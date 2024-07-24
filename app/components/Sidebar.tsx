@@ -17,6 +17,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ children }) => {
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const toggle = () => setDrawerOpen(!isDrawerOpen);
+  const setOpen = () => setDrawerOpen(true);
   return (
     <div className="drawer md:drawer-open h-screen">
       <input
@@ -24,13 +25,13 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
         type="checkbox"
         className="drawer-toggle md:hidden"
         checked={isDrawerOpen}
+        onChange={toggle}
       />
       <div className="drawer-content flex flex-col">
         {/* Hamburger menu button */}
         <label
           htmlFor="my-drawer"
           className="btn drawer-button md:hidden bg-transparent shadow-none fixed top-4 left-1 p-1 z-10"
-          onClick={toggle}
         >
           <FiMenu className="w-6 h-6" aria-label="Open drawer" />
         </label>

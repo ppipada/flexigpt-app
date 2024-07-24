@@ -25,14 +25,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   feedbackController,
 }) => {
   const isUser = user.role === ChatCompletionRoleEnum.user;
-  const align = isUser ? "items-end text-right" : "items-start text-left";
-  const leftColSpan = isUser ? "col-span-1 lg:col-span-2" : "col-span-1";
-  const rightColSpan = isUser ? "col-span-1" : "col-span-1 lg:col-span-2";
+  const align = !isUser ? "items-end text-left" : "items-start text-left";
+  const leftColSpan = !isUser ? "col-span-1 lg:col-span-2" : "col-span-1";
+  const rightColSpan = !isUser ? "col-span-1" : "col-span-1 lg:col-span-2";
 
   return (
     <div className="grid grid-cols-12 gap-2 mb-4 items-start">
       <div className={`${leftColSpan} flex justify-end`}>
-        {!isUser && <div className="w-10 h-10 mt-0.5 pl-1">{user.icon}</div>}
+        {isUser && <div className="w-10 h-10 mt-0.5 pl-1">{user.icon}</div>}
       </div>
       <div className="col-span-10 lg:col-span-9">
         <div className="flex flex-col w-full">
@@ -51,7 +51,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         </div>
       </div>
       <div className={`${rightColSpan} flex justify-start`}>
-        {isUser && <div className="w-10 h-10 mt-0.5 pl-1">{user.icon}</div>}
+        {!isUser && <div className="w-10 h-10 mt-0.5 pl-1">{user.icon}</div>}
       </div>
     </div>
   );
