@@ -1,7 +1,7 @@
+import { ChatMessageContent } from "@/chats/ChatMessageContent"; // Adjust the import path as necessary
+import ChatMessageFooterArea from "@/chats/ChatMessageFooter"; // Adjust the import path as necessary
+import { ChatCompletionRoleEnum, Message, User } from "@/lib/models/ChatTypes";
 import React from "react";
-import { ChatCompletionRoleEnum, Message, User } from "../lib/models/ChatTypes";
-import { ChatMessageContent } from "./ChatMessageContent"; // Adjust the import path as necessary
-import ChatMessageFooterArea from "./ChatMessageFooter"; // Adjust the import path as necessary
 
 interface ChatMessageProps {
   user: User;
@@ -26,16 +26,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 }) => {
   const isUser = user.role === ChatCompletionRoleEnum.user;
   const align = isUser ? "items-end text-right" : "items-start text-left";
+  const leftColSpan = isUser ? "col-span-1 lg:col-span-2" : "col-span-1";
+  const rightColSpan = isUser ? "col-span-1" : "col-span-1 lg:col-span-2";
 
   return (
-    <div className={`flex-1 mb-4`}>
-      <div className={`flex`}>
-        {!isUser && (
-          <div className="mt-0.5 mr-2">
-            <div className="w-10 h-10">{user.icon}</div>
-          </div>
-        )}
-        <div className="flex-1">
+    <div className="grid grid-cols-12 gap-2 mb-4 items-start">
+      <div className={`${leftColSpan} flex justify-end`}>
+        {!isUser && <div className="w-10 h-10 mt-0.5 pl-1">{user.icon}</div>}
+      </div>
+      <div className="col-span-10 lg:col-span-9">
+        <div className="flex flex-col w-full">
           <ChatMessageContent content={message.content} align={align} />
           <ChatMessageFooterArea
             isUser={isUser}
@@ -49,11 +49,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             cardContent={message.content}
           />
         </div>
-        {isUser && (
-          <div className="mt-0.5 ml-2">
-            <div className="w-10 h-10">{user.icon}</div>
-          </div>
-        )}
+      </div>
+      <div className={`${rightColSpan} flex justify-start`}>
+        {isUser && <div className="w-10 h-10 mt-0.5 pl-1">{user.icon}</div>}
       </div>
     </div>
   );

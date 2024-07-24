@@ -1,6 +1,27 @@
-import { ChatCompletionRoleEnum, Message } from "./models/ChatTypes";
+import { ChatCompletionRoleEnum, Message } from "@/lib/models/ChatTypes";
 
-const messages: Message[] = [
+export const tmpMessageDetails = `
+start of details
+
+\`\`\`dart
+class ChatScreen extends StatefulWidget {
+  const ChatScreen({super.key});
+
+  @override
+  ChatScreenState createState() => ChatScreenState();
+}
+\`\`\`
+
+there is a \`console\`
+
+\`\`\`py
+def myFunc() {
+  return "me";
+}
+\`\`\`
+`;
+
+export const messageSamplesList: Message[] = [
   {
     id: "1",
     createdAt: new Date("2023-09-24T08:30:00Z"),
@@ -221,7 +242,6 @@ return response
     `,
     timestamp: "09:45 AM",
     name: "Assistant",
+    details: tmpMessageDetails,
   },
 ];
-
-export default messages;

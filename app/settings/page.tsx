@@ -1,7 +1,7 @@
 "use client";
 
+import ThemeSwitch from "@/components/ThemeSwitch";
 import React, { ChangeEvent, useState } from "react";
-import ThemeSwitch from "../components/ThemeSwitch";
 
 const SettingsPage: React.FC = () => {
   const [apiKey, setApiKey] = useState("");

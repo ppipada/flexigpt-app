@@ -1,9 +1,9 @@
+import CopyButton from "@/components/CopyButton";
+import DownloadButton from "@/components/DownloadButton";
 import { FC, ReactNode, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { monokaiSublime } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import CopyButton from "../components/CopyButton";
-import DownloadButton from "../components/DownloadButton";
 
 export const MemoizedMarkdown = memo(
   ReactMarkdown,
@@ -84,9 +84,11 @@ export function ChatMessageContent({
     code: ({ inline, className, children, ...props }: CodeComponentProps) => {
       if (inline || !className) {
         return (
-          <code className="bg-base-200 p-1 rounded" {...props}>
-            {children}
-          </code>
+          <div className="flex overflow-x-auto p-1 rounded">
+            <code className="bg-base-200 whitespace-nowrap" {...props}>
+              {children}
+            </code>
+          </div>
         );
       }
       const match =

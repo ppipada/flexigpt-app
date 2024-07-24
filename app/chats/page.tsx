@@ -1,32 +1,12 @@
 "use client";
+import ChatInputField from "@/chats/ChatInputField";
+import ChatMessage from "@/chats/ChatMessage";
+import ChatNavBar from "@/chats/ChatNavbar";
+import ButtonScrollToBottom from "@/components/ButtonScrollToBottom";
+import { messageSamplesList } from "@/lib/MessageSamples";
+import { Chat, ChatCompletionRoleEnum, Message } from "@/lib/models/ChatTypes";
 import React, { useEffect, useRef, useState } from "react";
 import { v7 as uuidv7 } from "uuid";
-import ButtonScrollToBottom from "../components/ButtonScrollToBottom";
-import { Chat, ChatCompletionRoleEnum, Message } from "../lib/models/ChatTypes";
-import ChatInputField from "./ChatInputField";
-import ChatMessage from "./ChatMessage";
-import ChatNavBar from "./ChatNavbar";
-
-const tmpDetails = `
-start of details
-
-\`\`\`dart
-class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
-
-  @override
-  ChatScreenState createState() => ChatScreenState();
-}
-\`\`\`
-
-there is a \`console\`
-
-\`\`\`py
-def myFunc() {
-  return "me";
-}
-\`\`\`
-`;
 
 const ChatScreen: React.FC = () => {
   const [chat, setChat] = useState<Chat>({
@@ -47,7 +27,6 @@ const ChatScreen: React.FC = () => {
         id: new Date().toISOString(),
         role: ChatCompletionRoleEnum.user,
         content: trimmedText,
-        details: tmpDetails,
       };
 
       setChat((prevChat) => ({
@@ -59,6 +38,15 @@ const ChatScreen: React.FC = () => {
   };
 
   useEffect(() => {
+    // Initialize chat with sample messages on mount
+    setChat((prevChat) => ({
+      ...prevChat,
+      messages: messageSamplesList,
+      modifiedTime: new Date(),
+    }));
+  }, []);
+
+  useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop =
         chatContainerRef.current.scrollHeight;
@@ -67,7 +55,7 @@ const ChatScreen: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center w-full h-full overflow-hidden">
-      <div className="w-full flex justify-center bg-transparent fixed top-0 z-10">
+      <div className="w-full flex justify-center bg-transparent fixed top-0">
         <div className="w-11/12">
           <ChatNavBar
             title={chat.title}
@@ -118,8 +106,8 @@ const ChatScreen: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="w-full flex justify-center bg-transparent fixed bottom-0 z-10 mb-4">
-          <div className="w-11/12 lg:w-2/3">
+        <div className="w-full flex justify-center bg-transparent fixed bottom-0 mb-4">
+          <div className="w-11/12 lg:w-3/5">
             <ChatInputField
               onSend={sendMessage}
               setInputHeight={setInputHeight}
@@ -127,7 +115,7 @@ const ChatScreen: React.FC = () => {
           </div>
         </div>
       </div>
-      <div className="fixed bottom-0 right-0 mb-16 mr-16 z-10">
+      <div className="fixed bottom-0 right-0 mb-16 mr-0 lg:mr-16 z-10">
         <ButtonScrollToBottom
           scrollContainerRef={chatContainerRef}
           size={32}

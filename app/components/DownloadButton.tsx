@@ -1,6 +1,6 @@
+import { programmingLanguages } from "@/lib/models/CodeTypes";
 import React, { FC } from "react";
 import { FiDownload } from "react-icons/fi";
-import { programmingLanguages } from "../lib/models/CodeTypes";
 
 function generateRandomString(length: number, lowercase = false): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXY3456789"; // excluding similar looking characters like Z, 2, I, 1, O, 0

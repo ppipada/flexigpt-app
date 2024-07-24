@@ -1,3 +1,5 @@
+import { ChatMessageContent } from "@/chats//ChatMessageContent";
+import CopyButton from "@/components/CopyButton";
 import React, { useState } from "react";
 import {
   FiChevronDown,
@@ -5,8 +7,6 @@ import {
   FiEdit,
   FiMessageCircle,
 } from "react-icons/fi";
-import CopyButton from "../components/CopyButton";
-import { ChatMessageContent } from "./ChatMessageContent";
 
 interface ChatMessageFooterAreaProps {
   isUser: boolean;
@@ -85,7 +85,7 @@ const ChatMessageFooterArea: React.FC<ChatMessageFooterAreaProps> = ({
           {isExpanded ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
         </button>
       </div>
-      {isExpanded && (
+      {isExpanded && messageDetails && (
         <div className="mt-2">
           <ChatMessageContent
             content={messageDetails}

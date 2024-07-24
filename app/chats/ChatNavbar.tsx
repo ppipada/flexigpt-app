@@ -15,7 +15,7 @@ const ChatNavBar: React.FC<ChatNavBarProps> = ({
   return (
     <div className="flex items-center justify-between p-4 bg-transparent">
       <button
-        className="btn bg-transparent shadow-none"
+        className="btn bg-transparent shadow-none mx-4"
         onClick={onNewChat}
         aria-label="Create new chat"
         title="Create new chat"
@@ -24,7 +24,7 @@ const ChatNavBar: React.FC<ChatNavBarProps> = ({
       </button>
       <h1 className="text-xl font-semibold text-center flex-1">{title}</h1>
       <button
-        className="btn bg-transparent shadow-none"
+        className="btn bg-transparent shadow-none mx-4"
         onClick={onExport}
         aria-label="Export chat"
         title="Export chat"

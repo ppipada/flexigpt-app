@@ -1,6 +1,6 @@
+import { useAtBottom } from "@/lib/hooks/use-at-bottom";
 import React, { FC } from "react";
 import { FiArrowDownCircle } from "react-icons/fi";
-import { useAtBottom } from "../lib/hooks/use-at-bottom";
 
 interface ButtonScrollToBottomProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {

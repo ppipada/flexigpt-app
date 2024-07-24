@@ -93,7 +93,7 @@ const ChatInputField: React.FC<ChatInputFieldProps> = ({
         />
         <button
           type="submit"
-          className={`btn !bg-transparent shadow-none ml-1 ${
+          className={`btn btn-md !bg-transparent border-none shadow-none m-0 p-2 ${
             !isSendButtonEnabled ? "btn-disabled" : ""
           }`}
           disabled={!isSendButtonEnabled}

@@ -23,8 +23,8 @@ export default function ThemeSwitch() {
     <div className="flex items-center">
       <FiSun size={24} onClick={() => setTheme("light")} />
       <label
-        className="tooltip ml-2 mr-2 p-0 justify-between"
-        data-tip="Switch Light/Dark mode"
+        className="ml-2 mr-2 p-0 justify-between"
+        title="Switch Light/Dark mode"
       >
         <input
           type="checkbox"
