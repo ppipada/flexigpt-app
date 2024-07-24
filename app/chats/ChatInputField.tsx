@@ -1,23 +1,50 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState, type RefObject } from "react";
 import { FiSend } from "react-icons/fi";
-import { useEnterSubmit } from "../lib/hooks/use-enter-submit";
 
 interface ChatInputFieldProps {
   onSend: (message: string) => void;
+  setInputHeight: (height: number) => void;
 }
 
-const ChatInputField: React.FC<ChatInputFieldProps> = ({ onSend }) => {
+// Custom hook for handling form submission on Enter key press
+function useEnterSubmit(): {
+  formRef: RefObject<HTMLFormElement>;
+  onKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+} {
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const handleKeyDown = (
+    event: React.KeyboardEvent<HTMLTextAreaElement>
+  ): void => {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !event.nativeEvent.isComposing
+    ) {
+      formRef.current?.requestSubmit();
+      event.preventDefault();
+    }
+  };
+
+  return { formRef, onKeyDown: handleKeyDown };
+}
+
+const ChatInputField: React.FC<ChatInputFieldProps> = ({
+  onSend,
+  setInputHeight,
+}) => {
   const [text, setText] = useState<string>("");
   const [isSendButtonEnabled, setIsSendButtonEnabled] =
     useState<boolean>(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const { formRef, onKeyDown } = useEnterSubmit();
 
-  const handleTextChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = event.target.value;
     setText(value);
     setIsSendButtonEnabled(value.trim().length > 0);
+    autoResizeTextarea();
   };
 
   const handleSubmit = () => {
@@ -25,8 +52,25 @@ const ChatInputField: React.FC<ChatInputFieldProps> = ({ onSend }) => {
     onSend(text.trim());
     setText("");
     setIsSendButtonEnabled(false);
-    inputRef.current?.focus();
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto";
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+      setInputHeight(inputRef.current.scrollHeight);
+      inputRef.current?.focus();
+    }
   };
+
+  const autoResizeTextarea = () => {
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto";
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+      setInputHeight(inputRef.current.scrollHeight);
+    }
+  };
+
+  useEffect(() => {
+    autoResizeTextarea();
+  }, [text]);
 
   return (
     <div className="relative w-full">
@@ -38,14 +82,14 @@ const ChatInputField: React.FC<ChatInputFieldProps> = ({ onSend }) => {
         }}
         className="flex items-center w-full"
       >
-        <input
+        <textarea
           ref={inputRef}
-          type="text"
           value={text}
           onChange={handleTextChange}
           onKeyDown={onKeyDown}
           placeholder="Type message..."
-          className="input input-bordered flex-1"
+          className="textarea textarea-bordered flex-1 resize-none overflow-hidden min-h-[24px] max-h-[240px]"
+          rows={1}
         />
         <button
           type="submit"

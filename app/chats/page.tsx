@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { v7 as uuidv7 } from "uuid";
 import ButtonScrollToBottom from "../components/ButtonScrollToBottom";
 import { Chat, ChatCompletionRoleEnum, Message } from "../lib/models/ChatTypes";
@@ -37,6 +37,9 @@ const ChatScreen: React.FC = () => {
     messages: [],
   });
 
+  const [inputHeight, setInputHeight] = useState(0);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
   const sendMessage = (messageContent: string) => {
     const trimmedText = messageContent.trim();
     if (trimmedText) {
@@ -55,7 +58,12 @@ const ChatScreen: React.FC = () => {
     }
   };
 
-  const chatContainerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
+  }, [chat.messages]);
 
   return (
     <div className="flex flex-col items-center w-full h-full overflow-hidden">
@@ -78,10 +86,11 @@ const ChatScreen: React.FC = () => {
       </div>
       <div className="flex flex-col items-center w-full flex-grow bg-transparent overflow-hidden mt-16">
         <div
-          className="flex-grow w-full h-[calc(100vh-64px-80px)] flex justify-center overflow-y-auto mb-16"
+          className="w-full flex-grow flex justify-center overflow-y-auto"
           ref={chatContainerRef}
+          style={{ maxHeight: `calc(100vh - 128px - ${inputHeight}px)` }} // Adjust height dynamically
         >
-          <div className="w-11/12 lg:w-4/5">
+          <div className="w-11/12 lg:w-2/3">
             <div className="w-full flex-1 space-y-4">
               {chat.messages.map((message) => (
                 <ChatMessage
@@ -111,7 +120,10 @@ const ChatScreen: React.FC = () => {
         </div>
         <div className="w-full flex justify-center bg-transparent fixed bottom-0 z-10 mb-4">
           <div className="w-11/12 lg:w-2/3">
-            <ChatInputField onSend={sendMessage} />
+            <ChatInputField
+              onSend={sendMessage}
+              setInputHeight={setInputHeight}
+            />
           </div>
         </div>
       </div>

@@ -105,7 +105,7 @@ export function ChatMessageContent({
   };
 
   return (
-    <div className="bg-base-100 rounded-lg shadow-lg p-2">
+    <div className="bg-base-100 rounded-lg shadow-lg px-4 py-2">
       <MemoizedMarkdown components={components}>{content}</MemoizedMarkdown>
     </div>
   );
