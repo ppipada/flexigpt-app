@@ -74,13 +74,13 @@ export function ChatMessageContent({
   align,
 }: ChatMessageContentProps) {
   const components = {
-    p({ children }: PComponentProps) {
-      return (
-        <p className={`my-2 ${align}`} style={{ lineHeight: "1.5" }}>
-          {children}
-        </p>
-      );
-    },
+    // p({ children }: PComponentProps) {
+    //   return (
+    //     <p className={`my-2 ${align}`} style={{ lineHeight: "1.5" }}>
+    //       {children}
+    //     </p>
+    //   );
+    // },
     code: ({ inline, className, children, ...props }: CodeComponentProps) => {
       if (inline || !className) {
         return (
@@ -107,7 +107,7 @@ export function ChatMessageContent({
   };
 
   return (
-    <div className="bg-base-100 rounded-lg shadow-lg px-4 py-2">
+    <div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2">
       <MemoizedMarkdown components={components}>{content}</MemoizedMarkdown>
     </div>
   );

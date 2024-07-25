@@ -8,6 +8,22 @@ import { Chat, ChatCompletionRoleEnum, Message } from "@/lib/models/ChatTypes";
 import React, { useEffect, useRef, useState } from "react";
 import { v7 as uuidv7 } from "uuid";
 
+const initialItems = [
+  "Chat 1",
+  "Chat 2",
+  "Chat 3",
+  "Chat 4",
+  "my convo 1",
+  "py search 1",
+];
+
+const fetchSearchResults = async (query: string): Promise<string[]> => {
+  // Replace with your actual search logic
+  return initialItems.filter((item) =>
+    item.toLowerCase().includes(query.toLowerCase())
+  );
+};
+
 const ChatScreen: React.FC = () => {
   const [chat, setChat] = useState<Chat>({
     id: uuidv7(),
@@ -55,10 +71,9 @@ const ChatScreen: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center w-full h-full overflow-hidden">
-      <div className="w-full flex justify-center bg-transparent fixed top-0">
-        <div className="w-11/12">
+      <div className="w-full flex justify-center bg-transparent fixed top-2">
+        <div className="w-11/12 lg:w-3/4">
           <ChatNavBar
-            title={chat.title}
             onNewChat={() => {
               setChat((prevChat) => ({
                 ...prevChat,
@@ -69,14 +84,19 @@ const ChatScreen: React.FC = () => {
             onExport={() => {
               // Add export functionality
             }}
+            initialSearchItems={initialItems}
+            onSearch={fetchSearchResults}
           />
         </div>
       </div>
-      <div className="flex flex-col items-center w-full flex-grow bg-transparent overflow-hidden mt-16">
+      <div className="flex flex-col items-center w-full flex-grow bg-transparent overflow-hidden mt-12">
+        <h1 className="text-xl font-semibold text-center flex my-4">
+          {chat.title}
+        </h1>
         <div
           className="w-full flex-grow flex justify-center overflow-y-auto"
           ref={chatContainerRef}
-          style={{ maxHeight: `calc(100vh - 128px - ${inputHeight}px)` }} // Adjust height dynamically
+          style={{ maxHeight: `calc(100vh - 144px - ${inputHeight}px)` }} // Adjust height dynamically
         >
           <div className="w-11/12 lg:w-2/3">
             <div className="w-full flex-1 space-y-4">
@@ -106,8 +126,8 @@ const ChatScreen: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="w-full flex justify-center bg-transparent fixed bottom-0 mb-4">
-          <div className="w-11/12 lg:w-3/5">
+        <div className="w-full flex justify-center bg-transparent fixed bottom-0 mb-3">
+          <div className="w-11/12 lg:w-2/3">
             <ChatInputField
               onSend={sendMessage}
               setInputHeight={setInputHeight}

@@ -31,12 +31,12 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
         {/* Hamburger menu button */}
         <label
           htmlFor="my-drawer"
-          className="btn drawer-button md:hidden bg-transparent shadow-none fixed top-4 left-1 p-1 z-10"
+          className="btn drawer-button md:hidden bg-transparent shadow-none fixed top-3 left-2 py-1 pl-1 pr-0 z-10"
         >
           <FiMenu className="w-6 h-6" aria-label="Open drawer" />
         </label>
         {/* Page content here */}
-        <div className="flex-1 m-2 rounded bg-base-200">{children}</div>
+        <div className="flex-1 m-2 rounded-xl bg-base-200">{children}</div>
       </div>
       <div className="drawer-side z-20">
         <label htmlFor="my-drawer" className="drawer-overlay"></label>

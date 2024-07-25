@@ -73,14 +73,14 @@ const ChatInputField: React.FC<ChatInputFieldProps> = ({
   }, [text]);
 
   return (
-    <div className="relative w-full">
+    <div className="relative">
       <form
         ref={formRef}
         onSubmit={(e) => {
           e.preventDefault();
           handleSubmit();
         }}
-        className="flex items-center w-full"
+        className="flex items-center w-full bg-base-100 rounded-2xl border px-4"
       >
         <textarea
           ref={inputRef}
@@ -88,12 +88,12 @@ const ChatInputField: React.FC<ChatInputFieldProps> = ({
           onChange={handleTextChange}
           onKeyDown={onKeyDown}
           placeholder="Type message..."
-          className="textarea textarea-bordered flex-1 resize-none overflow-hidden min-h-[24px] max-h-[240px]"
+          className="flex-1 resize-none overflow-hidden bg-transparent border-none outline-none placeholder-gray-400 min-h-[24px] max-h-[240px] p-2"
           rows={1}
         />
         <button
           type="submit"
-          className={`btn btn-md !bg-transparent border-none shadow-none m-0 p-2 ${
+          className={`btn btn-md !bg-transparent border-none shadow-none px-1 ${
             !isSendButtonEnabled ? "btn-disabled" : ""
           }`}
           disabled={!isSendButtonEnabled}
