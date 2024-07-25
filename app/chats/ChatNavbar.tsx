@@ -18,7 +18,7 @@ const ChatNavBar: React.FC<ChatNavBarProps> = ({
   return (
     <div className="flex items-center justify-between p-1 bg-transparent">
       <button
-        className="btn bg-transparent shadow-none ml-4 mr-2"
+        className="btn bg-transparent shadow-none ml-4 mr-1"
         onClick={onNewChat}
         aria-label="Create new chat"
         title="Create new chat"
@@ -29,7 +29,7 @@ const ChatNavBar: React.FC<ChatNavBarProps> = ({
         <ChatSearch initialItems={initialSearchItems} onSearch={onSearch} />
       </div>
       <button
-        className="btn bg-transparent shadow-none ml-2 mr-4"
+        className="btn bg-transparent shadow-none ml-1 mr-4"
         onClick={onExport}
         aria-label="Export chat"
         title="Export chat"

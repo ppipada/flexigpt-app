@@ -80,7 +80,7 @@ const ChatInputField: React.FC<ChatInputFieldProps> = ({
           e.preventDefault();
           handleSubmit();
         }}
-        className="flex items-center w-full bg-base-100 rounded-2xl border px-4"
+        className="flex items-center bg-base-100 rounded-2xl border px-4 mx-2"
       >
         <textarea
           ref={inputRef}

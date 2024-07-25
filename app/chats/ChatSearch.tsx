@@ -43,9 +43,9 @@ const ChatSearch: React.FC<ChatSearchProps> = ({ initialItems, onSearch }) => {
   };
 
   return (
-    <div className="relative w-full">
-      <div className="flex items-center bg-base-100 p-1 rounded-2xl border">
-        <FiSearch size={16} className="ml-4 mr-2 text-neutral-400" />
+    <div className="relative">
+      <div className="flex items-center bg-base-100 py-3 mx-0 rounded-2xl border">
+        <FiSearch size={24} className="ml-4 mr-2 text-neutral-400" />
         <input
           type="text"
           value={query}
@@ -53,7 +53,7 @@ const ChatSearch: React.FC<ChatSearchProps> = ({ initialItems, onSearch }) => {
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder="Search or load chats"
-          className="w-full bg-base-100 m-1 border-none outline-none"
+          className="w-full bg-base-100 border-none outline-none"
         />
       </div>
       {showDropdown && (
