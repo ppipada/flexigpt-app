@@ -51,6 +51,29 @@
     - [ ] ~~Support add file, add image~~
     - [ ] ~~Support streaming response~~
 
+- Electron support
+
+  - [x] Support electron based bundling for desktop
+
+- Settings screen
+
+  - [x] A settings page is a multi card page.
+  - [ ] The settings page has a multiple cards and a "export settings" and a "import settings" button
+  - [ ] Card widget:
+    - [x] Each card widget has a header i.e the settings name
+    - [x] The body is a table of key value pairs
+    - [x] The first row is a fixed frozen row with colum names i.e column1: key, column 2: value
+    - [ ] There are then rows of "predefined keys", these rows are not deleteable. Also the keys are not editable, only the values are.
+    - [ ] There should be capability to add and remove other rows.
+    - [ ] There is should be a capability to display a value as "hidden" i.e "\*\*\*", based on some input type (e.g: password or secret or apikeys)
+    - [ ] There should be a explicit "save settings" button too. That can have a dummy implementation for now. Ideally this should be in card footer.
+
+- Settings State DB
+
+  - [ ] Connect all above widgets to a background settings state lib (ideally json file based)
+  - [ ] The lib should provide CRUD functionality with some keys being immutable (for above "predefined keys")
+  - [ ] It should also provide and import export functionality. The export should be as a json file, same with import.
+
 - LLM Provider
 
   - [ ] Implement llm providers
@@ -74,21 +97,3 @@
 - Agent screen
 
   - [ ] See if a jupyter notebook UI can be presented
-
-- Settings screen
-
-  - [ ] A settings page is a multi card page.
-  - [ ] The settings page has a multiple cards and a "export settings" and a "import settings" button
-  - [ ] Card widget:
-    - [ ] Each card widget has a header i.e the settings name
-    - [ ] The body is a table of key value pairs
-    - [ ] The first row is a fixed frozen row with colum names i.e column1: key, column 2: value
-    - [ ] There are then rows of "predefined keys", these rows are not deleteable. Also the keys are not editable, only the values are.
-    - [ ] There should be capability to add and remove other rows.
-    - [ ] There is should be a capability to display a value as "hidden" i.e "\*\*\*", based on some input type (e.g: password or secret or apikeys)
-    - [ ] There should be a explicit "save settings" button too. That can have a dummy implementation for now. Ideally this should be in card footer.
-
-- Settings State DB
-  - [ ] Connect all above widgets to a background settings state lib (ideally json file based)
-  - [ ] The lib should provide CRUD functionality with some keys being immutable (for above "predefined keys")
-  - [ ] It should also provide and import export functionality. The export should be as a json file, same with import.

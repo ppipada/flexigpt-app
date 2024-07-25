@@ -1,0 +1,14 @@
+artifactName: ${productName}-${os}-${arch}.${ext}
+win:
+  target: nsis
+linux:
+  target: AppImage
+  synopsis: UI for the FlexiGPT ecosystem
+  category: AI
+mac:
+  target: dmg
+  category: public.app-category.ai
+files: ['backend/build/**/*', 'frontend/build/**/*']
+extraResources: ['./assets/**']
+directories:
+  buildResources: 'assets'
