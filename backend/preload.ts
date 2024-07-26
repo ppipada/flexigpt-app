@@ -1,9 +1,14 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-// Electron doesnt support ESM for renderer process. Alternatively, pass this file
-// through a bundler but that feels like an overkill
-const { contextBridge, ipcRenderer } = require('electron')
+const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('BloopAPI', {
-	foo: 'bar',
-	ping: () => ipcRenderer.invoke('sample:ping'),
-})
+contextBridge.exposeInMainWorld('BackendAPI', {
+	ping: () => ipcRenderer.invoke('backend:ping'),
+});
+
+contextBridge.exposeInMainWorld('SettingsAPI', {
+	getAllSettings: async () => {
+		return await ipcRenderer.invoke('settings-store:getall');
+	},
+	setSetting: async (key: string, value: any) => {
+		await ipcRenderer.invoke('settings-store:set', key, value);
+	},
+});

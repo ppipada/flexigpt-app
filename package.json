@@ -9,6 +9,7 @@
 		"url": "https://github.com/flexigpt/flexiui.git"
 	},
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
+	"description": "UI for the flexigpt ecosystem",
 	"scripts": {
 		"frontend:start": "next start frontend",
 		"frontend:dev": "next dev frontend",
@@ -29,8 +30,8 @@
 	"dependencies": {
 		"electron-is-dev": "^3.0.1",
 		"electron-log": "^5.1.7",
-		"electron-store": "^10.0.0",
 		"electron-updater": "6.3.1",
+		"lowdb": "^7.0.1",
 		"next": "14.2.5",
 		"next-themes": "^0.3.0",
 		"react": "^18",
