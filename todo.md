@@ -70,9 +70,10 @@
 
 - Settings State DB
 
-  - [ ] Connect all above widgets to a background settings state lib (ideally json file based)
-  - [ ] The lib should provide CRUD functionality with some keys being immutable (for above "predefined keys")
-  - [ ] It should also provide and import export functionality. The export should be as a json file, same with import.
+  - [x] Create a state db that can store and retrieve settings
+  - [x] Connect all above widgets to a background settings state lib (ideally json file based)
+  - [ ] ~~The lib should provide CRUD functionality with some keys being immutable (for above "predefined keys")~~
+  - [ ] ~~It should also provide and import export functionality. The export should be as a json file, same with import.~~
 
 - LLM Provider
 
