@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-	// skipTrailingSlashRedirect: true,
 	distDir: 'build',
 	basePath: process.env.NODE_ENV === 'production' ? '/frontend/build' : undefined,
 	// assetPrefix: process.env.NODE_ENV === 'production' ? '/frontend/build' : undefined,
@@ -9,7 +8,7 @@ const nextConfig = {
 	},
 	output: 'export',
 	trailingSlash: true,
-	skipTrailingSlashRedirect: true,
+	// skipTrailingSlashRedirect: true,
 };
 
 export default nextConfig;

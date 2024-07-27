@@ -32,7 +32,7 @@
 		"electron-log": "^5.1.7",
 		"electron-updater": "6.3.1",
 		"lowdb": "^7.0.1",
-		"next": "13.5.6",
+		"next": "14.2.5",
 		"next-themes": "^0.3.0",
 		"react": "^18",
 		"react-dom": "^18",
@@ -77,5 +77,16 @@
 		"tsconfig-paths-webpack-plugin": "^4.1.0",
 		"typescript": "^5",
 		"wait-on": "^7.2.0"
+	},
+	"optionalDependencies": {
+		"@next/swc-darwin-arm64": "14.2.5",
+		"@next/swc-darwin-x64": "14.2.5",
+		"@next/swc-linux-arm64-gnu": "14.2.5",
+		"@next/swc-linux-arm64-musl": "14.2.5",
+		"@next/swc-linux-x64-gnu": "14.2.5",
+		"@next/swc-linux-x64-musl": "14.2.5",
+		"@next/swc-win32-arm64-msvc": "14.2.5",
+		"@next/swc-win32-ia32-msvc": "14.2.5",
+		"@next/swc-win32-x64-msvc": "14.2.5"
 	}
 }
