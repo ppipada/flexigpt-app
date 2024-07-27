@@ -28,6 +28,7 @@
     - [x] send button should be enabled only when something is typed
     - [x] styled as a box with top as circular
     - [x] fixed at bottom of the parent container
+    - [ ] Input box styling issues. should be centered on medium screens and small screens too.
 
   - [x] chat message list
 
@@ -54,6 +55,8 @@
 - Electron support
 
   - [x] Support electron based bundling for desktop
+  - [x] Test with prod build and run appimage.
+  - [ ] Add icon in title bar and ass appIcon for tray
 
 - Settings screen
 

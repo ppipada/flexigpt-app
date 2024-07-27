@@ -1,4 +1,4 @@
-import { BrowserWindow, app, ipcMain, net, protocol } from 'electron';
+import { BrowserWindow, CallbackResponse, OnBeforeRequestListenerDetails, app, ipcMain, session } from 'electron';
 import electronIsDev from 'electron-is-dev';
 import log from 'electron-log';
 import electronUpdater from 'electron-updater';
@@ -12,6 +12,8 @@ const __dirname = dirname(__filename);
 const FRONTEND_PATH_PREFIX = '/frontend/build';
 const PUBLIC_FILES_PATHS = ['/icon.png', '/favicon.ico'];
 const HANDLE_FILES_PREFIXES = [`file://${FRONTEND_PATH_PREFIX}`, ...PUBLIC_FILES_PATHS.map(path => `file://${path}`)];
+const ICON_PATH = path.resolve(__dirname, `../../${FRONTEND_PATH_PREFIX}/favicon.ico`);
+const PRELOAD_PATH = path.join(__dirname, 'preload.js');
 
 const { autoUpdater } = electronUpdater;
 let appWindow: BrowserWindow | null = null;
@@ -32,20 +34,10 @@ const installExtensions = async () => {
 const spawnAppWindow = async () => {
 	if (electronIsDev) await installExtensions();
 
-	const RESOURCES_PATH = electronIsDev
-		? path.join(__dirname, '../../assets')
-		: path.join(process.resourcesPath, 'assets');
-
-	const getAssetPath = (...paths: string[]): string => {
-		return path.join(RESOURCES_PATH, ...paths);
-	};
-
-	const PRELOAD_PATH = path.join(__dirname, 'preload.js');
-
 	appWindow = new BrowserWindow({
 		width: 800,
 		height: 600,
-		icon: getAssetPath('icon.png'),
+		icon: ICON_PATH,
 		show: false,
 		webPreferences: {
 			preload: PRELOAD_PATH,
@@ -81,14 +73,18 @@ const initializeSettingsManager = async () => {
 };
 
 const getActualURL = (origurl: string) => {
-	let callurl = decodeURI(origurl);
+	let callurl = origurl;
 
 	if (HANDLE_FILES_PREFIXES.some(prefix => callurl.startsWith(prefix))) {
 		// Remove the file://
 		let actualURL = callurl.substring(7);
+		// For public files add the frontend prefix
 		if (PUBLIC_FILES_PATHS.some(pfile => actualURL === pfile)) {
-			// For public files add the frontend prefix
 			actualURL = FRONTEND_PATH_PREFIX + actualURL;
+		}
+		// Handle if its a page request
+		if (actualURL.endsWith('/')) {
+			actualURL += 'index.html';
 		}
 		// Create a absolute url from the actual url
 		callurl = urlformat({
@@ -97,29 +93,30 @@ const getActualURL = (origurl: string) => {
 			slashes: true,
 		});
 	}
-	console.log(`Input URL: ${origurl} Callpath: ${callurl}`);
+	// console.log(`Input URL: ${origurl} Callpath: ${callurl}`);
 	return callurl;
 };
 
-const interceptFileProtocol = () => {
-	protocol.interceptFileProtocol('file', (request, callback) => {
-		const callurl = getActualURL(request.url);
-		callback({ path: callurl.substring(8) });
-	});
+const handleAccessRequest = (
+	details: OnBeforeRequestListenerDetails,
+	callback: (response: CallbackResponse) => void
+) => {
+	const callurl = getActualURL(details.url);
+	if (callurl !== details.url) {
+		callback({ redirectURL: callurl });
+	} else {
+		callback({});
+	}
 };
 
-const handleFileProtocol = () => {
-	protocol.handle('file', (request: Request) => {
-		const callurl = getActualURL(request.url);
-		// fetch the new path, without reinvoking this handler
-		return net.fetch(callurl, { bypassCustomProtocolHandlers: true });
-	});
-};
+// This is done to fix: [ERROR:gl_surface_presentation_helper.cc(260)] GetVSyncParametersIfAvailable() failed in linux.
+app.disableHardwareAcceleration();
 
 app.on('ready', async () => {
 	// new AppUpdater();
 	await initializeSettingsManager();
 	spawnAppWindow();
+	session.defaultSession.webRequest.onBeforeRequest(handleAccessRequest);
 });
 
 app.on('window-all-closed', () => {
@@ -128,10 +125,6 @@ app.on('window-all-closed', () => {
 	}
 });
 
-app.whenReady().then(() => {
-	// interceptFileProtocol();
-	handleFileProtocol();
-});
 /*
  * ======================================================================================
  *                                IPC Main Events

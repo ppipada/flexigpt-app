@@ -1,22 +1,23 @@
 artifactName: ${productName}-${os}-${arch}.${ext}
 win:
   target: nsis
+  icon: 'frontend/build/icon.png'
 linux:
   target: AppImage
   synopsis: UI for the FlexiGPT ecosystem
   category: AI
+  icon: 'frontend/build/icon.png'
 mac:
   target: dmg
   category: public.app-category.ai
+  icon: 'frontend/build/icon.png'
 files:
   - from: .
     filter:
       - 'backend/build'
       - 'frontend/build'
       - 'package.json'
-extraResources: ['./assets/**']
 directories:
-  buildResources: 'assets'
   output: "dist"
 publish: null
 
