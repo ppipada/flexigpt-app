@@ -8,7 +8,16 @@ linux:
 mac:
   target: dmg
   category: public.app-category.ai
-files: ['backend/build/**/*', 'frontend/build/**/*']
+files:
+  - from: .
+    filter:
+      - 'backend/build'
+      - 'frontend/build'
+      - 'package.json'
 extraResources: ['./assets/**']
 directories:
   buildResources: 'assets'
+  output: "dist"
+publish: null
+
+

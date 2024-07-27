@@ -1,35 +1,36 @@
 export interface CodeProps {
-  language: string;
-  value: string;
+	language: string;
+	value: string;
 }
 
 interface languageMap {
-  [key: string]: string | undefined;
+	[key: string]: string | undefined;
 }
 
 export const programmingLanguages: languageMap = {
-  javascript: ".js",
-  python: ".py",
-  java: ".java",
-  c: ".c",
-  cpp: ".cpp",
-  "c++": ".cpp",
-  "c#": ".cs",
-  ruby: ".rb",
-  php: ".php",
-  swift: ".swift",
-  "objective-c": ".m",
-  kotlin: ".kt",
-  typescript: ".ts",
-  go: ".go",
-  perl: ".pl",
-  rust: ".rs",
-  scala: ".scala",
-  haskell: ".hs",
-  lua: ".lua",
-  shell: ".sh",
-  sql: ".sql",
-  html: ".html",
-  css: ".css",
-  // add more file extensions here, make sure the key is same as language prop in CodeBlock.tsx component
+	javascript: '.js',
+	python: '.py',
+	java: '.java',
+	c: '.c',
+	cpp: '.cpp',
+	'c++': '.cpp',
+	'c#': '.cs',
+	ruby: '.rb',
+	php: '.php',
+	swift: '.swift',
+	'objective-c': '.m',
+	kotlin: '.kt',
+	typescript: '.ts',
+	go: '.go',
+	perl: '.pl',
+	rust: '.rs',
+	scala: '.scala',
+	haskell: '.hs',
+	lua: '.lua',
+	shell: '.sh',
+	sql: '.sql',
+	html: '.html',
+	css: '.css',
+	json: '.json',
+	// add more file extensions here, make sure the key is same as language prop in CodeBlock.tsx component
 };

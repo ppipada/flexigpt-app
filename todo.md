@@ -58,15 +58,16 @@
 - Settings screen
 
   - [x] A settings page is a multi card page.
-  - [ ] The settings page has a multiple cards and a "export settings" and a "import settings" button
-  - [ ] Card widget:
+  - [x] The settings page has a multiple cards and a "export settings" functionality
+  - [ ] ~~"import settings" functionality too~~
+  - Card widget:
     - [x] Each card widget has a header i.e the settings name
     - [x] The body is a table of key value pairs
     - [x] The first row is a fixed frozen row with colum names i.e column1: key, column 2: value
-    - [ ] There are then rows of "predefined keys", these rows are not deleteable. Also the keys are not editable, only the values are.
-    - [ ] There should be capability to add and remove other rows.
-    - [ ] There is should be a capability to display a value as "hidden" i.e "\*\*\*", based on some input type (e.g: password or secret or apikeys)
-    - [ ] There should be a explicit "save settings" button too. That can have a dummy implementation for now. Ideally this should be in card footer.
+    - [ ] ~~There are then rows of "predefined keys", these rows are not deleteable. Also the keys are not editable, only the values are.~~
+    - [ ] ~~There should be capability to add and remove other rows.~~
+    - [x] There is should be a capability to display a value as "hidden" i.e "\*\*\*", based on some input type (e.g: password or secret or apikeys)
+    - [ ] ~~There should be a explicit "save settings" button too. That can have a dummy implementation for now. Ideally this should be in card footer.~~
 
 - Settings State DB
 

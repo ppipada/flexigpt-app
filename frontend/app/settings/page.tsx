@@ -1,6 +1,7 @@
 'use client';
 
 import { SettingsSchema, getAllSettings, setSetting } from '@/api/settings';
+import DownloadButton from '@/components/DownloadButton';
 import ThemeSwitch from '@/components/ThemeSwitch';
 import React, { useEffect, useState } from 'react';
 
@@ -41,8 +42,25 @@ const SettingsPage: React.FC = () => {
 	return (
 		<div className="flex flex-col items-center justify-center p-2">
 			<div className="w-11/12 lg:w-2/3 mb-8 mt-8">
-				<div className="flex justify-center items-center h-full">
-					<h1 className="text-2xl font-bold mb-16">Settings</h1>
+				<div className="relative flex items-center justify-center h-full mb-16">
+					<h1 className="absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold">Settings</h1>
+					<div className="ml-auto">
+						<DownloadButton
+							title="Download Settings"
+							language="json"
+							value={JSON.stringify(
+								{
+									openai: openAiSettings,
+									anthropic: anthropicSettings,
+								},
+								null,
+								2
+							)}
+							size={24}
+							fileprefix="settings"
+							className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
+						/>
+					</div>
 				</div>
 
 				<div className="bg-base-100 rounded-lg shadow-lg p-6 mb-6">
