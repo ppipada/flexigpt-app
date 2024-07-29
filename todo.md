@@ -56,15 +56,16 @@
 
   - [x] Support electron based bundling for desktop
   - [x] Test with prod build and run appimage.
-  - [ ] Add icon in title bar and ass appIcon for tray
-  - [ ] Add a desktop entry so that appimage can be registered with the system
+  - [ ] ~~Add icon in title bar and ass appIcon for tray~~
+  - [x] Add a desktop entry so that appimage can be registered with the system
+    - [ ] currently supported only via appimagelauncher. Better do snap I suppose, but explore later.
   - [ ] see about package distribution and updates
 
 - Settings screen
 
   - [x] A settings page is a multi card page.
   - [x] The settings page has a multiple cards and a "export settings" functionality
-  - [ ] Support all settings from vscode extension
+  - [x] Support all settings from vscode extension
   - [ ] ~~"import settings" functionality too~~
   - Card widget:
     - [x] Each card widget has a header i.e the settings name
