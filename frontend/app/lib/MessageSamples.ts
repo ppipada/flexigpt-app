@@ -1,4 +1,5 @@
 import { ChatCompletionRoleEnum, Message } from '@/lib/models/ChatTypes';
+import { MarkDownCheatSheet } from './MarkdownSheet';
 
 export const tmpMessageDetails = `
 start of details
@@ -243,5 +244,13 @@ return response
 		timestamp: '09:45 AM',
 		name: 'Assistant',
 		details: tmpMessageDetails,
+	},
+	{
+		id: '19',
+		createdAt: new Date('2023-09-24T10:45:00Z'),
+		role: ChatCompletionRoleEnum.user,
+		content: MarkDownCheatSheet,
+		timestamp: '10:45 AM',
+		name: 'User',
 	},
 ];

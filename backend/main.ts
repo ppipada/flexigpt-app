@@ -52,7 +52,7 @@ const spawnAppWindow = async () => {
 			slashes: true,
 		});
 	}
-	console.log('Window loading URL: ', loadurl);
+	// console.log('Window loading URL: ', loadurl);
 	appWindow.loadURL(loadurl);
 	appWindow.maximize();
 	appWindow.setMenu(null);

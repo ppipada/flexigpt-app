@@ -106,7 +106,12 @@ export function ChatMessageContent({ content, align }: ChatMessageContentProps) 
 		th: ({ children }: PComponentProps) => <th className="px-4 py-2 text-left">{children}</th>,
 		td: ({ children }: PComponentProps) => <td className="px-4 py-2">{children}</td>,
 		a: ({ href, children }: { href?: string; children?: ReactNode }) => (
-			<a href={href} target="_blank" rel="noopener noreferrer" className="underline text-blue-600 hover:text-blue-800">
+			<a
+				href={href}
+				target={href?.startsWith('http') ? '_blank' : undefined}
+				rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+				className="underline text-blue-600 hover:text-blue-800"
+			>
 				{children}
 			</a>
 		),
