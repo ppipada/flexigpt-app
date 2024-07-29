@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC } from 'react';
 import { FiDownload, FiPlus } from 'react-icons/fi';
 import ChatSearch from './ChatSearch';
 
@@ -9,7 +9,7 @@ interface ChatNavBarProps {
 	onSearch: (query: string) => Promise<string[]>;
 }
 
-const ChatNavBar: React.FC<ChatNavBarProps> = ({ onNewChat, onExport, initialSearchItems, onSearch }) => {
+const ChatNavBar: FC<ChatNavBarProps> = ({ onNewChat, onExport, initialSearchItems, onSearch }) => {
 	return (
 		<div className="flex items-center justify-between p-2 bg-transparent">
 			<button

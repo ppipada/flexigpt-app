@@ -1,5 +1,5 @@
 import { programmingLanguages } from '@/lib/models/CodeTypes';
-import React, { FC } from 'react';
+import { ButtonHTMLAttributes, FC } from 'react';
 import { FiDownload } from 'react-icons/fi';
 
 function generateRandomString(length: number, lowercase = false): string {
@@ -11,7 +11,7 @@ function generateRandomString(length: number, lowercase = false): string {
 	return lowercase ? result.toLowerCase() : result;
 }
 
-export interface DownloadButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface DownloadButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	language: string;
 	value: string;
 	size: number;

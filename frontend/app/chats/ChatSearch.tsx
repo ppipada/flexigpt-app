@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { ChangeEvent, FC, useEffect, useState } from 'react';
 import { FiSearch } from 'react-icons/fi';
 
 interface ChatSearchProps {
@@ -6,7 +6,7 @@ interface ChatSearchProps {
 	onSearch: (query: string) => Promise<string[]>;
 }
 
-const ChatSearch: React.FC<ChatSearchProps> = ({ initialItems, onSearch }) => {
+const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch }) => {
 	const [query, setQuery] = useState('');
 	const [items, setItems] = useState<string[]>([]);
 	const [showDropdown, setShowDropdown] = useState(false);
@@ -15,7 +15,7 @@ const ChatSearch: React.FC<ChatSearchProps> = ({ initialItems, onSearch }) => {
 		setItems(initialItems);
 	}, [initialItems]);
 
-	const handleSearchChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleSearchChange = async (e: ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value;
 		setQuery(value);
 

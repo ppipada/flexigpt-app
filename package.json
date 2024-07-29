@@ -14,14 +14,17 @@
 		"frontend:start": "next start frontend",
 		"frontend:dev": "next dev frontend",
 		"frontend:build": "next build frontend",
-		"frontend:lint": "next lint frontend",
+		"frontend:lint": "cd frontend; eslint . --ext .ts,.tsx; next lint .;",
 		"backend:build": "tsc -p backend && tsc-alias -p ./backend/tsconfig.json",
-		"backend:lint": "eslint backend",
-		"lint": "prettier -c . && npm run backend:lint && npm run frontend:lint",
-		"lint:fix": "prettier -w .",
+		"backend:lint": "cd backend; eslint . --ext .ts",
+		"sharedpkg:lint": "cd sharedpkg; eslint . --ext .ts",
+		"sharedpkg:build": "tsc -p sharedpkg && tsc-alias -p ./sharedpkg/tsconfig.json",
+		"lint": "npm run sharedpkg:lint && npm run backend:lint && npm run frontend:lint",
+		"fmt": "prettier -c .",
+		"fmt:fix": "prettier -w .",
 		"boot": "npm run backend:build && electron .",
 		"start": "concurrently -k \"npm run frontend:dev\" \"wait-on tcp:127.0.0.1:3000 && npm run boot\"",
-		"pre-build": "npm run frontend:build && npm run backend:build",
+		"pre-build": "npm run sharedpkg:build && npm run frontend:build && npm run backend:build",
 		"build": "npm run pre-build && electron-builder",
 		"postinstall": "electron-builder install-app-deps"
 	},
@@ -41,15 +44,20 @@
 		"remark-gfm": "^4.0.0",
 		"remark-parse": "^11.0.0",
 		"remark-rehype": "^11.1.0",
+		"sharedpkg": "1.0.0",
 		"uuid": "^10.0.0"
 	},
 	"devDependencies": {
 		"@svgr/webpack": "^8.1.0",
 		"@types/babel__generator": "^7.6.8",
+		"@types/http-cache-semantics": "^4.0.4",
+		"@types/ms": "^0.7.34",
 		"@types/node": "^20",
+		"@types/prop-types": "^15.7.12",
 		"@types/react": "^18",
 		"@types/react-dom": "^18",
 		"@types/react-syntax-highlighter": "^15.5.13",
+		"@types/unist": "^3.0.2",
 		"@types/uuid": "^10.0.0",
 		"@typescript-eslint/eslint-plugin": "^7.17.0",
 		"@typescript-eslint/parser": "^7.17.0",
@@ -58,8 +66,12 @@
 		"electron": "^31.3.0",
 		"electron-builder": "^24.13.3",
 		"electron-devtools-installer": "^3.2.0",
-		"eslint": "^8",
+		"eslint": "^8.57.0",
 		"eslint-config-next": "14.2.5",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-import-resolver-typescript": "^3.6.1",
+		"eslint-plugin-import": "^2.29.1",
+		"eslint-plugin-prettier": "^5.2.1",
 		"postcss": "^8",
 		"prettier": "^3.3.3",
 		"tailwindcss": "^3.4.7",
@@ -78,5 +90,8 @@
 		"@next/swc-win32-arm64-msvc": "14.2.5",
 		"@next/swc-win32-ia32-msvc": "14.2.5",
 		"@next/swc-win32-x64-msvc": "14.2.5"
-	}
+	},
+	"workspaces": [
+		"sharedpkg"
+	]
 }

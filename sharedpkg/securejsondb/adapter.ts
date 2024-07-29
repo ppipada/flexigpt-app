@@ -1,12 +1,13 @@
 import { safeStorage } from 'electron';
 import { PathLike } from 'fs';
 import { DataFile, DataFileSync } from 'lowdb/node';
-import { SecureSchema } from './secureSchema';
+import { SecureSchema } from './schema';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getNestedProperty(obj: any, path: string) {
 	return path.split('.').reduce((o, p) => (o ? o[p] : undefined), obj);
 }
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setNestedProperty(obj: any, path: string, value: any) {
 	const keys = path.split('.');
 	const lastKey = keys.pop();

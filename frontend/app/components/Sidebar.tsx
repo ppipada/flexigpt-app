@@ -11,7 +11,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 	const [isDrawerOpen, setDrawerOpen] = useState(false);
 	const toggle = () => setDrawerOpen(!isDrawerOpen);
-	const setOpen = () => setDrawerOpen(true);
+	// const setOpen = () => setDrawerOpen(true);
 	return (
 		<div className="drawer md:drawer-open h-screen">
 			<input

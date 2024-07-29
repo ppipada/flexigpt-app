@@ -1,12 +1,14 @@
 'use client';
 
-import { getAllSettings, providers, setSetting } from '@/api/settings';
+import { getAllSettings, setSetting } from '@/api/settings';
+
 import DownloadButton from '@/components/DownloadButton';
 import ThemeSwitch from '@/components/ThemeSwitch';
-import React, { useEffect, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
+import { providers } from 'sharedpkg/settings/consts';
 import AISettingsCard from './AISettings';
 
-const SettingsPage: React.FC = () => {
+const SettingsPage: FC = () => {
 	const [defaultProvider, setDefaultProvider] = useState('');
 	const [aiSettings, setAISettings] = useState({
 		openai: {
@@ -148,11 +150,12 @@ const SettingsPage: React.FC = () => {
 						<div className="w-full flex-1 pb-4">
 							{Object.keys(aiSettings).map(provider => {
 								const typedProvider = provider as keyof typeof aiSettings;
+								const oneSettings = aiSettings[typedProvider];
 								return (
 									<AISettingsCard
 										key={provider}
 										provider={provider}
-										settings={aiSettings[typedProvider]}
+										settings={oneSettings}
 										onChange={(key, value) => handleAISettingsChange(typedProvider, key, value)}
 										onSave={(key, value) => handleSaveAISettings(typedProvider, key, value)}
 										additionalSettings={aiSettings[typedProvider].additionalSettings}

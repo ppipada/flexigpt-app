@@ -13,15 +13,11 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"incremental": true,
-		"outDir": "build",
-		"baseUrl": ".",
-		"paths": {
-			"@/*": ["./*"]
-		}
+		"outDir": "build"
 	},
 	"tsc-alias": {
 		"resolveFullPaths": true
 	},
-	"include": ["**/*.ts", "../sharedpkg/**/*.ts"],
+	"include": ["**/*.ts"],
 	"exclude": ["node_modules"]
 }

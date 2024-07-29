@@ -1,31 +1,30 @@
 import { BrowserWindow, CallbackResponse, OnBeforeRequestListenerDetails, app, ipcMain, session } from 'electron';
 import electronIsDev from 'electron-is-dev';
-import log from 'electron-log';
-import electronUpdater from 'electron-updater';
+// import electronUpdater from 'electron-updater';
 import path from 'node:path';
 import { dirname } from 'path';
 import { fileURLToPath, format as urlformat } from 'url';
-import { SettingsStore } from './settingsstore/store';
+import { SettingsStore } from './settingsstore';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const FRONTEND_PATH_PREFIX = '/frontend/build';
 const PUBLIC_FILES_PATHS = ['/icon.png', '/favicon.ico'];
 const HANDLE_FILES_PREFIXES = [`file://${FRONTEND_PATH_PREFIX}`, ...PUBLIC_FILES_PATHS.map(path => `file://${path}`)];
-const ICON_PATH = path.resolve(__dirname, `../../${FRONTEND_PATH_PREFIX}/favicon.ico`);
+// const ICON_PATH = path.resolve(__dirname, `../../${FRONTEND_PATH_PREFIX}/favicon.ico`);
 const PRELOAD_PATH = path.join(__dirname, 'preload.js');
 
-const { autoUpdater } = electronUpdater;
+// const { autoUpdater } = electronUpdater;
 let appWindow: BrowserWindow | null = null;
 let settingsManager: SettingsStore;
 
-class AppUpdater {
-	constructor() {
-		log.transports.file.level = 'info';
-		autoUpdater.logger = log;
-		autoUpdater.checkForUpdatesAndNotify();
-	}
-}
+// class AppUpdater {
+// 	constructor() {
+// 		log.transports.file.level = 'info';
+// 		autoUpdater.logger = log;
+// 		autoUpdater.checkForUpdatesAndNotify();
+// 	}
+// }
 
 const installExtensions = async () => {
 	// Install extensions if in development mode

@@ -1,7 +1,7 @@
 import { ChatMessageContent } from '@/chats/ChatMessageContent'; // Adjust the import path as necessary
 import ChatMessageFooterArea from '@/chats/ChatMessageFooter'; // Adjust the import path as necessary
 import { ChatCompletionRoleEnum, Message, User } from '@/lib/models/ChatTypes';
-import React from 'react';
+import { FC, RefObject } from 'react';
 
 interface ChatMessageProps {
 	user: User;
@@ -11,10 +11,10 @@ interface ChatMessageProps {
 	onLike: () => void;
 	onDislike: () => void;
 	onSendFeedback: () => void;
-	feedbackController: React.RefObject<HTMLInputElement>;
+	feedbackController: RefObject<HTMLInputElement>;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({
+const ChatMessage: FC<ChatMessageProps> = ({
 	user,
 	message,
 	onEdit,

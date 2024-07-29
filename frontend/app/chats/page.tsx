@@ -5,7 +5,7 @@ import ChatNavBar from '@/chats/ChatNavbar';
 import ButtonScrollToBottom from '@/components/ButtonScrollToBottom';
 import { messageSamplesList } from '@/lib/MessageSamples';
 import { Chat, ChatCompletionRoleEnum, Message } from '@/lib/models/ChatTypes';
-import React, { useEffect, useRef, useState } from 'react';
+import { FC, createRef, useEffect, useRef, useState } from 'react';
 import { v7 as uuidv7 } from 'uuid';
 
 const initialItems = ['Chat 1', 'Chat 2', 'Chat 3', 'Chat 4', 'my convo 1', 'py search 1'];
@@ -15,7 +15,7 @@ const fetchSearchResults = async (query: string): Promise<string[]> => {
 	return initialItems.filter(item => item.toLowerCase().includes(query.toLowerCase()));
 };
 
-const ChatScreen: React.FC = () => {
+const ChatScreen: FC = () => {
 	const [chat, setChat] = useState<Chat>({
 		id: uuidv7(),
 		title: 'New Chat',
@@ -106,7 +106,7 @@ const ChatScreen: React.FC = () => {
 									onLike={() => {}}
 									onDislike={() => {}}
 									onSendFeedback={() => {}}
-									feedbackController={React.createRef<HTMLInputElement>()}
+									feedbackController={createRef<HTMLInputElement>()}
 								/>
 							))}
 						</div>

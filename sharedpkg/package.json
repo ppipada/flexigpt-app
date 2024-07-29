@@ -1,0 +1,16 @@
+{
+	"name": "sharedpkg",
+	"version": "1.0.0",
+	"description": "A simple TypeScript package",
+	"main": "build/index.js",
+	"types": "build/index.d.ts",
+	"scripts": {
+		"build": "tsc",
+		"test": "echo \"No test specified\" && exit 0"
+	},
+	"keywords": [],
+	"author": "",
+	"devDependencies": {
+		"typescript": "^4.5.2"
+	}
+}

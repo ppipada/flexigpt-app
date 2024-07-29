@@ -1,16 +1,7 @@
 /* ********************************************************************
  *   Declaration file for the API exposed over the context bridge
  *********************************************************************/
-import { SettingsSchema } from './app/api/settings';
-
-export interface IBackendAPI {
-	ping: () => Promise<string>;
-}
-
-export interface ISettingsAPI {
-	getAllSettings: () => Promise<SettingsSchema>;
-	setSetting: (key: string, value: any) => Promise<void>;
-}
+import { IBackendAPI, ISettingsAPI } from 'sharedpkg/settings/types';
 
 declare global {
 	interface Window {

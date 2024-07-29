@@ -1,5 +1,5 @@
-import { aiSettingsDescriptions } from '@/api/settings';
-import React from 'react';
+import { FC } from 'react';
+import { aiSettingsDescriptions } from 'sharedpkg/settings/consts';
 
 interface AISettingsCardProps {
 	provider: string;
@@ -31,7 +31,7 @@ function getInputType(key: string, value: any): string {
 	return 'number';
 }
 
-const AISettingsCard: React.FC<AISettingsCardProps> = ({
+const AISettingsCard: FC<AISettingsCardProps> = ({
 	provider,
 	settings,
 	onChange,

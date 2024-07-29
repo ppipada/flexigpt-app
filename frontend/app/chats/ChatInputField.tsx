@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { ChangeEvent, FC, KeyboardEvent, useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { FiSend } from 'react-icons/fi';
 
 interface ChatInputFieldProps {
@@ -9,11 +9,11 @@ interface ChatInputFieldProps {
 // Custom hook for handling form submission on Enter key press
 function useEnterSubmit(): {
 	formRef: RefObject<HTMLFormElement>;
-	onKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+	onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
 } {
 	const formRef = useRef<HTMLFormElement>(null);
 
-	const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+	const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
 		if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
 			formRef.current?.requestSubmit();
 			event.preventDefault();
@@ -23,7 +23,7 @@ function useEnterSubmit(): {
 	return { formRef, onKeyDown: handleKeyDown };
 }
 
-const ChatInputField: React.FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => {
+const ChatInputField: FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => {
 	const [text, setText] = useState<string>('');
 	const [isSendButtonEnabled, setIsSendButtonEnabled] = useState<boolean>(false);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -38,7 +38,7 @@ const ChatInputField: React.FC<ChatInputFieldProps> = ({ onSend, setInputHeight 
 		}
 	}, [setInputHeight]);
 
-	const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+	const handleTextChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
 		const value = event.target.value;
 		setText(value);
 		setIsSendButtonEnabled(value.trim().length > 0);
