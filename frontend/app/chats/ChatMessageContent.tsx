@@ -48,6 +48,7 @@ const CodeBlock: FC<CodeProps> = memo(({ language, value }) => {
 						background: 'transparent',
 						padding: '0.5em',
 						borderRadius: '0.25rem',
+						fontSize: '14px',
 					}}
 				>
 					{value}
@@ -72,7 +73,7 @@ export function ChatMessageContent({ content, align }: ChatMessageContentProps) 
 	const components = {
 		p({ children }: PComponentProps) {
 			return (
-				<div className={`my-2 ${align}`} style={{ lineHeight: '1.5' }}>
+				<div className={`my-1 ${align}`} style={{ lineHeight: '1.5', fontSize: '14px' }}>
 					{children}
 				</div>
 			);
@@ -80,11 +81,9 @@ export function ChatMessageContent({ content, align }: ChatMessageContentProps) 
 		code: ({ inline, className, children, ...props }: CodeComponentProps) => {
 			if (inline || !className) {
 				return (
-					<div className="flex overflow-x-auto p-1 rounded">
-						<code className="bg-base-200 whitespace-nowrap" {...props}>
-							{children}
-						</code>
-					</div>
+					<code className="bg-base-200 whitespace-nowrap inline" {...props}>
+						{children}
+					</code>
 				);
 			}
 			const match = /lang-(\w+)/.exec(className || '') || /language-(\w+)/.exec(className || '');
