@@ -1,16 +1,22 @@
-artifactName: ${productName}-${os}-${arch}.${ext}
+artifactName: '${productName}-${os}-${arch}.${ext}'
 win:
   target: nsis
-  icon: 'frontend/build/icon.png'
+  icon: 'frontend/build/icon.ico'
 linux:
   target: AppImage
   synopsis: UI for the FlexiGPT ecosystem
   category: AI
   icon: 'frontend/build/icon.png'
+  desktop:
+    Name: FlexiGPT UI
+    Comment: UI for the FlexiGPT ecosystem
+    Icon: 'frontend/build/icon.png'
+    Terminal: false
+    Type: Application
 mac:
   target: dmg
   category: public.app-category.ai
-  icon: 'frontend/build/icon.png'
+  icon: 'frontend/build/icon.icns'
 files:
   - from: .
     filter:
@@ -20,5 +26,3 @@ files:
 directories:
   output: "dist"
 publish: null
-
-

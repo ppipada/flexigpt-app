@@ -37,8 +37,8 @@ const spawnAppWindow = async () => {
 	appWindow = new BrowserWindow({
 		width: 800,
 		height: 600,
-		icon: ICON_PATH,
-		show: false,
+		// icon: ICON_PATH,
+		// show: false,
 		webPreferences: {
 			preload: PRELOAD_PATH,
 		},
