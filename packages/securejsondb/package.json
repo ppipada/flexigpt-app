@@ -1,0 +1,21 @@
+{
+	"name": "securejsondb",
+	"version": "1.0.0",
+	"description": "LowDB wrapper that integrates electron safe storage",
+	"main": "build/index.js",
+	"types": "build/index.d.ts",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"build": "tsc && tsc-alias -p ./tsconfig.json",
+		"lint": "eslint . --ext .ts",
+		"clean": "rimraf ./build",
+		"test": "echo \"No test specified\" && exit 0"
+	},
+	"keywords": [],
+	"author": "",
+	"dependencies": {
+		"lowdb": "^7.0.1",
+		"steno": "^4.0.2"
+	}
+}

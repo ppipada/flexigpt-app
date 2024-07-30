@@ -1,6 +1,5 @@
-/backend/build/
-/frontend/build/
-/frontend/.next/
+build
+packages/frontend/.next/
 /dist/
 /node_modules/
 /stories/

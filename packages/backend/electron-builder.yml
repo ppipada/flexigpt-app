@@ -1,0 +1,35 @@
+productName: 'flexiui'
+artifactName: '${productName}-${os}-${arch}.${ext}'
+win:
+  target: nsis
+  icon: '../frontend/build/icon.ico'
+linux:
+  target: AppImage
+  synopsis: UI for the FlexiGPT ecosystem
+  category: AI
+  icon: '../frontend/build/icon.png'
+  desktop:
+    Name: FlexiGPT UI
+    Comment: UI for the FlexiGPT ecosystem
+    Icon: '../frontend/build/icon.png'
+    Terminal: false
+    Type: Application
+mac:
+  target: dmg
+  category: public.app-category.ai
+  icon: '../frontend/build/icon.icns'
+files:
+  - from: './build'
+    to: packages/backend/build
+    filter:
+      - '**/*'
+  - from: ../frontend/build
+    to: packages/frontend/build
+    filter:
+      - '**/*'
+  - from: .
+    filter:
+      - 'package.json'
+directories:
+  output: 'dist'
+publish: null

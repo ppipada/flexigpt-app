@@ -1,0 +1,31 @@
+{
+	"name": "backend",
+	"version": "1.0.0",
+	"description": "Electron backend",
+	"main": "packages/backend/build/main.js",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"build": "tsc && tsc-alias -p ./tsconfig.json",
+		"lint": "eslint . --ext .ts",
+		"clean": "rimraf ./build",
+		"test": "echo \"No test specified\" && exit 0",
+		"pack": "electron-builder",
+		"postinstall": "electron-builder install-app-deps"
+	},
+	"keywords": [],
+	"author": "",
+	"dependencies": {
+		"logger": "workspace:*",
+		"lowdb": "^7.0.1",
+		"securejsondb": "workspace:*",
+		"settings": "workspace:*",
+		"electron-is-dev": "^3.0.1",
+		"electron-log": "^5.1.7",
+		"electron-updater": "^6.3.1"
+	},
+	"devDependencies": {
+		"electron": "31.3.0",
+		"electron-builder": "^24"
+	}
+}
