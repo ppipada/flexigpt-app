@@ -11,7 +11,7 @@
 	"keywords": [],
 	"author": "",
 	"devDependencies": {
-		"typescript": "^4.5.2"
+		"typescript": "^5.5.4"
 	},
 	"dependencies": {
 		"winston": "^3.13.1"
