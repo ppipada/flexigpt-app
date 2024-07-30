@@ -22,6 +22,7 @@ files:
     filter:
       - 'backend/build'
       - 'frontend/build'
+      - 'sharedpkg/build'
       - 'package.json'
 directories:
   output: 'dist'

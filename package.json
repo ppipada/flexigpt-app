@@ -1,7 +1,7 @@
 {
 	"name": "flexiui",
 	"version": "0.1.0",
-	"main": "backend/build/main.js",
+	"main": "backend/build/backend/main.js",
 	"private": true,
 	"type": "module",
 	"repository": {
@@ -14,19 +14,21 @@
 		"frontend:start": "next start frontend",
 		"frontend:dev": "next dev frontend",
 		"frontend:build": "next build frontend",
-		"frontend:lint": "cd frontend; eslint . --ext .ts,.tsx; next lint .;",
+		"frontend:lint": "cd frontend && eslint . --ext .ts,.tsx && next lint .",
 		"backend:build": "tsc -p backend && tsc-alias -p ./backend/tsconfig.json",
-		"backend:lint": "cd backend; eslint . --ext .ts",
-		"sharedpkg:lint": "cd sharedpkg; eslint . --ext .ts",
+		"backend:lint": "cd backend && eslint . --ext .ts",
+		"sharedpkg:lint": "cd sharedpkg && eslint . --ext .ts",
 		"sharedpkg:build": "tsc -p sharedpkg && tsc-alias -p ./sharedpkg/tsconfig.json",
 		"lint": "npm run sharedpkg:lint && npm run backend:lint && npm run frontend:lint",
 		"fmt": "prettier -c .",
 		"fmt:fix": "prettier -w .",
 		"boot": "npm run backend:build && electron .",
 		"start": "concurrently -k \"npm run frontend:dev\" \"wait-on tcp:127.0.0.1:3000 && npm run boot\"",
-		"pre-build": "npm run sharedpkg:build && npm run frontend:build && npm run backend:build",
+		"cleanstart": "npm run clean && npm run sharedpkg:build && npm run backend:build && npm run start",
+		"pre-build": "npm run clean && npm run sharedpkg:build && npm run frontend:build && npm run backend:build",
 		"build": "npm run pre-build && electron-builder",
-		"postinstall": "electron-builder install-app-deps"
+		"postinstall": "electron-builder install-app-deps",
+		"clean": "rimraf ./frontend/build ./backend/build ./sharedpkg/build"
 	},
 	"dependencies": {
 		"electron-is-dev": "^3.0.1",
@@ -44,7 +46,7 @@
 		"remark-gfm": "^4.0.0",
 		"remark-parse": "^11.0.0",
 		"remark-rehype": "^11.1.0",
-		"sharedpkg": "1.0.0",
+		"sharedpkg": "^1.0.0",
 		"uuid": "^10.0.0"
 	},
 	"devDependencies": {

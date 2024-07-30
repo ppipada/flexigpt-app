@@ -3,6 +3,7 @@ import electronIsDev from 'electron-is-dev';
 // import electronUpdater from 'electron-updater';
 import path from 'node:path';
 import { dirname } from 'path';
+import { log } from 'sharedpkg/logger/log';
 import { fileURLToPath, format as urlformat } from 'url';
 import { SettingsStore } from './settingsstore';
 
@@ -46,12 +47,12 @@ const spawnAppWindow = async () => {
 	let loadurl = 'http://localhost:3000';
 	if (!electronIsDev) {
 		loadurl = urlformat({
-			pathname: path.join(__dirname, `../..${FRONTEND_PATH_PREFIX}/index.html`),
+			pathname: path.join(__dirname, `../../../${FRONTEND_PATH_PREFIX}/index.html`),
 			protocol: 'file:',
 			slashes: true,
 		});
 	}
-	// console.log('Window loading URL: ', loadurl);
+	// log.info('Window loading URL: ', loadurl);
 	appWindow.loadURL(loadurl);
 	appWindow.maximize();
 	appWindow.setMenu(null);
@@ -66,7 +67,7 @@ const spawnAppWindow = async () => {
 
 const initializeSettingsManager = async () => {
 	const settingsFilePath = path.join(app.getPath('userData'), 'settings.json');
-	console.log(`Settings file url: ${settingsFilePath}`);
+	log.info(`Settings file url: ${settingsFilePath}`);
 	settingsManager = new SettingsStore(settingsFilePath);
 	await settingsManager.initialize();
 };
@@ -87,12 +88,12 @@ const getActualURL = (origurl: string) => {
 		}
 		// Create a absolute url from the actual url
 		callurl = urlformat({
-			pathname: path.join(__dirname, `../..${actualURL}`),
+			pathname: path.join(__dirname, `../../..${actualURL}`),
 			protocol: 'file:',
 			slashes: true,
 		});
 	}
-	// console.log(`Input URL: ${origurl} Callpath: ${callurl}`);
+	// log.debug(`Input URL: ${origurl} Callpath: ${callurl}`);
 	return callurl;
 };
 
