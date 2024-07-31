@@ -1,13 +1,14 @@
+import { getAIProviderInfo } from 'aiprovider';
 import { FC } from 'react';
-import { aiSettingsDescriptions } from 'settings';
+// import AdditionalSettings from './AdditionalSettings';
 
 interface AISettingsCardProps {
 	provider: string;
 	settings: any;
 	onChange: (key: string, value: any) => void;
 	onSave: (key: string, value: any) => void;
-	additionalSettings: string;
-	onAdditionalSettingsChange: (value: string) => void;
+	additionalSettings: Record<string, any>;
+	onAdditionalSettingsChange: (value: Record<string, any>) => void;
 }
 
 const formatKey = (key: string) => {
@@ -36,9 +37,13 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	settings,
 	onChange,
 	onSave,
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	additionalSettings,
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	onAdditionalSettingsChange,
 }) => {
+	const providerinfo = getAIProviderInfo(provider);
+
 	return (
 		<div className="bg-base-100 rounded-lg shadow-lg p-4 mb-4">
 			<h3 className="text-xl font-semibold mb-8 capitalize">{provider}</h3>
@@ -48,7 +53,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 					<div key={key} className="grid grid-cols-12 gap-4 mb-4 items-center">
 						<label
 							className="col-span-3 text-sm font-medium text-left tooltip"
-							data-tip={aiSettingsDescriptions[`${provider}.${key}`]}
+							data-tip={providerinfo?.getDescription(key)}
 						>
 							{formatKey(key)}
 						</label>
@@ -65,20 +70,10 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						/>
 					</div>
 				))}
-			<div className="grid grid-cols-12 gap-4 mb-4 items-center">
-				<label
-					className="col-span-3 text-sm font-medium text-left tooltip"
-					data-tip={aiSettingsDescriptions[`${provider}.additionalSettings`]}
-				>
-					Additional Settings
-				</label>
-				<textarea
-					className="textarea textarea-bordered col-span-9 w-full rounded-lg px-4 py-2"
-					rows={2}
-					value={additionalSettings}
-					onChange={e => onAdditionalSettingsChange(e.target.value)}
-				/>
-			</div>
+			{/* <AdditionalSettings
+				additionalSettings={additionalSettings}
+				onAdditionalSettingsChange={onAdditionalSettingsChange}
+			/> */}
 		</div>
 	);
 };

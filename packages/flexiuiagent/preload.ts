@@ -2,7 +2,10 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('BackendAPI', {
-	ping: () => ipcRenderer.invoke('backend:ping'),
+	ping: async () => await ipcRenderer.invoke('backend:ping'),
+	log: async (level: string, ...args: unknown[]) => {
+		ipcRenderer.invoke('backend:log', level, ...args);
+	},
 });
 
 contextBridge.exposeInMainWorld('SettingsAPI', {

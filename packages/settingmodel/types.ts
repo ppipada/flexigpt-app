@@ -7,41 +7,37 @@ export type SettingsSchema = {
 		defaultModel: string;
 		defaultTemperature: number;
 		defaultOrigin: string;
-		additionalSettings: string;
+		additionalSettings: Record<string, any>;
 	};
 	anthropic: {
 		apiKey: string;
 		defaultModel: string;
 		defaultTemperature: number;
 		defaultOrigin: string;
-		additionalSettings: string;
+		additionalSettings: Record<string, any>;
 	};
 	huggingface: {
 		apiKey: string;
 		defaultModel: string;
 		defaultTemperature: number;
 		defaultOrigin: string;
-		additionalSettings: string;
+		additionalSettings: Record<string, any>;
 	};
 	googlegl: {
 		apiKey: string;
 		defaultModel: string;
 		defaultTemperature: number;
 		defaultOrigin: string;
-		additionalSettings: string;
+		additionalSettings: Record<string, any>;
 	};
 	llamacpp: {
 		apiKey: string;
 		defaultModel: string;
 		defaultTemperature: number;
 		defaultOrigin: string;
-		additionalSettings: string;
+		additionalSettings: Record<string, any>;
 	};
 };
-
-export interface IBackendAPI {
-	ping: () => Promise<string>;
-}
 
 export interface ISettingsAPI {
 	getAllSettings: () => Promise<SettingsSchema>;

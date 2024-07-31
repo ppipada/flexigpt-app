@@ -1,7 +1,7 @@
 import { Low } from 'lowdb';
 import { PathLike } from 'node:fs';
 import { SecureJSONFile, SecureSchema } from 'securejsondb';
-import { defaultSettingsData, SettingsSchema } from 'settings';
+import { defaultSettingsData, SettingsSchema } from 'settingmodel';
 
 export type SecureSettingsSchema = SettingsSchema & SecureSchema;
 

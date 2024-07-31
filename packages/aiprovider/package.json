@@ -1,7 +1,7 @@
 {
-	"name": "logger",
+	"name": "aiprovider",
 	"version": "1.0.0",
-	"description": "Logger",
+	"description": "Interact with AI APIs",
 	"main": "build/index.js",
 	"types": "build/index.d.ts",
 	"type": "module",
@@ -14,5 +14,8 @@
 	},
 	"keywords": [],
 	"author": "",
-	"dependencies": {}
+	"dependencies": {
+		"logger": "workspace:*",
+		"axios": "^1.5.0"
+	}
 }

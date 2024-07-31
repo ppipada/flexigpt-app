@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createLogger, format, transports, Logger as WinstonLogger } from 'winston';
-
 /* eslint-disable @typescript-eslint/no-empty-function */
 export interface ILogger {
 	log(...args: unknown[]): void;
@@ -10,28 +8,6 @@ export interface ILogger {
 	warn(...args: unknown[]): void;
 }
 
-// Utility function to convert unknown to string
-const stringifyArgs = (args: unknown[]): string => {
-	return args
-		.map(arg => {
-			if (typeof arg === 'object' && arg !== null) {
-				return JSON.stringify(arg);
-			}
-			return String(arg);
-		})
-		.join(' ');
-};
-
-// Winston logger instance
-const winstonLogger: WinstonLogger = createLogger({
-	level: 'debug', // Set the logging level
-	format: format.combine(
-		format.timestamp(),
-		format.printf(({ timestamp, level, message }) => `${timestamp} [${level.toUpperCase()}]: ${message}`)
-	),
-	transports: [new transports.Console()],
-});
-
 export const noopLogger: ILogger = {
 	log: (..._args: unknown[]) => {},
 	error: (..._args: unknown[]) => {},
@@ -40,25 +16,16 @@ export const noopLogger: ILogger = {
 	warn: (..._args: unknown[]) => {},
 };
 
-export const winstonBackedLogger: ILogger = {
-	log: (...args: unknown[]) => {
-		winstonLogger.log('info', stringifyArgs(args));
-	},
-	error: (...args: unknown[]) => {
-		winstonLogger.error(stringifyArgs(args));
-	},
-	info: (...args: unknown[]) => {
-		winstonLogger.info(stringifyArgs(args));
-	},
-	debug: (...args: unknown[]) => {
-		winstonLogger.debug(stringifyArgs(args));
-	},
-	warn: (...args: unknown[]) => {
-		winstonLogger.warn(stringifyArgs(args));
-	},
+// Define a new console logger
+export const consoleLogger: ILogger = {
+	log: (...args: unknown[]) => console.log(...args),
+	error: (...args: unknown[]) => console.error(...args),
+	info: (...args: unknown[]) => console.info(...args),
+	debug: (...args: unknown[]) => console.debug(...args),
+	warn: (...args: unknown[]) => console.warn(...args),
 };
 
-let globalLogger: ILogger = winstonBackedLogger;
+let globalLogger: ILogger = consoleLogger;
 
 export function setGlobalLogger(logger: ILogger): void {
 	globalLogger = logger;

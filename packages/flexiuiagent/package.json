@@ -1,8 +1,8 @@
 {
-	"name": "backend",
+	"name": "flexiuiagent",
 	"version": "1.0.0",
-	"description": "Electron backend",
-	"main": "packages/backend/build/main.js",
+	"description": "Electron backend agent for flexiui",
+	"main": "packages/flexiuiagent/build/main.js",
 	"type": "module",
 	"private": true,
 	"scripts": {
@@ -16,13 +16,13 @@
 	"keywords": [],
 	"author": "",
 	"dependencies": {
-		"logger": "workspace:*",
-		"lowdb": "^7.0.1",
-		"securejsondb": "workspace:*",
-		"settings": "workspace:*",
 		"electron-is-dev": "^3.0.1",
 		"electron-log": "^5.1.7",
-		"electron-updater": "^6.3.1"
+		"electron-updater": "^6.3.1",
+		"logger": "workspace:*",
+		"lowdb": "^7.0.1",
+		"settingstore": "workspace:*",
+		"winstonlogger": "workspace:*"
 	},
 	"devDependencies": {
 		"electron": "31.3.0",

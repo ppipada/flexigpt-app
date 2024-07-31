@@ -40,5 +40,10 @@
 		"../**/build/*.js"
 	],
 	"exclude": ["node_modules"],
-	"references": [{ "path": "../logger" }, { "path": "../settings" }, { "path": "../securejsondb" }]
+	"references": [
+		{ "path": "../logger" },
+		{ "path": "../settingmodel" },
+		{ "path": "../conversationmodel" },
+		{ "path": "../aiprovider" }
+	]
 }

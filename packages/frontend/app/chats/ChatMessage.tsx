@@ -1,11 +1,12 @@
 import { ChatMessageContent } from '@/chats/ChatMessageContent'; // Adjust the import path as necessary
 import ChatMessageFooterArea from '@/chats/ChatMessageFooter'; // Adjust the import path as necessary
-import { ChatCompletionRoleEnum, Message, User } from '@/lib/models/ChatTypes';
+import { ChatCompletionRoleEnum } from 'aiprovider';
+import { ConversationMessage, User } from 'conversationmodel';
 import { FC, RefObject } from 'react';
-
+import { FiCompass, FiUser } from 'react-icons/fi';
 interface ChatMessageProps {
 	user: User;
-	message: Message;
+	message: ConversationMessage;
 	onEdit: () => void;
 	onResend: () => void;
 	onLike: () => void;
@@ -32,7 +33,11 @@ const ChatMessage: FC<ChatMessageProps> = ({
 	return (
 		<div className="grid grid-cols-12 gap-2 mb-4 items-start" style={{ fontSize: '14px' }}>
 			<div className={`${leftColSpan} flex justify-end`}>
-				{isUser && <div className="w-10 h-10 mt-0.5 pl-1">{user.icon}</div>}
+				{isUser && (
+					<div className="flex w-10 h-10 mt-2 items-center justify-center rounded-full">
+						<FiUser size={24} />
+					</div>
+				)}
 			</div>
 			<div className="col-span-10 lg:col-span-9">
 				<div className="flex flex-col w-full">
@@ -51,7 +56,11 @@ const ChatMessage: FC<ChatMessageProps> = ({
 				</div>
 			</div>
 			<div className={`${rightColSpan} flex justify-start`}>
-				{!isUser && <div className="w-10 h-10 mt-0.5 pl-1">{user.icon}</div>}
+				{!isUser && (
+					<div className="flex w-10 h-10 mt-2 items-center justify-center rounded-full">
+						<FiCompass size={24} />
+					</div>
+				)}
 			</div>
 		</div>
 	);

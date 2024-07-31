@@ -1,4 +1,4 @@
-import { SettingsSchema } from 'settings';
+import { SettingsSchema } from 'settingmodel';
 export async function getAllSettings(): Promise<SettingsSchema> {
 	return await window.SettingsAPI.getAllSettings();
 }

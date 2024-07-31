@@ -1,5 +1,6 @@
-import { ChatCompletionRoleEnum, Message } from '@/lib/models/ChatTypes';
-import { MarkDownCheatSheet } from './MarkdownSheet';
+import { ChatCompletionRoleEnum } from 'aiprovider';
+import { ConversationMessage } from './conversation_types';
+import { MarkDownCheatSheet } from './markdown_sheet';
 
 export const tmpMessageDetails = `
 start of details
@@ -22,7 +23,18 @@ def myFunc() {
 \`\`\`
 `;
 
-export const messageSamplesList: Message[] = [
+export const tempCodeString = `def get_openapi_completion_for_integration_sequence_test(intxt, value_type):
+response = openai.Completion.create(
+    model="text-davinci-003",
+    prompt=prompts.generate_prompt_integration_sequence_test(intxt, value_type),
+    temperature=0,
+    max_tokens=2560,
+    best_of=1,
+    stop=["##", "}}}}}}", "Generate workflow", "func Test"])
+
+return response`;
+
+export const messageSamplesList: ConversationMessage[] = [
 	{
 		id: '1',
 		createdAt: new Date('2023-09-24T08:30:00Z'),

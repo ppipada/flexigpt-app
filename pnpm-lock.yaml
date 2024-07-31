@@ -60,11 +60,23 @@ importers:
         specifier: ^7.2.0
         version: 7.2.0
 
-  packages/backend:
+  packages/aiprovider:
     dependencies:
-      settings:
+      axios:
+        specifier: ^1.5.0
+        version: 1.7.2
+      logger:
         specifier: workspace:*
-        version: link:../settings
+        version: link:../logger
+
+  packages/conversationmodel:
+    dependencies:
+      aiprovider:
+        specifier: workspace:*
+        version: link:../aiprovider
+
+  packages/flexiuiagent:
+    dependencies:
       electron-is-dev:
         specifier: ^3.0.1
         version: 3.0.1
@@ -80,9 +92,12 @@ importers:
       lowdb:
         specifier: ^7.0.1
         version: 7.0.1
-      securejsondb:
+      settingstore:
         specifier: workspace:*
-        version: link:../securejsondb
+        version: link:../settingstore
+      winstonlogger:
+        specifier: workspace:*
+        version: link:../winstonlogger
     devDependencies:
       electron:
         specifier: 31.3.0
@@ -91,35 +106,17 @@ importers:
         specifier: ^24
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3(dmg-builder@24.13.3))
 
-  packages/backend/asarex:
-    dependencies:
-      settings:
-        specifier: workspace:*
-        version: link:../../settings
-      electron-is-dev:
-        specifier: ^3.0.1
-        version: 3.0.1
-      electron-log:
-        specifier: ^5.1.7
-        version: 5.1.7
-      electron-updater:
-        specifier: ^6.3.1
-        version: 6.3.1
-      logger:
-        specifier: workspace:*
-        version: link:../../logger
-      lowdb:
-        specifier: ^7.0.1
-        version: 7.0.1
-      securejsondb:
-        specifier: workspace:*
-        version: link:../../securejsondb
-
   packages/frontend:
     dependencies:
-      settings:
+      aiprovider:
         specifier: workspace:*
-        version: link:../settings
+        version: link:../aiprovider
+      conversationmodel:
+        specifier: workspace:*
+        version: link:../conversationmodel
+      logger:
+        specifier: workspace:*
+        version: link:../logger
       next:
         specifier: 14.2.5
         version: 14.2.5(@babel/core@7.25.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -153,6 +150,9 @@ importers:
       remark-rehype:
         specifier: ^11.1.0
         version: 11.1.0
+      settingmodel:
+        specifier: workspace:*
+        version: link:../settingmodel
       uuid:
         specifier: ^10.0.0
         version: 10.0.0
@@ -228,18 +228,7 @@ importers:
         specifier: ^3.4.7
         version: 3.4.7
 
-  packages/frontend/build: {}
-
-  packages/frontend/build/types: {}
-
-  packages/logger:
-    dependencies:
-      logform:
-        specifier: ^2.6.1
-        version: 2.6.1
-      winston:
-        specifier: ^3.13.1
-        version: 3.13.1
+  packages/logger: {}
 
   packages/securejsondb:
     dependencies:
@@ -250,7 +239,35 @@ importers:
         specifier: ^4.0.2
         version: 4.0.2
 
-  packages/settings: {}
+  packages/settingmodel:
+    dependencies:
+      aiprovider:
+        specifier: workspace:*
+        version: link:../aiprovider
+
+  packages/settingstore:
+    dependencies:
+      aiprovider:
+        specifier: workspace:*
+        version: link:../aiprovider
+      securejsondb:
+        specifier: workspace:*
+        version: link:../securejsondb
+      settingmodel:
+        specifier: workspace:*
+        version: link:../settingmodel
+
+  packages/winstonlogger:
+    dependencies:
+      logform:
+        specifier: ^2.6.1
+        version: 2.6.1
+      logger:
+        specifier: workspace:*
+        version: link:../logger
+      winston:
+        specifier: ^3.13.1
+        version: 3.13.1
 
 packages:
 
@@ -9569,13 +9586,13 @@ snapshots:
   jake@10.9.2:
     dependencies:
       async: 3.2.5
-      chalk: 4.1.0
+      chalk: 4.1.2
       filelist: 1.0.4
       minimatch: 3.1.2
 
   jest-diff@29.7.0:
     dependencies:
-      chalk: 4.1.0
+      chalk: 4.1.2
       diff-sequences: 29.6.3
       jest-get-type: 29.6.3
       pretty-format: 29.7.0
@@ -10580,7 +10597,7 @@ snapshots:
       '@yarnpkg/parsers': 3.0.0-rc.46
       '@zkochan/js-yaml': 0.0.7
       axios: 1.7.2
-      chalk: 4.1.0
+      chalk: 4.1.2
       cli-cursor: 3.1.0
       cli-spinners: 2.6.1
       cliui: 8.0.1
@@ -10698,7 +10715,7 @@ snapshots:
   ora@5.3.0:
     dependencies:
       bl: 4.1.0
-      chalk: 4.1.0
+      chalk: 4.1.2
       cli-cursor: 3.1.0
       cli-spinners: 2.6.1
       is-interactive: 1.0.0

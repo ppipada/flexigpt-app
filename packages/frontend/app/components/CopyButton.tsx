@@ -1,3 +1,4 @@
+import { log } from 'logger';
 import { ButtonHTMLAttributes, FC, useState } from 'react';
 import { FiCheck, FiCopy } from 'react-icons/fi';
 
@@ -18,7 +19,7 @@ const CopyButton: FC<CopyButtonProps> = ({ value, size, ...buttonProps }) => {
 			setCopied(true);
 			setTimeout(() => setCopied(false), 1500);
 		} catch (error) {
-			console.error('Failed to copy: ', error);
+			log.error('Failed to copy: ', error);
 		}
 	};
 

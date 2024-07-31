@@ -1,7 +1,25 @@
+'use client';
+import { setLogger } from '@/lib/logsetup';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect } from 'react';
 
 export default function Home() {
+	useEffect(() => {
+		const handleDOMContentLoaded = () => {
+			setLogger();
+		};
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', handleDOMContentLoaded);
+		} else {
+			// DOMContentLoaded already fired, invoke directly
+			handleDOMContentLoaded();
+		}
+		// Cleanup the event listener on component unmount
+		return () => {
+			document.removeEventListener('DOMContentLoaded', handleDOMContentLoaded);
+		};
+	}, []);
 	return (
 		<main className="flex flex-col h-full items-center justify-center p-24">
 			<div className="flex flex-row items-center mb-10">

@@ -3,7 +3,7 @@
 	"compilerOptions": {
 		"outDir": "build"
 	},
-	"references": [{ "path": "../logger" }, { "path": "../settings" }, { "path": "../securejsondb" }],
+	"references": [{ "path": "../logger" }, { "path": "../settingstore" }],
 	"include": ["**/*.ts"],
 	"exclude": ["node_modules", "build"]
 }

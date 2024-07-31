@@ -1,11 +1,13 @@
-import { BrowserWindow, CallbackResponse, OnBeforeRequestListenerDetails, app, ipcMain, session } from 'electron';
+import { app, BrowserWindow, CallbackResponse, ipcMain, OnBeforeRequestListenerDetails, session } from 'electron';
 import electronIsDev from 'electron-is-dev';
 // import electronUpdater from 'electron-updater';
-import { log } from 'logger';
+import { ILogger, log, setGlobalLogger } from 'logger';
 import path from 'node:path';
+
 import { dirname } from 'path';
+import { SettingsStore } from 'settingstore';
 import { fileURLToPath, format as urlformat } from 'url';
-import { SettingsStore } from './settingsstore';
+import { createILogger } from 'winstonlogger';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -14,6 +16,14 @@ const PUBLIC_FILES_PATHS = ['/icon.png', '/favicon.ico'];
 const HANDLE_FILES_PREFIXES = [`file://${FRONTEND_PATH_PREFIX}`, ...PUBLIC_FILES_PATHS.map(path => `file://${path}`)];
 // const ICON_PATH = path.resolve(__dirname, `../../${FRONTEND_PATH_PREFIX}/favicon.ico`);
 const PRELOAD_PATH = path.join(__dirname, 'preload.js');
+
+if (!electronIsDev) {
+	const wlog = createILogger('file', 'info', path.join(app.getPath('userData'), 'logs'));
+	setGlobalLogger(wlog);
+	log.info('Backend: Running in production');
+} else {
+	log.info('Backend: Running in dev');
+}
 
 // const { autoUpdater } = electronUpdater;
 let appWindow: BrowserWindow | null = null;
@@ -139,6 +149,10 @@ ipcMain.handle('settings-store:set', async (_event, key: string, value: any) => 
 	await settingsManager.setSetting(key, value);
 });
 
-ipcMain.handle('backend:ping', () => {
+ipcMain.handle('backend:ping', async () => {
 	return 'pong';
+});
+
+ipcMain.handle('backend:log', async (_event, level: string, ...args: unknown[]) => {
+	log[level as keyof ILogger](...args);
 });

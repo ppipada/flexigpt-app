@@ -5,8 +5,8 @@ import { getAllSettings, setSetting } from '@/api/settings';
 import DownloadButton from '@/components/DownloadButton';
 import ThemeSwitch from '@/components/ThemeSwitch';
 import AISettingsCard from '@/settings/AISettings';
+import { ALL_AI_PROVIDERS } from 'aiprovider';
 import { FC, useEffect, useState } from 'react';
-import { providers } from 'settings';
 
 const SettingsPage: FC = () => {
 	const [defaultProvider, setDefaultProvider] = useState('');
@@ -16,35 +16,35 @@ const SettingsPage: FC = () => {
 			defaultModel: '',
 			defaultOrigin: '',
 			defaultTemperature: 0.1,
-			additionalSettings: '{}',
+			additionalSettings: {},
 		},
 		anthropic: {
 			apiKey: '',
 			defaultModel: '',
 			defaultOrigin: '',
 			defaultTemperature: 0.1,
-			additionalSettings: '{}',
+			additionalSettings: {},
 		},
 		huggingface: {
 			apiKey: '',
 			defaultModel: '',
 			defaultOrigin: '',
 			defaultTemperature: 0.1,
-			additionalSettings: '{}',
+			additionalSettings: {},
 		},
 		googlegl: {
 			apiKey: '',
 			defaultModel: '',
 			defaultOrigin: '',
 			defaultTemperature: 0.1,
-			additionalSettings: '{}',
+			additionalSettings: {},
 		},
 		llamacpp: {
 			apiKey: '',
 			defaultModel: '',
 			defaultOrigin: '',
 			defaultTemperature: 0.1,
-			additionalSettings: '{}',
+			additionalSettings: {},
 		},
 	});
 
@@ -139,7 +139,7 @@ const SettingsPage: FC = () => {
 									value={defaultProvider}
 									onChange={e => handleDefaultProviderChange(e.target.value)}
 								>
-									{providers.map(provider => (
+									{Object.keys(ALL_AI_PROVIDERS).map(provider => (
 										<option key={provider} value={provider}>
 											{provider.charAt(0).toUpperCase() + provider.slice(1)}
 										</option>

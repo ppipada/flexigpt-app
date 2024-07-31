@@ -1,4 +1,4 @@
-productName: 'flexiui'
+appId: 'com.flexigpt.flexiuiagent'
 artifactName: '${productName}-${os}-${arch}.${ext}'
 win:
   target: nsis
@@ -20,7 +20,7 @@ mac:
   icon: '../frontend/build/icon.icns'
 files:
   - from: './build'
-    to: packages/backend/build
+    to: packages/flexiuiagent/build
     filter:
       - '**/*'
   - from: ../frontend/build

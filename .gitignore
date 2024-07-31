@@ -3,7 +3,7 @@ stories
 
 # Build
 dist
-backend/build
+flexiuiagent/build
 frontend/build
 frontend/.next
 frontend/next-env.d.ts

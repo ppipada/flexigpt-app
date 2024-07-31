@@ -1,7 +1,7 @@
 {
-	"name": "settings",
+	"name": "winstonlogger",
 	"version": "1.0.0",
-	"description": "Settings store",
+	"description": "Winston logger",
 	"main": "build/index.js",
 	"types": "build/index.d.ts",
 	"type": "module",
@@ -13,5 +13,10 @@
 		"test": "echo \"No test specified\" && exit 0"
 	},
 	"keywords": [],
-	"author": ""
+	"author": "",
+	"dependencies": {
+		"logform": "^2.6.1",
+		"winston": "^3.13.1",
+		"logger": "workspace:*"
+	}
 }

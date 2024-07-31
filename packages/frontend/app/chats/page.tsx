@@ -3,12 +3,20 @@ import ChatInputField from '@/chats/ChatInputField';
 import ChatMessage from '@/chats/ChatMessage';
 import ChatNavBar from '@/chats/ChatNavbar';
 import ButtonScrollToBottom from '@/components/ButtonScrollToBottom';
-import { messageSamplesList } from '@/lib/MessageSamples';
-import { Chat, ChatCompletionRoleEnum, Message } from '@/lib/models/ChatTypes';
+import { ChatCompletionRoleEnum } from 'aiprovider';
+import { Conversation, ConversationMessage, messageSamplesList } from 'conversationmodel';
+
 import { FC, createRef, useEffect, useRef, useState } from 'react';
 import { v7 as uuidv7 } from 'uuid';
 
-const initialItems = ['Chat 1', 'Chat 2', 'Chat 3', 'Chat 4', 'my convo 1', 'py search 1'];
+const initialItems = [
+	'Conversation 1',
+	'Conversation 2',
+	'Conversation 3',
+	'Conversation 4',
+	'my convo 1',
+	'py search 1',
+];
 
 const fetchSearchResults = async (query: string): Promise<string[]> => {
 	// Replace with your actual search logic
@@ -16,11 +24,11 @@ const fetchSearchResults = async (query: string): Promise<string[]> => {
 };
 
 const ChatScreen: FC = () => {
-	const [chat, setChat] = useState<Chat>({
+	const [chat, setChat] = useState<Conversation>({
 		id: uuidv7(),
-		title: 'New Chat',
-		createTime: new Date(),
-		modifiedTime: new Date(),
+		title: 'New Conversation',
+		createdAt: new Date(),
+		modifiedAt: new Date(),
 		messages: [],
 	});
 
@@ -30,7 +38,7 @@ const ChatScreen: FC = () => {
 	const sendMessage = (messageContent: string) => {
 		const trimmedText = messageContent.trim();
 		if (trimmedText) {
-			const newMessage: Message = {
+			const newMessage: ConversationMessage = {
 				id: new Date().toISOString(),
 				role: ChatCompletionRoleEnum.user,
 				content: trimmedText,
@@ -58,7 +66,7 @@ const ChatScreen: FC = () => {
 			chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
 		}
 	}, [chat.messages]);
-
+	// log.debug('Starting chat');
 	return (
 		<div className="flex flex-col items-center w-full h-full overflow-hidden">
 			<div className="w-full flex justify-center bg-transparent fixed top-2">
@@ -94,11 +102,6 @@ const ChatScreen: FC = () => {
 									user={{
 										id: '1',
 										role: message.role,
-										icon: (
-											<div className="w-8 h-8 flex items-center justify-center bg-base-100 rounded-full">
-												{message.role === ChatCompletionRoleEnum.user ? 'U' : 'A'}
-											</div>
-										),
 									}}
 									message={message}
 									onEdit={() => {}}
