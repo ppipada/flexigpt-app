@@ -37,7 +37,7 @@
 		"@types/babel__generator": "^7.6.8",
 		"@types/http-cache-semantics": "^4.0.4",
 		"@types/ms": "^0.7.34",
-		"@types/node": "^20",
+		"@types/node": "^22",
 		"@types/prop-types": "^15.7.12",
 		"@types/react": "^18",
 		"@types/react-dom": "^18",
