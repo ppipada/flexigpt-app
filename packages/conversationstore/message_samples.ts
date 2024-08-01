@@ -1,5 +1,5 @@
 import { ChatCompletionRoleEnum } from 'aiprovider';
-import { ConversationMessage } from './conversation_types';
+import { ConversationMessage } from 'conversationmodel/conversation_types';
 import { MarkDownCheatSheet } from './markdown_sheet';
 
 export const tmpMessageDetails = `
@@ -285,3 +285,12 @@ return response
 		userId: '1',
 	},
 ];
+
+// useEffect(() => {
+// 	// Initialize chat with sample messages on mount
+// 	setChat(prevChat => ({
+// 		...prevChat,
+// 		messages: messageSamplesList,
+// 		modifiedTime: new Date(),
+// 	}));
+// }, []);

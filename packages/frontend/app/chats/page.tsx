@@ -4,7 +4,7 @@ import ChatMessage from '@/chats/ChatMessage';
 import ChatNavBar from '@/chats/ChatNavbar';
 import ButtonScrollToBottom from '@/components/ButtonScrollToBottom';
 import { ChatCompletionRoleEnum } from 'aiprovider';
-import { Conversation, ConversationMessage, messageSamplesList } from 'conversationmodel';
+import { Conversation, ConversationMessage } from 'conversationmodel';
 
 import { FC, createRef, useEffect, useRef, useState } from 'react';
 import { v7 as uuidv7 } from 'uuid';
@@ -52,15 +52,6 @@ const ChatScreen: FC = () => {
 			}));
 		}
 	};
-
-	useEffect(() => {
-		// Initialize chat with sample messages on mount
-		setChat(prevChat => ({
-			...prevChat,
-			messages: messageSamplesList,
-			modifiedTime: new Date(),
-		}));
-	}, []);
 
 	useEffect(() => {
 		if (chatContainerRef.current) {

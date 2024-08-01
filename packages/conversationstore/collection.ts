@@ -2,12 +2,25 @@ import { Conversation as ConversationBase, IConversationAPI } from 'conversation
 import { basename } from 'node:path';
 import { CollectionMonthPartitioned, SecureSchema } from 'securejsondb';
 import { v7 as uuidv7 } from 'uuid';
+import { messageSamplesList } from './message_samples';
 
 export type Conversation = ConversationBase & SecureSchema;
+
+function getSampleConversation(): Conversation {
+	return {
+		id: uuidv7(),
+		title: 'Sample Conversation',
+		createdAt: new Date(),
+		modifiedAt: new Date(),
+		messages: messageSamplesList,
+	};
+}
 
 export class ConversationCollection extends CollectionMonthPartitioned<Conversation> implements IConversationAPI {
 	constructor(baseDir: string) {
 		super(baseDir, { id: '', title: '', createdAt: new Date(), modifiedAt: new Date(), messages: [] });
+		const sampleConvo = getSampleConversation();
+		this.saveConversation(sampleConvo);
 	}
 
 	createNewConversation(title: string): Conversation {
