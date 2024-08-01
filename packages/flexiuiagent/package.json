@@ -14,15 +14,17 @@
 		"postinstall": "electron-builder install-app-deps"
 	},
 	"keywords": [],
-	"author": "",
+	"author": "Pankaj Pipada <ppipada@gmail.com>",
 	"dependencies": {
+		"logger": "workspace:*",
+		"winstonlogger": "workspace:*",
+		"settingstore": "workspace:*",
+		"conversationstore": "workspace:*",
+		"conversationmodel": "workspace:*",
 		"electron-is-dev": "^3.0.1",
 		"electron-log": "^5.1.7",
 		"electron-updater": "^6.3.1",
-		"logger": "workspace:*",
-		"lowdb": "^7.0.1",
-		"settingstore": "workspace:*",
-		"winstonlogger": "workspace:*"
+		"lowdb": "^7.0.1"
 	},
 	"devDependencies": {
 		"electron": "31.3.0",

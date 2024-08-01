@@ -3,7 +3,13 @@
 	"compilerOptions": {
 		"outDir": "build"
 	},
-	"references": [{ "path": "../logger" }, { "path": "../settingstore" }],
+	"references": [
+		{ "path": "../logger" },
+		{ "path": "../winstonlogger" },
+		{ "path": "../settingstore" },
+		{ "path": "../conversationstore" },
+		{ "path": "../conversationmodel" }
+	],
 	"include": ["**/*.ts"],
 	"exclude": ["node_modules", "build"]
 }

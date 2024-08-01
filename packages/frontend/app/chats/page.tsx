@@ -42,6 +42,7 @@ const ChatScreen: FC = () => {
 				id: new Date().toISOString(),
 				role: ChatCompletionRoleEnum.user,
 				content: trimmedText,
+				userId: '1',
 			};
 
 			setChat(prevChat => ({
@@ -102,6 +103,7 @@ const ChatScreen: FC = () => {
 									user={{
 										id: '1',
 										role: message.role,
+										name: 'Joe',
 									}}
 									message={message}
 									onEdit={() => {}}

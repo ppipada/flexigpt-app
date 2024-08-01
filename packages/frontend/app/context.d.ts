@@ -1,6 +1,7 @@
 /* ********************************************************************
  *   Declaration file for the API exposed over the context bridge
  *********************************************************************/
+import { IConversationAPI } from 'conversationmodel';
 import { ISettingsAPI } from 'settingmodel';
 
 export interface IBackendAPI {
@@ -12,6 +13,7 @@ declare global {
 	interface Window {
 		BackendAPI: IBackendAPI;
 		SettingsAPI: ISettingsAPI;
+		ConversationAPI: IConversationAPI;
 		loggerSet: booleanl;
 	}
 }

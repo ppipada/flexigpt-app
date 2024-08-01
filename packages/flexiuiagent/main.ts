@@ -4,6 +4,8 @@ import electronIsDev from 'electron-is-dev';
 import { ILogger, log, setGlobalLogger } from 'logger';
 import path from 'node:path';
 
+import { Conversation } from 'conversationmodel';
+import { ConversationCollection } from 'conversationstore';
 import { dirname } from 'path';
 import { SettingsStore } from 'settingstore';
 import { fileURLToPath, format as urlformat } from 'url';
@@ -28,6 +30,7 @@ if (!electronIsDev) {
 // const { autoUpdater } = electronUpdater;
 let appWindow: BrowserWindow | null = null;
 let settingsManager: SettingsStore;
+let conversationManager: ConversationCollection;
 
 // class AppUpdater {
 // 	constructor() {
@@ -82,6 +85,12 @@ const initializeSettingsManager = async () => {
 	await settingsManager.initialize();
 };
 
+const initializeConversationManager = async () => {
+	const conversationDir = path.join(app.getPath('userData'), 'conversations');
+	log.info(`Conversation directory: ${conversationDir}`);
+	conversationManager = new ConversationCollection(conversationDir);
+};
+
 const getActualURL = (origurl: string) => {
 	let callurl = origurl;
 
@@ -125,6 +134,7 @@ app.disableHardwareAcceleration();
 app.on('ready', async () => {
 	// new AppUpdater();
 	await initializeSettingsManager();
+	await initializeConversationManager();
 	spawnAppWindow();
 	session.defaultSession.webRequest.onBeforeRequest(handleAccessRequest);
 });
@@ -141,11 +151,11 @@ app.on('window-all-closed', () => {
  * ======================================================================================
  */
 
-ipcMain.handle('settings-store:getall', async () => {
+ipcMain.handle('settingstore:getall', async () => {
 	return await settingsManager.getAllSettings();
 });
 
-ipcMain.handle('settings-store:set', async (_event, key: string, value: any) => {
+ipcMain.handle('settingstore:set', async (_event, key: string, value: any) => {
 	await settingsManager.setSetting(key, value);
 });
 
@@ -155,4 +165,24 @@ ipcMain.handle('backend:ping', async () => {
 
 ipcMain.handle('backend:log', async (_event, level: string, ...args: unknown[]) => {
 	log[level as keyof ILogger](...args);
+});
+
+ipcMain.handle('conversation:save', async (_event, conversation: Conversation) => {
+	await conversationManager.saveConversation(conversation);
+});
+
+ipcMain.handle('conversation:start', async (_event, title: string, oldConversation?: Conversation) => {
+	return await conversationManager.startConversation(title, oldConversation);
+});
+
+ipcMain.handle('conversation:delete', async (_event, id: string, title: string) => {
+	await conversationManager.deleteConversation(id, title);
+});
+
+ipcMain.handle('conversation:get', async (_event, id: string, title: string) => {
+	return await conversationManager.getConversation(id, title);
+});
+
+ipcMain.handle('conversation:list', async (_event, token?: string) => {
+	return await conversationManager.listConversations(token);
 });

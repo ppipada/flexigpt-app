@@ -41,6 +41,7 @@ export const messageSamplesList: ConversationMessage[] = [
 		role: ChatCompletionRoleEnum.system,
 		content: 'Welcome to our chat application!',
 		timestamp: '08:30 AM',
+		userId: '1',
 	},
 	{
 		id: '2',
@@ -49,6 +50,7 @@ export const messageSamplesList: ConversationMessage[] = [
 		content: 'Hello! I need help with my order.',
 		timestamp: '08:31 AM',
 		name: 'John Doe',
+		userId: '1',
 	},
 	{
 		id: '3',
@@ -57,6 +59,7 @@ export const messageSamplesList: ConversationMessage[] = [
 		content: 'Of course, John. Can you provide your order number?',
 		timestamp: '08:32 AM',
 		name: 'Assistant',
+		userId: '1',
 	},
 	{
 		id: '4',
@@ -65,6 +68,7 @@ export const messageSamplesList: ConversationMessage[] = [
 		content: 'My order number is 12345.',
 		timestamp: '08:33 AM',
 		name: 'John Doe',
+		userId: '1',
 	},
 	{
 		id: '5',
@@ -73,6 +77,7 @@ export const messageSamplesList: ConversationMessage[] = [
 		content: 'Thank you. I found your order. How can I assist you further?',
 		timestamp: '08:34 AM',
 		name: 'Assistant',
+		userId: '1',
 	},
 	{
 		id: '6',
@@ -81,6 +86,7 @@ export const messageSamplesList: ConversationMessage[] = [
 		content: 'I want to change the delivery address.',
 		timestamp: '08:35 AM',
 		name: 'John Doe',
+		userId: '1',
 	},
 	{
 		id: '7',
@@ -89,6 +95,7 @@ export const messageSamplesList: ConversationMessage[] = [
 		content: 'Sure, please provide the new address.',
 		timestamp: '08:36 AM',
 		name: 'Assistant',
+		userId: '1',
 	},
 	{
 		id: '8',
@@ -97,6 +104,7 @@ export const messageSamplesList: ConversationMessage[] = [
 		content: '123 New St, Springfield.',
 		timestamp: '08:37 AM',
 		name: 'John Doe',
+		userId: '1',
 	},
 	{
 		id: '9',
@@ -105,6 +113,7 @@ export const messageSamplesList: ConversationMessage[] = [
 		content: 'The address has been updated.',
 		timestamp: '08:38 AM',
 		name: 'Assistant',
+		userId: '1',
 	},
 	{
 		id: '10',
@@ -112,6 +121,7 @@ export const messageSamplesList: ConversationMessage[] = [
 		role: ChatCompletionRoleEnum.system,
 		content: 'Your chat will end in 10 minutes due to inactivity.',
 		timestamp: '08:39 AM',
+		userId: '1',
 	},
 	{
 		id: '11',
@@ -120,6 +130,7 @@ export const messageSamplesList: ConversationMessage[] = [
 		content: 'Thank you. Also, can I change the delivery date?',
 		timestamp: '08:40 AM',
 		name: 'John Doe',
+		userId: '1',
 	},
 	{
 		id: '12',
@@ -128,6 +139,7 @@ export const messageSamplesList: ConversationMessage[] = [
 		content: 'Yes, when would you like the order to be delivered?',
 		timestamp: '08:41 AM',
 		name: 'Assistant',
+		userId: '1',
 	},
 	{
 		id: '13',
@@ -136,6 +148,7 @@ export const messageSamplesList: ConversationMessage[] = [
 		content: 'On 30th September.',
 		timestamp: '08:42 AM',
 		name: 'John Doe',
+		userId: '1',
 	},
 	{
 		id: '14',
@@ -144,6 +157,7 @@ export const messageSamplesList: ConversationMessage[] = [
 		content: 'The delivery date has been updated to 30th September.',
 		timestamp: '08:43 AM',
 		name: 'Assistant',
+		userId: '1',
 	},
 	{
 		id: '15',
@@ -154,6 +168,7 @@ export const messageSamplesList: ConversationMessage[] = [
 May be I will see you again? Thanks a bunch!`,
 		timestamp: '08:44 AM',
 		name: 'John Doe',
+		userId: '1',
 	},
 	{
 		id: '16',
@@ -186,7 +201,7 @@ const CodeBlock: FC<CodeComponentProps> = ({ node, inline, className, children, 
   // CodeBlock implementation remains the same
 };
 
-export const ChatMessageContent: FC<ChatMessageContentProps> = ({ content }) => {
+export const ConversationMessageContent: FC<ConversationMessageContentProps> = ({ content }) => {
   return (
     <MemoizedMarkdown
       components={{
@@ -204,6 +219,7 @@ In this setup:
 `,
 		timestamp: '08:45 AM',
 		name: 'Assistant',
+		userId: '1',
 	},
 	{
 		id: '17',
@@ -233,6 +249,7 @@ import { Grommet } from 'grommet';
 `,
 		timestamp: '09:00 AM',
 		name: 'John Doe',
+		userId: '1',
 	},
 	{
 		id: '18',
@@ -256,6 +273,7 @@ return response
 		timestamp: '09:45 AM',
 		name: 'Assistant',
 		details: tmpMessageDetails,
+		userId: '1',
 	},
 	{
 		id: '19',
@@ -264,5 +282,6 @@ return response
 		content: MarkDownCheatSheet,
 		timestamp: '10:45 AM',
 		name: 'User',
+		userId: '1',
 	},
 ];

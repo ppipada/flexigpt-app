@@ -1,7 +1,7 @@
 {
-	"name": "winstonlogger",
+	"name": "conversationstore",
 	"version": "1.0.0",
-	"description": "Winston logger",
+	"description": "Store for chat interaction with LLMs",
 	"main": "build/index.js",
 	"types": "build/index.d.ts",
 	"type": "module",
@@ -16,7 +16,8 @@
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
 	"dependencies": {
 		"logger": "workspace:*",
-		"logform": "^2.6.1",
-		"winston": "^3.13.1"
+		"conversationmodel": "workspace:*",
+		"securejsondb": "workspace:*",
+		"uuid": "^10.0.0"
 	}
 }

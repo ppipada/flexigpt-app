@@ -74,9 +74,33 @@ importers:
       aiprovider:
         specifier: workspace:*
         version: link:../aiprovider
+      logger:
+        specifier: workspace:*
+        version: link:../logger
+
+  packages/conversationstore:
+    dependencies:
+      conversationmodel:
+        specifier: workspace:*
+        version: link:../conversationmodel
+      logger:
+        specifier: workspace:*
+        version: link:../logger
+      securejsondb:
+        specifier: workspace:*
+        version: link:../securejsondb
+      uuid:
+        specifier: ^10.0.0
+        version: 10.0.0
 
   packages/flexiuiagent:
     dependencies:
+      conversationmodel:
+        specifier: workspace:*
+        version: link:../conversationmodel
+      conversationstore:
+        specifier: workspace:*
+        version: link:../conversationstore
       electron-is-dev:
         specifier: ^3.0.1
         version: 3.0.1
@@ -232,6 +256,9 @@ importers:
 
   packages/securejsondb:
     dependencies:
+      logger:
+        specifier: workspace:*
+        version: link:../logger
       lowdb:
         specifier: ^7.0.1
         version: 7.0.1
@@ -244,12 +271,18 @@ importers:
       aiprovider:
         specifier: workspace:*
         version: link:../aiprovider
+      logger:
+        specifier: workspace:*
+        version: link:../logger
 
   packages/settingstore:
     dependencies:
       aiprovider:
         specifier: workspace:*
         version: link:../aiprovider
+      logger:
+        specifier: workspace:*
+        version: link:../logger
       securejsondb:
         specifier: workspace:*
         version: link:../securejsondb

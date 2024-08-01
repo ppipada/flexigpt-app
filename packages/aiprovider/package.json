@@ -13,7 +13,7 @@
 		"test": "echo \"No test specified\" && exit 0"
 	},
 	"keywords": [],
-	"author": "",
+	"author": "Pankaj Pipada <ppipada@gmail.com>",
 	"dependencies": {
 		"logger": "workspace:*",
 		"axios": "^1.5.0"

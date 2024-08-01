@@ -1,6 +1,7 @@
 import { safeStorage } from 'electron';
 import { PathLike } from 'fs';
-import { DataFile, DataFileSync } from 'lowdb/node';
+import { Low } from 'lowdb';
+import { DataFile } from 'lowdb/node';
 import { SecureSchema } from './schema';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,7 +16,7 @@ function setNestedProperty(obj: any, path: string, value: any) {
 	if (lastKey) lastObj[lastKey] = value;
 }
 
-export class SecureJSONFile<T extends SecureSchema> extends DataFile<T> {
+export class SecureJSONFileAdapter<T extends SecureSchema> extends DataFile<T> {
 	constructor(filename: PathLike) {
 		super(filename, {
 			parse: (text: string) => {
@@ -50,37 +51,49 @@ export class SecureJSONFile<T extends SecureSchema> extends DataFile<T> {
 	}
 }
 
-export class SecureJSONFileSync<T extends SecureSchema> extends DataFileSync<T> {
-	constructor(filename: PathLike) {
-		super(filename, {
-			parse: (text: string) => {
-				const parsedData = JSON.parse(text) as T;
-				const sensitiveKeys = parsedData._sensitiveKeys || [];
+export class SecureJSONFileDB<T extends SecureSchema> {
+	private db!: Low<T>;
 
-				// Decrypt keys
-				sensitiveKeys.forEach(key => {
-					const value = getNestedProperty(parsedData, key);
-					if (value) {
-						setNestedProperty(parsedData, key, safeStorage.decryptString(Buffer.from(value, 'base64')));
-					}
-				});
+	constructor(
+		private filename: PathLike,
+		private defaultData: T
+	) {}
 
-				return parsedData;
-			},
-			stringify: (data: T) => {
-				const encryptedData = { ...data };
-				const sensitiveKeys = encryptedData._sensitiveKeys || [];
+	async initialize(): Promise<void> {
+		const adapter = new SecureJSONFileAdapter<T>(this.filename);
+		this.db = new Low<T>(adapter, this.defaultData);
+		await this.db.read();
+	}
 
-				// Encrypt keys
-				sensitiveKeys.forEach(key => {
-					const value = getNestedProperty(encryptedData, key);
-					if (value) {
-						setNestedProperty(encryptedData, key, safeStorage.encryptString(value).toString('base64'));
-					}
-				});
+	async getAllData(): Promise<T> {
+		await this.db.read();
+		return this.db.data;
+	}
 
-				return JSON.stringify(encryptedData, null, 2);
-			},
-		});
+	async setData(dotSeparatedKey: string, value: any): Promise<void> {
+		await this.db.read();
+
+		const keys = dotSeparatedKey.split('.');
+		const lastKey = keys.pop();
+		// Use type assertion here to assure TypeScript that we're working with an object.
+		let target = this.db.data as Record<string, any>;
+
+		for (const key of keys) {
+			if (!target[key]) {
+				target[key] = {};
+			}
+			target = target[key];
+		}
+
+		if (lastKey) {
+			target[lastKey] = value;
+		}
+
+		await this.db.write();
+	}
+
+	async overwriteData(newData: T): Promise<void> {
+		this.db.data = newData;
+		await this.db.write();
 	}
 }

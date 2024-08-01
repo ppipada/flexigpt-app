@@ -1,46 +1,31 @@
-import { Low } from 'lowdb';
 import { PathLike } from 'node:fs';
-import { SecureJSONFile, SecureSchema } from 'securejsondb';
-import { defaultSettingsData, SettingsSchema } from 'settingmodel';
+import { SecureJSONFileDB, SecureSchema } from 'securejsondb';
+import { defaultSettingsData, ISettingsAPI, sensitiveKeys, SettingsSchema } from 'settingmodel';
 
 export type SecureSettingsSchema = SettingsSchema & SecureSchema;
 
 export const defaultSecureSettingsData: SecureSettingsSchema = {
 	...defaultSettingsData,
-	_sensitiveKeys: ['openai.apiKey', 'anthropic.apiKey', 'huggingface.apiKey', 'googlegl.apiKey', 'llamacpp.apiKey'],
+	_sensitiveKeys: sensitiveKeys,
 };
 
-export async function getSettingsDB(filename: PathLike): Promise<Low<SecureSettingsSchema>> {
-	const adapter = new SecureJSONFile<SecureSettingsSchema>(filename);
-	const db = new Low<SecureSettingsSchema>(adapter, defaultSecureSettingsData);
-	await db.read();
-	return db;
-}
+export class SettingsStore implements ISettingsAPI {
+	private db: SecureJSONFileDB<SecureSettingsSchema>;
 
-export class SettingsStore {
-	private db!: Low<SecureSettingsSchema>;
-
-	constructor(private filename: PathLike) {}
+	constructor(filename: PathLike) {
+		this.db = new SecureJSONFileDB<SecureSettingsSchema>(filename, defaultSecureSettingsData);
+	}
 
 	async initialize() {
-		this.db = await getSettingsDB(this.filename);
+		await this.db.initialize();
 	}
 
 	async getAllSettings(): Promise<SecureSettingsSchema> {
-		await this.db.read();
-		return this.db.data;
+		return await this.db.getAllData();
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	async setSetting(key: string, value: any): Promise<void> {
-		await this.db.read();
-
-		const keys = key.split('.');
-		const lastKey = keys.pop();
-		const target = keys.reduce((o, k) => (o[k] = o[k] || {}), this.db.data);
-
-		if (lastKey) target[lastKey] = value;
-
-		await this.db.write();
+		await this.db.setData(key, value);
 	}
 }

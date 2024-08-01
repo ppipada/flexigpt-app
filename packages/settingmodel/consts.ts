@@ -48,3 +48,11 @@ export const defaultSettingsData: SettingsSchema = {
 		additionalSettings: llamacppProviderInfo.additionalSettings,
 	},
 };
+
+export const sensitiveKeys = [
+	'openai.apiKey',
+	'anthropic.apiKey',
+	'huggingface.apiKey',
+	'googlegl.apiKey',
+	'llamacpp.apiKey',
+];

@@ -1,2 +1,3 @@
-export * from './adapter';
+export * from './collection';
+export * from './filedb';
 export * from './schema';
