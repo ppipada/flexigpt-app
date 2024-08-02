@@ -1,5 +1,5 @@
-import CopyButton from '@/components/CopyButton';
-import DownloadButton from '@/components/DownloadButton';
+import CopyButton from '@/components/copy_button';
+import DownloadButton from '@/components/download_button';
 import { FC, ReactNode, memo } from 'react';
 import Markdown from 'react-markdown';
 import SyntaxHighlighter from 'react-syntax-highlighter';

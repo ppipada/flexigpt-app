@@ -1,3 +1,3 @@
 export * from './collection';
-export * from './filedb';
+export * from './file_db';
 export * from './schema';

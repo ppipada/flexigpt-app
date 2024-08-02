@@ -1,5 +1,5 @@
 'use client';
-import { setLogger } from '@/lib/logsetup';
+import { setLogger } from '@/lib/log_setup';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect } from 'react';

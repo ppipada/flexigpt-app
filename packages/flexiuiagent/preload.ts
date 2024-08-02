@@ -21,8 +21,8 @@ contextBridge.exposeInMainWorld('ConversationAPI', {
 	saveConversation: async (conversation: any) => {
 		await ipcRenderer.invoke('conversation:save', conversation);
 	},
-	startConversation: async (title: string, oldConversation: any) => {
-		return await ipcRenderer.invoke('conversation:start', title, oldConversation);
+	createNewConversation: async (title: string) => {
+		return await ipcRenderer.invoke('conversation:create', title);
 	},
 	deleteConversation: async (id: string, title: string) => {
 		await ipcRenderer.invoke('conversation:delete', id, title);
@@ -32,5 +32,8 @@ contextBridge.exposeInMainWorld('ConversationAPI', {
 	},
 	listConversations: async (token?: string) => {
 		return await ipcRenderer.invoke('conversation:list', token);
+	},
+	addMessageToConversation: async (id: string, title: string, newMessage: any) => {
+		return await ipcRenderer.invoke('conversation:addMessage', id, title, newMessage);
 	},
 });

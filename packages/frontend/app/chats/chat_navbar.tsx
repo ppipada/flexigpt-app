@@ -1,5 +1,5 @@
-import { ChatSearch, SearchItem } from '@/chats/ChatSearch';
-import DownloadButton from '@/components/DownloadButton';
+import { ChatSearch, SearchItem } from '@/chats/chat_search';
+import DownloadButton from '@/components/download_button';
 import { FC } from 'react';
 import { FiPlus } from 'react-icons/fi';
 

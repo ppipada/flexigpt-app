@@ -1,29 +1,26 @@
-import { Conversation as ConversationBase, IConversationAPI } from 'conversationmodel';
+import { ConversationMessage, IConversationAPI } from 'conversationmodel';
 import { basename } from 'node:path';
-import { CollectionMonthPartitioned, SecureSchema } from 'securejsondb';
+import { CollectionMonthPartitioned } from 'securejsondb';
 import { v7 as uuidv7 } from 'uuid';
-import { messageSamplesList } from './message_samples';
+// import { getSampleConversations } from './message_samples';
+import { Conversation } from './store_types';
 
-export type Conversation = ConversationBase & SecureSchema;
+export class ConversationCollection implements IConversationAPI {
+	private partitionedCollection: CollectionMonthPartitioned<Conversation>;
 
-export function getSampleConversation(): Conversation {
-	return {
-		id: uuidv7(),
-		title: 'Sample Conversation',
-		createdAt: new Date(),
-		modifiedAt: new Date(),
-		messages: messageSamplesList,
-	};
-}
-
-export class ConversationCollection extends CollectionMonthPartitioned<Conversation> implements IConversationAPI {
 	constructor(baseDir: string) {
-		super(baseDir, { id: '', title: '', createdAt: new Date(), modifiedAt: new Date(), messages: [] });
-		// const sampleConvo = getSampleConversation();
-		// this.saveConversation(sampleConvo);
+		this.partitionedCollection = new CollectionMonthPartitioned<Conversation>(baseDir, {
+			id: '',
+			title: '',
+			createdAt: new Date(),
+			modifiedAt: new Date(),
+			messages: [],
+		});
+		// const sampleConvos = getSampleConversations();
+		// sampleConvos.map(convo => this.saveConversation(convo));
 	}
 
-	createNewConversation(title: string): Conversation {
+	async createNewConversation(title: string): Promise<Conversation> {
 		return {
 			id: uuidv7(),
 			title: title.substring(0, 64),
@@ -39,15 +36,7 @@ export class ConversationCollection extends CollectionMonthPartitioned<Conversat
 
 	async saveConversation(conversation: Conversation): Promise<void> {
 		const filename = this.getConversationFilename(conversation);
-		await this.addFile(filename, conversation);
-	}
-
-	async startConversation(title: string, oldConversation?: Conversation): Promise<Conversation> {
-		if (oldConversation) {
-			await this.saveConversation(oldConversation);
-		}
-		const conversation = this.createNewConversation(title);
-		return conversation;
+		await this.partitionedCollection.addFile(filename, conversation);
 	}
 
 	async deleteConversation(id: string, title: string): Promise<void> {
@@ -58,7 +47,7 @@ export class ConversationCollection extends CollectionMonthPartitioned<Conversat
 			modifiedAt: new Date(),
 			messages: [],
 		});
-		await this.deleteFile(filename);
+		await this.partitionedCollection.deleteFile(filename);
 	}
 
 	async getConversation(id: string, title: string): Promise<Conversation | null> {
@@ -69,13 +58,13 @@ export class ConversationCollection extends CollectionMonthPartitioned<Conversat
 			modifiedAt: new Date(),
 			messages: [],
 		});
-		return this.getFile(filename);
+		return this.partitionedCollection.getFile(filename);
 	}
 
 	async listConversations(
 		token?: string
 	): Promise<{ conversations: { id: string; title: string }[]; nextToken?: string }> {
-		const { files, nextToken } = await this.listFiles(token);
+		const { files, nextToken } = await this.partitionedCollection.listFiles(token);
 		const conversations = files.map(file => {
 			const filename = basename(file);
 			const [id, ...titleParts] = filename.replace('.json', '').split('_');
@@ -83,5 +72,15 @@ export class ConversationCollection extends CollectionMonthPartitioned<Conversat
 			return { id, title };
 		});
 		return { conversations, nextToken };
+	}
+
+	async addMessageToConversation(id: string, title: string, newMessage: ConversationMessage): Promise<void> {
+		const conversation = await this.getConversation(id, title);
+		if (!conversation) {
+			throw new Error('Conversation not found');
+		}
+		conversation.messages.push(newMessage);
+		conversation.modifiedAt = new Date();
+		await this.saveConversation(conversation);
 	}
 }

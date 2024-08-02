@@ -1,5 +1,5 @@
-import { ChatMessageContent } from '@/chats/ChatMessageContent';
-import ChatMessageFooterArea from '@/chats/ChatMessageFooter';
+import { ChatMessageContent } from '@/chats/chat_message_content';
+import ChatMessageFooterArea from '@/chats/chat_message_footer';
 import { ChatCompletionRoleEnum } from 'aiprovider';
 import { ConversationMessage, User } from 'conversationmodel';
 import { FC, RefObject } from 'react';

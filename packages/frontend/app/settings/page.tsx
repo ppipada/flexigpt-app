@@ -2,9 +2,9 @@
 
 import { getAllSettings, setSetting } from '@/api/settings';
 
-import DownloadButton from '@/components/DownloadButton';
-import ThemeSwitch from '@/components/ThemeSwitch';
-import AISettingsCard from '@/settings/AISettings';
+import DownloadButton from '@/components/download_button';
+import ThemeSwitch from '@/components/theme_switch';
+import AISettingsCard from '@/settings/ai_settings';
 import { ALL_AI_PROVIDERS } from 'aiprovider';
 import { FC, useEffect, useState } from 'react';
 

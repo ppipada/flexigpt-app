@@ -1,5 +1,5 @@
-import { ChatMessageContent } from '@/chats//ChatMessageContent';
-import CopyButton from '@/components/CopyButton';
+import { ChatMessageContent } from '@/chats/chat_message_content';
+import CopyButton from '@/components/copy_button';
 import { FC, RefObject, useState } from 'react';
 import { FiChevronDown, FiChevronUp, FiEdit, FiMessageCircle } from 'react-icons/fi';
 

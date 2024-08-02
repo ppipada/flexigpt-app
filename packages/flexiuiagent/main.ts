@@ -4,7 +4,7 @@ import electronIsDev from 'electron-is-dev';
 import { ILogger, log, setGlobalLogger } from 'logger';
 import path from 'node:path';
 
-import { Conversation } from 'conversationmodel';
+import { Conversation, ConversationMessage } from 'conversationmodel';
 import { ConversationCollection } from 'conversationstore';
 import { dirname } from 'path';
 import { SettingsStore } from 'settingstore';
@@ -171,8 +171,8 @@ ipcMain.handle('conversation:save', async (_event, conversation: Conversation) =
 	await conversationManager.saveConversation(conversation);
 });
 
-ipcMain.handle('conversation:start', async (_event, title: string, oldConversation?: Conversation) => {
-	return await conversationManager.startConversation(title, oldConversation);
+ipcMain.handle('conversation:create', async (_event, title: string) => {
+	return conversationManager.createNewConversation(title);
 });
 
 ipcMain.handle('conversation:delete', async (_event, id: string, title: string) => {
@@ -186,3 +186,10 @@ ipcMain.handle('conversation:get', async (_event, id: string, title: string) => 
 ipcMain.handle('conversation:list', async (_event, token?: string) => {
 	return await conversationManager.listConversations(token);
 });
+
+ipcMain.handle(
+	'conversation:addMessage',
+	async (_event, id: string, title: string, newMessage: ConversationMessage) => {
+		return await conversationManager.addMessageToConversation(id, title, newMessage);
+	}
+);

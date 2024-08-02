@@ -1,10 +1,15 @@
 'use client';
-import { getConversation, listConversations, saveConversation, startConversation } from '@/api/conversation';
-import ChatInputField from '@/chats/ChatInputField';
-import ChatMessage from '@/chats/ChatMessage';
-import ChatNavBar from '@/chats/ChatNavbar';
-import { SearchItem } from '@/chats/ChatSearch';
-import ButtonScrollToBottom from '@/components/ButtonScrollToBottom';
+import {
+	createNewConversation,
+	getConversation,
+	listAllConversations,
+	saveConversation,
+} from '@/api/conversation_memoized_api';
+import ChatInputField from '@/chats/chat_input_field';
+import ChatMessage from '@/chats/chat_message';
+import ChatNavBar from '@/chats/chat_navbar';
+import { SearchItem } from '@/chats/chat_search';
+import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
 import { ChatCompletionRoleEnum } from 'aiprovider';
 import { Conversation, ConversationMessage } from 'conversationmodel';
 import { FC, createRef, useEffect, useRef, useState } from 'react';
@@ -24,7 +29,7 @@ const ChatScreen: FC = () => {
 	const chatContainerRef = useRef<HTMLDivElement>(null);
 
 	const loadInitialItems = async () => {
-		const { conversations } = await listConversations();
+		const conversations = await listAllConversations();
 		setInitialItems(conversations);
 	};
 
@@ -55,7 +60,8 @@ const ChatScreen: FC = () => {
 	};
 
 	const handleNewChat = async () => {
-		const newChat = await startConversation('New chat');
+		saveConversation(chat);
+		const newChat = await createNewConversation('New chat');
 		setChat(newChat);
 	};
 
@@ -73,7 +79,7 @@ const ChatScreen: FC = () => {
 	}, [chat.messages]);
 
 	const fetchSearchResults = async (query: string): Promise<SearchItem[]> => {
-		const { conversations } = await listConversations();
+		const conversations = await listAllConversations();
 		return conversations.filter(item => item.title.toLowerCase().includes(query.toLowerCase()));
 	};
 

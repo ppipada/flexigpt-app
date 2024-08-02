@@ -20,11 +20,12 @@ export interface User {
 }
 
 export interface IConversationAPI {
+	createNewConversation: (title: string) => Promise<Conversation>;
 	saveConversation: (conversation: Conversation) => Promise<void>;
-	startConversation: (title: string, oldConversation?: Conversation) => Promise<Conversation>;
 	deleteConversation: (id: string, title: string) => Promise<void>;
 	getConversation: (id: string, title: string) => Promise<Conversation | null>;
 	listConversations: (
 		token?: string
 	) => Promise<{ conversations: { id: string; title: string }[]; nextToken?: string }>;
+	addMessageToConversation(id: string, title: string, newMessage: ConversationMessage): Promise<void>;
 }

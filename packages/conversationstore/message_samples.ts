@@ -1,7 +1,8 @@
 import { ChatCompletionRoleEnum } from 'aiprovider';
 import { ConversationMessage } from 'conversationmodel/conversation_types';
+import { v7 as uuidv7 } from 'uuid';
 import { MarkDownCheatSheet } from './markdown_sheet';
-
+import { Conversation } from './store_types';
 export const tmpMessageDetails = `
 start of details
 
@@ -34,7 +35,7 @@ response = openai.Completion.create(
 
 return response`;
 
-export const messageSamplesList: ConversationMessage[] = [
+export const messageSamplesListBase: ConversationMessage[] = [
 	{
 		id: '1',
 		createdAt: new Date('2023-09-24T08:30:00Z'),
@@ -286,6 +287,134 @@ return response
 	},
 ];
 
+export const messageSamplesListComplex: ConversationMessage[] = [
+	{
+		id: '100',
+		createdAt: new Date('2023-09-24T08:44:00Z'),
+		role: ChatCompletionRoleEnum.user,
+		content: `Great, that's all for now.
+
+May be I will see you again? Thanks a bunch!`,
+		timestamp: '08:44 AM',
+		name: 'John Doe',
+		userId: '2',
+	},
+	{
+		id: '101',
+		createdAt: new Date('2023-09-24T08:45:00Z'),
+		role: ChatCompletionRoleEnum.assistant,
+		content: `
+# My heading
+
+[reference](#)
+
+If Grommet's Markdown component uses \`markdown-to-jsx\` internally, then the types for your custom renderer function should align with what \`markdown-to-jsx\` expects. The \`markdown-to-jsx\` library allows you to provide custom renderers for different Markdown elements, and these custom renderers receive specific props based on the Markdown element they're rendering.
+
+For a \`code\` element, the props typically include those that are passed to any React component, along with some specific to Markdown rendering. Here's how you can define the type for your \`code\` component in this context:
+
+## Sample code
+
+\`\`\`typescript
+import React, { FC, ReactNode } from 'react';
+// other imports remain the same
+
+interface CodeComponentProps {
+  node: any;  // This can be more specific if you know the structure
+  inline?: boolean;
+  className?: string;
+  children: ReactNode;
+  // Include other props that markdown-to-jsx might pass
+}
+
+const CodeBlock: FC<CodeComponentProps> = ({ node, inline, className, children, ...props }) => {
+  // CodeBlock implementation remains the same
+};
+
+export const ConversationMessageContent: FC<ConversationMessageContentProps> = ({ content }) => {
+  return (
+    <MemoizedMarkdown
+      components={{
+        code: CodeBlock
+      }}
+    >
+      {content}
+    </MemoizedMarkdown>
+  );
+};
+\`\`\`
+
+In this setup:
+
+`,
+		timestamp: '08:45 AM',
+		name: 'Assistant',
+		userId: '3',
+	},
+	{
+		id: '102',
+		createdAt: new Date('2023-09-24T09:45:00Z'),
+		role: ChatCompletionRoleEnum.user,
+		content: `
+  # Out of Breath
+
+  You know, sometimes in life it seems like there's no way out. Like
+  a sheep trapped in a maze designed by wolves. See all the
+  options [here](https://github.com/probablyup/markdown-to-jsx/)
+
+  [reference](#)
+
+\`\`\`
+import { Grommet } from 'grommet';
+\`\`\`
+
+  > i carry your heart with me
+
+  ![alt text](//v2.grommet.io/assets/IMG_4245.jpg "Markdown Image")
+
+  | Markdown | Less | Pretty | Long header now | One more for sake of it |
+  | --- | --- | --- | --- | --- |
+  | Content *still* | \`renders\` | **nicely** in a table | **nicely** in a table | **nicely** in a table | 
+  | 1 | 2 | 3 | 3 | 3 |
+`,
+		timestamp: '09:00 AM',
+		name: 'John Doe',
+		userId: '2',
+	},
+	{
+		id: '103',
+		createdAt: new Date('2023-09-24T09:45:00Z'),
+		role: ChatCompletionRoleEnum.assistant,
+		content: `
+
+\`\`\`python
+def get_openapi_completion_for_integration_sequence_test(intxt, value_type):
+  response = openai.Completion.create(
+      model="text-davinci-003",
+      prompt=prompts.generate_prompt_integration_sequence_test(intxt, value_type),
+      temperature=0,
+      max_tokens=2560,
+      best_of=1,
+      stop=["##", "}}}}}}", "Generate workflow", "func Test"])
+  
+return response
+\`\`\`
+    `,
+		timestamp: '09:45 AM',
+		name: 'Assistant',
+		details: tmpMessageDetails,
+		userId: '3',
+	},
+	{
+		id: '104',
+		createdAt: new Date('2023-09-24T10:45:00Z'),
+		role: ChatCompletionRoleEnum.user,
+		content: MarkDownCheatSheet,
+		timestamp: '10:45 AM',
+		name: 'User',
+		userId: '2',
+	},
+];
+
 // useEffect(() => {
 // 	// Initialize chat with sample messages on mount
 // 	setChat(prevChat => ({
@@ -294,3 +423,25 @@ return response
 // 		modifiedTime: new Date(),
 // 	}));
 // }, []);
+
+// import { getSampleConversations } from './message_samples';
+// const sampleConvos = getSampleConversations();
+// sampleConvos.map(convo => this.saveConversation(convo));
+export function getSampleConversations(): Conversation[] {
+	return [
+		{
+			id: uuidv7(),
+			title: 'Sample Conversation base',
+			createdAt: new Date(),
+			modifiedAt: new Date(),
+			messages: messageSamplesListBase,
+		},
+		{
+			id: uuidv7(),
+			title: 'Sample Conversation complex',
+			createdAt: new Date(),
+			modifiedAt: new Date(),
+			messages: messageSamplesListComplex,
+		},
+	];
+}

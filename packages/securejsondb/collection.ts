@@ -1,7 +1,7 @@
 import { log } from 'logger';
 import { existsSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { SecureJSONFileDB } from './filedb';
+import { SecureJSONFileDB } from './file_db';
 import { SecureSchema } from './schema';
 
 export class Collection<T extends SecureSchema> {
