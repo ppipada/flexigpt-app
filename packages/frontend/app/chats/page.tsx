@@ -1,27 +1,14 @@
 'use client';
+import { getConversation, listConversations, saveConversation, startConversation } from '@/api/conversation';
 import ChatInputField from '@/chats/ChatInputField';
 import ChatMessage from '@/chats/ChatMessage';
 import ChatNavBar from '@/chats/ChatNavbar';
+import { SearchItem } from '@/chats/ChatSearch';
 import ButtonScrollToBottom from '@/components/ButtonScrollToBottom';
 import { ChatCompletionRoleEnum } from 'aiprovider';
 import { Conversation, ConversationMessage } from 'conversationmodel';
-
 import { FC, createRef, useEffect, useRef, useState } from 'react';
 import { v7 as uuidv7 } from 'uuid';
-
-const initialItems = [
-	'Conversation 1',
-	'Conversation 2',
-	'Conversation 3',
-	'Conversation 4',
-	'my convo 1',
-	'py search 1',
-];
-
-const fetchSearchResults = async (query: string): Promise<string[]> => {
-	// Replace with your actual search logic
-	return initialItems.filter(item => item.toLowerCase().includes(query.toLowerCase()));
-};
 
 const ChatScreen: FC = () => {
 	const [chat, setChat] = useState<Conversation>({
@@ -32,10 +19,20 @@ const ChatScreen: FC = () => {
 		messages: [],
 	});
 
+	const [initialItems, setInitialItems] = useState<SearchItem[]>([]);
 	const [inputHeight, setInputHeight] = useState(0);
 	const chatContainerRef = useRef<HTMLDivElement>(null);
 
-	const sendMessage = (messageContent: string) => {
+	const loadInitialItems = async () => {
+		const { conversations } = await listConversations();
+		setInitialItems(conversations);
+	};
+
+	useEffect(() => {
+		loadInitialItems();
+	}, []);
+
+	const sendMessage = async (messageContent: string) => {
 		const trimmedText = messageContent.trim();
 		if (trimmedText) {
 			const newMessage: ConversationMessage = {
@@ -45,11 +42,27 @@ const ChatScreen: FC = () => {
 				userId: '1',
 			};
 
-			setChat(prevChat => ({
-				...prevChat,
-				messages: [...prevChat.messages, newMessage],
-				modifiedTime: new Date(),
-			}));
+			setChat(prevChat => {
+				const updatedChat = {
+					...prevChat,
+					messages: [...prevChat.messages, newMessage],
+					modifiedAt: new Date(),
+				};
+				saveConversation(updatedChat);
+				return updatedChat;
+			});
+		}
+	};
+
+	const handleNewChat = async () => {
+		const newChat = await startConversation('New chat');
+		setChat(newChat);
+	};
+
+	const handleSelectConversation = async (item: SearchItem) => {
+		const selectedChat = await getConversation(item.id, item.title);
+		if (selectedChat) {
+			setChat(selectedChat);
 		}
 	};
 
@@ -58,24 +71,24 @@ const ChatScreen: FC = () => {
 			chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
 		}
 	}, [chat.messages]);
-	// log.debug('Starting chat');
+
+	const fetchSearchResults = async (query: string): Promise<SearchItem[]> => {
+		const { conversations } = await listConversations();
+		return conversations.filter(item => item.title.toLowerCase().includes(query.toLowerCase()));
+	};
+
 	return (
 		<div className="flex flex-col items-center w-full h-full overflow-hidden">
 			<div className="w-full flex justify-center bg-transparent fixed top-2">
 				<div className="w-10/12 lg:w-2/3">
 					<ChatNavBar
-						onNewChat={() => {
-							setChat(prevChat => ({
-								...prevChat,
-								messages: [],
-								modifiedTime: new Date(),
-							}));
-						}}
+						onNewChat={handleNewChat}
 						onExport={() => {
 							// Add export functionality
 						}}
 						initialSearchItems={initialItems}
 						onSearch={fetchSearchResults}
+						onSelectConversation={handleSelectConversation}
 					/>
 				</div>
 			</div>

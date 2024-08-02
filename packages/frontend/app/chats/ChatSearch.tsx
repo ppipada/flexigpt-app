@@ -1,14 +1,21 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
 import { FiSearch } from 'react-icons/fi';
 
+// Define the type for search items
+export type SearchItem = {
+	id: string;
+	title: string;
+};
+
 interface ChatSearchProps {
-	initialItems: string[];
-	onSearch: (query: string) => Promise<string[]>;
+	initialItems: SearchItem[];
+	onSearch: (query: string) => Promise<SearchItem[]>;
+	onSelectConversation: (item: SearchItem) => Promise<void>;
 }
 
-const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch }) => {
+export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSelectConversation }) => {
 	const [query, setQuery] = useState('');
-	const [items, setItems] = useState<string[]>([]);
+	const [items, setItems] = useState<SearchItem[]>([]);
 	const [showDropdown, setShowDropdown] = useState(false);
 
 	useEffect(() => {
@@ -27,8 +34,9 @@ const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch }) => {
 		}
 	};
 
-	const handleItemClick = (item: string) => {
-		setQuery(item);
+	const handleItemClick = (item: SearchItem) => {
+		onSelectConversation(item);
+		// setQuery(item.title);
 		setShowDropdown(false);
 	};
 
@@ -68,7 +76,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch }) => {
 							onClick={() => handleItemClick(item)}
 							className="px-12 py-2 cursor-pointer hover:bg-base-100"
 						>
-							{item}
+							{item.title}
 						</li>
 					))}
 				</ul>
@@ -76,5 +84,3 @@ const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch }) => {
 		</div>
 	);
 };
-
-export default ChatSearch;

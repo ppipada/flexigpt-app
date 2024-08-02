@@ -6,7 +6,7 @@ import { messageSamplesList } from './message_samples';
 
 export type Conversation = ConversationBase & SecureSchema;
 
-function getSampleConversation(): Conversation {
+export function getSampleConversation(): Conversation {
 	return {
 		id: uuidv7(),
 		title: 'Sample Conversation',
@@ -19,8 +19,8 @@ function getSampleConversation(): Conversation {
 export class ConversationCollection extends CollectionMonthPartitioned<Conversation> implements IConversationAPI {
 	constructor(baseDir: string) {
 		super(baseDir, { id: '', title: '', createdAt: new Date(), modifiedAt: new Date(), messages: [] });
-		const sampleConvo = getSampleConversation();
-		this.saveConversation(sampleConvo);
+		// const sampleConvo = getSampleConversation();
+		// this.saveConversation(sampleConvo);
 	}
 
 	createNewConversation(title: string): Conversation {
