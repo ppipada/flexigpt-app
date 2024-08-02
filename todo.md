@@ -85,23 +85,22 @@
 
 - LLM Provider
 
-  - [ ] Implement llm providers
+  - [x] Implement llm providers
   - [ ] connect this with chat page
 
 - Conversation State DB:
 
-  - [ ] Add a "conversations state db".
-  - [ ] It should provide a functionality of add a conversation, remove a conversation, list conversation titles, remove all conversations
-  - [ ] A conversation has a title, id (uuidv7), created time, modified time, list of messages
-  - [ ] For each conversation it should have a add message, list all messages interface.
-  - [ ] Each message has a
-  - [ ] Each conversation should be saved as a "json file" in some predefined folder.
-  - [ ] Connect UI to this state db
+  - [x] Add a "conversations state db".
+  - [x] It should provide a functionality of add a conversation, remove a conversation, list conversation titles, remove all conversations
+  - [x] A conversation has a title, id (uuidv7), created time, modified time, list of messages
+  - [x] For each conversation it should have a add message, list all messages interface.
+  - [x] Each conversation should be saved as a "json file" in some predefined folder.
+  - [x] Connect UI to this state db
 
 - Conversation list
 
-  - [ ] Fetch conversation titles and add it to the drawer
-  - [ ] provide a new chat, delete one conversation, delete all conversations actions
+  - [x] Fetch conversation titles and add it to the drawer
+  - [x] provide a new chat, delete one conversation, delete all conversations actions
 
 - Agent screen
 
