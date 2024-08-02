@@ -12,15 +12,10 @@ export function initConversation(title: string = 'New Conversation'): Conversati
 	};
 }
 
-export function initConversationMessage(
-	role: ChatCompletionRoleEnum,
-	content: string,
-	userId: string
-): ConversationMessage {
+export function initConversationMessage(role: ChatCompletionRoleEnum, content: string): ConversationMessage {
 	return {
 		id: new Date().toISOString(),
 		role: role,
 		content: content,
-		userId: userId,
 	};
 }

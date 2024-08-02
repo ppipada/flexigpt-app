@@ -1,8 +1,7 @@
-import { ChatAPIMessage, ChatCompletionRoleEnum } from 'aiprovider';
+import { ChatAPIMessage } from 'aiprovider';
 
 export interface ConversationMessage extends ChatAPIMessage {
 	details?: string;
-	userId: string;
 }
 
 export interface Conversation {
@@ -11,12 +10,6 @@ export interface Conversation {
 	createdAt: Date;
 	modifiedAt: Date;
 	messages: ConversationMessage[];
-}
-
-export interface User {
-	id: string;
-	name: string;
-	role: ChatCompletionRoleEnum;
 }
 
 export interface IConversationAPI {

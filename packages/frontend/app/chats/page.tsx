@@ -32,8 +32,7 @@ const ChatScreen: FC = () => {
 			isSubmittingRef.current = true;
 			const trimmedText = messageContent.trim();
 			if (trimmedText) {
-				const userId = '1';
-				const newMessage = initConversationMessage(ChatCompletionRoleEnum.user, trimmedText, userId);
+				const newMessage = initConversationMessage(ChatCompletionRoleEnum.user, trimmedText);
 
 				const updatedChat = {
 					...chat,
@@ -85,11 +84,6 @@ const ChatScreen: FC = () => {
 			chat.messages.map(message => (
 				<ChatMessage
 					key={message.id}
-					user={{
-						id: '1',
-						role: message.role,
-						name: 'Joe',
-					}}
 					message={message}
 					onEdit={() => {}}
 					onResend={() => {}}
