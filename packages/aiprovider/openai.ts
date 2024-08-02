@@ -1,7 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import { log } from 'logger';
-import { APICaller } from './chatapibase/api_fetch';
-import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chatapibase/chat_types';
+import { APICaller } from './api_fetch';
+import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chat_types';
 import { getCompletionRequest, unescapeChars } from './chatapibase/chat_utils';
 import { openaiProviderInfo } from './provider_consts';
 import { CompletionProvider, ProviderInfo } from './provider_types';

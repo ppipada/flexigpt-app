@@ -1,4 +1,4 @@
-import { ChatCompletionRequestMessage, CompletionRequest } from './chatapibase/chat_types';
+import { ChatCompletionRequestMessage, CompletionRequest } from './chat_types';
 
 export enum ProviderName {
 	OPENAI = 'openai',

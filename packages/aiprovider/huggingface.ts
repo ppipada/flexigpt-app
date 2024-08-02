@@ -1,6 +1,6 @@
 import { AxiosRequestConfig } from 'axios';
-import { APICaller } from './chatapibase/api_fetch';
-import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chatapibase/chat_types';
+import { APICaller } from './api_fetch';
+import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chat_types';
 import { filterMessagesByTokenCount, getCompletionRequest } from './chatapibase/chat_utils';
 import { huggingfaceProviderInfo } from './provider_consts';
 import { CompletionProvider, ProviderInfo } from './provider_types';
