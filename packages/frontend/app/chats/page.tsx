@@ -5,8 +5,8 @@ import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
 import { SearchItem } from '@/chats/chat_search';
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
-import { ChatCompletionRoleEnum } from 'aiprovider';
-import { Conversation, initConversation, initConversationMessage } from 'conversationmodel';
+
+import { Conversation, ConversationRoleEnum, initConversation, initConversationMessage } from 'conversationmodel';
 // import { log } from 'logger';
 import { FC, createRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -32,7 +32,7 @@ const ChatScreen: FC = () => {
 			isSubmittingRef.current = true;
 			const trimmedText = messageContent.trim();
 			if (trimmedText) {
-				const newMessage = initConversationMessage(ChatCompletionRoleEnum.user, trimmedText);
+				const newMessage = initConversationMessage(ConversationRoleEnum.user, trimmedText);
 
 				const updatedChat = {
 					...chat,

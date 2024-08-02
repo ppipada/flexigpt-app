@@ -1,6 +1,5 @@
-import { ChatCompletionRoleEnum } from 'aiprovider';
 import { v7 as uuidv7 } from 'uuid';
-import { Conversation, ConversationMessage } from './conversation_types';
+import { Conversation, ConversationMessage, ConversationRoleEnum } from './conversation_types';
 
 export function initConversation(title: string = 'New Conversation'): Conversation {
 	return {
@@ -12,7 +11,7 @@ export function initConversation(title: string = 'New Conversation'): Conversati
 	};
 }
 
-export function initConversationMessage(role: ChatCompletionRoleEnum, content: string): ConversationMessage {
+export function initConversationMessage(role: ConversationRoleEnum, content: string): ConversationMessage {
 	return {
 		id: new Date().toISOString(),
 		role: role,

@@ -1,7 +1,6 @@
 import { ChatMessageContent } from '@/chats/chat_message_content';
 import ChatMessageFooterArea from '@/chats/chat_message_footer';
-import { ChatCompletionRoleEnum } from 'aiprovider';
-import { ConversationMessage } from 'conversationmodel';
+import { ConversationMessage, ConversationRoleEnum } from 'conversationmodel';
 import { FC, RefObject } from 'react';
 import { FiCompass, FiUser } from 'react-icons/fi';
 interface ChatMessageProps {
@@ -23,7 +22,7 @@ const ChatMessage: FC<ChatMessageProps> = ({
 	onSendFeedback,
 	feedbackController,
 }) => {
-	const isUser = message.role === ChatCompletionRoleEnum.user;
+	const isUser = message.role === ConversationRoleEnum.user;
 	const align = !isUser ? 'items-end text-left' : 'items-start text-left';
 	const leftColSpan = !isUser ? 'col-span-1 lg:col-span-2' : 'col-span-1';
 	const rightColSpan = !isUser ? 'col-span-1' : 'col-span-1 lg:col-span-2';

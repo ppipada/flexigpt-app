@@ -5,15 +5,6 @@ export enum ChatCompletionRoleEnum {
 	function = 'function',
 }
 
-export interface ChatAPIMessage {
-	id: string;
-	createdAt?: Date;
-	role: ChatCompletionRoleEnum;
-	content: string;
-	timestamp?: string;
-	name?: string;
-}
-
 export interface ChatCompletionFunctions {
 	name: string;
 	description?: string;
