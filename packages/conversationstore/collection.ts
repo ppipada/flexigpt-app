@@ -1,8 +1,8 @@
 import { ConversationMessage, IConversationAPI } from 'conversationmodel';
 import { basename } from 'node:path';
 import { CollectionMonthPartitioned } from 'securejsondb';
-import { v7 as uuidv7 } from 'uuid';
 // import { getSampleConversations } from './message_samples';
+// import { log } from 'logger';
 import { Conversation } from './store_types';
 
 export class ConversationCollection implements IConversationAPI {
@@ -18,16 +18,6 @@ export class ConversationCollection implements IConversationAPI {
 		});
 		// const sampleConvos = getSampleConversations();
 		// sampleConvos.map(convo => this.saveConversation(convo));
-	}
-
-	async createNewConversation(title: string): Promise<Conversation> {
-		return {
-			id: uuidv7(),
-			title: title.substring(0, 64),
-			createdAt: new Date(),
-			modifiedAt: new Date(),
-			messages: [],
-		};
 	}
 
 	getConversationFilename(conversation: Conversation): string {

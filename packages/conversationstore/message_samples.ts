@@ -1,6 +1,6 @@
 import { ChatCompletionRoleEnum } from 'aiprovider';
+import { initConversation } from 'conversationmodel';
 import { ConversationMessage } from 'conversationmodel/conversation_types';
-import { v7 as uuidv7 } from 'uuid';
 import { MarkDownCheatSheet } from './markdown_sheet';
 import { Conversation } from './store_types';
 export const tmpMessageDetails = `
@@ -428,20 +428,9 @@ return response
 // const sampleConvos = getSampleConversations();
 // sampleConvos.map(convo => this.saveConversation(convo));
 export function getSampleConversations(): Conversation[] {
-	return [
-		{
-			id: uuidv7(),
-			title: 'Sample Conversation base',
-			createdAt: new Date(),
-			modifiedAt: new Date(),
-			messages: messageSamplesListBase,
-		},
-		{
-			id: uuidv7(),
-			title: 'Sample Conversation complex',
-			createdAt: new Date(),
-			modifiedAt: new Date(),
-			messages: messageSamplesListComplex,
-		},
-	];
+	const convo1 = initConversation('Sample conversation base');
+	convo1.messages = messageSamplesListBase;
+	const convo2 = initConversation('Sample conversation complex');
+	convo2.messages = messageSamplesListComplex;
+	return [convo1, convo2];
 }

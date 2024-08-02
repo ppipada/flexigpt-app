@@ -21,9 +21,6 @@ contextBridge.exposeInMainWorld('ConversationAPI', {
 	saveConversation: async (conversation: any) => {
 		await ipcRenderer.invoke('conversation:save', conversation);
 	},
-	createNewConversation: async (title: string) => {
-		return await ipcRenderer.invoke('conversation:create', title);
-	},
 	deleteConversation: async (id: string, title: string) => {
 		await ipcRenderer.invoke('conversation:delete', id, title);
 	},

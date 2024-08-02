@@ -4,10 +4,6 @@ export async function saveConversation(conversation: Conversation): Promise<void
 	await window.ConversationAPI.saveConversation(conversation);
 }
 
-export async function createNewConversation(title: string): Promise<Conversation> {
-	return await window.ConversationAPI.createNewConversation(title);
-}
-
 export async function deleteConversation(id: string, title: string): Promise<void> {
 	await window.ConversationAPI.deleteConversation(id, title);
 }
@@ -28,17 +24,4 @@ export async function addMessageToConversation(
 	newMessage: ConversationMessage
 ): Promise<void> {
 	await window.ConversationAPI.addMessageToConversation(id, title, newMessage);
-}
-
-export async function listAllConversations(): Promise<{ id: string; title: string }[]> {
-	let allConversations: { id: string; title: string }[] = [];
-	let token: string | undefined = undefined;
-
-	do {
-		const response = await listConversations(token);
-		allConversations = allConversations.concat(response.conversations);
-		token = response.nextToken;
-	} while (token);
-
-	return allConversations;
 }

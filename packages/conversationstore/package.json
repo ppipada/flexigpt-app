@@ -17,7 +17,6 @@
 	"dependencies": {
 		"logger": "workspace:*",
 		"conversationmodel": "workspace:*",
-		"securejsondb": "workspace:*",
-		"uuid": "^10.0.0"
+		"securejsondb": "workspace:*"
 	}
 }

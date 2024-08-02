@@ -77,6 +77,13 @@ importers:
       logger:
         specifier: workspace:*
         version: link:../logger
+      uuid:
+        specifier: ^10.0.0
+        version: 10.0.0
+    devDependencies:
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
 
   packages/conversationstore:
     dependencies:
@@ -89,9 +96,6 @@ importers:
       securejsondb:
         specifier: workspace:*
         version: link:../securejsondb
-      uuid:
-        specifier: ^10.0.0
-        version: 10.0.0
 
   packages/flexiuiagent:
     dependencies:
@@ -177,9 +181,6 @@ importers:
       settingmodel:
         specifier: workspace:*
         version: link:../settingmodel
-      uuid:
-        specifier: ^10.0.0
-        version: 10.0.0
     optionalDependencies:
       '@next/swc-darwin-arm64':
         specifier: 14.2.5
@@ -239,9 +240,6 @@ importers:
       '@types/unist':
         specifier: ^3.0.2
         version: 3.0.2
-      '@types/uuid':
-        specifier: ^10.0.0
-        version: 10.0.0
       daisyui:
         specifier: ^4.12.10
         version: 4.12.10(postcss@8.4.40)
@@ -251,6 +249,10 @@ importers:
       tailwindcss:
         specifier: ^3.4.7
         version: 3.4.7
+
+  packages/frontend/build: {}
+
+  packages/frontend/build/types: {}
 
   packages/logger: {}
 

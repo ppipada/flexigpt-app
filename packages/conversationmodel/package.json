@@ -15,7 +15,11 @@
 	"keywords": [],
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
 	"dependencies": {
+		"aiprovider": "workspace:*",
 		"logger": "workspace:*",
-		"aiprovider": "workspace:*"
+		"uuid": "^10.0.0"
+	},
+	"devDependencies": {
+		"@types/uuid": "^10.0.0"
 	}
 }

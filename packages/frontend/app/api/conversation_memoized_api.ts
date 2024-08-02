@@ -1,7 +1,6 @@
 import { Conversation } from 'conversationmodel';
 import {
 	addMessageToConversation as apiAddMessageToConversation,
-	createNewConversation as apiCreateNewConversation,
 	deleteConversation as apiDeleteConversation,
 	getConversation as apiGetConversation,
 	saveConversation as apiSaveConversation,
@@ -10,7 +9,6 @@ import { ConversationCache } from './conversation_cache';
 
 const conversationCache = new ConversationCache();
 
-export const createNewConversation = apiCreateNewConversation;
 export const getConversation = apiGetConversation;
 export const addMessageToConversation = apiAddMessageToConversation;
 

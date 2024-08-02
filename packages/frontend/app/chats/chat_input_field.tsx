@@ -1,3 +1,4 @@
+// import { log } from 'logger';
 import { ChangeEvent, FC, KeyboardEvent, useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { FiSend } from 'react-icons/fi';
 
@@ -15,7 +16,9 @@ function useEnterSubmit(): {
 
 	const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
 		if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-			formRef.current?.requestSubmit();
+			if (formRef.current) {
+				formRef.current.requestSubmit();
+			}
 			event.preventDefault();
 		}
 	};
@@ -27,6 +30,7 @@ const ChatInputField: FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => 
 	const [text, setText] = useState<string>('');
 	const [isSendButtonEnabled, setIsSendButtonEnabled] = useState<boolean>(false);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
+	const isSubmittingRef = useRef<boolean>(false);
 
 	const { formRef, onKeyDown } = useEnterSubmit();
 
@@ -45,11 +49,14 @@ const ChatInputField: FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => 
 		autoResizeTextarea();
 	};
 
-	const handleSubmit = () => {
-		if (text.trim().length === 0) return;
+	const handleSubmit = (e?: React.FormEvent) => {
+		if (e) e.preventDefault();
+		if (text.trim().length === 0 || isSubmittingRef.current) return;
+		isSubmittingRef.current = true;
+		setIsSendButtonEnabled(false);
 		onSend(text.trim());
 		setText('');
-		setIsSendButtonEnabled(false);
+		isSubmittingRef.current = false;
 		if (inputRef.current) {
 			inputRef.current.style.height = 'auto';
 			inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
@@ -66,10 +73,7 @@ const ChatInputField: FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => 
 		<div className="relative">
 			<form
 				ref={formRef}
-				onSubmit={e => {
-					e.preventDefault();
-					handleSubmit();
-				}}
+				onSubmit={handleSubmit}
 				className="flex items-center bg-base-100 rounded-2xl border px-4 mx-2"
 			>
 				<textarea

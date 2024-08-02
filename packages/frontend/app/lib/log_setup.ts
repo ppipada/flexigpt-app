@@ -15,6 +15,6 @@ export function setLogger() {
 		return;
 	}
 	setGlobalLogger(ipcLogger);
-	log.info('Frontend: DOM loaded');
+	log.debug('Frontend: DOM loaded');
 	window.loggerSet = true;
 }

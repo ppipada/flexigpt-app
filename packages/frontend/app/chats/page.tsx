@@ -1,76 +1,67 @@
 'use client';
-import {
-	createNewConversation,
-	getConversation,
-	listAllConversations,
-	saveConversation,
-} from '@/api/conversation_memoized_api';
+import { getConversation, listAllConversations, saveConversation } from '@/api/conversation_memoized_api';
 import ChatInputField from '@/chats/chat_input_field';
 import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
 import { SearchItem } from '@/chats/chat_search';
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
 import { ChatCompletionRoleEnum } from 'aiprovider';
-import { Conversation, ConversationMessage } from 'conversationmodel';
-import { FC, createRef, useEffect, useRef, useState } from 'react';
-import { v7 as uuidv7 } from 'uuid';
+import { Conversation, initConversation, initConversationMessage } from 'conversationmodel';
+// import { log } from 'logger';
+import { FC, createRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const ChatScreen: FC = () => {
-	const [chat, setChat] = useState<Conversation>({
-		id: uuidv7(),
-		title: 'New Conversation',
-		createdAt: new Date(),
-		modifiedAt: new Date(),
-		messages: [],
-	});
-
+	const [chat, setChat] = useState<Conversation>(initConversation());
 	const [initialItems, setInitialItems] = useState<SearchItem[]>([]);
 	const [inputHeight, setInputHeight] = useState(0);
 	const chatContainerRef = useRef<HTMLDivElement>(null);
+	const isSubmittingRef = useRef<boolean>(false);
 
-	const loadInitialItems = async () => {
+	const loadInitialItems = useCallback(async () => {
 		const conversations = await listAllConversations();
 		setInitialItems(conversations);
-	};
+	}, []);
 
 	useEffect(() => {
 		loadInitialItems();
-	}, []);
+	}, [loadInitialItems]);
 
-	const sendMessage = async (messageContent: string) => {
-		const trimmedText = messageContent.trim();
-		if (trimmedText) {
-			const newMessage: ConversationMessage = {
-				id: new Date().toISOString(),
-				role: ChatCompletionRoleEnum.user,
-				content: trimmedText,
-				userId: '1',
-			};
+	const sendMessage = useCallback(
+		async (messageContent: string) => {
+			if (isSubmittingRef.current) return;
+			isSubmittingRef.current = true;
+			const trimmedText = messageContent.trim();
+			if (trimmedText) {
+				const userId = '1';
+				const newMessage = initConversationMessage(ChatCompletionRoleEnum.user, trimmedText, userId);
 
-			setChat(prevChat => {
 				const updatedChat = {
-					...prevChat,
-					messages: [...prevChat.messages, newMessage],
+					...chat,
+					messages: [...chat.messages, newMessage],
 					modifiedAt: new Date(),
 				};
 				saveConversation(updatedChat);
-				return updatedChat;
-			});
-		}
-	};
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
+				setChat(prevChat => {
+					return updatedChat;
+				});
+			}
+			isSubmittingRef.current = false;
+		},
+		[chat]
+	);
 
-	const handleNewChat = async () => {
+	const handleNewChat = useCallback(async () => {
 		saveConversation(chat);
-		const newChat = await createNewConversation('New chat');
-		setChat(newChat);
-	};
+		setChat(initConversation());
+	}, [chat]);
 
-	const handleSelectConversation = async (item: SearchItem) => {
+	const handleSelectConversation = useCallback(async (item: SearchItem) => {
 		const selectedChat = await getConversation(item.id, item.title);
 		if (selectedChat) {
 			setChat(selectedChat);
 		}
-	};
+	}, []);
 
 	useEffect(() => {
 		if (chatContainerRef.current) {
@@ -78,16 +69,38 @@ const ChatScreen: FC = () => {
 		}
 	}, [chat.messages]);
 
-	const fetchSearchResults = async (query: string): Promise<SearchItem[]> => {
+	const fetchSearchResults = useCallback(async (query: string): Promise<SearchItem[]> => {
 		const conversations = await listAllConversations();
 		return conversations.filter(item => item.title.toLowerCase().includes(query.toLowerCase()));
-	};
+	}, []);
 
-	const getConversationForExport = async (): Promise<string> => {
+	const getConversationForExport = useCallback(async (): Promise<string> => {
 		const selectedChat = await getConversation(chat.id, chat.title);
 		const value = JSON.stringify(selectedChat, null, 2);
 		return value;
-	};
+	}, [chat.id, chat.title]);
+
+	const memoizedChatMessages = useMemo(
+		() =>
+			chat.messages.map(message => (
+				<ChatMessage
+					key={message.id}
+					user={{
+						id: '1',
+						role: message.role,
+						name: 'Joe',
+					}}
+					message={message}
+					onEdit={() => {}}
+					onResend={() => {}}
+					onLike={() => {}}
+					onDislike={() => {}}
+					onSendFeedback={() => {}}
+					feedbackController={createRef<HTMLInputElement>()}
+				/>
+			)),
+		[chat.messages]
+	);
 
 	return (
 		<div className="flex flex-col items-center w-full h-full overflow-hidden">
@@ -110,25 +123,7 @@ const ChatScreen: FC = () => {
 					style={{ maxHeight: `calc(100vh - 144px - ${inputHeight}px)` }} // Adjust height dynamically
 				>
 					<div className="w-11/12 lg:w-2/3">
-						<div className="w-full flex-1 space-y-4">
-							{chat.messages.map(message => (
-								<ChatMessage
-									key={message.id}
-									user={{
-										id: '1',
-										role: message.role,
-										name: 'Joe',
-									}}
-									message={message}
-									onEdit={() => {}}
-									onResend={() => {}}
-									onLike={() => {}}
-									onDislike={() => {}}
-									onSendFeedback={() => {}}
-									feedbackController={createRef<HTMLInputElement>()}
-								/>
-							))}
-						</div>
+						<div className="w-full flex-1 space-y-4">{memoizedChatMessages}</div>
 					</div>
 				</div>
 				<div className="w-full flex justify-center bg-transparent fixed bottom-0 mb-3">

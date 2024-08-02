@@ -20,7 +20,6 @@ export interface User {
 }
 
 export interface IConversationAPI {
-	createNewConversation: (title: string) => Promise<Conversation>;
 	saveConversation: (conversation: Conversation) => Promise<void>;
 	deleteConversation: (id: string, title: string) => Promise<void>;
 	getConversation: (id: string, title: string) => Promise<Conversation | null>;

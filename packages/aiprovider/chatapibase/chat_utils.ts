@@ -46,7 +46,7 @@ export function filterMessagesByTokenCount(
 		}
 	}
 	if (filteredMessages.length < messages.length) {
-		log.info(
+		log.debug(
 			`Filtered messages count (${filteredMessages.length}) is less than input messages count (${messages.length})`
 		);
 	}

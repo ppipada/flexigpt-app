@@ -171,10 +171,6 @@ ipcMain.handle('conversation:save', async (_event, conversation: Conversation) =
 	await conversationManager.saveConversation(conversation);
 });
 
-ipcMain.handle('conversation:create', async (_event, title: string) => {
-	return conversationManager.createNewConversation(title);
-});
-
 ipcMain.handle('conversation:delete', async (_event, id: string, title: string) => {
 	await conversationManager.deleteConversation(id, title);
 });
