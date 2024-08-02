@@ -25,6 +25,9 @@ interface CodeProps {
 }
 
 const CodeBlock: FC<CodeProps> = memo(({ language, value }) => {
+	const fetchValue = async (): Promise<string> => {
+		return value;
+	};
 	return (
 		<div className="rounded-md bg-gray-800 my-2 items-start overflow-hidden">
 			<div className="flex justify-between items-center bg-gray-700 px-4">
@@ -32,7 +35,7 @@ const CodeBlock: FC<CodeProps> = memo(({ language, value }) => {
 				<div className="flex space-x-2">
 					<DownloadButton
 						language={language}
-						value={value}
+						valueFetcher={fetchValue}
 						size={16}
 						className="btn btn-sm bg-transparent text-white border-none flex items-center shadow-none"
 					/>

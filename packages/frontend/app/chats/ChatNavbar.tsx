@@ -1,10 +1,11 @@
 import { ChatSearch, SearchItem } from '@/chats/ChatSearch';
+import DownloadButton from '@/components/DownloadButton';
 import { FC } from 'react';
-import { FiDownload, FiPlus } from 'react-icons/fi';
+import { FiPlus } from 'react-icons/fi';
 
 interface ChatNavBarProps {
 	onNewChat: () => void;
-	onExport: () => void;
+	getConversationForExport: () => Promise<string>;
 	initialSearchItems: SearchItem[];
 	onSearch: (query: string) => Promise<SearchItem[]>;
 	onSelectConversation: (item: SearchItem) => Promise<void>;
@@ -12,7 +13,7 @@ interface ChatNavBarProps {
 
 const ChatNavBar: FC<ChatNavBarProps> = ({
 	onNewChat,
-	onExport,
+	getConversationForExport,
 	initialSearchItems,
 	onSearch,
 	onSelectConversation,
@@ -30,14 +31,15 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 			<div className="flex-1">
 				<ChatSearch initialItems={initialSearchItems} onSearch={onSearch} onSelectConversation={onSelectConversation} />
 			</div>
-			<button
+			<DownloadButton
+				language="json"
+				valueFetcher={getConversationForExport}
+				size={24}
+				fileprefix="conversation"
 				className="btn btn-sm mx-1 bg-transparent shadow-none"
-				onClick={onExport}
 				aria-label="Export chat"
 				title="Export chat"
-			>
-				<FiDownload size={24} />
-			</button>
+			/>
 		</div>
 	);
 };

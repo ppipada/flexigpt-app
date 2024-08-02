@@ -77,15 +77,19 @@ const ChatScreen: FC = () => {
 		return conversations.filter(item => item.title.toLowerCase().includes(query.toLowerCase()));
 	};
 
+	const getConversationForExport = async (): Promise<string> => {
+		const selectedChat = await getConversation(chat.id, chat.title);
+		const value = JSON.stringify(selectedChat, null, 2);
+		return value;
+	};
+
 	return (
 		<div className="flex flex-col items-center w-full h-full overflow-hidden">
 			<div className="w-full flex justify-center bg-transparent fixed top-2">
 				<div className="w-10/12 lg:w-2/3">
 					<ChatNavBar
 						onNewChat={handleNewChat}
-						onExport={() => {
-							// Add export functionality
-						}}
+						getConversationForExport={getConversationForExport}
 						initialSearchItems={initialItems}
 						onSearch={fetchSearchResults}
 						onSelectConversation={handleSelectConversation}

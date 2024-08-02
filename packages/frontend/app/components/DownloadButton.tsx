@@ -13,16 +13,25 @@ function generateRandomString(length: number, lowercase = false): string {
 
 export interface DownloadButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	language: string;
-	value: string;
+	valueFetcher: () => Promise<string>;
 	size: number;
 	fileprefix?: string;
 }
 
-const DownloadButton: FC<DownloadButtonProps> = ({ language, value, size, fileprefix = 'file', ...buttonProps }) => {
-	const downloadAsFile = () => {
+const DownloadButton: FC<DownloadButtonProps> = ({
+	language,
+	valueFetcher,
+	size,
+	fileprefix = 'file',
+	...buttonProps
+}) => {
+	const downloadAsFile = async () => {
 		if (typeof window === 'undefined') {
 			return;
 		}
+
+		const value = await valueFetcher();
+
 		const fileExtension = programmingLanguages[language] || '.txt';
 		const suggestedFileName = `${fileprefix}-${generateRandomString(3, true)}${fileExtension}`;
 

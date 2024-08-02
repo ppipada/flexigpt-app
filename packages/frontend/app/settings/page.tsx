@@ -83,6 +83,24 @@ const SettingsPage: FC = () => {
 		await setSetting(`${provider}.${key}`, value);
 	};
 
+	const fetchValue = async (): Promise<string> => {
+		const value = JSON.stringify(
+			{
+				app: {
+					defaultProvider,
+				},
+				openai: aiSettings.openai,
+				anthropic: aiSettings.anthropic,
+				huggingface: aiSettings.huggingface,
+				googlegl: aiSettings.googlegl,
+				llamacpp: aiSettings.llamacpp,
+			},
+			null,
+			2
+		);
+		return value;
+	};
+
 	return (
 		<div className="flex flex-col items-center w-full h-full overflow-hidden">
 			<div className="w-full flex justify-center bg-transparent fixed top-2">
@@ -95,20 +113,7 @@ const SettingsPage: FC = () => {
 							<DownloadButton
 								title="Download Settings"
 								language="json"
-								value={JSON.stringify(
-									{
-										app: {
-											defaultProvider,
-										},
-										openai: aiSettings.openai,
-										anthropic: aiSettings.anthropic,
-										huggingface: aiSettings.huggingface,
-										googlegl: aiSettings.googlegl,
-										llamacpp: aiSettings.llamacpp,
-									},
-									null,
-									2
-								)}
+								valueFetcher={fetchValue}
 								size={24}
 								fileprefix="settings"
 								className="btn btn-sm bg-transparent border-none shadow-none"
