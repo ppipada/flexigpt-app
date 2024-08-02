@@ -1,9 +1,9 @@
 import { AxiosRequestConfig } from 'axios';
 import { APICaller } from './api_fetch';
 import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chat_types';
-import { getCompletionRequest } from './chatapibase/chat_utils';
 import { googleProviderInfo } from './provider_consts';
 import { CompletionProvider, ProviderInfo } from './provider_types';
+import { getCompletionRequest } from './provider_utils';
 
 interface Content {
 	role: string;

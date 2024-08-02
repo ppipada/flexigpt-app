@@ -1,9 +1,9 @@
 import { AxiosRequestConfig } from 'axios';
 import { APICaller } from './api_fetch';
 import { ChatCompletionRequestMessage, CompletionRequest } from './chat_types';
-import { getCompletionRequest } from './chatapibase/chat_utils';
 import { anthropicProviderInfo } from './provider_consts';
 import { CompletionProvider, ProviderInfo } from './provider_types';
+import { getCompletionRequest } from './provider_utils';
 
 export class AnthropicAPI implements CompletionProvider {
 	private providerInfo: ProviderInfo;

@@ -2,9 +2,9 @@ import { AxiosRequestConfig } from 'axios';
 import { log } from 'logger';
 import { APICaller } from './api_fetch';
 import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chat_types';
-import { getCompletionRequest, unescapeChars } from './chatapibase/chat_utils';
 import { openaiProviderInfo } from './provider_consts';
 import { CompletionProvider, ProviderInfo } from './provider_types';
+import { getCompletionRequest, unescapeChars } from './provider_utils';
 
 export class OpenAIAPI implements CompletionProvider {
 	private providerInfo: ProviderInfo;
