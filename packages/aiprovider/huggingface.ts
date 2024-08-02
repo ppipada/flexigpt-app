@@ -1,40 +1,34 @@
 import { AxiosRequestConfig } from 'axios';
-import { log } from 'logger';
-import { ProviderAPI } from './chatapibase/api_fetch';
-import {
-	ChatCompletionRequestMessage,
-	ChatCompletionRoleEnum,
-	CompletionProvider,
-	CompletionRequest,
-} from './chatapibase/chat_types';
+import { APICaller } from './chatapibase/api_fetch';
+import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chatapibase/chat_types';
 import { filterMessagesByTokenCount, getCompletionRequest } from './chatapibase/chat_utils';
+import { huggingfaceProviderInfo } from './provider_consts';
+import { CompletionProvider, ProviderInfo } from './provider_types';
 
-export class HuggingFaceAPI extends ProviderAPI implements CompletionProvider {
-	constructor(
-		apiKey: string,
-		timeout: number,
-		defaultCompletionModel: string,
-		defaultChatCompletionModel: string,
-		origin: string,
-		headers: Record<string, string> = {}
-	) {
-		const apiKeyHeaderKey = 'Authorization';
-		const defaultHeaders: Record<string, string> = {
-			// eslint-disable-next-line @typescript-eslint/naming-convention
-			'content-type': 'application/json',
-		};
-		super(origin, apiKey, apiKeyHeaderKey, timeout, defaultCompletionModel, defaultChatCompletionModel, {
-			...defaultHeaders,
-			...headers,
-		});
+export class HuggingFaceAPI implements CompletionProvider {
+	private providerInfo: ProviderInfo;
+	private apicaller: APICaller;
+	constructor() {
+		this.apicaller = new APICaller(
+			huggingfaceProviderInfo.defaultOrigin,
+			huggingfaceProviderInfo.apiKey,
+			huggingfaceProviderInfo.apiKeyHeaderKey,
+			huggingfaceProviderInfo.timeout,
+			huggingfaceProviderInfo.defaultHeaders
+		);
+		this.providerInfo = huggingfaceProviderInfo;
+	}
+
+	getProviderInfo(): ProviderInfo {
+		return this.providerInfo;
 	}
 
 	async getModelType(model: string) {
 		const requestConfig: AxiosRequestConfig = {
-			url: '/models/' + model,
+			url: `${this.providerInfo.chatCompletionPathPrefix}/${model}`,
 			method: 'GET',
 		};
-		const data = await this.request(requestConfig);
+		const data = await this.apicaller.request(requestConfig);
 		if (typeof data !== 'object' || data === null) {
 			throw new Error('Invalid data response. Expected an object.');
 		}
@@ -45,9 +39,6 @@ export class HuggingFaceAPI extends ProviderAPI implements CompletionProvider {
 			}
 		}
 		return 'completion';
-	}
-	async completion(input: CompletionRequest): Promise<any> {
-		return this.chatCompletion(input);
 	}
 
 	// eslint-disable-next-line @typescript-eslint/naming-convention
@@ -84,7 +75,7 @@ export class HuggingFaceAPI extends ProviderAPI implements CompletionProvider {
 		return { text, generated_responses, past_user_inputs };
 	}
 
-	async chatCompletion(input: CompletionRequest): Promise<any> {
+	async completion(input: CompletionRequest): Promise<any> {
 		if (!input.messages) {
 			throw Error('No input messages found');
 		}
@@ -96,7 +87,7 @@ export class HuggingFaceAPI extends ProviderAPI implements CompletionProvider {
 			max_length: input.maxTokens ? input.maxTokens : 4096,
 			temperature: input.temperature ? input.temperature : 0.1,
 			// eslint-disable-next-line @typescript-eslint/naming-convention
-			max_time: input.timeout ? input.timeout : this.timeout,
+			max_time: input.timeout ? input.timeout : this.providerInfo.timeout,
 		};
 
 		if (input.additionalParameters) {
@@ -132,11 +123,11 @@ export class HuggingFaceAPI extends ProviderAPI implements CompletionProvider {
 		}
 
 		const requestConfig: AxiosRequestConfig = {
-			url: '/models/' + input.model,
+			url: `${this.providerInfo.chatCompletionPathPrefix}/${input.model}`,
 			method: 'POST',
 			data: request,
 		};
-		const data = await this.request(requestConfig);
+		const data = await this.apicaller.request(requestConfig);
 		const fullResponse = data;
 		if (typeof data !== 'object' || data === null) {
 			throw new Error('Invalid data response. Expected an object.' + data);
@@ -156,18 +147,6 @@ export class HuggingFaceAPI extends ProviderAPI implements CompletionProvider {
 		messages: Array<ChatCompletionRequestMessage> | null,
 		inputParams?: { [key: string]: any }
 	): CompletionRequest {
-		return getCompletionRequest(this.defaultChatCompletionModel, prompt, messages, inputParams);
+		return getCompletionRequest(this.providerInfo.defaultModel, prompt, messages, inputParams);
 	}
-}
-
-export function getHuggingFaceProvider(): CompletionProvider {
-	// Default values for Hugging Face Provider
-	const apiKey = '';
-	const timeout = 120;
-	const defaultCompletionModel = 'bigcode/starcoder2-15b';
-	const defaultChatCompletionModel = 'deepseek-ai/deepseek-coder-1.3b-instruct';
-	const defaultOrigin = 'https://api-inference.huggingface.co';
-
-	log.info('HuggingFace API provider initialized');
-	return new HuggingFaceAPI(apiKey, timeout, defaultCompletionModel, defaultChatCompletionModel, defaultOrigin);
 }

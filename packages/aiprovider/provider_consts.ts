@@ -74,7 +74,7 @@ export const googleProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	chatCompletionPathPrefix: '/v1beta',
 	defaultTemperature: 0.1,
 	descriptions: {
-		apiKey: 'Your googlegl API key.',
+		apiKey: 'Your google generative AI API key.',
 		engine: 'The engine to be used for processing.',
 		defaultOrigin:
 			'Default origin to use for requests. This can be used to talk to any server that serves a compatible API',
@@ -100,7 +100,7 @@ export const huggingfaceProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	defaultHeaders: {
 		'content-type': 'application/json',
 	},
-	chatCompletionPathPrefix: '/models/',
+	chatCompletionPathPrefix: '/models',
 	defaultTemperature: 0.1,
 	modelPrefixes: ['microsoft/', 'replit/', 'Salesforce/', 'bigcode/', 'deepseek-ai/'],
 	descriptions: {

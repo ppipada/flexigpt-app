@@ -115,7 +115,7 @@ const ChatScreen: FC = () => {
 					/>
 				</div>
 			</div>
-			<div className="flex flex-col items-center w-full flex-grow bg-transparent overflow-hidden mt-12">
+			<div className="flex flex-col items-center w-full flex-grow bg-transparent overflow-hidden mt-16">
 				<h1 className="text-xl font-semibold text-center flex my-4">{chat.title}</h1>
 				<div
 					className="w-full flex-grow flex justify-center overflow-y-auto"

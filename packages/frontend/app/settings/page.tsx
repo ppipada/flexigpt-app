@@ -5,41 +5,41 @@ import { getAllSettings, setSetting } from '@/api/settings';
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
 import AISettingsCard from '@/settings/ai_settings';
-import { ALL_AI_PROVIDERS } from 'aiprovider';
+import { ALL_AI_PROVIDERS, ProviderName, providerSet } from 'aiprovider';
 import { FC, useEffect, useState } from 'react';
 
 const SettingsPage: FC = () => {
-	const [defaultProvider, setDefaultProvider] = useState('');
+	const [defaultProvider, setDefaultProvider] = useState(providerSet.getDefaultProvider());
 	const [aiSettings, setAISettings] = useState({
-		openai: {
+		[ProviderName.ANTHROPIC]: {
 			apiKey: '',
 			defaultModel: '',
 			defaultOrigin: '',
 			defaultTemperature: 0.1,
 			additionalSettings: {},
 		},
-		anthropic: {
+		[ProviderName.GOOGLE]: {
 			apiKey: '',
 			defaultModel: '',
 			defaultOrigin: '',
 			defaultTemperature: 0.1,
 			additionalSettings: {},
 		},
-		huggingface: {
+		[ProviderName.HUGGINGFACE]: {
 			apiKey: '',
 			defaultModel: '',
 			defaultOrigin: '',
 			defaultTemperature: 0.1,
 			additionalSettings: {},
 		},
-		googlegl: {
+		[ProviderName.LLAMACPP]: {
 			apiKey: '',
 			defaultModel: '',
 			defaultOrigin: '',
 			defaultTemperature: 0.1,
 			additionalSettings: {},
 		},
-		llamacpp: {
+		[ProviderName.OPENAI]: {
 			apiKey: '',
 			defaultModel: '',
 			defaultOrigin: '',
@@ -52,20 +52,23 @@ const SettingsPage: FC = () => {
 		(async () => {
 			const settings = await getAllSettings();
 			if (settings) {
-				setDefaultProvider(settings.app.defaultProvider);
+				const defaultProvider = settings.app.defaultProvider as ProviderName;
+				setDefaultProvider(defaultProvider);
+				providerSet.setDefaultProvider(defaultProvider);
 				setAISettings({
-					openai: settings.openai,
-					anthropic: settings.anthropic,
-					huggingface: settings.huggingface,
-					googlegl: settings.googlegl,
-					llamacpp: settings.llamacpp,
+					[ProviderName.ANTHROPIC]: settings[ProviderName.ANTHROPIC],
+					[ProviderName.GOOGLE]: settings[ProviderName.GOOGLE],
+					[ProviderName.HUGGINGFACE]: settings[ProviderName.HUGGINGFACE],
+					[ProviderName.LLAMACPP]: settings[ProviderName.LLAMACPP],
+					[ProviderName.OPENAI]: settings[ProviderName.OPENAI],
 				});
 			}
 		})();
 	}, []);
 
-	const handleDefaultProviderChange = (value: string) => {
+	const handleDefaultProviderChange = (value: ProviderName) => {
 		setDefaultProvider(value);
+		providerSet.setDefaultProvider(defaultProvider);
 		setSetting('app.defaultProvider', value);
 	};
 
@@ -89,11 +92,11 @@ const SettingsPage: FC = () => {
 				app: {
 					defaultProvider,
 				},
-				openai: aiSettings.openai,
-				anthropic: aiSettings.anthropic,
-				huggingface: aiSettings.huggingface,
-				googlegl: aiSettings.googlegl,
-				llamacpp: aiSettings.llamacpp,
+				[ProviderName.ANTHROPIC]: aiSettings.anthropic,
+				[ProviderName.GOOGLE]: aiSettings.google,
+				[ProviderName.HUGGINGFACE]: aiSettings.huggingface,
+				[ProviderName.LLAMACPP]: aiSettings.llamacpp,
+				[ProviderName.OPENAI]: aiSettings.openai,
 			},
 			null,
 			2
@@ -142,7 +145,7 @@ const SettingsPage: FC = () => {
 								<select
 									className="select select-bordered col-span-9 w-full rounded-lg min-h-2 h-10"
 									value={defaultProvider}
-									onChange={e => handleDefaultProviderChange(e.target.value)}
+									onChange={e => handleDefaultProviderChange(e.target.value as ProviderName)}
 								>
 									{Object.keys(ALL_AI_PROVIDERS).map(provider => (
 										<option key={provider} value={provider}>
@@ -153,13 +156,13 @@ const SettingsPage: FC = () => {
 							</div>
 						</div>
 						<div className="w-full flex-1 pb-4">
-							{Object.keys(aiSettings).map(provider => {
-								const typedProvider = provider as keyof typeof aiSettings;
+							{Object.keys(aiSettings).map(providerStr => {
+								const typedProvider = providerStr as keyof typeof aiSettings;
 								const oneSettings = aiSettings[typedProvider];
 								return (
 									<AISettingsCard
-										key={provider}
-										provider={provider}
+										key={typedProvider}
+										provider={typedProvider}
 										settings={oneSettings}
 										onChange={(key, value) => handleAISettingsChange(typedProvider, key, value)}
 										onSave={(key, value) => handleSaveAISettings(typedProvider, key, value)}

@@ -1,9 +1,9 @@
-import { getAIProviderInfo } from 'aiprovider';
+import { ProviderName, providerSet } from 'aiprovider';
 import { FC } from 'react';
 // import AdditionalSettings from './AdditionalSettings';
 
 interface AISettingsCardProps {
-	provider: string;
+	provider: ProviderName;
 	settings: any;
 	onChange: (key: string, value: any) => void;
 	onSave: (key: string, value: any) => void;
@@ -42,7 +42,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	onAdditionalSettingsChange,
 }) => {
-	const providerinfo = getAIProviderInfo(provider);
+	const providerinfo = providerSet.getProviderAPI(provider).getProviderInfo();
 
 	return (
 		<div className="bg-base-100 rounded-lg shadow-lg p-4 mb-4">

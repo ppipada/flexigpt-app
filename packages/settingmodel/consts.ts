@@ -33,7 +33,7 @@ export const defaultSettingsData: SettingsSchema = {
 		defaultTemperature: huggingfaceProviderInfo.defaultTemperature,
 		additionalSettings: huggingfaceProviderInfo.additionalSettings,
 	},
-	googlegl: {
+	google: {
 		apiKey: googleProviderInfo.apiKey,
 		defaultModel: googleProviderInfo.defaultModel,
 		defaultOrigin: googleProviderInfo.defaultOrigin,
@@ -53,6 +53,6 @@ export const sensitiveKeys = [
 	'openai.apiKey',
 	'anthropic.apiKey',
 	'huggingface.apiKey',
-	'googlegl.apiKey',
+	'google.apiKey',
 	'llamacpp.apiKey',
 ];

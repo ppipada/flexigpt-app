@@ -1,37 +1,29 @@
 import { AxiosRequestConfig } from 'axios';
-import { log } from 'logger';
-import { ProviderAPI } from './chatapibase/api_fetch';
-import { ChatCompletionRequestMessage, CompletionProvider, CompletionRequest } from './chatapibase/chat_types';
+import { APICaller } from './chatapibase/api_fetch';
+import { ChatCompletionRequestMessage, CompletionRequest } from './chatapibase/chat_types';
 import { getCompletionRequest } from './chatapibase/chat_utils';
+import { anthropicProviderInfo } from './provider_consts';
+import { CompletionProvider, ProviderInfo } from './provider_types';
 
-export class AnthropicAPI extends ProviderAPI implements CompletionProvider {
-	constructor(
-		apiKey: string,
-		timeout: number,
-		defaultCompletionModel: string,
-		defaultChatCompletionModel: string,
-		origin: string,
-		headers: Record<string, string> = {}
-	) {
-		const apiKeyHeaderKey = 'x-api-key';
-		const defaultHeaders: Record<string, string> = {
-			accept: 'application/json',
-			// eslint-disable-next-line @typescript-eslint/naming-convention
-			'anthropic-version': '2023-06-01',
-			// eslint-disable-next-line @typescript-eslint/naming-convention
-			'content-type': 'application/json',
-		};
-		super(origin, apiKey, apiKeyHeaderKey, timeout, defaultCompletionModel, defaultChatCompletionModel, {
-			...defaultHeaders,
-			...headers,
-		});
+export class AnthropicAPI implements CompletionProvider {
+	private providerInfo: ProviderInfo;
+	private apicaller: APICaller;
+	constructor() {
+		this.apicaller = new APICaller(
+			anthropicProviderInfo.defaultOrigin,
+			anthropicProviderInfo.apiKey,
+			anthropicProviderInfo.apiKeyHeaderKey,
+			anthropicProviderInfo.timeout,
+			anthropicProviderInfo.defaultHeaders
+		);
+		this.providerInfo = anthropicProviderInfo;
+	}
+
+	getProviderInfo(): ProviderInfo {
+		return this.providerInfo;
 	}
 
 	async completion(input: CompletionRequest): Promise<any> {
-		return this.chatCompletion(input);
-	}
-
-	async chatCompletion(input: CompletionRequest): Promise<any> {
 		// return tempCodeString;
 		// let messages: ChatCompletionRequestMessage[] = [{"role": "user", "content": "Hello!"}];
 		if (!input.messages) {
@@ -62,11 +54,11 @@ export class AnthropicAPI extends ProviderAPI implements CompletionProvider {
 
 		// eslint-disable-next-line prefer-const
 		let requestConfig: AxiosRequestConfig = {
-			url: '/v1/messages',
+			url: this.providerInfo.chatCompletionPathPrefix,
 			method: 'POST',
 			data: request,
 		};
-		const data = await this.request(requestConfig);
+		const data = await this.apicaller.request(requestConfig);
 		if (typeof data !== 'object' || data === null) {
 			throw new Error('Invalid data response. Expected an object.');
 		}
@@ -84,18 +76,6 @@ export class AnthropicAPI extends ProviderAPI implements CompletionProvider {
 		messages: Array<ChatCompletionRequestMessage> | null,
 		inputParams?: { [key: string]: any }
 	): CompletionRequest {
-		return getCompletionRequest(this.defaultChatCompletionModel, prompt, messages, inputParams);
+		return getCompletionRequest(this.providerInfo.defaultModel, prompt, messages, inputParams);
 	}
-}
-
-export function getDefaultAnthropicProvider(): CompletionProvider {
-	// Default values for Anthropic Provider
-	const apiKey = '';
-	const timeout = 120;
-	const defaultCompletionModel = 'claude-3-haiku-20240307';
-	const defaultChatCompletionModel = 'claude-3-haiku-20240307';
-	const defaultOrigin = 'https://api.anthropic.com';
-
-	log.info('Anthropic API provider initialized');
-	return new AnthropicAPI(apiKey, timeout, defaultCompletionModel, defaultChatCompletionModel, defaultOrigin);
 }

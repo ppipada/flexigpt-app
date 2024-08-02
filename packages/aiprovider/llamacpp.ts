@@ -1,35 +1,27 @@
 import { AxiosRequestConfig } from 'axios';
 import { log } from 'logger';
-import { ProviderAPI } from './chatapibase/api_fetch';
-import {
-	ChatCompletionRequestMessage,
-	ChatCompletionRoleEnum,
-	CompletionProvider,
-	CompletionRequest,
-} from './chatapibase/chat_types';
+import { APICaller } from './chatapibase/api_fetch';
+import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chatapibase/chat_types';
 import { getCompletionRequest } from './chatapibase/chat_utils';
+import { llamacppProviderInfo } from './provider_consts';
+import { CompletionProvider, ProviderInfo } from './provider_types';
 
-export class LlamaCPPAPIProvider extends ProviderAPI implements CompletionProvider {
-	constructor(
-		apiKey: string,
-		timeout: number,
-		defaultCompletionModel: string,
-		defaultChatCompletionModel: string,
-		origin: string,
-		headers: Record<string, string> = {}
-	) {
-		let apiKeyHeaderKey = '';
-		if (apiKey !== '') {
-			apiKeyHeaderKey = 'Authorization';
-		}
-		const defaultHeaders: Record<string, string> = {
-			// eslint-disable-next-line @typescript-eslint/naming-convention
-			'content-type': 'application/json',
-		};
-		super(origin, apiKey, apiKeyHeaderKey, timeout, defaultCompletionModel, defaultChatCompletionModel, {
-			...defaultHeaders,
-			...headers,
-		});
+export class LlamaCPPAPI implements CompletionProvider {
+	private providerInfo: ProviderInfo;
+	private apicaller: APICaller;
+	constructor() {
+		this.apicaller = new APICaller(
+			llamacppProviderInfo.defaultOrigin,
+			llamacppProviderInfo.apiKey,
+			llamacppProviderInfo.apiKeyHeaderKey,
+			llamacppProviderInfo.timeout,
+			llamacppProviderInfo.defaultHeaders
+		);
+		this.providerInfo = llamacppProviderInfo;
+	}
+
+	getProviderInfo(): ProviderInfo {
+		return this.providerInfo;
 	}
 
 	convertChat(
@@ -57,11 +49,7 @@ export class LlamaCPPAPIProvider extends ProviderAPI implements CompletionProvid
 		return prompt;
 	}
 
-	async completion(input: CompletionRequest) {
-		return this.chatCompletion(input);
-	}
-
-	async chatCompletion(input: CompletionRequest) {
+	async completion(input: CompletionRequest): Promise<any> {
 		// return tempCodeString;
 		// let messages: ChatCompletionRequestMessage[] = [{"role": "user", "content": "Hello!"}];
 		if (!input.messages) {
@@ -91,12 +79,12 @@ export class LlamaCPPAPIProvider extends ProviderAPI implements CompletionProvid
 		}
 
 		const requestConfig: AxiosRequestConfig = {
-			url: '/completion',
+			url: this.providerInfo.chatCompletionPathPrefix,
 			method: 'POST',
 			data: request,
 		};
 		try {
-			const data = await this.request(requestConfig);
+			const data = await this.apicaller.request(requestConfig);
 			const fullResponse = data;
 			if (typeof data !== 'object' || data === null) {
 				throw new Error('Invalid data response. Expected an object.' + data);
@@ -117,18 +105,6 @@ export class LlamaCPPAPIProvider extends ProviderAPI implements CompletionProvid
 		messages: Array<ChatCompletionRequestMessage> | null,
 		inputParams?: { [key: string]: any }
 	): CompletionRequest {
-		return getCompletionRequest(this.defaultChatCompletionModel, prompt, messages, inputParams);
+		return getCompletionRequest(this.providerInfo.defaultModel, prompt, messages, inputParams);
 	}
-}
-
-export function getDefaultLlamaCPPAPIProvider(): CompletionProvider {
-	// Default values for LlamaCPP API Provider
-	const apiKey = '';
-	const timeout = 120;
-	const defaultCompletionModel = 'llama2';
-	const defaultChatCompletionModel = 'llama2';
-	const defaultOrigin = 'http://127.0.0.1:8080';
-
-	log.info('LlamaCPP API provider initialized');
-	return new LlamaCPPAPIProvider(apiKey, timeout, defaultCompletionModel, defaultChatCompletionModel, defaultOrigin);
 }

@@ -30,13 +30,11 @@ export function filterSensitiveInfoFromJsonString(jsonString: string): string {
 	return JSON.stringify(filteredObj);
 }
 
-export class ProviderAPI {
+export class APICaller {
 	origin: string;
 	apiKey: string;
 	apiKeyHeaderKey: string;
 	timeout: number;
-	defaultCompletionModel: string;
-	defaultChatCompletionModel: string;
 	headers: Record<string, string>;
 	logRequests = false;
 	private axiosInstance: AxiosInstance;
@@ -46,16 +44,12 @@ export class ProviderAPI {
 		apiKey: string,
 		apiKeyHeaderKey: string,
 		timeout: number,
-		defaultCompletionModel: string,
-		defaultChatCompletionModel: string,
 		headers: Record<string, string> = {}
 	) {
 		this.origin = origin;
 		this.apiKeyHeaderKey = apiKeyHeaderKey;
 		this.apiKey = apiKey;
 		this.timeout = timeout;
-		this.defaultCompletionModel = defaultCompletionModel;
-		this.defaultChatCompletionModel = defaultChatCompletionModel;
 		this.headers = headers;
 
 		this.axiosInstance = axios.create();
@@ -74,32 +68,6 @@ export class ProviderAPI {
 				}
 			);
 		}
-	}
-
-	// Method to set attribute values
-	public setAttribute(key: string, value: any): void {
-		// Check if the attribute exists in the class
-		if (!(key in this)) {
-			log.error(`Attribute '${key}' does not exist in the class.`);
-			return;
-		}
-		// Check if the value is not null or undefined
-		if (value === null || value === undefined) {
-			log.error('Value cannot be null or undefined.');
-			return;
-		}
-
-		// Check if the type of the value matches the type of the attribute in the class
-		const currentType = typeof this[key as keyof this];
-		const valueType = typeof value;
-
-		if (currentType !== valueType) {
-			log.error(`Type mismatch for ${key}: Expected ${currentType}, but got ${valueType}.`);
-			return;
-		}
-
-		// Set the value
-		this[key as keyof this] = value;
 	}
 
 	// Function to generate the cURL command

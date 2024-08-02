@@ -1,37 +1,31 @@
 import { AxiosRequestConfig } from 'axios';
-import { log } from 'logger';
-import { ProviderAPI } from './chatapibase/api_fetch';
-import {
-	ChatCompletionRequestMessage,
-	ChatCompletionRoleEnum,
-	CompletionProvider,
-	CompletionRequest,
-} from './chatapibase/chat_types';
+import { APICaller } from './chatapibase/api_fetch';
+import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chatapibase/chat_types';
 import { getCompletionRequest } from './chatapibase/chat_utils';
+import { googleProviderInfo } from './provider_consts';
+import { CompletionProvider, ProviderInfo } from './provider_types';
 
 interface Content {
 	role: string;
 	parts: { text: string }[];
 }
 
-export class GoogleGenerativeLanguageAPI extends ProviderAPI implements CompletionProvider {
-	constructor(
-		apiKey: string,
-		timeout: number,
-		defaultCompletionModel: string,
-		defaultChatCompletionModel: string,
-		origin: string,
-		headers: Record<string, string> = {}
-	) {
-		const apiKeyHeaderKey = '';
-		const defaultHeaders: Record<string, string> = {
-			// eslint-disable-next-line @typescript-eslint/naming-convention
-			'content-type': 'application/json',
-		};
-		super(origin, apiKey, apiKeyHeaderKey, timeout, defaultCompletionModel, defaultChatCompletionModel, {
-			...defaultHeaders,
-			...headers,
-		});
+export class GoogleAPI implements CompletionProvider {
+	private providerInfo: ProviderInfo;
+	private apicaller: APICaller;
+	constructor() {
+		this.apicaller = new APICaller(
+			googleProviderInfo.defaultOrigin,
+			googleProviderInfo.apiKey,
+			googleProviderInfo.apiKeyHeaderKey,
+			googleProviderInfo.timeout,
+			googleProviderInfo.defaultHeaders
+		);
+		this.providerInfo = googleProviderInfo;
+	}
+
+	getProviderInfo(): ProviderInfo {
+		return this.providerInfo;
 	}
 
 	convertMessages(messages: ChatCompletionRequestMessage[]): Content[] {
@@ -56,11 +50,7 @@ export class GoogleGenerativeLanguageAPI extends ProviderAPI implements Completi
 		});
 	}
 
-	async completion(input: CompletionRequest) {
-		return this.chatCompletion(input);
-	}
-
-	async chatCompletion(input: CompletionRequest) {
+	async completion(input: CompletionRequest): Promise<any> {
 		// return tempCodeString;
 		// let messages: ChatCompletionRequestMessage[] = [{"role": "user", "content": "Hello!"}];
 		if (!input.messages) {
@@ -87,14 +77,14 @@ export class GoogleGenerativeLanguageAPI extends ProviderAPI implements Completi
 			generationConfig: generateConfig,
 		};
 
-		const modelpath = `/v1/models/${input.model}:generateContent?key=${this.apiKey}`;
+		const modelpath = `${this.providerInfo.chatCompletionPathPrefix}/${input.model}:generateContent?key=${this.providerInfo.apiKey}`;
 		const requestConfig: AxiosRequestConfig = {
 			url: modelpath,
 			method: 'POST',
 			data: request,
 		};
 
-		const data = await this.request(requestConfig);
+		const data = await this.apicaller.request(requestConfig);
 		if (typeof data !== 'object' || data === null) {
 			throw new Error('Invalid data response. Expected an object.' + data);
 		}
@@ -118,24 +108,6 @@ export class GoogleGenerativeLanguageAPI extends ProviderAPI implements Completi
 		messages: Array<ChatCompletionRequestMessage> | null,
 		inputParams?: { [key: string]: any }
 	): CompletionRequest {
-		return getCompletionRequest(this.defaultChatCompletionModel, prompt, messages, inputParams);
+		return getCompletionRequest(this.providerInfo.defaultModel, prompt, messages, inputParams);
 	}
-}
-
-export function getGoogleGenerativeLanguageProvider(): CompletionProvider {
-	// Default values for Google Generative Language Provider
-	const apiKey = '';
-	const timeout = 120;
-	const defaultCompletionModel = 'gemini-1.0-pro';
-	const defaultChatCompletionModel = 'gemini-1.0-pro';
-	const defaultOrigin = 'https://generativelanguage.googleapis.com';
-
-	log.info('GoogleGenerativeLanguage API provider initialized');
-	return new GoogleGenerativeLanguageAPI(
-		apiKey,
-		timeout,
-		defaultCompletionModel,
-		defaultChatCompletionModel,
-		defaultOrigin
-	);
 }

@@ -1,59 +1,50 @@
-import { log } from 'logger';
-import { CompletionProvider } from './chatapibase/chat_types';
-import { ALL_AI_PROVIDERS } from './provider_consts';
-import { ProviderInfo, ProviderName } from './provider_types';
+import { AnthropicAPI } from './anthropic';
+import { GoogleAPI } from './google';
+import { HuggingFaceAPI } from './huggingface';
+import { LlamaCPPAPI } from './llamacpp';
+import { OpenAIAPI } from './openai';
+import { ALL_MODEL_INFO, huggingfaceProviderInfo } from './provider_consts';
+import { CompletionProvider, ModelName, ProviderName } from './provider_types';
 
 export class ProviderSet {
-	public defaultProvider: string;
-	public providers: { [key: string]: CompletionProvider } = {};
+	private defaultProvider: ProviderName;
+	private providers: { [key in ProviderName]: CompletionProvider };
 
-	constructor(defaultProvider: string) {
+	constructor(defaultProvider: ProviderName) {
 		this.defaultProvider = defaultProvider;
+		this.providers = {
+			[ProviderName.ANTHROPIC]: new AnthropicAPI(),
+			[ProviderName.GOOGLE]: new GoogleAPI(),
+			[ProviderName.HUGGINGFACE]: new HuggingFaceAPI(),
+			[ProviderName.LLAMACPP]: new LlamaCPPAPI(),
+			[ProviderName.OPENAI]: new OpenAIAPI(),
+		};
 	}
 
-	public addProvider(name: string, provider: CompletionProvider | null) {
-		if (!provider) {
-			throw new Error('Provider cannot be null');
-		}
-		this.providers[name] = provider;
-		if (!this.defaultProvider || this.defaultProvider === '') {
-			this.defaultProvider = name;
-		}
+	getDefaultProvider(): ProviderName {
+		return this.defaultProvider;
 	}
 
-	public setAttribute(name: string, attrName: string, attrValue: any) {
-		if (!this.providers[name]) {
-			log.error('No provider found for name:', name);
-			return;
-		}
-		this.providers[name].setAttribute(attrName, attrValue);
+	setDefaultProvider(provider: ProviderName) {
+		this.defaultProvider = provider;
 	}
 
-	public getProvider(model: string, providerName = ''): CompletionProvider {
-		if (providerName && providerName !== '' && this.providers[providerName]) {
-			return this.providers[providerName];
-		}
-		if (!model || model === '') {
-			if (this.defaultProvider && this.defaultProvider !== '') {
-				return this.providers[this.defaultProvider];
-			}
-			throw new Error('No default provider and No model as input');
+	getProviderAPI(provider: ProviderName): CompletionProvider {
+		return this.providers[provider];
+	}
+
+	getProviderAPIUsingModelStr(model: string): CompletionProvider | undefined {
+		if (model in ALL_MODEL_INFO) {
+			return this.providers[ALL_MODEL_INFO[model as ModelName].provider];
 		}
 
-		const openAIModels = ['text-davinci-003, text-davinci-002, davinci, curie, babbage, ada', 'gpt-4', 'gpt-3.5-turbo'];
-		if (openAIModels.some(search => model.startsWith(search)) && this.providers.openai) {
-			return this.providers.openai;
-		}
-		const anthropicModels = ['claude'];
-		if (anthropicModels.some(search => model.startsWith(search)) && this.providers.anthropic) {
-			return this.providers.anthropic;
-		}
-		const googleglModels = ['bison', 'gecko'];
-		if (googleglModels.some(search => model.includes(search)) && this.providers.googlegl) {
-			return this.providers.googlegl;
-		}
-		const huggingfaceModels = ['microsoft/', 'replit/', 'Salesforce/', 'bigcode/', 'deepseek-ai/'];
-		if (huggingfaceModels.some(search => model.startsWith(search)) && this.providers.huggingface) {
+		// didnt find the model name, lets try prefixes
+		const huggingfaceModelPrefixes = huggingfaceProviderInfo.modelPrefixes;
+		if (
+			huggingfaceModelPrefixes &&
+			huggingfaceModelPrefixes.some(search => model.startsWith(search)) &&
+			this.providers.huggingface
+		) {
 			return this.providers.huggingface;
 		}
 		// No provider was given and input model didnt match any known models, but has slash in it, so assume its a huggingface model
@@ -61,17 +52,8 @@ export class ProviderSet {
 			return this.providers.huggingface;
 		}
 
-		if (this.defaultProvider && this.defaultProvider !== '') {
-			return this.providers[this.defaultProvider];
-		}
-		throw new Error('No default provider and No provider found for model ' + model);
+		return undefined;
 	}
 }
 
-export function getAIProviderInfo(providerName: string): ProviderInfo | undefined {
-	// Ensure the provided name is of type ProviderName
-	if (Object.values(ProviderName).includes(providerName as ProviderName)) {
-		return ALL_AI_PROVIDERS[providerName as ProviderName];
-	}
-	return undefined;
-}
+export const providerSet = new ProviderSet(ProviderName.OPENAI);

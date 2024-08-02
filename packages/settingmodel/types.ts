@@ -23,7 +23,7 @@ export type SettingsSchema = {
 		defaultOrigin: string;
 		additionalSettings: Record<string, any>;
 	};
-	googlegl: {
+	google: {
 		apiKey: string;
 		defaultModel: string;
 		defaultTemperature: number;

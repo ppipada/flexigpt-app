@@ -64,13 +64,3 @@ export interface CompletionRequest {
 	 */
 	additionalParameters?: Record<string, any> | null;
 }
-
-export interface CompletionProvider {
-	completion(input: CompletionRequest): Promise<{ fullResponse: any; data: string | null }>;
-	checkAndPopulateCompletionParams(
-		prompt: string | null,
-		messages: Array<ChatCompletionRequestMessage> | null,
-		inputParams?: { [key: string]: any }
-	): CompletionRequest;
-	setAttribute(key: string, value: any): void;
-}
