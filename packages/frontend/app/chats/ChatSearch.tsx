@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, useEffect, useState } from 'react';
+import { ChangeEvent, FC, KeyboardEvent, useEffect, useState } from 'react';
 import { FiSearch } from 'react-icons/fi';
 
 // Define the type for search items
@@ -17,6 +17,7 @@ export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSele
 	const [query, setQuery] = useState('');
 	const [items, setItems] = useState<SearchItem[]>([]);
 	const [showDropdown, setShowDropdown] = useState(false);
+	const [focusedIndex, setFocusedIndex] = useState(-1);
 
 	useEffect(() => {
 		setItems(initialItems);
@@ -29,6 +30,7 @@ export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSele
 		if (value) {
 			const results = await onSearch(value);
 			setItems(results);
+			setFocusedIndex(-1); // Reset focus index when search results change
 		} else {
 			setItems(initialItems);
 		}
@@ -36,7 +38,7 @@ export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSele
 
 	const handleItemClick = (item: SearchItem) => {
 		onSelectConversation(item);
-		// setQuery(item.title);
+		setQuery(item.title);
 		setShowDropdown(false);
 	};
 
@@ -50,6 +52,20 @@ export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSele
 		setTimeout(() => setShowDropdown(false), 100);
 	};
 
+	const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === 'ArrowDown') {
+			setFocusedIndex(prevIndex => (prevIndex + 1) % items.length);
+		} else if (e.key === 'ArrowUp') {
+			setFocusedIndex(prevIndex => (prevIndex - 1 + items.length) % items.length);
+		} else if (e.key === 'Escape') {
+			setFocusedIndex(-1);
+		} else if (e.key === 'Enter') {
+			if (focusedIndex >= 0 && focusedIndex < items.length) {
+				handleItemClick(items[focusedIndex]);
+			}
+		}
+	};
+
 	return (
 		<div className="relative">
 			<div className="flex items-center bg-base-100 py-3 mx-0 rounded-2xl border">
@@ -60,6 +76,7 @@ export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSele
 					onChange={handleSearchChange}
 					onFocus={handleFocus}
 					onBlur={handleBlur}
+					onKeyDown={handleKeyDown}
 					placeholder="Search or load chats"
 					className="w-full bg-base-100 border-none outline-none"
 					style={{ fontSize: '14px' }}
@@ -72,9 +89,9 @@ export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSele
 				>
 					{items.map((item, index) => (
 						<li
-							key={index}
+							key={item.id}
 							onClick={() => handleItemClick(item)}
-							className="px-12 py-2 cursor-pointer hover:bg-base-100"
+							className={`px-12 py-2 cursor-pointer hover:bg-base-100 ${index === focusedIndex ? 'bg-base-100' : ''}`}
 						>
 							{item.title}
 						</li>
