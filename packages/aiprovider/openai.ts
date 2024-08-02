@@ -2,7 +2,7 @@ import { AxiosRequestConfig } from 'axios';
 import { log } from 'logger';
 import { APICaller } from './api_fetch';
 import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chat_types';
-import { openaiProviderInfo } from './provider_consts';
+import { ALL_MODEL_INFO, openaiProviderInfo } from './provider_consts';
 import { CompletionProvider, ProviderInfo } from './provider_types';
 import { getCompletionRequest, unescapeChars } from './provider_utils';
 
@@ -35,8 +35,8 @@ export class OpenAIAPI implements CompletionProvider {
 		const request: Record<string, any> = {
 			model: input.model,
 			// eslint-disable-next-line @typescript-eslint/naming-convention
-			max_tokens: input.maxTokens ? input.maxTokens : 4096,
-			temperature: input.temperature ? input.temperature : 0.1,
+			max_tokens: input.maxOutputLength,
+			temperature: input.temperature,
 			stream: false,
 		};
 
@@ -117,10 +117,17 @@ export class OpenAIAPI implements CompletionProvider {
 	}
 
 	public checkAndPopulateCompletionParams(
-		prompt: string | null,
-		messages: Array<ChatCompletionRequestMessage> | null,
+		prompt: string,
+		messages?: Array<ChatCompletionRequestMessage>,
 		inputParams?: { [key: string]: any }
 	): CompletionRequest {
-		return getCompletionRequest(this.providerInfo.defaultModel, prompt, messages, inputParams);
+		return getCompletionRequest(
+			this.providerInfo.defaultModel,
+			prompt,
+			this.providerInfo.defaultTemperature,
+			ALL_MODEL_INFO[this.providerInfo.defaultModel].maxPromptLength,
+			messages,
+			inputParams
+		);
 	}
 }

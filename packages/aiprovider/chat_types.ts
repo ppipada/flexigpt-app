@@ -46,21 +46,20 @@ export interface CreateChatCompletionRequestFunctionCallOneOf {
 
 export interface CompletionRequest {
 	model: string;
-	messages?: Array<ChatCompletionRequestMessage> | null;
-	prompt?: string | null;
-	systemPrompt?: string | null;
-	limitContextLength?: number | null;
+	messages?: Array<ChatCompletionRequestMessage>;
+	temperature: number;
+	maxPromptLength: number;
+	stream: boolean;
+	systemPrompt?: string;
+	maxOutputLength?: number;
 	functions?: Array<ChatCompletionFunctions>;
 	functionCall?: CreateChatCompletionRequestFunctionCall;
-	suffix?: string | null;
-	maxTokens?: number | null;
-	temperature?: number | null;
-	stream?: boolean | null;
-	timeout?: number | null;
+	suffix?: string;
+	timeout?: number;
 	/**
 	 *  Map of additional parameters specific to the model.
 	 *  @type {Record<string, any>}
 	 *  Anything with non null/undefined value will be added to the request body
 	 */
-	additionalParameters?: Record<string, any> | null;
+	additionalParameters?: Record<string, any>;
 }

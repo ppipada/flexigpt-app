@@ -1,7 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import { APICaller } from './api_fetch';
 import { ChatCompletionRequestMessage, CompletionRequest } from './chat_types';
-import { anthropicProviderInfo } from './provider_consts';
+import { ALL_MODEL_INFO, anthropicProviderInfo } from './provider_consts';
 import { CompletionProvider, ProviderInfo } from './provider_types';
 import { getCompletionRequest } from './provider_utils';
 
@@ -34,8 +34,8 @@ export class AnthropicAPI implements CompletionProvider {
 			model: input.model,
 			messages: input.messages,
 			// eslint-disable-next-line @typescript-eslint/naming-convention
-			max_tokens: input.maxTokens ? input.maxTokens : 4096,
-			temperature: input.temperature ? input.temperature : 0.1,
+			max_tokens: input.maxOutputLength,
+			temperature: input.temperature,
 			stream: false,
 		};
 
@@ -72,10 +72,17 @@ export class AnthropicAPI implements CompletionProvider {
 	}
 
 	public checkAndPopulateCompletionParams(
-		prompt: string | null,
-		messages: Array<ChatCompletionRequestMessage> | null,
+		prompt: string,
+		messages?: Array<ChatCompletionRequestMessage>,
 		inputParams?: { [key: string]: any }
 	): CompletionRequest {
-		return getCompletionRequest(this.providerInfo.defaultModel, prompt, messages, inputParams);
+		return getCompletionRequest(
+			this.providerInfo.defaultModel,
+			prompt,
+			this.providerInfo.defaultTemperature,
+			ALL_MODEL_INFO[this.providerInfo.defaultModel].maxPromptLength,
+			messages,
+			inputParams
+		);
 	}
 }

@@ -1,7 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import { APICaller } from './api_fetch';
 import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chat_types';
-import { googleProviderInfo } from './provider_consts';
+import { ALL_MODEL_INFO, googleProviderInfo } from './provider_consts';
 import { CompletionProvider, ProviderInfo } from './provider_types';
 import { getCompletionRequest } from './provider_utils';
 
@@ -58,8 +58,8 @@ export class GoogleAPI implements CompletionProvider {
 		}
 
 		const generateConfig: Record<string, any> = {
-			maxOutputTokens: input.maxTokens ? input.maxTokens : 4096,
-			temperature: input.temperature ? input.temperature : 0.1,
+			maxOutputTokens: input.maxOutputLength,
+			temperature: input.temperature,
 		};
 
 		if (input.additionalParameters) {
@@ -104,10 +104,17 @@ export class GoogleAPI implements CompletionProvider {
 	}
 
 	public checkAndPopulateCompletionParams(
-		prompt: string | null,
-		messages: Array<ChatCompletionRequestMessage> | null,
+		prompt: string,
+		messages?: Array<ChatCompletionRequestMessage>,
 		inputParams?: { [key: string]: any }
 	): CompletionRequest {
-		return getCompletionRequest(this.providerInfo.defaultModel, prompt, messages, inputParams);
+		return getCompletionRequest(
+			this.providerInfo.defaultModel,
+			prompt,
+			this.providerInfo.defaultTemperature,
+			ALL_MODEL_INFO[this.providerInfo.defaultModel].maxPromptLength,
+			messages,
+			inputParams
+		);
 	}
 }

@@ -2,7 +2,7 @@ import { AxiosRequestConfig } from 'axios';
 import { log } from 'logger';
 import { APICaller } from './api_fetch';
 import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chat_types';
-import { llamacppProviderInfo } from './provider_consts';
+import { ALL_MODEL_INFO, llamacppProviderInfo } from './provider_consts';
 import { CompletionProvider, ProviderInfo } from './provider_types';
 import { getCompletionRequest } from './provider_utils';
 
@@ -60,8 +60,8 @@ export class LlamaCPPAPI implements CompletionProvider {
 		const request: Record<string, any> = {
 			prompt: this.convertChat(input.messages),
 			// eslint-disable-next-line @typescript-eslint/naming-convention
-			n_predict: input.maxTokens ? input.maxTokens : 1024,
-			temperature: input.temperature ? input.temperature : 0.1,
+			n_predict: input.maxOutputLength,
+			temperature: input.temperature,
 			stream: false,
 		};
 
@@ -101,10 +101,17 @@ export class LlamaCPPAPI implements CompletionProvider {
 	}
 
 	public checkAndPopulateCompletionParams(
-		prompt: string | null,
-		messages: Array<ChatCompletionRequestMessage> | null,
+		prompt: string,
+		messages?: Array<ChatCompletionRequestMessage>,
 		inputParams?: { [key: string]: any }
 	): CompletionRequest {
-		return getCompletionRequest(this.providerInfo.defaultModel, prompt, messages, inputParams);
+		return getCompletionRequest(
+			this.providerInfo.defaultModel,
+			prompt,
+			this.providerInfo.defaultTemperature,
+			ALL_MODEL_INFO[this.providerInfo.defaultModel].maxPromptLength,
+			messages,
+			inputParams
+		);
 	}
 }

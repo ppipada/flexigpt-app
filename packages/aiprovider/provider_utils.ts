@@ -55,72 +55,61 @@ export function filterMessagesByTokenCount(
 
 export function getCompletionRequest(
 	defaultModel: string,
-	prompt: string | null,
-	messages: Array<ChatCompletionRequestMessage> | null,
-	inputParams?: { [key: string]: any },
-	defaultTemprature: number = 0.1,
-	defaultMaxTokens: number = 2048,
-	defaultLimitContextLength: number = 2048
+	prompt: string,
+	defaultTemperature: number,
+	maxPromptLength: number,
+	prevMessages?: Array<ChatCompletionRequestMessage>,
+	inputParams?: { [key: string]: any }
 ): CompletionRequest {
 	if (!inputParams) {
 		inputParams = {};
 	}
+
+	const messages: Array<ChatCompletionRequestMessage> = prevMessages ? [...prevMessages] : [];
+	if (prompt) {
+		const message: ChatCompletionRequestMessage = {
+			role: ChatCompletionRoleEnum.user,
+			content: prompt,
+		};
+		messages.push(message);
+	}
+
 	const completionRequest: CompletionRequest = {
 		model: defaultModel,
-		prompt: prompt,
 		messages: messages,
-		temperature: defaultTemprature,
-		maxTokens: defaultMaxTokens,
-		limitContextLength: defaultLimitContextLength,
+		temperature: defaultTemperature,
 		stream: false,
+		maxPromptLength: maxPromptLength,
 	};
 
 	for (const key in inputParams) {
-		if (key === 'model' && typeof key === 'string') {
-			completionRequest.model = inputParams.model;
+		if (!Object.prototype.hasOwnProperty.call(inputParams, key)) {
 			continue;
 		}
-		if (key === 'maxTokens' && typeof key === 'number') {
-			completionRequest.maxTokens = inputParams.maxTokens;
-			continue;
-		}
-		if (key === 'temperature' && typeof key === 'number') {
-			completionRequest.temperature = inputParams.temperature;
-			continue;
-		}
-		if (key === 'limitContextLength' && typeof key === 'number') {
-			completionRequest.limitContextLength = inputParams.limitContextLength;
-			continue;
-		}
-		if (key === 'systemPrompt' && typeof key === 'string') {
-			completionRequest.systemPrompt = inputParams.systemPrompt;
-			continue;
-		}
-
-		completionRequest.additionalParameters = completionRequest.additionalParameters || {};
-		// eslint-disable-next-line no-prototype-builtins
-		if (!completionRequest.hasOwnProperty(key) && key !== 'provider') {
-			completionRequest.additionalParameters[key] = inputParams[key];
-		}
-	}
-
-	if (completionRequest.prompt) {
-		const message: ChatCompletionRequestMessage = {
-			role: ChatCompletionRoleEnum.user,
-			content: completionRequest.prompt,
-		};
-		if (!completionRequest.messages) {
-			completionRequest.messages = [message];
+		if (key === 'model' && typeof inputParams[key] === 'string') {
+			completionRequest.model = inputParams[key];
+		} else if (key === 'maxOutputLength' && typeof inputParams[key] === 'number') {
+			completionRequest.maxOutputLength = inputParams[key];
+		} else if (key === 'temperature' && typeof inputParams[key] === 'number') {
+			completionRequest.temperature = inputParams[key];
+		} else if (key === 'maxPromptLength' && typeof inputParams[key] === 'number') {
+			completionRequest.maxPromptLength = inputParams[key];
+		} else if (key === 'systemPrompt' && typeof inputParams[key] === 'string') {
+			completionRequest.systemPrompt = inputParams[key];
 		} else {
-			completionRequest.messages.push(message);
+			completionRequest.additionalParameters = completionRequest.additionalParameters || {};
+			if (key !== 'provider') {
+				completionRequest.additionalParameters[key] = inputParams[key];
+			}
 		}
-		completionRequest.prompt = null;
 	}
+
 	if (completionRequest.messages) {
 		completionRequest.messages = filterMessagesByTokenCount(
 			completionRequest.messages,
-			completionRequest.limitContextLength || 2048
+			completionRequest.maxPromptLength
 		);
 	}
+
 	return completionRequest;
 }

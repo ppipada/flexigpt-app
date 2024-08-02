@@ -1,7 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import { APICaller } from './api_fetch';
 import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chat_types';
-import { huggingfaceProviderInfo } from './provider_consts';
+import { ALL_MODEL_INFO, huggingfaceProviderInfo } from './provider_consts';
 import { CompletionProvider, ProviderInfo } from './provider_types';
 import { filterMessagesByTokenCount, getCompletionRequest } from './provider_utils';
 
@@ -84,8 +84,8 @@ export class HuggingFaceAPI implements CompletionProvider {
 
 		const parameters: Record<string, any> = {
 			// eslint-disable-next-line @typescript-eslint/naming-convention
-			max_length: input.maxTokens ? input.maxTokens : 4096,
-			temperature: input.temperature ? input.temperature : 0.1,
+			max_length: input.maxOutputLength,
+			temperature: input.temperature,
 			// eslint-disable-next-line @typescript-eslint/naming-convention
 			max_time: input.timeout ? input.timeout : this.providerInfo.timeout,
 		};
@@ -100,7 +100,7 @@ export class HuggingFaceAPI implements CompletionProvider {
 
 		if (modeltype !== 'chat') {
 			parameters.return_full_text = false;
-			if (!input.maxTokens || input.maxTokens > 250) {
+			if (!input.maxOutputLength || input.maxOutputLength > 250) {
 				parameters.max_length = 250;
 			}
 		}
@@ -143,10 +143,17 @@ export class HuggingFaceAPI implements CompletionProvider {
 	}
 
 	public checkAndPopulateCompletionParams(
-		prompt: string | null,
-		messages: Array<ChatCompletionRequestMessage> | null,
+		prompt: string,
+		messages?: Array<ChatCompletionRequestMessage>,
 		inputParams?: { [key: string]: any }
 	): CompletionRequest {
-		return getCompletionRequest(this.providerInfo.defaultModel, prompt, messages, inputParams);
+		return getCompletionRequest(
+			this.providerInfo.defaultModel,
+			prompt,
+			this.providerInfo.defaultTemperature,
+			ALL_MODEL_INFO[this.providerInfo.defaultModel].maxPromptLength,
+			messages,
+			inputParams
+		);
 	}
 }

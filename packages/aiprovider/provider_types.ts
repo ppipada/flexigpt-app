@@ -89,11 +89,11 @@ export class ProviderInfoImpl implements ProviderInfo {
 }
 
 export interface CompletionProvider {
+	getProviderInfo(): ProviderInfo;
 	completion(input: CompletionRequest): Promise<{ fullResponse: any; data: string | null }>;
 	checkAndPopulateCompletionParams(
-		prompt: string | null,
-		messages: Array<ChatCompletionRequestMessage> | null,
+		prompt: string,
+		messages?: Array<ChatCompletionRequestMessage>,
 		inputParams?: { [key: string]: any }
 	): CompletionRequest;
-	getProviderInfo(): ProviderInfo;
 }
