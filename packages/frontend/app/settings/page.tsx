@@ -7,46 +7,16 @@ import ThemeSwitch from '@/components/theme_switch';
 import AISettingsCard from '@/settings/ai_settings';
 import { ALL_AI_PROVIDERS, ProviderName, providerSet } from 'aiprovider';
 import { FC, useEffect, useState } from 'react';
+import { AISetting, defaultAISettings } from 'settingmodel';
+
+function updateProviderAISettings(provider: ProviderName, settings: AISetting) {
+	const providerAPI = providerSet.getProviderAPI(provider);
+	providerAPI.setAttribute(settings.apiKey, settings.defaultModel, settings.defaultTemperature, settings.defaultOrigin);
+}
 
 const SettingsPage: FC = () => {
 	const [defaultProvider, setDefaultProvider] = useState(providerSet.getDefaultProvider());
-	const [aiSettings, setAISettings] = useState({
-		[ProviderName.ANTHROPIC]: {
-			apiKey: '',
-			defaultModel: '',
-			defaultOrigin: '',
-			defaultTemperature: 0.1,
-			additionalSettings: {},
-		},
-		[ProviderName.GOOGLE]: {
-			apiKey: '',
-			defaultModel: '',
-			defaultOrigin: '',
-			defaultTemperature: 0.1,
-			additionalSettings: {},
-		},
-		[ProviderName.HUGGINGFACE]: {
-			apiKey: '',
-			defaultModel: '',
-			defaultOrigin: '',
-			defaultTemperature: 0.1,
-			additionalSettings: {},
-		},
-		[ProviderName.LLAMACPP]: {
-			apiKey: '',
-			defaultModel: '',
-			defaultOrigin: '',
-			defaultTemperature: 0.1,
-			additionalSettings: {},
-		},
-		[ProviderName.OPENAI]: {
-			apiKey: '',
-			defaultModel: '',
-			defaultOrigin: '',
-			defaultTemperature: 0.1,
-			additionalSettings: {},
-		},
-	});
+	const [aiSettings, setAISettings] = useState(defaultAISettings);
 
 	useEffect(() => {
 		(async () => {
@@ -54,14 +24,21 @@ const SettingsPage: FC = () => {
 			if (settings) {
 				const defaultProvider = settings.app.defaultProvider as ProviderName;
 				setDefaultProvider(defaultProvider);
-				providerSet.setDefaultProvider(defaultProvider);
+
 				setAISettings({
-					[ProviderName.ANTHROPIC]: settings[ProviderName.ANTHROPIC],
-					[ProviderName.GOOGLE]: settings[ProviderName.GOOGLE],
-					[ProviderName.HUGGINGFACE]: settings[ProviderName.HUGGINGFACE],
-					[ProviderName.LLAMACPP]: settings[ProviderName.LLAMACPP],
-					[ProviderName.OPENAI]: settings[ProviderName.OPENAI],
+					anthropic: settings[ProviderName.ANTHROPIC],
+					google: settings[ProviderName.GOOGLE],
+					huggingface: settings[ProviderName.HUGGINGFACE],
+					llamacpp: settings[ProviderName.LLAMACPP],
+					openai: settings[ProviderName.OPENAI],
 				});
+
+				providerSet.setDefaultProvider(defaultProvider);
+				updateProviderAISettings(ProviderName.ANTHROPIC, settings[ProviderName.ANTHROPIC]);
+				updateProviderAISettings(ProviderName.GOOGLE, settings[ProviderName.GOOGLE]);
+				updateProviderAISettings(ProviderName.HUGGINGFACE, settings[ProviderName.HUGGINGFACE]);
+				updateProviderAISettings(ProviderName.LLAMACPP, settings[ProviderName.LLAMACPP]);
+				updateProviderAISettings(ProviderName.OPENAI, settings[ProviderName.OPENAI]);
 			}
 		})();
 	}, []);
@@ -73,17 +50,22 @@ const SettingsPage: FC = () => {
 	};
 
 	const handleAISettingsChange = (provider: keyof typeof aiSettings, key: string, value: any) => {
-		setAISettings(prevState => ({
-			...prevState,
+		const updatedSettings = {
+			...aiSettings,
 			[provider]: {
-				...prevState[provider],
+				...aiSettings[provider],
 				[key]: value,
 			},
-		}));
+		};
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		setAISettings(prevState => {
+			return updatedSettings;
+		});
 	};
 
 	const handleSaveAISettings = async (provider: keyof typeof aiSettings, key: string, value: any) => {
 		await setSetting(`${provider}.${key}`, value);
+		updateProviderAISettings(provider, aiSettings[provider]);
 	};
 
 	const fetchValue = async (): Promise<string> => {
@@ -166,10 +148,6 @@ const SettingsPage: FC = () => {
 										settings={oneSettings}
 										onChange={(key, value) => handleAISettingsChange(typedProvider, key, value)}
 										onSave={(key, value) => handleSaveAISettings(typedProvider, key, value)}
-										additionalSettings={aiSettings[typedProvider].additionalSettings}
-										onAdditionalSettingsChange={value =>
-											handleAISettingsChange(typedProvider, 'additionalSettings', value)
-										}
 									/>
 								);
 							})}

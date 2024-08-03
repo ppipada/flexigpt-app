@@ -5,10 +5,62 @@ import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
 import { SearchItem } from '@/chats/chat_search';
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
+import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, providerSet } from 'aiprovider';
 
-import { Conversation, ConversationRoleEnum, initConversation, initConversationMessage } from 'conversationmodel';
+import {
+	Conversation,
+	ConversationMessage,
+	ConversationRoleEnum,
+	initConversation,
+	initConversationMessage,
+} from 'conversationmodel';
 // import { log } from 'logger';
 import { FC, createRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+const roleMap: Record<ConversationRoleEnum, ChatCompletionRoleEnum> = {
+	[ConversationRoleEnum.system]: ChatCompletionRoleEnum.system,
+	[ConversationRoleEnum.user]: ChatCompletionRoleEnum.user,
+	[ConversationRoleEnum.assistant]: ChatCompletionRoleEnum.assistant,
+	[ConversationRoleEnum.function]: ChatCompletionRoleEnum.function,
+	[ConversationRoleEnum.feedback]: ChatCompletionRoleEnum.user,
+};
+
+function convertConversationToChatMessages(
+	conversationMessages?: ConversationMessage[]
+): ChatCompletionRequestMessage[] {
+	if (!conversationMessages) {
+		return [];
+	}
+	const chatMessages: ChatCompletionRequestMessage[] = [];
+	conversationMessages.forEach(convoMsg => {
+		chatMessages.push({ role: roleMap[convoMsg.role], content: convoMsg.content });
+	});
+	return chatMessages;
+}
+
+async function getCompletionMessage(
+	prompt: string,
+	messages?: Array<ConversationMessage>,
+	inputParams?: { [key: string]: any }
+): Promise<ConversationMessage | undefined> {
+	const chatMsgs = convertConversationToChatMessages(messages);
+	const providerResp = await providerSet
+		.getProviderAPI(providerSet.getDefaultProvider())
+		.getCompletion(prompt, chatMsgs, inputParams);
+	let respContent = '';
+	let respDetails: string | undefined;
+	if (providerResp) {
+		if (providerResp.respContent) {
+			respContent = providerResp.respContent;
+		}
+		if (providerResp.fullResponse) {
+			respDetails = '```json' + JSON.stringify(providerResp.fullResponse, null, 2) + '```';
+		}
+	}
+	const newMsg = initConversationMessage(ConversationRoleEnum.assistant, respContent);
+	newMsg.details = respDetails;
+	return newMsg;
+}
 
 const ChatScreen: FC = () => {
 	const [chat, setChat] = useState<Conversation>(initConversation());
@@ -34,16 +86,29 @@ const ChatScreen: FC = () => {
 			if (trimmedText) {
 				const newMessage = initConversationMessage(ConversationRoleEnum.user, trimmedText);
 
-				const updatedChat = {
+				// First update: adding the user's message
+				const updatedChatWithUserMessage = {
 					...chat,
 					messages: [...chat.messages, newMessage],
 					modifiedAt: new Date(),
 				};
-				saveConversation(updatedChat);
-				// eslint-disable-next-line @typescript-eslint/no-unused-vars
-				setChat(prevChat => {
-					return updatedChat;
-				});
+				saveConversation(updatedChatWithUserMessage);
+				setChat(updatedChatWithUserMessage);
+
+				// Wait for the state to update
+				await new Promise(resolve => setTimeout(resolve, 0));
+
+				const newMsg = await getCompletionMessage(trimmedText, updatedChatWithUserMessage.messages);
+				if (newMsg) {
+					// Second update: adding the assistant's message
+					const updatedChatWithAssistantMessage = {
+						...updatedChatWithUserMessage,
+						messages: [...updatedChatWithUserMessage.messages, newMsg],
+						modifiedAt: new Date(),
+					};
+					saveConversation(updatedChatWithAssistantMessage);
+					setChat(updatedChatWithAssistantMessage);
+				}
 			}
 			isSubmittingRef.current = false;
 		},
@@ -114,7 +179,7 @@ const ChatScreen: FC = () => {
 				<div
 					className="w-full flex-grow flex justify-center overflow-y-auto"
 					ref={chatContainerRef}
-					style={{ maxHeight: `calc(100vh - 144px - ${inputHeight}px)` }} // Adjust height dynamically
+					style={{ maxHeight: `calc(100vh - 156px - ${inputHeight}px)` }} // Adjust height dynamically
 				>
 					<div className="w-11/12 lg:w-2/3">
 						<div className="w-full flex-1 space-y-4">{memoizedChatMessages}</div>

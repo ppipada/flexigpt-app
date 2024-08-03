@@ -105,3 +105,9 @@
 - Agent screen
 
   - [ ] See if a jupyter notebook UI can be presented
+
+- Small things
+- [ ] code inline line overflow handle
+- [ ] feedback integration
+- [ ] sort order of drop down, during load, after new chat
+- [ ] title population

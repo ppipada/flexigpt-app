@@ -1,29 +1,14 @@
 import { AxiosRequestConfig } from 'axios';
-import { APICaller } from './api_fetch';
-import { ChatCompletionRequestMessage, CompletionRequest } from './chat_types';
-import { ALL_MODEL_INFO, anthropicProviderInfo } from './provider_consts';
-import { CompletionProvider, ProviderInfo } from './provider_types';
-import { getCompletionRequest } from './provider_utils';
+import { CompletionRequest, CompletionResponse } from './chat_types';
+import { AIAPI } from './completion_provider';
+import { anthropicProviderInfo } from './provider_consts';
 
-export class AnthropicAPI implements CompletionProvider {
-	private providerInfo: ProviderInfo;
-	private apicaller: APICaller;
+export class AnthropicAPI extends AIAPI {
 	constructor() {
-		this.apicaller = new APICaller(
-			anthropicProviderInfo.defaultOrigin,
-			anthropicProviderInfo.apiKey,
-			anthropicProviderInfo.apiKeyHeaderKey,
-			anthropicProviderInfo.timeout,
-			anthropicProviderInfo.defaultHeaders
-		);
-		this.providerInfo = anthropicProviderInfo;
+		super(anthropicProviderInfo);
 	}
 
-	getProviderInfo(): ProviderInfo {
-		return this.providerInfo;
-	}
-
-	async completion(input: CompletionRequest): Promise<any> {
+	async completion(input: CompletionRequest): Promise<CompletionResponse | undefined> {
 		// return tempCodeString;
 		// let messages: ChatCompletionRequestMessage[] = [{"role": "user", "content": "Hello!"}];
 		if (!input.messages) {
@@ -68,21 +53,7 @@ export class AnthropicAPI implements CompletionProvider {
 				respText += resp.text + '\n';
 			}
 		}
-		return { fullResponse: data, data: respText };
-	}
-
-	public checkAndPopulateCompletionParams(
-		prompt: string,
-		messages?: Array<ChatCompletionRequestMessage>,
-		inputParams?: { [key: string]: any }
-	): CompletionRequest {
-		return getCompletionRequest(
-			this.providerInfo.defaultModel,
-			prompt,
-			this.providerInfo.defaultTemperature,
-			ALL_MODEL_INFO[this.providerInfo.defaultModel].maxPromptLength,
-			messages,
-			inputParams
-		);
+		const completionResponse: CompletionResponse = { fullResponse: data, respContent: respText };
+		return completionResponse;
 	}
 }

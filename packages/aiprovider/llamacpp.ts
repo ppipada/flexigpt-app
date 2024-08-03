@@ -1,27 +1,17 @@
 import { AxiosRequestConfig } from 'axios';
 import { log } from 'logger';
-import { APICaller } from './api_fetch';
-import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chat_types';
-import { ALL_MODEL_INFO, llamacppProviderInfo } from './provider_consts';
-import { CompletionProvider, ProviderInfo } from './provider_types';
-import { getCompletionRequest } from './provider_utils';
+import {
+	ChatCompletionRequestMessage,
+	ChatCompletionRoleEnum,
+	CompletionRequest,
+	CompletionResponse,
+} from './chat_types';
+import { AIAPI } from './completion_provider';
+import { llamacppProviderInfo } from './provider_consts';
 
-export class LlamaCPPAPI implements CompletionProvider {
-	private providerInfo: ProviderInfo;
-	private apicaller: APICaller;
+export class LlamaCPPAPI extends AIAPI {
 	constructor() {
-		this.apicaller = new APICaller(
-			llamacppProviderInfo.defaultOrigin,
-			llamacppProviderInfo.apiKey,
-			llamacppProviderInfo.apiKeyHeaderKey,
-			llamacppProviderInfo.timeout,
-			llamacppProviderInfo.defaultHeaders
-		);
-		this.providerInfo = llamacppProviderInfo;
-	}
-
-	getProviderInfo(): ProviderInfo {
-		return this.providerInfo;
+		super(llamacppProviderInfo);
 	}
 
 	convertChat(
@@ -49,7 +39,7 @@ export class LlamaCPPAPI implements CompletionProvider {
 		return prompt;
 	}
 
-	async completion(input: CompletionRequest): Promise<any> {
+	async completion(input: CompletionRequest): Promise<CompletionResponse | undefined> {
 		// return tempCodeString;
 		// let messages: ChatCompletionRequestMessage[] = [{"role": "user", "content": "Hello!"}];
 		if (!input.messages) {
@@ -85,33 +75,15 @@ export class LlamaCPPAPI implements CompletionProvider {
 		};
 		try {
 			const data = await this.apicaller.request(requestConfig);
-			const fullResponse = data;
 			if (typeof data !== 'object' || data === null) {
 				throw new Error('Invalid data response. Expected an object.' + data);
 			}
 			const respText = 'content' in data ? (data?.content as string) : '';
-			return {
-				fullResponse: fullResponse,
-				data: respText,
-			};
+			const completionResponse: CompletionResponse = { fullResponse: data, respContent: respText };
+			return completionResponse;
 		} catch (error) {
 			log.error('Error in completion request: ' + error);
 			throw error;
 		}
-	}
-
-	public checkAndPopulateCompletionParams(
-		prompt: string,
-		messages?: Array<ChatCompletionRequestMessage>,
-		inputParams?: { [key: string]: any }
-	): CompletionRequest {
-		return getCompletionRequest(
-			this.providerInfo.defaultModel,
-			prompt,
-			this.providerInfo.defaultTemperature,
-			ALL_MODEL_INFO[this.providerInfo.defaultModel].maxPromptLength,
-			messages,
-			inputParams
-		);
 	}
 }

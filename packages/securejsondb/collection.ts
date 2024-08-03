@@ -62,7 +62,7 @@ export class Collection<T extends SecureSchema> {
 		allFiles.forEach(file => {
 			allFilesFullPaths.push(join(dirPath, file));
 		});
-		return allFilesFullPaths;
+		return allFilesFullPaths.sort().reverse();
 	}
 
 	protected async deleteFileByPath(filePath: string): Promise<void> {

@@ -1,10 +1,11 @@
 import { AnthropicAPI } from './anthropic';
+import { CompletionProvider } from './completion_provider';
 import { GoogleAPI } from './google';
 import { HuggingFaceAPI } from './huggingface';
 import { LlamaCPPAPI } from './llamacpp';
 import { OpenAIAPI } from './openai';
 import { ALL_MODEL_INFO, huggingfaceProviderInfo } from './provider_consts';
-import { CompletionProvider, ModelName, ProviderName } from './provider_types';
+import { ModelName, ProviderName } from './provider_types';
 
 export class ProviderSet {
 	private defaultProvider: ProviderName;

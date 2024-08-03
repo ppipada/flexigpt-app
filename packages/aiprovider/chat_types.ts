@@ -54,3 +54,10 @@ export interface CompletionRequest {
 	 */
 	additionalParameters?: Record<string, any>;
 }
+
+export interface CompletionResponse {
+	fullResponse?: object;
+	respContent?: string;
+	functionName?: string;
+	functionArgs?: any;
+}

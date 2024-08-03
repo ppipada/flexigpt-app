@@ -1,26 +1,17 @@
 import { AxiosRequestConfig } from 'axios';
-import { APICaller } from './api_fetch';
-import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, CompletionRequest } from './chat_types';
-import { ALL_MODEL_INFO, huggingfaceProviderInfo } from './provider_consts';
-import { CompletionProvider, ProviderInfo } from './provider_types';
-import { filterMessagesByTokenCount, getCompletionRequest } from './provider_utils';
+import {
+	ChatCompletionRequestMessage,
+	ChatCompletionRoleEnum,
+	CompletionRequest,
+	CompletionResponse,
+} from './chat_types';
+import { AIAPI } from './completion_provider';
+import { huggingfaceProviderInfo } from './provider_consts';
+import { filterMessagesByTokenCount } from './provider_utils';
 
-export class HuggingFaceAPI implements CompletionProvider {
-	private providerInfo: ProviderInfo;
-	private apicaller: APICaller;
+export class HuggingFaceAPI extends AIAPI {
 	constructor() {
-		this.apicaller = new APICaller(
-			huggingfaceProviderInfo.defaultOrigin,
-			huggingfaceProviderInfo.apiKey,
-			huggingfaceProviderInfo.apiKeyHeaderKey,
-			huggingfaceProviderInfo.timeout,
-			huggingfaceProviderInfo.defaultHeaders
-		);
-		this.providerInfo = huggingfaceProviderInfo;
-	}
-
-	getProviderInfo(): ProviderInfo {
-		return this.providerInfo;
+		super(huggingfaceProviderInfo);
 	}
 
 	async getModelType(model: string) {
@@ -75,7 +66,7 @@ export class HuggingFaceAPI implements CompletionProvider {
 		return { text, generated_responses, past_user_inputs };
 	}
 
-	async completion(input: CompletionRequest): Promise<any> {
+	async completion(input: CompletionRequest): Promise<CompletionResponse | undefined> {
 		if (!input.messages) {
 			throw Error('No input messages found');
 		}
@@ -128,7 +119,6 @@ export class HuggingFaceAPI implements CompletionProvider {
 			data: request,
 		};
 		const data = await this.apicaller.request(requestConfig);
-		const fullResponse = data;
 		if (typeof data !== 'object' || data === null) {
 			throw new Error('Invalid data response. Expected an object.' + data);
 		}
@@ -139,21 +129,7 @@ export class HuggingFaceAPI implements CompletionProvider {
 			// Get 'generated_text' from the first element of the array, if the array is not empty
 			respText = data[0].generated_text as string;
 		}
-		return { fullResponse: fullResponse, data: respText };
-	}
-
-	public checkAndPopulateCompletionParams(
-		prompt: string,
-		messages?: Array<ChatCompletionRequestMessage>,
-		inputParams?: { [key: string]: any }
-	): CompletionRequest {
-		return getCompletionRequest(
-			this.providerInfo.defaultModel,
-			prompt,
-			this.providerInfo.defaultTemperature,
-			ALL_MODEL_INFO[this.providerInfo.defaultModel].maxPromptLength,
-			messages,
-			inputParams
-		);
+		const completionResponse: CompletionResponse = { fullResponse: data, respContent: respText };
+		return completionResponse;
 	}
 }

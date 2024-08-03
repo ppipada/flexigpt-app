@@ -1,41 +1,23 @@
-export type SettingsSchema = {
+import { ModelName, ProviderName } from 'aiprovider';
+
+export interface AISetting {
+	apiKey: string;
+	defaultModel: ModelName;
+	defaultTemperature: number;
+	defaultOrigin: string;
+	additionalSettings: Record<string, any>;
+}
+export interface AISettingsSchema {
+	[ProviderName.ANTHROPIC]: AISetting;
+	[ProviderName.GOOGLE]: AISetting;
+	[ProviderName.HUGGINGFACE]: AISetting;
+	[ProviderName.LLAMACPP]: AISetting;
+	[ProviderName.OPENAI]: AISetting;
+}
+
+export type SettingsSchema = AISettingsSchema & {
 	app: {
-		defaultProvider: string;
-	};
-	openai: {
-		apiKey: string;
-		defaultModel: string;
-		defaultTemperature: number;
-		defaultOrigin: string;
-		additionalSettings: Record<string, any>;
-	};
-	anthropic: {
-		apiKey: string;
-		defaultModel: string;
-		defaultTemperature: number;
-		defaultOrigin: string;
-		additionalSettings: Record<string, any>;
-	};
-	huggingface: {
-		apiKey: string;
-		defaultModel: string;
-		defaultTemperature: number;
-		defaultOrigin: string;
-		additionalSettings: Record<string, any>;
-	};
-	google: {
-		apiKey: string;
-		defaultModel: string;
-		defaultTemperature: number;
-		defaultOrigin: string;
-		additionalSettings: Record<string, any>;
-	};
-	llamacpp: {
-		apiKey: string;
-		defaultModel: string;
-		defaultTemperature: number;
-		defaultOrigin: string;
-		additionalSettings: Record<string, any>;
+		defaultProvider: ProviderName;
 	};
 };
 

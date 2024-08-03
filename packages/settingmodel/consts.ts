@@ -8,45 +8,49 @@ import {
 } from 'aiprovider';
 import { SettingsSchema } from './types';
 
-export const defaultSettingsData: SettingsSchema = {
-	app: {
-		defaultProvider: ProviderName.OPENAI,
-	},
-	openai: {
-		apiKey: openaiProviderInfo.apiKey,
-		defaultModel: openaiProviderInfo.defaultModel,
-		defaultOrigin: openaiProviderInfo.defaultOrigin,
-		defaultTemperature: openaiProviderInfo.defaultTemperature,
-		additionalSettings: openaiProviderInfo.additionalSettings,
-	},
-	anthropic: {
+export const defaultAISettings = {
+	[ProviderName.ANTHROPIC]: {
 		apiKey: anthropicProviderInfo.apiKey,
 		defaultModel: anthropicProviderInfo.defaultModel,
 		defaultOrigin: anthropicProviderInfo.defaultOrigin,
 		defaultTemperature: anthropicProviderInfo.defaultTemperature,
 		additionalSettings: anthropicProviderInfo.additionalSettings,
 	},
-	huggingface: {
-		apiKey: huggingfaceProviderInfo.apiKey,
-		defaultModel: huggingfaceProviderInfo.defaultModel,
-		defaultOrigin: huggingfaceProviderInfo.defaultOrigin,
-		defaultTemperature: huggingfaceProviderInfo.defaultTemperature,
-		additionalSettings: huggingfaceProviderInfo.additionalSettings,
-	},
-	google: {
+	[ProviderName.GOOGLE]: {
 		apiKey: googleProviderInfo.apiKey,
 		defaultModel: googleProviderInfo.defaultModel,
 		defaultOrigin: googleProviderInfo.defaultOrigin,
 		defaultTemperature: googleProviderInfo.defaultTemperature,
 		additionalSettings: googleProviderInfo.additionalSettings,
 	},
-	llamacpp: {
+	[ProviderName.HUGGINGFACE]: {
+		apiKey: huggingfaceProviderInfo.apiKey,
+		defaultModel: huggingfaceProviderInfo.defaultModel,
+		defaultOrigin: huggingfaceProviderInfo.defaultOrigin,
+		defaultTemperature: huggingfaceProviderInfo.defaultTemperature,
+		additionalSettings: huggingfaceProviderInfo.additionalSettings,
+	},
+	[ProviderName.LLAMACPP]: {
 		apiKey: llamacppProviderInfo.apiKey,
 		defaultModel: llamacppProviderInfo.defaultModel,
 		defaultOrigin: llamacppProviderInfo.defaultOrigin,
 		defaultTemperature: llamacppProviderInfo.defaultTemperature,
 		additionalSettings: llamacppProviderInfo.additionalSettings,
 	},
+	[ProviderName.OPENAI]: {
+		apiKey: openaiProviderInfo.apiKey,
+		defaultModel: openaiProviderInfo.defaultModel,
+		defaultOrigin: openaiProviderInfo.defaultOrigin,
+		defaultTemperature: openaiProviderInfo.defaultTemperature,
+		additionalSettings: openaiProviderInfo.additionalSettings,
+	},
+};
+
+export const defaultSettingsData: SettingsSchema = {
+	app: {
+		defaultProvider: ProviderName.OPENAI,
+	},
+	...defaultAISettings,
 };
 
 export const sensitiveKeys = [

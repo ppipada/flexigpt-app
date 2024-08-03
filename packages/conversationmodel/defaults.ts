@@ -12,8 +12,10 @@ export function initConversation(title: string = 'New Conversation'): Conversati
 }
 
 export function initConversationMessage(role: ConversationRoleEnum, content: string): ConversationMessage {
+	const d = new Date();
 	return {
-		id: new Date().toISOString(),
+		id: d.toISOString(),
+		createdAt: new Date(),
 		role: role,
 		content: content,
 	};

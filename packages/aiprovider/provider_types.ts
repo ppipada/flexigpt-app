@@ -1,5 +1,3 @@
-import { ChatCompletionRequestMessage, CompletionRequest } from './chat_types';
-
 export enum ProviderName {
 	OPENAI = 'openai',
 	ANTHROPIC = 'anthropic',
@@ -86,14 +84,4 @@ export class ProviderInfoImpl implements ProviderInfo {
 		}
 		return this.descriptions ? this.descriptions[key as keyof ProviderInfo] : undefined;
 	}
-}
-
-export interface CompletionProvider {
-	getProviderInfo(): ProviderInfo;
-	completion(input: CompletionRequest): Promise<{ fullResponse: any; data: string | null }>;
-	checkAndPopulateCompletionParams(
-		prompt: string,
-		messages?: Array<ChatCompletionRequestMessage>,
-		inputParams?: { [key: string]: any }
-	): CompletionRequest;
 }

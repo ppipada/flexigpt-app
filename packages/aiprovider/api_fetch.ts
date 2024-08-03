@@ -59,8 +59,7 @@ export class APICaller {
 			this.axiosInstance.interceptors.request.use(
 				(config: InternalAxiosRequestConfig) => {
 					// Caution: avoid logging sensitive information in production
-					log.info('Axios Request:', config);
-					log.info('cURL Command:', this.generateCurlCommand(config));
+					log.debug('cURL Command:', this.generateCurlCommand(config));
 					return config;
 				},
 				error => {
@@ -78,8 +77,10 @@ export class APICaller {
 		// Headers
 		if (config.headers) {
 			Object.keys(config.headers).forEach(key => {
-				const value = config.headers?.[key];
-				curlCommand += '-H "' + key + ': ' + value + '" ';
+				if (key != this.apiKeyHeaderKey) {
+					const value = config.headers?.[key];
+					curlCommand += '-H "' + key + ': ' + value + '" ';
+				}
 			});
 		}
 
