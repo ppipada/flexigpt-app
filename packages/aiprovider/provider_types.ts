@@ -43,6 +43,7 @@ export interface ProviderInfo {
 	defaultTemperature: number;
 	modelPrefixes?: string[];
 	descriptions?: Partial<Record<keyof ProviderInfo, string>>;
+	streamingSupport?: boolean;
 
 	// Method to get description of a key
 	getDescription(key: string): string | undefined;
@@ -61,6 +62,7 @@ export class ProviderInfoImpl implements ProviderInfo {
 	chatCompletionPathPrefix: string;
 	defaultTemperature: number;
 	modelPrefixes?: string[];
+	streamingSupport?: boolean;
 	descriptions?: Partial<Record<keyof ProviderInfo, string>>;
 
 	constructor(providerInfo: Omit<ProviderInfo, 'getDescription'>) {
@@ -75,6 +77,7 @@ export class ProviderInfoImpl implements ProviderInfo {
 		this.chatCompletionPathPrefix = providerInfo.chatCompletionPathPrefix;
 		this.defaultTemperature = providerInfo.defaultTemperature;
 		this.modelPrefixes = providerInfo.modelPrefixes;
+		this.streamingSupport = providerInfo.streamingSupport;
 		this.descriptions = providerInfo.descriptions;
 	}
 

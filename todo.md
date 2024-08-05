@@ -119,3 +119,5 @@
   - [ ] Subscript
   - [ ] custom headings
   - [ ] navigate in same doc
+- [ ] Usages in normal resp
+- [ ] Usages in stream resp

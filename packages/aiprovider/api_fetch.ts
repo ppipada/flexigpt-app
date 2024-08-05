@@ -1,20 +1,24 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import axios, {
+	AxiosError,
+	AxiosInstance,
+	AxiosRequestConfig,
+	AxiosResponse,
+	InternalAxiosRequestConfig,
+	ResponseType,
+} from 'axios';
 import { log } from 'logger';
 
 export function filterSensitiveInfo(obj: any): any {
 	const sensitiveKeys = ['authorization', 'key'];
 
-	// Base case: if obj is not an object, return it as is.
 	if (typeof obj !== 'object' || obj === null) {
 		return obj;
 	}
 
-	// Recursive case: if obj is an array, filter each element.
 	if (Array.isArray(obj)) {
 		return obj.map(item => filterSensitiveInfo(item));
 	}
 
-	// Recursive case: if obj is an object, filter each key.
 	const filteredObj: any = {};
 	for (const key in obj) {
 		if (!sensitiveKeys.some(sensitiveKey => key.toLowerCase().includes(sensitiveKey))) {
@@ -52,13 +56,11 @@ export class APICaller {
 		this.timeout = timeout;
 		this.headers = headers;
 
-		this.axiosInstance = axios.create();
+		this.axiosInstance = axios.create({ adapter: 'fetch' });
 
 		if (this.logRequests) {
-			//Add interceptor once in constructor
 			this.axiosInstance.interceptors.request.use(
 				(config: InternalAxiosRequestConfig) => {
-					// Caution: avoid logging sensitive information in production
 					log.debug('cURL Command:', this.generateCurlCommand(config));
 					return config;
 				},
@@ -69,12 +71,10 @@ export class APICaller {
 		}
 	}
 
-	// Function to generate the cURL command
 	generateCurlCommand(config: AxiosRequestConfig): string {
 		let curlCommand = 'curl -X ' + config.method?.toUpperCase() + ' ';
 		curlCommand += '"' + config.url + '" ';
 
-		// Headers
 		if (config.headers) {
 			Object.keys(config.headers).forEach(key => {
 				if (key != this.apiKeyHeaderKey) {
@@ -84,7 +84,6 @@ export class APICaller {
 			});
 		}
 
-		// Request body
 		if (config.data) {
 			curlCommand += "-d '" + JSON.stringify(config.data) + "' ";
 		}
@@ -92,7 +91,7 @@ export class APICaller {
 		return curlCommand;
 	}
 
-	async request<T>(requestConfig: AxiosRequestConfig): Promise<T> {
+	private extendAxiosRequestConfig(requestConfig: AxiosRequestConfig, stream = false): AxiosRequestConfig {
 		let apiKey = this.apiKey;
 		if (this.apiKeyHeaderKey === 'Authorization') {
 			apiKey = 'Bearer ' + apiKey;
@@ -102,36 +101,74 @@ export class APICaller {
 			...this.headers,
 			...(requestConfig.headers || {}),
 		};
-
+		const respType: ResponseType = stream ? 'stream' : 'json';
 		const config: AxiosRequestConfig = {
 			...requestConfig,
 			url: this.origin + (requestConfig.url || ''),
 			headers: mergedHeaders,
+			responseType: respType,
 		};
+		return config;
+	}
+
+	private handleError(error: unknown) {
+		if (axios.isAxiosError(error)) {
+			const axiosError = error as AxiosError;
+			let errorData: string;
+			if (axiosError.response) {
+				const headers = filterSensitiveInfo(axiosError.response.headers);
+				errorData =
+					JSON.stringify(axiosError.response.data, null, 2) +
+					'\n' +
+					JSON.stringify(axiosError.response.status, null, 2) +
+					'\n' +
+					JSON.stringify(headers, null, 2) +
+					'\n';
+			} else {
+				errorData = JSON.stringify(axiosError, null, 2) + '\n';
+			}
+			error.message = errorData + '\n' + error.message;
+		}
+		return error;
+	}
+
+	async request<T>(requestConfig: AxiosRequestConfig): Promise<T> {
+		const config = this.extendAxiosRequestConfig(requestConfig);
 
 		try {
 			const response: AxiosResponse<T> = await this.axiosInstance.request(config);
 			return response.data;
 		} catch (error) {
-			if (axios.isAxiosError(error)) {
-				// Handle Axios error
-				const axiosError = error as AxiosError;
-				let errorData: string;
-				if (axiosError.response) {
-					const headers = filterSensitiveInfo(axiosError.response.headers);
-					errorData =
-						JSON.stringify(axiosError.response.data, null, 2) +
-						'\n' +
-						JSON.stringify(axiosError.response.status, null, 2) +
-						'\n' +
-						JSON.stringify(headers, null, 2) +
-						'\n';
-				} else {
-					errorData = JSON.stringify(axiosError, null, 2) + '\n';
-				}
-				error.message = errorData + '\n' + error.message;
-			}
-			throw error;
+			const newError = this.handleError(error);
+			throw newError;
 		}
+	}
+
+	requestStream(requestConfig: AxiosRequestConfig, dataChunkProcessor: (data: string) => void): void {
+		const config = this.extendAxiosRequestConfig(requestConfig, true);
+
+		this.axiosInstance
+			.request(config)
+			.then(async response => {
+				const stream = response.data as ReadableStream<Uint8Array>;
+				const reader = stream.getReader();
+				const decoder = new TextDecoder();
+
+				const processText = async ({ done, value }: ReadableStreamReadResult<Uint8Array>) => {
+					if (done) {
+						return;
+					}
+
+					const dataString = decoder.decode(value, { stream: true });
+					dataChunkProcessor(dataString);
+
+					reader.read().then(processText);
+				};
+
+				reader.read().then(processText);
+			})
+			.catch(error => {
+				this.handleError(error);
+			});
 	}
 }

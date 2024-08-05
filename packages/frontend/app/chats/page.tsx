@@ -1,66 +1,19 @@
 'use client';
 import { getConversation, listAllConversations, saveConversation } from '@/api/conversation_memoized_api';
+import { getCompletionMessage } from '@/chats/chat_helper';
 import ChatInputField from '@/chats/chat_input_field';
 import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
-import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, providerSet } from 'aiprovider';
-
 import {
 	Conversation,
 	ConversationItem,
-	ConversationMessage,
 	ConversationRoleEnum,
 	initConversation,
 	initConversationMessage,
 } from 'conversationmodel';
-// import { log } from 'logger';
+import { log } from 'logger';
 import { FC, createRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
-const roleMap: Record<ConversationRoleEnum, ChatCompletionRoleEnum> = {
-	[ConversationRoleEnum.system]: ChatCompletionRoleEnum.system,
-	[ConversationRoleEnum.user]: ChatCompletionRoleEnum.user,
-	[ConversationRoleEnum.assistant]: ChatCompletionRoleEnum.assistant,
-	[ConversationRoleEnum.function]: ChatCompletionRoleEnum.function,
-	[ConversationRoleEnum.feedback]: ChatCompletionRoleEnum.user,
-};
-
-function convertConversationToChatMessages(
-	conversationMessages?: ConversationMessage[]
-): ChatCompletionRequestMessage[] {
-	if (!conversationMessages) {
-		return [];
-	}
-	const chatMessages: ChatCompletionRequestMessage[] = [];
-	conversationMessages.forEach(convoMsg => {
-		chatMessages.push({ role: roleMap[convoMsg.role], content: convoMsg.content });
-	});
-	return chatMessages;
-}
-
-async function getCompletionMessage(
-	prompt: string,
-	messages?: Array<ConversationMessage>,
-	inputParams?: { [key: string]: any }
-): Promise<ConversationMessage | undefined> {
-	const chatMsgs = convertConversationToChatMessages(messages);
-	const providerResp = await providerSet
-		.getProviderAPI(providerSet.getDefaultProvider())
-		.getCompletion(prompt, chatMsgs, inputParams);
-	let respContent = '';
-	let respDetails: string | undefined;
-	if (providerResp) {
-		if (providerResp.respContent) {
-			respContent = providerResp.respContent;
-		}
-		if (providerResp.fullResponse) {
-			respDetails = '```json' + JSON.stringify(providerResp.fullResponse, null, 2) + '```';
-		}
-	}
-	const newMsg = initConversationMessage(ConversationRoleEnum.assistant, respContent);
-	newMsg.details = respDetails;
-	return newMsg;
-}
 
 const ChatScreen: FC = () => {
 	const [chat, setChat] = useState<Conversation>(initConversation());
@@ -68,6 +21,7 @@ const ChatScreen: FC = () => {
 	const [inputHeight, setInputHeight] = useState(0);
 	const chatContainerRef = useRef<HTMLDivElement>(null);
 	const isSubmittingRef = useRef<boolean>(false);
+	const [streamedMessage, setStreamedMessage] = useState<string>('');
 
 	const loadInitialItems = useCallback(async () => {
 		const conversations = await listAllConversations();
@@ -77,48 +31,6 @@ const ChatScreen: FC = () => {
 	useEffect(() => {
 		loadInitialItems();
 	}, [loadInitialItems]);
-
-	const sendMessage = useCallback(
-		async (messageContent: string) => {
-			if (isSubmittingRef.current) return;
-			isSubmittingRef.current = true;
-			const trimmedText = messageContent.trim();
-			if (trimmedText) {
-				const newMessage = initConversationMessage(ConversationRoleEnum.user, trimmedText);
-
-				// First update: adding the user's message
-				const updatedChatWithUserMessage = {
-					...chat,
-					messages: [...chat.messages, newMessage],
-					modifiedAt: new Date(),
-				};
-				if (updatedChatWithUserMessage.messages.length === 1) {
-					const content = updatedChatWithUserMessage.messages[0].content.substring(0, 48);
-					const capitalizedTitle = content.charAt(0).toUpperCase() + content.slice(1) + '...';
-					updatedChatWithUserMessage.title = capitalizedTitle;
-				}
-				saveConversation(updatedChatWithUserMessage);
-				setChat(updatedChatWithUserMessage);
-
-				// Wait for the state to update
-				await new Promise(resolve => setTimeout(resolve, 0));
-
-				const newMsg = await getCompletionMessage(trimmedText, updatedChatWithUserMessage.messages);
-				if (newMsg) {
-					// Second update: adding the assistant's message
-					const updatedChatWithAssistantMessage = {
-						...updatedChatWithUserMessage,
-						messages: [...updatedChatWithUserMessage.messages, newMsg],
-						modifiedAt: new Date(),
-					};
-					saveConversation(updatedChatWithAssistantMessage);
-					setChat(updatedChatWithAssistantMessage);
-				}
-			}
-			isSubmittingRef.current = false;
-		},
-		[chat]
-	);
 
 	const handleNewChat = useCallback(async () => {
 		saveConversation(chat);
@@ -148,6 +60,51 @@ const ChatScreen: FC = () => {
 		const value = JSON.stringify(selectedChat, null, 2);
 		return value;
 	}, [chat.id, chat.title]);
+
+	const sendMessage = async (messageContent: string) => {
+		if (isSubmittingRef.current) return;
+		isSubmittingRef.current = true;
+		const trimmedText = messageContent.trim();
+		if (trimmedText) {
+			const newMessage = initConversationMessage(ConversationRoleEnum.user, trimmedText);
+
+			// First update: adding the user's message
+			const updatedChatWithUserMessage = {
+				...chat,
+				messages: [...chat.messages, newMessage],
+				modifiedAt: new Date(),
+			};
+			if (updatedChatWithUserMessage.messages.length === 1) {
+				const content = updatedChatWithUserMessage.messages[0].content.substring(0, 48);
+				const capitalizedTitle = content.charAt(0).toUpperCase() + content.slice(1);
+				updatedChatWithUserMessage.title = capitalizedTitle;
+			}
+			saveConversation(updatedChatWithUserMessage);
+			setChat(updatedChatWithUserMessage);
+
+			// Wait for the state to update
+			await new Promise(resolve => setTimeout(resolve, 0));
+
+			const onStreamData = (data: string) => {
+				log.debug('OnStream data', data);
+				setStreamedMessage(prev => prev + data);
+			};
+
+			const newMsg = await getCompletionMessage(trimmedText, updatedChatWithUserMessage.messages, {}, onStreamData);
+
+			if (newMsg) {
+				newMsg.content = streamedMessage;
+				const updatedChatWithAssistantMessage = {
+					...updatedChatWithUserMessage,
+					messages: [...updatedChatWithUserMessage.messages, newMsg],
+					modifiedAt: new Date(),
+				};
+				saveConversation(updatedChatWithAssistantMessage);
+				setChat(updatedChatWithAssistantMessage);
+			}
+		}
+		isSubmittingRef.current = false;
+	};
 
 	const memoizedChatMessages = useMemo(
 		() =>

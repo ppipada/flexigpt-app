@@ -13,6 +13,7 @@ export const openaiProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	},
 	chatCompletionPathPrefix: '/v1/chat/completions',
 	defaultTemperature: 0.1,
+	streamingSupport: true,
 	descriptions: {
 		apiKey: 'Your openAI API key. Can be seen at https://beta.openai.com/account/api-keys',
 		engine: 'The engine to be used for processing.',
@@ -44,6 +45,7 @@ export const anthropicProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	},
 	chatCompletionPathPrefix: '/v1/messages',
 	defaultTemperature: 0.1,
+	streamingSupport: false,
 	descriptions: {
 		apiKey: 'Your anthropic API key.',
 		engine: 'The engine to be used for processing.',
@@ -73,6 +75,7 @@ export const googleProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	},
 	chatCompletionPathPrefix: '/v1beta',
 	defaultTemperature: 0.1,
+	streamingSupport: false,
 	descriptions: {
 		apiKey: 'Your google generative AI API key.',
 		engine: 'The engine to be used for processing.',
@@ -103,6 +106,7 @@ export const huggingfaceProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	chatCompletionPathPrefix: '/models',
 	defaultTemperature: 0.1,
 	modelPrefixes: ['microsoft/', 'replit/', 'Salesforce/', 'bigcode/', 'deepseek-ai/'],
+	streamingSupport: false,
 	descriptions: {
 		apiKey: 'Your huggingface API key.',
 		engine: 'The engine to be used for processing.',
@@ -132,6 +136,7 @@ export const llamacppProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	},
 	chatCompletionPathPrefix: '/completion',
 	defaultTemperature: 0.1,
+	streamingSupport: false,
 	descriptions: {
 		apiKey: 'Your llamacpp API key.',
 		engine: 'The engine to be used for processing.',

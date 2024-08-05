@@ -3,6 +3,7 @@ import ChatMessageFooterArea from '@/chats/chat_message_footer';
 import { ConversationMessage, ConversationRoleEnum } from 'conversationmodel';
 import { FC, RefObject } from 'react';
 import { FiCompass, FiUser } from 'react-icons/fi';
+
 interface ChatMessageProps {
 	message: ConversationMessage;
 	onEdit: () => void;

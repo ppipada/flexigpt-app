@@ -7,7 +7,6 @@ import {
 } from './chat_types';
 import { AIAPI } from './completion_provider';
 import { huggingfaceProviderInfo } from './provider_consts';
-import { filterMessagesByTokenCount } from './provider_utils';
 
 export class HuggingFaceAPI extends AIAPI {
 	constructor() {
@@ -99,7 +98,7 @@ export class HuggingFaceAPI extends AIAPI {
 		if (parameters.max_length) {
 			filterTokens = parameters.max_length;
 		}
-		const messages = filterMessagesByTokenCount(input.messages, filterTokens);
+		const messages = this.filterMessagesByTokenCount(input.messages, filterTokens);
 
 		const inputmessages = this.getInputs(messages);
 
