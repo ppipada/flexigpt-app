@@ -92,6 +92,9 @@ const ChatScreen: FC = () => {
 					messages: [...chat.messages, newMessage],
 					modifiedAt: new Date(),
 				};
+				if (updatedChatWithUserMessage.messages.length === 1) {
+					updatedChatWithUserMessage.title = `${updatedChatWithUserMessage.messages[0].content.substring(0, 32)}...`;
+				}
 				saveConversation(updatedChatWithUserMessage);
 				setChat(updatedChatWithUserMessage);
 
