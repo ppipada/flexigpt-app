@@ -12,6 +12,7 @@ interface ChatMessageProps {
 	onDislike: () => void;
 	onSendFeedback: () => void;
 	feedbackController: RefObject<HTMLInputElement>;
+	streamedMessage: string; // New prop to handle streaming data
 }
 
 const ChatMessage: FC<ChatMessageProps> = ({
@@ -22,6 +23,7 @@ const ChatMessage: FC<ChatMessageProps> = ({
 	onDislike,
 	onSendFeedback,
 	feedbackController,
+	streamedMessage, // Destructure the new prop
 }) => {
 	const isUser = message.role === ConversationRoleEnum.user;
 	const align = !isUser ? 'items-end text-left' : 'items-start text-left';
@@ -39,7 +41,7 @@ const ChatMessage: FC<ChatMessageProps> = ({
 			</div>
 			<div className="col-span-10 lg:col-span-9">
 				<div className="flex flex-col w-full">
-					<ChatMessageContent content={message.content} align={align} />
+					<ChatMessageContent content={streamedMessage || message.content} align={align} />
 					<ChatMessageFooterArea
 						isUser={isUser}
 						onEdit={onEdit}

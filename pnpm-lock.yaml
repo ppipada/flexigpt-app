@@ -112,8 +112,8 @@ importers:
         specifier: ^5.1.7
         version: 5.1.7
       electron-updater:
-        specifier: ^6.3.1
-        version: 6.3.1
+        specifier: ^6.3.2
+        version: 6.3.2
       logger:
         specifier: workspace:*
         version: link:../logger
@@ -2553,8 +2553,8 @@ packages:
   electron-to-chromium@1.5.3:
     resolution: {integrity: sha512-QNdYSS5i8D9axWp/6XIezRObRHqaav/ur9z1VzCDUCH1XIFOr9WQk5xmgunhsTpjjgDy3oLxO/WMOVZlpUQrlA==}
 
-  electron-updater@6.3.1:
-    resolution: {integrity: sha512-Et9t9LcH42q/A73yu398YGHR7cbdTnHbIyFN/p0FNZIJi10XxGshZBVVE6FsClMuoggw7FVhn1+kMUVMCqS7MA==}
+  electron-updater@6.3.2:
+    resolution: {integrity: sha512-bEpuZ1IRnMtvZZaWeYi9ocX90Cnk+/impZ/08r6GQkfOMqECtKC2IjvxHcDk2VpWO8QZzK0+MUNaBiO81CGvQQ==}
 
   electron@31.3.0:
     resolution: {integrity: sha512-3LMRMmK4UK0A+jYSLGLYdfhc20TgY2v5jD3iGmhRZlDYj0gn7xBj/waRjlNalysZ0D2rgPvoes0wHuf5e/Bguw==}
@@ -8396,7 +8396,7 @@ snapshots:
 
   electron-to-chromium@1.5.3: {}
 
-  electron-updater@6.3.1:
+  electron-updater@6.3.2:
     dependencies:
       builder-util-runtime: 9.2.5
       fs-extra: 10.1.0

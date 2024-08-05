@@ -12,7 +12,6 @@ import {
 	initConversation,
 	initConversationMessage,
 } from 'conversationmodel';
-import { log } from 'logger';
 import { FC, createRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const ChatScreen: FC = () => {
@@ -22,6 +21,7 @@ const ChatScreen: FC = () => {
 	const chatContainerRef = useRef<HTMLDivElement>(null);
 	const isSubmittingRef = useRef<boolean>(false);
 	const [streamedMessage, setStreamedMessage] = useState<string>('');
+	const [isStreaming, setIsStreaming] = useState<boolean>(false);
 
 	const loadInitialItems = useCallback(async () => {
 		const conversations = await listAllConversations();
@@ -48,7 +48,7 @@ const ChatScreen: FC = () => {
 		if (chatContainerRef.current) {
 			chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
 		}
-	}, [chat.messages]);
+	}, [chat.messages, streamedMessage]);
 
 	const fetchSearchResults = useCallback(async (query: string): Promise<ConversationItem[]> => {
 		const conversations = await listAllConversations();
@@ -81,26 +81,52 @@ const ChatScreen: FC = () => {
 			}
 			saveConversation(updatedChatWithUserMessage);
 			setChat(updatedChatWithUserMessage);
+			setIsStreaming(true);
+			setStreamedMessage('');
 
 			// Wait for the state to update
 			await new Promise(resolve => setTimeout(resolve, 0));
 
-			const onStreamData = (data: string) => {
-				log.debug('OnStream data', data);
-				setStreamedMessage(prev => prev + data);
+			// Set a empty message for streaming data
+			const convoMsg = initConversationMessage(ConversationRoleEnum.assistant, '');
+			const updatedChatWithConvoMessage = {
+				...updatedChatWithUserMessage,
+				messages: [...updatedChatWithUserMessage.messages, convoMsg],
+				modifiedAt: new Date(),
 			};
 
-			const newMsg = await getCompletionMessage(trimmedText, updatedChatWithUserMessage.messages, {}, onStreamData);
+			const onStreamData = (data: string) => {
+				setStreamedMessage(prev => {
+					// Add assistant message to chat only when first stream data arrives
+					if (prev === '') {
+						updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 1].content = data;
+						updatedChatWithConvoMessage.modifiedAt = new Date();
+						setChat(updatedChatWithConvoMessage);
+						return data;
+					}
+					return prev + data;
+				});
+			};
+
+			const newMsg = await getCompletionMessage(
+				convoMsg,
+				trimmedText,
+				updatedChatWithUserMessage.messages,
+				{},
+				onStreamData
+			);
 
 			if (newMsg) {
-				newMsg.content = streamedMessage;
-				const updatedChatWithAssistantMessage = {
-					...updatedChatWithUserMessage,
-					messages: [...updatedChatWithUserMessage.messages, newMsg],
-					modifiedAt: new Date(),
-				};
-				saveConversation(updatedChatWithAssistantMessage);
-				setChat(updatedChatWithAssistantMessage);
+				// Remove last message and substitue the complete thing
+				updatedChatWithConvoMessage.messages.pop();
+				updatedChatWithConvoMessage.messages.push(newMsg);
+				updatedChatWithConvoMessage.modifiedAt = new Date();
+				// Save conversation after streaming complete
+				saveConversation(updatedChatWithConvoMessage);
+				// Set chat with final message
+				setChat(updatedChatWithConvoMessage);
+				setStreamedMessage(''); // Reset streamed message state
+				setIsStreaming(false); // Mark streaming as complete
 			}
 		}
 		isSubmittingRef.current = false;
@@ -108,7 +134,7 @@ const ChatScreen: FC = () => {
 
 	const memoizedChatMessages = useMemo(
 		() =>
-			chat.messages.map(message => (
+			chat.messages.map((message, index) => (
 				<ChatMessage
 					key={message.id}
 					message={message}
@@ -118,9 +144,14 @@ const ChatScreen: FC = () => {
 					onDislike={() => {}}
 					onSendFeedback={() => {}}
 					feedbackController={createRef<HTMLInputElement>()}
+					streamedMessage={
+						isStreaming && index === chat.messages.length - 1 && message.role === ConversationRoleEnum.assistant
+							? streamedMessage
+							: ''
+					}
 				/>
 			)),
-		[chat.messages]
+		[chat.messages, streamedMessage, isStreaming]
 	);
 
 	return (

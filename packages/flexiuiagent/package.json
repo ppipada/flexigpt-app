@@ -23,7 +23,7 @@
 		"conversationmodel": "workspace:*",
 		"electron-is-dev": "^3.0.1",
 		"electron-log": "^5.1.7",
-		"electron-updater": "^6.3.1",
+		"electron-updater": "^6.3.2",
 		"lowdb": "^7.0.1"
 	},
 	"devDependencies": {

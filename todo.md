@@ -114,10 +114,15 @@
 - [x] title population
 - [x] Full copy for assistant
 - [ ] Streaming
+  - [x] aiprovider support
+  - [x] page support
+  - [ ] add other providers
+  - [ ] someway to show things are loading
 - [ ] Content:
   - [ ] Emoji
   - [ ] Subscript
   - [ ] custom headings
   - [ ] navigate in same doc
+  - [ ] Math handling
 - [ ] Usages in normal resp
 - [ ] Usages in stream resp

@@ -1,5 +1,5 @@
 import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, providerSet } from 'aiprovider';
-import { ConversationMessage, ConversationRoleEnum, initConversationMessage } from 'conversationmodel';
+import { ConversationMessage, ConversationRoleEnum } from 'conversationmodel';
 
 const roleMap: Record<ConversationRoleEnum, ChatCompletionRoleEnum> = {
 	[ConversationRoleEnum.system]: ChatCompletionRoleEnum.system,
@@ -23,6 +23,7 @@ function convertConversationToChatMessages(
 }
 
 async function handleDirectCompletion(
+	convoMessage: ConversationMessage,
 	providerAPI: any,
 	fullCompletionRequest: any
 ): Promise<ConversationMessage | undefined> {
@@ -39,12 +40,13 @@ async function handleDirectCompletion(
 		}
 	}
 
-	const newMsg = initConversationMessage(ConversationRoleEnum.assistant, respContent);
-	newMsg.details = respDetails;
-	return newMsg;
+	convoMessage.content = respContent;
+	convoMessage.details = respDetails;
+	return convoMessage;
 }
 
 async function handleStreamedCompletion(
+	convoMessage: ConversationMessage,
 	providerAPI: any,
 	fullCompletionRequest: any,
 	onStreamData: (data: string) => void
@@ -61,13 +63,13 @@ async function handleStreamedCompletion(
 			respDetails = '```json' + JSON.stringify(providerResp.fullResponse, null, 2) + '```';
 		}
 	}
-
-	const newMsg = initConversationMessage(ConversationRoleEnum.assistant, respContent);
-	newMsg.details = respDetails;
-	return newMsg;
+	convoMessage.content = respContent;
+	convoMessage.details = respDetails;
+	return convoMessage;
 }
 
 export async function getCompletionMessage(
+	convoMessage: ConversationMessage,
 	prompt: string,
 	messages?: Array<ConversationMessage>,
 	inputParams?: { [key: string]: any },
@@ -79,8 +81,8 @@ export async function getCompletionMessage(
 	const fullCompletionRequest = providerAPI.getCompletionRequest(prompt, chatMsgs, inputParams, isStream);
 
 	if (isStream && onStreamData) {
-		return handleStreamedCompletion(providerAPI, fullCompletionRequest, onStreamData);
+		return handleStreamedCompletion(convoMessage, providerAPI, fullCompletionRequest, onStreamData);
 	} else {
-		return handleDirectCompletion(providerAPI, fullCompletionRequest);
+		return handleDirectCompletion(convoMessage, providerAPI, fullCompletionRequest);
 	}
 }
