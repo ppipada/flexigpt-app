@@ -89,7 +89,7 @@ export function ChatMessageContent({ content, align }: ChatMessageContentProps) 
 		code: ({ inline, className, children, ...props }: CodeComponentProps) => {
 			if (inline || !className) {
 				return (
-					<code className="bg-base-200 whitespace-nowrap inline" {...props}>
+					<code className="bg-base-200 inline" {...props}>
 						{children}
 					</code>
 				);
@@ -99,9 +99,21 @@ export function ChatMessageContent({ content, align }: ChatMessageContentProps) 
 
 			return <CodeBlock language={language} value={String(children).replace(/\n$/, '')} {...props} />;
 		},
-		ul: ({ children }: PComponentProps) => <ul className="list-disc list-inside">{children}</ul>,
-		ol: ({ children }: PComponentProps) => <ol className="list-decimal list-inside">{children}</ol>,
-		li: ({ children }: PComponentProps) => <li className="ml-4">{children}</li>,
+		ul: ({ children }: PComponentProps) => (
+			<span>
+				<ul className="list-disc my-2">{children}</ul>
+			</span>
+		),
+		ol: ({ children }: PComponentProps) => (
+			<span>
+				<ol className="list-decimal my-2">{children}</ol>
+			</span>
+		),
+		li: ({ children }: PComponentProps) => (
+			<span>
+				<li className="ml-4">{children}</li>
+			</span>
+		),
 		table: ({ children }: PComponentProps) => <table className="table-auto w-full">{children}</table>,
 		thead: ({ children }: PComponentProps) => <thead className="bg-base-300">{children}</thead>,
 		tbody: ({ children }: PComponentProps) => <tbody>{children}</tbody>,

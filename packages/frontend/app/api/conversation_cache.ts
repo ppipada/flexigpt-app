@@ -66,7 +66,7 @@ export class ConversationCache {
 				}
 			} else {
 				this.cache!.conversationsDict[id] = { id, title };
-				this.cache!.conversationsList.push({ id, title });
+				this.cache!.conversationsList.unshift({ id, title });
 			}
 		}
 	}

@@ -4,6 +4,8 @@ import { join, resolve } from 'node:path';
 import { SecureJSONFileDB } from './file_db';
 import { SecureSchema } from './schema';
 
+export const PATHORDER_ASC = 'asc';
+export const PATHORDER_DESC = 'desc';
 export class Collection<T extends SecureSchema> {
 	protected readonly PAGE_SIZE = 25;
 	protected baseDir: string;
@@ -53,7 +55,7 @@ export class Collection<T extends SecureSchema> {
 		}
 	}
 
-	protected listFilesByPath(dirPath: string): string[] {
+	protected listFilesByPath(dirPath: string, pathOrder: string): string[] {
 		if (!existsSync(dirPath)) {
 			throw new Error(`Secure collection: Directory not found ${dirPath}`);
 		}
@@ -62,7 +64,10 @@ export class Collection<T extends SecureSchema> {
 		allFiles.forEach(file => {
 			allFilesFullPaths.push(join(dirPath, file));
 		});
-		return allFilesFullPaths.sort().reverse();
+		if (pathOrder === PATHORDER_DESC) {
+			return allFilesFullPaths.sort().reverse();
+		}
+		return allFilesFullPaths.sort();
 	}
 
 	protected async deleteFileByPath(filePath: string): Promise<void> {
@@ -96,8 +101,8 @@ export class Collection<T extends SecureSchema> {
 		return this.getFileByPath(filePath);
 	}
 
-	async listFiles(): Promise<{ files: string[]; nextToken?: string }> {
-		const files = this.listFilesByPath(this.baseDir);
+	async listFiles(pathOrder = PATHORDER_DESC): Promise<{ files: string[]; nextToken?: string }> {
+		const files = this.listFilesByPath(this.baseDir, pathOrder);
 		return { files: files, nextToken: undefined };
 	}
 }
@@ -126,17 +131,23 @@ export class CollectionMonthPartitioned<T extends SecureSchema> extends Collecti
 		return join(partitionPath, filename);
 	}
 
-	private listPartitions(): string[] {
+	private listPartitions(pathOrder: string): string[] {
 		const partitions: string[] = [];
-		const years = readdirSync(this.baseDir).sort().reverse();
+		const years = readdirSync(this.baseDir).sort();
+		if (pathOrder === PATHORDER_DESC) {
+			years.reverse();
+		}
 		years.forEach(year => {
 			const yearPath = join(this.baseDir, year);
-			const months = readdirSync(yearPath).sort().reverse();
+			const months = readdirSync(yearPath).sort();
+			if (pathOrder === PATHORDER_DESC) {
+				months.reverse();
+			}
 			months.forEach(month => {
 				partitions.push(join(year, month));
 			});
 		});
-		return partitions.sort().reverse();
+		return partitions;
 	}
 
 	private parseToken(token?: string): { partitionIndex: number } {
@@ -181,19 +192,23 @@ export class CollectionMonthPartitioned<T extends SecureSchema> extends Collecti
 		return this.getFileByPath(filePath);
 	}
 
-	async listFiles(token?: string, partitionPath?: string): Promise<{ files: string[]; nextToken?: string }> {
+	async listFiles(
+		pathOrder = PATHORDER_DESC,
+		token?: string,
+		partitionPath?: string
+	): Promise<{ files: string[]; nextToken?: string }> {
 		if (partitionPath) {
-			const files = this.listFilesByPath(join(this.baseDir, partitionPath));
+			const files = this.listFilesByPath(join(this.baseDir, partitionPath), pathOrder);
 			return { files: files, nextToken: undefined };
 		}
-		const partitions = this.listPartitions();
+		const partitions = this.listPartitions(pathOrder);
 		const { partitionIndex } = this.parseToken(token);
 		let nextToken: string | undefined = undefined;
 		const allFiles: string[] = [];
 
 		for (let i = partitionIndex; i < partitions.length; i++) {
 			const partPath = join(this.baseDir, partitions[i]);
-			const partFiles = this.listFilesByPath(partPath);
+			const partFiles = this.listFilesByPath(partPath, pathOrder);
 
 			allFiles.push(...partFiles);
 

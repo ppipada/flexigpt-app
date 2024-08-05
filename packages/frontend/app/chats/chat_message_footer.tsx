@@ -1,7 +1,7 @@
 import { ChatMessageContent } from '@/chats/chat_message_content';
 import CopyButton from '@/components/copy_button';
 import { FC, RefObject, useState } from 'react';
-import { FiChevronDown, FiChevronUp, FiEdit, FiMessageCircle } from 'react-icons/fi';
+import { FiChevronDown, FiChevronUp, FiEdit } from 'react-icons/fi';
 
 interface ChatMessageFooterAreaProps {
 	isUser: boolean;
@@ -25,7 +25,9 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 	onLike,
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	onDislike,
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	onSendFeedback,
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	feedbackController,
 	messageDetails,
 }) => {
@@ -35,29 +37,29 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 		setIsExpanded(!isExpanded);
 	};
 
-	const handleFeedbackClick = () => {
-		if (feedbackController.current) {
-			feedbackController.current.value = '';
-		}
-		// Show the feedback dialog
-		const feedback = window.prompt('Enter your feedback:');
-		if (feedback) {
-			// Assuming there's some way to send the feedback
-			onSendFeedback();
-		}
-	};
+	// const handleFeedbackClick = () => {
+	// 	if (feedbackController.current) {
+	// 		feedbackController.current.value = '';
+	// 	}
+	// 	// Show the feedback dialog
+	// 	const feedback = window.prompt('Enter your feedback:');
+	// 	if (feedback) {
+	// 		// Assuming there's some way to send the feedback
+	// 		onSendFeedback();
+	// 	}
+	// };
 
 	return (
 		<div className="p-1">
 			<div className="flex justify-between items-center h-8">
 				<div className="flex items-center">
-					{isUser && (
-						<>
-							<CopyButton
-								value={cardContent}
-								className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
-								size={16}
-							/>
+					<>
+						<CopyButton
+							value={cardContent}
+							className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
+							size={16}
+						/>
+						{isUser && (
 							<button
 								className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
 								onClick={onEdit}
@@ -65,15 +67,15 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 							>
 								<FiEdit size={16} />
 							</button>
-						</>
-					)}
-					<button
-						className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
-						onClick={handleFeedbackClick}
-						aria-label="Submit feedback"
-					>
-						<FiMessageCircle size={16} />
-					</button>
+						)}
+						{/* <button
+							className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
+							onClick={handleFeedbackClick}
+							aria-label="Submit feedback"
+						>
+							<FiMessageCircle size={16} />
+						</button> */}
+					</>
 				</div>
 				<button
 					className="btn btn-sm bg-transparent border-none flex items-center shadow-none"

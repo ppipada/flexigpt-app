@@ -107,7 +107,15 @@
   - [ ] See if a jupyter notebook UI can be presented
 
 - Small things
-- [ ] code inline line overflow handle
-- [ ] feedback integration
-- [ ] sort order of drop down, during load, after new chat
+- [x] code inline line overflow handle
+- [x] feedback integration removal
+- [x] sort order of drop down, during load
+- [x] sort order of drop down, after new chat
 - [ ] title population
+- [x] Full copy for assistant
+- [ ] Streaming
+- [ ] Content:
+  - [ ] Emoji
+  - [ ] Subscript
+  - [ ] custom headings
+  - [ ] navigate in same doc

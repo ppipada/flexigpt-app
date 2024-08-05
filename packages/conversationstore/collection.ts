@@ -1,6 +1,6 @@
 import { ConversationMessage, IConversationAPI } from 'conversationmodel';
 import { basename } from 'node:path';
-import { CollectionMonthPartitioned } from 'securejsondb';
+import { CollectionMonthPartitioned, PATHORDER_DESC } from 'securejsondb';
 // import { getSampleConversations } from './message_samples';
 // import { log } from 'logger';
 import { Conversation } from './store_types';
@@ -54,7 +54,7 @@ export class ConversationCollection implements IConversationAPI {
 	async listConversations(
 		token?: string
 	): Promise<{ conversations: { id: string; title: string }[]; nextToken?: string }> {
-		const { files, nextToken } = await this.partitionedCollection.listFiles(token);
+		const { files, nextToken } = await this.partitionedCollection.listFiles(PATHORDER_DESC, token);
 		const conversations = files.map(file => {
 			const filename = basename(file);
 			const [id, ...titleParts] = filename.replace('.json', '').split('_');
