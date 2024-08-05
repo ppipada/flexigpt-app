@@ -29,7 +29,7 @@ const CodeBlock: FC<CodeProps> = memo(({ language, value }) => {
 		return value;
 	};
 	return (
-		<div className="rounded-md bg-gray-800 my-2 items-start overflow-hidden">
+		<div className="rounded-md bg-gray-800 my-4 items-start overflow-hidden">
 			<div className="flex justify-between items-center bg-gray-700 px-4">
 				<span className="text-white">{language}</span>
 				<div className="flex space-x-2">
@@ -82,7 +82,7 @@ export function ChatMessageContent({ content, align }: ChatMessageContentProps) 
 		h2: ({ children }: PComponentProps) => <h2 className="text-xl font-bold my-2">{children}</h2>,
 		h3: ({ children }: PComponentProps) => <h3 className="text-lg font-bold my-2">{children}</h3>,
 		p: ({ children }: PComponentProps) => (
-			<p className={`my-1 ${align}`} style={{ lineHeight: '1.5', fontSize: '14px' }}>
+			<p className={`my-2 ${align}`} style={{ lineHeight: '1.5', fontSize: '14px' }}>
 				{children}
 			</p>
 		),
@@ -101,17 +101,17 @@ export function ChatMessageContent({ content, align }: ChatMessageContentProps) 
 		},
 		ul: ({ children }: PComponentProps) => (
 			<span>
-				<ul className="list-disc my-2">{children}</ul>
+				<ul className="list-disc py-1">{children}</ul>
 			</span>
 		),
 		ol: ({ children }: PComponentProps) => (
 			<span>
-				<ol className="list-decimal my-2">{children}</ol>
+				<ol className="list-decimal py-1">{children}</ol>
 			</span>
 		),
 		li: ({ children }: PComponentProps) => (
 			<span>
-				<li className="ml-4">{children}</li>
+				<li className="ml-4 py-1">{children}</li>
 			</span>
 		),
 		table: ({ children }: PComponentProps) => <table className="table-auto w-full">{children}</table>,

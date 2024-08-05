@@ -1,4 +1,4 @@
-import { Conversation } from 'conversationmodel';
+import { Conversation, ConversationItem } from 'conversationmodel';
 import {
 	addMessageToConversation as apiAddMessageToConversation,
 	deleteConversation as apiDeleteConversation,
@@ -22,7 +22,7 @@ export async function deleteConversation(id: string, title: string): Promise<voi
 	conversationCache.updateConversationCache(id, title, 'delete');
 }
 
-export async function listAllConversations(): Promise<{ id: string; title: string }[]> {
+export async function listAllConversations(): Promise<ConversationItem[]> {
 	await conversationCache.refreshCache();
 	return conversationCache.getConversationsList();
 }

@@ -3,12 +3,12 @@ import { getConversation, listAllConversations, saveConversation } from '@/api/c
 import ChatInputField from '@/chats/chat_input_field';
 import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
-import { SearchItem } from '@/chats/chat_search';
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
 import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, providerSet } from 'aiprovider';
 
 import {
 	Conversation,
+	ConversationItem,
 	ConversationMessage,
 	ConversationRoleEnum,
 	initConversation,
@@ -64,7 +64,7 @@ async function getCompletionMessage(
 
 const ChatScreen: FC = () => {
 	const [chat, setChat] = useState<Conversation>(initConversation());
-	const [initialItems, setInitialItems] = useState<SearchItem[]>([]);
+	const [initialItems, setInitialItems] = useState<ConversationItem[]>([]);
 	const [inputHeight, setInputHeight] = useState(0);
 	const chatContainerRef = useRef<HTMLDivElement>(null);
 	const isSubmittingRef = useRef<boolean>(false);
@@ -93,7 +93,9 @@ const ChatScreen: FC = () => {
 					modifiedAt: new Date(),
 				};
 				if (updatedChatWithUserMessage.messages.length === 1) {
-					updatedChatWithUserMessage.title = `${updatedChatWithUserMessage.messages[0].content.substring(0, 32)}...`;
+					const content = updatedChatWithUserMessage.messages[0].content.substring(0, 48);
+					const capitalizedTitle = content.charAt(0).toUpperCase() + content.slice(1) + '...';
+					updatedChatWithUserMessage.title = capitalizedTitle;
 				}
 				saveConversation(updatedChatWithUserMessage);
 				setChat(updatedChatWithUserMessage);
@@ -123,7 +125,7 @@ const ChatScreen: FC = () => {
 		setChat(initConversation());
 	}, [chat]);
 
-	const handleSelectConversation = useCallback(async (item: SearchItem) => {
+	const handleSelectConversation = useCallback(async (item: ConversationItem) => {
 		const selectedChat = await getConversation(item.id, item.title);
 		if (selectedChat) {
 			setChat(selectedChat);
@@ -136,7 +138,7 @@ const ChatScreen: FC = () => {
 		}
 	}, [chat.messages]);
 
-	const fetchSearchResults = useCallback(async (query: string): Promise<SearchItem[]> => {
+	const fetchSearchResults = useCallback(async (query: string): Promise<ConversationItem[]> => {
 		const conversations = await listAllConversations();
 		return conversations.filter(item => item.title.toLowerCase().includes(query.toLowerCase()));
 	}, []);

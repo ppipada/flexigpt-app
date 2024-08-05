@@ -1,8 +1,9 @@
+import { ConversationItem, getDateFromUUIDv7 } from 'conversationmodel';
 import { listConversations as apiListConversations } from './conversation_base_api';
 
 interface CacheData {
-	conversationsDict: { [id: string]: { id: string; title: string } };
-	conversationsList: { id: string; title: string }[];
+	conversationsDict: { [id: string]: ConversationItem };
+	conversationsList: ConversationItem[];
 	timestamp: number;
 }
 
@@ -21,7 +22,7 @@ export class ConversationCache {
 		}
 
 		const conversations = await this.listAllConversationsFromAPI();
-		const conversationsDict: { [id: string]: { id: string; title: string } } = {};
+		const conversationsDict: { [id: string]: ConversationItem } = {};
 		conversations.forEach(conv => {
 			conversationsDict[conv.id] = conv;
 		});
@@ -33,8 +34,8 @@ export class ConversationCache {
 		};
 	}
 
-	private async listAllConversationsFromAPI(): Promise<{ id: string; title: string }[]> {
-		let allConversations: { id: string; title: string }[] = [];
+	private async listAllConversationsFromAPI(): Promise<ConversationItem[]> {
+		let allConversations: ConversationItem[] = [];
 		let token: string | undefined = undefined;
 
 		do {
@@ -65,13 +66,14 @@ export class ConversationCache {
 					}
 				}
 			} else {
-				this.cache!.conversationsDict[id] = { id, title };
-				this.cache!.conversationsList.unshift({ id, title });
+				const convo: ConversationItem = { id: id, title: title, createdAt: getDateFromUUIDv7(id) };
+				this.cache!.conversationsDict[id] = convo;
+				this.cache!.conversationsList.unshift(convo);
 			}
 		}
 	}
 
-	getConversationsList(): { id: string; title: string }[] {
+	getConversationsList(): ConversationItem[] {
 		if (this.isCacheValid() && this.cache) {
 			return this.cache.conversationsList;
 		}

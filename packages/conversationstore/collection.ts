@@ -1,8 +1,7 @@
-import { ConversationMessage, IConversationAPI } from 'conversationmodel';
+import { ConversationItem, ConversationMessage, getDateFromUUIDv7, IConversationAPI } from 'conversationmodel';
 import { basename } from 'node:path';
 import { CollectionMonthPartitioned, PATHORDER_DESC } from 'securejsondb';
 // import { getSampleConversations } from './message_samples';
-// import { log } from 'logger';
 import { Conversation } from './store_types';
 
 export class ConversationCollection implements IConversationAPI {
@@ -51,15 +50,18 @@ export class ConversationCollection implements IConversationAPI {
 		return this.partitionedCollection.getFile(filename);
 	}
 
-	async listConversations(
-		token?: string
-	): Promise<{ conversations: { id: string; title: string }[]; nextToken?: string }> {
+	async listConversations(token?: string): Promise<{ conversations: ConversationItem[]; nextToken?: string }> {
 		const { files, nextToken } = await this.partitionedCollection.listFiles(PATHORDER_DESC, token);
 		const conversations = files.map(file => {
 			const filename = basename(file);
 			const [id, ...titleParts] = filename.replace('.json', '').split('_');
 			const title = titleParts.join('_').replace(/_/g, ' ');
-			return { id, title };
+			const convo: ConversationItem = {
+				id: id,
+				title: title,
+				createdAt: getDateFromUUIDv7(id),
+			};
+			return convo;
 		});
 		return { conversations, nextToken };
 	}

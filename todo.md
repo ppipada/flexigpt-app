@@ -111,7 +111,7 @@
 - [x] feedback integration removal
 - [x] sort order of drop down, during load
 - [x] sort order of drop down, after new chat
-- [ ] title population
+- [x] title population
 - [x] Full copy for assistant
 - [ ] Streaming
 - [ ] Content:

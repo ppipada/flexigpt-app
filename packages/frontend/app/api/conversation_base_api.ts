@@ -1,4 +1,4 @@
-import { Conversation, ConversationMessage } from 'conversationmodel';
+import { Conversation, ConversationItem, ConversationMessage } from 'conversationmodel';
 
 export async function saveConversation(conversation: Conversation): Promise<void> {
 	await window.ConversationAPI.saveConversation(conversation);
@@ -14,7 +14,7 @@ export async function getConversation(id: string, title: string): Promise<Conver
 
 export async function listConversations(
 	token?: string
-): Promise<{ conversations: { id: string; title: string }[]; nextToken?: string }> {
+): Promise<{ conversations: ConversationItem[]; nextToken?: string }> {
 	return await window.ConversationAPI.listConversations(token);
 }
 

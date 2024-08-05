@@ -1,14 +1,15 @@
-import { ChatSearch, SearchItem } from '@/chats/chat_search';
+import { ChatSearch } from '@/chats/chat_search';
 import DownloadButton from '@/components/download_button';
+import { ConversationItem } from 'conversationmodel';
 import { FC } from 'react';
 import { FiPlus } from 'react-icons/fi';
 
 interface ChatNavBarProps {
 	onNewChat: () => void;
 	getConversationForExport: () => Promise<string>;
-	initialSearchItems: SearchItem[];
-	onSearch: (query: string) => Promise<SearchItem[]>;
-	onSelectConversation: (item: SearchItem) => Promise<void>;
+	initialSearchItems: ConversationItem[];
+	onSearch: (query: string) => Promise<ConversationItem[]>;
+	onSelectConversation: (item: ConversationItem) => Promise<void>;
 }
 
 const ChatNavBar: FC<ChatNavBarProps> = ({

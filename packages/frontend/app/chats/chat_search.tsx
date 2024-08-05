@@ -1,21 +1,17 @@
-import { ChangeEvent, FC, KeyboardEvent, useEffect, useState } from 'react';
+import { ConversationItem } from 'conversationmodel';
+// import { log } from 'logger';
+import { ChangeEvent, FC, Fragment, KeyboardEvent, useEffect, useState } from 'react';
 import { FiSearch } from 'react-icons/fi';
 
-// Define the type for search items
-export type SearchItem = {
-	id: string;
-	title: string;
-};
-
 interface ChatSearchProps {
-	initialItems: SearchItem[];
-	onSearch: (query: string) => Promise<SearchItem[]>;
-	onSelectConversation: (item: SearchItem) => Promise<void>;
+	initialItems: ConversationItem[];
+	onSearch: (query: string) => Promise<ConversationItem[]>;
+	onSelectConversation: (item: ConversationItem) => Promise<void>;
 }
 
 export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSelectConversation }) => {
 	const [query, setQuery] = useState('');
-	const [items, setItems] = useState<SearchItem[]>([]);
+	const [items, setItems] = useState<ConversationItem[]>([]);
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [focusedIndex, setFocusedIndex] = useState(-1);
 
@@ -36,7 +32,7 @@ export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSele
 		}
 	};
 
-	const handleItemClick = (item: SearchItem) => {
+	const handleItemClick = (item: ConversationItem) => {
 		onSelectConversation(item);
 		setQuery(item.title);
 		setShowDropdown(false);
@@ -82,22 +78,71 @@ export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSele
 					style={{ fontSize: '14px' }}
 				/>
 			</div>
-			{showDropdown && (
-				<ul
-					className="absolute left-0 right-0 mt-0 max-h-90 overflow-y-auto bg-base-200 rounded-2xl shadow-lg z-10"
-					style={{ fontSize: '14px' }}
-				>
-					{items.map((item, index) => (
+			{showDropdown && <GroupedDropdown items={items} handleItemClick={handleItemClick} focusedIndex={focusedIndex} />}
+		</div>
+	);
+};
+
+interface GroupedDropdownProps {
+	items: ConversationItem[];
+	handleItemClick: (item: ConversationItem) => void;
+	focusedIndex: number;
+}
+
+const GroupedDropdown: FC<GroupedDropdownProps> = ({ items, handleItemClick, focusedIndex }) => {
+	// Function to group items by date
+	const groupItems = (items: ConversationItem[]) => {
+		const now = new Date();
+		const yesterday = new Date(now);
+		yesterday.setDate(now.getDate() - 1);
+		const last7Days = new Date(now);
+		last7Days.setDate(now.getDate() - 7);
+
+		const groups: { [key: string]: ConversationItem[] } = {
+			Yesterday: [],
+			'Last 7 Days': [],
+			Older: [],
+		};
+
+		items.forEach(item => {
+			if (item.createdAt >= yesterday && item.createdAt < now) {
+				groups['Yesterday'].push(item);
+			} else if (item.createdAt >= last7Days && item.createdAt < now) {
+				groups['Last 7 Days'].push(item);
+			} else {
+				groups['Older'].push(item);
+			}
+		});
+
+		return groups;
+	};
+
+	const groupedItems = groupItems(items);
+	// log.info('Grouped Items:', JSON.stringify(groupedItems, null, 2));
+	return (
+		<ul
+			className="absolute left-0 right-0 mt-0 max-h-90 overflow-y-auto bg-base-200 rounded-2xl shadow-lg z-10"
+			style={{ fontSize: '14px' }}
+		>
+			{Object.entries(groupedItems).map(([groupTitle, groupItems]) => (
+				<Fragment key={groupTitle}>
+					<li className="text-neutral-400 text-sm px-12 py-2">{groupTitle}</li>
+					{groupItems.map((item, index) => (
 						<li
 							key={item.id}
 							onClick={() => handleItemClick(item)}
-							className={`px-12 py-2 cursor-pointer hover:bg-base-100 ${index === focusedIndex ? 'bg-base-100' : ''}`}
+							className={`flex justify-between items-center px-12 py-2 cursor-pointer hover:bg-base-100 ${index === focusedIndex ? 'bg-base-100' : ''}`}
 						>
-							{item.title}
+							<span>{item.title}</span>
+							<span className="text-neutral-400 text-xs hidden lg:block">
+								{new Date(item.createdAt).getDate()}{' '}
+								{new Intl.DateTimeFormat('en-US', { month: 'short' }).format(new Date(item.createdAt))}{' '}
+								{new Date(item.createdAt).getFullYear()}
+							</span>
 						</li>
 					))}
-				</ul>
-			)}
-		</div>
+				</Fragment>
+			))}
+		</ul>
 	);
 };
