@@ -81,9 +81,9 @@ interface PComponentProps {
 
 export function ChatMessageContent({ content, align }: ChatMessageContentProps) {
 	const components = {
-		h1: ({ children }: PComponentProps) => <h1 className="text-2xl font-bold my-2">{children}</h1>,
-		h2: ({ children }: PComponentProps) => <h2 className="text-xl font-bold my-2">{children}</h2>,
-		h3: ({ children }: PComponentProps) => <h3 className="text-lg font-bold my-2">{children}</h3>,
+		h1: ({ children }: PComponentProps) => <h1 className="text-xl font-bold my-2">{children}</h1>,
+		h2: ({ children }: PComponentProps) => <h2 className="text-lg font-bold my-2">{children}</h2>,
+		h3: ({ children }: PComponentProps) => <h3 className="text-base font-bold my-2">{children}</h3>,
 		p: ({ className, children }: PComponentProps) => {
 			const newClassName = `${className} my-2 ${align}`;
 			return (

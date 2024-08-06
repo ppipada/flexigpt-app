@@ -1,4 +1,5 @@
 'use client';
+import { loadProviderSettings } from '@/lib/loadSettings';
 import { setLogger } from '@/lib/log_setup';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -8,6 +9,7 @@ export default function Home() {
 	useEffect(() => {
 		const handleDOMContentLoaded = () => {
 			setLogger();
+			loadProviderSettings();
 		};
 		if (document.readyState === 'loading') {
 			document.addEventListener('DOMContentLoaded', handleDOMContentLoaded);

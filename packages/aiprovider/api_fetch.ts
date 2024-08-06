@@ -168,7 +168,8 @@ export class APICaller {
 				reader.read().then(processText);
 			})
 			.catch(error => {
-				this.handleError(error);
+				const newError = this.handleError(error);
+				throw newError;
 			});
 	}
 }

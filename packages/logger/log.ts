@@ -25,16 +25,36 @@ export const consoleLogger: ILogger = {
 	warn: (...args: unknown[]) => console.warn(...args),
 };
 
-let globalLogger: ILogger = consoleLogger;
+class Logger {
+	private logger;
 
-export function setGlobalLogger(logger: ILogger): void {
-	globalLogger = logger;
+	constructor(l: ILogger) {
+		this.logger = l;
+	}
+
+	setLogger(logger: ILogger): void {
+		this.logger = logger;
+	}
+
+	log(...args: unknown[]): void {
+		this.logger.log(...args);
+	}
+
+	error(...args: unknown[]): void {
+		this.logger.error(...args);
+	}
+
+	info(...args: unknown[]): void {
+		this.logger.info(...args);
+	}
+
+	debug(...args: unknown[]): void {
+		this.logger.debug(...args);
+	}
+
+	warn(...args: unknown[]): void {
+		this.logger.warn(...args);
+	}
 }
 
-export const log = {
-	log: (...args: unknown[]) => globalLogger.log(...args),
-	error: (...args: unknown[]) => globalLogger.error(...args),
-	info: (...args: unknown[]) => globalLogger.info(...args),
-	debug: (...args: unknown[]) => globalLogger.debug(...args),
-	warn: (...args: unknown[]) => globalLogger.warn(...args),
-};
+export const log = new Logger(consoleLogger);

@@ -108,13 +108,7 @@ const ChatScreen: FC = () => {
 				});
 			};
 
-			const newMsg = await getCompletionMessage(
-				convoMsg,
-				trimmedText,
-				updatedChatWithUserMessage.messages,
-				{},
-				onStreamData
-			);
+			const newMsg = await getCompletionMessage(convoMsg, updatedChatWithUserMessage.messages, {}, onStreamData);
 
 			if (newMsg) {
 				// Remove last message and substitue the complete thing

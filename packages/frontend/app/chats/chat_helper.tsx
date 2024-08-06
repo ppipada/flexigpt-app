@@ -70,15 +70,20 @@ async function handleStreamedCompletion(
 
 export async function getCompletionMessage(
 	convoMessage: ConversationMessage,
-	prompt: string,
 	messages?: Array<ConversationMessage>,
 	inputParams?: { [key: string]: any },
 	onStreamData?: (data: string) => void
 ): Promise<ConversationMessage | undefined> {
-	const chatMsgs = convertConversationToChatMessages(messages);
+	const allMessages = convertConversationToChatMessages(messages);
+	const promptMsg = allMessages.pop();
 	const providerAPI = providerSet.getProviderAPI(providerSet.getDefaultProvider());
 	const isStream = providerAPI.getProviderInfo().streamingSupport || false;
-	const fullCompletionRequest = providerAPI.getCompletionRequest(prompt, chatMsgs, inputParams, isStream);
+	const fullCompletionRequest = providerAPI.getCompletionRequest(
+		promptMsg?.content || '',
+		allMessages,
+		inputParams,
+		isStream
+	);
 
 	if (isStream && onStreamData) {
 		return handleStreamedCompletion(convoMessage, providerAPI, fullCompletionRequest, onStreamData);

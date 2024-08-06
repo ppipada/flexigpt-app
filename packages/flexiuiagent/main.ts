@@ -1,7 +1,16 @@
-import { app, BrowserWindow, CallbackResponse, ipcMain, OnBeforeRequestListenerDetails, session } from 'electron';
+import {
+	app,
+	BrowserWindow,
+	CallbackResponse,
+	globalShortcut,
+	ipcMain,
+	OnBeforeRequestListenerDetails,
+	protocol,
+	session,
+} from 'electron';
 import electronIsDev from 'electron-is-dev';
 // import electronUpdater from 'electron-updater';
-import { ILogger, log, setGlobalLogger } from 'logger';
+import { ILogger, log } from 'logger';
 import path from 'node:path';
 
 import { Conversation, ConversationMessage } from 'conversationmodel';
@@ -23,9 +32,12 @@ if (!electronIsDev) {
 	// const logLevel = "info";
 	const logLevel = 'debug';
 	const wlog = createILogger('file', logLevel, path.join(app.getPath('userData'), 'logs'));
-	setGlobalLogger(wlog);
+	log.setLogger(wlog);
 	log.info('Backend: Running in production');
 } else {
+	const logLevel = 'debug';
+	const wlog = createILogger('file', logLevel, path.join(app.getPath('userData'), 'logs'));
+	log.setLogger(wlog);
 	log.info('Backend: Running in dev');
 }
 
@@ -71,6 +83,11 @@ const spawnAppWindow = async () => {
 	appWindow.loadURL(loadurl);
 	appWindow.maximize();
 	appWindow.setMenu(null);
+	globalShortcut.register('Control+Shift+I', () => {
+		if (appWindow) {
+			appWindow.webContents.openDevTools();
+		}
+	});
 	appWindow.show();
 
 	if (electronIsDev) appWindow.webContents.openDevTools({ mode: 'right' });
@@ -103,6 +120,14 @@ const getActualURL = (origurl: string) => {
 		if (PUBLIC_FILES_PATHS.some(pfile => actualURL === pfile)) {
 			actualURL = FRONTEND_PATH_PREFIX + actualURL;
 		}
+		const percentIndex = actualURL.indexOf('%');
+		if (percentIndex !== -1) {
+			actualURL = actualURL.substring(0, percentIndex);
+		}
+		const qIndex = actualURL.indexOf('?');
+		if (qIndex !== -1) {
+			actualURL = actualURL.substring(0, qIndex);
+		}
 		// Handle if its a page request
 		if (actualURL.endsWith('/')) {
 			actualURL += 'index.html';
@@ -130,6 +155,13 @@ const handleAccessRequest = (
 	}
 };
 
+const interceptFileProtocol = () => {
+	protocol.interceptFileProtocol('file', (request, callback) => {
+		const callurl = getActualURL(request.url);
+		callback({ path: callurl.substring(8) });
+	});
+};
+
 // This is done to fix: [ERROR:gl_surface_presentation_helper.cc(260)] GetVSyncParametersIfAvailable() failed in linux.
 app.disableHardwareAcceleration();
 
@@ -137,6 +169,7 @@ app.on('ready', async () => {
 	// new AppUpdater();
 	await initializeSettingsManager();
 	await initializeConversationManager();
+	interceptFileProtocol();
 	spawnAppWindow();
 	session.defaultSession.webRequest.onBeforeRequest(handleAccessRequest);
 });

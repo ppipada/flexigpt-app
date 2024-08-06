@@ -126,4 +126,4 @@
   - [ ] ~~Math handling~~
 - [ ] Usages in normal resp
 - [ ] Usages in stream resp
-- [ ] packaged app debug
+- [x] packaged app debug

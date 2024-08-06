@@ -1,18 +1,13 @@
 'use client';
 
-import { getAllSettings, setSetting } from '@/api/settings';
-
+import { setSetting } from '@/api/settings';
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
+import { loadProviderSettings, updateProviderAISettings } from '@/lib/loadSettings';
 import AISettingsCard from '@/settings/ai_settings';
 import { ALL_AI_PROVIDERS, ProviderName, providerSet } from 'aiprovider';
 import { FC, useEffect, useState } from 'react';
-import { AISetting, defaultAISettings } from 'settingmodel';
-
-function updateProviderAISettings(provider: ProviderName, settings: AISetting) {
-	const providerAPI = providerSet.getProviderAPI(provider);
-	providerAPI.setAttribute(settings.apiKey, settings.defaultModel, settings.defaultTemperature, settings.defaultOrigin);
-}
+import { defaultAISettings } from 'settingmodel';
 
 const SettingsPage: FC = () => {
 	const [defaultProvider, setDefaultProvider] = useState(providerSet.getDefaultProvider());
@@ -20,7 +15,7 @@ const SettingsPage: FC = () => {
 
 	useEffect(() => {
 		(async () => {
-			const settings = await getAllSettings();
+			const settings = await loadProviderSettings();
 			if (settings) {
 				const defaultProvider = settings.app.defaultProvider as ProviderName;
 				setDefaultProvider(defaultProvider);
@@ -32,13 +27,6 @@ const SettingsPage: FC = () => {
 					llamacpp: settings[ProviderName.LLAMACPP],
 					openai: settings[ProviderName.OPENAI],
 				});
-
-				providerSet.setDefaultProvider(defaultProvider);
-				updateProviderAISettings(ProviderName.ANTHROPIC, settings[ProviderName.ANTHROPIC]);
-				updateProviderAISettings(ProviderName.GOOGLE, settings[ProviderName.GOOGLE]);
-				updateProviderAISettings(ProviderName.HUGGINGFACE, settings[ProviderName.HUGGINGFACE]);
-				updateProviderAISettings(ProviderName.LLAMACPP, settings[ProviderName.LLAMACPP]);
-				updateProviderAISettings(ProviderName.OPENAI, settings[ProviderName.OPENAI]);
 			}
 		})();
 	}, []);

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ILogger, log, setGlobalLogger } from 'logger';
+import { ILogger, log } from 'logger';
 
 // Define an IPC logger
 export const ipcLogger: ILogger = {
@@ -14,7 +14,7 @@ export function setLogger() {
 	if (window.loggerSet) {
 		return;
 	}
-	setGlobalLogger(ipcLogger);
+	log.setLogger(ipcLogger);
 	log.debug('Frontend: DOM loaded');
 	window.loggerSet = true;
 }
