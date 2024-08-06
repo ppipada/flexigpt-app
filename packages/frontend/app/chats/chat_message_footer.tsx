@@ -13,6 +13,7 @@ interface ChatMessageFooterAreaProps {
 	onSendFeedback: () => void;
 	feedbackController: RefObject<HTMLInputElement>;
 	messageDetails: string;
+	isStreaming: boolean;
 }
 
 const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
@@ -30,6 +31,7 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	feedbackController,
 	messageDetails,
+	isStreaming,
 }) => {
 	const [isExpanded, setIsExpanded] = useState(false);
 
@@ -77,6 +79,11 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 						</button> */}
 					</>
 				</div>
+				{isStreaming && (
+					<div className="text-sm">
+						<span>Streaming...</span>
+					</div>
+				)}
 				<button
 					className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
 					onClick={toggleExpanded}

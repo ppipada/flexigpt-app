@@ -2,11 +2,6 @@
 import { ChangeEvent, FC, KeyboardEvent, useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { FiSend } from 'react-icons/fi';
 
-interface ChatInputFieldProps {
-	onSend: (message: string) => void;
-	setInputHeight: (height: number) => void;
-}
-
 // Custom hook for handling form submission on Enter key press
 function useEnterSubmit(): {
 	formRef: RefObject<HTMLFormElement>;
@@ -24,6 +19,11 @@ function useEnterSubmit(): {
 	};
 
 	return { formRef, onKeyDown: handleKeyDown };
+}
+
+interface ChatInputFieldProps {
+	onSend: (message: string) => void;
+	setInputHeight: (height: number) => void;
 }
 
 const ChatInputField: FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => {

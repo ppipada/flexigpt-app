@@ -65,7 +65,7 @@ const SettingsPage: FC = () => {
 
 	const handleSaveAISettings = async (provider: keyof typeof aiSettings, key: string, value: any) => {
 		await setSetting(`${provider}.${key}`, value);
-		updateProviderAISettings(provider, aiSettings[provider]);
+		updateProviderAISettings(provider as ProviderName, aiSettings[provider]);
 	};
 
 	const fetchValue = async (): Promise<string> => {
@@ -139,7 +139,7 @@ const SettingsPage: FC = () => {
 						</div>
 						<div className="w-full flex-1 pb-4">
 							{Object.keys(aiSettings).map(providerStr => {
-								const typedProvider = providerStr as keyof typeof aiSettings;
+								const typedProvider = providerStr as ProviderName;
 								const oneSettings = aiSettings[typedProvider];
 								return (
 									<AISettingsCard

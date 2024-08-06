@@ -16,8 +16,8 @@
 		"fmt": "prettier -c .",
 		"fmt:fix": "prettier -w .",
 		"clean": "lerna run clean",
-		"pre-build": "lerna run clean && lerna run build --stream --sort",
-		"buildpack": "pnpm run pre-build && lerna run pack --scope flexiuiagent",
+		"pre-pack": "lerna run build --ignore frontend --ignore flexiuiagent --stream --sort && lerna run build --scope frontend && lerna run build --scope flexiuiagent",
+		"buildpack": "lerna run clean && pnpm run pre-pack && lerna run pack --scope flexiuiagent",
 		"boot": "lerna run build --scope flexiuiagent && electron .",
 		"dev": "lerna run build --ignore frontend --ignore flexiuiagent --stream --sort && concurrently -k \"lerna run dev --scope frontend\" \"wait-on tcp:127.0.0.1:3000 && pnpm run boot\""
 	},

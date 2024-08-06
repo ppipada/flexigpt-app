@@ -20,7 +20,9 @@ const HANDLE_FILES_PREFIXES = [`file://${FRONTEND_PATH_PREFIX}`, ...PUBLIC_FILES
 const PRELOAD_PATH = path.join(__dirname, 'preload.js');
 
 if (!electronIsDev) {
-	const wlog = createILogger('file', 'info', path.join(app.getPath('userData'), 'logs'));
+	// const logLevel = "info";
+	const logLevel = 'debug';
+	const wlog = createILogger('file', logLevel, path.join(app.getPath('userData'), 'logs'));
 	setGlobalLogger(wlog);
 	log.info('Backend: Running in production');
 } else {

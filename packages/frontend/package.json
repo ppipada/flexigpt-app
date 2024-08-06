@@ -15,10 +15,9 @@
 	"keywords": [],
 	"author": "",
 	"dependencies": {
-		"logger": "workspace:*",
 		"aiprovider": "workspace:*",
 		"conversationmodel": "workspace:*",
-		"settingmodel": "workspace:*",
+		"logger": "workspace:*",
 		"next": "14.2.5",
 		"next-themes": "^0.3.0",
 		"react": "^18",
@@ -27,9 +26,12 @@
 		"react-markdown": "^9.0.1",
 		"react-syntax-highlighter": "^15.5.0",
 		"rehype-react": "^8.0.0",
+		"remark-gemoji": "^8.0.0",
 		"remark-gfm": "^4.0.0",
 		"remark-parse": "^11.0.0",
-		"remark-rehype": "^11.1.0"
+		"remark-rehype": "^11.1.0",
+		"remark-supersub": "^1.0.0",
+		"settingmodel": "workspace:*"
 	},
 	"devDependencies": {
 		"@svgr/webpack": "^8.1.0",

@@ -117,12 +117,13 @@
   - [x] aiprovider support
   - [x] page support
   - [ ] add other providers
-  - [ ] someway to show things are loading
+  - [x] someway to show things are loading
 - [ ] Content:
-  - [ ] Emoji
-  - [ ] Subscript
-  - [ ] custom headings
-  - [ ] navigate in same doc
-  - [ ] Math handling
+  - [x] Emoji
+  - [ ] ~~Subscript~~
+  - [ ] ~~custom headings~~
+  - [ ] ~~navigate in same doc~~
+  - [ ] ~~Math handling~~
 - [ ] Usages in normal resp
 - [ ] Usages in stream resp
+- [ ] packaged app debug

@@ -5,9 +5,11 @@ import Markdown from 'react-markdown';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { monokaiSublime } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import rehypeReact from 'rehype-react';
+import remarkGemoji from 'remark-gemoji';
 import remarkGfm from 'remark-gfm';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
+import supersub from 'remark-supersub';
 
 export const MemoizedMarkdown = memo(
 	Markdown,
@@ -73,6 +75,7 @@ interface CodeComponentProps {
 }
 
 interface PComponentProps {
+	className?: string;
 	children?: ReactNode;
 }
 
@@ -81,15 +84,19 @@ export function ChatMessageContent({ content, align }: ChatMessageContentProps) 
 		h1: ({ children }: PComponentProps) => <h1 className="text-2xl font-bold my-2">{children}</h1>,
 		h2: ({ children }: PComponentProps) => <h2 className="text-xl font-bold my-2">{children}</h2>,
 		h3: ({ children }: PComponentProps) => <h3 className="text-lg font-bold my-2">{children}</h3>,
-		p: ({ children }: PComponentProps) => (
-			<p className={`my-2 ${align}`} style={{ lineHeight: '1.5', fontSize: '14px' }}>
-				{children}
-			</p>
-		),
+		p: ({ className, children }: PComponentProps) => {
+			const newClassName = `${className} my-2 ${align}`;
+			return (
+				<p className={newClassName} style={{ lineHeight: '1.5', fontSize: '14px' }}>
+					{children}
+				</p>
+			);
+		},
 		code: ({ inline, className, children, ...props }: CodeComponentProps) => {
 			if (inline || !className) {
+				const newClassName = `bg-base-200 inline text-wrap whitespace-pre-wrap break-words ${className}`;
 				return (
-					<code className="bg-base-200 inline" {...props}>
+					<code className={newClassName} {...props}>
 						{children}
 					</code>
 				);
@@ -134,13 +141,13 @@ export function ChatMessageContent({ content, align }: ChatMessageContentProps) 
 		blockquote: ({ children }: PComponentProps) => (
 			<blockquote className="border-l-4 border-gray-300 pl-4 italic">{children}</blockquote>
 		),
-		del: ({ children }: PComponentProps) => <del className="line-through">{children}</del>,
+		// del: ({ children }: PComponentProps) => <del className="line-through">{children}</del>,
 	};
 
 	return (
 		<div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2">
 			<MemoizedMarkdown
-				remarkPlugins={[remarkParse, remarkGfm, remarkRehype]}
+				remarkPlugins={[remarkParse, remarkGemoji, supersub, remarkGfm, remarkRehype]}
 				rehypePlugins={[rehypeReact]}
 				components={components}
 			>

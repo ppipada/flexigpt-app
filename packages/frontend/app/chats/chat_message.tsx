@@ -12,7 +12,7 @@ interface ChatMessageProps {
 	onDislike: () => void;
 	onSendFeedback: () => void;
 	feedbackController: RefObject<HTMLInputElement>;
-	streamedMessage: string; // New prop to handle streaming data
+	streamedMessage: string;
 }
 
 const ChatMessage: FC<ChatMessageProps> = ({
@@ -23,7 +23,7 @@ const ChatMessage: FC<ChatMessageProps> = ({
 	onDislike,
 	onSendFeedback,
 	feedbackController,
-	streamedMessage, // Destructure the new prop
+	streamedMessage,
 }) => {
 	const isUser = message.role === ConversationRoleEnum.user;
 	const align = !isUser ? 'items-end text-left' : 'items-start text-left';
@@ -52,6 +52,7 @@ const ChatMessage: FC<ChatMessageProps> = ({
 						feedbackController={feedbackController}
 						messageDetails={message.details ? message.details : ''}
 						cardContent={message.content}
+						isStreaming={streamedMessage ? true : false}
 					/>
 				</div>
 			</div>
