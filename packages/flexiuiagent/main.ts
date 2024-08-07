@@ -9,27 +9,13 @@ import {
 	session,
 } from 'electron';
 import electronIsDev from 'electron-is-dev';
-
 // import electronUpdater from 'electron-updater';
-import { ILogger, log } from 'logger';
 import path from 'node:path';
-
-import { ProviderSet } from 'aiproviderimpl';
-import { ChatCompletionRequestMessage, IProviderSetAPI, ModelName, ProviderName } from 'aiprovidermodel';
-import { Conversation, ConversationMessage } from 'conversationmodel';
-import { ConversationCollection } from 'conversationstore';
 import { dirname } from 'path';
-import { SettingsStore } from 'settingstore';
 import { fileURLToPath, format as urlformat } from 'url';
-import { createILogger } from 'winstonlogger';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const FRONTEND_PATH_PREFIX = '/frontend/build';
-const PUBLIC_FILES_PATHS = ['/icon.png', '/favicon.ico'];
-const HANDLE_FILES_PREFIXES = [`file://${FRONTEND_PATH_PREFIX}`, ...PUBLIC_FILES_PATHS.map(path => `file://${path}`)];
-// const ICON_PATH = path.resolve(__dirname, `../../${FRONTEND_PATH_PREFIX}/favicon.ico`);
-const PRELOAD_PATH = path.join(__dirname, 'preload.js');
+import { ILogger, log } from 'logger';
+import { createILogger } from 'winstonlogger';
 
 // const logLevel = "info";
 const logLevel = 'debug';
@@ -42,6 +28,20 @@ if (!electronIsDev) {
 	log.setLogger(wlog);
 	log.info('Backend: Running in dev');
 }
+
+import { ProviderSet } from 'aiproviderimpl';
+import { ChatCompletionRequestMessage, IProviderSetAPI, ModelName, ProviderName } from 'aiprovidermodel';
+import { Conversation, ConversationMessage } from 'conversationmodel';
+import { ConversationCollection } from 'conversationstore';
+import { SettingsStore } from 'settingstore';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const FRONTEND_PATH_PREFIX = '/frontend/build';
+const PUBLIC_FILES_PATHS = ['/icon.png', '/favicon.ico'];
+const HANDLE_FILES_PREFIXES = [`file://${FRONTEND_PATH_PREFIX}`, ...PUBLIC_FILES_PATHS.map(path => `file://${path}`)];
+// const ICON_PATH = path.resolve(__dirname, `../../${FRONTEND_PATH_PREFIX}/favicon.ico`);
+const PRELOAD_PATH = path.join(__dirname, 'preload.js');
 
 // const { autoUpdater } = electronUpdater;
 let appWindow: BrowserWindow | null = null;

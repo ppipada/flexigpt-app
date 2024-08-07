@@ -123,10 +123,12 @@
   - [ ] ~~Math handling~~
 - [x] packaged app debug
 - [x] Move ai provider to electron main
+- [x] screen blanks if lot of data is put in inputfield
+- [x] selection doesnt reset on new conversation in search bar
+- [x] today vs yesterday in group
+- [x] logger is imported in securejsondb before it is set as ipc logger
+- [ ] logger is imported in securejsondb before it is set as ipc file logger in appimage
 - [ ] error handling review and fix
-- [ ] screen blanks if lot of data is put in inputfield
-- [ ] selection doesnt reset on new conversation in search bar
-- [ ] logger is imported in securejsondb before it is set as ipc logger
 
 ## Pushed out list
 

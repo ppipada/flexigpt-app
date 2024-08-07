@@ -1,4 +1,3 @@
-// import { log } from 'logger';
 import { ChangeEvent, FC, KeyboardEvent, useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { FiSend } from 'react-icons/fi';
 
@@ -26,6 +25,8 @@ interface ChatInputFieldProps {
 	setInputHeight: (height: number) => void;
 }
 
+const MAX_HEIGHT = 240;
+
 const ChatInputField: FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => {
 	const [text, setText] = useState<string>('');
 	const [isSendButtonEnabled, setIsSendButtonEnabled] = useState<boolean>(false);
@@ -37,8 +38,8 @@ const ChatInputField: FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => 
 	const autoResizeTextarea = useCallback(() => {
 		if (inputRef.current) {
 			inputRef.current.style.height = 'auto';
-			inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
-			setInputHeight(inputRef.current.scrollHeight);
+			inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, MAX_HEIGHT)}px`;
+			setInputHeight(Math.min(inputRef.current.scrollHeight, MAX_HEIGHT));
 		}
 	}, [setInputHeight]);
 
@@ -59,8 +60,8 @@ const ChatInputField: FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => 
 		isSubmittingRef.current = false;
 		if (inputRef.current) {
 			inputRef.current.style.height = 'auto';
-			inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
-			setInputHeight(inputRef.current.scrollHeight);
+			inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, MAX_HEIGHT)}px`;
+			setInputHeight(Math.min(inputRef.current.scrollHeight, MAX_HEIGHT));
 			inputRef.current?.focus();
 		}
 	};

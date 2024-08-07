@@ -34,7 +34,8 @@ export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSele
 
 	const handleItemClick = (item: ConversationItem) => {
 		onSelectConversation(item);
-		setQuery(item.title);
+		// setQuery(item.title);
+		setQuery('');
 		setShowDropdown(false);
 	};
 
@@ -83,6 +84,48 @@ export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSele
 	);
 };
 
+function groupItems(items: ConversationItem[]) {
+	const normalizeDate = (date: Date): Date => {
+		const normalized = new Date(date);
+		normalized.setHours(0, 0, 0, 0);
+		return normalized;
+	};
+
+	const now = new Date();
+	const today = normalizeDate(now);
+
+	const yesterday = new Date(today);
+	yesterday.setDate(today.getDate() - 1);
+
+	const dayBeforeYesterday = new Date(today);
+	dayBeforeYesterday.setDate(today.getDate() - 2);
+
+	const last7Days = new Date(today);
+	last7Days.setDate(today.getDate() - 7);
+
+	const groups: { [key: string]: ConversationItem[] } = {
+		Today: [],
+		Yesterday: [],
+		'Last 7 Days': [],
+		Older: [],
+	};
+
+	items.forEach(item => {
+		const itemDate = normalizeDate(new Date(item.createdAt));
+
+		if (itemDate >= today) {
+			groups['Today'].push(item);
+		} else if (itemDate >= yesterday && itemDate < today) {
+			groups['Yesterday'].push(item);
+		} else if (itemDate >= last7Days && itemDate < today) {
+			groups['Last 7 Days'].push(item);
+		} else {
+			groups['Older'].push(item);
+		}
+	});
+
+	return groups;
+}
 interface GroupedDropdownProps {
 	items: ConversationItem[];
 	handleItemClick: (item: ConversationItem) => void;
@@ -90,59 +133,35 @@ interface GroupedDropdownProps {
 }
 
 const GroupedDropdown: FC<GroupedDropdownProps> = ({ items, handleItemClick, focusedIndex }) => {
-	// Function to group items by date
-	const groupItems = (items: ConversationItem[]) => {
-		const now = new Date();
-		const yesterday = new Date(now);
-		yesterday.setDate(now.getDate() - 1);
-		const last7Days = new Date(now);
-		last7Days.setDate(now.getDate() - 7);
-
-		const groups: { [key: string]: ConversationItem[] } = {
-			Yesterday: [],
-			'Last 7 Days': [],
-			Older: [],
-		};
-
-		items.forEach(item => {
-			if (item.createdAt >= yesterday && item.createdAt < now) {
-				groups['Yesterday'].push(item);
-			} else if (item.createdAt >= last7Days && item.createdAt < now) {
-				groups['Last 7 Days'].push(item);
-			} else {
-				groups['Older'].push(item);
-			}
-		});
-
-		return groups;
-	};
-
 	const groupedItems = groupItems(items);
-	// log.info('Grouped Items:', JSON.stringify(groupedItems, null, 2));
+
 	return (
 		<ul
 			className="absolute left-0 right-0 mt-0 max-h-80 overflow-y-auto bg-base-200 rounded-2xl shadow-lg z-10"
 			style={{ fontSize: '14px' }}
 		>
-			{Object.entries(groupedItems).map(([groupTitle, groupItems]) => (
-				<Fragment key={groupTitle}>
-					<li className="text-neutral-400 text-sm px-12 py-2">{groupTitle}</li>
-					{groupItems.map((item, index) => (
-						<li
-							key={item.id}
-							onClick={() => handleItemClick(item)}
-							className={`flex justify-between items-center px-12 py-2 cursor-pointer hover:bg-base-100 ${index === focusedIndex ? 'bg-base-100' : ''}`}
-						>
-							<span>{item.title}</span>
-							<span className="text-neutral-400 text-xs hidden lg:block">
-								{new Date(item.createdAt).getDate()}{' '}
-								{new Intl.DateTimeFormat('en-US', { month: 'short' }).format(new Date(item.createdAt))}{' '}
-								{new Date(item.createdAt).getFullYear()}
-							</span>
-						</li>
-					))}
-				</Fragment>
-			))}
+			{Object.entries(groupedItems)
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
+				.filter(([_, groupItems]) => groupItems.length > 0) // Filter out empty groups
+				.map(([groupTitle, groupItems]) => (
+					<Fragment key={groupTitle}>
+						<li className="text-neutral-400 text-sm px-12 py-2">{groupTitle}</li>
+						{groupItems.map((item, index) => (
+							<li
+								key={item.id}
+								onClick={() => handleItemClick(item)}
+								className={`flex justify-between items-center px-12 py-2 cursor-pointer hover:bg-base-100 ${index === focusedIndex ? 'bg-base-100' : ''}`}
+							>
+								<span>{item.title}</span>
+								<span className="text-neutral-400 text-xs hidden lg:block">
+									{new Date(item.createdAt).getDate()}{' '}
+									{new Intl.DateTimeFormat('en-US', { month: 'short' }).format(new Date(item.createdAt))}{' '}
+									{new Date(item.createdAt).getFullYear()}
+								</span>
+							</li>
+						))}
+					</Fragment>
+				))}
 		</ul>
 	);
 };
