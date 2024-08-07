@@ -1,5 +1,8 @@
-import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, providerSet } from 'aiprovider';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { completion, getCompletionRequest, getDefaultProvider, getProviderInfo } from '@/api/base_aiproviderimpl';
+import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, ProviderName } from 'aiprovidermodel';
 import { ConversationMessage, ConversationRoleEnum } from 'conversationmodel';
+import { log } from 'logger';
 
 const roleMap: Record<ConversationRoleEnum, ChatCompletionRoleEnum> = {
 	[ConversationRoleEnum.system]: ChatCompletionRoleEnum.system,
@@ -24,10 +27,10 @@ function convertConversationToChatMessages(
 
 async function handleDirectCompletion(
 	convoMessage: ConversationMessage,
-	providerAPI: any,
+	provider: ProviderName,
 	fullCompletionRequest: any
 ): Promise<ConversationMessage | undefined> {
-	const providerResp = await providerAPI.completion(fullCompletionRequest);
+	const providerResp = await completion(provider, fullCompletionRequest);
 	let respContent = '';
 	let respDetails: string | undefined;
 
@@ -47,11 +50,22 @@ async function handleDirectCompletion(
 
 async function handleStreamedCompletion(
 	convoMessage: ConversationMessage,
-	providerAPI: any,
+	provider: ProviderName,
 	fullCompletionRequest: any,
 	onStreamData: (data: string) => void
 ): Promise<ConversationMessage | undefined> {
-	const providerResp = await providerAPI.completion(fullCompletionRequest, onStreamData);
+	const dataFunction = async (data: any): Promise<void> => {
+		return new Promise((resolve, reject) => {
+			try {
+				onStreamData(data);
+				resolve();
+			} catch (error) {
+				reject(error);
+			}
+		});
+	};
+
+	const providerResp = await completion(provider, fullCompletionRequest, dataFunction);
 	let respContent = '';
 	let respDetails: string | undefined;
 
@@ -76,18 +90,25 @@ export async function getCompletionMessage(
 ): Promise<ConversationMessage | undefined> {
 	const allMessages = convertConversationToChatMessages(messages);
 	const promptMsg = allMessages.pop();
-	const providerAPI = providerSet.getProviderAPI(providerSet.getDefaultProvider());
-	const isStream = providerAPI.getProviderInfo().streamingSupport || false;
-	const fullCompletionRequest = providerAPI.getCompletionRequest(
+	let defaultProvider: ProviderName;
+	try {
+		defaultProvider = await getDefaultProvider();
+	} catch (e) {
+		log.error(e);
+		throw e;
+	}
+	const providerInfo = await getProviderInfo(defaultProvider);
+	const isStream = providerInfo.streamingSupport || false;
+	const fullCompletionRequest = await getCompletionRequest(
+		defaultProvider,
 		promptMsg?.content || '',
 		allMessages,
 		inputParams,
 		isStream
 	);
-
 	if (isStream && onStreamData) {
-		return handleStreamedCompletion(convoMessage, providerAPI, fullCompletionRequest, onStreamData);
+		return await handleStreamedCompletion(convoMessage, defaultProvider, fullCompletionRequest, onStreamData);
 	} else {
-		return handleDirectCompletion(convoMessage, providerAPI, fullCompletionRequest);
+		return await handleDirectCompletion(convoMessage, defaultProvider, fullCompletionRequest);
 	}
 }

@@ -1,13 +1,13 @@
-import { AxiosRequestConfig } from 'axios';
-import { log } from 'logger';
 import {
 	ChatCompletionRequestMessage,
 	ChatCompletionRoleEnum,
 	CompletionRequest,
 	CompletionResponse,
-} from './chat_types';
+	openaiProviderInfo,
+} from 'aiprovidermodel';
+import { AxiosRequestConfig } from 'axios';
+import { log } from 'logger';
 import { AIAPI } from './completion_provider';
-import { openaiProviderInfo } from './provider_consts';
 import { unescapeChars } from './provider_utils';
 
 export class OpenAIAPI extends AIAPI {
@@ -17,7 +17,7 @@ export class OpenAIAPI extends AIAPI {
 
 	async completion(
 		input: CompletionRequest,
-		onStreamData?: (data: string) => void
+		onStreamData?: (data: string) => Promise<void>
 	): Promise<CompletionResponse | undefined> {
 		if (!input.messages) {
 			throw Error('No input messages found');
@@ -155,57 +155,85 @@ export class OpenAIAPI extends AIAPI {
 		return { parsedText, parsedFunctionName, parsedFunctionArgs };
 	}
 
-	private handleStreamingResponse(
+	private getStreamDoneResponse(respText: string, functionName: string, functionArgs: any): CompletionResponse {
+		const completionResponse: CompletionResponse = {
+			fullResponse: undefined,
+			respContent: respText,
+			functionName: functionName,
+			functionArgs: functionArgs,
+		};
+		return completionResponse;
+	}
+
+	private parseStreamLine(respText: string, functionName: string, functionArgs: any, line: string) {
+		let respNew = '';
+		if (!line.startsWith('data: ')) {
+			return {
+				respNew: respNew,
+				respFull: respText,
+				fname: functionName,
+				fargs: functionArgs,
+				completeResponse: undefined,
+			};
+		}
+
+		line = line.substring(6).trim(); // Remove 'data: ' prefix
+		try {
+			if (line.trim().toUpperCase() === '[DONE]') {
+				const r = this.getStreamDoneResponse(respText, functionName, functionArgs);
+				return { respNew: respNew, respFull: respText, fname: functionName, fargs: functionArgs, completeResponse: r };
+			}
+			// log.debug('line data', line);
+			const dataObject = JSON.parse(line);
+			// log.debug('json data', dataObject);
+			const { parsedText, parsedFunctionName, parsedFunctionArgs } = this.parseStreamingData(dataObject);
+			// log.debug('parsed data', parsedText);
+			respNew = parsedText;
+			respText += parsedText || '';
+			functionName = parsedFunctionName || functionName;
+			functionArgs = parsedFunctionArgs || functionArgs;
+		} catch (e) {
+			log.error('Error in line data', line, JSON.stringify(e));
+		}
+		return {
+			respNew: respNew,
+			respFull: respText,
+			fname: functionName,
+			fargs: functionArgs,
+			completeResponse: undefined,
+		};
+	}
+
+	private async handleStreamingResponse(
 		requestConfig: AxiosRequestConfig,
-		onStreamData?: (data: string) => void
+		onStreamData?: (data: string) => Promise<void>
 	): Promise<CompletionResponse | undefined> {
 		if (!onStreamData) {
 			throw new Error('Need a stream data handler');
 		}
+
 		return new Promise((resolve, reject) => {
 			let respText = '';
 			let functionName = '';
 			let functionArgs: any;
 			let buffer = ''; // Buffer to hold incomplete lines
 
-			const handleStreamDone = (respText: string, functionName: string, functionArgs: any) => {
-				const completionResponse: CompletionResponse = {
-					fullResponse: undefined,
-					respContent: respText,
-					functionName: functionName,
-					functionArgs: functionArgs,
-				};
-				resolve(completionResponse);
-			};
-
-			const dataChunkProcessor = (dataString: string) => {
+			const dataChunkProcessor = async (dataString: string) => {
 				try {
 					buffer += dataString; // Accumulate data in the buffer
 					const lines = buffer.split('\n'); // Split the buffer by newline
 					buffer = lines.pop() || ''; // Keep the last partial line in the buffer
 
-					for (let line of lines) {
-						if (line.startsWith('data: ')) {
-							line = line.substring(6).trim(); // Remove 'data: ' prefix
-							try {
-								if (line.trim().toUpperCase() === '[DONE]') {
-									handleStreamDone(respText, functionName, functionArgs);
-									return; // Exit after handling done
-								}
-								// log.debug('line data', line);
-								const dataObject = JSON.parse(line);
-								// log.debug('json data', dataObject);
-								const { parsedText, parsedFunctionName, parsedFunctionArgs } = this.parseStreamingData(dataObject);
-								// log.debug('parsed data', parsedText);
-								respText += parsedText || '';
-								functionName = parsedFunctionName || functionName;
-								functionArgs = parsedFunctionArgs || functionArgs;
-								onStreamData(parsedText);
-							} catch (e) {
-								log.error('Error data', line, JSON.stringify(e));
-								reject(e);
-							}
+					for (const line of lines) {
+						const r = this.parseStreamLine(respText, functionArgs, functionName, line);
+						if (r.completeResponse) {
+							resolve(r.completeResponse);
+							return;
 						}
+						respText = r.respFull;
+						functionName = r.fname;
+						functionArgs = r.fargs;
+						await onStreamData(r.respNew);
 					}
 				} catch (e) {
 					reject(e);

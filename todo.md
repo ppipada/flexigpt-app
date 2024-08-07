@@ -58,8 +58,6 @@
   - [x] Test with prod build and run appimage.
   - [ ] ~~Add icon in title bar and ass appIcon for tray~~
   - [x] Add a desktop entry so that appimage can be registered with the system
-    - [ ] currently supported only via appimagelauncher. Better do snap I suppose, but explore later.
-  - [ ] see about package distribution and updates
 
 - Settings screen
 
@@ -86,7 +84,7 @@
 - LLM Provider
 
   - [x] Implement llm providers
-  - [ ] connect this with chat page
+  - [x] connect this with chat page
 
 - Conversation State DB:
 
@@ -104,9 +102,8 @@
 
 - Agent screen
 
-  - [ ] See if a jupyter notebook UI can be presented
+## Laundry list of current things
 
-- Small things
 - [x] code inline line overflow handle
 - [x] feedback integration removal
 - [x] sort order of drop down, during load
@@ -124,6 +121,17 @@
   - [ ] ~~custom headings~~
   - [ ] ~~navigate in same doc~~
   - [ ] ~~Math handling~~
-- [ ] Usages in normal resp
-- [ ] Usages in stream resp
 - [x] packaged app debug
+- [x] Move ai provider to electron main
+- [ ] error handling review and fix
+- [ ] screen blanks if lot of data is put in inputfield
+- [ ] selection doesnt reset on new conversation in search bar
+- [ ] logger is imported in securejsondb before it is set as ipc logger
+
+## Pushed out list
+
+- [ ] AI provider: Usages in normal resp
+- [ ] AI provider:Usages in stream resp
+- [ ] Electron: currently supported only via appimagelauncher. Better do snap I suppose, but explore later.
+- [ ] Electron: see about package distribution and updates
+- [ ] Agent screen: See if a jupyter notebook UI can be presented

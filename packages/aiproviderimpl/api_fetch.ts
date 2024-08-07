@@ -144,32 +144,27 @@ export class APICaller {
 		}
 	}
 
-	requestStream(requestConfig: AxiosRequestConfig, dataChunkProcessor: (data: string) => void): void {
+	async requestStream(
+		requestConfig: AxiosRequestConfig,
+		dataChunkProcessor: (data: string) => Promise<void>
+	): Promise<void> {
 		const config = this.extendAxiosRequestConfig(requestConfig, true);
+		const response = await this.axiosInstance.request(config);
+		const stream = response.data as ReadableStream<Uint8Array>;
+		const reader = stream.getReader();
+		const decoder = new TextDecoder();
 
-		this.axiosInstance
-			.request(config)
-			.then(async response => {
-				const stream = response.data as ReadableStream<Uint8Array>;
-				const reader = stream.getReader();
-				const decoder = new TextDecoder();
+		const processText = async ({ done, value }: ReadableStreamReadResult<Uint8Array>) => {
+			if (done) {
+				return;
+			}
 
-				const processText = async ({ done, value }: ReadableStreamReadResult<Uint8Array>) => {
-					if (done) {
-						return;
-					}
+			const dataString = decoder.decode(value, { stream: true });
+			await dataChunkProcessor(dataString);
 
-					const dataString = decoder.decode(value, { stream: true });
-					dataChunkProcessor(dataString);
+			reader.read().then(processText);
+		};
 
-					reader.read().then(processText);
-				};
-
-				reader.read().then(processText);
-			})
-			.catch(error => {
-				const newError = this.handleError(error);
-				throw newError;
-			});
+		reader.read().then(processText);
 	}
 }

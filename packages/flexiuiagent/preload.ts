@@ -34,3 +34,56 @@ contextBridge.exposeInMainWorld('ConversationAPI', {
 		return await ipcRenderer.invoke('conversation:addMessage', id, title, newMessage);
 	},
 });
+
+contextBridge.exposeInMainWorld('ProviderSetAPI', {
+	getDefaultProvider: async () => {
+		const provider = await ipcRenderer.invoke('providerset:getDefaultProvider');
+		// console.log('preload', provider);
+		return provider;
+	},
+	setDefaultProvider: async (provider: any) => {
+		return await ipcRenderer.invoke('providerset:setDefaultProvider', provider);
+	},
+	getProviderInfo: async (provider: any) => {
+		return await ipcRenderer.invoke('providerset:getProviderInfo', provider);
+	},
+	setAttribute: async (
+		provider: any,
+		apiKey?: string,
+		defaultModel?: any,
+		defaultTemperature?: number,
+		defaultOrigin?: string
+	) => {
+		return await ipcRenderer.invoke(
+			'providerset:setAttribute',
+			provider,
+			apiKey,
+			defaultModel,
+			defaultTemperature,
+			defaultOrigin
+		);
+	},
+	getCompletionRequest: async (
+		provider: any,
+		prompt: string,
+		prevMessages?: any,
+		inputParams?: any,
+		stream?: boolean
+	) => {
+		return await ipcRenderer.invoke(
+			'providerset:getCompletionRequest',
+			provider,
+			prompt,
+			prevMessages,
+			inputParams,
+			stream
+		);
+	},
+	completion: async (provider: any, input: any, onStreamData: any) => {
+		const callbackId = `stream-data-callback-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+		if (onStreamData) {
+			ipcRenderer.on(callbackId, async (_event, data) => await onStreamData(data));
+		}
+		return await ipcRenderer.invoke('providerset:completion', provider, input, callbackId);
+	},
+});

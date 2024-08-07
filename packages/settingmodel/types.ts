@@ -1,4 +1,4 @@
-import { ModelName, ProviderName } from 'aiprovider';
+import { ModelName, ProviderName } from 'aiprovidermodel';
 
 export interface AISetting {
 	apiKey: string;

@@ -1,7 +1,6 @@
+import { anthropicProviderInfo, CompletionRequest, CompletionResponse } from 'aiprovidermodel';
 import { AxiosRequestConfig } from 'axios';
-import { CompletionRequest, CompletionResponse } from './chat_types';
 import { AIAPI } from './completion_provider';
-import { anthropicProviderInfo } from './provider_consts';
 
 export class AnthropicAPI extends AIAPI {
 	constructor() {

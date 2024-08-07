@@ -1,6 +1,7 @@
 /* ********************************************************************
  *   Declaration file for the API exposed over the context bridge
  *********************************************************************/
+import { IProviderSetAPI } from 'aiprovidermodel';
 import { IConversationAPI } from 'conversationmodel';
 import { ISettingsAPI } from 'settingmodel';
 
@@ -14,6 +15,7 @@ declare global {
 		BackendAPI: IBackendAPI;
 		SettingsAPI: ISettingsAPI;
 		ConversationAPI: IConversationAPI;
-		loggerSet: booleanl;
+		ProviderSetAPI: IProviderSetAPI;
+		loggerSet: boolean;
 	}
 }

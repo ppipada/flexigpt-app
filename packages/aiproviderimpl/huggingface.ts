@@ -1,12 +1,12 @@
-import { AxiosRequestConfig } from 'axios';
 import {
 	ChatCompletionRequestMessage,
 	ChatCompletionRoleEnum,
 	CompletionRequest,
 	CompletionResponse,
-} from './chat_types';
+	huggingfaceProviderInfo,
+} from 'aiprovidermodel';
+import { AxiosRequestConfig } from 'axios';
 import { AIAPI } from './completion_provider';
-import { huggingfaceProviderInfo } from './provider_consts';
 
 export class HuggingFaceAPI extends AIAPI {
 	constructor() {

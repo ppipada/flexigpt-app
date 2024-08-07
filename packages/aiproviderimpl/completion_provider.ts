@@ -1,13 +1,14 @@
-import { log } from 'logger';
-import { APICaller } from './api_fetch';
 import {
+	ALL_MODEL_INFO,
 	ChatCompletionRequestMessage,
 	ChatCompletionRoleEnum,
 	CompletionRequest,
 	CompletionResponse,
-} from './chat_types';
-import { ALL_MODEL_INFO } from './provider_consts';
-import { ModelName, ProviderInfo } from './provider_types';
+	ModelName,
+	ProviderInfo,
+} from 'aiprovidermodel';
+import { log } from 'logger';
+import { APICaller } from './api_fetch';
 
 export interface CompletionProvider {
 	getProviderInfo(): ProviderInfo;
@@ -17,7 +18,10 @@ export interface CompletionProvider {
 		inputParams?: { [key: string]: any },
 		stream?: boolean
 	): CompletionRequest;
-	completion(input: CompletionRequest, onStreamData?: (data: string) => void): Promise<CompletionResponse | undefined>;
+	completion(
+		input: CompletionRequest,
+		onStreamData?: (data: string) => Promise<void>
+	): Promise<CompletionResponse | undefined>;
 	setAttribute(apiKey?: string, defaultModel?: ModelName, defaultTemperature?: number, defaultOrigin?: string): void;
 }
 
@@ -61,7 +65,7 @@ export class AIAPI implements CompletionProvider {
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		input: CompletionRequest,
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		onStreamData?: (data: string) => void
+		onStreamData?: (data: string) => Promise<void>
 	): Promise<CompletionResponse | undefined> {
 		return undefined;
 	}

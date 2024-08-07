@@ -1,7 +1,7 @@
 {
-	"name": "conversationmodel",
+	"name": "aiproviderimpl",
 	"version": "1.0.0",
-	"description": "Models for chat interaction with LLMs",
+	"description": "Interact with AI APIs implementing the aiprovidermodel",
 	"main": "build/index.js",
 	"types": "build/index.d.ts",
 	"type": "module",
@@ -17,9 +17,6 @@
 	"dependencies": {
 		"aiprovidermodel": "workspace:*",
 		"logger": "workspace:*",
-		"uuid": "^10.0.0"
-	},
-	"devDependencies": {
-		"@types/uuid": "^10.0.0"
+		"axios": "^1.7.3"
 	}
 }

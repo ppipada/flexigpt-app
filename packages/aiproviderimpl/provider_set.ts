@@ -1,13 +1,23 @@
+import {
+	ALL_MODEL_INFO,
+	ChatCompletionRequestMessage,
+	CompletionRequest,
+	CompletionResponse,
+	huggingfaceProviderInfo,
+	IProviderSetAPI,
+	ModelName,
+	ProviderInfo,
+	ProviderName,
+} from 'aiprovidermodel';
+
 import { AnthropicAPI } from './anthropic';
 import { CompletionProvider } from './completion_provider';
 import { GoogleAPI } from './google';
 import { HuggingFaceAPI } from './huggingface';
 import { LlamaCPPAPI } from './llamacpp';
 import { OpenAIAPI } from './openai';
-import { ALL_MODEL_INFO, huggingfaceProviderInfo } from './provider_consts';
-import { ModelName, ProviderName } from './provider_types';
 
-export class ProviderSet {
+export class ProviderSet implements IProviderSetAPI {
 	private defaultProvider: ProviderName;
 	private providers: { [key in ProviderName]: CompletionProvider };
 
@@ -22,16 +32,44 @@ export class ProviderSet {
 		};
 	}
 
-	getDefaultProvider(): ProviderName {
+	async getDefaultProvider(): Promise<ProviderName> {
 		return this.defaultProvider;
 	}
 
-	setDefaultProvider(provider: ProviderName) {
+	async setDefaultProvider(provider: ProviderName): Promise<void> {
 		this.defaultProvider = provider;
 	}
 
-	getProviderAPI(provider: ProviderName): CompletionProvider {
-		return this.providers[provider];
+	async getProviderInfo(provider: ProviderName): Promise<ProviderInfo> {
+		return this.providers[provider].getProviderInfo();
+	}
+
+	async setAttribute(
+		provider: ProviderName,
+		apiKey?: string,
+		defaultModel?: ModelName,
+		defaultTemperature?: number,
+		defaultOrigin?: string
+	): Promise<void> {
+		return this.providers[provider].setAttribute(apiKey, defaultModel, defaultTemperature, defaultOrigin);
+	}
+
+	async getCompletionRequest(
+		provider: ProviderName,
+		prompt: string,
+		prevMessages?: Array<ChatCompletionRequestMessage>,
+		inputParams?: { [key: string]: any },
+		stream?: boolean
+	): Promise<CompletionRequest> {
+		return this.providers[provider].getCompletionRequest(prompt, prevMessages, inputParams, stream);
+	}
+
+	async completion(
+		provider: ProviderName,
+		input: CompletionRequest,
+		onStreamData?: (data: string) => Promise<void>
+	): Promise<CompletionResponse | undefined> {
+		return this.providers[provider].completion(input, onStreamData);
 	}
 
 	getProviderAPIUsingModelStr(model: string): CompletionProvider | undefined {
@@ -56,5 +94,3 @@ export class ProviderSet {
 		return undefined;
 	}
 }
-
-export const providerSet = new ProviderSet(ProviderName.OPENAI);

@@ -9,10 +9,13 @@ import {
 	session,
 } from 'electron';
 import electronIsDev from 'electron-is-dev';
+
 // import electronUpdater from 'electron-updater';
 import { ILogger, log } from 'logger';
 import path from 'node:path';
 
+import { ProviderSet } from 'aiproviderimpl';
+import { ChatCompletionRequestMessage, IProviderSetAPI, ModelName, ProviderName } from 'aiprovidermodel';
 import { Conversation, ConversationMessage } from 'conversationmodel';
 import { ConversationCollection } from 'conversationstore';
 import { dirname } from 'path';
@@ -28,14 +31,13 @@ const HANDLE_FILES_PREFIXES = [`file://${FRONTEND_PATH_PREFIX}`, ...PUBLIC_FILES
 // const ICON_PATH = path.resolve(__dirname, `../../${FRONTEND_PATH_PREFIX}/favicon.ico`);
 const PRELOAD_PATH = path.join(__dirname, 'preload.js');
 
+// const logLevel = "info";
+const logLevel = 'debug';
 if (!electronIsDev) {
-	// const logLevel = "info";
-	const logLevel = 'debug';
 	const wlog = createILogger('file', logLevel, path.join(app.getPath('userData'), 'logs'));
 	log.setLogger(wlog);
 	log.info('Backend: Running in production');
 } else {
-	const logLevel = 'debug';
 	const wlog = createILogger('file', logLevel, path.join(app.getPath('userData'), 'logs'));
 	log.setLogger(wlog);
 	log.info('Backend: Running in dev');
@@ -45,6 +47,7 @@ if (!electronIsDev) {
 let appWindow: BrowserWindow | null = null;
 let settingsManager: SettingsStore;
 let conversationManager: ConversationCollection;
+let providerSetManager: IProviderSetAPI;
 
 // class AppUpdater {
 // 	constructor() {
@@ -110,6 +113,10 @@ const initializeConversationManager = async () => {
 	conversationManager = new ConversationCollection(conversationDir);
 };
 
+const initializeProviderSetManager = async () => {
+	providerSetManager = new ProviderSet(ProviderName.OPENAI);
+};
+
 const getActualURL = (origurl: string) => {
 	let callurl = origurl;
 
@@ -169,6 +176,7 @@ app.on('ready', async () => {
 	// new AppUpdater();
 	await initializeSettingsManager();
 	await initializeConversationManager();
+	await initializeProviderSetManager();
 	interceptFileProtocol();
 	spawnAppWindow();
 	session.defaultSession.webRequest.onBeforeRequest(handleAccessRequest);
@@ -224,3 +232,55 @@ ipcMain.handle(
 		return await conversationManager.addMessageToConversation(id, title, newMessage);
 	}
 );
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ipcMain.handle('providerset:getDefaultProvider', async _event => {
+	return await providerSetManager.getDefaultProvider();
+	// log.info('Main provider', provider);
+});
+
+ipcMain.handle('providerset:setDefaultProvider', async (_event, provider: ProviderName) => {
+	return await providerSetManager.setDefaultProvider(provider);
+});
+
+ipcMain.handle('providerset:getProviderInfo', async (_event, provider: ProviderName) => {
+	return await providerSetManager.getProviderInfo(provider);
+});
+
+ipcMain.handle(
+	'providerset:setAttribute',
+	async (
+		_event,
+		provider: ProviderName,
+		apiKey?: string,
+		defaultModel?: ModelName,
+		defaultTemperature?: number,
+		defaultOrigin?: string
+	) => {
+		return await providerSetManager.setAttribute(provider, apiKey, defaultModel, defaultTemperature, defaultOrigin);
+	}
+);
+
+ipcMain.handle(
+	'providerset:getCompletionRequest',
+	async (
+		_event,
+		provider: ProviderName,
+		prompt: string,
+		prevMessages?: Array<ChatCompletionRequestMessage>,
+		inputParams?: {
+			[key: string]: any;
+		},
+		stream?: boolean
+	) => {
+		return await providerSetManager.getCompletionRequest(provider, prompt, prevMessages, inputParams, stream);
+	}
+);
+
+ipcMain.handle('providerset:completion', async (event, provider, input, callbackId) => {
+	const onStreamData = async (data: string) => {
+		await event.sender.send(`${callbackId}`, data);
+	};
+
+	return await providerSetManager.completion(provider, input, onStreamData);
+});

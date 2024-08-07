@@ -5,7 +5,7 @@ import {
 	llamacppProviderInfo,
 	openaiProviderInfo,
 	ProviderName,
-} from 'aiprovider';
+} from 'aiprovidermodel';
 import { SettingsSchema } from './types';
 
 export const defaultAISettings = {

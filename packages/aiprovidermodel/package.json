@@ -1,7 +1,7 @@
 {
-	"name": "aiprovider",
+	"name": "aiprovidermodel",
 	"version": "1.0.0",
-	"description": "Interact with AI APIs",
+	"description": "Models to interact with AI APIs",
 	"main": "build/index.js",
 	"types": "build/index.d.ts",
 	"type": "module",
@@ -15,7 +15,6 @@
 	"keywords": [],
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
 	"dependencies": {
-		"logger": "workspace:*",
-		"axios": "^1.7.3"
+		"logger": "workspace:*"
 	}
 }

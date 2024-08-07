@@ -4,7 +4,7 @@ import {
 	deleteConversation as apiDeleteConversation,
 	getConversation as apiGetConversation,
 	saveConversation as apiSaveConversation,
-} from './conversation_base_api';
+} from './base_conversation';
 import { ConversationCache } from './conversation_cache';
 
 const conversationCache = new ConversationCache();

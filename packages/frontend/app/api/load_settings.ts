@@ -1,17 +1,17 @@
-import { getAllSettings } from '@/api/settings';
-import { ProviderName, providerSet } from 'aiprovider';
+import { setAttribute, setDefaultProvider } from '@/api/base_aiproviderimpl';
+import { getAllSettings } from '@/api/base_settings';
+import { ProviderName } from 'aiprovidermodel';
 import { AISetting, SettingsSchema } from 'settingmodel';
 
 export function updateProviderAISettings(provider: ProviderName, settings: AISetting) {
-	const providerAPI = providerSet.getProviderAPI(provider);
-	providerAPI.setAttribute(settings.apiKey, settings.defaultModel, settings.defaultTemperature, settings.defaultOrigin);
+	setAttribute(provider, settings.apiKey, settings.defaultModel, settings.defaultTemperature, settings.defaultOrigin);
 }
 
 export async function loadProviderSettings(): Promise<SettingsSchema> {
 	const settings = await getAllSettings();
 	if (settings) {
 		const defaultProvider = settings.app.defaultProvider as ProviderName;
-		providerSet.setDefaultProvider(defaultProvider);
+		setDefaultProvider(defaultProvider);
 		updateProviderAISettings(ProviderName.ANTHROPIC, settings[ProviderName.ANTHROPIC]);
 		updateProviderAISettings(ProviderName.GOOGLE, settings[ProviderName.GOOGLE]);
 		updateProviderAISettings(ProviderName.HUGGINGFACE, settings[ProviderName.HUGGINGFACE]);

@@ -1,6 +1,6 @@
 'use client';
+import { getCompletionMessage } from '@/api/chat_helper';
 import { getConversation, listAllConversations, saveConversation } from '@/api/conversation_memoized_api';
-import { getCompletionMessage } from '@/chats/chat_helper';
 import ChatInputField from '@/chats/chat_input_field';
 import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
@@ -22,6 +22,7 @@ const ChatScreen: FC = () => {
 	const isSubmittingRef = useRef<boolean>(false);
 	const [streamedMessage, setStreamedMessage] = useState<string>('');
 	const [isStreaming, setIsStreaming] = useState<boolean>(false);
+	const isFinalResponseReceived = useRef<boolean>(false); // Flag to track final response
 
 	const loadInitialItems = useCallback(async () => {
 		const conversations = await listAllConversations();
@@ -64,66 +65,65 @@ const ChatScreen: FC = () => {
 	const sendMessage = async (messageContent: string) => {
 		if (isSubmittingRef.current) return;
 		isSubmittingRef.current = true;
+		isFinalResponseReceived.current = false; // Reset the flag
+
 		const trimmedText = messageContent.trim();
-		if (trimmedText) {
-			const newMessage = initConversationMessage(ConversationRoleEnum.user, trimmedText);
-
-			// First update: adding the user's message
-			const updatedChatWithUserMessage = {
-				...chat,
-				messages: [...chat.messages, newMessage],
-				modifiedAt: new Date(),
-			};
-			if (updatedChatWithUserMessage.messages.length === 1) {
-				const content = updatedChatWithUserMessage.messages[0].content.substring(0, 48);
-				const capitalizedTitle = content.charAt(0).toUpperCase() + content.slice(1);
-				updatedChatWithUserMessage.title = capitalizedTitle;
-			}
-			saveConversation(updatedChatWithUserMessage);
-			setChat(updatedChatWithUserMessage);
-			setIsStreaming(true);
-			setStreamedMessage('');
-
-			// Wait for the state to update
-			await new Promise(resolve => setTimeout(resolve, 0));
-
-			// Set a empty message for streaming data
-			const convoMsg = initConversationMessage(ConversationRoleEnum.assistant, '');
-			const updatedChatWithConvoMessage = {
-				...updatedChatWithUserMessage,
-				messages: [...updatedChatWithUserMessage.messages, convoMsg],
-				modifiedAt: new Date(),
-			};
-
-			const onStreamData = (data: string) => {
-				setStreamedMessage(prev => {
-					// Add assistant message to chat only when first stream data arrives
-					if (prev === '') {
-						updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 1].content = data;
-						updatedChatWithConvoMessage.modifiedAt = new Date();
-						setChat(updatedChatWithConvoMessage);
-						return data;
-					}
-					return prev + data;
-				});
-			};
-
-			const newMsg = await getCompletionMessage(convoMsg, updatedChatWithUserMessage.messages, {}, onStreamData);
-
-			if (newMsg) {
-				// Remove last message and substitue the complete thing
-				updatedChatWithConvoMessage.messages.pop();
-				updatedChatWithConvoMessage.messages.push(newMsg);
-				updatedChatWithConvoMessage.modifiedAt = new Date();
-				// Save conversation after streaming complete
-				saveConversation(updatedChatWithConvoMessage);
-				// Set chat with final message
-				setChat(updatedChatWithConvoMessage);
-				setStreamedMessage(''); // Reset streamed message state
-				setIsStreaming(false); // Mark streaming as complete
-			}
+		if (!trimmedText) {
+			isSubmittingRef.current = false;
+			return;
 		}
-		isSubmittingRef.current = false;
+		const newMessage = initConversationMessage(ConversationRoleEnum.user, trimmedText);
+
+		const updatedChatWithUserMessage = {
+			...chat,
+			messages: [...chat.messages, newMessage],
+			modifiedAt: new Date(),
+		};
+		if (updatedChatWithUserMessage.messages.length === 1) {
+			const content = updatedChatWithUserMessage.messages[0].content.substring(0, 48);
+			const capitalizedTitle = content.charAt(0).toUpperCase() + content.slice(1);
+			updatedChatWithUserMessage.title = capitalizedTitle;
+		}
+		saveConversation(updatedChatWithUserMessage);
+		setChat(updatedChatWithUserMessage);
+		setIsStreaming(true);
+		setStreamedMessage('');
+
+		await new Promise(resolve => setTimeout(resolve, 0));
+
+		const convoMsg = initConversationMessage(ConversationRoleEnum.assistant, '');
+		const updatedChatWithConvoMessage = {
+			...updatedChatWithUserMessage,
+			messages: [...updatedChatWithUserMessage.messages, convoMsg],
+			modifiedAt: new Date(),
+		};
+
+		const onStreamData = (data: string) => {
+			if (isFinalResponseReceived.current) return; // Ignore further streaming data
+			setStreamedMessage(prev => {
+				if (prev === '') {
+					updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 1].content = data;
+					updatedChatWithConvoMessage.modifiedAt = new Date();
+					setChat(updatedChatWithConvoMessage);
+					return data;
+				}
+				return prev + data;
+			});
+		};
+
+		const newMsg = await getCompletionMessage(convoMsg, updatedChatWithUserMessage.messages, {}, onStreamData);
+
+		if (newMsg) {
+			isFinalResponseReceived.current = true; // Set the flag to stop further streaming updates
+			setIsStreaming(false); // Mark streaming as complete
+			updatedChatWithConvoMessage.messages.pop();
+			updatedChatWithConvoMessage.messages.push(newMsg);
+			updatedChatWithConvoMessage.modifiedAt = new Date();
+			saveConversation(updatedChatWithConvoMessage);
+			setStreamedMessage(''); // Reset streamed message state
+			setChat(updatedChatWithConvoMessage);
+		}
+		isSubmittingRef.current = false; // Reset submitting flag
 	};
 
 	const memoizedChatMessages = useMemo(

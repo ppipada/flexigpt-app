@@ -60,8 +60,11 @@ importers:
         specifier: ^7.2.0
         version: 7.2.0
 
-  packages/aiprovider:
+  packages/aiproviderimpl:
     dependencies:
+      aiprovidermodel:
+        specifier: workspace:*
+        version: link:../aiprovidermodel
       axios:
         specifier: ^1.7.3
         version: 1.7.3
@@ -69,11 +72,17 @@ importers:
         specifier: workspace:*
         version: link:../logger
 
+  packages/aiprovidermodel:
+    dependencies:
+      logger:
+        specifier: workspace:*
+        version: link:../logger
+
   packages/conversationmodel:
     dependencies:
-      aiprovider:
+      aiprovidermodel:
         specifier: workspace:*
-        version: link:../aiprovider
+        version: link:../aiprovidermodel
       logger:
         specifier: workspace:*
         version: link:../logger
@@ -99,6 +108,12 @@ importers:
 
   packages/flexiuiagent:
     dependencies:
+      aiproviderimpl:
+        specifier: workspace:*
+        version: link:../aiproviderimpl
+      aiprovidermodel:
+        specifier: workspace:*
+        version: link:../aiprovidermodel
       conversationmodel:
         specifier: workspace:*
         version: link:../conversationmodel
@@ -120,9 +135,18 @@ importers:
       lowdb:
         specifier: ^7.0.1
         version: 7.0.1
+      securejsondb:
+        specifier: workspace:*
+        version: link:../securejsondb
+      settingmodel:
+        specifier: workspace:*
+        version: link:../settingmodel
       settingstore:
         specifier: workspace:*
         version: link:../settingstore
+      uuid:
+        specifier: ^10.0.0
+        version: 10.0.0
       winstonlogger:
         specifier: workspace:*
         version: link:../winstonlogger
@@ -136,9 +160,9 @@ importers:
 
   packages/frontend:
     dependencies:
-      aiprovider:
+      aiprovidermodel:
         specifier: workspace:*
-        version: link:../aiprovider
+        version: link:../aiprovidermodel
       conversationmodel:
         specifier: workspace:*
         version: link:../conversationmodel
@@ -276,18 +300,18 @@ importers:
 
   packages/settingmodel:
     dependencies:
-      aiprovider:
+      aiprovidermodel:
         specifier: workspace:*
-        version: link:../aiprovider
+        version: link:../aiprovidermodel
       logger:
         specifier: workspace:*
         version: link:../logger
 
   packages/settingstore:
     dependencies:
-      aiprovider:
+      aiprovidermodel:
         specifier: workspace:*
-        version: link:../aiprovider
+        version: link:../aiprovidermodel
       logger:
         specifier: workspace:*
         version: link:../logger

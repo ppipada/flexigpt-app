@@ -1,4 +1,4 @@
-import { ProviderName, providerSet } from 'aiprovider';
+import { ALL_AI_PROVIDERS, ProviderName } from 'aiprovidermodel';
 import { FC } from 'react';
 import { AISetting } from 'settingmodel';
 
@@ -10,7 +10,7 @@ interface AISettingsCardProps {
 }
 
 const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange, onSave }) => {
-	const providerinfo = providerSet.getProviderAPI(provider).getProviderInfo();
+	const providerinfo = ALL_AI_PROVIDERS[provider];
 
 	return (
 		<div className="bg-base-100 rounded-lg shadow-lg p-4 mb-4">

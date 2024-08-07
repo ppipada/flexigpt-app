@@ -1,13 +1,13 @@
-import { AxiosRequestConfig } from 'axios';
-import { log } from 'logger';
 import {
 	ChatCompletionRequestMessage,
 	ChatCompletionRoleEnum,
 	CompletionRequest,
 	CompletionResponse,
-} from './chat_types';
+	llamacppProviderInfo,
+} from 'aiprovidermodel';
+import { AxiosRequestConfig } from 'axios';
+import { log } from 'logger';
 import { AIAPI } from './completion_provider';
-import { llamacppProviderInfo } from './provider_consts';
 
 export class LlamaCPPAPI extends AIAPI {
 	constructor() {

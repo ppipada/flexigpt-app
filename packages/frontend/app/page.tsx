@@ -1,6 +1,6 @@
 'use client';
-import { loadProviderSettings } from '@/lib/loadSettings';
-import { setLogger } from '@/lib/log_setup';
+import { setLogger } from '@/api/base_backend';
+import { loadProviderSettings } from '@/api/load_settings';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect } from 'react';

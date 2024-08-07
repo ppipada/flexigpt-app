@@ -16,18 +16,20 @@
 	"keywords": [],
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
 	"dependencies": {
-		"aiprovider": "workspace:*",
+		"aiproviderimpl": "workspace:*",
+		"aiprovidermodel": "workspace:*",
 		"conversationmodel": "workspace:*",
 		"conversationstore": "workspace:*",
-		"logger": "workspace:*",
-		"securejsondb": "workspace:*",
-		"settingmodel": "workspace:*",
-		"settingstore": "workspace:*",
-		"winstonlogger": "workspace:*",
 		"electron-is-dev": "^3.0.1",
 		"electron-log": "^5.1.7",
 		"electron-updater": "^6.3.2",
-		"lowdb": "^7.0.1"
+		"logger": "workspace:*",
+		"lowdb": "^7.0.1",
+		"securejsondb": "workspace:*",
+		"settingmodel": "workspace:*",
+		"settingstore": "workspace:*",
+		"uuid": "^10.0.0",
+		"winstonlogger": "workspace:*"
 	},
 	"devDependencies": {
 		"electron": "31.3.0",

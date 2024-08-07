@@ -4,7 +4,7 @@
 		"outDir": "build",
 		"composite": true
 	},
-	"references": [{ "path": "../logger" }, { "path": "../aiprovider" }],
+	"references": [{ "path": "../logger" }, { "path": "../aiprovidermodel" }],
 	"include": ["**/*.ts"],
 	"exclude": ["node_modules", "build"]
 }

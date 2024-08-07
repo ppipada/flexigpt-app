@@ -1,12 +1,12 @@
-import { AxiosRequestConfig } from 'axios';
 import {
 	ChatCompletionRequestMessage,
 	ChatCompletionRoleEnum,
 	CompletionRequest,
 	CompletionResponse,
-} from './chat_types';
+	googleProviderInfo,
+} from 'aiprovidermodel';
+import { AxiosRequestConfig } from 'axios';
 import { AIAPI } from './completion_provider';
-import { googleProviderInfo } from './provider_consts';
 
 interface Content {
 	role: string;

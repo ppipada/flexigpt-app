@@ -16,7 +16,7 @@
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
 	"dependencies": {
 		"logger": "workspace:*",
-		"aiprovider": "workspace:*",
+		"aiprovidermodel": "workspace:*",
 		"settingmodel": "workspace:*",
 		"securejsondb": "workspace:*"
 	}
