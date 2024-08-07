@@ -114,6 +114,9 @@
   - [x] aiprovider support
   - [x] page support
   - [ ] add other providers
+    - [x] Openai
+    - [x] anthropic
+    - [ ] google
   - [x] someway to show things are loading
 - [ ] Content:
   - [x] Emoji
@@ -132,6 +135,7 @@
 
 ## Pushed out list
 
+- [ ] Other AI providers: Tool use
 - [ ] AI provider: Usages in normal resp
 - [ ] AI provider:Usages in stream resp
 - [ ] Electron: currently supported only via appimagelauncher. Better do snap I suppose, but explore later.

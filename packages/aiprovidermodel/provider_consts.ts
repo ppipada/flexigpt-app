@@ -1,35 +1,5 @@
 import { ModelInfo, ModelName, ProviderInfo, ProviderInfoImpl, ProviderName } from './provider_types';
 
-export const openaiProviderInfo: ProviderInfo = new ProviderInfoImpl({
-	apiKey: '',
-	engine: '',
-	defaultOrigin: 'https://api.openai.com',
-	defaultModel: ModelName.GPT_4O_MINI,
-	additionalSettings: {},
-	timeout: 120,
-	apiKeyHeaderKey: 'Authorization',
-	defaultHeaders: {
-		'content-type': 'application/json',
-	},
-	chatCompletionPathPrefix: '/v1/chat/completions',
-	defaultTemperature: 0.1,
-	streamingSupport: true,
-	descriptions: {
-		apiKey: 'Your openAI API key. Can be seen at https://beta.openai.com/account/api-keys',
-		engine: 'The engine to be used for processing.',
-		defaultOrigin:
-			'Default origin to use for requests. This can be used to talk to any server that serves a compatible API',
-		defaultModel: 'Default model to use for chat requests',
-		additionalSettings: 'Any additional settings to pass to the model. Input as a JSON object',
-		timeout: 'The timeout duration in milliseconds.',
-		apiKeyHeaderKey: 'The header key for the API key.',
-		defaultHeaders: 'The default headers to be included in requests.',
-		chatCompletionPathPrefix: 'The path prefix for chat completions.',
-		defaultTemperature: 'Default temperature setting for chat requests',
-		modelPrefixes: 'Optional prefixes for models.',
-	},
-});
-
 export const anthropicProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	apiKey: '',
 	engine: '',
@@ -45,7 +15,7 @@ export const anthropicProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	},
 	chatCompletionPathPrefix: '/v1/messages',
 	defaultTemperature: 0.1,
-	streamingSupport: false,
+	streamingSupport: true,
 	descriptions: {
 		apiKey: 'Your anthropic API key.',
 		engine: 'The engine to be used for processing.',
@@ -153,36 +123,35 @@ export const llamacppProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	},
 });
 
-export const OPENAI_MODELS: { [key in ModelName]?: ModelInfo } = {
-	[ModelName.GPT_4O]: {
-		name: ModelName.GPT_4O,
-		provider: ProviderName.OPENAI,
-		maxPromptLength: 4096,
-		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
+export const openaiProviderInfo: ProviderInfo = new ProviderInfoImpl({
+	apiKey: '',
+	engine: '',
+	defaultOrigin: 'https://api.openai.com',
+	defaultModel: ModelName.GPT_4O_MINI,
+	additionalSettings: {},
+	timeout: 120,
+	apiKeyHeaderKey: 'Authorization',
+	defaultHeaders: {
+		'content-type': 'application/json',
 	},
-	[ModelName.GPT_4]: {
-		name: ModelName.GPT_4,
-		provider: ProviderName.OPENAI,
-		maxPromptLength: 4096,
-		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
+	chatCompletionPathPrefix: '/v1/chat/completions',
+	defaultTemperature: 0.1,
+	streamingSupport: true,
+	descriptions: {
+		apiKey: 'Your openAI API key. Can be seen at https://beta.openai.com/account/api-keys',
+		engine: 'The engine to be used for processing.',
+		defaultOrigin:
+			'Default origin to use for requests. This can be used to talk to any server that serves a compatible API',
+		defaultModel: 'Default model to use for chat requests',
+		additionalSettings: 'Any additional settings to pass to the model. Input as a JSON object',
+		timeout: 'The timeout duration in milliseconds.',
+		apiKeyHeaderKey: 'The header key for the API key.',
+		defaultHeaders: 'The default headers to be included in requests.',
+		chatCompletionPathPrefix: 'The path prefix for chat completions.',
+		defaultTemperature: 'Default temperature setting for chat requests',
+		modelPrefixes: 'Optional prefixes for models.',
 	},
-	[ModelName.GPT_3_5_TURBO]: {
-		name: ModelName.GPT_3_5_TURBO,
-		provider: ProviderName.OPENAI,
-		maxPromptLength: 2400,
-		maxOutputLength: 2400,
-		defaultTemperature: 0.1,
-	},
-	[ModelName.GPT_4O_MINI]: {
-		name: ModelName.GPT_4O_MINI,
-		provider: ProviderName.OPENAI,
-		maxPromptLength: 4096,
-		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
-	},
-};
+});
 
 export const ANTHROPIC_MODELS: { [key in ModelName]?: ModelInfo } = {
 	[ModelName.CLAUDE_3_5_SONNET]: {
@@ -259,18 +228,49 @@ export const LLAMACPP_MODELS: { [key in ModelName]?: ModelInfo } = {
 	},
 };
 
+export const OPENAI_MODELS: { [key in ModelName]?: ModelInfo } = {
+	[ModelName.GPT_4O]: {
+		name: ModelName.GPT_4O,
+		provider: ProviderName.OPENAI,
+		maxPromptLength: 4096,
+		maxOutputLength: 4096,
+		defaultTemperature: 0.1,
+	},
+	[ModelName.GPT_4]: {
+		name: ModelName.GPT_4,
+		provider: ProviderName.OPENAI,
+		maxPromptLength: 4096,
+		maxOutputLength: 4096,
+		defaultTemperature: 0.1,
+	},
+	[ModelName.GPT_3_5_TURBO]: {
+		name: ModelName.GPT_3_5_TURBO,
+		provider: ProviderName.OPENAI,
+		maxPromptLength: 2400,
+		maxOutputLength: 2400,
+		defaultTemperature: 0.1,
+	},
+	[ModelName.GPT_4O_MINI]: {
+		name: ModelName.GPT_4O_MINI,
+		provider: ProviderName.OPENAI,
+		maxPromptLength: 4096,
+		maxOutputLength: 4096,
+		defaultTemperature: 0.1,
+	},
+};
+
 export const ALL_MODEL_INFO: { [key in ModelName]: ModelInfo } = {
-	...OPENAI_MODELS,
 	...ANTHROPIC_MODELS,
 	...GOOGLE_MODELS,
 	...HUGGINGFACE_MODELS,
 	...LLAMACPP_MODELS,
+	...OPENAI_MODELS,
 } as { [key in ModelName]: ModelInfo };
 
 export const ALL_AI_PROVIDERS: Record<ProviderName, ProviderInfo> = {
-	[ProviderName.OPENAI]: openaiProviderInfo,
 	[ProviderName.ANTHROPIC]: anthropicProviderInfo,
 	[ProviderName.GOOGLE]: googleProviderInfo,
 	[ProviderName.HUGGINGFACE]: huggingfaceProviderInfo,
 	[ProviderName.LLAMACPP]: llamacppProviderInfo,
+	[ProviderName.OPENAI]: openaiProviderInfo,
 };

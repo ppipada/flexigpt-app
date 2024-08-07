@@ -243,7 +243,6 @@ export class OpenAIAPI extends AIAPI {
 				this.apicaller.requestStream(requestConfig, dataChunkProcessor);
 			} catch (error) {
 				log.error('Error in streaming completion request: ' + error);
-				// throw error;
 				reject(error);
 			}
 		});

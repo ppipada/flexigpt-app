@@ -22,7 +22,6 @@ const ChatScreen: FC = () => {
 	const isSubmittingRef = useRef<boolean>(false);
 	const [streamedMessage, setStreamedMessage] = useState<string>('');
 	const [isStreaming, setIsStreaming] = useState<boolean>(false);
-	const isFinalResponseReceived = useRef<boolean>(false); // Flag to track final response
 
 	const loadInitialItems = useCallback(async () => {
 		const conversations = await listAllConversations();
@@ -65,7 +64,6 @@ const ChatScreen: FC = () => {
 	const sendMessage = async (messageContent: string) => {
 		if (isSubmittingRef.current) return;
 		isSubmittingRef.current = true;
-		isFinalResponseReceived.current = false; // Reset the flag
 
 		const trimmedText = messageContent.trim();
 		if (!trimmedText) {
@@ -99,9 +97,9 @@ const ChatScreen: FC = () => {
 		};
 
 		const onStreamData = (data: string) => {
-			if (isFinalResponseReceived.current) return; // Ignore further streaming data
 			setStreamedMessage(prev => {
 				if (prev === '') {
+					// log.info('first data', data);
 					updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 1].content = data;
 					updatedChatWithConvoMessage.modifiedAt = new Date();
 					setChat(updatedChatWithConvoMessage);
@@ -114,14 +112,13 @@ const ChatScreen: FC = () => {
 		const newMsg = await getCompletionMessage(convoMsg, updatedChatWithUserMessage.messages, {}, onStreamData);
 
 		if (newMsg) {
-			isFinalResponseReceived.current = true; // Set the flag to stop further streaming updates
-			setIsStreaming(false); // Mark streaming as complete
+			// log.info('complete data', JSON.stringify(newMsg, null, 2));
 			updatedChatWithConvoMessage.messages.pop();
 			updatedChatWithConvoMessage.messages.push(newMsg);
 			updatedChatWithConvoMessage.modifiedAt = new Date();
 			saveConversation(updatedChatWithConvoMessage);
-			setStreamedMessage(''); // Reset streamed message state
 			setChat(updatedChatWithConvoMessage);
+			setIsStreaming(false); // Mark streaming as complete
 		}
 		isSubmittingRef.current = false; // Reset submitting flag
 	};
