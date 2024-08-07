@@ -1,4 +1,10 @@
-import { anthropicProviderInfo, CompletionRequest, CompletionResponse } from 'aiprovidermodel';
+import {
+	ALL_MODEL_INFO,
+	anthropicProviderInfo,
+	CompletionRequest,
+	CompletionResponse,
+	ModelName,
+} from 'aiprovidermodel';
 import { AxiosRequestConfig } from 'axios';
 import { AIAPI } from './completion_provider';
 
@@ -14,11 +20,19 @@ export class AnthropicAPI extends AIAPI {
 			throw Error('No input messages found');
 		}
 
+		let maxTokens = input.maxOutputLength;
+		if (!maxTokens) {
+			if (input.model in ALL_MODEL_INFO) {
+				maxTokens = ALL_MODEL_INFO[input.model as ModelName].maxOutputLength;
+			} else {
+				maxTokens = 4096;
+			}
+		}
 		const request: Record<string, any> = {
 			model: input.model,
 			messages: input.messages,
 			// eslint-disable-next-line @typescript-eslint/naming-convention
-			max_tokens: input.maxOutputLength,
+			max_tokens: maxTokens,
 			temperature: input.temperature,
 			stream: false,
 		};
