@@ -39,13 +39,13 @@ export const googleProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	defaultModel: ModelName.GEMINI_1_5_FLASH,
 	additionalSettings: {},
 	timeout: 120,
-	apiKeyHeaderKey: 'Authorization',
+	apiKeyHeaderKey: 'x-goog-api-key',
 	defaultHeaders: {
 		'content-type': 'application/json',
 	},
-	chatCompletionPathPrefix: '/v1beta',
+	chatCompletionPathPrefix: '/v1beta/models',
 	defaultTemperature: 0.1,
-	streamingSupport: false,
+	streamingSupport: true,
 	descriptions: {
 		apiKey: 'Your google generative AI API key.',
 		engine: 'The engine to be used for processing.',

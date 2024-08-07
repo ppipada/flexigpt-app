@@ -116,7 +116,7 @@
   - [ ] add other providers
     - [x] Openai
     - [x] anthropic
-    - [ ] google
+    - [x] google
   - [x] someway to show things are loading
 - [ ] Content:
   - [x] Emoji
@@ -132,6 +132,9 @@
 - [x] logger is imported in securejsondb before it is set as ipc logger
 - [ ] logger is imported in securejsondb before it is set as ipc file logger in appimage
 - [ ] error handling review and fix
+- [ ] ability to discard previous message history in next call
+- [ ] ability to choose provider and model in the chat itself.
+- [ ] Better title deduce
 
 ## Pushed out list
 

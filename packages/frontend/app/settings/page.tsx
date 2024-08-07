@@ -7,6 +7,7 @@ import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
 import AISettingsCard from '@/settings/ai_settings';
 import { ALL_AI_PROVIDERS, ProviderName } from 'aiprovidermodel';
+import { log } from 'logger';
 import { FC, useEffect, useState } from 'react';
 import { defaultAISettings } from 'settingmodel';
 
@@ -34,7 +35,8 @@ const SettingsPage: FC = () => {
 
 	const handleDefaultProviderChange = (value: ProviderName) => {
 		setComponentDefaultProvider(value);
-		setDefaultProvider(defaultProvider);
+		setDefaultProvider(value);
+		log.debug('Set a new default provider', value);
 		setSetting('app.defaultProvider', value);
 	};
 

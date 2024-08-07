@@ -106,7 +106,7 @@ export async function getCompletionMessage(
 		inputParams,
 		isStream
 	);
-	log.info('CompletionRequest', JSON.stringify(fullCompletionRequest, null, 2));
+	// log.info('CompletionRequest', defaultProvider, JSON.stringify(fullCompletionRequest, null, 2));
 	if (isStream && onStreamData) {
 		return await handleStreamedCompletion(convoMessage, defaultProvider, fullCompletionRequest, onStreamData);
 	} else {

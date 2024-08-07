@@ -153,9 +153,9 @@ export class APICaller {
 		const stream = response.data as ReadableStream<Uint8Array>;
 		const reader = stream.getReader();
 		const decoder = new TextDecoder();
-
 		const processText = async ({ done, value }: ReadableStreamReadResult<Uint8Array>) => {
 			if (done) {
+				await dataChunkProcessor('data: [DONE]');
 				return;
 			}
 
@@ -164,7 +164,6 @@ export class APICaller {
 
 			reader.read().then(processText);
 		};
-
 		reader.read().then(processText);
 	}
 }

@@ -142,6 +142,10 @@ export class AnthropicAPI extends AIAPI {
 				completeResponse: undefined,
 			};
 		}
+		if (line === 'data: [DONE]') {
+			const r = this.getStreamDoneResponse(respText, functionName, functionArgs);
+			return { respNew: respNew, respFull: respText, fname: functionName, fargs: functionArgs, completeResponse: r };
+		}
 
 		line = line.substring(6).trim(); // Remove 'data: ' prefix
 		try {
