@@ -175,29 +175,29 @@ const ChatScreen: FC = () => {
 	return (
 		<div className="flex flex-col items-center w-full h-full overflow-hidden">
 			<div className="w-full flex justify-center bg-transparent fixed top-2">
-				<div className="w-10/12 lg:w-2/3">
+				<div className="w-11/12 lg:w-4/5 xl:w-3/4">
 					<ChatNavBar
 						onNewChat={handleNewChat}
 						getConversationForExport={getConversationForExport}
 						initialSearchItems={initialItems}
 						onSearch={fetchSearchResults}
 						onSelectConversation={handleSelectConversation}
+						chatTitle={chat.title}
 					/>
 				</div>
 			</div>
-			<div className="flex flex-col items-center w-full flex-grow bg-transparent overflow-hidden mt-16">
-				<h1 className="text-xl font-semibold text-center flex my-4">{chat.title}</h1>
+			<div className="flex flex-col items-center w-full flex-grow bg-transparent overflow-hidden mt-32">
 				<div
 					className="w-full flex-grow flex justify-center overflow-y-auto"
 					ref={chatContainerRef}
 					style={{ maxHeight: `calc(100vh - 156px - ${inputHeight}px)` }} // Adjust height dynamically
 				>
-					<div className="w-11/12 lg:w-2/3">
+					<div className="w-11/12 lg:w-4/5 xl:w-3/4">
 						<div className="w-full flex-1 space-y-4">{memoizedChatMessages}</div>
 					</div>
 				</div>
 				<div className="w-full flex justify-center bg-transparent fixed bottom-0 mb-3">
-					<div className="w-10/12 lg:w-2/3">
+					<div className="w-11/12 lg:w-4/5 xl:w-3/4">
 						<ChatInputField onSend={sendMessage} setInputHeight={setInputHeight} />
 					</div>
 				</div>

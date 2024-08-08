@@ -34,27 +34,43 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 			</div>
 			<div className="drawer-side z-20">
 				<label htmlFor="my-drawer" className="drawer-overlay"></label>
-				<ul className="menu justify-between h-full w-20 bg-base-300 text-base-content">
-					<div>
+				<ul className="menu justify-between h-full w-12 ms-0 ps-0 bg-base-300 text-base-content">
+					<div className="flex-col p-0">
 						<li className="mt-16" title="Home" onClick={toggle}>
-							<Link href="/" className="flex items-center justify-center rounded-lg" aria-label="ChatsHome">
-								<FiHome className="w-6 h-6" />
+							<Link
+								href="/"
+								className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
+								aria-label="ChatsHome"
+							>
+								<FiHome size={24} />
 							</Link>
 						</li>
 						<li className="mt-4" title="Chats" onClick={toggle}>
-							<Link href="/chats/" className="flex items-center justify-center rounded-lg" aria-label="Chats">
-								<FiMessageSquare className="w-6 h-6" />
+							<Link
+								href="/chats/"
+								className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
+								aria-label="Chats"
+							>
+								<FiMessageSquare size={24} />
 							</Link>
 						</li>
 						<li className="mt-4" title="Agents" onClick={toggle}>
-							<Link href="/agents/" className="flex items-center justify-center rounded-lg" aria-label="Agents">
-								<FiCpu className="w-6 h-6" />
+							<Link
+								href="/agents/"
+								className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
+								aria-label="Agents"
+							>
+								<FiCpu size={24} />
 							</Link>
 						</li>
 					</div>
 					<li className="mb-16" title="Settings" onClick={toggle}>
-						<Link href="/settings/" className="flex items-center justify-center rounded-lg" aria-label="Settings">
-							<FiSettings className="w-6 h-6" />
+						<Link
+							href="/settings/"
+							className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
+							aria-label="Settings"
+						>
+							<FiSettings size={24} />
 						</Link>
 					</li>
 				</ul>
