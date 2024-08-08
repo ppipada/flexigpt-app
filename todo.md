@@ -130,7 +130,9 @@
 - [x] selection doesnt reset on new conversation in search bar
 - [x] today vs yesterday in group
 - [x] logger is imported in securejsondb before it is set as ipc logger
-- [ ] error handling review and fix
+- [x] error handling review and fix
+- [ ] Blanket error handle in api fetch caht helper
+- [ ] Add edit functionality
 - [ ] ability to discard previous message history in next call
 - [ ] ability to choose provider and model in the chat itself.
 
