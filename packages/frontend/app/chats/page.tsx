@@ -66,50 +66,58 @@ const ChatScreen: FC = () => {
 		setChat(updatedChat);
 	};
 
-	const updateStreamingMessage = useCallback(async (updatedChatWithUserMessage: Conversation) => {
-		setIsStreaming(true);
-		setStreamedMessage('');
+	const updateStreamingMessage = useCallback(
+		async (updatedChatWithUserMessage: Conversation, inputParams: Record<string, any>) => {
+			setIsStreaming(true);
+			setStreamedMessage('');
 
-		await new Promise(resolve => setTimeout(resolve, 0));
+			await new Promise(resolve => setTimeout(resolve, 0));
 
-		const convoMsg = initConversationMessage(ConversationRoleEnum.assistant, '');
-		const updatedChatWithConvoMessage = {
-			...updatedChatWithUserMessage,
-			messages: [...updatedChatWithUserMessage.messages, convoMsg],
-			modifiedAt: new Date(),
-		};
+			const convoMsg = initConversationMessage(ConversationRoleEnum.assistant, '');
+			const updatedChatWithConvoMessage = {
+				...updatedChatWithUserMessage,
+				messages: [...updatedChatWithUserMessage.messages, convoMsg],
+				modifiedAt: new Date(),
+			};
 
-		const onStreamData = (data: string) => {
-			setStreamedMessage(prev => {
-				if (prev === '') {
-					updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 1].content = data;
-					updatedChatWithConvoMessage.modifiedAt = new Date();
-					setChat(updatedChatWithConvoMessage);
-					return data;
+			const onStreamData = (data: string) => {
+				setStreamedMessage(prev => {
+					if (prev === '') {
+						updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 1].content = data;
+						updatedChatWithConvoMessage.modifiedAt = new Date();
+						setChat(updatedChatWithConvoMessage);
+						return data;
+					}
+					return prev + data;
+				});
+			};
+
+			const newMsg = await getCompletionMessage(
+				convoMsg,
+				updatedChatWithUserMessage.messages,
+				inputParams,
+				onStreamData
+			);
+			if (newMsg && newMsg.requestDetails) {
+				if (updatedChatWithConvoMessage.messages.length > 1) {
+					updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 2].details =
+						newMsg.requestDetails;
 				}
-				return prev + data;
-			});
-		};
-
-		const newMsg = await getCompletionMessage(convoMsg, updatedChatWithUserMessage.messages, {}, onStreamData);
-		if (newMsg && newMsg.requestDetails) {
-			if (updatedChatWithConvoMessage.messages.length > 1) {
-				updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 2].details =
-					newMsg.requestDetails;
 			}
-		}
-		if (newMsg && newMsg.responseMessage) {
-			const respMessage = newMsg.responseMessage;
-			updatedChatWithConvoMessage.messages.pop();
-			updatedChatWithConvoMessage.messages.push(respMessage);
-			updatedChatWithConvoMessage.modifiedAt = new Date();
-			saveUpdatedChat(updatedChatWithConvoMessage);
-			setIsStreaming(false); // Mark streaming as complete
-		}
-		isSubmittingRef.current = false; // Reset submitting flag
-	}, []);
+			if (newMsg && newMsg.responseMessage) {
+				const respMessage = newMsg.responseMessage;
+				updatedChatWithConvoMessage.messages.pop();
+				updatedChatWithConvoMessage.messages.push(respMessage);
+				updatedChatWithConvoMessage.modifiedAt = new Date();
+				saveUpdatedChat(updatedChatWithConvoMessage);
+				setIsStreaming(false); // Mark streaming as complete
+			}
+			isSubmittingRef.current = false; // Reset submitting flag
+		},
+		[]
+	);
 
-	const sendMessage = async (messageContent: string) => {
+	const sendMessage = async (messageContent: string, options: Record<string, any>) => {
 		if (isSubmittingRef.current) return;
 		isSubmittingRef.current = true;
 
@@ -132,7 +140,7 @@ const ChatScreen: FC = () => {
 		}
 		saveUpdatedChat(updatedChatWithUserMessage);
 
-		updateStreamingMessage(updatedChatWithUserMessage);
+		updateStreamingMessage(updatedChatWithUserMessage, options);
 	};
 
 	const handleEdit = useCallback(
@@ -150,7 +158,7 @@ const ChatScreen: FC = () => {
 			};
 			saveUpdatedChat(updatedChat);
 
-			await updateStreamingMessage(updatedChat);
+			await updateStreamingMessage(updatedChat, {});
 		},
 		[chat, updateStreamingMessage]
 	);
@@ -190,7 +198,7 @@ const ChatScreen: FC = () => {
 				<div
 					className="w-full flex-grow flex justify-center overflow-y-auto"
 					ref={chatContainerRef}
-					style={{ maxHeight: `calc(100vh - 156px - ${inputHeight}px)` }} // Adjust height dynamically
+					style={{ maxHeight: `calc(100vh - 196px - ${inputHeight}px)` }} // Adjust height dynamically
 				>
 					<div className="w-11/12 lg:w-4/5 xl:w-3/4">
 						<div className="w-full flex-1 space-y-4">{memoizedChatMessages}</div>

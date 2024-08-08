@@ -134,7 +134,7 @@
 - [x] Blanket error handle in api fetch chat helper
 - [x] Add edit functionality
 - [ ] ability to discard previous message history in next call
-- [ ] ability to choose provider and model in the chat itself.
+- [ ] ability to choose provider and model and temperature in the chat itself.
 
 ## Pushed out list
 
