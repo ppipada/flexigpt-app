@@ -131,7 +131,7 @@
 - [x] today vs yesterday in group
 - [x] logger is imported in securejsondb before it is set as ipc logger
 - [x] error handling review and fix
-- [ ] Blanket error handle in api fetch caht helper
+- [ ] Blanket error handle in api fetch chat helper
 - [ ] Add edit functionality
 - [ ] ability to discard previous message history in next call
 - [ ] ability to choose provider and model in the chat itself.
