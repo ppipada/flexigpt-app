@@ -9,7 +9,7 @@ export class APICaller {
 	apiKeyHeaderKey: string;
 	timeout: number;
 	headers: Record<string, string>;
-	logRequests = true;
+	logRequests = false;
 	private axiosInstance: AxiosInstance;
 
 	constructor(
@@ -70,26 +70,41 @@ export class APICaller {
 		return resp;
 	}
 
-	async requestStream(
+	async requestStream<T>(
 		requestConfig: AxiosRequestConfig,
-		dataChunkProcessor: (data: string) => Promise<void>
+		dataChunkProcessor: (data: string, details?: APIFetchResponse<T>) => Promise<void>
 	): Promise<void> {
 		const config = this.extendAxiosRequestConfig(requestConfig, true);
-		const response = await this.axiosInstance.request(config);
-		const stream = response.data as ReadableStream<Uint8Array>;
-		const reader = stream.getReader();
-		const decoder = new TextDecoder();
-		const processText = async ({ done, value }: ReadableStreamReadResult<Uint8Array>) => {
-			if (done) {
-				await dataChunkProcessor('data: [DONE]');
-				return;
-			}
+		const resp: APIFetchResponse<T> = {};
+		try {
+			const response = await this.axiosInstance.request(config);
+			const responseDetails = (response.config as any).responseDetails as APIResponseDetails;
+			resp.requestDetails = responseDetails.requestDetails;
+			resp.responseDetails = responseDetails;
+			resp.responseDetails.data = undefined;
+			resp.responseDetails.requestDetails = undefined;
+			const stream = response.data as ReadableStream<Uint8Array>;
+			const reader = stream.getReader();
+			const decoder = new TextDecoder();
 
-			const dataString = decoder.decode(value, { stream: true });
-			await dataChunkProcessor(dataString);
+			const processText = async ({ done, value }: ReadableStreamReadResult<Uint8Array>) => {
+				if (done) {
+					await dataChunkProcessor('data: [DONE]', resp);
+					return;
+				}
 
+				const dataString = decoder.decode(value, { stream: true });
+				await dataChunkProcessor(dataString);
+
+				reader.read().then(processText);
+			};
 			reader.read().then(processText);
-		};
-		reader.read().then(processText);
+		} catch (error) {
+			const errorDetails: APIErrorDetails = axios.isAxiosError(error)
+				? ((error as any).errorDetails as APIErrorDetails)
+				: { message: JSON.stringify(error, null, 2) };
+			resp.errorDetails = errorDetails;
+			await dataChunkProcessor('data: [ERROR]', resp);
+		}
 	}
 }

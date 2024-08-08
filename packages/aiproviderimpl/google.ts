@@ -154,7 +154,7 @@ export class GoogleAPI extends AIAPI {
 		return completionResponse;
 	}
 
-	private async handleStreamingResponse(
+	private async handleStreamingResponse<T>(
 		requestConfig: AxiosRequestConfig,
 		onStreamData?: (data: string) => Promise<void>
 	): Promise<CompletionResponse | undefined> {
@@ -166,8 +166,18 @@ export class GoogleAPI extends AIAPI {
 			let respText = '';
 			const objParser = new StreamParser();
 
-			const dataChunkProcessor = async (dataString: string) => {
+			const dataChunkProcessor = async (dataString: string, details?: APIFetchResponse<T>) => {
 				try {
+					if (details) {
+						const completionResponse: CompletionResponse = {
+							requestDetails: details.requestDetails,
+							responseDetails: details.responseDetails,
+							errorDetails: details.errorDetails,
+							respContent: respText,
+						};
+						resolve(completionResponse);
+						return;
+					}
 					const lines = dataString.split('\n'); // Split the buffer by newline
 
 					for (const line of lines) {
@@ -184,9 +194,12 @@ export class GoogleAPI extends AIAPI {
 							respText += respNew;
 							await onStreamData(respNew);
 						}
-						if (objParser.isStreamComplete() || line === 'data: [DONE]') {
-							const r = this.getStreamDoneResponse(respText, '', '');
-							resolve(r);
+						if (objParser.isStreamComplete() || line === 'data: [DONE]' || line === 'data: [ERROR]') {
+							const completionResponse: CompletionResponse = {
+								respContent: respText,
+							};
+							resolve(completionResponse);
+							return;
 						}
 					}
 				} catch (e) {

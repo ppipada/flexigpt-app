@@ -142,15 +142,6 @@ export class AnthropicAPI extends AIAPI {
 		return { parsedText, parsedFunctionName, parsedFunctionArgs };
 	}
 
-	private getStreamDoneResponse(respText: string, functionName: string, functionArgs: any): CompletionResponse {
-		const completionResponse: CompletionResponse = {
-			respContent: respText,
-			functionName: functionName,
-			functionArgs: functionArgs,
-		};
-		return completionResponse;
-	}
-
 	private parseStreamLine(respText: string, functionName: string, functionArgs: any, line: string) {
 		let respNew = '';
 		if (!line.startsWith('data: ')) {
@@ -159,16 +150,19 @@ export class AnthropicAPI extends AIAPI {
 				respFull: respText,
 				fname: functionName,
 				fargs: functionArgs,
-				completeResponse: undefined,
 			};
-		}
-		if (line === 'data: [DONE]') {
-			const r = this.getStreamDoneResponse(respText, functionName, functionArgs);
-			return { respNew: respNew, respFull: respText, fname: functionName, fargs: functionArgs, completeResponse: r };
 		}
 
 		line = line.substring(6).trim(); // Remove 'data: ' prefix
 		try {
+			if (line.trim().toUpperCase() === '[DONE]' || line.trim().toUpperCase() === '[ERROR]') {
+				return {
+					respNew: respNew,
+					respFull: respText,
+					fname: functionName,
+					fargs: functionArgs,
+				};
+			}
 			const dataObject = JSON.parse(line);
 			// log.debug('json data', dataObject);
 			if (!dataObject || !('type' in dataObject)) {
@@ -178,22 +172,15 @@ export class AnthropicAPI extends AIAPI {
 					respFull: respText,
 					fname: functionName,
 					fargs: functionArgs,
-					completeResponse: undefined,
 				};
 			}
 			const msgType = dataObject['type'].trim();
-			if (msgType === 'message_stop') {
-				const r = this.getStreamDoneResponse(respText, functionName, functionArgs);
-				return { respNew: respNew, respFull: respText, fname: functionName, fargs: functionArgs, completeResponse: r };
-			}
-
 			if (msgType !== 'content_block_delta' && msgType !== 'content_block_start') {
 				return {
 					respNew: respNew,
 					respFull: respText,
 					fname: functionName,
 					fargs: functionArgs,
-					completeResponse: undefined,
 				};
 			}
 
@@ -211,11 +198,10 @@ export class AnthropicAPI extends AIAPI {
 			respFull: respText,
 			fname: functionName,
 			fargs: functionArgs,
-			completeResponse: undefined,
 		};
 	}
 
-	private async handleStreamingResponse(
+	private async handleStreamingResponse<T>(
 		requestConfig: AxiosRequestConfig,
 		onStreamData?: (data: string) => Promise<void>
 	): Promise<CompletionResponse | undefined> {
@@ -229,18 +215,26 @@ export class AnthropicAPI extends AIAPI {
 			let functionArgs: any;
 			let buffer = ''; // Buffer to hold incomplete lines
 
-			const dataChunkProcessor = async (dataString: string) => {
+			const dataChunkProcessor = async (dataString: string, details?: APIFetchResponse<T>) => {
 				try {
+					if (details) {
+						const completionResponse: CompletionResponse = {
+							requestDetails: details.requestDetails,
+							responseDetails: details.responseDetails,
+							errorDetails: details.errorDetails,
+							respContent: respText,
+							functionName: functionName,
+							functionArgs: functionArgs,
+						};
+						resolve(completionResponse);
+						return;
+					}
 					buffer += dataString; // Accumulate data in the buffer
 					const lines = buffer.split('\n'); // Split the buffer by newline
 					buffer = lines.pop() || ''; // Keep the last partial line in the buffer
 
 					for (const line of lines) {
 						const r = this.parseStreamLine(respText, functionArgs, functionName, line);
-						if (r.completeResponse) {
-							resolve(r.completeResponse);
-							return;
-						}
 						respText = r.respFull;
 						functionName = r.fname;
 						functionArgs = r.fargs;
