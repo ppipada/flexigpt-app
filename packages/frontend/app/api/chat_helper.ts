@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { completion, getCompletionRequest, getDefaultProvider, getProviderInfo } from '@/api/base_aiproviderimpl';
-import { ChatCompletionRequestMessage, ChatCompletionRoleEnum, ProviderName } from 'aiprovidermodel';
+import {
+	ChatCompletionRequestMessage,
+	ChatCompletionRoleEnum,
+	CompletionResponse,
+	ProviderName,
+} from 'aiprovidermodel';
 import { ConversationMessage, ConversationRoleEnum } from 'conversationmodel';
 import { log } from 'logger';
 
@@ -25,15 +30,10 @@ function convertConversationToChatMessages(
 	return chatMessages;
 }
 
-async function handleDirectCompletion(
-	convoMessage: ConversationMessage,
-	provider: ProviderName,
-	fullCompletionRequest: any
-): Promise<ConversationMessage | undefined> {
-	const providerResp = await completion(provider, fullCompletionRequest);
+function parseAPIResponse(convoMessage: ConversationMessage, providerResp: CompletionResponse | undefined) {
 	let respContent = '';
 	let respDetails: string | undefined;
-
+	let requestDetails: string | undefined;
 	if (providerResp) {
 		if (providerResp.respContent) {
 			respContent = providerResp.respContent;
@@ -41,11 +41,31 @@ async function handleDirectCompletion(
 		if (providerResp.responseDetails) {
 			respDetails = '```json' + JSON.stringify(providerResp.responseDetails, null, 2) + '```';
 		}
+		if (providerResp.errorDetails) {
+			const errorDetails = '```json' + JSON.stringify(providerResp.errorDetails, null, 2) + '```';
+			if (respDetails) {
+				respDetails += '\n' + errorDetails;
+			} else {
+				respDetails = errorDetails;
+			}
+		}
+		if (providerResp.requestDetails) {
+			requestDetails = '```json' + JSON.stringify(providerResp.requestDetails, null, 2) + '```';
+		}
 	}
 
 	convoMessage.content = respContent;
 	convoMessage.details = respDetails;
-	return convoMessage;
+	return { responseMessage: convoMessage, requestDetails: requestDetails };
+}
+
+async function handleDirectCompletion(
+	convoMessage: ConversationMessage,
+	provider: ProviderName,
+	fullCompletionRequest: any
+): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
+	const providerResp = await completion(provider, fullCompletionRequest);
+	return parseAPIResponse(convoMessage, providerResp);
 }
 
 async function handleStreamedCompletion(
@@ -53,7 +73,7 @@ async function handleStreamedCompletion(
 	provider: ProviderName,
 	fullCompletionRequest: any,
 	onStreamData: (data: string) => void
-): Promise<ConversationMessage | undefined> {
+): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
 	const dataFunction = async (data: any): Promise<void> => {
 		return new Promise((resolve, reject) => {
 			try {
@@ -66,20 +86,7 @@ async function handleStreamedCompletion(
 	};
 
 	const providerResp = await completion(provider, fullCompletionRequest, dataFunction);
-	let respContent = '';
-	let respDetails: string | undefined;
-
-	if (providerResp) {
-		if (providerResp.respContent) {
-			respContent = providerResp.respContent;
-		}
-		if (providerResp.responseDetails) {
-			respDetails = '```json' + JSON.stringify(providerResp.responseDetails, null, 2) + '```';
-		}
-	}
-	convoMessage.content = respContent;
-	convoMessage.details = respDetails;
-	return convoMessage;
+	return parseAPIResponse(convoMessage, providerResp);
 }
 
 export async function getCompletionMessage(
@@ -87,7 +94,7 @@ export async function getCompletionMessage(
 	messages?: Array<ConversationMessage>,
 	inputParams?: { [key: string]: any },
 	onStreamData?: (data: string) => void
-): Promise<ConversationMessage | undefined> {
+): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
 	const allMessages = convertConversationToChatMessages(messages);
 	const promptMsg = allMessages.pop();
 	let defaultProvider: ProviderName;

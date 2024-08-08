@@ -110,11 +110,17 @@ const ChatScreen: FC = () => {
 		};
 
 		const newMsg = await getCompletionMessage(convoMsg, updatedChatWithUserMessage.messages, {}, onStreamData);
-
-		if (newMsg) {
+		if (newMsg && newMsg.requestDetails) {
+			if (updatedChatWithConvoMessage.messages.length > 1) {
+				updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 2].details =
+					newMsg.requestDetails;
+			}
+		}
+		if (newMsg && newMsg.responseMessage) {
+			const respMessage = newMsg.responseMessage;
 			// log.info('complete data', JSON.stringify(newMsg, null, 2));
 			updatedChatWithConvoMessage.messages.pop();
-			updatedChatWithConvoMessage.messages.push(newMsg);
+			updatedChatWithConvoMessage.messages.push(respMessage);
 			updatedChatWithConvoMessage.modifiedAt = new Date();
 			saveConversation(updatedChatWithConvoMessage);
 			setChat(updatedChatWithConvoMessage);
