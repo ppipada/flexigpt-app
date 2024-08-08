@@ -136,7 +136,7 @@ export const openaiProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	},
 	chatCompletionPathPrefix: '/v1/chat/completions',
 	defaultTemperature: 0.1,
-	streamingSupport: true,
+	streamingSupport: false,
 	descriptions: {
 		apiKey: 'Your openAI API key. Can be seen at https://beta.openai.com/account/api-keys',
 		engine: 'The engine to be used for processing.',

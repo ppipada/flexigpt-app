@@ -1,4 +1,5 @@
 import {
+	APIFetchResponse,
 	ChatCompletionRequestMessage,
 	ChatCompletionRoleEnum,
 	CompletionRequest,
@@ -6,6 +7,7 @@ import {
 	huggingfaceProviderInfo,
 } from 'aiprovidermodel';
 import { AxiosRequestConfig } from 'axios';
+import { log } from 'logger';
 import { AIAPI } from './completion_provider';
 
 export class HuggingFaceAPI extends AIAPI {
@@ -66,6 +68,16 @@ export class HuggingFaceAPI extends AIAPI {
 	}
 
 	async completion(input: CompletionRequest): Promise<CompletionResponse | undefined> {
+		const request = await this.createRequestData(input);
+		const requestConfig: AxiosRequestConfig = {
+			url: `${this.providerInfo.chatCompletionPathPrefix}/${input.model}`,
+			method: 'POST',
+			data: request,
+		};
+		return this.handleDirectResponse(requestConfig);
+	}
+
+	private async createRequestData(input: CompletionRequest): Promise<Record<string, any>> {
 		if (!input.messages) {
 			throw Error('No input messages found');
 		}
@@ -111,16 +123,42 @@ export class HuggingFaceAPI extends AIAPI {
 		} else {
 			request.inputs = inputmessages.text;
 		}
+		return request;
+	}
 
-		const requestConfig: AxiosRequestConfig = {
-			url: `${this.providerInfo.chatCompletionPathPrefix}/${input.model}`,
-			method: 'POST',
-			data: request,
-		};
-		const data = await this.apicaller.request(requestConfig);
-		if (typeof data !== 'object' || data === null) {
-			throw new Error('Invalid data response. Expected an object.' + data);
+	private async handleDirectResponse(requestConfig: AxiosRequestConfig): Promise<CompletionResponse | undefined> {
+		try {
+			const data = await this.apicaller.request(requestConfig);
+			return this.parseFullResponse(data);
+		} catch (error) {
+			log.error('Error in completion request: ' + error);
+			throw error;
 		}
+	}
+
+	private parseFullResponse<T>(apiFetchData: APIFetchResponse<T>): CompletionResponse {
+		if (!apiFetchData) {
+			log.error('No API fetch data');
+			return {};
+		}
+		const completionResponse: CompletionResponse = {
+			requestDetails: apiFetchData.requestDetails,
+			responseDetails: apiFetchData.responseDetails,
+			errorDetails: apiFetchData.errorDetails,
+		};
+
+		const data = apiFetchData.data;
+		if (typeof data !== 'object' || data === null) {
+			const msg = 'Invalid data response. Expected an object.';
+			// log.error(msg);
+			if (completionResponse.errorDetails) {
+				completionResponse.errorDetails.message += msg;
+			} else {
+				completionResponse.errorDetails = { message: msg };
+			}
+			return completionResponse;
+		}
+
 		let respText = '';
 		if ('generated_text' in data) {
 			respText = data.generated_text as string;
@@ -128,7 +166,8 @@ export class HuggingFaceAPI extends AIAPI {
 			// Get 'generated_text' from the first element of the array, if the array is not empty
 			respText = data[0].generated_text as string;
 		}
-		const completionResponse: CompletionResponse = { fullResponse: data, respContent: respText };
+
+		completionResponse.respContent = respText;
 		return completionResponse;
 	}
 }

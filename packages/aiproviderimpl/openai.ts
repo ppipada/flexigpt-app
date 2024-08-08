@@ -1,4 +1,5 @@
 import {
+	APIFetchResponse,
 	ChatCompletionRequestMessage,
 	ChatCompletionRoleEnum,
 	CompletionRequest,
@@ -65,9 +66,27 @@ export class OpenAIAPI extends AIAPI {
 		return request;
 	}
 
-	private parseFullResponse(data: any): CompletionResponse | undefined {
+	private parseFullResponse<T>(apiFetchData: APIFetchResponse<T>): CompletionResponse {
+		if (!apiFetchData) {
+			log.error('No API fetch data');
+			return {};
+		}
+		const completionResponse: CompletionResponse = {
+			requestDetails: apiFetchData.requestDetails,
+			responseDetails: apiFetchData.responseDetails,
+			errorDetails: apiFetchData.errorDetails,
+		};
+
+		const data = apiFetchData.data;
 		if (typeof data !== 'object' || data === null) {
-			throw new Error('Invalid data response. Expected an object.' + data);
+			const msg = 'Invalid data response. Expected an object.';
+			// log.error(msg);
+			if (completionResponse.errorDetails) {
+				completionResponse.errorDetails.message += msg;
+			} else {
+				completionResponse.errorDetails = { message: msg };
+			}
+			return completionResponse;
 		}
 
 		let respText = '';
@@ -101,12 +120,10 @@ export class OpenAIAPI extends AIAPI {
 			}
 		}
 
-		const completionResponse: CompletionResponse = {
-			fullResponse: data,
-			respContent: respText,
-			functionName: functionName,
-			functionArgs: functionArgs,
-		};
+		completionResponse.respContent = respText;
+		completionResponse.functionArgs = functionArgs;
+		completionResponse.functionName = functionName;
+
 		return completionResponse;
 	}
 
@@ -157,7 +174,6 @@ export class OpenAIAPI extends AIAPI {
 
 	private getStreamDoneResponse(respText: string, functionName: string, functionArgs: any): CompletionResponse {
 		const completionResponse: CompletionResponse = {
-			fullResponse: undefined,
 			respContent: respText,
 			functionName: functionName,
 			functionArgs: functionArgs,

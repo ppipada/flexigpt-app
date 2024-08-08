@@ -1,6 +1,7 @@
 import {
 	ALL_MODEL_INFO,
 	anthropicProviderInfo,
+	APIFetchResponse,
 	CompletionRequest,
 	CompletionResponse,
 	ModelName,
@@ -69,9 +70,27 @@ export class AnthropicAPI extends AIAPI {
 		return request;
 	}
 
-	private parseFullResponse(data: any): CompletionResponse | undefined {
+	private parseFullResponse<T>(apiFetchData: APIFetchResponse<T>): CompletionResponse {
+		if (!apiFetchData) {
+			log.error('No API fetch data');
+			return {};
+		}
+		const completionResponse: CompletionResponse = {
+			requestDetails: apiFetchData.requestDetails,
+			responseDetails: apiFetchData.responseDetails,
+			errorDetails: apiFetchData.errorDetails,
+		};
+
+		const data = apiFetchData.data;
 		if (typeof data !== 'object' || data === null) {
-			throw new Error('Invalid data response. Expected an object.');
+			const msg = 'Invalid data response. Expected an object.';
+			// log.error(msg);
+			if (completionResponse.errorDetails) {
+				completionResponse.errorDetails.message += msg;
+			} else {
+				completionResponse.errorDetails = { message: msg };
+			}
+			return completionResponse;
 		}
 		let respText = '';
 		if ('content' in data && Array.isArray(data.content) && data.content.length > 0) {
@@ -79,7 +98,9 @@ export class AnthropicAPI extends AIAPI {
 				respText += resp.text + '\n';
 			}
 		}
-		const completionResponse: CompletionResponse = { fullResponse: data, respContent: respText };
+
+		completionResponse.respContent = respText;
+
 		return completionResponse;
 	}
 
@@ -123,7 +144,6 @@ export class AnthropicAPI extends AIAPI {
 
 	private getStreamDoneResponse(respText: string, functionName: string, functionArgs: any): CompletionResponse {
 		const completionResponse: CompletionResponse = {
-			fullResponse: undefined,
 			respContent: respText,
 			functionName: functionName,
 			functionArgs: functionArgs,

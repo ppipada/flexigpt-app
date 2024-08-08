@@ -38,8 +38,8 @@ async function handleDirectCompletion(
 		if (providerResp.respContent) {
 			respContent = providerResp.respContent;
 		}
-		if (providerResp.fullResponse) {
-			respDetails = '```json' + JSON.stringify(providerResp.fullResponse, null, 2) + '```';
+		if (providerResp.responseDetails) {
+			respDetails = '```json' + JSON.stringify(providerResp.responseDetails, null, 2) + '```';
 		}
 	}
 
@@ -73,8 +73,8 @@ async function handleStreamedCompletion(
 		if (providerResp.respContent) {
 			respContent = providerResp.respContent;
 		}
-		if (providerResp.fullResponse) {
-			respDetails = '```json' + JSON.stringify(providerResp.fullResponse, null, 2) + '```';
+		if (providerResp.responseDetails) {
+			respDetails = '```json' + JSON.stringify(providerResp.responseDetails, null, 2) + '```';
 		}
 	}
 	convoMessage.content = respContent;

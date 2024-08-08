@@ -130,14 +130,14 @@
 - [x] selection doesnt reset on new conversation in search bar
 - [x] today vs yesterday in group
 - [x] logger is imported in securejsondb before it is set as ipc logger
-- [ ] logger is imported in securejsondb before it is set as ipc file logger in appimage
 - [ ] error handling review and fix
 - [ ] ability to discard previous message history in next call
 - [ ] ability to choose provider and model in the chat itself.
-- [ ] Better title deduce
 
 ## Pushed out list
 
+- [ ] logger is imported in securejsondb before it is set as ipc file logger in appimage
+- [ ] Better title deduce
 - [ ] Other AI providers: Tool use
 - [ ] AI provider: Usages in normal resp
 - [ ] AI provider:Usages in stream resp

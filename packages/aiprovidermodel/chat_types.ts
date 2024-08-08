@@ -55,8 +55,41 @@ export interface CompletionRequest {
 	additionalParameters?: Record<string, any>;
 }
 
+export interface APIRequestDetails {
+	url?: string;
+	method?: string;
+	headers?: any;
+	params?: any;
+	data?: any;
+	timeout?: number;
+	curlCommand?: string;
+}
+
+export interface APIResponseDetails {
+	data: any;
+	status: number;
+	headers: any;
+	requestDetails?: APIRequestDetails;
+}
+
+export interface APIErrorDetails {
+	message: string;
+	requestDetails?: APIRequestDetails;
+	responseDetails?: APIResponseDetails;
+	request?: any;
+}
+
+export interface APIFetchResponse<T> {
+	data?: T;
+	responseDetails?: APIResponseDetails;
+	requestDetails?: APIRequestDetails;
+	errorDetails?: APIErrorDetails;
+}
+
 export interface CompletionResponse {
-	fullResponse?: object;
+	requestDetails?: APIRequestDetails;
+	responseDetails?: APIResponseDetails;
+	errorDetails?: APIErrorDetails;
 	respContent?: string;
 	functionName?: string;
 	functionArgs?: any;
