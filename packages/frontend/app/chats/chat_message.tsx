@@ -1,34 +1,41 @@
-import { ChatMessageContent } from '@/chats/chat_message_content';
-import ChatMessageFooterArea from '@/chats/chat_message_footer';
+import EditBox from '@/chats/chat_message_editbox';
+import StaticMessage from '@/chats/chat_message_fixedbox';
 import { ConversationMessage, ConversationRoleEnum } from 'conversationmodel';
-import { FC, RefObject } from 'react';
+import { ChangeEvent, FC, useState } from 'react';
 import { FiCompass, FiUser } from 'react-icons/fi';
 
 interface ChatMessageProps {
 	message: ConversationMessage;
-	onEdit: () => void;
-	onResend: () => void;
-	onLike: () => void;
-	onDislike: () => void;
-	onSendFeedback: () => void;
-	feedbackController: RefObject<HTMLInputElement>;
+	onEdit: (editedText: string) => void;
 	streamedMessage: string;
 }
 
-const ChatMessage: FC<ChatMessageProps> = ({
-	message,
-	onEdit,
-	onResend,
-	onLike,
-	onDislike,
-	onSendFeedback,
-	feedbackController,
-	streamedMessage,
-}) => {
+const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, streamedMessage }) => {
 	const isUser = message.role === ConversationRoleEnum.user;
 	const align = !isUser ? 'items-end text-left' : 'items-start text-left';
 	const leftColSpan = !isUser ? 'col-span-1 lg:col-span-2' : 'col-span-1';
 	const rightColSpan = !isUser ? 'col-span-1' : 'col-span-1 lg:col-span-2';
+
+	const [isEditing, setIsEditing] = useState(false);
+	const [editText, setEditText] = useState(message.content);
+
+	const handleEditClick = () => {
+		setIsEditing(true);
+	};
+
+	const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+		setEditText(e.target.value);
+	};
+
+	const handleSubmit = (editedText: string) => {
+		onEdit(editedText);
+		setIsEditing(false);
+	};
+
+	const handleDiscard = () => {
+		setIsEditing(false);
+		setEditText(message.content);
+	};
 
 	return (
 		<div className="grid grid-cols-12 gap-2 mb-4 items-start" style={{ fontSize: '14px' }}>
@@ -40,21 +47,22 @@ const ChatMessage: FC<ChatMessageProps> = ({
 				)}
 			</div>
 			<div className="col-span-10 lg:col-span-9">
-				<div className="flex flex-col w-full">
-					<ChatMessageContent content={streamedMessage || message.content} align={align} />
-					<ChatMessageFooterArea
-						isUser={isUser}
-						onEdit={onEdit}
-						onResend={onResend}
-						onLike={onLike}
-						onDislike={onDislike}
-						onSendFeedback={onSendFeedback}
-						feedbackController={feedbackController}
-						messageDetails={message.details ? message.details : ''}
-						cardContent={message.content}
-						isStreaming={streamedMessage ? true : false}
+				{isEditing ? (
+					<EditBox
+						editText={editText}
+						onTextChange={handleTextChange}
+						onSubmit={handleSubmit}
+						onDiscard={handleDiscard}
 					/>
-				</div>
+				) : (
+					<StaticMessage
+						message={message}
+						onEdit={handleEditClick}
+						streamedMessage={streamedMessage}
+						isUser={isUser}
+						align={align}
+					/>
+				)}
 			</div>
 			<div className={`${rightColSpan} flex justify-start`}>
 				{!isUser && (

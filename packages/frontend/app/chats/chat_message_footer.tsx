@@ -1,17 +1,12 @@
 import { ChatMessageContent } from '@/chats/chat_message_content';
 import CopyButton from '@/components/copy_button';
-import { FC, RefObject, useState } from 'react';
+import { FC, useState } from 'react';
 import { FiChevronDown, FiChevronUp, FiEdit } from 'react-icons/fi';
 
 interface ChatMessageFooterAreaProps {
 	isUser: boolean;
 	cardContent: string;
 	onEdit: () => void;
-	onResend: () => void;
-	onLike: () => void;
-	onDislike: () => void;
-	onSendFeedback: () => void;
-	feedbackController: RefObject<HTMLInputElement>;
 	messageDetails: string;
 	isStreaming: boolean;
 }
@@ -20,16 +15,6 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 	isUser,
 	cardContent,
 	onEdit,
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	onResend,
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	onLike,
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	onDislike,
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	onSendFeedback,
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	feedbackController,
 	messageDetails,
 	isStreaming,
 }) => {
