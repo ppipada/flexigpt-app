@@ -30,6 +30,10 @@ function convertConversationToChatMessages(
 	return chatMessages;
 }
 
+function getQuotedJSON(obj: any): string {
+	return '```json\n' + JSON.stringify(obj, null, 2) + '\n```';
+}
+
 function parseAPIResponse(convoMessage: ConversationMessage, providerResp: CompletionResponse | undefined) {
 	let respContent = '';
 	let respDetails: string | undefined;
@@ -39,18 +43,20 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Compl
 			respContent = providerResp.respContent;
 		}
 		if (providerResp.responseDetails) {
-			respDetails = '```json' + JSON.stringify(providerResp.responseDetails, null, 2) + '```';
-		}
-		if (providerResp.errorDetails) {
-			const errorDetails = '```json' + JSON.stringify(providerResp.errorDetails, null, 2) + '```';
-			if (respDetails) {
-				respDetails += '\n' + errorDetails;
-			} else {
-				respDetails = errorDetails;
-			}
+			respDetails = getQuotedJSON(providerResp.responseDetails);
 		}
 		if (providerResp.requestDetails) {
-			requestDetails = '```json' + JSON.stringify(providerResp.requestDetails, null, 2) + '```';
+			requestDetails = getQuotedJSON(providerResp.requestDetails);
+		}
+		if (providerResp.errorDetails) {
+			respDetails = providerResp.errorDetails.message;
+			if (providerResp.errorDetails.responseDetails) {
+				respDetails += '\n### Response Details\n' + getQuotedJSON(providerResp.errorDetails.responseDetails);
+			}
+			if (providerResp.errorDetails.requestDetails) {
+				requestDetails = getQuotedJSON(providerResp.errorDetails.requestDetails);
+			}
+			respContent += '\nGot error in api processing. Check details...';
 		}
 	}
 
@@ -95,28 +101,37 @@ export async function getCompletionMessage(
 	inputParams?: { [key: string]: any },
 	onStreamData?: (data: string) => void
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
-	const allMessages = convertConversationToChatMessages(messages);
-	const promptMsg = allMessages.pop();
-	let defaultProvider: ProviderName;
 	try {
-		defaultProvider = await getDefaultProvider();
-	} catch (e) {
-		log.error(e);
-		throw e;
-	}
-	const providerInfo = await getProviderInfo(defaultProvider);
-	const isStream = providerInfo.streamingSupport || false;
-	const fullCompletionRequest = await getCompletionRequest(
-		defaultProvider,
-		promptMsg?.content || '',
-		allMessages,
-		inputParams,
-		isStream
-	);
-	// log.info('CompletionRequest', defaultProvider, JSON.stringify(fullCompletionRequest, null, 2));
-	if (isStream && onStreamData) {
-		return await handleStreamedCompletion(convoMessage, defaultProvider, fullCompletionRequest, onStreamData);
-	} else {
-		return await handleDirectCompletion(convoMessage, defaultProvider, fullCompletionRequest);
+		const allMessages = convertConversationToChatMessages(messages);
+		const promptMsg = allMessages.pop();
+		let defaultProvider: ProviderName;
+		try {
+			defaultProvider = await getDefaultProvider();
+		} catch (e) {
+			log.error(e);
+			throw e;
+		}
+		const providerInfo = await getProviderInfo(defaultProvider);
+		const isStream = providerInfo.streamingSupport || false;
+		const fullCompletionRequest = await getCompletionRequest(
+			defaultProvider,
+			promptMsg?.content || '',
+			allMessages,
+			inputParams,
+			isStream
+		);
+		// log.info('CompletionRequest', defaultProvider, JSON.stringify(fullCompletionRequest, null, 2));
+		if (isStream && onStreamData) {
+			return await handleStreamedCompletion(convoMessage, defaultProvider, fullCompletionRequest, onStreamData);
+		} else {
+			return await handleDirectCompletion(convoMessage, defaultProvider, fullCompletionRequest);
+		}
+	} catch (error) {
+		const msg = 'Got error in api processing. Check details...';
+		const details = JSON.stringify(error, null, 2);
+		log.error(msg, details);
+		convoMessage.content = msg;
+		convoMessage.details = details;
+		return { responseMessage: convoMessage, requestDetails: undefined };
 	}
 }

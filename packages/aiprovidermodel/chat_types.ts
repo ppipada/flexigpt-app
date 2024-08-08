@@ -76,7 +76,6 @@ export interface APIErrorDetails {
 	message: string;
 	requestDetails?: APIRequestDetails;
 	responseDetails?: APIResponseDetails;
-	request?: any;
 }
 
 export interface APIFetchResponse<T> {

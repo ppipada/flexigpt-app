@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, ResponseType } from 'axios';
 
-import { APIErrorDetails, APIFetchResponse, APIResponseDetails } from 'aiprovidermodel';
+import { APIErrorDetails, APIFetchResponse, APIRequestDetails, APIResponseDetails } from 'aiprovidermodel';
 import { setupInterceptors } from './api_fetch_interceptors';
 
 export class APICaller {
@@ -49,6 +49,20 @@ export class APICaller {
 		return config;
 	}
 
+	private getErrorDetails(error: unknown): APIErrorDetails {
+		const errorDetails: APIErrorDetails = { message: JSON.stringify(error, null, 2) };
+		if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+			errorDetails.message = error.message;
+			if ('requestDetails' in error) {
+				errorDetails.requestDetails = error.requestDetails as APIRequestDetails;
+			}
+			if ('responseDetails' in error) {
+				errorDetails.responseDetails = error.responseDetails as APIResponseDetails;
+			}
+		}
+		return errorDetails;
+	}
+
 	async request<T>(requestConfig: AxiosRequestConfig): Promise<APIFetchResponse<T>> {
 		const config = this.extendAxiosRequestConfig(requestConfig);
 		const resp: APIFetchResponse<T> = {};
@@ -60,12 +74,7 @@ export class APICaller {
 			resp.responseDetails = responseDetails;
 			resp.responseDetails.requestDetails = undefined;
 		} catch (error) {
-			if (axios.isAxiosError(error)) {
-				const errorDetails = (error as any).errorDetails as APIErrorDetails;
-				resp.errorDetails = errorDetails;
-			} else {
-				resp.errorDetails = { message: JSON.stringify(error, null, 2) };
-			}
+			resp.errorDetails = this.getErrorDetails(error);
 		}
 		return resp;
 	}
@@ -100,10 +109,7 @@ export class APICaller {
 			};
 			reader.read().then(processText);
 		} catch (error) {
-			const errorDetails: APIErrorDetails = axios.isAxiosError(error)
-				? ((error as any).errorDetails as APIErrorDetails)
-				: { message: JSON.stringify(error, null, 2) };
-			resp.errorDetails = errorDetails;
+			resp.errorDetails = this.getErrorDetails(error);
 			await dataChunkProcessor('data: [ERROR]', resp);
 		}
 	}

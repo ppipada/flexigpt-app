@@ -48,20 +48,26 @@ function generateCurlCommand(config: APIRequestDetails): string {
 	return curlCommand;
 }
 
+function checkNonEmptyObject(obj: any): boolean {
+	if (obj && typeof obj === 'object' && Object.keys(obj).length !== 0) {
+		return true;
+	}
+	return false;
+}
+
 function getRequestDetails(config: AxiosRequestConfig, logDetails = false): AxiosRequestConfig {
 	const requestDetails: APIRequestDetails = {
 		url: config.url,
 		method: config.method,
-		headers: filterSensitiveInfo(config.headers),
-		params: config.params,
-		data: config.data,
+		headers: checkNonEmptyObject(config.headers) ? filterSensitiveInfo(config.headers) : undefined,
+		params: checkNonEmptyObject(config.params) ? config.params : undefined,
+		data: checkNonEmptyObject(config.data) ? config.data : undefined,
 		timeout: config.timeout,
 	};
 
 	requestDetails.curlCommand = generateCurlCommand(requestDetails);
 	if (logDetails) {
 		log.debug('Request Details:', requestDetails);
-		log.debug('cURL Command:', requestDetails.curlCommand);
 	}
 
 	// Attach requestDetails to config for later use in response interceptor
@@ -77,9 +83,9 @@ function getRequestErrorDetails(error: AxiosError, logDetails = false): APIError
 			? {
 					url: error.config.url,
 					method: error.config.method,
-					headers: filterSensitiveInfo(error.config.headers),
-					params: error.config.params,
-					data: filterSensitiveInfo(error.config.data),
+					headers: checkNonEmptyObject(error.config.headers) ? filterSensitiveInfo(error.config.headers) : undefined,
+					params: checkNonEmptyObject(error.config.params) ? error.config.params : undefined,
+					data: checkNonEmptyObject(error.config.data) ? filterSensitiveInfo(error.config.data) : undefined,
 					timeout: error.config.timeout,
 				}
 			: undefined,
@@ -94,7 +100,7 @@ function getRequestErrorDetails(error: AxiosError, logDetails = false): APIError
 function getResponseDetails(response: AxiosResponse, logDetails = false): AxiosResponse {
 	const requestDetails = (response.config as any).requestDetails as APIRequestDetails;
 	const responseDetails: APIResponseDetails = {
-		data: response.data,
+		data: checkNonEmptyObject(response.data) ? response.data : undefined,
 		status: response.status,
 		headers: response.headers,
 		requestDetails: requestDetails,
@@ -107,22 +113,32 @@ function getResponseDetails(response: AxiosResponse, logDetails = false): AxiosR
 }
 
 function getResponseErrorDetails(error: AxiosError, logDetails = false): APIErrorDetails {
+	// log.debug('Full error', JSON.stringify(error, null, 2));
+	let msg = `Message: ${error.message}`;
+	if (error.code) {
+		msg += `\n\nCode: ${error.code}`;
+	}
 	const errorDetails: APIErrorDetails = {
-		message: error.message,
+		message: msg,
 	};
-
+	let status = error.status;
 	if (error.response) {
 		const requestDetails = (error.config as any).requestDetails as APIRequestDetails;
+		if (error.response.status) {
+			status = error.response.status;
+		}
 		errorDetails.responseDetails = {
-			data: error.response.data,
+			data: checkNonEmptyObject(error.response.data) ? error.response.data : undefined,
 			status: error.response.status,
 			headers: filterSensitiveInfo(error.response.headers),
-			requestDetails: requestDetails,
+			requestDetails: undefined,
 		};
 		errorDetails.requestDetails = requestDetails;
-	} else if (error.request) {
-		errorDetails.request = error.request;
 	}
+	if (status) {
+		errorDetails.message += `\n\nStatus: ${status}`;
+	}
+
 	if (logDetails) {
 		log.error('Response Error Details:', errorDetails);
 	}
