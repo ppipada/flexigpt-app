@@ -118,7 +118,7 @@
     - [x] anthropic
     - [x] google
   - [x] someway to show things are loading
-- [ ] Content:
+- [x] Content:
   - [x] Emoji
   - [ ] ~~Subscript~~
   - [ ] ~~custom headings~~
