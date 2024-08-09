@@ -194,15 +194,23 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 
 	return (
 		<div className="relative">
-			<div className="flex items-center justify-between bg-base-200 gap-8 mb-1 mx-4">
+			<div className="flex items-center justify-between bg-base-200 gap-1 md:gap-8 mb-1 mx-4">
 				<div className="dropdown dropdown-top dropdown-end w-1/3">
 					<label
 						tabIndex={0}
-						className="btn btn-xs w-full text-left text-neutral-400 shadow-none border-none"
+						className="btn btn-xs w-full text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
 						onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+						title="Select Model"
 					>
-						{selectedModel.title}{' '}
-						{isModelDropdownOpen ? <FiChevronDown className="ml-2" /> : <FiChevronUp className="ml-2" />}
+						<div className="flex">
+							<span className="sm:hidden">{selectedModel.title.substring(0, 8)}</span>
+							<span className="hidden sm:inline">{selectedModel.title} </span>
+							{isModelDropdownOpen ? (
+								<FiChevronDown className="ml-1 md:ml-2" />
+							) : (
+								<FiChevronUp className="ml-1 md:ml-2" />
+							)}
+						</div>
 					</label>
 					<ul
 						tabIndex={0}
@@ -211,7 +219,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					>
 						{allOptions.map((model, index) => (
 							<li key={index} className="cursor-pointer text-xs" onClick={() => setSelectedModel(model)}>
-								<a className="flex justify-between items-center p-1 m-0">
+								<a className="justify-between items-center p-1 m-0">
 									<span>{model.title}</span>
 									{selectedModel.name && selectedModel.name === model.name && <FiCheck />}
 								</a>
@@ -223,11 +231,19 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 				<div className="dropdown dropdown-top dropdown-end w-1/3">
 					<label
 						tabIndex={0}
-						className="btn btn-xs w-full text-left text-neutral-400 shadow-none border-none"
+						className="btn btn-xs w-full text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
 						onClick={() => setIsTemperatureDropdownOpen(!isTemperatureDropdownOpen)}
+						title="Set temperature"
 					>
-						Temperature: {selectedModel.temperature.toFixed(1)}{' '}
-						{isTemperatureDropdownOpen ? <FiChevronDown className="ml-2" /> : <FiChevronUp className="ml-2" />}
+						<div className="flex">
+							<span className="sm:hidden">Temp:</span>
+							<span className="hidden sm:inline">Temperature:</span> {selectedModel.temperature.toFixed(1)}{' '}
+							{isTemperatureDropdownOpen ? (
+								<FiChevronDown className="ml-1 md:ml-2" />
+							) : (
+								<FiChevronUp className="ml-1 md:ml-2" />
+							)}
+						</div>
 					</label>
 					<ul
 						tabIndex={0}
@@ -236,7 +252,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					>
 						{temperatureOptions.map((temp, index) => (
 							<li key={index} className="cursor-pointer text-xs" onClick={() => setTemperature(parseFloat(temp))}>
-								<a className="flex justify-between items-center p-1 m-0">
+								<a className="justify-between items-center p-1 m-0">
 									<span>{temp}</span>
 									{selectedModel.temperature.toFixed(1) === temp && <FiCheck />}
 								</a>
@@ -245,14 +261,17 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					</ul>
 				</div>
 
-				<label className="flex items-center space-x-2 text-neutral-400 w-1/3">
+				<label
+					className="flex items-center space-x-2 text-neutral-400 w-1/3 overflow-hidden"
+					title="Disable previous messages"
+				>
 					<input
 						type="checkbox"
 						checked={disablePreviousMessages}
 						onChange={e => setDisablePreviousMessages(e.target.checked)}
 						className="checkbox checkbox-xs rounded-full"
 					/>
-					<span className="text-xs">Disable previous messages</span>
+					<span className="text-xs text-nowrap">Disable previous messages</span>
 				</label>
 			</div>
 
