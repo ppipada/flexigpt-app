@@ -1,16 +1,45 @@
-import { ChangeEvent, FC, KeyboardEvent, useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { ModelName, ProviderName } from 'aiprovidermodel';
+import React, {
+	ChangeEvent,
+	forwardRef,
+	KeyboardEvent,
+	useCallback,
+	useEffect,
+	useImperativeHandle,
+	useRef,
+	useState,
+} from 'react';
 import { FiCheck, FiChevronDown, FiChevronUp, FiSend } from 'react-icons/fi';
 
+// Define the structure of the model information and chat options
 interface ModelOption {
 	title: string;
-	provider: string;
-	name: string;
+	provider: ProviderName;
+	name: ModelName;
+}
+
+export interface ChatOptions {
+	modelInfo?: {
+		provider: ProviderName;
+		model: ModelName;
+		temperature: number;
+	};
+	disablePreviousMessages: boolean;
+}
+
+export interface ChatInputFieldProps {
+	onSend: (message: string, options: ChatOptions) => void; // Updated to use ChatOptions
+	setInputHeight: (height: number) => void;
+}
+
+export interface ChatInputFieldHandle {
+	getChatOptions: () => ChatOptions;
 }
 
 const inputModels: ModelOption[] = [
-	{ title: 'Model 1', provider: 'Provider 1', name: 'Model1' },
-	{ title: 'Model 2', provider: 'Provider 2', name: 'Model2' },
-	{ title: 'Model 3', provider: 'Provider 3', name: 'Model3' },
+	{ title: 'GPT4oMini', provider: ProviderName.OPENAI, name: ModelName.GPT_4O_MINI },
+	{ title: 'GPT4o', provider: ProviderName.OPENAI, name: ModelName.GPT_4O },
+	{ title: 'GPT4', provider: ProviderName.OPENAI, name: ModelName.GPT_4 },
 ];
 
 const defaultTemperature = 0.1;
@@ -21,7 +50,7 @@ const getOptions = () => ({
 
 // Custom hook for handling form submission on Enter key press
 function useEnterSubmit(): {
-	formRef: RefObject<HTMLFormElement>;
+	formRef: React.RefObject<HTMLFormElement>;
 	onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
 } {
 	const formRef = useRef<HTMLFormElement>(null);
@@ -38,22 +67,17 @@ function useEnterSubmit(): {
 	return { formRef, onKeyDown: handleKeyDown };
 }
 
-interface ChatInputFieldProps {
-	onSend: (message: string, options: Record<string, any>) => void;
-	setInputHeight: (height: number) => void;
-}
-
 const MAX_HEIGHT = 240;
 
-const ChatInputField: FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => {
+const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ onSend, setInputHeight }, ref) => {
 	const [text, setText] = useState<string>('');
 	const [isSendButtonEnabled, setIsSendButtonEnabled] = useState<boolean>(false);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const isSubmittingRef = useRef<boolean>(false);
 	const [selectedModel, setSelectedModel] = useState<ModelOption>({
-		title: 'Model 1',
-		provider: 'Provider 1',
-		name: 'Model1',
+		title: 'GPT4oMini',
+		provider: ProviderName.OPENAI,
+		name: ModelName.GPT_4O_MINI,
 	});
 	const [temperature, setTemperature] = useState<number>(0.5);
 	const [disablePreviousMessages, setDisablePreviousMessages] = useState<boolean>(false);
@@ -87,11 +111,19 @@ const ChatInputField: FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => 
 		if (text.trim().length === 0 || isSubmittingRef.current) return;
 		isSubmittingRef.current = true;
 		setIsSendButtonEnabled(false);
-		onSend(text.trim(), {
-			model: selectedModel,
-			temperature,
+
+		// Create the ChatOptions object
+		const chatOptions: ChatOptions = {
+			modelInfo: {
+				provider: selectedModel.provider,
+				model: selectedModel.name,
+				temperature,
+			},
 			disablePreviousMessages,
-		});
+		};
+
+		onSend(text.trim(), chatOptions);
+
 		setText('');
 		isSubmittingRef.current = false;
 		if (inputRef.current) {
@@ -106,6 +138,18 @@ const ChatInputField: FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => 
 		autoResizeTextarea();
 	}, [text, autoResizeTextarea]);
 
+	// Expose the function to get current chat options
+	useImperativeHandle(ref, () => ({
+		getChatOptions: () => ({
+			modelInfo: {
+				provider: selectedModel.provider,
+				model: selectedModel.name,
+				temperature,
+			},
+			disablePreviousMessages,
+		}),
+	}));
+
 	const temperatureOptions = Array.from({ length: 11 }, (_, i) => (i / 10).toFixed(1));
 
 	return (
@@ -118,7 +162,7 @@ const ChatInputField: FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => 
 						onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
 					>
 						{selectedModel.title}{' '}
-						{isModelDropdownOpen ? <FiChevronUp className="ml-2" /> : <FiChevronDown className="ml-2" />}
+						{isModelDropdownOpen ? <FiChevronDown className="ml-2" /> : <FiChevronUp className="ml-2" />}
 					</label>
 					<ul
 						tabIndex={0}
@@ -145,7 +189,7 @@ const ChatInputField: FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => 
 						onClick={() => setIsTemperatureDropdownOpen(!isTemperatureDropdownOpen)}
 					>
 						Temperature: {temperature}{' '}
-						{isTemperatureDropdownOpen ? <FiChevronUp className="ml-2" /> : <FiChevronDown className="ml-2" />}
+						{isTemperatureDropdownOpen ? <FiChevronDown className="ml-2" /> : <FiChevronUp className="ml-2" />}
 					</label>
 					<ul
 						tabIndex={0}
@@ -202,6 +246,7 @@ const ChatInputField: FC<ChatInputFieldProps> = ({ onSend, setInputHeight }) => 
 			</form>
 		</div>
 	);
-};
+});
 
+ChatInputField.displayName = 'ChatInputField';
 export default ChatInputField;

@@ -1,7 +1,7 @@
 'use client';
 import { getCompletionMessage } from '@/api/chat_helper';
 import { getConversation, listAllConversations, saveConversation } from '@/api/conversation_memoized_api';
-import ChatInputField from '@/chats/chat_input_field';
+import ChatInputField, { ChatInputFieldHandle, ChatOptions } from '@/chats/chat_input_field';
 import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
@@ -22,6 +22,7 @@ const ChatScreen: FC = () => {
 	const isSubmittingRef = useRef<boolean>(false);
 	const [streamedMessage, setStreamedMessage] = useState<string>('');
 	const [isStreaming, setIsStreaming] = useState<boolean>(false);
+	const chatInputRef = useRef<ChatInputFieldHandle>(null);
 
 	const loadInitialItems = useCallback(async () => {
 		const conversations = await listAllConversations();
@@ -66,58 +67,56 @@ const ChatScreen: FC = () => {
 		setChat(updatedChat);
 	};
 
-	const updateStreamingMessage = useCallback(
-		async (updatedChatWithUserMessage: Conversation, inputParams: Record<string, any>) => {
-			setIsStreaming(true);
-			setStreamedMessage('');
+	const updateStreamingMessage = useCallback(async (updatedChatWithUserMessage: Conversation, options: ChatOptions) => {
+		const inputParams: Record<string, any> = { ...options.modelInfo };
+		let prevMessages = updatedChatWithUserMessage.messages;
+		if (options.disablePreviousMessages) {
+			prevMessages = [updatedChatWithUserMessage.messages[updatedChatWithUserMessage.messages.length - 1]];
+		}
 
-			await new Promise(resolve => setTimeout(resolve, 0));
+		setIsStreaming(true);
+		setStreamedMessage('');
 
-			const convoMsg = initConversationMessage(ConversationRoleEnum.assistant, '');
-			const updatedChatWithConvoMessage = {
-				...updatedChatWithUserMessage,
-				messages: [...updatedChatWithUserMessage.messages, convoMsg],
-				modifiedAt: new Date(),
-			};
+		await new Promise(resolve => setTimeout(resolve, 0));
 
-			const onStreamData = (data: string) => {
-				setStreamedMessage(prev => {
-					if (prev === '') {
-						updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 1].content = data;
-						updatedChatWithConvoMessage.modifiedAt = new Date();
-						setChat(updatedChatWithConvoMessage);
-						return data;
-					}
-					return prev + data;
-				});
-			};
+		const convoMsg = initConversationMessage(ConversationRoleEnum.assistant, '');
+		const updatedChatWithConvoMessage = {
+			...updatedChatWithUserMessage,
+			messages: [...updatedChatWithUserMessage.messages, convoMsg],
+			modifiedAt: new Date(),
+		};
 
-			const newMsg = await getCompletionMessage(
-				convoMsg,
-				updatedChatWithUserMessage.messages,
-				inputParams,
-				onStreamData
-			);
-			if (newMsg && newMsg.requestDetails) {
-				if (updatedChatWithConvoMessage.messages.length > 1) {
-					updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 2].details =
-						newMsg.requestDetails;
+		const onStreamData = (data: string) => {
+			setStreamedMessage(prev => {
+				if (prev === '') {
+					updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 1].content = data;
+					updatedChatWithConvoMessage.modifiedAt = new Date();
+					setChat(updatedChatWithConvoMessage);
+					return data;
 				}
-			}
-			if (newMsg && newMsg.responseMessage) {
-				const respMessage = newMsg.responseMessage;
-				updatedChatWithConvoMessage.messages.pop();
-				updatedChatWithConvoMessage.messages.push(respMessage);
-				updatedChatWithConvoMessage.modifiedAt = new Date();
-				saveUpdatedChat(updatedChatWithConvoMessage);
-				setIsStreaming(false); // Mark streaming as complete
-			}
-			isSubmittingRef.current = false; // Reset submitting flag
-		},
-		[]
-	);
+				return prev + data;
+			});
+		};
 
-	const sendMessage = async (messageContent: string, options: Record<string, any>) => {
+		const newMsg = await getCompletionMessage(convoMsg, prevMessages, inputParams, onStreamData);
+		if (newMsg && newMsg.requestDetails) {
+			if (updatedChatWithConvoMessage.messages.length > 1) {
+				updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 2].details =
+					newMsg.requestDetails;
+			}
+		}
+		if (newMsg && newMsg.responseMessage) {
+			const respMessage = newMsg.responseMessage;
+			updatedChatWithConvoMessage.messages.pop();
+			updatedChatWithConvoMessage.messages.push(respMessage);
+			updatedChatWithConvoMessage.modifiedAt = new Date();
+			saveUpdatedChat(updatedChatWithConvoMessage);
+			setIsStreaming(false); // Mark streaming as complete
+		}
+		isSubmittingRef.current = false; // Reset submitting flag
+	}, []);
+
+	const sendMessage = async (messageContent: string, options: ChatOptions) => {
 		if (isSubmittingRef.current) return;
 		isSubmittingRef.current = true;
 
@@ -157,8 +156,14 @@ const ChatScreen: FC = () => {
 				modifiedAt: new Date(),
 			};
 			saveUpdatedChat(updatedChat);
+			let currentChatOptions: ChatOptions = {
+				disablePreviousMessages: false,
+			};
+			if (chatInputRef && chatInputRef.current) {
+				currentChatOptions = chatInputRef.current.getChatOptions();
+			}
 
-			await updateStreamingMessage(updatedChat, {});
+			await updateStreamingMessage(updatedChat, currentChatOptions);
 		},
 		[chat, updateStreamingMessage]
 	);
@@ -206,7 +211,7 @@ const ChatScreen: FC = () => {
 				</div>
 				<div className="w-full flex justify-center bg-transparent fixed bottom-0 mb-3">
 					<div className="w-11/12 lg:w-4/5 xl:w-3/4">
-						<ChatInputField onSend={sendMessage} setInputHeight={setInputHeight} />
+						<ChatInputField ref={chatInputRef} onSend={sendMessage} setInputHeight={setInputHeight} />
 					</div>
 				</div>
 			</div>

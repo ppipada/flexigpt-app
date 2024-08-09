@@ -61,7 +61,16 @@ export class ProviderSet implements IProviderSetAPI {
 		inputParams?: { [key: string]: any },
 		stream?: boolean
 	): Promise<CompletionRequest> {
-		return this.providers[provider].getCompletionRequest(prompt, prevMessages, inputParams, stream);
+		let completionProvider = provider;
+		if (inputParams && 'provider' in inputParams) {
+			const providerStr = inputParams['provider'];
+			if (providerStr in ProviderName) {
+				completionProvider = inputParams['provider'] as ProviderName;
+			}
+			delete inputParams['provider'];
+		}
+
+		return this.providers[completionProvider].getCompletionRequest(prompt, prevMessages, inputParams, stream);
 	}
 
 	async completion(
