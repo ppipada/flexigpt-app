@@ -28,6 +28,7 @@ export enum ModelName {
 
 export interface ModelInfo {
 	name: ModelName;
+	displayName: string;
 	provider: ProviderName;
 	maxPromptLength: number;
 	maxOutputLength: number;
@@ -35,6 +36,7 @@ export interface ModelInfo {
 }
 
 export interface ProviderInfo {
+	name: ProviderName;
 	apiKey: string;
 	engine: string;
 	defaultOrigin: string;
@@ -55,6 +57,7 @@ export interface ProviderInfo {
 
 // Implementing the ProviderInfo interface in a class
 export class ProviderInfoImpl implements ProviderInfo {
+	name: ProviderName;
 	apiKey: string;
 	engine: string;
 	defaultOrigin: string;
@@ -70,6 +73,7 @@ export class ProviderInfoImpl implements ProviderInfo {
 	descriptions?: Partial<Record<keyof ProviderInfo, string>>;
 
 	constructor(providerInfo: Omit<ProviderInfo, 'getDescription'>) {
+		this.name = providerInfo.name;
 		this.apiKey = providerInfo.apiKey;
 		this.engine = providerInfo.engine;
 		this.defaultOrigin = providerInfo.defaultOrigin;

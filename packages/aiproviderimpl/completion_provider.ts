@@ -23,6 +23,7 @@ export interface CompletionProvider {
 		onStreamData?: (data: string) => Promise<void>
 	): Promise<CompletionResponse | undefined>;
 	setAttribute(apiKey?: string, defaultModel?: ModelName, defaultTemperature?: number, defaultOrigin?: string): void;
+	isConfigured(): boolean;
 }
 
 export class AIAPI implements CompletionProvider {
@@ -42,6 +43,13 @@ export class AIAPI implements CompletionProvider {
 
 	getProviderInfo(): ProviderInfo {
 		return this.providerInfo;
+	}
+
+	isConfigured(): boolean {
+		if (this.apicaller.apiKey && this.apicaller.apiKey !== '') {
+			return true;
+		}
+		return false;
 	}
 
 	setAttribute(apiKey?: string, defaultModel?: ModelName, defaultTemperature?: number, defaultOrigin?: string) {
@@ -165,6 +173,7 @@ export class AIAPI implements CompletionProvider {
 				completionRequest.systemPrompt = inputParams[key];
 			} else {
 				completionRequest.additionalParameters = completionRequest.additionalParameters || {};
+				// No additional param support as of now
 				if (key !== 'provider') {
 					completionRequest.additionalParameters[key] = inputParams[key];
 				}

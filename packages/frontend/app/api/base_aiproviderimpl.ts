@@ -21,6 +21,10 @@ export async function getProviderInfo(provider: ProviderName): Promise<ProviderI
 	return await window.ProviderSetAPI.getProviderInfo(provider);
 }
 
+export async function getConfigurationInfo(): Promise<Record<string, any>> {
+	return await window.ProviderSetAPI.getConfigurationInfo();
+}
+
 export async function getCompletionRequest(
 	provider: ProviderName,
 	prompt: string,

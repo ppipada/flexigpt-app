@@ -68,7 +68,11 @@ const ChatScreen: FC = () => {
 	};
 
 	const updateStreamingMessage = useCallback(async (updatedChatWithUserMessage: Conversation, options: ChatOptions) => {
-		const inputParams: Record<string, any> = { ...options.modelInfo };
+		const inputParams: Record<string, any> = {
+			provider: options.modelInfo?.provider,
+			model: options.modelInfo?.name,
+			temperature: options.modelInfo?.temperature,
+		};
 		let prevMessages = updatedChatWithUserMessage.messages;
 		if (options.disablePreviousMessages) {
 			prevMessages = [updatedChatWithUserMessage.messages[updatedChatWithUserMessage.messages.length - 1]];
@@ -97,7 +101,7 @@ const ChatScreen: FC = () => {
 				return prev + data;
 			});
 		};
-
+		// log.info(JSON.stringify({ prevMessages, inputParams, convoMsg }, null, 2));
 		const newMsg = await getCompletionMessage(convoMsg, prevMessages, inputParams, onStreamData);
 		if (newMsg && newMsg.requestDetails) {
 			if (updatedChatWithConvoMessage.messages.length > 1) {

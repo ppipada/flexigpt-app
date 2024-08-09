@@ -4,7 +4,16 @@ import { ModelName, ProviderInfo, ProviderName } from './provider_types';
 export interface IProviderSetAPI {
 	getDefaultProvider(): Promise<ProviderName>;
 	setDefaultProvider(provider: ProviderName): Promise<void>;
+	getConfigurationInfo(): Promise<Record<string, any>>;
 	getProviderInfo(provider: ProviderName): Promise<ProviderInfo>;
+	setAttribute(
+		provider: ProviderName,
+		apiKey?: string,
+		defaultModel?: ModelName,
+		defaultTemperature?: number,
+		defaultOrigin?: string
+	): Promise<void>;
+
 	getCompletionRequest(
 		provider: ProviderName,
 		prompt: string,
@@ -17,11 +26,4 @@ export interface IProviderSetAPI {
 		input: CompletionRequest,
 		onStreamData?: (data: string) => Promise<void>
 	): Promise<CompletionResponse | undefined>;
-	setAttribute(
-		provider: ProviderName,
-		apiKey?: string,
-		defaultModel?: ModelName,
-		defaultTemperature?: number,
-		defaultOrigin?: string
-	): Promise<void>;
 }

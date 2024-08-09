@@ -104,17 +104,20 @@ export async function getCompletionMessage(
 	try {
 		const allMessages = convertConversationToChatMessages(messages);
 		const promptMsg = allMessages.pop();
-		let defaultProvider: ProviderName;
-		try {
-			defaultProvider = await getDefaultProvider();
-		} catch (e) {
-			log.error(e);
-			throw e;
+
+		let completionProvider = await getDefaultProvider();
+		if (inputParams && 'provider' in inputParams) {
+			const providerStr = inputParams['provider'] as string;
+			if (Object.values(ProviderName).includes(providerStr as ProviderName)) {
+				completionProvider = providerStr as ProviderName;
+			}
+			delete inputParams['provider'];
 		}
-		const providerInfo = await getProviderInfo(defaultProvider);
+
+		const providerInfo = await getProviderInfo(completionProvider);
 		const isStream = providerInfo.streamingSupport || false;
 		const fullCompletionRequest = await getCompletionRequest(
-			defaultProvider,
+			completionProvider,
 			promptMsg?.content || '',
 			allMessages,
 			inputParams,
@@ -122,9 +125,9 @@ export async function getCompletionMessage(
 		);
 		// log.info('CompletionRequest', defaultProvider, JSON.stringify(fullCompletionRequest, null, 2));
 		if (isStream && onStreamData) {
-			return await handleStreamedCompletion(convoMessage, defaultProvider, fullCompletionRequest, onStreamData);
+			return await handleStreamedCompletion(convoMessage, completionProvider, fullCompletionRequest, onStreamData);
 		} else {
-			return await handleDirectCompletion(convoMessage, defaultProvider, fullCompletionRequest);
+			return await handleDirectCompletion(convoMessage, completionProvider, fullCompletionRequest);
 		}
 	} catch (error) {
 		const msg = 'Got error in api processing. Check details...';

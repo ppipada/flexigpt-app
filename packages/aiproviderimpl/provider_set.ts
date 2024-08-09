@@ -1,10 +1,12 @@
 import {
+	ALL_AI_PROVIDERS,
 	ALL_MODEL_INFO,
 	ChatCompletionRequestMessage,
 	CompletionRequest,
 	CompletionResponse,
 	huggingfaceProviderInfo,
 	IProviderSetAPI,
+	ModelInfo,
 	ModelName,
 	ProviderInfo,
 	ProviderName,
@@ -36,6 +38,25 @@ export class ProviderSet implements IProviderSetAPI {
 		return this.defaultProvider;
 	}
 
+	async getConfigurationInfo(): Promise<Record<string, any>> {
+		const configurationInfo: Record<string, any> = { defaultProvider: this.defaultProvider };
+		const configuredProviders: ProviderInfo[] = [];
+		const configuredModels: ModelInfo[] = [];
+		for (const providerInfo of Object.values(ALL_AI_PROVIDERS)) {
+			if (this.providers[providerInfo.name].isConfigured()) {
+				configuredProviders.push(providerInfo);
+				for (const modelInfo of Object.values(ALL_MODEL_INFO)) {
+					if (modelInfo.provider === providerInfo.name) {
+						configuredModels.push(modelInfo);
+					}
+				}
+			}
+		}
+		configurationInfo['configuredProviders'] = configuredProviders;
+		configurationInfo['configuredModels'] = configuredModels;
+		return configurationInfo;
+	}
+
 	async setDefaultProvider(provider: ProviderName): Promise<void> {
 		this.defaultProvider = provider;
 	}
@@ -61,16 +82,7 @@ export class ProviderSet implements IProviderSetAPI {
 		inputParams?: { [key: string]: any },
 		stream?: boolean
 	): Promise<CompletionRequest> {
-		let completionProvider = provider;
-		if (inputParams && 'provider' in inputParams) {
-			const providerStr = inputParams['provider'];
-			if (providerStr in ProviderName) {
-				completionProvider = inputParams['provider'] as ProviderName;
-			}
-			delete inputParams['provider'];
-		}
-
-		return this.providers[completionProvider].getCompletionRequest(prompt, prevMessages, inputParams, stream);
+		return this.providers[provider].getCompletionRequest(prompt, prevMessages, inputParams, stream);
 	}
 
 	async completion(

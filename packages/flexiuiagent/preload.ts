@@ -47,6 +47,10 @@ contextBridge.exposeInMainWorld('ProviderSetAPI', {
 	getProviderInfo: async (provider: any) => {
 		return await ipcRenderer.invoke('providerset:getProviderInfo', provider);
 	},
+	getConfigurationInfo: async () => {
+		return await ipcRenderer.invoke('providerset:getConfigurationInfo');
+	},
+
 	setAttribute: async (
 		provider: any,
 		apiKey?: string,

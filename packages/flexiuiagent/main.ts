@@ -247,6 +247,11 @@ ipcMain.handle('providerset:getProviderInfo', async (_event, provider: ProviderN
 	return await providerSetManager.getProviderInfo(provider);
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ipcMain.handle('providerset:getConfigurationInfo', async _event => {
+	return await providerSetManager.getConfigurationInfo();
+});
+
 ipcMain.handle(
 	'providerset:setAttribute',
 	async (
