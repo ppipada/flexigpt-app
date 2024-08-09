@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, ResponseType } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, ResponseType } from 'axios';
 
 import { APIErrorDetails, APIFetchResponse, APIRequestDetails, APIResponseDetails } from 'aiprovidermodel';
 import { setupInterceptors } from './api_fetch_interceptors';
@@ -67,8 +67,8 @@ export class APICaller {
 		const config = this.extendAxiosRequestConfig(requestConfig);
 		const resp: APIFetchResponse<T> = {};
 		try {
-			const response: AxiosResponse<T> = await this.axiosInstance.request(config);
-			const responseDetails = (response.config as any).requestDetails as APIResponseDetails;
+			const response = await this.axiosInstance.request(config);
+			const responseDetails = (response.config as any).responseDetails as APIResponseDetails;
 			resp.data = response.data;
 			resp.requestDetails = responseDetails.requestDetails;
 			resp.responseDetails = responseDetails;

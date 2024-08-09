@@ -135,7 +135,8 @@
 - [x] Add edit functionality
 - [x] ability to discard previous message history in next call
 - [x] ability to choose provider and model and temperature in the chat itself.
-- [ ] populate initial choices in input options
+- [x] populate initial choices in input options
+- [ ] Error wrapper and unwrapper on electron main and base apis
 
 ## Pushed out list
 

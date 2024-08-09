@@ -1,5 +1,8 @@
 import {
+	APIErrorDetails,
 	APIFetchResponse,
+	APIRequestDetails,
+	APIResponseDetails,
 	ChatCompletionRequestMessage,
 	ChatCompletionRoleEnum,
 	CompletionRequest,
@@ -101,22 +104,42 @@ export class GoogleAPI extends AIAPI {
 			log.error('No API fetch data');
 			return {};
 		}
+		// log.info(JSON.stringify(apiFetchData, null, 2));
 		const completionResponse: CompletionResponse = {
 			requestDetails: apiFetchData.requestDetails,
 			responseDetails: apiFetchData.responseDetails,
 			errorDetails: apiFetchData.errorDetails,
 		};
-
-		const data = apiFetchData.data;
-		if (typeof data !== 'object' || data === null) {
-			const msg = 'Invalid data response. Expected an object.';
+		try {
+			const data = apiFetchData.data;
+			completionResponse.respContent = this.parseResponseDataObject(data);
+			return completionResponse;
+		} catch (error) {
+			// log.debug('Didnt get a completion');
 			// log.error(msg);
-			if (completionResponse.errorDetails) {
-				completionResponse.errorDetails.message += msg;
+			let errorMessage: string;
+
+			if (error instanceof Error) {
+				errorMessage = error.message;
+			} else if (typeof error === 'string') {
+				errorMessage = error;
 			} else {
-				completionResponse.errorDetails = { message: msg };
+				errorMessage = 'An unknown error occurred.';
+			}
+			if (completionResponse.errorDetails) {
+				completionResponse.errorDetails.message += errorMessage;
+			} else {
+				completionResponse.errorDetails = { message: errorMessage };
 			}
 			return completionResponse;
+		}
+	}
+
+	private parseResponseDataObject(data: any): string {
+		if (typeof data !== 'object' || data === null) {
+			const msg = 'Invalid data response. Expected an object.';
+			log.error(msg);
+			throw new Error(msg);
 		}
 		let respText = '';
 		if ('candidates' in data && Array.isArray(data.candidates) && data.candidates.length > 0) {
@@ -130,9 +153,7 @@ export class GoogleAPI extends AIAPI {
 				respText = data.candidates[0].content.parts[0].text as string;
 			}
 		}
-		completionResponse.respContent = respText;
-
-		return completionResponse;
+		return respText;
 	}
 
 	private async handleDirectResponse(requestConfig: AxiosRequestConfig): Promise<CompletionResponse | undefined> {
@@ -143,15 +164,6 @@ export class GoogleAPI extends AIAPI {
 			log.error('Error in completion request: ' + error);
 			throw error;
 		}
-	}
-
-	private getStreamDoneResponse(respText: string, functionName: string, functionArgs: any): CompletionResponse {
-		const completionResponse: CompletionResponse = {
-			respContent: respText,
-			functionName: functionName,
-			functionArgs: functionArgs,
-		};
-		return completionResponse;
 	}
 
 	private async handleStreamingResponse<T>(
@@ -165,18 +177,16 @@ export class GoogleAPI extends AIAPI {
 		return new Promise((resolve, reject) => {
 			let respText = '';
 			const objParser = new StreamParser();
+			let requestDetails: APIRequestDetails | undefined;
+			let responseDetails: APIResponseDetails | undefined;
+			let errorDetails: APIErrorDetails | undefined;
 
 			const dataChunkProcessor = async (dataString: string, details?: APIFetchResponse<T>) => {
 				try {
 					if (details) {
-						const completionResponse: CompletionResponse = {
-							requestDetails: details.requestDetails,
-							responseDetails: details.responseDetails,
-							errorDetails: details.errorDetails,
-							respContent: respText,
-						};
-						resolve(completionResponse);
-						return;
+						requestDetails = details.requestDetails;
+						responseDetails = details.responseDetails;
+						errorDetails = details.errorDetails;
 					}
 					const lines = dataString.split('\n'); // Split the buffer by newline
 
@@ -185,18 +195,23 @@ export class GoogleAPI extends AIAPI {
 						const res = objParser.parse(line);
 						if (res) {
 							// log.debug('got obj', JSON.stringify(res, null, 2));
-							const partCompletion = this.parseFullResponse(res);
-							if (!partCompletion) {
+							let partCompletion = '';
+							try {
+								partCompletion = this.parseResponseDataObject(res);
+							} catch (e) {
 								// log.debug('Didnt get a completion');
 								continue;
 							}
-							const respNew = partCompletion.respContent || '';
-							respText += respNew;
-							await onStreamData(respNew);
+							respText += partCompletion;
+							await onStreamData(partCompletion);
 						}
-						if (objParser.isStreamComplete() || line === 'data: [DONE]' || line === 'data: [ERROR]') {
+						if (objParser.isStreamComplete() && (line === 'data: [DONE]' || line === 'data: [ERROR]')) {
+							// log.debug('Got resp', respText);
 							const completionResponse: CompletionResponse = {
 								respContent: respText,
+								requestDetails: requestDetails,
+								responseDetails: responseDetails,
+								errorDetails: errorDetails,
 							};
 							resolve(completionResponse);
 							return;
