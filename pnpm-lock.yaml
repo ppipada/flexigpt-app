@@ -280,10 +280,6 @@ importers:
         specifier: ^3.4.7
         version: 3.4.7
 
-  packages/frontend/build: {}
-
-  packages/frontend/build/types: {}
-
   packages/logger: {}
 
   packages/securejsondb:
@@ -8900,7 +8896,7 @@ snapshots:
       cross-spawn: 7.0.3
       get-stream: 6.0.0
       human-signals: 2.1.0
-      is-stream: 2.0.0
+      is-stream: 2.0.1
       merge-stream: 2.0.0
       npm-run-path: 4.0.1
       onetime: 5.1.2
