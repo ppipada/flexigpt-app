@@ -280,10 +280,6 @@ importers:
         specifier: ^3.4.7
         version: 3.4.7
 
-  packages/frontend/build: {}
-
-  packages/frontend/build/types: {}
-
   packages/logger: {}
 
   packages/securejsondb:
