@@ -24,10 +24,10 @@
 	"dependencies": {},
 	"devDependencies": {
 		"electron": "31.3.0",
-		"@typescript-eslint/eslint-plugin": "^7.17.0",
-		"@typescript-eslint/parser": "^7.17.0",
+		"@typescript-eslint/eslint-plugin": "^8.3.0",
+		"@typescript-eslint/parser": "^8.3.0",
 		"concurrently": "^8.2.2",
-		"eslint": "^8.57.0",
+		"eslint": "^9.9.1",
 		"eslint-config-next": "14.2.7",
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-import-resolver-typescript": "^3.6.1",
