@@ -231,8 +231,8 @@ importers:
         specifier: 14.2.5
         version: 14.2.5
       '@next/swc-win32-arm64-msvc':
-        specifier: 14.2.5
-        version: 14.2.5
+        specifier: 14.2.7
+        version: 14.2.7
       '@next/swc-win32-ia32-msvc':
         specifier: 14.2.5
         version: 14.2.5
@@ -279,10 +279,6 @@ importers:
       tailwindcss:
         specifier: ^3.4.7
         version: 3.4.7
-
-  packages/frontend/build: {}
-
-  packages/frontend/build/types: {}
 
   packages/logger: {}
 
@@ -1136,12 +1132,6 @@ packages:
     cpu: [x64]
     os: [darwin]
 
-  '@next/swc-linux-arm64-gnu@14.2.5':
-    resolution: {integrity: sha512-vlhB8wI+lj8q1ExFW8lbWutA4M2ZazQNvMWuEDqZcuJJc78iUnLdPPunBPX8rC4IgT6lIx/adB+Cwrl99MzNaA==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [linux]
-
   '@next/swc-linux-arm64-gnu@14.2.6':
     resolution: {integrity: sha512-O4HqUEe3ZvKshXHcDUXn1OybN4cSZg7ZdwHJMGCXSUEVUqGTJVsOh17smqilIjooP/sIJksgl+1kcf2IWMZWHg==}
     engines: {node: '>= 10'}
@@ -1184,14 +1174,14 @@ packages:
     cpu: [x64]
     os: [linux]
 
-  '@next/swc-win32-arm64-msvc@14.2.5':
-    resolution: {integrity: sha512-1GpG2VhbspO+aYoMOQPQiqc/tG3LzmsdBH0LhnDS3JrtDx2QmzXe0B6mSZZiN3Bq7IOMXxv1nlsjzoS1+9mzZw==}
+  '@next/swc-win32-arm64-msvc@14.2.6':
+    resolution: {integrity: sha512-AlgIhk4/G+PzOG1qdF1b05uKTMsuRatFlFzAi5G8RZ9h67CVSSuZSbqGHbJDlcV1tZPxq/d4G0q6qcHDKWf4aQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
 
-  '@next/swc-win32-arm64-msvc@14.2.6':
-    resolution: {integrity: sha512-AlgIhk4/G+PzOG1qdF1b05uKTMsuRatFlFzAi5G8RZ9h67CVSSuZSbqGHbJDlcV1tZPxq/d4G0q6qcHDKWf4aQ==}
+  '@next/swc-win32-arm64-msvc@14.2.7':
+    resolution: {integrity: sha512-PGbONHIVIuzWlYmLvuFKcj+8jXnLbx4WrlESYlVnEzDsa3+Q2hI1YHoXaSmbq0k4ZwZ7J6sWNV4UZfx1OeOlbQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
@@ -6771,9 +6761,6 @@ snapshots:
   '@next/swc-darwin-x64@14.2.6':
     optional: true
 
-  '@next/swc-linux-arm64-gnu@14.2.5':
-    optional: true
-
   '@next/swc-linux-arm64-gnu@14.2.6':
     optional: true
 
@@ -6795,10 +6782,10 @@ snapshots:
   '@next/swc-linux-x64-musl@14.2.6':
     optional: true
 
-  '@next/swc-win32-arm64-msvc@14.2.5':
+  '@next/swc-win32-arm64-msvc@14.2.6':
     optional: true
 
-  '@next/swc-win32-arm64-msvc@14.2.6':
+  '@next/swc-win32-arm64-msvc@14.2.7':
     optional: true
 
   '@next/swc-win32-ia32-msvc@14.2.5':
