@@ -18,7 +18,7 @@
 		"aiprovidermodel": "workspace:*",
 		"conversationmodel": "workspace:*",
 		"logger": "workspace:*",
-		"next": "14.2.12",
+		"next": "14.2.13",
 		"next-themes": "^0.3.0",
 		"react": "^18",
 		"react-dom": "^18",
@@ -49,14 +49,14 @@
 		"tailwindcss": "^3.4.7"
 	},
 	"optionalDependencies": {
-		"@next/swc-darwin-arm64": "14.2.12",
-		"@next/swc-darwin-x64": "14.2.12",
-		"@next/swc-linux-arm64-gnu": "14.2.12",
-		"@next/swc-linux-arm64-musl": "14.2.12",
-		"@next/swc-linux-x64-gnu": "14.2.12",
-		"@next/swc-linux-x64-musl": "14.2.12",
-		"@next/swc-win32-arm64-msvc": "14.2.12",
-		"@next/swc-win32-ia32-msvc": "14.2.12",
-		"@next/swc-win32-x64-msvc": "14.2.12"
+		"@next/swc-darwin-arm64": "14.2.13",
+		"@next/swc-darwin-x64": "14.2.13",
+		"@next/swc-linux-arm64-gnu": "14.2.13",
+		"@next/swc-linux-arm64-musl": "14.2.13",
+		"@next/swc-linux-x64-gnu": "14.2.13",
+		"@next/swc-linux-x64-musl": "14.2.13",
+		"@next/swc-win32-arm64-msvc": "14.2.13",
+		"@next/swc-win32-ia32-msvc": "14.2.13",
+		"@next/swc-win32-x64-msvc": "14.2.13"
 	}
 }
