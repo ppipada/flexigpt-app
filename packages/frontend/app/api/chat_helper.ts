@@ -115,7 +115,20 @@ export async function getCompletionMessage(
 		}
 
 		const providerInfo = await getProviderInfo(completionProvider);
-		const isStream = providerInfo.streamingSupport || false;
+		let isStream: boolean = providerInfo.streamingSupport || false;
+
+		if (isStream && completionProvider === ProviderName.OPENAI) {
+			// HACK for o models
+			if (
+				inputParams &&
+				typeof inputParams['model'] === 'string' &&
+				inputParams['model'].toLowerCase().startsWith('o')
+			) {
+				isStream = false;
+				inputParams['temperature'] = 1;
+				log.info('Detected openai o models');
+			}
+		}
 		const fullCompletionRequest = await getCompletionRequest(
 			completionProvider,
 			promptMsg?.content || '',

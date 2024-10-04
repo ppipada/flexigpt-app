@@ -249,7 +249,7 @@ export const OPENAI_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.OPENAI,
 		maxPromptLength: 4096,
 		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
+		defaultTemperature: 1,
 	},
 	[ModelName.GPT_O1_MINI]: {
 		name: ModelName.GPT_O1_MINI,
@@ -257,7 +257,7 @@ export const OPENAI_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.OPENAI,
 		maxPromptLength: 4096,
 		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
+		defaultTemperature: 1,
 	},
 	[ModelName.GPT_4O]: {
 		name: ModelName.GPT_4O,
