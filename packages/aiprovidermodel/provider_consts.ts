@@ -243,6 +243,22 @@ export const LLAMACPP_MODELS: { [key in ModelName]?: ModelInfo } = {
 };
 
 export const OPENAI_MODELS: { [key in ModelName]?: ModelInfo } = {
+	[ModelName.GPT_O1_PREVIEW]: {
+		name: ModelName.GPT_O1_PREVIEW,
+		displayName: 'OpenAI GPT o1 preview',
+		provider: ProviderName.OPENAI,
+		maxPromptLength: 4096,
+		maxOutputLength: 4096,
+		defaultTemperature: 0.1,
+	},
+	[ModelName.GPT_O1_MINI]: {
+		name: ModelName.GPT_O1_MINI,
+		displayName: 'OpenAI GPT o1 mini',
+		provider: ProviderName.OPENAI,
+		maxPromptLength: 4096,
+		maxOutputLength: 4096,
+		defaultTemperature: 0.1,
+	},
 	[ModelName.GPT_4O]: {
 		name: ModelName.GPT_4O,
 		displayName: 'OpenAI GPT 4o',

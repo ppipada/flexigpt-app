@@ -113,7 +113,7 @@
 - [ ] Streaming
   - [x] aiprovider support
   - [x] page support
-  - [ ] add other providers
+  - [x] add other providers
     - [x] Openai
     - [x] anthropic
     - [x] google

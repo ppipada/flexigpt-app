@@ -41,7 +41,7 @@ export class OpenAIAPI extends AIAPI {
 	private createRequestData(input: CompletionRequest): Record<string, any> {
 		const request: Record<string, any> = {
 			model: input.model,
-			max_tokens: input.maxOutputLength,
+			max_completion_tokens: input.maxOutputLength,
 			temperature: input.temperature,
 			stream: input.stream || false,
 			messages: input.messages,
