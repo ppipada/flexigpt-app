@@ -1,4 +1,4 @@
-package mapfilestore
+package filestore
 
 import (
 	"fmt"

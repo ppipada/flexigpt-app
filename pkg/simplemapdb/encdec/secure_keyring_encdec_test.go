@@ -1,4 +1,4 @@
-package mapfilestore
+package encdec
 
 import (
 	"bytes"
@@ -32,7 +32,7 @@ func TestEncodeDecode(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			encoderDecoder := encryptedStringValueEncoderDecoder{}
+			encoderDecoder := EncryptedStringValueEncoderDecoder{}
 
 			buffer := &bytes.Buffer{}
 			err := encoderDecoder.Encode(buffer, tc.input)
@@ -68,7 +68,7 @@ func TestEncodeDecode(t *testing.T) {
 }
 
 func TestDecodeInvalidData(t *testing.T) {
-	encoderDecoder := encryptedStringValueEncoderDecoder{}
+	encoderDecoder := EncryptedStringValueEncoderDecoder{}
 
 	testCases := []struct {
 		desc         string
@@ -100,7 +100,7 @@ func (e *errorWriter) Write(p []byte) (n int, err error) {
 }
 
 func TestEncodeWithErrorWriter(t *testing.T) {
-	encoderDecoder := encryptedStringValueEncoderDecoder{}
+	encoderDecoder := EncryptedStringValueEncoderDecoder{}
 
 	w := &errorWriter{}
 	err := encoderDecoder.Encode(w, "some data")
@@ -116,7 +116,7 @@ func (e *errorReader) Read(p []byte) (n int, err error) {
 }
 
 func TestDecodeWithErrorReader(t *testing.T) {
-	encoderDecoder := encryptedStringValueEncoderDecoder{}
+	encoderDecoder := EncryptedStringValueEncoderDecoder{}
 	var v string
 	r := &errorReader{}
 	err := encoderDecoder.Decode(r, &v)

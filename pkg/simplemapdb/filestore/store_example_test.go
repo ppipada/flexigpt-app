@@ -1,4 +1,4 @@
-package mapfilestore
+package filestore
 
 import (
 	"encoding/base64"
@@ -10,6 +10,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	simplemapdbEncdec "github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
 )
 
 type operation interface {
@@ -48,14 +50,14 @@ func TestMapFileStore(t *testing.T) {
 	tests := []struct {
 		name              string
 		initialData       map[string]interface{}
-		keyEncDecs        map[string]EncoderDecoder
+		keyEncDecs        map[string]simplemapdbEncdec.EncoderDecoder
 		operations        []operation
 		expectedFinalData map[string]interface{}
 	}{
 		{
 			name:        "test with per-key encoders",
 			initialData: map[string]interface{}{"foo": "hello", "bar": "world", "parent": map[string]interface{}{"child": "secret"}},
-			keyEncDecs: map[string]EncoderDecoder{
+			keyEncDecs: map[string]simplemapdbEncdec.EncoderDecoder{
 				// "foo":          encryptedStringValueEncoderDecoder{},
 				"foo":          reverseStringEncoderDecoder{},
 				"parent.child": reverseStringEncoderDecoder{},
@@ -80,7 +82,7 @@ func TestMapFileStore(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create a temporary file
 			tempDir := t.TempDir()
-			filename := filepath.Join(tempDir, "mapfilestore_test.json")
+			filename := filepath.Join(tempDir, "simplemapdb_test.json")
 
 			// Create store with initial data
 			store, err := NewMapFileStore(

@@ -1,4 +1,4 @@
-package mapfilestore
+package encdec
 
 import (
 	"crypto/aes"
@@ -14,9 +14,9 @@ import (
 )
 
 // encryptedStringValueEncoderDecoder uses your encryption for encoding/decoding.
-type encryptedStringValueEncoderDecoder struct{}
+type EncryptedStringValueEncoderDecoder struct{}
 
-func (e encryptedStringValueEncoderDecoder) Encode(w io.Writer, value interface{}) error {
+func (e EncryptedStringValueEncoderDecoder) Encode(w io.Writer, value interface{}) error {
 	v, ok := value.(string)
 	if !ok {
 		return errors.New("Got non string encode input")
@@ -30,7 +30,7 @@ func (e encryptedStringValueEncoderDecoder) Encode(w io.Writer, value interface{
 	return err
 }
 
-func (e encryptedStringValueEncoderDecoder) Decode(r io.Reader, value interface{}) error {
+func (e EncryptedStringValueEncoderDecoder) Decode(r io.Reader, value interface{}) error {
 	encryptedData, err := io.ReadAll(r)
 	if err != nil {
 		return err

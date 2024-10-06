@@ -1,4 +1,4 @@
-package mapfilestore
+package filestore
 
 import (
 	"bytes"
@@ -8,16 +8,18 @@ import (
 	"os"
 	"strings"
 	"sync"
+
+	simplemapdbEncdec "github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
 )
 
 // MapFileStore is a file-backed implementation of a thread-safe key-value store.
 type MapFileStore struct {
 	data              map[string]interface{}
 	mu                sync.RWMutex
-	encdec            EncoderDecoder
+	encdec            simplemapdbEncdec.EncoderDecoder
 	filename          string
 	autoFlush         bool
-	keyEncDecs        map[string]EncoderDecoder
+	keyEncDecs        map[string]simplemapdbEncdec.EncoderDecoder
 	createIfNotExists bool
 }
 
@@ -25,7 +27,7 @@ type MapFileStore struct {
 type Option func(*MapFileStore)
 
 // WithEncoder sets a custom encoder/decoder for the store.
-func WithEncoder(encoder EncoderDecoder) Option {
+func WithEncoder(encoder simplemapdbEncdec.EncoderDecoder) Option {
 	return func(store *MapFileStore) {
 		store.encdec = encoder
 	}
@@ -39,7 +41,7 @@ func WithAutoFlush(autoFlush bool) Option {
 }
 
 // WithKeyEncoders sets per-key encoder/decoders.
-func WithKeyEncoders(keyEncDecs map[string]EncoderDecoder) Option {
+func WithKeyEncoders(keyEncDecs map[string]simplemapdbEncdec.EncoderDecoder) Option {
 	return func(store *MapFileStore) {
 		store.keyEncDecs = keyEncDecs
 	}
@@ -59,8 +61,8 @@ func NewMapFileStore(filename string, opts ...Option) (*MapFileStore, error) {
 		data:       make(map[string]interface{}),
 		filename:   filename,
 		autoFlush:  true, // Default to true
-		keyEncDecs: make(map[string]EncoderDecoder),
-		encdec:     jsonEncoderDecoder{}, // Default to JSON encoder/decoder
+		keyEncDecs: make(map[string]simplemapdbEncdec.EncoderDecoder),
+		encdec:     simplemapdbEncdec.JSONEncoderDecoder{}, // Default to JSON encoder/decoder
 	}
 
 	// Apply options
@@ -240,7 +242,7 @@ func (store *MapFileStore) DeleteKey(key string) error {
 }
 
 // encodeValueAtPath encodes the value at the specified path using encDec and stores the encoded value.
-func encodeValueAtPath(data interface{}, keys []string, encDec EncoderDecoder) error {
+func encodeValueAtPath(data interface{}, keys []string, encDec simplemapdbEncdec.EncoderDecoder) error {
 	parentMap, lastKey, err := navigateToParentMap(data, keys, false)
 	if err != nil {
 		if _, ok := err.(*KeyNotFoundError); ok {
@@ -274,7 +276,7 @@ func encodeValueAtPath(data interface{}, keys []string, encDec EncoderDecoder) e
 }
 
 // decodeValueAtPath decodes the value at the specified path using encDec and replaces it with the decoded value.
-func decodeValueAtPath(data interface{}, keys []string, encDec EncoderDecoder) error {
+func decodeValueAtPath(data interface{}, keys []string, encDec simplemapdbEncdec.EncoderDecoder) error {
 	parentMap, lastKey, err := navigateToParentMap(data, keys, false)
 	if err != nil {
 		return err
