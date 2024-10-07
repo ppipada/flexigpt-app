@@ -1,11 +1,11 @@
-package settings_test
+package settingstore_test
 
 import (
 	"os"
 	"strings"
 	"testing"
 
-	"github.com/flexigpt/flexiui/pkg/settings"
+	"github.com/flexigpt/flexiui/pkg/settingstore"
 )
 
 func TestSettingsStore_GetAllSettings(t *testing.T) {
@@ -13,7 +13,7 @@ func TestSettingsStore_GetAllSettings(t *testing.T) {
 	filename := "test_settings.json"
 	defer os.Remove(filename)
 
-	store, err := settings.NewSettingsStore(filename)
+	store, err := settingstore.NewSettingsStore(filename)
 	if err != nil {
 		t.Fatalf("Failed to create settings store: %v", err)
 	}
@@ -91,7 +91,7 @@ func TestSettingsStore_GetAllSettings(t *testing.T) {
 }
 
 func TestSettingsStore_SetSetting(t *testing.T) {
-	store, err := settings.NewSettingsStore("test_settings.json")
+	store, err := settingstore.NewSettingsStore("test_settings.json")
 	if err != nil {
 		t.Fatalf("Failed to create settings store: %v", err)
 	}

@@ -1,10 +1,10 @@
-package settings
+package settingstore
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/flexigpt/flexiui/pkg/settings/spec"
+	"github.com/flexigpt/flexiui/pkg/settingstore/spec"
 	"github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
 	"github.com/flexigpt/flexiui/pkg/simplemapdb/filestore"
 )

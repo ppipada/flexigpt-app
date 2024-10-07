@@ -8,11 +8,11 @@ import (
 type ConversationRoleEnum string
 
 const (
-	System    ConversationRoleEnum = "system"
-	User      ConversationRoleEnum = "user"
-	Assistant ConversationRoleEnum = "assistant"
-	Function  ConversationRoleEnum = "function"
-	Feedback  ConversationRoleEnum = "feedback"
+	ConversationRoleSystem    ConversationRoleEnum = "system"
+	ConversationRoleUser      ConversationRoleEnum = "user"
+	ConversationRoleAssistant ConversationRoleEnum = "assistant"
+	ConversationRoleFunction  ConversationRoleEnum = "function"
+	ConversationRoleFeedback  ConversationRoleEnum = "feedback"
 )
 
 // ConversationMessage represents a message in a conversation.
