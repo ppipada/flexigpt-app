@@ -3,6 +3,7 @@ package filestore
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -14,6 +15,7 @@ func TestNewMapFileStore(t *testing.T) {
 	tests := []struct {
 		name              string
 		filename          string
+		defaultData       map[string]interface{}
 		createFile        bool
 		fileContent       string
 		options           []Option
@@ -23,12 +25,14 @@ func TestNewMapFileStore(t *testing.T) {
 		{
 			name:        "File does not exist, createIfNotExists true",
 			filename:    filepath.Join(tempDir, "store1.json"),
+			defaultData: map[string]interface{}{"k": "v"},
 			options:     []Option{WithCreateIfNotExists(true)},
 			expectError: false,
 		},
 		{
 			name:              "File does not exist, createIfNotExists false",
 			filename:          filepath.Join(tempDir, "store2.json"),
+			defaultData:       map[string]interface{}{"k": "v"},
 			options:           []Option{WithCreateIfNotExists(false)},
 			expectError:       true,
 			expectedErrorText: "does not exist",
@@ -36,6 +40,7 @@ func TestNewMapFileStore(t *testing.T) {
 		{
 			name:        "File exists with valid content",
 			filename:    filepath.Join(tempDir, "store3.json"),
+			defaultData: map[string]interface{}{"k": "v"},
 			createFile:  true,
 			fileContent: `{"foo":"bar"}`,
 			options:     []Option{},
@@ -44,6 +49,7 @@ func TestNewMapFileStore(t *testing.T) {
 		{
 			name:        "File exists with invalid content",
 			filename:    filepath.Join(tempDir, "store4.json"),
+			defaultData: map[string]interface{}{"k": "v"},
 			createFile:  true,
 			fileContent: `{invalid json}`,
 			options:     []Option{},
@@ -52,6 +58,7 @@ func TestNewMapFileStore(t *testing.T) {
 		{
 			name:        "File exists but cannot open",
 			filename:    filepath.Join(tempDir, "store5.json"),
+			defaultData: map[string]interface{}{"k": "v"},
 			createFile:  true,
 			fileContent: `{"foo":"bar"}`,
 			options:     []Option{},
@@ -79,7 +86,7 @@ func TestNewMapFileStore(t *testing.T) {
 			defer ch()
 		}
 
-		_, err := NewMapFileStore(tt.filename, tt.options...)
+		_, err := NewMapFileStore(tt.filename, tt.defaultData, tt.options...)
 		if tt.expectError {
 			if err == nil {
 				t.Errorf("[%s] Expected error but got nil", tt.name)
@@ -97,11 +104,12 @@ func TestNewMapFileStore(t *testing.T) {
 func TestMapFileStore_SetKey_GetKey(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore.json")
+	defaultData := map[string]interface{}{"foo": "bar"}
 	keyEncDecs := map[string]simplemapdbEncdec.EncoderDecoder{
 		"foo":          simplemapdbEncdec.EncryptedStringValueEncoderDecoder{},
 		"parent.child": simplemapdbEncdec.EncryptedStringValueEncoderDecoder{},
 	}
-	store, err := NewMapFileStore(filename, WithCreateIfNotExists(true), WithKeyEncoders(keyEncDecs))
+	store, err := NewMapFileStore(filename, defaultData, WithCreateIfNotExists(true), WithKeyEncoders(keyEncDecs))
 	if err != nil {
 		t.Fatalf("Failed to create store: %v", err)
 	}
@@ -179,11 +187,6 @@ func TestMapFileStore_SetKey_GetKey(t *testing.T) {
 func TestMapFileStore_DeleteKey(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore.json")
-	store, err := NewMapFileStore(filename, WithCreateIfNotExists(true), WithEncoder(simplemapdbEncdec.JSONEncoderDecoder{}))
-	if err != nil {
-		t.Fatalf("Failed to create store: %v", err)
-	}
-
 	// Pre-populate the store
 	initialData := map[string]interface{}{
 		"foo":          "bar",
@@ -196,9 +199,9 @@ func TestMapFileStore_DeleteKey(t *testing.T) {
 		"another":      map[string]interface{}{"parent": map[string]interface{}{"child1": "val1", "child2": "val2"}},
 	}
 
-	err = store.SetAll(initialData)
+	store, err := NewMapFileStore(filename, initialData, WithCreateIfNotExists(true))
 	if err != nil {
-		t.Fatalf("Failed to set initial data: %v", err)
+		t.Fatalf("Failed to create store: %v", err)
 	}
 
 	tests := []struct {
@@ -272,7 +275,8 @@ func TestMapFileStore_DeleteKey(t *testing.T) {
 func TestMapFileStore_SetAll_GetAll(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore.json")
-	store, err := NewMapFileStore(filename, WithCreateIfNotExists(true))
+	defaultData := map[string]interface{}{"foo": "bar"}
+	store, err := NewMapFileStore(filename, defaultData, WithCreateIfNotExists(true), WithAutoFlush(true))
 	if err != nil {
 		t.Fatalf("Failed to create store: %v", err)
 	}
@@ -329,7 +333,7 @@ func TestMapFileStore_SetAll_GetAll(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := store.DeleteAll()
+			err := store.Reset()
 			if err != nil {
 				t.Fatalf("[%s] Failed to clear store: %v", tt.name, err)
 			}
@@ -340,14 +344,20 @@ func TestMapFileStore_SetAll_GetAll(t *testing.T) {
 				return
 			}
 
-			got := store.GetAll()
+			got, err := store.GetAll(false)
+			if err != nil {
+				t.Errorf("Failed to get data err: %v", err)
+			}
 			if !deepEqual(got, tt.expectedData) {
 				t.Errorf("[%s] GetAll returned %v, expected %v", tt.name, got, tt.expectedData)
 			}
 
 			if tt.modifyData {
 				got["original"] = "modified"
-				gotAfterModification := store.GetAll()
+				gotAfterModification, err := store.GetAll(false)
+				if err != nil {
+					t.Errorf("Failed to get data err: %v", err)
+				}
 				if !deepEqual(gotAfterModification, tt.expectedAfter) {
 					t.Errorf("[%s] Store data modified after external change: got %v, expected %v", tt.name, gotAfterModification, tt.expectedAfter)
 				}
@@ -359,12 +369,13 @@ func TestMapFileStore_SetAll_GetAll(t *testing.T) {
 func TestMapFileStore_DeleteAll(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore.json")
-	store, err := NewMapFileStore(filename, WithCreateIfNotExists(true))
+	defaultData := map[string]interface{}{"foo": "bar"}
+	store, err := NewMapFileStore(filename, defaultData, WithCreateIfNotExists(true))
 	if err != nil {
 		t.Fatalf("Failed to create store: %v", err)
 	}
 
-	// Pre-populate the store
+	// Re-populate the store
 	initialData := map[string]interface{}{
 		"key1": "value1",
 		"key2": 2,
@@ -375,21 +386,25 @@ func TestMapFileStore_DeleteAll(t *testing.T) {
 		t.Fatalf("Failed to set initial data: %v", err)
 	}
 
-	err = store.DeleteAll()
+	err = store.Reset()
 	if err != nil {
-		t.Fatalf("DeleteAll failed: %v", err)
+		t.Fatalf("Reset failed: %v", err)
 	}
 
-	got := store.GetAll()
-	if len(got) != 0 {
-		t.Errorf("Expected store to be empty after DeleteAll, but got %v", got)
+	got, err := store.GetAll(false)
+	if err != nil {
+		t.Errorf("Failed to get data err: %v", err)
+	}
+	if !reflect.DeepEqual(got, defaultData) {
+		t.Errorf("Expected store to reset to defaultData %v, but got %v", defaultData, got)
 	}
 }
 
 func TestMapFileStore_AutoFlush(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore_autoflush.json")
-	store, err := NewMapFileStore(filename, WithCreateIfNotExists(true), WithAutoFlush(true))
+	defaultData := map[string]interface{}{"k": "v"}
+	store, err := NewMapFileStore(filename, defaultData, WithCreateIfNotExists(true), WithAutoFlush(true))
 	if err != nil {
 		t.Fatalf("Failed to create store: %v", err)
 	}
@@ -400,7 +415,7 @@ func TestMapFileStore_AutoFlush(t *testing.T) {
 	}
 
 	// Reopen the store
-	store2, err := NewMapFileStore(filename)
+	store2, err := NewMapFileStore(filename, defaultData)
 	if err != nil {
 		t.Fatalf("Failed to reopen store: %v", err)
 	}
@@ -417,7 +432,8 @@ func TestMapFileStore_AutoFlush(t *testing.T) {
 func TestMapFileStore_NoAutoFlush(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore_noautoflush.json")
-	store, err := NewMapFileStore(filename, WithCreateIfNotExists(true), WithAutoFlush(false))
+	defaultData := map[string]interface{}{"k": "v"}
+	store, err := NewMapFileStore(filename, defaultData, WithCreateIfNotExists(true), WithAutoFlush(false))
 	if err != nil {
 		t.Fatalf("Failed to create store: %v", err)
 	}
@@ -428,7 +444,7 @@ func TestMapFileStore_NoAutoFlush(t *testing.T) {
 	}
 
 	// Reopen the store
-	store2, err := NewMapFileStore(filename)
+	store2, err := NewMapFileStore(filename, defaultData)
 	if err != nil {
 		t.Fatalf("Failed to reopen store: %v", err)
 	}
@@ -444,7 +460,7 @@ func TestMapFileStore_NoAutoFlush(t *testing.T) {
 		t.Fatalf("Save failed: %v", err)
 	}
 
-	store3, err := NewMapFileStore(filename)
+	store3, err := NewMapFileStore(filename, defaultData)
 	if err != nil {
 		t.Fatalf("Failed to reopen store after save: %v", err)
 	}
@@ -458,10 +474,11 @@ func TestMapFileStore_NoAutoFlush(t *testing.T) {
 	}
 }
 
-func TestMapFileStore_ErrorCases(t *testing.T) {
+func TestMapFileStorePermissionErrorCases(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore_errors.json")
-	store, err := NewMapFileStore(filename, WithCreateIfNotExists(true))
+	defaultData := map[string]interface{}{"k": "v"}
+	store, err := NewMapFileStore(filename, defaultData, WithCreateIfNotExists(true))
 	if err != nil {
 		t.Fatalf("Failed to create store: %v", err)
 	}
@@ -489,7 +506,7 @@ func TestMapFileStore_ErrorCases(t *testing.T) {
 		t.Fatalf("Failed to write invalid data to file: %v", err)
 	}
 
-	_, err = NewMapFileStore(filename)
+	_, err = NewMapFileStore(filename, defaultData)
 	if err == nil {
 		t.Errorf("Expected error when loading store from invalid data, but got nil")
 	}
@@ -498,7 +515,8 @@ func TestMapFileStore_ErrorCases(t *testing.T) {
 func TestMapFileStore_NestedStructures(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore_nested.json")
-	store, err := NewMapFileStore(filename, WithCreateIfNotExists(true))
+	defaultData := map[string]interface{}{"k": "v"}
+	store, err := NewMapFileStore(filename, defaultData, WithCreateIfNotExists(true))
 	if err != nil {
 		t.Fatalf("Failed to create store: %v", err)
 	}

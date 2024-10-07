@@ -14,13 +14,7 @@ type AISetting struct {
 }
 
 // AISettingsSchema represents the schema for AI settings for different providers.
-type AISettingsSchema struct {
-	Anthropic   AISetting `json:"anthropic"`
-	Google      AISetting `json:"google"`
-	Huggingface AISetting `json:"huggingface"`
-	Llamacpp    AISetting `json:"llamacpp"`
-	Openai      AISetting `json:"openai"`
-}
+type AISettingsSchema map[aiproviderSpec.ProviderName]AISetting
 
 // AppSettings app settings.
 type AppSettings struct {
@@ -35,6 +29,6 @@ type SettingsSchema struct {
 
 // ISettingsAPI defines the interface for settings API.
 type ISettingsAPI interface {
-	GetAllSettings() (*SettingsSchema, error)
+	GetAllSettings(forceFetch bool) (*SettingsSchema, error)
 	SetSetting(key string, value interface{}) error
 }

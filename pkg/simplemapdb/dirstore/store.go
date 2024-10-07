@@ -21,7 +21,6 @@ type PartitionProvider interface {
 // MapDirectoryStore manages multiple MapFileStores within a directory.
 type MapDirectoryStore struct {
 	baseDir           string
-	fileOpts          []simplemapdbFileStore.Option
 	pageSize          int
 	PartitionProvider PartitionProvider
 }
@@ -83,7 +82,7 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]inter
 		return fmt.Errorf("filename should not contain directory components: %s", filename)
 	}
 	if data == nil {
-		data = make(map[string]interface{})
+		return fmt.Errorf("Cannot set nil data to file %s", filename)
 	}
 
 	partitionDir := mds.PartitionProvider.GetPartitionDir(filename)
@@ -95,8 +94,7 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]inter
 	}
 
 	// Create or truncate the file
-	opts := append(mds.fileOpts, simplemapdbFileStore.WithCreateIfNotExists(true))
-	store, err := simplemapdbFileStore.NewMapFileStore(filePath, opts...)
+	store, err := simplemapdbFileStore.NewMapFileStore(filePath, data, simplemapdbFileStore.WithCreateIfNotExists(true))
 	if err != nil {
 		return fmt.Errorf("failed to create or truncate file %s: %v", filename, err)
 	}
@@ -110,14 +108,14 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]inter
 }
 
 // GetFileData returns the data from the specified file in the store.
-func (mds *MapDirectoryStore) GetFileData(filename string) (map[string]interface{}, error) {
+func (mds *MapDirectoryStore) GetFileData(filename string, forceFetch bool) (map[string]interface{}, error) {
 	partitionDir := mds.PartitionProvider.GetPartitionDir(filename)
 	filePath := filepath.Join(mds.baseDir, partitionDir, filename)
-	store, err := simplemapdbFileStore.NewMapFileStore(filePath, mds.fileOpts...)
+	store, err := simplemapdbFileStore.NewMapFileStore(filePath, map[string]interface{}{"k": "v"})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get file %s: %v", filename, err)
 	}
-	return store.GetAll(), nil
+	return store.GetAll(forceFetch)
 }
 
 // DeleteFile removes the file with the given filename from the base directory.
@@ -129,6 +127,7 @@ func (mds *MapDirectoryStore) DeleteFile(filename string) error {
 	}
 	return nil
 }
+
 func (mds *MapDirectoryStore) ListFiles(initialSortOrder, pageToken string) ([]string, string, error) {
 	// Decode page token
 	var tokenData struct {

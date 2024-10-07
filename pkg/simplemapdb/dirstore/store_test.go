@@ -43,7 +43,7 @@ func TestMapDirectoryStore(t *testing.T) {
 			name:               "Default Partition - No Data",
 			partitionProvider:  &dirstore.NoPartitionProvider{},
 			filename:           "emptyfile.json",
-			data:               nil,
+			data:               map[string]interface{}{},
 			expectedPartition:  "",
 			expectedFileExists: true,
 			expectError:        false,
@@ -95,7 +95,7 @@ func TestMapDirectoryStore(t *testing.T) {
 
 			// Verify data if file exists
 			if tt.expectedFileExists {
-				data, err := mds.GetFileData(tt.filename)
+				data, err := mds.GetFileData(tt.filename, false)
 				if err != nil {
 					t.Fatalf("failed to get file data: %v", err)
 				}

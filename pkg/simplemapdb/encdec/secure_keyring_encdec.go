@@ -19,7 +19,7 @@ type EncryptedStringValueEncoderDecoder struct{}
 func (e EncryptedStringValueEncoderDecoder) Encode(w io.Writer, value interface{}) error {
 	v, ok := value.(string)
 	if !ok {
-		return errors.New("Got non string encode input")
+		return fmt.Errorf("Got non string encode input")
 	}
 	encryptedData, err := encryptString(v)
 	if err != nil {
@@ -41,14 +41,30 @@ func (e EncryptedStringValueEncoderDecoder) Decode(r io.Reader, value interface{
 		return err
 	}
 
-	// Check if value is a pointer to a string
+	// Use reflection to handle the value
 	valuePtr := reflect.ValueOf(value)
-	if valuePtr.Kind() != reflect.Ptr || valuePtr.Elem().Kind() != reflect.String {
-		return errors.New("value must be a pointer to a string")
+
+	// Check if value is a pointer
+	if valuePtr.Kind() != reflect.Ptr {
+		return fmt.Errorf("value must be a pointer. Kind: %v", valuePtr.Kind())
+	}
+
+	// Dereference the pointer to get the underlying value
+	valueElem := valuePtr.Elem()
+
+	// If the underlying value is an interface, set the decrypted data directly
+	if valueElem.Kind() == reflect.Interface {
+		valueElem.Set(reflect.ValueOf(decryptedData))
+		return nil
+	}
+
+	// Otherwise, check if the underlying value is a string
+	if valueElem.Kind() != reflect.String {
+		return fmt.Errorf("value must be a pointer to a string or interface. Kind: %v", valueElem.Kind())
 	}
 
 	// Set the decrypted data to the dereferenced value
-	valuePtr.Elem().SetString(decryptedData)
+	valueElem.SetString(decryptedData)
 
 	return nil
 }
@@ -139,7 +155,7 @@ func decryptString(encodedCiphertext string) (string, error) {
 
 	nonceSize := aesGCM.NonceSize()
 	if len(ciphertext) < nonceSize {
-		return "", errors.New("ciphertext too short")
+		return "", fmt.Errorf("ciphertext too short")
 	}
 
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]

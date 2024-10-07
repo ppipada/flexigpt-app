@@ -48,19 +48,14 @@ var DefaultSettingsData = SettingsSchema{
 	App: AppSettings{
 		DefaultProvider: aiproviderSpec.OPENAI,
 	},
-	AISettings: AISettingsSchema{
-		Anthropic:   DefaultAISettings[aiproviderSpec.ANTHROPIC],
-		Google:      DefaultAISettings[aiproviderSpec.GOOGLE],
-		Huggingface: DefaultAISettings[aiproviderSpec.HUGGINGFACE],
-		Llamacpp:    DefaultAISettings[aiproviderSpec.LLAMACPP],
-		Openai:      DefaultAISettings[aiproviderSpec.OPENAI]},
+	AISettings: DefaultAISettings,
 }
 
 // Define the sensitive keys
 var SensitiveKeys = []string{
-	"openai.apiKey",
-	"anthropic.apiKey",
-	"huggingface.apiKey",
-	"google.apiKey",
-	"llamacpp.apiKey",
+	"aiSettings.openai.apiKey",
+	"aiSettings.anthropic.apiKey",
+	"aiSettings.huggingface.apiKey",
+	"aiSettings.google.apiKey",
+	"aiSettings.llamacpp.apiKey",
 }

@@ -5,7 +5,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
-	"errors"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -96,7 +96,7 @@ func TestDecodeInvalidData(t *testing.T) {
 type errorWriter struct{}
 
 func (e *errorWriter) Write(p []byte) (n int, err error) {
-	return 0, errors.New("write error")
+	return 0, fmt.Errorf("write error")
 }
 
 func TestEncodeWithErrorWriter(t *testing.T) {
@@ -112,7 +112,7 @@ func TestEncodeWithErrorWriter(t *testing.T) {
 type errorReader struct{}
 
 func (e *errorReader) Read(p []byte) (n int, err error) {
-	return 0, errors.New("read error")
+	return 0, fmt.Errorf("read error")
 }
 
 func TestDecodeWithErrorReader(t *testing.T) {
@@ -212,5 +212,71 @@ func TestEncryptDecryptConsistency(t *testing.T) {
 
 	if encrypted1 == encrypted2 {
 		t.Errorf("Expected encrypted outputs to differ due to different nonces, but they were the same")
+	}
+}
+
+func TestDecodeWithInterface(t *testing.T) {
+	encoderDecoder := EncryptedStringValueEncoderDecoder{}
+
+	// Prepare a valid encoded string
+	originalValue := "Test string for interface"
+	encodedBuffer := &bytes.Buffer{}
+	err := encoderDecoder.Encode(encodedBuffer, originalValue)
+	if err != nil {
+		t.Fatalf("Encode failed: %v", err)
+	}
+
+	// Decode into an interface{}
+	var decodedValue interface{}
+	err = encoderDecoder.Decode(encodedBuffer, &decodedValue)
+	if err != nil {
+		t.Fatalf("Decode failed: %v", err)
+	}
+
+	// Assert the type and value
+	strValue, ok := decodedValue.(string)
+	if !ok {
+		t.Errorf("Decoded value is not of type string")
+	}
+	if strValue != originalValue {
+		t.Errorf("Decoded value does not match the original. Got %q, want %q", strValue, originalValue)
+	}
+}
+
+func TestDecodeWithNonStringInterface(t *testing.T) {
+	encoderDecoder := EncryptedStringValueEncoderDecoder{}
+
+	// Prepare a valid encoded string
+	originalValue := "Test string for non-string interface"
+	encodedBuffer := &bytes.Buffer{}
+	err := encoderDecoder.Encode(encodedBuffer, originalValue)
+	if err != nil {
+		t.Fatalf("Encode failed: %v", err)
+	}
+
+	// Decode dest that is not a string
+	var decodedValue = 123 // Initialize with a non-string type
+	err = encoderDecoder.Decode(encodedBuffer, &decodedValue)
+	if err == nil {
+		t.Errorf("Expected error when decoding into a non-string interface, but got none")
+	}
+}
+
+func TestDecodeWithNilInterface(t *testing.T) {
+	encoderDecoder := EncryptedStringValueEncoderDecoder{}
+
+	// Prepare a valid encoded string
+	originalValue := "Test string for nil interface"
+	encodedBuffer := &bytes.Buffer{}
+	err := encoderDecoder.Encode(encodedBuffer, originalValue)
+	if err != nil {
+		t.Fatalf("Encode failed: %v", err)
+	}
+
+	// Decode into a nil interface
+	var decodedValue interface{}
+	err = encoderDecoder.Decode(encodedBuffer, decodedValue)
+	if err == nil {
+		t.Errorf("Expected error when decoding into a nil interface, but got none")
 	}
 }

@@ -15,6 +15,7 @@ import (
 // MapFileStore is a file-backed implementation of a thread-safe key-value store.
 type MapFileStore struct {
 	data              map[string]interface{}
+	defaultData       map[string]interface{}
 	mu                sync.RWMutex
 	encdec            simplemapdbEncdec.EncoderDecoder
 	filename          string
@@ -56,13 +57,14 @@ func WithCreateIfNotExists(createIfNotExists bool) Option {
 
 // NewMapFileStore initializes a new MapFileStore.
 // If the file does not exist and createIfNotExists is false, it returns an error.
-func NewMapFileStore(filename string, opts ...Option) (*MapFileStore, error) {
+func NewMapFileStore(filename string, defaultData map[string]interface{}, opts ...Option) (*MapFileStore, error) {
 	store := &MapFileStore{
-		data:       make(map[string]interface{}),
-		filename:   filename,
-		autoFlush:  true, // Default to true
-		keyEncDecs: make(map[string]simplemapdbEncdec.EncoderDecoder),
-		encdec:     simplemapdbEncdec.JSONEncoderDecoder{}, // Default to JSON encoder/decoder
+		data:        make(map[string]interface{}),
+		defaultData: defaultData,
+		filename:    filename,
+		autoFlush:   true, // Default to true
+		keyEncDecs:  make(map[string]simplemapdbEncdec.EncoderDecoder),
+		encdec:      simplemapdbEncdec.JSONEncoderDecoder{}, // Default to JSON encoder/decoder
 	}
 
 	// Apply options
@@ -70,28 +72,47 @@ func NewMapFileStore(filename string, opts ...Option) (*MapFileStore, error) {
 		opt(store)
 	}
 
-	// Open file
-	f, err := os.Open(filename)
+	// create file if not exists
+	_, err := os.Stat(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if !store.createIfNotExists {
 				return nil, fmt.Errorf("file %s does not exist", filename)
 			}
+			maps.Copy(store.data, store.defaultData)
 			// File does not exist but createIfNotExists is true, so save the empty data to create the file.
 			if err := store.flush(); err != nil {
 				return nil, fmt.Errorf("failed to create file %s: %v", filename, err)
 			}
 			return store, nil
 		}
-		return nil, fmt.Errorf("failed to open file %s: %v", filename, err)
+		return nil, fmt.Errorf("failed to stat file %s: %v", filename, err)
+	}
+
+	err = store.load()
+	if err != nil {
+		return nil, err
+	}
+
+	return store, nil
+}
+
+// load the data from the file into the in-memory store.
+func (store *MapFileStore) load() error {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
+	// Open the file
+	f, err := os.Open(store.filename)
+	if err != nil {
+		return fmt.Errorf("failed to open file %s: %v", store.filename, err)
 	}
 	defer f.Close()
 
-	// Decode data
-	store.mu.Lock()
-	defer store.mu.Unlock()
+	// Decode the data from the file
+	store.data = make(map[string]interface{})
 	if err := store.encdec.Decode(f, &store.data); err != nil {
-		return nil, fmt.Errorf("failed to decode data from file %s: %v", filename, err)
+		return fmt.Errorf("failed to decode data from file %s: %v", store.filename, err)
 	}
 
 	// Apply per-key decoders
@@ -100,22 +121,15 @@ func NewMapFileStore(filename string, opts ...Option) (*MapFileStore, error) {
 			keys := strings.Split(key, ".")
 			if err := decodeValueAtPath(store.data, keys, encDec); err != nil {
 				if _, ok := err.(*KeyNotFoundError); ok {
-					// Key doesnt exist
+					// Key doesn't exist
 					continue
 				}
-				return nil, fmt.Errorf("failed to decode value at key %s: %v", key, err)
+				return fmt.Errorf("failed to decode value at key %s: %v", key, err)
 			}
 		}
 	}
 
-	return store, nil
-}
-
-// Save writes the current data to the file.
-func (store *MapFileStore) Save() error {
-	store.mu.RLock()
-	defer store.mu.RUnlock()
-	return store.flush()
+	return nil
 }
 
 func (store *MapFileStore) flush() error {
@@ -151,13 +165,43 @@ func (store *MapFileStore) flush() error {
 	return nil
 }
 
-// GetAll returns a copy of all data in the store.
-func (store *MapFileStore) GetAll() map[string]interface{} {
+// Reset removes all data from the store.
+func (store *MapFileStore) Reset() error {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
+	store.data = make(map[string]interface{})
+	maps.Copy(store.data, store.defaultData)
+
+	if err := store.flush(); err != nil {
+		return fmt.Errorf("failed to save data after Reset: %v", err)
+	}
+	return nil
+}
+
+// Save writes the current data to the file.
+func (store *MapFileStore) Save() error {
 	store.mu.RLock()
 	defer store.mu.RUnlock()
+	return store.flush()
+}
+
+// GetAll returns a copy of all data in the store, refreshing from the file first.
+func (store *MapFileStore) GetAll(forceFetch bool) (map[string]interface{}, error) {
+	if forceFetch {
+		// Refresh data from the file
+		if err := store.load(); err != nil {
+			return nil, fmt.Errorf("failed to refresh data from file: %v", err)
+		}
+	}
+
+	store.mu.RLock()
+	defer store.mu.RUnlock()
+
+	// Return a copy of the in-memory data
 	var dataCopy = make(map[string]interface{})
 	maps.Copy(dataCopy, store.data)
-	return dataCopy
+	return dataCopy, nil
 }
 
 // SetAll overwrites all data in the store with the provided data.
@@ -165,25 +209,12 @@ func (store *MapFileStore) SetAll(data map[string]interface{}) error {
 	store.mu.Lock()
 	defer store.mu.Unlock()
 	// Deep copy the input data to prevent external modifications after setting.
+	store.data = make(map[string]interface{})
 	maps.Copy(store.data, data)
 
 	if store.autoFlush {
 		if err := store.flush(); err != nil {
 			return fmt.Errorf("failed to save data after SetAll: %v", err)
-		}
-	}
-	return nil
-}
-
-// DeleteAll removes all data from the store.
-func (store *MapFileStore) DeleteAll() error {
-	store.mu.Lock()
-	defer store.mu.Unlock()
-
-	store.data = make(map[string]interface{})
-	if store.autoFlush {
-		if err := store.flush(); err != nil {
-			return fmt.Errorf("failed to save data after DeleteAll: %v", err)
 		}
 	}
 	return nil
@@ -288,7 +319,7 @@ func decodeValueAtPath(data interface{}, keys []string, encDec simplemapdbEncdec
 
 	// val should be the encoded value. We need to decode it via encDec
 
-	// We assume val is a string
+	// We assume val is a string because we encoded and stored it as string in encode func
 	strVal, ok := val.(string)
 	if !ok {
 		return fmt.Errorf("value at key %s is not a string", strings.Join(keys, "."))

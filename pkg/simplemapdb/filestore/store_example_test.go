@@ -87,16 +87,12 @@ func TestMapFileStore(t *testing.T) {
 			// Create store with initial data
 			store, err := NewMapFileStore(
 				filename,
+				tt.initialData,
 				WithCreateIfNotExists(true),
 				WithKeyEncoders(tt.keyEncDecs),
 			)
 			if err != nil {
 				t.Fatalf("failed to create store: %v", err)
-			}
-
-			// Set all data
-			if err := store.SetAll(tt.initialData); err != nil {
-				t.Fatalf("failed to set initial data: %v", err)
 			}
 
 			// Save data
@@ -164,7 +160,7 @@ func TestMapFileStore(t *testing.T) {
 			}
 
 			// Now, create a new store by reading from the file
-			newStore, err := NewMapFileStore(filename, WithCreateIfNotExists(false), WithKeyEncoders(tt.keyEncDecs))
+			newStore, err := NewMapFileStore(filename, tt.initialData, WithCreateIfNotExists(false), WithKeyEncoders(tt.keyEncDecs))
 			if err != nil {
 				t.Fatalf("failed to create store from file: %v", err)
 			}
@@ -180,7 +176,10 @@ func TestMapFileStore(t *testing.T) {
 			}
 
 			// Get the final data and verify
-			finalData := newStore.GetAll()
+			finalData, err := newStore.GetAll(false)
+			if err != nil {
+				t.Errorf("Failed to get data err: %v", err)
+			}
 			if !reflect.DeepEqual(finalData, tt.expectedFinalData) {
 				t.Errorf("final data does not match expected.\ngot: %v\nwant:%v", finalData, tt.expectedFinalData)
 			}
