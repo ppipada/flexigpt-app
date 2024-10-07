@@ -1,13 +1,25 @@
+//nolint:unused
 package main
 
 import (
 	"context"
-	"fmt"
+	"log"
+	"path/filepath"
+
+	"github.com/flexigpt/flexiui/pkg/conversationstore"
+	"github.com/flexigpt/flexiui/pkg/settingstore"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
+
+	"github.com/adrg/xdg"
 )
 
 // App struct
 type App struct {
-	ctx context.Context
+	ctx                 context.Context
+	settingsManager     *settingstore.SettingsStore
+	conversationManager *conversationstore.ConversationCollection
+	// providerSetManager  aiproviderSpec.ProviderSetAPI
+	configBasePath string
 }
 
 // NewApp creates a new App application struct
@@ -19,6 +31,36 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	// Perform your setup here
 	a.ctx = ctx
+
+	configFolderPath, err := xdg.ConfigFile(AppName)
+	if err != nil {
+		log.Panicf("Could not resolve path for config dir: %v", err)
+		return
+	}
+
+	a.configBasePath = configFolderPath
+	// Initialize settings manager
+	settingsFilePath := filepath.Join(a.configBasePath, "settings.json")
+	log.Printf("Settings file path: %s", settingsFilePath)
+	sm, err := settingstore.NewSettingStore(settingsFilePath)
+	if err != nil {
+		log.Panicf("Couldnt initialize setting store at: %s", settingsFilePath)
+	}
+	a.settingsManager = sm
+
+	// Initialize conversation manager
+	conversationDir := filepath.Join(a.configBasePath, "conversations")
+	log.Printf("Conversation directory: %s", conversationDir)
+	cs, err := conversationstore.NewConversationCollection(conversationDir)
+	if err != nil {
+		log.Panicf("Couldnt initialize conversation store at: %s", conversationDir)
+	}
+	a.conversationManager = cs
+	// Initialize provider set manager
+	// a.providerSetManager = NewProviderSet("OPENAI")
+
+	// Load the frontend
+	runtime.WindowShow(a.ctx)
 }
 
 // domReady is called after front-end resources have been loaded
@@ -39,6 +81,6 @@ func (a *App) shutdown(ctx context.Context) {
 }
 
 // Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
+func (a *App) Ping() string {
+	return "pong"
 }

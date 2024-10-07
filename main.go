@@ -12,6 +12,8 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
+const AppName = "FlexiGptUI"
+
 //go:embed all:frontend/dist
 var assets embed.FS
 
@@ -24,7 +26,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:             "flexiui",
+		Title:             AppName,
 		Width:             1024,
 		Height:            768,
 		MinWidth:          1024,
@@ -74,7 +76,7 @@ func main() {
 			WebviewIsTransparent: true,
 			WindowIsTranslucent:  true,
 			About: &mac.AboutInfo{
-				Title:   "flexiui",
+				Title:   AppName,
 				Message: "",
 				Icon:    icon,
 			},

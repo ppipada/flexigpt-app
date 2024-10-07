@@ -13,7 +13,7 @@ func TestSettingsStore_GetAllSettings(t *testing.T) {
 	filename := "test_settings.json"
 	defer os.Remove(filename)
 
-	store, err := settingstore.NewSettingsStore(filename)
+	store, err := settingstore.NewSettingStore(filename)
 	if err != nil {
 		t.Fatalf("Failed to create settings store: %v", err)
 	}
@@ -91,7 +91,7 @@ func TestSettingsStore_GetAllSettings(t *testing.T) {
 }
 
 func TestSettingsStore_SetSetting(t *testing.T) {
-	store, err := settingstore.NewSettingsStore("test_settings.json")
+	store, err := settingstore.NewSettingStore("test_settings.json")
 	if err != nil {
 		t.Fatalf("Failed to create settings store: %v", err)
 	}

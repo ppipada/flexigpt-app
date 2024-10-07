@@ -5,6 +5,7 @@ go 1.21
 toolchain go1.22.2
 
 require (
+	github.com/adrg/xdg v0.5.0
 	github.com/google/uuid v1.6.0
 	github.com/wailsapp/wails/v2 v2.9.2
 	github.com/zalando/go-keyring v0.2.5
@@ -37,7 +38,7 @@ require (
 	golang.org/x/crypto v0.23.0 // indirect
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1 // indirect
 	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
 )
 

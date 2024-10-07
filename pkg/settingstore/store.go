@@ -14,7 +14,7 @@ type SettingsStore struct {
 	defaultData spec.SettingsSchema
 }
 
-func NewSettingsStore(filename string) (*SettingsStore, error) {
+func NewSettingStore(filename string) (*SettingsStore, error) {
 	keyEncDecs := make(map[string]encdec.EncoderDecoder)
 	for _, key := range spec.SensitiveKeys {
 		keyEncDecs[key] = encdec.EncryptedStringValueEncoderDecoder{}
