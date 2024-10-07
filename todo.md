@@ -138,6 +138,16 @@
 - [x] populate initial choices in input options
 - [ ] Error wrapper and unwrapper on electron main and base apis
 
+## Wails migrate
+
+- [x] Translate securejsondb to go
+- [x] Translate settings store and conversation store to go
+- [ ] Translate aiprovider to go
+- [ ] Move next frontend to appropriate folder and change config and build system as seen in wails template
+- [ ] wains main.go and app.go integrations
+- [ ] Logger integration
+- [ ] build/test
+
 ## Pushed out list
 
 - [ ] logger is imported in securejsondb before it is set as ipc file logger in appimage
