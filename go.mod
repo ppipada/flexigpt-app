@@ -5,6 +5,7 @@ go 1.21
 toolchain go1.22.2
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/wailsapp/wails/v2 v2.9.2
 	github.com/zalando/go-keyring v0.2.5
 )
@@ -15,7 +16,6 @@ require (
 	github.com/danieljoos/wincred v1.2.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
 	github.com/labstack/echo/v4 v4.10.2 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect

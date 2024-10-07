@@ -39,12 +39,3 @@ type Conversation struct {
 	ModifiedAt time.Time             `json:"modifiedAt"`
 	Messages   []ConversationMessage `json:"messages"`
 }
-
-// IConversationAPI defines the interface for conversation-related operations.
-type IConversationAPI interface {
-	SaveConversation(conversation Conversation) error
-	DeleteConversation(id string, title string) error
-	GetConversation(id string, title string) (*Conversation, error)
-	ListConversations(token *string) ([]ConversationItem, *string, error)
-	AddMessageToConversation(id string, title string, newMessage ConversationMessage) error
-}
