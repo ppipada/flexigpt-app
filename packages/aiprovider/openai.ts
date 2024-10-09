@@ -1,3 +1,7 @@
+import { AxiosRequestConfig } from 'axios';
+import { log } from 'logger';
+import { AIAPI } from './completion_provider';
+import { unescapeChars } from './provider_utils';
 import {
 	APIFetchResponse,
 	ChatCompletionRequestMessage,
@@ -5,11 +9,7 @@ import {
 	CompletionRequest,
 	CompletionResponse,
 	openaiProviderInfo,
-} from 'aiprovidermodel';
-import { AxiosRequestConfig } from 'axios';
-import { log } from 'logger';
-import { AIAPI } from './completion_provider';
-import { unescapeChars } from './provider_utils';
+} from './spec';
 
 export class OpenAIAPI extends AIAPI {
 	constructor() {

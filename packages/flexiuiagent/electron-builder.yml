@@ -31,5 +31,5 @@ files:
     filter:
       - 'package.json'
 directories:
-  output: 'dist'
+  output: 'build'
 publish: null

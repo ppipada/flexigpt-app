@@ -1,5 +1,31 @@
 import { listConversations as apiListConversations } from '@/backendapibase/conversation';
-import { ConversationItem, getDateFromUUIDv7 } from '@/models/conversationmodel';
+import { ConversationItem } from '@/models/conversationmodel';
+
+import { log } from '@/logger';
+import { parse } from 'uuid';
+
+export function getDateFromUUIDv7(uuid: string): Date {
+	// Check if the UUID is valid and has the correct length
+	if (!uuid || uuid.length !== 36) {
+		log.error('Invalid UUIDv7 string');
+		return new Date();
+	}
+
+	// Parse the UUID into bytes
+	const uuidBytes = parse(uuid);
+
+	// Prepare an array to hold the 8-byte timestamp
+	const timestampBytes = new Uint8Array(8);
+
+	// Set the first 6 bytes from the UUID bytes (first 48 bits)
+	timestampBytes.set(uuidBytes.slice(0, 6), 2);
+
+	// Convert the 8-byte array into a 64-bit integer
+	const timestampMs = new DataView(timestampBytes.buffer).getBigUint64(0, false);
+
+	// Convert the timestamp from milliseconds to a Date object
+	return new Date(Number(timestampMs));
+}
 
 interface CacheData {
 	conversationsDict: { [id: string]: ConversationItem };

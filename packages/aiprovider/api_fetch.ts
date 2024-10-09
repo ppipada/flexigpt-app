@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, ResponseType } from 'axios';
 
-import { APIErrorDetails, APIFetchResponse, APIRequestDetails, APIResponseDetails } from 'aiprovidermodel';
 import { setupInterceptors } from './api_fetch_interceptors';
+import { APIErrorDetails, APIFetchResponse, APIRequestDetails, APIResponseDetails } from './spec';
 
 export class APICaller {
 	origin: string;

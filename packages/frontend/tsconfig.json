@@ -31,7 +31,6 @@
 		"**/*.d.ts",
 		"**/*.tsx",
 		"../build/types/**/*.ts",
-		"dist/types/**/*.ts",
 		"build/types/**/*.ts",
 		".next/types/**/*.ts",
 		"tailwind.config.ts",

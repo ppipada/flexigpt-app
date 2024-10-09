@@ -1,6 +1,6 @@
-import { APIErrorDetails, APIRequestDetails, APIResponseDetails } from 'aiprovidermodel';
 import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { log } from 'logger';
+import { APIErrorDetails, APIRequestDetails, APIResponseDetails } from './spec';
 
 export function filterSensitiveInfoFromJsonString(jsonString: string): string {
 	const jsonObj = JSON.parse(jsonString);

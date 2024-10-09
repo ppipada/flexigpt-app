@@ -1,3 +1,5 @@
+import { log } from 'logger';
+import { APICaller } from './api_fetch';
 import {
 	ALL_MODEL_INFO,
 	ChatCompletionRequestMessage,
@@ -6,9 +8,7 @@ import {
 	CompletionResponse,
 	ModelName,
 	ProviderInfo,
-} from 'aiprovidermodel';
-import { log } from 'logger';
-import { APICaller } from './api_fetch';
+} from './spec';
 
 export interface CompletionProvider {
 	getProviderInfo(): ProviderInfo;

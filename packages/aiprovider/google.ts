@@ -1,3 +1,6 @@
+import { AxiosRequestConfig } from 'axios';
+import { log } from 'logger';
+import { AIAPI } from './completion_provider';
 import {
 	APIErrorDetails,
 	APIFetchResponse,
@@ -8,10 +11,7 @@ import {
 	CompletionRequest,
 	CompletionResponse,
 	googleProviderInfo,
-} from 'aiprovidermodel';
-import { AxiosRequestConfig } from 'axios';
-import { log } from 'logger';
-import { AIAPI } from './completion_provider';
+} from './spec';
 
 interface Content {
 	role: string;

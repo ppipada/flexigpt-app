@@ -6,10 +6,20 @@ import { loadProviderSettings, updateProviderAISettings } from '@/backendapihelp
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
 import { log } from '@/logger';
-import { ALL_AI_PROVIDERS, ProviderName } from '@/models/aiprovidermodel';
-import { defaultAISettings } from '@/models/settingmodel';
+import { ALL_AI_PROVIDERS, ModelName, ProviderName } from '@/models/aiprovidermodel';
+import { AISetting } from '@/models/settingmodel';
 import AISettingsCard from '@/settings/ai_settings';
 import { FC, useEffect, useState } from 'react';
+
+const defaultAISettings: Record<string, AISetting> = {
+	[ProviderName.OPENAI]: {
+		apiKey: '',
+		defaultModel: ModelName.GPT_4O_MINI,
+		defaultOrigin: '',
+		defaultTemperature: 0.0,
+		additionalSettings: {},
+	},
+};
 
 const SettingsPage: FC = () => {
 	const [defaultProvider, setComponentDefaultProvider] = useState(ProviderName.OPENAI);

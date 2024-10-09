@@ -1,6 +1,7 @@
 import { PathLike } from 'node:fs';
 import { SecureJSONFileDB, SecureSchema } from 'securejsondb';
-import { defaultSettingsData, ISettingsAPI, sensitiveKeys, SettingsSchema } from 'settingmodel';
+import { defaultSettingsData, sensitiveKeys } from './consts';
+import { ISettingsAPI, SettingsSchema } from './types';
 
 export type SecureSettingsSchema = SettingsSchema & SecureSchema;
 

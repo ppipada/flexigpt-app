@@ -1,3 +1,6 @@
+import { AxiosRequestConfig } from 'axios';
+import { log } from 'logger';
+import { AIAPI } from './completion_provider';
 import {
 	APIFetchResponse,
 	ChatCompletionRequestMessage,
@@ -5,10 +8,7 @@ import {
 	CompletionRequest,
 	CompletionResponse,
 	huggingfaceProviderInfo,
-} from 'aiprovidermodel';
-import { AxiosRequestConfig } from 'axios';
-import { log } from 'logger';
-import { AIAPI } from './completion_provider';
+} from './spec';
 
 export class HuggingFaceAPI extends AIAPI {
 	constructor() {

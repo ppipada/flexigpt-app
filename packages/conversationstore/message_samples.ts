@@ -1,6 +1,19 @@
-import { ConversationMessage, ConversationRoleEnum, initConversation } from 'conversationmodel';
+import { ConversationMessage, ConversationRoleEnum } from './conversation_types';
 import { MarkDownCheatSheet } from './markdown_sheet';
 import { Conversation } from './store_types';
+
+import { v7 as uuidv7 } from 'uuid';
+
+export function initConversation(title: string = 'New Conversation'): Conversation {
+	return {
+		id: uuidv7(),
+		title: title.substring(0, 64),
+		createdAt: new Date(),
+		modifiedAt: new Date(),
+		messages: [],
+	};
+}
+
 export const tmpMessageDetails = `
 start of details
 

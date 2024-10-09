@@ -3,8 +3,8 @@
 	"version": "1.0.0",
 	"description": "Electron backend agent for flexiui",
 	"main": "packages/flexiuiagent/build/main.js",
-	"type": "module",
 	"private": true,
+	"type": "module",
 	"scripts": {
 		"build": "tsc && tsc-alias -p ./tsconfig.json",
 		"lint": "eslint . --ext .ts",
@@ -16,9 +16,7 @@
 	"keywords": [],
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
 	"dependencies": {
-		"aiproviderimpl": "workspace:*",
-		"aiprovidermodel": "workspace:*",
-		"conversationmodel": "workspace:*",
+		"aiprovider": "workspace:*",
 		"conversationstore": "workspace:*",
 		"electron-is-dev": "^3.0.1",
 		"electron-log": "^5.1.7",
@@ -26,7 +24,6 @@
 		"logger": "workspace:*",
 		"lowdb": "^7.0.1",
 		"securejsondb": "workspace:*",
-		"settingmodel": "workspace:*",
 		"settingstore": "workspace:*",
 		"uuid": "^10.0.0",
 		"winstonlogger": "workspace:*"

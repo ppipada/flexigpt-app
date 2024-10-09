@@ -60,32 +60,23 @@ importers:
         specifier: ^8.0.0
         version: 8.0.1
 
-  packages/aiproviderimpl:
+  packages/aiprovider:
     dependencies:
-      aiprovidermodel:
-        specifier: workspace:*
-        version: link:../aiprovidermodel
       axios:
         specifier: ^1.7.3
-        version: 1.7.3
+        version: 1.7.7
       logger:
         specifier: workspace:*
         version: link:../logger
 
-  packages/aiprovidermodel:
+  packages/conversationstore:
     dependencies:
       logger:
         specifier: workspace:*
         version: link:../logger
-
-  packages/conversationmodel:
-    dependencies:
-      aiprovidermodel:
+      securejsondb:
         specifier: workspace:*
-        version: link:../aiprovidermodel
-      logger:
-        specifier: workspace:*
-        version: link:../logger
+        version: link:../securejsondb
       uuid:
         specifier: ^10.0.0
         version: 10.0.0
@@ -94,29 +85,11 @@ importers:
         specifier: ^10.0.0
         version: 10.0.0
 
-  packages/conversationstore:
-    dependencies:
-      conversationmodel:
-        specifier: workspace:*
-        version: link:../conversationmodel
-      logger:
-        specifier: workspace:*
-        version: link:../logger
-      securejsondb:
-        specifier: workspace:*
-        version: link:../securejsondb
-
   packages/flexiuiagent:
     dependencies:
-      aiproviderimpl:
+      aiprovider:
         specifier: workspace:*
-        version: link:../aiproviderimpl
-      aiprovidermodel:
-        specifier: workspace:*
-        version: link:../aiprovidermodel
-      conversationmodel:
-        specifier: workspace:*
-        version: link:../conversationmodel
+        version: link:../aiprovider
       conversationstore:
         specifier: workspace:*
         version: link:../conversationstore
@@ -138,9 +111,6 @@ importers:
       securejsondb:
         specifier: workspace:*
         version: link:../securejsondb
-      settingmodel:
-        specifier: workspace:*
-        version: link:../settingmodel
       settingstore:
         specifier: workspace:*
         version: link:../settingstore
@@ -199,6 +169,9 @@ importers:
       remark-supersub:
         specifier: ^1.0.0
         version: 1.0.0
+      uuid:
+        specifier: ^10.0.0
+        version: 10.0.0
     optionalDependencies:
       '@next/swc-darwin-arm64':
         specifier: 14.2.12
@@ -258,6 +231,9 @@ importers:
       '@types/unist':
         specifier: ^3.0.2
         version: 3.0.2
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
       daisyui:
         specifier: ^4.12.10
         version: 4.12.10(postcss@8.4.40)
@@ -269,10 +245,6 @@ importers:
         version: 3.4.7
 
   packages/frontend/app/wailsjs/runtime: {}
-
-  packages/frontend/build: {}
-
-  packages/frontend/build/types: {}
 
   packages/logger: {}
 
@@ -288,29 +260,17 @@ importers:
         specifier: ^4.0.2
         version: 4.0.2
 
-  packages/settingmodel:
-    dependencies:
-      aiprovidermodel:
-        specifier: workspace:*
-        version: link:../aiprovidermodel
-      logger:
-        specifier: workspace:*
-        version: link:../logger
-
   packages/settingstore:
     dependencies:
-      aiprovidermodel:
+      aiprovider:
         specifier: workspace:*
-        version: link:../aiprovidermodel
+        version: link:../aiprovider
       logger:
         specifier: workspace:*
         version: link:../logger
       securejsondb:
         specifier: workspace:*
         version: link:../securejsondb
-      settingmodel:
-        specifier: workspace:*
-        version: link:../settingmodel
 
   packages/winstonlogger:
     dependencies:
@@ -2027,9 +1987,6 @@ packages:
     resolution: {integrity: sha512-Mr2ZakwQ7XUAjp7pAwQWRhhK8mQQ6JAaNWSjmjxil0R8BPioMtQsTLOolGYkji1rcL++3dCqZA3zWqpT+9Ew6g==}
     engines: {node: '>=4'}
 
-  axios@1.7.3:
-    resolution: {integrity: sha512-Ar7ND9pU99eJ9GpoGQKhKf58GpUOgnzuaB7ueNQ5BMi0p+LZ5oaEnfF999fAArcTIBwXTCHAmGcHOZJaWPq9Nw==}
-
   axios@1.7.7:
     resolution: {integrity: sha512-S4kL7XrjgBmvdGut0sN3yJxqYzrDOnivkBiN0OFs6hLiUam3UPvswUo0kqGyhqUZGEOytHyumEdXsAkgCOUf3Q==}
 
@@ -3082,15 +3039,6 @@ packages:
 
   fn.name@1.1.0:
     resolution: {integrity: sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==}
-
-  follow-redirects@1.15.6:
-    resolution: {integrity: sha512-wWN62YITEaOpSK584EZXJafH1AGpO8RVgElfkuXbTOrPX4fIfOyEpW/CsiNd8JdYrAoOvafRTOEnvsO++qCqFA==}
-    engines: {node: '>=4.0'}
-    peerDependencies:
-      debug: '*'
-    peerDependenciesMeta:
-      debug:
-        optional: true
 
   follow-redirects@1.15.9:
     resolution: {integrity: sha512-gew4GsXizNgdoRyqmyfMHyAmXsZDk6mHkSxZFCzW9gwlbtOW44CDtYavM+y+72qD/Vq2l550kMF52DT8fOLJqQ==}
@@ -8132,14 +8080,6 @@ snapshots:
 
   axe-core@4.10.0: {}
 
-  axios@1.7.3:
-    dependencies:
-      follow-redirects: 1.15.6
-      form-data: 4.0.0
-      proxy-from-env: 1.1.0
-    transitivePeerDependencies:
-      - debug
-
   axios@1.7.7:
     dependencies:
       follow-redirects: 1.15.9
@@ -9554,8 +9494,6 @@ snapshots:
   flatted@3.3.1: {}
 
   fn.name@1.1.0: {}
-
-  follow-redirects@1.15.6: {}
 
   follow-redirects@1.15.9: {}
 

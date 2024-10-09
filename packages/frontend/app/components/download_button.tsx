@@ -1,6 +1,38 @@
-import { programmingLanguages } from '@/models/conversationmodel';
 import { ButtonHTMLAttributes, FC } from 'react';
 import { FiDownload } from 'react-icons/fi';
+
+interface languageMap {
+	[key: string]: string | undefined;
+}
+
+export const programmingLanguages: languageMap = {
+	javascript: '.js',
+	python: '.py',
+	java: '.java',
+	c: '.c',
+	cpp: '.cpp',
+	'c++': '.cpp',
+	'c#': '.cs',
+	ruby: '.rb',
+	php: '.php',
+	swift: '.swift',
+	'objective-c': '.m',
+	kotlin: '.kt',
+	typescript: '.ts',
+	go: '.go',
+	perl: '.pl',
+	rust: '.rs',
+	scala: '.scala',
+	haskell: '.hs',
+	lua: '.lua',
+	shell: '.sh',
+	sql: '.sql',
+	html: '.html',
+	css: '.css',
+	json: '.json',
+	dart: '.dart',
+	// add more file extensions here, make sure the key is same as language prop in CodeBlock.tsx component
+};
 
 function generateRandomString(length: number, lowercase = false): string {
 	const chars = 'ABCDEFGHJKLMNPQRSTUVWXY3456789'; // excluding similar looking characters like Z, 2, I, 1, O, 0

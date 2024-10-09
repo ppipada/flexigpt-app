@@ -1,3 +1,6 @@
+import { AxiosRequestConfig } from 'axios';
+import { log } from 'logger';
+import { AIAPI } from './completion_provider';
 import {
 	ALL_MODEL_INFO,
 	anthropicProviderInfo,
@@ -5,10 +8,7 @@ import {
 	CompletionRequest,
 	CompletionResponse,
 	ModelName,
-} from 'aiprovidermodel';
-import { AxiosRequestConfig } from 'axios';
-import { log } from 'logger';
-import { AIAPI } from './completion_provider';
+} from './spec';
 
 export class AnthropicAPI extends AIAPI {
 	constructor() {

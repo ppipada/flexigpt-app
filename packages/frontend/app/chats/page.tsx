@@ -5,14 +5,29 @@ import ChatInputField, { ChatInputFieldHandle, ChatOptions } from '@/chats/chat_
 import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
-import {
-	Conversation,
-	ConversationItem,
-	ConversationRoleEnum,
-	initConversation,
-	initConversationMessage,
-} from '@/models/conversationmodel';
+import { Conversation, ConversationItem, ConversationMessage, ConversationRoleEnum } from '@/models/conversationmodel';
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { v7 as uuidv7 } from 'uuid';
+
+function initConversation(title: string = 'New Conversation'): Conversation {
+	return {
+		id: uuidv7(),
+		title: title.substring(0, 64),
+		createdAt: new Date(),
+		modifiedAt: new Date(),
+		messages: [],
+	};
+}
+
+function initConversationMessage(role: ConversationRoleEnum, content: string): ConversationMessage {
+	const d = new Date();
+	return {
+		id: d.toISOString(),
+		createdAt: new Date(),
+		role: role,
+		content: content,
+	};
+}
 
 const ChatScreen: FC = () => {
 	const [chat, setChat] = useState<Conversation>(initConversation());

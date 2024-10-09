@@ -10,7 +10,7 @@ import {
 	ModelName,
 	ProviderInfo,
 	ProviderName,
-} from 'aiprovidermodel';
+} from './spec';
 
 import { AnthropicAPI } from './anthropic';
 import { CompletionProvider } from './completion_provider';

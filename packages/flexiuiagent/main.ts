@@ -10,9 +10,8 @@ import {
 } from 'electron';
 import electronIsDev from 'electron-is-dev';
 // import electronUpdater from 'electron-updater';
-import path from 'node:path';
-import { dirname } from 'path';
-import { fileURLToPath, format as urlformat } from 'url';
+import path, { dirname } from 'node:path';
+import { format as urlformat } from 'url';
 
 import { ILogger, log } from 'logger';
 import { createILogger } from 'winstonlogger';
@@ -29,10 +28,9 @@ if (!electronIsDev) {
 	log.info('Backend: Running in dev');
 }
 
-import { ProviderSet } from 'aiproviderimpl';
-import { ChatCompletionRequestMessage, IProviderSetAPI, ModelName, ProviderName } from 'aiprovidermodel';
-import { Conversation, ConversationMessage } from 'conversationmodel';
-import { ConversationCollection } from 'conversationstore';
+import { ChatCompletionRequestMessage, IProviderSetAPI, ModelName, ProviderName, ProviderSet } from 'aiprovider';
+import { Conversation, ConversationCollection, ConversationMessage } from 'conversationstore';
+import { fileURLToPath } from 'node:url';
 import { SettingsStore } from 'settingstore';
 
 const __filename = fileURLToPath(import.meta.url);
