@@ -1,8 +1,8 @@
 'use client';
 
-import { setDefaultProvider } from '@/api/base_aiproviderimpl';
-import { setSetting } from '@/api/base_settings';
-import { loadProviderSettings, updateProviderAISettings } from '@/api/load_settings';
+import { setDefaultProvider } from '@/backendapibase/aiprovider';
+import { setSetting } from '@/backendapibase/settings';
+import { loadProviderSettings, updateProviderAISettings } from '@/backendapihelper/load_settings';
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
 import { log } from '@/logger';

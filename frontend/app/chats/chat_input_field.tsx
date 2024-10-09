@@ -1,4 +1,4 @@
-import { getConfigurationInfo } from '@/api/base_aiproviderimpl';
+import { getConfigurationInfo } from '@/backendapibase/aiprovider';
 import { ModelInfo, ModelName, ProviderInfo, ProviderName } from '@/models/aiprovidermodel';
 import React, {
 	ChangeEvent,

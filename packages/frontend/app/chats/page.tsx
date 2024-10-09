@@ -1,6 +1,6 @@
 'use client';
-import { getCompletionMessage } from '@/api/chat_helper';
-import { getConversation, listAllConversations, saveConversation } from '@/api/conversation_memoized_api';
+import { getCompletionMessage } from '@/backendapihelper/chat_helper';
+import { getConversation, listAllConversations, saveConversation } from '@/backendapihelper/conversation_memoized_api';
 import ChatInputField, { ChatInputFieldHandle, ChatOptions } from '@/chats/chat_input_field';
 import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';

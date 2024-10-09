@@ -1,5 +1,5 @@
-import { setAttribute, setDefaultProvider } from '@/api/base_aiproviderimpl';
-import { getAllSettings } from '@/api/base_settings';
+import { setAttribute, setDefaultProvider } from '@/backendapibase/aiprovider';
+import { getAllSettings } from '@/backendapibase/settings';
 import { ProviderName } from '@/models/aiprovidermodel';
 import { AISetting, SettingsSchema } from '@/models/settingmodel';
 

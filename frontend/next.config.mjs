@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-	distDir: 'dist',
-	// basePath: process.env.NODE_ENV === 'production' ? '/frontend/dist' : undefined,
+	distDir: 'build',
+	// basePath: process.env.NODE_ENV === 'production' ? '/frontend/build' : undefined,
 	images: {
 		unoptimized: true,
 	},

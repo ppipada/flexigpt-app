@@ -1,6 +1,6 @@
 'use client';
-import { setLogger } from '@/api/base_backend';
-import { loadProviderSettings } from '@/api/load_settings';
+import { setLogger } from '@/backendapibase/backend';
+import { loadProviderSettings } from '@/backendapihelper/load_settings';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect } from 'react';

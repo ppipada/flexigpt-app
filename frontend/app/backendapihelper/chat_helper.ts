@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { completion, getCompletionRequest, getDefaultProvider, getProviderInfo } from '@/api/base_aiproviderimpl';
+import { completion, getCompletionRequest, getDefaultProvider, getProviderInfo } from '@/backendapibase/aiprovider';
+import { log } from '@/logger';
 import {
 	ChatCompletionRequestMessage,
 	ChatCompletionRoleEnum,
 	CompletionResponse,
 	ProviderName,
-} from 'aiprovidermodel';
-import { ConversationMessage, ConversationRoleEnum } from 'conversationmodel';
-import { log } from 'logger';
+} from '@/models/aiprovidermodel';
+import { ConversationMessage, ConversationRoleEnum } from '@/models/conversationmodel';
 
 const roleMap: Record<ConversationRoleEnum, ChatCompletionRoleEnum> = {
 	[ConversationRoleEnum.system]: ChatCompletionRoleEnum.system,
