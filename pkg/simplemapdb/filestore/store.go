@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -73,20 +74,9 @@ func NewMapFileStore(filename string, defaultData map[string]interface{}, opts .
 	}
 
 	// create file if not exists
-	_, err := os.Stat(filename)
+	err := store.createFileIfNotExists(filename)
 	if err != nil {
-		if os.IsNotExist(err) {
-			if !store.createIfNotExists {
-				return nil, fmt.Errorf("file %s does not exist", filename)
-			}
-			maps.Copy(store.data, store.defaultData)
-			// File does not exist but createIfNotExists is true, so save the empty data to create the file.
-			if err := store.flush(); err != nil {
-				return nil, fmt.Errorf("failed to create file %s: %v", filename, err)
-			}
-			return store, nil
-		}
-		return nil, fmt.Errorf("failed to stat file %s: %v", filename, err)
+		return nil, err
 	}
 
 	err = store.load()
@@ -95,6 +85,44 @@ func NewMapFileStore(filename string, defaultData map[string]interface{}, opts .
 	}
 
 	return store, nil
+}
+
+// createFileIfNotExists checks if a file exists and creates it if it doesn't.
+func (store *MapFileStore) createFileIfNotExists(filename string) error {
+	// Check if the file exists
+	if _, err := os.Stat(filename); err == nil {
+		return nil // File exists, nothing to do
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("failed to stat file %s: %v", filename, err)
+	}
+
+	// File does not exist
+	if !store.createIfNotExists {
+		return fmt.Errorf("file %s does not exist", filename)
+	}
+
+	// Copy default data to store
+	store.data = make(map[string]interface{})
+	maps.Copy(store.data, store.defaultData)
+
+	// Create directories if needed
+	if err := os.MkdirAll(filepath.Dir(filename), os.FileMode(0770)); err != nil {
+		return fmt.Errorf("failed to create directories for file %s: %v", filename, err)
+	}
+
+	// Create the file
+	f, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("failed to create file %s: %v", filename, err)
+	}
+	defer f.Close()
+
+	// Flush the store data to the file
+	if err := store.flush(); err != nil {
+		return fmt.Errorf("failed to flush file %s: %v", filename, err)
+	}
+
+	return nil
 }
 
 // load the data from the file into the in-memory store.
@@ -155,7 +183,7 @@ func (store *MapFileStore) flush() error {
 
 	f, err := os.Create(store.filename)
 	if err != nil {
-		return fmt.Errorf("failed to create file %s: %v", store.filename, err)
+		return fmt.Errorf("failed to open file %s for flush: %v", store.filename, err)
 	}
 	defer f.Close()
 

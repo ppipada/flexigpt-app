@@ -1,19 +1,12 @@
-/**
- * @type {import('next').NextConfig}
- */
+/** @type {import('next').NextConfig} */
 const nextConfig = {
-    output: "export",
-  
-    // Optional: Change links `/me` -> `/me/` and emit `/me.html` -> `/me/index.html`
-    // trailingSlash: true,
-  
-    // Optional: Prevent automatic `/me` -> `/me/`, instead preserve `href`
-    // skipTrailingSlashRedirect: true,
-  
-    // Optional: Change the output directory `out` -> `dist`
-    distDir: "dist",
-    compress: false,
-  };
-  
-  module.exports = nextConfig;
-  
+	distDir: 'dist',
+	// basePath: process.env.NODE_ENV === 'production' ? '/frontend/dist' : undefined,
+	images: {
+		unoptimized: true,
+	},
+	output: 'export',
+	trailingSlash: true,
+};
+
+export default nextConfig;
