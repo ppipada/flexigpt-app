@@ -24,12 +24,6 @@
 			"@/*": ["./*"]
 		}
 	},
-	"references": [
-		{ "path": "../logger" },
-		{ "path": "../aiprovidermodel" },
-		{ "path": "../conversationmodel" },
-		{ "path": "../settingmodel" }
-	],
 	"include": [
 		"next-env.d.ts",
 		"app/context.d.ts",

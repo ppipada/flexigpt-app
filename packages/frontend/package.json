@@ -15,9 +15,6 @@
 	"keywords": [],
 	"author": "ppipada",
 	"dependencies": {
-		"aiprovidermodel": "workspace:*",
-		"conversationmodel": "workspace:*",
-		"logger": "workspace:*",
 		"next": "14.2.12",
 		"next-themes": "^0.3.0",
 		"react": "^18",
@@ -30,8 +27,7 @@
 		"remark-gfm": "^4.0.0",
 		"remark-parse": "^11.0.0",
 		"remark-rehype": "^11.1.0",
-		"remark-supersub": "^1.0.0",
-		"settingmodel": "workspace:*"
+		"remark-supersub": "^1.0.0"
 	},
 	"devDependencies": {
 		"@svgr/webpack": "^8.1.0",

@@ -160,15 +160,6 @@ importers:
 
   packages/frontend:
     dependencies:
-      aiprovidermodel:
-        specifier: workspace:*
-        version: link:../aiprovidermodel
-      conversationmodel:
-        specifier: workspace:*
-        version: link:../conversationmodel
-      logger:
-        specifier: workspace:*
-        version: link:../logger
       next:
         specifier: 14.2.12
         version: 14.2.12(@babel/core@7.25.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -208,9 +199,6 @@ importers:
       remark-supersub:
         specifier: ^1.0.0
         version: 1.0.0
-      settingmodel:
-        specifier: workspace:*
-        version: link:../settingmodel
     optionalDependencies:
       '@next/swc-darwin-arm64':
         specifier: 14.2.12
@@ -281,6 +269,10 @@ importers:
         version: 3.4.7
 
   packages/frontend/app/wailsjs/runtime: {}
+
+  packages/frontend/build: {}
+
+  packages/frontend/build/types: {}
 
   packages/logger: {}
 
