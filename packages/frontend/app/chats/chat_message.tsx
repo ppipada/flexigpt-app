@@ -1,6 +1,6 @@
 import EditBox from '@/chats/chat_message_editbox';
 import StaticMessage from '@/chats/chat_message_fixedbox';
-import { ConversationMessage, ConversationRoleEnum } from 'conversationmodel';
+import { ConversationMessage, ConversationRoleEnum } from '@/models/conversationmodel';
 import { ChangeEvent, FC, useState } from 'react';
 import { FiCompass, FiUser } from 'react-icons/fi';
 

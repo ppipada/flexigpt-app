@@ -1,5 +1,5 @@
-import { getConfigurationInfo } from '@/backendapibase/aiproviderimpl';
-import { ModelInfo, ModelName, ProviderInfo, ProviderName } from 'aiprovidermodel';
+import { getConfigurationInfo } from '@/backendapibase/aiprovider';
+import { ModelInfo, ModelName, ProviderInfo, ProviderName } from '@/models/aiprovidermodel';
 import React, {
 	ChangeEvent,
 	forwardRef,

@@ -1,10 +1,10 @@
-import { Conversation, ConversationItem } from 'conversationmodel';
 import {
 	addMessageToConversation as apiAddMessageToConversation,
 	deleteConversation as apiDeleteConversation,
 	getConversation as apiGetConversation,
 	saveConversation as apiSaveConversation,
-} from '../backendapibase/conversation';
+} from '@/backendapibase/conversation';
+import { Conversation, ConversationItem } from '@/models/conversationmodel';
 import { ConversationCache } from './conversation_cache';
 
 const conversationCache = new ConversationCache();

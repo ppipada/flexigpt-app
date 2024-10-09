@@ -1,9 +1,9 @@
 /* ********************************************************************
  *   Declaration file for the API exposed over the context bridge
  *********************************************************************/
-import { IProviderSetAPI } from 'aiprovidermodel';
-import { IConversationAPI } from 'conversationmodel';
-import { ISettingsAPI } from 'settingmodel';
+import { IProviderSetAPI } from '@/models/aiprovidermodel';
+import { IConversationAPI } from '@/models/conversationmodel';
+import { ISettingsAPI } from '@/models/settingmodel';
 
 export interface IBackendAPI {
 	ping: () => string;

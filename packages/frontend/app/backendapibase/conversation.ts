@@ -1,4 +1,4 @@
-import { Conversation, ConversationItem, ConversationMessage } from 'conversationmodel';
+import { Conversation, ConversationItem, ConversationMessage } from '@/models/conversationmodel';
 
 export async function saveConversation(conversation: Conversation): Promise<void> {
 	await window.ConversationAPI.saveConversation(conversation);

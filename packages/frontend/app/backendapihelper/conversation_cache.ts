@@ -1,5 +1,5 @@
 import { listConversations as apiListConversations } from '@/backendapibase/conversation';
-import { ConversationItem, getDateFromUUIDv7 } from 'conversationmodel';
+import { ConversationItem, getDateFromUUIDv7 } from '@/models/conversationmodel';
 
 interface CacheData {
 	conversationsDict: { [id: string]: ConversationItem };

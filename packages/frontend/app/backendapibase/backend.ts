@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ILogger, log } from 'logger';
+import { ILogger, log } from '@/logger';
 
 // Define an IPC logger
 export const ipcLogger: ILogger = {

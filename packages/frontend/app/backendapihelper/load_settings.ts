@@ -1,7 +1,7 @@
-import { setAttribute, setDefaultProvider } from '@/backendapibase/aiproviderimpl';
+import { setAttribute, setDefaultProvider } from '@/backendapibase/aiprovider';
 import { getAllSettings } from '@/backendapibase/settings';
-import { ProviderName } from 'aiprovidermodel';
-import { AISetting, SettingsSchema } from 'settingmodel';
+import { ProviderName } from '@/models/aiprovidermodel';
+import { AISetting, SettingsSchema } from '@/models/settingmodel';
 
 export function updateProviderAISettings(provider: ProviderName, settings: AISetting) {
 	setAttribute(provider, settings.apiKey, settings.defaultModel, settings.defaultTemperature, settings.defaultOrigin);

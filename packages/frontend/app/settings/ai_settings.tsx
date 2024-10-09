@@ -1,6 +1,6 @@
-import { ALL_AI_PROVIDERS, ProviderName } from 'aiprovidermodel';
+import { ALL_AI_PROVIDERS, ProviderName } from '@/models/aiprovidermodel';
+import { AISetting } from '@/models/settingmodel';
 import { FC } from 'react';
-import { AISetting } from 'settingmodel';
 
 interface AISettingsCardProps {
 	provider: ProviderName;

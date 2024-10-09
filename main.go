@@ -25,10 +25,10 @@ import (
 
 const AppTitle = "FlexiGptUI"
 
-//go:embed all:frontend/dist
+//go:embed all:packages/frontend/build
 var assets embed.FS
 
-//go:embed images/icon.png
+//go:embed packages/frontend/public/icon.png
 var icon []byte
 
 // App struct

@@ -11,7 +11,7 @@ import {
 	ConversationRoleEnum,
 	initConversation,
 	initConversationMessage,
-} from 'conversationmodel';
+} from '@/models/conversationmodel';
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const ChatScreen: FC = () => {

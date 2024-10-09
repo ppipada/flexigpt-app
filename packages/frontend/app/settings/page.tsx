@@ -1,15 +1,15 @@
 'use client';
 
-import { setDefaultProvider } from '@/backendapibase/aiproviderimpl';
+import { setDefaultProvider } from '@/backendapibase/aiprovider';
 import { setSetting } from '@/backendapibase/settings';
 import { loadProviderSettings, updateProviderAISettings } from '@/backendapihelper/load_settings';
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
+import { log } from '@/logger';
+import { ALL_AI_PROVIDERS, ProviderName } from '@/models/aiprovidermodel';
+import { defaultAISettings } from '@/models/settingmodel';
 import AISettingsCard from '@/settings/ai_settings';
-import { ALL_AI_PROVIDERS, ProviderName } from 'aiprovidermodel';
-import { log } from 'logger';
 import { FC, useEffect, useState } from 'react';
-import { defaultAISettings } from 'settingmodel';
 
 const SettingsPage: FC = () => {
 	const [defaultProvider, setComponentDefaultProvider] = useState(ProviderName.OPENAI);

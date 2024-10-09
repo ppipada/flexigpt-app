@@ -1,4 +1,4 @@
-import { programmingLanguages } from 'conversationmodel';
+import { programmingLanguages } from '@/models/conversationmodel';
 import { ButtonHTMLAttributes, FC } from 'react';
 import { FiDownload } from 'react-icons/fi';
 
