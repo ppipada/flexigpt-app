@@ -3,3 +3,4 @@ packages/frontend/.next/
 /dist/
 /node_modules/
 /stories/
+packages/frontend/app/backendapibase/wailsjs

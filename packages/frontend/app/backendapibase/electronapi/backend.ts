@@ -45,7 +45,7 @@ export class ElectronLogger implements ILogger {
 
 export class ElectronBackendAPI implements IBackendAPI {
 	// Implement the ping method
-	ping(): string {
+	ping(): Promise<string> {
 		// Assuming the ping method is synchronous and returns a string
 		return window.BackendAPI.ping();
 	}

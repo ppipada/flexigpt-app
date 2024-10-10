@@ -135,6 +135,8 @@ func main() {
 		WindowStartState: options.Normal,
 		Bind: []interface{}{
 			app,
+			// app.settingsManager,
+			// app.conversationManager,
 		},
 		// Windows platform specific options
 		Windows: &windows.Options{

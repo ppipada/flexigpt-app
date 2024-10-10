@@ -4,10 +4,10 @@
 	"outputfilename": "flexiui",
 	"frontend:dir": "packages/frontend",
 	"frontend:install": "pnpm install",
-	"frontend:build": "pnpm run build",
-	"frontend:dev:watcher": "pnpm run dev",
+	"frontend:build": "pnpm run build:wails",
+	"frontend:dev:watcher": "pnpm run dev:wails",
 	"frontend:dev:serverUrl": "auto",
-	"wailsjsdir": "packages/frontend/app",
+	"wailsjsdir": "packages/frontend/app/backendapibase",
 	"author": {
 		"name": "ppipada",
 		"email": "ppipada@gmail.com"

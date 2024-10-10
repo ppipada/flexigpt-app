@@ -1,4 +1,4 @@
 export interface IBackendAPI {
-	ping: () => string;
+	ping: () => Promise<string>;
 	log: (level: string, ...args: unknown[]) => void;
 }
