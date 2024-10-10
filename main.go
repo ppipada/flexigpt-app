@@ -114,7 +114,7 @@ func NewApp() *App {
 	}
 }
 
-func (a *App) InitManagers() {
+func (a *App) initManagers() {
 	configFolderPath, err := xdg.ConfigFile(strings.ToLower(AppTitle))
 	if err != nil {
 		log.Panicf("Could not resolve path for config dir: %v", err)
@@ -187,7 +187,7 @@ func EmbeddedFSWalker() {
 func main() {
 	// Create an instance of the app structure
 	app := NewApp()
-	app.InitManagers()
+	app.initManagers()
 	// EmbeddedFSWalker()
 
 	// Create application with options
