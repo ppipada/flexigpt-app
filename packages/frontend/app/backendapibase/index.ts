@@ -25,9 +25,9 @@ if (process.env.NEXT_PUBLIC_PLATFORM === 'electron') {
 	const wailsAPI = require('./wailsapi');
 	LoggerImpl = wailsAPI.WailsLogger;
 	BackendAPIImpl = wailsAPI.WailsBackendAPI;
-	ConversationStoreAPIImpl = wailsAPI.ElectronConversationStoreAPI;
-	ProviderSetAPIImpl = wailsAPI.ElectronProviderSetAPI;
-	SettingStoreAPIImpl = wailsAPI.ElectronSettingStoreAPI;
+	ConversationStoreAPIImpl = wailsAPI.WailsConversationStoreAPI;
+	ProviderSetAPIImpl = wailsAPI.WailsProviderSetAPI;
+	SettingStoreAPIImpl = wailsAPI.WailsSettingStoreAPI;
 } else {
 	throw new Error(`Unsupported platform: ${process.env.NEXT_PUBLIC_PLATFORM}`);
 }

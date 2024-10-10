@@ -1,3 +1,4 @@
+'use client';
 import { Ping } from '@/backendapibase/wailsjs/go/main/App';
 import { LogDebug, LogError, LogInfo, LogWarning } from '@/backendapibase/wailsjs/runtime/runtime';
 import { IBackendAPI } from '@/models/backendmodel';

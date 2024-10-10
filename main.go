@@ -2,7 +2,11 @@ package main
 
 import (
 	"embed"
+	"fmt"
+	"io/fs"
 	"log"
+	"net/http"
+	goruntime "runtime"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
@@ -30,6 +34,68 @@ var assets embed.FS
 
 //go:embed packages/frontend/public/icon.png
 var icon []byte
+
+const FRONTEND_PATH_PREFIX = "/frontend/build"
+
+var DIR_PAGES = []string{"/agents", "/chats", "/settings", "/404"}
+
+func getActualURL(origurl string) string {
+	callurl := origurl
+	if !strings.HasPrefix(callurl, FRONTEND_PATH_PREFIX) {
+		return callurl
+	}
+
+	// percentIndex := strings.Index(callurl, "%")
+	// if percentIndex != -1 {
+	// 	callurl = callurl[:percentIndex]
+	// }
+
+	// qIndex := strings.Index(callurl, "?")
+	// if qIndex != -1 {
+	// 	callurl = callurl[:qIndex]
+	// }
+
+	// Handle if it's a page request
+	if strings.HasSuffix(callurl, "/") {
+		return callurl[len(FRONTEND_PATH_PREFIX):] + "index.html"
+	}
+
+	for _, d := range DIR_PAGES {
+		durl := FRONTEND_PATH_PREFIX + d
+		if callurl == durl {
+			return callurl[len(FRONTEND_PATH_PREFIX):] + "/index.html"
+		}
+	}
+
+	return callurl[len(FRONTEND_PATH_PREFIX):]
+}
+
+func LogStackTrace() {
+	// Create a buffer to hold the stack trace
+	buf := make([]byte, 1024)
+	// Capture the stack trace
+	n := goruntime.Stack(buf, false)
+	// Log the stack trace
+	fmt.Println("Stack trace:\n", string(buf[:n]))
+}
+
+func URLCleanerMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		// Clean the URL using getActualURL
+		// fmt.Println("Input URL:", req.URL.Path) // For debugging purposes
+		// if req.URL.Path == "/agents" {
+		// 	LogStackTrace()
+		// }
+		cleanedURL := getActualURL(req.URL.Path)
+		// fmt.Println("Cleaned URL:", cleanedURL) // For debugging purposes
+
+		// Update the request URL path
+		req.URL.Path = cleanedURL
+
+		// Call the next handler
+		next.ServeHTTP(w, req)
+	})
+}
 
 // App struct
 type App struct {
@@ -103,9 +169,20 @@ func (a *App) Ping() string {
 	return "pong"
 }
 
+func EmbeddedFSWalker() {
+	_ = fs.WalkDir(assets, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		fmt.Println("Embedded file:", path)
+		return nil
+	})
+}
+
 func main() {
 	// Create an instance of the app structure
 	app := NewApp()
+	// EmbeddedFSWalker()
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -123,11 +200,13 @@ func main() {
 		HideWindowOnClose: false,
 		BackgroundColour:  &options.RGBA{R: 255, G: 255, B: 255, A: 255},
 		AssetServer: &assetserver.Options{
-			Assets: assets,
+			Assets:     assets,
+			Middleware: URLCleanerMiddleware,
 		},
-		Menu:             nil,
-		Logger:           nil,
-		LogLevel:         logger.DEBUG,
+		Menu:     nil,
+		Logger:   nil,
+		LogLevel: logger.DEBUG,
+		// LogLevelProduction: logger.DEBUG,
 		OnStartup:        app.startup,
 		OnDomReady:       app.domReady,
 		OnBeforeClose:    app.beforeClose,
@@ -167,7 +246,6 @@ func main() {
 			},
 		},
 	})
-
 	if err != nil {
 		log.Fatal(err)
 	}
