@@ -31,7 +31,7 @@ if (!electronIsDev) {
 import { ChatCompletionRequestMessage, IProviderSetAPI, ModelName, ProviderName, ProviderSet } from 'aiprovider';
 import { Conversation, ConversationCollection, ConversationMessage } from 'conversationstore';
 import { fileURLToPath } from 'node:url';
-import { SettingsStore } from 'settingstore';
+import { SettingStore } from 'settingstore';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -43,7 +43,7 @@ const PRELOAD_PATH = path.join(__dirname, 'preload.js');
 
 // const { autoUpdater } = electronUpdater;
 let appWindow: BrowserWindow | null = null;
-let settingsManager: SettingsStore;
+let settingsManager: SettingStore;
 let conversationManager: ConversationCollection;
 let providerSetManager: IProviderSetAPI;
 
@@ -101,7 +101,7 @@ const spawnAppWindow = async () => {
 const initializeSettingsManager = async () => {
 	const settingsFilePath = path.join(app.getPath('userData'), 'settings.json');
 	log.info(`Settings file url: ${settingsFilePath}`);
-	settingsManager = new SettingsStore(settingsFilePath);
+	settingsManager = new SettingStore(settingsFilePath);
 	await settingsManager.initialize();
 };
 

@@ -72,8 +72,8 @@ func TestGetConversationFilename(t *testing.T) {
 func TestConversationCollection(t *testing.T) {
 	baseDir := filepath.Join(os.TempDir(), "conversationstore_test")
 	defer os.RemoveAll(baseDir)
-
-	cc, err := conversationstore.NewConversationCollection(baseDir)
+	cc := &conversationstore.ConversationCollection{}
+	err := conversationstore.InitConversationCollection(cc, baseDir)
 	if err != nil {
 		t.Fatalf("Failed to create conversation collection: %v", err)
 	}
@@ -178,7 +178,8 @@ func TestConversationCollectionListing(t *testing.T) {
 	baseDir := filepath.Join(os.TempDir(), "conversationstore_test_list")
 	defer os.RemoveAll(baseDir)
 
-	cc, err := conversationstore.NewConversationCollection(baseDir)
+	cc := &conversationstore.ConversationCollection{}
+	err := conversationstore.InitConversationCollection(cc, baseDir)
 	if err != nil {
 		t.Fatalf("Failed to create conversation collection: %v", err)
 	}
@@ -200,13 +201,13 @@ func TestConversationCollectionListing(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to save conversation: %v", err)
 		}
-		convoItems, _, err := cc.ListConversations("")
+		convoItems, err := cc.ListConversations("")
 		if err != nil {
 			t.Fatalf("Failed to list conversations: %v", err)
 		}
 
-		if len(convoItems) != 2 {
-			t.Errorf("Expected 2 conversations, got %d", len(convoItems))
+		if len(convoItems.ConversationItems) != 2 {
+			t.Errorf("Expected 2 conversations, got %d", len(convoItems.ConversationItems))
 		}
 	})
 

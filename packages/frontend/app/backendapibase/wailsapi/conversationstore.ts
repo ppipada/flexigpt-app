@@ -1,28 +1,33 @@
+import {
+	AddMessageToConversation,
+	DeleteConversation,
+	GetConversation,
+	ListConversations,
+	SaveConversation,
+} from '@/backendapibase/wailsjs/go/conversationstore/ConversationCollection';
 import { Conversation, ConversationItem, ConversationMessage, IConversationStoreAPI } from '@/models/conversationmodel';
+import { spec as wailsSpec } from '../wailsjs/go/models';
 
 export class WailsConversationStoreAPI implements IConversationStoreAPI {
-	// Implement the saveConversation method
 	async saveConversation(conversation: Conversation): Promise<void> {
-		await window.ConversationStoreAPI.saveConversation(conversation);
+		await SaveConversation(conversation as wailsSpec.Conversation);
 	}
 
-	// Implement the deleteConversation method
 	async deleteConversation(id: string, title: string): Promise<void> {
-		await window.ConversationStoreAPI.deleteConversation(id, title);
+		await DeleteConversation(id, title);
 	}
 
-	// Implement the getConversation method
 	async getConversation(id: string, title: string): Promise<Conversation | null> {
-		return await window.ConversationStoreAPI.getConversation(id, title);
+		const c = await GetConversation(id, title);
+		return c as Conversation;
 	}
 
-	// Implement the listConversations method
 	async listConversations(token?: string): Promise<{ conversations: ConversationItem[]; nextToken?: string }> {
-		return await window.ConversationStoreAPI.listConversations(token);
+		const resp = await ListConversations(token || '');
+		return { conversations: resp.ConversationItems as ConversationItem[], nextToken: resp.NextPageToken };
 	}
 
-	// Implement the addMessageToConversation method
 	async addMessageToConversation(id: string, title: string, newMessage: ConversationMessage): Promise<void> {
-		await window.ConversationStoreAPI.addMessageToConversation(id, title, newMessage);
+		await AddMessageToConversation(id, title, newMessage as wailsSpec.ConversationMessage);
 	}
 }

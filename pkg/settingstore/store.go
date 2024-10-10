@@ -9,19 +9,19 @@ import (
 	"github.com/flexigpt/flexiui/pkg/simplemapdb/filestore"
 )
 
-type SettingsStore struct {
+type SettingStore struct {
 	store       *filestore.MapFileStore
 	defaultData spec.SettingsSchema
 }
 
-func NewSettingStore(filename string) (*SettingsStore, error) {
+func InitSettingStore(settingStore *SettingStore, filename string) error {
 	keyEncDecs := make(map[string]encdec.EncoderDecoder)
 	for _, key := range spec.SensitiveKeys {
 		keyEncDecs[key] = encdec.EncryptedStringValueEncoderDecoder{}
 	}
 	settingsMap, err := encdec.StructWithJSONTagsToMap(spec.DefaultSettingsData)
 	if err != nil {
-		return nil, fmt.Errorf("Could not get map of settings data")
+		return fmt.Errorf("Could not get map of settings data")
 	}
 	store, err := filestore.NewMapFileStore(
 		filename,
@@ -31,13 +31,15 @@ func NewSettingStore(filename string) (*SettingsStore, error) {
 		filestore.WithKeyEncoders(keyEncDecs),
 		filestore.WithEncoder(encdec.JSONEncoderDecoder{}))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create store: %v", err)
+		return fmt.Errorf("failed to create store: %v", err)
 	}
 
-	return &SettingsStore{store: store, defaultData: spec.DefaultSettingsData}, nil
+	settingStore.store = store
+	settingStore.defaultData = spec.DefaultSettingsData
+	return nil
 }
 
-func (s *SettingsStore) GetAllSettings(forceFetch bool) (*spec.SettingsSchema, error) {
+func (s *SettingStore) GetAllSettings(forceFetch bool) (*spec.SettingsSchema, error) {
 	data, err := s.store.GetAll(forceFetch)
 	if err != nil {
 		return nil, err
@@ -50,7 +52,7 @@ func (s *SettingsStore) GetAllSettings(forceFetch bool) (*spec.SettingsSchema, e
 	return &settings, nil
 }
 
-func (s *SettingsStore) SetSetting(dotSeparatedKey string, value interface{}) error {
+func (s *SettingStore) SetSetting(dotSeparatedKey string, value interface{}) error {
 	keys := strings.Split(dotSeparatedKey, ".")
 	defaultDataMap, err := encdec.StructWithJSONTagsToMap(s.defaultData)
 	if err != nil {

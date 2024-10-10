@@ -50,7 +50,7 @@ export const defaultSettingsData: SettingsSchema = {
 	app: {
 		defaultProvider: ProviderName.OPENAI,
 	},
-	...defaultAISettings,
+	aiSettings: defaultAISettings,
 };
 
 export const sensitiveKeys = [

@@ -1,13 +1,15 @@
+import { GetAllSettings, SetSetting } from '@/backendapibase/wailsjs/go/settingstore/SettingStore';
 import { ISettingStoreAPI, SettingsSchema } from '@/models/settingmodel';
 
 export class WailsSettingStoreAPI implements ISettingStoreAPI {
 	// Implement the getAllSettings method
 	async getAllSettings(): Promise<SettingsSchema> {
-		return await window.SettingStoreAPI.getAllSettings();
+		const forceFetch = false;
+		const s = await GetAllSettings(forceFetch);
+		return s as SettingsSchema;
 	}
 
-	// Implement the setSetting method
 	async setSetting(key: string, value: any): Promise<void> {
-		await window.SettingStoreAPI.setSetting(key, value);
+		await SetSetting(key, value);
 	}
 }

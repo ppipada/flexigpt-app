@@ -33,6 +33,11 @@ type ConversationItem struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
+type ListResponse struct {
+	ConversationItems []ConversationItem
+	NextPageToken     *string
+}
+
 // Conversation represents a conversation with messages.
 type Conversation struct {
 	ConversationItem

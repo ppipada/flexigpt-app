@@ -17,11 +17,11 @@ export async function loadProviderSettings(): Promise<SettingsSchema> {
 	if (settings) {
 		const defaultProvider = settings.app.defaultProvider as ProviderName;
 		providerSetAPI.setDefaultProvider(defaultProvider);
-		updateProviderAISettings(ProviderName.ANTHROPIC, settings[ProviderName.ANTHROPIC]);
-		updateProviderAISettings(ProviderName.GOOGLE, settings[ProviderName.GOOGLE]);
-		updateProviderAISettings(ProviderName.HUGGINGFACE, settings[ProviderName.HUGGINGFACE]);
-		updateProviderAISettings(ProviderName.LLAMACPP, settings[ProviderName.LLAMACPP]);
-		updateProviderAISettings(ProviderName.OPENAI, settings[ProviderName.OPENAI]);
+		updateProviderAISettings(ProviderName.ANTHROPIC, settings.aiSettings[ProviderName.ANTHROPIC]);
+		updateProviderAISettings(ProviderName.GOOGLE, settings.aiSettings[ProviderName.GOOGLE]);
+		updateProviderAISettings(ProviderName.HUGGINGFACE, settings.aiSettings[ProviderName.HUGGINGFACE]);
+		updateProviderAISettings(ProviderName.LLAMACPP, settings.aiSettings[ProviderName.LLAMACPP]);
+		updateProviderAISettings(ProviderName.OPENAI, settings.aiSettings[ProviderName.OPENAI]);
 	}
 	return settings;
 }

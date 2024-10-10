@@ -50,13 +50,14 @@ type ConversationCollection struct {
 	store *dirstore.MapDirectoryStore
 }
 
-func NewConversationCollection(baseDir string) (*ConversationCollection, error) {
+func InitConversationCollection(convoCollection *ConversationCollection, baseDir string) error {
 	partitionProvider := &dirstore.MonthBasedPartitionProvider{}
 	store, err := dirstore.NewMapDirectoryStore(baseDir, true, dirstore.WithPartitionProvider(partitionProvider))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &ConversationCollection{store: store}, nil
+	convoCollection.store = store
+	return nil
 }
 
 func (cc *ConversationCollection) GetConversationFilename(conversation spec.Conversation) string {
@@ -128,10 +129,10 @@ func (cc *ConversationCollection) GetConversation(id, title string) (*spec.Conve
 	return &convo, nil
 }
 
-func (cc *ConversationCollection) ListConversations(token string) ([]spec.ConversationItem, string, error) {
+func (cc *ConversationCollection) ListConversations(token string) (*spec.ListResponse, error) {
 	files, nextToken, err := cc.store.ListFiles("desc", token)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	var convoItems []spec.ConversationItem
@@ -153,7 +154,10 @@ func (cc *ConversationCollection) ListConversations(token string) ([]spec.Conver
 		convoItems = append(convoItems, convo)
 	}
 
-	return convoItems, nextToken, nil
+	resp := &spec.ListResponse{}
+	resp.ConversationItems = convoItems
+	resp.NextPageToken = &nextToken
+	return resp, nil
 }
 
 func (cc *ConversationCollection) AddMessageToConversation(id, title string, newMessage spec.ConversationMessage) error {

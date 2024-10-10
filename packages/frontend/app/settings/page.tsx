@@ -31,11 +31,11 @@ const SettingsPage: FC = () => {
 				setComponentDefaultProvider(defaultProvider);
 
 				setAISettings({
-					anthropic: settings[ProviderName.ANTHROPIC],
-					google: settings[ProviderName.GOOGLE],
-					huggingface: settings[ProviderName.HUGGINGFACE],
-					llamacpp: settings[ProviderName.LLAMACPP],
-					openai: settings[ProviderName.OPENAI],
+					anthropic: settings.aiSettings[ProviderName.ANTHROPIC],
+					google: settings.aiSettings[ProviderName.GOOGLE],
+					huggingface: settings.aiSettings[ProviderName.HUGGINGFACE],
+					llamacpp: settings.aiSettings[ProviderName.LLAMACPP],
+					openai: settings.aiSettings[ProviderName.OPENAI],
 				});
 			}
 		})();
@@ -63,7 +63,7 @@ const SettingsPage: FC = () => {
 	};
 
 	const handleSaveAISettings = async (provider: keyof typeof aiSettings, key: string, value: any) => {
-		await settingstoreAPI.setSetting(`${provider}.${key}`, value);
+		await settingstoreAPI.setSetting(`aiSettings.${provider}.${key}`, value);
 		updateProviderAISettings(provider as ProviderName, aiSettings[provider]);
 	};
 
@@ -73,11 +73,13 @@ const SettingsPage: FC = () => {
 				app: {
 					defaultProvider,
 				},
-				[ProviderName.ANTHROPIC]: aiSettings.anthropic,
-				[ProviderName.GOOGLE]: aiSettings.google,
-				[ProviderName.HUGGINGFACE]: aiSettings.huggingface,
-				[ProviderName.LLAMACPP]: aiSettings.llamacpp,
-				[ProviderName.OPENAI]: aiSettings.openai,
+				aiSettings: {
+					[ProviderName.ANTHROPIC]: aiSettings.anthropic,
+					[ProviderName.GOOGLE]: aiSettings.google,
+					[ProviderName.HUGGINGFACE]: aiSettings.huggingface,
+					[ProviderName.LLAMACPP]: aiSettings.llamacpp,
+					[ProviderName.OPENAI]: aiSettings.openai,
+				},
 			},
 			null,
 			2

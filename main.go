@@ -99,23 +99,22 @@ func URLCleanerMiddleware(next http.Handler) http.Handler {
 
 // App struct
 type App struct {
-	ctx                 context.Context
-	settingsManager     *settingstore.SettingsStore
-	conversationManager *conversationstore.ConversationCollection
+	ctx                  context.Context
+	settingStoreAPI      *settingstore.SettingStore
+	conversationStoreAPI *conversationstore.ConversationCollection
 	// providerSetManager  aiproviderSpec.ProviderSetAPI
 	configBasePath string
 }
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{}
+	return &App{
+		settingStoreAPI:      &settingstore.SettingStore{},
+		conversationStoreAPI: &conversationstore.ConversationCollection{},
+	}
 }
 
-// startup is called at application startup
-func (a *App) startup(ctx context.Context) {
-	// Perform your setup here
-	a.ctx = ctx
-
+func (a *App) InitManagers() {
 	configFolderPath, err := xdg.ConfigFile(strings.ToLower(AppTitle))
 	if err != nil {
 		log.Panicf("Could not resolve path for config dir: %v", err)
@@ -126,23 +125,29 @@ func (a *App) startup(ctx context.Context) {
 	// Initialize settings manager
 	settingsFilePath := filepath.Join(a.configBasePath, "settings.json")
 	log.Printf("Settings file path: %s", settingsFilePath)
-	sm, err := settingstore.NewSettingStore(settingsFilePath)
+
+	err = settingstore.InitSettingStore(a.settingStoreAPI, settingsFilePath)
 	if err != nil {
 		log.Panicf("Couldnt initialize setting store at: %s. error: %v", settingsFilePath, err)
 	}
-	a.settingsManager = sm
 
 	// Initialize conversation manager
 	conversationDir := filepath.Join(a.configBasePath, "conversations")
 	log.Printf("Conversation directory: %s", conversationDir)
-	cs, err := conversationstore.NewConversationCollection(conversationDir)
+
+	err = conversationstore.InitConversationCollection(a.conversationStoreAPI, conversationDir)
 	if err != nil {
 		log.Panicf("Couldnt initialize conversation store at: %s. err:%v", conversationDir, err)
 	}
-	a.conversationManager = cs
 	// Initialize provider set manager
 	// a.providerSetManager = NewProviderSet("OPENAI")
 
+}
+
+// startup is called at application startup
+func (a *App) startup(ctx context.Context) {
+	// Perform your setup here
+	a.ctx = ctx
 	// Load the frontend
 	runtime.WindowShow(a.ctx)
 }
@@ -182,6 +187,7 @@ func EmbeddedFSWalker() {
 func main() {
 	// Create an instance of the app structure
 	app := NewApp()
+	app.InitManagers()
 	// EmbeddedFSWalker()
 
 	// Create application with options
@@ -191,8 +197,8 @@ func main() {
 		Height:            768,
 		MinWidth:          1024,
 		MinHeight:         768,
-		MaxWidth:          1280,
-		MaxHeight:         800,
+		MaxWidth:          1920,
+		MaxHeight:         1080,
 		DisableResize:     false,
 		Fullscreen:        false,
 		Frameless:         false,
@@ -203,19 +209,19 @@ func main() {
 			Assets:     assets,
 			Middleware: URLCleanerMiddleware,
 		},
-		Menu:     nil,
-		Logger:   nil,
-		LogLevel: logger.DEBUG,
-		// LogLevelProduction: logger.DEBUG,
-		OnStartup:        app.startup,
-		OnDomReady:       app.domReady,
-		OnBeforeClose:    app.beforeClose,
-		OnShutdown:       app.shutdown,
-		WindowStartState: options.Normal,
+		Menu:               nil,
+		Logger:             nil,
+		LogLevel:           logger.DEBUG,
+		LogLevelProduction: logger.DEBUG,
+		OnStartup:          app.startup,
+		OnDomReady:         app.domReady,
+		OnBeforeClose:      app.beforeClose,
+		OnShutdown:         app.shutdown,
+		WindowStartState:   options.Normal,
 		Bind: []interface{}{
 			app,
-			// app.settingsManager,
-			// app.conversationManager,
+			app.settingStoreAPI,
+			app.conversationStoreAPI,
 		},
 		// Windows platform specific options
 		Windows: &windows.Options{

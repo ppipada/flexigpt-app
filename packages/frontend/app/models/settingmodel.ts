@@ -7,15 +7,9 @@ export interface AISetting {
 	defaultOrigin: string;
 	additionalSettings: Record<string, any>;
 }
-export interface AISettingsSchema {
-	[ProviderName.ANTHROPIC]: AISetting;
-	[ProviderName.GOOGLE]: AISetting;
-	[ProviderName.HUGGINGFACE]: AISetting;
-	[ProviderName.LLAMACPP]: AISetting;
-	[ProviderName.OPENAI]: AISetting;
-}
 
-export type SettingsSchema = AISettingsSchema & {
+export type SettingsSchema = {
+	aiSettings: { [key: string]: AISetting };
 	app: {
 		defaultProvider: ProviderName;
 	};

@@ -10,7 +10,7 @@ export const defaultSecureSettingsData: SecureSettingsSchema = {
 	_sensitiveKeys: sensitiveKeys,
 };
 
-export class SettingsStore implements ISettingStoreAPI {
+export class SettingStore implements ISettingStoreAPI {
 	private db: SecureJSONFileDB<SecureSettingsSchema>;
 
 	constructor(filename: PathLike) {
