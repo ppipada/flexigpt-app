@@ -144,15 +144,16 @@
 - [x] Translate settings store and conversation store to go
 - [x] Move next frontend to appropriate folder and change config and build system as seen in wails template
 
-- [ ] Transform next app to work with multiple backend provider like electron or wails.
+- [x] Transform next app to work with multiple backend provider like electron or wails.
 
-  - [ ] Involves segregating models and creating a facade to redirect to window apis that are injected by backend
-  - [ ] Ideally interface declaration should be present in frontend and all calls should be made to interface by components, the exact implementation should decide which backend is present and redirect there.
-  - [ ] Get most consts through API
-  - [ ] wails main.go app integrations
-  - [ ] Logger integration
+  - [x] Involves segregating models and creating a facade to redirect to window apis that are injected by backend
+  - [x] Ideally interface declaration should be present in frontend and all calls should be made to interface by components, the exact implementation should decide which backend is present and redirect there.
+  - [x] wails main.go app integrations
+  - [x] Logger integration
 
 - [ ] Translate aiprovider to go. Try and use langchaingo directly
+- [ ] Get most consts through API
+
 - [ ] build/test
 
 ## Pushed out list
