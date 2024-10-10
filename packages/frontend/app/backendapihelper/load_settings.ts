@@ -1,17 +1,22 @@
-import { setAttribute, setDefaultProvider } from '@/backendapibase/aiprovider';
-import { getAllSettings } from '@/backendapibase/settings';
+import { providerSetAPI, settingstoreAPI } from '@/backendapibase';
 import { ProviderName } from '@/models/aiprovidermodel';
 import { AISetting, SettingsSchema } from '@/models/settingmodel';
 
 export function updateProviderAISettings(provider: ProviderName, settings: AISetting) {
-	setAttribute(provider, settings.apiKey, settings.defaultModel, settings.defaultTemperature, settings.defaultOrigin);
+	providerSetAPI.setAttribute(
+		provider,
+		settings.apiKey,
+		settings.defaultModel,
+		settings.defaultTemperature,
+		settings.defaultOrigin
+	);
 }
 
 export async function loadProviderSettings(): Promise<SettingsSchema> {
-	const settings = await getAllSettings();
+	const settings = await settingstoreAPI.getAllSettings();
 	if (settings) {
 		const defaultProvider = settings.app.defaultProvider as ProviderName;
-		setDefaultProvider(defaultProvider);
+		providerSetAPI.setDefaultProvider(defaultProvider);
 		updateProviderAISettings(ProviderName.ANTHROPIC, settings[ProviderName.ANTHROPIC]);
 		updateProviderAISettings(ProviderName.GOOGLE, settings[ProviderName.GOOGLE]);
 		updateProviderAISettings(ProviderName.HUGGINGFACE, settings[ProviderName.HUGGINGFACE]);

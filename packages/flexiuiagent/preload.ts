@@ -8,7 +8,7 @@ contextBridge.exposeInMainWorld('BackendAPI', {
 	},
 });
 
-contextBridge.exposeInMainWorld('SettingsAPI', {
+contextBridge.exposeInMainWorld('SettingStoreAPI', {
 	getAllSettings: async () => {
 		return await ipcRenderer.invoke('settingstore:getall');
 	},
@@ -17,21 +17,21 @@ contextBridge.exposeInMainWorld('SettingsAPI', {
 	},
 });
 
-contextBridge.exposeInMainWorld('ConversationAPI', {
+contextBridge.exposeInMainWorld('ConversationStoreAPI', {
 	saveConversation: async (conversation: any) => {
-		await ipcRenderer.invoke('conversation:save', conversation);
+		await ipcRenderer.invoke('conversationstore:save', conversation);
 	},
 	deleteConversation: async (id: string, title: string) => {
-		await ipcRenderer.invoke('conversation:delete', id, title);
+		await ipcRenderer.invoke('conversationstore:delete', id, title);
 	},
 	getConversation: async (id: string, title: string) => {
-		return await ipcRenderer.invoke('conversation:get', id, title);
+		return await ipcRenderer.invoke('conversationstore:get', id, title);
 	},
 	listConversations: async (token?: string) => {
-		return await ipcRenderer.invoke('conversation:list', token);
+		return await ipcRenderer.invoke('conversationstore:list', token);
 	},
 	addMessageToConversation: async (id: string, title: string, newMessage: any) => {
-		return await ipcRenderer.invoke('conversation:addMessage', id, title, newMessage);
+		return await ipcRenderer.invoke('conversationstore:addMessage', id, title, newMessage);
 	},
 });
 

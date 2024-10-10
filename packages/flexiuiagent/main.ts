@@ -208,24 +208,24 @@ ipcMain.handle('backend:log', async (_event, level: string, ...args: unknown[]) 
 	log[level as keyof ILogger](...args);
 });
 
-ipcMain.handle('conversation:save', async (_event, conversation: Conversation) => {
+ipcMain.handle('conversationstore:save', async (_event, conversation: Conversation) => {
 	await conversationManager.saveConversation(conversation);
 });
 
-ipcMain.handle('conversation:delete', async (_event, id: string, title: string) => {
+ipcMain.handle('conversationstore:delete', async (_event, id: string, title: string) => {
 	await conversationManager.deleteConversation(id, title);
 });
 
-ipcMain.handle('conversation:get', async (_event, id: string, title: string) => {
+ipcMain.handle('conversationstore:get', async (_event, id: string, title: string) => {
 	return await conversationManager.getConversation(id, title);
 });
 
-ipcMain.handle('conversation:list', async (_event, token?: string) => {
+ipcMain.handle('conversationstore:list', async (_event, token?: string) => {
 	return await conversationManager.listConversations(token);
 });
 
 ipcMain.handle(
-	'conversation:addMessage',
+	'conversationstore:addMessage',
 	async (_event, id: string, title: string, newMessage: ConversationMessage) => {
 		return await conversationManager.addMessageToConversation(id, title, newMessage);
 	}

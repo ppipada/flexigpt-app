@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { completion, getCompletionRequest, getDefaultProvider, getProviderInfo } from '@/backendapibase/aiprovider';
-import { log } from '@/logger';
+import { log, providerSetAPI } from '@/backendapibase';
 import {
 	ChatCompletionRequestMessage,
 	ChatCompletionRoleEnum,
@@ -70,7 +69,7 @@ async function handleDirectCompletion(
 	provider: ProviderName,
 	fullCompletionRequest: any
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
-	const providerResp = await completion(provider, fullCompletionRequest);
+	const providerResp = await providerSetAPI.completion(provider, fullCompletionRequest);
 	return parseAPIResponse(convoMessage, providerResp);
 }
 
@@ -91,7 +90,7 @@ async function handleStreamedCompletion(
 		});
 	};
 
-	const providerResp = await completion(provider, fullCompletionRequest, dataFunction);
+	const providerResp = await providerSetAPI.completion(provider, fullCompletionRequest, dataFunction);
 	return parseAPIResponse(convoMessage, providerResp);
 }
 
@@ -105,7 +104,7 @@ export async function getCompletionMessage(
 		const allMessages = convertConversationToChatMessages(messages);
 		const promptMsg = allMessages.pop();
 
-		let completionProvider = await getDefaultProvider();
+		let completionProvider = await providerSetAPI.getDefaultProvider();
 		if (inputParams && 'provider' in inputParams) {
 			const providerStr = inputParams['provider'] as string;
 			if (Object.values(ProviderName).includes(providerStr as ProviderName)) {
@@ -114,7 +113,7 @@ export async function getCompletionMessage(
 			delete inputParams['provider'];
 		}
 
-		const providerInfo = await getProviderInfo(completionProvider);
+		const providerInfo = await providerSetAPI.getProviderInfo(completionProvider);
 		let isStream: boolean = providerInfo.streamingSupport || false;
 
 		if (isStream && completionProvider === ProviderName.OPENAI) {
@@ -129,7 +128,7 @@ export async function getCompletionMessage(
 				log.info('Detected openai o models');
 			}
 		}
-		const fullCompletionRequest = await getCompletionRequest(
+		const fullCompletionRequest = await providerSetAPI.getCompletionRequest(
 			completionProvider,
 			promptMsg?.content || '',
 			allMessages,

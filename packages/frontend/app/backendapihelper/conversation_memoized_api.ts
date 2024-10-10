@@ -1,24 +1,20 @@
-import {
-	addMessageToConversation as apiAddMessageToConversation,
-	deleteConversation as apiDeleteConversation,
-	getConversation as apiGetConversation,
-	saveConversation as apiSaveConversation,
-} from '@/backendapibase/conversation';
+import { conversationStoreAPI } from '@/backendapibase';
+
 import { Conversation, ConversationItem } from '@/models/conversationmodel';
 import { ConversationCache } from './conversation_cache';
 
 const conversationCache = new ConversationCache();
 
-export const getConversation = apiGetConversation;
-export const addMessageToConversation = apiAddMessageToConversation;
+export const getConversation = conversationStoreAPI.getConversation;
+export const addMessageToConversation = conversationStoreAPI.addMessageToConversation;
 
 export async function saveConversation(conversation: Conversation): Promise<void> {
-	await apiSaveConversation(conversation);
+	await conversationStoreAPI.saveConversation(conversation);
 	conversationCache.updateConversationCache(conversation.id, conversation.title, 'update');
 }
 
 export async function deleteConversation(id: string, title: string): Promise<void> {
-	await apiDeleteConversation(id, title);
+	await conversationStoreAPI.deleteConversation(id, title);
 	conversationCache.updateConversationCache(id, title, 'delete');
 }
 

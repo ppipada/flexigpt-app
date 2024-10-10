@@ -1,5 +1,4 @@
 'use client';
-import { setLogger } from '@/backendapibase/backend';
 import { loadProviderSettings } from '@/backendapihelper/load_settings';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -8,7 +7,7 @@ import { useEffect } from 'react';
 export default function Home() {
 	useEffect(() => {
 		const handleDOMContentLoaded = () => {
-			setLogger();
+			// setLogger();
 			loadProviderSettings();
 		};
 		if (document.readyState === 'loading') {

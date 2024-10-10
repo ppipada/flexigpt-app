@@ -1,7 +1,7 @@
 import { PathLike } from 'node:fs';
 import { SecureJSONFileDB, SecureSchema } from 'securejsondb';
 import { defaultSettingsData, sensitiveKeys } from './consts';
-import { ISettingsAPI, SettingsSchema } from './types';
+import { ISettingStoreAPI, SettingsSchema } from './types';
 
 export type SecureSettingsSchema = SettingsSchema & SecureSchema;
 
@@ -10,7 +10,7 @@ export const defaultSecureSettingsData: SecureSettingsSchema = {
 	_sensitiveKeys: sensitiveKeys,
 };
 
-export class SettingsStore implements ISettingsAPI {
+export class SettingsStore implements ISettingStoreAPI {
 	private db: SecureJSONFileDB<SecureSettingsSchema>;
 
 	constructor(filename: PathLike) {

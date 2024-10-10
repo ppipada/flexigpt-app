@@ -1,4 +1,4 @@
-import { getConfigurationInfo } from '@/backendapibase/aiprovider';
+import { providerSetAPI } from '@/backendapibase';
 import { ModelInfo, ModelName, ProviderInfo, ProviderName } from '@/models/aiprovidermodel';
 import React, {
 	ChangeEvent,
@@ -35,7 +35,7 @@ export interface ChatInputFieldHandle {
 }
 
 const getOptions = async () => {
-	const configInfo = await getConfigurationInfo();
+	const configInfo = await providerSetAPI.getConfigurationInfo();
 	// log.info(JSON.stringify(configInfo, null, 2));
 	let defaultOption: ModelOption | undefined;
 	const inputModels: ModelOption[] = [];

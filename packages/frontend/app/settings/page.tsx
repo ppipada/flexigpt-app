@@ -1,11 +1,9 @@
 'use client';
 
-import { setDefaultProvider } from '@/backendapibase/aiprovider';
-import { setSetting } from '@/backendapibase/settings';
+import { log, providerSetAPI, settingstoreAPI } from '@/backendapibase';
 import { loadProviderSettings, updateProviderAISettings } from '@/backendapihelper/load_settings';
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
-import { log } from '@/logger';
 import { ALL_AI_PROVIDERS, ModelName, ProviderName } from '@/models/aiprovidermodel';
 import { AISetting } from '@/models/settingmodel';
 import AISettingsCard from '@/settings/ai_settings';
@@ -45,9 +43,9 @@ const SettingsPage: FC = () => {
 
 	const handleDefaultProviderChange = (value: ProviderName) => {
 		setComponentDefaultProvider(value);
-		setDefaultProvider(value);
+		providerSetAPI.setDefaultProvider(value);
 		log.debug('Set a new default provider', value);
-		setSetting('app.defaultProvider', value);
+		settingstoreAPI.setSetting('app.defaultProvider', value);
 	};
 
 	const handleAISettingsChange = (provider: keyof typeof aiSettings, key: string, value: any) => {
@@ -65,7 +63,7 @@ const SettingsPage: FC = () => {
 	};
 
 	const handleSaveAISettings = async (provider: keyof typeof aiSettings, key: string, value: any) => {
-		await setSetting(`${provider}.${key}`, value);
+		await settingstoreAPI.setSetting(`${provider}.${key}`, value);
 		updateProviderAISettings(provider as ProviderName, aiSettings[provider]);
 	};
 

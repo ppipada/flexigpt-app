@@ -21,7 +21,7 @@ export type SettingsSchema = AISettingsSchema & {
 	};
 };
 
-export interface ISettingsAPI {
+export interface ISettingStoreAPI {
 	getAllSettings: () => Promise<SettingsSchema>;
 	setSetting: (key: string, value: any) => Promise<void>;
 }

@@ -1,6 +1,6 @@
 import { basename } from 'node:path';
 import { CollectionMonthPartitioned, PATHORDER_DESC } from 'securejsondb';
-import { ConversationItem, ConversationMessage, IConversationAPI } from './conversation_types';
+import { ConversationItem, ConversationMessage, IConversationStoreAPI } from './conversation_types';
 // import { getSampleConversations } from './message_samples';
 import { Conversation } from './store_types';
 
@@ -30,7 +30,7 @@ export function getDateFromUUIDv7(uuid: string): Date {
 	return new Date(Number(timestampMs));
 }
 
-export class ConversationCollection implements IConversationAPI {
+export class ConversationCollection implements IConversationStoreAPI {
 	private partitionedCollection: CollectionMonthPartitioned<Conversation>;
 
 	constructor(baseDir: string) {

@@ -26,7 +26,7 @@ export type Conversation = ConversationItem & {
 	messages: ConversationMessage[];
 };
 
-export interface IConversationAPI {
+export interface IConversationStoreAPI {
 	saveConversation: (conversation: Conversation) => Promise<void>;
 	deleteConversation: (id: string, title: string) => Promise<void>;
 	getConversation: (id: string, title: string) => Promise<Conversation | null>;

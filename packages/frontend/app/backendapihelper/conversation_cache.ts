@@ -1,7 +1,6 @@
-import { listConversations as apiListConversations } from '@/backendapibase/conversation';
+import { conversationStoreAPI, log } from '@/backendapibase';
 import { ConversationItem } from '@/models/conversationmodel';
 
-import { log } from '@/logger';
 import { parse } from 'uuid';
 
 export function getDateFromUUIDv7(uuid: string): Date {
@@ -65,7 +64,7 @@ export class ConversationCache {
 		let token: string | undefined = undefined;
 
 		do {
-			const response = await apiListConversations(token);
+			const response = await conversationStoreAPI.listConversations(token);
 			allConversations = allConversations.concat(response.conversations);
 			token = response.nextToken;
 		} while (token);

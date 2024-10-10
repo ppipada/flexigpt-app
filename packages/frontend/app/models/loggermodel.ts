@@ -24,37 +24,3 @@ export const consoleLogger: ILogger = {
 	debug: (...args: unknown[]) => console.debug(...args),
 	warn: (...args: unknown[]) => console.warn(...args),
 };
-
-class Logger {
-	private logger;
-
-	constructor(l: ILogger) {
-		this.logger = l;
-	}
-
-	setLogger(logger: ILogger): void {
-		this.logger = logger;
-	}
-
-	log(...args: unknown[]): void {
-		this.logger.log(...args);
-	}
-
-	error(...args: unknown[]): void {
-		this.logger.error(...args);
-	}
-
-	info(...args: unknown[]): void {
-		this.logger.info(...args);
-	}
-
-	debug(...args: unknown[]): void {
-		this.logger.debug(...args);
-	}
-
-	warn(...args: unknown[]): void {
-		this.logger.warn(...args);
-	}
-}
-
-export const log = new Logger(consoleLogger);
