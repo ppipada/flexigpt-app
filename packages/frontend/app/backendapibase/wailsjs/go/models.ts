@@ -20,6 +20,102 @@ export namespace spec {
 	        this.additionalSettings = source["additionalSettings"];
 	    }
 	}
+	export class APIResponseDetails {
+	    data: any;
+	    status: number;
+	    headers: {[key: string]: any};
+	    requestDetails?: APIRequestDetails;
+	
+	    static createFrom(source: any = {}) {
+	        return new APIResponseDetails(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.data = source["data"];
+	        this.status = source["status"];
+	        this.headers = source["headers"];
+	        this.requestDetails = this.convertValues(source["requestDetails"], APIRequestDetails);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class APIRequestDetails {
+	    url?: string;
+	    method?: string;
+	    headers?: {[key: string]: any};
+	    params?: {[key: string]: any};
+	    data?: any;
+	    timeout?: number;
+	    curlCommand?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new APIRequestDetails(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	        this.method = source["method"];
+	        this.headers = source["headers"];
+	        this.params = source["params"];
+	        this.data = source["data"];
+	        this.timeout = source["timeout"];
+	        this.curlCommand = source["curlCommand"];
+	    }
+	}
+	export class APIErrorDetails {
+	    message: string;
+	    requestDetails?: APIRequestDetails;
+	    responseDetails?: APIResponseDetails;
+	
+	    static createFrom(source: any = {}) {
+	        return new APIErrorDetails(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.message = source["message"];
+	        this.requestDetails = this.convertValues(source["requestDetails"], APIRequestDetails);
+	        this.responseDetails = this.convertValues(source["responseDetails"], APIResponseDetails);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
 	export class AppSettings {
 	    defaultProvider: string;
 	
@@ -31,6 +127,165 @@ export namespace spec {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.defaultProvider = source["defaultProvider"];
 	    }
+	}
+	export class ChatCompletionFunctions {
+	    name: string;
+	    description?: string;
+	    parameters?: {[key: string]: any};
+	
+	    static createFrom(source: any = {}) {
+	        return new ChatCompletionFunctions(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.description = source["description"];
+	        this.parameters = source["parameters"];
+	    }
+	}
+	export class ChatCompletionRequestMessageFunctionCall {
+	    name?: string;
+	    arguments?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ChatCompletionRequestMessageFunctionCall(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.arguments = source["arguments"];
+	    }
+	}
+	export class ChatCompletionRequestMessage {
+	    role: string;
+	    content?: string;
+	    name?: string;
+	    functionCall?: ChatCompletionRequestMessageFunctionCall;
+	
+	    static createFrom(source: any = {}) {
+	        return new ChatCompletionRequestMessage(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.role = source["role"];
+	        this.content = source["content"];
+	        this.name = source["name"];
+	        this.functionCall = this.convertValues(source["functionCall"], ChatCompletionRequestMessageFunctionCall);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class CompletionRequest {
+	    model: string;
+	    messages?: ChatCompletionRequestMessage[];
+	    temperature: number;
+	    maxPromptLength: number;
+	    stream: boolean;
+	    systemPrompt?: string;
+	    maxOutputLength?: number;
+	    functions?: ChatCompletionFunctions[];
+	    functionCall?: any;
+	    suffix?: string;
+	    timeout?: number;
+	    additionalParameters?: {[key: string]: any};
+	
+	    static createFrom(source: any = {}) {
+	        return new CompletionRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.model = source["model"];
+	        this.messages = this.convertValues(source["messages"], ChatCompletionRequestMessage);
+	        this.temperature = source["temperature"];
+	        this.maxPromptLength = source["maxPromptLength"];
+	        this.stream = source["stream"];
+	        this.systemPrompt = source["systemPrompt"];
+	        this.maxOutputLength = source["maxOutputLength"];
+	        this.functions = this.convertValues(source["functions"], ChatCompletionFunctions);
+	        this.functionCall = source["functionCall"];
+	        this.suffix = source["suffix"];
+	        this.timeout = source["timeout"];
+	        this.additionalParameters = source["additionalParameters"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class CompletionResponse {
+	    requestDetails?: APIRequestDetails;
+	    responseDetails?: APIResponseDetails;
+	    errorDetails?: APIErrorDetails;
+	    respContent?: string;
+	    functionName?: string;
+	    functionArgs?: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new CompletionResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.requestDetails = this.convertValues(source["requestDetails"], APIRequestDetails);
+	        this.responseDetails = this.convertValues(source["responseDetails"], APIResponseDetails);
+	        this.errorDetails = this.convertValues(source["errorDetails"], APIErrorDetails);
+	        this.respContent = source["respContent"];
+	        this.functionName = source["functionName"];
+	        this.functionArgs = source["functionArgs"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class ConversationMessage {
 	    id: string;
@@ -182,6 +437,44 @@ export namespace spec {
 		    }
 		    return a;
 		}
+	}
+	export class ProviderInfo {
+	    name: string;
+	    apiKey: string;
+	    engine: string;
+	    defaultOrigin: string;
+	    defaultModel: string;
+	    additionalSettings: {[key: string]: any};
+	    timeout: number;
+	    apiKeyHeaderKey: string;
+	    defaultHeaders: {[key: string]: string};
+	    chatCompletionPathPrefix: string;
+	    defaultTemperature: number;
+	    modelPrefixes: string[];
+	    descriptions: {[key: string]: string};
+	    streamingSupport: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ProviderInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.apiKey = source["apiKey"];
+	        this.engine = source["engine"];
+	        this.defaultOrigin = source["defaultOrigin"];
+	        this.defaultModel = source["defaultModel"];
+	        this.additionalSettings = source["additionalSettings"];
+	        this.timeout = source["timeout"];
+	        this.apiKeyHeaderKey = source["apiKeyHeaderKey"];
+	        this.defaultHeaders = source["defaultHeaders"];
+	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
+	        this.defaultTemperature = source["defaultTemperature"];
+	        this.modelPrefixes = source["modelPrefixes"];
+	        this.descriptions = source["descriptions"];
+	        this.streamingSupport = source["streamingSupport"];
+	    }
 	}
 	export class SettingsSchema {
 	    aiSettings: {[key: string]: AISetting};

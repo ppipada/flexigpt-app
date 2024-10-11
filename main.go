@@ -22,6 +22,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/flexigpt/flexiui/pkg/aiprovider"
+	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 	"github.com/flexigpt/flexiui/pkg/conversationstore"
 	"github.com/flexigpt/flexiui/pkg/settingstore"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -104,8 +106,8 @@ type App struct {
 	ctx                  context.Context
 	settingStoreAPI      *settingstore.SettingStore
 	conversationStoreAPI *conversationstore.ConversationCollection
-	// providerSetManager  aiproviderSpec.ProviderSetAPI
-	configBasePath string
+	providerSetAPI       *aiprovider.ProviderSetAPI
+	configBasePath       string
 }
 
 // NewApp creates a new App application struct
@@ -113,6 +115,7 @@ func NewApp() *App {
 	return &App{
 		settingStoreAPI:      &settingstore.SettingStore{},
 		conversationStoreAPI: &conversationstore.ConversationCollection{},
+		providerSetAPI:       aiprovider.NewProviderSetAPI(spec.ProviderNameOpenAI),
 	}
 }
 
@@ -141,9 +144,6 @@ func (a *App) initManagers() {
 	if err != nil {
 		log.Panicf("Couldnt initialize conversation store at: %s. err:%v", conversationDir, err)
 	}
-	// Initialize provider set manager
-	// a.providerSetManager = NewProviderSet("OPENAI")
-
 }
 
 // startup is called at application startup
@@ -224,6 +224,7 @@ func main() {
 			app,
 			app.settingStoreAPI,
 			app.conversationStoreAPI,
+			app.providerSetAPI,
 		},
 		// Windows platform specific options
 		Windows: &windows.Options{

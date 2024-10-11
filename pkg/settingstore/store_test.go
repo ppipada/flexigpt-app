@@ -113,8 +113,8 @@ func TestSettingStore_SetSetting(t *testing.T) {
 		wantErr       bool
 		expectedError string
 	}{
-		{"SetSetting_ValidKey", "app.defaultProvider", "OPENAI", false, ""},
-		{"SetSetting_InvalidKey", "app.invalidKey", "OPENAI", true, "invalid key: app.invalidKey"},
+		{"SetSetting_ValidKey", "app.defaultProvider", "ProviderNameOpenAI", false, ""},
+		{"SetSetting_InvalidKey", "app.invalidKey", "ProviderNameOpenAI", true, "invalid key: app.invalidKey"},
 		{
 			"SetSetting_TypeMismatch",
 			"app.defaultProvider",

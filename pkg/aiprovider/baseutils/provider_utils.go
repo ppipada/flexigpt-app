@@ -1,9 +1,9 @@
-package aiprovider
+package baseutils
 
 import "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 
-// SetAttribute updates the ProviderInfo and APICaller based on the provided parameters.
-func SetAttribute(
+// SetProviderAttribute updates the ProviderInfo and APICaller based on the provided parameters.
+func SetProviderAttribute(
 	providerInfo *spec.ProviderInfo,
 	apiKey *string,
 	defaultModel *string,

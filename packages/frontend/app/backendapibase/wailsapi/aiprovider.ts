@@ -5,39 +5,40 @@ import {
 	CompletionResponse,
 	IProviderSetAPI,
 	ModelName,
-	openaiProviderInfo,
 	ProviderInfo,
 	ProviderName,
 } from '@/models/aiprovidermodel';
+import {
+	FetchCompletion,
+	GetCompletionRequest,
+	GetConfigurationInfo,
+	GetDefaultProvider,
+	GetProviderInfo,
+	SetDefaultProvider,
+	SetProviderAttribute,
+} from '../wailsjs/go/aiprovider/ProviderSetAPI';
+import { spec as wailsSpec } from '../wailsjs/go/models';
 
 export class WailsProviderSetAPI implements IProviderSetAPI {
-	// Implement the getDefaultProvider method
 	async getDefaultProvider(): Promise<ProviderName> {
-		// const provider = await window.ProviderSetAPI.getDefaultProvider();
-		// return provider;
-		return ProviderName.OPENAI;
+		const provider = await GetDefaultProvider();
+		return provider;
 	}
 
-	// Implement the setDefaultProvider method
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	async setDefaultProvider(provider: ProviderName): Promise<void> {
-		// await window.ProviderSetAPI.setDefaultProvider(provider);
+		await SetDefaultProvider(provider);
 	}
 
-	// Implement the getProviderInfo method
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	async getProviderInfo(provider: ProviderName): Promise<ProviderInfo> {
-		// return await window.ProviderSetAPI.getProviderInfo(provider);
-		return openaiProviderInfo;
+		const resp = await GetProviderInfo(provider);
+		return resp as ProviderInfo;
 	}
 
-	// Implement the getConfigurationInfo method
 	async getConfigurationInfo(): Promise<Record<string, any>> {
-		// return await window.ProviderSetAPI.getConfigurationInfo();
-		return { x: 'y' };
+		const resp = await GetConfigurationInfo();
+		return resp;
 	}
 
-	// Implement the getCompletionRequest method
 	async getCompletionRequest(
 		provider: ProviderName,
 		prompt: string,
@@ -45,22 +46,30 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		inputParams?: { [key: string]: any },
 		stream?: boolean
 	): Promise<CompletionRequest> {
-		// return await window.ProviderSetAPI.getCompletionRequest(provider, prompt, prevMessages, inputParams, stream);
-		const x: CompletionRequest = { model: 'x', temperature: 0, maxPromptLength: 2000, stream: false };
-		return x;
+		const msgs: wailsSpec.ChatCompletionRequestMessage[] = [];
+		if (prevMessages) {
+			for (const m of prevMessages) {
+				msgs.push(m as wailsSpec.ChatCompletionRequestMessage);
+			}
+		}
+		if (!inputParams) {
+			inputParams = {};
+		}
+		const resp = await GetCompletionRequest(provider, prompt, msgs, inputParams, stream || false);
+		return resp as CompletionRequest;
+		// const x: CompletionRequest = { model: 'x', temperature: 0, maxPromptLength: 2000, stream: false };
+		// return x;
 	}
 
-	// Implement the completion method
 	async completion(
 		provider: ProviderName,
 		input: CompletionRequest,
 		onStreamData?: (data: string) => Promise<void>
 	): Promise<CompletionResponse | undefined> {
-		// return await window.ProviderSetAPI.completion(provider, input, onStreamData);
-		return undefined;
+		const resp = await FetchCompletion(provider, input as wailsSpec.CompletionRequest, onStreamData);
+		return resp as CompletionResponse;
 	}
 
-	// Implement the setAttribute method
 	async setAttribute(
 		provider: ProviderName,
 		apiKey?: string,
@@ -68,6 +77,6 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		defaultTemperature?: number,
 		defaultOrigin?: string
 	): Promise<void> {
-		// await window.ProviderSetAPI.setAttribute(provider, apiKey, defaultModel, defaultTemperature, defaultOrigin);
+		await SetProviderAttribute(provider, apiKey, defaultModel, defaultTemperature, defaultOrigin);
 	}
 }

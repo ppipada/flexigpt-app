@@ -250,7 +250,7 @@ In this setup:
 	
 	` + "```python" + `
 	def get_openapi_completion_for_integration_sequence_test(intxt, value_type):
-		response = openai.Completion.create(
+		response = openai.FetchCompletion.create(
 				model="text-davinci-003",
 				prompt=prompts.generate_prompt_integration_sequence_test(intxt, value_type),
 				temperature=0,
@@ -373,7 +373,7 @@ May be I will see you again? Thanks a bunch!`,
 	
 	` + "```python" + `
 	def get_openapi_completion_for_integration_sequence_test(intxt, value_type):
-		response = openai.Completion.create(
+		response = openai.FetchCompletion.create(
 				model="text-davinci-003",
 				prompt=prompts.generate_prompt_integration_sequence_test(intxt, value_type),
 				temperature=0,
@@ -407,7 +407,7 @@ May be I will see you again? Thanks a bunch!`,
 // }
 
 const TempCodeString = `def get_openapi_completion_for_integration_sequence_test(intxt, value_type):
-response = openai.Completion.create(
+response = openai.FetchCompletion.create(
     model="text-davinci-003",
     prompt=prompts.generate_prompt_integration_sequence_test(intxt, value_type),
     temperature=0,

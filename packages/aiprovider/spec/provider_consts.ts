@@ -5,7 +5,7 @@ export const anthropicProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	name: ProviderName.ANTHROPIC,
 	apiKey: '',
 	engine: '',
-	defaultOrigin: 'https://api.anthropic.com',
+	defaultOrigin: 'https://api.anthropic.com/v1',
 	defaultModel: ModelName.CLAUDE_3_HAIKU,
 	additionalSettings: {},
 	timeout: 120,
@@ -15,7 +15,7 @@ export const anthropicProviderInfo: ProviderInfo = new ProviderInfoImpl({
 		accept: 'application/json',
 		'anthropic-version': '2023-06-01',
 	},
-	chatCompletionPathPrefix: '/v1/messages',
+	chatCompletionPathPrefix: '/messages',
 	defaultTemperature: 0.1,
 	streamingSupport: true,
 	descriptions: {
@@ -132,7 +132,7 @@ export const openaiProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	name: ProviderName.OPENAI,
 	apiKey: '',
 	engine: '',
-	defaultOrigin: 'https://api.openai.com',
+	defaultOrigin: 'https://api.openai.com/v1',
 	defaultModel: ModelName.GPT_4O_MINI,
 	additionalSettings: {},
 	timeout: 120,
@@ -140,7 +140,7 @@ export const openaiProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	defaultHeaders: {
 		'content-type': 'application/json',
 	},
-	chatCompletionPathPrefix: '/v1/chat/completions',
+	chatCompletionPathPrefix: '/chat/completions',
 	defaultTemperature: 0.1,
 	streamingSupport: true,
 	descriptions: {

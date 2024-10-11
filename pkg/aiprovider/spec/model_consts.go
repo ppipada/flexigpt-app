@@ -4,7 +4,7 @@ var AnthropicModels = map[ModelName]ModelInfo{
 	CLAUDE_3_5_SONNET: {
 		Name:               CLAUDE_3_5_SONNET,
 		DisplayName:        "Claude 3.5 Sonnet",
-		Provider:           ANTHROPIC,
+		Provider:           ProviderNameAnthropic,
 		MaxPromptLength:    4096,
 		MaxOutputLength:    4096,
 		DefaultTemperature: 0.1,
@@ -12,7 +12,7 @@ var AnthropicModels = map[ModelName]ModelInfo{
 	CLAUDE_3_OPUS: {
 		Name:               CLAUDE_3_OPUS,
 		DisplayName:        "Claude 3 Opus",
-		Provider:           ANTHROPIC,
+		Provider:           ProviderNameAnthropic,
 		MaxPromptLength:    4096,
 		MaxOutputLength:    4096,
 		DefaultTemperature: 0.1,
@@ -20,7 +20,7 @@ var AnthropicModels = map[ModelName]ModelInfo{
 	CLAUDE_3_SONNET: {
 		Name:               CLAUDE_3_SONNET,
 		DisplayName:        "Claude 3 Sonnet",
-		Provider:           ANTHROPIC,
+		Provider:           ProviderNameAnthropic,
 		MaxPromptLength:    4096,
 		MaxOutputLength:    4096,
 		DefaultTemperature: 0.1,
@@ -28,7 +28,7 @@ var AnthropicModels = map[ModelName]ModelInfo{
 	CLAUDE_3_HAIKU: {
 		Name:               CLAUDE_3_HAIKU,
 		DisplayName:        "Claude 3 Haiku",
-		Provider:           ANTHROPIC,
+		Provider:           ProviderNameAnthropic,
 		MaxPromptLength:    4096,
 		MaxOutputLength:    4096,
 		DefaultTemperature: 0.1,
@@ -39,7 +39,7 @@ var GoogleModels = map[ModelName]ModelInfo{
 	GEMINI_1_5_FLASH: {
 		Name:               GEMINI_1_5_FLASH,
 		DisplayName:        "Google Gemini 1.5 Flash",
-		Provider:           GOOGLE,
+		Provider:           ProviderNameGoogle,
 		MaxPromptLength:    4096,
 		MaxOutputLength:    8192,
 		DefaultTemperature: 0.1,
@@ -47,7 +47,7 @@ var GoogleModels = map[ModelName]ModelInfo{
 	GEMINI_1_5_PRO: {
 		Name:               GEMINI_1_5_PRO,
 		DisplayName:        "Google Gemini 1.5 Pro",
-		Provider:           GOOGLE,
+		Provider:           ProviderNameGoogle,
 		MaxPromptLength:    4096,
 		MaxOutputLength:    8192,
 		DefaultTemperature: 0.1,
@@ -58,7 +58,7 @@ var HuggingfaceModels = map[ModelName]ModelInfo{
 	DEEPSEEK_CODER_1_3B_INSTRUCT: {
 		Name:               DEEPSEEK_CODER_1_3B_INSTRUCT,
 		DisplayName:        "HF Deepseek Coder 1.3b",
-		Provider:           HUGGINGFACE,
+		Provider:           ProviderNameHuggingFace,
 		MaxPromptLength:    4096,
 		MaxOutputLength:    4096,
 		DefaultTemperature: 0.1,
@@ -69,7 +69,7 @@ var LlamacppModels = map[ModelName]ModelInfo{
 	LLAMA_3: {
 		Name:               LLAMA_3,
 		DisplayName:        "Llama 3",
-		Provider:           LLAMACPP,
+		Provider:           ProviderNameLlamaCPP,
 		MaxPromptLength:    4096,
 		MaxOutputLength:    4096,
 		DefaultTemperature: 0.1,
@@ -77,7 +77,7 @@ var LlamacppModels = map[ModelName]ModelInfo{
 	LLAMA_3_1: {
 		Name:               LLAMA_3_1,
 		DisplayName:        "Llama 3.1",
-		Provider:           LLAMACPP,
+		Provider:           ProviderNameLlamaCPP,
 		MaxPromptLength:    4096,
 		MaxOutputLength:    4096,
 		DefaultTemperature: 0.1,
@@ -88,7 +88,7 @@ var OpenaiModels = map[ModelName]ModelInfo{
 	GPT_O1_PREVIEW: {
 		Name:               GPT_O1_PREVIEW,
 		DisplayName:        "OpenAI GPT o1 preview",
-		Provider:           OPENAI,
+		Provider:           ProviderNameOpenAI,
 		MaxPromptLength:    4096,
 		MaxOutputLength:    4096,
 		DefaultTemperature: 1,
@@ -96,7 +96,7 @@ var OpenaiModels = map[ModelName]ModelInfo{
 	GPT_O1_MINI: {
 		Name:               GPT_O1_MINI,
 		DisplayName:        "OpenAI GPT o1 mini",
-		Provider:           OPENAI,
+		Provider:           ProviderNameOpenAI,
 		MaxPromptLength:    4096,
 		MaxOutputLength:    4096,
 		DefaultTemperature: 1,
@@ -104,7 +104,7 @@ var OpenaiModels = map[ModelName]ModelInfo{
 	GPT_4O: {
 		Name:               GPT_4O,
 		DisplayName:        "OpenAI GPT 4o",
-		Provider:           OPENAI,
+		Provider:           ProviderNameOpenAI,
 		MaxPromptLength:    4096,
 		MaxOutputLength:    4096,
 		DefaultTemperature: 0.1,
@@ -112,7 +112,7 @@ var OpenaiModels = map[ModelName]ModelInfo{
 	GPT_4: {
 		Name:               GPT_4,
 		DisplayName:        "OpenAI GPT 4",
-		Provider:           OPENAI,
+		Provider:           ProviderNameOpenAI,
 		MaxPromptLength:    4096,
 		MaxOutputLength:    4096,
 		DefaultTemperature: 0.1,
@@ -120,7 +120,7 @@ var OpenaiModels = map[ModelName]ModelInfo{
 	GPT_3_5_TURBO: {
 		Name:               GPT_3_5_TURBO,
 		DisplayName:        "OpenAI GPT 3.5 turbo",
-		Provider:           OPENAI,
+		Provider:           ProviderNameOpenAI,
 		MaxPromptLength:    2400,
 		MaxOutputLength:    2400,
 		DefaultTemperature: 0.1,
@@ -128,7 +128,7 @@ var OpenaiModels = map[ModelName]ModelInfo{
 	GPT_4O_MINI: {
 		Name:               GPT_4O_MINI,
 		DisplayName:        "OpenAI GPT 4o mini",
-		Provider:           OPENAI,
+		Provider:           ProviderNameOpenAI,
 		MaxPromptLength:    4096,
 		MaxOutputLength:    4096,
 		DefaultTemperature: 0.1,

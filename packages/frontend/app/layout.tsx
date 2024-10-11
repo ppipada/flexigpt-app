@@ -20,15 +20,16 @@ export default function RootLayout({
 
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<head>
-				{isWailsPlatform && (
+			{isWailsPlatform && (
+				<head>
 					<>
 						<meta name="wails-options" content="noautoinject" />
 						<Script src="/wails/ipc.js" strategy="beforeInteractive" />
 						<Script src="/wails/runtime.js" strategy="beforeInteractive" />
 					</>
-				)}
-			</head>
+				</head>
+			)}
+
 			<body className={inter.className}>
 				<ThemeSwitchProvider>
 					<Sidebar>{children}</Sidebar>

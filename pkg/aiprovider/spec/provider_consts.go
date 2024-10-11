@@ -1,10 +1,10 @@
 package spec
 
 var AnthropicProviderInfo = ProviderInfo{
-	Name:               ANTHROPIC,
+	Name:               ProviderNameAnthropic,
 	ApiKey:             "",
 	Engine:             "",
-	DefaultOrigin:      "https://api.anthropic.com",
+	DefaultOrigin:      "https://api.anthropic.com/v1",
 	DefaultModel:       CLAUDE_3_HAIKU,
 	AdditionalSettings: map[string]interface{}{},
 	Timeout:            120,
@@ -14,7 +14,7 @@ var AnthropicProviderInfo = ProviderInfo{
 		"accept":            "application/json",
 		"anthropic-version": "2023-06-01",
 	},
-	ChatCompletionPathPrefix: "/v1/messages",
+	ChatCompletionPathPrefix: "/messages",
 	DefaultTemperature:       0.1,
 	StreamingSupport:         true,
 	Descriptions: map[string]string{
@@ -33,7 +33,7 @@ var AnthropicProviderInfo = ProviderInfo{
 }
 
 var GoogleProviderInfo = ProviderInfo{
-	Name:                     GOOGLE,
+	Name:                     ProviderNameGoogle,
 	ApiKey:                   "",
 	Engine:                   "",
 	DefaultOrigin:            "https://generativelanguage.googleapis.com",
@@ -61,7 +61,7 @@ var GoogleProviderInfo = ProviderInfo{
 }
 
 var HuggingfaceProviderInfo = ProviderInfo{
-	Name:                     HUGGINGFACE,
+	Name:                     ProviderNameHuggingFace,
 	ApiKey:                   "",
 	Engine:                   "",
 	DefaultOrigin:            "https://api-inference.huggingface.co",
@@ -96,7 +96,7 @@ var HuggingfaceProviderInfo = ProviderInfo{
 }
 
 var LlamacppProviderInfo = ProviderInfo{
-	Name:                     LLAMACPP,
+	Name:                     ProviderNameLlamaCPP,
 	ApiKey:                   "",
 	Engine:                   "",
 	DefaultOrigin:            "http://127.0.0.1:8080",
@@ -123,17 +123,17 @@ var LlamacppProviderInfo = ProviderInfo{
 	},
 }
 
-var OpenaiProviderInfo = ProviderInfo{
-	Name:                     OPENAI,
+var OpenAIProviderInfo = ProviderInfo{
+	Name:                     ProviderNameOpenAI,
 	ApiKey:                   "",
 	Engine:                   "",
-	DefaultOrigin:            "https://api.openai.com",
+	DefaultOrigin:            "https://api.openai.com/v1",
 	DefaultModel:             GPT_4O_MINI,
 	AdditionalSettings:       map[string]interface{}{},
 	Timeout:                  120,
 	ApiKeyHeaderKey:          "Authorization",
 	DefaultHeaders:           map[string]string{"content-type": "application/json"},
-	ChatCompletionPathPrefix: "/v1/chat/completions",
+	ChatCompletionPathPrefix: "/chat/completions",
 	DefaultTemperature:       0.1,
 	StreamingSupport:         true,
 	Descriptions: map[string]string{
@@ -152,9 +152,9 @@ var OpenaiProviderInfo = ProviderInfo{
 }
 
 var AllAIProviders = map[ProviderName]ProviderInfo{
-	ANTHROPIC:   AnthropicProviderInfo,
-	GOOGLE:      GoogleProviderInfo,
-	HUGGINGFACE: HuggingfaceProviderInfo,
-	LLAMACPP:    LlamacppProviderInfo,
-	OPENAI:      OpenaiProviderInfo,
+	ProviderNameAnthropic:   AnthropicProviderInfo,
+	ProviderNameGoogle:      GoogleProviderInfo,
+	ProviderNameHuggingFace: HuggingfaceProviderInfo,
+	ProviderNameLlamaCPP:    LlamacppProviderInfo,
+	ProviderNameOpenAI:      OpenAIProviderInfo,
 }

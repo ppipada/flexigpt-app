@@ -7,8 +7,15 @@ toolchain go1.22.2
 require (
 	github.com/adrg/xdg v0.5.0
 	github.com/google/uuid v1.6.0
+	github.com/tmc/langchaingo v0.1.12
 	github.com/wailsapp/wails/v2 v2.9.2
 	github.com/zalando/go-keyring v0.2.5
+)
+
+require (
+	github.com/dlclark/regexp2 v1.10.0 // indirect
+	github.com/fatih/color v1.17.0 // indirect
+	github.com/pkoukk/tiktoken-go v0.1.6 // indirect
 )
 
 require (

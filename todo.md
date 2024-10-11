@@ -136,7 +136,6 @@
 - [x] ability to discard previous message history in next call
 - [x] ability to choose provider and model and temperature in the chat itself.
 - [x] populate initial choices in input options
-- [ ] Error wrapper and unwrapper on electron main and base apis
 
 ## Wails migrate
 
@@ -151,10 +150,10 @@
   - [x] wails main.go app integrations
   - [x] Logger integration
 
-- [ ] Translate aiprovider to go. Try and use langchaingo directly
+- [x] Translate aiprovider to go. Try and use langchaingo directly
+- [ ] Implement streaming.
 - [ ] Get most consts through API
-
-- [ ] build/test
+- [ ] Integrate other AI providers
 
 ## Pushed out list
 
@@ -166,3 +165,4 @@
 - [ ] Electron: currently supported only via appimagelauncher. Better do snap I suppose, but explore later.
 - [ ] Electron: see about package distribution and updates
 - [ ] Agent screen: See if a jupyter notebook UI can be presented
+- [ ] Error wrapper and unwrapper on electron main and base apis

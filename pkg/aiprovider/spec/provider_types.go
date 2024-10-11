@@ -1,14 +1,16 @@
 package spec
 
+import "context"
+
 // ProviderName is an enumeration of provider names.
 type ProviderName string
 
 const (
-	OPENAI      ProviderName = "openai"
-	ANTHROPIC   ProviderName = "anthropic"
-	GOOGLE      ProviderName = "google"
-	HUGGINGFACE ProviderName = "huggingface"
-	LLAMACPP    ProviderName = "llamacpp"
+	ProviderNameOpenAI      ProviderName = "openai"
+	ProviderNameAnthropic   ProviderName = "anthropic"
+	ProviderNameGoogle      ProviderName = "google"
+	ProviderNameHuggingFace ProviderName = "huggingface"
+	ProviderNameLlamaCPP    ProviderName = "llamacpp"
 )
 
 // ProviderInfo represents information about a provider.
@@ -42,22 +44,25 @@ func (p *ProviderInfo) IsConfigured() bool {
 }
 
 type CompletionProvider interface {
-	GetProviderInfo() (*ProviderInfo, error)
+	GetProviderInfo(ctx context.Context) (*ProviderInfo, error)
 	GetCompletionRequest(
+		ctx context.Context,
 		prompt string,
 		prevMessages []ChatCompletionRequestMessage,
 		inputParams map[string]interface{},
 		stream bool,
 	) (*CompletionRequest, error)
-	Completion(
+	FetchCompletion(
+		ctx context.Context,
 		input CompletionRequest,
 		onStreamData func(data string) error,
 	) (*CompletionResponse, error)
-	SetAttribute(
+	SetProviderAttribute(
+		ctx context.Context,
 		apiKey *string,
 		defaultModel *string,
 		defaultTemperature *float64,
 		defaultOrigin *string,
 	) error
-	IsConfigured() bool
+	IsConfigured(ctx context.Context) bool
 }

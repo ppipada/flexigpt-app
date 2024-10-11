@@ -1,4 +1,4 @@
-package aiprovider
+package baseutils
 
 import "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 
@@ -8,7 +8,7 @@ func GetCompletionRequest(
 	prevMessages []spec.ChatCompletionRequestMessage,
 	inputParams map[string]interface{},
 	stream bool,
-	providerInfo spec.ProviderInfo,
+	providerInfo *spec.ProviderInfo,
 ) spec.CompletionRequest {
 	defaultModel := providerInfo.DefaultModel
 	defaultTemperature := providerInfo.DefaultTemperature
