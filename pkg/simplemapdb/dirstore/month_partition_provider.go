@@ -19,7 +19,12 @@ func (p *MonthBasedPartitionProvider) GetPartitionDir(filename string) string {
 }
 
 // ListPartitions returns a paginated and sorted list of partition directories in the base directory.
-func (p *MonthBasedPartitionProvider) ListPartitions(baseDir string, sortOrder string, pageToken string, pageSize int) ([]string, string, error) {
+func (p *MonthBasedPartitionProvider) ListPartitions(
+	baseDir string,
+	sortOrder string,
+	pageToken string,
+	pageSize int,
+) ([]string, string, error) {
 	entries, err := os.ReadDir(baseDir)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to read base directory: %v", err)

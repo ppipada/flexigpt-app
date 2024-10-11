@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ModelInfo, ModelName, ProviderInfo, ProviderInfoImpl, ProviderName } from './provider_types';
 
 export const anthropicProviderInfo: ProviderInfo = new ProviderInfoImpl({

@@ -19,10 +19,13 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 	}
 
 	// Set additional data
-	err = store.SetSetting("aiSettings.openai.additionalSettings", map[string]interface{}{"internal": 1, "new": [][]string{
-		{"1", "2"},
-		{"1"},
-	}})
+	err = store.SetSetting(
+		"aiSettings.openai.additionalSettings",
+		map[string]interface{}{"internal": 1, "new": [][]string{
+			{"1", "2"},
+			{"1"},
+		}},
+	)
 	if err != nil {
 		t.Fatalf("Failed to set additional setting: %v", err)
 	}
@@ -71,7 +74,11 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 				return
 			}
 			if err != nil && !strings.Contains(err.Error(), tt.expectedError) {
-				t.Errorf("GetAllSettings() error = %v, expected error containing %v", err, tt.expectedError)
+				t.Errorf(
+					"GetAllSettings() error = %v, expected error containing %v",
+					err,
+					tt.expectedError,
+				)
 			}
 
 			if tt.expectedError == "" && got == nil {
@@ -82,7 +89,9 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 				// Verify additional settings
 				additionalSettings := got.AISettings["openai"].AdditionalSettings
 				if customVal, ok := additionalSettings["new"]; !ok || customVal == nil {
-					t.Errorf("GetAllSettings() additional setting mismatch, expected 'new' setting to be present")
+					t.Errorf(
+						"GetAllSettings() additional setting mismatch, expected 'new' setting to be present",
+					)
 				}
 
 			}
@@ -106,7 +115,13 @@ func TestSettingStore_SetSetting(t *testing.T) {
 	}{
 		{"SetSetting_ValidKey", "app.defaultProvider", "OPENAI", false, ""},
 		{"SetSetting_InvalidKey", "app.invalidKey", "OPENAI", true, "invalid key: app.invalidKey"},
-		{"SetSetting_TypeMismatch", "app.defaultProvider", 123, true, "type mismatch for key \"app.defaultProvider\": expected string, got int"},
+		{
+			"SetSetting_TypeMismatch",
+			"app.defaultProvider",
+			123,
+			true,
+			"type mismatch for key \"app.defaultProvider\": expected string, got int",
+		},
 		{"SetSetting_SensitiveKey", "aiSettings.openai.apiKey", "newApiKey", false, ""},
 	}
 

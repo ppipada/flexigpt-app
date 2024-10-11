@@ -87,7 +87,12 @@ func (s *SettingStore) SetSetting(dotSeparatedKey string, value interface{}) err
 	valueType := fmt.Sprintf("%T", value)
 
 	if expectedType != valueType {
-		return fmt.Errorf("type mismatch for key \"%s\": expected %s, got %s", dotSeparatedKey, expectedType, valueType)
+		return fmt.Errorf(
+			"type mismatch for key \"%s\": expected %s, got %s",
+			dotSeparatedKey,
+			expectedType,
+			valueType,
+		)
 	}
 
 	return s.store.SetKey(dotSeparatedKey, value)

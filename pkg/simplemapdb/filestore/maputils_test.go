@@ -1003,7 +1003,11 @@ func TestNavigateToParentMap(t *testing.T) {
 			}
 			// Compare gotLastKey with expected last key
 			if gotLastKey != tt.wantLastKey {
-				t.Errorf("navigateToParentMap() gotLastKey = %v, want %v", gotLastKey, tt.wantLastKey)
+				t.Errorf(
+					"navigateToParentMap() gotLastKey = %v, want %v",
+					gotLastKey,
+					tt.wantLastKey,
+				)
 			}
 		})
 	}

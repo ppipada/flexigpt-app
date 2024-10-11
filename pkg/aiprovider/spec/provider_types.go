@@ -36,3 +36,28 @@ func (p *ProviderInfo) GetDescription(key string) string {
 	}
 	return ""
 }
+
+func (p *ProviderInfo) IsConfigured() bool {
+	return p.ApiKey != ""
+}
+
+type CompletionProvider interface {
+	GetProviderInfo() (*ProviderInfo, error)
+	GetCompletionRequest(
+		prompt string,
+		prevMessages []ChatCompletionRequestMessage,
+		inputParams map[string]interface{},
+		stream bool,
+	) (*CompletionRequest, error)
+	Completion(
+		input CompletionRequest,
+		onStreamData func(data string) error,
+	) (*CompletionResponse, error)
+	SetAttribute(
+		apiKey *string,
+		defaultModel *string,
+		defaultTemperature *float64,
+		defaultOrigin *string,
+	) error
+	IsConfigured() bool
+}

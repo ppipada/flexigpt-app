@@ -21,6 +21,7 @@ import { OpenAIAPI } from './openai';
 
 export class ProviderSet implements IProviderSetAPI {
 	private defaultProvider: ProviderName;
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	private providers: { [key in ProviderName]: CompletionProvider };
 
 	constructor(defaultProvider: ProviderName) {

@@ -18,7 +18,11 @@ func TestInitConversation(t *testing.T) {
 	}{
 		{"Empty title", "", "New Conversation"},
 		{"Short title", "Chat with AI", "Chat with AI"},
-		{"Long title", "This is a very long title that should be truncated to fit within the maximum allowed length of 64 characters", "This is a very long title that should be truncated to fit within"},
+		{
+			"Long title",
+			"This is a very long title that should be truncated to fit within the maximum allowed length of 64 characters",
+			"This is a very long title that should be truncated to fit within",
+		},
 	}
 
 	for _, tt := range tests {
@@ -31,7 +35,10 @@ func TestInitConversation(t *testing.T) {
 				t.Errorf("Expected title %s, got %s", tt.expectedTitle, convo.Title)
 			}
 			if len(convo.Title) > 64 {
-				t.Errorf("Expected title to be truncated to 64 characters, got %d", len(convo.Title))
+				t.Errorf(
+					"Expected title to be truncated to 64 characters, got %d",
+					len(convo.Title),
+				)
 			}
 			if _, err := uuid.Parse(convo.ID); err != nil {
 				t.Errorf("Expected valid UUID, got error: %v", err)
@@ -108,7 +115,8 @@ func TestConversationCollection(t *testing.T) {
 					t.Fatalf("Failed to get conversation: %v", err)
 				}
 
-				if retrievedConvo.ID != tt.conversation.ID || retrievedConvo.Title != tt.conversation.Title {
+				if retrievedConvo.ID != tt.conversation.ID ||
+					retrievedConvo.Title != tt.conversation.Title {
 					t.Errorf("Retrieved conversation does not match saved conversation")
 				}
 			})
@@ -150,8 +158,20 @@ func TestConversationCollection(t *testing.T) {
 			message     spec.ConversationMessage
 			expectError bool
 		}{
-			{"Valid message", spec.ConversationMessage{ID: "msg1", Role: spec.ConversationRoleUser, Content: "Hello"}, false},
-			{"Empty content", spec.ConversationMessage{ID: "msg2", Role: spec.ConversationRoleUser, Content: ""}, false},
+			{
+				"Valid message",
+				spec.ConversationMessage{
+					ID:      "msg1",
+					Role:    spec.ConversationRoleUser,
+					Content: "Hello",
+				},
+				false,
+			},
+			{
+				"Empty content",
+				spec.ConversationMessage{ID: "msg2", Role: spec.ConversationRoleUser, Content: ""},
+				false,
+			},
 		}
 
 		for _, tt := range tests {
@@ -166,7 +186,8 @@ func TestConversationCollection(t *testing.T) {
 					t.Fatalf("Failed to get conversation: %v", err)
 				}
 
-				if len(retrievedConvo.Messages) == 0 || retrievedConvo.Messages[len(retrievedConvo.Messages)-1].Content != tt.message.Content {
+				if len(retrievedConvo.Messages) == 0 ||
+					retrievedConvo.Messages[len(retrievedConvo.Messages)-1].Content != tt.message.Content {
 					t.Errorf("Message not added correctly to conversation")
 				}
 			})

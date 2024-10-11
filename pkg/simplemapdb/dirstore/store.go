@@ -15,7 +15,12 @@ import (
 // PartitionProvider defines an interface for determining the partition directory for a file.
 type PartitionProvider interface {
 	GetPartitionDir(filename string) string
-	ListPartitions(baseDir string, sortOrder string, pageToken string, pageSize int) ([]string, string, error)
+	ListPartitions(
+		baseDir string,
+		sortOrder string,
+		pageToken string,
+		pageSize int,
+	) ([]string, string, error)
 }
 
 // MapDirectoryStore manages multiple MapFileStores within a directory.
@@ -43,7 +48,11 @@ func WithPartitionProvider(provider PartitionProvider) Option {
 }
 
 // NewMapDirectoryStore initializes a new MapDirectoryStore with the given base directory and options.
-func NewMapDirectoryStore(baseDir string, createIfNotExists bool, opts ...Option) (*MapDirectoryStore, error) {
+func NewMapDirectoryStore(
+	baseDir string,
+	createIfNotExists bool,
+	opts ...Option,
+) (*MapDirectoryStore, error) {
 	// Resolve the base directory path
 	baseDir, err := filepath.Abs(baseDir)
 	if err != nil {
@@ -90,11 +99,19 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]inter
 
 	// Ensure the partition directory exists
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
-		return fmt.Errorf("failed to create partition directory %s: %v", filepath.Dir(filePath), err)
+		return fmt.Errorf(
+			"failed to create partition directory %s: %v",
+			filepath.Dir(filePath),
+			err,
+		)
 	}
 
 	// Create or truncate the file
-	store, err := simplemapdbFileStore.NewMapFileStore(filePath, data, simplemapdbFileStore.WithCreateIfNotExists(true))
+	store, err := simplemapdbFileStore.NewMapFileStore(
+		filePath,
+		data,
+		simplemapdbFileStore.WithCreateIfNotExists(true),
+	)
 	if err != nil {
 		return fmt.Errorf("failed to create or truncate file %s: %v", filename, err)
 	}
@@ -108,7 +125,10 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]inter
 }
 
 // GetFileData returns the data from the specified file in the store.
-func (mds *MapDirectoryStore) GetFileData(filename string, forceFetch bool) (map[string]interface{}, error) {
+func (mds *MapDirectoryStore) GetFileData(
+	filename string,
+	forceFetch bool,
+) (map[string]interface{}, error) {
 	partitionDir := mds.PartitionProvider.GetPartitionDir(filename)
 	filePath := filepath.Join(mds.baseDir, partitionDir, filename)
 	store, err := simplemapdbFileStore.NewMapFileStore(filePath, map[string]interface{}{"k": "v"})
@@ -128,7 +148,9 @@ func (mds *MapDirectoryStore) DeleteFile(filename string) error {
 	return nil
 }
 
-func (mds *MapDirectoryStore) ListFiles(initialSortOrder, pageToken string) ([]string, string, error) {
+func (mds *MapDirectoryStore) ListFiles(
+	initialSortOrder, pageToken string,
+) ([]string, string, error) {
 	// Decode page token
 	var tokenData struct {
 		PartitionPageToken string
@@ -151,7 +173,12 @@ func (mds *MapDirectoryStore) ListFiles(initialSortOrder, pageToken string) ([]s
 	var filenames []string
 	for {
 		// Get a paginated list of partition directories
-		partitions, nextPartitionPageToken, err := mds.PartitionProvider.ListPartitions(mds.baseDir, tokenData.SortOrder, tokenData.PartitionPageToken, 1)
+		partitions, nextPartitionPageToken, err := mds.PartitionProvider.ListPartitions(
+			mds.baseDir,
+			tokenData.SortOrder,
+			tokenData.PartitionPageToken,
+			1,
+		)
 		if err != nil {
 			return nil, "", fmt.Errorf("failed to list partitions: %v", err)
 		}
@@ -163,7 +190,11 @@ func (mds *MapDirectoryStore) ListFiles(initialSortOrder, pageToken string) ([]s
 		partitionPath := filepath.Join(mds.baseDir, partitions[0])
 		files, err := os.ReadDir(partitionPath)
 		if err != nil {
-			return nil, "", fmt.Errorf("failed to read partition directory %s: %v", partitionPath, err)
+			return nil, "", fmt.Errorf(
+				"failed to read partition directory %s: %v",
+				partitionPath,
+				err,
+			)
 		}
 
 		// Collect file names

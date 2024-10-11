@@ -9,6 +9,11 @@ func (p *NoPartitionProvider) GetPartitionDir(filename string) string {
 }
 
 // ListPartitions returns a single partition representing the base directory.
-func (p *NoPartitionProvider) ListPartitions(baseDir string, sortOrder string, pageToken string, pageSize int) ([]string, string, error) {
+func (p *NoPartitionProvider) ListPartitions(
+	baseDir string,
+	sortOrder string,
+	pageToken string,
+	pageSize int,
+) ([]string, string, error) {
 	return []string{""}, "", nil
 }

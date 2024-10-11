@@ -27,7 +27,12 @@ def myFunc() {
 ` + "```" + `
 `
 
-func newTimePointer(year int, month time.Month, day, hour, min, sec, nsec int, loc *time.Location) *time.Time {
+func newTimePointer(
+	year int,
+	month time.Month,
+	day, hour, min, sec, nsec int,
+	loc *time.Location,
+) *time.Time {
 	t := time.Date(year, month, day, hour, min, sec, nsec, loc)
 	return &t
 }

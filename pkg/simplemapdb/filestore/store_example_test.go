@@ -41,7 +41,12 @@ func (op getKeyOperation) Execute(store *MapFileStore, t *testing.T) {
 		return
 	}
 	if !reflect.DeepEqual(val, op.expectedValue) {
-		t.Errorf("value for key %s does not match expected.\ngot: %v\nwant:%v", op.key, val, op.expectedValue)
+		t.Errorf(
+			"value for key %s does not match expected.\ngot: %v\nwant:%v",
+			op.key,
+			val,
+			op.expectedValue,
+		)
 	}
 }
 
@@ -55,8 +60,12 @@ func TestMapFileStore(t *testing.T) {
 		expectedFinalData map[string]interface{}
 	}{
 		{
-			name:        "test with per-key encoders",
-			initialData: map[string]interface{}{"foo": "hello", "bar": "world", "parent": map[string]interface{}{"child": "secret"}},
+			name: "test with per-key encoders",
+			initialData: map[string]interface{}{
+				"foo":    "hello",
+				"bar":    "world",
+				"parent": map[string]interface{}{"child": "secret"},
+			},
 			keyEncDecs: map[string]simplemapdbEncdec.EncoderDecoder{
 				// "foo":          encryptedStringValueEncoderDecoder{},
 				"foo":          reverseStringEncoderDecoder{},
@@ -149,18 +158,32 @@ func TestMapFileStore(t *testing.T) {
 
 				origStrVal, ok := originalVal.(string)
 				if !ok {
-					t.Errorf("expected string value at key %s in initial data, got %T", key, originalVal)
+					t.Errorf(
+						"expected string value at key %s in initial data, got %T",
+						key,
+						originalVal,
+					)
 					continue
 				}
 
 				expectedEncodedValue := reverseString(origStrVal)
 				if reversedValue != expectedEncodedValue {
-					t.Errorf("encoded value at key %s does not match expected reversed value.\ngot: %s\nwant: %s", key, reversedValue, expectedEncodedValue)
+					t.Errorf(
+						"encoded value at key %s does not match expected reversed value.\ngot: %s\nwant: %s",
+						key,
+						reversedValue,
+						expectedEncodedValue,
+					)
 				}
 			}
 
 			// Now, create a new store by reading from the file
-			newStore, err := NewMapFileStore(filename, tt.initialData, WithCreateIfNotExists(false), WithKeyEncoders(tt.keyEncDecs))
+			newStore, err := NewMapFileStore(
+				filename,
+				tt.initialData,
+				WithCreateIfNotExists(false),
+				WithKeyEncoders(tt.keyEncDecs),
+			)
 			if err != nil {
 				t.Fatalf("failed to create store from file: %v", err)
 			}
@@ -181,7 +204,11 @@ func TestMapFileStore(t *testing.T) {
 				t.Errorf("Failed to get data err: %v", err)
 			}
 			if !reflect.DeepEqual(finalData, tt.expectedFinalData) {
-				t.Errorf("final data does not match expected.\ngot: %v\nwant:%v", finalData, tt.expectedFinalData)
+				t.Errorf(
+					"final data does not match expected.\ngot: %v\nwant:%v",
+					finalData,
+					tt.expectedFinalData,
+				)
 			}
 
 			// Read raw data from file again
@@ -201,20 +228,32 @@ func TestMapFileStore(t *testing.T) {
 				keys := strings.Split(key, ".")
 				val, err := getValueAtPath(fileDataAfterOps, keys)
 				if err != nil {
-					t.Errorf("failed to get value at key %s in file data after operations: %v", key, err)
+					t.Errorf(
+						"failed to get value at key %s in file data after operations: %v",
+						key,
+						err,
+					)
 					continue
 				}
 
 				strVal, ok := val.(string)
 				if !ok {
-					t.Errorf("expected string value at key %s in file data after operations, got %T", key, val)
+					t.Errorf(
+						"expected string value at key %s in file data after operations, got %T",
+						key,
+						val,
+					)
 					continue
 				}
 
 				// The value should be a base64 encoded string
 				decodedBytes, err := base64.StdEncoding.DecodeString(strVal)
 				if err != nil {
-					t.Errorf("failed to base64-decode value at key %s after operations: %v", key, err)
+					t.Errorf(
+						"failed to base64-decode value at key %s after operations: %v",
+						key,
+						err,
+					)
 					continue
 				}
 
@@ -236,7 +275,12 @@ func TestMapFileStore(t *testing.T) {
 
 				expectedEncodedValue := reverseString(finalStrVal)
 				if reversedValue != expectedEncodedValue {
-					t.Errorf("encoded value at key %s after operations does not match expected reversed value.\ngot: %s\nwant: %s", key, reversedValue, expectedEncodedValue)
+					t.Errorf(
+						"encoded value at key %s after operations does not match expected reversed value.\ngot: %s\nwant: %s",
+						key,
+						reversedValue,
+						expectedEncodedValue,
+					)
 				}
 			}
 		})

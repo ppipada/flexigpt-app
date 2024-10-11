@@ -87,7 +87,10 @@ func TestDecodeInvalidData(t *testing.T) {
 			buffer := bytes.NewBufferString(tc.invalidInput)
 			err := encoderDecoder.Decode(buffer, &v)
 			if err == nil {
-				t.Errorf("Expected error when decoding invalid data '%s', but got none", tc.invalidInput)
+				t.Errorf(
+					"Expected error when decoding invalid data '%s', but got none",
+					tc.invalidInput,
+				)
 			}
 		})
 	}
@@ -138,7 +141,10 @@ func TestDecryptInvalidBase64(t *testing.T) {
 		t.Run("Invalid base64 input", func(t *testing.T) {
 			_, err := decryptString(input)
 			if err == nil {
-				t.Errorf("Expected error when decrypting invalid base64 input '%s', but got none", input)
+				t.Errorf(
+					"Expected error when decrypting invalid base64 input '%s', but got none",
+					input,
+				)
 			}
 		})
 	}
@@ -211,7 +217,9 @@ func TestEncryptDecryptConsistency(t *testing.T) {
 	}
 
 	if encrypted1 == encrypted2 {
-		t.Errorf("Expected encrypted outputs to differ due to different nonces, but they were the same")
+		t.Errorf(
+			"Expected encrypted outputs to differ due to different nonces, but they were the same",
+		)
 	}
 }
 
@@ -239,7 +247,11 @@ func TestDecodeWithInterface(t *testing.T) {
 		t.Errorf("Decoded value is not of type string")
 	}
 	if strValue != originalValue {
-		t.Errorf("Decoded value does not match the original. Got %q, want %q", strValue, originalValue)
+		t.Errorf(
+			"Decoded value does not match the original. Got %q, want %q",
+			strValue,
+			originalValue,
+		)
 	}
 }
 

@@ -87,7 +87,11 @@ func deepCopyValue(value interface{}) interface{} {
 // navigateToParentMap navigates to the parent map of the last key in the given path.
 // It returns the parent map, the last key, and any error encountered.
 // If createMissing is true, it creates any missing maps along the path.
-func navigateToParentMap(data interface{}, keys []string, createMissing bool) (map[string]interface{}, string, error) {
+func navigateToParentMap(
+	data interface{},
+	keys []string,
+	createMissing bool,
+) (map[string]interface{}, string, error) {
 	if len(keys) == 0 {
 		return nil, "", fmt.Errorf("empty path received")
 	}

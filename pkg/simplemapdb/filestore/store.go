@@ -58,7 +58,11 @@ func WithCreateIfNotExists(createIfNotExists bool) Option {
 
 // NewMapFileStore initializes a new MapFileStore.
 // If the file does not exist and createIfNotExists is false, it returns an error.
-func NewMapFileStore(filename string, defaultData map[string]interface{}, opts ...Option) (*MapFileStore, error) {
+func NewMapFileStore(
+	filename string,
+	defaultData map[string]interface{},
+	opts ...Option,
+) (*MapFileStore, error) {
 	store := &MapFileStore{
 		data:        make(map[string]interface{}),
 		defaultData: defaultData,
@@ -301,7 +305,11 @@ func (store *MapFileStore) DeleteKey(key string) error {
 }
 
 // encodeValueAtPath encodes the value at the specified path using encDec and stores the encoded value.
-func encodeValueAtPath(data interface{}, keys []string, encDec simplemapdbEncdec.EncoderDecoder) error {
+func encodeValueAtPath(
+	data interface{},
+	keys []string,
+	encDec simplemapdbEncdec.EncoderDecoder,
+) error {
 	parentMap, lastKey, err := navigateToParentMap(data, keys, false)
 	if err != nil {
 		if _, ok := err.(*KeyNotFoundError); ok {
@@ -335,7 +343,11 @@ func encodeValueAtPath(data interface{}, keys []string, encDec simplemapdbEncdec
 }
 
 // decodeValueAtPath decodes the value at the specified path using encDec and replaces it with the decoded value.
-func decodeValueAtPath(data interface{}, keys []string, encDec simplemapdbEncdec.EncoderDecoder) error {
+func decodeValueAtPath(
+	data interface{},
+	keys []string,
+	encDec simplemapdbEncdec.EncoderDecoder,
+) error {
 	parentMap, lastKey, err := navigateToParentMap(data, keys, false)
 	if err != nil {
 		return err
@@ -356,7 +368,11 @@ func decodeValueAtPath(data interface{}, keys []string, encDec simplemapdbEncdec
 	// Decode the base64 string to bytes
 	decodedBytes, err := base64.StdEncoding.DecodeString(strVal)
 	if err != nil {
-		return fmt.Errorf("failed to base64-decode value at key %s: %v", strings.Join(keys, "."), err)
+		return fmt.Errorf(
+			"failed to base64-decode value at key %s: %v",
+			strings.Join(keys, "."),
+			err,
+		)
 	}
 
 	// Decode bytes via encDec

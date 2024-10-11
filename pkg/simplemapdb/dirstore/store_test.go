@@ -62,7 +62,11 @@ func TestMapDirectoryStore(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			baseDir := t.TempDir()
-			mds, err := dirstore.NewMapDirectoryStore(baseDir, true, dirstore.WithPartitionProvider(tt.partitionProvider))
+			mds, err := dirstore.NewMapDirectoryStore(
+				baseDir,
+				true,
+				dirstore.WithPartitionProvider(tt.partitionProvider),
+			)
 			if err != nil {
 				t.Fatalf("failed to create MapDirectoryStore: %v", err)
 			}
@@ -114,7 +118,11 @@ func TestMapDirectoryStore(t *testing.T) {
 
 func TestListFiles(t *testing.T) {
 	baseDir := t.TempDir()
-	mds, err := dirstore.NewMapDirectoryStore(baseDir, true, dirstore.WithPartitionProvider(&dirstore.MonthBasedPartitionProvider{}))
+	mds, err := dirstore.NewMapDirectoryStore(
+		baseDir,
+		true,
+		dirstore.WithPartitionProvider(&dirstore.MonthBasedPartitionProvider{}),
+	)
 	if err != nil {
 		t.Fatalf("failed to create MapDirectoryStore: %v", err)
 	}
@@ -192,7 +200,11 @@ func TestListFiles(t *testing.T) {
 
 func TestDeleteFile(t *testing.T) {
 	baseDir := t.TempDir()
-	mds, err := dirstore.NewMapDirectoryStore(baseDir, true, dirstore.WithPartitionProvider(&dirstore.NoPartitionProvider{}))
+	mds, err := dirstore.NewMapDirectoryStore(
+		baseDir,
+		true,
+		dirstore.WithPartitionProvider(&dirstore.NoPartitionProvider{}),
+	)
 	if err != nil {
 		t.Fatalf("failed to create MapDirectoryStore: %v", err)
 	}
@@ -225,7 +237,11 @@ func TestDeleteFile(t *testing.T) {
 
 func TestListPartitionsPagination(t *testing.T) {
 	baseDir := t.TempDir()
-	mds, err := dirstore.NewMapDirectoryStore(baseDir, true, dirstore.WithPartitionProvider(&dirstore.MonthBasedPartitionProvider{}))
+	mds, err := dirstore.NewMapDirectoryStore(
+		baseDir,
+		true,
+		dirstore.WithPartitionProvider(&dirstore.MonthBasedPartitionProvider{}),
+	)
 	if err != nil {
 		t.Fatalf("failed to create MapDirectoryStore: %v", err)
 	}
@@ -275,7 +291,12 @@ func TestListPartitionsPagination(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			partitions, nextPageToken, err := mds.PartitionProvider.ListPartitions(baseDir, tt.sortOrder, tt.pageToken, tt.pageSize)
+			partitions, nextPageToken, err := mds.PartitionProvider.ListPartitions(
+				baseDir,
+				tt.sortOrder,
+				tt.pageToken,
+				tt.pageSize,
+			)
 			if tt.expectError {
 				if err == nil {
 					t.Fatalf("expected error but got none")
@@ -297,7 +318,12 @@ func TestListPartitionsPagination(t *testing.T) {
 
 			// Test pagination by checking the next page
 			if nextPageToken != "" {
-				partitions, _, err = mds.PartitionProvider.ListPartitions(baseDir, tt.sortOrder, nextPageToken, tt.pageSize)
+				partitions, _, err = mds.PartitionProvider.ListPartitions(
+					baseDir,
+					tt.sortOrder,
+					nextPageToken,
+					tt.pageSize,
+				)
 				if err != nil {
 					t.Fatalf("unexpected error on next page: %v", err)
 				}
@@ -351,9 +377,24 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 			sortOrder: "asc",
 			pageSize:  4,
 			expectedPages: [][]string{
-				{"202301/file1.json", "202301/file2.json", "202301/file3.json", "202301/file4.json"},
-				{"202301/file5.json", "202302/file1.json", "202302/file2.json", "202302/file3.json"},
-				{"202302/file4.json", "202302/file5.json", "202303/file1.json", "202303/file2.json"},
+				{
+					"202301/file1.json",
+					"202301/file2.json",
+					"202301/file3.json",
+					"202301/file4.json",
+				},
+				{
+					"202301/file5.json",
+					"202302/file1.json",
+					"202302/file2.json",
+					"202302/file3.json",
+				},
+				{
+					"202302/file4.json",
+					"202302/file5.json",
+					"202303/file1.json",
+					"202303/file2.json",
+				},
 				{"202303/file3.json", "202303/file4.json", "202303/file5.json"},
 			},
 			expectError: false,
@@ -363,9 +404,24 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 			sortOrder: "desc",
 			pageSize:  4,
 			expectedPages: [][]string{
-				{"202303/file5.json", "202303/file4.json", "202303/file3.json", "202303/file2.json"},
-				{"202303/file1.json", "202302/file5.json", "202302/file4.json", "202302/file3.json"},
-				{"202302/file2.json", "202302/file1.json", "202301/file5.json", "202301/file4.json"},
+				{
+					"202303/file5.json",
+					"202303/file4.json",
+					"202303/file3.json",
+					"202303/file2.json",
+				},
+				{
+					"202303/file1.json",
+					"202302/file5.json",
+					"202302/file4.json",
+					"202302/file3.json",
+				},
+				{
+					"202302/file2.json",
+					"202302/file1.json",
+					"202301/file5.json",
+					"202301/file4.json",
+				},
 				{"202301/file3.json", "202301/file2.json", "202301/file1.json"},
 			},
 			expectError: false,
@@ -375,9 +431,27 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 			sortOrder: "asc",
 			pageSize:  5,
 			expectedPages: [][]string{
-				{"202301/file1.json", "202301/file2.json", "202301/file3.json", "202301/file4.json", "202301/file5.json"},
-				{"202302/file1.json", "202302/file2.json", "202302/file3.json", "202302/file4.json", "202302/file5.json"},
-				{"202303/file1.json", "202303/file2.json", "202303/file3.json", "202303/file4.json", "202303/file5.json"},
+				{
+					"202301/file1.json",
+					"202301/file2.json",
+					"202301/file3.json",
+					"202301/file4.json",
+					"202301/file5.json",
+				},
+				{
+					"202302/file1.json",
+					"202302/file2.json",
+					"202302/file3.json",
+					"202302/file4.json",
+					"202302/file5.json",
+				},
+				{
+					"202303/file1.json",
+					"202303/file2.json",
+					"202303/file3.json",
+					"202303/file4.json",
+					"202303/file5.json",
+				},
 			},
 			expectError: false,
 		},
@@ -386,9 +460,24 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 			sortOrder: "asc",
 			pageSize:  4,
 			expectedPages: [][]string{
-				{"202301/file1.json", "202301/file2.json", "202301/file3.json", "202301/file4.json"},
-				{"202301/file5.json", "202302/file1.json", "202302/file2.json", "202302/file3.json"},
-				{"202302/file4.json", "202302/file5.json", "202303/file1.json", "202303/file2.json"},
+				{
+					"202301/file1.json",
+					"202301/file2.json",
+					"202301/file3.json",
+					"202301/file4.json",
+				},
+				{
+					"202301/file5.json",
+					"202302/file1.json",
+					"202302/file2.json",
+					"202302/file3.json",
+				},
+				{
+					"202302/file4.json",
+					"202302/file5.json",
+					"202303/file1.json",
+					"202303/file2.json",
+				},
 				{"202303/file3.json", "202303/file4.json", "202303/file5.json"},
 			},
 			expectError: false,
@@ -398,9 +487,24 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 			sortOrder: "asc",
 			pageSize:  4,
 			expectedPages: [][]string{
-				{"202301/file1.json", "202301/file2.json", "202301/file3.json", "202301/file4.json"},
-				{"202301/file5.json", "202302/file1.json", "202302/file2.json", "202302/file3.json"},
-				{"202302/file4.json", "202302/file5.json", "202303/file1.json", "202303/file2.json"},
+				{
+					"202301/file1.json",
+					"202301/file2.json",
+					"202301/file3.json",
+					"202301/file4.json",
+				},
+				{
+					"202301/file5.json",
+					"202302/file1.json",
+					"202302/file2.json",
+					"202302/file3.json",
+				},
+				{
+					"202302/file4.json",
+					"202302/file5.json",
+					"202303/file1.json",
+					"202303/file2.json",
+				},
 				{"202303/file3.json", "202303/file4.json", "202303/file5.json"},
 			},
 			expectError: false,
@@ -411,7 +515,12 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			pageToken := ""
 			for pageIndex, expectedFiles := range tt.expectedPages {
-				mds, err := dirstore.NewMapDirectoryStore(baseDir, true, dirstore.WithPartitionProvider(&dirstore.MonthBasedPartitionProvider{}), dirstore.WithPageSize(tt.pageSize))
+				mds, err := dirstore.NewMapDirectoryStore(
+					baseDir,
+					true,
+					dirstore.WithPartitionProvider(&dirstore.MonthBasedPartitionProvider{}),
+					dirstore.WithPageSize(tt.pageSize),
+				)
 				if err != nil {
 					t.Fatalf("failed to create MapDirectoryStore: %v", err)
 				}
@@ -427,12 +536,22 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 				}
 
 				if len(files) != len(expectedFiles) {
-					t.Fatalf("expected %d files on page %d, got %d", len(expectedFiles), pageIndex+1, len(files))
+					t.Fatalf(
+						"expected %d files on page %d, got %d",
+						len(expectedFiles),
+						pageIndex+1,
+						len(files),
+					)
 				}
 
 				for i, expectedFile := range expectedFiles {
 					if files[i] != expectedFile {
-						t.Fatalf("expected file %s on page %d, got %s", expectedFile, pageIndex+1, files[i])
+						t.Fatalf(
+							"expected file %s on page %d, got %s",
+							expectedFile,
+							pageIndex+1,
+							files[i],
+						)
 					}
 				}
 
@@ -447,7 +566,17 @@ func TestListFilesNoPartitionProvider(t *testing.T) {
 	fmt.Printf("BaseDir: %s\n", baseDir)
 
 	// Create some files in a single directory (no partitions)
-	files := []string{"file1.json", "file2.json", "file3.json", "file4.json", "file5.json", "file6.json", "file7.json", "file8.json", "file9.json"}
+	files := []string{
+		"file1.json",
+		"file2.json",
+		"file3.json",
+		"file4.json",
+		"file5.json",
+		"file6.json",
+		"file7.json",
+		"file8.json",
+		"file9.json",
+	}
 	testData := map[string]interface{}{"key": "value"}
 	err := os.MkdirAll(baseDir, os.ModePerm)
 	if err != nil {
@@ -501,7 +630,11 @@ func TestListFilesNoPartitionProvider(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			pageToken := ""
-			mds, err := dirstore.NewMapDirectoryStore(baseDir, true, dirstore.WithPageSize(tt.pageSize))
+			mds, err := dirstore.NewMapDirectoryStore(
+				baseDir,
+				true,
+				dirstore.WithPageSize(tt.pageSize),
+			)
 			if err != nil {
 				t.Fatalf("failed to create MapDirectoryStore: %v", err)
 			}
@@ -519,12 +652,22 @@ func TestListFilesNoPartitionProvider(t *testing.T) {
 				}
 
 				if len(files) != len(expectedFiles) {
-					t.Fatalf("expected %d files on page %d, got %d", len(expectedFiles), pageIndex+1, len(files))
+					t.Fatalf(
+						"expected %d files on page %d, got %d",
+						len(expectedFiles),
+						pageIndex+1,
+						len(files),
+					)
 				}
 
 				for i, expectedFile := range expectedFiles {
 					if files[i] != expectedFile {
-						t.Fatalf("expected file %s on page %d, got %s", expectedFile, pageIndex+1, files[i])
+						t.Fatalf(
+							"expected file %s on page %d, got %s",
+							expectedFile,
+							pageIndex+1,
+							files[i],
+						)
 					}
 				}
 

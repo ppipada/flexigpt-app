@@ -52,7 +52,11 @@ type ConversationCollection struct {
 
 func InitConversationCollection(convoCollection *ConversationCollection, baseDir string) error {
 	partitionProvider := &dirstore.MonthBasedPartitionProvider{}
-	store, err := dirstore.NewMapDirectoryStore(baseDir, true, dirstore.WithPartitionProvider(partitionProvider))
+	store, err := dirstore.NewMapDirectoryStore(
+		baseDir,
+		true,
+		dirstore.WithPartitionProvider(partitionProvider),
+	)
 	if err != nil {
 		return err
 	}
@@ -160,7 +164,10 @@ func (cc *ConversationCollection) ListConversations(token string) (*spec.ListRes
 	return resp, nil
 }
 
-func (cc *ConversationCollection) AddMessageToConversation(id, title string, newMessage spec.ConversationMessage) error {
+func (cc *ConversationCollection) AddMessageToConversation(
+	id, title string,
+	newMessage spec.ConversationMessage,
+) error {
 	conversation, err := cc.GetConversation(id, title)
 	if err != nil {
 		return err

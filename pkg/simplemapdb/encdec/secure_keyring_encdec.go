@@ -60,7 +60,10 @@ func (e EncryptedStringValueEncoderDecoder) Decode(r io.Reader, value interface{
 
 	// Otherwise, check if the underlying value is a string
 	if valueElem.Kind() != reflect.String {
-		return fmt.Errorf("value must be a pointer to a string or interface. Kind: %v", valueElem.Kind())
+		return fmt.Errorf(
+			"value must be a pointer to a string or interface. Kind: %v",
+			valueElem.Kind(),
+		)
 	}
 
 	// Set the decrypted data to the dereferenced value
