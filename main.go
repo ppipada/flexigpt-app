@@ -29,7 +29,6 @@ import (
 
 const AppTitle = "FlexiGptUI"
 
-//nolint:all
 //go:embed all:packages/frontend/build
 var assets embed.FS
 
