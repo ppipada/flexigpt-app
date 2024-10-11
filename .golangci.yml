@@ -1,3 +1,6 @@
 issues:
   exclude-files:
-    - ./main.go
+    - main.go
+run:
+  build-tags:
+    - codeanalysis
