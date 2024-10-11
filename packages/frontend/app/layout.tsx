@@ -24,8 +24,8 @@ export default function RootLayout({
 				{isWailsPlatform && (
 					<>
 						<meta name="wails-options" content="noautoinject" />
-						<Script src="/wails/ipc.js" />
-						<Script src="/wails/runtime.js" />
+						<Script src="/wails/ipc.js" strategy="beforeInteractive" />
+						<Script src="/wails/runtime.js" strategy="beforeInteractive" />
 					</>
 				)}
 			</head>

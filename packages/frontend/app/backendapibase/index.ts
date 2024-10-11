@@ -1,5 +1,3 @@
-'use client';
-
 import { IProviderSetAPI } from '@/models/aiprovidermodel';
 import { IBackendAPI } from '@/models/backendmodel';
 import { IConversationStoreAPI } from '@/models/conversationmodel';

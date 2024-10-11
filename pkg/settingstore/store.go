@@ -40,15 +40,25 @@ func InitSettingStore(settingStore *SettingStore, filename string) error {
 }
 
 func (s *SettingStore) GetAllSettings(forceFetch bool) (*spec.SettingsSchema, error) {
+	// fmt.Println("Called GetAllSettings")
 	data, err := s.store.GetAll(forceFetch)
 	if err != nil {
 		return nil, err
 	}
+	// ds, err := json.Marshal(data)
+	// if err == nil {
+	// 	fmt.Println("Settings Got data:", string(ds))
+	// }
 	var settings spec.SettingsSchema
 	// Assuming a function to map data to settings
 	if err := encdec.MapToStructWithJSONTags(data, &settings); err != nil {
 		return nil, err
 	}
+	// ds, err = json.Marshal(settings)
+	// if err == nil {
+	// 	fmt.Println("Settings returning data:", string(ds))
+	// }
+
 	return &settings, nil
 }
 
