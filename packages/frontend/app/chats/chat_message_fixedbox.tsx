@@ -1,6 +1,6 @@
 import { ChatMessageContent } from '@/chats/chat_message_content';
 import ChatMessageFooterArea from '@/chats/chat_message_footer';
-import { ConversationMessage } from 'conversationmodel';
+import { ConversationMessage } from '@/models/conversationmodel';
 import { FC } from 'react';
 
 interface StaticMessageProps {

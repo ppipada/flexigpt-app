@@ -1,4 +1,4 @@
-import { log } from 'logger';
+import { log } from '@/backendapibase';
 import { ButtonHTMLAttributes, FC, useState } from 'react';
 import { FiCheck, FiCopy } from 'react-icons/fi';
 

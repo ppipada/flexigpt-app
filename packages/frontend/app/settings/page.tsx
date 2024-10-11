@@ -1,15 +1,23 @@
 'use client';
 
-import { setDefaultProvider } from '@/api/base_aiproviderimpl';
-import { setSetting } from '@/api/base_settings';
-import { loadProviderSettings, updateProviderAISettings } from '@/api/load_settings';
+import { log, providerSetAPI, settingstoreAPI } from '@/backendapibase';
+import { loadProviderSettings, updateProviderAISettings } from '@/backendapihelper/load_settings';
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
+import { ALL_AI_PROVIDERS, ModelName, ProviderName } from '@/models/aiprovidermodel';
+import { AISetting } from '@/models/settingmodel';
 import AISettingsCard from '@/settings/ai_settings';
-import { ALL_AI_PROVIDERS, ProviderName } from 'aiprovidermodel';
-import { log } from 'logger';
 import { FC, useEffect, useState } from 'react';
-import { defaultAISettings } from 'settingmodel';
+
+const defaultAISettings: Record<string, AISetting> = {
+	[ProviderName.OPENAI]: {
+		apiKey: '',
+		defaultModel: ModelName.GPT_4O_MINI,
+		defaultOrigin: '',
+		defaultTemperature: 0.0,
+		additionalSettings: {},
+	},
+};
 
 const SettingsPage: FC = () => {
 	const [defaultProvider, setComponentDefaultProvider] = useState(ProviderName.OPENAI);
@@ -23,11 +31,11 @@ const SettingsPage: FC = () => {
 				setComponentDefaultProvider(defaultProvider);
 
 				setAISettings({
-					anthropic: settings[ProviderName.ANTHROPIC],
-					google: settings[ProviderName.GOOGLE],
-					huggingface: settings[ProviderName.HUGGINGFACE],
-					llamacpp: settings[ProviderName.LLAMACPP],
-					openai: settings[ProviderName.OPENAI],
+					anthropic: settings.aiSettings[ProviderName.ANTHROPIC],
+					google: settings.aiSettings[ProviderName.GOOGLE],
+					huggingface: settings.aiSettings[ProviderName.HUGGINGFACE],
+					llamacpp: settings.aiSettings[ProviderName.LLAMACPP],
+					openai: settings.aiSettings[ProviderName.OPENAI],
 				});
 			}
 		})();
@@ -35,9 +43,9 @@ const SettingsPage: FC = () => {
 
 	const handleDefaultProviderChange = (value: ProviderName) => {
 		setComponentDefaultProvider(value);
-		setDefaultProvider(value);
+		providerSetAPI.setDefaultProvider(value);
 		log.debug('Set a new default provider', value);
-		setSetting('app.defaultProvider', value);
+		settingstoreAPI.setSetting('app.defaultProvider', value);
 	};
 
 	const handleAISettingsChange = (provider: keyof typeof aiSettings, key: string, value: any) => {
@@ -55,7 +63,7 @@ const SettingsPage: FC = () => {
 	};
 
 	const handleSaveAISettings = async (provider: keyof typeof aiSettings, key: string, value: any) => {
-		await setSetting(`${provider}.${key}`, value);
+		await settingstoreAPI.setSetting(`aiSettings.${provider}.${key}`, value);
 		updateProviderAISettings(provider as ProviderName, aiSettings[provider]);
 	};
 
@@ -65,11 +73,13 @@ const SettingsPage: FC = () => {
 				app: {
 					defaultProvider,
 				},
-				[ProviderName.ANTHROPIC]: aiSettings.anthropic,
-				[ProviderName.GOOGLE]: aiSettings.google,
-				[ProviderName.HUGGINGFACE]: aiSettings.huggingface,
-				[ProviderName.LLAMACPP]: aiSettings.llamacpp,
-				[ProviderName.OPENAI]: aiSettings.openai,
+				aiSettings: {
+					[ProviderName.ANTHROPIC]: aiSettings.anthropic,
+					[ProviderName.GOOGLE]: aiSettings.google,
+					[ProviderName.HUGGINGFACE]: aiSettings.huggingface,
+					[ProviderName.LLAMACPP]: aiSettings.llamacpp,
+					[ProviderName.OPENAI]: aiSettings.openai,
+				},
 			},
 			null,
 			2

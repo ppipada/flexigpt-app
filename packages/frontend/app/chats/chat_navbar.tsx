@@ -1,6 +1,6 @@
 import { ChatSearch } from '@/chats/chat_search';
 import DownloadButton from '@/components/download_button';
-import { ConversationItem } from 'conversationmodel';
+import { ConversationItem } from '@/models/conversationmodel';
 import { FC } from 'react';
 import { FiPlus } from 'react-icons/fi';
 

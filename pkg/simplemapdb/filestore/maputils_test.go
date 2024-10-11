@@ -1,0 +1,1010 @@
+package filestore
+
+import (
+	"reflect"
+	"testing"
+)
+
+// TestGetValueAtPath tests the getValueAtPath function.
+func TestGetValueAtPath(t *testing.T) {
+	tests := []struct {
+		name      string
+		data      interface{}
+		keys      []string
+		wantValue interface{}
+		wantErr   bool
+	}{
+		{
+			name: "Happy path - valid nested keys",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": map[string]interface{}{
+						"c": "value1",
+					},
+				},
+			},
+			keys:      []string{"a", "b", "c"},
+			wantValue: "value1",
+			wantErr:   false,
+		},
+		{
+			name: "Error path - key not found",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": "value2",
+				},
+			},
+			keys:    []string{"a", "b", "c"},
+			wantErr: true,
+		},
+		{
+			name: "Error path - path not a map",
+			data: map[string]interface{}{
+				"a": "not a map",
+			},
+			keys:    []string{"a", "b"},
+			wantErr: true,
+		},
+		{
+			name: "Boundary case - empty keys",
+			data: map[string]interface{}{
+				"a": "value3",
+			},
+			keys:    []string{},
+			wantErr: true,
+		},
+		{
+			name:    "Boundary case - nil data",
+			data:    nil,
+			keys:    []string{"a"},
+			wantErr: true,
+		},
+		{
+			name: "Happy path - root level key",
+			data: map[string]interface{}{
+				"root": "rootValue",
+			},
+			keys:      []string{"root"},
+			wantValue: "rootValue",
+			wantErr:   false,
+		},
+		{
+			name: "Happy path - value is a map",
+			data: map[string]interface{}{
+				"mapKey": map[string]interface{}{
+					"innerKey": "innerValue",
+				},
+			},
+			keys: []string{"mapKey"},
+			wantValue: map[string]interface{}{
+				"innerKey": "innerValue",
+			},
+			wantErr: false,
+		},
+		{
+			name: "Error path - intermediate path is not a map",
+			data: map[string]interface{}{
+				"a": "stringValue",
+			},
+			keys:    []string{"a", "b"},
+			wantErr: true,
+		},
+		{
+			name: "Error path - key not present at the end",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": map[string]interface{}{},
+				},
+			},
+			keys:    []string{"a", "b", "c"},
+			wantErr: true,
+		},
+		{
+			name: "Happy path - value is a slice",
+			data: map[string]interface{}{
+				"list": []interface{}{"item1", "item2"},
+			},
+			keys:      []string{"list"},
+			wantValue: []interface{}{"item1", "item2"},
+			wantErr:   false,
+		},
+		{
+			name: "Boundary case - key is empty string",
+			data: map[string]interface{}{
+				"": "emptyKey",
+			},
+			keys:      []string{""},
+			wantValue: "emptyKey",
+			wantErr:   false,
+		},
+		{
+			name:    "Error path - data is not a map",
+			data:    "not a map",
+			keys:    []string{"a"},
+			wantErr: true,
+		},
+		{
+			name: "Happy path - deep nested key",
+			data: map[string]interface{}{
+				"level1": map[string]interface{}{
+					"level2": map[string]interface{}{
+						"level3": map[string]interface{}{
+							"level4": "deepValue",
+						},
+					},
+				},
+			},
+			keys:      []string{"level1", "level2", "level3", "level4"},
+			wantValue: "deepValue",
+			wantErr:   false,
+		},
+		{
+			name: "Error path - nil key in middle",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": "value",
+				},
+			},
+			keys:    []string{"a", "", "c"},
+			wantErr: true,
+		},
+		{
+			name: "Happy path - keys with special characters",
+			data: map[string]interface{}{
+				"a.b": map[string]interface{}{
+					"c.d": "specialValue",
+				},
+			},
+			keys:      []string{"a.b", "c.d"},
+			wantValue: "specialValue",
+			wantErr:   false,
+		},
+		{
+			name:    "Boundary case - data is empty map",
+			data:    map[string]interface{}{},
+			keys:    []string{"a"},
+			wantErr: true,
+		},
+		{
+			name:      "Boundary case - data is nil",
+			data:      nil,
+			keys:      []string{},
+			wantValue: nil,
+			wantErr:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotValue, err := getValueAtPath(tt.data, tt.keys)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getValueAtPath() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotValue, tt.wantValue) {
+				t.Errorf("getValueAtPath() = %v, want %v", gotValue, tt.wantValue)
+			}
+		})
+	}
+}
+
+// TestSetValueAtPath tests the setValueAtPath function.
+func TestSetValueAtPath(t *testing.T) {
+	tests := []struct {
+		name     string
+		data     interface{}
+		keys     []string
+		value    interface{}
+		wantData interface{}
+		wantErr  bool
+	}{
+		{
+			name: "Happy path - set new value at valid path",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": "oldValue",
+				},
+			},
+			keys:  []string{"a", "b"},
+			value: "newValue",
+			wantData: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": "newValue",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Happy path - create missing nested maps",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{},
+			},
+			keys:  []string{"a", "b", "c"},
+			value: "nestedValue",
+			wantData: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": map[string]interface{}{
+						"c": "nestedValue",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Error path - intermediate key is not a map",
+			data: map[string]interface{}{
+				"a": "not a map",
+			},
+			keys:    []string{"a", "b"},
+			value:   "value",
+			wantErr: true,
+		},
+		{
+			name: "Boundary case - empty keys",
+			data: map[string]interface{}{
+				"a": "value",
+			},
+			keys:     []string{},
+			value:    "newRootValue",
+			wantData: "newRootValue",
+			wantErr:  true,
+		},
+		{
+			name:    "Boundary case - data is nil",
+			data:    nil,
+			keys:    []string{"a"},
+			value:   "value",
+			wantErr: true,
+		},
+		{
+			name: "Happy path - set value at root",
+			data: map[string]interface{}{},
+			keys: []string{},
+			value: map[string]interface{}{
+				"new": "rootValue",
+			},
+			wantData: nil,
+			wantErr:  true,
+		},
+		{
+			name: "Happy path - overwrite existing map",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": "oldValue",
+				},
+			},
+			keys:  []string{"a"},
+			value: "newAValue",
+			wantData: map[string]interface{}{
+				"a": "newAValue",
+			},
+			wantErr: false,
+		},
+		{
+			name:    "Error path - data is not a map",
+			data:    "not a map",
+			keys:    []string{"a"},
+			value:   "value",
+			wantErr: true,
+		},
+		{
+			name:  "Happy path - keys with special characters",
+			data:  map[string]interface{}{},
+			keys:  []string{"key.with.dots"},
+			value: "specialKeyValue",
+			wantData: map[string]interface{}{
+				"key.with.dots": "specialKeyValue",
+			},
+			wantErr: false,
+		},
+		{
+			name: "Boundary case - set value at non-existent root",
+			data: nil,
+			keys: []string{},
+			value: map[string]interface{}{
+				"root": "rootValue",
+			},
+			wantData: nil,
+			wantErr:  true,
+		},
+		{
+			name: "Error path - intermediate path is nil",
+			data: map[string]interface{}{
+				"a": nil,
+			},
+			keys:    []string{"a", "b"},
+			value:   "value",
+			wantErr: true,
+		},
+		{
+			name: "Error path - empty string as key",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{},
+			},
+			keys:    []string{"a", ""},
+			value:   "emptyKey",
+			wantErr: true,
+		},
+		{
+			name: "Error path - cannot set value in a non-map and non-slice type",
+			data: map[string]interface{}{
+				"a": "stringValue",
+			},
+			keys:    []string{"a", "b"},
+			value:   "value",
+			wantErr: true,
+		},
+		{
+			name:  "Happy path - set value at deep nested key",
+			data:  map[string]interface{}{},
+			keys:  []string{"level1", "level2", "level3", "level4"},
+			value: "deepValue",
+			wantData: map[string]interface{}{
+				"level1": map[string]interface{}{
+					"level2": map[string]interface{}{
+						"level3": map[string]interface{}{
+							"level4": "deepValue",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Error path - nil key in middle",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{},
+			},
+			keys:    []string{"a", "", "c"},
+			value:   "value",
+			wantErr: true,
+		},
+		{
+			name:     "Boundary case - empty data and keys",
+			data:     nil,
+			keys:     []string{},
+			value:    "rootValue",
+			wantData: "rootValue",
+			wantErr:  true,
+		},
+		{
+			name:  "Happy path - set value in an empty map",
+			data:  map[string]interface{}{},
+			keys:  []string{"a"},
+			value: "value",
+			wantData: map[string]interface{}{
+				"a": "value",
+			},
+			wantErr: false,
+		},
+		{
+			name: "Error path - set value at invalid index in slice",
+			data: map[string]interface{}{
+				"list": []interface{}{"item1", "item2"},
+			},
+			keys:    []string{"list", "2"},
+			value:   "item3",
+			wantErr: true,
+		},
+		{
+			name:     "Error path - setting value with nil data and keys",
+			data:     nil,
+			keys:     nil,
+			value:    "value",
+			wantData: "value",
+			wantErr:  true,
+		},
+		{
+			name: "Error path - keys is nil",
+			data: map[string]interface{}{
+				"a": "value",
+			},
+			keys:     nil,
+			value:    "newRootValue",
+			wantData: "newRootValue",
+			wantErr:  true,
+		},
+		{
+			name:    "Error path - setting value in nil map",
+			data:    nil,
+			keys:    []string{"a", "b"},
+			value:   "value",
+			wantErr: true,
+		},
+		{
+			name: "Boundary case - setting nil value",
+			data: map[string]interface{}{
+				"a": "value",
+			},
+			keys:  []string{"a"},
+			value: nil,
+			wantData: map[string]interface{}{
+				"a": nil,
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		// Make a deep copy of the original data to avoid side effects
+		dataCopy := deepCopyValue(tt.data)
+		t.Run(tt.name, func(t *testing.T) {
+			err := setValueAtPath(dataCopy, tt.keys, tt.value)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("setValueAtPath() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr {
+				return
+			}
+
+			// Compare the modified data with the expected data
+			if !reflect.DeepEqual(dataCopy, tt.wantData) {
+				t.Errorf("After setValueAtPath(), data = %v, want %v", dataCopy, tt.wantData)
+			}
+		})
+	}
+}
+
+// TestDeleteValueAtPath tests the deleteValueAtPath function.
+func TestDeleteValueAtPath(t *testing.T) {
+	tests := []struct {
+		name     string
+		data     interface{}
+		keys     []string
+		wantData interface{}
+		wantErr  bool
+	}{
+		{
+			name: "Happy path - delete existing key",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": "value",
+				},
+			},
+			keys: []string{"a", "b"},
+			wantData: map[string]interface{}{
+				"a": map[string]interface{}{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Happy path - delete non-existent key",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": "value",
+				},
+			},
+			wantData: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": "value",
+				},
+			},
+			keys:    []string{"a", "c"},
+			wantErr: false,
+		},
+		{
+			name: "Error path - intermediate path is not a map",
+			data: map[string]interface{}{
+				"a": "not a map",
+			},
+			keys:    []string{"a", "b"},
+			wantErr: true,
+		},
+		{
+			name: "Boundary case - empty keys",
+			data: map[string]interface{}{
+				"a": "value",
+			},
+			keys: []string{},
+			wantData: map[string]interface{}{
+				"a": "value",
+			},
+			wantErr: true,
+		},
+		{
+			name:    "Boundary case - data is nil",
+			data:    nil,
+			keys:    []string{"a"},
+			wantErr: true,
+		},
+		{
+			name: "Happy path - delete root key",
+			data: map[string]interface{}{
+				"root":  "value",
+				"other": "otherValue",
+			},
+			keys: []string{"root"},
+			wantData: map[string]interface{}{
+				"other": "otherValue",
+			},
+			wantErr: false,
+		},
+		{
+			name:    "Error path - data is not a map",
+			data:    "not a map",
+			keys:    []string{"a"},
+			wantErr: true,
+		},
+		{
+			name: "Happy path - delete key with empty string",
+			data: map[string]interface{}{
+				"": "emptyKey",
+			},
+			keys:     []string{""},
+			wantData: map[string]interface{}{},
+			wantErr:  false,
+		},
+		{
+			name: "Happy path - delete key in slice",
+			data: map[string]interface{}{
+				"list": []interface{}{"item1", "item2", "item3"},
+			},
+			keys:    []string{"list", "1"},
+			wantErr: true, // Deleting an index in a slice is not supported
+		},
+		{
+			name: "Happy path - delete deep nested key",
+			data: map[string]interface{}{
+				"level1": map[string]interface{}{
+					"level2": map[string]interface{}{
+						"level3": "deepValue",
+					},
+				},
+			},
+			keys: []string{"level1", "level2", "level3"},
+			wantData: map[string]interface{}{
+				"level1": map[string]interface{}{
+					"level2": map[string]interface{}{},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Happy path - nil key in keys",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": "value",
+				},
+			},
+			wantData: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": "value",
+				},
+			},
+			keys:    []string{"a", "", "c"},
+			wantErr: false,
+		},
+		{
+			name:     "Happy path - deleting from an empty map",
+			data:     map[string]interface{}{},
+			wantData: map[string]interface{}{},
+			keys:     []string{"a"},
+			wantErr:  false,
+		},
+		{
+			name: "Happy path - delete key with special characters",
+			data: map[string]interface{}{
+				"a.b":   "specialKeyValue",
+				"other": "otherValue",
+			},
+			keys: []string{"a.b"},
+			wantData: map[string]interface{}{
+				"other": "otherValue",
+			},
+			wantErr: false,
+		},
+		{
+			name:    "Error path - delete from nil data",
+			data:    nil,
+			keys:    []string{"a"},
+			wantErr: true,
+		},
+		{
+			name: "Error path - keys is nil",
+			data: map[string]interface{}{
+				"a": "value",
+			},
+			keys:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Happy path - deleting non-existent nested key",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": "value",
+				},
+			},
+			wantData: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": "value",
+				},
+			},
+			keys:    []string{"a", "c"},
+			wantErr: false,
+		},
+		{
+			name: "Boundary case - deleting from non-map type",
+			data: map[string]interface{}{
+				"a": "stringValue",
+			},
+			keys:    []string{"a", "b"},
+			wantErr: true,
+		},
+		{
+			name: "Happy path - delete entire data",
+			data: map[string]interface{}{
+				"a": "value",
+			},
+			keys: []string{},
+			wantData: map[string]interface{}{
+				"a": "value",
+			},
+			wantErr: true, // Cannot delete root data
+		},
+	}
+
+	for _, tt := range tests {
+		// Make a deep copy of the original data to avoid side effects
+		dataCopy := deepCopyValue(tt.data)
+		t.Run(tt.name, func(t *testing.T) {
+			err := deleteValueAtPath(dataCopy, tt.keys)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("deleteValueAtPath() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr {
+				return
+			}
+
+			// Compare the modified data with the expected data
+			if !reflect.DeepEqual(dataCopy, tt.wantData) {
+				t.Errorf("After deleteValueAtPath(), data = %v, want %v", dataCopy, tt.wantData)
+			}
+		})
+	}
+}
+
+// TestDeepCopyValue tests the deepCopyValue function.
+func TestDeepCopyValue(t *testing.T) {
+	tests := []struct {
+		name      string
+		value     interface{}
+		wantValue interface{}
+	}{
+		{
+			name: "Copy map[string]interface{}",
+			value: map[string]interface{}{
+				"a": "value",
+				"b": map[string]interface{}{
+					"c": "nestedValue",
+				},
+			},
+			wantValue: map[string]interface{}{
+				"a": "value",
+				"b": map[string]interface{}{
+					"c": "nestedValue",
+				},
+			},
+		},
+		{
+			name: "Copy []interface{}",
+			value: []interface{}{
+				"value1",
+				[]interface{}{"nestedValue1", "nestedValue2"},
+				map[string]interface{}{"a": "value"},
+			},
+			wantValue: []interface{}{
+				"value1",
+				[]interface{}{"nestedValue1", "nestedValue2"},
+				map[string]interface{}{"a": "value"},
+			},
+		},
+		{
+			name:      "Copy string value",
+			value:     "stringValue",
+			wantValue: "stringValue",
+		},
+		{
+			name:      "Copy integer value",
+			value:     42,
+			wantValue: 42,
+		},
+		{
+			name:      "Copy nil value",
+			value:     nil,
+			wantValue: nil,
+		},
+		{
+			name:      "Copy float value",
+			value:     3.14,
+			wantValue: 3.14,
+		},
+		{
+			name:      "Copy boolean value",
+			value:     true,
+			wantValue: true,
+		},
+		{
+			name: "Copy complex nested structure",
+			value: map[string]interface{}{
+				"a": []interface{}{
+					map[string]interface{}{
+						"b": "value",
+					},
+				},
+				"c": 123,
+			},
+			wantValue: map[string]interface{}{
+				"a": []interface{}{
+					map[string]interface{}{
+						"b": "value",
+					},
+				},
+				"c": 123,
+			},
+		},
+		{
+			name:      "Copy empty map",
+			value:     map[string]interface{}{},
+			wantValue: map[string]interface{}{},
+		},
+		{
+			name:      "Copy empty slice",
+			value:     []interface{}{},
+			wantValue: []interface{}{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotValue := deepCopyValue(tt.value)
+
+			// Modify the original value to ensure deep copy
+			modifyValue(tt.value)
+
+			if !reflect.DeepEqual(gotValue, tt.wantValue) {
+				t.Errorf("deepCopyValue() = %v, want %v", gotValue, tt.wantValue)
+			}
+		})
+	}
+}
+
+// modifyValue modifies the input value in place for testing deep copy.
+func modifyValue(value interface{}) {
+	switch v := value.(type) {
+	case map[string]interface{}:
+		for key := range v {
+			v[key] = "modified"
+		}
+	case []interface{}:
+		for i := range v {
+			v[i] = "modified"
+		}
+	}
+}
+
+// TestNavigateToParentMap tests the navigateToParentMap function.
+func TestNavigateToParentMap(t *testing.T) {
+	tests := []struct {
+		name          string
+		data          interface{}
+		keys          []string
+		createMissing bool
+		wantMap       map[string]interface{}
+		wantLastKey   string
+		wantErr       bool
+	}{
+		{
+			name: "Happy path - existing path",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": map[string]interface{}{},
+				},
+			},
+			keys:          []string{"a", "b", "c"},
+			createMissing: true,
+			wantMap:       map[string]interface{}{},
+			wantLastKey:   "c",
+			wantErr:       false,
+		},
+		{
+			name: "Error path - path is not a map",
+			data: map[string]interface{}{
+				"a": "not a map",
+			},
+			keys:          []string{"a", "b"},
+			createMissing: false,
+			wantErr:       true,
+		},
+		{
+			name: "Happy path - key not found and not creating missing but parent present",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{},
+			},
+			keys:          []string{"a", "b"},
+			createMissing: false,
+			wantMap:       map[string]interface{}{},
+			wantErr:       false,
+			wantLastKey:   "b",
+		},
+		{
+			name: "Happy path - create missing maps",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{},
+			},
+			keys:          []string{"a", "b", "c"},
+			createMissing: true,
+			wantMap:       map[string]interface{}{},
+			wantLastKey:   "c",
+			wantErr:       false,
+		},
+		{
+			name:          "Error path - data is not a map",
+			data:          "not a map",
+			keys:          []string{"a", "b"},
+			createMissing: true,
+			wantErr:       true,
+		},
+		{
+			name: "Boundary case - empty keys",
+			data: map[string]interface{}{
+				"a": "value",
+			},
+			keys:          []string{},
+			createMissing: false,
+			wantLastKey:   "",
+			wantErr:       true,
+		},
+		{
+			name: "Happy path - keys with special characters",
+			data: map[string]interface{}{
+				"a.b": map[string]interface{}{
+					"c.d": "value",
+				},
+			},
+			keys:          []string{"a.b", "c.d"},
+			createMissing: false,
+			wantMap: map[string]interface{}{
+				"c.d": "value",
+			},
+			wantLastKey: "c.d",
+			wantErr:     false,
+		},
+		{
+			name: "Error path - intermediate map is nil",
+			data: map[string]interface{}{
+				"a": nil,
+			},
+			keys:          []string{"a", "b"},
+			createMissing: false,
+			wantErr:       true,
+		},
+		{
+			name: "Happy path - createMissing false but path exists",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": map[string]interface{}{},
+				},
+			},
+			keys:          []string{"a", "b", "c"},
+			createMissing: false,
+			wantMap:       map[string]interface{}{},
+			wantLastKey:   "c",
+			wantErr:       false,
+		},
+		{
+			name: "Error path - non-string key in keys",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": "value",
+				},
+			},
+			keys:          []string{"a", "", "c"},
+			createMissing: false,
+			wantErr:       true,
+		},
+		{
+			name:          "Boundary case - data is nil",
+			data:          nil,
+			keys:          []string{"a"},
+			createMissing: true,
+			wantErr:       true,
+		},
+		{
+			name:          "Happy path - empty data and create missing",
+			data:          map[string]interface{}{},
+			keys:          []string{"a", "b"},
+			createMissing: true,
+			wantMap:       map[string]interface{}{},
+			wantLastKey:   "b",
+			wantErr:       false,
+		},
+		{
+			name:          "Error path - data is not a map and createMissing false",
+			data:          "not a map",
+			keys:          []string{},
+			createMissing: false,
+			wantErr:       true,
+		},
+		{
+			name: "Error path - create missing with nil intermediate map",
+			data: map[string]interface{}{
+				"a": nil,
+			},
+			keys:          []string{"a", "b"},
+			createMissing: true,
+			wantLastKey:   "",
+			wantErr:       true,
+		},
+		{
+			name: "Happy path - empty keys",
+			data: map[string]interface{}{
+				"a": "value",
+			},
+			keys:          []string{},
+			createMissing: true,
+			wantLastKey:   "",
+			wantErr:       true,
+		},
+		{
+			name:          "Error path - data is nil and keys are empty",
+			data:          nil,
+			keys:          []string{},
+			createMissing: false,
+			wantErr:       true,
+		},
+		{
+			name: "Happy path - deep nested create missing",
+			data: map[string]interface{}{
+				"a": map[string]interface{}{},
+			},
+			keys:          []string{"a", "b", "c", "d"},
+			createMissing: true,
+			wantMap:       map[string]interface{}{},
+			wantLastKey:   "d",
+			wantErr:       false,
+		},
+		{
+			name: "Error path - path is not a map and createMissing true",
+			data: map[string]interface{}{
+				"a": "value",
+			},
+			keys:          []string{"a", "b"},
+			createMissing: true,
+			wantErr:       true,
+		},
+		{
+			name: "Error path - intermediate value is not a map",
+			data: map[string]interface{}{
+				"a": 123,
+			},
+			keys:          []string{"a", "b"},
+			createMissing: true,
+			wantErr:       true,
+		},
+	}
+
+	for _, tt := range tests {
+		// Make a deep copy of the original data to avoid side effects
+		dataCopy := deepCopyValue(tt.data)
+		t.Run(tt.name, func(t *testing.T) {
+			gotMap, gotLastKey, err := navigateToParentMap(dataCopy, tt.keys, tt.createMissing)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("navigateToParentMap() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr {
+				return
+			}
+			// Compare gotMap with expected map
+			if !reflect.DeepEqual(gotMap, tt.wantMap) {
+				t.Errorf("navigateToParentMap() gotMap = %v, want %v", gotMap, tt.wantMap)
+			}
+			// Compare gotLastKey with expected last key
+			if gotLastKey != tt.wantLastKey {
+				t.Errorf("navigateToParentMap() gotLastKey = %v, want %v", gotLastKey, tt.wantLastKey)
+			}
+		})
+	}
+}

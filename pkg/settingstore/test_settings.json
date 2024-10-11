@@ -1,0 +1,42 @@
+{
+  "aiSettings": {
+    "anthropic": {
+      "additionalSettings": {},
+      "apiKey": "S1BXbXBRRkpETWdQOEdoNlp0MHQ0ZWRvcTZIQytac25OT0NZVHc9PQ==",
+      "defaultModel": "claude-3-haiku-20240307",
+      "defaultOrigin": "https://api.anthropic.com",
+      "defaultTemperature": 0.1
+    },
+    "google": {
+      "additionalSettings": {},
+      "apiKey": "RlplWldrS1BGRlhxcHAzNzNXODE2WnhUeHVmeEVWTERRRVZEcHc9PQ==",
+      "defaultModel": "gemini-1.5-flash",
+      "defaultOrigin": "https://generativelanguage.googleapis.com",
+      "defaultTemperature": 0.1
+    },
+    "huggingface": {
+      "additionalSettings": {},
+      "apiKey": "bjFRZ1FqaHdEanpTbDI3OXdRZlRzbDczY0FxRnVwclhCd05QMmc9PQ==",
+      "defaultModel": "deepseek-ai/deepseek-coder-1.3b-instruct",
+      "defaultOrigin": "https://api-inference.huggingface.co",
+      "defaultTemperature": 0.1
+    },
+    "llamacpp": {
+      "additionalSettings": {},
+      "apiKey": "S3ZqczQwQmQ2QjRTWU9Cc3dJNkRkT012TTc4R3JqMnVpNkhPc3c9PQ==",
+      "defaultModel": "llama3",
+      "defaultOrigin": "http://127.0.0.1:8080",
+      "defaultTemperature": 0.1
+    },
+    "openai": {
+      "additionalSettings": {},
+      "apiKey": "UmoyZ1hzdC9NU3FTNHpJSWdpQVMyU1FlVGlMQ29rSXZQdUxwN1ViQ3dBRW5FbHhnNHc9PQ==",
+      "defaultModel": "gpt-4o-mini",
+      "defaultOrigin": "https://api.openai.com",
+      "defaultTemperature": 0.1
+    }
+  },
+  "app": {
+    "defaultProvider": "OPENAI"
+  }
+}

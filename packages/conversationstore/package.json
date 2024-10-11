@@ -16,7 +16,10 @@
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
 	"dependencies": {
 		"logger": "workspace:*",
-		"conversationmodel": "workspace:*",
-		"securejsondb": "workspace:*"
+		"securejsondb": "workspace:*",
+		"uuid": "^10.0.0"
+	},
+	"devDependencies": {
+		"@types/uuid": "^10.0.0"
 	}
 }

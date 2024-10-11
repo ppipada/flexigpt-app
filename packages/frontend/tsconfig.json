@@ -5,11 +5,11 @@
 		"allowJs": true,
 		"skipLibCheck": true,
 		"strict": true,
-		"forceConsistentCasingInFileNames": true,
+		"forceConsistentCasingInFileNames": true, // not in template
 		"noEmit": true,
 		"esModuleInterop": true,
 		"module": "esnext",
-		"moduleResolution": "bundler", // was bundler
+		"moduleResolution": "bundler",
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"jsx": "preserve",
@@ -24,25 +24,17 @@
 			"@/*": ["./*"]
 		}
 	},
-	"references": [
-		{ "path": "../logger" },
-		{ "path": "../aiprovidermodel" },
-		{ "path": "../conversationmodel" },
-		{ "path": "../settingmodel" }
-	],
 	"include": [
 		"next-env.d.ts",
-		"app/context.d.ts",
 		"**/*.ts",
 		"**/*.d.ts",
 		"**/*.tsx",
 		"../build/types/**/*.ts",
-		"dist/types/**/*.ts",
 		"build/types/**/*.ts",
 		".next/types/**/*.ts",
 		"tailwind.config.ts",
-		"postcss.config.mjs",
-		"next.config.mjs",
+		"postcss.config.js",
+		"next.config.js",
 		"../**/build/*.js"
 	],
 	"exclude": ["node_modules"]

@@ -17,5 +17,11 @@
 			}
 		}
 	},
-	"ignorePatterns": ["build/**", ".next/**"]
+	"ignorePatterns": ["build/**", ".next/**", "app/backendapibase/wailsjs/**"],
+	"overrides": [
+		{
+			"files": ["*.js"],
+			"rules": {}
+		}
+	]
 }

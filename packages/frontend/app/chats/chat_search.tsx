@@ -1,5 +1,4 @@
-import { ConversationItem } from 'conversationmodel';
-// import { log } from 'logger';
+import { ConversationItem } from '@/models/conversationmodel';
 import { ChangeEvent, FC, Fragment, KeyboardEvent, useEffect, useState } from 'react';
 import { FiSearch } from 'react-icons/fi';
 

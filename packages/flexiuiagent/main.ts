@@ -10,9 +10,8 @@ import {
 } from 'electron';
 import electronIsDev from 'electron-is-dev';
 // import electronUpdater from 'electron-updater';
-import path from 'node:path';
-import { dirname } from 'path';
-import { fileURLToPath, format as urlformat } from 'url';
+import path, { dirname } from 'node:path';
+import { format as urlformat } from 'url';
 
 import { ILogger, log } from 'logger';
 import { createILogger } from 'winstonlogger';
@@ -29,11 +28,10 @@ if (!electronIsDev) {
 	log.info('Backend: Running in dev');
 }
 
-import { ProviderSet } from 'aiproviderimpl';
-import { ChatCompletionRequestMessage, IProviderSetAPI, ModelName, ProviderName } from 'aiprovidermodel';
-import { Conversation, ConversationMessage } from 'conversationmodel';
-import { ConversationCollection } from 'conversationstore';
-import { SettingsStore } from 'settingstore';
+import { ChatCompletionRequestMessage, IProviderSetAPI, ModelName, ProviderName, ProviderSet } from 'aiprovider';
+import { Conversation, ConversationCollection, ConversationMessage } from 'conversationstore';
+import { fileURLToPath } from 'node:url';
+import { SettingStore } from 'settingstore';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -45,7 +43,7 @@ const PRELOAD_PATH = path.join(__dirname, 'preload.js');
 
 // const { autoUpdater } = electronUpdater;
 let appWindow: BrowserWindow | null = null;
-let settingsManager: SettingsStore;
+let settingsManager: SettingStore;
 let conversationManager: ConversationCollection;
 let providerSetManager: IProviderSetAPI;
 
@@ -103,7 +101,7 @@ const spawnAppWindow = async () => {
 const initializeSettingsManager = async () => {
 	const settingsFilePath = path.join(app.getPath('userData'), 'settings.json');
 	log.info(`Settings file url: ${settingsFilePath}`);
-	settingsManager = new SettingsStore(settingsFilePath);
+	settingsManager = new SettingStore(settingsFilePath);
 	await settingsManager.initialize();
 };
 
@@ -210,24 +208,24 @@ ipcMain.handle('backend:log', async (_event, level: string, ...args: unknown[]) 
 	log[level as keyof ILogger](...args);
 });
 
-ipcMain.handle('conversation:save', async (_event, conversation: Conversation) => {
+ipcMain.handle('conversationstore:save', async (_event, conversation: Conversation) => {
 	await conversationManager.saveConversation(conversation);
 });
 
-ipcMain.handle('conversation:delete', async (_event, id: string, title: string) => {
+ipcMain.handle('conversationstore:delete', async (_event, id: string, title: string) => {
 	await conversationManager.deleteConversation(id, title);
 });
 
-ipcMain.handle('conversation:get', async (_event, id: string, title: string) => {
+ipcMain.handle('conversationstore:get', async (_event, id: string, title: string) => {
 	return await conversationManager.getConversation(id, title);
 });
 
-ipcMain.handle('conversation:list', async (_event, token?: string) => {
+ipcMain.handle('conversationstore:list', async (_event, token?: string) => {
 	return await conversationManager.listConversations(token);
 });
 
 ipcMain.handle(
-	'conversation:addMessage',
+	'conversationstore:addMessage',
 	async (_event, id: string, title: string, newMessage: ConversationMessage) => {
 		return await conversationManager.addMessageToConversation(id, title, newMessage);
 	}

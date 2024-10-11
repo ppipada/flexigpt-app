@@ -16,10 +16,10 @@
 		"fmt": "prettier -c .",
 		"fmt:fix": "prettier -w .",
 		"clean": "lerna run clean",
-		"pre-pack": "lerna run build --ignore frontend --ignore flexiuiagent --stream --sort && lerna run build --scope frontend && lerna run build --scope flexiuiagent",
+		"pre-pack": "lerna run build --ignore frontend --ignore flexiuiagent --stream --sort && lerna run build:electron --scope frontend && lerna run build --scope flexiuiagent",
 		"buildpack": "lerna run clean && pnpm run pre-pack && lerna run pack --scope flexiuiagent",
 		"boot": "lerna run build --scope flexiuiagent && electron .",
-		"dev": "lerna run build --ignore frontend --ignore flexiuiagent --stream --sort && concurrently -k \"lerna run dev --scope frontend\" \"wait-on tcp:127.0.0.1:3000 && pnpm run boot\""
+		"dev": "lerna run build --ignore frontend --ignore flexiuiagent --stream --sort && concurrently -k \"lerna run dev:electron --scope frontend\" \"wait-on tcp:127.0.0.1:3000 && pnpm run boot\""
 	},
 	"dependencies": {},
 	"devDependencies": {
@@ -27,7 +27,7 @@
 		"@typescript-eslint/eslint-plugin": "^8.3.0",
 		"@typescript-eslint/parser": "^8.3.0",
 		"concurrently": "^9.0.1",
-		"eslint": "^9.9.1",
+		"eslint": "^8",
 		"eslint-config-next": "14.2.11",
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-import-resolver-typescript": "^3.6.1",
