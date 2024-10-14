@@ -1,52 +1,57 @@
 package spec
 
 import (
+	"github.com/flexigpt/flexiui/pkg/aiprovider/anthropic"
+	"github.com/flexigpt/flexiui/pkg/aiprovider/google"
+	"github.com/flexigpt/flexiui/pkg/aiprovider/huggingface"
+	"github.com/flexigpt/flexiui/pkg/aiprovider/llamacpp"
+	"github.com/flexigpt/flexiui/pkg/aiprovider/openai"
 	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 )
 
 // Define the default AI settings
 var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
-	aiproviderSpec.ProviderNameAnthropic: {
-		ApiKey:             aiproviderSpec.AnthropicProviderInfo.ApiKey,
-		DefaultModel:       aiproviderSpec.AnthropicProviderInfo.DefaultModel,
-		DefaultOrigin:      aiproviderSpec.AnthropicProviderInfo.DefaultOrigin,
-		DefaultTemperature: aiproviderSpec.AnthropicProviderInfo.DefaultTemperature,
-		AdditionalSettings: aiproviderSpec.AnthropicProviderInfo.AdditionalSettings,
+	anthropic.ProviderNameAnthropic: {
+		ApiKey:             anthropic.AnthropicProviderInfo.ApiKey,
+		DefaultModel:       anthropic.AnthropicProviderInfo.DefaultModel,
+		DefaultOrigin:      anthropic.AnthropicProviderInfo.DefaultOrigin,
+		DefaultTemperature: anthropic.AnthropicProviderInfo.DefaultTemperature,
+		AdditionalSettings: anthropic.AnthropicProviderInfo.AdditionalSettings,
 	},
-	aiproviderSpec.ProviderNameGoogle: {
-		ApiKey:             aiproviderSpec.GoogleProviderInfo.ApiKey,
-		DefaultModel:       aiproviderSpec.GoogleProviderInfo.DefaultModel,
-		DefaultOrigin:      aiproviderSpec.GoogleProviderInfo.DefaultOrigin,
-		DefaultTemperature: aiproviderSpec.GoogleProviderInfo.DefaultTemperature,
-		AdditionalSettings: aiproviderSpec.GoogleProviderInfo.AdditionalSettings,
+	google.ProviderNameGoogle: {
+		ApiKey:             google.GoogleProviderInfo.ApiKey,
+		DefaultModel:       google.GoogleProviderInfo.DefaultModel,
+		DefaultOrigin:      google.GoogleProviderInfo.DefaultOrigin,
+		DefaultTemperature: google.GoogleProviderInfo.DefaultTemperature,
+		AdditionalSettings: google.GoogleProviderInfo.AdditionalSettings,
 	},
-	aiproviderSpec.ProviderNameHuggingFace: {
-		ApiKey:             aiproviderSpec.HuggingfaceProviderInfo.ApiKey,
-		DefaultModel:       aiproviderSpec.HuggingfaceProviderInfo.DefaultModel,
-		DefaultOrigin:      aiproviderSpec.HuggingfaceProviderInfo.DefaultOrigin,
-		DefaultTemperature: aiproviderSpec.HuggingfaceProviderInfo.DefaultTemperature,
-		AdditionalSettings: aiproviderSpec.HuggingfaceProviderInfo.AdditionalSettings,
+	huggingface.ProviderNameHuggingFace: {
+		ApiKey:             huggingface.HuggingfaceProviderInfo.ApiKey,
+		DefaultModel:       huggingface.HuggingfaceProviderInfo.DefaultModel,
+		DefaultOrigin:      huggingface.HuggingfaceProviderInfo.DefaultOrigin,
+		DefaultTemperature: huggingface.HuggingfaceProviderInfo.DefaultTemperature,
+		AdditionalSettings: huggingface.HuggingfaceProviderInfo.AdditionalSettings,
 	},
-	aiproviderSpec.ProviderNameLlamaCPP: {
-		ApiKey:             aiproviderSpec.LlamacppProviderInfo.ApiKey,
-		DefaultModel:       aiproviderSpec.LlamacppProviderInfo.DefaultModel,
-		DefaultOrigin:      aiproviderSpec.LlamacppProviderInfo.DefaultOrigin,
-		DefaultTemperature: aiproviderSpec.LlamacppProviderInfo.DefaultTemperature,
-		AdditionalSettings: aiproviderSpec.LlamacppProviderInfo.AdditionalSettings,
+	llamacpp.ProviderNameLlamaCPP: {
+		ApiKey:             llamacpp.LlamacppProviderInfo.ApiKey,
+		DefaultModel:       llamacpp.LlamacppProviderInfo.DefaultModel,
+		DefaultOrigin:      llamacpp.LlamacppProviderInfo.DefaultOrigin,
+		DefaultTemperature: llamacpp.LlamacppProviderInfo.DefaultTemperature,
+		AdditionalSettings: llamacpp.LlamacppProviderInfo.AdditionalSettings,
 	},
-	aiproviderSpec.ProviderNameOpenAI: {
-		ApiKey:             aiproviderSpec.OpenAIProviderInfo.ApiKey,
-		DefaultModel:       aiproviderSpec.OpenAIProviderInfo.DefaultModel,
-		DefaultOrigin:      aiproviderSpec.OpenAIProviderInfo.DefaultOrigin,
-		DefaultTemperature: aiproviderSpec.OpenAIProviderInfo.DefaultTemperature,
-		AdditionalSettings: aiproviderSpec.OpenAIProviderInfo.AdditionalSettings,
+	openai.ProviderNameOpenAI: {
+		ApiKey:             openai.OpenAIProviderInfo.ApiKey,
+		DefaultModel:       openai.OpenAIProviderInfo.DefaultModel,
+		DefaultOrigin:      openai.OpenAIProviderInfo.DefaultOrigin,
+		DefaultTemperature: openai.OpenAIProviderInfo.DefaultTemperature,
+		AdditionalSettings: openai.OpenAIProviderInfo.AdditionalSettings,
 	},
 }
 
 // Define the default settings data
 var DefaultSettingsData = SettingsSchema{
 	App: AppSettings{
-		DefaultProvider: aiproviderSpec.ProviderNameOpenAI,
+		DefaultProvider: openai.ProviderNameOpenAI,
 	},
 	AISettings: DefaultAISettings,
 }

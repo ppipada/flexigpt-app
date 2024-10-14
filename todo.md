@@ -152,17 +152,26 @@
 
 - [x] Translate aiprovider to go. Try and use langchaingo directly
 - [x] Implement streaming.
+- [x] Integrate other AI providers: anthropic, google, hf
+
+## Post migration list
+
+- [ ] Add support for first getting available ai providers and then configuring them accordingly. UI needs to be modified as collapsed cards and disabled cards
 - [ ] Get most consts through API
-- [ ] Integrate other AI providers
+- [ ] AI provider: Usages in normal resp
+- [ ] AI provider: Usages in stream resp
+- [ ] AI provider: get masked http details from langchaingo whenever available and then send in details
+- [ ] Error wrapper and unwrapper on backend main and base apis
+- [ ] Add support for llangchaingo supported ai providers. Would need testing with each.
+
+- [ ] Prompt templates
+- [ ] Tool use
 
 ## Pushed out list
 
-- [ ] logger is imported in securejsondb before it is set as ipc file logger in appimage
-- [ ] Better title deduce
-- [ ] Other AI providers: Tool use
-- [ ] AI provider: Usages in normal resp
-- [ ] AI provider:Usages in stream resp
-- [ ] Electron: currently supported only via appimagelauncher. Better do snap I suppose, but explore later.
-- [ ] Electron: see about package distribution and updates
+- [ ] ~~logger is imported in securejsondb before it is set as ipc file logger in appimage~~
+- [ ] ~~Better title deduce~~
+- [ ] ~~Electron: currently supported only via appimagelauncher. Better do snap I suppose, but explore later.~~
+- [ ] ~~Electron: see about package distribution and updates~~
+- [ ] KB stores
 - [ ] Agent screen: See if a jupyter notebook UI can be presented
-- [ ] Error wrapper and unwrapper on electron main and base apis

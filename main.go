@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/flexigpt/flexiui/pkg/aiprovider"
+	"github.com/flexigpt/flexiui/pkg/aiprovider/openai"
 	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 	"github.com/flexigpt/flexiui/pkg/conversationstore"
 	"github.com/flexigpt/flexiui/pkg/settingstore"
@@ -69,7 +70,7 @@ func NewApp() *App {
 	app.dataBasePath = filepath.Join(xdg.DataHome, (strings.ToLower(AppTitle)))
 	app.settingStoreAPI = &settingstore.SettingStore{}
 	app.conversationStoreAPI = &conversationstore.ConversationCollection{}
-	app.providerSetAPI = NewWrappedProviderSetAPI(aiproviderSpec.ProviderNameOpenAI)
+	app.providerSetAPI = NewWrappedProviderSetAPI(openai.ProviderNameOpenAI)
 
 	if err := os.MkdirAll(app.configBasePath, os.FileMode(0770)); err != nil {
 		log.Panicf("Failed to create directories for config data %s: %v", app.configBasePath, err)

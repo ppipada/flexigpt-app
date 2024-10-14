@@ -2,7 +2,6 @@ package conversationstore
 
 import (
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -18,7 +17,7 @@ import (
 func GetDateFromUUIDv7(uuid string) (time.Time, error) {
 	// Check if the UUID is valid and has the correct length
 	if len(uuid) != 36 {
-		return time.Time{}, errors.New("invalid UUIDv7 string")
+		return time.Time{}, fmt.Errorf("invalid UUIDv7 string")
 	}
 
 	// Remove dashes from the UUID

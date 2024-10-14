@@ -2,16 +2,21 @@ package spec
 
 import "context"
 
+// ModelName is an enumeration of model names.
+type ModelName string
+
+// ModelInfo represents information about a model.
+type ModelInfo struct {
+	Name               ModelName    `json:"name"`
+	DisplayName        string       `json:"displayName"`
+	Provider           ProviderName `json:"provider"`
+	MaxPromptLength    int          `json:"maxPromptLength"`
+	MaxOutputLength    int          `json:"maxOutputLength"`
+	DefaultTemperature float64      `json:"defaultTemperature"`
+}
+
 // ProviderName is an enumeration of provider names.
 type ProviderName string
-
-const (
-	ProviderNameOpenAI      ProviderName = "openai"
-	ProviderNameAnthropic   ProviderName = "anthropic"
-	ProviderNameGoogle      ProviderName = "google"
-	ProviderNameHuggingFace ProviderName = "huggingface"
-	ProviderNameLlamaCPP    ProviderName = "llamacpp"
-)
 
 // ProviderInfo represents information about a provider.
 type ProviderInfo struct {
@@ -47,6 +52,7 @@ type CompletionProvider interface {
 	GetProviderInfo(ctx context.Context) (*ProviderInfo, error)
 	GetCompletionRequest(
 		ctx context.Context,
+		modelInfo ModelInfo,
 		prompt string,
 		prevMessages []ChatCompletionRequestMessage,
 		inputParams map[string]interface{},

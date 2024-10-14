@@ -2,11 +2,41 @@ package aiprovider
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
+	"github.com/flexigpt/flexiui/pkg/aiprovider/anthropic"
+	"github.com/flexigpt/flexiui/pkg/aiprovider/google"
+	"github.com/flexigpt/flexiui/pkg/aiprovider/huggingface"
+	"github.com/flexigpt/flexiui/pkg/aiprovider/llamacpp"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/openai"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 )
+
+var AllAIProviders = map[spec.ProviderName]spec.ProviderInfo{
+	anthropic.ProviderNameAnthropic:     anthropic.AnthropicProviderInfo,
+	google.ProviderNameGoogle:           google.GoogleProviderInfo,
+	huggingface.ProviderNameHuggingFace: huggingface.HuggingfaceProviderInfo,
+	llamacpp.ProviderNameLlamaCPP:       llamacpp.LlamacppProviderInfo,
+	openai.ProviderNameOpenAI:           openai.OpenAIProviderInfo,
+}
+
+var AllModelInfo = map[spec.ModelName]spec.ModelInfo{
+	anthropic.CLAUDE_3_5_SONNET:              anthropic.AnthropicModels[anthropic.CLAUDE_3_5_SONNET],
+	anthropic.CLAUDE_3_OPUS:                  anthropic.AnthropicModels[anthropic.CLAUDE_3_OPUS],
+	anthropic.CLAUDE_3_SONNET:                anthropic.AnthropicModels[anthropic.CLAUDE_3_SONNET],
+	anthropic.CLAUDE_3_HAIKU:                 anthropic.AnthropicModels[anthropic.CLAUDE_3_HAIKU],
+	google.GEMINI_1_5_FLASH:                  google.GoogleModels[google.GEMINI_1_5_FLASH],
+	google.GEMINI_1_5_PRO:                    google.GoogleModels[google.GEMINI_1_5_PRO],
+	huggingface.DEEPSEEK_CODER_1_3B_INSTRUCT: huggingface.HuggingfaceModels[huggingface.DEEPSEEK_CODER_1_3B_INSTRUCT],
+	llamacpp.LLAMA_3:                         llamacpp.LlamacppModels[llamacpp.LLAMA_3],
+	llamacpp.LLAMA_3_1:                       llamacpp.LlamacppModels[llamacpp.LLAMA_3_1],
+	openai.GPT_O1_PREVIEW:                    openai.OpenAIModels[openai.GPT_O1_PREVIEW],
+	openai.GPT_O1_MINI:                       openai.OpenAIModels[openai.GPT_O1_MINI],
+	openai.GPT_4O:                            openai.OpenAIModels[openai.GPT_4O],
+	openai.GPT_4:                             openai.OpenAIModels[openai.GPT_4],
+	openai.GPT_3_5_TURBO:                     openai.OpenAIModels[openai.GPT_3_5_TURBO],
+	openai.GPT_4O_MINI:                       openai.OpenAIModels[openai.GPT_4O_MINI],
+}
 
 // Define the ProviderSetAPI struct
 type ProviderSetAPI struct {
@@ -19,11 +49,11 @@ func NewProviderSetAPI(defaultProvider spec.ProviderName) *ProviderSetAPI {
 	return &ProviderSetAPI{
 		defaultProvider: defaultProvider,
 		providers: map[spec.ProviderName]spec.CompletionProvider{
-			// spec.ProviderNameAnthropic:   &AnthropicAPI{},
-			// spec.ProviderNameGoogle:      &GoogleAPI{},
-			// spec.ProviderNameHuggingFace: &HuggingFaceAPI{},
+			anthropic.ProviderNameAnthropic:     anthropic.NewAnthropicAPI(),
+			google.ProviderNameGoogle:           google.NewGoogleAPI(),
+			huggingface.ProviderNameHuggingFace: huggingface.NewHuggingFaceAPI(),
 			// spec.ProviderNameLlamaCPP:    &LlamaCPPAPI{},
-			spec.ProviderNameOpenAI: openai.NewOpenAIAPI(),
+			openai.ProviderNameOpenAI: openai.NewOpenAIAPI(),
 		},
 	}
 }
@@ -47,11 +77,11 @@ func (ps *ProviderSetAPI) GetConfigurationInfo() (map[string]interface{}, error)
 	configuredProviders := []spec.ProviderInfo{}
 	configuredModels := []spec.ModelInfo{}
 
-	for _, providerInfo := range spec.AllAIProviders {
+	for _, providerInfo := range AllAIProviders {
 		if provider, exists := ps.providers[spec.ProviderName(providerInfo.Name)]; exists &&
 			provider.IsConfigured(ctx) {
 			configuredProviders = append(configuredProviders, providerInfo)
-			for _, modelInfo := range spec.AllModelInfo {
+			for _, modelInfo := range AllModelInfo {
 				if modelInfo.Provider == providerInfo.Name {
 					configuredModels = append(configuredModels, modelInfo)
 				}
@@ -72,7 +102,7 @@ func (ps *ProviderSetAPI) GetProviderInfo(
 	if p, exists := ps.providers[provider]; exists {
 		return p.GetProviderInfo(ctx)
 	}
-	return nil, errors.New("provider not found")
+	return nil, fmt.Errorf("provider not found")
 }
 
 // SetProviderAttribute sets attributes for a given provider
@@ -87,7 +117,7 @@ func (ps *ProviderSetAPI) SetProviderAttribute(
 	if p, exists := ps.providers[provider]; exists {
 		return p.SetProviderAttribute(ctx, apiKey, defaultModel, defaultTemperature, defaultOrigin)
 	}
-	return errors.New("provider not found")
+	return fmt.Errorf("provider not found")
 }
 
 // GetCompletionRequest creates a completion request for a given provider
@@ -99,10 +129,18 @@ func (ps *ProviderSetAPI) GetCompletionRequest(
 	stream bool,
 ) (*spec.CompletionRequest, error) {
 	ctx := context.Background()
-	if p, exists := ps.providers[provider]; exists {
-		return p.GetCompletionRequest(ctx, prompt, prevMessages, inputParams, stream)
+	p, exists := ps.providers[provider]
+	if !exists {
+		return nil, fmt.Errorf("provider not found")
 	}
-	return nil, errors.New("provider not found")
+	return p.GetCompletionRequest(
+		ctx,
+		AllModelInfo[AllAIProviders[provider].DefaultModel],
+		prompt,
+		prevMessages,
+		inputParams,
+		stream,
+	)
 }
 
 // FetchCompletion processes a completion request for a given provider
@@ -115,5 +153,5 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	if p, exists := ps.providers[provider]; exists {
 		return p.FetchCompletion(ctx, input, onStreamData)
 	}
-	return nil, errors.New("provider not found")
+	return nil, fmt.Errorf("provider not found")
 }
