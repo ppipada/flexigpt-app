@@ -1,4 +1,14 @@
-# Project Implementation Plan
+# Project Milestones
+
+## MileStone 0
+
+### Scope
+
+- Local installer for Linux/Mac/Win
+- Top level feature: Chat, Conversation history
+- Available during Chat: Prompt templates, Tools, KB servers
+
+### Tasks
 
 - Design and implement AppLayout
 
@@ -100,44 +110,42 @@
   - [x] Fetch conversation titles and add it to the drawer
   - [x] provide a new chat, delete one conversation, delete all conversations actions
 
-- Agent screen
+- Laundry list
 
-## Laundry list of current things
+  - [x] code inline line overflow handle
+  - [x] feedback integration removal
+  - [x] sort order of drop down, during load
+  - [x] sort order of drop down, after new chat
+  - [x] title population
+  - [x] Full copy for assistant
+  - [ ] Streaming
+    - [x] aiprovider support
+    - [x] page support
+    - [x] add other providers
+      - [x] Openai
+      - [x] anthropic
+      - [x] google
+    - [x] someway to show things are loading
+  - [x] Content:
+    - [x] Emoji
+    - [ ] ~~Subscript~~
+    - [ ] ~~custom headings~~
+    - [ ] ~~navigate in same doc~~
+    - [ ] ~~Math handling~~
+  - [x] packaged app debug
+  - [x] Move ai provider to electron main
+  - [x] screen blanks if lot of data is put in inputfield
+  - [x] selection doesnt reset on new conversation in search bar
+  - [x] today vs yesterday in group
+  - [x] logger is imported in securejsondb before it is set as ipc logger
+  - [x] error handling review and fix
+  - [x] Blanket error handle in api fetch chat helper
+  - [x] Add edit functionality
+  - [x] ability to discard previous message history in next call
+  - [x] ability to choose provider and model and temperature in the chat itself.
+  - [x] populate initial choices in input options
 
-- [x] code inline line overflow handle
-- [x] feedback integration removal
-- [x] sort order of drop down, during load
-- [x] sort order of drop down, after new chat
-- [x] title population
-- [x] Full copy for assistant
-- [ ] Streaming
-  - [x] aiprovider support
-  - [x] page support
-  - [x] add other providers
-    - [x] Openai
-    - [x] anthropic
-    - [x] google
-  - [x] someway to show things are loading
-- [x] Content:
-  - [x] Emoji
-  - [ ] ~~Subscript~~
-  - [ ] ~~custom headings~~
-  - [ ] ~~navigate in same doc~~
-  - [ ] ~~Math handling~~
-- [x] packaged app debug
-- [x] Move ai provider to electron main
-- [x] screen blanks if lot of data is put in inputfield
-- [x] selection doesnt reset on new conversation in search bar
-- [x] today vs yesterday in group
-- [x] logger is imported in securejsondb before it is set as ipc logger
-- [x] error handling review and fix
-- [x] Blanket error handle in api fetch chat helper
-- [x] Add edit functionality
-- [x] ability to discard previous message history in next call
-- [x] ability to choose provider and model and temperature in the chat itself.
-- [x] populate initial choices in input options
-
-## Wails migrate
+### Wails migrate
 
 - [x] Translate securejsondb to go
 - [x] Translate settings store and conversation store to go
@@ -154,24 +162,15 @@
 - [x] Implement streaming.
 - [x] Integrate other AI providers: anthropic, google, hf
 
-## Post migration list
+- Post migration list
 
-- [ ] Add support for first getting available ai providers and then configuring them accordingly. UI needs to be modified as collapsed cards and disabled cards
-- [ ] Get most consts through API
-- [ ] AI provider: Usages in normal resp
-- [ ] AI provider: Usages in stream resp
-- [ ] AI provider: get masked http details from langchaingo whenever available and then send in details
-- [ ] Error wrapper and unwrapper on backend main and base apis
-- [ ] Add support for llangchaingo supported ai providers. Would need testing with each.
+  - [ ] Add support for first getting available ai providers and then configuring them accordingly. UI needs to be modified as collapsed cards and disabled cards
+  - [ ] Get most consts through API
+  - [ ] AI provider: get masked http details from langchaingo whenever available and then send in details
+  - [ ] Error wrapper and unwrapper on backend main and base apis
+  - [ ] Add support for llangchaingo supported ai providers. Would need testing with each.
+  - [ ] Better title deduce
 
 - [ ] Prompt templates
 - [ ] Tool use
-
-## Pushed out list
-
-- [ ] ~~logger is imported in securejsondb before it is set as ipc file logger in appimage~~
-- [ ] ~~Better title deduce~~
-- [ ] ~~Electron: currently supported only via appimagelauncher. Better do snap I suppose, but explore later.~~
-- [ ] ~~Electron: see about package distribution and updates~~
 - [ ] KB stores
-- [ ] Agent screen: See if a jupyter notebook UI can be presented
