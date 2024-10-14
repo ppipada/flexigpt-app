@@ -1,16 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
+	FetchCompletion,
 	GetCompletionRequest,
 	GetConfigurationInfo,
 	GetDefaultProvider,
 	GetProviderInfo,
 	SetDefaultProvider,
 	SetProviderAttribute,
-} from '@/backendapibase/wailsjs/go/aiprovider/ProviderSetAPI';
-import { EventsOn } from '@/backendapibase/wailsjs/runtime/runtime';
-
-import { FetchCompletion } from '@/backendapibase/wailsjs/go/main/App';
+} from '@/backendapibase/wailsjs/go/main/WrappedProviderSetAPI';
 import { spec as wailsSpec } from '@/backendapibase/wailsjs/go/models';
+import { EventsOn } from '@/backendapibase/wailsjs/runtime/runtime';
 import {
 	ChatCompletionRequestMessage,
 	CompletionRequest,
@@ -64,8 +63,8 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 	}
 
 	// Need an eventflow for getting completion.
-	// Implemented that in main App rather than aiprovider go package.
-	// App redirects to providerSet
+	// Implemented that in main App Wrapper than aiprovider go package.
+	// Wrapper redirects to providerSet after doing event handling
 	async completion(
 		provider: ProviderName,
 		input: CompletionRequest,

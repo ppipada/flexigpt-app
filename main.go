@@ -48,7 +48,7 @@ type App struct {
 	ctx                  context.Context
 	settingStoreAPI      *settingstore.SettingStore
 	conversationStoreAPI *conversationstore.ConversationCollection
-	providerSetAPI       *aiprovider.ProviderSetAPI
+	providerSetAPI       *WrappedProviderSetAPI
 	configBasePath       string
 	dataBasePath         string
 }
@@ -69,7 +69,7 @@ func NewApp() *App {
 	app.dataBasePath = filepath.Join(xdg.DataHome, (strings.ToLower(AppTitle)))
 	app.settingStoreAPI = &settingstore.SettingStore{}
 	app.conversationStoreAPI = &conversationstore.ConversationCollection{}
-	app.providerSetAPI = aiprovider.NewProviderSetAPI(aiproviderSpec.ProviderNameOpenAI)
+	app.providerSetAPI = NewWrappedProviderSetAPI(aiproviderSpec.ProviderNameOpenAI)
 
 	if err := os.MkdirAll(app.configBasePath, os.FileMode(0770)); err != nil {
 		log.Panicf("Failed to create directories for config data %s: %v", app.configBasePath, err)
@@ -135,18 +135,36 @@ func (a *App) Ping() string {
 	return "pong"
 }
 
+type WrappedProviderSetAPI struct {
+	*aiprovider.ProviderSetAPI
+	appContext context.Context
+}
+
+// NewWrappedProviderSetAPI creates a new ProviderSet with the specified default provider
+func NewWrappedProviderSetAPI(
+	defaultProvider aiproviderSpec.ProviderName,
+) *WrappedProviderSetAPI {
+	return &WrappedProviderSetAPI{
+		ProviderSetAPI: aiprovider.NewProviderSetAPI(defaultProvider),
+	}
+}
+
+func (w *WrappedProviderSetAPI) setAppContext(ctx context.Context) {
+	w.appContext = ctx
+}
+
 // FetchCompletion handles the completion request and streams data back to the frontend
-func (a *App) FetchCompletion(
+func (w *WrappedProviderSetAPI) FetchCompletion(
 	provider string,
 	input aiproviderSpec.CompletionRequest,
 	callbackId string,
 ) (*aiproviderSpec.CompletionResponse, error) {
 	onStreamData := func(data string) error {
-		runtime.EventsEmit(a.ctx, callbackId, data)
+		runtime.EventsEmit(w.appContext, callbackId, data)
 		return nil
 	}
 
-	resp, err := a.providerSetAPI.FetchCompletion(
+	resp, err := w.ProviderSetAPI.FetchCompletion(
 		aiproviderSpec.ProviderName(provider),
 		input,
 		onStreamData,
@@ -255,11 +273,16 @@ func main() {
 		Logger:             nil,
 		LogLevel:           logger.DEBUG,
 		LogLevelProduction: logger.DEBUG,
-		OnStartup:          app.startup,
-		OnDomReady:         app.domReady,
-		OnBeforeClose:      app.beforeClose,
-		OnShutdown:         app.shutdown,
-		WindowStartState:   options.Normal,
+
+		OnStartup: func(ctx context.Context) {
+			app.startup(ctx)
+			app.providerSetAPI.setAppContext(ctx)
+		},
+
+		OnDomReady:       app.domReady,
+		OnBeforeClose:    app.beforeClose,
+		OnShutdown:       app.shutdown,
+		WindowStartState: options.Normal,
 		Bind: []interface{}{
 			app,
 			app.settingStoreAPI,
