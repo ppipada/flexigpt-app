@@ -54,9 +54,9 @@ export const defaultSettingsData: SettingsSchema = {
 };
 
 export const sensitiveKeys = [
-	'openai.apiKey',
-	'anthropic.apiKey',
-	'huggingface.apiKey',
-	'google.apiKey',
-	'llamacpp.apiKey',
+	'aiSettings.openai.apiKey',
+	'aiSettings.anthropic.apiKey',
+	'aiSettings.huggingface.apiKey',
+	'aiSettings.google.apiKey',
+	'aiSettings.llamacpp.apiKey',
 ];

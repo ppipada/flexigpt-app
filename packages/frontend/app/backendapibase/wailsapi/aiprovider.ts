@@ -1,5 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
+	GetCompletionRequest,
+	GetConfigurationInfo,
+	GetDefaultProvider,
+	GetProviderInfo,
+	SetDefaultProvider,
+	SetProviderAttribute,
+} from '@/backendapibase/wailsjs/go/aiprovider/ProviderSetAPI';
+import { EventsOn } from '@/backendapibase/wailsjs/runtime/runtime';
+
+import { FetchCompletion } from '@/backendapibase/wailsjs/go/main/App';
+import { spec as wailsSpec } from '@/backendapibase/wailsjs/go/models';
+import {
 	ChatCompletionRequestMessage,
 	CompletionRequest,
 	CompletionResponse,
@@ -8,16 +20,6 @@ import {
 	ProviderInfo,
 	ProviderName,
 } from '@/models/aiprovidermodel';
-import {
-	FetchCompletion,
-	GetCompletionRequest,
-	GetConfigurationInfo,
-	GetDefaultProvider,
-	GetProviderInfo,
-	SetDefaultProvider,
-	SetProviderAttribute,
-} from '../wailsjs/go/aiprovider/ProviderSetAPI';
-import { spec as wailsSpec } from '../wailsjs/go/models';
 
 export class WailsProviderSetAPI implements IProviderSetAPI {
 	async getDefaultProvider(): Promise<ProviderName> {
@@ -61,13 +63,20 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		// return x;
 	}
 
+	// Need an eventflow for getting completion.
+	// Implemented that in main App rather than aiprovider go package.
+	// App redirects to providerSet
 	async completion(
 		provider: ProviderName,
 		input: CompletionRequest,
 		onStreamData?: (data: string) => Promise<void>
 	): Promise<CompletionResponse | undefined> {
-		const resp = await FetchCompletion(provider, input as wailsSpec.CompletionRequest, onStreamData);
-		return resp as CompletionResponse;
+		const callbackId = `stream-data-callback-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+		if (onStreamData) {
+			EventsOn(callbackId, onStreamData);
+		}
+		const response = await FetchCompletion(provider, input as wailsSpec.CompletionRequest, callbackId);
+		return response;
 	}
 
 	async setAttribute(

@@ -151,7 +151,7 @@
   - [x] Logger integration
 
 - [x] Translate aiprovider to go. Try and use langchaingo directly
-- [ ] Implement streaming.
+- [x] Implement streaming.
 - [ ] Get most consts through API
 - [ ] Integrate other AI providers
 

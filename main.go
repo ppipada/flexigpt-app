@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
 	goruntime "runtime"
 
 	"github.com/wailsapp/wails/v2"
@@ -23,7 +24,7 @@ import (
 	"strings"
 
 	"github.com/flexigpt/flexiui/pkg/aiprovider"
-	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 	"github.com/flexigpt/flexiui/pkg/conversationstore"
 	"github.com/flexigpt/flexiui/pkg/settingstore"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -32,6 +33,9 @@ import (
 )
 
 const AppTitle = "FlexiGptUI"
+const FRONTEND_PATH_PREFIX = "/frontend/build"
+
+var DIR_PAGES = []string{"/agents", "/chats", "/settings", "/404"}
 
 //go:embed all:packages/frontend/build
 var assets embed.FS
@@ -39,9 +43,120 @@ var assets embed.FS
 //go:embed packages/frontend/public/icon.png
 var icon []byte
 
-const FRONTEND_PATH_PREFIX = "/frontend/build"
+// App struct
+type App struct {
+	ctx                  context.Context
+	settingStoreAPI      *settingstore.SettingStore
+	conversationStoreAPI *conversationstore.ConversationCollection
+	providerSetAPI       *aiprovider.ProviderSetAPI
+	configBasePath       string
+	dataBasePath         string
+}
 
-var DIR_PAGES = []string{"/agents", "/chats", "/settings", "/404"}
+// NewApp creates a new App application struct
+func NewApp() *App {
+	if xdg.ConfigHome == "" || xdg.DataHome == "" {
+		log.Panicf(
+			"Could not resolve data paths. XDG Config dir: %s, XDG Data dir: %s",
+			xdg.ConfigHome,
+			xdg.DataHome,
+		)
+		return nil
+	}
+
+	app := &App{}
+	app.configBasePath = filepath.Join(xdg.ConfigHome, (strings.ToLower(AppTitle)))
+	app.dataBasePath = filepath.Join(xdg.DataHome, (strings.ToLower(AppTitle)))
+	app.settingStoreAPI = &settingstore.SettingStore{}
+	app.conversationStoreAPI = &conversationstore.ConversationCollection{}
+	app.providerSetAPI = aiprovider.NewProviderSetAPI(aiproviderSpec.ProviderNameOpenAI)
+
+	if err := os.MkdirAll(app.configBasePath, os.FileMode(0770)); err != nil {
+		log.Panicf("Failed to create directories for config data %s: %v", app.configBasePath, err)
+		return nil
+
+	}
+	if err := os.MkdirAll(app.dataBasePath, os.FileMode(0770)); err != nil {
+		log.Panicf("Failed to create directories for app data %s: %v", app.dataBasePath, err)
+		return nil
+	}
+
+	return app
+
+}
+
+func (a *App) initManagers() {
+
+	// Initialize settings manager
+	settingsFilePath := filepath.Join(a.configBasePath, "settings.json")
+	log.Printf("Settings file path: %s", settingsFilePath)
+	err := settingstore.InitSettingStore(a.settingStoreAPI, settingsFilePath)
+	if err != nil {
+		log.Panicf("Couldnt initialize setting store at: %s. error: %v", settingsFilePath, err)
+	}
+
+	// Initialize conversation manager
+	conversationDir := filepath.Join(a.dataBasePath, "conversations")
+	log.Printf("Conversation directory: %s", conversationDir)
+
+	err = conversationstore.InitConversationCollection(a.conversationStoreAPI, conversationDir)
+	if err != nil {
+		log.Panicf("Couldnt initialize conversation store at: %s. err:%v", conversationDir, err)
+	}
+}
+
+// startup is called at application startup
+func (a *App) startup(ctx context.Context) {
+	// Perform your setup here
+	a.ctx = ctx
+	// Load the frontend
+	runtime.WindowShow(a.ctx)
+}
+
+// domReady is called after front-end resources have been loaded
+func (a App) domReady(ctx context.Context) {
+	// Add your action here
+}
+
+// beforeClose is called when the application is about to quit,
+// either by clicking the window close button or calling runtime.Quit.
+// Returning true will cause the application to continue, false will continue shutdown as normal.
+func (a *App) beforeClose(ctx context.Context) (prevent bool) {
+	return false
+}
+
+// shutdown is called at application termination
+func (a *App) shutdown(ctx context.Context) {
+	// Perform your teardown here
+}
+
+// Greet returns a greeting for the given name
+func (a *App) Ping() string {
+	return "pong"
+}
+
+// FetchCompletion handles the completion request and streams data back to the frontend
+func (a *App) FetchCompletion(
+	provider string,
+	input aiproviderSpec.CompletionRequest,
+	callbackId string,
+) (*aiproviderSpec.CompletionResponse, error) {
+	onStreamData := func(data string) error {
+		runtime.EventsEmit(a.ctx, callbackId, data)
+		return nil
+	}
+
+	resp, err := a.providerSetAPI.FetchCompletion(
+		aiproviderSpec.ProviderName(provider),
+		input,
+		onStreamData,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
 
 func getActualURL(origurl string) string {
 	callurl := origurl
@@ -101,81 +216,6 @@ func URLCleanerMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// App struct
-type App struct {
-	ctx                  context.Context
-	settingStoreAPI      *settingstore.SettingStore
-	conversationStoreAPI *conversationstore.ConversationCollection
-	providerSetAPI       *aiprovider.ProviderSetAPI
-	configBasePath       string
-}
-
-// NewApp creates a new App application struct
-func NewApp() *App {
-	return &App{
-		settingStoreAPI:      &settingstore.SettingStore{},
-		conversationStoreAPI: &conversationstore.ConversationCollection{},
-		providerSetAPI:       aiprovider.NewProviderSetAPI(spec.ProviderNameOpenAI),
-	}
-}
-
-func (a *App) initManagers() {
-	configFolderPath, err := xdg.ConfigFile(strings.ToLower(AppTitle))
-	if err != nil {
-		log.Panicf("Could not resolve path for config dir: %v", err)
-		return
-	}
-
-	a.configBasePath = configFolderPath
-	// Initialize settings manager
-	settingsFilePath := filepath.Join(a.configBasePath, "settings.json")
-	log.Printf("Settings file path: %s", settingsFilePath)
-
-	err = settingstore.InitSettingStore(a.settingStoreAPI, settingsFilePath)
-	if err != nil {
-		log.Panicf("Couldnt initialize setting store at: %s. error: %v", settingsFilePath, err)
-	}
-
-	// Initialize conversation manager
-	conversationDir := filepath.Join(a.configBasePath, "conversations")
-	log.Printf("Conversation directory: %s", conversationDir)
-
-	err = conversationstore.InitConversationCollection(a.conversationStoreAPI, conversationDir)
-	if err != nil {
-		log.Panicf("Couldnt initialize conversation store at: %s. err:%v", conversationDir, err)
-	}
-}
-
-// startup is called at application startup
-func (a *App) startup(ctx context.Context) {
-	// Perform your setup here
-	a.ctx = ctx
-	// Load the frontend
-	runtime.WindowShow(a.ctx)
-}
-
-// domReady is called after front-end resources have been loaded
-func (a App) domReady(ctx context.Context) {
-	// Add your action here
-}
-
-// beforeClose is called when the application is about to quit,
-// either by clicking the window close button or calling runtime.Quit.
-// Returning true will cause the application to continue, false will continue shutdown as normal.
-func (a *App) beforeClose(ctx context.Context) (prevent bool) {
-	return false
-}
-
-// shutdown is called at application termination
-func (a *App) shutdown(ctx context.Context) {
-	// Perform your teardown here
-}
-
-// Greet returns a greeting for the given name
-func (a *App) Ping() string {
-	return "pong"
-}
-
 func EmbeddedFSWalker() {
 	_ = fs.WalkDir(assets, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -199,8 +239,8 @@ func main() {
 		Height:            768,
 		MinWidth:          1024,
 		MinHeight:         768,
-		MaxWidth:          1920,
-		MaxHeight:         1080,
+		MaxWidth:          7680,
+		MaxHeight:         4320,
 		DisableResize:     false,
 		Fullscreen:        false,
 		Frameless:         false,
