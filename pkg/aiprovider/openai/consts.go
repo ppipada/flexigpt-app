@@ -78,5 +78,5 @@ var OpenAIProviderInfo = spec.ProviderInfo{
 	DefaultHeaders:           map[string]string{"content-type": "application/json"},
 	ChatCompletionPathPrefix: "/chat/completions",
 	DefaultTemperature:       0.1,
-	StreamingSupport:         false,
+	StreamingSupport:         true,
 }

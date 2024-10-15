@@ -193,8 +193,8 @@ func (api *BaseAIAPI) FetchCompletion(
 	}
 	if ok && debugResp != nil {
 		completionResp.RequestDetails = debugResp.RequestDetails
-		completionResp.ResponseDetails = debugResp.ResponseDetails
 		completionResp.ErrorDetails = debugResp.ErrorDetails
+		completionResp.ResponseDetails = debugResp.ResponseDetails
 	}
 
 	if resp == nil || len(resp.Choices) == 0 {

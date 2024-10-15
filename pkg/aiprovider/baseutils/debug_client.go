@@ -136,7 +136,7 @@ func captureRequestDetails(req *http.Request) *spec.APIRequestDetails {
 }
 
 // captureResponseDetails captures details of the HTTP response
-func captureResponseDetails(
+func CaptureResponseDetails(
 	resp *http.Response,
 ) *spec.APIResponseDetails {
 	headers := make(map[string]interface{})
@@ -160,6 +160,52 @@ func captureResponseDetails(
 		Headers: FilterSensitiveInfo(headers),
 		Data:    FilterSensitiveInfo(data),
 	}
+}
+
+type loggingReadCloser struct {
+	io.ReadCloser
+	buf       *bytes.Buffer
+	debugResp *DebugHTTPResponse
+	logMode   bool
+}
+
+func (lc *loggingReadCloser) Read(p []byte) (int, error) {
+	n, err := lc.ReadCloser.Read(p)
+	if n > 0 {
+		lc.buf.Write(p[:n])
+	}
+	return n, err
+}
+
+func (lc *loggingReadCloser) Close() error {
+	err := lc.ReadCloser.Close()
+	if err != nil {
+		return err
+	}
+	dataBytes := lc.buf.Bytes()
+
+	// Process the data based on its type
+	var data interface{}
+	err = json.Unmarshal(dataBytes, &data)
+	if err != nil {
+		// Text data
+		lc.debugResp.ResponseDetails.Data = string(dataBytes)
+	} else {
+		mapData, ok := data.(map[string]interface{})
+		if ok {
+			// JSON data
+			lc.debugResp.ResponseDetails.Data = FilterSensitiveInfo(mapData)
+		} else {
+			// Text data
+			lc.debugResp.ResponseDetails.Data = string(dataBytes)
+		}
+	}
+
+	if lc.logMode {
+		fmt.Printf("Response Body: %s\n", string(dataBytes))
+	}
+
+	return err
 }
 
 // LogTransport is a custom http.RoundTripper that logs requests and responses
@@ -193,8 +239,27 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Capture response details
 	var respDetails *spec.APIResponseDetails
 	if resp != nil {
-		respDetails = captureResponseDetails(resp)
+		// Capture headers
+		headers := make(map[string]interface{})
+		for key, values := range resp.Header {
+			headers[key] = strings.Join(values, ", ")
+		}
+
+		// Initialize response details
+		respDetails = &spec.APIResponseDetails{
+			Status:  resp.StatusCode,
+			Headers: FilterSensitiveInfo(headers),
+		}
 		debugResp.ResponseDetails = respDetails
+
+		// Wrap the response body
+		buffer := new(bytes.Buffer)
+		resp.Body = &loggingReadCloser{
+			ReadCloser: resp.Body,
+			buf:        buffer,
+			debugResp:  debugResp,
+			logMode:    t.LogMode,
+		}
 	}
 
 	// Capture error details if an error occurred

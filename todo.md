@@ -12,9 +12,9 @@
 
 - Post migration list
 
-  - [ ] AI provider: get masked http details from langchaingo whenever available and then send in details
+  - [x] AI provider: get masked http details from langchaingo whenever available and then send in details
   - [ ] ~~Error wrapper and unwrapper on backend main and base apis~~
-  - [ ] Whether to stream or not shoudl be decided by model in conjuction with provider in frontend.
+  - [ ] Whether to stream or not should be decided by model in conjuction with provider in frontend.
   - [ ] integrate file logger
   - [ ] Add support for llangchaingo supported ai providers. Would need testing with each.
   - [ ] Better title deduce
