@@ -7,7 +7,6 @@ import (
 	"github.com/flexigpt/flexiui/pkg/aiprovider/baseutils"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 
-	"github.com/tmc/langchaingo/httputil"
 	langchainAnthropic "github.com/tmc/langchaingo/llms/anthropic"
 )
 
@@ -57,9 +56,8 @@ func (api *AnthropicAPI) SetProviderAttribute(
 			langchainAnthropic.WithModel(string(api.ProviderInfo.DefaultModel)),
 		)
 	}
-	if api.BaseAIAPI.Debug {
-		options = append(options, langchainAnthropic.WithHTTPClient(httputil.DebugHTTPClient))
-	}
+	newClient := baseutils.NewDebugHTTPClient(api.BaseAIAPI.Debug)
+	options = append(options, langchainAnthropic.WithHTTPClient(newClient))
 
 	llm, err := langchainAnthropic.New(options...)
 	if err != nil {

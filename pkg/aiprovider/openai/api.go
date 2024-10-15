@@ -7,7 +7,6 @@ import (
 	"github.com/flexigpt/flexiui/pkg/aiprovider/baseutils"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 
-	"github.com/tmc/langchaingo/httputil"
 	langchainOpenAI "github.com/tmc/langchaingo/llms/openai"
 )
 
@@ -54,9 +53,8 @@ func (api *OpenAIAPI) SetProviderAttribute(
 	if api.ProviderInfo.DefaultModel != "" {
 		options = append(options, langchainOpenAI.WithModel(string(api.ProviderInfo.DefaultModel)))
 	}
-	if api.BaseAIAPI.Debug {
-		options = append(options, langchainOpenAI.WithHTTPClient(httputil.DebugHTTPClient))
-	}
+	newClient := baseutils.NewDebugHTTPClient(api.BaseAIAPI.Debug)
+	options = append(options, langchainOpenAI.WithHTTPClient(newClient))
 
 	llm, err := langchainOpenAI.New(options...)
 	if err != nil {

@@ -7,7 +7,6 @@ import (
 	"github.com/flexigpt/flexiui/pkg/aiprovider/baseutils"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 
-	"github.com/tmc/langchaingo/httputil"
 	langchainGoogle "github.com/tmc/langchaingo/llms/googleai"
 )
 
@@ -58,10 +57,8 @@ func (api *GoogleAPI) SetProviderAttribute(
 			langchainGoogle.WithDefaultModel(string(api.ProviderInfo.DefaultModel)),
 		)
 	}
-
-	if api.BaseAIAPI.Debug {
-		options = append(options, langchainGoogle.WithHTTPClient(httputil.DebugHTTPClient))
-	}
+	newClient := baseutils.NewDebugHTTPClient(api.BaseAIAPI.Debug)
+	options = append(options, langchainGoogle.WithHTTPClient(newClient))
 
 	options = append(
 		options,

@@ -1,0 +1,251 @@
+package baseutils
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+
+	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+)
+
+// Sensitive keys to filter
+var sensitiveKeys = []string{"authorization", "key"}
+
+// Define a context key type to avoid collisions
+type contextKey string
+
+const debugHTTPResponseKey = contextKey("DebugHTTPResponse")
+
+// DebugHTTPResponse wraps http.Response and includes additional debug information
+type DebugHTTPResponse struct {
+	RequestDetails  *spec.APIRequestDetails
+	ResponseDetails *spec.APIResponseDetails
+	ErrorDetails    *spec.APIErrorDetails
+}
+
+// FilterSensitiveInfo recursively filters out sensitive keys from a data structure.
+// It supports nested maps and slices.
+func FilterSensitiveInfo(data map[string]interface{}) map[string]interface{} {
+	filteredData := make(map[string]interface{})
+	for key, value := range data {
+		if containsSensitiveKey(key) {
+			// Mask the sensitive value
+			filteredData[key] = "***"
+		} else {
+			// Recursively process nested data structures
+			filteredData[key] = deepCopyAndFilter(value)
+		}
+	}
+	return filteredData
+}
+
+// deepCopyAndFilter recursively traverses the data structure,
+// filtering sensitive keys from maps and processing slices.
+func deepCopyAndFilter(value interface{}) interface{} {
+	switch v := value.(type) {
+	case map[string]interface{}:
+		// Process nested map
+		return FilterSensitiveInfo(v)
+	case []interface{}:
+		// Process each element in the slice
+		newSlice := make([]interface{}, len(v))
+		for i, elem := range v {
+			newSlice[i] = deepCopyAndFilter(elem)
+		}
+		return newSlice
+	default:
+		// Return the value as is for other data types
+		return v
+	}
+}
+
+// containsSensitiveKey checks if a key contains any sensitive keywords
+func containsSensitiveKey(key string) bool {
+	lowerKey := strings.ToLower(key)
+	for _, sensitiveKey := range sensitiveKeys {
+		if strings.Contains(lowerKey, sensitiveKey) {
+			return true
+		}
+	}
+	return false
+}
+
+func generateCurlCommand(config *spec.APIRequestDetails) string {
+	var curlCommand strings.Builder
+
+	// Add HTTP method
+	if config.Method != nil {
+		curlCommand.WriteString("curl -X " + strings.ToUpper(*config.Method) + " ")
+	}
+
+	// Add URL
+	if config.URL != nil {
+		curlCommand.WriteString("\"" + *config.URL + "\" ")
+	}
+
+	// Add headers
+	if config.Headers != nil {
+		for key, value := range config.Headers {
+			curlCommand.WriteString(fmt.Sprintf("-H \"%s: %v\" ", key, value))
+		}
+	}
+
+	// Add data
+	if config.Data != nil {
+		dataBytes, err := json.Marshal(config.Data)
+		if err == nil {
+			curlCommand.WriteString(fmt.Sprintf("-d '%s' ", string(dataBytes)))
+		}
+	}
+
+	return curlCommand.String()
+}
+
+// captureRequestDetails captures details of the HTTP request
+func captureRequestDetails(req *http.Request) *spec.APIRequestDetails {
+	headers := make(map[string]interface{})
+	for key, values := range req.Header {
+		headers[key] = strings.Join(values, ", ")
+	}
+
+	var data map[string]interface{}
+	if req.Body != nil {
+		bodyBytes, _ := io.ReadAll(req.Body)
+		req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes)) // Reset body for further use
+		_ = json.Unmarshal(bodyBytes, &data)
+	}
+
+	url := req.URL.String()
+	method := req.Method
+
+	apireq := &spec.APIRequestDetails{
+		URL:     &url,
+		Method:  &method,
+		Headers: FilterSensitiveInfo(headers),
+		Data:    FilterSensitiveInfo(data),
+	}
+
+	curlcmd := generateCurlCommand(apireq)
+	apireq.CurlCommand = &curlcmd
+
+	return apireq
+}
+
+// captureResponseDetails captures details of the HTTP response
+func captureResponseDetails(
+	resp *http.Response,
+) *spec.APIResponseDetails {
+	headers := make(map[string]interface{})
+	for key, values := range resp.Header {
+		headers[key] = strings.Join(values, ", ")
+	}
+
+	var data map[string]interface{}
+	if resp.Body != nil {
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err == nil {
+			// Attempt to unmarshal the body into 'data'
+			_ = json.Unmarshal(bodyBytes, &data)
+		}
+		// Reconstruct the body so it can be read again later
+		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	}
+
+	return &spec.APIResponseDetails{
+		Status:  resp.StatusCode,
+		Headers: FilterSensitiveInfo(headers),
+		Data:    FilterSensitiveInfo(data),
+	}
+}
+
+// LogTransport is a custom http.RoundTripper that logs requests and responses
+type LogTransport struct {
+	Transport http.RoundTripper
+	LogMode   bool
+}
+
+// RoundTrip executes a single HTTP transaction and logs the request and response
+func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	reqCtx := req.Context()
+	debugResp, ok := GetDebugHTTPResponse(reqCtx)
+	if !ok || debugResp == nil {
+		// Allocate a pointer for processing. This is not going to be available in consumer anycase, but is present for processing sakes only.
+		// fmt.Printf("Couldnt get debug context from request")
+		debugResp = &DebugHTTPResponse{}
+	}
+
+	// Capture request details
+	reqDetails := captureRequestDetails(req)
+	debugResp.RequestDetails = reqDetails
+
+	// Log request details if LogMode is enabled
+	if t.LogMode {
+		fmt.Printf("Request Details: %+v\n", reqDetails)
+	}
+
+	// Perform the request
+	resp, err := t.Transport.RoundTrip(req)
+
+	// Capture response details
+	var respDetails *spec.APIResponseDetails
+	if resp != nil {
+		respDetails = captureResponseDetails(resp)
+		debugResp.ResponseDetails = respDetails
+	}
+
+	// Capture error details if an error occurred
+	var errorDetails *spec.APIErrorDetails
+	if err != nil {
+		errorDetails = &spec.APIErrorDetails{
+			Message:         err.Error(),
+			RequestDetails:  reqDetails,
+			ResponseDetails: respDetails,
+		}
+		debugResp.ErrorDetails = errorDetails
+	}
+
+	// Log response details if LogMode is enabled
+	if t.LogMode {
+		if respDetails != nil {
+			fmt.Printf("Response Details: %+v\n", respDetails)
+		}
+		if errorDetails != nil {
+			fmt.Printf("Error Details: %+v\n", errorDetails)
+		}
+	}
+
+	// Return the response and error
+	return resp, err
+
+}
+
+// NewDebugHTTPClient creates a new HTTP client with logging capabilities
+func NewDebugHTTPClient(logMode bool) *http.Client {
+	return &http.Client{
+		Transport: &LogTransport{
+			Transport: http.DefaultTransport,
+			LogMode:   logMode,
+		},
+	}
+}
+
+func AddDebugResponseToCtx(ctx context.Context) context.Context {
+	debugResp := &DebugHTTPResponse{}
+	// Create a context with the DebugHTTPResponse
+	return context.WithValue(ctx, debugHTTPResponseKey, debugResp)
+}
+
+// Helper function to retrieve DebugHTTPResponse from context
+func GetDebugHTTPResponse(ctx context.Context) (*DebugHTTPResponse, bool) {
+	debugResp, ok := ctx.Value(debugHTTPResponseKey).(*DebugHTTPResponse)
+	// if !ok {
+	// 	fmt.Printf("Couldnt get debug context in response %+v\n", ctx)
+	// } else {
+	// 	fmt.Printf("Got context in response. DebugResp: %+v\nContext:%+v\n", debugResp, ctx)
+	// }
+	return debugResp, ok
+}

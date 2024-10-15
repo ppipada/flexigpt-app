@@ -179,15 +179,37 @@ func (api *BaseAIAPI) FetchCompletion(
 		return nil, fmt.Errorf("Empty input content messages")
 	}
 
+	completionResp := &spec.CompletionResponse{}
+
+	ctx = AddDebugResponseToCtx(ctx)
 	resp, err := llm.GenerateContent(ctx, content, options...)
+	debugResp, ok := GetDebugHTTPResponse(ctx)
 	if err != nil {
+		if ok && debugResp != nil && debugResp.ErrorDetails != nil {
+			completionResp.ErrorDetails = debugResp.ErrorDetails
+			return completionResp, nil
+		}
 		return nil, err
 	}
-	if resp == nil || len(resp.Choices) == 0 {
-		return nil, fmt.Errorf("Got nil response from LLM api")
+	if ok && debugResp != nil {
+		completionResp.RequestDetails = debugResp.RequestDetails
+		completionResp.ResponseDetails = debugResp.ResponseDetails
+		completionResp.ErrorDetails = debugResp.ErrorDetails
 	}
 
-	return &spec.CompletionResponse{
-		RespContent: &resp.Choices[0].Content,
-	}, nil
+	if resp == nil || len(resp.Choices) == 0 {
+		if ok && debugResp != nil {
+			if completionResp.ErrorDetails == nil {
+				completionResp.ErrorDetails = &spec.APIErrorDetails{
+					Message: "Got nil response from LLM api",
+				}
+			} else {
+				completionResp.ErrorDetails.Message += "Got nil response from LLM api"
+			}
+			return completionResp, nil
+		}
+		return nil, fmt.Errorf("Got nil response from LLM api")
+	}
+	completionResp.RespContent = &resp.Choices[0].Content
+	return completionResp, nil
 }
