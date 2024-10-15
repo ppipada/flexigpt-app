@@ -94,7 +94,7 @@ async function handleStreamedCompletion(
 	return parseAPIResponse(convoMessage, providerResp);
 }
 
-export async function getCompletionMessage(
+export async function GetCompletionMessage(
 	convoMessage: ConversationMessage,
 	messages?: Array<ConversationMessage>,
 	inputParams?: { [key: string]: any },

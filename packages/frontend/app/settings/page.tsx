@@ -1,7 +1,7 @@
 'use client';
 
 import { providerSetAPI, settingstoreAPI } from '@/backendapibase';
-import { loadProviderSettings, updateProviderAISettings } from '@/backendapihelper/load_settings';
+import { loadProviderSettings, updateProviderAISettings } from '@/backendapihelper/settings_helper';
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
 import { ModelName, ProviderName } from '@/models/aiprovidermodel';
@@ -95,7 +95,6 @@ const SettingsPage: FC = () => {
 		);
 		return value;
 	};
-
 	return (
 		<div className="flex flex-col items-center w-full h-full overflow-hidden">
 			<div className="w-full flex justify-center bg-transparent fixed top-2">
@@ -123,40 +122,47 @@ const SettingsPage: FC = () => {
 					className="w-full flex-grow flex justify-center overflow-y-auto"
 					style={{ maxHeight: `calc(100vh - 128px)` }}
 				>
-					<div className="w-11/12 lg:w-2/3">
-						<div className="bg-base-100 rounded-lg shadow-lg p-4 mb-4">
-							<h3 className="text-xl font-semibold mb-8">App</h3>
-							<div className="grid grid-cols-12 gap-4 mb-4 items-center">
-								<h3 className="col-span-3 text-sm font-medium">Theme</h3>
+					<div className="flex flex-col space-y-4 w-11/12 lg:w-2/3">
+						{/* Theme Switch Card */}
+						<div className="bg-base-100 rounded-lg shadow-lg px-4 py-2">
+							<div className="grid grid-cols-12 gap-4 items-center">
+								<div className="col-span-3 text-sm font-medium">Theme</div>
 								<div className="col-span-9">
 									<ThemeSwitch />
 								</div>
 							</div>
-							<div className="grid grid-cols-12 gap-4 mb-4 items-center">
-								<label className="col-span-3 text-sm font-medium">Default Provider</label>
-								<ProviderDropdown
-									aiSettings={aiSettings}
-									defaultProvider={defaultProvider}
-									onProviderChange={handleDefaultProviderChange}
-								/>
+						</div>
+
+						{/* Default Provider Card */}
+						<div className="bg-base-100 rounded-lg shadow-lg px-4 py-2">
+							<div className="grid grid-cols-12 gap-4 items-center">
+								<div className="col-span-3 text-sm font-medium">Default Provider</div>
+								<div className="col-span-9">
+									<ProviderDropdown
+										aiSettings={aiSettings}
+										defaultProvider={defaultProvider}
+										onProviderChange={handleDefaultProviderChange}
+									/>
+								</div>
 							</div>
 						</div>
-						<div className="w-full flex-1 pb-4">
-							{Object.keys(aiSettings).map(providerStr => {
-								const typedProvider = providerStr as ProviderName;
-								const oneSettings = aiSettings[typedProvider];
-								return (
+
+						{/* AI Settings Cards */}
+						{Object.keys(aiSettings).map(providerStr => {
+							const typedProvider = providerStr as ProviderName;
+							const oneSettings = aiSettings[typedProvider];
+							return (
+								<div key={typedProvider} className=" rounded-lg">
 									<AISettingsCard
-										key={typedProvider}
 										provider={typedProvider}
 										settings={oneSettings}
 										onChange={(key, value) => handleAISettingsChange(typedProvider, key, value)}
 										onSave={(key, value) => handleSaveAISettings(typedProvider, key, value)}
 										aiSettings={aiSettings}
 									/>
-								);
-							})}
-						</div>
+								</div>
+							);
+						})}
 					</div>
 				</div>
 			</div>

@@ -1,5 +1,5 @@
 'use client';
-import { loadProviderSettings } from '@/backendapihelper/load_settings';
+import { loadProviderSettings } from '@/backendapihelper/settings_helper';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect } from 'react';

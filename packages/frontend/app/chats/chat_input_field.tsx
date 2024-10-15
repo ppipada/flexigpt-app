@@ -1,5 +1,5 @@
-import { providerSetAPI } from '@/backendapibase';
-import { ModelInfo, ModelName, ProviderInfo, ProviderName } from '@/models/aiprovidermodel';
+import { GetChatInputOptions, ModelOption } from '@/backendapihelper/chat_inputoptions_helper';
+import { ModelName, ProviderName } from '@/models/aiprovidermodel';
 import React, {
 	ChangeEvent,
 	forwardRef,
@@ -11,14 +11,7 @@ import React, {
 	useState,
 } from 'react';
 import { FiCheck, FiChevronDown, FiChevronUp, FiSend } from 'react-icons/fi';
-
 // Define the structure of the model information and chat options
-interface ModelOption {
-	title: string;
-	provider?: ProviderName;
-	name?: ModelName;
-	temperature: number;
-}
 
 export interface ChatOptions {
 	modelInfo?: ModelOption;
@@ -33,46 +26,6 @@ export interface ChatInputFieldProps {
 export interface ChatInputFieldHandle {
 	getChatOptions: () => ChatOptions;
 }
-
-const getOptions = async () => {
-	const configInfo = await providerSetAPI.getConfigurationInfo();
-	// log.info(JSON.stringify(configInfo, null, 2));
-	let defaultOption: ModelOption | undefined;
-	const inputModels: ModelOption[] = [];
-	if ('configuredModels' in configInfo && 'configuredProviders' in configInfo && 'defaultProvider' in configInfo) {
-		const configDefaultProvider = configInfo['defaultProvider'] as ProviderName;
-		let defaultModelName: ModelName | undefined;
-		const configuredProviders = configInfo['configuredProviders'] as ProviderInfo[];
-		const providerInfoDict: Record<string, ProviderInfo> = {};
-		for (const providerInfo of configuredProviders) {
-			if (providerInfo.name === configDefaultProvider) {
-				defaultModelName = providerInfo.defaultModel;
-			}
-			providerInfoDict[providerInfo.name] = providerInfo;
-		}
-		const configuredModels = configInfo['configuredModels'] as ModelInfo[];
-		for (const modelInfo of configuredModels) {
-			const modelOption: ModelOption = {
-				title: modelInfo.displayName,
-				provider: modelInfo.provider,
-				temperature: providerInfoDict[modelInfo.provider].defaultTemperature,
-				name: modelInfo.name,
-			};
-			if (modelInfo.name === defaultModelName) {
-				defaultOption = modelOption;
-			}
-			inputModels.push(modelOption);
-		}
-	} else {
-		const noModel: ModelOption = {
-			title: 'No Model configured',
-			temperature: 0.1,
-		};
-		inputModels.push(noModel);
-		defaultOption = noModel;
-	}
-	return { allOptions: inputModels, default: defaultOption };
-};
 
 // Custom hook for handling form submission on Enter key press
 function useEnterSubmit(): {
@@ -119,7 +72,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	]);
 
 	const loadInitialItems = useCallback(async () => {
-		const r = await getOptions();
+		const r = await GetChatInputOptions();
 		if (r.default) {
 			setSelectedModel(r.default);
 		}

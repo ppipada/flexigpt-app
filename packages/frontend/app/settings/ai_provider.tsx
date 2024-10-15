@@ -23,14 +23,14 @@ const ProviderDropdown: FC<ProviderDropdownProps> = ({ aiSettings, defaultProvid
 	const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
 	return (
-		<div className="dropdown col-span-9 relative">
+		<div className="dropdown relative w-full">
 			<label
 				tabIndex={0}
-				className="btn w-full text-left shadow-none border-none rounded-box bg-base-100 flex justify-between items-center"
+				className="flex btn w-full text-left shadow-none border-none rounded-box bg-base-100 justify-between items-center px-1"
 				onClick={toggleDropdown}
 				title="Select Provider"
 			>
-				<span>{capitalize(selectedProvider)}</span>
+				<h3 className="text-sm font-medium capitalize">{selectedProvider}</h3>
 				{isOpen ? <FiChevronUp /> : <FiChevronDown />}
 			</label>
 			<ul
@@ -46,7 +46,7 @@ const ProviderDropdown: FC<ProviderDropdownProps> = ({ aiSettings, defaultProvid
 							className="cursor-pointer rounded-box"
 							onClick={() => handleSelection(provider as ProviderName)}
 						>
-							<a className="justify-between items-center p-2 m-0 flex">
+							<a className="justify-between items-center p-2 m-1 flex">
 								<span>{capitalize(provider)}</span>
 								{provider === selectedProvider && <FiCheck />}
 							</a>

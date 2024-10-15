@@ -1,5 +1,5 @@
 'use client';
-import { getCompletionMessage } from '@/backendapihelper/chat_helper';
+import { GetCompletionMessage } from '@/backendapihelper/chat_completion_helper';
 import { getConversation, listAllConversations, saveConversation } from '@/backendapihelper/conversation_memoized_api';
 import ChatInputField, { ChatInputFieldHandle, ChatOptions } from '@/chats/chat_input_field';
 import ChatMessage from '@/chats/chat_message';
@@ -117,7 +117,7 @@ const ChatScreen: FC = () => {
 			});
 		};
 		// log.info(JSON.stringify({ prevMessages, inputParams, convoMsg }, null, 2));
-		const newMsg = await getCompletionMessage(convoMsg, prevMessages, inputParams, onStreamData);
+		const newMsg = await GetCompletionMessage(convoMsg, prevMessages, inputParams, onStreamData);
 		if (newMsg && newMsg.requestDetails) {
 			if (updatedChatWithConvoMessage.messages.length > 1) {
 				updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 2].details =
