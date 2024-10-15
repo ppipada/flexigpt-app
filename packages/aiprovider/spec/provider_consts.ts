@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ModelInfo, ModelName, ProviderInfo, ProviderInfoImpl, ProviderName } from './provider_types';
+import { ModelInfo, ModelName, ProviderInfo, ProviderName } from './provider_types';
 
-export const anthropicProviderInfo: ProviderInfo = new ProviderInfoImpl({
+export const anthropicProviderInfo: ProviderInfo = {
 	name: ProviderName.ANTHROPIC,
 	apiKey: '',
 	engine: '',
@@ -18,23 +18,9 @@ export const anthropicProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	chatCompletionPathPrefix: '/messages',
 	defaultTemperature: 0.1,
 	streamingSupport: true,
-	descriptions: {
-		apiKey: 'Your anthropic API key.',
-		engine: 'The engine to be used for processing.',
-		defaultOrigin:
-			'Default origin to use for requests. This can be used to talk to any server that serves a compatible API',
-		defaultModel: 'Default model to use for chat requests',
-		additionalSettings: 'Any additional settings to pass to the model. Input as a JSON object',
-		timeout: 'The timeout duration in milliseconds.',
-		apiKeyHeaderKey: 'The header key for the API key.',
-		defaultHeaders: 'The default headers to be included in requests.',
-		chatCompletionPathPrefix: 'The path prefix for chat completions.',
-		defaultTemperature: 'Default temperature setting for chat requests',
-		modelPrefixes: 'Optional prefixes for models.',
-	},
-});
+};
 
-export const googleProviderInfo: ProviderInfo = new ProviderInfoImpl({
+export const googleProviderInfo: ProviderInfo = {
 	name: ProviderName.GOOGLE,
 	apiKey: '',
 	engine: '',
@@ -49,23 +35,9 @@ export const googleProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	chatCompletionPathPrefix: '/v1beta/models',
 	defaultTemperature: 0.1,
 	streamingSupport: true,
-	descriptions: {
-		apiKey: 'Your google generative AI API key.',
-		engine: 'The engine to be used for processing.',
-		defaultOrigin:
-			'Default origin to use for requests. This can be used to talk to any server that serves a compatible API',
-		defaultModel: 'Default model to use for chat requests',
-		additionalSettings: 'Any additional settings to pass to the model. Input as a JSON object',
-		timeout: 'The timeout duration in milliseconds.',
-		apiKeyHeaderKey: 'The header key for the API key.',
-		defaultHeaders: 'The default headers to be included in requests.',
-		chatCompletionPathPrefix: 'The path prefix for chat completions.',
-		defaultTemperature: 'Default temperature setting for chat requests',
-		modelPrefixes: 'Optional prefixes for models.',
-	},
-});
+};
 
-export const huggingfaceProviderInfo: ProviderInfo = new ProviderInfoImpl({
+export const huggingfaceProviderInfo: ProviderInfo = {
 	name: ProviderName.HUGGINGFACE,
 	apiKey: '',
 	engine: '',
@@ -81,23 +53,9 @@ export const huggingfaceProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	defaultTemperature: 0.1,
 	modelPrefixes: ['microsoft/', 'replit/', 'Salesforce/', 'bigcode/', 'deepseek-ai/'],
 	streamingSupport: false,
-	descriptions: {
-		apiKey: 'Your huggingface API key.',
-		engine: 'The engine to be used for processing.',
-		defaultOrigin:
-			'Default origin to use for requests. This can be used to talk to any server that serves a compatible API',
-		defaultModel: 'Default model to use for chat requests',
-		additionalSettings: 'Any additional settings to pass to the model. Input as a JSON object',
-		timeout: 'The timeout duration in milliseconds.',
-		apiKeyHeaderKey: 'The header key for the API key.',
-		defaultHeaders: 'The default headers to be included in requests.',
-		chatCompletionPathPrefix: 'The path prefix for chat completions.',
-		defaultTemperature: 'Default temperature setting for chat requests',
-		modelPrefixes: 'Optional prefixes for models.',
-	},
-});
+};
 
-export const llamacppProviderInfo: ProviderInfo = new ProviderInfoImpl({
+export const llamacppProviderInfo: ProviderInfo = {
 	name: ProviderName.LLAMACPP,
 	apiKey: '',
 	engine: '',
@@ -112,23 +70,9 @@ export const llamacppProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	chatCompletionPathPrefix: '/completion',
 	defaultTemperature: 0.1,
 	streamingSupport: false,
-	descriptions: {
-		apiKey: 'Your llamacpp API key.',
-		engine: 'The engine to be used for processing.',
-		defaultOrigin:
-			'Default origin to use for requests. This can be used to talk to any server that serves a compatible API',
-		defaultModel: 'Default model to use for chat requests',
-		additionalSettings: 'Any additional settings to pass to the model. Input as a JSON object',
-		timeout: 'The timeout duration in milliseconds.',
-		apiKeyHeaderKey: 'The header key for the API key.',
-		defaultHeaders: 'The default headers to be included in requests.',
-		chatCompletionPathPrefix: 'The path prefix for chat completions.',
-		defaultTemperature: 'Default temperature setting for chat requests',
-		modelPrefixes: 'Optional prefixes for models.',
-	},
-});
+};
 
-export const openaiProviderInfo: ProviderInfo = new ProviderInfoImpl({
+export const openaiProviderInfo: ProviderInfo = {
 	name: ProviderName.OPENAI,
 	apiKey: '',
 	engine: '',
@@ -143,21 +87,7 @@ export const openaiProviderInfo: ProviderInfo = new ProviderInfoImpl({
 	chatCompletionPathPrefix: '/chat/completions',
 	defaultTemperature: 0.1,
 	streamingSupport: true,
-	descriptions: {
-		apiKey: 'Your openAI API key. Can be seen at https://beta.openai.com/account/api-keys',
-		engine: 'The engine to be used for processing.',
-		defaultOrigin:
-			'Default origin to use for requests. This can be used to talk to any server that serves a compatible API',
-		defaultModel: 'Default model to use for chat requests',
-		additionalSettings: 'Any additional settings to pass to the model. Input as a JSON object',
-		timeout: 'The timeout duration in milliseconds.',
-		apiKeyHeaderKey: 'The header key for the API key.',
-		defaultHeaders: 'The default headers to be included in requests.',
-		chatCompletionPathPrefix: 'The path prefix for chat completions.',
-		defaultTemperature: 'Default temperature setting for chat requests',
-		modelPrefixes: 'Optional prefixes for models.',
-	},
-});
+};
 
 export const ANTHROPIC_MODELS: { [key in ModelName]?: ModelInfo } = {
 	[ModelName.CLAUDE_3_5_SONNET]: {

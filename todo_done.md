@@ -110,40 +110,40 @@
   - [x] Fetch conversation titles and add it to the drawer
   - [x] provide a new chat, delete one conversation, delete all conversations actions
 
-- Laundry list
+### Laundry list
 
-  - [x] code inline line overflow handle
-  - [x] feedback integration removal
-  - [x] sort order of drop down, during load
-  - [x] sort order of drop down, after new chat
-  - [x] title population
-  - [x] Full copy for assistant
-  - [x] Streaming
-    - [x] aiprovider support
-    - [x] page support
-    - [x] add other providers
-      - [x] Openai
-      - [x] anthropic
-      - [x] google
-    - [x] someway to show things are loading
-  - [x] Content:
-    - [x] Emoji
-    - [ ] ~~Subscript~~
-    - [ ] ~~custom headings~~
-    - [ ] ~~navigate in same doc~~
-    - [ ] ~~Math handling~~
-  - [x] packaged app debug
-  - [x] Move ai provider to electron main
-  - [x] screen blanks if lot of data is put in inputfield
-  - [x] selection doesnt reset on new conversation in search bar
-  - [x] today vs yesterday in group
-  - [x] logger is imported in securejsondb before it is set as ipc logger
-  - [x] error handling review and fix
-  - [x] Blanket error handle in api fetch chat helper
-  - [x] Add edit functionality
-  - [x] ability to discard previous message history in next call
-  - [x] ability to choose provider and model and temperature in the chat itself.
-  - [x] populate initial choices in input options
+- [x] code inline line overflow handle
+- [x] feedback integration removal
+- [x] sort order of drop down, during load
+- [x] sort order of drop down, after new chat
+- [x] title population
+- [x] Full copy for assistant
+- [x] Streaming
+  - [x] aiprovider support
+  - [x] page support
+  - [x] add other providers
+    - [x] Openai
+    - [x] anthropic
+    - [x] google
+  - [x] someway to show things are loading
+- [x] Content:
+  - [x] Emoji
+  - [ ] ~~Subscript~~
+  - [ ] ~~custom headings~~
+  - [ ] ~~navigate in same doc~~
+  - [ ] ~~Math handling~~
+- [x] packaged app debug
+- [x] Move ai provider to electron main
+- [x] screen blanks if lot of data is put in inputfield
+- [x] selection doesnt reset on new conversation in search bar
+- [x] today vs yesterday in group
+- [x] logger is imported in securejsondb before it is set as ipc logger
+- [x] error handling review and fix
+- [x] Blanket error handle in api fetch chat helper
+- [x] Add edit functionality
+- [x] ability to discard previous message history in next call
+- [x] ability to choose provider and model and temperature in the chat itself.
+- [x] populate initial choices in input options
 
 ### Wails migrate
 
@@ -161,3 +161,9 @@
 - [x] Translate aiprovider to go. Try and use langchaingo directly
 - [x] Implement streaming.
 - [x] Integrate other AI providers: anthropic, google, hf
+
+### Post migrate laundry list
+
+- [x] Add support for first getting available ai providers and then configuring them accordingly. UI needs to be modified as collapsed cards and disabled cards
+- [x] Only enabled chat options should be available
+- [x] Get most consts through API

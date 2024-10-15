@@ -32,16 +32,7 @@ type ProviderInfo struct {
 	ChatCompletionPathPrefix string                 `json:"chatCompletionPathPrefix"`
 	DefaultTemperature       float64                `json:"defaultTemperature"`
 	ModelPrefixes            []string               `json:"modelPrefixes"`
-	Descriptions             map[string]string      `json:"descriptions"`
 	StreamingSupport         bool                   `json:"streamingSupport"`
-}
-
-// GetDescription returns the description for a given key.
-func (p *ProviderInfo) GetDescription(key string) string {
-	if description, exists := p.Descriptions[key]; exists {
-		return description
-	}
-	return ""
 }
 
 func (p *ProviderInfo) IsConfigured() bool {

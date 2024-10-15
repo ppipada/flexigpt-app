@@ -12,9 +12,6 @@
 
 - Post migration list
 
-  - [x] Add support for first getting available ai providers and then configuring them accordingly. UI needs to be modified as collapsed cards and disabled cards
-  - [x] Only enabled chat options should be available
-  - [ ] Get most consts through API
   - [ ] AI provider: get masked http details from langchaingo whenever available and then send in details
   - [ ] Error wrapper and unwrapper on backend main and base apis
   - [ ] Add support for llangchaingo supported ai providers. Would need testing with each.

@@ -52,49 +52,4 @@ export interface ProviderInfo {
 	modelPrefixes?: string[];
 	descriptions?: Partial<Record<keyof ProviderInfo, string>>;
 	streamingSupport?: boolean;
-
-	// Method to get description of a key
-	getDescription(key: string): string | undefined;
-}
-
-// Implementing the ProviderInfo interface in a class
-export class ProviderInfoImpl implements ProviderInfo {
-	name: ProviderName;
-	apiKey: string;
-	engine: string;
-	defaultOrigin: string;
-	defaultModel: ModelName;
-	additionalSettings: Record<string, any>;
-	timeout: number;
-	apiKeyHeaderKey: string;
-	defaultHeaders: Record<string, string>;
-	chatCompletionPathPrefix: string;
-	defaultTemperature: number;
-	modelPrefixes?: string[];
-	streamingSupport?: boolean;
-	descriptions?: Partial<Record<keyof ProviderInfo, string>>;
-
-	constructor(providerInfo: Omit<ProviderInfo, 'getDescription'>) {
-		this.name = providerInfo.name;
-		this.apiKey = providerInfo.apiKey;
-		this.engine = providerInfo.engine;
-		this.defaultOrigin = providerInfo.defaultOrigin;
-		this.defaultModel = providerInfo.defaultModel;
-		this.additionalSettings = providerInfo.additionalSettings;
-		this.timeout = providerInfo.timeout;
-		this.apiKeyHeaderKey = providerInfo.apiKeyHeaderKey;
-		this.defaultHeaders = providerInfo.defaultHeaders;
-		this.chatCompletionPathPrefix = providerInfo.chatCompletionPathPrefix;
-		this.defaultTemperature = providerInfo.defaultTemperature;
-		this.modelPrefixes = providerInfo.modelPrefixes;
-		this.streamingSupport = providerInfo.streamingSupport;
-		this.descriptions = providerInfo.descriptions;
-	}
-
-	getDescription(key: string): string | undefined {
-		if (!(key as keyof ProviderInfo)) {
-			return undefined;
-		}
-		return this.descriptions ? this.descriptions[key as keyof ProviderInfo] : undefined;
-	}
 }

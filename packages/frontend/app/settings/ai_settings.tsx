@@ -1,4 +1,4 @@
-import { ALL_AI_PROVIDERS, ProviderName } from '@/models/aiprovidermodel';
+import { ALL_AI_PROVIDERS_DESCRIPTION, ProviderName } from '@/models/aiprovidermodel';
 import { AISetting } from '@/models/settingmodel';
 import { FC, useState } from 'react';
 import { FiAlertTriangle, FiCheckCircle, FiChevronDown, FiChevronUp, FiXCircle } from 'react-icons/fi';
@@ -12,7 +12,6 @@ interface AISettingsCardProps {
 }
 
 const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange, onSave, aiSettings }) => {
-	const providerinfo = ALL_AI_PROVIDERS[provider];
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [isEnabled, setIsEnabled] = useState(!!settings.isEnabled);
 	const [showModal, setShowModal] = useState(false);
@@ -47,7 +46,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 					<h3 className="text-sm font-medium capitalize">{provider}</h3>
 				</div>
 				{/* Enable/Disable Toggle */}
-				<div className="col-span-6 flex items-center space-x-4 ml-1">
+				<div className="col-span-3 flex items-center space-x-4 ml-1">
 					<label className="text-sm font-medium">Enable</label>
 					<input
 						type="checkbox"
@@ -57,7 +56,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 					/>
 				</div>
 				{/* Full Settings with Chevron */}
-				<div className="col-span-3 flex items-center cursor-pointer space-x-4" onClick={toggleExpand}>
+				<div className="col-span-6 cursor-pointer space-x-4 flex items-end justify-end" onClick={toggleExpand}>
 					<div className="flex items-center">
 						<span className="text-sm font-medium">API Key</span>
 						{settings.apiKey ? (
@@ -81,7 +80,10 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 				<div className="m-1 mt-8 space-y-4">
 					{/* API Key */}
 					<div className="grid grid-cols-12 gap-4 items-center">
-						<label className="col-span-3 text-sm text-left tooltip" data-tip={providerinfo?.getDescription('apiKey')}>
+						<label
+							className="col-span-3 text-sm text-left tooltip"
+							data-tip={ALL_AI_PROVIDERS_DESCRIPTION[provider]['apiKey']}
+						>
 							API Key
 						</label>
 						<input
@@ -98,7 +100,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 					<div className="grid grid-cols-12 gap-4 items-center">
 						<label
 							className="col-span-3 text-sm text-left tooltip"
-							data-tip={providerinfo?.getDescription('defaultModel')}
+							data-tip={ALL_AI_PROVIDERS_DESCRIPTION[provider]['defaultModel']}
 						>
 							Default Model
 						</label>
@@ -116,7 +118,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 					<div className="grid grid-cols-12 gap-4 items-center">
 						<label
 							className="col-span-3 text-sm text-left tooltip"
-							data-tip={providerinfo?.getDescription('defaultTemperature')}
+							data-tip={ALL_AI_PROVIDERS_DESCRIPTION[provider]['defaultTemperature']}
 						>
 							Default Temperature
 						</label>
@@ -137,7 +139,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 					<div className="grid grid-cols-12 gap-4 items-center">
 						<label
 							className="col-span-3 text-sm text-left tooltip"
-							data-tip={providerinfo?.getDescription('defaultOrigin')}
+							data-tip={ALL_AI_PROVIDERS_DESCRIPTION[provider]['defaultOrigin']}
 						>
 							Default Origin
 						</label>

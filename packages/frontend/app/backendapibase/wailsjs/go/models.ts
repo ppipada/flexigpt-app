@@ -453,7 +453,6 @@ export namespace spec {
 	    chatCompletionPathPrefix: string;
 	    defaultTemperature: number;
 	    modelPrefixes: string[];
-	    descriptions: {[key: string]: string};
 	    streamingSupport: boolean;
 	
 	    static createFrom(source: any = {}) {
@@ -474,7 +473,6 @@ export namespace spec {
 	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
 	        this.defaultTemperature = source["defaultTemperature"];
 	        this.modelPrefixes = source["modelPrefixes"];
-	        this.descriptions = source["descriptions"];
 	        this.streamingSupport = source["streamingSupport"];
 	    }
 	}
