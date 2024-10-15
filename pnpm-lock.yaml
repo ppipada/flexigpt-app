@@ -255,6 +255,10 @@ importers:
 
   packages/frontend/app/backendapibase/wailsjs/runtime: {}
 
+  packages/frontend/build: {}
+
+  packages/frontend/build/types: {}
+
   packages/logger: {}
 
   packages/securejsondb:

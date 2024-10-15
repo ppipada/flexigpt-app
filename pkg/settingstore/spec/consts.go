@@ -12,6 +12,7 @@ import (
 // Define the default AI settings
 var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 	anthropic.ProviderNameAnthropic: {
+		IsEnabled:          true,
 		ApiKey:             anthropic.AnthropicProviderInfo.ApiKey,
 		DefaultModel:       anthropic.AnthropicProviderInfo.DefaultModel,
 		DefaultOrigin:      anthropic.AnthropicProviderInfo.DefaultOrigin,
@@ -19,6 +20,7 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 		AdditionalSettings: anthropic.AnthropicProviderInfo.AdditionalSettings,
 	},
 	google.ProviderNameGoogle: {
+		IsEnabled:          false,
 		ApiKey:             google.GoogleProviderInfo.ApiKey,
 		DefaultModel:       google.GoogleProviderInfo.DefaultModel,
 		DefaultOrigin:      google.GoogleProviderInfo.DefaultOrigin,
@@ -26,6 +28,7 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 		AdditionalSettings: google.GoogleProviderInfo.AdditionalSettings,
 	},
 	huggingface.ProviderNameHuggingFace: {
+		IsEnabled:          false,
 		ApiKey:             huggingface.HuggingfaceProviderInfo.ApiKey,
 		DefaultModel:       huggingface.HuggingfaceProviderInfo.DefaultModel,
 		DefaultOrigin:      huggingface.HuggingfaceProviderInfo.DefaultOrigin,
@@ -33,6 +36,7 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 		AdditionalSettings: huggingface.HuggingfaceProviderInfo.AdditionalSettings,
 	},
 	llamacpp.ProviderNameLlamaCPP: {
+		IsEnabled:          false,
 		ApiKey:             llamacpp.LlamacppProviderInfo.ApiKey,
 		DefaultModel:       llamacpp.LlamacppProviderInfo.DefaultModel,
 		DefaultOrigin:      llamacpp.LlamacppProviderInfo.DefaultOrigin,
@@ -40,6 +44,7 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 		AdditionalSettings: llamacpp.LlamacppProviderInfo.AdditionalSettings,
 	},
 	openai.ProviderNameOpenAI: {
+		IsEnabled:          true,
 		ApiKey:             openai.OpenAIProviderInfo.ApiKey,
 		DefaultModel:       openai.OpenAIProviderInfo.DefaultModel,
 		DefaultOrigin:      openai.OpenAIProviderInfo.DefaultOrigin,

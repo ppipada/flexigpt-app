@@ -1,16 +1,18 @@
 'use client';
 
-import { log, providerSetAPI, settingstoreAPI } from '@/backendapibase';
+import { providerSetAPI, settingstoreAPI } from '@/backendapibase';
 import { loadProviderSettings, updateProviderAISettings } from '@/backendapihelper/load_settings';
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
-import { ALL_AI_PROVIDERS, ModelName, ProviderName } from '@/models/aiprovidermodel';
+import { ModelName, ProviderName } from '@/models/aiprovidermodel';
 import { AISetting } from '@/models/settingmodel';
+import ProviderDropdown from '@/settings/ai_provider'; // Import the new component
 import AISettingsCard from '@/settings/ai_settings';
 import { FC, useEffect, useState } from 'react';
 
 const defaultAISettings: Record<string, AISetting> = {
 	[ProviderName.OPENAI]: {
+		isEnabled: true,
 		apiKey: '',
 		defaultModel: ModelName.GPT_4O_MINI,
 		defaultOrigin: '',
@@ -27,16 +29,22 @@ const SettingsPage: FC = () => {
 		(async () => {
 			const settings = await loadProviderSettings();
 			if (settings) {
-				const defaultProvider = settings.app.defaultProvider as ProviderName;
-				setComponentDefaultProvider(defaultProvider);
+				const enabledProviders = Object.keys(settings.aiSettings).filter(
+					provider => settings.aiSettings[provider as ProviderName]?.isEnabled
+				);
 
-				setAISettings({
-					anthropic: settings.aiSettings[ProviderName.ANTHROPIC],
-					google: settings.aiSettings[ProviderName.GOOGLE],
-					huggingface: settings.aiSettings[ProviderName.HUGGINGFACE],
-					llamacpp: settings.aiSettings[ProviderName.LLAMACPP],
-					openai: settings.aiSettings[ProviderName.OPENAI],
-				});
+				if (enabledProviders.length === 0) {
+					enabledProviders.push(ProviderName.OPENAI);
+				}
+
+				const defaultProvider = settings.app.defaultProvider as ProviderName;
+				setComponentDefaultProvider(
+					enabledProviders.includes(defaultProvider)
+						? (defaultProvider as ProviderName)
+						: (enabledProviders[0] as ProviderName)
+				);
+
+				setAISettings(settings.aiSettings);
 			}
 		})();
 	}, []);
@@ -44,7 +52,7 @@ const SettingsPage: FC = () => {
 	const handleDefaultProviderChange = (value: ProviderName) => {
 		setComponentDefaultProvider(value);
 		providerSetAPI.setDefaultProvider(value);
-		log.debug('Set a new default provider', value);
+		// console.log('Set a new default provider', value);
 		settingstoreAPI.setSetting('app.defaultProvider', value);
 	};
 
@@ -56,13 +64,20 @@ const SettingsPage: FC = () => {
 				[key]: value,
 			},
 		};
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		setAISettings(prevState => {
-			return updatedSettings;
-		});
+		setAISettings(updatedSettings);
 	};
 
 	const handleSaveAISettings = async (provider: keyof typeof aiSettings, key: string, value: any) => {
+		if (key === 'isEnabled') {
+			const enabledProviders = Object.keys(aiSettings).filter(
+				provider => aiSettings[provider as ProviderName]?.isEnabled
+			);
+
+			if (enabledProviders.length === 1 && !value) {
+				return;
+			}
+		}
+
 		await settingstoreAPI.setSetting(`aiSettings.${provider}.${key}`, value);
 		updateProviderAISettings(provider as ProviderName, aiSettings[provider]);
 	};
@@ -73,13 +88,7 @@ const SettingsPage: FC = () => {
 				app: {
 					defaultProvider,
 				},
-				aiSettings: {
-					[ProviderName.ANTHROPIC]: aiSettings.anthropic,
-					[ProviderName.GOOGLE]: aiSettings.google,
-					[ProviderName.HUGGINGFACE]: aiSettings.huggingface,
-					[ProviderName.LLAMACPP]: aiSettings.llamacpp,
-					[ProviderName.OPENAI]: aiSettings.openai,
-				},
+				aiSettings: aiSettings,
 			},
 			null,
 			2
@@ -109,10 +118,10 @@ const SettingsPage: FC = () => {
 				</div>
 			</div>
 
-			<div className="flex flex-col items-center w-full flex-grow bg-transparent  mt-20">
+			<div className="flex flex-col items-center w-full flex-grow bg-transparent mt-20">
 				<div
 					className="w-full flex-grow flex justify-center overflow-y-auto"
-					style={{ maxHeight: `calc(100vh - 128px` }}
+					style={{ maxHeight: `calc(100vh - 128px)` }}
 				>
 					<div className="w-11/12 lg:w-2/3">
 						<div className="bg-base-100 rounded-lg shadow-lg p-4 mb-4">
@@ -125,17 +134,11 @@ const SettingsPage: FC = () => {
 							</div>
 							<div className="grid grid-cols-12 gap-4 mb-4 items-center">
 								<label className="col-span-3 text-sm font-medium">Default Provider</label>
-								<select
-									className="select select-bordered col-span-9 w-full rounded-lg min-h-2 h-10"
-									value={defaultProvider}
-									onChange={e => handleDefaultProviderChange(e.target.value as ProviderName)}
-								>
-									{Object.keys(ALL_AI_PROVIDERS).map(provider => (
-										<option key={provider} value={provider}>
-											{provider.charAt(0).toUpperCase() + provider.slice(1)}
-										</option>
-									))}
-								</select>
+								<ProviderDropdown
+									aiSettings={aiSettings}
+									defaultProvider={defaultProvider}
+									onProviderChange={handleDefaultProviderChange}
+								/>
 							</div>
 						</div>
 						<div className="w-full flex-1 pb-4">
@@ -149,6 +152,7 @@ const SettingsPage: FC = () => {
 										settings={oneSettings}
 										onChange={(key, value) => handleAISettingsChange(typedProvider, key, value)}
 										onSave={(key, value) => handleSaveAISettings(typedProvider, key, value)}
+										aiSettings={aiSettings}
 									/>
 								);
 							})}

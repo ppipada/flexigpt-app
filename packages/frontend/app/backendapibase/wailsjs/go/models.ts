@@ -1,6 +1,7 @@
 export namespace spec {
 	
 	export class AISetting {
+	    isEnabled: boolean;
 	    apiKey: string;
 	    defaultModel: string;
 	    defaultTemperature: number;
@@ -13,6 +14,7 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.isEnabled = source["isEnabled"];
 	        this.apiKey = source["apiKey"];
 	        this.defaultModel = source["defaultModel"];
 	        this.defaultTemperature = source["defaultTemperature"];

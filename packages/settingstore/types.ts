@@ -1,6 +1,7 @@
 import { ModelName, ProviderName } from 'aiprovider';
 
 export interface AISetting {
+	isEnabled: boolean;
 	apiKey: string;
 	defaultModel: ModelName;
 	defaultTemperature: number;
