@@ -6,8 +6,8 @@ export function FetchCompletion(arg1, arg2, arg3) {
   return window['go']['main']['WrappedProviderSetAPI']['FetchCompletion'](arg1, arg2, arg3);
 }
 
-export function GetCompletionRequest(arg1, arg2, arg3, arg4, arg5) {
-  return window['go']['main']['WrappedProviderSetAPI']['GetCompletionRequest'](arg1, arg2, arg3, arg4, arg5);
+export function GetCompletionRequest(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['WrappedProviderSetAPI']['GetCompletionRequest'](arg1, arg2, arg3, arg4);
 }
 
 export function GetConfigurationInfo() {
@@ -16,10 +16,6 @@ export function GetConfigurationInfo() {
 
 export function GetDefaultProvider() {
   return window['go']['main']['WrappedProviderSetAPI']['GetDefaultProvider']();
-}
-
-export function GetProviderInfo(arg1) {
-  return window['go']['main']['WrappedProviderSetAPI']['GetProviderInfo'](arg1);
 }
 
 export function SetDefaultProvider(arg1) {

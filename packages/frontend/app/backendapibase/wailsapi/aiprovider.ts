@@ -4,7 +4,6 @@ import {
 	GetCompletionRequest,
 	GetConfigurationInfo,
 	GetDefaultProvider,
-	GetProviderInfo,
 	SetDefaultProvider,
 	SetProviderAttribute,
 } from '@/backendapibase/wailsjs/go/main/WrappedProviderSetAPI';
@@ -16,7 +15,6 @@ import {
 	CompletionResponse,
 	IProviderSetAPI,
 	ModelName,
-	ProviderInfo,
 	ProviderName,
 } from '@/models/aiprovidermodel';
 
@@ -30,11 +28,6 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		await SetDefaultProvider(provider);
 	}
 
-	async getProviderInfo(provider: ProviderName): Promise<ProviderInfo> {
-		const resp = await GetProviderInfo(provider);
-		return resp as ProviderInfo;
-	}
-
 	async getConfigurationInfo(): Promise<Record<string, any>> {
 		const resp = await GetConfigurationInfo();
 		return resp;
@@ -44,8 +37,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		provider: ProviderName,
 		prompt: string,
 		prevMessages?: Array<ChatCompletionRequestMessage>,
-		inputParams?: { [key: string]: any },
-		stream?: boolean
+		inputParams?: { [key: string]: any }
 	): Promise<CompletionRequest> {
 		const msgs: wailsSpec.ChatCompletionRequestMessage[] = [];
 		if (prevMessages) {
@@ -56,7 +48,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		if (!inputParams) {
 			inputParams = {};
 		}
-		const resp = await GetCompletionRequest(provider, prompt, msgs, inputParams, stream || false);
+		const resp = await GetCompletionRequest(provider, prompt, msgs, inputParams);
 		return resp as CompletionRequest;
 		// const x: CompletionRequest = { model: 'x', temperature: 0, maxPromptLength: 2000, stream: false };
 		// return x;

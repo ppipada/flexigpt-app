@@ -1,6 +1,8 @@
 package huggingface
 
-import "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+import (
+	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+)
 
 const ProviderNameHuggingFace spec.ProviderName = "huggingface"
 
@@ -10,12 +12,11 @@ const (
 
 var HuggingfaceModels = map[spec.ModelName]spec.ModelInfo{
 	DEEPSEEK_CODER_1_3B_INSTRUCT: {
-		Name:               DEEPSEEK_CODER_1_3B_INSTRUCT,
-		DisplayName:        "HF Deepseek Coder 1.3b",
-		Provider:           ProviderNameHuggingFace,
-		MaxPromptLength:    4096,
-		MaxOutputLength:    4096,
-		DefaultTemperature: 0.1,
+		Name:            DEEPSEEK_CODER_1_3B_INSTRUCT,
+		DisplayName:     "HF Deepseek Coder 1.3b",
+		Provider:        ProviderNameHuggingFace,
+		MaxPromptLength: 4096,
+		MaxOutputLength: 4096,
 	},
 }
 

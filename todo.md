@@ -14,9 +14,9 @@
 
   - [x] AI provider: get masked http details from langchaingo whenever available and then send in details
   - [ ] ~~Error wrapper and unwrapper on backend main and base apis~~
-  - [ ] Whether to stream or not should be decided by model in conjuction with provider in frontend.
+  - [x] Whether to stream or not should be decided by model in conjunction with provider in frontend.
   - [ ] integrate file logger
-  - [ ] Add support for llangchaingo supported ai providers. Would need testing with each.
+  - [ ] Add support for langchaingo supported ai providers. Would need testing with each.
   - [ ] Better title deduce
   - [ ] Create dmg and flatpack and distribute for experimentation
 

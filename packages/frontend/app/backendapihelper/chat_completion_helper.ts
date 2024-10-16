@@ -113,32 +113,18 @@ export async function GetCompletionMessage(
 			delete inputParams['provider'];
 		}
 
-		const providerInfo = await providerSetAPI.getProviderInfo(completionProvider);
-		let isStream: boolean = providerInfo.streamingSupport || false;
-
-		if (isStream && completionProvider === ProviderName.OPENAI) {
-			// HACK for o models
-			if (
-				inputParams &&
-				typeof inputParams['model'] === 'string' &&
-				inputParams['model'].toLowerCase().startsWith('o')
-			) {
-				isStream = false;
-				inputParams['temperature'] = 1;
-				log.info('Detected openai o models');
-			}
-		}
 		const fullCompletionRequest = await providerSetAPI.getCompletionRequest(
 			completionProvider,
 			promptMsg?.content || '',
 			allMessages,
-			inputParams,
-			isStream
+			inputParams
 		);
+		const isStream = fullCompletionRequest.stream;
 		// log.info('CompletionRequest', defaultProvider, JSON.stringify(fullCompletionRequest, null, 2));
 		if (isStream && onStreamData) {
 			return await handleStreamedCompletion(convoMessage, completionProvider, fullCompletionRequest, onStreamData);
 		} else {
+			fullCompletionRequest.stream = false;
 			return await handleDirectCompletion(convoMessage, completionProvider, fullCompletionRequest);
 		}
 	} catch (error) {

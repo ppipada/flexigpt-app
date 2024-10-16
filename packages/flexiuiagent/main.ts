@@ -241,10 +241,6 @@ ipcMain.handle('providerset:setDefaultProvider', async (_event, provider: Provid
 	return await providerSetManager.setDefaultProvider(provider);
 });
 
-ipcMain.handle('providerset:getProviderInfo', async (_event, provider: ProviderName) => {
-	return await providerSetManager.getProviderInfo(provider);
-});
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 ipcMain.handle('providerset:getConfigurationInfo', async _event => {
 	return await providerSetManager.getConfigurationInfo();
@@ -273,10 +269,9 @@ ipcMain.handle(
 		prevMessages?: Array<ChatCompletionRequestMessage>,
 		inputParams?: {
 			[key: string]: any;
-		},
-		stream?: boolean
+		}
 	) => {
-		return await providerSetManager.getCompletionRequest(provider, prompt, prevMessages, inputParams, stream);
+		return await providerSetManager.getCompletionRequest(provider, prompt, prevMessages, inputParams);
 	}
 );
 

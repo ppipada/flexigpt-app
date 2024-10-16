@@ -94,17 +94,6 @@ func (ps *ProviderSetAPI) GetConfigurationInfo() (map[string]interface{}, error)
 	return configurationInfo, nil
 }
 
-// GetProviderInfo returns the provider information for a given provider
-func (ps *ProviderSetAPI) GetProviderInfo(
-	provider spec.ProviderName,
-) (*spec.ProviderInfo, error) {
-	ctx := context.Background()
-	if p, exists := ps.providers[provider]; exists {
-		return p.GetProviderInfo(ctx)
-	}
-	return nil, fmt.Errorf("provider not found")
-}
-
 // SetProviderAttribute sets attributes for a given provider
 func (ps *ProviderSetAPI) SetProviderAttribute(
 	provider spec.ProviderName,
@@ -126,20 +115,60 @@ func (ps *ProviderSetAPI) GetCompletionRequest(
 	prompt string,
 	prevMessages []spec.ChatCompletionRequestMessage,
 	inputParams map[string]interface{},
-	stream bool,
 ) (*spec.CompletionRequest, error) {
 	ctx := context.Background()
+
+	// Check if the provider exists in the provider set
 	p, exists := ps.providers[provider]
 	if !exists {
-		return nil, fmt.Errorf("provider not found")
+		return nil, fmt.Errorf("provider '%s' not found", provider)
 	}
+
+	// Get the default model for the provider
+	aiProvider, ok := AllAIProviders[provider]
+	if !ok {
+		return nil, fmt.Errorf("AI provider '%s' not found", provider)
+	}
+
+	defaultModelName := aiProvider.DefaultModel
+
+	// Retrieve the model info for the default model
+	modelInfo, ok := AllModelInfo[defaultModelName]
+	if !ok {
+		return nil, fmt.Errorf("model info for default model '%s' not found", defaultModelName)
+	}
+
+	// Check if 'model' is specified in inputParams and is a valid model name
+	if inputParams != nil {
+		if modelInterface, ok := inputParams["model"]; ok {
+			// Ensure the model is a string
+			modelStr, ok := modelInterface.(string)
+			if !ok {
+				return nil, fmt.Errorf("'model' in inputParams must be a string")
+			}
+
+			modelName := spec.ModelName(modelStr)
+
+			// Verify that the model exists and belongs to the provider
+			if modelEntry, exists := AllModelInfo[modelName]; exists &&
+				modelEntry.Provider == provider {
+				modelInfo = modelEntry
+			} else {
+				return nil, fmt.Errorf("invalid model '%s' specified for provider '%s'", modelName, provider)
+			}
+		}
+	}
+
+	// Debug output (optional, consider using a logger instead of fmt.Printf)
+	// fmt.Printf("Input Parameters: %+v\nModel Info: %+v\n", inputParams, modelInfo)
+
+	// Create and return the completion request
 	return p.GetCompletionRequest(
 		ctx,
-		AllModelInfo[AllAIProviders[provider].DefaultModel],
+		modelInfo,
 		prompt,
 		prevMessages,
 		inputParams,
-		stream,
 	)
 }
 

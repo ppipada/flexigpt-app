@@ -1,11 +1,10 @@
 import { ChatCompletionRequestMessage, CompletionRequest, CompletionResponse } from './chat_types';
-import { ModelName, ProviderInfo, ProviderName } from './provider_types';
+import { ModelName, ProviderName } from './provider_types';
 
 export interface IProviderSetAPI {
 	getDefaultProvider(): Promise<ProviderName>;
 	setDefaultProvider(provider: ProviderName): Promise<void>;
 	getConfigurationInfo(): Promise<Record<string, any>>;
-	getProviderInfo(provider: ProviderName): Promise<ProviderInfo>;
 	setAttribute(
 		provider: ProviderName,
 		apiKey?: string,
@@ -18,8 +17,7 @@ export interface IProviderSetAPI {
 		provider: ProviderName,
 		prompt: string,
 		prevMessages?: Array<ChatCompletionRequestMessage>,
-		inputParams?: { [key: string]: any },
-		stream?: boolean
+		inputParams?: { [key: string]: any }
 	): Promise<CompletionRequest>;
 	completion(
 		provider: ProviderName,

@@ -11,12 +11,10 @@ import {
 } from './spec';
 
 export interface CompletionProvider {
-	getProviderInfo(): ProviderInfo;
 	getCompletionRequest(
 		prompt: string,
 		prevMessages?: Array<ChatCompletionRequestMessage>,
-		inputParams?: { [key: string]: any },
-		stream?: boolean
+		inputParams?: { [key: string]: any }
 	): CompletionRequest;
 	completion(
 		input: CompletionRequest,
@@ -39,10 +37,6 @@ export class AIAPI implements CompletionProvider {
 			providerInfo.defaultHeaders
 		);
 		this.providerInfo = providerInfo;
-	}
-
-	getProviderInfo(): ProviderInfo {
-		return this.providerInfo;
 	}
 
 	isConfigured(): boolean {
@@ -129,17 +123,11 @@ export class AIAPI implements CompletionProvider {
 	getCompletionRequest(
 		prompt: string,
 		prevMessages?: Array<ChatCompletionRequestMessage>,
-		inputParams?: { [key: string]: any },
-		stream?: boolean
+		inputParams?: { [key: string]: any }
 	): CompletionRequest {
-		const defaultModel = this.providerInfo.defaultModel;
-		const defaultTemperature = this.providerInfo.defaultTemperature;
-		const maxPromptLength = ALL_MODEL_INFO[this.providerInfo.defaultModel].maxPromptLength;
-
 		if (!inputParams) {
 			inputParams = {};
 		}
-
 		const messages: Array<ChatCompletionRequestMessage> = prevMessages ? [...prevMessages] : [];
 		if (prompt) {
 			const message: ChatCompletionRequestMessage = {
@@ -148,35 +136,56 @@ export class AIAPI implements CompletionProvider {
 			};
 			messages.push(message);
 		}
-
+		let modelInfo = ALL_MODEL_INFO[this.providerInfo.defaultModel];
+		if ('model' in inputParams && typeof inputParams['model'] === 'string') {
+			modelInfo = ALL_MODEL_INFO[inputParams['model'] as ModelName];
+		}
 		const completionRequest: CompletionRequest = {
-			model: defaultModel,
+			model: modelInfo.name,
 			messages: messages,
-			temperature: defaultTemperature,
-			stream: stream || false,
-			maxPromptLength: maxPromptLength,
+			temperature: this.providerInfo.defaultTemperature,
+			stream: this.providerInfo.streamingSupport || false,
+			maxPromptLength: modelInfo.maxPromptLength,
 		};
 
+		if (modelInfo.streamingSupport !== undefined) {
+			completionRequest.stream = modelInfo.streamingSupport;
+		}
+
+		if (modelInfo.defaultTemperature !== undefined) {
+			completionRequest.temperature = modelInfo.defaultTemperature;
+		}
+
+		if (
+			'temperature' in inputParams &&
+			typeof inputParams['temperature'] === 'number' &&
+			!modelInfo.defaultTemperature
+		) {
+			completionRequest.temperature = inputParams['temperature'];
+		}
+		if (
+			'maxPromptLength' in inputParams &&
+			typeof inputParams['maxPromptLength'] === 'number' &&
+			inputParams['maxPromptLength'] <= completionRequest.maxPromptLength
+		) {
+			completionRequest.maxPromptLength = inputParams['maxPromptLength'];
+		}
+		if (
+			'maxOutputLength' in inputParams &&
+			typeof inputParams['maxOutputLength'] === 'number' &&
+			inputParams['maxOutputLength'] <= modelInfo.maxOutputLength
+		) {
+			completionRequest.maxOutputLength = inputParams['maxOutputLength'];
+		}
+		if ('systemPrompt' in inputParams && typeof inputParams['systemPrompt'] === 'string') {
+			completionRequest.systemPrompt = inputParams['systemPrompt'];
+		}
+
+		const excludedKeys = ['systemPrompt', 'maxPromptLength', 'maxOutputLength', 'temperature', 'model', 'provider'];
 		for (const key in inputParams) {
-			if (!Object.prototype.hasOwnProperty.call(inputParams, key)) {
-				continue;
-			}
-			if (key === 'model' && typeof inputParams[key] === 'string') {
-				completionRequest.model = inputParams[key];
-			} else if (key === 'maxOutputLength' && typeof inputParams[key] === 'number') {
-				completionRequest.maxOutputLength = inputParams[key];
-			} else if (key === 'temperature' && typeof inputParams[key] === 'number') {
-				completionRequest.temperature = inputParams[key];
-			} else if (key === 'maxPromptLength' && typeof inputParams[key] === 'number') {
-				completionRequest.maxPromptLength = inputParams[key];
-			} else if (key === 'systemPrompt' && typeof inputParams[key] === 'string') {
-				completionRequest.systemPrompt = inputParams[key];
-			} else {
+			if (!excludedKeys.includes(key)) {
 				completionRequest.additionalParameters = completionRequest.additionalParameters || {};
-				// No additional param support as of now
-				if (key !== 'provider') {
-					completionRequest.additionalParameters[key] = inputParams[key];
-				}
+				completionRequest.additionalParameters[key] = inputParams[key];
 			}
 		}
 

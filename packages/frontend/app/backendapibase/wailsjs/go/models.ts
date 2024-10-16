@@ -440,42 +440,6 @@ export namespace spec {
 		    return a;
 		}
 	}
-	export class ProviderInfo {
-	    name: string;
-	    apiKey: string;
-	    engine: string;
-	    defaultOrigin: string;
-	    defaultModel: string;
-	    additionalSettings: {[key: string]: any};
-	    timeout: number;
-	    apiKeyHeaderKey: string;
-	    defaultHeaders: {[key: string]: string};
-	    chatCompletionPathPrefix: string;
-	    defaultTemperature: number;
-	    modelPrefixes: string[];
-	    streamingSupport: boolean;
-	
-	    static createFrom(source: any = {}) {
-	        return new ProviderInfo(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.name = source["name"];
-	        this.apiKey = source["apiKey"];
-	        this.engine = source["engine"];
-	        this.defaultOrigin = source["defaultOrigin"];
-	        this.defaultModel = source["defaultModel"];
-	        this.additionalSettings = source["additionalSettings"];
-	        this.timeout = source["timeout"];
-	        this.apiKeyHeaderKey = source["apiKeyHeaderKey"];
-	        this.defaultHeaders = source["defaultHeaders"];
-	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
-	        this.defaultTemperature = source["defaultTemperature"];
-	        this.modelPrefixes = source["modelPrefixes"];
-	        this.streamingSupport = source["streamingSupport"];
-	    }
-	}
 	export class SettingsSchema {
 	    aiSettings: {[key: string]: AISetting};
 	    app: AppSettings;

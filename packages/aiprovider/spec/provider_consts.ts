@@ -16,7 +16,7 @@ export const anthropicProviderInfo: ProviderInfo = {
 		'anthropic-version': '2023-06-01',
 	},
 	chatCompletionPathPrefix: '/messages',
-	defaultTemperature: 0.1,
+	defaultTemperature: 0.0,
 	streamingSupport: true,
 };
 
@@ -33,7 +33,7 @@ export const googleProviderInfo: ProviderInfo = {
 		'content-type': 'application/json',
 	},
 	chatCompletionPathPrefix: '/v1beta/models',
-	defaultTemperature: 0.1,
+	defaultTemperature: 0.0,
 	streamingSupport: true,
 };
 
@@ -50,7 +50,7 @@ export const huggingfaceProviderInfo: ProviderInfo = {
 		'content-type': 'application/json',
 	},
 	chatCompletionPathPrefix: '/models',
-	defaultTemperature: 0.1,
+	defaultTemperature: 0.0,
 	modelPrefixes: ['microsoft/', 'replit/', 'Salesforce/', 'bigcode/', 'deepseek-ai/'],
 	streamingSupport: false,
 };
@@ -68,7 +68,7 @@ export const llamacppProviderInfo: ProviderInfo = {
 		'content-type': 'application/json',
 	},
 	chatCompletionPathPrefix: '/completion',
-	defaultTemperature: 0.1,
+	defaultTemperature: 0.0,
 	streamingSupport: false,
 };
 
@@ -85,7 +85,7 @@ export const openaiProviderInfo: ProviderInfo = {
 		'content-type': 'application/json',
 	},
 	chatCompletionPathPrefix: '/chat/completions',
-	defaultTemperature: 0.1,
+	defaultTemperature: 0.0,
 	streamingSupport: true,
 };
 
@@ -96,7 +96,6 @@ export const ANTHROPIC_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.ANTHROPIC,
 		maxPromptLength: 4096,
 		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
 	},
 	[ModelName.CLAUDE_3_OPUS]: {
 		name: ModelName.CLAUDE_3_OPUS,
@@ -104,7 +103,6 @@ export const ANTHROPIC_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.ANTHROPIC,
 		maxPromptLength: 4096,
 		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
 	},
 	[ModelName.CLAUDE_3_SONNET]: {
 		name: ModelName.CLAUDE_3_SONNET,
@@ -112,7 +110,6 @@ export const ANTHROPIC_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.ANTHROPIC,
 		maxPromptLength: 4096,
 		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
 	},
 	[ModelName.CLAUDE_3_HAIKU]: {
 		name: ModelName.CLAUDE_3_HAIKU,
@@ -120,7 +117,6 @@ export const ANTHROPIC_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.ANTHROPIC,
 		maxPromptLength: 4096,
 		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
 	},
 };
 
@@ -131,7 +127,6 @@ export const GOOGLE_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.GOOGLE,
 		maxPromptLength: 4096,
 		maxOutputLength: 8192,
-		defaultTemperature: 0.1,
 	},
 	[ModelName.GEMINI_1_5_PRO]: {
 		name: ModelName.GEMINI_1_5_PRO,
@@ -139,7 +134,6 @@ export const GOOGLE_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.GOOGLE,
 		maxPromptLength: 4096,
 		maxOutputLength: 8192,
-		defaultTemperature: 0.1,
 	},
 };
 
@@ -150,7 +144,6 @@ export const HUGGINGFACE_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.HUGGINGFACE,
 		maxPromptLength: 4096,
 		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
 	},
 };
 
@@ -161,7 +154,6 @@ export const LLAMACPP_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.LLAMACPP,
 		maxPromptLength: 4096,
 		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
 	},
 	[ModelName.LLAMA_3_1]: {
 		name: ModelName.LLAMA_3_1,
@@ -169,7 +161,6 @@ export const LLAMACPP_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.LLAMACPP,
 		maxPromptLength: 4096,
 		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
 	},
 };
 
@@ -181,6 +172,7 @@ export const OPENAI_MODELS: { [key in ModelName]?: ModelInfo } = {
 		maxPromptLength: 4096,
 		maxOutputLength: 4096,
 		defaultTemperature: 1,
+		streamingSupport: false,
 	},
 	[ModelName.GPT_O1_MINI]: {
 		name: ModelName.GPT_O1_MINI,
@@ -189,6 +181,7 @@ export const OPENAI_MODELS: { [key in ModelName]?: ModelInfo } = {
 		maxPromptLength: 4096,
 		maxOutputLength: 4096,
 		defaultTemperature: 1,
+		streamingSupport: false,
 	},
 	[ModelName.GPT_4O]: {
 		name: ModelName.GPT_4O,
@@ -196,7 +189,6 @@ export const OPENAI_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.OPENAI,
 		maxPromptLength: 4096,
 		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
 	},
 	[ModelName.GPT_4]: {
 		name: ModelName.GPT_4,
@@ -204,7 +196,6 @@ export const OPENAI_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.OPENAI,
 		maxPromptLength: 4096,
 		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
 	},
 	[ModelName.GPT_3_5_TURBO]: {
 		name: ModelName.GPT_3_5_TURBO,
@@ -212,7 +203,6 @@ export const OPENAI_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.OPENAI,
 		maxPromptLength: 2400,
 		maxOutputLength: 2400,
-		defaultTemperature: 0.1,
 	},
 	[ModelName.GPT_4O_MINI]: {
 		name: ModelName.GPT_4O_MINI,
@@ -220,7 +210,6 @@ export const OPENAI_MODELS: { [key in ModelName]?: ModelInfo } = {
 		provider: ProviderName.OPENAI,
 		maxPromptLength: 4096,
 		maxOutputLength: 4096,
-		defaultTemperature: 0.1,
 	},
 };
 

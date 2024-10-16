@@ -1,6 +1,8 @@
 package anthropic
 
-import "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+import (
+	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+)
 
 const ProviderNameAnthropic spec.ProviderName = "anthropic"
 
@@ -13,36 +15,32 @@ const (
 
 var AnthropicModels = map[spec.ModelName]spec.ModelInfo{
 	CLAUDE_3_5_SONNET: {
-		Name:               CLAUDE_3_5_SONNET,
-		DisplayName:        "Claude 3.5 Sonnet",
-		Provider:           ProviderNameAnthropic,
-		MaxPromptLength:    4096,
-		MaxOutputLength:    4096,
-		DefaultTemperature: 0.1,
+		Name:            CLAUDE_3_5_SONNET,
+		DisplayName:     "Claude 3.5 Sonnet",
+		Provider:        ProviderNameAnthropic,
+		MaxPromptLength: 4096,
+		MaxOutputLength: 4096,
 	},
 	CLAUDE_3_OPUS: {
-		Name:               CLAUDE_3_OPUS,
-		DisplayName:        "Claude 3 Opus",
-		Provider:           ProviderNameAnthropic,
-		MaxPromptLength:    4096,
-		MaxOutputLength:    4096,
-		DefaultTemperature: 0.1,
+		Name:            CLAUDE_3_OPUS,
+		DisplayName:     "Claude 3 Opus",
+		Provider:        ProviderNameAnthropic,
+		MaxPromptLength: 4096,
+		MaxOutputLength: 4096,
 	},
 	CLAUDE_3_SONNET: {
-		Name:               CLAUDE_3_SONNET,
-		DisplayName:        "Claude 3 Sonnet",
-		Provider:           ProviderNameAnthropic,
-		MaxPromptLength:    4096,
-		MaxOutputLength:    4096,
-		DefaultTemperature: 0.1,
+		Name:            CLAUDE_3_SONNET,
+		DisplayName:     "Claude 3 Sonnet",
+		Provider:        ProviderNameAnthropic,
+		MaxPromptLength: 4096,
+		MaxOutputLength: 4096,
 	},
 	CLAUDE_3_HAIKU: {
-		Name:               CLAUDE_3_HAIKU,
-		DisplayName:        "Claude 3 Haiku",
-		Provider:           ProviderNameAnthropic,
-		MaxPromptLength:    4096,
-		MaxOutputLength:    4096,
-		DefaultTemperature: 0.1,
+		Name:            CLAUDE_3_HAIKU,
+		DisplayName:     "Claude 3 Haiku",
+		Provider:        ProviderNameAnthropic,
+		MaxPromptLength: 4096,
+		MaxOutputLength: 4096,
 	},
 }
 

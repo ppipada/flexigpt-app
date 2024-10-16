@@ -54,7 +54,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const isSubmittingRef = useRef<boolean>(false);
 	const [selectedModel, setSelectedModel] = useState<ModelOption>({
-		title: 'GPT4oMini',
+		title: 'OpenAI GPT 4o mini',
 		provider: ProviderName.OPENAI,
 		name: ModelName.GPT_4O_MINI,
 		temperature: 0.1,

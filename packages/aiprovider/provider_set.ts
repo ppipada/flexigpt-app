@@ -62,10 +62,6 @@ export class ProviderSet implements IProviderSetAPI {
 		this.defaultProvider = provider;
 	}
 
-	async getProviderInfo(provider: ProviderName): Promise<ProviderInfo> {
-		return this.providers[provider].getProviderInfo();
-	}
-
 	async setAttribute(
 		provider: ProviderName,
 		apiKey?: string,
@@ -80,10 +76,9 @@ export class ProviderSet implements IProviderSetAPI {
 		provider: ProviderName,
 		prompt: string,
 		prevMessages?: Array<ChatCompletionRequestMessage>,
-		inputParams?: { [key: string]: any },
-		stream?: boolean
+		inputParams?: { [key: string]: any }
 	): Promise<CompletionRequest> {
-		return this.providers[provider].getCompletionRequest(prompt, prevMessages, inputParams, stream);
+		return this.providers[provider].getCompletionRequest(prompt, prevMessages, inputParams);
 	}
 
 	async completion(

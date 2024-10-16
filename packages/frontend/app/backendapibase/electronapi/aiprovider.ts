@@ -4,7 +4,6 @@ import {
 	CompletionResponse,
 	IProviderSetAPI,
 	ModelName,
-	ProviderInfo,
 	ProviderName,
 } from '@/models/aiprovidermodel';
 
@@ -20,11 +19,6 @@ export class ElectronProviderSetAPI implements IProviderSetAPI {
 		await window.ProviderSetAPI.setDefaultProvider(provider);
 	}
 
-	// Implement the getProviderInfo method
-	async getProviderInfo(provider: ProviderName): Promise<ProviderInfo> {
-		return await window.ProviderSetAPI.getProviderInfo(provider);
-	}
-
 	// Implement the getConfigurationInfo method
 	async getConfigurationInfo(): Promise<Record<string, any>> {
 		return await window.ProviderSetAPI.getConfigurationInfo();
@@ -35,10 +29,9 @@ export class ElectronProviderSetAPI implements IProviderSetAPI {
 		provider: ProviderName,
 		prompt: string,
 		prevMessages?: Array<ChatCompletionRequestMessage>,
-		inputParams?: { [key: string]: any },
-		stream?: boolean
+		inputParams?: { [key: string]: any }
 	): Promise<CompletionRequest> {
-		return await window.ProviderSetAPI.getCompletionRequest(provider, prompt, prevMessages, inputParams, stream);
+		return await window.ProviderSetAPI.getCompletionRequest(provider, prompt, prevMessages, inputParams);
 	}
 
 	// Implement the completion method

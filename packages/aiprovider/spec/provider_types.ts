@@ -34,7 +34,8 @@ export interface ModelInfo {
 	provider: ProviderName;
 	maxPromptLength: number;
 	maxOutputLength: number;
-	defaultTemperature: number;
+	defaultTemperature?: number;
+	streamingSupport?: boolean;
 }
 
 export interface ProviderInfo {
@@ -49,7 +50,7 @@ export interface ProviderInfo {
 	defaultHeaders: Record<string, string>;
 	chatCompletionPathPrefix: string;
 	defaultTemperature: number;
+	streamingSupport: boolean;
 	modelPrefixes?: string[];
 	descriptions?: Partial<Record<keyof ProviderInfo, string>>;
-	streamingSupport?: boolean;
 }

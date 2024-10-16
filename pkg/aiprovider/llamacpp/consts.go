@@ -1,6 +1,8 @@
 package llamacpp
 
-import "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+import (
+	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+)
 
 const ProviderNameLlamaCPP spec.ProviderName = "llamacpp"
 
@@ -11,20 +13,18 @@ const (
 
 var LlamacppModels = map[spec.ModelName]spec.ModelInfo{
 	LLAMA_3: {
-		Name:               LLAMA_3,
-		DisplayName:        "Llama 3",
-		Provider:           ProviderNameLlamaCPP,
-		MaxPromptLength:    4096,
-		MaxOutputLength:    4096,
-		DefaultTemperature: 0.1,
+		Name:            LLAMA_3,
+		DisplayName:     "Llama 3",
+		Provider:        ProviderNameLlamaCPP,
+		MaxPromptLength: 4096,
+		MaxOutputLength: 4096,
 	},
 	LLAMA_3_1: {
-		Name:               LLAMA_3_1,
-		DisplayName:        "Llama 3.1",
-		Provider:           ProviderNameLlamaCPP,
-		MaxPromptLength:    4096,
-		MaxOutputLength:    4096,
-		DefaultTemperature: 0.1,
+		Name:            LLAMA_3_1,
+		DisplayName:     "Llama 3.1",
+		Provider:        ProviderNameLlamaCPP,
+		MaxPromptLength: 4096,
+		MaxOutputLength: 4096,
 	},
 }
 

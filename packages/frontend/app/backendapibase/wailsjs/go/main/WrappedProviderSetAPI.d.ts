@@ -4,13 +4,11 @@ import {spec} from '../models';
 
 export function FetchCompletion(arg1:string,arg2:spec.CompletionRequest,arg3:string):Promise<spec.CompletionResponse>;
 
-export function GetCompletionRequest(arg1:spec.ProviderName,arg2:string,arg3:Array<spec.ChatCompletionRequestMessage>,arg4:{[key: string]: any},arg5:boolean):Promise<spec.CompletionRequest>;
+export function GetCompletionRequest(arg1:spec.ProviderName,arg2:string,arg3:Array<spec.ChatCompletionRequestMessage>,arg4:{[key: string]: any}):Promise<spec.CompletionRequest>;
 
 export function GetConfigurationInfo():Promise<{[key: string]: any}>;
 
 export function GetDefaultProvider():Promise<spec.ProviderName>;
-
-export function GetProviderInfo(arg1:spec.ProviderName):Promise<spec.ProviderInfo>;
 
 export function SetDefaultProvider(arg1:spec.ProviderName):Promise<void>;
 

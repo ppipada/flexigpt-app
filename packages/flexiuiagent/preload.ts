@@ -45,9 +45,6 @@ contextBridge.exposeInMainWorld('ProviderSetAPI', {
 	setDefaultProvider: async (provider: any) => {
 		return await ipcRenderer.invoke('providerset:setDefaultProvider', provider);
 	},
-	getProviderInfo: async (provider: any) => {
-		return await ipcRenderer.invoke('providerset:getProviderInfo', provider);
-	},
 	getConfigurationInfo: async () => {
 		return await ipcRenderer.invoke('providerset:getConfigurationInfo');
 	},
@@ -68,21 +65,8 @@ contextBridge.exposeInMainWorld('ProviderSetAPI', {
 			defaultOrigin
 		);
 	},
-	getCompletionRequest: async (
-		provider: any,
-		prompt: string,
-		prevMessages?: any,
-		inputParams?: any,
-		stream?: boolean
-	) => {
-		return await ipcRenderer.invoke(
-			'providerset:getCompletionRequest',
-			provider,
-			prompt,
-			prevMessages,
-			inputParams,
-			stream
-		);
+	getCompletionRequest: async (provider: any, prompt: string, prevMessages?: any, inputParams?: any) => {
+		return await ipcRenderer.invoke('providerset:getCompletionRequest', provider, prompt, prevMessages, inputParams);
 	},
 	completion: async (provider: any, input: any, onStreamData: any) => {
 		const callbackId = `stream-data-callback-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;

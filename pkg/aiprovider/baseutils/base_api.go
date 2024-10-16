@@ -26,14 +26,6 @@ func (api *BaseAIAPI) IsConfigured(ctx context.Context) bool {
 	return api.ProviderInfo.IsConfigured()
 }
 
-// GetProviderInfo returns the provider information
-func (api *BaseAIAPI) GetProviderInfo(ctx context.Context) (*spec.ProviderInfo, error) {
-	if api.ProviderInfo == nil {
-		return nil, fmt.Errorf("provider info is not set")
-	}
-	return api.ProviderInfo, nil
-}
-
 // GetCompletionRequest creates a new completion request
 func (api *BaseAIAPI) GetCompletionRequest(
 	ctx context.Context,
@@ -41,16 +33,19 @@ func (api *BaseAIAPI) GetCompletionRequest(
 	prompt string,
 	prevMessages []spec.ChatCompletionRequestMessage,
 	inputParams map[string]interface{},
-	stream bool,
 ) (*spec.CompletionRequest, error) {
-	defaultModel := modelInfo.Name
-	defaultTemperature := api.ProviderInfo.DefaultTemperature
-	maxPromptLength := modelInfo.MaxPromptLength
-
 	if inputParams == nil {
 		inputParams = make(map[string]interface{})
 	}
 
+	completionRequest := spec.CompletionRequest{
+		Model:           string(modelInfo.Name),
+		Temperature:     api.ProviderInfo.DefaultTemperature,
+		Stream:          api.ProviderInfo.StreamingSupport,
+		MaxPromptLength: modelInfo.MaxPromptLength,
+	}
+
+	// Handle messages
 	messages := append([]spec.ChatCompletionRequestMessage{}, prevMessages...)
 	if prompt != "" {
 		message := spec.ChatCompletionRequestMessage{
@@ -59,44 +54,49 @@ func (api *BaseAIAPI) GetCompletionRequest(
 		}
 		messages = append(messages, message)
 	}
+	completionRequest.Messages = messages
 
-	completionRequest := spec.CompletionRequest{
-		Model:           string(defaultModel),
-		Messages:        messages,
-		Temperature:     defaultTemperature,
-		Stream:          stream,
-		MaxPromptLength: maxPromptLength,
+	// Handle StreamingSupport. Streaming resolution is: ModelInfo > ProviderInfo
+	if modelInfo.StreamingSupport != nil {
+		completionRequest.Stream = *modelInfo.StreamingSupport
+	}
+	// Handle temperature. Temperature resolution is: ModelInfo > inputParams > ProviderInfo
+	if modelInfo.DefaultTemperature != nil {
+		completionRequest.Temperature = *modelInfo.DefaultTemperature
+	} else if inTemp, ok := inputParams["temperature"].(float64); ok {
+		completionRequest.Temperature = inTemp
+	}
+
+	if inMaxOutputLength, ok := inputParams["maxOutputLength"].(int); ok {
+		if inMaxOutputLength <= modelInfo.MaxOutputLength {
+			completionRequest.MaxOutputLength = &inMaxOutputLength
+		}
+	}
+
+	if inMaxPromptLength, ok := inputParams["maxPromptLength"].(int); ok {
+		if inMaxPromptLength <= modelInfo.MaxPromptLength {
+			completionRequest.MaxPromptLength = inMaxPromptLength
+		}
+	}
+
+	if inSystemPrompt, ok := inputParams["systemPrompt"].(string); ok {
+		completionRequest.SystemPrompt = &inSystemPrompt
 	}
 
 	for key, value := range inputParams {
 		switch key {
-		case "model":
-			if model, ok := value.(string); ok {
-				completionRequest.Model = model
-			}
-		case "maxOutputLength":
-			if maxOutputLength, ok := value.(int); ok {
-				completionRequest.MaxOutputLength = &maxOutputLength
-			}
-		case "temperature":
-			if temperature, ok := value.(float64); ok {
-				completionRequest.Temperature = temperature
-			}
-		case "maxPromptLength":
-			if maxPromptLength, ok := value.(int); ok {
-				completionRequest.MaxPromptLength = maxPromptLength
-			}
-		case "systemPrompt":
-			if systemPrompt, ok := value.(string); ok {
-				completionRequest.SystemPrompt = &systemPrompt
-			}
+		case "systemPrompt",
+			"maxPromptLength",
+			"maxOutputLength",
+			"temperature",
+			"model",
+			"provider":
+			// Do nothing for these keys
 		default:
-			if key != "provider" {
-				if completionRequest.AdditionalParameters == nil {
-					completionRequest.AdditionalParameters = make(map[string]interface{})
-				}
-				completionRequest.AdditionalParameters[key] = value
+			if completionRequest.AdditionalParameters == nil {
+				completionRequest.AdditionalParameters = make(map[string]interface{})
 			}
+			completionRequest.AdditionalParameters[key] = value
 		}
 	}
 

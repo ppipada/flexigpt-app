@@ -1,6 +1,8 @@
 package google
 
-import "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+import (
+	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+)
 
 const ProviderNameGoogle spec.ProviderName = "google"
 
@@ -11,20 +13,18 @@ const (
 
 var GoogleModels = map[spec.ModelName]spec.ModelInfo{
 	GEMINI_1_5_FLASH: {
-		Name:               GEMINI_1_5_FLASH,
-		DisplayName:        "Google Gemini 1.5 Flash",
-		Provider:           ProviderNameGoogle,
-		MaxPromptLength:    4096,
-		MaxOutputLength:    8192,
-		DefaultTemperature: 0.1,
+		Name:            GEMINI_1_5_FLASH,
+		DisplayName:     "Google Gemini 1.5 Flash",
+		Provider:        ProviderNameGoogle,
+		MaxPromptLength: 4096,
+		MaxOutputLength: 8192,
 	},
 	GEMINI_1_5_PRO: {
-		Name:               GEMINI_1_5_PRO,
-		DisplayName:        "Google Gemini 1.5 Pro",
-		Provider:           ProviderNameGoogle,
-		MaxPromptLength:    4096,
-		MaxOutputLength:    8192,
-		DefaultTemperature: 0.1,
+		Name:            GEMINI_1_5_PRO,
+		DisplayName:     "Google Gemini 1.5 Pro",
+		Provider:        ProviderNameGoogle,
+		MaxPromptLength: 4096,
+		MaxOutputLength: 8192,
 	},
 }
 
