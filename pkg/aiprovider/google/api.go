@@ -2,7 +2,7 @@ package google
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 
 	"github.com/flexigpt/flexiui/pkg/aiprovider/baseutils"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
@@ -69,7 +69,7 @@ func (api *GoogleAPI) SetProviderAttribute(
 		return err
 	}
 	api.llm = llm
-	fmt.Println("Set Google LLM provider")
+	slog.Info("Google LLM provider initialized")
 	return nil
 }
 

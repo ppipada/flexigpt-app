@@ -2,7 +2,8 @@ package anthropic
 
 import (
 	"context"
-	"fmt"
+
+	"log/slog"
 
 	"github.com/flexigpt/flexiui/pkg/aiprovider/baseutils"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
@@ -64,7 +65,7 @@ func (api *AnthropicAPI) SetProviderAttribute(
 		return err
 	}
 	api.llm = llm
-	fmt.Println("Set Anthropic LLM provider")
+	slog.Info("Anthropic LLM provider initialized")
 	return nil
 }
 

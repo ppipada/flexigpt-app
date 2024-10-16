@@ -2,7 +2,7 @@ package dirstore_test
 
 import (
 	"encoding/json"
-	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
@@ -337,7 +337,7 @@ func TestListPartitionsPagination(t *testing.T) {
 
 func TestListFilesPaginationMonthPartition(t *testing.T) {
 	baseDir := filepath.Join(t.TempDir(), "listdir")
-	fmt.Printf("BaseDir: %s\n", baseDir)
+	slog.Info("TestListFilesPaginationMonthPartition", "BaseDir", baseDir)
 
 	// Create some files across multiple partitions
 	partitions := []string{"202301", "202302", "202303"}
@@ -563,7 +563,7 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 
 func TestListFilesNoPartitionProvider(t *testing.T) {
 	baseDir := filepath.Join(t.TempDir(), "nolistdir")
-	fmt.Printf("BaseDir: %s\n", baseDir)
+	slog.Info("TestListFilesNoPartitionProvider", "BaseDir", baseDir)
 
 	// Create some files in a single directory (no partitions)
 	files := []string{

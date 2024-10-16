@@ -158,9 +158,13 @@ func (ps *ProviderSetAPI) GetCompletionRequest(
 			}
 		}
 	}
-
-	// Debug output (optional, consider using a logger instead of fmt.Printf)
-	// fmt.Printf("Input Parameters: %+v\nModel Info: %+v\n", inputParams, modelInfo)
+	// slog.Debug(
+	// 	"GetCompletionAPI",
+	// 	"Input Parameters",
+	// 	fmt.Sprintf("%+v", inputParams),
+	// 	"Model Info",
+	// 	fmt.Sprintf("%+v", modelInfo),
+	// )
 
 	// Create and return the completion request
 	return p.GetCompletionRequest(

@@ -2,7 +2,7 @@ package huggingface
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 
 	"github.com/flexigpt/flexiui/pkg/aiprovider/baseutils"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
@@ -66,7 +66,7 @@ func (api *HuggingFaceAPI) SetProviderAttribute(
 		return err
 	}
 	api.llm = llm
-	fmt.Println("Set HuggingFace LLM provider")
+	slog.Info("HuggingFace LLM provider initialized")
 	return nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -202,7 +203,7 @@ func (lc *loggingReadCloser) Close() error {
 	}
 
 	if lc.logMode {
-		fmt.Printf("Response Body: %s\n", string(dataBytes))
+		slog.Debug("Response", "Body", fmt.Sprintf("%s\n", string(dataBytes)))
 	}
 
 	return err
@@ -220,7 +221,6 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	debugResp, ok := GetDebugHTTPResponse(reqCtx)
 	if !ok || debugResp == nil {
 		// Allocate a pointer for processing. This is not going to be available in consumer anycase, but is present for processing sakes only.
-		// fmt.Printf("Couldnt get debug context from request")
 		debugResp = &DebugHTTPResponse{}
 	}
 
@@ -230,7 +230,7 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	// Log request details if LogMode is enabled
 	if t.LogMode {
-		fmt.Printf("Request Details: %+v\n", reqDetails)
+		slog.Debug("Roundtripper", "Request Details", fmt.Sprintf("%+v", reqDetails))
 	}
 
 	// Perform the request
@@ -276,10 +276,10 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Log response details if LogMode is enabled
 	if t.LogMode {
 		if respDetails != nil {
-			fmt.Printf("Response Details: %+v\n", respDetails)
+			slog.Debug("Roundtripper", "Response Details", fmt.Sprintf("%+v", respDetails))
 		}
 		if errorDetails != nil {
-			fmt.Printf("Error Details: %+v\n", errorDetails)
+			slog.Debug("Roundtripper", "Error Details", fmt.Sprintf("%+v", errorDetails))
 		}
 	}
 
@@ -307,10 +307,5 @@ func AddDebugResponseToCtx(ctx context.Context) context.Context {
 // Helper function to retrieve DebugHTTPResponse from context
 func GetDebugHTTPResponse(ctx context.Context) (*DebugHTTPResponse, bool) {
 	debugResp, ok := ctx.Value(debugHTTPResponseKey).(*DebugHTTPResponse)
-	// if !ok {
-	// 	fmt.Printf("Couldnt get debug context in response %+v\n", ctx)
-	// } else {
-	// 	fmt.Printf("Got context in response. DebugResp: %+v\nContext:%+v\n", debugResp, ctx)
-	// }
 	return debugResp, ok
 }

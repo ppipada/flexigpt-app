@@ -4,12 +4,9 @@ package main
 
 import (
 	"embed"
-	"fmt"
-	"io/fs"
-	"log"
-	"net/http"
+	"log/slog"
 	"os"
-	goruntime "runtime"
+	"time"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
@@ -23,20 +20,18 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/flexigpt/flexiui/pkg/aiprovider"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/openai"
-	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 	"github.com/flexigpt/flexiui/pkg/conversationstore"
+	"github.com/flexigpt/flexiui/pkg/logrotate"
 	"github.com/flexigpt/flexiui/pkg/settingstore"
+	"github.com/flexigpt/flexiui/pkg/wailsutils"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/adrg/xdg"
 )
 
 const AppTitle = "FlexiGptUI"
-const FRONTEND_PATH_PREFIX = "/frontend/build"
-
-var DIR_PAGES = []string{"/agents", "/chats", "/settings", "/404"}
+const AppDisplayTitle = "FlexiGPT Agent"
 
 //go:embed all:packages/frontend/build
 var assets embed.FS
@@ -49,7 +44,7 @@ type App struct {
 	ctx                  context.Context
 	settingStoreAPI      *settingstore.SettingStore
 	conversationStoreAPI *conversationstore.ConversationCollection
-	providerSetAPI       *WrappedProviderSetAPI
+	providerSetAPI       *wailsutils.WrappedProviderSetAPI
 	configBasePath       string
 	dataBasePath         string
 }
@@ -57,12 +52,15 @@ type App struct {
 // NewApp creates a new App application struct
 func NewApp() *App {
 	if xdg.ConfigHome == "" || xdg.DataHome == "" {
-		log.Panicf(
-			"Could not resolve data paths. XDG Config dir: %s, XDG Data dir: %s",
+		slog.Error(
+			"Could not resolve data paths",
+			"XDG Config dir",
 			xdg.ConfigHome,
+			"XDG Data dir",
 			xdg.DataHome,
 		)
-		return nil
+		panic("Failed to initialize App")
+
 	}
 
 	app := &App{}
@@ -70,16 +68,21 @@ func NewApp() *App {
 	app.dataBasePath = filepath.Join(xdg.DataHome, (strings.ToLower(AppTitle)))
 	app.settingStoreAPI = &settingstore.SettingStore{}
 	app.conversationStoreAPI = &conversationstore.ConversationCollection{}
-	app.providerSetAPI = NewWrappedProviderSetAPI(openai.ProviderNameOpenAI)
+	app.providerSetAPI = wailsutils.NewWrappedProviderSetAPI(openai.ProviderNameOpenAI)
 
 	if err := os.MkdirAll(app.configBasePath, os.FileMode(0770)); err != nil {
-		log.Panicf("Failed to create directories for config data %s: %v", app.configBasePath, err)
-		return nil
-
+		slog.Error(
+			"Failed to create directories",
+			"Config path",
+			app.configBasePath,
+			"Error",
+			err,
+		)
+		panic("Failed to initialize App")
 	}
 	if err := os.MkdirAll(app.dataBasePath, os.FileMode(0770)); err != nil {
-		log.Panicf("Failed to create directories for app data %s: %v", app.dataBasePath, err)
-		return nil
+		slog.Error("Failed to create directories", "app data", app.dataBasePath, "Error", err)
+		panic("Failed to initialize App")
 	}
 
 	return app
@@ -90,19 +93,33 @@ func (a *App) initManagers() {
 
 	// Initialize settings manager
 	settingsFilePath := filepath.Join(a.configBasePath, "settings.json")
-	log.Printf("Settings file path: %s", settingsFilePath)
+	slog.Info("Settings created", "filepath", settingsFilePath)
 	err := settingstore.InitSettingStore(a.settingStoreAPI, settingsFilePath)
 	if err != nil {
-		log.Panicf("Couldnt initialize setting store at: %s. error: %v", settingsFilePath, err)
+		slog.Error(
+			"Couldnt initialize setting store",
+			"Settings file",
+			settingsFilePath,
+			"Error",
+			err,
+		)
+		panic("Failed to initialize Managers")
 	}
 
 	// Initialize conversation manager
 	conversationDir := filepath.Join(a.dataBasePath, "conversations")
-	log.Printf("Conversation directory: %s", conversationDir)
+	slog.Info("Conversation store initialized", "directory", conversationDir)
 
 	err = conversationstore.InitConversationCollection(a.conversationStoreAPI, conversationDir)
 	if err != nil {
-		log.Panicf("Couldnt initialize conversation store at: %s. err:%v", conversationDir, err)
+		slog.Error(
+			"Couldnt initialize conversation store",
+			"Direcotry",
+			conversationDir,
+			"Error",
+			err,
+		)
+		panic("Failed to initialize Managers")
 	}
 }
 
@@ -136,124 +153,46 @@ func (a *App) Ping() string {
 	return "pong"
 }
 
-type WrappedProviderSetAPI struct {
-	*aiprovider.ProviderSetAPI
-	appContext context.Context
-}
-
-// NewWrappedProviderSetAPI creates a new ProviderSet with the specified default provider
-func NewWrappedProviderSetAPI(
-	defaultProvider aiproviderSpec.ProviderName,
-) *WrappedProviderSetAPI {
-	return &WrappedProviderSetAPI{
-		ProviderSetAPI: aiprovider.NewProviderSetAPI(defaultProvider),
-	}
-}
-
-func (w *WrappedProviderSetAPI) setAppContext(ctx context.Context) {
-	w.appContext = ctx
-}
-
-// FetchCompletion handles the completion request and streams data back to the frontend
-func (w *WrappedProviderSetAPI) FetchCompletion(
-	provider string,
-	input aiproviderSpec.CompletionRequest,
-	callbackId string,
-) (*aiproviderSpec.CompletionResponse, error) {
-	onStreamData := func(data string) error {
-		runtime.EventsEmit(w.appContext, callbackId, data)
-		return nil
-	}
-
-	resp, err := w.ProviderSetAPI.FetchCompletion(
-		aiproviderSpec.ProviderName(provider),
-		input,
-		onStreamData,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-func getActualURL(origurl string) string {
-	callurl := origurl
-	if !strings.HasPrefix(callurl, FRONTEND_PATH_PREFIX) {
-		return callurl
-	}
-
-	// percentIndex := strings.Index(callurl, "%")
-	// if percentIndex != -1 {
-	// 	callurl = callurl[:percentIndex]
-	// }
-
-	// qIndex := strings.Index(callurl, "?")
-	// if qIndex != -1 {
-	// 	callurl = callurl[:qIndex]
-	// }
-
-	// Handle if it's a page request
-	if strings.HasSuffix(callurl, "/") {
-		return callurl[len(FRONTEND_PATH_PREFIX):] + "index.html"
-	}
-
-	for _, d := range DIR_PAGES {
-		durl := FRONTEND_PATH_PREFIX + d
-		if callurl == durl {
-			return callurl[len(FRONTEND_PATH_PREFIX):] + "/index.html"
-		}
-	}
-
-	return callurl[len(FRONTEND_PATH_PREFIX):]
-}
-
-func LogStackTrace() {
-	// Create a buffer to hold the stack trace
-	buf := make([]byte, 1024)
-	// Capture the stack trace
-	n := goruntime.Stack(buf, false)
-	// Log the stack trace
-	fmt.Println("Stack trace:\n", string(buf[:n]))
-}
-
-func URLCleanerMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		// Clean the URL using getActualURL
-		// fmt.Println("Input URL:", req.URL.Path) // For debugging purposes
-		// if req.URL.Path == "/agents" {
-		// 	LogStackTrace()
-		// }
-		cleanedURL := getActualURL(req.URL.Path)
-		// fmt.Println("Cleaned URL:", cleanedURL) // For debugging purposes
-
-		// Update the request URL path
-		req.URL.Path = cleanedURL
-
-		// Call the next handler
-		next.ServeHTTP(w, req)
-	})
-}
-
-func EmbeddedFSWalker() {
-	_ = fs.WalkDir(assets, ".", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		fmt.Println("Embedded file:", path)
-		return nil
-	})
-}
-
 func main() {
+	slogLevel := slog.LevelDebug
+	wailsLogLevel := logger.DEBUG
+
 	// Create an instance of the app structure
 	app := NewApp()
-	app.initManagers()
-	// EmbeddedFSWalker()
+	slogOpts := &slog.HandlerOptions{
+		Level: slogLevel,
+	}
 
+	var stdoutHandler slog.Handler = slog.NewTextHandler(os.Stdout, slogOpts)
+	stdoutLogger := slog.New(stdoutHandler)
+
+	// Init logger
+	opts := logrotate.Options{
+		Directory:            filepath.Join(app.dataBasePath, "logs"),
+		MaximumFileSize:      10 * 1024 * 1024, // 10 MB
+		MaximumLifetime:      24 * time.Hour,
+		FileNameFunc:         logrotate.DefaultFilenameFunc,
+		FlushAfterEveryWrite: true,
+	}
+	writer, err := logrotate.New(stdoutLogger, opts)
+	if err != nil {
+		slog.Error("Failed to create log writer", "Error", err)
+		panic("Init failed")
+	}
+	defer writer.Close()
+
+	var handler slog.Handler = slog.NewTextHandler(writer, slogOpts)
+	slogger := slog.New(handler)
+	slog.SetDefault(slogger)
+
+	app.initManagers()
+	// wailsutils.EmbeddedFSWalker(assets)
+
+	wailsLogger := wailsutils.NewSlogLoggerAdapter(slogger)
+	slog.Info("App Initialized")
 	// Create application with options
-	err := wails.Run(&options.App{
-		Title:             AppTitle,
+	err = wails.Run(&options.App{
+		Title:             AppDisplayTitle,
 		Width:             1024,
 		Height:            768,
 		MinWidth:          1024,
@@ -268,16 +207,16 @@ func main() {
 		BackgroundColour:  &options.RGBA{R: 255, G: 255, B: 255, A: 255},
 		AssetServer: &assetserver.Options{
 			Assets:     assets,
-			Middleware: URLCleanerMiddleware,
+			Middleware: wailsutils.URLCleanerMiddleware,
 		},
 		Menu:               nil,
-		Logger:             nil,
-		LogLevel:           logger.DEBUG,
-		LogLevelProduction: logger.DEBUG,
+		Logger:             wailsLogger,
+		LogLevel:           wailsLogLevel,
+		LogLevelProduction: wailsLogLevel,
 
 		OnStartup: func(ctx context.Context) {
 			app.startup(ctx)
-			app.providerSetAPI.setAppContext(ctx)
+			wailsutils.SetWrappedProviderAppContext(app.providerSetAPI, ctx)
 		},
 
 		OnDomReady:       app.domReady,
@@ -313,13 +252,13 @@ func main() {
 			WebviewIsTransparent: true,
 			WindowIsTranslucent:  true,
 			About: &mac.AboutInfo{
-				Title:   AppTitle,
+				Title:   AppDisplayTitle,
 				Message: "",
 				Icon:    icon,
 			},
 		},
 	})
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }

@@ -3,6 +3,7 @@ package conversationstore
 import (
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -146,7 +147,7 @@ func (cc *ConversationCollection) ListConversations(token string) (*spec.ListRes
 		title := strings.Join(parts[1:], " ")
 		d, err := GetDateFromUUIDv7(id)
 		if err != nil {
-			fmt.Printf("Could not get date from ID: %s, skipping", id)
+			slog.Warn("Could not get date. Skipping.", "ID", id)
 			continue
 		}
 		convo := spec.ConversationItem{

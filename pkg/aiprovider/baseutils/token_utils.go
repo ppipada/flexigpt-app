@@ -1,7 +1,7 @@
 package baseutils
 
 import (
-	"fmt"
+	"log/slog"
 	"regexp"
 
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
@@ -60,10 +60,12 @@ func FilterMessagesByTokenCount(
 	}
 
 	if len(filteredMessages) < len(messages) {
-		fmt.Printf(
-			"Filtered messages count (%d) is less than input messages count (%d)",
-			len(filteredMessages),
+		slog.Debug(
+			"Filtered messages are less than input",
+			"message count",
 			len(messages),
+			"filtered count",
+			len(filteredMessages),
 		)
 	}
 

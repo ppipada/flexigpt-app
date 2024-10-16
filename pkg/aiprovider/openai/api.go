@@ -2,7 +2,7 @@ package openai
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 
 	"github.com/flexigpt/flexiui/pkg/aiprovider/baseutils"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
@@ -61,7 +61,7 @@ func (api *OpenAIAPI) SetProviderAttribute(
 		return err
 	}
 	api.llm = llm
-	fmt.Println("Set OpenAI LLM provider")
+	slog.Info("OpenAI LLM provider initialized")
 	return nil
 }
 
