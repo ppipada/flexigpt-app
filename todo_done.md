@@ -167,3 +167,7 @@
 - [x] Add support for first getting available ai providers and then configuring them accordingly. UI needs to be modified as collapsed cards and disabled cards
 - [x] Only enabled chat options should be available
 - [x] Get most consts through API
+- [x] AI provider: get masked http details from langchaingo whenever available and then send in details
+- [ ] ~~Error wrapper and unwrapper on backend main and base apis~~
+- [x] Whether to stream or not should be decided by model in conjunction with provider in frontend.
+- [x] integrate file logger

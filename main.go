@@ -30,8 +30,8 @@ import (
 	"github.com/adrg/xdg"
 )
 
-const AppTitle = "FlexiGptUI"
-const AppDisplayTitle = "FlexiGPT Agent"
+const AppTitle = "FlexiGPT"
+const AppDisplayTitle = "FlexiGPT"
 
 //go:embed all:packages/frontend/build
 var assets embed.FS

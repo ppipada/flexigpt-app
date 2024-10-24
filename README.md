@@ -1,3 +1,3 @@
-# FlexiGPT UI
+# FlexiGPT
 
-UI for flexigpt ecosystem
+- flexigpt ecosystem

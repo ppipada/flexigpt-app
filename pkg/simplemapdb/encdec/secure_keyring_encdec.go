@@ -76,7 +76,7 @@ func (e EncryptedStringValueEncoderDecoder) Decode(r io.Reader, value interface{
 // If the key does not exist, it generates a new one, stores it, and returns it.
 func getKey() ([]byte, error) {
 	const (
-		service = "FlexiUIKeyRingEncDec"
+		service = "FlexiGPTKeyRingEncDec"
 		user    = "user"
 		keySize = 32 // AES-256 requires a 32-byte key
 	)

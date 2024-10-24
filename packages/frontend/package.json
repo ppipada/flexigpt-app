@@ -1,7 +1,7 @@
 {
 	"name": "frontend",
 	"version": "0.1.0",
-	"description": "NextJS frontend app for flexiui",
+	"description": "Frontend app for flexigpt",
 	"type": "module",
 	"private": true,
 	"scripts": {

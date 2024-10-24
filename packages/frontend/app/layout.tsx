@@ -7,8 +7,8 @@ import Script from 'next/script';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-	title: 'FlexiGPT UI',
-	description: 'UI for FlexiGPT ecosystem',
+	title: 'FlexiGPT',
+	description: 'The FlexiGPT ecosystem agent',
 };
 
 export default function RootLayout({

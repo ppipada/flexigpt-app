@@ -1,7 +1,7 @@
 {
 	"$schema": "https://wails.io/schemas/config.v2.json",
-	"name": "flexiui",
-	"outputfilename": "flexiui",
+	"name": "flexigpt",
+	"outputfilename": "flexigpt",
 	"frontend:dir": "packages/frontend",
 	"frontend:install": "pnpm install",
 	"frontend:build": "pnpm run build:wails",

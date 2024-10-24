@@ -1,8 +1,8 @@
 {
-	"name": "flexiuiagent",
+	"name": "electronagent",
 	"version": "1.0.0",
-	"description": "Electron backend agent for flexiui",
-	"main": "packages/flexiuiagent/build/main.js",
+	"description": "Electron backend agent for FlexiGPT",
+	"main": "packages/electronagent/build/main.js",
 	"private": true,
 	"type": "module",
 	"scripts": {

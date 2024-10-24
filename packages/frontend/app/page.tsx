@@ -24,8 +24,8 @@ export default function Home() {
 	return (
 		<main className="flex flex-col h-full items-center justify-center p-24">
 			<div className="flex flex-row items-center mb-10">
-				<Image src="/icon.png" alt="FlexiUI Icon" width={64} height={64} />
-				<h1 className="text-2xl font-bold m-8">FlexiGPT UI</h1>
+				<Image src="/icon.png" alt="FlexiGPT Icon" width={64} height={64} />
+				<h1 className="text-2xl font-bold m-8">FlexiGPT</h1>
 			</div>
 			<div className="grid gap-6 sm:grid-cols-2 h-36">
 				<Link href="/chats/">
