@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 
-	"github.com/flexigpt/flexiui/pkg/aiprovider"
-	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+	"github.com/flexigpt/flexiui/pkggo/aiprovider"
+	aiproviderSpec "github.com/flexigpt/flexiui/pkggo/aiprovider/spec"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 

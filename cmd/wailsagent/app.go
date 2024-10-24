@@ -11,15 +11,15 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/flexigpt/flexiui/pkg/aiprovider/openai"
-	"github.com/flexigpt/flexiui/pkg/conversationstore"
-	"github.com/flexigpt/flexiui/pkg/settingstore"
+	"github.com/flexigpt/flexiui/pkggo/aiprovider/openai"
+	"github.com/flexigpt/flexiui/pkggo/conversationstore"
+	"github.com/flexigpt/flexiui/pkggo/settingstore"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/adrg/xdg"
 )
 
-const AppTitle = "FlexiGPT"
+const AppTitle = "WailsFlexiGPT"
 const AppDisplayTitle = "FlexiGPT"
 
 // App struct

@@ -18,8 +18,8 @@ import (
 
 	"path/filepath"
 
-	assets "github.com/flexigpt/flexiui/packages"
-	"github.com/flexigpt/flexiui/pkg/logrotate"
+	assets "github.com/flexigpt/flexiui/frontend"
+	"github.com/flexigpt/flexiui/pkggo/logrotate"
 )
 
 func main() {

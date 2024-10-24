@@ -1,6 +1,6 @@
 build
-packages/frontend/.next/
+frontend/.next/
 /dist/
 /node_modules/
 /stories/
-packages/frontend/app/backendapibase/wailsjs
+frontend/app/backendapibase/wailsjs

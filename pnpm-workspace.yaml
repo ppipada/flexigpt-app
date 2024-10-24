@@ -1,3 +1,5 @@
 packages:
   # include packages in subfolders (change as required)
-  - 'packages/**'
+  - 'pkgts/**'
+  - 'frontend'
+  - 'cmd/electronagent'
