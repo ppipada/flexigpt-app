@@ -1,4 +1,4 @@
-package wailsutils
+package main
 
 import (
 	"context"

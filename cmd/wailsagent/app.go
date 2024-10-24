@@ -1,0 +1,137 @@
+//go:build !codeanalysis
+
+package main
+
+import (
+	"log/slog"
+	"os"
+
+	"context"
+
+	"path/filepath"
+	"strings"
+
+	"github.com/flexigpt/flexiui/pkg/aiprovider/openai"
+	"github.com/flexigpt/flexiui/pkg/conversationstore"
+	"github.com/flexigpt/flexiui/pkg/settingstore"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
+
+	"github.com/adrg/xdg"
+)
+
+const AppTitle = "FlexiGPT"
+const AppDisplayTitle = "FlexiGPT"
+
+// App struct
+type App struct {
+	ctx                  context.Context
+	settingStoreAPI      *settingstore.SettingStore
+	conversationStoreAPI *conversationstore.ConversationCollection
+	providerSetAPI       *WrappedProviderSetAPI
+	configBasePath       string
+	dataBasePath         string
+}
+
+// NewApp creates a new App application struct
+func NewApp() *App {
+	if xdg.ConfigHome == "" || xdg.DataHome == "" {
+		slog.Error(
+			"Could not resolve data paths",
+			"XDG Config dir",
+			xdg.ConfigHome,
+			"XDG Data dir",
+			xdg.DataHome,
+		)
+		panic("Failed to initialize App")
+
+	}
+
+	app := &App{}
+	app.configBasePath = filepath.Join(xdg.ConfigHome, (strings.ToLower(AppTitle)))
+	app.dataBasePath = filepath.Join(xdg.DataHome, (strings.ToLower(AppTitle)))
+	app.settingStoreAPI = &settingstore.SettingStore{}
+	app.conversationStoreAPI = &conversationstore.ConversationCollection{}
+	app.providerSetAPI = NewWrappedProviderSetAPI(openai.ProviderNameOpenAI)
+
+	if err := os.MkdirAll(app.configBasePath, os.FileMode(0770)); err != nil {
+		slog.Error(
+			"Failed to create directories",
+			"Config path",
+			app.configBasePath,
+			"Error",
+			err,
+		)
+		panic("Failed to initialize App")
+	}
+	if err := os.MkdirAll(app.dataBasePath, os.FileMode(0770)); err != nil {
+		slog.Error("Failed to create directories", "app data", app.dataBasePath, "Error", err)
+		panic("Failed to initialize App")
+	}
+
+	return app
+
+}
+
+func (a *App) initManagers() {
+
+	// Initialize settings manager
+	settingsFilePath := filepath.Join(a.configBasePath, "settings.json")
+	slog.Info("Settings created", "filepath", settingsFilePath)
+	err := settingstore.InitSettingStore(a.settingStoreAPI, settingsFilePath)
+	if err != nil {
+		slog.Error(
+			"Couldnt initialize setting store",
+			"Settings file",
+			settingsFilePath,
+			"Error",
+			err,
+		)
+		panic("Failed to initialize Managers")
+	}
+
+	// Initialize conversation manager
+	conversationDir := filepath.Join(a.dataBasePath, "conversations")
+	slog.Info("Conversation store initialized", "directory", conversationDir)
+
+	err = conversationstore.InitConversationCollection(a.conversationStoreAPI, conversationDir)
+	if err != nil {
+		slog.Error(
+			"Couldnt initialize conversation store",
+			"Direcotry",
+			conversationDir,
+			"Error",
+			err,
+		)
+		panic("Failed to initialize Managers")
+	}
+}
+
+// startup is called at application startup
+func (a *App) startup(ctx context.Context) {
+	// Perform your setup here
+	a.ctx = ctx
+	// Load the frontend
+	runtime.WindowShow(a.ctx)
+}
+
+// domReady is called after front-end resources have been loaded
+func (a App) domReady(ctx context.Context) {
+	// Add your action here
+}
+
+// beforeClose is called when the application is about to quit,
+// either by clicking the window close button or calling runtime.Quit.
+// Returning true will cause the application to continue, false will continue shutdown as normal.
+func (a *App) beforeClose(ctx context.Context) (prevent bool) {
+	return false
+}
+
+// shutdown is called at application termination
+func (a *App) shutdown(ctx context.Context) {
+	// Perform your teardown here
+}
+
+// Greet returns a greeting for the given name
+func (a *App) Ping() string {
+	return "pong"
+}

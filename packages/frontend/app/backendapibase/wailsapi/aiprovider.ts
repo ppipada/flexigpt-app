@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { spec as wailsSpec } from '@/backendapibase/wailsjs/go/models';
 import {
 	FetchCompletion,
 	GetCompletionRequest,
@@ -7,7 +6,8 @@ import {
 	GetDefaultProvider,
 	SetDefaultProvider,
 	SetProviderAttribute,
-} from '@/backendapibase/wailsjs/go/wailsutils/WrappedProviderSetAPI';
+} from '@/backendapibase/wailsjs/go/main/WrappedProviderSetAPI';
+import { spec as wailsSpec } from '@/backendapibase/wailsjs/go/models';
 import { EventsOn } from '@/backendapibase/wailsjs/runtime/runtime';
 import {
 	ChatCompletionRequestMessage,

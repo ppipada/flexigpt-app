@@ -17,7 +17,8 @@
 		"fmt:fix": "prettier -w .",
 		"clean": "lerna run clean",
 		"pre-pack": "lerna run build --ignore frontend --ignore electronagent --stream --sort && lerna run build:electron --scope frontend && lerna run build --scope electronagent",
-		"buildpack": "lerna run clean && pnpm run pre-pack && lerna run pack --scope electronagent",
+		"build:electron": "lerna run clean && pnpm run pre-pack && lerna run pack --scope electronagent",
+		"build:wails": "cd ./cmd/wailsagent && wails build -devtools -v 2",
 		"boot": "lerna run build --scope electronagent && electron .",
 		"dev": "lerna run build --ignore frontend --ignore electronagent --stream --sort && concurrently -k \"lerna run dev:electron --scope frontend\" \"wait-on tcp:127.0.0.1:3000 && pnpm run boot\""
 	},
