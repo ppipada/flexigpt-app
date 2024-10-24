@@ -21,6 +21,7 @@ updates:
       - dependency-name: "eslint"
       - dependency-name: "eslint-config-next"
       - dependency-name: "eslint-plugin-import"
+      - dependency-name: "next"
     groups:
       production-dependencies:
         dependency-type: "production"
