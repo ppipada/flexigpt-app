@@ -16,11 +16,11 @@ pnpm run dev
 
 ```
 pnpm run build:electron
-./cmd/electronagent/build/flexigpt-linux-x86_64.AppImage
+./agentts/build/flexigpt-linux-x86_64.AppImage
 ```
 
 - Inspect built electron package
 
 ```
-npx asar extract cmd/electronagent/build/linux-unpacked/resources/app.asar ./asarex
+npx asar extract agentts/build/linux-unpacked/resources/app.asar ./asarex
 ```

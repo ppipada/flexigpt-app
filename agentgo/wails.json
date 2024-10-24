@@ -2,13 +2,13 @@
 	"$schema": "https://wails.io/schemas/config.v2.json",
 	"name": "flexigpt",
 	"outputfilename": "flexigpt",
-	"build:dir": "../../build",
-	"frontend:dir": "../../frontend",
+	"build:dir": "../build",
+	"frontend:dir": "../frontend",
 	"frontend:install": "pnpm install",
 	"frontend:build": "pnpm run build:wails",
 	"frontend:dev:watcher": "pnpm run dev:wails",
 	"frontend:dev:serverUrl": "auto",
-	"wailsjsdir": "../../frontend/app/backendapibase",
+	"wailsjsdir": "../frontend/app/backendapibase",
 	"author": {
 		"name": "ppipada",
 		"email": "ppipada@gmail.com"

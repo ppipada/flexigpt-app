@@ -3,24 +3,24 @@
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",
-	"main": "cmd/electronagent/build/main.js",
+	"main": "agentts/build/main.js",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/flexigpt/flexiui.git"
 	},
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
-	"description": "UI for the flexigpt ecosystem",
+	"description": "Agent for the flexigpt ecosystem",
 	"scripts": {
 		"lint": "lerna run lint",
 		"lint:fix": "lerna run lint -- --fix",
 		"fmt": "prettier -c .",
 		"fmt:fix": "prettier -w .",
 		"clean": "lerna run clean",
-		"pre-pack": "lerna run build --ignore frontend --ignore electronagent --stream --sort && lerna run build:electron --scope frontend && lerna run build --scope electronagent",
-		"build:electron": "lerna run clean && pnpm run pre-pack && lerna run pack --scope electronagent",
-		"build:wails": "cd ./cmd/wailsagent && wails build -devtools -v 2",
-		"boot": "lerna run build --scope electronagent && electron .",
-		"dev": "lerna run build --ignore frontend --ignore electronagent --stream --sort && concurrently -k \"lerna run dev:electron --scope frontend\" \"wait-on tcp:127.0.0.1:3000 && pnpm run boot\""
+		"pre-pack": "lerna run build --ignore frontend --ignore agentts --stream --sort && lerna run build:electron --scope frontend && lerna run build --scope agentts",
+		"build:electron": "lerna run clean && pnpm run pre-pack && lerna run pack --scope agentts",
+		"build:wails": "cd ./agentgo && wails build -devtools -v 2",
+		"boot": "lerna run build --scope agentts && electron .",
+		"dev": "lerna run build --ignore frontend --ignore agentts --stream --sort && concurrently -k \"lerna run dev:electron --scope frontend\" \"wait-on tcp:127.0.0.1:3000 && pnpm run boot\""
 	},
 	"dependencies": {},
 	"devDependencies": {

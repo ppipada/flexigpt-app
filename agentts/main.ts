@@ -39,7 +39,7 @@ const FRONTEND_PATH_PREFIX = '/frontend/build';
 const PUBLIC_FILES_PATHS = ['/icon.png', '/favicon.ico'];
 const HANDLE_FILES_PREFIXES = [`file://${FRONTEND_PATH_PREFIX}`, ...PUBLIC_FILES_PATHS.map(path => `file://${path}`)];
 const PRELOAD_PATH = path.join(__dirname, 'preload.js');
-const PACKAGED_FILE_PATH = path.join(__dirname, `../../../${FRONTEND_PATH_PREFIX}/index.html`);
+const PACKAGED_FILE_PATH = path.join(__dirname, `../../${FRONTEND_PATH_PREFIX}/index.html`);
 // const { autoUpdater } = electronUpdater;
 let appWindow: BrowserWindow | null = null;
 let settingsManager: SettingStore;
@@ -138,7 +138,7 @@ const getActualURL = (origurl: string) => {
 		}
 		// Create a absolute url from the actual url
 		callurl = urlformat({
-			pathname: path.join(__dirname, `../../..${actualURL}`),
+			pathname: path.join(__dirname, `../..${actualURL}`),
 			protocol: 'file:',
 			slashes: true,
 		});

@@ -16,11 +16,11 @@
 		"outDir": "build"
 	},
 	"references": [
-		{ "path": "../../pkgts/logger" },
-		{ "path": "../../pkgts/aiprovider" },
-		{ "path": "../../pkgts/winstonlogger" },
-		{ "path": "../../pkgts/settingstore" },
-		{ "path": "../../pkgts/conversationstore" }
+		{ "path": "../pkgts/logger" },
+		{ "path": "../pkgts/aiprovider" },
+		{ "path": "../pkgts/winstonlogger" },
+		{ "path": "../pkgts/settingstore" },
+		{ "path": "../pkgts/conversationstore" }
 	],
 	"include": ["**/*.ts"],
 	"tsc-alias": {
