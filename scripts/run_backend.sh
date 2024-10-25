@@ -8,4 +8,29 @@ export SERVICE_LOGS_DIR_PATH="./out/logs"
 export SERVICE_DEFAULT_PROVIDER="openai"
 export SERVICE_DEBUG="true"
 
-go run ./backendgo
+# Run the Go application in the background
+go run ./httpbackend &
+
+# Capture the PID of the Go process
+GO_PID=$!
+
+# Function to clean up and exit
+cleanup() {
+    echo "Cleaning up..."
+    kill $GO_PID 2>/dev/null
+    exit
+}
+
+# Trap Ctrl+C (SIGINT) and call cleanup
+trap cleanup SIGINT
+
+sleep 2
+
+# Open the default web browser
+xdg-open "http://$SERVICE_HOST:$SERVICE_PORT/docs"
+
+# Wait for the Go process to finish
+wait $GO_PID
+
+# Call cleanup when the Go process exits
+cleanup
