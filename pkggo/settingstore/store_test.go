@@ -1,37 +1,68 @@
 package settingstore_test
 
 import (
+	"context"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/flexigpt/flexiui/pkggo/settingstore"
+	"github.com/flexigpt/flexiui/pkggo/settingstore/spec"
 )
+
+func initTestFile(filePath string) error {
+	// Check if the file exists
+	if _, err := os.Stat(filePath); err == nil {
+		// File exists, so remove it
+		err := os.Remove(filePath)
+		if err != nil {
+			return err
+		}
+	} else if !os.IsNotExist(err) {
+		// Some other error occurred
+		return err
+	}
+	return nil
+}
 
 func TestSettingStore_GetAllSettings(t *testing.T) {
 	// Create a temporary file for testing
 	filename := "test_settings.json"
+	err := initTestFile(filename)
+	if err != nil {
+		t.Fatalf("Failed to init test file: %v", err)
+	}
 	defer os.Remove(filename)
 	store := &settingstore.SettingStore{}
-	err := settingstore.InitSettingStore(store, filename)
+	err = settingstore.InitSettingStore(store, filename)
 	if err != nil {
 		t.Fatalf("Failed to create settings store: %v", err)
 	}
-
+	ctx := context.Background()
+	request := &spec.SetSettingRequest{
+		Key: "aiSettings.openai.additionalSettings",
+		Body: &spec.SetSettingRequestBody{
+			Value: map[string]interface{}{
+				"internal": 1,
+				"new":      [][]string{{"1", "2"}, {"1"}},
+			},
+		},
+	}
 	// Set additional data
-	err = store.SetSetting(
-		"aiSettings.openai.additionalSettings",
-		map[string]interface{}{"internal": 1, "new": [][]string{
-			{"1", "2"},
-			{"1"},
-		}},
+	_, err = store.SetSetting(
+		ctx,
+		request,
 	)
 	if err != nil {
 		t.Fatalf("Failed to set additional setting: %v", err)
 	}
-
 	// Set sensitive data
-	err = store.SetSetting("aiSettings.openai.apiKey", "sensitiveApiKey")
+	_, err = store.SetSetting(ctx, &spec.SetSettingRequest{
+		Key: "aiSettings.openai.apiKey",
+		Body: &spec.SetSettingRequestBody{
+			Value: "sensitiveApiKey",
+		},
+	})
 	if err != nil {
 		t.Fatalf("Failed to set sensitive setting: %v", err)
 	}
@@ -64,7 +95,10 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 				t.Fatalf("Setup failed: %v", err)
 			}
 
-			got, err := store.GetAllSettings(true)
+			got, err := store.GetAllSettings(
+				context.Background(),
+				&spec.GetAllSettingsRequest{ForceFetch: true},
+			)
 			if err != nil && tt.expectedError == "" {
 				t.Errorf("GetAllSettings() unexpected error = %v", err)
 				return
@@ -87,7 +121,7 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 
 			if tt.expectedError == "" {
 				// Verify additional settings
-				additionalSettings := got.AISettings["openai"].AdditionalSettings
+				additionalSettings := got.Body.AISettings["openai"].AdditionalSettings
 				if customVal, ok := additionalSettings["new"]; !ok || customVal == nil {
 					t.Errorf(
 						"GetAllSettings() additional setting mismatch, expected 'new' setting to be present",
@@ -100,8 +134,15 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 }
 
 func TestSettingStore_SetSetting(t *testing.T) {
+	filename := "test_settings.json"
+	err := initTestFile(filename)
+	if err != nil {
+		t.Fatalf("Failed to init test file: %v", err)
+	}
+	defer os.Remove(filename)
+
 	store := &settingstore.SettingStore{}
-	err := settingstore.InitSettingStore(store, "test_settings.json")
+	err = settingstore.InitSettingStore(store, filename)
 	if err != nil {
 		t.Fatalf("Failed to create settings store: %v", err)
 	}
@@ -114,7 +155,13 @@ func TestSettingStore_SetSetting(t *testing.T) {
 		expectedError string
 	}{
 		{"SetSetting_ValidKey", "app.defaultProvider", "ProviderNameOpenAI", false, ""},
-		{"SetSetting_InvalidKey", "app.invalidKey", "ProviderNameOpenAI", true, "invalid key: app.invalidKey"},
+		{
+			"SetSetting_InvalidKey",
+			"app.invalidKey",
+			"ProviderNameOpenAI",
+			true,
+			"invalid key: app.invalidKey",
+		},
 		{
 			"SetSetting_TypeMismatch",
 			"app.defaultProvider",
@@ -127,7 +174,14 @@ func TestSettingStore_SetSetting(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := store.SetSetting(tt.key, tt.value)
+			// Set sensitive data
+			_, err = store.SetSetting(context.Background(), &spec.SetSettingRequest{
+				Key: tt.key,
+				Body: &spec.SetSettingRequestBody{
+					Value: tt.value,
+				},
+			})
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SetSetting() error = %v, wantErr %v", err, tt.wantErr)
 				return

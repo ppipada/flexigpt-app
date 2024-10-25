@@ -4,30 +4,41 @@ import {
 	GetConversation,
 	ListConversations,
 	SaveConversation,
-} from '@/backendapibase/wailsjs/go/conversationstore/ConversationCollection';
+} from '@/backendapibase/wailsjs/go/main/ConversationCollectionWrapper';
 import { spec as wailsSpec } from '@/backendapibase/wailsjs/go/models';
 import { Conversation, ConversationItem, ConversationMessage, IConversationStoreAPI } from '@/models/conversationmodel';
 
 export class WailsConversationStoreAPI implements IConversationStoreAPI {
 	async saveConversation(conversation: Conversation): Promise<void> {
-		await SaveConversation(conversation as wailsSpec.Conversation);
+		const req = { Body: conversation };
+		await SaveConversation(req as wailsSpec.SaveConversationRequest);
 	}
 
 	async deleteConversation(id: string, title: string): Promise<void> {
-		await DeleteConversation(id, title);
+		const req = { ID: id, Title: title };
+		await DeleteConversation(req as wailsSpec.DeleteConversationRequest);
 	}
 
 	async getConversation(id: string, title: string): Promise<Conversation | null> {
-		const c = await GetConversation(id, title);
-		return c as Conversation;
+		const req = { ID: id, Title: title };
+		const c = await GetConversation(req as wailsSpec.GetConversationRequest);
+		return c.Body as Conversation;
 	}
 
 	async listConversations(token?: string): Promise<{ conversations: ConversationItem[]; nextToken?: string }> {
-		const resp = await ListConversations(token || '');
-		return { conversations: resp.ConversationItems as ConversationItem[], nextToken: resp.NextPageToken };
+		const req = { Token: token || '' };
+		const resp = await ListConversations(req as wailsSpec.ListConversationsRequest);
+		return { conversations: resp.Body?.conversationItems as ConversationItem[], nextToken: resp.Body?.nextPageToken };
 	}
 
 	async addMessageToConversation(id: string, title: string, newMessage: ConversationMessage): Promise<void> {
-		await AddMessageToConversation(id, title, newMessage as wailsSpec.ConversationMessage);
+		const req = {
+			ID: id,
+			Body: {
+				title: title,
+				newMessage: newMessage,
+			},
+		};
+		await AddMessageToConversation(req as wailsSpec.AddMessageToConversationRequest);
 	}
 }

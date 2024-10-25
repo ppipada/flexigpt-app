@@ -1,0 +1,74 @@
+package spec
+
+type GetDefaultProviderRequest struct{}
+
+type GetDefaultProviderResponseBody struct {
+	DefaultProvider ProviderName `json:"defaultProvider"`
+}
+
+type GetDefaultProviderResponse struct {
+	Body *GetDefaultProviderResponseBody
+}
+
+type SetDefaultProviderRequestBody struct {
+	Provider ProviderName `json:"provider" required:"true"`
+}
+
+type SetDefaultProviderRequest struct {
+	Body *SetDefaultProviderRequestBody
+}
+
+type SetDefaultProviderResponse struct{}
+
+type GetConfigurationInfoRequest struct{}
+
+type GetConfigurationInfoResponse struct {
+	Body *GetConfigurationInfoResponseBody
+}
+
+type GetConfigurationInfoResponseBody struct {
+	ConfigurationInfo map[string]interface{} `json:"configurationInfo"`
+}
+
+type SetProviderAttributeRequestBody struct {
+	APIKey             *string  `json:"apiKey,omitempty"`
+	DefaultModel       *string  `json:"defaultModel,omitempty"`
+	DefaultTemperature *float64 `json:"defaultTemperature,omitempty"`
+	DefaultOrigin      *string  `json:"defaultOrigin,omitempty"`
+}
+
+type SetProviderAttributeRequest struct {
+	Provider ProviderName `path:"provider" required:"true"`
+	Body     *SetProviderAttributeRequestBody
+}
+
+type SetProviderAttributeResponse struct{}
+
+type MakeCompletionRequestBody struct {
+	Prompt       string                         `json:"prompt"       required:"true"`
+	PrevMessages []ChatCompletionRequestMessage `json:"prevMessages"`
+	InputParams  map[string]interface{}         `json:"inputParams"`
+}
+
+type MakeCompletionRequest struct {
+	Provider ProviderName `path:"provider" required:"true"`
+	Body     *MakeCompletionRequestBody
+}
+
+type MakeCompletionResponse struct {
+	Body *CompletionRequest
+}
+
+type FetchCompletionRequestBody struct {
+	Provider     ProviderName            `json:"provider" required:"true"`
+	Input        *CompletionRequest      `json:"input"    required:"true"`
+	OnStreamData func(data string) error `json:"-"`
+}
+
+type FetchCompletionRequest struct {
+	Body *FetchCompletionRequestBody
+}
+
+type FetchCompletionResponse struct {
+	Body *CompletionResponse
+}

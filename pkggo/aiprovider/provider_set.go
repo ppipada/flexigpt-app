@@ -45,32 +45,55 @@ type ProviderSetAPI struct {
 }
 
 // NewProviderSetAPI creates a new ProviderSet with the specified default provider
-func NewProviderSetAPI(defaultProvider spec.ProviderName) *ProviderSetAPI {
+func NewProviderSetAPI(defaultProvider spec.ProviderName) (*ProviderSetAPI, error) {
+	_, exists := AllAIProviders[defaultProvider]
+	if !exists {
+		return nil, fmt.Errorf("Invalid provider")
+	}
 	return &ProviderSetAPI{
 		defaultProvider: defaultProvider,
 		providers: map[spec.ProviderName]spec.CompletionProvider{
 			anthropic.ProviderNameAnthropic:     anthropic.NewAnthropicAPI(),
 			google.ProviderNameGoogle:           google.NewGoogleAPI(),
 			huggingface.ProviderNameHuggingFace: huggingface.NewHuggingFaceAPI(),
-			// spec.ProviderNameLlamaCPP:    &LlamaCPPAPI{},
-			openai.ProviderNameOpenAI: openai.NewOpenAIAPI(),
+			llamacpp.ProviderNameLlamaCPP:       llamacpp.NewLlamaCPPAPI(),
+			openai.ProviderNameOpenAI:           openai.NewOpenAIAPI(),
 		},
-	}
+	}, nil
 }
 
 // GetDefaultProvider returns the default provider
-func (ps *ProviderSetAPI) GetDefaultProvider() spec.ProviderName {
-	return ps.defaultProvider
+func (ps *ProviderSetAPI) GetDefaultProvider(
+	ctx context.Context,
+	req *spec.GetDefaultProviderRequest,
+) (*spec.GetDefaultProviderResponse, error) {
+	return &spec.GetDefaultProviderResponse{
+		Body: &spec.GetDefaultProviderResponseBody{DefaultProvider: ps.defaultProvider},
+	}, nil
 }
 
 // SetDefaultProvider sets the default provider
-func (ps *ProviderSetAPI) SetDefaultProvider(provider spec.ProviderName) {
-	ps.defaultProvider = provider
+func (ps *ProviderSetAPI) SetDefaultProvider(
+	ctx context.Context,
+	req *spec.SetDefaultProviderRequest,
+) (*spec.SetDefaultProviderResponse, error) {
+	if req == nil || req.Body == nil {
+		return nil, fmt.Errorf("Got empty provider input")
+	}
+	_, exists := ps.providers[req.Body.Provider]
+	if !exists {
+		return nil, fmt.Errorf("Invalid provider")
+	}
+	ps.defaultProvider = req.Body.Provider
+	return &spec.SetDefaultProviderResponse{}, nil
 }
 
 // GetConfigurationInfo returns configuration information
-func (ps *ProviderSetAPI) GetConfigurationInfo() (map[string]interface{}, error) {
-	ctx := context.Background()
+func (ps *ProviderSetAPI) GetConfigurationInfo(
+	ctx context.Context,
+	req *spec.GetConfigurationInfoRequest,
+
+) (*spec.GetConfigurationInfoResponse, error) {
 	configurationInfo := map[string]interface{}{
 		"defaultProvider": ps.defaultProvider,
 	}
@@ -91,47 +114,55 @@ func (ps *ProviderSetAPI) GetConfigurationInfo() (map[string]interface{}, error)
 
 	configurationInfo["configuredProviders"] = configuredProviders
 	configurationInfo["configuredModels"] = configuredModels
-	return configurationInfo, nil
+	return &spec.GetConfigurationInfoResponse{
+		Body: &spec.GetConfigurationInfoResponseBody{ConfigurationInfo: configurationInfo},
+	}, nil
 }
 
 // SetProviderAttribute sets attributes for a given provider
 func (ps *ProviderSetAPI) SetProviderAttribute(
-	provider spec.ProviderName,
-	apiKey *string,
-	defaultModel *string,
-	defaultTemperature *float64,
-	defaultOrigin *string,
-) error {
-	ctx := context.Background()
-	if p, exists := ps.providers[provider]; exists {
-		return p.SetProviderAttribute(ctx, apiKey, defaultModel, defaultTemperature, defaultOrigin)
+	ctx context.Context,
+	req *spec.SetProviderAttributeRequest,
+) (*spec.SetProviderAttributeResponse, error) {
+	if req == nil || req.Body == nil {
+		return nil, fmt.Errorf("Got empty provider input")
 	}
-	return fmt.Errorf("provider not found")
+	p, exists := ps.providers[req.Provider]
+	if !exists {
+		return nil, fmt.Errorf("Invalid provider")
+	}
+
+	err := p.SetProviderAttribute(
+		ctx,
+		req.Body.APIKey,
+		req.Body.DefaultModel,
+		req.Body.DefaultTemperature,
+		req.Body.DefaultOrigin,
+	)
+	return &spec.SetProviderAttributeResponse{}, err
 }
 
-// GetCompletionRequest creates a completion request for a given provider
-func (ps *ProviderSetAPI) GetCompletionRequest(
-	provider spec.ProviderName,
-	prompt string,
-	prevMessages []spec.ChatCompletionRequestMessage,
-	inputParams map[string]interface{},
-) (*spec.CompletionRequest, error) {
-	ctx := context.Background()
-
-	// Check if the provider exists in the provider set
+// MakeCompletion creates a completion request for a given provider
+func (ps *ProviderSetAPI) MakeCompletion(
+	ctx context.Context,
+	req *spec.MakeCompletionRequest,
+) (*spec.MakeCompletionResponse, error) {
+	if req == nil || req.Body == nil {
+		return nil, fmt.Errorf("Got empty provider input")
+	}
+	provider := req.Provider
 	p, exists := ps.providers[provider]
 	if !exists {
-		return nil, fmt.Errorf("provider '%s' not found", provider)
+		return nil, fmt.Errorf("Invalid provider")
 	}
 
 	// Get the default model for the provider
-	aiProvider, ok := AllAIProviders[provider]
+	aiProviderInfo, ok := AllAIProviders[provider]
 	if !ok {
 		return nil, fmt.Errorf("AI provider '%s' not found", provider)
 	}
 
-	defaultModelName := aiProvider.DefaultModel
-
+	defaultModelName := aiProviderInfo.DefaultModel
 	// Retrieve the model info for the default model
 	modelInfo, ok := AllModelInfo[defaultModelName]
 	if !ok {
@@ -139,8 +170,8 @@ func (ps *ProviderSetAPI) GetCompletionRequest(
 	}
 
 	// Check if 'model' is specified in inputParams and is a valid model name
-	if inputParams != nil {
-		if modelInterface, ok := inputParams["model"]; ok {
+	if req.Body.InputParams != nil {
+		if modelInterface, ok := req.Body.InputParams["model"]; ok {
 			// Ensure the model is a string
 			modelStr, ok := modelInterface.(string)
 			if !ok {
@@ -167,24 +198,38 @@ func (ps *ProviderSetAPI) GetCompletionRequest(
 	// )
 
 	// Create and return the completion request
-	return p.GetCompletionRequest(
+
+	cr, err := p.MakeCompletion(
 		ctx,
 		modelInfo,
-		prompt,
-		prevMessages,
-		inputParams,
+		req.Body.Prompt,
+		req.Body.PrevMessages,
+		req.Body.InputParams,
 	)
+	if err != nil {
+		return nil, err
+	}
+	return &spec.MakeCompletionResponse{Body: cr}, nil
 }
 
 // FetchCompletion processes a completion request for a given provider
 func (ps *ProviderSetAPI) FetchCompletion(
-	provider spec.ProviderName,
-	input spec.CompletionRequest,
-	onStreamData func(data string) error,
-) (*spec.CompletionResponse, error) {
-	ctx := context.Background()
-	if p, exists := ps.providers[provider]; exists {
-		return p.FetchCompletion(ctx, input, onStreamData)
+	ctx context.Context,
+	req *spec.FetchCompletionRequest,
+) (*spec.FetchCompletionResponse, error) {
+	if req == nil || req.Body == nil || req.Body.Input == nil {
+		return nil, fmt.Errorf("Got empty provider input")
 	}
-	return nil, fmt.Errorf("provider not found")
+	provider := req.Body.Provider
+	p, exists := ps.providers[provider]
+	if !exists {
+		return nil, fmt.Errorf("Invalid provider")
+	}
+
+	resp, err := p.FetchCompletion(ctx, *req.Body.Input, req.Body.OnStreamData)
+	if err != nil {
+		return nil, fmt.Errorf("Error in fetch completion")
+	}
+
+	return &spec.FetchCompletionResponse{Body: resp}, nil
 }

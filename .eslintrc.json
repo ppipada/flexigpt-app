@@ -15,10 +15,5 @@
 		// "import/no-relative-parent-imports": "", // Disallow relative parent imports
 		"prettier/prettier": "error",
 		"@typescript-eslint/no-explicit-any": "off"
-	},
-	"settings": {
-		"next": {
-			"rootDir": "frontend"
-		}
 	}
 }

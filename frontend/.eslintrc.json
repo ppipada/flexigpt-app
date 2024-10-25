@@ -8,7 +8,7 @@
 	},
 	"settings": {
 		"next": {
-			"rootDir": "frontend"
+			"rootDir": "."
 		},
 		"import/resolver": {
 			"typescript": {

@@ -118,6 +118,126 @@ export namespace spec {
 	}
 	
 	
+	export class ConversationMessage {
+	    id: string;
+	    // Go type: time
+	    createdAt?: any;
+	    role: string;
+	    content: string;
+	    timestamp?: string;
+	    name?: string;
+	    details?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConversationMessage(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.createdAt = this.convertValues(source["createdAt"], null);
+	        this.role = source["role"];
+	        this.content = source["content"];
+	        this.timestamp = source["timestamp"];
+	        this.name = source["name"];
+	        this.details = source["details"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class AddMessageToConversationRequestBody {
+	    title: string;
+	    newMessage: ConversationMessage;
+	
+	    static createFrom(source: any = {}) {
+	        return new AddMessageToConversationRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.title = source["title"];
+	        this.newMessage = this.convertValues(source["newMessage"], ConversationMessage);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class AddMessageToConversationRequest {
+	    ID: string;
+	    Body?: AddMessageToConversationRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new AddMessageToConversationRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ID = source["ID"];
+	        this.Body = this.convertValues(source["Body"], AddMessageToConversationRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class AddMessageToConversationResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new AddMessageToConversationResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
 	export class AppSettings {
 	    defaultProvider: string;
 	
@@ -289,49 +409,6 @@ export namespace spec {
 		    return a;
 		}
 	}
-	export class ConversationMessage {
-	    id: string;
-	    // Go type: time
-	    createdAt?: any;
-	    role: string;
-	    content: string;
-	    timestamp?: string;
-	    name?: string;
-	    details?: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new ConversationMessage(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.createdAt = this.convertValues(source["createdAt"], null);
-	        this.role = source["role"];
-	        this.content = source["content"];
-	        this.timestamp = source["timestamp"];
-	        this.name = source["name"];
-	        this.details = source["details"];
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
 	export class Conversation {
 	    id: string;
 	    title: string;
@@ -408,18 +485,42 @@ export namespace spec {
 		}
 	}
 	
-	export class ListResponse {
-	    ConversationItems: ConversationItem[];
-	    NextPageToken?: string;
+	export class DeleteConversationRequest {
+	    ID: string;
+	    Title: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new ListResponse(source);
+	        return new DeleteConversationRequest(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.ConversationItems = this.convertValues(source["ConversationItems"], ConversationItem);
-	        this.NextPageToken = source["NextPageToken"];
+	        this.ID = source["ID"];
+	        this.Title = source["Title"];
+	    }
+	}
+	export class DeleteConversationResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new DeleteConversationResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class FetchCompletionResponse {
+	    Body?: CompletionResponse;
+	
+	    static createFrom(source: any = {}) {
+	        return new FetchCompletionResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], CompletionResponse);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -439,6 +540,18 @@ export namespace spec {
 		    }
 		    return a;
 		}
+	}
+	export class GetAllSettingsRequest {
+	    ForceFetch: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new GetAllSettingsRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ForceFetch = source["ForceFetch"];
+	    }
 	}
 	export class SettingsSchema {
 	    aiSettings: {[key: string]: AISetting};
@@ -471,6 +584,579 @@ export namespace spec {
 		    }
 		    return a;
 		}
+	}
+	export class GetAllSettingsResponse {
+	    Body?: SettingsSchema;
+	
+	    static createFrom(source: any = {}) {
+	        return new GetAllSettingsResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], SettingsSchema);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class GetConfigurationInfoRequest {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new GetConfigurationInfoRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class GetConfigurationInfoResponseBody {
+	    configurationInfo: {[key: string]: any};
+	
+	    static createFrom(source: any = {}) {
+	        return new GetConfigurationInfoResponseBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.configurationInfo = source["configurationInfo"];
+	    }
+	}
+	export class GetConfigurationInfoResponse {
+	    Body?: GetConfigurationInfoResponseBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new GetConfigurationInfoResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], GetConfigurationInfoResponseBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class GetConversationRequest {
+	    ID: string;
+	    Title: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new GetConversationRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ID = source["ID"];
+	        this.Title = source["Title"];
+	    }
+	}
+	export class GetConversationResponse {
+	    Body?: Conversation;
+	
+	    static createFrom(source: any = {}) {
+	        return new GetConversationResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], Conversation);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class GetDefaultProviderRequest {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new GetDefaultProviderRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class GetDefaultProviderResponseBody {
+	    defaultProvider: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new GetDefaultProviderResponseBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.defaultProvider = source["defaultProvider"];
+	    }
+	}
+	export class GetDefaultProviderResponse {
+	    Body?: GetDefaultProviderResponseBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new GetDefaultProviderResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], GetDefaultProviderResponseBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class ListConversationsRequest {
+	    Token: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListConversationsRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Token = source["Token"];
+	    }
+	}
+	export class ListConversationsResponseBody {
+	    conversationItems: ConversationItem[];
+	    nextPageToken?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListConversationsResponseBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.conversationItems = this.convertValues(source["conversationItems"], ConversationItem);
+	        this.nextPageToken = source["nextPageToken"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ListConversationsResponse {
+	    Body?: ListConversationsResponseBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListConversationsResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], ListConversationsResponseBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class MakeCompletionRequestBody {
+	    prompt: string;
+	    prevMessages: ChatCompletionRequestMessage[];
+	    inputParams: {[key: string]: any};
+	
+	    static createFrom(source: any = {}) {
+	        return new MakeCompletionRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.prompt = source["prompt"];
+	        this.prevMessages = this.convertValues(source["prevMessages"], ChatCompletionRequestMessage);
+	        this.inputParams = source["inputParams"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class MakeCompletionRequest {
+	    Provider: string;
+	    Body?: MakeCompletionRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new MakeCompletionRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Provider = source["Provider"];
+	        this.Body = this.convertValues(source["Body"], MakeCompletionRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class MakeCompletionResponse {
+	    Body?: CompletionRequest;
+	
+	    static createFrom(source: any = {}) {
+	        return new MakeCompletionResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], CompletionRequest);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SaveConversationRequest {
+	    Body?: Conversation;
+	
+	    static createFrom(source: any = {}) {
+	        return new SaveConversationRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], Conversation);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SaveConversationResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new SaveConversationResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class SetDefaultProviderRequestBody {
+	    provider: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetDefaultProviderRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.provider = source["provider"];
+	    }
+	}
+	export class SetDefaultProviderRequest {
+	    Body?: SetDefaultProviderRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetDefaultProviderRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], SetDefaultProviderRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class SetDefaultProviderResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new SetDefaultProviderResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class SetProviderAttributeRequestBody {
+	    apiKey?: string;
+	    defaultModel?: string;
+	    defaultTemperature?: number;
+	    defaultOrigin?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetProviderAttributeRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.apiKey = source["apiKey"];
+	        this.defaultModel = source["defaultModel"];
+	        this.defaultTemperature = source["defaultTemperature"];
+	        this.defaultOrigin = source["defaultOrigin"];
+	    }
+	}
+	export class SetProviderAttributeRequest {
+	    Provider: string;
+	    Body?: SetProviderAttributeRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetProviderAttributeRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Provider = source["Provider"];
+	        this.Body = this.convertValues(source["Body"], SetProviderAttributeRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class SetProviderAttributeResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new SetProviderAttributeResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class SetSettingRequestBody {
+	    value: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetSettingRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.value = source["value"];
+	    }
+	}
+	export class SetSettingRequest {
+	    Key: string;
+	    Body?: SetSettingRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetSettingRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Key = source["Key"];
+	        this.Body = this.convertValues(source["Body"], SetSettingRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class SetSettingResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new SetSettingResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
 	}
 
 }

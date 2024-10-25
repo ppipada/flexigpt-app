@@ -1,6 +1,7 @@
 package conversationstore_test
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -105,18 +106,28 @@ func TestConversationCollection(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				err := cc.SaveConversation(&tt.conversation)
+				ctx := context.Background()
+				_, err := cc.SaveConversation(
+					ctx,
+					&spec.SaveConversationRequest{Body: &tt.conversation},
+				)
 				if (err != nil) != tt.expectError {
 					t.Fatalf("Expected error: %v, got: %v", tt.expectError, err)
 				}
 
-				retrievedConvo, err := cc.GetConversation(tt.conversation.ID, tt.conversation.Title)
+				retrievedConvo, err := cc.GetConversation(
+					ctx,
+					&spec.GetConversationRequest{
+						ID:    tt.conversation.ID,
+						Title: tt.conversation.Title,
+					},
+				)
 				if err != nil {
 					t.Fatalf("Failed to get conversation: %v", err)
 				}
 
-				if retrievedConvo.ID != tt.conversation.ID ||
-					retrievedConvo.Title != tt.conversation.Title {
+				if retrievedConvo.Body.ID != tt.conversation.ID ||
+					retrievedConvo.Body.Title != tt.conversation.Title {
 					t.Errorf("Retrieved conversation does not match saved conversation")
 				}
 			})
@@ -124,32 +135,40 @@ func TestConversationCollection(t *testing.T) {
 	})
 
 	t.Run("Delete Conversation", func(t *testing.T) {
+		ctx := context.Background()
 		convo, err := conversationstore.InitConversation("To Be Deleted")
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
 		}
-		err = cc.SaveConversation(convo)
+		_, err = cc.SaveConversation(ctx, &spec.SaveConversationRequest{Body: convo})
 		if err != nil {
 			t.Errorf("Failed to save conversation: %v", err)
 		}
 
-		err = cc.DeleteConversation(convo.ID, convo.Title)
+		_, err = cc.DeleteConversation(
+			ctx,
+			&spec.DeleteConversationRequest{ID: convo.ID, Title: convo.Title},
+		)
 		if err != nil {
 			t.Errorf("Failed to delete conversation: %v", err)
 		}
 
-		_, err = cc.GetConversation(convo.ID, convo.Title)
+		_, err = cc.GetConversation(
+			ctx,
+			&spec.GetConversationRequest{ID: convo.ID, Title: convo.Title},
+		)
 		if err == nil {
 			t.Errorf("Expected error when getting deleted conversation, got none")
 		}
 	})
 
 	t.Run("Add Message to Conversation", func(t *testing.T) {
+		ctx := context.Background()
 		convo, err := conversationstore.InitConversation("Message Test")
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
 		}
-		err = cc.SaveConversation(convo)
+		_, err = cc.SaveConversation(ctx, &spec.SaveConversationRequest{Body: convo})
 		if err != nil {
 			t.Errorf("Failed to save conversation: %v", err)
 		}
@@ -176,18 +195,31 @@ func TestConversationCollection(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				err := cc.AddMessageToConversation(convo.ID, convo.Title, tt.message)
+				ctx := context.Background()
+				_, err := cc.AddMessageToConversation(
+					ctx,
+					&spec.AddMessageToConversationRequest{
+						ID: convo.ID,
+						Body: &spec.AddMessageToConversationRequestBody{
+							Title:      convo.Title,
+							NewMessage: tt.message,
+						},
+					},
+				)
 				if (err != nil) != tt.expectError {
 					t.Fatalf("Expected error: %v, got: %v", tt.expectError, err)
 				}
 
-				retrievedConvo, err := cc.GetConversation(convo.ID, convo.Title)
+				retrievedConvo, err := cc.GetConversation(
+					ctx,
+					&spec.GetConversationRequest{ID: convo.ID, Title: convo.Title},
+				)
 				if err != nil {
 					t.Fatalf("Failed to get conversation: %v", err)
 				}
 
-				if len(retrievedConvo.Messages) == 0 ||
-					retrievedConvo.Messages[len(retrievedConvo.Messages)-1].Content != tt.message.Content {
+				if len(retrievedConvo.Body.Messages) == 0 ||
+					retrievedConvo.Body.Messages[len(retrievedConvo.Body.Messages)-1].Content != tt.message.Content {
 					t.Errorf("Message not added correctly to conversation")
 				}
 			})
@@ -206,6 +238,7 @@ func TestConversationCollectionListing(t *testing.T) {
 	}
 
 	t.Run("List Conversations", func(t *testing.T) {
+		ctx := context.Background()
 		convo1, err := conversationstore.InitConversation("First Conversation")
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
@@ -214,21 +247,21 @@ func TestConversationCollectionListing(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
 		}
-		err = cc.SaveConversation(convo1)
+		_, err = cc.SaveConversation(ctx, &spec.SaveConversationRequest{Body: convo1})
 		if err != nil {
 			t.Errorf("Failed to save conversation: %v", err)
 		}
-		err = cc.SaveConversation(convo2)
+		_, err = cc.SaveConversation(ctx, &spec.SaveConversationRequest{Body: convo2})
 		if err != nil {
 			t.Errorf("Failed to save conversation: %v", err)
 		}
-		convoItems, err := cc.ListConversations("")
+		convoItems, err := cc.ListConversations(ctx, nil)
 		if err != nil {
 			t.Fatalf("Failed to list conversations: %v", err)
 		}
 
-		if len(convoItems.ConversationItems) != 2 {
-			t.Errorf("Expected 2 conversations, got %d", len(convoItems.ConversationItems))
+		if len(convoItems.Body.ConversationItems) != 2 {
+			t.Errorf("Expected 2 conversations, got %d", len(convoItems.Body.ConversationItems))
 		}
 	})
 

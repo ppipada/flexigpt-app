@@ -99,7 +99,7 @@ const spawnAppWindow = async () => {
 
 const initializeSettingsManager = async () => {
 	const settingsFilePath = path.join(app.getPath('userData'), 'settings.json');
-	log.info(`Settings file url: ${settingsFilePath}`);
+	log.info(`Setting file url: ${settingsFilePath}`);
 	settingsManager = new SettingStore(settingsFilePath);
 	await settingsManager.initialize();
 };

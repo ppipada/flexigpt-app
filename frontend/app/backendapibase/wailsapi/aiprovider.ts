@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
 	FetchCompletion,
-	GetCompletionRequest,
 	GetConfigurationInfo,
 	GetDefaultProvider,
+	MakeCompletion,
 	SetDefaultProvider,
 	SetProviderAttribute,
-} from '@/backendapibase/wailsjs/go/main/WrappedProviderSetAPI';
+} from '@/backendapibase/wailsjs/go/main/ProviderSetWrapper';
 import { spec as wailsSpec } from '@/backendapibase/wailsjs/go/models';
 import { EventsOn } from '@/backendapibase/wailsjs/runtime/runtime';
 import {
@@ -20,19 +20,38 @@ import {
 
 export class WailsProviderSetAPI implements IProviderSetAPI {
 	async getDefaultProvider(): Promise<ProviderName> {
-		const provider = await GetDefaultProvider();
-		return provider;
+		const resp = await GetDefaultProvider({} as wailsSpec.GetDefaultProviderRequest);
+		return resp.Body?.defaultProvider as ProviderName;
 	}
 
 	async setDefaultProvider(provider: ProviderName): Promise<void> {
-		await SetDefaultProvider(provider);
+		const req = { Body: { provider: provider } };
+		await SetDefaultProvider(req as wailsSpec.SetDefaultProviderRequest);
 	}
 
 	async getConfigurationInfo(): Promise<Record<string, any>> {
-		const resp = await GetConfigurationInfo();
-		return resp;
+		const resp = await GetConfigurationInfo({} as wailsSpec.GetConfigurationInfoRequest);
+		return resp.Body?.configurationInfo as Record<string, any>;
 	}
 
+	async setAttribute(
+		provider: ProviderName,
+		apiKey?: string,
+		defaultModel?: ModelName,
+		defaultTemperature?: number,
+		defaultOrigin?: string
+	): Promise<void> {
+		const req = {
+			Provider: provider as string,
+			Body: {
+				apiKey: apiKey,
+				defaultModel: defaultModel,
+				defaultTemperature: defaultTemperature,
+				defaultOrigin: defaultOrigin,
+			},
+		};
+		await SetProviderAttribute(req as wailsSpec.SetProviderAttributeRequest);
+	}
 	async getCompletionRequest(
 		provider: ProviderName,
 		prompt: string,
@@ -48,8 +67,16 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		if (!inputParams) {
 			inputParams = {};
 		}
-		const resp = await GetCompletionRequest(provider, prompt, msgs, inputParams);
-		return resp as CompletionRequest;
+		const req = {
+			Provider: provider as string,
+			Body: {
+				prompt: prompt,
+				prevMessages: msgs,
+				inputParams: inputParams,
+			},
+		};
+		const resp = await MakeCompletion(req as wailsSpec.MakeCompletionRequest);
+		return resp.Body as CompletionRequest;
 		// const x: CompletionRequest = { model: 'x', temperature: 0, maxPromptLength: 2000, stream: false };
 		// return x;
 	}
@@ -67,16 +94,6 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 			EventsOn(callbackId, onStreamData);
 		}
 		const response = await FetchCompletion(provider, input as wailsSpec.CompletionRequest, callbackId);
-		return response;
-	}
-
-	async setAttribute(
-		provider: ProviderName,
-		apiKey?: string,
-		defaultModel?: ModelName,
-		defaultTemperature?: number,
-		defaultOrigin?: string
-	): Promise<void> {
-		await SetProviderAttribute(provider, apiKey, defaultModel, defaultTemperature, defaultOrigin);
+		return response.Body as CompletionResponse;
 	}
 }

@@ -115,8 +115,9 @@ func (w *Writer) Write(p []byte) (n int, err error) {
 		w.pending.Add(1)
 		defer w.pending.Done()
 	}
-
-	w.queue <- p
+	copyP := make([]byte, len(p))
+	copy(copyP, p)
+	w.queue <- copyP
 
 	return len(p), nil
 }
@@ -246,7 +247,7 @@ func New(logger *slog.Logger, opts Options) (*Writer, error) {
 	w := &Writer{
 		logger:  logger,
 		opts:    opts,
-		queue:   make(chan []byte, 1024),
+		queue:   make(chan []byte, 4096),
 		closing: make(chan struct{}),
 		done:    make(chan struct{}),
 	}

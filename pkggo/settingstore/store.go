@@ -1,6 +1,7 @@
 package settingstore
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -39,7 +40,14 @@ func InitSettingStore(settingStore *SettingStore, filename string) error {
 	return nil
 }
 
-func (s *SettingStore) GetAllSettings(forceFetch bool) (*spec.SettingsSchema, error) {
+func (s *SettingStore) GetAllSettings(
+	ctx context.Context,
+	req *spec.GetAllSettingsRequest,
+) (*spec.GetAllSettingsResponse, error) {
+	forceFetch := false
+	if req != nil {
+		forceFetch = req.ForceFetch
+	}
 	data, err := s.store.GetAll(forceFetch)
 	if err != nil {
 		return nil, err
@@ -50,14 +58,18 @@ func (s *SettingStore) GetAllSettings(forceFetch bool) (*spec.SettingsSchema, er
 		return nil, err
 	}
 
-	return &settings, nil
+	return &spec.GetAllSettingsResponse{Body: &settings}, nil
 }
 
-func (s *SettingStore) SetSetting(dotSeparatedKey string, value interface{}) error {
+func (s *SettingStore) SetSetting(
+	ctx context.Context,
+	req *spec.SetSettingRequest,
+) (*spec.SetSettingResponse, error) {
+	dotSeparatedKey := req.Key
 	keys := strings.Split(dotSeparatedKey, ".")
 	defaultDataMap, err := encdec.StructWithJSONTagsToMap(s.defaultData)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var currentSchema interface{}
@@ -66,19 +78,19 @@ func (s *SettingStore) SetSetting(dotSeparatedKey string, value interface{}) err
 		switch currentTypedSchema := currentSchema.(type) {
 		case map[string]interface{}:
 			if _, ok := currentTypedSchema[key]; !ok {
-				return fmt.Errorf("invalid key: %s", dotSeparatedKey)
+				return nil, fmt.Errorf("invalid key: %s", dotSeparatedKey)
 			}
 			currentSchema = currentTypedSchema[key]
 		default:
-			return fmt.Errorf("invalid key: %s", dotSeparatedKey)
+			return nil, fmt.Errorf("invalid key: %s", dotSeparatedKey)
 		}
 	}
 
 	expectedType := fmt.Sprintf("%T", currentSchema)
-	valueType := fmt.Sprintf("%T", value)
+	valueType := fmt.Sprintf("%T", req.Body.Value)
 
 	if expectedType != valueType {
-		return fmt.Errorf(
+		return nil, fmt.Errorf(
 			"type mismatch for key \"%s\": expected %s, got %s",
 			dotSeparatedKey,
 			expectedType,
@@ -86,5 +98,7 @@ func (s *SettingStore) SetSetting(dotSeparatedKey string, value interface{}) err
 		)
 	}
 
-	return s.store.SetKey(dotSeparatedKey, value)
+	err = s.store.SetKey(dotSeparatedKey, req.Body.Value)
+
+	return &spec.SetSettingResponse{}, err
 }

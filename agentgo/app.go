@@ -12,8 +12,6 @@ import (
 	"strings"
 
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/openai"
-	"github.com/flexigpt/flexiui/pkggo/conversationstore"
-	"github.com/flexigpt/flexiui/pkggo/settingstore"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/adrg/xdg"
@@ -25,9 +23,9 @@ const AppDisplayTitle = "FlexiGPT"
 // App struct
 type App struct {
 	ctx                  context.Context
-	settingStoreAPI      *settingstore.SettingStore
-	conversationStoreAPI *conversationstore.ConversationCollection
-	providerSetAPI       *WrappedProviderSetAPI
+	settingStoreAPI      *SettingStoreWrapper
+	conversationStoreAPI *ConversationCollectionWrapper
+	providerSetAPI       *ProviderSetWrapper
 	configBasePath       string
 	dataBasePath         string
 }
@@ -49,9 +47,12 @@ func NewApp() *App {
 	app := &App{}
 	app.configBasePath = filepath.Join(xdg.ConfigHome, (strings.ToLower(AppTitle)))
 	app.dataBasePath = filepath.Join(xdg.DataHome, (strings.ToLower(AppTitle)))
-	app.settingStoreAPI = &settingstore.SettingStore{}
-	app.conversationStoreAPI = &conversationstore.ConversationCollection{}
-	app.providerSetAPI = NewWrappedProviderSetAPI(openai.ProviderNameOpenAI)
+
+	// Wails needs some instance of an struct to create bindings from its methods.
+	// Therefore the pattern followed is that create a hollow struct in new and then init in startup
+	app.settingStoreAPI = &SettingStoreWrapper{}
+	app.conversationStoreAPI = &ConversationCollectionWrapper{}
+	app.providerSetAPI = &ProviderSetWrapper{}
 
 	if err := os.MkdirAll(app.configBasePath, os.FileMode(0770)); err != nil {
 		slog.Error(
@@ -73,15 +74,14 @@ func NewApp() *App {
 }
 
 func (a *App) initManagers() {
-
 	// Initialize settings manager
 	settingsFilePath := filepath.Join(a.configBasePath, "settings.json")
-	slog.Info("Settings created", "filepath", settingsFilePath)
-	err := settingstore.InitSettingStore(a.settingStoreAPI, settingsFilePath)
+	slog.Info("Setting created", "filepath", settingsFilePath)
+	err := InitSettingStoreWrapper(a.settingStoreAPI, settingsFilePath)
 	if err != nil {
 		slog.Error(
 			"Couldnt initialize setting store",
-			"Settings file",
+			"Setting file",
 			settingsFilePath,
 			"Error",
 			err,
@@ -93,7 +93,7 @@ func (a *App) initManagers() {
 	conversationDir := filepath.Join(a.dataBasePath, "conversations")
 	slog.Info("Conversation store initialized", "directory", conversationDir)
 
-	err = conversationstore.InitConversationCollection(a.conversationStoreAPI, conversationDir)
+	err = InitConversationCollectionWrapper(a.conversationStoreAPI, conversationDir)
 	if err != nil {
 		slog.Error(
 			"Couldnt initialize conversation store",
@@ -104,6 +104,17 @@ func (a *App) initManagers() {
 		)
 		panic("Failed to initialize Managers")
 	}
+
+	err = InitProviderSetWrapper(a.providerSetAPI, openai.ProviderNameOpenAI)
+	if err != nil {
+		slog.Error(
+			"Couldnt initialize providerset",
+			"Error",
+			err,
+		)
+		panic("Failed to initialize Managers")
+	}
+
 }
 
 // startup is called at application startup

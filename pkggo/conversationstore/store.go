@@ -1,6 +1,7 @@
 package conversationstore
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"log/slog"
@@ -46,6 +47,29 @@ func GetDateFromUUIDv7(uuid string) (time.Time, error) {
 	return time.Unix(0, timestampMs*int64(time.Millisecond)), nil
 }
 
+func InitConversation(title string) (*spec.Conversation, error) {
+	if title == "" {
+		title = "New Conversation"
+	}
+	if len(title) > 64 {
+		title = title[:64]
+	}
+
+	c := spec.Conversation{}
+	u, err := uuid.NewV7()
+	if err != nil {
+		return nil, err
+	}
+	c.ID = u.String()
+	c.Title = title
+	c.CreatedAt = time.Now()
+	c.ModifiedAt = time.Now()
+	c.Messages = []spec.ConversationMessage{}
+
+	return &c, nil
+
+}
+
 type ConversationCollection struct {
 	store *dirstore.MapDirectoryStore
 }
@@ -84,44 +108,41 @@ func (cc *ConversationCollection) getConversationFilenameUsingIDTitle(id, title 
 	return cc.GetConversationFilename(c)
 }
 
-func InitConversation(title string) (*spec.Conversation, error) {
-	if title == "" {
-		title = "New Conversation"
-	}
-	if len(title) > 64 {
-		title = title[:64]
-	}
-
-	c := spec.Conversation{}
-	u, err := uuid.NewV7()
+func (cc *ConversationCollection) SaveConversation(
+	ctx context.Context,
+	req *spec.SaveConversationRequest,
+) (*spec.SaveConversationResponse, error) {
+	filename := cc.GetConversationFilename(*req.Body)
+	data, err := encdec.StructWithJSONTagsToMap(req.Body)
 	if err != nil {
 		return nil, err
 	}
-	c.ID = u.String()
-	c.Title = title
-	c.CreatedAt = time.Now()
-	c.ModifiedAt = time.Now()
-	c.Messages = []spec.ConversationMessage{}
-
-	return &c, nil
-
-}
-
-func (cc *ConversationCollection) SaveConversation(conversation *spec.Conversation) error {
-	filename := cc.GetConversationFilename(*conversation)
-	data, err := encdec.StructWithJSONTagsToMap(conversation)
+	err = cc.store.SetFileData(filename, data)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return cc.store.SetFileData(filename, data)
+	return &spec.SaveConversationResponse{}, nil
 }
 
-func (cc *ConversationCollection) DeleteConversation(id, title string) error {
-	return cc.store.DeleteFile(cc.getConversationFilenameUsingIDTitle(id, title))
+func (cc *ConversationCollection) DeleteConversation(
+	ctx context.Context,
+	req *spec.DeleteConversationRequest,
+) (*spec.DeleteConversationResponse, error) {
+	err := cc.store.DeleteFile(cc.getConversationFilenameUsingIDTitle(req.ID, req.Title))
+	if err != nil {
+		return nil, err
+	}
+	return &spec.DeleteConversationResponse{}, nil
 }
 
-func (cc *ConversationCollection) GetConversation(id, title string) (*spec.Conversation, error) {
-	data, err := cc.store.GetFileData(cc.getConversationFilenameUsingIDTitle(id, title), false)
+func (cc *ConversationCollection) GetConversation(
+	ctx context.Context,
+	req *spec.GetConversationRequest,
+) (*spec.GetConversationResponse, error) {
+	data, err := cc.store.GetFileData(
+		cc.getConversationFilenameUsingIDTitle(req.ID, req.Title),
+		false,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -130,10 +151,17 @@ func (cc *ConversationCollection) GetConversation(id, title string) (*spec.Conve
 	if err != nil {
 		return nil, err
 	}
-	return &convo, nil
+	return &spec.GetConversationResponse{Body: &convo}, nil
 }
 
-func (cc *ConversationCollection) ListConversations(token string) (*spec.ListResponse, error) {
+func (cc *ConversationCollection) ListConversations(
+	ctx context.Context,
+	req *spec.ListConversationsRequest,
+) (*spec.ListConversationsResponse, error) {
+	token := ""
+	if req != nil {
+		token = req.Token
+	}
 	files, nextToken, err := cc.store.ListFiles("desc", token)
 	if err != nil {
 		return nil, err
@@ -158,22 +186,30 @@ func (cc *ConversationCollection) ListConversations(token string) (*spec.ListRes
 		convoItems = append(convoItems, convo)
 	}
 
-	resp := &spec.ListResponse{}
-	resp.ConversationItems = convoItems
-	resp.NextPageToken = &nextToken
-	return resp, nil
+	resp := &spec.ListConversationsResponseBody{
+		ConversationItems: convoItems,
+		NextPageToken:     &nextToken,
+	}
+	return &spec.ListConversationsResponse{Body: resp}, nil
 }
 
 func (cc *ConversationCollection) AddMessageToConversation(
-	id, title string,
-	newMessage spec.ConversationMessage,
-) error {
-	conversation, err := cc.GetConversation(id, title)
+	ctx context.Context,
+	req *spec.AddMessageToConversationRequest,
+) (*spec.AddMessageToConversationResponse, error) {
+	conversation, err := cc.GetConversation(
+		ctx,
+		&spec.GetConversationRequest{ID: req.ID, Title: req.Body.Title},
+	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	conversation.Messages = append(conversation.Messages, newMessage)
-	conversation.ModifiedAt = time.Now()
-	return cc.SaveConversation(conversation)
+	conversation.Body.Messages = append(conversation.Body.Messages, req.Body.NewMessage)
+	conversation.Body.ModifiedAt = time.Now()
+	_, err = cc.SaveConversation(ctx, &spec.SaveConversationRequest{Body: conversation.Body})
+	if err != nil {
+		return nil, err
+	}
+	return &spec.AddMessageToConversationResponse{}, nil
 }

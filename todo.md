@@ -11,6 +11,7 @@
 ### Laundry list
 
 - [ ] math formulas in content needs to render properly
+- [ ] Need a resend button
 
 ### Tasks: Tools Implementation with CodeMirror
 

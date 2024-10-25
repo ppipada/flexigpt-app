@@ -27,9 +27,3 @@ type SettingsSchema struct {
 	AISettings AISettingsSchema `json:"aiSettings"`
 	App        AppSettings      `json:"app"`
 }
-
-// ISettingStoreAPI defines the interface for settings API.
-type ISettingStoreAPI interface {
-	GetAllSettings(forceFetch bool) (*SettingsSchema, error)
-	SetSetting(key string, value interface{}) error
-}

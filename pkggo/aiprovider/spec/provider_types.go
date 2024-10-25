@@ -49,7 +49,7 @@ func (p *ProviderInfo) IsConfigured() bool {
 }
 
 type CompletionProvider interface {
-	GetCompletionRequest(
+	MakeCompletion(
 		ctx context.Context,
 		modelInfo ModelInfo,
 		prompt string,

@@ -26,8 +26,8 @@ func (api *BaseAIAPI) IsConfigured(ctx context.Context) bool {
 	return api.ProviderInfo.IsConfigured()
 }
 
-// GetCompletionRequest creates a new completion request
-func (api *BaseAIAPI) GetCompletionRequest(
+// MakeCompletion creates a new completion request
+func (api *BaseAIAPI) MakeCompletion(
 	ctx context.Context,
 	modelInfo spec.ModelInfo,
 	prompt string,
