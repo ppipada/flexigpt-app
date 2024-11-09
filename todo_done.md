@@ -1,15 +1,5 @@
 # Project Done Items
 
-## MileStone 0
-
-### Scope
-
-- Local installer for Linux/Mac/Win
-- Top level feature: Chat, Conversation history
-- Available during Chat: Prompt templates, Tools, KB servers
-
-### Tasks
-
 - Design and implement AppLayout
 
   - [x] Manages overall layout structure

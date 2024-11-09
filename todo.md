@@ -1,19 +1,24 @@
 # Project Current Milestones
 
-## MileStone 0
+## Ongoing Scope
 
-### Scope
+- Milestone 0 completion
+  - Top level feature: Chat, Conversation history, Settings
+  - Local installer for Linux
+- Milestone 1 partial
+  - Tools, Prompts
 
-- Local installer for Linux/Mac/Win
-- Top level feature: Chat, Conversation history
-- Available during Chat: Prompt templates, Tools, KB servers
+## Laundry list
 
-### Laundry list
+- [ ] Math formulas in content needs to render properly
+- [ ] Mermaid diagrams and sequence diagrams should render properly
+- [ ] Need a resend button too
+- [ ] Scroll bug in input text area
+- [ ] load chats properly at new chat etc. handle caching as needed
+  - [ ] Wails app test doesnt show any delay. Need to test electron.
+- [ ] Better title deduce
 
-- [ ] math formulas in content needs to render properly
-- [ ] Need a resend button
-
-### Tasks: Tools Implementation with CodeMirror
+## Tasks: Tools Implementation with CodeMirror
 
 - Tools Page
 
@@ -55,7 +60,7 @@
   - [ ] Implement API endpoints for creating, retrieving, updating, and deleting tools.
   - [ ] Ensure schema validation and function execution are supported on the backend.
 
-### Tasks: Prompt templates
+## Tasks: Prompt templates
 
 - Prompt list page
 
@@ -105,24 +110,3 @@
   - [ ] ~~Ideally if it is just prompt it should just expand the prompt in the input box~~
   - [ ] For any prompt with vars, the vars should be injected with defaults properly so that a user can edit them and frontend can parse it to create a proper string too.
   - [ ] ~~Can vars be few system functions like open file (??)~~
-
-### Pushed out
-
-- [ ] Tool use
-- [ ] KB stores
-- [ ] Create dmg, msi and flatpack and distribute for experimentation
-- [ ] Add support for langchaingo supported ai providers. Would need testing with each.
-
-  - [ ] bedrock
-  - [ ] mistral
-  - [ ] ollama
-  - [ ] watsonx
-  - [ ] llamafile
-  - [ ] cohere ??
-  - [ ] cloudflare ??
-  - [ ] ernie/baidu ??
-
-- [ ] load chats properly at new chat etc. handle caching as needed
-  - [ ] Wails app test doesnt show any delay. Need to test electron.
-- [ ] Better title deduce
-- [ ] Code interpreter for few languages baked in. This can be provided as a normal tool so that
