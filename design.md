@@ -4,34 +4,35 @@
 
 FlexiGPT is an AI application platform designed to empower organizations in seamlessly developing and deploying AI-driven solutions across their engineering teams. FlexiGPT ensures that your AI initiatives are both scalable and sustainable.
 
-Key objectives of FlexiGPT:
+Key objectives of FlexiGPT
 
-- Robust and flexible chat interface:
+- Robust and flexible chat interface
   - Enable dynamic interactions through tools, prompt templates, and knowledge servers, enhancing user engagement and productivity.
   - Support text and code generation APIs from multiple AI providers such as OpenAI, Anthropic, and Google.
-- Comprehensive control mechanisms:
+- Comprehensive control mechanisms
   - Implement user and cost management controls while maintaining high levels of observability to ensure efficient resource utilization.
-- Facilitated development of use-case focused applications:
+- Facilitated development of use-case focused applications
   - Provide a base UI and backend platform for developing use-case focused, LLM powered, applications while maintaining a seamless user experience.
-- Cross-Platform Compatibility: Ensure seamless operation across Linux, Mac, and Windows systems.
+- Cross-Platform Compatibility
+  - Ensure seamless operation across Linux, Mac, and Windows systems.
 
 This document outlines the requirements of FlexiGPT, along with a milestone-based task breakdown.
 
 ## Requirements
 
-- Chat with LLMs in real-time.
+- Chat with LLMs in real-time
 
   - Support for rich text formatting, including code blocks, mermaid diagrams and mathematical formulas.
   - Edit/Resend previously sent messages.
   - Enable/Disable attaching previous messages to an API call.
   - Tune chat settings such as models/temperature/message control inline.
 
-- Conversation history management.
+- Conversation history management
 
   - Persistent local storage of chats.
   - Ability to view and search past conversations.
 
-- Tools Integration:
+- Tools Integration
 
   - Ability to create and manage custom tools to augment chat functionality.
   - Specify input and output parameters using structured schemas.
@@ -39,7 +40,7 @@ This document outlines the requirements of FlexiGPT, along with a milestone-base
   - Define tools with schemas and executable functions.
   - Support a short code key to access and insert tools in chat
 
-- Prompt Templates:
+- Prompt Templates
 
   - Creation and use of predefined prompts within chats.
   - Create, edit, delete, and duplicate prompt templates.
@@ -77,19 +78,19 @@ This document outlines the requirements of FlexiGPT, along with a milestone-base
 
 ## MileStone 0
 
-- Chat interface:
+- Chat interface
 
   - Code/mermaid/math/sequence diagram(?) rendering support
   - Edit/Resend support
   - Streaming response support
   - AI Providers integration: OpenAI, Anthropic, Google
 
-- Conversations:
+- Conversations
 
   - Local conversation history JSON store via API
   - Supporting search and load
 
-- Settings:
+- Settings
 
   - Local settings JSON store via API
   - Tune settings inline of chat
@@ -99,7 +100,7 @@ This document outlines the requirements of FlexiGPT, along with a milestone-base
 
 ## MileStone 1
 
-- Tools:
+- Tools
 
   - CRUD + search in a dedicated page
   - In chat usage
@@ -108,7 +109,7 @@ This document outlines the requirements of FlexiGPT, along with a milestone-base
   - Local tool JSON store via API
   - Short code key support
 
-- Prompts:
+- Prompts
 
   - CRUD + search in a dedicated page.
   - Provide an editor for defining prompt template.
@@ -119,7 +120,7 @@ This document outlines the requirements of FlexiGPT, along with a milestone-base
   - Local prompt JSON store via API
   - Short code key support
 
-- Knowledge base servers integration:
+- Knowledge base servers integration
 
   - Provide a user interface to add, query and display KB servers.
   - Integrate with KB server APIs.
@@ -177,7 +178,7 @@ This document outlines the requirements of FlexiGPT, along with a milestone-base
   - Notifications support
   - Expenditure manager
 
-## Possible Sample Apps to integrate
+## Possible Sample Apps to Integrate
 
 - Sample Note app
 
