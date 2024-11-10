@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 export SERVICE_HOST="localhost"
 export SERVICE_PORT=8080
@@ -22,7 +22,7 @@ cleanup() {
 }
 
 # Trap Ctrl+C (SIGINT) and call cleanup
-trap cleanup SIGINT
+trap cleanup INT
 
 sleep 2
 

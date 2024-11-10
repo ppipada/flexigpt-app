@@ -6,11 +6,11 @@
 	"private": true,
 	"scripts": {
 		"start:electron": "cross-env NEXT_PUBLIC_PLATFORM=electron next start",
-		"dev:electron": "cross-env NEXT_PUBLIC_PLATFORM=electron next dev",
-		"build:electron": "cross-env NEXT_PUBLIC_PLATFORM=electron next build",
+		"electron:dev": "cross-env NEXT_PUBLIC_PLATFORM=electron next dev",
+		"electron:build": "cross-env NEXT_PUBLIC_PLATFORM=electron next build",
 		"start:wails": "cross-env NEXT_PUBLIC_PLATFORM=wails next start",
-		"dev:wails": "cross-env NEXT_PUBLIC_PLATFORM=wails next dev",
-		"build:wails": "cross-env NEXT_PUBLIC_PLATFORM=wails next build",
+		"wails:dev": "cross-env NEXT_PUBLIC_PLATFORM=wails next dev",
+		"wails:build": "cross-env NEXT_PUBLIC_PLATFORM=wails next build",
 		"lint": "next lint . -c ./.eslintrc.json",
 		"clean": "rimraf ./build",
 		"test": "echo \"No test specified\" && exit 0"

@@ -4,9 +4,8 @@
 	"outputfilename": "flexigpt",
 	"build:dir": "../build",
 	"frontend:dir": "../frontend",
-	"frontend:install": "pnpm install",
-	"frontend:build": "pnpm run build:wails",
-	"frontend:dev:watcher": "pnpm run dev:wails",
+	"frontend:build": "pnpm run wails:build",
+	"frontend:dev:watcher": "pnpm run wails:dev",
 	"frontend:dev:serverUrl": "auto",
 	"wailsjsdir": "../frontend/app/backendapibase",
 	"author": {

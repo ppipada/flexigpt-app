@@ -16,11 +16,15 @@
 		"fmt": "prettier -c .",
 		"fmt:fix": "prettier -w .",
 		"clean": "lerna run clean",
-		"pre-pack": "lerna run build --ignore frontend --ignore agentts --stream --sort && lerna run build:electron --scope frontend && lerna run build --scope agentts",
-		"build:electron": "lerna run clean && pnpm run pre-pack && lerna run pack --scope agentts",
-		"build:wails": "cd ./agentgo && wails build -devtools -v 2",
+		"pre-pack": "lerna run build --ignore frontend --ignore agentts --stream --sort && lerna run electron:build --scope frontend && lerna run build --scope agentts",
 		"boot": "lerna run build --scope agentts && electron .",
-		"dev": "lerna run build --ignore frontend --ignore agentts --stream --sort && concurrently -k \"lerna run dev:electron --scope frontend\" \"wait-on tcp:127.0.0.1:3000 && pnpm run boot\""
+		"electron:build": "lerna run clean && pnpm run pre-pack && lerna run pack --scope agentts",
+		"electron:dev": "lerna run clean && lerna run build --ignore frontend --ignore agentts --stream --sort && concurrently -k \"lerna run electron:dev --scope frontend\" \"wait-on tcp:127.0.0.1:3000 && pnpm run boot\"",
+		"electron:run": "pnpm run electron:build && ./agentts/build/flexigpt-linux-x86_64.AppImage",
+		"wails:build": "cd ./agentgo && wails build -m -clean -devtools -v 2 -tags webkit2_41",
+		"wails:dev": "wails dev",
+		"wails:run": "pnpm run wails:build && ./build/bin/flexigpt",
+		"gobackend:run": "./scripts/run_backend.sh"
 	},
 	"dependencies": {},
 	"devDependencies": {
