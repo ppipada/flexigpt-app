@@ -17,6 +17,7 @@
 - [ ] load chats properly at new chat etc. handle caching as needed
   - [ ] Wails app test doesnt show any delay. Need to test electron.
 - [ ] Better title deduce
+- [ ] Flatpack installer for Linux
 
 ## Tasks: Tools Implementation with CodeMirror
 
