@@ -11,7 +11,7 @@ let ProviderSetAPIImpl: new () => IProviderSetAPI;
 let SettingStoreAPIImpl: new () => ISettingStoreAPI;
 
 if (process.env.NEXT_PUBLIC_PLATFORM === 'electron') {
-	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
 	const electronAPI = require('./electronapi');
 	LoggerImpl = electronAPI.ElectronLogger;
 	BackendAPIImpl = electronAPI.ElectronBackendAPI;
@@ -19,7 +19,7 @@ if (process.env.NEXT_PUBLIC_PLATFORM === 'electron') {
 	ProviderSetAPIImpl = electronAPI.ElectronProviderSetAPI;
 	SettingStoreAPIImpl = electronAPI.ElectronSettingStoreAPI;
 } else if (process.env.NEXT_PUBLIC_PLATFORM === 'wails') {
-	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
 	const wailsAPI = require('./wailsapi');
 	LoggerImpl = wailsAPI.WailsLogger;
 	BackendAPIImpl = wailsAPI.WailsBackendAPI;

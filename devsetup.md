@@ -16,6 +16,16 @@
 - Download all pnpm modules: `pnpm i`
 - All the available scripts are via pnpm scripts. You can check the `package.json` scripts section for all script available. A select few scripts are mentioned below.
 
+## VSCode setup
+
+Note: Similar can apply to other IDEs.
+
+- Plugins:
+  - Recommended plugins are at: `./vscode/extensions.json`
+  - You can check and install them at the notification time, or later by checking them via VSCode command pallette
+- Settings config for VSCode is at: `./vscode/settings.json`. These get applied as workspace settings if you open this project in VSCode.
+- External CI tools: `golangci-lint`, `golines`
+
 ## Backend only commands
 
 - Build and run the backend: `pnpm run gobackend:run`

@@ -1,0 +1,9 @@
+{
+	"recommendations": [
+		"dbaeumer.vscode-eslint", // ESLint
+		"golang.go", // Go
+		"yzhang.markdown-all-in-one", // Markdown All in One
+		"esbenp.prettier-vscode", // Prettier
+		"redhat.vscode-yaml" // YAML
+	]
+}
