@@ -11,6 +11,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/linux"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 
@@ -62,15 +63,8 @@ func main() {
 	// Create application with options
 	err = wails.Run(&options.App{
 		Title:             AppDisplayTitle,
-		Width:             1024,
-		Height:            768,
 		MinWidth:          1024,
 		MinHeight:         768,
-		MaxWidth:          7680,
-		MaxHeight:         4320,
-		DisableResize:     false,
-		Fullscreen:        false,
-		Frameless:         false,
 		StartHidden:       false,
 		HideWindowOnClose: false,
 		BackgroundColour:  &options.RGBA{R: 255, G: 255, B: 255, A: 255},
@@ -125,6 +119,10 @@ func main() {
 				Message: "",
 				Icon:    assets.Icon,
 			},
+		},
+		Linux: &linux.Options{
+			WindowIsTranslucent: false,
+			WebviewGpuPolicy:    linux.WebviewGpuPolicyOnDemand,
 		},
 	})
 	if err != nil {
