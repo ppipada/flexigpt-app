@@ -1,0 +1,52 @@
+name: Flatpak
+run-name: ${{ github.ref_name }} - Building Flatpak
+on:
+  push:
+    tags:
+      - '*'
+jobs:
+  flatpak:
+    name: 'Flatpak'
+    runs-on: ubuntu-latest
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:gnome-46
+      options: --privileged
+    steps:
+      # - name: 'Free up disk space'
+      #   run: |
+      #     sudo rm -rf /usr/share/dotnet >/dev/null 2>&1
+      #     sudo rm -rf /opt/ghc >/dev/null 2>&1
+      #     sudo rm -rf "/usr/local/share/boost" >/dev/null 2>&1
+      #     sudo rm -rf "$AGENT_TOOLSDIRECTORY" >/dev/null 2>&1
+      #     sudo rm -rf /usr/local/lib/android >/dev/null 2>&1
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - name: 'Determine prerequisites'
+        id: prereq
+        run: |
+          echo "need_node=$(command -v node >/dev/null 2>&1 && echo 0 || echo 1)" >> $GITHUB_OUTPUT
+
+      # Consider switching to https://github.com/actions/setup-node when it works
+      # https://github.com/nektos/act/issues/973
+      - name: Install node
+        if: ${{ steps.prereq.outputs.need_node == '1' }}
+        run: |
+          if [ "${RUNNER_OS,,}" = "windows" ]
+          then
+            choco install nodejs -y
+            echo "C:\Program Files\nodejs" >> $GITHUB_PATH
+          else
+            curl -sS https://webi.sh/node@20.18.0 | sh
+            echo ~/.local/opt/node/bin >> $GITHUB_PATH
+          fi
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          manifest-path: packaging/flatpak/io.github.flexigpt.Client.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+          bundle: FlexiGPT.flatpak
+      # - name: 'Add to release'
+      #   uses: softprops/action-gh-release@v2
+      #   with:
+      #     files: |
+      #       FlexiGPT.flatpak

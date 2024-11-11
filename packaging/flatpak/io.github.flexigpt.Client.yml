@@ -1,6 +1,6 @@
 id: io.github.flexigpt.Client
 runtime: org.gnome.Platform
-runtime-version: "46.6"
+runtime-version: "46"
 sdk: org.gnome.Sdk
 
 command: flexigpt
@@ -10,11 +10,10 @@ finish-args:
   - --socket=wayland
   - --socket=fallback-x11
   - --device=dri
-  - --talk-name=org.freedesktop.Notifications
-  - --filesystem=home
-  - --filesystem=host
   - --share=network
-  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.freedesktop.secrets
+  - --filesystem=xdg-config
+  - --filesystem=xdg-data
 
 build-options:
   build-args:
@@ -24,8 +23,11 @@ build-options:
     - GOBIN=/app/go/bin
     - CGO_ENABLED=0
     - NODEROOT=/app/sdk/node
+    - XDG_CONFIG_HOME=/app/xdgdirs/config
+    - XDG_DATA_HOME=/app/xdgdirs/data
 
 modules:
+  # - shared-modules/libsecret/libsecret.json
   - name: golang
     buildsystem: simple
     build-commands:
@@ -44,15 +46,12 @@ modules:
     sources:
       - type: archive
         url: https://nodejs.org/dist/v20.18.0/node-v20.18.0-linux-x64.tar.xz
-        sha256: 7d9433e91fd88d82ba8de86e711ec41907638e227993d22e95126b02f6cd714a
+        sha256: 4543670b589593f8fa5f106111fd5139081da42bb165a9239f05195e405f240a
 
   - name: pnpm
     buildsystem: simple
     build-commands:
-      - npm install -g pnpm
-    sources:
-      - type: file
-        path: /dev/null
+      - PATH=$PATH:$GOROOT/bin:$NODEROOT/bin npm install -g pnpm
 
   - name: wails
     buildsystem: simple
@@ -62,9 +61,11 @@ modules:
   - name: flexigpt
     buildsystem: simple
     build-commands:
-      - PATH=$PATH:$GOROOT/bin:$NODEROOT/bin pnpm install
-      - PATH=$PATH:$GOROOT/bin $GOROOT/bin/go mod download
-      - PATH=$PATH:$GOROOT/bin:$NODEROOT/bin pnpm run wails:build
+      - mkdir -p $XDG_CONFIG_HOME
+      - mkdir -p $XDG_DATA_HOME
+      - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin pnpm install
+      - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin $GOROOT/bin/go mod download
+      - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin pnpm run wails:pack
       - install -Dm00755 build/bin/flexigpt $FLATPAK_DEST/bin/flexigpt
       - install -Dm00644 frontend/public/icon_256x256.png $FLATPAK_DEST/share/icons/hicolor/256x256/apps/$FLATPAK_ID.png
       - install -Dm00644 packaging/flatpak/$FLATPAK_ID.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop
