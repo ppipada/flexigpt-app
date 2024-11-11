@@ -8,6 +8,7 @@
 - [ ] Code interpreter for few languages baked in. This can be provided as a normal tool so that
 - [ ] DMG installer for Mac
 - [ ] NSIS installer for Windows
+- [ ] Container build and publish
 
 ## Tasks: Knowledge base
 

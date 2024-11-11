@@ -1,0 +1,34 @@
+name: Flatpak
+run-name: ${{ github.ref_name }} - Building Flatpak
+on:
+  push:
+    tags:
+      - '*'
+jobs:
+  flatpak:
+    name: 'Flatpak'
+    runs-on: ubuntu-latest
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:gnome-46
+      options: --privileged
+    steps:
+      - name: 'Free up disk space'
+        run: |
+          sudo rm -rf /usr/share/dotnet >/dev/null 2>&1
+          sudo rm -rf /opt/ghc >/dev/null 2>&1
+          sudo rm -rf "/usr/local/share/boost" >/dev/null 2>&1
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY" >/dev/null 2>&1
+          sudo rm -rf /usr/local/lib/android >/dev/null 2>&1
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          manifest-path: packaging/flatpak/io.github.flexigpt.Client.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+          bundle: FlexiGPT.flatpak
+      - name: 'Add to release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            FlexiGPT.flatpak

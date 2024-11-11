@@ -1,0 +1,74 @@
+id: io.github.flexigpt.Client
+runtime: org.gnome.Platform
+runtime-version: "46.6"
+sdk: org.gnome.Sdk
+
+command: flexigpt
+finish-args:
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --talk-name=org.freedesktop.Notifications
+  - --filesystem=home
+  - --filesystem=host
+  - --share=network
+  - --talk-name=org.kde.StatusNotifierWatcher
+
+build-options:
+  build-args:
+    - --share=network
+  env:
+    - GOROOT=/app/sdk/golang
+    - GOBIN=/app/go/bin
+    - CGO_ENABLED=0
+    - NODEROOT=/app/sdk/node
+
+modules:
+  - name: golang
+    buildsystem: simple
+    build-commands:
+      - mkdir -p $GOROOT
+      - mv $(pwd)/* $GOROOT
+    sources:
+      - type: archive
+        url: https://go.dev/dl/go1.23.3.linux-amd64.tar.gz
+        sha256: a0afb9744c00648bafb1b90b4aba5bdb86f424f02f9275399ce0c20b93a2c3a8
+
+  - name: nodejs
+    buildsystem: simple
+    build-commands:
+      - mkdir -p $NODEROOT
+      - mv $(pwd)/* $NODEROOT
+    sources:
+      - type: archive
+        url: https://nodejs.org/dist/v20.18.0/node-v20.18.0-linux-x64.tar.xz
+        sha256: 7d9433e91fd88d82ba8de86e711ec41907638e227993d22e95126b02f6cd714a
+
+  - name: pnpm
+    buildsystem: simple
+    build-commands:
+      - npm install -g pnpm
+    sources:
+      - type: file
+        path: /dev/null
+
+  - name: wails
+    buildsystem: simple
+    build-commands:
+      - $GOROOT/bin/go install github.com/wailsapp/wails/v2/cmd/wails@v2.9.2
+
+  - name: flexigpt
+    buildsystem: simple
+    build-commands:
+      - PATH=$PATH:$GOROOT/bin:$NODEROOT/bin pnpm install
+      - PATH=$PATH:$GOROOT/bin $GOROOT/bin/go mod download
+      - PATH=$PATH:$GOROOT/bin:$NODEROOT/bin pnpm run wails:build
+      - install -Dm00755 build/bin/flexigpt $FLATPAK_DEST/bin/flexigpt
+      - install -Dm00644 frontend/public/icon_256x256.png $FLATPAK_DEST/share/icons/hicolor/256x256/apps/$FLATPAK_ID.png
+      - install -Dm00644 packaging/flatpak/$FLATPAK_ID.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop
+      - install -Dm00644 packaging/flatpak/$FLATPAK_ID.appdata.xml $FLATPAK_DEST/share/appdata/$FLATPAK_ID.appdata.xml
+    sources:
+      - type: dir
+        path: ../../

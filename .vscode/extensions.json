@@ -4,6 +4,7 @@
 		"golang.go", // Go
 		"yzhang.markdown-all-in-one", // Markdown All in One
 		"esbenp.prettier-vscode", // Prettier
-		"redhat.vscode-yaml" // YAML
+		"redhat.vscode-yaml", // YAML
+		"redhat.vscode-xml" // XML
 	]
 }

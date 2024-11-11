@@ -9,7 +9,7 @@
 		"url": "https://github.com/flexigpt/flexiui.git"
 	},
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
-	"description": "Agent for the flexigpt ecosystem",
+	"description": "FlexiGPT - An AI application platform",
 	"scripts": {
 		"lint": "lerna run lint",
 		"lint:fix": "lerna run lint -- --fix",
