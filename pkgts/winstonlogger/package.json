@@ -15,8 +15,8 @@
 	"keywords": [],
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
 	"dependencies": {
+		"logform": "^2.7.0",
 		"logger": "workspace:*",
-		"logform": "^2.6.1",
-		"winston": "^3.13.1"
+		"winston": "^3.17.0"
 	}
 }
