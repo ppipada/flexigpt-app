@@ -6,9 +6,8 @@
 - [ ] ~~Electron: currently supported only via appimagelauncher. Better do snap I suppose, but explore later.~~
 - [ ] ~~Electron: see about package distribution and updates~~
 - [ ] Code interpreter for few languages baked in. This can be provided as a normal tool so that
-- [ ] DMG installer for Mac
-- [ ] NSIS installer for Windows
 - [ ] Container build and publish
+- [ ] Signing for Mac dmg and Win
 
 ## Tasks: Knowledge base
 

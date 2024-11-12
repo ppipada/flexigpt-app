@@ -17,7 +17,14 @@
 - [ ] load chats properly at new chat etc. handle caching as needed
   - [ ] Wails app test doesnt show any delay. Need to test electron.
 - [ ] Better title deduce
-- [ ] Flatpack installer for Linux
+- [x] Flatpak installer for Linux
+- [x] DMG installer for Mac
+- [x] NSIS installer for Windows
+- [ ] Mac install shows no title bar, better add a plain titlebar.
+- [ ] Mac: Add how to install non signed pkg in readme. click > ok > settings > privacy and security > blocked > open anyway
+- [ ] Mac icns file not present. Need proper icns file added
+- [ ] Mac pkg install is add the .app in ~/build/bin. It should be in application. Check the settings, conversation and log location
+- [ ] Test Windows build
 
 ## Tasks: Tools Implementation with CodeMirror
 
