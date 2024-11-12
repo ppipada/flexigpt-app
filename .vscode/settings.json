@@ -3,6 +3,7 @@
 	"editor.codeActionsOnSave": {
 		"source.organizeImports": "explicit"
 	},
+	"prettier.configPath": "",
 	"[markdown]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
 	},

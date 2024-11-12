@@ -13,7 +13,7 @@
 	"rules": {
 		"import/no-unresolved": "error", // Ensure imports are resolved correctly
 		// "import/no-relative-parent-imports": "", // Disallow relative parent imports
-		"prettier/prettier": "error",
+		"prettier/prettier": ["error", { "endOfLine": "auto" }],
 		"@typescript-eslint/no-explicit-any": "off"
 	}
 }
