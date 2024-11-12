@@ -119,14 +119,14 @@ jobs:
         shell: bash
         working-directory: ${{ env.APP_WORKING_DIRECTORY }}
         run: |
-          productbuild --sign '${{ env.SIGN_MACOS_INSTALLER_ID }}' --component build/bin/${{ env.BUILD_NAME }}.app /Applications build/bin/${{ env.BUILD_NAME }}.pkg
+          productbuild --sign '${{ env.SIGN_MACOS_INSTALLER_ID }}' --component build/bin/${{ env.BUILD_NAME }}.app build/bin/${{ env.BUILD_NAME }}.pkg
 
       - name: Build Installer
         if: env.SIGN_MACOS_INSTALLER_ID == ''
         shell: bash
         working-directory: ${{ env.APP_WORKING_DIRECTORY }}
         run: |
-          productbuild --component '${{ env.SIGN_MACOS_INSTALLER_ID }}' --component build/bin/${{ env.BUILD_NAME }}.app /Applications build/bin/${{ env.BUILD_NAME }}.pkg
+          productbuild --component build/bin/${{ env.BUILD_NAME }}.app build/bin/${{ env.BUILD_NAME }}.pkg
 
       - name: Notarize Installer and zip
         if: env.SIGN_MACOS_APP_CERT != '' && startsWith(github.ref, 'refs/tags/')
