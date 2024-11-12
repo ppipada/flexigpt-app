@@ -9,10 +9,10 @@ on:
       tag:
         description: 'Version tag'
         required: true
-        default: '0.1.0'
+        default: '0.0.1'
 
 jobs:
-  build-and-package:
+  build-nsis:
     runs-on: windows-latest
     strategy:
       matrix:
@@ -55,7 +55,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install pnpm dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
@@ -83,7 +83,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Windows Build ${{runner.os}} ${{ env.BUILD_NAME }}
+          name: ${{ env.BUILD_NAME }}-win-amd64
           path: |
             */bin/
             *\bin\*

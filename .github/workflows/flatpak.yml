@@ -3,9 +3,15 @@ run-name: ${{ github.ref_name }} - Building Flatpak
 on:
   push:
     tags:
-      - '*'
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag'
+        required: true
+        default: '0.0.1'
 jobs:
-  flatpak:
+  build-flatpak:
     name: 'Flatpak'
     runs-on: ubuntu-latest
     env:
