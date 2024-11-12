@@ -1,0 +1,18 @@
+{
+	"notarize": [
+		{
+			"path": "./build/bin/FlexiGPT.pkg",
+			"bundle_id": "com.flexigpt.app",
+			"staple": true
+		},
+		{
+			"path": "./build/bin/FlexiGPT.app.zip",
+			"bundle_id": "com.flexigpt.app",
+			"staple": false
+		}
+	],
+	"apple_id": {
+		"username": "@env:SIGN_MACOS_APPLE_USERNAME",
+		"password": "@env:SIGN_MACOS_APPLE_PASSWORD"
+	}
+}

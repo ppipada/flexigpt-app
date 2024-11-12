@@ -1,5 +1,5 @@
-name: Flatpak
-run-name: ${{ github.ref_name }} - Building Flatpak
+name: 'Linux Build and Package'
+
 on:
   push:
     tags:
@@ -12,7 +12,6 @@ on:
         default: '0.0.1'
 jobs:
   build-flatpak:
-    name: 'Flatpak'
     runs-on: ubuntu-latest
     env:
       BUILD_NAME: 'FlexiGPT'
