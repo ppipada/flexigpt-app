@@ -25,6 +25,7 @@ jobs:
       WAILS_BUILD_WEBVIEW2: 'download'
       GO_VERSION: '^1.23.2'
       NODE_VERSION: '20.x'
+      PNPM_VERSION: '9'
       APP_WORKING_DIRECTORY: '.'
       SIGN_WINDOWS_CERT: "${{ secrets.SIGN_WINDOWS_CERT || ''}}"
       SIGN_WINDOWS_CERT_PASSWORD: ${{ secrets.SIGN_WINDOWS_CERT_PASSWORD || ''}}
@@ -41,14 +42,20 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Setup NodeJS
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
-          cache-dependency-path: '**/package-lock.json'
 
-      - run: pnpm install
+      - name: Install dependencies
+        run: pnpm install
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
