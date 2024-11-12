@@ -37,7 +37,7 @@ jobs:
       SIGN_MACOS_INSTALLER_ID: "${{ secrets.SIGN_MACOS_INSTALLER_ID || '' }}"
       SIGN_MACOS_INSTALLER_CERT: ${{ secrets.MACOS_INSTALLER_CERT || '' }}
       SIGN_MACOS_INSTALLER_CERT_PASSWORD: ${{ secrets.MACOS_INSTALLER_CERT_PASSWORD || '' }}
-      BUILD_COMMAND: 'pnpm run wails:basepack'
+      BUILD_COMMAND: 'pnpm run wails:macpack'
 
     steps:
       - name: Checkout code
