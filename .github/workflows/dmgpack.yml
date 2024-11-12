@@ -114,14 +114,14 @@ jobs:
         run: |
           ditto -c -k --sequesterRsrc --keepParent build/bin/${{ env.BUILD_NAME }}.app build/bin/${{ env.BUILD_NAME }}.app.zip
 
-      - name: Build Installer
+      - name: Build Installer Signed
         if: env.SIGN_MACOS_INSTALLER_ID != '' && startsWith(github.ref, 'refs/tags/')
         shell: bash
         working-directory: ${{ env.APP_WORKING_DIRECTORY }}
         run: |
           productbuild --sign '${{ env.SIGN_MACOS_INSTALLER_ID }}' --component build/bin/${{ env.BUILD_NAME }}.app build/bin/${{ env.BUILD_NAME }}.pkg
 
-      - name: Build Installer
+      - name: Build Installer Unsigned
         if: env.SIGN_MACOS_INSTALLER_ID == ''
         shell: bash
         working-directory: ${{ env.APP_WORKING_DIRECTORY }}
