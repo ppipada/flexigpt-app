@@ -45,8 +45,8 @@ jobs:
           manifest-path: packaging/flatpak/io.github.flexigpt.Client.yml
           cache-key: flatpak-builder-${{ github.sha }}
           bundle: FlexiGPT.flatpak
-      # - name: 'Add to release'
-      #   uses: softprops/action-gh-release@v2
-      #   with:
-      #     files: |
-      #       FlexiGPT.flatpak
+      - name: 'Add to release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            FlexiGPT.flatpak

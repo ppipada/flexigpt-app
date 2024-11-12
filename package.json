@@ -28,7 +28,8 @@
 		"wails:dev": "wails dev",
 		"wails:run": "pnpm run wails:build && ./build/bin/flexigpt",
 		"wails:flatpak": "gh act -W './.github/workflows/flatpak.yml' --artifact-server-path ./out",
-		"wails:winmacpak": "gh act -W './.github/workflows/winmacpak.yml' --artifact-server-path ./out",
+		"wails:winpak": "gh act -W './.github/workflows/winpak.yml' --artifact-server-path ./out",
+		"wails:macpak": "gh act -W './.github/workflows/macpak.yml' --artifact-server-path ./out",
 		"gobackend:run": "./scripts/run_backend.sh"
 	},
 	"devDependencies": {

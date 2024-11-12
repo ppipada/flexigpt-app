@@ -1,0 +1,81 @@
+name: 'Windows Build and Package'
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag'
+        required: true
+        default: '0.1.0'
+
+jobs:
+  build-and-package:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        platform:
+          - windows/amd64
+    env:
+      BUILD_NAME: 'FlexiGPT'
+      BUILD_PLATFORM: 'windows/amd64'
+      WAILS_VERSION: '2.9.2'
+      WAILS_BUILD_WEBVIEW2: 'download'
+      GO_VERSION: '^1.23.2'
+      NODE_VERSION: '20.x'
+      APP_WORKING_DIRECTORY: '.'
+      SIGN_WINDOWS_CERT: "${{ secrets.SIGN_WINDOWS_CERT || ''}}"
+      SIGN_WINDOWS_CERT_PASSWORD: ${{ secrets.SIGN_WINDOWS_CERT_PASSWORD || ''}}
+      BUILD_COMMAND: 'pnpm run wails:pack'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Setup GoLang
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - run: pnpm install
+
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
+        shell: bash
+
+      - name: Build Windows App
+        working-directory: ${{ env.APP_WORKING_DIRECTORY }}
+        run: ${{ env.BUILD_COMMAND }}
+        shell: bash
+
+      - name: Sign Windows binaries
+        shell: powershell
+        if: env.SIGN_WINDOWS_CERT != ''
+        working-directory: ${{ env.APP_WORKING_DIRECTORY }}
+        run: |
+          echo "Creating certificate file"
+          New-Item -ItemType directory -Path certificate
+          Set-Content -Path certificate\certificate.txt -Value '${{ env.SIGN_WINDOWS_CERT }}'
+          certutil -decode certificate\certificate.txt certificate\certificate.pfx
+          echo "Signing our binaries"
+          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ env.SIGN_WINDOWS_CERT_PASSWORD }}' .\build\bin\${{ env.BUILD_NAME }}.exe
+          echo "Signing Installer"
+          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ env.SIGN_WINDOWS_CERT_PASSWORD }}' .\build\bin\${{ env.BUILD_NAME }}-amd64-installer.exe
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            */bin/*
