@@ -15,11 +15,11 @@ finish-args:
   - --filesystem=xdg-config
   - --filesystem=xdg-data
 
-cleanup:
-  - "/sdk/golang"
-  - "/go/bin"
-  - "/sdk/node"
-  - "/xdgdirs"
+cleanup-commands:
+  - "rm -rf /app/sdk/golang"
+  - "rm -rf /app/go/bin"
+  - "rm -rf /app/sdk/node"
+  - "rm -rf /app/xdgdirs"
 
 build-options:
   build-args:
