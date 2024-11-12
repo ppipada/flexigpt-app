@@ -21,7 +21,7 @@ jobs:
     env:
       BUILD_NAME: 'FlexiGPT'
       BUILD_PLATFORM: 'windows/amd64'
-      WAILS_VERSION: '2.9.2'
+      WAILS_VERSION: 'v2.9.2'
       WAILS_BUILD_WEBVIEW2: 'download'
       GO_VERSION: '^1.23.2'
       NODE_VERSION: '20.x'
@@ -29,7 +29,7 @@ jobs:
       APP_WORKING_DIRECTORY: '.'
       SIGN_WINDOWS_CERT: "${{ secrets.SIGN_WINDOWS_CERT || ''}}"
       SIGN_WINDOWS_CERT_PASSWORD: ${{ secrets.SIGN_WINDOWS_CERT_PASSWORD || ''}}
-      BUILD_COMMAND: 'pnpm run wails:pack'
+      BUILD_COMMAND: 'pnpm run wails:nsispack'
 
     steps:
       - name: Checkout code
@@ -54,7 +54,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      - name: Install dependencies
+      - name: Install pnpm dependencies
         run: pnpm install
 
       - name: Install Wails
