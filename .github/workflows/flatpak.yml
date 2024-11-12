@@ -48,18 +48,18 @@ jobs:
         with:
           manifest-path: packaging/flatpak/${{env.FLATPAK_ID}}.yml
           cache-key: flatpak-builder-${{ github.sha }}
-          bundle: ${{ env.BUILD_NAME }}.flatpak
+          bundle: ${{ env.BUILD_NAME }}-linux-amd64.flatpak
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.BUILD_NAME }}-linux-amd64
           path: |
-            ${{ env.BUILD_NAME }}.flatpak
+            ${{ env.BUILD_NAME }}-linux-amd64.flatpak
 
       - name: 'Add to release'
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            ${{ env.BUILD_NAME }}.flatpak
+            ${{ env.BUILD_NAME }}-linux-amd64.flatpak
