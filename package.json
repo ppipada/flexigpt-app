@@ -27,7 +27,8 @@
 		"wails:pack": "cd ./agentgo && pnpm run wails:frontend && wails build -m -clean -s -skipbindings -tags webkit2_41",
 		"wails:dev": "wails dev",
 		"wails:run": "pnpm run wails:build && ./build/bin/flexigpt",
-		"wails:localpack": "gh act -W './.github/workflows/flatpak.yml' --artifact-server-path ./out",
+		"wails:flatpak": "gh act -W './.github/workflows/flatpak.yml' --artifact-server-path ./out",
+		"wails:winmacpak": "gh act -W './.github/workflows/winmacpak.yml' --artifact-server-path ./out",
 		"gobackend:run": "./scripts/run_backend.sh"
 	},
 	"devDependencies": {

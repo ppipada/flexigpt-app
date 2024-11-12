@@ -1,0 +1,32 @@
+name: Windows and MacOS build and package
+on:
+  push:
+    tags:
+      - 'v*'
+  # allow to run the workflow manually from the actions tab
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag'
+        required: true
+        default: '0.1.0'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+          [
+            { name: FlexiGPT, platform: windows/amd64, os: windows-latest },
+            { name: FlexiGPT, platform: darwin/universal, os: macos-latest },
+          ]
+    runs-on: ${{ matrix.build.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dAppServer/wails-build-action@v2.2
+        with:
+          build-name: ${{ matrix.build.name }}
+          build-platform: ${{ matrix.build.platform }}

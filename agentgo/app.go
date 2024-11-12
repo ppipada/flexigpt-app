@@ -17,7 +17,7 @@ import (
 	"github.com/adrg/xdg"
 )
 
-const AppTitle = "WailsFlexiGPT"
+const AppTitle = "FlexiGPT"
 const AppDisplayTitle = "FlexiGPT"
 
 // App struct

@@ -15,6 +15,12 @@ finish-args:
   - --filesystem=xdg-config
   - --filesystem=xdg-data
 
+cleanup:
+  - "/sdk/golang"
+  - "/go/bin"
+  - "/sdk/node"
+  - "/xdgdirs"
+
 build-options:
   build-args:
     - --share=network
@@ -66,6 +72,12 @@ modules:
       - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin pnpm install
       - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin $GOROOT/bin/go mod download
       - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin pnpm run wails:pack
+      # Cleanup unneeded files
+      - rm -rf node_modules
+      - rm -rf frontend/node_modules
+      - rm -rf ~/.cache/go-build
+      - rm -rf $GOROOT/pkg
+      # Continue with installation
       - install -Dm00755 build/bin/flexigpt $FLATPAK_DEST/bin/flexigpt
       - install -Dm00644 frontend/public/icon_256x256.png $FLATPAK_DEST/share/icons/hicolor/256x256/apps/$FLATPAK_ID.png
       - install -Dm00644 packaging/flatpak/$FLATPAK_ID.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop
