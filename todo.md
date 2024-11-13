@@ -6,11 +6,29 @@
   - Top level feature: Chat, Conversation history, Settings
   - Local installer for Linux
 - Milestone 1 partial
-  - Tools, Prompts
+  - KB, Tools, Prompts
 
 ## Laundry list
 
-- [ ]
+- [ ] Need a stop streaming / cancel button on assistant
+- [ ] Wails save file dialog opens and saves but file not seen on system
+
+## Tasks: Knowledge base
+
+- Allow upload/delete docs
+- Create searchable entities
+
+- Document
+
+  - Features
+
+    - CRUD operations
+    - Store and manage documents
+    - Allow document upload and deletion
+    - Provide search capabilities
+
+  - Attributes: `document_id`, `org_id`, `name`, `content`, `created_at`, `updated_at`
+  - Relationships: Belongs to `Org`
 
 ## Tasks: Tools Implementation with CodeMirror
 

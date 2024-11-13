@@ -1,12 +1,8 @@
 # Project Future notes
 
-## Pushed out list
+## Laundry list
 
-- [ ] ~~logger is imported in securejsondb before it is set as ipc file logger in appimage~~
-- [ ] ~~Electron: currently supported only via appimagelauncher. Better do snap I suppose, but explore later.~~
-- [ ] ~~Electron: see about package distribution and updates~~
-- [ ] Code interpreter for few languages baked in. This can be provided as a normal tool so that
-- [ ] Container build and publish
+- [ ] Inter font files need to be cached in repo
 - [ ] Signing for Mac dmg and Win
 - [ ] Better title deduce
 - [ ] Mac install shows no title bar, better add a plain titlebar.
@@ -14,23 +10,6 @@
 - [ ] Mac icns file not present. Need proper icns file added
 - [ ] Mac pkg install is add the .app in ~/build/bin. It should be in application. Check the settings, conversation and log location
 - [ ] Test Windows build
-
-## Tasks: Knowledge base
-
-- Allow upload/delete docs
-- Create searchable entities
-
-- Document
-
-  - Features
-
-    - CRUD operations
-    - Store and manage documents
-    - Allow document upload and deletion
-    - Provide search capabilities
-
-  - Attributes: `document_id`, `org_id`, `name`, `content`, `created_at`, `updated_at`
-  - Relationships: Belongs to `Org`
 
 ## Tasks: Application Performance Management (APM)
 
@@ -184,3 +163,11 @@
 - Attributes: `quota_id`, `entity_type` (Org/Team/User), `entity_id`, `item_id`, `item_type`
   (Agent/Tool/Assistant/Prompt), `limit`, `created_at`, `updated_at`
 - Relationships: Belongs to `Org`/`Team`/`User`, Belongs to `Agent`/`Tool`/`Assistant`/`Prompt`
+
+## Pushed out list
+
+- [ ] ~~logger is imported in securejsondb before it is set as ipc file logger in appimage~~
+- [ ] ~~Electron: currently supported only via appimagelauncher. Better do snap I suppose, but explore later.~~
+- [ ] ~~Electron: see about package distribution and updates~~
+- [ ] Code interpreter for few languages baked in. This can be provided as a normal tool so that
+- [ ] Container build and publish
