@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld('BackendAPI', {
 	log: async (level: string, ...args: unknown[]) => {
 		ipcRenderer.invoke('backend:log', level, ...args);
 	},
+	savefile: async (defaultFilename: string, contentBase64: string, filters: any) =>
+		ipcRenderer.invoke('backend:savefile', defaultFilename, contentBase64, filters),
 });
 
 contextBridge.exposeInMainWorld('SettingStoreAPI', {

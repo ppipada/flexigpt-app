@@ -3,6 +3,8 @@
 package main
 
 import (
+	"encoding/base64"
+	"errors"
 	"log/slog"
 	"os"
 
@@ -145,4 +147,37 @@ func (a *App) shutdown(ctx context.Context) {
 // Greet returns a greeting for the given name
 func (a *App) Ping() string {
 	return "pong"
+}
+
+// SaveFile handles saving any content to a file
+func (a *App) SaveFile(
+	defaultFilename string,
+	contentBase64 string,
+	filters []runtime.FileFilter,
+) error {
+	if a.ctx == nil {
+		return errors.New("context is not initialized")
+	}
+
+	saveDialogOptions := runtime.SaveDialogOptions{
+		DefaultFilename: defaultFilename,
+		Filters:         filters,
+	}
+	savePath, err := runtime.SaveFileDialog(a.ctx, saveDialogOptions)
+	if err != nil {
+		return err
+	}
+	if savePath == "" {
+		// User cancelled the dialog
+		return nil
+	}
+
+	// Decode base64 content
+	contentBytes, err := base64.StdEncoding.DecodeString(contentBase64)
+	if err != nil {
+		return err
+	}
+
+	// Write the content to the file
+	return os.WriteFile(savePath, contentBytes, 0644)
 }

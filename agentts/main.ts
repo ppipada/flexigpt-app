@@ -2,6 +2,7 @@ import {
 	app,
 	BrowserWindow,
 	CallbackResponse,
+	dialog,
 	globalShortcut,
 	ipcMain,
 	OnBeforeRequestListenerDetails,
@@ -10,6 +11,7 @@ import {
 } from 'electron';
 import electronIsDev from 'electron-is-dev';
 // import electronUpdater from 'electron-updater';
+import fs from 'fs';
 import path, { dirname } from 'node:path';
 import { format as urlformat } from 'url';
 
@@ -201,6 +203,28 @@ ipcMain.handle('settingstore:set', async (_event, key: string, value: any) => {
 
 ipcMain.handle('backend:ping', async () => {
 	return 'pong';
+});
+
+ipcMain.handle('backend:savefile', async (event, defaultFilename, contentBase64, filters) => {
+	const options = {
+		defaultPath: defaultFilename,
+		// filters: filters,
+	};
+
+	const { canceled, filePath } = await dialog.showSaveDialog(options);
+
+	if (canceled || !filePath) {
+		return { success: false, message: 'User cancelled the dialog' };
+	}
+
+	try {
+		const contentBuffer = Buffer.from(contentBase64, 'base64');
+		const contentArray = new Uint8Array(contentBuffer);
+		fs.writeFileSync(filePath, contentArray);
+		return { success: true, message: 'File saved successfully' };
+	} catch (error) {
+		return { success: false, message: error instanceof Error ? error.message : `${error}` };
+	}
 });
 
 ipcMain.handle('backend:log', async (_event, level: string, ...args: unknown[]) => {

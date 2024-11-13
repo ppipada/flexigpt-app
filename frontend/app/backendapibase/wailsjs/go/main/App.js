@@ -5,3 +5,7 @@
 export function Ping() {
   return window['go']['main']['App']['Ping']();
 }
+
+export function SaveFile(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SaveFile'](arg1, arg2, arg3);
+}

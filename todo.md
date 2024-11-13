@@ -11,8 +11,10 @@
 ## Laundry list
 
 - [x] Math formulas in content needs to render properly
-- [ ] Mermaid diagrams and sequence diagrams should render properly
+- [x] Mermaid diagrams and sequence diagrams should render properly
+- [x] Adapt download button to wails
 - [ ] Need a resend button too
+- [ ] Cursor should move to text area after loading a chat or other chat actions
 - [x] Scroll bug in input text area
 - [ ] load chats properly at new chat etc. handle caching as needed
   - [ ] Wails app test doesnt show any delay. Need to test electron.

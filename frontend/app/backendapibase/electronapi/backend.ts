@@ -1,4 +1,4 @@
-import { IBackendAPI } from '@/models/backendmodel';
+import { FileFilter, IBackendAPI } from '@/models/backendmodel';
 import { ILogger } from '@/models/loggermodel';
 
 export class ElectronLogger implements ILogger {
@@ -53,5 +53,10 @@ export class ElectronBackendAPI implements IBackendAPI {
 	// Implement the log method
 	log(level: string, ...args: unknown[]): void {
 		window.BackendAPI.log(level, ...args);
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	async savefile(defaultFilename: string, contentBase64: string, filters: Array<FileFilter>): Promise<void> {
+		return await window.BackendAPI.savefile(defaultFilename, contentBase64, filters);
 	}
 }

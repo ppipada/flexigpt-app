@@ -1,6 +1,6 @@
-import { Ping } from '@/backendapibase/wailsjs/go/main/App';
+import { Ping, SaveFile } from '@/backendapibase/wailsjs/go/main/App';
 import { LogDebug, LogError, LogInfo, LogWarning } from '@/backendapibase/wailsjs/runtime/runtime';
-import { IBackendAPI } from '@/models/backendmodel';
+import { FileFilter, IBackendAPI } from '@/models/backendmodel';
 import { ILogger } from '@/models/loggermodel';
 import { sprintf } from 'sprintf-js';
 
@@ -108,5 +108,15 @@ export class WailsBackendAPI implements IBackendAPI {
 		} else {
 			console.log(...args);
 		}
+	}
+
+	async savefile(defaultFilename: string, contentBase64: string, filters: Array<FileFilter>): Promise<void> {
+		// Call the Go backend method to save the file
+		try {
+			await SaveFile(defaultFilename, contentBase64, filters);
+		} catch (err) {
+			console.error('Error saving file:', err);
+		}
+		return;
 	}
 }

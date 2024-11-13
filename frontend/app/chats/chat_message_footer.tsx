@@ -79,7 +79,7 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 			</div>
 			{isExpanded && messageDetails && (
 				<div className="mt-2">
-					<ChatMessageContent content={messageDetails} align="items-start text-left" />
+					<ChatMessageContent content={messageDetails} align="items-start text-left" isStreaming={isStreaming} />
 				</div>
 			)}
 		</div>
