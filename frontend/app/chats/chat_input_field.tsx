@@ -239,7 +239,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					onChange={handleTextChange}
 					onKeyDown={onKeyDown}
 					placeholder="Type message..."
-					className="flex-1 resize-none overflow-hidden bg-transparent border-none outline-none placeholder-gray-400 min-h-[24px] max-h-[240px] p-2"
+					className="flex-1 resize-none overflow-auto bg-transparent border-none outline-none placeholder-gray-400 min-h-[24px] max-h-[240px] p-2"
 					rows={1}
 					style={{ fontSize: '14px' }}
 				/>

@@ -60,6 +60,7 @@ func main() {
 
 	wailsLogger := NewSlogLoggerAdapter(slogger)
 	slog.Info("App Initialized")
+
 	// Create application with options
 	err = wails.Run(&options.App{
 		Title:             AppDisplayTitle,
@@ -98,29 +99,22 @@ func main() {
 			WindowIsTranslucent:  false,
 			DisableWindowIcon:    false,
 			// DisableFramelessWindowDecorations: false,
-			WebviewUserDataPath: "",
-			ZoomFactor:          1.0,
 		},
 		// Mac platform specific options
 		Mac: &mac.Options{
-			TitleBar: &mac.TitleBar{
-				TitlebarAppearsTransparent: true,
-				HideTitle:                  false,
-				HideTitleBar:               false,
-				FullSizeContent:            false,
-				UseToolbar:                 false,
-				HideToolbarSeparator:       true,
-			},
-			Appearance:           mac.NSAppearanceNameDarkAqua,
-			WebviewIsTransparent: true,
-			WindowIsTranslucent:  true,
+			TitleBar: mac.TitleBarDefault(),
 			About: &mac.AboutInfo{
 				Title:   AppDisplayTitle,
-				Message: "",
+				Message: "An AI app platform.\n\nCopyright © 2024",
 				Icon:    assets.Icon,
 			},
+			WebviewIsTransparent: true,
+			WindowIsTranslucent:  true,
 		},
+
 		Linux: &linux.Options{
+			ProgramName:         AppDisplayTitle,
+			Icon:                assets.Icon,
 			WindowIsTranslucent: false,
 			WebviewGpuPolicy:    linux.WebviewGpuPolicyOnDemand,
 		},

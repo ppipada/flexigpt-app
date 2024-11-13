@@ -1,15 +1,37 @@
 import CopyButton from '@/components/copy_button';
 import DownloadButton from '@/components/download_button';
+import 'katex/dist/katex.min.css'; // Import KaTeX CSS for styling
 import { FC, ReactNode, memo } from 'react';
 import Markdown from 'react-markdown';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { monokaiSublime } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import rehypeKatex from 'rehype-katex';
 import rehypeReact from 'rehype-react';
 import remarkGemoji from 'remark-gemoji';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import supersub from 'remark-supersub';
+
+// LaTeX processing function
+const containsLatexRegex = /\\\(.*?\\\)|\\\[.*?\\\]|\$.*?\$|\\begin\{equation\}.*?\\end\{equation\}/;
+const inlineLatex = new RegExp(/\\\((.+?)\\\)/, 'g');
+const blockLatex = new RegExp(/\\\[(.*?[^\\])\\\]/, 'gs');
+
+export const processLaTeX = (content: string) => {
+	let processedContent = content.replace(/(\$)(?=\s?\d)/g, '\\$');
+
+	if (!containsLatexRegex.test(processedContent)) {
+		return processedContent;
+	}
+
+	processedContent = processedContent
+		.replace(inlineLatex, (match: string, equation: string) => `$${equation}$`)
+		.replace(blockLatex, (match: string, equation: string) => `$$${equation}$$`);
+
+	return processedContent;
+};
 
 export const MemoizedMarkdown = memo(
 	Markdown,
@@ -80,6 +102,9 @@ interface PComponentProps {
 }
 
 export function ChatMessageContent({ content, align }: ChatMessageContentProps) {
+	// Process the content to handle LaTeX expressions
+	const processedContent = processLaTeX(content);
+
 	const components = {
 		h1: ({ children }: PComponentProps) => <h1 className="text-xl font-bold my-2">{children}</h1>,
 		h2: ({ children }: PComponentProps) => <h2 className="text-lg font-bold my-2">{children}</h2>,
@@ -137,21 +162,19 @@ export function ChatMessageContent({ content, align }: ChatMessageContentProps) 
 				{children}
 			</a>
 		),
-
 		blockquote: ({ children }: PComponentProps) => (
 			<blockquote className="border-l-4 border-gray-300 pl-4 italic">{children}</blockquote>
 		),
-		// del: ({ children }: PComponentProps) => <del className="line-through">{children}</del>,
 	};
 
 	return (
 		<div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2">
 			<MemoizedMarkdown
-				remarkPlugins={[remarkParse, remarkGemoji, supersub, remarkGfm, remarkRehype]}
-				rehypePlugins={[rehypeReact]}
+				remarkPlugins={[remarkParse, remarkGemoji, supersub, remarkGfm, remarkMath, remarkRehype]}
+				rehypePlugins={[rehypeKatex, rehypeReact]}
 				components={components}
 			>
-				{content}
+				{processedContent}
 			</MemoizedMarkdown>
 		</div>
 	);

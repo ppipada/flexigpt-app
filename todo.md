@@ -10,10 +10,10 @@
 
 ## Laundry list
 
-- [ ] Math formulas in content needs to render properly
+- [x] Math formulas in content needs to render properly
 - [ ] Mermaid diagrams and sequence diagrams should render properly
 - [ ] Need a resend button too
-- [ ] Scroll bug in input text area
+- [x] Scroll bug in input text area
 - [ ] load chats properly at new chat etc. handle caching as needed
   - [ ] Wails app test doesnt show any delay. Need to test electron.
 - [ ] Better title deduce
