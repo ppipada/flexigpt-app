@@ -161,3 +161,14 @@
 - [ ] ~~Error wrapper and unwrapper on backend main and base apis~~
 - [x] Whether to stream or not should be decided by model in conjunction with provider in frontend.
 - [x] integrate file logger
+- [x] Math formulas in content needs to render properly
+- [x] Mermaid diagrams and sequence diagrams should render properly
+- [x] Adapt download button to wails
+- [x] Need a resend button too
+- [x] Cursor should move to text area after loading a chat or other chat actions
+- [x] Scroll bug in input text area
+- [x] load chats properly at new chat etc. handle caching as needed
+  - [x] Wails app test doesnt show any delay. Need to test electron.
+- [x] Flatpak installer for Linux
+- [x] PKG installer for Mac
+- [x] NSIS installer for Windows

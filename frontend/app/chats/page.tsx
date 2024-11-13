@@ -75,10 +75,10 @@ const ChatScreen: FC = () => {
 		}
 	}, [chat.messages, streamedMessage]);
 
-	const fetchSearchResults = useCallback(async (query: string): Promise<ConversationItem[]> => {
+	const fetchSearchResults = async (query: string): Promise<ConversationItem[]> => {
 		const conversations = await listAllConversations();
 		return conversations.filter(item => item.title.toLowerCase().includes(query.toLowerCase()));
-	}, []);
+	};
 
 	const getConversationForExport = useCallback(async (): Promise<string> => {
 		const selectedChat = await getConversation(chat.id, chat.title);
