@@ -13,11 +13,7 @@ interface StaticMessageProps {
 
 const StaticMessage: FC<StaticMessageProps> = ({ message, onEdit, streamedMessage, isUser, align }) => (
 	<div className="flex flex-col w-full">
-		<ChatMessageContent
-			content={streamedMessage || message.content}
-			align={align}
-			isStreaming={streamedMessage ? true : false}
-		/>
+		<ChatMessageContent content={streamedMessage || message.content} align={align} streamedMessage={streamedMessage} />
 		<ChatMessageFooterArea
 			isUser={isUser}
 			cardContent={message.content}

@@ -35,11 +35,14 @@ export const processLaTeX = (content: string) => {
 	return processedContent;
 };
 
-export const MemoizedMarkdown = memo(
-	Markdown,
-	(prevProps, nextProps) => prevProps.children === nextProps.children && prevProps.className === nextProps.className
-);
+let mermaidInitialized = false;
 
+function initializeMermaid() {
+	if (!mermaidInitialized) {
+		mermaid.initialize({ startOnLoad: false, theme: 'default' });
+		mermaidInitialized = true;
+	}
+}
 interface MermaidDiagramProps {
 	code: string;
 }
@@ -49,6 +52,7 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 	const uniqueId = useRef(`mermaid-${uuidv4()}`); // Generate a unique ID
 
 	useEffect(() => {
+		initializeMermaid();
 		if (containerRef.current) {
 			mermaid.initialize({
 				startOnLoad: true,
@@ -149,10 +153,10 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 interface CodeProps {
 	language: string;
 	value: string;
-	isStreaming: boolean;
+	streamedMessage: string;
 }
 
-const CodeBlock: FC<CodeProps> = memo(({ language, value, isStreaming }) => {
+const CodeBlock: FC<CodeProps> = ({ language, value, streamedMessage }) => {
 	const fetchValue = async (): Promise<string> => {
 		return value;
 	};
@@ -192,10 +196,10 @@ const CodeBlock: FC<CodeProps> = memo(({ language, value, isStreaming }) => {
 					</SyntaxHighlighter>
 				</div>
 			</div>
-			{isMermaid && !isStreaming && <MermaidDiagram code={value} />}
+			{isMermaid && streamedMessage == '' && <MermaidDiagram code={value} />}
 		</>
 	);
-});
+};
 CodeBlock.displayName = 'CodeBlock';
 
 interface CodeComponentProps {
@@ -212,10 +216,15 @@ interface PComponentProps {
 export interface ChatMessageContentProps {
 	content: string;
 	align: string;
-	isStreaming: boolean;
+	streamedMessage: string;
 }
 
-export function ChatMessageContent({ content, align, isStreaming }: ChatMessageContentProps) {
+export const MemoizedMarkdown = memo(
+	Markdown,
+	(prevProps, nextProps) => prevProps.children === nextProps.children && prevProps.className === nextProps.className
+);
+
+export function ChatMessageContent({ content, align, streamedMessage }: ChatMessageContentProps) {
 	// Process the content to handle LaTeX expressions
 	const processedContent = processLaTeX(content);
 
@@ -247,7 +256,7 @@ export function ChatMessageContent({ content, align, isStreaming }: ChatMessageC
 				<CodeBlock
 					language={language}
 					value={String(children).replace(/\n$/, '')}
-					isStreaming={isStreaming}
+					streamedMessage={streamedMessage}
 					{...props}
 				/>
 			);
