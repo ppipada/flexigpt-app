@@ -1,12 +1,13 @@
 import { ChatMessageContent } from '@/chats/chat_message_content';
 import CopyButton from '@/components/copy_button';
 import { FC, useState } from 'react';
-import { FiChevronDown, FiChevronUp, FiEdit } from 'react-icons/fi';
+import { FiChevronDown, FiChevronUp, FiEdit, FiRepeat } from 'react-icons/fi';
 
 interface ChatMessageFooterAreaProps {
 	isUser: boolean;
 	cardContent: string;
 	onEdit: () => void;
+	onResend: () => void;
 	messageDetails: string;
 	isStreaming: boolean;
 }
@@ -15,6 +16,7 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 	isUser,
 	cardContent,
 	onEdit,
+	onResend,
 	messageDetails,
 	isStreaming,
 }) => {
@@ -53,6 +55,15 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 								aria-label="Edit message"
 							>
 								<FiEdit size={16} />
+							</button>
+						)}
+						{isUser && (
+							<button
+								className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
+								onClick={onResend}
+								aria-label="Resend message"
+							>
+								<FiRepeat size={16} />
 							</button>
 						)}
 						{/* <button

@@ -7,10 +7,11 @@ import { FiCompass, FiUser } from 'react-icons/fi';
 interface ChatMessageProps {
 	message: ConversationMessage;
 	onEdit: (editedText: string) => void;
+	onResend: () => void;
 	streamedMessage: string;
 }
 
-const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, streamedMessage }) => {
+const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamedMessage }) => {
 	const isUser = message.role === ConversationRoleEnum.user;
 	const align = !isUser ? 'items-end text-left' : 'items-start text-left';
 	const leftColSpan = !isUser ? 'col-span-1 lg:col-span-2' : 'col-span-1';
@@ -58,6 +59,7 @@ const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, streamedMessage })
 					<StaticMessage
 						message={message}
 						onEdit={handleEditClick}
+						onResend={onResend}
 						streamedMessage={streamedMessage}
 						isUser={isUser}
 						align={align}

@@ -187,6 +187,31 @@ const ChatScreen: FC = () => {
 		[chat, updateStreamingMessage]
 	);
 
+	const handleResend = useCallback(
+		async (messageId: string) => {
+			const messageIndex = chat.messages.findIndex(msg => msg.id === messageId);
+			if (messageIndex === -1) return;
+
+			const newMessages = chat.messages.slice(0, messageIndex + 1);
+
+			const updatedChat = {
+				...chat,
+				messages: newMessages,
+				modifiedAt: new Date(),
+			};
+			saveUpdatedChat(updatedChat);
+			let currentChatOptions: ChatOptions = {
+				disablePreviousMessages: false,
+			};
+			if (chatInputRef && chatInputRef.current) {
+				currentChatOptions = chatInputRef.current.getChatOptions();
+			}
+
+			await updateStreamingMessage(updatedChat, currentChatOptions);
+		},
+		[chat, updateStreamingMessage]
+	);
+
 	const memoizedChatMessages = useMemo(
 		() =>
 			chat.messages.map((message, index) => (
@@ -194,6 +219,7 @@ const ChatScreen: FC = () => {
 					key={message.id}
 					message={message}
 					onEdit={editedText => handleEdit(editedText, message.id)}
+					onResend={() => handleResend(message.id)}
 					streamedMessage={
 						isStreaming && index === chat.messages.length - 1 && message.role === ConversationRoleEnum.assistant
 							? streamedMessage
@@ -201,7 +227,7 @@ const ChatScreen: FC = () => {
 					}
 				/>
 			)),
-		[chat.messages, streamedMessage, isStreaming, handleEdit]
+		[chat.messages, streamedMessage, isStreaming, handleEdit, handleResend]
 	);
 
 	return (
