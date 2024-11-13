@@ -13,14 +13,14 @@
 - [x] Math formulas in content needs to render properly
 - [x] Mermaid diagrams and sequence diagrams should render properly
 - [x] Adapt download button to wails
-- [ ] Need a resend button too
-- [ ] Cursor should move to text area after loading a chat or other chat actions
+- [x] Need a resend button too
+- [x] Cursor should move to text area after loading a chat or other chat actions
 - [x] Scroll bug in input text area
 - [ ] load chats properly at new chat etc. handle caching as needed
   - [ ] Wails app test doesnt show any delay. Need to test electron.
 - [ ] Better title deduce
 - [x] Flatpak installer for Linux
-- [x] DMG installer for Mac
+- [x] PKG installer for Mac
 - [x] NSIS installer for Windows
 - [ ] Mac install shows no title bar, better add a plain titlebar.
 - [ ] Mac: Add how to install non signed pkg in readme. click > ok > settings > privacy and security > blocked > open anyway

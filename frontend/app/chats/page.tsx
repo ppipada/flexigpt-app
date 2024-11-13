@@ -48,9 +48,18 @@ const ChatScreen: FC = () => {
 		loadInitialItems();
 	}, [loadInitialItems]);
 
+	useEffect(() => {
+		if (chatInputRef.current) {
+			chatInputRef.current.focus();
+		}
+	}, []); // Empty dependency array ensures this runs only on mount
+
 	const handleNewChat = useCallback(async () => {
 		saveConversation(chat);
 		setChat(initConversation());
+		if (chatInputRef.current) {
+			chatInputRef.current.focus(); // Focus on new chat
+		}
 	}, [chat]);
 
 	const handleSelectConversation = useCallback(async (item: ConversationItem) => {

@@ -25,6 +25,7 @@ export interface ChatInputFieldProps {
 
 export interface ChatInputFieldHandle {
 	getChatOptions: () => ChatOptions;
+	focus: () => void;
 }
 
 // Custom hook for handling form submission on Enter key press
@@ -134,6 +135,11 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 			modelInfo: selectedModel,
 			disablePreviousMessages: disablePreviousMessages,
 		}),
+		focus: () => {
+			if (inputRef.current) {
+				inputRef.current.focus();
+			}
+		},
 	}));
 
 	const setTemperature = (temp: number) => {
