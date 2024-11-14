@@ -1,41 +1,43 @@
 import DownloadButton from '@/components/download_button';
 import 'katex/dist/katex.min.css';
 import mermaid from 'mermaid';
-import { FC, useEffect, useRef } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 let mermaidInitialized = false;
 
 function initializeMermaid() {
 	if (!mermaidInitialized) {
-		mermaid.initialize({ startOnLoad: false, theme: 'default' });
+		mermaid.initialize({ startOnLoad: false, theme: 'default', suppressErrorRendering: true });
 		mermaidInitialized = true;
 	}
 }
+
 interface MermaidDiagramProps {
 	code: string;
 }
 
 export const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 	const containerRef = useRef<HTMLDivElement | null>(null);
-	const uniqueId = useRef(`mermaid-${uuidv4()}`); // Generate a unique ID
+	const uniqueId = useRef(`mermaid-${uuidv4()}`);
+	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
 		initializeMermaid();
 		if (containerRef.current) {
-			mermaid.initialize({
-				startOnLoad: true,
-				theme: 'default',
-			});
+			// Clear the container before rendering
+			containerRef.current.innerHTML = '';
 			mermaid
-				.render(uniqueId.current, code)
+				.render(uniqueId.current, code, containerRef.current)
 				.then(renderResult => {
 					if (containerRef.current) {
 						containerRef.current.innerHTML = renderResult.svg;
+						setError(null); // Clear any previous errors
 					}
 				})
-				.catch(error => {
-					console.error('Mermaid rendering failed:', error);
+				.catch(err => {
+					console.error('Mermaid rendering failed:', err);
+					setError('Failed to render diagram. Please check the syntax.');
 				});
 		}
 	}, [code]);
@@ -46,33 +48,23 @@ export const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 			if (svg) {
 				const svgData = new XMLSerializer().serializeToString(svg);
 
-				// Convert SVG to PNG using a canvas
 				return new Promise<Blob>((resolve, reject) => {
 					const canvas = document.createElement('canvas');
 					const ctx = canvas.getContext('2d');
 					const img = new Image();
 
 					img.onload = () => {
-						// Set the desired resolution scale factor
-						const scaleFactor = 2; // Adjust this value for higher/lower resolution
-
-						// Set canvas dimensions based on the scale factor
+						const scaleFactor = 2;
 						canvas.width = img.width * scaleFactor;
 						canvas.height = img.height * scaleFactor;
 
 						if (ctx) {
-							// Scale the drawing context
 							ctx.scale(scaleFactor, scaleFactor);
-
-							// Fill the background with white
 							ctx.fillStyle = 'white';
 							ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-							// Draw the image onto the canvas
 							ctx.drawImage(img, 0, 0);
 						}
 
-						// Convert the canvas to a Blob
 						canvas.toBlob(
 							blob => {
 								if (blob) {
@@ -90,7 +82,6 @@ export const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 						reject(err);
 					};
 
-					// Set the source of the image to the SVG data URL
 					img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
 				});
 			} else {
@@ -109,12 +100,14 @@ export const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 					valueFetcher={fetchDiagramAsBlob}
 					size={16}
 					fileprefix="diagram"
-					isBinary={true} // Important for binary content
+					isBinary={true}
 					language="mermaid"
 					className="btn btn-sm bg-transparent text-white border-none flex items-center shadow-none"
 				/>
 			</div>
-			<div className="flex justify-center text-center p-1" ref={containerRef}></div>
+			<div className="flex justify-center text-center p-1" ref={containerRef} style={{ overflow: 'auto' }}>
+				{error && <div className="text-red-500">{error}</div>}
+			</div>
 		</div>
 	);
 };

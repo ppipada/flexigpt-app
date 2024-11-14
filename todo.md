@@ -14,8 +14,23 @@
 
 ## Tasks: Knowledge base
 
-- Allow upload/delete docs
-- Create searchable entities
+### Entity - DB
+
+- [ ] Top level entity
+- [ ] Hardcoded for now at state/docstore. Can be taken as a server later on. May need some local metadata at that point
+- [ ] May want the page to be kdbs/local/
+
+### Entity - Collection
+
+- [ ] Need to support CRUD for it. List of it would be the landing page for kb
+- [ ] Would need embedding func + name as config. Additional metadata can be stored separately in a file (chromem supports this)
+- [ ] May want the page to be kdbs/local/collections/collectionName
+
+### Entity - Docs
+
+- [ ] Allow CRUD for docs inside a collection
+- [ ] May not need a separate page. docs list can be in collection page
+- [ ] Create searchable entities
 
 - Document
 
@@ -26,8 +41,8 @@
     - Allow document upload and deletion
     - Provide search capabilities
 
-  - Attributes: `document_id`, `org_id`, `name`, `content`, `created_at`, `updated_at`
-  - Relationships: Belongs to `Org`
+  - ~~Attributes: `document_id`, `org_id`, `name`, `content`, `created_at`, `updated_at`~~
+  - ~~Relationships: Belongs to `Org`~~
 
 ## Tasks: Tools Implementation with CodeMirror
 
