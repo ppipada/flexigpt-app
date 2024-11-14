@@ -14,23 +14,32 @@
 
 ## Tasks: Knowledge base
 
+### UI
+
+- [ ] Simple single page that lists collections and number of docs in each collection
+- [ ] A separate modal to edit docs inside it
+
 ### Entity - DB
 
 - [ ] Top level entity
 - [ ] Hardcoded for now at state/docstore. Can be taken as a server later on. May need some local metadata at that point
-- [ ] May want the page to be kdbs/local/
+- [ ] ~~May want the page to be kdbs/local/~~
 
 ### Entity - Collection
 
 - [ ] Need to support CRUD for it. List of it would be the landing page for kb
 - [ ] Would need embedding func + name as config. Additional metadata can be stored separately in a file (chromem supports this)
-- [ ] May want the page to be kdbs/local/collections/collectionName
+- [ ] ~~May want the page to be kdbs/local/collections/collectionName~~
 
 ### Entity - Docs
 
 - [ ] Allow CRUD for docs inside a collection
-- [ ] May not need a separate page. docs list can be in collection page
-- [ ] Create searchable entities
+- [ ] ~~May not need a separate page. docs list can be in collection page~~
+- [ ] Create searchable chunked entities
+- [ ] Need ways to integrate with doc type specific loader/chunker/semantic analyzer.
+
+  - [ ] A doc type is going to have specific loader and semantic parsers. E.g: PDF would need to extract text then do some semantic classification and then create chunks to store embeddings.
+  - [ ] Can provide basic already available loaders in app, but would need a defined hook for it.
 
 - Document
 
