@@ -10,8 +10,7 @@
 
 ## Laundry list
 
-- [ ] Need a stop streaming / cancel button on assistant
-- [ ] Wails save file dialog opens and saves but file not seen on system
+- [ ]
 
 ## Tasks: Knowledge base
 

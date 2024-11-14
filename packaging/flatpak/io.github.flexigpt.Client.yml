@@ -14,6 +14,8 @@ finish-args:
   - --talk-name=org.freedesktop.secrets
   - --filesystem=xdg-config
   - --filesystem=xdg-data
+  - --filesystem=home
+  - --filesystem=host
 
 cleanup-commands:
   - "rm -rf /app/sdk/golang"
