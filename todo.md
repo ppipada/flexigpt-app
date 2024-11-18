@@ -10,36 +10,100 @@
 
 ## Laundry list
 
-- [ ]
+- [ ] Take default model and temp from settings without caching
 
-## Tasks: Knowledge base
+## Knowledge base
+
+Implement a `DocStoreSet` that manages multiple `DocStore` instances within a Wails desktop application. Each `DocStore` can use different adapters (e.g., local file system, HTTP) and contains collections of documents. Documents are split into chunks and stored in a vector database as separate vector "documents".
 
 ### UI
 
 - [ ] Simple single page that lists collections and number of docs in each collection
 - [ ] A separate modal to edit docs inside it
+- [ ] Dont implement for now: ~~Managing `DocStoreSet`, such as adding/removing docstores.~~
+- [ ] Viewing and managing collections within the current local docstore.
+- [ ] Viewing documents within a collection and number of chunks info.
+- [ ] Linking UI actions to `DocStoreSet`, `DocStore`, and `Collection` methods.
 
-### Entity - DB
+### Entity: `DocStoreSet`
 
 - [ ] Top level entity
-- [ ] Hardcoded for now at state/docstore. Can be taken as a server later on. May need some local metadata at that point
-- [ ] ~~May want the page to be kdbs/local/~~
 
-### Entity - Collection
+- [ ] **Create the `DocStoreSet` struct with the following fields:**
 
-- [ ] Need to support CRUD for it. List of it would be the landing page for kb
-- [ ] Would need embedding func + name as config. Additional metadata can be stored separately in a file (chromem supports this)
-- [ ] ~~May want the page to be kdbs/local/collections/collectionName~~
+  ```go
+  type DocStoreSet struct {
+  		MetadataPath string
+  		DocStores    map[DocStoreName]*DocStore
+  }
+  ```
 
-### Entity - Docs
+- [ ] **Implement methods for `DocStoreSet`:**
+
+  - Initialize the default local filesystem docstore and add it in the set.
+  - Dont implement add for now. ~~`AddDocStore(name string, adapter Adapter)`: Adds a new docstore with the specified adapter.~~
+  - `GetDocStore(name string) *DocStore`: Retrieves a docstore by name.
+  - Dont implement add for now. ~~`RemoveDocStore(name string)`: Removes a docstore by name.~~
+  - Dont implement list for now. ~~`ListDocStores() []string`: Lists all docstore names.~~
+
+### Entity: `DocStore`
+
+- [ ] Design the `DocStore` Interface
+
+  - Initialize can be independent and store specific.
+
+  ```go
+  type DocStoreName string
+
+  // DocStore interface for different storage backends
+  type DocStore interface {
+  	GetCollections() (map[CollectionName]*Collection, error)
+  	AddCollection(name CollectionName) error
+  	AddDocument(collection string, doc *Document) error
+  	DeleteDocument(collection string, docID DocumentID) error
+  	ListDocuments(collection string) ([]*Document, error)
+  }
+  ```
+
+- [ ] Implement the Default Local File Adapter
+
+  - [ ] Create a `ChromemDocStore` struct implementing the `DocStore` interface.
+  - [ ] Define the fields for `ChromemDocStore`
+    - [ ] `BasePath` (string): Base file path for storing documents.
+  - [ ] Implement the `DocStore` methods for `ChromemDocStore`.
+
+- [ ] Support for HTTP-Based DocStores
+  - [ ] Similarly implement a HTTPDocStore
+  - [ ] Define the fields for `HTTPDocStore`:
+    - `Endpoint` (string): Base URL of the HTTP docstore.
+    - `Headers` (map[string]string): Optional headers for HTTP requests.
+
+### Entity: `Collection`
+
+- [ ] **Create the `Collection` struct with the following fields:**
+
+  ```go
+  type CollectionName string
+  type Collection struct {
+  		Name      CollectionName
+  		Documents map[string]*Document
+  }
+  ```
+
+- [ ] **Implement methods for `Collection`:**
+  - `AddDocument(doc *Document) error`: Adds a new document.
+  - `GetDocument(docID string) *Document`: Retrieves a document by ID.
+  - `RemoveDocument(docID string) error`: Removes a document by ID.
+  - `ListDocuments() ([]string, error)`: Lists all document IDs.
+
+### Entity: `Document`
 
 - [ ] Allow CRUD for docs inside a collection
 - [ ] ~~May not need a separate page. docs list can be in collection page~~
 - [ ] Create searchable chunked entities
 - [ ] Need ways to integrate with doc type specific loader/chunker/semantic analyzer.
-
-  - [ ] A doc type is going to have specific loader and semantic parsers. E.g: PDF would need to extract text then do some semantic classification and then create chunks to store embeddings.
-  - [ ] Can provide basic already available loaders in app, but would need a defined hook for it.
+- [ ] A doc type is going to have specific loader and semantic parsers. E.g: PDF would need to extract text then do some semantic classification and then create chunks to store embeddings.
+- [ ] Can provide basic already available loaders in app, but would need a defined hook for it.
 
 - Document
 
@@ -50,98 +114,48 @@
     - Allow document upload and deletion
     - Provide search capabilities
 
-  - ~~Attributes: `document_id`, `org_id`, `name`, `content`, `created_at`, `updated_at`~~
-  - ~~Relationships: Belongs to `Org`~~
+- [ ] **Create the `Document` struct with the following fields:**
 
-## Tasks: Tools Implementation with CodeMirror
+  - `ID` (string): Unique identifier for the document.
+  - `Content` (string): Full content of the document.
+  - `Metadata` (map[string]interface{}): Document metadata.
 
-- Tools Page
+  ```go
+  type Document struct {
+  		ID       string
+  		Content  string
+  		Chunks   []*Chunk
+  		Metadata map[string]interface{}
+  }
+  ```
 
-  - Header
+- [ ] **Implement methods for `Document`:**
 
-    - [ ] Design the header with the title "Tools."
-    - [ ] Implement a search bar for tool searching.
+  - `SplitIntoChunks(chunkSize int) error`: Splits the document content into chunks.
+  - `GetChunk(index int) (*Chunk, error)`: Retrieves a specific chunk by index.
 
-  - Main Content Area:
+- [ ] Define the `Chunk` Structure
 
-    - [ ] Design the tool list in a card format.
-    - [ ] Display tool name, short description, and last modified date on each card.
-    - [ ] Add quick action icons/buttons for edit, delete, and duplicate.
-    - [ ] Implement a "Create New Tool" button using a floating action button (FAB) or a clearly marked button.
+  - `Index` (int): The order of the chunk in the document.
+  - `Content` (string): The content of the chunk.
+  - `VectorID` (string): Identifier in the vector database.
 
-- Create/Edit Tool Modal:
+  ```go
+  type Chunk struct {
+  		Index    int
+  		Content  string
+  		VectorID string
+  }
+  ```
 
-  - [ ] Design the modal layout for creating/editing tools.
-  - [ ] Add a tool name field (required).
-  - [ ] Add a description field (optional).
-  - [ ] Implement a schema area using CodeMirror for defining the tool's schema.
-    - [ ] Configure CodeMirror to support JSON syntax highlighting and validation.
-    - [ ] Allow users to define input and output parameters using JSON schema.
-  - [ ] Implement a function area using CodeMirror for accepting/implementing the schema.
-    - [ ] Configure CodeMirror to support TypeScript syntax highlighting and validation.
-    - [ ] Allow users to write an asynchronous TypeScript function that utilizes the defined schema.
-  - [ ] Usability
-    - [ ] Provide real-time validation and feedback for required fields.
-    - [ ] Use tooltips or inline messages for guidance on schema and function implementation.
-    - [ ] Ensure keyboard navigability.
-    - [ ] Implement ARIA labels and roles for screen readers.
-  - [ ] Action area:
-    - [ ] Implement a "Save & Close" option.
-    - [ ] Add a "Discard" button to exit without saving changes.
+- [ ] **Modify `Document.SplitIntoChunks` to:**
 
-- Backend
+  - Split the document content into chunks of specified size.
+  - For each chunk:
+    - Create a `Chunk` instance.
+    - Store the chunk in the vector database using `VectorStore.StoreChunk`.
+    - Update the `VectorStore` in the `Chunk`.
 
-  - [ ] Integrate with json store for tool storage.
-  - [ ] Implement API endpoints for creating, retrieving, updating, and deleting tools.
-  - [ ] Ensure schema validation and function execution are supported on the backend.
+### Entity: `VectorStore`
 
-## Tasks: Prompt templates
-
-- Prompt list page
-
-  - Header
-
-    - [ ] Design the header with the title "Prompt Templates."
-    - [ ] Implement a search bar for prompt searching.
-
-  - Main Content Area:
-
-    - [ ] Design the prompt list in a card format.
-    - [ ] Display prompt name, short description, short prompt start string and last modified date on each card.
-    - [ ] Add quick action icons/buttons for edit, delete, and duplicate.
-    - [ ] Implement a "Create New Prompt" button using a floating action button (FAB) or a clearly marked button.
-
-- Create/Edit Prompt Modal:
-
-  - [ ] Design the modal layout for creating/editing prompts.
-  - [ ] Add a prompt name field (required).
-  - [ ] Add a description field (optional).
-  - [ ] Implement a large text area for entering the prompt template. This should be large enough and scrollable
-  - [ ] May have preferred llm provider config (??)
-  - [ ] Would need:
-    - [ ] tools
-    - [ ] KB
-  - [ ] Usability
-    - [ ] Provide real-time validation and feedback for required fields.
-    - [ ] Use tooltips or inline messages for guidance on template strings.
-    - [ ] Ensure keyboard navigability.
-    - [ ] Implement ARIA labels and roles for screen readers.
-  - [ ] Detect template strings and dynamically add them to a "Variables" section.
-    - [ ] This should be below the scrollable area
-    - [ ] Automatically populate variables section with detected template strings.
-    - [ ] Implement fields for variable name, type dropdown, and default value.
-  - [ ] Action area: should be below variables
-    - [ ] Implement a "Save & Close" option.
-    - [ ] Add a "Discard" button to exit without saving changes.
-
-- Backend
-
-  - [ ] Integrate with JSON file store per prompt
-  - [ ] get list of prompts using the partitioned file store
-
-- Integration of prompts in chat
-  - [ ] Once defined all prompts should be available to use in chat via some keystroke (??).
-  - [ ] Would also need some way to indicate if someone wants to add a prompt as a system prompt or just prompt
-  - [ ] ~~Ideally if it is just prompt it should just expand the prompt in the input box~~
-  - [ ] For any prompt with vars, the vars should be injected with defaults properly so that a user can edit them and frontend can parse it to create a proper string too.
-  - [ ] ~~Can vars be few system functions like open file (??)~~
+- Use VectoreStore interface from langchaingo and implement for chromamem for local files

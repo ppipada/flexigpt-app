@@ -41,11 +41,16 @@ export const CodeBlock: FC<CodeProps> = ({ language, value, streamedMessage }) =
 						language={language}
 						style={monokaiSublime}
 						showLineNumbers
+						// wrapLines={true}
+						// lineNumberStyle={{ userSelect: 'none', pointerEvents: 'none' }}
 						customStyle={{
 							background: 'transparent',
 							padding: '0.5em',
 							borderRadius: '0.25rem',
 							fontSize: '14px',
+							// overflow: 'auto',
+							// position: 'relative',
+							// userSelect: 'text',
 						}}
 					>
 						{value}
