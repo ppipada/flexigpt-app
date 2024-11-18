@@ -18,7 +18,7 @@ jobs:
       NODE_VERSION: '20.18.0'
       FLATPAK_ID: 'io.github.flexigpt.Client'
     container:
-      image: bilelmoussaoui/flatpak-github-actions:gnome-46
+      image: bilelmoussaoui/flatpak-github-actions:gnome-46@sha256:25e022f62120218e83f97adc0f71c3925f0b74f33c6ba94f5cb2b5cf7e975fd7
       options: --privileged
     steps:
       - uses: actions/checkout@v4
