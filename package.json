@@ -26,7 +26,7 @@
 		"wails:build": "cd ./agentgo && pnpm run wails:frontend && wails build -m -clean -tags webkit2_41",
 		"wails:linpack": "cd ./agentgo && pnpm run wails:frontend && wails build -m -clean -s -skipbindings -tags webkit2_41 -platform linux/amd64",
 		"wails:macpack": "cd ./agentgo && pnpm run wails:frontend && wails build -m -clean -s -skipbindings -tags webkit2_41 -platform darwin/universal",
-		"wails:winpack": "cd ./agentgo && pnpm run wails:frontend && wails build -m -clean -s -skipbindings -tags webkit2_41 -nsis -platform windows/amd64 -o FlexiGPT-win-amd64",
+		"wails:winpack": "cd ./agentgo && pnpm run wails:frontend && wails build -m -clean -s -skipbindings -tags webkit2_41 -nsis -platform windows/amd64",
 		"wails:dev": "wails dev",
 		"wails:run": "pnpm run wails:builddevtools && ./build/bin/FlexiGPT",
 		"wails:flatpak": "gh act -W './.github/workflows/flatpak.yml' --artifact-server-path ./out",
