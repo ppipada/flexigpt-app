@@ -95,6 +95,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: ${{ env.BUILD_NAME }}-win-amd64
           files: |
-            */bin/*-installer.exe
+            */bin/*-win-amd64.exe
