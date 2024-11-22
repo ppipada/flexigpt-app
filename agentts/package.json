@@ -10,8 +10,7 @@
 		"lint": "eslint . --ext .ts",
 		"clean": "rimraf ./build",
 		"test": "echo \"No test specified\" && exit 0",
-		"pack": "electron-builder",
-		"postinstall": "electron-builder install-app-deps"
+		"pack": "electron-builder"
 	},
 	"keywords": [],
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
@@ -27,9 +26,5 @@
 		"settingstore": "workspace:*",
 		"uuid": "^11.0.3",
 		"winstonlogger": "workspace:*"
-	},
-	"devDependencies": {
-		"electron": "31.3.0",
-		"electron-builder": "^25"
 	}
 }
