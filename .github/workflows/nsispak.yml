@@ -18,6 +18,8 @@ jobs:
       matrix:
         platform:
           - windows/amd64
+    permissions:
+      contents: write
     env:
       BUILD_NAME: 'FlexiGPT'
       BUILD_PLATFORM: 'windows/amd64'

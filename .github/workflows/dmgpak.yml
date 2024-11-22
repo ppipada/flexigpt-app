@@ -18,6 +18,8 @@ jobs:
       matrix:
         platform:
           - darwin/universal
+    permissions:
+      contents: write
     env:
       BUILD_NAME: 'FlexiGPT'
       BUILD_PLATFORM: 'darwin/universal'
