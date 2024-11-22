@@ -1,35 +1,35 @@
-appId: 'com.flexigpt.agentts'
-artifactName: 'flexigpt-${os}-${arch}.${ext}'
+appId: "io.github.flexigpt.electronclient"
+artifactName: "FlexiGPT-${os}-${arch}.${ext}"
 win:
   target: nsis
-  icon: '../frontend/build/favicon.ico'
+  icon: "../frontend/build/favicon.ico"
 linux:
   target: AppImage
   synopsis: The FlexiGPT ecosystem agent
   category: AI
-  icon: '../frontend/build/icon.png'
+  icon: "../frontend/build/icon.png"
   desktop:
     Name: FlexiGPT
     Comment: The FlexiGPT ecosystem agent
-    Icon: '../frontend/build/icon.png'
+    Icon: "../frontend/build/icon.png"
     Terminal: false
     Type: Application
 mac:
   target: dmg
   category: public.app-category.ai
-  icon: '../frontend/build/icon.png'
+  icon: "../frontend/build/icon.png"
 files:
-  - from: './build'
+  - from: "./build"
     to: agentts/build
     filter:
-      - '**/*'
+      - "**/*"
   - from: ../frontend/build
     to: frontend/build
     filter:
-      - '**/*'
+      - "**/*"
   - from: .
     filter:
-      - 'package.json'
+      - "package.json"
 directories:
-  output: 'build'
+  output: "build"
 publish: null

@@ -1,7 +1,7 @@
 {
 	"name": "frontend",
 	"version": "0.1.0",
-	"description": "Frontend app for flexigpt",
+	"description": "Frontend for FlexiGPT",
 	"type": "module",
 	"private": true,
 	"scripts": {

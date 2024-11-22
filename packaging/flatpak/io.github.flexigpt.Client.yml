@@ -1,20 +1,16 @@
-id: io.github.flexigpt.Client
+id: io.github.flexigpt.client
 runtime: org.gnome.Platform
 runtime-version: "46"
 sdk: org.gnome.Sdk
 
-command: flexigpt
+command: FlexiGPT
 finish-args:
   - --share=ipc
-  - --socket=x11
   - --socket=wayland
   - --socket=fallback-x11
   - --device=dri
   - --share=network
   - --talk-name=org.freedesktop.secrets
-  - --filesystem=xdg-config
-  - --filesystem=xdg-data
-  - --filesystem=home
   - --filesystem=host
 
 cleanup-commands:
@@ -66,7 +62,7 @@ modules:
     build-commands:
       - $GOROOT/bin/go install github.com/wailsapp/wails/v2/cmd/wails@v2.9.2
 
-  - name: flexigpt
+  - name: FlexiGPT
     buildsystem: simple
     build-commands:
       - mkdir -p $XDG_CONFIG_HOME
@@ -80,7 +76,7 @@ modules:
       - rm -rf ~/.cache/go-build
       - rm -rf $GOROOT/pkg
       # Continue with installation
-      - install -Dm00755 build/bin/flexigpt $FLATPAK_DEST/bin/flexigpt
+      - install -Dm00755 build/bin/FlexiGPT $FLATPAK_DEST/bin/FlexiGPT
       - install -Dm00644 frontend/public/icon_256x256.png $FLATPAK_DEST/share/icons/hicolor/256x256/apps/$FLATPAK_ID.png
       - install -Dm00644 packaging/flatpak/$FLATPAK_ID.desktop $FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop
       - install -Dm00644 packaging/flatpak/$FLATPAK_ID.appdata.xml $FLATPAK_DEST/share/appdata/$FLATPAK_ID.appdata.xml

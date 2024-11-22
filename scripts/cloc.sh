@@ -42,7 +42,7 @@ frontend/app/models/conversationmodel.ts:  duplicate of pkgts/conversationstore/
 frontend/package.json.md5:  language unknown (#3)
 go.mod:  listed in $Not_Code_Extension{mod}
 go.sum:  listed in $Not_Code_Extension{sum}
-packaging/flatpak/io.github.flexigpt.Client.desktop:  listed in $Not_Code_Extension{desktop}
+packaging/flatpak/io.github.flexigpt.client.desktop:  listed in $Not_Code_Extension{desktop}
 pkgts/aiprovider/.eslintrc.json:  duplicate of pkgts/winstonlogger/.eslintrc.json
 pkgts/aiprovider/tsconfig.json:  duplicate of pkgts/winstonlogger/tsconfig.json
 pkgts/conversationstore/.eslintrc.json:  duplicate of pkgts/winstonlogger/.eslintrc.json

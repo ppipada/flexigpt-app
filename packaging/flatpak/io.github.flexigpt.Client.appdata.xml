@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-	<id>io.github.flexigpt.Client</id>
+	<id>io.github.flexigpt.client</id>
 
 	<name>FlexiGPT</name>
 	<developer_name>Pankaj Pipada</developer_name>
@@ -43,7 +43,7 @@
 		</ul>
 	</description>
 
-	<launchable type="desktop-id">io.github.flexigpt.Client.desktop</launchable>
+	<launchable type="desktop-id">io.github.flexigpt.client.desktop</launchable>
 	<screenshots>
 		<screenshot type="default">
 			<image>

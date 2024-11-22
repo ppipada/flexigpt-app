@@ -2,12 +2,12 @@
 	"notarize": [
 		{
 			"path": "./build/bin/FlexiGPT.pkg",
-			"bundle_id": "com.flexigpt.app",
+			"bundle_id": "io.github.flexigpt.client",
 			"staple": true
 		},
 		{
 			"path": "./build/bin/FlexiGPT.app.zip",
-			"bundle_id": "com.flexigpt.app",
+			"bundle_id": "io.github.flexigpt.client",
 			"staple": false
 		}
 	],

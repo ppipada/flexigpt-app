@@ -1,6 +1,6 @@
 {
 	"source": ["./build/bin/FlexiGPT.app"],
-	"bundle_id": "com.flexigpt.app",
+	"bundle_id": "io.github.flexigpt.client",
 	"apple_id": {
 		"username": "@env:SIGN_MACOS_APPLE_USERNAME",
 		"password": "@env:SIGN_MACOS_APPLE_PASSWORD"

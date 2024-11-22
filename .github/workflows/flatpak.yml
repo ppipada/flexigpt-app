@@ -16,7 +16,7 @@ jobs:
     env:
       BUILD_NAME: 'FlexiGPT'
       NODE_VERSION: '20.18.0'
-      FLATPAK_ID: 'io.github.flexigpt.Client'
+      FLATPAK_ID: 'io.github.flexigpt.client'
     permissions:
       contents: write
     container:
