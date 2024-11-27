@@ -18,12 +18,13 @@ Implement a `DocStoreSet` that manages multiple `DocStore` instances within a Wa
 
 ### UI
 
-- [ ] Simple single page that lists collections and number of docs in each collection
-- [ ] A separate modal to edit docs inside it
-- [ ] Dont implement for now: ~~Managing `DocStoreSet`, such as adding/removing docstores.~~
-- [ ] Viewing and managing collections within the current local docstore.
-- [ ] Viewing documents within a collection and number of chunks info.
-- [ ] Linking UI actions to `DocStoreSet`, `DocStore`, and `Collection` methods.
+- [x] Simple single page that lists servers + collections under them.
+  - [x] KB server has some associated detail
+  - [x] Collection row is still a visible row but placed so that it is visually known that it belongs to the server
+- [x] Add/edit/remove buttons as needed
+- [ ] Modal to edit server details
+- [ ] Modal to edit collection details and Viewing documents within a collection and number of chunks info.
+- [ ] Integrate with backend
 
 ### Entity: `DocStoreSet`
 
