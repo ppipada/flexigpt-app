@@ -100,7 +100,9 @@ const spawnAppWindow = async () => {
 };
 
 const initializeSettingsManager = async () => {
-	const settingsFilePath = path.join(app.getPath('userData'), 'settings.json');
+	// Appending the electron prefix as the encryption user for wails and electron are different.
+	// If we dont do this, they overwrite each other and wails tears up at init as it cannot initialize settings
+	const settingsFilePath = path.join(app.getPath('userData'), 'electron_settings.json');
 	log.info(`Setting file url: ${settingsFilePath}`);
 	settingsManager = new SettingStore(settingsFilePath);
 	await settingsManager.initialize();

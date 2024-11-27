@@ -64,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 							</Link>
 						</li>
 					</div>
-					<div className="flex-col p-0 mb-16">
+					<div className="flex-col p-0 mb-8">
 						<li className="mt-4" title="DocumentStores" onClick={toggle}>
 							<Link
 								href="/docstores/"
