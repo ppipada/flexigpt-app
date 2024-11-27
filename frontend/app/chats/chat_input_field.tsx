@@ -47,7 +47,7 @@ function useEnterSubmit(): {
 	return { formRef, onKeyDown: handleKeyDown };
 }
 
-const MAX_HEIGHT = 240;
+const MAX_HEIGHT = 360;
 
 const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ onSend, setInputHeight }, ref) => {
 	const [text, setText] = useState<string>('');

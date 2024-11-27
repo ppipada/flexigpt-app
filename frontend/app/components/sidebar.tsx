@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ReactNode, useState } from 'react';
-import { FiCpu, FiDatabase, FiHome, FiMenu, FiMessageSquare, FiSettings } from 'react-icons/fi';
+import { FiCpu, FiDatabase, FiFilePlus, FiHome, FiMenu, FiMessageSquare, FiSettings } from 'react-icons/fi';
 
 interface SidebarProps {
 	children: ReactNode;
@@ -65,6 +65,15 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 						</li>
 					</div>
 					<div className="flex-col p-0 mb-8">
+						<li className="mt-4" title="Prompts" onClick={toggle}>
+							<Link
+								href="/prompts/"
+								className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
+								aria-label="Prompts"
+							>
+								<FiFilePlus size={24} />
+							</Link>
+						</li>
 						<li className="mt-4" title="DocumentStores" onClick={toggle}>
 							<Link
 								href="/docstores/"

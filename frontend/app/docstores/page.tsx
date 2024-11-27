@@ -1,11 +1,13 @@
 'use client';
 
+import { DOCUMENT_STORE_INVOKE_CHAR } from '@/models/commands';
 import { useEffect, useState } from 'react';
 import { FiEdit, FiFolder, FiPlus, FiServer, FiTrash2 } from 'react-icons/fi';
 
 interface Collection {
 	id: string;
 	name: string;
+	command: string;
 	documentCount: number;
 	chunkCount: number;
 }
@@ -21,7 +23,7 @@ interface Server {
 }
 
 const fetchServers = async (): Promise<Server[]> => {
-	await new Promise(resolve => setTimeout(resolve, 500));
+	await new Promise(resolve => setTimeout(resolve, 10));
 
 	return [
 		{
@@ -29,8 +31,8 @@ const fetchServers = async (): Promise<Server[]> => {
 			name: 'KB Server 1',
 			url: 'https://kb1.example.com',
 			collections: [
-				{ id: '1', name: 'Collection 1', documentCount: 100, chunkCount: 1000 },
-				{ id: '2', name: 'Collection 2', documentCount: 50, chunkCount: 500 },
+				{ id: '1', name: 'Collection 1', command: 'c1', documentCount: 100, chunkCount: 1000 },
+				{ id: '2', name: 'Collection 2', command: 'c2', documentCount: 50, chunkCount: 500 },
 			],
 			status: 'online',
 			description: 'Primary knowledge base server',
@@ -40,7 +42,7 @@ const fetchServers = async (): Promise<Server[]> => {
 			id: '2',
 			name: 'KB Server 2',
 			url: 'https://kb2.example.com',
-			collections: [{ id: '3', name: 'Collection 3', documentCount: 75, chunkCount: 750 }],
+			collections: [{ id: '3', name: 'Collection 3', command: 'c3', documentCount: 75, chunkCount: 750 }],
 			status: 'offline',
 			description: 'Backup knowledge base server',
 			dbName: 'kb_backup',
@@ -82,8 +84,8 @@ const DocumentStores: React.FC = () => {
 				<div></div>
 				<h1 className="text-3xl font-bold text-center">Document Stores</h1>
 				<div className="text-right">
-					<button className="btn btn-warning rounded-2xl">
-						<FiPlus /> Add Document Store
+					<button className="btn btn-lg btn-ghost rounded-2xl">
+						<FiPlus size={24} />
 					</button>
 				</div>
 			</div>
@@ -128,6 +130,7 @@ const DocumentStores: React.FC = () => {
 									<thead>
 										<tr className="font-semibold text-sm px-4 py-0 m-0 bg-base-300">
 											<th className="rounded-tl-2xl">Collection Name</th>
+											<th>Use Command</th>
 											<th>Documents</th>
 											<th>Chunks</th>
 											<th className="text-right rounded-tr-2xl pr-8">Actions</th>
@@ -141,6 +144,10 @@ const DocumentStores: React.FC = () => {
 														<FiFolder className="mr-2" />
 														{collection.name}
 													</div>
+												</td>
+												<td>
+													{DOCUMENT_STORE_INVOKE_CHAR}
+													{collection.command}
 												</td>
 												<td>{collection.documentCount}</td>
 												<td>{collection.chunkCount}</td>
