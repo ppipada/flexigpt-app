@@ -11,6 +11,9 @@
 ## Laundry list
 
 - [ ] Take default model and temp from settings without caching
+- [ ] focus on edit box if someone presses edit. as of now focs is at end of page
+- [ ] Need a stop streaming / cancel button on assistant
+- [ ] In chat the last used model should be stored ideally so that nesxt time you load the chat it loads that model by default
 
 ## Knowledge base
 
@@ -22,8 +25,9 @@ Implement a `DocStoreSet` that manages multiple `DocStore` instances within a Wa
   - [x] KB server has some associated detail
   - [x] Collection row is still a visible row but placed so that it is visually known that it belongs to the server
 - [x] Add/edit/remove buttons as needed
-- [ ] Modal to edit server details
-- [ ] Modal to edit collection details and Viewing documents within a collection and number of chunks info.
+- [x] Modal to edit server details
+- [x] Modal to edit collection details and Viewing documents within a collection and number of chunks info.
+- [ ] Add/Edit docs inside the collections modal
 - [ ] Integrate with backend
 
 ### Entity: `DocStoreSet`

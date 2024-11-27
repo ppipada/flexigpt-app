@@ -1,0 +1,131 @@
+import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/models/commands';
+import { Collection } from '@/models/docstoremodel';
+import React, { useEffect, useState } from 'react';
+
+interface ModifyCollectionProps {
+	isOpen: boolean;
+	onClose: () => void;
+	onSubmit: (collectionData: Partial<Collection>, serverId: string) => void;
+	initialData?: Partial<Collection>;
+	serverId: string;
+	existingCollections: Collection[];
+}
+
+const ModifyCollection: React.FC<ModifyCollectionProps> = ({
+	isOpen,
+	onClose,
+	onSubmit,
+	initialData,
+	serverId,
+	existingCollections,
+}) => {
+	const [formData, setFormData] = useState<Partial<Collection>>({
+		name: '',
+		command: '',
+	});
+	const [errors, setErrors] = useState<{ name?: string; command?: string }>({});
+
+	useEffect(() => {
+		if (isOpen) {
+			setFormData(initialData || { name: '', command: '' });
+			setErrors({});
+		}
+	}, [isOpen, initialData]);
+
+	const validateField = (name: string, value: string) => {
+		const newErrors = { ...errors };
+
+		if (!value.trim()) {
+			newErrors[name as keyof typeof errors] = 'This field is required';
+		} else if (name === 'command' && value.startsWith(DOCUMENT_COLLECTION_INVOKE_CHAR)) {
+			newErrors[name] = `Command should not start with ${DOCUMENT_COLLECTION_INVOKE_CHAR}`;
+		} else {
+			const isUnique = !existingCollections.some(
+				c => c[name as keyof Collection] === value && c.id !== initialData?.id
+			);
+			if (!isUnique) {
+				newErrors[name as keyof typeof errors] = `This ${name} is already in use`;
+			} else {
+				delete newErrors[name as keyof typeof errors];
+			}
+		}
+
+		setErrors(newErrors);
+	};
+
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const { name, value } = e.target;
+		setFormData(prev => ({ ...prev, [name]: value }));
+		validateField(name, value);
+	};
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+
+		validateField('name', formData.name || '');
+		validateField('command', formData.command || '');
+
+		if (Object.keys(errors).length === 0 && formData.name && formData.command) {
+			onSubmit(formData, serverId);
+		}
+	};
+
+	if (!isOpen) return null;
+
+	return (
+		<div className="modal modal-open">
+			<div className="modal-box rounded-2xl">
+				<h3 className="font-bold text-lg">{initialData ? 'Edit Collection' : 'Add New Collection'}</h3>
+				<form onSubmit={handleSubmit} className="mt-4">
+					<div className="form-control">
+						<label className="label">
+							<span className="label-text">Name*</span>
+						</label>
+						<input
+							type="text"
+							name="name"
+							value={formData.name || ''}
+							onChange={handleChange}
+							className={`input input-bordered rounded-2xl ${errors.name ? 'input-error' : ''}`}
+							required
+						/>
+						{errors.name && <p className="text-error text-sm mt-1">{errors.name}</p>}
+					</div>
+					<div className="form-control">
+						<label className="label">
+							<span className="label-text">Command*</span>
+						</label>
+						<div className="relative">
+							<span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral">
+								{DOCUMENT_COLLECTION_INVOKE_CHAR}
+							</span>
+							<input
+								type="text"
+								name="command"
+								value={formData.command || ''}
+								onChange={handleChange}
+								className={`input input-bordered rounded-2xl pl-8 ${errors.command ? 'input-error' : ''}`}
+								required
+							/>
+						</div>
+						{errors.command && <p className="text-error text-sm mt-1">{errors.command}</p>}
+					</div>
+					<div className="modal-action">
+						<button type="button" className="btn btn-ghost rounded-2xl" onClick={onClose}>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							className="btn btn-primary rounded-2xl"
+							disabled={!!errors.name || !!errors.command || !formData.name || !formData.command}
+						>
+							Save
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
+};
+
+export default ModifyCollection;

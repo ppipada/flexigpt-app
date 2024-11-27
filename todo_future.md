@@ -10,7 +10,6 @@
 - [ ] Mac icns file not present. Need proper icns file added
 - [ ] Mac pkg install is add the .app in ~/build/bin. It should be in application. Check the settings, conversation and log location
 - [ ] Test Windows build
-- [ ] Need a stop streaming / cancel button on assistant
 
 ## Tasks: Tools Implementation with CodeMirror
 
