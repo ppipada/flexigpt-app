@@ -1,8 +1,8 @@
 'use client';
 
 import DeleteConfirmationModal from '@/components/delete_confirmation';
-import ModifyCollection from '@/docstores/modifycollection';
-import ModifyDocStore from '@/docstores/modifystore';
+import ModifyCollection from '@/docstores/collection_modify';
+import ModifyDocStore from '@/docstores/docstore_modify';
 import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/models/commands';
 import { Collection, DocStore } from '@/models/docstoremodel';
 import { useEffect, useState } from 'react';

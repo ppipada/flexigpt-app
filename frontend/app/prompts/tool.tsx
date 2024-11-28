@@ -3,6 +3,7 @@
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 import { TOOL_INVOKE_CHAR } from '@/models/commands';
 import { Tool } from '@/models/promptmodel';
+import ModifyTool from '@/prompts/tool_modify';
 import { useEffect, useState } from 'react';
 import { FiEdit, FiPlus, FiTrash2 } from 'react-icons/fi';
 
@@ -10,9 +11,23 @@ const fetchTools = async (): Promise<Tool[]> => {
 	await new Promise(resolve => setTimeout(resolve, 100));
 
 	return [
-		{ id: '1', name: 'Web Search', command: 'search', tokenCount: 50 },
-		{ id: '2', name: 'Calculator', command: 'calc', tokenCount: 30 },
-		{ id: '3', name: 'Weather', command: 'weather', tokenCount: 40 },
+		{
+			id: '1',
+			name: 'Web Search',
+			command: 'search',
+			schema: 'search schema',
+			inFunc: 'def searchFunc',
+			tokenCount: 50,
+		},
+		{ id: '2', name: 'Calculator', command: 'calc', schema: 'calc schema', inFunc: 'def calcFunc', tokenCount: 30 },
+		{
+			id: '3',
+			name: 'Weather',
+			command: 'weather',
+			schema: 'weather schema',
+			inFunc: 'def weatherFunc',
+			tokenCount: 40,
+		},
 	];
 };
 
@@ -21,6 +36,8 @@ const Tools: React.FC = () => {
 	const [loading, setLoading] = useState(true);
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 	const [toolToDelete, setToolToDelete] = useState<Tool | null>(null);
+	const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
+	const [toolToModify, setToolToModify] = useState<Tool | null>(null);
 
 	useEffect(() => {
 		const loadTools = async () => {
@@ -37,25 +54,47 @@ const Tools: React.FC = () => {
 		loadTools();
 	}, []);
 
-	// Function to open the delete confirmation modal
 	const openDeleteToolModal = (tool: Tool) => {
 		setToolToDelete(tool);
 		setIsDeleteModalOpen(true);
 	};
 
-	// Function to close the delete confirmation modal
 	const closeDeleteToolModal = () => {
 		setIsDeleteModalOpen(false);
 		setToolToDelete(null);
 	};
 
-	// Function to handle the tool deletion
 	const handleDeleteTool = () => {
 		if (toolToDelete) {
-			// Perform the actual deletion here
 			setTools(prevTools => prevTools.filter(tool => tool.id !== toolToDelete.id));
 		}
 		closeDeleteToolModal();
+	};
+
+	const openModifyToolModal = (tool?: Tool) => {
+		setToolToModify(tool || null);
+		setIsModifyModalOpen(true);
+	};
+
+	const closeModifyToolModal = () => {
+		setIsModifyModalOpen(false);
+		setToolToModify(null);
+	};
+
+	const handleModifyTool = (toolData: Partial<Tool>) => {
+		if (toolToModify) {
+			// Edit existing tool
+			setTools(prevTools => prevTools.map(tool => (tool.id === toolToModify.id ? { ...tool, ...toolData } : tool)));
+		} else {
+			// Add new tool
+			const newTool: Tool = {
+				...toolData,
+				id: Date.now().toString(),
+				tokenCount: 0,
+			} as Tool;
+			setTools(prevTools => [...prevTools, newTool]);
+		}
+		closeModifyToolModal();
 	};
 
 	if (loading) {
@@ -69,7 +108,7 @@ const Tools: React.FC = () => {
 	return (
 		<div className="mx-auto p-4">
 			<div className="text-right items-center mb-2">
-				<button className="btn btn-ghost rounded-2xl text-sm">
+				<button className="btn btn-ghost rounded-2xl text-sm" onClick={() => openModifyToolModal()}>
 					<FiPlus size={18} /> Add Tool
 				</button>
 			</div>
@@ -94,7 +133,11 @@ const Tools: React.FC = () => {
 								</td>
 								<td>{tool.tokenCount}</td>
 								<td className={index === tools.length - 1 ? 'rounded-br-2xl text-right' : 'text-right'}>
-									<button className="btn btn-sm btn-ghost rounded-2xl" aria-label="Edit Tool">
+									<button
+										className="btn btn-sm btn-ghost rounded-2xl"
+										aria-label="Edit Tool"
+										onClick={() => openModifyToolModal(tool)}
+									>
 										<FiEdit />
 									</button>
 									<button
@@ -119,6 +162,15 @@ const Tools: React.FC = () => {
 				title="Delete Tool"
 				message={`Are you sure you want to delete the tool "${toolToDelete?.name}"? This action cannot be undone.`}
 				confirmButtonText="Delete"
+			/>
+
+			{/* Modify Tool Modal */}
+			<ModifyTool
+				isOpen={isModifyModalOpen}
+				onClose={closeModifyToolModal}
+				onSubmit={handleModifyTool}
+				initialData={toolToModify || undefined}
+				existingTools={tools}
 			/>
 		</div>
 	);

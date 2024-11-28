@@ -1,7 +1,7 @@
 'use client';
 
-import PromptTemplates from '@/prompts/prompttemplates';
-import Tools from '@/prompts/tools';
+import PromptTemplates from '@/prompts/prompt_template';
+import Tools from '@/prompts/tool';
 import { useState } from 'react';
 
 const Prompts: React.FC = () => {
