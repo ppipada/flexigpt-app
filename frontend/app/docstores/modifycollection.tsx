@@ -5,9 +5,9 @@ import React, { useEffect, useState } from 'react';
 interface ModifyCollectionProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSubmit: (collectionData: Partial<Collection>, serverId: string) => void;
+	onSubmit: (collectionData: Partial<Collection>, docStoreID: string) => void;
 	initialData?: Partial<Collection>;
-	serverId: string;
+	docStoreID: string;
 	existingCollections: Collection[];
 }
 
@@ -16,7 +16,7 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 	onClose,
 	onSubmit,
 	initialData,
-	serverId,
+	docStoreID,
 	existingCollections,
 }) => {
 	const [formData, setFormData] = useState<Partial<Collection>>({
@@ -66,7 +66,7 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 		validateField('command', formData.command || '');
 
 		if (Object.keys(errors).length === 0 && formData.name && formData.command) {
-			onSubmit(formData, serverId);
+			onSubmit(formData, docStoreID);
 		}
 	};
 

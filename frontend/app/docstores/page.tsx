@@ -1,16 +1,15 @@
 'use client';
 
-import DeleteCollectionModal from '@/docstores/deletecollection';
-import DeleteDocStoreModal from '@/docstores/deletestore';
+import DeleteConfirmationModal from '@/components/delete_confirmation';
 import ModifyCollection from '@/docstores/modifycollection';
 import ModifyDocStore from '@/docstores/modifystore';
 import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/models/commands';
-import { Collection, DocStoreServer } from '@/models/docstoremodel';
+import { Collection, DocStore } from '@/models/docstoremodel';
 import { useEffect, useState } from 'react';
 import { FiEdit, FiFolder, FiPlus, FiServer, FiTrash2 } from 'react-icons/fi';
 
-// Mock function to fetch servers
-const fetchServers = async (): Promise<DocStoreServer[]> => {
+// Mock function to fetch docStores
+const fetchDocStores = async (): Promise<DocStore[]> => {
 	await new Promise(resolve => setTimeout(resolve, 10));
 
 	return [
@@ -23,7 +22,7 @@ const fetchServers = async (): Promise<DocStoreServer[]> => {
 				{ id: '2', name: 'Collection 2', command: 'c2', documentCount: 50, chunkCount: 500 },
 			],
 			status: 'online',
-			description: 'Primary knowledge base server',
+			description: 'Primary knowledge base',
 			dbName: 'kb_main',
 		},
 		{
@@ -32,7 +31,7 @@ const fetchServers = async (): Promise<DocStoreServer[]> => {
 			url: 'https://kb2.example.com',
 			collections: [{ id: '3', name: 'Collection 3', command: 'c3', documentCount: 75, chunkCount: 750 }],
 			status: 'offline',
-			description: 'Backup knowledge base server',
+			description: 'Backup knowledge base',
 			dbName: 'kb_backup',
 		},
 	];
@@ -40,128 +39,135 @@ const fetchServers = async (): Promise<DocStoreServer[]> => {
 
 const DocumentStores: React.FC = () => {
 	// State declarations
-	const [servers, setServers] = useState<DocStoreServer[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-	const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
-	const [selectedServer, setSelectedServer] = useState<DocStoreServer | null>(null);
+	const [error, setError] = useState<string | null>(null);
+
+	const [docStores, setDocStores] = useState<DocStore[]>([]);
+	const [isDeleteDocStoreModalOpen, setIsDeleteDocStoreModalOpen] = useState(false);
+	const [isModifyDocStoreModalOpen, setIsModifyDocStoreModalOpen] = useState(false);
+	const [selectedDocStore, setSelectedDocStore] = useState<DocStore | null>(null);
+
 	const [isDeleteCollectionModalOpen, setIsDeleteCollectionModalOpen] = useState(false);
 	const [selectedCollection, setSelectedCollection] = useState<{
-		serverId: string;
+		docStoreID: string;
 		collection: Collection | null;
 	}>({
-		serverId: '',
+		docStoreID: '',
 		collection: null,
 	});
 	const [isModifyCollectionModalOpen, setIsModifyCollectionModalOpen] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 
-	// Effect to load servers on component mount
+	// Effect to load docStores on component mount
 	useEffect(() => {
-		const loadServers = async () => {
+		const loadDocStores = async () => {
 			try {
-				const data = await fetchServers();
-				setServers(data);
+				const data = await fetchDocStores();
+				setDocStores(data);
 			} catch (error) {
-				console.error('Failed to fetch servers:', error);
-				setError('Failed to load servers. Please try again later.');
+				console.error('Failed to fetch doc stores:', error);
+				setError('Failed to load doc stores. Please try again later.');
 			} finally {
 				setLoading(false);
 			}
 		};
 
-		loadServers();
+		loadDocStores();
 	}, []);
 
-	// Handler for deleting a server
-	const handleDeleteServer = (server: DocStoreServer) => {
-		setSelectedServer(server);
-		setIsDeleteModalOpen(true);
+	const openDeleteDocStoreModal = (docStore: DocStore) => {
+		setSelectedDocStore(docStore);
+		setIsDeleteDocStoreModalOpen(true);
 	};
 
-	// Handler for editing a server
-	const handleEditServer = (server: DocStoreServer) => {
-		setSelectedServer(server);
-		setIsModifyModalOpen(true);
+	const closeDeleteDocStoreModal = () => {
+		setIsDeleteDocStoreModalOpen(false);
+		setSelectedDocStore(null);
 	};
 
-	// Handler for adding a new server
-	const handleAddServer = () => {
-		setSelectedServer(null);
-		setIsModifyModalOpen(true);
-	};
-
-	// Confirmation handler for deleting a server
-	const confirmDeleteDocStore = () => {
-		if (selectedServer) {
-			setServers(servers.filter(s => s.id !== selectedServer.id));
+	const handleDeleteDocStore = () => {
+		if (selectedDocStore) {
+			setDocStores(docStores.filter(s => s.id !== selectedDocStore.id));
 		}
-		setIsDeleteModalOpen(false);
-		setSelectedServer(null);
+		closeDeleteDocStoreModal();
 	};
 
-	// Handler for modifying or adding a server
-	const handleModifyDocStoreSubmit = (storeData: Partial<DocStoreServer>) => {
-		if (selectedServer) {
-			// Edit existing server
-			setServers(servers.map(s => (s.id === selectedServer.id ? { ...s, ...storeData } : s)));
+	// Handler for editing a docStore
+	const handleEditDocStore = (docStore: DocStore) => {
+		setSelectedDocStore(docStore);
+		setIsModifyDocStoreModalOpen(true);
+	};
+
+	// Handler for adding a new docStore
+	const handleAddDocStore = () => {
+		setSelectedDocStore(null);
+		setIsModifyDocStoreModalOpen(true);
+	};
+
+	// Handler for modifying or adding a docStore
+	const handleModifyDocStoreSubmit = (storeData: Partial<DocStore>) => {
+		if (selectedDocStore) {
+			// Edit existing docStore
+			setDocStores(docStores.map(s => (s.id === selectedDocStore.id ? { ...s, ...storeData } : s)));
 		} else {
-			// Add new server
-			const newServer: DocStoreServer = {
+			// Add new docStore
+			const newDocStore: DocStore = {
 				id: Date.now().toString(),
 				collections: [],
 				status: 'offline',
 				...storeData,
-			} as DocStoreServer;
-			setServers([...servers, newServer]);
+			} as DocStore;
+			setDocStores([...docStores, newDocStore]);
 		}
-		setIsModifyModalOpen(false);
-		setSelectedServer(null);
+		setIsModifyDocStoreModalOpen(false);
+		setSelectedDocStore(null);
 	};
 
-	// Handler for deleting a collection
-	const handleDeleteCollection = (serverId: string, collection: Collection) => {
-		setSelectedCollection({ serverId, collection });
+	const openDeleteCollectionModal = (docStoreID: string, collection: Collection) => {
+		setSelectedCollection({ docStoreID, collection });
 		setIsDeleteCollectionModalOpen(true);
 	};
 
+	const closeDeleteCollectionModal = () => {
+		setIsDeleteCollectionModalOpen(false);
+		setSelectedCollection({ docStoreID: '', collection: null });
+	};
+
 	// Confirmation handler for deleting a collection
-	const confirmDeleteCollection = () => {
-		if (selectedCollection.serverId && selectedCollection.collection) {
-			setServers(
-				servers.map(server =>
-					server.id === selectedCollection.serverId
-						? { ...server, collections: server.collections.filter(c => c.id !== selectedCollection.collection?.id) }
-						: server
+	const handleDeleteCollection = () => {
+		if (selectedCollection.docStoreID && selectedCollection.collection) {
+			setDocStores(
+				docStores.map(docStore =>
+					docStore.id === selectedCollection.docStoreID
+						? { ...docStore, collections: docStore.collections.filter(c => c.id !== selectedCollection.collection?.id) }
+						: docStore
 				)
 			);
 		}
-		setIsDeleteCollectionModalOpen(false);
-		setSelectedCollection({ serverId: '', collection: null });
+		closeDeleteCollectionModal();
 	};
 
 	// Handler for adding a new collection
-	const handleAddCollection = (serverId: string) => {
-		setSelectedCollection({ serverId, collection: null });
+	const handleAddCollection = (docStoreID: string) => {
+		setSelectedCollection({ docStoreID, collection: null });
 		setIsModifyCollectionModalOpen(true);
 	};
 
 	// Handler for editing a collection
-	const handleEditCollection = (serverId: string, collection: Collection) => {
-		setSelectedCollection({ serverId, collection });
+	const handleEditCollection = (docStoreID: string, collection: Collection) => {
+		setSelectedCollection({ docStoreID, collection });
 		setIsModifyCollectionModalOpen(true);
 	};
 
 	// Handler for modifying or adding a collection
-	const handleModifyCollectionSubmit = (collectionData: Partial<Collection>, serverId: string) => {
-		setServers(
-			servers.map(server => {
-				if (server.id === serverId) {
+	const handleModifyCollectionSubmit = (collectionData: Partial<Collection>, docStoreID: string) => {
+		setDocStores(
+			docStores.map(docStore => {
+				if (docStore.id === docStoreID) {
 					if (selectedCollection.collection) {
 						// Edit existing collection
 						return {
-							...server,
-							collections: server.collections.map(c =>
+							...docStore,
+							collections: docStore.collections.map(c =>
 								c.id === selectedCollection.collection?.id ? { ...c, ...collectionData } : c
 							),
 						};
@@ -174,16 +180,16 @@ const DocumentStores: React.FC = () => {
 							...collectionData,
 						} as Collection;
 						return {
-							...server,
-							collections: [...server.collections, newCollection],
+							...docStore,
+							collections: [...docStore.collections, newCollection],
 						};
 					}
 				}
-				return server;
+				return docStore;
 			})
 		);
 		setIsModifyCollectionModalOpen(false);
-		setSelectedCollection({ serverId: '', collection: null });
+		setSelectedCollection({ docStoreID: '', collection: null });
 	};
 
 	// Loading state
@@ -213,41 +219,46 @@ const DocumentStores: React.FC = () => {
 				<div></div>
 				<h1 className="text-3xl font-bold text-center">Document Stores</h1>
 				<div className="text-right">
-					<button className="btn btn-lg btn-ghost rounded-2xl" onClick={handleAddServer}>
+					<button className="btn btn-lg btn-ghost rounded-2xl" onClick={handleAddDocStore}>
 						<FiPlus size={24} />
 					</button>
 				</div>
 			</div>
 
-			{/* DocStoreServer Cards */}
+			{/* DocStore Cards */}
 			<div className="space-y-4">
-				{servers.map(server => (
-					<div key={server.id} className="card bg-base-100 shadow-xl rounded-2xl">
+				{docStores.map(docStore => (
+					<div key={docStore.id} className="card bg-base-100 shadow-xl rounded-2xl">
 						<div className="card-body p-4">
-							{/* DocStoreServer Info Row */}
+							{/* DocStore Info Row */}
 							<div className="flex items-center justify-between pr-2 pb-2">
 								<div className="flex items-center space-x-2">
 									<FiServer className="mr-2" />
 									<span className="font-bold">
-										{server.name} - {server.dbName}
+										{docStore.name} - {docStore.dbName}
 									</span>
 								</div>
-								<div className={`badge-md ${server.status === 'online' ? 'badge-success' : 'badge-error'} rounded-2xl`}>
-									{server.status}
+								<div
+									className={`badge-md ${docStore.status === 'online' ? 'badge-success' : 'badge-error'} rounded-2xl`}
+								>
+									{docStore.status}
 								</div>
 							</div>
 
-							{/* DocStoreServer URL and Action Buttons */}
+							{/* DocStore URL and Action Buttons */}
 							<div className="flex text-neutral items-center justify-between text-sm">
-								<span>{server.url}</span>
+								<span>{docStore.url}</span>
 								<div>
-									<button className="btn btn-sm btn-ghost rounded-2xl" onClick={() => handleAddCollection(server.id)}>
+									<button className="btn btn-sm btn-ghost rounded-2xl" onClick={() => handleAddCollection(docStore.id)}>
 										<FiPlus /> Add Collection
 									</button>
-									<button className="btn btn-sm btn-ghost rounded-2xl" onClick={() => handleEditServer(server)}>
+									<button className="btn btn-sm btn-ghost rounded-2xl" onClick={() => handleEditDocStore(docStore)}>
 										<FiEdit />
 									</button>
-									<button className="btn btn-sm btn-ghost rounded-2xl" onClick={() => handleDeleteServer(server)}>
+									<button
+										className="btn btn-sm btn-ghost rounded-2xl"
+										onClick={() => openDeleteDocStoreModal(docStore)}
+									>
 										<FiTrash2 />
 									</button>
 								</div>
@@ -266,9 +277,9 @@ const DocumentStores: React.FC = () => {
 										</tr>
 									</thead>
 									<tbody>
-										{server.collections.map((collection, index) => (
+										{docStore.collections.map((collection, index) => (
 											<tr key={collection.id} className="hover border-none shadow-none">
-												<td className={index === server.collections.length - 1 ? 'rounded-bl-2xl' : ''}>
+												<td className={index === docStore.collections.length - 1 ? 'rounded-bl-2xl' : ''}>
 													<div className="flex items-center">
 														<FiFolder className="mr-2" />
 														{collection.name}
@@ -282,20 +293,20 @@ const DocumentStores: React.FC = () => {
 												<td>{collection.chunkCount}</td>
 												<td
 													className={
-														index === server.collections.length - 1 ? 'rounded-br-2xl text-right' : 'text-right'
+														index === docStore.collections.length - 1 ? 'rounded-br-2xl text-right' : 'text-right'
 													}
 												>
 													<button
 														className="btn btn-sm btn-ghost rounded-2xl"
 														aria-label="Edit Collection"
-														onClick={() => handleEditCollection(server.id, collection)}
+														onClick={() => handleEditCollection(docStore.id, collection)}
 													>
 														<FiEdit />
 													</button>
 													<button
 														className="btn btn-sm btn-ghost rounded-2xl"
 														aria-label="Delete Collection"
-														onClick={() => handleDeleteCollection(server.id, collection)}
+														onClick={() => openDeleteCollectionModal(docStore.id, collection)}
 													>
 														<FiTrash2 />
 													</button>
@@ -311,35 +322,33 @@ const DocumentStores: React.FC = () => {
 				))}
 			</div>
 
-			{/* Delete Confirmation Modal */}
-			<DeleteDocStoreModal
-				isOpen={isDeleteModalOpen}
-				onClose={() => {
-					setIsDeleteModalOpen(false);
-					setSelectedServer(null);
-				}}
-				onConfirm={confirmDeleteDocStore}
-				storeName={selectedServer?.name || ''}
+			{/* DocStore Delete Confirmation Modal */}
+			<DeleteConfirmationModal
+				isOpen={isDeleteDocStoreModalOpen}
+				onClose={closeDeleteDocStoreModal}
+				onConfirm={handleDeleteDocStore}
+				title="Delete Document Store"
+				message={`Are you sure you want to delete the document store "${selectedDocStore?.name || ''}"? This action cannot be undone.`}
+				confirmButtonText="Delete"
 			/>
 
 			{/* Modify Store Modal */}
 			<ModifyDocStore
-				isOpen={isModifyModalOpen}
-				onClose={() => setIsModifyModalOpen(false)}
+				isOpen={isModifyDocStoreModalOpen}
+				onClose={() => setIsModifyDocStoreModalOpen(false)}
 				onSubmit={handleModifyDocStoreSubmit}
-				initialData={selectedServer || undefined}
-				existingServers={servers}
+				initialData={selectedDocStore || undefined}
+				existingDocStores={docStores}
 			/>
 
 			{/* Delete Collection Modal */}
-			<DeleteCollectionModal
+			<DeleteConfirmationModal
 				isOpen={isDeleteCollectionModalOpen}
-				onClose={() => {
-					setIsDeleteCollectionModalOpen(false);
-					setSelectedCollection({ serverId: '', collection: null });
-				}}
-				onConfirm={confirmDeleteCollection}
-				collectionName={selectedCollection?.collection?.name || ''}
+				onClose={closeDeleteCollectionModal}
+				onConfirm={handleDeleteCollection}
+				title="Delete Collection"
+				message={`Are you sure you want to delete the collection "${selectedCollection?.collection?.name || ''}"? This action cannot be undone.`}
+				confirmButtonText="Delete"
 			/>
 
 			{/* Modify Collection Modal */}
@@ -348,8 +357,8 @@ const DocumentStores: React.FC = () => {
 				onClose={() => setIsModifyCollectionModalOpen(false)}
 				onSubmit={handleModifyCollectionSubmit}
 				initialData={selectedCollection.collection || undefined}
-				serverId={selectedCollection.serverId}
-				existingCollections={servers.find(s => s.id === selectedCollection.serverId)?.collections || []}
+				docStoreID={selectedCollection.docStoreID}
+				existingCollections={docStores.find(s => s.id === selectedCollection.docStoreID)?.collections || []}
 			/>
 		</div>
 	);

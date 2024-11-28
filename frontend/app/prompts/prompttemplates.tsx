@@ -1,17 +1,10 @@
 'use client';
 
+import DeleteConfirmationModal from '@/components/delete_confirmation';
 import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/models/commands';
+import { PromptTemplate } from '@/models/promptmodel';
 import { useEffect, useState } from 'react';
 import { FiCheck, FiEdit, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
-
-interface PromptTemplate {
-	id: string;
-	name: string;
-	command: string;
-	hasTools: boolean;
-	hasDocStore: boolean;
-	tokenCount: number;
-}
 
 const fetchPromptTemplates = async (): Promise<PromptTemplate[]> => {
 	await new Promise(resolve => setTimeout(resolve, 10));
@@ -26,6 +19,8 @@ const fetchPromptTemplates = async (): Promise<PromptTemplate[]> => {
 const PromptTemplates: React.FC = () => {
 	const [templates, setTemplates] = useState<PromptTemplate[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+	const [templateToDelete, setTemplateToDelete] = useState<PromptTemplate | null>(null);
 
 	useEffect(() => {
 		const loadTemplates = async () => {
@@ -41,6 +36,27 @@ const PromptTemplates: React.FC = () => {
 
 		loadTemplates();
 	}, []);
+
+	// Function to open the delete confirmation modal
+	const openDeletePromptTemplateModal = (template: PromptTemplate) => {
+		setTemplateToDelete(template);
+		setIsDeleteModalOpen(true);
+	};
+
+	// Function to close the delete confirmation modal
+	const closeDeletePromptTemplateModal = () => {
+		setIsDeleteModalOpen(false);
+		setTemplateToDelete(null);
+	};
+
+	// Function to handle the template deletion
+	const handleDeleteTemplate = () => {
+		if (templateToDelete) {
+			// Perform the actual deletion here
+			setTemplates(prevTemplates => prevTemplates.filter(template => template.id !== templateToDelete.id));
+		}
+		closeDeletePromptTemplateModal();
+	};
 
 	if (loading) {
 		return (
@@ -99,7 +115,11 @@ const PromptTemplates: React.FC = () => {
 									<button className="btn btn-sm btn-ghost rounded-2xl" aria-label="Edit Template">
 										<FiEdit />
 									</button>
-									<button className="btn btn-sm btn-ghost rounded-2xl" aria-label="Delete Template">
+									<button
+										className="btn btn-sm btn-ghost rounded-2xl"
+										aria-label="Delete Template"
+										onClick={() => openDeletePromptTemplateModal(template)}
+									>
 										<FiTrash2 />
 									</button>
 								</td>
@@ -108,6 +128,16 @@ const PromptTemplates: React.FC = () => {
 					</tbody>
 				</table>
 			</div>
+
+			{/* Delete Confirmation Modal */}
+			<DeleteConfirmationModal
+				isOpen={isDeleteModalOpen}
+				onClose={closeDeletePromptTemplateModal}
+				onConfirm={handleDeleteTemplate}
+				title="Delete Prompt Template"
+				message={`Are you sure you want to delete the prompt template "${templateToDelete?.name}"? This action cannot be undone.`}
+				confirmButtonText="Delete"
+			/>
 		</div>
 	);
 };

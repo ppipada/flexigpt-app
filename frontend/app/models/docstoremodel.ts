@@ -1,4 +1,4 @@
-export interface DocStoreServer {
+export interface DocStore {
 	id: string;
 	name: string;
 	url: string;

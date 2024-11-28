@@ -1,27 +1,17 @@
 'use client';
 
+import DeleteConfirmationModal from '@/components/delete_confirmation';
 import { TOOL_INVOKE_CHAR } from '@/models/commands';
+import { Tool } from '@/models/promptmodel';
 import { useEffect, useState } from 'react';
 import { FiEdit, FiPlus, FiTrash2 } from 'react-icons/fi';
-
-interface Tool {
-	id: string;
-	name: string;
-	command: string;
-	tokenCount: number;
-}
 
 const fetchTools = async (): Promise<Tool[]> => {
 	await new Promise(resolve => setTimeout(resolve, 100));
 
 	return [
 		{ id: '1', name: 'Web Search', command: 'search', tokenCount: 50 },
-		{
-			id: '2',
-			name: 'Calculator',
-			command: 'calc',
-			tokenCount: 30,
-		},
+		{ id: '2', name: 'Calculator', command: 'calc', tokenCount: 30 },
 		{ id: '3', name: 'Weather', command: 'weather', tokenCount: 40 },
 	];
 };
@@ -29,6 +19,8 @@ const fetchTools = async (): Promise<Tool[]> => {
 const Tools: React.FC = () => {
 	const [tools, setTools] = useState<Tool[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+	const [toolToDelete, setToolToDelete] = useState<Tool | null>(null);
 
 	useEffect(() => {
 		const loadTools = async () => {
@@ -44,6 +36,27 @@ const Tools: React.FC = () => {
 
 		loadTools();
 	}, []);
+
+	// Function to open the delete confirmation modal
+	const openDeleteToolModal = (tool: Tool) => {
+		setToolToDelete(tool);
+		setIsDeleteModalOpen(true);
+	};
+
+	// Function to close the delete confirmation modal
+	const closeDeleteToolModal = () => {
+		setIsDeleteModalOpen(false);
+		setToolToDelete(null);
+	};
+
+	// Function to handle the tool deletion
+	const handleDeleteTool = () => {
+		if (toolToDelete) {
+			// Perform the actual deletion here
+			setTools(prevTools => prevTools.filter(tool => tool.id !== toolToDelete.id));
+		}
+		closeDeleteToolModal();
+	};
 
 	if (loading) {
 		return (
@@ -84,7 +97,11 @@ const Tools: React.FC = () => {
 									<button className="btn btn-sm btn-ghost rounded-2xl" aria-label="Edit Tool">
 										<FiEdit />
 									</button>
-									<button className="btn btn-sm btn-ghost rounded-2xl" aria-label="Delete Tool">
+									<button
+										className="btn btn-sm btn-ghost rounded-2xl"
+										aria-label="Delete Tool"
+										onClick={() => openDeleteToolModal(tool)}
+									>
 										<FiTrash2 />
 									</button>
 								</td>
@@ -93,6 +110,16 @@ const Tools: React.FC = () => {
 					</tbody>
 				</table>
 			</div>
+
+			{/* Delete Confirmation Modal */}
+			<DeleteConfirmationModal
+				isOpen={isDeleteModalOpen}
+				onClose={closeDeleteToolModal}
+				onConfirm={handleDeleteTool}
+				title="Delete Tool"
+				message={`Are you sure you want to delete the tool "${toolToDelete?.name}"? This action cannot be undone.`}
+				confirmButtonText="Delete"
+			/>
 		</div>
 	);
 };

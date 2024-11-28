@@ -1,16 +1,16 @@
-import { DocStoreServer } from '@/models/docstoremodel';
+import { DocStore } from '@/models/docstoremodel';
 import React, { useEffect, useState } from 'react';
 
 interface ModifyStoreProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSubmit: (storeData: Partial<DocStoreServer>) => void;
-	initialData?: Partial<DocStoreServer>;
-	existingServers: DocStoreServer[];
+	onSubmit: (storeData: Partial<DocStore>) => void;
+	initialData?: Partial<DocStore>;
+	existingDocStores: DocStore[];
 }
 
-const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit, initialData, existingServers }) => {
-	const [formData, setFormData] = useState<Partial<DocStoreServer>>({
+const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit, initialData, existingDocStores }) => {
+	const [formData, setFormData] = useState<Partial<DocStore>>({
 		name: '',
 		url: '',
 		description: '',
@@ -52,7 +52,7 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 			const otherField = name === 'url' ? 'dbName' : 'url';
 			const otherValue = formData[otherField as keyof typeof formData];
 
-			const isUnique = !existingServers.some(
+			const isUnique = !existingDocStores.some(
 				s =>
 					s.url === (name === 'url' ? value : otherValue) &&
 					s.dbName === (name === 'dbName' ? value : otherValue) &&
