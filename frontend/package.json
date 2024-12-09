@@ -22,8 +22,8 @@
 		"mermaid": "^11.4.0",
 		"next": "14.2.15",
 		"next-themes": "^0.4.3",
-		"react": "^18",
-		"react-dom": "^18",
+		"react": "^19",
+		"react-dom": "^19",
 		"react-icons": "^5.3.0",
 		"react-markdown": "^9.0.1",
 		"react-syntax-highlighter": "^15.6.1",
@@ -45,8 +45,8 @@
 		"@types/ms": "^0.7.34",
 		"@types/node": "^20.17.6",
 		"@types/prop-types": "^15.7.13",
-		"@types/react": "^18.3.12",
-		"@types/react-dom": "^18.3.1",
+		"@types/react": "^19.0.1",
+		"@types/react-dom": "^19.0.1",
 		"@types/react-syntax-highlighter": "^15.5.13",
 		"@types/sprintf-js": "^1.1.4",
 		"@types/unist": "^3.0.3",
@@ -57,14 +57,14 @@
 		"tailwindcss": "^3.4.14"
 	},
 	"optionalDependencies": {
-		"@next/swc-darwin-arm64": "14.2.15",
-		"@next/swc-darwin-x64": "14.2.15",
-		"@next/swc-linux-arm64-gnu": "14.2.15",
-		"@next/swc-linux-arm64-musl": "14.2.15",
-		"@next/swc-linux-x64-gnu": "14.2.15",
-		"@next/swc-linux-x64-musl": "14.2.15",
-		"@next/swc-win32-arm64-msvc": "14.2.15",
-		"@next/swc-win32-ia32-msvc": "14.2.15",
-		"@next/swc-win32-x64-msvc": "14.2.15"
+		"@next/swc-darwin-arm64": "15.0.4",
+		"@next/swc-darwin-x64": "15.0.4",
+		"@next/swc-linux-arm64-gnu": "15.0.4",
+		"@next/swc-linux-arm64-musl": "15.0.4",
+		"@next/swc-linux-x64-gnu": "15.0.4",
+		"@next/swc-linux-x64-musl": "15.0.4",
+		"@next/swc-win32-arm64-msvc": "15.0.4",
+		"@next/swc-win32-ia32-msvc": "14.2.16",
+		"@next/swc-win32-x64-msvc": "15.0.4"
 	}
 }
