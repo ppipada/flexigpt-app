@@ -30,6 +30,7 @@ var AllModelInfo = map[spec.ModelName]spec.ModelInfo{
 	huggingface.DEEPSEEK_CODER_1_3B_INSTRUCT: huggingface.HuggingfaceModels[huggingface.DEEPSEEK_CODER_1_3B_INSTRUCT],
 	llamacpp.LLAMA_3:                         llamacpp.LlamacppModels[llamacpp.LLAMA_3],
 	llamacpp.LLAMA_3_1:                       llamacpp.LlamacppModels[llamacpp.LLAMA_3_1],
+	openai.GPT_O1:                            openai.OpenAIModels[openai.GPT_O1],
 	openai.GPT_O1_PREVIEW:                    openai.OpenAIModels[openai.GPT_O1_PREVIEW],
 	openai.GPT_O1_MINI:                       openai.OpenAIModels[openai.GPT_O1_MINI],
 	openai.GPT_4O:                            openai.OpenAIModels[openai.GPT_4O],

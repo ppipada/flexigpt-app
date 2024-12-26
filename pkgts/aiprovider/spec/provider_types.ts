@@ -20,6 +20,7 @@ export enum ModelName {
 	LLAMA_3 = 'llama3',
 	LLAMA_3_1 = 'llama3.1',
 
+	GPT_O1 = 'o1',
 	GPT_O1_PREVIEW = 'o1-preview',
 	GPT_O1_MINI = 'o1-mini',
 	GPT_4O_MINI = 'gpt-4o-mini',

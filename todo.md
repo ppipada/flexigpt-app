@@ -14,6 +14,7 @@
 - [ ] focus on edit box if someone presses edit. as of now focs is at end of page
 - [ ] Need a stop streaming / cancel button on assistant
 - [ ] In chat the last used model should be stored ideally so that nesxt time you load the chat it loads that model by default
+- [ ] url in output and input should be clickable and copiable
 
 ## Knowledge base
 

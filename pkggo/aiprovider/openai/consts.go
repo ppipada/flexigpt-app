@@ -10,6 +10,7 @@ const (
 )
 
 const (
+	GPT_O1         spec.ModelName = "o1"
 	GPT_O1_PREVIEW spec.ModelName = "o1-preview"
 	GPT_O1_MINI    spec.ModelName = "o1-mini"
 	GPT_4O_MINI    spec.ModelName = "gpt-4o-mini"
@@ -19,6 +20,15 @@ const (
 )
 
 var OpenAIModels = map[spec.ModelName]spec.ModelInfo{
+	GPT_O1: {
+		Name:               GPT_O1,
+		DisplayName:        "OpenAI GPT o1",
+		Provider:           ProviderNameOpenAI,
+		MaxPromptLength:    4096,
+		MaxOutputLength:    4096,
+		DefaultTemperature: baseutils.Float64Ptr(1),
+		StreamingSupport:   baseutils.BoolPtr(false),
+	},
 	GPT_O1_PREVIEW: {
 		Name:               GPT_O1_PREVIEW,
 		DisplayName:        "OpenAI GPT o1 preview",
