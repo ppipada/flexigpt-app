@@ -1,4 +1,4 @@
-package spec
+package consts
 
 const (
 	LATEST_PROTOCOL_VERSION = "2024-11-05"

@@ -1,6 +1,4 @@
-package spec
-
-import "github.com/flexigpt/flexiui/pkggo/mcpsdk/spec/customtype"
+package types
 
 var enumValues_IncludeContext = []string{
 	"allServers",
@@ -10,14 +8,14 @@ var enumValues_IncludeContext = []string{
 
 // IncludeContext
 type IncludeContext struct {
-	*customtype.StringUnion
+	*StringUnion
 }
 
 // NewIncludeContext creates a new IncludeContext with the provided value.
 func NewIncludeContext(
 	value string,
 ) *IncludeContext {
-	stringUnion := customtype.NewStringUnion(enumValues_IncludeContext...)
+	stringUnion := NewStringUnion(enumValues_IncludeContext...)
 	_ = stringUnion.SetValue(value)
 	return &IncludeContext{StringUnion: stringUnion}
 }
@@ -26,7 +24,7 @@ func NewIncludeContext(
 func (r *IncludeContext) UnmarshalJSON(b []byte) error {
 	if r.StringUnion == nil {
 		// Initialize with allowed values if not already initialized
-		r.StringUnion = customtype.NewStringUnion(
+		r.StringUnion = NewStringUnion(
 			enumValues_IncludeContext...)
 	}
 	return r.StringUnion.UnmarshalJSON(b)

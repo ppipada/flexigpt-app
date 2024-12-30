@@ -1,17 +1,15 @@
-package spec
-
-import "github.com/flexigpt/flexiui/pkggo/mcpsdk/spec/customtype"
+package types
 
 var enumValues_Ref = []string{"ref/resource", "ref/prompt"}
 
 // Ref
 type Ref struct {
-	*customtype.StringUnion
+	*StringUnion
 }
 
 // NewRef creates a new Ref with the provided value.
 func NewRef(value string) *Ref {
-	stringUnion := customtype.NewStringUnion(enumValues_Ref...)
+	stringUnion := NewStringUnion(enumValues_Ref...)
 	_ = stringUnion.SetValue(value)
 	return &Ref{StringUnion: stringUnion}
 }
@@ -20,7 +18,7 @@ func NewRef(value string) *Ref {
 func (r *Ref) UnmarshalJSON(b []byte) error {
 	if r.StringUnion == nil {
 		// Initialize with allowed values if not already initialized
-		r.StringUnion = customtype.NewStringUnion(enumValues_Ref...)
+		r.StringUnion = NewStringUnion(enumValues_Ref...)
 	}
 	return r.StringUnion.UnmarshalJSON(b)
 }

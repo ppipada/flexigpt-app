@@ -1,17 +1,15 @@
-package spec
-
-import "github.com/flexigpt/flexiui/pkggo/mcpsdk/spec/customtype"
+package types
 
 var enumValues_Role = []string{"assistant", "user"}
 
 // Role
 type Role struct {
-	*customtype.StringUnion
+	*StringUnion
 }
 
 // NewRole creates a new Role with the provided value.
 func NewRole(value string) *Role {
-	stringUnion := customtype.NewStringUnion(enumValues_Role...)
+	stringUnion := NewStringUnion(enumValues_Role...)
 	_ = stringUnion.SetValue(value)
 	return &Role{StringUnion: stringUnion}
 }
@@ -20,7 +18,7 @@ func NewRole(value string) *Role {
 func (r *Role) UnmarshalJSON(b []byte) error {
 	if r.StringUnion == nil {
 		// Initialize with allowed values if not already initialized
-		r.StringUnion = customtype.NewStringUnion(enumValues_Role...)
+		r.StringUnion = NewStringUnion(enumValues_Role...)
 	}
 	return r.StringUnion.UnmarshalJSON(b)
 }

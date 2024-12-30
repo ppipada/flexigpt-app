@@ -1,6 +1,4 @@
-package spec
-
-import "github.com/flexigpt/flexiui/pkggo/mcpsdk/spec/customtype"
+package types
 
 var enumValues_LoggingLevel = []string{
 	"alert",
@@ -15,12 +13,12 @@ var enumValues_LoggingLevel = []string{
 
 // LoggingLevel
 type LoggingLevel struct {
-	*customtype.StringUnion
+	*StringUnion
 }
 
 // NewLoggingLevel creates a new LoggingLevel with the provided value.
 func NewLoggingLevel(value string) *LoggingLevel {
-	stringUnion := customtype.NewStringUnion(enumValues_LoggingLevel...)
+	stringUnion := NewStringUnion(enumValues_LoggingLevel...)
 	_ = stringUnion.SetValue(value)
 	return &LoggingLevel{StringUnion: stringUnion}
 }
@@ -29,7 +27,7 @@ func NewLoggingLevel(value string) *LoggingLevel {
 func (r *LoggingLevel) UnmarshalJSON(b []byte) error {
 	if r.StringUnion == nil {
 		// Initialize with allowed values if not already initialized
-		r.StringUnion = customtype.NewStringUnion(enumValues_LoggingLevel...)
+		r.StringUnion = NewStringUnion(enumValues_LoggingLevel...)
 	}
 	return r.StringUnion.UnmarshalJSON(b)
 }
