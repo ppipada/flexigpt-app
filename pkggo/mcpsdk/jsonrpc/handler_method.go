@@ -5,10 +5,32 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 )
 
-// Method is a RPC handler method with input type I and output type O.
-// It expects a response to be returned to the client.
+// MethodHandler represents a generic handler with customizable input and output types.
+// It generally expects a response to be returned to the client.
+//
+// Usage Scenarios:
+//
+//  1. Compulsory Parameters:
+//     Use concrete types for both I and O when both input and output are required.
+//
+//  2. Optional Input or Output Parameters:
+//     Use a pointer type for I or O to allow passing nil when no input or output is provided.
+//
+//  3. No Input or Output Parameters:
+//     Use struct{} for I or O when the handler does not require any input or output.
+//
+// Example:
+//
+//	// Handler with no input and output
+//	handler := MethodHandler[struct{}, struct{}]{
+//	    Endpoint: func(ctx context.Context, _ struct{}) (struct{}, error) {
+//	        // Implementation
+//	        return struct{}{}, nil
+//	    },
+//	}
 type MethodHandler[I any, O any] struct {
 	Endpoint func(ctx context.Context, params I) (O, error)
 }
@@ -67,4 +89,11 @@ func (m *MethodHandler[I, O]) Handle(
 		ID:      req.ID,
 		Result:  json.RawMessage(resultData),
 	}, nil
+}
+
+// GetTypes returns the reflect.Type of the input and output types.
+func (m *MethodHandler[I, O]) GetTypes() (reflect.Type, reflect.Type) {
+	iType := reflect.TypeOf((*I)(nil)).Elem()
+	oType := reflect.TypeOf((*O)(nil)).Elem()
+	return iType, oType
 }

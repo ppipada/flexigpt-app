@@ -14,6 +14,12 @@ go run ./httpbackend &
 # Capture the PID of the Go process
 GO_PID=$!
 
+if [ -z "$GO_PID" ] || ! kill -0 $GO_PID 2>/dev/null; then
+    echo "No valid PID found. Exiting without opening the browser."
+    exit 1
+fi
+
+echo "PID: ${GO_PID}"
 # Function to clean up and exit
 cleanup() {
     echo "Cleaning up..."

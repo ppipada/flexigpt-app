@@ -19,6 +19,8 @@
 - [ ] chat load is not happening before a request fire
 - [ ] if the app is on for a long time, looks like the conversation list is removed
 - [ ] there is some jerkiness in chat load for today
+- [ ] Ideally should detect any code or math blocks even in input, annotate them and then display. i.e format a normal text into proper md.
+- [ ] details of request are not visible immediatly
 
 ## Knowledge base
 

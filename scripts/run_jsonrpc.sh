@@ -5,10 +5,18 @@ export SERVICE_PORT=8080
 export SERVICE_DEBUG="true"
 
 # Run the Go application in the background
-go run ./pkggo/mcpsdk/jsonrpc/example &
+# go run ./pkggo/mcpsdk/jsonrpc/example &
+go test -v -tags=integration -run TestRunServer -count=1 ./pkggo/mcpsdk/jsonrpc/ &
 
 # Capture the PID of the Go process
 GO_PID=$!
+
+if [ -z "$GO_PID" ] || ! kill -0 $GO_PID 2>/dev/null; then
+    echo "No valid PID found. Exiting without opening the browser."
+    exit 1
+fi
+
+echo "PID: ${GO_PID}"
 
 # Function to clean up and exit
 cleanup() {
