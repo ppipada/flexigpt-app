@@ -1,12 +1,14 @@
-package reqresp
+package spec
 
-import "github.com/flexigpt/flexiui/pkggo/mcpsdk/spec/types"
+import (
+	"github.com/flexigpt/flexiui/pkggo/mcpsdk/jsonrpc"
+)
 
 // Sent from the client to request a list of tools the server has.
-type ListToolsRequest JSONRPCV2Request[*PaginatedRequestParams]
+type ListToolsRequest jsonrpc.Request[*PaginatedRequestParams]
 
 // The server's response to a tools/list request from the client.
-type ListToolsResponse JSONRPCV2Response[*ListToolsResult]
+type ListToolsResponse jsonrpc.Response[*ListToolsResult]
 type ListToolsResult struct {
 	_ struct{} `json:"-"     additionalProperties:"true"`
 	PaginatedResultParams
@@ -30,7 +32,7 @@ type ToolInputSchema struct {
 }
 
 // Used by the client to invoke a tool provided by the server.
-type CallToolRequest JSONRPCV2Request[CallToolRequestParams]
+type CallToolRequest jsonrpc.Request[CallToolRequestParams]
 type CallToolRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
@@ -50,14 +52,14 @@ type CallToolRequestParams struct {
 // However, any errors in _finding_ the tool, an error indicating that the
 // server does not support tool calls, or any other exceptional conditions,
 // should be reported as an MCP error response.
-type CallToolResponse JSONRPCV2Response[*CallToolResult]
+type CallToolResponse jsonrpc.Response[*CallToolResult]
 type CallToolResult struct {
 	// This result property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their responses.
 	Meta map[string]interface{} `json:"_meta,omitempty"`
 
 	// Content corresponds to the JSON schema field "content".
-	Content []types.Content `json:"content"`
+	Content []Content `json:"content"`
 
 	// Whether the tool call ended in an error.
 	//
@@ -68,4 +70,4 @@ type CallToolResult struct {
 // An optional notification from the server to the client, informing it that the
 // list of tools it offers has changed. This may be issued by servers without any
 // previous subscription from the client.
-type ToolListChangedNotification JSONRPCV2Notification[*types.AdditionalParams]
+type ToolListChangedNotification jsonrpc.Notification[*AdditionalParams]

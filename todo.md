@@ -16,6 +16,9 @@
 - [ ] In chat the last used model should be stored ideally so that nesxt time you load the chat it loads that model by default
 - [ ] url in output and input should be clickable and copiable
 - [ ] word wrap for single word if it is too long. ojas expt
+- [ ] chat load is not happening before a request fire
+- [ ] if the app is on for a long time, looks like the conversation list is removed
+- [ ] there is some jerkiness in chat load for today
 
 ## Knowledge base
 

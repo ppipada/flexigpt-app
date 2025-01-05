@@ -1,13 +1,15 @@
-package reqresp
+package spec
 
-import "github.com/flexigpt/flexiui/pkggo/mcpsdk/spec/types"
+import (
+	"github.com/flexigpt/flexiui/pkggo/mcpsdk/jsonrpc"
+)
 
 // Sent from the client to request a list of prompts and prompt templates the
 // server has.
-type ListPromptsRequest JSONRPCV2Request[*PaginatedRequestParams]
+type ListPromptsRequest jsonrpc.Request[*PaginatedRequestParams]
 
 // The server's response to a prompts/list request from the client.
-type ListPromptsResponse JSONRPCV2Response[*ListPromptsResult]
+type ListPromptsResponse jsonrpc.Response[*ListPromptsResult]
 
 type ListPromptsResult struct {
 	_ struct{} `json:"-"       additionalProperties:"true"`
@@ -40,7 +42,7 @@ type PromptArgument struct {
 }
 
 // Used by the client to get a prompt provided by the server.
-type GetPromptRequest JSONRPCV2Request[GetPromptRequestParams]
+type GetPromptRequest jsonrpc.Request[GetPromptRequestParams]
 
 type GetPromptRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
@@ -55,7 +57,7 @@ type GetPromptRequestParams struct {
 }
 
 // The server's response to a prompts/get request from the client.
-type GetPromptResponse JSONRPCV2Response[*GetPromptResult]
+type GetPromptResponse jsonrpc.Response[*GetPromptResult]
 type GetPromptResult struct {
 	// This result property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their responses.
@@ -69,11 +71,11 @@ type GetPromptResult struct {
 // This is similar to `SamplingMessage`, but also supports the embedding of
 // resources from the MCP server.
 type PromptMessage struct {
-	Role    types.Role    `json:"role"`
-	Content types.Content `json:"content"`
+	Role    Role    `json:"role"`
+	Content Content `json:"content"`
 }
 
 // An optional notification from the server to the client, informing it that the
 // list of prompts it offers has changed. This may be issued by servers without any
 // previous subscription from the client.
-type PromptListChangedNotification JSONRPCV2Notification[*types.AdditionalParams]
+type PromptListChangedNotification jsonrpc.Notification[*AdditionalParams]

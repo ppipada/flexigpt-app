@@ -1,4 +1,4 @@
-package types
+package spec
 
 var enumValues_ContentType = []string{"text", "image", "resource"}
 
@@ -44,7 +44,7 @@ type Content struct {
 	// ImageContent only: The base64-encoded image data.
 	Data *string `json:"data" yaml:"data" mapstructure:"data"`
 
-	// ImageContent only: The MIME type of the image. Different providers may support different image types.
+	// ImageContent only: The MIME type of the image. Different providers may support different image types
 	MimeType *string `json:"mimeType" yaml:"mimeType" mapstructure:"mimeType"`
 
 	// EmbeddedResourceContent only: Resource corresponds to the JSON schema field "resource".

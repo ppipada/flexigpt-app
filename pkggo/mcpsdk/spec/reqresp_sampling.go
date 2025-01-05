@@ -1,18 +1,20 @@
-package reqresp
+package spec
 
-import "github.com/flexigpt/flexiui/pkggo/mcpsdk/spec/types"
+import (
+	"github.com/flexigpt/flexiui/pkggo/mcpsdk/jsonrpc"
+)
 
 // Describes a message issued to or received from an LLM API.
 type SamplingMessage struct {
-	Content types.Content `json:"content"`
-	Role    types.Role    `json:"role"`
+	Content Content `json:"content"`
+	Role    Role    `json:"role"`
 }
 
 // A request from the server to sample an LLM via the client. The client has full
 // discretion over which model to select. The client should also inform the user
 // before beginning sampling, to allow them to inspect the request (human in the
 // loop) and decide whether to approve it.
-type CreateMessageRequest JSONRPCV2Request[CreateMessageRequestParams]
+type CreateMessageRequest jsonrpc.Request[CreateMessageRequestParams]
 
 type CreateMessageRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
@@ -32,7 +34,7 @@ type CreateMessageRequestParams struct {
 
 	// A request to include context from one or more MCP servers (including the
 	// caller), to be attached to the prompt. The client MAY ignore this request.
-	IncludeContext *types.IncludeContext `json:"includeContext,omitempty"`
+	IncludeContext *IncludeContext `json:"includeContext,omitempty"`
 
 	// Temperature corresponds to the JSON schema field "temperature".
 	Temperature *float64 `json:"temperature,omitempty"`
@@ -52,15 +54,15 @@ type CreateMessageRequestParams struct {
 // client should inform the user before returning the sampled message, to allow
 // them to inspect the response (human in the loop) and decide whether to allow the
 // server to see it.
-type CreateMessageResponse JSONRPCV2Response[*CreateMessageResult]
+type CreateMessageResponse jsonrpc.Response[*CreateMessageResult]
 type CreateMessageResult struct {
 	// This result property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their responses.
 	Meta map[string]interface{} `json:"_meta,omitempty"`
 	_    struct{}               `json:"-"               additionalProperties:"true"`
 
-	Content types.Content `json:"content"`
-	Role    types.Role    `json:"role"`
+	Content Content `json:"content"`
+	Role    Role    `json:"role"`
 
 	// The name of the model that generated the message.
 	Model string `json:"model"`

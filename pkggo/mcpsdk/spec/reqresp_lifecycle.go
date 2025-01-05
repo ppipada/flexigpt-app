@@ -1,13 +1,15 @@
-package reqresp
+package spec
 
-import "github.com/flexigpt/flexiui/pkggo/mcpsdk/spec/types"
+import (
+	"github.com/flexigpt/flexiui/pkggo/mcpsdk/jsonrpc"
+)
 
 // A ping, issued by either the server or the client, to check that the other party
 // is still alive. The receiver must promptly respond, or else may be disconnected.
-type PingRequest JSONRPCV2Request[*types.AdditionalParams]
+type PingRequest jsonrpc.Request[*AdditionalParams]
 
 // A ping response should send out a empty result
-type PingResponse JSONRPCV2Response[types.AdditionalParams]
+type PingResponse jsonrpc.Response[AdditionalParams]
 
 // This notification can be sent by either side to indicate that it is cancelling a
 // previously-issued request.
@@ -20,7 +22,7 @@ type PingResponse JSONRPCV2Response[types.AdditionalParams]
 // processing SHOULD cease.
 //
 // A client MUST NOT attempt to cancel its `initialize` request.
-type CancelledNotification JSONRPCV2Notification[CancelledNotificationParams]
+type CancelledNotification jsonrpc.Notification[CancelledNotificationParams]
 
 type CancelledNotificationParams struct {
 	// This property is reserved by the protocol to allow clients and servers
@@ -32,7 +34,7 @@ type CancelledNotificationParams struct {
 	//
 	// This MUST correspond to the ID of a request previously issued in the same
 	// direction.
-	RequestId RequestId `json:"requestId"`
+	RequestID jsonrpc.RequestID `json:"requestId"`
 
 	// An optional string describing the reason for the cancellation. This MAY be
 	// logged or presented to the user.
@@ -41,7 +43,7 @@ type CancelledNotificationParams struct {
 
 // An out-of-band notification used to inform the receiver of a progress update for
 // a long-running request.
-type ProgressNotification JSONRPCV2Notification[ProgressNotificationParams]
+type ProgressNotification jsonrpc.Notification[ProgressNotificationParams]
 
 type ProgressNotificationParams struct {
 	// This property is reserved by the protocol to allow clients and servers
@@ -62,11 +64,11 @@ type ProgressNotificationParams struct {
 }
 
 // This notification is sent from the client to the server after initialization has finished.
-type InitializedNotification JSONRPCV2Notification[*types.AdditionalParams]
+type InitializedNotification jsonrpc.Notification[*AdditionalParams]
 
 // This request is sent from the client to the server when it first connects,
 // asking it to begin initialization.
-type InitializeRequest JSONRPCV2Request[InitializeRequestParams]
+type InitializeRequest jsonrpc.Request[InitializeRequestParams]
 
 type InitializeRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
@@ -111,7 +113,7 @@ type ClientCapabilitiesSampling map[string]interface{}
 
 // After receiving an initialize request from the client, the server sends this response.
 
-type InitializeResponse JSONRPCV2Response[*InitializeResult]
+type InitializeResponse jsonrpc.Response[*InitializeResult]
 
 type InitializeResult struct {
 	// This result property is reserved by the protocol to allow clients and servers

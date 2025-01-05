@@ -1,4 +1,4 @@
-package types
+package spec
 
 type Annotations struct {
 	// Describes who the intended customer of this object or data is.

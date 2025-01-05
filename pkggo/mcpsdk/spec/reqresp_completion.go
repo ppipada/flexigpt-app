@@ -1,9 +1,11 @@
-package reqresp
+package spec
 
-import "github.com/flexigpt/flexiui/pkggo/mcpsdk/spec/types"
+import (
+	"github.com/flexigpt/flexiui/pkggo/mcpsdk/jsonrpc"
+)
 
 // A request from the client to the server, to ask for completion options.
-type CompleteRequest JSONRPCV2Request[CompleteRequestParams]
+type CompleteRequest jsonrpc.Request[CompleteRequestParams]
 
 type CompleteRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
@@ -24,13 +26,13 @@ type CompleteRequestParamsArgument struct {
 
 // Identifies a completion.
 type CompletionReference struct {
-	Type types.Ref `json:"type"`
-	Name *string   `json:"name"` // This should be present for prompt
-	Uri  *string   `json:"uri"`  // This should be present for resource
+	Type Ref     `json:"type"`
+	Name *string `json:"name"` // This should be present for prompt
+	Uri  *string `json:"uri"`  // This should be present for resource
 }
 
 // The server's response to a completion/complete request
-type CompleteResponse JSONRPCV2Response[*CompleteResult]
+type CompleteResponse jsonrpc.Response[*CompleteResult]
 type CompleteResult struct {
 	// This result property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their responses.

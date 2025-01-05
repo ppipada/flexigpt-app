@@ -1,8 +1,10 @@
-package types
+package jsonrpc
 
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/danielgtaylor/huma/v2"
 )
 
 type IntString struct {
@@ -11,6 +13,12 @@ type IntString struct {
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
 func (is *IntString) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		// If the input is "null", return an error for non-pointer types
+		// (UnmarshalJSON is called only for non-pointer types in this case)
+		return fmt.Errorf("IntString cannot be null")
+	}
+
 	// Try to unmarshal data into an int
 	var intValue int
 	if err := json.Unmarshal(data, &intValue); err == nil {
@@ -41,6 +49,15 @@ func (is IntString) MarshalJSON() ([]byte, error) {
 	}
 }
 
+func (is IntString) Schema(r huma.Registry) *huma.Schema {
+	return &huma.Schema{
+		OneOf: []*huma.Schema{
+			{Type: huma.TypeInteger},
+			{Type: huma.TypeString},
+		},
+	}
+}
+
 // Helper methods
 func (is IntString) IsInt() bool {
 	_, ok := is.Value.(int)
@@ -60,4 +77,25 @@ func (is IntString) IntValue() (int, bool) {
 func (is IntString) StringValue() (string, bool) {
 	v, ok := is.Value.(string)
 	return v, ok
+}
+
+func (is *IntString) Equal(other *IntString) bool {
+	// Handle nil cases
+	if is == nil && other == nil {
+		return true
+	}
+	if is == nil || other == nil {
+		return false
+	}
+	// Compare the underlying values based on their types
+	switch v := is.Value.(type) {
+	case int:
+		ov, ok := other.Value.(int)
+		return ok && v == ov
+	case string:
+		ov, ok := other.Value.(string)
+		return ok && v == ov
+	default:
+		return false
+	}
 }

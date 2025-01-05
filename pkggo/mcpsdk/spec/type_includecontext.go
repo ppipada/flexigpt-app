@@ -1,4 +1,4 @@
-package types
+package spec
 
 var enumValues_IncludeContext = []string{
 	"allServers",

@@ -1,4 +1,4 @@
-package types
+package spec
 
 var enumValues_Ref = []string{"ref/resource", "ref/prompt"}
 

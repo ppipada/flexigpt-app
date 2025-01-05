@@ -1,12 +1,14 @@
-package reqresp
+package spec
 
-import "github.com/flexigpt/flexiui/pkggo/mcpsdk/spec/types"
+import (
+	"github.com/flexigpt/flexiui/pkggo/mcpsdk/jsonrpc"
+)
 
 // Sent from the client to request a list of resources the server has.
-type ListResourcesRequest JSONRPCV2Request[*PaginatedRequestParams]
+type ListResourcesRequest jsonrpc.Request[*PaginatedRequestParams]
 
 // The server's response to a resources/list request from the client.
-type ListResourcesResponse JSONRPCV2Response[*ListPromptsResult]
+type ListResourcesResponse jsonrpc.Response[*ListPromptsResult]
 
 type ListResourcesResult struct {
 	_ struct{} `json:"-"         additionalProperties:"true"`
@@ -16,7 +18,7 @@ type ListResourcesResult struct {
 
 // A known resource that the server is capable of reading.
 type Resource struct {
-	Annotations *types.Annotations `json:"annotations,omitempty"`
+	Annotations *Annotations `json:"annotations,omitempty"`
 
 	// The URI of this resource.
 	Uri string `json:"uri"`
@@ -37,7 +39,7 @@ type Resource struct {
 }
 
 // Sent from the client to the server, to read a specific resource URI.
-type ReadResourceRequest JSONRPCV2Request[ReadResourceRequestParams]
+type ReadResourceRequest jsonrpc.Request[ReadResourceRequestParams]
 
 type ReadResourceRequestParams struct {
 	_    struct{}               `json:"-"               additionalProperties:"true"`
@@ -48,30 +50,30 @@ type ReadResourceRequestParams struct {
 }
 
 // The server's response to a resources/read request from the client.
-type ReadResourceResponse JSONRPCV2Response[*ReadResourceResult]
+type ReadResourceResponse jsonrpc.Response[*ReadResourceResult]
 type ReadResourceResult struct {
 	// This result property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their responses.
 	Meta     map[string]interface{}  `json:"_meta,omitempty"`
-	Contents []types.ResourceContent `json:"contents"`
+	Contents []ResourceContent `json:"contents"`
 }
 
 // Sent from the client to request a list of resource templates the server has.
-type ListResourceTemplatesRequest JSONRPCV2Request[*PaginatedRequestParams]
+type ListResourceTemplatesRequest jsonrpc.Request[*PaginatedRequestParams]
 
 // The server's response to a resources/templates/list request from the client.
-type ListResourceTemplatesResponse JSONRPCV2Response[*ListResourceTemplatesResult]
+type ListResourceTemplatesResponse jsonrpc.Response[*ListResourceTemplatesResult]
 type ListResourceTemplatesResult struct {
 	// This result property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their responses.
 	Meta map[string]interface{} `json:"_meta,omitempty"`
 	// ResourceTemplates corresponds to the JSON schema field "resourceTemplates".
-	ResourceTemplates []types.ResourceTemplate `json:"resourceTemplates"`
+	ResourceTemplates []ResourceTemplate `json:"resourceTemplates"`
 }
 
 // Sent from the client to request resources/updated notifications from the server
 // whenever a particular resource changes.
-type SubscribeRequest JSONRPCV2Request[SubscribeRequestParams]
+type SubscribeRequest jsonrpc.Request[SubscribeRequestParams]
 
 type SubscribeRequestParams struct {
 	// This result property is reserved by the protocol to allow clients and servers
@@ -84,7 +86,7 @@ type SubscribeRequestParams struct {
 
 // Sent from the client to request cancellation of resources/updated notifications
 // from the server. This should follow a previous resources/subscribe request.
-type UnsubscribeRequest JSONRPCV2Request[UnsubscribeRequestParams]
+type UnsubscribeRequest jsonrpc.Request[UnsubscribeRequestParams]
 
 type UnsubscribeRequestParams struct {
 	// This result property is reserved by the protocol to allow clients and servers
@@ -97,12 +99,12 @@ type UnsubscribeRequestParams struct {
 // An optional notification from the server to the client, informing it that the
 // list of resources it can read from has changed. This may be issued by servers
 // without any previous subscription from the client.
-type ResourceListChangedNotification JSONRPCV2Notification[*types.AdditionalParams]
+type ResourceListChangedNotification jsonrpc.Notification[*AdditionalParams]
 
 // A notification from the server to the client, informing it that a resource has
 // changed and may need to be read again. This should only be sent if the client
 // previously sent a resources/subscribe request.
-type ResourceUpdatedNotification JSONRPCV2Notification[ResourceUpdatedNotificationParams]
+type ResourceUpdatedNotification jsonrpc.Notification[ResourceUpdatedNotificationParams]
 
 type ResourceUpdatedNotificationParams struct {
 	// This result property is reserved by the protocol to allow clients and servers

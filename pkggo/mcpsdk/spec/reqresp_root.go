@@ -1,6 +1,8 @@
-package reqresp
+package spec
 
-import "github.com/flexigpt/flexiui/pkggo/mcpsdk/spec/types"
+import (
+	"github.com/flexigpt/flexiui/pkggo/mcpsdk/jsonrpc"
+)
 
 // Sent from the server to request a list of root URIs from the client. Roots allow
 // servers to ask for specific directories or files to operate on. A common example
@@ -12,13 +14,13 @@ import "github.com/flexigpt/flexiui/pkggo/mcpsdk/spec/types"
 // system
 // structure or access specific locations that the client has permission to read
 // from.
-type ListRootsRequest JSONRPCV2Request[*PaginatedRequestParams]
+type ListRootsRequest jsonrpc.Request[*PaginatedRequestParams]
 
 // The client's response to a roots/list request from the server.
 // This result contains an array of Root objects, each representing a root
 // directory
 // or file that the server can operate on.
-type ListRootsResponse JSONRPCV2Response[*ListPromptsResult]
+type ListRootsResponse jsonrpc.Response[*ListPromptsResult]
 type ListRootsResult struct {
 	// Even though this is a listing, spec doesnt specify pagination for it.
 
@@ -49,4 +51,4 @@ type Root struct {
 // any root.
 // The server should then request an updated list of roots using the
 // ListRootsRequest.
-type RootsListChangedNotification JSONRPCV2Notification[*types.AdditionalParams]
+type RootsListChangedNotification jsonrpc.Notification[*AdditionalParams]

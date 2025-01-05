@@ -1,0 +1,32 @@
+#!/bin/sh
+
+export SERVICE_HOST="localhost"
+export SERVICE_PORT=8080
+export SERVICE_DEBUG="true"
+
+# Run the Go application in the background
+go run ./pkggo/mcpsdk/jsonrpc/example &
+
+# Capture the PID of the Go process
+GO_PID=$!
+
+# Function to clean up and exit
+cleanup() {
+    echo "Cleaning up..."
+    kill $GO_PID 2>/dev/null
+    exit
+}
+
+# Trap Ctrl+C (SIGINT) and call cleanup
+trap cleanup INT
+
+sleep 2
+
+# Open the default web browser
+xdg-open "http://$SERVICE_HOST:$SERVICE_PORT/docs"
+
+# Wait for the Go process to finish
+wait $GO_PID
+
+# Call cleanup when the Go process exits
+cleanup
