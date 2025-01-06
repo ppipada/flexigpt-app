@@ -28,6 +28,23 @@ func InitJSONRPChandlers(api huma.API) {
 			},
 		},
 		"concat": &MethodHandler[ConcatParams, string]{Endpoint: ConcatEndpoint},
+		"concatOptionalIn": &MethodHandler[*ConcatParams, string]{
+			Endpoint: func(ctx context.Context, params *ConcatParams) (string, error) {
+				if params != nil {
+					return params.S1 + params.S2, nil
+				}
+				return "", nil
+			},
+		},
+		"concatOptionalInOut": &MethodHandler[*ConcatParams, *string]{
+			Endpoint: func(ctx context.Context, params *ConcatParams) (*string, error) {
+				if params != nil {
+					r := params.S1 + params.S2
+					return &r, nil
+				}
+				return nil, nil
+			},
+		},
 		"echo": &MethodHandler[struct{}, *struct{}]{
 			Endpoint: func(ctx context.Context, _ struct{}) (*struct{}, error) {
 				return nil, nil

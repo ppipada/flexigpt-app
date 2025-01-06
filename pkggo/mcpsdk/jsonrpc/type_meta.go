@@ -79,6 +79,10 @@ func marshalMeta[T any](isBatch bool, items []T) ([]byte, error) {
 	return nil, &JSONRPCError{Code: ParseError, Message: "Received empty input"}
 }
 
+func intPtr(i int) *int {
+	return &i
+}
+
 // Meta is a generic struct to handle both MetaRequest and MetaResponse
 type Meta[T any] struct {
 	IsBatch bool `json:"-"`

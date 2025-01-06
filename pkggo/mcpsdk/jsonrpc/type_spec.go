@@ -1,11 +1,5 @@
 package jsonrpc
 
-import (
-	"reflect"
-
-	"github.com/danielgtaylor/huma/v2"
-)
-
 // http://www.jsonrpc.org/specification
 const JSONRPC_VERSION = "2.0"
 
@@ -28,49 +22,49 @@ type Response[T any] struct {
 	Error   *JSONRPCError `json:"error,omitempty"`
 }
 
-func (rs Response[T]) Schema(r huma.Registry) *huma.Schema {
+// func (rs Response[T]) Schema(r huma.Registry) *huma.Schema {
 
-	errorObjectSchema := r.Schema(reflect.TypeOf(rs.Error), true, "")
+// 	errorObjectSchema := r.Schema(reflect.TypeOf(rs.Error), true, "")
 
-	responseObjectSchema := &huma.Schema{
-		Type:     huma.TypeObject,
-		Required: []string{"jsonrpc"},
-		Properties: map[string]*huma.Schema{
-			"jsonrpc": {
-				Type:        huma.TypeString,
-				Enum:        []any{"2.0"},
-				Description: "JSON-RPC version, must be '2.0'",
-			},
-			"id": {
-				Description: "Request identifier. Compulsory for method responses. This MUST be null to the client in case of parse errors etc.",
-				OneOf: []*huma.Schema{
-					{Type: huma.TypeInteger},
-					{Type: huma.TypeString},
-				},
-			},
-			// "result": {},
-			// "error":  errorObjectSchema,
-		},
-		OneOf: []*huma.Schema{
-			{
-				Required: []string{"result"},
-				Properties: map[string]*huma.Schema{
-					"result": {
-						Description: "Result of the method call",
-					},
-				},
-			},
-			{
-				Required: []string{"error"},
-				Properties: map[string]*huma.Schema{
-					"error": errorObjectSchema,
-				},
-			},
-		},
-	}
+// 	responseObjectSchema := &huma.Schema{
+// 		Type:     huma.TypeObject,
+// 		Required: []string{"jsonrpc"},
+// 		Properties: map[string]*huma.Schema{
+// 			"jsonrpc": {
+// 				Type:        huma.TypeString,
+// 				Enum:        []any{"2.0"},
+// 				Description: "JSON-RPC version, must be '2.0'",
+// 			},
+// 			"id": {
+// 				Description: "Request identifier. Compulsory for method responses. This MUST be null to the client in case of parse errors etc.",
+// 				OneOf: []*huma.Schema{
+// 					{Type: huma.TypeInteger},
+// 					{Type: huma.TypeString},
+// 				},
+// 			},
+// 			// "result": {},
+// 			// "error":  errorObjectSchema,
+// 		},
+// 		OneOf: []*huma.Schema{
+// 			{
+// 				Required: []string{"result"},
+// 				Properties: map[string]*huma.Schema{
+// 					"result": {
+// 						Description: "Result of the method call",
+// 					},
+// 				},
+// 			},
+// 			{
+// 				Required: []string{"error"},
+// 				Properties: map[string]*huma.Schema{
+// 					"error": errorObjectSchema,
+// 				},
+// 			},
+// 		},
+// 	}
 
-	return responseObjectSchema
-}
+// 	return responseObjectSchema
+// }
 
 // A notification which does not expect a response.
 type Notification[T any] struct {

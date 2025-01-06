@@ -98,11 +98,7 @@ func Register(
 	methodMap map[string]IMethodHandler,
 	notificationMap map[string]INotificationHandler,
 ) {
-
+	AddSchemasToAPI(api, methodMap, notificationMap)
 	reqHandler := GetMetaRequestHandler(methodMap, notificationMap)
 	huma.Register(api, op, reqHandler)
-}
-
-func intPtr(i int) *int {
-	return &i
 }
