@@ -56,20 +56,29 @@ func getRequestType(iType reflect.Type) reflect.Type {
 		// If the field is 'Params', replace its type with iType
 		if field.Name == "Params" {
 			field.Type = iType
+			jsonTag := field.Tag.Get("json")
+
 			// If iType is pointer type, add omitempty to json tag
 			if iType.Kind() == reflect.Ptr {
-				tag := field.Tag.Get("json")
-				if !strings.Contains(tag, "omitempty") {
-					tag += ",omitempty"
+				if !strings.Contains(jsonTag, "omitempty") {
+					jsonTag += ",omitempty"
 				}
-				field.Tag = reflect.StructTag(fmt.Sprintf(`json:"%s"`, tag))
+				// Update the field's tag with the modified JSON and required tags
+				field.Tag = reflect.StructTag(
+					fmt.Sprintf(`json:"%s"`, jsonTag),
+				)
+			} else {
+				// If iType is not a pointer, add required:true to required tag
+				// Update the field's tag with the modified JSON and required tags
+				field.Tag = reflect.StructTag(
+					fmt.Sprintf(`json:"%s" required:"true"`, jsonTag),
+				)
 			}
 		}
 
 		// Add the field to the fields slice
 		fields[i] = field
 	}
-
 	// Create a new struct type with the updated fields
 	reqType := reflect.StructOf(fields)
 	return reqType
@@ -93,12 +102,10 @@ func getRequestSchema(
 			Type: "string",
 			Enum: []interface{}{methodName},
 		}
-		reqSubSchema.Required = []string{
-			"jsonrpc",
-			"method",
-		}
 		if idPresent {
 			reqSubSchema.Required = append(reqSubSchema.Required, "id")
+		} else {
+			delete(reqSubSchema.Properties, "id")
 		}
 	}
 	return reqSchema
@@ -154,11 +161,12 @@ func getSuccessResponseType(resultType reflect.Type) reflect.Type {
 	var resultField reflect.StructField
 	resultField.Name = "Result"
 	resultField.Type = resultType
-	resultField.Tag = `json:"result"`
 
 	if resultType.Kind() == reflect.Ptr {
 		// If resultType is a pointer, add omitempty to json tag
 		resultField.Tag = reflect.StructTag(`json:"result,omitempty"`)
+	} else {
+		resultField.Tag = reflect.StructTag(`json:"result" required:"true"`)
 	}
 
 	fields = append(fields, resultField)

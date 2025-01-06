@@ -9,14 +9,14 @@ type RequestID = IntString
 
 type Request[T any] struct {
 	// Support JSON RPC v2.
-	JSONRPC string     `json:"jsonrpc"          enum:"2.0" doc:"JSON-RPC version, must be '2.0'"`
+	JSONRPC string     `json:"jsonrpc"          enum:"2.0" doc:"JSON-RPC version, must be '2.0'"                                     required:"true"`
 	ID      *RequestID `json:"id,omitempty"                doc:"RequestID is int or string for methods and absent for notifications"`
-	Method  string     `json:"method"                      doc:"Method to invoke"`
+	Method  string     `json:"method"                      doc:"Method to invoke"                                                    required:"true"`
 	Params  T          `json:"params,omitempty"            doc:"Method parameters"`
 }
 
 type Response[T any] struct {
-	JSONRPC string        `json:"jsonrpc"`
+	JSONRPC string        `json:"jsonrpc"          required:"true"`
 	ID      *RequestID    `json:"id,omitempty"`
 	Result  T             `json:"result,omitempty"`
 	Error   *JSONRPCError `json:"error,omitempty"`
