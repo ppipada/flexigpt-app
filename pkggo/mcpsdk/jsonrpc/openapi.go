@@ -2,6 +2,7 @@ package jsonrpc
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -55,6 +56,14 @@ func getRequestType(iType reflect.Type) reflect.Type {
 		// If the field is 'Params', replace its type with iType
 		if field.Name == "Params" {
 			field.Type = iType
+			// If iType is pointer type, add omitempty to json tag
+			if iType.Kind() == reflect.Ptr {
+				tag := field.Tag.Get("json")
+				if !strings.Contains(tag, "omitempty") {
+					tag += ",omitempty"
+				}
+				field.Tag = reflect.StructTag(fmt.Sprintf(`json:"%s"`, tag))
+			}
 		}
 
 		// Add the field to the fields slice
@@ -141,12 +150,19 @@ func getSuccessResponseType(resultType reflect.Type) reflect.Type {
 			Type: reflect.TypeOf((*IntString)(nil)).Elem(),
 			Tag:  `json:"id"`,
 		},
-		{
-			Name: "Result",
-			Type: resultType,
-			Tag:  `json:"result"`,
-		},
 	}
+	var resultField reflect.StructField
+	resultField.Name = "Result"
+	resultField.Type = resultType
+	resultField.Tag = `json:"result"`
+
+	if resultType.Kind() == reflect.Ptr {
+		// If resultType is a pointer, add omitempty to json tag
+		resultField.Tag = reflect.StructTag(`json:"result,omitempty"`)
+	}
+
+	fields = append(fields, resultField)
+
 	return reflect.StructOf(fields)
 }
 
