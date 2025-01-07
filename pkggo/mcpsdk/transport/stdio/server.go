@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -329,66 +330,95 @@ func (s *Server) Serve(l net.Listener) error {
 	}
 	defer conn.Close()
 
-	reader := bufio.NewReader(conn)
+	lines := make(chan []byte)
+	errCh := make(chan error, 1)
+
+	// Start a goroutine to read from conn and send lines over the channel
+	go func() {
+		reader := bufio.NewReader(conn)
+		for {
+			// Read until a newline
+			line, err := reader.ReadBytes('\n')
+			if err != nil {
+				if err != io.EOF {
+					// Send error to errCh if it's not EOF
+					errCh <- err
+				}
+				// Close the lines channel to signal EOF or error
+				close(lines)
+				return
+			}
+
+			// Send the line to the lines channel
+			lines <- line
+		}
+	}()
+
 	for {
 		select {
 		case <-s.done:
+			// Shutdown signal received
 			return nil
-		default:
-		}
-
-		// Read until a newline
-		line, err := reader.ReadBytes('\n')
-		if err != nil {
-			if err == io.EOF {
-				break // Connection closed
-			}
+		case err := <-errCh:
+			// An error occurred while reading
 			return err
-		}
-
-		// Ignore empty messages (consecutive newlines)
-		if len(bytes.TrimSpace(line)) == 0 {
-			continue
-		}
-
-		// Make a copy of the message to avoid data races
-		msg := make([]byte, len(line))
-		copy(msg, line)
-
-		// Create a ResponseWriter for this handler
-		w := &ResponseWriter{
-			conn:    conn,
-			writeMu: &s.writeMu,
-		}
-
-		// Create Request with the message as the body
-		req, err := http.NewRequest(
-			s.requestParams.Method,
-			s.requestParams.URL,
-			bytes.NewReader(msg),
-		)
-		if err != nil {
-			return err
-		}
-
-		// Copy default headers
-		for k, v := range s.requestParams.Header {
-			for _, vv := range v {
-				req.Header.Add(k, vv)
+		case line, ok := <-lines:
+			if !ok {
+				// Lines channel closed, EOF reached
+				return nil
 			}
+
+			// Process the line
+			if len(bytes.TrimSpace(line)) == 0 {
+				// Ignore empty messages (consecutive newlines)
+				continue
+			}
+
+			s.processLine(conn, line)
 		}
+	}
+}
 
-		// Set RemoteAddr
-		req.RemoteAddr = conn.RemoteAddr().String()
+// processLine processes a single line read from the input
+func (s *Server) processLine(conn net.Conn, line []byte) {
+	// Make a copy of the message to avoid data races
+	msg := make([]byte, len(line))
+	copy(msg, line)
 
-		s.wg.Add(1)
-		go func() {
-			defer s.wg.Done()
-			s.Handler.ServeHTTP(w, req)
-		}()
+	// Create a ResponseWriter for this handler
+	w := &ResponseWriter{
+		conn:    conn,
+		writeMu: &s.writeMu,
 	}
 
-	return nil
+	// Create Request with the message as the body
+	req, err := http.NewRequest(
+		s.requestParams.Method,
+		s.requestParams.URL,
+		bytes.NewReader(msg),
+	)
+	if err != nil {
+		// Log the error and return
+		fmt.Fprintf(os.Stderr, "Error creating request: %v\n", err)
+		return
+	}
+
+	// Copy default headers
+	for k, v := range s.requestParams.Header {
+		for _, vv := range v {
+			req.Header.Add(k, vv)
+		}
+	}
+
+	// Set RemoteAddr
+	req.RemoteAddr = conn.RemoteAddr().String()
+
+	// Handle the request in a new goroutine
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		s.Handler.ServeHTTP(w, req)
+	}()
 }
 
 // Shutdown gracefully shuts down the server without interrupting active handlers

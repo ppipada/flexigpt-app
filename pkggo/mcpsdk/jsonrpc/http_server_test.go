@@ -23,7 +23,7 @@ type Options struct {
 func StartHTTPServer() {
 
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {
-		fmt.Printf("Options are %+v\n", opts)
+		log.Printf("Options are %+v\n", opts)
 		router := getRouter()
 		server := http.Server{
 			Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),

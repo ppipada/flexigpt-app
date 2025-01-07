@@ -57,7 +57,7 @@ func GetRouter() (*http.ServeMux, huma.API) {
 func GetHTTPServerCLI() humacli.CLI {
 
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {
-		fmt.Printf("Options are %+v\n", opts)
+		log.Printf("Options are %+v\n", opts)
 		router, api := GetRouter()
 		InitJSONRPChandlers(api)
 		server := http.Server{

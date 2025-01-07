@@ -66,7 +66,7 @@ func initSlog(logsDirPath string, debug bool) *logrotate.Writer {
 func main() {
 
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {
-		fmt.Printf("Options are %+v\n", opts)
+		log.Printf("Options are %+v\n", opts)
 		writer := initSlog(opts.LogsDirPath, opts.Debug)
 		router := http.NewServeMux()
 		api := humago.New(router, huma.DefaultConfig("FlexiGPTServer API", "1.0.0"))
