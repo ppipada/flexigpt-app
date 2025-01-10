@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"runtime/debug"
@@ -14,6 +15,7 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
 	"github.com/flexigpt/flexiui/pkggo/mcpsdk/jsonrpc"
+	stdioNet "github.com/flexigpt/flexiui/pkggo/mcpsdk/transport/stdio/net"
 )
 
 type StdIOOptions struct {
@@ -81,6 +83,29 @@ func GetRouter() (http.Handler, huma.API) {
 	return handler, api
 }
 
+func GetJSONRPCStdIOServer(handler http.Handler) *stdioNet.Server {
+	// Create the StdioConn
+	connCreator := func() net.Conn {
+		return stdioNet.NewStdioConn(os.Stdin, os.Stdout)
+	}
+
+	// Create the StdioListener
+	listener := stdioNet.NewStdioListener(connCreator)
+
+	// Create the MessageFramer
+	framer := &stdioNet.LineFramer{}
+
+	// Create the MessageHandler
+	requestParams := RequestParams{
+		Method: "POST",
+		URL:    "/jsonrpc",
+		Header: make(http.Header),
+	}
+	messageHandler := NewHTTPMessageHandler(handler, requestParams)
+	server := stdioNet.NewServer(listener, framer, messageHandler)
+	return server
+}
+
 func GetStdIOServerCLI() humacli.CLI {
 	cli := humacli.New(func(hooks humacli.Hooks, opts *StdIOOptions) {
 		log.Printf("Options are %+v", opts)
@@ -89,20 +114,11 @@ func GetStdIOServerCLI() humacli.CLI {
 		InitJSONRPChandlers(api)
 
 		// Create the server with the handler and request parameters
-		server := NewServer(
-			handler,
-			WithRequestParams(RequestParams{
-				Method: "POST",
-				URL:    "/jsonrpc",
-				Header: http.Header{
-					"Content-Type": []string{"application/json"},
-				},
-			}),
-		)
+		server := GetJSONRPCStdIOServer(handler)
 
 		// Start the server
 		hooks.OnStart(func() {
-			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			if err := server.Serve(); err != nil && err != http.ErrServerClosed {
 				log.Fatalf("listen: %s\n", err)
 			}
 		})
@@ -118,7 +134,7 @@ func GetStdIOServerCLI() humacli.CLI {
 	return cli
 }
 
-func StartStdIOServer() {
+func GetAndRunStdIOCLI() {
 	cli := GetStdIOServerCLI()
 	cli.Run()
 }
