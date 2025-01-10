@@ -1,9 +1,9 @@
 package stdio
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
-	"net"
 	"net/http"
 	"os"
 	"sync"
@@ -43,7 +43,7 @@ func NewHTTPMessageHandler(handler http.Handler, params RequestParams) *HTTPMess
 
 // ResponseWriter implements http.ResponseWriter
 type ResponseWriter struct {
-	conn        net.Conn
+	writer      *bufio.Writer
 	writeMu     *sync.Mutex
 	header      http.Header
 	statusCode  int
@@ -75,14 +75,18 @@ func (w *ResponseWriter) Write(b []byte) (int, error) {
 	defer w.writeMu.Unlock()
 
 	// Write to the connection
-	return w.conn.Write(b)
+	n, err := w.writer.Write(b)
+	if err == nil {
+		err = w.writer.Flush()
+	}
+	return n, err
 }
 
 // HandleMessage processes a single message
-func (h *HTTPMessageHandler) HandleMessage(conn net.Conn, msg []byte) {
+func (h *HTTPMessageHandler) HandleMessage(writer *bufio.Writer, msg []byte) {
 	// Create a ResponseWriter for this handler
 	w := &ResponseWriter{
-		conn:    conn,
+		writer:  writer,
 		writeMu: &h.writeMu,
 	}
 
@@ -104,9 +108,6 @@ func (h *HTTPMessageHandler) HandleMessage(conn net.Conn, msg []byte) {
 			req.Header.Add(k, vv)
 		}
 	}
-
-	// Set RemoteAddr
-	req.RemoteAddr = conn.RemoteAddr().String()
 
 	// Handle the request
 	h.Handler.ServeHTTP(w, req)

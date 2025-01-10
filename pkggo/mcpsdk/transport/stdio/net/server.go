@@ -1,15 +1,18 @@
 package net
 
 import (
+	"bufio"
 	"context"
 	"io"
 	"net"
+	"strings"
 	"sync"
+	"time"
 )
 
 // MessageHandler defines how messages are handled
 type MessageHandler interface {
-	HandleMessage(conn net.Conn, msg []byte)
+	HandleMessage(writer *bufio.Writer, msg []byte)
 }
 
 // Server orchestrates the transport, framing, and message handling
@@ -18,7 +21,10 @@ type Server struct {
 	framer   MessageFramer
 	handler  MessageHandler
 	done     chan struct{}
+	doneOnce sync.Once
 	wg       sync.WaitGroup // Tracks connection handler goroutines
+	connMu   sync.Mutex
+	conns    map[net.Conn]struct{}
 }
 
 // NewServer creates a new Server with provided components
@@ -28,6 +34,7 @@ func NewServer(listener net.Listener, framer MessageFramer, handler MessageHandl
 		framer:   framer,
 		handler:  handler,
 		done:     make(chan struct{}),
+		conns:    make(map[net.Conn]struct{}),
 	}
 }
 
@@ -36,74 +43,88 @@ func (s *Server) Serve() error {
 	defer s.listener.Close()
 
 	for {
-		select {
-		case <-s.done:
-			return nil
-		default:
-			conn, err := s.listener.Accept()
-			if err != nil {
-				if ne, ok := err.(net.Error); ok && ne.Temporary() {
-					continue
-				}
-				return err
+		conn, err := s.listener.Accept()
+		if err != nil {
+			if ne, ok := err.(net.Error); ok && ne.Timeout() {
+				// Temporary error, continue accepting
+				continue
 			}
-
-			s.wg.Add(1) // Increment WaitGroup for the connection handler
-			go func() {
-				defer s.wg.Done() // Decrement when connection handler is done
-				s.handleConnection(conn)
-			}()
+			// Check if listener is closed due to shutdown
+			select {
+			case <-s.done:
+				return nil // Shutdown initiated
+			default:
+			}
+			return err
 		}
+
+		s.connMu.Lock()
+		s.conns[conn] = struct{}{}
+		s.connMu.Unlock()
+
+		s.wg.Add(1)
+		go func() {
+			defer s.wg.Done()
+			s.handleConnection(conn)
+		}()
 	}
 }
 
 func (s *Server) handleConnection(conn net.Conn) {
-	// WaitGroup to ensure all message handlers complete before closing the connection
 	var handlerWG sync.WaitGroup
-	// Close the connection after all message handlers are done
 	defer func() {
 		handlerWG.Wait()
 		conn.Close()
+		s.connMu.Lock()
+		delete(s.conns, conn)
+		s.connMu.Unlock()
 	}()
-
+	reader := bufio.NewReader(conn)
+	writer := bufio.NewWriter(conn)
+	var writeMutex sync.Mutex
 	for {
-		select {
-		case <-s.done:
+		msg, err := s.framer.ReadMessage(reader)
+		if err != nil {
+			if err == io.EOF || strings.Contains(err.Error(), "EOF") {
+				return // Client closed the connection
+			}
+			if ne, ok := err.(net.Error); ok && ne.Timeout() {
+				time.Sleep(10 * time.Microsecond)
+				continue // Temporary error, try reading again
+			}
+			// Unrecoverable error, exit the connection handler
 			return
-		default:
-			msg, err := s.framer.ReadMessage(conn)
-			if err != nil {
-				if err == io.EOF {
-					return // Client closed the connection
-				}
-				if ne, ok := err.(net.Error); ok && ne.Temporary() {
-					continue // Temporary error, try reading again
-				}
-				// Unrecoverable error, exit the connection handler
-				return
-			}
-
-			// Ignore empty messages
-			if len(msg) == 0 {
-				continue
-			}
-
-			// Start a new goroutine to handle the message
-			handlerWG.Add(1)
-			go func(msgCopy []byte) {
-				defer handlerWG.Done() // Decrement when message handler is done
-				// Handle the message (assuming HandleMessage handles its own panic recovery)
-				s.handler.HandleMessage(conn, msgCopy)
-			}(msg)
 		}
+
+		// Start a new goroutine to handle the message
+		handlerWG.Add(1)
+		go func(msgCopy []byte) {
+			// log.Print("Started")
+			defer handlerWG.Done()
+			writeMutex.Lock()
+			defer writeMutex.Unlock()
+			s.handler.HandleMessage(writer, msgCopy)
+			writer.Flush()
+			// log.Print("return")
+		}(msg)
 	}
+
 }
 
 // Shutdown gracefully shuts down the server
 func (s *Server) Shutdown(ctx context.Context) error {
 	// Signal to stop accepting new connections and stop processing
-	close(s.done)
-	s.listener.Close()
+	s.doneOnce.Do(func() {
+		close(s.done)
+		s.listener.Close()
+	})
+
+	// Close all active connections
+	s.connMu.Lock()
+	for conn := range s.conns {
+		conn.Close()
+	}
+	s.connMu.Unlock()
 
 	doneChan := make(chan struct{})
 	go func() {
