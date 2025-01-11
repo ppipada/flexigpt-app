@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"runtime/debug"
@@ -84,14 +83,6 @@ func GetRouter() (http.Handler, huma.API) {
 }
 
 func GetJSONRPCStdIOServer(handler http.Handler) *stdioNet.Server {
-	// Create the StdioConn
-	connCreator := func() net.Conn {
-		return stdioNet.NewStdioConn(os.Stdin, os.Stdout)
-	}
-
-	// Create the StdioListener
-	listener := stdioNet.NewStdioListener(connCreator)
-
 	// Create the MessageFramer
 	framer := &stdioNet.LineFramer{}
 
@@ -102,7 +93,8 @@ func GetJSONRPCStdIOServer(handler http.Handler) *stdioNet.Server {
 		Header: make(http.Header),
 	}
 	messageHandler := NewHTTPMessageHandler(handler, requestParams)
-	server := stdioNet.NewServer(listener, framer, messageHandler)
+	stdconn := stdioNet.NewStdioConn(os.Stdin, os.Stdout)
+	server := stdioNet.NewServer(stdconn, framer, messageHandler)
 	return server
 }
 

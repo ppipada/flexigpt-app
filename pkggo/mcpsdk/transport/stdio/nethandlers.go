@@ -1,9 +1,9 @@
 package stdio
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"sync"
@@ -16,34 +16,9 @@ type RequestParams struct {
 	Header http.Header
 }
 
-// HTTPMessageHandler uses an http.Handler to process messages
-type HTTPMessageHandler struct {
-	Handler       http.Handler
-	RequestParams RequestParams
-	writeMu       sync.Mutex
-}
-
-// NewHTTPMessageHandler creates a new HTTPMessageHandler
-func NewHTTPMessageHandler(handler http.Handler, params RequestParams) *HTTPMessageHandler {
-	// Set default values if not provided
-	if params.Method == "" {
-		params.Method = "POST"
-	}
-	if params.URL == "" {
-		params.URL = "/"
-	}
-	if params.Header == nil {
-		params.Header = make(http.Header)
-	}
-	return &HTTPMessageHandler{
-		Handler:       handler,
-		RequestParams: params,
-	}
-}
-
 // ResponseWriter implements http.ResponseWriter
 type ResponseWriter struct {
-	writer      *bufio.Writer
+	writer      io.Writer
 	writeMu     *sync.Mutex
 	header      http.Header
 	statusCode  int
@@ -75,15 +50,36 @@ func (w *ResponseWriter) Write(b []byte) (int, error) {
 	defer w.writeMu.Unlock()
 
 	// Write to the connection
-	n, err := w.writer.Write(b)
-	if err == nil {
-		err = w.writer.Flush()
+	return w.writer.Write(b)
+}
+
+// HTTPMessageHandler uses an http.Handler to process messages
+type HTTPMessageHandler struct {
+	Handler       http.Handler
+	RequestParams RequestParams
+	writeMu       sync.Mutex
+}
+
+// NewHTTPMessageHandler creates a new HTTPMessageHandler
+func NewHTTPMessageHandler(handler http.Handler, params RequestParams) *HTTPMessageHandler {
+	// Set default values if not provided
+	if params.Method == "" {
+		params.Method = "POST"
 	}
-	return n, err
+	if params.URL == "" {
+		params.URL = "/"
+	}
+	if params.Header == nil {
+		params.Header = make(http.Header)
+	}
+	return &HTTPMessageHandler{
+		Handler:       handler,
+		RequestParams: params,
+	}
 }
 
 // HandleMessage processes a single message
-func (h *HTTPMessageHandler) HandleMessage(writer *bufio.Writer, msg []byte) {
+func (h *HTTPMessageHandler) HandleMessage(writer io.Writer, msg []byte) {
 	// Create a ResponseWriter for this handler
 	w := &ResponseWriter{
 		writer:  writer,

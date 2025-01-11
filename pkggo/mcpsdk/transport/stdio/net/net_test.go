@@ -1,7 +1,6 @@
 package net
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"crypto/rand"
@@ -22,13 +21,9 @@ import (
 // echoHandler echoes back the received message.
 type echoHandler struct{}
 
-func (h *echoHandler) HandleMessage(writer *bufio.Writer, msg []byte) {
+func (h *echoHandler) HandleMessage(writer io.Writer, msg []byte) {
 	log.Printf("Start echo write: %s", string(msg))
-	if !bytes.HasSuffix(msg, []byte("\n")) {
-		msg = append(msg, '\n')
-	}
 	_, _ = writer.Write(msg)
-	_ = writer.Flush()
 	log.Printf("Done echo write: %s", string(msg))
 }
 
@@ -37,23 +32,18 @@ type delayHandler struct {
 	delay time.Duration
 }
 
-func (h *delayHandler) HandleMessage(writer *bufio.Writer, msg []byte) {
+func (h *delayHandler) HandleMessage(writer io.Writer, msg []byte) {
 	time.Sleep(h.delay)
-	if !bytes.HasSuffix(msg, []byte("\n")) {
-		msg = append(msg, '\n')
-	}
 	_, _ = writer.Write(msg)
-	_ = writer.Flush()
+
 }
 
 // errorHandler simulates an error by sending invalid responses.
 type errorHandler struct{}
 
-func (h *errorHandler) HandleMessage(writer *bufio.Writer, msg []byte) {
+func (h *errorHandler) HandleMessage(writer io.Writer, msg []byte) {
 	// Send back an invalid response (e.g., no request ID).
 	_, _ = writer.Write([]byte("invalid response\n"))
-	_ = writer.Flush()
-
 }
 
 // initClientServer initializes a client and server for testing.
@@ -79,13 +69,8 @@ func initClientServer(
 		WithWriteTimeout(time.Second*1),
 	)
 
-	// Server setup
-	connCreator := func() net.Conn {
-		return serverConn
-	}
-	listener := NewStdioListener(connCreator)
 	framer := &LineFramer{}
-	server := NewServer(listener, framer, handler)
+	server := NewServer(serverConn, framer, handler)
 	go func() {
 		err := server.Serve()
 		if err != nil && err != net.ErrClosed {
