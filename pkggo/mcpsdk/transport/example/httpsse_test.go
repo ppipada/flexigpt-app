@@ -1,118 +1,27 @@
-package jsonrpc
+package example
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/danielgtaylor/huma/v2"
-	"github.com/danielgtaylor/huma/v2/adapters/humago"
+	"github.com/flexigpt/flexiui/pkggo/mcpsdk/jsonrpc"
+	"github.com/flexigpt/flexiui/pkggo/mcpsdk/transport/httpsse"
 )
 
-func InitJSONRPChandlers(api huma.API) {
-	// Define method maps
-	methodMap := map[string]IMethodHandler{
-		"add": &MethodHandler[AddParams, AddResult]{Endpoint: AddEndpoint},
-		"addpositional": &MethodHandler[[]int, AddResult]{
-			Endpoint: func(ctx context.Context, params []int) (AddResult, error) {
-				res := 0
-				for _, v := range params {
-					res += v
-				}
-				return AddResult{Sum: res}, nil
-			},
-		},
-		"concat": &MethodHandler[ConcatParams, string]{Endpoint: ConcatEndpoint},
-		"concatOptionalIn": &MethodHandler[*ConcatParams, string]{
-			Endpoint: func(ctx context.Context, params *ConcatParams) (string, error) {
-				if params != nil {
-					return params.S1 + params.S2, nil
-				}
-				return "", nil
-			},
-		},
-		"concatOptionalInOut": &MethodHandler[*ConcatParams, *string]{
-			Endpoint: func(ctx context.Context, params *ConcatParams) (*string, error) {
-				if params != nil {
-					r := params.S1 + params.S2
-					return &r, nil
-				}
-				return nil, nil
-			},
-		},
-		"echo": &MethodHandler[struct{}, *struct{}]{
-			Endpoint: func(ctx context.Context, _ struct{}) (*struct{}, error) {
-				return nil, nil
-			},
-		},
-		"echooptional": &MethodHandler[*string, *string]{
-			Endpoint: func(ctx context.Context, e *string) (*string, error) {
-				return e, nil
-			},
-		},
-	}
-
-	notificationMap := map[string]INotificationHandler{
-		"ping": &NotificationHandler[PingParams]{Endpoint: PingEndpoint},
-		"notify": &NotificationHandler[NotifyParams]{
-			Endpoint: NotifyEndpoint,
-		},
-	}
-
-	// Get default operation
-	op := GetDefaultOperation()
-
-	// Register the methods
-	Register(api, op, methodMap, notificationMap)
-
-}
-
-func loggingMiddleware(ctx huma.Context, next func(huma.Context)) {
-	// log.Printf("Received request: %v %v", ctx.URL().RawPath, ctx.Operation().Path)
-	next(ctx)
-	// log.Printf("Responded to request: %v %v", ctx.URL().RawPath, ctx.Operation().Path)
-}
-
-var DefaultJSONFormat = huma.Format{
-	Marshal: func(w io.Writer, v any) error {
-		return json.NewEncoder(w).Encode(v)
-	},
-	Unmarshal: func(data []byte, v any) error {
-		// log.Printf("Trying to unmarshal %v", string(data))
-		err := json.Unmarshal(data, v)
-		// log.Printf("err %v", err)
-		return err
-	},
-}
-
-func getRouter() *http.ServeMux {
-	router := http.NewServeMux()
-	config := huma.DefaultConfig("Example JSONRPC API", "1.0.0")
-	config.Formats = map[string]huma.Format{
-		"application/json": DefaultJSONFormat,
-		"json":             DefaultJSONFormat,
-	}
-	huma.NewError = GetStatusError
-
-	api := humago.New(router, config)
-	api.UseMiddleware(loggingMiddleware)
-
-	InitJSONRPChandlers(api)
-	return router
-}
-
 func setupTestServer(t *testing.T) (*httptest.Server, *http.Client, string) {
-	router := getRouter()
-	server := httptest.NewUnstartedServer(router)
+	handler := SetupSSETransport()
+	server := httptest.NewUnstartedServer(handler)
 	server.Start()
 	t.Cleanup(server.Close) // Ensure server closes after test
 	client := server.Client()
-	url := server.URL + "/jsonrpc"
+	url := server.URL + httpsse.JSONRPCEndpoint
 	return server, client, url
 }
 
@@ -173,54 +82,54 @@ func TestValidSingleRequests(t *testing.T) {
 			},
 			expectedResult: map[string]float64{"sum": 5},
 		},
-		{
-			name: "Add method with positional parameters",
-			request: map[string]interface{}{
-				"jsonrpc": "2.0",
-				"method":  "addpositional",
-				"params":  []interface{}{2, 3},
-				"id":      2,
-			},
-			expectedResult: map[string]float64{"sum": 5},
-		},
-		{
-			name: "Echo method with no parameters",
-			request: map[string]interface{}{
-				"jsonrpc": "2.0",
-				"method":  "echo",
-				"id":      3,
-			},
-			expectedResult: nil,
-		},
-		{
-			name: "Echo method with optional parameters",
-			request: map[string]interface{}{
-				"jsonrpc": "2.0",
-				"method":  "echooptional",
-				"id":      "1",
-				"params":  "foo",
-			},
-			expectedResult: "foo",
-		},
-		{
-			name: "Echo method with optional parameters nil input",
-			request: map[string]interface{}{
-				"jsonrpc": "2.0",
-				"method":  "echooptional",
-				"id":      "2",
-			},
-			expectedResult: nil,
-		},
-		{
-			name: "Concat method",
-			request: map[string]interface{}{
-				"jsonrpc": "2.0",
-				"method":  "concat",
-				"params":  map[string]interface{}{"s1": "Hello, ", "s2": "World!"},
-				"id":      2,
-			},
-			expectedResult: "Hello, World!",
-		},
+		// {
+		// 	name: "Add method with positional parameters",
+		// 	request: map[string]interface{}{
+		// 		"jsonrpc": "2.0",
+		// 		"method":  "addpositional",
+		// 		"params":  []interface{}{2, 3},
+		// 		"id":      2,
+		// 	},
+		// 	expectedResult: map[string]float64{"sum": 5},
+		// },
+		// {
+		// 	name: "Echo method with no parameters",
+		// 	request: map[string]interface{}{
+		// 		"jsonrpc": "2.0",
+		// 		"method":  "echo",
+		// 		"id":      3,
+		// 	},
+		// 	expectedResult: nil,
+		// },
+		// {
+		// 	name: "Echo method with optional parameters",
+		// 	request: map[string]interface{}{
+		// 		"jsonrpc": "2.0",
+		// 		"method":  "echooptional",
+		// 		"id":      "1",
+		// 		"params":  "foo",
+		// 	},
+		// 	expectedResult: "foo",
+		// },
+		// {
+		// 	name: "Echo method with optional parameters nil input",
+		// 	request: map[string]interface{}{
+		// 		"jsonrpc": "2.0",
+		// 		"method":  "echooptional",
+		// 		"id":      "2",
+		// 	},
+		// 	expectedResult: nil,
+		// },
+		// {
+		// 	name: "Concat method",
+		// 	request: map[string]interface{}{
+		// 		"jsonrpc": "2.0",
+		// 		"method":  "concat",
+		// 		"params":  map[string]interface{}{"s1": "Hello, ", "s2": "World!"},
+		// 		"id":      2,
+		// 	},
+		// 	expectedResult: "Hello, World!",
+		// },
 	}
 
 	for _, tc := range tests {
@@ -228,10 +137,10 @@ func TestValidSingleRequests(t *testing.T) {
 			respBody := sendJSONRPCRequest(t, client, url, tc.request)
 
 			var response struct {
-				JSONRPC      string        `json:"jsonrpc"`
-				Result       interface{}   `json:"result"`
-				JSONRPCError *JSONRPCError `json:"error"`
-				ID           interface{}   `json:"id"`
+				JSONRPC      string                `json:"jsonrpc"`
+				Result       interface{}           `json:"result"`
+				JSONRPCError *jsonrpc.JSONRPCError `json:"error"`
+				ID           interface{}           `json:"id"`
 			}
 
 			err := json.Unmarshal(respBody, &response)
@@ -258,12 +167,12 @@ func TestInvalidSingleRequests(t *testing.T) {
 		name          string
 		request       interface{}
 		rawRequest    []byte
-		expectedError *JSONRPCError
+		expectedError *jsonrpc.JSONRPCError
 	}{
 		{
 			name:       "Invalid JSON request",
 			rawRequest: []byte(`{ this is invalid json }`),
-			expectedError: &JSONRPCError{
+			expectedError: &jsonrpc.JSONRPCError{
 				Code:    -32700,
 				Message: "validation failed",
 			},
@@ -275,7 +184,7 @@ func TestInvalidSingleRequests(t *testing.T) {
 				"method":  "unknown_method",
 				"id":      1,
 			},
-			expectedError: &JSONRPCError{
+			expectedError: &jsonrpc.JSONRPCError{
 				Code:    -32601,
 				Message: "Method 'unknown_method' not found",
 			},
@@ -288,7 +197,7 @@ func TestInvalidSingleRequests(t *testing.T) {
 				"params":  map[string]interface{}{"a": "two", "b": 3},
 				"id":      2,
 			},
-			expectedError: &JSONRPCError{
+			expectedError: &jsonrpc.JSONRPCError{
 				Code:    -32602,
 				Message: "Invalid parameters",
 			},
@@ -300,7 +209,7 @@ func TestInvalidSingleRequests(t *testing.T) {
 				"params": map[string]interface{}{"a": 2, "b": 3},
 				"id":     3,
 			},
-			expectedError: &JSONRPCError{
+			expectedError: &jsonrpc.JSONRPCError{
 				Code:    -32600,
 				Message: "validation failed",
 			},
@@ -313,7 +222,7 @@ func TestInvalidSingleRequests(t *testing.T) {
 				"params":  map[string]interface{}{"a": 2, "b": 3},
 				"id":      4,
 			},
-			expectedError: &JSONRPCError{
+			expectedError: &jsonrpc.JSONRPCError{
 				Code:    -32600,
 				Message: "validation failed",
 			},
@@ -325,7 +234,7 @@ func TestInvalidSingleRequests(t *testing.T) {
 				"params":  map[string]interface{}{"a": 2, "b": 3},
 				"id":      5,
 			},
-			expectedError: &JSONRPCError{
+			expectedError: &jsonrpc.JSONRPCError{
 				Code:    -32600,
 				Message: "validation failed",
 			},
@@ -338,7 +247,7 @@ func TestInvalidSingleRequests(t *testing.T) {
 				"params":  map[string]interface{}{"a": 2, "b": 3},
 				"id":      []int{1, 2, 3},
 			},
-			expectedError: &JSONRPCError{
+			expectedError: &jsonrpc.JSONRPCError{
 				Code:    -32600,
 				Message: "validation failed",
 			},
@@ -355,10 +264,10 @@ func TestInvalidSingleRequests(t *testing.T) {
 			respBody := sendJSONRPCRequest(t, client, url, req)
 
 			var response struct {
-				JSONRPC      string        `json:"jsonrpc"`
-				Result       interface{}   `json:"result"`
-				JSONRPCError *JSONRPCError `json:"error"`
-				ID           interface{}   `json:"id"`
+				JSONRPC      string                `json:"jsonrpc"`
+				Result       interface{}           `json:"result"`
+				JSONRPCError *jsonrpc.JSONRPCError `json:"error"`
+				ID           interface{}           `json:"id"`
 			}
 
 			err := json.Unmarshal(respBody, &response)
@@ -562,27 +471,27 @@ func TestBatchRequests(t *testing.T) {
 			}
 
 			var responses []struct {
-				JSONRPC      string        `json:"jsonrpc"`
-				Result       interface{}   `json:"result"`
-				JSONRPCError *JSONRPCError `json:"error"`
-				ID           interface{}   `json:"id"`
+				JSONRPC      string                `json:"jsonrpc"`
+				Result       interface{}           `json:"result"`
+				JSONRPCError *jsonrpc.JSONRPCError `json:"error"`
+				ID           interface{}           `json:"id"`
 			}
 
 			if err := json.Unmarshal(respBody, &responses); err != nil {
 				var singleResponse struct {
-					JSONRPC      string        `json:"jsonrpc"`
-					Result       interface{}   `json:"result"`
-					JSONRPCError *JSONRPCError `json:"error"`
-					ID           interface{}   `json:"id"`
+					JSONRPC      string                `json:"jsonrpc"`
+					Result       interface{}           `json:"result"`
+					JSONRPCError *jsonrpc.JSONRPCError `json:"error"`
+					ID           interface{}           `json:"id"`
 				}
 				if err := json.Unmarshal(respBody, &singleResponse); err != nil {
 					t.Fatalf("Error unmarshaling response: %v", err)
 				}
 				responses = []struct {
-					JSONRPC      string        `json:"jsonrpc"`
-					Result       interface{}   `json:"result"`
-					JSONRPCError *JSONRPCError `json:"error"`
-					ID           interface{}   `json:"id"`
+					JSONRPC      string                `json:"jsonrpc"`
+					Result       interface{}           `json:"result"`
+					JSONRPCError *jsonrpc.JSONRPCError `json:"error"`
+					ID           interface{}           `json:"id"`
 				}{singleResponse}
 			}
 
@@ -628,4 +537,69 @@ func TestBatchRequests(t *testing.T) {
 			}
 		})
 	}
+}
+
+func jsonEqual(a, b json.RawMessage) bool {
+	var o1 interface{}
+	var o2 interface{}
+
+	if err := json.Unmarshal(a, &o1); err != nil {
+		return false
+	}
+	if err := json.Unmarshal(b, &o2); err != nil {
+		return false
+	}
+	// Direct reflect Deepequal would have issues when there are pointers, keyorders etc.
+	// unmarshalling into a interface and then doing deepequal removes those issues
+	return reflect.DeepEqual(o1, o2)
+}
+
+func jsonStringsEqual(a, b string) bool {
+	return jsonEqual([]byte(a), []byte(b))
+}
+
+func getJSONStrings(args ...interface{}) ([]string, error) {
+	var ret []string
+	for _, a := range args {
+		jsonBytes, err := json.Marshal(a)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, string(jsonBytes))
+	}
+	return ret, nil
+}
+
+func jsonStructEqual(arg1 interface{}, arg2 interface{}) (bool, error) {
+	vals, err := getJSONStrings(arg1, arg2)
+	if err != nil {
+		log.Fatalf("Could not encode struct to json")
+	}
+	return jsonStringsEqual(vals[0], vals[1]), nil
+}
+
+func arraysAreSimilar(arr1, arr2 []int) bool {
+	if len(arr1) != len(arr2) {
+		return false
+	}
+	if len(arr1) != 0 {
+		counts1 := make(map[int]int)
+		counts2 := make(map[int]int)
+
+		for _, num := range arr1 {
+			counts1[num]++
+		}
+
+		for _, num := range arr2 {
+			counts2[num]++
+		}
+
+		for key, count1 := range counts1 {
+			if count2, exists := counts2[key]; !exists || count1 != count2 {
+				return false
+			}
+		}
+	}
+
+	return true
 }

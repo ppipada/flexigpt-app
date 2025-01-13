@@ -7,6 +7,52 @@ import (
 	"testing"
 )
 
+// AddParams defines the parameters for the "add" method
+type AddParams struct {
+	A int `json:"a"`
+	B int `json:"b"`
+}
+
+type AddResult struct {
+	Sum int `json:"sum"`
+}
+
+type NotifyParams struct {
+	Message string `json:"message"`
+}
+
+// ConcatParams defines the parameters for the "concat" method
+type ConcatParams struct {
+	S1 string `json:"s1"`
+	S2 string `json:"s2"`
+}
+
+// PingParams defines the parameters for the "ping" notification
+type PingParams struct {
+	Message string `json:"message"`
+}
+
+// AddEndpoint is the handler for the "add" method
+func AddEndpoint(ctx context.Context, params AddParams) (AddResult, error) {
+	res := params.A + params.B
+	return AddResult{Sum: res}, nil
+}
+
+// ConcatEndpoint is the handler for the "concat" method
+func ConcatEndpoint(ctx context.Context, params ConcatParams) (string, error) {
+	return params.S1 + params.S2, nil
+}
+
+// PingEndpoint is the handler for the "ping" notification
+func PingEndpoint(ctx context.Context, params PingParams) error {
+	return nil
+}
+
+func NotifyEndpoint(ctx context.Context, params NotifyParams) error {
+	// Process notification
+	return nil
+}
+
 func TestGetMetaRequestHandler(t *testing.T) {
 	// Define method maps
 	methodMap := map[string]IMethodHandler{
@@ -52,7 +98,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 				Body: &Meta[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
-						JSONRPC: JSONRPC_VERSION,
+						JSONRPC: JSONRPCVersion,
 						ID:      nil,
 						Error: &JSONRPCError{
 							Code:    ParseError,
@@ -74,7 +120,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 				Body: &Meta[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
-						JSONRPC: JSONRPC_VERSION,
+						JSONRPC: JSONRPCVersion,
 						ID:      nil,
 						Error: &JSONRPCError{
 							Code:    ParseError,
@@ -103,7 +149,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 				Body: &Meta[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
-						JSONRPC: JSONRPC_VERSION,
+						JSONRPC: JSONRPCVersion,
 						ID:      &RequestID{Value: 1},
 						Error: &JSONRPCError{
 							Code:    InvalidRequestError,
@@ -119,7 +165,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 				Body: &Meta[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{{
-						JSONRPC: JSONRPC_VERSION,
+						JSONRPC: JSONRPCVersion,
 						Method:  "unknown_notification",
 						Params:  json.RawMessage(`{}`),
 						ID:      nil,
@@ -134,7 +180,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 				Body: &Meta[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{{
-						JSONRPC: JSONRPC_VERSION,
+						JSONRPC: JSONRPCVersion,
 						Method:  "ping",
 						Params:  json.RawMessage(`{"message":"hello"}`),
 						ID:      nil,
@@ -150,7 +196,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							Method:  "notify",
 							Params:  json.RawMessage(`{"message":"Hello"}`),
 							ID:      nil, // Notification
@@ -167,7 +213,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							Method:  "notify",
 							Params:  json.RawMessage(`{"message":123}`),
 							ID:      nil, // Notification
@@ -184,7 +230,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							Method:  "errornotify",
 							Params:  json.RawMessage(`{"message":"Hello"}`),
 							ID:      nil, // Notification
@@ -201,13 +247,13 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: true,
 					Items: []Request[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							Method:  "add",
 							Params:  json.RawMessage(`{"a":1,"b":2}`),
 							ID:      &RequestID{Value: 1},
 						},
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							Method:  "notify",
 							Params:  json.RawMessage(`{"message":"Hello"}`),
 							ID:      nil,
@@ -220,7 +266,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: true,
 					Items: []Response[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							ID:      &RequestID{Value: 1},
 							Result:  json.RawMessage(`{"sum":3}`),
 						},
@@ -235,7 +281,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 				Body: &Meta[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{{
-						JSONRPC: JSONRPC_VERSION,
+						JSONRPC: JSONRPCVersion,
 						Method:  "add",
 						Params:  json.RawMessage(`{"a":2,"b":3}`),
 						ID:      &RequestID{Value: 1},
@@ -246,7 +292,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 				Body: &Meta[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
-						JSONRPC: JSONRPC_VERSION,
+						JSONRPC: JSONRPCVersion,
 						ID:      &RequestID{Value: 1},
 						Result:  json.RawMessage(`{"sum":5}`),
 					}},
@@ -260,7 +306,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							Method:  "",
 							Params:  json.RawMessage(`{"a":1,"b":2}`),
 							ID:      &RequestID{Value: 1},
@@ -272,7 +318,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 				Body: &Meta[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
-						JSONRPC: JSONRPC_VERSION,
+						JSONRPC: JSONRPCVersion,
 						ID:      &RequestID{Value: 1},
 						Error: &JSONRPCError{
 							Code:    InvalidRequestError,
@@ -288,7 +334,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 				Body: &Meta[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{{
-						JSONRPC: JSONRPC_VERSION,
+						JSONRPC: JSONRPCVersion,
 						Method:  "subtract",
 						Params:  json.RawMessage(`{"a":5,"b":2}`),
 						ID:      &RequestID{Value: 2},
@@ -299,7 +345,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 				Body: &Meta[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
-						JSONRPC: JSONRPC_VERSION,
+						JSONRPC: JSONRPCVersion,
 						ID:      &RequestID{Value: 2},
 						Error: &JSONRPCError{
 							Code:    MethodNotFoundError,
@@ -316,7 +362,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							Method:  "add",
 							Params:  json.RawMessage(`{"a":1,"b":2}`),
 							ID:      nil,
@@ -328,7 +374,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 				Body: &Meta[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
-						JSONRPC: JSONRPC_VERSION,
+						JSONRPC: JSONRPCVersion,
 						ID:      nil,
 						Error: &JSONRPCError{
 							Code:    InvalidRequestError,
@@ -345,25 +391,25 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: true,
 					Items: []Request[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							Method:  "add",
 							Params:  json.RawMessage(`{"a":1,"b":2}`),
 							ID:      &RequestID{Value: 1},
 						},
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							Method:  "concat",
 							Params:  json.RawMessage(`{"s1":"hello","s2":"world"}`),
 							ID:      &RequestID{Value: 2},
 						},
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							Method:  "subtract",
 							Params:  json.RawMessage(`{"a":5,"b":3}`),
 							ID:      &RequestID{Value: 3},
 						},
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							Method:  "ping",
 							Params:  json.RawMessage(`{"message":"ping"}`),
 							ID:      nil,
@@ -376,17 +422,17 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: true,
 					Items: []Response[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							ID:      &RequestID{Value: 1},
 							Result:  json.RawMessage(`{"sum":3}`),
 						},
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							ID:      &RequestID{Value: 2},
 							Result:  json.RawMessage(`"helloworld"`),
 						},
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							ID:      &RequestID{Value: 3},
 							Error: &JSONRPCError{
 								Code:    MethodNotFoundError,
@@ -404,7 +450,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							Method:  "add",
 							Params:  json.RawMessage(`{"a":"one","b":2}`),
 							ID:      &RequestID{Value: 1},
@@ -417,7 +463,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							ID:      &RequestID{Value: 1},
 							Error: &JSONRPCError{
 								Code:    InvalidParamsError,
@@ -435,7 +481,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							Method:  "addErrorSimple",
 							Params:  json.RawMessage(`{"a":1,"b":2}`),
 							ID:      &RequestID{Value: 1},
@@ -448,7 +494,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							ID:      &RequestID{Value: 1},
 							Error: &JSONRPCError{
 								Code:    InternalError,
@@ -466,7 +512,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							Method:  "addErrorJSONRPC",
 							Params:  json.RawMessage(`{"a":1,"b":2}`),
 							ID:      &RequestID{Value: 1},
@@ -479,7 +525,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{
 						{
-							JSONRPC: JSONRPC_VERSION,
+							JSONRPC: JSONRPCVersion,
 							ID:      &RequestID{Value: 1},
 							Error: &JSONRPCError{
 								Code:    1234,
@@ -496,7 +542,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 				Body: &Meta[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{{
-						JSONRPC: JSONRPC_VERSION,
+						JSONRPC: JSONRPCVersion,
 						Method:  "add",
 						Params:  json.RawMessage(`invalid`),
 						ID:      &RequestID{Value: 4},
@@ -507,7 +553,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 				Body: &Meta[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
-						JSONRPC: JSONRPC_VERSION,
+						JSONRPC: JSONRPCVersion,
 						ID:      &RequestID{Value: 4},
 						Error: &JSONRPCError{
 							Code:    InvalidParamsError,

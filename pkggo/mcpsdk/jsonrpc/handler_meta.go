@@ -29,7 +29,7 @@ func GetMetaRequestHandler(
 	return func(ctx context.Context, metaReq *MetaRequest) (*MetaResponse, error) {
 		if metaReq == nil || metaReq.Body == nil || len(metaReq.Body.Items) == 0 {
 			item := Response[json.RawMessage]{
-				JSONRPC: JSONRPC_VERSION,
+				JSONRPC: JSONRPCVersion,
 				ID:      nil,
 				Error: &JSONRPCError{
 					Code:    ParseError,
@@ -55,7 +55,7 @@ func GetMetaRequestHandler(
 
 		for _, request := range metaReq.Body.Items {
 			// Need a valid JSONRPC version and method
-			if request.JSONRPC != JSONRPC_VERSION || request.Method == "" {
+			if request.JSONRPC != JSONRPCVersion || request.Method == "" {
 				msg := fmt.Sprintf(
 					"Invalid JSON-RPC version: '%s'",
 					request.JSONRPC,
@@ -64,7 +64,7 @@ func GetMetaRequestHandler(
 					msg = "Method name missing"
 				}
 				resp.Body.Items = append(resp.Body.Items, Response[json.RawMessage]{
-					JSONRPC: JSONRPC_VERSION,
+					JSONRPC: JSONRPCVersion,
 					ID:      request.ID,
 					Error: &JSONRPCError{
 						Code:    InvalidRequestError,
@@ -94,7 +94,7 @@ func GetMetaRequestHandler(
 				// If it was a method send a incalid request error. Else dont send anything.
 				if _, ok = methodMap[request.Method]; ok {
 					resp.Body.Items = append(resp.Body.Items, Response[json.RawMessage]{
-						JSONRPC: JSONRPC_VERSION,
+						JSONRPC: JSONRPCVersion,
 						ID:      nil,
 						Error: &JSONRPCError{
 							Code: InvalidRequestError,
@@ -114,7 +114,7 @@ func GetMetaRequestHandler(
 			if !ok {
 				// Method not found
 				resp.Body.Items = append(resp.Body.Items, Response[json.RawMessage]{
-					JSONRPC: JSONRPC_VERSION,
+					JSONRPC: JSONRPCVersion,
 					ID:      request.ID,
 					Error: &JSONRPCError{
 						Code:    MethodNotFoundError,
@@ -133,7 +133,7 @@ func GetMetaRequestHandler(
 				// Handler returned an error.
 				// This should generally not happen as handler is expected to convert any errors into a jsonrpc response with error object
 				resp.Body.Items = append(resp.Body.Items, Response[json.RawMessage]{
-					JSONRPC: JSONRPC_VERSION,
+					JSONRPC: JSONRPCVersion,
 					ID:      request.ID,
 					Error: &JSONRPCError{
 						Code:    InternalError,

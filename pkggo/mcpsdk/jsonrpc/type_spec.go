@@ -1,7 +1,7 @@
 package jsonrpc
 
 // http://www.jsonrpc.org/specification
-const JSONRPC_VERSION = "2.0"
+const JSONRPCVersion = "2.0"
 
 // RequestID can be a int or a string
 // Do a type alias as we want marshal/unmarshal etc to be available

@@ -54,14 +54,14 @@ func (m *MethodHandler[I, O]) Handle(
 		if errors.As(err, &jsonrpcErr) {
 			// Handler returned a JSON-RPC error
 			return Response[json.RawMessage]{
-				JSONRPC: JSONRPC_VERSION,
+				JSONRPC: JSONRPCVersion,
 				ID:      req.ID,
 				Error:   jsonrpcErr,
 			}, nil
 		}
 		// Handler returned a standard error
 		return Response[json.RawMessage]{
-			JSONRPC: JSONRPC_VERSION,
+			JSONRPC: JSONRPCVersion,
 			ID:      req.ID,
 			Error: &JSONRPCError{
 				Code:    InternalError,
@@ -74,7 +74,7 @@ func (m *MethodHandler[I, O]) Handle(
 	resultData, err := json.Marshal(result)
 	if err != nil {
 		return Response[json.RawMessage]{
-			JSONRPC: JSONRPC_VERSION,
+			JSONRPC: JSONRPCVersion,
 			ID:      req.ID,
 			Error: &JSONRPCError{
 				Code:    InternalError,
@@ -85,7 +85,7 @@ func (m *MethodHandler[I, O]) Handle(
 
 	// Return the response with the marshaled result
 	return Response[json.RawMessage]{
-		JSONRPC: JSONRPC_VERSION,
+		JSONRPC: JSONRPCVersion,
 		ID:      req.ID,
 		Result:  json.RawMessage(resultData),
 	}, nil

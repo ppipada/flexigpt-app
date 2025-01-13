@@ -1,10 +1,8 @@
-package httpsse
+package example
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"time"
@@ -13,58 +11,49 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
 	"github.com/flexigpt/flexiui/pkggo/mcpsdk/jsonrpc"
+	"github.com/flexigpt/flexiui/pkggo/mcpsdk/transport/httpsse"
 )
 
+// CLI options can be added as needed
 type Options struct {
 	Host  string `doc:"Host to listen on" default:"localhost"`
 	Port  int    `doc:"Port to listen on" default:"8080"`
 	Debug bool   `doc:"Enable debug logs" default:"false"`
 }
 
-func loggingMiddleware(ctx huma.Context, next func(huma.Context)) {
-	// log.Printf("Received request: %v %v", ctx.URL().RawPath, ctx.Operation().Path)
-	next(ctx)
-	// log.Printf("Responded to request: %v %v", ctx.URL().RawPath, ctx.Operation().Path)
-}
-
-var DefaultJSONFormat = huma.Format{
-	Marshal: func(w io.Writer, v any) error {
-		return json.NewEncoder(w).Encode(v)
-	},
-	Unmarshal: func(data []byte, v any) error {
-		// log.Printf("Trying to unmarshal %v", string(data))
-		err := json.Unmarshal(data, v)
-		// log.Printf("err %v", err)
-		return err
-	},
-}
-
-func GetRouter() (*http.ServeMux, huma.API) {
+func SetupSSETransport() http.Handler {
+	// Use default go router
 	router := http.NewServeMux()
-	config := huma.DefaultConfig("Example JSONRPC API", "1.0.0")
-	config.Formats = map[string]huma.Format{
-		"application/json": DefaultJSONFormat,
-		"json":             DefaultJSONFormat,
-	}
+	// Change huma's error handler so any error thrown by any layer is converted to jsonrpc error
 	huma.NewError = jsonrpc.GetStatusError
 
-	api := humago.New(router, config)
-	api.UseMiddleware(loggingMiddleware)
+	api := humago.New(router, huma.DefaultConfig("Example JSONRPC API", "1.0.0"))
+	// Add any middlewares
+	// api.UseMiddleware(loggingMiddleware)
+	// handler := PanicRecoveryMiddleware(router)
 
-	return router, api
+	// Init the servers method and notifications handlers
+	methodMap := GetMethodHandlers()
+	notificationMap := GetNotificationHandlers()
+
+	// Register the SSE endpoint and post endpoint
+	sseTransport := httpsse.NewSSETransport(httpsse.JSONRPCEndpoint)
+	sseTransport.Register(api, methodMap, notificationMap)
+	return router
 }
 
 func GetHTTPServerCLI() humacli.CLI {
 
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {
 		log.Printf("Options are %+v\n", opts)
-		router, api := GetRouter()
-		InitJSONRPChandlers(api)
+		handler := SetupSSETransport()
+		// Initialize the http server
 		server := http.Server{
 			Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),
-			Handler: router,
+			Handler: handler,
 		}
-		// Create the HTTP server.
+
+		// Hook the HTTP server.
 		hooks.OnStart(func() {
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				log.Fatalf("listen: %s\n", err)

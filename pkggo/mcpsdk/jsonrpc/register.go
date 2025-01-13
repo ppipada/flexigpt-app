@@ -17,10 +17,11 @@ func GetDefaultOperation() huma.Operation {
 		Path:          "/jsonrpc",
 		DefaultStatus: 200,
 
-		Tags:        []string{"JSONRPC"},
-		Summary:     "JSONRPC endpoint",
-		Description: "Serve all jsonrpc methods",
-		OperationID: "jsonrpc",
+		Tags:             []string{"JSONRPC"},
+		Summary:          "JSONRPC endpoint",
+		Description:      "Serve all jsonrpc methods",
+		OperationID:      "jsonrpc",
+		SkipValidateBody: true,
 	}
 }
 
@@ -68,7 +69,7 @@ func GetStatusError(status int, message string, errs ...error) huma.StatusError 
 	return &ResponseStatusError{
 		status: status,
 		Response: Response[any]{
-			JSONRPC: JSONRPC_VERSION,
+			JSONRPC: JSONRPCVersion,
 			ID:      nil,
 			Error: &JSONRPCError{
 				Code:    code,

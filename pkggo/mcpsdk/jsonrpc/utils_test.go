@@ -2,7 +2,6 @@ package jsonrpc
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"log"
 	"reflect"
@@ -63,76 +62,4 @@ func compareRequestSlices(a, b []Request[json.RawMessage]) bool {
 		}
 	}
 	return true
-}
-
-func arraysAreSimilar(arr1, arr2 []int) bool {
-	if len(arr1) != len(arr2) {
-		return false
-	}
-	if len(arr1) != 0 {
-		counts1 := make(map[int]int)
-		counts2 := make(map[int]int)
-
-		for _, num := range arr1 {
-			counts1[num]++
-		}
-
-		for _, num := range arr2 {
-			counts2[num]++
-		}
-
-		for key, count1 := range counts1 {
-			if count2, exists := counts2[key]; !exists || count1 != count2 {
-				return false
-			}
-		}
-	}
-
-	return true
-}
-
-// AddParams defines the parameters for the "add" method
-type AddParams struct {
-	A int `json:"a"`
-	B int `json:"b"`
-}
-
-type AddResult struct {
-	Sum int `json:"sum"`
-}
-
-type NotifyParams struct {
-	Message string `json:"message"`
-}
-
-// ConcatParams defines the parameters for the "concat" method
-type ConcatParams struct {
-	S1 string `json:"s1"`
-	S2 string `json:"s2"`
-}
-
-// PingParams defines the parameters for the "ping" notification
-type PingParams struct {
-	Message string `json:"message"`
-}
-
-// AddEndpoint is the handler for the "add" method
-func AddEndpoint(ctx context.Context, params AddParams) (AddResult, error) {
-	res := params.A + params.B
-	return AddResult{Sum: res}, nil
-}
-
-// ConcatEndpoint is the handler for the "concat" method
-func ConcatEndpoint(ctx context.Context, params ConcatParams) (string, error) {
-	return params.S1 + params.S2, nil
-}
-
-// PingEndpoint is the handler for the "ping" notification
-func PingEndpoint(ctx context.Context, params PingParams) error {
-	return nil
-}
-
-func NotifyEndpoint(ctx context.Context, params NotifyParams) error {
-	// Process notification
-	return nil
 }
