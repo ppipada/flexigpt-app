@@ -6,7 +6,7 @@ toolchain go1.23.2
 
 require (
 	github.com/adrg/xdg v0.5.3
-	github.com/danielgtaylor/huma/v2 v2.25.0
+	github.com/danielgtaylor/huma/v2 v2.27.0
 	github.com/google/uuid v1.6.0
 	github.com/philippgille/chromem-go v0.7.0
 	github.com/tmc/langchaingo v0.1.12

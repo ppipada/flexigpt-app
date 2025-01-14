@@ -6,25 +6,27 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
+type JSONRPCErrorCode int
+
 const (
 	// ParseError defines invalid JSON was received by the server.
 	// An error occurred on the server while parsing the JSON text.
-	ParseError int = -32700
+	ParseError JSONRPCErrorCode = -32700
 
 	// InvalidRequestError defines the JSON sent is not a valid Request object.
-	InvalidRequestError int = -32600
+	InvalidRequestError JSONRPCErrorCode = -32600
 
 	// MethodNotFoundError defines the method does not exist / is not available.
-	MethodNotFoundError int = -32601
+	MethodNotFoundError JSONRPCErrorCode = -32601
 
 	// InvalidParamsError defines invalid method parameter(s).
-	InvalidParamsError int = -32602
+	InvalidParamsError JSONRPCErrorCode = -32602
 
 	// InternalError defines a server error
-	InternalError int = -32603
+	InternalError JSONRPCErrorCode = -32603
 )
 
-var errorMessage = map[int]string{
+var errorMessage = map[JSONRPCErrorCode]string{
 	ParseError:          "An error occurred on the server while parsing JSON object.",
 	InvalidRequestError: "The JSON sent is not a valid Request object.",
 	MethodNotFoundError: "The method does not exist / is not available.",
@@ -32,11 +34,15 @@ var errorMessage = map[int]string{
 	InternalError:       "Internal JSON-RPC error.",
 }
 
+func GetDefaultErrorMessage(code JSONRPCErrorCode) string {
+	return errorMessage[code]
+}
+
 // Error defines a JSON RPC error that can be returned in a Response from the spec
 // http://www.jsonrpc.org/specification#error_object
 type JSONRPCError struct {
 	// The error type that occurred.
-	Code int `json:"code"`
+	Code JSONRPCErrorCode `json:"code"`
 
 	// A short description of the error. The message SHOULD be limited to a concise
 	// single sentence.
@@ -56,7 +62,7 @@ func (e JSONRPCError) Error() string {
 }
 
 // ErrorCode returns the JSON RPC error code associated with the error.
-func (e JSONRPCError) ErrorCode() int {
+func (e JSONRPCError) ErrorCode() JSONRPCErrorCode {
 	return e.Code
 }
 

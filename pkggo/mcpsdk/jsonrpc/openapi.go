@@ -10,6 +10,7 @@ import (
 )
 
 type RequestAny = Request[any]
+type NotificationAny = Notification[any]
 
 func getTypeSchema(
 	api huma.API,
@@ -38,10 +39,22 @@ func getTypeSchema(
 	return inputSchema
 }
 
+func isNillableType(t reflect.Type) bool {
+	switch t.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
+		return true
+	default:
+		return false
+	}
+}
+
 // Function to dynamically create the Request type with Params of type iType
-func getRequestType(iType reflect.Type) reflect.Type {
+func getRequestType(iType reflect.Type, isNotification bool) reflect.Type {
 	// Get the reflect.Type of Request[any]
 	requestAnyType := reflect.TypeOf(RequestAny{})
+	if isNotification {
+		requestAnyType = reflect.TypeOf(NotificationAny{})
+	}
 
 	// Get the number of fields in the Request struct
 	numFields := requestAnyType.NumField()
@@ -59,7 +72,7 @@ func getRequestType(iType reflect.Type) reflect.Type {
 			jsonTag := field.Tag.Get("json")
 
 			// If iType is pointer type, add omitempty to json tag
-			if iType.Kind() == reflect.Ptr {
+			if isNillableType(iType) {
 				if !strings.Contains(jsonTag, "omitempty") {
 					jsonTag += ",omitempty"
 				}
@@ -88,9 +101,9 @@ func getRequestSchema(
 	api huma.API,
 	methodName string,
 	paramType reflect.Type,
-	idPresent bool,
+	isNotification bool,
 ) *huma.Schema {
-	newReqType := getRequestType(paramType)
+	newReqType := getRequestType(paramType, isNotification)
 	reqSchema := getTypeSchema(api, methodName, newReqType, "Request")
 	if reqSchema.Properties == nil {
 		reqSchema.Properties = make(map[string]*huma.Schema)
@@ -102,10 +115,8 @@ func getRequestSchema(
 			Type: "string",
 			Enum: []interface{}{methodName},
 		}
-		if idPresent {
+		if !isNotification {
 			reqSubSchema.Required = append(reqSubSchema.Required, "id")
-		} else {
-			delete(reqSubSchema.Properties, "id")
 		}
 	}
 	return reqSchema
@@ -162,7 +173,7 @@ func getSuccessResponseType(resultType reflect.Type) reflect.Type {
 	resultField.Name = "Result"
 	resultField.Type = resultType
 
-	if resultType.Kind() == reflect.Ptr {
+	if isNillableType(resultType) {
 		// If resultType is a pointer, add omitempty to json tag
 		resultField.Tag = reflect.StructTag(`json:"result,omitempty"`)
 	} else {
@@ -209,7 +220,7 @@ func AddSchemasToAPI(
 	for methodName, handler := range methodMap {
 		inputType, outputType := handler.GetTypes()
 
-		reqSchema := getRequestSchema(api, methodName, inputType, true)
+		reqSchema := getRequestSchema(api, methodName, inputType, false)
 		reqSchemas = append(reqSchemas, reqSchema)
 
 		respSchema := getResponseSchema(api, methodName, outputType)
@@ -219,7 +230,7 @@ func AddSchemasToAPI(
 	// Process notification handlers
 	for methodName, handler := range notificationMap {
 		inputType := handler.GetTypes()
-		reqSchema := getRequestSchema(api, methodName, inputType, false)
+		reqSchema := getRequestSchema(api, methodName, inputType, true)
 		reqSchemas = append(reqSchemas, reqSchema)
 	}
 
@@ -228,14 +239,17 @@ func AddSchemasToAPI(
 	baseReqSchema := api.OpenAPI().Components.Schemas.Schema(reqType, false, "")
 	baseReqSchema.OneOf = reqSchemas
 	// Delete properties
-	baseReqSchema.Properties = nil
-	baseReqSchema.Required = nil
-	baseReqSchema.MinItems = intPtr(1)
+	baseReqSchema.Properties = make(map[string]*huma.Schema)
+	baseReqSchema.Required = []string{}
+	baseReqSchema.AdditionalProperties = true
+	baseReqSchema.Type = ""
 
 	respType := reflect.TypeOf((*Response[json.RawMessage])(nil)).Elem()
 	baseRespSchema := api.OpenAPI().Components.Schemas.Schema(respType, false, "")
 	baseRespSchema.OneOf = resSchemas
 	// Delete properties
-	baseRespSchema.Properties = nil
-	baseReqSchema.Required = nil
+	baseRespSchema.Properties = make(map[string]*huma.Schema)
+	baseRespSchema.Required = []string{}
+	baseRespSchema.AdditionalProperties = true
+	baseRespSchema.Type = ""
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
-	"github.com/flexigpt/flexiui/pkggo/mcpsdk/jsonrpc"
 	"github.com/flexigpt/flexiui/pkggo/mcpsdk/transport/httpsse"
 )
 
@@ -24,8 +23,6 @@ type Options struct {
 func SetupSSETransport() http.Handler {
 	// Use default go router
 	router := http.NewServeMux()
-	// Change huma's error handler so any error thrown by any layer is converted to jsonrpc error
-	huma.NewError = jsonrpc.GetStatusError
 
 	api := humago.New(router, huma.DefaultConfig("Example JSONRPC API", "1.0.0"))
 	// Add any middlewares

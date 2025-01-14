@@ -91,7 +91,7 @@ func GetMetaRequestHandler(
 				}
 
 				// Notification not found, but requestid was nil
-				// If it was a method send a incalid request error. Else dont send anything.
+				// If it was a method, send a invalid request error. Else dont send anything.
 				if _, ok = methodMap[request.Method]; ok {
 					resp.Body.Items = append(resp.Body.Items, Response[json.RawMessage]{
 						JSONRPC: JSONRPCVersion,

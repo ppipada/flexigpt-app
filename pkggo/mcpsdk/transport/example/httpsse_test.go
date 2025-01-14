@@ -82,54 +82,54 @@ func TestValidSingleRequests(t *testing.T) {
 			},
 			expectedResult: map[string]float64{"sum": 5},
 		},
-		// {
-		// 	name: "Add method with positional parameters",
-		// 	request: map[string]interface{}{
-		// 		"jsonrpc": "2.0",
-		// 		"method":  "addpositional",
-		// 		"params":  []interface{}{2, 3},
-		// 		"id":      2,
-		// 	},
-		// 	expectedResult: map[string]float64{"sum": 5},
-		// },
-		// {
-		// 	name: "Echo method with no parameters",
-		// 	request: map[string]interface{}{
-		// 		"jsonrpc": "2.0",
-		// 		"method":  "echo",
-		// 		"id":      3,
-		// 	},
-		// 	expectedResult: nil,
-		// },
-		// {
-		// 	name: "Echo method with optional parameters",
-		// 	request: map[string]interface{}{
-		// 		"jsonrpc": "2.0",
-		// 		"method":  "echooptional",
-		// 		"id":      "1",
-		// 		"params":  "foo",
-		// 	},
-		// 	expectedResult: "foo",
-		// },
-		// {
-		// 	name: "Echo method with optional parameters nil input",
-		// 	request: map[string]interface{}{
-		// 		"jsonrpc": "2.0",
-		// 		"method":  "echooptional",
-		// 		"id":      "2",
-		// 	},
-		// 	expectedResult: nil,
-		// },
-		// {
-		// 	name: "Concat method",
-		// 	request: map[string]interface{}{
-		// 		"jsonrpc": "2.0",
-		// 		"method":  "concat",
-		// 		"params":  map[string]interface{}{"s1": "Hello, ", "s2": "World!"},
-		// 		"id":      2,
-		// 	},
-		// 	expectedResult: "Hello, World!",
-		// },
+		{
+			name: "Add method with positional parameters",
+			request: map[string]interface{}{
+				"jsonrpc": "2.0",
+				"method":  "addpositional",
+				"params":  []interface{}{2, 3},
+				"id":      2,
+			},
+			expectedResult: map[string]float64{"sum": 5},
+		},
+		{
+			name: "Echo method with no parameters",
+			request: map[string]interface{}{
+				"jsonrpc": "2.0",
+				"method":  "echo",
+				"id":      3,
+			},
+			expectedResult: nil,
+		},
+		{
+			name: "Echo method with optional parameters",
+			request: map[string]interface{}{
+				"jsonrpc": "2.0",
+				"method":  "echooptional",
+				"id":      "1",
+				"params":  "foo",
+			},
+			expectedResult: "foo",
+		},
+		{
+			name: "Echo method with optional parameters nil input",
+			request: map[string]interface{}{
+				"jsonrpc": "2.0",
+				"method":  "echooptional",
+				"id":      "2",
+			},
+			expectedResult: nil,
+		},
+		{
+			name: "Concat method",
+			request: map[string]interface{}{
+				"jsonrpc": "2.0",
+				"method":  "concat",
+				"params":  map[string]interface{}{"s1": "Hello, ", "s2": "World!"},
+				"id":      2,
+			},
+			expectedResult: "Hello, World!",
+		},
 	}
 
 	for _, tc := range tests {
@@ -173,8 +173,8 @@ func TestInvalidSingleRequests(t *testing.T) {
 			name:       "Invalid JSON request",
 			rawRequest: []byte(`{ this is invalid json }`),
 			expectedError: &jsonrpc.JSONRPCError{
-				Code:    -32700,
-				Message: "validation failed",
+				Code:    jsonrpc.ParseError,
+				Message: jsonrpc.GetDefaultErrorMessage(jsonrpc.ParseError),
 			},
 		},
 		{
@@ -185,7 +185,7 @@ func TestInvalidSingleRequests(t *testing.T) {
 				"id":      1,
 			},
 			expectedError: &jsonrpc.JSONRPCError{
-				Code:    -32601,
+				Code:    jsonrpc.MethodNotFoundError,
 				Message: "Method 'unknown_method' not found",
 			},
 		},
@@ -198,8 +198,8 @@ func TestInvalidSingleRequests(t *testing.T) {
 				"id":      2,
 			},
 			expectedError: &jsonrpc.JSONRPCError{
-				Code:    -32602,
-				Message: "Invalid parameters",
+				Code:    jsonrpc.InvalidRequestError,
+				Message: jsonrpc.GetDefaultErrorMessage(jsonrpc.InvalidRequestError),
 			},
 		},
 		{
@@ -210,8 +210,8 @@ func TestInvalidSingleRequests(t *testing.T) {
 				"id":     3,
 			},
 			expectedError: &jsonrpc.JSONRPCError{
-				Code:    -32600,
-				Message: "validation failed",
+				Code:    jsonrpc.InvalidRequestError,
+				Message: jsonrpc.GetDefaultErrorMessage(jsonrpc.InvalidRequestError),
 			},
 		},
 		{
@@ -223,8 +223,8 @@ func TestInvalidSingleRequests(t *testing.T) {
 				"id":      4,
 			},
 			expectedError: &jsonrpc.JSONRPCError{
-				Code:    -32600,
-				Message: "validation failed",
+				Code:    jsonrpc.InvalidRequestError,
+				Message: jsonrpc.GetDefaultErrorMessage(jsonrpc.InvalidRequestError),
 			},
 		},
 		{
@@ -235,8 +235,8 @@ func TestInvalidSingleRequests(t *testing.T) {
 				"id":      5,
 			},
 			expectedError: &jsonrpc.JSONRPCError{
-				Code:    -32600,
-				Message: "validation failed",
+				Code:    jsonrpc.InvalidRequestError,
+				Message: jsonrpc.GetDefaultErrorMessage(jsonrpc.InvalidRequestError),
 			},
 		},
 		{
@@ -248,8 +248,8 @@ func TestInvalidSingleRequests(t *testing.T) {
 				"id":      []int{1, 2, 3},
 			},
 			expectedError: &jsonrpc.JSONRPCError{
-				Code:    -32600,
-				Message: "validation failed",
+				Code:    jsonrpc.InvalidRequestError,
+				Message: jsonrpc.GetDefaultErrorMessage(jsonrpc.InvalidRequestError),
 			},
 		},
 	}
@@ -293,8 +293,9 @@ func TestNotifications(t *testing.T) {
 	_, client, url := setupTestServer(t)
 
 	tests := []struct {
-		name    string
-		request interface{}
+		name          string
+		request       interface{}
+		expectedError *jsonrpc.JSONRPCError
 	}{
 		{
 			name: "Valid notification",
@@ -310,6 +311,10 @@ func TestNotifications(t *testing.T) {
 				"jsonrpc": "2.0",
 				"method":  "unknown_method",
 				"params":  map[string]interface{}{"message": "Hello"},
+			},
+			expectedError: &jsonrpc.JSONRPCError{
+				Code:    jsonrpc.MethodNotFoundError,
+				Message: "Method 'unknown_method' not found",
 			},
 		},
 		{
@@ -327,8 +332,36 @@ func TestNotifications(t *testing.T) {
 			respBody := sendJSONRPCRequest(t, client, url, tc.request)
 
 			if len(respBody) != 0 {
-				t.Errorf("Expected no response, but got: %s", string(respBody))
+				if tc.expectedError != nil {
+					var response struct {
+						JSONRPC      string                `json:"jsonrpc"`
+						Result       interface{}           `json:"result"`
+						JSONRPCError *jsonrpc.JSONRPCError `json:"error"`
+						ID           interface{}           `json:"id"`
+					}
+					err := json.Unmarshal(respBody, &response)
+					if err != nil {
+						t.Fatalf("Error unmarshaling response: %v", err)
+					}
+					if response.JSONRPCError.Code != tc.expectedError.Code {
+						t.Errorf(
+							"Expected error code %d, got %d",
+							tc.expectedError.Code,
+							response.JSONRPCError.Code,
+						)
+					}
+					if !strings.Contains(response.JSONRPCError.Message, tc.expectedError.Message) {
+						t.Errorf(
+							"Expected error message '%s', got '%s'",
+							tc.expectedError.Message,
+							response.JSONRPCError.Message,
+						)
+					}
+				} else {
+					t.Errorf("Expected no response, but got: %s", string(respBody))
+				}
 			}
+
 		})
 	}
 }
@@ -440,12 +473,8 @@ func TestBatchRequests(t *testing.T) {
 					"id":      3,
 				},
 			},
-			expectedResponses:  3,
-			expectedErrorCodes: []int{-32601},
-			expectedResults: map[interface{}]interface{}{
-				float64(1): map[string]interface{}{"sum": float64(3)},
-				float64(2): "foobar",
-			},
+			expectedResponses:  1,
+			expectedErrorCodes: []int{int(jsonrpc.InvalidRequestError)},
 		},
 	}
 
@@ -502,7 +531,7 @@ func TestBatchRequests(t *testing.T) {
 			var gotErrorCodes []int
 			for _, response := range responses {
 				if response.JSONRPCError != nil {
-					gotErrorCodes = append(gotErrorCodes, response.JSONRPCError.Code)
+					gotErrorCodes = append(gotErrorCodes, int(response.JSONRPCError.Code))
 				}
 			}
 			if !arraysAreSimilar(gotErrorCodes, tc.expectedErrorCodes) {

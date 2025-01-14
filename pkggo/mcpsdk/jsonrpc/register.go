@@ -17,66 +17,109 @@ func GetDefaultOperation() huma.Operation {
 		Path:          "/jsonrpc",
 		DefaultStatus: 200,
 
-		Tags:             []string{"JSONRPC"},
-		Summary:          "JSONRPC endpoint",
-		Description:      "Serve all jsonrpc methods",
-		OperationID:      "jsonrpc",
-		SkipValidateBody: true,
+		Tags:        []string{"JSONRPC"},
+		Summary:     "JSONRPC endpoint",
+		Description: "Serve all jsonrpc methods",
+		OperationID: "jsonrpc",
 	}
 }
 
-// GetStatusError converts any errors returned into a JSONRPC error response object that implements the huma StatusError interface
+// GetErrorHandler is a closure returning a function that converts any errors returned into a JSONRPC error
+// response object. It implements the huma StatusError interface.
 // IF the JSONRPC handler is invoked, it should never throw an error, but should return a error response object.
 // JSONRPC requires a error case to be covered via the specifications error response object
-func GetStatusError(status int, message string, errs ...error) huma.StatusError {
-	var foundJSONRPCError *JSONRPCError
-	code := InternalError
-	if status >= 400 && status < 500 {
-		code = InvalidRequestError
-	}
+func GetErrorHandler(
+	methodMap map[string]IMethodHandler,
+	notificationMap map[string]INotificationHandler,
+) func(status int, message string, errs ...error) huma.StatusError {
+	return func(gotStatus int, gotMessage string, errs ...error) huma.StatusError {
+		var foundJSONRPCError *JSONRPCError
+		message := gotMessage
+		details := make([]string, 0)
+		details = append(details, fmt.Sprintf("Message:%s", gotMessage))
+		// Add the HTTP status to details and set status sent back as 200
+		details = append(details, fmt.Sprintf("HTTP Status:%d", gotStatus))
+		status := 200
 
-	details := make([]string, len(errs))
-	for i, err := range errs {
-		details[i] = err.Error()
-		if converted, ok := err.(huma.ErrorDetailer); ok {
-			d := converted.ErrorDetail()
-			// See if this is parse error
-			if strings.Contains(d.Message, "unmarshal") ||
-				strings.Contains(d.Message, "invalid character") ||
-				strings.Contains(d.Message, "unexpected end") {
-				code = ParseError
+		code := InternalError
+		if gotStatus >= 400 && gotStatus < 500 {
+			code = InvalidRequestError
+			message = errorMessage[InvalidRequestError]
+		}
+
+		for _, err := range errs {
+			if converted, ok := err.(huma.ErrorDetailer); ok {
+				d := converted.ErrorDetail()
+				// See if this is parse error
+				if strings.Contains(d.Message, "unmarshal") ||
+					strings.Contains(d.Message, "invalid character") ||
+					strings.Contains(d.Message, "unexpected end") {
+					code = ParseError
+					message = errorMessage[ParseError]
+				}
+			} else if jsonRPCError, ok := err.(JSONRPCError); ok {
+				// Check if the error is of type JSONRPCError
+				foundJSONRPCError = &jsonRPCError
 			}
-		} else if jsonRPCError, ok := err.(JSONRPCError); ok {
-			// Check if the error is of type JSONRPCError
-			foundJSONRPCError = &jsonRPCError
+			details = append(details, err.Error())
 		}
-	}
-	// add the http status to details and set status sent back as 200
-	details = append(details, fmt.Sprintf("HTTP Status:%d", status))
-	status = 200
-	// If a JSONRPCError was found, update the message and append JSON-encoded details
-	if foundJSONRPCError != nil {
-		details = append(details, fmt.Sprintf("Message:%s", message))
-		message = foundJSONRPCError.Message
-		code = foundJSONRPCError.Code
 
-		// JSON encode the Data field of the found JSONRPCError
-		if jsonData, err := json.Marshal(foundJSONRPCError.Data); err == nil {
-			details = append(details, string(jsonData))
+		// If a JSONRPCError was found, update the message and append JSON-encoded details
+		if foundJSONRPCError != nil {
+			message = foundJSONRPCError.Message
+			code = foundJSONRPCError.Code
+
+			// JSON encode the Data field of the found JSONRPCError
+			if jsonData, err := json.Marshal(foundJSONRPCError.Data); err == nil {
+				details = append(details, string(jsonData))
+			}
 		}
-	}
 
-	return &ResponseStatusError{
-		status: status,
-		Response: Response[any]{
-			JSONRPC: JSONRPCVersion,
-			ID:      nil,
-			Error: &JSONRPCError{
-				Code:    code,
-				Message: message,
-				Data:    details,
+		// Check for method not found
+		if gotMessage == "validation failed" {
+			// Assume that the method name is in one of the error messages
+			// Look for "method:<methodName>"
+			var methodName string
+			for _, errMsg := range details {
+				idx := strings.Index(errMsg, "method:")
+				if idx != -1 {
+					// Extract method name up to the next space or bracket or end of string
+					rest := errMsg[idx+len("method:"):]
+					endIdx := strings.IndexFunc(rest, func(r rune) bool {
+						return r == ' ' || r == ']' || r == ')'
+					})
+					if endIdx == -1 {
+						methodName = rest
+					} else {
+						methodName = rest[:endIdx]
+					}
+					break
+				}
+			}
+			// Check if method exists in methodMap or notificationMap
+			if methodName != "" {
+				if _, exists := methodMap[methodName]; !exists {
+					if _, exists := notificationMap[methodName]; !exists {
+						// Method not found
+						code = MethodNotFoundError // You need to define this constant
+						message = fmt.Sprintf("Method '%s' not found", methodName)
+					}
+				}
+			}
+		}
+
+		return &ResponseStatusError{
+			status: status,
+			Response: Response[any]{
+				JSONRPC: JSONRPCVersion,
+				ID:      nil,
+				Error: &JSONRPCError{
+					Code:    code,
+					Message: message,
+					Data:    details,
+				},
 			},
-		},
+		}
 	}
 }
 
@@ -100,6 +143,7 @@ func Register(
 	notificationMap map[string]INotificationHandler,
 ) {
 	AddSchemasToAPI(api, methodMap, notificationMap)
+	huma.NewError = GetErrorHandler(methodMap, notificationMap)
 	reqHandler := GetMetaRequestHandler(methodMap, notificationMap)
 	huma.Register(api, op, reqHandler)
 }
