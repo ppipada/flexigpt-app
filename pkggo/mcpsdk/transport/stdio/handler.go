@@ -1,8 +1,8 @@
 package stdio
 
 import (
+	"io"
 	"net/http"
-	"os"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/flexigpt/flexiui/pkggo/mcpsdk/jsonrpc"
@@ -22,7 +22,8 @@ func Register(api huma.API,
 	jsonrpc.Register(api, op, methodMap, notificationMap)
 }
 
-func GetServer(handler http.Handler) *stdioNet.Server {
+// For actual runs os.Stdin, os.Stdout can be passed as reader and writer respectively
+func GetServer(r io.Reader, w io.Writer, handler http.Handler) *stdioNet.Server {
 	// Create the MessageFramer
 	framer := &stdioNet.LineFramer{}
 
@@ -33,7 +34,17 @@ func GetServer(handler http.Handler) *stdioNet.Server {
 		Header: make(http.Header),
 	}
 	messageHandler := NewHTTPMessageHandler(handler, requestParams)
-	stdconn := stdioNet.NewStdioConn(os.Stdin, os.Stdout)
+	stdconn := stdioNet.NewStdioConn(r, w)
 	server := stdioNet.NewServer(stdconn, framer, messageHandler)
 	return server
+}
+
+// For actual runs os.Stdout and os.Stdin can be passed as reader and writer respectively
+func GetClient(r io.Reader, w io.Writer) *stdioNet.Client {
+	framer := &stdioNet.LineFramer{}
+
+	clientConn := stdioNet.NewStdioConn(r, w)
+	client := stdioNet.NewClient(clientConn, framer)
+
+	return client
 }

@@ -26,8 +26,8 @@ func SetupSSETransport() http.Handler {
 
 	api := humago.New(router, huma.DefaultConfig("Example JSONRPC API", "1.0.0"))
 	// Add any middlewares
-	// api.UseMiddleware(loggingMiddleware)
-	// handler := PanicRecoveryMiddleware(router)
+	api.UseMiddleware(loggingMiddleware)
+	handler := PanicRecoveryMiddleware(router)
 
 	// Init the servers method and notifications handlers
 	methodMap := GetMethodHandlers()
@@ -36,7 +36,7 @@ func SetupSSETransport() http.Handler {
 	// Register the SSE endpoint and post endpoint
 	sseTransport := httpsse.NewSSETransport(httpsse.JSONRPCEndpoint)
 	sseTransport.Register(api, methodMap, notificationMap)
-	return router
+	return handler
 }
 
 func GetHTTPServerCLI() humacli.CLI {

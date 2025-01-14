@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -111,6 +112,19 @@ func randomBytes(n int) []byte {
 }
 
 func TestSynchronousSingleRequest(t *testing.T) {
+	message := []interface{}{
+		map[string]interface{}{
+			"jsonrpc": "2.0",
+			"method":  "notify",
+			"params":  map[string]interface{}{"message": "Hello"},
+		},
+		map[string]interface{}{
+			"jsonrpc": "2.0",
+			"method":  "notify",
+			"params":  map[string]interface{}{"message": "World"},
+		},
+	}
+	msgReqBytes, _ := json.Marshal(message)
 	tests := []struct {
 		name          string
 		message       []byte
@@ -150,6 +164,11 @@ func TestSynchronousSingleRequest(t *testing.T) {
 			name:          "Random data",
 			message:       randomBytes(512),
 			expectedReply: nil, // We'll compare the lengths instead
+		},
+		{
+			name:          "msg interface",
+			message:       msgReqBytes,
+			expectedReply: msgReqBytes, // We'll compare the lengths instead
 		},
 	}
 

@@ -57,7 +57,6 @@ func (w *ResponseWriter) Write(b []byte) (int, error) {
 type HTTPMessageHandler struct {
 	Handler       http.Handler
 	RequestParams RequestParams
-	writeMu       sync.Mutex
 }
 
 // NewHTTPMessageHandler creates a new HTTPMessageHandler
@@ -80,10 +79,11 @@ func NewHTTPMessageHandler(handler http.Handler, params RequestParams) *HTTPMess
 
 // HandleMessage processes a single message
 func (h *HTTPMessageHandler) HandleMessage(writer io.Writer, msg []byte) {
+	// log.Printf("MSG: %s", string(msg))
 	// Create a ResponseWriter for this handler
 	w := &ResponseWriter{
 		writer:  writer,
-		writeMu: &h.writeMu,
+		writeMu: &sync.Mutex{},
 	}
 
 	// Create Request with the message as the body

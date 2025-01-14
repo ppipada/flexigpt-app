@@ -3,6 +3,7 @@ package net
 import (
 	"bufio"
 	"bytes"
+	"errors"
 )
 
 // MessageFramer defines how messages are read from a stream
@@ -16,11 +17,22 @@ type LineFramer struct{}
 
 // WriteMessage writes a message with a newline delimiter.
 func (f *LineFramer) WriteMessage(w *bufio.Writer, msg []byte) error {
+	c := bytes.TrimSuffix(msg, []byte("\n"))
+	if bytes.Contains(c, []byte("\n")) {
+		return errors.New("invalid character newline in the middle")
+	}
 	if !bytes.HasSuffix(msg, []byte("\n")) {
 		msg = append(msg, '\n')
 	}
-	_, err := w.Write(msg)
-	return err
+	totalWritten := 0
+	for totalWritten < len(msg) {
+		n, err := w.Write(msg[totalWritten:])
+		if err != nil {
+			return err
+		}
+		totalWritten += n
+	}
+	return nil
 }
 
 // ReadMessage reads a message up to the next newline.
