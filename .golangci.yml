@@ -1,6 +1,6 @@
 # Linters last analyzed with golangci-lint v1.63.4
+# Most of the defaults in the config are good enough for run
 run:
-  # Most of the defaults in the config are good enough
   timeout: 10m
 
   # Tags used to build code with. Negatory of this
@@ -50,7 +50,7 @@ linters:
     # Checks `Err-` prefix for var and `-Error` suffix for error type.
     - errname
 
-    # Suggests to use `%w` for error-wrapping.
+    # Suggests to use `%w` for error-wrapping and other post 1.13 directives of Is, As etc.
     - errorlint
 
     # Finds forced type assertions.
@@ -147,7 +147,10 @@ linters:
     - wastedassign
 
   disable:
-    # Detects struct contained context.Context field. Not a problem.
+    # Checks whether net/http.Header uses canonical header. Most probably good to have but not my use case
+    - canonicalheader
+
+    # Detects struct containing context.Context field. Not a problem.
     - containedctx
 
     # Checks function and package cyclomatic complexity.
@@ -157,7 +160,7 @@ linters:
     # (c) Bryan C. Mills / https://github.com/bcmills
     - cyclop
 
-    # Check declaration order of types, consts, vars and funcs.
+    # Check declaration order of types, constants, variables, and functions.
     - decorder
 
     # Checks if package imports are in a list of acceptable packages.
@@ -170,12 +173,24 @@ linters:
     # Tool for code clone detection.
     - dupl
 
-    # I'm fine to check the error from json.Marshal
+    # Error lint covers all things from this and more.
+    - err113
+
+    # I'm fine to check the error from json.Marshal.
     - errchkjson
 
-    # Forces to handle more cases in enum and structs.
+    # Forces to handle more cases in enums.
     - exhaustive
+
+    # Forces to handle more cases in structs.
     - exhaustruct
+
+    # Detects functions from golang.org/x/exp/ that can be replaced by standard functions.
+    # I don't prefer using exp at all.
+    - exptostd
+
+    # Detects nested contexts in loops and function literals.
+    - fatcontext
 
     # Forbids some identifiers. I don't have a case for it.
     - forbidigo
@@ -183,49 +198,73 @@ linters:
     # Function length checker. I might have long but a simple function.
     - funlen
 
-    # Imports sorter. Can stomp on gofumpt's feet. Just gofumpt is good enough
+    # Imports sorter. Can stomp on gofumpt's feet. Just gofumpt is good enough.
     - gci
 
     # I'm not a fan of ginkgo and gomega packages.
     - ginkgolinter
 
-    # Checks that compiler directive comments (//go:) are valid. Very Rare.
+    # Checks that compiler directive comments (//go:) are valid. Very rare.
     - gocheckcompilerdirectives
 
-    # Globals and init() are ok.
+    # Checks if globals or init is present. Globals and init() are okay.
     - gochecknoglobals
     - gochecknoinits
 
-    # Same as `cyclop` linter (see above)
+    # Similar to cyclop linter (see above).
     - gocognit
     - gocyclo
 
-    # TODO and friends are ok.
+    # TODO and friends are okay.
     - godox
+
+    # Checks if the code is formatted according to gofmt.
+    # I already use gofumpt, so gofmt is redundant.
+    - gofmt
 
     # I don't use file headers.
     - goheader
 
+    # Checks if code and import statements are formatted according to goimports.
+    # gofumpt handles formatting, so goimports is redundant.
+    - goimports
+
     # Allowed/blocked packages to import. I prefer to do it manually.
     - gomodguard
 
-    # Printf-like functions must have -f. Not useful to me.
+    # Manages the use of replace, retract, and exclude directives in go.mod.
+    - gomoddirectives
+
+    # Reports certain internationalization anti-patterns.
+    - gosmopolitan
+
+    # Printf-like functions must have 'f' at the end. Not useful to me.
     - goprintffuncname
 
-    # Checks imports aliases consistency. very rare.
+    # Detects the incorrect use of interfaces to avoid interface pollution.
+    - iface
+
+    # Checks import alias consistency. Very rare.
     - importas
+
+    # Reports interfaces with unnamed method parameters.
+    - inamedparam
 
     # Forces tiny interfaces, very subjective.
     - interfacebloat
 
-    # Accept interfaces, return types. Not always.
+    # Finds places where for-loops could use an integer range.
+    - intrange
+
+    # Accept interfaces, return concrete types. Not always.
     - ireturn
 
-    # Check long lines. Using golines with gofumpt as base formatter takes care of this.
-    # This is not really AST based, so it has issues with long struct tags etc
+    # Reports long lines.
+    # Using golines with gofumpt as base formatter takes care of this.
+    # This is not really AST-based, so it has issues with long struct tags, etc.
     - lll
 
-    # Some log checkers, might be useful. I tend to use log/slog
+    # Some log checkers might be useful. I tend to use log/slog.
     - loggercheck
 
     # Maintainability index of each function, subjective.
@@ -234,10 +273,19 @@ linters:
     # Slice declarations with non-zero initial length. Not my case.
     - makezero
 
+    # Reports wrong mirror patterns of bytes/strings usage.
+    - mirror
+
+    # Detects magic numbers.
+    - mnd
+
     # Deeply nested if statements, subjective.
     - nestif
 
-    # Forces newlines in some places.
+    # Reports constructs that check 'err != nil' but return a different nil value error.
+    - nilnesserr
+
+    # Checks for a new line before return and branch statements to increase code clarity.
     - nlreturn
 
     # Reports all named returns, not that bad.
@@ -252,27 +300,47 @@ linters:
     # Lint your Prometheus metrics name.
     - promlinter
 
-    # Is a replacement for `golint`, similar to `revive`.
+    # Reports direct reads from proto message fields when getters should be used.
+    - protogetter
+
+    # Checks for receiver type consistency.
+    - recvcheck
+
+    # Ensures consistent code style when using log/slog.
+    - sloglint
+
+    # Checks for mistakes with OpenTelemetry/Census spans.
+    - spancheck
+
+    # Is a replacement for golint, similar to revive.
     - stylecheck
 
-    # Check struct tags.
+    # Checks that struct tags are well aligned.
+    - tagalign
+
+    # Checks the struct tags.
     - tagliatelle
 
-    # Forces to use _ test package. Often non-`_test` package is ok.
+    # Forces the use of a separate _test package. Often non-_test package is okay.
     - testpackage
 
-    # Makes you add t.Helper() as first line to test utils
+    # Makes you add t.Helper() as the first line in test helpers.
     - thelper
 
+    # Expects testable examples.
     - testableexamples
 
-    # Covered by revive
+    # Covered by revive.
     - unparam
+
+    # Reports uses of functions with replacements inside the testing package.
+    - usetesting
 
     # I'm fine with long variable names with a small scope.
     - varnamelen
 
-    # gofmt,gofumpt covers that (from what I know).
+    # Checks for unnecessary newlines at the start and end of functions.
+    # gofmt and gofumpt cover that.
     - whitespace
 
     # Wrap all errors from external packages.
@@ -280,6 +348,9 @@ linters:
 
     # Forces you to use empty lines.
     - wsl
+
+    # Detects the wrong usage of zerolog where a user forgets to dispatch with Send or Msg.
+    - zerologlint
 
 linters-settings:
   errcheck:
