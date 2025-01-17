@@ -9,10 +9,10 @@ run:
 
 issues:
   # Setting 0 to have all the results. Good to be have all issues once the initial lint is stable.
-  max-issues-per-linter: 10
+  max-issues-per-linter: 0
 
   # Same here, nothing should be skipped to not miss errors.
-  max-same-issues: 5
+  max-same-issues: 0
 
   # Which dirs to exclude
   exclude-dirs:
