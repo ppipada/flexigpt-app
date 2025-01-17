@@ -47,5 +47,4 @@ func (n *NotificationHandler[I]) Handle(ctx context.Context, req Request[json.Ra
 // GetTypes returns the reflect.Type of the input
 func (m *NotificationHandler[I]) GetTypes() reflect.Type {
 	return reflect.TypeOf((*I)(nil)).Elem()
-
 }

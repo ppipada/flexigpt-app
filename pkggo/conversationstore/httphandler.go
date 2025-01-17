@@ -6,11 +6,12 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
-const tag = "Conversations"
-const pathPrefix = "/conversations"
+const (
+	tag        = "Conversations"
+	pathPrefix = "/conversations"
+)
 
 func InitConversationStoreHandlers(api huma.API, conversationStoreAPI *ConversationCollection) {
-
 	huma.Register(api, huma.Operation{
 		OperationID: "save-conversation",
 		Method:      http.MethodPut,
@@ -55,5 +56,4 @@ func InitConversationStoreHandlers(api huma.API, conversationStoreAPI *Conversat
 		Description: "List conversation",
 		Tags:        []string{tag},
 	}, conversationStoreAPI.ListConversations)
-
 }

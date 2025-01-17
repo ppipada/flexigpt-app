@@ -51,7 +51,6 @@ func (op getKeyOperation) Execute(store *MapFileStore, t *testing.T) {
 }
 
 func TestMapFileStore(t *testing.T) {
-
 	tests := []struct {
 		name              string
 		initialData       map[string]interface{}

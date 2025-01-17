@@ -83,14 +83,15 @@ func getKey() ([]byte, error) {
 
 	// Attempt to retrieve the key from the keyring.
 	keyStr, err := keyring.Get(service, user)
-	if err == nil {
+	switch {
+	case err == nil:
 		// Decode the base64-encoded key.
 		key, err := base64.StdEncoding.DecodeString(keyStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode key: %w", err)
 		}
 		return key, nil
-	} else if errors.Is(err, keyring.ErrNotFound) {
+	case errors.Is(err, keyring.ErrNotFound):
 		// Generate a new 32-byte key if not found.
 		key := make([]byte, keySize)
 		if _, err := io.ReadFull(rand.Reader, key); err != nil {
@@ -102,7 +103,7 @@ func getKey() ([]byte, error) {
 			return nil, fmt.Errorf("failed to store key in keyring: %w", err)
 		}
 		return key, nil
-	} else {
+	default:
 		return nil, fmt.Errorf("failed to retrieve key from keyring: %w", err)
 	}
 }

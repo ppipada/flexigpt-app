@@ -54,22 +54,24 @@ type CreateMessageRequestParams struct {
 // client should inform the user before returning the sampled message, to allow
 // them to inspect the response (human in the loop) and decide whether to allow the
 // server to see it.
-type CreateMessageResponse jsonrpc.Response[*CreateMessageResult]
-type CreateMessageResult struct {
-	// This result property is reserved by the protocol to allow clients and servers
-	// to attach additional metadata to their responses.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
-	_    struct{}               `json:"-"               additionalProperties:"true"`
+type (
+	CreateMessageResponse jsonrpc.Response[*CreateMessageResult]
+	CreateMessageResult   struct {
+		// This result property is reserved by the protocol to allow clients and servers
+		// to attach additional metadata to their responses.
+		Meta map[string]interface{} `json:"_meta,omitempty"`
+		_    struct{}               `json:"-"               additionalProperties:"true"`
 
-	Content Content `json:"content"`
-	Role    Role    `json:"role"`
+		Content Content `json:"content"`
+		Role    Role    `json:"role"`
 
-	// The name of the model that generated the message.
-	Model string `json:"model"`
+		// The name of the model that generated the message.
+		Model string `json:"model"`
 
-	// The reason why sampling stopped, if known.
-	StopReason *string `json:"stopReason,omitempty"`
-}
+		// The reason why sampling stopped, if known.
+		StopReason *string `json:"stopReason,omitempty"`
+	}
+)
 
 // The server's preferences for model selection, requested of the client during
 // sampling.

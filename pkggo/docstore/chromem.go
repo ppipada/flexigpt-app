@@ -127,7 +127,6 @@ func (db *ChromemDocumentDB) CreateCollection(
 	embeddingFuncID spec.EmbeddingFuncID,
 	apiKey string,
 ) (*spec.DocumentCollection, error) {
-
 	u, err := uuid.NewV7()
 	if err != nil {
 		return nil, err

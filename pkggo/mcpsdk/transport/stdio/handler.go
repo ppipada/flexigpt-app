@@ -13,8 +13,8 @@ const JSONRPCEndpoint = "/jsonrpc"
 
 func Register(api huma.API,
 	methodMap map[string]jsonrpc.IMethodHandler,
-	notificationMap map[string]jsonrpc.INotificationHandler) {
-
+	notificationMap map[string]jsonrpc.INotificationHandler,
+) {
 	// Get default operation
 	op := jsonrpc.GetDefaultOperation()
 	op.Path = JSONRPCEndpoint

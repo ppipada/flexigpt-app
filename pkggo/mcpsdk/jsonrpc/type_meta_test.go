@@ -223,7 +223,6 @@ func TestMarshalMeta_Request(t *testing.T) {
 			if !jsonStringsEqual(string(data), tt.wantData) {
 				t.Errorf("marshalMeta() data = %s, want %s", string(data), tt.wantData)
 			}
-
 		})
 	}
 }

@@ -183,6 +183,7 @@ func TestRotateOnLifetime(t *testing.T) {
 		t.Fatalf("expected 2 files, got %d", len(files))
 	}
 }
+
 func TestConcurrentWrites(t *testing.T) {
 	slogOpts := &slog.HandlerOptions{
 		Level: slog.LevelDebug,

@@ -3,7 +3,6 @@ package main
 import (
 	"log/slog"
 	"os"
-
 	"path/filepath"
 
 	"github.com/flexigpt/flexiui/pkggo/conversationstore"
@@ -53,7 +52,7 @@ func NewBackendApp(
 
 func (a *BackendApp) initSettingsStore() {
 	a.settingStoreAPI = &settingstore.SettingStore{}
-	if err := os.MkdirAll(a.settingsDirPath, os.FileMode(0770)); err != nil {
+	if err := os.MkdirAll(a.settingsDirPath, os.FileMode(0o770)); err != nil {
 		slog.Error(
 			"Failed to create directories for settings",
 			"settings dir",
@@ -77,12 +76,11 @@ func (a *BackendApp) initSettingsStore() {
 		panic("Failed to initialize settings store")
 	}
 	slog.Info("Settings created", "filepath", a.settingsFilePath)
-
 }
 
 func (a *BackendApp) initConversationStore() {
 	a.conversationStoreAPI = &conversationstore.ConversationCollection{}
-	if err := os.MkdirAll(a.conversationsDirPath, os.FileMode(0770)); err != nil {
+	if err := os.MkdirAll(a.conversationsDirPath, os.FileMode(0o770)); err != nil {
 		slog.Error(
 			"Failed to create directories",
 			"ConversationStore path",
@@ -108,7 +106,6 @@ func (a *BackendApp) initConversationStore() {
 		panic("Failed to initialize Managers")
 	}
 	slog.Info("Conversation store initialized", "directory", a.conversationsDirPath)
-
 }
 
 func (a *BackendApp) initProviderSet() {

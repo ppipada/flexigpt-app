@@ -264,7 +264,6 @@ func TestConversationCollectionListing(t *testing.T) {
 			t.Errorf("Expected 2 conversations, got %d", len(convoItems.Body.ConversationItems))
 		}
 	})
-
 }
 
 func TestGetDateFromUUIDv7(t *testing.T) {

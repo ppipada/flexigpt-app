@@ -35,6 +35,8 @@ func (r *IncludeContext) MarshalJSON() ([]byte, error) {
 	return r.StringUnion.MarshalJSON()
 }
 
-var IncludeContextNone *IncludeContext = NewIncludeContext("none")
-var IncludeContextAllServers *IncludeContext = NewIncludeContext("allServers")
-var IncludeContextThisServer *IncludeContext = NewIncludeContext("thisServer")
+var (
+	IncludeContextNone       *IncludeContext = NewIncludeContext("none")
+	IncludeContextAllServers *IncludeContext = NewIncludeContext("allServers")
+	IncludeContextThisServer *IncludeContext = NewIncludeContext("thisServer")
+)

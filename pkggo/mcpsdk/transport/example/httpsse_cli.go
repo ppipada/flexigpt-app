@@ -40,7 +40,6 @@ func SetupSSETransport() http.Handler {
 }
 
 func GetHTTPServerCLI() humacli.CLI {
-
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {
 		log.Printf("Options are %+v\n", opts)
 		handler := SetupSSETransport()

@@ -3,8 +3,10 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/wailsapp/wails/v2"
@@ -14,10 +16,6 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/linux"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
-
-	"context"
-
-	"path/filepath"
 
 	assets "github.com/flexigpt/flexiui/frontend"
 	"github.com/flexigpt/flexiui/pkggo/logrotate"

@@ -8,12 +8,14 @@ import (
 type ListToolsRequest jsonrpc.Request[*PaginatedRequestParams]
 
 // The server's response to a tools/list request from the client.
-type ListToolsResponse jsonrpc.Response[*ListToolsResult]
-type ListToolsResult struct {
-	_ struct{} `json:"-"     additionalProperties:"true"`
-	PaginatedResultParams
-	Tools []Tool `json:"tools"`
-}
+type (
+	ListToolsResponse jsonrpc.Response[*ListToolsResult]
+	ListToolsResult   struct {
+		_ struct{} `json:"-"     additionalProperties:"true"`
+		PaginatedResultParams
+		Tools []Tool `json:"tools"`
+	}
+)
 
 // Definition for a tool the client can call.
 type Tool struct {
@@ -32,15 +34,17 @@ type ToolInputSchema struct {
 }
 
 // Used by the client to invoke a tool provided by the server.
-type CallToolRequest jsonrpc.Request[CallToolRequestParams]
-type CallToolRequestParams struct {
-	// This property is reserved by the protocol to allow clients and servers
-	// to attach additional metadata to their requests.
-	Meta      map[string]interface{} `json:"_meta,omitempty"`
-	_         struct{}               `json:"-"                   additionalProperties:"true"`
-	Name      string                 `json:"name"`
-	Arguments map[string]interface{} `json:"arguments,omitempty"`
-}
+type (
+	CallToolRequest       jsonrpc.Request[CallToolRequestParams]
+	CallToolRequestParams struct {
+		// This property is reserved by the protocol to allow clients and servers
+		// to attach additional metadata to their requests.
+		Meta      map[string]interface{} `json:"_meta,omitempty"`
+		_         struct{}               `json:"-"                   additionalProperties:"true"`
+		Name      string                 `json:"name"`
+		Arguments map[string]interface{} `json:"arguments,omitempty"`
+	}
+)
 
 // The server's response to a tool call.
 //
@@ -52,20 +56,22 @@ type CallToolRequestParams struct {
 // However, any errors in _finding_ the tool, an error indicating that the
 // server does not support tool calls, or any other exceptional conditions,
 // should be reported as an MCP error response.
-type CallToolResponse jsonrpc.Response[*CallToolResult]
-type CallToolResult struct {
-	// This result property is reserved by the protocol to allow clients and servers
-	// to attach additional metadata to their responses.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+type (
+	CallToolResponse jsonrpc.Response[*CallToolResult]
+	CallToolResult   struct {
+		// This result property is reserved by the protocol to allow clients and servers
+		// to attach additional metadata to their responses.
+		Meta map[string]interface{} `json:"_meta,omitempty"`
 
-	// Content corresponds to the JSON schema field "content".
-	Content []Content `json:"content"`
+		// Content corresponds to the JSON schema field "content".
+		Content []Content `json:"content"`
 
-	// Whether the tool call ended in an error.
-	//
-	// If not set, this is assumed to be false (the call was successful).
-	IsError *bool `json:"isError,omitempty"`
-}
+		// Whether the tool call ended in an error.
+		//
+		// If not set, this is assumed to be false (the call was successful).
+		IsError *bool `json:"isError,omitempty"`
+	}
+)
 
 // An optional notification from the server to the client, informing it that the
 // list of tools it offers has changed. This may be issued by servers without any

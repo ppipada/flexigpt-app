@@ -9,8 +9,10 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
-type RequestAny = Request[any]
-type NotificationAny = Notification[any]
+type (
+	RequestAny      = Request[any]
+	NotificationAny = Notification[any]
+)
 
 func getTypeSchema(
 	api huma.API,

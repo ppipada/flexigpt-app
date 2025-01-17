@@ -57,14 +57,16 @@ type GetPromptRequestParams struct {
 }
 
 // The server's response to a prompts/get request from the client.
-type GetPromptResponse jsonrpc.Response[*GetPromptResult]
-type GetPromptResult struct {
-	// This result property is reserved by the protocol to allow clients and servers
-	// to attach additional metadata to their responses.
-	Meta        map[string]interface{} `json:"_meta,omitempty"`
-	Description *string                `json:"description,omitempty"`
-	Messages    []PromptMessage        `json:"messages"`
-}
+type (
+	GetPromptResponse jsonrpc.Response[*GetPromptResult]
+	GetPromptResult   struct {
+		// This result property is reserved by the protocol to allow clients and servers
+		// to attach additional metadata to their responses.
+		Meta        map[string]interface{} `json:"_meta,omitempty"`
+		Description *string                `json:"description,omitempty"`
+		Messages    []PromptMessage        `json:"messages"`
+	}
+)
 
 // Describes a message returned as part of a prompt.
 //

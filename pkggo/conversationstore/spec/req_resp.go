@@ -4,16 +4,14 @@ type SaveConversationRequest struct {
 	Body *Conversation
 }
 
-type SaveConversationResponse struct {
-}
+type SaveConversationResponse struct{}
 
 type DeleteConversationRequest struct {
 	ID    string `path:"id" required:"true"`
 	Title string `          required:"true" query:"title"`
 }
 
-type DeleteConversationResponse struct {
-}
+type DeleteConversationResponse struct{}
 
 type GetConversationRequest struct {
 	ID    string `path:"id" required:"true"`
@@ -47,5 +45,4 @@ type AddMessageToConversationRequestBody struct {
 	NewMessage ConversationMessage `json:"newMessage" required:"true"`
 }
 
-type AddMessageToConversationResponse struct {
-}
+type AddMessageToConversationResponse struct{}

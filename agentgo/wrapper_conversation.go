@@ -33,27 +33,23 @@ func (ccw *ConversationCollectionWrapper) SaveConversation(
 func (ccw *ConversationCollectionWrapper) DeleteConversation(
 	req *spec.DeleteConversationRequest,
 ) (*spec.DeleteConversationResponse, error) {
-
 	return ccw.store.DeleteConversation(context.Background(), req)
 }
 
 func (ccw *ConversationCollectionWrapper) GetConversation(
 	req *spec.GetConversationRequest,
 ) (*spec.GetConversationResponse, error) {
-
 	return ccw.store.GetConversation(context.Background(), req)
 }
 
 func (ccw *ConversationCollectionWrapper) ListConversations(
 	req *spec.ListConversationsRequest,
 ) (*spec.ListConversationsResponse, error) {
-
 	return ccw.store.ListConversations(context.Background(), req)
 }
 
 func (ccw *ConversationCollectionWrapper) AddMessageToConversation(
 	req *spec.AddMessageToConversationRequest,
 ) (*spec.AddMessageToConversationResponse, error) {
-
 	return ccw.store.AddMessageToConversation(context.Background(), req)
 }

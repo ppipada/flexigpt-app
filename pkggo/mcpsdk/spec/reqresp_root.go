@@ -20,17 +20,19 @@ type ListRootsRequest jsonrpc.Request[*PaginatedRequestParams]
 // This result contains an array of Root objects, each representing a root
 // directory
 // or file that the server can operate on.
-type ListRootsResponse jsonrpc.Response[*ListPromptsResult]
-type ListRootsResult struct {
-	// Even though this is a listing, spec doesnt specify pagination for it.
+type (
+	ListRootsResponse jsonrpc.Response[*ListPromptsResult]
+	ListRootsResult   struct {
+		// Even though this is a listing, spec doesnt specify pagination for it.
 
-	// This property is reserved by the protocol to allow clients and servers
-	// to attach additional metadata to their requests.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
-	_    struct{}               `json:"-"               additionalProperties:"true"`
+		// This property is reserved by the protocol to allow clients and servers
+		// to attach additional metadata to their requests.
+		Meta map[string]interface{} `json:"_meta,omitempty"`
+		_    struct{}               `json:"-"               additionalProperties:"true"`
 
-	Roots []Root `json:"roots,omitempty"`
-}
+		Roots []Root `json:"roots,omitempty"`
+	}
+)
 
 // Represents a root directory or file that the server can operate on.
 type Root struct {

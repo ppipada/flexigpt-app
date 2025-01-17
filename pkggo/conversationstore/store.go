@@ -68,7 +68,6 @@ func InitConversation(title string) (*spec.Conversation, error) {
 	c.Messages = []spec.ConversationMessage{}
 
 	return &c, nil
-
 }
 
 type ConversationCollection struct {

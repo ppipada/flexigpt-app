@@ -421,7 +421,6 @@ func TestNotifications(t *testing.T) {
 					t.Errorf("Expected no response, but got: %s", string(respBody))
 				}
 			}
-
 		})
 	}
 }

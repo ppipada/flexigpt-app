@@ -28,5 +28,7 @@ func (r *Role) MarshalJSON() ([]byte, error) {
 	return r.StringUnion.MarshalJSON()
 }
 
-var RoleAssistant *Role = NewRole("assistant")
-var RoleUser *Role = NewRole("user")
+var (
+	RoleAssistant *Role = NewRole("assistant")
+	RoleUser      *Role = NewRole("user")
+)

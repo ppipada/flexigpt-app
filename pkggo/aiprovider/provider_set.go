@@ -94,7 +94,6 @@ func (ps *ProviderSetAPI) SetDefaultProvider(
 func (ps *ProviderSetAPI) GetConfigurationInfo(
 	ctx context.Context,
 	req *spec.GetConfigurationInfoRequest,
-
 ) (*spec.GetConfigurationInfoResponse, error) {
 	configurationInfo := map[string]interface{}{
 		"defaultProvider": ps.defaultProvider,

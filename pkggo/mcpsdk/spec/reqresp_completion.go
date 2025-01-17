@@ -32,15 +32,17 @@ type CompletionReference struct {
 }
 
 // The server's response to a completion/complete request
-type CompleteResponse jsonrpc.Response[*CompleteResult]
-type CompleteResult struct {
-	// This result property is reserved by the protocol to allow clients and servers
-	// to attach additional metadata to their responses.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+type (
+	CompleteResponse jsonrpc.Response[*CompleteResult]
+	CompleteResult   struct {
+		// This result property is reserved by the protocol to allow clients and servers
+		// to attach additional metadata to their responses.
+		Meta map[string]interface{} `json:"_meta,omitempty"`
 
-	// Completion corresponds to the JSON schema field "completion".
-	Completion CompleteResultCompletion `json:"completion"`
-}
+		// Completion corresponds to the JSON schema field "completion".
+		Completion CompleteResultCompletion `json:"completion"`
+	}
+)
 
 type CompleteResultCompletion struct {
 	// Indicates whether there are additional completion options beyond those provided

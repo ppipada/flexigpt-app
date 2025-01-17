@@ -28,5 +28,7 @@ func (r *Ref) MarshalJSON() ([]byte, error) {
 	return r.StringUnion.MarshalJSON()
 }
 
-var RefResource *Ref = NewRef("ref/resource")
-var RefPrompt *Ref = NewRef("ref/prompt")
+var (
+	RefResource *Ref = NewRef("ref/resource")
+	RefPrompt   *Ref = NewRef("ref/prompt")
+)

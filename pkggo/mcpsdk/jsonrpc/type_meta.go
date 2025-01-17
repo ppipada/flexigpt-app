@@ -111,11 +111,12 @@ func (m Meta[T]) Schema(r huma.Registry) *huma.Schema {
 	elementSchema := r.Schema(elementType, true, "")
 
 	s := &huma.Schema{
-		OneOf: []*huma.Schema{elementSchema, {
-			Type:     huma.TypeArray,
-			Items:    elementSchema,
-			MinItems: intPtr(1),
-		},
+		OneOf: []*huma.Schema{
+			elementSchema, {
+				Type:     huma.TypeArray,
+				Items:    elementSchema,
+				MinItems: intPtr(1),
+			},
 		},
 	}
 	return s

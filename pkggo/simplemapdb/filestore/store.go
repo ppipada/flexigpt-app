@@ -110,7 +110,7 @@ func (store *MapFileStore) createFileIfNotExists(filename string) error {
 	maps.Copy(store.data, store.defaultData)
 
 	// Create directories if needed
-	if err := os.MkdirAll(filepath.Dir(filename), os.FileMode(0770)); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), os.FileMode(0o770)); err != nil {
 		return fmt.Errorf("failed to create directories for file %s: %v", filename, err)
 	}
 
@@ -231,7 +231,7 @@ func (store *MapFileStore) GetAll(forceFetch bool) (map[string]interface{}, erro
 	defer store.mu.RUnlock()
 
 	// Return a copy of the in-memory data
-	var dataCopy = make(map[string]interface{})
+	dataCopy := make(map[string]interface{})
 	maps.Copy(dataCopy, store.data)
 	return dataCopy, nil
 }

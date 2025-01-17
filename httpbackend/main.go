@@ -64,7 +64,6 @@ func initSlog(logsDirPath string, debug bool) *logrotate.Writer {
 }
 
 func main() {
-
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {
 		log.Printf("Options are %+v\n", opts)
 		writer := initSlog(opts.LogsDirPath, opts.Debug)
@@ -99,5 +98,4 @@ func main() {
 	})
 
 	cli.Run()
-
 }

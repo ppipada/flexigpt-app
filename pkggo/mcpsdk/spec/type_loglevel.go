@@ -37,11 +37,13 @@ func (r *LoggingLevel) MarshalJSON() ([]byte, error) {
 	return r.StringUnion.MarshalJSON()
 }
 
-var LoggingLevelAlert *LoggingLevel = NewLoggingLevel("alert")
-var LoggingLevelCritical *LoggingLevel = NewLoggingLevel("critical")
-var LoggingLevelDebug *LoggingLevel = NewLoggingLevel("debug")
-var LoggingLevelEmergency *LoggingLevel = NewLoggingLevel("emergency")
-var LoggingLevelError *LoggingLevel = NewLoggingLevel("error")
-var LoggingLevelInfo *LoggingLevel = NewLoggingLevel("info")
-var LoggingLevelNotice *LoggingLevel = NewLoggingLevel("notice")
-var LoggingLevelWarning *LoggingLevel = NewLoggingLevel("warning")
+var (
+	LoggingLevelAlert     *LoggingLevel = NewLoggingLevel("alert")
+	LoggingLevelCritical  *LoggingLevel = NewLoggingLevel("critical")
+	LoggingLevelDebug     *LoggingLevel = NewLoggingLevel("debug")
+	LoggingLevelEmergency *LoggingLevel = NewLoggingLevel("emergency")
+	LoggingLevelError     *LoggingLevel = NewLoggingLevel("error")
+	LoggingLevelInfo      *LoggingLevel = NewLoggingLevel("info")
+	LoggingLevelNotice    *LoggingLevel = NewLoggingLevel("notice")
+	LoggingLevelWarning   *LoggingLevel = NewLoggingLevel("warning")
+)

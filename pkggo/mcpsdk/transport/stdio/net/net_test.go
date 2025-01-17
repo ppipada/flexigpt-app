@@ -37,7 +37,6 @@ type delayHandler struct {
 func (h *delayHandler) HandleMessage(writer io.Writer, msg []byte) {
 	time.Sleep(h.delay)
 	_, _ = writer.Write(msg)
-
 }
 
 // errorHandler simulates an error by sending invalid responses.
@@ -196,7 +195,6 @@ func TestSynchronousSingleRequest(t *testing.T) {
 				if len(reply) != len(tt.message) {
 					t.Errorf("Expected reply length %d, got %d", len(tt.message), len(reply))
 				}
-
 			}
 		})
 	}

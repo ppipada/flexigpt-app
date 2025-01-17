@@ -6,11 +6,12 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
-const tag = "LLMProviders"
-const pathPrefix = "/llmproviders"
+const (
+	tag        = "LLMProviders"
+	pathPrefix = "/llmproviders"
+)
 
 func InitProviderSetHandlers(api huma.API, providerSetAPI *ProviderSetAPI) {
-
 	huma.Register(api, huma.Operation{
 		OperationID: "get-default-provider",
 		Method:      http.MethodGet,
@@ -64,5 +65,4 @@ func InitProviderSetHandlers(api huma.API, providerSetAPI *ProviderSetAPI) {
 		Description: "Fetch completion for a provider",
 		Tags:        []string{tag},
 	}, providerSetAPI.FetchCompletion)
-
 }

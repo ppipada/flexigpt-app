@@ -98,11 +98,9 @@ func GetMethodHandlers() map[string]jsonrpc.IMethodHandler {
 	}
 
 	return methodMap
-
 }
 
 func GetNotificationHandlers() map[string]jsonrpc.INotificationHandler {
-
 	notificationMap := map[string]jsonrpc.INotificationHandler{
 		"ping": &jsonrpc.NotificationHandler[PingParams]{Endpoint: PingEndpoint},
 		"notify": &jsonrpc.NotificationHandler[NotifyParams]{
@@ -111,5 +109,4 @@ func GetNotificationHandlers() map[string]jsonrpc.INotificationHandler {
 	}
 
 	return notificationMap
-
 }

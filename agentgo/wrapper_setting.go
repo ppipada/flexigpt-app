@@ -37,6 +37,5 @@ func (w *SettingStoreWrapper) GetAllSettings(
 func (w *SettingStoreWrapper) SetSetting(
 	req *spec.SetSettingRequest,
 ) (*spec.SetSettingResponse, error) {
-
 	return w.store.SetSetting(context.Background(), req)
 }

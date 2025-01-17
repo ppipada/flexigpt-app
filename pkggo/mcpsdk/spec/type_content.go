@@ -29,9 +29,11 @@ func (c *ContentType) MarshalJSON() ([]byte, error) {
 }
 
 // Content
-var ContentTypeText = NewContentType("text")
-var ContentTypeImage = NewContentType("image")
-var ContentTypeEmbeddedResource = NewContentType("resource")
+var (
+	ContentTypeText             = NewContentType("text")
+	ContentTypeImage            = NewContentType("image")
+	ContentTypeEmbeddedResource = NewContentType("resource")
+)
 
 type Content struct {
 	// Type corresponds to the JSON schema field "type".

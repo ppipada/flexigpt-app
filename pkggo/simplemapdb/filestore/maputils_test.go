@@ -772,14 +772,15 @@ func TestDeepCopyValue(t *testing.T) {
 
 // modifyValue modifies the input value in place for testing deep copy.
 func modifyValue(value interface{}) {
+	const m = "modified"
 	switch v := value.(type) {
 	case map[string]interface{}:
 		for key := range v {
-			v[key] = "modified"
+			v[key] = m
 		}
 	case []interface{}:
 		for i := range v {
-			v[i] = "modified"
+			v[i] = m
 		}
 	}
 }

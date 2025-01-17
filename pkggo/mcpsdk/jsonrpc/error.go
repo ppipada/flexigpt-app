@@ -83,7 +83,6 @@ func (e *ResponseStatusError) GetStatus() int {
 }
 
 func (e ResponseStatusError) Schema(r huma.Registry) *huma.Schema {
-
 	errorObjectSchema := r.Schema(reflect.TypeOf(e.Response.Error), true, "")
 
 	responseObjectSchema := &huma.Schema{

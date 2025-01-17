@@ -357,7 +357,7 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to marshal test data: %v", err)
 			}
-			err = os.WriteFile(filePath, fileData, 0644)
+			err = os.WriteFile(filePath, fileData, 0o644)
 			if err != nil {
 				t.Fatalf("failed to write test file: %v", err)
 			}
@@ -589,7 +589,7 @@ func TestListFilesNoPartitionProvider(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to marshal test data: %v", err)
 		}
-		err = os.WriteFile(filePath, fileData, 0644)
+		err = os.WriteFile(filePath, fileData, 0o644)
 		if err != nil {
 			t.Fatalf("failed to write test file: %v", err)
 		}

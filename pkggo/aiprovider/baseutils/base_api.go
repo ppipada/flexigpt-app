@@ -107,7 +107,6 @@ func (api *BaseAIAPI) MakeCompletion(
 	)
 
 	return &completionRequest, nil
-
 }
 
 // SetProviderAttribute sets the attributes for the OpenAIAPI

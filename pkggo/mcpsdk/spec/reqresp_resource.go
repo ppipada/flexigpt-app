@@ -50,26 +50,30 @@ type ReadResourceRequestParams struct {
 }
 
 // The server's response to a resources/read request from the client.
-type ReadResourceResponse jsonrpc.Response[*ReadResourceResult]
-type ReadResourceResult struct {
-	// This result property is reserved by the protocol to allow clients and servers
-	// to attach additional metadata to their responses.
-	Meta     map[string]interface{}  `json:"_meta,omitempty"`
-	Contents []ResourceContent `json:"contents"`
-}
+type (
+	ReadResourceResponse jsonrpc.Response[*ReadResourceResult]
+	ReadResourceResult   struct {
+		// This result property is reserved by the protocol to allow clients and servers
+		// to attach additional metadata to their responses.
+		Meta     map[string]interface{} `json:"_meta,omitempty"`
+		Contents []ResourceContent      `json:"contents"`
+	}
+)
 
 // Sent from the client to request a list of resource templates the server has.
 type ListResourceTemplatesRequest jsonrpc.Request[*PaginatedRequestParams]
 
 // The server's response to a resources/templates/list request from the client.
-type ListResourceTemplatesResponse jsonrpc.Response[*ListResourceTemplatesResult]
-type ListResourceTemplatesResult struct {
-	// This result property is reserved by the protocol to allow clients and servers
-	// to attach additional metadata to their responses.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
-	// ResourceTemplates corresponds to the JSON schema field "resourceTemplates".
-	ResourceTemplates []ResourceTemplate `json:"resourceTemplates"`
-}
+type (
+	ListResourceTemplatesResponse jsonrpc.Response[*ListResourceTemplatesResult]
+	ListResourceTemplatesResult   struct {
+		// This result property is reserved by the protocol to allow clients and servers
+		// to attach additional metadata to their responses.
+		Meta map[string]interface{} `json:"_meta,omitempty"`
+		// ResourceTemplates corresponds to the JSON schema field "resourceTemplates".
+		ResourceTemplates []ResourceTemplate `json:"resourceTemplates"`
+	}
+)
 
 // Sent from the client to request resources/updated notifications from the server
 // whenever a particular resource changes.

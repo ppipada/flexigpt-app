@@ -33,6 +33,6 @@ type LoggingMessageNotificationParams struct {
 
 	// The data to be logged, such as a string message or an object. Any JSON
 	// serializable type is allowed here.
-	Data  interface{}        `json:"data"`
+	Data  interface{}  `json:"data"`
 	Level LoggingLevel `json:"level"`
 }

@@ -26,7 +26,6 @@ func InitDocumentDBSet(dds *DocumentDBSet, basePath string) error {
 		WithBasePath(spec.ChromemDocStorePath),
 		WithCompression(true),
 	)
-
 	if err != nil {
 		return err
 	}

@@ -285,7 +285,6 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	// Return the response and error
 	return resp, err
-
 }
 
 // NewDebugHTTPClient creates a new HTTP client with logging capabilities

@@ -267,7 +267,7 @@ func TestDecodeWithNonStringInterface(t *testing.T) {
 	}
 
 	// Decode dest that is not a string
-	var decodedValue = 123 // Initialize with a non-string type
+	decodedValue := 123 // Initialize with a non-string type
 	err = encoderDecoder.Decode(encodedBuffer, &decodedValue)
 	if err == nil {
 		t.Errorf("Expected error when decoding into a non-string interface, but got none")

@@ -12,7 +12,6 @@ import (
 
 // GetDefaultOperation gets the conventional values for jsonrpc as a single operation
 func GetDefaultOperation() huma.Operation {
-
 	return huma.Operation{
 		Method:        http.MethodPost,
 		Path:          "/jsonrpc",

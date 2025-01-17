@@ -6,8 +6,10 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
-const tag = "Settings"
-const pathPrefix = "/settings"
+const (
+	tag        = "Settings"
+	pathPrefix = "/settings"
+)
 
 func InitSettingStoreHandlers(api huma.API, settingsStoreAPI *SettingStore) {
 	// Register GET /settings

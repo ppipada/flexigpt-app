@@ -3,13 +3,11 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"log/slog"
 	"os"
-
-	"context"
-
 	"path/filepath"
 	"strings"
 
@@ -19,8 +17,10 @@ import (
 	"github.com/adrg/xdg"
 )
 
-const AppTitle = "FlexiGPT"
-const AppDisplayTitle = "FlexiGPT"
+const (
+	AppTitle        = "FlexiGPT"
+	AppDisplayTitle = "FlexiGPT"
+)
 
 // App struct
 type App struct {
@@ -56,7 +56,7 @@ func NewApp() *App {
 	app.conversationStoreAPI = &ConversationCollectionWrapper{}
 	app.providerSetAPI = &ProviderSetWrapper{}
 
-	if err := os.MkdirAll(app.configBasePath, os.FileMode(0770)); err != nil {
+	if err := os.MkdirAll(app.configBasePath, os.FileMode(0o770)); err != nil {
 		slog.Error(
 			"Failed to create directories",
 			"Config path",
@@ -66,13 +66,12 @@ func NewApp() *App {
 		)
 		panic("Failed to initialize App")
 	}
-	if err := os.MkdirAll(app.dataBasePath, os.FileMode(0770)); err != nil {
+	if err := os.MkdirAll(app.dataBasePath, os.FileMode(0o770)); err != nil {
 		slog.Error("Failed to create directories", "app data", app.dataBasePath, "Error", err)
 		panic("Failed to initialize App")
 	}
 
 	return app
-
 }
 
 func (a *App) initManagers() {
@@ -116,7 +115,6 @@ func (a *App) initManagers() {
 		)
 		panic("Failed to initialize Managers")
 	}
-
 }
 
 // startup is called at application startup
@@ -179,5 +177,5 @@ func (a *App) SaveFile(
 	}
 
 	// Write the content to the file
-	return os.WriteFile(savePath, contentBytes, 0644)
+	return os.WriteFile(savePath, contentBytes, 0o644)
 }

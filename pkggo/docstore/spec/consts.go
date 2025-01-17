@@ -1,10 +1,14 @@
 package spec
 
-const ChromemDocStoreName = "chromemlocal"
-const ChromemDocStorePath = "./chromemgo"
+const (
+	ChromemDocStoreName = "chromemlocal"
+	ChromemDocStorePath = "./chromemgo"
+)
 
-const HTTPDocStoreName = DocumentDBID("http")
-const HTTPDocStoreEndpoint = "http://127.0.0.1:8080"
+const (
+	HTTPDocStoreName     = DocumentDBID("http")
+	HTTPDocStoreEndpoint = "http://127.0.0.1:8080"
+)
 
 var HTTPDocStoreHeaders = map[string]string{}
 

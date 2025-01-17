@@ -17,5 +17,4 @@ type SetSettingRequest struct {
 	Body *SetSettingRequestBody
 }
 
-type SetSettingResponse struct {
-}
+type SetSettingResponse struct{}

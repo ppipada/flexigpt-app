@@ -1,6 +1,7 @@
 issues:
   exclude-files:
     - main.go
+  max-same-issues: 50
 run:
   build-tags:
     - codeanalysis
@@ -12,7 +13,16 @@ linters:
     - ineffassign
     - staticcheck
     - unused
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - contextcheck
+    - copyloopvar
     - dupword
+    - durationcheck
+    - goconst
+    - gocritic
+    - gofumpt
     - misspell
     - musttag
     - nolintlint

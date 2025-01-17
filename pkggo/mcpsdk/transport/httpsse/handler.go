@@ -14,8 +14,10 @@ import (
 	"github.com/google/uuid"
 )
 
-const SSEEndpoint = "/sse"
-const JSONRPCEndpoint = "/jsonrpc"
+const (
+	SSEEndpoint     = "/sse"
+	JSONRPCEndpoint = "/jsonrpc"
+)
 
 // SSETransport manages SSE connections and messages.
 type SSETransport struct {
@@ -55,7 +57,6 @@ func (s *SSETransport) Register(
 	op.Path = JSONRPCEndpoint
 	// Register the methods
 	jsonrpc.Register(api, op, methodMap, notificationMap)
-
 }
 
 // handleSSEConnection handles the initial SSE connection request.

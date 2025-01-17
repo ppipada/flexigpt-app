@@ -68,7 +68,7 @@ func TestNewMapFileStore(t *testing.T) {
 
 	for _, tt := range tests {
 		if tt.createFile {
-			err := os.WriteFile(tt.filename, []byte(tt.fileContent), 0644)
+			err := os.WriteFile(tt.filename, []byte(tt.fileContent), 0o644)
 			if err != nil {
 				t.Fatalf("[%s] Failed to create test file: %v", tt.name, err)
 			}
@@ -76,12 +76,12 @@ func TestNewMapFileStore(t *testing.T) {
 
 		if tt.name == "File exists but cannot open" {
 			// Create a file with no read permissions
-			err := os.Chmod(tt.filename, 0000)
+			err := os.Chmod(tt.filename, 0o000)
 			if err != nil {
 				t.Fatalf("[%s] Failed to change file permissions: %v", tt.name, err)
 			}
-			var ch = func() {
-				_ = os.Chmod(tt.filename, 0644) // Ensure we can clean up later}
+			ch := func() {
+				_ = os.Chmod(tt.filename, 0o644) // Ensure we can clean up later}
 			}
 			defer ch()
 		}
@@ -163,11 +163,9 @@ func TestMapFileStore_SetKey_GetKey(t *testing.T) {
 					t.Errorf("[%s] Expected error in SetKey but got nil", tt.name)
 				}
 				return
-			} else {
-				if err != nil {
-					t.Errorf("[%s] Unexpected error in SetKey: %v", tt.name, err)
-					return
-				}
+			} else if err != nil {
+				t.Errorf("[%s] Unexpected error in SetKey: %v", tt.name, err)
+				return
 			}
 
 			got, err := store.GetKey(tt.key)
@@ -179,10 +177,8 @@ func TestMapFileStore_SetKey_GetKey(t *testing.T) {
 			} else {
 				if err != nil {
 					t.Errorf("[%s] Unexpected error in GetKey: %v", tt.name, err)
-
 				} else if got != tt.value {
 					t.Errorf("[%s] GetKey returned %v, expected %v", tt.name, got, tt.value)
-
 				}
 			}
 		})
@@ -264,11 +260,9 @@ func TestMapFileStore_DeleteKey(t *testing.T) {
 					t.Errorf("[%s] Expected error in DeleteKey but got nil", tt.name)
 				}
 				return
-			} else {
-				if err != nil {
-					t.Errorf("[%s] Unexpected error in DeleteKey: %v", tt.name, err)
-					return
-				}
+			} else if err != nil {
+				t.Errorf("[%s] Unexpected error in DeleteKey: %v", tt.name, err)
+				return
 			}
 
 			if tt.checkExist {
@@ -517,11 +511,11 @@ func TestMapFileStorePermissionErrorCases(t *testing.T) {
 	}
 
 	// Simulate Save error by making the file unwritable
-	err = os.Chmod(filename, 0444)
+	err = os.Chmod(filename, 0o444)
 	if err != nil {
 		t.Fatalf("Failed to change file permissions: %v", err)
 	}
-	var ch = func() { _ = os.Chmod(filename, 0644) }
+	ch := func() { _ = os.Chmod(filename, 0o644) }
 	defer ch()
 
 	err = store.SetKey("foo", "bar")
@@ -530,11 +524,11 @@ func TestMapFileStorePermissionErrorCases(t *testing.T) {
 	}
 
 	// Simulate Decode error by writing invalid data into the file
-	err = os.Chmod(filename, 0666)
+	err = os.Chmod(filename, 0o666)
 	if err != nil {
 		t.Fatalf("Failed to change file permissions: %v", err)
 	}
-	err = os.WriteFile(filename, []byte(`invalid json`), 0666)
+	err = os.WriteFile(filename, []byte(`invalid json`), 0o666)
 	if err != nil {
 		t.Fatalf("Failed to write invalid data to file: %v", err)
 	}
