@@ -6,7 +6,7 @@ import (
 	"github.com/flexigpt/flexiui/pkggo/docstore/spec"
 )
 
-// DocumentDBSet manages multiple DocStore instances
+// DocumentDBSet manages multiple DocStore instances.
 type DocumentDBSet struct {
 	basePath string
 	docDBs   map[spec.DocumentDBID]spec.IDocumentDB

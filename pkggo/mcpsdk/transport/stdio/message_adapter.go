@@ -2,6 +2,7 @@ package stdio
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,14 +10,14 @@ import (
 	"sync"
 )
 
-// RequestParams holds default parameters for HTTP requests
+// RequestParams holds default parameters for HTTP requests.
 type RequestParams struct {
 	Method string
 	URL    string
 	Header http.Header
 }
 
-// ResponseWriter implements http.ResponseWriter
+// ResponseWriter implements http.ResponseWriter.
 type ResponseWriter struct {
 	writer      io.Writer
 	writeMu     *sync.Mutex
@@ -25,7 +26,7 @@ type ResponseWriter struct {
 	wroteHeader bool
 }
 
-// Header returns the header map to be sent by WriteHeader
+// Header returns the header map to be sent by WriteHeader.
 func (w *ResponseWriter) Header() http.Header {
 	if w.header == nil {
 		w.header = make(http.Header)
@@ -33,7 +34,7 @@ func (w *ResponseWriter) Header() http.Header {
 	return w.header
 }
 
-// WriteHeader sends an HTTP response header with the provided status code
+// WriteHeader sends an HTTP response header with the provided status code.
 func (w *ResponseWriter) WriteHeader(statusCode int) {
 	if w.wroteHeader {
 		// Avoid multiple WriteHeader calls
@@ -44,7 +45,7 @@ func (w *ResponseWriter) WriteHeader(statusCode int) {
 	// We don't output the status code or headers in this example
 }
 
-// Write writes the data to the connection as part of an HTTP reply
+// Write writes the data to the connection as part of an HTTP reply.
 func (w *ResponseWriter) Write(b []byte) (int, error) {
 	w.writeMu.Lock()
 	defer w.writeMu.Unlock()
@@ -53,13 +54,13 @@ func (w *ResponseWriter) Write(b []byte) (int, error) {
 	return w.writer.Write(b)
 }
 
-// HTTPMessageHandler uses an http.Handler to process messages
+// HTTPMessageHandler uses an http.Handler to process messages.
 type HTTPMessageHandler struct {
 	Handler       http.Handler
 	RequestParams RequestParams
 }
 
-// NewHTTPMessageHandler creates a new HTTPMessageHandler
+// NewHTTPMessageHandler creates a new HTTPMessageHandler.
 func NewHTTPMessageHandler(handler http.Handler, params RequestParams) *HTTPMessageHandler {
 	// Set default values if not provided
 	if params.Method == "" {
@@ -77,7 +78,7 @@ func NewHTTPMessageHandler(handler http.Handler, params RequestParams) *HTTPMess
 	}
 }
 
-// HandleMessage processes a single message
+// HandleMessage processes a single message.
 func (h *HTTPMessageHandler) HandleMessage(writer io.Writer, msg []byte) {
 	// log.Printf("MSG: %s", string(msg))
 	// Create a ResponseWriter for this handler
@@ -87,7 +88,8 @@ func (h *HTTPMessageHandler) HandleMessage(writer io.Writer, msg []byte) {
 	}
 
 	// Create Request with the message as the body
-	req, err := http.NewRequest(
+	req, err := http.NewRequestWithContext(
+		context.Background(),
 		h.RequestParams.Method,
 		h.RequestParams.URL,
 		bytes.NewReader(msg),

@@ -3,6 +3,7 @@ package filestore
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"maps"
 	"os"
@@ -97,7 +98,7 @@ func (store *MapFileStore) createFileIfNotExists(filename string) error {
 	if _, err := os.Stat(filename); err == nil {
 		return nil // File exists, nothing to do
 	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("failed to stat file %s: %v", filename, err)
+		return fmt.Errorf("failed to stat file %s: %w", filename, err)
 	}
 
 	// File does not exist
@@ -111,19 +112,19 @@ func (store *MapFileStore) createFileIfNotExists(filename string) error {
 
 	// Create directories if needed
 	if err := os.MkdirAll(filepath.Dir(filename), os.FileMode(0o770)); err != nil {
-		return fmt.Errorf("failed to create directories for file %s: %v", filename, err)
+		return fmt.Errorf("failed to create directories for file %s: %w", filename, err)
 	}
 
 	// Create the file
 	f, err := os.Create(filename)
 	if err != nil {
-		return fmt.Errorf("failed to create file %s: %v", filename, err)
+		return fmt.Errorf("failed to create file %s: %w", filename, err)
 	}
 	defer f.Close()
 
 	// Flush the store data to the file
 	if err := store.flush(); err != nil {
-		return fmt.Errorf("failed to flush file %s: %v", filename, err)
+		return fmt.Errorf("failed to flush file %s: %w", filename, err)
 	}
 
 	return nil
@@ -137,14 +138,14 @@ func (store *MapFileStore) load() error {
 	// Open the file
 	f, err := os.Open(store.filename)
 	if err != nil {
-		return fmt.Errorf("failed to open file %s: %v", store.filename, err)
+		return fmt.Errorf("failed to open file %s: %w", store.filename, err)
 	}
 	defer f.Close()
 
 	// Decode the data from the file
 	store.data = make(map[string]interface{})
 	if err := store.encdec.Decode(f, &store.data); err != nil {
-		return fmt.Errorf("failed to decode data from file %s: %v", store.filename, err)
+		return fmt.Errorf("failed to decode data from file %s: %w", store.filename, err)
 	}
 
 	// Apply per-key decoders
@@ -152,11 +153,12 @@ func (store *MapFileStore) load() error {
 		for key, encDec := range store.keyEncDecs {
 			keys := strings.Split(key, ".")
 			if err := decodeValueAtPath(store.data, keys, encDec); err != nil {
-				if _, ok := err.(*KeyNotFoundError); ok {
+				var kne *KeyNotFoundError
+				if errors.As(err, &kne) {
 					// Key doesn't exist
 					continue
 				}
-				return fmt.Errorf("failed to decode value at key %s: %v", key, err)
+				return fmt.Errorf("failed to decode value at key %s: %w", key, err)
 			}
 		}
 	}
@@ -172,11 +174,12 @@ func (store *MapFileStore) flush() error {
 		for key, encDec := range store.keyEncDecs {
 			keys := strings.Split(key, ".")
 			if err := encodeValueAtPath(dataCopy, keys, encDec); err != nil {
-				if _, ok := err.(*KeyNotFoundError); ok {
+				var kne *KeyNotFoundError
+				if errors.As(err, &kne) {
 					// Key doesnt exist
 					continue
 				}
-				return fmt.Errorf("failed to encode value at key %s: %v", key, err)
+				return fmt.Errorf("failed to encode value at key %s: %w", key, err)
 			}
 		}
 		dataToSave = dataCopy
@@ -187,12 +190,12 @@ func (store *MapFileStore) flush() error {
 
 	f, err := os.Create(store.filename)
 	if err != nil {
-		return fmt.Errorf("failed to open file %s for flush: %v", store.filename, err)
+		return fmt.Errorf("failed to open file %s for flush: %w", store.filename, err)
 	}
 	defer f.Close()
 
 	if err := store.encdec.Encode(f, dataToSave); err != nil {
-		return fmt.Errorf("failed to encode data to file %s: %v", store.filename, err)
+		return fmt.Errorf("failed to encode data to file %s: %w", store.filename, err)
 	}
 	return nil
 }
@@ -206,7 +209,7 @@ func (store *MapFileStore) Reset() error {
 	maps.Copy(store.data, store.defaultData)
 
 	if err := store.flush(); err != nil {
-		return fmt.Errorf("failed to save data after Reset: %v", err)
+		return fmt.Errorf("failed to save data after Reset: %w", err)
 	}
 	return nil
 }
@@ -223,7 +226,7 @@ func (store *MapFileStore) GetAll(forceFetch bool) (map[string]interface{}, erro
 	if forceFetch {
 		// Refresh data from the file
 		if err := store.load(); err != nil {
-			return nil, fmt.Errorf("failed to refresh data from file: %v", err)
+			return nil, fmt.Errorf("failed to refresh data from file: %w", err)
 		}
 	}
 
@@ -246,7 +249,7 @@ func (store *MapFileStore) SetAll(data map[string]interface{}) error {
 
 	if store.autoFlush {
 		if err := store.flush(); err != nil {
-			return fmt.Errorf("failed to save data after SetAll: %v", err)
+			return fmt.Errorf("failed to save data after SetAll: %w", err)
 		}
 	}
 	return nil
@@ -274,12 +277,12 @@ func (store *MapFileStore) SetKey(key string, value interface{}) error {
 
 	keys := strings.Split(key, ".")
 	if err := setValueAtPath(store.data, keys, value); err != nil {
-		return fmt.Errorf("failed to set value at key %s: %v", key, err)
+		return fmt.Errorf("failed to set value at key %s: %w", key, err)
 	}
 
 	if store.autoFlush {
 		if err := store.flush(); err != nil {
-			return fmt.Errorf("failed to save data after SetKey for key %s: %v", key, err)
+			return fmt.Errorf("failed to save data after SetKey for key %s: %w", key, err)
 		}
 	}
 	return nil
@@ -293,12 +296,12 @@ func (store *MapFileStore) DeleteKey(key string) error {
 
 	keys := strings.Split(key, ".")
 	if err := deleteValueAtPath(store.data, keys); err != nil {
-		return fmt.Errorf("failed to delete key %s: %v", key, err)
+		return fmt.Errorf("failed to delete key %s: %w", key, err)
 	}
 
 	if store.autoFlush {
 		if err := store.flush(); err != nil {
-			return fmt.Errorf("failed to save data after DeleteKey for key %s: %v", key, err)
+			return fmt.Errorf("failed to save data after DeleteKey for key %s: %w", key, err)
 		}
 	}
 	return nil
@@ -312,7 +315,8 @@ func encodeValueAtPath(
 ) error {
 	parentMap, lastKey, err := navigateToParentMap(data, keys, false)
 	if err != nil {
-		if _, ok := err.(*KeyNotFoundError); ok {
+		var kne *KeyNotFoundError
+		if errors.As(err, &kne) {
 			// Key doesnt exist so cannot encode, noop
 			return nil
 		}
@@ -327,7 +331,7 @@ func encodeValueAtPath(
 	// Encode val via encDec
 	var buf bytes.Buffer
 	if err := encDec.Encode(&buf, val); err != nil {
-		return fmt.Errorf("failed to encode value: %v", err)
+		return fmt.Errorf("failed to encode value: %w", err)
 	}
 
 	// Get the bytes
@@ -369,7 +373,7 @@ func decodeValueAtPath(
 	decodedBytes, err := base64.StdEncoding.DecodeString(strVal)
 	if err != nil {
 		return fmt.Errorf(
-			"failed to base64-decode value at key %s: %v",
+			"failed to base64-decode value at key %s: %w",
 			strings.Join(keys, "."),
 			err,
 		)
@@ -379,7 +383,7 @@ func decodeValueAtPath(
 	buf := bytes.NewReader(decodedBytes)
 	var decodedVal interface{}
 	if err := encDec.Decode(buf, &decodedVal); err != nil {
-		return fmt.Errorf("failed to decode value at key %s: %v", strings.Join(keys, "."), err)
+		return fmt.Errorf("failed to decode value at key %s: %w", strings.Join(keys, "."), err)
 	}
 
 	// Replace the value in parentMap[lastKey] with the decoded value

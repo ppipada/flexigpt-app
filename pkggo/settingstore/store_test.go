@@ -83,7 +83,7 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 			name: "GetAllSettings_InvalidSchema",
 			setupFunc: func() error {
 				// Manually create an invalid schema file
-				return os.WriteFile(filename, []byte(`{"invalid": "schema"}`), 0o644)
+				return os.WriteFile(filename, []byte(`{"invalid": "schema"}`), 0o600)
 			},
 			expectedError: "unknown field",
 		},

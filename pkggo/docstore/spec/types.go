@@ -28,7 +28,7 @@ type DocumentQueryResult struct {
 
 type DocumentCollectionID string
 
-// DocumentCollection represents a collection of documents
+// DocumentCollection represents a collection of documents.
 type DocumentCollection struct {
 	ID          DocumentCollectionID
 	Name        string
@@ -72,7 +72,7 @@ type IDocumentCollection interface {
 
 type DocumentDBID string
 
-// IDocumentDB interface for different document storage backends
+// IDocumentDB interface for different document storage backends.
 type IDocumentDB interface {
 	CreateCollection(
 		ctx context.Context,

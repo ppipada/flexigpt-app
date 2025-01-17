@@ -1,15 +1,15 @@
 package spec
 
-var enumValues_Role = []string{"assistant", "user"}
+var enumValuesRole = []string{"assistant", "user"}
 
-// Role
+// Role.
 type Role struct {
 	*StringUnion
 }
 
 // NewRole creates a new Role with the provided value.
 func NewRole(value string) *Role {
-	stringUnion := NewStringUnion(enumValues_Role...)
+	stringUnion := NewStringUnion(enumValuesRole...)
 	_ = stringUnion.SetValue(value)
 	return &Role{StringUnion: stringUnion}
 }
@@ -18,7 +18,7 @@ func NewRole(value string) *Role {
 func (r *Role) UnmarshalJSON(b []byte) error {
 	if r.StringUnion == nil {
 		// Initialize with allowed values if not already initialized
-		r.StringUnion = NewStringUnion(enumValues_Role...)
+		r.StringUnion = NewStringUnion(enumValuesRole...)
 	}
 	return r.StringUnion.UnmarshalJSON(b)
 }

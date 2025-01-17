@@ -47,10 +47,26 @@ func NewHTTPClient(t *testing.T) *HTTPJSONRPCClient {
 }
 
 func (c *HTTPJSONRPCClient) Send(reqBytes []byte) ([]byte, error) {
-	resp, err := c.client.Post(c.url, "application/json", bytes.NewReader(reqBytes))
+	// Create a new HTTP request with context.
+	req, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodPost,
+		c.url,
+		bytes.NewReader(reqBytes),
+	)
 	if err != nil {
 		return nil, err
 	}
+
+	// Set the content type header.
+	req.Header.Set("Content-Type", "application/json")
+
+	// Perform the HTTP request.
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
 	defer resp.Body.Close()
 	return io.ReadAll(resp.Body)
 }
@@ -72,7 +88,7 @@ func NewStdIOClient(t *testing.T) *StdIOJSONRPCClient {
 	// Start the server in a goroutine
 	go func() {
 		err := server.Serve()
-		if err != nil && err != net.ErrClosed {
+		if err != nil && errors.Is(err, net.ErrClosed) {
 			// Log the error if it's not due to server shutdown.
 			fmt.Printf("Server error: %v\n", err)
 		}

@@ -54,10 +54,10 @@ type ChromemDocumentDB struct {
 	chromemDB   *chromem.DB
 }
 
-// Option is a function that configures a ChromemDocumentDB
+// Option is a function that configures a ChromemDocumentDB.
 type Option func(*ChromemDocumentDB) error
 
-// WithName sets the name of the ChromemDocumentDB
+// WithName sets the name of the ChromemDocumentDB.
 func WithName(name string) Option {
 	return func(db *ChromemDocumentDB) error {
 		db.name = name
@@ -65,7 +65,7 @@ func WithName(name string) Option {
 	}
 }
 
-// WithMetadata sets the metadata of the ChromemDocumentDB
+// WithMetadata sets the metadata of the ChromemDocumentDB.
 func WithMetadata(metadata map[string]string) Option {
 	return func(db *ChromemDocumentDB) error {
 		db.metadata = metadata
@@ -73,7 +73,7 @@ func WithMetadata(metadata map[string]string) Option {
 	}
 }
 
-// WithBasePath sets the base path of the ChromemDocumentDB
+// WithBasePath sets the base path of the ChromemDocumentDB.
 func WithBasePath(basePath string) Option {
 	return func(db *ChromemDocumentDB) error {
 		db.basePath = basePath
@@ -81,7 +81,7 @@ func WithBasePath(basePath string) Option {
 	}
 }
 
-// WithCompression sets the compression flag of the ChromemDocumentDB
+// WithCompression sets the compression flag of the ChromemDocumentDB.
 func WithCompression(compress bool) Option {
 	return func(db *ChromemDocumentDB) error {
 		db.compress = compress
@@ -89,7 +89,7 @@ func WithCompression(compress bool) Option {
 	}
 }
 
-// NewChromemDocumentDB initializes a new ChromemDocumentDB with the given options
+// NewChromemDocumentDB initializes a new ChromemDocumentDB with the given options.
 func NewChromemDocumentDB(options ...Option) (*ChromemDocumentDB, error) {
 	db := &ChromemDocumentDB{
 		metadata:    make(map[string]string),
@@ -119,7 +119,7 @@ func NewChromemDocumentDB(options ...Option) (*ChromemDocumentDB, error) {
 	return db, nil
 }
 
-// CreateCollection creates a new document collection
+// CreateCollection creates a new document collection.
 func (db *ChromemDocumentDB) CreateCollection(
 	ctx context.Context,
 	name string,
@@ -163,7 +163,7 @@ func (db *ChromemDocumentDB) CreateCollection(
 	return collection, nil
 }
 
-// DeleteCollection deletes a document collection
+// DeleteCollection deletes a document collection.
 func (db *ChromemDocumentDB) DeleteCollection(
 	ctx context.Context,
 	id spec.DocumentCollectionID,
@@ -183,7 +183,7 @@ func (db *ChromemDocumentDB) DeleteCollection(
 	return nil
 }
 
-// GetCollection retrieves a document collection by ID
+// GetCollection retrieves a document collection by ID.
 func (db *ChromemDocumentDB) GetCollection(
 	ctx context.Context,
 	id spec.DocumentCollectionID,
@@ -195,7 +195,7 @@ func (db *ChromemDocumentDB) GetCollection(
 	return collection, nil
 }
 
-// ListCollections lists all document collections
+// ListCollections lists all document collections.
 func (db *ChromemDocumentDB) ListCollections(
 	ctx context.Context,
 ) (map[spec.DocumentCollectionID]*spec.DocumentCollection, error) {

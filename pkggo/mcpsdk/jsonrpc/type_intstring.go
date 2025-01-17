@@ -58,7 +58,7 @@ func (is IntString) Schema(r huma.Registry) *huma.Schema {
 	}
 }
 
-// Helper methods
+// Helper methods.
 func (is IntString) IsInt() bool {
 	_, ok := is.Value.(int)
 	return ok

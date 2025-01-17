@@ -27,7 +27,7 @@ func (p *MonthBasedPartitionProvider) ListPartitions(
 ) ([]string, string, error) {
 	entries, err := os.ReadDir(baseDir)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to read base directory: %v", err)
+		return nil, "", fmt.Errorf("failed to read base directory: %w", err)
 	}
 
 	var partitions []string
@@ -52,10 +52,10 @@ func (p *MonthBasedPartitionProvider) ListPartitions(
 	if pageToken != "" {
 		tokenData, err := base64.StdEncoding.DecodeString(pageToken)
 		if err != nil {
-			return nil, "", fmt.Errorf("invalid page token: %v", err)
+			return nil, "", fmt.Errorf("invalid page token: %w", err)
 		}
 		if err := json.Unmarshal(tokenData, &start); err != nil {
-			return nil, "", fmt.Errorf("invalid page token: %v", err)
+			return nil, "", fmt.Errorf("invalid page token: %w", err)
 		}
 	}
 

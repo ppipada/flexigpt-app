@@ -22,7 +22,7 @@ func Register(api huma.API,
 	jsonrpc.Register(api, op, methodMap, notificationMap)
 }
 
-// For actual runs os.Stdin, os.Stdout can be passed as reader and writer respectively
+// For actual runs os.Stdin, os.Stdout can be passed as reader and writer respectively.
 func GetServer(r io.Reader, w io.Writer, handler http.Handler) *stdioNet.Server {
 	// Create the MessageFramer
 	framer := &stdioNet.LineFramer{}
@@ -39,7 +39,7 @@ func GetServer(r io.Reader, w io.Writer, handler http.Handler) *stdioNet.Server 
 	return server
 }
 
-// For actual runs os.Stdout and os.Stdin can be passed as reader and writer respectively
+// For actual runs os.Stdout and os.Stdin can be passed as reader and writer respectively.
 func GetClient(r io.Reader, w io.Writer) *stdioNet.Client {
 	framer := &stdioNet.LineFramer{}
 

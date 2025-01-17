@@ -10,13 +10,13 @@ import (
 	langchainOpenAI "github.com/tmc/langchaingo/llms/openai"
 )
 
-// LlamaCPPAPI struct that implements the CompletionProvider interface
+// LlamaCPPAPI struct that implements the CompletionProvider interface.
 type LlamaCPPAPI struct {
 	*baseutils.BaseAIAPI
 	llm *langchainOpenAI.LLM
 }
 
-// NewLlamaCPPAPI creates a new instance of LlamaCPPAPI with default ProviderInfo
+// NewLlamaCPPAPI creates a new instance of LlamaCPPAPI with default ProviderInfo.
 func NewLlamaCPPAPI() *LlamaCPPAPI {
 	pi := LlamacppProviderInfo
 	debug := false
@@ -25,7 +25,7 @@ func NewLlamaCPPAPI() *LlamaCPPAPI {
 	}
 }
 
-// SetProviderAttribute sets the attributes for the LlamaCPPAPI
+// SetProviderAttribute sets the attributes for the LlamaCPPAPI.
 func (api *LlamaCPPAPI) SetProviderAttribute(
 	ctx context.Context,
 	apiKey *string,
@@ -65,7 +65,7 @@ func (api *LlamaCPPAPI) SetProviderAttribute(
 	return nil
 }
 
-// FetchCompletion processes the completion request
+// FetchCompletion processes the completion request.
 func (api *LlamaCPPAPI) FetchCompletion(
 	ctx context.Context,
 	input spec.CompletionRequest,

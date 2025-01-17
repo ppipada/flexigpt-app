@@ -3,8 +3,8 @@ package jsonrpc
 // http://www.jsonrpc.org/specification
 const JSONRPCVersion = "2.0"
 
-// RequestID can be a int or a string
-// Do a type alias as we want marshal/unmarshal etc to be available
+// RequestID can be a int or a string.
+// Do a type alias as we want marshal/unmarshal etc to be available.
 type RequestID = IntString
 
 type Request[T any] struct {

@@ -2,7 +2,7 @@ package spec
 
 var enumValues_ContentType = []string{"text", "image", "resource"}
 
-// ContentType
+// ContentType.
 type ContentType struct {
 	*StringUnion
 }
@@ -28,7 +28,7 @@ func (c *ContentType) MarshalJSON() ([]byte, error) {
 	return c.StringUnion.MarshalJSON()
 }
 
-// Content
+// Content.
 var (
 	ContentTypeText             = NewContentType("text")
 	ContentTypeImage            = NewContentType("image")

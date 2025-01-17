@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -47,7 +48,7 @@ func GetStdIOServerCLI() humacli.CLI {
 
 		// Start the server
 		hooks.OnStart(func() {
-			if err := server.Serve(); err != nil && err != http.ErrServerClosed {
+			if err := server.Serve(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Fatalf("listen: %s\n", err)
 			}
 		})

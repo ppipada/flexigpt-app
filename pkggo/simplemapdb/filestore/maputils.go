@@ -48,11 +48,12 @@ func setValueAtPath(data interface{}, keys []string, value interface{}) error {
 }
 
 // deleteValueAtPath deletes the value at the specified path in the data map.
-// If path is not found, this is a noop
+// If path is not found, this is a noop.
 func deleteValueAtPath(data interface{}, keys []string) error {
 	parentMap, lastKey, err := navigateToParentMap(data, keys, false)
 	if err != nil {
-		if _, ok := err.(*KeyNotFoundError); ok {
+		var kne *KeyNotFoundError
+		if errors.As(err, &kne) {
 			// Path not found, Delete is a noop in this case
 			return nil
 		}

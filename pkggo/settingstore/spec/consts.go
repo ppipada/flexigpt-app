@@ -9,7 +9,7 @@ import (
 	aiproviderSpec "github.com/flexigpt/flexiui/pkggo/aiprovider/spec"
 )
 
-// Define the default AI settings
+// Define the default AI settings.
 var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 	anthropic.ProviderNameAnthropic: {
 		IsEnabled:          true,
@@ -53,7 +53,7 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 	},
 }
 
-// Define the default settings data
+// Define the default settings data.
 var DefaultSettingsData = SettingsSchema{
 	App: AppSettings{
 		DefaultProvider: openai.ProviderNameOpenAI,
@@ -61,7 +61,7 @@ var DefaultSettingsData = SettingsSchema{
 	AISettings: DefaultAISettings,
 }
 
-// Define the sensitive keys
+// Define the sensitive keys.
 var SensitiveKeys = []string{
 	"aiSettings.openai.apiKey",
 	"aiSettings.anthropic.apiKey",

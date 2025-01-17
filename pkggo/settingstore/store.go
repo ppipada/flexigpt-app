@@ -33,7 +33,7 @@ func InitSettingStore(settingStore *SettingStore, filename string) error {
 		filestore.WithKeyEncoders(keyEncDecs),
 		filestore.WithEncoder(encdec.JSONEncoderDecoder{}))
 	if err != nil {
-		return fmt.Errorf("failed to create store: %v", err)
+		return fmt.Errorf("failed to create store: %w", err)
 	}
 
 	settingStore.store = store

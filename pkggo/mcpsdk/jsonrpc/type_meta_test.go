@@ -13,7 +13,7 @@ type MyData struct {
 	Value int    `json:"value"`
 }
 
-// Test unmarshalMeta with Request[json.RawMessage]
+// Test unmarshalMeta with Request[json.RawMessage].
 func TestUnmarshalMeta_Request(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -144,7 +144,7 @@ func TestUnmarshalMeta_Request(t *testing.T) {
 	}
 }
 
-// Test marshalMeta with Request[json.RawMessage]
+// Test marshalMeta with Request[json.RawMessage].
 func TestMarshalMeta_Request(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -227,7 +227,7 @@ func TestMarshalMeta_Request(t *testing.T) {
 	}
 }
 
-// Test Meta[T] UnmarshalJSON and MarshalJSON with MyData
+// Test Meta[T] UnmarshalJSON and MarshalJSON with MyData.
 func TestMeta_MyData(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -391,7 +391,7 @@ func TestMeta_MarshalJSON(t *testing.T) {
 	}
 }
 
-// Test MetaRequest UnmarshalJSON and MarshalJSON
+// Test MetaRequest UnmarshalJSON and MarshalJSON.
 func TestMetaRequest_UnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -622,7 +622,7 @@ func TestMetaRequest_MarshalJSON(t *testing.T) {
 	}
 }
 
-// Test MetaResponse UnmarshalJSON and MarshalJSON
+// Test MetaResponse UnmarshalJSON and MarshalJSON.
 func TestMetaResponse_UnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name        string

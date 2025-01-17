@@ -8,7 +8,7 @@ import (
 // is still alive. The receiver must promptly respond, or else may be disconnected.
 type PingRequest jsonrpc.Request[*AdditionalParams]
 
-// A ping response should send out a empty result
+// A ping response should send out a empty result.
 type PingResponse jsonrpc.Response[AdditionalParams]
 
 // This notification can be sent by either side to indicate that it is cancelling a

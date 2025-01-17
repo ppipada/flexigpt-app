@@ -383,7 +383,7 @@ func TestIntString_HelperMethods(t *testing.T) {
 	}
 }
 
-// Additional test to ensure proper error messages
+// Additional test to ensure proper error messages.
 func TestIntString_ErrorMessages(t *testing.T) {
 	// Unmarshaling an array should return a specific error message
 	data := `["hello", 123]`

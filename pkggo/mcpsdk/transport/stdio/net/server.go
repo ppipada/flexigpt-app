@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net"
 	"strings"
@@ -12,12 +13,12 @@ import (
 	"time"
 )
 
-// MessageHandler defines how messages are handled
+// MessageHandler defines how messages are handled.
 type MessageHandler interface {
 	HandleMessage(writer io.Writer, msg []byte)
 }
 
-// Server orchestrates the transport, framing, and message handling
+// Server orchestrates the transport, framing, and message handling.
 type Server struct {
 	conn     net.Conn
 	framer   MessageFramer
@@ -27,7 +28,7 @@ type Server struct {
 	wg       sync.WaitGroup // Tracks connection handler goroutines
 }
 
-// NewServer creates a new Server with provided components
+// NewServer creates a new Server with provided components.
 func NewServer(conn net.Conn, framer MessageFramer, handler MessageHandler) *Server {
 	return &Server{
 		conn:    conn,
@@ -37,7 +38,7 @@ func NewServer(conn net.Conn, framer MessageFramer, handler MessageHandler) *Ser
 	}
 }
 
-// Serve starts the server and listens for connections
+// Serve starts the server and listens for connections.
 func (s *Server) Serve() error {
 	s.wg.Add(1)
 	go func() {
@@ -66,11 +67,12 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 		msg, err := s.framer.ReadMessage(reader)
 		if err != nil {
-			if err == io.EOF || strings.Contains(err.Error(), "EOF") ||
+			if errors.Is(err, io.EOF) || strings.Contains(err.Error(), "EOF") ||
 				strings.Contains(err.Error(), "closed") {
 				return // Client closed the connection
 			}
-			if ne, ok := err.(net.Error); ok && ne.Timeout() {
+			var ne net.Error
+			if ok := errors.As(err, &ne); ok && ne.Timeout() {
 				time.Sleep(10 * time.Microsecond)
 				continue // Temporary error, try reading again
 			}

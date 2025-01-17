@@ -41,7 +41,7 @@ func DefaultFilenameFunc() string {
 	return fmt.Sprintf("%s-%s.log", time.Now().UTC().Format(time.RFC3339), RandomHash(3))
 }
 
-// Options define configuration options for Writer
+// Options define configuration options for Writer.
 type Options struct {
 	// Directory defines the directory where log files will be written to.
 	// If the directory does not exist, it will be created.

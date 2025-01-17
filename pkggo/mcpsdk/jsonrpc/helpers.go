@@ -59,7 +59,7 @@ func unmarshalParams[I any](req Request[json.RawMessage]) (I, error) {
 	return params, nil
 }
 
-// Helper function to create an InvalidParamsError response
+// Helper function to create an InvalidParamsError response.
 func invalidParamsResponse(req Request[json.RawMessage], err error) Response[json.RawMessage] {
 	return Response[json.RawMessage]{
 		JSONRPC: JSONRPCVersion,

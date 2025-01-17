@@ -74,7 +74,7 @@ func initClientServer(
 	server := NewServer(serverConn, framer, handler)
 	go func() {
 		err := server.Serve()
-		if err != nil && err != net.ErrClosed {
+		if err != nil && !errors.Is(err, net.ErrClosed) {
 			// Log the error if it's not due to server shutdown.
 			fmt.Printf("Server error: %v\n", err)
 		}

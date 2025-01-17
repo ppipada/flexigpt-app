@@ -10,13 +10,13 @@ import (
 	langchainAnthropic "github.com/tmc/langchaingo/llms/anthropic"
 )
 
-// AnthropicAPI struct that implements the CompletionProvider interface
+// AnthropicAPI struct that implements the CompletionProvider interface.
 type AnthropicAPI struct {
 	*baseutils.BaseAIAPI
 	llm *langchainAnthropic.LLM
 }
 
-// NewAnthropicAPI creates a new instance of AnthropicAPI with default ProviderInfo
+// NewAnthropicAPI creates a new instance of AnthropicAPI with default ProviderInfo.
 func NewAnthropicAPI() *AnthropicAPI {
 	pi := AnthropicProviderInfo
 	debug := false
@@ -25,7 +25,7 @@ func NewAnthropicAPI() *AnthropicAPI {
 	}
 }
 
-// SetProviderAttribute sets the attributes for the AnthropicAPI
+// SetProviderAttribute sets the attributes for the AnthropicAPI.
 func (api *AnthropicAPI) SetProviderAttribute(
 	ctx context.Context,
 	apiKey *string,
@@ -68,7 +68,7 @@ func (api *AnthropicAPI) SetProviderAttribute(
 	return nil
 }
 
-// FetchCompletion processes the completion request
+// FetchCompletion processes the completion request.
 func (api *AnthropicAPI) FetchCompletion(
 	ctx context.Context,
 	input spec.CompletionRequest,

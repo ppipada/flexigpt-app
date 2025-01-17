@@ -1,34 +1,297 @@
-issues:
-  exclude-files:
-    - main.go
-  max-same-issues: 50
+# Linters last analyzed with golangci-lint v1.63.4
 run:
+  # Most of the defaults in the config are good enough
+  timeout: 10m
+
+  # Tags used to build code with. Negatory of this
   build-tags:
     - codeanalysis
+
+issues:
+  # Setting 0 to have all the results. Good to be have all issues once the initial lint is stable.
+  max-issues-per-linter: 10
+
+  # Same here, nothing should be skipped to not miss errors.
+  max-same-issues: 5
+
+  # Which dirs to exclude
+  exclude-dirs:
+    - pkgts
+
 linters:
   enable:
-    - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
+    # Check for pass []any as any in variadic func(...any). Rare case but good to have.
+    - asasalint
+
+    # Use plain ASCII identifiers.
     - asciicheck
+
+    # Checks for dangerous unicode character sequences. Rare case but good to have.
     - bidichk
+
+    # Checks whether HTTP response body is closed successfully.
     - bodyclose
+
+    # Check whether the function uses a non-inherited context.
     - contextcheck
+
+    # Detect if loop vars are copied
     - copyloopvar
+
+    # Find duplicate words. Rare case but good to have.
     - dupword
+
+    # Check for two durations multiplied together.
     - durationcheck
+
+    # Forces to not skip error check.
+    - errcheck
+
+    # Checks `Err-` prefix for var and `-Error` suffix for error type.
+    - errname
+
+    # Suggests to use `%w` for error-wrapping.
+    - errorlint
+
+    # Finds forced type assertions.
+    - forcetypeassert
+
+    # Finds repeated strings that could be replaced by a constant.
     - goconst
+
+    # Meta linter with lots of great checks
     - gocritic
+
+    # Forces to put `.` at the end of the comment. Code is poetry.
+    - godot
+
+    # formatter
     - gofumpt
+
+    # Powerful security-oriented linter. But requires some time to
+    # configure it properly, see https://github.com/securego/gosec#available-rules
+    - gosec
+
+    # Linter that specializes in simplifying code.
+    - gosimple
+
+    # Official Go tool. Must have.
+    - govet
+
+    # Group declarations, for import, const, var, etc.
+    - grouper
+
+    # Detects when assignments to existing variables are not used
+    - ineffassign
+
+    # Fix all the misspells, amazing thing.
     - misspell
+
+    # Enforce tags in un/marshaled structs.
     - musttag
+
+    # Finds naked/bare returns and requires change them.
+    - nakedret
+
+    # Both require a bit more explicit returns.
+    - nilerr
+    - nilnil
+
+    # Finds sending HTTP request without context.Context.
+    - noctx
+
+    # Forces comment why another check is disabled.
+    # Better not to have //nolint: at all ;)
     - nolintlint
+
+    # Checks that fmt.Sprintf can be replaced with a faster alternative.
     - perfsprint
+
+    # Finds slices that could potentially be pre-allocated.
+    # Small performance win + cleaner code.
     - prealloc
+
+    # Finds shadowing of Go's predeclared identifiers.
+    # I hear a lot of complaints from junior developers.
+    # But after some time they find it very useful.
+    - predeclared
+
+    # Checks that package variables are not reassigned.
+    # Super rare case but can catch bad things (like `io.EOF = nil`)
+    - reassign
+
+    # Drop-in replacement of `golint`.
+    - revive
+
+    # Somewhat similar to `bodyclose` but for `database/sql` package.
+    - rowserrcheck
+    - sqlclosecheck
+
+    # Meta linter
+    - staticcheck
+
+    # Test-related checks. All of them are good.
     - tenv
-    - unparam
+    - tparallel
+
+    # Remove unnecessary type conversions, make code cleaner
     - unconvert
+
+    # Finds unused declarations.
+    - unused
+
+    # Detect the possibility to use variables/constants from stdlib.
+    - usestdlibvars
+
+    # Finds wasted assignment statements.
     - wastedassign
+
+  disable:
+    # Detects struct contained context.Context field. Not a problem.
+    - containedctx
+
+    # Checks function and package cyclomatic complexity.
+    # I can have a long but trivial switch-case.
+    #
+    # Cyclomatic complexity is a measurement, not a goal.
+    # (c) Bryan C. Mills / https://github.com/bcmills
+    - cyclop
+
+    # Check declaration order of types, consts, vars and funcs.
+    - decorder
+
+    # Checks if package imports are in a list of acceptable packages.
+    # I'm very picky about what I import, so no automation.
+    - depguard
+
+    # Checks assignments with too many blank identifiers.
+    - dogsled
+
+    # Tool for code clone detection.
+    - dupl
+
+    # I'm fine to check the error from json.Marshal
+    - errchkjson
+
+    # Forces to handle more cases in enum and structs.
+    - exhaustive
+    - exhaustruct
+
+    # Forbids some identifiers. I don't have a case for it.
+    - forbidigo
+
+    # Function length checker. I might have long but a simple function.
+    - funlen
+
+    # Imports sorter. Can stomp on gofumpt's feet. Just gofumpt is good enough
+    - gci
+
+    # I'm not a fan of ginkgo and gomega packages.
+    - ginkgolinter
+
+    # Checks that compiler directive comments (//go:) are valid. Very Rare.
+    - gocheckcompilerdirectives
+
+    # Globals and init() are ok.
+    - gochecknoglobals
+    - gochecknoinits
+
+    # Same as `cyclop` linter (see above)
+    - gocognit
+    - gocyclo
+
+    # TODO and friends are ok.
+    - godox
+
+    # I don't use file headers.
+    - goheader
+
+    # Allowed/blocked packages to import. I prefer to do it manually.
+    - gomodguard
+
+    # Printf-like functions must have -f. Not useful to me.
+    - goprintffuncname
+
+    # Checks imports aliases consistency. very rare.
+    - importas
+
+    # Forces tiny interfaces, very subjective.
+    - interfacebloat
+
+    # Accept interfaces, return types. Not always.
+    - ireturn
+
+    # Check long lines. Using golines with gofumpt as base formatter takes care of this.
+    # This is not really AST based, so it has issues with long struct tags etc
+    - lll
+
+    # Some log checkers, might be useful. I tend to use log/slog
+    - loggercheck
+
+    # Maintainability index of each function, subjective.
+    - maintidx
+
+    # Slice declarations with non-zero initial length. Not my case.
+    - makezero
+
+    # Deeply nested if statements, subjective.
+    - nestif
+
+    # Forces newlines in some places.
+    - nlreturn
+
+    # Reports all named returns, not that bad.
+    - nonamedreturns
+
+    # Finds misuse of Sprintf with host:port in a URL. Cool but rare.
+    - nosprintfhostport
+
+    # I don't use t.Parallel() that much.
+    - paralleltest
+
+    # Lint your Prometheus metrics name.
+    - promlinter
+
+    # Is a replacement for `golint`, similar to `revive`.
+    - stylecheck
+
+    # Check struct tags.
+    - tagliatelle
+
+    # Forces to use _ test package. Often non-`_test` package is ok.
+    - testpackage
+
+    # Makes you add t.Helper() as first line to test utils
+    - thelper
+
+    - testableexamples
+
+    # Covered by revive
+    - unparam
+
+    # I'm fine with long variable names with a small scope.
+    - varnamelen
+
+    # gofmt,gofumpt covers that (from what I know).
+    - whitespace
+
+    # Wrap all errors from external packages.
+    - wrapcheck
+
+    # Forces you to use empty lines.
+    - wsl
+
+linters-settings:
+  errcheck:
+    # Report `a := b.(MyStruct)` when `a, ok := ...` should be.
+    check-type-assertions: true # Default: false
+
+  nakedret:
+    # No naked returns, ever.
+    max-func-lines: 0 # Default: 30
+
+  revive:
+    rules:
+      - name: unused-parameter
+        # Too noisy
+        disabled: true

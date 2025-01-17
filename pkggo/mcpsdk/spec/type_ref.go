@@ -1,15 +1,15 @@
 package spec
 
-var enumValues_Ref = []string{"ref/resource", "ref/prompt"}
+var enumValuesRef = []string{"ref/resource", "ref/prompt"}
 
-// Ref
+// Ref.
 type Ref struct {
 	*StringUnion
 }
 
 // NewRef creates a new Ref with the provided value.
 func NewRef(value string) *Ref {
-	stringUnion := NewStringUnion(enumValues_Ref...)
+	stringUnion := NewStringUnion(enumValuesRef...)
 	_ = stringUnion.SetValue(value)
 	return &Ref{StringUnion: stringUnion}
 }
@@ -18,7 +18,7 @@ func NewRef(value string) *Ref {
 func (r *Ref) UnmarshalJSON(b []byte) error {
 	if r.StringUnion == nil {
 		// Initialize with allowed values if not already initialized
-		r.StringUnion = NewStringUnion(enumValues_Ref...)
+		r.StringUnion = NewStringUnion(enumValuesRef...)
 	}
 	return r.StringUnion.UnmarshalJSON(b)
 }

@@ -56,14 +56,14 @@ func NewMapDirectoryStore(
 	// Resolve the base directory path
 	baseDir, err := filepath.Abs(baseDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to resolve base directory path: %v", err)
+		return nil, fmt.Errorf("failed to resolve base directory path: %w", err)
 	}
 
 	// Ensure the base directory exists or create it if allowed
 	if _, err := os.Stat(baseDir); os.IsNotExist(err) {
 		if createIfNotExists {
 			if err := os.MkdirAll(baseDir, os.ModePerm); err != nil {
-				return nil, fmt.Errorf("failed to create directory %s: %v", baseDir, err)
+				return nil, fmt.Errorf("failed to create directory %s: %w", baseDir, err)
 			}
 		} else {
 			return nil, fmt.Errorf("directory %s does not exist", baseDir)
@@ -100,7 +100,7 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]inter
 	// Ensure the partition directory exists
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 		return fmt.Errorf(
-			"failed to create partition directory %s: %v",
+			"failed to create partition directory %s: %w",
 			filepath.Dir(filePath),
 			err,
 		)
@@ -113,12 +113,12 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]inter
 		simplemapdbFileStore.WithCreateIfNotExists(true),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create or truncate file %s: %v", filename, err)
+		return fmt.Errorf("failed to create or truncate file %s: %w", filename, err)
 	}
 
 	// Set data
 	if err := store.SetAll(data); err != nil {
-		return fmt.Errorf("failed to set data for file %s: %v", filename, err)
+		return fmt.Errorf("failed to set data for file %s: %w", filename, err)
 	}
 
 	return nil
@@ -133,7 +133,7 @@ func (mds *MapDirectoryStore) GetFileData(
 	filePath := filepath.Join(mds.baseDir, partitionDir, filename)
 	store, err := simplemapdbFileStore.NewMapFileStore(filePath, map[string]interface{}{"k": "v"})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get file %s: %v", filename, err)
+		return nil, fmt.Errorf("failed to get file %s: %w", filename, err)
 	}
 	return store.GetAll(forceFetch)
 }
@@ -143,7 +143,7 @@ func (mds *MapDirectoryStore) DeleteFile(filename string) error {
 	partitionDir := mds.PartitionProvider.GetPartitionDir(filename)
 	filePath := filepath.Join(mds.baseDir, partitionDir, filename)
 	if err := os.Remove(filePath); err != nil {
-		return fmt.Errorf("failed to delete file %s: %v", filename, err)
+		return fmt.Errorf("failed to delete file %s: %w", filename, err)
 	}
 	return nil
 }
@@ -160,10 +160,10 @@ func (mds *MapDirectoryStore) ListFiles(
 	if pageToken != "" {
 		tokenBytes, err := base64.StdEncoding.DecodeString(pageToken)
 		if err != nil {
-			return nil, "", fmt.Errorf("invalid page token: %v", err)
+			return nil, "", fmt.Errorf("invalid page token: %w", err)
 		}
 		if err := json.Unmarshal(tokenBytes, &tokenData); err != nil {
-			return nil, "", fmt.Errorf("invalid page token: %v", err)
+			return nil, "", fmt.Errorf("invalid page token: %w", err)
 		}
 	} else {
 		// Use the initial sort order for the first page
@@ -180,7 +180,7 @@ func (mds *MapDirectoryStore) ListFiles(
 			1,
 		)
 		if err != nil {
-			return nil, "", fmt.Errorf("failed to list partitions: %v", err)
+			return nil, "", fmt.Errorf("failed to list partitions: %w", err)
 		}
 
 		if len(partitions) == 0 {
@@ -191,7 +191,7 @@ func (mds *MapDirectoryStore) ListFiles(
 		files, err := os.ReadDir(partitionPath)
 		if err != nil {
 			return nil, "", fmt.Errorf(
-				"failed to read partition directory %s: %v",
+				"failed to read partition directory %s: %w",
 				partitionPath,
 				err,
 			)

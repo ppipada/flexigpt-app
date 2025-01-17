@@ -9,7 +9,7 @@ import (
 )
 
 // This is a huma middleware.
-// Either a huma middleware can be added or a http handler middleware can be added
+// Either a huma middleware can be added or a http handler middleware can be added.
 func loggingMiddleware(ctx huma.Context, next func(huma.Context)) {
 	// log.Printf("Received request: %v %v", ctx.URL().RawPath, ctx.Operation().Path)
 	next(ctx)
@@ -17,7 +17,7 @@ func loggingMiddleware(ctx huma.Context, next func(huma.Context)) {
 }
 
 // This is a http handler middleware.
-// PanicRecoveryMiddleware recovers from panics in handlers
+// PanicRecoveryMiddleware recovers from panics in handlers.
 func PanicRecoveryMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {

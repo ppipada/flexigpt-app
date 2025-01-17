@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 	"github.com/flexigpt/flexiui/pkggo/mcpsdk/transport/httpsse"
 )
 
-// CLI options can be added as needed
+// CLI options can be added as needed.
 type Options struct {
 	Host  string `doc:"Host to listen on" default:"localhost"`
 	Port  int    `doc:"Port to listen on" default:"8080"`
@@ -45,13 +46,14 @@ func GetHTTPServerCLI() humacli.CLI {
 		handler := SetupSSETransport()
 		// Initialize the http server
 		server := http.Server{
-			Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),
-			Handler: handler,
+			Addr:              fmt.Sprintf("%s:%d", opts.Host, opts.Port),
+			Handler:           handler,
+			ReadHeaderTimeout: 10 * time.Second,
 		}
 
 		// Hook the HTTP server.
 		hooks.OnStart(func() {
-			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			if err := server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
 				log.Fatalf("listen: %s\n", err)
 			}
 		})

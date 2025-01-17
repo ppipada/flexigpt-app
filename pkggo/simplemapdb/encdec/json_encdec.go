@@ -60,13 +60,13 @@ func StructWithJSONTagsToMap(data interface{}) (map[string]interface{}, error) {
 	// Marshal the struct to JSON
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal struct to JSON: %v", err)
+		return nil, fmt.Errorf("failed to marshal struct to JSON: %w", err)
 	}
 
 	// Unmarshal the JSON into a map
 	var result map[string]interface{}
 	if err := json.Unmarshal(jsonData, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal JSON to map: %v", err)
+		return nil, fmt.Errorf("failed to unmarshal JSON to map: %w", err)
 	}
 
 	return result, nil
@@ -91,7 +91,7 @@ func MapToStructWithJSONTags(data map[string]interface{}, out interface{}) error
 	// Marshal the map to JSON
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("failed to marshal map to JSON: %v", err)
+		return fmt.Errorf("failed to marshal map to JSON: %w", err)
 	}
 
 	// Use a JSON decoder with DisallowUnknownFields
@@ -100,7 +100,7 @@ func MapToStructWithJSONTags(data map[string]interface{}, out interface{}) error
 
 	// Unmarshal the JSON into the struct
 	if err := decoder.Decode(out); err != nil {
-		return fmt.Errorf("failed to unmarshal JSON to struct: %v", err)
+		return fmt.Errorf("failed to unmarshal JSON to struct: %w", err)
 	}
 
 	return nil

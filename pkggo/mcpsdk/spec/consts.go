@@ -3,7 +3,7 @@ package spec
 const (
 	LatestProtocolVersion = "2024-11-05"
 
-	// BaseMethods
+	// BaseMethods.
 	MethodInitialize = "initialize"
 	MethodPing       = "ping"
 

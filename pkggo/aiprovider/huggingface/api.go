@@ -10,13 +10,13 @@ import (
 	langchainHuggingFace "github.com/tmc/langchaingo/llms/huggingface"
 )
 
-// HuggingFaceAPI struct that implements the CompletionProvider interface
+// HuggingFaceAPI struct that implements the CompletionProvider interface.
 type HuggingFaceAPI struct {
 	*baseutils.BaseAIAPI
 	llm *langchainHuggingFace.LLM
 }
 
-// NewHuggingFaceAPI creates a new instance of HuggingFaceAPI with default ProviderInfo
+// NewHuggingFaceAPI creates a new instance of HuggingFaceAPI with default ProviderInfo.
 func NewHuggingFaceAPI() *HuggingFaceAPI {
 	pi := HuggingfaceProviderInfo
 	debug := false
@@ -25,7 +25,7 @@ func NewHuggingFaceAPI() *HuggingFaceAPI {
 	}
 }
 
-// SetProviderAttribute sets the attributes for the HuggingFaceAPI
+// SetProviderAttribute sets the attributes for the HuggingFaceAPI.
 func (api *HuggingFaceAPI) SetProviderAttribute(
 	ctx context.Context,
 	apiKey *string,
@@ -70,7 +70,7 @@ func (api *HuggingFaceAPI) SetProviderAttribute(
 	return nil
 }
 
-// FetchCompletion processes the completion request
+// FetchCompletion processes the completion request.
 func (api *HuggingFaceAPI) FetchCompletion(
 	ctx context.Context,
 	input spec.CompletionRequest,

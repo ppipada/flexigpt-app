@@ -8,23 +8,23 @@ import (
 	"time"
 )
 
-// StdioAddr represents the network address for StdioConn
+// StdioAddr represents the network address for StdioConn.
 type StdioAddr struct {
 	network string
 	address string
 }
 
-// Network returns the address's network name, implementing net.Addr
+// Network returns the address's network name, implementing net.Addr.
 func (a StdioAddr) Network() string {
 	return a.network
 }
 
-// String returns the string form of the address, implementing net.Addr
+// String returns the string form of the address, implementing net.Addr.
 func (a StdioAddr) String() string {
 	return a.address
 }
 
-// StdioConn implements net.Conn over io.Reader and io.Writer
+// StdioConn implements net.Conn over io.Reader and io.Writer.
 type StdioConn struct {
 	addr      net.Addr      // Connection address
 	closed    chan struct{} // Channel to signal connection closed
@@ -39,28 +39,28 @@ type StdioConn struct {
 	writeCh chan writeRequest // Channel for write requests
 }
 
-// readResult represents the result of a read operation
+// readResult represents the result of a read operation.
 type readResult struct {
 	data []byte
 	err  error
 }
 
-// writeRequest represents a write operation request
+// writeRequest represents a write operation request.
 type writeRequest struct {
 	data  []byte
 	resCh chan writeResult
 }
 
-// writeResult represents the result of a write operation
+// writeResult represents the result of a write operation.
 type writeResult struct {
 	n   int
 	err error
 }
 
-// StdioConnOption defines a functional option for StdioConn
+// StdioConnOption defines a functional option for StdioConn.
 type StdioConnOption func(*StdioConn)
 
-// NewStdioConn creates a new StdioConn with provided options
+// NewStdioConn creates a new StdioConn with provided options.
 func NewStdioConn(r io.Reader, w io.Writer, options ...StdioConnOption) *StdioConn {
 	c := &StdioConn{
 		addr: StdioAddr{
@@ -88,21 +88,21 @@ func NewStdioConn(r io.Reader, w io.Writer, options ...StdioConnOption) *StdioCo
 	return c
 }
 
-// WithReadTimeout sets the default read timeout
+// WithReadTimeout sets the default read timeout.
 func WithReadTimeout(d time.Duration) StdioConnOption {
 	return func(c *StdioConn) {
 		c.readTimeout = d
 	}
 }
 
-// WithWriteTimeout sets the default write timeout
+// WithWriteTimeout sets the default write timeout.
 func WithWriteTimeout(d time.Duration) StdioConnOption {
 	return func(c *StdioConn) {
 		c.writeTimeout = d
 	}
 }
 
-// WithConnAddress sets the connection's address
+// WithConnAddress sets the connection's address.
 func WithConnAddress(network, address string) StdioConnOption {
 	return func(c *StdioConn) {
 		c.addr = StdioAddr{
@@ -112,24 +112,24 @@ func WithConnAddress(network, address string) StdioConnOption {
 	}
 }
 
-// LocalAddr returns the local network address, implementing net.Conn
+// LocalAddr returns the local network address, implementing net.Conn.
 func (c *StdioConn) LocalAddr() net.Addr {
 	return c.addr
 }
 
-// RemoteAddr returns the remote network address, implementing net.Conn
+// RemoteAddr returns the remote network address, implementing net.Conn.
 func (c *StdioConn) RemoteAddr() net.Addr {
 	return c.addr
 }
 
-// SetDeadline sets the read and write timeouts, implementing net.Conn
+// SetDeadline sets the read and write timeouts, implementing net.Conn.
 func (c *StdioConn) SetDeadline(t time.Time) error {
 	_ = c.SetReadDeadline(t)
 	_ = c.SetWriteDeadline(t)
 	return nil
 }
 
-// SetReadDeadline sets the read timeout, implementing net.Conn
+// SetReadDeadline sets the read timeout, implementing net.Conn.
 func (c *StdioConn) SetReadDeadline(t time.Time) error {
 	if t.IsZero() {
 		c.readTimeout = 0
@@ -139,7 +139,7 @@ func (c *StdioConn) SetReadDeadline(t time.Time) error {
 	return nil
 }
 
-// SetWriteDeadline sets the write timeout, implementing net.Conn
+// SetWriteDeadline sets the write timeout, implementing net.Conn.
 func (c *StdioConn) SetWriteDeadline(t time.Time) error {
 	if t.IsZero() {
 		c.writeTimeout = 0
@@ -149,7 +149,7 @@ func (c *StdioConn) SetWriteDeadline(t time.Time) error {
 	return nil
 }
 
-// readLoop continuously reads from the underlying reader and sends results over readCh
+// readLoop continuously reads from the underlying reader and sends results over readCh.
 func (c *StdioConn) readLoop() {
 	defer close(c.readCh)
 	for {
@@ -171,7 +171,7 @@ func (c *StdioConn) readLoop() {
 	}
 }
 
-// Read reads data from the connection, implementing net.Conn
+// Read reads data from the connection, implementing net.Conn.
 func (c *StdioConn) Read(b []byte) (int, error) {
 	// Check if the connection is closed
 	select {
@@ -213,7 +213,7 @@ func (c *StdioConn) Read(b []byte) (int, error) {
 	}
 }
 
-// writeLoop continuously handles write requests from writeCh
+// writeLoop continuously handles write requests from writeCh.
 func (c *StdioConn) writeLoop() {
 	defer close(c.writeCh)
 	for {
@@ -238,7 +238,7 @@ func (c *StdioConn) writeLoop() {
 	}
 }
 
-// Write writes data to the connection, implementing net.Conn
+// Write writes data to the connection, implementing net.Conn.
 func (c *StdioConn) Write(b []byte) (int, error) {
 	// Check if the connection is closed
 	select {
@@ -289,7 +289,7 @@ func (c *StdioConn) Write(b []byte) (int, error) {
 	}
 }
 
-// Close closes the connection, implementing net.Conn
+// Close closes the connection, implementing net.Conn.
 func (c *StdioConn) Close() error {
 	c.closeOnce.Do(func() {
 		close(c.closed)
@@ -297,7 +297,7 @@ func (c *StdioConn) Close() error {
 	return nil
 }
 
-// timeoutError represents a timeout error
+// timeoutError represents a timeout error.
 type timeoutError struct {
 	op      string
 	timeout time.Duration

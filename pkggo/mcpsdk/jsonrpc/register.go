@@ -2,6 +2,7 @@ package jsonrpc
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,7 +11,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
-// GetDefaultOperation gets the conventional values for jsonrpc as a single operation
+// GetDefaultOperation gets the conventional values for jsonrpc as a single operation.
 func GetDefaultOperation() huma.Operation {
 	return huma.Operation{
 		Method:        http.MethodPost,
@@ -24,10 +25,10 @@ func GetDefaultOperation() huma.Operation {
 	}
 }
 
-// GetErrorHandler is a closure returning a function that converts any errors returned into a JSONRPC error
+// GetErrorHandler is a closure returning a function that converts any errors returned into a JSONRPC error.
 // response object. It implements the huma StatusError interface.
 // IF the JSONRPC handler is invoked, it should never throw an error, but should return a error response object.
-// JSONRPC requires a error case to be covered via the specifications error response object
+// JSONRPC requires a error case to be covered via the specifications error response object.
 func GetErrorHandler(
 	methodMap map[string]IMethodHandler,
 	notificationMap map[string]INotificationHandler,
@@ -48,6 +49,7 @@ func GetErrorHandler(
 		}
 
 		for _, err := range errs {
+			var jsonRPCError JSONRPCError
 			if converted, ok := err.(huma.ErrorDetailer); ok {
 				d := converted.ErrorDetail()
 				// See if this is parse error
@@ -57,7 +59,7 @@ func GetErrorHandler(
 					code = ParseError
 					message = errorMessage[ParseError]
 				}
-			} else if jsonRPCError, ok := err.(JSONRPCError); ok {
+			} else if errors.As(err, &jsonRPCError) {
 				// Check if the error is of type JSONRPCError
 				foundJSONRPCError = &jsonRPCError
 			}

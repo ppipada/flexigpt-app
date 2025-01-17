@@ -1,6 +1,7 @@
 package net
 
 import (
+	"errors"
 	"io"
 	"net"
 	"strings"
@@ -41,7 +42,7 @@ func TestStdioConnNoTimeoutReadBlocksIndefinitely(t *testing.T) {
 	// Now the read should complete.
 	select {
 	case err := <-readDone:
-		if err != nil && err != io.EOF {
+		if err != nil && !errors.Is(err, io.EOF) {
 			t.Errorf("Read returned error: %v", err)
 		}
 	case <-time.After(1 * time.Second):
@@ -68,9 +69,10 @@ func TestStdioConnReadTimeout(t *testing.T) {
 	// Wait for the read to return.
 	select {
 	case err := <-readDone:
+		var ne net.Error
 		if err == nil {
 			t.Errorf("Read did not return an error as expected")
-		} else if ne, ok := err.(net.Error); !ok || !ne.Timeout() {
+		} else if ok := errors.As(err, &ne); !ok || !ne.Timeout() {
 			t.Errorf("Expected timeout error, got: %v", err)
 		}
 	case <-time.After(1 * time.Second):
@@ -99,9 +101,10 @@ func TestStdioConnWriteTimeout(t *testing.T) {
 	// Wait for the write to return.
 	select {
 	case err := <-writeDone:
+		var ne net.Error
 		if err == nil {
 			t.Errorf("Write did not return an error as expected")
-		} else if ne, ok := err.(net.Error); !ok || !ne.Timeout() {
+		} else if ok := errors.As(err, &ne); !ok || !ne.Timeout() {
 			if !strings.Contains(err.Error(), "closed") { // May get a closed error
 				t.Errorf("Expected timeout error, got: %v", err)
 			}
@@ -135,9 +138,10 @@ func TestStdioConnSetReadDeadline(t *testing.T) {
 	// Wait for the read to return.
 	select {
 	case err := <-readDone:
+		var ne net.Error
 		if err == nil {
 			t.Errorf("Read did not return an error as expected")
-		} else if ne, ok := err.(net.Error); !ok || !ne.Timeout() {
+		} else if ok := errors.As(err, &ne); !ok || !ne.Timeout() {
 			t.Errorf("Expected timeout error, got: %v", err)
 		}
 	case <-time.After(1 * time.Second):
@@ -170,11 +174,12 @@ func TestStdioConnReadDeadlineReset(t *testing.T) {
 	// Wait for the read to return with a timeout error.
 	select {
 	case err := <-readDone:
+		var ne net.Error
 		if err == nil {
 			t.Errorf("Read did not return an error as expected")
 			return
 		}
-		if ne, ok := err.(net.Error); !ok || !ne.Timeout() {
+		if ok := errors.As(err, &ne); !ok || !ne.Timeout() {
 			t.Errorf("Expected timeout error, got: %v", err)
 			return
 		}
@@ -206,7 +211,7 @@ func TestStdioConnReadDeadlineReset(t *testing.T) {
 	// Now the read should complete successfully.
 	select {
 	case err := <-readDone:
-		if err != nil && err != io.EOF {
+		if err != nil && !errors.Is(err, io.EOF) {
 			t.Errorf("Read returned error after resetting deadline: %v", err)
 		}
 	case <-time.After(1 * time.Second):

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -79,11 +80,12 @@ func main() {
 		aiprovider.InitProviderSetHandlers(api, app.providerSetAPI)
 		// Create the HTTP server.
 		server := http.Server{
-			Addr:    fmt.Sprintf("%s:%d", opts.Host, opts.Port),
-			Handler: router,
+			Addr:              fmt.Sprintf("%s:%d", opts.Host, opts.Port),
+			Handler:           router,
+			ReadHeaderTimeout: 10 * time.Second,
 		}
 		hooks.OnStart(func() {
-			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Fatalf("listen: %s\n", err)
 			}
 		})
@@ -93,7 +95,7 @@ func main() {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			defer writer.Close()
-			server.Shutdown(ctx)
+			_ = server.Shutdown(ctx)
 		})
 	})
 

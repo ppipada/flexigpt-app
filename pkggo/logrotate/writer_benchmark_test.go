@@ -39,7 +39,7 @@ func benchmarkWriter(b *testing.B, messages int, messageSize int, writers int) {
 				defer wg.Done()
 				for j := 0; j < messages; j++ {
 					if _, err := w.Write([]byte(strings.Repeat(strconv.Itoa(i), messageSize))); err != nil {
-						errCh <- fmt.Errorf("failed to write: %v", err)
+						errCh <- fmt.Errorf("failed to write: %w", err)
 						return
 					}
 				}

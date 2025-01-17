@@ -15,7 +15,7 @@ type ProviderSetWrapper struct {
 	appContext     context.Context
 }
 
-// NewProviderSetWrapper creates a new ProviderSet with the specified default provider
+// NewProviderSetWrapper creates a new ProviderSet with the specified default provider.
 func InitProviderSetWrapper(
 	ps *ProviderSetWrapper,
 	defaultProvider aiproviderSpec.ProviderName,
@@ -62,7 +62,7 @@ func (w *ProviderSetWrapper) MakeCompletion(
 	return w.providersetAPI.MakeCompletion(context.Background(), req)
 }
 
-// FetchCompletion handles the completion request and streams data back to the frontend
+// FetchCompletion handles the completion request and streams data back to the frontend.
 func (w *ProviderSetWrapper) FetchCompletion(
 	provider string,
 	input aiproviderSpec.CompletionRequest,

@@ -40,13 +40,13 @@ var AllModelInfo = map[spec.ModelName]spec.ModelInfo{
 	openai.GPT_4O_MINI:                       openai.OpenAIModels[openai.GPT_4O_MINI],
 }
 
-// Define the ProviderSetAPI struct
+// Define the ProviderSetAPI struct.
 type ProviderSetAPI struct {
 	defaultProvider spec.ProviderName
 	providers       map[spec.ProviderName]spec.CompletionProvider
 }
 
-// NewProviderSetAPI creates a new ProviderSet with the specified default provider
+// NewProviderSetAPI creates a new ProviderSet with the specified default provider.
 func NewProviderSetAPI(defaultProvider spec.ProviderName) (*ProviderSetAPI, error) {
 	_, exists := AllAIProviders[defaultProvider]
 	if !exists {
@@ -64,7 +64,7 @@ func NewProviderSetAPI(defaultProvider spec.ProviderName) (*ProviderSetAPI, erro
 	}, nil
 }
 
-// GetDefaultProvider returns the default provider
+// GetDefaultProvider returns the default provider.
 func (ps *ProviderSetAPI) GetDefaultProvider(
 	ctx context.Context,
 	req *spec.GetDefaultProviderRequest,
@@ -74,7 +74,7 @@ func (ps *ProviderSetAPI) GetDefaultProvider(
 	}, nil
 }
 
-// SetDefaultProvider sets the default provider
+// SetDefaultProvider sets the default provider.
 func (ps *ProviderSetAPI) SetDefaultProvider(
 	ctx context.Context,
 	req *spec.SetDefaultProviderRequest,
@@ -90,7 +90,7 @@ func (ps *ProviderSetAPI) SetDefaultProvider(
 	return &spec.SetDefaultProviderResponse{}, nil
 }
 
-// GetConfigurationInfo returns configuration information
+// GetConfigurationInfo returns configuration information.
 func (ps *ProviderSetAPI) GetConfigurationInfo(
 	ctx context.Context,
 	req *spec.GetConfigurationInfoRequest,
@@ -120,7 +120,7 @@ func (ps *ProviderSetAPI) GetConfigurationInfo(
 	}, nil
 }
 
-// SetProviderAttribute sets attributes for a given provider
+// SetProviderAttribute sets attributes for a given provider.
 func (ps *ProviderSetAPI) SetProviderAttribute(
 	ctx context.Context,
 	req *spec.SetProviderAttributeRequest,
@@ -143,7 +143,7 @@ func (ps *ProviderSetAPI) SetProviderAttribute(
 	return &spec.SetProviderAttributeResponse{}, err
 }
 
-// MakeCompletion creates a completion request for a given provider
+// MakeCompletion creates a completion request for a given provider.
 func (ps *ProviderSetAPI) MakeCompletion(
 	ctx context.Context,
 	req *spec.MakeCompletionRequest,
@@ -213,7 +213,7 @@ func (ps *ProviderSetAPI) MakeCompletion(
 	return &spec.MakeCompletionResponse{Body: cr}, nil
 }
 
-// FetchCompletion processes a completion request for a given provider
+// FetchCompletion processes a completion request for a given provider.
 func (ps *ProviderSetAPI) FetchCompletion(
 	ctx context.Context,
 	req *spec.FetchCompletionRequest,

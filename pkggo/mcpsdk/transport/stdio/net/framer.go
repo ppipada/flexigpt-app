@@ -6,7 +6,7 @@ import (
 	"errors"
 )
 
-// MessageFramer defines how messages are read from a stream
+// MessageFramer defines how messages are read from a stream.
 type MessageFramer interface {
 	WriteMessage(w *bufio.Writer, msg []byte) error
 	ReadMessage(r *bufio.Reader) ([]byte, error)

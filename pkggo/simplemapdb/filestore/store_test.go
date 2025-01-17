@@ -68,7 +68,7 @@ func TestNewMapFileStore(t *testing.T) {
 
 	for _, tt := range tests {
 		if tt.createFile {
-			err := os.WriteFile(tt.filename, []byte(tt.fileContent), 0o644)
+			err := os.WriteFile(tt.filename, []byte(tt.fileContent), 0o600)
 			if err != nil {
 				t.Fatalf("[%s] Failed to create test file: %v", tt.name, err)
 			}
@@ -528,7 +528,7 @@ func TestMapFileStorePermissionErrorCases(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to change file permissions: %v", err)
 	}
-	err = os.WriteFile(filename, []byte(`invalid json`), 0o666)
+	err = os.WriteFile(filename, []byte(`invalid json`), 0o600)
 	if err != nil {
 		t.Fatalf("Failed to write invalid data to file: %v", err)
 	}

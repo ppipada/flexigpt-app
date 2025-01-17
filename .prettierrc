@@ -1,7 +1,6 @@
 {
 	"arrowParens": "avoid",
 	"bracketSpacing": true,
-	"endOfLine": "lf",
 	"jsxSingleQuote": false,
 	"printWidth": 120,
 	"proseWrap": "preserve",
@@ -9,16 +8,5 @@
 	"requirePragma": false,
 	"semi": true,
 	"singleQuote": true,
-	"tabWidth": 2,
-	"trailingComma": "es5",
-	"useTabs": true,
-	"overrides": [
-		{
-			"files": ["*.yml", "*.yaml"],
-			"options": {
-				"useTabs": false,
-				"tabWidth": 2
-			}
-		}
-	]
+	"trailingComma": "es5"
 }

@@ -18,7 +18,7 @@ type CompleteRequestParams struct {
 	Ref CompletionReference `json:"ref"`
 }
 
-// The argument's information
+// The argument's information.
 type CompleteRequestParamsArgument struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
@@ -31,7 +31,7 @@ type CompletionReference struct {
 	Uri  *string `json:"uri"`  // This should be present for resource
 }
 
-// The server's response to a completion/complete request
+// The server's response to a completion/complete request.
 type (
 	CompleteResponse jsonrpc.Response[*CompleteResult]
 	CompleteResult   struct {

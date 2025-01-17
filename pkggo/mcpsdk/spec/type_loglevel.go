@@ -1,6 +1,6 @@
 package spec
 
-var enumValues_LoggingLevel = []string{
+var enumValuesLoggingLevel = []string{
 	"alert",
 	"critical",
 	"debug",
@@ -11,14 +11,14 @@ var enumValues_LoggingLevel = []string{
 	"warning",
 }
 
-// LoggingLevel
+// LoggingLevel.
 type LoggingLevel struct {
 	*StringUnion
 }
 
 // NewLoggingLevel creates a new LoggingLevel with the provided value.
 func NewLoggingLevel(value string) *LoggingLevel {
-	stringUnion := NewStringUnion(enumValues_LoggingLevel...)
+	stringUnion := NewStringUnion(enumValuesLoggingLevel...)
 	_ = stringUnion.SetValue(value)
 	return &LoggingLevel{StringUnion: stringUnion}
 }
@@ -27,7 +27,7 @@ func NewLoggingLevel(value string) *LoggingLevel {
 func (r *LoggingLevel) UnmarshalJSON(b []byte) error {
 	if r.StringUnion == nil {
 		// Initialize with allowed values if not already initialized
-		r.StringUnion = NewStringUnion(enumValues_LoggingLevel...)
+		r.StringUnion = NewStringUnion(enumValuesLoggingLevel...)
 	}
 	return r.StringUnion.UnmarshalJSON(b)
 }

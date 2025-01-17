@@ -22,7 +22,7 @@ const (
 	// InvalidParamsError defines invalid method parameter(s).
 	InvalidParamsError JSONRPCErrorCode = -32602
 
-	// InternalError defines a server error
+	// InternalError defines a server error.
 	InternalError JSONRPCErrorCode = -32603
 )
 

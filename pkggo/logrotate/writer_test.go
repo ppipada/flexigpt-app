@@ -212,7 +212,7 @@ func TestConcurrentWrites(t *testing.T) {
 			defer wg.Done()
 			for j := 0; j < rows; j++ {
 				if _, err := w.Write([]byte(strings.Repeat(strconv.Itoa(i), messageSize))); err != nil {
-					errCh <- fmt.Errorf("failed to write: %v", err)
+					errCh <- fmt.Errorf("failed to write: %w", err)
 					return
 				}
 			}

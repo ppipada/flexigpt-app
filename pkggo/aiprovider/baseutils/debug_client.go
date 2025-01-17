@@ -13,15 +13,15 @@ import (
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/spec"
 )
 
-// Sensitive keys to filter
+// Sensitive keys to filter.
 var sensitiveKeys = []string{"authorization", "key"}
 
-// Define a context key type to avoid collisions
+// Define a context key type to avoid collisions.
 type contextKey string
 
 const debugHTTPResponseKey = contextKey("DebugHTTPResponse")
 
-// DebugHTTPResponse wraps http.Response and includes additional debug information
+// DebugHTTPResponse wraps http.Response and includes additional debug information.
 type DebugHTTPResponse struct {
 	RequestDetails  *spec.APIRequestDetails
 	ResponseDetails *spec.APIResponseDetails
@@ -64,7 +64,7 @@ func deepCopyAndFilter(value interface{}) interface{} {
 	}
 }
 
-// containsSensitiveKey checks if a key contains any sensitive keywords
+// containsSensitiveKey checks if a key contains any sensitive keywords.
 func containsSensitiveKey(key string) bool {
 	lowerKey := strings.ToLower(key)
 	for _, sensitiveKey := range sensitiveKeys {
@@ -106,7 +106,7 @@ func generateCurlCommand(config *spec.APIRequestDetails) string {
 	return curlCommand.String()
 }
 
-// captureRequestDetails captures details of the HTTP request
+// captureRequestDetails captures details of the HTTP request.
 func captureRequestDetails(req *http.Request) *spec.APIRequestDetails {
 	headers := make(map[string]interface{})
 	for key, values := range req.Header {
@@ -136,7 +136,7 @@ func captureRequestDetails(req *http.Request) *spec.APIRequestDetails {
 	return apireq
 }
 
-// captureResponseDetails captures details of the HTTP response
+// captureResponseDetails captures details of the HTTP response.
 func CaptureResponseDetails(
 	resp *http.Response,
 ) *spec.APIResponseDetails {
@@ -209,18 +209,19 @@ func (lc *loggingReadCloser) Close() error {
 	return err
 }
 
-// LogTransport is a custom http.RoundTripper that logs requests and responses
+// LogTransport is a custom http.RoundTripper that logs requests and responses.
 type LogTransport struct {
 	Transport http.RoundTripper
 	LogMode   bool
 }
 
-// RoundTrip executes a single HTTP transaction and logs the request and response
+// RoundTrip executes a single HTTP transaction and logs the request and response.
 func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	reqCtx := req.Context()
 	debugResp, ok := GetDebugHTTPResponse(reqCtx)
 	if !ok || debugResp == nil {
-		// Allocate a pointer for processing. This is not going to be available in consumer anycase, but is present for processing sakes only.
+		// Allocate a pointer for processing.
+		// This is not going to be available in consumer anycase, but is present for processing sakes only.
 		debugResp = &DebugHTTPResponse{}
 	}
 
@@ -287,7 +288,7 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
-// NewDebugHTTPClient creates a new HTTP client with logging capabilities
+// NewDebugHTTPClient creates a new HTTP client with logging capabilities.
 func NewDebugHTTPClient(logMode bool) *http.Client {
 	return &http.Client{
 		Transport: &LogTransport{
@@ -303,7 +304,7 @@ func AddDebugResponseToCtx(ctx context.Context) context.Context {
 	return context.WithValue(ctx, debugHTTPResponseKey, debugResp)
 }
 
-// Helper function to retrieve DebugHTTPResponse from context
+// Helper function to retrieve DebugHTTPResponse from context.
 func GetDebugHTTPResponse(ctx context.Context) (*DebugHTTPResponse, bool) {
 	debugResp, ok := ctx.Value(debugHTTPResponseKey).(*DebugHTTPResponse)
 	return debugResp, ok

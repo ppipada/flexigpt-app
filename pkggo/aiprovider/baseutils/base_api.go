@@ -13,7 +13,7 @@ type BaseAIAPI struct {
 	Debug        bool
 }
 
-// NewOpenAIAPI creates a new instance of BaseAIAPI with input ProviderInfo
+// NewOpenAIAPI creates a new instance of BaseAIAPI with input ProviderInfo.
 func NewBaseAIAPI(p *spec.ProviderInfo, debug bool) *BaseAIAPI {
 	return &BaseAIAPI{
 		ProviderInfo: p,
@@ -21,12 +21,12 @@ func NewBaseAIAPI(p *spec.ProviderInfo, debug bool) *BaseAIAPI {
 	}
 }
 
-// IsConfigured checks if the API is configured
+// IsConfigured checks if the API is configured.
 func (api *BaseAIAPI) IsConfigured(ctx context.Context) bool {
 	return api.ProviderInfo.IsConfigured()
 }
 
-// MakeCompletion creates a new completion request
+// MakeCompletion creates a new completion request.
 func (api *BaseAIAPI) MakeCompletion(
 	ctx context.Context,
 	modelInfo spec.ModelInfo,
@@ -109,7 +109,7 @@ func (api *BaseAIAPI) MakeCompletion(
 	return &completionRequest, nil
 }
 
-// SetProviderAttribute sets the attributes for the OpenAIAPI
+// SetProviderAttribute sets the attributes for the OpenAIAPI.
 func (api *BaseAIAPI) SetProviderAttribute(
 	ctx context.Context,
 	apiKey *string,
@@ -139,7 +139,7 @@ func (api *BaseAIAPI) SetProviderAttribute(
 	return nil
 }
 
-// FetchCompletion processes the completion request
+// FetchCompletion processes the completion request.
 func (api *BaseAIAPI) FetchCompletion(
 	ctx context.Context,
 	llm llms.Model,

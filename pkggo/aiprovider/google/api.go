@@ -10,13 +10,13 @@ import (
 	langchainGoogle "github.com/tmc/langchaingo/llms/googleai"
 )
 
-// GoogleAPI struct that implements the CompletionProvider interface
+// GoogleAPI struct that implements the CompletionProvider interface.
 type GoogleAPI struct {
 	*baseutils.BaseAIAPI
 	llm *langchainGoogle.GoogleAI
 }
 
-// NewGoogleAPI creates a new instance of GoogleAPI with default ProviderInfo
+// NewGoogleAPI creates a new instance of GoogleAPI with default ProviderInfo.
 func NewGoogleAPI() *GoogleAPI {
 	pi := GoogleProviderInfo
 	debug := false
@@ -25,7 +25,7 @@ func NewGoogleAPI() *GoogleAPI {
 	}
 }
 
-// SetProviderAttribute sets the attributes for the GoogleAPI
+// SetProviderAttribute sets the attributes for the GoogleAPI.
 func (api *GoogleAPI) SetProviderAttribute(
 	ctx context.Context,
 	apiKey *string,
@@ -73,7 +73,7 @@ func (api *GoogleAPI) SetProviderAttribute(
 	return nil
 }
 
-// FetchCompletion processes the completion request
+// FetchCompletion processes the completion request.
 func (api *GoogleAPI) FetchCompletion(
 	ctx context.Context,
 	input spec.CompletionRequest,

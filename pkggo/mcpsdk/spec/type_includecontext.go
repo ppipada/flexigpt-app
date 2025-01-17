@@ -6,7 +6,7 @@ var enumValues_IncludeContext = []string{
 	"thisServer",
 }
 
-// IncludeContext
+// IncludeContext.
 type IncludeContext struct {
 	*StringUnion
 }

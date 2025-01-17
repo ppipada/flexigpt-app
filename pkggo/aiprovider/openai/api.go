@@ -10,13 +10,13 @@ import (
 	langchainOpenAI "github.com/tmc/langchaingo/llms/openai"
 )
 
-// OpenAIAPI struct that implements the CompletionProvider interface
+// OpenAIAPI struct that implements the CompletionProvider interface.
 type OpenAIAPI struct {
 	*baseutils.BaseAIAPI
 	llm *langchainOpenAI.LLM
 }
 
-// NewOpenAIAPI creates a new instance of OpenAIAPI with default ProviderInfo
+// NewOpenAIAPI creates a new instance of OpenAIAPI with default ProviderInfo.
 func NewOpenAIAPI() *OpenAIAPI {
 	pi := OpenAIProviderInfo
 	debug := false
@@ -25,7 +25,7 @@ func NewOpenAIAPI() *OpenAIAPI {
 	}
 }
 
-// SetProviderAttribute sets the attributes for the OpenAIAPI
+// SetProviderAttribute sets the attributes for the OpenAIAPI.
 func (api *OpenAIAPI) SetProviderAttribute(
 	ctx context.Context,
 	apiKey *string,
@@ -65,7 +65,7 @@ func (api *OpenAIAPI) SetProviderAttribute(
 	return nil
 }
 
-// FetchCompletion processes the completion request
+// FetchCompletion processes the completion request.
 func (api *OpenAIAPI) FetchCompletion(
 	ctx context.Context,
 	input spec.CompletionRequest,

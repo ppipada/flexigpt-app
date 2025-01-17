@@ -23,7 +23,7 @@ type DeadLetterItem struct {
 	Err      error
 }
 
-// ClientOption configures the client
+// ClientOption configures the client.
 type ClientOption func(*Client)
 
 // WithRequestIDFunctions allows assigning custom ID functions.
@@ -181,8 +181,8 @@ func (c *Client) Send(msg []byte) ([]byte, error) {
 	}
 }
 
-// receiver reads messages from the connection and dispatches them.
-// This is run only when concurrency is enabled
+// Receiver reads messages from the connection and dispatches them.
+// This is run only when concurrency is enabled.
 func (c *Client) receiver() {
 	defer c.wg.Done()
 	for {
@@ -192,7 +192,7 @@ func (c *Client) receiver() {
 		default:
 			resp, err := c.framer.ReadMessage(c.reader)
 			if err != nil {
-				if err == io.EOF || err == io.ErrUnexpectedEOF {
+				if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
 					// Connection closed, terminate the receiver
 					return
 				}
