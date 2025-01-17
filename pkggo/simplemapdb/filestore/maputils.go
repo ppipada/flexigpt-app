@@ -1,6 +1,7 @@
 package filestore
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -93,7 +94,7 @@ func navigateToParentMap(
 	createMissing bool,
 ) (map[string]interface{}, string, error) {
 	if len(keys) == 0 {
-		return nil, "", fmt.Errorf("empty path received")
+		return nil, "", errors.New("empty path received")
 	}
 	current := data
 	for i := 0; i < len(keys)-1; i++ {

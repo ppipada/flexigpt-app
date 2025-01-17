@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 
+	"errors"
+
 	"github.com/flexigpt/flexiui/pkggo/aiprovider"
 	aiproviderSpec "github.com/flexigpt/flexiui/pkggo/aiprovider/spec"
+
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -20,7 +23,7 @@ func InitProviderSetWrapper(
 ) error {
 	p, err := aiprovider.NewProviderSetAPI(defaultProvider)
 	if err != nil {
-		panic("Invalid default provider")
+		return errors.Join(err, errors.New("Invalid default provider"))
 	}
 	ps.providersetAPI = p
 	return nil

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -36,9 +37,9 @@ func GetErrorHandler(
 		var foundJSONRPCError *JSONRPCError
 		message := gotMessage
 		details := make([]string, 0)
-		details = append(details, fmt.Sprintf("Message:%s", gotMessage))
+		details = append(details, "Message:"+gotMessage)
 		// Add the HTTP status to details and set status sent back as 200
-		details = append(details, fmt.Sprintf("HTTP Status:%d", gotStatus))
+		details = append(details, "HTTP Status:"+strconv.Itoa(gotStatus))
 		status := 200
 
 		code := InternalError

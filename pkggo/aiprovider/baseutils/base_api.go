@@ -2,7 +2,7 @@ package baseutils
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/spec"
 	"github.com/tmc/langchaingo/llms"
@@ -119,10 +119,10 @@ func (api *BaseAIAPI) SetProviderAttribute(
 	defaultOrigin *string,
 ) error {
 	if apiKey == nil && defaultModel == nil && defaultTemperature == nil && defaultOrigin == nil {
-		return fmt.Errorf("No attribute provided for set")
+		return errors.New("No attribute provided for set")
 	}
 	if api.ProviderInfo == nil {
-		return fmt.Errorf("No ProviderInfo found")
+		return errors.New("No ProviderInfo found")
 	}
 	if apiKey != nil {
 		api.ProviderInfo.ApiKey = *apiKey
@@ -148,7 +148,7 @@ func (api *BaseAIAPI) FetchCompletion(
 	onStreamData func(data string) error,
 ) (*spec.CompletionResponse, error) {
 	if len(input.Messages) == 0 {
-		return nil, fmt.Errorf("Empty input messages")
+		return nil, errors.New("Empty input messages")
 	}
 	options := []llms.CallOption{
 		llms.WithModel(input.Model),
@@ -176,7 +176,7 @@ func (api *BaseAIAPI) FetchCompletion(
 		}
 	}
 	if len(content) == 0 {
-		return nil, fmt.Errorf("Empty input content messages")
+		return nil, errors.New("Empty input content messages")
 	}
 
 	completionResp := &spec.CompletionResponse{}
@@ -208,7 +208,7 @@ func (api *BaseAIAPI) FetchCompletion(
 			}
 			return completionResp, nil
 		}
-		return nil, fmt.Errorf("Got nil response from LLM api")
+		return nil, errors.New("Got nil response from LLM api")
 	}
 	completionResp.RespContent = &resp.Choices[0].Content
 	return completionResp, nil

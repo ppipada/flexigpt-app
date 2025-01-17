@@ -19,7 +19,7 @@ type EncryptedStringValueEncoderDecoder struct{}
 func (e EncryptedStringValueEncoderDecoder) Encode(w io.Writer, value interface{}) error {
 	v, ok := value.(string)
 	if !ok {
-		return fmt.Errorf("Got non string encode input")
+		return errors.New("Got non string encode input")
 	}
 	encryptedData, err := encryptString(v)
 	if err != nil {
@@ -158,7 +158,7 @@ func decryptString(encodedCiphertext string) (string, error) {
 
 	nonceSize := aesGCM.NonceSize()
 	if len(ciphertext) < nonceSize {
-		return "", fmt.Errorf("ciphertext too short")
+		return "", errors.New("ciphertext too short")
 	}
 
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]

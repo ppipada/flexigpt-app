@@ -56,7 +56,7 @@ func (a *BackendApp) initSettingsStore() {
 	if err := os.MkdirAll(a.settingsDirPath, os.FileMode(0770)); err != nil {
 		slog.Error(
 			"Failed to create directories for settings",
-			"settigns dir",
+			"settings dir",
 			a.settingsDirPath,
 			"Error",
 			err,

@@ -3,6 +3,7 @@ package conversationstore
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log/slog"
 	"path/filepath"
@@ -19,7 +20,7 @@ import (
 func GetDateFromUUIDv7(uuid string) (time.Time, error) {
 	// Check if the UUID is valid and has the correct length
 	if len(uuid) != 36 {
-		return time.Time{}, fmt.Errorf("invalid UUIDv7 string")
+		return time.Time{}, errors.New("invalid UUIDv7 string")
 	}
 
 	// Remove dashes from the UUID
@@ -167,7 +168,7 @@ func (cc *ConversationCollection) ListConversations(
 		return nil, err
 	}
 
-	var convoItems []spec.ConversationItem
+	convoItems := make([]spec.ConversationItem, 0, len(files))
 	for _, file := range files {
 		filename := filepath.Base(file)
 		parts := strings.Split(strings.TrimSuffix(filename, ".json"), "_")

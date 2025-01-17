@@ -5,7 +5,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
-	"fmt"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -99,7 +99,7 @@ func TestDecodeInvalidData(t *testing.T) {
 type errorWriter struct{}
 
 func (e *errorWriter) Write(p []byte) (n int, err error) {
-	return 0, fmt.Errorf("write error")
+	return 0, errors.New("write error")
 }
 
 func TestEncodeWithErrorWriter(t *testing.T) {
@@ -115,7 +115,7 @@ func TestEncodeWithErrorWriter(t *testing.T) {
 type errorReader struct{}
 
 func (e *errorReader) Read(p []byte) (n int, err error) {
-	return 0, fmt.Errorf("read error")
+	return 0, errors.New("read error")
 }
 
 func TestDecodeWithErrorReader(t *testing.T) {

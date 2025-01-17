@@ -1,7 +1,6 @@
 package settingstore
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -25,7 +24,7 @@ func InitSettingStoreHandlers(api huma.API, settingsStoreAPI *SettingStore) {
 	huma.Register(api, huma.Operation{
 		OperationID: "set-settings",
 		Method:      http.MethodPut,
-		Path:        fmt.Sprintf("%s/{key}", pathPrefix),
+		Path:        pathPrefix + "/{key}",
 		Summary:     "Set a setting",
 		Description: "Set a setting. Key can be dot separated key",
 		Tags:        []string{tag},

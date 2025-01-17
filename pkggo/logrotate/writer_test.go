@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -209,7 +210,7 @@ func TestConcurrentWrites(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 			for j := 0; j < rows; j++ {
-				if _, err := w.Write([]byte(strings.Repeat(fmt.Sprintf("%d", i), messageSize))); err != nil {
+				if _, err := w.Write([]byte(strings.Repeat(strconv.Itoa(i), messageSize))); err != nil {
 					errCh <- fmt.Errorf("failed to write: %v", err)
 					return
 				}

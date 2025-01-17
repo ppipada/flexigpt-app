@@ -153,9 +153,9 @@ func (mds *MapDirectoryStore) ListFiles(
 ) ([]string, string, error) {
 	// Decode page token
 	var tokenData struct {
-		PartitionPageToken string
-		FileIndex          int
-		SortOrder          string
+		PartitionPageToken string `json:"PartitionPageToken"`
+		FileIndex          int    `json:"FileIndex"`
+		SortOrder          string `json:"SortOrder"`
 	}
 	if pageToken != "" {
 		tokenBytes, err := base64.StdEncoding.DecodeString(pageToken)
@@ -222,18 +222,18 @@ func (mds *MapDirectoryStore) ListFiles(
 				if j+1 < len(partitionFileNames) {
 					// More files in the current partition
 					nextPageTokenData, _ := json.Marshal(struct {
-						PartitionPageToken string
-						FileIndex          int
-						SortOrder          string
+						PartitionPageToken string `json:"PartitionPageToken"`
+						FileIndex          int    `json:"FileIndex"`
+						SortOrder          string `json:"SortOrder"`
 					}{PartitionPageToken: tokenData.PartitionPageToken, FileIndex: j + 1, SortOrder: tokenData.SortOrder})
 					nextPageToken := base64.StdEncoding.EncodeToString(nextPageTokenData)
 					return filenames, nextPageToken, nil
 				} else {
 					// Move to the next partition
 					nextPageTokenData, _ := json.Marshal(struct {
-						PartitionPageToken string
-						FileIndex          int
-						SortOrder          string
+						PartitionPageToken string `json:"PartitionPageToken"`
+						FileIndex          int    `json:"FileIndex"`
+						SortOrder          string `json:"SortOrder"`
 					}{PartitionPageToken: nextPartitionPageToken, FileIndex: 0, SortOrder: tokenData.SortOrder})
 					nextPageToken := base64.StdEncoding.EncodeToString(nextPageTokenData)
 					return filenames, nextPageToken, nil

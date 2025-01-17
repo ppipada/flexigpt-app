@@ -4,3 +4,21 @@ issues:
 run:
   build-tags:
     - codeanalysis
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - dupword
+    - misspell
+    - musttag
+    - nolintlint
+    - perfsprint
+    - prealloc
+    - tenv
+    - unparam
+    - unconvert
+    - wastedassign

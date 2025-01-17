@@ -10,6 +10,8 @@
 
 ## Laundry list
 
+- [ ] Implement MCP protocol
+- [ ] Add servers for: file, git, simplemapstore
 - [ ] Take default model and temp from settings without caching
 - [ ] focus on edit box if someone presses edit. as of now focs is at end of page
 - [ ] Need a stop streaming / cancel button on assistant

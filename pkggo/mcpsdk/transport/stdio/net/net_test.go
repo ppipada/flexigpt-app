@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -51,7 +52,7 @@ func (h *errorHandler) HandleMessage(writer io.Writer, msg []byte) {
 func initClientServer(
 	handler MessageHandler,
 	options ...ClientOption,
-) (*Client, *Server, func(), error) {
+) (*Client, *Server, func()) {
 	// Create connected pipes to simulate stdin and stdout.
 	clientReader, serverWriter := io.Pipe() // Client writes to serverReader
 	serverReader, clientWriter := io.Pipe() // Server writes to clientReader
@@ -88,7 +89,7 @@ func initClientServer(
 		_ = server.Shutdown(context.Background())
 	}
 
-	return client, server, teardown, nil
+	return client, server, teardown
 }
 
 // Helper function to generate random bytes.
@@ -173,10 +174,7 @@ func TestSynchronousSingleRequest(t *testing.T) {
 	}
 
 	handler := &echoHandler{}
-	client, _, teardown, err := initClientServer(handler)
-	if err != nil {
-		t.Fatalf("Failed to initialize client and server: %v", err)
-	}
+	client, _, teardown := initClientServer(handler)
 
 	defer teardown()
 
@@ -185,7 +183,7 @@ func TestSynchronousSingleRequest(t *testing.T) {
 			// Set long timeouts to avoid interference.
 			_ = client.conn.SetDeadline(time.Now().Add(10 * time.Second))
 
-			reply, err := client.Send([]byte(tt.message))
+			reply, err := client.Send(tt.message)
 			if err != nil {
 				t.Fatalf("Send failed: %v", err)
 			}
@@ -212,7 +210,7 @@ func TestConcurrentRequestsSingleClient(t *testing.T) {
 	var idCounter int32
 	assignID := func(msg []byte) (*string, []byte, error) {
 		id := atomic.AddInt32(&idCounter, 1)
-		idStr := fmt.Sprintf("%d", id)
+		idStr := strconv.Itoa(int(id))
 		msgWithID := append([]byte(idStr+":"), msg...)
 		return &idStr, msgWithID, nil
 	}
@@ -226,13 +224,11 @@ func TestConcurrentRequestsSingleClient(t *testing.T) {
 	}
 
 	handler := &echoHandler{}
-	client, _, teardown, err := initClientServer(
+	client, _, teardown := initClientServer(
 		handler,
 		WithRequestIDFunctions(assignID, extractID),
 	)
-	if err != nil {
-		t.Fatalf("Failed to initialize client and server: %v", err)
-	}
+
 	defer teardown()
 
 	// Prepare test messages.
@@ -276,7 +272,7 @@ func TestClientRequestTimeout(t *testing.T) {
 	var idCounter int32
 	assignID := func(msg []byte) (*string, []byte, error) {
 		id := atomic.AddInt32(&idCounter, 1)
-		idStr := fmt.Sprintf("%d", id)
+		idStr := strconv.Itoa(int(id))
 		msgWithID := append([]byte(idStr+":"), msg...)
 		return &idStr, msgWithID, nil
 	}
@@ -290,14 +286,12 @@ func TestClientRequestTimeout(t *testing.T) {
 	}
 	clientOptions = append(clientOptions, WithRequestIDFunctions(assignID, extractID))
 
-	client, _, teardown, err := initClientServer(handler, clientOptions...)
-	if err != nil {
-		t.Fatalf("Failed to initialize client and server: %v", err)
-	}
+	client, _, teardown := initClientServer(handler, clientOptions...)
+
 	defer teardown()
 
 	startTime := time.Now()
-	_, err = client.Send([]byte("This will timeout"))
+	_, err := client.Send([]byte("This will timeout"))
 	elapsed := time.Since(startTime)
 
 	if err == nil {
@@ -318,10 +312,8 @@ func TestClientRequestTimeout(t *testing.T) {
 
 func TestServerShutdownDuringActiveConnections(t *testing.T) {
 	handler := &delayHandler{delay: 2 * time.Second}
-	client, server, teardown, err := initClientServer(handler)
-	if err != nil {
-		t.Fatalf("Failed to initialize client and server: %v", err)
-	}
+	client, server, teardown := initClientServer(handler)
+
 	defer teardown()
 
 	var wg sync.WaitGroup
@@ -339,7 +331,7 @@ func TestServerShutdownDuringActiveConnections(t *testing.T) {
 
 	// Wait a moment and then shutdown the server.
 	time.Sleep(1 * time.Second)
-	err = server.Shutdown(context.Background())
+	err := server.Shutdown(context.Background())
 	if err != nil {
 		t.Errorf("Server shutdown error: %v", err)
 	}
@@ -349,10 +341,8 @@ func TestServerShutdownDuringActiveConnections(t *testing.T) {
 
 func TestClientSendWithoutRequestIDFunctions(t *testing.T) {
 	handler := &echoHandler{}
-	client, _, teardown, err := initClientServer(handler)
-	if err != nil {
-		t.Fatalf("Failed to initialize client and server: %v", err)
-	}
+	client, _, teardown := initClientServer(handler)
+
 	defer teardown()
 
 	// Send a message without request ID functions (synchronous send).
@@ -374,7 +364,7 @@ func TestInvalidMessageFormat(t *testing.T) {
 	var idCounter int32
 	assignID := func(msg []byte) (*string, []byte, error) {
 		id := atomic.AddInt32(&idCounter, 1)
-		idStr := fmt.Sprintf("%d", id)
+		idStr := strconv.Itoa(int(id))
 		msgWithID := append([]byte(idStr+":"), msg...)
 		return &idStr, msgWithID, nil
 	}
@@ -389,13 +379,11 @@ func TestInvalidMessageFormat(t *testing.T) {
 		WithRequestTimeout(time.Second),
 	}
 
-	client, _, teardown, err := initClientServer(handler, clientOptions...)
-	if err != nil {
-		t.Fatalf("Failed to initialize client and server: %v", err)
-	}
+	client, _, teardown := initClientServer(handler, clientOptions...)
+
 	defer teardown()
 
-	_, err = client.Send([]byte("Test message"))
+	_, err := client.Send([]byte("Test message"))
 	if err == nil {
 		t.Errorf("Expected error due to invalid message format, but got none")
 	}
@@ -423,7 +411,7 @@ func TestErrorHandlingAndDeadLetterQueue(t *testing.T) {
 	var idCounter int32
 	assignID := func(msg []byte) (*string, []byte, error) {
 		id := atomic.AddInt32(&idCounter, 1)
-		idStr := fmt.Sprintf("%d", id)
+		idStr := strconv.Itoa(int(id))
 		msgWithID := append([]byte(idStr+":"), msg...)
 		return &idStr, msgWithID, nil
 	}
@@ -441,13 +429,11 @@ func TestErrorHandlingAndDeadLetterQueue(t *testing.T) {
 		WithRequestTimeout(time.Millisecond*100),
 	)
 
-	client, _, teardown, err := initClientServer(handler, clientOptions...)
-	if err != nil {
-		t.Fatalf("Failed to initialize client and server: %v", err)
-	}
+	client, _, teardown := initClientServer(handler, clientOptions...)
+
 	defer teardown()
 
-	_, err = client.Send([]byte("Test message"))
+	_, err := client.Send([]byte("Test message"))
 	if err == nil {
 		t.Errorf("Expected error due to invalid response, but got none")
 	}

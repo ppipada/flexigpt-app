@@ -31,7 +31,8 @@ const (
 	MethodLoggingNotificationsMessage = "notifications/message"
 
 	MethodSamplingCreateMessage = "sampling/createMessage"
-	MethodSamplingCompletion    = "completion/complete"
+
+	MethodCompletion = "completion/complete"
 
 	MethodRootsList                     = "roots/list"
 	MethodRootsNotificationsListChanged = "notifications/roots/list_changed"

@@ -203,7 +203,7 @@ func (lc *loggingReadCloser) Close() error {
 	}
 
 	if lc.logMode {
-		slog.Debug("Response", "Body", fmt.Sprintf("%s\n", string(dataBytes)))
+		slog.Debug("Response", "Body", string(dataBytes)+"\n")
 	}
 
 	return err

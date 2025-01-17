@@ -2,6 +2,7 @@ package aiprovider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/anthropic"
@@ -49,7 +50,7 @@ type ProviderSetAPI struct {
 func NewProviderSetAPI(defaultProvider spec.ProviderName) (*ProviderSetAPI, error) {
 	_, exists := AllAIProviders[defaultProvider]
 	if !exists {
-		return nil, fmt.Errorf("Invalid provider")
+		return nil, errors.New("Invalid provider")
 	}
 	return &ProviderSetAPI{
 		defaultProvider: defaultProvider,
@@ -79,11 +80,11 @@ func (ps *ProviderSetAPI) SetDefaultProvider(
 	req *spec.SetDefaultProviderRequest,
 ) (*spec.SetDefaultProviderResponse, error) {
 	if req == nil || req.Body == nil {
-		return nil, fmt.Errorf("Got empty provider input")
+		return nil, errors.New("Got empty provider input")
 	}
 	_, exists := ps.providers[req.Body.Provider]
 	if !exists {
-		return nil, fmt.Errorf("Invalid provider")
+		return nil, errors.New("Invalid provider")
 	}
 	ps.defaultProvider = req.Body.Provider
 	return &spec.SetDefaultProviderResponse{}, nil
@@ -102,7 +103,7 @@ func (ps *ProviderSetAPI) GetConfigurationInfo(
 	configuredModels := []spec.ModelInfo{}
 
 	for _, providerInfo := range AllAIProviders {
-		if provider, exists := ps.providers[spec.ProviderName(providerInfo.Name)]; exists &&
+		if provider, exists := ps.providers[providerInfo.Name]; exists &&
 			provider.IsConfigured(ctx) {
 			configuredProviders = append(configuredProviders, providerInfo)
 			for _, modelInfo := range AllModelInfo {
@@ -126,11 +127,11 @@ func (ps *ProviderSetAPI) SetProviderAttribute(
 	req *spec.SetProviderAttributeRequest,
 ) (*spec.SetProviderAttributeResponse, error) {
 	if req == nil || req.Body == nil {
-		return nil, fmt.Errorf("Got empty provider input")
+		return nil, errors.New("Got empty provider input")
 	}
 	p, exists := ps.providers[req.Provider]
 	if !exists {
-		return nil, fmt.Errorf("Invalid provider")
+		return nil, errors.New("Invalid provider")
 	}
 
 	err := p.SetProviderAttribute(
@@ -149,12 +150,12 @@ func (ps *ProviderSetAPI) MakeCompletion(
 	req *spec.MakeCompletionRequest,
 ) (*spec.MakeCompletionResponse, error) {
 	if req == nil || req.Body == nil {
-		return nil, fmt.Errorf("Got empty provider input")
+		return nil, errors.New("Got empty provider input")
 	}
 	provider := req.Provider
 	p, exists := ps.providers[provider]
 	if !exists {
-		return nil, fmt.Errorf("Invalid provider")
+		return nil, errors.New("Invalid provider")
 	}
 
 	// Get the default model for the provider
@@ -176,7 +177,7 @@ func (ps *ProviderSetAPI) MakeCompletion(
 			// Ensure the model is a string
 			modelStr, ok := modelInterface.(string)
 			if !ok {
-				return nil, fmt.Errorf("'model' in inputParams must be a string")
+				return nil, errors.New("'model' in inputParams must be a string")
 			}
 
 			modelName := spec.ModelName(modelStr)
@@ -219,17 +220,17 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	req *spec.FetchCompletionRequest,
 ) (*spec.FetchCompletionResponse, error) {
 	if req == nil || req.Body == nil || req.Body.Input == nil {
-		return nil, fmt.Errorf("Got empty provider input")
+		return nil, errors.New("Got empty provider input")
 	}
 	provider := req.Body.Provider
 	p, exists := ps.providers[provider]
 	if !exists {
-		return nil, fmt.Errorf("Invalid provider")
+		return nil, errors.New("Invalid provider")
 	}
 
 	resp, err := p.FetchCompletion(ctx, *req.Body.Input, req.Body.OnStreamData)
 	if err != nil {
-		return nil, fmt.Errorf("Error in fetch completion")
+		return nil, errors.New("Error in fetch completion")
 	}
 
 	return &spec.FetchCompletionResponse{Body: resp}, nil

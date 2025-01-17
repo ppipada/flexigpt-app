@@ -2,6 +2,7 @@ package encdec
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -14,7 +15,7 @@ type JSONEncoderDecoder struct{}
 // Encode encodes the given value into JSON format and writes it to the writer.
 func (d JSONEncoderDecoder) Encode(w io.Writer, value interface{}) error {
 	if w == nil {
-		return fmt.Errorf("writer cannot be nil")
+		return errors.New("writer cannot be nil")
 	}
 
 	encoder := json.NewEncoder(w)
@@ -30,16 +31,16 @@ func (d JSONEncoderDecoder) Encode(w io.Writer, value interface{}) error {
 // Decode decodes JSON data from the reader into the given value.
 func (d JSONEncoderDecoder) Decode(r io.Reader, value interface{}) error {
 	if r == nil {
-		return fmt.Errorf("reader cannot be nil")
+		return errors.New("reader cannot be nil")
 	}
 
 	if value == nil {
-		return fmt.Errorf("value cannot be nil")
+		return errors.New("value cannot be nil")
 	}
 
 	v := reflect.ValueOf(value)
 	if v.Kind() != reflect.Ptr || v.IsNil() {
-		return fmt.Errorf("value must be a non-nil pointer")
+		return errors.New("value must be a non-nil pointer")
 	}
 
 	decoder := json.NewDecoder(r)
@@ -54,7 +55,7 @@ func (d JSONEncoderDecoder) Decode(r io.Reader, value interface{}) error {
 func StructWithJSONTagsToMap(data interface{}) (map[string]interface{}, error) {
 	// Check if the input is nil
 	if data == nil {
-		return nil, fmt.Errorf("input data cannot be nil")
+		return nil, errors.New("input data cannot be nil")
 	}
 	// Marshal the struct to JSON
 	jsonData, err := json.Marshal(data)
@@ -73,18 +74,18 @@ func StructWithJSONTagsToMap(data interface{}) (map[string]interface{}, error) {
 
 func MapToStructWithJSONTags(data map[string]interface{}, out interface{}) error {
 	if data == nil {
-		return fmt.Errorf("input data cannot be nil")
+		return errors.New("input data cannot be nil")
 	}
 
 	// Check if out is a pointer
 	v := reflect.ValueOf(out)
 	if v.Kind() != reflect.Ptr || v.IsNil() {
-		return fmt.Errorf("output parameter must be a non-nil pointer to a struct")
+		return errors.New("output parameter must be a non-nil pointer to a struct")
 	}
 
 	// Check if out is pointing to a struct
 	if v.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("output parameter must be a pointer to a struct")
+		return errors.New("output parameter must be a pointer to a struct")
 	}
 
 	// Marshal the map to JSON

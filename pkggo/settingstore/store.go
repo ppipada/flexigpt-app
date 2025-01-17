@@ -2,6 +2,7 @@ package settingstore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -22,7 +23,7 @@ func InitSettingStore(settingStore *SettingStore, filename string) error {
 	}
 	settingsMap, err := encdec.StructWithJSONTagsToMap(spec.DefaultSettingsData)
 	if err != nil {
-		return fmt.Errorf("Could not get map of settings data")
+		return errors.New("Could not get map of settings data")
 	}
 	store, err := filestore.NewMapFileStore(
 		filename,
