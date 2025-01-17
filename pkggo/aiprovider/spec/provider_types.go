@@ -28,13 +28,13 @@ type ProviderName string
 // ProviderInfo represents information about a provider.
 type ProviderInfo struct {
 	Name                     ProviderName           `json:"name"`
-	ApiKey                   string                 `json:"apiKey"`
+	APIKey                   string                 `json:"apiKey"`
 	Engine                   string                 `json:"engine"`
 	DefaultOrigin            string                 `json:"defaultOrigin"`
 	DefaultModel             ModelName              `json:"defaultModel"`
 	AdditionalSettings       map[string]interface{} `json:"additionalSettings"`
 	Timeout                  int                    `json:"timeout"`
-	ApiKeyHeaderKey          string                 `json:"apiKeyHeaderKey"`
+	APIKeyHeaderKey          string                 `json:"apiKeyHeaderKey"`
 	DefaultHeaders           map[string]string      `json:"defaultHeaders"`
 	ChatCompletionPathPrefix string                 `json:"chatCompletionPathPrefix"`
 	// Temperature resolution is: inputParams > ModelInfo > ProviderInfo
@@ -45,7 +45,7 @@ type ProviderInfo struct {
 }
 
 func (p *ProviderInfo) IsConfigured() bool {
-	return p.ApiKey != ""
+	return p.APIKey != ""
 }
 
 type CompletionProvider interface {

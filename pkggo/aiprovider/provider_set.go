@@ -22,22 +22,22 @@ var AllAIProviders = map[spec.ProviderName]spec.ProviderInfo{
 }
 
 var AllModelInfo = map[spec.ModelName]spec.ModelInfo{
-	anthropic.CLAUDE_3_5_SONNET:              anthropic.AnthropicModels[anthropic.CLAUDE_3_5_SONNET],
-	anthropic.CLAUDE_3_OPUS:                  anthropic.AnthropicModels[anthropic.CLAUDE_3_OPUS],
-	anthropic.CLAUDE_3_SONNET:                anthropic.AnthropicModels[anthropic.CLAUDE_3_SONNET],
-	anthropic.CLAUDE_3_HAIKU:                 anthropic.AnthropicModels[anthropic.CLAUDE_3_HAIKU],
-	google.GEMINI_1_5_FLASH:                  google.GoogleModels[google.GEMINI_1_5_FLASH],
-	google.GEMINI_1_5_PRO:                    google.GoogleModels[google.GEMINI_1_5_PRO],
-	huggingface.DEEPSEEK_CODER_1_3B_INSTRUCT: huggingface.HuggingfaceModels[huggingface.DEEPSEEK_CODER_1_3B_INSTRUCT],
-	llamacpp.LLAMA_3:                         llamacpp.LlamacppModels[llamacpp.LLAMA_3],
-	llamacpp.LLAMA_3_1:                       llamacpp.LlamacppModels[llamacpp.LLAMA_3_1],
-	openai.GPT_O1:                            openai.OpenAIModels[openai.GPT_O1],
-	openai.GPT_O1_PREVIEW:                    openai.OpenAIModels[openai.GPT_O1_PREVIEW],
-	openai.GPT_O1_MINI:                       openai.OpenAIModels[openai.GPT_O1_MINI],
-	openai.GPT_4O:                            openai.OpenAIModels[openai.GPT_4O],
-	openai.GPT_4:                             openai.OpenAIModels[openai.GPT_4],
-	openai.GPT_3_5_TURBO:                     openai.OpenAIModels[openai.GPT_3_5_TURBO],
-	openai.GPT_4O_MINI:                       openai.OpenAIModels[openai.GPT_4O_MINI],
+	anthropic.Claude35Sonnet:             anthropic.AnthropicModels[anthropic.Claude35Sonnet],
+	anthropic.Claude3Opus:                anthropic.AnthropicModels[anthropic.Claude3Opus],
+	anthropic.Claude3Sonnet:              anthropic.AnthropicModels[anthropic.Claude3Sonnet],
+	anthropic.Claude3Haiku:               anthropic.AnthropicModels[anthropic.Claude3Haiku],
+	google.Gemini15Flash:                 google.GoogleModels[google.Gemini15Flash],
+	google.Gemini15Pro:                   google.GoogleModels[google.Gemini15Pro],
+	huggingface.DeepseekCoder13BInstruct: huggingface.HuggingfaceModels[huggingface.DeepseekCoder13BInstruct],
+	llamacpp.Llama3:                      llamacpp.LlamacppModels[llamacpp.Llama3],
+	llamacpp.Llama31:                     llamacpp.LlamacppModels[llamacpp.Llama31],
+	openai.GPTO1:                         openai.OpenAIModels[openai.GPTO1],
+	openai.GPTO1Preview:                  openai.OpenAIModels[openai.GPTO1Preview],
+	openai.GPTO1Mini:                     openai.OpenAIModels[openai.GPTO1Mini],
+	openai.GPT4O:                         openai.OpenAIModels[openai.GPT4O],
+	openai.GPT4:                          openai.OpenAIModels[openai.GPT4],
+	openai.GPT35Turbo:                    openai.OpenAIModels[openai.GPT35Turbo],
+	openai.GPT4OMini:                     openai.OpenAIModels[openai.GPT4OMini],
 }
 
 // Define the ProviderSetAPI struct.
@@ -50,7 +50,7 @@ type ProviderSetAPI struct {
 func NewProviderSetAPI(defaultProvider spec.ProviderName) (*ProviderSetAPI, error) {
 	_, exists := AllAIProviders[defaultProvider]
 	if !exists {
-		return nil, errors.New("Invalid provider")
+		return nil, errors.New("invalid provider")
 	}
 	return &ProviderSetAPI{
 		defaultProvider: defaultProvider,
@@ -80,11 +80,11 @@ func (ps *ProviderSetAPI) SetDefaultProvider(
 	req *spec.SetDefaultProviderRequest,
 ) (*spec.SetDefaultProviderResponse, error) {
 	if req == nil || req.Body == nil {
-		return nil, errors.New("Got empty provider input")
+		return nil, errors.New("got empty provider input")
 	}
 	_, exists := ps.providers[req.Body.Provider]
 	if !exists {
-		return nil, errors.New("Invalid provider")
+		return nil, errors.New("invalid provider")
 	}
 	ps.defaultProvider = req.Body.Provider
 	return &spec.SetDefaultProviderResponse{}, nil
@@ -126,11 +126,11 @@ func (ps *ProviderSetAPI) SetProviderAttribute(
 	req *spec.SetProviderAttributeRequest,
 ) (*spec.SetProviderAttributeResponse, error) {
 	if req == nil || req.Body == nil {
-		return nil, errors.New("Got empty provider input")
+		return nil, errors.New("got empty provider input")
 	}
 	p, exists := ps.providers[req.Provider]
 	if !exists {
-		return nil, errors.New("Invalid provider")
+		return nil, errors.New("invalid provider")
 	}
 
 	err := p.SetProviderAttribute(
@@ -149,12 +149,12 @@ func (ps *ProviderSetAPI) MakeCompletion(
 	req *spec.MakeCompletionRequest,
 ) (*spec.MakeCompletionResponse, error) {
 	if req == nil || req.Body == nil {
-		return nil, errors.New("Got empty provider input")
+		return nil, errors.New("got empty provider input")
 	}
 	provider := req.Provider
 	p, exists := ps.providers[provider]
 	if !exists {
-		return nil, errors.New("Invalid provider")
+		return nil, errors.New("invalid provider")
 	}
 
 	// Get the default model for the provider
@@ -190,16 +190,8 @@ func (ps *ProviderSetAPI) MakeCompletion(
 			}
 		}
 	}
-	// slog.Debug(
-	// 	"GetCompletionAPI",
-	// 	"Input Parameters",
-	// 	fmt.Sprintf("%+v", inputParams),
-	// 	"Model Info",
-	// 	fmt.Sprintf("%+v", modelInfo),
-	// )
 
 	// Create and return the completion request
-
 	cr, err := p.MakeCompletion(
 		ctx,
 		modelInfo,
@@ -219,17 +211,17 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	req *spec.FetchCompletionRequest,
 ) (*spec.FetchCompletionResponse, error) {
 	if req == nil || req.Body == nil || req.Body.Input == nil {
-		return nil, errors.New("Got empty provider input")
+		return nil, errors.New("got empty provider input")
 	}
 	provider := req.Body.Provider
 	p, exists := ps.providers[provider]
 	if !exists {
-		return nil, errors.New("Invalid provider")
+		return nil, errors.New("invalid provider")
 	}
 
 	resp, err := p.FetchCompletion(ctx, *req.Body.Input, req.Body.OnStreamData)
 	if err != nil {
-		return nil, errors.New("Error in fetch completion")
+		return nil, errors.New("error in fetch completion")
 	}
 
 	return &spec.FetchCompletionResponse{Body: resp}, nil

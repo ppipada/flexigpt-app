@@ -44,7 +44,7 @@ type Root struct {
 	// The URI identifying the root. This *must* start with file:// for now.
 	// This restriction may be relaxed in future versions of the protocol to allow
 	// other URI schemes.
-	Uri string `json:"uri"`
+	URI string `json:"uri"`
 }
 
 // A notification from the client to the server, informing it that the list of

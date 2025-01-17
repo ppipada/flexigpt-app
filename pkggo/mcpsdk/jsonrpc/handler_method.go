@@ -92,8 +92,8 @@ func (m *MethodHandler[I, O]) Handle(
 }
 
 // GetTypes returns the reflect.Type of the input and output types.
-func (m *MethodHandler[I, O]) GetTypes() (reflect.Type, reflect.Type) {
-	iType := reflect.TypeOf((*I)(nil)).Elem()
-	oType := reflect.TypeOf((*O)(nil)).Elem()
+func (m *MethodHandler[I, O]) GetTypes() (iType, oType reflect.Type) {
+	iType = reflect.TypeOf((*I)(nil)).Elem()
+	oType = reflect.TypeOf((*O)(nil)).Elem()
 	return iType, oType
 }

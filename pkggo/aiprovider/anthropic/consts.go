@@ -7,36 +7,36 @@ import (
 const ProviderNameAnthropic spec.ProviderName = "anthropic"
 
 const (
-	CLAUDE_3_5_SONNET spec.ModelName = "claude-3-5-sonnet-20240620"
-	CLAUDE_3_OPUS     spec.ModelName = "claude-3-opus-20240229"
-	CLAUDE_3_SONNET   spec.ModelName = "claude-3-sonnet-20240229"
-	CLAUDE_3_HAIKU    spec.ModelName = "claude-3-haiku-20240307"
+	Claude35Sonnet spec.ModelName = "claude-3-5-sonnet-20240620"
+	Claude3Opus    spec.ModelName = "claude-3-opus-20240229"
+	Claude3Sonnet  spec.ModelName = "claude-3-sonnet-20240229"
+	Claude3Haiku   spec.ModelName = "claude-3-haiku-20240307"
 )
 
 var AnthropicModels = map[spec.ModelName]spec.ModelInfo{
-	CLAUDE_3_5_SONNET: {
-		Name:            CLAUDE_3_5_SONNET,
+	Claude35Sonnet: {
+		Name:            Claude35Sonnet,
 		DisplayName:     "Claude 3.5 Sonnet",
 		Provider:        ProviderNameAnthropic,
 		MaxPromptLength: 8192,
 		MaxOutputLength: 8192,
 	},
-	CLAUDE_3_OPUS: {
-		Name:            CLAUDE_3_OPUS,
+	Claude3Opus: {
+		Name:            Claude3Opus,
 		DisplayName:     "Claude 3 Opus",
 		Provider:        ProviderNameAnthropic,
 		MaxPromptLength: 8192,
 		MaxOutputLength: 8192,
 	},
-	CLAUDE_3_SONNET: {
-		Name:            CLAUDE_3_SONNET,
+	Claude3Sonnet: {
+		Name:            Claude3Sonnet,
 		DisplayName:     "Claude 3 Sonnet",
 		Provider:        ProviderNameAnthropic,
 		MaxPromptLength: 8192,
 		MaxOutputLength: 8192,
 	},
-	CLAUDE_3_HAIKU: {
-		Name:            CLAUDE_3_HAIKU,
+	Claude3Haiku: {
+		Name:            Claude3Haiku,
 		DisplayName:     "Claude 3 Haiku",
 		Provider:        ProviderNameAnthropic,
 		MaxPromptLength: 8192,
@@ -46,13 +46,13 @@ var AnthropicModels = map[spec.ModelName]spec.ModelInfo{
 
 var AnthropicProviderInfo = spec.ProviderInfo{
 	Name:               ProviderNameAnthropic,
-	ApiKey:             "",
+	APIKey:             "",
 	Engine:             "",
 	DefaultOrigin:      "https://api.anthropic.com/v1",
-	DefaultModel:       CLAUDE_3_HAIKU,
+	DefaultModel:       Claude3Haiku,
 	AdditionalSettings: map[string]interface{}{},
 	Timeout:            120,
-	ApiKeyHeaderKey:    "x-api-key",
+	APIKeyHeaderKey:    "x-api-key",
 	DefaultHeaders: map[string]string{
 		"content-type":      "application/json",
 		"accept":            "application/json",

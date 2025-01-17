@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func benchmarkWriter(b *testing.B, messages int, messageSize int, writers int) {
+func benchmarkWriter(b *testing.B, messages, messageSize, writers int) {
 	slogOpts := &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	}

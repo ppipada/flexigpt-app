@@ -19,7 +19,7 @@ type EncryptedStringValueEncoderDecoder struct{}
 func (e EncryptedStringValueEncoderDecoder) Encode(w io.Writer, value interface{}) error {
 	v, ok := value.(string)
 	if !ok {
-		return errors.New("Got non string encode input")
+		return errors.New("got non string encode input")
 	}
 	encryptedData, err := encryptString(v)
 	if err != nil {

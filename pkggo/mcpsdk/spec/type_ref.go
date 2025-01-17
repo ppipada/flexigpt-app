@@ -2,7 +2,7 @@ package spec
 
 var enumValuesRef = []string{"ref/resource", "ref/prompt"}
 
-// Ref.
+// Ref to a resource or prompt.
 type Ref struct {
 	*StringUnion
 }

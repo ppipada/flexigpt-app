@@ -44,8 +44,8 @@ func (api *HuggingFaceAPI) SetProviderAttribute(
 		return err
 	}
 	options := []langchainHuggingFace.Option{}
-	if api.ProviderInfo.ApiKey != "" {
-		options = append(options, langchainHuggingFace.WithToken(api.ProviderInfo.ApiKey))
+	if api.ProviderInfo.APIKey != "" {
+		options = append(options, langchainHuggingFace.WithToken(api.ProviderInfo.APIKey))
 	}
 	if api.ProviderInfo.DefaultOrigin != "" {
 		options = append(options, langchainHuggingFace.WithURL(api.ProviderInfo.DefaultOrigin))

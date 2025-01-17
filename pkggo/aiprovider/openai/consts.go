@@ -10,18 +10,18 @@ const (
 )
 
 const (
-	GPT_O1         spec.ModelName = "o1"
-	GPT_O1_PREVIEW spec.ModelName = "o1-preview"
-	GPT_O1_MINI    spec.ModelName = "o1-mini"
-	GPT_4O_MINI    spec.ModelName = "gpt-4o-mini"
-	GPT_4O         spec.ModelName = "gpt-4o"
-	GPT_4          spec.ModelName = "gpt-4"
-	GPT_3_5_TURBO  spec.ModelName = "gpt-3.5-turbo"
+	GPTO1        spec.ModelName = "o1"
+	GPTO1Preview spec.ModelName = "o1-preview"
+	GPTO1Mini    spec.ModelName = "o1-mini"
+	GPT4OMini    spec.ModelName = "gpt-4o-mini"
+	GPT4O        spec.ModelName = "gpt-4o"
+	GPT4         spec.ModelName = "gpt-4"
+	GPT35Turbo   spec.ModelName = "gpt-3.5-turbo"
 )
 
 var OpenAIModels = map[spec.ModelName]spec.ModelInfo{
-	GPT_O1: {
-		Name:               GPT_O1,
+	GPTO1: {
+		Name:               GPTO1,
 		DisplayName:        "OpenAI GPT o1",
 		Provider:           ProviderNameOpenAI,
 		MaxPromptLength:    4096,
@@ -29,8 +29,8 @@ var OpenAIModels = map[spec.ModelName]spec.ModelInfo{
 		DefaultTemperature: baseutils.Float64Ptr(1),
 		StreamingSupport:   baseutils.BoolPtr(false),
 	},
-	GPT_O1_PREVIEW: {
-		Name:               GPT_O1_PREVIEW,
+	GPTO1Preview: {
+		Name:               GPTO1Preview,
 		DisplayName:        "OpenAI GPT o1 preview",
 		Provider:           ProviderNameOpenAI,
 		MaxPromptLength:    4096,
@@ -38,8 +38,8 @@ var OpenAIModels = map[spec.ModelName]spec.ModelInfo{
 		DefaultTemperature: baseutils.Float64Ptr(1),
 		StreamingSupport:   baseutils.BoolPtr(false),
 	},
-	GPT_O1_MINI: {
-		Name:               GPT_O1_MINI,
+	GPTO1Mini: {
+		Name:               GPTO1Mini,
 		DisplayName:        "OpenAI GPT o1 mini",
 		Provider:           ProviderNameOpenAI,
 		MaxPromptLength:    4096,
@@ -47,29 +47,29 @@ var OpenAIModels = map[spec.ModelName]spec.ModelInfo{
 		DefaultTemperature: baseutils.Float64Ptr(1),
 		StreamingSupport:   baseutils.BoolPtr(false),
 	},
-	GPT_4O: {
-		Name:            GPT_4O,
+	GPT4O: {
+		Name:            GPT4O,
 		DisplayName:     "OpenAI GPT 4o",
 		Provider:        ProviderNameOpenAI,
 		MaxPromptLength: 4096,
 		MaxOutputLength: 4096,
 	},
-	GPT_4: {
-		Name:            GPT_4,
+	GPT4: {
+		Name:            GPT4,
 		DisplayName:     "OpenAI GPT 4",
 		Provider:        ProviderNameOpenAI,
 		MaxPromptLength: 4096,
 		MaxOutputLength: 4096,
 	},
-	GPT_3_5_TURBO: {
-		Name:            GPT_3_5_TURBO,
+	GPT35Turbo: {
+		Name:            GPT35Turbo,
 		DisplayName:     "OpenAI GPT 3.5 turbo",
 		Provider:        ProviderNameOpenAI,
 		MaxPromptLength: 2400,
 		MaxOutputLength: 2400,
 	},
-	GPT_4O_MINI: {
-		Name:            GPT_4O_MINI,
+	GPT4OMini: {
+		Name:            GPT4OMini,
 		DisplayName:     "OpenAI GPT 4o mini",
 		Provider:        ProviderNameOpenAI,
 		MaxPromptLength: 4096,
@@ -79,13 +79,13 @@ var OpenAIModels = map[spec.ModelName]spec.ModelInfo{
 
 var OpenAIProviderInfo = spec.ProviderInfo{
 	Name:                     ProviderNameOpenAI,
-	ApiKey:                   "",
+	APIKey:                   "",
 	Engine:                   "",
 	DefaultOrigin:            "https://api.openai.com/v1",
-	DefaultModel:             GPT_4O_MINI,
+	DefaultModel:             GPT4OMini,
 	AdditionalSettings:       map[string]interface{}{},
 	Timeout:                  120,
-	ApiKeyHeaderKey:          "Authorization",
+	APIKeyHeaderKey:          "Authorization",
 	DefaultHeaders:           map[string]string{"content-type": "application/json"},
 	ChatCompletionPathPrefix: "/chat/completions",
 	DefaultTemperature:       0.0,

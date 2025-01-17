@@ -9,39 +9,29 @@ import (
 	"strings"
 )
 
-const FRONTEND_PATH_PREFIX = "/frontend/build"
+const FrontendPathPrefix = "/frontend/build"
 
-var DIR_PAGES = []string{"/agents", "/chats", "/settings", "/404"}
+var DIRPages = []string{"/agents", "/chats", "/settings", "/404"}
 
 func getActualURL(origurl string) string {
 	callurl := origurl
-	if !strings.HasPrefix(callurl, FRONTEND_PATH_PREFIX) {
+	if !strings.HasPrefix(callurl, FrontendPathPrefix) {
 		return callurl
 	}
 
-	// percentIndex := strings.Index(callurl, "%")
-	// if percentIndex != -1 {
-	// 	callurl = callurl[:percentIndex]
-	// }
-
-	// qIndex := strings.Index(callurl, "?")
-	// if qIndex != -1 {
-	// 	callurl = callurl[:qIndex]
-	// }
-
 	// Handle if it's a page request
 	if strings.HasSuffix(callurl, "/") {
-		return callurl[len(FRONTEND_PATH_PREFIX):] + "index.html"
+		return callurl[len(FrontendPathPrefix):] + "index.html"
 	}
 
-	for _, d := range DIR_PAGES {
-		durl := FRONTEND_PATH_PREFIX + d
+	for _, d := range DIRPages {
+		durl := FrontendPathPrefix + d
 		if callurl == durl {
-			return callurl[len(FRONTEND_PATH_PREFIX):] + "/index.html"
+			return callurl[len(FrontendPathPrefix):] + "/index.html"
 		}
 	}
 
-	return callurl[len(FRONTEND_PATH_PREFIX):]
+	return callurl[len(FrontendPathPrefix):]
 }
 
 func LogStackTrace() {
@@ -56,9 +46,6 @@ func LogStackTrace() {
 func URLCleanerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// Clean the URL using getActualURL
-		// if req.URL.Path == "/agents" {
-		// 	LogStackTrace()
-		// }
 		cleanedURL := getActualURL(req.URL.Path)
 
 		// Update the request URL path

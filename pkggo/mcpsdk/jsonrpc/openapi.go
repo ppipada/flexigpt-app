@@ -80,13 +80,13 @@ func getRequestType(iType reflect.Type, isNotification bool) reflect.Type {
 				}
 				// Update the field's tag with the modified JSON and required tags
 				field.Tag = reflect.StructTag(
-					fmt.Sprintf(`json:"%s"`, jsonTag),
+					fmt.Sprintf(`json:%q`, jsonTag),
 				)
 			} else {
 				// If iType is not a pointer, add required:true to required tag
 				// Update the field's tag with the modified JSON and required tags
 				field.Tag = reflect.StructTag(
-					fmt.Sprintf(`json:"%s" required:"true"`, jsonTag),
+					fmt.Sprintf(`json:%q required:"true"`, jsonTag),
 				)
 			}
 		}

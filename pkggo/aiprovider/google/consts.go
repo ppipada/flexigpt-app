@@ -7,20 +7,20 @@ import (
 const ProviderNameGoogle spec.ProviderName = "google"
 
 const (
-	GEMINI_1_5_FLASH spec.ModelName = "gemini-1.5-flash"
-	GEMINI_1_5_PRO   spec.ModelName = "gemini-1.5-pro"
+	Gemini15Flash spec.ModelName = "gemini-1.5-flash"
+	Gemini15Pro   spec.ModelName = "gemini-1.5-pro"
 )
 
 var GoogleModels = map[spec.ModelName]spec.ModelInfo{
-	GEMINI_1_5_FLASH: {
-		Name:            GEMINI_1_5_FLASH,
+	Gemini15Flash: {
+		Name:            Gemini15Flash,
 		DisplayName:     "Google Gemini 1.5 Flash",
 		Provider:        ProviderNameGoogle,
 		MaxPromptLength: 4096,
 		MaxOutputLength: 8192,
 	},
-	GEMINI_1_5_PRO: {
-		Name:            GEMINI_1_5_PRO,
+	Gemini15Pro: {
+		Name:            Gemini15Pro,
 		DisplayName:     "Google Gemini 1.5 Pro",
 		Provider:        ProviderNameGoogle,
 		MaxPromptLength: 4096,
@@ -30,13 +30,13 @@ var GoogleModels = map[spec.ModelName]spec.ModelInfo{
 
 var GoogleProviderInfo = spec.ProviderInfo{
 	Name:                     ProviderNameGoogle,
-	ApiKey:                   "",
+	APIKey:                   "",
 	Engine:                   "",
 	DefaultOrigin:            "https://generativelanguage.googleapis.com",
-	DefaultModel:             GEMINI_1_5_FLASH,
+	DefaultModel:             Gemini15Flash,
 	AdditionalSettings:       map[string]interface{}{},
 	Timeout:                  120,
-	ApiKeyHeaderKey:          "x-goog-api-key",
+	APIKeyHeaderKey:          "x-goog-api-key",
 	DefaultHeaders:           map[string]string{"content-type": "application/json"},
 	ChatCompletionPathPrefix: "/v1beta/models",
 	DefaultTemperature:       0.1,

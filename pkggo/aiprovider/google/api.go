@@ -44,8 +44,8 @@ func (api *GoogleAPI) SetProviderAttribute(
 		return err
 	}
 	options := []langchainGoogle.Option{}
-	if api.ProviderInfo.ApiKey != "" {
-		options = append(options, langchainGoogle.WithAPIKey(api.ProviderInfo.ApiKey))
+	if api.ProviderInfo.APIKey != "" {
+		options = append(options, langchainGoogle.WithAPIKey(api.ProviderInfo.APIKey))
 	}
 	// googles official sdk provides option to override the endpoitn but langchain doesnt expose it.
 	// if api.ProviderInfo.DefaultOrigin != "" {
@@ -58,12 +58,12 @@ func (api *GoogleAPI) SetProviderAttribute(
 		)
 	}
 	newClient := baseutils.NewDebugHTTPClient(api.BaseAIAPI.Debug)
-	options = append(options, langchainGoogle.WithHTTPClient(newClient))
-
 	options = append(
 		options,
+		langchainGoogle.WithHTTPClient(newClient),
 		langchainGoogle.WithDefaultTemperature(api.ProviderInfo.DefaultTemperature),
 	)
+
 	llm, err := langchainGoogle.New(ctx, options...)
 	if err != nil {
 		return err

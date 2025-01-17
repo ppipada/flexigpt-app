@@ -44,8 +44,8 @@ func (api *LlamaCPPAPI) SetProviderAttribute(
 		return err
 	}
 	options := []langchainOpenAI.Option{}
-	if api.ProviderInfo.ApiKey != "" {
-		options = append(options, langchainOpenAI.WithToken(api.ProviderInfo.ApiKey))
+	if api.ProviderInfo.APIKey != "" {
+		options = append(options, langchainOpenAI.WithToken(api.ProviderInfo.APIKey))
 	}
 	if api.ProviderInfo.DefaultOrigin != "" {
 		options = append(options, langchainOpenAI.WithBaseURL(api.ProviderInfo.DefaultOrigin))

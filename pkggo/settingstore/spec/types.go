@@ -7,7 +7,7 @@ import (
 // AISetting represents the settings for an AI provider.
 type AISetting struct {
 	IsEnabled          bool                     `json:"isEnabled"`
-	ApiKey             string                   `json:"apiKey"`
+	APIKey             string                   `json:"apiKey"`
 	DefaultModel       aiproviderSpec.ModelName `json:"defaultModel"`
 	DefaultTemperature float64                  `json:"defaultTemperature"`
 	DefaultOrigin      string                   `json:"defaultOrigin"`

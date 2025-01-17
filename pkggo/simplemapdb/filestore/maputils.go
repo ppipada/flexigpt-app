@@ -93,7 +93,7 @@ func navigateToParentMap(
 	data interface{},
 	keys []string,
 	createMissing bool,
-) (map[string]interface{}, string, error) {
+) (parentMap map[string]interface{}, lastKey string, err error) {
 	if len(keys) == 0 {
 		return nil, "", errors.New("empty path received")
 	}
@@ -121,11 +121,11 @@ func navigateToParentMap(
 		}
 	}
 
-	m, ok := current.(map[string]interface{})
+	parentMap, ok := current.(map[string]interface{})
 	if !ok {
 		path := strings.Join(keys[:len(keys)-1], ".")
 		return nil, "", fmt.Errorf("path '%s' is not a map", path)
 	}
-	lastKey := keys[len(keys)-1]
-	return m, lastKey, nil
+	lastKey = keys[len(keys)-1]
+	return parentMap, lastKey, nil
 }

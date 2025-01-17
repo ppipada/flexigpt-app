@@ -13,7 +13,7 @@ import (
 var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 	anthropic.ProviderNameAnthropic: {
 		IsEnabled:          true,
-		ApiKey:             anthropic.AnthropicProviderInfo.ApiKey,
+		APIKey:             anthropic.AnthropicProviderInfo.APIKey,
 		DefaultModel:       anthropic.AnthropicProviderInfo.DefaultModel,
 		DefaultOrigin:      anthropic.AnthropicProviderInfo.DefaultOrigin,
 		DefaultTemperature: anthropic.AnthropicProviderInfo.DefaultTemperature,
@@ -21,7 +21,7 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 	},
 	google.ProviderNameGoogle: {
 		IsEnabled:          false,
-		ApiKey:             google.GoogleProviderInfo.ApiKey,
+		APIKey:             google.GoogleProviderInfo.APIKey,
 		DefaultModel:       google.GoogleProviderInfo.DefaultModel,
 		DefaultOrigin:      google.GoogleProviderInfo.DefaultOrigin,
 		DefaultTemperature: google.GoogleProviderInfo.DefaultTemperature,
@@ -29,7 +29,7 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 	},
 	huggingface.ProviderNameHuggingFace: {
 		IsEnabled:          false,
-		ApiKey:             huggingface.HuggingfaceProviderInfo.ApiKey,
+		APIKey:             huggingface.HuggingfaceProviderInfo.APIKey,
 		DefaultModel:       huggingface.HuggingfaceProviderInfo.DefaultModel,
 		DefaultOrigin:      huggingface.HuggingfaceProviderInfo.DefaultOrigin,
 		DefaultTemperature: huggingface.HuggingfaceProviderInfo.DefaultTemperature,
@@ -37,7 +37,7 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 	},
 	llamacpp.ProviderNameLlamaCPP: {
 		IsEnabled:          false,
-		ApiKey:             llamacpp.LlamacppProviderInfo.ApiKey,
+		APIKey:             llamacpp.LlamacppProviderInfo.APIKey,
 		DefaultModel:       llamacpp.LlamacppProviderInfo.DefaultModel,
 		DefaultOrigin:      llamacpp.LlamacppProviderInfo.DefaultOrigin,
 		DefaultTemperature: llamacpp.LlamacppProviderInfo.DefaultTemperature,
@@ -45,7 +45,7 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 	},
 	openai.ProviderNameOpenAI: {
 		IsEnabled:          true,
-		ApiKey:             openai.OpenAIProviderInfo.ApiKey,
+		APIKey:             openai.OpenAIProviderInfo.APIKey,
 		DefaultModel:       openai.OpenAIProviderInfo.DefaultModel,
 		DefaultOrigin:      openai.OpenAIProviderInfo.DefaultOrigin,
 		DefaultTemperature: openai.OpenAIProviderInfo.DefaultTemperature,

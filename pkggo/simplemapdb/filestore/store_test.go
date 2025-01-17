@@ -12,7 +12,7 @@ import (
 
 func TestNewMapFileStore(t *testing.T) {
 	tempDir := t.TempDir()
-	tests := []struct {
+	type testType struct {
 		name              string
 		filename          string
 		defaultData       map[string]interface{}
@@ -21,7 +21,8 @@ func TestNewMapFileStore(t *testing.T) {
 		options           []Option
 		expectError       bool
 		expectedErrorText string
-	}{
+	}
+	tests := []testType{
 		{
 			name:        "File does not exist, createIfNotExists true",
 			filename:    filepath.Join(tempDir, "store1.json"),
@@ -66,7 +67,7 @@ func TestNewMapFileStore(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	runtNewMapFileStoreTestCase := func(t *testing.T, tt testType) {
 		if tt.createFile {
 			err := os.WriteFile(tt.filename, []byte(tt.fileContent), 0o600)
 			if err != nil {
@@ -80,10 +81,10 @@ func TestNewMapFileStore(t *testing.T) {
 			if err != nil {
 				t.Fatalf("[%s] Failed to change file permissions: %v", tt.name, err)
 			}
-			ch := func() {
-				_ = os.Chmod(tt.filename, 0o644) // Ensure we can clean up later}
-			}
-			defer ch()
+
+			defer func() {
+				_ = os.Chmod(tt.filename, 0o644) // Ensure we can clean up later
+			}()
 		}
 
 		_, err := NewMapFileStore(tt.filename, tt.defaultData, tt.options...)
@@ -98,6 +99,10 @@ func TestNewMapFileStore(t *testing.T) {
 				t.Errorf("[%s] Unexpected error: %v", tt.name, err)
 			}
 		}
+	}
+
+	for _, tt := range tests {
+		runtNewMapFileStoreTestCase(t, tt)
 	}
 }
 

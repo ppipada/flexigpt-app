@@ -1,15 +1,15 @@
 package spec
 
-var enumValues_ContentType = []string{"text", "image", "resource"}
+var enumValuesContentType = []string{"text", "image", "resource"}
 
-// ContentType.
+// ContentType is a union of all contents supported as resources.
 type ContentType struct {
 	*StringUnion
 }
 
 // NewContentType creates a new ContentType with the provided value.
 func NewContentType(value string) *ContentType {
-	stringUnion := NewStringUnion(enumValues_ContentType...)
+	stringUnion := NewStringUnion(enumValuesContentType...)
 	_ = stringUnion.SetValue(value)
 	return &ContentType{StringUnion: stringUnion}
 }
@@ -18,7 +18,7 @@ func NewContentType(value string) *ContentType {
 func (c *ContentType) UnmarshalJSON(b []byte) error {
 	if c.StringUnion == nil {
 		// Initialize with allowed values if not already initialized
-		c.StringUnion = NewStringUnion(enumValues_ContentType...)
+		c.StringUnion = NewStringUnion(enumValuesContentType...)
 	}
 	return c.StringUnion.UnmarshalJSON(b)
 }
@@ -65,7 +65,7 @@ type ResourceContent struct {
 	Blob *string `json:"blob,omitempty" yaml:"blob" mapstructure:"blob"`
 
 	// The URI of this resource.
-	Uri string `json:"uri" yaml:"uri" mapstructure:"uri"`
+	URI string `json:"uri" yaml:"uri" mapstructure:"uri"`
 }
 
 // A template description for resources available on the server.
@@ -75,7 +75,7 @@ type ResourceTemplate struct {
 
 	// A URI template (according to RFC 6570) that can be used to construct resource
 	// URIs.
-	UriTemplate string `json:"uriTemplate"`
+	URITemplate string `json:"uriTemplate"`
 
 	// A human-readable name for the type of resource this template refers to.
 	//

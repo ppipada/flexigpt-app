@@ -11,7 +11,7 @@ var enumValuesLoggingLevel = []string{
 	"warning",
 }
 
-// LoggingLevel.
+// LoggingLevel to support.
 type LoggingLevel struct {
 	*StringUnion
 }

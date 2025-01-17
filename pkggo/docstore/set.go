@@ -14,7 +14,7 @@ type DocumentDBSet struct {
 
 func InitDocumentDBSet(dds *DocumentDBSet, basePath string) error {
 	if dds == nil || basePath == "" {
-		return errors.New("InitDocumentDBSet: Invalid input arguments")
+		return errors.New("invalid input arguments to InitDocumentDBSet")
 	}
 	dds.basePath = basePath
 	dds.docDBs = make(map[spec.DocumentDBID]spec.IDocumentDB)
@@ -31,11 +31,5 @@ func InitDocumentDBSet(dds *DocumentDBSet, basePath string) error {
 	}
 
 	dds.docDBs[spec.ChromemDocStoreName] = cdb
-	// dss.docDBs[spec.HTTPDocStoreName] = NewHTTPDocStore(
-	// 	spec.HTTPDocStoreName,
-	// 	spec.HTTPDocStoreEndpoint,
-	// 	spec.HTTPDocStoreHeaders,
-	// )
-
 	return nil
 }

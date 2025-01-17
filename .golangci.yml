@@ -73,6 +73,7 @@ linters:
     - gosec
 
     # Linter that specializes in simplifying code.
+    # This is part of staticcheck but golangci-lint runs all S checks via this lint config
     - gosimple
 
     # Official Go tool. Must have.
@@ -127,8 +128,12 @@ linters:
     - rowserrcheck
     - sqlclosecheck
 
-    # Meta linter
+    # Meta linter: golangci-lint runs all SA checks from staticcheck via this lint config
     - staticcheck
+
+    # Is a replacement for golint in staticcheck, similar to revive.
+    # golangci-lint runs all ST checks from staticcheck via this lint config
+    - stylecheck
 
     # Test-related checks. All of them are good.
     - tenv
@@ -241,7 +246,7 @@ linters:
     # Printf-like functions must have 'f' at the end. Not useful to me.
     - goprintffuncname
 
-    # Detects the incorrect use of interfaces to avoid interface pollution.
+    # Detects the incorrect use of interfaces to avoid interface pollution. Very subjective.
     - iface
 
     # Checks import alias consistency. Very rare.
@@ -312,9 +317,6 @@ linters:
     # Checks for mistakes with OpenTelemetry/Census spans.
     - spancheck
 
-    # Is a replacement for golint, similar to revive.
-    - stylecheck
-
     # Checks that struct tags are well aligned.
     - tagalign
 
@@ -356,6 +358,20 @@ linters-settings:
   errcheck:
     # Report `a := b.(MyStruct)` when `a, ok := ...` should be.
     check-type-assertions: true # Default: false
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      # These 3 will detect many cases, but they do make sense
+      # if it's performance oriented code
+      - hugeParam
+      - rangeExprCopy
+      - rangeValCopy
+      - commentedOutCode
 
   nakedret:
     # No naked returns, ever.

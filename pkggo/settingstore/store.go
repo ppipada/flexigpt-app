@@ -23,7 +23,7 @@ func InitSettingStore(settingStore *SettingStore, filename string) error {
 	}
 	settingsMap, err := encdec.StructWithJSONTagsToMap(spec.DefaultSettingsData)
 	if err != nil {
-		return errors.New("Could not get map of settings data")
+		return errors.New("could not get map of settings data")
 	}
 	store, err := filestore.NewMapFileStore(
 		filename,

@@ -1,6 +1,7 @@
 package logrotate
 
 import (
+	"bytes"
 	"fmt"
 	"log/slog"
 	"os"
@@ -13,13 +14,13 @@ import (
 	"time"
 )
 
-func setup(t *testing.T) (string, func()) {
+func setup(t *testing.T) (dir string, cleanup func()) {
 	dir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
 
-	cleanup := func() {
+	cleanup = func() {
 		if err := os.RemoveAll(dir); err != nil {
 			t.Fatalf("failed to remove temp dir: %v", err)
 		}
@@ -92,7 +93,7 @@ func TestCreateWriteClose(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read file: %v", err)
 	}
-	if string(written) != string(message) {
+	if !bytes.Equal(written, message) {
 		t.Fatalf("expected %s, got %s", message, written)
 	}
 }

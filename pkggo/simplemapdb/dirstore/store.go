@@ -91,7 +91,7 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]inter
 		return fmt.Errorf("filename should not contain directory components: %s", filename)
 	}
 	if data == nil {
-		return fmt.Errorf("Cannot set nil data to file %s", filename)
+		return fmt.Errorf("cannot set nil data to file %s", filename)
 	}
 
 	partitionDir := mds.PartitionProvider.GetPartitionDir(filename)
@@ -150,7 +150,7 @@ func (mds *MapDirectoryStore) DeleteFile(filename string) error {
 
 func (mds *MapDirectoryStore) ListFiles(
 	initialSortOrder, pageToken string,
-) ([]string, string, error) {
+) (filenames []string, nextPageToken string, err error) {
 	// Decode page token
 	var tokenData struct {
 		PartitionPageToken string `json:"PartitionPageToken"`
@@ -170,7 +170,6 @@ func (mds *MapDirectoryStore) ListFiles(
 		tokenData.SortOrder = initialSortOrder
 	}
 
-	var filenames []string
 	for {
 		// Get a paginated list of partition directories
 		partitions, nextPartitionPageToken, err := mds.PartitionProvider.ListPartitions(
@@ -226,7 +225,7 @@ func (mds *MapDirectoryStore) ListFiles(
 						FileIndex          int    `json:"FileIndex"`
 						SortOrder          string `json:"SortOrder"`
 					}{PartitionPageToken: tokenData.PartitionPageToken, FileIndex: j + 1, SortOrder: tokenData.SortOrder})
-					nextPageToken := base64.StdEncoding.EncodeToString(nextPageTokenData)
+					nextPageToken = base64.StdEncoding.EncodeToString(nextPageTokenData)
 					return filenames, nextPageToken, nil
 				} else {
 					// Move to the next partition
@@ -235,7 +234,7 @@ func (mds *MapDirectoryStore) ListFiles(
 						FileIndex          int    `json:"FileIndex"`
 						SortOrder          string `json:"SortOrder"`
 					}{PartitionPageToken: nextPartitionPageToken, FileIndex: 0, SortOrder: tokenData.SortOrder})
-					nextPageToken := base64.StdEncoding.EncodeToString(nextPageTokenData)
+					nextPageToken = base64.StdEncoding.EncodeToString(nextPageTokenData)
 					return filenames, nextPageToken, nil
 				}
 			}

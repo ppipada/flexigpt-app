@@ -22,7 +22,7 @@ func InitProviderSetWrapper(
 ) error {
 	p, err := aiprovider.NewProviderSetAPI(defaultProvider)
 	if err != nil {
-		return errors.Join(err, errors.New("Invalid default provider"))
+		return errors.Join(err, errors.New("invalid default provider"))
 	}
 	ps.providersetAPI = p
 	return nil
@@ -66,10 +66,10 @@ func (w *ProviderSetWrapper) MakeCompletion(
 func (w *ProviderSetWrapper) FetchCompletion(
 	provider string,
 	input aiproviderSpec.CompletionRequest,
-	callbackId string,
+	callbackID string,
 ) (*aiproviderSpec.FetchCompletionResponse, error) {
 	onStreamData := func(data string) error {
-		runtime.EventsEmit(w.appContext, callbackId, data)
+		runtime.EventsEmit(w.appContext, callbackID, data)
 		return nil
 	}
 

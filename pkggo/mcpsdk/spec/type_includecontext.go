@@ -1,12 +1,12 @@
 package spec
 
-var enumValues_IncludeContext = []string{
+var enumValuesIncludeContext = []string{
 	"allServers",
 	"none",
 	"thisServer",
 }
 
-// IncludeContext.
+// IncludeContext options from all or this server.
 type IncludeContext struct {
 	*StringUnion
 }
@@ -15,7 +15,7 @@ type IncludeContext struct {
 func NewIncludeContext(
 	value string,
 ) *IncludeContext {
-	stringUnion := NewStringUnion(enumValues_IncludeContext...)
+	stringUnion := NewStringUnion(enumValuesIncludeContext...)
 	_ = stringUnion.SetValue(value)
 	return &IncludeContext{StringUnion: stringUnion}
 }
@@ -25,7 +25,7 @@ func (r *IncludeContext) UnmarshalJSON(b []byte) error {
 	if r.StringUnion == nil {
 		// Initialize with allowed values if not already initialized
 		r.StringUnion = NewStringUnion(
-			enumValues_IncludeContext...)
+			enumValuesIncludeContext...)
 	}
 	return r.StringUnion.UnmarshalJSON(b)
 }

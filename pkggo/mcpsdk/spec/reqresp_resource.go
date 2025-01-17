@@ -21,7 +21,7 @@ type Resource struct {
 	Annotations *Annotations `json:"annotations,omitempty"`
 
 	// The URI of this resource.
-	Uri string `json:"uri"`
+	URI string `json:"uri"`
 
 	// A human-readable name for this resource.
 	//
@@ -46,7 +46,7 @@ type ReadResourceRequestParams struct {
 	Meta map[string]interface{} `json:"_meta,omitempty"`
 	// The URI of the resource to read. The URI can use any protocol; it is up to the
 	// server how to interpret it.
-	Uri string `json:"uri"`
+	URI string `json:"uri"`
 }
 
 // The server's response to a resources/read request from the client.
@@ -85,7 +85,7 @@ type SubscribeRequestParams struct {
 	Meta map[string]interface{} `json:"_meta,omitempty"`
 	// The URI of the resource to subscribe to. The URI can use any protocol; it is up
 	// to the server how to interpret it.
-	Uri string `json:"uri"`
+	URI string `json:"uri"`
 }
 
 // Sent from the client to request cancellation of resources/updated notifications
@@ -97,7 +97,7 @@ type UnsubscribeRequestParams struct {
 	// to attach additional metadata to their responses.
 	Meta map[string]interface{} `json:"_meta,omitempty"`
 	// The URI of the resource to unsubscribe from.
-	Uri string `json:"uri"`
+	URI string `json:"uri"`
 }
 
 // An optional notification from the server to the client, informing it that the
@@ -117,5 +117,5 @@ type ResourceUpdatedNotificationParams struct {
 
 	// The URI of the resource that has been updated. This might be a sub-resource of
 	// the one that the client actually subscribed to.
-	Uri string `json:"uri"`
+	URI string `json:"uri"`
 }

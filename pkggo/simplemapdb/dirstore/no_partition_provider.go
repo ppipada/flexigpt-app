@@ -14,6 +14,6 @@ func (p *NoPartitionProvider) ListPartitions(
 	sortOrder string,
 	pageToken string,
 	pageSize int,
-) ([]string, string, error) {
+) (partitions []string, nextPageToken string, err error) {
 	return []string{""}, "", nil
 }

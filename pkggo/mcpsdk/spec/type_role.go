@@ -2,7 +2,7 @@ package spec
 
 var enumValuesRole = []string{"assistant", "user"}
 
-// Role.
+// Role of the actor.
 type Role struct {
 	*StringUnion
 }

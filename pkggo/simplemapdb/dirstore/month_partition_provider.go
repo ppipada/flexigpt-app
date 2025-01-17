@@ -24,13 +24,12 @@ func (p *MonthBasedPartitionProvider) ListPartitions(
 	sortOrder string,
 	pageToken string,
 	pageSize int,
-) ([]string, string, error) {
+) (partitions []string, nextPageToken string, err error) {
 	entries, err := os.ReadDir(baseDir)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to read base directory: %w", err)
 	}
 
-	var partitions []string
 	for _, entry := range entries {
 		if entry.IsDir() {
 			partitions = append(partitions, entry.Name())
@@ -66,7 +65,6 @@ func (p *MonthBasedPartitionProvider) ListPartitions(
 	}
 
 	// Generate next page token
-	var nextPageToken string
 	if end < len(partitions) {
 		nextPageTokenData, _ := json.Marshal(end)
 		nextPageToken = base64.StdEncoding.EncodeToString(nextPageTokenData)

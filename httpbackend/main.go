@@ -60,7 +60,6 @@ func initSlog(logsDirPath string, debug bool) *logrotate.Writer {
 	var handler slog.Handler = slog.NewTextHandler(writer, slogOpts)
 	slogger := slog.New(handler)
 	slog.SetDefault(slogger)
-	// slog.SetDefault(stdoutLogger)
 	return writer
 }
 

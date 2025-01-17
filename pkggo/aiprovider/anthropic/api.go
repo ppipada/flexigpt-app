@@ -44,8 +44,8 @@ func (api *AnthropicAPI) SetProviderAttribute(
 		return err
 	}
 	options := []langchainAnthropic.Option{}
-	if api.ProviderInfo.ApiKey != "" {
-		options = append(options, langchainAnthropic.WithToken(api.ProviderInfo.ApiKey))
+	if api.ProviderInfo.APIKey != "" {
+		options = append(options, langchainAnthropic.WithToken(api.ProviderInfo.APIKey))
 	}
 	if api.ProviderInfo.DefaultOrigin != "" {
 		options = append(options, langchainAnthropic.WithBaseURL(api.ProviderInfo.DefaultOrigin))
