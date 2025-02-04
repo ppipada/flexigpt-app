@@ -23,14 +23,17 @@ var AllAIProviders = map[spec.ProviderName]spec.ProviderInfo{
 
 var AllModelInfo = map[spec.ModelName]spec.ModelInfo{
 	anthropic.Claude35Sonnet:             anthropic.AnthropicModels[anthropic.Claude35Sonnet],
+	anthropic.Claude35Haiku:              anthropic.AnthropicModels[anthropic.Claude35Haiku],
 	anthropic.Claude3Opus:                anthropic.AnthropicModels[anthropic.Claude3Opus],
 	anthropic.Claude3Sonnet:              anthropic.AnthropicModels[anthropic.Claude3Sonnet],
 	anthropic.Claude3Haiku:               anthropic.AnthropicModels[anthropic.Claude3Haiku],
+	google.Gemini2FlashExp:               google.GoogleModels[google.Gemini2FlashExp],
 	google.Gemini15Flash:                 google.GoogleModels[google.Gemini15Flash],
 	google.Gemini15Pro:                   google.GoogleModels[google.Gemini15Pro],
 	huggingface.DeepseekCoder13BInstruct: huggingface.HuggingfaceModels[huggingface.DeepseekCoder13BInstruct],
 	llamacpp.Llama3:                      llamacpp.LlamacppModels[llamacpp.Llama3],
 	llamacpp.Llama31:                     llamacpp.LlamacppModels[llamacpp.Llama31],
+	openai.GPTO3Mini:                     openai.OpenAIModels[openai.GPTO3Mini],
 	openai.GPTO1:                         openai.OpenAIModels[openai.GPTO1],
 	openai.GPTO1Preview:                  openai.OpenAIModels[openai.GPTO1Preview],
 	openai.GPTO1Mini:                     openai.OpenAIModels[openai.GPTO1Mini],
@@ -218,10 +221,9 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	if !exists {
 		return nil, errors.New("invalid provider")
 	}
-
 	resp, err := p.FetchCompletion(ctx, *req.Body.Input, req.Body.OnStreamData)
 	if err != nil {
-		return nil, errors.New("error in fetch completion")
+		return nil, errors.Join(err, errors.New("error in fetch completion"))
 	}
 
 	return &spec.FetchCompletionResponse{Body: resp}, nil

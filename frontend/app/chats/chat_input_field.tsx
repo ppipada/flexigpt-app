@@ -67,7 +67,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		{
 			title: 'No Model configured',
 			provider: ProviderName.OPENAI,
-			name: ModelName.GPT_4O_MINI,
+			name: ModelName.GPT_O3_MINI,
 			temperature: 0.1,
 		},
 	]);

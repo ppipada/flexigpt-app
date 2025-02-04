@@ -7,13 +7,13 @@ import (
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/baseutils"
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/spec"
 
-	langchainGoogle "github.com/tmc/langchaingo/llms/googleai"
+	langchainOpenAI "github.com/tmc/langchaingo/llms/openai"
 )
 
 // GoogleAPI struct that implements the CompletionProvider interface.
 type GoogleAPI struct {
 	*baseutils.BaseAIAPI
-	llm *langchainGoogle.GoogleAI
+	llm *langchainOpenAI.LLM
 }
 
 // NewGoogleAPI creates a new instance of GoogleAPI with default ProviderInfo.
@@ -43,28 +43,25 @@ func (api *GoogleAPI) SetProviderAttribute(
 	if err != nil {
 		return err
 	}
-	options := []langchainGoogle.Option{}
+	options := []langchainOpenAI.Option{}
 	if api.ProviderInfo.APIKey != "" {
-		options = append(options, langchainGoogle.WithAPIKey(api.ProviderInfo.APIKey))
+		options = append(options, langchainOpenAI.WithToken(api.ProviderInfo.APIKey))
 	}
-	// googles official sdk provides option to override the endpoitn but langchain doesnt expose it.
-	// if api.ProviderInfo.DefaultOrigin != "" {
-	// 	options = append(options, langchainGoogle.WithBaseURL(api.ProviderInfo.DefaultOrigin))
-	// }
-	if api.ProviderInfo.DefaultModel != "" {
+	if api.ProviderInfo.DefaultOrigin != "" {
 		options = append(
 			options,
-			langchainGoogle.WithDefaultModel(string(api.ProviderInfo.DefaultModel)),
+			langchainOpenAI.WithBaseURL(
+				api.ProviderInfo.DefaultOrigin+api.ProviderInfo.ChatCompletionPathPrefix,
+			),
 		)
 	}
+	if api.ProviderInfo.DefaultModel != "" {
+		options = append(options, langchainOpenAI.WithModel(string(api.ProviderInfo.DefaultModel)))
+	}
 	newClient := baseutils.NewDebugHTTPClient(api.BaseAIAPI.Debug)
-	options = append(
-		options,
-		langchainGoogle.WithHTTPClient(newClient),
-		langchainGoogle.WithDefaultTemperature(api.ProviderInfo.DefaultTemperature),
-	)
+	options = append(options, langchainOpenAI.WithHTTPClient(newClient))
 
-	llm, err := langchainGoogle.New(ctx, options...)
+	llm, err := langchainOpenAI.New(options...)
 	if err != nil {
 		return err
 	}

@@ -6,7 +6,7 @@ export const anthropicProviderInfo: ProviderInfo = {
 	apiKey: '',
 	engine: '',
 	defaultOrigin: 'https://api.anthropic.com/v1',
-	defaultModel: ModelName.CLAUDE_3_HAIKU,
+	defaultModel: ModelName.CLAUDE_3_5_SONNET,
 	additionalSettings: {},
 	timeout: 120,
 	apiKeyHeaderKey: 'x-api-key',
@@ -97,6 +97,13 @@ export const ANTHROPIC_MODELS: { [key in ModelName]?: ModelInfo } = {
 		maxPromptLength: 8192,
 		maxOutputLength: 8192,
 	},
+	[ModelName.CLAUDE_3_5_HAIKU]: {
+		name: ModelName.CLAUDE_3_5_HAIKU,
+		displayName: 'Claude 3.5 Haiku',
+		provider: ProviderName.ANTHROPIC,
+		maxPromptLength: 8192,
+		maxOutputLength: 8192,
+	},
 	[ModelName.CLAUDE_3_OPUS]: {
 		name: ModelName.CLAUDE_3_OPUS,
 		displayName: 'Claude 3 Opus',
@@ -121,6 +128,13 @@ export const ANTHROPIC_MODELS: { [key in ModelName]?: ModelInfo } = {
 };
 
 export const GOOGLE_MODELS: { [key in ModelName]?: ModelInfo } = {
+	[ModelName.GEMINI_2_FLASH_EXP]: {
+		name: ModelName.GEMINI_2_FLASH_EXP,
+		displayName: 'Google Gemini 2 Flash exp',
+		provider: ProviderName.GOOGLE,
+		maxPromptLength: 4096,
+		maxOutputLength: 8192,
+	},
 	[ModelName.GEMINI_1_5_FLASH]: {
 		name: ModelName.GEMINI_1_5_FLASH,
 		displayName: 'Google Gemini 1.5 Flash',
@@ -165,6 +179,15 @@ export const LLAMACPP_MODELS: { [key in ModelName]?: ModelInfo } = {
 };
 
 export const OPENAI_MODELS: { [key in ModelName]?: ModelInfo } = {
+	[ModelName.GPT_O3_MINI]: {
+		name: ModelName.GPT_O3_MINI,
+		displayName: 'OpenAI GPT o3 mini',
+		provider: ProviderName.OPENAI,
+		maxPromptLength: 4096,
+		maxOutputLength: 4096,
+		defaultTemperature: 1,
+		streamingSupport: false,
+	},
 	[ModelName.GPT_O1]: {
 		name: ModelName.GPT_O1,
 		displayName: 'OpenAI GPT o1',

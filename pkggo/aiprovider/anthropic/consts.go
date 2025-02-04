@@ -7,7 +7,8 @@ import (
 const ProviderNameAnthropic spec.ProviderName = "anthropic"
 
 const (
-	Claude35Sonnet spec.ModelName = "claude-3-5-sonnet-20240620"
+	Claude35Sonnet spec.ModelName = "claude-3-5-sonnet-20241022"
+	Claude35Haiku  spec.ModelName = "claude-3-5-haiku-20241022"
 	Claude3Opus    spec.ModelName = "claude-3-opus-20240229"
 	Claude3Sonnet  spec.ModelName = "claude-3-sonnet-20240229"
 	Claude3Haiku   spec.ModelName = "claude-3-haiku-20240307"
@@ -17,6 +18,13 @@ var AnthropicModels = map[spec.ModelName]spec.ModelInfo{
 	Claude35Sonnet: {
 		Name:            Claude35Sonnet,
 		DisplayName:     "Claude 3.5 Sonnet",
+		Provider:        ProviderNameAnthropic,
+		MaxPromptLength: 8192,
+		MaxOutputLength: 8192,
+	},
+	Claude35Haiku: {
+		Name:            Claude35Haiku,
+		DisplayName:     "Claude 3.5 Haiku",
 		Provider:        ProviderNameAnthropic,
 		MaxPromptLength: 8192,
 		MaxOutputLength: 8192,
@@ -49,7 +57,7 @@ var AnthropicProviderInfo = spec.ProviderInfo{
 	APIKey:             "",
 	Engine:             "",
 	DefaultOrigin:      "https://api.anthropic.com/v1",
-	DefaultModel:       Claude3Haiku,
+	DefaultModel:       Claude35Sonnet,
 	AdditionalSettings: map[string]interface{}{},
 	Timeout:            120,
 	APIKeyHeaderKey:    "x-api-key",

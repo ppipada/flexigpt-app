@@ -215,6 +215,14 @@ type LogTransport struct {
 	LogMode   bool
 }
 
+func getDetailsStr(v any) string {
+	s, err := json.MarshalIndent(v, "", "  ") // Two spaces for indentation
+	if err != nil {
+		return fmt.Sprintf("Could not get json of object: %+v", v)
+	}
+	return string(s)
+}
+
 // RoundTrip executes a single HTTP transaction and logs the request and response.
 func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	reqCtx := req.Context()
@@ -231,7 +239,7 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	// Log request details if LogMode is enabled
 	if t.LogMode {
-		slog.Debug("Roundtripper", "Request Details", fmt.Sprintf("%+v", reqDetails))
+		slog.Debug("Roundtripper", "Request Details", getDetailsStr(reqDetails))
 	}
 
 	// Perform the request
@@ -277,10 +285,10 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Log response details if LogMode is enabled
 	if t.LogMode {
 		if respDetails != nil {
-			slog.Debug("Roundtripper", "Response Details", fmt.Sprintf("%+v", respDetails))
+			slog.Debug("Roundtripper", "Response Details", getDetailsStr(respDetails))
 		}
 		if errorDetails != nil {
-			slog.Debug("Roundtripper", "Error Details", fmt.Sprintf("%+v", errorDetails))
+			slog.Debug("Roundtripper", "Error Details", getDetailsStr(errorDetails))
 		}
 	}
 

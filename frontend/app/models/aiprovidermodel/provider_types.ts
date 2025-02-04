@@ -9,11 +9,13 @@ export enum ProviderName {
 }
 
 export enum ModelName {
-	CLAUDE_3_5_SONNET = 'claude-3-5-sonnet-20240620',
+	CLAUDE_3_5_SONNET = 'claude-3-5-sonnet-20241022',
+	CLAUDE_3_5_HAIKU = 'claude-3-5-haiku-20241022',
 	CLAUDE_3_OPUS = 'claude-3-opus-20240229',
 	CLAUDE_3_SONNET = 'claude-3-sonnet-20240229',
 	CLAUDE_3_HAIKU = 'claude-3-haiku-20240307',
 
+	GEMINI_2_FLASH_EXP = 'gemini-2.0-flash-exp',
 	GEMINI_1_5_FLASH = 'gemini-1.5-flash',
 	GEMINI_1_5_PRO = 'gemini-1.5-pro',
 
@@ -22,6 +24,7 @@ export enum ModelName {
 	LLAMA_3 = 'llama3',
 	LLAMA_3_1 = 'llama3.1',
 
+	GPT_O3_MINI = 'o3-mini',
 	GPT_O1 = 'o1',
 	GPT_O1_PREVIEW = 'o1-preview',
 	GPT_O1_MINI = 'o1-mini',

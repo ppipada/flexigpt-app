@@ -10,6 +10,7 @@ const (
 )
 
 const (
+	GPTO3Mini    spec.ModelName = "o3-mini"
 	GPTO1        spec.ModelName = "o1"
 	GPTO1Preview spec.ModelName = "o1-preview"
 	GPTO1Mini    spec.ModelName = "o1-mini"
@@ -20,6 +21,15 @@ const (
 )
 
 var OpenAIModels = map[spec.ModelName]spec.ModelInfo{
+	GPTO3Mini: {
+		Name:               GPTO3Mini,
+		DisplayName:        "OpenAI GPT o3 mini",
+		Provider:           ProviderNameOpenAI,
+		MaxPromptLength:    4096,
+		MaxOutputLength:    4096,
+		DefaultTemperature: baseutils.Float64Ptr(1),
+		StreamingSupport:   baseutils.BoolPtr(false),
+	},
 	GPTO1: {
 		Name:               GPTO1,
 		DisplayName:        "OpenAI GPT o1",
@@ -82,7 +92,7 @@ var OpenAIProviderInfo = spec.ProviderInfo{
 	APIKey:                   "",
 	Engine:                   "",
 	DefaultOrigin:            "https://api.openai.com/v1",
-	DefaultModel:             GPT4OMini,
+	DefaultModel:             GPTO3Mini,
 	AdditionalSettings:       map[string]interface{}{},
 	Timeout:                  120,
 	APIKeyHeaderKey:          "Authorization",
