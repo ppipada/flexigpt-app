@@ -46,7 +46,7 @@ var GoogleProviderInfo = spec.ProviderInfo{
 	Timeout:                  120,
 	APIKeyHeaderKey:          "x-goog-api-key",
 	DefaultHeaders:           map[string]string{"content-type": "application/json"},
-	ChatCompletionPathPrefix: "/v1beta/openai",
+	ChatCompletionPathPrefix: "/v1beta/openai/chat/completions",
 	DefaultTemperature:       0.1,
 	StreamingSupport:         true,
 }

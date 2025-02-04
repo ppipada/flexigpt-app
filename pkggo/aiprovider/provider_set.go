@@ -59,10 +59,16 @@ func NewProviderSetAPI(defaultProvider spec.ProviderName) (*ProviderSetAPI, erro
 		defaultProvider: defaultProvider,
 		providers: map[spec.ProviderName]spec.CompletionProvider{
 			anthropic.ProviderNameAnthropic:     anthropic.NewAnthropicAPI(),
-			google.ProviderNameGoogle:           google.NewGoogleAPI(),
 			huggingface.ProviderNameHuggingFace: huggingface.NewHuggingFaceAPI(),
 			llamacpp.ProviderNameLlamaCPP:       llamacpp.NewLlamaCPPAPI(),
-			openai.ProviderNameOpenAI:           openai.NewOpenAIAPI(),
+			openai.ProviderNameOpenAI: openai.NewOpenAICompatibleProvider(
+				openai.OpenAIProviderInfo,
+				false,
+			),
+			google.ProviderNameGoogle: openai.NewOpenAICompatibleProvider(
+				google.GoogleProviderInfo,
+				false,
+			),
 		},
 	}, nil
 }

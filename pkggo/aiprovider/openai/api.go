@@ -3,6 +3,7 @@ package openai
 import (
 	"context"
 	"log/slog"
+	"strings"
 
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/baseutils"
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/spec"
@@ -16,10 +17,8 @@ type OpenAIAPI struct {
 	llm *langchainOpenAI.LLM
 }
 
-// NewOpenAIAPI creates a new instance of OpenAIAPI with default ProviderInfo.
-func NewOpenAIAPI() *OpenAIAPI {
-	pi := OpenAIProviderInfo
-	debug := false
+// NewOpenAICompatibleProvider creates a new instance of OpenAICompatibleProvider with the provided ProviderInfo.
+func NewOpenAICompatibleProvider(pi spec.ProviderInfo, debug bool) *OpenAIAPI {
 	return &OpenAIAPI{
 		BaseAIAPI: baseutils.NewBaseAIAPI(&pi, debug),
 	}
@@ -47,12 +46,23 @@ func (api *OpenAIAPI) SetProviderAttribute(
 	if api.ProviderInfo.APIKey != "" {
 		options = append(options, langchainOpenAI.WithToken(api.ProviderInfo.APIKey))
 	}
-	if api.ProviderInfo.DefaultOrigin != "" {
-		options = append(options, langchainOpenAI.WithBaseURL(api.ProviderInfo.DefaultOrigin))
-	}
 	if api.ProviderInfo.DefaultModel != "" {
 		options = append(options, langchainOpenAI.WithModel(string(api.ProviderInfo.DefaultModel)))
 	}
+
+	if api.ProviderInfo.DefaultOrigin != "" {
+		baseURL := api.ProviderInfo.DefaultOrigin
+		// Remove trailing slash from baseURL if present
+		baseURL = strings.TrimSuffix(baseURL, "/")
+
+		pathPrefix := api.ProviderInfo.ChatCompletionPathPrefix
+		// Remove '/chat/completions' from pathPrefix if present
+		// This is because langchaingo adds '/chat/completions' internally
+		pathPrefix = strings.TrimSuffix(pathPrefix, "/chat/completions")
+
+		options = append(options, langchainOpenAI.WithBaseURL(baseURL+pathPrefix))
+	}
+
 	newClient := baseutils.NewDebugHTTPClient(api.BaseAIAPI.Debug)
 	options = append(options, langchainOpenAI.WithHTTPClient(newClient))
 
