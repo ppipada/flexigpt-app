@@ -9,7 +9,7 @@ on:
       tag:
         description: 'Version tag'
         required: true
-        default: '0.0.1'
+        default: 'v0.0.1'
 jobs:
   build-flatpak:
     runs-on: ubuntu-latest
