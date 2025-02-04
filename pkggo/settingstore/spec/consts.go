@@ -2,6 +2,7 @@ package spec
 
 import (
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/anthropic"
+	"github.com/flexigpt/flexiui/pkggo/aiprovider/deepseek"
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/google"
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/huggingface"
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/llamacpp"
@@ -18,6 +19,14 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 		DefaultOrigin:      anthropic.AnthropicProviderInfo.DefaultOrigin,
 		DefaultTemperature: anthropic.AnthropicProviderInfo.DefaultTemperature,
 		AdditionalSettings: anthropic.AnthropicProviderInfo.AdditionalSettings,
+	},
+	deepseek.ProviderNameDeepseek: {
+		IsEnabled:          false,
+		APIKey:             deepseek.DeepseekProviderInfo.APIKey,
+		DefaultModel:       deepseek.DeepseekProviderInfo.DefaultModel,
+		DefaultOrigin:      deepseek.DeepseekProviderInfo.DefaultOrigin,
+		DefaultTemperature: deepseek.DeepseekProviderInfo.DefaultTemperature,
+		AdditionalSettings: deepseek.DeepseekProviderInfo.AdditionalSettings,
 	},
 	google.ProviderNameGoogle: {
 		IsEnabled:          false,
@@ -65,6 +74,7 @@ var DefaultSettingsData = SettingsSchema{
 var SensitiveKeys = []string{
 	"aiSettings.openai.apiKey",
 	"aiSettings.anthropic.apiKey",
+	"aiSettings.deepseek.apiKey",
 	"aiSettings.huggingface.apiKey",
 	"aiSettings.google.apiKey",
 	"aiSettings.llamacpp.apiKey",

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/anthropic"
+	"github.com/flexigpt/flexiui/pkggo/aiprovider/deepseek"
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/google"
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/huggingface"
 	"github.com/flexigpt/flexiui/pkggo/aiprovider/llamacpp"
@@ -15,6 +16,7 @@ import (
 
 var AllAIProviders = map[spec.ProviderName]spec.ProviderInfo{
 	anthropic.ProviderNameAnthropic:     anthropic.AnthropicProviderInfo,
+	deepseek.ProviderNameDeepseek:       deepseek.DeepseekProviderInfo,
 	google.ProviderNameGoogle:           google.GoogleProviderInfo,
 	huggingface.ProviderNameHuggingFace: huggingface.HuggingfaceProviderInfo,
 	llamacpp.ProviderNameLlamaCPP:       llamacpp.LlamacppProviderInfo,
@@ -27,6 +29,8 @@ var AllModelInfo = map[spec.ModelName]spec.ModelInfo{
 	anthropic.Claude3Opus:                anthropic.AnthropicModels[anthropic.Claude3Opus],
 	anthropic.Claude3Sonnet:              anthropic.AnthropicModels[anthropic.Claude3Sonnet],
 	anthropic.Claude3Haiku:               anthropic.AnthropicModels[anthropic.Claude3Haiku],
+	deepseek.DeepseekChat:                deepseek.DeepseekModels[deepseek.DeepseekChat],
+	deepseek.DeepseekReasoner:            deepseek.DeepseekModels[deepseek.DeepseekReasoner],
 	google.Gemini2FlashExp:               google.GoogleModels[google.Gemini2FlashExp],
 	google.Gemini15Flash:                 google.GoogleModels[google.Gemini15Flash],
 	google.Gemini15Pro:                   google.GoogleModels[google.Gemini15Pro],
@@ -58,15 +62,19 @@ func NewProviderSetAPI(defaultProvider spec.ProviderName) (*ProviderSetAPI, erro
 	return &ProviderSetAPI{
 		defaultProvider: defaultProvider,
 		providers: map[spec.ProviderName]spec.CompletionProvider{
-			anthropic.ProviderNameAnthropic:     anthropic.NewAnthropicAPI(),
-			huggingface.ProviderNameHuggingFace: huggingface.NewHuggingFaceAPI(),
-			llamacpp.ProviderNameLlamaCPP:       llamacpp.NewLlamaCPPAPI(),
-			openai.ProviderNameOpenAI: openai.NewOpenAICompatibleProvider(
-				openai.OpenAIProviderInfo,
+			anthropic.ProviderNameAnthropic: anthropic.NewAnthropicAPI(),
+			deepseek.ProviderNameDeepseek: openai.NewOpenAICompatibleProvider(
+				deepseek.DeepseekProviderInfo,
 				false,
 			),
 			google.ProviderNameGoogle: openai.NewOpenAICompatibleProvider(
 				google.GoogleProviderInfo,
+				false,
+			),
+			huggingface.ProviderNameHuggingFace: huggingface.NewHuggingFaceAPI(),
+			llamacpp.ProviderNameLlamaCPP:       llamacpp.NewLlamaCPPAPI(),
+			openai.ProviderNameOpenAI: openai.NewOpenAICompatibleProvider(
+				openai.OpenAIProviderInfo,
 				false,
 			),
 		},

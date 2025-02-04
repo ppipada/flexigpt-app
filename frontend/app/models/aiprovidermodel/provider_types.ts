@@ -3,6 +3,7 @@ import { ChatCompletionRequestMessage, CompletionRequest, CompletionResponse } f
 export enum ProviderName {
 	OPENAI = 'openai',
 	ANTHROPIC = 'anthropic',
+	DEEPSEEK = 'deepseek',
 	GOOGLE = 'google',
 	HUGGINGFACE = 'huggingface',
 	LLAMACPP = 'llamacpp',
@@ -14,6 +15,9 @@ export enum ModelName {
 	CLAUDE_3_OPUS = 'claude-3-opus-20240229',
 	CLAUDE_3_SONNET = 'claude-3-sonnet-20240229',
 	CLAUDE_3_HAIKU = 'claude-3-haiku-20240307',
+
+	DEEPSEEK_CHAT = 'deepseek-chat',
+	DEEPSEEK_REASONER = 'deepseek-reasoner',
 
 	GEMINI_2_FLASH_EXP = 'gemini-2.0-flash-exp',
 	GEMINI_1_5_FLASH = 'gemini-1.5-flash',

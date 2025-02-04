@@ -75,8 +75,24 @@ export const openaiProviderInfo = {
 	modelPrefixes: 'Optional prefixes for models.',
 };
 
+export const deepseekProviderInfo = {
+	apiKey: 'Your deepseek API key. Can be seen at https://platform.deepseek.com/api_keys',
+	engine: 'The engine to be used for processing.',
+	defaultOrigin:
+		'Default origin to use for requests. This can be used to talk to any server that serves a compatible API',
+	defaultModel: 'Default model to use for chat requests',
+	additionalSettings: 'Any additional settings to pass to the model. Input as a JSON object',
+	timeout: 'The timeout duration in milliseconds.',
+	apiKeyHeaderKey: 'The header key for the API key.',
+	defaultHeaders: 'The default headers to be included in requests.',
+	chatCompletionPathPrefix: 'The path prefix for chat completions.',
+	defaultTemperature: 'Default temperature setting for chat requests',
+	modelPrefixes: 'Optional prefixes for models.',
+};
+
 export const ALL_AI_PROVIDERS_DESCRIPTION: Record<ProviderName, Record<string, string>> = {
 	[ProviderName.ANTHROPIC]: anthropicProviderInfo,
+	[ProviderName.DEEPSEEK]: deepseekProviderInfo,
 	[ProviderName.GOOGLE]: googleProviderInfo,
 	[ProviderName.HUGGINGFACE]: huggingfaceProviderInfo,
 	[ProviderName.LLAMACPP]: llamacppProviderInfo,

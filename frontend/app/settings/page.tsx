@@ -14,7 +14,7 @@ const defaultAISettings: Record<string, AISetting> = {
 	[ProviderName.OPENAI]: {
 		isEnabled: true,
 		apiKey: '',
-		defaultModel: ModelName.GPT_4O_MINI,
+		defaultModel: ModelName.GPT_4O,
 		defaultOrigin: '',
 		defaultTemperature: 0.0,
 		additionalSettings: {},

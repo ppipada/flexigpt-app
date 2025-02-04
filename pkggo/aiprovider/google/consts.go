@@ -44,7 +44,7 @@ var GoogleProviderInfo = spec.ProviderInfo{
 	DefaultModel:             Gemini15Flash,
 	AdditionalSettings:       map[string]interface{}{},
 	Timeout:                  120,
-	APIKeyHeaderKey:          "x-goog-api-key",
+	APIKeyHeaderKey:          "Authorization",
 	DefaultHeaders:           map[string]string{"content-type": "application/json"},
 	ChatCompletionPathPrefix: "/v1beta/openai/chat/completions",
 	DefaultTemperature:       0.1,
