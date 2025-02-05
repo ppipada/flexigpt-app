@@ -69,7 +69,7 @@ modules:
       - mkdir -p $XDG_DATA_HOME
       - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin pnpm install
       - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin $GOROOT/bin/go mod download
-      - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin pnpm run wails:linpack
+      - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin pnpm run pack:linux
       # Cleanup unneeded files
       - rm -rf node_modules
       - rm -rf frontend/node_modules
