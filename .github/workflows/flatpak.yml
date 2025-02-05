@@ -48,13 +48,14 @@ jobs:
 
       - name: Build flatpak
         # uses: flatpak/flatpak-github-actions/flatpak-builder@v6
-        uses: jochumdev/flatpak-github-actions/flatpak-builder@builder-update-deps
+        uses: ppipada/flatpak-github-actions/flatpak-builder@master
         with:
           manifest-path: packaging/flatpak/${{env.FLATPAK_ID}}.yml
           cache-key: flatpak-builder-${{ github.sha }}
           bundle: ${{ env.BUILD_NAME }}-linux-amd64-${{env.VERSION_TAG}}.flatpak
           upload-artifact: 'false'
           verbose: 'true'
+          disable-rofiles-fuse: 'true'
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
