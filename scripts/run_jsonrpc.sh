@@ -5,8 +5,8 @@ export SERVICE_PORT=8080
 export SERVICE_DEBUG="true"
 
 # Run the Go application in the background
-# go run ./pkggo/mcpsdk/transport/example/httpsse_cli.go &
-go test -v -tags=integration -run TestRunServer -count=1 ./pkggo/mcpsdk/transport/example &
+# go run ./pkg/mcpsdk/transport/example/httpsse_cli.go &
+go test -v -tags=integration -run TestRunServer -count=1 ./pkg/mcpsdk/transport/example &
 
 # Capture the PID of the Go process
 GO_PID=$!

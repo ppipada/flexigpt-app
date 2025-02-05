@@ -9,7 +9,7 @@ export SERVICE_DEFAULT_PROVIDER="openai"
 export SERVICE_DEBUG="true"
 
 # Run the Go application in the background
-go run ./httpbackend &
+go run ./cmd/httpbackend &
 
 # Capture the PID of the Go process
 GO_PID=$!

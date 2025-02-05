@@ -17,11 +17,11 @@
 		"fmt:fix": "prettier -w . --ignore-path ./.prettierignore",
 		"clean:frontend": "pnpm -F frontend run clean",
 		"build:frontend": "pnpm -F frontend run build:wails",
-		"build:dev": "cd ./agentgo && pnpm run build:frontend && wails build -m -clean -devtools -v 2 -tags webkit2_41",
-		"build:prod": "cd ./agentgo && pnpm run build:frontend && wails build -m -clean -tags webkit2_41",
-		"build:linux": "cd ./agentgo && pnpm run build:frontend && wails build -m -clean -s -skipbindings -tags webkit2_41 -platform linux/amd64",
-		"build:mac": "cd ./agentgo && pnpm run build:frontend && wails build -m -clean -s -skipbindings -tags webkit2_41 -platform darwin/universal",
-		"build:win": "cd ./agentgo && pnpm run build:frontend && wails build -m -clean -s -skipbindings -tags webkit2_41 -nsis -platform windows/amd64",
+		"build:dev": "cd ./cmd/agentgo && pnpm run build:frontend && wails build -m -clean -devtools -v 2 -tags webkit2_41",
+		"build:prod": "cd ./cmd/agentgo && pnpm run build:frontend && wails build -m -clean -tags webkit2_41",
+		"build:linux": "cd ./cmd/agentgo && pnpm run build:frontend && wails build -m -clean -s -skipbindings -tags webkit2_41 -platform linux/amd64",
+		"build:mac": "cd ./cmd/agentgo && pnpm run build:frontend && wails build -m -clean -s -skipbindings -tags webkit2_41 -platform darwin/universal",
+		"build:win": "cd ./cmd/agentgo && pnpm run build:frontend && wails build -m -clean -s -skipbindings -tags webkit2_41 -nsis -platform windows/amd64",
 		"run:dev": "pnpm run build:dev && ./build/bin/FlexiGPT",
 		"run:watcher": "wails dev",
 		"run:gobackend": "./scripts/run_backend.sh",
@@ -46,7 +46,7 @@
 	},
 	"knip": {
 		"ignore": [
-			"pkggo/mcpsdk/external/schema_24_12_2024.ts",
+			"pkg/mcpsdk/external/schema_24_12_2024.ts",
 			"frontend/app/backendapibase/wailsjs/runtime/runtime.js",
 			"frontend/app/models/aiprovidermodel/chat_types.ts"
 		],

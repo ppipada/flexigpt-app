@@ -28,10 +28,14 @@ Note: Similar can apply to other IDEs.
 
 ## Backend only commands
 
-- Build and run the backend: `pnpm run run:gobackend`
+- Build and run the backend: `pnpm run:gobackend`
 - Backend OpenAPI 3.1 docs should be visible at: `http://localhost:8080/docs`
 
 ## Wails commands
 
-- Build wails app and run it: `pnpm run run:dev`
+- Build wails app and run it: `pnpm run:dev`
 - Debug console in the app is available via `Ctrl + Shift + F12`
+
+## Build commands
+
+- Create a flatpack on a local machine: `pnpm pack:flatpak`
