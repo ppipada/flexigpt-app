@@ -2,7 +2,7 @@ import { log } from '@/backendapibase';
 import { ButtonHTMLAttributes, FC, useState } from 'react';
 import { FiCheck, FiCopy } from 'react-icons/fi';
 
-export interface CopyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface CopyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	value?: string;
 	size: number;
 }

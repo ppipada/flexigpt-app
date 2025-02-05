@@ -4,3 +4,9 @@ frontend/.next/
 /node_modules/
 /stories/
 frontend/app/backendapibase/wailsjs
+.anima
+out
+*.yml
+*.yaml
+packaging/flatpak/shared-modules
+pkggo/mcpsdk/external

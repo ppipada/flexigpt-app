@@ -1,5 +1,4 @@
 packages:
   # include packages in subfolders (change as required)
-  - 'pkgts/**'
-  - 'frontend'
-  - 'agentts'
+  # - 'packages/**'
+  - "frontend"

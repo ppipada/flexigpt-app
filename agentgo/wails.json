@@ -4,8 +4,8 @@
 	"outputfilename": "FlexiGPT",
 	"build:dir": "../build",
 	"frontend:dir": "../frontend",
-	"frontend:build": "pnpm run wails:build",
-	"frontend:dev:watcher": "pnpm run wails:dev",
+	"frontend:build": "pnpm run build:wails",
+	"frontend:dev:watcher": "pnpm run run:watcher",
 	"frontend:dev:serverUrl": "auto",
 	"wailsjsdir": "../frontend/app/backendapibase",
 	"author": {

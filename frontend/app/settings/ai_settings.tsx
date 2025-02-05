@@ -1,4 +1,4 @@
-import { ALL_AI_PROVIDERS_DESCRIPTION, ProviderName } from '@/models/aiprovidermodel';
+import { ProviderInfoDescription, ProviderName } from '@/models/aiprovidermodel';
 import { AISetting } from '@/models/settingmodel';
 import { FC, useState } from 'react';
 import { FiAlertTriangle, FiCheckCircle, FiChevronDown, FiChevronUp, FiXCircle } from 'react-icons/fi';
@@ -80,10 +80,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 				<div className="m-1 mt-8 space-y-4">
 					{/* API Key */}
 					<div className="grid grid-cols-12 gap-4 items-center">
-						<label
-							className="col-span-3 text-sm text-left tooltip"
-							data-tip={ALL_AI_PROVIDERS_DESCRIPTION[provider]['apiKey']}
-						>
+						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['apiKey']}>
 							API Key
 						</label>
 						<input
@@ -98,10 +95,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 
 					{/* Default Model */}
 					<div className="grid grid-cols-12 gap-4 items-center">
-						<label
-							className="col-span-3 text-sm text-left tooltip"
-							data-tip={ALL_AI_PROVIDERS_DESCRIPTION[provider]['defaultModel']}
-						>
+						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['defaultModel']}>
 							Default Model
 						</label>
 						<input
@@ -118,7 +112,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 					<div className="grid grid-cols-12 gap-4 items-center">
 						<label
 							className="col-span-3 text-sm text-left tooltip"
-							data-tip={ALL_AI_PROVIDERS_DESCRIPTION[provider]['defaultTemperature']}
+							data-tip={ProviderInfoDescription['defaultTemperature']}
 						>
 							Default Temperature
 						</label>
@@ -137,10 +131,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 
 					{/* Default Origin */}
 					<div className="grid grid-cols-12 gap-4 items-center">
-						<label
-							className="col-span-3 text-sm text-left tooltip"
-							data-tip={ALL_AI_PROVIDERS_DESCRIPTION[provider]['defaultOrigin']}
-						>
+						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['defaultOrigin']}>
 							Default Origin
 						</label>
 						<input

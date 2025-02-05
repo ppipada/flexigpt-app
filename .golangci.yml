@@ -14,10 +14,6 @@ issues:
   # Same here, nothing should be skipped to not miss errors.
   max-same-issues: 0
 
-  # Which dirs to exclude
-  exclude-dirs:
-    - pkgts
-
 linters:
   enable:
     # Check for pass []any as any in variadic func(...any). Rare case but good to have.

@@ -16,7 +16,7 @@ const containsLatexRegex = /\\\(.*?\\\)|\\\[.*?\\\]|\$.*?\$|\\begin\{equation\}.
 const inlineLatex = new RegExp(/\\\((.+?)\\\)/, 'g');
 const blockLatex = new RegExp(/\\\[(.*?[^\\])\\\]/, 'gs');
 
-export const processLaTeX = (content: string) => {
+const processLaTeX = (content: string) => {
 	let processedContent = content.replace(/(\$)(?=\s?\d)/g, '\\$');
 
 	if (!containsLatexRegex.test(processedContent)) {
@@ -41,13 +41,13 @@ interface PComponentProps {
 	children?: ReactNode;
 }
 
-export interface ChatMessageContentProps {
+interface ChatMessageContentProps {
 	content: string;
 	align: string;
 	streamedMessage: string;
 }
 
-export const MemoizedMarkdown = memo(
+const MemoizedMarkdown = memo(
 	Markdown,
 	(prevProps, nextProps) => prevProps.children === nextProps.children && prevProps.className === nextProps.className
 );

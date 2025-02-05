@@ -1,16 +1,28 @@
 {
+	// Auto format on save and organize imports
 	"editor.formatOnSave": true,
 	"editor.codeActionsOnSave": {
 		"source.organizeImports": "explicit"
 	},
-	"prettier.configPath": "",
-	"[markdown]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
-	},
-	"typescript.tsdk": "node_modules\\typescript\\lib",
-	"typescript.updateImportsOnFileMove.enabled": "always",
+
+	// VS Code language associations and formatter mappings
 	"files.associations": {
 		"*.css": "tailwindcss"
+	},
+
+	// TypeScript-related settings
+	"typescript.tsdk": "node_modules\\typescript\\lib",
+	"typescript.updateImportsOnFileMove.enabled": "always",
+
+	// Set Prettier as the default formatter for several languages
+	"[javascript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
 	},
 	"[typescript]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
@@ -18,26 +30,18 @@
 	"[typescriptreact]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
 	},
-	"[json]": {
+	"[markdown]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
 	},
-	"[javascript]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
+
+	// YAML formatting – overridden to ensure spaces and proper tab size
+	"[yaml]": {
+		"editor.insertSpaces": true,
+		"editor.tabSize": 2,
+		"editor.defaultFormatter": "redhat.vscode-yaml"
 	},
-	"[jsonc]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
-	},
-	"eslint.format.enable": true,
-	"eslint.workingDirectories": [
-		"./pkgts/aiprovider",
-		"./pkgts/conversationstore",
-		"./pkgts/logger",
-		"./pkgts/securejsondb",
-		"./pkgts/settings",
-		"./pkgts/winstonlogger",
-		"./frontend",
-		"./agentts"
-	],
+
+	// Go language configurations
 	"[go]": {
 		"editor.defaultFormatter": "golang.go"
 	},
@@ -50,9 +54,8 @@
 	"go.lintOnSave": "package",
 	"go.testFlags": ["-timeout=30m", "-count=1", "-v"],
 	"go.toolsManagement.autoUpdate": true,
-	"[yaml]": {
-		"editor.insertSpaces": true,
-		"editor.tabSize": 2,
-		"editor.defaultFormatter": "redhat.vscode-yaml"
-	}
+
+	// ESLint settings for various project directories
+	"eslint.format.enable": true,
+	"eslint.workingDirectories": ["./frontend"]
 }

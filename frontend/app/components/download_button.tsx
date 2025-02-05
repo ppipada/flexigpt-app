@@ -9,7 +9,8 @@ interface LanguageMap {
 	[key: string]: { extension: string; mimeType: string };
 }
 
-export const programmingLanguages: LanguageMap = {
+/** @lintignore */
+export const ProgrammingLanguages: LanguageMap = {
 	javascript: { extension: '.js', mimeType: 'application/javascript' },
 	python: { extension: '.py', mimeType: 'text/x-python' },
 	java: { extension: '.java', mimeType: 'text/x-java-source' },
@@ -61,7 +62,7 @@ async function saveFile(defaultFilename: string, contentBase64: string, filters:
 	return await backendAPI.savefile(defaultFilename, contentBase64, filters);
 }
 
-export interface DownloadButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface DownloadButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	language?: string;
 	valueFetcher: () => Promise<string | Blob>;
 	size: number;
@@ -102,7 +103,7 @@ const DownloadButton: FC<DownloadButtonProps> = ({
 			fileExtension = mimeTypeMap[mimeType] || '';
 		} else if (typeof value === 'string') {
 			// Handle text content
-			const langInfo = programmingLanguages[language.toLowerCase()] || {
+			const langInfo = ProgrammingLanguages[language.toLowerCase()] || {
 				extension: '.txt',
 				mimeType: 'text/plain',
 			};

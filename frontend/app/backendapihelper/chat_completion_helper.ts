@@ -106,10 +106,7 @@ export async function GetCompletionMessage(
 
 		let completionProvider = await providerSetAPI.getDefaultProvider();
 		if (inputParams && 'provider' in inputParams) {
-			const providerStr = inputParams['provider'] as string;
-			if (Object.values(ProviderName).includes(providerStr as ProviderName)) {
-				completionProvider = providerStr as ProviderName;
-			}
+			completionProvider = inputParams['provider'] as ProviderName;
 			delete inputParams['provider'];
 		}
 

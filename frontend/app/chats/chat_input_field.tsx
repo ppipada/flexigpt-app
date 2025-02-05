@@ -1,5 +1,5 @@
 import { GetChatInputOptions, ModelOption } from '@/backendapihelper/chat_inputoptions_helper';
-import { ModelName, ProviderName } from '@/models/aiprovidermodel';
+import { DefaultModelName, DefaultModelTitle, DefaultProviderName } from '@/models/aiprovidermodel';
 import React, {
 	ChangeEvent,
 	forwardRef,
@@ -18,7 +18,7 @@ export interface ChatOptions {
 	disablePreviousMessages: boolean;
 }
 
-export interface ChatInputFieldProps {
+interface ChatInputFieldProps {
 	onSend: (message: string, options: ChatOptions) => void; // Updated to use ChatOptions
 	setInputHeight: (height: number) => void;
 }
@@ -55,9 +55,9 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const isSubmittingRef = useRef<boolean>(false);
 	const [selectedModel, setSelectedModel] = useState<ModelOption>({
-		title: 'OpenAI GPT 4o mini',
-		provider: ProviderName.OPENAI,
-		name: ModelName.GPT_4O_MINI,
+		title: DefaultModelTitle,
+		provider: DefaultProviderName,
+		name: DefaultModelName,
 		temperature: 0.1,
 	});
 	const [disablePreviousMessages, setDisablePreviousMessages] = useState<boolean>(false);
@@ -66,8 +66,8 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	const [allOptions, setAllOptions] = useState<ModelOption[]>([
 		{
 			title: 'No Model configured',
-			provider: ProviderName.OPENAI,
-			name: ModelName.GPT_O3_MINI,
+			provider: DefaultProviderName,
+			name: DefaultModelName,
 			temperature: 0.1,
 		},
 	]);

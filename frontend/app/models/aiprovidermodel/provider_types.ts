@@ -1,42 +1,11 @@
 import { ChatCompletionRequestMessage, CompletionRequest, CompletionResponse } from './chat_types';
 
-export enum ProviderName {
-	OPENAI = 'openai',
-	ANTHROPIC = 'anthropic',
-	DEEPSEEK = 'deepseek',
-	GOOGLE = 'google',
-	HUGGINGFACE = 'huggingface',
-	LLAMACPP = 'llamacpp',
-}
+export type ModelName = string;
+export const DefaultModelName: ModelName = 'gpt-4o';
+export const DefaultModelTitle = 'OpenAI GPT 4o';
 
-export enum ModelName {
-	CLAUDE_3_5_SONNET = 'claude-3-5-sonnet-20241022',
-	CLAUDE_3_5_HAIKU = 'claude-3-5-haiku-20241022',
-	CLAUDE_3_OPUS = 'claude-3-opus-20240229',
-	CLAUDE_3_SONNET = 'claude-3-sonnet-20240229',
-	CLAUDE_3_HAIKU = 'claude-3-haiku-20240307',
-
-	DEEPSEEK_CHAT = 'deepseek-chat',
-	DEEPSEEK_REASONER = 'deepseek-reasoner',
-
-	GEMINI_2_FLASH_EXP = 'gemini-2.0-flash-exp',
-	GEMINI_1_5_FLASH = 'gemini-1.5-flash',
-	GEMINI_1_5_PRO = 'gemini-1.5-pro',
-
-	DEEPSEEK_CODER_1_3B_INSTRUCT = 'deepseek-ai/deepseek-coder-1.3b-instruct',
-
-	LLAMA_3 = 'llama3',
-	LLAMA_3_1 = 'llama3.1',
-
-	GPT_O3_MINI = 'o3-mini',
-	GPT_O1 = 'o1',
-	GPT_O1_PREVIEW = 'o1-preview',
-	GPT_O1_MINI = 'o1-mini',
-	GPT_4O_MINI = 'gpt-4o-mini',
-	GPT_4O = 'gpt-4o',
-	GPT_4 = 'gpt-4',
-	GPT_3_5_TURBO = 'gpt-3.5-turbo',
-}
+export type ProviderName = string;
+export const DefaultProviderName: ProviderName = 'openai';
 
 export interface ModelInfo {
 	name: ModelName;
@@ -88,3 +57,18 @@ export interface IProviderSetAPI {
 		onStreamData?: (data: string) => Promise<void>
 	): Promise<CompletionResponse | undefined>;
 }
+
+export const ProviderInfoDescription = {
+	apiKey: 'Your API key for the provider.',
+	engine: 'The engine to be used for processing. Is present with Azure etc.',
+	defaultOrigin:
+		'Default origin to use for requests. This can be used to talk to any server that serves a compatible API',
+	defaultModel: 'Default model to use for chat requests',
+	additionalSettings: 'Any additional settings to pass to the model. Input as a JSON object',
+	timeout: 'The timeout duration in milliseconds.',
+	apiKeyHeaderKey: 'The header key for the API key.',
+	defaultHeaders: 'The default headers to be included in requests.',
+	chatCompletionPathPrefix: 'The path prefix for chat completions.',
+	defaultTemperature: 'Default temperature setting for chat requests',
+	modelPrefixes: 'Optional prefixes for models.',
+};

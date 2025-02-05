@@ -31,7 +31,7 @@ jobs:
       APP_WORKING_DIRECTORY: '.'
       SIGN_WINDOWS_CERT: "${{ secrets.SIGN_WINDOWS_CERT || ''}}"
       SIGN_WINDOWS_CERT_PASSWORD: ${{ secrets.SIGN_WINDOWS_CERT_PASSWORD || ''}}
-      BUILD_COMMAND: 'pnpm run wails:winpack'
+      BUILD_COMMAND: 'pnpm run build:win'
 
     steps:
       - name: Checkout code

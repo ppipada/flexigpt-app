@@ -15,7 +15,6 @@ updates:
       include: "scope"
     ignore:
       - dependency-name: "@types/node"
-      - dependency-name: "electron"
       - dependency-name: "@typescript-eslint/eslint-plugin"
       - dependency-name: "@typescript-eslint/parser"
       - dependency-name: "eslint"

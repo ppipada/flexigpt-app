@@ -8,6 +8,9 @@ export interface ILogger {
 	warn(...args: unknown[]): void;
 }
 
+/**
+ * @public
+ */
 export const noopLogger: ILogger = {
 	log: (..._args: unknown[]) => {},
 	error: (..._args: unknown[]) => {},
@@ -16,7 +19,10 @@ export const noopLogger: ILogger = {
 	warn: (..._args: unknown[]) => {},
 };
 
-// Define a new console logger
+/**
+ * @public
+ * Define a new console logger
+ */
 export const consoleLogger: ILogger = {
 	log: (...args: unknown[]) => console.log(...args),
 	error: (...args: unknown[]) => console.error(...args),

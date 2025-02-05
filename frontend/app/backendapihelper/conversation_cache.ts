@@ -3,7 +3,7 @@ import { ConversationItem } from '@/models/conversationmodel';
 
 import { parse } from 'uuid';
 
-export function getDateFromUUIDv7(uuid: string): Date {
+function getDateFromUUIDv7(uuid: string): Date {
 	// Check if the UUID is valid and has the correct length
 	if (!uuid || uuid.length !== 36) {
 		log.error('Invalid UUIDv7 string');

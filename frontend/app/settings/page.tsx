@@ -4,17 +4,17 @@ import { providerSetAPI, settingstoreAPI } from '@/backendapibase';
 import { loadProviderSettings, updateProviderAISettings } from '@/backendapihelper/settings_helper';
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
-import { ModelName, ProviderName } from '@/models/aiprovidermodel';
+import { DefaultModelName, DefaultProviderName, ProviderName } from '@/models/aiprovidermodel';
 import { AISetting } from '@/models/settingmodel';
 import ProviderDropdown from '@/settings/ai_provider'; // Import the new component
 import AISettingsCard from '@/settings/ai_settings';
 import { FC, useEffect, useState } from 'react';
 
-const defaultAISettings: Record<string, AISetting> = {
-	[ProviderName.OPENAI]: {
+const defaultAISettings: Record<ProviderName, AISetting> = {
+	[DefaultProviderName]: {
 		isEnabled: true,
 		apiKey: '',
-		defaultModel: ModelName.GPT_4O,
+		defaultModel: DefaultModelName,
 		defaultOrigin: '',
 		defaultTemperature: 0.0,
 		additionalSettings: {},
@@ -22,7 +22,7 @@ const defaultAISettings: Record<string, AISetting> = {
 };
 
 const SettingsPage: FC = () => {
-	const [defaultProvider, setComponentDefaultProvider] = useState(ProviderName.OPENAI);
+	const [defaultProvider, setComponentDefaultProvider] = useState(DefaultProviderName);
 	const [aiSettings, setAISettings] = useState(defaultAISettings);
 
 	useEffect(() => {
@@ -34,7 +34,7 @@ const SettingsPage: FC = () => {
 				);
 
 				if (enabledProviders.length === 0) {
-					enabledProviders.push(ProviderName.OPENAI);
+					enabledProviders.push(DefaultProviderName);
 				}
 
 				const defaultProvider = settings.app.defaultProvider as ProviderName;

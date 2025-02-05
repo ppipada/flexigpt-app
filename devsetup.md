@@ -10,7 +10,7 @@
   - Additional reference can be found at [Go Ubuntu Wiki](https://go.dev/wiki/Ubuntu)
 - Check Go is installed correctly: `go version`
 - Install `wails v2`. Documentation page is [here](https://wails.io/docs/gettingstarted/installation). Generally you need to do: `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
-- Install [pnpm](https://pnpm.io/installation) and [lerna](https://lerna.js.org/docs/getting-started)
+- Install [pnpm](https://pnpm.io/installation)
 - Checkout repo code
 - Download all go modules: `go mod download`
 - Download all pnpm modules: `pnpm i`
@@ -28,16 +28,10 @@ Note: Similar can apply to other IDEs.
 
 ## Backend only commands
 
-- Build and run the backend: `pnpm run gobackend:run`
+- Build and run the backend: `pnpm run run:gobackend`
 - Backend OpenAPI 3.1 docs should be visible at: `http://localhost:8080/docs`
 
 ## Wails commands
 
-- Build wails app and run it: `pnpm run wails:run`
+- Build wails app and run it: `pnpm run run:dev`
 - Debug console in the app is available via `Ctrl + Shift + F12`
-
-## Electron commands
-
-- Dev build and run: `pnpm run dev`
-- Prod build and run appimage: `pnpm run electron:run`
-- Inspect built electron package: `npx asar extract agentts/build/linux-unpacked/resources/app.asar ./asarex`
