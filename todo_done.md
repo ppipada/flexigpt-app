@@ -173,3 +173,4 @@
 - [x] PKG installer for Mac
 - [x] NSIS installer for Windows
 - [x] Wails save file dialog opens and saves but file not seen on system
+- [x] Remove electron
