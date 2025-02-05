@@ -38,4 +38,4 @@ Note: Similar can apply to other IDEs.
 
 ## Build commands
 
-- Create a flatpack on a local machine: `pnpm pack:flatpak`
+- Create a flatpak on a local machine: `pnpm pack:flatpak`
