@@ -25,7 +25,7 @@ export namespace spec {
 	    defaultModel: string;
 	    defaultTemperature: number;
 	    defaultOrigin: string;
-	    additionalSettings: {[key: string]: any};
+	    additionalSettings: Record<string, any>;
 	
 	    static createFrom(source: any = {}) {
 	        return new AISetting(source);
@@ -44,7 +44,7 @@ export namespace spec {
 	export class APIResponseDetails {
 	    data: any;
 	    status: number;
-	    headers: {[key: string]: any};
+	    headers: Record<string, any>;
 	    requestDetails?: APIRequestDetails;
 	
 	    static createFrom(source: any = {}) {
@@ -80,8 +80,8 @@ export namespace spec {
 	export class APIRequestDetails {
 	    url?: string;
 	    method?: string;
-	    headers?: {[key: string]: any};
-	    params?: {[key: string]: any};
+	    headers?: Record<string, any>;
+	    params?: Record<string, any>;
 	    data?: any;
 	    timeout?: number;
 	    curlCommand?: string;
@@ -272,7 +272,7 @@ export namespace spec {
 	export class ChatCompletionFunctions {
 	    name: string;
 	    description?: string;
-	    parameters?: {[key: string]: any};
+	    parameters?: Record<string, any>;
 	
 	    static createFrom(source: any = {}) {
 	        return new ChatCompletionFunctions(source);
@@ -348,7 +348,7 @@ export namespace spec {
 	    functionCall?: any;
 	    suffix?: string;
 	    timeout?: number;
-	    additionalParameters?: {[key: string]: any};
+	    additionalParameters?: Record<string, any>;
 	
 	    static createFrom(source: any = {}) {
 	        return new CompletionRequest(source);
@@ -573,7 +573,7 @@ export namespace spec {
 	    }
 	}
 	export class SettingsSchema {
-	    aiSettings: {[key: string]: AISetting};
+	    aiSettings: Record<string, AISetting>;
 	    app: AppSettings;
 	
 	    static createFrom(source: any = {}) {
@@ -647,7 +647,7 @@ export namespace spec {
 	    }
 	}
 	export class GetConfigurationInfoResponseBody {
-	    configurationInfo: {[key: string]: any};
+	    configurationInfo: Record<string, any>;
 	
 	    static createFrom(source: any = {}) {
 	        return new GetConfigurationInfoResponseBody(source);
@@ -866,7 +866,7 @@ export namespace spec {
 	export class MakeCompletionRequestBody {
 	    prompt: string;
 	    prevMessages: ChatCompletionRequestMessage[];
-	    inputParams: {[key: string]: any};
+	    inputParams: Record<string, any>;
 	
 	    static createFrom(source: any = {}) {
 	        return new MakeCompletionRequestBody(source);

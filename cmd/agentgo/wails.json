@@ -11,5 +11,17 @@
 	"author": {
 		"name": "ppipada",
 		"email": "ppipada@gmail.com"
+	},
+	"info": {
+		"comments": "FlexiGPT - An AI application platform",
+		"fileAssociations": [
+			{
+				"ext": "wails",
+				"name": "Wails",
+				"description": "Wails Application File",
+				"iconName": "appicon",
+				"role": "None"
+			}
+		]
 	}
 }
