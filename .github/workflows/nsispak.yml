@@ -27,7 +27,7 @@ jobs:
       WAILS_BUILD_WEBVIEW2: 'download'
       GO_VERSION: '^1.23.2'
       NODE_VERSION: '20.x'
-      PNPM_VERSION: '9'
+      PNPM_VERSION: '10'
       APP_WORKING_DIRECTORY: '.'
       SIGN_WINDOWS_CERT: "${{ secrets.SIGN_WINDOWS_CERT || ''}}"
       SIGN_WINDOWS_CERT_PASSWORD: ${{ secrets.SIGN_WINDOWS_CERT_PASSWORD || ''}}
