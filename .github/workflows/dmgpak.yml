@@ -27,7 +27,6 @@ jobs:
       WAILS_BUILD_WEBVIEW2: 'download'
       GO_VERSION: '^1.23.2'
       NODE_VERSION: '20.x'
-      PNPM_VERSION: '10'
       APP_WORKING_DIRECTORY: '.'
       GON_SIGN_JSON_PATH: './packaging/darwin/gon-sign.json'
       GON_SIGN_NOTARIZE_PATH: './packaging/darwin/gon-notarize.json'
@@ -55,7 +54,6 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
           run_install: false
 
       - name: Install Node.js
