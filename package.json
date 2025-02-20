@@ -16,7 +16,7 @@
 		"fmt": "prettier -c . --ignore-path ./.prettierignore",
 		"fmt:fix": "prettier -w . --ignore-path ./.prettierignore",
 		"clean:frontend": "pnpm -F frontend run clean",
-		"copy:icon": "cp ./frontend/public/icon.png ./build/appicon.png",
+		"copy:icon": "mkdir -p ./build && cp ./frontend/public/icon.png ./build/appicon.png",
 		"build:frontend": "pnpm -F frontend run build:wails && pnpm run copy:icon",
 		"build:dev": "cd ./cmd/agentgo && pnpm run build:frontend && wails build -m -clean -devtools -v 2 -tags webkit2_41",
 		"build:prod": "cd ./cmd/agentgo && pnpm run build:frontend && wails build -m -clean -tags webkit2_41",
