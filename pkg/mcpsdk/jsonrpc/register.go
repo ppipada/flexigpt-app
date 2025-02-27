@@ -145,6 +145,6 @@ func Register(
 ) {
 	AddSchemasToAPI(api, methodMap, notificationMap)
 	huma.NewError = GetErrorHandler(methodMap, notificationMap)
-	reqHandler := GetMetaRequestHandler(methodMap, notificationMap)
+	reqHandler := GetBatchRequestHandler(methodMap, notificationMap)
 	huma.Register(api, op, reqHandler)
 }

@@ -26,8 +26,8 @@ func checkForEmptyOrNullData(data []byte) error {
 	return nil
 }
 
-// Generic function to unmarshal Meta structures.
-func unmarshalMeta[T any](data []byte, isBatch *bool, items *[]T) error {
+// Generic function to unmarshal BatchItem structures.
+func unmarshalBatchItem[T any](data []byte, isBatch *bool, items *[]T) error {
 	if err := checkForEmptyOrNullData(data); err != nil {
 		return err
 	}
@@ -67,8 +67,8 @@ func unmarshalMeta[T any](data []byte, isBatch *bool, items *[]T) error {
 	return nil
 }
 
-// Generic function to marshal Meta structures.
-func marshalMeta[T any](isBatch bool, items []T) ([]byte, error) {
+// Generic function to marshal BatchItem structures.
+func marshalBatchItem[T any](isBatch bool, items []T) ([]byte, error) {
 	if isBatch {
 		return json.Marshal(items)
 	}
@@ -82,25 +82,25 @@ func intPtr(i int) *int {
 	return &i
 }
 
-// Meta is a generic struct to handle both MetaRequest and MetaResponse.
-type Meta[T any] struct {
+// BatchItem is a generic struct to handle both BatchRequest and BatchResponse.
+type BatchItem[T any] struct {
 	IsBatch bool `json:"-"`
 	Items   []T
 }
 
-// UnmarshalJSON implements json.Unmarshaler for Meta[T].
-func (m *Meta[T]) UnmarshalJSON(data []byte) error {
+// UnmarshalJSON implements json.Unmarshaler for BatchItem[T].
+func (m *BatchItem[T]) UnmarshalJSON(data []byte) error {
 	m.Items = make([]T, 0)
-	err := unmarshalMeta(data, &m.IsBatch, &m.Items)
+	err := unmarshalBatchItem(data, &m.IsBatch, &m.Items)
 	return err
 }
 
-// MarshalJSON implements json.Marshaler for Meta[T].
-func (m Meta[T]) MarshalJSON() ([]byte, error) {
-	return marshalMeta(m.IsBatch, m.Items)
+// MarshalJSON implements json.Marshaler for BatchItem[T].
+func (m BatchItem[T]) MarshalJSON() ([]byte, error) {
+	return marshalBatchItem(m.IsBatch, m.Items)
 }
 
-func (m Meta[T]) Schema(r huma.Registry) *huma.Schema {
+func (m BatchItem[T]) Schema(r huma.Registry) *huma.Schema {
 	// Get the type of the Items slice
 	itemsType := reflect.TypeOf(m.Items)
 
@@ -122,11 +122,11 @@ func (m Meta[T]) Schema(r huma.Registry) *huma.Schema {
 	return s
 }
 
-// Now, we can define MetaRequest and MetaResponse using Meta[T].
-type MetaRequest struct {
-	Body *Meta[Request[json.RawMessage]]
+// Now, we can define BatchRequest and BatchResponse using BatchItem[T].
+type BatchRequest struct {
+	Body *BatchItem[Request[json.RawMessage]]
 }
 
-type MetaResponse struct {
-	Body *Meta[Response[json.RawMessage]]
+type BatchResponse struct {
+	Body *BatchItem[Response[json.RawMessage]]
 }

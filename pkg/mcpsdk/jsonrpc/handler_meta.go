@@ -6,12 +6,12 @@ import (
 	"fmt"
 )
 
-// GetMetaRequestHandler creates a handler function that processes MetaRequests.
-func GetMetaRequestHandler(
+// GetBatchRequestHandler creates a handler function that processes BatchRequests.
+func GetBatchRequestHandler(
 	methodMap map[string]IMethodHandler,
 	notificationMap map[string]INotificationHandler,
-) func(context.Context, *MetaRequest) (*MetaResponse, error) {
-	return func(ctx context.Context, metaReq *MetaRequest) (*MetaResponse, error) {
+) func(context.Context, *BatchRequest) (*BatchResponse, error) {
+	return func(ctx context.Context, metaReq *BatchRequest) (*BatchResponse, error) {
 		if metaReq == nil || metaReq.Body == nil || len(metaReq.Body.Items) == 0 {
 			item := Response[json.RawMessage]{
 				JSONRPC: JSONRPCVersion,
@@ -22,8 +22,8 @@ func GetMetaRequestHandler(
 				},
 			}
 			// Return single error if invalid batch or even a single item cannot be found.
-			ret := MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			ret := BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items:   []Response[json.RawMessage]{item},
 				},
@@ -31,8 +31,8 @@ func GetMetaRequestHandler(
 			return &ret, nil
 		}
 
-		resp := MetaResponse{
-			Body: &Meta[Response[json.RawMessage]]{
+		resp := BatchResponse{
+			Body: &BatchItem[Response[json.RawMessage]]{
 				IsBatch: metaReq.Body.IsBatch,
 				Items:   []Response[json.RawMessage]{},
 			},

@@ -53,7 +53,7 @@ func NotifyEndpoint(ctx context.Context, params NotifyParams) error {
 	return nil
 }
 
-func TestGetMetaRequestHandler(t *testing.T) {
+func TestGetBatchRequestHandler(t *testing.T) {
 	// Define method maps
 	methodMap := map[string]IMethodHandler{
 		"add": &MethodHandler[AddParams, AddResult]{Endpoint: AddEndpoint},
@@ -88,14 +88,14 @@ func TestGetMetaRequestHandler(t *testing.T) {
 	// Define test cases
 	tests := []struct {
 		name         string
-		metaReq      *MetaRequest
-		expectedResp *MetaResponse
+		metaReq      *BatchRequest
+		expectedResp *BatchResponse
 	}{
 		{
-			name:    "Nil MetaRequest",
+			name:    "Nil BatchRequest",
 			metaReq: nil,
-			expectedResp: &MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			expectedResp: &BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
 						JSONRPC: JSONRPCVersion,
@@ -110,14 +110,14 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Empty Body Items",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items:   []Request[json.RawMessage]{},
 				},
 			},
-			expectedResp: &MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			expectedResp: &BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
 						JSONRPC: JSONRPCVersion,
@@ -132,8 +132,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Invalid JSON-RPC version",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
@@ -145,8 +145,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: &MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			expectedResp: &BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
 						JSONRPC: JSONRPCVersion,
@@ -161,8 +161,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Invalid notification method",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{{
 						JSONRPC: JSONRPCVersion,
@@ -176,8 +176,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Valid notification",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{{
 						JSONRPC: JSONRPCVersion,
@@ -191,8 +191,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Processing single notification",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
@@ -208,8 +208,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Invalid parameters in notification (unmarshaling fails)",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
@@ -225,8 +225,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Notify Endpoint returns an error",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
@@ -242,8 +242,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Processing batch of requests and notifications",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: true,
 					Items: []Request[json.RawMessage]{
 						{
@@ -261,8 +261,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: &MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			expectedResp: &BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: true,
 					Items: []Response[json.RawMessage]{
 						{
@@ -277,8 +277,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Valid request to 'add' method",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{{
 						JSONRPC: JSONRPCVersion,
@@ -288,8 +288,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					}},
 				},
 			},
-			expectedResp: &MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			expectedResp: &BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
 						JSONRPC: JSONRPCVersion,
@@ -301,8 +301,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Method with missing method name",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
@@ -314,8 +314,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: &MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			expectedResp: &BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
 						JSONRPC: JSONRPCVersion,
@@ -330,8 +330,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Method not found",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{{
 						JSONRPC: JSONRPCVersion,
@@ -341,8 +341,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					}},
 				},
 			},
-			expectedResp: &MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			expectedResp: &BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
 						JSONRPC: JSONRPCVersion,
@@ -357,8 +357,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Method with invalid ID",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
@@ -370,8 +370,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: &MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			expectedResp: &BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
 						JSONRPC: JSONRPCVersion,
@@ -386,8 +386,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Batch request with mixed valid and invalid methods",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: true,
 					Items: []Request[json.RawMessage]{
 						{
@@ -417,8 +417,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: &MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			expectedResp: &BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: true,
 					Items: []Response[json.RawMessage]{
 						{
@@ -445,8 +445,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Method request with invalid parameters",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
@@ -458,8 +458,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: &MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			expectedResp: &BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{
 						{
@@ -476,8 +476,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Method endpoint returns simple error",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
@@ -489,8 +489,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: &MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			expectedResp: &BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{
 						{
@@ -507,8 +507,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Method Endpoint returns a *jsonrpc.Error",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
@@ -520,8 +520,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: &MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			expectedResp: &BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{
 						{
@@ -538,8 +538,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 		{
 			name: "Handler returns an error",
-			metaReq: &MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			metaReq: &BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{{
 						JSONRPC: JSONRPCVersion,
@@ -549,8 +549,8 @@ func TestGetMetaRequestHandler(t *testing.T) {
 					}},
 				},
 			},
-			expectedResp: &MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			expectedResp: &BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{{
 						JSONRPC: JSONRPCVersion,
@@ -565,7 +565,7 @@ func TestGetMetaRequestHandler(t *testing.T) {
 		},
 	}
 
-	handlerFunc := GetMetaRequestHandler(methodMap, notificationMap)
+	handlerFunc := GetBatchRequestHandler(methodMap, notificationMap)
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

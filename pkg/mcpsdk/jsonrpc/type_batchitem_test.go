@@ -13,8 +13,8 @@ type MyData struct {
 	Value int    `json:"value"`
 }
 
-// Test unmarshalMeta with Request[json.RawMessage].
-func TestUnmarshalMeta_Request(t *testing.T) {
+// Test unmarshalBatchItem with Request[json.RawMessage].
+func TestUnmarshalBatchItem_Request(t *testing.T) {
 	tests := []struct {
 		name        string
 		data        []byte
@@ -120,14 +120,14 @@ func TestUnmarshalMeta_Request(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var isBatch bool
 			var items []Request[json.RawMessage]
-			err := unmarshalMeta(tt.data, &isBatch, &items)
+			err := unmarshalBatchItem(tt.data, &isBatch, &items)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("unmarshalMeta() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("unmarshalBatchItem() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err != nil {
 				if tt.wantErrMsg != "" && !strings.Contains(err.Error(), tt.wantErrMsg) {
 					t.Errorf(
-						"unmarshalMeta() error message = %v, want %v",
+						"unmarshalBatchItem() error message = %v, want %v",
 						err.Error(),
 						tt.wantErrMsg,
 					)
@@ -135,17 +135,17 @@ func TestUnmarshalMeta_Request(t *testing.T) {
 				return
 			}
 			if isBatch != tt.wantIsBatch {
-				t.Errorf("unmarshalMeta() isBatch = %v, want %v", isBatch, tt.wantIsBatch)
+				t.Errorf("unmarshalBatchItem() isBatch = %v, want %v", isBatch, tt.wantIsBatch)
 			}
 			if !compareRequestSlices(items, tt.wantItems) {
-				t.Errorf("unmarshalMeta() items = %+v, want %+v", items, tt.wantItems)
+				t.Errorf("unmarshalBatchItem() items = %+v, want %+v", items, tt.wantItems)
 			}
 		})
 	}
 }
 
-// Test marshalMeta with Request[json.RawMessage].
-func TestMarshalMeta_Request(t *testing.T) {
+// Test marshalBatchItem with Request[json.RawMessage].
+func TestMarshalBatchItem_Request(t *testing.T) {
 	tests := []struct {
 		name       string
 		isBatch    bool
@@ -206,14 +206,14 @@ func TestMarshalMeta_Request(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			data, err := marshalMeta(tt.isBatch, tt.items)
+			data, err := marshalBatchItem(tt.isBatch, tt.items)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("marshalMeta() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("marshalBatchItem() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err != nil {
 				if tt.wantErrMsg != "" && !strings.Contains(err.Error(), tt.wantErrMsg) {
 					t.Errorf(
-						"marshalMeta() error message = %v, want %v",
+						"marshalBatchItem() error message = %v, want %v",
 						err.Error(),
 						tt.wantErrMsg,
 					)
@@ -221,14 +221,14 @@ func TestMarshalMeta_Request(t *testing.T) {
 				return
 			}
 			if !jsonStringsEqual(string(data), tt.wantData) {
-				t.Errorf("marshalMeta() data = %s, want %s", string(data), tt.wantData)
+				t.Errorf("marshalBatchItem() data = %s, want %s", string(data), tt.wantData)
 			}
 		})
 	}
 }
 
-// Test Meta[T] UnmarshalJSON and MarshalJSON with MyData.
-func TestMeta_MyData(t *testing.T) {
+// Test BatchItem[T] UnmarshalJSON and MarshalJSON with MyData.
+func TestBatchItem_MyData(t *testing.T) {
 	tests := []struct {
 		name        string
 		jsonData    string
@@ -292,15 +292,15 @@ func TestMeta_MyData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var meta Meta[MyData]
+			var meta BatchItem[MyData]
 			err := json.Unmarshal([]byte(tt.jsonData), &meta)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("Meta.UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("BatchItem.UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err != nil {
 				if tt.wantErrMsg != "" && !strings.Contains(err.Error(), tt.wantErrMsg) {
 					t.Errorf(
-						"Meta.UnmarshalJSON() error message = %v, want %v",
+						"BatchItem.UnmarshalJSON() error message = %v, want %v",
 						err.Error(),
 						tt.wantErrMsg,
 					)
@@ -308,26 +308,26 @@ func TestMeta_MyData(t *testing.T) {
 				return
 			}
 			if meta.IsBatch != tt.wantIsBatch {
-				t.Errorf("Meta.UnmarshalJSON() IsBatch = %v, want %v", meta.IsBatch, tt.wantIsBatch)
+				t.Errorf("BatchItem.UnmarshalJSON() IsBatch = %v, want %v", meta.IsBatch, tt.wantIsBatch)
 			}
 			if !reflect.DeepEqual(meta.Items, tt.wantItems) {
-				t.Errorf("Meta.UnmarshalJSON() Items = %#v, want %#v", meta.Items, tt.wantItems)
+				t.Errorf("BatchItem.UnmarshalJSON() Items = %#v, want %#v", meta.Items, tt.wantItems)
 			}
 		})
 	}
 }
 
-func TestMeta_MarshalJSON(t *testing.T) {
+func TestBatchItem_MarshalJSON(t *testing.T) {
 	tests := []struct {
 		name       string
-		meta       Meta[MyData]
+		meta       BatchItem[MyData]
 		wantData   string
 		wantErr    bool
 		wantErrMsg string
 	}{
 		{
 			name: "Single item",
-			meta: Meta[MyData]{
+			meta: BatchItem[MyData]{
 				IsBatch: false,
 				Items: []MyData{
 					{Name: "Item1", Value: 100},
@@ -338,7 +338,7 @@ func TestMeta_MarshalJSON(t *testing.T) {
 		},
 		{
 			name: "Batch items",
-			meta: Meta[MyData]{
+			meta: BatchItem[MyData]{
 				IsBatch: true,
 				Items: []MyData{
 					{Name: "Item1", Value: 100},
@@ -350,7 +350,7 @@ func TestMeta_MarshalJSON(t *testing.T) {
 		},
 		{
 			name: "Empty items with IsBatch=false",
-			meta: Meta[MyData]{
+			meta: BatchItem[MyData]{
 				IsBatch: false,
 				Items:   []MyData{},
 			},
@@ -359,7 +359,7 @@ func TestMeta_MarshalJSON(t *testing.T) {
 		},
 		{
 			name: "Empty items with IsBatch=true",
-			meta: Meta[MyData]{
+			meta: BatchItem[MyData]{
 				IsBatch: true,
 				Items:   []MyData{},
 			},
@@ -372,12 +372,12 @@ func TestMeta_MarshalJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			data, err := json.Marshal(&tt.meta)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("Meta.MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("BatchItem.MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err != nil {
 				if tt.wantErrMsg != "" && !strings.Contains(err.Error(), tt.wantErrMsg) {
 					t.Errorf(
-						"Meta.MarshalJSON() error message = %v, want %v",
+						"BatchItem.MarshalJSON() error message = %v, want %v",
 						err.Error(),
 						tt.wantErrMsg,
 					)
@@ -385,14 +385,14 @@ func TestMeta_MarshalJSON(t *testing.T) {
 				return
 			}
 			if !jsonStringsEqual(string(data), tt.wantData) {
-				t.Errorf("Meta.MarshalJSON() data = %s, want %s", string(data), tt.wantData)
+				t.Errorf("BatchItem.MarshalJSON() data = %s, want %s", string(data), tt.wantData)
 			}
 		})
 	}
 }
 
-// Test MetaRequest UnmarshalJSON and MarshalJSON.
-func TestMetaRequest_UnmarshalJSON(t *testing.T) {
+// Test BatchRequest UnmarshalJSON and MarshalJSON.
+func TestBatchRequest_UnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name        string
 		jsonData    string
@@ -482,16 +482,16 @@ func TestMetaRequest_UnmarshalJSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var metaRequest MetaRequest
-			metaRequest.Body = &Meta[Request[json.RawMessage]]{}
+			var metaRequest BatchRequest
+			metaRequest.Body = &BatchItem[Request[json.RawMessage]]{}
 			err := json.Unmarshal([]byte(tt.jsonData), metaRequest.Body)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("MetaRequest.UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("BatchRequest.UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err != nil {
 				if tt.wantErrMsg != "" && !strings.Contains(err.Error(), tt.wantErrMsg) {
 					t.Errorf(
-						"MetaRequest.UnmarshalJSON() error message = %v, want %v",
+						"BatchRequest.UnmarshalJSON() error message = %v, want %v",
 						err.Error(),
 						tt.wantErrMsg,
 					)
@@ -500,14 +500,14 @@ func TestMetaRequest_UnmarshalJSON(t *testing.T) {
 			}
 			if metaRequest.Body.IsBatch != tt.wantIsBatch {
 				t.Errorf(
-					"MetaRequest.UnmarshalJSON() IsBatch = %v, want %v",
+					"BatchRequest.UnmarshalJSON() IsBatch = %v, want %v",
 					metaRequest.Body.IsBatch,
 					tt.wantIsBatch,
 				)
 			}
 			if !compareRequestSlices(metaRequest.Body.Items, tt.wantItems) {
 				t.Errorf(
-					"MetaRequest.UnmarshalJSON() Items = %+v, want %+v",
+					"BatchRequest.UnmarshalJSON() Items = %+v, want %+v",
 					metaRequest.Body.Items,
 					tt.wantItems,
 				)
@@ -516,18 +516,18 @@ func TestMetaRequest_UnmarshalJSON(t *testing.T) {
 	}
 }
 
-func TestMetaRequest_MarshalJSON(t *testing.T) {
+func TestBatchRequest_MarshalJSON(t *testing.T) {
 	tests := []struct {
 		name       string
-		meta       MetaRequest
+		meta       BatchRequest
 		wantData   string
 		wantErr    bool
 		wantErrMsg string
 	}{
 		{
 			name: "Single request",
-			meta: MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			meta: BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Request[json.RawMessage]{
 						{
@@ -544,8 +544,8 @@ func TestMetaRequest_MarshalJSON(t *testing.T) {
 		},
 		{
 			name: "Batch requests",
-			meta: MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			meta: BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: true,
 					Items: []Request[json.RawMessage]{
 						{
@@ -568,8 +568,8 @@ func TestMetaRequest_MarshalJSON(t *testing.T) {
 		},
 		{
 			name: "Empty items with IsBatch=false",
-			meta: MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			meta: BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: false,
 					Items:   []Request[json.RawMessage]{},
 				},
@@ -579,8 +579,8 @@ func TestMetaRequest_MarshalJSON(t *testing.T) {
 		},
 		{
 			name: "Empty items with IsBatch=true",
-			meta: MetaRequest{
-				Body: &Meta[Request[json.RawMessage]]{
+			meta: BatchRequest{
+				Body: &BatchItem[Request[json.RawMessage]]{
 					IsBatch: true,
 					Items:   []Request[json.RawMessage]{},
 				},
@@ -590,7 +590,7 @@ func TestMetaRequest_MarshalJSON(t *testing.T) {
 		},
 		{
 			name: "Nil Body",
-			meta: MetaRequest{
+			meta: BatchRequest{
 				Body: nil,
 			},
 			wantErr:  false,
@@ -602,12 +602,12 @@ func TestMetaRequest_MarshalJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			data, err := json.Marshal(tt.meta.Body)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("MetaRequest.MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("BatchRequest.MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err != nil {
 				if !strings.Contains(err.Error(), tt.wantErrMsg) {
 					t.Errorf(
-						"MetaRequest.MarshalJSON() error message = %v, want %v",
+						"BatchRequest.MarshalJSON() error message = %v, want %v",
 						err.Error(),
 						tt.wantErrMsg,
 					)
@@ -616,14 +616,14 @@ func TestMetaRequest_MarshalJSON(t *testing.T) {
 			}
 
 			if !jsonStringsEqual(string(data), tt.wantData) {
-				t.Errorf("MetaRequest.MarshalJSON() data = %s, want %s", string(data), tt.wantData)
+				t.Errorf("BatchRequest.MarshalJSON() data = %s, want %s", string(data), tt.wantData)
 			}
 		})
 	}
 }
 
-// Test MetaResponse UnmarshalJSON and MarshalJSON.
-func TestMetaResponse_UnmarshalJSON(t *testing.T) {
+// Test BatchResponse UnmarshalJSON and MarshalJSON.
+func TestBatchResponse_UnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name        string
 		jsonData    string
@@ -713,16 +713,16 @@ func TestMetaResponse_UnmarshalJSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var metaResponse MetaResponse
-			metaResponse.Body = &Meta[Response[json.RawMessage]]{}
+			var metaResponse BatchResponse
+			metaResponse.Body = &BatchItem[Response[json.RawMessage]]{}
 			err := json.Unmarshal([]byte(tt.jsonData), metaResponse.Body)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("MetaResponse.UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("BatchResponse.UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err != nil {
 				if tt.wantErrMsg != "" && !strings.Contains(err.Error(), tt.wantErrMsg) {
 					t.Errorf(
-						"MetaResponse.UnmarshalJSON() error message = %v, want %v",
+						"BatchResponse.UnmarshalJSON() error message = %v, want %v",
 						err.Error(),
 						tt.wantErrMsg,
 					)
@@ -731,7 +731,7 @@ func TestMetaResponse_UnmarshalJSON(t *testing.T) {
 			}
 			if metaResponse.Body.IsBatch != tt.wantIsBatch {
 				t.Errorf(
-					"MetaResponse.UnmarshalJSON() IsBatch = %v, want %v",
+					"BatchResponse.UnmarshalJSON() IsBatch = %v, want %v",
 					metaResponse.Body.IsBatch,
 					tt.wantIsBatch,
 				)
@@ -739,7 +739,7 @@ func TestMetaResponse_UnmarshalJSON(t *testing.T) {
 			eq, err := jsonStructEqual(metaResponse.Body.Items, tt.wantItems)
 			if err != nil || !eq {
 				t.Errorf(
-					"MetaResponse.UnmarshalJSON() Items = %+v, want %+v",
+					"BatchResponse.UnmarshalJSON() Items = %+v, want %+v",
 					metaResponse.Body.Items,
 					tt.wantItems,
 				)
@@ -748,18 +748,18 @@ func TestMetaResponse_UnmarshalJSON(t *testing.T) {
 	}
 }
 
-func TestMetaResponse_MarshalJSON(t *testing.T) {
+func TestBatchResponse_MarshalJSON(t *testing.T) {
 	tests := []struct {
 		name       string
-		meta       MetaResponse
+		meta       BatchResponse
 		wantData   string
 		wantErr    bool
 		wantErrMsg string
 	}{
 		{
 			name: "Single response with result",
-			meta: MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			meta: BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{
 						{
@@ -775,8 +775,8 @@ func TestMetaResponse_MarshalJSON(t *testing.T) {
 		},
 		{
 			name: "Single response with error",
-			meta: MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			meta: BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items: []Response[json.RawMessage]{
 						{
@@ -795,8 +795,8 @@ func TestMetaResponse_MarshalJSON(t *testing.T) {
 		},
 		{
 			name: "Batch responses",
-			meta: MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			meta: BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: true,
 					Items: []Response[json.RawMessage]{
 						{
@@ -820,8 +820,8 @@ func TestMetaResponse_MarshalJSON(t *testing.T) {
 		},
 		{
 			name: "Empty items with IsBatch=false",
-			meta: MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			meta: BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: false,
 					Items:   []Response[json.RawMessage]{},
 				},
@@ -831,8 +831,8 @@ func TestMetaResponse_MarshalJSON(t *testing.T) {
 		},
 		{
 			name: "Empty items with IsBatch=true",
-			meta: MetaResponse{
-				Body: &Meta[Response[json.RawMessage]]{
+			meta: BatchResponse{
+				Body: &BatchItem[Response[json.RawMessage]]{
 					IsBatch: true,
 					Items:   []Response[json.RawMessage]{},
 				},
@@ -842,7 +842,7 @@ func TestMetaResponse_MarshalJSON(t *testing.T) {
 		},
 		{
 			name: "Nil Body",
-			meta: MetaResponse{
+			meta: BatchResponse{
 				Body: nil,
 			},
 			wantData: "null",
@@ -854,12 +854,12 @@ func TestMetaResponse_MarshalJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			data, err := json.Marshal(tt.meta.Body)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("MetaResponse.MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("BatchResponse.MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err != nil {
 				if !strings.Contains(err.Error(), tt.wantErrMsg) {
 					t.Errorf(
-						"MetaResponse.MarshalJSON() error message = %v, want %v",
+						"BatchResponse.MarshalJSON() error message = %v, want %v",
 						err.Error(),
 						tt.wantErrMsg,
 					)
@@ -868,7 +868,7 @@ func TestMetaResponse_MarshalJSON(t *testing.T) {
 			}
 
 			if !jsonStringsEqual(string(data), tt.wantData) {
-				t.Errorf("MetaResponse.MarshalJSON() data = %s, want %s", string(data), tt.wantData)
+				t.Errorf("BatchResponse.MarshalJSON() data = %s, want %s", string(data), tt.wantData)
 			}
 		})
 	}

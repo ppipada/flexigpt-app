@@ -40,7 +40,7 @@ func (s *SSETransport) Register(
 ) {
 	// Define the mapping between event names and message types.
 	messageTypes := map[string]interface{}{
-		"message":  jsonrpc.MetaRequest{Body: &jsonrpc.Meta[jsonrpc.Request[json.RawMessage]]{}},
+		"message":  jsonrpc.BatchRequest{Body: &jsonrpc.BatchItem[jsonrpc.Request[json.RawMessage]]{}},
 		"endpoint": "", // For the initial endpoint event.
 	}
 
