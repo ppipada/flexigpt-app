@@ -15,18 +15,12 @@ import (
 )
 
 func setup(t *testing.T) (dir string, cleanup func()) {
-	dir, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
+	tdir := t.TempDir()
 
 	cleanup = func() {
-		if err := os.RemoveAll(dir); err != nil {
-			t.Fatalf("failed to remove temp dir: %v", err)
-		}
 	}
 
-	return dir, cleanup
+	return tdir, cleanup
 }
 
 func TestCreateTargetDirectory(t *testing.T) {

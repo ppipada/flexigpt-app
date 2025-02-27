@@ -131,8 +131,8 @@ linters:
     # golangci-lint runs all ST checks from staticcheck via this lint config
     - stylecheck
 
-    # Test-related checks. All of them are good.
-    - tenv
+    # Reports uses of functions with replacements inside the testing package.
+    - usetesting
     - tparallel
 
     # Remove unnecessary type conversions, make code cleaner
@@ -330,9 +330,6 @@ linters:
 
     # Covered by revive.
     - unparam
-
-    # Reports uses of functions with replacements inside the testing package.
-    - usetesting
 
     # I'm fine with long variable names with a small scope.
     - varnamelen

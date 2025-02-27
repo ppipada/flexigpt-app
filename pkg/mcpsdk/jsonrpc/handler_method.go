@@ -14,7 +14,6 @@ type IMethodHandler interface {
 	GetTypes() (reflect.Type, reflect.Type)
 }
 
-
 // MethodHandler represents a generic handler with customizable input and output types.
 // It generally expects a response to be returned to the client.
 //

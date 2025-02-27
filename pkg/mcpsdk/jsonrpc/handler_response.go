@@ -69,4 +69,3 @@ func (r *ResponseHandler[T]) Handle(ctx context.Context, resp Response[json.RawM
 func (r *ResponseHandler[T]) GetTypes() reflect.Type {
 	return reflect.TypeOf((*T)(nil)).Elem()
 }
-

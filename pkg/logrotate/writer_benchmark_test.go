@@ -16,11 +16,7 @@ func benchmarkWriter(b *testing.B, messages, messageSize, writers int) {
 	}
 	logger := slog.New(slog.NewTextHandler(os.Stderr, slogOpts))
 
-	dir, err := os.MkdirTemp("", "")
-	if err != nil {
-		b.Fatalf("failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(dir)
+	dir := b.TempDir()
 
 	for n := 0; n < b.N; n++ {
 		w, err := New(logger, Options{

@@ -72,5 +72,3 @@ type Response[T any] struct {
 
 // 	return responseObjectSchema
 // }
-
-
