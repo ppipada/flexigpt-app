@@ -24,6 +24,7 @@ var AllAIProviders = map[spec.ProviderName]spec.ProviderInfo{
 }
 
 var AllModelInfo = map[spec.ModelName]spec.ModelInfo{
+	anthropic.Claude37Sonnet:             anthropic.AnthropicModels[anthropic.Claude37Sonnet],
 	anthropic.Claude35Sonnet:             anthropic.AnthropicModels[anthropic.Claude35Sonnet],
 	anthropic.Claude35Haiku:              anthropic.AnthropicModels[anthropic.Claude35Haiku],
 	anthropic.Claude3Opus:                anthropic.AnthropicModels[anthropic.Claude3Opus],

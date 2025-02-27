@@ -7,6 +7,7 @@ import (
 const ProviderNameAnthropic spec.ProviderName = "anthropic"
 
 const (
+	Claude37Sonnet spec.ModelName = "claude-3-7-sonnet-20250219"
 	Claude35Sonnet spec.ModelName = "claude-3-5-sonnet-20241022"
 	Claude35Haiku  spec.ModelName = "claude-3-5-haiku-20241022"
 	Claude3Opus    spec.ModelName = "claude-3-opus-20240229"
@@ -15,6 +16,13 @@ const (
 )
 
 var AnthropicModels = map[spec.ModelName]spec.ModelInfo{
+	Claude37Sonnet: {
+		Name:            Claude37Sonnet,
+		DisplayName:     "Claude 3.7 Sonnet",
+		Provider:        ProviderNameAnthropic,
+		MaxPromptLength: 8192,
+		MaxOutputLength: 8192,
+	},
 	Claude35Sonnet: {
 		Name:            Claude35Sonnet,
 		DisplayName:     "Claude 3.5 Sonnet",
