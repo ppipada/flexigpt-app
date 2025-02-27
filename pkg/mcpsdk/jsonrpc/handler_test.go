@@ -32,10 +32,13 @@ type PingParams struct {
 	Message string `json:"message"`
 }
 
-// AddEndpoint is the handler for the "add" method.
 func AddEndpoint(ctx context.Context, params AddParams) (AddResult, error) {
 	res := params.A + params.B
 	return AddResult{Sum: res}, nil
+}
+
+func AddResponseEndpoint(ctx context.Context, result *AddResult, err *JSONRPCError) error {
+	return nil
 }
 
 // ConcatEndpoint is the handler for the "concat" method.
@@ -83,6 +86,14 @@ func TestGetBatchRequestHandler(t *testing.T) {
 				return errors.New("processing error")
 			},
 		},
+	}
+
+	responseMap := map[string]IResponseHandler{
+		"add": &ResponseHandler[AddResult]{Endpoint: AddResponseEndpoint},
+	}
+
+	responseHandlerMapper := func(context.Context, Response[json.RawMessage]) (string, error) {
+		return "add", nil
 	}
 
 	// Define test cases
@@ -534,9 +545,28 @@ func TestGetBatchRequestHandler(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Valid response from 'add' method",
+			metaReq: &BatchRequest{
+				Body: &BatchItem[UnionRequest]{
+					IsBatch: false,
+					Items: []UnionRequest{{
+						JSONRPC: JSONRPCVersion,
+						Result:  json.RawMessage(`{"a":2,"b":3}`),
+						ID:      &RequestID{Value: 1},
+					}},
+				},
+			},
+			expectedResp: nil,
+		},
 	}
 
-	handlerFunc := GetBatchRequestHandler(methodMap, notificationMap, nil, nil)
+	handlerFunc := GetBatchRequestHandler(
+		methodMap,
+		notificationMap,
+		responseMap,
+		responseHandlerMapper,
+	)
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

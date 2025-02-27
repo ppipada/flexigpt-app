@@ -104,20 +104,20 @@ func handleResponse(
 	responseHandlerMapper func(context.Context, Response[json.RawMessage]) (string, error),
 ) error {
 	// Create context with request info
-	subCtx := contextWithRequestInfo(ctx, *request.Method, MessageTypeResponse, nil)
 	resp := Response[json.RawMessage]{
 		JSONRPC: request.JSONRPC,
 		ID:      request.ID,
 		Result:  request.Result,
 		Error:   request.Error,
 	}
-	method, err := responseHandlerMapper(subCtx, resp)
+	method, err := responseHandlerMapper(ctx, resp)
 	if err != nil {
 		return &JSONRPCError{
 			Code:    InternalError,
 			Message: err.Error(),
 		}
 	}
+	subCtx := contextWithRequestInfo(ctx, method, MessageTypeResponse, request.ID)
 	handler, ok := responseMap[method]
 	if !ok {
 		return &JSONRPCError{
