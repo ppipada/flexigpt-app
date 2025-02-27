@@ -8,6 +8,13 @@ import (
 	"reflect"
 )
 
+// IMethodHandler	is an interface for handlers that process requests expecting a response.
+type IMethodHandler interface {
+	Handle(ctx context.Context, req Request[json.RawMessage]) (Response[json.RawMessage], error)
+	GetTypes() (reflect.Type, reflect.Type)
+}
+
+
 // MethodHandler represents a generic handler with customizable input and output types.
 // It generally expects a response to be returned to the client.
 //

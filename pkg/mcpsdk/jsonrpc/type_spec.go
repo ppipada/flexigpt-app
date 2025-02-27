@@ -15,6 +15,13 @@ type Request[T any] struct {
 	Params  T          `json:"params,omitempty"            doc:"Method parameters"`
 }
 
+// A notification which does not expect a response.
+type Notification[T any] struct {
+	JSONRPC string `json:"jsonrpc"`
+	Method  string `json:"method"`
+	Params  T      `json:"params,omitempty"`
+}
+
 type Response[T any] struct {
 	JSONRPC string        `json:"jsonrpc"          required:"true"`
 	ID      *RequestID    `json:"id,omitempty"`
@@ -66,9 +73,4 @@ type Response[T any] struct {
 // 	return responseObjectSchema
 // }
 
-// A notification which does not expect a response.
-type Notification[T any] struct {
-	JSONRPC string `json:"jsonrpc"`
-	Method  string `json:"method"`
-	Params  T      `json:"params,omitempty"`
-}
+

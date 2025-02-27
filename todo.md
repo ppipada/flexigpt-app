@@ -22,7 +22,9 @@
 - [ ] if the app is on for a long time, looks like the conversation list is removed
 - [ ] there is some jerkiness in chat load for today
 - [ ] Ideally should detect any code or math blocks even in input, annotate them and then display. i.e format a normal text into proper md.
-- [ ] details of request are not visible immediatly
+- [ ] Details of request are not visible immediately
+- [ ] Need an about section someplace with version of software, dev name etc
+- [ ] Icon of user and assistant should be near bottom of card rather than at top
 
 ## Knowledge base
 
@@ -47,8 +49,8 @@ Implement a `DocStoreSet` that manages multiple `DocStore` instances within a Wa
 
   ```go
   type DocStoreSet struct {
-  		MetadataPath string
-  		DocStores    map[DocStoreName]*DocStore
+    MetadataPath string
+    DocStores    map[DocStoreName]*DocStore
   }
   ```
 
@@ -71,11 +73,11 @@ Implement a `DocStoreSet` that manages multiple `DocStore` instances within a Wa
 
   // DocStore interface for different storage backends
   type DocStore interface {
-  	GetCollections() (map[CollectionName]*Collection, error)
-  	AddCollection(name CollectionName) error
-  	AddDocument(collection string, doc *Document) error
-  	DeleteDocument(collection string, docID DocumentID) error
-  	ListDocuments(collection string) ([]*Document, error)
+   GetCollections() (map[CollectionName]*Collection, error)
+   AddCollection(name CollectionName) error
+   AddDocument(collection string, doc *Document) error
+   DeleteDocument(collection string, docID DocumentID) error
+   ListDocuments(collection string) ([]*Document, error)
   }
   ```
 
@@ -99,8 +101,8 @@ Implement a `DocStoreSet` that manages multiple `DocStore` instances within a Wa
   ```go
   type CollectionName string
   type Collection struct {
-  		Name      CollectionName
-  		Documents map[string]*Document
+    Name      CollectionName
+    Documents map[string]*Document
   }
   ```
 
@@ -136,10 +138,10 @@ Implement a `DocStoreSet` that manages multiple `DocStore` instances within a Wa
 
   ```go
   type Document struct {
-  		ID       string
-  		Content  string
-  		Chunks   []*Chunk
-  		Metadata map[string]interface{}
+    ID       string
+    Content  string
+    Chunks   []*Chunk
+    Metadata map[string]interface{}
   }
   ```
 
@@ -156,9 +158,9 @@ Implement a `DocStoreSet` that manages multiple `DocStore` instances within a Wa
 
   ```go
   type Chunk struct {
-  		Index    int
-  		Content  string
-  		VectorID string
+    Index    int
+    Content  string
+    VectorID string
   }
   ```
 

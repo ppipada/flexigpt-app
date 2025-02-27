@@ -6,6 +6,14 @@ import (
 	"reflect"
 )
 
+// INotificationHandler is an interface for handlers that process notifications (no response expected).
+type INotificationHandler interface {
+	// Even though there is a error return allowed this is mainly present for any debugging logs etc
+	// The client will never receive any error
+	Handle(ctx context.Context, req Request[json.RawMessage]) error
+	GetTypes() reflect.Type
+}
+
 // NotificationHandler is a RPC handler for methods that do not expect a response.
 //
 // Usage Scenarios:

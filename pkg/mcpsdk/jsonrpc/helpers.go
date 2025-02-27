@@ -59,6 +59,19 @@ func unmarshalParams[I any](req Request[json.RawMessage]) (I, error) {
 	return params, nil
 }
 
+// Helper function to unmarshal the result from the response.
+func unmarshalResult[T any](data json.RawMessage) (*T, error) {
+	if data == nil {
+		return nil, nil
+	}
+	
+	var result T
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 // Helper function to create an InvalidParamsError response.
 func invalidParamsResponse(req Request[json.RawMessage], err error) Response[json.RawMessage] {
 	return Response[json.RawMessage]{

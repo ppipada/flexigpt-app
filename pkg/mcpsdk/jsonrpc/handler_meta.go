@@ -4,22 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
 )
-
-// IMethodHandler	is an interface for handlers that process requests expecting a response.
-type IMethodHandler interface {
-	Handle(ctx context.Context, req Request[json.RawMessage]) (Response[json.RawMessage], error)
-	GetTypes() (reflect.Type, reflect.Type)
-}
-
-// INotificationHandler is an interface for handlers that process notifications (no response expected).
-type INotificationHandler interface {
-	// Even though there is a error return allowed this is mainly present for any debugging logs etc in the server
-	// The client will never receive any error for a notification
-	Handle(ctx context.Context, req Request[json.RawMessage]) error
-	GetTypes() reflect.Type
-}
 
 // GetMetaRequestHandler creates a handler function that processes MetaRequests.
 func GetMetaRequestHandler(
