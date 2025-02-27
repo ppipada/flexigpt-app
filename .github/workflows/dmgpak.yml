@@ -109,25 +109,25 @@ jobs:
           echo "Signing Package"
           gon -log-level=info ${{ env.GON_SIGN_JSON_PATH }}
 
-      - name: Build .app zip file
-        working-directory: ${{ env.APP_WORKING_DIRECTORY }}
-        shell: bash
-        run: |
-          ditto -c -k --sequesterRsrc --keepParent build/bin/${{ env.BUILD_NAME }}.app build/bin/${{ env.BUILD_NAME }}.app.zip
+      # - name: Build .app zip file
+      #   working-directory: ${{ env.APP_WORKING_DIRECTORY }}
+      #   shell: bash
+      #   run: |
+      #     ditto -c -k --sequesterRsrc --keepParent build/bin/${{ env.BUILD_NAME }}.app build/bin/${{ env.BUILD_NAME }}.app.zip
 
       - name: Build Installer Signed
         if: env.SIGN_MACOS_INSTALLER_ID != '' && startsWith(github.ref, 'refs/tags/')
         shell: bash
         working-directory: ${{ env.APP_WORKING_DIRECTORY }}
         run: |
-          productbuild --sign '${{ env.SIGN_MACOS_INSTALLER_ID }}' --component build/bin/${{ env.BUILD_NAME }}.app build/bin/${{ env.BUILD_NAME }}-macos-universal.pkg
+          productbuild --sign '${{ env.SIGN_MACOS_INSTALLER_ID }}' --component build/bin/${{ env.BUILD_NAME }}.app build/bin/${{ env.BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}.pkg
 
       - name: Build Installer Unsigned
         if: env.SIGN_MACOS_INSTALLER_ID == ''
         shell: bash
         working-directory: ${{ env.APP_WORKING_DIRECTORY }}
         run: |
-          productbuild --component build/bin/${{ env.BUILD_NAME }}.app build/bin/${{ env.BUILD_NAME }}-macos-universal.pkg
+          productbuild --component build/bin/${{ env.BUILD_NAME }}.app build/bin/${{ env.BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}.pkg
 
       - name: Notarize Installer and zip
         if: env.SIGN_MACOS_APP_CERT != '' && startsWith(github.ref, 'refs/tags/')
@@ -142,7 +142,7 @@ jobs:
         with:
           name: ${{ env.BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}
           path: |
-            build/bin/${{ env.BUILD_NAME }}-macos-universal.pkg
+            build/bin/${{ env.BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}.pkg
 
       - name: Release
         uses: softprops/action-gh-release@v2
@@ -150,4 +150,4 @@ jobs:
         with:
           name: ${{ env.BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}
           files: |
-            build/bin/${{ env.BUILD_NAME }}-macos-universal.pkg
+            build/bin/${{ env.BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}.pkg
