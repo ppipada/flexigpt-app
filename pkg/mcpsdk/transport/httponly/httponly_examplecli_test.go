@@ -66,8 +66,3 @@ func GetHTTPServerCLI() humacli.CLI {
 
 	return cli
 }
-
-func StartHTTPServer() {
-	cli := GetHTTPServerCLI()
-	cli.Run()
-}

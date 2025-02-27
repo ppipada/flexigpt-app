@@ -63,8 +63,3 @@ func GetStdIOServerCLI() humacli.CLI {
 
 	return cli
 }
-
-func GetAndRunStdIOCLI() {
-	cli := GetStdIOServerCLI()
-	cli.Run()
-}

@@ -33,7 +33,11 @@ trap cleanup INT
 sleep 2
 
 # Open the default web browser
-xdg-open "http://$SERVICE_HOST:$SERVICE_PORT/docs"
+if [ "$(uname)" = "Darwin" ]; then
+    open "http://$SERVICE_HOST:$SERVICE_PORT/docs"
+else
+    xdg-open "http://$SERVICE_HOST:$SERVICE_PORT/docs"
+fi
 
 # Wait for the Go process to finish
 wait $GO_PID

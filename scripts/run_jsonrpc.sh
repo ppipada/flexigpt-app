@@ -6,7 +6,7 @@ export SERVICE_DEBUG="true"
 
 # Run the Go application in the background
 # go run ./pkg/mcpsdk/transport/example/httpsse_cli.go &
-go test -v -tags=integration -run TestRunServer -count=1 ./pkg/mcpsdk/transport/example &
+go test -v -tags=integration -run TestRunServer -count=1 ./pkg/mcpsdk/transport/httponly &
 
 # Capture the PID of the Go process
 GO_PID=$!
@@ -31,7 +31,11 @@ trap cleanup INT
 sleep 2
 
 # Open the default web browser
-xdg-open "http://$SERVICE_HOST:$SERVICE_PORT/docs"
+if [ "$(uname)" = "Darwin" ]; then
+    open "http://$SERVICE_HOST:$SERVICE_PORT/docs"
+else
+    xdg-open "http://$SERVICE_HOST:$SERVICE_PORT/docs"
+fi
 
 # Wait for the Go process to finish
 wait $GO_PID

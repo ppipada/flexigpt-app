@@ -1,6 +1,6 @@
 //go:build integration
 
-package httpsse
+package httponly
 
 import "testing"
 
