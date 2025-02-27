@@ -1,15 +1,13 @@
 package spec
 
-import (
-	"github.com/flexigpt/flexiui/pkg/mcpsdk/jsonrpc"
-)
+import jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
 
 // Sent from the client to request a list of prompts and prompt templates the
 // server has.
-type ListPromptsRequest jsonrpc.Request[*PaginatedRequestParams]
+type ListPromptsRequest jsonrpcReqResp.Request[*PaginatedRequestParams]
 
 // The server's response to a prompts/list request from the client.
-type ListPromptsResponse jsonrpc.Response[*ListPromptsResult]
+type ListPromptsResponse jsonrpcReqResp.Response[*ListPromptsResult]
 
 type ListPromptsResult struct {
 	_ struct{} `json:"-"       additionalProperties:"true"`
@@ -42,13 +40,13 @@ type PromptArgument struct {
 }
 
 // Used by the client to get a prompt provided by the server.
-type GetPromptRequest jsonrpc.Request[GetPromptRequestParams]
+type GetPromptRequest jsonrpcReqResp.Request[GetPromptRequestParams]
 
 type GetPromptRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
 	Meta map[string]any `json:"_meta,omitempty"`
-	_    struct{}               `json:"-"               additionalProperties:"true"`
+	_    struct{}       `json:"-"               additionalProperties:"true"`
 
 	Name string `json:"name"`
 
@@ -58,13 +56,13 @@ type GetPromptRequestParams struct {
 
 // The server's response to a prompts/get request from the client.
 type (
-	GetPromptResponse jsonrpc.Response[*GetPromptResult]
+	GetPromptResponse jsonrpcReqResp.Response[*GetPromptResult]
 	GetPromptResult   struct {
 		// This result property is reserved by the protocol to allow clients and servers
 		// to attach additional metadata to their responses.
-		Meta        map[string]any `json:"_meta,omitempty"`
-		Description *string                `json:"description,omitempty"`
-		Messages    []PromptMessage        `json:"messages"`
+		Meta        map[string]any  `json:"_meta,omitempty"`
+		Description *string         `json:"description,omitempty"`
+		Messages    []PromptMessage `json:"messages"`
 	}
 )
 
@@ -80,4 +78,4 @@ type PromptMessage struct {
 // An optional notification from the server to the client, informing it that the
 // list of prompts it offers has changed. This may be issued by servers without any
 // previous subscription from the client.
-type PromptListChangedNotification jsonrpc.Notification[*AdditionalParams]
+type PromptListChangedNotification jsonrpcReqResp.Notification[*AdditionalParams]

@@ -1,15 +1,13 @@
 package spec
 
-import (
-	"github.com/flexigpt/flexiui/pkg/mcpsdk/jsonrpc"
-)
+import jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
 
 // Sent from the client to request a list of tools the server has.
-type ListToolsRequest jsonrpc.Request[*PaginatedRequestParams]
+type ListToolsRequest jsonrpcReqResp.Request[*PaginatedRequestParams]
 
 // The server's response to a tools/list request from the client.
 type (
-	ListToolsResponse jsonrpc.Response[*ListToolsResult]
+	ListToolsResponse jsonrpcReqResp.Response[*ListToolsResult]
 	ListToolsResult   struct {
 		_ struct{} `json:"-"     additionalProperties:"true"`
 		PaginatedResultParams
@@ -28,20 +26,20 @@ type Tool struct {
 
 // A JSON Schema object defining the expected parameters for the tool.
 type ToolInputSchema struct {
-	Type       string                            `json:"type"                 enum:"object"`
+	Type       string                    `json:"type"                 enum:"object"`
 	Properties map[string]map[string]any `json:"properties,omitempty"`
-	Required   []string                          `json:"required,omitempty"`
+	Required   []string                  `json:"required,omitempty"`
 }
 
 // Used by the client to invoke a tool provided by the server.
 type (
-	CallToolRequest       jsonrpc.Request[CallToolRequestParams]
+	CallToolRequest       jsonrpcReqResp.Request[CallToolRequestParams]
 	CallToolRequestParams struct {
 		// This property is reserved by the protocol to allow clients and servers
 		// to attach additional metadata to their requests.
 		Meta      map[string]any `json:"_meta,omitempty"`
-		_         struct{}               `json:"-"                   additionalProperties:"true"`
-		Name      string                 `json:"name"`
+		_         struct{}       `json:"-"                   additionalProperties:"true"`
+		Name      string         `json:"name"`
 		Arguments map[string]any `json:"arguments,omitempty"`
 	}
 )
@@ -57,7 +55,7 @@ type (
 // server does not support tool calls, or any other exceptional conditions,
 // should be reported as an MCP error response.
 type (
-	CallToolResponse jsonrpc.Response[*CallToolResult]
+	CallToolResponse jsonrpcReqResp.Response[*CallToolResult]
 	CallToolResult   struct {
 		// This result property is reserved by the protocol to allow clients and servers
 		// to attach additional metadata to their responses.
@@ -76,4 +74,4 @@ type (
 // An optional notification from the server to the client, informing it that the
 // list of tools it offers has changed. This may be issued by servers without any
 // previous subscription from the client.
-type ToolListChangedNotification jsonrpc.Notification[*AdditionalParams]
+type ToolListChangedNotification jsonrpcReqResp.Notification[*AdditionalParams]

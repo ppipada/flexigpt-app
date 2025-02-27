@@ -1,8 +1,6 @@
 package spec
 
-import (
-	"github.com/flexigpt/flexiui/pkg/mcpsdk/jsonrpc"
-)
+import jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
 
 // Sent from the server to request a list of root URIs from the client. Roots allow
 // servers to ask for specific directories or files to operate on. A common example
@@ -14,21 +12,21 @@ import (
 // system
 // structure or access specific locations that the client has permission to read
 // from.
-type ListRootsRequest jsonrpc.Request[*PaginatedRequestParams]
+type ListRootsRequest jsonrpcReqResp.Request[*PaginatedRequestParams]
 
 // The client's response to a roots/list request from the server.
 // This result contains an array of Root objects, each representing a root
 // directory
 // or file that the server can operate on.
 type (
-	ListRootsResponse jsonrpc.Response[*ListPromptsResult]
+	ListRootsResponse jsonrpcReqResp.Response[*ListPromptsResult]
 	ListRootsResult   struct {
 		// Even though this is a listing, spec doesnt specify pagination for it.
 
 		// This property is reserved by the protocol to allow clients and servers
 		// to attach additional metadata to their requests.
 		Meta map[string]any `json:"_meta,omitempty"`
-		_    struct{}               `json:"-"               additionalProperties:"true"`
+		_    struct{}       `json:"-"               additionalProperties:"true"`
 
 		Roots []Root `json:"roots,omitempty"`
 	}
@@ -53,4 +51,4 @@ type Root struct {
 // any root.
 // The server should then request an updated list of roots using the
 // ListRootsRequest.
-type RootsListChangedNotification jsonrpc.Notification[*AdditionalParams]
+type RootsListChangedNotification jsonrpcReqResp.Notification[*AdditionalParams]

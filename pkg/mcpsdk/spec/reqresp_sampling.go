@@ -1,8 +1,6 @@
 package spec
 
-import (
-	"github.com/flexigpt/flexiui/pkg/mcpsdk/jsonrpc"
-)
+import jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
 
 // Describes a message issued to or received from an LLM API.
 type SamplingMessage struct {
@@ -14,13 +12,13 @@ type SamplingMessage struct {
 // discretion over which model to select. The client should also inform the user
 // before beginning sampling, to allow them to inspect the request (human in the
 // loop) and decide whether to approve it.
-type CreateMessageRequest jsonrpc.Request[CreateMessageRequestParams]
+type CreateMessageRequest jsonrpcReqResp.Request[CreateMessageRequestParams]
 
 type CreateMessageRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
 	Meta map[string]any `json:"_meta,omitempty"`
-	_    struct{}               `json:"-"               additionalProperties:"true"`
+	_    struct{}       `json:"-"               additionalProperties:"true"`
 
 	Messages []SamplingMessage `json:"messages"`
 
@@ -55,12 +53,12 @@ type CreateMessageRequestParams struct {
 // them to inspect the response (human in the loop) and decide whether to allow the
 // server to see it.
 type (
-	CreateMessageResponse jsonrpc.Response[*CreateMessageResult]
+	CreateMessageResponse jsonrpcReqResp.Response[*CreateMessageResult]
 	CreateMessageResult   struct {
 		// This result property is reserved by the protocol to allow clients and servers
 		// to attach additional metadata to their responses.
 		Meta map[string]any `json:"_meta,omitempty"`
-		_    struct{}               `json:"-"               additionalProperties:"true"`
+		_    struct{}       `json:"-"               additionalProperties:"true"`
 
 		Content Content `json:"content"`
 		Role    Role    `json:"role"`

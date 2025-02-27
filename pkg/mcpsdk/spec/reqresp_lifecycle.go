@@ -1,15 +1,15 @@
 package spec
 
 import (
-	"github.com/flexigpt/flexiui/pkg/mcpsdk/jsonrpc"
+	jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
 )
 
 // A ping, issued by either the server or the client, to check that the other party
 // is still alive. The receiver must promptly respond, or else may be disconnected.
-type PingRequest jsonrpc.Request[*AdditionalParams]
+type PingRequest jsonrpcReqResp.Request[*AdditionalParams]
 
 // A ping response should send out a empty result.
-type PingResponse jsonrpc.Response[AdditionalParams]
+type PingResponse jsonrpcReqResp.Response[AdditionalParams]
 
 // This notification can be sent by either side to indicate that it is cancelling a
 // previously-issued request.
@@ -22,19 +22,19 @@ type PingResponse jsonrpc.Response[AdditionalParams]
 // processing SHOULD cease.
 //
 // A client MUST NOT attempt to cancel its `initialize` request.
-type CancelledNotification jsonrpc.Notification[CancelledNotificationParams]
+type CancelledNotification jsonrpcReqResp.Notification[CancelledNotificationParams]
 
 type CancelledNotificationParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
 	Meta map[string]any `json:"_meta,omitempty"`
-	_    struct{}               `json:"-"               additionalProperties:"true"`
+	_    struct{}       `json:"-"               additionalProperties:"true"`
 
 	// The ID of the request to cancel.
 	//
 	// This MUST correspond to the ID of a request previously issued in the same
 	// direction.
-	RequestID jsonrpc.RequestID `json:"requestId"`
+	RequestID jsonrpcReqResp.RequestID `json:"requestId"`
 
 	// An optional string describing the reason for the cancellation. This MAY be
 	// logged or presented to the user.
@@ -43,13 +43,13 @@ type CancelledNotificationParams struct {
 
 // An out-of-band notification used to inform the receiver of a progress update for
 // a long-running request.
-type ProgressNotification jsonrpc.Notification[ProgressNotificationParams]
+type ProgressNotification jsonrpcReqResp.Notification[ProgressNotificationParams]
 
 type ProgressNotificationParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
 	Meta map[string]any `json:"_meta,omitempty"`
-	_    struct{}               `json:"-"               additionalProperties:"true"`
+	_    struct{}       `json:"-"               additionalProperties:"true"`
 
 	// The progress thus far. This should increase every time progress is made, even
 	// if the total is unknown.
@@ -64,17 +64,17 @@ type ProgressNotificationParams struct {
 }
 
 // This notification is sent from the client to the server after initialization has finished.
-type InitializedNotification jsonrpc.Notification[*AdditionalParams]
+type InitializedNotification jsonrpcReqResp.Notification[*AdditionalParams]
 
 // This request is sent from the client to the server when it first connects,
 // asking it to begin initialization.
-type InitializeRequest jsonrpc.Request[InitializeRequestParams]
+type InitializeRequest jsonrpcReqResp.Request[InitializeRequestParams]
 
 type InitializeRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
 	Meta map[string]any `json:"_meta,omitempty"`
-	_    struct{}               `json:"-"               additionalProperties:"true"`
+	_    struct{}       `json:"-"               additionalProperties:"true"`
 
 	// The latest version of the Model Context Protocol that the client supports. The
 	// client MAY decide to support older versions as well.
@@ -113,7 +113,7 @@ type ClientCapabilitiesSampling map[string]any
 
 // After receiving an initialize request from the client, the server sends this response.
 
-type InitializeResponse jsonrpc.Response[*InitializeResult]
+type InitializeResponse jsonrpcReqResp.Response[*InitializeResult]
 
 type InitializeResult struct {
 	// This result property is reserved by the protocol to allow clients and servers

@@ -1,16 +1,16 @@
 package spec
 
 import (
-	"github.com/flexigpt/flexiui/pkg/mcpsdk/jsonrpc"
+	jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
 )
 
 // A request from the client to the server, to ask for completion options.
-type CompleteRequest jsonrpc.Request[CompleteRequestParams]
+type CompleteRequest jsonrpcReqResp.Request[CompleteRequestParams]
 
 type CompleteRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
-	Meta     map[string]any        `json:"_meta,omitempty"`
+	Meta     map[string]any                `json:"_meta,omitempty"`
 	_        struct{}                      `json:"-"               additionalProperties:"true"`
 	Argument CompleteRequestParamsArgument `json:"argument"`
 
@@ -33,7 +33,7 @@ type CompletionReference struct {
 
 // The server's response to a completion/complete request.
 type (
-	CompleteResponse jsonrpc.Response[*CompleteResult]
+	CompleteResponse jsonrpcReqResp.Response[*CompleteResult]
 	CompleteResult   struct {
 		// This result property is reserved by the protocol to allow clients and servers
 		// to attach additional metadata to their responses.

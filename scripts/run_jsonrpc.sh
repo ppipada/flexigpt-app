@@ -6,7 +6,7 @@ export SERVICE_DEBUG="true"
 
 # Run the Go application in the background
 # go run ./pkg/mcpsdk/transport/example/httpsse_cli.go &
-go test -v -tags=integration -run TestRunServer -count=1 ./pkg/mcpsdk/transport/httponly &
+go test -v -tags=integration -run TestRunServer -count=1 ./pkg/jsonrpc/transport/httponly &
 
 # Capture the PID of the Go process
 GO_PID=$!
