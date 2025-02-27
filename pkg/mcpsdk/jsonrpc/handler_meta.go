@@ -6,6 +6,15 @@ import (
 	"fmt"
 )
 
+// Now, we can define BatchRequest and BatchResponse using BatchItem[T].
+type BatchRequest struct {
+	Body *BatchItem[Request[json.RawMessage]]
+}
+
+type BatchResponse struct {
+	Body *BatchItem[Response[json.RawMessage]]
+}
+
 // GetBatchRequestHandler creates a handler function that processes BatchRequests.
 func GetBatchRequestHandler(
 	methodMap map[string]IMethodHandler,

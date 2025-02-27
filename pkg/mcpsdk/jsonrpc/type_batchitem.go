@@ -82,7 +82,7 @@ func intPtr(i int) *int {
 	return &i
 }
 
-// BatchItem is a generic struct to handle both BatchRequest and BatchResponse.
+// BatchItem is a generic struct to detect and handle batch Items of any type.
 type BatchItem[T any] struct {
 	IsBatch bool `json:"-"`
 	Items   []T
@@ -120,13 +120,4 @@ func (m BatchItem[T]) Schema(r huma.Registry) *huma.Schema {
 		},
 	}
 	return s
-}
-
-// Now, we can define BatchRequest and BatchResponse using BatchItem[T].
-type BatchRequest struct {
-	Body *BatchItem[Request[json.RawMessage]]
-}
-
-type BatchResponse struct {
-	Body *BatchItem[Response[json.RawMessage]]
 }
