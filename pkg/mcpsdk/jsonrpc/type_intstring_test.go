@@ -11,7 +11,7 @@ func TestIntString_UnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name       string
 		input      string
-		wantValue  interface{}
+		wantValue  any
 		wantIsInt  bool
 		wantErr    bool
 		wantErrMsg string
@@ -167,7 +167,7 @@ func TestIntString_UnmarshalJSON(t *testing.T) {
 func TestIntString_MarshalJSON(t *testing.T) {
 	tests := []struct {
 		name       string
-		value      interface{}
+		value      any
 		wantOutput string
 		wantErr    bool
 		wantErrMsg string
@@ -291,7 +291,7 @@ func TestIntString_MarshalJSON(t *testing.T) {
 func TestIntString_HelperMethods(t *testing.T) {
 	tests := []struct {
 		name         string
-		value        interface{}
+		value        any
 		wantIsInt    bool
 		wantIsString bool
 		wantIntValue int

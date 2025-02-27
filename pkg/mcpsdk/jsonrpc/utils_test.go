@@ -8,8 +8,8 @@ import (
 )
 
 func jsonEqual(a, b json.RawMessage) bool {
-	var o1 interface{}
-	var o2 interface{}
+	var o1 any
+	var o2 any
 
 	if err := json.Unmarshal(a, &o1); err != nil {
 		return false
@@ -26,7 +26,7 @@ func jsonStringsEqual(a, b string) bool {
 	return jsonEqual([]byte(a), []byte(b))
 }
 
-func getJSONStrings(args ...interface{}) ([]string, error) {
+func getJSONStrings(args ...any) ([]string, error) {
 	ret := make([]string, 0, len(args))
 	for _, a := range args {
 		jsonBytes, err := json.Marshal(a)
@@ -38,7 +38,7 @@ func getJSONStrings(args ...interface{}) ([]string, error) {
 	return ret, nil
 }
 
-func jsonStructEqual(arg1, arg2 interface{}) (bool, error) {
+func jsonStructEqual(arg1, arg2 any) (bool, error) {
 	vals, err := getJSONStrings(arg1, arg2)
 	if err != nil {
 		return false, errors.New("could not encode struct to json")

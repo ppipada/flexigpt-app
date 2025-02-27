@@ -10,7 +10,7 @@ type CompleteRequest jsonrpc.Request[CompleteRequestParams]
 type CompleteRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
-	Meta     map[string]interface{}        `json:"_meta,omitempty"`
+	Meta     map[string]any        `json:"_meta,omitempty"`
 	_        struct{}                      `json:"-"               additionalProperties:"true"`
 	Argument CompleteRequestParamsArgument `json:"argument"`
 
@@ -37,7 +37,7 @@ type (
 	CompleteResult   struct {
 		// This result property is reserved by the protocol to allow clients and servers
 		// to attach additional metadata to their responses.
-		Meta map[string]interface{} `json:"_meta,omitempty"`
+		Meta map[string]any `json:"_meta,omitempty"`
 
 		// Completion corresponds to the JSON schema field "completion".
 		Completion CompleteResultCompletion `json:"completion"`

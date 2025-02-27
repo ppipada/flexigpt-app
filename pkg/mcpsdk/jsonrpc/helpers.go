@@ -66,7 +66,7 @@ func invalidParamsResponse(req Request[json.RawMessage], err error) Response[jso
 		ID:      &req.ID,
 		Error: &JSONRPCError{
 			Code:    InvalidParamsError,
-			Message: fmt.Sprintf("Invalid parameters: %v", err),
+			Message: fmt.Sprintf("%s: %v", GetDefaultErrorMessage(InvalidParamsError), err),
 		},
 	}
 }

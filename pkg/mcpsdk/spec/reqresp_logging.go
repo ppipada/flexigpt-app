@@ -10,7 +10,7 @@ type SetLevelRequest jsonrpc.Request[SetLevelRequestParams]
 type SetLevelRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Meta map[string]any `json:"_meta,omitempty"`
 	_    struct{}               `json:"-"               additionalProperties:"true"`
 	// The level of logging that the client wants to receive from the server. The
 	// server should send all logs at this level and higher (i.e., more severe) to the
@@ -26,13 +26,13 @@ type LoggingMessageNotification jsonrpc.Notification[LoggingMessageNotificationP
 type LoggingMessageNotificationParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Meta map[string]any `json:"_meta,omitempty"`
 	_    struct{}               `json:"-"                additionalProperties:"true"`
 	// An optional name of the logger issuing this message.
 	Logger *string `json:"logger,omitempty"`
 
 	// The data to be logged, such as a string message or an object. Any JSON
 	// serializable type is allowed here.
-	Data  interface{}  `json:"data"`
+	Data  any  `json:"data"`
 	Level LoggingLevel `json:"level"`
 }

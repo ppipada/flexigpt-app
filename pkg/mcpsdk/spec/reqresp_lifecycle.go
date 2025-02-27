@@ -27,7 +27,7 @@ type CancelledNotification jsonrpc.Notification[CancelledNotificationParams]
 type CancelledNotificationParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Meta map[string]any `json:"_meta,omitempty"`
 	_    struct{}               `json:"-"               additionalProperties:"true"`
 
 	// The ID of the request to cancel.
@@ -48,7 +48,7 @@ type ProgressNotification jsonrpc.Notification[ProgressNotificationParams]
 type ProgressNotificationParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Meta map[string]any `json:"_meta,omitempty"`
 	_    struct{}               `json:"-"               additionalProperties:"true"`
 
 	// The progress thus far. This should increase every time progress is made, even
@@ -73,7 +73,7 @@ type InitializeRequest jsonrpc.Request[InitializeRequestParams]
 type InitializeRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Meta map[string]any `json:"_meta,omitempty"`
 	_    struct{}               `json:"-"               additionalProperties:"true"`
 
 	// The latest version of the Model Context Protocol that the client supports. The
@@ -100,7 +100,7 @@ type ClientCapabilities struct {
 }
 
 // Experimental, non-standard capabilities that the client supports.
-type ClientCapabilitiesExperimental map[string]map[string]interface{}
+type ClientCapabilitiesExperimental map[string]map[string]any
 
 // Present if the client supports listing roots.
 type ClientCapabilitiesRoots struct {
@@ -109,7 +109,7 @@ type ClientCapabilitiesRoots struct {
 }
 
 // Present if the client supports sampling from an LLM.
-type ClientCapabilitiesSampling map[string]interface{}
+type ClientCapabilitiesSampling map[string]any
 
 // After receiving an initialize request from the client, the server sends this response.
 
@@ -118,7 +118,7 @@ type InitializeResponse jsonrpc.Response[*InitializeResult]
 type InitializeResult struct {
 	// This result property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their responses.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Meta map[string]any `json:"_meta,omitempty"`
 	// The version of the Model Context Protocol that the server wants to use. This
 	// may not match the version that the client requested. If the client cannot
 	// support this version, it MUST disconnect.
@@ -158,10 +158,10 @@ type ServerCapabilities struct {
 }
 
 // Experimental, non-standard capabilities that the server supports.
-type ServerCapabilitiesExperimental map[string]map[string]interface{}
+type ServerCapabilitiesExperimental map[string]map[string]any
 
 // Present if the server supports sending log messages to the client.
-type ServerCapabilitiesLogging map[string]interface{}
+type ServerCapabilitiesLogging map[string]any
 
 // Present if the server offers any prompt templates.
 type ServerCapabilitiesPrompts struct {

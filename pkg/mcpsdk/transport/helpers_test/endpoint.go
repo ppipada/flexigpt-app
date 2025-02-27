@@ -1,4 +1,4 @@
-package example
+package helpers_test
 
 import (
 	"context"

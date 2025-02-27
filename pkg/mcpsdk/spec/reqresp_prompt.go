@@ -47,7 +47,7 @@ type GetPromptRequest jsonrpc.Request[GetPromptRequestParams]
 type GetPromptRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Meta map[string]any `json:"_meta,omitempty"`
 	_    struct{}               `json:"-"               additionalProperties:"true"`
 
 	Name string `json:"name"`
@@ -62,7 +62,7 @@ type (
 	GetPromptResult   struct {
 		// This result property is reserved by the protocol to allow clients and servers
 		// to attach additional metadata to their responses.
-		Meta        map[string]interface{} `json:"_meta,omitempty"`
+		Meta        map[string]any `json:"_meta,omitempty"`
 		Description *string                `json:"description,omitempty"`
 		Messages    []PromptMessage        `json:"messages"`
 	}

@@ -1,4 +1,4 @@
-package example
+package httponly
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
-	"github.com/flexigpt/flexiui/pkg/mcpsdk/transport/httpsse"
+	"github.com/flexigpt/flexiui/pkg/mcpsdk/transport/helpers_test"
 )
 
 // CLI options can be added as needed.
@@ -21,29 +21,27 @@ type Options struct {
 	Debug bool   `doc:"Enable debug logs" default:"false"`
 }
 
-func SetupSSETransport() http.Handler {
+func SetupHTTPOnlyTransport() http.Handler {
 	// Use default go router
 	router := http.NewServeMux()
 
 	api := humago.New(router, huma.DefaultConfig("Example JSONRPC API", "1.0.0"))
 	// Add any middlewares
-	api.UseMiddleware(loggingMiddleware)
-	handler := PanicRecoveryMiddleware(router)
+	api.UseMiddleware(helpers_test.LoggingMiddleware)
+	handler := helpers_test.PanicRecoveryMiddleware(router)
 
 	// Init the servers method and notifications handlers
-	methodMap := GetMethodHandlers()
-	notificationMap := GetNotificationHandlers()
+	methodMap := helpers_test.GetMethodHandlers()
+	notificationMap := helpers_test.GetNotificationHandlers()
 
-	// Register the SSE endpoint and post endpoint
-	sseTransport := httpsse.NewSSETransport(httpsse.JSONRPCEndpoint)
-	sseTransport.Register(api, methodMap, notificationMap)
+	Register(api, methodMap, notificationMap)
 	return handler
 }
 
 func GetHTTPServerCLI() humacli.CLI {
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {
 		log.Printf("Options are %+v\n", opts)
-		handler := SetupSSETransport()
+		handler := SetupHTTPOnlyTransport()
 		// Initialize the http server
 		server := http.Server{
 			Addr:              fmt.Sprintf("%s:%d", opts.Host, opts.Port),

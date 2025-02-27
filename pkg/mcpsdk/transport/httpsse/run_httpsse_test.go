@@ -1,6 +1,6 @@
 //go:build integration
 
-package example
+package httpsse
 
 import "testing"
 
@@ -8,4 +8,9 @@ import "testing"
 func TestRunServer(t *testing.T) {
 	// Start the server
 	StartHTTPServer()
+}
+
+func StartHTTPServer() {
+	cli := GetHTTPServerCLI()
+	cli.Run()
 }

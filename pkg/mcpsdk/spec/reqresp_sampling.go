@@ -19,7 +19,7 @@ type CreateMessageRequest jsonrpc.Request[CreateMessageRequestParams]
 type CreateMessageRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Meta map[string]any `json:"_meta,omitempty"`
 	_    struct{}               `json:"-"               additionalProperties:"true"`
 
 	Messages []SamplingMessage `json:"messages"`
@@ -47,7 +47,7 @@ type CreateMessageRequestParams struct {
 
 	// Optional metadata to pass through to the LLM provider. The format of this
 	// metadata is provider-specific.
-	Metadata map[string]interface{} `json:"metadata,omitempty"`
+	Metadata map[string]any `json:"metadata,omitempty"`
 }
 
 // The client's response to a sampling/create_message request from the server. The
@@ -59,7 +59,7 @@ type (
 	CreateMessageResult   struct {
 		// This result property is reserved by the protocol to allow clients and servers
 		// to attach additional metadata to their responses.
-		Meta map[string]interface{} `json:"_meta,omitempty"`
+		Meta map[string]any `json:"_meta,omitempty"`
 		_    struct{}               `json:"-"               additionalProperties:"true"`
 
 		Content Content `json:"content"`

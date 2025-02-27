@@ -43,7 +43,7 @@ type ReadResourceRequest jsonrpc.Request[ReadResourceRequestParams]
 
 type ReadResourceRequestParams struct {
 	_    struct{}               `json:"-"               additionalProperties:"true"`
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Meta map[string]any `json:"_meta,omitempty"`
 	// The URI of the resource to read. The URI can use any protocol; it is up to the
 	// server how to interpret it.
 	URI string `json:"uri"`
@@ -55,7 +55,7 @@ type (
 	ReadResourceResult   struct {
 		// This result property is reserved by the protocol to allow clients and servers
 		// to attach additional metadata to their responses.
-		Meta     map[string]interface{} `json:"_meta,omitempty"`
+		Meta     map[string]any `json:"_meta,omitempty"`
 		Contents []ResourceContent      `json:"contents"`
 	}
 )
@@ -69,7 +69,7 @@ type (
 	ListResourceTemplatesResult   struct {
 		// This result property is reserved by the protocol to allow clients and servers
 		// to attach additional metadata to their responses.
-		Meta map[string]interface{} `json:"_meta,omitempty"`
+		Meta map[string]any `json:"_meta,omitempty"`
 		// ResourceTemplates corresponds to the JSON schema field "resourceTemplates".
 		ResourceTemplates []ResourceTemplate `json:"resourceTemplates"`
 	}
@@ -82,7 +82,7 @@ type SubscribeRequest jsonrpc.Request[SubscribeRequestParams]
 type SubscribeRequestParams struct {
 	// This result property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their responses.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Meta map[string]any `json:"_meta,omitempty"`
 	// The URI of the resource to subscribe to. The URI can use any protocol; it is up
 	// to the server how to interpret it.
 	URI string `json:"uri"`
@@ -95,7 +95,7 @@ type UnsubscribeRequest jsonrpc.Request[UnsubscribeRequestParams]
 type UnsubscribeRequestParams struct {
 	// This result property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their responses.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Meta map[string]any `json:"_meta,omitempty"`
 	// The URI of the resource to unsubscribe from.
 	URI string `json:"uri"`
 }
@@ -113,7 +113,7 @@ type ResourceUpdatedNotification jsonrpc.Notification[ResourceUpdatedNotificatio
 type ResourceUpdatedNotificationParams struct {
 	// This result property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their responses.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Meta map[string]any `json:"_meta,omitempty"`
 
 	// The URI of the resource that has been updated. This might be a sub-resource of
 	// the one that the client actually subscribed to.

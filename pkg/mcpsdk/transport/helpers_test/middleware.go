@@ -1,4 +1,4 @@
-package example
+package helpers_test
 
 import (
 	"log"
@@ -10,7 +10,7 @@ import (
 
 // This is a huma middleware.
 // Either a huma middleware can be added or a http handler middleware can be added.
-func loggingMiddleware(ctx huma.Context, next func(huma.Context)) {
+func LoggingMiddleware(ctx huma.Context, next func(huma.Context)) {
 	// log.Printf("Received request: %v %v", ctx.URL().RawPath, ctx.Operation().Path)
 	next(ctx)
 	// log.Printf("Responded to request: %v %v", ctx.URL().RawPath, ctx.Operation().Path)

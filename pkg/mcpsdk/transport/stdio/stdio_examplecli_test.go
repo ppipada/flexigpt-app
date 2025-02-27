@@ -1,4 +1,4 @@
-package example
+package stdio
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
-	"github.com/flexigpt/flexiui/pkg/mcpsdk/transport/stdio"
+	"github.com/flexigpt/flexiui/pkg/mcpsdk/transport/helpers_test"
 )
 
 type StdIOOptions struct {
@@ -24,13 +24,13 @@ func SetupStdIOTransport() http.Handler {
 
 	api := humago.New(router, huma.DefaultConfig("Example JSONRPC API", "1.0.0"))
 	// Add any middlewares
-	api.UseMiddleware(loggingMiddleware)
-	handler := PanicRecoveryMiddleware(router)
+	api.UseMiddleware(helpers_test.LoggingMiddleware)
+	handler := helpers_test.PanicRecoveryMiddleware(router)
 
 	// Init the servers method and notifications handlers
-	methodMap := GetMethodHandlers()
-	notificationMap := GetNotificationHandlers()
-	stdio.Register(api, methodMap, notificationMap)
+	methodMap := helpers_test.GetMethodHandlers()
+	notificationMap := helpers_test.GetNotificationHandlers()
+	Register(api, methodMap, notificationMap)
 
 	return handler
 }
@@ -44,7 +44,7 @@ func GetStdIOServerCLI() humacli.CLI {
 		log.Printf("Options are %+v\n", opts)
 		handler := SetupStdIOTransport()
 		// Create the server with the handler and request parameters
-		server := stdio.GetServer(os.Stdin, os.Stdout, handler)
+		server := GetServer(os.Stdin, os.Stdout, handler)
 
 		// Start the server
 		hooks.OnStart(func() {

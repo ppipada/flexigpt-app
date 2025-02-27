@@ -8,7 +8,7 @@ import (
 )
 
 type IntString struct {
-	Value interface{}
+	Value any
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.

@@ -29,7 +29,7 @@ type Tool struct {
 // A JSON Schema object defining the expected parameters for the tool.
 type ToolInputSchema struct {
 	Type       string                            `json:"type"                 enum:"object"`
-	Properties map[string]map[string]interface{} `json:"properties,omitempty"`
+	Properties map[string]map[string]any `json:"properties,omitempty"`
 	Required   []string                          `json:"required,omitempty"`
 }
 
@@ -39,10 +39,10 @@ type (
 	CallToolRequestParams struct {
 		// This property is reserved by the protocol to allow clients and servers
 		// to attach additional metadata to their requests.
-		Meta      map[string]interface{} `json:"_meta,omitempty"`
+		Meta      map[string]any `json:"_meta,omitempty"`
 		_         struct{}               `json:"-"                   additionalProperties:"true"`
 		Name      string                 `json:"name"`
-		Arguments map[string]interface{} `json:"arguments,omitempty"`
+		Arguments map[string]any `json:"arguments,omitempty"`
 	}
 )
 
@@ -61,7 +61,7 @@ type (
 	CallToolResult   struct {
 		// This result property is reserved by the protocol to allow clients and servers
 		// to attach additional metadata to their responses.
-		Meta map[string]interface{} `json:"_meta,omitempty"`
+		Meta map[string]any `json:"_meta,omitempty"`
 
 		// Content corresponds to the JSON schema field "content".
 		Content []Content `json:"content"`

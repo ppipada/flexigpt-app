@@ -38,7 +38,7 @@ func (s *SSETransport) Register(
 	notificationMap map[string]jsonrpc.INotificationHandler,
 ) {
 	// Define the mapping between event names and message types.
-	messageTypes := map[string]interface{}{
+	messageTypes := map[string]any{
 		"message":  jsonrpc.BatchRequest{Body: &jsonrpc.BatchItem[jsonrpc.UnionRequest]{}},
 		"endpoint": "", // For the initial endpoint event.
 	}

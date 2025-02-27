@@ -115,7 +115,7 @@ func getRequestSchema(
 		// Set method name as a constant in the schema
 		reqSubSchema.Properties["method"] = &huma.Schema{
 			Type: "string",
-			Enum: []interface{}{methodName},
+			Enum: []any{methodName},
 		}
 		if !isNotification {
 			reqSubSchema.Required = append(reqSubSchema.Required, "id")

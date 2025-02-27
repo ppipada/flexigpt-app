@@ -12,7 +12,7 @@ type Cursor string
 type PaginatedRequestParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Meta map[string]any `json:"_meta,omitempty"`
 	_    struct{}               `json:"-"               additionalProperties:"true"`
 
 	// An opaque token representing the current pagination position.
@@ -23,7 +23,7 @@ type PaginatedRequestParams struct {
 type PaginatedResultParams struct {
 	// This property is reserved by the protocol to allow clients and servers
 	// to attach additional metadata to their requests.
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Meta map[string]any `json:"_meta,omitempty"`
 	_    struct{}               `json:"-"               additionalProperties:"true"`
 
 	// An opaque token representing the pagination position after the last returned result.

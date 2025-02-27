@@ -112,16 +112,16 @@ func randomBytes(n int) []byte {
 }
 
 func TestSynchronousSingleRequest(t *testing.T) {
-	message := []interface{}{
-		map[string]interface{}{
+	message := []any{
+		map[string]any{
 			"jsonrpc": "2.0",
 			"method":  "notify",
-			"params":  map[string]interface{}{"message": "Hello"},
+			"params":  map[string]any{"message": "Hello"},
 		},
-		map[string]interface{}{
+		map[string]any{
 			"jsonrpc": "2.0",
 			"method":  "notify",
-			"params":  map[string]interface{}{"message": "World"},
+			"params":  map[string]any{"message": "World"},
 		},
 	}
 	msgReqBytes, _ := json.Marshal(message)

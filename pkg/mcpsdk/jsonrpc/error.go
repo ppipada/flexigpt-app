@@ -50,7 +50,7 @@ type JSONRPCError struct {
 
 	// Additional information about the error. The value of this member is defined by
 	// the sender (e.g. detailed error information, nested errors etc.).
-	Data interface{} `json:"data,omitempty"`
+	Data any `json:"data,omitempty"`
 }
 
 // Error implements error.
