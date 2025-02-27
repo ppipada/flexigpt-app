@@ -10,7 +10,7 @@ import (
 
 // IMethodHandler	is an interface for handlers that process requests expecting a response.
 type IMethodHandler interface {
-	Handle(ctx context.Context, req Request[json.RawMessage]) (Response[json.RawMessage], error)
+	Handle(ctx context.Context, req Request[json.RawMessage]) Response[json.RawMessage]
 	GetTypes() (reflect.Type, reflect.Type)
 }
 
@@ -45,11 +45,11 @@ type MethodHandler[I any, O any] struct {
 func (m *MethodHandler[I, O]) Handle(
 	ctx context.Context,
 	req Request[json.RawMessage],
-) (Response[json.RawMessage], error) {
-	params, err := unmarshalParams[I](req)
+) Response[json.RawMessage] {
+	params, err := unmarshalData[I](req.Params)
 	if err != nil {
 		// Return InvalidParamsError
-		return invalidParamsResponse(req, err), nil
+		return invalidParamsResponse(req, err)
 	}
 
 	// Call the handler
@@ -61,19 +61,19 @@ func (m *MethodHandler[I, O]) Handle(
 			// Handler returned a JSON-RPC error
 			return Response[json.RawMessage]{
 				JSONRPC: JSONRPCVersion,
-				ID:      req.ID,
+				ID:      &req.ID,
 				Error:   jsonrpcErr,
-			}, nil
+			}
 		}
 		// Handler returned a standard error
 		return Response[json.RawMessage]{
 			JSONRPC: JSONRPCVersion,
-			ID:      req.ID,
+			ID:      &req.ID,
 			Error: &JSONRPCError{
 				Code:    InternalError,
 				Message: err.Error(),
 			},
-		}, nil
+		}
 	}
 
 	// Marshal the result.
@@ -81,20 +81,20 @@ func (m *MethodHandler[I, O]) Handle(
 	if err != nil {
 		return Response[json.RawMessage]{
 			JSONRPC: JSONRPCVersion,
-			ID:      req.ID,
+			ID:      &req.ID,
 			Error: &JSONRPCError{
 				Code:    InternalError,
 				Message: fmt.Sprintf("Error marshaling result: %v", err),
 			},
-		}, nil
+		}
 	}
 
 	// Return the response with the marshaled result
 	return Response[json.RawMessage]{
 		JSONRPC: JSONRPCVersion,
-		ID:      req.ID,
+		ID:      &req.ID,
 		Result:  json.RawMessage(resultData),
-	}, nil
+	}
 }
 
 // GetTypes returns the reflect.Type of the input and output types.

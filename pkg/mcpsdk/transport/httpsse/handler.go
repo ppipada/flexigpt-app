@@ -2,7 +2,6 @@ package httpsse
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -40,7 +39,7 @@ func (s *SSETransport) Register(
 ) {
 	// Define the mapping between event names and message types.
 	messageTypes := map[string]interface{}{
-		"message":  jsonrpc.BatchRequest{Body: &jsonrpc.BatchItem[jsonrpc.Request[json.RawMessage]]{}},
+		"message":  jsonrpc.BatchRequest{Body: &jsonrpc.BatchItem[jsonrpc.UnionRequest]{}},
 		"endpoint": "", // For the initial endpoint event.
 	}
 
@@ -56,7 +55,7 @@ func (s *SSETransport) Register(
 	op := jsonrpc.GetDefaultOperation()
 	op.Path = JSONRPCEndpoint
 	// Register the methods
-	jsonrpc.Register(api, op, methodMap, notificationMap)
+	jsonrpc.Register(api, op, methodMap, notificationMap, nil, nil)
 }
 
 // handleSSEConnection handles the initial SSE connection request.

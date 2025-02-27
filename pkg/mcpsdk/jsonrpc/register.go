@@ -1,6 +1,7 @@
 package jsonrpc
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -142,9 +143,17 @@ func Register(
 	op huma.Operation,
 	methodMap map[string]IMethodHandler,
 	notificationMap map[string]INotificationHandler,
+	responseMap map[string]IResponseHandler,
+	responseHandlerMapper func(context.Context, Response[json.RawMessage]) (string, error),
 ) {
 	AddSchemasToAPI(api, methodMap, notificationMap)
 	huma.NewError = GetErrorHandler(methodMap, notificationMap)
-	reqHandler := GetBatchRequestHandler(methodMap, notificationMap)
+	reqHandler := GetBatchRequestHandler(
+		methodMap,
+		notificationMap,
+		responseMap,
+		responseHandlerMapper,
+	)
+
 	huma.Register(api, op, reqHandler)
 }

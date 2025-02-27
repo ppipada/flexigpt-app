@@ -56,13 +56,13 @@ func (r *ResponseHandler[T]) Handle(ctx context.Context, resp Response[json.RawM
 	}
 
 	// Unmarshal the result if present
-	result, err := unmarshalResult[T](resp.Result)
+	result, err := unmarshalData[T](resp.Result)
 	if err != nil {
 		return err
 	}
 
 	// Call the endpoint with the result and nil error
-	return r.Endpoint(ctx, result, nil)
+	return r.Endpoint(ctx, &result, nil)
 }
 
 // GetTypes returns the reflect.Type of the expected result.

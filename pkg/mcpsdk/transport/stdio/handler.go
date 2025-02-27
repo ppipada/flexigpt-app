@@ -19,7 +19,7 @@ func Register(api huma.API,
 	op := jsonrpc.GetDefaultOperation()
 	op.Path = JSONRPCEndpoint
 	// Register the methods
-	jsonrpc.Register(api, op, methodMap, notificationMap)
+	jsonrpc.Register(api, op, methodMap, notificationMap, nil, nil)
 }
 
 // For actual runs os.Stdin, os.Stdout can be passed as reader and writer respectively.

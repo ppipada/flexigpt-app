@@ -38,7 +38,7 @@ func TestUnmarshalBatchItem_Request(t *testing.T) {
 					JSONRPC: "2.0",
 					Method:  "sum",
 					Params:  json.RawMessage(`[1,2,3]`),
-					ID:      &RequestID{Value: 1},
+					ID:      RequestID{Value: 1},
 				},
 			},
 			wantErr: false,
@@ -54,13 +54,13 @@ func TestUnmarshalBatchItem_Request(t *testing.T) {
 					JSONRPC: "2.0",
 					Method:  "sum",
 					Params:  json.RawMessage(`[1,2,3]`),
-					ID:      &RequestID{Value: 1},
+					ID:      RequestID{Value: 1},
 				},
 				{
 					JSONRPC: "2.0",
 					Method:  "subtract",
 					Params:  json.RawMessage(`[42,23]`),
-					ID:      &RequestID{Value: 2},
+					ID:      RequestID{Value: 2},
 				},
 			},
 			wantErr: false,
@@ -162,7 +162,7 @@ func TestMarshalBatchItem_Request(t *testing.T) {
 					JSONRPC: "2.0",
 					Method:  "subtract",
 					Params:  json.RawMessage(`[42,23]`),
-					ID:      &RequestID{Value: 1},
+					ID:      RequestID{Value: 1},
 				},
 			},
 			wantData: `{"jsonrpc":"2.0","method":"subtract","params":[42,23],"id":1}`,
@@ -176,13 +176,13 @@ func TestMarshalBatchItem_Request(t *testing.T) {
 					JSONRPC: "2.0",
 					Method:  "sum",
 					Params:  json.RawMessage(`[1,2,3]`),
-					ID:      &RequestID{Value: 1},
+					ID:      RequestID{Value: 1},
 				},
 				{
 					JSONRPC: "2.0",
 					Method:  "subtract",
 					Params:  json.RawMessage(`[42,23]`),
-					ID:      &RequestID{Value: 2},
+					ID:      RequestID{Value: 2},
 				},
 			},
 			wantData: `[{"jsonrpc":"2.0","method":"sum","params":[1,2,3],"id":1},{"jsonrpc":"2.0","method":"subtract","params":[42,23],"id":2}]`,
@@ -308,10 +308,18 @@ func TestBatchItem_MyData(t *testing.T) {
 				return
 			}
 			if meta.IsBatch != tt.wantIsBatch {
-				t.Errorf("BatchItem.UnmarshalJSON() IsBatch = %v, want %v", meta.IsBatch, tt.wantIsBatch)
+				t.Errorf(
+					"BatchItem.UnmarshalJSON() IsBatch = %v, want %v",
+					meta.IsBatch,
+					tt.wantIsBatch,
+				)
 			}
 			if !reflect.DeepEqual(meta.Items, tt.wantItems) {
-				t.Errorf("BatchItem.UnmarshalJSON() Items = %#v, want %#v", meta.Items, tt.wantItems)
+				t.Errorf(
+					"BatchItem.UnmarshalJSON() Items = %#v, want %#v",
+					meta.Items,
+					tt.wantItems,
+				)
 			}
 		})
 	}
@@ -397,7 +405,7 @@ func TestBatchRequest_UnmarshalJSON(t *testing.T) {
 		name        string
 		jsonData    string
 		wantIsBatch bool
-		wantItems   []Request[json.RawMessage]
+		wantItems   []UnionRequest
 		wantErr     bool
 		wantErrMsg  string
 	}{
@@ -405,10 +413,10 @@ func TestBatchRequest_UnmarshalJSON(t *testing.T) {
 			name:        "Valid single request",
 			jsonData:    `{"jsonrpc":"2.0","method":"sum","params":[1,2,3],"id":1}`,
 			wantIsBatch: false,
-			wantItems: []Request[json.RawMessage]{
+			wantItems: []UnionRequest{
 				{
 					JSONRPC: "2.0",
-					Method:  "sum",
+					Method:  stringToPointer("sum"),
 					Params:  json.RawMessage(`[1,2,3]`),
 					ID:      &RequestID{Value: 1},
 				},
@@ -419,16 +427,16 @@ func TestBatchRequest_UnmarshalJSON(t *testing.T) {
 			name:        "Valid batch requests",
 			jsonData:    `[{"jsonrpc":"2.0","method":"sum","params":[1,2,3],"id":1},{"jsonrpc":"2.0","method":"subtract","params":[42,23],"id":2}]`,
 			wantIsBatch: true,
-			wantItems: []Request[json.RawMessage]{
+			wantItems: []UnionRequest{
 				{
 					JSONRPC: "2.0",
-					Method:  "sum",
+					Method:  stringToPointer("sum"),
 					Params:  json.RawMessage(`[1,2,3]`),
 					ID:      &RequestID{Value: 1},
 				},
 				{
 					JSONRPC: "2.0",
-					Method:  "subtract",
+					Method:  stringToPointer("subtract"),
 					Params:  json.RawMessage(`[42,23]`),
 					ID:      &RequestID{Value: 2},
 				},
@@ -451,7 +459,7 @@ func TestBatchRequest_UnmarshalJSON(t *testing.T) {
 			name:        "Empty batch",
 			jsonData:    `[]`,
 			wantIsBatch: true,
-			wantItems:   []Request[json.RawMessage]{},
+			wantItems:   []UnionRequest{},
 			wantErr:     false,
 		},
 		{
@@ -483,7 +491,7 @@ func TestBatchRequest_UnmarshalJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var metaRequest BatchRequest
-			metaRequest.Body = &BatchItem[Request[json.RawMessage]]{}
+			metaRequest.Body = &BatchItem[UnionRequest]{}
 			err := json.Unmarshal([]byte(tt.jsonData), metaRequest.Body)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("BatchRequest.UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
@@ -505,7 +513,7 @@ func TestBatchRequest_UnmarshalJSON(t *testing.T) {
 					tt.wantIsBatch,
 				)
 			}
-			if !compareRequestSlices(metaRequest.Body.Items, tt.wantItems) {
+			if !compareUnionRequestSlices(metaRequest.Body.Items, tt.wantItems) {
 				t.Errorf(
 					"BatchRequest.UnmarshalJSON() Items = %+v, want %+v",
 					metaRequest.Body.Items,
@@ -527,12 +535,12 @@ func TestBatchRequest_MarshalJSON(t *testing.T) {
 		{
 			name: "Single request",
 			meta: BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items: []Request[json.RawMessage]{
+					Items: []UnionRequest{
 						{
 							JSONRPC: "2.0",
-							Method:  "subtract",
+							Method:  stringToPointer("subtract"),
 							Params:  json.RawMessage(`[42,23]`),
 							ID:      &RequestID{Value: 1},
 						},
@@ -545,18 +553,18 @@ func TestBatchRequest_MarshalJSON(t *testing.T) {
 		{
 			name: "Batch requests",
 			meta: BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: true,
-					Items: []Request[json.RawMessage]{
+					Items: []UnionRequest{
 						{
 							JSONRPC: "2.0",
-							Method:  "sum",
+							Method:  stringToPointer("sum"),
 							Params:  json.RawMessage(`[1,2,3]`),
 							ID:      &RequestID{Value: 1},
 						},
 						{
 							JSONRPC: "2.0",
-							Method:  "subtract",
+							Method:  stringToPointer("subtract"),
 							Params:  json.RawMessage(`[42,23]`),
 							ID:      &RequestID{Value: 2},
 						},
@@ -569,9 +577,9 @@ func TestBatchRequest_MarshalJSON(t *testing.T) {
 		{
 			name: "Empty items with IsBatch=false",
 			meta: BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items:   []Request[json.RawMessage]{},
+					Items:   []UnionRequest{},
 				},
 			},
 			wantErr:    true,
@@ -580,9 +588,9 @@ func TestBatchRequest_MarshalJSON(t *testing.T) {
 		{
 			name: "Empty items with IsBatch=true",
 			meta: BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: true,
-					Items:   []Request[json.RawMessage]{},
+					Items:   []UnionRequest{},
 				},
 			},
 			wantData: `[]`,
@@ -868,7 +876,11 @@ func TestBatchResponse_MarshalJSON(t *testing.T) {
 			}
 
 			if !jsonStringsEqual(string(data), tt.wantData) {
-				t.Errorf("BatchResponse.MarshalJSON() data = %s, want %s", string(data), tt.wantData)
+				t.Errorf(
+					"BatchResponse.MarshalJSON() data = %s, want %s",
+					string(data),
+					tt.wantData,
+				)
 			}
 		})
 	}

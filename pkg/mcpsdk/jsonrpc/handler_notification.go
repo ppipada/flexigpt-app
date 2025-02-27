@@ -10,7 +10,7 @@ import (
 type INotificationHandler interface {
 	// Even though there is a error return allowed this is mainly present for any debugging logs etc
 	// The client will never receive any error
-	Handle(ctx context.Context, req Request[json.RawMessage]) error
+	Handle(ctx context.Context, req Notification[json.RawMessage]) error
 	GetTypes() reflect.Type
 }
 
@@ -41,8 +41,11 @@ type NotificationHandler[I any] struct {
 }
 
 // Handle processes a notification (no response expected).
-func (n *NotificationHandler[I]) Handle(ctx context.Context, req Request[json.RawMessage]) error {
-	params, err := unmarshalParams[I](req)
+func (n *NotificationHandler[I]) Handle(
+	ctx context.Context,
+	req Notification[json.RawMessage],
+) error {
+	params, err := unmarshalData[I](req.Params)
 	if err != nil {
 		// Cannot send error to client in notification; possibly log internally
 		return err

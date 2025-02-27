@@ -111,9 +111,9 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Empty Body Items",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items:   []Request[json.RawMessage]{},
+					Items:   []UnionRequest{},
 				},
 			},
 			expectedResp: &BatchResponse{
@@ -133,12 +133,12 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Invalid JSON-RPC version",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items: []Request[json.RawMessage]{
+					Items: []UnionRequest{
 						{
 							JSONRPC: "1.0",
-							Method:  "add",
+							Method:  stringToPointer("add"),
 							Params:  json.RawMessage(`{"a":1,"b":2}`),
 							ID:      &RequestID{Value: 1},
 						},
@@ -162,11 +162,11 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Invalid notification method",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items: []Request[json.RawMessage]{{
+					Items: []UnionRequest{{
 						JSONRPC: JSONRPCVersion,
-						Method:  "unknown_notification",
+						Method:  stringToPointer("unknown_notification"),
 						Params:  json.RawMessage(`{}`),
 						ID:      nil,
 					}},
@@ -177,11 +177,11 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Valid notification",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items: []Request[json.RawMessage]{{
+					Items: []UnionRequest{{
 						JSONRPC: JSONRPCVersion,
-						Method:  "ping",
+						Method:  stringToPointer("ping"),
 						Params:  json.RawMessage(`{"message":"hello"}`),
 						ID:      nil,
 					}},
@@ -192,12 +192,12 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Processing single notification",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items: []Request[json.RawMessage]{
+					Items: []UnionRequest{
 						{
 							JSONRPC: JSONRPCVersion,
-							Method:  "notify",
+							Method:  stringToPointer("notify"),
 							Params:  json.RawMessage(`{"message":"Hello"}`),
 							ID:      nil, // Notification
 						},
@@ -209,12 +209,12 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Invalid parameters in notification (unmarshaling fails)",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items: []Request[json.RawMessage]{
+					Items: []UnionRequest{
 						{
 							JSONRPC: JSONRPCVersion,
-							Method:  "notify",
+							Method:  stringToPointer("notify"),
 							Params:  json.RawMessage(`{"message":123}`),
 							ID:      nil, // Notification
 						},
@@ -226,12 +226,12 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Notify Endpoint returns an error",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items: []Request[json.RawMessage]{
+					Items: []UnionRequest{
 						{
 							JSONRPC: JSONRPCVersion,
-							Method:  "errornotify",
+							Method:  stringToPointer("errornotify"),
 							Params:  json.RawMessage(`{"message":"Hello"}`),
 							ID:      nil, // Notification
 						},
@@ -243,18 +243,18 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Processing batch of requests and notifications",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: true,
-					Items: []Request[json.RawMessage]{
+					Items: []UnionRequest{
 						{
 							JSONRPC: JSONRPCVersion,
-							Method:  "add",
+							Method:  stringToPointer("add"),
 							Params:  json.RawMessage(`{"a":1,"b":2}`),
 							ID:      &RequestID{Value: 1},
 						},
 						{
 							JSONRPC: JSONRPCVersion,
-							Method:  "notify",
+							Method:  stringToPointer("notify"),
 							Params:  json.RawMessage(`{"message":"Hello"}`),
 							ID:      nil,
 						},
@@ -278,11 +278,11 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Valid request to 'add' method",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items: []Request[json.RawMessage]{{
+					Items: []UnionRequest{{
 						JSONRPC: JSONRPCVersion,
-						Method:  "add",
+						Method:  stringToPointer("add"),
 						Params:  json.RawMessage(`{"a":2,"b":3}`),
 						ID:      &RequestID{Value: 1},
 					}},
@@ -302,12 +302,12 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Method with missing method name",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items: []Request[json.RawMessage]{
+					Items: []UnionRequest{
 						{
 							JSONRPC: JSONRPCVersion,
-							Method:  "",
+							Method:  stringToPointer(""),
 							Params:  json.RawMessage(`{"a":1,"b":2}`),
 							ID:      &RequestID{Value: 1},
 						},
@@ -321,8 +321,8 @@ func TestGetBatchRequestHandler(t *testing.T) {
 						JSONRPC: JSONRPCVersion,
 						ID:      &RequestID{Value: 1},
 						Error: &JSONRPCError{
-							Code:    InvalidRequestError,
-							Message: "Method name missing",
+							Code:    MethodNotFoundError,
+							Message: "Method '' not found",
 						},
 					}},
 				},
@@ -331,11 +331,11 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Method not found",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items: []Request[json.RawMessage]{{
+					Items: []UnionRequest{{
 						JSONRPC: JSONRPCVersion,
-						Method:  "subtract",
+						Method:  stringToPointer("subtract"),
 						Params:  json.RawMessage(`{"a":5,"b":2}`),
 						ID:      &RequestID{Value: 2},
 					}},
@@ -356,61 +356,32 @@ func TestGetBatchRequestHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "Method with invalid ID",
-			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
-					IsBatch: false,
-					Items: []Request[json.RawMessage]{
-						{
-							JSONRPC: JSONRPCVersion,
-							Method:  "add",
-							Params:  json.RawMessage(`{"a":1,"b":2}`),
-							ID:      nil,
-						},
-					},
-				},
-			},
-			expectedResp: &BatchResponse{
-				Body: &BatchItem[Response[json.RawMessage]]{
-					IsBatch: false,
-					Items: []Response[json.RawMessage]{{
-						JSONRPC: JSONRPCVersion,
-						ID:      nil,
-						Error: &JSONRPCError{
-							Code:    InvalidRequestError,
-							Message: "Received no requestID for method: 'add'",
-						},
-					}},
-				},
-			},
-		},
-		{
 			name: "Batch request with mixed valid and invalid methods",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: true,
-					Items: []Request[json.RawMessage]{
+					Items: []UnionRequest{
 						{
 							JSONRPC: JSONRPCVersion,
-							Method:  "add",
+							Method:  stringToPointer("add"),
 							Params:  json.RawMessage(`{"a":1,"b":2}`),
 							ID:      &RequestID{Value: 1},
 						},
 						{
 							JSONRPC: JSONRPCVersion,
-							Method:  "concat",
+							Method:  stringToPointer("concat"),
 							Params:  json.RawMessage(`{"s1":"hello","s2":"world"}`),
 							ID:      &RequestID{Value: 2},
 						},
 						{
 							JSONRPC: JSONRPCVersion,
-							Method:  "subtract",
+							Method:  stringToPointer("subtract"),
 							Params:  json.RawMessage(`{"a":5,"b":3}`),
 							ID:      &RequestID{Value: 3},
 						},
 						{
 							JSONRPC: JSONRPCVersion,
-							Method:  "ping",
+							Method:  stringToPointer("ping"),
 							Params:  json.RawMessage(`{"message":"ping"}`),
 							ID:      nil,
 						},
@@ -446,12 +417,12 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Method request with invalid parameters",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items: []Request[json.RawMessage]{
+					Items: []UnionRequest{
 						{
 							JSONRPC: JSONRPCVersion,
-							Method:  "add",
+							Method:  stringToPointer("add"),
 							Params:  json.RawMessage(`{"a":"one","b":2}`),
 							ID:      &RequestID{Value: 1},
 						},
@@ -477,12 +448,12 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Method endpoint returns simple error",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items: []Request[json.RawMessage]{
+					Items: []UnionRequest{
 						{
 							JSONRPC: JSONRPCVersion,
-							Method:  "addErrorSimple",
+							Method:  stringToPointer("addErrorSimple"),
 							Params:  json.RawMessage(`{"a":1,"b":2}`),
 							ID:      &RequestID{Value: 1},
 						},
@@ -508,12 +479,12 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Method Endpoint returns a *jsonrpc.Error",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items: []Request[json.RawMessage]{
+					Items: []UnionRequest{
 						{
 							JSONRPC: JSONRPCVersion,
-							Method:  "addErrorJSONRPC",
+							Method:  stringToPointer("addErrorJSONRPC"),
 							Params:  json.RawMessage(`{"a":1,"b":2}`),
 							ID:      &RequestID{Value: 1},
 						},
@@ -539,11 +510,11 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		{
 			name: "Handler returns an error",
 			metaReq: &BatchRequest{
-				Body: &BatchItem[Request[json.RawMessage]]{
+				Body: &BatchItem[UnionRequest]{
 					IsBatch: false,
-					Items: []Request[json.RawMessage]{{
+					Items: []UnionRequest{{
 						JSONRPC: JSONRPCVersion,
-						Method:  "add",
+						Method:  stringToPointer("add"),
 						Params:  json.RawMessage(`invalid`),
 						ID:      &RequestID{Value: 4},
 					}},
@@ -565,7 +536,7 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		},
 	}
 
-	handlerFunc := GetBatchRequestHandler(methodMap, notificationMap)
+	handlerFunc := GetBatchRequestHandler(methodMap, notificationMap, nil, nil)
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

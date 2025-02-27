@@ -54,6 +54,24 @@ func compareRequestSlices(a, b []Request[json.RawMessage]) bool {
 		if a[i].JSONRPC != b[i].JSONRPC || a[i].Method != b[i].Method {
 			return false
 		}
+		if !a[i].ID.Equal(&b[i].ID) {
+			return false
+		}
+		if !bytes.Equal(a[i].Params, b[i].Params) {
+			return false
+		}
+	}
+	return true
+}
+
+func compareUnionRequestSlices(a, b []UnionRequest) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i].JSONRPC != b[i].JSONRPC || *a[i].Method != *b[i].Method {
+			return false
+		}
 		if !a[i].ID.Equal(b[i].ID) {
 			return false
 		}
@@ -62,4 +80,8 @@ func compareRequestSlices(a, b []Request[json.RawMessage]) bool {
 		}
 	}
 	return true
+}
+
+func stringToPointer(s string) *string {
+	return &s
 }

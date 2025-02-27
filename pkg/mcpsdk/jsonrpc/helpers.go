@@ -9,9 +9,9 @@ import (
 type contextKey string
 
 const (
-	ctxKeyRequestID      contextKey = "jsonrpcRequestID"
-	ctxKeyMethodName     contextKey = "jsonrpcMethodName"
-	ctxKeyIsNotification contextKey = "jsonrpcIsNotification"
+	ctxKeyRequestID   contextKey = "jsonrpcRequestID"
+	ctxKeyMethodName  contextKey = "jsonrpcMethodName"
+	ctxKeyMessageType contextKey = "jsonrpcMessageType"
 )
 
 // GetRequestID retrieves the RequestID from the context.
@@ -27,56 +27,43 @@ func GetMethodName(ctx context.Context) (string, bool) {
 }
 
 // IsNotification checks if the request is a notification.
-func IsNotification(ctx context.Context) bool {
-	isNotification, ok := ctx.Value(ctxKeyIsNotification).(bool)
-	return ok && isNotification
+func GetMessageType(ctx context.Context) (MessageType, bool) {
+	msgType, ok := ctx.Value(ctxKeyMessageType).(MessageType)
+	return msgType, ok
 }
 
 // Helper function to create context with request information.
 func contextWithRequestInfo(
 	parentCtx context.Context,
 	methodName string,
-	isNotification bool,
+	msgType MessageType,
 	requestID *RequestID,
 ) context.Context {
 	ctx := context.WithValue(parentCtx, ctxKeyMethodName, methodName)
-	ctx = context.WithValue(ctx, ctxKeyIsNotification, isNotification)
-	if !isNotification && requestID != nil {
+	ctx = context.WithValue(ctx, ctxKeyMessageType, msgType)
+	if requestID != nil {
 		ctx = context.WithValue(ctx, ctxKeyRequestID, *requestID)
 	}
 	return ctx
 }
 
-// Helper function to unmarshal parameters from the request.
-func unmarshalParams[I any](req Request[json.RawMessage]) (I, error) {
-	var params I
-	if req.Params == nil {
-		return params, nil
-	}
-	if err := json.Unmarshal(req.Params, &params); err != nil {
-		return params, err
-	}
-	return params, nil
-}
-
-// Helper function to unmarshal the result from the response.
-func unmarshalResult[T any](data json.RawMessage) (*T, error) {
-	var result T
+// Helper function to unmarshal generic data.
+func unmarshalData[I any](data json.RawMessage) (I, error) {
+	var p I
 	if data == nil {
-		return &result, nil
+		return p, nil
 	}
-
-	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, err
+	if err := json.Unmarshal(data, &p); err != nil {
+		return p, err
 	}
-	return &result, nil
+	return p, nil
 }
 
 // Helper function to create an InvalidParamsError response.
 func invalidParamsResponse(req Request[json.RawMessage], err error) Response[json.RawMessage] {
 	return Response[json.RawMessage]{
 		JSONRPC: JSONRPCVersion,
-		ID:      req.ID,
+		ID:      &req.ID,
 		Error: &JSONRPCError{
 			Code:    InvalidParamsError,
 			Message: fmt.Sprintf("Invalid parameters: %v", err),
