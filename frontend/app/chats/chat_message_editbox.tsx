@@ -25,6 +25,14 @@ const EditBox: FC<EditBoxProps> = ({ editText, onTextChange, onSubmit, onDiscard
 		autoResizeTextarea();
 	}, [editText, autoResizeTextarea]);
 
+	// Add this useEffect to focus and scroll into the textarea when the component mounts
+	useEffect(() => {
+		if (textAreaRef.current) {
+			textAreaRef.current.focus();
+			textAreaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}
+	}, []);
+
 	const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
 		if (e.key === 'Enter' && !e.shiftKey) {
 			onSubmit(editText);
@@ -43,7 +51,7 @@ const EditBox: FC<EditBoxProps> = ({ editText, onTextChange, onSubmit, onDiscard
 	};
 
 	return (
-		<div className="flex flex-col w-full">
+		<div className="flex flex-col w-full p-2">
 			<textarea
 				ref={textAreaRef}
 				value={editText}
@@ -51,7 +59,7 @@ const EditBox: FC<EditBoxProps> = ({ editText, onTextChange, onSubmit, onDiscard
 				onKeyDown={handleKeyDown}
 				className="resize-none bg-base-100 rounded-2xl p-2 shadow-lg"
 				rows={4}
-				style={{ fontSize: '14px' }}
+				style={{ fontSize: '14px', margin: '4px' }}
 			/>
 			<div className="flex justify-end mt-0 mr-2 space-x-2">
 				<button
