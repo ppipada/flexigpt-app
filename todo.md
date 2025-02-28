@@ -15,7 +15,7 @@
 - [x] Take default model and temp from settings without caching
 - [x] focus on edit box if someone presses edit. as of now focus is at end of page
 - [ ] Need a stop streaming / cancel button on assistant
-- [ ] In chat the last used model should be stored ideally so that next time you load the chat it loads that model by default
+- [x] In chat the last used model should be stored ideally so that next time you load the chat it loads that model by default
 - [ ] url in output and input should be clickable and copiable
 - [ ] word wrap for single word if it is too long. ojas expt
 - [ ] chat load is not happening before a request fire

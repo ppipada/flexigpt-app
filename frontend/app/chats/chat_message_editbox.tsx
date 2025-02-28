@@ -52,7 +52,7 @@ const EditBox: FC<EditBoxProps> = ({ editText, onTextChange, onSubmit, onDiscard
 
 	return (
 		<div className="flex flex-col w-full p-2">
-			<div className="relative w-full rounded-2xl overflow-hidden shadow-lg">
+			<div className="relative w-full rounded-2xl overflow-hidden">
 				<textarea
 					ref={textAreaRef}
 					value={editText}

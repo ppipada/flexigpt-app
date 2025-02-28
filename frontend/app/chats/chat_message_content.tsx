@@ -126,7 +126,7 @@ export function ChatMessageContent({ content, align, streamedMessage }: ChatMess
 	};
 
 	return (
-		<div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2">
+		<div className="bg-base-100 px-4 py-2">
 			<MemoizedMarkdown
 				remarkPlugins={[remarkParse, remarkGemoji, supersub, remarkGfm, remarkMath, remarkRehype]}
 				rehypePlugins={[rehypeKatex, rehypeReact]}

@@ -49,7 +49,7 @@ const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamed
 					</div>
 				)}
 			</div>
-			<div className="col-span-10 lg:col-span-9 row-start-1 row-end-1">
+			<div className="col-span-10 lg:col-span-9 row-start-1 row-end-1 overflow-hidden shadow-lg rounded-2xl">
 				{isEditing ? (
 					<EditBox
 						editText={editText}
