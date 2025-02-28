@@ -18,7 +18,7 @@ Key objectives of FlexiGPT
 
 ### Linux
 
-- Download linux zip from releases, extract to get a `.flatpak` file.
+- Download the `.flatpak` release package.
 - If flatpak is not enabled, initialize it for the distribution
 
   - Ubuntu/Debian/etc (APT based systems):
@@ -36,7 +36,7 @@ Key objectives of FlexiGPT
 
 ### Mac
 
-- Download mac pkg zip from releases, extract it to get a `.pkg` file.
+- Download the `.pkg` release package.
 - The current package is not signed using an Apple developer ID based process. Mac would give a security warning for this.
 - To install the `.pkg`
   - Click on pkg. It should prompt you to `Move to bin` or `Close`. Choose `Close`.
