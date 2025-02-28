@@ -1,5 +1,6 @@
+import { ChatMessageContent } from '@/chats/chat_message_content';
 import EditBox from '@/chats/chat_message_editbox';
-import StaticMessage from '@/chats/chat_message_fixedbox';
+import ChatMessageFooterArea from '@/chats/chat_message_footer';
 import { ConversationMessage, ConversationRoleEnum } from '@/models/conversationmodel';
 import { ChangeEvent, FC, useState } from 'react';
 import { FiCompass, FiUser } from 'react-icons/fi';
@@ -39,15 +40,16 @@ const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamed
 	};
 
 	return (
-		<div className="grid grid-cols-12 gap-2 mb-4 items-start" style={{ fontSize: '14px' }}>
-			<div className={`${leftColSpan} flex justify-end`}>
+		<div className="grid grid-cols-12 grid-rows-[auto,auto] gap-2 mb-4" style={{ fontSize: '14px' }}>
+			{/* Row 1: Icons and Message Content */}
+			<div className={`${leftColSpan} flex justify-end row-start-1 row-end-1`}>
 				{isUser && (
-					<div className="flex w-10 h-10 mt-2 items-center justify-center rounded-full">
+					<div className="flex w-10 h-10 items-center justify-center rounded-full self-end">
 						<FiUser size={24} />
 					</div>
 				)}
 			</div>
-			<div className="col-span-10 lg:col-span-9">
+			<div className="col-span-10 lg:col-span-9 row-start-1 row-end-1">
 				{isEditing ? (
 					<EditBox
 						editText={editText}
@@ -56,23 +58,38 @@ const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamed
 						onDiscard={handleDiscard}
 					/>
 				) : (
-					<StaticMessage
-						message={message}
-						onEdit={handleEditClick}
-						onResend={onResend}
-						streamedMessage={streamedMessage}
-						isUser={isUser}
-						align={align}
-					/>
+					<div className="flex flex-col w-full">
+						<ChatMessageContent
+							content={streamedMessage || message.content}
+							align={align}
+							streamedMessage={streamedMessage}
+						/>
+					</div>
 				)}
 			</div>
-			<div className={`${rightColSpan} flex justify-start`}>
+			<div className={`${rightColSpan} flex justify-start row-start-1 row-end-1`}>
 				{!isUser && (
-					<div className="flex w-10 h-10 mt-2 items-center justify-center rounded-full">
+					<div className="flex w-10 h-10 items-center justify-center rounded-full self-end">
 						<FiCompass size={24} />
 					</div>
 				)}
 			</div>
+
+			{/* Row 2: Footer */}
+			<div className={`${leftColSpan} row-start-2 row-end-2`}></div>
+			<div className="col-span-10 lg:col-span-9 row-start-2 row-end-2">
+				{!isEditing && (
+					<ChatMessageFooterArea
+						isUser={isUser}
+						cardContent={message.content}
+						onEdit={handleEditClick}
+						onResend={onResend}
+						messageDetails={message.details ? message.details : ''}
+						isStreaming={streamedMessage ? true : false}
+					/>
+				)}
+			</div>
+			<div className={`${rightColSpan} row-start-2 row-end-2`}></div>
 		</div>
 	);
 };

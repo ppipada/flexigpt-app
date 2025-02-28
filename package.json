@@ -24,7 +24,6 @@
 		"build:win": "cd ./cmd/agentgo && pnpm run build:frontend && wails build -m -clean -s -skipbindings -tags webkit2_41 -nsis -platform windows/amd64",
 		"run:lindev": "pnpm run build:dev && ./build/bin/FlexiGPT",
 		"run:macdev": "pnpm run build:dev && ./build/bin/FlexiGPT.app/Contents/MacOS/FlexiGPT",
-		"run:watcher": "wails dev",
 		"run:gobackend": "./scripts/run_backend.sh",
 		"pack:flatpak": "gh act -W './.github/workflows/flatpak.yml' --artifact-server-path ./out",
 		"pack:nsis": "gh act -W './.github/workflows/nsispak.yml' --artifact-server-path ./out",

@@ -24,7 +24,7 @@
 - [ ] Ideally should detect any code or math blocks even in input, annotate them and then display. i.e format a normal text into proper md.
 - [ ] Details of request are not visible immediately
 - [ ] Need an about section someplace with version of software, dev name etc
-- [ ] Icon of user and assistant should be near bottom of card rather than at top
+- [x] Icon of user and assistant should be near bottom of card rather than at top
 
 ## Knowledge base
 
