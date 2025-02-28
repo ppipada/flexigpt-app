@@ -1,5 +1,5 @@
 import { Ping, SaveFile } from '@/backendapibase/wailsjs/go/main/App';
-import { LogDebug, LogError, LogInfo, LogWarning } from '@/backendapibase/wailsjs/runtime/runtime';
+import { BrowserOpenURL, LogDebug, LogError, LogInfo, LogWarning } from '@/backendapibase/wailsjs/runtime/runtime';
 import { FileFilter, IBackendAPI } from '@/models/backendmodel';
 import { ILogger } from '@/models/loggermodel';
 import { sprintf } from 'sprintf-js';
@@ -118,5 +118,9 @@ export class WailsBackendAPI implements IBackendAPI {
 			console.error('Error saving file:', err);
 		}
 		return;
+	}
+
+	openurl(url: string): void {
+		BrowserOpenURL(url);
 	}
 }

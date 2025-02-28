@@ -1,14 +1,12 @@
+import { backendAPI } from '@/backendapibase';
 import { CodeBlock } from '@/chats/chat_message_content_codeblock';
 import 'katex/dist/katex.min.css';
 import { ReactNode, memo } from 'react';
 import Markdown from 'react-markdown';
 import rehypeKatex from 'rehype-katex';
-import rehypeReact from 'rehype-react';
 import remarkGemoji from 'remark-gemoji';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
-import remarkParse from 'remark-parse';
-import remarkRehype from 'remark-rehype';
 import supersub from 'remark-supersub';
 
 // LaTeX processing function
@@ -61,7 +59,7 @@ export function ChatMessageContent({ content, align, streamedMessage }: ChatMess
 		h2: ({ children }: PComponentProps) => <h2 className="text-lg font-bold my-2">{children}</h2>,
 		h3: ({ children }: PComponentProps) => <h3 className="text-base font-bold my-2">{children}</h3>,
 		p: ({ className, children }: PComponentProps) => {
-			const newClassName = `${className} my-2 ${align}`;
+			const newClassName = `${className || ''} my-2 ${align} break-words`;
 			return (
 				<p className={newClassName} style={{ lineHeight: '1.5', fontSize: '14px' }}>
 					{children}
@@ -115,7 +113,13 @@ export function ChatMessageContent({ content, align, streamedMessage }: ChatMess
 				href={href}
 				target={href?.startsWith('http') ? '_blank' : undefined}
 				rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
-				className="underline text-blue-600 hover:text-blue-800"
+				className="underline text-blue-600 hover:text-blue-800 cursor-pointer"
+				onClick={e => {
+					e.preventDefault();
+					if (href) {
+						backendAPI.openurl(href);
+					}
+				}}
 			>
 				{children}
 			</a>
@@ -128,8 +132,8 @@ export function ChatMessageContent({ content, align, streamedMessage }: ChatMess
 	return (
 		<div className="bg-base-100 px-4 py-2">
 			<MemoizedMarkdown
-				remarkPlugins={[remarkParse, remarkGemoji, supersub, remarkGfm, remarkMath, remarkRehype]}
-				rehypePlugins={[rehypeKatex, rehypeReact]}
+				remarkPlugins={[remarkGemoji, supersub, remarkGfm, remarkMath]}
+				rehypePlugins={[rehypeKatex]}
 				components={components}
 			>
 				{processedContent}

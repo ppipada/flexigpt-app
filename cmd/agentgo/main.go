@@ -71,11 +71,11 @@ func main() {
 			Assets:     assets.Assets,
 			Middleware: URLCleanerMiddleware,
 		},
-		Menu:               nil,
-		Logger:             wailsLogger,
-		LogLevel:           wailsLogLevel,
-		LogLevelProduction: wailsLogLevel,
-
+		Menu:                     nil,
+		Logger:                   wailsLogger,
+		LogLevel:                 wailsLogLevel,
+		LogLevelProduction:       wailsLogLevel,
+		EnableDefaultContextMenu: true,
 		OnStartup: func(ctx context.Context) {
 			app.startup(ctx)
 			SetWrappedProviderAppContext(app.providerSetAPI, ctx)

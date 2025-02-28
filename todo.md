@@ -14,10 +14,13 @@
 - [ ] Add servers for: file, git, simplemapstore
 - [x] Take default model and temp from settings without caching
 - [x] focus on edit box if someone presses edit. as of now focus is at end of page
-- [ ] Need a stop streaming / cancel button on assistant
 - [x] In chat the last used model should be stored ideally so that next time you load the chat it loads that model by default
-- [ ] url in output and input should be clickable and copiable
-- [ ] word wrap for single word if it is too long. ojas expt
+- [x] url in output and input should be clickable and copiable
+- [x] Enable right click context menu
+- [x] word wrap for single word if it is too long.
+- [x] Scroll handling for edit text area
+
+- [ ] Need a stop streaming / cancel button on assistant
 - [ ] chat load is not happening before a request fire
 - [ ] if the app is on for a long time, looks like the conversation list is removed
 - [ ] there is some jerkiness in chat load for today
