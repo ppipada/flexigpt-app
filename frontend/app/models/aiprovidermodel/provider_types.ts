@@ -7,7 +7,7 @@ export const DefaultModelTitle = 'OpenAI GPT 4o';
 export type ProviderName = string;
 export const DefaultProviderName: ProviderName = 'openai';
 
-export interface ModelInfo {
+interface ModelInfo {
 	name: ModelName;
 	displayName: string;
 	provider: ProviderName;
