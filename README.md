@@ -28,9 +28,11 @@ Key objectives of FlexiGPT
     sudo apt install -y flatpak # install flatpak
     sudo apt install -y gnome-software-plugin-flatpak # optional, enables flathub packages in gnome sofware center
     flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-    flatpak install --user FlexiGPT-xyz.flatpak
-    flatpak info io.github.flexigpt.client
     ```
+
+- Install the package
+  - `flatpak install --user FlexiGPT-xyz.flatpak`
+  - `flatpak info io.github.flexigpt.client`
 
 ### Mac
 
