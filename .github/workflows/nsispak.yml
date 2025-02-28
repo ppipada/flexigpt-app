@@ -93,7 +93,7 @@ jobs:
       - name: Rename Installer File
         shell: bash
         run: |
-          mv .\build\bin\${{ env.BUILD_NAME }}-amd64-installer.exe .\build\bin\${{ env.BUILD_NAME }}-win-amd64-${{ env.VERSION_TAG }}-installer.exe
+          mv ./build/bin/${{ env.BUILD_NAME }}-amd64-installer.exe ./build/bin/${{ env.BUILD_NAME }}-win-amd64-${{ env.VERSION_TAG }}-installer.exe
     
       - name: Release
         uses: softprops/action-gh-release@v2
