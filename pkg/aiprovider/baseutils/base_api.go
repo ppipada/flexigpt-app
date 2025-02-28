@@ -32,10 +32,10 @@ func (api *BaseAIAPI) MakeCompletion(
 	modelInfo spec.ModelInfo,
 	prompt string,
 	prevMessages []spec.ChatCompletionRequestMessage,
-	inputParams map[string]interface{},
+	inputParams map[string]any,
 ) (*spec.CompletionRequest, error) {
 	if inputParams == nil {
-		inputParams = make(map[string]interface{})
+		inputParams = make(map[string]any)
 	}
 
 	completionRequest := spec.CompletionRequest{
@@ -94,7 +94,7 @@ func (api *BaseAIAPI) MakeCompletion(
 			// Do nothing for these keys
 		default:
 			if completionRequest.AdditionalParameters == nil {
-				completionRequest.AdditionalParameters = make(map[string]interface{})
+				completionRequest.AdditionalParameters = make(map[string]any)
 			}
 			completionRequest.AdditionalParameters[key] = value
 		}

@@ -42,7 +42,7 @@ var GoogleProviderInfo = spec.ProviderInfo{
 	Engine:                   "",
 	DefaultOrigin:            "https://generativelanguage.googleapis.com",
 	DefaultModel:             Gemini15Flash,
-	AdditionalSettings:       map[string]interface{}{},
+	AdditionalSettings:       map[string]any{},
 	Timeout:                  120,
 	APIKeyHeaderKey:          "Authorization",
 	DefaultHeaders:           map[string]string{"content-type": "application/json"},

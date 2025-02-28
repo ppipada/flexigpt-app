@@ -16,7 +16,7 @@ import (
 // encryptedStringValueEncoderDecoder uses your encryption for encoding/decoding.
 type EncryptedStringValueEncoderDecoder struct{}
 
-func (e EncryptedStringValueEncoderDecoder) Encode(w io.Writer, value interface{}) error {
+func (e EncryptedStringValueEncoderDecoder) Encode(w io.Writer, value any) error {
 	v, ok := value.(string)
 	if !ok {
 		return errors.New("got non string encode input")
@@ -30,7 +30,7 @@ func (e EncryptedStringValueEncoderDecoder) Encode(w io.Writer, value interface{
 	return err
 }
 
-func (e EncryptedStringValueEncoderDecoder) Decode(r io.Reader, value interface{}) error {
+func (e EncryptedStringValueEncoderDecoder) Decode(r io.Reader, value any) error {
 	encryptedData, err := io.ReadAll(r)
 	if err != nil {
 		return err

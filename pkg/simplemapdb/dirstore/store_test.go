@@ -16,7 +16,7 @@ func TestMapDirectoryStore(t *testing.T) {
 		name               string
 		partitionProvider  dirstore.PartitionProvider
 		filename           string
-		data               map[string]interface{}
+		data               map[string]any
 		expectedPartition  string
 		expectedFileExists bool
 		expectError        bool
@@ -25,7 +25,7 @@ func TestMapDirectoryStore(t *testing.T) {
 			name:               "Default Partition - Create File",
 			partitionProvider:  &dirstore.NoPartitionProvider{},
 			filename:           "testfile.json",
-			data:               map[string]interface{}{"key": "value"},
+			data:               map[string]any{"key": "value"},
 			expectedPartition:  "",
 			expectedFileExists: true,
 			expectError:        false,
@@ -34,7 +34,7 @@ func TestMapDirectoryStore(t *testing.T) {
 			name:               "Month Partition - Create File",
 			partitionProvider:  &dirstore.MonthBasedPartitionProvider{},
 			filename:           "testfile.json",
-			data:               map[string]interface{}{"key": "value"},
+			data:               map[string]any{"key": "value"},
 			expectedPartition:  time.Now().Format("200601"),
 			expectedFileExists: true,
 			expectError:        false,
@@ -43,7 +43,7 @@ func TestMapDirectoryStore(t *testing.T) {
 			name:               "Default Partition - No Data",
 			partitionProvider:  &dirstore.NoPartitionProvider{},
 			filename:           "emptyfile.json",
-			data:               map[string]interface{}{},
+			data:               map[string]any{},
 			expectedPartition:  "",
 			expectedFileExists: true,
 			expectError:        false,
@@ -52,7 +52,7 @@ func TestMapDirectoryStore(t *testing.T) {
 			name:               "Invalid Directory",
 			partitionProvider:  &dirstore.NoPartitionProvider{},
 			filename:           "invalid/testfile.json",
-			data:               map[string]interface{}{"key": "value"},
+			data:               map[string]any{"key": "value"},
 			expectedPartition:  "",
 			expectedFileExists: false,
 			expectError:        true,
@@ -130,7 +130,7 @@ func TestListFiles(t *testing.T) {
 	// Create some files
 	files := []string{"file1.json", "file2.json", "file3.json"}
 	for _, file := range files {
-		err := mds.SetFileData(file, map[string]interface{}{"key": "value"})
+		err := mds.SetFileData(file, map[string]any{"key": "value"})
 		if err != nil {
 			t.Fatalf("failed to set file data: %v", err)
 		}
@@ -210,7 +210,7 @@ func TestDeleteFile(t *testing.T) {
 	}
 
 	filename := "testfile.json"
-	err = mds.SetFileData(filename, map[string]interface{}{"key": "value"})
+	err = mds.SetFileData(filename, map[string]any{"key": "value"})
 	if err != nil {
 		t.Fatalf("failed to set file data: %v", err)
 	}
@@ -342,7 +342,7 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 	// Create some files across multiple partitions
 	partitions := []string{"202301", "202302", "202303"}
 	files := []string{"file1.json", "file2.json", "file3.json", "file4.json", "file5.json"}
-	testData := map[string]interface{}{"key": "value"}
+	testData := map[string]any{"key": "value"}
 
 	for _, partition := range partitions {
 		partitionDir := filepath.Join(baseDir, partition)
@@ -577,7 +577,7 @@ func TestListFilesNoPartitionProvider(t *testing.T) {
 		"file8.json",
 		"file9.json",
 	}
-	testData := map[string]interface{}{"key": "value"}
+	testData := map[string]any{"key": "value"}
 	err := os.MkdirAll(baseDir, os.ModePerm)
 	if err != nil {
 		t.Fatalf("failed to create partition directory: %v", err)

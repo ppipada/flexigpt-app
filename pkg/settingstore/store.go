@@ -73,11 +73,11 @@ func (s *SettingStore) SetSetting(
 		return nil, err
 	}
 
-	var currentSchema interface{}
+	var currentSchema any
 	currentSchema = defaultDataMap
 	for _, key := range keys {
 		switch currentTypedSchema := currentSchema.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			if _, ok := currentTypedSchema[key]; !ok {
 				return nil, fmt.Errorf("invalid key: %s", dotSeparatedKey)
 			}

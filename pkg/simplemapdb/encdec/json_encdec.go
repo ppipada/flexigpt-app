@@ -13,7 +13,7 @@ import (
 type JSONEncoderDecoder struct{}
 
 // Encode encodes the given value into JSON format and writes it to the writer.
-func (d JSONEncoderDecoder) Encode(w io.Writer, value interface{}) error {
+func (d JSONEncoderDecoder) Encode(w io.Writer, value any) error {
 	if w == nil {
 		return errors.New("writer cannot be nil")
 	}
@@ -29,7 +29,7 @@ func (d JSONEncoderDecoder) Encode(w io.Writer, value interface{}) error {
 }
 
 // Decode decodes JSON data from the reader into the given value.
-func (d JSONEncoderDecoder) Decode(r io.Reader, value interface{}) error {
+func (d JSONEncoderDecoder) Decode(r io.Reader, value any) error {
 	if r == nil {
 		return errors.New("reader cannot be nil")
 	}
@@ -52,7 +52,7 @@ func (d JSONEncoderDecoder) Decode(r io.Reader, value interface{}) error {
 	return nil
 }
 
-func StructWithJSONTagsToMap(data interface{}) (map[string]interface{}, error) {
+func StructWithJSONTagsToMap(data any) (map[string]any, error) {
 	// Check if the input is nil
 	if data == nil {
 		return nil, errors.New("input data cannot be nil")
@@ -64,7 +64,7 @@ func StructWithJSONTagsToMap(data interface{}) (map[string]interface{}, error) {
 	}
 
 	// Unmarshal the JSON into a map
-	var result map[string]interface{}
+	var result map[string]any
 	if err := json.Unmarshal(jsonData, &result); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal JSON to map: %w", err)
 	}
@@ -72,7 +72,7 @@ func StructWithJSONTagsToMap(data interface{}) (map[string]interface{}, error) {
 	return result, nil
 }
 
-func MapToStructWithJSONTags(data map[string]interface{}, out interface{}) error {
+func MapToStructWithJSONTags(data map[string]any, out any) error {
 	if data == nil {
 		return errors.New("input data cannot be nil")
 	}

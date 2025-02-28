@@ -11,7 +11,7 @@ type AISetting struct {
 	DefaultModel       aiproviderSpec.ModelName `json:"defaultModel"`
 	DefaultTemperature float64                  `json:"defaultTemperature"`
 	DefaultOrigin      string                   `json:"defaultOrigin"`
-	AdditionalSettings map[string]interface{}   `json:"additionalSettings"`
+	AdditionalSettings map[string]any           `json:"additionalSettings"`
 }
 
 // AISettingsSchema represents the schema for AI settings for different providers.

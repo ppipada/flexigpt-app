@@ -21,7 +21,7 @@ func (e *KeyNotFoundError) Error() string {
 }
 
 // getValueAtPath retrieves the value at the specified path in the data map.
-func getValueAtPath(data interface{}, keys []string) (interface{}, error) {
+func getValueAtPath(data any, keys []string) (any, error) {
 	parentMap, lastKey, err := navigateToParentMap(data, keys, false)
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func getValueAtPath(data interface{}, keys []string) (interface{}, error) {
 }
 
 // setValueAtPath sets the value at the specified path in the data map.
-func setValueAtPath(data interface{}, keys []string, value interface{}) error {
+func setValueAtPath(data any, keys []string, value any) error {
 	parentMap, lastKey, err := navigateToParentMap(data, keys, true)
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func setValueAtPath(data interface{}, keys []string, value interface{}) error {
 
 // deleteValueAtPath deletes the value at the specified path in the data map.
 // If path is not found, this is a noop.
-func deleteValueAtPath(data interface{}, keys []string) error {
+func deleteValueAtPath(data any, keys []string) error {
 	parentMap, lastKey, err := navigateToParentMap(data, keys, false)
 	if err != nil {
 		var kne *KeyNotFoundError
@@ -66,17 +66,17 @@ func deleteValueAtPath(data interface{}, keys []string) error {
 	return nil
 }
 
-// deepCopyValue creates a deep copy of an interface{} value.
-func deepCopyValue(value interface{}) interface{} {
+// deepCopyValue creates a deep copy of an any value.
+func deepCopyValue(value any) any {
 	switch v := value.(type) {
-	case map[string]interface{}:
-		newV := make(map[string]interface{})
+	case map[string]any:
+		newV := make(map[string]any)
 		for k, val := range v {
 			newV[k] = deepCopyValue(val)
 		}
 		return newV
-	case []interface{}:
-		sliceCopy := make([]interface{}, len(v))
+	case []any:
+		sliceCopy := make([]any, len(v))
 		for i, elem := range v {
 			sliceCopy[i] = deepCopyValue(elem)
 		}
@@ -90,17 +90,17 @@ func deepCopyValue(value interface{}) interface{} {
 // It returns the parent map, the last key, and any error encountered.
 // If createMissing is true, it creates any missing maps along the path.
 func navigateToParentMap(
-	data interface{},
+	data any,
 	keys []string,
 	createMissing bool,
-) (parentMap map[string]interface{}, lastKey string, err error) {
+) (parentMap map[string]any, lastKey string, err error) {
 	if len(keys) == 0 {
 		return nil, "", errors.New("empty path received")
 	}
 	current := data
 	for i := 0; i < len(keys)-1; i++ {
 		key := keys[i]
-		m, ok := current.(map[string]interface{})
+		m, ok := current.(map[string]any)
 		if !ok {
 			path := strings.Join(keys[:i], ".")
 			return nil, "", fmt.Errorf("path '%s' is not a map", path)
@@ -109,7 +109,7 @@ func navigateToParentMap(
 		if !ok {
 			if createMissing && key != "" {
 				// Create nested map
-				newMap := make(map[string]interface{})
+				newMap := make(map[string]any)
 				m[key] = newMap
 				current = newMap
 			} else {
@@ -121,7 +121,7 @@ func navigateToParentMap(
 		}
 	}
 
-	parentMap, ok := current.(map[string]interface{})
+	parentMap, ok := current.(map[string]any)
 	if !ok {
 		path := strings.Join(keys[:len(keys)-1], ".")
 		return nil, "", fmt.Errorf("path '%s' is not a map", path)

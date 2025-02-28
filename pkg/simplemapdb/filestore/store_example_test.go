@@ -20,7 +20,7 @@ type operation interface {
 
 type setKeyOperation struct {
 	key   string
-	value interface{}
+	value any
 }
 
 func (op setKeyOperation) Execute(store *MapFileStore, t *testing.T) {
@@ -31,7 +31,7 @@ func (op setKeyOperation) Execute(store *MapFileStore, t *testing.T) {
 
 type getKeyOperation struct {
 	key           string
-	expectedValue interface{}
+	expectedValue any
 }
 
 func (op getKeyOperation) Execute(store *MapFileStore, t *testing.T) {
@@ -53,17 +53,17 @@ func (op getKeyOperation) Execute(store *MapFileStore, t *testing.T) {
 func TestMapFileStore(t *testing.T) {
 	tests := []struct {
 		name              string
-		initialData       map[string]interface{}
+		initialData       map[string]any
 		keyEncDecs        map[string]simplemapdbEncdec.EncoderDecoder
 		operations        []operation
-		expectedFinalData map[string]interface{}
+		expectedFinalData map[string]any
 	}{
 		{
 			name: "test with per-key encoders",
-			initialData: map[string]interface{}{
+			initialData: map[string]any{
 				"foo":    "hello",
 				"bar":    "world",
-				"parent": map[string]interface{}{"child": "secret"},
+				"parent": map[string]any{"child": "secret"},
 			},
 			keyEncDecs: map[string]simplemapdbEncdec.EncoderDecoder{
 				// "foo":          encryptedStringValueEncoderDecoder{},
@@ -76,10 +76,10 @@ func TestMapFileStore(t *testing.T) {
 				setKeyOperation{key: "bar", value: "new value for bar"},
 				getKeyOperation{key: "bar", expectedValue: "new value for bar"},
 			},
-			expectedFinalData: map[string]interface{}{
+			expectedFinalData: map[string]any{
 				"foo": "new value for foo",
 				"bar": "new value for bar",
-				"parent": map[string]interface{}{
+				"parent": map[string]any{
 					"child": "secret",
 				},
 			},
@@ -118,7 +118,7 @@ func TestMapFileStore(t *testing.T) {
 			t.Logf("Raw data in file: %s", string(rawData))
 
 			// Unmarshal raw data to map
-			var fileData map[string]interface{}
+			var fileData map[string]any
 			if err := json.Unmarshal(rawData, &fileData); err != nil {
 				t.Fatalf("failed to unmarshal raw data: %v", err)
 			}
@@ -217,7 +217,7 @@ func TestMapFileStore(t *testing.T) {
 			}
 
 			// Unmarshal raw data to map
-			var fileDataAfterOps map[string]interface{}
+			var fileDataAfterOps map[string]any
 			if err := json.Unmarshal(rawDataAfterOps, &fileDataAfterOps); err != nil {
 				t.Fatalf("failed to unmarshal raw data after operations: %v", err)
 			}
@@ -290,7 +290,7 @@ func TestMapFileStore(t *testing.T) {
 
 type reverseStringEncoderDecoder struct{}
 
-func (e reverseStringEncoderDecoder) Encode(w io.Writer, v interface{}) error {
+func (e reverseStringEncoderDecoder) Encode(w io.Writer, v any) error {
 	s, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("expected string value, got %T", v)
@@ -300,15 +300,15 @@ func (e reverseStringEncoderDecoder) Encode(w io.Writer, v interface{}) error {
 	return err
 }
 
-func (e reverseStringEncoderDecoder) Decode(r io.Reader, v interface{}) error {
+func (e reverseStringEncoderDecoder) Decode(r io.Reader, v any) error {
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return err
 	}
 	reversed := reverseString(string(data))
-	ptr, ok := v.(*interface{})
+	ptr, ok := v.(*any)
 	if !ok {
-		return fmt.Errorf("expected *interface{} pointer, got %T", v)
+		return fmt.Errorf("expected *any pointer, got %T", v)
 	}
 	*ptr = reversed
 	return nil

@@ -9,7 +9,7 @@ package docstore
 // // HTTPDocStore implements the DocStoreAdapter interface for HTTP-based storage
 // type HTTPDocStore struct {
 // 	Name        spec.DocStoreName
-// 	Metadata    map[string]interface{}
+// 	Metadata    map[string]any
 // 	Collections map[spec.CollectionName]*spec.Collection
 // 	Endpoint    string
 // 	Headers     map[string]string
@@ -23,7 +23,7 @@ package docstore
 // ) *HTTPDocStore {
 // 	return &HTTPDocStore{
 // 		Name:        name,
-// 		Metadata:    make(map[string]interface{}),
+// 		Metadata:    make(map[string]any),
 // 		Collections: make(map[spec.CollectionName]*spec.Collection),
 // 		Endpoint:    endpoint,
 // 		Headers:     headers,

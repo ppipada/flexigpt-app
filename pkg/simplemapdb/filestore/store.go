@@ -16,8 +16,8 @@ import (
 
 // MapFileStore is a file-backed implementation of a thread-safe key-value store.
 type MapFileStore struct {
-	data              map[string]interface{}
-	defaultData       map[string]interface{}
+	data              map[string]any
+	defaultData       map[string]any
 	mu                sync.RWMutex
 	encdec            simplemapdbEncdec.EncoderDecoder
 	filename          string
@@ -61,11 +61,11 @@ func WithCreateIfNotExists(createIfNotExists bool) Option {
 // If the file does not exist and createIfNotExists is false, it returns an error.
 func NewMapFileStore(
 	filename string,
-	defaultData map[string]interface{},
+	defaultData map[string]any,
 	opts ...Option,
 ) (*MapFileStore, error) {
 	store := &MapFileStore{
-		data:        make(map[string]interface{}),
+		data:        make(map[string]any),
 		defaultData: defaultData,
 		filename:    filename,
 		autoFlush:   true, // Default to true
@@ -107,7 +107,7 @@ func (store *MapFileStore) createFileIfNotExists(filename string) error {
 	}
 
 	// Copy default data to store
-	store.data = make(map[string]interface{})
+	store.data = make(map[string]any)
 	maps.Copy(store.data, store.defaultData)
 
 	// Create directories if needed
@@ -143,7 +143,7 @@ func (store *MapFileStore) load() error {
 	defer f.Close()
 
 	// Decode the data from the file
-	store.data = make(map[string]interface{})
+	store.data = make(map[string]any)
 	if err := store.encdec.Decode(f, &store.data); err != nil {
 		return fmt.Errorf("failed to decode data from file %s: %w", store.filename, err)
 	}
@@ -167,7 +167,7 @@ func (store *MapFileStore) load() error {
 }
 
 func (store *MapFileStore) flush() error {
-	var dataToSave interface{}
+	var dataToSave any
 	if len(store.keyEncDecs) > 0 {
 		// Need to make a copy of store.data and apply per-key encodings
 		dataCopy := deepCopyValue(store.data)
@@ -205,7 +205,7 @@ func (store *MapFileStore) Reset() error {
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
-	store.data = make(map[string]interface{})
+	store.data = make(map[string]any)
 	maps.Copy(store.data, store.defaultData)
 
 	if err := store.flush(); err != nil {
@@ -222,7 +222,7 @@ func (store *MapFileStore) Save() error {
 }
 
 // GetAll returns a copy of all data in the store, refreshing from the file first.
-func (store *MapFileStore) GetAll(forceFetch bool) (map[string]interface{}, error) {
+func (store *MapFileStore) GetAll(forceFetch bool) (map[string]any, error) {
 	if forceFetch {
 		// Refresh data from the file
 		if err := store.load(); err != nil {
@@ -234,17 +234,17 @@ func (store *MapFileStore) GetAll(forceFetch bool) (map[string]interface{}, erro
 	defer store.mu.RUnlock()
 
 	// Return a copy of the in-memory data
-	dataCopy := make(map[string]interface{})
+	dataCopy := make(map[string]any)
 	maps.Copy(dataCopy, store.data)
 	return dataCopy, nil
 }
 
 // SetAll overwrites all data in the store with the provided data.
-func (store *MapFileStore) SetAll(data map[string]interface{}) error {
+func (store *MapFileStore) SetAll(data map[string]any) error {
 	store.mu.Lock()
 	defer store.mu.Unlock()
 	// Deep copy the input data to prevent external modifications after setting.
-	store.data = make(map[string]interface{})
+	store.data = make(map[string]any)
 	maps.Copy(store.data, data)
 
 	if store.autoFlush {
@@ -257,7 +257,7 @@ func (store *MapFileStore) SetAll(data map[string]interface{}) error {
 
 // GetKey retrieves the value associated with the given key.
 // The key can be a dot-separated path to a nested value.
-func (store *MapFileStore) GetKey(key string) (interface{}, error) {
+func (store *MapFileStore) GetKey(key string) (any, error) {
 	store.mu.RLock()
 	defer store.mu.RUnlock()
 
@@ -271,7 +271,7 @@ func (store *MapFileStore) GetKey(key string) (interface{}, error) {
 
 // SetKey sets the value for the given key.
 // The key can be a dot-separated path to a nested value.
-func (store *MapFileStore) SetKey(key string, value interface{}) error {
+func (store *MapFileStore) SetKey(key string, value any) error {
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
@@ -309,7 +309,7 @@ func (store *MapFileStore) DeleteKey(key string) error {
 
 // encodeValueAtPath encodes the value at the specified path using encDec and stores the encoded value.
 func encodeValueAtPath(
-	data interface{},
+	data any,
 	keys []string,
 	encDec simplemapdbEncdec.EncoderDecoder,
 ) error {
@@ -348,7 +348,7 @@ func encodeValueAtPath(
 
 // decodeValueAtPath decodes the value at the specified path using encDec and replaces it with the decoded value.
 func decodeValueAtPath(
-	data interface{},
+	data any,
 	keys []string,
 	encDec simplemapdbEncdec.EncoderDecoder,
 ) error {
@@ -381,7 +381,7 @@ func decodeValueAtPath(
 
 	// Decode bytes via encDec
 	buf := bytes.NewReader(decodedBytes)
-	var decodedVal interface{}
+	var decodedVal any
 	if err := encDec.Decode(buf, &decodedVal); err != nil {
 		return fmt.Errorf("failed to decode value at key %s: %w", strings.Join(keys, "."), err)
 	}

@@ -34,7 +34,7 @@ var DeepseekProviderInfo = spec.ProviderInfo{
 	Engine:                   "",
 	DefaultOrigin:            "https://api.deepseek.com",
 	DefaultModel:             DeepseekChat,
-	AdditionalSettings:       map[string]interface{}{},
+	AdditionalSettings:       map[string]any{},
 	Timeout:                  120,
 	APIKeyHeaderKey:          "Authorization",
 	DefaultHeaders:           map[string]string{"content-type": "application/json"},

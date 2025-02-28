@@ -85,7 +85,7 @@ func NewMapDirectoryStore(
 
 // SetFileData creates or truncates a file and sets the provided data.
 // If the data is nil, it initializes an empty map.
-func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]interface{}) error {
+func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]any) error {
 	// Check if the filename contains any directory components
 	if strings.Contains(filename, string(os.PathSeparator)) {
 		return fmt.Errorf("filename should not contain directory components: %s", filename)
@@ -128,10 +128,10 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]inter
 func (mds *MapDirectoryStore) GetFileData(
 	filename string,
 	forceFetch bool,
-) (map[string]interface{}, error) {
+) (map[string]any, error) {
 	partitionDir := mds.PartitionProvider.GetPartitionDir(filename)
 	filePath := filepath.Join(mds.baseDir, partitionDir, filename)
-	store, err := simplemapdbFileStore.NewMapFileStore(filePath, map[string]interface{}{"k": "v"})
+	store, err := simplemapdbFileStore.NewMapFileStore(filePath, map[string]any{"k": "v"})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get file %s: %w", filename, err)
 	}

@@ -15,7 +15,7 @@ func TestNewMapFileStore(t *testing.T) {
 	type testType struct {
 		name              string
 		filename          string
-		defaultData       map[string]interface{}
+		defaultData       map[string]any
 		createFile        bool
 		fileContent       string
 		options           []Option
@@ -26,14 +26,14 @@ func TestNewMapFileStore(t *testing.T) {
 		{
 			name:        "File does not exist, createIfNotExists true",
 			filename:    filepath.Join(tempDir, "store1.json"),
-			defaultData: map[string]interface{}{"k": "v"},
+			defaultData: map[string]any{"k": "v"},
 			options:     []Option{WithCreateIfNotExists(true)},
 			expectError: false,
 		},
 		{
 			name:              "File does not exist, createIfNotExists false",
 			filename:          filepath.Join(tempDir, "store2.json"),
-			defaultData:       map[string]interface{}{"k": "v"},
+			defaultData:       map[string]any{"k": "v"},
 			options:           []Option{WithCreateIfNotExists(false)},
 			expectError:       true,
 			expectedErrorText: "does not exist",
@@ -41,7 +41,7 @@ func TestNewMapFileStore(t *testing.T) {
 		{
 			name:        "File exists with valid content",
 			filename:    filepath.Join(tempDir, "store3.json"),
-			defaultData: map[string]interface{}{"k": "v"},
+			defaultData: map[string]any{"k": "v"},
 			createFile:  true,
 			fileContent: `{"foo":"bar"}`,
 			options:     []Option{},
@@ -50,7 +50,7 @@ func TestNewMapFileStore(t *testing.T) {
 		{
 			name:        "File exists with invalid content",
 			filename:    filepath.Join(tempDir, "store4.json"),
-			defaultData: map[string]interface{}{"k": "v"},
+			defaultData: map[string]any{"k": "v"},
 			createFile:  true,
 			fileContent: `{invalid json}`,
 			options:     []Option{},
@@ -59,7 +59,7 @@ func TestNewMapFileStore(t *testing.T) {
 		{
 			name:        "File exists but cannot open",
 			filename:    filepath.Join(tempDir, "store5.json"),
-			defaultData: map[string]interface{}{"k": "v"},
+			defaultData: map[string]any{"k": "v"},
 			createFile:  true,
 			fileContent: `{"foo":"bar"}`,
 			options:     []Option{},
@@ -109,7 +109,7 @@ func TestNewMapFileStore(t *testing.T) {
 func TestMapFileStore_SetKey_GetKey(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore.json")
-	defaultData := map[string]interface{}{"foo": "bar"}
+	defaultData := map[string]any{"foo": "bar"}
 	keyEncDecs := map[string]simplemapdbEncdec.EncoderDecoder{
 		"foo":          simplemapdbEncdec.EncryptedStringValueEncoderDecoder{},
 		"parent.child": simplemapdbEncdec.EncryptedStringValueEncoderDecoder{},
@@ -127,7 +127,7 @@ func TestMapFileStore_SetKey_GetKey(t *testing.T) {
 	tests := []struct {
 		name       string
 		key        string
-		value      interface{}
+		value      any
 		wantErrSet bool
 		wantErrGet bool
 	}{
@@ -194,18 +194,18 @@ func TestMapFileStore_DeleteKey(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore.json")
 	// Pre-populate the store
-	initialData := map[string]interface{}{
+	initialData := map[string]any{
 		"foo":    "bar",
-		"parent": map[string]interface{}{"child": "value"},
-		"grand": map[string]interface{}{
-			"parent": map[string]interface{}{"child": map[string]interface{}{"key": "deep"}},
+		"parent": map[string]any{"child": "value"},
+		"grand": map[string]any{
+			"parent": map[string]any{"child": map[string]any{"key": "deep"}},
 		},
 		"nondeletable": "persist",
-		"empty":        map[string]interface{}{"parent": map[string]interface{}{}},
-		"list":         []interface{}{1, 2, 3},
+		"empty":        map[string]any{"parent": map[string]any{}},
+		"list":         []any{1, 2, 3},
 		"nonexistent":  nil,
-		"another": map[string]interface{}{
-			"parent": map[string]interface{}{"child1": "val1", "child2": "val2"},
+		"another": map[string]any{
+			"parent": map[string]any{"child1": "val1", "child2": "val2"},
 		},
 	}
 
@@ -287,7 +287,7 @@ func TestMapFileStore_DeleteKey(t *testing.T) {
 func TestMapFileStore_SetAll_GetAll(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore.json")
-	defaultData := map[string]interface{}{"foo": "bar"}
+	defaultData := map[string]any{"foo": "bar"}
 	store, err := NewMapFileStore(
 		filename,
 		defaultData,
@@ -300,49 +300,49 @@ func TestMapFileStore_SetAll_GetAll(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		data          map[string]interface{}
-		expectedData  map[string]interface{}
+		data          map[string]any
+		expectedData  map[string]any
 		modifyData    bool
-		expectedAfter map[string]interface{}
+		expectedAfter map[string]any
 	}{
 		{
 			name: "Set and get all simple data",
-			data: map[string]interface{}{
+			data: map[string]any{
 				"key1": "value1",
 				"key2": 2,
 			},
-			expectedData: map[string]interface{}{
+			expectedData: map[string]any{
 				"key1": "value1",
 				"key2": 2,
 			},
 		},
 		{
 			name: "Set and get all nested data",
-			data: map[string]interface{}{
-				"parent": map[string]interface{}{
+			data: map[string]any{
+				"parent": map[string]any{
 					"child": "value",
 				},
 			},
-			expectedData: map[string]interface{}{
-				"parent": map[string]interface{}{
+			expectedData: map[string]any{
+				"parent": map[string]any{
 					"child": "value",
 				},
 			},
 		},
 		{
 			name: "Set and get all empty data",
-			data: map[string]interface{}{},
+			data: map[string]any{},
 		},
 		{
 			name: "Modify returned data should not affect store",
-			data: map[string]interface{}{
+			data: map[string]any{
 				"original": "value",
 			},
-			expectedData: map[string]interface{}{
+			expectedData: map[string]any{
 				"original": "value",
 			},
 			modifyData: true,
-			expectedAfter: map[string]interface{}{
+			expectedAfter: map[string]any{
 				"original": "value",
 			},
 		},
@@ -391,14 +391,14 @@ func TestMapFileStore_SetAll_GetAll(t *testing.T) {
 func TestMapFileStore_DeleteAll(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore.json")
-	defaultData := map[string]interface{}{"foo": "bar"}
+	defaultData := map[string]any{"foo": "bar"}
 	store, err := NewMapFileStore(filename, defaultData, WithCreateIfNotExists(true))
 	if err != nil {
 		t.Fatalf("Failed to create store: %v", err)
 	}
 
 	// Re-populate the store
-	initialData := map[string]interface{}{
+	initialData := map[string]any{
 		"key1": "value1",
 		"key2": 2,
 		"key3": true,
@@ -425,7 +425,7 @@ func TestMapFileStore_DeleteAll(t *testing.T) {
 func TestMapFileStore_AutoFlush(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore_autoflush.json")
-	defaultData := map[string]interface{}{"k": "v"}
+	defaultData := map[string]any{"k": "v"}
 	store, err := NewMapFileStore(
 		filename,
 		defaultData,
@@ -459,7 +459,7 @@ func TestMapFileStore_AutoFlush(t *testing.T) {
 func TestMapFileStore_NoAutoFlush(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore_noautoflush.json")
-	defaultData := map[string]interface{}{"k": "v"}
+	defaultData := map[string]any{"k": "v"}
 	store, err := NewMapFileStore(
 		filename,
 		defaultData,
@@ -509,7 +509,7 @@ func TestMapFileStore_NoAutoFlush(t *testing.T) {
 func TestMapFileStorePermissionErrorCases(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore_errors.json")
-	defaultData := map[string]interface{}{"k": "v"}
+	defaultData := map[string]any{"k": "v"}
 	store, err := NewMapFileStore(filename, defaultData, WithCreateIfNotExists(true))
 	if err != nil {
 		t.Fatalf("Failed to create store: %v", err)
@@ -547,7 +547,7 @@ func TestMapFileStorePermissionErrorCases(t *testing.T) {
 func TestMapFileStore_NestedStructures(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore_nested.json")
-	defaultData := map[string]interface{}{"k": "v"}
+	defaultData := map[string]any{"k": "v"}
 	store, err := NewMapFileStore(filename, defaultData, WithCreateIfNotExists(true))
 	if err != nil {
 		t.Fatalf("Failed to create store: %v", err)
@@ -557,7 +557,7 @@ func TestMapFileStore_NestedStructures(t *testing.T) {
 	tests := []struct {
 		name      string
 		key       string
-		value     interface{}
+		value     any
 		expectErr bool
 	}{
 		{
@@ -608,12 +608,12 @@ func TestMapFileStore_NestedStructures(t *testing.T) {
 	}
 }
 
-// deepEqual is a simple helper function to compare two interface{} values for equality.
+// deepEqual is a simple helper function to compare two any values for equality.
 // It handles comparison of maps and basic types.
-func deepEqual(a, b interface{}) bool {
+func deepEqual(a, b any) bool {
 	switch aVal := a.(type) {
-	case map[string]interface{}:
-		bVal, ok := b.(map[string]interface{})
+	case map[string]any:
+		bVal, ok := b.(map[string]any)
 		if !ok || len(aVal) != len(bVal) {
 			return false
 		}
@@ -623,8 +623,8 @@ func deepEqual(a, b interface{}) bool {
 			}
 		}
 		return true
-	case []interface{}:
-		bVal, ok := b.([]interface{})
+	case []any:
+		bVal, ok := b.([]any)
 		if !ok || len(aVal) != len(bVal) {
 			return false
 		}

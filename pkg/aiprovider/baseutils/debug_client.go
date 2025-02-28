@@ -30,8 +30,8 @@ type DebugHTTPResponse struct {
 
 // FilterSensitiveInfo recursively filters out sensitive keys from a data structure.
 // It supports nested maps and slices.
-func FilterSensitiveInfo(data map[string]interface{}) map[string]interface{} {
-	filteredData := make(map[string]interface{})
+func FilterSensitiveInfo(data map[string]any) map[string]any {
+	filteredData := make(map[string]any)
 	for key, value := range data {
 		if containsSensitiveKey(key) {
 			// Mask the sensitive value
@@ -46,14 +46,14 @@ func FilterSensitiveInfo(data map[string]interface{}) map[string]interface{} {
 
 // deepCopyAndFilter recursively traverses the data structure,
 // filtering sensitive keys from maps and processing slices.
-func deepCopyAndFilter(value interface{}) interface{} {
+func deepCopyAndFilter(value any) any {
 	switch v := value.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		// Process nested map
 		return FilterSensitiveInfo(v)
-	case []interface{}:
+	case []any:
 		// Process each element in the slice
-		newSlice := make([]interface{}, len(v))
+		newSlice := make([]any, len(v))
 		for i, elem := range v {
 			newSlice[i] = deepCopyAndFilter(elem)
 		}
@@ -108,12 +108,12 @@ func generateCurlCommand(config *spec.APIRequestDetails) string {
 
 // captureRequestDetails captures details of the HTTP request.
 func captureRequestDetails(req *http.Request) *spec.APIRequestDetails {
-	headers := make(map[string]interface{})
+	headers := make(map[string]any)
 	for key, values := range req.Header {
 		headers[key] = strings.Join(values, ", ")
 	}
 
-	var data map[string]interface{}
+	var data map[string]any
 	if req.Body != nil {
 		bodyBytes, _ := io.ReadAll(req.Body)
 		req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes)) // Reset body for further use
@@ -140,12 +140,12 @@ func captureRequestDetails(req *http.Request) *spec.APIRequestDetails {
 func CaptureResponseDetails(
 	resp *http.Response,
 ) *spec.APIResponseDetails {
-	headers := make(map[string]interface{})
+	headers := make(map[string]any)
 	for key, values := range resp.Header {
 		headers[key] = strings.Join(values, ", ")
 	}
 
-	var data map[string]interface{}
+	var data map[string]any
 	if resp.Body != nil {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err == nil {
@@ -186,13 +186,13 @@ func (lc *loggingReadCloser) Close() error {
 	dataBytes := lc.buf.Bytes()
 
 	// Process the data based on its type
-	var data interface{}
+	var data any
 	err = json.Unmarshal(dataBytes, &data)
 	if err != nil {
 		// Text data
 		lc.debugResp.ResponseDetails.Data = string(dataBytes)
 	} else {
-		mapData, ok := data.(map[string]interface{})
+		mapData, ok := data.(map[string]any)
 		if ok {
 			// JSON data
 			lc.debugResp.ResponseDetails.Data = FilterSensitiveInfo(mapData)
@@ -249,7 +249,7 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	var respDetails *spec.APIResponseDetails
 	if resp != nil {
 		// Capture headers
-		headers := make(map[string]interface{})
+		headers := make(map[string]any)
 		for key, values := range resp.Header {
 			headers[key] = strings.Join(values, ", ")
 		}

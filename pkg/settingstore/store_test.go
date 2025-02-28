@@ -42,7 +42,7 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 	request := &spec.SetSettingRequest{
 		Key: "aiSettings.openai.additionalSettings",
 		Body: &spec.SetSettingRequestBody{
-			Value: map[string]interface{}{
+			Value: map[string]any{
 				"internal": 1,
 				"new":      [][]string{{"1", "2"}, {"1"}},
 			},
@@ -150,7 +150,7 @@ func TestSettingStore_SetSetting(t *testing.T) {
 	tests := []struct {
 		name          string
 		key           string
-		value         interface{}
+		value         any
 		wantErr       bool
 		expectedError string
 	}{

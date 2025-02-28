@@ -34,7 +34,7 @@ var LlamacppProviderInfo = spec.ProviderInfo{
 	Engine:                   "",
 	DefaultOrigin:            "http://127.0.0.1:8080",
 	DefaultModel:             Llama3,
-	AdditionalSettings:       map[string]interface{}{},
+	AdditionalSettings:       map[string]any{},
 	Timeout:                  120,
 	APIKeyHeaderKey:          "Authorization",
 	DefaultHeaders:           map[string]string{"content-type": "application/json"},

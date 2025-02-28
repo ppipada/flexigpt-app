@@ -10,9 +10,9 @@ const (
 )
 
 type ChatCompletionFunctions struct {
-	Name        string                 `json:"name"`
-	Description *string                `json:"description,omitempty"`
-	Parameters  map[string]interface{} `json:"parameters,omitempty"`
+	Name        string         `json:"name"`
+	Description *string        `json:"description,omitempty"`
+	Parameters  map[string]any `json:"parameters,omitempty"`
 }
 
 type ChatCompletionRequestMessageFunctionCall struct {
@@ -33,7 +33,7 @@ type ChatCompletionResponseMessage struct {
 	FunctionCall *ChatCompletionRequestMessageFunctionCall `json:"functionCall,omitempty"`
 }
 
-type CreateChatCompletionRequestFunctionCall interface{}
+type CreateChatCompletionRequestFunctionCall any
 
 type CreateChatCompletionRequestFunctionCallOneOf struct {
 	Name string `json:"name"`
@@ -51,24 +51,24 @@ type CompletionRequest struct {
 	FunctionCall         CreateChatCompletionRequestFunctionCall `json:"functionCall,omitempty"`
 	Suffix               *string                                 `json:"suffix,omitempty"`
 	Timeout              *int                                    `json:"timeout,omitempty"`
-	AdditionalParameters map[string]interface{}                  `json:"additionalParameters,omitempty"`
+	AdditionalParameters map[string]any                          `json:"additionalParameters,omitempty"`
 }
 
 type APIRequestDetails struct {
-	URL         *string                `json:"url,omitempty"`
-	Method      *string                `json:"method,omitempty"`
-	Headers     map[string]interface{} `json:"headers,omitempty"`
-	Params      map[string]interface{} `json:"params,omitempty"`
-	Data        interface{}            `json:"data,omitempty"`
-	Timeout     *int                   `json:"timeout,omitempty"`
-	CurlCommand *string                `json:"curlCommand,omitempty"`
+	URL         *string        `json:"url,omitempty"`
+	Method      *string        `json:"method,omitempty"`
+	Headers     map[string]any `json:"headers,omitempty"`
+	Params      map[string]any `json:"params,omitempty"`
+	Data        any            `json:"data,omitempty"`
+	Timeout     *int           `json:"timeout,omitempty"`
+	CurlCommand *string        `json:"curlCommand,omitempty"`
 }
 
 type APIResponseDetails struct {
-	Data           interface{}            `json:"data"`
-	Status         int                    `json:"status"`
-	Headers        map[string]interface{} `json:"headers"`
-	RequestDetails *APIRequestDetails     `json:"requestDetails,omitempty"`
+	Data           any                `json:"data"`
+	Status         int                `json:"status"`
+	Headers        map[string]any     `json:"headers"`
+	RequestDetails *APIRequestDetails `json:"requestDetails,omitempty"`
 }
 
 type APIErrorDetails struct {
@@ -90,5 +90,5 @@ type CompletionResponse struct {
 	ErrorDetails    *APIErrorDetails    `json:"errorDetails,omitempty"`
 	RespContent     *string             `json:"respContent,omitempty"`
 	FunctionName    *string             `json:"functionName,omitempty"`
-	FunctionArgs    interface{}         `json:"functionArgs,omitempty"`
+	FunctionArgs    any                 `json:"functionArgs,omitempty"`
 }

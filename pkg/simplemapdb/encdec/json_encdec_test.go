@@ -10,7 +10,7 @@ import (
 func TestJSONEncoderDecoder_Encode(t *testing.T) {
 	tests := []struct {
 		name    string
-		value   interface{}
+		value   any
 		want    string
 		wantErr bool
 	}{
@@ -46,8 +46,8 @@ func TestJSONEncoderDecoder_Encode(t *testing.T) {
 		},
 		{
 			name: "complex nested structure",
-			value: map[string]interface{}{
-				"nested": map[string]interface{}{
+			value: map[string]any{
+				"nested": map[string]any{
 					"key": "value",
 				},
 			},
@@ -76,8 +76,8 @@ func TestJSONEncoderDecoder_Decode(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string
-		value   interface{}
-		want    interface{}
+		value   any
+		want    any
 		wantErr bool
 	}{
 		{
@@ -162,8 +162,8 @@ func TestStructWithJSONTagsToMap(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		input   interface{}
-		want    map[string]interface{}
+		input   any
+		want    map[string]any
 		wantErr bool
 	}{
 		{
@@ -173,7 +173,7 @@ func TestStructWithJSONTagsToMap(t *testing.T) {
 				Age:   30,
 				Email: "john.doe@example.com",
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"name":  "John Doe",
 				"age":   float64(30),
 				"email": "john.doe@example.com",
@@ -187,7 +187,7 @@ func TestStructWithJSONTagsToMap(t *testing.T) {
 				Age:   0,
 				Email: "",
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"name": "",
 				"age":  float64(0),
 			},
@@ -210,8 +210,8 @@ func TestStructWithJSONTagsToMap(t *testing.T) {
 					Email: "jane.doe@example.com",
 				},
 			},
-			want: map[string]interface{}{
-				"person": map[string]interface{}{
+			want: map[string]any{
+				"person": map[string]any{
 					"name":  "Jane Doe",
 					"age":   float64(25),
 					"email": "jane.doe@example.com",
@@ -250,14 +250,14 @@ func TestMapToStructWithJSONTags(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		input   map[string]interface{}
-		output  interface{}
+		input   map[string]any
+		output  any
 		want    TestStruct
 		wantErr bool
 	}{
 		{
 			name: "happy path",
-			input: map[string]interface{}{
+			input: map[string]any{
 				"name":  "John Doe",
 				"age":   float64(30),
 				"email": "john.doe@example.com",
@@ -272,7 +272,7 @@ func TestMapToStructWithJSONTags(t *testing.T) {
 		},
 		{
 			name: "missing optional field",
-			input: map[string]interface{}{
+			input: map[string]any{
 				"name": "Jane Doe",
 				"age":  float64(25),
 			},
@@ -293,7 +293,7 @@ func TestMapToStructWithJSONTags(t *testing.T) {
 		},
 		{
 			name: "non-pointer output",
-			input: map[string]interface{}{
+			input: map[string]any{
 				"name": "John Doe",
 				"age":  float64(30),
 			},
@@ -303,7 +303,7 @@ func TestMapToStructWithJSONTags(t *testing.T) {
 		},
 		{
 			name: "nil pointer output",
-			input: map[string]interface{}{
+			input: map[string]any{
 				"name": "John Doe",
 				"age":  float64(30),
 			},
@@ -313,7 +313,7 @@ func TestMapToStructWithJSONTags(t *testing.T) {
 		},
 		{
 			name: "extra fields in map",
-			input: map[string]interface{}{
+			input: map[string]any{
 				"name":    "John Doe",
 				"age":     float64(30),
 				"email":   "john.doe@example.com",
@@ -329,7 +329,7 @@ func TestMapToStructWithJSONTags(t *testing.T) {
 		},
 		{
 			name: "invalid JSON structure",
-			input: map[string]interface{}{
+			input: map[string]any{
 				"name": "John Doe",
 				"age":  "not a number",
 			},
@@ -339,7 +339,7 @@ func TestMapToStructWithJSONTags(t *testing.T) {
 		},
 		{
 			name: "incompatible types",
-			input: map[string]interface{}{
+			input: map[string]any{
 				"name": 123,      // expecting a string
 				"age":  "thirty", // expecting an int
 			},

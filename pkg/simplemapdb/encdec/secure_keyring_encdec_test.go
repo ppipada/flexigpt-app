@@ -234,8 +234,8 @@ func TestDecodeWithInterface(t *testing.T) {
 		t.Fatalf("Encode failed: %v", err)
 	}
 
-	// Decode into an interface{}
-	var decodedValue interface{}
+	// Decode into an any
+	var decodedValue any
 	err = encoderDecoder.Decode(encodedBuffer, &decodedValue)
 	if err != nil {
 		t.Fatalf("Decode failed: %v", err)
@@ -286,7 +286,7 @@ func TestDecodeWithNilInterface(t *testing.T) {
 	}
 
 	// Decode into a nil interface
-	var decodedValue interface{}
+	var decodedValue any
 	err = encoderDecoder.Decode(encodedBuffer, decodedValue)
 	if err == nil {
 		t.Errorf("Expected error when decoding into a nil interface, but got none")
