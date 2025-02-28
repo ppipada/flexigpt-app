@@ -31,7 +31,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 
 	async getConfigurationInfo(): Promise<Record<string, any>> {
 		const resp = await GetConfigurationInfo({} as wailsSpec.GetConfigurationInfoRequest);
-		return resp.Body?.configurationInfo as Record<string, any>;
+		return resp.Body as Record<string, any>;
 	}
 
 	async setAttribute(

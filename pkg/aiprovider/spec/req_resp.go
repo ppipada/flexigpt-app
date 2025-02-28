@@ -27,7 +27,8 @@ type GetConfigurationInfoResponse struct {
 }
 
 type GetConfigurationInfoResponseBody struct {
-	ConfigurationInfo map[string]interface{} `json:"configurationInfo"`
+	DefaultProvider     ProviderName   `json:"defaultProvider"`
+	ConfiguredProviders []ProviderInfo `json:"configuredProviders"`
 }
 
 type SetProviderAttributeRequestBody struct {
@@ -47,7 +48,7 @@ type SetProviderAttributeResponse struct{}
 type MakeCompletionRequestBody struct {
 	Prompt       string                         `json:"prompt"       required:"true"`
 	PrevMessages []ChatCompletionRequestMessage `json:"prevMessages"`
-	InputParams  map[string]interface{}         `json:"inputParams"`
+	InputParams  map[string]any                 `json:"inputParams"`
 }
 
 type MakeCompletionRequest struct {

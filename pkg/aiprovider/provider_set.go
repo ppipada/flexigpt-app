@@ -23,31 +23,6 @@ var AllAIProviders = map[spec.ProviderName]spec.ProviderInfo{
 	openai.ProviderNameOpenAI:           openai.OpenAIProviderInfo,
 }
 
-var AllModelInfo = map[spec.ModelName]spec.ModelInfo{
-	anthropic.Claude37Sonnet:             anthropic.AnthropicModels[anthropic.Claude37Sonnet],
-	anthropic.Claude35Sonnet:             anthropic.AnthropicModels[anthropic.Claude35Sonnet],
-	anthropic.Claude35Haiku:              anthropic.AnthropicModels[anthropic.Claude35Haiku],
-	anthropic.Claude3Opus:                anthropic.AnthropicModels[anthropic.Claude3Opus],
-	anthropic.Claude3Sonnet:              anthropic.AnthropicModels[anthropic.Claude3Sonnet],
-	anthropic.Claude3Haiku:               anthropic.AnthropicModels[anthropic.Claude3Haiku],
-	deepseek.DeepseekChat:                deepseek.DeepseekModels[deepseek.DeepseekChat],
-	deepseek.DeepseekReasoner:            deepseek.DeepseekModels[deepseek.DeepseekReasoner],
-	google.Gemini2FlashExp:               google.GoogleModels[google.Gemini2FlashExp],
-	google.Gemini15Flash:                 google.GoogleModels[google.Gemini15Flash],
-	google.Gemini15Pro:                   google.GoogleModels[google.Gemini15Pro],
-	huggingface.DeepseekCoder13BInstruct: huggingface.HuggingfaceModels[huggingface.DeepseekCoder13BInstruct],
-	llamacpp.Llama3:                      llamacpp.LlamacppModels[llamacpp.Llama3],
-	llamacpp.Llama31:                     llamacpp.LlamacppModels[llamacpp.Llama31],
-	openai.GPTO3Mini:                     openai.OpenAIModels[openai.GPTO3Mini],
-	openai.GPTO1:                         openai.OpenAIModels[openai.GPTO1],
-	openai.GPTO1Preview:                  openai.OpenAIModels[openai.GPTO1Preview],
-	openai.GPTO1Mini:                     openai.OpenAIModels[openai.GPTO1Mini],
-	openai.GPT4O:                         openai.OpenAIModels[openai.GPT4O],
-	openai.GPT4:                          openai.OpenAIModels[openai.GPT4],
-	openai.GPT35Turbo:                    openai.OpenAIModels[openai.GPT35Turbo],
-	openai.GPT4OMini:                     openai.OpenAIModels[openai.GPT4OMini],
-}
-
 // Define the ProviderSetAPI struct.
 type ProviderSetAPI struct {
 	defaultProvider spec.ProviderName
@@ -113,28 +88,19 @@ func (ps *ProviderSetAPI) GetConfigurationInfo(
 	ctx context.Context,
 	req *spec.GetConfigurationInfoRequest,
 ) (*spec.GetConfigurationInfoResponse, error) {
-	configurationInfo := map[string]interface{}{
-		"defaultProvider": ps.defaultProvider,
-	}
 	configuredProviders := []spec.ProviderInfo{}
-	configuredModels := []spec.ModelInfo{}
 
 	for _, providerInfo := range AllAIProviders {
 		if provider, exists := ps.providers[providerInfo.Name]; exists &&
 			provider.IsConfigured(ctx) {
 			configuredProviders = append(configuredProviders, providerInfo)
-			for _, modelInfo := range AllModelInfo {
-				if modelInfo.Provider == providerInfo.Name {
-					configuredModels = append(configuredModels, modelInfo)
-				}
-			}
 		}
 	}
-
-	configurationInfo["configuredProviders"] = configuredProviders
-	configurationInfo["configuredModels"] = configuredModels
 	return &spec.GetConfigurationInfoResponse{
-		Body: &spec.GetConfigurationInfoResponseBody{ConfigurationInfo: configurationInfo},
+		Body: &spec.GetConfigurationInfoResponseBody{
+			DefaultProvider:     ps.defaultProvider,
+			ConfiguredProviders: configuredProviders,
+		},
 	}, nil
 }
 
@@ -181,11 +147,13 @@ func (ps *ProviderSetAPI) MakeCompletion(
 		return nil, fmt.Errorf("AI provider '%s' not found", provider)
 	}
 
-	defaultModelName := aiProviderInfo.DefaultModel
 	// Retrieve the model info for the default model
-	modelInfo, ok := AllModelInfo[defaultModelName]
+	modelInfo, ok := aiProviderInfo.Models[aiProviderInfo.DefaultModel]
 	if !ok {
-		return nil, fmt.Errorf("model info for default model '%s' not found", defaultModelName)
+		return nil, fmt.Errorf(
+			"model info for default model '%s' not found",
+			aiProviderInfo.DefaultModel,
+		)
 	}
 
 	// Check if 'model' is specified in inputParams and is a valid model name
@@ -197,14 +165,11 @@ func (ps *ProviderSetAPI) MakeCompletion(
 				return nil, errors.New("'model' in inputParams must be a string")
 			}
 
-			modelName := spec.ModelName(modelStr)
-
 			// Verify that the model exists and belongs to the provider
-			if modelEntry, exists := AllModelInfo[modelName]; exists &&
-				modelEntry.Provider == provider {
+			if modelEntry, exists := aiProviderInfo.Models[spec.ModelName(modelStr)]; exists {
 				modelInfo = modelEntry
 			} else {
-				return nil, fmt.Errorf("invalid model '%s' specified for provider '%s'", modelName, provider)
+				return nil, fmt.Errorf("invalid model '%s' specified for provider '%s'", spec.ModelName(modelStr), provider)
 			}
 		}
 	}

@@ -41,4 +41,5 @@ var LlamacppProviderInfo = spec.ProviderInfo{
 	ChatCompletionPathPrefix: "/completion",
 	DefaultTemperature:       0.1,
 	StreamingSupport:         false,
+	Models:                   LlamacppModels,
 }

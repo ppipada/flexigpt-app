@@ -77,4 +77,5 @@ var AnthropicProviderInfo = spec.ProviderInfo{
 	ChatCompletionPathPrefix: "/messages",
 	DefaultTemperature:       0.1,
 	StreamingSupport:         true,
+	Models:                   AnthropicModels,
 }

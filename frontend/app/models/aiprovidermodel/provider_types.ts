@@ -28,9 +28,9 @@ export interface ProviderInfo {
 	defaultHeaders: Record<string, string>;
 	chatCompletionPathPrefix: string;
 	defaultTemperature: number;
+	streamingSupport: boolean;
+	models: Record<string, ModelInfo>;
 	modelPrefixes?: string[];
-	descriptions?: Partial<Record<keyof ProviderInfo, string>>;
-	streamingSupport?: boolean;
 }
 
 export interface IProviderSetAPI {

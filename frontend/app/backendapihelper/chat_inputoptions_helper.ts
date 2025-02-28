@@ -1,6 +1,5 @@
 import { providerSetAPI, settingstoreAPI } from '@/backendapibase';
-import { ModelInfo, ModelName, ProviderInfo, ProviderName } from '@/models/aiprovidermodel';
-import { SettingsSchema } from '@/models/settingmodel';
+import { ModelName, ProviderInfo, ProviderName } from '@/models/aiprovidermodel';
 
 export interface ModelOption {
 	title: string;
@@ -20,11 +19,7 @@ export async function GetChatInputOptions() {
 		const inputModels: ModelOption[] = [];
 
 		// Validate the presence of necessary configuration properties
-		if (
-			!('configuredModels' in configInfo) ||
-			!('configuredProviders' in configInfo) ||
-			!('defaultProvider' in configInfo)
-		) {
+		if (!('configuredProviders' in configInfo) || !('defaultProvider' in configInfo)) {
 			return handleNoConfiguredModels();
 		}
 
@@ -32,14 +27,21 @@ export async function GetChatInputOptions() {
 		const configDefaultProvider = configInfo['defaultProvider'] as ProviderName;
 		const providerInfoDict = createProviderInfoDict(configInfo['configuredProviders']);
 
-		// Process configured models
-		const configuredModels = configInfo['configuredModels'] as ModelInfo[];
-		for (const modelInfo of configuredModels) {
-			const modelOption = createModelOption(modelInfo, providerInfoDict, settings);
-			if (modelOption) {
-				inputModels.push(modelOption);
-				if (modelInfo.name === providerInfoDict[configDefaultProvider]?.defaultModel) {
-					defaultOption = modelOption;
+		for (const [providerName, providerInfo] of Object.entries(providerInfoDict)) {
+			const aiSetting = settings.aiSettings[providerName];
+			if (aiSetting && aiSetting.isEnabled) {
+				const settingsDefaultModelName = aiSetting.defaultModel;
+				for (const [modelName, modelInfo] of Object.entries(providerInfo.models)) {
+					const modelOption = {
+						title: modelInfo.displayName,
+						provider: providerName,
+						temperature: providerInfo.defaultTemperature || 0.1,
+						name: modelName,
+					};
+					inputModels.push(modelOption);
+					if (modelInfo.name === settingsDefaultModelName && providerName === configDefaultProvider) {
+						defaultOption = modelOption;
+					}
 				}
 			}
 		}
@@ -67,24 +69,4 @@ function createProviderInfoDict(configuredProviders: ProviderInfo[]) {
 		providerInfoDict[providerInfo.name] = providerInfo;
 	}
 	return providerInfoDict;
-}
-
-// Helper function to create a model option if the provider is enabled
-function createModelOption(
-	modelInfo: ModelInfo,
-	providerInfoDict: Record<string, ProviderInfo>,
-	settings: SettingsSchema
-): ModelOption | null {
-	const providerName = modelInfo.provider;
-	const aiSetting = settings.aiSettings[providerName];
-
-	if (aiSetting && aiSetting.isEnabled) {
-		return {
-			title: modelInfo.displayName,
-			provider: providerName,
-			temperature: providerInfoDict[providerName]?.defaultTemperature || 0.1,
-			name: modelInfo.name,
-		};
-	}
-	return null;
 }

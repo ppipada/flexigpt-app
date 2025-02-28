@@ -646,8 +646,89 @@ export namespace spec {
 	
 	    }
 	}
+	export class ModelInfo {
+	    name: string;
+	    displayName: string;
+	    provider: string;
+	    maxPromptLength: number;
+	    maxOutputLength: number;
+	    defaultTemperature?: number;
+	    streamingSupport?: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.displayName = source["displayName"];
+	        this.provider = source["provider"];
+	        this.maxPromptLength = source["maxPromptLength"];
+	        this.maxOutputLength = source["maxOutputLength"];
+	        this.defaultTemperature = source["defaultTemperature"];
+	        this.streamingSupport = source["streamingSupport"];
+	    }
+	}
+	export class ProviderInfo {
+	    name: string;
+	    apiKey: string;
+	    engine: string;
+	    defaultOrigin: string;
+	    defaultModel: string;
+	    additionalSettings: Record<string, any>;
+	    timeout: number;
+	    apiKeyHeaderKey: string;
+	    defaultHeaders: Record<string, string>;
+	    chatCompletionPathPrefix: string;
+	    defaultTemperature: number;
+	    modelPrefixes: string[];
+	    streamingSupport: boolean;
+	    models: Record<string, ModelInfo>;
+	
+	    static createFrom(source: any = {}) {
+	        return new ProviderInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.apiKey = source["apiKey"];
+	        this.engine = source["engine"];
+	        this.defaultOrigin = source["defaultOrigin"];
+	        this.defaultModel = source["defaultModel"];
+	        this.additionalSettings = source["additionalSettings"];
+	        this.timeout = source["timeout"];
+	        this.apiKeyHeaderKey = source["apiKeyHeaderKey"];
+	        this.defaultHeaders = source["defaultHeaders"];
+	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
+	        this.defaultTemperature = source["defaultTemperature"];
+	        this.modelPrefixes = source["modelPrefixes"];
+	        this.streamingSupport = source["streamingSupport"];
+	        this.models = this.convertValues(source["models"], ModelInfo, true);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class GetConfigurationInfoResponseBody {
-	    configurationInfo: Record<string, any>;
+	    defaultProvider: string;
+	    configuredProviders: ProviderInfo[];
 	
 	    static createFrom(source: any = {}) {
 	        return new GetConfigurationInfoResponseBody(source);
@@ -655,8 +736,27 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.configurationInfo = source["configurationInfo"];
+	        this.defaultProvider = source["defaultProvider"];
+	        this.configuredProviders = this.convertValues(source["configuredProviders"], ProviderInfo);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class GetConfigurationInfoResponse {
 	    Body?: GetConfigurationInfoResponseBody;
@@ -960,6 +1060,8 @@ export namespace spec {
 		    return a;
 		}
 	}
+	
+	
 	export class SaveConversationRequest {
 	    Body?: Conversation;
 	

@@ -41,4 +41,5 @@ var DeepseekProviderInfo = spec.ProviderInfo{
 	ChatCompletionPathPrefix: "",
 	DefaultTemperature:       0.1,
 	StreamingSupport:         true,
+	Models:                   DeepseekModels,
 }

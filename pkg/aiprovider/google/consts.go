@@ -49,4 +49,5 @@ var GoogleProviderInfo = spec.ProviderInfo{
 	ChatCompletionPathPrefix: "/v1beta/openai/chat/completions",
 	DefaultTemperature:       0.1,
 	StreamingSupport:         true,
+	Models:                   GoogleModels,
 }

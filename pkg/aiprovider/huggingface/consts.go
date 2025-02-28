@@ -32,6 +32,8 @@ var HuggingfaceProviderInfo = spec.ProviderInfo{
 	DefaultHeaders:           map[string]string{"content-type": "application/json"},
 	ChatCompletionPathPrefix: "/models",
 	DefaultTemperature:       0.1,
+	StreamingSupport:         false,
+	Models:                   HuggingfaceModels,
 	ModelPrefixes: []string{
 		"microsoft/",
 		"replit/",
@@ -39,5 +41,4 @@ var HuggingfaceProviderInfo = spec.ProviderInfo{
 		"bigcode/",
 		"deepseek-ai/",
 	},
-	StreamingSupport: false,
 }
