@@ -18,8 +18,7 @@
 - [x] url in output and input should be clickable and copiable
 - [x] Enable right click context menu
 - [x] word wrap for single word if it is too long.
-- [x] Scroll handling for edit text area
-
+- [x] scroll handling for edit text area
 - [ ] Need a stop streaming / cancel button on assistant
 - [ ] chat load is not happening before a request fire
 - [ ] if the app is on for a long time, looks like the conversation list is removed
