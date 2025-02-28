@@ -10,15 +10,11 @@
 
 ## Laundry list
 
-- [ ] Implement MCP protocol
-- [ ] Add servers for: file, git, simplemapstore
-- [x] Take default model and temp from settings without caching
-- [x] focus on edit box if someone presses edit. as of now focus is at end of page
-- [x] In chat the last used model should be stored ideally so that next time you load the chat it loads that model by default
-- [x] url in output and input should be clickable and copiable
-- [x] Enable right click context menu
-- [x] word wrap for single word if it is too long.
-- [x] scroll handling for edit text area
+- MCP handling
+
+  - [ ] Implement MCP protocol
+  - [ ] Add servers for: file, git, simplemapstore
+
 - [ ] Need a stop streaming / cancel button on assistant
 - [ ] chat load is not happening before a request fire
 - [ ] if the app is on for a long time, looks like the conversation list is removed
@@ -26,7 +22,6 @@
 - [ ] Ideally should detect any code or math blocks even in input, annotate them and then display. i.e format a normal text into proper md.
 - [ ] Details of request are not visible immediately
 - [ ] Need an about section someplace with version of software, dev name etc
-- [x] Icon of user and assistant should be near bottom of card rather than at top
 
 ## Knowledge base
 

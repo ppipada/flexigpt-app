@@ -100,7 +100,7 @@
   - [x] Fetch conversation titles and add it to the drawer
   - [x] provide a new chat, delete one conversation, delete all conversations actions
 
-### Laundry list
+## Laundry list
 
 - [x] code inline line overflow handle
 - [x] feedback integration removal
@@ -134,8 +134,19 @@
 - [x] ability to discard previous message history in next call
 - [x] ability to choose provider and model and temperature in the chat itself.
 - [x] populate initial choices in input options
+- [x] Take default model and temp from settings without caching
+- [x] focus on edit box if someone presses edit. as of now focus is at end of page
+- [x] In chat the last used model should be stored ideally so that next time you load the chat it loads that model by default
+- [x] url in output and input should be clickable and copiable
+- [x] Enable right click context menu
+- [x] word wrap for single word if it is too long.
+- [x] scroll handling for edit text area
+- [x] Icon of user and assistant should be near bottom of card rather than at top
+- [x] Mac install shows no title bar, better add a plain titlebar.
+- [x] Mac: Add how to install non signed pkg in readme. click > ok > settings > privacy and security > blocked > open anyway
+- [x] Mac icns file not present. Need proper icns file added
 
-### Wails migrate
+## Wails migrate
 
 - [x] Translate securejsondb to go
 - [x] Translate settings store and conversation store to go
@@ -152,7 +163,7 @@
 - [x] Implement streaming.
 - [x] Integrate other AI providers: anthropic, google, hf
 
-### Post migrate laundry list
+## Post migrate laundry list
 
 - [x] Add support for first getting available ai providers and then configuring them accordingly. UI needs to be modified as collapsed cards and disabled cards
 - [x] Only enabled chat options should be available
