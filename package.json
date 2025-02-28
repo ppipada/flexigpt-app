@@ -25,6 +25,7 @@
 		"run:lindev": "pnpm run build:dev && ./build/bin/FlexiGPT",
 		"run:macdev": "pnpm run build:dev && ./build/bin/FlexiGPT.app/Contents/MacOS/FlexiGPT",
 		"run:gobackend": "./scripts/run_backend.sh",
+		"run:watch": "cd ./cmd/agentgo && wails dev",
 		"pack:flatpak": "gh act -W './.github/workflows/flatpak.yml' --artifact-server-path ./out",
 		"pack:nsis": "gh act -W './.github/workflows/nsispak.yml' --artifact-server-path ./out",
 		"pack:dmg": "gh act -W './.github/workflows/dmgpak.yml' --artifact-server-path ./out",

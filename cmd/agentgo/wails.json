@@ -5,7 +5,7 @@
 	"build:dir": "../../build",
 	"frontend:dir": "../../frontend",
 	"frontend:build": "pnpm run build:wails",
-	"frontend:dev:watcher": "pnpm run run:watcher",
+	"frontend:dev:watcher": "pnpm run run:wailsdev",
 	"frontend:dev:serverUrl": "auto",
 	"wailsjsdir": "../../frontend/app/backendapibase",
 	"author": {

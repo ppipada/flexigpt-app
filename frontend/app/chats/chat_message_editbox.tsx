@@ -52,15 +52,17 @@ const EditBox: FC<EditBoxProps> = ({ editText, onTextChange, onSubmit, onDiscard
 
 	return (
 		<div className="flex flex-col w-full p-2">
-			<textarea
-				ref={textAreaRef}
-				value={editText}
-				onChange={handleTextChange}
-				onKeyDown={handleKeyDown}
-				className="resize-none bg-base-100 rounded-2xl p-2 shadow-lg"
-				rows={4}
-				style={{ fontSize: '14px', margin: '4px' }}
-			/>
+			<div className="relative w-full rounded-2xl overflow-hidden shadow-lg">
+				<textarea
+					ref={textAreaRef}
+					value={editText}
+					onChange={handleTextChange}
+					onKeyDown={handleKeyDown}
+					className="resize-none bg-base-100 p-4 w-full"
+					rows={4}
+					style={{ fontSize: '14px' }}
+				/>
+			</div>
 			<div className="flex justify-end mt-0 mr-2 space-x-2">
 				<button
 					onClick={onDiscard}
