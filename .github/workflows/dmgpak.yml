@@ -148,6 +148,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: ${{ env.BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}
           files: |
             build/bin/${{ env.BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}.pkg
