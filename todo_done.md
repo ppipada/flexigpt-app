@@ -145,6 +145,9 @@
 - [x] Mac install shows no title bar, better add a plain titlebar.
 - [x] Mac: Add how to install non signed pkg in readme. click > ok > settings > privacy and security > blocked > open anyway
 - [x] Mac icns file not present. Need proper icns file added
+- [x] chat load is not happening before a request fire
+- [x] if the app is on for a long time, looks like the conversation list is removed
+- [x] there is some jerkiness in chat load for today
 
 ## Wails migrate
 

@@ -8,6 +8,7 @@
 - [ ] Mac pkg install is add the .app in ~/build/bin. It should be in application. Check the settings, conversation and log location
 - [ ] Test Windows build
 - [ ] Ideally should detect any code or math blocks even in input, annotate them and then display. i.e format a normal text into proper md.
+- [ ] Details of request are not visible immediately. We use a trapper in golang ai provider package to get req/resp details, that means until the completion returns there is no way of getting the request details. Some refactoring of workflow is needed to make this happen.
 
 ## Tasks: Tools Implementation with CodeMirror
 

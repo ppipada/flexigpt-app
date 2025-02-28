@@ -16,11 +16,7 @@
   - [ ] Add servers for: file, git, simplemapstore
 
 - [ ] Need a stop streaming / cancel button on assistant
-- [ ] chat load is not happening before a request fire
-- [ ] if the app is on for a long time, looks like the conversation list is removed
-- [ ] there is some jerkiness in chat load for today
 
-- [ ] Details of request are not visible immediately
 - [ ] Need an about section someplace with version of software, dev name etc
 
 ## Knowledge base

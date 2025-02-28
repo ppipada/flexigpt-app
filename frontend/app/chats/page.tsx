@@ -1,6 +1,7 @@
 'use client';
+import { conversationStoreAPI } from '@/backendapibase';
 import { GetCompletionMessage } from '@/backendapihelper/chat_completion_helper';
-import { getConversation, listAllConversations, saveConversation } from '@/backendapihelper/conversation_memoized_api';
+import { listAllConversations } from '@/backendapihelper/conversation_cache';
 import ChatInputField, { ChatInputFieldHandle, ChatOptions } from '@/chats/chat_input_field';
 import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
@@ -38,15 +39,7 @@ const ChatScreen: FC = () => {
 	const [streamedMessage, setStreamedMessage] = useState<string>('');
 	const [isStreaming, setIsStreaming] = useState<boolean>(false);
 	const chatInputRef = useRef<ChatInputFieldHandle>(null);
-
-	const loadInitialItems = useCallback(async () => {
-		const conversations = await listAllConversations();
-		setInitialItems(conversations);
-	}, []);
-
-	useEffect(() => {
-		loadInitialItems();
-	}, [loadInitialItems]);
+	const conversationListRef = useRef<ConversationItem[]>();
 
 	useEffect(() => {
 		if (chatInputRef.current) {
@@ -54,20 +47,41 @@ const ChatScreen: FC = () => {
 		}
 	}, []); // Empty dependency array ensures this runs only on mount
 
+	// Fetch conversations function
+	const fetchConversations = useCallback(async () => {
+		const conversations = await listAllConversations();
+		conversationListRef.current = conversations;
+		setInitialItems(conversations);
+	}, []);
+
+	// Fetch initial conversations
+	useEffect(() => {
+		fetchConversations();
+	}, [fetchConversations]);
+
+	const fetchSearchResults = async (query: string): Promise<ConversationItem[]> => {
+		let conversations: ConversationItem[] = [];
+		if (!conversationListRef.current || conversationListRef.current.length === 0) {
+			await fetchConversations();
+		}
+		conversations = conversationListRef.current || [];
+		return conversations.filter(item => item.title.toLowerCase().includes(query.toLowerCase()));
+	};
+
 	const handleNewChat = useCallback(async () => {
-		saveConversation(chat);
+		conversationStoreAPI.saveConversation(chat);
 		setChat(initConversation());
+		conversationListRef.current = undefined;
+		fetchConversations(); // Fetch conversations again
 		if (chatInputRef.current) {
 			chatInputRef.current.focus(); // Focus on new chat
 		}
-	}, [chat]);
+	}, [chat, fetchConversations]);
 
-	const handleSelectConversation = useCallback(async (item: ConversationItem) => {
-		const selectedChat = await getConversation(item.id, item.title);
-		if (selectedChat) {
-			setChat(selectedChat);
-		}
-	}, []);
+	useEffect(() => {
+		conversationListRef.current = undefined;
+		fetchConversations(); // Fetch conversations again
+	}, [chat.id, fetchConversations]);
 
 	useEffect(() => {
 		if (chatContainerRef.current) {
@@ -75,19 +89,21 @@ const ChatScreen: FC = () => {
 		}
 	}, [chat.messages, streamedMessage]);
 
-	const fetchSearchResults = async (query: string): Promise<ConversationItem[]> => {
-		const conversations = await listAllConversations();
-		return conversations.filter(item => item.title.toLowerCase().includes(query.toLowerCase()));
-	};
+	const handleSelectConversation = useCallback(async (item: ConversationItem) => {
+		const selectedChat = await conversationStoreAPI.getConversation(item.id, item.title);
+		if (selectedChat) {
+			setChat(selectedChat);
+		}
+	}, []);
 
 	const getConversationForExport = useCallback(async (): Promise<string> => {
-		const selectedChat = await getConversation(chat.id, chat.title);
+		const selectedChat = await conversationStoreAPI.getConversation(chat.id, chat.title);
 		const value = JSON.stringify(selectedChat, null, 2);
 		return value;
 	}, [chat.id, chat.title]);
 
 	const saveUpdatedChat = (updatedChat: Conversation) => {
-		saveConversation(updatedChat);
+		conversationStoreAPI.saveConversation(updatedChat);
 		setChat(updatedChat);
 	};
 
