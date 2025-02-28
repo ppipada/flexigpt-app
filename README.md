@@ -39,8 +39,8 @@ Key objectives of FlexiGPT
 - Download the `.pkg` release package.
 - The current package is not signed using an Apple developer ID based process. Mac would give a security warning for this.
 - To install the `.pkg`
-  - Click on pkg. It should prompt you to `Move to bin` or `Close`. Choose `Close`.
-  - Not Navigate to `Settings` > `Privacy and security`.
-  - Scroll to near bottom of the settings and find the `Blocked` section.
-  - It should list FlexiGPT there. Click `Open anyway`.
-  - It will again ask to confirm. Click `Open` and then install.
+  - Click on pkg. It should prompt you to `Move to bin` or `Done`. Choose `Done`.
+  - Now Navigate to `Settings` > `Privacy & Security`.
+  - Scroll to near bottom of the settings and find the `Security` section.
+  - It should list FlexiGPT there. Click `Open Anyway`.
+  - It will now walk you through the installation process.
