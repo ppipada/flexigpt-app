@@ -45,9 +45,9 @@
 		"cross-env": "^7.0.3",
 		"daisyui": "^4.12.14",
 		"postcss": "^8.4.48",
-		"tailwindcss": "^3.4.14",
+		"postcss-load-config": "^6.0.1",
 		"rimraf": "^6.0.1",
-		"postcss-load-config": "^6.0.1"
+		"tailwindcss": "^3.4.14"
 	},
 	"optionalDependencies": {
 		"@next/swc-darwin-arm64": "14.2.15",

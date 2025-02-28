@@ -7,6 +7,7 @@
 - [ ] Better title deduce
 - [ ] Mac pkg install is add the .app in ~/build/bin. It should be in application. Check the settings, conversation and log location
 - [ ] Test Windows build
+- [ ] Ideally should detect any code or math blocks even in input, annotate them and then display. i.e format a normal text into proper md.
 
 ## Tasks: Tools Implementation with CodeMirror
 
