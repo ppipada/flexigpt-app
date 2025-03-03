@@ -20,7 +20,7 @@ export interface ChatOptions {
 
 interface ChatInputFieldProps {
 	onSend: (message: string, options: ChatOptions) => void; // Updated to use ChatOptions
-	setInputHeight: (height: number) => void;
+	setInputHeight: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export interface ChatInputFieldHandle {
@@ -89,8 +89,10 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	const autoResizeTextarea = useCallback(() => {
 		if (inputRef.current) {
 			inputRef.current.style.height = 'auto';
-			inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, MAX_HEIGHT)}px`;
-			setInputHeight(Math.min(inputRef.current.scrollHeight, MAX_HEIGHT));
+			const newHeight = Math.min(inputRef.current.scrollHeight, MAX_HEIGHT);
+			inputRef.current.style.height = `${newHeight}px`;
+
+			setInputHeight((prevHeight: number) => (prevHeight !== newHeight ? newHeight : prevHeight));
 		}
 	}, [setInputHeight]);
 

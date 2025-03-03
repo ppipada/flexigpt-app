@@ -1,5 +1,5 @@
 import Sidebar from '@/components/sidebar';
-import { ThemeSwitchProvider } from '@/providers/theme_provider';
+import { ThemeSwitchProvider } from '@/lib/theme_provider';
 import '@/styles/globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';

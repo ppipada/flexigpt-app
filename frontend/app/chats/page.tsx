@@ -3,7 +3,7 @@ import { conversationStoreAPI } from '@/backendapibase';
 import { GetCompletionMessage } from '@/backendapihelper/chat_completion_helper';
 import { listAllConversations } from '@/backendapihelper/conversation_cache';
 import ChatInputField, { ChatInputFieldHandle, ChatOptions } from '@/chats/chat_input_field';
-import ChatMessage from '@/chats/chat_message';
+import { MemoizedChatMessage } from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
 import { Conversation, ConversationItem, ConversationMessage, ConversationRoleEnum } from '@/models/conversationmodel';
@@ -33,7 +33,7 @@ function initConversationMessage(role: ConversationRoleEnum, content: string): C
 const ChatScreen: FC = () => {
 	const [chat, setChat] = useState<Conversation>(initConversation());
 	const [initialItems, setInitialItems] = useState<ConversationItem[]>([]);
-	const [inputHeight, setInputHeight] = useState(0);
+	const [inputHeight, setInputHeight] = useState<number>(0);
 	const chatContainerRef = useRef<HTMLDivElement>(null);
 	const isSubmittingRef = useRef<boolean>(false);
 	const [streamedMessage, setStreamedMessage] = useState<string>('');
@@ -240,7 +240,7 @@ const ChatScreen: FC = () => {
 	const memoizedChatMessages = useMemo(
 		() =>
 			chat.messages.map((message, index) => (
-				<ChatMessage
+				<MemoizedChatMessage
 					key={message.id}
 					message={message}
 					onEdit={editedText => handleEdit(editedText, message.id)}

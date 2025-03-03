@@ -149,6 +149,9 @@ func (api *BaseAIAPI) FetchCompletion(
 	if len(input.Messages) == 0 {
 		return nil, errors.New("empty input messages")
 	}
+	if llm == nil {
+		return nil, errors.New("llm not initialized")
+	}
 	options := []llms.CallOption{
 		llms.WithModel(input.Model),
 		llms.WithTemperature(input.Temperature),

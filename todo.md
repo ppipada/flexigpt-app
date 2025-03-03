@@ -15,6 +15,10 @@
   - [ ] Implement MCP protocol
   - [ ] Add servers for: file, git, simplemapstore
 
+- [ ] Add models as a configuration in providers where each model can be enabled disabled as required.
+- [ ] Add a custom model entry support too.
+- [ ] Add a custom provider and model name setting too so that an OAI compatible provider and model can be added
+- [ ] Need a settings data version and migration func
 - [ ] Need a stop streaming / cancel button on assistant
 
 - [ ] Need an about section someplace with version of software, dev name etc

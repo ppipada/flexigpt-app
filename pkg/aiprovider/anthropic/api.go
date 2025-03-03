@@ -44,9 +44,7 @@ func (api *AnthropicAPI) SetProviderAttribute(
 		return err
 	}
 	options := []langchainAnthropic.Option{}
-	if api.ProviderInfo.APIKey != "" {
-		options = append(options, langchainAnthropic.WithToken(api.ProviderInfo.APIKey))
-	}
+
 	if api.ProviderInfo.DefaultOrigin != "" {
 		options = append(options, langchainAnthropic.WithBaseURL(api.ProviderInfo.DefaultOrigin))
 	}
@@ -56,6 +54,11 @@ func (api *AnthropicAPI) SetProviderAttribute(
 			langchainAnthropic.WithModel(string(api.ProviderInfo.DefaultModel)),
 		)
 	}
+	if api.ProviderInfo.APIKey == "" {
+		slog.Debug("No API key given. Not initializing Anthropic LLM object")
+		return nil
+	}
+	options = append(options, langchainAnthropic.WithToken(api.ProviderInfo.APIKey))
 	newClient := baseutils.NewDebugHTTPClient(api.BaseAIAPI.Debug)
 	options = append(options, langchainAnthropic.WithHTTPClient(newClient))
 

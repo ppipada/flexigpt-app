@@ -44,9 +44,7 @@ func (api *HuggingFaceAPI) SetProviderAttribute(
 		return err
 	}
 	options := []langchainHuggingFace.Option{}
-	if api.ProviderInfo.APIKey != "" {
-		options = append(options, langchainHuggingFace.WithToken(api.ProviderInfo.APIKey))
-	}
+
 	if api.ProviderInfo.DefaultOrigin != "" {
 		options = append(options, langchainHuggingFace.WithURL(api.ProviderInfo.DefaultOrigin))
 	}
@@ -60,7 +58,11 @@ func (api *HuggingFaceAPI) SetProviderAttribute(
 	// if api.BaseAIAPI.Debug {
 	// 	options = append(options, langchainHuggingFace.WithHTTPClient(httputil.DebugHTTPClient))
 	// }
-
+	if api.ProviderInfo.APIKey == "" {
+		slog.Debug("No API key given. Not initializing Huggingface LLM object")
+		return nil
+	}
+	options = append(options, langchainHuggingFace.WithToken(api.ProviderInfo.APIKey))
 	llm, err := langchainHuggingFace.New(options...)
 	if err != nil {
 		return err

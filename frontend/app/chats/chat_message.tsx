@@ -2,7 +2,7 @@ import { ChatMessageContent } from '@/chats/chat_message_content';
 import EditBox from '@/chats/chat_message_editbox';
 import ChatMessageFooterArea from '@/chats/chat_message_footer';
 import { ConversationMessage, ConversationRoleEnum } from '@/models/conversationmodel';
-import { ChangeEvent, FC, useState } from 'react';
+import { ChangeEvent, FC, memo, useState } from 'react';
 import { FiCompass, FiUser } from 'react-icons/fi';
 
 interface ChatMessageProps {
@@ -94,4 +94,4 @@ const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamed
 	);
 };
 
-export default ChatMessage;
+export const MemoizedChatMessage = memo(ChatMessage);

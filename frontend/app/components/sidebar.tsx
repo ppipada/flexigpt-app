@@ -1,5 +1,6 @@
 'use client';
 
+import { FeatureFlag, isFeatureEnabled } from '@/lib/features';
 import Link from 'next/link';
 import { ReactNode, useState } from 'react';
 import { FiCpu, FiDatabase, FiFilePlus, FiHome, FiMenu, FiMessageSquare, FiSettings } from 'react-icons/fi';
@@ -54,35 +55,41 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 								<FiMessageSquare size={24} />
 							</Link>
 						</li>
-						<li className="mt-4" title="Agents" onClick={toggle}>
-							<Link
-								href="/agents/"
-								className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
-								aria-label="Agents"
-							>
-								<FiCpu size={24} />
-							</Link>
-						</li>
+						{isFeatureEnabled(FeatureFlag.AGENTS) && (
+							<li className="mt-4" title="Agents" onClick={toggle}>
+								<Link
+									href="/agents/"
+									className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
+									aria-label="Agents"
+								>
+									<FiCpu size={24} />
+								</Link>
+							</li>
+						)}
 					</div>
 					<div className="flex-col p-0 mb-8">
-						<li className="mt-4" title="Prompts" onClick={toggle}>
-							<Link
-								href="/prompts/"
-								className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
-								aria-label="Prompts"
-							>
-								<FiFilePlus size={24} />
-							</Link>
-						</li>
-						<li className="mt-4" title="DocumentStores" onClick={toggle}>
-							<Link
-								href="/docstores/"
-								className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
-								aria-label="DocumentStores"
-							>
-								<FiDatabase size={24} />
-							</Link>
-						</li>
+						{isFeatureEnabled(FeatureFlag.PROMPTS) && (
+							<li className="mt-4" title="Prompts" onClick={toggle}>
+								<Link
+									href="/prompts/"
+									className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
+									aria-label="Prompts"
+								>
+									<FiFilePlus size={24} />
+								</Link>
+							</li>
+						)}
+						{isFeatureEnabled(FeatureFlag.DOCUMENT_STORES) && (
+							<li className="mt-4" title="DocumentStores" onClick={toggle}>
+								<Link
+									href="/docstores/"
+									className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
+									aria-label="DocumentStores"
+								>
+									<FiDatabase size={24} />
+								</Link>
+							</li>
+						)}
 						<li className="mt-4" title="Settings" onClick={toggle}>
 							<Link
 								href="/settings/"

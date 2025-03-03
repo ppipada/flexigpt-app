@@ -43,9 +43,7 @@ func (api *OpenAIAPI) SetProviderAttribute(
 		return err
 	}
 	options := []langchainOpenAI.Option{}
-	if api.ProviderInfo.APIKey != "" {
-		options = append(options, langchainOpenAI.WithToken(api.ProviderInfo.APIKey))
-	}
+
 	if api.ProviderInfo.DefaultModel != "" {
 		options = append(options, langchainOpenAI.WithModel(string(api.ProviderInfo.DefaultModel)))
 	}
@@ -63,6 +61,11 @@ func (api *OpenAIAPI) SetProviderAttribute(
 		options = append(options, langchainOpenAI.WithBaseURL(baseURL+pathPrefix))
 	}
 
+	if api.ProviderInfo.APIKey == "" {
+		slog.Debug("No API key given. Not initializing LLM object")
+		return nil
+	}
+	options = append(options, langchainOpenAI.WithToken(api.ProviderInfo.APIKey))
 	newClient := baseutils.NewDebugHTTPClient(api.BaseAIAPI.Debug)
 	options = append(options, langchainOpenAI.WithHTTPClient(newClient))
 

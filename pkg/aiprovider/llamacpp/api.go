@@ -44,15 +44,18 @@ func (api *LlamaCPPAPI) SetProviderAttribute(
 		return err
 	}
 	options := []langchainOpenAI.Option{}
-	if api.ProviderInfo.APIKey != "" {
-		options = append(options, langchainOpenAI.WithToken(api.ProviderInfo.APIKey))
-	}
+
 	if api.ProviderInfo.DefaultOrigin != "" {
 		options = append(options, langchainOpenAI.WithBaseURL(api.ProviderInfo.DefaultOrigin))
 	}
 	if api.ProviderInfo.DefaultModel != "" {
 		options = append(options, langchainOpenAI.WithModel(string(api.ProviderInfo.DefaultModel)))
 	}
+	if api.ProviderInfo.APIKey == "" {
+		slog.Debug("No API key given. Not initializing LLama cpp LLM object")
+		return nil
+	}
+	options = append(options, langchainOpenAI.WithToken(api.ProviderInfo.APIKey))
 	newClient := baseutils.NewDebugHTTPClient(api.BaseAIAPI.Debug)
 	options = append(options, langchainOpenAI.WithHTTPClient(newClient))
 
