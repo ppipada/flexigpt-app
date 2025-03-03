@@ -3,8 +3,10 @@
 		"dbaeumer.vscode-eslint", // ESLint
 		"golang.go", // Go
 		"yzhang.markdown-all-in-one", // Markdown All in One
+		"davidanson.vscode-markdownlint",
 		"esbenp.prettier-vscode", // Prettier
 		"redhat.vscode-yaml", // YAML
-		"redhat.vscode-xml" // XML
+		"redhat.vscode-xml", // XML
+		"foxundermoon.shell-format" // Shell
 	]
 }

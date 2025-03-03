@@ -1,50 +1,61 @@
 {
-	// Auto format on save and organize imports
+	// ============================================
+	// General Editor Settings
+	// ============================================
 	"editor.formatOnSave": true,
 	"editor.codeActionsOnSave": {
 		"source.organizeImports": "explicit"
 	},
+	"editor.linkedEditing": true,
 
-	// VS Code language associations and formatter mappings
+	// ============================================
+	// File Associations
+	// ============================================
 	"files.associations": {
 		"*.css": "tailwindcss"
 	},
 
-	// TypeScript-related settings
-	"typescript.tsdk": "node_modules\\typescript\\lib",
-	"typescript.updateImportsOnFileMove.enabled": "always",
-
-	// Set Prettier as the default formatter for several languages
-	"[javascript]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
-	},
-	"[json]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
-	},
-	"[jsonc]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
-	},
-	"[typescript]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
-	},
-	"[typescriptreact]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
-	},
-	"[markdown]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
-	},
-
-	// YAML formatting – overridden to ensure spaces and proper tab size
+	// ============================================
+	// Language-Specific Formatter Overrides
+	// ============================================
+	"[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+	"[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+	"[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+	"[html]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+	"[css]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+	"[scss]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+	"[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+	"[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+	"[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+	"[shellscript]": { "editor.defaultFormatter": "foxundermoon.shell-format" },
+	"[dockerfile]": { "editor.defaultFormatter": "foxundermoon.shell-format" },
 	"[yaml]": {
+		"editor.defaultFormatter": "redhat.vscode-yaml",
 		"editor.insertSpaces": true,
-		"editor.tabSize": 2,
-		"editor.defaultFormatter": "redhat.vscode-yaml"
+		"editor.tabSize": 2
 	},
-
-	// Go language configurations
 	"[go]": {
 		"editor.defaultFormatter": "golang.go"
 	},
+
+	// ============================================
+	// Language-Specific Settings
+	// ============================================
+
+	// --- TypeScript ---
+	"typescript.tsdk": "node_modules/typescript/lib",
+	"typescript.updateImportsOnFileMove.enabled": "always",
+
+	// --- Markdown ---
+	"markdown.extension.toc.levels": "2..4",
+	"markdownlint.config": {
+		"MD030": false,
+		"MD033": {
+			"allowed_elements": ["table", "td", "tr", "strong"]
+		}
+	},
+
+	// --- Go ---
 	"go.lintTool": "golangci-lint",
 	"go.formatTool": "custom",
 	"go.alternateTools": {
@@ -55,7 +66,7 @@
 	"go.testFlags": ["-timeout=30m", "-count=1", "-v"],
 	"go.toolsManagement.autoUpdate": true,
 
-	// ESLint settings for various project directories
+	// --- ESLint ---
 	"eslint.format.enable": true,
 	"eslint.workingDirectories": ["./frontend"]
 }
