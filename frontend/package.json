@@ -54,7 +54,7 @@
 		"@next/swc-linux-x64-gnu": "14.2.15",
 		"@next/swc-linux-x64-musl": "14.2.15",
 		"@next/swc-win32-arm64-msvc": "14.2.15",
-		"@next/swc-win32-ia32-msvc": "14.2.15",
+		"@next/swc-win32-ia32-msvc": "14.2.16",
 		"@next/swc-win32-x64-msvc": "14.2.15"
 	}
 }

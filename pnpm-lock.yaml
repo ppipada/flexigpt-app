@@ -158,8 +158,8 @@ importers:
         specifier: 14.2.15
         version: 14.2.15
       '@next/swc-win32-ia32-msvc':
-        specifier: 14.2.15
-        version: 14.2.15
+        specifier: 14.2.16
+        version: 14.2.16
       '@next/swc-win32-x64-msvc':
         specifier: 14.2.15
         version: 14.2.15
@@ -310,6 +310,12 @@ packages:
 
   '@next/swc-win32-ia32-msvc@14.2.15':
     resolution: {integrity: sha512-fyTE8cklgkyR1p03kJa5zXEaZ9El+kDNM5A+66+8evQS5e/6v0Gk28LqA0Jet8gKSOyP+OTm/tJHzMlGdQerdQ==}
+    engines: {node: '>= 10'}
+    cpu: [ia32]
+    os: [win32]
+
+  '@next/swc-win32-ia32-msvc@14.2.16':
+    resolution: {integrity: sha512-jhPl3nN0oKEshJBNDAo0etGMzv0j3q3VYorTSFqH1o3rwv1MQRdor27u1zhkgsHPNeY1jxcgyx1ZsCkDD1IHgg==}
     engines: {node: '>= 10'}
     cpu: [ia32]
     os: [win32]
@@ -3073,6 +3079,9 @@ snapshots:
     optional: true
 
   '@next/swc-win32-ia32-msvc@14.2.15':
+    optional: true
+
+  '@next/swc-win32-ia32-msvc@14.2.16':
     optional: true
 
   '@next/swc-win32-x64-msvc@14.2.15':
