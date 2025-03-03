@@ -11,6 +11,6 @@
 	},
 	"dmg": {
 		"output_path": "./build/bin/FlexiGPT.dmg",
-		"volume_name": "Lethean"
+		"volume_name": "flexigpt"
 	}
 }

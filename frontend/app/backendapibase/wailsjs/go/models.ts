@@ -573,6 +573,7 @@ export namespace spec {
 	    }
 	}
 	export class SettingsSchema {
+	    version: string;
 	    aiSettings: Record<string, AISetting>;
 	    app: AppSettings;
 	
@@ -582,6 +583,7 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.version = source["version"];
 	        this.aiSettings = this.convertValues(source["aiSettings"], AISetting, true);
 	        this.app = this.convertValues(source["app"], AppSettings);
 	    }

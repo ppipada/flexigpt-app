@@ -7,8 +7,8 @@
 	"scripts": {
 		"lint": "next lint . -c ./.eslintrc.json",
 		"clean": "rimraf ./build",
-		"run:wailsdev": "cross-env NEXT_PUBLIC_PLATFORM=wails NODE_ENV=development next dev",
-		"build:wails": "cross-env NEXT_PUBLIC_PLATFORM=wails NODE_ENV=production next build",
+		"run:wailsdev": "rimraf ./build && cp .env.dev .env && cross-env NEXT_PUBLIC_PLATFORM=wails next dev",
+		"build:wails": "rimraf ./build && cp .env.prod .env && cross-env NEXT_PUBLIC_PLATFORM=wails next build",
 		"test": "echo \"No test specified\" && exit 0"
 	},
 	"keywords": [],

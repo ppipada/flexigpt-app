@@ -64,6 +64,7 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 
 // Define the default settings data.
 var DefaultSettingsData = SettingsSchema{
+	Version: "1.0",
 	App: AppSettings{
 		DefaultProvider: openai.ProviderNameOpenAI,
 	},

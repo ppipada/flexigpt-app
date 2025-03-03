@@ -1,6 +1,6 @@
 'use client';
 
-import { FeatureFlag, isFeatureEnabled } from '@/lib/features';
+import { FEATURE_FLAG_AGENTS, FEATURE_FLAG_DOCUMENT_STORES, FEATURE_FLAG_PROMPTS } from '@/lib/features';
 import Link from 'next/link';
 import { ReactNode, useState } from 'react';
 import { FiCpu, FiDatabase, FiFilePlus, FiHome, FiMenu, FiMessageSquare, FiSettings } from 'react-icons/fi';
@@ -12,6 +12,8 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 	const [isDrawerOpen, setDrawerOpen] = useState(false);
 	const toggle = () => setDrawerOpen(!isDrawerOpen);
+
+	// console.log(`${FEATURE_FLAG_AGENTS}`);
 	// const setOpen = () => setDrawerOpen(true);
 	return (
 		<div className="drawer md:drawer-open h-screen">
@@ -55,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 								<FiMessageSquare size={24} />
 							</Link>
 						</li>
-						{isFeatureEnabled(FeatureFlag.AGENTS) && (
+						{FEATURE_FLAG_AGENTS && (
 							<li className="mt-4" title="Agents" onClick={toggle}>
 								<Link
 									href="/agents/"
@@ -68,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 						)}
 					</div>
 					<div className="flex-col p-0 mb-8">
-						{isFeatureEnabled(FeatureFlag.PROMPTS) && (
+						{FEATURE_FLAG_PROMPTS && (
 							<li className="mt-4" title="Prompts" onClick={toggle}>
 								<Link
 									href="/prompts/"
@@ -79,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 								</Link>
 							</li>
 						)}
-						{isFeatureEnabled(FeatureFlag.DOCUMENT_STORES) && (
+						{FEATURE_FLAG_DOCUMENT_STORES && (
 							<li className="mt-4" title="DocumentStores" onClick={toggle}>
 								<Link
 									href="/docstores/"

@@ -22,5 +22,5 @@ export async function loadProviderSettings(): Promise<SettingsSchema> {
 			updateProviderAISettings(providerName as ProviderName, aiSettings);
 		}
 	}
-	return settings;
+	return settings as SettingsSchema;
 }

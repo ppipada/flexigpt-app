@@ -1,11 +1,5 @@
 'use client';
 
-export enum FeatureFlag {
-	PROMPTS = 'PROMPTS',
-	DOCUMENT_STORES = 'DOCUMENT_STORES',
-	AGENTS = 'AGENTS',
-}
-
-export function isFeatureEnabled(feature: FeatureFlag): boolean {
-	return process.env[`NEXT_PUBLIC_FEATURE_${feature}`] === 'true';
-}
+export const FEATURE_FLAG_PROMPTS = process.env.NEXT_PUBLIC_FEATURE_PROMPTS === 'true';
+export const FEATURE_FLAG_DOCUMENT_STORES = process.env.NEXT_PUBLIC_FEATURE_DOCUMENT_STORES === 'true';
+export const FEATURE_FLAG_AGENTS = process.env.NEXT_PUBLIC_FEATURE_AGENTS === 'true';

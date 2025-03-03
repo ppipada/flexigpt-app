@@ -1,6 +1,6 @@
 'use client';
 import { loadProviderSettings } from '@/backendapihelper/settings_helper';
-import { FeatureFlag, isFeatureEnabled } from '@/lib/features';
+import { FEATURE_FLAG_AGENTS } from '@/lib/features';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect } from 'react';
@@ -38,7 +38,7 @@ export default function Home() {
 						</h3>
 					</div>
 				</Link>
-				{isFeatureEnabled(FeatureFlag.AGENTS) && (
+				{FEATURE_FLAG_AGENTS && (
 					<Link href="/agents/">
 						<div className="cursor-pointer p-6 text-center bg-base-100 rounded-lg shadow-lg transition-transform transform hover:scale-105 h-full">
 							<h3 className="text-2xl font-semibold mb-3">Explore Agents</h3>

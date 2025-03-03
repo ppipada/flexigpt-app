@@ -24,6 +24,7 @@ type AppSettings struct {
 
 // SettingsSchema represents the complete settings schema including app settings.
 type SettingsSchema struct {
+	Version    string           `json:"version"`
 	AISettings AISettingsSchema `json:"aiSettings"`
 	App        AppSettings      `json:"app"`
 }
