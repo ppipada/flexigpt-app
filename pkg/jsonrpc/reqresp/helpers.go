@@ -3,7 +3,6 @@ package reqresp
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 )
 
 type contextKey string
@@ -66,7 +65,7 @@ func invalidParamsResponse(req Request[json.RawMessage], err error) Response[jso
 		ID:      &req.ID,
 		Error: &JSONRPCError{
 			Code:    InvalidParamsError,
-			Message: fmt.Sprintf("%s: %v", GetDefaultErrorMessage(InvalidParamsError), err),
+			Message: GetDefaultErrorMessage(InvalidParamsError) + ": " + err.Error(),
 		},
 	}
 }

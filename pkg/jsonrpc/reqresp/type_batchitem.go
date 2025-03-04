@@ -11,13 +11,13 @@ func checkForEmptyOrNullData(data []byte) error {
 	if len(data) == 0 {
 		return &JSONRPCError{
 			Code:    ParseError,
-			Message: "Received empty data",
+			Message: GetDefaultErrorMessage(ParseError) + ": Received empty data",
 		}
 	}
 	if bytes.Equal(data, []byte("null")) {
 		return &JSONRPCError{
 			Code:    ParseError,
-			Message: "Received null data",
+			Message: GetDefaultErrorMessage(ParseError) + ": Received null data",
 		}
 	}
 	return nil
@@ -44,8 +44,10 @@ func unmarshalBatchItem[T any](data []byte, isBatch *bool, items *[]T) error {
 			var item T
 			if err := json.Unmarshal(msg, &item); err != nil {
 				return &JSONRPCError{
-					Code:    ParseError,
-					Message: "Failed to unmarshal batch item: " + err.Error(),
+					Code: ParseError,
+					Message: GetDefaultErrorMessage(
+						ParseError,
+					) + ": Failed to unmarshal batch item: " + err.Error(),
 				}
 			}
 			*items = append(*items, item)
@@ -55,7 +57,7 @@ func unmarshalBatchItem[T any](data []byte, isBatch *bool, items *[]T) error {
 		if err := json.Unmarshal(data, &item); err != nil {
 			return &JSONRPCError{
 				Code:    ParseError,
-				Message: "Failed to unmarshal single item: " + err.Error(),
+				Message: GetDefaultErrorMessage(ParseError) + ": Failed to unmarshal single item: " + err.Error(),
 			}
 		}
 		*isBatch = false
@@ -72,7 +74,10 @@ func marshalBatchItem[T any](isBatch bool, items []T) ([]byte, error) {
 	if len(items) > 0 {
 		return json.Marshal(items[0])
 	}
-	return nil, &JSONRPCError{Code: ParseError, Message: "Received empty input"}
+	return nil, &JSONRPCError{
+		Code:    ParseError,
+		Message: GetDefaultErrorMessage(ParseError) + ": Received empty input",
+	}
 }
 
 // BatchItem is a generic struct to detect and handle batch Items of any type.

@@ -162,8 +162,10 @@ func TestInvalidSingleRequests(t *testing.T, client JSONRPCClient) {
 				"id":      1,
 			},
 			expectedError: &jsonrpcReqResp.JSONRPCError{
-				Code:    jsonrpcReqResp.MethodNotFoundError,
-				Message: "Method 'unknown_method' not found",
+				Code: jsonrpcReqResp.MethodNotFoundError,
+				Message: jsonrpcReqResp.GetDefaultErrorMessage(
+					jsonrpcReqResp.MethodNotFoundError,
+				) + ": unknown_method",
 			},
 		},
 		{

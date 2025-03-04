@@ -275,23 +275,17 @@ func AddSchemasToAPI(
 	baseRespSchema.Required = []string{}
 	baseRespSchema.AdditionalProperties = true
 	baseRespSchema.Type = ""
-}
 
-func intPtr(i int) *int {
-	return &i
-}
-
-func BatchItemSchema[T any](m jsonrpcReqResp.BatchItem[T], r huma.Registry) *huma.Schema {
-	// Get the type of the Items slice
-	itemsType := reflect.TypeOf(m.Items)
-
-	// Get the type of the element T
-	elementType := itemsType.Elem()
-
-	// Use the elementType to get the schema
-	elementSchema := r.Schema(elementType, true, "")
-
-	s := &huma.Schema{
+	elementType := reflect.TypeOf((*jsonrpcReqResp.UnionRequest)(nil)).Elem()
+	elementSchema := api.OpenAPI().Components.Schemas.Schema(elementType, true, "")
+	if elementSchema.Ref != "" {
+		elementSubSchema := api.OpenAPI().Components.Schemas.SchemaFromRef(elementSchema.Ref)
+		elementSubSchema.Properties["id"] = IntStringSchema()
+	}
+	batchItemType := reflect.TypeOf((*jsonrpcReqResp.BatchItem[jsonrpcReqResp.UnionRequest])(nil)).
+		Elem()
+	basebatchItemSchema := api.OpenAPI().Components.Schemas.Schema(batchItemType, false, "")
+	*basebatchItemSchema = huma.Schema{
 		OneOf: []*huma.Schema{
 			elementSchema, {
 				Type:     huma.TypeArray,
@@ -300,5 +294,25 @@ func BatchItemSchema[T any](m jsonrpcReqResp.BatchItem[T], r huma.Registry) *hum
 			},
 		},
 	}
-	return s
+
+	batchItemResponseType := reflect.TypeOf((*jsonrpcReqResp.BatchItem[jsonrpcReqResp.Response[json.RawMessage]])(nil)).
+		Elem()
+	basebatchItemResponseSchema := api.OpenAPI().Components.Schemas.Schema(
+		batchItemResponseType,
+		false,
+		"",
+	)
+	*basebatchItemResponseSchema = huma.Schema{
+		OneOf: []*huma.Schema{
+			baseRespSchema, {
+				Type:     huma.TypeArray,
+				Items:    baseRespSchema,
+				MinItems: intPtr(1),
+			},
+		},
+	}
+}
+
+func intPtr(i int) *int {
+	return &i
 }

@@ -21,11 +21,11 @@ const (
 )
 
 var errorMessage = map[JSONRPCErrorCode]string{
-	ParseError:          "An error occurred on the server while parsing JSON object.",
-	InvalidRequestError: "The JSON sent is not a valid Request object.",
-	MethodNotFoundError: "The method does not exist / is not available.",
-	InvalidParamsError:  "Invalid method parameter(s).",
-	InternalError:       "Internal JSON-RPC error.",
+	ParseError:          "An error occurred on the server while parsing JSON object",
+	InvalidRequestError: "The JSON sent is not a valid Request object",
+	MethodNotFoundError: "The method does not exist / is not available",
+	InvalidParamsError:  "Invalid method parameter(s)",
+	InternalError:       "Internal JSON-RPC error",
 }
 
 func GetDefaultErrorMessage(code JSONRPCErrorCode) string {

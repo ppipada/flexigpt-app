@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"reflect"
 )
 
@@ -71,7 +70,7 @@ func (m *MethodHandler[I, O]) Handle(
 			ID:      &req.ID,
 			Error: &JSONRPCError{
 				Code:    InternalError,
-				Message: err.Error(),
+				Message: GetDefaultErrorMessage(InternalError) + ": " + err.Error(),
 			},
 		}
 	}
@@ -83,8 +82,10 @@ func (m *MethodHandler[I, O]) Handle(
 			JSONRPC: JSONRPCVersion,
 			ID:      &req.ID,
 			Error: &JSONRPCError{
-				Code:    InternalError,
-				Message: fmt.Sprintf("Error marshaling result: %v", err),
+				Code: InternalError,
+				Message: GetDefaultErrorMessage(
+					InternalError,
+				) + ": Error marshaling result: " + err.Error(),
 			},
 		}
 	}

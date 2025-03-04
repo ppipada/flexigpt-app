@@ -9,7 +9,7 @@ import (
 type UnionRequest struct {
 	JSONRPC string          `json:"jsonrpc"          enum:"2.0" doc:"JSON-RPC version, must be '2.0'" required:"true"`
 	ID      *RequestID      `json:"id,omitempty"`
-	Method  *string         `json:"method"`
+	Method  *string         `json:"method,omitempty"`
 	Params  json.RawMessage `json:"params,omitempty"`
 	Result  json.RawMessage `json:"result,omitempty"`
 	Error   *JSONRPCError   `json:"error,omitempty"`
@@ -28,20 +28,22 @@ func detectMessageType(u UnionRequest) (MessageType, *JSONRPCError) {
 	switch {
 	case u.JSONRPC != "2.0":
 		msg := fmt.Sprintf(
-			"Invalid JSON-RPC version: '%s'",
+			": Invalid JSON-RPC version: '%s'",
 			u.JSONRPC,
 		)
 		return MessageTypeInvalid, &JSONRPCError{
 			Code:    InvalidRequestError,
-			Message: msg,
+			Message: GetDefaultErrorMessage(InvalidRequestError) + msg,
 		}
 
 	case u.Method != nil:
 		// Invalid if both method and result/error are present
 		if u.Result != nil || u.Error != nil {
 			return MessageTypeInvalid, &JSONRPCError{
-				Code:    InvalidRequestError,
-				Message: "Invalid message: 'method' cannot coexist with 'result' or 'error'",
+				Code: InvalidRequestError,
+				Message: GetDefaultErrorMessage(
+					InvalidRequestError,
+				) + ": Invalid message: 'method' cannot coexist with 'result' or 'error'",
 			}
 		}
 		// It's a Request or Notification
@@ -54,8 +56,10 @@ func detectMessageType(u UnionRequest) (MessageType, *JSONRPCError) {
 		// Invalid if both result and error are present
 		if u.Result != nil && u.Error != nil {
 			return MessageTypeInvalid, &JSONRPCError{
-				Code:    InternalError,
-				Message: "Invalid message: 'result' and 'error' cannot coexist",
+				Code: InternalError,
+				Message: GetDefaultErrorMessage(
+					InternalError,
+				) + ": Invalid message: 'result' and 'error' cannot coexist",
 			}
 		}
 
@@ -65,14 +69,16 @@ func detectMessageType(u UnionRequest) (MessageType, *JSONRPCError) {
 		}
 		return MessageTypeInvalid, &JSONRPCError{
 			Code:    InternalError,
-			Message: "Invalid response: missing 'id'",
+			Message: GetDefaultErrorMessage(InternalError) + ": Invalid response: missing 'id'",
 		}
 
 	default:
 		// Invalid message
 		return MessageTypeInvalid, &JSONRPCError{
-			Code:    InternalError,
-			Message: "Unknown message type: missing both 'method' and 'result'/'error'",
+			Code: InvalidRequestError,
+			Message: GetDefaultErrorMessage(
+				InvalidRequestError,
+			) + ": Unknown message type: missing both 'method' and 'result'/'error'",
 		}
 	}
 }
@@ -85,8 +91,10 @@ func handleNotification(
 	handler, ok := notificationMap[*request.Method]
 	if !ok {
 		return &JSONRPCError{
-			Code:    MethodNotFoundError,
-			Message: fmt.Sprintf("Notification '%s' not found", *request.Method),
+			Code: MethodNotFoundError,
+			Message: GetDefaultErrorMessage(
+				MethodNotFoundError,
+			) + ": Notification" + *request.Method,
 		}
 	}
 	subCtx := contextWithRequestInfo(ctx, *request.Method, MessageTypeNotification, nil)
@@ -114,7 +122,7 @@ func handleResponse(
 	if err != nil {
 		return &JSONRPCError{
 			Code:    InternalError,
-			Message: err.Error(),
+			Message: GetDefaultErrorMessage(InternalError) + ": " + err.Error(),
 		}
 	}
 	subCtx := contextWithRequestInfo(ctx, method, MessageTypeResponse, request.ID)
@@ -122,7 +130,7 @@ func handleResponse(
 	if !ok {
 		return &JSONRPCError{
 			Code:    MethodNotFoundError,
-			Message: fmt.Sprintf("Method '%s' not found", method),
+			Message: GetDefaultErrorMessage(MethodNotFoundError) + ": " + method,
 		}
 	}
 
@@ -141,7 +149,7 @@ func handleMethod(
 			ID:      request.ID,
 			Error: &JSONRPCError{
 				Code:    MethodNotFoundError,
-				Message: fmt.Sprintf("Method '%s' not found", *request.Method),
+				Message: GetDefaultErrorMessage(MethodNotFoundError) + ": " + *request.Method,
 			},
 		}
 	}
@@ -150,8 +158,12 @@ func handleMethod(
 			JSONRPC: JSONRPCVersion,
 			ID:      request.ID,
 			Error: &JSONRPCError{
-				Code:    InvalidRequestError,
-				Message: fmt.Sprintf("Received no requestID for method: '%s'", *request.Method),
+				Code: InvalidRequestError,
+				Message: fmt.Sprintf(
+					"%s: Received no requestID for method: '%s'",
+					GetDefaultErrorMessage(ParseError),
+					*request.Method,
+				),
 			},
 		}
 	}
@@ -178,7 +190,7 @@ func GetBatchRequestHandler(
 				ID:      nil,
 				Error: &JSONRPCError{
 					Code:    ParseError,
-					Message: "No input received for",
+					Message: GetDefaultErrorMessage(ParseError) + ": No input received",
 				},
 			}
 			// Return single error if invalid batch or even a single item cannot be found.
@@ -235,7 +247,7 @@ func GetBatchRequestHandler(
 		if len(resp.Body.Items) == 0 {
 			return nil, nil
 		}
-
+		// log.Printf("%#v", resp.Body)
 		return &resp, nil
 	}
 }

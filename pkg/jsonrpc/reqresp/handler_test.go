@@ -113,7 +113,7 @@ func TestGetBatchRequestHandler(t *testing.T) {
 						ID:      nil,
 						Error: &JSONRPCError{
 							Code:    ParseError,
-							Message: "No input received for",
+							Message: GetDefaultErrorMessage(ParseError) + ": No input received",
 						},
 					}},
 				},
@@ -135,7 +135,7 @@ func TestGetBatchRequestHandler(t *testing.T) {
 						ID:      nil,
 						Error: &JSONRPCError{
 							Code:    ParseError,
-							Message: "No input received for",
+							Message: GetDefaultErrorMessage(ParseError) + ": No input received",
 						},
 					}},
 				},
@@ -163,8 +163,10 @@ func TestGetBatchRequestHandler(t *testing.T) {
 						JSONRPC: JSONRPCVersion,
 						ID:      &RequestID{Value: 1},
 						Error: &JSONRPCError{
-							Code:    InvalidRequestError,
-							Message: "Invalid JSON-RPC version: '1.0'",
+							Code: InvalidRequestError,
+							Message: GetDefaultErrorMessage(
+								InvalidRequestError,
+							) + ": Invalid JSON-RPC version: '1.0'",
 						},
 					}},
 				},
@@ -333,7 +335,7 @@ func TestGetBatchRequestHandler(t *testing.T) {
 						ID:      &RequestID{Value: 1},
 						Error: &JSONRPCError{
 							Code:    MethodNotFoundError,
-							Message: "Method '' not found",
+							Message: GetDefaultErrorMessage(MethodNotFoundError) + ": ",
 						},
 					}},
 				},
@@ -360,7 +362,7 @@ func TestGetBatchRequestHandler(t *testing.T) {
 						ID:      &RequestID{Value: 2},
 						Error: &JSONRPCError{
 							Code:    MethodNotFoundError,
-							Message: "Method 'subtract' not found",
+							Message: GetDefaultErrorMessage(MethodNotFoundError) + ": subtract",
 						},
 					}},
 				},
@@ -418,7 +420,7 @@ func TestGetBatchRequestHandler(t *testing.T) {
 							ID:      &RequestID{Value: 3},
 							Error: &JSONRPCError{
 								Code:    MethodNotFoundError,
-								Message: "Method 'subtract' not found",
+								Message: GetDefaultErrorMessage(MethodNotFoundError) + ": subtract",
 							},
 						},
 					},
@@ -448,8 +450,10 @@ func TestGetBatchRequestHandler(t *testing.T) {
 							JSONRPC: JSONRPCVersion,
 							ID:      &RequestID{Value: 1},
 							Error: &JSONRPCError{
-								Code:    InvalidParamsError,
-								Message: "Invalid method parameter(s).: json: cannot unmarshal string into Go struct field AddParams.a of type int",
+								Code: InvalidParamsError,
+								Message: GetDefaultErrorMessage(
+									InvalidParamsError,
+								) + ": json: cannot unmarshal string into Go struct field AddParams.a of type int",
 							},
 						},
 					},
@@ -479,8 +483,10 @@ func TestGetBatchRequestHandler(t *testing.T) {
 							JSONRPC: JSONRPCVersion,
 							ID:      &RequestID{Value: 1},
 							Error: &JSONRPCError{
-								Code:    InternalError,
-								Message: "intentional error",
+								Code: InternalError,
+								Message: GetDefaultErrorMessage(
+									InternalError,
+								) + ": intentional error",
 							},
 						},
 					},
@@ -538,8 +544,10 @@ func TestGetBatchRequestHandler(t *testing.T) {
 						JSONRPC: JSONRPCVersion,
 						ID:      &RequestID{Value: 4},
 						Error: &JSONRPCError{
-							Code:    InvalidParamsError,
-							Message: "Invalid method parameter(s).: invalid character 'i' looking for beginning of value",
+							Code: InvalidParamsError,
+							Message: GetDefaultErrorMessage(
+								InvalidParamsError,
+							) + ": invalid character 'i' looking for beginning of value",
 						},
 					}},
 				},
