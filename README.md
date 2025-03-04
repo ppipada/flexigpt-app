@@ -14,6 +14,10 @@ Key objectives of FlexiGPT
 - Cross-Platform Compatibility
   - Ensure seamless operation across Linux, Mac, and Windows systems.
 
+## 🐉 Here Be Dragons! 🐉
+
+**Warning:** This repository is currently under heavy development. Expect frequent breaking changes, incomplete features, and unstable APIs across releases. Use at your own risk!
+
 ## Install
 
 ### Linux
