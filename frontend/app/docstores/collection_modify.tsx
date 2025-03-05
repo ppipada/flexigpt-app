@@ -88,6 +88,7 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 							onChange={handleChange}
 							className={`input input-bordered rounded-2xl ${errors.name ? 'input-error' : ''}`}
 							required
+							spellCheck="false"
 						/>
 						{errors.name && <p className="text-error text-sm mt-1">{errors.name}</p>}
 					</div>
@@ -106,6 +107,7 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 								onChange={handleChange}
 								className={`input input-bordered rounded-2xl pl-8 ${errors.command ? 'input-error' : ''}`}
 								required
+								spellCheck="false"
 							/>
 						</div>
 						{errors.command && <p className="text-error text-sm mt-1">{errors.command}</p>}

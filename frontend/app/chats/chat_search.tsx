@@ -76,6 +76,7 @@ export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSele
 					placeholder="Search or load chats"
 					className="w-full bg-base-100 border-none outline-none"
 					style={{ fontSize: '14px' }}
+					spellCheck="false"
 				/>
 			</div>
 			{showDropdown && <GroupedDropdown items={items} handleItemClick={handleItemClick} focusedIndex={focusedIndex} />}

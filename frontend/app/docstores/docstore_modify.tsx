@@ -110,6 +110,7 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 							onChange={handleChange}
 							className={`input input-bordered rounded-2xl ${errors.name ? 'input-error' : ''}`}
 							required
+							spellCheck="false"
 						/>
 						{errors.name && <p className="text-error text-sm mt-1">{errors.name}</p>}
 					</div>
@@ -124,6 +125,7 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 							onChange={handleChange}
 							className={`input input-bordered rounded-2xl ${errors.url ? 'input-error' : ''}`}
 							required
+							spellCheck="false"
 						/>
 						{errors.url && <p className="text-error text-sm mt-1">{errors.url}</p>}
 					</div>
@@ -136,6 +138,7 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 							value={formData.description}
 							onChange={handleChange}
 							className="textarea textarea-bordered rounded-2xl"
+							spellCheck="false"
 						></textarea>
 					</div>
 					<div className="form-control">
@@ -149,6 +152,7 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 							onChange={handleChange}
 							className={`input input-bordered rounded-2xl ${errors.dbName ? 'input-error' : ''}`}
 							required
+							spellCheck="false"
 						/>
 						{errors.dbName && <p className="text-error text-sm mt-1">{errors.dbName}</p>}
 					</div>

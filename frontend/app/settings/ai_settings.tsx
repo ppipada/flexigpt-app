@@ -53,6 +53,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 						checked={isEnabled}
 						onChange={toggleEnable}
 						className="toggle toggle-primary rounded-full"
+						spellCheck="false"
 					/>
 				</div>
 				{/* Full Settings with Chevron */}
@@ -90,6 +91,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 							value={settings.apiKey}
 							onChange={e => onChange('apiKey', e.target.value)}
 							onBlur={e => onSave('apiKey', e.target.value)}
+							spellCheck="false"
 						/>
 					</div>
 
@@ -105,6 +107,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 							value={settings.defaultModel}
 							onChange={e => onChange('defaultModel', e.target.value)}
 							onBlur={e => onSave('defaultModel', e.target.value)}
+							spellCheck="false"
 						/>
 					</div>
 
@@ -126,6 +129,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 							value={settings.defaultTemperature}
 							onChange={e => onChange('defaultTemperature', parseFloat(e.target.value))}
 							onBlur={e => onSave('defaultTemperature', parseFloat(e.target.value))}
+							spellCheck="false"
 						/>
 					</div>
 
@@ -141,6 +145,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 							value={settings.defaultOrigin}
 							onChange={e => onChange('defaultOrigin', e.target.value)}
 							onBlur={e => onSave('defaultOrigin', e.target.value)}
+							spellCheck="false"
 						/>
 					</div>
 				</div>

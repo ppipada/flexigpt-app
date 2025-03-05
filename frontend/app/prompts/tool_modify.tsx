@@ -86,6 +86,7 @@ const ModifyTool: React.FC<ModifyToolProps> = ({ isOpen, onClose, onSubmit, init
 							onChange={handleChange}
 							className={`input input-bordered rounded-2xl ${errors.name ? 'input-error' : ''}`}
 							required
+							spellCheck="false"
 						/>
 						{errors.name && <p className="text-error text-sm mt-1">{errors.name}</p>}
 					</div>
@@ -104,6 +105,7 @@ const ModifyTool: React.FC<ModifyToolProps> = ({ isOpen, onClose, onSubmit, init
 								onChange={handleChange}
 								className={`input input-bordered rounded-2xl pl-8 ${errors.command ? 'input-error' : ''}`}
 								required
+								spellCheck="false"
 							/>
 						</div>
 						{errors.command && <p className="text-error text-sm mt-1">{errors.command}</p>}
@@ -118,6 +120,7 @@ const ModifyTool: React.FC<ModifyToolProps> = ({ isOpen, onClose, onSubmit, init
 							onChange={handleChange}
 							className={`textarea textarea-bordered rounded-2xl ${errors.schema ? 'textarea-error' : ''}`}
 							required
+							spellCheck="false"
 						/>
 						{errors.schema && <p className="text-error text-sm mt-1">{errors.schema}</p>}
 					</div>
@@ -131,6 +134,7 @@ const ModifyTool: React.FC<ModifyToolProps> = ({ isOpen, onClose, onSubmit, init
 							onChange={handleChange}
 							className={`textarea textarea-bordered rounded-2xl ${errors.inFunc ? 'textarea-error' : ''}`}
 							required
+							spellCheck="false"
 						/>
 						{errors.inFunc && <p className="text-error text-sm mt-1">{errors.inFunc}</p>}
 					</div>

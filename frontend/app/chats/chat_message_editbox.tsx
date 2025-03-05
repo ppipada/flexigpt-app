@@ -61,6 +61,7 @@ const EditBox: FC<EditBoxProps> = ({ editText, onTextChange, onSubmit, onDiscard
 					className="resize-none bg-base-100 p-4 w-full"
 					rows={4}
 					style={{ fontSize: '14px' }}
+					spellCheck="false"
 				/>
 			</div>
 			<div className="flex justify-end mt-0 mr-2 space-x-2">

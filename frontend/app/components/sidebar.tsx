@@ -23,6 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 				className="drawer-toggle md:hidden"
 				checked={isDrawerOpen}
 				onChange={toggle}
+				spellCheck="false"
 			/>
 			<div className="drawer-content flex flex-col">
 				{/* Hamburger menu button */}

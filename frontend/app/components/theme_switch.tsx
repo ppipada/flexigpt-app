@@ -28,6 +28,7 @@ export default function ThemeSwitch() {
 					className="toggle toggle-primary rounded-full mt-1 h-6"
 					checked={resolvedTheme === 'dark'}
 					onChange={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+					spellCheck="false"
 				/>
 			</label>
 			<FiMoon className="flex items-center justify-center w-8 h-5" size={24} onClick={() => setTheme('dark')} />

@@ -231,6 +231,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 						checked={disablePreviousMessages}
 						onChange={e => setDisablePreviousMessages(e.target.checked)}
 						className="checkbox checkbox-xs rounded-full"
+						spellCheck="false"
 					/>
 					<span className="text-xs text-nowrap">Disable previous messages</span>
 				</label>
@@ -250,6 +251,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					className="flex-1 resize-none overflow-auto bg-transparent border-none outline-none placeholder-gray-400 min-h-[24px] max-h-[240px] p-2"
 					rows={1}
 					style={{ fontSize: '14px' }}
+					spellCheck="false"
 				/>
 				<button
 					type="submit"

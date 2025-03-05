@@ -95,6 +95,7 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 							onChange={handleChange}
 							className={`input input-bordered rounded-2xl ${errors.name ? 'input-error' : ''}`}
 							required
+							spellCheck="false"
 						/>
 						{errors.name && <p className="text-error text-sm mt-1">{errors.name}</p>}
 					</div>
@@ -113,6 +114,7 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 								onChange={handleChange}
 								className={`input input-bordered rounded-2xl pl-8 ${errors.command ? 'input-error' : ''}`}
 								required
+								spellCheck="false"
 							/>
 						</div>
 						{errors.command && <p className="text-error text-sm mt-1">{errors.command}</p>}
@@ -127,6 +129,7 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 							onChange={handleChange}
 							className={`textarea textarea-bordered rounded-2xl ${errors.template ? 'textarea-error' : ''}`}
 							required
+							spellCheck="false"
 						/>
 						{errors.template && <p className="text-error text-sm mt-1">{errors.template}</p>}
 					</div>
