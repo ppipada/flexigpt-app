@@ -1,4 +1,4 @@
-package stdio
+package mcpstdio
 
 import (
 	"io"
@@ -7,7 +7,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/flexigpt/flexiui/pkg/jsonrpc/humaadapter"
 	jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
-	stdioNet "github.com/flexigpt/flexiui/pkg/jsonrpc/transport/stdio/net"
+	stdioNet "github.com/flexigpt/flexiui/pkg/jsonrpc/transport/mcpstdio/net"
 )
 
 const JSONRPCEndpoint = "/jsonrpc"

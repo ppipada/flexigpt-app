@@ -1,4 +1,4 @@
-package stdio
+package mcpstdio
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/flexigpt/flexiui/pkg/jsonrpc/transport/helpers_test"
-	stdioNet "github.com/flexigpt/flexiui/pkg/jsonrpc/transport/stdio/net"
+	stdioNet "github.com/flexigpt/flexiui/pkg/jsonrpc/transport/mcpstdio/net"
 )
 
 type StdIOJSONRPCClient struct {
