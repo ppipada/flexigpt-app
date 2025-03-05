@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -103,4 +104,43 @@ func (m *MethodHandler[I, O]) GetTypes() (iType, oType reflect.Type) {
 	iType = reflect.TypeOf((*I)(nil)).Elem()
 	oType = reflect.TypeOf((*O)(nil)).Elem()
 	return iType, oType
+}
+
+func handleMethod(
+	ctx context.Context,
+	request UnionRequest,
+	methodMap map[string]IMethodHandler,
+) Response[json.RawMessage] {
+	handler, ok := methodMap[*request.Method]
+	if !ok {
+		return Response[json.RawMessage]{
+			JSONRPC: JSONRPCVersion,
+			ID:      request.ID,
+			Error: &JSONRPCError{
+				Code:    MethodNotFoundError,
+				Message: GetDefaultErrorMessage(MethodNotFoundError) + ": " + *request.Method,
+			},
+		}
+	}
+	if request.ID == nil {
+		return Response[json.RawMessage]{
+			JSONRPC: JSONRPCVersion,
+			ID:      request.ID,
+			Error: &JSONRPCError{
+				Code: InvalidRequestError,
+				Message: fmt.Sprintf(
+					"%s: Received no requestID for method: '%s'",
+					GetDefaultErrorMessage(ParseError),
+					*request.Method,
+				),
+			},
+		}
+	}
+	subCtx := contextWithRequestInfo(ctx, *request.Method, MessageTypeMethod, request.ID)
+	return handler.Handle(subCtx, Request[json.RawMessage]{
+		JSONRPC: request.JSONRPC,
+		ID:      *request.ID,
+		Method:  *request.Method,
+		Params:  request.Params,
+	})
 }

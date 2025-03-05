@@ -39,7 +39,7 @@ func sendJSONRPCRequest(t *testing.T, client JSONRPCClient, request any) []byte 
 	if err == nil {
 		r, err := json.Marshal(o)
 		if err == nil {
-			t.Logf("Json resp %s", string(r))
+			t.Logf("Json resp %s - %#v", string(r), r)
 		}
 	}
 	return respBody
@@ -289,10 +289,6 @@ func TestNotifications(t *testing.T, client JSONRPCClient) {
 				"method":  "unknown_method",
 				"params":  map[string]any{"message": "Hello"},
 			},
-			expectedError: &jsonrpcReqResp.JSONRPCError{
-				Code:    jsonrpcReqResp.MethodNotFoundError,
-				Message: "Method 'unknown_method' not found",
-			},
 		},
 		{
 			name: "Ping notification",
@@ -307,36 +303,14 @@ func TestNotifications(t *testing.T, client JSONRPCClient) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			respBody := sendJSONRPCRequest(t, client, tc.request)
-
-			if len(respBody) != 0 {
-				if tc.expectedError != nil {
-					var response struct {
-						JSONRPC      string                       `json:"jsonrpc"`
-						Result       any                          `json:"result"`
-						JSONRPCError *jsonrpcReqResp.JSONRPCError `json:"error"`
-						ID           any                          `json:"id"`
-					}
-					err := json.Unmarshal(respBody, &response)
-					if err != nil {
-						t.Fatalf("Error unmarshaling response: %v", err)
-					}
-					if response.JSONRPCError.Code != tc.expectedError.Code {
-						t.Errorf(
-							"Expected error code %d, got %d",
-							tc.expectedError.Code,
-							response.JSONRPCError.Code,
-						)
-					}
-					if !strings.Contains(response.JSONRPCError.Message, tc.expectedError.Message) {
-						t.Errorf(
-							"Expected error message '%s', got '%s'",
-							tc.expectedError.Message,
-							response.JSONRPCError.Message,
-						)
-					}
-				} else {
-					t.Errorf("Expected no response, but got: %s", string(respBody))
-				}
+			var o any
+			err := json.Unmarshal(respBody, &o)
+			if err != nil {
+				t.Errorf("Got error in unmarshal resp: %s", string(respBody))
+				return
+			}
+			if o != nil {
+				t.Errorf("Expected no response, but got: %s", string(respBody))
 			}
 		})
 	}
@@ -466,8 +440,10 @@ func TestBatchRequests(t *testing.T, client JSONRPCClient) {
 			respBody := sendJSONRPCRequest(t, client, batch)
 
 			if tc.expectedResponses == 0 {
-				if len(respBody) != 0 {
-					t.Errorf("Expected no response, but got: %s", string(respBody))
+				var o any
+				err := json.Unmarshal(respBody, &o)
+				if err != nil || o != nil {
+					t.Errorf("Expected no response, but got: %#v", o)
 					return
 				} else {
 					return

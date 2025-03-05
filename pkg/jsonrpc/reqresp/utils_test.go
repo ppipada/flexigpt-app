@@ -31,6 +31,7 @@ func getJSONStrings(args ...any) ([]string, error) {
 	for _, a := range args {
 		jsonBytes, err := json.Marshal(a)
 		if err != nil {
+			// log.Printf("%s", err.Error())
 			return nil, err
 		}
 		ret = append(ret, string(jsonBytes))

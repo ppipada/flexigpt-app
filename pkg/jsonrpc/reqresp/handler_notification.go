@@ -59,3 +59,25 @@ func (n *NotificationHandler[I]) Handle(
 func (m *NotificationHandler[I]) GetTypes() reflect.Type {
 	return reflect.TypeOf((*I)(nil)).Elem()
 }
+
+func handleNotification(
+	ctx context.Context,
+	request UnionRequest,
+	notificationMap map[string]INotificationHandler,
+) error {
+	handler, ok := notificationMap[*request.Method]
+	if !ok {
+		return &JSONRPCError{
+			Code: MethodNotFoundError,
+			Message: GetDefaultErrorMessage(
+				MethodNotFoundError,
+			) + ": Notification" + *request.Method,
+		}
+	}
+	subCtx := contextWithRequestInfo(ctx, *request.Method, MessageTypeNotification, nil)
+	return handler.Handle(subCtx, Notification[json.RawMessage]{
+		JSONRPC: request.JSONRPC,
+		Method:  *request.Method,
+		Params:  request.Params,
+	})
+}

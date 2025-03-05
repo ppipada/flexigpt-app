@@ -69,3 +69,35 @@ func (r *ResponseHandler[T]) Handle(ctx context.Context, resp Response[json.RawM
 func (r *ResponseHandler[T]) GetTypes() reflect.Type {
 	return reflect.TypeOf((*T)(nil)).Elem()
 }
+
+func handleResponse(
+	ctx context.Context,
+	request UnionRequest,
+	responseMap map[string]IResponseHandler,
+	responseHandlerMapper func(context.Context, Response[json.RawMessage]) (string, error),
+) error {
+	// Create context with request info
+	resp := Response[json.RawMessage]{
+		JSONRPC: request.JSONRPC,
+		ID:      request.ID,
+		Result:  request.Result,
+		Error:   request.Error,
+	}
+	method, err := responseHandlerMapper(ctx, resp)
+	if err != nil {
+		return &JSONRPCError{
+			Code:    InternalError,
+			Message: GetDefaultErrorMessage(InternalError) + ": " + err.Error(),
+		}
+	}
+	subCtx := contextWithRequestInfo(ctx, method, MessageTypeResponse, request.ID)
+	handler, ok := responseMap[method]
+	if !ok {
+		return &JSONRPCError{
+			Code:    MethodNotFoundError,
+			Message: GetDefaultErrorMessage(MethodNotFoundError) + ": " + method,
+		}
+	}
+
+	return handler.Handle(subCtx, resp)
+}

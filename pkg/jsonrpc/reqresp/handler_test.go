@@ -56,7 +56,7 @@ func NotifyEndpoint(ctx context.Context, params NotifyParams) error {
 	return nil
 }
 
-func TestGetBatchRequestHandler(t *testing.T) {
+func TestBatchRequestHandler(t *testing.T) {
 	// Define method maps
 	methodMap := map[string]IMethodHandler{
 		"add": &MethodHandler[AddParams, AddResult]{Endpoint: AddEndpoint},
@@ -569,16 +569,14 @@ func TestGetBatchRequestHandler(t *testing.T) {
 		},
 	}
 
-	handlerFunc := GetBatchRequestHandler(
-		methodMap,
-		notificationMap,
-		responseMap,
-		responseHandlerMapper,
+	brh := NewBatchRequestHandler(WithMethodMap(methodMap),
+		WithNotificationMap(notificationMap),
+		WithResponseMap(responseMap, responseHandlerMapper),
 	)
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := handlerFunc(ctx, tt.metaReq)
+			resp, err := brh.Handle(ctx, tt.metaReq)
 			if err != nil {
 				t.Errorf("handlerFunc returned error: %v", err)
 			}

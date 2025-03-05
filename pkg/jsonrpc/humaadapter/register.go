@@ -149,12 +149,10 @@ func Register(
 ) {
 	AddSchemasToAPI(api, methodMap, notificationMap)
 	huma.NewError = GetErrorHandler(methodMap, notificationMap)
-	reqHandler := jsonrpcReqResp.GetBatchRequestHandler(
-		methodMap,
-		notificationMap,
-		responseMap,
-		responseHandlerMapper,
+	brh := jsonrpcReqResp.NewBatchRequestHandler(jsonrpcReqResp.WithMethodMap(methodMap),
+		jsonrpcReqResp.WithNotificationMap(notificationMap),
+		jsonrpcReqResp.WithResponseMap(responseMap, responseHandlerMapper),
 	)
 
-	huma.Register(api, op, reqHandler)
+	huma.Register(api, op, brh.Handle)
 }

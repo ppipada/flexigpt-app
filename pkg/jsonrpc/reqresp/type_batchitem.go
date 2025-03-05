@@ -74,10 +74,7 @@ func marshalBatchItem[T any](isBatch bool, items []T) ([]byte, error) {
 	if len(items) > 0 {
 		return json.Marshal(items[0])
 	}
-	return nil, &JSONRPCError{
-		Code:    ParseError,
-		Message: GetDefaultErrorMessage(ParseError) + ": Received empty input",
-	}
+	return json.Marshal(nil)
 }
 
 // BatchItem is a generic struct to detect and handle batch Items of any type.
