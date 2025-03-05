@@ -1,4 +1,4 @@
-package httpsse
+package mcphttpsse
 
 import (
 	"bytes"
