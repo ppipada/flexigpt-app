@@ -3,7 +3,7 @@ import { conversationStoreAPI } from '@/backendapibase';
 import { GetCompletionMessage } from '@/backendapihelper/chat_completion_helper';
 import { listAllConversations } from '@/backendapihelper/conversation_cache';
 import ChatInputField, { ChatInputFieldHandle, ChatOptions } from '@/chats/chat_input_field';
-import { MemoizedChatMessage } from '@/chats/chat_message';
+import { ChatMessage } from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
 import { Conversation, ConversationItem, ConversationMessage, ConversationRoleEnum } from '@/models/conversationmodel';
@@ -81,7 +81,7 @@ const ChatScreen: FC = () => {
 	useEffect(() => {
 		conversationListRef.current = undefined;
 		fetchConversations(); // Fetch conversations again
-	}, [chat.id, fetchConversations]);
+	}, [chat, fetchConversations]);
 
 	useEffect(() => {
 		if (chatContainerRef.current) {
@@ -240,7 +240,7 @@ const ChatScreen: FC = () => {
 	const memoizedChatMessages = useMemo(
 		() =>
 			chat.messages.map((message, index) => (
-				<MemoizedChatMessage
+				<ChatMessage
 					key={message.id}
 					message={message}
 					onEdit={editedText => handleEdit(editedText, message.id)}

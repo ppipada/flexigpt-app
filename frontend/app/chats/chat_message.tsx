@@ -2,7 +2,7 @@ import { ChatMessageContent } from '@/chats/chat_message_content';
 import EditBox from '@/chats/chat_message_editbox';
 import ChatMessageFooterArea from '@/chats/chat_message_footer';
 import { ConversationMessage, ConversationRoleEnum } from '@/models/conversationmodel';
-import { ChangeEvent, FC, memo, useState } from 'react';
+import { ChangeEvent, FC, useState } from 'react';
 import { FiCompass, FiUser } from 'react-icons/fi';
 
 interface ChatMessageProps {
@@ -12,7 +12,7 @@ interface ChatMessageProps {
 	streamedMessage: string;
 }
 
-const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamedMessage }) => {
+export const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamedMessage }) => {
 	const isUser = message.role === ConversationRoleEnum.user;
 	const align = !isUser ? 'items-end text-left' : 'items-start text-left';
 	const leftColSpan = !isUser ? 'col-span-1 lg:col-span-2' : 'col-span-1';
@@ -93,5 +93,3 @@ const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamed
 		</div>
 	);
 };
-
-export const MemoizedChatMessage = memo(ChatMessage);
