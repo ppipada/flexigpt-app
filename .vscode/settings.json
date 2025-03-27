@@ -3,10 +3,14 @@
 	// General Editor Settings
 	// ============================================
 	"editor.formatOnSave": true,
+	"editor.rulers": [120],
 	"editor.codeActionsOnSave": {
 		"source.organizeImports": "explicit"
 	},
 	"editor.linkedEditing": true,
+	"editor.quickSuggestions": {
+		"strings": "on"
+	},
 
 	// ============================================
 	// File Associations
