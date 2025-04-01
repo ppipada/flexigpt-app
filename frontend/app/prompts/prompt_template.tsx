@@ -145,7 +145,7 @@ const PromptTemplates: React.FC = () => {
 					</thead>
 					<tbody>
 						{templates.map((template, index) => (
-							<tr key={template.id} className="hover border-none shadow-none">
+							<tr key={template.id} className="hover:bg-base-300 border-none shadow-none">
 								<td className={index === templates.length - 1 ? 'rounded-bl-2xl' : ''}>{template.name}</td>
 								<td>
 									{PROMPT_TEMPLATE_INVOKE_CHAR}

@@ -69,9 +69,9 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 					<div className="flex items-center">
 						<span className="text-sm font-medium">Full Settings</span>
 						{isExpanded ? (
-							<FiChevronUp className="mx-1 text-gray-500" />
+							<FiChevronUp size={16} className="mx-1 text-gray-500" />
 						) : (
-							<FiChevronDown className="mx-1 text-gray-500" />
+							<FiChevronDown size={16} className="mx-1 text-gray-500" />
 						)}
 					</div>
 				</div>
@@ -86,7 +86,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 						</label>
 						<input
 							type="password"
-							className="input input-bordered col-span-9 w-full h-10 rounded-lg px-4 py-2"
+							className="input col-span-9 w-full h-10 rounded-lg px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={settings.apiKey}
 							onChange={e => onChange('apiKey', e.target.value)}
@@ -102,7 +102,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 						</label>
 						<input
 							type="text"
-							className="input input-bordered col-span-9 w-full h-10 rounded-lg px-4 py-2"
+							className="input col-span-9 w-full h-10 rounded-lg px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={settings.defaultModel}
 							onChange={e => onChange('defaultModel', e.target.value)}
@@ -124,7 +124,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 							step="0.01"
 							min="0"
 							max="1"
-							className="input input-bordered col-span-9 w-full h-10 rounded-lg px-4 py-2"
+							className="input col-span-9 w-full h-10 rounded-lg px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={settings.defaultTemperature}
 							onChange={e => onChange('defaultTemperature', parseFloat(e.target.value))}
@@ -140,7 +140,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 						</label>
 						<input
 							type="text"
-							className="input input-bordered col-span-9 w-full h-10 rounded-lg px-4 py-2"
+							className="input col-span-9 w-full h-10 rounded-lg px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={settings.defaultOrigin}
 							onChange={e => onChange('defaultOrigin', e.target.value)}

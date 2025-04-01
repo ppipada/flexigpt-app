@@ -125,7 +125,7 @@ const Tools: React.FC = () => {
 					</thead>
 					<tbody>
 						{tools.map((tool, index) => (
-							<tr key={tool.id} className="hover border-none shadow-none">
+							<tr key={tool.id} className="hover:bg-base-300 border-none shadow-none">
 								<td className={index === tools.length - 1 ? 'rounded-bl-2xl' : ''}>{tool.name}</td>
 								<td>
 									{TOOL_INVOKE_CHAR}

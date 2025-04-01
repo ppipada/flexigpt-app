@@ -84,24 +84,24 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 			<div className="modal-box rounded-2xl">
 				<h3 className="font-bold text-lg">{initialData ? 'Edit Prompt Template' : 'Add New Prompt Template'}</h3>
 				<form onSubmit={handleSubmit} className="mt-4">
-					<div className="form-control">
-						<label className="label">
-							<span className="label-text">Name*</span>
+					<fieldset className="fieldset">
+						<label className="label" htmlFor="name">
+							Name*
 						</label>
 						<input
 							type="text"
 							name="name"
 							value={formData.name || ''}
 							onChange={handleChange}
-							className={`input input-bordered rounded-2xl ${errors.name ? 'input-error' : ''}`}
+							className={`input rounded-2xl ${errors.name ? 'input-error' : ''}`}
 							required
 							spellCheck="false"
 						/>
 						{errors.name && <p className="text-error text-sm mt-1">{errors.name}</p>}
-					</div>
-					<div className="form-control">
-						<label className="label">
-							<span className="label-text">Command*</span>
+					</fieldset>
+					<fieldset className="fieldset">
+						<label className="label" htmlFor="name">
+							Command*
 						</label>
 						<div className="relative">
 							<span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral">
@@ -112,27 +112,27 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 								name="command"
 								value={formData.command || ''}
 								onChange={handleChange}
-								className={`input input-bordered rounded-2xl pl-8 ${errors.command ? 'input-error' : ''}`}
+								className={`input rounded-2xl pl-8 ${errors.command ? 'input-error' : ''}`}
 								required
 								spellCheck="false"
 							/>
 						</div>
 						{errors.command && <p className="text-error text-sm mt-1">{errors.command}</p>}
-					</div>
-					<div className="form-control">
-						<label className="label">
-							<span className="label-text">Template*</span>
+					</fieldset>
+					<fieldset className="fieldset">
+						<label className="label" htmlFor="name">
+							Template*
 						</label>
 						<textarea
 							name="template"
 							value={formData.template || ''}
 							onChange={handleChange}
-							className={`textarea textarea-bordered rounded-2xl ${errors.template ? 'textarea-error' : ''}`}
+							className={`textarea rounded-2xl ${errors.template ? 'textarea-error' : ''}`}
 							required
 							spellCheck="false"
 						/>
 						{errors.template && <p className="text-error text-sm mt-1">{errors.template}</p>}
-					</div>
+					</fieldset>
 					<div className="modal-action">
 						<button type="button" className="btn btn-ghost rounded-2xl" onClick={onClose}>
 							Cancel

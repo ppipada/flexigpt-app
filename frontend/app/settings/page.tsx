@@ -100,7 +100,7 @@ const SettingsPage: FC = () => {
 			<div className="w-full flex justify-center bg-transparent fixed top-2">
 				<div className="w-10/12 lg:w-2/3">
 					<div className="flex flex-row items-center justify-between p-2 mt-2 bg-transparent">
-						<div className="flex-grow text-center">
+						<div className="grow text-center">
 							<h1 className="text-xl font-semibold">Settings</h1>
 						</div>
 						<div className="ml-auto lg:pr-8">
@@ -117,11 +117,8 @@ const SettingsPage: FC = () => {
 				</div>
 			</div>
 
-			<div className="flex flex-col items-center w-full flex-grow bg-transparent mt-20">
-				<div
-					className="w-full flex-grow flex justify-center overflow-y-auto"
-					style={{ maxHeight: `calc(100vh - 128px)` }}
-				>
+			<div className="flex flex-col items-center w-full grow bg-transparent mt-20">
+				<div className="w-full grow flex justify-center overflow-y-auto" style={{ maxHeight: `calc(100vh - 128px)` }}>
 					<div className="flex flex-col space-y-4 w-11/12 lg:w-2/3">
 						{/* Theme Switch Card */}
 						<div className="bg-base-100 rounded-lg shadow-lg px-4 py-2">

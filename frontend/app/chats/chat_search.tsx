@@ -74,7 +74,7 @@ export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSele
 					onBlur={handleBlur}
 					onKeyDown={handleKeyDown}
 					placeholder="Search or load chats"
-					className="w-full bg-base-100 border-none outline-none"
+					className="w-full bg-base-100 border-none outline-hidden"
 					style={{ fontSize: '14px' }}
 					spellCheck="false"
 				/>

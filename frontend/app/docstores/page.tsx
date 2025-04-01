@@ -278,7 +278,7 @@ const DocumentStores: React.FC = () => {
 									</thead>
 									<tbody>
 										{docStore.collections.map((collection, index) => (
-											<tr key={collection.id} className="hover border-none shadow-none">
+											<tr key={collection.id} className="hover:bg-base-300 border-none shadow-none">
 												<td className={index === docStore.collections.length - 1 ? 'rounded-bl-2xl' : ''}>
 													<div className="flex items-center">
 														<FiFolder className="mr-2" />

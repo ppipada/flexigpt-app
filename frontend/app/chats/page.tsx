@@ -269,9 +269,9 @@ const ChatScreen: FC = () => {
 					/>
 				</div>
 			</div>
-			<div className="flex flex-col items-center w-full flex-grow bg-transparent overflow-hidden mt-32">
+			<div className="flex flex-col items-center w-full grow bg-transparent overflow-hidden mt-32">
 				<div
-					className="w-full flex-grow flex justify-center overflow-y-auto"
+					className="w-full grow flex justify-center overflow-y-auto"
 					ref={chatContainerRef}
 					style={{ maxHeight: `calc(100vh - 196px - ${inputHeight}px)` }} // Adjust height dynamically
 				>

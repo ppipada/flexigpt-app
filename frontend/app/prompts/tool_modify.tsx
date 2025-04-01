@@ -75,24 +75,24 @@ const ModifyTool: React.FC<ModifyToolProps> = ({ isOpen, onClose, onSubmit, init
 			<div className="modal-box rounded-2xl">
 				<h3 className="font-bold text-lg">{initialData ? 'Edit Tool' : 'Add New Tool'}</h3>
 				<form onSubmit={handleSubmit} className="mt-4">
-					<div className="form-control">
-						<label className="label">
-							<span className="label-text">Name*</span>
+					<fieldset className="fieldset">
+						<label className="label" htmlFor="name">
+							Name*
 						</label>
 						<input
 							type="text"
 							name="name"
 							value={formData.name || ''}
 							onChange={handleChange}
-							className={`input input-bordered rounded-2xl ${errors.name ? 'input-error' : ''}`}
+							className={`input rounded-2xl ${errors.name ? 'input-error' : ''}`}
 							required
 							spellCheck="false"
 						/>
 						{errors.name && <p className="text-error text-sm mt-1">{errors.name}</p>}
-					</div>
-					<div className="form-control">
-						<label className="label">
-							<span className="label-text">Command*</span>
+					</fieldset>
+					<fieldset className="fieldset">
+						<label className="label" htmlFor="name">
+							Command*
 						</label>
 						<div className="relative">
 							<span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral">
@@ -103,41 +103,41 @@ const ModifyTool: React.FC<ModifyToolProps> = ({ isOpen, onClose, onSubmit, init
 								name="command"
 								value={formData.command || ''}
 								onChange={handleChange}
-								className={`input input-bordered rounded-2xl pl-8 ${errors.command ? 'input-error' : ''}`}
+								className={`input rounded-2xl pl-8 ${errors.command ? 'input-error' : ''}`}
 								required
 								spellCheck="false"
 							/>
 						</div>
 						{errors.command && <p className="text-error text-sm mt-1">{errors.command}</p>}
-					</div>
-					<div className="form-control">
-						<label className="label">
-							<span className="label-text">Schema*</span>
+					</fieldset>
+					<fieldset className="fieldset">
+						<label className="label" htmlFor="name">
+							Schema*
 						</label>
 						<textarea
 							name="schema"
 							value={formData.schema || ''}
 							onChange={handleChange}
-							className={`textarea textarea-bordered rounded-2xl ${errors.schema ? 'textarea-error' : ''}`}
+							className={`textarea rounded-2xl ${errors.schema ? 'textarea-error' : ''}`}
 							required
 							spellCheck="false"
 						/>
 						{errors.schema && <p className="text-error text-sm mt-1">{errors.schema}</p>}
-					</div>
-					<div className="form-control">
-						<label className="label">
-							<span className="label-text">Input Function*</span>
+					</fieldset>
+					<fieldset className="fieldset">
+						<label className="label" htmlFor="name">
+							Input Function*
 						</label>
 						<textarea
 							name="inFunc"
 							value={formData.inFunc || ''}
 							onChange={handleChange}
-							className={`textarea textarea-bordered rounded-2xl ${errors.inFunc ? 'textarea-error' : ''}`}
+							className={`textarea rounded-2xl ${errors.inFunc ? 'textarea-error' : ''}`}
 							required
 							spellCheck="false"
 						/>
 						{errors.inFunc && <p className="text-error text-sm mt-1">{errors.inFunc}</p>}
-					</div>
+					</fieldset>
 					<div className="modal-action">
 						<button type="button" className="btn btn-ghost rounded-2xl" onClick={onClose}>
 							Cancel

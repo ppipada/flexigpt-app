@@ -1,4 +1,5 @@
 import { GetChatInputOptions, ModelOption } from '@/backendapihelper/chat_inputoptions_helper';
+import { useCloseDetails } from '@/lib/useCloseDetails';
 import { DefaultModelName, DefaultModelTitle, DefaultProviderName } from '@/models/aiprovidermodel';
 import React, {
 	ChangeEvent,
@@ -11,6 +12,7 @@ import React, {
 	useState,
 } from 'react';
 import { FiCheck, FiChevronDown, FiChevronUp, FiSend } from 'react-icons/fi';
+
 // Define the structure of the model information and chat options
 
 export interface ChatOptions {
@@ -71,6 +73,18 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 			temperature: 0.1,
 		},
 	]);
+	const modelDetailsRef = useRef<HTMLDetailsElement>(null);
+	const temperatureDetailsRef = useRef<HTMLDetailsElement>(null);
+	useCloseDetails({
+		detailsRef: modelDetailsRef,
+		events: ['mousedown'],
+		onClose: () => setIsModelDropdownOpen(false),
+	});
+	useCloseDetails({
+		detailsRef: temperatureDetailsRef,
+		events: ['mousedown'],
+		onClose: () => setIsTemperatureDropdownOpen(false),
+	});
 
 	const loadInitialItems = useCallback(async () => {
 		const r = await GetChatInputOptions();
@@ -156,30 +170,40 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	return (
 		<div className="relative">
 			<div className="flex items-center justify-between bg-base-200 gap-1 md:gap-8 mb-1 mx-4">
-				<div className="dropdown dropdown-top dropdown-end w-1/3">
-					<label
-						tabIndex={0}
+				<details
+					ref={modelDetailsRef}
+					className="dropdown dropdown-top dropdown-end w-1/3"
+					onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
+						setIsModelDropdownOpen((event.currentTarget as HTMLDetailsElement).open);
+					}}
+				>
+					<summary
 						className="btn btn-xs w-full text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
-						onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-						title="Select Model"
+						title="Select Modal"
 					>
 						<div className="flex">
 							<span className="sm:hidden">{selectedModel.title.substring(0, 8)}</span>
 							<span className="hidden sm:inline">{selectedModel.title} </span>
 							{isModelDropdownOpen ? (
-								<FiChevronDown className="ml-1 md:ml-2" />
+								<FiChevronDown size={16} className="ml-1 md:ml-2" />
 							) : (
-								<FiChevronUp className="ml-1 md:ml-2" />
+								<FiChevronUp size={16} className="ml-1 md:ml-2" />
 							)}
 						</div>
-					</label>
-					<ul
-						tabIndex={0}
-						className={`dropdown-content menu bg-base-100 rounded-box w-full ${isModelDropdownOpen ? 'block' : 'hidden'}`}
-						onClick={() => setIsModelDropdownOpen(false)}
-					>
+					</summary>
+					<ul className={`dropdown-content menu bg-base-100 rounded-box w-full`}>
 						{allOptions.map((model, index) => (
-							<li key={index} className="cursor-pointer text-xs" onClick={() => setSelectedModel(model)}>
+							<li
+								key={index}
+								className="cursor-pointer text-xs"
+								onClick={() => {
+									setSelectedModel(model);
+									if (modelDetailsRef.current) {
+										modelDetailsRef.current.open = false;
+									}
+									setIsModelDropdownOpen(false);
+								}}
+							>
 								<a className="justify-between items-center p-1 m-0">
 									<span>{model.title}</span>
 									{selectedModel.name && selectedModel.name === model.name && <FiCheck />}
@@ -187,32 +211,42 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 							</li>
 						))}
 					</ul>
-				</div>
+				</details>
 
-				<div className="dropdown dropdown-top dropdown-end w-1/3">
-					<label
-						tabIndex={0}
+				<details
+					ref={temperatureDetailsRef}
+					className="dropdown dropdown-top dropdown-end w-1/3"
+					onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
+						setIsTemperatureDropdownOpen((event.currentTarget as HTMLDetailsElement).open);
+					}}
+				>
+					<summary
 						className="btn btn-xs w-full text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
-						onClick={() => setIsTemperatureDropdownOpen(!isTemperatureDropdownOpen)}
 						title="Set temperature"
 					>
 						<div className="flex">
 							<span className="sm:hidden">Temp:</span>
 							<span className="hidden sm:inline">Temperature:</span> {selectedModel.temperature.toFixed(1)}{' '}
 							{isTemperatureDropdownOpen ? (
-								<FiChevronDown className="ml-1 md:ml-2" />
+								<FiChevronDown size={16} className="ml-1 md:ml-2" />
 							) : (
-								<FiChevronUp className="ml-1 md:ml-2" />
+								<FiChevronUp size={16} className="ml-1 md:ml-2" />
 							)}
 						</div>
-					</label>
-					<ul
-						tabIndex={0}
-						className={`dropdown-content menu bg-base-100 rounded-box w-full ${isTemperatureDropdownOpen ? 'block' : 'hidden'}`}
-						onClick={() => setIsTemperatureDropdownOpen(false)}
-					>
+					</summary>
+					<ul className={`dropdown-content menu bg-base-100 rounded-box w-full`}>
 						{temperatureOptions.map((temp, index) => (
-							<li key={index} className="cursor-pointer text-xs" onClick={() => setTemperature(parseFloat(temp))}>
+							<li
+								key={index}
+								className="cursor-pointer text-xs"
+								onClick={() => {
+									setTemperature(parseFloat(temp));
+									if (temperatureDetailsRef.current) {
+										temperatureDetailsRef.current.open = false;
+									}
+									setIsTemperatureDropdownOpen(false);
+								}}
+							>
 								<a className="justify-between items-center p-1 m-0">
 									<span>{temp}</span>
 									{selectedModel.temperature.toFixed(1) === temp && <FiCheck />}
@@ -220,7 +254,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 							</li>
 						))}
 					</ul>
-				</div>
+				</details>
 
 				<label
 					className="flex items-center space-x-2 text-neutral-400 w-1/3 overflow-hidden"
@@ -248,7 +282,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					onChange={handleTextChange}
 					onKeyDown={onKeyDown}
 					placeholder="Type message..."
-					className="flex-1 resize-none overflow-auto bg-transparent border-none outline-none placeholder-gray-400 min-h-[24px] max-h-[240px] p-2"
+					className="flex-1 resize-none overflow-auto bg-transparent border-none outline-hidden placeholder-gray-400 min-h-[24px] max-h-[240px] p-2"
 					rows={1}
 					style={{ fontSize: '14px' }}
 					spellCheck="false"

@@ -40,7 +40,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, s
 	};
 
 	return (
-		<div className="grid grid-cols-12 grid-rows-[auto,auto] gap-2 mb-4" style={{ fontSize: '14px' }}>
+		<div className="grid grid-cols-12 grid-rows-[auto_auto] gap-2 mb-4" style={{ fontSize: '14px' }}>
 			{/* Row 1: Icons and Message Content */}
 			<div className={`${leftColSpan} flex justify-end row-start-1 row-end-1`}>
 				{isUser && (

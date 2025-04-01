@@ -99,63 +99,63 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 			<div className="modal-box rounded-2xl">
 				<h3 className="font-bold text-lg">{initialData ? 'Edit Document Store' : 'Add New Document Store'}</h3>
 				<form onSubmit={handleSubmit} className="mt-4">
-					<div className="form-control">
-						<label className="label">
-							<span className="label-text">Name*</span>
+					<fieldset className="fieldset">
+						<label className="label" htmlFor="name">
+							Name*
 						</label>
 						<input
 							type="text"
 							name="name"
 							value={formData.name}
 							onChange={handleChange}
-							className={`input input-bordered rounded-2xl ${errors.name ? 'input-error' : ''}`}
+							className={`input rounded-2xl ${errors.name ? 'input-error' : ''}`}
 							required
 							spellCheck="false"
 						/>
 						{errors.name && <p className="text-error text-sm mt-1">{errors.name}</p>}
-					</div>
-					<div className="form-control">
-						<label className="label">
-							<span className="label-text">URL*</span>
+					</fieldset>
+					<fieldset className="fieldset">
+						<label className="label" htmlFor="name">
+							URL*
 						</label>
 						<input
 							type="url"
 							name="url"
 							value={formData.url}
 							onChange={handleChange}
-							className={`input input-bordered rounded-2xl ${errors.url ? 'input-error' : ''}`}
+							className={`input rounded-2xl ${errors.url ? 'input-error' : ''}`}
 							required
 							spellCheck="false"
 						/>
 						{errors.url && <p className="text-error text-sm mt-1">{errors.url}</p>}
-					</div>
-					<div className="form-control">
-						<label className="label">
-							<span className="label-text">Description</span>
+					</fieldset>
+					<fieldset className="fieldset">
+						<label className="label" htmlFor="name">
+							Description
 						</label>
 						<textarea
 							name="description"
 							value={formData.description}
 							onChange={handleChange}
-							className="textarea textarea-bordered rounded-2xl"
+							className="textarea rounded-2xl"
 							spellCheck="false"
 						></textarea>
-					</div>
-					<div className="form-control">
-						<label className="label">
-							<span className="label-text">Database Name*</span>
+					</fieldset>
+					<fieldset className="fieldset">
+						<label className="label" htmlFor="name">
+							Database Name*
 						</label>
 						<input
 							type="text"
 							name="dbName"
 							value={formData.dbName}
 							onChange={handleChange}
-							className={`input input-bordered rounded-2xl ${errors.dbName ? 'input-error' : ''}`}
+							className={`input rounded-2xl ${errors.dbName ? 'input-error' : ''}`}
 							required
 							spellCheck="false"
 						/>
 						{errors.dbName && <p className="text-error text-sm mt-1">{errors.dbName}</p>}
-					</div>
+					</fieldset>
 					<div className="modal-action">
 						<button type="button" className="btn btn-ghost rounded-2xl" onClick={onClose}>
 							Cancel

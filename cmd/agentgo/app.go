@@ -70,7 +70,7 @@ func NewApp() *App {
 		slog.Error("Failed to create directories", "app data", app.dataBasePath, "Error", err)
 		panic("Failed to initialize App")
 	}
-
+	slog.Info("FlexiGPT Paths", "app data", app.dataBasePath, "config data", app.configBasePath)
 	return app
 }
 
