@@ -31,7 +31,6 @@
 		"**/*.tsx",
 		"build/types/**/*.ts",
 		".next/types/**/*.ts",
-		"tailwind.config.ts",
 		"postcss.config.js",
 		"next.config.js"
 	],
