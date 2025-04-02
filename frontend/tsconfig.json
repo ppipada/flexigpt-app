@@ -25,6 +25,7 @@
 	"include": [
 		"**/*.ts",
 		"**/*.tsx",
+		"eslint.config.mjs",
 		"vite.config.ts",
 		"references.config.ts",
 		"**/.server/**/*",

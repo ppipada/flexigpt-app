@@ -13,6 +13,9 @@ import type {
 	IConversationStoreAPI,
 } from '@/models/conversationmodel';
 
+/**
+ * @public
+ */
 export class WailsConversationStoreAPI implements IConversationStoreAPI {
 	async saveConversation(conversation: Conversation): Promise<void> {
 		const req = { Body: conversation };

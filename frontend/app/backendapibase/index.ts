@@ -11,7 +11,6 @@ let ConversationStoreAPIImpl: new () => IConversationStoreAPI;
 let ProviderSetAPIImpl: new () => IProviderSetAPI;
 let SettingStoreAPIImpl: new () => ISettingStoreAPI;
 
-// Use async IIFE to handle dynamic imports
 (async () => {
 	if (IS_WAILS_PLATFORM) {
 		// Use dynamic import instead of require

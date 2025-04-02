@@ -10,6 +10,8 @@
 
 ## Laundry list
 
+- [ ] hydrationfallback addition
+- [ ] use loaders to do client loading of pre dom loading content like settings
 - MCP handling
 
   - [ ] Implement MCP protocol

@@ -22,7 +22,6 @@ export default tseslint.config(
 	},
 	js.configs.recommended,
 	tseslint.configs.strictTypeChecked,
-
 	{
 		files: ['**/*.{js,jsx,mjs,ts,tsx}'],
 		plugins: {

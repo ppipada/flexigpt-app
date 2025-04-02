@@ -194,4 +194,4 @@
   - [x] migrate to eslint 9
   - [x] use spa mode
   - [x] remove postcss
-  - [ ] remove eslint, prettier, knip from top
+  - [x] remove eslint, prettier, knip from top

@@ -17,6 +17,9 @@ import type {
 	ProviderName,
 } from '@/models/aiprovidermodel';
 
+/**
+ * @public
+ */
 export class WailsProviderSetAPI implements IProviderSetAPI {
 	async getDefaultProvider(): Promise<ProviderName> {
 		const resp = await GetDefaultProvider({} as wailsSpec.GetDefaultProviderRequest);

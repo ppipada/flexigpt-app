@@ -2,6 +2,9 @@ import { GetAllSettings, SetSetting } from '@/backendapibase/wailsjs/go/main/Set
 import type { ISettingStoreAPI, SettingsSchema } from '@/models/settingmodel';
 import type { spec } from '../wailsjs/go/models';
 
+/**
+ * @public
+ */
 export class WailsSettingStoreAPI implements ISettingStoreAPI {
 	// Implement the getAllSettings method
 	async getAllSettings(): Promise<SettingsSchema> {
