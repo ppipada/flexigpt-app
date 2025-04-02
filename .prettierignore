@@ -1,5 +1,6 @@
 build
 frontend/.next/
+frontend/.react-router/
 /dist/
 /node_modules/
 /stories/

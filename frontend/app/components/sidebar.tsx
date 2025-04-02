@@ -1,9 +1,8 @@
-'use client';
-
 import { FEATURE_FLAG_AGENTS, FEATURE_FLAG_DOCUMENT_STORES, FEATURE_FLAG_PROMPTS } from '@/lib/features';
-import Link from 'next/link';
-import { ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { FiCpu, FiDatabase, FiFilePlus, FiHome, FiMenu, FiMessageSquare, FiSettings } from 'react-icons/fi';
+import { Link } from 'react-router';
 
 interface SidebarProps {
 	children: ReactNode;
@@ -11,7 +10,9 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 	const [isDrawerOpen, setDrawerOpen] = useState(false);
-	const toggle = () => setDrawerOpen(!isDrawerOpen);
+	const toggle = () => {
+		setDrawerOpen(!isDrawerOpen);
+	};
 
 	// console.log(`${FEATURE_FLAG_AGENTS}`);
 	// const setOpen = () => setDrawerOpen(true);
@@ -41,17 +42,13 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 				<ul className="menu justify-between h-full w-12 ms-0 ps-0 bg-base-300 text-base-content">
 					<div className="flex-col p-0">
 						<li className="mt-16" title="Home" onClick={toggle}>
-							<Link
-								href="/"
-								className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
-								aria-label="ChatsHome"
-							>
+							<Link to="/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg" aria-label="ChatsHome">
 								<FiHome size={24} />
 							</Link>
 						</li>
 						<li className="mt-4" title="Chats" onClick={toggle}>
 							<Link
-								href="/chats/"
+								to="/chats/"
 								className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
 								aria-label="Chats"
 							>
@@ -61,7 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 						{FEATURE_FLAG_AGENTS && (
 							<li className="mt-4" title="Agents" onClick={toggle}>
 								<Link
-									href="/agents/"
+									to="/agents/"
 									className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
 									aria-label="Agents"
 								>
@@ -74,7 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 						{FEATURE_FLAG_PROMPTS && (
 							<li className="mt-4" title="Prompts" onClick={toggle}>
 								<Link
-									href="/prompts/"
+									to="/prompts/"
 									className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
 									aria-label="Prompts"
 								>
@@ -85,7 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 						{FEATURE_FLAG_DOCUMENT_STORES && (
 							<li className="mt-4" title="DocumentStores" onClick={toggle}>
 								<Link
-									href="/docstores/"
+									to="/docstores/"
 									className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
 									aria-label="DocumentStores"
 								>
@@ -95,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 						)}
 						<li className="mt-4" title="Settings" onClick={toggle}>
 							<Link
-								href="/settings/"
+								to="/settings/"
 								className="flex w-12 h-12 p-0 items-center justify-center rounded-lg"
 								aria-label="Settings"
 							>

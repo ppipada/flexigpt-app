@@ -1,6 +1,6 @@
 import { GetAllSettings, SetSetting } from '@/backendapibase/wailsjs/go/main/SettingStoreWrapper';
-import { ISettingStoreAPI, SettingsSchema } from '@/models/settingmodel';
-import { spec } from '../wailsjs/go/models';
+import type { ISettingStoreAPI, SettingsSchema } from '@/models/settingmodel';
+import type { spec } from '../wailsjs/go/models';
 
 export class WailsSettingStoreAPI implements ISettingStoreAPI {
 	// Implement the getAllSettings method

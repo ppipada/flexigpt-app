@@ -1,13 +1,13 @@
 import { Ping, SaveFile } from '@/backendapibase/wailsjs/go/main/App';
 import { BrowserOpenURL, LogDebug, LogError, LogInfo, LogWarning } from '@/backendapibase/wailsjs/runtime/runtime';
-import { FileFilter, IBackendAPI } from '@/models/backendmodel';
-import { ILogger } from '@/models/loggermodel';
+import type { FileFilter, IBackendAPI } from '@/models/backendmodel';
+import type { ILogger } from '@/models/loggermodel';
 import { sprintf } from 'sprintf-js';
 
 function formatMessage(args: unknown[]): string {
 	if (args.length > 0 && typeof args[0] === 'string') {
 		try {
-			return sprintf(args[0] as string, ...args.slice(1));
+			return sprintf(args[0], ...args.slice(1));
 		} catch (error) {
 			console.error(`Error formatting message: ${error}`);
 			return '';

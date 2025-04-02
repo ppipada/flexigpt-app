@@ -1,14 +1,12 @@
-'use client';
-
 import { providerSetAPI, settingstoreAPI } from '@/backendapibase';
 import { loadProviderSettings, updateProviderAISettings } from '@/backendapihelper/settings_helper';
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
-import { DefaultModelName, DefaultProviderName, ProviderName } from '@/models/aiprovidermodel';
-import { AISetting } from '@/models/settingmodel';
+import { DefaultModelName, DefaultProviderName, type ProviderName } from '@/models/aiprovidermodel';
+import type { AISetting } from '@/models/settingmodel';
 import ProviderDropdown from '@/settings/ai_provider'; // Import the new component
 import AISettingsCard from '@/settings/ai_settings';
-import { FC, useEffect, useState } from 'react';
+import { type FC, useEffect, useState } from 'react';
 
 const defaultAISettings: Record<ProviderName, AISetting> = {
 	[DefaultProviderName]: {
@@ -28,24 +26,19 @@ const SettingsPage: FC = () => {
 	useEffect(() => {
 		(async () => {
 			const settings = await loadProviderSettings();
-			if (settings) {
-				const enabledProviders = Object.keys(settings.aiSettings).filter(
-					provider => settings.aiSettings[provider as ProviderName]?.isEnabled
-				);
 
-				if (enabledProviders.length === 0) {
-					enabledProviders.push(DefaultProviderName);
-				}
+			const enabledProviders = Object.keys(settings.aiSettings).filter(
+				provider => settings.aiSettings[provider].isEnabled
+			);
 
-				const defaultProvider = settings.app.defaultProvider as ProviderName;
-				setComponentDefaultProvider(
-					enabledProviders.includes(defaultProvider)
-						? (defaultProvider as ProviderName)
-						: (enabledProviders[0] as ProviderName)
-				);
-
-				setAISettings(settings.aiSettings);
+			if (enabledProviders.length === 0) {
+				enabledProviders.push(DefaultProviderName);
 			}
+
+			const defaultProvider = settings.app.defaultProvider;
+			setComponentDefaultProvider(enabledProviders.includes(defaultProvider) ? defaultProvider : enabledProviders[0]);
+
+			setAISettings(settings.aiSettings);
 		})();
 	}, []);
 
@@ -69,9 +62,7 @@ const SettingsPage: FC = () => {
 
 	const handleSaveAISettings = async (provider: keyof typeof aiSettings, key: string, value: any) => {
 		if (key === 'isEnabled') {
-			const enabledProviders = Object.keys(aiSettings).filter(
-				provider => aiSettings[provider as ProviderName]?.isEnabled
-			);
+			const enabledProviders = Object.keys(aiSettings).filter(provider => aiSettings[provider].isEnabled);
 
 			if (enabledProviders.length === 1 && !value) {
 				return;
@@ -79,7 +70,7 @@ const SettingsPage: FC = () => {
 		}
 
 		await settingstoreAPI.setSetting(`aiSettings.${provider}.${key}`, value);
-		updateProviderAISettings(provider as ProviderName, aiSettings[provider]);
+		updateProviderAISettings(provider, aiSettings[provider]);
 	};
 
 	const fetchValue = async (): Promise<string> => {
@@ -146,14 +137,16 @@ const SettingsPage: FC = () => {
 
 						{/* AI Settings Cards */}
 						{Object.keys(aiSettings).map(providerStr => {
-							const typedProvider = providerStr as ProviderName;
+							const typedProvider = providerStr;
 							const oneSettings = aiSettings[typedProvider];
 							return (
 								<div key={typedProvider} className=" rounded-lg">
 									<AISettingsCard
 										provider={typedProvider}
 										settings={oneSettings}
-										onChange={(key, value) => handleAISettingsChange(typedProvider, key, value)}
+										onChange={(key, value) => {
+											handleAISettingsChange(typedProvider, key, value);
+										}}
 										onSave={(key, value) => handleSaveAISettings(typedProvider, key, value)}
 										aiSettings={aiSettings}
 									/>

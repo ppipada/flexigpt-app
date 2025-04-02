@@ -1,13 +1,14 @@
-'use client';
 import { conversationStoreAPI } from '@/backendapibase';
 import { GetCompletionMessage } from '@/backendapihelper/chat_completion_helper';
 import { listAllConversations } from '@/backendapihelper/conversation_cache';
-import ChatInputField, { ChatInputFieldHandle, ChatOptions } from '@/chats/chat_input_field';
-import { ChatMessage } from '@/chats/chat_message';
+import ChatInputField, { type ChatInputFieldHandle, type ChatOptions } from '@/chats/chat_input_field';
+import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
-import { Conversation, ConversationItem, ConversationMessage, ConversationRoleEnum } from '@/models/conversationmodel';
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ConversationRoleEnum } from '@/models/conversationmodel';
+
+import type { Conversation, ConversationItem, ConversationMessage } from '@/models/conversationmodel';
+import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { v7 as uuidv7 } from 'uuid';
 
 function initConversation(title: string = 'New Conversation'): Conversation {
@@ -39,7 +40,7 @@ const ChatScreen: FC = () => {
 	const [streamedMessage, setStreamedMessage] = useState<string>('');
 	const [isStreaming, setIsStreaming] = useState<boolean>(false);
 	const chatInputRef = useRef<ChatInputFieldHandle>(null);
-	const conversationListRef = useRef<ConversationItem[]>();
+	const conversationListRef = useRef<ConversationItem[]>([]);
 
 	useEffect(() => {
 		if (chatInputRef.current) {
@@ -61,17 +62,17 @@ const ChatScreen: FC = () => {
 
 	const fetchSearchResults = async (query: string): Promise<ConversationItem[]> => {
 		let conversations: ConversationItem[] = [];
-		if (!conversationListRef.current || conversationListRef.current.length === 0) {
+		if (conversationListRef.current.length === 0) {
 			await fetchConversations();
 		}
-		conversations = conversationListRef.current || [];
+		conversations = conversationListRef.current;
 		return conversations.filter(item => item.title.toLowerCase().includes(query.toLowerCase()));
 	};
 
 	const handleNewChat = useCallback(async () => {
 		conversationStoreAPI.saveConversation(chat);
 		setChat(initConversation());
-		conversationListRef.current = undefined;
+		conversationListRef.current = [];
 		fetchConversations(); // Fetch conversations again
 		if (chatInputRef.current) {
 			chatInputRef.current.focus(); // Focus on new chat
@@ -79,7 +80,7 @@ const ChatScreen: FC = () => {
 	}, [chat, fetchConversations]);
 
 	useEffect(() => {
-		conversationListRef.current = undefined;
+		conversationListRef.current = [];
 		fetchConversations(); // Fetch conversations again
 	}, [chat, fetchConversations]);
 
@@ -143,13 +144,13 @@ const ChatScreen: FC = () => {
 		};
 		// log.info(JSON.stringify({ prevMessages, inputParams, convoMsg }, null, 2));
 		const newMsg = await GetCompletionMessage(convoMsg, prevMessages, inputParams, onStreamData);
-		if (newMsg && newMsg.requestDetails) {
+		if (newMsg.requestDetails) {
 			if (updatedChatWithConvoMessage.messages.length > 1) {
 				updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 2].details =
 					newMsg.requestDetails;
 			}
 		}
-		if (newMsg && newMsg.responseMessage) {
+		if (newMsg.responseMessage) {
 			const respMessage = newMsg.responseMessage;
 			updatedChatWithConvoMessage.messages.pop();
 			updatedChatWithConvoMessage.messages.push(respMessage);
@@ -203,7 +204,7 @@ const ChatScreen: FC = () => {
 			let currentChatOptions: ChatOptions = {
 				disablePreviousMessages: false,
 			};
-			if (chatInputRef && chatInputRef.current) {
+			if (chatInputRef.current) {
 				currentChatOptions = chatInputRef.current.getChatOptions();
 			}
 
@@ -228,7 +229,7 @@ const ChatScreen: FC = () => {
 			let currentChatOptions: ChatOptions = {
 				disablePreviousMessages: false,
 			};
-			if (chatInputRef && chatInputRef.current) {
+			if (chatInputRef.current) {
 				currentChatOptions = chatInputRef.current.getChatOptions();
 			}
 

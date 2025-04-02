@@ -1,5 +1,4 @@
-'use client';
-import { FC } from 'react';
+import type { FC } from 'react';
 
 const AgentPage: FC = () => {
 	return (

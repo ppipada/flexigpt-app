@@ -1,8 +1,10 @@
-import { ChatMessageContent } from '@/chats/chat_message_content';
+import ChatMessageContent from '@/chats/chat_message_content';
 import EditBox from '@/chats/chat_message_editbox';
 import ChatMessageFooterArea from '@/chats/chat_message_footer';
-import { ConversationMessage, ConversationRoleEnum } from '@/models/conversationmodel';
-import { ChangeEvent, FC, useState } from 'react';
+import type { ConversationMessage } from '@/models/conversationmodel';
+import { ConversationRoleEnum } from '@/models/conversationmodel';
+import type { ChangeEvent, FC } from 'react';
+import { useState } from 'react';
 import { FiCompass, FiUser } from 'react-icons/fi';
 
 interface ChatMessageProps {
@@ -12,7 +14,7 @@ interface ChatMessageProps {
 	streamedMessage: string;
 }
 
-export const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamedMessage }) => {
+const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamedMessage }) => {
 	const isUser = message.role === ConversationRoleEnum.user;
 	const align = !isUser ? 'items-end text-left' : 'items-start text-left';
 	const leftColSpan = !isUser ? 'col-span-1 lg:col-span-2' : 'col-span-1';
@@ -93,3 +95,5 @@ export const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, s
 		</div>
 	);
 };
+
+export default ChatMessage;

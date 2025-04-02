@@ -1,12 +1,8 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { log, providerSetAPI } from '@/backendapibase';
-import {
-	ChatCompletionRequestMessage,
-	ChatCompletionRoleEnum,
-	CompletionResponse,
-	ProviderName,
-} from '@/models/aiprovidermodel';
-import { ConversationMessage, ConversationRoleEnum } from '@/models/conversationmodel';
+import type { ChatCompletionRequestMessage, CompletionResponse, ProviderName } from '@/models/aiprovidermodel';
+import { ChatCompletionRoleEnum } from '@/models/aiprovidermodel';
+import type { ConversationMessage } from '@/models/conversationmodel';
+import { ConversationRoleEnum } from '@/models/conversationmodel';
 
 const roleMap: Record<ConversationRoleEnum, ChatCompletionRoleEnum> = {
 	[ConversationRoleEnum.system]: ChatCompletionRoleEnum.system,
@@ -79,18 +75,7 @@ async function handleStreamedCompletion(
 	fullCompletionRequest: any,
 	onStreamData: (data: string) => void
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
-	const dataFunction = async (data: any): Promise<void> => {
-		return new Promise((resolve, reject) => {
-			try {
-				onStreamData(data);
-				resolve();
-			} catch (error) {
-				reject(error);
-			}
-		});
-	};
-
-	const providerResp = await providerSetAPI.completion(provider, fullCompletionRequest, dataFunction);
+	const providerResp = await providerSetAPI.completion(provider, fullCompletionRequest, onStreamData);
 	return parseAPIResponse(convoMessage, providerResp);
 }
 

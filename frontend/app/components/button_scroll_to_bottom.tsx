@@ -1,7 +1,8 @@
-import { ButtonHTMLAttributes, FC, RefObject, useEffect, useState } from 'react';
+import type { ButtonHTMLAttributes, FC, RefObject } from 'react';
+import { useEffect, useState } from 'react';
 import { FiArrowDownCircle } from 'react-icons/fi';
 
-function useAtBottom(ref: RefObject<HTMLElement>, offset = 0) {
+function useAtBottom(ref: RefObject<HTMLElement | null>, offset = 0) {
 	const [isAtBottom, setIsAtBottom] = useState(false);
 	const [isScrollable, setIsScrollable] = useState(false);
 
@@ -47,7 +48,7 @@ function useAtBottom(ref: RefObject<HTMLElement>, offset = 0) {
 }
 
 interface ButtonScrollToBottomProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-	scrollContainerRef: RefObject<HTMLElement>;
+	scrollContainerRef: RefObject<HTMLElement | null>;
 	size: number;
 }
 

@@ -1,7 +1,8 @@
-import { RefObject, useEffect } from 'react';
+import type { RefObject } from 'react';
+import { useEffect } from 'react';
 
 type UseCloseDetailsProps = {
-	detailsRef: RefObject<HTMLDetailsElement>;
+	detailsRef: RefObject<HTMLDetailsElement | null>;
 	events?: (keyof DocumentEventMap)[];
 	onClose?: () => void;
 };
@@ -24,11 +25,15 @@ export function useCloseDetails({
 		}
 
 		// Add all desired events
-		events.forEach(eventName => document.addEventListener(eventName, handleClickOutside));
+		events.forEach(eventName => {
+			document.addEventListener(eventName, handleClickOutside);
+		});
 
 		return () => {
 			// Clean up all added event listeners
-			events.forEach(eventName => document.removeEventListener(eventName, handleClickOutside));
+			events.forEach(eventName => {
+				document.removeEventListener(eventName, handleClickOutside);
+			});
 		};
 	}, [detailsRef, events, onClose]);
 }

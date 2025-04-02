@@ -2,9 +2,9 @@ import { MermaidDiagram } from '@/chats/chat_message_content_mermaid';
 import CopyButton from '@/components/copy_button';
 import DownloadButton from '@/components/download_button';
 import 'katex/dist/katex.min.css';
-import { FC } from 'react';
+import type { FC } from 'react';
 import SyntaxHighlighter from 'react-syntax-highlighter';
-import { monokaiSublime } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { monokaiSublime } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
 
 interface CodeProps {
 	language: string;
@@ -12,7 +12,7 @@ interface CodeProps {
 	streamedMessage: string;
 }
 
-export const CodeBlock: FC<CodeProps> = ({ language, value, streamedMessage }) => {
+const CodeBlock: FC<CodeProps> = ({ language, value, streamedMessage }) => {
 	const fetchValue = async (): Promise<string> => {
 		return value;
 	};
@@ -61,4 +61,5 @@ export const CodeBlock: FC<CodeProps> = ({ language, value, streamedMessage }) =
 		</>
 	);
 };
-CodeBlock.displayName = 'CodeBlock';
+
+export default CodeBlock;

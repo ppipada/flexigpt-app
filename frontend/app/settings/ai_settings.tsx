@@ -1,13 +1,15 @@
-import { ProviderInfoDescription, ProviderName } from '@/models/aiprovidermodel';
-import { AISetting } from '@/models/settingmodel';
-import { FC, useState } from 'react';
+import type { ProviderName } from '@/models/aiprovidermodel';
+import { ProviderInfoDescription } from '@/models/aiprovidermodel';
+import type { AISetting } from '@/models/settingmodel';
+import type { FC } from 'react';
+import { useState } from 'react';
 import { FiAlertTriangle, FiCheckCircle, FiChevronDown, FiChevronUp, FiXCircle } from 'react-icons/fi';
 
 interface AISettingsCardProps {
 	provider: ProviderName;
 	settings: AISetting;
 	onChange: (key: string, value: any) => void;
-	onSave: (key: string, value: any) => void;
+	onSave: (key: string, value: any) => Promise<void>;
 	aiSettings: Record<string, AISetting>;
 }
 
@@ -25,9 +27,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 	const toggleEnable = () => {
 		const newIsEnabled = !isEnabled;
 		if (!newIsEnabled) {
-			const enabledProviders = Object.keys(aiSettings).filter(
-				k => aiSettings[k as ProviderName]?.isEnabled && k !== provider
-			);
+			const enabledProviders = Object.keys(aiSettings).filter(k => aiSettings[k].isEnabled && k !== provider);
 			if (enabledProviders.length === 0) {
 				setShowModal(true);
 				return;
@@ -89,8 +89,12 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 							className="input col-span-9 w-full h-10 rounded-lg px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={settings.apiKey}
-							onChange={e => onChange('apiKey', e.target.value)}
-							onBlur={e => onSave('apiKey', e.target.value)}
+							onChange={e => {
+								onChange('apiKey', e.target.value);
+							}}
+							onBlur={e => {
+								onSave('apiKey', e.target.value);
+							}}
 							spellCheck="false"
 						/>
 					</div>
@@ -105,8 +109,12 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 							className="input col-span-9 w-full h-10 rounded-lg px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={settings.defaultModel}
-							onChange={e => onChange('defaultModel', e.target.value)}
-							onBlur={e => onSave('defaultModel', e.target.value)}
+							onChange={e => {
+								onChange('defaultModel', e.target.value);
+							}}
+							onBlur={e => {
+								onSave('defaultModel', e.target.value);
+							}}
 							spellCheck="false"
 						/>
 					</div>
@@ -127,8 +135,12 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 							className="input col-span-9 w-full h-10 rounded-lg px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={settings.defaultTemperature}
-							onChange={e => onChange('defaultTemperature', parseFloat(e.target.value))}
-							onBlur={e => onSave('defaultTemperature', parseFloat(e.target.value))}
+							onChange={e => {
+								onChange('defaultTemperature', parseFloat(e.target.value));
+							}}
+							onBlur={e => {
+								onSave('defaultTemperature', parseFloat(e.target.value));
+							}}
 							spellCheck="false"
 						/>
 					</div>
@@ -143,8 +155,12 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 							className="input col-span-9 w-full h-10 rounded-lg px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={settings.defaultOrigin}
-							onChange={e => onChange('defaultOrigin', e.target.value)}
-							onBlur={e => onSave('defaultOrigin', e.target.value)}
+							onChange={e => {
+								onChange('defaultOrigin', e.target.value);
+							}}
+							onBlur={e => {
+								onSave('defaultOrigin', e.target.value);
+							}}
 							spellCheck="false"
 						/>
 					</div>
@@ -160,7 +176,13 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 						</div>
 					</div>
 					<form method="dialog" className="modal-backdrop w-full">
-						<button onClick={() => setShowModal(false)}>OK</button>
+						<button
+							onClick={() => {
+								setShowModal(false);
+							}}
+						>
+							OK
+						</button>
 					</form>
 				</dialog>
 			)}

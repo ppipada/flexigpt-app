@@ -1,8 +1,9 @@
-import { IProviderSetAPI } from '@/models/aiprovidermodel';
-import { IBackendAPI } from '@/models/backendmodel';
-import { IConversationStoreAPI } from '@/models/conversationmodel';
-import { ILogger } from '@/models/loggermodel';
-import { ISettingStoreAPI } from '@/models/settingmodel';
+import { IS_WAILS_PLATFORM } from '@/lib/features';
+import type { IProviderSetAPI } from '@/models/aiprovidermodel';
+import type { IBackendAPI } from '@/models/backendmodel';
+import type { IConversationStoreAPI } from '@/models/conversationmodel';
+import type { ILogger } from '@/models/loggermodel';
+import type { ISettingStoreAPI } from '@/models/settingmodel';
 
 let LoggerImpl: new () => ILogger;
 let BackendAPIImpl: new () => IBackendAPI;
@@ -10,20 +11,37 @@ let ConversationStoreAPIImpl: new () => IConversationStoreAPI;
 let ProviderSetAPIImpl: new () => IProviderSetAPI;
 let SettingStoreAPIImpl: new () => ISettingStoreAPI;
 
-if (process.env.NEXT_PUBLIC_PLATFORM === 'wails') {
-	// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
-	const wailsAPI = require('./wailsapi');
-	LoggerImpl = wailsAPI.WailsLogger;
-	BackendAPIImpl = wailsAPI.WailsBackendAPI;
-	ConversationStoreAPIImpl = wailsAPI.WailsConversationStoreAPI;
-	ProviderSetAPIImpl = wailsAPI.WailsProviderSetAPI;
-	SettingStoreAPIImpl = wailsAPI.WailsSettingStoreAPI;
-} else {
-	throw new Error(`Unsupported platform: ${process.env.NEXT_PUBLIC_PLATFORM}`);
-}
+// Use async IIFE to handle dynamic imports
+(async () => {
+	if (IS_WAILS_PLATFORM) {
+		// Use dynamic import instead of require
+		const wailsAPI = await import('./wailsapi');
+		LoggerImpl = wailsAPI.WailsLogger;
+		BackendAPIImpl = wailsAPI.WailsBackendAPI;
+		ConversationStoreAPIImpl = wailsAPI.WailsConversationStoreAPI;
+		ProviderSetAPIImpl = wailsAPI.WailsProviderSetAPI;
+		SettingStoreAPIImpl = wailsAPI.WailsSettingStoreAPI;
 
-export const log = new LoggerImpl();
-export const backendAPI = new BackendAPIImpl();
-export const conversationStoreAPI = new ConversationStoreAPIImpl();
-export const providerSetAPI = new ProviderSetAPIImpl();
-export const settingstoreAPI = new SettingStoreAPIImpl();
+		// Initialize exports
+		initializeExports();
+	} else {
+		throw new Error('Unsupported platform');
+	}
+})().catch((error: unknown) => {
+	console.error('Failed to initialize API:', error);
+});
+
+// Define exports but initialize them later
+export let log: ILogger;
+export let backendAPI: IBackendAPI;
+export let conversationStoreAPI: IConversationStoreAPI;
+export let providerSetAPI: IProviderSetAPI;
+export let settingstoreAPI: ISettingStoreAPI;
+
+function initializeExports() {
+	log = new LoggerImpl();
+	backendAPI = new BackendAPIImpl();
+	conversationStoreAPI = new ConversationStoreAPIImpl();
+	providerSetAPI = new ProviderSetAPIImpl();
+	settingstoreAPI = new SettingStoreAPIImpl();
+}

@@ -1,5 +1,6 @@
-import { ConversationItem } from '@/models/conversationmodel';
-import { ChangeEvent, FC, Fragment, KeyboardEvent, useEffect, useState } from 'react';
+import type { ConversationItem } from '@/models/conversationmodel';
+import type { ChangeEvent, FC, KeyboardEvent } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { FiSearch } from 'react-icons/fi';
 
 interface ChatSearchProps {
@@ -8,7 +9,7 @@ interface ChatSearchProps {
 	onSelectConversation: (item: ConversationItem) => Promise<void>;
 }
 
-export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSelectConversation }) => {
+const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSelectConversation }) => {
 	const [query, setQuery] = useState('');
 	const [items, setItems] = useState<ConversationItem[]>([]);
 	const [showDropdown, setShowDropdown] = useState(false);
@@ -45,7 +46,9 @@ export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSele
 
 	const handleBlur = () => {
 		// Delay hiding the dropdown to allow item click event to be processed
-		setTimeout(() => setShowDropdown(false), 100);
+		setTimeout(() => {
+			setShowDropdown(false);
+		}, 100);
 	};
 
 	const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -83,6 +86,7 @@ export const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSele
 		</div>
 	);
 };
+export default ChatSearch;
 
 function groupItems(items: ConversationItem[]) {
 	const normalizeDate = (date: Date): Date => {
@@ -149,7 +153,9 @@ const GroupedDropdown: FC<GroupedDropdownProps> = ({ items, handleItemClick, foc
 						{groupItems.map((item, index) => (
 							<li
 								key={item.id}
-								onClick={() => handleItemClick(item)}
+								onClick={() => {
+									handleItemClick(item);
+								}}
 								className={`flex justify-between items-center px-12 py-2 cursor-pointer hover:bg-base-100 ${index === focusedIndex ? 'bg-base-100' : ''}`}
 							>
 								<span>{item.title}</span>

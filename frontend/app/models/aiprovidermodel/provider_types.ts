@@ -1,4 +1,4 @@
-import { ChatCompletionRequestMessage, CompletionRequest, CompletionResponse } from './chat_types';
+import type { ChatCompletionRequestMessage, CompletionRequest, CompletionResponse } from './chat_types';
 
 export type ModelName = string;
 export const DefaultModelName: ModelName = 'gpt-4o';
@@ -54,7 +54,7 @@ export interface IProviderSetAPI {
 	completion(
 		provider: ProviderName,
 		input: CompletionRequest,
-		onStreamData?: (data: string) => Promise<void>
+		onStreamData?: (data: string) => void
 	): Promise<CompletionResponse | undefined>;
 }
 

@@ -1,7 +1,8 @@
 import DownloadButton from '@/components/download_button';
 import 'katex/dist/katex.min.css';
 import mermaid from 'mermaid';
-import { FC, useEffect, useRef, useState } from 'react';
+import type { FC } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 let mermaidInitialized = false;
@@ -35,7 +36,7 @@ export const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 						setError(null); // Clear any previous errors
 					}
 				})
-				.catch(err => {
+				.catch((err: unknown) => {
 					console.error('Mermaid rendering failed:', err);
 					setError('Failed to render diagram. Please check the syntax.');
 				});
@@ -82,7 +83,7 @@ export const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 						reject(err);
 					};
 
-					img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+					img.src = 'data:image/svg+xml;base64,' + btoa(encodeURIComponent(svgData));
 				});
 			} else {
 				throw new Error('SVG element not found in container');

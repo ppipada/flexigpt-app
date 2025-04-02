@@ -1,4 +1,4 @@
-import { DocStore } from '@/models/docstoremodel';
+import type { DocStore } from '@/models/docstoremodel';
 import React, { useEffect, useState } from 'react';
 
 interface ModifyStoreProps {
@@ -38,13 +38,11 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 	}, [isOpen, initialData]);
 
 	const validateFields = (name: string, value: string) => {
-		const newErrors: typeof errors = { ...errors };
+		const newErrors: { [key: string]: string | undefined } = {};
 
 		// Check if field is empty
 		if (!value.trim()) {
-			newErrors[name as keyof typeof errors] = 'This field is required';
-		} else {
-			delete newErrors[name as keyof typeof errors];
+			newErrors[name] = 'This field is required';
 		}
 
 		// Check for uniqueness of URL and dbName combination
@@ -60,7 +58,14 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 			);
 
 			if (!isUnique) {
-				newErrors[name as keyof typeof errors] = `This combination of URL and Database Name already exists`;
+				newErrors[name] = `This combination of URL and Database Name already exists`;
+			}
+		}
+
+		// Populate newErrors with existing errors except for the current field if it's valid
+		for (const key in errors) {
+			if (Object.prototype.hasOwnProperty.call(errors, key) && key !== name) {
+				newErrors[key] = errors[key as keyof typeof errors];
 			}
 		}
 

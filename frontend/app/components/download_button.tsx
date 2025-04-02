@@ -1,8 +1,8 @@
 // DownloadButton.tsx
 
 import { backendAPI } from '@/backendapibase';
-import { FileFilter } from '@/models/backendmodel';
-import { ButtonHTMLAttributes, FC } from 'react';
+import type { FileFilter } from '@/models/backendmodel';
+import type { ButtonHTMLAttributes, FC } from 'react';
 import { FiDownload } from 'react-icons/fi';
 
 interface LanguageMap {
@@ -57,9 +57,8 @@ function generateRandomString(length: number, lowercase = false): string {
 	return lowercase ? result.toLowerCase() : result;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function saveFile(defaultFilename: string, contentBase64: string, filters: Array<FileFilter>): Promise<void> {
-	return await backendAPI.savefile(defaultFilename, contentBase64, filters);
+	await backendAPI.savefile(defaultFilename, contentBase64, filters);
 }
 
 interface DownloadButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -103,15 +102,19 @@ const DownloadButton: FC<DownloadButtonProps> = ({
 			fileExtension = mimeTypeMap[mimeType] || '';
 		} else if (typeof value === 'string') {
 			// Handle text content
-			const langInfo = ProgrammingLanguages[language.toLowerCase()] || {
-				extension: '.txt',
-				mimeType: 'text/plain',
-			};
+			const languageKey = language.toLowerCase();
+			const langInfo =
+				languageKey in ProgrammingLanguages
+					? ProgrammingLanguages[languageKey]
+					: {
+							extension: '.txt',
+							mimeType: 'text/plain',
+						};
 			fileExtension = langInfo.extension;
 			mimeType = langInfo.mimeType;
 
 			// Convert string to base64
-			contentBase64 = btoa(unescape(encodeURIComponent(value)));
+			contentBase64 = btoa(encodeURIComponent(value));
 		} else {
 			console.error('Unsupported content type for download');
 			return;

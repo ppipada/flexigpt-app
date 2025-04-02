@@ -1,7 +1,8 @@
 import { backendAPI } from '@/backendapibase';
-import { CodeBlock } from '@/chats/chat_message_content_codeblock';
+import CodeBlock from '@/chats/chat_message_content_codeblock';
 import 'katex/dist/katex.min.css';
-import { ReactNode, useMemo } from 'react';
+import type { ReactNode } from 'react';
+import { useMemo } from 'react';
 import Markdown from 'react-markdown';
 import rehypeKatex from 'rehype-katex';
 import remarkGemoji from 'remark-gemoji';
@@ -50,7 +51,7 @@ interface ChatMessageContentProps {
 // 	(prevProps, nextProps) => prevProps.children === nextProps.children && prevProps.className === nextProps.className
 // );
 
-export function ChatMessageContent({ content, align, streamedMessage }: ChatMessageContentProps) {
+function ChatMessageContent({ content, align, streamedMessage }: ChatMessageContentProps) {
 	// Process the content to handle LaTeX expressions
 	const processedContent = processLaTeX(content);
 
@@ -82,6 +83,7 @@ export function ChatMessageContent({ content, align, streamedMessage }: ChatMess
 				return (
 					<CodeBlock
 						language={language}
+						// eslint-disable-next-line @typescript-eslint/no-base-to-string
 						value={String(children).replace(/\n$/, '')}
 						streamedMessage={streamedMessage}
 						{...props}
@@ -144,3 +146,5 @@ export function ChatMessageContent({ content, align, streamedMessage }: ChatMess
 		</div>
 	);
 }
+
+export default ChatMessageContent;

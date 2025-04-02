@@ -1,6 +1,7 @@
-import { ChatMessageContent } from '@/chats/chat_message_content';
+import ChatMessageContent from '@/chats/chat_message_content';
 import CopyButton from '@/components/copy_button';
-import { FC, useState } from 'react';
+import type { FC } from 'react';
+import { useState } from 'react';
 import { FiChevronDown, FiChevronUp, FiEdit, FiRepeat } from 'react-icons/fi';
 
 interface ChatMessageFooterAreaProps {

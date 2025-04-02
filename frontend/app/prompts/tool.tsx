@@ -1,8 +1,6 @@
-'use client';
-
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 import { TOOL_INVOKE_CHAR } from '@/models/commands';
-import { Tool } from '@/models/promptmodel';
+import type { Tool } from '@/models/promptmodel';
 import ModifyTool from '@/prompts/tool_modify';
 import { useEffect, useState } from 'react';
 import { FiEdit, FiPlus, FiTrash2 } from 'react-icons/fi';
@@ -108,7 +106,12 @@ const Tools: React.FC = () => {
 	return (
 		<div className="mx-auto p-4">
 			<div className="text-right items-center mb-2">
-				<button className="btn btn-ghost rounded-2xl text-sm" onClick={() => openModifyToolModal()}>
+				<button
+					className="btn btn-ghost rounded-2xl text-sm"
+					onClick={() => {
+						openModifyToolModal();
+					}}
+				>
 					<FiPlus size={18} /> Add Tool
 				</button>
 			</div>
@@ -136,14 +139,18 @@ const Tools: React.FC = () => {
 									<button
 										className="btn btn-sm btn-ghost rounded-2xl"
 										aria-label="Edit Tool"
-										onClick={() => openModifyToolModal(tool)}
+										onClick={() => {
+											openModifyToolModal(tool);
+										}}
 									>
 										<FiEdit />
 									</button>
 									<button
 										className="btn btn-sm btn-ghost rounded-2xl"
 										aria-label="Delete Tool"
-										onClick={() => openDeleteToolModal(tool)}
+										onClick={() => {
+											openDeleteToolModal(tool);
+										}}
 									>
 										<FiTrash2 />
 									</button>
@@ -160,7 +167,7 @@ const Tools: React.FC = () => {
 				onClose={closeDeleteToolModal}
 				onConfirm={handleDeleteTool}
 				title="Delete Tool"
-				message={`Are you sure you want to delete the tool "${toolToDelete?.name}"? This action cannot be undone.`}
+				message={`Are you sure you want to delete the tool "${toolToDelete?.name || ''}"? This action cannot be undone.`}
 				confirmButtonText="Delete"
 			/>
 

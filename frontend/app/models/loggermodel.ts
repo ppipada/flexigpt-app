@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-empty-function */
+
 export interface ILogger {
 	log(...args: unknown[]): void;
 	error(...args: unknown[]): void;
@@ -24,9 +24,19 @@ export const noopLogger: ILogger = {
  * Define a new console logger
  */
 export const consoleLogger: ILogger = {
-	log: (...args: unknown[]) => console.log(...args),
-	error: (...args: unknown[]) => console.error(...args),
-	info: (...args: unknown[]) => console.info(...args),
-	debug: (...args: unknown[]) => console.debug(...args),
-	warn: (...args: unknown[]) => console.warn(...args),
+	log: (...args: unknown[]) => {
+		console.log(...args);
+	},
+	error: (...args: unknown[]) => {
+		console.error(...args);
+	},
+	info: (...args: unknown[]) => {
+		console.info(...args);
+	},
+	debug: (...args: unknown[]) => {
+		console.debug(...args);
+	},
+	warn: (...args: unknown[]) => {
+		console.warn(...args);
+	},
 };

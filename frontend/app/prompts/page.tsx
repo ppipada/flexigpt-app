@@ -1,5 +1,3 @@
-'use client';
-
 import PromptTemplates from '@/prompts/prompt_template';
 import Tools from '@/prompts/tool';
 import { useState } from 'react';
@@ -13,14 +11,18 @@ const Prompts: React.FC = () => {
 				<a
 					role="tab"
 					className={`tab ${activeTab === 'promptTemplates' ? 'tab-active font-bold' : 'font-bold'}`}
-					onClick={() => setActiveTab('promptTemplates')}
+					onClick={() => {
+						setActiveTab('promptTemplates');
+					}}
 				>
 					Prompt Templates
 				</a>
 				<a
 					role="tab"
 					className={`tab ${activeTab === 'tools' ? 'tab-active font-bold' : 'font-bold'}`}
-					onClick={() => setActiveTab('tools')}
+					onClick={() => {
+						setActiveTab('tools');
+					}}
 				>
 					Tools
 				</a>

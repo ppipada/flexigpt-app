@@ -1,5 +1,6 @@
 import { log } from '@/backendapibase';
-import { ButtonHTMLAttributes, FC, useState } from 'react';
+import type { ButtonHTMLAttributes, FC } from 'react';
+import { useState } from 'react';
 import { FiCheck, FiCopy } from 'react-icons/fi';
 
 interface CopyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -17,7 +18,9 @@ const CopyButton: FC<CopyButtonProps> = ({ value, size, ...buttonProps }) => {
 		try {
 			await navigator.clipboard.writeText(value);
 			setCopied(true);
-			setTimeout(() => setCopied(false), 1500);
+			setTimeout(() => {
+				setCopied(false);
+			}, 1500);
 		} catch (error) {
 			log.error('Failed to copy: ', error);
 		}

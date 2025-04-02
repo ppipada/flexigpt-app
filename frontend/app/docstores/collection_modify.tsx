@@ -1,5 +1,5 @@
 import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/models/commands';
-import { Collection } from '@/models/docstoremodel';
+import type { Collection } from '@/models/docstoremodel';
 import React, { useEffect, useState } from 'react';
 
 interface ModifyCollectionProps {
@@ -33,10 +33,10 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 	}, [isOpen, initialData]);
 
 	const validateField = (name: string, value: string) => {
-		const newErrors = { ...errors };
+		const newErrors: { [key: string]: string | undefined } = {};
 
 		if (!value.trim()) {
-			newErrors[name as keyof typeof errors] = 'This field is required';
+			newErrors[name] = 'This field is required';
 		} else if (name === 'command' && value.startsWith(DOCUMENT_COLLECTION_INVOKE_CHAR)) {
 			newErrors[name] = `Command should not start with ${DOCUMENT_COLLECTION_INVOKE_CHAR}`;
 		} else {
@@ -44,9 +44,14 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 				c => c[name as keyof Collection] === value && c.id !== initialData?.id
 			);
 			if (!isUnique) {
-				newErrors[name as keyof typeof errors] = `This ${name} is already in use`;
-			} else {
-				delete newErrors[name as keyof typeof errors];
+				newErrors[name] = `This ${name} is already in use`;
+			}
+		}
+
+		// Populate newErrors with existing errors except for the current field if it's valid
+		for (const key in errors) {
+			if (Object.prototype.hasOwnProperty.call(errors, key) && key !== name) {
+				newErrors[key] = errors[key as keyof typeof errors];
 			}
 		}
 

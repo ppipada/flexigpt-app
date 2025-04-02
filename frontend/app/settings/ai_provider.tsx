@@ -1,10 +1,12 @@
 import { useCloseDetails } from '@/lib/useCloseDetails';
-import { ProviderName } from '@/models/aiprovidermodel';
-import { FC, useRef, useState } from 'react';
+import type { ProviderName } from '@/models/aiprovidermodel';
+import type { AISetting } from '@/models/settingmodel';
+import type { FC } from 'react';
+import { useRef, useState } from 'react';
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 interface ProviderDropdownProps {
-	aiSettings: Record<string, any>;
+	aiSettings: Record<ProviderName, AISetting>;
 	defaultProvider: ProviderName;
 	onProviderChange: (provider: ProviderName) => void;
 }
@@ -16,7 +18,9 @@ const ProviderDropdown: FC<ProviderDropdownProps> = ({ aiSettings, defaultProvid
 	useCloseDetails({
 		detailsRef,
 		events: ['mousedown'],
-		onClose: () => setIsOpen(false),
+		onClose: () => {
+			setIsOpen(false);
+		},
 	});
 
 	const handleSelection = (provider: ProviderName) => {
@@ -48,12 +52,14 @@ const ProviderDropdown: FC<ProviderDropdownProps> = ({ aiSettings, defaultProvid
 			</summary>
 			<ul tabIndex={0} className={`dropdown-content menu rounded-box w-full bg-base-200`}>
 				{Object.keys(aiSettings)
-					.filter(provider => aiSettings[provider]?.isEnabled)
+					.filter(provider => aiSettings[provider].isEnabled)
 					.map(provider => (
 						<li
 							key={provider}
 							className="cursor-pointer rounded-box"
-							onClick={() => handleSelection(provider as ProviderName)}
+							onClick={() => {
+								handleSelection(provider);
+							}}
 						>
 							<a className="justify-between items-center p-2 m-1 flex">
 								<span>{capitalize(provider)}</span>

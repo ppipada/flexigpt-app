@@ -1,6 +1,6 @@
 import { providerSetAPI, settingstoreAPI } from '@/backendapibase';
-import { ProviderName } from '@/models/aiprovidermodel';
-import { AISetting, SettingsSchema } from '@/models/settingmodel';
+import type { ProviderName } from '@/models/aiprovidermodel';
+import type { AISetting, SettingsSchema } from '@/models/settingmodel';
 
 export function updateProviderAISettings(provider: ProviderName, settings: AISetting) {
 	providerSetAPI.setAttribute(
@@ -14,13 +14,13 @@ export function updateProviderAISettings(provider: ProviderName, settings: AISet
 
 export async function loadProviderSettings(): Promise<SettingsSchema> {
 	const settings = await settingstoreAPI.getAllSettings();
-	if (settings) {
-		const defaultProvider = settings.app.defaultProvider as ProviderName;
-		providerSetAPI.setDefaultProvider(defaultProvider);
-		// Iterate over each entry in settings.aiSettings
-		for (const [providerName, aiSettings] of Object.entries(settings.aiSettings)) {
-			updateProviderAISettings(providerName as ProviderName, aiSettings);
-		}
+
+	const defaultProvider = settings.app.defaultProvider;
+	await providerSetAPI.setDefaultProvider(defaultProvider);
+	// Iterate over each entry in settings.aiSettings
+	for (const [providerName, aiSettings] of Object.entries(settings.aiSettings)) {
+		updateProviderAISettings(providerName, aiSettings);
 	}
-	return settings as SettingsSchema;
+
+	return settings;
 }

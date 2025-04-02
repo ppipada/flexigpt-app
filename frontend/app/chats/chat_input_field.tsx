@@ -1,16 +1,9 @@
-import { GetChatInputOptions, ModelOption } from '@/backendapihelper/chat_inputoptions_helper';
+import type { ModelOption } from '@/backendapihelper/chat_inputoptions_helper';
+import { GetChatInputOptions } from '@/backendapihelper/chat_inputoptions_helper';
 import { useCloseDetails } from '@/lib/useCloseDetails';
 import { DefaultModelName, DefaultModelTitle, DefaultProviderName } from '@/models/aiprovidermodel';
-import React, {
-	ChangeEvent,
-	forwardRef,
-	KeyboardEvent,
-	useCallback,
-	useEffect,
-	useImperativeHandle,
-	useRef,
-	useState,
-} from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { FiCheck, FiChevronDown, FiChevronUp, FiSend } from 'react-icons/fi';
 
 // Define the structure of the model information and chat options
@@ -32,7 +25,7 @@ export interface ChatInputFieldHandle {
 
 // Custom hook for handling form submission on Enter key press
 function useEnterSubmit(): {
-	formRef: React.RefObject<HTMLFormElement>;
+	formRef: React.RefObject<HTMLFormElement | null>;
 	onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
 } {
 	const formRef = useRef<HTMLFormElement>(null);
@@ -78,12 +71,16 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	useCloseDetails({
 		detailsRef: modelDetailsRef,
 		events: ['mousedown'],
-		onClose: () => setIsModelDropdownOpen(false),
+		onClose: () => {
+			setIsModelDropdownOpen(false);
+		},
 	});
 	useCloseDetails({
 		detailsRef: temperatureDetailsRef,
 		events: ['mousedown'],
-		onClose: () => setIsTemperatureDropdownOpen(false),
+		onClose: () => {
+			setIsTemperatureDropdownOpen(false);
+		},
 	});
 
 	const loadInitialItems = useCallback(async () => {
@@ -141,7 +138,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 			inputRef.current.style.height = 'auto';
 			inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, MAX_HEIGHT)}px`;
 			setInputHeight(Math.min(inputRef.current.scrollHeight, MAX_HEIGHT));
-			inputRef.current?.focus();
+			inputRef.current.focus();
 		}
 	};
 
@@ -263,7 +260,9 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					<input
 						type="checkbox"
 						checked={disablePreviousMessages}
-						onChange={e => setDisablePreviousMessages(e.target.checked)}
+						onChange={e => {
+							setDisablePreviousMessages(e.target.checked);
+						}}
 						className="checkbox checkbox-xs rounded-full"
 						spellCheck="false"
 					/>

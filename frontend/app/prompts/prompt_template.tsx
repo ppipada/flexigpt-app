@@ -1,8 +1,6 @@
-'use client';
-
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/models/commands';
-import { PromptTemplate } from '@/models/promptmodel';
+import type { PromptTemplate } from '@/models/promptmodel';
 import ModifyPromptTemplate from '@/prompts/prompt_template_modify';
 import { useEffect, useState } from 'react';
 import { FiCheck, FiEdit, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
@@ -125,7 +123,12 @@ const PromptTemplates: React.FC = () => {
 		<div className="mx-auto p-4">
 			{/* Heading Row */}
 			<div className="text-right items-center mb-2">
-				<button className="btn btn-ghost rounded-2xl text-sm" onClick={() => openModifyPromptTemplateModal()}>
+				<button
+					className="btn btn-ghost rounded-2xl text-sm"
+					onClick={() => {
+						openModifyPromptTemplateModal();
+					}}
+				>
 					<FiPlus size={18} /> Add Prompt Templates
 				</button>
 			</div>
@@ -170,14 +173,18 @@ const PromptTemplates: React.FC = () => {
 									<button
 										className="btn btn-sm btn-ghost rounded-2xl"
 										aria-label="Edit Template"
-										onClick={() => openModifyPromptTemplateModal(template)}
+										onClick={() => {
+											openModifyPromptTemplateModal(template);
+										}}
 									>
 										<FiEdit />
 									</button>
 									<button
 										className="btn btn-sm btn-ghost rounded-2xl"
 										aria-label="Delete Template"
-										onClick={() => openDeletePromptTemplateModal(template)}
+										onClick={() => {
+											openDeletePromptTemplateModal(template);
+										}}
 									>
 										<FiTrash2 />
 									</button>
@@ -194,7 +201,7 @@ const PromptTemplates: React.FC = () => {
 				onClose={closeDeletePromptTemplateModal}
 				onConfirm={handleDeleteTemplate}
 				title="Delete Prompt Template"
-				message={`Are you sure you want to delete the prompt template "${templateToDelete?.name}"? This action cannot be undone.`}
+				message={`Are you sure you want to delete the prompt template "${templateToDelete?.name || ''}"? This action cannot be undone.`}
 				confirmButtonText="Delete"
 			/>
 

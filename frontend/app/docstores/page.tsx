@@ -1,10 +1,8 @@
-'use client';
-
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 import ModifyCollection from '@/docstores/collection_modify';
 import ModifyDocStore from '@/docstores/docstore_modify';
 import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/models/commands';
-import { Collection, DocStore } from '@/models/docstoremodel';
+import type { Collection, DocStore } from '@/models/docstoremodel';
 import { useEffect, useState } from 'react';
 import { FiEdit, FiFolder, FiPlus, FiServer, FiTrash2 } from 'react-icons/fi';
 
@@ -249,15 +247,27 @@ const DocumentStores: React.FC = () => {
 							<div className="flex text-neutral items-center justify-between text-sm">
 								<span>{docStore.url}</span>
 								<div>
-									<button className="btn btn-sm btn-ghost rounded-2xl" onClick={() => handleAddCollection(docStore.id)}>
+									<button
+										className="btn btn-sm btn-ghost rounded-2xl"
+										onClick={() => {
+											handleAddCollection(docStore.id);
+										}}
+									>
 										<FiPlus /> Add Collection
 									</button>
-									<button className="btn btn-sm btn-ghost rounded-2xl" onClick={() => handleEditDocStore(docStore)}>
+									<button
+										className="btn btn-sm btn-ghost rounded-2xl"
+										onClick={() => {
+											handleEditDocStore(docStore);
+										}}
+									>
 										<FiEdit />
 									</button>
 									<button
 										className="btn btn-sm btn-ghost rounded-2xl"
-										onClick={() => openDeleteDocStoreModal(docStore)}
+										onClick={() => {
+											openDeleteDocStoreModal(docStore);
+										}}
 									>
 										<FiTrash2 />
 									</button>
@@ -299,14 +309,18 @@ const DocumentStores: React.FC = () => {
 													<button
 														className="btn btn-sm btn-ghost rounded-2xl"
 														aria-label="Edit Collection"
-														onClick={() => handleEditCollection(docStore.id, collection)}
+														onClick={() => {
+															handleEditCollection(docStore.id, collection);
+														}}
 													>
 														<FiEdit />
 													</button>
 													<button
 														className="btn btn-sm btn-ghost rounded-2xl"
 														aria-label="Delete Collection"
-														onClick={() => openDeleteCollectionModal(docStore.id, collection)}
+														onClick={() => {
+															openDeleteCollectionModal(docStore.id, collection);
+														}}
 													>
 														<FiTrash2 />
 													</button>
@@ -335,7 +349,9 @@ const DocumentStores: React.FC = () => {
 			{/* Modify Store Modal */}
 			<ModifyDocStore
 				isOpen={isModifyDocStoreModalOpen}
-				onClose={() => setIsModifyDocStoreModalOpen(false)}
+				onClose={() => {
+					setIsModifyDocStoreModalOpen(false);
+				}}
 				onSubmit={handleModifyDocStoreSubmit}
 				initialData={selectedDocStore || undefined}
 				existingDocStores={docStores}
@@ -347,14 +363,16 @@ const DocumentStores: React.FC = () => {
 				onClose={closeDeleteCollectionModal}
 				onConfirm={handleDeleteCollection}
 				title="Delete Collection"
-				message={`Are you sure you want to delete the collection "${selectedCollection?.collection?.name || ''}"? This action cannot be undone.`}
+				message={`Are you sure you want to delete the collection "${selectedCollection.collection?.name || ''}"? This action cannot be undone.`}
 				confirmButtonText="Delete"
 			/>
 
 			{/* Modify Collection Modal */}
 			<ModifyCollection
 				isOpen={isModifyCollectionModalOpen}
-				onClose={() => setIsModifyCollectionModalOpen(false)}
+				onClose={() => {
+					setIsModifyCollectionModalOpen(false);
+				}}
 				onSubmit={handleModifyCollectionSubmit}
 				initialData={selectedCollection.collection || undefined}
 				docStoreID={selectedCollection.docStoreID}

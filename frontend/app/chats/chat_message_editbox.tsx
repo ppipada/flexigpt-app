@@ -1,4 +1,5 @@
-import { ChangeEvent, FC, KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
+import type { ChangeEvent, FC, KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FiSend, FiX } from 'react-icons/fi';
 
 interface EditBoxProps {

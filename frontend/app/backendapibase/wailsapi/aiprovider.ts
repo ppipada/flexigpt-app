@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
 	FetchCompletion,
 	GetConfigurationInfo,
@@ -7,9 +6,9 @@ import {
 	SetDefaultProvider,
 	SetProviderAttribute,
 } from '@/backendapibase/wailsjs/go/main/ProviderSetWrapper';
-import { spec as wailsSpec } from '@/backendapibase/wailsjs/go/models';
+import type { spec as wailsSpec } from '@/backendapibase/wailsjs/go/models';
 import { EventsOn } from '@/backendapibase/wailsjs/runtime/runtime';
-import {
+import type {
 	ChatCompletionRequestMessage,
 	CompletionRequest,
 	CompletionResponse,
@@ -42,7 +41,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		defaultOrigin?: string
 	): Promise<void> {
 		const req = {
-			Provider: provider as string,
+			Provider: provider,
 			Body: {
 				apiKey: apiKey,
 				defaultModel: defaultModel,
@@ -68,7 +67,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 			inputParams = {};
 		}
 		const req = {
-			Provider: provider as string,
+			Provider: provider,
 			Body: {
 				prompt: prompt,
 				prevMessages: msgs,
@@ -87,9 +86,9 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 	async completion(
 		provider: ProviderName,
 		input: CompletionRequest,
-		onStreamData?: (data: string) => Promise<void>
+		onStreamData?: (data: string) => void
 	): Promise<CompletionResponse | undefined> {
-		const callbackId = `stream-data-callback-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+		const callbackId = `stream-data-callback-${Date.now().toString()}-${Math.random().toString(36).substring(2, 9)}`;
 		if (onStreamData) {
 			EventsOn(callbackId, onStreamData);
 		}

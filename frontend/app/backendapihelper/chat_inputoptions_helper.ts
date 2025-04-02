@@ -1,5 +1,5 @@
 import { providerSetAPI, settingstoreAPI } from '@/backendapibase';
-import { ModelName, ProviderInfo, ProviderName } from '@/models/aiprovidermodel';
+import type { ModelName, ProviderInfo, ProviderName } from '@/models/aiprovidermodel';
 
 export interface ModelOption {
 	title: string;
@@ -29,7 +29,7 @@ export async function GetChatInputOptions() {
 
 		for (const [providerName, providerInfo] of Object.entries(providerInfoDict)) {
 			const aiSetting = settings.aiSettings[providerName];
-			if (aiSetting && aiSetting.isEnabled) {
+			if (aiSetting.isEnabled) {
 				const settingsDefaultModelName = aiSetting.defaultModel;
 				for (const [modelName, modelInfo] of Object.entries(providerInfo.models)) {
 					const modelOption = {

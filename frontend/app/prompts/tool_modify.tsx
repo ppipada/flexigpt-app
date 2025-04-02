@@ -1,5 +1,5 @@
 import { TOOL_INVOKE_CHAR } from '@/models/commands';
-import { Tool } from '@/models/promptmodel';
+import type { Tool } from '@/models/promptmodel';
 import React, { useEffect, useState } from 'react';
 
 interface ModifyToolProps {
@@ -27,10 +27,10 @@ const ModifyTool: React.FC<ModifyToolProps> = ({ isOpen, onClose, onSubmit, init
 	}, [isOpen, initialData]);
 
 	const validateField = (name: string, value: string) => {
-		const newErrors = { ...errors };
+		const newErrors: { [key: string]: string | undefined } = {};
 
 		if (!value.trim()) {
-			newErrors[name as keyof typeof errors] = 'This field is required';
+			newErrors[name] = 'This field is required';
 		} else if (name === 'command') {
 			if (value.startsWith(TOOL_INVOKE_CHAR)) {
 				newErrors[name] = `Command should not start with ${TOOL_INVOKE_CHAR}`;
@@ -38,12 +38,15 @@ const ModifyTool: React.FC<ModifyToolProps> = ({ isOpen, onClose, onSubmit, init
 				const isUnique = !existingTools.some(t => t.command === value && t.id !== initialData?.id);
 				if (!isUnique) {
 					newErrors[name] = 'This command is already in use';
-				} else {
-					delete newErrors[name];
 				}
 			}
-		} else {
-			delete newErrors[name as keyof typeof errors];
+		}
+
+		// Populate newErrors with existing errors except for the current field if it's valid
+		for (const key in errors) {
+			if (Object.prototype.hasOwnProperty.call(errors, key) && key !== name) {
+				newErrors[key] = errors[key as keyof typeof errors];
+			}
 		}
 
 		setErrors(newErrors);

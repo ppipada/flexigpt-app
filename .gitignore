@@ -91,7 +91,6 @@ web_modules/
 .env.local
 .env*.local
 
-
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
@@ -150,3 +149,5 @@ asarex
 .flatpak-builder
 flatpak_app
 .anima
+
+**/.react-router/

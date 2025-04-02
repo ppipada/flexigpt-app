@@ -1,4 +1,4 @@
-import { ModelName, ProviderName } from '@/models/aiprovidermodel';
+import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
 
 export interface AISetting {
 	isEnabled: boolean;

@@ -1,5 +1,5 @@
 import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/models/commands';
-import { PromptTemplate } from '@/models/promptmodel';
+import type { PromptTemplate } from '@/models/promptmodel';
 import React, { useEffect, useState } from 'react';
 
 interface ModifyPromptTemplateProps {
@@ -37,10 +37,10 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 	}, [isOpen, initialData]);
 
 	const validateField = (name: string, value: string) => {
-		const newErrors = { ...errors };
+		const newErrors: { [key: string]: string | undefined } = {};
 
 		if (!value.trim()) {
-			newErrors[name as keyof typeof errors] = 'This field is required';
+			newErrors[name] = 'This field is required';
 		} else if (name === 'command') {
 			if (value.startsWith(PROMPT_TEMPLATE_INVOKE_CHAR)) {
 				newErrors[name] = `Command should not start with ${PROMPT_TEMPLATE_INVOKE_CHAR}`;
@@ -48,17 +48,19 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 				const isUnique = !existingTemplates.some(t => t.command === value && t.id !== initialData?.id);
 				if (!isUnique) {
 					newErrors[name] = 'This command is already in use';
-				} else {
-					delete newErrors[name];
 				}
 			}
-		} else {
-			delete newErrors[name as keyof typeof errors];
+		}
+
+		// Populate newErrors with existing errors except for the current field if it's valid
+		for (const key in errors) {
+			if (Object.prototype.hasOwnProperty.call(errors, key) && key !== name) {
+				newErrors[key] = errors[key as keyof typeof errors];
+			}
 		}
 
 		setErrors(newErrors);
 	};
-
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 		const { name, value } = e.target;
 		setFormData(prev => ({ ...prev, [name]: value }));

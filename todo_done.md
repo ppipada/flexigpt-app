@@ -188,3 +188,10 @@
 - [x] NSIS installer for Windows
 - [x] Wails save file dialog opens and saves but file not seen on system
 - [x] Remove electron
+- [x] Remove nextjs and use react router v7
+  - [x] migrate to react 19
+  - [x] use vite
+  - [x] migrate to eslint 9
+  - [x] use spa mode
+  - [x] remove postcss
+  - [ ] remove eslint, prettier, knip from top

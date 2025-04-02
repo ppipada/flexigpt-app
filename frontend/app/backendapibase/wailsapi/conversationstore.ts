@@ -5,8 +5,13 @@ import {
 	ListConversations,
 	SaveConversation,
 } from '@/backendapibase/wailsjs/go/main/ConversationCollectionWrapper';
-import { spec as wailsSpec } from '@/backendapibase/wailsjs/go/models';
-import { Conversation, ConversationItem, ConversationMessage, IConversationStoreAPI } from '@/models/conversationmodel';
+import type { spec as wailsSpec } from '@/backendapibase/wailsjs/go/models';
+import type {
+	Conversation,
+	ConversationItem,
+	ConversationMessage,
+	IConversationStoreAPI,
+} from '@/models/conversationmodel';
 
 export class WailsConversationStoreAPI implements IConversationStoreAPI {
 	async saveConversation(conversation: Conversation): Promise<void> {

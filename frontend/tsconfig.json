@@ -1,38 +1,35 @@
 {
 	"compilerOptions": {
-		"target": "es6",
-		"lib": ["dom", "dom.iterable", "esnext"],
+		"target": "ESNext",
+		"lib": ["dom", "dom.iterable", "ESNext"],
 		"allowJs": true,
 		"skipLibCheck": true,
 		"strict": true,
-		"forceConsistentCasingInFileNames": true, // not in template
+		"forceConsistentCasingInFileNames": true,
 		"noEmit": true,
 		"esModuleInterop": true,
-		"module": "esnext",
+		"module": "ESNext",
 		"moduleResolution": "bundler",
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"jsx": "preserve",
 		"incremental": true,
-		"plugins": [
-			{
-				"name": "next"
-			}
-		],
-		"baseUrl": "./app",
+		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./*"]
-		}
+			"@/*": ["./app/*"]
+		},
+		"types": ["node", "vite/client"],
+		"rootDirs": [".", "./.react-router/types"],
+		"verbatimModuleSyntax": true
 	},
 	"include": [
-		"next-env.d.ts",
 		"**/*.ts",
-		"**/*.d.ts",
 		"**/*.tsx",
-		"build/types/**/*.ts",
-		".next/types/**/*.ts",
-		"postcss.config.js",
-		"next.config.js"
+		"vite.config.ts",
+		"references.config.ts",
+		"**/.server/**/*",
+		"**/.client/**/*",
+		".react-router/types/**/*"
 	],
 	"exclude": ["node_modules"]
 }

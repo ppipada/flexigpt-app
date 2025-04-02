@@ -1,7 +1,7 @@
-import { ChatSearch } from '@/chats/chat_search';
+import ChatSearch from '@/chats/chat_search';
 import DownloadButton from '@/components/download_button';
-import { ConversationItem } from '@/models/conversationmodel';
-import { FC } from 'react';
+import type { ConversationItem } from '@/models/conversationmodel';
+import type { FC } from 'react';
 import { FiPlus } from 'react-icons/fi';
 
 interface ChatNavBarProps {
