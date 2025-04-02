@@ -12,6 +12,7 @@
 
 - [ ] hydrationfallback addition
 - [ ] use loaders to do client loading of pre dom loading content like settings
+
 - MCP handling
 
   - [ ] Implement MCP protocol
@@ -25,6 +26,7 @@
 - [ ] For user message, do not render as markdown, render as is.
 - [ ] Support developer message for openai. Add Formatting re-enabled on first line of developer message in >o1 models for md output.
 - [ ] Need an about section someplace with version of software, dev name etc
+- [ ] move packaging to build dir and add apple plist etc. also use apple developerid
 
 ## Knowledge base
 
