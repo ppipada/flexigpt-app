@@ -103,7 +103,7 @@ func main() {
 			TitleBar: mac.TitleBarDefault(),
 			About: &mac.AboutInfo{
 				Title:   AppDisplayTitle,
-				Message: "An AI app platform.\n\nCopyright © 2024",
+				Message: "An AI app platform.\n\nCopyright © 2023 - Present",
 				Icon:    assets.Icon,
 			},
 			WebviewIsTransparent: true,

@@ -189,9 +189,17 @@
 - [x] Wails save file dialog opens and saves but file not seen on system
 - [x] Remove electron
 - [x] Remove nextjs and use react router v7
+
   - [x] migrate to react 19
   - [x] use vite
   - [x] migrate to eslint 9
   - [x] use spa mode
   - [x] remove postcss
   - [x] remove eslint, prettier, knip from top
+
+- [x] hydrationfallback addition
+- [x] use loaders to do client loading of pre dom loading content like settings
+- [x] Buttons in nav bar changed styling during migration, rectify
+- [x] font google local source
+- [x] Need an about section someplace with version of software, dev name etc
+  - [x] Added simple version in title bar for now.

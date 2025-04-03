@@ -19,7 +19,7 @@ import (
 
 const (
 	AppTitle        = "FlexiGPT"
-	AppDisplayTitle = "FlexiGPT"
+	AppDisplayTitle = "FlexiGPT - v0.0.5"
 )
 
 // App struct
