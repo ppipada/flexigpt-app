@@ -79,8 +79,12 @@ func (api *BaseAIAPI) MakeCompletion(
 		}
 	}
 
+	reqSystemPrompt := modelInfo.DefaultSystemPrompt
 	if inSystemPrompt, ok := inputParams["systemPrompt"].(string); ok {
-		completionRequest.SystemPrompt = &inSystemPrompt
+		reqSystemPrompt += "\n" + inSystemPrompt
+	}
+	if reqSystemPrompt != "" {
+		completionRequest.SystemPrompt = &reqSystemPrompt
 	}
 
 	for key, value := range inputParams {

@@ -18,9 +18,9 @@
 - [ ] Add models as a configuration in providers where each model can be enabled disabled as required.
 - [ ] Add a custom model entry support too.
 - [ ] Add a custom provider and model name setting too so that an OAI compatible provider and model can be added
+
 - [ ] Need a settings data version and migration func
 
-- [ ] Support developer message for openai. Add Formatting re-enabled on first line of developer message in >o1 models for md output.
 - [ ] move packaging to build dir and add apple plist etc. also use apple developerid
 
 ## Knowledge base

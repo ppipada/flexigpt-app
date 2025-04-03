@@ -20,6 +20,8 @@ type ModelInfo struct {
 	// Add this only if you want to override the one set in provider.
 	// Streaming resolution is: ModelInfo > ProviderInfo
 	StreamingSupport *bool `json:"streamingSupport"`
+	// Any default system message to add. E.g: for o1 models
+	DefaultSystemPrompt string `json:"defaultSystemPrompt"`
 }
 
 // ProviderName is an enumeration of provider names.

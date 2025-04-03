@@ -656,6 +656,7 @@ export namespace spec {
 	    maxOutputLength: number;
 	    defaultTemperature?: number;
 	    streamingSupport?: boolean;
+	    defaultSystemPrompt: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelInfo(source);
@@ -670,6 +671,7 @@ export namespace spec {
 	        this.maxOutputLength = source["maxOutputLength"];
 	        this.defaultTemperature = source["defaultTemperature"];
 	        this.streamingSupport = source["streamingSupport"];
+	        this.defaultSystemPrompt = source["defaultSystemPrompt"];
 	    }
 	}
 	export class ProviderInfo {

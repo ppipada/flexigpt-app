@@ -100,8 +100,6 @@
   - [x] Fetch conversation titles and add it to the drawer
   - [x] provide a new chat, delete one conversation, delete all conversations actions
 
-## Laundry list
-
 - [x] code inline line overflow handle
 - [x] feedback integration removal
 - [x] sort order of drop down, during load
@@ -149,24 +147,22 @@
 - [x] if the app is on for a long time, looks like the conversation list is removed
 - [x] there is some jerkiness in chat load for today
 
-## Wails migrate
+- Wails migrate
 
-- [x] Translate securejsondb to go
-- [x] Translate settings store and conversation store to go
-- [x] Move next frontend to appropriate folder and change config and build system as seen in wails template
+  - [x] Translate securejsondb to go
+  - [x] Translate settings store and conversation store to go
+  - [x] Move next frontend to appropriate folder and change config and build system as seen in wails template
 
-- [x] Transform next app to work with multiple backend provider like electron or wails.
+  - [x] Transform next app to work with multiple backend provider like electron or wails.
 
-  - [x] Involves segregating models and creating a facade to redirect to window apis that are injected by backend
-  - [x] Ideally interface declaration should be present in frontend and all calls should be made to interface by components, the exact implementation should decide which backend is present and redirect there.
-  - [x] wails main.go app integrations
-  - [x] Logger integration
+    - [x] Involves segregating models and creating a facade to redirect to window apis that are injected by backend
+    - [x] Ideally interface declaration should be present in frontend and all calls should be made to interface by components, the exact implementation should decide which backend is present and redirect there.
+    - [x] wails main.go app integrations
+    - [x] Logger integration
 
-- [x] Translate aiprovider to go. Try and use langchaingo directly
-- [x] Implement streaming.
-- [x] Integrate other AI providers: anthropic, google, hf
-
-## Post migrate laundry list
+  - [x] Translate aiprovider to go. Try and use langchaingo directly
+  - [x] Implement streaming.
+  - [x] Integrate other AI providers: anthropic, google, hf
 
 - [x] Add support for first getting available ai providers and then configuring them accordingly. UI needs to be modified as collapsed cards and disabled cards
 - [x] Only enabled chat options should be available
@@ -204,3 +200,4 @@
 - [x] Need an about section someplace with version of software, dev name etc
   - [x] Added simple version in title bar for now.
 - [x] For user message, do not render as markdown, render as is.
+- [x] Support developer message for openai. Add Formatting re-enabled on first line of developer message in >o1 models for md output.
