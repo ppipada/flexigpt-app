@@ -1,4 +1,11 @@
+@import '@fontsource-variable/inter';
 @import 'tailwindcss';
+
+@theme {
+	--font-sans:
+		'Inter Variable', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+		'Noto Color Emoji';
+}
 
 @plugin "daisyui" {
 	themes:

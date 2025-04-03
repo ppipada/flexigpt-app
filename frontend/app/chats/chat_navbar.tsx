@@ -28,7 +28,7 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 			</div>
 			<div className="flex items-center justify-between p-0 mt-2 max-h-8 bg-transparent">
 				<button
-					className="btn btn-sm mx-1 bg-transparent shadow-none"
+					className="btn btn-sm btn-ghost mx-1"
 					onClick={onNewChat}
 					aria-label="Create new chat"
 					title="Create new chat"
@@ -41,7 +41,7 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 					valueFetcher={getConversationForExport}
 					size={24}
 					fileprefix="conversation"
-					className="btn btn-sm mx-1 bg-transparent shadow-none"
+					className="btn btn-sm btn-ghost mx-1"
 					aria-label="Export chat"
 					title="Export chat"
 				/>

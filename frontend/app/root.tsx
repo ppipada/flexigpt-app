@@ -6,19 +6,6 @@ import { ThemeSwitchProvider } from '@/lib/theme_provider';
 import type { Route } from './+types/root';
 import './globals.css';
 
-export const links: Route.LinksFunction = () => [
-	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-	{
-		rel: 'preconnect',
-		href: 'https://fonts.gstatic.com',
-		crossOrigin: 'anonymous',
-	},
-	{
-		rel: 'stylesheet',
-		href: 'https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap',
-	},
-];
-
 export const meta: Route.MetaFunction = () => [
 	{ title: 'FlexiGPT' },
 	{ name: 'description', content: 'The FlexiGPT ecosystem agent' },

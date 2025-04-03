@@ -101,7 +101,7 @@ const SettingsPage: FC = () => {
 								valueFetcher={fetchValue}
 								size={24}
 								fileprefix="settings"
-								className="btn btn-sm bg-transparent border-none shadow-none"
+								className="btn btn-sm btn-ghost"
 							/>
 						</div>
 					</div>

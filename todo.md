@@ -11,8 +11,9 @@
 ## Laundry list
 
 - [x] hydrationfallback addition
-- [ ] use loaders to do client loading of pre dom loading content like settings
-- [ ] font google local source
+- [x] use loaders to do client loading of pre dom loading content like settings
+- [x] Buttons in nav bar changed styling during migration, rectify
+- [x] font google local source
 
 - MCP handling
 

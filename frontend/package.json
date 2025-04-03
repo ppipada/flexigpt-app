@@ -17,6 +17,7 @@
 	"keywords": [],
 	"author": "ppipada",
 	"dependencies": {
+		"@fontsource-variable/inter": "^5.2.5",
 		"@react-router/node": "^7.4.1",
 		"isbot": "^5",
 		"katex": "^0.16.11",
