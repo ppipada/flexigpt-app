@@ -84,3 +84,12 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 		</main>
 	);
 }
+
+export function HydrateFallback() {
+	return (
+		<div id="loading-splash" className="flex justify-center items-center h-screen w-full flex-col gap-4">
+			<div id="loading-splash-spinner" />
+			<span className="loading loading-dots loading-xl text-primary-content"></span>
+		</div>
+	);
+}
