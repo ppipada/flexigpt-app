@@ -41,7 +41,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		apiKey?: string,
 		defaultModel?: ModelName,
 		defaultTemperature?: number,
-		defaultOrigin?: string
+		origin?: string
 	): Promise<void> {
 		const req = {
 			Provider: provider,
@@ -49,7 +49,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 				apiKey: apiKey,
 				defaultModel: defaultModel,
 				defaultTemperature: defaultTemperature,
-				defaultOrigin: defaultOrigin,
+				origin: origin,
 			},
 		};
 		await SetProviderAttribute(req as wailsSpec.SetProviderAttributeRequest);

@@ -35,7 +35,7 @@ type SetProviderAttributeRequestBody struct {
 	APIKey             *string  `json:"apiKey,omitempty"`
 	DefaultModel       *string  `json:"defaultModel,omitempty"`
 	DefaultTemperature *float64 `json:"defaultTemperature,omitempty"`
-	DefaultOrigin      *string  `json:"defaultOrigin,omitempty"`
+	Origin             *string  `json:"origin,omitempty"`
 }
 
 type SetProviderAttributeRequest struct {

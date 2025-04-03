@@ -30,14 +30,14 @@ func (api *OpenAIAPI) SetProviderAttribute(
 	apiKey *string,
 	defaultModel *string,
 	defaultTemperature *float64,
-	defaultOrigin *string,
+	origin *string,
 ) error {
 	err := api.BaseAIAPI.SetProviderAttribute(
 		ctx,
 		apiKey,
 		defaultModel,
 		defaultTemperature,
-		defaultOrigin,
+		origin,
 	)
 	if err != nil {
 		return err
@@ -48,8 +48,8 @@ func (api *OpenAIAPI) SetProviderAttribute(
 		options = append(options, langchainOpenAI.WithModel(string(api.ProviderInfo.DefaultModel)))
 	}
 
-	if api.ProviderInfo.DefaultOrigin != "" {
-		baseURL := api.ProviderInfo.DefaultOrigin
+	if api.ProviderInfo.Origin != "" {
+		baseURL := api.ProviderInfo.Origin
 		// Remove trailing slash from baseURL if present
 		baseURL = strings.TrimSuffix(baseURL, "/")
 

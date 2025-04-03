@@ -13,7 +13,7 @@ const defaultAISettings: Record<ProviderName, AISetting> = {
 		isEnabled: true,
 		apiKey: '',
 		defaultModel: DefaultModelName,
-		defaultOrigin: '',
+		origin: '',
 		defaultTemperature: 0.0,
 		additionalSettings: {},
 	},

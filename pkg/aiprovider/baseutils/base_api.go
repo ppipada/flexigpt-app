@@ -119,9 +119,9 @@ func (api *BaseAIAPI) SetProviderAttribute(
 	apiKey *string,
 	defaultModel *string,
 	defaultTemperature *float64,
-	defaultOrigin *string,
+	origin *string,
 ) error {
-	if apiKey == nil && defaultModel == nil && defaultTemperature == nil && defaultOrigin == nil {
+	if apiKey == nil && defaultModel == nil && defaultTemperature == nil && origin == nil {
 		return errors.New("no attribute provided for set")
 	}
 	if api.ProviderInfo == nil {
@@ -130,8 +130,8 @@ func (api *BaseAIAPI) SetProviderAttribute(
 	if apiKey != nil {
 		api.ProviderInfo.APIKey = *apiKey
 	}
-	if defaultOrigin != nil {
-		api.ProviderInfo.DefaultOrigin = *defaultOrigin
+	if origin != nil {
+		api.ProviderInfo.Origin = *origin
 	}
 	if defaultModel != nil {
 		api.ProviderInfo.DefaultModel = spec.ModelName(*defaultModel)

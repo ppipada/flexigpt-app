@@ -8,7 +8,7 @@ export function updateProviderAISettings(provider: ProviderName, settings: AISet
 		settings.apiKey,
 		settings.defaultModel,
 		settings.defaultTemperature,
-		settings.defaultOrigin
+		settings.origin
 	);
 }
 

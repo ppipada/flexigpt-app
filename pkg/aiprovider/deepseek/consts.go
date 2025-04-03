@@ -32,7 +32,7 @@ var DeepseekProviderInfo = spec.ProviderInfo{
 	Name:                     ProviderNameDeepseek,
 	APIKey:                   "",
 	Engine:                   "",
-	DefaultOrigin:            "https://api.deepseek.com",
+	Origin:                   "https://api.deepseek.com",
 	DefaultModel:             DeepseekChat,
 	AdditionalSettings:       map[string]any{},
 	Timeout:                  120,

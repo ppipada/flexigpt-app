@@ -32,7 +32,7 @@ var LlamacppProviderInfo = spec.ProviderInfo{
 	Name:                     ProviderNameLlamaCPP,
 	APIKey:                   "",
 	Engine:                   "",
-	DefaultOrigin:            "http://127.0.0.1:8080",
+	Origin:                   "http://127.0.0.1:8080",
 	DefaultModel:             Llama3,
 	AdditionalSettings:       map[string]any{},
 	Timeout:                  120,

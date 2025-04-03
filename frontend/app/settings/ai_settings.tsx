@@ -99,6 +99,26 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 						/>
 					</div>
 
+					{/* Origin */}
+					<div className="grid grid-cols-12 gap-4 items-center">
+						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['origin']}>
+							Origin
+						</label>
+						<input
+							type="text"
+							className="input col-span-9 w-full h-10 rounded-lg px-4 py-2"
+							style={{ fontSize: '14px' }}
+							value={settings.origin}
+							onChange={e => {
+								onChange('origin', e.target.value);
+							}}
+							onBlur={e => {
+								onSave('origin', e.target.value);
+							}}
+							spellCheck="false"
+						/>
+					</div>
+
 					{/* Default Model */}
 					<div className="grid grid-cols-12 gap-4 items-center">
 						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['defaultModel']}>
@@ -140,26 +160,6 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 							}}
 							onBlur={e => {
 								onSave('defaultTemperature', parseFloat(e.target.value));
-							}}
-							spellCheck="false"
-						/>
-					</div>
-
-					{/* Default Origin */}
-					<div className="grid grid-cols-12 gap-4 items-center">
-						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['defaultOrigin']}>
-							Default Origin
-						</label>
-						<input
-							type="text"
-							className="input col-span-9 w-full h-10 rounded-lg px-4 py-2"
-							style={{ fontSize: '14px' }}
-							value={settings.defaultOrigin}
-							onChange={e => {
-								onChange('defaultOrigin', e.target.value);
-							}}
-							onBlur={e => {
-								onSave('defaultOrigin', e.target.value);
 							}}
 							spellCheck="false"
 						/>

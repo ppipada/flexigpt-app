@@ -40,7 +40,7 @@ var GoogleProviderInfo = spec.ProviderInfo{
 	Name:                     ProviderNameGoogle,
 	APIKey:                   "",
 	Engine:                   "",
-	DefaultOrigin:            "https://generativelanguage.googleapis.com",
+	Origin:                   "https://generativelanguage.googleapis.com",
 	DefaultModel:             Gemini15Flash,
 	AdditionalSettings:       map[string]any{},
 	Timeout:                  120,

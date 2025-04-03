@@ -24,7 +24,7 @@ export namespace spec {
 	    apiKey: string;
 	    defaultModel: string;
 	    defaultTemperature: number;
-	    defaultOrigin: string;
+	    origin: string;
 	    additionalSettings: Record<string, any>;
 	
 	    static createFrom(source: any = {}) {
@@ -37,7 +37,7 @@ export namespace spec {
 	        this.apiKey = source["apiKey"];
 	        this.defaultModel = source["defaultModel"];
 	        this.defaultTemperature = source["defaultTemperature"];
-	        this.defaultOrigin = source["defaultOrigin"];
+	        this.origin = source["origin"];
 	        this.additionalSettings = source["additionalSettings"];
 	    }
 	}
@@ -678,7 +678,7 @@ export namespace spec {
 	    name: string;
 	    apiKey: string;
 	    engine: string;
-	    defaultOrigin: string;
+	    origin: string;
 	    defaultModel: string;
 	    additionalSettings: Record<string, any>;
 	    timeout: number;
@@ -699,7 +699,7 @@ export namespace spec {
 	        this.name = source["name"];
 	        this.apiKey = source["apiKey"];
 	        this.engine = source["engine"];
-	        this.defaultOrigin = source["defaultOrigin"];
+	        this.origin = source["origin"];
 	        this.defaultModel = source["defaultModel"];
 	        this.additionalSettings = source["additionalSettings"];
 	        this.timeout = source["timeout"];
@@ -1167,7 +1167,7 @@ export namespace spec {
 	    apiKey?: string;
 	    defaultModel?: string;
 	    defaultTemperature?: number;
-	    defaultOrigin?: string;
+	    origin?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new SetProviderAttributeRequestBody(source);
@@ -1178,7 +1178,7 @@ export namespace spec {
 	        this.apiKey = source["apiKey"];
 	        this.defaultModel = source["defaultModel"];
 	        this.defaultTemperature = source["defaultTemperature"];
-	        this.defaultOrigin = source["defaultOrigin"];
+	        this.origin = source["origin"];
 	    }
 	}
 	export class SetProviderAttributeRequest {

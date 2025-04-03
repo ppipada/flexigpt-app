@@ -24,7 +24,7 @@ var HuggingfaceProviderInfo = spec.ProviderInfo{
 	Name:                     ProviderNameHuggingFace,
 	APIKey:                   "",
 	Engine:                   "",
-	DefaultOrigin:            "https://api-inference.huggingface.co",
+	Origin:                   "https://api-inference.huggingface.co",
 	DefaultModel:             DeepseekCoder13BInstruct,
 	AdditionalSettings:       map[string]any{},
 	Timeout:                  120,

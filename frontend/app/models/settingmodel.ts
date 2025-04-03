@@ -5,7 +5,7 @@ export interface AISetting {
 	apiKey: string;
 	defaultModel: ModelName;
 	defaultTemperature: number;
-	defaultOrigin: string;
+	origin: string;
 	additionalSettings: Record<string, any>;
 }
 

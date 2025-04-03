@@ -20,7 +20,7 @@ export interface ProviderInfo {
 	name: ProviderName;
 	apiKey: string;
 	engine: string;
-	defaultOrigin: string;
+	origin: string;
 	defaultModel: ModelName;
 	additionalSettings: Record<string, any>;
 	timeout: number;
@@ -42,7 +42,7 @@ export interface IProviderSetAPI {
 		apiKey?: string,
 		defaultModel?: ModelName,
 		defaultTemperature?: number,
-		defaultOrigin?: string
+		origin?: string
 	): Promise<void>;
 
 	getCompletionRequest(
@@ -61,8 +61,7 @@ export interface IProviderSetAPI {
 export const ProviderInfoDescription = {
 	apiKey: 'Your API key for the provider.',
 	engine: 'The engine to be used for processing. Is present with Azure etc.',
-	defaultOrigin:
-		'Default origin to use for requests. This can be used to talk to any server that serves a compatible API',
+	origin: 'Origin/URL to use for requests. This can be used to talk to any server that serves a compatible API',
 	defaultModel: 'Default model to use for chat requests',
 	additionalSettings: 'Any additional settings to pass to the model. Input as a JSON object',
 	timeout: 'The timeout duration in milliseconds.',

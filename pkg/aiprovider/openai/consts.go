@@ -101,7 +101,7 @@ var OpenAIProviderInfo = spec.ProviderInfo{
 	Name:                     ProviderNameOpenAI,
 	APIKey:                   "",
 	Engine:                   "",
-	DefaultOrigin:            "https://api.openai.com/v1",
+	Origin:                   "https://api.openai.com/v1",
 	DefaultModel:             GPTO3Mini,
 	AdditionalSettings:       map[string]any{},
 	Timeout:                  120,

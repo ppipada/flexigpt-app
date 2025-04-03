@@ -31,22 +31,22 @@ func (api *AnthropicAPI) SetProviderAttribute(
 	apiKey *string,
 	defaultModel *string,
 	defaultTemperature *float64,
-	defaultOrigin *string,
+	origin *string,
 ) error {
 	err := api.BaseAIAPI.SetProviderAttribute(
 		ctx,
 		apiKey,
 		defaultModel,
 		defaultTemperature,
-		defaultOrigin,
+		origin,
 	)
 	if err != nil {
 		return err
 	}
 	options := []langchainAnthropic.Option{}
 
-	if api.ProviderInfo.DefaultOrigin != "" {
-		options = append(options, langchainAnthropic.WithBaseURL(api.ProviderInfo.DefaultOrigin))
+	if api.ProviderInfo.Origin != "" {
+		options = append(options, langchainAnthropic.WithBaseURL(api.ProviderInfo.Origin))
 	}
 	if api.ProviderInfo.DefaultModel != "" {
 		options = append(

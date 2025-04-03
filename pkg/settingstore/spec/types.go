@@ -10,7 +10,7 @@ type AISetting struct {
 	APIKey             string                   `json:"apiKey"`
 	DefaultModel       aiproviderSpec.ModelName `json:"defaultModel"`
 	DefaultTemperature float64                  `json:"defaultTemperature"`
-	DefaultOrigin      string                   `json:"defaultOrigin"`
+	Origin      string                   `json:"origin"`
 	AdditionalSettings map[string]any           `json:"additionalSettings"`
 }
 

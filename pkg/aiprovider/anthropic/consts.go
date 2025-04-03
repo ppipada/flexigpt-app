@@ -64,7 +64,7 @@ var AnthropicProviderInfo = spec.ProviderInfo{
 	Name:               ProviderNameAnthropic,
 	APIKey:             "",
 	Engine:             "",
-	DefaultOrigin:      "https://api.anthropic.com/v1",
+	Origin:             "https://api.anthropic.com/v1",
 	DefaultModel:       Claude35Sonnet,
 	AdditionalSettings: map[string]any{},
 	Timeout:            120,

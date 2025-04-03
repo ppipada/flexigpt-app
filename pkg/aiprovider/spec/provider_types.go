@@ -32,7 +32,7 @@ type ProviderInfo struct {
 	Name                     ProviderName      `json:"name"`
 	APIKey                   string            `json:"apiKey"`
 	Engine                   string            `json:"engine"`
-	DefaultOrigin            string            `json:"defaultOrigin"`
+	Origin                   string            `json:"origin"`
 	DefaultModel             ModelName         `json:"defaultModel"`
 	AdditionalSettings       map[string]any    `json:"additionalSettings"`
 	Timeout                  int               `json:"timeout"`
@@ -69,7 +69,7 @@ type CompletionProvider interface {
 		apiKey *string,
 		defaultModel *string,
 		defaultTemperature *float64,
-		defaultOrigin *string,
+		origin *string,
 	) error
 	IsConfigured(ctx context.Context) bool
 }

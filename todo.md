@@ -18,6 +18,7 @@
 - [ ] Add models as a configuration in providers where each model can be enabled disabled as required.
 - [ ] Add a custom model entry support too.
 - [ ] Add a custom provider and model name setting too so that an OAI compatible provider and model can be added
+- [ ] reasoning models should have a "reasoning" effort param too.
 
 - [ ] Need a settings data version and migration func
 

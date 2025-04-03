@@ -122,7 +122,7 @@ func (ps *ProviderSetAPI) SetProviderAttribute(
 		req.Body.APIKey,
 		req.Body.DefaultModel,
 		req.Body.DefaultTemperature,
-		req.Body.DefaultOrigin,
+		req.Body.Origin,
 	)
 	return &spec.SetProviderAttributeResponse{}, err
 }
