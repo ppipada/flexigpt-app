@@ -5,42 +5,24 @@ import type { IConversationStoreAPI } from '@/models/conversationmodel';
 import type { ILogger } from '@/models/loggermodel';
 import type { ISettingStoreAPI } from '@/models/settingmodel';
 
-let LoggerImpl: new () => ILogger;
-let BackendAPIImpl: new () => IBackendAPI;
-let ConversationStoreAPIImpl: new () => IConversationStoreAPI;
-let ProviderSetAPIImpl: new () => IProviderSetAPI;
-let SettingStoreAPIImpl: new () => ISettingStoreAPI;
+// Static imports at the top - Vite will tree-shake unused imports
+import * as wailsImpl from './wailsapi';
 
-(async () => {
-	if (IS_WAILS_PLATFORM) {
-		// Use dynamic import instead of require
-		const wailsAPI = await import('./wailsapi');
-		LoggerImpl = wailsAPI.WailsLogger;
-		BackendAPIImpl = wailsAPI.WailsBackendAPI;
-		ConversationStoreAPIImpl = wailsAPI.WailsConversationStoreAPI;
-		ProviderSetAPIImpl = wailsAPI.WailsProviderSetAPI;
-		SettingStoreAPIImpl = wailsAPI.WailsSettingStoreAPI;
-
-		// Initialize exports
-		initializeExports();
-	} else {
-		throw new Error('Unsupported platform');
-	}
-})().catch((error: unknown) => {
-	console.error('Failed to initialize API:', error);
-});
-
-// Define exports but initialize them later
 export let log: ILogger;
 export let backendAPI: IBackendAPI;
 export let conversationStoreAPI: IConversationStoreAPI;
 export let providerSetAPI: IProviderSetAPI;
 export let settingstoreAPI: ISettingStoreAPI;
 
-function initializeExports() {
-	log = new LoggerImpl();
-	backendAPI = new BackendAPIImpl();
-	conversationStoreAPI = new ConversationStoreAPIImpl();
-	providerSetAPI = new ProviderSetAPIImpl();
-	settingstoreAPI = new SettingStoreAPIImpl();
+// Conditional initialization
+if (IS_WAILS_PLATFORM) {
+	// Initialize with Wails implementations
+	log = new wailsImpl.WailsLogger();
+	backendAPI = new wailsImpl.WailsBackendAPI();
+	conversationStoreAPI = new wailsImpl.WailsConversationStoreAPI();
+	providerSetAPI = new wailsImpl.WailsProviderSetAPI();
+	settingstoreAPI = new wailsImpl.WailsSettingStoreAPI();
+} else {
+	// Error for unsupported platforms
+	throw new Error('Unsupported platform');
 }

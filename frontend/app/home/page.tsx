@@ -1,25 +1,20 @@
 import { loadProviderSettings } from '@/backendapihelper/settings_helper';
 import { FEATURE_FLAG_AGENTS } from '@/lib/features';
-import { useEffect } from 'react';
 import { Link } from 'react-router';
 
+export async function clientLoader() {
+	// Wait for DOM content to be loaded and Wails runtime to be injected
+	if (document.readyState !== 'complete' && document.readyState !== 'interactive') {
+		await new Promise(resolve => {
+			document.addEventListener('DOMContentLoaded', resolve, { once: true });
+		});
+	}
+
+	// Now it's safe to call Wails backend functions
+	return loadProviderSettings();
+}
+
 export default function Home() {
-	useEffect(() => {
-		const handleDOMContentLoaded = () => {
-			// setLogger();
-			loadProviderSettings();
-		};
-		if (document.readyState === 'loading') {
-			document.addEventListener('DOMContentLoaded', handleDOMContentLoaded);
-		} else {
-			// DOMContentLoaded already fired, invoke directly
-			handleDOMContentLoaded();
-		}
-		// Cleanup the event listener on component unmount
-		return () => {
-			document.removeEventListener('DOMContentLoaded', handleDOMContentLoaded);
-		};
-	}, []);
 	return (
 		<main className="flex flex-col h-full items-center justify-center p-24">
 			<div className="flex flex-row items-center mb-10">

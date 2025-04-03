@@ -10,8 +10,9 @@
 
 ## Laundry list
 
-- [ ] hydrationfallback addition
+- [x] hydrationfallback addition
 - [ ] use loaders to do client loading of pre dom loading content like settings
+- [ ] font google local source
 
 - MCP handling
 
