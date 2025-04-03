@@ -203,3 +203,4 @@
 - [x] font google local source
 - [x] Need an about section someplace with version of software, dev name etc
   - [x] Added simple version in title bar for now.
+- [x] For user message, do not render as markdown, render as is.

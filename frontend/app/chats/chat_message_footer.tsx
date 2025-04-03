@@ -91,7 +91,12 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 			</div>
 			{isExpanded && messageDetails && (
 				<div className="mt-2 overflow-hidden shadow-lg rounded-2xl">
-					<ChatMessageContent content={messageDetails} align="items-start text-left" streamedMessage="" />
+					<ChatMessageContent
+						content={messageDetails}
+						align="items-start text-left"
+						streamedMessage=""
+						renderAsMarkdown={true}
+					/>
 				</div>
 			)}
 		</div>

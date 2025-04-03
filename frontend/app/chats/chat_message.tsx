@@ -65,6 +65,7 @@ const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamed
 							content={streamedMessage || message.content}
 							align={align}
 							streamedMessage={streamedMessage}
+							renderAsMarkdown={!isUser}
 						/>
 					</div>
 				)}

@@ -44,6 +44,7 @@ interface ChatMessageContentProps {
 	content: string;
 	align: string;
 	streamedMessage: string;
+	renderAsMarkdown?: boolean;
 }
 
 // const MemoizedMarkdown = memo(
@@ -51,7 +52,7 @@ interface ChatMessageContentProps {
 // 	(prevProps, nextProps) => prevProps.children === nextProps.children && prevProps.className === nextProps.className
 // );
 
-function ChatMessageContent({ content, align, streamedMessage }: ChatMessageContentProps) {
+function ChatMessageMarkdownContent({ content, align, streamedMessage }: ChatMessageContentProps) {
 	// Process the content to handle LaTeX expressions
 	const processedContent = processLaTeX(content);
 
@@ -147,4 +148,24 @@ function ChatMessageContent({ content, align, streamedMessage }: ChatMessageCont
 	);
 }
 
-export default ChatMessageContent;
+export default function ChatMessageContent({
+	content,
+	align,
+	streamedMessage,
+	renderAsMarkdown = true,
+}: ChatMessageContentProps) {
+	if (renderAsMarkdown) {
+		return <ChatMessageMarkdownContent content={content} align={align} streamedMessage={streamedMessage} />;
+	}
+
+	// Memoize the plain text content to prevent unnecessary re-renders
+	const plainTextContent = useMemo(() => {
+		return content.split('\n').map((line, index) => (
+			<p key={index} className={`my-2 ${align} break-words`} style={{ lineHeight: '1.5', fontSize: '14px' }}>
+				{line || '\u00A0' /* Use non-breaking space for empty lines */}
+			</p>
+		));
+	}, [content, align]);
+
+	return <div className="bg-base-100 px-4 py-2">{plainTextContent}</div>;
+}
