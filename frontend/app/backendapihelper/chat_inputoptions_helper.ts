@@ -3,8 +3,8 @@ import type { ModelName, ProviderInfo, ProviderName } from '@/models/aiproviderm
 
 export interface ModelOption {
 	title: string;
-	provider?: ProviderName;
-	name?: ModelName;
+	provider: ProviderName;
+	name: ModelName;
 	temperature: number;
 }
 
@@ -27,25 +27,31 @@ export async function GetChatInputOptions() {
 		const configDefaultProvider = configInfo['defaultProvider'] as ProviderName;
 		const providerInfoDict = createProviderInfoDict(configInfo['configuredProviders']);
 
-		for (const [providerName, providerInfo] of Object.entries(providerInfoDict)) {
+		for (const providerName of Object.keys(providerInfoDict)) {
 			const aiSetting = settings.aiSettings[providerName];
 			if (aiSetting.isEnabled) {
 				const settingsDefaultModelName = aiSetting.defaultModel;
-				for (const [modelName, modelInfo] of Object.entries(providerInfo.models)) {
+				for (const modelParams of aiSetting.modelSettings) {
+					if (!modelParams.isEnabled) {
+						continue;
+					}
 					const modelOption = {
-						title: modelInfo.displayName,
+						title: modelParams.displayName,
 						provider: providerName,
-						temperature: providerInfo.defaultTemperature || 0.1,
-						name: modelName,
+						temperature: modelParams.temperature || 0.1,
+						name: modelParams.name,
 					};
 					inputModels.push(modelOption);
-					if (modelInfo.name === settingsDefaultModelName && providerName === configDefaultProvider) {
+					if (modelParams.name === settingsDefaultModelName && providerName === configDefaultProvider) {
 						defaultOption = modelOption;
 					}
 				}
 			}
 		}
 
+		if (defaultOption === undefined || inputModels.length === 0) {
+			throw Error('No input option found !!!');
+		}
 		return { allOptions: inputModels, default: defaultOption };
 	} catch (error) {
 		console.error('Error fetching chat input options:', error);
@@ -56,6 +62,8 @@ export async function GetChatInputOptions() {
 // Helper function to handle cases with no configured models
 function handleNoConfiguredModels() {
 	const noModel: ModelOption = {
+		provider: 'No Provider',
+		name: 'No Model',
 		title: 'No Model configured',
 		temperature: 0.1,
 	};

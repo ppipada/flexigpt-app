@@ -5,7 +5,7 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"lint": "eslint . ; knip --tags=-lintignore",
+		"lint": "eslint .; knip --tags=-lintignore",
 		"lint:fix": "eslint --fix .",
 		"fmt": "prettier -c . --ignore-path ../.prettierignore",
 		"fmt:fix": "prettier -w . --ignore-path ../.prettierignore",
@@ -78,7 +78,8 @@
 			"isbot",
 			"daisyui",
 			"react-router-devtools",
-			"tailwindcss"
+			"tailwindcss",
+			"@fontsource-variable/inter"
 		]
 	},
 	"prettier": {

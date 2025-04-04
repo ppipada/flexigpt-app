@@ -14,8 +14,7 @@ const defaultAISettings: Record<ProviderName, AISetting> = {
 		apiKey: '',
 		defaultModel: DefaultModelName,
 		origin: '',
-		defaultTemperature: 0.0,
-		additionalSettings: {},
+		modelSettings: [],
 	},
 };
 
@@ -26,7 +25,6 @@ const SettingsPage: FC = () => {
 	useEffect(() => {
 		(async () => {
 			const settings = await loadProviderSettings();
-
 			const enabledProviders = Object.keys(settings.aiSettings).filter(
 				provider => settings.aiSettings[provider].isEnabled
 			);
@@ -37,7 +35,7 @@ const SettingsPage: FC = () => {
 
 			const defaultProvider = settings.app.defaultProvider;
 			setComponentDefaultProvider(enabledProviders.includes(defaultProvider) ? defaultProvider : enabledProviders[0]);
-
+			// console.log('All settings', JSON.stringify(settings.aiSettings, null, 2));
 			setAISettings(settings.aiSettings);
 		})();
 	}, []);
@@ -137,17 +135,16 @@ const SettingsPage: FC = () => {
 
 						{/* AI Settings Cards */}
 						{Object.keys(aiSettings).map(providerStr => {
-							const typedProvider = providerStr;
-							const oneSettings = aiSettings[typedProvider];
+							const oneSettings = aiSettings[providerStr];
 							return (
-								<div key={typedProvider} className=" rounded-lg">
+								<div key={providerStr} className=" rounded-lg">
 									<AISettingsCard
-										provider={typedProvider}
+										provider={providerStr}
 										settings={oneSettings}
 										onChange={(key, value) => {
-											handleAISettingsChange(typedProvider, key, value);
+											handleAISettingsChange(providerStr, key, value);
 										}}
-										onSave={(key, value) => handleSaveAISettings(typedProvider, key, value)}
+										onSave={(key, value) => handleSaveAISettings(providerStr, key, value)}
 										aiSettings={aiSettings}
 									/>
 								</div>

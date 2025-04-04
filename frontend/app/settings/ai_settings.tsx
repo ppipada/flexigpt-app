@@ -1,9 +1,23 @@
+import DeleteConfirmationModal from '@/components/delete_confirmation';
 import type { ProviderName } from '@/models/aiprovidermodel';
 import { ProviderInfoDescription } from '@/models/aiprovidermodel';
-import type { AISetting } from '@/models/settingmodel';
+import type { AISetting, ModelSetting } from '@/models/settingmodel';
+
 import type { FC } from 'react';
 import { useState } from 'react';
-import { FiAlertTriangle, FiCheckCircle, FiChevronDown, FiChevronUp, FiXCircle } from 'react-icons/fi';
+import {
+	FiAlertTriangle,
+	FiCheck,
+	FiCheckCircle,
+	FiChevronDown,
+	FiChevronUp,
+	FiEdit,
+	FiPlus,
+	FiTrash2,
+	FiX,
+	FiXCircle,
+} from 'react-icons/fi';
+import ModifyModelModal from './modify_model_modal';
 
 interface AISettingsCardProps {
 	provider: ProviderName;
@@ -17,6 +31,14 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [isEnabled, setIsEnabled] = useState(!!settings.isEnabled);
 	const [showModal, setShowModal] = useState(false);
+	const initModelSettings = settings.modelSettings;
+
+	const [modelSettings, setModelSettings] = useState<ModelSetting[]>(initModelSettings);
+	const [isModifyModelModalOpen, setIsModifyModelModalOpen] = useState(false);
+	const [selectedModel, setSelectedModel] = useState<ModelSetting | null>(null);
+	const [isDeleteModelModalOpen, setIsDeleteModelModalOpen] = useState(false);
+
+	console.log(JSON.stringify(modelSettings, null, 2));
 
 	const toggleExpand = () => {
 		if (isEnabled) {
@@ -36,6 +58,52 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 		setIsEnabled(newIsEnabled);
 		onChange('isEnabled', newIsEnabled);
 		onSave('isEnabled', newIsEnabled);
+	};
+
+	// Handlers for models
+	const handleAddModel = () => {
+		setSelectedModel(null);
+		setIsModifyModelModalOpen(true);
+	};
+
+	const handleEditModel = (model: ModelSetting) => {
+		setSelectedModel(model);
+		setIsModifyModelModalOpen(true);
+	};
+
+	const handleDeleteModel = (model: ModelSetting) => {
+		setSelectedModel(model);
+		setIsDeleteModelModalOpen(true);
+	};
+
+	const handleDeleteModelConfirm = () => {
+		const updatedModels = modelSettings.filter(m => m.name !== selectedModel?.name);
+		setModelSettings(updatedModels);
+		onChange('modelSettings', updatedModels);
+		onSave('modelSettings', updatedModels);
+		setIsDeleteModelModalOpen(false);
+		setSelectedModel(null);
+	};
+
+	const closeDeleteModelModal = () => {
+		setIsDeleteModelModalOpen(false);
+		setSelectedModel(null);
+	};
+
+	const handleModifyModelSubmit = (modelData: ModelSetting) => {
+		let updatedModels;
+		if (selectedModel) {
+			// Edit existing model
+			updatedModels = modelSettings.map(m => (m.name === selectedModel.name ? modelData : m));
+		} else {
+			// Add new model
+			updatedModels = [...modelSettings, modelData];
+		}
+		setModelSettings(updatedModels);
+		onChange('modelSettings', updatedModels);
+		onSave('modelSettings', updatedModels);
+		setIsModifyModelModalOpen(false);
+		setSelectedModel(null);
 	};
 
 	return (
@@ -119,51 +187,93 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 						/>
 					</div>
 
-					{/* Default Model */}
+					{/* Models : Default and add */}
 					<div className="grid grid-cols-12 gap-4 items-center">
 						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['defaultModel']}>
 							Default Model
 						</label>
-						<input
-							type="text"
-							className="input col-span-9 w-full h-10 rounded-lg px-4 py-2"
-							style={{ fontSize: '14px' }}
+						<select
+							className="col-span-6 select select-bordered w-full h-10 rounded-lg px-4 py-2 text-sm"
 							value={settings.defaultModel}
 							onChange={e => {
 								onChange('defaultModel', e.target.value);
-							}}
-							onBlur={e => {
 								onSave('defaultModel', e.target.value);
 							}}
-							spellCheck="false"
-						/>
+						>
+							{modelSettings.map(model => (
+								<option key={model.name} value={model.name}>
+									{model.name}
+								</option>
+							))}
+						</select>
+						<div className="col-span-3 flex justify-end">
+							<button className="btn btn-md btn-ghost rounded-2xl flex items-center" onClick={handleAddModel}>
+								<FiPlus size={16} /> Add Model
+							</button>
+						</div>
 					</div>
 
-					{/* Default Temperature */}
-					<div className="grid grid-cols-12 gap-4 items-center">
-						<label
-							className="col-span-3 text-sm text-left tooltip"
-							data-tip={ProviderInfoDescription['defaultTemperature']}
-						>
-							Default Temperature
-						</label>
-						<input
-							type="number"
-							step="0.01"
-							min="0"
-							max="1"
-							className="input col-span-9 w-full h-10 rounded-lg px-4 py-2"
-							style={{ fontSize: '14px' }}
-							value={settings.defaultTemperature}
-							onChange={e => {
-								onChange('defaultTemperature', parseFloat(e.target.value));
-							}}
-							onBlur={e => {
-								onSave('defaultTemperature', parseFloat(e.target.value));
-							}}
-							spellCheck="false"
-						/>
+					{/* Models Table */}
+					<div className="overflow-x-auto">
+						<table className="table table-zebra w-full">
+							<thead>
+								<tr className="font-semibold text-sm px-4 py-0 m-0 bg-base-300">
+									<th className="rounded-tl-2xl">Model Name</th>
+									<th className="text-center">Enabled</th>
+									<th className="text-center">Reasoning</th>
+									<th className="text-right rounded-tr-2xl pr-8">Actions</th>
+								</tr>
+							</thead>
+							<tbody>
+								{modelSettings.map((model, index) => (
+									<tr key={model.name} className="hover:bg-base-300 border-none shadow-none">
+										<td className={index === modelSettings.length - 1 ? 'rounded-bl-2xl' : ''}>{model.name}</td>
+										<td className="flex items-center justify-center">
+											<input
+												type="checkbox"
+												checked={model.isEnabled}
+												onChange={() => {
+													const updatedModels = modelSettings.map(m =>
+														m.name === model.name ? { ...m, isEnabled: !m.isEnabled } : m
+													);
+													setModelSettings(updatedModels);
+													onChange('modelSettings', updatedModels);
+													onSave('modelSettings', updatedModels);
+												}}
+												className="toggle toggle-primary rounded-full"
+											/>
+										</td>
+										<td>
+											<div className="flex items-center justify-center">
+												{model.reasoningSupport ? <FiCheck size={16} /> : <FiX size={16} />}
+											</div>
+										</td>
+										<td className={index === modelSettings.length - 1 ? 'rounded-br-2xl text-right' : 'text-right'}>
+											<button
+												className="btn btn-sm btn-ghost rounded-2xl"
+												aria-label="Edit Model"
+												onClick={() => {
+													handleEditModel(model);
+												}}
+											>
+												<FiEdit size={16} />
+											</button>
+											<button
+												className="btn btn-sm btn-ghost rounded-2xl"
+												aria-label="Delete Model"
+												onClick={() => {
+													handleDeleteModel(model);
+												}}
+											>
+												<FiTrash2 size={16} />
+											</button>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
 					</div>
+					{/* End of Models */}
 				</div>
 			)}
 
@@ -185,6 +295,31 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 						</button>
 					</form>
 				</dialog>
+			)}
+
+			{/* Modify Model Modal */}
+			{isModifyModelModalOpen && (
+				<ModifyModelModal
+					isOpen={isModifyModelModalOpen}
+					onClose={() => {
+						setIsModifyModelModalOpen(false);
+					}}
+					onSubmit={handleModifyModelSubmit}
+					initialData={selectedModel || undefined}
+					existingModels={modelSettings}
+				/>
+			)}
+
+			{/* Delete Model Confirmation Modal */}
+			{isDeleteModelModalOpen && (
+				<DeleteConfirmationModal
+					isOpen={isDeleteModelModalOpen}
+					onClose={closeDeleteModelModal}
+					onConfirm={handleDeleteModelConfirm}
+					title="Delete Model"
+					message={`Are you sure you want to delete the model "${selectedModel?.name || ''}"? This action cannot be undone.`}
+					confirmButtonText="Delete"
+				/>
 			)}
 		</div>
 	);

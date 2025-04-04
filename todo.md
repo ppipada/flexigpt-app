@@ -21,7 +21,7 @@
 - [ ] reasoning models should have a "reasoning" effort param too.
 
 - [ ] Need a settings data version and migration func
-
+- [ ] API key should never reach frontend after save
 - [ ] move packaging to build dir and add apple plist etc. also use apple developerid
 
 ## Knowledge base

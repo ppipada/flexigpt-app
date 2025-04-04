@@ -21,7 +21,8 @@
 		"pack:dmg": "gh act -W './.github/workflows/dmgpak.yml' --artifact-server-path ./out",
 		"build:withbindings": "cd ./cmd/agentgo && pnpm run build:frontend && wails build -devtools -m -clean -v 2",
 		"run:watch": "cd ./cmd/agentgo &&  wails dev -s -v 2 -tags webkit2_41",
-		"run:gobackend": "./scripts/run_backend.sh"
+		"run:gobackend": "./scripts/run_backend.sh",
+		"run:golint": "golangci-lint run ./... -v"
 	},
 	"devDependencies": {
 		"shx": "^0.4.0"

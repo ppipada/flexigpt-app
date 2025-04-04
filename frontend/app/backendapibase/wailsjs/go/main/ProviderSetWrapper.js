@@ -10,10 +10,6 @@ export function GetConfigurationInfo(arg1) {
   return window['go']['main']['ProviderSetWrapper']['GetConfigurationInfo'](arg1);
 }
 
-export function GetDefaultProvider(arg1) {
-  return window['go']['main']['ProviderSetWrapper']['GetDefaultProvider'](arg1);
-}
-
 export function MakeCompletion(arg1) {
   return window['go']['main']['ProviderSetWrapper']['MakeCompletion'](arg1);
 }

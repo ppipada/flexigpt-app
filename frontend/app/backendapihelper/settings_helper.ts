@@ -3,13 +3,7 @@ import type { ProviderName } from '@/models/aiprovidermodel';
 import type { AISetting, SettingsSchema } from '@/models/settingmodel';
 
 export function updateProviderAISettings(provider: ProviderName, settings: AISetting) {
-	providerSetAPI.setAttribute(
-		provider,
-		settings.apiKey,
-		settings.defaultModel,
-		settings.defaultTemperature,
-		settings.origin
-	);
+	providerSetAPI.setAttribute(provider, settings.apiKey, settings.defaultModel, settings.origin);
 }
 
 export async function loadProviderSettings(): Promise<SettingsSchema> {

@@ -3,10 +3,23 @@ import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
 export interface AISetting {
 	isEnabled: boolean;
 	apiKey: string;
-	defaultModel: ModelName;
-	defaultTemperature: number;
 	origin: string;
-	additionalSettings: Record<string, any>;
+	defaultModel: ModelName;
+	modelSettings: ModelSetting[];
+}
+
+export interface ModelSetting {
+	name: ModelName;
+	displayName: string;
+	isEnabled: boolean;
+	stream?: boolean;
+	promptLength?: number;
+	outputLength?: number;
+	temperature?: number;
+	reasoningSupport?: boolean;
+	systemPrompt?: string;
+	timeout?: number;
+	additionalParameters?: Record<string, any>;
 }
 
 export type SettingsSchema = {

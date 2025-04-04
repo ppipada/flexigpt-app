@@ -19,13 +19,44 @@ export namespace frontend {
 
 export namespace spec {
 	
+	export class ModelSetting {
+	    name: string;
+	    displayName: string;
+	    isEnabled: boolean;
+	    stream?: boolean;
+	    promptLength?: number;
+	    outputLength?: number;
+	    temperature?: number;
+	    reasoningSupport?: boolean;
+	    systemPrompt?: string;
+	    timeout?: number;
+	    additionalParameters?: Record<string, any>;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelSetting(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.displayName = source["displayName"];
+	        this.isEnabled = source["isEnabled"];
+	        this.stream = source["stream"];
+	        this.promptLength = source["promptLength"];
+	        this.outputLength = source["outputLength"];
+	        this.temperature = source["temperature"];
+	        this.reasoningSupport = source["reasoningSupport"];
+	        this.systemPrompt = source["systemPrompt"];
+	        this.timeout = source["timeout"];
+	        this.additionalParameters = source["additionalParameters"];
+	    }
+	}
 	export class AISetting {
 	    isEnabled: boolean;
 	    apiKey: string;
 	    defaultModel: string;
-	    defaultTemperature: number;
 	    origin: string;
-	    additionalSettings: Record<string, any>;
+	    modelSettings: ModelSetting[];
 	
 	    static createFrom(source: any = {}) {
 	        return new AISetting(source);
@@ -36,10 +67,27 @@ export namespace spec {
 	        this.isEnabled = source["isEnabled"];
 	        this.apiKey = source["apiKey"];
 	        this.defaultModel = source["defaultModel"];
-	        this.defaultTemperature = source["defaultTemperature"];
 	        this.origin = source["origin"];
-	        this.additionalSettings = source["additionalSettings"];
+	        this.modelSettings = this.convertValues(source["modelSettings"], ModelSetting);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class APIResponseDetails {
 	    data: any;
@@ -336,19 +384,39 @@ export namespace spec {
 		}
 	}
 	
-	export class CompletionRequest {
-	    model: string;
-	    messages?: ChatCompletionRequestMessage[];
-	    temperature: number;
-	    maxPromptLength: number;
-	    stream: boolean;
+	export class ModelParams {
+	    name: string;
+	    stream?: boolean;
+	    promptLength?: number;
+	    outputLength?: number;
+	    temperature?: number;
+	    reasoningSupport?: boolean;
 	    systemPrompt?: string;
-	    maxOutputLength?: number;
-	    functions?: ChatCompletionFunctions[];
-	    functionCall?: any;
-	    suffix?: string;
 	    timeout?: number;
 	    additionalParameters?: Record<string, any>;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelParams(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.stream = source["stream"];
+	        this.promptLength = source["promptLength"];
+	        this.outputLength = source["outputLength"];
+	        this.temperature = source["temperature"];
+	        this.reasoningSupport = source["reasoningSupport"];
+	        this.systemPrompt = source["systemPrompt"];
+	        this.timeout = source["timeout"];
+	        this.additionalParameters = source["additionalParameters"];
+	    }
+	}
+	export class CompletionRequest {
+	    modelParams: ModelParams;
+	    messages?: ChatCompletionRequestMessage[];
+	    functions?: ChatCompletionFunctions[];
+	    functionCall?: any;
 	
 	    static createFrom(source: any = {}) {
 	        return new CompletionRequest(source);
@@ -356,18 +424,10 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.model = source["model"];
+	        this.modelParams = this.convertValues(source["modelParams"], ModelParams);
 	        this.messages = this.convertValues(source["messages"], ChatCompletionRequestMessage);
-	        this.temperature = source["temperature"];
-	        this.maxPromptLength = source["maxPromptLength"];
-	        this.stream = source["stream"];
-	        this.systemPrompt = source["systemPrompt"];
-	        this.maxOutputLength = source["maxOutputLength"];
 	        this.functions = this.convertValues(source["functions"], ChatCompletionFunctions);
 	        this.functionCall = source["functionCall"];
-	        this.suffix = source["suffix"];
-	        this.timeout = source["timeout"];
-	        this.additionalParameters = source["additionalParameters"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -654,9 +714,11 @@ export namespace spec {
 	    provider: string;
 	    maxPromptLength: number;
 	    maxOutputLength: number;
-	    defaultTemperature?: number;
-	    streamingSupport?: boolean;
+	    defaultTemperature: number;
+	    streamingSupport: boolean;
+	    reasoningSupport: boolean;
 	    defaultSystemPrompt: string;
+	    timeout: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelInfo(source);
@@ -671,23 +733,21 @@ export namespace spec {
 	        this.maxOutputLength = source["maxOutputLength"];
 	        this.defaultTemperature = source["defaultTemperature"];
 	        this.streamingSupport = source["streamingSupport"];
+	        this.reasoningSupport = source["reasoningSupport"];
 	        this.defaultSystemPrompt = source["defaultSystemPrompt"];
+	        this.timeout = source["timeout"];
 	    }
 	}
 	export class ProviderInfo {
 	    name: string;
 	    apiKey: string;
+	    defaultModel: string;
 	    engine: string;
 	    origin: string;
-	    defaultModel: string;
-	    additionalSettings: Record<string, any>;
-	    timeout: number;
 	    apiKeyHeaderKey: string;
 	    defaultHeaders: Record<string, string>;
 	    chatCompletionPathPrefix: string;
-	    defaultTemperature: number;
 	    modelPrefixes: string[];
-	    streamingSupport: boolean;
 	    models: Record<string, ModelInfo>;
 	
 	    static createFrom(source: any = {}) {
@@ -698,17 +758,13 @@ export namespace spec {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
 	        this.apiKey = source["apiKey"];
+	        this.defaultModel = source["defaultModel"];
 	        this.engine = source["engine"];
 	        this.origin = source["origin"];
-	        this.defaultModel = source["defaultModel"];
-	        this.additionalSettings = source["additionalSettings"];
-	        this.timeout = source["timeout"];
 	        this.apiKeyHeaderKey = source["apiKeyHeaderKey"];
 	        this.defaultHeaders = source["defaultHeaders"];
 	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
-	        this.defaultTemperature = source["defaultTemperature"];
 	        this.modelPrefixes = source["modelPrefixes"];
-	        this.streamingSupport = source["streamingSupport"];
 	        this.models = this.convertValues(source["models"], ModelInfo, true);
 	    }
 	
@@ -837,61 +893,6 @@ export namespace spec {
 		    return a;
 		}
 	}
-	export class GetDefaultProviderRequest {
-	
-	
-	    static createFrom(source: any = {}) {
-	        return new GetDefaultProviderRequest(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	
-	    }
-	}
-	export class GetDefaultProviderResponseBody {
-	    defaultProvider: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new GetDefaultProviderResponseBody(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.defaultProvider = source["defaultProvider"];
-	    }
-	}
-	export class GetDefaultProviderResponse {
-	    Body?: GetDefaultProviderResponseBody;
-	
-	    static createFrom(source: any = {}) {
-	        return new GetDefaultProviderResponse(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Body = this.convertValues(source["Body"], GetDefaultProviderResponseBody);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	
 	export class ListConversationsRequest {
 	    Token: string;
 	
@@ -969,8 +970,8 @@ export namespace spec {
 	
 	export class MakeCompletionRequestBody {
 	    prompt: string;
+	    modelParams: ModelParams;
 	    prevMessages: ChatCompletionRequestMessage[];
-	    inputParams: Record<string, any>;
 	
 	    static createFrom(source: any = {}) {
 	        return new MakeCompletionRequestBody(source);
@@ -979,8 +980,8 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.prompt = source["prompt"];
+	        this.modelParams = this.convertValues(source["modelParams"], ModelParams);
 	        this.prevMessages = this.convertValues(source["prevMessages"], ChatCompletionRequestMessage);
-	        this.inputParams = source["inputParams"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1064,6 +1065,8 @@ export namespace spec {
 		    return a;
 		}
 	}
+	
+	
 	
 	
 	export class SaveConversationRequest {
@@ -1166,7 +1169,6 @@ export namespace spec {
 	export class SetProviderAttributeRequestBody {
 	    apiKey?: string;
 	    defaultModel?: string;
-	    defaultTemperature?: number;
 	    origin?: string;
 	
 	    static createFrom(source: any = {}) {
@@ -1177,7 +1179,6 @@ export namespace spec {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiKey = source["apiKey"];
 	        this.defaultModel = source["defaultModel"];
-	        this.defaultTemperature = source["defaultTemperature"];
 	        this.origin = source["origin"];
 	    }
 	}

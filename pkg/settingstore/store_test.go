@@ -40,12 +40,9 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 	}
 	ctx := context.Background()
 	request := &spec.SetSettingRequest{
-		Key: "aiSettings.openai.additionalSettings",
+		Key: "aiSettings.openai.defaultModel",
 		Body: &spec.SetSettingRequestBody{
-			Value: map[string]any{
-				"internal": 1,
-				"new":      [][]string{{"1", "2"}, {"1"}},
-			},
+			Value: "gpt-4o",
 		},
 	}
 	// Set additional data
@@ -121,10 +118,10 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 
 			if tt.expectedError == "" {
 				// Verify additional settings
-				additionalSettings := got.Body.AISettings["openai"].AdditionalSettings
-				if customVal, ok := additionalSettings["new"]; !ok || customVal == nil {
+				defaultModel := got.Body.AISettings["openai"].DefaultModel
+				if defaultModel != "gpt-4o" {
 					t.Errorf(
-						"GetAllSettings() additional setting mismatch, expected 'new' setting to be present",
+						"GetAllSettings() defaultModel mismatch, expected 'gpt-4o' setting to be present",
 					)
 				}
 

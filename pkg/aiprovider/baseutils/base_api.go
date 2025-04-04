@@ -26,23 +26,60 @@ func (api *BaseAIAPI) IsConfigured(ctx context.Context) bool {
 	return api.ProviderInfo.IsConfigured()
 }
 
-// MakeCompletion creates a new completion request.
-func (api *BaseAIAPI) MakeCompletion(
+func (api *BaseAIAPI) CreateCompletionRequest(
 	ctx context.Context,
-	modelInfo spec.ModelInfo,
 	prompt string,
+	modelParams spec.ModelParams,
 	prevMessages []spec.ChatCompletionRequestMessage,
-	inputParams map[string]any,
 ) (*spec.CompletionRequest, error) {
-	if inputParams == nil {
-		inputParams = make(map[string]any)
+	modelInfo, ok := api.ProviderInfo.Models[modelParams.Name]
+	if !ok {
+		return nil, errors.New(
+			"Provider: " + string(
+				api.ProviderInfo.Name,
+			) + " ModelInfo not found for Model: " + string(
+				modelParams.Name,
+			),
+		)
+	}
+	completionRequest := spec.CompletionRequest{
+		ModelParams: spec.ModelParams{
+			Name:                 modelParams.Name,
+			AdditionalParameters: modelParams.AdditionalParameters,
+		},
 	}
 
-	completionRequest := spec.CompletionRequest{
-		Model:           string(modelInfo.Name),
-		Temperature:     api.ProviderInfo.DefaultTemperature,
-		Stream:          api.ProviderInfo.StreamingSupport,
-		MaxPromptLength: modelInfo.MaxPromptLength,
+	// Cannot turn on streaming of it is set false in model
+	if modelParams.Stream != nil && *modelParams.Stream {
+		completionRequest.ModelParams.Stream = &modelInfo.StreamingSupport
+	} else {
+		completionRequest.ModelParams.Stream = BoolPtr(modelInfo.StreamingSupport)
+	}
+
+	if modelParams.Temperature != nil {
+		completionRequest.ModelParams.Temperature = modelParams.Temperature
+	} else {
+		completionRequest.ModelParams.Temperature = &modelInfo.DefaultTemperature
+	}
+
+	if modelParams.OutputLength != nil && *modelParams.OutputLength <= modelInfo.MaxOutputLength {
+		completionRequest.ModelParams.OutputLength = modelParams.OutputLength
+	} else {
+		completionRequest.ModelParams.OutputLength = &modelInfo.MaxOutputLength
+	}
+
+	if modelParams.PromptLength != nil && *modelParams.PromptLength <= modelInfo.MaxPromptLength {
+		completionRequest.ModelParams.PromptLength = modelParams.PromptLength
+	} else {
+		completionRequest.ModelParams.PromptLength = &modelInfo.MaxPromptLength
+	}
+
+	reqSystemPrompt := modelInfo.DefaultSystemPrompt
+	if modelParams.SystemPrompt != nil {
+		reqSystemPrompt += "\n" + *modelParams.SystemPrompt
+	}
+	if reqSystemPrompt != "" {
+		completionRequest.ModelParams.SystemPrompt = &reqSystemPrompt
 	}
 
 	// Handle messages
@@ -56,58 +93,10 @@ func (api *BaseAIAPI) MakeCompletion(
 	}
 	completionRequest.Messages = messages
 
-	// Handle StreamingSupport. Streaming resolution is: ModelInfo > ProviderInfo
-	if modelInfo.StreamingSupport != nil {
-		completionRequest.Stream = *modelInfo.StreamingSupport
-	}
-	// Handle temperature. Temperature resolution is: ModelInfo > inputParams > ProviderInfo
-	if modelInfo.DefaultTemperature != nil {
-		completionRequest.Temperature = *modelInfo.DefaultTemperature
-	} else if inTemp, ok := inputParams["temperature"].(float64); ok {
-		completionRequest.Temperature = inTemp
-	}
-
-	if inMaxOutputLength, ok := inputParams["maxOutputLength"].(int); ok {
-		if inMaxOutputLength <= modelInfo.MaxOutputLength {
-			completionRequest.MaxOutputLength = &inMaxOutputLength
-		}
-	}
-
-	if inMaxPromptLength, ok := inputParams["maxPromptLength"].(int); ok {
-		if inMaxPromptLength <= modelInfo.MaxPromptLength {
-			completionRequest.MaxPromptLength = inMaxPromptLength
-		}
-	}
-
-	reqSystemPrompt := modelInfo.DefaultSystemPrompt
-	if inSystemPrompt, ok := inputParams["systemPrompt"].(string); ok {
-		reqSystemPrompt += "\n" + inSystemPrompt
-	}
-	if reqSystemPrompt != "" {
-		completionRequest.SystemPrompt = &reqSystemPrompt
-	}
-
-	for key, value := range inputParams {
-		switch key {
-		case "systemPrompt",
-			"maxPromptLength",
-			"maxOutputLength",
-			"temperature",
-			"model",
-			"provider":
-			// Do nothing for these keys
-		default:
-			if completionRequest.AdditionalParameters == nil {
-				completionRequest.AdditionalParameters = make(map[string]any)
-			}
-			completionRequest.AdditionalParameters[key] = value
-		}
-	}
-
 	// Assuming filterMessagesByTokenCount is implemented elsewhere
 	completionRequest.Messages = FilterMessagesByTokenCount(
 		completionRequest.Messages,
-		completionRequest.MaxPromptLength,
+		*completionRequest.ModelParams.PromptLength,
 	)
 
 	return &completionRequest, nil
@@ -118,10 +107,9 @@ func (api *BaseAIAPI) SetProviderAttribute(
 	ctx context.Context,
 	apiKey *string,
 	defaultModel *string,
-	defaultTemperature *float64,
 	origin *string,
 ) error {
-	if apiKey == nil && defaultModel == nil && defaultTemperature == nil && origin == nil {
+	if apiKey == nil && defaultModel == nil && origin == nil {
 		return errors.New("no attribute provided for set")
 	}
 	if api.ProviderInfo == nil {
@@ -135,9 +123,6 @@ func (api *BaseAIAPI) SetProviderAttribute(
 	}
 	if defaultModel != nil {
 		api.ProviderInfo.DefaultModel = spec.ModelName(*defaultModel)
-	}
-	if defaultTemperature != nil {
-		api.ProviderInfo.DefaultTemperature = *defaultTemperature
 	}
 
 	return nil
@@ -157,14 +142,24 @@ func (api *BaseAIAPI) FetchCompletion(
 		return nil, errors.New("llm not initialized")
 	}
 	options := []llms.CallOption{
-		llms.WithModel(input.Model),
-		llms.WithTemperature(input.Temperature),
+		llms.WithModel(string(input.ModelParams.Name)),
 	}
-	if input.MaxOutputLength != nil {
-		options = append(options, llms.WithMaxTokens(*input.MaxOutputLength))
+	if input.ModelParams.Temperature != nil {
+		options = append(options, llms.WithTemperature(*input.ModelParams.Temperature))
 	}
-	if input.Stream && onStreamData != nil {
+
+	if input.ModelParams.OutputLength != nil {
+		options = append(options, llms.WithMaxTokens(*input.ModelParams.OutputLength))
+	}
+
+	count := 0
+	if input.ModelParams.Stream != nil && *input.ModelParams.Stream && onStreamData != nil {
 		streamingFunc := func(ctx context.Context, chunk []byte) error {
+			if count < 5 {
+				// slog.Info("stream", "got chunk", string(chunk))
+				count += 1
+			}
+
 			err := onStreamData(string(chunk))
 			return err
 		}
@@ -172,8 +167,11 @@ func (api *BaseAIAPI) FetchCompletion(
 	}
 
 	content := []llms.MessageContent{}
-	if input.SystemPrompt != nil {
-		content = append(content, llms.TextParts(llms.ChatMessageTypeSystem, *input.SystemPrompt))
+	if input.ModelParams.SystemPrompt != nil && *input.ModelParams.SystemPrompt != "" {
+		content = append(
+			content,
+			llms.TextParts(llms.ChatMessageTypeSystem, *input.ModelParams.SystemPrompt),
+		)
 	}
 	for _, msg := range input.Messages {
 		role := LangchainRoleMap[msg.Role]

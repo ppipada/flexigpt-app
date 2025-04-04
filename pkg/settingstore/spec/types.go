@@ -4,14 +4,27 @@ import (
 	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 )
 
+type ModelSetting struct {
+	Name                 aiproviderSpec.ModelName `json:"name"                           required:"true"`
+	DisplayName          string                   `json:"displayName"                    required:"true"`
+	IsEnabled            bool                     `json:"isEnabled"                      required:"true"`
+	Stream               *bool                    `json:"stream,omitempty"`
+	PromptLength         *int                     `json:"promptLength,omitempty"`
+	OutputLength         *int                     `json:"outputLength,omitempty"`
+	Temperature          *float64                 `json:"temperature,omitempty"`
+	ReasoningSupport     *bool                    `json:"reasoningSupport,omitempty"`
+	SystemPrompt         *string                  `json:"systemPrompt,omitempty"`
+	Timeout              *int                     `json:"timeout,omitempty"`
+	AdditionalParameters *map[string]any          `json:"additionalParameters,omitempty"`
+}
+
 // AISetting represents the settings for an AI provider.
 type AISetting struct {
-	IsEnabled          bool                     `json:"isEnabled"`
-	APIKey             string                   `json:"apiKey"`
-	DefaultModel       aiproviderSpec.ModelName `json:"defaultModel"`
-	DefaultTemperature float64                  `json:"defaultTemperature"`
-	Origin      string                   `json:"origin"`
-	AdditionalSettings map[string]any           `json:"additionalSettings"`
+	IsEnabled     bool                     `json:"isEnabled"`
+	APIKey        string                   `json:"apiKey"`
+	DefaultModel  aiproviderSpec.ModelName `json:"defaultModel"`
+	Origin        string                   `json:"origin"`
+	ModelSettings []ModelSetting           `json:"modelSettings"`
 }
 
 // AISettingsSchema represents the schema for AI settings for different providers.

@@ -1,7 +1,6 @@
 import {
 	FetchCompletion,
 	GetConfigurationInfo,
-	GetDefaultProvider,
 	MakeCompletion,
 	SetDefaultProvider,
 	SetProviderAttribute,
@@ -14,6 +13,7 @@ import type {
 	CompletionResponse,
 	IProviderSetAPI,
 	ModelName,
+	ModelParams,
 	ProviderName,
 } from '@/models/aiprovidermodel';
 
@@ -21,11 +21,6 @@ import type {
  * @public
  */
 export class WailsProviderSetAPI implements IProviderSetAPI {
-	async getDefaultProvider(): Promise<ProviderName> {
-		const resp = await GetDefaultProvider({} as wailsSpec.GetDefaultProviderRequest);
-		return resp.Body?.defaultProvider as ProviderName;
-	}
-
 	async setDefaultProvider(provider: ProviderName): Promise<void> {
 		const req = { Body: { provider: provider } };
 		await SetDefaultProvider(req as wailsSpec.SetDefaultProviderRequest);
@@ -40,7 +35,6 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		provider: ProviderName,
 		apiKey?: string,
 		defaultModel?: ModelName,
-		defaultTemperature?: number,
 		origin?: string
 	): Promise<void> {
 		const req = {
@@ -48,7 +42,6 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 			Body: {
 				apiKey: apiKey,
 				defaultModel: defaultModel,
-				defaultTemperature: defaultTemperature,
 				origin: origin,
 			},
 		};
@@ -57,8 +50,8 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 	async getCompletionRequest(
 		provider: ProviderName,
 		prompt: string,
-		prevMessages?: Array<ChatCompletionRequestMessage>,
-		inputParams?: { [key: string]: any }
+		modelParams: ModelParams,
+		prevMessages?: Array<ChatCompletionRequestMessage>
 	): Promise<CompletionRequest> {
 		const msgs: wailsSpec.ChatCompletionRequestMessage[] = [];
 		if (prevMessages) {
@@ -66,15 +59,13 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 				msgs.push(m as wailsSpec.ChatCompletionRequestMessage);
 			}
 		}
-		if (!inputParams) {
-			inputParams = {};
-		}
+
 		const req = {
 			Provider: provider,
 			Body: {
 				prompt: prompt,
+				modelParams: modelParams,
 				prevMessages: msgs,
-				inputParams: inputParams,
 			},
 		};
 		const resp = await MakeCompletion(req as wailsSpec.MakeCompletionRequest);

@@ -3,7 +3,6 @@ package aiprovider
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/flexigpt/flexiui/pkg/aiprovider/anthropic"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/deepseek"
@@ -54,16 +53,6 @@ func NewProviderSetAPI(defaultProvider spec.ProviderName) (*ProviderSetAPI, erro
 				false,
 			),
 		},
-	}, nil
-}
-
-// GetDefaultProvider returns the default provider.
-func (ps *ProviderSetAPI) GetDefaultProvider(
-	ctx context.Context,
-	req *spec.GetDefaultProviderRequest,
-) (*spec.GetDefaultProviderResponse, error) {
-	return &spec.GetDefaultProviderResponse{
-		Body: &spec.GetDefaultProviderResponseBody{DefaultProvider: ps.defaultProvider},
 	}, nil
 }
 
@@ -121,7 +110,6 @@ func (ps *ProviderSetAPI) SetProviderAttribute(
 		ctx,
 		req.Body.APIKey,
 		req.Body.DefaultModel,
-		req.Body.DefaultTemperature,
 		req.Body.Origin,
 	)
 	return &spec.SetProviderAttributeResponse{}, err
@@ -141,46 +129,12 @@ func (ps *ProviderSetAPI) MakeCompletion(
 		return nil, errors.New("invalid provider")
 	}
 
-	// Get the default model for the provider
-	aiProviderInfo, ok := AllAIProviders[provider]
-	if !ok {
-		return nil, fmt.Errorf("AI provider '%s' not found", provider)
-	}
-
-	// Retrieve the model info for the default model
-	modelInfo, ok := aiProviderInfo.Models[aiProviderInfo.DefaultModel]
-	if !ok {
-		return nil, fmt.Errorf(
-			"model info for default model '%s' not found",
-			aiProviderInfo.DefaultModel,
-		)
-	}
-
-	// Check if 'model' is specified in inputParams and is a valid model name
-	if req.Body.InputParams != nil {
-		if modelInterface, ok := req.Body.InputParams["model"]; ok {
-			// Ensure the model is a string
-			modelStr, ok := modelInterface.(string)
-			if !ok {
-				return nil, errors.New("'model' in inputParams must be a string")
-			}
-
-			// Verify that the model exists and belongs to the provider
-			if modelEntry, exists := aiProviderInfo.Models[spec.ModelName(modelStr)]; exists {
-				modelInfo = modelEntry
-			} else {
-				return nil, fmt.Errorf("invalid model '%s' specified for provider '%s'", spec.ModelName(modelStr), provider)
-			}
-		}
-	}
-
 	// Create and return the completion request
-	cr, err := p.MakeCompletion(
+	cr, err := p.CreateCompletionRequest(
 		ctx,
-		modelInfo,
 		req.Body.Prompt,
+		req.Body.ModelParams,
 		req.Body.PrevMessages,
-		req.Body.InputParams,
 	)
 	if err != nil {
 		return nil, err

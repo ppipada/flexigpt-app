@@ -1,15 +1,5 @@
 package spec
 
-type GetDefaultProviderRequest struct{}
-
-type GetDefaultProviderResponseBody struct {
-	DefaultProvider ProviderName `json:"defaultProvider"`
-}
-
-type GetDefaultProviderResponse struct {
-	Body *GetDefaultProviderResponseBody
-}
-
 type SetDefaultProviderRequestBody struct {
 	Provider ProviderName `json:"provider" required:"true"`
 }
@@ -32,10 +22,9 @@ type GetConfigurationInfoResponseBody struct {
 }
 
 type SetProviderAttributeRequestBody struct {
-	APIKey             *string  `json:"apiKey,omitempty"`
-	DefaultModel       *string  `json:"defaultModel,omitempty"`
-	DefaultTemperature *float64 `json:"defaultTemperature,omitempty"`
-	Origin             *string  `json:"origin,omitempty"`
+	APIKey       *string `json:"apiKey,omitempty"`
+	DefaultModel *string `json:"defaultModel,omitempty"`
+	Origin       *string `json:"origin,omitempty"`
 }
 
 type SetProviderAttributeRequest struct {
@@ -47,8 +36,8 @@ type SetProviderAttributeResponse struct{}
 
 type MakeCompletionRequestBody struct {
 	Prompt       string                         `json:"prompt"       required:"true"`
+	ModelParams  ModelParams                    `json:"modelParams"  required:"true"`
 	PrevMessages []ChatCompletionRequestMessage `json:"prevMessages"`
-	InputParams  map[string]any                 `json:"inputParams"`
 }
 
 type MakeCompletionRequest struct {

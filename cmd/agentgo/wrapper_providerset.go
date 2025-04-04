@@ -32,12 +32,6 @@ func SetWrappedProviderAppContext(w *ProviderSetWrapper, ctx context.Context) {
 	w.appContext = ctx
 }
 
-func (w *ProviderSetWrapper) GetDefaultProvider(
-	req *aiproviderSpec.GetDefaultProviderRequest,
-) (*aiproviderSpec.GetDefaultProviderResponse, error) {
-	return w.providersetAPI.GetDefaultProvider(context.Background(), req)
-}
-
 func (w *ProviderSetWrapper) SetDefaultProvider(
 	req *aiproviderSpec.SetDefaultProviderRequest,
 ) (*aiproviderSpec.SetDefaultProviderResponse, error) {

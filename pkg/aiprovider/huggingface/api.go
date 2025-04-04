@@ -30,14 +30,12 @@ func (api *HuggingFaceAPI) SetProviderAttribute(
 	ctx context.Context,
 	apiKey *string,
 	defaultModel *string,
-	defaultTemperature *float64,
 	origin *string,
 ) error {
 	err := api.BaseAIAPI.SetProviderAttribute(
 		ctx,
 		apiKey,
 		defaultModel,
-		defaultTemperature,
 		origin,
 	)
 	if err != nil {

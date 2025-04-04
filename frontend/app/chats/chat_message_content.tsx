@@ -161,7 +161,7 @@ export default function ChatMessageContent({
 	// Memoize the plain text content to prevent unnecessary re-renders
 	const plainTextContent = useMemo(() => {
 		return content.split('\n').map((line, index) => (
-			<p key={index} className={`my-2 ${align} break-words`} style={{ lineHeight: '1.5', fontSize: '14px' }}>
+			<p key={index} className={`${align} break-words`} style={{ lineHeight: '1.5', fontSize: '14px' }}>
 				{line || '\u00A0' /* Use non-breaking space for empty lines */}
 			</p>
 		));

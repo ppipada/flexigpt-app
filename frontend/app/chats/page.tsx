@@ -1,14 +1,19 @@
 import { conversationStoreAPI } from '@/backendapibase';
 import { GetCompletionMessage } from '@/backendapihelper/chat_completion_helper';
 import { listAllConversations } from '@/backendapihelper/conversation_cache';
-import ChatInputField, { type ChatInputFieldHandle, type ChatOptions } from '@/chats/chat_input_field';
+import ChatInputField, {
+	DefaultModelOption,
+	type ChatInputFieldHandle,
+	type ChatOptions,
+} from '@/chats/chat_input_field';
 import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
+import { type ModelParams } from '@/models/aiprovidermodel';
 import { ConversationRoleEnum } from '@/models/conversationmodel';
 
 import type { Conversation, ConversationItem, ConversationMessage } from '@/models/conversationmodel';
-import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FC } from 'react';
 import { v7 as uuidv7 } from 'uuid';
 
 function initConversation(title: string = 'New Conversation'): Conversation {
@@ -109,11 +114,6 @@ const ChatScreen: FC = () => {
 	};
 
 	const updateStreamingMessage = useCallback(async (updatedChatWithUserMessage: Conversation, options: ChatOptions) => {
-		const inputParams: Record<string, any> = {
-			provider: options.modelInfo?.provider,
-			model: options.modelInfo?.name,
-			temperature: options.modelInfo?.temperature,
-		};
 		let prevMessages = updatedChatWithUserMessage.messages;
 		if (options.disablePreviousMessages) {
 			prevMessages = [updatedChatWithUserMessage.messages[updatedChatWithUserMessage.messages.length - 1]];
@@ -142,8 +142,18 @@ const ChatScreen: FC = () => {
 				return prev + data;
 			});
 		};
+		const inputParams: ModelParams = {
+			name: options.modelInfo.name,
+			temperature: options.modelInfo.temperature,
+		};
 		// log.info(JSON.stringify({ prevMessages, inputParams, convoMsg }, null, 2));
-		const newMsg = await GetCompletionMessage(convoMsg, prevMessages, inputParams, onStreamData);
+		const newMsg = await GetCompletionMessage(
+			options.modelInfo.provider,
+			inputParams,
+			convoMsg,
+			prevMessages,
+			onStreamData
+		);
 		if (newMsg.requestDetails) {
 			if (updatedChatWithConvoMessage.messages.length > 1) {
 				updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 2].details =
@@ -202,6 +212,7 @@ const ChatScreen: FC = () => {
 			};
 			saveUpdatedChat(updatedChat);
 			let currentChatOptions: ChatOptions = {
+				modelInfo: DefaultModelOption,
 				disablePreviousMessages: false,
 			};
 			if (chatInputRef.current) {
@@ -227,6 +238,7 @@ const ChatScreen: FC = () => {
 			};
 			saveUpdatedChat(updatedChat);
 			let currentChatOptions: ChatOptions = {
+				modelInfo: DefaultModelOption,
 				disablePreviousMessages: false,
 			};
 			if (chatInputRef.current) {

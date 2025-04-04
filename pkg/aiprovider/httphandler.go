@@ -13,15 +13,6 @@ const (
 
 func InitProviderSetHandlers(api huma.API, providerSetAPI *ProviderSetAPI) {
 	huma.Register(api, huma.Operation{
-		OperationID: "get-default-provider",
-		Method:      http.MethodGet,
-		Path:        pathPrefix + "/default",
-		Summary:     "Get default provider",
-		Description: "Get default provider",
-		Tags:        []string{tag},
-	}, providerSetAPI.GetDefaultProvider)
-
-	huma.Register(api, huma.Operation{
 		OperationID: "set-default-provider",
 		Method:      http.MethodPut,
 		Path:        pathPrefix + "/default",

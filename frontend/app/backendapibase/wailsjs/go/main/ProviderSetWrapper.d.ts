@@ -6,8 +6,6 @@ export function FetchCompletion(arg1:string,arg2:spec.CompletionRequest,arg3:str
 
 export function GetConfigurationInfo(arg1:spec.GetConfigurationInfoRequest):Promise<spec.GetConfigurationInfoResponse>;
 
-export function GetDefaultProvider(arg1:spec.GetDefaultProviderRequest):Promise<spec.GetDefaultProviderResponse>;
-
 export function MakeCompletion(arg1:spec.MakeCompletionRequest):Promise<spec.MakeCompletionResponse>;
 
 export function SetDefaultProvider(arg1:spec.SetDefaultProviderRequest):Promise<spec.SetDefaultProviderResponse>;

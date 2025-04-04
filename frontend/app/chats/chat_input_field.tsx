@@ -9,9 +9,16 @@ import { FiCheck, FiChevronDown, FiChevronUp, FiSend } from 'react-icons/fi';
 // Define the structure of the model information and chat options
 
 export interface ChatOptions {
-	modelInfo?: ModelOption;
+	modelInfo: ModelOption;
 	disablePreviousMessages: boolean;
 }
+
+export const DefaultModelOption: ModelOption = {
+	title: DefaultModelTitle,
+	provider: DefaultProviderName,
+	name: DefaultModelName,
+	temperature: 0.1,
+};
 
 interface ChatInputFieldProps {
 	onSend: (message: string, options: ChatOptions) => void; // Updated to use ChatOptions
@@ -49,23 +56,11 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	const [isSendButtonEnabled, setIsSendButtonEnabled] = useState<boolean>(false);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const isSubmittingRef = useRef<boolean>(false);
-	const [selectedModel, setSelectedModel] = useState<ModelOption>({
-		title: DefaultModelTitle,
-		provider: DefaultProviderName,
-		name: DefaultModelName,
-		temperature: 0.1,
-	});
+	const [selectedModel, setSelectedModel] = useState<ModelOption>(DefaultModelOption);
 	const [disablePreviousMessages, setDisablePreviousMessages] = useState<boolean>(false);
 	const [isModelDropdownOpen, setIsModelDropdownOpen] = useState<boolean>(false);
 	const [isTemperatureDropdownOpen, setIsTemperatureDropdownOpen] = useState<boolean>(false);
-	const [allOptions, setAllOptions] = useState<ModelOption[]>([
-		{
-			title: 'No Model configured',
-			provider: DefaultProviderName,
-			name: DefaultModelName,
-			temperature: 0.1,
-		},
-	]);
+	const [allOptions, setAllOptions] = useState<ModelOption[]>([DefaultModelOption]);
 	const modelDetailsRef = useRef<HTMLDetailsElement>(null);
 	const temperatureDetailsRef = useRef<HTMLDetailsElement>(null);
 	useCloseDetails({
