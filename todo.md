@@ -15,8 +15,12 @@
   - [ ] Implement MCP protocol
   - [ ] Add servers for: file, git, simplemapstore
 
-- [ ] Add models as a configuration in providers where each model can be enabled disabled as required.
-- [ ] Add a custom model entry support too.
+- [ ] Add models as a configuration in providers where each model can be enabled disabled as required. Add a custom model entry support too.
+
+  - [x] UI with card table and actions
+  - [x] Modal for edit/add
+  - [ ] Backend integration
+
 - [ ] Add a custom provider and model name setting too so that an OAI compatible provider and model can be added
 - [ ] reasoning models should have a "reasoning" effort param too.
 

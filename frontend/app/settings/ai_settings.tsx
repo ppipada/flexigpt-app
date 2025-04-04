@@ -2,6 +2,7 @@ import DeleteConfirmationModal from '@/components/delete_confirmation';
 import type { ProviderName } from '@/models/aiprovidermodel';
 import { ProviderInfoDescription } from '@/models/aiprovidermodel';
 import type { AISetting, ModelSetting } from '@/models/settingmodel';
+import ModelDropdown from '@/settings/default_model_dropdown';
 
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
@@ -162,7 +163,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 						</label>
 						<input
 							type="password"
-							className="input col-span-9 w-full h-10 rounded-lg px-4 py-2"
+							className="input col-span-9 w-full h-10 rounded-lg border border-base-300 px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={settings.apiKey}
 							onChange={e => {
@@ -182,7 +183,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 						</label>
 						<input
 							type="text"
-							className="input col-span-9 w-full h-10 rounded-lg px-4 py-2"
+							className="input col-span-9 w-full h-10 rounded-lg border border-base-300 px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={settings.origin}
 							onChange={e => {
@@ -200,20 +201,16 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['defaultModel']}>
 							Default Model
 						</label>
-						<select
-							className="col-span-6 select select-bordered w-full h-10 rounded-lg px-4 py-2 text-sm"
-							value={settings.defaultModel}
-							onChange={e => {
-								onChange('defaultModel', e.target.value);
-								onSave('defaultModel', e.target.value);
-							}}
-						>
-							{modelSettings.map(model => (
-								<option key={model.name} value={model.name}>
-									{model.name}
-								</option>
-							))}
-						</select>
+						<div className="col-span-6">
+							<ModelDropdown
+								modelSettings={modelSettings}
+								defaultModel={settings.defaultModel}
+								onModelChange={modelName => {
+									onChange('defaultModel', modelName);
+									onSave('defaultModel', modelName);
+								}}
+							/>
+						</div>
 						<div className="col-span-3 flex justify-end">
 							<button className="btn btn-md btn-ghost rounded-2xl flex items-center" onClick={handleAddModel}>
 								<FiPlus size={16} /> Add Model

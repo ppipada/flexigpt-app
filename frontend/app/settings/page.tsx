@@ -4,8 +4,8 @@ import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
 import { DefaultModelName, DefaultProviderName, type ProviderName } from '@/models/aiprovidermodel';
 import type { AISetting } from '@/models/settingmodel';
-import ProviderDropdown from '@/settings/ai_provider'; // Import the new component
 import AISettingsCard from '@/settings/ai_settings';
+import ProviderDropdown from '@/settings/default_provider_dropdown'; // Import the new component
 import { type FC, useEffect, useState } from 'react';
 
 const defaultAISettings: Record<ProviderName, AISetting> = {

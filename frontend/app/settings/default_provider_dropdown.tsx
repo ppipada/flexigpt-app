@@ -44,10 +44,10 @@ const ProviderDropdown: FC<ProviderDropdownProps> = ({ aiSettings, defaultProvid
 			}}
 		>
 			<summary
-				className="flex btn w-full text-left shadow-none border-none rounded-box bg-base-100 justify-between items-center px-1"
+				className="flex btn w-full text-left shadow-none rounded-box border border-base-300 bg-base-100 justify-between items-center px-4 py-2 cursor-pointer"
 				title="Select Provider"
 			>
-				<h3 className="text-sm font-medium capitalize">{selectedProvider}</h3>
+				<span className="capitalize font-normal">{selectedProvider}</span>
 				{isOpen ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
 			</summary>
 			<ul tabIndex={0} className={`dropdown-content menu rounded-box w-full bg-base-200`}>

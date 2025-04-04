@@ -1,0 +1,65 @@
+import { useCloseDetails } from '@/lib/useCloseDetails';
+import type { ModelSetting } from '@/models/settingmodel';
+import type { FC } from 'react';
+import { useRef, useState } from 'react';
+import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+
+interface ModelDropdownProps {
+	modelSettings: ModelSetting[];
+	defaultModel: string;
+	onModelChange: (modelName: string) => void;
+}
+
+const ModelDropdown: FC<ModelDropdownProps> = ({ modelSettings, defaultModel, onModelChange }) => {
+	const [isOpen, setIsOpen] = useState(false);
+	const [selectedModel, setSelectedModel] = useState(defaultModel);
+	const detailsRef = useRef<HTMLDetailsElement>(null);
+
+	useCloseDetails({
+		detailsRef,
+		events: ['mousedown'],
+		onClose: () => {
+			setIsOpen(false);
+		},
+	});
+
+	const handleSelection = (modelName: string) => {
+		setSelectedModel(modelName);
+		onModelChange(modelName);
+		// Force-close the native dropdown
+		if (detailsRef.current) {
+			detailsRef.current.open = false;
+		}
+		setIsOpen(false);
+	};
+
+	return (
+		<details
+			ref={detailsRef}
+			className="dropdown relative w-full"
+			onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
+				setIsOpen((event.currentTarget as HTMLDetailsElement).open);
+			}}
+		>
+			<summary
+				className="flex btn w-full text-left shadow-none rounded-lg border border-base-300 bg-base-100 justify-between items-center px-4 py-2 cursor-pointer"
+				title="Select Model"
+			>
+				<span className="font-normal">{selectedModel}</span>
+				{isOpen ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+			</summary>
+			<ul tabIndex={0} className="dropdown-content menu rounded-box w-full bg-base-200 z-10">
+				{modelSettings.map(model => (
+					<li key={model.name} className="cursor-pointer rounded-box" onClick={() => handleSelection(model.name)}>
+						<a className="flex justify-between items-center p-2 m-1">
+							<span>{model.name}</span>
+							{model.name === selectedModel && <FiCheck />}
+						</a>
+					</li>
+				))}
+			</ul>
+		</details>
+	);
+};
+
+export default ModelDropdown;
