@@ -4,7 +4,7 @@ import { ProviderInfoDescription } from '@/models/aiprovidermodel';
 import type { AISetting, ModelSetting } from '@/models/settingmodel';
 
 import type { FC } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
 	FiAlertTriangle,
 	FiCheck,
@@ -31,14 +31,22 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, onChange,
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [isEnabled, setIsEnabled] = useState(!!settings.isEnabled);
 	const [showModal, setShowModal] = useState(false);
-	const initModelSettings = settings.modelSettings;
 
-	const [modelSettings, setModelSettings] = useState<ModelSetting[]>(initModelSettings);
+	const [modelSettings, setModelSettings] = useState<ModelSetting[]>(settings.modelSettings);
 	const [isModifyModelModalOpen, setIsModifyModelModalOpen] = useState(false);
 	const [selectedModel, setSelectedModel] = useState<ModelSetting | null>(null);
 	const [isDeleteModelModalOpen, setIsDeleteModelModalOpen] = useState(false);
 
-	console.log(JSON.stringify(modelSettings, null, 2));
+	// console.log(JSON.stringify(modelSettings, null, 2));
+
+	useEffect(() => {
+		setIsEnabled(!!settings.isEnabled);
+	}, [settings.isEnabled]);
+
+	// Synchronize modelSettings with settings.modelSettings
+	useEffect(() => {
+		setModelSettings(settings.modelSettings);
+	}, [settings.modelSettings]);
 
 	const toggleExpand = () => {
 		if (isEnabled) {
