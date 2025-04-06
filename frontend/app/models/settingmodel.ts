@@ -5,11 +5,10 @@ export interface AISetting {
 	apiKey: string;
 	origin: string;
 	defaultModel: ModelName;
-	modelSettings: ModelSetting[];
+	modelSettings: Record<ModelName, ModelSetting>;
 }
 
 export interface ModelSetting {
-	name: ModelName;
 	displayName: string;
 	isEnabled: boolean;
 	stream?: boolean;
@@ -23,7 +22,7 @@ export interface ModelSetting {
 }
 
 export type SettingsSchema = {
-	aiSettings: { [key: string]: AISetting };
+	aiSettings: Record<ProviderName, AISetting>;
 	app: {
 		defaultProvider: ProviderName;
 	};

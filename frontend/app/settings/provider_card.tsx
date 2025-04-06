@@ -1,7 +1,7 @@
 import { settingstoreAPI } from '@/backendapibase';
 import { updateProviderAISettings } from '@/backendapihelper/settings_helper';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
-import type { ProviderName } from '@/models/aiprovidermodel';
+import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
 import { ProviderInfoDescription } from '@/models/aiprovidermodel';
 import type { AISetting, ModelSetting } from '@/models/settingmodel';
 import ModelDropdown from '@/settings/model_dropdown';
@@ -43,9 +43,9 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	const [showModal, setShowModal] = useState(false);
 	const [localSettings, setLocalSettings] = useState<AISetting>(settings);
 
-	const [modelSettings, setModelSettings] = useState<ModelSetting[]>(settings.modelSettings);
+	const [modelSettings, setModelSettings] = useState<Record<ModelName, ModelSetting>>(settings.modelSettings);
 	const [isModifyModelModalOpen, setIsModifyModelModalOpen] = useState(false);
-	const [selectedModel, setSelectedModel] = useState<ModelSetting | null>(null);
+	const [selectedModelName, setSelectedModelName] = useState<ModelName | null>(null);
 	const [isDeleteModelModalOpen, setIsDeleteModelModalOpen] = useState(false);
 
 	const [showActionDeniedAlert, setShowActionDeniedAlert] = useState(false);
@@ -99,57 +99,55 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 
 	// Handlers for models
 	const handleAddModel = () => {
-		setSelectedModel(null);
+		setSelectedModelName(null);
 		setIsModifyModelModalOpen(true);
 	};
 
-	const handleEditModel = (model: ModelSetting) => {
-		setSelectedModel(model);
+	const handleEditModel = (modelName: ModelName) => {
+		setSelectedModelName(modelName);
 		setIsModifyModelModalOpen(true);
 	};
 
-	const handleDeleteModel = (model: ModelSetting) => {
-		if (selectedModel?.name === localSettings.defaultModel) {
+	const handleDeleteModel = (modelName: ModelName) => {
+		if (modelName === localSettings.defaultModel) {
 			setActionDeniedMessage('Cannot delete the default model. Please select a different default model first.');
 			setShowActionDeniedAlert(true);
 			return;
 		}
-		setSelectedModel(model);
+		setSelectedModelName(modelName);
 		setIsDeleteModelModalOpen(true);
 	};
 
 	const handleDeleteModelConfirm = () => {
-		if (selectedModel?.name === localSettings.defaultModel) {
+		if (selectedModelName === localSettings.defaultModel) {
 			setActionDeniedMessage('Cannot delete the default model. Please select a different default model first.');
 			setShowActionDeniedAlert(true);
 			return;
 		}
 
-		const updatedModels = modelSettings.filter(m => m.name !== selectedModel?.name);
+		const updatedModels = { ...modelSettings };
+		if (selectedModelName) {
+			delete updatedModels[selectedModelName];
+		}
+
 		setModelSettings(updatedModels);
 		handleSettingChange('modelSettings', updatedModels);
 		setIsDeleteModelModalOpen(false);
-		setSelectedModel(null);
+		setSelectedModelName(null);
 	};
 
 	const closeDeleteModelModal = () => {
 		setIsDeleteModelModalOpen(false);
-		setSelectedModel(null);
+		setSelectedModelName(null);
 	};
 
-	const handleModifyModelSubmit = (modelData: ModelSetting) => {
-		let updatedModels;
-		if (selectedModel) {
-			// Edit existing model
-			updatedModels = modelSettings.map(m => (m.name === selectedModel.name ? modelData : m));
-		} else {
-			// Add new model
-			updatedModels = [...modelSettings, modelData];
-		}
+	const handleModifyModelSubmit = (modelName: ModelName, modelData: ModelSetting) => {
+		const updatedModels = { ...modelSettings };
+		updatedModels[modelName] = modelData;
 		setModelSettings(updatedModels);
 		handleSettingChange('modelSettings', updatedModels);
 		setIsModifyModelModalOpen(false);
-		setSelectedModel(null);
+		setSelectedModelName(null);
 	};
 
 	return (
@@ -272,17 +270,18 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 								</tr>
 							</thead>
 							<tbody>
-								{modelSettings.map((model, index) => (
-									<tr key={model.name} className="hover:bg-base-300 border-none shadow-none">
-										<td className={index === modelSettings.length - 1 ? 'rounded-bl-2xl' : ''}>{model.name}</td>
+								{Object.entries(modelSettings).map(([modelName, model], index, array) => (
+									<tr key={modelName} className="hover:bg-base-300 border-none shadow-none">
+										<td className={index === array.length - 1 ? 'rounded-bl-2xl' : ''}>
+											{model.displayName || modelName}
+										</td>
 										<td className="flex items-center justify-center">
 											<input
 												type="checkbox"
 												checked={model.isEnabled}
 												onChange={() => {
-													const updatedModels = modelSettings.map(m =>
-														m.name === model.name ? { ...m, isEnabled: !m.isEnabled } : m
-													);
+													const updatedModels = { ...modelSettings };
+													updatedModels[modelName as ModelName] = { ...model, isEnabled: !model.isEnabled };
 													setModelSettings(updatedModels);
 													handleSettingChange('modelSettings', updatedModels);
 												}}
@@ -294,12 +293,12 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 												{model.reasoningSupport ? <FiCheck size={16} /> : <FiX size={16} />}
 											</div>
 										</td>
-										<td className={index === modelSettings.length - 1 ? 'rounded-br-2xl text-right' : 'text-right'}>
+										<td className={index === array.length - 1 ? 'rounded-br-2xl text-right' : 'text-right'}>
 											<button
 												className="btn btn-sm btn-ghost rounded-2xl"
 												aria-label="Edit Model"
 												onClick={() => {
-													handleEditModel(model);
+													handleEditModel(modelName as ModelName);
 												}}
 											>
 												<FiEdit size={16} />
@@ -308,11 +307,11 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 												className="btn btn-sm btn-ghost rounded-2xl"
 												aria-label="Delete Model"
 												onClick={() => {
-													handleDeleteModel(model);
+													handleDeleteModel(modelName as ModelName);
 												}}
-												disabled={model.name === localSettings.defaultModel}
+												disabled={modelName === localSettings.defaultModel}
 												title={
-													model.name === localSettings.defaultModel ? 'Cannot delete default model' : 'Delete model'
+													modelName === localSettings.defaultModel ? 'Cannot delete default model' : 'Delete model'
 												}
 											>
 												<FiTrash2 size={16} />
@@ -355,7 +354,8 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						setIsModifyModelModalOpen(false);
 					}}
 					onSubmit={handleModifyModelSubmit}
-					initialData={selectedModel || undefined}
+					initialModelName={selectedModelName || undefined}
+					initialData={selectedModelName ? modelSettings[selectedModelName] : undefined}
 					existingModels={modelSettings}
 				/>
 			)}
@@ -367,7 +367,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 					onClose={closeDeleteModelModal}
 					onConfirm={handleDeleteModelConfirm}
 					title="Delete Model"
-					message={`Are you sure you want to delete the model "${selectedModel?.name || ''}"? This action cannot be undone.`}
+					message={`Are you sure you want to delete the model "${selectedModelName || ''}"? This action cannot be undone.`}
 					confirmButtonText="Delete"
 				/>
 			)}

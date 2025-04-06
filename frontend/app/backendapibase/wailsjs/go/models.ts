@@ -20,7 +20,6 @@ export namespace frontend {
 export namespace spec {
 	
 	export class ModelSetting {
-	    name: string;
 	    displayName: string;
 	    isEnabled: boolean;
 	    stream?: boolean;
@@ -38,7 +37,6 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.name = source["name"];
 	        this.displayName = source["displayName"];
 	        this.isEnabled = source["isEnabled"];
 	        this.stream = source["stream"];
@@ -56,7 +54,7 @@ export namespace spec {
 	    apiKey: string;
 	    defaultModel: string;
 	    origin: string;
-	    modelSettings: ModelSetting[];
+	    modelSettings: Record<string, ModelSetting>;
 	
 	    static createFrom(source: any = {}) {
 	        return new AISetting(source);
@@ -68,7 +66,7 @@ export namespace spec {
 	        this.apiKey = source["apiKey"];
 	        this.defaultModel = source["defaultModel"];
 	        this.origin = source["origin"];
-	        this.modelSettings = this.convertValues(source["modelSettings"], ModelSetting);
+	        this.modelSettings = this.convertValues(source["modelSettings"], ModelSetting, true);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

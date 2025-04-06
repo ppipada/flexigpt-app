@@ -1,11 +1,12 @@
 import { useCloseDetails } from '@/lib/useCloseDetails';
+import type { ModelName } from '@/models/aiprovidermodel';
 import type { ModelSetting } from '@/models/settingmodel';
 import type { FC } from 'react';
 import { useRef, useState } from 'react';
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 interface ModelDropdownProps {
-	modelSettings: ModelSetting[];
+	modelSettings: Record<ModelName, ModelSetting>;
 	defaultModel: string;
 	onModelChange: (modelName: string) => void;
 }
@@ -45,21 +46,23 @@ const ModelDropdown: FC<ModelDropdownProps> = ({ modelSettings, defaultModel, on
 				className="flex btn w-full text-left shadow-none rounded-lg border border-base-300 bg-base-100 justify-between items-center px-4 py-2 cursor-pointer"
 				title="Select Model"
 			>
-				<span className="font-normal">{selectedModel}</span>
+				<span className="font-normal">
+					{modelSettings[selectedModel]?.displayName || selectedModel || 'Select a model'}
+				</span>
 				{isOpen ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
 			</summary>
 			<ul tabIndex={0} className="dropdown-content menu rounded-box w-full bg-base-200 z-10">
-				{modelSettings.map(model => (
+				{Object.entries(modelSettings).map(([modelName, model]) => (
 					<li
-						key={model.name}
+						key={modelName}
 						className="cursor-pointer rounded-box"
 						onClick={() => {
-							handleSelection(model.name);
+							handleSelection(modelName);
 						}}
 					>
 						<a className="flex justify-between items-center p-2 m-1">
-							<span>{model.name}</span>
-							{model.name === selectedModel && <FiCheck />}
+							<span>{model.displayName || modelName}</span>
+							{modelName === selectedModel && <FiCheck />}
 						</a>
 					</li>
 				))}
