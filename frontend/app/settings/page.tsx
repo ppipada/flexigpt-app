@@ -1,11 +1,11 @@
 import { providerSetAPI, settingstoreAPI } from '@/backendapibase';
-import { loadProviderSettings, updateProviderAISettings } from '@/backendapihelper/settings_helper';
+import { loadProviderSettings } from '@/backendapihelper/settings_helper';
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
 import { DefaultModelName, DefaultProviderName, type ProviderName } from '@/models/aiprovidermodel';
 import type { AISetting } from '@/models/settingmodel';
-import AISettingsCard from '@/settings/ai_settings';
-import ProviderDropdown from '@/settings/default_provider_dropdown'; // Import the new component
+import AISettingsCard from '@/settings/provider_card';
+import ProviderDropdown from '@/settings/provider_dropdown'; // Import the new component
 import { type FC, useEffect, useState } from 'react';
 
 const defaultAISettings: Record<ProviderName, AISetting> = {
@@ -45,30 +45,6 @@ const SettingsPage: FC = () => {
 		providerSetAPI.setDefaultProvider(value);
 		// console.log('Set a new default provider', value);
 		settingstoreAPI.setSetting('app.defaultProvider', value);
-	};
-
-	const handleAISettingsChange = (provider: keyof typeof aiSettings, key: string, value: any) => {
-		const updatedSettings = {
-			...aiSettings,
-			[provider]: {
-				...aiSettings[provider],
-				[key]: value,
-			},
-		};
-		setAISettings(updatedSettings);
-	};
-
-	const handleSaveAISettings = async (provider: keyof typeof aiSettings, key: string, value: any) => {
-		if (key === 'isEnabled') {
-			const enabledProviders = Object.keys(aiSettings).filter(provider => aiSettings[provider].isEnabled);
-
-			if (enabledProviders.length === 1 && !value) {
-				return;
-			}
-		}
-
-		await settingstoreAPI.setSetting(`aiSettings.${provider}.${key}`, value);
-		updateProviderAISettings(provider, aiSettings[provider]);
 	};
 
 	const fetchValue = async (): Promise<string> => {
@@ -138,15 +114,7 @@ const SettingsPage: FC = () => {
 							const oneSettings = aiSettings[providerStr];
 							return (
 								<div key={providerStr} className=" rounded-lg">
-									<AISettingsCard
-										provider={providerStr}
-										settings={oneSettings}
-										onChange={(key, value) => {
-											handleAISettingsChange(providerStr, key, value);
-										}}
-										onSave={(key, value) => handleSaveAISettings(providerStr, key, value)}
-										aiSettings={aiSettings}
-									/>
+									<AISettingsCard provider={providerStr} settings={oneSettings} aiSettings={aiSettings} />
 								</div>
 							);
 						})}
