@@ -50,7 +50,13 @@ const ModelDropdown: FC<ModelDropdownProps> = ({ modelSettings, defaultModel, on
 			</summary>
 			<ul tabIndex={0} className="dropdown-content menu rounded-box w-full bg-base-200 z-10">
 				{modelSettings.map(model => (
-					<li key={model.name} className="cursor-pointer rounded-box" onClick={() => handleSelection(model.name)}>
+					<li
+						key={model.name}
+						className="cursor-pointer rounded-box"
+						onClick={() => {
+							handleSelection(model.name);
+						}}
+					>
 						<a className="flex justify-between items-center p-2 m-1">
 							<span>{model.name}</span>
 							{model.name === selectedModel && <FiCheck />}

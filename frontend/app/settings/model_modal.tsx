@@ -37,7 +37,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({ isOpen, onClose, onSubmit
 		}
 
 		if (name === 'name') {
-			if (!value.trim()) {
+			if (typeof value !== 'string' || !value.trim()) {
 				newErrors.name = 'Model name is required.';
 			} else {
 				const isDuplicate = existingModels.some(model => model.name === value && model.name !== initialData?.name);

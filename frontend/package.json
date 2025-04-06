@@ -69,7 +69,7 @@
 	"knip": {
 		"ignore": [
 			"app/backendapibase/wailsjs/runtime/runtime.js",
-			"app/models/aiprovidermodel/chat_types.ts",
+			"app/models/aiprovidermodel.ts",
 			"app/backendapihelper/conversation_cache.ts"
 		],
 		"ignoreBinaries": [],

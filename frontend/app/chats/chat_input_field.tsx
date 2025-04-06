@@ -80,9 +80,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 
 	const loadInitialItems = useCallback(async () => {
 		const r = await GetChatInputOptions();
-		if (r.default) {
-			setSelectedModel(r.default);
-		}
+		setSelectedModel(r.default);
 		setAllOptions(r.allOptions);
 	}, []);
 

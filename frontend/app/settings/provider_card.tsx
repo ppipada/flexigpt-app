@@ -2,8 +2,10 @@ import { settingstoreAPI } from '@/backendapibase';
 import { updateProviderAISettings } from '@/backendapihelper/settings_helper';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 import type { ProviderName } from '@/models/aiprovidermodel';
+import { ProviderInfoDescription } from '@/models/aiprovidermodel';
 import type { AISetting, ModelSetting } from '@/models/settingmodel';
 import ModelDropdown from '@/settings/model_dropdown';
+
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 import {
@@ -28,31 +30,30 @@ interface AISettingsCardProps {
 
 const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, aiSettings }) => {
 	const [isExpanded, setIsExpanded] = useState(false);
-	const [localSettings, setLocalSettings] = useState<AISetting>(settings);
+	const [isEnabled, setIsEnabled] = useState(!!settings.isEnabled);
 	const [showModal, setShowModal] = useState(false);
+	const [localSettings, setLocalSettings] = useState<AISetting>(settings);
+
+	const [modelSettings, setModelSettings] = useState<ModelSetting[]>(settings.modelSettings);
 	const [isModifyModelModalOpen, setIsModifyModelModalOpen] = useState(false);
 	const [selectedModel, setSelectedModel] = useState<ModelSetting | null>(null);
 	const [isDeleteModelModalOpen, setIsDeleteModelModalOpen] = useState(false);
 
+	// Update local state when props change
 	useEffect(() => {
+		setIsEnabled(!!settings.isEnabled);
 		setLocalSettings(settings);
+		setModelSettings(settings.modelSettings);
 	}, [settings]);
 
 	const toggleExpand = () => {
-		if (localSettings.isEnabled) {
+		if (isEnabled) {
 			setIsExpanded(!isExpanded);
 		}
 	};
 
-	const saveSetting = async (key: string, value: any) => {
-		const updatedSettings = { ...localSettings, [key]: value };
-		setLocalSettings(updatedSettings);
-		await settingstoreAPI.setSetting(`aiSettings.${provider}.${key}`, value);
-		updateProviderAISettings(provider, updatedSettings);
-	};
-
 	const toggleEnable = () => {
-		const newIsEnabled = !localSettings.isEnabled;
+		const newIsEnabled = !isEnabled;
 		if (!newIsEnabled) {
 			const enabledProviders = Object.keys(aiSettings).filter(k => aiSettings[k].isEnabled && k !== provider);
 			if (enabledProviders.length === 0) {
@@ -60,150 +61,225 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, aiSetting
 				return;
 			}
 		}
-		saveSetting('isEnabled', newIsEnabled);
+		setIsEnabled(newIsEnabled);
+		handleSettingChange('isEnabled', newIsEnabled);
 	};
 
-	const handleModifyModelSubmit = async (modelData: ModelSetting) => {
-		const existing = localSettings.modelSettings.find(m => m.name === modelData.name);
-		const updatedModels = existing
-			? localSettings.modelSettings.map(m => (m.name === modelData.name ? modelData : m))
-			: [...localSettings.modelSettings, modelData];
+	// Handle setting changes and save to backend
+	const handleSettingChange = async (key: string, value: any) => {
+		const updatedSettings = {
+			...localSettings,
+			[key]: value,
+		};
+		setLocalSettings(updatedSettings);
+		await settingstoreAPI.setSetting(`aiSettings.${provider}.${key}`, value);
+		updateProviderAISettings(provider, updatedSettings);
+	};
 
-		saveSetting('modelSettings', updatedModels);
-		setIsModifyModelModalOpen(false);
+	// Handlers for models
+	const handleAddModel = () => {
+		setSelectedModel(null);
+		setIsModifyModelModalOpen(true);
+	};
+
+	const handleEditModel = (model: ModelSetting) => {
+		setSelectedModel(model);
+		setIsModifyModelModalOpen(true);
+	};
+
+	const handleDeleteModel = (model: ModelSetting) => {
+		setSelectedModel(model);
+		setIsDeleteModelModalOpen(true);
+	};
+
+	const handleDeleteModelConfirm = () => {
+		const updatedModels = modelSettings.filter(m => m.name !== selectedModel?.name);
+		setModelSettings(updatedModels);
+		handleSettingChange('modelSettings', updatedModels);
+		setIsDeleteModelModalOpen(false);
 		setSelectedModel(null);
 	};
 
-	const handleDeleteModelConfirm = async () => {
-		const updatedModels = localSettings.modelSettings.filter(m => m.name !== selectedModel?.name);
-		saveSetting('modelSettings', updatedModels);
+	const closeDeleteModelModal = () => {
 		setIsDeleteModelModalOpen(false);
+		setSelectedModel(null);
+	};
+
+	const handleModifyModelSubmit = (modelData: ModelSetting) => {
+		let updatedModels;
+		if (selectedModel) {
+			// Edit existing model
+			updatedModels = modelSettings.map(m => (m.name === selectedModel.name ? modelData : m));
+		} else {
+			// Add new model
+			updatedModels = [...modelSettings, modelData];
+		}
+		setModelSettings(updatedModels);
+		handleSettingChange('modelSettings', updatedModels);
+		setIsModifyModelModalOpen(false);
 		setSelectedModel(null);
 	};
 
 	return (
 		<div className="bg-base-100 rounded-lg shadow-lg p-4 mb-4">
 			<div className="grid grid-cols-12 gap-4 items-center">
+				{/* Provider Title*/}
 				<div className="col-span-3 flex items-center space-x-4">
 					<h3 className="text-sm font-medium capitalize">{provider}</h3>
 				</div>
+				{/* Enable/Disable Toggle */}
 				<div className="col-span-3 flex items-center space-x-4 ml-1">
 					<label className="text-sm font-medium">Enable</label>
 					<input
 						type="checkbox"
-						checked={localSettings.isEnabled}
+						checked={isEnabled}
 						onChange={toggleEnable}
 						className="toggle toggle-primary rounded-full"
+						spellCheck="false"
 					/>
 				</div>
+				{/* Full Settings with Chevron */}
 				<div className="col-span-6 cursor-pointer space-x-4 flex items-end justify-end" onClick={toggleExpand}>
 					<div className="flex items-center">
 						<span className="text-sm font-medium">API Key</span>
 						{localSettings.apiKey ? (
-							<FiCheckCircle className="text-green-500 mx-1" />
+							<FiCheckCircle className="text-green-500 mx-1" title="API Key Configured" />
 						) : (
-							<FiXCircle className="text-red-500 mx-1" />
+							<FiXCircle className="text-red-500 mx-1" title="API Key Not Configured" />
 						)}
 					</div>
 					<div className="flex items-center">
 						<span className="text-sm font-medium">Full Settings</span>
-						{isExpanded ? <FiChevronUp size={16} className="mx-1" /> : <FiChevronDown size={16} className="mx-1" />}
+						{isExpanded ? (
+							<FiChevronUp size={16} className="mx-1 text-gray-500" />
+						) : (
+							<FiChevronDown size={16} className="mx-1 text-gray-500" />
+						)}
 					</div>
 				</div>
 			</div>
 
-			{localSettings.isEnabled && isExpanded && (
+			{isEnabled && isExpanded && (
 				<div className="m-1 mt-8 space-y-4">
+					{/* API Key */}
 					<div className="grid grid-cols-12 gap-4 items-center">
-						<label className="col-span-3 text-sm">API Key</label>
+						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['apiKey']}>
+							API Key
+						</label>
 						<input
 							type="password"
-							className="input col-span-9"
+							className="input col-span-9 w-full h-10 rounded-lg border border-base-300 px-4 py-2"
+							style={{ fontSize: '14px' }}
 							value={localSettings.apiKey}
-							onChange={e => setLocalSettings({ ...localSettings, apiKey: e.target.value })}
-							onBlur={e => saveSetting('apiKey', e.target.value)}
+							onChange={e => {
+								setLocalSettings({
+									...localSettings,
+									apiKey: e.target.value,
+								});
+							}}
+							onBlur={e => {
+								handleSettingChange('apiKey', e.target.value);
+							}}
+							spellCheck="false"
 						/>
 					</div>
 
+					{/* Origin */}
 					<div className="grid grid-cols-12 gap-4 items-center">
-						<label className="col-span-3 text-sm">Origin</label>
+						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['origin']}>
+							Origin
+						</label>
 						<input
 							type="text"
-							className="input col-span-9"
+							className="input col-span-9 w-full h-10 rounded-lg border border-base-300 px-4 py-2"
+							style={{ fontSize: '14px' }}
 							value={localSettings.origin}
-							onChange={e => setLocalSettings({ ...localSettings, origin: e.target.value })}
-							onBlur={e => saveSetting('origin', e.target.value)}
+							onChange={e => {
+								setLocalSettings({
+									...localSettings,
+									origin: e.target.value,
+								});
+							}}
+							onBlur={e => {
+								handleSettingChange('origin', e.target.value);
+							}}
+							spellCheck="false"
 						/>
 					</div>
 
+					{/* Models : Default and add */}
 					<div className="grid grid-cols-12 gap-4 items-center">
-						<label className="col-span-3 text-sm">Default Model</label>
+						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['defaultModel']}>
+							Default Model
+						</label>
 						<div className="col-span-6">
 							<ModelDropdown
-								modelSettings={localSettings.modelSettings}
+								modelSettings={modelSettings}
 								defaultModel={localSettings.defaultModel}
-								onModelChange={modelName => saveSetting('defaultModel', modelName)}
+								onModelChange={modelName => {
+									handleSettingChange('defaultModel', modelName);
+								}}
 							/>
 						</div>
 						<div className="col-span-3 flex justify-end">
-							<button
-								className="btn btn-md btn-ghost"
-								onClick={() => {
-									setSelectedModel(null);
-									setIsModifyModelModalOpen(true);
-								}}
-							>
+							<button className="btn btn-md btn-ghost rounded-2xl flex items-center" onClick={handleAddModel}>
 								<FiPlus size={16} /> Add Model
 							</button>
 						</div>
 					</div>
 
+					{/* Models Table */}
 					<div className="overflow-x-auto">
 						<table className="table table-zebra w-full">
 							<thead>
-								<tr className="font-semibold text-sm bg-base-300">
-									<th>Model Name</th>
+								<tr className="font-semibold text-sm px-4 py-0 m-0 bg-base-300">
+									<th className="rounded-tl-2xl">Model Name</th>
 									<th className="text-center">Enabled</th>
 									<th className="text-center">Reasoning</th>
-									<th className="text-right pr-8">Actions</th>
+									<th className="text-right rounded-tr-2xl pr-8">Actions</th>
 								</tr>
 							</thead>
 							<tbody>
-								{localSettings.modelSettings.map(model => (
-									<tr key={model.name}>
-										<td>{model.name}</td>
-										<td className="text-center">
+								{modelSettings.map((model, index) => (
+									<tr key={model.name} className="hover:bg-base-300 border-none shadow-none">
+										<td className={index === modelSettings.length - 1 ? 'rounded-bl-2xl' : ''}>{model.name}</td>
+										<td className="flex items-center justify-center">
 											<input
 												type="checkbox"
 												checked={model.isEnabled}
 												onChange={() => {
-													const updatedModels = localSettings.modelSettings.map(m =>
+													const updatedModels = modelSettings.map(m =>
 														m.name === model.name ? { ...m, isEnabled: !m.isEnabled } : m
 													);
-													saveSetting('modelSettings', updatedModels);
+													setModelSettings(updatedModels);
+													handleSettingChange('modelSettings', updatedModels);
 												}}
 												className="toggle toggle-primary rounded-full"
 											/>
 										</td>
-										<td className="text-center">{model.reasoningSupport ? <FiCheck /> : <FiX />}</td>
-										<td className="text-right">
+										<td>
+											<div className="flex items-center justify-center">
+												{model.reasoningSupport ? <FiCheck size={16} /> : <FiX size={16} />}
+											</div>
+										</td>
+										<td className={index === modelSettings.length - 1 ? 'rounded-br-2xl text-right' : 'text-right'}>
 											<button
-												className="btn btn-sm btn-ghost"
+												className="btn btn-sm btn-ghost rounded-2xl"
+												aria-label="Edit Model"
 												onClick={() => {
-													setSelectedModel(model);
-													setIsModifyModelModalOpen(true);
+													handleEditModel(model);
 												}}
 											>
-												<FiEdit />
+												<FiEdit size={16} />
 											</button>
 											<button
-												className="btn btn-sm btn-ghost"
+												className="btn btn-sm btn-ghost rounded-2xl"
+												aria-label="Delete Model"
 												onClick={() => {
-													setSelectedModel(model);
-													setIsDeleteModelModalOpen(true);
+													handleDeleteModel(model);
 												}}
 											>
-												<FiTrash2 />
+												<FiTrash2 size={16} />
 											</button>
 										</td>
 									</tr>
@@ -211,38 +287,51 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, aiSetting
 							</tbody>
 						</table>
 					</div>
+					{/* End of Models */}
 				</div>
 			)}
 
 			{showModal && (
 				<dialog className="modal modal-open">
-					<div className="modal-box">
-						<FiAlertTriangle size={24} />
-						<p>Cannot disable the last provider!</p>
+					<div className="modal-box w-5/6 max-w-4xl">
+						<div className="flex flex-row items-center">
+							<FiAlertTriangle size={24} />
+							<p className="text-lg px-4">Cannot disable the last provider !!!</p>
+						</div>
 					</div>
-					<form method="dialog" className="modal-backdrop">
-						<button onClick={() => setShowModal(false)}>OK</button>
+					<form method="dialog" className="modal-backdrop w-full">
+						<button
+							onClick={() => {
+								setShowModal(false);
+							}}
+						>
+							OK
+						</button>
 					</form>
 				</dialog>
 			)}
 
+			{/* Modify Model Modal */}
 			{isModifyModelModalOpen && (
 				<ModifyModelModal
 					isOpen={isModifyModelModalOpen}
-					onClose={() => setIsModifyModelModalOpen(false)}
+					onClose={() => {
+						setIsModifyModelModalOpen(false);
+					}}
 					onSubmit={handleModifyModelSubmit}
 					initialData={selectedModel || undefined}
-					existingModels={localSettings.modelSettings}
+					existingModels={modelSettings}
 				/>
 			)}
 
+			{/* Delete Model Confirmation Modal */}
 			{isDeleteModelModalOpen && (
 				<DeleteConfirmationModal
 					isOpen={isDeleteModelModalOpen}
-					onClose={() => setIsDeleteModelModalOpen(false)}
+					onClose={closeDeleteModelModal}
 					onConfirm={handleDeleteModelConfirm}
 					title="Delete Model"
-					message={`Delete "${selectedModel?.name}"?`}
+					message={`Are you sure you want to delete the model "${selectedModel?.name || ''}"? This action cannot be undone.`}
 					confirmButtonText="Delete"
 				/>
 			)}
