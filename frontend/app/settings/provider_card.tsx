@@ -6,6 +6,7 @@ import { ProviderInfoDescription } from '@/models/aiprovidermodel';
 import type { AISetting, ModelSetting } from '@/models/settingmodel';
 import ModelDropdown from '@/settings/model_dropdown';
 
+import ActionDeniedAlert from '@/components/action_denied';
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 import {
@@ -26,9 +27,17 @@ interface AISettingsCardProps {
 	provider: ProviderName;
 	settings: AISetting;
 	aiSettings: Record<string, AISetting>;
+	defaultProvider: ProviderName;
+	onProviderSettingChange: (provider: ProviderName, settings: AISetting) => void;
 }
 
-const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, aiSettings }) => {
+const AISettingsCard: FC<AISettingsCardProps> = ({
+	provider,
+	settings,
+	aiSettings,
+	defaultProvider,
+	onProviderSettingChange,
+}) => {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [isEnabled, setIsEnabled] = useState(!!settings.isEnabled);
 	const [showModal, setShowModal] = useState(false);
@@ -38,6 +47,9 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, aiSetting
 	const [isModifyModelModalOpen, setIsModifyModelModalOpen] = useState(false);
 	const [selectedModel, setSelectedModel] = useState<ModelSetting | null>(null);
 	const [isDeleteModelModalOpen, setIsDeleteModelModalOpen] = useState(false);
+
+	const [showActionDeniedAlert, setShowActionDeniedAlert] = useState(false);
+	const [actionDeniedMessage, setActionDeniedMessage] = useState('');
 
 	// Update local state when props change
 	useEffect(() => {
@@ -55,6 +67,14 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, aiSetting
 	const toggleEnable = () => {
 		const newIsEnabled = !isEnabled;
 		if (!newIsEnabled) {
+			// Prevent disabling the default provider
+			if (provider === defaultProvider) {
+				setActionDeniedMessage(
+					'Cannot disable the default provider. Please select a different default provider first.'
+				);
+				setShowActionDeniedAlert(true);
+				return;
+			}
 			const enabledProviders = Object.keys(aiSettings).filter(k => aiSettings[k].isEnabled && k !== provider);
 			if (enabledProviders.length === 0) {
 				setShowModal(true);
@@ -74,6 +94,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, aiSetting
 		setLocalSettings(updatedSettings);
 		await settingstoreAPI.setSetting(`aiSettings.${provider}.${key}`, value);
 		updateProviderAISettings(provider, updatedSettings);
+		onProviderSettingChange(provider, updatedSettings);
 	};
 
 	// Handlers for models
@@ -88,11 +109,22 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, aiSetting
 	};
 
 	const handleDeleteModel = (model: ModelSetting) => {
+		if (selectedModel?.name === localSettings.defaultModel) {
+			setActionDeniedMessage('Cannot delete the default model. Please select a different default model first.');
+			setShowActionDeniedAlert(true);
+			return;
+		}
 		setSelectedModel(model);
 		setIsDeleteModelModalOpen(true);
 	};
 
 	const handleDeleteModelConfirm = () => {
+		if (selectedModel?.name === localSettings.defaultModel) {
+			setActionDeniedMessage('Cannot delete the default model. Please select a different default model first.');
+			setShowActionDeniedAlert(true);
+			return;
+		}
+
 		const updatedModels = modelSettings.filter(m => m.name !== selectedModel?.name);
 		setModelSettings(updatedModels);
 		handleSettingChange('modelSettings', updatedModels);
@@ -278,6 +310,10 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, aiSetting
 												onClick={() => {
 													handleDeleteModel(model);
 												}}
+												disabled={model.name === localSettings.defaultModel}
+												title={
+													model.name === localSettings.defaultModel ? 'Cannot delete default model' : 'Delete model'
+												}
 											>
 												<FiTrash2 size={16} />
 											</button>
@@ -333,6 +369,17 @@ const AISettingsCard: FC<AISettingsCardProps> = ({ provider, settings, aiSetting
 					title="Delete Model"
 					message={`Are you sure you want to delete the model "${selectedModel?.name || ''}"? This action cannot be undone.`}
 					confirmButtonText="Delete"
+				/>
+			)}
+
+			{showActionDeniedAlert && (
+				<ActionDeniedAlert
+					isOpen={showActionDeniedAlert}
+					onClose={() => {
+						setShowActionDeniedAlert(false);
+						setActionDeniedMessage('');
+					}}
+					message={actionDeniedMessage}
 				/>
 			)}
 		</div>

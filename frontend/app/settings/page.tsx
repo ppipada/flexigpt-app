@@ -47,6 +47,13 @@ const SettingsPage: FC = () => {
 		settingstoreAPI.setSetting('app.defaultProvider', value);
 	};
 
+	const handleProviderSettingChange = (provider: ProviderName, settings: AISetting) => {
+		setAISettings(prev => ({
+			...prev,
+			[provider]: settings,
+		}));
+	};
+
 	const fetchValue = async (): Promise<string> => {
 		const value = JSON.stringify(
 			{
@@ -114,7 +121,13 @@ const SettingsPage: FC = () => {
 							const oneSettings = aiSettings[providerStr];
 							return (
 								<div key={providerStr} className=" rounded-lg">
-									<AISettingsCard provider={providerStr} settings={oneSettings} aiSettings={aiSettings} />
+									<AISettingsCard
+										provider={providerStr}
+										settings={oneSettings}
+										aiSettings={aiSettings}
+										defaultProvider={defaultProvider}
+										onProviderSettingChange={handleProviderSettingChange}
+									/>
 								</div>
 							);
 						})}

@@ -20,6 +20,7 @@
   - [x] UI with card table and actions
   - [x] Modal for edit/add
   - [ ] Backend integration
+  - [ ] Do not delete inbuilt models, just disable them.
 
 - [ ] Add a custom provider and model name setting too so that an OAI compatible provider and model can be added
 - [ ] reasoning models should have a "reasoning" effort param too.
