@@ -1,6 +1,6 @@
 {
 	"name": "frontend",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "Frontend for FlexiGPT",
 	"type": "module",
 	"private": true,
@@ -50,7 +50,7 @@
 		"@types/sprintf-js": "^1.1.4",
 		"@types/uuid": "^10.0.0",
 		"cross-env": "^7.0.3",
-		"daisyui": "^5.0.13",
+		"daisyui": "^5.0.12",
 		"eslint": "^9.23.0",
 		"eslint-plugin-prettier": "^5.2.6",
 		"eslint-plugin-react": "^7.37.5",

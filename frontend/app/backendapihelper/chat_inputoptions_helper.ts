@@ -31,7 +31,7 @@ export async function GetChatInputOptions() {
 			const aiSetting = settings.aiSettings[providerName];
 			if (aiSetting.isEnabled) {
 				const settingsDefaultModelName = aiSetting.defaultModel;
-				for (const modelParams of aiSetting.modelSettings) {
+				for (const [modelName, modelParams] of Object.entries(aiSetting.modelSettings)) {
 					if (!modelParams.isEnabled) {
 						continue;
 					}
@@ -39,10 +39,10 @@ export async function GetChatInputOptions() {
 						title: modelParams.displayName,
 						provider: providerName,
 						temperature: modelParams.temperature || 0.1,
-						name: modelParams.name,
+						name: modelName,
 					};
 					inputModels.push(modelOption);
-					if (modelParams.name === settingsDefaultModelName && providerName === configDefaultProvider) {
+					if (modelName === settingsDefaultModelName && providerName === configDefaultProvider) {
 						defaultOption = modelOption;
 					}
 				}
