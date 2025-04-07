@@ -1,5 +1,5 @@
-import { settingstoreAPI } from '@/backendapibase';
-import { updateProviderAISettings } from '@/backendapihelper/settings_helper';
+import { settingstoreAPI } from '@/apis/baseapi';
+import { UpdateProviderAISettings } from '@/apis/settingstore_helper';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
 import { ProviderInfoDescription } from '@/models/aiprovidermodel';
@@ -93,7 +93,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		};
 		setLocalSettings(updatedSettings);
 		await settingstoreAPI.setSetting(`aiSettings.${provider}.${key}`, value);
-		updateProviderAISettings(provider, updatedSettings);
+		UpdateProviderAISettings(provider, updatedSettings);
 		onProviderSettingChange(provider, updatedSettings);
 	};
 
@@ -108,8 +108,14 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		setIsModifyModelModalOpen(true);
 	};
 
-	const handleDeleteModel = (modelName: ModelName) => {
+	const isModelRemovable = (modelName: ModelName) => {
 		if (modelName === localSettings.defaultModel) {
+			return true;
+		}
+	};
+
+	const handleDeleteModel = (modelName: ModelName) => {
+		if (isModelRemovable(modelName)) {
 			setActionDeniedMessage('Cannot delete the default model. Please select a different default model first.');
 			setShowActionDeniedAlert(true);
 			return;
@@ -119,7 +125,8 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	};
 
 	const handleDeleteModelConfirm = () => {
-		if (selectedModelName === localSettings.defaultModel) {
+		const modelName: ModelName = selectedModelName || '';
+		if (isModelRemovable(modelName)) {
 			setActionDeniedMessage('Cannot delete the default model. Please select a different default model first.');
 			setShowActionDeniedAlert(true);
 			return;
@@ -308,10 +315,8 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 												onClick={() => {
 													handleDeleteModel(modelName);
 												}}
-												disabled={modelName === localSettings.defaultModel}
-												title={
-													modelName === localSettings.defaultModel ? 'Cannot delete default model' : 'Delete model'
-												}
+												disabled={isModelRemovable(modelName)}
+												title={isModelRemovable(modelName) ? 'Cannot delete default model' : 'Delete model'}
 											>
 												<FiTrash2 size={16} />
 											</button>

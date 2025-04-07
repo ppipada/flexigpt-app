@@ -7,7 +7,7 @@
 	"frontend:build": "pnpm run build:wails",
 	"frontend:dev:watcher": "pnpm run run:wailsdev",
 	"frontend:dev:serverUrl": "auto",
-	"wailsjsdir": "../../frontend/app/backendapibase",
+	"wailsjsdir": "../../frontend/app/apis",
 	"author": {
 		"name": "ppipada",
 		"email": "ppipada@gmail.com"

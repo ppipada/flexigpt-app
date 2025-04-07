@@ -1,4 +1,4 @@
-import { backendAPI } from '@/backendapibase';
+import { backendAPI } from '@/apis/baseapi';
 import CodeBlock from '@/chats/chat_message_content_codeblock';
 import 'katex/dist/katex.min.css';
 import type { ReactNode } from 'react';

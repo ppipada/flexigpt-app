@@ -1,4 +1,4 @@
-import { PopulateModelSettingDefaults } from '@/backendapihelper/settings_helper';
+import { PopulateModelSettingDefaults } from '@/apis/settingstore_helper';
 import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
 import type { ModelSetting } from '@/models/settingmodel';
 import React, { type FC, useEffect, useState } from 'react';

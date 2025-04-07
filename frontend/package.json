@@ -68,7 +68,7 @@
 	},
 	"knip": {
 		"ignore": [
-			"app/backendapibase/wailsjs/runtime/runtime.js",
+			"app/apis/wailsjs/runtime/runtime.js",
 			"app/models/aiprovidermodel.ts",
 			"app/backendapihelper/conversation_cache.ts"
 		],

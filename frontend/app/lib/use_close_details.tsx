@@ -7,7 +7,7 @@ type UseCloseDetailsProps = {
 	onClose?: () => void;
 };
 
-export function useCloseDetails({
+export function UseCloseDetails({
 	detailsRef,
 	events = ['mousedown'], // default is 'mousedown'
 	onClose,

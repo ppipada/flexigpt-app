@@ -4,7 +4,7 @@ frontend/.react-router/
 /dist/
 /node_modules/
 /stories/
-frontend/app/backendapibase/wailsjs
+frontend/app/apis/wailsjs
 .anima
 out
 *.yml

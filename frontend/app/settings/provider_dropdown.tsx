@@ -1,4 +1,4 @@
-import { useCloseDetails } from '@/lib/useCloseDetails';
+import { UseCloseDetails } from '@/lib/use_close_details';
 import type { ProviderName } from '@/models/aiprovidermodel';
 import type { AISetting } from '@/models/settingmodel';
 import type { FC } from 'react';
@@ -15,7 +15,7 @@ const ProviderDropdown: FC<ProviderDropdownProps> = ({ aiSettings, defaultProvid
 	const [isOpen, setIsOpen] = useState(false);
 	const [selectedProvider, setSelectedProvider] = useState(defaultProvider);
 	const detailsRef = useRef<HTMLDetailsElement>(null);
-	useCloseDetails({
+	UseCloseDetails({
 		detailsRef,
 		events: ['mousedown'],
 		onClose: () => {

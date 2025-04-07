@@ -1,4 +1,4 @@
-import { conversationStoreAPI } from '@/backendapibase';
+import { conversationStoreAPI } from '@/apis/baseapi';
 import type { ConversationItem } from '@/models/conversationmodel';
 
 export async function listAllConversations(): Promise<ConversationItem[]> {

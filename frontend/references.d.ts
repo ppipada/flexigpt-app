@@ -1,4 +1,4 @@
-declare module 'app/backendapibase/wailsjs/*' {
+declare module 'app/apis/wailsjs/*' {
 	const value: any;
 	export = value;
 }

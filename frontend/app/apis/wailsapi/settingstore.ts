@@ -1,4 +1,4 @@
-import { GetAllSettings, SetSetting } from '@/backendapibase/wailsjs/go/main/SettingStoreWrapper';
+import { GetAllSettings, SetSetting } from '@/apis/wailsjs/go/main/SettingStoreWrapper';
 import type { ISettingStoreAPI, SettingsSchema } from '@/models/settingmodel';
 import type { spec } from '../wailsjs/go/models';
 

@@ -1,4 +1,4 @@
-import { useCloseDetails } from '@/lib/useCloseDetails';
+import { UseCloseDetails } from '@/lib/use_close_details';
 import type { ModelName } from '@/models/aiprovidermodel';
 import type { ModelSetting } from '@/models/settingmodel';
 import type { FC } from 'react';
@@ -16,7 +16,7 @@ const ModelDropdown: FC<ModelDropdownProps> = ({ modelSettings, defaultModel, on
 	const [selectedModel, setSelectedModel] = useState(defaultModel);
 	const detailsRef = useRef<HTMLDetailsElement>(null);
 
-	useCloseDetails({
+	UseCloseDetails({
 		detailsRef,
 		events: ['mousedown'],
 		onClose: () => {

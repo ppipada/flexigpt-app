@@ -4,9 +4,9 @@ import {
 	MakeCompletion,
 	SetDefaultProvider,
 	SetProviderAttribute,
-} from '@/backendapibase/wailsjs/go/main/ProviderSetWrapper';
-import type { spec as wailsSpec } from '@/backendapibase/wailsjs/go/models';
-import { EventsOn } from '@/backendapibase/wailsjs/runtime/runtime';
+} from '@/apis/wailsjs/go/main/ProviderSetWrapper';
+import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
+import { EventsOn } from '@/apis/wailsjs/runtime/runtime';
 import type {
 	ChatCompletionRequestMessage,
 	CompletionRequest,

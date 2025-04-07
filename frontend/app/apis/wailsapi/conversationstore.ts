@@ -4,8 +4,8 @@ import {
 	GetConversation,
 	ListConversations,
 	SaveConversation,
-} from '@/backendapibase/wailsjs/go/main/ConversationCollectionWrapper';
-import type { spec as wailsSpec } from '@/backendapibase/wailsjs/go/models';
+} from '@/apis/wailsjs/go/main/ConversationCollectionWrapper';
+import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
 import type {
 	Conversation,
 	ConversationItem,

@@ -1,5 +1,6 @@
-import { providerSetAPI, settingstoreAPI } from '@/backendapibase';
-import type { ModelName, ProviderInfo, ProviderName } from '@/models/aiprovidermodel';
+import { CreateProviderInfoDict } from '@/apis/aiprovider_helper';
+import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
+import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
 import type { AISetting, ModelSetting, SettingsSchema } from '@/models/settingmodel';
 
 export interface ModelOption {
@@ -9,7 +10,7 @@ export interface ModelOption {
 	temperature: number;
 }
 
-export function updateProviderAISettings(provider: ProviderName, settings: AISetting) {
+export function UpdateProviderAISettings(provider: ProviderName, settings: AISetting) {
 	providerSetAPI.setAttribute(provider, settings.apiKey, settings.defaultModel, settings.origin);
 }
 
@@ -20,7 +21,7 @@ export async function loadProviderSettings(): Promise<SettingsSchema> {
 	await providerSetAPI.setDefaultProvider(defaultProvider);
 	// Iterate over each entry in settings.aiSettings
 	for (const [providerName, aiSettings] of Object.entries(settings.aiSettings)) {
-		updateProviderAISettings(providerName, aiSettings);
+		UpdateProviderAISettings(providerName, aiSettings);
 	}
 
 	return settings;
@@ -37,27 +38,10 @@ function handleNoConfiguredModels() {
 	return { allOptions: [noModel], default: noModel };
 }
 
-// Helper function to create a dictionary of provider info
-async function createProviderInfoDict() {
-	const configInfo = await providerSetAPI.getConfigurationInfo();
-	// Validate the presence of necessary configuration properties
-	if (!('configuredProviders' in configInfo) || !('defaultProvider' in configInfo)) {
-		return;
-	}
-	// Extract default provider and initialize provider info dictionary
-	const configDefaultProvider = configInfo['defaultProvider'] as ProviderName;
-
-	const providerInfoDict: Record<ProviderName, ProviderInfo> = {};
-	for (const providerInfo of configInfo['configuredProviders'] as ProviderInfo[]) {
-		providerInfoDict[providerInfo.name] = providerInfo;
-	}
-	return { defaultProvider: configDefaultProvider, providerInfo: providerInfoDict };
-}
-
 export async function GetChatInputOptions() {
 	try {
 		// Fetch configuration info and settings
-		const info = await createProviderInfoDict();
+		const info = await CreateProviderInfoDict();
 		if (!info) {
 			return handleNoConfiguredModels();
 		}
@@ -129,7 +113,7 @@ export async function PopulateModelSettingDefaults(
 		timeout: 60,
 	};
 	// fetch overall config
-	const info = await createProviderInfoDict();
+	const info = await CreateProviderInfoDict();
 	if (!info) {
 		return fallback;
 	}

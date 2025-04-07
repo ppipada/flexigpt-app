@@ -1,4 +1,4 @@
-import { loadProviderSettings } from '@/backendapihelper/settings_helper';
+import { loadProviderSettings } from '@/apis/settingstore_helper';
 import { FEATURE_FLAG_AGENTS } from '@/lib/features';
 import { Link } from 'react-router';
 

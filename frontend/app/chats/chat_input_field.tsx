@@ -1,6 +1,6 @@
-import type { ModelOption } from '@/backendapihelper/settings_helper';
-import { GetChatInputOptions } from '@/backendapihelper/settings_helper';
-import { useCloseDetails } from '@/lib/useCloseDetails';
+import type { ModelOption } from '@/apis/settingstore_helper';
+import { GetChatInputOptions } from '@/apis/settingstore_helper';
+import { UseCloseDetails } from '@/lib/use_close_details';
 import { DefaultModelName, DefaultModelTitle, DefaultProviderName } from '@/models/aiprovidermodel';
 import type { ChangeEvent, KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
@@ -63,14 +63,14 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	const [allOptions, setAllOptions] = useState<ModelOption[]>([DefaultModelOption]);
 	const modelDetailsRef = useRef<HTMLDetailsElement>(null);
 	const temperatureDetailsRef = useRef<HTMLDetailsElement>(null);
-	useCloseDetails({
+	UseCloseDetails({
 		detailsRef: modelDetailsRef,
 		events: ['mousedown'],
 		onClose: () => {
 			setIsModelDropdownOpen(false);
 		},
 	});
-	useCloseDetails({
+	UseCloseDetails({
 		detailsRef: temperatureDetailsRef,
 		events: ['mousedown'],
 		onClose: () => {

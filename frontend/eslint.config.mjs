@@ -18,7 +18,7 @@ const compat = new FlatCompat({
 
 export default tseslint.config(
 	{
-		ignores: ['**/build/**', '**/app/backendapibase/wailsjs/**', '**/.react-router/**'],
+		ignores: ['**/build/**', '**/app/apis/wailsjs/**', '**/.react-router/**'],
 	},
 	js.configs.recommended,
 	tseslint.configs.strictTypeChecked,

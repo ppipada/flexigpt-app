@@ -1,6 +1,6 @@
 // DownloadButton.tsx
 
-import { backendAPI } from '@/backendapibase';
+import { backendAPI } from '@/apis/baseapi';
 import type { FileFilter } from '@/models/backendmodel';
 import type { ButtonHTMLAttributes, FC } from 'react';
 import { FiDownload } from 'react-icons/fi';

@@ -1,4 +1,4 @@
-import { log, providerSetAPI } from '@/backendapibase';
+import { log, providerSetAPI } from '@/apis/baseapi';
 import type {
 	ChatCompletionRequestMessage,
 	CompletionResponse,

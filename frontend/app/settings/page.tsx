@@ -1,5 +1,5 @@
-import { providerSetAPI, settingstoreAPI } from '@/backendapibase';
-import { loadProviderSettings } from '@/backendapihelper/settings_helper';
+import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
+import { loadProviderSettings } from '@/apis/settingstore_helper';
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
 import { DefaultModelName, DefaultProviderName, type ProviderName } from '@/models/aiprovidermodel';
