@@ -139,9 +139,14 @@ export interface CompletionResponse {
 	functionArgs?: any;
 }
 
+export interface ConfigurationResponse {
+	defaultProvider: ProviderName;
+	configuredProviders: Record<ProviderName, ProviderInfo>;
+}
+
 export interface IProviderSetAPI {
 	setDefaultProvider(provider: ProviderName): Promise<void>;
-	getConfigurationInfo(): Promise<Record<string, any>>;
+	getConfigurationInfo(): Promise<ConfigurationResponse>;
 	setAttribute(provider: ProviderName, apiKey?: string, defaultModel?: ModelName, origin?: string): Promise<void>;
 
 	getCompletionRequest(

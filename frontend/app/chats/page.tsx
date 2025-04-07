@@ -1,5 +1,5 @@
+import { GetCompletionMessage } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
-import { GetCompletionMessage } from '@/apis/chat_completion_helper';
 import { listAllConversations } from '@/apis/conversationstore_helper';
 import ChatInputField, {
 	DefaultModelOption,

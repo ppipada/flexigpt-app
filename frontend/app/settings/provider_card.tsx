@@ -1,7 +1,7 @@
-import { settingstoreAPI } from '@/apis/baseapi';
+import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
 import { UpdateProviderAISettings } from '@/apis/settingstore_helper';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
-import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
+import type { ConfigurationResponse, ModelName, ProviderName } from '@/models/aiprovidermodel';
 import { ProviderInfoDescription } from '@/models/aiprovidermodel';
 import type { AISetting, ModelSetting } from '@/models/settingmodel';
 import ModelDropdown from '@/settings/model_dropdown';
@@ -50,6 +50,23 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 
 	const [showActionDeniedAlert, setShowActionDeniedAlert] = useState(false);
 	const [actionDeniedMessage, setActionDeniedMessage] = useState('');
+	const [configurationInfo, setConfigurationInfo] = useState<ConfigurationResponse | null>(null);
+
+	useEffect(() => {
+		const fetchConfigurationInfo = async () => {
+			try {
+				const info = await providerSetAPI.getConfigurationInfo();
+				if (!info || info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
+					return;
+				}
+				setConfigurationInfo(info);
+			} catch (error) {
+				console.error('Failed to fetch configuration info:', error);
+			}
+		};
+
+		fetchConfigurationInfo();
+	}, []);
 
 	// Update local state when props change
 	useEffect(() => {
@@ -112,6 +129,11 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		if (modelName === localSettings.defaultModel) {
 			return true;
 		}
+		if (configurationInfo && configurationInfo.configuredProviders[provider]?.models[modelName]) {
+			return true;
+		}
+
+		return false;
 	};
 
 	const handleDeleteModel = (modelName: ModelName) => {

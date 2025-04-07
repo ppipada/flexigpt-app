@@ -11,9 +11,11 @@ import type {
 	ChatCompletionRequestMessage,
 	CompletionRequest,
 	CompletionResponse,
+	ConfigurationResponse,
 	IProviderSetAPI,
 	ModelName,
 	ModelParams,
+	ProviderInfo,
 	ProviderName,
 } from '@/models/aiprovidermodel';
 
@@ -26,9 +28,18 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		await SetDefaultProvider(req as wailsSpec.SetDefaultProviderRequest);
 	}
 
-	async getConfigurationInfo(): Promise<Record<string, any>> {
+	async getConfigurationInfo(): Promise<ConfigurationResponse> {
 		const resp = await GetConfigurationInfo({} as wailsSpec.GetConfigurationInfoRequest);
-		return resp.Body as Record<string, any>;
+		const configInfo = resp.Body || {};
+		if (!('configuredProviders' in configInfo) || !('defaultProvider' in configInfo)) {
+			return { defaultProvider: '', configuredProviders: {} };
+		}
+
+		const providerInfoDict: Record<ProviderName, ProviderInfo> = {};
+		for (const providerInfo of configInfo['configuredProviders'] as ProviderInfo[]) {
+			providerInfoDict[providerInfo.name] = providerInfo;
+		}
+		return { defaultProvider: configInfo['defaultProvider'] as ProviderName, configuredProviders: providerInfoDict };
 	}
 
 	async setAttribute(

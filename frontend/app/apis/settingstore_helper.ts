@@ -1,4 +1,3 @@
-import { CreateProviderInfoDict } from '@/apis/aiprovider_helper';
 import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
 import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
 import type { AISetting, ModelSetting, SettingsSchema } from '@/models/settingmodel';
@@ -41,12 +40,12 @@ function handleNoConfiguredModels() {
 export async function GetChatInputOptions() {
 	try {
 		// Fetch configuration info and settings
-		const info = await CreateProviderInfoDict();
-		if (!info) {
+		const info = await providerSetAPI.getConfigurationInfo();
+		if (!info || info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
 			return handleNoConfiguredModels();
 		}
 		const configDefaultProvider = info.defaultProvider;
-		const providerInfoDict = info.providerInfo;
+		const providerInfoDict = info.configuredProviders;
 
 		const settings = await settingstoreAPI.getAllSettings();
 		// Initialize default option and input models array
@@ -113,11 +112,12 @@ export async function PopulateModelSettingDefaults(
 		timeout: 60,
 	};
 	// fetch overall config
-	const info = await CreateProviderInfoDict();
-	if (!info) {
+	const info = await providerSetAPI.getConfigurationInfo();
+	if (!info || info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
 		return fallback;
 	}
-	const providerInfoDict = info.providerInfo;
+
+	const providerInfoDict = info.configuredProviders;
 
 	// locate provider + model info in that config
 	if (!(providerName in providerInfoDict)) {

@@ -20,10 +20,13 @@
   - [x] UI with card table and actions
   - [x] Modal for edit/add
   - [x] Backend integration
-  - [ ] Do not delete inbuilt models, just disable them.
+  - [x] Do not delete inbuilt models, just disable them.
   - [x] Input options temperature should come from either modelparams or modelinfo
+  - [ ] Link add model
+  - [ ] Add a custom provider and model name setting too so that an OAI compatible provider and model can be added
 
-- [ ] Add a custom provider and model name setting too so that an OAI compatible provider and model can be added
+- [x] Param input content should preserve tabs/spaces etc
+
 - [ ] reasoning models should have a "reasoning" effort param too.
 
 - [ ] Need a settings data version and migration func
