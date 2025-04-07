@@ -125,10 +125,9 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 			return;
 		}
 
-		const updatedModels = { ...modelSettings };
-		if (selectedModelName) {
-			delete updatedModels[selectedModelName];
-		}
+		const updatedModels = selectedModelName
+			? Object.fromEntries(Object.entries(modelSettings).filter(([key]) => key !== selectedModelName))
+			: { ...modelSettings };
 
 		setModelSettings(updatedModels);
 		handleSettingChange('modelSettings', updatedModels);
@@ -281,7 +280,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 												checked={model.isEnabled}
 												onChange={() => {
 													const updatedModels = { ...modelSettings };
-													updatedModels[modelName as ModelName] = { ...model, isEnabled: !model.isEnabled };
+													updatedModels[modelName] = { ...model, isEnabled: !model.isEnabled };
 													setModelSettings(updatedModels);
 													handleSettingChange('modelSettings', updatedModels);
 												}}
@@ -298,7 +297,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 												className="btn btn-sm btn-ghost rounded-2xl"
 												aria-label="Edit Model"
 												onClick={() => {
-													handleEditModel(modelName as ModelName);
+													handleEditModel(modelName);
 												}}
 											>
 												<FiEdit size={16} />
@@ -307,7 +306,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 												className="btn btn-sm btn-ghost rounded-2xl"
 												aria-label="Delete Model"
 												onClick={() => {
-													handleDeleteModel(modelName as ModelName);
+													handleDeleteModel(modelName);
 												}}
 												disabled={modelName === localSettings.defaultModel}
 												title={
@@ -354,6 +353,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						setIsModifyModelModalOpen(false);
 					}}
 					onSubmit={handleModifyModelSubmit}
+					providerName={provider}
 					initialModelName={selectedModelName || undefined}
 					initialData={selectedModelName ? modelSettings[selectedModelName] : undefined}
 					existingModels={modelSettings}

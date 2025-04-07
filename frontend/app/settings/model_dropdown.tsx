@@ -47,7 +47,11 @@ const ModelDropdown: FC<ModelDropdownProps> = ({ modelSettings, defaultModel, on
 				title="Select Model"
 			>
 				<span className="font-normal">
-					{modelSettings[selectedModel]?.displayName || selectedModel || 'Select a model'}
+					{selectedModel !== ''
+						? selectedModel in modelSettings
+							? modelSettings[selectedModel].displayName
+							: selectedModel
+						: 'Select a model'}
 				</span>
 				{isOpen ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
 			</summary>

@@ -14,7 +14,7 @@ const defaultAISettings: Record<ProviderName, AISetting> = {
 		apiKey: '',
 		defaultModel: DefaultModelName,
 		origin: '',
-		modelSettings: [],
+		modelSettings: {},
 	},
 };
 

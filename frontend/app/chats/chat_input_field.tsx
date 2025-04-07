@@ -1,5 +1,5 @@
-import type { ModelOption } from '@/backendapihelper/chat_inputoptions_helper';
-import { GetChatInputOptions } from '@/backendapihelper/chat_inputoptions_helper';
+import type { ModelOption } from '@/backendapihelper/settings_helper';
+import { GetChatInputOptions } from '@/backendapihelper/settings_helper';
 import { useCloseDetails } from '@/lib/useCloseDetails';
 import { DefaultModelName, DefaultModelTitle, DefaultProviderName } from '@/models/aiprovidermodel';
 import type { ChangeEvent, KeyboardEvent } from 'react';

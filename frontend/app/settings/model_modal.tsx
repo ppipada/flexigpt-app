@@ -1,30 +1,46 @@
-import type { ModelName } from '@/models/aiprovidermodel';
+import { PopulateModelSettingDefaults } from '@/backendapihelper/settings_helper';
+import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
 import type { ModelSetting } from '@/models/settingmodel';
-import type { FC } from 'react';
-import React, { useEffect, useState } from 'react';
+import React, { type FC, useEffect, useState } from 'react';
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
 interface ModifyModelModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (modelName: ModelName, modelData: ModelSetting) => void;
+	providerName: ProviderName;
 	initialModelName?: ModelName; // if provided, indicates edit mode
-	initialData?: ModelSetting;
+	initialData?: ModelSetting; // when editing existing model data
 	existingModels: Record<ModelName, ModelSetting>;
+}
+
+// We'll use a separate interface for the local form data,
+// especially for numeric fields, so we can store them as strings (allowing blank).
+interface ModelSettingFormData {
+	displayName: string;
+	isEnabled: boolean;
+	stream: boolean;
+	promptLength: string;
+	outputLength: string;
+	temperature: string;
+	reasoningSupport: boolean;
+	systemPrompt: string;
+	timeout: string;
 }
 
 const ModifyModelModal: FC<ModifyModelModalProps> = ({
 	isOpen,
 	onClose,
 	onSubmit,
+	providerName,
 	initialModelName,
 	initialData,
 	existingModels,
 }) => {
-	const isEditMode = !!initialModelName;
+	const isEditMode = Boolean(initialModelName);
 
-	const [modelName, setModelName] = useState<ModelName>(initialModelName || ('' as ModelName));
-	const [formData, setFormData] = useState<ModelSetting>({
+	// Default numeric values that we also show in placeholders
+	const [defaultValues, setDefaultValues] = useState<ModelSetting>({
 		displayName: '',
 		isEnabled: true,
 		stream: false,
@@ -34,6 +50,21 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		reasoningSupport: false,
 		systemPrompt: '',
 		timeout: 60,
+	});
+
+	const [modelName, setModelName] = useState<ModelName>(initialModelName ?? ('' as ModelName));
+
+	// Local form data (storing numeric as strings for easy clearing)
+	const [formData, setFormData] = useState<ModelSettingFormData>({
+		displayName: '',
+		isEnabled: true,
+		stream: false,
+		promptLength: '',
+		outputLength: '',
+		temperature: '',
+		reasoningSupport: false,
+		systemPrompt: '',
+		timeout: '',
 	});
 
 	const [errors, setErrors] = useState<{
@@ -46,99 +77,121 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 	}>({});
 
 	useEffect(() => {
-		if (isOpen) {
-			setModelName(initialModelName || ('' as ModelName));
-			setFormData(
-				initialData || {
-					displayName: '',
-					isEnabled: true,
-					stream: false,
-					promptLength: 2048,
-					outputLength: 1024,
-					temperature: 0.7,
-					reasoningSupport: false,
-					systemPrompt: '',
-					timeout: 60,
-				}
-			);
+		async function loadData() {
+			let mName: ModelName = '';
+			if (initialModelName) {
+				mName = initialModelName;
+			}
+			const merged = await PopulateModelSettingDefaults(providerName, mName, initialData);
+			setDefaultValues(merged);
+
+			// Convert numbers to strings for local form usage
+			setFormData({
+				displayName: merged.displayName,
+				isEnabled: merged.isEnabled,
+				stream: merged.stream ?? false,
+				promptLength: String(merged.promptLength ?? ''),
+				outputLength: String(merged.outputLength ?? ''),
+				temperature: String(merged.temperature ?? ''),
+				reasoningSupport: merged.reasoningSupport ?? false,
+				systemPrompt: merged.systemPrompt ?? '',
+				timeout: String(merged.timeout ?? ''),
+			});
+
+			setModelName(mName);
 			setErrors({});
 		}
-	}, [isOpen, initialModelName, initialData]);
 
-	const validateField = (
-		field: 'modelName' | 'displayName' | 'temperature' | 'promptLength' | 'outputLength' | 'timeout',
-		value: any
-	) => {
-		const newErrors = { ...errors };
-		delete newErrors[field];
+		if (isOpen) {
+			void loadData();
+		}
+	}, [isOpen, providerName, initialModelName, initialData]);
 
-		if (field === 'modelName') {
-			if (!value.trim()) {
+	type ValidationField = 'modelName' | 'displayName' | 'temperature' | 'promptLength' | 'outputLength' | 'timeout';
+	type ValidationErrors = Partial<Record<ValidationField, string>>;
+
+	const validateField = (field: ValidationField, value: unknown) => {
+		const newErrors: ValidationErrors = Object.fromEntries(Object.entries(errors).filter(([key]) => key !== field));
+
+		// Model Name is required only if we're adding a new model (not edit mode)
+		if (field === 'modelName' && !isEditMode) {
+			if (typeof value === 'string' && !value.trim()) {
 				newErrors.modelName = 'Model name is required.';
-			} else if (!isEditMode && existingModels.hasOwnProperty(value)) {
+			} else if (typeof value === 'string' && Object.prototype.hasOwnProperty.call(existingModels, value)) {
 				newErrors.modelName = 'Model name must be unique.';
 			}
 		}
 
-		if (field === 'displayName' && !value.trim()) {
-			newErrors.displayName = 'Display name is required.';
-		}
-
-		if (field === 'temperature') {
-			if (value === '' || value === null || isNaN(value)) {
-				newErrors.temperature = 'Temperature is required.';
-			} else if (value < 0 || value > 1) {
-				newErrors.temperature = 'Temperature must be between 0 and 1.';
+		// Display Name is always required
+		if (field === 'displayName') {
+			if (typeof value === 'string' && !value.trim()) {
+				newErrors.displayName = 'Display name is required.';
 			}
 		}
 
-		if (field === 'promptLength') {
-			if (value === '' || value === null || isNaN(value)) {
-				newErrors.promptLength = 'Prompt length is required.';
-			} else if (value < 1) {
-				newErrors.promptLength = 'Prompt length must be positive.';
+		// For numeric fields, only validate if there's a non-empty string
+		if (['temperature', 'promptLength', 'outputLength', 'timeout'].includes(field)) {
+			let strVal = '';
+			if (typeof value === 'number' || typeof value === 'boolean') {
+				strVal = String(value);
 			}
-		}
+			strVal = strVal.trim();
 
-		if (field === 'outputLength') {
-			if (value === '' || value === null || isNaN(value)) {
-				newErrors.outputLength = 'Output length is required.';
-			} else if (value < 1) {
-				newErrors.outputLength = 'Output length must be positive.';
-			}
-		}
-
-		if (field === 'timeout') {
-			if (value === '' || value === null || isNaN(value)) {
-				newErrors.timeout = 'Timeout is required.';
-			} else if (value < 1) {
-				newErrors.timeout = 'Timeout must be positive.';
+			if (strVal.length > 0) {
+				const numValue = Number(strVal);
+				if (Number.isNaN(numValue)) {
+					newErrors[field] = `${field} must be a valid number.`;
+				} else {
+					if (field === 'temperature' && (numValue < 0 || numValue > 1)) {
+						newErrors.temperature = 'Temperature must be between 0 and 1.';
+					}
+					if ((field === 'promptLength' || field === 'outputLength' || field === 'timeout') && numValue < 1) {
+						newErrors[field] = `${field} must be positive.`;
+					}
+				}
 			}
 		}
 
 		setErrors(newErrors);
 	};
 
+	// ----------------------------------------------------
+	// Handle changes for all fields
+	// ----------------------------------------------------
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 		const target = e.target as HTMLInputElement;
 		const { name, value, type, checked } = target;
-		const val = type === 'checkbox' ? checked : type === 'number' ? parseFloat(value) : value;
 
+		if (type === 'checkbox') {
+			setFormData(prev => ({ ...prev, [name]: checked }));
+			return;
+		}
+
+		// Model Name
 		if (name === 'modelName') {
-			setModelName(val as ModelName);
-			validateField(name, val);
-		} else {
-			setFormData(prev => ({ ...prev, [name]: val }));
-			if (['displayName', 'temperature', 'promptLength', 'outputLength', 'timeout'].includes(name)) {
-				validateField(name as 'displayName' | 'temperature' | 'promptLength' | 'outputLength' | 'timeout', val);
-			}
+			setModelName(value);
+			validateField('modelName', value);
+			return;
+		}
+
+		// For other text/numeric inputs, just store the raw string
+		setFormData(prev => ({ ...prev, [name]: value }));
+		// Trigger validation for required fields
+		if (name === 'displayName') {
+			validateField('displayName', value);
+		}
+		if (name === 'temperature' || name === 'promptLength' || name === 'outputLength' || name === 'timeout') {
+			validateField(name as ValidationField, value);
 		}
 	};
 
+	// ----------------------------------------------------
+	// On form submit, parse final values and re-validate
+	// ----------------------------------------------------
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
-		// Validate all fields before submission
+		// Re-validate fields
 		validateField('modelName', modelName);
 		validateField('displayName', formData.displayName);
 		validateField('temperature', formData.temperature);
@@ -146,253 +199,295 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		validateField('outputLength', formData.outputLength);
 		validateField('timeout', formData.timeout);
 
-		// Check if there are any errors
-		if (Object.keys(errors).length === 0 && modelName && formData.displayName) {
-			onSubmit(modelName, formData);
+		// Check for errors
+		const hasErrors = Object.keys(errors).length > 0;
+		if (hasErrors) {
+			// If errors exist, don’t proceed
+			return;
 		}
+
+		// If required fields are missing, don't proceed
+		if ((!isEditMode && !modelName.trim()) || !formData.displayName.trim()) {
+			return;
+		}
+
+		// Convert strings to numbers (fallback to defaults) for numeric fields
+		const parseOrDefault = (val: string, def: number) => (val.trim() === '' ? def : Number(val));
+
+		const finalData: ModelSetting = {
+			displayName: formData.displayName.trim(),
+			isEnabled: formData.isEnabled,
+			stream: formData.stream,
+			promptLength: parseOrDefault(formData.promptLength, defaultValues.promptLength ?? 2048),
+			outputLength: parseOrDefault(formData.outputLength, defaultValues.outputLength ?? 1024),
+			temperature: parseOrDefault(formData.temperature, defaultValues.temperature ?? 0.7),
+			reasoningSupport: formData.reasoningSupport,
+			systemPrompt: formData.systemPrompt,
+			timeout: parseOrDefault(formData.timeout, defaultValues.timeout ?? 60),
+		};
+
+		onSubmit(modelName, finalData);
 	};
 
+	// If we’re not open, return null (don’t render)
 	if (!isOpen) return null;
+
+	const numPlaceholder = (field: keyof ModelSetting) => {
+		const value = defaultValues[field];
+
+		if (value === undefined || typeof value === 'object') {
+			return 'Default: N/A'; // Or any other placeholder for null/undefined
+		}
+		return `Default: ${String(value)}`; // Convert other types to string
+	};
 
 	return (
 		<dialog className="modal modal-open">
-			<div className="modal-box max-w-3xl rounded-lg">
+			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-lg">
+				{/* Header */}
 				<div className="flex justify-between items-center mb-4">
 					<h3 className="font-bold text-lg">{isEditMode ? 'Edit Model' : 'Add New Model'}</h3>
 					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close">
-						<FiX size={16} />
+						<FiX size={12} />
 					</button>
 				</div>
 
+				{/* Form */}
 				<form onSubmit={handleSubmit} className="space-y-4">
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						{/* Model Name (internal key) */}
-						<div className="form-control">
-							<label className="label">
-								<span className="label-text">Model Name (Internal Key)*</span>
-								<span className="label-text-alt tooltip tooltip-left" data-tip="Unique identifier for this model">
-									<FiHelpCircle size={16} />
-								</span>
-							</label>
+					{/* Model Name (Internal Key) */}
+					<div className="grid grid-cols-12 items-center gap-2">
+						<label className="label col-span-3">
+							<span className="label-text text-sm">Model Name*</span>
+							<span className="label-text-alt tooltip" data-tip="Unique identifier for this model">
+								<FiHelpCircle size={12} />
+							</span>
+						</label>
+						<div className="col-span-9">
 							<input
 								type="text"
 								name="modelName"
 								value={modelName}
 								onChange={handleChange}
 								className={`input input-bordered w-full ${errors.modelName ? 'input-error' : ''}`}
-								required
-								disabled={isEditMode}
 								placeholder="e.g., gpt-4, claude-opus"
+								disabled={isEditMode}
 							/>
 							{errors.modelName && (
 								<div className="label">
 									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={14} /> {errors.modelName}
+										<FiAlertCircle size={12} /> {errors.modelName}
 									</span>
 								</div>
 							)}
 						</div>
+					</div>
 
-						{/* Display Name */}
-						<div className="form-control">
-							<label className="label">
-								<span className="label-text">Display Name*</span>
-								<span className="label-text-alt tooltip tooltip-left" data-tip="Name displayed to users">
-									<FiHelpCircle size={16} />
-								</span>
-							</label>
+					{/* Display Name */}
+					<div className="grid grid-cols-12 items-center gap-2">
+						<label className="label col-span-3">
+							<span className="label-text text-sm">Display Name*</span>
+							<span className="label-text-alt tooltip" data-tip="Name displayed to users">
+								<FiHelpCircle size={12} />
+							</span>
+						</label>
+						<div className="col-span-9">
 							<input
 								type="text"
 								name="displayName"
 								value={formData.displayName}
 								onChange={handleChange}
 								className={`input input-bordered w-full ${errors.displayName ? 'input-error' : ''}`}
-								required
 								placeholder="e.g., GPT-4, Claude Opus"
 							/>
 							{errors.displayName && (
 								<div className="label">
 									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={14} /> {errors.displayName}
+										<FiAlertCircle size={12} /> {errors.displayName}
 									</span>
 								</div>
 							)}
 						</div>
+					</div>
 
-						{/* Temperature */}
-						<div className="form-control">
-							<label className="label">
-								<span className="label-text">Temperature (0.0 - 1.0)*</span>
-								<span
-									className="label-text-alt tooltip tooltip-left"
-									data-tip="Controls randomness: lower values are more deterministic"
-								>
-									<FiHelpCircle size={16} />
-								</span>
-							</label>
+					{/* Toggle: isEnabled */}
+					<div className="grid grid-cols-12 items-center gap-2">
+						<label className="label col-span-3 cursor-pointer">
+							<span className="label-text text-sm">Enabled</span>
+						</label>
+						<div className="col-span-9">
 							<input
-								type="number"
+								type="checkbox"
+								name="isEnabled"
+								checked={formData.isEnabled}
+								onChange={handleChange}
+								className="toggle toggle-primary rounded-full"
+								spellCheck="false"
+							/>
+						</div>
+					</div>
+
+					{/* Toggle: stream */}
+					<div className="grid grid-cols-12 items-center gap-2">
+						<label className="label col-span-3 cursor-pointer">
+							<span className="label-text text-sm">Streaming</span>
+						</label>
+						<div className="col-span-9">
+							<input
+								type="checkbox"
+								name="stream"
+								checked={formData.stream}
+								onChange={handleChange}
+								className="toggle toggle-primary rounded-full"
+								spellCheck="false"
+							/>
+						</div>
+					</div>
+
+					{/* Toggle: reasoningSupport */}
+					<div className="grid grid-cols-12 items-center gap-2">
+						<label className="label col-span-3 cursor-pointer">
+							<span className="label-text text-sm">Reasoning Support</span>
+						</label>
+						<div className="col-span-9">
+							<input
+								type="checkbox"
+								name="reasoningSupport"
+								checked={formData.reasoningSupport}
+								onChange={handleChange}
+								className="toggle toggle-primary rounded-full"
+								spellCheck="false"
+							/>
+						</div>
+					</div>
+
+					{/* Temperature */}
+					<div className="grid grid-cols-12 items-center gap-2">
+						<label className="label col-span-3">
+							<span className="label-text text-sm">Temperature (0.0-1.0)</span>
+							<span
+								className="label-text-alt tooltip"
+								data-tip="Controls randomness: lower values are more deterministic"
+							>
+								<FiHelpCircle size={12} />
+							</span>
+						</label>
+						<div className="col-span-9">
+							<input
+								type="text"
 								name="temperature"
-								step="0.01"
-								min="0"
-								max="1"
 								value={formData.temperature}
 								onChange={handleChange}
+								placeholder={numPlaceholder('temperature')}
 								className={`input input-bordered w-full ${errors.temperature ? 'input-error' : ''}`}
-								required
 							/>
 							{errors.temperature && (
 								<div className="label">
 									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={14} /> {errors.temperature}
+										<FiAlertCircle size={12} /> {errors.temperature}
 									</span>
 								</div>
 							)}
 						</div>
+					</div>
 
-						{/* Timeout */}
-						<div className="form-control">
-							<label className="label">
-								<span className="label-text">Timeout (seconds)*</span>
-								<span className="label-text-alt tooltip tooltip-left" data-tip="Maximum time to wait for response">
-									<FiHelpCircle size={16} />
-								</span>
-							</label>
+					{/* Timeout */}
+					<div className="grid grid-cols-12 items-center gap-2">
+						<label className="label col-span-3">
+							<span className="label-text text-sm">Timeout (seconds)</span>
+							<span className="label-text-alt tooltip" data-tip="Maximum time to wait for response">
+								<FiHelpCircle size={12} />
+							</span>
+						</label>
+						<div className="col-span-9">
 							<input
-								type="number"
+								type="text"
 								name="timeout"
-								step="1"
-								min="1"
 								value={formData.timeout}
 								onChange={handleChange}
+								placeholder={numPlaceholder('timeout')}
 								className={`input input-bordered w-full ${errors.timeout ? 'input-error' : ''}`}
-								required
 							/>
 							{errors.timeout && (
 								<div className="label">
 									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={14} /> {errors.timeout}
+										<FiAlertCircle size={12} /> {errors.timeout}
 									</span>
 								</div>
 							)}
 						</div>
+					</div>
 
-						{/* Prompt Length */}
-						<div className="form-control">
-							<label className="label">
-								<span className="label-text">Prompt Length (tokens)*</span>
-								<span className="label-text-alt tooltip tooltip-left" data-tip="Maximum tokens for input">
-									<FiHelpCircle size={16} />
-								</span>
-							</label>
+					{/* Prompt Length */}
+					<div className="grid grid-cols-12 items-center gap-2">
+						<label className="label col-span-3">
+							<span className="label-text text-sm">Max Prompt Tokens</span>
+							<span className="label-text-alt tooltip" data-tip="Maximum tokens for input">
+								<FiHelpCircle size={12} />
+							</span>
+						</label>
+						<div className="col-span-9">
 							<input
-								type="number"
+								type="text"
 								name="promptLength"
-								step="1"
-								min="1"
 								value={formData.promptLength}
 								onChange={handleChange}
+								placeholder={numPlaceholder('promptLength')}
 								className={`input input-bordered w-full ${errors.promptLength ? 'input-error' : ''}`}
-								required
 							/>
 							{errors.promptLength && (
 								<div className="label">
 									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={14} /> {errors.promptLength}
+										<FiAlertCircle size={12} /> {errors.promptLength}
 									</span>
 								</div>
 							)}
 						</div>
+					</div>
 
-						{/* Output Length */}
-						<div className="form-control">
-							<label className="label">
-								<span className="label-text">Output Length (tokens)*</span>
-								<span className="label-text-alt tooltip tooltip-left" data-tip="Maximum tokens for output">
-									<FiHelpCircle size={16} />
-								</span>
-							</label>
+					{/* Output Length */}
+					<div className="grid grid-cols-12 items-center gap-2">
+						<label className="label col-span-3">
+							<span className="label-text text-sm">Max Output Tokens</span>
+							<span className="label-text-alt tooltip" data-tip="Maximum tokens for output">
+								<FiHelpCircle size={12} />
+							</span>
+						</label>
+						<div className="col-span-9">
 							<input
-								type="number"
+								type="text"
 								name="outputLength"
-								step="1"
-								min="1"
 								value={formData.outputLength}
 								onChange={handleChange}
+								placeholder={numPlaceholder('outputLength')}
 								className={`input input-bordered w-full ${errors.outputLength ? 'input-error' : ''}`}
-								required
 							/>
 							{errors.outputLength && (
 								<div className="label">
 									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={14} /> {errors.outputLength}
+										<FiAlertCircle size={12} /> {errors.outputLength}
 									</span>
 								</div>
 							)}
 						</div>
 					</div>
 
-					{/* Toggle Options */}
-					<div className="divider"></div>
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-						<div className="form-control">
-							<label className="label cursor-pointer justify-start gap-3">
-								<input
-									type="checkbox"
-									name="isEnabled"
-									checked={formData.isEnabled}
-									onChange={handleChange}
-									className="checkbox checkbox-primary"
-								/>
-								<span className="label-text">Enabled</span>
-							</label>
-						</div>
-
-						<div className="form-control">
-							<label className="label cursor-pointer justify-start gap-3">
-								<input
-									type="checkbox"
-									name="stream"
-									checked={formData.stream}
-									onChange={handleChange}
-									className="checkbox checkbox-primary"
-								/>
-								<span className="label-text">Streaming</span>
-							</label>
-						</div>
-
-						<div className="form-control">
-							<label className="label cursor-pointer justify-start gap-3">
-								<input
-									type="checkbox"
-									name="reasoningSupport"
-									checked={formData.reasoningSupport}
-									onChange={handleChange}
-									className="checkbox checkbox-primary"
-								/>
-								<span className="label-text">Reasoning Support</span>
-							</label>
-						</div>
-					</div>
-
 					{/* System Prompt */}
-					<div className="form-control mt-2">
-						<label className="label">
-							<span className="label-text">System Prompt</span>
-							<span
-								className="label-text-alt tooltip tooltip-left"
-								data-tip="Instructions that define the model's behavior"
-							>
-								<FiHelpCircle size={16} />
+					<div className="grid grid-cols-12 items-center gap-2">
+						<label className="label col-span-3">
+							<span className="label-text text-sm">System Prompt</span>
+							<span className="label-text-alt tooltip" data-tip="Instructions that define the model's behavior">
+								<FiHelpCircle size={12} />
 							</span>
 						</label>
-						<textarea
-							name="systemPrompt"
-							value={formData.systemPrompt}
-							onChange={handleChange}
-							className="textarea textarea-bordered h-24"
-							placeholder="Enter system prompt instructions here..."
-						/>
+						<div className="col-span-9">
+							<textarea
+								name="systemPrompt"
+								value={formData.systemPrompt}
+								onChange={handleChange}
+								className="textarea textarea-bordered w-full h-24"
+								placeholder="Enter system prompt instructions here..."
+							/>
+						</div>
 					</div>
 
 					{/* Actions */}
@@ -406,6 +501,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 					</div>
 				</form>
 			</div>
+			{/* Click outside to close */}
 			<div className="modal-backdrop" onClick={onClose}></div>
 		</dialog>
 	);

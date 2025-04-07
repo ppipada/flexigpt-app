@@ -5,7 +5,7 @@ export const DefaultModelTitle = 'OpenAI GPT 4o';
 export type ProviderName = string;
 export const DefaultProviderName: ProviderName = 'openai';
 
-interface ModelInfo {
+export interface ModelInfo {
 	name: ModelName;
 	displayName: string;
 	provider: string;
@@ -29,7 +29,7 @@ export interface ProviderInfo {
 	defaultHeaders: Record<string, string>;
 	chatCompletionPathPrefix: string;
 	modelPrefixes?: string[];
-	models: Record<string, ModelInfo>;
+	models: Record<ModelName, ModelInfo>;
 }
 
 export const ProviderInfoDescription = {
