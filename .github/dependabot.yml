@@ -9,7 +9,7 @@ updates:
     directory: "/"
     open-pull-requests-limit: 10
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "chore"
       include: "scope"
