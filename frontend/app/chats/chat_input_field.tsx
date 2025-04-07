@@ -181,7 +181,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 							)}
 						</div>
 					</summary>
-					<ul className={`dropdown-content menu bg-base-100 rounded-box w-full`}>
+					<ul className={`dropdown-content menu bg-base-100 rounded-xl w-full`}>
 						{allOptions.map((model, index) => (
 							<li
 								key={index}
@@ -224,7 +224,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 							)}
 						</div>
 					</summary>
-					<ul className={`dropdown-content menu bg-base-100 rounded-box w-full`}>
+					<ul className={`dropdown-content menu bg-base-100 rounded-xl w-full`}>
 						{temperatureOptions.map((temp, index) => (
 							<li
 								key={index}

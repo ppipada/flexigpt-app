@@ -44,19 +44,19 @@ const ProviderDropdown: FC<ProviderDropdownProps> = ({ aiSettings, defaultProvid
 			}}
 		>
 			<summary
-				className="flex btn w-full text-left shadow-none rounded-box border border-base-300 bg-base-100 justify-between items-center px-4 py-2 cursor-pointer"
+				className="flex btn w-full text-left shadow-none rounded-xl border border-base-300 bg-base-100 justify-between items-center px-4 py-2 cursor-pointer"
 				title="Select Provider"
 			>
 				<span className="capitalize font-normal">{selectedProvider}</span>
 				{isOpen ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
 			</summary>
-			<ul tabIndex={0} className={`dropdown-content menu rounded-box w-full bg-base-200`}>
+			<ul tabIndex={0} className={`dropdown-content menu rounded-xl w-full bg-base-200`}>
 				{Object.keys(aiSettings)
 					.filter(provider => aiSettings[provider].isEnabled)
 					.map(provider => (
 						<li
 							key={provider}
-							className="cursor-pointer rounded-box"
+							className="cursor-pointer rounded-xl"
 							onClick={() => {
 								handleSelection(provider);
 							}}

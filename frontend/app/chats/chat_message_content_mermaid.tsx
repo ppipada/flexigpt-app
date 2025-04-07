@@ -94,7 +94,7 @@ export const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 	};
 
 	return (
-		<div className="rounded-md my-4 items-start overflow-hidden" style={{ backgroundColor: '#E5E9F0' }}>
+		<div className="rounded-lg my-4 items-start overflow-hidden" style={{ backgroundColor: '#E5E9F0' }}>
 			<div className="flex justify-between items-center bg-gray-700 px-4">
 				<span className="text-white">Mermaid Diagram</span>
 				<DownloadButton

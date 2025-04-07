@@ -19,7 +19,7 @@ const CodeBlock: FC<CodeProps> = ({ language, value, streamedMessage }) => {
 	const isMermaid = language.toLowerCase() === 'mermaid';
 	return (
 		<>
-			<div className="rounded-md bg-gray-800 my-4 items-start overflow-hidden">
+			<div className="rounded-lg bg-gray-800 my-4 items-start overflow-hidden">
 				<div className="flex justify-between items-center bg-gray-700 px-4">
 					<span className="text-white">{language}</span>
 					<div className="flex space-x-2">

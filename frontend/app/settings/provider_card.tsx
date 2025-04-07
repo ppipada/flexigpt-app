@@ -21,7 +21,7 @@ import {
 	FiX,
 	FiXCircle,
 } from 'react-icons/fi';
-import ModifyModelModal from './model_modal';
+import ModifyModelModal from './model_modify_modal';
 
 interface AISettingsCardProps {
 	provider: ProviderName;
@@ -179,7 +179,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	};
 
 	return (
-		<div className="bg-base-100 rounded-lg shadow-lg p-4 mb-4">
+		<div className="bg-base-100 rounded-xl shadow-lg p-4 mb-4">
 			<div className="grid grid-cols-12 gap-4 items-center">
 				{/* Provider Title*/}
 				<div className="col-span-3 flex items-center space-x-4">
@@ -226,7 +226,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						</label>
 						<input
 							type="password"
-							className="input col-span-9 w-full h-10 rounded-lg border border-base-300 px-4 py-2"
+							className="input col-span-9 w-full h-10 rounded-xl border border-base-300 px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={localSettings.apiKey}
 							onChange={e => {
@@ -249,7 +249,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						</label>
 						<input
 							type="text"
-							className="input col-span-9 w-full h-10 rounded-lg border border-base-300 px-4 py-2"
+							className="input col-span-9 w-full h-10 rounded-xl border border-base-300 px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={localSettings.origin}
 							onChange={e => {
@@ -280,7 +280,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 							/>
 						</div>
 						<div className="col-span-3 flex justify-end">
-							<button className="btn btn-md btn-ghost rounded-2xl flex items-center" onClick={handleAddModel}>
+							<button className="btn btn-md btn-ghost rounded-xl flex items-center" onClick={handleAddModel}>
 								<FiPlus size={16} /> Add Model
 							</button>
 						</div>

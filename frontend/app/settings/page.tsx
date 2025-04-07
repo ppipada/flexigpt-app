@@ -1,12 +1,15 @@
 import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
-import { loadProviderSettings } from '@/apis/settingstore_helper';
+import { loadProviderSettings, UpdateProviderAISettings } from '@/apis/settingstore_helper';
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
 import { DefaultModelName, DefaultProviderName, type ProviderName } from '@/models/aiprovidermodel';
 import type { AISetting } from '@/models/settingmodel';
+import AddProviderModal from '@/settings/provider_add_modal';
 import AISettingsCard from '@/settings/provider_card';
-import ProviderDropdown from '@/settings/provider_dropdown'; // Import the new component
+import ProviderDropdown from '@/settings/provider_dropdown';
+
 import { type FC, useEffect, useState } from 'react';
+import { FiPlus } from 'react-icons/fi';
 
 const defaultAISettings: Record<ProviderName, AISetting> = {
 	[DefaultProviderName]: {
@@ -19,8 +22,10 @@ const defaultAISettings: Record<ProviderName, AISetting> = {
 };
 
 const SettingsPage: FC = () => {
-	const [defaultProvider, setComponentDefaultProvider] = useState(DefaultProviderName);
-	const [aiSettings, setAISettings] = useState(defaultAISettings);
+	const [defaultProvider, setComponentDefaultProvider] = useState<ProviderName>(DefaultProviderName);
+	const [aiSettings, setAISettings] = useState<Record<string, AISetting>>(defaultAISettings);
+
+	const [isAddProviderModalOpen, setIsAddProviderModalOpen] = useState(false);
 
 	useEffect(() => {
 		(async () => {
@@ -33,25 +38,40 @@ const SettingsPage: FC = () => {
 				enabledProviders.push(DefaultProviderName);
 			}
 
-			const defaultProvider = settings.app.defaultProvider;
-			setComponentDefaultProvider(enabledProviders.includes(defaultProvider) ? defaultProvider : enabledProviders[0]);
-			// console.log('All settings', JSON.stringify(settings.aiSettings, null, 2));
+			const defaultProv = settings.app.defaultProvider;
+			setComponentDefaultProvider(
+				enabledProviders.includes(defaultProv) ? (defaultProv as ProviderName) : (enabledProviders[0] as ProviderName)
+			);
 			setAISettings(settings.aiSettings);
 		})();
 	}, []);
 
-	const handleDefaultProviderChange = (value: ProviderName) => {
+	const handleDefaultProviderChange = async (value: ProviderName) => {
 		setComponentDefaultProvider(value);
-		providerSetAPI.setDefaultProvider(value);
-		// console.log('Set a new default provider', value);
-		settingstoreAPI.setSetting('app.defaultProvider', value);
+		await providerSetAPI.setDefaultProvider(value);
+		await settingstoreAPI.setSetting('app.defaultProvider', value);
 	};
 
-	const handleProviderSettingChange = (provider: ProviderName, settings: AISetting) => {
+	const handleProviderSettingChange = (provider: ProviderName, updatedSettings: AISetting) => {
 		setAISettings(prev => ({
 			...prev,
-			[provider]: settings,
+			[provider]: updatedSettings,
 		}));
+	};
+
+	/**
+	 * Handle adding a new provider from the AddProviderModal
+	 */
+	const handleAddProviderSubmit = async (providerName: ProviderName, newProviderSettings: AISetting) => {
+		// Save to local state
+		setAISettings(prev => ({
+			...prev,
+			[providerName]: newProviderSettings,
+		}));
+
+		// Persist to setting store
+		await settingstoreAPI.setSetting(`aiSettings`, { ...aiSettings });
+		UpdateProviderAISettings(providerName, newProviderSettings);
 	};
 
 	const fetchValue = async (): Promise<string> => {
@@ -67,6 +87,7 @@ const SettingsPage: FC = () => {
 		);
 		return value;
 	};
+
 	return (
 		<div className="flex flex-col items-center w-full h-full overflow-hidden">
 			<div className="w-full flex justify-center bg-transparent fixed top-2">
@@ -89,11 +110,14 @@ const SettingsPage: FC = () => {
 				</div>
 			</div>
 
-			<div className="flex flex-col items-center w-full grow bg-transparent mt-20">
-				<div className="w-full grow flex justify-center overflow-y-auto" style={{ maxHeight: `calc(100vh - 128px)` }}>
+			<div className="flex flex-col items-center w-full grow bg-transparent mt-18">
+				<div
+					className="flex flex-col items-center w-full grow overflow-y-auto"
+					style={{ maxHeight: `calc(100vh - 128px)` }}
+				>
 					<div className="flex flex-col space-y-4 w-11/12 lg:w-2/3">
 						{/* Theme Switch Card */}
-						<div className="bg-base-100 rounded-lg shadow-lg px-4 py-2">
+						<div className="bg-base-100 rounded-xl shadow-lg px-4 py-2 mb-8">
 							<div className="grid grid-cols-12 gap-4 items-center">
 								<div className="col-span-3 text-sm font-medium">Theme</div>
 								<div className="col-span-9">
@@ -102,28 +126,35 @@ const SettingsPage: FC = () => {
 							</div>
 						</div>
 
-						{/* Default Provider Card */}
-						<div className="bg-base-100 rounded-lg shadow-lg px-4 py-2">
+						{/* Default Provider + Add Provider */}
+						<div className="bg-base-100 rounded-xl shadow-lg px-4 py-2 mb-8">
 							<div className="grid grid-cols-12 gap-4 items-center">
-								<div className="col-span-3 text-sm font-medium">Default Provider</div>
-								<div className="col-span-9">
+								<label className="col-span-3 text-sm font-medium">Default Provider</label>
+								<div className="col-span-6">
 									<ProviderDropdown
 										aiSettings={aiSettings}
 										defaultProvider={defaultProvider}
 										onProviderChange={handleDefaultProviderChange}
 									/>
 								</div>
+								<div className="col-span-3 flex justify-end">
+									<button
+										className="btn btn-md btn-ghost rounded-2xl flex items-center"
+										onClick={() => setIsAddProviderModalOpen(true)}
+									>
+										<FiPlus size={16} /> Add Provider
+									</button>
+								</div>
 							</div>
 						</div>
 
 						{/* AI Settings Cards */}
 						{Object.keys(aiSettings).map(providerStr => {
-							const oneSettings = aiSettings[providerStr];
 							return (
-								<div key={providerStr} className=" rounded-lg">
+								<div key={providerStr} className="rounded-xl">
 									<AISettingsCard
-										provider={providerStr}
-										settings={oneSettings}
+										provider={providerStr as ProviderName}
+										settings={aiSettings[providerStr]}
 										aiSettings={aiSettings}
 										defaultProvider={defaultProvider}
 										onProviderSettingChange={handleProviderSettingChange}
@@ -134,6 +165,14 @@ const SettingsPage: FC = () => {
 					</div>
 				</div>
 			</div>
+
+			{isAddProviderModalOpen && (
+				<AddProviderModal
+					isOpen={isAddProviderModalOpen}
+					onClose={() => setIsAddProviderModalOpen(false)}
+					onSubmit={handleAddProviderSubmit}
+				/>
+			)}
 		</div>
 	);
 };

@@ -22,8 +22,11 @@
   - [x] Backend integration
   - [x] Do not delete inbuilt models, just disable them.
   - [x] Input options temperature should come from either modelparams or modelinfo
-  - [ ] Link add model
-  - [ ] Add a custom provider and model name setting too so that an OAI compatible provider and model can be added
+  - [x] Link add model
+  - [x] Add a custom provider and model name setting too so that an OAI compatible provider and model can be added
+  - [ ] Add a new provider flow in providerSet
+  - [ ] delete of custom new providers need to be there simialr to models
+  - [ ] add a note in add provider that only OAI compatible api can be served
 
 - [x] Param input content should preserve tabs/spaces etc
 

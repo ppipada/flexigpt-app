@@ -243,7 +243,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 
 	return (
 		<dialog className="modal modal-open">
-			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-lg">
+			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
 				{/* Header */}
 				<div className="flex justify-between items-center mb-4">
 					<h3 className="font-bold text-lg">{isEditMode ? 'Edit Model' : 'Add New Model'}</h3>
@@ -268,7 +268,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								name="modelName"
 								value={modelName}
 								onChange={handleChange}
-								className={`input input-bordered w-full ${errors.modelName ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-xl ${errors.modelName ? 'input-error' : ''}`}
 								placeholder="e.g., gpt-4, claude-opus"
 								disabled={isEditMode}
 							/>
@@ -296,7 +296,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								name="displayName"
 								value={formData.displayName}
 								onChange={handleChange}
-								className={`input input-bordered w-full ${errors.displayName ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-xl ${errors.displayName ? 'input-error' : ''}`}
 								placeholder="e.g., GPT-4, Claude Opus"
 							/>
 							{errors.displayName && (
@@ -378,7 +378,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								value={formData.temperature}
 								onChange={handleChange}
 								placeholder={numPlaceholder('temperature')}
-								className={`input input-bordered w-full ${errors.temperature ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-xl ${errors.temperature ? 'input-error' : ''}`}
 							/>
 							{errors.temperature && (
 								<div className="label">
@@ -405,7 +405,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								value={formData.timeout}
 								onChange={handleChange}
 								placeholder={numPlaceholder('timeout')}
-								className={`input input-bordered w-full ${errors.timeout ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-xl ${errors.timeout ? 'input-error' : ''}`}
 							/>
 							{errors.timeout && (
 								<div className="label">
@@ -432,7 +432,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								value={formData.promptLength}
 								onChange={handleChange}
 								placeholder={numPlaceholder('promptLength')}
-								className={`input input-bordered w-full ${errors.promptLength ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-xl ${errors.promptLength ? 'input-error' : ''}`}
 							/>
 							{errors.promptLength && (
 								<div className="label">
@@ -459,7 +459,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								value={formData.outputLength}
 								onChange={handleChange}
 								placeholder={numPlaceholder('outputLength')}
-								className={`input input-bordered w-full ${errors.outputLength ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-xl ${errors.outputLength ? 'input-error' : ''}`}
 							/>
 							{errors.outputLength && (
 								<div className="label">
@@ -484,7 +484,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								name="systemPrompt"
 								value={formData.systemPrompt}
 								onChange={handleChange}
-								className="textarea textarea-bordered w-full h-24"
+								className="textarea textarea-bordered w-full rounded-xl h-24"
 								placeholder="Enter system prompt instructions here..."
 							/>
 						</div>
@@ -492,17 +492,15 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 
 					{/* Actions */}
 					<div className="modal-action">
-						<button type="button" className="btn" onClick={onClose}>
+						<button type="button" className="btn rounded-xl" onClick={onClose}>
 							Cancel
 						</button>
-						<button type="submit" className="btn btn-primary">
+						<button type="submit" className="btn btn-primary rounded-xl">
 							{isEditMode ? 'Save Changes' : 'Add Model'}
 						</button>
 					</div>
 				</form>
 			</div>
-			{/* Click outside to close */}
-			<div className="modal-backdrop" onClick={onClose}></div>
 		</dialog>
 	);
 };
