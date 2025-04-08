@@ -303,6 +303,69 @@ export namespace spec {
 	
 	    }
 	}
+	export class AddProviderRequestBody {
+	    apiKey: string;
+	    engine: string;
+	    origin: string;
+	    chatCompletionPathPrefix: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new AddProviderRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.apiKey = source["apiKey"];
+	        this.engine = source["engine"];
+	        this.origin = source["origin"];
+	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
+	    }
+	}
+	export class AddProviderRequest {
+	    Provider: string;
+	    Body?: AddProviderRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new AddProviderRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Provider = source["Provider"];
+	        this.Body = this.convertValues(source["Body"], AddProviderRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class AddProviderResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new AddProviderResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
 	export class AppSettings {
 	    defaultProvider: string;
 	
@@ -313,22 +376,6 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.defaultProvider = source["defaultProvider"];
-	    }
-	}
-	export class ChatCompletionFunctions {
-	    name: string;
-	    description?: string;
-	    parameters?: Record<string, any>;
-	
-	    static createFrom(source: any = {}) {
-	        return new ChatCompletionFunctions(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.name = source["name"];
-	        this.description = source["description"];
-	        this.parameters = source["parameters"];
 	    }
 	}
 	export class ChatCompletionRequestMessageFunctionCall {
@@ -382,70 +429,6 @@ export namespace spec {
 		}
 	}
 	
-	export class ModelParams {
-	    name: string;
-	    stream?: boolean;
-	    promptLength?: number;
-	    outputLength?: number;
-	    temperature?: number;
-	    reasoningSupport?: boolean;
-	    systemPrompt?: string;
-	    timeout?: number;
-	    additionalParameters?: Record<string, any>;
-	
-	    static createFrom(source: any = {}) {
-	        return new ModelParams(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.name = source["name"];
-	        this.stream = source["stream"];
-	        this.promptLength = source["promptLength"];
-	        this.outputLength = source["outputLength"];
-	        this.temperature = source["temperature"];
-	        this.reasoningSupport = source["reasoningSupport"];
-	        this.systemPrompt = source["systemPrompt"];
-	        this.timeout = source["timeout"];
-	        this.additionalParameters = source["additionalParameters"];
-	    }
-	}
-	export class CompletionRequest {
-	    modelParams: ModelParams;
-	    messages?: ChatCompletionRequestMessage[];
-	    functions?: ChatCompletionFunctions[];
-	    functionCall?: any;
-	
-	    static createFrom(source: any = {}) {
-	        return new CompletionRequest(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.modelParams = this.convertValues(source["modelParams"], ModelParams);
-	        this.messages = this.convertValues(source["messages"], ChatCompletionRequestMessage);
-	        this.functions = this.convertValues(source["functions"], ChatCompletionFunctions);
-	        this.functionCall = source["functionCall"];
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
 	export class CompletionResponse {
 	    requestDetails?: APIRequestDetails;
 	    responseDetails?: APIResponseDetails;
@@ -581,6 +564,30 @@ export namespace spec {
 	
 	    static createFrom(source: any = {}) {
 	        return new DeleteConversationResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class DeleteProviderRequest {
+	    Provider: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DeleteProviderRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Provider = source["Provider"];
+	    }
+	}
+	export class DeleteProviderResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new DeleteProviderResponse(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -742,10 +749,10 @@ export namespace spec {
 	    defaultModel: string;
 	    engine: string;
 	    origin: string;
+	    type: string;
 	    apiKeyHeaderKey: string;
 	    defaultHeaders: Record<string, string>;
 	    chatCompletionPathPrefix: string;
-	    modelPrefixes: string[];
 	    models: Record<string, ModelInfo>;
 	
 	    static createFrom(source: any = {}) {
@@ -759,10 +766,10 @@ export namespace spec {
 	        this.defaultModel = source["defaultModel"];
 	        this.engine = source["engine"];
 	        this.origin = source["origin"];
+	        this.type = source["type"];
 	        this.apiKeyHeaderKey = source["apiKeyHeaderKey"];
 	        this.defaultHeaders = source["defaultHeaders"];
 	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
-	        this.modelPrefixes = source["modelPrefixes"];
 	        this.models = this.convertValues(source["models"], ModelInfo, true);
 	    }
 	
@@ -966,105 +973,35 @@ export namespace spec {
 		}
 	}
 	
-	export class MakeCompletionRequestBody {
-	    prompt: string;
-	    modelParams: ModelParams;
-	    prevMessages: ChatCompletionRequestMessage[];
+	
+	export class ModelParams {
+	    name: string;
+	    stream: boolean;
+	    maxPromptLength: number;
+	    maxOutputLength: number;
+	    temperature?: number;
+	    reasoningSupport: boolean;
+	    systemPrompt: string;
+	    timeout: number;
+	    additionalParameters: Record<string, any>;
 	
 	    static createFrom(source: any = {}) {
-	        return new MakeCompletionRequestBody(source);
+	        return new ModelParams(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.prompt = source["prompt"];
-	        this.modelParams = this.convertValues(source["modelParams"], ModelParams);
-	        this.prevMessages = this.convertValues(source["prevMessages"], ChatCompletionRequestMessage);
+	        this.name = source["name"];
+	        this.stream = source["stream"];
+	        this.maxPromptLength = source["maxPromptLength"];
+	        this.maxOutputLength = source["maxOutputLength"];
+	        this.temperature = source["temperature"];
+	        this.reasoningSupport = source["reasoningSupport"];
+	        this.systemPrompt = source["systemPrompt"];
+	        this.timeout = source["timeout"];
+	        this.additionalParameters = source["additionalParameters"];
 	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
-	export class MakeCompletionRequest {
-	    Provider: string;
-	    Body?: MakeCompletionRequestBody;
-	
-	    static createFrom(source: any = {}) {
-	        return new MakeCompletionRequest(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Provider = source["Provider"];
-	        this.Body = this.convertValues(source["Body"], MakeCompletionRequestBody);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	
-	export class MakeCompletionResponse {
-	    Body?: CompletionRequest;
-	
-	    static createFrom(source: any = {}) {
-	        return new MakeCompletionResponse(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Body = this.convertValues(source["Body"], CompletionRequest);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	
-	
 	
 	
 	export class SaveConversationRequest {
@@ -1166,8 +1103,8 @@ export namespace spec {
 	}
 	export class SetProviderAttributeRequestBody {
 	    apiKey?: string;
-	    defaultModel?: string;
 	    origin?: string;
+	    chatCompletionPathPrefix?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new SetProviderAttributeRequestBody(source);
@@ -1176,8 +1113,8 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiKey = source["apiKey"];
-	        this.defaultModel = source["defaultModel"];
 	        this.origin = source["origin"];
+	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
 	    }
 	}
 	export class SetProviderAttributeRequest {

@@ -1,6 +1,7 @@
 package google
 
 import (
+	"github.com/flexigpt/flexiui/pkg/aiprovider/openaicompat"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 )
 
@@ -57,9 +58,10 @@ var GoogleProviderInfo = spec.ProviderInfo{
 	Engine:       "",
 	Origin:       "https://generativelanguage.googleapis.com",
 	DefaultModel: Gemini15Flash,
+	Type:         spec.InbuiltOpenAICompatible,
 
-	APIKeyHeaderKey:          "Authorization",
-	DefaultHeaders:           map[string]string{"content-type": "application/json"},
+	APIKeyHeaderKey:          openaicompat.APIKeyHeaderKey,
+	DefaultHeaders:           openaicompat.DefaultHeaders,
 	ChatCompletionPathPrefix: "/v1beta/openai/chat/completions",
 	Models:                   GoogleModels,
 }

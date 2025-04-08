@@ -29,14 +29,14 @@ func NewHuggingFaceAPI() *HuggingFaceAPI {
 func (api *HuggingFaceAPI) SetProviderAttribute(
 	ctx context.Context,
 	apiKey *string,
-	defaultModel *string,
 	origin *string,
+	chatCompletionPathPrefix *string,
 ) error {
 	err := api.BaseAIAPI.SetProviderAttribute(
 		ctx,
 		apiKey,
-		defaultModel,
 		origin,
+		chatCompletionPathPrefix,
 	)
 	if err != nil {
 		return err
@@ -73,8 +73,17 @@ func (api *HuggingFaceAPI) SetProviderAttribute(
 // FetchCompletion processes the completion request.
 func (api *HuggingFaceAPI) FetchCompletion(
 	ctx context.Context,
-	input spec.CompletionRequest,
+	prompt string,
+	modelParams spec.ModelParams,
+	prevMessages []spec.ChatCompletionRequestMessage,
 	onStreamData func(data string) error,
 ) (*spec.CompletionResponse, error) {
-	return api.BaseAIAPI.FetchCompletion(ctx, api.llm, input, onStreamData)
+	return api.BaseAIAPI.FetchCompletion(
+		ctx,
+		api.llm,
+		prompt,
+		modelParams,
+		prevMessages,
+		onStreamData,
+	)
 }

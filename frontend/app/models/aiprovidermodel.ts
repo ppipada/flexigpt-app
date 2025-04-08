@@ -18,6 +18,30 @@ export interface ModelInfo {
 	timeout: number;
 }
 
+export interface ModelParams {
+	name: ModelName;
+	stream: boolean;
+	maxPromptLength: number;
+	maxOutputLength: number;
+	temperature?: number;
+	reasoningSupport: boolean;
+	systemPrompt: string;
+	timeout: number;
+	additionalParameters: Record<string, any>;
+}
+
+export const DefaultModelParams: ModelParams = {
+	name: '',
+	stream: false,
+	maxPromptLength: 2048,
+	maxOutputLength: 1024,
+	temperature: 0.1,
+	reasoningSupport: false,
+	systemPrompt: '',
+	timeout: 60,
+	additionalParameters: {},
+};
+
 export interface ProviderInfo {
 	name: ProviderName;
 	apiKey: string;
@@ -81,18 +105,6 @@ export interface CreateChatCompletionRequestFunctionCallOneOf {
 	name: string;
 }
 
-export interface ModelParams {
-	name: string;
-	stream?: boolean;
-	promptLength?: number;
-	outputLength?: number;
-	temperature?: number;
-	reasoningSupport?: boolean;
-	systemPrompt?: string;
-	timeout?: number;
-	additionalParameters?: Record<string, any>;
-}
-
 export interface CompletionRequest {
 	modelParams: ModelParams;
 	messages?: ChatCompletionRequestMessage[];
@@ -144,20 +156,30 @@ export interface ConfigurationResponse {
 	configuredProviders: Record<ProviderName, ProviderInfo>;
 }
 
+export interface AddProviderRequest {
+	provider: ProviderName;
+	apiKey: string;
+	engine: string;
+	origin: string;
+	chatCompletionPathPrefix: string;
+}
+
 export interface IProviderSetAPI {
 	setDefaultProvider(provider: ProviderName): Promise<void>;
 	getConfigurationInfo(): Promise<ConfigurationResponse>;
-	setAttribute(provider: ProviderName, apiKey?: string, defaultModel?: ModelName, origin?: string): Promise<void>;
-
-	getCompletionRequest(
+	addProvider(providerInfo: AddProviderRequest): Promise<void>;
+	deleteProvider(provider: ProviderName): Promise<void>;
+	setAttribute(
+		provider: ProviderName,
+		apiKey?: string,
+		origin?: string,
+		chatCompletionPathPrefix?: string
+	): Promise<void>;
+	completion(
 		provider: ProviderName,
 		prompt: string,
 		modelParams: ModelParams,
-		prevMessages?: Array<ChatCompletionRequestMessage>
-	): Promise<CompletionRequest>;
-	completion(
-		provider: ProviderName,
-		input: CompletionRequest,
+		prevMessages?: Array<ChatCompletionRequestMessage>,
 		onStreamData?: (data: string) => void
 	): Promise<CompletionResponse | undefined>;
 }

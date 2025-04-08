@@ -68,19 +68,23 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Compl
 async function handleDirectCompletion(
 	convoMessage: ConversationMessage,
 	provider: ProviderName,
-	fullCompletionRequest: any
+	prompt: string,
+	modelParams: ModelParams,
+	prevMessages: Array<ChatCompletionRequestMessage>
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
-	const providerResp = await providerSetAPI.completion(provider, fullCompletionRequest);
+	const providerResp = await providerSetAPI.completion(provider, prompt, modelParams, prevMessages);
 	return parseAPIResponse(convoMessage, providerResp);
 }
 
 async function handleStreamedCompletion(
 	convoMessage: ConversationMessage,
 	provider: ProviderName,
-	fullCompletionRequest: any,
+	prompt: string,
+	modelParams: ModelParams,
+	prevMessages: Array<ChatCompletionRequestMessage>,
 	onStreamData: (data: string) => void
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
-	const providerResp = await providerSetAPI.completion(provider, fullCompletionRequest, onStreamData);
+	const providerResp = await providerSetAPI.completion(provider, prompt, modelParams, prevMessages, onStreamData);
 	return parseAPIResponse(convoMessage, providerResp);
 }
 
@@ -95,19 +99,20 @@ export async function GetCompletionMessage(
 		const allMessages = convertConversationToChatMessages(messages);
 		const promptMsg = allMessages.pop();
 
-		const fullCompletionRequest = await providerSetAPI.getCompletionRequest(
-			provider,
-			promptMsg?.content || '',
-			modelParams,
-			allMessages
-		);
-		const isStream = fullCompletionRequest.modelParams.stream || false;
+		const isStream = modelParams.stream || false;
 		// log.info('CompletionRequest', defaultProvider, JSON.stringify(fullCompletionRequest, null, 2));
 		if (isStream && onStreamData) {
-			return await handleStreamedCompletion(convoMessage, provider, fullCompletionRequest, onStreamData);
+			return await handleStreamedCompletion(
+				convoMessage,
+				provider,
+				promptMsg?.content || '',
+				modelParams,
+				allMessages,
+				onStreamData
+			);
 		} else {
-			fullCompletionRequest.modelParams.stream = false;
-			return await handleDirectCompletion(convoMessage, provider, fullCompletionRequest);
+			modelParams.stream = false;
+			return await handleDirectCompletion(convoMessage, provider, promptMsg?.content || '', modelParams, allMessages);
 		}
 	} catch (error) {
 		const msg = 'Got error in api processing. Check details...';

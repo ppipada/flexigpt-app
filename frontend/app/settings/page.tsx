@@ -1,14 +1,19 @@
 import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
-import { loadProviderSettings, UpdateProviderAISettings } from '@/apis/settingstore_helper';
+import { loadProviderSettings } from '@/apis/settingstore_helper';
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
-import { DefaultModelName, DefaultProviderName, type ProviderName } from '@/models/aiprovidermodel';
+import {
+	DefaultModelName,
+	DefaultProviderName,
+	type AddProviderRequest,
+	type ProviderName,
+} from '@/models/aiprovidermodel';
 import type { AISetting } from '@/models/settingmodel';
 import AddProviderModal from '@/settings/provider_add_modal';
 import AISettingsCard from '@/settings/provider_card';
 import ProviderDropdown from '@/settings/provider_dropdown';
 
-import { type FC, useEffect, useState } from 'react';
+import { useEffect, useState, type FC } from 'react';
 import { FiPlus } from 'react-icons/fi';
 
 const defaultAISettings: Record<ProviderName, AISetting> = {
@@ -59,9 +64,6 @@ const SettingsPage: FC = () => {
 		}));
 	};
 
-	/**
-	 * Handle adding a new provider from the AddProviderModal
-	 */
 	const handleAddProviderSubmit = async (providerName: ProviderName, newProviderSettings: AISetting) => {
 		// Save to local state
 		setAISettings(prev => ({
@@ -71,7 +73,14 @@ const SettingsPage: FC = () => {
 
 		// Persist to setting store
 		await settingstoreAPI.setSetting(`aiSettings`, { ...aiSettings });
-		UpdateProviderAISettings(providerName, newProviderSettings);
+		const req: AddProviderRequest = {
+			provider: providerName,
+			apiKey: newProviderSettings.apiKey,
+			origin: newProviderSettings.origin,
+			engine: '',
+			chatCompletionPathPrefix: '',
+		};
+		await providerSetAPI.addProvider(req);
 	};
 
 	const fetchValue = async (): Promise<string> => {

@@ -1,6 +1,7 @@
 package llamacpp
 
 import (
+	"github.com/flexigpt/flexiui/pkg/aiprovider/openaicompat"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 )
 
@@ -44,9 +45,10 @@ var LlamacppProviderInfo = spec.ProviderInfo{
 	Engine:       "",
 	Origin:       "http://127.0.0.1:8080",
 	DefaultModel: Llama3,
+	Type:         spec.InbuiltOpenAICompatible,
 
-	APIKeyHeaderKey:          "Authorization",
-	DefaultHeaders:           map[string]string{"content-type": "application/json"},
-	ChatCompletionPathPrefix: "/completion",
+	APIKeyHeaderKey:          openaicompat.APIKeyHeaderKey,
+	DefaultHeaders:           openaicompat.DefaultHeaders,
+	ChatCompletionPathPrefix: openaicompat.ChatCompletionPathPrefix,
 	Models:                   LlamacppModels,
 }

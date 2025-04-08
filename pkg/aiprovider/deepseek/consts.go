@@ -1,6 +1,7 @@
 package deepseek
 
 import (
+	"github.com/flexigpt/flexiui/pkg/aiprovider/openaicompat"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 )
 
@@ -44,9 +45,10 @@ var DeepseekProviderInfo = spec.ProviderInfo{
 	Engine:       "",
 	Origin:       "https://api.deepseek.com",
 	DefaultModel: DeepseekChat,
+	Type:         spec.InbuiltOpenAICompatible,
 
-	APIKeyHeaderKey:          "Authorization",
-	DefaultHeaders:           map[string]string{"content-type": "application/json"},
-	ChatCompletionPathPrefix: "",
+	APIKeyHeaderKey:          openaicompat.APIKeyHeaderKey,
+	DefaultHeaders:           openaicompat.DefaultHeaders,
+	ChatCompletionPathPrefix: openaicompat.ChatCompletionPathPrefix,
 	Models:                   DeepseekModels,
 }

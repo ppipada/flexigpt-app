@@ -31,6 +31,24 @@ func InitProviderSetHandlers(api huma.API, providerSetAPI *ProviderSetAPI) {
 	}, providerSetAPI.GetConfigurationInfo)
 
 	huma.Register(api, huma.Operation{
+		OperationID: "add-provider",
+		Method:      http.MethodPut,
+		Path:        pathPrefix + "/{provider}",
+		Summary:     "Add provider",
+		Description: "Add provider",
+		Tags:        []string{tag},
+	}, providerSetAPI.AddProvider)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "delete-provider",
+		Method:      http.MethodDelete,
+		Path:        pathPrefix + "/{provider}",
+		Summary:     "Delete provider",
+		Description: "Delete provider",
+		Tags:        []string{tag},
+	}, providerSetAPI.DeleteProvider)
+
+	huma.Register(api, huma.Operation{
 		OperationID: "set-provider-attributes",
 		Method:      http.MethodPatch,
 		Path:        pathPrefix + "/{provider}",
@@ -38,15 +56,6 @@ func InitProviderSetHandlers(api huma.API, providerSetAPI *ProviderSetAPI) {
 		Description: "Set provider attributes",
 		Tags:        []string{tag},
 	}, providerSetAPI.SetProviderAttribute)
-
-	huma.Register(api, huma.Operation{
-		OperationID: "make-provider-completion-req",
-		Method:      http.MethodPost,
-		Path:        pathPrefix + "/{provider}/completion/makereq",
-		Summary:     "Make completion request",
-		Description: "Make completion request for a provider",
-		Tags:        []string{tag},
-	}, providerSetAPI.MakeCompletion)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "fetch-provider-completion",

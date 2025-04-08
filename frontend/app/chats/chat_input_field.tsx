@@ -1,24 +1,9 @@
-import type { ModelOption } from '@/apis/settingstore_helper';
-import { GetChatInputOptions } from '@/apis/settingstore_helper';
+import type { ChatOptions, ModelOption } from '@/apis/settingstore_helper';
+import { DefaultModelOption, GetChatInputOptions } from '@/apis/settingstore_helper';
 import { UseCloseDetails } from '@/lib/use_close_details';
-import { DefaultModelName, DefaultModelTitle, DefaultProviderName } from '@/models/aiprovidermodel';
 import type { ChangeEvent, KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { FiCheck, FiChevronDown, FiChevronUp, FiSend } from 'react-icons/fi';
-
-// Define the structure of the model information and chat options
-
-export interface ChatOptions {
-	modelInfo: ModelOption;
-	disablePreviousMessages: boolean;
-}
-
-export const DefaultModelOption: ModelOption = {
-	title: DefaultModelTitle,
-	provider: DefaultProviderName,
-	name: DefaultModelName,
-	temperature: 0.1,
-};
 
 interface ChatInputFieldProps {
 	onSend: (message: string, options: ChatOptions) => void; // Updated to use ChatOptions
@@ -216,7 +201,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					>
 						<div className="flex">
 							<span className="sm:hidden">Temp:</span>
-							<span className="hidden sm:inline">Temperature:</span> {selectedModel.temperature.toFixed(1)}{' '}
+							<span className="hidden sm:inline">Temperature:</span> {selectedModel.temperature?.toFixed(1) || 0.1}{' '}
 							{isTemperatureDropdownOpen ? (
 								<FiChevronDown size={16} className="ml-1 md:ml-2" />
 							) : (
@@ -239,7 +224,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 							>
 								<a className="justify-between items-center p-1 m-0">
 									<span>{temp}</span>
-									{selectedModel.temperature.toFixed(1) === temp && <FiCheck />}
+									{(selectedModel.temperature?.toFixed(1) || 0.1) === temp && <FiCheck />}
 								</a>
 							</li>
 						))}

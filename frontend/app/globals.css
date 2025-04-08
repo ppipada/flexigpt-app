@@ -12,7 +12,6 @@
 		nord --default,
 		dracula --prefersdark;
 	prefix: '';
-	exclude: divider;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));

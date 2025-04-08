@@ -1,6 +1,7 @@
 package openai
 
 import (
+	"github.com/flexigpt/flexiui/pkg/aiprovider/openaicompat"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 )
 
@@ -135,11 +136,12 @@ var OpenAIProviderInfo = spec.ProviderInfo{
 	Name:         ProviderNameOpenAI,
 	APIKey:       "",
 	Engine:       "",
-	Origin:       "https://api.openai.com/v1",
+	Origin:       "https://api.openai.com",
 	DefaultModel: GPTO3Mini,
+	Type:         spec.InbuiltOpenAICompatible,
 
-	APIKeyHeaderKey:          "Authorization",
-	DefaultHeaders:           map[string]string{"content-type": "application/json"},
-	ChatCompletionPathPrefix: "/chat/completions",
+	APIKeyHeaderKey:          openaicompat.APIKeyHeaderKey,
+	DefaultHeaders:           openaicompat.DefaultHeaders,
+	ChatCompletionPathPrefix: openaicompat.ChatCompletionPathPrefix,
 	Models:                   OpenAIModels,
 }

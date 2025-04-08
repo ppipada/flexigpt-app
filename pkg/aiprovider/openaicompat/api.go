@@ -1,4 +1,4 @@
-package openai
+package openaicompat
 
 import (
 	"context"
@@ -11,31 +11,31 @@ import (
 	langchainOpenAI "github.com/tmc/langchaingo/llms/openai"
 )
 
-// OpenAIAPI struct that implements the CompletionProvider interface.
-type OpenAIAPI struct {
+// OpenAICompatibleAPI struct that implements the CompletionProvider interface.
+type OpenAICompatibleAPI struct {
 	*baseutils.BaseAIAPI
 	llm *langchainOpenAI.LLM
 }
 
 // NewOpenAICompatibleProvider creates a new instance of OpenAICompatibleProvider with the provided ProviderInfo.
-func NewOpenAICompatibleProvider(pi spec.ProviderInfo, debug bool) *OpenAIAPI {
-	return &OpenAIAPI{
+func NewOpenAICompatibleProvider(pi spec.ProviderInfo, debug bool) *OpenAICompatibleAPI {
+	return &OpenAICompatibleAPI{
 		BaseAIAPI: baseutils.NewBaseAIAPI(&pi, debug),
 	}
 }
 
-// SetProviderAttribute sets the attributes for the OpenAIAPI.
-func (api *OpenAIAPI) SetProviderAttribute(
+// SetProviderAttribute sets the attributes for the OpenAICompatibleAPI.
+func (api *OpenAICompatibleAPI) SetProviderAttribute(
 	ctx context.Context,
 	apiKey *string,
-	defaultModel *string,
 	origin *string,
+	chatCompletionPathPrefix *string,
 ) error {
 	err := api.BaseAIAPI.SetProviderAttribute(
 		ctx,
 		apiKey,
-		defaultModel,
 		origin,
+		chatCompletionPathPrefix,
 	)
 	if err != nil {
 		return err
@@ -55,12 +55,16 @@ func (api *OpenAIAPI) SetProviderAttribute(
 		// Remove '/chat/completions' from pathPrefix if present
 		// This is because langchaingo adds '/chat/completions' internally
 		pathPrefix = strings.TrimSuffix(pathPrefix, "/chat/completions")
-
+		slog.Info("URL", "url", baseURL+pathPrefix)
 		options = append(options, langchainOpenAI.WithBaseURL(baseURL+pathPrefix))
 	}
 
 	if api.ProviderInfo.APIKey == "" {
-		slog.Debug("No API key given. Not initializing LLM object")
+		slog.Debug(
+			string(
+				api.ProviderInfo.Name,
+			) + ": No API key given. Not initializing OpenAICompatibleAPI LLM object",
+		)
 		return nil
 	}
 	options = append(options, langchainOpenAI.WithToken(api.ProviderInfo.APIKey))
@@ -72,15 +76,24 @@ func (api *OpenAIAPI) SetProviderAttribute(
 		return err
 	}
 	api.llm = llm
-	slog.Info("OpenAI LLM provider initialized")
+	slog.Info(string(api.ProviderInfo.Name) + ": OpenAICompatibleAPI LLM provider initialized")
 	return nil
 }
 
 // FetchCompletion processes the completion request.
-func (api *OpenAIAPI) FetchCompletion(
+func (api *OpenAICompatibleAPI) FetchCompletion(
 	ctx context.Context,
-	input spec.CompletionRequest,
+	prompt string,
+	modelParams spec.ModelParams,
+	prevMessages []spec.ChatCompletionRequestMessage,
 	onStreamData func(data string) error,
 ) (*spec.CompletionResponse, error) {
-	return api.BaseAIAPI.FetchCompletion(ctx, api.llm, input, onStreamData)
+	return api.BaseAIAPI.FetchCompletion(
+		ctx,
+		api.llm,
+		prompt,
+		modelParams,
+		prevMessages,
+		onStreamData,
+	)
 }

@@ -94,8 +94,9 @@ var AnthropicProviderInfo = spec.ProviderInfo{
 	Name:         ProviderNameAnthropic,
 	APIKey:       "",
 	Engine:       "",
-	Origin:       "https://api.anthropic.com/v1",
+	Origin:       "https://api.anthropic.com",
 	DefaultModel: Claude35Sonnet,
+	Type:         spec.InbuiltSpecific,
 
 	APIKeyHeaderKey: "x-api-key",
 	DefaultHeaders: map[string]string{
@@ -103,6 +104,6 @@ var AnthropicProviderInfo = spec.ProviderInfo{
 		"accept":            "application/json",
 		"anthropic-version": "2023-06-01",
 	},
-	ChatCompletionPathPrefix: "/messages",
+	ChatCompletionPathPrefix: "/v1/messages",
 	Models:                   AnthropicModels,
 }

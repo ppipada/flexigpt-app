@@ -18,9 +18,9 @@ type ProviderSetWrapper struct {
 // NewProviderSetWrapper creates a new ProviderSet with the specified default provider.
 func InitProviderSetWrapper(
 	ps *ProviderSetWrapper,
-	defaultProvider aiproviderSpec.ProviderName,
+	defaultInbuiltProvider aiproviderSpec.ProviderName,
 ) error {
-	p, err := aiprovider.NewProviderSetAPI(defaultProvider)
+	p, err := aiprovider.NewProviderSetAPI(defaultInbuiltProvider, false)
 	if err != nil {
 		return errors.Join(err, errors.New("invalid default provider"))
 	}
@@ -44,22 +44,30 @@ func (w *ProviderSetWrapper) GetConfigurationInfo(
 	return w.providersetAPI.GetConfigurationInfo(context.Background(), req)
 }
 
+func (w *ProviderSetWrapper) AddProvider(
+	req *aiproviderSpec.AddProviderRequest,
+) (*aiproviderSpec.AddProviderResponse, error) {
+	return w.providersetAPI.AddProvider(context.Background(), req)
+}
+
+func (w *ProviderSetWrapper) DeleteProvider(
+	req *aiproviderSpec.DeleteProviderRequest,
+) (*aiproviderSpec.DeleteProviderResponse, error) {
+	return w.providersetAPI.DeleteProvider(context.Background(), req)
+}
+
 func (w *ProviderSetWrapper) SetProviderAttribute(
 	req *aiproviderSpec.SetProviderAttributeRequest,
 ) (*aiproviderSpec.SetProviderAttributeResponse, error) {
 	return w.providersetAPI.SetProviderAttribute(context.Background(), req)
 }
 
-func (w *ProviderSetWrapper) MakeCompletion(
-	req *aiproviderSpec.MakeCompletionRequest,
-) (*aiproviderSpec.MakeCompletionResponse, error) {
-	return w.providersetAPI.MakeCompletion(context.Background(), req)
-}
-
 // FetchCompletion handles the completion request and streams data back to the frontend.
 func (w *ProviderSetWrapper) FetchCompletion(
 	provider string,
-	input aiproviderSpec.CompletionRequest,
+	prompt string,
+	modelParams aiproviderSpec.ModelParams,
+	prevMessages []aiproviderSpec.ChatCompletionRequestMessage,
 	callbackID string,
 ) (*aiproviderSpec.FetchCompletionResponse, error) {
 	onStreamData := func(data string) error {
@@ -70,7 +78,9 @@ func (w *ProviderSetWrapper) FetchCompletion(
 	req := &aiproviderSpec.FetchCompletionRequest{
 		Body: &aiproviderSpec.FetchCompletionRequestBody{
 			Provider:     aiproviderSpec.ProviderName(provider),
-			Input:        &input,
+			Prompt:       prompt,
+			ModelParams:  modelParams,
+			PrevMessages: prevMessages,
 			OnStreamData: onStreamData,
 		},
 	}

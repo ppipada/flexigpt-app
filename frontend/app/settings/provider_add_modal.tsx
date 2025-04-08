@@ -119,7 +119,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 					{/* Origin */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
-							<span className="label-text text-sm">Origin</span>
+							<span className="label-text text-sm">Origin/FQDN</span>
 						</label>
 						<div className="col-span-9">
 							<input

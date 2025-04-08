@@ -1,6 +1,6 @@
 import { PopulateModelSettingDefaults } from '@/apis/settingstore_helper';
 import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
-import type { ModelSetting } from '@/models/settingmodel';
+import { DefaultModelSetting, type ModelSetting } from '@/models/settingmodel';
 import React, { type FC, useEffect, useState } from 'react';
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
@@ -40,17 +40,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 	const isEditMode = Boolean(initialModelName);
 
 	// Default numeric values that we also show in placeholders
-	const [defaultValues, setDefaultValues] = useState<ModelSetting>({
-		displayName: '',
-		isEnabled: true,
-		stream: false,
-		promptLength: 2048,
-		outputLength: 1024,
-		temperature: 0.7,
-		reasoningSupport: false,
-		systemPrompt: '',
-		timeout: 60,
-	});
+	const [defaultValues, setDefaultValues] = useState<ModelSetting>(DefaultModelSetting);
 
 	const [modelName, setModelName] = useState<ModelName>(initialModelName ?? ('' as ModelName));
 

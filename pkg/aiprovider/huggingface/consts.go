@@ -31,17 +31,11 @@ var HuggingfaceProviderInfo = spec.ProviderInfo{
 	Engine:       "",
 	Origin:       "https://api-inference.huggingface.co",
 	DefaultModel: DeepseekCoder13BInstruct,
+	Type:         spec.InbuiltSpecific,
 
 	APIKeyHeaderKey:          "Authorization",
 	DefaultHeaders:           map[string]string{"content-type": "application/json"},
 	ChatCompletionPathPrefix: "/models",
 
 	Models: HuggingfaceModels,
-	ModelPrefixes: []string{
-		"microsoft/",
-		"replit/",
-		"Salesforce/",
-		"bigcode/",
-		"deepseek-ai/",
-	},
 }

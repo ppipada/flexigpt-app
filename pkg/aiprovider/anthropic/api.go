@@ -17,9 +17,8 @@ type AnthropicAPI struct {
 }
 
 // NewAnthropicAPI creates a new instance of AnthropicAPI with default ProviderInfo.
-func NewAnthropicAPI() *AnthropicAPI {
+func NewAnthropicAPI(debug bool) *AnthropicAPI {
 	pi := AnthropicProviderInfo
-	debug := false
 	return &AnthropicAPI{
 		BaseAIAPI: baseutils.NewBaseAIAPI(&pi, debug),
 	}
@@ -29,14 +28,14 @@ func NewAnthropicAPI() *AnthropicAPI {
 func (api *AnthropicAPI) SetProviderAttribute(
 	ctx context.Context,
 	apiKey *string,
-	defaultModel *string,
 	origin *string,
+	chatCompletionPathPrefix *string,
 ) error {
 	err := api.BaseAIAPI.SetProviderAttribute(
 		ctx,
 		apiKey,
-		defaultModel,
 		origin,
+		chatCompletionPathPrefix,
 	)
 	if err != nil {
 		return err
@@ -72,8 +71,17 @@ func (api *AnthropicAPI) SetProviderAttribute(
 // FetchCompletion processes the completion request.
 func (api *AnthropicAPI) FetchCompletion(
 	ctx context.Context,
-	input spec.CompletionRequest,
+	prompt string,
+	modelParams spec.ModelParams,
+	prevMessages []spec.ChatCompletionRequestMessage,
 	onStreamData func(data string) error,
 ) (*spec.CompletionResponse, error) {
-	return api.BaseAIAPI.FetchCompletion(ctx, api.llm, input, onStreamData)
+	return api.BaseAIAPI.FetchCompletion(
+		ctx,
+		api.llm,
+		prompt,
+		modelParams,
+		prevMessages,
+		onStreamData,
+	)
 }

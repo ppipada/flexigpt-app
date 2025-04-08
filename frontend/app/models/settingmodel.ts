@@ -1,4 +1,4 @@
-import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
+import { DefaultModelParams, type ModelName, type ProviderName } from '@/models/aiprovidermodel';
 
 export interface AISetting {
 	isEnabled: boolean;
@@ -20,6 +20,19 @@ export interface ModelSetting {
 	timeout?: number;
 	additionalParameters?: Record<string, any>;
 }
+
+export const DefaultModelSetting: ModelSetting = {
+	displayName: '',
+	isEnabled: true,
+	stream: DefaultModelParams.stream,
+	promptLength: DefaultModelParams.maxPromptLength,
+	outputLength: DefaultModelParams.maxOutputLength,
+	temperature: DefaultModelParams.temperature ?? 0.1,
+	reasoningSupport: DefaultModelParams.reasoningSupport,
+	systemPrompt: DefaultModelParams.systemPrompt,
+	timeout: DefaultModelParams.timeout,
+	additionalParameters: DefaultModelParams.additionalParameters,
+};
 
 export type SettingsSchema = {
 	aiSettings: Record<ProviderName, AISetting>;

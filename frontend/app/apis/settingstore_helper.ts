@@ -1,16 +1,34 @@
 import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
-import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
-import type { AISetting, ModelSetting, SettingsSchema } from '@/models/settingmodel';
+import {
+	DefaultModelParams,
+	type ModelInfo,
+	type ModelName,
+	type ModelParams,
+	type ProviderInfo,
+	type ProviderName,
+} from '@/models/aiprovidermodel';
+import { DefaultModelSetting, type AISetting, type ModelSetting, type SettingsSchema } from '@/models/settingmodel';
 
-export interface ModelOption {
+export interface ModelOption extends ModelParams {
 	title: string;
 	provider: ProviderName;
-	name: ModelName;
-	temperature: number;
+}
+
+export const DefaultModelOption: ModelOption = {
+	...DefaultModelParams,
+	provider: 'No Provider',
+	name: 'No Model',
+	title: 'No Model configured',
+};
+
+export interface ChatOptions {
+	modelInfo: ModelOption;
+	disablePreviousMessages: boolean;
 }
 
 export function UpdateProviderAISettings(provider: ProviderName, settings: AISetting) {
-	providerSetAPI.setAttribute(provider, settings.apiKey, settings.defaultModel, settings.origin);
+	// chatCompletionPathPrefix?: string
+	providerSetAPI.setAttribute(provider, settings.apiKey, settings.origin, undefined);
 }
 
 export async function loadProviderSettings(): Promise<SettingsSchema> {
@@ -26,15 +44,88 @@ export async function loadProviderSettings(): Promise<SettingsSchema> {
 	return settings;
 }
 
-// Helper function to handle cases with no configured models
-function handleNoConfiguredModels() {
-	const noModel: ModelOption = {
-		provider: 'No Provider',
-		name: 'No Model',
-		title: 'No Model configured',
-		temperature: 0.1,
+function mergeModelSettingModelInfoToOption(
+	providerName: ProviderName,
+	modelName: ModelName,
+	providerInfoDict: Record<ProviderName, ProviderInfo>,
+	modelSetting: ModelSetting
+): ModelOption {
+	var modelInfo: ModelInfo | undefined = undefined;
+	if (
+		providerName in providerInfoDict &&
+		providerInfoDict[providerName].models &&
+		modelName in providerInfoDict[providerName].models
+	) {
+		modelInfo = providerInfoDict[providerName].models[modelName];
+	}
+
+	let temperature = DefaultModelParams.temperature ?? 0.1;
+	if (typeof modelSetting.temperature !== 'undefined') {
+		temperature = modelSetting.temperature;
+	} else if (modelInfo) {
+		temperature = modelInfo.defaultTemperature;
+	}
+
+	let stream = DefaultModelParams.stream;
+	if (typeof modelSetting.stream !== 'undefined') {
+		stream = modelSetting.stream;
+	} else if (modelInfo) {
+		stream = modelInfo.streamingSupport;
+	}
+
+	let maxPromptLength = DefaultModelParams.maxPromptLength;
+	if (typeof modelSetting.promptLength !== 'undefined') {
+		maxPromptLength = modelSetting.promptLength;
+	} else if (modelInfo) {
+		maxPromptLength = modelInfo.maxPromptLength;
+	}
+
+	let maxOutputLength = DefaultModelParams.maxOutputLength;
+	if (typeof modelSetting.outputLength !== 'undefined') {
+		maxOutputLength = modelSetting.outputLength;
+	} else if (modelInfo) {
+		maxOutputLength = modelInfo.maxOutputLength;
+	}
+
+	let reasoningSupport = DefaultModelParams.reasoningSupport;
+	if (typeof modelSetting.reasoningSupport !== 'undefined') {
+		reasoningSupport = modelSetting.reasoningSupport;
+	} else if (modelInfo) {
+		reasoningSupport = modelInfo.reasoningSupport;
+	}
+
+	let systemPrompt = DefaultModelParams.systemPrompt;
+	if (typeof modelSetting.systemPrompt !== 'undefined') {
+		systemPrompt = modelSetting.systemPrompt;
+	} else if (modelInfo) {
+		systemPrompt = modelInfo.defaultSystemPrompt;
+	}
+
+	let timeout = DefaultModelParams.timeout;
+	if (typeof modelSetting.timeout !== 'undefined') {
+		timeout = modelSetting.timeout;
+	} else if (modelInfo) {
+		timeout = modelInfo.timeout;
+	}
+
+	let additionalParameters = { ...DefaultModelParams.additionalParameters };
+	if (modelSetting.additionalParameters) {
+		additionalParameters = { ...additionalParameters, ...modelSetting.additionalParameters };
+	}
+
+	return {
+		title: modelSetting.displayName,
+		provider: providerName,
+		name: modelName,
+		stream: stream,
+		maxPromptLength: maxPromptLength,
+		maxOutputLength: maxOutputLength,
+		temperature: temperature,
+		reasoningSupport: reasoningSupport,
+		systemPrompt: systemPrompt,
+		timeout: timeout,
+		additionalParameters: additionalParameters,
 	};
-	return { allOptions: [noModel], default: noModel };
 }
 
 export async function GetChatInputOptions() {
@@ -42,7 +133,7 @@ export async function GetChatInputOptions() {
 		// Fetch configuration info and settings
 		const info = await providerSetAPI.getConfigurationInfo();
 		if (!info || info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
-			return handleNoConfiguredModels();
+			return { allOptions: [DefaultModelOption], default: DefaultModelOption };
 		}
 		const configDefaultProvider = info.defaultProvider;
 		const providerInfoDict = info.configuredProviders;
@@ -56,22 +147,16 @@ export async function GetChatInputOptions() {
 			const aiSetting = settings.aiSettings[providerName];
 			if (aiSetting.isEnabled) {
 				const settingsDefaultModelName = aiSetting.defaultModel;
-				for (const [modelName, modelParams] of Object.entries(aiSetting.modelSettings)) {
-					if (!modelParams.isEnabled) {
+				for (const [modelName, modelSetting] of Object.entries(aiSetting.modelSettings)) {
+					if (!modelSetting.isEnabled) {
 						continue;
 					}
-					let temperature = 0.1;
-					if (typeof modelParams.temperature !== 'undefined') {
-						temperature = modelParams.temperature;
-					} else if (modelName in providerInfoDict[providerName].models) {
-						temperature = providerInfoDict[providerName].models[modelName].defaultTemperature;
-					}
-					const modelOption = {
-						title: modelParams.displayName,
-						provider: providerName,
-						temperature: temperature,
-						name: modelName,
-					};
+					const modelOption = mergeModelSettingModelInfoToOption(
+						providerName,
+						modelName,
+						providerInfoDict,
+						modelSetting
+					);
 					inputModels.push(modelOption);
 					if (modelName === settingsDefaultModelName && providerName === configDefaultProvider) {
 						defaultOption = modelOption;
@@ -86,45 +171,29 @@ export async function GetChatInputOptions() {
 		return { allOptions: inputModels, default: defaultOption };
 	} catch (error) {
 		console.error('Error fetching chat input options:', error);
-		return handleNoConfiguredModels();
+		return { allOptions: [DefaultModelOption], default: DefaultModelOption };
 	}
 }
 
-// ----------------------------------------------------
-// Utility: merges model defaults from providerInfo with
-// an existing model setting (if any).
-// ----------------------------------------------------
+// Create a Model setting from default or ModelInfo if available
 export async function PopulateModelSettingDefaults(
 	providerName: ProviderName,
 	modelName: ModelName,
 	existingData?: ModelSetting
 ): Promise<ModelSetting> {
-	// define some global fallback defaults
-	const fallback: ModelSetting = {
-		displayName: '',
-		isEnabled: true,
-		stream: false,
-		promptLength: 2048,
-		outputLength: 1024,
-		temperature: 0.1,
-		reasoningSupport: false,
-		systemPrompt: '',
-		timeout: 60,
-	};
-	// fetch overall config
 	const info = await providerSetAPI.getConfigurationInfo();
 	if (!info || info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
-		return fallback;
+		return DefaultModelSetting;
 	}
 
 	const providerInfoDict = info.configuredProviders;
 
 	// locate provider + model info in that config
 	if (!(providerName in providerInfoDict)) {
-		return fallback;
+		return DefaultModelSetting;
 	}
 	if (!(modelName in providerInfoDict[providerName].models)) {
-		return fallback;
+		return DefaultModelSetting;
 	}
 	const modelInfo = providerInfoDict[providerName].models[modelName];
 

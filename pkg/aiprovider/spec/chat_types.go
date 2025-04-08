@@ -1,7 +1,5 @@
 package spec
 
-import "context"
-
 type ChatCompletionRoleEnum string
 
 const (
@@ -44,16 +42,15 @@ type CreateChatCompletionRequestFunctionCallOneOf struct {
 
 // ModelParams represents input information about a model to a completion.
 type ModelParams struct {
-	Name         ModelName `json:"name"`
-	Stream       *bool     `json:"stream"`
-	PromptLength *int      `json:"promptLength,omitempty"`
-	OutputLength *int      `json:"outputLength,omitempty"`
-	Temperature  *float64  `json:"temperature,omitempty"`
-
-	ReasoningSupport     *bool           `json:"reasoningSupport,omitempty"`
-	SystemPrompt         *string         `json:"systemPrompt,omitempty"`
-	Timeout              *int            `json:"timeout,omitempty"`
-	AdditionalParameters *map[string]any `json:"additionalParameters,omitempty"`
+	Name                 ModelName      `json:"name"`
+	Stream               bool           `json:"stream"`
+	MaxPromptLength      int            `json:"maxPromptLength"`
+	MaxOutputLength      int            `json:"maxOutputLength"`
+	Temperature          *float64       `json:"temperature,omitempty"`
+	ReasoningSupport     bool           `json:"reasoningSupport"`
+	SystemPrompt         string         `json:"systemPrompt"`
+	Timeout              int            `json:"timeout"`
+	AdditionalParameters map[string]any `json:"additionalParameters"`
 }
 
 type CompletionRequest struct {
@@ -100,25 +97,4 @@ type CompletionResponse struct {
 	RespContent     *string             `json:"respContent,omitempty"`
 	FunctionName    *string             `json:"functionName,omitempty"`
 	FunctionArgs    any                 `json:"functionArgs,omitempty"`
-}
-
-type CompletionProvider interface {
-	CreateCompletionRequest(
-		ctx context.Context,
-		prompt string,
-		modelParams ModelParams,
-		prevMessages []ChatCompletionRequestMessage,
-	) (*CompletionRequest, error)
-	FetchCompletion(
-		ctx context.Context,
-		input CompletionRequest,
-		onStreamData func(data string) error,
-	) (*CompletionResponse, error)
-	SetProviderAttribute(
-		ctx context.Context,
-		apiKey *string,
-		defaultModel *string,
-		origin *string,
-	) error
-	IsConfigured(ctx context.Context) bool
 }

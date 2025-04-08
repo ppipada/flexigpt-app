@@ -1,11 +1,8 @@
 import { GetCompletionMessage } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
 import { listAllConversations } from '@/apis/conversationstore_helper';
-import ChatInputField, {
-	DefaultModelOption,
-	type ChatInputFieldHandle,
-	type ChatOptions,
-} from '@/chats/chat_input_field';
+import { DefaultModelOption, type ChatOptions } from '@/apis/settingstore_helper';
+import ChatInputField, { type ChatInputFieldHandle } from '@/chats/chat_input_field';
 import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
@@ -145,6 +142,13 @@ const ChatScreen: FC = () => {
 		const inputParams: ModelParams = {
 			name: options.modelInfo.name,
 			temperature: options.modelInfo.temperature,
+			stream: options.modelInfo.stream,
+			maxPromptLength: options.modelInfo.maxPromptLength,
+			maxOutputLength: options.modelInfo.maxOutputLength,
+			reasoningSupport: options.modelInfo.reasoningSupport,
+			systemPrompt: options.modelInfo.systemPrompt,
+			timeout: options.modelInfo.timeout,
+			additionalParameters: options.modelInfo.additionalParameters,
 		};
 		// log.info(JSON.stringify({ prevMessages, inputParams, convoMsg }, null, 2));
 		const newMsg = await GetCompletionMessage(

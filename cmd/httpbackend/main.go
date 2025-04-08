@@ -14,7 +14,7 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
 	"github.com/flexigpt/flexiui/pkg/aiprovider"
-	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+	"github.com/flexigpt/flexiui/pkg/aiprovider/openai"
 	"github.com/flexigpt/flexiui/pkg/conversationstore"
 	"github.com/flexigpt/flexiui/pkg/logrotate"
 	"github.com/flexigpt/flexiui/pkg/settingstore"
@@ -27,7 +27,6 @@ type Options struct {
 	SettingsDirPath      string `doc:"path to directory of settings file"`
 	ConversationsDirPath string `doc:"path to conversations directory"`
 	LogsDirPath          string `doc:"path to logs directory"`
-	DefaultProvider      string `doc:"default provider to use"`
 	Debug                bool   `doc:"Enable debug logs"`
 }
 
@@ -70,7 +69,7 @@ func main() {
 		router := http.NewServeMux()
 		api := humago.New(router, huma.DefaultConfig("FlexiGPTServer API", "1.0.0"))
 		app := NewBackendApp(
-			aiproviderSpec.ProviderName(opts.DefaultProvider),
+			openai.ProviderNameOpenAI,
 			opts.SettingsDirPath,
 			opts.ConversationsDirPath,
 		)

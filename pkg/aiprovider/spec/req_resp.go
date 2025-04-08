@@ -1,5 +1,25 @@
 package spec
 
+type AddProviderRequestBody struct {
+	APIKey                   string `json:"apiKey"`
+	Engine                   string `json:"engine"`
+	Origin                   string `json:"origin"`
+	ChatCompletionPathPrefix string `json:"chatCompletionPathPrefix"`
+}
+
+type AddProviderRequest struct {
+	Provider ProviderName `path:"provider" required:"true"`
+	Body     *AddProviderRequestBody
+}
+
+type AddProviderResponse struct{}
+
+type DeleteProviderRequest struct {
+	Provider ProviderName `path:"provider" required:"true"`
+}
+
+type DeleteProviderResponse struct{}
+
 type SetDefaultProviderRequestBody struct {
 	Provider ProviderName `json:"provider" required:"true"`
 }
@@ -22,9 +42,9 @@ type GetConfigurationInfoResponseBody struct {
 }
 
 type SetProviderAttributeRequestBody struct {
-	APIKey       *string `json:"apiKey,omitempty"`
-	DefaultModel *string `json:"defaultModel,omitempty"`
-	Origin       *string `json:"origin,omitempty"`
+	APIKey                   *string `json:"apiKey,omitempty"`
+	Origin                   *string `json:"origin,omitempty"`
+	ChatCompletionPathPrefix *string `json:"chatCompletionPathPrefix,omitempty"`
 }
 
 type SetProviderAttributeRequest struct {
@@ -34,25 +54,12 @@ type SetProviderAttributeRequest struct {
 
 type SetProviderAttributeResponse struct{}
 
-type MakeCompletionRequestBody struct {
+type FetchCompletionRequestBody struct {
+	Provider     ProviderName                   `json:"provider"     required:"true"`
 	Prompt       string                         `json:"prompt"       required:"true"`
 	ModelParams  ModelParams                    `json:"modelParams"  required:"true"`
 	PrevMessages []ChatCompletionRequestMessage `json:"prevMessages"`
-}
-
-type MakeCompletionRequest struct {
-	Provider ProviderName `path:"provider" required:"true"`
-	Body     *MakeCompletionRequestBody
-}
-
-type MakeCompletionResponse struct {
-	Body *CompletionRequest
-}
-
-type FetchCompletionRequestBody struct {
-	Provider     ProviderName            `json:"provider" required:"true"`
-	Input        *CompletionRequest      `json:"input"    required:"true"`
-	OnStreamData func(data string) error `json:"-"`
+	OnStreamData func(data string) error        `json:"-"`
 }
 
 type FetchCompletionRequest struct {

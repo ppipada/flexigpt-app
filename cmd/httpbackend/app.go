@@ -13,36 +13,36 @@ import (
 )
 
 type BackendApp struct {
-	settingStoreAPI      *settingstore.SettingStore
-	conversationStoreAPI *conversationstore.ConversationCollection
-	providerSetAPI       *aiprovider.ProviderSetAPI
-	settingsDirPath      string
-	settingsFilePath     string
-	conversationsDirPath string
-	defaultProvider      aiproviderSpec.ProviderName
+	settingStoreAPI        *settingstore.SettingStore
+	conversationStoreAPI   *conversationstore.ConversationCollection
+	providerSetAPI         *aiprovider.ProviderSetAPI
+	settingsDirPath        string
+	settingsFilePath       string
+	conversationsDirPath   string
+	defaultInbuiltProvider aiproviderSpec.ProviderName
 }
 
 func NewBackendApp(
-	defaultProvider aiproviderSpec.ProviderName,
+	defaultInbuiltProvider aiproviderSpec.ProviderName,
 	settingsDirPath, conversationsDirPath string,
 ) *BackendApp {
-	if settingsDirPath == "" || conversationsDirPath == "" || defaultProvider == "" {
+	if settingsDirPath == "" || conversationsDirPath == "" || defaultInbuiltProvider == "" {
 		slog.Error(
 			"Invalid App input",
 			"settingsDirPath",
 			settingsDirPath,
 			"conversationsDirPath",
 			conversationsDirPath,
-			"defaultProvider",
-			defaultProvider,
+			"defaultInbuiltProvider",
+			defaultInbuiltProvider,
 		)
 		panic("Failed to initialize App")
 	}
 
 	app := &BackendApp{
-		settingsDirPath:      settingsDirPath,
-		conversationsDirPath: conversationsDirPath,
-		defaultProvider:      defaultProvider,
+		settingsDirPath:        settingsDirPath,
+		conversationsDirPath:   conversationsDirPath,
+		defaultInbuiltProvider: defaultInbuiltProvider,
 	}
 	app.initSettingsStore()
 	app.initConversationStore()
@@ -109,7 +109,7 @@ func (a *BackendApp) initConversationStore() {
 }
 
 func (a *BackendApp) initProviderSet() {
-	p, err := aiprovider.NewProviderSetAPI(a.defaultProvider)
+	p, err := aiprovider.NewProviderSetAPI(a.defaultInbuiltProvider, false)
 	if err != nil {
 		panic("Invalid default provider")
 	}
