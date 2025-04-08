@@ -12,8 +12,8 @@ export interface ModelSetting {
 	displayName: string;
 	isEnabled: boolean;
 	stream?: boolean;
-	promptLength?: number;
-	outputLength?: number;
+	maxPromptLength?: number;
+	maxOutputLength?: number;
 	temperature?: number;
 	reasoningSupport?: boolean;
 	systemPrompt?: string;
@@ -25,8 +25,8 @@ export const DefaultModelSetting: ModelSetting = {
 	displayName: '',
 	isEnabled: true,
 	stream: DefaultModelParams.stream,
-	promptLength: DefaultModelParams.maxPromptLength,
-	outputLength: DefaultModelParams.maxOutputLength,
+	maxPromptLength: DefaultModelParams.maxPromptLength,
+	maxOutputLength: DefaultModelParams.maxOutputLength,
 	temperature: DefaultModelParams.temperature ?? 0.1,
 	reasoningSupport: DefaultModelParams.reasoningSupport,
 	systemPrompt: DefaultModelParams.systemPrompt,

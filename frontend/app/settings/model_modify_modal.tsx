@@ -20,8 +20,8 @@ interface ModelSettingFormData {
 	displayName: string;
 	isEnabled: boolean;
 	stream: boolean;
-	promptLength: string;
-	outputLength: string;
+	maxPromptLength: string;
+	maxOutputLength: string;
 	temperature: string;
 	reasoningSupport: boolean;
 	systemPrompt: string;
@@ -49,8 +49,8 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		displayName: '',
 		isEnabled: true,
 		stream: false,
-		promptLength: '',
-		outputLength: '',
+		maxPromptLength: '',
+		maxOutputLength: '',
 		temperature: '',
 		reasoningSupport: false,
 		systemPrompt: '',
@@ -61,8 +61,8 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		modelName?: string;
 		displayName?: string;
 		temperature?: string;
-		promptLength?: string;
-		outputLength?: string;
+		maxPromptLength?: string;
+		maxOutputLength?: string;
 		timeout?: string;
 	}>({});
 
@@ -80,8 +80,8 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 				displayName: merged.displayName,
 				isEnabled: merged.isEnabled,
 				stream: merged.stream ?? false,
-				promptLength: String(merged.promptLength ?? ''),
-				outputLength: String(merged.outputLength ?? ''),
+				maxPromptLength: String(merged.maxPromptLength ?? ''),
+				maxOutputLength: String(merged.maxOutputLength ?? ''),
 				temperature: String(merged.temperature ?? ''),
 				reasoningSupport: merged.reasoningSupport ?? false,
 				systemPrompt: merged.systemPrompt ?? '',
@@ -97,7 +97,13 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		}
 	}, [isOpen, providerName, initialModelName, initialData]);
 
-	type ValidationField = 'modelName' | 'displayName' | 'temperature' | 'promptLength' | 'outputLength' | 'timeout';
+	type ValidationField =
+		| 'modelName'
+		| 'displayName'
+		| 'temperature'
+		| 'maxPromptLength'
+		| 'maxOutputLength'
+		| 'timeout';
 	type ValidationErrors = Partial<Record<ValidationField, string>>;
 
 	const validateField = (field: ValidationField, value: unknown) => {
@@ -120,7 +126,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		}
 
 		// For numeric fields, only validate if there's a non-empty string
-		if (['temperature', 'promptLength', 'outputLength', 'timeout'].includes(field)) {
+		if (['temperature', 'maxPromptLength', 'maxOutputLength', 'timeout'].includes(field)) {
 			let strVal = '';
 			if (typeof value === 'number' || typeof value === 'boolean') {
 				strVal = String(value);
@@ -135,7 +141,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 					if (field === 'temperature' && (numValue < 0 || numValue > 1)) {
 						newErrors.temperature = 'Temperature must be between 0 and 1.';
 					}
-					if ((field === 'promptLength' || field === 'outputLength' || field === 'timeout') && numValue < 1) {
+					if ((field === 'maxPromptLength' || field === 'maxOutputLength' || field === 'timeout') && numValue < 1) {
 						newErrors[field] = `${field} must be positive.`;
 					}
 				}
@@ -170,7 +176,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		if (name === 'displayName') {
 			validateField('displayName', value);
 		}
-		if (name === 'temperature' || name === 'promptLength' || name === 'outputLength' || name === 'timeout') {
+		if (name === 'temperature' || name === 'maxPromptLength' || name === 'maxOutputLength' || name === 'timeout') {
 			validateField(name as ValidationField, value);
 		}
 	};
@@ -185,8 +191,8 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		validateField('modelName', modelName);
 		validateField('displayName', formData.displayName);
 		validateField('temperature', formData.temperature);
-		validateField('promptLength', formData.promptLength);
-		validateField('outputLength', formData.outputLength);
+		validateField('maxPromptLength', formData.maxPromptLength);
+		validateField('maxOutputLength', formData.maxOutputLength);
 		validateField('timeout', formData.timeout);
 
 		// Check for errors
@@ -208,9 +214,9 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			displayName: formData.displayName.trim(),
 			isEnabled: formData.isEnabled,
 			stream: formData.stream,
-			promptLength: parseOrDefault(formData.promptLength, defaultValues.promptLength ?? 2048),
-			outputLength: parseOrDefault(formData.outputLength, defaultValues.outputLength ?? 1024),
-			temperature: parseOrDefault(formData.temperature, defaultValues.temperature ?? 0.7),
+			maxPromptLength: parseOrDefault(formData.maxPromptLength, defaultValues.maxPromptLength ?? 2048),
+			maxOutputLength: parseOrDefault(formData.maxOutputLength, defaultValues.maxOutputLength ?? 1024),
+			temperature: parseOrDefault(formData.temperature, defaultValues.temperature ?? 0.1),
 			reasoningSupport: formData.reasoningSupport,
 			systemPrompt: formData.systemPrompt,
 			timeout: parseOrDefault(formData.timeout, defaultValues.timeout ?? 60),
@@ -418,16 +424,16 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 						<div className="col-span-9">
 							<input
 								type="text"
-								name="promptLength"
-								value={formData.promptLength}
+								name="maxPromptLength"
+								value={formData.maxPromptLength}
 								onChange={handleChange}
-								placeholder={numPlaceholder('promptLength')}
-								className={`input input-bordered w-full rounded-xl ${errors.promptLength ? 'input-error' : ''}`}
+								placeholder={numPlaceholder('maxPromptLength')}
+								className={`input input-bordered w-full rounded-xl ${errors.maxPromptLength ? 'input-error' : ''}`}
 							/>
-							{errors.promptLength && (
+							{errors.maxPromptLength && (
 								<div className="label">
 									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.promptLength}
+										<FiAlertCircle size={12} /> {errors.maxPromptLength}
 									</span>
 								</div>
 							)}
@@ -445,16 +451,16 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 						<div className="col-span-9">
 							<input
 								type="text"
-								name="outputLength"
-								value={formData.outputLength}
+								name="maxOutputLength"
+								value={formData.maxOutputLength}
 								onChange={handleChange}
-								placeholder={numPlaceholder('outputLength')}
-								className={`input input-bordered w-full rounded-xl ${errors.outputLength ? 'input-error' : ''}`}
+								placeholder={numPlaceholder('maxOutputLength')}
+								className={`input input-bordered w-full rounded-xl ${errors.maxOutputLength ? 'input-error' : ''}`}
 							/>
-							{errors.outputLength && (
+							{errors.maxOutputLength && (
 								<div className="label">
 									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.outputLength}
+										<FiAlertCircle size={12} /> {errors.maxOutputLength}
 									</span>
 								</div>
 							)}

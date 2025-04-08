@@ -25,12 +25,11 @@
   - [x] Link add model
   - [x] Add a custom provider and model name setting too so that an OAI compatible provider and model can be added
   - [ ] Add a new provider flow in providerSet
-    - [ ] engine inegrate end to end
+    - [ ] engine integrate end to end
     - [ ] chat completion prefix end to end
-    - [ ] need promptlength and output as max in setting
-    - [ ] setting and param need to be simialr in names, info need to be about "global defaults"
+    - [x] need promptlength and output as max in setting and param need to be similar in names, info need to be about "global defaults"
     - [ ] setting provider attr for custom providers
-  - [ ] delete of custom new providers need to be there simialr to models
+  - [ ] delete of custom new providers need to be there similar to models
   - [ ] add a note in add provider that only OAI compatible api can be served
   - [ ]
 

@@ -8,8 +8,8 @@ type ModelSetting struct {
 	DisplayName          string          `json:"displayName"                    required:"true"`
 	IsEnabled            bool            `json:"isEnabled"                      required:"true"`
 	Stream               *bool           `json:"stream,omitempty"`
-	PromptLength         *int            `json:"promptLength,omitempty"`
-	OutputLength         *int            `json:"outputLength,omitempty"`
+	MaxPromptLength      *int            `json:"maxPromptLength,omitempty"`
+	MaxOutputLength      *int            `json:"maxOutputLength,omitempty"`
 	Temperature          *float64        `json:"temperature,omitempty"`
 	ReasoningSupport     *bool           `json:"reasoningSupport,omitempty"`
 	SystemPrompt         *string         `json:"systemPrompt,omitempty"`

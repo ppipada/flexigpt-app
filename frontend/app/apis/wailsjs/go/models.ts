@@ -23,8 +23,8 @@ export namespace spec {
 	    displayName: string;
 	    isEnabled: boolean;
 	    stream?: boolean;
-	    promptLength?: number;
-	    outputLength?: number;
+	    maxPromptLength?: number;
+	    maxOutputLength?: number;
 	    temperature?: number;
 	    reasoningSupport?: boolean;
 	    systemPrompt?: string;
@@ -40,8 +40,8 @@ export namespace spec {
 	        this.displayName = source["displayName"];
 	        this.isEnabled = source["isEnabled"];
 	        this.stream = source["stream"];
-	        this.promptLength = source["promptLength"];
-	        this.outputLength = source["outputLength"];
+	        this.maxPromptLength = source["maxPromptLength"];
+	        this.maxOutputLength = source["maxOutputLength"];
 	        this.temperature = source["temperature"];
 	        this.reasoningSupport = source["reasoningSupport"];
 	        this.systemPrompt = source["systemPrompt"];

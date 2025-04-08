@@ -74,15 +74,15 @@ function mergeModelSettingModelInfoToOption(
 	}
 
 	let maxPromptLength = DefaultModelParams.maxPromptLength;
-	if (typeof modelSetting.promptLength !== 'undefined') {
-		maxPromptLength = modelSetting.promptLength;
+	if (typeof modelSetting.maxPromptLength !== 'undefined') {
+		maxPromptLength = modelSetting.maxPromptLength;
 	} else if (modelInfo) {
 		maxPromptLength = modelInfo.maxPromptLength;
 	}
 
 	let maxOutputLength = DefaultModelParams.maxOutputLength;
-	if (typeof modelSetting.outputLength !== 'undefined') {
-		maxOutputLength = modelSetting.outputLength;
+	if (typeof modelSetting.maxOutputLength !== 'undefined') {
+		maxOutputLength = modelSetting.maxOutputLength;
 	} else if (modelInfo) {
 		maxOutputLength = modelInfo.maxOutputLength;
 	}
@@ -202,8 +202,8 @@ export async function PopulateModelSettingDefaults(
 		displayName: modelInfo.displayName || '',
 		isEnabled: true,
 		stream: modelInfo.streamingSupport,
-		promptLength: modelInfo.maxPromptLength,
-		outputLength: modelInfo.maxOutputLength,
+		maxPromptLength: modelInfo.maxPromptLength,
+		maxOutputLength: modelInfo.maxOutputLength,
 		temperature: modelInfo.defaultTemperature,
 		reasoningSupport: modelInfo.reasoningSupport,
 		systemPrompt: modelInfo.defaultSystemPrompt,
