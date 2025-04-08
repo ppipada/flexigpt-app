@@ -55,7 +55,6 @@ var GoogleModels = map[spec.ModelName]spec.ModelInfo{
 var GoogleProviderInfo = spec.ProviderInfo{
 	Name:         ProviderNameGoogle,
 	APIKey:       "",
-	Engine:       "",
 	Origin:       "https://generativelanguage.googleapis.com",
 	DefaultModel: Gemini15Flash,
 	Type:         spec.InbuiltOpenAICompatible,

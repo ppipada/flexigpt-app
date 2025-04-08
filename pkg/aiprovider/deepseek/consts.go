@@ -42,7 +42,6 @@ var DeepseekModels = map[spec.ModelName]spec.ModelInfo{
 var DeepseekProviderInfo = spec.ProviderInfo{
 	Name:         ProviderNameDeepseek,
 	APIKey:       "",
-	Engine:       "",
 	Origin:       "https://api.deepseek.com",
 	DefaultModel: DeepseekChat,
 	Type:         spec.InbuiltOpenAICompatible,

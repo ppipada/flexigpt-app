@@ -42,7 +42,6 @@ var LlamacppModels = map[spec.ModelName]spec.ModelInfo{
 var LlamacppProviderInfo = spec.ProviderInfo{
 	Name:         ProviderNameLlamaCPP,
 	APIKey:       "",
-	Engine:       "",
 	Origin:       "http://127.0.0.1:8080",
 	DefaultModel: Llama3,
 	Type:         spec.InbuiltOpenAICompatible,

@@ -19,11 +19,12 @@ type ModelSetting struct {
 
 // AISetting represents the settings for an AI provider.
 type AISetting struct {
-	IsEnabled     bool                                      `json:"isEnabled"`
-	APIKey        string                                    `json:"apiKey"`
-	DefaultModel  aiproviderSpec.ModelName                  `json:"defaultModel"`
-	Origin        string                                    `json:"origin"`
-	ModelSettings map[aiproviderSpec.ModelName]ModelSetting `json:"modelSettings"`
+	IsEnabled                bool                                      `json:"isEnabled"`
+	APIKey                   string                                    `json:"apiKey"`
+	DefaultModel             aiproviderSpec.ModelName                  `json:"defaultModel"`
+	Origin                   string                                    `json:"origin"`
+	ChatCompletionPathPrefix string                                    `json:"chatCompletionPathPrefix"`
+	ModelSettings            map[aiproviderSpec.ModelName]ModelSetting `json:"modelSettings"`
 }
 
 // AISettingsSchema represents the schema for AI settings for different providers.

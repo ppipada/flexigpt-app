@@ -265,6 +265,32 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						/>
 					</div>
 
+					{/* Chat completion path prefix */}
+					<div className="grid grid-cols-12 gap-4 items-center">
+						<label
+							className="col-span-3 text-sm text-left tooltip"
+							data-tip={ProviderInfoDescription['chatCompletionPathPrefix']}
+						>
+							Chat Path Prefix
+						</label>
+						<input
+							type="text"
+							className="input col-span-9 w-full h-10 rounded-xl border border-base-300 px-4 py-2"
+							style={{ fontSize: '14px' }}
+							value={localSettings.chatCompletionPathPrefix}
+							onChange={e => {
+								setLocalSettings({
+									...localSettings,
+									origin: e.target.value,
+								});
+							}}
+							onBlur={e => {
+								handleSettingChange('chatCompletionPathPrefix', e.target.value);
+							}}
+							spellCheck="false"
+						/>
+					</div>
+
 					{/* Models : Default and add */}
 					<div className="grid grid-cols-12 gap-4 items-center">
 						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['defaultModel']}>

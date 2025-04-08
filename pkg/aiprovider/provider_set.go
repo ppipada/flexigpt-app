@@ -129,7 +129,6 @@ func (ps *ProviderSetAPI) AddProvider(
 	providerInfo := spec.ProviderInfo{
 		Name:         req.Provider,
 		APIKey:       req.Body.APIKey,
-		Engine:       req.Body.Engine,
 		Origin:       req.Body.Origin,
 		Type:         spec.CustomOpenAICompatible,
 		DefaultModel: "",

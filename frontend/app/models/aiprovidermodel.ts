@@ -46,7 +46,6 @@ export interface ProviderInfo {
 	name: ProviderName;
 	apiKey: string;
 	defaultModel: ModelName;
-	engine: string;
 	origin: string;
 
 	apiKeyHeaderKey: string;
@@ -58,7 +57,6 @@ export interface ProviderInfo {
 
 export const ProviderInfoDescription = {
 	apiKey: 'Your API key for the provider.',
-	engine: 'The engine to be used for processing. Is present with Azure etc.',
 	origin: 'Origin/URL to use for requests. This can be used to talk to any server that serves a compatible API',
 	defaultModel: 'Default model to use for chat requests',
 	timeout: 'The timeout duration in milliseconds.',
@@ -159,7 +157,6 @@ export interface ConfigurationResponse {
 export interface AddProviderRequest {
 	provider: ProviderName;
 	apiKey: string;
-	engine: string;
 	origin: string;
 	chatCompletionPathPrefix: string;
 }

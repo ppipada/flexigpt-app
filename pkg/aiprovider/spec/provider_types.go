@@ -30,16 +30,16 @@ type ModelInfo struct {
 
 // ProviderInfo represents information about a provider.
 type ProviderInfo struct {
-	Name                     ProviderName            `json:"name"`
-	APIKey                   string                  `json:"apiKey"`
-	DefaultModel             ModelName               `json:"defaultModel"`
-	Engine                   string                  `json:"engine"`
-	Origin                   string                  `json:"origin"`
-	Type                     ProviderType            `json:"type"`
-	APIKeyHeaderKey          string                  `json:"apiKeyHeaderKey"`
-	DefaultHeaders           map[string]string       `json:"defaultHeaders"`
-	ChatCompletionPathPrefix string                  `json:"chatCompletionPathPrefix"`
-	Models                   map[ModelName]ModelInfo `json:"models"`
+	Name                     ProviderName `json:"name"`
+	APIKey                   string       `json:"apiKey"`
+	Origin                   string       `json:"origin"`
+	ChatCompletionPathPrefix string       `json:"chatCompletionPathPrefix"`
+
+	Type            ProviderType            `json:"type"`
+	APIKeyHeaderKey string                  `json:"apiKeyHeaderKey"`
+	DefaultHeaders  map[string]string       `json:"defaultHeaders"`
+	DefaultModel    ModelName               `json:"defaultModel"`
+	Models          map[ModelName]ModelInfo `json:"models"`
 }
 
 func (p *ProviderInfo) IsConfigured() bool {

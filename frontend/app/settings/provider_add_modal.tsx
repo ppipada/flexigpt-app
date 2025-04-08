@@ -16,6 +16,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 	const [providerName, setProviderName] = useState('');
 	const [apiKey, setApiKey] = useState('');
 	const [origin, setOrigin] = useState('');
+	const [chatCompletionPathPrefix, setChatCompletionPathPrefix] = useState('');
 
 	// For the "default" model
 	const [defaultModelName, setDefaultModelName] = useState('');
@@ -30,6 +31,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 			setProviderName('');
 			setApiKey('');
 			setOrigin('');
+			setChatCompletionPathPrefix('');
 			setDefaultModelName('');
 			setModelSettings({});
 			setIsModifyModelModalOpen(false);
@@ -59,10 +61,11 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 
 		const newProviderSettings: AISetting = {
 			isEnabled: true, // new providers are enabled by default
-			apiKey,
+			apiKey: apiKey,
+			origin: origin,
+			chatCompletionPathPrefix: chatCompletionPathPrefix,
 			defaultModel: defaultModelName,
-			origin,
-			modelSettings,
+			modelSettings: modelSettings,
 		};
 
 		onSubmit(providerName as ProviderName, newProviderSettings);
@@ -128,6 +131,22 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 								value={origin}
 								onChange={e => setOrigin(e.target.value)}
 								placeholder="e.g. https://api.provider.com"
+							/>
+						</div>
+					</div>
+
+					{/* Chat completion path prefix */}
+					<div className="grid grid-cols-12 items-center gap-2">
+						<label className="label col-span-3">
+							<span className="label-text text-sm">Chat Path Prefix</span>
+						</label>
+						<div className="col-span-9">
+							<input
+								type="text"
+								className="input input-bordered w-full rounded-xl"
+								value={chatCompletionPathPrefix}
+								onChange={e => setOrigin(e.target.value)}
+								placeholder="e.g. /v1/chat/completions"
 							/>
 						</div>
 					</div>

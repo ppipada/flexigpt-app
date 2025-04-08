@@ -28,7 +28,6 @@ var HuggingfaceModels = map[spec.ModelName]spec.ModelInfo{
 var HuggingfaceProviderInfo = spec.ProviderInfo{
 	Name:         ProviderNameHuggingFace,
 	APIKey:       "",
-	Engine:       "",
 	Origin:       "https://api-inference.huggingface.co",
 	DefaultModel: DeepseekCoder13BInstruct,
 	Type:         spec.InbuiltSpecific,

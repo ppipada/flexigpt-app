@@ -20,8 +20,9 @@ const defaultAISettings: Record<ProviderName, AISetting> = {
 	[DefaultProviderName]: {
 		isEnabled: true,
 		apiKey: '',
-		defaultModel: DefaultModelName,
 		origin: '',
+		chatCompletionPathPrefix: '',
+		defaultModel: DefaultModelName,
 		modelSettings: {},
 	},
 };
@@ -77,8 +78,7 @@ const SettingsPage: FC = () => {
 			provider: providerName,
 			apiKey: newProviderSettings.apiKey,
 			origin: newProviderSettings.origin,
-			engine: '',
-			chatCompletionPathPrefix: '',
+			chatCompletionPathPrefix: newProviderSettings.chatCompletionPathPrefix,
 		};
 		await providerSetAPI.addProvider(req);
 	};

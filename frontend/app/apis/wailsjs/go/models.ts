@@ -54,6 +54,7 @@ export namespace spec {
 	    apiKey: string;
 	    defaultModel: string;
 	    origin: string;
+	    chatCompletionPathPrefix: string;
 	    modelSettings: Record<string, ModelSetting>;
 	
 	    static createFrom(source: any = {}) {
@@ -66,6 +67,7 @@ export namespace spec {
 	        this.apiKey = source["apiKey"];
 	        this.defaultModel = source["defaultModel"];
 	        this.origin = source["origin"];
+	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
 	        this.modelSettings = this.convertValues(source["modelSettings"], ModelSetting, true);
 	    }
 	
@@ -305,7 +307,6 @@ export namespace spec {
 	}
 	export class AddProviderRequestBody {
 	    apiKey: string;
-	    engine: string;
 	    origin: string;
 	    chatCompletionPathPrefix: string;
 	
@@ -316,7 +317,6 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiKey = source["apiKey"];
-	        this.engine = source["engine"];
 	        this.origin = source["origin"];
 	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
 	    }
@@ -746,13 +746,12 @@ export namespace spec {
 	export class ProviderInfo {
 	    name: string;
 	    apiKey: string;
-	    defaultModel: string;
-	    engine: string;
 	    origin: string;
+	    chatCompletionPathPrefix: string;
 	    type: string;
 	    apiKeyHeaderKey: string;
 	    defaultHeaders: Record<string, string>;
-	    chatCompletionPathPrefix: string;
+	    defaultModel: string;
 	    models: Record<string, ModelInfo>;
 	
 	    static createFrom(source: any = {}) {
@@ -763,13 +762,12 @@ export namespace spec {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
 	        this.apiKey = source["apiKey"];
-	        this.defaultModel = source["defaultModel"];
-	        this.engine = source["engine"];
 	        this.origin = source["origin"];
+	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
 	        this.type = source["type"];
 	        this.apiKeyHeaderKey = source["apiKeyHeaderKey"];
 	        this.defaultHeaders = source["defaultHeaders"];
-	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
+	        this.defaultModel = source["defaultModel"];
 	        this.models = this.convertValues(source["models"], ModelInfo, true);
 	    }
 	

@@ -2,7 +2,6 @@ package spec
 
 type AddProviderRequestBody struct {
 	APIKey                   string `json:"apiKey"`
-	Engine                   string `json:"engine"`
 	Origin                   string `json:"origin"`
 	ChatCompletionPathPrefix string `json:"chatCompletionPathPrefix"`
 }

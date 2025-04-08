@@ -27,8 +27,7 @@ export interface ChatOptions {
 }
 
 export function UpdateProviderAISettings(provider: ProviderName, settings: AISetting) {
-	// chatCompletionPathPrefix?: string
-	providerSetAPI.setAttribute(provider, settings.apiKey, settings.origin, undefined);
+	providerSetAPI.setAttribute(provider, settings.apiKey, settings.origin, settings.chatCompletionPathPrefix);
 }
 
 export async function loadProviderSettings(): Promise<SettingsSchema> {

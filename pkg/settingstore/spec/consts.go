@@ -13,10 +13,11 @@ import (
 // Define the default AI settings.
 var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 	anthropic.ProviderNameAnthropic: {
-		IsEnabled:    true,
-		APIKey:       anthropic.AnthropicProviderInfo.APIKey,
-		DefaultModel: anthropic.AnthropicProviderInfo.DefaultModel,
-		Origin:       anthropic.AnthropicProviderInfo.Origin,
+		IsEnabled:                true,
+		APIKey:                   anthropic.AnthropicProviderInfo.APIKey,
+		DefaultModel:             anthropic.AnthropicProviderInfo.DefaultModel,
+		Origin:                   anthropic.AnthropicProviderInfo.Origin,
+		ChatCompletionPathPrefix: anthropic.AnthropicProviderInfo.ChatCompletionPathPrefix,
 		ModelSettings: map[aiproviderSpec.ModelName]ModelSetting{
 			anthropic.Claude37Sonnet: {
 				DisplayName: anthropic.AnthropicModels[anthropic.Claude37Sonnet].DisplayName,
@@ -46,10 +47,11 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 	},
 
 	deepseek.ProviderNameDeepseek: {
-		IsEnabled:    false,
-		APIKey:       deepseek.DeepseekProviderInfo.APIKey,
-		DefaultModel: deepseek.DeepseekProviderInfo.DefaultModel,
-		Origin:       deepseek.DeepseekProviderInfo.Origin,
+		IsEnabled:                false,
+		APIKey:                   deepseek.DeepseekProviderInfo.APIKey,
+		DefaultModel:             deepseek.DeepseekProviderInfo.DefaultModel,
+		Origin:                   deepseek.DeepseekProviderInfo.Origin,
+		ChatCompletionPathPrefix: deepseek.DeepseekProviderInfo.ChatCompletionPathPrefix,
 		ModelSettings: map[aiproviderSpec.ModelName]ModelSetting{
 			deepseek.DeepseekChat: {
 				DisplayName: deepseek.DeepseekModels[deepseek.DeepseekChat].DisplayName,
@@ -62,10 +64,11 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 		},
 	},
 	google.ProviderNameGoogle: {
-		IsEnabled:    false,
-		APIKey:       google.GoogleProviderInfo.APIKey,
-		DefaultModel: google.GoogleProviderInfo.DefaultModel,
-		Origin:       google.GoogleProviderInfo.Origin,
+		IsEnabled:                false,
+		APIKey:                   google.GoogleProviderInfo.APIKey,
+		DefaultModel:             google.GoogleProviderInfo.DefaultModel,
+		Origin:                   google.GoogleProviderInfo.Origin,
+		ChatCompletionPathPrefix: google.GoogleProviderInfo.ChatCompletionPathPrefix,
 		ModelSettings: map[aiproviderSpec.ModelName]ModelSetting{
 			google.Gemini2FlashExp: {
 				DisplayName: google.GoogleModels[google.Gemini2FlashExp].DisplayName,
@@ -82,10 +85,11 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 		},
 	},
 	huggingface.ProviderNameHuggingFace: {
-		IsEnabled:    false,
-		APIKey:       huggingface.HuggingfaceProviderInfo.APIKey,
-		DefaultModel: huggingface.HuggingfaceProviderInfo.DefaultModel,
-		Origin:       huggingface.HuggingfaceProviderInfo.Origin,
+		IsEnabled:                false,
+		APIKey:                   huggingface.HuggingfaceProviderInfo.APIKey,
+		DefaultModel:             huggingface.HuggingfaceProviderInfo.DefaultModel,
+		Origin:                   huggingface.HuggingfaceProviderInfo.Origin,
+		ChatCompletionPathPrefix: huggingface.HuggingfaceProviderInfo.ChatCompletionPathPrefix,
 		ModelSettings: map[aiproviderSpec.ModelName]ModelSetting{
 			huggingface.DeepseekCoder13BInstruct: {
 				DisplayName: huggingface.HuggingfaceModels[huggingface.DeepseekCoder13BInstruct].DisplayName,
@@ -94,10 +98,11 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 		},
 	},
 	llamacpp.ProviderNameLlamaCPP: {
-		IsEnabled:    false,
-		APIKey:       llamacpp.LlamacppProviderInfo.APIKey,
-		DefaultModel: llamacpp.LlamacppProviderInfo.DefaultModel,
-		Origin:       llamacpp.LlamacppProviderInfo.Origin,
+		IsEnabled:                false,
+		APIKey:                   llamacpp.LlamacppProviderInfo.APIKey,
+		DefaultModel:             llamacpp.LlamacppProviderInfo.DefaultModel,
+		Origin:                   llamacpp.LlamacppProviderInfo.Origin,
+		ChatCompletionPathPrefix: llamacpp.LlamacppProviderInfo.ChatCompletionPathPrefix,
 		ModelSettings: map[aiproviderSpec.ModelName]ModelSetting{
 			llamacpp.Llama31: {
 				DisplayName: llamacpp.LlamacppModels[llamacpp.Llama31].DisplayName,
@@ -110,10 +115,11 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 		},
 	},
 	openai.ProviderNameOpenAI: {
-		IsEnabled:    true,
-		APIKey:       openai.OpenAIProviderInfo.APIKey,
-		DefaultModel: openai.OpenAIProviderInfo.DefaultModel,
-		Origin:       openai.OpenAIProviderInfo.Origin,
+		IsEnabled:                true,
+		APIKey:                   openai.OpenAIProviderInfo.APIKey,
+		DefaultModel:             openai.OpenAIProviderInfo.DefaultModel,
+		Origin:                   openai.OpenAIProviderInfo.Origin,
+		ChatCompletionPathPrefix: llamacpp.LlamacppProviderInfo.ChatCompletionPathPrefix,
 		ModelSettings: map[aiproviderSpec.ModelName]ModelSetting{
 			openai.GPTO3Mini: {
 				DisplayName: openai.OpenAIModels[openai.GPTO3Mini].DisplayName,

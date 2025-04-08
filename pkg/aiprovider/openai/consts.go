@@ -135,7 +135,6 @@ var OpenAIModels = map[spec.ModelName]spec.ModelInfo{
 var OpenAIProviderInfo = spec.ProviderInfo{
 	Name:         ProviderNameOpenAI,
 	APIKey:       "",
-	Engine:       "",
 	Origin:       "https://api.openai.com",
 	DefaultModel: GPTO3Mini,
 	Type:         spec.InbuiltOpenAICompatible,

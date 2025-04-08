@@ -47,7 +47,6 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 			Provider: providerInfo.provider,
 			Body: {
 				apiKey: providerInfo.apiKey,
-				engine: providerInfo.engine,
 				origin: providerInfo.origin,
 				chatCompletionPathPrefix: providerInfo.chatCompletionPathPrefix,
 			},

@@ -4,6 +4,7 @@ export interface AISetting {
 	isEnabled: boolean;
 	apiKey: string;
 	origin: string;
+	chatCompletionPathPrefix: string;
 	defaultModel: ModelName;
 	modelSettings: Record<ModelName, ModelSetting>;
 }

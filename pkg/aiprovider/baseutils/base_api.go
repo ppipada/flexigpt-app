@@ -37,7 +37,7 @@ func (api *BaseAIAPI) SetProviderAttribute(
 	origin *string,
 	chatCompletionPathPrefix *string,
 ) error {
-	if apiKey == nil && chatCompletionPathPrefix == nil && origin == nil {
+	if apiKey == nil && origin == nil && chatCompletionPathPrefix == nil {
 		return errors.New("no attribute provided for set")
 	}
 	if api.ProviderInfo == nil {

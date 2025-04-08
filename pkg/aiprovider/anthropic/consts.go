@@ -93,7 +93,6 @@ var AnthropicModels = map[spec.ModelName]spec.ModelInfo{
 var AnthropicProviderInfo = spec.ProviderInfo{
 	Name:         ProviderNameAnthropic,
 	APIKey:       "",
-	Engine:       "",
 	Origin:       "https://api.anthropic.com",
 	DefaultModel: Claude35Sonnet,
 	Type:         spec.InbuiltSpecific,
