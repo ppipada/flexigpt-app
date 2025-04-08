@@ -1,7 +1,6 @@
 package conversationstore_test
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -106,7 +105,7 @@ func TestConversationCollection(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				ctx := context.Background()
+				ctx := t.Context()
 				_, err := cc.SaveConversation(
 					ctx,
 					&spec.SaveConversationRequest{Body: &tt.conversation},
@@ -135,7 +134,7 @@ func TestConversationCollection(t *testing.T) {
 	})
 
 	t.Run("Delete Conversation", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		convo, err := conversationstore.InitConversation("To Be Deleted")
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
@@ -163,7 +162,7 @@ func TestConversationCollection(t *testing.T) {
 	})
 
 	t.Run("Add Message to Conversation", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		convo, err := conversationstore.InitConversation("Message Test")
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
@@ -195,7 +194,7 @@ func TestConversationCollection(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				ctx := context.Background()
+				ctx := t.Context()
 				_, err := cc.AddMessageToConversation(
 					ctx,
 					&spec.AddMessageToConversationRequest{
@@ -238,7 +237,7 @@ func TestConversationCollectionListing(t *testing.T) {
 	}
 
 	t.Run("List Conversations", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := t.Context()
 		convo1, err := conversationstore.InitConversation("First Conversation")
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)

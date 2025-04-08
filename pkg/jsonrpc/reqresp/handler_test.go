@@ -573,7 +573,7 @@ func TestBatchRequestHandler(t *testing.T) {
 		WithNotificationMap(notificationMap),
 		WithResponseMap(responseMap, responseHandlerMapper),
 	)
-	ctx := context.Background()
+	ctx := t.Context()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, err := brh.Handle(ctx, tt.metaReq)

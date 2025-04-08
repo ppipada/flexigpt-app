@@ -329,7 +329,7 @@ func TestServerShutdownDuringActiveConnections(t *testing.T) {
 
 	// Wait a moment and then shutdown the server.
 	time.Sleep(1 * time.Second)
-	err := server.Shutdown(context.Background())
+	err := server.Shutdown(t.Context())
 	if err != nil {
 		t.Errorf("Server shutdown error: %v", err)
 	}

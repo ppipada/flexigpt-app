@@ -45,9 +45,7 @@ const SettingsPage: FC = () => {
 			}
 
 			const defaultProv = settings.app.defaultProvider;
-			setComponentDefaultProvider(
-				enabledProviders.includes(defaultProv) ? (defaultProv as ProviderName) : (enabledProviders[0] as ProviderName)
-			);
+			setComponentDefaultProvider(enabledProviders.includes(defaultProv) ? defaultProv : enabledProviders[0]);
 			setAISettings(settings.aiSettings);
 		})();
 	}, []);
@@ -149,7 +147,9 @@ const SettingsPage: FC = () => {
 								<div className="col-span-3 flex justify-end">
 									<button
 										className="btn btn-md btn-ghost rounded-2xl flex items-center"
-										onClick={() => setIsAddProviderModalOpen(true)}
+										onClick={() => {
+											setIsAddProviderModalOpen(true);
+										}}
 									>
 										<FiPlus size={16} /> Add Provider
 									</button>
@@ -162,7 +162,7 @@ const SettingsPage: FC = () => {
 							return (
 								<div key={providerStr} className="rounded-xl">
 									<AISettingsCard
-										provider={providerStr as ProviderName}
+										provider={providerStr}
 										settings={aiSettings[providerStr]}
 										aiSettings={aiSettings}
 										defaultProvider={defaultProvider}
@@ -178,7 +178,9 @@ const SettingsPage: FC = () => {
 			{isAddProviderModalOpen && (
 				<AddProviderModal
 					isOpen={isAddProviderModalOpen}
-					onClose={() => setIsAddProviderModalOpen(false)}
+					onClose={() => {
+						setIsAddProviderModalOpen(false);
+					}}
 					onSubmit={handleAddProviderSubmit}
 				/>
 			)}

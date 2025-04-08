@@ -68,7 +68,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 			modelSettings: modelSettings,
 		};
 
-		onSubmit(providerName as ProviderName, newProviderSettings);
+		onSubmit(providerName, newProviderSettings);
 		onClose();
 	};
 
@@ -97,7 +97,9 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 								type="text"
 								className="input input-bordered w-full rounded-xl"
 								value={providerName}
-								onChange={e => setProviderName(e.target.value.toLocaleLowerCase())}
+								onChange={e => {
+									setProviderName(e.target.value.toLocaleLowerCase());
+								}}
 								placeholder="e.g. openai2"
 							/>
 						</div>
@@ -113,7 +115,9 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 								type="password"
 								className="input input-bordered w-full rounded-xl"
 								value={apiKey}
-								onChange={e => setApiKey(e.target.value)}
+								onChange={e => {
+									setApiKey(e.target.value);
+								}}
 								placeholder="Your provider's API key"
 							/>
 						</div>
@@ -129,7 +133,9 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 								type="text"
 								className="input input-bordered w-full rounded-xl"
 								value={origin}
-								onChange={e => setOrigin(e.target.value)}
+								onChange={e => {
+									setOrigin(e.target.value);
+								}}
 								placeholder="e.g. https://api.provider.com"
 							/>
 						</div>
@@ -145,7 +151,9 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 								type="text"
 								className="input input-bordered w-full rounded-xl"
 								value={chatCompletionPathPrefix}
-								onChange={e => setOrigin(e.target.value)}
+								onChange={e => {
+									setOrigin(e.target.value);
+								}}
 								placeholder="e.g. /v1/chat/completions"
 							/>
 						</div>
@@ -189,9 +197,11 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 			{isModifyModelModalOpen && (
 				<ModifyModelModal
 					isOpen={isModifyModelModalOpen}
-					onClose={() => setIsModifyModelModalOpen(false)}
+					onClose={() => {
+						setIsModifyModelModalOpen(false);
+					}}
 					onSubmit={handleModifyModelSubmit}
-					providerName={providerName as ProviderName}
+					providerName={providerName}
 					initialModelName={defaultModelName || undefined}
 					initialData={defaultModelName ? modelSettings[defaultModelName] : undefined}
 					existingModels={modelSettings}

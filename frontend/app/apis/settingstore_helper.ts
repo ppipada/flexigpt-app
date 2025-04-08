@@ -49,12 +49,8 @@ function mergeModelSettingModelInfoToOption(
 	providerInfoDict: Record<ProviderName, ProviderInfo>,
 	modelSetting: ModelSetting
 ): ModelOption {
-	var modelInfo: ModelInfo | undefined = undefined;
-	if (
-		providerName in providerInfoDict &&
-		providerInfoDict[providerName].models &&
-		modelName in providerInfoDict[providerName].models
-	) {
+	let modelInfo: ModelInfo | undefined = undefined;
+	if (providerName in providerInfoDict && modelName in providerInfoDict[providerName].models) {
 		modelInfo = providerInfoDict[providerName].models[modelName];
 	}
 
@@ -131,7 +127,7 @@ export async function GetChatInputOptions() {
 	try {
 		// Fetch configuration info and settings
 		const info = await providerSetAPI.getConfigurationInfo();
-		if (!info || info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
+		if (info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
 			return { allOptions: [DefaultModelOption], default: DefaultModelOption };
 		}
 		const configDefaultProvider = info.defaultProvider;
@@ -181,7 +177,7 @@ export async function PopulateModelSettingDefaults(
 	existingData?: ModelSetting
 ): Promise<ModelSetting> {
 	const info = await providerSetAPI.getConfigurationInfo();
-	if (!info || info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
+	if (info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
 		return DefaultModelSetting;
 	}
 

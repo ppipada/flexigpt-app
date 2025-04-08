@@ -1,7 +1,6 @@
 package mcpstdio
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -35,7 +34,7 @@ func NewStdIOClient(t *testing.T) *StdIOJSONRPCClient {
 		}
 	}()
 	t.Cleanup(func() {
-		_ = server.Shutdown(context.Background())
+		_ = server.Shutdown(t.Context())
 	})
 	client := GetClient(clientReader, clientWriter)
 	return &StdIOJSONRPCClient{

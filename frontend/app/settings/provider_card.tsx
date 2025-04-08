@@ -56,7 +56,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		const fetchConfigurationInfo = async () => {
 			try {
 				const info = await providerSetAPI.getConfigurationInfo();
-				if (!info || info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
+				if (info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
 					return;
 				}
 				setConfigurationInfo(info);
@@ -129,7 +129,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		if (modelName === localSettings.defaultModel) {
 			return true;
 		}
-		if (configurationInfo && configurationInfo.configuredProviders[provider]?.models[modelName]) {
+		if (configurationInfo && modelName in configurationInfo.configuredProviders[provider].models) {
 			return true;
 		}
 

@@ -1,7 +1,6 @@
 package settingstore_test
 
 import (
-	"context"
 	"os"
 	"strings"
 	"testing"
@@ -38,7 +37,7 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create settings store: %v", err)
 	}
-	ctx := context.Background()
+	ctx := t.Context()
 	request := &spec.SetSettingRequest{
 		Key: "aiSettings.openai.defaultModel",
 		Body: &spec.SetSettingRequestBody{
@@ -93,7 +92,7 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 			}
 
 			got, err := store.GetAllSettings(
-				context.Background(),
+				t.Context(),
 				&spec.GetAllSettingsRequest{ForceFetch: true},
 			)
 			if err != nil && tt.expectedError == "" {
@@ -172,7 +171,7 @@ func TestSettingStore_SetSetting(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set sensitive data
-			_, err = store.SetSetting(context.Background(), &spec.SetSettingRequest{
+			_, err = store.SetSetting(t.Context(), &spec.SetSettingRequest{
 				Key: tt.key,
 				Body: &spec.SetSettingRequestBody{
 					Value: tt.value,
