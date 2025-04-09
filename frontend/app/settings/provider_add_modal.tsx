@@ -101,6 +101,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 									setProviderName(e.target.value.toLocaleLowerCase());
 								}}
 								placeholder="e.g. openai2"
+								spellCheck="false"
 							/>
 						</div>
 					</div>
@@ -119,6 +120,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 									setApiKey(e.target.value);
 								}}
 								placeholder="Your provider's API key"
+								spellCheck="false"
 							/>
 						</div>
 					</div>
@@ -137,6 +139,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 									setOrigin(e.target.value);
 								}}
 								placeholder="e.g. https://api.provider.com"
+								spellCheck="false"
 							/>
 						</div>
 					</div>
@@ -152,9 +155,10 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 								className="input input-bordered w-full rounded-xl"
 								value={chatCompletionPathPrefix}
 								onChange={e => {
-									setOrigin(e.target.value);
+									setChatCompletionPathPrefix(e.target.value);
 								}}
 								placeholder="e.g. /v1/chat/completions"
+								spellCheck="false"
 							/>
 						</div>
 					</div>

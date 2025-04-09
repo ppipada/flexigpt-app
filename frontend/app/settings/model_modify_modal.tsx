@@ -1,8 +1,10 @@
-import { PopulateModelSettingDefaults } from '@/apis/settingstore_helper';
-import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
-import { DefaultModelSetting, type ModelSetting } from '@/models/settingmodel';
 import React, { type FC, useEffect, useState } from 'react';
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
+
+import { PopulateModelSettingDefaults } from '@/apis/settingstore_helper';
+
+import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
+import { DefaultModelSetting, type ModelSetting } from '@/models/settingmodel';
 
 interface ModifyModelModalProps {
 	isOpen: boolean;
@@ -267,6 +269,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								className={`input input-bordered w-full rounded-xl ${errors.modelName ? 'input-error' : ''}`}
 								placeholder="e.g., gpt-4, claude-opus"
 								disabled={isEditMode}
+								spellCheck="false"
 							/>
 							{errors.modelName && (
 								<div className="label">
@@ -294,6 +297,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								onChange={handleChange}
 								className={`input input-bordered w-full rounded-xl ${errors.displayName ? 'input-error' : ''}`}
 								placeholder="e.g., GPT-4, Claude Opus"
+								spellCheck="false"
 							/>
 							{errors.displayName && (
 								<div className="label">
@@ -375,6 +379,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								onChange={handleChange}
 								placeholder={numPlaceholder('temperature')}
 								className={`input input-bordered w-full rounded-xl ${errors.temperature ? 'input-error' : ''}`}
+								spellCheck="false"
 							/>
 							{errors.temperature && (
 								<div className="label">
@@ -402,6 +407,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								onChange={handleChange}
 								placeholder={numPlaceholder('timeout')}
 								className={`input input-bordered w-full rounded-xl ${errors.timeout ? 'input-error' : ''}`}
+								spellCheck="false"
 							/>
 							{errors.timeout && (
 								<div className="label">
@@ -429,6 +435,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								onChange={handleChange}
 								placeholder={numPlaceholder('maxPromptLength')}
 								className={`input input-bordered w-full rounded-xl ${errors.maxPromptLength ? 'input-error' : ''}`}
+								spellCheck="false"
 							/>
 							{errors.maxPromptLength && (
 								<div className="label">
@@ -456,6 +463,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								onChange={handleChange}
 								placeholder={numPlaceholder('maxOutputLength')}
 								className={`input input-bordered w-full rounded-xl ${errors.maxOutputLength ? 'input-error' : ''}`}
+								spellCheck="false"
 							/>
 							{errors.maxOutputLength && (
 								<div className="label">
@@ -482,6 +490,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								onChange={handleChange}
 								className="textarea textarea-bordered w-full rounded-xl h-24"
 								placeholder="Enter system prompt instructions here..."
+								spellCheck="false"
 							/>
 						</div>
 					</div>

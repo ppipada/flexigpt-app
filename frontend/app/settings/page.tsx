@@ -1,20 +1,18 @@
-import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
-import { loadProviderSettings } from '@/apis/settingstore_helper';
+import { useEffect, useState, type FC } from 'react';
+import { FiPlus } from 'react-icons/fi';
+
+import { settingstoreAPI } from '@/apis/baseapi';
+import { AddAISetting, SetAppSettings } from '@/apis/settingstore_helper';
+
+import { DefaultModelName, DefaultProviderName, type ProviderName } from '@/models/aiprovidermodel';
+import type { AISetting } from '@/models/settingmodel';
+
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
-import {
-	DefaultModelName,
-	DefaultProviderName,
-	type AddProviderRequest,
-	type ProviderName,
-} from '@/models/aiprovidermodel';
-import type { AISetting } from '@/models/settingmodel';
+
 import AddProviderModal from '@/settings/provider_add_modal';
 import AISettingsCard from '@/settings/provider_card';
 import ProviderDropdown from '@/settings/provider_dropdown';
-
-import { useEffect, useState, type FC } from 'react';
-import { FiPlus } from 'react-icons/fi';
 
 const defaultAISettings: Record<ProviderName, AISetting> = {
 	[DefaultProviderName]: {
@@ -35,7 +33,8 @@ const SettingsPage: FC = () => {
 
 	useEffect(() => {
 		(async () => {
-			const settings = await loadProviderSettings();
+			const settings = await settingstoreAPI.getAllSettings();
+
 			const enabledProviders = Object.keys(settings.aiSettings).filter(
 				provider => settings.aiSettings[provider].isEnabled
 			);
@@ -52,8 +51,7 @@ const SettingsPage: FC = () => {
 
 	const handleDefaultProviderChange = async (value: ProviderName) => {
 		setComponentDefaultProvider(value);
-		await providerSetAPI.setDefaultProvider(value);
-		await settingstoreAPI.setSetting('app.defaultProvider', value);
+		await SetAppSettings(value);
 	};
 
 	const handleProviderSettingChange = (provider: ProviderName, updatedSettings: AISetting) => {
@@ -64,21 +62,17 @@ const SettingsPage: FC = () => {
 	};
 
 	const handleAddProviderSubmit = async (providerName: ProviderName, newProviderSettings: AISetting) => {
-		// Save to local state
-		setAISettings(prev => ({
-			...prev,
+		// Build the updated settings yourself:
+		const updatedSettings = {
+			...aiSettings,
 			[providerName]: newProviderSettings,
-		}));
-
-		// Persist to setting store
-		await settingstoreAPI.setSetting(`aiSettings`, { ...aiSettings });
-		const req: AddProviderRequest = {
-			provider: providerName,
-			apiKey: newProviderSettings.apiKey,
-			origin: newProviderSettings.origin,
-			chatCompletionPathPrefix: newProviderSettings.chatCompletionPathPrefix,
 		};
-		await providerSetAPI.addProvider(req);
+
+		// Update React state with the same object
+		setAISettings(updatedSettings);
+
+		// Persist to setting store and update the provider api
+		await AddAISetting(providerName, newProviderSettings);
 	};
 
 	const fetchValue = async (): Promise<string> => {

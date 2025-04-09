@@ -5,19 +5,6 @@ export const DefaultModelTitle = 'OpenAI GPT 4o';
 export type ProviderName = string;
 export const DefaultProviderName: ProviderName = 'openai';
 
-export interface ModelInfo {
-	name: ModelName;
-	displayName: string;
-	provider: string;
-	maxPromptLength: number;
-	maxOutputLength: number;
-	defaultTemperature: number;
-	streamingSupport: boolean;
-	reasoningSupport: boolean;
-	defaultSystemPrompt: string;
-	timeout: number;
-}
-
 export interface ModelParams {
 	name: ModelName;
 	stream: boolean;
@@ -45,14 +32,10 @@ export const DefaultModelParams: ModelParams = {
 export interface ProviderInfo {
 	name: ProviderName;
 	apiKey: string;
-	defaultModel: ModelName;
 	origin: string;
-
+	chatCompletionPathPrefix: string;
 	apiKeyHeaderKey: string;
 	defaultHeaders: Record<string, string>;
-	chatCompletionPathPrefix: string;
-	modelPrefixes?: string[];
-	models: Record<ModelName, ModelInfo>;
 }
 
 export const ProviderInfoDescription = {
@@ -152,6 +135,7 @@ export interface CompletionResponse {
 export interface ConfigurationResponse {
 	defaultProvider: ProviderName;
 	configuredProviders: Record<ProviderName, ProviderInfo>;
+	inbuiltProviderModels: Record<ProviderName, Record<ModelName, ModelParams>>;
 }
 
 export interface AddProviderRequest {
@@ -166,12 +150,8 @@ export interface IProviderSetAPI {
 	getConfigurationInfo(): Promise<ConfigurationResponse>;
 	addProvider(providerInfo: AddProviderRequest): Promise<void>;
 	deleteProvider(provider: ProviderName): Promise<void>;
-	setAttribute(
-		provider: ProviderName,
-		apiKey?: string,
-		origin?: string,
-		chatCompletionPathPrefix?: string
-	): Promise<void>;
+	setProviderAPIKey(provider: ProviderName, apiKey: string): Promise<void>;
+	setProviderAttribute(provider: ProviderName, origin?: string, chatCompletionPathPrefix?: string): Promise<void>;
 	completion(
 		provider: ProviderName,
 		prompt: string,

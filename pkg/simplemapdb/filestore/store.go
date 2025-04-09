@@ -14,6 +14,8 @@ import (
 	simplemapdbEncdec "github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
 )
 
+type KeyEncDecsGetter func(data map[string]any) map[string]simplemapdbEncdec.EncoderDecoder
+
 // MapFileStore is a file-backed implementation of a thread-safe key-value store.
 type MapFileStore struct {
 	data              map[string]any
@@ -22,8 +24,8 @@ type MapFileStore struct {
 	encdec            simplemapdbEncdec.EncoderDecoder
 	filename          string
 	autoFlush         bool
-	keyEncDecs        map[string]simplemapdbEncdec.EncoderDecoder
 	createIfNotExists bool
+	getKeyEncDecs     KeyEncDecsGetter
 }
 
 // Option defines a function type that applies a configuration option to the MapFileStore.
@@ -43,10 +45,10 @@ func WithAutoFlush(autoFlush bool) Option {
 	}
 }
 
-// WithKeyEncoders sets per-key encoder/decoders.
-func WithKeyEncoders(keyEncDecs map[string]simplemapdbEncdec.EncoderDecoder) Option {
+// WithKeyEncDecsGetter sets per-key encoder/decoders.
+func WithKeyEncDecsGetter(keyEncDecsGetter KeyEncDecsGetter) Option {
 	return func(store *MapFileStore) {
-		store.keyEncDecs = keyEncDecs
+		store.getKeyEncDecs = keyEncDecsGetter
 	}
 }
 
@@ -68,8 +70,7 @@ func NewMapFileStore(
 		data:        make(map[string]any),
 		defaultData: defaultData,
 		filename:    filename,
-		autoFlush:   true, // Default to true
-		keyEncDecs:  make(map[string]simplemapdbEncdec.EncoderDecoder),
+		autoFlush:   true,                                   // Default to true
 		encdec:      simplemapdbEncdec.JSONEncoderDecoder{}, // Default to JSON encoder/decoder
 	}
 
@@ -149,16 +150,19 @@ func (store *MapFileStore) load() error {
 	}
 
 	// Apply per-key decoders
-	if len(store.keyEncDecs) > 0 {
-		for key, encDec := range store.keyEncDecs {
-			keys := strings.Split(key, ".")
-			if err := decodeValueAtPath(store.data, keys, encDec); err != nil {
-				var kne *KeyNotFoundError
-				if errors.As(err, &kne) {
-					// Key doesn't exist
-					continue
+	if store.getKeyEncDecs != nil {
+		keyEncDecs := store.getKeyEncDecs(store.data)
+		if len(keyEncDecs) > 0 {
+			for key, encDec := range keyEncDecs {
+				keys := strings.Split(key, ".")
+				if err := decodeValueAtPath(store.data, keys, encDec); err != nil {
+					var kne *KeyNotFoundError
+					if errors.As(err, &kne) {
+						// Key doesn't exist
+						continue
+					}
+					return fmt.Errorf("failed to decode value at key %s: %w", key, err)
 				}
-				return fmt.Errorf("failed to decode value at key %s: %w", key, err)
 			}
 		}
 	}
@@ -168,21 +172,24 @@ func (store *MapFileStore) load() error {
 
 func (store *MapFileStore) flush() error {
 	var dataToSave any
-	if len(store.keyEncDecs) > 0 {
-		// Need to make a copy of store.data and apply per-key encodings
-		dataCopy := deepCopyValue(store.data)
-		for key, encDec := range store.keyEncDecs {
-			keys := strings.Split(key, ".")
-			if err := encodeValueAtPath(dataCopy, keys, encDec); err != nil {
-				var kne *KeyNotFoundError
-				if errors.As(err, &kne) {
-					// Key doesnt exist
-					continue
+	if store.getKeyEncDecs != nil {
+		keyEncDecs := store.getKeyEncDecs(store.data)
+		if len(keyEncDecs) > 0 {
+			// Need to make a copy of store.data and apply per-key encodings
+			dataCopy := DeepCopyValue(store.data)
+			for key, encDec := range keyEncDecs {
+				keys := strings.Split(key, ".")
+				if err := encodeValueAtPath(dataCopy, keys, encDec); err != nil {
+					var kne *KeyNotFoundError
+					if errors.As(err, &kne) {
+						// Key doesnt exist
+						continue
+					}
+					return fmt.Errorf("failed to encode value at key %s: %w", key, err)
 				}
-				return fmt.Errorf("failed to encode value at key %s: %w", key, err)
 			}
+			dataToSave = dataCopy
 		}
-		dataToSave = dataCopy
 	} else {
 		// No per-key encodings, can use store.data directly
 		dataToSave = store.data
@@ -262,11 +269,11 @@ func (store *MapFileStore) GetKey(key string) (any, error) {
 	defer store.mu.RUnlock()
 
 	keys := strings.Split(key, ".")
-	val, err := getValueAtPath(store.data, keys)
+	val, err := GetValueAtPath(store.data, keys)
 	if err != nil {
 		return nil, err
 	}
-	return deepCopyValue(val), nil
+	return DeepCopyValue(val), nil
 }
 
 // SetKey sets the value for the given key.
@@ -276,7 +283,7 @@ func (store *MapFileStore) SetKey(key string, value any) error {
 	defer store.mu.Unlock()
 
 	keys := strings.Split(key, ".")
-	if err := setValueAtPath(store.data, keys, value); err != nil {
+	if err := SetValueAtPath(store.data, keys, value); err != nil {
 		return fmt.Errorf("failed to set value at key %s: %w", key, err)
 	}
 
@@ -295,7 +302,7 @@ func (store *MapFileStore) DeleteKey(key string) error {
 	defer store.mu.Unlock()
 
 	keys := strings.Split(key, ".")
-	if err := deleteValueAtPath(store.data, keys); err != nil {
+	if err := DeleteValueAtPath(store.data, keys); err != nil {
 		return fmt.Errorf("failed to delete key %s: %w", key, err)
 	}
 
@@ -313,7 +320,7 @@ func encodeValueAtPath(
 	keys []string,
 	encDec simplemapdbEncdec.EncoderDecoder,
 ) error {
-	parentMap, lastKey, err := navigateToParentMap(data, keys, false)
+	parentMap, lastKey, err := NavigateToParentMap(data, keys, false)
 	if err != nil {
 		var kne *KeyNotFoundError
 		if errors.As(err, &kne) {
@@ -352,7 +359,7 @@ func decodeValueAtPath(
 	keys []string,
 	encDec simplemapdbEncdec.EncoderDecoder,
 ) error {
-	parentMap, lastKey, err := navigateToParentMap(data, keys, false)
+	parentMap, lastKey, err := NavigateToParentMap(data, keys, false)
 	if err != nil {
 		return err
 	}

@@ -151,19 +151,20 @@ func TestSettingStore_SetSetting(t *testing.T) {
 		expectedError string
 	}{
 		{"SetSetting_ValidKey", "app.defaultProvider", "ProviderNameOpenAI", false, ""},
+		{"SetSetting_KeyNotInDefaultData", "aiSettings.openai2.origin", "O2Origin", false, ""},
 		{
 			"SetSetting_InvalidKey",
 			"app.invalidKey",
 			"ProviderNameOpenAI",
 			true,
-			"invalid key: app.invalidKey",
+			"unknown field \"invalidKey\"",
 		},
 		{
 			"SetSetting_TypeMismatch",
 			"app.defaultProvider",
 			123,
 			true,
-			"type mismatch for key \"app.defaultProvider\": expected string, got int",
+			"cannot unmarshal number",
 		},
 		{"SetSetting_SensitiveKey", "aiSettings.openai.apiKey", "newApiKey", false, ""},
 	}
@@ -182,7 +183,7 @@ func TestSettingStore_SetSetting(t *testing.T) {
 				t.Errorf("SetSetting() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if err != nil && err.Error() != tt.expectedError {
+			if err != nil && !strings.Contains(err.Error(), tt.expectedError) {
 				t.Errorf("SetSetting() error = %v, expectedError %v", err, tt.expectedError)
 			}
 		})

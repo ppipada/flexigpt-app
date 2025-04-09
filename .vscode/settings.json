@@ -39,7 +39,10 @@
 		"editor.tabSize": 2
 	},
 	"[go]": {
-		"editor.defaultFormatter": "golang.go"
+		"editor.defaultFormatter": "golang.go",
+		"editor.codeActionsOnSave": {
+			"source.organizeImports": "explicit"
+		}
 	},
 
 	// ============================================
@@ -69,6 +72,9 @@
 	"go.lintOnSave": "package",
 	"go.testFlags": ["-timeout=30m", "-count=1", "-v"],
 	"go.toolsManagement.autoUpdate": true,
+	"go.addTags": {
+		"transform": "camelcase"
+	},
 
 	// --- ESLint ---
 	"eslint.format.enable": true,

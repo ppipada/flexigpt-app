@@ -14,10 +14,11 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
 	"github.com/flexigpt/flexiui/pkg/aiprovider"
-	"github.com/flexigpt/flexiui/pkg/aiprovider/openai"
 	"github.com/flexigpt/flexiui/pkg/conversationstore"
 	"github.com/flexigpt/flexiui/pkg/logrotate"
 	"github.com/flexigpt/flexiui/pkg/settingstore"
+
+	aiproviderConsts "github.com/flexigpt/flexiui/pkg/aiprovider/consts"
 )
 
 // Options for the server cli.
@@ -69,7 +70,7 @@ func main() {
 		router := http.NewServeMux()
 		api := humago.New(router, huma.DefaultConfig("FlexiGPTServer API", "1.0.0"))
 		app := NewBackendApp(
-			openai.ProviderNameOpenAI,
+			aiproviderConsts.ProviderNameOpenAI,
 			opts.SettingsDirPath,
 			opts.ConversationsDirPath,
 		)

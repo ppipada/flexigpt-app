@@ -185,6 +185,50 @@ export namespace spec {
 	}
 	
 	
+	export class AddAISettingRequest {
+	    ProviderName: string;
+	    Body?: AISetting;
+	
+	    static createFrom(source: any = {}) {
+	        return new AddAISettingRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ProviderName = source["ProviderName"];
+	        this.Body = this.convertValues(source["Body"], AISetting);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class AddAISettingResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new AddAISettingResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
 	export class ConversationMessage {
 	    id: string;
 	    // Go type: time
@@ -298,6 +342,52 @@ export namespace spec {
 	
 	    static createFrom(source: any = {}) {
 	        return new AddMessageToConversationResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class AddModelSettingRequest {
+	    ProviderName: string;
+	    ModelName: string;
+	    Body?: ModelSetting;
+	
+	    static createFrom(source: any = {}) {
+	        return new AddModelSettingRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ProviderName = source["ProviderName"];
+	        this.ModelName = source["ModelName"];
+	        this.Body = this.convertValues(source["Body"], ModelSetting);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class AddModelSettingResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new AddModelSettingResponse(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -545,6 +635,30 @@ export namespace spec {
 		}
 	}
 	
+	export class DeleteAISettingRequest {
+	    ProviderName: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DeleteAISettingRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ProviderName = source["ProviderName"];
+	    }
+	}
+	export class DeleteAISettingResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new DeleteAISettingResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
 	export class DeleteConversationRequest {
 	    ID: string;
 	    Title: string;
@@ -564,6 +678,32 @@ export namespace spec {
 	
 	    static createFrom(source: any = {}) {
 	        return new DeleteConversationResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class DeleteModelSettingRequest {
+	    ProviderName: string;
+	    ModelName: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DeleteModelSettingRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ProviderName = source["ProviderName"];
+	        this.ModelName = source["ModelName"];
+	    }
+	}
+	export class DeleteModelSettingResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new DeleteModelSettingResponse(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -713,46 +853,14 @@ export namespace spec {
 	
 	    }
 	}
-	export class ModelInfo {
-	    name: string;
-	    displayName: string;
-	    provider: string;
-	    maxPromptLength: number;
-	    maxOutputLength: number;
-	    defaultTemperature: number;
-	    streamingSupport: boolean;
-	    reasoningSupport: boolean;
-	    defaultSystemPrompt: string;
-	    timeout: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new ModelInfo(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.name = source["name"];
-	        this.displayName = source["displayName"];
-	        this.provider = source["provider"];
-	        this.maxPromptLength = source["maxPromptLength"];
-	        this.maxOutputLength = source["maxOutputLength"];
-	        this.defaultTemperature = source["defaultTemperature"];
-	        this.streamingSupport = source["streamingSupport"];
-	        this.reasoningSupport = source["reasoningSupport"];
-	        this.defaultSystemPrompt = source["defaultSystemPrompt"];
-	        this.timeout = source["timeout"];
-	    }
-	}
 	export class ProviderInfo {
 	    name: string;
 	    apiKey: string;
 	    origin: string;
 	    chatCompletionPathPrefix: string;
-	    type: string;
 	    apiKeyHeaderKey: string;
 	    defaultHeaders: Record<string, string>;
-	    defaultModel: string;
-	    models: Record<string, ModelInfo>;
+	    type: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ProviderInfo(source);
@@ -764,34 +872,15 @@ export namespace spec {
 	        this.apiKey = source["apiKey"];
 	        this.origin = source["origin"];
 	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
-	        this.type = source["type"];
 	        this.apiKeyHeaderKey = source["apiKeyHeaderKey"];
 	        this.defaultHeaders = source["defaultHeaders"];
-	        this.defaultModel = source["defaultModel"];
-	        this.models = this.convertValues(source["models"], ModelInfo, true);
+	        this.type = source["type"];
 	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 	export class GetConfigurationInfoResponseBody {
 	    defaultProvider: string;
 	    configuredProviders: ProviderInfo[];
+	    inbuiltProviderModels: Record<string, any>;
 	
 	    static createFrom(source: any = {}) {
 	        return new GetConfigurationInfoResponseBody(source);
@@ -801,6 +890,7 @@ export namespace spec {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.defaultProvider = source["defaultProvider"];
 	        this.configuredProviders = this.convertValues(source["configuredProviders"], ProviderInfo);
+	        this.inbuiltProviderModels = source["inbuiltProviderModels"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -971,7 +1061,6 @@ export namespace spec {
 		}
 	}
 	
-	
 	export class ModelParams {
 	    name: string;
 	    stream: boolean;
@@ -1044,6 +1133,168 @@ export namespace spec {
 	
 	    }
 	}
+	export class SetAISettingAPIKeyRequestBody {
+	    apiKey: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetAISettingAPIKeyRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.apiKey = source["apiKey"];
+	    }
+	}
+	export class SetAISettingAPIKeyRequest {
+	    ProviderName: string;
+	    Body?: SetAISettingAPIKeyRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetAISettingAPIKeyRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ProviderName = source["ProviderName"];
+	        this.Body = this.convertValues(source["Body"], SetAISettingAPIKeyRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class SetAISettingAPIKeyResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new SetAISettingAPIKeyResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class SetAISettingAttrsRequestBody {
+	    isEnabled?: boolean;
+	    origin?: string;
+	    chatCompletionPathPrefix?: string;
+	    defaultModel?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetAISettingAttrsRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.isEnabled = source["isEnabled"];
+	        this.origin = source["origin"];
+	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
+	        this.defaultModel = source["defaultModel"];
+	    }
+	}
+	export class SetAISettingAttrsRequest {
+	    ProviderName: string;
+	    Body?: SetAISettingAttrsRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetAISettingAttrsRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ProviderName = source["ProviderName"];
+	        this.Body = this.convertValues(source["Body"], SetAISettingAttrsRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class SetAISettingAttrsResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new SetAISettingAttrsResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class SetAppSettingsRequest {
+	    Body?: AppSettings;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetAppSettingsRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], AppSettings);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SetAppSettingsResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new SetAppSettingsResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
 	export class SetDefaultProviderRequestBody {
 	    provider: string;
 	
@@ -1099,8 +1350,64 @@ export namespace spec {
 	
 	    }
 	}
+	export class SetProviderAPIKeyRequestBody {
+	    apiKey: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetProviderAPIKeyRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.apiKey = source["apiKey"];
+	    }
+	}
+	export class SetProviderAPIKeyRequest {
+	    Provider: string;
+	    Body?: SetProviderAPIKeyRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetProviderAPIKeyRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Provider = source["Provider"];
+	        this.Body = this.convertValues(source["Body"], SetProviderAPIKeyRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class SetProviderAPIKeyResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new SetProviderAPIKeyResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
 	export class SetProviderAttributeRequestBody {
-	    apiKey?: string;
 	    origin?: string;
 	    chatCompletionPathPrefix?: string;
 	
@@ -1110,7 +1417,6 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.apiKey = source["apiKey"];
 	        this.origin = source["origin"];
 	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
 	    }
@@ -1153,63 +1459,6 @@ export namespace spec {
 	
 	    static createFrom(source: any = {}) {
 	        return new SetProviderAttributeResponse(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	
-	    }
-	}
-	export class SetSettingRequestBody {
-	    value: any;
-	
-	    static createFrom(source: any = {}) {
-	        return new SetSettingRequestBody(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.value = source["value"];
-	    }
-	}
-	export class SetSettingRequest {
-	    Key: string;
-	    Body?: SetSettingRequestBody;
-	
-	    static createFrom(source: any = {}) {
-	        return new SetSettingRequest(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Key = source["Key"];
-	        this.Body = this.convertValues(source["Body"], SetSettingRequestBody);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	
-	export class SetSettingResponse {
-	
-	
-	    static createFrom(source: any = {}) {
-	        return new SetSettingResponse(source);
 	    }
 	
 	    constructor(source: any = {}) {

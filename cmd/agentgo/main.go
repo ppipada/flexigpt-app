@@ -24,6 +24,7 @@ import (
 func main() {
 	slogLevel := slog.LevelDebug
 	wailsLogLevel := logger.DEBUG
+	wailsProdLogLevel := logger.INFO
 
 	// Create an instance of the app structure
 	app := NewApp()
@@ -74,7 +75,7 @@ func main() {
 		Menu:                     nil,
 		Logger:                   wailsLogger,
 		LogLevel:                 wailsLogLevel,
-		LogLevelProduction:       wailsLogLevel,
+		LogLevelProduction:       wailsProdLogLevel,
 		EnableDefaultContextMenu: true,
 		OnStartup: func(ctx context.Context) {
 			app.startup(ctx)

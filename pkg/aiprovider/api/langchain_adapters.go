@@ -1,4 +1,4 @@
-package baseutils
+package api
 
 import (
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"

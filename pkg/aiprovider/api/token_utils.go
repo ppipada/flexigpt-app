@@ -1,4 +1,4 @@
-package baseutils
+package api
 
 import (
 	"log/slog"

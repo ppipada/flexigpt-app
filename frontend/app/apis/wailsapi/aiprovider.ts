@@ -4,6 +4,7 @@ import {
 	FetchCompletion,
 	GetConfigurationInfo,
 	SetDefaultProvider,
+	SetProviderAPIKey,
 	SetProviderAttribute,
 } from '@/apis/wailsjs/go/main/ProviderSetWrapper';
 import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
@@ -14,6 +15,7 @@ import type {
 	CompletionResponse,
 	ConfigurationResponse,
 	IProviderSetAPI,
+	ModelName,
 	ModelParams,
 	ProviderInfo,
 	ProviderName,
@@ -31,15 +33,26 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 	async getConfigurationInfo(): Promise<ConfigurationResponse> {
 		const resp = await GetConfigurationInfo({} as wailsSpec.GetConfigurationInfoRequest);
 		const configInfo = resp.Body || {};
-		if (!('configuredProviders' in configInfo) || !('defaultProvider' in configInfo)) {
-			return { defaultProvider: '', configuredProviders: {} };
+		if (
+			!('configuredProviders' in configInfo) ||
+			!('defaultProvider' in configInfo) ||
+			!('inbuiltProviderModels' in configInfo)
+		) {
+			return { defaultProvider: '', configuredProviders: {}, inbuiltProviderModels: {} };
 		}
 
 		const providerInfoDict: Record<ProviderName, ProviderInfo> = {};
 		for (const providerInfo of configInfo['configuredProviders'] as ProviderInfo[]) {
 			providerInfoDict[providerInfo.name] = providerInfo;
 		}
-		return { defaultProvider: configInfo['defaultProvider'] as ProviderName, configuredProviders: providerInfoDict };
+		return {
+			defaultProvider: configInfo['defaultProvider'] as ProviderName,
+			configuredProviders: providerInfoDict,
+			inbuiltProviderModels: configInfo['inbuiltProviderModels'] as Record<
+				ProviderName,
+				Record<ModelName, ModelParams>
+			>,
+		};
 	}
 
 	async addProvider(providerInfo: AddProviderRequest): Promise<void> {
@@ -61,16 +74,24 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		await DeleteProvider(req as wailsSpec.DeleteProviderRequest);
 	}
 
-	async setAttribute(
+	async setProviderAPIKey(provider: ProviderName, apiKey: string): Promise<void> {
+		const req = {
+			Provider: provider,
+			Body: {
+				apiKey: apiKey,
+			},
+		};
+		await SetProviderAPIKey(req as wailsSpec.SetProviderAPIKeyRequest);
+	}
+
+	async setProviderAttribute(
 		provider: ProviderName,
-		apiKey?: string,
 		origin?: string,
 		chatCompletionPathPrefix?: string
 	): Promise<void> {
 		const req = {
 			Provider: provider,
 			Body: {
-				apiKey: apiKey,
 				origin: origin,
 				chatCompletionPathPrefix: chatCompletionPathPrefix,
 			},

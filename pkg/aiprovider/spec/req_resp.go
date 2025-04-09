@@ -36,12 +36,23 @@ type GetConfigurationInfoResponse struct {
 }
 
 type GetConfigurationInfoResponseBody struct {
-	DefaultProvider     ProviderName   `json:"defaultProvider"`
-	ConfiguredProviders []ProviderInfo `json:"configuredProviders"`
+	DefaultProvider       ProviderName                               `json:"defaultProvider"`
+	ConfiguredProviders   []ProviderInfo                             `json:"configuredProviders"`
+	InbuiltProviderModels map[ProviderName]map[ModelName]ModelParams `json:"inbuiltProviderModels"`
 }
 
+type SetProviderAPIKeyRequestBody struct {
+	APIKey string `json:"apiKey" required:"true"`
+}
+
+type SetProviderAPIKeyRequest struct {
+	Provider ProviderName `path:"provider" required:"true"`
+	Body     *SetProviderAPIKeyRequestBody
+}
+
+type SetProviderAPIKeyResponse struct{}
+
 type SetProviderAttributeRequestBody struct {
-	APIKey                   *string `json:"apiKey,omitempty"`
 	Origin                   *string `json:"origin,omitempty"`
 	ChatCompletionPathPrefix *string `json:"chatCompletionPathPrefix,omitempty"`
 }

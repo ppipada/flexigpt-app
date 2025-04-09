@@ -1,13 +1,12 @@
 import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
 import {
 	DefaultModelParams,
-	type ModelInfo,
+	type AddProviderRequest,
 	type ModelName,
 	type ModelParams,
-	type ProviderInfo,
 	type ProviderName,
 } from '@/models/aiprovidermodel';
-import { DefaultModelSetting, type AISetting, type ModelSetting, type SettingsSchema } from '@/models/settingmodel';
+import { DefaultModelSetting, type AISetting, type AISettingAttrs, type ModelSetting } from '@/models/settingmodel';
 
 export interface ModelOption extends ModelParams {
 	title: string;
@@ -26,81 +25,105 @@ export interface ChatOptions {
 	disablePreviousMessages: boolean;
 }
 
-export function UpdateProviderAISettings(provider: ProviderName, settings: AISetting) {
-	providerSetAPI.setAttribute(provider, settings.apiKey, settings.origin, settings.chatCompletionPathPrefix);
-}
-
-export async function loadProviderSettings(): Promise<SettingsSchema> {
-	const settings = await settingstoreAPI.getAllSettings();
-
-	const defaultProvider = settings.app.defaultProvider;
+export async function SetAppSettings(defaultProvider: ProviderName) {
+	await settingstoreAPI.setAppSettings(defaultProvider);
 	await providerSetAPI.setDefaultProvider(defaultProvider);
-	// Iterate over each entry in settings.aiSettings
-	for (const [providerName, aiSettings] of Object.entries(settings.aiSettings)) {
-		UpdateProviderAISettings(providerName, aiSettings);
-	}
-
-	return settings;
 }
 
-function mergeModelSettingModelInfoToOption(
+export async function AddAISetting(providerName: ProviderName, aiSetting: AISetting) {
+	// Persist to setting store
+	await settingstoreAPI.addAISetting(providerName, aiSetting);
+	const req: AddProviderRequest = {
+		provider: providerName,
+		apiKey: aiSetting.apiKey,
+		origin: aiSetting.origin,
+		chatCompletionPathPrefix: aiSetting.chatCompletionPathPrefix,
+	};
+	await providerSetAPI.addProvider(req);
+}
+
+/**
+ * @public
+ */
+export async function DeleteAISetting(providerName: ProviderName) {
+	await settingstoreAPI.deleteAISetting(providerName);
+	await providerSetAPI.deleteProvider(providerName);
+}
+
+export async function SetAISettingAPIKey(providerName: ProviderName, apiKey: string) {
+	await settingstoreAPI.setAISettingAPIKey(providerName, apiKey);
+	await providerSetAPI.setProviderAPIKey(providerName, apiKey);
+}
+
+export async function SetAISettingAttrs(providerName: ProviderName, aiSettingAttrs: AISettingAttrs) {
+	await settingstoreAPI.setAISettingAttrs(providerName, aiSettingAttrs);
+	if (typeof aiSettingAttrs.origin !== 'undefined' || typeof aiSettingAttrs.chatCompletionPathPrefix !== 'undefined') {
+		await providerSetAPI.setProviderAttribute(
+			providerName,
+			aiSettingAttrs.origin,
+			aiSettingAttrs.chatCompletionPathPrefix
+		);
+	}
+}
+
+function mergeDefaultsModelSettingAndInbuilt(
 	providerName: ProviderName,
 	modelName: ModelName,
-	providerInfoDict: Record<ProviderName, ProviderInfo>,
+	inbuiltProviderModels: Record<ProviderName, Record<ModelName, ModelParams>>,
 	modelSetting: ModelSetting
-): ModelOption {
-	let modelInfo: ModelInfo | undefined = undefined;
-	if (providerName in providerInfoDict && modelName in providerInfoDict[providerName].models) {
-		modelInfo = providerInfoDict[providerName].models[modelName];
+): ModelParams {
+	let inbuiltModelParams: ModelParams | undefined = undefined;
+	if (providerName in inbuiltProviderModels && modelName in inbuiltProviderModels[providerName]) {
+		inbuiltModelParams = inbuiltProviderModels[providerName][modelName];
 	}
 
 	let temperature = DefaultModelParams.temperature ?? 0.1;
 	if (typeof modelSetting.temperature !== 'undefined') {
 		temperature = modelSetting.temperature;
-	} else if (modelInfo) {
-		temperature = modelInfo.defaultTemperature;
+	} else if (inbuiltModelParams) {
+		temperature = inbuiltModelParams.temperature ?? 0.1;
 	}
 
 	let stream = DefaultModelParams.stream;
 	if (typeof modelSetting.stream !== 'undefined') {
 		stream = modelSetting.stream;
-	} else if (modelInfo) {
-		stream = modelInfo.streamingSupport;
+	} else if (inbuiltModelParams) {
+		stream = inbuiltModelParams.stream;
 	}
 
 	let maxPromptLength = DefaultModelParams.maxPromptLength;
 	if (typeof modelSetting.maxPromptLength !== 'undefined') {
 		maxPromptLength = modelSetting.maxPromptLength;
-	} else if (modelInfo) {
-		maxPromptLength = modelInfo.maxPromptLength;
+	} else if (inbuiltModelParams) {
+		maxPromptLength = inbuiltModelParams.maxPromptLength;
 	}
 
 	let maxOutputLength = DefaultModelParams.maxOutputLength;
 	if (typeof modelSetting.maxOutputLength !== 'undefined') {
 		maxOutputLength = modelSetting.maxOutputLength;
-	} else if (modelInfo) {
-		maxOutputLength = modelInfo.maxOutputLength;
+	} else if (inbuiltModelParams) {
+		maxOutputLength = inbuiltModelParams.maxOutputLength;
 	}
 
 	let reasoningSupport = DefaultModelParams.reasoningSupport;
 	if (typeof modelSetting.reasoningSupport !== 'undefined') {
 		reasoningSupport = modelSetting.reasoningSupport;
-	} else if (modelInfo) {
-		reasoningSupport = modelInfo.reasoningSupport;
+	} else if (inbuiltModelParams) {
+		reasoningSupport = inbuiltModelParams.reasoningSupport;
 	}
 
 	let systemPrompt = DefaultModelParams.systemPrompt;
 	if (typeof modelSetting.systemPrompt !== 'undefined') {
 		systemPrompt = modelSetting.systemPrompt;
-	} else if (modelInfo) {
-		systemPrompt = modelInfo.defaultSystemPrompt;
+	} else if (inbuiltModelParams) {
+		systemPrompt = inbuiltModelParams.systemPrompt;
 	}
 
 	let timeout = DefaultModelParams.timeout;
 	if (typeof modelSetting.timeout !== 'undefined') {
 		timeout = modelSetting.timeout;
-	} else if (modelInfo) {
-		timeout = modelInfo.timeout;
+	} else if (inbuiltModelParams) {
+		timeout = inbuiltModelParams.timeout;
 	}
 
 	let additionalParameters = { ...DefaultModelParams.additionalParameters };
@@ -109,8 +132,6 @@ function mergeModelSettingModelInfoToOption(
 	}
 
 	return {
-		title: modelSetting.displayName,
-		provider: providerName,
 		name: modelName,
 		stream: stream,
 		maxPromptLength: maxPromptLength,
@@ -132,6 +153,7 @@ export async function GetChatInputOptions() {
 		}
 		const configDefaultProvider = info.defaultProvider;
 		const providerInfoDict = info.configuredProviders;
+		const inbuiltProviderModels = info.inbuiltProviderModels;
 
 		const settings = await settingstoreAPI.getAllSettings();
 		// Initialize default option and input models array
@@ -146,12 +168,25 @@ export async function GetChatInputOptions() {
 					if (!modelSetting.isEnabled) {
 						continue;
 					}
-					const modelOption = mergeModelSettingModelInfoToOption(
+					const mergedModelParam = mergeDefaultsModelSettingAndInbuilt(
 						providerName,
 						modelName,
-						providerInfoDict,
+						inbuiltProviderModels,
 						modelSetting
 					);
+					const modelOption: ModelOption = {
+						title: modelSetting.displayName,
+						provider: providerName,
+						name: modelName,
+						stream: mergedModelParam.stream,
+						maxPromptLength: mergedModelParam.maxPromptLength,
+						maxOutputLength: mergedModelParam.maxOutputLength,
+						temperature: mergedModelParam.temperature,
+						reasoningSupport: mergedModelParam.reasoningSupport,
+						systemPrompt: mergedModelParam.systemPrompt,
+						timeout: mergedModelParam.timeout,
+						additionalParameters: mergedModelParam.additionalParameters,
+					};
 					inputModels.push(modelOption);
 					if (modelName === settingsDefaultModelName && providerName === configDefaultProvider) {
 						defaultOption = modelOption;
@@ -170,43 +205,45 @@ export async function GetChatInputOptions() {
 	}
 }
 
-// Create a Model setting from default or ModelInfo if available
+// Create a Model setting from default or inbuilt ModelParams if available
 export async function PopulateModelSettingDefaults(
 	providerName: ProviderName,
 	modelName: ModelName,
 	existingData?: ModelSetting
 ): Promise<ModelSetting> {
 	const info = await providerSetAPI.getConfigurationInfo();
-	if (info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
+	if (
+		info.defaultProvider === '' ||
+		Object.keys(info.configuredProviders).length === 0 ||
+		!(providerName in info.configuredProviders)
+	) {
 		return DefaultModelSetting;
 	}
 
-	const providerInfoDict = info.configuredProviders;
-
-	// locate provider + model info in that config
-	if (!(providerName in providerInfoDict)) {
-		return DefaultModelSetting;
+	let modelSetting = existingData;
+	if (typeof modelSetting === 'undefined') {
+		modelSetting = {
+			displayName: modelName,
+			isEnabled: true,
+		};
 	}
-	if (!(modelName in providerInfoDict[providerName].models)) {
-		return DefaultModelSetting;
-	}
-	const modelInfo = providerInfoDict[providerName].models[modelName];
 
-	// if modelInfo is present, use its known defaults
-	const defaultsFromModelInfo: ModelSetting = {
-		displayName: modelInfo.displayName || '',
-		isEnabled: true,
-		stream: modelInfo.streamingSupport,
-		maxPromptLength: modelInfo.maxPromptLength,
-		maxOutputLength: modelInfo.maxOutputLength,
-		temperature: modelInfo.defaultTemperature,
-		reasoningSupport: modelInfo.reasoningSupport,
-		systemPrompt: modelInfo.defaultSystemPrompt,
-		timeout: modelInfo.timeout,
-	};
-	// combine fallback -> modelInfo defaults -> existingData
+	const mergedModelParam = mergeDefaultsModelSettingAndInbuilt(
+		providerName,
+		modelName,
+		info.inbuiltProviderModels,
+		modelSetting
+	);
+
 	return {
-		...defaultsFromModelInfo,
-		...existingData,
+		displayName: modelSetting.displayName,
+		isEnabled: modelSetting.isEnabled,
+		stream: mergedModelParam.stream,
+		maxPromptLength: mergedModelParam.maxPromptLength,
+		maxOutputLength: mergedModelParam.maxOutputLength,
+		temperature: mergedModelParam.temperature,
+		reasoningSupport: mergedModelParam.reasoningSupport,
+		systemPrompt: mergedModelParam.systemPrompt,
+		timeout: mergedModelParam.timeout,
 	};
 }

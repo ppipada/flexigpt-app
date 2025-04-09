@@ -1,9 +1,11 @@
-import { UseCloseDetails } from '@/lib/use_close_details';
-import type { ProviderName } from '@/models/aiprovidermodel';
-import type { AISetting } from '@/models/settingmodel';
 import type { FC } from 'react';
 import { useRef, useState } from 'react';
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+
+import { UseCloseDetails } from '@/lib/use_close_details';
+
+import type { ProviderName } from '@/models/aiprovidermodel';
+import type { AISetting } from '@/models/settingmodel';
 
 interface ProviderDropdownProps {
 	aiSettings: Record<ProviderName, AISetting>;

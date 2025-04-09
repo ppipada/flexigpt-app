@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	simplemapdbEncdec "github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
+	"github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
 )
 
 func TestNewMapFileStore(t *testing.T) {
@@ -110,15 +110,17 @@ func TestMapFileStore_SetKey_GetKey(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore.json")
 	defaultData := map[string]any{"foo": "bar"}
-	keyEncDecs := map[string]simplemapdbEncdec.EncoderDecoder{
-		"foo":          simplemapdbEncdec.EncryptedStringValueEncoderDecoder{},
-		"parent.child": simplemapdbEncdec.EncryptedStringValueEncoderDecoder{},
+	keyEncDecs := map[string]encdec.EncoderDecoder{
+		"foo":          encdec.EncryptedStringValueEncoderDecoder{},
+		"parent.child": encdec.EncryptedStringValueEncoderDecoder{},
 	}
 	store, err := NewMapFileStore(
 		filename,
 		defaultData,
 		WithCreateIfNotExists(true),
-		WithKeyEncoders(keyEncDecs),
+		WithKeyEncDecsGetter(func(data map[string]any) map[string]encdec.EncoderDecoder {
+			return keyEncDecs
+		}),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create store: %v", err)

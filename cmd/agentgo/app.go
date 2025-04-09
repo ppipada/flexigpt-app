@@ -11,7 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/flexigpt/flexiui/pkg/aiprovider/openai"
+	aiproviderConsts "github.com/flexigpt/flexiui/pkg/aiprovider/consts"
+
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/adrg/xdg"
@@ -19,7 +20,7 @@ import (
 
 const (
 	AppTitle        = "FlexiGPT"
-	AppDisplayTitle = "FlexiGPT - v0.0.9"
+	AppDisplayTitle = "FlexiGPT - v0.0.10"
 )
 
 // App struct
@@ -106,10 +107,20 @@ func (a *App) initManagers() {
 		panic("Failed to initialize Managers")
 	}
 
-	err = InitProviderSetWrapper(a.providerSetAPI, openai.ProviderNameOpenAI)
+	err = InitProviderSetWrapper(a.providerSetAPI, aiproviderConsts.ProviderNameOpenAI)
 	if err != nil {
 		slog.Error(
 			"Couldnt initialize providerset",
+			"Error",
+			err,
+		)
+		panic("Failed to initialize Managers")
+	}
+
+	err = InitProviderSetUsingSettings(a.settingStoreAPI, a.providerSetAPI)
+	if err != nil {
+		slog.Error(
+			"Couldnt initialize providerset from settings",
 			"Error",
 			err,
 		)

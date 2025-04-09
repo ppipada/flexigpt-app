@@ -4,7 +4,7 @@ import prettier from 'eslint-plugin-prettier';
 import react from 'eslint-plugin-react';
 import globals from 'globals';
 import path from 'path';
-import tseslint from 'typescript-eslint';
+import tseslint, { configs } from 'typescript-eslint';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,7 +21,7 @@ export default tseslint.config(
 		ignores: ['**/build/**', '**/app/apis/wailsjs/**', '**/.react-router/**'],
 	},
 	js.configs.recommended,
-	tseslint.configs.strictTypeChecked,
+	configs.strictTypeChecked,
 	{
 		files: ['**/*.{js,jsx,mjs,ts,tsx}'],
 		plugins: {

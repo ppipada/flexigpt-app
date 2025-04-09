@@ -12,4 +12,6 @@ export function GetConfigurationInfo(arg1:spec.GetConfigurationInfoRequest):Prom
 
 export function SetDefaultProvider(arg1:spec.SetDefaultProviderRequest):Promise<spec.SetDefaultProviderResponse>;
 
+export function SetProviderAPIKey(arg1:spec.SetProviderAPIKeyRequest):Promise<spec.SetProviderAPIKeyResponse>;
+
 export function SetProviderAttribute(arg1:spec.SetProviderAttributeRequest):Promise<spec.SetProviderAttributeResponse>;

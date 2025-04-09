@@ -1,4 +1,4 @@
-package baseutils
+package api
 
 import (
 	"context"
@@ -30,23 +30,36 @@ func (api *BaseAIAPI) GetProviderInfo(ctx context.Context) *spec.ProviderInfo {
 	return api.ProviderInfo
 }
 
-// SetProviderAttribute sets the attributes for the OpenAIAPI.
+// SetProviderAPIKey sets the key for a provider.
+func (api *BaseAIAPI) SetProviderAPIKey(
+	ctx context.Context,
+	apiKey string,
+) error {
+	if apiKey == "" {
+		return errors.New("invalid apikey provided")
+	}
+	if api.ProviderInfo == nil {
+		return errors.New("no ProviderInfo found")
+	}
+
+	api.ProviderInfo.APIKey = apiKey
+
+	return nil
+}
+
+// SetProviderAttribute sets the attributes of a provider.
 func (api *BaseAIAPI) SetProviderAttribute(
 	ctx context.Context,
-	apiKey *string,
 	origin *string,
 	chatCompletionPathPrefix *string,
 ) error {
-	if apiKey == nil && origin == nil && chatCompletionPathPrefix == nil {
+	if origin == nil && chatCompletionPathPrefix == nil {
 		return errors.New("no attribute provided for set")
 	}
 	if api.ProviderInfo == nil {
 		return errors.New("no ProviderInfo found")
 	}
-	if apiKey != nil {
-		api.ProviderInfo.APIKey = *apiKey
-	}
-	if origin != nil {
+	if origin != nil && *origin != "" {
 		api.ProviderInfo.Origin = *origin
 	}
 	if chatCompletionPathPrefix != nil {
@@ -59,16 +72,9 @@ func (api *BaseAIAPI) SetProviderAttribute(
 func (api *BaseAIAPI) getCompletionRequest(
 	prompt string,
 	modelParams spec.ModelParams,
+	inbuiltModelParams *spec.ModelParams,
 	prevMessages []spec.ChatCompletionRequestMessage,
 ) *spec.CompletionRequest {
-	var modelInfo *spec.ModelInfo = nil
-
-	_, ok := api.ProviderInfo.Models[modelParams.Name]
-	if ok {
-		m := api.ProviderInfo.Models[modelParams.Name]
-		modelInfo = &m
-	}
-
 	completionRequest := spec.CompletionRequest{
 		ModelParams: spec.ModelParams{
 			Name:                 modelParams.Name,
@@ -78,27 +84,29 @@ func (api *BaseAIAPI) getCompletionRequest(
 	}
 
 	// Cannot turn on streaming of it is set false in model
-	if modelInfo != nil && modelParams.Stream {
-		completionRequest.ModelParams.Stream = modelInfo.StreamingSupport
+	if inbuiltModelParams != nil && modelParams.Stream {
+		completionRequest.ModelParams.Stream = inbuiltModelParams.Stream
 	} else {
 		completionRequest.ModelParams.Stream = modelParams.Stream
 	}
 
-	if modelInfo != nil && modelParams.MaxOutputLength > modelInfo.MaxOutputLength {
-		completionRequest.ModelParams.MaxOutputLength = modelInfo.MaxOutputLength
+	if inbuiltModelParams != nil &&
+		modelParams.MaxOutputLength > inbuiltModelParams.MaxOutputLength {
+		completionRequest.ModelParams.MaxOutputLength = inbuiltModelParams.MaxOutputLength
 	} else {
 		completionRequest.ModelParams.MaxOutputLength = modelParams.MaxOutputLength
 	}
 
-	if modelInfo != nil && modelParams.MaxPromptLength > modelInfo.MaxPromptLength {
-		completionRequest.ModelParams.MaxPromptLength = modelInfo.MaxPromptLength
+	if inbuiltModelParams != nil &&
+		modelParams.MaxPromptLength > inbuiltModelParams.MaxPromptLength {
+		completionRequest.ModelParams.MaxPromptLength = inbuiltModelParams.MaxPromptLength
 	} else {
 		completionRequest.ModelParams.MaxPromptLength = modelParams.MaxPromptLength
 	}
 
 	reqSystemPrompt := modelParams.SystemPrompt
-	if modelInfo != nil && modelInfo.DefaultSystemPrompt != "" {
-		reqSystemPrompt = modelInfo.DefaultSystemPrompt + "\n" + reqSystemPrompt
+	if inbuiltModelParams != nil && inbuiltModelParams.SystemPrompt != "" {
+		reqSystemPrompt = inbuiltModelParams.SystemPrompt + "\n" + reqSystemPrompt
 	}
 	completionRequest.ModelParams.SystemPrompt = reqSystemPrompt
 
@@ -128,10 +136,11 @@ func (api *BaseAIAPI) FetchCompletion(
 	llm llms.Model,
 	prompt string,
 	modelParams spec.ModelParams,
+	inbuiltModelParams *spec.ModelParams,
 	prevMessages []spec.ChatCompletionRequestMessage,
 	onStreamData func(data string) error,
 ) (*spec.CompletionResponse, error) {
-	input := api.getCompletionRequest(prompt, modelParams, prevMessages)
+	input := api.getCompletionRequest(prompt, modelParams, inbuiltModelParams, prevMessages)
 	if len(input.Messages) == 0 {
 		return nil, errors.New("empty input messages")
 	}

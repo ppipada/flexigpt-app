@@ -56,6 +56,12 @@ func (w *ProviderSetWrapper) DeleteProvider(
 	return w.providersetAPI.DeleteProvider(context.Background(), req)
 }
 
+func (w *ProviderSetWrapper) SetProviderAPIKey(
+	req *aiproviderSpec.SetProviderAPIKeyRequest,
+) (*aiproviderSpec.SetProviderAPIKeyResponse, error) {
+	return w.providersetAPI.SetProviderAPIKey(context.Background(), req)
+}
+
 func (w *ProviderSetWrapper) SetProviderAttribute(
 	req *aiproviderSpec.SetProviderAttributeRequest,
 ) (*aiproviderSpec.SetProviderAttributeResponse, error) {

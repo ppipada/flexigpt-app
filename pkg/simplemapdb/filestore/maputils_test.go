@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// TestGetValueAtPath tests the getValueAtPath function.
+// TestGetValueAtPath tests the GetValueAtPath function.
 func TestGetValueAtPath(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -176,19 +176,19 @@ func TestGetValueAtPath(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotValue, err := getValueAtPath(tt.data, tt.keys)
+			gotValue, err := GetValueAtPath(tt.data, tt.keys)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getValueAtPath() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetValueAtPath() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotValue, tt.wantValue) {
-				t.Errorf("getValueAtPath() = %v, want %v", gotValue, tt.wantValue)
+				t.Errorf("GetValueAtPath() = %v, want %v", gotValue, tt.wantValue)
 			}
 		})
 	}
 }
 
-// TestSetValueAtPath tests the setValueAtPath function.
+// TestSetValueAtPath tests the SetValueAtPath function.
 func TestSetValueAtPath(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -427,11 +427,11 @@ func TestSetValueAtPath(t *testing.T) {
 
 	for _, tt := range tests {
 		// Make a deep copy of the original data to avoid side effects
-		dataCopy := deepCopyValue(tt.data)
+		dataCopy := DeepCopyValue(tt.data)
 		t.Run(tt.name, func(t *testing.T) {
-			err := setValueAtPath(dataCopy, tt.keys, tt.value)
+			err := SetValueAtPath(dataCopy, tt.keys, tt.value)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("setValueAtPath() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("SetValueAtPath() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if tt.wantErr {
@@ -440,13 +440,13 @@ func TestSetValueAtPath(t *testing.T) {
 
 			// Compare the modified data with the expected data
 			if !reflect.DeepEqual(dataCopy, tt.wantData) {
-				t.Errorf("After setValueAtPath(), data = %v, want %v", dataCopy, tt.wantData)
+				t.Errorf("After SetValueAtPath(), data = %v, want %v", dataCopy, tt.wantData)
 			}
 		})
 	}
 }
 
-// TestDeleteValueAtPath tests the deleteValueAtPath function.
+// TestDeleteValueAtPath tests the DeleteValueAtPath function.
 func TestDeleteValueAtPath(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -646,11 +646,11 @@ func TestDeleteValueAtPath(t *testing.T) {
 
 	for _, tt := range tests {
 		// Make a deep copy of the original data to avoid side effects
-		dataCopy := deepCopyValue(tt.data)
+		dataCopy := DeepCopyValue(tt.data)
 		t.Run(tt.name, func(t *testing.T) {
-			err := deleteValueAtPath(dataCopy, tt.keys)
+			err := DeleteValueAtPath(dataCopy, tt.keys)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("deleteValueAtPath() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("DeleteValueAtPath() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if tt.wantErr {
@@ -659,13 +659,13 @@ func TestDeleteValueAtPath(t *testing.T) {
 
 			// Compare the modified data with the expected data
 			if !reflect.DeepEqual(dataCopy, tt.wantData) {
-				t.Errorf("After deleteValueAtPath(), data = %v, want %v", dataCopy, tt.wantData)
+				t.Errorf("After DeleteValueAtPath(), data = %v, want %v", dataCopy, tt.wantData)
 			}
 		})
 	}
 }
 
-// TestDeepCopyValue tests the deepCopyValue function.
+// TestDeepCopyValue tests the DeepCopyValue function.
 func TestDeepCopyValue(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -758,13 +758,13 @@ func TestDeepCopyValue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotValue := deepCopyValue(tt.value)
+			gotValue := DeepCopyValue(tt.value)
 
 			// Modify the original value to ensure deep copy
 			modifyValue(tt.value)
 
 			if !reflect.DeepEqual(gotValue, tt.wantValue) {
-				t.Errorf("deepCopyValue() = %v, want %v", gotValue, tt.wantValue)
+				t.Errorf("DeepCopyValue() = %v, want %v", gotValue, tt.wantValue)
 			}
 		})
 	}
@@ -785,7 +785,7 @@ func modifyValue(value any) {
 	}
 }
 
-// TestNavigateToParentMap tests the navigateToParentMap function.
+// TestNavigateToParentMap tests the NavigateToParentMap function.
 func TestNavigateToParentMap(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -988,11 +988,11 @@ func TestNavigateToParentMap(t *testing.T) {
 
 	for _, tt := range tests {
 		// Make a deep copy of the original data to avoid side effects
-		dataCopy := deepCopyValue(tt.data)
+		dataCopy := DeepCopyValue(tt.data)
 		t.Run(tt.name, func(t *testing.T) {
-			gotMap, gotLastKey, err := navigateToParentMap(dataCopy, tt.keys, tt.createMissing)
+			gotMap, gotLastKey, err := NavigateToParentMap(dataCopy, tt.keys, tt.createMissing)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("navigateToParentMap() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NavigateToParentMap() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if tt.wantErr {
@@ -1000,12 +1000,12 @@ func TestNavigateToParentMap(t *testing.T) {
 			}
 			// Compare gotMap with expected map
 			if !reflect.DeepEqual(gotMap, tt.wantMap) {
-				t.Errorf("navigateToParentMap() gotMap = %v, want %v", gotMap, tt.wantMap)
+				t.Errorf("NavigateToParentMap() gotMap = %v, want %v", gotMap, tt.wantMap)
 			}
 			// Compare gotLastKey with expected last key
 			if gotLastKey != tt.wantLastKey {
 				t.Errorf(
-					"navigateToParentMap() gotLastKey = %v, want %v",
+					"NavigateToParentMap() gotLastKey = %v, want %v",
 					gotLastKey,
 					tt.wantLastKey,
 				)

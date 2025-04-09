@@ -1,12 +1,3 @@
-import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
-import { UpdateProviderAISettings } from '@/apis/settingstore_helper';
-import DeleteConfirmationModal from '@/components/delete_confirmation';
-import type { ConfigurationResponse, ModelName, ProviderName } from '@/models/aiprovidermodel';
-import { ProviderInfoDescription } from '@/models/aiprovidermodel';
-import type { AISetting, ModelSetting } from '@/models/settingmodel';
-import ModelDropdown from '@/settings/model_dropdown';
-
-import ActionDeniedAlert from '@/components/action_denied';
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 import {
@@ -21,7 +12,18 @@ import {
 	FiX,
 	FiXCircle,
 } from 'react-icons/fi';
-import ModifyModelModal from './model_modify_modal';
+
+import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
+import { SetAISettingAPIKey, SetAISettingAttrs } from '@/apis/settingstore_helper';
+
+import type { ConfigurationResponse, ModelName, ProviderName } from '@/models/aiprovidermodel';
+import { ProviderInfoDescription } from '@/models/aiprovidermodel';
+import type { AISetting, AISettingAttrs, ModelSetting } from '@/models/settingmodel';
+
+import ActionDeniedAlert from '@/components/action_denied';
+import DeleteConfirmationModal from '@/components/delete_confirmation';
+import ModelDropdown from '@/settings/model_dropdown';
+import ModifyModelModal from '@/settings/model_modify_modal';
 
 interface AISettingsCardProps {
 	provider: ProviderName;
@@ -81,7 +83,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		}
 	};
 
-	const toggleEnable = () => {
+	const toggleEnable = async () => {
 		const newIsEnabled = !isEnabled;
 		if (!newIsEnabled) {
 			// Prevent disabling the default provider
@@ -99,18 +101,20 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 			}
 		}
 		setIsEnabled(newIsEnabled);
-		handleSettingChange('isEnabled', newIsEnabled);
+		updateLocalSettings('isEnabled', newIsEnabled);
+		const aiSettingAttrs: AISettingAttrs = {
+			isEnabled: newIsEnabled,
+		};
+		await SetAISettingAttrs(provider, aiSettingAttrs);
 	};
 
 	// Handle setting changes and save to backend
-	const handleSettingChange = async (key: string, value: any) => {
+	const updateLocalSettings = async (key: string, value: any) => {
 		const updatedSettings = {
 			...localSettings,
 			[key]: value,
 		};
 		setLocalSettings(updatedSettings);
-		await settingstoreAPI.setSetting(`aiSettings.${provider}.${key}`, value);
-		UpdateProviderAISettings(provider, updatedSettings);
 		onProviderSettingChange(provider, updatedSettings);
 	};
 
@@ -127,17 +131,21 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 
 	const isModelRemovable = (modelName: ModelName) => {
 		if (modelName === localSettings.defaultModel) {
-			return true;
+			return false;
 		}
-		if (configurationInfo && modelName in configurationInfo.configuredProviders[provider].models) {
-			return true;
+		if (
+			configurationInfo &&
+			provider in configurationInfo.inbuiltProviderModels &&
+			modelName in configurationInfo.inbuiltProviderModels[provider]
+		) {
+			return false;
 		}
 
-		return false;
+		return true;
 	};
 
 	const handleDeleteModel = (modelName: ModelName) => {
-		if (isModelRemovable(modelName)) {
+		if (!isModelRemovable(modelName)) {
 			setActionDeniedMessage('Cannot delete the default model. Please select a different default model first.');
 			setShowActionDeniedAlert(true);
 			return;
@@ -146,9 +154,9 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		setIsDeleteModelModalOpen(true);
 	};
 
-	const handleDeleteModelConfirm = () => {
+	const handleDeleteModelConfirm = async () => {
 		const modelName: ModelName = selectedModelName || '';
-		if (isModelRemovable(modelName)) {
+		if (!isModelRemovable(modelName)) {
 			setActionDeniedMessage('Cannot delete the default model. Please select a different default model first.');
 			setShowActionDeniedAlert(true);
 			return;
@@ -159,7 +167,9 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 			: { ...modelSettings };
 
 		setModelSettings(updatedModels);
-		handleSettingChange('modelSettings', updatedModels);
+		updateLocalSettings('modelSettings', updatedModels);
+		await settingstoreAPI.deleteModelSetting(provider, modelName);
+
 		setIsDeleteModelModalOpen(false);
 		setSelectedModelName(null);
 	};
@@ -169,11 +179,12 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		setSelectedModelName(null);
 	};
 
-	const handleModifyModelSubmit = (modelName: ModelName, modelData: ModelSetting) => {
+	const handleModifyModelSubmit = async (modelName: ModelName, modelData: ModelSetting) => {
 		const updatedModels = { ...modelSettings };
 		updatedModels[modelName] = modelData;
 		setModelSettings(updatedModels);
-		handleSettingChange('modelSettings', updatedModels);
+		updateLocalSettings('modelSettings', updatedModels);
+		await settingstoreAPI.addModelSetting(provider, modelName, modelData);
 		setIsModifyModelModalOpen(false);
 		setSelectedModelName(null);
 	};
@@ -235,8 +246,9 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 									apiKey: e.target.value,
 								});
 							}}
-							onBlur={e => {
-								handleSettingChange('apiKey', e.target.value);
+							onBlur={async e => {
+								updateLocalSettings('apiKey', e.target.value);
+								await SetAISettingAPIKey(provider, e.target.value);
 							}}
 							spellCheck="false"
 						/>
@@ -258,8 +270,9 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 									origin: e.target.value,
 								});
 							}}
-							onBlur={e => {
-								handleSettingChange('origin', e.target.value);
+							onBlur={async e => {
+								updateLocalSettings('origin', e.target.value);
+								await SetAISettingAttrs(provider, { origin: e.target.value } as AISettingAttrs);
 							}}
 							spellCheck="false"
 						/>
@@ -281,11 +294,12 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 							onChange={e => {
 								setLocalSettings({
 									...localSettings,
-									origin: e.target.value,
+									chatCompletionPathPrefix: e.target.value,
 								});
 							}}
-							onBlur={e => {
-								handleSettingChange('chatCompletionPathPrefix', e.target.value);
+							onBlur={async e => {
+								updateLocalSettings('chatCompletionPathPrefix', e.target.value);
+								await SetAISettingAttrs(provider, { chatCompletionPathPrefix: e.target.value } as AISettingAttrs);
 							}}
 							spellCheck="false"
 						/>
@@ -300,8 +314,9 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 							<ModelDropdown
 								modelSettings={modelSettings}
 								defaultModel={localSettings.defaultModel}
-								onModelChange={modelName => {
-									handleSettingChange('defaultModel', modelName);
+								onModelChange={async modelName => {
+									updateLocalSettings('defaultModel', modelName);
+									await SetAISettingAttrs(provider, { defaultModel: modelName } as AISettingAttrs);
 								}}
 							/>
 						</div>
@@ -333,11 +348,13 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 											<input
 												type="checkbox"
 												checked={model.isEnabled}
-												onChange={() => {
+												onChange={async () => {
 													const updatedModels = { ...modelSettings };
-													updatedModels[modelName] = { ...model, isEnabled: !model.isEnabled };
+													const modelData = { ...model, isEnabled: !model.isEnabled };
+													updatedModels[modelName] = modelData;
 													setModelSettings(updatedModels);
-													handleSettingChange('modelSettings', updatedModels);
+													updateLocalSettings('modelSettings', updatedModels);
+													await settingstoreAPI.addModelSetting(provider, modelName, modelData);
 												}}
 												className="toggle toggle-primary rounded-full"
 											/>
@@ -363,8 +380,8 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 												onClick={() => {
 													handleDeleteModel(modelName);
 												}}
-												disabled={isModelRemovable(modelName)}
-												title={isModelRemovable(modelName) ? 'Cannot delete default model' : 'Delete model'}
+												disabled={!isModelRemovable(modelName)}
+												title={!isModelRemovable(modelName) ? 'Cannot delete default model' : 'Delete model'}
 											>
 												<FiTrash2 size={16} />
 											</button>

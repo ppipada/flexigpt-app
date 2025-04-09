@@ -9,6 +9,13 @@ export interface AISetting {
 	modelSettings: Record<ModelName, ModelSetting>;
 }
 
+export interface AISettingAttrs {
+	isEnabled?: boolean;
+	origin?: string;
+	chatCompletionPathPrefix?: string;
+	defaultModel?: ModelName;
+}
+
 export interface ModelSetting {
 	displayName: string;
 	isEnabled: boolean;
@@ -44,5 +51,12 @@ export type SettingsSchema = {
 
 export interface ISettingStoreAPI {
 	getAllSettings: () => Promise<SettingsSchema>;
-	setSetting: (key: string, value: any) => Promise<void>;
+	// setSetting: (key: string, value: any) => Promise<void>;
+	setAppSettings: (defaultProvider: ProviderName) => Promise<void>;
+	addAISetting: (providerName: ProviderName, aiSetting: AISetting) => Promise<void>;
+	deleteAISetting: (providerName: ProviderName) => Promise<void>;
+	setAISettingAPIKey: (providerName: ProviderName, apiKey: string) => Promise<void>;
+	setAISettingAttrs: (providerName: ProviderName, aiSettingAttrs: AISettingAttrs) => Promise<void>;
+	addModelSetting: (providerName: ProviderName, modelName: ModelName, modelSetting: ModelSetting) => Promise<void>;
+	deleteModelSetting: (providerName: ProviderName, modelName: ModelName) => Promise<void>;
 }

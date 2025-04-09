@@ -22,6 +22,10 @@ export function SetDefaultProvider(arg1) {
   return window['go']['main']['ProviderSetWrapper']['SetDefaultProvider'](arg1);
 }
 
+export function SetProviderAPIKey(arg1) {
+  return window['go']['main']['ProviderSetWrapper']['SetProviderAPIKey'](arg1);
+}
+
 export function SetProviderAttribute(arg1) {
   return window['go']['main']['ProviderSetWrapper']['SetProviderAttribute'](arg1);
 }

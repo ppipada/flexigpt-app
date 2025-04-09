@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	simplemapdbEncdec "github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
+	"github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
 )
 
 type operation interface {
@@ -54,7 +54,7 @@ func TestMapFileStore(t *testing.T) {
 	tests := []struct {
 		name              string
 		initialData       map[string]any
-		keyEncDecs        map[string]simplemapdbEncdec.EncoderDecoder
+		keyEncDecs        map[string]encdec.EncoderDecoder
 		operations        []operation
 		expectedFinalData map[string]any
 	}{
@@ -65,7 +65,7 @@ func TestMapFileStore(t *testing.T) {
 				"bar":    "world",
 				"parent": map[string]any{"child": "secret"},
 			},
-			keyEncDecs: map[string]simplemapdbEncdec.EncoderDecoder{
+			keyEncDecs: map[string]encdec.EncoderDecoder{
 				// "foo":          encryptedStringValueEncoderDecoder{},
 				"foo":          reverseStringEncoderDecoder{},
 				"parent.child": reverseStringEncoderDecoder{},
@@ -97,7 +97,9 @@ func TestMapFileStore(t *testing.T) {
 				filename,
 				tt.initialData,
 				WithCreateIfNotExists(true),
-				WithKeyEncoders(tt.keyEncDecs),
+				WithKeyEncDecsGetter(func(data map[string]any) map[string]encdec.EncoderDecoder {
+					return tt.keyEncDecs
+				}),
 			)
 			if err != nil {
 				t.Fatalf("failed to create store: %v", err)
@@ -126,7 +128,7 @@ func TestMapFileStore(t *testing.T) {
 			// Check that the values for the encoded keys are properly encoded
 			for key := range tt.keyEncDecs {
 				keys := strings.Split(key, ".")
-				val, err := getValueAtPath(fileData, keys)
+				val, err := GetValueAtPath(fileData, keys)
 				if err != nil {
 					t.Errorf("failed to get value at key %s in file data: %v", key, err)
 					continue
@@ -149,7 +151,7 @@ func TestMapFileStore(t *testing.T) {
 				reversedValue := string(decodedBytes)
 
 				// Get the initial value from tt.initialData at the same key
-				originalVal, err := getValueAtPath(tt.initialData, keys)
+				originalVal, err := GetValueAtPath(tt.initialData, keys)
 				if err != nil {
 					t.Errorf("failed to get original value at key %s: %v", key, err)
 					continue
@@ -181,7 +183,9 @@ func TestMapFileStore(t *testing.T) {
 				filename,
 				tt.initialData,
 				WithCreateIfNotExists(false),
-				WithKeyEncoders(tt.keyEncDecs),
+				WithKeyEncDecsGetter(func(data map[string]any) map[string]encdec.EncoderDecoder {
+					return tt.keyEncDecs
+				}),
 			)
 			if err != nil {
 				t.Fatalf("failed to create store from file: %v", err)
@@ -225,7 +229,7 @@ func TestMapFileStore(t *testing.T) {
 			// Check that the values for the encoded keys are properly encoded after operations
 			for key := range tt.keyEncDecs {
 				keys := strings.Split(key, ".")
-				val, err := getValueAtPath(fileDataAfterOps, keys)
+				val, err := GetValueAtPath(fileDataAfterOps, keys)
 				if err != nil {
 					t.Errorf(
 						"failed to get value at key %s in file data after operations: %v",
@@ -260,7 +264,7 @@ func TestMapFileStore(t *testing.T) {
 				reversedValue := string(decodedBytes)
 
 				// Get the value from finalData at the same key
-				finalVal, err := getValueAtPath(tt.expectedFinalData, keys)
+				finalVal, err := GetValueAtPath(tt.expectedFinalData, keys)
 				if err != nil {
 					t.Errorf("failed to get final value at key %s: %v", key, err)
 					continue

@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	tag        = "LLMProviders"
-	pathPrefix = "/llmproviders"
+	tag        = "ProviderSet"
+	pathPrefix = "/providerset"
 )
 
 func InitProviderSetHandlers(api huma.API, providerSetAPI *ProviderSetAPI) {
@@ -33,7 +33,7 @@ func InitProviderSetHandlers(api huma.API, providerSetAPI *ProviderSetAPI) {
 	huma.Register(api, huma.Operation{
 		OperationID: "add-provider",
 		Method:      http.MethodPut,
-		Path:        pathPrefix + "/{provider}",
+		Path:        pathPrefix + "/providers/{provider}",
 		Summary:     "Add provider",
 		Description: "Add provider",
 		Tags:        []string{tag},
@@ -42,16 +42,25 @@ func InitProviderSetHandlers(api huma.API, providerSetAPI *ProviderSetAPI) {
 	huma.Register(api, huma.Operation{
 		OperationID: "delete-provider",
 		Method:      http.MethodDelete,
-		Path:        pathPrefix + "/{provider}",
+		Path:        pathPrefix + "/providers/{provider}",
 		Summary:     "Delete provider",
 		Description: "Delete provider",
 		Tags:        []string{tag},
 	}, providerSetAPI.DeleteProvider)
 
 	huma.Register(api, huma.Operation{
+		OperationID: "set-provider-apikey",
+		Method:      http.MethodPatch,
+		Path:        pathPrefix + "/providers/{provider}/apikey",
+		Summary:     "Set provider apikey",
+		Description: "Set provider apikey",
+		Tags:        []string{tag},
+	}, providerSetAPI.SetProviderAPIKey)
+
+	huma.Register(api, huma.Operation{
 		OperationID: "set-provider-attributes",
 		Method:      http.MethodPatch,
-		Path:        pathPrefix + "/{provider}",
+		Path:        pathPrefix + "/providers/{provider}/attrs",
 		Summary:     "Set provider attributes",
 		Description: "Set provider attributes",
 		Tags:        []string{tag},
@@ -60,7 +69,7 @@ func InitProviderSetHandlers(api huma.API, providerSetAPI *ProviderSetAPI) {
 	huma.Register(api, huma.Operation{
 		OperationID: "fetch-provider-completion",
 		Method:      http.MethodPost,
-		Path:        pathPrefix + "/{provider}/completion",
+		Path:        pathPrefix + "/providers/{provider}/completion",
 		Summary:     "Fetch completion for a provider",
 		Description: "Fetch completion for a provider",
 		Tags:        []string{tag},

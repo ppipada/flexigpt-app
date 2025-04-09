@@ -28,10 +28,15 @@
     - [x] engine delete end to end
     - [x] chat completion prefix end to end
     - [x] need promptlength and output as max in setting and param need to be similar in names, info need to be about "global defaults"
-    - [ ] setting provider attr for custom providers
+    - [x] setting provider attr for custom providers
+      - [x] At load time need to init default + settings specific custom providers and models
+      - [x] Better do it inside go rather than from frontend. may solve for api key thing too
+    - [x] Need a dynamic time key encoder decoder for secrets
+    - [ ] Dont allow disabling default model
   - [ ] delete of custom new providers need to be there similar to models
   - [ ] add a note in add provider that only OAI compatible api can be served
 
+- [ ] Conversations still sometime dont load at init
 - [x] Param input content should preserve tabs/spaces etc
 
 - [ ] reasoning models should have a "reasoning" effort param too.

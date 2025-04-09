@@ -5,45 +5,35 @@ import (
 	"errors"
 	"log/slog"
 
-	"github.com/flexigpt/flexiui/pkg/aiprovider/anthropic"
-	"github.com/flexigpt/flexiui/pkg/aiprovider/deepseek"
-	"github.com/flexigpt/flexiui/pkg/aiprovider/google"
-	"github.com/flexigpt/flexiui/pkg/aiprovider/huggingface"
-	"github.com/flexigpt/flexiui/pkg/aiprovider/llamacpp"
-	"github.com/flexigpt/flexiui/pkg/aiprovider/openai"
-	"github.com/flexigpt/flexiui/pkg/aiprovider/openaicompat"
+	"github.com/flexigpt/flexiui/pkg/aiprovider/api"
+	"github.com/flexigpt/flexiui/pkg/aiprovider/consts"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 )
 
-func getInbuiltProviderInfo() map[spec.ProviderName]spec.ProviderInfo {
-	return map[spec.ProviderName]spec.ProviderInfo{
-		anthropic.ProviderNameAnthropic:     anthropic.AnthropicProviderInfo,
-		deepseek.ProviderNameDeepseek:       deepseek.DeepseekProviderInfo,
-		google.ProviderNameGoogle:           google.GoogleProviderInfo,
-		huggingface.ProviderNameHuggingFace: huggingface.HuggingfaceProviderInfo,
-		llamacpp.ProviderNameLlamaCPP:       llamacpp.LlamacppProviderInfo,
-		openai.ProviderNameOpenAI:           openai.OpenAIProviderInfo,
-	}
-}
-
 func getInbuiltProviderAPI(debug bool) map[spec.ProviderName]spec.CompletionProvider {
 	return map[spec.ProviderName]spec.CompletionProvider{
-		anthropic.ProviderNameAnthropic: anthropic.NewAnthropicAPI(debug),
-		deepseek.ProviderNameDeepseek: openaicompat.NewOpenAICompatibleProvider(
-			deepseek.DeepseekProviderInfo,
+		consts.ProviderNameAnthropic: api.NewAnthropicCompatibleAPI(
+			consts.AnthropicProviderInfo,
 			debug,
 		),
-		google.ProviderNameGoogle: openaicompat.NewOpenAICompatibleProvider(
-			google.GoogleProviderInfo,
+		consts.ProviderNameDeepseek: api.NewOpenAICompatibleProvider(
+			consts.DeepseekProviderInfo,
 			debug,
 		),
-		huggingface.ProviderNameHuggingFace: huggingface.NewHuggingFaceAPI(),
-		llamacpp.ProviderNameLlamaCPP: openaicompat.NewOpenAICompatibleProvider(
-			llamacpp.LlamacppProviderInfo,
+		consts.ProviderNameGoogle: api.NewOpenAICompatibleProvider(
+			consts.GoogleProviderInfo,
 			debug,
 		),
-		openai.ProviderNameOpenAI: openaicompat.NewOpenAICompatibleProvider(
-			openai.OpenAIProviderInfo,
+		consts.ProviderNameHuggingFace: api.NewHuggingFaceCompatibleAPI(
+			consts.HuggingfaceProviderInfo,
+			debug,
+		),
+		consts.ProviderNameLlamaCPP: api.NewOpenAICompatibleProvider(
+			consts.LlamacppProviderInfo,
+			debug,
+		),
+		consts.ProviderNameOpenAI: api.NewOpenAICompatibleProvider(
+			consts.OpenAIProviderInfo,
 			debug,
 		),
 	}
@@ -61,8 +51,7 @@ func NewProviderSetAPI(
 	defaultInbuiltProvider spec.ProviderName,
 	debug bool,
 ) (*ProviderSetAPI, error) {
-	inbuiltProviderSet := getInbuiltProviderInfo()
-	_, exists := inbuiltProviderSet[defaultInbuiltProvider]
+	_, exists := consts.InbuiltProviders[defaultInbuiltProvider]
 	if !exists {
 		return nil, errors.New("invalid inbuilt provider")
 	}
@@ -96,16 +85,16 @@ func (ps *ProviderSetAPI) GetConfigurationInfo(
 ) (*spec.GetConfigurationInfoResponse, error) {
 	configuredProviders := []spec.ProviderInfo{}
 
-	for _, providerInfo := range getInbuiltProviderInfo() {
-		if provider, exists := ps.providers[providerInfo.Name]; exists &&
-			provider.IsConfigured(ctx) {
-			configuredProviders = append(configuredProviders, providerInfo)
+	for _, providerAPI := range ps.providers {
+		if providerAPI.IsConfigured(ctx) {
+			configuredProviders = append(configuredProviders, *providerAPI.GetProviderInfo(ctx))
 		}
 	}
 	return &spec.GetConfigurationInfoResponse{
 		Body: &spec.GetConfigurationInfoResponseBody{
-			DefaultProvider:     ps.defaultProvider,
-			ConfiguredProviders: configuredProviders,
+			DefaultProvider:       ps.defaultProvider,
+			ConfiguredProviders:   configuredProviders,
+			InbuiltProviderModels: consts.InbuiltProviderModels,
 		},
 	}, nil
 }
@@ -127,23 +116,42 @@ func (ps *ProviderSetAPI) AddProvider(
 	}
 
 	providerInfo := spec.ProviderInfo{
-		Name:         req.Provider,
-		APIKey:       req.Body.APIKey,
-		Origin:       req.Body.Origin,
-		Type:         spec.CustomOpenAICompatible,
-		DefaultModel: "",
-
-		APIKeyHeaderKey:          openaicompat.APIKeyHeaderKey,
-		DefaultHeaders:           openaicompat.DefaultHeaders,
-		ChatCompletionPathPrefix: req.Body.ChatCompletionPathPrefix,
-		Models:                   map[spec.ModelName]spec.ModelInfo{},
+		Name:                     req.Provider,
+		Type:                     spec.CustomOpenAICompatible,
+		APIKeyHeaderKey:          consts.OpenAICompatibleAPIKeyHeaderKey,
+		DefaultHeaders:           consts.OpenAICompatibleDefaultHeaders,
+		APIKey:                   "",
+		Origin:                   "",
+		ChatCompletionPathPrefix: "",
 	}
 
-	ps.providers[req.Provider] = openaicompat.NewOpenAICompatibleProvider(
+	ps.providers[req.Provider] = api.NewOpenAICompatibleProvider(
 		providerInfo,
 		ps.debug,
 	)
-	slog.Info("Added", "Provider", req.Provider)
+	if req.Body.APIKey != "" {
+		err := ps.providers[req.Provider].SetProviderAPIKey(ctx, req.Body.APIKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if req.Body.Origin != "" || req.Body.ChatCompletionPathPrefix != "" {
+		err := ps.providers[req.Provider].SetProviderAttribute(
+			ctx,
+			&req.Body.Origin,
+			&req.Body.ChatCompletionPathPrefix,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err := ps.providers[req.Provider].InitLLM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	slog.Info("AddProvider", "Name", req.Provider)
 	return &spec.AddProviderResponse{}, nil
 }
 
@@ -168,8 +176,35 @@ func (ps *ProviderSetAPI) DeleteProvider(
 		)
 	}
 	delete(ps.providers, req.Provider)
-	slog.Info("Deleted", "Provider", req.Provider)
+	slog.Info("DeleteProvider", "Name", req.Provider)
 	return &spec.DeleteProviderResponse{}, nil
+}
+
+// SetProviderAPIKey sets the key for a given provider.
+func (ps *ProviderSetAPI) SetProviderAPIKey(
+	ctx context.Context,
+	req *spec.SetProviderAPIKeyRequest,
+) (*spec.SetProviderAPIKeyResponse, error) {
+	if req == nil || req.Body == nil {
+		return nil, errors.New("got empty provider input")
+	}
+	p, exists := ps.providers[req.Provider]
+	if !exists {
+		return nil, errors.New("invalid provider")
+	}
+
+	err := p.SetProviderAPIKey(
+		ctx,
+		req.Body.APIKey,
+	)
+	if err != nil {
+		return nil, err
+	}
+	err = p.InitLLM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &spec.SetProviderAPIKeyResponse{}, nil
 }
 
 // SetProviderAttribute sets attributes for a given provider.
@@ -187,11 +222,17 @@ func (ps *ProviderSetAPI) SetProviderAttribute(
 
 	err := p.SetProviderAttribute(
 		ctx,
-		req.Body.APIKey,
 		req.Body.Origin,
 		req.Body.ChatCompletionPathPrefix,
 	)
-	return &spec.SetProviderAttributeResponse{}, err
+	if err != nil {
+		return nil, err
+	}
+	err = p.InitLLM(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &spec.SetProviderAttributeResponse{}, nil
 }
 
 // FetchCompletion processes a completion request for a given provider.
@@ -207,10 +248,20 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	if !exists {
 		return nil, errors.New("invalid provider")
 	}
+
+	var inbuiltModelParams *spec.ModelParams = nil
+	if pmodels, providerExists := consts.InbuiltProviderModels[provider]; providerExists {
+		if params, paramExists := pmodels[req.Body.ModelParams.Name]; paramExists {
+			inbuiltModelParams = &params
+		}
+	}
+
 	resp, err := p.FetchCompletion(
 		ctx,
+		p.GetLLMsModel(ctx),
 		req.Body.Prompt,
 		req.Body.ModelParams,
+		inbuiltModelParams,
 		req.Body.PrevMessages,
 		req.Body.OnStreamData,
 	)

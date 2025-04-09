@@ -20,9 +20,9 @@ func (e *KeyNotFoundError) Error() string {
 	return fmt.Sprintf("key '%s' not found", e.Key)
 }
 
-// getValueAtPath retrieves the value at the specified path in the data map.
-func getValueAtPath(data any, keys []string) (any, error) {
-	parentMap, lastKey, err := navigateToParentMap(data, keys, false)
+// GetValueAtPath retrieves the value at the specified path in the data map.
+func GetValueAtPath(data any, keys []string) (any, error) {
+	parentMap, lastKey, err := NavigateToParentMap(data, keys, false)
 	if err != nil {
 		return nil, err
 	}
@@ -34,23 +34,23 @@ func getValueAtPath(data any, keys []string) (any, error) {
 	return val, nil
 }
 
-// setValueAtPath sets the value at the specified path in the data map.
-func setValueAtPath(data any, keys []string, value any) error {
-	parentMap, lastKey, err := navigateToParentMap(data, keys, true)
+// SetValueAtPath sets the value at the specified path in the data map.
+func SetValueAtPath(data any, keys []string, value any) error {
+	parentMap, lastKey, err := NavigateToParentMap(data, keys, true)
 	if err != nil {
 		return err
 	}
 	if lastKey == "" {
 		return &KeyNotFoundError{Key: lastKey, Path: strings.Join(keys, ".")}
 	}
-	parentMap[lastKey] = deepCopyValue(value)
+	parentMap[lastKey] = DeepCopyValue(value)
 	return nil
 }
 
-// deleteValueAtPath deletes the value at the specified path in the data map.
+// DeleteValueAtPath deletes the value at the specified path in the data map.
 // If path is not found, this is a noop.
-func deleteValueAtPath(data any, keys []string) error {
-	parentMap, lastKey, err := navigateToParentMap(data, keys, false)
+func DeleteValueAtPath(data any, keys []string) error {
+	parentMap, lastKey, err := NavigateToParentMap(data, keys, false)
 	if err != nil {
 		var kne *KeyNotFoundError
 		if errors.As(err, &kne) {
@@ -66,19 +66,19 @@ func deleteValueAtPath(data any, keys []string) error {
 	return nil
 }
 
-// deepCopyValue creates a deep copy of an any value.
-func deepCopyValue(value any) any {
+// DeepCopyValue creates a deep copy of an any value.
+func DeepCopyValue(value any) any {
 	switch v := value.(type) {
 	case map[string]any:
 		newV := make(map[string]any)
 		for k, val := range v {
-			newV[k] = deepCopyValue(val)
+			newV[k] = DeepCopyValue(val)
 		}
 		return newV
 	case []any:
 		sliceCopy := make([]any, len(v))
 		for i, elem := range v {
-			sliceCopy[i] = deepCopyValue(elem)
+			sliceCopy[i] = DeepCopyValue(elem)
 		}
 		return sliceCopy
 	default:
@@ -86,10 +86,10 @@ func deepCopyValue(value any) any {
 	}
 }
 
-// navigateToParentMap navigates to the parent map of the last key in the given path.
+// NavigateToParentMap navigates to the parent map of the last key in the given path.
 // It returns the parent map, the last key, and any error encountered.
 // If createMissing is true, it creates any missing maps along the path.
-func navigateToParentMap(
+func NavigateToParentMap(
 	data any,
 	keys []string,
 	createMissing bool,
