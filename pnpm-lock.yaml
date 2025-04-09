@@ -109,7 +109,7 @@ importers:
         specifier: ^7.0.3
         version: 7.0.3
       daisyui:
-        specifier: ^5.0.14
+        specifier: ^5.0.16
         version: 5.0.16
       eslint:
         specifier: ^9.23.0
