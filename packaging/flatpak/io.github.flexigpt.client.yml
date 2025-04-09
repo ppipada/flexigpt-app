@@ -39,8 +39,8 @@ modules:
       - mv $(pwd)/* $GOROOT
     sources:
       - type: archive
-        url: https://go.dev/dl/go1.23.3.linux-amd64.tar.gz
-        sha256: a0afb9744c00648bafb1b90b4aba5bdb86f424f02f9275399ce0c20b93a2c3a8
+        url: https://go.dev/dl/go1.24.2.linux-amd64.tar.gz
+        sha256: 68097bd680839cbc9d464a0edce4f7c333975e27a90246890e9f1078c7e702ad
 
   - name: nodejs
     buildsystem: simple
@@ -60,7 +60,7 @@ modules:
   - name: wails
     buildsystem: simple
     build-commands:
-      - $GOROOT/bin/go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.0
+      - $GOROOT/bin/go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.1
 
   - name: FlexiGPT
     buildsystem: simple

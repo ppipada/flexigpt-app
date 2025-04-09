@@ -24,9 +24,9 @@ jobs:
       BUILD_NAME: 'FlexiGPT'
       BUILD_PLATFORM: 'darwin/universal'
       VERSION_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
-      WAILS_VERSION: 'v2.10.0'
+      WAILS_VERSION: 'v2.10.1'
       WAILS_BUILD_WEBVIEW2: 'download'
-      GO_VERSION: '^1.23.2'
+      GO_VERSION: '^1.24.2'
       NODE_VERSION: '20.x'
       APP_WORKING_DIRECTORY: '.'
       GON_SIGN_JSON_PATH: './packaging/darwin/gon-sign.json'

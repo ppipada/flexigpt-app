@@ -23,7 +23,8 @@
 		"run:watch": "cd ./cmd/agentgo &&  wails dev -s -v 2 -tags webkit2_41",
 		"run:gobackend": "./scripts/run_backend.sh",
 		"lint:go": "golangci-lint run ./... -v",
-		"lint:all": "pnpm -F frontend run lint; golangci-lint run ./... -v"
+		"lint": "pnpm -F frontend run lint; pnpm run lint:go",
+		"test:go": "go test ./..."
 	},
 	"devDependencies": {
 		"shx": "^0.4.0"

@@ -56,7 +56,7 @@ func (api *AnthropicAPI) SetProviderAttribute(
 		return nil
 	}
 	options = append(options, langchainAnthropic.WithToken(api.ProviderInfo.APIKey))
-	newClient := baseutils.NewDebugHTTPClient(api.BaseAIAPI.Debug)
+	newClient := baseutils.NewDebugHTTPClient(api.Debug)
 	options = append(options, langchainAnthropic.WithHTTPClient(newClient))
 
 	llm, err := langchainAnthropic.New(options...)

@@ -68,7 +68,7 @@ func (api *OpenAICompatibleAPI) SetProviderAttribute(
 		return nil
 	}
 	options = append(options, langchainOpenAI.WithToken(api.ProviderInfo.APIKey))
-	newClient := baseutils.NewDebugHTTPClient(api.BaseAIAPI.Debug)
+	newClient := baseutils.NewDebugHTTPClient(api.Debug)
 	options = append(options, langchainOpenAI.WithHTTPClient(newClient))
 
 	llm, err := langchainOpenAI.New(options...)
