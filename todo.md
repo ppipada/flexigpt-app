@@ -15,42 +15,15 @@
   - [ ] Implement MCP protocol
   - [ ] Add servers for: file, git, simplemapstore
 
-- [ ] Add models as a configuration in providers where each model can be enabled disabled as required. Add a custom model entry support too.
-
-  - [x] UI with card table and actions
-  - [x] Modal for edit/add
-  - [x] Backend integration
-  - [x] Do not delete inbuilt models, just disable them.
-  - [x] Input options temperature should come from either modelparams or modelinfo
-  - [x] Link add model
-  - [x] Add a custom provider and model name setting too so that an OAI compatible provider and model can be added
-  - [ ] Add a new provider flow in providerSet
-    - [x] engine delete end to end
-    - [x] chat completion prefix end to end
-    - [x] need promptlength and output as max in setting and param need to be similar in names, info need to be about "global defaults"
-    - [x] setting provider attr for custom providers
-      - [x] At load time need to init default + settings specific custom providers and models
-      - [x] Better do it inside go rather than from frontend. may solve for api key thing too
-    - [x] Need a dynamic time key encoder decoder for secrets
-    - [x] Dont allow disabling default model
-    - [x] atleast one model should be enabled
-    - [x] default should have only enabled models
-    - [x] reasoning models dont have tick as of now
-    - [x] dont allow dot and spaces in providername and model name
-    - [x] add buttons should be disabled until add reqs are met.
-  - [x] Chat options is showing the new default model as default + the actual default model as tick mark
-  - [ ] delete of custom new providers need to be there similar to models
-  - [x] add a note in add provider that only OAI compatible api can be served
-
-- [x] Overflow issue in parent i.e whole page sometimes moves up
-- [x] Param input content should preserve tabs/spaces etc
-
-- [ ] Conversations still sometime dont load at init
 - [ ] reasoning models should have a "reasoning" effort param too.
 
   - [x] Add reasoning support in modelparams
   - [ ] reasoning effort comes in multiple flavors: medium high less etc. number from x to y. find a way to represent them.
   - [ ] See if temperature is almost always optional. Anthropic supports reasoning + normal mode too. Need to see how to represent that too without real overwhelming of the user. Represent appropriately in UI
+    - [ ] For anthropic: temp and thinking are not compatible. streaming is present. thinking is controlled as "budget tokens "
+    - [ ] For openai: temp and thinking are not compatible. can pass temp as 1 to some models after dec 24. streaming is present in newer api. thinking is controlled as effort, low medium high
+    - [ ] google doesnt mention any control on thinking model
+  - [ ] langchaingo seem to be moving very slow with no thinking support. better use official sdks from openai and anthropic
 
 - [ ] Need a settings data version and migration func
 - [ ] API key should never reach frontend after save
@@ -59,6 +32,7 @@
   - [ ] It is mainly seen if both wails dev and current app is open and being used wails://wails consumes 100%
   - [ ] Also check when one request was fired but not allowed to complete for some reason
   - [ ] Also, if the message thread gets very very big there seems to be a issue.
+- [ ] Conversations still sometime dont load at init
 
 ## Knowledge base
 

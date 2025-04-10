@@ -33,6 +33,7 @@ interface AISettingsCardProps {
 	aiSettings: Record<string, AISetting>;
 	defaultProvider: ProviderName;
 	onProviderSettingChange: (provider: ProviderName, settings: AISetting) => void;
+	onProviderDelete: (provider: ProviderName) => Promise<void>;
 }
 
 const AISettingsCard: FC<AISettingsCardProps> = ({
@@ -41,6 +42,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	aiSettings,
 	defaultProvider,
 	onProviderSettingChange,
+	onProviderDelete,
 }) => {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [isEnabled, setIsEnabled] = useState(!!settings.isEnabled);
@@ -55,6 +57,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	const [showActionDeniedAlert, setShowActionDeniedAlert] = useState(false);
 	const [actionDeniedMessage, setActionDeniedMessage] = useState('');
 	const [configurationInfo, setConfigurationInfo] = useState<ConfigurationResponse | null>(null);
+	const [isDeleteProviderModalOpen, setIsDeleteProviderModalOpen] = useState(false);
 
 	useEffect(() => {
 		const fetchConfigurationInfo = async () => {
@@ -128,7 +131,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		setModelSettings(updatedModels);
 		updateLocalSettings('modelSettings', updatedModels);
 
-		// Optionally persist to a backend, for example:
+		// Persist to a backend
 		await settingstoreAPI.addModelSetting(provider, modelName, updatedModel);
 	};
 
@@ -154,9 +157,11 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	};
 
 	const isModelRemovable = (modelName: ModelName) => {
+		// Cannot remove if it is the default model
 		if (modelName === localSettings.defaultModel) {
 			return false;
 		}
+		// Cannot remove if it is an inbuilt model
 		if (
 			configurationInfo &&
 			provider in configurationInfo.inbuiltProviderModels &&
@@ -186,7 +191,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 
 	const handleDeleteModel = (modelName: ModelName) => {
 		if (!isModelRemovable(modelName)) {
-			setActionDeniedMessage('Cannot delete the default model. Please select a different default model first.');
+			setActionDeniedMessage('Cannot delete the default model or an inbuilt model.');
 			setShowActionDeniedAlert(true);
 			return;
 		}
@@ -197,14 +202,12 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	const handleDeleteModelConfirm = async () => {
 		const modelName: ModelName = selectedModelName || '';
 		if (!isModelRemovable(modelName)) {
-			setActionDeniedMessage('Cannot delete the default model. Please select a different default model first.');
+			setActionDeniedMessage('Cannot delete the default model or an inbuilt model.');
 			setShowActionDeniedAlert(true);
 			return;
 		}
 
-		const updatedModels = selectedModelName
-			? Object.fromEntries(Object.entries(modelSettings).filter(([key]) => key !== selectedModelName))
-			: { ...modelSettings };
+		const updatedModels = Object.fromEntries(Object.entries(modelSettings).filter(([key]) => key !== modelName));
 
 		setModelSettings(updatedModels);
 		updateLocalSettings('modelSettings', updatedModels);
@@ -227,6 +230,30 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		await settingstoreAPI.addModelSetting(provider, modelName, modelData);
 		setIsModifyModelModalOpen(false);
 		setSelectedModelName(null);
+	};
+
+	const isProviderRemovable = (provider: ProviderName) => {
+		if (provider === defaultProvider) return false;
+		if (configurationInfo && provider in configurationInfo.inbuiltProviderModels) return false;
+		return true;
+	};
+
+	const handleDeleteProvider = (provider: ProviderName) => {
+		if (!isProviderRemovable(provider)) {
+			setActionDeniedMessage('Cannot delete the default provider or an inbuilt provider.');
+			setShowActionDeniedAlert(true);
+			return;
+		}
+		setIsDeleteProviderModalOpen(true);
+	};
+
+	const handleDeleteProviderConfirm = async () => {
+		await onProviderDelete(provider); // call parent to remove from state & store
+		setIsDeleteProviderModalOpen(false);
+	};
+
+	const closeDeleteProviderModal = () => {
+		setIsDeleteProviderModalOpen(false);
 	};
 
 	return (
@@ -368,22 +395,20 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 					</div>
 
 					{/* Models Table */}
-					<div className="overflow-x-auto">
+					<div className="overflow-x-auto border border-base-content/10 rounded-2xl">
 						<table className="table table-zebra w-full">
 							<thead>
 								<tr className="font-semibold text-sm px-4 py-0 m-0 bg-base-300">
-									<th className="rounded-tl-2xl">Model Name</th>
+									<th>Model Name</th>
 									<th className="text-center">Enabled</th>
 									<th className="text-center">Reasoning</th>
-									<th className="text-right rounded-tr-2xl pr-8">Actions</th>
+									<th className="text-right pr-8">Actions</th>
 								</tr>
 							</thead>
 							<tbody>
-								{Object.entries(modelSettings).map(([modelName, model], index, array) => (
+								{Object.entries(modelSettings).map(([modelName, model]) => (
 									<tr key={modelName} className="hover:bg-base-300 border-none shadow-none">
-										<td className={index === array.length - 1 ? 'rounded-bl-2xl' : ''}>
-											{model.displayName || modelName}
-										</td>
+										<td>{model.displayName || modelName}</td>
 										<td className="flex items-center justify-center">
 											<input
 												type="checkbox"
@@ -399,7 +424,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 												{isModelReasoningSupport(modelName) ? <FiCheck size={16} /> : <FiX size={16} />}
 											</div>
 										</td>
-										<td className={index === array.length - 1 ? 'rounded-br-2xl text-right' : 'text-right'}>
+										<td className="text-right">
 											<button
 												className="btn btn-sm btn-ghost rounded-2xl"
 												aria-label="Edit Model"
@@ -416,7 +441,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 													handleDeleteModel(modelName);
 												}}
 												disabled={!isModelRemovable(modelName)}
-												title={!isModelRemovable(modelName) ? 'Cannot delete default model' : 'Delete model'}
+												title={!isModelRemovable(modelName) ? 'Cannot delete default or inbuilt model' : 'Delete model'}
 											>
 												<FiTrash2 size={16} />
 											</button>
@@ -427,6 +452,21 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						</table>
 					</div>
 					{/* End of Models */}
+
+					{/* Delete Provider */}
+					<div className="flex justify-end">
+						<button
+							className="btn btn-md btn-ghost rounded-2xl flex items-center"
+							aria-label="Delete Provider"
+							onClick={() => {
+								handleDeleteProvider(provider);
+							}}
+							disabled={!isProviderRemovable(provider)}
+							title={!isProviderRemovable(provider) ? 'Cannot delete default or inbuilt provider' : 'Delete Provider'}
+						>
+							<FiTrash2 size={16} /> Delete Provider
+						</button>
+					</div>
 				</div>
 			)}
 
@@ -485,6 +525,18 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						setActionDeniedMessage('');
 					}}
 					message={actionDeniedMessage}
+				/>
+			)}
+
+			{/* ADDED: Delete Provider Modal */}
+			{isDeleteProviderModalOpen && (
+				<DeleteConfirmationModal
+					isOpen={isDeleteProviderModalOpen}
+					onClose={closeDeleteProviderModal}
+					onConfirm={handleDeleteProviderConfirm}
+					title="Delete Provider"
+					message={`Are you sure you want to delete the entire provider "${provider}"? This action cannot be undone.`}
+					confirmButtonText="Delete"
 				/>
 			)}
 		</div>

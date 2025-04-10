@@ -6,7 +6,7 @@ import { DefaultModelName, DefaultProviderName, type ProviderName } from '@/mode
 import type { AISetting } from '@/models/settingmodel';
 
 import { settingstoreAPI } from '@/apis/baseapi';
-import { AddAISetting, SetAppSettings } from '@/apis/settingstore_helper';
+import { AddAISetting, DeleteAISetting, SetAppSettings } from '@/apis/settingstore_helper';
 
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';
@@ -63,7 +63,7 @@ const SettingsPage: FC = () => {
 	};
 
 	const handleAddProviderSubmit = async (providerName: ProviderName, newProviderSettings: AISetting) => {
-		// Build the updated settings yourself:
+		// Build the updated settings
 		const updatedSettings = {
 			...aiSettings,
 			[providerName]: newProviderSettings,
@@ -72,11 +72,27 @@ const SettingsPage: FC = () => {
 		// Update React state with the same object
 		setAISettings(updatedSettings);
 
-		// Persist to setting store and update the provider api
+		// Persist to setting store
 		await AddAISetting(providerName, newProviderSettings);
+		console.log(`Provider "${providerName}" added successfully.`);
+	};
+
+	const handleRemoveProvider = async (providerName: ProviderName) => {
+		if (providerName === defaultProvider) {
+			// This should never happen
+			console.log(`Provider "${providerName}" not removed.`);
+			return;
+		}
+		// Remove from local state
+		const newAISettings = Object.fromEntries(Object.entries(aiSettings).filter(([key]) => key !== providerName));
+		setAISettings(newAISettings);
+
+		await DeleteAISetting(providerName);
+		console.log(`Provider "${providerName}" removed successfully.`);
 	};
 
 	const fetchValue = async (): Promise<string> => {
+		// For download button
 		const value = JSON.stringify(
 			{
 				app: {
@@ -162,6 +178,7 @@ const SettingsPage: FC = () => {
 										aiSettings={aiSettings}
 										defaultProvider={defaultProvider}
 										onProviderSettingChange={handleProviderSettingChange}
+										onProviderDelete={handleRemoveProvider}
 									/>
 								</div>
 							);
