@@ -1,4 +1,3 @@
-import { log, providerSetAPI } from '@/apis/baseapi';
 import type {
 	ChatCompletionRequestMessage,
 	CompletionResponse,
@@ -8,6 +7,8 @@ import type {
 import { ChatCompletionRoleEnum } from '@/models/aiprovidermodel';
 import type { ConversationMessage } from '@/models/conversationmodel';
 import { ConversationRoleEnum } from '@/models/conversationmodel';
+
+import { log, providerSetAPI } from '@/apis/baseapi';
 
 const roleMap: Record<ConversationRoleEnum, ChatCompletionRoleEnum> = {
 	[ConversationRoleEnum.system]: ChatCompletionRoleEnum.system,

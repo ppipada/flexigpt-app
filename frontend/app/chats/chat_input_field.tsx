@@ -1,9 +1,11 @@
-import type { ChatOptions, ModelOption } from '@/apis/settingstore_helper';
-import { DefaultModelOption, GetChatInputOptions } from '@/apis/settingstore_helper';
-import { UseCloseDetails } from '@/lib/use_close_details';
 import type { ChangeEvent, KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { FiCheck, FiChevronDown, FiChevronUp, FiSend } from 'react-icons/fi';
+
+import type { ChatOptions, ModelOption } from '@/apis/settingstore_helper';
+import { DefaultModelOption, GetChatInputOptions } from '@/apis/settingstore_helper';
+
+import { UseCloseDetails } from '@/lib/use_close_details';
 
 interface ChatInputFieldProps {
 	onSend: (message: string, options: ChatOptions) => void; // Updated to use ChatOptions

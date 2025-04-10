@@ -1,11 +1,11 @@
-import { useEffect, useState, type FC } from 'react';
+import { type FC, useEffect, useState } from 'react';
 import { FiPlus } from 'react-icons/fi';
-
-import { settingstoreAPI } from '@/apis/baseapi';
-import { AddAISetting, SetAppSettings } from '@/apis/settingstore_helper';
 
 import { DefaultModelName, DefaultProviderName, type ProviderName } from '@/models/aiprovidermodel';
 import type { AISetting } from '@/models/settingmodel';
+
+import { settingstoreAPI } from '@/apis/baseapi';
+import { AddAISetting, SetAppSettings } from '@/apis/settingstore_helper';
 
 import DownloadButton from '@/components/download_button';
 import ThemeSwitch from '@/components/theme_switch';

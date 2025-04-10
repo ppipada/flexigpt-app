@@ -1,11 +1,13 @@
-import ChatMessageContent from '@/chats/chat_message_content';
-import EditBox from '@/chats/chat_message_editbox';
-import ChatMessageFooterArea from '@/chats/chat_message_footer';
-import type { ConversationMessage } from '@/models/conversationmodel';
-import { ConversationRoleEnum } from '@/models/conversationmodel';
 import type { ChangeEvent, FC } from 'react';
 import { useState } from 'react';
 import { FiCompass, FiUser } from 'react-icons/fi';
+
+import type { ConversationMessage } from '@/models/conversationmodel';
+import { ConversationRoleEnum } from '@/models/conversationmodel';
+
+import ChatMessageContent from '@/chats/chat_message_content';
+import EditBox from '@/chats/chat_message_editbox';
+import ChatMessageFooterArea from '@/chats/chat_message_footer';
 
 interface ChatMessageProps {
 	message: ConversationMessage;

@@ -1,5 +1,6 @@
-import { FEATURE_FLAG_AGENTS } from '@/lib/features';
 import { Link } from 'react-router';
+
+import { FEATURE_FLAG_AGENTS } from '@/lib/features';
 
 export default function Home() {
 	return (

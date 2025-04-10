@@ -1,6 +1,7 @@
+import React, { useEffect, useState } from 'react';
+
 import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/models/commands';
 import type { PromptTemplate } from '@/models/promptmodel';
-import React, { useEffect, useState } from 'react';
 
 interface ModifyPromptTemplateProps {
 	isOpen: boolean;

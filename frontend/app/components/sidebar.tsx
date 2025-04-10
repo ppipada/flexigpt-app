@@ -1,8 +1,9 @@
-import { FEATURE_FLAG_AGENTS, FEATURE_FLAG_DOCUMENT_STORES, FEATURE_FLAG_PROMPTS } from '@/lib/features';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { FiCpu, FiDatabase, FiFilePlus, FiHome, FiMenu, FiMessageSquare, FiSettings } from 'react-icons/fi';
 import { Link } from 'react-router';
+
+import { FEATURE_FLAG_AGENTS, FEATURE_FLAG_DOCUMENT_STORES, FEATURE_FLAG_PROMPTS } from '@/lib/features';
 
 interface SidebarProps {
 	children: ReactNode;

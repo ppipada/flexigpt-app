@@ -1,9 +1,12 @@
-import DeleteConfirmationModal from '@/components/delete_confirmation';
-import { TOOL_INVOKE_CHAR } from '@/models/commands';
-import type { Tool } from '@/models/promptmodel';
-import ModifyTool from '@/prompts/tool_modify';
 import { useEffect, useState } from 'react';
 import { FiEdit, FiPlus, FiTrash2 } from 'react-icons/fi';
+
+import { TOOL_INVOKE_CHAR } from '@/models/commands';
+import type { Tool } from '@/models/promptmodel';
+
+import DeleteConfirmationModal from '@/components/delete_confirmation';
+
+import ModifyTool from '@/prompts/tool_modify';
 
 const fetchTools = async (): Promise<Tool[]> => {
 	await new Promise(resolve => setTimeout(resolve, 100));

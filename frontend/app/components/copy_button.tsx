@@ -1,7 +1,8 @@
-import { log } from '@/apis/baseapi';
 import type { ButtonHTMLAttributes, FC } from 'react';
 import { useState } from 'react';
 import { FiCheck, FiCopy } from 'react-icons/fi';
+
+import { log } from '@/apis/baseapi';
 
 interface CopyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	value?: string;

@@ -1,7 +1,8 @@
-import type { ConversationItem } from '@/models/conversationmodel';
 import type { ChangeEvent, FC, KeyboardEvent } from 'react';
 import { Fragment, useEffect, useState } from 'react';
 import { FiSearch } from 'react-icons/fi';
+
+import type { ConversationItem } from '@/models/conversationmodel';
 
 interface ChatSearchProps {
 	initialItems: ConversationItem[];

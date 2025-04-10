@@ -1,3 +1,6 @@
+import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
+import type { AISetting, AISettingAttrs, ISettingStoreAPI, ModelSetting, SettingsSchema } from '@/models/settingmodel';
+
 import {
 	AddAISetting,
 	AddModelSetting,
@@ -8,8 +11,7 @@ import {
 	SetAISettingAttrs,
 	SetAppSettings,
 } from '@/apis/wailsjs/go/main/SettingStoreWrapper';
-import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
-import type { AISetting, AISettingAttrs, ISettingStoreAPI, ModelSetting, SettingsSchema } from '@/models/settingmodel';
+
 import type { spec } from '../wailsjs/go/models';
 
 /**

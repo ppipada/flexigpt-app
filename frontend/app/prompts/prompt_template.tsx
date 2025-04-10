@@ -1,9 +1,12 @@
-import DeleteConfirmationModal from '@/components/delete_confirmation';
-import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/models/commands';
-import type { PromptTemplate } from '@/models/promptmodel';
-import ModifyPromptTemplate from '@/prompts/prompt_template_modify';
 import { useEffect, useState } from 'react';
 import { FiCheck, FiEdit, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
+
+import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/models/commands';
+import type { PromptTemplate } from '@/models/promptmodel';
+
+import DeleteConfirmationModal from '@/components/delete_confirmation';
+
+import ModifyPromptTemplate from '@/prompts/prompt_template_modify';
 
 const fetchPromptTemplates = async (): Promise<PromptTemplate[]> => {
 	await new Promise(resolve => setTimeout(resolve, 10));

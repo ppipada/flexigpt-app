@@ -1,12 +1,13 @@
-import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
 import {
-	DefaultModelParams,
 	type AddProviderRequest,
+	DefaultModelParams,
 	type ModelName,
 	type ModelParams,
 	type ProviderName,
 } from '@/models/aiprovidermodel';
-import { DefaultModelSetting, type AISetting, type AISettingAttrs, type ModelSetting } from '@/models/settingmodel';
+import { type AISetting, type AISettingAttrs, DefaultModelSetting, type ModelSetting } from '@/models/settingmodel';
+
+import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
 
 export interface ModelOption extends ModelParams {
 	title: string;

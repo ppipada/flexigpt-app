@@ -1,3 +1,10 @@
+import type {
+	Conversation,
+	ConversationItem,
+	ConversationMessage,
+	IConversationStoreAPI,
+} from '@/models/conversationmodel';
+
 import {
 	AddMessageToConversation,
 	DeleteConversation,
@@ -6,12 +13,6 @@ import {
 	SaveConversation,
 } from '@/apis/wailsjs/go/main/ConversationCollectionWrapper';
 import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
-import type {
-	Conversation,
-	ConversationItem,
-	ConversationMessage,
-	IConversationStoreAPI,
-} from '@/models/conversationmodel';
 
 /**
  * @public

@@ -1,10 +1,12 @@
-import { MermaidDiagram } from '@/chats/chat_message_content_mermaid';
-import CopyButton from '@/components/copy_button';
-import DownloadButton from '@/components/download_button';
 import 'katex/dist/katex.min.css';
 import type { FC } from 'react';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { monokaiSublime } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
+
+import CopyButton from '@/components/copy_button';
+import DownloadButton from '@/components/download_button';
+
+import { MermaidDiagram } from '@/chats/chat_message_content_mermaid';
 
 interface CodeProps {
 	language: string;

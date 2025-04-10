@@ -1,6 +1,7 @@
+import React, { useEffect, useState } from 'react';
+
 import { TOOL_INVOKE_CHAR } from '@/models/commands';
 import type { Tool } from '@/models/promptmodel';
-import React, { useEffect, useState } from 'react';
 
 interface ModifyToolProps {
 	isOpen: boolean;

@@ -1,10 +1,10 @@
 import React, { type FC, useEffect, useState } from 'react';
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
-import { PopulateModelSettingDefaults } from '@/apis/settingstore_helper';
-
 import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
 import { DefaultModelSetting, type ModelSetting } from '@/models/settingmodel';
+
+import { PopulateModelSettingDefaults } from '@/apis/settingstore_helper';
 
 interface ModifyModelModalProps {
 	isOpen: boolean;

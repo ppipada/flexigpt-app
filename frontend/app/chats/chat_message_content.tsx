@@ -1,5 +1,3 @@
-import { backendAPI } from '@/apis/baseapi';
-import CodeBlock from '@/chats/chat_message_content_codeblock';
 import 'katex/dist/katex.min.css';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
@@ -9,6 +7,10 @@ import remarkGemoji from 'remark-gemoji';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import supersub from 'remark-supersub';
+
+import { backendAPI } from '@/apis/baseapi';
+
+import CodeBlock from '@/chats/chat_message_content_codeblock';
 
 // LaTeX processing function
 const containsLatexRegex = /\\\(.*?\\\)|\\\[.*?\\\]|\$.*?\$|\\begin\{equation\}.*?\\end\{equation\}/;

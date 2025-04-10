@@ -1,14 +1,3 @@
-import {
-	AddProvider,
-	DeleteProvider,
-	FetchCompletion,
-	GetConfigurationInfo,
-	SetDefaultProvider,
-	SetProviderAPIKey,
-	SetProviderAttribute,
-} from '@/apis/wailsjs/go/main/ProviderSetWrapper';
-import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
-import { EventsOn } from '@/apis/wailsjs/runtime/runtime';
 import type {
 	AddProviderRequest,
 	ChatCompletionRequestMessage,
@@ -20,6 +9,18 @@ import type {
 	ProviderInfo,
 	ProviderName,
 } from '@/models/aiprovidermodel';
+
+import {
+	AddProvider,
+	DeleteProvider,
+	FetchCompletion,
+	GetConfigurationInfo,
+	SetDefaultProvider,
+	SetProviderAPIKey,
+	SetProviderAttribute,
+} from '@/apis/wailsjs/go/main/ProviderSetWrapper';
+import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
+import { EventsOn } from '@/apis/wailsjs/runtime/runtime';
 
 /**
  * @public

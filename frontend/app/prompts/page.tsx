@@ -1,6 +1,7 @@
+import { useState } from 'react';
+
 import PromptTemplates from '@/prompts/prompt_template';
 import Tools from '@/prompts/tool';
-import { useState } from 'react';
 
 const Prompts: React.FC = () => {
 	const [activeTab, setActiveTab] = useState('promptTemplates');

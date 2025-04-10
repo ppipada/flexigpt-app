@@ -1,17 +1,20 @@
+import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { v7 as uuidv7 } from 'uuid';
+
+import { type ModelParams } from '@/models/aiprovidermodel';
+import { ConversationRoleEnum } from '@/models/conversationmodel';
+import type { Conversation, ConversationItem, ConversationMessage } from '@/models/conversationmodel';
+
 import { GetCompletionMessage } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
 import { listAllConversations } from '@/apis/conversationstore_helper';
-import { DefaultModelOption, type ChatOptions } from '@/apis/settingstore_helper';
+import { type ChatOptions, DefaultModelOption } from '@/apis/settingstore_helper';
+
+import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
+
 import ChatInputField, { type ChatInputFieldHandle } from '@/chats/chat_input_field';
 import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
-import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
-import { type ModelParams } from '@/models/aiprovidermodel';
-import { ConversationRoleEnum } from '@/models/conversationmodel';
-
-import type { Conversation, ConversationItem, ConversationMessage } from '@/models/conversationmodel';
-import { useCallback, useEffect, useMemo, useRef, useState, type FC } from 'react';
-import { v7 as uuidv7 } from 'uuid';
 
 function initConversation(title: string = 'New Conversation'): Conversation {
 	return {

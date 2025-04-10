@@ -1,8 +1,10 @@
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 
-import Sidebar from '@/components/sidebar';
 import { IS_WAILS_PLATFORM } from '@/lib/features';
 import { ThemeSwitchProvider } from '@/lib/theme_provider';
+
+import Sidebar from '@/components/sidebar';
+
 import type { Route } from './+types/root';
 import './globals.css';
 

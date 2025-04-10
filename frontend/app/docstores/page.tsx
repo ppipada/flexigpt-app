@@ -1,10 +1,13 @@
-import DeleteConfirmationModal from '@/components/delete_confirmation';
-import ModifyCollection from '@/docstores/collection_modify';
-import ModifyDocStore from '@/docstores/docstore_modify';
-import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/models/commands';
-import type { Collection, DocStore } from '@/models/docstoremodel';
 import { useEffect, useState } from 'react';
 import { FiEdit, FiFolder, FiPlus, FiServer, FiTrash2 } from 'react-icons/fi';
+
+import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/models/commands';
+import type { Collection, DocStore } from '@/models/docstoremodel';
+
+import DeleteConfirmationModal from '@/components/delete_confirmation';
+
+import ModifyCollection from '@/docstores/collection_modify';
+import ModifyDocStore from '@/docstores/docstore_modify';
 
 // Mock function to fetch docStores
 const fetchDocStores = async (): Promise<DocStore[]> => {
