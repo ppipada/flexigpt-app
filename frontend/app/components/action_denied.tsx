@@ -1,5 +1,5 @@
 // components/ActionDeniedAlert.tsx
-import React from 'react';
+import type { FC } from 'react';
 import { FiAlertTriangle } from 'react-icons/fi';
 
 interface ActionDeniedAlertProps {
@@ -9,12 +9,7 @@ interface ActionDeniedAlertProps {
 	title?: string;
 }
 
-const ActionDeniedAlert: React.FC<ActionDeniedAlertProps> = ({
-	isOpen,
-	onClose,
-	message,
-	title = 'Action Not Allowed',
-}) => {
+const ActionDeniedAlert: FC<ActionDeniedAlertProps> = ({ isOpen, onClose, message, title = 'Action Not Allowed' }) => {
 	if (!isOpen) return null;
 
 	return (

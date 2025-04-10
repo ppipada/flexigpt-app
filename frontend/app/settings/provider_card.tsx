@@ -13,15 +13,16 @@ import {
 	FiXCircle,
 } from 'react-icons/fi';
 
-import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
-import { SetAISettingAPIKey, SetAISettingAttrs } from '@/apis/settingstore_helper';
-
 import type { ConfigurationResponse, ModelName, ProviderName } from '@/models/aiprovidermodel';
 import { ProviderInfoDescription } from '@/models/aiprovidermodel';
 import type { AISetting, AISettingAttrs, ModelSetting } from '@/models/settingmodel';
 
+import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
+import { SetAISettingAPIKey, SetAISettingAttrs } from '@/apis/settingstore_helper';
+
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
+
 import ModelDropdown from '@/settings/model_dropdown';
 import ModifyModelModal from '@/settings/model_modify_modal';
 

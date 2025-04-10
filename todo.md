@@ -41,6 +41,10 @@
 
 - [ ] reasoning models should have a "reasoning" effort param too.
 
+  - [x] Add reasoning support in modelparams
+  - [ ] reasoning effort comes in multiple flavors: medium high less etc. number from x to y. find a way to represent them.
+  - [ ] See if temperature is almost always optional. Anthropic supports reasoning + normal mode too. Need to see how to represent that too without real overwhelming of the user. Represent appropriately in UI
+
 - [ ] Need a settings data version and migration func
 - [ ] API key should never reach frontend after save
 - [ ] move packaging to build dir and add apple plist etc. also use apple developerid
