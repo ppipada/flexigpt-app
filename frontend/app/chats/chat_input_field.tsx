@@ -1,9 +1,11 @@
 import type { ChangeEvent, KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+
 import { FiCheck, FiChevronDown, FiChevronUp, FiSend } from 'react-icons/fi';
 
-import type { ChatOptions, ModelOption } from '@/apis/settingstore_helper';
-import { DefaultModelOption, GetChatInputOptions } from '@/apis/settingstore_helper';
+import { type ChatOptions, DefaultChatOptions } from '@/models/settingmodel';
+
+import { GetChatInputOptions } from '@/apis/settingstore_helper';
 
 import { UseCloseDetails } from '@/lib/use_close_details';
 
@@ -43,11 +45,11 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	const [isSendButtonEnabled, setIsSendButtonEnabled] = useState<boolean>(false);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const isSubmittingRef = useRef<boolean>(false);
-	const [selectedModel, setSelectedModel] = useState<ModelOption>(DefaultModelOption);
+	const [selectedModel, setSelectedModel] = useState<ChatOptions>(DefaultChatOptions);
 	const [disablePreviousMessages, setDisablePreviousMessages] = useState<boolean>(false);
 	const [isModelDropdownOpen, setIsModelDropdownOpen] = useState<boolean>(false);
 	const [isTemperatureDropdownOpen, setIsTemperatureDropdownOpen] = useState<boolean>(false);
-	const [allOptions, setAllOptions] = useState<ModelOption[]>([DefaultModelOption]);
+	const [allOptions, setAllOptions] = useState<ChatOptions[]>([DefaultChatOptions]);
 	const modelDetailsRef = useRef<HTMLDetailsElement>(null);
 	const temperatureDetailsRef = useRef<HTMLDetailsElement>(null);
 	UseCloseDetails({
@@ -104,13 +106,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		isSubmittingRef.current = true;
 		setIsSendButtonEnabled(false);
 
-		// Create the ChatOptions object
-		const chatOptions: ChatOptions = {
-			modelInfo: selectedModel,
-			disablePreviousMessages: disablePreviousMessages,
-		};
-
-		onSend(text.trim(), chatOptions);
+		onSend(text.trim(), { ...selectedModel, disablePreviousMessages: disablePreviousMessages });
 
 		setText('');
 		isSubmittingRef.current = false;
@@ -125,7 +121,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	// Expose the function to get current chat options
 	useImperativeHandle(ref, () => ({
 		getChatOptions: () => ({
-			modelInfo: selectedModel,
+			...selectedModel,
 			disablePreviousMessages: disablePreviousMessages,
 		}),
 		focus: () => {

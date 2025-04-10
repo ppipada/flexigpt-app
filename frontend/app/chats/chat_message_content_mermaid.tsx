@@ -1,7 +1,8 @@
-import 'katex/dist/katex.min.css';
-import mermaid from 'mermaid';
 import type { FC } from 'react';
 import { useEffect, useRef, useState } from 'react';
+
+import 'katex/dist/katex.min.css';
+import mermaid from 'mermaid';
 import { v4 as uuidv4 } from 'uuid';
 
 import DownloadButton from '@/components/download_button';

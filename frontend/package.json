@@ -75,6 +75,7 @@
 		],
 		"ignoreBinaries": [],
 		"ignoreDependencies": [
+			"@eslint/eslintrc",
 			"@react-router/node",
 			"isbot",
 			"daisyui",
@@ -98,6 +99,7 @@
 			"@trivago/prettier-plugin-sort-imports"
 		],
 		"importOrder": [
+			"^react$",
 			"<THIRD_PARTY_MODULES>",
 			"^@/models/(.*)$",
 			"^@/apis/(.*)$",

@@ -1,5 +1,6 @@
 import type { ChangeEvent, FC } from 'react';
 import { useState } from 'react';
+
 import { FiCompass, FiUser } from 'react-icons/fi';
 
 import type { ConversationMessage } from '@/models/conversationmodel';

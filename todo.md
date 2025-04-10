@@ -33,6 +33,7 @@
       - [x] Better do it inside go rather than from frontend. may solve for api key thing too
     - [x] Need a dynamic time key encoder decoder for secrets
     - [ ] Dont allow disabling default model
+  - [ ] Chat options is showing the new default model as default + the actual default model as tick mark
   - [ ] delete of custom new providers need to be there similar to models
   - [ ] add a note in add provider that only OAI compatible api can be served
 

@@ -1,5 +1,6 @@
 // components/ActionDeniedAlert.tsx
 import type { FC } from 'react';
+
 import { FiAlertTriangle } from 'react-icons/fi';
 
 interface ActionDeniedAlertProps {

@@ -78,5 +78,7 @@
 
 	// --- ESLint ---
 	"eslint.format.enable": true,
-	"eslint.workingDirectories": ["./frontend"]
+	"eslint.useFlatConfig": true,
+	"eslint.workingDirectories": ["./frontend"],
+	"eslint.options": { "overrideConfigFile": "./eslint.config.mjs" }
 }

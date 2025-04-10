@@ -1,14 +1,16 @@
-import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { FC } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { v7 as uuidv7 } from 'uuid';
 
-import { type ModelParams } from '@/models/aiprovidermodel';
-import { ConversationRoleEnum } from '@/models/conversationmodel';
+import type { ModelParams } from '@/models/aiprovidermodel';
 import type { Conversation, ConversationItem, ConversationMessage } from '@/models/conversationmodel';
+import { ConversationRoleEnum } from '@/models/conversationmodel';
+import { type ChatOptions, DefaultChatOptions } from '@/models/settingmodel';
 
 import { GetCompletionMessage } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
 import { listAllConversations } from '@/apis/conversationstore_helper';
-import { type ChatOptions, DefaultModelOption } from '@/apis/settingstore_helper';
 
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
 
@@ -143,24 +145,18 @@ const ChatScreen: FC = () => {
 			});
 		};
 		const inputParams: ModelParams = {
-			name: options.modelInfo.name,
-			temperature: options.modelInfo.temperature,
-			stream: options.modelInfo.stream,
-			maxPromptLength: options.modelInfo.maxPromptLength,
-			maxOutputLength: options.modelInfo.maxOutputLength,
-			reasoningSupport: options.modelInfo.reasoningSupport,
-			systemPrompt: options.modelInfo.systemPrompt,
-			timeout: options.modelInfo.timeout,
-			additionalParameters: options.modelInfo.additionalParameters,
+			name: options.name,
+			temperature: options.temperature,
+			stream: options.stream,
+			maxPromptLength: options.maxPromptLength,
+			maxOutputLength: options.maxOutputLength,
+			reasoningSupport: options.reasoningSupport,
+			systemPrompt: options.systemPrompt,
+			timeout: options.timeout,
+			additionalParameters: options.additionalParameters,
 		};
 		// log.info(JSON.stringify({ prevMessages, inputParams, convoMsg }, null, 2));
-		const newMsg = await GetCompletionMessage(
-			options.modelInfo.provider,
-			inputParams,
-			convoMsg,
-			prevMessages,
-			onStreamData
-		);
+		const newMsg = await GetCompletionMessage(options.provider, inputParams, convoMsg, prevMessages, onStreamData);
 		if (newMsg.requestDetails) {
 			if (updatedChatWithConvoMessage.messages.length > 1) {
 				updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 2].details =
@@ -219,8 +215,7 @@ const ChatScreen: FC = () => {
 			};
 			saveUpdatedChat(updatedChat);
 			let currentChatOptions: ChatOptions = {
-				modelInfo: DefaultModelOption,
-				disablePreviousMessages: false,
+				...DefaultChatOptions,
 			};
 			if (chatInputRef.current) {
 				currentChatOptions = chatInputRef.current.getChatOptions();
@@ -245,8 +240,7 @@ const ChatScreen: FC = () => {
 			};
 			saveUpdatedChat(updatedChat);
 			let currentChatOptions: ChatOptions = {
-				modelInfo: DefaultModelOption,
-				disablePreviousMessages: false,
+				...DefaultChatOptions,
 			};
 			if (chatInputRef.current) {
 				currentChatOptions = chatInputRef.current.getChatOptions();

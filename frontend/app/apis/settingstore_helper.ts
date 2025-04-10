@@ -5,26 +5,16 @@ import {
 	type ModelParams,
 	type ProviderName,
 } from '@/models/aiprovidermodel';
-import { type AISetting, type AISettingAttrs, DefaultModelSetting, type ModelSetting } from '@/models/settingmodel';
+import {
+	type AISetting,
+	type AISettingAttrs,
+	type ChatOptions,
+	DefaultChatOptions,
+	DefaultModelSetting,
+	type ModelSetting,
+} from '@/models/settingmodel';
 
 import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
-
-export interface ModelOption extends ModelParams {
-	title: string;
-	provider: ProviderName;
-}
-
-export const DefaultModelOption: ModelOption = {
-	...DefaultModelParams,
-	provider: 'No Provider',
-	name: 'No Model',
-	title: 'No Model configured',
-};
-
-export interface ChatOptions {
-	modelInfo: ModelOption;
-	disablePreviousMessages: boolean;
-}
 
 export async function SetAppSettings(defaultProvider: ProviderName) {
 	await settingstoreAPI.setAppSettings(defaultProvider);
@@ -145,12 +135,12 @@ function mergeDefaultsModelSettingAndInbuilt(
 	};
 }
 
-export async function GetChatInputOptions() {
+export async function GetChatInputOptions(): Promise<{ allOptions: ChatOptions[]; default: ChatOptions }> {
 	try {
 		// Fetch configuration info and settings
 		const info = await providerSetAPI.getConfigurationInfo();
 		if (info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
-			return { allOptions: [DefaultModelOption], default: DefaultModelOption };
+			return { allOptions: [DefaultChatOptions], default: DefaultChatOptions };
 		}
 		const configDefaultProvider = info.defaultProvider;
 		const providerInfoDict = info.configuredProviders;
@@ -158,8 +148,8 @@ export async function GetChatInputOptions() {
 
 		const settings = await settingstoreAPI.getAllSettings();
 		// Initialize default option and input models array
-		let defaultOption: ModelOption | undefined;
-		const inputModels: ModelOption[] = [];
+		let defaultOption: ChatOptions | undefined;
+		const inputModels: ChatOptions[] = [];
 
 		for (const providerName of Object.keys(providerInfoDict)) {
 			const aiSetting = settings.aiSettings[providerName];
@@ -175,7 +165,7 @@ export async function GetChatInputOptions() {
 						inbuiltProviderModels,
 						modelSetting
 					);
-					const modelOption: ModelOption = {
+					const chatOption: ChatOptions = {
 						title: modelSetting.displayName,
 						provider: providerName,
 						name: modelName,
@@ -187,10 +177,11 @@ export async function GetChatInputOptions() {
 						systemPrompt: mergedModelParam.systemPrompt,
 						timeout: mergedModelParam.timeout,
 						additionalParameters: mergedModelParam.additionalParameters,
+						disablePreviousMessages: false,
 					};
-					inputModels.push(modelOption);
+					inputModels.push(chatOption);
 					if (modelName === settingsDefaultModelName && providerName === configDefaultProvider) {
-						defaultOption = modelOption;
+						defaultOption = chatOption;
 					}
 				}
 			}
@@ -202,7 +193,7 @@ export async function GetChatInputOptions() {
 		return { allOptions: inputModels, default: defaultOption };
 	} catch (error) {
 		console.error('Error fetching chat input options:', error);
-		return { allOptions: [DefaultModelOption], default: DefaultModelOption };
+		return { allOptions: [DefaultChatOptions], default: DefaultChatOptions };
 	}
 }
 

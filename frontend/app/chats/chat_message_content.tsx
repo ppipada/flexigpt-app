@@ -1,6 +1,7 @@
-import 'katex/dist/katex.min.css';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
+
+import 'katex/dist/katex.min.css';
 import Markdown from 'react-markdown';
 import rehypeKatex from 'rehype-katex';
 import remarkGemoji from 'remark-gemoji';

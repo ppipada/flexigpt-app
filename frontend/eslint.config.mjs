@@ -1,6 +1,6 @@
-import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
 import prettier from 'eslint-plugin-prettier';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import react from 'eslint-plugin-react';
 import globals from 'globals';
 import path from 'path';
@@ -10,18 +10,13 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const compat = new FlatCompat({
-	baseDirectory: __dirname,
-	recommendedConfig: js.configs.recommended,
-	allConfig: js.configs.all,
-});
-
 export default tseslint.config(
 	{
 		ignores: ['**/build/**', '**/app/apis/wailsjs/**', '**/.react-router/**'],
 	},
 	js.configs.recommended,
 	configs.strictTypeChecked,
+	eslintPluginPrettierRecommended,
 	{
 		files: ['**/*.{js,jsx,mjs,ts,tsx}'],
 		plugins: {
@@ -53,6 +48,16 @@ export default tseslint.config(
 			},
 		},
 		rules: {
+			'@typescript-eslint/consistent-type-imports': 'error',
+			'@typescript-eslint/no-explicit-any': 'off',
+			'@typescript-eslint/no-unsafe-assignment': 'off',
+			'@typescript-eslint/no-unsafe-call': 'off',
+			'@typescript-eslint/no-unsafe-argument': 'off',
+			'@typescript-eslint/restrict-template-expressions': 'off',
+			'@typescript-eslint/prefer-promise-reject-errors': 'off',
+			'@typescript-eslint/require-await': 'off',
+			'@typescript-eslint/no-floating-promises': 'off',
+			'@typescript-eslint/no-misused-promises': 'off',
 			'prettier/prettier': [
 				'error',
 				{
@@ -66,18 +71,6 @@ export default tseslint.config(
 					},
 				},
 			],
-			'@typescript-eslint/consistent-type-imports': ['error'],
-			'@typescript-eslint/no-explicit-any': 'off',
-			'@typescript-eslint/no-unsafe-assignment': 'off',
-			'@typescript-eslint/no-unsafe-call': 'off',
-			'@typescript-eslint/no-unsafe-argument': 'off',
-			'@typescript-eslint/restrict-template-expressions': 'off',
-			'@typescript-eslint/prefer-promise-reject-errors': 'off',
-			'@typescript-eslint/require-await': 'off',
-			'@typescript-eslint/no-floating-promises': 'off',
-			'@typescript-eslint/no-misused-promises': 'off',
 		},
-	},
-	// Use compat to add the prettier recommended config
-	...compat.config({ extends: ['plugin:prettier/recommended'] })
+	}
 );

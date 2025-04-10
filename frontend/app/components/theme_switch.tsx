@@ -1,6 +1,7 @@
 // components/ThemeSwitch.tsx
-import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
+
+import { useTheme } from 'next-themes';
 import { FiMoon, FiSun } from 'react-icons/fi';
 
 export default function ThemeSwitch() {

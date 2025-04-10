@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+
 import { FiCheck, FiEdit, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
 import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/models/commands';

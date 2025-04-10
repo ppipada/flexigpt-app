@@ -1,4 +1,4 @@
-import { DefaultModelParams, type ModelName, type ProviderName } from '@/models/aiprovidermodel';
+import { DefaultModelParams, type ModelName, type ModelParams, type ProviderName } from '@/models/aiprovidermodel';
 
 export interface AISetting {
 	isEnabled: boolean;
@@ -40,6 +40,20 @@ export const DefaultModelSetting: ModelSetting = {
 	systemPrompt: DefaultModelParams.systemPrompt,
 	timeout: DefaultModelParams.timeout,
 	additionalParameters: DefaultModelParams.additionalParameters,
+};
+
+export interface ChatOptions extends ModelParams {
+	title: string;
+	provider: ProviderName;
+	disablePreviousMessages: boolean;
+}
+
+export const DefaultChatOptions: ChatOptions = {
+	...DefaultModelParams,
+	provider: 'No Provider',
+	name: 'No Model',
+	title: 'No Model configured',
+	disablePreviousMessages: false,
 };
 
 export type SettingsSchema = {

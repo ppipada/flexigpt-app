@@ -1,5 +1,6 @@
-import 'katex/dist/katex.min.css';
 import type { FC } from 'react';
+
+import 'katex/dist/katex.min.css';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { monokaiSublime } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
 

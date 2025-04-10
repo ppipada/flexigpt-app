@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import { useRef, useState } from 'react';
+
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 import type { ModelName } from '@/models/aiprovidermodel';
