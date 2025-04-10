@@ -208,12 +208,17 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 		<dialog className="modal modal-open">
 			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
 				{/* Header */}
-				<div className="flex justify-between items-center mb-4">
+				<div className="flex justify-between items-center">
 					<h3 className="font-bold text-lg">Add New Provider</h3>
+
 					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close">
 						<FiX size={12} />
 					</button>
 				</div>
+				<h4 className="flex items-center gap-2 text-xs text-neutral mt-2 mb-8">
+					<FiAlertCircle size={16} />
+					<span>Only OpenAI API-compatible custom providers are supported.</span>
+				</h4>
 
 				{/* Form Body */}
 				<form onSubmit={handleSubmit} className="space-y-4">

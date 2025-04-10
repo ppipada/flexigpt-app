@@ -40,12 +40,12 @@
     - [x] add buttons should be disabled until add reqs are met.
   - [x] Chat options is showing the new default model as default + the actual default model as tick mark
   - [ ] delete of custom new providers need to be there similar to models
-  - [ ] add a note in add provider that only OAI compatible api can be served
+  - [x] add a note in add provider that only OAI compatible api can be served
 
-- [ ] Conversations still sometime dont load at init
 - [x] Overflow issue in parent i.e whole page sometimes moves up
 - [x] Param input content should preserve tabs/spaces etc
 
+- [ ] Conversations still sometime dont load at init
 - [ ] reasoning models should have a "reasoning" effort param too.
 
   - [x] Add reasoning support in modelparams
