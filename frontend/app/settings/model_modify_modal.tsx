@@ -1,4 +1,4 @@
-import React, { type FC, useEffect, useState } from 'react';
+import React, { type FC, useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
@@ -45,6 +45,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 	// Default numeric values that we also show in placeholders
 	const [defaultValues, setDefaultValues] = useState<ModelSetting>(DefaultModelSetting);
 
+	// If not edit mode, user must provide a new modelName
 	const [modelName, setModelName] = useState<ModelName>(initialModelName ?? ('' as ModelName));
 
 	// Local form data (storing numeric as strings for easy clearing)
@@ -107,6 +108,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		| 'maxPromptLength'
 		| 'maxOutputLength'
 		| 'timeout';
+
 	type ValidationErrors = Partial<Record<ValidationField, string>>;
 
 	const validateField = (field: ValidationField, value: unknown) => {
@@ -118,6 +120,10 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 				newErrors.modelName = 'Model name is required.';
 			} else if (typeof value === 'string' && Object.prototype.hasOwnProperty.call(existingModels, value)) {
 				newErrors.modelName = 'Model name must be unique.';
+			} else if (typeof value === 'string' && value.includes('.')) {
+				newErrors.modelName = 'Model name cannot contain a dot (".").';
+			} else if (typeof value === 'string' && value.includes(' ')) {
+				newErrors.modelName = 'Model name cannot contain spaces.';
 			}
 		}
 
@@ -128,13 +134,14 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			}
 		}
 
-		// For numeric fields, only validate if there's a non-empty string
+		// Validate numeric fields if a non-empty string is provided
 		if (['temperature', 'maxPromptLength', 'maxOutputLength', 'timeout'].includes(field)) {
 			let strVal = '';
 			if (typeof value === 'number' || typeof value === 'boolean') {
 				strVal = String(value);
+			} else if (typeof value === 'string') {
+				strVal = value.trim();
 			}
-			strVal = strVal.trim();
 
 			if (strVal.length > 0) {
 				const numValue = Number(strVal);
@@ -158,15 +165,14 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 	// Handle changes for all fields
 	// ----------------------------------------------------
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-		const target = e.target as HTMLInputElement;
-		const { name, value, type, checked } = target;
+		const { name, value, type, checked } = e.target as HTMLInputElement;
 
 		if (type === 'checkbox') {
 			setFormData(prev => ({ ...prev, [name]: checked }));
 			return;
 		}
 
-		// Model Name
+		// If changing "modelName" (only relevant if adding a new model)
 		if (name === 'modelName') {
 			setModelName(value);
 			validateField('modelName', value);
@@ -175,7 +181,8 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 
 		// For other text/numeric inputs, just store the raw string
 		setFormData(prev => ({ ...prev, [name]: value }));
-		// Trigger validation for required fields
+
+		// Trigger validation
 		if (name === 'displayName') {
 			validateField('displayName', value);
 		}
@@ -183,6 +190,22 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			validateField(name as ValidationField, value);
 		}
 	};
+
+	// ----------------------------------------------------
+	// Compute if form is valid for "Add Model" / "Save Changes" button
+	// ----------------------------------------------------
+	const isAllValid = useMemo(() => {
+		// 1) No errors in the errors object
+		const noErrors = !Object.values(errors).some(Boolean);
+
+		// 2) If adding a model, modelName must be non-empty
+		const modelNameValid = isEditMode || modelName.trim().length > 0;
+
+		// 3) Always require a non-empty displayName
+		const displayNameValid = formData.displayName.trim().length > 0;
+
+		return noErrors && modelNameValid && displayNameValid;
+	}, [errors, isEditMode, modelName, formData.displayName]);
 
 	// ----------------------------------------------------
 	// On form submit, parse final values and re-validate
@@ -198,15 +221,9 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		validateField('maxOutputLength', formData.maxOutputLength);
 		validateField('timeout', formData.timeout);
 
-		// Check for errors
+		// If any errors remain, or the required fields are empty, do not proceed
 		const hasErrors = Object.keys(errors).length > 0;
-		if (hasErrors) {
-			// If errors exist, don’t proceed
-			return;
-		}
-
-		// If required fields are missing, don't proceed
-		if ((!isEditMode && !modelName.trim()) || !formData.displayName.trim()) {
+		if (hasErrors || !isAllValid) {
 			return;
 		}
 
@@ -231,13 +248,15 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 	// If we’re not open, return null (don’t render)
 	if (!isOpen) return null;
 
+	/**
+	 * Helper for placeholders showing "Default: X" for numeric fields.
+	 */
 	const numPlaceholder = (field: keyof ModelSetting) => {
 		const value = defaultValues[field];
-
 		if (value === undefined || typeof value === 'object') {
-			return 'Default: N/A'; // Or any other placeholder for null/undefined
+			return 'Default: N/A'; // or any other placeholder for null/undefined
 		}
-		return `Default: ${String(value)}`; // Convert other types to string
+		return `Default: ${String(value)}`;
 	};
 
 	return (
@@ -257,7 +276,10 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Model Name*</span>
-							<span className="label-text-alt tooltip" data-tip="Unique identifier for this model">
+							<span
+								className="label-text-alt tooltip"
+								data-tip="Unique identifier for this model (no dots/spaces allowed)."
+							>
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
@@ -269,7 +291,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								onChange={handleChange}
 								className={`input input-bordered w-full rounded-xl ${errors.modelName ? 'input-error' : ''}`}
 								placeholder="e.g., gpt-4, claude-opus"
-								disabled={isEditMode}
+								disabled={isEditMode} // Cannot change modelName if editing an existing model
 								spellCheck="false"
 							/>
 							{errors.modelName && (
@@ -501,7 +523,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 						<button type="button" className="btn rounded-xl" onClick={onClose}>
 							Cancel
 						</button>
-						<button type="submit" className="btn btn-primary rounded-xl">
+						<button type="submit" className="btn btn-primary rounded-xl" disabled={!isAllValid}>
 							{isEditMode ? 'Save Changes' : 'Add Model'}
 						</button>
 					</div>

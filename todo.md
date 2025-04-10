@@ -32,12 +32,18 @@
       - [x] At load time need to init default + settings specific custom providers and models
       - [x] Better do it inside go rather than from frontend. may solve for api key thing too
     - [x] Need a dynamic time key encoder decoder for secrets
-    - [ ] Dont allow disabling default model
-  - [ ] Chat options is showing the new default model as default + the actual default model as tick mark
+    - [x] Dont allow disabling default model
+    - [x] atleast one model should be enabled
+    - [x] default should have only enabled models
+    - [x] reasoning models dont have tick as of now
+    - [x] dont allow dot and spaces in providername and model name
+    - [x] add buttons should be disabled until add reqs are met.
+  - [x] Chat options is showing the new default model as default + the actual default model as tick mark
   - [ ] delete of custom new providers need to be there similar to models
   - [ ] add a note in add provider that only OAI compatible api can be served
 
 - [ ] Conversations still sometime dont load at init
+- [x] Overflow issue in parent i.e whole page sometimes moves up
 - [x] Param input content should preserve tabs/spaces etc
 
 - [ ] reasoning models should have a "reasoning" effort param too.

@@ -85,7 +85,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		}
 	};
 
-	const toggleEnable = async () => {
+	const toggleProviderEnable = async () => {
 		const newIsEnabled = !isEnabled;
 		if (!newIsEnabled) {
 			// Prevent disabling the default provider
@@ -108,6 +108,28 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 			isEnabled: newIsEnabled,
 		};
 		await SetAISettingAttrs(provider, aiSettingAttrs);
+	};
+
+	const toggleModelEnable = async (modelName: ModelName) => {
+		const model = modelSettings[modelName];
+
+		// If we are about to disable the default model, deny the action.
+		if (model.isEnabled && modelName === localSettings.defaultModel) {
+			setActionDeniedMessage('Cannot disable the default model. Please select a different default model first.');
+			setShowActionDeniedAlert(true);
+			return;
+		}
+
+		// Otherwise proceed with toggling
+		const updatedModel = { ...model, isEnabled: !model.isEnabled };
+		const updatedModels = { ...modelSettings, [modelName]: updatedModel };
+
+		// Update local state
+		setModelSettings(updatedModels);
+		updateLocalSettings('modelSettings', updatedModels);
+
+		// Optionally persist to a backend, for example:
+		await settingstoreAPI.addModelSetting(provider, modelName, updatedModel);
 	};
 
 	// Handle setting changes and save to backend
@@ -144,6 +166,22 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		}
 
 		return true;
+	};
+
+	const isModelReasoningSupport = (modelName: ModelName) => {
+		if (modelSettings[modelName].reasoningSupport) {
+			return true;
+		}
+
+		if (
+			configurationInfo &&
+			provider in configurationInfo.inbuiltProviderModels &&
+			modelName in configurationInfo.inbuiltProviderModels[provider]
+		) {
+			return configurationInfo.inbuiltProviderModels[provider][modelName].reasoningSupport;
+		}
+
+		return false;
 	};
 
 	const handleDeleteModel = (modelName: ModelName) => {
@@ -204,7 +242,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 					<input
 						type="checkbox"
 						checked={isEnabled}
-						onChange={toggleEnable}
+						onChange={toggleProviderEnable}
 						className="toggle toggle-primary rounded-full"
 						spellCheck="false"
 					/>
@@ -351,19 +389,14 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 												type="checkbox"
 												checked={model.isEnabled}
 												onChange={async () => {
-													const updatedModels = { ...modelSettings };
-													const modelData = { ...model, isEnabled: !model.isEnabled };
-													updatedModels[modelName] = modelData;
-													setModelSettings(updatedModels);
-													updateLocalSettings('modelSettings', updatedModels);
-													await settingstoreAPI.addModelSetting(provider, modelName, modelData);
+													await toggleModelEnable(modelName);
 												}}
 												className="toggle toggle-primary rounded-full"
 											/>
 										</td>
 										<td>
 											<div className="flex items-center justify-center">
-												{model.reasoningSupport ? <FiCheck size={16} /> : <FiX size={16} />}
+												{isModelReasoningSupport(modelName) ? <FiCheck size={16} /> : <FiX size={16} />}
 											</div>
 										</td>
 										<td className={index === array.length - 1 ? 'rounded-br-2xl text-right' : 'text-right'}>

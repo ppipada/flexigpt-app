@@ -19,7 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 	// console.log(`${FEATURE_FLAG_AGENTS}`);
 	// const setOpen = () => setDrawerOpen(true);
 	return (
-		<div className="drawer md:drawer-open h-screen">
+		<div className="drawer md:drawer-open h-screen overflow-hidden">
 			<input
 				id="my-drawer"
 				type="checkbox"
@@ -28,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 				onChange={toggle}
 				spellCheck="false"
 			/>
-			<div className="drawer-content flex flex-col">
+			<div className="drawer-content flex flex-col overflow-auto">
 				{/* Hamburger menu button */}
 				<label
 					htmlFor="my-drawer"

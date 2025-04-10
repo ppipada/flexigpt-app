@@ -120,7 +120,11 @@ func (s *SettingStore) SetAppSettings(
 	if req == nil || req.Body == nil {
 		return nil, errors.New("request or request body cannot be nil")
 	}
-	// Just store the entire "app" object
+	_, _, _, err := s.getProviderData(req.Body.DefaultProvider, false)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := s.store.SetKey("app.defaultProvider", string(req.Body.DefaultProvider)); err != nil {
 		return nil, fmt.Errorf("failed to set app settings: %w", err)
 	}
@@ -135,6 +139,10 @@ func (s *SettingStore) AddAISetting(
 		return nil, errors.New("request or request body cannot be nil")
 	}
 
+	if strings.Contains(string(req.ProviderName), ".") ||
+		strings.Contains(string(req.ProviderName), " ") {
+		return nil, errors.New("providername cannot have dot or space")
+	}
 	// Pull current data
 	currentData, err := s.store.GetAll(false)
 	if err != nil {
@@ -307,6 +315,10 @@ func (s *SettingStore) AddModelSetting(
 	_, _, _, err := s.getProviderData(req.ProviderName, false)
 	if err != nil {
 		return nil, err
+	}
+	if strings.Contains(string(req.ModelName), ".") ||
+		strings.Contains(string(req.ModelName), " ") {
+		return nil, errors.New("modelname cannot have dot or space")
 	}
 
 	// Overwrite or create the model

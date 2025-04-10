@@ -12,6 +12,7 @@
 		nord --default,
 		dracula --prefersdark;
 	prefix: '';
+	exclude: rootscrollgutter;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));

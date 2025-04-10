@@ -8,8 +8,8 @@ const ProviderNameGoogle spec.ProviderName = "google"
 
 const (
 	Gemini2FlashExp spec.ModelName = "gemini-2-flash-exp"
-	Gemini15Flash   spec.ModelName = "gemini-1.5-flash"
-	Gemini15Pro     spec.ModelName = "gemini-1.5-pro"
+	Gemini15Flash   spec.ModelName = "gemini-1-5-flash"
+	Gemini15Pro     spec.ModelName = "gemini-1-5-pro"
 )
 
 const (

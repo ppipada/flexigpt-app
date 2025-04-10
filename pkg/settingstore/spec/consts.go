@@ -134,7 +134,7 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 			},
 			aiproviderConsts.GPT45Preview: {
 				DisplayName: aiproviderConsts.DisplayNameGPT45Preview,
-				IsEnabled:   true,
+				IsEnabled:   false,
 			},
 			aiproviderConsts.GPT4OMini: {
 				DisplayName: aiproviderConsts.DisplayNameGPT4OMini,

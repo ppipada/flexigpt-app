@@ -177,6 +177,7 @@ const SettingsPage: FC = () => {
 						setIsAddProviderModalOpen(false);
 					}}
 					onSubmit={handleAddProviderSubmit}
+					existingProviderNames={Object.keys(aiSettings)}
 				/>
 			)}
 		</div>

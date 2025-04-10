@@ -165,9 +165,9 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 						</div>
 					</summary>
 					<ul className={`dropdown-content menu bg-base-100 rounded-xl w-full`}>
-						{allOptions.map((model, index) => (
+						{allOptions.map(model => (
 							<li
-								key={index}
+								key={`${model.provider}-${model.name}`}
 								className="cursor-pointer text-xs"
 								onClick={() => {
 									setSelectedModel(model);
@@ -179,7 +179,9 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 							>
 								<a className="justify-between items-center p-1 m-0">
 									<span>{model.title}</span>
-									{selectedModel.name && selectedModel.name === model.name && <FiCheck />}
+									{selectedModel.name &&
+										selectedModel.name === model.name &&
+										selectedModel.provider === model.provider && <FiCheck />}
 								</a>
 							</li>
 						))}

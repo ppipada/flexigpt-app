@@ -59,20 +59,23 @@ const ModelDropdown: FC<ModelDropdownProps> = ({ modelSettings, defaultModel, on
 				{isOpen ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
 			</summary>
 			<ul tabIndex={0} className="dropdown-content menu rounded-xl w-full bg-base-200 z-10">
-				{Object.entries(modelSettings).map(([modelName, model]) => (
-					<li
-						key={modelName}
-						className="cursor-pointer rounded-xl"
-						onClick={() => {
-							handleSelection(modelName);
-						}}
-					>
-						<a className="flex justify-between items-center p-2 m-1">
-							<span>{model.displayName || modelName}</span>
-							{modelName === selectedModel && <FiCheck />}
-						</a>
-					</li>
-				))}
+				{Object.entries(modelSettings)
+					// Only show models that are enabled OR are already the default
+					.filter(([mName, m]) => m.isEnabled || mName === defaultModel)
+					.map(([mName, m]) => (
+						<li
+							key={mName}
+							className="cursor-pointer rounded-xl"
+							onClick={() => {
+								handleSelection(mName);
+							}}
+						>
+							<a className="flex justify-between items-center p-2 m-1">
+								<span>{m.displayName || mName}</span>
+								{mName === selectedModel && <FiCheck />}
+							</a>
+						</li>
+					))}
 			</ul>
 		</details>
 	);
