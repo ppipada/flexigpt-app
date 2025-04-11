@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 	"github.com/flexigpt/flexiui/pkg/settingstore/spec"
@@ -13,8 +12,10 @@ import (
 )
 
 type SettingStore struct {
-	store       *filestore.MapFileStore
-	defaultData spec.SettingsSchema
+	store         *filestore.MapFileStore
+	defaultData   spec.SettingsSchema
+	encryptEncDec encdec.EncoderDecoder
+	keyEncDec     encdec.StringEncoderDecoder
 }
 
 func InitSettingStore(settingStore *SettingStore, filename string) error {
@@ -27,30 +28,41 @@ func InitSettingStore(settingStore *SettingStore, filename string) error {
 		settingsMap,
 		filestore.WithCreateIfNotExists(true),
 		filestore.WithAutoFlush(true),
-		filestore.WithKeyEncDecsGetter(settingStore.KeyEncDecsGetter),
-		filestore.WithEncoder(encdec.JSONEncoderDecoder{}))
+		filestore.WithValueEncDecGetter(settingStore.ValueEncDecGetter),
+		// filestore.WithKeyEncDecGetter(settingStore.KeyEncDecGetter),
+		filestore.WithEncoderDecoder(encdec.JSONEncoderDecoder{}))
 	if err != nil {
 		return fmt.Errorf("failed to create store: %w", err)
 	}
 
 	settingStore.store = store
 	settingStore.defaultData = spec.DefaultSettingsData
+	settingStore.encryptEncDec = encdec.EncryptedStringValueEncoderDecoder{}
+	settingStore.keyEncDec = encdec.Base64StringEncoderDecoder{}
 	return nil
 }
 
-func (s *SettingStore) KeyEncDecsGetter(data map[string]any) map[string]encdec.EncoderDecoder {
-	keyEncDecs := make(map[string]encdec.EncoderDecoder)
-	aiSettings, ok := data["aiSettings"].(map[string]any)
-	if !ok {
-		return nil
+func (s *SettingStore) ValueEncDecGetter(pathSoFar []string) encdec.EncoderDecoder {
+	if len(pathSoFar) == 3 && pathSoFar[2] == "apiKey" {
+		return s.encryptEncDec
 	}
-	for providerName := range aiSettings {
-		k := fmt.Sprintf("aiSettings.%s.apiKey", providerName)
-		keyEncDecs[k] = encdec.EncryptedStringValueEncoderDecoder{}
-	}
-
-	return keyEncDecs
+	return nil
 }
+
+// func (s *SettingStore) KeyEncDecGetter(pathSoFar []string) encdec.StringEncoderDecoder {
+// 	// 1) If pathSoFar == ["aiSettings", <providerName>], encode providerName
+// 	if len(pathSoFar) == 2 && pathSoFar[1] == "aiSettings" {
+// 		return s.keyEncDec
+// 	}
+// 	// 2) If pathSoFar == ["aiSettings", <providerName>, modelSettings, <modelName>], encode modelName
+// 	if len(pathSoFar) == 4 &&
+// 		pathSoFar[0] == "aiSettings" &&
+// 		pathSoFar[2] == "modelSettings" {
+// 		return s.keyEncDec
+// 	}
+// 	// Otherwise, no key-encoding
+// 	return nil
+// }
 
 func (s *SettingStore) GetAllSettings(
 	ctx context.Context,
@@ -72,47 +84,6 @@ func (s *SettingStore) GetAllSettings(
 	return &spec.GetAllSettingsResponse{Body: &settings}, nil
 }
 
-func (s *SettingStore) SetSetting(
-	ctx context.Context,
-	req *spec.SetSettingRequest,
-) (*spec.SetSettingResponse, error) {
-	dotSeparatedKey := req.Key
-	keys := strings.Split(dotSeparatedKey, ".")
-
-	// 1. Retrieve the current data from the store
-	currentData, err := s.store.GetAll(false)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve current data: %w", err)
-	}
-
-	// 2. Make a copy of the current data
-	mData := filestore.DeepCopyValue(currentData)
-
-	modifiedData, ok := mData.(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("failed to copy %q data", dotSeparatedKey)
-	}
-
-	// 3. Attempt to set the new value in the cloned map
-	if err := filestore.SetValueAtPath(modifiedData, keys, req.Body.Value); err != nil {
-		return nil, fmt.Errorf("failed to set value at key %q in map: %w", dotSeparatedKey, err)
-	}
-
-	// 4. Validate by converting the entire map to the SettingsSchema struct.
-	//    This ensures the new data is compatible with our schema.
-	var validatedSettings spec.SettingsSchema
-	if err := encdec.MapToStructWithJSONTags(modifiedData, &validatedSettings); err != nil {
-		return nil, fmt.Errorf("failed schema validation for key %q: %w", dotSeparatedKey, err)
-	}
-
-	// 5. If no error, persist the key/value to the underlying store.
-	if err := s.store.SetKey(dotSeparatedKey, req.Body.Value); err != nil {
-		return nil, fmt.Errorf("failed to persist key %q: %w", dotSeparatedKey, err)
-	}
-
-	return &spec.SetSettingResponse{}, nil
-}
-
 func (s *SettingStore) SetAppSettings(
 	ctx context.Context,
 	req *spec.SetAppSettingsRequest,
@@ -125,7 +96,7 @@ func (s *SettingStore) SetAppSettings(
 		return nil, err
 	}
 
-	if err := s.store.SetKey("app.defaultProvider", string(req.Body.DefaultProvider)); err != nil {
+	if err := s.store.SetKey([]string{"app", "defaultProvider"}, string(req.Body.DefaultProvider)); err != nil {
 		return nil, fmt.Errorf("failed to set app settings: %w", err)
 	}
 	return &spec.SetAppSettingsResponse{}, nil
@@ -139,10 +110,6 @@ func (s *SettingStore) AddAISetting(
 		return nil, errors.New("request or request body cannot be nil")
 	}
 
-	if strings.Contains(string(req.ProviderName), ".") ||
-		strings.Contains(string(req.ProviderName), " ") {
-		return nil, errors.New("providername cannot have dot or space")
-	}
 	// Pull current data
 	currentData, err := s.store.GetAll(false)
 	if err != nil {
@@ -159,13 +126,15 @@ func (s *SettingStore) AddAISetting(
 		return nil, fmt.Errorf("provider %q already exists", req.ProviderName)
 	}
 
-	// Just set
-	dotKey := fmt.Sprintf("aiSettings.%s", req.ProviderName)
+	keys := []string{"aiSettings", string(req.ProviderName)}
+	if req.Body.ModelSettings == nil {
+		req.Body.ModelSettings = make(map[aiproviderSpec.ModelName]spec.ModelSetting)
+	}
 	val, err := encdec.StructWithJSONTagsToMap(req.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add provider %q: %w", req.ProviderName, err)
 	}
-	if err := s.store.SetKey(dotKey, val); err != nil {
+	if err := s.store.SetKey(keys, val); err != nil {
 		return nil, fmt.Errorf("failed to add provider %q: %w", req.ProviderName, err)
 	}
 
@@ -176,8 +145,9 @@ func (s *SettingStore) DeleteAISetting(
 	ctx context.Context,
 	req *spec.DeleteAISettingRequest,
 ) (*spec.DeleteAISettingResponse, error) {
-	providerName := req.ProviderName
-
+	if req == nil {
+		return nil, errors.New("request cannot be nil")
+	}
 	// Pull current data
 	currentData, err := s.store.GetAll(false)
 	if err != nil {
@@ -189,12 +159,13 @@ func (s *SettingStore) DeleteAISetting(
 		return nil, errors.New("aiSettings missing or not a map")
 	}
 
-	if _, exists := aiSettings[string(providerName)]; !exists {
-		return nil, fmt.Errorf("provider %q does not exist", providerName)
+	if _, exists := aiSettings[string(req.ProviderName)]; !exists {
+		return nil, fmt.Errorf("provider %q does not exist", req.ProviderName)
 	}
 
-	if err := s.store.DeleteKey(fmt.Sprintf("aiSettings.%s", providerName)); err != nil {
-		return nil, fmt.Errorf("failed to delete provider %q: %w", providerName, err)
+	keys := []string{"aiSettings", string(req.ProviderName)}
+	if err := s.store.DeleteKey(keys); err != nil {
+		return nil, fmt.Errorf("failed to delete provider %q: %w", req.ProviderName, err)
 	}
 
 	return &spec.DeleteAISettingResponse{}, nil
@@ -252,9 +223,8 @@ func (s *SettingStore) SetAISettingAPIKey(
 		return nil, err
 	}
 
-	// Construct dot-key and set
-	dotKey := fmt.Sprintf("aiSettings.%s.apiKey", req.ProviderName)
-	if err := s.store.SetKey(dotKey, req.Body.APIKey); err != nil {
+	keys := []string{"aiSettings", string(req.ProviderName), "apiKey"}
+	if err := s.store.SetKey(keys, req.Body.APIKey); err != nil {
 		return nil, fmt.Errorf("failed to set AI API key: %w", err)
 	}
 	return &spec.SetAISettingAPIKeyResponse{}, nil
@@ -276,26 +246,22 @@ func (s *SettingStore) SetAISettingAttrs(
 
 	// For each non-nil field, set via dot key if it’s not empty (for strings)
 	if req.Body.IsEnabled != nil {
-		dotKey := fmt.Sprintf("aiSettings.%s.isEnabled", req.ProviderName)
-		if err := s.store.SetKey(dotKey, *req.Body.IsEnabled); err != nil {
+		if err := s.store.SetKey([]string{"aiSettings", string(req.ProviderName), "isEnabled"}, *req.Body.IsEnabled); err != nil {
 			return nil, fmt.Errorf("failed updating isEnabled: %w", err)
 		}
 	}
 	if req.Body.Origin != nil && *req.Body.Origin != "" {
-		dotKey := fmt.Sprintf("aiSettings.%s.origin", req.ProviderName)
-		if err := s.store.SetKey(dotKey, *req.Body.Origin); err != nil {
+		if err := s.store.SetKey([]string{"aiSettings", string(req.ProviderName), "origin"}, *req.Body.Origin); err != nil {
 			return nil, fmt.Errorf("failed updating origin: %w", err)
 		}
 	}
 	if req.Body.ChatCompletionPathPrefix != nil && *req.Body.ChatCompletionPathPrefix != "" {
-		dotKey := fmt.Sprintf("aiSettings.%s.chatCompletionPathPrefix", req.ProviderName)
-		if err := s.store.SetKey(dotKey, *req.Body.ChatCompletionPathPrefix); err != nil {
+		if err := s.store.SetKey([]string{"aiSettings", string(req.ProviderName), "chatCompletionPathPrefix"}, *req.Body.ChatCompletionPathPrefix); err != nil {
 			return nil, fmt.Errorf("failed updating chatCompletionPathPrefix: %w", err)
 		}
 	}
 	if req.Body.DefaultModel != nil && *req.Body.DefaultModel != "" {
-		dotKey := fmt.Sprintf("aiSettings.%s.defaultModel", req.ProviderName)
-		if err := s.store.SetKey(dotKey, string(*req.Body.DefaultModel)); err != nil {
+		if err := s.store.SetKey([]string{"aiSettings", string(req.ProviderName), "defaultModel"}, string(*req.Body.DefaultModel)); err != nil {
 			return nil, fmt.Errorf("failed updating defaultModel: %w", err)
 		}
 	}
@@ -316,19 +282,15 @@ func (s *SettingStore) AddModelSetting(
 	if err != nil {
 		return nil, err
 	}
-	if strings.Contains(string(req.ModelName), ".") ||
-		strings.Contains(string(req.ModelName), " ") {
-		return nil, errors.New("modelname cannot have dot or space")
-	}
 
 	// Overwrite or create the model
-	dotKey := fmt.Sprintf("aiSettings.%s.modelSettings.%s", req.ProviderName, req.ModelName)
+	keys := []string{"aiSettings", string(req.ProviderName), "modelSettings", string(req.ModelName)}
 	val, err := encdec.StructWithJSONTagsToMap(req.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed setting model %q for provider %q: %w",
 			req.ModelName, req.ProviderName, err)
 	}
-	if err := s.store.SetKey(dotKey, val); err != nil {
+	if err := s.store.SetKey(keys, val); err != nil {
 		return nil, fmt.Errorf("failed setting model %q for provider %q: %w",
 			req.ModelName, req.ProviderName, err)
 	}
@@ -350,8 +312,8 @@ func (s *SettingStore) DeleteModelSetting(
 	}
 
 	// Delete the model
-	dotKey := fmt.Sprintf("aiSettings.%s.modelSettings.%s", req.ProviderName, req.ModelName)
-	if err := s.store.DeleteKey(dotKey); err != nil {
+	keys := []string{"aiSettings", string(req.ProviderName), "modelSettings", string(req.ModelName)}
+	if err := s.store.DeleteKey(keys); err != nil {
 		return nil, fmt.Errorf("failed deleting model %q for provider %q: %w",
 			req.ModelName, req.ProviderName, err)
 	}

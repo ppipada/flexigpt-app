@@ -13,11 +13,11 @@ const (
 	GPTO1        spec.ModelName = "o1"
 	GPTO1Preview spec.ModelName = "o1-preview"
 	GPTO1Mini    spec.ModelName = "o1-mini"
-	GPT45Preview spec.ModelName = "gpt-4-5-preview"
+	GPT45Preview spec.ModelName = "gpt-4.5-preview"
 	GPT4OMini    spec.ModelName = "gpt-4o-mini"
 	GPT4O        spec.ModelName = "gpt-4o"
 	GPT4         spec.ModelName = "gpt-4"
-	GPT35Turbo   spec.ModelName = "gpt-3-5-turbo"
+	GPT35Turbo   spec.ModelName = "gpt-3.5-turbo"
 )
 
 const (

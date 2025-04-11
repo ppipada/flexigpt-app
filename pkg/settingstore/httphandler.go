@@ -24,16 +24,6 @@ func InitSettingStoreHandlers(api huma.API, settingsStoreAPI *SettingStore) {
 		Tags:        []string{tag},
 	}, settingsStoreAPI.GetAllSettings)
 
-	// Generic dot-key setter
-	huma.Register(api, huma.Operation{
-		OperationID: "set-settings",
-		Method:      http.MethodPut,
-		Path:        pathPrefix + "/dotkey/{key}",
-		Summary:     "Set dot-key setting",
-		Description: "Set a setting by providing a dot-separated key path",
-		Tags:        []string{tag},
-	}, settingsStoreAPI.SetSetting)
-
 	huma.Register(api, huma.Operation{
 		OperationID: "set-app-settings",
 		Method:      http.MethodPut,

@@ -15,6 +15,7 @@
   - [ ] Implement MCP protocol
   - [ ] Add servers for: file, git, simplemapstore
 
+- [ ] allow dot and spaces in providername and model name
 - [ ] reasoning models should have a "reasoning" effort param too.
 
   - [x] Add reasoning support in modelparams

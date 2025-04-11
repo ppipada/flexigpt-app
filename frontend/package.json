@@ -12,7 +12,8 @@
 		"clean": "rimraf ./build",
 		"run:wailsdev": "pnpm run build:wails && cp .env.dev .env && cross-env VITE_PLATFORM=wails react-router dev",
 		"build:wails": "rimraf ./build && cp .env.prod .env && cross-env VITE_PLATFORM=wails react-router build",
-		"typecheck": "react-router typegen && tsc"
+		"typecheck": "react-router typegen && tsc",
+		"test": "echo 'No tests'"
 	},
 	"keywords": [],
 	"author": "ppipada",

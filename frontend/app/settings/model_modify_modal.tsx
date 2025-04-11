@@ -120,10 +120,6 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 				newErrors.modelName = 'Model name is required.';
 			} else if (typeof value === 'string' && Object.prototype.hasOwnProperty.call(existingModels, value)) {
 				newErrors.modelName = 'Model name must be unique.';
-			} else if (typeof value === 'string' && value.includes('.')) {
-				newErrors.modelName = 'Model name cannot contain a dot (".").';
-			} else if (typeof value === 'string' && value.includes(' ')) {
-				newErrors.modelName = 'Model name cannot contain spaces.';
 			}
 		}
 
@@ -276,10 +272,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Model Name*</span>
-							<span
-								className="label-text-alt tooltip"
-								data-tip="Unique identifier for this model (no dots/spaces allowed)."
-							>
+							<span className="label-text-alt tooltip" data-tip="Unique identifier for this model.">
 								<FiHelpCircle size={12} />
 							</span>
 						</label>

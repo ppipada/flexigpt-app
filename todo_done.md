@@ -223,7 +223,6 @@
     - [x] atleast one model should be enabled
     - [x] default should have only enabled models
     - [x] reasoning models dont have tick as of now
-    - [x] dont allow dot and spaces in providername and model name
     - [x] add buttons should be disabled until add reqs are met.
   - [x] Chat options is showing the new default model as default + the actual default model as tick mark
   - [x] delete of custom new providers need to be there similar to models

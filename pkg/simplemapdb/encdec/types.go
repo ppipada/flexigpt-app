@@ -7,3 +7,8 @@ type EncoderDecoder interface {
 	Encode(io.Writer, any) error
 	Decode(io.Reader, any) error
 }
+
+type StringEncoderDecoder interface {
+	Encode(plain string) string
+	Decode(encoded string) (string, error)
+}

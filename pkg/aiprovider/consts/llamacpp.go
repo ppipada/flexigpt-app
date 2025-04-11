@@ -8,12 +8,12 @@ const ProviderNameLlamaCPP spec.ProviderName = "llamacpp"
 
 const (
 	Llama3  spec.ModelName = "llama3"
-	Llama31 spec.ModelName = "llama3-1"
+	Llama31 spec.ModelName = "llama3.1"
 )
 
 const (
 	DisplayNameLlama3  = "Llama 3"
-	DisplayNameLlama31 = "Llama 3-1"
+	DisplayNameLlama31 = "Llama 3.1"
 )
 
 var LlamacppModels = map[spec.ModelName]spec.ModelParams{

@@ -24,7 +24,7 @@
 		"run:gobackend": "./scripts/run_backend.sh",
 		"lint:go": "golangci-lint run ./... -v",
 		"lint": "pnpm -F frontend run lint; pnpm run lint:go",
-		"test:go": "go test ./..."
+		"test": "pnpm -F frontend run test; go test ./..."
 	},
 	"devDependencies": {
 		"shx": "^0.4.0"

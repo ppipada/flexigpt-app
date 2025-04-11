@@ -10,6 +10,36 @@ import (
 	"github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
 )
 
+// deepEqual is a simple helper function to compare two any values for equality.
+func deepEqual(a, b any) bool {
+	switch aVal := a.(type) {
+	case map[string]any:
+		bVal, ok := b.(map[string]any)
+		if !ok || len(aVal) != len(bVal) {
+			return false
+		}
+		for k, v := range aVal {
+			if !deepEqual(v, bVal[k]) {
+				return false
+			}
+		}
+		return true
+	case []any:
+		bVal, ok := b.([]any)
+		if !ok || len(aVal) != len(bVal) {
+			return false
+		}
+		for i := range aVal {
+			if !deepEqual(aVal[i], bVal[i]) {
+				return false
+			}
+		}
+		return true
+	default:
+		return a == b
+	}
+}
+
 func TestNewMapFileStore(t *testing.T) {
 	tempDir := t.TempDir()
 	type testType struct {
@@ -110,16 +140,24 @@ func TestMapFileStore_SetKey_GetKey(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore.json")
 	defaultData := map[string]any{"foo": "bar"}
-	keyEncDecs := map[string]encdec.EncoderDecoder{
+
+	// Example: We'll return an EncoderDecoder for the paths "foo" and "parent.child".
+	valueEncDecs := map[string]encdec.EncoderDecoder{
 		"foo":          encdec.EncryptedStringValueEncoderDecoder{},
 		"parent.child": encdec.EncryptedStringValueEncoderDecoder{},
 	}
+
 	store, err := NewMapFileStore(
 		filename,
 		defaultData,
 		WithCreateIfNotExists(true),
-		WithKeyEncDecsGetter(func(data map[string]any) map[string]encdec.EncoderDecoder {
-			return keyEncDecs
+		// New approach: We pass a function that returns an EncoderDecoder depending on pathSoFar.
+		WithValueEncDecGetter(func(pathSoFar []string) encdec.EncoderDecoder {
+			joined := strings.Join(pathSoFar, ".")
+			if ed, ok := valueEncDecs[joined]; ok {
+				return ed
+			}
+			return nil
 		}),
 	)
 	if err != nil {
@@ -128,35 +166,35 @@ func TestMapFileStore_SetKey_GetKey(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		key        string
+		keys       []string
 		value      any
 		wantErrSet bool
 		wantErrGet bool
 	}{
 		{
 			name:  "Set and get simple key",
-			key:   "foo",
+			keys:  []string{"foo"},
 			value: "bar",
 		},
 		{
 			name:  "Set and get nested key",
-			key:   "parent.child",
+			keys:  []string{"parent", "child"},
 			value: "grandson",
 		},
 		{
 			name:  "Set and get deep nested key",
-			key:   "grand.parent.child.key",
+			keys:  []string{"grand", "parent", "child", "key"},
 			value: true,
 		},
 		{
-			name:       "Set empty key",
-			key:        "",
+			name:       "Set empty key slice",
+			keys:       []string{},
 			value:      "value",
 			wantErrSet: true,
 		},
 		{
-			name:       "Set key with empty segment",
-			key:        "parent..child",
+			name:       "Set key with empty segment (like parent..child in dotted form)",
+			keys:       []string{"parent", "", "child"},
 			value:      "value",
 			wantErrSet: true,
 		},
@@ -164,7 +202,7 @@ func TestMapFileStore_SetKey_GetKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := store.SetKey(tt.key, tt.value)
+			err := store.SetKey(tt.keys, tt.value)
 			if tt.wantErrSet {
 				if err == nil {
 					t.Errorf("[%s] Expected error in SetKey but got nil", tt.name)
@@ -175,7 +213,7 @@ func TestMapFileStore_SetKey_GetKey(t *testing.T) {
 				return
 			}
 
-			got, err := store.GetKey(tt.key)
+			got, err := store.GetKey(tt.keys)
 			if tt.wantErrGet {
 				if err == nil {
 					t.Errorf("[%s] Expected error in GetKey but got nil", tt.name)
@@ -184,7 +222,7 @@ func TestMapFileStore_SetKey_GetKey(t *testing.T) {
 			} else {
 				if err != nil {
 					t.Errorf("[%s] Unexpected error in GetKey: %v", tt.name, err)
-				} else if got != tt.value {
+				} else if !reflect.DeepEqual(got, tt.value) {
 					t.Errorf("[%s] GetKey returned %v, expected %v", tt.name, got, tt.value)
 				}
 			}
@@ -218,50 +256,50 @@ func TestMapFileStore_DeleteKey(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		key        string
+		keys       []string
 		wantErr    bool
 		checkExist bool
 	}{
 		{
 			name:       "Delete simple key",
-			key:        "foo",
+			keys:       []string{"foo"},
 			checkExist: true,
 		},
 		{
 			name:       "Delete nested key",
-			key:        "parent.child",
+			keys:       []string{"parent", "child"},
 			checkExist: true,
 		},
 		{
 			name:       "Delete deep nested key",
-			key:        "grand.parent.child.key",
+			keys:       []string{"grand", "parent", "child", "key"},
 			checkExist: true,
 		},
 		{
 			name:    "Delete non-existent key",
-			key:     "does.not.exist",
+			keys:    []string{"does", "not", "exist"},
 			wantErr: false,
 		},
 		{
 			name:    "Delete key with empty segment",
-			key:     "parent..child",
+			keys:    []string{"parent", "", "child"},
 			wantErr: false,
 		},
 		{
 			name:       "Delete empty map",
-			key:        "empty.parent",
+			keys:       []string{"empty", "parent"},
 			checkExist: true,
 		},
 		{
 			name:       "Delete from map with multiple keys",
-			key:        "another.parent.child1",
+			keys:       []string{"another", "parent", "child1"},
 			checkExist: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := store.DeleteKey(tt.key)
+			err := store.DeleteKey(tt.keys)
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("[%s] Expected error in DeleteKey but got nil", tt.name)
@@ -273,12 +311,12 @@ func TestMapFileStore_DeleteKey(t *testing.T) {
 			}
 
 			if tt.checkExist {
-				_, err := store.GetKey(tt.key)
+				_, err := store.GetKey(tt.keys)
 				if err == nil {
 					t.Errorf(
-						"[%s] Expected key %s to be deleted, but it still exists",
+						"[%s] Expected key %v to be deleted, but it still exists",
 						tt.name,
-						tt.key,
+						tt.keys,
 					)
 				}
 			}
@@ -352,9 +390,10 @@ func TestMapFileStore_SetAll_GetAll(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Reset store to default before each subtest
 			err := store.Reset()
 			if err != nil {
-				t.Fatalf("[%s] Failed to clear store: %v", tt.name, err)
+				t.Fatalf("[%s] Failed to reset store: %v", tt.name, err)
 			}
 
 			err = store.SetAll(tt.data)
@@ -365,8 +404,10 @@ func TestMapFileStore_SetAll_GetAll(t *testing.T) {
 
 			got, err := store.GetAll(false)
 			if err != nil {
-				t.Errorf("Failed to get data err: %v", err)
+				t.Errorf("[%s] Failed to get data: %v", tt.name, err)
+				return
 			}
+
 			if !deepEqual(got, tt.expectedData) {
 				t.Errorf("[%s] GetAll returned %v, expected %v", tt.name, got, tt.expectedData)
 			}
@@ -438,7 +479,7 @@ func TestMapFileStore_AutoFlush(t *testing.T) {
 		t.Fatalf("Failed to create store: %v", err)
 	}
 
-	err = store.SetKey("foo", "bar")
+	err = store.SetKey([]string{"foo"}, "bar")
 	if err != nil {
 		t.Fatalf("SetKey failed: %v", err)
 	}
@@ -449,7 +490,7 @@ func TestMapFileStore_AutoFlush(t *testing.T) {
 		t.Fatalf("Failed to reopen store: %v", err)
 	}
 
-	val, err := store2.GetKey("foo")
+	val, err := store2.GetKey([]string{"foo"})
 	if err != nil {
 		t.Fatalf("GetKey failed: %v", err)
 	}
@@ -472,7 +513,7 @@ func TestMapFileStore_NoAutoFlush(t *testing.T) {
 		t.Fatalf("Failed to create store: %v", err)
 	}
 
-	err = store.SetKey("foo", "bar")
+	err = store.SetKey([]string{"foo"}, "bar")
 	if err != nil {
 		t.Fatalf("SetKey failed: %v", err)
 	}
@@ -483,7 +524,7 @@ func TestMapFileStore_NoAutoFlush(t *testing.T) {
 		t.Fatalf("Failed to reopen store: %v", err)
 	}
 
-	_, err = store2.GetKey("foo")
+	_, err = store2.GetKey([]string{"foo"})
 	if err == nil {
 		t.Errorf("Expected error getting 'foo' from store2 as it should not be saved yet")
 	}
@@ -499,7 +540,7 @@ func TestMapFileStore_NoAutoFlush(t *testing.T) {
 		t.Fatalf("Failed to reopen store after save: %v", err)
 	}
 
-	val, err := store3.GetKey("foo")
+	val, err := store3.GetKey([]string{"foo"})
 	if err != nil {
 		t.Fatalf("GetKey failed: %v", err)
 	}
@@ -525,7 +566,7 @@ func TestMapFileStorePermissionErrorCases(t *testing.T) {
 	ch := func() { _ = os.Chmod(filename, 0o644) }
 	defer ch()
 
-	err = store.SetKey("foo", "bar")
+	err = store.SetKey([]string{"foo"}, "bar")
 	if err == nil {
 		t.Errorf("Expected error in SetKey due to unwritable file, but got nil")
 	}
@@ -558,28 +599,28 @@ func TestMapFileStore_NestedStructures(t *testing.T) {
 	// Set nested data
 	tests := []struct {
 		name      string
-		key       string
+		keys      []string
 		value     any
 		expectErr bool
 	}{
 		{
 			name:  "Set nested map",
-			key:   "parent.child",
+			keys:  []string{"parent", "child"},
 			value: "value",
 		},
 		{
 			name:  "Set nested map with existing parent",
-			key:   "parent.anotherChild",
+			keys:  []string{"parent", "anotherChild"},
 			value: 123,
 		},
 		{
 			name:  "Set deep nested map",
-			key:   "grand.parent.child",
+			keys:  []string{"grand", "parent", "child"},
 			value: true,
 		},
 		{
 			name:      "Set value where intermediate is not a map",
-			key:       "parent.child.key",
+			keys:      []string{"parent", "child", "key"},
 			value:     "invalid",
 			expectErr: true, // 'parent.child' is a string, cannot set 'key' under it
 		},
@@ -587,7 +628,7 @@ func TestMapFileStore_NestedStructures(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := store.SetKey(tt.key, tt.value)
+			err := store.SetKey(tt.keys, tt.value)
 			if tt.expectErr {
 				if err == nil {
 					t.Errorf("[%s] Expected error in SetKey but got nil", tt.name)
@@ -598,45 +639,255 @@ func TestMapFileStore_NestedStructures(t *testing.T) {
 				return
 			}
 
-			got, err := store.GetKey(tt.key)
+			got, err := store.GetKey(tt.keys)
 			if err != nil {
 				t.Errorf("[%s] GetKey failed: %v", tt.name, err)
 				return
 			}
-			if got != tt.value {
+			if !reflect.DeepEqual(got, tt.value) {
 				t.Errorf("[%s] GetKey returned %v, expected %v", tt.name, got, tt.value)
 			}
 		})
 	}
 }
 
-// deepEqual is a simple helper function to compare two any values for equality.
-// It handles comparison of maps and basic types.
-func deepEqual(a, b any) bool {
-	switch aVal := a.(type) {
-	case map[string]any:
-		bVal, ok := b.(map[string]any)
-		if !ok || len(aVal) != len(bVal) {
-			return false
-		}
-		for k, v := range aVal {
-			if !deepEqual(v, bVal[k]) {
-				return false
-			}
-		}
-		return true
-	case []any:
-		bVal, ok := b.([]any)
-		if !ok || len(aVal) != len(bVal) {
-			return false
-		}
-		for i := range aVal {
-			if !deepEqual(aVal[i], bVal[i]) {
-				return false
-			}
-		}
-		return true
-	default:
-		return a == b
+// TestMapFileStore_KeyEncodingDecoding demonstrates how keys are encoded/decoded via WithKeyEncDecGetter.
+// We run table-driven sub-tests that verify:
+//  1. We can set nested keys, then upon store reload, retrieve them with the *original* plain path.
+//  2. If the on-disk data is corrupted (invalid base64 in a key), we get an error when loading.
+//  3. Partial path coverage vs. all path coverage, etc.
+func TestMapFileStore_KeyEncodingDecoding(t *testing.T) {
+	tempDir := t.TempDir()
+	filename := filepath.Join(tempDir, "teststore_key_encdec.json")
+
+	// We'll define a function that returns mockB64KeyEncDec for *all* paths
+	// i.e. it encodes/decodes every key in the store.
+	keyEncDecGetter := func(pathSoFar []string) encdec.StringEncoderDecoder {
+		// Always return the base64 encoder/decoder
+		return encdec.Base64StringEncoderDecoder{}
 	}
+
+	// Create store with default data and our KeyEncDec
+	defaultData := map[string]any{"plainKey": "plainVal"}
+	store, err := NewMapFileStore(
+		filename,
+		defaultData,
+		WithCreateIfNotExists(true),
+		WithKeyEncDecGetter(keyEncDecGetter),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create store with keyEncDec: %v", err)
+	}
+
+	t.Run("Set and Get with Key Encoding - Nested Paths", func(t *testing.T) {
+		testCases := []struct {
+			name       string
+			keys       []string
+			value      any
+			wantErrSet bool
+			wantErrGet bool
+		}{
+			{
+				name:  "simple top-level key",
+				keys:  []string{"hello"},
+				value: "world",
+			},
+			{
+				name:  "nested key with two levels",
+				keys:  []string{"level1", "level2"},
+				value: 123,
+			},
+			{
+				name:  "deep nested key",
+				keys:  []string{"grandlevel", "parentlevel", "childlevel"},
+				value: true,
+			},
+			{
+				name:       "empty key slice",
+				keys:       []string{},
+				value:      "value",
+				wantErrSet: true, // cannot set root
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				err := store.SetKey(tc.keys, tc.value)
+				if tc.wantErrSet {
+					if err == nil {
+						t.Errorf("[%s] Expected error in SetKey but got nil", tc.name)
+					}
+					return
+				} else if err != nil {
+					t.Errorf("[%s] Unexpected error in SetKey: %v", tc.name, err)
+					return
+				}
+
+				gotVal, err := store.GetKey(tc.keys)
+				if tc.wantErrGet {
+					if err == nil {
+						t.Errorf("[%s] Expected error in GetKey but got nil", tc.name)
+					}
+					return
+				}
+
+				if err != nil {
+					t.Errorf("[%s] Unexpected error in GetKey: %v", tc.name, err)
+					return
+				}
+				if !reflect.DeepEqual(gotVal, tc.value) {
+					t.Errorf("[%s] GetKey returned %v, expected %v", tc.name, gotVal, tc.value)
+				}
+			})
+		}
+	})
+
+	t.Run("Reloading the Store Should Decode Keys Correctly", func(t *testing.T) {
+		// We set some keys in the previous sub-test. Let's close the store,
+		// reopen it, and ensure we get the same data with the same key paths.
+		err := store.Save()
+		if err != nil {
+			t.Fatalf("Unexpected error while saving: %v", err)
+		}
+		store2, err := NewMapFileStore(
+			filename,
+			defaultData,
+			WithKeyEncDecGetter(keyEncDecGetter),
+		)
+		if err != nil {
+			t.Fatalf("Failed to reopen store after saving: %v", err)
+		}
+
+		// Try retrieving some keys we set in the previous sub-test:
+		keysToCheck := [][]string{
+			{"hello"},
+			{"level1", "level2"},
+			{"grandlevel", "parentlevel", "childlevel"},
+		}
+		for _, k := range keysToCheck {
+			val, err := store2.GetKey(k)
+			if err != nil {
+				t.Errorf("GetKey(%v) failed after reopen: %v", k, err)
+			} else {
+				t.Logf("After reload, got key %v => %v (ok)", k, val)
+			}
+		}
+	})
+
+	t.Run("Invalid Base64 Key on Disk - Load Should Fail", func(t *testing.T) {
+		// We'll forcibly write a key that is not valid base64 into the JSON file
+		// to mimic a corrupt on-disk scenario.
+		// Then, a new store load should fail because decode will error out on that key.
+		err := store.Save()
+		if err != nil {
+			t.Fatalf("Unexpected error while saving: %v", err)
+		}
+
+		// Overwrite the store file with one invalid key (like: {"bad-base64??===": "someVal"})
+		invalidJSON := `{"bad-base64??===": "someVal"}`
+		err = os.WriteFile(filename, []byte(invalidJSON), 0o600)
+		if err != nil {
+			t.Fatalf("Failed to write invalid base64 key to file: %v", err)
+		}
+
+		// Now attempt to open a new store that uses the same KeyEncDec
+		_, err = NewMapFileStore(
+			filename,
+			defaultData,
+			WithKeyEncDecGetter(keyEncDecGetter),
+		)
+		if err == nil {
+			t.Errorf("Expected error when loading invalid base64 key from disk, but got nil")
+		} else {
+			t.Logf("Got expected error: %v", err)
+		}
+	})
+}
+
+// Below is an example test enhancement for SetAll/GetAll with key encoding.
+// We'll ensure that keys are also re-encoded/de-encoded properly when using SetAll.
+func TestMapFileStore_SetAll_KeyEncDec(t *testing.T) {
+	tempDir := t.TempDir()
+	filename := filepath.Join(tempDir, "teststore_setall_keyencdec.json")
+
+	keyEncDecGetter := func(pathSoFar []string) encdec.StringEncoderDecoder {
+		return encdec.Base64StringEncoderDecoder{}
+	}
+	defaultData := map[string]any{"default": "val"}
+
+	store, err := NewMapFileStore(
+		filename,
+		defaultData,
+		WithCreateIfNotExists(true),
+		WithKeyEncDecGetter(keyEncDecGetter),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create store: %v", err)
+	}
+
+	tests := []struct {
+		name        string
+		data        map[string]any
+		keysToCheck [][]string
+	}{
+		{
+			name: "simple set of keys",
+			data: map[string]any{
+				"alpha":   "bravo",
+				"charlie": "delta",
+			},
+			keysToCheck: [][]string{{"alpha"}, {"charlie"}},
+		},
+		{
+			name: "nested maps inside setAll",
+			data: map[string]any{
+				"root": map[string]any{
+					"inner": "val1",
+					"deep": map[string]any{
+						"level": 42,
+					},
+				},
+			},
+			keysToCheck: [][]string{
+				{"root", "inner"},
+				{"root", "deep", "level"},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := store.SetAll(tc.data)
+			if err != nil {
+				t.Errorf("[%s] SetAll error: %v", tc.name, err)
+				return
+			}
+			// Now retrieve them to ensure they're set properly
+			for _, k := range tc.keysToCheck {
+				got, err := store.GetKey(k)
+				if err != nil {
+					t.Errorf("[%s] GetKey(%v) error: %v", tc.name, k, err)
+					continue
+				}
+				wantVal := getValueAtPath(tc.data, k)
+				if !reflect.DeepEqual(got, wantVal) {
+					t.Errorf("[%s] mismatch: got %v, want %v for path %v", tc.name, got, wantVal, k)
+				}
+			}
+		})
+	}
+}
+
+// getValueAtPath is a helper to retrieve the value from a map at the given nested path.
+// This is only used in our test expansions for quick checking inside the table-driven tests.
+func getValueAtPath(m map[string]any, path []string) any {
+	current := any(m)
+	for _, p := range path {
+		subMap, ok := current.(map[string]any)
+		if !ok {
+			return nil
+		}
+		current = subMap[p]
+	}
+	return current
 }

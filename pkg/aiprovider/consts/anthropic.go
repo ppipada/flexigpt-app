@@ -7,9 +7,9 @@ import (
 const ProviderNameAnthropic spec.ProviderName = "anthropic"
 
 const (
-	Claude37Sonnet spec.ModelName = "claude-3-7-sonnet-20250219"
-	Claude35Sonnet spec.ModelName = "claude-3-5-sonnet-20241022"
-	Claude35Haiku  spec.ModelName = "claude-3-5-haiku-20241022"
+	Claude37Sonnet spec.ModelName = "claude-3.7-sonnet-20250219"
+	Claude35Sonnet spec.ModelName = "claude-3.5-sonnet-20241022"
+	Claude35Haiku  spec.ModelName = "claude-3.5-haiku-20241022"
 	Claude3Opus    spec.ModelName = "claude-3-opus-20240229"
 	Claude3Sonnet  spec.ModelName = "claude-3-sonnet-20240229"
 	Claude3Haiku   spec.ModelName = "claude-3-haiku-20240307"

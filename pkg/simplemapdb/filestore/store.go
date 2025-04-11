@@ -8,13 +8,18 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	simplemapdbEncdec "github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
 )
 
-type KeyEncDecsGetter func(data map[string]any) map[string]simplemapdbEncdec.EncoderDecoder
+// KeyEncDecGetter: given the path so far, if applicable, returns a StringEncoderDecoder
+// It encodes decodes: The key at the path i.e last part of the path array.
+type KeyEncDecGetter func(pathSoFar []string) simplemapdbEncdec.StringEncoderDecoder
+
+// ValueEncDecGetter: given the path so far, if applicable, returns a EncoderDecoder
+// It encodes decodes: Value at the key i.e value at last part of the path array.
+type ValueEncDecGetter func(pathSoFar []string) simplemapdbEncdec.EncoderDecoder
 
 // MapFileStore is a file-backed implementation of a thread-safe key-value store.
 type MapFileStore struct {
@@ -25,14 +30,15 @@ type MapFileStore struct {
 	filename          string
 	autoFlush         bool
 	createIfNotExists bool
-	getKeyEncDecs     KeyEncDecsGetter
+	getValueEncDec    ValueEncDecGetter
+	getKeyEncDec      KeyEncDecGetter
 }
 
 // Option defines a function type that applies a configuration option to the MapFileStore.
 type Option func(*MapFileStore)
 
-// WithEncoder sets a custom encoder/decoder for the store.
-func WithEncoder(encoder simplemapdbEncdec.EncoderDecoder) Option {
+// WithEncoderDecoder sets a custom encoder/decoder for the store.
+func WithEncoderDecoder(encoder simplemapdbEncdec.EncoderDecoder) Option {
 	return func(store *MapFileStore) {
 		store.encdec = encoder
 	}
@@ -45,10 +51,17 @@ func WithAutoFlush(autoFlush bool) Option {
 	}
 }
 
-// WithKeyEncDecsGetter sets per-key encoder/decoders.
-func WithKeyEncDecsGetter(keyEncDecsGetter KeyEncDecsGetter) Option {
+// WithValueEncDecsGetter registers the user’s value encoding decoding handler callback.
+func WithValueEncDecGetter(valueEncDecGetter ValueEncDecGetter) Option {
 	return func(store *MapFileStore) {
-		store.getKeyEncDecs = keyEncDecsGetter
+		store.getValueEncDec = valueEncDecGetter
+	}
+}
+
+// WithKeyEncDecsGetter registers the user’s key encoding decoding handler callback.
+func WithKeyEncDecGetter(getter KeyEncDecGetter) Option {
+	return func(store *MapFileStore) {
+		store.getKeyEncDec = getter
 	}
 }
 
@@ -149,50 +162,51 @@ func (store *MapFileStore) load() error {
 		return fmt.Errorf("failed to decode data from file %s: %w", store.filename, err)
 	}
 
-	// Apply per-key decoders
-	if store.getKeyEncDecs != nil {
-		keyEncDecs := store.getKeyEncDecs(store.data)
-		if len(keyEncDecs) > 0 {
-			for key, encDec := range keyEncDecs {
-				keys := strings.Split(key, ".")
-				if err := decodeValueAtPath(store.data, keys, encDec); err != nil {
-					var kne *KeyNotFoundError
-					if errors.As(err, &kne) {
-						// Key doesn't exist
-						continue
-					}
-					return fmt.Errorf("failed to decode value at key %s: %w", key, err)
-				}
-			}
-		}
+	// Do processing in place for load as you want laoded data to be non encoded decoded
+	// First process keys in decode mode
+	encodeMode := false
+	err = encodeDecodeAllKeysRecursively(store.data, []string{}, store.getKeyEncDec, encodeMode)
+	if err != nil {
+		return err
 	}
+
+	// Then process values in decode mode
+	newObj, err := encodeDecodeAllValuesRecursively(
+		store.data,
+		[]string{},
+		store.getValueEncDec,
+		encodeMode,
+	)
+	if err != nil {
+		return err
+	}
+	store.data, _ = newObj.(map[string]any)
 
 	return nil
 }
 
 func (store *MapFileStore) flush() error {
-	var dataToSave any
-	if store.getKeyEncDecs != nil {
-		keyEncDecs := store.getKeyEncDecs(store.data)
-		if len(keyEncDecs) > 0 {
-			// Need to make a copy of store.data and apply per-key encodings
-			dataCopy := DeepCopyValue(store.data)
-			for key, encDec := range keyEncDecs {
-				keys := strings.Split(key, ".")
-				if err := encodeValueAtPath(dataCopy, keys, encDec); err != nil {
-					var kne *KeyNotFoundError
-					if errors.As(err, &kne) {
-						// Key doesnt exist
-						continue
-					}
-					return fmt.Errorf("failed to encode value at key %s: %w", key, err)
-				}
-			}
-			dataToSave = dataCopy
-		}
-	} else {
-		// No per-key encodings, can use store.data directly
-		dataToSave = store.data
+	// We'll make a deep copy so we don't mutate in-memory. no error as store.data is always a map
+	encodeMode := true
+	dataCopy, _ := DeepCopyValue(store.data).(map[string]any)
+
+	// First encode values so that all keys from in mem are non mutated
+	// Encode KEYS next, so that on disk, the providers/modelnames become base64, etc.
+	d, err := encodeDecodeAllValuesRecursively(
+		dataCopy,
+		[]string{},
+		store.getValueEncDec,
+		encodeMode,
+	)
+	if err != nil {
+		return err
+	}
+	dataCopy, _ = d.(map[string]any)
+
+	// Encode KEYS next, so that on disk, the providers/modelnames become base64, etc.
+	err = encodeDecodeAllKeysRecursively(dataCopy, []string{}, store.getKeyEncDec, encodeMode)
+	if err != nil {
+		return err
 	}
 
 	f, err := os.Create(store.filename)
@@ -201,7 +215,7 @@ func (store *MapFileStore) flush() error {
 	}
 	defer f.Close()
 
-	if err := store.encdec.Encode(f, dataToSave); err != nil {
+	if err := store.encdec.Encode(f, dataCopy); err != nil {
 		return fmt.Errorf("failed to encode data to file %s: %w", store.filename, err)
 	}
 	return nil
@@ -264,11 +278,13 @@ func (store *MapFileStore) SetAll(data map[string]any) error {
 
 // GetKey retrieves the value associated with the given key.
 // The key can be a dot-separated path to a nested value.
-func (store *MapFileStore) GetKey(key string) (any, error) {
+func (store *MapFileStore) GetKey(keys []string) (any, error) {
+	if len(keys) == 0 {
+		return nil, errors.New("cannot get value at root")
+	}
 	store.mu.RLock()
 	defer store.mu.RUnlock()
 
-	keys := strings.Split(key, ".")
 	val, err := GetValueAtPath(store.data, keys)
 	if err != nil {
 		return nil, err
@@ -278,18 +294,20 @@ func (store *MapFileStore) GetKey(key string) (any, error) {
 
 // SetKey sets the value for the given key.
 // The key can be a dot-separated path to a nested value.
-func (store *MapFileStore) SetKey(key string, value any) error {
+func (store *MapFileStore) SetKey(keys []string, value any) error {
+	if len(keys) == 0 {
+		return errors.New("cannot set value at root")
+	}
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
-	keys := strings.Split(key, ".")
 	if err := SetValueAtPath(store.data, keys, value); err != nil {
-		return fmt.Errorf("failed to set value at key %s: %w", key, err)
+		return fmt.Errorf("failed to set value at key %v: %w", keys, err)
 	}
 
 	if store.autoFlush {
 		if err := store.flush(); err != nil {
-			return fmt.Errorf("failed to save data after SetKey for key %s: %w", key, err)
+			return fmt.Errorf("failed to save data after SetKey for keys %v: %w", keys, err)
 		}
 	}
 	return nil
@@ -297,104 +315,157 @@ func (store *MapFileStore) SetKey(key string, value any) error {
 
 // DeleteKey deletes the value associated with the given key.
 // The key can be a dot-separated path to a nested value.
-func (store *MapFileStore) DeleteKey(key string) error {
+func (store *MapFileStore) DeleteKey(keys []string) error {
+	if len(keys) == 0 {
+		return errors.New("cannot delete value at root")
+	}
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
-	keys := strings.Split(key, ".")
 	if err := DeleteValueAtPath(store.data, keys); err != nil {
-		return fmt.Errorf("failed to delete key %s: %w", key, err)
+		return fmt.Errorf("failed to delete key %v: %w", keys, err)
 	}
 
 	if store.autoFlush {
 		if err := store.flush(); err != nil {
-			return fmt.Errorf("failed to save data after DeleteKey for key %s: %w", key, err)
+			return fmt.Errorf("failed to save data after DeleteKey for key %v: %w", keys, err)
 		}
 	}
 	return nil
 }
 
-// encodeValueAtPath encodes the value at the specified path using encDec and stores the encoded value.
-func encodeValueAtPath(
-	data any,
-	keys []string,
-	encDec simplemapdbEncdec.EncoderDecoder,
+// encodeDecodeAllKeysRecursively walks the data as a map.
+// if "KeyEncDecGetter(pathSoFar)" returns a StringEncoderDecoder, it renames all immediate sub-keys using Encode() or Decode() depending on the mode.
+// Then it recurses into each sub-value with an updated path.
+// Here obj needs to be any as we may get non map objects in recursive traversal, dont do anything.
+func encodeDecodeAllKeysRecursively(
+	currentMap map[string]any,
+	pathSoFar []string,
+	getKeyEncDec KeyEncDecGetter,
+	encodeMode bool,
 ) error {
-	parentMap, lastKey, err := NavigateToParentMap(data, keys, false)
-	if err != nil {
-		var kne *KeyNotFoundError
-		if errors.As(err, &kne) {
-			// Key doesnt exist so cannot encode, noop
-			return nil
-		}
-		return err
-	}
-	val, ok := parentMap[lastKey]
-	if !ok {
-		// Key doesnt exist so cannot encode, noop
+	if getKeyEncDec == nil {
 		return nil
 	}
 
-	// Encode val via encDec
-	var buf bytes.Buffer
-	if err := encDec.Encode(&buf, val); err != nil {
-		return fmt.Errorf("failed to encode value: %w", err)
+	// 1) Collect all needed renames for *this* level
+	//    We don't mutate the map while iterating. We'll rename afterwards.
+	var renames []struct {
+		oldKey, newKey string
+		val            any
 	}
 
-	// Get the bytes
-	encodedBytes := buf.Bytes()
+	for k, v := range currentMap {
+		newPath := pathSoFar
+		newPath = append(newPath, k)
+		// Does the user want to rename THIS child's key?
+		if keyEncDec := getKeyEncDec(newPath); keyEncDec != nil {
+			if encodeMode {
+				newK := keyEncDec.Encode(k)
+				if newK != k {
+					renames = append(renames, struct {
+						oldKey, newKey string
+						val            any
+					}{k, newK, v})
+				}
+			} else {
+				decodedK, err := keyEncDec.Decode(k)
+				if err != nil {
+					return fmt.Errorf("failed to decode key %q at path %v: %w", k, newPath, err)
+				}
+				if decodedK != k {
+					renames = append(renames, struct {
+						oldKey, newKey string
+						val            any
+					}{k, decodedK, v})
+				}
+			}
+		}
+	}
 
-	// Encode the bytes to a base64 string
-	encodedStr := base64.StdEncoding.EncodeToString(encodedBytes)
+	// 2) Apply the renames so the map keys reflect the new names.
+	//    After this, the child values have new keys in currentMap.
+	for _, r := range renames {
+		delete(currentMap, r.oldKey)
+		currentMap[r.newKey] = r.val
+	}
 
-	// Store the base64 string in parentMap[lastKey]
-	parentMap[lastKey] = encodedStr
-
+	// 3) Now recurse into each child to see if they also want to rename sub-keys.
+	//    Note that if we changed a key from oldK -> newK, we pass newK in pathSoFar.
+	for k, v := range currentMap {
+		newPath := pathSoFar
+		newPath = append(newPath, k)
+		// If the child's value is a map, keep going
+		if subMap, ok := v.(map[string]any); ok {
+			if err := encodeDecodeAllKeysRecursively(subMap, newPath, getKeyEncDec, encodeMode); err != nil {
+				return err
+			}
+		}
+		// If it's not a map, there's no deeper "keys" to rename.
+	}
 	return nil
 }
 
-// decodeValueAtPath decodes the value at the specified path using encDec and replaces it with the decoded value.
-func decodeValueAtPath(
-	data any,
-	keys []string,
-	encDec simplemapdbEncdec.EncoderDecoder,
-) error {
-	parentMap, lastKey, err := NavigateToParentMap(data, keys, false)
-	if err != nil {
-		return err
+func encodeDecodeAllValuesRecursively(
+	obj any,
+	pathSoFar []string,
+	getValueEncDec ValueEncDecGetter,
+	encodeMode bool,
+) (any, error) {
+	// If the user has a value-encoder for this path, encode/decode the *entire* obj here.
+	if getValueEncDec != nil {
+		if valEncDec := getValueEncDec(pathSoFar); valEncDec != nil {
+			var (
+				buf       bytes.Buffer
+				finalVal  any
+				base64Str string
+			)
+			if encodeMode {
+				// Encode obj to bytes -> base64 -> store as string
+				if err := valEncDec.Encode(&buf, obj); err != nil {
+					return obj, fmt.Errorf("failed encoding at path %v: %w", pathSoFar, err)
+				}
+				base64Str = base64.StdEncoding.EncodeToString(buf.Bytes())
+				return base64Str, nil
+			}
+
+			// Decode mode: obj should be a base64-encoded string...
+			strVal, ok := obj.(string)
+			if !ok {
+				// If we expected it to be base64 but found something else, either error or just skip
+				return obj, nil
+			}
+			rawBytes, err := base64.StdEncoding.DecodeString(strVal)
+			if err != nil {
+				// Move on or return an error
+				return obj, fmt.Errorf("failed base64 decode at path %v: %w", pathSoFar, err)
+			}
+			if err := valEncDec.Decode(bytes.NewReader(rawBytes), &finalVal); err != nil {
+				return obj, fmt.Errorf("failed decode at path %v: %w", pathSoFar, err)
+			}
+			return finalVal, nil
+		}
 	}
-	val, ok := parentMap[lastKey]
+
+	// If we get here, no special (en/de)coding applies at this node.
+	// If obj is a map, recurse its children.
+	m, ok := obj.(map[string]any)
 	if !ok {
-		return &KeyNotFoundError{Key: lastKey, Path: strings.Join(keys, ".")}
+		// Not a map => nothing left to do
+		return obj, nil
 	}
 
-	// val should be the encoded value. We need to decode it via encDec
-
-	// We assume val is a string because we encoded and stored it as string in encode func
-	strVal, ok := val.(string)
-	if !ok {
-		return fmt.Errorf("value at key %s is not a string", strings.Join(keys, "."))
-	}
-
-	// Decode the base64 string to bytes
-	decodedBytes, err := base64.StdEncoding.DecodeString(strVal)
-	if err != nil {
-		return fmt.Errorf(
-			"failed to base64-decode value at key %s: %w",
-			strings.Join(keys, "."),
-			err,
+	for k, v := range m {
+		newChild, err := encodeDecodeAllValuesRecursively(
+			v,
+			append(pathSoFar, k),
+			getValueEncDec,
+			encodeMode,
 		)
+		if err != nil {
+			return obj, err
+		}
+		m[k] = newChild // store the possibly-encoded child back
 	}
-
-	// Decode bytes via encDec
-	buf := bytes.NewReader(decodedBytes)
-	var decodedVal any
-	if err := encDec.Decode(buf, &decodedVal); err != nil {
-		return fmt.Errorf("failed to decode value at key %s: %w", strings.Join(keys, "."), err)
-	}
-
-	// Replace the value in parentMap[lastKey] with the decoded value
-	parentMap[lastKey] = decodedVal
-
-	return nil
+	return m, nil
 }

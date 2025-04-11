@@ -82,10 +82,6 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 		if (field === 'providerName') {
 			if (!value.trim()) {
 				newErrors.providerName = 'Provider name is required.';
-			} else if (value.includes('.')) {
-				newErrors.providerName = 'Provider name cannot contain a dot (".").';
-			} else if (value.includes(' ')) {
-				newErrors.providerName = 'Provider name cannot contain spaces.';
 			} else if (existingProviderNames.includes(value)) {
 				newErrors.providerName = 'This provider name already exists.';
 			}
@@ -109,13 +105,6 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 				}
 			}
 		}
-
-		// If you want chatCompletionPathPrefix to be mandatory, uncomment:
-		// if (field === 'chatCompletionPathPrefix') {
-		//   if (!value.trim()) {
-		//     newErrors.chatCompletionPathPrefix = 'Chat path prefix is required.';
-		//   }
-		// }
 
 		if (field === 'defaultModelName') {
 			if (!value.trim()) {
@@ -226,10 +215,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Provider Name*</span>
-							<span
-								className="label-text-alt tooltip"
-								data-tip="Unique identifier, no dots or spaces, not already in use"
-							>
+							<span className="label-text-alt tooltip" data-tip="Unique identifier for this provider.">
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
