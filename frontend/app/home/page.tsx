@@ -2,6 +2,16 @@ import { Link } from 'react-router';
 
 import { FEATURE_FLAG_AGENTS } from '@/lib/features';
 
+export async function clientLoader() {
+	// Wait for DOM content to be loaded and Wails runtime to be injected
+	if (document.readyState !== 'complete' && document.readyState !== 'interactive') {
+		await new Promise(resolve => {
+			document.addEventListener('DOMContentLoaded', resolve, { once: true });
+		});
+	}
+	// Now it's safe to call Wails backend functions
+}
+
 export default function Home() {
 	return (
 		<main className="flex flex-col h-full items-center justify-center p-24">

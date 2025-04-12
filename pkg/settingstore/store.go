@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 	"github.com/flexigpt/flexiui/pkg/settingstore/spec"
@@ -23,28 +24,31 @@ func InitSettingStore(settingStore *SettingStore, filename string) error {
 	if err != nil {
 		return errors.New("could not get map of settings data")
 	}
+	settingStore.defaultData = spec.DefaultSettingsData
+	settingStore.encryptEncDec = encdec.EncryptedStringValueEncoderDecoder{}
+	settingStore.keyEncDec = encdec.Base64StringEncoderDecoder{}
 	store, err := filestore.NewMapFileStore(
 		filename,
 		settingsMap,
 		filestore.WithCreateIfNotExists(true),
 		filestore.WithAutoFlush(true),
 		filestore.WithValueEncDecGetter(settingStore.ValueEncDecGetter),
+		// Lets not encode decode keys for now
 		// filestore.WithKeyEncDecGetter(settingStore.KeyEncDecGetter),
 		filestore.WithEncoderDecoder(encdec.JSONEncoderDecoder{}))
 	if err != nil {
 		return fmt.Errorf("failed to create store: %w", err)
 	}
-
 	settingStore.store = store
-	settingStore.defaultData = spec.DefaultSettingsData
-	settingStore.encryptEncDec = encdec.EncryptedStringValueEncoderDecoder{}
-	settingStore.keyEncDec = encdec.Base64StringEncoderDecoder{}
+	slog.Info("Store initialization done.")
 	return nil
 }
 
 func (s *SettingStore) ValueEncDecGetter(pathSoFar []string) encdec.EncoderDecoder {
-	if len(pathSoFar) == 3 && pathSoFar[2] == "apiKey" {
-		return s.encryptEncDec
+	if len(pathSoFar) == 3 {
+		if pathSoFar[2] == "apiKey" {
+			return s.encryptEncDec
+		}
 	}
 	return nil
 }

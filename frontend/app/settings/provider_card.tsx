@@ -14,11 +14,11 @@ import {
 	FiXCircle,
 } from 'react-icons/fi';
 
-import type { ConfigurationResponse, ModelName, ProviderName } from '@/models/aiprovidermodel';
+import type { ModelName, ModelParams, ProviderName } from '@/models/aiprovidermodel';
 import { ProviderInfoDescription } from '@/models/aiprovidermodel';
 import type { AISetting, AISettingAttrs, ModelSetting } from '@/models/settingmodel';
 
-import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
+import { settingstoreAPI } from '@/apis/baseapi';
 import { SetAISettingAPIKey, SetAISettingAttrs } from '@/apis/settingstore_helper';
 
 import ActionDeniedAlert from '@/components/action_denied';
@@ -32,6 +32,7 @@ interface AISettingsCardProps {
 	settings: AISetting;
 	aiSettings: Record<string, AISetting>;
 	defaultProvider: ProviderName;
+	inbuiltProviderModels: Record<ModelName, ModelParams> | undefined;
 	onProviderSettingChange: (provider: ProviderName, settings: AISetting) => void;
 	onProviderDelete: (provider: ProviderName) => Promise<void>;
 }
@@ -41,6 +42,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	settings,
 	aiSettings,
 	defaultProvider,
+	inbuiltProviderModels,
 	onProviderSettingChange,
 	onProviderDelete,
 }) => {
@@ -56,24 +58,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 
 	const [showActionDeniedAlert, setShowActionDeniedAlert] = useState(false);
 	const [actionDeniedMessage, setActionDeniedMessage] = useState('');
-	const [configurationInfo, setConfigurationInfo] = useState<ConfigurationResponse | null>(null);
 	const [isDeleteProviderModalOpen, setIsDeleteProviderModalOpen] = useState(false);
-
-	useEffect(() => {
-		const fetchConfigurationInfo = async () => {
-			try {
-				const info = await providerSetAPI.getConfigurationInfo();
-				if (info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
-					return;
-				}
-				setConfigurationInfo(info);
-			} catch (error) {
-				console.error('Failed to fetch configuration info:', error);
-			}
-		};
-
-		fetchConfigurationInfo();
-	}, []);
 
 	// Update local state when props change
 	useEffect(() => {
@@ -162,11 +147,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 			return false;
 		}
 		// Cannot remove if it is an inbuilt model
-		if (
-			configurationInfo &&
-			provider in configurationInfo.inbuiltProviderModels &&
-			modelName in configurationInfo.inbuiltProviderModels[provider]
-		) {
+		if (inbuiltProviderModels && modelName in inbuiltProviderModels) {
 			return false;
 		}
 
@@ -178,12 +159,8 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 			return true;
 		}
 
-		if (
-			configurationInfo &&
-			provider in configurationInfo.inbuiltProviderModels &&
-			modelName in configurationInfo.inbuiltProviderModels[provider]
-		) {
-			return configurationInfo.inbuiltProviderModels[provider][modelName].reasoningSupport;
+		if (inbuiltProviderModels && modelName in inbuiltProviderModels) {
+			return inbuiltProviderModels[modelName].reasoningSupport;
 		}
 
 		return false;
@@ -234,7 +211,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 
 	const isProviderRemovable = (provider: ProviderName) => {
 		if (provider === defaultProvider) return false;
-		if (configurationInfo && provider in configurationInfo.inbuiltProviderModels) return false;
+		if (inbuiltProviderModels) return false;
 		return true;
 	};
 

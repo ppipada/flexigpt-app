@@ -414,7 +414,8 @@ func encodeDecodeAllValuesRecursively(
 ) (any, error) {
 	// If the user has a value-encoder for this path, encode/decode the *entire* obj here.
 	if getValueEncDec != nil {
-		if valEncDec := getValueEncDec(pathSoFar); valEncDec != nil {
+		valEncDec := getValueEncDec(pathSoFar)
+		if valEncDec != nil {
 			var (
 				buf       bytes.Buffer
 				finalVal  any
@@ -432,7 +433,7 @@ func encodeDecodeAllValuesRecursively(
 			// Decode mode: obj should be a base64-encoded string...
 			strVal, ok := obj.(string)
 			if !ok {
-				// If we expected it to be base64 but found something else, either error or just skip
+				// we expected it to be string but found something else, either error or just skip
 				return obj, nil
 			}
 			rawBytes, err := base64.StdEncoding.DecodeString(strVal)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 
 	aiproviderConsts "github.com/flexigpt/flexiui/pkg/aiprovider/consts"
 	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
@@ -87,7 +88,7 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 	if err != nil {
 		return err
 	}
-
+	slog.Info("InitProviderSetUsingSettings Done.")
 	return nil
 }
 

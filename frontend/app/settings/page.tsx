@@ -2,9 +2,16 @@ import { type FC, useEffect, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
 
-import { DefaultModelName, DefaultProviderName, type ProviderName } from '@/models/aiprovidermodel';
+import {
+	DefaultModelName,
+	DefaultProviderName,
+	type ModelName,
+	type ModelParams,
+	type ProviderName,
+} from '@/models/aiprovidermodel';
 import type { AISetting } from '@/models/settingmodel';
 
+import { FetchInbuiltProviderInfo } from '@/apis/aiprovider_helper';
 import { settingstoreAPI } from '@/apis/baseapi';
 import { AddAISetting, DeleteAISetting, SetAppSettings } from '@/apis/settingstore_helper';
 
@@ -29,13 +36,15 @@ const defaultAISettings: Record<ProviderName, AISetting> = {
 const SettingsPage: FC = () => {
 	const [defaultProvider, setComponentDefaultProvider] = useState<ProviderName>(DefaultProviderName);
 	const [aiSettings, setAISettings] = useState<Record<string, AISetting>>(defaultAISettings);
-
 	const [isAddProviderModalOpen, setIsAddProviderModalOpen] = useState(false);
+	const [inbuiltProviderInfo, setInbuiltProviderInfo] = useState<Record<ProviderName, Record<ModelName, ModelParams>>>(
+		{}
+	);
 
 	useEffect(() => {
 		(async () => {
 			const settings = await settingstoreAPI.getAllSettings();
-
+			const info = await FetchInbuiltProviderInfo();
 			const enabledProviders = Object.keys(settings.aiSettings).filter(
 				provider => settings.aiSettings[provider].isEnabled
 			);
@@ -43,8 +52,9 @@ const SettingsPage: FC = () => {
 			if (enabledProviders.length === 0) {
 				enabledProviders.push(DefaultProviderName);
 			}
-
 			const defaultProv = settings.app.defaultProvider;
+
+			setInbuiltProviderInfo(info);
 			setComponentDefaultProvider(enabledProviders.includes(defaultProv) ? defaultProv : enabledProviders[0]);
 			setAISettings(settings.aiSettings);
 		})();
@@ -177,6 +187,9 @@ const SettingsPage: FC = () => {
 										settings={aiSettings[providerStr]}
 										aiSettings={aiSettings}
 										defaultProvider={defaultProvider}
+										inbuiltProviderModels={
+											providerStr in inbuiltProviderInfo ? inbuiltProviderInfo[providerStr] : undefined
+										}
 										onProviderSettingChange={handleProviderSettingChange}
 										onProviderDelete={handleRemoveProvider}
 									/>
