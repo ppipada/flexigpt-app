@@ -46,6 +46,67 @@ function useEnterSubmit(): {
 const MAX_HEIGHT = 360;
 
 /**
+ * Subcomponent for selecting the Model
+ */
+function ModelDropdown(props: {
+	selectedModel: ChatOptions;
+	setSelectedModel: React.Dispatch<React.SetStateAction<ChatOptions>>;
+	allOptions: ChatOptions[];
+	isOpen: boolean;
+	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	detailsRef: React.RefObject<HTMLDetailsElement | null>;
+}) {
+	const { selectedModel, setSelectedModel, allOptions, isOpen, setIsOpen, detailsRef } = props;
+
+	return (
+		<details
+			ref={detailsRef}
+			className="dropdown dropdown-top dropdown-end w-1/3"
+			onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
+				setIsOpen((event.currentTarget as HTMLDetailsElement).open);
+			}}
+			open={isOpen}
+		>
+			<summary
+				className="btn btn-xs w-full text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
+				title="Select Model"
+			>
+				<div className="flex">
+					<span className="sm:hidden">{selectedModel.title.substring(0, 8)}</span>
+					<span className="hidden sm:inline">{selectedModel.title} </span>
+					{isOpen ? (
+						<FiChevronDown size={16} className="ml-1 md:ml-2" />
+					) : (
+						<FiChevronUp size={16} className="ml-1 md:ml-2" />
+					)}
+				</div>
+			</summary>
+
+			<ul className="dropdown-content menu bg-base-100 rounded-xl w-full">
+				{allOptions.map(model => (
+					<li
+						key={`${model.provider}-${model.name}`}
+						className="cursor-pointer text-xs"
+						onClick={() => {
+							setSelectedModel(model);
+							if (detailsRef.current) {
+								detailsRef.current.open = false;
+							}
+							setIsOpen(false);
+						}}
+					>
+						<a className="justify-between items-center p-1 m-0">
+							<span>{model.title}</span>
+							{selectedModel.name === model.name && selectedModel.provider === model.provider && <FiCheck />}
+						</a>
+					</li>
+				))}
+			</ul>
+		</details>
+	);
+}
+
+/**
  * Subcomponent for Temperature Selection
  * -------------------------------------
  * Uses a string-based custom input and clamps the value to [0,1].
@@ -63,12 +124,12 @@ function TemperatureDropdown(props: {
 	// local state for the custom text input (string-based)
 	const [customTemp, setCustomTemp] = useState(temperature.toString());
 
-	// Sync local string whenever "temperature" changes from the outside
+	// Sync local string whenever "temperature" changes
 	useEffect(() => {
 		setCustomTemp(temperature.toString());
 	}, [temperature]);
 
-	// Called on blur or default so we clamp to [0,1], fallback to 0.1 if invalid
+	// Called on blur so we clamp to [0,1], fallback to 0.1 if invalid
 	function clampOnBlur() {
 		let val = parseFloat(customTemp);
 		if (isNaN(val)) {
@@ -158,7 +219,38 @@ function TemperatureDropdown(props: {
 }
 
 /**
- * Main Chat Input Field with integrated TemperatureDropdown subcomponent
+ * Subcomponent for "Disable previous messages" checkbox
+ */
+function DisablePreviousMessagesCheckbox(props: {
+	disablePreviousMessages: boolean;
+	setDisablePreviousMessages: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+	const { disablePreviousMessages, setDisablePreviousMessages } = props;
+
+	return (
+		<label
+			className="flex items-center space-x-2 text-neutral-400 w-1/3 overflow-hidden"
+			title="Disable previous messages"
+		>
+			<input
+				type="checkbox"
+				checked={disablePreviousMessages}
+				onChange={e => {
+					setDisablePreviousMessages(e.target.checked);
+				}}
+				className="checkbox checkbox-xs rounded-full"
+				spellCheck="false"
+			/>
+			<span className="text-xs text-nowrap">Disable previous messages</span>
+		</label>
+	);
+}
+
+/**
+ * Main Chat Input Field
+ * -------------------------------------
+ * Renders ModelDropdown, TemperatureDropdown, DisablePreviousMessagesCheckbox,
+ * and the message input form.
  */
 const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ onSend, setInputHeight }, ref) => {
 	// For the main text area
@@ -186,7 +278,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	const modelDetailsRef = useRef<HTMLDetailsElement>(null);
 	const temperatureDetailsRef = useRef<HTMLDetailsElement>(null);
 
-	// Close logic
+	// Close logic for model dropdown
 	UseCloseDetails({
 		detailsRef: modelDetailsRef,
 		events: ['mousedown'],
@@ -194,6 +286,8 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 			setIsModelDropdownOpen(false);
 		},
 	});
+
+	// Close logic for temperature dropdown
 	UseCloseDetails({
 		detailsRef: temperatureDetailsRef,
 		events: ['mousedown'],
@@ -252,6 +346,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		setText('');
 		isSubmittingRef.current = false;
 
+		// Reset + refocus
 		if (inputRef.current) {
 			inputRef.current.style.height = 'auto';
 			inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, MAX_HEIGHT)}px`;
@@ -273,7 +368,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		},
 	}));
 
-	// Clamps temperature to [0, 1] (this is triggered by the subcomponent on blur or default selection)
+	// Clamps temperature to [0, 1] (this is triggered by the subcomponent on blur or selection)
 	const setTemperature = (temp: number) => {
 		const clampedTemp = Math.max(0, Math.min(1, temp));
 		setSelectedModel(prev => ({
@@ -284,54 +379,17 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 
 	return (
 		<div className="relative">
-			{/* Top bar with model dropdown, temperature subcomponent, and disable checkbox */}
+			{/* Top bar with separate model dropdown, temperature dropdown, and disable checkbox */}
 			<div className="flex items-center justify-between bg-base-200 gap-1 md:gap-8 mb-1 mx-4">
-				{/* Model Select */}
-				<details
-					ref={modelDetailsRef}
-					className="dropdown dropdown-top dropdown-end w-1/3"
-					onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
-						setIsModelDropdownOpen((event.currentTarget as HTMLDetailsElement).open);
-					}}
-				>
-					<summary
-						className="btn btn-xs w-full text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
-						title="Select Model"
-					>
-						<div className="flex">
-							<span className="sm:hidden">{selectedModel.title.substring(0, 8)}</span>
-							<span className="hidden sm:inline">{selectedModel.title} </span>
-							{isModelDropdownOpen ? (
-								<FiChevronDown size={16} className="ml-1 md:ml-2" />
-							) : (
-								<FiChevronUp size={16} className="ml-1 md:ml-2" />
-							)}
-						</div>
-					</summary>
+				<ModelDropdown
+					selectedModel={selectedModel}
+					setSelectedModel={setSelectedModel}
+					allOptions={allOptions}
+					isOpen={isModelDropdownOpen}
+					setIsOpen={setIsModelDropdownOpen}
+					detailsRef={modelDetailsRef}
+				/>
 
-					<ul className="dropdown-content menu bg-base-100 rounded-xl w-full">
-						{allOptions.map(model => (
-							<li
-								key={`${model.provider}-${model.name}`}
-								className="cursor-pointer text-xs"
-								onClick={() => {
-									setSelectedModel(model);
-									if (modelDetailsRef.current) {
-										modelDetailsRef.current.open = false;
-									}
-									setIsModelDropdownOpen(false);
-								}}
-							>
-								<a className="justify-between items-center p-1 m-0">
-									<span>{model.title}</span>
-									{selectedModel.name === model.name && selectedModel.provider === model.provider && <FiCheck />}
-								</a>
-							</li>
-						))}
-					</ul>
-				</details>
-
-				{/* Temperature Dropdown subcomponent */}
 				<TemperatureDropdown
 					temperature={selectedModel.temperature ?? 0.1}
 					setTemperature={setTemperature}
@@ -340,22 +398,10 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					detailsRef={temperatureDetailsRef}
 				/>
 
-				{/* "Disable previous messages" checkbox */}
-				<label
-					className="flex items-center space-x-2 text-neutral-400 w-1/3 overflow-hidden"
-					title="Disable previous messages"
-				>
-					<input
-						type="checkbox"
-						checked={disablePreviousMessages}
-						onChange={e => {
-							setDisablePreviousMessages(e.target.checked);
-						}}
-						className="checkbox checkbox-xs rounded-full"
-						spellCheck="false"
-					/>
-					<span className="text-xs text-nowrap">Disable previous messages</span>
-				</label>
+				<DisablePreviousMessagesCheckbox
+					disablePreviousMessages={disablePreviousMessages}
+					setDisablePreviousMessages={setDisablePreviousMessages}
+				/>
 			</div>
 
 			{/* Main input form for messages */}
