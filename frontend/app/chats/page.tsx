@@ -150,7 +150,7 @@ const ChatScreen: FC = () => {
 			stream: options.stream,
 			maxPromptLength: options.maxPromptLength,
 			maxOutputLength: options.maxOutputLength,
-			reasoningSupport: options.reasoningSupport,
+			reasoning: options.reasoning,
 			systemPrompt: options.systemPrompt,
 			timeout: options.timeout,
 			additionalParameters: options.additionalParameters,

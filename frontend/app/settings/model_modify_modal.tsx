@@ -2,10 +2,30 @@ import React, { type FC, useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
-import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
+import { type ModelName, type ProviderName, ReasoningLevel, ReasoningType } from '@/models/aiprovidermodel';
 import { DefaultModelSetting, type ModelSetting } from '@/models/settingmodel';
 
 import { PopulateModelSettingDefaults } from '@/apis/settingstore_helper';
+
+import Dropdown from '@/components/dropdown';
+
+/**
+ * For ReasoningType: a record where every option is `isEnabled: true`.
+ * That ensures the dropdown can show them. We also set filterDisabled={false} to skip filtering.
+ */
+const reasoningTypeItems: Record<ReasoningType, { isEnabled: boolean; displayName: string }> = {
+	[ReasoningType.SingleWithLevels]: { isEnabled: true, displayName: 'Reasoning only, with Levels' },
+	[ReasoningType.HybridWithTokens]: { isEnabled: true, displayName: 'Hybrid, with Reasoning Tokens' },
+};
+
+/**
+ * For ReasoningLevel: similarly set up your enumerated values.
+ */
+const reasoningLevelItems: Record<ReasoningLevel, { isEnabled: boolean; displayName: string }> = {
+	[ReasoningLevel.Low]: { isEnabled: true, displayName: 'Low' },
+	[ReasoningLevel.Medium]: { isEnabled: true, displayName: 'Medium' },
+	[ReasoningLevel.High]: { isEnabled: true, displayName: 'High' },
+};
 
 interface ModifyModelModalProps {
 	isOpen: boolean;
@@ -17,8 +37,10 @@ interface ModifyModelModalProps {
 	existingModels: Record<ModelName, ModelSetting>;
 }
 
-// We'll use a separate interface for the local form data,
-// especially for numeric fields, so we can store them as strings (allowing blank).
+/**
+ * We'll use this interface for the local form data,
+ * especially for numeric fields, so we can store them as strings (allowing blank).
+ */
 interface ModelSettingFormData {
 	displayName: string;
 	isEnabled: boolean;
@@ -26,7 +48,13 @@ interface ModelSettingFormData {
 	maxPromptLength: string;
 	maxOutputLength: string;
 	temperature: string;
+
+	// New reasoning fields
 	reasoningSupport: boolean;
+	reasoningType?: ReasoningType;
+	reasoningLevel?: ReasoningLevel;
+	reasoningTokens?: string;
+
 	systemPrompt: string;
 	timeout: string;
 }
@@ -42,7 +70,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 }) => {
 	const isEditMode = Boolean(initialModelName);
 
-	// Default numeric values that we also show in placeholders
+	// Default numeric values and placeholders
 	const [defaultValues, setDefaultValues] = useState<ModelSetting>(DefaultModelSetting);
 
 	// If not edit mode, user must provide a new modelName
@@ -57,10 +85,14 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		maxOutputLength: '',
 		temperature: '',
 		reasoningSupport: false,
+		reasoningType: ReasoningType.SingleWithLevels,
+		reasoningLevel: ReasoningLevel.Medium,
+		reasoningTokens: '',
 		systemPrompt: '',
 		timeout: '',
 	});
 
+	// Validation errors
 	const [errors, setErrors] = useState<{
 		modelName?: string;
 		displayName?: string;
@@ -68,6 +100,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		maxPromptLength?: string;
 		maxOutputLength?: string;
 		timeout?: string;
+		reasoningTokens?: string;
 	}>({});
 
 	useEffect(() => {
@@ -79,7 +112,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			const merged = await PopulateModelSettingDefaults(providerName, mName, initialData);
 			setDefaultValues(merged);
 
-			// Convert numbers to strings for local form usage
+			// Convert numbers to strings for the local form usage
 			setFormData({
 				displayName: merged.displayName,
 				isEnabled: merged.isEnabled,
@@ -87,7 +120,10 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 				maxPromptLength: String(merged.maxPromptLength ?? ''),
 				maxOutputLength: String(merged.maxOutputLength ?? ''),
 				temperature: String(merged.temperature ?? ''),
-				reasoningSupport: merged.reasoningSupport ?? false,
+				reasoningSupport: !!merged.reasoning,
+				reasoningType: merged.reasoning?.type ?? ReasoningType.SingleWithLevels,
+				reasoningLevel: merged.reasoning?.level ?? ReasoningLevel.Medium,
+				reasoningTokens: merged.reasoning?.tokens ? String(merged.reasoning.tokens) : '',
 				systemPrompt: merged.systemPrompt ?? '',
 				timeout: String(merged.timeout ?? ''),
 			});
@@ -101,17 +137,25 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		}
 	}, [isOpen, providerName, initialModelName, initialData]);
 
+	/**
+	 * Fields we validate
+	 */
 	type ValidationField =
 		| 'modelName'
 		| 'displayName'
 		| 'temperature'
 		| 'maxPromptLength'
 		| 'maxOutputLength'
-		| 'timeout';
+		| 'timeout'
+		| 'reasoningTokens';
 
 	type ValidationErrors = Partial<Record<ValidationField, string>>;
 
+	/**
+	 * Validate a single field
+	 */
 	const validateField = (field: ValidationField, value: unknown) => {
+		// Remove old error for this field
 		const newErrors: ValidationErrors = Object.fromEntries(Object.entries(errors).filter(([key]) => key !== field));
 
 		// Model Name is required only if we're adding a new model (not edit mode)
@@ -154,15 +198,29 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			}
 		}
 
+		// Validate reasoningTokens if the reasoningType is HybridWithTokens
+		if (field === 'reasoningTokens' && formData.reasoningType === ReasoningType.HybridWithTokens) {
+			if (typeof value === 'string') {
+				const strVal = value.trim();
+				if (strVal.length > 0) {
+					const numValue = Number(strVal);
+					if (Number.isNaN(numValue) || numValue < 1024) {
+						newErrors.reasoningTokens = 'Reasoning tokens must be a positive number > 1024.';
+					}
+				}
+			}
+		}
+
 		setErrors(newErrors);
 	};
 
-	// ----------------------------------------------------
-	// Handle changes for all fields
-	// ----------------------------------------------------
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+	/**
+	 * Handle changes for all fields
+	 */
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
 		const { name, value, type, checked } = e.target as HTMLInputElement;
 
+		// If checkbox
 		if (type === 'checkbox') {
 			setFormData(prev => ({ ...prev, [name]: checked }));
 			return;
@@ -175,21 +233,26 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			return;
 		}
 
-		// For other text/numeric inputs, just store the raw string
 		setFormData(prev => ({ ...prev, [name]: value }));
 
-		// Trigger validation
+		// Trigger validation for relevant fields
 		if (name === 'displayName') {
 			validateField('displayName', value);
 		}
-		if (name === 'temperature' || name === 'maxPromptLength' || name === 'maxOutputLength' || name === 'timeout') {
+		if (
+			name === 'temperature' ||
+			name === 'maxPromptLength' ||
+			name === 'maxOutputLength' ||
+			name === 'timeout' ||
+			name === 'reasoningTokens'
+		) {
 			validateField(name as ValidationField, value);
 		}
 	};
 
-	// ----------------------------------------------------
-	// Compute if form is valid for "Add Model" / "Save Changes" button
-	// ----------------------------------------------------
+	/**
+	 * Compute if form is valid for "Add Model" / "Save Changes" button
+	 */
 	const isAllValid = useMemo(() => {
 		// 1) No errors in the errors object
 		const noErrors = !Object.values(errors).some(Boolean);
@@ -203,9 +266,9 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		return noErrors && modelNameValid && displayNameValid;
 	}, [errors, isEditMode, modelName, formData.displayName]);
 
-	// ----------------------------------------------------
-	// On form submit, parse final values and re-validate
-	// ----------------------------------------------------
+	/**
+	 * On form submit, parse final values and re-validate
+	 */
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
@@ -216,6 +279,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		validateField('maxPromptLength', formData.maxPromptLength);
 		validateField('maxOutputLength', formData.maxOutputLength);
 		validateField('timeout', formData.timeout);
+		validateField('reasoningTokens', formData.reasoningTokens);
 
 		// If any errors remain, or the required fields are empty, do not proceed
 		const hasErrors = Object.keys(errors).length > 0;
@@ -233,19 +297,29 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			maxPromptLength: parseOrDefault(formData.maxPromptLength, defaultValues.maxPromptLength ?? 2048),
 			maxOutputLength: parseOrDefault(formData.maxOutputLength, defaultValues.maxOutputLength ?? 1024),
 			temperature: parseOrDefault(formData.temperature, defaultValues.temperature ?? 0.1),
-			reasoningSupport: formData.reasoningSupport,
 			systemPrompt: formData.systemPrompt,
 			timeout: parseOrDefault(formData.timeout, defaultValues.timeout ?? 60),
 		};
 
+		// Build reasoning object if reasoningSupport is true
+		if (formData.reasoningSupport) {
+			finalData.reasoning = {
+				type: formData.reasoningType ?? ReasoningType.SingleWithLevels,
+				level: formData.reasoningLevel ?? ReasoningLevel.Medium,
+				tokens: parseOrDefault(formData.reasoningTokens ?? '', defaultValues.reasoning?.tokens ?? 0),
+			};
+		} else {
+			finalData.reasoning = undefined;
+		}
+
 		onSubmit(modelName, finalData);
 	};
 
-	// If we’re not open, return null (don’t render)
+	// If the modal isn’t open, return null
 	if (!isOpen) return null;
 
 	/**
-	 * Helper for placeholders showing "Default: X" for numeric fields.
+	 * Helper for numeric placeholders showing "Default: X"
 	 */
 	const numPlaceholder = (field: keyof ModelSetting) => {
 		const value = defaultValues[field];
@@ -255,6 +329,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		return `Default: ${String(value)}`;
 	};
 
+	// Render the dialog
 	return (
 		<dialog className="modal modal-open">
 			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
@@ -362,7 +437,13 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 					{/* Toggle: reasoningSupport */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3 cursor-pointer">
-							<span className="label-text text-sm">Reasoning Support</span>
+							<span className="label-text text-sm">Supports Reasoning</span>
+							<span
+								className="label-text-alt tooltip"
+								data-tip="If enabled, configure below how the model handles reasoning"
+							>
+								<FiHelpCircle size={12} />
+							</span>
 						</label>
 						<div className="col-span-9">
 							<input
@@ -375,6 +456,84 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 							/>
 						</div>
 					</div>
+
+					{/* Reasoning Type (use Dropdown instead of <select>) */}
+					{formData.reasoningSupport && (
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Reasoning Type</span>
+								<span className="label-text-alt tooltip" data-tip="singleWithLevels or hybridWithTokens">
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<Dropdown<ReasoningType>
+									dropdownItems={reasoningTypeItems}
+									selectedKey={formData.reasoningType ?? ReasoningType.SingleWithLevels}
+									onChange={newType => {
+										setFormData(prev => ({ ...prev, reasoningType: newType }));
+									}}
+									filterDisabled={false}
+									title="Select Reasoning Type"
+									getDisplayName={key => reasoningTypeItems[key].displayName}
+								/>
+							</div>
+						</div>
+					)}
+
+					{/* Reasoning Level (use Dropdown if reasoningType === SingleWithLevels) */}
+					{formData.reasoningSupport && formData.reasoningType === ReasoningType.SingleWithLevels && (
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Reasoning Level</span>
+								<span className="label-text-alt tooltip" data-tip="Pick how deep the chain-of-thought is">
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<Dropdown<ReasoningLevel>
+									dropdownItems={reasoningLevelItems}
+									selectedKey={formData.reasoningLevel ?? ReasoningLevel.Medium}
+									onChange={newLevel => {
+										setFormData(prev => ({ ...prev, reasoningLevel: newLevel }));
+									}}
+									filterDisabled={false}
+									title="Select Reasoning Level"
+									getDisplayName={key => reasoningLevelItems[key].displayName}
+								/>
+							</div>
+						</div>
+					)}
+
+					{/* Reasoning Tokens (show if reasoningType === hybridWithTokens) */}
+					{formData.reasoningSupport && formData.reasoningType === ReasoningType.HybridWithTokens && (
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Reasoning Tokens</span>
+								<span className="label-text-alt tooltip" data-tip="Number of tokens dedicated to reasoning">
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="text"
+									name="reasoningTokens"
+									value={formData.reasoningTokens}
+									onChange={handleChange}
+									className={`input input-bordered w-full rounded-xl ${errors.reasoningTokens ? 'input-error' : ''}`}
+									placeholder="e.g., 1024"
+									spellCheck="false"
+								/>
+								{errors.reasoningTokens && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.reasoningTokens}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+					)}
 
 					{/* Temperature */}
 					<div className="grid grid-cols-12 items-center gap-2">
@@ -435,7 +594,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 						</div>
 					</div>
 
-					{/* Prompt Length */}
+					{/* Max Prompt Length */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Max Prompt Tokens</span>
@@ -463,7 +622,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 						</div>
 					</div>
 
-					{/* Output Length */}
+					{/* Max Output Length */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Max Output Tokens</span>

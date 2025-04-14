@@ -16,11 +16,11 @@ import { settingstoreAPI } from '@/apis/baseapi';
 import { AddAISetting, DeleteAISetting, SetAppSettings } from '@/apis/settingstore_helper';
 
 import DownloadButton from '@/components/download_button';
+import Dropdown from '@/components/dropdown';
 import ThemeSwitch from '@/components/theme_switch';
 
 import AddProviderModal from '@/settings/provider_add_modal';
 import AISettingsCard from '@/settings/provider_card';
-import ProviderDropdown from '@/settings/provider_dropdown';
 
 const defaultAISettings: Record<ProviderName, AISetting> = {
 	[DefaultProviderName]: {
@@ -159,10 +159,15 @@ const SettingsPage: FC = () => {
 							<div className="grid grid-cols-12 gap-4 items-center">
 								<label className="col-span-3 text-sm font-medium">Default Provider</label>
 								<div className="col-span-6">
-									<ProviderDropdown
-										aiSettings={aiSettings}
-										defaultProvider={defaultProvider}
-										onProviderChange={handleDefaultProviderChange}
+									<Dropdown<ProviderName>
+										dropdownItems={aiSettings}
+										selectedKey={defaultProvider}
+										onChange={handleDefaultProviderChange}
+										filterDisabled={true}
+										title="Select Default Provider"
+										getDisplayName={(key: string) => {
+											return key.charAt(0).toUpperCase() + key.slice(1);
+										}}
 									/>
 								</div>
 								<div className="col-span-3 flex justify-end">

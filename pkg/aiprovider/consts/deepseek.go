@@ -18,24 +18,26 @@ const (
 
 var DeepseekModels = map[spec.ModelName]spec.ModelParams{
 	DeepseekChat: {
-		Name:             DeepseekChat,
-		MaxPromptLength:  8192,
-		MaxOutputLength:  8192,
-		Temperature:      spec.Float64Ptr(0.1),
-		Stream:           true,
-		ReasoningSupport: false,
-		SystemPrompt:     "",
-		Timeout:          120,
+		Name:            DeepseekChat,
+		MaxPromptLength: 8192,
+		MaxOutputLength: 8192,
+		Temperature:     spec.Float64Ptr(0.1),
+		Stream:          true,
+		SystemPrompt:    "",
+		Timeout:         120,
 	},
 	DeepseekReasoner: {
-		Name:             DeepseekChat,
-		MaxPromptLength:  8192,
-		MaxOutputLength:  8192,
-		Temperature:      spec.Float64Ptr(0.1),
-		Stream:           true,
-		ReasoningSupport: true,
-		SystemPrompt:     "",
-		Timeout:          120,
+		Name:            DeepseekChat,
+		MaxPromptLength: 8192,
+		MaxOutputLength: 8192,
+		Temperature:     spec.Float64Ptr(1.0),
+		Stream:          true,
+		Reasoning: &spec.ReasoningParams{
+			Type:  spec.ReasoningTypeSingleWithLevels,
+			Level: spec.ReasoningLevelMedium,
+		},
+		SystemPrompt: "",
+		Timeout:      120,
 	},
 }
 

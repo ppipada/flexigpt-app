@@ -5,13 +5,33 @@ export const DefaultModelTitle = 'OpenAI GPT 4o';
 export type ProviderName = string;
 export const DefaultProviderName: ProviderName = 'openai';
 
+// Define the ReasoningType enum
+export enum ReasoningType {
+	HybridWithTokens = 'hybridWithTokens',
+	SingleWithLevels = 'singleWithLevels',
+}
+
+// Define the ReasoningLevel enum
+export enum ReasoningLevel {
+	Low = 'low',
+	Medium = 'medium',
+	High = 'high',
+}
+
+// Define the ReasoningParams interface
+export interface ReasoningParams {
+	type: ReasoningType;
+	level: ReasoningLevel;
+	tokens: number;
+}
+
 export interface ModelParams {
 	name: ModelName;
 	stream: boolean;
 	maxPromptLength: number;
 	maxOutputLength: number;
 	temperature?: number;
-	reasoningSupport: boolean;
+	reasoning?: ReasoningParams;
 	systemPrompt: string;
 	timeout: number;
 	additionalParameters: Record<string, any>;
@@ -23,7 +43,11 @@ export const DefaultModelParams: ModelParams = {
 	maxPromptLength: 2048,
 	maxOutputLength: 1024,
 	temperature: 0.1,
-	reasoningSupport: false,
+	reasoning: {
+		type: ReasoningType.SingleWithLevels,
+		level: ReasoningLevel.Medium,
+		tokens: 1024,
+	},
 	systemPrompt: '',
 	timeout: 60,
 	additionalParameters: {},

@@ -7,47 +7,59 @@ import (
 const ProviderNameGoogle spec.ProviderName = "google"
 
 const (
-	Gemini2FlashExp spec.ModelName = "gemini-2-flash-exp"
-	Gemini15Flash   spec.ModelName = "gemini-1.5-flash"
-	Gemini15Pro     spec.ModelName = "gemini-1.5-pro"
+	Gemini25Pro      spec.ModelName = "gemini-2.5-pro-preview-03-25"
+	Gemini2Flash     spec.ModelName = "gemini-2.0-flash"
+	Gemini2FlashLite spec.ModelName = "gemini-2.0-flash-lite"
+	Gemini15Pro      spec.ModelName = "gemini-1.5-pro"
 )
 
 const (
-	DisplayNameGemini2FlashExp = "Google Gemini 2 Flash exp"
-	DisplayNameGemini15Flash   = "Google Gemini 1.5 Flash"
-	DisplayNameGemini15Pro     = "Google Gemini 1.5 Pro"
+	DisplayNameGemini25Pro      = "Google Gemini 2 Flash exp"
+	DisplayNameGemini2Flash     = "Google Gemini 2.0 Flash"
+	DisplayNameGemini2FlashLite = "Google Gemini 2.0 Flash Lite"
+	DisplayNameGemini15Pro      = "Google Gemini 1.5 Pro"
 )
 
 var GoogleModels = map[spec.ModelName]spec.ModelParams{
-	Gemini2FlashExp: {
-		Name:             Gemini2FlashExp,
-		MaxPromptLength:  4096,
-		MaxOutputLength:  8192,
-		Temperature:      spec.Float64Ptr(0.1),
-		Stream:           true,
-		ReasoningSupport: false,
-		SystemPrompt:     "",
-		Timeout:          120,
+	Gemini25Pro: {
+		Name:            Gemini25Pro,
+		MaxPromptLength: 16384,
+		MaxOutputLength: 16384,
+		Temperature:     spec.Float64Ptr(1.0),
+		Reasoning: &spec.ReasoningParams{
+			Type:  spec.ReasoningTypeSingleWithLevels,
+			Level: spec.ReasoningLevelMedium,
+		},
+		Stream:       true,
+		SystemPrompt: "",
+		Timeout:      120,
 	},
-	Gemini15Flash: {
-		Name:             Gemini15Flash,
-		MaxPromptLength:  4096,
-		MaxOutputLength:  8192,
-		Temperature:      spec.Float64Ptr(0.1),
-		Stream:           true,
-		ReasoningSupport: false,
-		SystemPrompt:     "",
-		Timeout:          120,
+	Gemini2Flash: {
+		Name:            Gemini2Flash,
+		MaxPromptLength: 16384,
+		MaxOutputLength: 8192,
+		Temperature:     spec.Float64Ptr(0.1),
+		Stream:          true,
+		SystemPrompt:    "",
+		Timeout:         120,
+	},
+	Gemini2FlashLite: {
+		Name:            Gemini2FlashLite,
+		MaxPromptLength: 16384,
+		MaxOutputLength: 8192,
+		Temperature:     spec.Float64Ptr(0.1),
+		Stream:          true,
+		SystemPrompt:    "",
+		Timeout:         120,
 	},
 	Gemini15Pro: {
-		Name:             Gemini15Pro,
-		MaxPromptLength:  4096,
-		MaxOutputLength:  8192,
-		Temperature:      spec.Float64Ptr(0.1),
-		Stream:           true,
-		ReasoningSupport: false,
-		SystemPrompt:     "",
-		Timeout:          120,
+		Name:            Gemini15Pro,
+		MaxPromptLength: 16384,
+		MaxOutputLength: 8192,
+		Temperature:     spec.Float64Ptr(0.1),
+		Stream:          true,
+		SystemPrompt:    "",
+		Timeout:         120,
 	},
 }
 

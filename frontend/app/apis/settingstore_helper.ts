@@ -4,6 +4,7 @@ import {
 	type ModelName,
 	type ModelParams,
 	type ProviderName,
+	type ReasoningParams,
 } from '@/models/aiprovidermodel';
 import {
 	type AISetting,
@@ -96,11 +97,11 @@ function mergeDefaultsModelSettingAndInbuilt(
 		maxOutputLength = inbuiltModelParams.maxOutputLength;
 	}
 
-	let reasoningSupport = DefaultModelParams.reasoningSupport;
-	if (typeof modelSetting.reasoningSupport !== 'undefined') {
-		reasoningSupport = modelSetting.reasoningSupport;
+	let reasoning: ReasoningParams | undefined = undefined;
+	if (typeof modelSetting.reasoning !== 'undefined') {
+		reasoning = modelSetting.reasoning;
 	} else if (inbuiltModelParams) {
-		reasoningSupport = inbuiltModelParams.reasoningSupport;
+		reasoning = inbuiltModelParams.reasoning;
 	}
 
 	let systemPrompt = DefaultModelParams.systemPrompt;
@@ -128,7 +129,7 @@ function mergeDefaultsModelSettingAndInbuilt(
 		maxPromptLength: maxPromptLength,
 		maxOutputLength: maxOutputLength,
 		temperature: temperature,
-		reasoningSupport: reasoningSupport,
+		reasoning: reasoning,
 		systemPrompt: systemPrompt,
 		timeout: timeout,
 		additionalParameters: additionalParameters,
@@ -173,7 +174,7 @@ export async function GetChatInputOptions(): Promise<{ allOptions: ChatOptions[]
 						maxPromptLength: mergedModelParam.maxPromptLength,
 						maxOutputLength: mergedModelParam.maxOutputLength,
 						temperature: mergedModelParam.temperature,
-						reasoningSupport: mergedModelParam.reasoningSupport,
+						reasoning: mergedModelParam.reasoning,
 						systemPrompt: mergedModelParam.systemPrompt,
 						timeout: mergedModelParam.timeout,
 						additionalParameters: mergedModelParam.additionalParameters,
@@ -234,7 +235,7 @@ export async function PopulateModelSettingDefaults(
 		maxPromptLength: mergedModelParam.maxPromptLength,
 		maxOutputLength: mergedModelParam.maxOutputLength,
 		temperature: mergedModelParam.temperature,
-		reasoningSupport: mergedModelParam.reasoningSupport,
+		reasoning: mergedModelParam.reasoning,
 		systemPrompt: mergedModelParam.systemPrompt,
 		timeout: mergedModelParam.timeout,
 	};

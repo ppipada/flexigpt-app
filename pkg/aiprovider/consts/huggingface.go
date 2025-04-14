@@ -14,14 +14,13 @@ const DisplayNameDeepseekCoder13BInstruct = "HF Deepseek Coder 1.3b"
 
 var HuggingfaceModels = map[spec.ModelName]spec.ModelParams{
 	DeepseekCoder13BInstruct: {
-		Name:             DeepseekCoder13BInstruct,
-		MaxPromptLength:  4096,
-		MaxOutputLength:  4096,
-		Temperature:      spec.Float64Ptr(0.1),
-		Stream:           true,
-		ReasoningSupport: false,
-		SystemPrompt:     "",
-		Timeout:          120,
+		Name:            DeepseekCoder13BInstruct,
+		MaxPromptLength: 4096,
+		MaxOutputLength: 4096,
+		Temperature:     spec.Float64Ptr(0.1),
+		Stream:          true,
+		SystemPrompt:    "",
+		Timeout:         120,
 	},
 }
 

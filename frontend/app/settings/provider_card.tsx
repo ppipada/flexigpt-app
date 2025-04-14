@@ -23,8 +23,8 @@ import { SetAISettingAPIKey, SetAISettingAttrs } from '@/apis/settingstore_helpe
 
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
+import Dropdown from '@/components/dropdown';
 
-import ModelDropdown from '@/settings/model_dropdown';
 import ModifyModelModal from '@/settings/model_modify_modal';
 
 interface AISettingsCardProps {
@@ -155,12 +155,12 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	};
 
 	const isModelReasoningSupport = (modelName: ModelName) => {
-		if (modelSettings[modelName].reasoningSupport) {
+		if (modelSettings[modelName].reasoning) {
 			return true;
 		}
 
-		if (inbuiltProviderModels && modelName in inbuiltProviderModels) {
-			return inbuiltProviderModels[modelName].reasoningSupport;
+		if (inbuiltProviderModels && modelName in inbuiltProviderModels && inbuiltProviderModels[modelName].reasoning) {
+			return true;
 		}
 
 		return false;
@@ -355,13 +355,16 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 							Default Model
 						</label>
 						<div className="col-span-6">
-							<ModelDropdown
-								modelSettings={modelSettings}
-								defaultModel={localSettings.defaultModel}
-								onModelChange={async modelName => {
+							<Dropdown<ModelName>
+								dropdownItems={modelSettings}
+								selectedKey={localSettings.defaultModel}
+								onChange={async (modelName: ModelName) => {
 									updateLocalSettings('defaultModel', modelName);
 									await SetAISettingAttrs(provider, { defaultModel: modelName } as AISettingAttrs);
 								}}
+								filterDisabled={true}
+								title="Select Default Model"
+								getDisplayName={key => modelSettings[key].displayName}
 							/>
 						</div>
 						<div className="col-span-3 flex justify-end">

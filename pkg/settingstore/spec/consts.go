@@ -61,21 +61,25 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 	aiproviderConsts.ProviderNameGoogle: {
 		IsEnabled:                false,
 		APIKey:                   aiproviderConsts.GoogleProviderInfo.APIKey,
-		DefaultModel:             aiproviderConsts.Gemini2FlashExp,
+		DefaultModel:             aiproviderConsts.Gemini2Flash,
 		Origin:                   aiproviderConsts.GoogleProviderInfo.Origin,
 		ChatCompletionPathPrefix: aiproviderConsts.GoogleProviderInfo.ChatCompletionPathPrefix,
 		ModelSettings: map[aiproviderSpec.ModelName]ModelSetting{
-			aiproviderConsts.Gemini2FlashExp: {
-				DisplayName: aiproviderConsts.DisplayNameGemini2FlashExp,
+			aiproviderConsts.Gemini25Pro: {
+				DisplayName: aiproviderConsts.DisplayNameGemini25Pro,
 				IsEnabled:   true,
 			},
-			aiproviderConsts.Gemini15Flash: {
-				DisplayName: aiproviderConsts.DisplayNameGemini15Flash,
+			aiproviderConsts.Gemini2Flash: {
+				DisplayName: aiproviderConsts.DisplayNameGemini2Flash,
 				IsEnabled:   true,
+			},
+			aiproviderConsts.Gemini2FlashLite: {
+				DisplayName: aiproviderConsts.DisplayNameGemini2FlashLite,
+				IsEnabled:   false,
 			},
 			aiproviderConsts.Gemini15Pro: {
 				DisplayName: aiproviderConsts.DisplayNameGemini15Pro,
-				IsEnabled:   true,
+				IsEnabled:   false,
 			},
 		},
 	},

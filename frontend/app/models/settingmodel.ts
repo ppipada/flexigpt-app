@@ -1,4 +1,10 @@
-import { DefaultModelParams, type ModelName, type ModelParams, type ProviderName } from '@/models/aiprovidermodel';
+import {
+	DefaultModelParams,
+	type ModelName,
+	type ModelParams,
+	type ProviderName,
+	type ReasoningParams,
+} from '@/models/aiprovidermodel';
 
 export interface AISetting {
 	isEnabled: boolean;
@@ -23,7 +29,7 @@ export interface ModelSetting {
 	maxPromptLength?: number;
 	maxOutputLength?: number;
 	temperature?: number;
-	reasoningSupport?: boolean;
+	reasoning?: ReasoningParams;
 	systemPrompt?: string;
 	timeout?: number;
 	additionalParameters?: Record<string, any>;
@@ -36,7 +42,7 @@ export const DefaultModelSetting: ModelSetting = {
 	maxPromptLength: DefaultModelParams.maxPromptLength,
 	maxOutputLength: DefaultModelParams.maxOutputLength,
 	temperature: DefaultModelParams.temperature ?? 0.1,
-	reasoningSupport: DefaultModelParams.reasoningSupport,
+	reasoning: DefaultModelParams.reasoning,
 	systemPrompt: DefaultModelParams.systemPrompt,
 	timeout: DefaultModelParams.timeout,
 	additionalParameters: DefaultModelParams.additionalParameters,

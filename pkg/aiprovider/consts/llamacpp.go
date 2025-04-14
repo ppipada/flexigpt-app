@@ -18,24 +18,22 @@ const (
 
 var LlamacppModels = map[spec.ModelName]spec.ModelParams{
 	Llama3: {
-		Name:             Llama3,
-		MaxPromptLength:  4096,
-		MaxOutputLength:  4096,
-		Temperature:      spec.Float64Ptr(0.1),
-		Stream:           true,
-		ReasoningSupport: false,
-		SystemPrompt:     "",
-		Timeout:          120,
+		Name:            Llama3,
+		MaxPromptLength: 4096,
+		MaxOutputLength: 4096,
+		Temperature:     spec.Float64Ptr(0.1),
+		Stream:          true,
+		SystemPrompt:    "",
+		Timeout:         120,
 	},
 	Llama31: {
-		Name:             Llama31,
-		MaxPromptLength:  4096,
-		MaxOutputLength:  4096,
-		Temperature:      spec.Float64Ptr(0.1),
-		Stream:           true,
-		ReasoningSupport: false,
-		SystemPrompt:     "",
-		Timeout:          120,
+		Name:            Llama31,
+		MaxPromptLength: 4096,
+		MaxOutputLength: 4096,
+		Temperature:     spec.Float64Ptr(0.1),
+		Stream:          true,
+		SystemPrompt:    "",
+		Timeout:         120,
 	},
 }
 
