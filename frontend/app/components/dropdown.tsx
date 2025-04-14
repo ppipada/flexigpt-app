@@ -4,10 +4,16 @@ import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 import { UseCloseDetails } from '@/lib/use_close_details';
 
+/**
+ * @public
+ */
 export interface DropdownItem {
 	isEnabled: boolean;
 }
 
+/**
+ * @public
+ */
 export interface DropdownProps<K extends string> {
 	/**
 	 * The mapped dropdownItems (like modelSettings or aiSettings).
