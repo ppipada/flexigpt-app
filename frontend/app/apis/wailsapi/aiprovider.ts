@@ -110,13 +110,20 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		onStreamData?: (data: string) => void
 	): Promise<CompletionResponse | undefined> {
 		const callbackId = `stream-data-callback-${Date.now().toString()}-${Math.random().toString(36).substring(2, 9)}`;
+		let prevData: string = '';
 		if (onStreamData) {
-			EventsOn(callbackId, onStreamData);
+			const cb = (data: string) => {
+				if (data !== prevData) {
+					prevData = data;
+					onStreamData(data);
+				}
+			};
+			EventsOn(callbackId, cb);
 		}
 		const response = await FetchCompletion(
 			provider,
 			prompt,
-			modelParams,
+			modelParams as wailsSpec.ModelParams,
 			prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionRequestMessage[]) : [],
 			callbackId
 		);

@@ -23,7 +23,7 @@ import (
 
 func main() {
 	slogLevel := slog.LevelDebug
-	wailsLogLevel := logger.DEBUG
+	wailsLogLevel := logger.INFO
 	wailsProdLogLevel := logger.INFO
 
 	// Create an instance of the app structure

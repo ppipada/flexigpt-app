@@ -1,18 +1,22 @@
 import type { ChangeEvent, KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
-import { FiCheck, FiChevronDown, FiChevronUp, FiSend } from 'react-icons/fi';
+import { FiSend } from 'react-icons/fi';
 
+import { type ReasoningLevel, ReasoningType } from '@/models/aiprovidermodel';
 import { type ChatOptions, DefaultChatOptions } from '@/models/settingmodel';
 
 import { GetChatInputOptions } from '@/apis/settingstore_helper';
 
 import { UseCloseDetails } from '@/lib/use_close_details';
 
-/**
- * Four default pre-set temperatures.
- */
-const defaultTemperatureOptions = [0.0, 0.1, 0.5, 1.0];
+import DisablePreviousMessagesCheckbox from '@/chats/chat_input_field_disable_checkbox';
+import ModelDropdown from '@/chats/chat_input_field_model_dropdown';
+import { HybridReasoningCheckbox, ReasoningTokensDropdown } from '@/chats/chat_input_field_reasoning_hybrid';
+import SingleReasoningDropdown from '@/chats/chat_input_field_reasoning_levels';
+import TemperatureDropdown from '@/chats/chat_input_field_temperature';
+
+const MAX_HEIGHT = 360;
 
 interface ChatInputFieldProps {
 	onSend: (message: string, options: ChatOptions) => void;
@@ -43,209 +47,6 @@ function useEnterSubmit(): {
 	return { formRef, onKeyDown: handleKeyDown };
 }
 
-const MAX_HEIGHT = 360;
-
-/**
- * Subcomponent for selecting the Model
- */
-function ModelDropdown(props: {
-	selectedModel: ChatOptions;
-	setSelectedModel: React.Dispatch<React.SetStateAction<ChatOptions>>;
-	allOptions: ChatOptions[];
-	isOpen: boolean;
-	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-	detailsRef: React.RefObject<HTMLDetailsElement | null>;
-}) {
-	const { selectedModel, setSelectedModel, allOptions, isOpen, setIsOpen, detailsRef } = props;
-
-	return (
-		<details
-			ref={detailsRef}
-			className="dropdown dropdown-top dropdown-end w-1/3"
-			onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
-				setIsOpen((event.currentTarget as HTMLDetailsElement).open);
-			}}
-			open={isOpen}
-		>
-			<summary
-				className="btn btn-xs w-full text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
-				title="Select Model"
-			>
-				<div className="flex">
-					<span className="sm:hidden">{selectedModel.title.substring(0, 8)}</span>
-					<span className="hidden sm:inline">{selectedModel.title} </span>
-					{isOpen ? (
-						<FiChevronDown size={16} className="ml-1 md:ml-2" />
-					) : (
-						<FiChevronUp size={16} className="ml-1 md:ml-2" />
-					)}
-				</div>
-			</summary>
-
-			<ul className="dropdown-content menu bg-base-100 rounded-xl w-full">
-				{allOptions.map(model => (
-					<li
-						key={`${model.provider}-${model.name}`}
-						className="cursor-pointer text-xs"
-						onClick={() => {
-							setSelectedModel(model);
-							if (detailsRef.current) {
-								detailsRef.current.open = false;
-							}
-							setIsOpen(false);
-						}}
-					>
-						<a className="justify-between items-center p-1 m-0">
-							<span>{model.title}</span>
-							{selectedModel.name === model.name && selectedModel.provider === model.provider && <FiCheck />}
-						</a>
-					</li>
-				))}
-			</ul>
-		</details>
-	);
-}
-
-/**
- * Subcomponent for Temperature Selection
- * -------------------------------------
- * Uses a string-based custom input and clamps the value to [0,1].
- * Also displays four pre-set temperatures the user can click on.
- */
-function TemperatureDropdown(props: {
-	temperature: number; // The current temperature value
-	setTemperature: (temp: number) => void; // A function to update & clamp
-	isOpen: boolean; // Whether details is open
-	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-	detailsRef: React.RefObject<HTMLDetailsElement | null>;
-}) {
-	const { temperature, setTemperature, isOpen, setIsOpen, detailsRef } = props;
-
-	// local state for the custom text input (string-based)
-	const [customTemp, setCustomTemp] = useState(temperature.toString());
-
-	// Sync local string whenever "temperature" changes
-	useEffect(() => {
-		setCustomTemp(temperature.toString());
-	}, [temperature]);
-
-	// Called on blur so we clamp to [0,1], fallback to 0.1 if invalid
-	function clampOnBlur() {
-		let val = parseFloat(customTemp);
-		if (isNaN(val)) {
-			val = 0.1; // fallback if parse fails
-		}
-		// clamp
-		val = Math.max(0, Math.min(1, val));
-		setTemperature(val);
-
-		// close after user is done typing
-		if (detailsRef.current) {
-			detailsRef.current.open = false;
-		}
-		setIsOpen(false);
-	}
-
-	return (
-		<details
-			ref={detailsRef}
-			className="dropdown dropdown-top dropdown-end w-1/3"
-			onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
-				setIsOpen((event.currentTarget as HTMLDetailsElement).open);
-			}}
-			open={isOpen}
-		>
-			<summary
-				className="btn btn-xs w-full text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
-				title="Set temperature"
-			>
-				<div className="flex">
-					<span className="sm:hidden mr-2">Temp: </span>
-					<span className="hidden sm:inline mr-2">Temperature: </span> {temperature.toFixed(2)}{' '}
-					{isOpen ? (
-						<FiChevronDown size={16} className="ml-1 md:ml-2" />
-					) : (
-						<FiChevronUp size={16} className="ml-1 md:ml-2" />
-					)}
-				</div>
-			</summary>
-
-			<ul className="dropdown-content menu bg-base-100 rounded-xl w-full p-4">
-				{/* Default temperature options */}
-				{defaultTemperatureOptions.map(tempVal => (
-					<li
-						key={tempVal}
-						className="cursor-pointer text-xs"
-						onClick={() => {
-							setTemperature(tempVal);
-							if (detailsRef.current) {
-								detailsRef.current.open = false;
-							}
-							setIsOpen(false);
-						}}
-					>
-						<a className="justify-between items-center p-1 m-0">
-							<span>{tempVal.toFixed(1)}</span>
-							{temperature.toFixed(1) === tempVal.toFixed(1) && <FiCheck />}
-						</a>
-					</li>
-				))}
-
-				{/* Custom temperature input */}
-				<li className="text-xs">
-					<hr className="p-0 my-2 border-0 border-t border-base-300" />
-					<label className="tooltip tooltip-top outline-none border-none">
-						<div className="tooltip-content">
-							<div className="text-xs">Custom value (0.1 - 0.1 )</div>
-						</div>
-						<span>Custom</span>
-						<input
-							type="text"
-							name="temperature"
-							className="input input-xs w-full"
-							placeholder="Custom value (0.1 - 0.1 )"
-							value={customTemp}
-							onChange={e => {
-								setCustomTemp(e.target.value);
-							}}
-							onBlur={clampOnBlur}
-							spellCheck="false"
-						/>
-					</label>
-				</li>
-			</ul>
-		</details>
-	);
-}
-
-/**
- * Subcomponent for "Disable previous messages" checkbox
- */
-function DisablePreviousMessagesCheckbox(props: {
-	disablePreviousMessages: boolean;
-	setDisablePreviousMessages: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
-	const { disablePreviousMessages, setDisablePreviousMessages } = props;
-
-	return (
-		<label
-			className="flex items-center space-x-2 text-neutral-400 w-1/3 overflow-hidden"
-			title="Disable previous messages"
-		>
-			<input
-				type="checkbox"
-				checked={disablePreviousMessages}
-				onChange={e => {
-					setDisablePreviousMessages(e.target.checked);
-				}}
-				className="checkbox checkbox-xs rounded-full"
-				spellCheck="false"
-			/>
-			<span className="text-xs text-nowrap">Disable previous messages</span>
-		</label>
-	);
-}
-
 /**
  * Main Chat Input Field
  * -------------------------------------
@@ -262,21 +63,22 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	// Model state
 	const [selectedModel, setSelectedModel] = useState<ChatOptions>(DefaultChatOptions);
 
+	// User preference for enabling/disabling hybrid reasoning
+	const [isHybridReasoningEnabled, setIsHybridReasoningEnabled] = useState<boolean>(true);
+
 	// Checkbox for "Disable previous messages"
 	const [disablePreviousMessages, setDisablePreviousMessages] = useState<boolean>(false);
 
-	// Model dropdown open state
+	// Dropdown open states
 	const [isModelDropdownOpen, setIsModelDropdownOpen] = useState<boolean>(false);
-
-	// Temperature dropdown open state
-	const [isTemperatureDropdownOpen, setIsTemperatureDropdownOpen] = useState<boolean>(false);
+	const [isSecondaryDropdownOpen, setIsSecondaryDropdownOpen] = useState<boolean>(false);
 
 	// All available models
 	const [allOptions, setAllOptions] = useState<ChatOptions[]>([DefaultChatOptions]);
 
-	// Refs for the 2 <details> elements
+	// Refs for the dropdown details elements
 	const modelDetailsRef = useRef<HTMLDetailsElement>(null);
-	const temperatureDetailsRef = useRef<HTMLDetailsElement>(null);
+	const secondaryDetailsRef = useRef<HTMLDetailsElement>(null);
 
 	// Close logic for model dropdown
 	UseCloseDetails({
@@ -287,12 +89,12 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		},
 	});
 
-	// Close logic for temperature dropdown
+	// Close logic for secondary dropdown (temperature or reasoning)
 	UseCloseDetails({
-		detailsRef: temperatureDetailsRef,
+		detailsRef: secondaryDetailsRef,
 		events: ['mousedown'],
 		onClose: () => {
-			setIsTemperatureDropdownOpen(false);
+			setIsSecondaryDropdownOpen(false);
 		},
 	});
 
@@ -300,12 +102,21 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	const loadInitialItems = useCallback(async () => {
 		const r = await GetChatInputOptions();
 		setSelectedModel(r.default);
+		// Initialize hybrid reasoning enabled state based on model
+		setIsHybridReasoningEnabled(r.default.reasoning?.type === ReasoningType.HybridWithTokens);
 		setAllOptions(r.allOptions);
 	}, []);
 
 	useEffect(() => {
 		loadInitialItems();
 	}, [loadInitialItems]);
+
+	// When model changes, update hybrid reasoning enabled state
+	useEffect(() => {
+		if (selectedModel.reasoning?.type === ReasoningType.HybridWithTokens) {
+			setIsHybridReasoningEnabled(true);
+		}
+	}, [selectedModel]);
 
 	// Enter key submission logic
 	const { formRef, onKeyDown } = useEnterSubmit();
@@ -331,6 +142,21 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		autoResizeTextarea();
 	}, [text, autoResizeTextarea]);
 
+	// Get the final chat options to send, applying user preferences
+	const getFinalChatOptions = (): ChatOptions => {
+		const options = { ...selectedModel, disablePreviousMessages };
+
+		// If this is a hybrid reasoning model but the user has disabled reasoning,
+		// create a modified version without reasoning for the API call
+		if (selectedModel.reasoning?.type === ReasoningType.HybridWithTokens && !isHybridReasoningEnabled) {
+			const modifiedOptions = { ...options };
+			delete modifiedOptions.reasoning;
+			return modifiedOptions;
+		}
+
+		return options;
+	};
+
 	const handleSubmit = (e?: React.FormEvent) => {
 		if (e) e.preventDefault();
 		if (text.trim().length === 0 || isSubmittingRef.current) return;
@@ -338,10 +164,8 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		isSubmittingRef.current = true;
 		setIsSendButtonEnabled(false);
 
-		onSend(text.trim(), {
-			...selectedModel,
-			disablePreviousMessages: disablePreviousMessages,
-		});
+		// Use getFinalChatOptions to apply user preferences
+		onSend(text.trim(), getFinalChatOptions());
 
 		setText('');
 		isSubmittingRef.current = false;
@@ -357,10 +181,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 
 	// Expose the function to get current chat options + focus
 	useImperativeHandle(ref, () => ({
-		getChatOptions: () => ({
-			...selectedModel,
-			disablePreviousMessages: disablePreviousMessages,
-		}),
+		getChatOptions: () => getFinalChatOptions(),
 		focus: () => {
 			if (inputRef.current) {
 				inputRef.current.focus();
@@ -368,7 +189,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		},
 	}));
 
-	// Clamps temperature to [0, 1] (this is triggered by the subcomponent on blur or selection)
+	// Clamps temperature to [0, 1]
 	const setTemperature = (temp: number) => {
 		const clampedTemp = Math.max(0, Math.min(1, temp));
 		setSelectedModel(prev => ({
@@ -377,33 +198,93 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		}));
 	};
 
+	// Set reasoning level for SingleWithLevels type
+	const setReasoningLevel = (newLevel: ReasoningLevel) => {
+		setSelectedModel(prev => ({
+			...prev,
+			reasoning: {
+				type: ReasoningType.SingleWithLevels,
+				level: newLevel,
+				tokens: 1024, // Default tokens value
+			},
+		}));
+	};
+
+	// Set tokens for HybridWithTokens type
+	const setHybridTokens = (tokens: number) => {
+		setSelectedModel(prev => {
+			if (!prev.reasoning || prev.reasoning.type !== ReasoningType.HybridWithTokens) {
+				return prev;
+			}
+
+			return {
+				...prev,
+				reasoning: {
+					...prev.reasoning,
+					tokens,
+				},
+			};
+		});
+	};
+
 	return (
 		<div className="relative">
-			{/* Top bar with separate model dropdown, temperature dropdown, and disable checkbox */}
-			<div className="flex items-center justify-between bg-base-200 gap-1 md:gap-8 mb-1 mx-4">
-				<ModelDropdown
-					selectedModel={selectedModel}
-					setSelectedModel={setSelectedModel}
-					allOptions={allOptions}
-					isOpen={isModelDropdownOpen}
-					setIsOpen={setIsModelDropdownOpen}
-					detailsRef={modelDetailsRef}
-				/>
+			<div className="flex items-center justify-between bg-base-200 mb-1 mx-8">
+				{/* Model dropdown (1/4 width) */}
+				<div className="w-1/3">
+					<ModelDropdown
+						selectedModel={selectedModel}
+						setSelectedModel={setSelectedModel}
+						allOptions={allOptions}
+						isOpen={isModelDropdownOpen}
+						setIsOpen={setIsModelDropdownOpen}
+						detailsRef={modelDetailsRef}
+					/>
+				</div>
 
-				<TemperatureDropdown
-					temperature={selectedModel.temperature ?? 0.1}
-					setTemperature={setTemperature}
-					isOpen={isTemperatureDropdownOpen}
-					setIsOpen={setIsTemperatureDropdownOpen}
-					detailsRef={temperatureDetailsRef}
-				/>
+				{/* Flexible middle section */}
+				<div className="flex items-center justify-between w-2/3">
+					{/* If hybrid reasoning is available, show the checkbox */}
+					{selectedModel.reasoning?.type === ReasoningType.HybridWithTokens && (
+						<HybridReasoningCheckbox
+							isReasoningEnabled={isHybridReasoningEnabled}
+							setIsReasoningEnabled={setIsHybridReasoningEnabled}
+						/>
+					)}
 
-				<DisablePreviousMessagesCheckbox
-					disablePreviousMessages={disablePreviousMessages}
-					setDisablePreviousMessages={setDisablePreviousMessages}
-				/>
+					{/* Show tokens dropdown if hybrid reasoning is enabled */}
+					{selectedModel.reasoning?.type === ReasoningType.HybridWithTokens && isHybridReasoningEnabled ? (
+						<ReasoningTokensDropdown
+							tokens={selectedModel.reasoning.tokens}
+							setTokens={setHybridTokens}
+							isOpen={isSecondaryDropdownOpen}
+							setIsOpen={setIsSecondaryDropdownOpen}
+							detailsRef={secondaryDetailsRef}
+						/>
+					) : selectedModel.reasoning?.type === ReasoningType.SingleWithLevels ? (
+						<SingleReasoningDropdown
+							reasoningLevel={selectedModel.reasoning.level}
+							setReasoningLevel={setReasoningLevel}
+							isOpen={isSecondaryDropdownOpen}
+							setIsOpen={setIsSecondaryDropdownOpen}
+							detailsRef={secondaryDetailsRef}
+						/>
+					) : (
+						<TemperatureDropdown
+							temperature={selectedModel.temperature ?? 0.1}
+							setTemperature={setTemperature}
+							isOpen={isSecondaryDropdownOpen}
+							setIsOpen={setIsSecondaryDropdownOpen}
+							detailsRef={secondaryDetailsRef}
+						/>
+					)}
+
+					<DisablePreviousMessagesCheckbox
+						disablePreviousMessages={disablePreviousMessages}
+						setDisablePreviousMessages={setDisablePreviousMessages}
+					/>
+				</div>
 			</div>
-
 			{/* Main input form for messages */}
 			<form
 				ref={formRef}
