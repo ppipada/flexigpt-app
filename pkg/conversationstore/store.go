@@ -17,17 +17,17 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetDateFromUUIDv7(uuid string) (time.Time, error) {
+func GetDateFromUUIDv7(uuidStr string) (time.Time, error) {
 	// Check if the UUID is valid and has the correct length
-	if len(uuid) != 36 {
+	if len(uuidStr) != 36 {
 		return time.Time{}, errors.New("invalid UUIDv7 string")
 	}
 
 	// Remove dashes from the UUID
-	uuid = uuid[:8] + uuid[9:13] + uuid[14:18] + uuid[19:23] + uuid[24:]
+	uuidStr = uuidStr[:8] + uuidStr[9:13] + uuidStr[14:18] + uuidStr[19:23] + uuidStr[24:]
 
 	// Parse the UUID into bytes
-	uuidBytes, err := hex.DecodeString(uuid)
+	uuidBytes, err := hex.DecodeString(uuidStr)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -40,7 +40,7 @@ func GetDateFromUUIDv7(uuid string) (time.Time, error) {
 
 	// Convert the 8-byte array into a 64-bit integer
 	timestampMs := int64(0)
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		timestampMs = (timestampMs << 8) | int64(timestampBytes[i])
 	}
 
