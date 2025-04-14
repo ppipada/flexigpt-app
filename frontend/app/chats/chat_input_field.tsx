@@ -9,8 +9,13 @@ import { GetChatInputOptions } from '@/apis/settingstore_helper';
 
 import { UseCloseDetails } from '@/lib/use_close_details';
 
+/**
+ * Four default pre-set temperatures.
+ */
+const defaultTemperatureOptions = [0.0, 0.1, 0.5, 1.0];
+
 interface ChatInputFieldProps {
-	onSend: (message: string, options: ChatOptions) => void; // Updated to use ChatOptions
+	onSend: (message: string, options: ChatOptions) => void;
 	setInputHeight: React.Dispatch<React.SetStateAction<number>>;
 }
 
@@ -40,18 +45,148 @@ function useEnterSubmit(): {
 
 const MAX_HEIGHT = 360;
 
+/**
+ * Subcomponent for Temperature Selection
+ * -------------------------------------
+ * Uses a string-based custom input and clamps the value to [0,1].
+ * Also displays four pre-set temperatures the user can click on.
+ */
+function TemperatureDropdown(props: {
+	temperature: number; // The current temperature value
+	setTemperature: (temp: number) => void; // A function to update & clamp
+	isOpen: boolean; // Whether details is open
+	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	detailsRef: React.RefObject<HTMLDetailsElement | null>;
+}) {
+	const { temperature, setTemperature, isOpen, setIsOpen, detailsRef } = props;
+
+	// local state for the custom text input (string-based)
+	const [customTemp, setCustomTemp] = useState(temperature.toString());
+
+	// Sync local string whenever "temperature" changes from the outside
+	useEffect(() => {
+		setCustomTemp(temperature.toString());
+	}, [temperature]);
+
+	// Called on blur or default so we clamp to [0,1], fallback to 0.1 if invalid
+	function clampOnBlur() {
+		let val = parseFloat(customTemp);
+		if (isNaN(val)) {
+			val = 0.1; // fallback if parse fails
+		}
+		// clamp
+		val = Math.max(0, Math.min(1, val));
+		setTemperature(val);
+
+		// close after user is done typing
+		if (detailsRef.current) {
+			detailsRef.current.open = false;
+		}
+		setIsOpen(false);
+	}
+
+	return (
+		<details
+			ref={detailsRef}
+			className="dropdown dropdown-top dropdown-end w-1/3"
+			onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
+				setIsOpen((event.currentTarget as HTMLDetailsElement).open);
+			}}
+			open={isOpen}
+		>
+			<summary
+				className="btn btn-xs w-full text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
+				title="Set temperature"
+			>
+				<div className="flex">
+					<span className="sm:hidden mr-2">Temp: </span>
+					<span className="hidden sm:inline mr-2">Temperature: </span> {temperature.toFixed(2)}{' '}
+					{isOpen ? (
+						<FiChevronDown size={16} className="ml-1 md:ml-2" />
+					) : (
+						<FiChevronUp size={16} className="ml-1 md:ml-2" />
+					)}
+				</div>
+			</summary>
+
+			<ul className="dropdown-content menu bg-base-100 rounded-xl w-full p-4">
+				{/* Default temperature options */}
+				{defaultTemperatureOptions.map(tempVal => (
+					<li
+						key={tempVal}
+						className="cursor-pointer text-xs"
+						onClick={() => {
+							setTemperature(tempVal);
+							if (detailsRef.current) {
+								detailsRef.current.open = false;
+							}
+							setIsOpen(false);
+						}}
+					>
+						<a className="justify-between items-center p-1 m-0">
+							<span>{tempVal.toFixed(1)}</span>
+							{temperature.toFixed(1) === tempVal.toFixed(1) && <FiCheck />}
+						</a>
+					</li>
+				))}
+
+				{/* Custom temperature input */}
+				<li className="text-xs">
+					<hr className="p-0 my-2 border-0 border-t border-base-300" />
+					<label className="tooltip tooltip-top outline-none border-none">
+						<div className="tooltip-content">
+							<div className="text-xs">Custom value (0.1 - 0.1 )</div>
+						</div>
+						<span>Custom</span>
+						<input
+							type="text"
+							name="temperature"
+							className="input input-xs w-full"
+							placeholder="Custom value (0.1 - 0.1 )"
+							value={customTemp}
+							onChange={e => {
+								setCustomTemp(e.target.value);
+							}}
+							onBlur={clampOnBlur}
+							spellCheck="false"
+						/>
+					</label>
+				</li>
+			</ul>
+		</details>
+	);
+}
+
+/**
+ * Main Chat Input Field with integrated TemperatureDropdown subcomponent
+ */
 const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ onSend, setInputHeight }, ref) => {
+	// For the main text area
 	const [text, setText] = useState<string>('');
 	const [isSendButtonEnabled, setIsSendButtonEnabled] = useState<boolean>(false);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const isSubmittingRef = useRef<boolean>(false);
+
+	// Model state
 	const [selectedModel, setSelectedModel] = useState<ChatOptions>(DefaultChatOptions);
+
+	// Checkbox for "Disable previous messages"
 	const [disablePreviousMessages, setDisablePreviousMessages] = useState<boolean>(false);
+
+	// Model dropdown open state
 	const [isModelDropdownOpen, setIsModelDropdownOpen] = useState<boolean>(false);
+
+	// Temperature dropdown open state
 	const [isTemperatureDropdownOpen, setIsTemperatureDropdownOpen] = useState<boolean>(false);
+
+	// All available models
 	const [allOptions, setAllOptions] = useState<ChatOptions[]>([DefaultChatOptions]);
+
+	// Refs for the 2 <details> elements
 	const modelDetailsRef = useRef<HTMLDetailsElement>(null);
 	const temperatureDetailsRef = useRef<HTMLDetailsElement>(null);
+
+	// Close logic
 	UseCloseDetails({
 		detailsRef: modelDetailsRef,
 		events: ['mousedown'],
@@ -67,6 +202,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		},
 	});
 
+	// Load initial model options
 	const loadInitialItems = useCallback(async () => {
 		const r = await GetChatInputOptions();
 		setSelectedModel(r.default);
@@ -77,14 +213,15 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		loadInitialItems();
 	}, [loadInitialItems]);
 
+	// Enter key submission logic
 	const { formRef, onKeyDown } = useEnterSubmit();
 
+	// Automatically resize the textarea
 	const autoResizeTextarea = useCallback(() => {
 		if (inputRef.current) {
 			inputRef.current.style.height = 'auto';
 			const newHeight = Math.min(inputRef.current.scrollHeight, MAX_HEIGHT);
 			inputRef.current.style.height = `${newHeight}px`;
-
 			setInputHeight((prevHeight: number) => (prevHeight !== newHeight ? newHeight : prevHeight));
 		}
 	}, [setInputHeight]);
@@ -103,13 +240,18 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	const handleSubmit = (e?: React.FormEvent) => {
 		if (e) e.preventDefault();
 		if (text.trim().length === 0 || isSubmittingRef.current) return;
+
 		isSubmittingRef.current = true;
 		setIsSendButtonEnabled(false);
 
-		onSend(text.trim(), { ...selectedModel, disablePreviousMessages: disablePreviousMessages });
+		onSend(text.trim(), {
+			...selectedModel,
+			disablePreviousMessages: disablePreviousMessages,
+		});
 
 		setText('');
 		isSubmittingRef.current = false;
+
 		if (inputRef.current) {
 			inputRef.current.style.height = 'auto';
 			inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, MAX_HEIGHT)}px`;
@@ -118,7 +260,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		}
 	};
 
-	// Expose the function to get current chat options
+	// Expose the function to get current chat options + focus
 	useImperativeHandle(ref, () => ({
 		getChatOptions: () => ({
 			...selectedModel,
@@ -131,18 +273,20 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		},
 	}));
 
+	// Clamps temperature to [0, 1] (this is triggered by the subcomponent on blur or default selection)
 	const setTemperature = (temp: number) => {
-		setSelectedModel(prevModel => ({
-			...prevModel,
-			temperature: temp,
+		const clampedTemp = Math.max(0, Math.min(1, temp));
+		setSelectedModel(prev => ({
+			...prev,
+			temperature: clampedTemp,
 		}));
 	};
 
-	const temperatureOptions = Array.from({ length: 11 }, (_, i) => (i / 10).toFixed(1));
-
 	return (
 		<div className="relative">
+			{/* Top bar with model dropdown, temperature subcomponent, and disable checkbox */}
 			<div className="flex items-center justify-between bg-base-200 gap-1 md:gap-8 mb-1 mx-4">
+				{/* Model Select */}
 				<details
 					ref={modelDetailsRef}
 					className="dropdown dropdown-top dropdown-end w-1/3"
@@ -152,7 +296,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 				>
 					<summary
 						className="btn btn-xs w-full text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
-						title="Select Modal"
+						title="Select Model"
 					>
 						<div className="flex">
 							<span className="sm:hidden">{selectedModel.title.substring(0, 8)}</span>
@@ -164,7 +308,8 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 							)}
 						</div>
 					</summary>
-					<ul className={`dropdown-content menu bg-base-100 rounded-xl w-full`}>
+
+					<ul className="dropdown-content menu bg-base-100 rounded-xl w-full">
 						{allOptions.map(model => (
 							<li
 								key={`${model.provider}-${model.name}`}
@@ -179,58 +324,23 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 							>
 								<a className="justify-between items-center p-1 m-0">
 									<span>{model.title}</span>
-									{selectedModel.name &&
-										selectedModel.name === model.name &&
-										selectedModel.provider === model.provider && <FiCheck />}
+									{selectedModel.name === model.name && selectedModel.provider === model.provider && <FiCheck />}
 								</a>
 							</li>
 						))}
 					</ul>
 				</details>
 
-				<details
-					ref={temperatureDetailsRef}
-					className="dropdown dropdown-top dropdown-end w-1/3"
-					onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
-						setIsTemperatureDropdownOpen((event.currentTarget as HTMLDetailsElement).open);
-					}}
-				>
-					<summary
-						className="btn btn-xs w-full text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
-						title="Set temperature"
-					>
-						<div className="flex">
-							<span className="sm:hidden">Temp:</span>
-							<span className="hidden sm:inline">Temperature:</span> {selectedModel.temperature?.toFixed(1) || 0.1}{' '}
-							{isTemperatureDropdownOpen ? (
-								<FiChevronDown size={16} className="ml-1 md:ml-2" />
-							) : (
-								<FiChevronUp size={16} className="ml-1 md:ml-2" />
-							)}
-						</div>
-					</summary>
-					<ul className={`dropdown-content menu bg-base-100 rounded-xl w-full`}>
-						{temperatureOptions.map((temp, index) => (
-							<li
-								key={index}
-								className="cursor-pointer text-xs"
-								onClick={() => {
-									setTemperature(parseFloat(temp));
-									if (temperatureDetailsRef.current) {
-										temperatureDetailsRef.current.open = false;
-									}
-									setIsTemperatureDropdownOpen(false);
-								}}
-							>
-								<a className="justify-between items-center p-1 m-0">
-									<span>{temp}</span>
-									{(selectedModel.temperature?.toFixed(1) || 0.1) === temp && <FiCheck />}
-								</a>
-							</li>
-						))}
-					</ul>
-				</details>
+				{/* Temperature Dropdown subcomponent */}
+				<TemperatureDropdown
+					temperature={selectedModel.temperature ?? 0.1}
+					setTemperature={setTemperature}
+					isOpen={isTemperatureDropdownOpen}
+					setIsOpen={setIsTemperatureDropdownOpen}
+					detailsRef={temperatureDetailsRef}
+				/>
 
+				{/* "Disable previous messages" checkbox */}
 				<label
 					className="flex items-center space-x-2 text-neutral-400 w-1/3 overflow-hidden"
 					title="Disable previous messages"
@@ -248,6 +358,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 				</label>
 			</div>
 
+			{/* Main input form for messages */}
 			<form
 				ref={formRef}
 				onSubmit={handleSubmit}
@@ -280,4 +391,5 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 });
 
 ChatInputField.displayName = 'ChatInputField';
+
 export default ChatInputField;
