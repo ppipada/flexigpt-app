@@ -24,50 +24,53 @@ export default function SingleReasoningDropdown(props: {
 	};
 
 	return (
-		<details
-			ref={detailsRef}
-			className="dropdown dropdown-top dropdown-end"
-			onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
-				setIsOpen((event.currentTarget as HTMLDetailsElement).open);
-			}}
-			open={isOpen}
-		>
-			<summary
-				className="btn btn-xs w-full text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
-				title="Set reasoning level"
+		<div className="flex w-full justify-center">
+			<details
+				ref={detailsRef}
+				className="dropdown dropdown-top dropdown-end"
+				onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
+					setIsOpen((event.currentTarget as HTMLDetailsElement).open);
+				}}
+				open={isOpen}
 			>
-				<div className="flex">
-					<span className="sm:hidden mr-2">Reasoning: </span>
-					<span className="hidden sm:inline mr-2">Reasoning Level: </span> {levelDisplayNames[reasoningLevel]}{' '}
-					{isOpen ? (
-						<FiChevronDown size={16} className="ml-1 md:ml-2" />
-					) : (
-						<FiChevronUp size={16} className="ml-1 md:ml-2" />
-					)}
-				</div>
-			</summary>
+				<summary
+					className="btn btn-xs text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
+					title="Set reasoning level"
+				>
+					<div className="flex">
+						<span className="text-xs font-normal sm:hidden mr-2">Reasoning: </span>
+						<span className="text-xs font-normal hidden sm:inline mr-2">Reasoning Level: </span>
+						<span className="text-xs font-normal"> {levelDisplayNames[reasoningLevel]} </span>
+						{isOpen ? (
+							<FiChevronDown size={16} className="ml-1 md:ml-2" />
+						) : (
+							<FiChevronUp size={16} className="ml-1 md:ml-2" />
+						)}
+					</div>
+				</summary>
 
-			<ul className="dropdown-content menu bg-base-100 rounded-xl w-full p-4">
-				{/* Reasoning level options */}
-				{Object.values(ReasoningLevel).map(level => (
-					<li
-						key={level}
-						className="cursor-pointer text-xs"
-						onClick={() => {
-							setReasoningLevel(level);
-							if (detailsRef.current) {
-								detailsRef.current.open = false;
-							}
-							setIsOpen(false);
-						}}
-					>
-						<a className="justify-between items-center p-1 m-0">
-							<span>{levelDisplayNames[level]}</span>
-							{reasoningLevel === level && <FiCheck />}
-						</a>
-					</li>
-				))}
-			</ul>
-		</details>
+				<ul className="dropdown-content menu bg-base-100 rounded-xl w-full p-4">
+					{/* Reasoning level options */}
+					{Object.values(ReasoningLevel).map(level => (
+						<li
+							key={level}
+							className="cursor-pointer text-xs"
+							onClick={() => {
+								setReasoningLevel(level);
+								if (detailsRef.current) {
+									detailsRef.current.open = false;
+								}
+								setIsOpen(false);
+							}}
+						>
+							<a className="justify-between items-center p-1 m-0">
+								<span>{levelDisplayNames[level]}</span>
+								{reasoningLevel === level && <FiCheck />}
+							</a>
+						</li>
+					))}
+				</ul>
+			</details>
+		</div>
 	);
 }

@@ -128,10 +128,6 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 				DisplayName: aiproviderConsts.DisplayNameGPTO1,
 				IsEnabled:   true,
 			},
-			aiproviderConsts.GPTO1Preview: {
-				DisplayName: aiproviderConsts.DisplayNameGPTO1Preview,
-				IsEnabled:   false,
-			},
 			aiproviderConsts.GPTO1Mini: {
 				DisplayName: aiproviderConsts.DisplayNameGPTO1Mini,
 				IsEnabled:   false,
@@ -140,13 +136,21 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 				DisplayName: aiproviderConsts.DisplayNameGPT45Preview,
 				IsEnabled:   false,
 			},
-			aiproviderConsts.GPT4OMini: {
-				DisplayName: aiproviderConsts.DisplayNameGPT4OMini,
+			aiproviderConsts.GPT41: {
+				DisplayName: aiproviderConsts.DisplayNameGPT41,
+				IsEnabled:   true,
+			},
+			aiproviderConsts.GPT41Mini: {
+				DisplayName: aiproviderConsts.DisplayNameGPT41Mini,
 				IsEnabled:   false,
 			},
 			aiproviderConsts.GPT4O: {
 				DisplayName: aiproviderConsts.DisplayNameGPT4O,
-				IsEnabled:   true,
+				IsEnabled:   false,
+			},
+			aiproviderConsts.GPT4OMini: {
+				DisplayName: aiproviderConsts.DisplayNameGPT4OMini,
+				IsEnabled:   false,
 			},
 			aiproviderConsts.GPT4: {
 				DisplayName: aiproviderConsts.DisplayNameGPT4,

@@ -11,9 +11,10 @@ const (
 const (
 	GPTO3Mini    spec.ModelName = "o3-mini"
 	GPTO1        spec.ModelName = "o1"
-	GPTO1Preview spec.ModelName = "o1-preview"
 	GPTO1Mini    spec.ModelName = "o1-mini"
 	GPT45Preview spec.ModelName = "gpt-4.5-preview"
+	GPT41        spec.ModelName = "gpt-4.1"
+	GPT41Mini    spec.ModelName = "gpt-4.1-mini"
 	GPT4OMini    spec.ModelName = "gpt-4o-mini"
 	GPT4O        spec.ModelName = "gpt-4o"
 	GPT4         spec.ModelName = "gpt-4"
@@ -23,9 +24,10 @@ const (
 const (
 	DisplayNameGPTO3Mini    = "OpenAI o3 mini"
 	DisplayNameGPTO1        = "OpenAI o1"
-	DisplayNameGPTO1Preview = "OpenAI o1 preview"
 	DisplayNameGPTO1Mini    = "OpenAI o1 mini"
 	DisplayNameGPT45Preview = "OpenAI GPT 4.5 Preview"
+	DisplayNameGPT41        = "OpenAI GPT 4.1"
+	DisplayNameGPT41Mini    = "OpenAI GPT 4.1 mini"
 	DisplayNameGPT4OMini    = "OpenAI GPT 4o mini"
 	DisplayNameGPT4O        = "OpenAI GPT 4o"
 	DisplayNameGPT4         = "OpenAI GPT 4"
@@ -59,19 +61,6 @@ var OpenAIModels = map[spec.ModelName]spec.ModelParams{
 		SystemPrompt: "Formatting re-enabled",
 		Timeout:      120,
 	},
-	GPTO1Preview: {
-		Name:            GPTO1Preview,
-		MaxPromptLength: 16384,
-		MaxOutputLength: 16384,
-		Temperature:     spec.Float64Ptr(1.0),
-		Stream:          true,
-		Reasoning: &spec.ReasoningParams{
-			Type:  spec.ReasoningTypeSingleWithLevels,
-			Level: spec.ReasoningLevelMedium,
-		},
-		SystemPrompt: "",
-		Timeout:      120,
-	},
 	GPTO1Mini: {
 		Name:            GPTO1Mini,
 		MaxPromptLength: 16384,
@@ -89,6 +78,24 @@ var OpenAIModels = map[spec.ModelName]spec.ModelParams{
 		Name:            GPT45Preview,
 		MaxPromptLength: 16384,
 		MaxOutputLength: 16384,
+		Temperature:     spec.Float64Ptr(0.1),
+		Stream:          true,
+		SystemPrompt:    "",
+		Timeout:         120,
+	},
+	GPT41: {
+		Name:            GPT41,
+		MaxPromptLength: 32768,
+		MaxOutputLength: 32768,
+		Temperature:     spec.Float64Ptr(0.1),
+		Stream:          true,
+		SystemPrompt:    "",
+		Timeout:         120,
+	},
+	GPT41Mini: {
+		Name:            GPT41Mini,
+		MaxPromptLength: 32768,
+		MaxOutputLength: 32768,
 		Temperature:     spec.Float64Ptr(0.1),
 		Stream:          true,
 		SystemPrompt:    "",
