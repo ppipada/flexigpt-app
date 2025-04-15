@@ -114,7 +114,8 @@ func (api *BaseAIAPI) getCompletionRequest(
 	}
 
 	reqSystemPrompt := modelParams.SystemPrompt
-	if inbuiltModelParams != nil && inbuiltModelParams.SystemPrompt != "" {
+	if inbuiltModelParams != nil && inbuiltModelParams.SystemPrompt != "" &&
+		!strings.HasPrefix(modelParams.SystemPrompt, inbuiltModelParams.SystemPrompt) {
 		reqSystemPrompt = inbuiltModelParams.SystemPrompt + "\n" + reqSystemPrompt
 	}
 	completionRequest.ModelParams.SystemPrompt = reqSystemPrompt

@@ -1,7 +1,7 @@
 import type { ChangeEvent, KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
-import { FiSend } from 'react-icons/fi';
+import { FiSend, FiSliders } from 'react-icons/fi';
 
 import { type ReasoningLevel, ReasoningType } from '@/models/aiprovidermodel';
 import { type ChatOptions, DefaultChatOptions } from '@/models/settingmodel';
@@ -10,6 +10,7 @@ import { GetChatInputOptions } from '@/apis/settingstore_helper';
 
 import { UseCloseDetails } from '@/lib/use_close_details';
 
+import AdvancedParamsModal from '@/chats/chat_input_field_advanced_params';
 import DisablePreviousMessagesCheckbox from '@/chats/chat_input_field_disable_checkbox';
 import ModelDropdown from '@/chats/chat_input_field_model_dropdown';
 import { HybridReasoningCheckbox, ReasoningTokensDropdown } from '@/chats/chat_input_field_reasoning_hybrid';
@@ -47,12 +48,6 @@ function useEnterSubmit(): {
 	return { formRef, onKeyDown: handleKeyDown };
 }
 
-/**
- * Main Chat Input Field
- * -------------------------------------
- * Renders ModelDropdown, TemperatureDropdown, DisablePreviousMessagesCheckbox,
- * and the message input form.
- */
 const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ onSend, setInputHeight }, ref) => {
 	// For the main text area
 	const [text, setText] = useState<string>('');
@@ -63,13 +58,16 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	// Model state
 	const [selectedModel, setSelectedModel] = useState<ChatOptions>(DefaultChatOptions);
 
-	// User preference for enabling/disabling hybrid reasoning
+	// Whether the advanced params modal is open
+	const [isAdvancedModalOpen, setIsAdvancedModalOpen] = useState<boolean>(false);
+
+	// Hybrid reasoning
 	const [isHybridReasoningEnabled, setIsHybridReasoningEnabled] = useState<boolean>(true);
 
 	// Checkbox for "Disable previous messages"
 	const [disablePreviousMessages, setDisablePreviousMessages] = useState<boolean>(false);
 
-	// Dropdown open states
+	// Model + advanced dropdown open states
 	const [isModelDropdownOpen, setIsModelDropdownOpen] = useState<boolean>(false);
 	const [isSecondaryDropdownOpen, setIsSecondaryDropdownOpen] = useState<boolean>(false);
 
@@ -102,6 +100,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	const loadInitialItems = useCallback(async () => {
 		const r = await GetChatInputOptions();
 		setSelectedModel(r.default);
+
 		// Initialize hybrid reasoning enabled state based on model
 		setIsHybridReasoningEnabled(r.default.reasoning?.type === ReasoningType.HybridWithTokens);
 		setAllOptions(r.allOptions);
@@ -142,12 +141,11 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		autoResizeTextarea();
 	}, [text, autoResizeTextarea]);
 
-	// Get the final chat options to send, applying user preferences
+	// Construct the final ChatOptions
 	const getFinalChatOptions = (): ChatOptions => {
 		const options = { ...selectedModel, disablePreviousMessages };
 
-		// If this is a hybrid reasoning model but the user has disabled reasoning,
-		// create a modified version without reasoning for the API call
+		// If it's a hybrid reasoning model but user disabled reasoning, remove it
 		if (selectedModel.reasoning?.type === ReasoningType.HybridWithTokens && !isHybridReasoningEnabled) {
 			const modifiedOptions = { ...options };
 			delete modifiedOptions.reasoning;
@@ -164,7 +162,6 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		isSubmittingRef.current = true;
 		setIsSendButtonEnabled(false);
 
-		// Use getFinalChatOptions to apply user preferences
 		onSend(text.trim(), getFinalChatOptions());
 
 		setText('');
@@ -205,7 +202,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 			reasoning: {
 				type: ReasoningType.SingleWithLevels,
 				level: newLevel,
-				tokens: 1024, // Default tokens value
+				tokens: 1024, // default tokens
 			},
 		}));
 	};
@@ -216,7 +213,6 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 			if (!prev.reasoning || prev.reasoning.type !== ReasoningType.HybridWithTokens) {
 				return prev;
 			}
-
 			return {
 				...prev,
 				reasoning: {
@@ -227,10 +223,28 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		});
 	};
 
+	/**
+	 * Handle saving the advanced parameters from the modal
+	 * We simply merge these changes back into selectedModel.
+	 */
+	const handleSaveAdvancedParams = (updatedModel: ChatOptions) => {
+		setSelectedModel(prev => {
+			return {
+				...prev,
+				stream: updatedModel.stream,
+				maxOutputLength: updatedModel.maxOutputLength,
+				maxPromptLength: updatedModel.maxPromptLength,
+				systemPrompt: updatedModel.systemPrompt,
+			};
+		});
+		setSelectedModel(updatedModel);
+		setIsAdvancedModalOpen(false);
+	};
+
 	return (
 		<div className="relative">
 			<div className="flex items-center justify-between bg-base-200 mb-1 mx-8">
-				{/* Model dropdown (1/4 width) */}
+				{/* Model dropdown (1/3 width) */}
 				<div className="w-1/3">
 					<ModelDropdown
 						selectedModel={selectedModel}
@@ -283,8 +297,31 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 						disablePreviousMessages={disablePreviousMessages}
 						setDisablePreviousMessages={setDisablePreviousMessages}
 					/>
+
+					{/* -- Sliders Icon to open advanced params modal -- */}
+					<button
+						type="button"
+						className="btn btn-sm btn-ghost mx-2 text-neutral-400"
+						onClick={() => {
+							setIsAdvancedModalOpen(true);
+						}}
+						aria-label="Open advanced settings"
+					>
+						<FiSliders size={16} />
+					</button>
 				</div>
 			</div>
+			{/* -- Advanced Params Modal -- */}
+			{isAdvancedModalOpen && (
+				<AdvancedParamsModal
+					isOpen={isAdvancedModalOpen}
+					onClose={() => {
+						setIsAdvancedModalOpen(false);
+					}}
+					currentModel={selectedModel}
+					onSave={handleSaveAdvancedParams}
+				/>
+			)}
 			{/* Main input form for messages */}
 			<form
 				ref={formRef}
