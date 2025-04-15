@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 	"github.com/tmc/langchaingo/llms"
@@ -80,6 +81,7 @@ func (api *BaseAIAPI) getCompletionRequest(
 			Name:                 modelParams.Name,
 			AdditionalParameters: modelParams.AdditionalParameters,
 			Temperature:          modelParams.Temperature,
+			Reasoning:            modelParams.Reasoning,
 		},
 	}
 
@@ -102,6 +104,13 @@ func (api *BaseAIAPI) getCompletionRequest(
 		completionRequest.ModelParams.MaxPromptLength = inbuiltModelParams.MaxPromptLength
 	} else {
 		completionRequest.ModelParams.MaxPromptLength = modelParams.MaxPromptLength
+	}
+
+	if inbuiltModelParams != nil && inbuiltModelParams.Reasoning != nil &&
+		modelParams.Reasoning != nil &&
+		modelParams.Reasoning.Type != inbuiltModelParams.Reasoning.Type {
+		// Cannot have input reasoning different than models defined reasoning type
+		completionRequest.ModelParams.Reasoning = nil
 	}
 
 	reqSystemPrompt := modelParams.SystemPrompt
@@ -150,25 +159,50 @@ func (api *BaseAIAPI) FetchCompletion(
 	options := []llms.CallOption{
 		llms.WithModel(string(input.ModelParams.Name)),
 	}
+	// PrintJSON(input.ModelParams)
 
 	if input.ModelParams.Temperature != nil {
 		options = append(options, llms.WithTemperature(*input.ModelParams.Temperature))
 	}
 
+	if input.ModelParams.Reasoning != nil &&
+		input.ModelParams.Reasoning.Type == spec.ReasoningTypeHybridWithTokens {
+		options = append(options, llms.WithReasoning(llms.Reasoning{
+			IsEnabled: true,
+			Mode:      llms.ReasoningModeTokens,
+			Tokens:    input.ModelParams.Reasoning.Tokens,
+		}))
+	}
+
+	if input.ModelParams.Reasoning != nil &&
+		input.ModelParams.Reasoning.Type == spec.ReasoningTypeSingleWithLevels {
+		options = append(options, llms.WithReasoning(llms.Reasoning{
+			IsEnabled: true,
+			Mode:      llms.ReasoningModeLevel,
+			Level:     llms.ReasoningLevel(input.ModelParams.Reasoning.Level),
+		}))
+	}
+
 	options = append(options, llms.WithMaxTokens(input.ModelParams.MaxOutputLength))
 
-	count := 0
 	if input.ModelParams.Stream && onStreamData != nil {
-		streamingFunc := func(ctx context.Context, chunk []byte) error {
-			if count < 5 {
-				// slog.Info("stream", "got chunk", string(chunk))
-				count += 1
+		if input.ModelParams.Reasoning != nil {
+			streamingReasoningFunc := func(ctx context.Context, reasoningChunk []byte, chunk []byte) error {
+				reasoningContent := string(reasoningChunk)
+				if reasoningContent != "" {
+					reasoningContent = getBlockQuotedReasoning(reasoningContent)
+				}
+				err := onStreamData(reasoningContent + string(chunk))
+				return err
 			}
-
-			err := onStreamData(string(chunk))
-			return err
+			options = append(options, llms.WithStreamingReasoningFunc(streamingReasoningFunc))
+		} else {
+			streamingFunc := func(ctx context.Context, chunk []byte) error {
+				err := onStreamData(string(chunk))
+				return err
+			}
+			options = append(options, llms.WithStreamingFunc(streamingFunc))
 		}
-		options = append(options, llms.WithStreamingFunc(streamingFunc))
 	}
 
 	content := []llms.MessageContent{}
@@ -206,7 +240,9 @@ func (api *BaseAIAPI) FetchCompletion(
 		completionResp.ResponseDetails = debugResp.ResponseDetails
 	}
 
-	if resp == nil || len(resp.Choices) == 0 {
+	// PrintJSON(resp)
+
+	if resp == nil || len(resp.Choices) == 0 || resp.Choices[0] == nil {
 		if ok && debugResp != nil {
 			if completionResp.ErrorDetails == nil {
 				completionResp.ErrorDetails = &spec.APIErrorDetails{
@@ -219,6 +255,24 @@ func (api *BaseAIAPI) FetchCompletion(
 		}
 		return nil, errors.New("got nil response from LLM api")
 	}
-	completionResp.RespContent = &resp.Choices[0].Content
+	reasoningContent := ""
+	if resp.Choices[0].ReasoningContent != "" {
+		reasoningContent = "> Thought process:\n\n" + getBlockQuotedReasoning(
+			resp.Choices[0].ReasoningContent,
+		) + "\n\n"
+	}
+	c := reasoningContent + resp.Choices[0].Content
+	completionResp.RespContent = &c
 	return completionResp, nil
+}
+
+func getBlockQuotedReasoning(content string) string {
+	// Split the content into lines
+	lines := strings.Split(content, "\n")
+	// Prepend each line with "> "
+	for i, line := range lines {
+		lines[i] = "> " + line
+	}
+	// Join the lines back together as blockquote
+	return strings.Join(lines, "\n")
 }

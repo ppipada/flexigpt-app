@@ -9,7 +9,7 @@ export default function DisablePreviousMessagesCheckbox(props: {
 
 	return (
 		<div className="flex w-full justify-center">
-			<label className="flex space-x-2 text-neutral-400 overflow-hidden" title="Disable previous messages">
+			<label className="flex ml-4 space-x-2 text-neutral-400 overflow-hidden" title="Disable previous messages">
 				<input
 					type="checkbox"
 					checked={disablePreviousMessages}

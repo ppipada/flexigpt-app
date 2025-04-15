@@ -317,3 +317,10 @@ func GetDebugHTTPResponse(ctx context.Context) (*DebugHTTPResponse, bool) {
 	debugResp, ok := ctx.Value(debugHTTPResponseKey).(*DebugHTTPResponse)
 	return debugResp, ok
 }
+
+func PrintJSON(v any) {
+	p, err := json.MarshalIndent(v, "", "")
+	if err == nil {
+		slog.Info("Request params", "JSON", string(p))
+	}
+}

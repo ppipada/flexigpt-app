@@ -5,6 +5,7 @@ import (
 
 	"github.com/flexigpt/flexiui/pkg/conversationstore"
 	"github.com/flexigpt/flexiui/pkg/conversationstore/spec"
+	"github.com/flexigpt/flexiui/pkg/middleware"
 )
 
 type ConversationCollectionWrapper struct {
@@ -27,29 +28,39 @@ func InitConversationCollectionWrapper(
 func (ccw *ConversationCollectionWrapper) SaveConversation(
 	req *spec.SaveConversationRequest,
 ) (*spec.SaveConversationResponse, error) {
-	return ccw.store.SaveConversation(context.Background(), req)
+	return middleware.WithRecoveryResp(func() (*spec.SaveConversationResponse, error) {
+		return ccw.store.SaveConversation(context.Background(), req)
+	})
 }
 
 func (ccw *ConversationCollectionWrapper) DeleteConversation(
 	req *spec.DeleteConversationRequest,
 ) (*spec.DeleteConversationResponse, error) {
-	return ccw.store.DeleteConversation(context.Background(), req)
+	return middleware.WithRecoveryResp(func() (*spec.DeleteConversationResponse, error) {
+		return ccw.store.DeleteConversation(context.Background(), req)
+	})
 }
 
 func (ccw *ConversationCollectionWrapper) GetConversation(
 	req *spec.GetConversationRequest,
 ) (*spec.GetConversationResponse, error) {
-	return ccw.store.GetConversation(context.Background(), req)
+	return middleware.WithRecoveryResp(func() (*spec.GetConversationResponse, error) {
+		return ccw.store.GetConversation(context.Background(), req)
+	})
 }
 
 func (ccw *ConversationCollectionWrapper) ListConversations(
 	req *spec.ListConversationsRequest,
 ) (*spec.ListConversationsResponse, error) {
-	return ccw.store.ListConversations(context.Background(), req)
+	return middleware.WithRecoveryResp(func() (*spec.ListConversationsResponse, error) {
+		return ccw.store.ListConversations(context.Background(), req)
+	})
 }
 
 func (ccw *ConversationCollectionWrapper) AddMessageToConversation(
 	req *spec.AddMessageToConversationRequest,
 ) (*spec.AddMessageToConversationResponse, error) {
-	return ccw.store.AddMessageToConversation(context.Background(), req)
+	return middleware.WithRecoveryResp(func() (*spec.AddMessageToConversationResponse, error) {
+		return ccw.store.AddMessageToConversation(context.Background(), req)
+	})
 }

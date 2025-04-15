@@ -101,7 +101,6 @@ export default function TemperatureDropdown(props: {
 							<div className="tooltip-content">
 								<div className="text-xs">Custom value (0.0 - 1.0)</div>
 							</div>
-							<span>Custom</span>
 							<input
 								type="text"
 								name="temperature"

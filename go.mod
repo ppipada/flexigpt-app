@@ -50,4 +50,4 @@ require (
 	golang.org/x/text v0.24.0 // indirect
 )
 
-// replace github.com/wailsapp/wails/v2 v2.9.2 => /home/ppipada/go/pkg/mod
+replace github.com/tmc/langchaingo => github.com/ppipada/langchaingo v0.0.0-20250415113126-aea8baaa4200

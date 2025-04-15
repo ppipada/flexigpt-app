@@ -132,7 +132,7 @@ function ChatMessageMarkdownContent({ content, align, streamedMessage }: ChatMes
 				</a>
 			),
 			blockquote: ({ children }: PComponentProps) => (
-				<blockquote className="border-l-4 border-gray-300 pl-4 italic">{children}</blockquote>
+				<blockquote className="border-l-4 border-base-300 pl-4 italic">{children}</blockquote>
 			),
 		}),
 		[align, streamedMessage]

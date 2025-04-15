@@ -113,7 +113,6 @@ export function ReasoningTokensDropdown(props: {
 							<div className="tooltip-content">
 								<div className="text-xs">Custom tokens (≥ 1024)</div>
 							</div>
-							<span>Custom</span>
 							<input
 								type="text"
 								className="input input-xs w-full"
