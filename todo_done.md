@@ -230,3 +230,18 @@
 
 - [x] Overflow issue in parent i.e whole page sometimes moves up
 - [x] Param input content should preserve tabs/spaces etc
+
+- [x] allow dot and spaces in providername and model name
+- [x] reasoning models should have a "reasoning" effort param too.
+
+  - [x] Add reasoning support in modelparams
+  - [x] reasoning effort comes in multiple flavors: medium high less etc. number from x to y. find a way to represent them.
+  - [x] See if temperature is almost always optional. Anthropic supports reasoning + normal mode too. Need to see how to represent that too without real overwhelming of the user. Represent appropriately in UI
+    - [x] For anthropic: temp and thinking are not compatible. streaming is present. thinking is controlled as "budget tokens "
+    - [x] For openai: temp and thinking are not compatible. can pass temp as 1 to some models after dec 24. streaming is present in newer api. thinking is controlled as effort, low medium high
+    - [x] google doesnt mention any control on thinking model
+  - [x] langchaingo seem to be moving very slow with no thinking support. better use official sdks from openai and anthropic
+    - [x] created a fork and try to merge pr
+
+- [x] Support additional params from UI to backend
+- [x] Represent reasoning process in UI

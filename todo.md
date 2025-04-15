@@ -15,18 +15,7 @@
   - [ ] Implement MCP protocol
   - [ ] Add servers for: file, git, simplemapstore
 
-- [x] allow dot and spaces in providername and model name
 - [ ] see how to set version increment seamlessly at one place only
-- [ ] reasoning models should have a "reasoning" effort param too.
-
-  - [x] Add reasoning support in modelparams
-  - [ ] reasoning effort comes in multiple flavors: medium high less etc. number from x to y. find a way to represent them.
-  - [ ] See if temperature is almost always optional. Anthropic supports reasoning + normal mode too. Need to see how to represent that too without real overwhelming of the user. Represent appropriately in UI
-    - [ ] For anthropic: temp and thinking are not compatible. streaming is present. thinking is controlled as "budget tokens "
-    - [ ] For openai: temp and thinking are not compatible. can pass temp as 1 to some models after dec 24. streaming is present in newer api. thinking is controlled as effort, low medium high
-    - [ ] google doesnt mention any control on thinking model
-  - [ ] langchaingo seem to be moving very slow with no thinking support. better use official sdks from openai and anthropic
-
 - [ ] Need a settings data version and migration func
 - [ ] API key should never reach frontend after save
 - [ ] move packaging to build dir and add apple plist etc. also use apple developerid
