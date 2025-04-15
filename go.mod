@@ -50,4 +50,4 @@ require (
 	golang.org/x/text v0.24.0 // indirect
 )
 
-replace github.com/tmc/langchaingo => github.com/ppipada/langchaingo v0.0.0-20250415113126-aea8baaa4200
+replace github.com/tmc/langchaingo => github.com/ppipada/langchaingo v0.0.0-20250415125909-3e5c2da6d429
