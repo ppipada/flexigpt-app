@@ -71,6 +71,10 @@
 	"knip": {
 		"ignore": [
 			"app/apis/wailsjs/runtime/runtime.js",
+			"app/apis/wailsjs/go/main/App.js",
+			"app/apis/wailsjs/go/main/ConversationCollectionWrapper.js",
+			"app/apis/wailsjs/go/main/ProviderSetWrapper.js",
+			"app/apis/wailsjs/go/main/SettingStoreWrapper.js",
 			"app/models/aiprovidermodel.ts",
 			"app/backendapihelper/conversation_cache.ts"
 		],
