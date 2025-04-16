@@ -21,67 +21,26 @@ jobs:
     permissions:
       contents: write
     env:
-      BUILD_NAME: 'FlexiGPT'
-      BUILD_PLATFORM: 'darwin/universal'
       VERSION_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
-      WAILS_VERSION: 'v2.10.1'
-      WAILS_BUILD_WEBVIEW2: 'download'
-      GO_VERSION: '^1.24.2'
-      NODE_VERSION: '20.x'
-      APP_WORKING_DIRECTORY: '.'
-      GON_SIGN_JSON_PATH: './build/darwin/gon-sign.json'
-      GON_SIGN_NOTARIZE_PATH: './build/darwin/gon-notarize.json'
-      SIGN_MACOS_APPLE_USERNAME: ${{ secrets.APPLE_USERNAME || '' }}
-      SIGN_MACOS_APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD || '' }}
+      SIGN_MACOS_APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD || '' }}
       SIGN_MACOS_APP_ID: "${{ secrets.SIGN_MACOS_APP_ID || '' }}"
       SIGN_MACOS_APP_CERT: "${{ secrets.SIGN_MACOS_APP_CERT || '' }}"
       SIGN_MACOS_APP_CERT_PASSWORD: "${{ secrets.SIGN_MACOS_APP_CERT_PASSWORD || '' }}"
       SIGN_MACOS_INSTALLER_ID: "${{ secrets.SIGN_MACOS_INSTALLER_ID || '' }}"
       SIGN_MACOS_INSTALLER_CERT: ${{ secrets.MACOS_INSTALLER_CERT || '' }}
       SIGN_MACOS_INSTALLER_CERT_PASSWORD: ${{ secrets.MACOS_INSTALLER_CERT_PASSWORD || '' }}
-      BUILD_COMMAND: 'pnpm run build:mac'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
+      - name: Setup Environment and Tools
+        uses: ./.github/actions/setup-env
 
-      - name: Setup GoLang
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          run_install: false
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install pnpm dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Wails
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
+      - name: Set pkg path
+        run: |
+          echo "FINAL_PKG_PATH=build/bin/${BUILD_NAME}-macos-universal-${VERSION_TAG}.pkg" >> $GITHUB_ENV
         shell: bash
 
       - name: Install macOS Wails deps
-        run: brew install mitchellh/gon/gon
-        shell: bash
-
-      - name: Build macOS App
-        working-directory: ${{ env.APP_WORKING_DIRECTORY }}
-        run: ${{ env.BUILD_COMMAND }}
-        shell: bash
-
-      - name: Add macOS permissions
-        working-directory: ${{ env.APP_WORKING_DIRECTORY }}
-        run: chmod +x build/bin/*/Contents/MacOS/*
+        run: brew install Bearer/tap/gon
         shell: bash
 
       - name: Import Code-Signing Certificates for macOS
@@ -101,40 +60,34 @@ jobs:
           p12-password: ${{ env.SIGN_MACOS_INSTALLER_CERT_PASSWORD }}
           create-keychain: false
 
-      - name: Sign macOS binary
-        if: env.SIGN_MACOS_APP_ID != '' && startsWith(github.ref, 'refs/tags/')
+      - name: Build / Sign / Notarize
         shell: bash
-        working-directory: ${{ env.APP_WORKING_DIRECTORY }}
         run: |
-          echo "Signing Package"
-          gon -log-level=info ${{ env.GON_SIGN_JSON_PATH }}
+          chmod +x build/build_sign_notarize.sh
 
-      # - name: Build .app zip file
-      #   working-directory: ${{ env.APP_WORKING_DIRECTORY }}
-      #   shell: bash
-      #   run: |
-      #     ditto -c -k --sequesterRsrc --keepParent build/bin/${{ env.BUILD_NAME }}.app build/bin/${{ env.BUILD_NAME }}.app.zip
+          # Decide if we should pass --sign
+          SIGN_FLAGS=""
+          if [[ -n "$SIGN_MACOS_APP_CERT" ]]; then
+            SIGN_FLAGS="--sign"
+          fi
 
-      - name: Build Installer Signed
-        if: env.SIGN_MACOS_INSTALLER_ID != '' && startsWith(github.ref, 'refs/tags/')
+          # Decide if we should pass --notarize
+          NOTARIZE_FLAGS=""
+          if [[ -n "$SIGN_MACOS_APP_CERT" && -n "$SIGN_MACOS_APPLE_PASSWORD" && startsWith("${{ github.ref }}","refs/tags/") == "true" ]]; then
+            NOTARIZE_FLAGS="--notarize"
+          fi
+
+          # Finally call the script, specifying our version from $VERSION_TAG
+          ./build/build_sign_notarize.sh --version "${VERSION_TAG}" $SIGN_FLAGS $NOTARIZE_FLAGS
+
+      - name: Add macOS permissions
+        working-directory: ${{ env.APP_WORKING_DIRECTORY }}
+        run: chmod +x build/bin/*/Contents/MacOS/*
         shell: bash
-        working-directory: ${{ env.APP_WORKING_DIRECTORY }}
-        run: |
-          productbuild --sign '${{ env.SIGN_MACOS_INSTALLER_ID }}' --component build/bin/${{ env.BUILD_NAME }}.app build/bin/${{ env.BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}.pkg
 
-      - name: Build Installer Unsigned
-        if: env.SIGN_MACOS_INSTALLER_ID == ''
+      - name: Copy file
+        run: cp ${{env.DARWIN_PKG_BUNDLE_PATH}} ${{env.FINAL_PKG_PATH}}
         shell: bash
-        working-directory: ${{ env.APP_WORKING_DIRECTORY }}
-        run: |
-          productbuild --component build/bin/${{ env.BUILD_NAME }}.app build/bin/${{ env.BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}.pkg
-
-      - name: Notarize Installer and zip
-        if: env.SIGN_MACOS_APP_CERT != '' && startsWith(github.ref, 'refs/tags/')
-        shell: bash
-        working-directory: ${{ env.APP_WORKING_DIRECTORY }}
-        run: |
-          gon -log-level=info ${{ env.GON_SIGN_NOTARIZE_PATH }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -142,11 +95,11 @@ jobs:
         with:
           name: ${{ env.BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}
           path: |
-            build/bin/${{ env.BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}.pkg
+            ${{env.FINAL_PKG_PATH}}
 
       - name: Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            build/bin/${{ env.BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}.pkg
+            ${{env.FINAL_PKG_PATH}}

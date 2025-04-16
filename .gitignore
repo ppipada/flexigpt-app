@@ -6,6 +6,10 @@ dist
 frontend/dist
 out
 build/bin
+build/darwin/Info.plist
+build/darwin/entitlements.plist
+build/darwin/gon-sign.json
+build/darwin/gon-notarize.json
 
 # Logs
 logs

@@ -1,0 +1,50 @@
+name: Setup Environment and Tools
+description: Loads env vars and sets up Go, Node, pnpm, Wails
+inputs: {}
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: "recursive"
+
+    - name: Load environment from buildvars.env
+      shell: bash
+      run: |
+        set -o allexport
+        source build/buildvars.env
+        set +o allexport
+
+        # Export to $GITHUB_ENV for subsequent steps
+        while IFS='=' read -r KEY VAL; do
+          if [[ -n "$KEY" && -n "$VAL" && "$KEY" != \#* ]]; then
+            echo "$KEY=$VAL" >> "$GITHUB_ENV"
+          fi
+        done < <(grep '=' build/buildvars.env | grep -v '^#')
+
+        echo "Environment variables loaded for subsequent steps."
+
+    - name: Setup GoLang
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: "pnpm"
+
+    - name: Install pnpm dependencies
+      run: pnpm install --frozen-lockfile
+      shell: bash
+
+    - name: Install Wails
+      run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
+      shell: bash
