@@ -17,7 +17,7 @@
 		"build:win": "cd ./cmd/agentgo && pnpm run build:frontend && wails build -m -clean -s -skipbindings -nsis -platform windows/amd64",
 		"pack:flatpak": "gh act -W './.github/workflows/flatpak.yml' --artifact-server-path ./out",
 		"pack:nsis": "gh act -W './.github/workflows/nsispak.yml' --artifact-server-path ./out",
-		"pack:dmg": "gh act -W './.github/workflows/dmgpak.yml' --artifact-server-path ./out",
+		"pack:macpkg": "gh act -W './.github/workflows/macpkg.yml' --artifact-server-path ./out",
 		"build:withbindings": "cd ./cmd/agentgo && pnpm run build:frontend && wails build -devtools -m -clean -v 2",
 		"run:watch": "cd ./cmd/agentgo &&  wails dev -s -v 2 -tags webkit2_41",
 		"run:gobackend": "./scripts/run_backend.sh",

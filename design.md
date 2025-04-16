@@ -135,7 +135,7 @@ This document outlines the requirements of FlexiGPT, along with a milestone-base
 
 - Current feature enhancements
 
-  - CI: Build and distribute packages like DMG (Mac), MSI (Windows), and Flatpak (Linux).
+  - CI: Build and distribute packages like PKG (Mac), MSI (Windows), and Flatpak (Linux).
   - Chat interface:
     - Develop better algorithms for deducing conversation titles.
   - Tools: Incorporate code interpretation capabilities for select programming languages as tools.

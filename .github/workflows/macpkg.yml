@@ -1,0 +1,149 @@
+name: "MacOS Build and Package"
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version tag"
+        required: true
+        default: "v0.0.1"
+      sign:
+        description: "Sign the build?"
+        required: false
+        default: false
+        type: boolean
+      notarize:
+        description: "Notarize the build?"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        platform:
+          - darwin/universal
+    permissions:
+      contents: write
+    env:
+      VERSION_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
+      MACOS_SIGN_APPLE_USERNAME: ${{ secrets.MACOS_SIGN_APPLE_USERNAME }}
+      MACOS_SIGN_APPLE_TEAM_ID: ${{ secrets.MACOS_SIGN_APPLE_TEAM_ID || '' }}
+      MACOS_SIGN_APPLE_DEVELOPER_IDENTITY: ${{ secrets.MACOS_SIGN_APPLE_DEVELOPER_IDENTITY || '' }}
+      MACOS_SIGN_APPLE_APP_PASSWORD: ${{ secrets.MACOS_SIGN_APPLE_APP_PASSWORD || '' }}
+      MACOS_SIGN_APP_CERT: ${{ secrets.MACOS_SIGN_APP_CERT || '' }}
+      MACOS_SIGN_APP_CERT_PASSWORD: ${{ secrets.MACOS_SIGN_APP_CERT_PASSWORD || '' }}
+      MACOS_SIGN_INSTALLER_ID: ${{ secrets.MACOS_SIGN_INSTALLER_ID || '' }}
+      MACOS_SIGN_INSTALLER_CERT: ${{ secrets.MACOS_SIGN_INSTALLER_CERT || '' }}
+      MACOS_SIGN_INSTALLER_CERT_PASSWORD: ${{ secrets.MACOS_SIGN_INSTALLER_CERT_PASSWORD || '' }}
+
+    steps:
+      - name: Check signing and notarization
+        id: check_signing_notarization
+        shell: bash
+        run: |
+          # Compute SIGNING_ENABLED
+          SIGNING_ENABLED=false
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/* ]]; then
+            if [[ -n "${{ secrets.MACOS_SIGN_APPLE_USERNAME }}" && -n "${{ secrets.MACOS_SIGN_APPLE_APP_PASSWORD }}" && -n "${{ secrets.MACOS_SIGN_APP_CERT }}" && -n "${{ secrets.MACOS_SIGN_INSTALLER_ID }}" ]]; then
+              SIGNING_ENABLED=true
+            fi
+          elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && "${{ github.event.inputs.sign }}" == "true" ]]; then
+            if [[ -n "${{ secrets.MACOS_SIGN_APPLE_USERNAME }}" && -n "${{ secrets.MACOS_SIGN_APPLE_APP_PASSWORD }}" && -n "${{ secrets.MACOS_SIGN_APP_CERT }}" && -n "${{ secrets.MACOS_SIGN_INSTALLER_ID }}" ]]; then
+              SIGNING_ENABLED=true
+            fi
+          fi
+
+          # Compute NOTARIZE_ENABLED (only if SIGNING_ENABLED is true)
+          NOTARIZE_ENABLED=false
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && "${{ github.event.inputs.notarize }}" == "true" && "${{ github.event.inputs.sign }}" == "true" ]]; then
+            if [[ -n "${{ secrets.MACOS_SIGN_APPLE_USERNAME }}" && -n "${{ secrets.MACOS_SIGN_APPLE_APP_PASSWORD }}" && -n "${{ secrets.MACOS_SIGN_APP_CERT }}" && -n "${{ secrets.MACOS_SIGN_INSTALLER_ID }}" ]]; then
+              NOTARIZE_ENABLED=true
+            fi
+          fi
+
+          echo "SIGNING_ENABLED=$SIGNING_ENABLED" >> $GITHUB_ENV
+          echo "NOTARIZE_ENABLED=$NOTARIZE_ENABLED" >> $GITHUB_ENV
+
+          echo "SIGNING_ENABLED: $SIGNING_ENABLED"
+          echo "NOTARIZE_ENABLED: $NOTARIZE_ENABLED"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+
+      - name: Setup Environment and Tools
+        uses: ./.github/actions/setup-env
+
+      - name: Set pkg path
+        run: |
+          echo "FINAL_PKG_PATH=build/bin/${COMMON_BUILD_NAME}-macos-universal-${VERSION_TAG}.pkg" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Install macOS Wails deps
+        run: brew install Bearer/tap/gon
+        shell: bash
+
+      # Import certs only if signing is enabled
+      - name: Import Code-Signing Certificates for macOS
+        if: ${{ env.SIGNING_ENABLED }} == true
+        uses: Apple-Actions/import-codesign-certs@v3
+        with:
+          keychain-password: ${{ env.MACOS_SIGN_APPLE_APP_PASSWORD }}
+          p12-file-base64: ${{ env.MACOS_SIGN_APP_CERT }}
+          p12-password: ${{ env.MACOS_SIGN_APP_CERT_PASSWORD }}
+
+      - name: Import Code-Signing Certificates for macOS installer
+        if: ${{ env.SIGNING_ENABLED }} == 'true'
+        uses: Apple-Actions/import-codesign-certs@v3
+        with:
+          keychain-password: ${{ env.MACOS_SIGN_APPLE_APP_PASSWORD }}
+          p12-file-base64: ${{ env.MACOS_SIGN_INSTALLER_CERT }}
+          p12-password: ${{ env.MACOS_SIGN_INSTALLER_CERT_PASSWORD }}
+          create-keychain: false
+
+      - name: Build / Sign / Notarize
+        shell: bash
+        run: |
+          set -e
+          SIGN_FLAGS=""
+          NOTARIZE_FLAGS=""
+          if [[ "$SIGNING_ENABLED" == "true" ]]; then
+            SIGN_FLAGS="--sign"
+          fi
+          if [[ "$NOTARIZE_ENABLED" == "true" ]]; then
+            NOTARIZE_FLAGS="--notarize"
+          fi
+          echo "SIGN_FLAGS: $SIGN_FLAGS"
+          echo "NOTARIZE_FLAGS: $NOTARIZE_FLAGS"
+          ./build/macos/build_sign_notarize.sh --version "${VERSION_TAG}" $SIGN_FLAGS $NOTARIZE_FLAGS
+
+      - name: Copy file
+        run: cp ${{env.MACOS_PKG_BUNDLE_PATH}} ${{env.FINAL_PKG_PATH}}
+        shell: bash
+
+      - name: Add macOS permissions
+        working-directory: ${{ env.COMMON_APP_WORKING_DIRECTORY }}
+        run: chmod +x build/bin/*/Contents/MacOS/*
+        shell: bash
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        if: startsWith(github.ref, 'refs/tags/') != true
+        with:
+          name: ${{ env.COMMON_BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}
+          path: |
+            ${{env.FINAL_PKG_PATH}}
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            ${{env.FINAL_PKG_PATH}}
