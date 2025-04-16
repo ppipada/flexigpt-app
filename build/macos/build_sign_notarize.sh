@@ -144,9 +144,7 @@ if [[ "$NOTARIZE_APP" == true ]]; then
   : "${MACOS_GON_NOTARIZE_JSON_TEMPLATE_PATH:?Must set MACOS_GON_NOTARIZE_JSON_TEMPLATE_PATH if notarizing}"
   : "${MACOS_GON_NOTARIZE_JSON_PATH:?Must set MACOS_GON_NOTARIZE_JSON_PATH if notarizing}"
 
-  # Notarization also needs Apple ID credentials
-  : "${MACOS_SIGN_APPLE_USERNAME:?Must set MACOS_SIGN_APPLE_USERNAME if notarizing}"
-  : "${MACOS_SIGN_APPLE_APP_PASSWORD:?Must set MACOS_SIGN_APPLE_APP_PASSWORD if notarizing}"
+  # Notarization needs signing too
 fi
 
 ################################################################################
@@ -228,7 +226,7 @@ fi
 #         and notarize the pkg.
 ################################################################################
 
-if [[ "$NOTARIZE_APP" == true ]]; then
+if [[ "$SIGN_APP" == true && "$NOTARIZE_APP" == true ]]; then
   echo "Notarization requested. Rendering gon-notarize.json..."
 
   # If your gon-notarize template references MACOS_PKG_BUNDLE_PATH, re-render now
