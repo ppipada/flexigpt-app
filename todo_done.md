@@ -249,3 +249,9 @@
 - [x] deprecate 4.5preview
 - [x] Home page overflows some times
 - [x] Chat input fields scroll height mismatches with textarea
+- [x] move packaging to build dir and add apple plist etc. also use apple developerid
+- [x] Inter font files need to be cached in repo
+  - [x] Did this by using font source npm
+- [x] Signing for Mac pkg and Win
+- [x] Mac pkg install is add the .app in ~/build/bin. It should be in application. Check the settings, conversation and log location
+- [ ] ~~Ideally should detect any code or math blocks even in input, annotate them and then display. i.e format a normal text into proper md.~~

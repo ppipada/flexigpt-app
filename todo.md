@@ -18,7 +18,7 @@
 - [ ] see how to set version increment seamlessly at one place only
 - [ ] Need a settings data version and migration func
 - [ ] API key should never reach frontend after save
-- [ ] move packaging to build dir and add apple plist etc. also use apple developerid
+- [ ] Version string to be passed via ldconfig to code and use from there
 - [ ] There is large cpu consumption sometime, debug
   - [ ] It is mainly seen if both wails dev and current app is open and being used wails://wails consumes 100%
   - [ ] Also check when one request was fired but not allowed to complete for some reason
