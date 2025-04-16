@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 
 export default tseslint.config(
 	{
-		ignores: ['**/build/**', '**/app/apis/wailsjs/**', '**/.react-router/**'],
+		ignores: ['**/dist/**', '**/app/apis/wailsjs/**', '**/.react-router/**'],
 	},
 	js.configs.recommended,
 	configs.strictTypeChecked,

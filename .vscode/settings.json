@@ -11,6 +11,14 @@
 	"editor.quickSuggestions": {
 		"strings": "on"
 	},
+	"search.exclude": {
+		"**/node_modules": true,
+		"**/pnpm-lock.yaml": true,
+		"**/.git": true,
+		"**/tsconfig.tsbuildinfo": true,
+		"**/out": true,
+		"**/dist": true
+	},
 
 	// ============================================
 	// File Associations

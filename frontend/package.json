@@ -9,9 +9,9 @@
 		"lint:fix": "eslint --fix .",
 		"fmt": "prettier -c . --ignore-path ../.prettierignore",
 		"fmt:fix": "prettier -w . --ignore-path ../.prettierignore",
-		"clean": "rimraf ./build",
+		"clean": "rimraf ./dist",
 		"run:wailsdev": "pnpm run build:wails && cp .env.dev .env && cross-env VITE_PLATFORM=wails react-router dev",
-		"build:wails": "rimraf ./build && cp .env.prod .env && cross-env VITE_PLATFORM=wails react-router build",
+		"build:wails": "rimraf ./dist && cp .env.prod .env && cross-env VITE_PLATFORM=wails react-router build",
 		"typecheck": "react-router typegen && tsc",
 		"test": "echo 'No tests'"
 	},

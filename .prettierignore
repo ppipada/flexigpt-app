@@ -1,4 +1,3 @@
-build
 frontend/.next/
 frontend/.react-router/
 /dist/
@@ -9,5 +8,5 @@ frontend/app/apis/wailsjs
 out
 *.yml
 *.yaml
-packaging/flatpak/shared-modules
+build/flatpak/shared-modules
 pkg/mcpsdk/external

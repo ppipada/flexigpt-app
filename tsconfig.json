@@ -13,10 +13,10 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"incremental": true,
-		"outDir": "build"
+		"outDir": "dist"
 	},
 	"tsc-alias": {
 		"resolveFullPaths": true
 	},
-	"exclude": ["node_modules", "dist", "build"]
+	"exclude": ["node_modules", "dist"]
 }

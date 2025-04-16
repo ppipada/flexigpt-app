@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const FrontendPathPrefix = "/frontend/build"
+const FrontendPathPrefix = "/frontend/dist"
 
 var DIRPages = []string{"/agents", "/chats", "/settings", "/404"}
 

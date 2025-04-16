@@ -9,7 +9,7 @@ export default defineConfig(({ command, mode }) => {
 	const isProd = mode === 'production';
 	return {
 		plugins: [tailwindcss(), reactRouter(), tsconfigPaths(), eslintPlugin()],
-		base: isProd ? '/frontend/build/' : '/',
+		base: isProd ? '/frontend/dist/' : '/',
 
 		// Add these configurations for better ESM support
 		optimizeDeps: {
@@ -25,6 +25,7 @@ export default defineConfig(({ command, mode }) => {
 			},
 		},
 		build: {
+			outDir: 'dist',
 			target: 'esnext',
 			rollupOptions: {
 				output: {
