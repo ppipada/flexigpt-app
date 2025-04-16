@@ -31,6 +31,11 @@ jobs:
       SIGN_MACOS_INSTALLER_CERT_PASSWORD: ${{ secrets.MACOS_INSTALLER_CERT_PASSWORD || '' }}
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+
       - name: Setup Environment and Tools
         uses: ./.github/actions/setup-env
 
