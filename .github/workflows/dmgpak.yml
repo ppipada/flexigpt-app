@@ -85,20 +85,20 @@ jobs:
           # Finally call the script, specifying our version from $VERSION_TAG
           ./build/build_sign_notarize.sh --version "${VERSION_TAG}" $SIGN_FLAGS $NOTARIZE_FLAGS
 
-      - name: Add macOS permissions
-        working-directory: ${{ env.APP_WORKING_DIRECTORY }}
-        run: chmod +x build/bin/*/Contents/MacOS/*
-        shell: bash
-
       - name: Copy file
         run: cp ${{env.DARWIN_PKG_BUNDLE_PATH}} ${{env.FINAL_PKG_PATH}}
+        shell: bash
+
+      - name: Add macOS permissions
+        working-directory: ${{ env.COMMON_APP_WORKING_DIRECTORY }}
+        run: chmod +x build/bin/*/Contents/MacOS/*
         shell: bash
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         if: startsWith(github.ref, 'refs/tags/') != true
         with:
-          name: ${{ env.BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}
+          name: ${{ env.COMMON_BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}
           path: |
             ${{env.FINAL_PKG_PATH}}
 
