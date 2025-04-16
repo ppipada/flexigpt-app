@@ -17,7 +17,7 @@ import { HybridReasoningCheckbox, ReasoningTokensDropdown } from '@/chats/chat_i
 import SingleReasoningDropdown from '@/chats/chat_input_field_reasoning_levels';
 import TemperatureDropdown from '@/chats/chat_input_field_temperature';
 
-const MAX_HEIGHT = 360;
+const MAX_HEIGHT = 240;
 
 interface ChatInputFieldProps {
 	onSend: (message: string, options: ChatOptions) => void;
@@ -334,7 +334,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					onChange={handleTextChange}
 					onKeyDown={onKeyDown}
 					placeholder="Type message..."
-					className="flex-1 resize-none overflow-auto bg-transparent border-none outline-hidden placeholder-gray-400 min-h-[24px] max-h-[240px] p-2"
+					className="flex-1 resize-none overflow-auto bg-transparent border-none outline-hidden placeholder-gray-400 min-h-[24px] p-2"
 					rows={1}
 					style={{ fontSize: '14px' }}
 					spellCheck="false"

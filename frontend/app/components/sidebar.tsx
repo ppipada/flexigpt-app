@@ -19,7 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 	// console.log(`${FEATURE_FLAG_AGENTS}`);
 	// const setOpen = () => setDrawerOpen(true);
 	return (
-		<div className="drawer md:drawer-open h-screen overflow-hidden">
+		<div className="drawer md:drawer-open h-screen">
 			<input
 				id="my-drawer"
 				type="checkbox"

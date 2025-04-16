@@ -245,3 +245,7 @@
 
 - [x] Support additional params from UI to backend
 - [x] Represent reasoning process in UI
+- [x] Conversations sometime dont load at init from homepage
+- [x] deprecate 4.5preview
+- [x] Home page overflows some times
+- [x] Chat input fields scroll height mismatches with textarea

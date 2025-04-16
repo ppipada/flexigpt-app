@@ -27,8 +27,8 @@ const (
 var AnthropicModels = map[spec.ModelName]spec.ModelParams{
 	Claude37Sonnet: {
 		Name:            Claude37Sonnet,
-		MaxPromptLength: 16384,
-		MaxOutputLength: 8192,
+		MaxPromptLength: 65536,
+		MaxOutputLength: 16384,
 		Temperature:     spec.Float64Ptr(0.1),
 		Stream:          true,
 		Reasoning: &spec.ReasoningParams{

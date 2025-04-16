@@ -79,7 +79,6 @@ const ChatScreen: FC = () => {
 	const handleNewChat = useCallback(async () => {
 		conversationStoreAPI.saveConversation(chat);
 		setChat(initConversation());
-		conversationListRef.current = [];
 		fetchConversations(); // Fetch conversations again
 		if (chatInputRef.current) {
 			chatInputRef.current.focus(); // Focus on new chat
@@ -87,7 +86,6 @@ const ChatScreen: FC = () => {
 	}, [chat, fetchConversations]);
 
 	useEffect(() => {
-		conversationListRef.current = [];
 		fetchConversations(); // Fetch conversations again
 	}, [chat, fetchConversations]);
 
