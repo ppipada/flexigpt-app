@@ -24,6 +24,7 @@
   - [ ] Also check when one request was fired but not allowed to complete for some reason
   - [ ] Also, if the message thread gets very very big there seems to be a issue.
 - [ ] Conversations still sometime dont load at init
+- [x] deprecate 4.5preview
 
 ## Knowledge base
 

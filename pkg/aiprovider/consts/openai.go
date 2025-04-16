@@ -9,29 +9,27 @@ const (
 )
 
 const (
-	GPTO3Mini    spec.ModelName = "o3-mini"
-	GPTO1        spec.ModelName = "o1"
-	GPTO1Mini    spec.ModelName = "o1-mini"
-	GPT45Preview spec.ModelName = "gpt-4.5-preview"
-	GPT41        spec.ModelName = "gpt-4.1"
-	GPT41Mini    spec.ModelName = "gpt-4.1-mini"
-	GPT4OMini    spec.ModelName = "gpt-4o-mini"
-	GPT4O        spec.ModelName = "gpt-4o"
-	GPT4         spec.ModelName = "gpt-4"
-	GPT35Turbo   spec.ModelName = "gpt-3.5-turbo"
+	GPTO3Mini  spec.ModelName = "o3-mini"
+	GPTO1      spec.ModelName = "o1"
+	GPTO1Mini  spec.ModelName = "o1-mini"
+	GPT41      spec.ModelName = "gpt-4.1"
+	GPT41Mini  spec.ModelName = "gpt-4.1-mini"
+	GPT4OMini  spec.ModelName = "gpt-4o-mini"
+	GPT4O      spec.ModelName = "gpt-4o"
+	GPT4       spec.ModelName = "gpt-4"
+	GPT35Turbo spec.ModelName = "gpt-3.5-turbo"
 )
 
 const (
-	DisplayNameGPTO3Mini    = "OpenAI o3 mini"
-	DisplayNameGPTO1        = "OpenAI o1"
-	DisplayNameGPTO1Mini    = "OpenAI o1 mini"
-	DisplayNameGPT45Preview = "OpenAI GPT 4.5 Preview"
-	DisplayNameGPT41        = "OpenAI GPT 4.1"
-	DisplayNameGPT41Mini    = "OpenAI GPT 4.1 mini"
-	DisplayNameGPT4OMini    = "OpenAI GPT 4o mini"
-	DisplayNameGPT4O        = "OpenAI GPT 4o"
-	DisplayNameGPT4         = "OpenAI GPT 4"
-	DisplayNameGPT35Turbo   = "OpenAI GPT 3.5 turbo"
+	DisplayNameGPTO3Mini  = "OpenAI o3 mini"
+	DisplayNameGPTO1      = "OpenAI o1"
+	DisplayNameGPTO1Mini  = "OpenAI o1 mini"
+	DisplayNameGPT41      = "OpenAI GPT 4.1"
+	DisplayNameGPT41Mini  = "OpenAI GPT 4.1 mini"
+	DisplayNameGPT4OMini  = "OpenAI GPT 4o mini"
+	DisplayNameGPT4O      = "OpenAI GPT 4o"
+	DisplayNameGPT4       = "OpenAI GPT 4"
+	DisplayNameGPT35Turbo = "OpenAI GPT 3.5 turbo"
 )
 
 var OpenAIModels = map[spec.ModelName]spec.ModelParams{
@@ -73,15 +71,6 @@ var OpenAIModels = map[spec.ModelName]spec.ModelParams{
 		},
 		SystemPrompt: "",
 		Timeout:      120,
-	},
-	GPT45Preview: {
-		Name:            GPT45Preview,
-		MaxPromptLength: 16384,
-		MaxOutputLength: 16384,
-		Temperature:     spec.Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
 	},
 	GPT41: {
 		Name:            GPT41,

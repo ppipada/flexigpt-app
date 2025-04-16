@@ -132,10 +132,6 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 				DisplayName: aiproviderConsts.DisplayNameGPTO1Mini,
 				IsEnabled:   false,
 			},
-			aiproviderConsts.GPT45Preview: {
-				DisplayName: aiproviderConsts.DisplayNameGPT45Preview,
-				IsEnabled:   false,
-			},
 			aiproviderConsts.GPT41: {
 				DisplayName: aiproviderConsts.DisplayNameGPT41,
 				IsEnabled:   true,
