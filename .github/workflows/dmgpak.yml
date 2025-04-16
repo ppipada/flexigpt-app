@@ -68,7 +68,7 @@ jobs:
       - name: Build / Sign / Notarize
         shell: bash
         run: |
-          chmod +x build/build_sign_notarize.sh
+          chmod +x build/darwin/build_sign_notarize.sh
 
           # Decide if we should pass --sign
           SIGN_FLAGS=""
@@ -83,7 +83,7 @@ jobs:
           fi
 
           # Finally call the script, specifying our version from $VERSION_TAG
-          ./build/build_sign_notarize.sh --version "${VERSION_TAG}" $SIGN_FLAGS $NOTARIZE_FLAGS
+          ./build/darwin/build_sign_notarize.sh --version "${VERSION_TAG}" $SIGN_FLAGS $NOTARIZE_FLAGS
 
       - name: Copy file
         run: cp ${{env.DARWIN_PKG_BUNDLE_PATH}} ${{env.FINAL_PKG_PATH}}
