@@ -69,19 +69,16 @@ jobs:
         shell: bash
         run: |
           chmod +x build/darwin/build_sign_notarize.sh
-
           # Decide if we should pass --sign
           SIGN_FLAGS=""
           if [[ -n "$SIGN_MACOS_APP_CERT" ]]; then
             SIGN_FLAGS="--sign"
           fi
-
           # Decide if we should pass --notarize
           NOTARIZE_FLAGS=""
-          if [[ -n "$SIGN_MACOS_APP_CERT" && -n "$SIGN_MACOS_APPLE_PASSWORD" && startsWith("${{ github.ref }}","refs/tags/") == "true" ]]; then
+          if [[ -n "$SIGN_MACOS_APP_CERT" && -n "$SIGN_MACOS_APPLE_PASSWORD" && "$GITHUB_REF" == refs/tags/* ]]; then
             NOTARIZE_FLAGS="--notarize"
           fi
-
           # Finally call the script, specifying our version from $VERSION_TAG
           ./build/darwin/build_sign_notarize.sh --version "${VERSION_TAG}" $SIGN_FLAGS $NOTARIZE_FLAGS
 
