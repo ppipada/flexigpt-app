@@ -14,6 +14,8 @@ runs:
         # Export to $GITHUB_ENV for subsequent steps
         while IFS='=' read -r KEY VAL; do
           if [[ -n "$KEY" && -n "$VAL" && "$KEY" != \#* ]]; then
+            # Remove leading and trailing single or double quotes
+            VAL=$(echo "$VAL" | sed -e "s/^['\"]//" -e "s/['\"]$//")
             echo "$KEY=$VAL" >> "$GITHUB_ENV"
           fi
         done < <(grep '=' build/buildvars.env | grep -v '^#')

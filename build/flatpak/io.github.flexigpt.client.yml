@@ -39,7 +39,7 @@ modules:
       - mv $(pwd)/* $GOROOT
     sources:
       - type: archive
-        url: https://go.dev/dl/go1.24.0.linux-amd64.tar.gz
+        url: https://go.dev/dl/go1.24.2.linux-amd64.tar.gz
         sha256: 68097bd680839cbc9d464a0edce4f7c333975e27a90246890e9f1078c7e702ad
 
   - name: nodejs
