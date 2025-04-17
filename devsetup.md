@@ -2,10 +2,10 @@
 
 ## Setup
 
-- Install `go > 1.23`. For Ubuntu you can do:
+- Install `go > 1.24`. For Ubuntu you can do:
   - `sudo add-apt-repository ppa:longsleep/golang-backports`
   - `sudo apt update`
-  - `sudo apt install golang-1.23`
+  - `sudo apt install golang-1.24`
   - You can see that go is installed in `/lib/go-1.23/bin/go`
   - Additional reference can be found at [Go Ubuntu Wiki](https://go.dev/wiki/Ubuntu)
 - Check Go is installed correctly: `go version`
@@ -33,7 +33,7 @@ Note: Similar can apply to other IDEs.
 
 ## Wails commands
 
-- Build wails app and run it: `pnpm run:dev`
+- Build wails app and run it as a dev server: `pnpm run:watch`
 - Debug console in the app is available via `Ctrl + Shift + F12`
 
 ## Build commands
