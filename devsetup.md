@@ -2,12 +2,13 @@
 
 ## Setup
 
-- Install `go > 1.24`. For Ubuntu you can do:
-  - `sudo add-apt-repository ppa:longsleep/golang-backports`
-  - `sudo apt update`
-  - `sudo apt install golang-1.24`
-  - You can see that go is installed in `/lib/go-1.23/bin/go`
-  - Additional reference can be found at [Go Ubuntu Wiki](https://go.dev/wiki/Ubuntu)
+- Install `go > 1.24`.
+  - For Ubuntu you can do install via standard download and install OR via `asdf` or through the backports channel:
+    - `sudo add-apt-repository ppa:longsleep/golang-backports`
+    - `sudo apt update`
+    - `sudo apt install golang-1.24`
+    - You can see that go is installed in `/lib/go-1.23/bin/go`
+    - Additional reference can be found at [Go Ubuntu Wiki](https://go.dev/wiki/Ubuntu)
 - Check Go is installed correctly: `go version`
 - Install `wails v2`. Documentation page is [here](https://wails.io/docs/gettingstarted/installation). Generally you need to do: `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
 - Install [pnpm](https://pnpm.io/installation)
