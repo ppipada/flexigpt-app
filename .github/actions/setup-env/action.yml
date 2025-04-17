@@ -31,6 +31,14 @@ runs:
           echo "RELEASE_MODE=false" >> $GITHUB_ENV
         fi
 
+    - name: Checkout given tag if RELEASE_MODE is true
+      if: env.RELEASE_MODE == 'true'
+      shell: bash
+      run: |
+        TAG="${{ github.event.inputs.tag }}"
+        git fetch --tags
+        git checkout "tags/$TAG"
+
     - name: Load environment from buildvars.env
       shell: bash
       run: |
