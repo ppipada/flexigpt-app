@@ -61,7 +61,7 @@
 - [Go](https://go.dev/) backend.
 - [Wails](https://wails.io/) as a desktop application building platform.
 - [Vite](https://vite.dev/), [React router v7](https://reactrouter.com/) frontend.
-- [DaisyUI](https://daisyui.com/) with TailwindCSS for styling.
+- [DaisyUI](https://daisyui.com/) with [TailwindCSS](https://tailwindcss.com/) for styling.
 - Tooling:
   - [Golangci-lint](https://golangci-lint.run/)
   - [Knip](https://knip.dev/)
