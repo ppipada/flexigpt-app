@@ -35,6 +35,10 @@ Note: Similar can apply to other IDEs.
 ## Wails commands
 
 - Build wails app and run it as a dev server: `pnpm run:watch`
+  - Ideally this is to be used mainly for UI development via the local server running inside the browser.
+  - Wails has some issues reloading both backend and frontend file changes together in some cases.
+- Build wails app in dev mode: `pnpm build:withbindings`
+  - After this you will see the binary path at the end of build. YOu can execute it directly. Dev console is available in this mode.
 - Debug console in the app is available via `Ctrl + Shift + F12`
 
 ## Build commands
