@@ -40,7 +40,7 @@ Key objectives of FlexiGPT
   - `flatpak info io.github.flexigpt.client`
 
 - Your local data (settings, conversations, logs) will be at:
-  - `~/.var/app/io.github.flexigpt.client/config/flexigpt`
+  - `~/.var/app/io.github.flexigpt.client/`
 
 ### Mac
 
