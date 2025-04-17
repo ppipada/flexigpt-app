@@ -54,3 +54,11 @@
 - Download the `.exe` release package.
 - Click to install the `.exe`. It will walk you through the installation process.
 - Note: Windows builds have undergone very limited testing.
+
+### Built With
+
+- Fundamentals:
+  - Go backend
+  - Vite, React router v7 frontend
+- [Wails](https://wails.io/)
+- [DaisyUI](https://daisyui.com/) with TailwindCSS
