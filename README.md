@@ -53,4 +53,4 @@ Key objectives of FlexiGPT
 
 - Download the `.exe` release package.
 - Click to install the `.exe`. It will walk you through the installation process.
-- Note: Windows has very limited testing done.
+- Note: Windows builds have undergone very limited testing.

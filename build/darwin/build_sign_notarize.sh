@@ -225,11 +225,12 @@ if [[ "$SIGN_APP" == true && -n "${MACOS_SIGN_INSTALLER_ID:-}" ]]; then
   echo "Building signed installer pkg at: ${MACOS_PKG_BUNDLE_PATH}"
   productbuild \
     --sign "${MACOS_SIGN_INSTALLER_ID}" \
-    --component "${MACOS_APP_BUNDLE_PATH}" "${MACOS_PKG_BUNDLE_PATH}"
+    --component "${MACOS_APP_BUNDLE_PATH}" /Applications \
+    "${MACOS_PKG_BUNDLE_PATH}"
 else
-  echo "Building unsigned installer pkg at: ${MACOS_PKG_BUNDLE_PATH}"
   productbuild \
-    --component "${MACOS_APP_BUNDLE_PATH}" "${MACOS_PKG_BUNDLE_PATH}"
+    --component "${MACOS_APP_BUNDLE_PATH}" /Applications \
+    "${MACOS_PKG_BUNDLE_PATH}"
 fi
 
 ################################################################################
