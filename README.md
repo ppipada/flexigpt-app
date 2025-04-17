@@ -58,8 +58,13 @@
 
 ### Built With
 
-- Fundamentals:
-  - Go backend
-  - Vite, React router v7 frontend
-- [Wails](https://wails.io/)
-- [DaisyUI](https://daisyui.com/) with TailwindCSS
+- [Go](https://go.dev/) backend.
+- [Wails](https://wails.io/) as a desktop application building platform.
+- [Vite](https://vite.dev/), [React router v7](https://reactrouter.com/) frontend.
+- [DaisyUI](https://daisyui.com/) with TailwindCSS for styling.
+- Tooling:
+  - [Golangci-lint](https://golangci-lint.run/)
+  - [Knip](https://knip.dev/)
+  - [ESLint](https://eslint.org/)
+  - [Prettier](https://prettier.io/)
+  - [Github actions](https://github.com/features/actions)
