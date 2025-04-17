@@ -100,7 +100,7 @@ jobs:
 
       # Import certs only if signing is enabled
       - name: Import Code-Signing Certificates for macOS
-        if: ${{ env.SIGNING_ENABLED }} == true
+        if: ${{ env.SIGNING_ENABLED  == true }}
         uses: Apple-Actions/import-codesign-certs@v3
         with:
           keychain-password: ${{ env.MACOS_SIGN_APPLE_APP_PASSWORD }}
@@ -108,7 +108,7 @@ jobs:
           p12-password: ${{ env.MACOS_SIGN_APP_CERT_PASSWORD }}
 
       - name: Import Code-Signing Certificates for macOS installer
-        if: ${{ env.SIGNING_ENABLED }} == 'true'
+        if: ${{ env.SIGNING_ENABLED  == 'true' }}
         uses: Apple-Actions/import-codesign-certs@v3
         with:
           keychain-password: ${{ env.MACOS_SIGN_APPLE_APP_PASSWORD }}
@@ -143,7 +143,7 @@ jobs:
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
-        if: ${{ env.RELEASE_MODE }} != 'true'
+        if: ${{ env.RELEASE_MODE  != 'true' }}
         with:
           name: ${{ env.COMMON_BUILD_NAME }}-macos-universal-${{env.VERSION_TAG}}
           path: |
@@ -151,7 +151,7 @@ jobs:
 
       - name: Release
         uses: softprops/action-gh-release@v2
-        if: ${{ env.RELEASE_MODE }} == 'true'
+        if: ${{ env.RELEASE_MODE  == 'true' }}
         with:
           tag_name: ${{ env.VERSION_TAG }}
           files: |

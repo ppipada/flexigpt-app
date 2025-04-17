@@ -18,6 +18,7 @@ runs:
     - name: Check tag exists and set RELEASE_MODE
       shell: bash
       run: |
+        # Set RELEASE_MODE based on event type
         if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && "${{ github.event.inputs.release }}" == "true" ]]; then
           TAG="${{ github.event.inputs.tag }}"
           git fetch --tags
