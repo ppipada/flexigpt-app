@@ -18,7 +18,7 @@ set -euo pipefail
 #       - notarizes using gon
 #
 # Core environment variables always required:
-#   COMMON_PRODUCT_VERSION, COMMON_PRODUCT_NAME, COMMON_BUILD_NAME, COMMON_PRODUCT_DESCRIPTION
+#   COMMON_PRODUCT_NAME, COMMON_BUILD_NAME, COMMON_PRODUCT_DESCRIPTION
 #   MACOS_BUNDLE_ID, MACOS_BUILD_COMMAND, MACOS_APP_BUNDLE_PATH
 #   MACOS_PKG_BUNDLE_PATH, MACOS_INFO_PLIST_PATH, MACOS_INFO_PLIST_TEMPLATE_PATH
 #
@@ -46,15 +46,15 @@ function usage() {
   cat <<EOF
 Usage: $(basename "$0") [--version <version>] [--sign] [--notarize]
 
-  --version <version>   Specify the app version (required).
+  --version <version>   Specify the app version (required, must be vX.Y.Z).
   --sign                Sign the .app (and sign the .pkg if MACOS_SIGN_INSTALLER_ID is set).
-  --notarize            Notarize the resulting .pkg.
+  --notarize            Notarize the resulting .pkg (requires --sign).
   -h, --help            Show this help.
 
 Steps:
   1) Build the .app (always).
   2) If --sign, sign the .app and produce either a signed or unsigned .pkg.
-  3) If --notarize, notarize that .pkg.
+  3) If --notarize, notarize that .pkg (requires --sign).
 
 Ensure you have all required environment variables set for each requested step.
 EOF
@@ -62,7 +62,7 @@ EOF
 
 SIGN_APP=false
 NOTARIZE_APP=false
-VERSION_ARG=""
+VERSION_TAG=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -71,7 +71,7 @@ while [[ $# -gt 0 ]]; do
       echo "Error: --version requires a value."
       exit 1
     fi
-    VERSION_ARG="$2"
+    VERSION_TAG="$2"
     shift 2
     ;;
   --sign)
@@ -94,8 +94,21 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$VERSION_ARG" ]]; then
+if [[ -z "$VERSION_TAG" ]]; then
   echo "Error: --version is required."
+  usage
+  exit 1
+fi
+
+# Enforce version tag format: must start with v and be semantic version vX.Y.Z
+if ! [[ "$VERSION_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "Error: --version must be in format vX.Y.Z (e.g., v1.2.3)"
+  exit 1
+fi
+
+# If --notarize is requested, --sign must also be requested
+if [[ "$NOTARIZE_APP" == true && "$SIGN_APP" != true ]]; then
+  echo "Error: --notarize requires --sign. Please specify both."
   usage
   exit 1
 fi
@@ -104,7 +117,6 @@ fi
 # Check environment variables needed for ALWAYS-needed steps (building .app)
 ################################################################################
 
-: "${COMMON_PRODUCT_VERSION:?Must set COMMON_PRODUCT_VERSION}"
 : "${COMMON_PRODUCT_NAME:?Must set COMMON_PRODUCT_NAME}"
 : "${COMMON_BUILD_NAME:?Must set COMMON_BUILD_NAME}"
 : "${COMMON_PRODUCT_DESCRIPTION:?Must set COMMON_PRODUCT_DESCRIPTION}"
@@ -156,13 +168,12 @@ render_template() {
   local dest_file="$2"
 
   sed -e "s|{{COMMON_PRODUCT_NAME}}|${COMMON_PRODUCT_NAME}|g" \
-    -e "s|{{COMMON_PRODUCT_VERSION}}|${COMMON_PRODUCT_VERSION}|g" \
     -e "s|{{COMMON_BUILD_NAME}}|${COMMON_BUILD_NAME}|g" \
     -e "s|{{COMMON_PRODUCT_DESCRIPTION}}|${COMMON_PRODUCT_DESCRIPTION}|g" \
     -e "s|{{MACOS_BUNDLE_ID}}|${MACOS_BUNDLE_ID}|g" \
     -e "s|{{MACOS_APP_BUNDLE_PATH}}|${MACOS_APP_BUNDLE_PATH}|g" \
     -e "s|{{MACOS_PKG_BUNDLE_PATH}}|${MACOS_PKG_BUNDLE_PATH}|g" \
-    -e "s|{{VERSION_ARG}}|${VERSION_ARG}|g" \
+    -e "s|{{VERSION_TAG}}|${VERSION_TAG}|g" \
     -e "s|{{MACOS_SIGN_APPLE_USERNAME}}|${MACOS_SIGN_APPLE_USERNAME:-}|g" \
     -e "s|{{MACOS_SIGN_APPLE_APP_PASSWORD}}|${MACOS_SIGN_APPLE_APP_PASSWORD:-}|g" \
     -e "s|{{MACOS_SIGN_APPLE_TEAM_ID}}|${MACOS_SIGN_APPLE_TEAM_ID:-}|g" \

@@ -9,6 +9,8 @@ const (
 )
 
 const (
+	GPTO4Mini  spec.ModelName = "o4-mini"
+	GPTO3      spec.ModelName = "o3"
 	GPTO3Mini  spec.ModelName = "o3-mini"
 	GPTO1      spec.ModelName = "o1"
 	GPTO1Mini  spec.ModelName = "o1-mini"
@@ -21,6 +23,8 @@ const (
 )
 
 const (
+	DisplayNameGPTO4Mini  = "OpenAI o4 mini"
+	DisplayNameGPTO3      = "OpenAI o3"
 	DisplayNameGPTO3Mini  = "OpenAI o3 mini"
 	DisplayNameGPTO1      = "OpenAI o1"
 	DisplayNameGPTO1Mini  = "OpenAI o1 mini"
@@ -33,6 +37,32 @@ const (
 )
 
 var OpenAIModels = map[spec.ModelName]spec.ModelParams{
+	GPTO4Mini: {
+		Name:            GPTO4Mini,
+		Stream:          true,
+		MaxPromptLength: 32768,
+		MaxOutputLength: 32768,
+		Temperature:     spec.Float64Ptr(1.0),
+		Reasoning: &spec.ReasoningParams{
+			Type:  spec.ReasoningTypeSingleWithLevels,
+			Level: spec.ReasoningLevelMedium,
+		},
+		SystemPrompt: "Formatting re-enabled",
+		Timeout:      120,
+	},
+	GPTO3: {
+		Name:            GPTO3,
+		MaxPromptLength: 32768,
+		MaxOutputLength: 32768,
+		Temperature:     spec.Float64Ptr(1.0),
+		Stream:          true,
+		Reasoning: &spec.ReasoningParams{
+			Type:  spec.ReasoningTypeSingleWithLevels,
+			Level: spec.ReasoningLevelMedium,
+		},
+		SystemPrompt: "Formatting re-enabled",
+		Timeout:      120,
+	},
 	GPTO3Mini: {
 		Name:            GPTO3Mini,
 		Stream:          true,

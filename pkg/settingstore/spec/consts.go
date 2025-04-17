@@ -116,17 +116,25 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 	aiproviderConsts.ProviderNameOpenAI: {
 		IsEnabled:                true,
 		APIKey:                   aiproviderConsts.OpenAIProviderInfo.APIKey,
-		DefaultModel:             aiproviderConsts.GPTO3Mini,
+		DefaultModel:             aiproviderConsts.GPTO4Mini,
 		Origin:                   aiproviderConsts.OpenAIProviderInfo.Origin,
 		ChatCompletionPathPrefix: aiproviderConsts.LlamacppProviderInfo.ChatCompletionPathPrefix,
 		ModelSettings: map[aiproviderSpec.ModelName]ModelSetting{
+			aiproviderConsts.GPTO4Mini: {
+				DisplayName: aiproviderConsts.DisplayNameGPTO4Mini,
+				IsEnabled:   true,
+			},
+			aiproviderConsts.GPTO3: {
+				DisplayName: aiproviderConsts.DisplayNameGPTO3,
+				IsEnabled:   true,
+			},
 			aiproviderConsts.GPTO3Mini: {
 				DisplayName: aiproviderConsts.DisplayNameGPTO3Mini,
-				IsEnabled:   true,
+				IsEnabled:   false,
 			},
 			aiproviderConsts.GPTO1: {
 				DisplayName: aiproviderConsts.DisplayNameGPTO1,
-				IsEnabled:   true,
+				IsEnabled:   false,
 			},
 			aiproviderConsts.GPTO1Mini: {
 				DisplayName: aiproviderConsts.DisplayNameGPTO1Mini,
