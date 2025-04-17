@@ -130,7 +130,7 @@ jobs:
           fi
           echo "SIGN_FLAGS: $SIGN_FLAGS"
           echo "NOTARIZE_FLAGS: $NOTARIZE_FLAGS"
-          ./build/macos/build_sign_notarize.sh --version "${VERSION_TAG}" $SIGN_FLAGS $NOTARIZE_FLAGS
+          ./build/darwin/build_sign_notarize.sh --version "${VERSION_TAG}" $SIGN_FLAGS $NOTARIZE_FLAGS
 
       - name: Copy file
         run: cp ${{env.MACOS_PKG_BUNDLE_PATH}} ${{env.FINAL_PKG_PATH}}

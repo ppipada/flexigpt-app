@@ -35,16 +35,22 @@ Key objectives of FlexiGPT
     ```
 
 - Install the package
+
   - `flatpak install --user FlexiGPT-xyz.flatpak`
   - `flatpak info io.github.flexigpt.client`
+
+- Your local data (settings, conversations, logs) will be at:
+  - `~/.var/app/io.github.flexigpt.client/config/flexigpt`
 
 ### Mac
 
 - Download the `.pkg` release package.
-- The current package is not signed using an Apple developer ID based process. Mac would give a security warning for this.
-- To install the `.pkg`
-  - Click on pkg. It should prompt you to `Move to bin` or `Done`. Choose `Done`.
-  - Now Navigate to `Settings` > `Privacy & Security`.
-  - Scroll to near bottom of the settings and find the `Security` section.
-  - It should list FlexiGPT there. Click `Open Anyway`.
-  - It will now walk you through the installation process.
+- Click to install the `.pkg`. It will walk you through the installation process.
+- Your local data (settings, conversations, logs) will be at:
+  - `~/Library/Containers/io.github.flexigpt.client/Data/Library/Application\ Support/flexigpt/`
+
+### Windows
+
+- Download the `.exe` release package.
+- Click to install the `.exe`. It will walk you through the installation process.
+- Note: Windows has very limited testing done.

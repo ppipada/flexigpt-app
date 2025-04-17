@@ -17,7 +17,8 @@
 		"**/.git": true,
 		"**/tsconfig.tsbuildinfo": true,
 		"**/out": true,
-		"**/dist": true
+		"**/dist": true,
+		"**/flatpak": true
 	},
 
 	// ============================================
