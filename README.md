@@ -56,7 +56,7 @@
 - Click to install the `.exe`. It will walk you through the installation process.
 - Note: Windows builds have undergone very limited testing.
 
-### Built With
+## Built With
 
 - [Go](https://go.dev/) backend.
 - [Wails](https://wails.io/) as a desktop application building platform.
