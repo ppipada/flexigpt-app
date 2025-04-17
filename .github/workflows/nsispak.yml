@@ -1,15 +1,20 @@
-name: 'Windows Build and Package'
+name: "Windows Build and Package"
 
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Version tag'
+        description: "Version tag"
         required: true
-        default: 'v0.0.1'
+        default: "v0.0.1"
+      release:
+        description: "Do a release?"
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build-nsis:
@@ -22,83 +27,61 @@ jobs:
     permissions:
       contents: write
     env:
-      BUILD_NAME: 'FlexiGPT'
-      BUILD_PLATFORM: 'windows/amd64'
-      VERSION_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
-      WAILS_VERSION: 'v2.10.1'
-      WAILS_BUILD_WEBVIEW2: 'download'
-      GO_VERSION: '1.24.2'
-      NODE_VERSION: '20.x'
-      APP_WORKING_DIRECTORY: '.'
       SIGN_WINDOWS_CERT: "${{ secrets.SIGN_WINDOWS_CERT || ''}}"
       SIGN_WINDOWS_CERT_PASSWORD: ${{ secrets.SIGN_WINDOWS_CERT_PASSWORD || ''}}
-      BUILD_COMMAND: 'pnpm run build:win'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
 
-      - name: Setup GoLang
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
+      - name: Setup Environment Variables
+        uses: ./.github/actions/setup-env
+      
+      - name: Setup Tools
+        uses: ./.github/actions/setup-tools
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          run_install: false
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install pnpm dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Wails
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
+      - name: Set pkg path
+        run: |
+          echo "FINAL_PKG_PATH=build/bin/${COMMON_BUILD_NAME}-win-amd64-${VERSION_TAG}-installer.exe" >> $GITHUB_ENV
         shell: bash
 
       - name: Build Windows App
-        working-directory: ${{ env.APP_WORKING_DIRECTORY }}
-        run: ${{ env.BUILD_COMMAND }}
+        working-directory: ${{ env.COMMON_APP_WORKING_DIRECTORY }}
+        run: ${{ env.WIN_BUILD_COMMAND }}
         shell: bash
 
       - name: Sign Windows binaries
         shell: powershell
         if: env.SIGN_WINDOWS_CERT != ''
-        working-directory: ${{ env.APP_WORKING_DIRECTORY }}
+        working-directory: ${{ env.COMMON_APP_WORKING_DIRECTORY }}
         run: |
           echo "Creating certificate file"
           New-Item -ItemType directory -Path certificate
           Set-Content -Path certificate\certificate.txt -Value '${{ env.SIGN_WINDOWS_CERT }}'
           certutil -decode certificate\certificate.txt certificate\certificate.pfx
           echo "Signing our binaries"
-          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ env.SIGN_WINDOWS_CERT_PASSWORD }}' .\build\bin\${{ env.BUILD_NAME }}.exe
+          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ env.SIGN_WINDOWS_CERT_PASSWORD }}' .\build\bin\${{ env.COMMON_BUILD_NAME }}.exe
           echo "Signing Installer"
-          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ env.SIGN_WINDOWS_CERT_PASSWORD }}' .\build\bin\${{ env.BUILD_NAME }}-amd64-installer.exe
+          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ env.SIGN_WINDOWS_CERT_PASSWORD }}' .\build\bin\${{ env.COMMON_BUILD_NAME }}-amd64-installer.exe
+
+      - name: Copy file
+        run: cp ${{ env.WIN_INSTALLER_PATH }} ${{ env.FINAL_PKG_PATH }}
+        shell: bash
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
-        if: startsWith(github.ref, 'refs/tags/') != true
+        if: ${{ env.RELEASE_MODE }} != 'true'
         with:
-          name: ${{ env.BUILD_NAME }}-win-amd64-${{env.VERSION_TAG}}
+          name: ${{ env.COMMON_BUILD_NAME }}-win-amd64-${{env.VERSION_TAG}}
           path: |
-            */bin/
-            *\bin\*
+            ${{ env.FINAL_PKG_PATH }}
 
-      - name: Rename Installer File
-        shell: bash
-        run: |
-          mv ./build/bin/${{ env.BUILD_NAME }}-amd64-installer.exe ./build/bin/${{ env.BUILD_NAME }}-win-amd64-${{ env.VERSION_TAG }}-installer.exe
-    
       - name: Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+        if: ${{ env.RELEASE_MODE }} == 'true'
         with:
+          tag_name: ${{ env.VERSION_TAG }}
           files: |
-            */bin/*${{ env.BUILD_NAME }}-win-amd64-${{ env.VERSION_TAG }}-installer.exe
+            ${{ env.FINAL_PKG_PATH }}

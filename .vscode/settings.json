@@ -46,6 +46,11 @@
 		"editor.insertSpaces": true,
 		"editor.tabSize": 2
 	},
+	"[yml]": {
+		"editor.defaultFormatter": "redhat.vscode-yaml",
+		"editor.insertSpaces": true,
+		"editor.tabSize": 2
+	},
 	"[go]": {
 		"editor.defaultFormatter": "golang.go",
 		"editor.codeActionsOnSave": {

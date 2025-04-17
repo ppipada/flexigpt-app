@@ -1,9 +1,36 @@
-name: Setup Environment and Tools
-description: Loads env vars and sets up Go, Node, pnpm, Wails
+name: Setup Environment Variables
+description: Loads env vars
 inputs: {}
 runs:
   using: "composite"
   steps:
+    - name: Set Version Tag
+      shell: bash
+      run: |
+        # Set VERSION_TAG based on event type
+        if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+          VERSION_TAG="${{ github.event.inputs.tag }}"
+        else
+          VERSION_TAG="${{ github.ref_name }}"
+        fi
+        echo "VERSION_TAG=$VERSION_TAG" >> $GITHUB_ENV
+
+    - name: Check tag exists and set RELEASE_MODE
+      shell: bash
+      run: |
+        if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && "${{ github.event.inputs.release }}" == "true" ]]; then
+          TAG="${{ github.event.inputs.tag }}"
+          git fetch --tags
+          if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "RELEASE_MODE=true" >> $GITHUB_ENV
+          else
+            echo "Tag $TAG does not exist. Not releasing."
+            echo "RELEASE_MODE=false" >> $GITHUB_ENV
+          fi
+        else
+          echo "RELEASE_MODE=false" >> $GITHUB_ENV
+        fi
+
     - name: Load environment from buildvars.env
       shell: bash
       run: |
@@ -21,27 +48,3 @@ runs:
         done < <(grep '=' build/buildvars.env | grep -v '^#')
 
         echo "Environment variables loaded for subsequent steps."
-
-    - name: Setup GoLang
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ env.COMMON_GO_VERSION }}
-
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        run_install: false
-
-    - name: Install Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.COMMON_NODE_VERSION }}
-        cache: "pnpm"
-
-    - name: Install pnpm dependencies
-      run: pnpm install --frozen-lockfile
-      shell: bash
-
-    - name: Install Wails
-      run: ${{ env.COMMON_WAILS_INSTALL }}
-      shell: bash

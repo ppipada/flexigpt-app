@@ -1,0 +1,29 @@
+name: Setup Tools
+description: Sets up Go, Node, pnpm, Wails
+inputs: {}
+runs:
+  using: "composite"
+  steps:
+    - name: Setup GoLang
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.COMMON_GO_VERSION }}
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.COMMON_NODE_VERSION }}
+        cache: "pnpm"
+
+    - name: Install pnpm dependencies
+      run: pnpm install --frozen-lockfile
+      shell: bash
+
+    - name: Install Wails
+      run: ${{ env.COMMON_WAILS_INSTALL }}
+      shell: bash

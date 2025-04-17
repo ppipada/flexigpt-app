@@ -1,34 +1,41 @@
-name: 'Linux Build and Package'
+name: "Linux Build and Package"
 
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Version tag'
+        description: "Version tag"
         required: true
-        default: 'v0.0.1'
+        default: "v0.0.1"
+      release:
+        description: "Do a release?"
+        required: false
+        default: false
+        type: boolean
 jobs:
   build-flatpak:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      BUILD_NAME: 'FlexiGPT'
-      NODE_VERSION: '20.18.0'
-      FLATPAK_ID: 'io.github.flexigpt.client'
-      VERSION_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
+      NODE_VERSION: "20.18.0"
     permissions:
       contents: write
     container:
       image: bilelmoussaoui/flatpak-github-actions:gnome-46@sha256:25e022f62120218e83f97adc0f71c3925f0b74f33c6ba94f5cb2b5cf7e975fd7
       options: --privileged
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
-      - name: 'Determine prerequisites'
+          submodules: "recursive"
+
+      - name: Setup Environment Variables
+        uses: ./.github/actions/setup-env
+  
+      - name: "Determine prerequisites"
         id: prereq
         run: |
           echo "need_node=$(command -v node >/dev/null 2>&1 && echo 0 || echo 1)" >> $GITHUB_OUTPUT
@@ -48,27 +55,28 @@ jobs:
           fi
 
       - name: Build flatpak
-        # uses: flatpak/flatpak-github-actions/flatpak-builder@v6
-        uses: ppipada/flatpak-github-actions/flatpak-builder@master
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        # uses: ppipada/flatpak-github-actions/flatpak-builder@master
         with:
           manifest-path: build/flatpak/${{env.FLATPAK_ID}}.yml
           cache-key: flatpak-builder-${{ github.sha }}
-          bundle: ${{ env.BUILD_NAME }}-linux-amd64-${{env.VERSION_TAG}}.flatpak
-          upload-artifact: 'false'
-          verbose: 'true'
-          disable-rofiles-fuse: 'true'
+          bundle: ${{ env.COMMON_BUILD_NAME }}-linux-amd64-${{env.VERSION_TAG}}.flatpak
+          upload-artifact: "false"
+          verbose: "true"
+          # disable-rofiles-fuse: "true"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
-        if: startsWith(github.ref, 'refs/tags/') != true
+        if: ${{ env.RELEASE_MODE }} != 'true'
         with:
-          name: ${{ env.BUILD_NAME }}-linux-amd64-${{env.VERSION_TAG}}
+          name: ${{ env.COMMON_BUILD_NAME }}-linux-amd64-${{env.VERSION_TAG}}
           path: |
-            ${{ env.BUILD_NAME }}-linux-amd64-${{env.VERSION_TAG}}.flatpak
+            ${{ env.COMMON_BUILD_NAME }}-linux-amd64-${{env.VERSION_TAG}}.flatpak
 
-      - name: 'Add to release'
+      - name: Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+        if: ${{ env.RELEASE_MODE }} == 'true'
         with:
+          tag_name: ${{ env.VERSION_TAG }}
           files: |
-            ${{ env.BUILD_NAME }}-linux-amd64-${{env.VERSION_TAG}}.flatpak
+            ${{ env.COMMON_BUILD_NAME }}-linux-amd64-${{env.VERSION_TAG}}.flatpak
