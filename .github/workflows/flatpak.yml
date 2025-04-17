@@ -15,6 +15,7 @@ on:
         required: false
         default: false
         type: boolean
+
 jobs:
   build-flatpak:
     runs-on: ubuntu-latest
@@ -37,30 +38,34 @@ jobs:
 
       - name: "Determine prerequisites"
         id: prereq
+        shell: bash
         run: |
-          echo "need_node=$(command -v node >/dev/null 2>&1 && echo 0 || echo 1)" >> $GITHUB_OUTPUT
+          if command -v node >/dev/null 2>&1; then
+            echo "need_node=0" >> $GITHUB_OUTPUT
+          else
+            echo "need_node=1" >> $GITHUB_OUTPUT
+          fi
 
       # Consider switching to https://github.com/actions/setup-node when it works
       # https://github.com/nektos/act/issues/973
       - name: Install node
         if: ${{ steps.prereq.outputs.need_node == '1' }}
+        shell: bash
         run: |
-          if [ "${RUNNER_OS,,}" = "windows" ]
-          then
-            choco install nodejs -y --version=${{ env.NODE_VERSION }}
+          if [[ "${RUNNER_OS,,}" == "windows" ]]; then
+            choco install nodejs -y --version="${NODE_VERSION}"
             echo "C:\Program Files\nodejs" >> $GITHUB_PATH
           else
-            curl -sS https://webi.sh/node@${{ env.NODE_VERSION }} | sh
-            echo ~/.local/opt/node/bin >> $GITHUB_PATH
+            curl -sS https://webi.sh/node@${NODE_VERSION} | sh
+            echo "${HOME}/.local/opt/node/bin" >> $GITHUB_PATH
           fi
 
       - name: Build flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
-        # uses: ppipada/flatpak-github-actions/flatpak-builder@master
         with:
-          manifest-path: build/flatpak/${{env.FLATPAK_ID}}.yml
+          manifest-path: build/flatpak/${{ env.FLATPAK_ID }}.yml
           cache-key: flatpak-builder-${{ github.sha }}
-          bundle: ${{ env.COMMON_BUILD_NAME }}-linux-amd64-${{env.VERSION_TAG}}.flatpak
+          bundle: ${{ env.COMMON_BUILD_NAME }}-linux-amd64-${{ env.VERSION_TAG }}.flatpak
           upload-artifact: "false"
           verbose: "true"
           # disable-rofiles-fuse: "true"
@@ -69,9 +74,9 @@ jobs:
         uses: actions/upload-artifact@v4
         if: ${{ env.RELEASE_MODE != 'true' }}
         with:
-          name: ${{ env.COMMON_BUILD_NAME }}-linux-amd64-${{env.VERSION_TAG}}
+          name: ${{ env.COMMON_BUILD_NAME }}-linux-amd64-${{ env.VERSION_TAG }}
           path: |
-            ${{ env.COMMON_BUILD_NAME }}-linux-amd64-${{env.VERSION_TAG}}.flatpak
+            ${{ env.COMMON_BUILD_NAME }}-linux-amd64-${{ env.VERSION_TAG }}.flatpak
 
       - name: Release
         uses: softprops/action-gh-release@v2
@@ -79,4 +84,4 @@ jobs:
         with:
           tag_name: ${{ env.VERSION_TAG }}
           files: |
-            ${{ env.COMMON_BUILD_NAME }}-linux-amd64-${{env.VERSION_TAG}}.flatpak
+            ${{ env.COMMON_BUILD_NAME }}-linux-amd64-${{ env.VERSION_TAG }}.flatpak

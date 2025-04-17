@@ -27,8 +27,8 @@ jobs:
     permissions:
       contents: write
     env:
-      SIGN_WINDOWS_CERT: "${{ secrets.SIGN_WINDOWS_CERT || ''}}"
-      SIGN_WINDOWS_CERT_PASSWORD: ${{ secrets.SIGN_WINDOWS_CERT_PASSWORD || ''}}
+      SIGN_WINDOWS_CERT: ${{ secrets.SIGN_WINDOWS_CERT || '' }}
+      SIGN_WINDOWS_CERT_PASSWORD: ${{ secrets.SIGN_WINDOWS_CERT_PASSWORD || '' }}
 
     steps:
       - name: Checkout code
@@ -38,49 +38,49 @@ jobs:
 
       - name: Setup Environment Variables
         uses: ./.github/actions/setup-env
-      
+
       - name: Setup Tools
         uses: ./.github/actions/setup-tools
 
       - name: Set pkg path
+        shell: bash
         run: |
           echo "FINAL_PKG_PATH=build/bin/${COMMON_BUILD_NAME}-win-amd64-${VERSION_TAG}-installer.exe" >> $GITHUB_ENV
-        shell: bash
 
       - name: Build Windows App
         working-directory: ${{ env.COMMON_APP_WORKING_DIRECTORY }}
-        run: ${{ env.WIN_BUILD_COMMAND }}
         shell: bash
+        run: ${{ env.WIN_BUILD_COMMAND }}
 
       - name: Sign Windows binaries
+        if: ${{ env.SIGN_WINDOWS_CERT != '' }}
         shell: powershell
-        if: env.SIGN_WINDOWS_CERT != ''
         working-directory: ${{ env.COMMON_APP_WORKING_DIRECTORY }}
         run: |
-          echo "Creating certificate file"
-          New-Item -ItemType directory -Path certificate
+          Write-Host "Creating certificate file"
+          New-Item -ItemType directory -Path certificate -Force
           Set-Content -Path certificate\certificate.txt -Value '${{ env.SIGN_WINDOWS_CERT }}'
           certutil -decode certificate\certificate.txt certificate\certificate.pfx
-          echo "Signing our binaries"
+          Write-Host "Signing our binaries"
           & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ env.SIGN_WINDOWS_CERT_PASSWORD }}' .\build\bin\${{ env.COMMON_BUILD_NAME }}.exe
-          echo "Signing Installer"
+          Write-Host "Signing Installer"
           & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /fd sha256 /tr http://ts.ssl.com /f certificate\certificate.pfx /p '${{ env.SIGN_WINDOWS_CERT_PASSWORD }}' .\build\bin\${{ env.COMMON_BUILD_NAME }}-amd64-installer.exe
 
       - name: Copy file
-        run: cp ${{ env.WIN_INSTALLER_PATH }} ${{ env.FINAL_PKG_PATH }}
         shell: bash
+        run: cp "${WIN_INSTALLER_PATH}" "${FINAL_PKG_PATH}"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
-        if: ${{ env.RELEASE_MODE  != 'true' }}
+        if: ${{ env.RELEASE_MODE != 'true' }}
         with:
-          name: ${{ env.COMMON_BUILD_NAME }}-win-amd64-${{env.VERSION_TAG}}
+          name: ${{ env.COMMON_BUILD_NAME }}-win-amd64-${{ env.VERSION_TAG }}
           path: |
             ${{ env.FINAL_PKG_PATH }}
 
       - name: Release
         uses: softprops/action-gh-release@v2
-        if: ${{ env.RELEASE_MODE  == 'true' }}
+        if: ${{ env.RELEASE_MODE == 'true' }}
         with:
           tag_name: ${{ env.VERSION_TAG }}
           files: |
