@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/flexigpt/flexiui/pkg/aiprovider/consts"
 	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
 	"github.com/tmc/langchaingo/llms"
 )
@@ -208,9 +209,13 @@ func (api *BaseAIAPI) FetchCompletion(
 
 	content := []llms.MessageContent{}
 	if input.ModelParams.SystemPrompt != "" {
+		sysmsg := llms.TextParts(llms.ChatMessageTypeSystem, input.ModelParams.SystemPrompt)
+		if api.ProviderInfo.Name == consts.ProviderNameOpenAI &&
+			strings.HasPrefix(string(input.ModelParams.Name), "o") {
+			sysmsg = llms.TextParts(llms.ChatMessageTypeDeveloper, input.ModelParams.SystemPrompt)
+		}
 		content = append(
-			content,
-			llms.TextParts(llms.ChatMessageTypeSystem, input.ModelParams.SystemPrompt),
+			content, sysmsg,
 		)
 	}
 	for _, msg := range input.Messages {

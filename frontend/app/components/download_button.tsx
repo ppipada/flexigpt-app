@@ -1,5 +1,5 @@
 // DownloadButton.tsx
-import type { ButtonHTMLAttributes, FC } from 'react';
+import { type ButtonHTMLAttributes, type FC, useState } from 'react';
 
 import { FiDownload } from 'react-icons/fi';
 
@@ -79,68 +79,67 @@ const DownloadButton: FC<DownloadButtonProps> = ({
 	isBinary = false,
 	...buttonProps
 }) => {
+	const [downloading, setDownloading] = useState(false);
+
 	const downloadAsFile = async () => {
-		const value = await valueFetcher(); // Can be string or Blob
-		let contentBase64: string;
-		let fileExtension: string;
-		let mimeType: string;
+		setDownloading(true);
+		try {
+			const value = await valueFetcher();
+			let contentBase64: string;
+			let fileExtension: string;
+			let mimeType: string;
 
-		if (isBinary && value instanceof Blob) {
-			// Handle binary content
-			mimeType = value.type || 'application/octet-stream';
+			if (isBinary && value instanceof Blob) {
+				mimeType = value.type || 'application/octet-stream';
+				contentBase64 = await new Promise<string>((resolve, reject) => {
+					const reader = new FileReader();
+					reader.onloadend = () => {
+						const dataUrl = reader.result as string;
+						const base64Data = dataUrl.split(',')[1];
+						resolve(base64Data);
+					};
+					reader.onerror = reject;
+					reader.readAsDataURL(value);
+				});
+				fileExtension = mimeTypeMap[mimeType] || '';
+			} else if (typeof value === 'string') {
+				const languageKey = language.toLowerCase();
+				const langInfo =
+					languageKey in ProgrammingLanguages
+						? ProgrammingLanguages[languageKey]
+						: {
+								extension: '.txt',
+								mimeType: 'text/plain',
+							};
+				fileExtension = langInfo.extension;
+				mimeType = langInfo.mimeType;
+				contentBase64 = btoa(encodeURIComponent(value));
+			} else {
+				throw new Error('Unsupported content type for download');
+			}
 
-			// Read the Blob as base64
-			contentBase64 = await new Promise<string>((resolve, reject) => {
-				const reader = new FileReader();
-				reader.onloadend = () => {
-					const dataUrl = reader.result as string;
-					const base64Data = dataUrl.split(',')[1]; // Extract base64 data
-					resolve(base64Data);
-				};
-				reader.onerror = reject;
-				reader.readAsDataURL(value);
-			});
+			const suggestedFileName = `${fileprefix}-${generateRandomString(3, true)}${fileExtension}`;
+			const filters = [
+				{
+					DisplayName: `Files (*${fileExtension})`,
+					Pattern: `*${fileExtension}`,
+				},
+				{
+					DisplayName: 'All Files (*.*)',
+					Pattern: '*.*',
+				},
+			];
 
-			fileExtension = mimeTypeMap[mimeType] || '';
-		} else if (typeof value === 'string') {
-			// Handle text content
-			const languageKey = language.toLowerCase();
-			const langInfo =
-				languageKey in ProgrammingLanguages
-					? ProgrammingLanguages[languageKey]
-					: {
-							extension: '.txt',
-							mimeType: 'text/plain',
-						};
-			fileExtension = langInfo.extension;
-			mimeType = langInfo.mimeType;
-
-			// Convert string to base64
-			contentBase64 = btoa(encodeURIComponent(value));
-		} else {
-			console.error('Unsupported content type for download');
-			return;
+			await saveFile(suggestedFileName, contentBase64, filters);
+		} catch (err: any) {
+			console.error('Download failed:', err, JSON.stringify(err));
+		} finally {
+			setDownloading(false);
 		}
-
-		const suggestedFileName = `${fileprefix}-${generateRandomString(3, true)}${fileExtension}`;
-
-		// Prepare file filters
-		const filters = [
-			{
-				DisplayName: `Files (*${fileExtension})`,
-				Pattern: `*${fileExtension}`,
-			},
-			{
-				DisplayName: 'All Files (*.*)',
-				Pattern: '*.*',
-			},
-		];
-
-		await saveFile(suggestedFileName, contentBase64, filters);
 	};
 
 	return (
-		<button aria-label="Download" onClick={downloadAsFile} {...buttonProps}>
+		<button aria-label="Download" onClick={downloadAsFile} disabled={downloading} {...buttonProps}>
 			<FiDownload size={size} />
 		</button>
 	);
