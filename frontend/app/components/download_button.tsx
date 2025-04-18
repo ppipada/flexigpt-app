@@ -7,6 +7,8 @@ import type { FileFilter } from '@/models/backendmodel';
 
 import { backendAPI } from '@/apis/baseapi';
 
+import { Base64EncodeUTF8 } from '@/lib/encode_decode';
+
 interface LanguageMap {
 	[key: string]: { extension: string; mimeType: string };
 }
@@ -113,7 +115,7 @@ const DownloadButton: FC<DownloadButtonProps> = ({
 							};
 				fileExtension = langInfo.extension;
 				mimeType = langInfo.mimeType;
-				contentBase64 = btoa(encodeURIComponent(value));
+				contentBase64 = Base64EncodeUTF8(value);
 			} else {
 				throw new Error('Unsupported content type for download');
 			}

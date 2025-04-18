@@ -5,6 +5,8 @@ import 'katex/dist/katex.min.css';
 import mermaid from 'mermaid';
 import { v4 as uuidv4 } from 'uuid';
 
+import { Base64EncodeUTF8 } from '@/lib/encode_decode';
+
 import DownloadButton from '@/components/download_button';
 
 let mermaidInitialized = false;
@@ -54,7 +56,7 @@ export const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 
 		const svgData = new XMLSerializer().serializeToString(svg);
 		// Encode SVG as base64 data URL
-		const svgBase64 = window.btoa(decodeURIComponent(encodeURIComponent(svgData)));
+		const svgBase64 = Base64EncodeUTF8(svgData);
 		const dataUrl = `data:image/svg+xml;base64,${svgBase64}`;
 
 		return new Promise<Blob>((resolve, reject) => {
