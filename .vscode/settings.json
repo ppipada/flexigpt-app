@@ -13,12 +13,13 @@
 	},
 	"search.exclude": {
 		"**/node_modules": true,
-		"**/pnpm-lock.yaml": true,
+		"**/*lock.yaml": true,
 		"**/.git": true,
 		"**/tsconfig.tsbuildinfo": true,
 		"**/out": true,
 		"**/dist": true,
-		"**/flatpak": true
+		"**/build/flatpak/shared-modules": true,
+		"**/build/bin": true
 	},
 
 	// ============================================
