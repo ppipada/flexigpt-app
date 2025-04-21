@@ -37,6 +37,16 @@ export const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 				.then(renderResult => {
 					if (isMounted && containerRef.current) {
 						containerRef.current.innerHTML = renderResult.svg;
+						// Center the SVG with inline styles
+						const svg = containerRef.current.querySelector('svg');
+						if (svg) {
+							svg.style.display = 'block';
+							svg.style.marginLeft = 'auto';
+							svg.style.marginRight = 'auto';
+							svg.style.width = '100%';
+							svg.style.height = 'auto';
+							svg.style.maxWidth = '100%';
+						}
 						setError(null);
 					}
 				})
@@ -104,7 +114,7 @@ export const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 					className="btn btn-sm bg-transparent text-white border-none flex items-center shadow-none"
 				/>
 			</div>
-			<div className="flex justify-center text-center p-1" style={{ overflow: 'auto' }}>
+			<div className="flex items-center justify-center text-center p-1 min-h-[250px] w-full overflow-auto">
 				{error ? (
 					<svg width="300" height="100" style={{ background: '#fff', border: '2px solid #e53e3e', borderRadius: 8 }}>
 						<rect x="0" y="0" width="300" height="100" fill="#fff" stroke="#e53e3e" strokeWidth="2" rx="8" />
@@ -113,7 +123,7 @@ export const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 						</text>
 					</svg>
 				) : (
-					<div ref={containerRef} />
+					<div ref={containerRef} className="w-full" />
 				)}
 			</div>
 		</div>
