@@ -69,9 +69,13 @@ var DefaultAISettings = map[aiproviderSpec.ProviderName]AISetting{
 				DisplayName: aiproviderConsts.DisplayNameGemini25Pro,
 				IsEnabled:   true,
 			},
+			aiproviderConsts.Gemini25Flash: {
+				DisplayName: aiproviderConsts.DisplayNameGemini25Flash,
+				IsEnabled:   true,
+			},
 			aiproviderConsts.Gemini2Flash: {
 				DisplayName: aiproviderConsts.DisplayNameGemini2Flash,
-				IsEnabled:   true,
+				IsEnabled:   false,
 			},
 			aiproviderConsts.Gemini2FlashLite: {
 				DisplayName: aiproviderConsts.DisplayNameGemini2FlashLite,
