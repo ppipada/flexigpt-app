@@ -1,6 +1,6 @@
 {
 	"name": "frontend",
-	"version": "0.0.20",
+	"version": "0.0.21",
 	"description": "Frontend for FlexiGPT",
 	"type": "module",
 	"private": true,
