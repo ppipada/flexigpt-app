@@ -305,7 +305,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 						onClick={() => {
 							setIsAdvancedModalOpen(true);
 						}}
-						aria-label="Open advanced settings"
+						title="Set Advanced Params"
 					>
 						<FiSliders size={16} />
 					</button>
@@ -345,7 +345,8 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 						!isSendButtonEnabled ? 'btn-disabled' : ''
 					}`}
 					disabled={!isSendButtonEnabled}
-					aria-label="Send message"
+					aria-label="Send Message"
+					title="Send Message"
 				>
 					<FiSend size={24} />
 				</button>

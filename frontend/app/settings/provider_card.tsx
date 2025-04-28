@@ -408,6 +408,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 											<button
 												className="btn btn-sm btn-ghost rounded-2xl"
 												aria-label="Edit Model"
+												title="Edit Model"
 												onClick={() => {
 													handleEditModel(modelName);
 												}}
@@ -421,7 +422,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 													handleDeleteModel(modelName);
 												}}
 												disabled={!isModelRemovable(modelName)}
-												title={!isModelRemovable(modelName) ? 'Cannot delete default or inbuilt model' : 'Delete model'}
+												title={!isModelRemovable(modelName) ? 'Cannot Delete Default Or Inbuilt Model' : 'Delete Model'}
 											>
 												<FiTrash2 size={16} />
 											</button>
@@ -442,7 +443,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 								handleDeleteProvider(provider);
 							}}
 							disabled={!isProviderRemovable(provider)}
-							title={!isProviderRemovable(provider) ? 'Cannot delete default or inbuilt provider' : 'Delete Provider'}
+							title={!isProviderRemovable(provider) ? 'Cannot Delete Default Or Inbuilt Provider' : 'Delete Provider'}
 						>
 							<FiTrash2 size={16} /> Delete Provider
 						</button>

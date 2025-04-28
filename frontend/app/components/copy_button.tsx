@@ -29,7 +29,7 @@ const CopyButton: FC<CopyButtonProps> = ({ value, size, ...buttonProps }) => {
 	};
 
 	return (
-		<button aria-label="Copy to clipboard" onClick={handleCopy} {...buttonProps}>
+		<button aria-label="Copy To Clipboard" title="Copy To Clipboard" onClick={handleCopy} {...buttonProps}>
 			{copied ? <FiCheck size={size} /> : <FiCopy size={size} />}
 		</button>
 	);

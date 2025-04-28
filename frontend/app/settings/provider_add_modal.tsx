@@ -200,7 +200,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 				<div className="flex justify-between items-center">
 					<h3 className="font-bold text-lg">Add New Provider</h3>
 
-					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close">
+					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close" title="Close">
 						<FiX size={12} />
 					</button>
 				</div>

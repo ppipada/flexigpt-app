@@ -313,6 +313,7 @@ const DocumentStores: React.FC = () => {
 													<button
 														className="btn btn-sm btn-ghost rounded-2xl"
 														aria-label="Edit Collection"
+														title="Edit Collection"
 														onClick={() => {
 															handleEditCollection(docStore.id, collection);
 														}}
@@ -322,6 +323,7 @@ const DocumentStores: React.FC = () => {
 													<button
 														className="btn btn-sm btn-ghost rounded-2xl"
 														aria-label="Delete Collection"
+														title="Delete Collection"
 														onClick={() => {
 															openDeleteCollectionModal(docStore.id, collection);
 														}}

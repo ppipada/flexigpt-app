@@ -34,8 +34,8 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 				<button
 					className="btn btn-sm btn-ghost mx-1"
 					onClick={onNewChat}
-					aria-label="Create new chat"
-					title="Create new chat"
+					aria-label="Create New Chat"
+					title="Create New Chat"
 				>
 					<FiPlus size={24} />
 				</button>
@@ -46,8 +46,8 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 					size={24}
 					fileprefix="conversation"
 					className="btn btn-sm btn-ghost mx-1"
-					aria-label="Export chat"
-					title="Export chat"
+					aria-label="Export Chat"
+					title="Export Chat"
 				/>
 			</div>
 		</div>

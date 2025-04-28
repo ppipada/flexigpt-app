@@ -70,8 +70,8 @@ const EditBox: FC<EditBoxProps> = ({ editText, onTextChange, onSubmit, onDiscard
 				<button
 					onClick={onDiscard}
 					className="btn btn-md bg-transparent rounded-xl border-none shadow-none px-2"
-					aria-label="Discard changes"
-					title="Discard"
+					aria-label="Discard Changes"
+					title="Discard Changes"
 				>
 					<FiX size={24} />
 				</button>
@@ -79,8 +79,8 @@ const EditBox: FC<EditBoxProps> = ({ editText, onTextChange, onSubmit, onDiscard
 					onClick={handleSubmit}
 					className={`btn btn-md bg-transparent rounded-xl border-none shadow-none px-2 ${!isSendButtonEnabled ? 'btn-disabled' : ''}`}
 					disabled={!isSendButtonEnabled}
-					aria-label="Send edited message"
-					title="Send"
+					aria-label="Send Edited Message"
+					title="Send Edited Message"
 				>
 					<FiSend size={24} />
 				</button>

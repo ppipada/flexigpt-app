@@ -28,7 +28,7 @@ export default function ThemeSwitch() {
 					setTheme('light');
 				}}
 			/>
-			<label className="p-1 justify-between" title="Switch Light/Dark mode">
+			<label className="p-1 justify-between" title="Switch Light/Dark Mode">
 				<input
 					type="checkbox"
 					className="toggle toggle-accent rounded-full mt-1 h-6"

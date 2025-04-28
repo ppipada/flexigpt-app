@@ -73,7 +73,7 @@ export function ReasoningTokensDropdown(props: {
 			>
 				<summary
 					className="btn btn-xs text-left text-nowrap text-neutral/60 shadow-none border-none overflow-hidden"
-					title="Set tokens"
+					title="Set Tokens"
 				>
 					<div className="flex">
 						<span className="text-xs font-normal sm:hidden mr-2">Tokens: </span>

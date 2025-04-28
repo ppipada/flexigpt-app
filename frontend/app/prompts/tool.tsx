@@ -143,6 +143,7 @@ const Tools: React.FC = () => {
 									<button
 										className="btn btn-sm btn-ghost rounded-2xl"
 										aria-label="Edit Tool"
+										title="Edit Tool"
 										onClick={() => {
 											openModifyToolModal(tool);
 										}}
@@ -152,6 +153,7 @@ const Tools: React.FC = () => {
 									<button
 										className="btn btn-sm btn-ghost rounded-2xl"
 										aria-label="Delete Tool"
+										title="Delete Tool"
 										onClick={() => {
 											openDeleteToolModal(tool);
 										}}

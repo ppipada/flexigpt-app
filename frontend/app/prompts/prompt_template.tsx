@@ -177,6 +177,7 @@ const PromptTemplates: React.FC = () => {
 									<button
 										className="btn btn-sm btn-ghost rounded-2xl"
 										aria-label="Edit Template"
+										title="Edit Template"
 										onClick={() => {
 											openModifyPromptTemplateModal(template);
 										}}
@@ -186,6 +187,7 @@ const PromptTemplates: React.FC = () => {
 									<button
 										className="btn btn-sm btn-ghost rounded-2xl"
 										aria-label="Delete Template"
+										title="Delete Template"
 										onClick={() => {
 											openDeletePromptTemplateModal(template);
 										}}

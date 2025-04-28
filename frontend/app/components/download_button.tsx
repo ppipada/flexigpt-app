@@ -141,7 +141,7 @@ const DownloadButton: FC<DownloadButtonProps> = ({
 	};
 
 	return (
-		<button aria-label="Download" onClick={downloadAsFile} disabled={downloading} {...buttonProps}>
+		<button aria-label="Download" title="Download" onClick={downloadAsFile} disabled={downloading} {...buttonProps}>
 			<FiDownload size={size} />
 		</button>
 	);

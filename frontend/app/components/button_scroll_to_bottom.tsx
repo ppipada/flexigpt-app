@@ -60,7 +60,8 @@ const ButtonScrollToBottom: FC<ButtonScrollToBottomProps> = ({ scrollContainerRe
 		isScrollable &&
 		!isAtBottom && (
 			<button
-				aria-label="Scroll to bottom"
+				aria-label="Scroll To Bottom"
+				title="Scroll To Bottom"
 				disabled={isAtBottom}
 				onClick={() => {
 					if (scrollContainerRef.current) {

@@ -56,7 +56,8 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 							<button
 								className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
 								onClick={onEdit}
-								aria-label="Edit message"
+								aria-label="Edit Message"
+								title="Edit Message"
 							>
 								<FiEdit size={16} />
 							</button>
@@ -65,7 +66,8 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 							<button
 								className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
 								onClick={onResend}
-								aria-label="Resend message"
+								aria-label="Resend Message"
+								title="Resend Message"
 							>
 								<FiRepeat size={16} />
 							</button>
@@ -73,7 +75,8 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 						{/* <button
 							className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
 							onClick={handleFeedbackClick}
-							aria-label="Submit feedback"
+							aria-label="Submit Feedback"
+							title="Submit Feedback"
 						>
 							<FiMessageCircle size={16} />
 						</button> */}
@@ -88,6 +91,7 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 					className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
 					onClick={toggleExpanded}
 					aria-label="Details"
+					title="Details"
 				>
 					{isExpanded ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
 				</button>
