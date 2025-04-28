@@ -113,7 +113,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 			}}
 		>
 			<summary
-				className="flex btn w-full text-left shadow-none rounded-xl border border-base-300 bg-base-100 justify-between items-center px-4 py-2 cursor-pointer"
+				className="flex btn w-full text-left shadow-none rounded-xl border-neutral/20 bg-base-100 justify-between items-center px-4 py-2 cursor-pointer"
 				title={title}
 			>
 				<span className="font-normal">{selectedKey ? getItemDisplayName(selectedKey) : 'Select an option'}</span>

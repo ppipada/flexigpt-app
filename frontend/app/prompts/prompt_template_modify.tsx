@@ -107,7 +107,7 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 							Command*
 						</label>
 						<div className="relative">
-							<span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral">
+							<span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral/60">
 								{PROMPT_TEMPLATE_INVOKE_CHAR}
 							</span>
 							<input

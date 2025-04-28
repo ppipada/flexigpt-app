@@ -34,7 +34,7 @@ export default function SingleReasoningDropdown(props: {
 				open={isOpen}
 			>
 				<summary
-					className="btn btn-xs text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
+					className="btn btn-xs text-left text-nowrap text-neutral/60 shadow-none border-none overflow-hidden"
 					title="Set reasoning level"
 				>
 					<div className="flex">

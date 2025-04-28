@@ -247,7 +247,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						type="checkbox"
 						checked={isEnabled}
 						onChange={toggleProviderEnable}
-						className="toggle toggle-primary rounded-full"
+						className="toggle toggle-accent rounded-full"
 						spellCheck="false"
 					/>
 				</div>
@@ -264,9 +264,9 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 					<div className="flex items-center">
 						<span className="text-sm font-medium">Full Settings</span>
 						{isExpanded ? (
-							<FiChevronUp size={16} className="mx-1 text-gray-500" />
+							<FiChevronUp size={16} className="mx-1 text-neutral/60" />
 						) : (
-							<FiChevronDown size={16} className="mx-1 text-gray-500" />
+							<FiChevronDown size={16} className="mx-1 text-neutral/60" />
 						)}
 					</div>
 				</div>
@@ -281,7 +281,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						</label>
 						<input
 							type="password"
-							className="input col-span-9 w-full h-10 rounded-xl border border-base-300 px-4 py-2"
+							className="input col-span-9 w-full h-10 rounded-xl border border-neutral/20 px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={localSettings.apiKey}
 							onChange={e => {
@@ -305,7 +305,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						</label>
 						<input
 							type="text"
-							className="input col-span-9 w-full h-10 rounded-xl border border-base-300 px-4 py-2"
+							className="input col-span-9 w-full h-10 rounded-xl border border-neutral/20 px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={localSettings.origin}
 							onChange={e => {
@@ -332,7 +332,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						</label>
 						<input
 							type="text"
-							className="input col-span-9 w-full h-10 rounded-xl border border-base-300 px-4 py-2"
+							className="input col-span-9 w-full h-10 rounded-xl border border-neutral/20 px-4 py-2"
 							style={{ fontSize: '14px' }}
 							value={localSettings.chatCompletionPathPrefix}
 							onChange={e => {
@@ -379,10 +379,10 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						<table className="table table-zebra w-full">
 							<thead>
 								<tr className="font-semibold text-sm px-4 py-0 m-0 bg-base-300">
-									<th>Model Name</th>
-									<th className="text-center">Enabled</th>
-									<th className="text-center">Reasoning</th>
-									<th className="text-right pr-8">Actions</th>
+									<th className="text-base-content">Model Name</th>
+									<th className="text-base-content text-center">Enabled</th>
+									<th className="text-base-content text-center">Reasoning</th>
+									<th className="text-base-content text-right pr-8">Actions</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -396,7 +396,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 												onChange={async () => {
 													await toggleModelEnable(modelName);
 												}}
-												className="toggle toggle-primary rounded-full"
+												className="toggle toggle-accent rounded-full"
 											/>
 										</td>
 										<td>

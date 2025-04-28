@@ -301,7 +301,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					{/* -- Sliders Icon to open advanced params modal -- */}
 					<button
 						type="button"
-						className="btn btn-sm btn-ghost mx-2 text-neutral-400"
+						className="btn btn-sm btn-ghost mx-2 text-neutral/60"
 						onClick={() => {
 							setIsAdvancedModalOpen(true);
 						}}
@@ -334,7 +334,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					onChange={handleTextChange}
 					onKeyDown={onKeyDown}
 					placeholder="Type message..."
-					className="flex-1 resize-none overflow-auto bg-transparent border-none outline-hidden placeholder-gray-400 min-h-[24px] p-2"
+					className="flex-1 resize-none overflow-auto bg-transparent border-none outline-hidden text-neutral min-h-[24px] p-2"
 					rows={1}
 					style={{ fontSize: '14px' }}
 					spellCheck="false"

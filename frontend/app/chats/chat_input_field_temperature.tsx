@@ -58,8 +58,8 @@ export default function TemperatureDropdown(props: {
 				open={isOpen}
 			>
 				<summary
-					className="btn btn-xs text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
-					title="Set temperature"
+					className="btn btn-xs text-nowrap text-neutral/60 shadow-none border-none overflow-hidden"
+					title="Set Temperature"
 				>
 					<div className="flex">
 						<span className="text-xs font-normal sm:hidden mr-2">Temp: </span>
@@ -96,7 +96,7 @@ export default function TemperatureDropdown(props: {
 
 					{/* Custom temperature input */}
 					<li className="text-xs">
-						<hr className="p-0 my-2 border-0 border-t border-base-300" />
+						<hr className="p-0 my-2 border-0 border-t border-neutral/20" />
 						<label className="tooltip tooltip-top outline-none border-none">
 							<div className="tooltip-content">
 								<div className="text-xs">Custom value (0.0 - 1.0)</div>

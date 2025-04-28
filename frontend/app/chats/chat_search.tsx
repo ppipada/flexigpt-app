@@ -70,7 +70,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSelectConve
 	return (
 		<div className="relative">
 			<div className="flex items-center bg-base-100 py-3 mx-0 rounded-2xl border">
-				<FiSearch size={24} className="mx-2 text-neutral-400" />
+				<FiSearch size={24} className="mx-2 text-neutral/60" />
 				<input
 					type="text"
 					value={query}
@@ -151,7 +151,7 @@ const GroupedDropdown: FC<GroupedDropdownProps> = ({ items, handleItemClick, foc
 				.filter(([_, groupItems]) => groupItems.length > 0) // Filter out empty groups
 				.map(([groupTitle, groupItems]) => (
 					<Fragment key={groupTitle}>
-						<li className="text-neutral-400 text-sm px-12 py-2">{groupTitle}</li>
+						<li className="text-neutral/60 text-sm px-12 py-2">{groupTitle}</li>
 						{groupItems.map((item, index) => (
 							<li
 								key={item.id}
@@ -161,7 +161,7 @@ const GroupedDropdown: FC<GroupedDropdownProps> = ({ items, handleItemClick, foc
 								className={`flex justify-between items-center px-12 py-2 cursor-pointer hover:bg-base-100 ${index === focusedIndex ? 'bg-base-100' : ''}`}
 							>
 								<span>{item.title}</span>
-								<span className="text-neutral-400 text-xs hidden lg:block">
+								<span className="text-neutral text-xs hidden lg:block">
 									{new Date(item.createdAt).getDate()}{' '}
 									{new Intl.DateTimeFormat('en-US', { month: 'short' }).format(new Date(item.createdAt))}{' '}
 									{new Date(item.createdAt).getFullYear()}

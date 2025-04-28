@@ -15,7 +15,7 @@ export function HybridReasoningCheckbox({
 }) {
 	return (
 		<div className="flex w-full justify-center mx-2">
-			<label className="flex text-neutral-400 cursor-pointer">
+			<label className="flex text-neutral/60 cursor-pointer">
 				<input
 					type="checkbox"
 					className="checkbox checkbox-xs rounded-full"
@@ -72,7 +72,7 @@ export function ReasoningTokensDropdown(props: {
 				open={isOpen}
 			>
 				<summary
-					className="btn btn-xs text-left text-nowrap text-neutral-400 shadow-none border-none overflow-hidden"
+					className="btn btn-xs text-left text-nowrap text-neutral/60 shadow-none border-none overflow-hidden"
 					title="Set tokens"
 				>
 					<div className="flex">
@@ -108,7 +108,7 @@ export function ReasoningTokensDropdown(props: {
 					))}
 
 					<li className="text-xs">
-						<hr className="p-0 my-2 border-0 border-t border-base-300" />
+						<hr className="p-0 my-2 border-0 border-t border-neutral/20" />
 						<label className="tooltip tooltip-top outline-none border-none">
 							<div className="tooltip-content">
 								<div className="text-xs">Custom tokens (≥ 1024)</div>

@@ -99,7 +99,7 @@ const ModifyTool: React.FC<ModifyToolProps> = ({ isOpen, onClose, onSubmit, init
 							Command*
 						</label>
 						<div className="relative">
-							<span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral">
+							<span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral/60">
 								{TOOL_INVOKE_CHAR}
 							</span>
 							<input

@@ -103,7 +103,7 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 							Command*
 						</label>
 						<div className="relative">
-							<span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral">
+							<span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral/60">
 								{DOCUMENT_COLLECTION_INVOKE_CHAR}
 							</span>
 							<input

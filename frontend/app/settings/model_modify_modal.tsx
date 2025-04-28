@@ -411,7 +411,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								name="isEnabled"
 								checked={formData.isEnabled}
 								onChange={handleChange}
-								className="toggle toggle-primary rounded-full"
+								className="toggle toggle-accent rounded-full"
 								spellCheck="false"
 							/>
 						</div>
@@ -428,7 +428,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								name="stream"
 								checked={formData.stream}
 								onChange={handleChange}
-								className="toggle toggle-primary rounded-full"
+								className="toggle toggle-accent rounded-full"
 								spellCheck="false"
 							/>
 						</div>
@@ -451,7 +451,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								name="reasoningSupport"
 								checked={formData.reasoningSupport}
 								onChange={handleChange}
-								className="toggle toggle-primary rounded-full"
+								className="toggle toggle-accent rounded-full"
 								spellCheck="false"
 							/>
 						</div>

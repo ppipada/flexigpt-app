@@ -204,7 +204,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 						<FiX size={12} />
 					</button>
 				</div>
-				<h4 className="flex items-center gap-2 text-xs text-neutral mt-2 mb-8">
+				<h4 className="flex items-center gap-2 text-xs text-neutral/60 mt-2 mb-8">
 					<FiAlertCircle size={16} />
 					<span>Only OpenAI API-compatible custom providers are supported.</span>
 				</h4>
