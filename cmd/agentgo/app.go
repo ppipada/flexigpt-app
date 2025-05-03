@@ -18,10 +18,7 @@ import (
 	"github.com/adrg/xdg"
 )
 
-const (
-	AppTitle        = "FlexiGPT"
-	AppDisplayTitle = "FlexiGPT - v0.0.23"
-)
+const AppTitle = "FlexiGPT"
 
 // App struct
 type App struct {

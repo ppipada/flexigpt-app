@@ -21,7 +21,10 @@ import (
 	"github.com/flexigpt/flexiui/pkg/logrotate"
 )
 
+var Version string
+
 func main() {
+	appDisplayTitle := "FlexiGPT - " + Version
 	slogLevel := slog.LevelDebug
 	wailsLogLevel := logger.INFO
 	wailsProdLogLevel := logger.INFO
@@ -58,11 +61,11 @@ func main() {
 	// EmbeddedFSWalker(assets)
 
 	wailsLogger := NewSlogLoggerAdapter(slogger)
-	slog.Info("App Initialized")
+	slog.Info("Initialized", "App", appDisplayTitle)
 
 	// Create application with options
 	err = wails.Run(&options.App{
-		Title:             AppDisplayTitle,
+		Title:             appDisplayTitle,
 		MinWidth:          1024,
 		MinHeight:         768,
 		StartHidden:       false,
@@ -103,7 +106,7 @@ func main() {
 		Mac: &mac.Options{
 			TitleBar: mac.TitleBarDefault(),
 			About: &mac.AboutInfo{
-				Title:   AppDisplayTitle,
+				Title:   appDisplayTitle,
 				Message: "An AI app platform.\n\nCopyright © 2023 - Present",
 				Icon:    assets.Icon,
 			},
@@ -112,7 +115,7 @@ func main() {
 		},
 
 		Linux: &linux.Options{
-			ProgramName:         AppDisplayTitle,
+			ProgramName:         appDisplayTitle,
 			Icon:                assets.Icon,
 			WindowIsTranslucent: false,
 			WebviewGpuPolicy:    linux.WebviewGpuPolicyOnDemand,
