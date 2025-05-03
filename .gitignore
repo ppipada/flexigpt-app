@@ -10,6 +10,8 @@ build/darwin/Info.plist
 build/darwin/entitlements.plist
 build/darwin/gon-sign.json
 build/darwin/gon-notarize.json
+build/flatpak/io.github.flexigpt.client.desktop
+build/flatpak/io.github.flexigpt.client.appdata.xml
 
 # Logs
 logs
