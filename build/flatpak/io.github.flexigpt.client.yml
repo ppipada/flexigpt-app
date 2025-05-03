@@ -62,13 +62,18 @@ modules:
     build-commands:
       - $GOROOT/bin/go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.1
 
+  - name: rendertmpls
+    buildsystem: simple
+    build-commands:
+      - env
+      - chmod 755 ./build/flatpak/render_flatpak_templates.sh
+      - bash ./build/flatpak/render_flatpak_templates.sh --version $VERSION_TAG
+
   - name: FlexiGPT
     buildsystem: simple
     build-commands:
       - mkdir -p $XDG_CONFIG_HOME
       - mkdir -p $XDG_DATA_HOME
-      - chmod 777 build/flatpak/render_flatpak_templates.sh
-      - build/flatpak/render_flatpak_templates.sh --version $VERSION_TAG
       - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin pnpm install
       - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin $GOROOT/bin/go mod download
       - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin pnpm run build:linux
