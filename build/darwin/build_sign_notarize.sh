@@ -76,6 +76,7 @@ if [[ "$NOTARIZE_APP" == true ]]; then
 fi
 
 echo "Rendering templates..."
+chmod +x build/darwin/render_templates.sh
 build/darwin/render_templates.sh $RENDER_FLAGS
 
 ################################################################################
