@@ -70,11 +70,6 @@ jobs:
             echo "${HOME}/.local/opt/node/bin" >> $GITHUB_PATH
           fi
 
-      - name: Render Templates
-        shell: bash
-        run: |
-          build/flatpak/render_flatpak_templates.sh --version $VERSION_TAG
-
       - name: Append VERSION_TAG to buildvars.env
         shell: bash
         run: |
