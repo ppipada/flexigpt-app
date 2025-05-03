@@ -16,6 +16,16 @@ on:
         default: false
         type: boolean
 
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      release:
+        required: false
+        default: false
+        type: boolean
+
 jobs:
   build-flatpak:
     runs-on: ubuntu-latest

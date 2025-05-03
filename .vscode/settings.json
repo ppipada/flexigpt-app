@@ -32,6 +32,10 @@
 	// ============================================
 	// Language-Specific Formatter Overrides
 	// ============================================
+	"[yaml]": {
+		// Note that this wont be used for github workflow yml files as it doesnt support it
+		"editor.defaultFormatter": "redhat.vscode-yaml"
+	},
 	"[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
 	"[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
 	"[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
@@ -43,16 +47,7 @@
 	"[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
 	"[shellscript]": { "editor.defaultFormatter": "foxundermoon.shell-format" },
 	"[dockerfile]": { "editor.defaultFormatter": "foxundermoon.shell-format" },
-	"[yaml]": {
-		"editor.defaultFormatter": "redhat.vscode-yaml",
-		"editor.insertSpaces": true,
-		"editor.tabSize": 2
-	},
-	"[yml]": {
-		"editor.defaultFormatter": "redhat.vscode-yaml",
-		"editor.insertSpaces": true,
-		"editor.tabSize": 2
-	},
+
 	"[go]": {
 		"editor.defaultFormatter": "golang.go",
 		"editor.codeActionsOnSave": {

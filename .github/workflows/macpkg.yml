@@ -26,6 +26,43 @@ on:
         default: false
         type: boolean
 
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      sign:
+        required: false
+        default: false
+        type: boolean
+      notarize:
+        required: false
+        default: false
+        type: boolean
+      release:
+        required: false
+        default: false
+        type: boolean
+    secrets:
+      MACOS_SIGN_APPLE_USERNAME:
+        required: false
+      MACOS_SIGN_APPLE_TEAM_ID:
+        required: false
+      MACOS_SIGN_APPLE_DEVELOPER_IDENTITY:
+        required: false
+      MACOS_SIGN_APPLE_APP_PASSWORD:
+        required: false
+      MACOS_SIGN_APP_CERT:
+        required: false
+      MACOS_SIGN_APP_CERT_PASSWORD:
+        required: false
+      MACOS_SIGN_INSTALLER_ID:
+        required: false
+      MACOS_SIGN_INSTALLER_CERT:
+        required: false
+      MACOS_SIGN_INSTALLER_CERT_PASSWORD:
+        required: false
+
 jobs:
   build-macos:
     runs-on: macos-latest

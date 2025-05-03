@@ -15,6 +15,30 @@ on:
         required: false
         default: false
         type: boolean
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      sign:
+        required: false
+        default: false
+        type: boolean
+      notarize:
+        required: false
+        default: false
+        type: boolean
+      release:
+        required: false
+        default: false
+        type: boolean
+    secrets:
+      SIGN_WINDOWS_CERT:
+        required: false
+        description: "Windows signing certificate"
+      SIGN_WINDOWS_CERT_PASSWORD:
+        required: false
+        description: "Windows signing certificate password"
 
 jobs:
   build-nsis:

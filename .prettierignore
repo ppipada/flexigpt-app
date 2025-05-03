@@ -6,7 +6,5 @@ frontend/.react-router/
 frontend/app/apis/wailsjs
 .anima
 out
-*.yml
-*.yaml
 build/flatpak/shared-modules
 pkg/mcpsdk/external
