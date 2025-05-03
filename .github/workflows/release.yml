@@ -29,7 +29,7 @@ permissions:
 
 jobs:
   macos:
-    name: "macOS build"
+    name: "MacOS build"
     uses: ./.github/workflows/macpkg.yml
     with:
       tag: ${{ inputs.tag }}

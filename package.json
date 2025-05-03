@@ -12,7 +12,7 @@
 	"description": "FlexiGPT - An AI application platform",
 	"scripts": {
 		"build:frontend": "pnpm -F frontend run build:wails",
-		"check:version": "sh -c 'if [ -z \"$VERSION_TAG\" ]; then echo VERSION_TAG not set; exit 1; fi; if ! echo \"$VERSION_TAG\" | grep -Eq \"^v[0-9]+\\.[0-9]+\\.[0-9]+$\"; then echo VERSION_TAG must match vX.Y.Z; exit 1; fi'",
+		"check:version": "node -e \"const t=process.env.VERSION_TAG;if(!t){console.error('VERSION_TAG not set');process.exit(1);}if(!/^v\\d+\\.\\d+\\.\\d+$/.test(t)){console.error('VERSION_TAG must match vX.Y.Z');process.exit(1);}\"",
 		"build:linux": "cd ./cmd/agentgo && pnpm run build:frontend && pnpm run check:version && wails build -m -clean -s -skipbindings -tags webkit2_41 -platform linux/amd64 -ldflags=\"-X main.Version=$VERSION_TAG\"",
 		"build:mac": "cd ./cmd/agentgo && pnpm run build:frontend && pnpm run check:version && wails build -m -clean -s -skipbindings -platform darwin/universal -ldflags=\"-X main.Version=$VERSION_TAG\"",
 		"build:win": "cd ./cmd/agentgo && pnpm run build:frontend && pnpm run check:version && wails build -m -clean -s -skipbindings -nsis -platform windows/amd64 -ldflags=\"-X main.Version=$VERSION_TAG\"",
