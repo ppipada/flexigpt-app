@@ -65,10 +65,10 @@ modules:
   - name: FlexiGPT
     buildsystem: simple
     build-commands:
-      - set -a
-      - . build/buildvars.env
-      - set +a
       - cat build/buildvars.env
+      - set -a
+      - source build/buildvars.env
+      - set +a
       - env
       - mkdir -p $XDG_CONFIG_HOME
       - mkdir -p $XDG_DATA_HOME
