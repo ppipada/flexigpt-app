@@ -46,7 +46,7 @@ var OpenAIModels = map[spec.ModelName]spec.ModelParams{
 			Type:  spec.ReasoningTypeSingleWithLevels,
 			Level: spec.ReasoningLevelMedium,
 		},
-		SystemPrompt: "Formatting re-enabled",
+		SystemPrompt: "Formatting re-enabled.\nAlways output in Markdown format.",
 		Timeout:      120,
 	},
 	GPTO3: {
@@ -59,7 +59,7 @@ var OpenAIModels = map[spec.ModelName]spec.ModelParams{
 			Type:  spec.ReasoningTypeSingleWithLevels,
 			Level: spec.ReasoningLevelMedium,
 		},
-		SystemPrompt: "Formatting re-enabled",
+		SystemPrompt: "Formatting re-enabled.\nAlways output in Markdown format.",
 		Timeout:      120,
 	},
 	GPTO3Mini: {
@@ -72,7 +72,7 @@ var OpenAIModels = map[spec.ModelName]spec.ModelParams{
 			Type:  spec.ReasoningTypeSingleWithLevels,
 			Level: spec.ReasoningLevelMedium,
 		},
-		SystemPrompt: "Formatting re-enabled",
+		SystemPrompt: "Formatting re-enabled.\nAlways output in Markdown format.",
 		Timeout:      120,
 	},
 	GPTO1: {
@@ -85,7 +85,7 @@ var OpenAIModels = map[spec.ModelName]spec.ModelParams{
 			Type:  spec.ReasoningTypeSingleWithLevels,
 			Level: spec.ReasoningLevelMedium,
 		},
-		SystemPrompt: "Formatting re-enabled",
+		SystemPrompt: "Formatting re-enabled.\nAlways output in Markdown format.",
 		Timeout:      120,
 	},
 	GPT41: {
