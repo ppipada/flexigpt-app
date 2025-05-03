@@ -256,3 +256,6 @@
 - [x] Mac pkg install is add the .app in ~/build/bin. It should be in application. Check the settings, conversation and log location
 - [ ] ~~Ideally should detect any code or math blocks even in input, annotate them and then display. i.e format a normal text into proper md.~~
 - [x] Math support broke in between, do math rendering before gfm
+- [x] see how to set version increment seamlessly at one place only
+  - [x] Version string to be passed via ldconfig to code and use from there
+  - [x] render templates for flatpak and mac

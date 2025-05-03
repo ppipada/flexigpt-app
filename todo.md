@@ -15,10 +15,6 @@
   - [ ] Implement MCP protocol
   - [ ] Add servers for: file, git, simplemapstore
 
-- [ ] see how to set version increment seamlessly at one place only
-
-  - [ ] Version string to be passed via ldconfig to code and use from there
-
 - [ ] Need a settings data version and migration func
 
   - [ ] API key should never reach frontend after save
