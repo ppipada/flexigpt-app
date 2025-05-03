@@ -16,19 +16,19 @@ set -euo pipefail
 VERSION_TAG=""
 
 usage() {
-    grep '^#' "\$0" | sed -e 's/^#//'
+    grep '^#' "$0" | sed -e 's/^#//'
     exit 1
 }
 
 while [[ $# -gt 0 ]]; do
-    case "\$1" in
+    case "$1" in
     --version)
         VERSION_TAG="${2:-}"
         shift 2
         ;;
     -h | --help) usage ;;
     *)
-        echo "Unknown arg: \$1"
+        echo "Unknown arg: $1"
         usage
         ;;
     esac
@@ -66,7 +66,7 @@ APPDATA_DATE="$(date +%Y-%m-%d)"
 # Helper: simple template renderer with sed substitution
 ###############################################################################
 render_tpl() {
-    local tpl="\$1" out="\$2"
+    local tpl="$1" out="$2"
     sed \
         -e "s|{{COMMON_BUILD_NAME}}|${COMMON_BUILD_NAME}|g" \
         -e "s|{{COMMON_PRODUCT_NAME}}|${COMMON_PRODUCT_NAME}|g" \
