@@ -24,6 +24,9 @@ on:
         type: boolean
         default: true
 
+permissions:
+  contents: write
+
 jobs:
   macos:
     name: "macOS build"
