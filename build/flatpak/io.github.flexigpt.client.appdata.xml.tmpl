@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>{{FLATPAK_ID}}</id>
+
+  <name>{{COMMON_PRODUCT_NAME}}</name>
+  <developer_name>{{COMMON_DEVELOPER_NAME}}</developer_name>
+  <summary>{{COMMON_PRODUCT_DESCRIPTION}}</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>{{COMMON_PROJECT_LICENSE}}</project_license>
+
+  <recommends>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>touch</control>
+  </recommends>
+
+  <description>
+    <p>{{COMMON_PRODUCT_DESCRIPTION}}</p>
+    <ul>
+        <li>FlexiGPT helps you interact with multiple LLMs from multiple AI providers seamlessly via a dedicated desktop application.</li>
+        <li>It can interact with hosted AI providers service providers, along with Local models.</li>
+        <li>It has inbuilt support for OpenAI, Anthropic, Google, DeepSeek.</li>
+        <li>It can talk to any local or external server that serves an OpenAI compatible API.</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">{{FLATPAK_ID}}.desktop</launchable>
+
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/flexigpt/flexiui/main/frontend/public/screenshot-home.png</image>
+      <caption>Home</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/flexigpt/flexiui/main/frontend/public/screenshot-chat.png</image>
+      <caption>Chat</caption>
+    </screenshot>
+  </screenshots>
+
+  <url type="bugtracker">https://github.com/flexigpt/flexiui/issues</url>
+  <url type="donation">https://github.com/sponsors/ppipada</url>
+  <url type="homepage">https://github.com/flexigpt/flexiui</url>
+
+  <!-- Generate an OARS rating at https://hughsie.github.io/oars/generate.html -->
+  <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="{{VERSION_TAG}}" date="{{APPDATA_DATE}}" type="stable"/>
+  </releases>
+</component>

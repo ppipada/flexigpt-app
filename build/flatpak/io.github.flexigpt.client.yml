@@ -67,6 +67,8 @@ modules:
     build-commands:
       - mkdir -p $XDG_CONFIG_HOME
       - mkdir -p $XDG_DATA_HOME
+      - chmod 777 build/flatpak/render_flatpak_templates.sh
+      - build/flatpak/render_flatpak_templates.sh --version $VERSION_TAG
       - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin pnpm install
       - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin $GOROOT/bin/go mod download
       - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin pnpm run build:linux

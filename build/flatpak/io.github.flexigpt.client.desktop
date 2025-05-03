@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=FlexiGPT
-GenericName=AIChatBot
-Comment=FlexiGPT - An AI application platform
-Categories=Utility
-Icon=io.github.flexigpt.client
-Exec=FlexiGPT
-Terminal=false
