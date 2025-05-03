@@ -16,9 +16,13 @@
   - [ ] Add servers for: file, git, simplemapstore
 
 - [ ] see how to set version increment seamlessly at one place only
+
+  - [ ] Version string to be passed via ldconfig to code and use from there
+
 - [ ] Need a settings data version and migration func
-- [ ] API key should never reach frontend after save
-- [ ] Version string to be passed via ldconfig to code and use from there
+
+  - [ ] API key should never reach frontend after save
+
 - [ ] There is large cpu consumption sometime, debug
   - [ ] It is mainly seen if both wails dev and current app is open and being used wails://wails consumes 100%
   - [ ] Also check when one request was fired but not allowed to complete for some reason

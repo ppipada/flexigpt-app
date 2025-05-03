@@ -141,7 +141,7 @@ function ChatMessageMarkdownContent({ content, align, streamedMessage }: ChatMes
 	return (
 		<div className="bg-base-100 px-4 py-2">
 			<Markdown
-				remarkPlugins={[remarkGemoji, supersub, remarkGfm, remarkMath]}
+				remarkPlugins={[remarkGemoji, supersub, remarkMath, remarkGfm]}
 				rehypePlugins={[rehypeKatex]}
 				components={components}
 			>

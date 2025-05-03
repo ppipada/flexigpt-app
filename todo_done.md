@@ -255,3 +255,4 @@
 - [x] Signing for Mac pkg and Win
 - [x] Mac pkg install is add the .app in ~/build/bin. It should be in application. Check the settings, conversation and log location
 - [ ] ~~Ideally should detect any code or math blocks even in input, annotate them and then display. i.e format a normal text into proper md.~~
+- [x] Math support broke in between, do math rendering before gfm
