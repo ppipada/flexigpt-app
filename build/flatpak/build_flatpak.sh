@@ -10,8 +10,8 @@ echo "==== ENVIRONMENT VARIABLES ===="
 env | sort
 echo "==============================="
 
-chmod +x build/flatpak/render_flatpak_templates.sh
-./build/flatpak/render_flatpak_templates.sh --version $VERSION_TAG
+chmod +x build/flatpak/render_templates.sh
+./build/flatpak/render_templates.sh --version $VERSION_TAG
 
 mkdir -p "$XDG_CONFIG_HOME"
 mkdir -p "$XDG_DATA_HOME"

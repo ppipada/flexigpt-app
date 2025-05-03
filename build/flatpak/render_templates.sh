@@ -5,7 +5,7 @@ set -euo pipefail
 # Renders Flatpak templates (.desktop & .appdata.xml)
 #
 # Usage:
-#   ./render_flatpak_templates.sh --version vX.Y.Z
+#   ./render_templates.sh --version vX.Y.Z
 #
 # See build/buildvars.env for env variables required
 ################################################################################
