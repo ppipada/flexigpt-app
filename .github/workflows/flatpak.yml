@@ -35,7 +35,7 @@ jobs:
     permissions:
       contents: write
     container:
-      image: bilelmoussaoui/flatpak-github-actions:gnome-46@sha256:25e022f62120218e83f97adc0f71c3925f0b74f33c6ba94f5cb2b5cf7e975fd7
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-48
       options: --privileged
     steps:
       - name: Checkout code
@@ -69,6 +69,11 @@ jobs:
             curl -sS https://webi.sh/node@${NODE_VERSION} | sh
             echo "${HOME}/.local/opt/node/bin" >> $GITHUB_PATH
           fi
+
+      - name: rendertmpls
+        shell: bash
+        run: |
+          build/flatpak/render_flatpak_templates.sh --version $VERSION_TAG
 
       - name: Build flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6

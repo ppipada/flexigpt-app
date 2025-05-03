@@ -1,6 +1,6 @@
 id: io.github.flexigpt.client
 runtime: org.gnome.Platform
-runtime-version: "46"
+runtime-version: "48"
 sdk: org.gnome.Sdk
 
 command: FlexiGPT
@@ -61,13 +61,6 @@ modules:
     buildsystem: simple
     build-commands:
       - $GOROOT/bin/go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.1
-
-  - name: rendertmpls
-    buildsystem: simple
-    build-commands:
-      - env
-      - chmod 755 ./build/flatpak/render_flatpak_templates.sh
-      - bash ./build/flatpak/render_flatpak_templates.sh --version $VERSION_TAG
 
   - name: FlexiGPT
     buildsystem: simple
