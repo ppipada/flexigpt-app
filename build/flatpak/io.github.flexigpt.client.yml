@@ -68,6 +68,8 @@ modules:
       - set -a
       - . build/buildvars.env
       - set +a
+      - cat build/buildvars.env
+      - env
       - mkdir -p $XDG_CONFIG_HOME
       - mkdir -p $XDG_DATA_HOME
       - PATH=$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin pnpm install
