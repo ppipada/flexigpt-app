@@ -7,7 +7,7 @@ import (
 const ProviderNameGoogle spec.ProviderName = "google"
 
 const (
-	Gemini25Pro      spec.ModelName = "gemini-2.5-pro-preview-03-25"
+	Gemini25Pro      spec.ModelName = "gemini-2.5-pro-preview-05-06"
 	Gemini25Flash    spec.ModelName = "gemini-2.5-flash-preview-04-17"
 	Gemini2Flash     spec.ModelName = "gemini-2.0-flash"
 	Gemini2FlashLite spec.ModelName = "gemini-2.0-flash-lite"
@@ -28,13 +28,9 @@ var GoogleModels = map[spec.ModelName]spec.ModelParams{
 		MaxPromptLength: 32768,
 		MaxOutputLength: 32768,
 		Temperature:     spec.Float64Ptr(1.0),
-		Reasoning: &spec.ReasoningParams{
-			Type:  spec.ReasoningTypeSingleWithLevels,
-			Level: spec.ReasoningLevelMedium,
-		},
-		Stream:       true,
-		SystemPrompt: "",
-		Timeout:      120,
+		Stream:          true,
+		SystemPrompt:    "",
+		Timeout:         120,
 	},
 	Gemini25Flash: {
 		Name:            Gemini25Flash,

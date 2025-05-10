@@ -42,7 +42,7 @@ func (w *ResponseWriter) WriteHeader(statusCode int) {
 	}
 	w.statusCode = statusCode
 	w.wroteHeader = true
-	// We don't output the status code or headers in this example
+	// We don't output the status code or headers in this
 }
 
 // Write writes the data to the connection as part of an HTTP reply.
