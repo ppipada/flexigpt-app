@@ -26,6 +26,8 @@
   - [ ] stdio for mcp
 
 - [ ] Add servers for: file, git, simplemapstore
+- [ ] New conversation is created again and again even if empty
+- [ ] if formatting reenabled is there in runtime input params prompt it is still sent as double
 
 ## Settings
 
@@ -39,3 +41,4 @@
   - [ ] It is mainly seen if both wails dev and current app is open and being used wails://wails consumes 100%
   - [ ] Also check when one request was fired but not allowed to complete for some reason
   - [ ] Also, if the message thread gets very very big there seems to be a issue.
+  - [ ] it is seen that post data streaming the cpu percentage shoots up. May be stream callback leaks or looped somewhere?
