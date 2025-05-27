@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
+	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 )
 
 type operation interface {

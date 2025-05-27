@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	simplemapdbFileStore "github.com/flexigpt/flexiui/pkg/simplemapdb/filestore"
+	simplemapdbFileStore "github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 )
 
 // PartitionProvider defines an interface for determining the partition directory for a file.

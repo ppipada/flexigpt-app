@@ -11,7 +11,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
-	"github.com/flexigpt/flexiui/pkg/jsonrpc/transport/helpers_test"
+	"github.com/ppipada/flexigpt-app/pkg/jsonrpc/transport/helpers_test"
 )
 
 type StdIOOptions struct {

@@ -1,6 +1,6 @@
 package spec
 
-import jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
+import jsonrpcReqResp "github.com/ppipada/flexigpt-app/pkg/jsonrpc/reqresp"
 
 // A progress token, used to associate progress notifications with the original
 // request.

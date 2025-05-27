@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
-	"github.com/flexigpt/flexiui/pkg/settingstore"
-	settingSpec "github.com/flexigpt/flexiui/pkg/settingstore/spec"
+	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/settingstore"
+	settingSpec "github.com/ppipada/flexigpt-app/pkg/settingstore/spec"
 )
 
 // initTestFile removes any existing file with the given path,

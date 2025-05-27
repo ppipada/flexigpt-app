@@ -1,7 +1,7 @@
 package spec
 
 import (
-	jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
+	jsonrpcReqResp "github.com/ppipada/flexigpt-app/pkg/jsonrpc/reqresp"
 )
 
 // A ping, issued by either the server or the client, to check that the other party

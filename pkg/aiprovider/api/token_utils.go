@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"regexp"
 
-	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 )
 
 func CountTokensInContent(content string) int {

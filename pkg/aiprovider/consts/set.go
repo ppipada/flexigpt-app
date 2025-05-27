@@ -1,6 +1,6 @@
 package consts
 
-import "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+import "github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 
 const (
 	OpenAICompatibleAPIKeyHeaderKey          = "Authorization"

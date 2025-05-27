@@ -5,9 +5,9 @@ import (
 	"errors"
 	"log/slog"
 
-	"github.com/flexigpt/flexiui/pkg/aiprovider/api"
-	"github.com/flexigpt/flexiui/pkg/aiprovider/consts"
-	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/aiprovider/api"
+	"github.com/ppipada/flexigpt-app/pkg/aiprovider/consts"
+	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 )
 
 func getInbuiltProviderAPI(debug bool) map[spec.ProviderName]spec.CompletionProvider {

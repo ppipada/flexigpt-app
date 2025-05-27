@@ -5,8 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/flexigpt/flexiui/pkg/aiprovider/consts"
-	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/aiprovider/consts"
+	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 	"github.com/tmc/langchaingo/llms"
 )
 

@@ -1,6 +1,6 @@
 package spec
 
-import jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
+import jsonrpcReqResp "github.com/ppipada/flexigpt-app/pkg/jsonrpc/reqresp"
 
 // Describes a message issued to or received from an LLM API.
 type SamplingMessage struct {

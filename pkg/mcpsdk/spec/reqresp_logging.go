@@ -1,7 +1,7 @@
 package spec
 
 import (
-	jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
+	jsonrpcReqResp "github.com/ppipada/flexigpt-app/pkg/jsonrpc/reqresp"
 )
 
 // A request from the client to the server, to enable or adjust logging.

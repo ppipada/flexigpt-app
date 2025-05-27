@@ -1,4 +1,4 @@
-module github.com/flexigpt/flexiui
+module github.com/ppipada/flexigpt-app
 
 go 1.24.2
 

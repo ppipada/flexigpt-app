@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	simplemapdbEncdec "github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
+	simplemapdbEncdec "github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 )
 
 // KeyEncDecGetter: given the path so far, if applicable, returns a StringEncoderDecoder

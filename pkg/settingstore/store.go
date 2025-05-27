@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
-	"github.com/flexigpt/flexiui/pkg/settingstore/spec"
-	"github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
-	"github.com/flexigpt/flexiui/pkg/simplemapdb/filestore"
+	aiproviderSpec "github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/settingstore/spec"
+	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
+	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 )
 
 type SettingStore struct {

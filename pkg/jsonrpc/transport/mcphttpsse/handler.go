@@ -9,8 +9,8 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/sse"
-	"github.com/flexigpt/flexiui/pkg/jsonrpc/humaadapter"
-	jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
+	"github.com/ppipada/flexigpt-app/pkg/jsonrpc/humaadapter"
+	jsonrpcReqResp "github.com/ppipada/flexigpt-app/pkg/jsonrpc/reqresp"
 	"github.com/google/uuid"
 )
 

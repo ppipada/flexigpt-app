@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	aiproviderConsts "github.com/flexigpt/flexiui/pkg/aiprovider/consts"
+	aiproviderConsts "github.com/ppipada/flexigpt-app/pkg/aiprovider/consts"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 

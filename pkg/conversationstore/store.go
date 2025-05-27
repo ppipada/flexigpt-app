@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/flexigpt/flexiui/pkg/conversationstore/spec"
-	"github.com/flexigpt/flexiui/pkg/simplemapdb/dirstore"
-	"github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
+	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
+	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
+	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/google/uuid"
 )
 

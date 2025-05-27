@@ -4,11 +4,11 @@ import (
 	"context"
 	"log/slog"
 
-	aiproviderConsts "github.com/flexigpt/flexiui/pkg/aiprovider/consts"
-	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
-	"github.com/flexigpt/flexiui/pkg/middleware"
-	"github.com/flexigpt/flexiui/pkg/settingstore"
-	"github.com/flexigpt/flexiui/pkg/settingstore/spec"
+	aiproviderConsts "github.com/ppipada/flexigpt-app/pkg/aiprovider/consts"
+	aiproviderSpec "github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/middleware"
+	"github.com/ppipada/flexigpt-app/pkg/settingstore"
+	"github.com/ppipada/flexigpt-app/pkg/settingstore/spec"
 )
 
 // SettingStoreWrapper is a wrapper around SettingStore that provides non-contextual APIs.

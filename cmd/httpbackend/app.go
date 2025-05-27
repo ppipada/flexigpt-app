@@ -5,11 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/flexigpt/flexiui/pkg/conversationstore"
-	"github.com/flexigpt/flexiui/pkg/settingstore"
+	"github.com/ppipada/flexigpt-app/pkg/conversationstore"
+	"github.com/ppipada/flexigpt-app/pkg/settingstore"
 
-	"github.com/flexigpt/flexiui/pkg/aiprovider"
-	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/aiprovider"
+	aiproviderSpec "github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 )
 
 type BackendApp struct {

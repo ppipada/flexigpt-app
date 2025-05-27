@@ -1,6 +1,6 @@
 package spec
 
-import jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
+import jsonrpcReqResp "github.com/ppipada/flexigpt-app/pkg/jsonrpc/reqresp"
 
 // Sent from the client to request a list of resources the server has.
 type ListResourcesRequest jsonrpcReqResp.Request[*PaginatedRequestParams]

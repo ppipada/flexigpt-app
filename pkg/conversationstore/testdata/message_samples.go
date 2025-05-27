@@ -3,7 +3,7 @@ package testdata
 import (
 	"time"
 
-	"github.com/flexigpt/flexiui/pkg/conversationstore/spec"
+	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
 )
 
 const tmpMessageDetails = `
@@ -219,24 +219,24 @@ In this setup:
 		Role:      spec.ConversationRoleUser,
 		Content: `
 		# Out of Breath
-	
+
 		You know, sometimes in life it seems like there's no way out. Like
 		a sheep trapped in a maze designed by wolves. See all the
 		options [here](https://github.com/probablyup/markdown-to-jsx/)
-	
+
 		[reference](#)
-	
+
 	` + "```" + `
 	import { Grommet } from 'grommet';
 	` + "```" + `
-	
+
 		> i carry your heart with me
-	
+
 		![alt text](//v2.grommet.io/assets/IMG_4245.jpg "Markdown Image")
-	
+
 		| Markdown | Less | Pretty | Long header now | One more for sake of it |
 		| --- | --- | --- | --- | --- |
-		| Content *still* | ` + "`renders`" + ` | **nicely** in a table | **nicely** in a table | **nicely** in a table | 
+		| Content *still* | ` + "`renders`" + ` | **nicely** in a table | **nicely** in a table | **nicely** in a table |
 		| 1 | 2 | 3 | 3 | 3 |
 	`,
 		Timestamp: newStringPointer("09:00 AM"),
@@ -247,7 +247,7 @@ In this setup:
 		CreatedAt: newTimePointer(2023, 9, 24, 9, 45, 0, 0, time.UTC),
 		Role:      spec.ConversationRoleAssistant,
 		Content: `
-	
+
 	` + "```python" + `
 	def get_openapi_completion_for_integration_sequence_test(intxt, value_type):
 		response = openai.FetchCompletion.create(
@@ -257,7 +257,7 @@ In this setup:
 				max_tokens=2560,
 				best_of=1,
 				stop=["##", "}}}}}}", "Generate workflow", "func Test"])
-		
+
 	return response
 	` + "```" + `
 			`,
@@ -292,19 +292,19 @@ May be I will see you again? Thanks a bunch!`,
 		Role:      spec.ConversationRoleAssistant,
 		Content: `
 	# My heading
-	
+
 	[reference](#)
-	
+
 	If Grommet's Markdown component uses ` + "`markdown-to-jsx`" + ` internally, then the types for your custom renderer function should align with what ` + "`markdown-to-jsx`" + ` expects. The ` + "`markdown-to-jsx`" + ` library allows you to provide custom renderers for different Markdown elements, and these custom renderers receive specific props based on the Markdown element they're rendering.
-	
+
 	For a ` + "`code`" + ` element, the props typically include those that are passed to any React component, along with some specific to Markdown rendering. Here's how you can define the type for your ` + "`code`" + ` component in this context:
-	
+
 	## Sample code
-	
+
 	` + "```typescript" + `
 	import React, { FC, ReactNode } from 'react';
 	// other imports remain the same
-	
+
 	interface CodeComponentProps {
 		node: any;  // This can be more specific if you know the structure
 		inline?: boolean;
@@ -312,11 +312,11 @@ May be I will see you again? Thanks a bunch!`,
 		children: ReactNode;
 		// Include other props that markdown-to-jsx might pass
 	}
-	
+
 	const CodeBlock: FC<CodeComponentProps> = ({ node, inline, className, children, ...props }) => {
 		// CodeBlock implementation remains the same
 	};
-	
+
 	export const ConversationMessageContent: FC<ConversationMessageContentProps> = ({ content }) => {
 		return (
 			<MemoizedMarkdown
@@ -329,9 +329,9 @@ May be I will see you again? Thanks a bunch!`,
 		);
 	};
 	` + "```" + `
-	
+
 	In this setup:
-	
+
 	`,
 		Timestamp: newStringPointer("08:45 AM"),
 		Name:      newStringPointer("Assistant"),
@@ -342,24 +342,24 @@ May be I will see you again? Thanks a bunch!`,
 		Role:      spec.ConversationRoleUser,
 		Content: `
 		# Out of Breath
-	
+
 		You know, sometimes in life it seems like there's no way out. Like
 		a sheep trapped in a maze designed by wolves. See all the
 		options [here](https://github.com/probablyup/markdown-to-jsx/)
-	
+
 		[reference](#)
-	
+
 	` + "```" + `
 	import { Grommet } from 'grommet';
 	` + "```" + `
-	
+
 		> i carry your heart with me
-	
+
 		![alt text](//v2.grommet.io/assets/IMG_4245.jpg "Markdown Image")
-	
+
 		| Markdown | Less | Pretty | Long header now | One more for sake of it |
 		| --- | --- | --- | --- | --- |
-		| Content *still* | ` + "`renders`" + ` | **nicely** in a table | **nicely** in a table | **nicely** in a table | 
+		| Content *still* | ` + "`renders`" + ` | **nicely** in a table | **nicely** in a table | **nicely** in a table |
 		| 1 | 2 | 3 | 3 | 3 |
 	`,
 		Timestamp: newStringPointer("09:00 AM"),
@@ -370,7 +370,7 @@ May be I will see you again? Thanks a bunch!`,
 		CreatedAt: newTimePointer(2023, 9, 24, 9, 45, 0, 0, time.UTC),
 		Role:      spec.ConversationRoleAssistant,
 		Content: `
-	
+
 	` + "```python" + `
 	def get_openapi_completion_for_integration_sequence_test(intxt, value_type):
 		response = openai.FetchCompletion.create(
@@ -380,7 +380,7 @@ May be I will see you again? Thanks a bunch!`,
 				max_tokens=2560,
 				best_of=1,
 				stop=["##", "}}}}}}", "Generate workflow", "func Test"])
-		
+
 	return response
 	` + "```" + `
 			`,

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/flexigpt/flexiui/pkg/simplemapdb/encdec"
+	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 )
 
 // deepEqual is a simple helper function to compare two any values for equality.

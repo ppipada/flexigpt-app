@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/flexigpt/flexiui/pkg/jsonrpc/transport/helpers_test"
+	"github.com/ppipada/flexigpt-app/pkg/jsonrpc/transport/helpers_test"
 )
 
 type HTTPJSONRPCClient struct {

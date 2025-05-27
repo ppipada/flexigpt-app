@@ -13,12 +13,12 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
-	"github.com/flexigpt/flexiui/pkg/aiprovider"
-	"github.com/flexigpt/flexiui/pkg/conversationstore"
-	"github.com/flexigpt/flexiui/pkg/logrotate"
-	"github.com/flexigpt/flexiui/pkg/settingstore"
+	"github.com/ppipada/flexigpt-app/pkg/aiprovider"
+	"github.com/ppipada/flexigpt-app/pkg/conversationstore"
+	"github.com/ppipada/flexigpt-app/pkg/logrotate"
+	"github.com/ppipada/flexigpt-app/pkg/settingstore"
 
-	aiproviderConsts "github.com/flexigpt/flexiui/pkg/aiprovider/consts"
+	aiproviderConsts "github.com/ppipada/flexigpt-app/pkg/aiprovider/consts"
 )
 
 // Options for the server cli.

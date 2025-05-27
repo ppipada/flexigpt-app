@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/flexigpt/flexiui/pkg/simplemapdb/dirstore"
+	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
 )
 
 func TestMapDirectoryStore(t *testing.T) {

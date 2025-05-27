@@ -52,7 +52,7 @@
 		"@types/sprintf-js": "^1.1.4",
 		"@types/uuid": "^10.0.0",
 		"cross-env": "^7.0.3",
-		"daisyui": "^5.0.16",
+		"daisyui": "^5.0.38",
 		"eslint": "^9.23.0",
 		"eslint-plugin-prettier": "^5.2.6",
 		"eslint-plugin-react": "^7.37.5",

@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/danielgtaylor/huma/v2"
-	jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
+	jsonrpcReqResp "github.com/ppipada/flexigpt-app/pkg/jsonrpc/reqresp"
 )
 
 type ResponseStatusError struct {

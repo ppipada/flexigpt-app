@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/flexigpt/flexiui/pkg/docstore/spec"
+	"github.com/ppipada/flexigpt-app/pkg/docstore/spec"
 	"github.com/google/uuid"
 	"github.com/philippgille/chromem-go"
 )

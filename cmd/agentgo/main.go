@@ -17,8 +17,8 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 
-	assets "github.com/flexigpt/flexiui/frontend"
-	"github.com/flexigpt/flexiui/pkg/logrotate"
+	assets "github.com/ppipada/flexigpt-app/frontend"
+	"github.com/ppipada/flexigpt-app/pkg/logrotate"
 )
 
 var Version string

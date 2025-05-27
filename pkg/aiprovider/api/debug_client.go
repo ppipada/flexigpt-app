@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 )
 
 // Sensitive keys to filter.

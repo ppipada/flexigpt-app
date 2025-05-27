@@ -1,6 +1,6 @@
 package spec
 
-import aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+import aiproviderSpec "github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 
 type GetAllSettingsRequest struct {
 	ForceFetch bool `query:"forceFetch" doc:"Force refresh the settings and get" required:"false"`

@@ -1,7 +1,7 @@
 package consts
 
 import (
-	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 )
 
 const ProviderNameGoogle spec.ProviderName = "google"

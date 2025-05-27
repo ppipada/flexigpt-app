@@ -1,8 +1,8 @@
 package spec
 
 import (
-	aiproviderConsts "github.com/flexigpt/flexiui/pkg/aiprovider/consts"
-	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+	aiproviderConsts "github.com/ppipada/flexigpt-app/pkg/aiprovider/consts"
+	aiproviderSpec "github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 )
 
 // Define the default AI settings.

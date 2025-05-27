@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 
 	"github.com/tmc/langchaingo/llms"
 	langchainAnthropic "github.com/tmc/langchaingo/llms/anthropic"

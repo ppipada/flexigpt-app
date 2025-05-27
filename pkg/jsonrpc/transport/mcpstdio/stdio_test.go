@@ -7,8 +7,8 @@ import (
 	"net"
 	"testing"
 
-	"github.com/flexigpt/flexiui/pkg/jsonrpc/transport/helpers_test"
-	stdioNet "github.com/flexigpt/flexiui/pkg/jsonrpc/transport/mcpstdio/net"
+	"github.com/ppipada/flexigpt-app/pkg/jsonrpc/transport/helpers_test"
+	stdioNet "github.com/ppipada/flexigpt-app/pkg/jsonrpc/transport/mcpstdio/net"
 )
 
 type StdIOJSONRPCClient struct {

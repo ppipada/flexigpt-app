@@ -1,6 +1,6 @@
 package spec
 
-import jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
+import jsonrpcReqResp "github.com/ppipada/flexigpt-app/pkg/jsonrpc/reqresp"
 
 // Sent from the server to request a list of root URIs from the client. Roots allow
 // servers to ask for specific directories or files to operate on. A common example

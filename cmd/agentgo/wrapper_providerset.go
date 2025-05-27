@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/flexigpt/flexiui/pkg/aiprovider"
-	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
-	"github.com/flexigpt/flexiui/pkg/middleware"
+	"github.com/ppipada/flexigpt-app/pkg/aiprovider"
+	aiproviderSpec "github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/middleware"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )

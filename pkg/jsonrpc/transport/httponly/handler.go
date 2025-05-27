@@ -2,8 +2,8 @@ package httponly
 
 import (
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/flexigpt/flexiui/pkg/jsonrpc/humaadapter"
-	jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
+	"github.com/ppipada/flexigpt-app/pkg/jsonrpc/humaadapter"
+	jsonrpcReqResp "github.com/ppipada/flexigpt-app/pkg/jsonrpc/reqresp"
 )
 
 const (

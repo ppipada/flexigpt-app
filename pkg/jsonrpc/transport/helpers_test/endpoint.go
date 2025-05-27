@@ -3,7 +3,7 @@ package helpers_test
 import (
 	"context"
 
-	jsonrpcReqResp "github.com/flexigpt/flexiui/pkg/jsonrpc/reqresp"
+	jsonrpcReqResp "github.com/ppipada/flexigpt-app/pkg/jsonrpc/reqresp"
 )
 
 // /////////////// Handlers /////////////////

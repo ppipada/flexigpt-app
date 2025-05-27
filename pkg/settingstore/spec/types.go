@@ -1,7 +1,7 @@
 package spec
 
 import (
-	aiproviderSpec "github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+	aiproviderSpec "github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 )
 
 type ModelSetting struct {

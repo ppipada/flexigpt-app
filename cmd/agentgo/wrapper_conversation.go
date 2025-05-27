@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/flexigpt/flexiui/pkg/conversationstore"
-	"github.com/flexigpt/flexiui/pkg/conversationstore/spec"
-	"github.com/flexigpt/flexiui/pkg/middleware"
+	"github.com/ppipada/flexigpt-app/pkg/conversationstore"
+	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
+	"github.com/ppipada/flexigpt-app/pkg/middleware"
 )
 
 type ConversationCollectionWrapper struct {

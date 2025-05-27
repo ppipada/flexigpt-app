@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/flexigpt/flexiui/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 	"github.com/tmc/langchaingo/llms"
 )
 
