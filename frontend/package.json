@@ -13,7 +13,8 @@
 		"run:wailsdev": "pnpm run build:wails && cp .env.dev .env && cross-env VITE_PLATFORM=wails react-router dev",
 		"build:wails": "rimraf ./dist && cp .env.prod .env && cross-env VITE_PLATFORM=wails react-router build",
 		"typecheck": "react-router typegen && tsc",
-		"test": "echo 'No tests'"
+		"test": "echo 'No tests'",
+		"vite": "vite"
 	},
 	"keywords": [],
 	"author": "ppipada",
@@ -65,7 +66,7 @@
 		"tailwindcss": "^4.1.3",
 		"typescript": "^5.8.3",
 		"typescript-eslint": "^8.29.0",
-		"vite": "^6.2.6",
+		"vite": "^6.3.5",
 		"vite-tsconfig-paths": "^5.1.3"
 	},
 	"knip": {
