@@ -9,9 +9,9 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/sse"
+	"github.com/google/uuid"
 	"github.com/ppipada/flexigpt-app/pkg/jsonrpc/humaadapter"
 	jsonrpcReqResp "github.com/ppipada/flexigpt-app/pkg/jsonrpc/reqresp"
-	"github.com/google/uuid"
 )
 
 const (

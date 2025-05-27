@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/ppipada/flexigpt-app/pkg/conversationstore"
 	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
-	"github.com/google/uuid"
 )
 
 func TestInitConversation(t *testing.T) {

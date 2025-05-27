@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
-	"github.com/google/uuid"
 )
 
 func GetDateFromUUIDv7(uuidStr string) (time.Time, error) {
