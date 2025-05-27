@@ -40,6 +40,7 @@ export const ProgrammingLanguages: LanguageMap = {
 	css: { extension: '.css', mimeType: 'text/css' },
 	json: { extension: '.json', mimeType: 'application/json' },
 	toml: { extension: '.toml', mimeType: 'application/toml' },
+	yaml: { extension: '.yaml', mimeType: 'application/yaml' },
 	dart: { extension: '.dart', mimeType: 'application/dart' },
 	// Add more file extensions and MIME types here
 };
