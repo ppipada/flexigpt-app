@@ -10,6 +10,9 @@
   - [ ] Think through:
     - [ ] In AI replies, find a way to mention the model used and special params a bit more explicitly.
     - [ ] Check whether current details is good enough UX or need a bit better subtle ux.
+  - [ ] Support for image/audio in chat
+  - [ ] Slash commands for prompts/tools/kb in chat
+  - [ ] support for read/attach file in chats and then write/save file (slightly different flow than download)
 
 - [ ] Chats vs Chat with AI from home
 
@@ -193,3 +196,7 @@ Implement a `DocStoreSet` that manages multiple `DocStore` instances within a Wa
 ### Entity: `VectorStore`
 
 - Use VectoreStore interface from langchaingo and implement for chromamem for local files
+
+## Apps
+
+- [ ] Start with the noted apps support
