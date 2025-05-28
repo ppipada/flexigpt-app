@@ -77,6 +77,13 @@ const ChatScreen: FC = () => {
 	};
 
 	const handleNewChat = useCallback(async () => {
+		// If the current chat is empty (no messages), do nothing
+		if (chat.messages.length === 0) {
+			if (chatInputRef.current) {
+				chatInputRef.current.focus(); // Still focus input
+			}
+			return;
+		}
 		conversationStoreAPI.saveConversation(chat);
 		setChat(initConversation());
 		fetchConversations(); // Fetch conversations again

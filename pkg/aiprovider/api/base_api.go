@@ -71,6 +71,20 @@ func (api *BaseAIAPI) SetProviderAttribute(
 	return nil
 }
 
+func trimInbuiltPrompts(systemPrompt, inbuiltPrompt string) string {
+	// Split both prompts into lines
+	inbuiltLines := strings.Split(inbuiltPrompt, "\n")
+	promptLines := strings.Split(systemPrompt, "\n")
+
+	// Remove matching lines from the start
+	for len(inbuiltLines) > 0 && len(promptLines) > 0 && promptLines[0] == inbuiltLines[0] {
+		promptLines = promptLines[1:]
+		inbuiltLines = inbuiltLines[1:]
+	}
+	// Re-join the remaining lines
+	return inbuiltPrompt + "\n" + strings.TrimLeft(strings.Join(promptLines, "\n"), "\n")
+}
+
 func (api *BaseAIAPI) getCompletionRequest(
 	prompt string,
 	modelParams spec.ModelParams,
@@ -115,9 +129,8 @@ func (api *BaseAIAPI) getCompletionRequest(
 	}
 
 	reqSystemPrompt := modelParams.SystemPrompt
-	if inbuiltModelParams != nil && inbuiltModelParams.SystemPrompt != "" &&
-		!strings.HasPrefix(modelParams.SystemPrompt, inbuiltModelParams.SystemPrompt) {
-		reqSystemPrompt = inbuiltModelParams.SystemPrompt + "\n" + reqSystemPrompt
+	if inbuiltModelParams != nil && inbuiltModelParams.SystemPrompt != "" {
+		reqSystemPrompt = trimInbuiltPrompts(reqSystemPrompt, inbuiltModelParams.SystemPrompt)
 	}
 	completionRequest.ModelParams.SystemPrompt = reqSystemPrompt
 

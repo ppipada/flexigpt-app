@@ -270,3 +270,7 @@
     - [x] openapi docs for jsonrpc
   - [x] http transport for jsonrpc
   - [x] stdio transport
+
+- [x] New conversation is created again and again even if empty
+- [x] Input param validation: If formatting reenabled is there in runtime input params prompt it is still sent as double
+- [x] Icon resolutions: revalidate icon and its resolutions available vs used

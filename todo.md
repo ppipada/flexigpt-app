@@ -2,10 +2,6 @@
 
 ## Laundry list
 
-- [ ] New conversation is created again and again even if empty
-- [ ] Input param validation: If formatting reenabled is there in runtime input params prompt it is still sent as double
-- [ ] Icon resolutions: revalidate icon and its resolutions available vs used
-
 - [ ] Settings
 
   - [ ] Initial inbuilt models should be available by default without a entry in settings.
