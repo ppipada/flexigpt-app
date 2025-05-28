@@ -12,7 +12,15 @@
     - [ ] Check whether current details is good enough UX or need a bit better subtle ux.
   - [ ] Support for image/audio in chat
   - [ ] Slash commands for prompts/tools/kb in chat
+    - [ ] Should model selection also be in chat commands?
+    - [ ] may be can be done as: @ invokes assistants. inbuilt models with current settings are default assistants.
   - [ ] support for read/attach file in chats and then write/save file (slightly different flow than download)
+  - [ ] Think if needed:
+    - [ ] Users can mark a query to be not included in the chat message conversation history when talking to llm.
+    - [ ] This is query level control which is different from the generic control.
+    - [ ] Ignore history command structure:
+      - [ ] Global on/off switch like right now
+      - [ ] Query level switch overrides the global switch.
 
 - [ ] Chats vs Chat with AI from home
 
