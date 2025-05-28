@@ -257,5 +257,16 @@
 - [ ] ~~Ideally should detect any code or math blocks even in input, annotate them and then display. i.e format a normal text into proper md.~~
 - [x] Math support broke in between, do math rendering before gfm
 - [x] see how to set version increment seamlessly at one place only
+
   - [x] Version string to be passed via ldconfig to code and use from there
   - [x] render templates for flatpak and mac
+
+- [x] JSONRPC
+
+  - [x] jsonrpc message protocol implementation
+  - [x] Supprot batch for jsonrpc
+  - [x] stdio conn
+  - [x] humaadapter for jsonrpc
+    - [x] openapi docs for jsonrpc
+  - [x] http transport for jsonrpc
+  - [x] stdio transport

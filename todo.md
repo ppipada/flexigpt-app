@@ -1,44 +1,114 @@
-# Project Current Milestones
+# Project TODO
 
-## Ongoing Scope
+## Laundry list
 
-- Milestone 0 completion
-  - Top level feature: Chat, Conversation history, Settings
-  - Local installer for Linux
-- Milestone 1 partial
-  - KB, Tools, Prompts
-
-## MCP handling
-
-- [x] JSONRPC
-
-  - [x] jsonrpc message protocol implementation
-  - [x] Supprot batch for jsonrpc
-  - [x] stdio conn
-  - [x] humaadapter for jsonrpc
-    - [x] openapi docs for jsonrpc
-  - [x] http transport for jsonrpc
-  - [x] stdio transport
-
-- [ ] MCP transport
-
-  - [ ] mcp httpsse
-  - [ ] stdio for mcp
-
-- [ ] Add servers for: file, git, simplemapstore
 - [ ] New conversation is created again and again even if empty
-- [ ] if formatting reenabled is there in runtime input params prompt it is still sent as double
+- [ ] Input param validation: If formatting reenabled is there in runtime input params prompt it is still sent as double
+- [ ] Icon resolutions: revalidate icon and its resolutions available vs used
 
-## Settings
+- [ ] Settings
 
-- [ ] Need a settings data version and migration func
+  - [ ] Initial inbuilt models should be available by default without a entry in settings.
+  - [ ] Settings should be overrides and new/custom models/providers
+  - [ ] Future: Need a settings data version and migration func
+  - [ ] API key should never reach frontend after save: Need to verify if some place this is remaining
 
-  - [ ] API key should never reach frontend after save
+- [ ] Performance: There is large cpu consumption sometime, debug
 
-## Performance
-
-- [ ] There is large cpu consumption sometime, debug
   - [ ] It is mainly seen if both wails dev and current app is open and being used wails://wails consumes 100%
   - [ ] Also check when one request was fired but not allowed to complete for some reason
   - [ ] Also, if the message thread gets very very big there seems to be a issue.
   - [ ] it is seen that post data streaming the cpu percentage shoots up. May be stream callback leaks or looped somewhere?
+
+## Tasks: Tools Implementation with CodeMirror
+
+- Tools Page
+
+  - Header
+
+    - [x] Design the header with the title "Tools."
+    - [ ] ~~Implement a search bar for tool searching.~~
+
+  - Main Content Area:
+
+    - [ ] ~~Design the tool list in a card format.~~
+    - [ ] ~~Display tool name, short description, and last modified date on each card.~~
+    - [x] Add quick action icons/buttons for edit, delete, ~~and duplicate~~.
+    - [x] Implement a "Create New Tool" button using a floating action button (FAB) or a clearly marked button.
+
+- Create/Edit Tool Modal:
+
+  - [x] Design the modal layout for creating/editing tools.
+  - [x] Add a tool name field (required).
+  - [ ] ~~Add a description field (optional).~~
+  - [ ] Implement a schema area using CodeMirror for defining the tool's schema.
+    - [ ] Configure CodeMirror to support JSON syntax highlighting and validation.
+    - [ ] Allow users to define input and output parameters using JSON schema.
+  - [ ] Implement a function area using CodeMirror for accepting/implementing the schema.
+    - [ ] Configure CodeMirror to support TypeScript syntax highlighting and validation.
+    - [ ] Allow users to write an asynchronous TypeScript function that utilizes the defined schema.
+  - [x] Usability
+    - [x] Provide real-time validation and feedback for required fields.
+    - [x] Use tooltips or inline messages for guidance on schema and function implementation.
+    - [x] Ensure keyboard navigability.
+    - [x] Implement ARIA labels and roles for screen readers.
+  - [x] Action area:
+    - [x] Implement a "Save & Close" option.
+    - [x] Add a "Discard" button to exit without saving changes.
+
+- Backend
+
+  - [ ] Integrate with json store for tool storage.
+  - [ ] Implement API endpoints for creating, retrieving, updating, and deleting tools.
+  - [ ] Ensure schema validation and function execution are supported on the backend.
+
+## Tasks: Prompt templates
+
+- Prompt list page
+
+  - Header
+
+    - [x] Design the header with the title "Prompt Templates."
+    - [ ] ~~Implement a search bar for prompt searching.~~
+
+  - Main Content Area:
+
+    - [ ] ~~Design the prompt list in a card format.~~
+    - [ ] ~~Display prompt name, short description, short prompt start string and last modified date on each card.~~
+    - [x] Add quick action icons/buttons for edit, delete, and ~~duplicate~~.
+    - [x] Implement a "Create New Prompt" button using a floating action button (FAB) or a clearly marked button.
+
+- Create/Edit Prompt Modal:
+
+  - [x] Design the modal layout for creating/editing prompts.
+  - [x] Add a prompt name field (required).
+  - [ ] ~~Add a description field (optional).~~
+  - [ ] Implement a large text area for entering the prompt template. This should be large enough and scrollable
+  - [ ] May have preferred llm provider config (??)
+  - [ ] Would need:
+    - [ ] tools
+    - [ ] KB
+  - [x] Usability
+    - [x] Provide real-time validation and feedback for required fields.
+    - [x] Use tooltips or inline messages for guidance on template strings.
+    - [x] Ensure keyboard navigability.
+    - [x] Implement ARIA labels and roles for screen readers.
+  - [ ] Detect template strings and dynamically add them to a "Variables" section.
+    - [ ] This should be below the scrollable area
+    - [ ] Automatically populate variables section with detected template strings.
+    - [ ] Implement fields for variable name, type dropdown, and default value.
+  - [x] Action area: should be below variables
+    - [x] Implement a "Save & Close" option.
+    - [x] Add a "Discard" button to exit without saving changes.
+
+- Backend
+
+  - [ ] Integrate with JSON file store per prompt
+  - [ ] get list of prompts using the partitioned file store
+
+- Integration of prompts in chat
+  - [ ] Once defined all prompts should be available to use in chat via some keystroke (??).
+  - [ ] Would also need some way to indicate if someone wants to add a prompt as a system prompt or just prompt
+  - [ ] ~~Ideally if it is just prompt it should just expand the prompt in the input box~~
+  - [ ] For any prompt with vars, the vars should be injected with defaults properly so that a user can edit them and frontend can parse it to create a proper string too.
+  - [ ] ~~Can vars be few system functions like open file (??)~~
