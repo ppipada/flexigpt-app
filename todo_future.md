@@ -38,6 +38,9 @@
   - [ ] Signing for Win
   - [ ] Test Windows build
 
+- [ ] Docs inside app
+  - [ ] Have docs pages inside app itself
+
 ## Stricken out list
 
 - [ ] ~~logger is imported in securejsondb before it is set as ipc file logger in appimage~~
