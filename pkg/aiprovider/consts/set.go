@@ -26,3 +26,12 @@ var InbuiltProviderModels = map[spec.ProviderName]map[spec.ModelName]spec.ModelP
 	ProviderNameLlamaCPP:    LlamacppModels,
 	ProviderNameOpenAI:      OpenAIModels,
 }
+
+var InbuiltProviderModelDefaults = map[spec.ProviderName]map[spec.ModelName]spec.ModelDefaults{
+	ProviderNameAnthropic:   AnthropicModelDefaults,
+	ProviderNameDeepseek:    DeepseekModelDefaults,
+	ProviderNameGoogle:      GoogleModelDefaults,
+	ProviderNameHuggingFace: HuggingfaceModelDefaults,
+	ProviderNameLlamaCPP:    LlamacppModelDefaults,
+	ProviderNameOpenAI:      OpenAIModelDefaults,
+}

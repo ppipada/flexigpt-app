@@ -11,9 +11,13 @@ import {
 } from '@/models/aiprovidermodel';
 import type { AISetting } from '@/models/settingmodel';
 
-import { FetchInbuiltProviderInfo } from '@/apis/aiprovider_helper';
-import { settingstoreAPI } from '@/apis/baseapi';
-import { AddAISetting, DeleteAISetting, SetAppSettings } from '@/apis/settingstore_helper';
+import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
+import {
+	AddAISetting,
+	DeleteAISetting,
+	MergeInbuiltModelsWithSettings,
+	SetAppSettings,
+} from '@/apis/settingstore_helper';
 
 import DownloadButton from '@/components/download_button';
 import Dropdown from '@/components/dropdown';
@@ -44,7 +48,7 @@ const SettingsPage: FC = () => {
 	useEffect(() => {
 		(async () => {
 			const settings = await settingstoreAPI.getAllSettings();
-			const info = await FetchInbuiltProviderInfo();
+			const info = await providerSetAPI.getConfigurationInfo();
 			const enabledProviders = Object.keys(settings.aiSettings).filter(
 				provider => settings.aiSettings[provider].isEnabled
 			);
@@ -54,9 +58,14 @@ const SettingsPage: FC = () => {
 			}
 			const defaultProv = settings.app.defaultProvider;
 
-			setInbuiltProviderInfo(info);
+			setInbuiltProviderInfo(info.inbuiltProviderModels);
 			setComponentDefaultProvider(enabledProviders.includes(defaultProv) ? defaultProv : enabledProviders[0]);
-			setAISettings(settings.aiSettings);
+			const newSettings = MergeInbuiltModelsWithSettings(
+				settings.aiSettings,
+				info.inbuiltProviderModels,
+				info.inbuiltProviderModelDefaults
+			);
+			setAISettings(newSettings);
 		})();
 	}, []);
 

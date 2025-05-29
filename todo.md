@@ -2,13 +2,6 @@
 
 ## Laundry list
 
-- [ ] Settings
-
-  - [ ] Initial inbuilt models should be available by default without a entry in settings.
-  - [ ] Settings should be overrides and new/custom models/providers
-  - [ ] Future: Need a settings data version and migration func
-  - [ ] API key should never reach frontend after save: Need to verify if some place this is remaining
-
 - [ ] Performance: There is large cpu consumption sometime, debug
 
   - [ ] It is mainly seen if both wails dev and current app is open and being used wails://wails consumes 100%

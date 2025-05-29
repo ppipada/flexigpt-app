@@ -4,6 +4,7 @@ import type {
 	CompletionResponse,
 	ConfigurationResponse,
 	IProviderSetAPI,
+	ModelDefaults,
 	ModelName,
 	ModelParams,
 	ProviderInfo,
@@ -37,9 +38,15 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		if (
 			!('configuredProviders' in configInfo) ||
 			!('defaultProvider' in configInfo) ||
-			!('inbuiltProviderModels' in configInfo)
+			!('inbuiltProviderModels' in configInfo) ||
+			!('inbuiltProviderModelDefaults' in configInfo)
 		) {
-			return { defaultProvider: '', configuredProviders: {}, inbuiltProviderModels: {} };
+			return {
+				defaultProvider: '',
+				configuredProviders: {},
+				inbuiltProviderModels: {},
+				inbuiltProviderModelDefaults: {},
+			};
 		}
 
 		const providerInfoDict: Record<ProviderName, ProviderInfo> = {};
@@ -52,6 +59,10 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 			inbuiltProviderModels: configInfo['inbuiltProviderModels'] as Record<
 				ProviderName,
 				Record<ModelName, ModelParams>
+			>,
+			inbuiltProviderModelDefaults: configInfo['inbuiltProviderModelDefaults'] as Record<
+				ProviderName,
+				Record<ModelName, ModelDefaults>
 			>,
 		};
 	}

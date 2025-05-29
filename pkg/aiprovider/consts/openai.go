@@ -35,6 +35,49 @@ const (
 	DisplayNameGPT35Turbo = "OpenAI GPT 3.5 turbo"
 )
 
+var OpenAIModelDefaults = map[spec.ModelName]spec.ModelDefaults{
+	GPTO4Mini: {
+		DisplayName: DisplayNameGPTO4Mini,
+		IsEnabled:   true,
+	},
+	GPTO3: {
+		DisplayName: DisplayNameGPTO3,
+		IsEnabled:   true,
+	},
+	GPTO3Mini: {
+		DisplayName: DisplayNameGPTO3Mini,
+		IsEnabled:   false,
+	},
+	GPTO1: {
+		DisplayName: DisplayNameGPTO1,
+		IsEnabled:   false,
+	},
+	GPT41: {
+		DisplayName: DisplayNameGPT41,
+		IsEnabled:   true,
+	},
+	GPT41Mini: {
+		DisplayName: DisplayNameGPT41Mini,
+		IsEnabled:   false,
+	},
+	GPT4O: {
+		DisplayName: DisplayNameGPT4O,
+		IsEnabled:   false,
+	},
+	GPT4OMini: {
+		DisplayName: DisplayNameGPT4OMini,
+		IsEnabled:   false,
+	},
+	GPT4: {
+		DisplayName: DisplayNameGPT4,
+		IsEnabled:   false,
+	},
+	GPT35Turbo: {
+		DisplayName: DisplayNameGPT35Turbo,
+		IsEnabled:   false,
+	},
+}
+
 var OpenAIModels = map[spec.ModelName]spec.ModelParams{
 	GPTO4Mini: {
 		Name:            GPTO4Mini,

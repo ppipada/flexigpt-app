@@ -61,6 +61,11 @@ type ReasoningParams struct {
 	Tokens int            `json:"tokens"`
 }
 
+type ModelDefaults struct {
+	DisplayName string `json:"displayName"`
+	IsEnabled   bool   `json:"isEnabled"`
+}
+
 // ModelParams represents input information about a model to a completion.
 type ModelParams struct {
 	Name                 ModelName        `json:"name"`

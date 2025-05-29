@@ -1,6 +1,7 @@
 import {
 	type AddProviderRequest,
 	DefaultModelParams,
+	type ModelDefaults,
 	type ModelName,
 	type ModelParams,
 	type ProviderName,
@@ -147,13 +148,18 @@ export async function GetChatInputOptions(): Promise<{ allOptions: ChatOptions[]
 		const providerInfoDict = info.configuredProviders;
 		const inbuiltProviderModels = info.inbuiltProviderModels;
 
-		const settings = await settingstoreAPI.getAllSettings();
+		const onlySettings = await settingstoreAPI.getAllSettings();
+		const mergedSettings = MergeInbuiltModelsWithSettings(
+			onlySettings.aiSettings,
+			inbuiltProviderModels,
+			info.inbuiltProviderModelDefaults
+		);
 		// Initialize default option and input models array
 		let defaultOption: ChatOptions | undefined;
 		const inputModels: ChatOptions[] = [];
 
 		for (const providerName of Object.keys(providerInfoDict)) {
-			const aiSetting = settings.aiSettings[providerName];
+			const aiSetting = mergedSettings[providerName];
 			if (aiSetting.isEnabled) {
 				const settingsDefaultModelName = aiSetting.defaultModel;
 				for (const [modelName, modelSetting] of Object.entries(aiSetting.modelSettings)) {
@@ -239,4 +245,46 @@ export async function PopulateModelSettingDefaults(
 		systemPrompt: mergedModelParam.systemPrompt,
 		timeout: mergedModelParam.timeout,
 	};
+}
+
+export function MergeInbuiltModelsWithSettings(
+	aiSettings: Record<ProviderName, AISetting>,
+	inbuiltProviderModels: Record<ProviderName, Record<ModelName, ModelParams>>,
+	inbuiltProviderModelDefaults: Record<ProviderName, Record<ModelName, ModelDefaults>>
+): Record<ProviderName, AISetting> {
+	const newSettings = { ...aiSettings };
+
+	for (const provider in inbuiltProviderModels) {
+		// If provider not in aiSettings, add it
+		if (!(provider in newSettings)) {
+			continue;
+		}
+
+		// For each model in inbuiltProviderInfo, ensure it exists in modelSettings
+		for (const model in inbuiltProviderModels[provider]) {
+			if (model in newSettings[provider].modelSettings) {
+				continue;
+			}
+
+			newSettings[provider].modelSettings[model] = {
+				displayName: model,
+				isEnabled: false,
+				stream: inbuiltProviderModels[provider][model].stream,
+				maxPromptLength: inbuiltProviderModels[provider][model].maxPromptLength,
+				maxOutputLength: inbuiltProviderModels[provider][model].maxOutputLength,
+				temperature: inbuiltProviderModels[provider][model].temperature,
+				reasoning: inbuiltProviderModels[provider][model].reasoning,
+				systemPrompt: inbuiltProviderModels[provider][model].systemPrompt,
+				timeout: inbuiltProviderModels[provider][model].timeout,
+				additionalParameters: inbuiltProviderModels[provider][model].additionalParameters,
+			};
+			if (provider in inbuiltProviderModelDefaults && model in inbuiltProviderModelDefaults[provider]) {
+				newSettings[provider].modelSettings[model].displayName =
+					inbuiltProviderModelDefaults[provider][model].displayName;
+				newSettings[provider].modelSettings[model].isEnabled = inbuiltProviderModelDefaults[provider][model].isEnabled;
+			}
+		}
+	}
+
+	return newSettings;
 }

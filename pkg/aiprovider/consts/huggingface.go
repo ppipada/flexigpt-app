@@ -12,6 +12,13 @@ const (
 
 const DisplayNameDeepseekCoder13BInstruct = "HF Deepseek Coder 1.3b"
 
+var HuggingfaceModelDefaults = map[spec.ModelName]spec.ModelDefaults{
+	DeepseekCoder13BInstruct: {
+		DisplayName: DisplayNameDeepseekCoder13BInstruct,
+		IsEnabled:   true,
+	},
+}
+
 var HuggingfaceModels = map[spec.ModelName]spec.ModelParams{
 	DeepseekCoder13BInstruct: {
 		Name:            DeepseekCoder13BInstruct,

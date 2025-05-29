@@ -1,7 +1,6 @@
 import type {
 	ChatCompletionRequestMessage,
 	CompletionResponse,
-	ModelName,
 	ModelParams,
 	ProviderName,
 } from '@/models/aiprovidermodel';
@@ -123,19 +122,5 @@ export async function GetCompletionMessage(
 		convoMessage.content = msg;
 		convoMessage.details = details;
 		return { responseMessage: convoMessage, requestDetails: undefined };
-	}
-}
-
-export async function FetchInbuiltProviderInfo(): Promise<Record<ProviderName, Record<ModelName, ModelParams>>> {
-	try {
-		const info = await providerSetAPI.getConfigurationInfo();
-		if (Object.keys(info.inbuiltProviderModels).length === 0) {
-			return {};
-		}
-		console.log('Fetched inbuilt providers successfully');
-		return info.inbuiltProviderModels;
-	} catch (error) {
-		console.error('Failed to fetch configuration info:', error);
-		return {};
 	}
 }

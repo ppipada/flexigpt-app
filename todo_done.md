@@ -274,3 +274,6 @@
 - [x] New conversation is created again and again even if empty
 - [x] Input param validation: If formatting reenabled is there in runtime input params prompt it is still sent as double
 - [x] Icon resolutions: revalidate icon and its resolutions available vs used
+
+- [x] Initial inbuilt models should be available by default without a entry in settings.
+- [x] Settings should be overrides and new/custom models/providers

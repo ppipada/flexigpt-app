@@ -22,6 +22,29 @@ const (
 	DisplayNameGemini15Pro      = "Google Gemini 1.5 Pro"
 )
 
+var GoogleModelDefaults = map[spec.ModelName]spec.ModelDefaults{
+	Gemini25Pro: {
+		DisplayName: DisplayNameGemini25Pro,
+		IsEnabled:   true,
+	},
+	Gemini25Flash: {
+		DisplayName: DisplayNameGemini25Flash,
+		IsEnabled:   true,
+	},
+	Gemini2Flash: {
+		DisplayName: DisplayNameGemini2Flash,
+		IsEnabled:   false,
+	},
+	Gemini2FlashLite: {
+		DisplayName: DisplayNameGemini2FlashLite,
+		IsEnabled:   false,
+	},
+	Gemini15Pro: {
+		DisplayName: DisplayNameGemini15Pro,
+		IsEnabled:   false,
+	},
+}
+
 var GoogleModels = map[spec.ModelName]spec.ModelParams{
 	Gemini25Pro: {
 		Name:            Gemini25Pro,

@@ -16,6 +16,17 @@ const (
 	DisplayNameDeepseekReasoner = "Deepseek Reasoner"
 )
 
+var DeepseekModelDefaults = map[spec.ModelName]spec.ModelDefaults{
+	DeepseekChat: {
+		DisplayName: DisplayNameDeepseekChat,
+		IsEnabled:   true,
+	},
+	DeepseekReasoner: {
+		DisplayName: DisplayNameDeepseekReasoner,
+		IsEnabled:   true,
+	},
+}
+
 var DeepseekModels = map[spec.ModelName]spec.ModelParams{
 	DeepseekChat: {
 		Name:            DeepseekChat,

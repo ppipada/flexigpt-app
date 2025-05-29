@@ -33,6 +33,11 @@
   - [ ] Maybe, have soft delete then hard delete workflow.
   - [ ] Conversations ux decisions need to be reviewed again based on current experience with their usage.
 
+- [ ] Settings
+
+  - [ ] Need a settings data version and migration func
+  - [ ] API key should never reach frontend after save: Need to verify if some place this is remaining
+
 - [ ] Windows
 
   - [ ] Signing for Win
@@ -207,6 +212,10 @@ Implement a `DocStoreSet` that manages multiple `DocStore` instances within a Wa
 ### Entity: `VectorStore`
 
 - Use VectoreStore interface from langchaingo and implement for chromamem for local files
+
+## Observability
+
+- At least tokens and dollars need to be represented someplace
 
 ## Apps
 

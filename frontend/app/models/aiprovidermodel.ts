@@ -156,10 +156,16 @@ export interface CompletionResponse {
 	functionArgs?: any;
 }
 
+export interface ModelDefaults {
+	displayName: string;
+	isEnabled: boolean;
+}
+
 export interface ConfigurationResponse {
 	defaultProvider: ProviderName;
 	configuredProviders: Record<ProviderName, ProviderInfo>;
 	inbuiltProviderModels: Record<ProviderName, Record<ModelName, ModelParams>>;
+	inbuiltProviderModelDefaults: Record<ProviderName, Record<ModelName, ModelDefaults>>;
 }
 
 export interface AddProviderRequest {

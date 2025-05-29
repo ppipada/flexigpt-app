@@ -16,6 +16,17 @@ const (
 	DisplayNameLlama31 = "Llama 3.1"
 )
 
+var LlamacppModelDefaults = map[spec.ModelName]spec.ModelDefaults{
+	Llama31: {
+		DisplayName: DisplayNameLlama31,
+		IsEnabled:   true,
+	},
+	Llama3: {
+		DisplayName: DisplayNameLlama3,
+		IsEnabled:   true,
+	},
+}
+
 var LlamacppModels = map[spec.ModelName]spec.ModelParams{
 	Llama3: {
 		Name:            Llama3,

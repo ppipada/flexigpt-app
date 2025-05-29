@@ -915,6 +915,7 @@ export namespace spec {
 	    defaultProvider: string;
 	    configuredProviders: ProviderInfo[];
 	    inbuiltProviderModels: Record<string, any>;
+	    inbuiltProviderModelDefaults: Record<string, any>;
 	
 	    static createFrom(source: any = {}) {
 	        return new GetConfigurationInfoResponseBody(source);
@@ -925,6 +926,7 @@ export namespace spec {
 	        this.defaultProvider = source["defaultProvider"];
 	        this.configuredProviders = this.convertValues(source["configuredProviders"], ProviderInfo);
 	        this.inbuiltProviderModels = source["inbuiltProviderModels"];
+	        this.inbuiltProviderModelDefaults = source["inbuiltProviderModelDefaults"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1095,6 +1097,20 @@ export namespace spec {
 		}
 	}
 	
+	export class ModelDefaults {
+	    displayName: string;
+	    isEnabled: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelDefaults(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.displayName = source["displayName"];
+	        this.isEnabled = source["isEnabled"];
+	    }
+	}
 	export class ModelParams {
 	    name: string;
 	    stream: boolean;
