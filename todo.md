@@ -4,10 +4,11 @@
 
 - [ ] Performance: There is large cpu consumption sometime, debug
 
-  - [ ] It is mainly seen if both wails dev and current app is open and being used wails://wails consumes 100%
-  - [ ] Also check when one request was fired but not allowed to complete for some reason
-  - [ ] Also, if the message thread gets very very big there seems to be a issue.
-  - [ ] it is seen that post data streaming the cpu percentage shoots up. May be stream callback leaks or looped somewhere?
+  - [x] It is mainly seen if both wails dev and current app is open and being used wails://wails consumes 100%
+  - [x] Also check when one request was fired but not allowed to complete for some reason
+  - [x] Also, if the message thread gets very very big there seems to be a issue.
+  - [x] it is seen that post data streaming the cpu percentage shoots up. May be stream callback leaks or looped somewhere?
+  - [ ] check again after installing new version for cpu issues
 
 - [ ] spinner before first response (details if possible)
 
