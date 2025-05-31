@@ -90,7 +90,7 @@ const ChatMessageContentBase = ({
 					{line || '\u00A0' /* Use non-breaking space for empty lines */}
 				</p>
 			));
-		}, [content, align]);
+		}, [textToRender, align]);
 		return <div className="bg-base-100 px-4 py-2">{plainTextContent}</div>;
 	}
 
