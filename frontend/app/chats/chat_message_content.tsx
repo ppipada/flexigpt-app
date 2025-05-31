@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useMemo } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 
 import 'katex/dist/katex.min.css';
 import Markdown from 'react-markdown';
@@ -12,6 +12,23 @@ import supersub from 'remark-supersub';
 import { backendAPI } from '@/apis/baseapi';
 
 import CodeBlock from '@/chats/chat_message_content_codeblock';
+
+const remarkPlugins = [remarkGemoji, supersub, remarkMath, remarkGfm];
+const rehypePlugins = [rehypeKatex];
+const remarkPluginsStreaming = [remarkGemoji, supersub, remarkGfm];
+
+function useDebounced<T>(value: T, delay: number): T {
+	const [debounced, setDebounced] = useState(value);
+	useEffect(() => {
+		const id = setTimeout(() => {
+			setDebounced(value);
+		}, delay);
+		return () => {
+			clearTimeout(id);
+		};
+	}, [value, delay]);
+	return debounced;
+}
 
 // LaTeX processing function
 const containsLatexRegex = /\\\(.*?\\\)|\\\[.*?\\\]|\$.*?\$|\\begin\{equation\}.*?\\end\{equation\}/;
@@ -44,20 +61,43 @@ interface PComponentProps {
 }
 
 interface ChatMessageContentProps {
-	content: string;
+	content: string; // final text (when stream finished)
+	streamedText?: string; // partial text while streaming
+	isStreaming?: boolean;
 	align: string;
-	streamedMessage: string;
 	renderAsMarkdown?: boolean;
 }
 
-// const MemoizedMarkdown = memo(
-// 	Markdown,
-// 	(prevProps, nextProps) => prevProps.children === nextProps.children && prevProps.className === nextProps.className
-// );
+const ChatMessageContentBase = ({
+	content,
+	streamedText = '',
+	isStreaming = false,
+	align,
+	renderAsMarkdown = true,
+}: ChatMessageContentProps) => {
+	const liveText = isStreaming ? streamedText : content;
+	const textToRender = useDebounced(liveText, 250); // parse max ~4×/sec
 
-function ChatMessageMarkdownContent({ content, align, streamedMessage }: ChatMessageContentProps) {
-	// Process the content to handle LaTeX expressions
-	const processedContent = processLaTeX(content);
+	if (!renderAsMarkdown) {
+		// Memoize the plain text content to prevent unnecessary re-renders
+		const plainTextContent = useMemo(() => {
+			return textToRender.split('\n').map((line, index) => (
+				<p
+					key={index}
+					className={`${align} break-words`}
+					style={{ whiteSpace: 'pre-wrap', lineHeight: '1.5', fontSize: '14px' }}
+				>
+					{line || '\u00A0' /* Use non-breaking space for empty lines */}
+				</p>
+			));
+		}, [content, align]);
+		return <div className="bg-base-100 px-4 py-2">{plainTextContent}</div>;
+	}
+
+	const processedContent = useMemo(() => {
+		if (isStreaming) return textToRender; // skip LaTeX processing
+		return /[$\\]/.test(textToRender) ? processLaTeX(textToRender) : textToRender;
+	}, [textToRender, isStreaming]);
 
 	const components = useMemo(
 		() => ({
@@ -89,7 +129,7 @@ function ChatMessageMarkdownContent({ content, align, streamedMessage }: ChatMes
 						language={language}
 						// eslint-disable-next-line @typescript-eslint/no-base-to-string
 						value={String(children).replace(/\n$/, '')}
-						streamedMessage={streamedMessage}
+						streamedMessage={streamedText}
 						{...props}
 					/>
 				);
@@ -135,44 +175,29 @@ function ChatMessageMarkdownContent({ content, align, streamedMessage }: ChatMes
 				<blockquote className="border-l-4 border-neutral/20 pl-4 italic">{children}</blockquote>
 			),
 		}),
-		[align, streamedMessage]
+		[align]
 	);
 
 	return (
 		<div className="bg-base-100 px-4 py-2">
 			<Markdown
-				remarkPlugins={[remarkGemoji, supersub, remarkMath, remarkGfm]}
-				rehypePlugins={[rehypeKatex]}
+				remarkPlugins={isStreaming ? remarkPluginsStreaming : remarkPlugins}
+				rehypePlugins={isStreaming ? [] : rehypePlugins}
 				components={components}
 			>
 				{processedContent}
 			</Markdown>
 		</div>
 	);
+};
+
+function contentAreEqual(prev: ChatMessageContentProps, next: ChatMessageContentProps) {
+	return (
+		prev.content === next.content &&
+		prev.streamedText === next.streamedText &&
+		prev.isStreaming === next.isStreaming &&
+		prev.align === next.align
+	);
 }
 
-export default function ChatMessageContent({
-	content,
-	align,
-	streamedMessage,
-	renderAsMarkdown = true,
-}: ChatMessageContentProps) {
-	if (renderAsMarkdown) {
-		return <ChatMessageMarkdownContent content={content} align={align} streamedMessage={streamedMessage} />;
-	}
-
-	// Memoize the plain text content to prevent unnecessary re-renders
-	const plainTextContent = useMemo(() => {
-		return content.split('\n').map((line, index) => (
-			<p
-				key={index}
-				className={`${align} break-words`}
-				style={{ whiteSpace: 'pre-wrap', lineHeight: '1.5', fontSize: '14px' }}
-			>
-				{line || '\u00A0' /* Use non-breaking space for empty lines */}
-			</p>
-		));
-	}, [content, align]);
-
-	return <div className="bg-base-100 px-4 py-2">{plainTextContent}</div>;
-}
+export default memo(ChatMessageContentBase, contentAreEqual);

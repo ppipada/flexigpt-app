@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { v7 as uuidv7 } from 'uuid';
 
@@ -256,23 +256,23 @@ const ChatScreen: FC = () => {
 		[chat, updateStreamingMessage]
 	);
 
-	const memoizedChatMessages = useMemo(
-		() =>
-			chat.messages.map((message, index) => (
-				<ChatMessage
-					key={message.id}
-					message={message}
-					onEdit={editedText => handleEdit(editedText, message.id)}
-					onResend={() => handleResend(message.id)}
-					streamedMessage={
-						isStreaming && index === chat.messages.length - 1 && message.role === ConversationRoleEnum.assistant
-							? streamedMessage
-							: ''
-					}
-				/>
-			)),
-		[chat.messages, streamedMessage, isStreaming, handleEdit, handleResend]
-	);
+	const chatMessages = chat.messages.map((msg, idx) => {
+		// only the *last* assistant message receives the live chunks
+		const liveText =
+			isStreaming && idx === chat.messages.length - 1 && msg.role === ConversationRoleEnum.assistant
+				? streamedMessage
+				: '';
+
+		return (
+			<ChatMessage
+				key={msg.id}
+				message={msg}
+				onEdit={txt => handleEdit(txt, msg.id)}
+				onResend={() => handleResend(msg.id)}
+				streamedMessage={liveText}
+			/>
+		);
+	});
 
 	return (
 		<div className="flex flex-col items-center w-full h-full overflow-hidden">
@@ -295,7 +295,7 @@ const ChatScreen: FC = () => {
 					style={{ maxHeight: `calc(100vh - 196px - ${inputHeight}px)` }} // Adjust height dynamically
 				>
 					<div className="w-11/12 lg:w-4/5 xl:w-3/4">
-						<div className="w-full flex-1 space-y-4">{memoizedChatMessages}</div>
+						<div className="w-full flex-1 space-y-4">{chatMessages}</div>
 					</div>
 				</div>
 				<div className="w-full flex justify-center bg-transparent fixed bottom-0 mb-3">

@@ -9,6 +9,8 @@
   - [ ] Also, if the message thread gets very very big there seems to be a issue.
   - [ ] it is seen that post data streaming the cpu percentage shoots up. May be stream callback leaks or looped somewhere?
 
+- [ ] spinner before first response (details if possible)
+
 ## Tasks: Tools Implementation with CodeMirror
 
 - Tools Page

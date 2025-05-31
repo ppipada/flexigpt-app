@@ -1,5 +1,5 @@
 import type { ChangeEvent, FC } from 'react';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 
 import { FiCompass, FiUser } from 'react-icons/fi';
 
@@ -14,10 +14,10 @@ interface ChatMessageProps {
 	message: ConversationMessage;
 	onEdit: (editedText: string) => void;
 	onResend: () => void;
-	streamedMessage: string;
+	streamedMessage: string; // live chunks for *this* row
 }
 
-const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamedMessage }) => {
+const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamedMessage }) => {
 	const isUser = message.role === ConversationRoleEnum.user;
 	const align = !isUser ? 'items-end text-left' : 'items-start text-left';
 	const leftColSpan = !isUser ? 'col-span-1 lg:col-span-2' : 'col-span-1';
@@ -29,24 +29,21 @@ const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamed
 	const handleEditClick = () => {
 		setIsEditing(true);
 	};
-
 	const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
 		setEditText(e.target.value);
 	};
-
-	const handleSubmit = (editedText: string) => {
-		onEdit(editedText);
+	const handleSubmit = (txt: string) => {
+		onEdit(txt);
 		setIsEditing(false);
 	};
-
 	const handleDiscard = () => {
 		setIsEditing(false);
 		setEditText(message.content);
 	};
 
 	return (
-		<div className="grid grid-cols-12 grid-rows-[auto_auto] gap-2 mb-4" style={{ fontSize: '14px' }}>
-			{/* Row 1: Icons and Message Content */}
+		<div className="grid grid-cols-12 grid-rows-[auto_auto] gap-2 mb-4" style={{ fontSize: 14 }}>
+			{/* Row 1 ── icon + message bubble */}
 			<div className={`${leftColSpan} flex justify-end row-start-1 row-end-1`}>
 				{isUser && (
 					<div className="flex w-10 h-10 items-center justify-center rounded-full self-end">
@@ -54,7 +51,10 @@ const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamed
 					</div>
 				)}
 			</div>
-			<div className="col-span-10 lg:col-span-9 row-start-1 row-end-1 overflow-hidden shadow-lg rounded-2xl">
+
+			<div
+				className={`col-span-10 lg:col-span-9 row-start-1 row-end-1 overflow-hidden rounded-2xl ${streamedMessage ? '' : 'shadow-lg'}`}
+			>
 				{isEditing ? (
 					<EditBox
 						editText={editText}
@@ -63,16 +63,16 @@ const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamed
 						onDiscard={handleDiscard}
 					/>
 				) : (
-					<div className="flex flex-col w-full">
-						<ChatMessageContent
-							content={streamedMessage || message.content}
-							align={align}
-							streamedMessage={streamedMessage}
-							renderAsMarkdown={!isUser}
-						/>
-					</div>
+					<ChatMessageContent
+						content={message.content}
+						streamedText={streamedMessage}
+						isStreaming={!!streamedMessage}
+						align={align}
+						renderAsMarkdown={!isUser}
+					/>
 				)}
 			</div>
+
 			<div className={`${rightColSpan} flex justify-start row-start-1 row-end-1`}>
 				{!isUser && (
 					<div className="flex w-10 h-10 items-center justify-center rounded-full self-end">
@@ -81,8 +81,8 @@ const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamed
 				)}
 			</div>
 
-			{/* Row 2: Footer */}
-			<div className={`${leftColSpan} row-start-2 row-end-2`}></div>
+			{/* Row 2 ── footer bar */}
+			<div className={`${leftColSpan} row-start-2 row-end-2`} />
 			<div className="col-span-10 lg:col-span-9 row-start-2 row-end-2">
 				{!isEditing && (
 					<ChatMessageFooterArea
@@ -90,14 +90,27 @@ const ChatMessage: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamed
 						cardContent={message.content}
 						onEdit={handleEditClick}
 						onResend={onResend}
-						messageDetails={message.details ? message.details : ''}
-						isStreaming={streamedMessage ? true : false}
+						messageDetails={message.details ?? ''}
+						isStreaming={!!streamedMessage}
 					/>
 				)}
 			</div>
-			<div className={`${rightColSpan} row-start-2 row-end-2`}></div>
+			<div className={`${rightColSpan} row-start-2 row-end-2`} />
 		</div>
 	);
 };
 
-export default ChatMessage;
+/* ----------  MEMO WRAPPER  ---------- */
+function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
+	/* 1️⃣  if the *object reference* for the ConversationMessage changes
+         React must re-render (content edited, message appended …)          */
+	if (prev.message !== next.message) return false;
+
+	/* 2️⃣  we only care if THIS row’s streamed text changed    */
+	if (prev.streamedMessage !== next.streamedMessage) return false;
+
+	/* everything else is the same → skip */
+	return true;
+}
+
+export default memo(ChatMessageInner, propsAreEqual);

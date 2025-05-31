@@ -164,6 +164,8 @@ func (api *BaseAIAPI) FetchCompletion(
 	prevMessages []spec.ChatCompletionRequestMessage,
 	onStreamData func(data string) error,
 ) (*spec.CompletionResponse, error) {
+	/* ------------------------- build completion request -------------------- */
+
 	input := api.getCompletionRequest(prompt, modelParams, inbuiltModelParams, prevMessages)
 	if len(input.Messages) == 0 {
 		return nil, errors.New("empty input messages")
@@ -171,6 +173,7 @@ func (api *BaseAIAPI) FetchCompletion(
 	if llm == nil {
 		return nil, errors.New("llm not initialized")
 	}
+
 	options := []llms.CallOption{
 		llms.WithModel(string(input.ModelParams.Name)),
 	}
@@ -179,72 +182,78 @@ func (api *BaseAIAPI) FetchCompletion(
 	if input.ModelParams.Temperature != nil {
 		options = append(options, llms.WithTemperature(*input.ModelParams.Temperature))
 	}
-
-	if input.ModelParams.Reasoning != nil &&
-		input.ModelParams.Reasoning.Type == spec.ReasoningTypeHybridWithTokens {
+	if rp := input.ModelParams.Reasoning; rp != nil &&
+		rp.Type == spec.ReasoningTypeHybridWithTokens {
 		options = append(options, llms.WithReasoning(llms.Reasoning{
 			IsEnabled: true,
 			Mode:      llms.ReasoningModeTokens,
-			Tokens:    input.ModelParams.Reasoning.Tokens,
+			Tokens:    rp.Tokens,
 		}))
 	}
-
-	if input.ModelParams.Reasoning != nil &&
-		input.ModelParams.Reasoning.Type == spec.ReasoningTypeSingleWithLevels {
+	if rp := input.ModelParams.Reasoning; rp != nil &&
+		rp.Type == spec.ReasoningTypeSingleWithLevels {
 		options = append(options, llms.WithReasoning(llms.Reasoning{
 			IsEnabled: true,
 			Mode:      llms.ReasoningModeLevel,
-			Level:     llms.ReasoningLevel(input.ModelParams.Reasoning.Level),
+			Level:     llms.ReasoningLevel(rp.Level),
 		}))
 	}
-
 	options = append(options, llms.WithMaxTokens(input.ModelParams.MaxOutputLength))
 
+	/* --------------------------- wrap onStreamData -------------------------- */
+	var write func(string) error
+	var flush func()
 	if input.ModelParams.Stream && onStreamData != nil {
+		write, flush = NewBufferedStreamer(onStreamData, FlushInterval, FlushChunkSize)
 		if input.ModelParams.Reasoning != nil {
 			streamingReasoningFunc := func(ctx context.Context, reasoningChunk []byte, chunk []byte) error {
-				reasoningContent := string(reasoningChunk)
-				if reasoningContent != "" {
-					reasoningContent = getBlockQuotedReasoning(reasoningContent)
+				rc := string(reasoningChunk)
+				if rc != "" {
+					rc = getBlockQuotedReasoning(rc)
 				}
-				err := onStreamData(reasoningContent + string(chunk))
-				return err
+				return write(rc + string(chunk))
 			}
 			options = append(options, llms.WithStreamingReasoningFunc(streamingReasoningFunc))
 		} else {
 			streamingFunc := func(ctx context.Context, chunk []byte) error {
-				err := onStreamData(string(chunk))
-				return err
+				return write(string(chunk))
 			}
 			options = append(options, llms.WithStreamingFunc(streamingFunc))
 		}
 	}
 
+	/* ------------------------------ content ------------------------------- */
+
 	content := []llms.MessageContent{}
-	if input.ModelParams.SystemPrompt != "" {
-		sysmsg := llms.TextParts(llms.ChatMessageTypeSystem, input.ModelParams.SystemPrompt)
+	if sp := input.ModelParams.SystemPrompt; sp != "" {
+		sysmsg := llms.TextParts(llms.ChatMessageTypeSystem, sp)
 		if api.ProviderInfo.Name == consts.ProviderNameOpenAI &&
 			strings.HasPrefix(string(input.ModelParams.Name), "o") {
-			sysmsg = llms.TextParts(llms.ChatMessageTypeDeveloper, input.ModelParams.SystemPrompt)
+			sysmsg = llms.TextParts(llms.ChatMessageTypeDeveloper, sp)
 		}
-		content = append(
-			content, sysmsg,
-		)
+		content = append(content, sysmsg)
 	}
 	for _, msg := range input.Messages {
-		role := LangchainRoleMap[msg.Role]
 		if msg.Content != nil {
-			content = append(content, llms.TextParts(role, *msg.Content))
+			content = append(content, llms.TextParts(LangchainRoleMap[msg.Role], *msg.Content))
 		}
 	}
 	if len(content) == 0 {
 		return nil, errors.New("empty input content messages")
 	}
 
+	/* --------------------------- call the model --------------------------- */
+
 	completionResp := &spec.CompletionResponse{}
 
 	ctx = AddDebugResponseToCtx(ctx)
 	resp, err := llm.GenerateContent(ctx, content, options...)
+
+	// make sure buffered data reaches the client
+	if flush != nil {
+		flush()
+	}
+
 	debugResp, ok := GetDebugHTTPResponse(ctx)
 	if err != nil {
 		if ok && debugResp != nil && debugResp.ErrorDetails != nil {
@@ -265,23 +274,23 @@ func (api *BaseAIAPI) FetchCompletion(
 		if ok && debugResp != nil {
 			if completionResp.ErrorDetails == nil {
 				completionResp.ErrorDetails = &spec.APIErrorDetails{
-					Message: "Got nil response from LLM api",
+					Message: "got nil response from LLM api",
 				}
 			} else {
-				completionResp.ErrorDetails.Message += "Got nil response from LLM api"
+				completionResp.ErrorDetails.Message += " got nil response from LLM api"
 			}
 			return completionResp, nil
 		}
 		return nil, errors.New("got nil response from LLM api")
 	}
+
 	reasoningContent := ""
-	if resp.Choices[0].ReasoningContent != "" {
-		reasoningContent = "> Thought process:\n\n" + getBlockQuotedReasoning(
-			resp.Choices[0].ReasoningContent,
-		) + "\n\n"
+	if rc := resp.Choices[0].ReasoningContent; rc != "" {
+		reasoningContent = "> Thought process:\n\n" + getBlockQuotedReasoning(rc) + "\n\n"
 	}
-	c := reasoningContent + resp.Choices[0].Content
-	completionResp.RespContent = &c
+	full := reasoningContent + resp.Choices[0].Content
+	completionResp.RespContent = &full
+
 	return completionResp, nil
 }
 
