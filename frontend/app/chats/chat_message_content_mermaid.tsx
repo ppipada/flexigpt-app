@@ -43,9 +43,9 @@ export const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 							svg.style.display = 'block';
 							svg.style.marginLeft = 'auto';
 							svg.style.marginRight = 'auto';
-							svg.style.width = '100%';
+							svg.style.width = '80%';
 							svg.style.height = 'auto';
-							svg.style.maxWidth = '100%';
+							svg.style.maxWidth = '80%';
 						}
 						setError(null);
 					}

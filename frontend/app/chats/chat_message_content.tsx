@@ -129,8 +129,7 @@ const ChatMessageContentBase = ({
 						language={language}
 						// eslint-disable-next-line @typescript-eslint/no-base-to-string
 						value={String(children).replace(/\n$/, '')}
-						streamedMessage={streamedText}
-						{...props}
+						isStreaming={isStreaming}
 					/>
 				);
 			},
@@ -175,7 +174,7 @@ const ChatMessageContentBase = ({
 				<blockquote className="border-l-4 border-neutral/20 pl-4 italic">{children}</blockquote>
 			),
 		}),
-		[align]
+		[align, textToRender, isStreaming]
 	);
 
 	return (

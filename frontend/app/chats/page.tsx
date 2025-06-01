@@ -18,7 +18,11 @@ import ChatInputField, { type ChatInputFieldHandle } from '@/chats/chat_input_fi
 import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
 
-function initConversation(title: string = 'New Conversation'): Conversation {
+/* -------------------------------------------------------------------------- */
+/* Utils                                                                      */
+/* -------------------------------------------------------------------------- */
+
+function initConversation(title = 'New Conversation'): Conversation {
 	return {
 		id: uuidv7(),
 		title: title.substring(0, 64),
@@ -33,92 +37,96 @@ function initConversationMessage(role: ConversationRoleEnum, content: string): C
 	return {
 		id: d.toISOString(),
 		createdAt: new Date(),
-		role: role,
-		content: content,
+		role,
+		content,
 	};
 }
 
+/* -------------------------------------------------------------------------- */
+/* Component                                                                  */
+/* -------------------------------------------------------------------------- */
+
 const ChatScreen: FC = () => {
+	/* --------------------------------- state -------------------------------- */
+
 	const [chat, setChat] = useState<Conversation>(initConversation());
 	const [initialItems, setInitialItems] = useState<ConversationItem[]>([]);
-	const [inputHeight, setInputHeight] = useState<number>(0);
+	const [inputHeight, setInputHeight] = useState(0);
+	const [streamedMessage, setStreamedMessage] = useState('');
+	const [isStreaming, setIsStreaming] = useState(false);
+
+	/* ---------------------------------- refs -------------------------------- */
+
 	const chatContainerRef = useRef<HTMLDivElement>(null);
-	const isSubmittingRef = useRef<boolean>(false);
-	const [streamedMessage, setStreamedMessage] = useState<string>('');
-	const [isStreaming, setIsStreaming] = useState<boolean>(false);
 	const chatInputRef = useRef<ChatInputFieldHandle>(null);
 	const conversationListRef = useRef<ConversationItem[]>([]);
+	const isSubmittingRef = useRef(false);
+
+	/* ----------------------------- focus on mount --------------------------- */
 
 	useEffect(() => {
-		if (chatInputRef.current) {
-			chatInputRef.current.focus();
-		}
-	}, []); // Empty dependency array ensures this runs only on mount
+		chatInputRef.current?.focus();
+	}, []);
 
-	// Fetch conversations function
+	/* ------------------ fetch conversations / search helpers ---------------- */
+
 	const fetchConversations = useCallback(async () => {
 		const conversations = await listAllConversations();
 		conversationListRef.current = conversations;
 		setInitialItems(conversations);
 	}, []);
 
-	// Fetch initial conversations
 	useEffect(() => {
 		fetchConversations();
 	}, [fetchConversations]);
 
 	const fetchSearchResults = async (query: string): Promise<ConversationItem[]> => {
-		let conversations: ConversationItem[] = [];
 		if (conversationListRef.current.length === 0) {
 			await fetchConversations();
 		}
-		conversations = conversationListRef.current;
-		return conversations.filter(item => item.title.toLowerCase().includes(query.toLowerCase()));
+		return conversationListRef.current.filter(item => item.title.toLowerCase().includes(query.toLowerCase()));
 	};
 
+	/* --------------------------- new-chat handler --------------------------- */
+
 	const handleNewChat = useCallback(async () => {
-		// If the current chat is empty (no messages), do nothing
 		if (chat.messages.length === 0) {
-			if (chatInputRef.current) {
-				chatInputRef.current.focus(); // Still focus input
-			}
+			chatInputRef.current?.focus();
 			return;
 		}
 		conversationStoreAPI.saveConversation(chat);
 		setChat(initConversation());
-		fetchConversations(); // Fetch conversations again
-		if (chatInputRef.current) {
-			chatInputRef.current.focus(); // Focus on new chat
-		}
+		fetchConversations();
+		chatInputRef.current?.focus();
 	}, [chat, fetchConversations]);
 
-	useEffect(() => {
-		fetchConversations(); // Fetch conversations again
-	}, [chat, fetchConversations]);
-
+	/* ----------------------- scroll to bottom ------------------------ */
 	useEffect(() => {
 		if (chatContainerRef.current) {
 			chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
 		}
 	}, [chat.messages, streamedMessage]);
 
+	/* ----------------------- conversation navigation ------------------------ */
+
 	const handleSelectConversation = useCallback(async (item: ConversationItem) => {
 		const selectedChat = await conversationStoreAPI.getConversation(item.id, item.title);
-		if (selectedChat) {
-			setChat(selectedChat);
-		}
+		if (selectedChat) setChat(selectedChat);
 	}, []);
 
 	const getConversationForExport = useCallback(async (): Promise<string> => {
 		const selectedChat = await conversationStoreAPI.getConversation(chat.id, chat.title);
-		const value = JSON.stringify(selectedChat, null, 2);
-		return value;
+		return JSON.stringify(selectedChat, null, 2);
 	}, [chat.id, chat.title]);
+
+	/* ---------------------------- save helpers ------------------------------ */
 
 	const saveUpdatedChat = (updatedChat: Conversation) => {
 		conversationStoreAPI.saveConversation(updatedChat);
 		setChat(updatedChat);
 	};
+
+	/* -------------------------- streaming helper ---------------------------- */
 
 	const updateStreamingMessage = useCallback(async (updatedChatWithUserMessage: Conversation, options: ChatOptions) => {
 		let prevMessages = updatedChatWithUserMessage.messages;
@@ -129,7 +137,7 @@ const ChatScreen: FC = () => {
 		setIsStreaming(true);
 		setStreamedMessage('');
 
-		await new Promise(resolve => setTimeout(resolve, 0));
+		await new Promise(res => setTimeout(res, 0));
 
 		const convoMsg = initConversationMessage(ConversationRoleEnum.assistant, '');
 		const updatedChatWithConvoMessage = {
@@ -149,6 +157,7 @@ const ChatScreen: FC = () => {
 				return prev + data;
 			});
 		};
+
 		const inputParams: ModelParams = {
 			name: options.name,
 			temperature: options.temperature,
@@ -160,105 +169,96 @@ const ChatScreen: FC = () => {
 			timeout: options.timeout,
 			additionalParameters: options.additionalParameters,
 		};
-		// log.info(JSON.stringify({ prevMessages, inputParams, convoMsg }, null, 2));
+
 		const newMsg = await GetCompletionMessage(options.provider, inputParams, convoMsg, prevMessages, onStreamData);
+
 		if (newMsg.requestDetails) {
 			if (updatedChatWithConvoMessage.messages.length > 1) {
 				updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 2].details =
 					newMsg.requestDetails;
 			}
 		}
+
 		if (newMsg.responseMessage) {
 			const respMessage = newMsg.responseMessage;
 			updatedChatWithConvoMessage.messages.pop();
 			updatedChatWithConvoMessage.messages.push(respMessage);
 			updatedChatWithConvoMessage.modifiedAt = new Date();
 			saveUpdatedChat(updatedChatWithConvoMessage);
-			setIsStreaming(false); // Mark streaming as complete
+			setIsStreaming(false);
 		}
-		isSubmittingRef.current = false; // Reset submitting flag
+
+		isSubmittingRef.current = false;
 	}, []);
 
-	const sendMessage = async (messageContent: string, options: ChatOptions) => {
+	/* ----------------------------- send message ----------------------------- */
+
+	const sendMessage = async (text: string, options: ChatOptions) => {
 		if (isSubmittingRef.current) return;
 		isSubmittingRef.current = true;
 
-		const trimmedText = messageContent.trim();
-		if (!trimmedText) {
+		const trimmed = text.trim();
+		if (!trimmed) {
 			isSubmittingRef.current = false;
 			return;
 		}
-		const newMessage = initConversationMessage(ConversationRoleEnum.user, trimmedText);
 
-		const updatedChatWithUserMessage = {
+		const newMsg = initConversationMessage(ConversationRoleEnum.user, trimmed);
+		const updated = {
 			...chat,
-			messages: [...chat.messages, newMessage],
+			messages: [...chat.messages, newMsg],
 			modifiedAt: new Date(),
 		};
-		if (updatedChatWithUserMessage.messages.length === 1) {
-			const content = updatedChatWithUserMessage.messages[0].content.substring(0, 48);
-			const capitalizedTitle = content.charAt(0).toUpperCase() + content.slice(1);
-			updatedChatWithUserMessage.title = capitalizedTitle;
-		}
-		saveUpdatedChat(updatedChatWithUserMessage);
 
-		updateStreamingMessage(updatedChatWithUserMessage, options);
+		if (updated.messages.length === 1) {
+			const t = updated.messages[0].content.substring(0, 48);
+			updated.title = t.charAt(0).toUpperCase() + t.slice(1);
+		}
+
+		saveUpdatedChat(updated);
+		updateStreamingMessage(updated, options);
 	};
 
+	/* --------------------------- edit / resend ------------------------------ */
+
 	const handleEdit = useCallback(
-		async (editedText: string, messageId: string) => {
-			const messageIndex = chat.messages.findIndex(msg => msg.id === messageId);
-			if (messageIndex === -1) return;
+		async (edited: string, id: string) => {
+			const idx = chat.messages.findIndex(m => m.id === id);
+			if (idx === -1) return;
 
-			const newMessages = chat.messages.slice(0, messageIndex + 1);
-			newMessages[messageIndex].content = editedText;
+			const msgs = chat.messages.slice(0, idx + 1);
+			msgs[idx].content = edited;
 
-			const updatedChat = {
-				...chat,
-				messages: newMessages,
-				modifiedAt: new Date(),
-			};
-			saveUpdatedChat(updatedChat);
-			let currentChatOptions: ChatOptions = {
-				...DefaultChatOptions,
-			};
-			if (chatInputRef.current) {
-				currentChatOptions = chatInputRef.current.getChatOptions();
-			}
+			const updated = { ...chat, messages: msgs, modifiedAt: new Date() };
+			saveUpdatedChat(updated);
 
-			await updateStreamingMessage(updatedChat, currentChatOptions);
+			let opts = { ...DefaultChatOptions };
+			if (chatInputRef.current) opts = chatInputRef.current.getChatOptions();
+			await updateStreamingMessage(updated, opts);
 		},
 		[chat, updateStreamingMessage]
 	);
 
 	const handleResend = useCallback(
-		async (messageId: string) => {
-			const messageIndex = chat.messages.findIndex(msg => msg.id === messageId);
-			if (messageIndex === -1) return;
+		async (id: string) => {
+			const idx = chat.messages.findIndex(m => m.id === id);
+			if (idx === -1) return;
 
-			const newMessages = chat.messages.slice(0, messageIndex + 1);
+			const msgs = chat.messages.slice(0, idx + 1);
+			const updated = { ...chat, messages: msgs, modifiedAt: new Date() };
+			saveUpdatedChat(updated);
 
-			const updatedChat = {
-				...chat,
-				messages: newMessages,
-				modifiedAt: new Date(),
-			};
-			saveUpdatedChat(updatedChat);
-			let currentChatOptions: ChatOptions = {
-				...DefaultChatOptions,
-			};
-			if (chatInputRef.current) {
-				currentChatOptions = chatInputRef.current.getChatOptions();
-			}
-
-			await updateStreamingMessage(updatedChat, currentChatOptions);
+			let opts = { ...DefaultChatOptions };
+			if (chatInputRef.current) opts = chatInputRef.current.getChatOptions();
+			await updateStreamingMessage(updated, opts);
 		},
 		[chat, updateStreamingMessage]
 	);
 
-	const chatMessages = chat.messages.map((msg, idx) => {
-		// only the *last* assistant message receives the live chunks
-		const liveText =
+	/* ---------------------------- render list ------------------------------- */
+
+	const renderedMessages = chat.messages.map((msg, idx) => {
+		const live =
 			isStreaming && idx === chat.messages.length - 1 && msg.role === ConversationRoleEnum.assistant
 				? streamedMessage
 				: '';
@@ -269,14 +269,17 @@ const ChatScreen: FC = () => {
 				message={msg}
 				onEdit={txt => handleEdit(txt, msg.id)}
 				onResend={() => handleResend(msg.id)}
-				streamedMessage={liveText}
+				streamedMessage={live}
 			/>
 		);
 	});
 
+	/* ------------------------------ template -------------------------------- */
+
 	return (
 		<div className="flex flex-col items-center w-full h-full overflow-hidden">
-			<div className="w-full flex justify-center bg-transparent fixed top-2 z-10">
+			{/* NAVBAR */}
+			<div className="w-full flex justify-center fixed top-2 z-10">
 				<div className="w-11/12 lg:w-4/5 xl:w-3/4">
 					<ChatNavBar
 						onNewChat={handleNewChat}
@@ -288,22 +291,28 @@ const ChatScreen: FC = () => {
 					/>
 				</div>
 			</div>
-			<div className="flex flex-col items-center w-full grow bg-transparent overflow-hidden mt-32">
+
+			{/* MESSAGES */}
+			<div className="flex flex-col items-center w-full grow overflow-hidden mt-32">
 				<div
 					className="w-full grow flex justify-center overflow-y-auto"
 					ref={chatContainerRef}
-					style={{ maxHeight: `calc(100vh - 196px - ${inputHeight}px)` }} // Adjust height dynamically
+					style={{ maxHeight: `calc(100vh - 196px - ${inputHeight}px)` }}
 				>
 					<div className="w-11/12 lg:w-4/5 xl:w-3/4">
-						<div className="w-full flex-1 space-y-4">{chatMessages}</div>
+						<div className="w-full flex-1 space-y-4">{renderedMessages}</div>
 					</div>
 				</div>
-				<div className="w-full flex justify-center bg-transparent fixed bottom-0 mb-3">
+
+				{/* INPUT */}
+				<div className="w-full flex justify-center fixed bottom-0 mb-3">
 					<div className="w-11/12 lg:w-4/5 xl:w-3/4">
 						<ChatInputField ref={chatInputRef} onSend={sendMessage} setInputHeight={setInputHeight} />
 					</div>
 				</div>
 			</div>
+
+			{/* SCROLL-TO-BOTTOM BUTTON */}
 			<div className="fixed bottom-0 right-0 mb-16 mr-0 lg:mr-16 z-10">
 				<ButtonScrollToBottom
 					scrollContainerRef={chatContainerRef}

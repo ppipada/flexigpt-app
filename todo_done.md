@@ -277,3 +277,15 @@
 
 - [x] Initial inbuilt models should be available by default without a entry in settings.
 - [x] Settings should be overrides and new/custom models/providers
+
+- [x] Performance: There is large cpu consumption sometime, debug
+
+  - [x] It is mainly seen if both wails dev and current app is open and being used wails://wails consumes 100%
+  - [x] Also check when one request was fired but not allowed to complete for some reason
+  - [x] Also, if the message thread gets very very big there seems to be a issue.
+  - [x] it is seen that post data streaming the cpu percentage shoots up. May be stream callback leaks or looped somewhere?
+  - [x] check again after installing new version for cpu issues
+
+- [x] Conversation collection month provider has hardcoded partitions that returns current month only. Need to derive month from filename
+- [x] katex and math symbols are on top of the search bar
+- [ ] ~~If user has scrolled up, dont keep scrolling at bottom. this seems to introduce some unwanted cpy~~

@@ -12,10 +12,10 @@ import { MermaidDiagram } from '@/chats/chat_message_content_mermaid';
 interface CodeProps {
 	language: string;
 	value: string;
-	streamedMessage: string;
+	isStreaming: boolean;
 }
 
-const CodeBlock: FC<CodeProps> = ({ language, value, streamedMessage }) => {
+const CodeBlock: FC<CodeProps> = ({ language, value, isStreaming }) => {
 	const fetchValue = async (): Promise<string> => {
 		return value;
 	};
@@ -60,7 +60,7 @@ const CodeBlock: FC<CodeProps> = ({ language, value, streamedMessage }) => {
 					</SyntaxHighlighter>
 				</div>
 			</div>
-			{isMermaid && streamedMessage == '' && <MermaidDiagram code={value} />}
+			{isMermaid && !isStreaming && <MermaidDiagram code={value} />}
 		</>
 	);
 };
