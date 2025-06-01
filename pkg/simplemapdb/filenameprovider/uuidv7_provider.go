@@ -2,6 +2,7 @@ package filenameprovider
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -13,10 +14,10 @@ var nonAlphaNum = regexp.MustCompile(`[^a-zA-Z0-9]`)
 
 type UUIDv7Provider struct{}
 
-// Build "<uuid>_<sanitised-title>.json"
+// Build "<uuid>_<sanitised-title>.json".
 func (p *UUIDv7Provider) Build(info FileInfo) (string, error) {
 	if info.ID == "" {
-		return "", fmt.Errorf("missing ID")
+		return "", errors.New("missing ID")
 	}
 	title := info.Title
 	if title == "" {

@@ -60,7 +60,6 @@ func TestUUIDv7Provider_Build(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc // pin range variable
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := p.Build(FileInfo{ID: tc.id, Title: tc.title})
 			if (err != nil) != tc.expectError {
@@ -118,7 +117,6 @@ func TestUUIDv7Provider_Parse(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			info, err := p.Parse(tc.filename)
 			if (err != nil) != tc.expectErr {

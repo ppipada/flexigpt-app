@@ -70,13 +70,6 @@ func TestInitConversation(t *testing.T) {
 	}
 }
 
-func getConvo(id, title string) spec.Conversation {
-	c := spec.Conversation{}
-	c.ID = id
-	c.Title = title
-	return c
-}
-
 func TestConversationCollection(t *testing.T) {
 	baseDir := filepath.Join(os.TempDir(), "conversationstore_test")
 	defer os.RemoveAll(baseDir)
