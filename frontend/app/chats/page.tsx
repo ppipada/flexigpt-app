@@ -276,7 +276,7 @@ const ChatScreen: FC = () => {
 
 	return (
 		<div className="flex flex-col items-center w-full h-full overflow-hidden">
-			<div className="w-full flex justify-center bg-transparent fixed top-2">
+			<div className="w-full flex justify-center bg-transparent fixed top-2 z-10">
 				<div className="w-11/12 lg:w-4/5 xl:w-3/4">
 					<ChatNavBar
 						onNewChat={handleNewChat}
