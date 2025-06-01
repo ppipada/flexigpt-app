@@ -79,7 +79,6 @@ func (a *BackendApp) initSettingsStore() {
 }
 
 func (a *BackendApp) initConversationStore() {
-	a.conversationStoreAPI = &conversationstore.ConversationCollection{}
 	if err := os.MkdirAll(a.conversationsDirPath, os.FileMode(0o770)); err != nil {
 		slog.Error(
 			"Failed to create directories",
@@ -91,8 +90,7 @@ func (a *BackendApp) initConversationStore() {
 		panic("Failed to initialize App")
 	}
 
-	err := conversationstore.InitConversationCollection(
-		a.conversationStoreAPI,
+	cc, err := conversationstore.NewConversationCollection(
 		a.conversationsDirPath,
 	)
 	if err != nil {
@@ -105,6 +103,7 @@ func (a *BackendApp) initConversationStore() {
 		)
 		panic("Failed to initialize Managers")
 	}
+	a.conversationStoreAPI = cc
 	slog.Info("Conversation store initialized", "directory", a.conversationsDirPath)
 }
 

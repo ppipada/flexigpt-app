@@ -10,6 +10,7 @@
   - [x] it is seen that post data streaming the cpu percentage shoots up. May be stream callback leaks or looped somewhere?
   - [ ] check again after installing new version for cpu issues
 
+- [x] Conversation collection month provider has hardcoded partitions that returns current month only. Need to derive month from filename
 - [ ] spinner before first response (details if possible)
 
 ## Tasks: Tools Implementation with CodeMirror

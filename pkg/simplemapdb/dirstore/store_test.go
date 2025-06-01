@@ -31,8 +31,10 @@ func TestMapDirectoryStore(t *testing.T) {
 			expectError:        false,
 		},
 		{
-			name:               "Month Partition - Create File",
-			partitionProvider:  &dirstore.MonthBasedPartitionProvider{},
+			name: "Month Partition - Create File",
+			partitionProvider: &dirstore.MonthPartitionProvider{
+				TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
+			},
 			filename:           "testfile.json",
 			data:               map[string]any{"key": "value"},
 			expectedPartition:  time.Now().Format("200601"),
@@ -118,10 +120,13 @@ func TestMapDirectoryStore(t *testing.T) {
 
 func TestListFiles(t *testing.T) {
 	baseDir := t.TempDir()
+	partitionProvider := &dirstore.MonthPartitionProvider{
+		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
+	}
 	mds, err := dirstore.NewMapDirectoryStore(
 		baseDir,
 		true,
-		dirstore.WithPartitionProvider(&dirstore.MonthBasedPartitionProvider{}),
+		dirstore.WithPartitionProvider(partitionProvider),
 	)
 	if err != nil {
 		t.Fatalf("failed to create MapDirectoryStore: %v", err)
@@ -237,10 +242,13 @@ func TestDeleteFile(t *testing.T) {
 
 func TestListPartitionsPagination(t *testing.T) {
 	baseDir := t.TempDir()
+	partitionProvider := &dirstore.MonthPartitionProvider{
+		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
+	}
 	mds, err := dirstore.NewMapDirectoryStore(
 		baseDir,
 		true,
-		dirstore.WithPartitionProvider(&dirstore.MonthBasedPartitionProvider{}),
+		dirstore.WithPartitionProvider(partitionProvider),
 	)
 	if err != nil {
 		t.Fatalf("failed to create MapDirectoryStore: %v", err)
@@ -515,10 +523,13 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			pageToken := ""
 			for pageIndex, expectedFiles := range tt.expectedPages {
+				partitionProvider := &dirstore.MonthPartitionProvider{
+					TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
+				}
 				mds, err := dirstore.NewMapDirectoryStore(
 					baseDir,
 					true,
-					dirstore.WithPartitionProvider(&dirstore.MonthBasedPartitionProvider{}),
+					dirstore.WithPartitionProvider(partitionProvider),
 					dirstore.WithPageSize(tt.pageSize),
 				)
 				if err != nil {

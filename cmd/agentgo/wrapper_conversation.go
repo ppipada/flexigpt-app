@@ -16,8 +16,7 @@ func InitConversationCollectionWrapper(
 	c *ConversationCollectionWrapper,
 	conversationDir string,
 ) error {
-	conversationStoreAPI := &conversationstore.ConversationCollection{}
-	err := conversationstore.InitConversationCollection(conversationStoreAPI, conversationDir)
+	conversationStoreAPI, err := conversationstore.NewConversationCollection(conversationDir)
 	if err != nil {
 		return err
 	}

@@ -4,11 +4,34 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/ppipada/flexigpt-app/pkg/conversationstore"
 	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
 )
+
+func initConversation(title string) (*spec.Conversation, error) {
+	if title == "" {
+		title = "New Conversation"
+	}
+	if len(title) > 64 {
+		title = title[:64]
+	}
+
+	c := spec.Conversation{}
+	u, err := uuid.NewV7()
+	if err != nil {
+		return nil, err
+	}
+	c.ID = u.String()
+	c.Title = title
+	c.CreatedAt = time.Now()
+	c.ModifiedAt = time.Now()
+	c.Messages = []spec.ConversationMessage{}
+
+	return &c, nil
+}
 
 func TestInitConversation(t *testing.T) {
 	tests := []struct {
@@ -27,7 +50,7 @@ func TestInitConversation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			convo, err := conversationstore.InitConversation(tt.title)
+			convo, err := initConversation(tt.title)
 			if err != nil {
 				t.Errorf("Expected valid convo, got error: %v", err)
 			}
@@ -54,43 +77,20 @@ func getConvo(id, title string) spec.Conversation {
 	return c
 }
 
-func TestGetConversationFilename(t *testing.T) {
-	cc := &conversationstore.ConversationCollection{}
-	tests := []struct {
-		name         string
-		conversation spec.Conversation
-		expected     string
-	}{
-		{"Simple title", getConvo("123", "Chat"), "123_Chat.json"},
-		{"Title with special chars", getConvo("123", "Chat with AI!"), "123_Chat_with_AI_.json"},
-		{"Empty title", getConvo("123", ""), "123_.json"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			filename := cc.GetConversationFilename(tt.conversation)
-			if filename != tt.expected {
-				t.Errorf("Expected %s, got %s", tt.expected, filename)
-			}
-		})
-	}
-}
-
 func TestConversationCollection(t *testing.T) {
 	baseDir := filepath.Join(os.TempDir(), "conversationstore_test")
 	defer os.RemoveAll(baseDir)
-	cc := &conversationstore.ConversationCollection{}
-	err := conversationstore.InitConversationCollection(cc, baseDir)
+	cc, err := conversationstore.NewConversationCollection(baseDir)
 	if err != nil {
 		t.Fatalf("Failed to create conversation collection: %v", err)
 	}
 
 	t.Run("Save and Get Conversation", func(t *testing.T) {
-		validConvo, err := conversationstore.InitConversation("Test Conversation")
+		validConvo, err := initConversation("Test Conversation")
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
 		}
-		emptyConvo, err := conversationstore.InitConversation("")
+		emptyConvo, err := initConversation("")
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
 		}
@@ -135,7 +135,7 @@ func TestConversationCollection(t *testing.T) {
 
 	t.Run("Delete Conversation", func(t *testing.T) {
 		ctx := t.Context()
-		convo, err := conversationstore.InitConversation("To Be Deleted")
+		convo, err := initConversation("To Be Deleted")
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
 		}
@@ -163,7 +163,7 @@ func TestConversationCollection(t *testing.T) {
 
 	t.Run("Add Message to Conversation", func(t *testing.T) {
 		ctx := t.Context()
-		convo, err := conversationstore.InitConversation("Message Test")
+		convo, err := initConversation("Message Test")
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
 		}
@@ -230,19 +230,18 @@ func TestConversationCollectionListing(t *testing.T) {
 	baseDir := filepath.Join(os.TempDir(), "conversationstore_test_list")
 	defer os.RemoveAll(baseDir)
 
-	cc := &conversationstore.ConversationCollection{}
-	err := conversationstore.InitConversationCollection(cc, baseDir)
+	cc, err := conversationstore.NewConversationCollection(baseDir)
 	if err != nil {
 		t.Fatalf("Failed to create conversation collection: %v", err)
 	}
 
 	t.Run("List Conversations", func(t *testing.T) {
 		ctx := t.Context()
-		convo1, err := conversationstore.InitConversation("First Conversation")
+		convo1, err := initConversation("First Conversation")
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
 		}
-		convo2, err := conversationstore.InitConversation("Second Conversation")
+		convo2, err := initConversation("Second Conversation")
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
 		}
@@ -263,25 +262,4 @@ func TestConversationCollectionListing(t *testing.T) {
 			t.Errorf("Expected 2 conversations, got %d", len(convoItems.Body.ConversationItems))
 		}
 	})
-}
-
-func TestGetDateFromUUIDv7(t *testing.T) {
-	tests := []struct {
-		name        string
-		uuid        string
-		expectError bool
-	}{
-		{"Valid UUID", "018f1e3e-7c89-7b4b-8a3b-6f8e8f8e8f8e", false},
-		{"Invalid UUID length", "123", true},
-		{"Invalid UUID format", "invalid-uuid-format", true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := conversationstore.GetDateFromUUIDv7(tt.uuid)
-			if (err != nil) != tt.expectError {
-				t.Errorf("Expected error: %v, got: %v", tt.expectError, err)
-			}
-		})
-	}
 }

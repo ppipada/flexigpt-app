@@ -10,16 +10,25 @@ import (
 	"time"
 )
 
-// MonthBasedPartitionProvider is an example implementation that partitions files by month.
-type MonthBasedPartitionProvider struct{}
+// TimeExtractor is a function that returns the creation time of a file.
+type TimeExtractor func(filename string) (time.Time, error)
 
-// GetPartitionDir returns the partition directory based on the current month in the format "yyyyMM".
-func (p *MonthBasedPartitionProvider) GetPartitionDir(filename string) string {
+// MonthPartitionProvider decides directories yyyyMM from TimeExtractor.
+type MonthPartitionProvider struct {
+	TimeFn TimeExtractor
+}
+
+// GetPartitionDir implements the PartitionProvider interface.
+func (p *MonthPartitionProvider) GetPartitionDir(filename string) string {
+	if t, err := p.TimeFn(filename); err == nil {
+		return t.Format("200601")
+	}
+	// Fallback – never explode; put file into current month.
 	return time.Now().Format("200601")
 }
 
 // ListPartitions returns a paginated and sorted list of partition directories in the base directory.
-func (p *MonthBasedPartitionProvider) ListPartitions(
+func (p *MonthPartitionProvider) ListPartitions(
 	baseDir string,
 	sortOrder string,
 	pageToken string,
