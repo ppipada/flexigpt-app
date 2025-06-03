@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { type FC } from 'react';
 
 import 'katex/dist/katex.min.css';
 import SyntaxHighlighter from 'react-syntax-highlighter';
@@ -6,8 +6,7 @@ import { monokaiSublime } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
 
 import CopyButton from '@/components/copy_button';
 import DownloadButton from '@/components/download_button';
-
-import { MermaidDiagram } from '@/chats/chat_message_content_mermaid';
+import { MermaidDiagram } from '@/components/mermaid_diagram';
 
 interface CodeProps {
 	language: string;

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useMemo } from 'react';
 
 import 'katex/dist/katex.min.css';
 import Markdown from 'react-markdown';
@@ -11,43 +11,14 @@ import supersub from 'remark-supersub';
 
 import { backendAPI } from '@/apis/baseapi';
 
+import { useDebounced } from '@/lib/debounce';
+import { SanitizeLaTeX } from '@/lib/markdown_utils';
+
 import CodeBlock from '@/chats/chat_message_content_codeblock';
 
 const remarkPlugins = [remarkGemoji, supersub, remarkMath, remarkGfm];
 const rehypePlugins = [rehypeKatex];
 const remarkPluginsStreaming = [remarkGemoji, supersub, remarkGfm];
-
-function useDebounced<T>(value: T, delay: number): T {
-	const [debounced, setDebounced] = useState(value);
-	useEffect(() => {
-		const id = setTimeout(() => {
-			setDebounced(value);
-		}, delay);
-		return () => {
-			clearTimeout(id);
-		};
-	}, [value, delay]);
-	return debounced;
-}
-
-// LaTeX processing function
-const containsLatexRegex = /\\\(.*?\\\)|\\\[.*?\\\]|\$.*?\$|\\begin\{equation\}.*?\\end\{equation\}/;
-const inlineLatex = new RegExp(/\\\((.+?)\\\)/, 'g');
-const blockLatex = new RegExp(/\\\[(.*?[^\\])\\\]/, 'gs');
-
-const processLaTeX = (content: string) => {
-	let processedContent = content.replace(/(\$)(?=\s?\d)/g, '\\$');
-
-	if (!containsLatexRegex.test(processedContent)) {
-		return processedContent;
-	}
-
-	processedContent = processedContent
-		.replace(inlineLatex, (match: string, equation: string) => `$${equation}$`)
-		.replace(blockLatex, (match: string, equation: string) => `$$${equation}$$`);
-
-	return processedContent;
-};
 
 interface CodeComponentProps {
 	inline?: boolean;
@@ -96,7 +67,7 @@ const ChatMessageContentBase = ({
 
 	const processedContent = useMemo(() => {
 		if (isStreaming) return textToRender; // skip LaTeX processing
-		return /[$\\]/.test(textToRender) ? processLaTeX(textToRender) : textToRender;
+		return SanitizeLaTeX(textToRender);
 	}, [textToRender, isStreaming]);
 
 	const components = useMemo(

@@ -11,3 +11,12 @@ export function Base64EncodeUTF8(str: string): string {
 	// 3. btoa() on that binary string
 	return btoa(binaryString);
 }
+
+export function GenerateRandomString(length: number, lowercase = false): string {
+	const chars = 'ABCDEFGHJKLMNPQRSTUVWXY3456789'; // Exclude similar characters
+	let result = '';
+	for (let i = 0; i < length; i++) {
+		result += chars.charAt(Math.floor(Math.random() * chars.length));
+	}
+	return lowercase ? result.toLowerCase() : result;
+}
