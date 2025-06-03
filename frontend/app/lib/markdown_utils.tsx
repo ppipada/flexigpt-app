@@ -66,15 +66,3 @@ export const MimeTypeMap: { [key: string]: string } = {
 	'application/pdf': '.pdf',
 	// Add more MIME types and extensions as needed
 };
-
-// Fallback check for unsupported languages
-export function GetSupportedLanguage(lang: string) {
-	const l = lang.toLowerCase();
-	if (l in ProgrammingLanguages) {
-		if (l === 'c++') return 'cpp';
-		if (l === 'c#') return 'csharp';
-		if (l === 'yml') return 'yaml';
-		return l;
-	}
-	return 'text';
-}

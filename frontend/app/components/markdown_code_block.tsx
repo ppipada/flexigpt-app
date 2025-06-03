@@ -1,8 +1,7 @@
 import type { FC } from 'react';
 import { useMemo } from 'react';
 
-import { GetSupportedLanguage } from '@/lib/markdown_utils';
-import { highlighter } from '@/lib/syntax_highlighter';
+import { highlighter, isLanguageSupported } from '@/lib/syntax_highlighter';
 
 import CopyButton from '@/components/copy_button';
 import DownloadButton from '@/components/download_button';
@@ -22,7 +21,7 @@ const CodeBlock: FC<CodeProps> = ({ language, value, isStreaming }) => {
 
 		try {
 			return highlighter.codeToHtml(value, {
-				lang: GetSupportedLanguage(language),
+				lang: isLanguageSupported(language) ? language : 'text',
 				theme: 'monokai',
 			});
 		} catch (error) {

@@ -13,6 +13,7 @@ export default defineConfig(({ command, mode }) => {
 
 		// Add these configurations for better ESM support
 		optimizeDeps: {
+			include: ['shiki/bundle/full'],
 			esbuildOptions: {
 				target: 'esnext',
 				supported: {
