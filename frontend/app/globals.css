@@ -113,3 +113,54 @@
 		background-color: auto;
 	}
 }
+
+/* Shiki styling adjustments */
+.shiki-container pre {
+	background: transparent !important;
+	padding: 0.5em;
+	margin: 0;
+	border-radius: 0.25rem;
+	overflow-x: auto;
+}
+
+.shiki-container code {
+	background: transparent !important;
+}
+
+code {
+	counter-reset: step;
+	counter-increment: step 0;
+}
+
+code .line {
+	user-select: none; /* Disable for entire line */
+	-webkit-user-select: none;
+}
+
+code .line > * {
+	user-select: text; /* Re-enable for code content */
+	-webkit-user-select: text;
+}
+
+code .line::before {
+	content: counter(step);
+	counter-increment: step;
+	width: 1rem;
+	margin-right: 1.5rem;
+	display: inline-block;
+	text-align: right;
+	user-select: none;
+	color: var(--color-gray-400, #e0e0e0);
+	pointer-events: none;
+	-webkit-user-select: none;
+}
+
+code .line::before::selection {
+	background: transparent !important;
+	color: inherit !important;
+}
+
+code .line::before::-webkit-selection {
+	background: transparent !important;
+	color: inherit !important;
+}

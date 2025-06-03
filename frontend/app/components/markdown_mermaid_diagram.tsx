@@ -1,7 +1,6 @@
 import type { FC } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
-import 'katex/dist/katex.min.css';
 import mermaid from 'mermaid';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -22,7 +21,7 @@ interface MermaidDiagramProps {
 	code: string;
 }
 
-export const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
+const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const uniqueId = useRef(`mermaid-${uuidv4()}`);
 	const [error, setError] = useState<string | null>(null);
@@ -129,3 +128,5 @@ export const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 		</div>
 	);
 };
+
+export default MermaidDiagram;

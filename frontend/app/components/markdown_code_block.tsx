@@ -1,12 +1,12 @@
-import { type FC } from 'react';
+import type { FC } from 'react';
+import { useMemo } from 'react';
 
-import 'katex/dist/katex.min.css';
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import { monokaiSublime } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
+import { GetSupportedLanguage } from '@/lib/markdown_utils';
+import { highlighter } from '@/lib/syntax_highlighter';
 
 import CopyButton from '@/components/copy_button';
 import DownloadButton from '@/components/download_button';
-import { MermaidDiagram } from '@/components/mermaid_diagram';
+import MermaidDiagram from '@/components/markdown_mermaid_diagram';
 
 interface CodeProps {
 	language: string;
@@ -15,10 +15,29 @@ interface CodeProps {
 }
 
 const CodeBlock: FC<CodeProps> = ({ language, value, isStreaming }) => {
+	const highlightedCode = useMemo(() => {
+		if (!value.trim()) {
+			return '';
+		}
+
+		try {
+			return highlighter.codeToHtml(value, {
+				lang: GetSupportedLanguage(language),
+				theme: 'monokai',
+			});
+		} catch (error) {
+			console.error('Error highlighting code:', error);
+			// Fallback to plain code block
+			return `<pre class="bg-gray-800 text-gray-100 p-4 rounded overflow-auto"><code>${value}</code></pre>`;
+		}
+	}, [value, language]);
+
 	const fetchValue = async (): Promise<string> => {
 		return value;
 	};
+
 	const isMermaid = language.toLowerCase() === 'mermaid';
+
 	return (
 		<>
 			<div className="rounded-lg bg-gray-800 my-4 items-start overflow-hidden">
@@ -39,24 +58,21 @@ const CodeBlock: FC<CodeProps> = ({ language, value, isStreaming }) => {
 					</div>
 				</div>
 				<div className="p-1">
-					<SyntaxHighlighter
-						language={language}
-						style={monokaiSublime}
-						showLineNumbers
-						wrapLines={true}
-						lineNumberStyle={{ userSelect: 'none', pointerEvents: 'none', WebkitUserSelect: 'none' }}
-						customStyle={{
-							background: 'transparent',
-							padding: '0.5em',
-							borderRadius: '0.25rem',
-							fontSize: '14px',
-							// overflow: 'auto',
-							// position: 'relative',
-							// userSelect: 'text',
-						}}
-					>
-						{value}
-					</SyntaxHighlighter>
+					{highlightedCode ? (
+						<div
+							className="shiki-container"
+							style={{
+								fontSize: '14px',
+								lineHeight: '1.5',
+								overflow: 'auto',
+							}}
+							dangerouslySetInnerHTML={{ __html: highlightedCode }}
+						/>
+					) : (
+						<pre className="bg-transparent text-gray-100 p-2 rounded overflow-auto text-sm">
+							<code>{value}</code>
+						</pre>
+					)}
 				</div>
 			</div>
 			{isMermaid && !isStreaming && <MermaidDiagram code={value} />}
