@@ -25,7 +25,7 @@ const rehypePlugins = [rehypeKatex];
 /* ------------------------------------------------------------------ */
 /*  props                                                             */
 /* ------------------------------------------------------------------ */
-export interface EnhancedMarkdownProps {
+interface EnhancedMarkdownProps {
 	text: string;
 	align?: string;
 	isStreaming?: boolean;

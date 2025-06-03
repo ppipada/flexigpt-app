@@ -51,7 +51,6 @@
 		"@types/node": "^20.17.6",
 		"@types/react": "^19.1.6",
 		"@types/react-dom": "^19.1.5",
-		"@types/react-syntax-highlighter": "^15.5.13",
 		"@types/sprintf-js": "^1.1.4",
 		"@types/uuid": "^10.0.0",
 		"cross-env": "^7.0.3",

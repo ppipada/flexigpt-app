@@ -13,10 +13,6 @@ export default defineConfig(({ command, mode }) => {
 
 		// Add these configurations for better ESM support
 		optimizeDeps: {
-			include: [
-				// Add problematic packages here
-				'react-syntax-highlighter',
-			],
 			esbuildOptions: {
 				target: 'esnext',
 				supported: {
