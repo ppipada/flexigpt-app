@@ -289,3 +289,4 @@
 - [x] Conversation collection month provider has hardcoded partitions that returns current month only. Need to derive month from filename
 - [x] katex and math symbols are on top of the search bar
 - [ ] ~~If user has scrolled up, dont keep scrolling at bottom. this seems to introduce some unwanted cpy~~
+- [x] Use shiki instead of react syntax highlighter
