@@ -21,8 +21,6 @@
 	"dependencies": {
 		"@fontsource-variable/inter": "^5.2.5",
 		"@react-router/node": "^7.6.1",
-		"@shikijs/langs": "^3.4.2",
-		"@shikijs/themes": "^3.4.2",
 		"isbot": "^5.1.28",
 		"katex": "^0.16.22",
 		"mermaid": "^11.6.0",
@@ -78,7 +76,8 @@
 			"app/apis/wailsjs/go/main/ProviderSetWrapper.js",
 			"app/apis/wailsjs/go/main/SettingStoreWrapper.js",
 			"app/models/aiprovidermodel.ts",
-			"app/backendapihelper/conversation_cache.ts"
+			"app/backendapihelper/conversation_cache.ts",
+			"app/lib/highlight_worker.ts"
 		],
 		"ignoreBinaries": [],
 		"ignoreDependencies": [
@@ -88,7 +87,8 @@
 			"daisyui",
 			"react-router-devtools",
 			"tailwindcss",
-			"@fontsource-variable/inter"
+			"@fontsource-variable/inter",
+			"shiki"
 		]
 	},
 	"prettier": {

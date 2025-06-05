@@ -4,8 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ mode }) => {
 	const isProd = mode === 'production';
 	return {
 		plugins: [tailwindcss(), reactRouter(), tsconfigPaths(), eslintPlugin()],
@@ -25,10 +24,11 @@ export default defineConfig(({ command, mode }) => {
 			outDir: 'dist',
 			target: 'esnext',
 			rollupOptions: {
-				output: {
-					format: 'esm',
-				},
+				output: { format: 'es' },
 			},
+		},
+		worker: {
+			format: 'es',
 		},
 		// Handle specific problematic packages
 		resolve: {

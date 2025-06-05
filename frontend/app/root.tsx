@@ -1,6 +1,9 @@
+import { useEffect } from 'react';
+
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 
 import { IS_WAILS_PLATFORM } from '@/lib/features';
+import { ensureWorker } from '@/lib/highlight_hook';
 import { ThemeSwitchProvider } from '@/lib/theme_provider';
 
 import Sidebar from '@/components/sidebar';
@@ -39,6 +42,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function Root() {
+	/* ----------------------------- init worker on mount --------------------------- */
+	useEffect(() => {
+		if ('requestIdleCallback' in window) requestIdleCallback(() => ensureWorker());
+		else setTimeout(() => ensureWorker(), 300);
+	}, []);
 	return (
 		<ThemeSwitchProvider>
 			<Sidebar>

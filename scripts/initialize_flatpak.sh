@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Starting Initializing Flatpak for apt based ssytems (Ubuntu, etc)..."
+echo "Starting Initializing Flatpak for apt based systems (Ubuntu, etc)..."
 # Update package lists
 echo "Updating package lists..."
 sudo apt update
@@ -23,6 +23,7 @@ echo "Some useful commands:"
 echo "  flatpak install --user FlexiGPT.flatpak"
 echo "  flatpak list"
 echo "  flatpak info io.github.flexigpt.client"
+echo "  flatpak run io.github.flexigpt.client"
 echo "  cat ~/.var/app/io.github.flexigpt.client/config/flexigpt/settings.json"
 echo "  ls -la ~/.var/app/io.github.flexigpt.client/data/flexigpt/conversations"
 echo "  ls -la ~/.var/app/io.github.flexigpt.client/data/flexigpt/logs"

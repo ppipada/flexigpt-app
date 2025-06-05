@@ -51,30 +51,21 @@
     flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     ```
 
+  - Some additional helper commands can be found in this [script](./scripts/initialize_flatpak.sh)
+
 - Install the package
 
   - `flatpak install --user FlexiGPT-xyz.flatpak`
   - `flatpak info io.github.flexigpt.client`
 
 - Running the app
-  - Via launcher GUI: You can launch the app from the distributions's launcher. E.g: In Ubuntu: Press the window key, type flexigpt and click on icon.
-  - Via terminal: `flatpak run io.github.flexigpt.client`
-  - IF you use Nvidia propriety drivers, you will face a DMA buf issue. Below are the issue links and workaround for it:
-    - If you have nvidia propriety drivers installed, it has upstream bugs open for webkit-gtk:
-      - [Webkit issue 180739](https://bugs.webkit.org/show_bug.cgi?id=180739)
-      - [Webkit issue 262607](https://bugs.webkit.org/show_bug.cgi?id=262607)
-      - [Debian issue 1082139](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1082139)
-      - [Wails issue 2977](https://github.com/wailsapp/wails/issues/2977)
-    - You can workaround this by running the app as:
-      - `WEBKIT_DISABLE_COMPOSITING_MODE=1 flatpak run io.github.flexigpt.client`.
-      - OR use `WEBKIT_DISABLE_DMABUF_RENDERER=1` instead in above run command.
-      - OR if you are ok with making system chnages:
-        - `cat /sys/module/nvidia_drm/parameters/modeset`
-        - If you see printed N then you need to enable it with: `echo options nvidia_drm modeset=1 | sudo tee /etc/modprobe.d/nvidia_drm.conf`
-        - Restart machine
-  - IF you use `Mate` or other `gnome 2` based systems, you may get lib-appmenu and lib-canberra issues. Workaround:
-    - `sudo apt install appmenu-gtk2-module appmenu-gtk3-module libcanberra-gtk-module libcanberra-gtk3-module -y`
-    - Then run app: `flatpak run io.github.flexigpt.client`
+
+  - Using launcher GUI: You can launch the app from the distributions's launcher. E.g: In Ubuntu: Press the window key, type flexigpt and click on icon.
+  - Using terminal: `flatpak run io.github.flexigpt.client`
+  - If you use Nvidia and its proprietary drivers, you _may_ see that the run command open a blank screen and close, the workaround for it is to run the app as:
+    - `flatpak run --env=WEBKIT_DISABLE_COMPOSITING_MODE=1 io.github.flexigpt.client`
+    - Open bugs in upstream projects that cause this: [Webkit issue 180739](https://bugs.webkit.org/show_bug.cgi?id=180739), [Webkit issue 262607](https://bugs.webkit.org/show_bug.cgi?id=262607), [Debian issue 1082139](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1082139), [Wails issue 2977](https://github.com/wailsapp/wails/issues/2977)
+
 - Your local data (settings, conversations, logs) will be at:
   - `~/.var/app/io.github.flexigpt.client/`
 

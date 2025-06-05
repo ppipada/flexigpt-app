@@ -4,6 +4,7 @@ runtime-version: "48"
 sdk: org.gnome.Sdk
 
 command: FlexiGPT
+
 finish-args:
   - --share=ipc
   - --socket=wayland
@@ -11,7 +12,29 @@ finish-args:
   - --device=dri
   - --share=network
   - --talk-name=org.freedesktop.secrets
+  - --talk-name=com.canonical.AppMenu.Registrar
   - --filesystem=host
+  # keep client-side decorations. Ubuntu mate has csd stripping and injects some gtk libs like appmenu,canberra etc
+  - --env=GTK_CSD=1
+  # block the host’s nocsd shim
+  - --unset-env=LD_PRELOAD
+
+  # disable WebKit accelerated compositing for nvidia drivers.
+  # - --env=WEBKIT_DISABLE_COMPOSITING_MODE=1
+  # This should not be enabled here as this is a issue in nvidia + x11 + legacy window manager combination
+  # - IF you use Nvidia propriety drivers, you will face a DMA buf issue. Below are the issue links and workaround for it:
+  # - Upstream bugs:
+  #   - [Webkit issue 180739](https://bugs.webkit.org/show_bug.cgi?id=180739)
+  #   - [Webkit issue 262607](https://bugs.webkit.org/show_bug.cgi?id=262607)
+  #   - [Debian issue 1082139](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1082139)
+  #   - [Wails issue 2977](https://github.com/wailsapp/wails/issues/2977)
+  #  - You can workaround this by running the app as:
+  #    - `WEBKIT_DISABLE_COMPOSITING_MODE=1 flatpak run io.github.flexigpt.client`.
+  #    - OR use `WEBKIT_DISABLE_DMABUF_RENDERER=1` instead in above run command.
+  #    - OR if you are ok with making system chnages:
+  #      - `cat /sys/module/nvidia_drm/parameters/modeset`
+  #      - If you see printed N then you need to enable it with: `echo options nvidia_drm modeset=1 | sudo tee /etc/modprobe.d/nvidia_drm.conf`
+  #      - Restart machine
 
 cleanup-commands:
   - "rm -rf /app/sdk/golang"

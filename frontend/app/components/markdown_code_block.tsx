@@ -1,7 +1,6 @@
 import type { FC } from 'react';
-import { useMemo } from 'react';
 
-import { highlighter, isLanguageSupported } from '@/lib/syntax_highlighter';
+import { useHighlight } from '@/lib/highlight_hook';
 
 import CopyButton from '@/components/copy_button';
 import DownloadButton from '@/components/download_button';
@@ -14,28 +13,17 @@ interface CodeProps {
 }
 
 const CodeBlock: FC<CodeProps> = ({ language, value, isStreaming }) => {
-	const highlightedCode = useMemo(() => {
-		if (!value.trim()) {
-			return '';
-		}
-
-		try {
-			return highlighter.codeToHtml(value, {
-				lang: isLanguageSupported(language) ? language : 'text',
-				theme: 'monokai',
-			});
-		} catch (error) {
-			console.error('Error highlighting code:', error);
-			// Fallback to plain code block
-			return `<pre class="bg-gray-800 text-gray-100 p-4 rounded overflow-auto"><code>${value}</code></pre>`;
-		}
-	}, [value, language]);
-
-	const fetchValue = async (): Promise<string> => {
-		return value;
-	};
-
+	const html = useHighlight(value, language);
+	const showFallback = !value.trim() || html === null || html === '';
 	const isMermaid = language.toLowerCase() === 'mermaid';
+
+	const fallback = (
+		<pre className="bg-transparent text-gray-100 p-2 rounded overflow-auto text-sm">
+			<code>{value}</code>
+		</pre>
+	);
+
+	const fetchValue = async () => value;
 
 	return (
 		<>
@@ -56,24 +44,12 @@ const CodeBlock: FC<CodeProps> = ({ language, value, isStreaming }) => {
 						/>
 					</div>
 				</div>
-				<div className="p-1">
-					{highlightedCode ? (
-						<div
-							className="shiki-container"
-							style={{
-								fontSize: '14px',
-								lineHeight: '1.5',
-								overflow: 'auto',
-							}}
-							dangerouslySetInnerHTML={{ __html: highlightedCode }}
-						/>
-					) : (
-						<pre className="bg-transparent text-gray-100 p-2 rounded overflow-auto text-sm">
-							<code>{value}</code>
-						</pre>
-					)}
+
+				<div className="p-1" style={{ fontSize: 14, lineHeight: 1.5 }}>
+					{showFallback ? fallback : <div className="shiki-container" dangerouslySetInnerHTML={{ __html: html }} />}
 				</div>
 			</div>
+
 			{isMermaid && !isStreaming && <MermaidDiagram code={value} />}
 		</>
 	);

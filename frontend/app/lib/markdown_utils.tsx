@@ -55,7 +55,6 @@ export const ProgrammingLanguages: LanguageMap = {
 	toml: { extension: '.toml', mimeType: 'application/toml' },
 	yaml: { extension: '.yaml', mimeType: 'application/yaml' },
 	dart: { extension: '.dart', mimeType: 'application/dart' },
-	// Add more file extensions and MIME types here and then import in highlighter
 };
 
 // Determine the file extension from the MIME type
