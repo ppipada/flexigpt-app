@@ -290,3 +290,5 @@
 - [x] katex and math symbols are on top of the search bar
 - [ ] ~~If user has scrolled up, dont keep scrolling at bottom. this seems to introduce some unwanted cpy~~
 - [x] Use shiki instead of react syntax highlighter
+- [x] Nvidia issue debug and Ubuntu mate env vars fix
+- [x] Move syntax highlighting to a worker
