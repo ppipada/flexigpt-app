@@ -2,11 +2,13 @@
 
 ## Laundry list
 
-- [ ] spinner before first response (details if possible)
 - [x] support events in simplemapdb
-- [ ] add fts using sqlite for simplemapdb
-- [ ] test and integrate fts with conversations
-- [ ] implment prompts and tools using dirstore+fts
+- [x] add fts using sqlite for simplemapdb
+- [x] test and integrate fts with conversations
+- [ ] mtime should be added to cols in conversations and it should be used to do a incremental walk along with path used as externalID
+- [x] the engine somehow has path etc as inbuilt. It looks very tightly coupled to files or something called as path. Ideally it should have opaque and its own semantics that the consumer will adapt to
+- [ ] implement prompts and tools using dirstore+fts
+- [ ] spinner before first response (details if possible)
 
 ## Tasks: Tools Implementation with CodeMirror
 

@@ -91,6 +91,7 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 				{Name: "assistant", Weight: 4},
 				{Name: "function", Weight: 5},
 				{Name: "feedback", Weight: 6},
+				{Name: "mtime", Unindexed: true},
 			},
 		})
 		if err != nil {

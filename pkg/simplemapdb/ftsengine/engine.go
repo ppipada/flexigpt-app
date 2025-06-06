@@ -20,7 +20,7 @@ import (
 
 // Result is returned by Search().
 type Result struct {
-	ID    string  // string id stored in the "path" column
+	ID    string  // string id stored in the "externalID" column
 	Score float64 // bm25
 }
 
@@ -129,7 +129,7 @@ func (e *Engine) bootstrap(ctx context.Context) error {
 	// create / replace FTS virtual table
 	if stored != e.hsh {
 		var cols []string
-		cols = append(cols, `path UNINDEXED`)
+		cols = append(cols, `externalID UNINDEXED`)
 		for _, c := range e.cfg.Columns {
 			col := quote(c.Name)
 			if c.Unindexed {
@@ -165,7 +165,7 @@ func (e *Engine) IsEmpty(ctx context.Context) (bool, error) {
 }
 
 // Upsert inserts a new document, or replaces the existing one whose
-// string id is `path`.  The logic works with every SQLite ≥ 3.9 because
+// string id is `externalID`.  The logic works with every SQLite ≥ 3.9 because
 // it uses INSERT and INSERT OR REPLACE, both supported by FTS5.
 func (e *Engine) Upsert(
 	ctx context.Context,
@@ -180,10 +180,10 @@ func (e *Engine) Upsert(
 	defer e.mu.Unlock()
 
 	/* --------------------------------------------------------------
-	   1) Does a row with this path already exist?
+	   1) Does a row with this externalID already exist?
 	----------------------------------------------------------------*/
 	var rowid int64
-	const sqlSearchRow = `SELECT rowid FROM %s WHERE path=?`
+	const sqlSearchRow = `SELECT rowid FROM %s WHERE externalID=?`
 	err := e.db.QueryRowContext(
 		ctx,
 		fmt.Sprintf(sqlSearchRow, quote(e.cfg.Table)),
@@ -198,13 +198,13 @@ func (e *Engine) Upsert(
 	/* --------------------------------------------------------------
 	   2) Build column lists and args
 	----------------------------------------------------------------*/
-	numCols := 1 + len(e.cfg.Columns) // path + N user columns
+	numCols := 1 + len(e.cfg.Columns) // externalID + N user columns
 	colNames := make([]string, 0, numCols)
 	marks := make([]string, 0, numCols)
 	args := make([]any, 0, numCols+1) // maybe +1 rowid
 
-	// path column
-	colNames = append(colNames, "path")
+	// externalID column
+	colNames = append(colNames, "externalID")
 	marks = append(marks, "?")
 	args = append(args, id)
 
@@ -248,7 +248,7 @@ func (e *Engine) Upsert(
 }
 
 func (e *Engine) Delete(ctx context.Context, id string) error {
-	const sqlDel = `DELETE FROM %s WHERE path=?`
+	const sqlDel = `DELETE FROM %s WHERE externalID=?`
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	_, err := e.db.ExecContext(ctx,
@@ -294,7 +294,7 @@ func (e *Engine) Search(
 		}
 	}
 
-	const sqlSearch = `SELECT path, bm25(%s%s) AS s
+	const sqlSearch = `SELECT externalID, bm25(%s%s) AS s
 			FROM %s WHERE %s MATCH ?
 			ORDER BY s ASC, rowid
 			LIMIT ? OFFSET ?;`

@@ -87,6 +87,7 @@ func stringField(m map[string]any, key string) (string, bool) {
 }
 
 func rebuild(ctx context.Context, baseDir string, e *ftsengine.Engine) error {
+	slog.Info("Conversations: starting fts rebuild")
 	// walk the directory only once, if table was empty
 	return filepath.WalkDir(baseDir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || !strings.HasSuffix(d.Name(), ".json") {
