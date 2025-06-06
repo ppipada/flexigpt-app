@@ -21,3 +21,7 @@ export function ListConversations(arg1) {
 export function SaveConversation(arg1) {
   return window['go']['main']['ConversationCollectionWrapper']['SaveConversation'](arg1);
 }
+
+export function SearchConversations(arg1) {
+  return window['go']['main']['ConversationCollectionWrapper']['SearchConversations'](arg1);
+}

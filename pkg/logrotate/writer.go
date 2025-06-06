@@ -29,6 +29,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -38,7 +39,11 @@ func newFile(path string) (*os.File, error) {
 }
 
 func DefaultFilenameFunc() string {
-	return fmt.Sprintf("%s-%s.log", time.Now().UTC().Format(time.RFC3339), RandomHash(3))
+	return fmt.Sprintf(
+		"%s-%s.log",
+		strings.ReplaceAll(time.Now().UTC().Format(time.RFC3339), ":", "-"),
+		RandomHash(3),
+	)
 }
 
 // Options define configuration options for Writer.

@@ -2,6 +2,7 @@ package conversationstore
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filenameprovider"
+	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 )
 
 /* ------------------------------------------------------------------ */
@@ -31,12 +33,22 @@ func WithPartitionProvider(pp dirstore.PartitionProvider) Option {
 	}
 }
 
+func WithFTS(enabled bool) Option {
+	return func(cc *ConversationCollection) error {
+		cc.enableFTS = enabled
+		return nil
+	}
+}
+
 /* ------------------------------------------------------------------ */
 /*  ConversationCollection                                            */
 /* ------------------------------------------------------------------ */
 
 type ConversationCollection struct {
-	store *dirstore.MapDirectoryStore
+	baseDir   string
+	store     *dirstore.MapDirectoryStore
+	fts       *ftsengine.Engine
+	enableFTS bool // default = false
 
 	// pluggable bits
 	fp filenameprovider.Provider  // file-name builder / parser
@@ -51,28 +63,48 @@ strategy via the Option functions above.
 	baseDir is the root directory for the map-directory store.
 */
 func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCollection, error) {
-	// default components ------------------------------------------------
 	defFP := filenameprovider.UUIDv7Provider{}
 	defPP := dirstore.MonthPartitionProvider{TimeFn: defFP.CreatedAt}
 
 	cc := &ConversationCollection{
-		fp: &defFP,
-		pp: &defPP,
+		baseDir: filepath.Clean(baseDir),
+		fp:      &defFP,
+		pp:      &defPP,
 	}
 
-	// apply caller overrides -------------------------------------------
 	for _, o := range opts {
 		if err := o(cc); err != nil {
 			return nil, err
 		}
 	}
 
-	// wire the underlying store ----------------------------------------
-	store, err := dirstore.NewMapDirectoryStore(
-		baseDir,
-		true,
-		dirstore.WithPartitionProvider(cc.pp),
-	)
+	/* ------------- optional full-text engine ------------------------ */
+	if cc.enableFTS {
+		var err error
+		cc.fts, err = ftsengine.New(ftsengine.Config{
+			DBPath: filepath.Join(baseDir, "conversations.fts.sqlite"),
+			Table:  "conversations",
+			Columns: []ftsengine.Column{
+				{Name: "title", Weight: 1},
+				{Name: "system", Weight: 2},
+				{Name: "user", Weight: 3},
+				{Name: "assistant", Weight: 4},
+				{Name: "function", Weight: 5},
+				{Name: "feedback", Weight: 6},
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		rebuildIfEmpty(baseDir, cc.fts)
+	}
+
+	/* ------------- MapDirectoryStore -------------------------------- */
+	optsDir := []dirstore.Option{dirstore.WithPartitionProvider(cc.pp)}
+	if cc.fts != nil {
+		optsDir = append(optsDir, dirstore.WithListeners(NewFTSListner(cc.fts)))
+	}
+	store, err := dirstore.NewMapDirectoryStore(baseDir, true, optsDir...)
 	if err != nil {
 		return nil, err
 	}
@@ -100,6 +132,10 @@ func (cc *ConversationCollection) SaveConversation(
 	ctx context.Context,
 	req *spec.SaveConversationRequest,
 ) (*spec.SaveConversationResponse, error) {
+	if req == nil || req.Body == nil {
+		return nil, errors.New("request or request body cannot be nil")
+	}
+
 	fn, err := cc.fileNameFromConversation(*req.Body)
 	if err != nil {
 		return nil, err
@@ -119,9 +155,17 @@ func (cc *ConversationCollection) DeleteConversation(
 	ctx context.Context,
 	req *spec.DeleteConversationRequest,
 ) (*spec.DeleteConversationResponse, error) {
+	if req == nil {
+		return nil, errors.New("request cannot be nil")
+	}
 	fn, _ := cc.fp.Build(filenameprovider.FileInfo{ID: req.ID, Title: req.Title})
 	if err := cc.store.DeleteFile(fn); err != nil {
 		return nil, err
+	}
+	// purge from FTS (absolute path = docID)
+	if cc.fts != nil {
+		full := filepath.Join(cc.baseDir, cc.pp.GetPartitionDir(fn), fn)
+		_ = cc.fts.Delete(full)
 	}
 	return &spec.DeleteConversationResponse{}, nil
 }
@@ -130,6 +174,9 @@ func (cc *ConversationCollection) GetConversation(
 	ctx context.Context,
 	req *spec.GetConversationRequest,
 ) (*spec.GetConversationResponse, error) {
+	if req == nil {
+		return nil, errors.New("request or request body cannot be nil")
+	}
 	fn, _ := cc.fp.Build(filenameprovider.FileInfo{ID: req.ID, Title: req.Title})
 	raw, err := cc.store.GetFileData(fn, false)
 	if err != nil {
@@ -171,6 +218,47 @@ func (cc *ConversationCollection) ListConversations(
 	}
 	return &spec.ListConversationsResponse{
 		Body: &spec.ListConversationsResponseBody{
+			ConversationItems: items,
+			NextPageToken:     &next,
+		},
+	}, nil
+}
+
+func (cc *ConversationCollection) SearchConversations(
+	ctx context.Context,
+	req *spec.SearchConversationsRequest,
+) (*spec.SearchConversationsResponse, error) {
+	if req == nil {
+		return nil, errors.New("request cannot be nil")
+	}
+	if cc.fts == nil {
+		return nil, errors.New("full-text search is disabled")
+	}
+	pageSize := req.PageSize
+	if pageSize <= 0 || pageSize > 1000 {
+		pageSize = 10
+	}
+
+	hits, next, err := cc.fts.Search(ctx, req.Query, req.Token, pageSize)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]spec.ConversationItem, 0, len(hits))
+	for _, h := range hits {
+		base := filepath.Base(h.ID)
+		info, err := cc.fp.Parse(base)
+		if err != nil {
+			continue
+		}
+		items = append(items, spec.ConversationItem{
+			ID:        info.ID,
+			Title:     info.Title,
+			CreatedAt: info.CreatedAt,
+		})
+	}
+	return &spec.SearchConversationsResponse{
+		Body: &spec.SearchConversationsResponseBody{
 			ConversationItems: items,
 			NextPageToken:     &next,
 		},

@@ -92,6 +92,7 @@ func (a *BackendApp) initConversationStore() {
 
 	cc, err := conversationstore.NewConversationCollection(
 		a.conversationsDirPath,
+		conversationstore.WithFTS(true),
 	)
 	if err != nil {
 		slog.Error(

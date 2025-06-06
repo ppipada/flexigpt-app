@@ -35,6 +35,21 @@ type ListConversationsResponseBody struct {
 	NextPageToken     *string            `json:"nextPageToken"`
 }
 
+type SearchConversationsRequest struct {
+	Query    string `query:"query"    required:"true"`
+	Token    string `query:"token"`
+	PageSize int    `query:"pageSize"` // default is 10
+}
+
+type SearchConversationsResponse struct {
+	Body *SearchConversationsResponseBody
+}
+
+type SearchConversationsResponseBody struct {
+	ConversationItems []ConversationItem `json:"conversationItems"`
+	NextPageToken     *string            `json:"nextPageToken"`
+}
+
 type AddMessageToConversationRequest struct {
 	ID   string `path:"id" required:"true"`
 	Body *AddMessageToConversationRequestBody

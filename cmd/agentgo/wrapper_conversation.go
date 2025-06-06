@@ -16,7 +16,10 @@ func InitConversationCollectionWrapper(
 	c *ConversationCollectionWrapper,
 	conversationDir string,
 ) error {
-	conversationStoreAPI, err := conversationstore.NewConversationCollection(conversationDir)
+	conversationStoreAPI, err := conversationstore.NewConversationCollection(
+		conversationDir,
+		conversationstore.WithFTS(true),
+	)
 	if err != nil {
 		return err
 	}
@@ -53,6 +56,14 @@ func (ccw *ConversationCollectionWrapper) ListConversations(
 ) (*spec.ListConversationsResponse, error) {
 	return middleware.WithRecoveryResp(func() (*spec.ListConversationsResponse, error) {
 		return ccw.store.ListConversations(context.Background(), req)
+	})
+}
+
+func (ccw *ConversationCollectionWrapper) SearchConversations(
+	req *spec.SearchConversationsRequest,
+) (*spec.SearchConversationsResponse, error) {
+	return middleware.WithRecoveryResp(func() (*spec.SearchConversationsResponse, error) {
+		return ccw.store.SearchConversations(context.Background(), req)
 	})
 }
 

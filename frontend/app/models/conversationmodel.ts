@@ -31,5 +31,10 @@ export interface IConversationStoreAPI {
 	deleteConversation: (id: string, title: string) => Promise<void>;
 	getConversation: (id: string, title: string) => Promise<Conversation | null>;
 	listConversations: (token?: string) => Promise<{ conversations: ConversationItem[]; nextToken?: string }>;
+	searchConversations: (
+		query: string,
+		token?: string,
+		pageSize?: number
+	) => Promise<{ conversations: ConversationItem[]; nextToken?: string }>;
 	addMessageToConversation(id: string, title: string, newMessage: ConversationMessage): Promise<void>;
 }

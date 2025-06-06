@@ -31,6 +31,15 @@ func InitConversationStoreHandlers(api huma.API, conversationStoreAPI *Conversat
 	}, conversationStoreAPI.DeleteConversation)
 
 	huma.Register(api, huma.Operation{
+		OperationID: "search-conversations",
+		Method:      http.MethodGet,
+		Path:        pathPrefix + "/search",
+		Summary:     "Search conversations",
+		Description: "Search conversation",
+		Tags:        []string{tag},
+	}, conversationStoreAPI.SearchConversations)
+
+	huma.Register(api, huma.Operation{
 		OperationID: "get-conversation",
 		Method:      http.MethodGet,
 		Path:        pathPrefix + "/{id}",

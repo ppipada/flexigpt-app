@@ -11,6 +11,7 @@ import {
 	GetConversation,
 	ListConversations,
 	SaveConversation,
+	SearchConversations,
 } from '@/apis/wailsjs/go/main/ConversationCollectionWrapper';
 import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
 
@@ -37,6 +38,16 @@ export class WailsConversationStoreAPI implements IConversationStoreAPI {
 	async listConversations(token?: string): Promise<{ conversations: ConversationItem[]; nextToken?: string }> {
 		const req = { Token: token || '' };
 		const resp = await ListConversations(req as wailsSpec.ListConversationsRequest);
+		return { conversations: resp.Body?.conversationItems as ConversationItem[], nextToken: resp.Body?.nextPageToken };
+	}
+
+	async searchConversations(
+		query: string,
+		token?: string,
+		pageSize?: number
+	): Promise<{ conversations: ConversationItem[]; nextToken?: string }> {
+		const req = { Query: query, Token: token || '', PageSize: pageSize || 10 };
+		const resp = await SearchConversations(req as wailsSpec.SearchConversationsRequest);
 		return { conversations: resp.Body?.conversationItems as ConversationItem[], nextToken: resp.Body?.nextPageToken };
 	}
 
