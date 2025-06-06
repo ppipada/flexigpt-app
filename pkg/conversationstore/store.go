@@ -96,7 +96,10 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 		if err != nil {
 			return nil, err
 		}
-		rebuildIfEmpty(baseDir, cc.fts)
+		err = rebuildIfEmpty(context.Background(), baseDir, cc.fts)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	/* ------------- MapDirectoryStore -------------------------------- */
@@ -165,7 +168,7 @@ func (cc *ConversationCollection) DeleteConversation(
 	// purge from FTS (absolute path = docID)
 	if cc.fts != nil {
 		full := filepath.Join(cc.baseDir, cc.pp.GetPartitionDir(fn), fn)
-		_ = cc.fts.Delete(full)
+		_ = cc.fts.Delete(ctx, full)
 	}
 	return &spec.DeleteConversationResponse{}, nil
 }

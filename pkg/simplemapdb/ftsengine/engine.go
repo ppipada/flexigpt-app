@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -19,9 +18,18 @@ import (
 	_ "github.com/glebarez/go-sqlite" // pure-Go SQLite/FTS5 driver
 )
 
-/* ------------------------------------------------------------------ */
-/*  public configuration                                              */
-/* ------------------------------------------------------------------ */
+// Result is returned by Search().
+type Result struct {
+	ID    string  // string id stored in the "path" column
+	Score float64 // bm25
+}
+
+type Engine struct {
+	db  *sql.DB
+	cfg Config
+	hsh string     // schema checksum
+	mu  sync.Mutex // serialises write-queries
+}
 
 // Column declares one FTS5 column.
 type Column struct {
@@ -36,33 +44,34 @@ type Config struct {
 	Columns []Column `json:"columns"`
 }
 
-// Result is returned by Search().
-type Result struct {
-	ID    string  // rowid (=docID)
-	Score float64 // bm25
+func (c *Config) Validate() error {
+	if len(c.Columns) == 0 {
+		return errors.New("ftsengine: need ≥1 column")
+	}
+	if c.DBPath == "" {
+		return errors.New("ftsengine: DBPath missing")
+	}
+
+	if strings.TrimSpace(c.Table) == "" {
+		return errors.New("ftsengine: empty table name")
+	}
+	seen := make(map[string]struct{})
+	for _, col := range c.Columns {
+		if strings.TrimSpace(col.Name) == "" {
+			return errors.New("ftsengine: column with empty name")
+		}
+		if _, dup := seen[col.Name]; dup {
+			return fmt.Errorf("ftsengine: duplicate column %q", col.Name)
+		}
+		seen[col.Name] = struct{}{}
+	}
+	return nil
 }
-
-/* ------------------------------------------------------------------ */
-/*  Engine                                                            */
-/* ------------------------------------------------------------------ */
-
-type Engine struct {
-	db  *sql.DB
-	cfg Config
-	hsh string     // schema checksum
-	mu  sync.Mutex // serialises write-queries
-}
-
-/* ------------------------------------------------------------------ */
-/*  construction                                                      */
-/* ------------------------------------------------------------------ */
 
 func New(cfg Config) (*Engine, error) {
-	if len(cfg.Columns) == 0 {
-		return nil, errors.New("ftsengine: need ≥1 column")
-	}
-	if cfg.DBPath == "" {
-		return nil, errors.New("ftsengine: DBPath missing")
+	err := cfg.Validate()
+	if err != nil {
+		return nil, err
 	}
 	if dir := filepath.Dir(cfg.DBPath); dir != "" && dir != ":memory:" {
 		if err := os.MkdirAll(dir, 0o770); err != nil {
@@ -75,6 +84,8 @@ func New(cfg Config) (*Engine, error) {
 	if err != nil {
 		return nil, err
 	}
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
 
 	e := &Engine{db: db, cfg: cfg}
 	e.hsh = e.schemaChecksum()
@@ -93,8 +104,7 @@ func New(cfg Config) (*Engine, error) {
 
 func (e *Engine) schemaChecksum() string {
 	h := sha256.New()
-	cfg := e.cfg
-	_ = json.NewEncoder(h).Encode(cfg)
+	_ = json.NewEncoder(h).Encode(e.cfg)
 	return hex.EncodeToString(h.Sum(nil))
 }
 
@@ -143,56 +153,106 @@ func (e *Engine) bootstrap(ctx context.Context) error {
 	return nil
 }
 
-func (e *Engine) IsEmpty() bool {
-	const sqlIsEmpty = `SELECT count(*) FROM %s` // Table name must be injected safely
-
+func (e *Engine) IsEmpty(ctx context.Context) (bool, error) {
+	const sqlIsEmpty = `SELECT count(*) FROM %s`
 	var n int
-	_ = e.db.QueryRow(fmt.Sprintf(sqlIsEmpty, quote(e.cfg.Table))).Scan(&n)
-
-	return n == 0
+	if err := e.db.QueryRowContext(
+		ctx, fmt.Sprintf(sqlIsEmpty, quote(e.cfg.Table)),
+	).Scan(&n); err != nil {
+		return false, err
+	}
+	return n == 0, nil
 }
 
-// Upsert --------------------------------------------------------------------
-// rowid = fnv64(id);  path column keeps the *original* string id.
-func (e *Engine) Upsert(id string, vals map[string]string) error {
+// Upsert inserts a new document, or replaces the existing one whose
+// string id is `path`.  The logic works with every SQLite ≥ 3.9 because
+// it uses INSERT and INSERT OR REPLACE, both supported by FTS5.
+func (e *Engine) Upsert(
+	ctx context.Context,
+	id string,
+	vals map[string]string,
+) error {
 	if id == "" {
 		return errors.New("ftsengine: empty id")
 	}
-	rowid := fnv64a(id)
 
-	numCols := 1 + len(e.cfg.Columns) // "path" + each column
+	e.mu.Lock() // serialise writes inside *this* process
+	defer e.mu.Unlock()
 
+	/* --------------------------------------------------------------
+	   1) Does a row with this path already exist?
+	----------------------------------------------------------------*/
+	var rowid int64
+	const sqlSearchRow = `SELECT rowid FROM %s WHERE path=?`
+	err := e.db.QueryRowContext(
+		ctx,
+		fmt.Sprintf(sqlSearchRow, quote(e.cfg.Table)),
+		id,
+	).Scan(&rowid)
+
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return err // real DB error
+	}
+	exists := !errors.Is(err, sql.ErrNoRows)
+
+	/* --------------------------------------------------------------
+	   2) Build column lists and args
+	----------------------------------------------------------------*/
+	numCols := 1 + len(e.cfg.Columns) // path + N user columns
 	colNames := make([]string, 0, numCols)
 	marks := make([]string, 0, numCols)
-	args := make([]any, 1, numCols+1)
-	args[0] = rowid
+	args := make([]any, 0, numCols+1) // maybe +1 rowid
 
+	// path column
 	colNames = append(colNames, "path")
 	marks = append(marks, "?")
 	args = append(args, id)
 
+	// user-defined columns
 	for _, c := range e.cfg.Columns {
 		colNames = append(colNames, quote(c.Name))
 		marks = append(marks, "?")
 		args = append(args, vals[c.Name])
 	}
 
-	const sqlInsertOrReplace = `INSERT OR REPLACE INTO %s (rowid,%s) VALUES (? , %s);`
+	/* --------------------------------------------------------------
+	   3) Choose statement variant
+	----------------------------------------------------------------*/
+	var sqlQ string
 
-	sqlQ := fmt.Sprintf(sqlInsertOrReplace,
-		quote(e.cfg.Table), strings.Join(colNames, ","), strings.Join(marks, ","))
+	if exists {
+		// prepend rowid for INSERT OR REPLACE
+		colNames = append([]string{"rowid"}, colNames...)
+		marks = append([]string{"?"}, marks...)
+		args = append([]any{rowid}, args...)
+		const sqlInsertOrReplace = `INSERT OR REPLACE INTO %s (%s) VALUES (%s);`
+		sqlQ = fmt.Sprintf(
+			sqlInsertOrReplace,
+			quote(e.cfg.Table),
+			strings.Join(colNames, ","),
+			strings.Join(marks, ","),
+		)
+	} else {
+		// fresh insert, rowid is omitted
+		const sqlInsert = `INSERT INTO %s (%s) VALUES (%s);`
+		sqlQ = fmt.Sprintf(
+			sqlInsert,
+			quote(e.cfg.Table),
+			strings.Join(colNames, ","),
+			strings.Join(marks, ","),
+		)
+	}
 
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	_, err := e.db.Exec(sqlQ, args...)
+	_, err = e.db.ExecContext(ctx, sqlQ, args...)
 	return err
 }
 
-func (e *Engine) Delete(id string) error {
-	const sqlDeleteByRowID = `DELETE FROM %s WHERE rowid=?`
-
-	_, err := e.db.Exec(fmt.Sprintf(sqlDeleteByRowID, quote(e.cfg.Table)), fnv64a(id))
-
+func (e *Engine) Delete(ctx context.Context, id string) error {
+	const sqlDel = `DELETE FROM %s WHERE path=?`
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	_, err := e.db.ExecContext(ctx,
+		fmt.Sprintf(sqlDel, quote(e.cfg.Table)), id)
 	return err
 }
 
@@ -236,8 +296,8 @@ func (e *Engine) Search(
 
 	const sqlSearch = `SELECT path, bm25(%s%s) AS s
 			FROM %s WHERE %s MATCH ?
-			ORDER BY s, rowid
-			LIMIT ? OFFSET ?;` // Table/columns injected safely
+			ORDER BY s ASC, rowid
+			LIMIT ? OFFSET ?;`
 
 	sqlQ := fmt.Sprintf(sqlSearch,
 		quote(e.cfg.Table), paramPlaceholders(len(weights)),
@@ -272,6 +332,8 @@ func (e *Engine) Search(
 	return hits, nextToken, rows.Err()
 }
 
+func (e *Engine) Close() error { return e.db.Close() }
+
 /* ------------------------------------------------------------------ */
 /*  helpers                                                           */
 /* ------------------------------------------------------------------ */
@@ -279,27 +341,8 @@ func (e *Engine) Search(
 func quote(id string) string { return `"` + strings.ReplaceAll(id, `"`, `""`) + `"` }
 
 func paramPlaceholders(n int) string {
-	sb := strings.Builder{}
-	for range n {
-		sb.WriteString(",?")
+	if n == 0 {
+		return ""
 	}
-	return sb.String()
-}
-
-func fnv64a(s string) int64 {
-	const (
-		offset uint64 = 14695981039346656037
-		prime  uint64 = 1099511628211
-	)
-	h := offset
-	for i := range len(s) {
-		h ^= uint64(s[i])
-		h *= prime
-	}
-	h &= 0x7fffffffffffffff // mask to 63 bits
-	if h > math.MaxInt64 {
-		// Should never happen, but just in case
-		return math.MaxInt64
-	}
-	return int64(h)
+	return strings.Repeat(",?", n)
 }

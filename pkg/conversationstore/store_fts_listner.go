@@ -2,6 +2,7 @@ package conversationstore
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/fs"
 	"log/slog"
@@ -17,7 +18,7 @@ func NewFTSListner(e *ftsengine.Engine) filestore.Listener {
 	return func(ev filestore.Event) {
 		switch ev.Op {
 		case filestore.OpSetFile, filestore.OpResetFile:
-			_ = e.Upsert(ev.File, extract(ev.Data))
+			_ = e.Upsert(context.Background(), ev.File, extract(ev.Data))
 		}
 	}
 }
@@ -85,7 +86,7 @@ func stringField(m map[string]any, key string) (string, bool) {
 	return "", false
 }
 
-func rebuild(baseDir string, e *ftsengine.Engine) error {
+func rebuild(ctx context.Context, baseDir string, e *ftsengine.Engine) error {
 	// walk the directory only once, if table was empty
 	return filepath.WalkDir(baseDir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || !strings.HasSuffix(d.Name(), ".json") {
@@ -95,24 +96,36 @@ func rebuild(baseDir string, e *ftsengine.Engine) error {
 		var m map[string]any
 		if err == nil {
 			if err := json.Unmarshal(raw, &m); err == nil {
-				return e.Upsert(p, extract(m))
+				return e.Upsert(ctx, p, extract(m))
 			}
 		}
 		return nil
 	})
 }
 
-func rebuildIfEmpty(baseDir string, e *ftsengine.Engine) {
-	if e.IsEmpty() {
+func rebuildIfEmpty(ctx context.Context, baseDir string, e *ftsengine.Engine) error {
+	isEmp, err := e.IsEmpty(ctx)
+	if err != nil {
+		slog.Error(
+			"DB empty check issue. possibly delete the .sqlite file and restart app again",
+			"basedir",
+			baseDir,
+			"error",
+			err,
+		)
+		return err
+	}
+	if isEmp {
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
 					slog.Error("fts rebuild panic", "error", r)
 				}
 			}()
-			if err := rebuild(baseDir, e); err != nil {
+			if err := rebuild(ctx, baseDir, e); err != nil {
 				slog.Error("fts rebuild", "error", err)
 			}
 		}()
 	}
+	return nil
 }
