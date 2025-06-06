@@ -28,7 +28,6 @@ type MapFileStore struct {
 	createIfNotExists bool
 	getValueEncDec    ValueEncDecGetter
 	getKeyEncDec      KeyEncDecGetter
-	listenersMu       sync.RWMutex
 	listeners         []Listener
 }
 
@@ -112,8 +111,6 @@ func NewMapFileStore(
 // fireEvent delivers e to all listeners, recovering from panics so that a faulty
 // observer cannot crash the store.
 func (s *MapFileStore) fireEvent(e Event) {
-	s.listenersMu.RLock()
-	defer s.listenersMu.RUnlock()
 	for _, l := range s.listeners {
 		if l == nil {
 			continue
