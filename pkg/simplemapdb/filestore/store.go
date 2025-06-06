@@ -273,7 +273,7 @@ func (store *MapFileStore) reset() (copyAfter map[string]any, err error) {
 
 	store.data = make(map[string]any)
 	maps.Copy(store.data, store.defaultData)
-	copyAfter = DeepCopyValue(store.data).(map[string]any)
+	copyAfter, _ = DeepCopyValue(store.data).(map[string]any)
 
 	if err = store.flushUnlocked(); err != nil {
 		return nil, fmt.Errorf("failed to save data after Reset: %w", err)
@@ -325,7 +325,7 @@ func (store *MapFileStore) setAll(data map[string]any) (copyAfter map[string]any
 	// Deep copy the input data to prevent external modifications after setting.
 	store.data = make(map[string]any)
 	maps.Copy(store.data, data)
-	copyAfter = DeepCopyValue(store.data).(map[string]any)
+	copyAfter, _ = DeepCopyValue(store.data).(map[string]any)
 
 	if store.autoFlush {
 		if err = store.flushUnlocked(); err != nil {
@@ -380,7 +380,7 @@ func (store *MapFileStore) setKey(
 	if err := SetValueAtPath(store.data, keys, value); err != nil {
 		return nil, nil, fmt.Errorf("failed to set value at key %v: %w", keys, err)
 	}
-	copyAfter = DeepCopyValue(store.data).(map[string]any)
+	copyAfter, _ = DeepCopyValue(store.data).(map[string]any)
 	if store.autoFlush {
 		if err := store.flushUnlocked(); err != nil {
 			return nil, nil, fmt.Errorf(
@@ -426,7 +426,7 @@ func (store *MapFileStore) deleteKey(
 	if err := DeleteValueAtPath(store.data, keys); err != nil {
 		return nil, nil, fmt.Errorf("failed to delete key %v: %w", keys, err)
 	}
-	copyAfter = DeepCopyValue(store.data).(map[string]any)
+	copyAfter, _ = DeepCopyValue(store.data).(map[string]any)
 
 	if store.autoFlush {
 		if err := store.flushUnlocked(); err != nil {

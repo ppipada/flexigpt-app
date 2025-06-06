@@ -951,6 +951,8 @@ func TestEvents_MultipleListeners_IdenticalOrder(t *testing.T) {
 ----------------------------------------------------------------*/
 
 func TestEvents_AutoFlushFalse(t *testing.T) {
+	const key = "foo"
+	const val = "bar"
 	tmp := t.TempDir()
 	f := filepath.Join(tmp, "noflush.json")
 
@@ -961,16 +963,16 @@ func TestEvents_AutoFlushFalse(t *testing.T) {
 		WithListeners(func(e Event) { ev = noTime(e) }),
 	)
 
-	if err := st.SetKey([]string{"foo"}, "bar"); err != nil {
+	if err := st.SetKey([]string{key}, val); err != nil {
 		t.Fatalf("SetKey: %v", err)
 	}
-	if ev.Op != OpSetKey || ev.NewValue != "bar" {
+	if ev.Op != OpSetKey || ev.NewValue != val {
 		t.Fatalf("unexpected event %+v", ev)
 	}
 
 	// reopen – change should NOT be on disk
 	reopen := openStore(f)
-	if _, err := reopen.GetKey([]string{"foo"}); err == nil {
+	if _, err := reopen.GetKey([]string{key}); err == nil {
 		t.Fatalf("value persisted although autoFlush was off")
 	}
 
@@ -979,8 +981,8 @@ func TestEvents_AutoFlushFalse(t *testing.T) {
 		t.Fatalf("flush: %v", err)
 	}
 	reopen2 := openStore(f)
-	got, err := reopen2.GetKey([]string{"foo"})
-	if err != nil || got != "bar" {
+	got, err := reopen2.GetKey([]string{key})
+	if err != nil || got != val {
 		t.Fatalf("after flush expected bar, got %v err %v", got, err)
 	}
 }
