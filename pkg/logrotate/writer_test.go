@@ -201,11 +201,11 @@ func TestConcurrentWrites(t *testing.T) {
 	var wg sync.WaitGroup
 	errCh := make(chan error, writers)
 
-	for i := 0; i < writers; i++ {
+	for i := range writers {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			for j := 0; j < rows; j++ {
+			for range rows {
 				if _, err := w.Write([]byte(strings.Repeat(strconv.Itoa(i), messageSize))); err != nil {
 					errCh <- fmt.Errorf("failed to write: %w", err)
 					return

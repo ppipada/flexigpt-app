@@ -28,6 +28,7 @@ type MapDirectoryStore struct {
 	baseDir           string
 	pageSize          int
 	PartitionProvider PartitionProvider
+	listeners         []simplemapdbFileStore.Listener
 }
 
 // Option is a functional option for configuring the MapDirectoryStore.
@@ -44,6 +45,14 @@ func WithPageSize(size int) Option {
 func WithPartitionProvider(provider PartitionProvider) Option {
 	return func(mds *MapDirectoryStore) {
 		mds.PartitionProvider = provider
+	}
+}
+
+// WithListeners registers one or more listeners when the directory store is
+// created.
+func WithListeners(ls ...simplemapdbFileStore.Listener) Option {
+	return func(mds *MapDirectoryStore) {
+		mds.listeners = append(mds.listeners, ls...)
 	}
 }
 
@@ -111,6 +120,7 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]any) 
 		filePath,
 		data,
 		simplemapdbFileStore.WithCreateIfNotExists(true),
+		simplemapdbFileStore.WithListeners(mds.listeners...),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create or truncate file %s: %w", filename, err)
@@ -131,7 +141,11 @@ func (mds *MapDirectoryStore) GetFileData(
 ) (map[string]any, error) {
 	partitionDir := mds.PartitionProvider.GetPartitionDir(filename)
 	filePath := filepath.Join(mds.baseDir, partitionDir, filename)
-	store, err := simplemapdbFileStore.NewMapFileStore(filePath, map[string]any{"k": "v"})
+	store, err := simplemapdbFileStore.NewMapFileStore(
+		filePath,
+		map[string]any{"k": "v"},
+		simplemapdbFileStore.WithListeners(mds.listeners...),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get file %s: %w", filename, err)
 	}

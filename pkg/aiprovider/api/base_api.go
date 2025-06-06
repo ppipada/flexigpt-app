@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 
 	"github.com/ppipada/flexigpt-app/pkg/aiprovider/consts"
@@ -135,7 +136,7 @@ func (api *BaseAIAPI) getCompletionRequest(
 	completionRequest.ModelParams.SystemPrompt = reqSystemPrompt
 
 	// Handle messages
-	messages := append([]spec.ChatCompletionRequestMessage{}, prevMessages...)
+	messages := slices.Clone(prevMessages)
 	if prompt != "" {
 		message := spec.ChatCompletionRequestMessage{
 			Role:    "user",

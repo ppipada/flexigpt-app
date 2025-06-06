@@ -3,6 +3,10 @@
 ## Laundry list
 
 - [ ] spinner before first response (details if possible)
+- [x] support events in simplemapdb
+- [ ] add fts using sqlite for simplemapdb
+- [ ] test and integrate fts with conversations
+- [ ] implment prompts and tools using dirstore+fts
 
 ## Tasks: Tools Implementation with CodeMirror
 

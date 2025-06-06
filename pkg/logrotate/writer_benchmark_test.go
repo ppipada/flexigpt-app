@@ -18,7 +18,7 @@ func benchmarkWriter(b *testing.B, messages, messageSize, writers int) {
 
 	dir := b.TempDir()
 
-	for n := 0; n < b.N; n++ {
+	for b.Loop() {
 		w, err := New(logger, Options{
 			Directory: dir,
 		})
@@ -29,11 +29,11 @@ func benchmarkWriter(b *testing.B, messages, messageSize, writers int) {
 		var wg sync.WaitGroup
 		errCh := make(chan error, writers)
 
-		for i := 0; i < writers; i++ {
+		for i := range writers {
 			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()
-				for j := 0; j < messages; j++ {
+				for range messages {
 					if _, err := w.Write([]byte(strings.Repeat(strconv.Itoa(i), messageSize))); err != nil {
 						errCh <- fmt.Errorf("failed to write: %w", err)
 						return

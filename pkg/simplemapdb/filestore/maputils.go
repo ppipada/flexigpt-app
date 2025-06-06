@@ -98,7 +98,7 @@ func NavigateToParentMap(
 		return nil, "", errors.New("empty path received")
 	}
 	current := data
-	for i := 0; i < len(keys)-1; i++ {
+	for i := range len(keys) - 1 {
 		key := keys[i]
 		m, ok := current.(map[string]any)
 		if !ok {

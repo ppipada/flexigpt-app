@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"slices"
 	"sync"
 	"time"
 )
@@ -251,7 +252,7 @@ func (c *StdioConn) Write(b []byte) (int, error) {
 	// Prepare the write request
 	resCh := make(chan writeResult, 1)
 	// Make a copy of b to avoid data races
-	dataCopy := append([]byte(nil), b...)
+	dataCopy := slices.Clone(b)
 	req := writeRequest{
 		data:  dataCopy,
 		resCh: resCh,

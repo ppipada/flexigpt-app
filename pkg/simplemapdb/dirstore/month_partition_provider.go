@@ -68,10 +68,7 @@ func (p *MonthPartitionProvider) ListPartitions(
 	}
 
 	// Apply pagination
-	end := start + pageSize
-	if end > len(partitions) {
-		end = len(partitions)
-	}
+	end := min(start+pageSize, len(partitions))
 
 	// Generate next page token
 	if end < len(partitions) {

@@ -231,7 +231,7 @@ func TestConcurrentRequestsSingleClient(t *testing.T) {
 
 	// Prepare test messages.
 	messages := make([]string, numRequests)
-	for i := 0; i < numRequests; i++ {
+	for i := range numRequests {
 		messages[i] = fmt.Sprintf("Message %d", i)
 	}
 
@@ -240,7 +240,7 @@ func TestConcurrentRequestsSingleClient(t *testing.T) {
 	wg.Add(numRequests)
 
 	// Send requests concurrently.
-	for i := 0; i < numRequests; i++ {
+	for i := range numRequests {
 		go func(i int) {
 			defer wg.Done()
 			reply, err := client.Send([]byte(messages[i]))
