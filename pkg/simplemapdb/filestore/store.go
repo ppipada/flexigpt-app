@@ -5,21 +5,17 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"log/slog"
 	"maps"
 	"os"
 	"path/filepath"
+	"runtime/debug"
+	"slices"
 	"sync"
+	"time"
 
 	simplemapdbEncdec "github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 )
-
-// KeyEncDecGetter: given the path so far, if applicable, returns a StringEncoderDecoder
-// It encodes decodes: The key at the path i.e last part of the path array.
-type KeyEncDecGetter func(pathSoFar []string) simplemapdbEncdec.StringEncoderDecoder
-
-// ValueEncDecGetter: given the path so far, if applicable, returns a EncoderDecoder
-// It encodes decodes: Value at the key i.e value at last part of the path array.
-type ValueEncDecGetter func(pathSoFar []string) simplemapdbEncdec.EncoderDecoder
 
 // MapFileStore is a file-backed implementation of a thread-safe key-value store.
 type MapFileStore struct {
@@ -32,6 +28,8 @@ type MapFileStore struct {
 	createIfNotExists bool
 	getValueEncDec    ValueEncDecGetter
 	getKeyEncDec      KeyEncDecGetter
+	listenersMu       sync.RWMutex
+	listeners         []Listener
 }
 
 // Option defines a function type that applies a configuration option to the MapFileStore.
@@ -72,6 +70,11 @@ func WithCreateIfNotExists(createIfNotExists bool) Option {
 	}
 }
 
+// WithListeners registers one or more listeners during store creation.
+func WithListeners(ls ...Listener) Option {
+	return func(s *MapFileStore) { s.listeners = append(s.listeners, ls...) }
+}
+
 // NewMapFileStore initializes a new MapFileStore.
 // If the file does not exist and createIfNotExists is false, it returns an error.
 func NewMapFileStore(
@@ -106,6 +109,35 @@ func NewMapFileStore(
 	return store, nil
 }
 
+// fireEvent delivers e to all listeners, recovering from panics so that a faulty
+// observer cannot crash the store.
+func (s *MapFileStore) fireEvent(e Event) {
+	s.listenersMu.RLock()
+	defer s.listenersMu.RUnlock()
+	for _, l := range s.listeners {
+		if l == nil {
+			continue
+		}
+		func(cb Listener) {
+			defer func() {
+				if r := recover(); r != nil {
+					// log.Printf("filestore: listener panic: %v", r)
+					slog.Error(
+						"Filestore listener panic",
+						"err",
+						r,
+						"event",
+						e,
+						"stack",
+						string(debug.Stack()),
+					)
+				}
+			}()
+			cb(e)
+		}(l)
+	}
+}
+
 // createFileIfNotExists checks if a file exists and creates it if it doesn't.
 func (store *MapFileStore) createFileIfNotExists(filename string) error {
 	// Check if the file exists
@@ -137,7 +169,7 @@ func (store *MapFileStore) createFileIfNotExists(filename string) error {
 	defer f.Close()
 
 	// Flush the store data to the file
-	if err := store.flush(); err != nil {
+	if err := store.flushUnlocked(); err != nil {
 		return fmt.Errorf("failed to flush file %s: %w", filename, err)
 	}
 
@@ -185,14 +217,14 @@ func (store *MapFileStore) load() error {
 	return nil
 }
 
-func (store *MapFileStore) flush() error {
+func (store *MapFileStore) flushUnlocked() error {
 	// We'll make a deep copy so we don't mutate in-memory. no error as store.data is always a map
 	encodeMode := true
 	dataCopy, _ := DeepCopyValue(store.data).(map[string]any)
 
 	// First encode values so that all keys from in mem are non mutated
 	// Encode KEYS next, so that on disk, the providers/modelnames become base64, etc.
-	d, err := encodeDecodeAllValuesRecursively(
+	tmpd, err := encodeDecodeAllValuesRecursively(
 		dataCopy,
 		[]string{},
 		store.getValueEncDec,
@@ -201,7 +233,7 @@ func (store *MapFileStore) flush() error {
 	if err != nil {
 		return err
 	}
-	dataCopy, _ = d.(map[string]any)
+	dataCopy, _ = tmpd.(map[string]any)
 
 	// Encode KEYS next, so that on disk, the providers/modelnames become base64, etc.
 	err = encodeDecodeAllKeysRecursively(dataCopy, []string{}, store.getKeyEncDec, encodeMode)
@@ -209,6 +241,13 @@ func (store *MapFileStore) flush() error {
 		return err
 	}
 
+	if err := os.MkdirAll(filepath.Dir(store.filename), 0o770); err != nil {
+		return fmt.Errorf(
+			"failed to ensure directory for file %s for flush: %w",
+			store.filename,
+			err,
+		)
+	}
 	f, err := os.Create(store.filename)
 	if err != nil {
 		return fmt.Errorf("failed to open file %s for flush: %w", store.filename, err)
@@ -221,25 +260,41 @@ func (store *MapFileStore) flush() error {
 	return nil
 }
 
-// Reset removes all data from the store.
-func (store *MapFileStore) Reset() error {
+// Flush writes the current data to the file. No event is emitted for flush.
+func (store *MapFileStore) Flush() error {
+	store.mu.RLock()
+	defer store.mu.RUnlock()
+	return store.flushUnlocked()
+}
+
+func (store *MapFileStore) reset() (copyAfter map[string]any, err error) {
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
 	store.data = make(map[string]any)
 	maps.Copy(store.data, store.defaultData)
+	copyAfter = DeepCopyValue(store.data).(map[string]any)
 
-	if err := store.flush(); err != nil {
-		return fmt.Errorf("failed to save data after Reset: %w", err)
+	if err = store.flushUnlocked(); err != nil {
+		return nil, fmt.Errorf("failed to save data after Reset: %w", err)
 	}
-	return nil
+	return copyAfter, nil
 }
 
-// Save writes the current data to the file.
-func (store *MapFileStore) Save() error {
-	store.mu.RLock()
-	defer store.mu.RUnlock()
-	return store.flush()
+// Reset removes all data from the store.
+func (store *MapFileStore) Reset() error {
+	copyAfter, err := store.reset()
+	if err != nil {
+		return err
+	}
+	store.fireEvent(Event{
+		Op:        OpResetFile,
+		File:      store.filename,
+		Data:      copyAfter,
+		Timestamp: time.Now(),
+	})
+
+	return nil
 }
 
 // GetAll returns a copy of all data in the store, refreshing from the file first.
@@ -260,19 +315,38 @@ func (store *MapFileStore) GetAll(forceFetch bool) (map[string]any, error) {
 	return dataCopy, nil
 }
 
-// SetAll overwrites all data in the store with the provided data.
-func (store *MapFileStore) SetAll(data map[string]any) error {
+func (store *MapFileStore) setAll(data map[string]any) (copyAfter map[string]any, err error) {
+	if data == nil {
+		return nil, errors.New("SetAll: nil data")
+	}
+
 	store.mu.Lock()
 	defer store.mu.Unlock()
 	// Deep copy the input data to prevent external modifications after setting.
 	store.data = make(map[string]any)
 	maps.Copy(store.data, data)
+	copyAfter = DeepCopyValue(store.data).(map[string]any)
 
 	if store.autoFlush {
-		if err := store.flush(); err != nil {
-			return fmt.Errorf("failed to save data after SetAll: %w", err)
+		if err = store.flushUnlocked(); err != nil {
+			return nil, fmt.Errorf("failed to save data after SetAll: %w", err)
 		}
 	}
+	return copyAfter, nil
+}
+
+// SetAll overwrites all data in the store with the provided data.
+func (store *MapFileStore) SetAll(data map[string]any) error {
+	copyAfter, err := store.setAll(data)
+	if err != nil {
+		return err
+	}
+	store.fireEvent(Event{
+		Op:        OpSetFile,
+		File:      store.filename,
+		Data:      copyAfter,
+		Timestamp: time.Now(),
+	})
 	return nil
 }
 
@@ -292,45 +366,96 @@ func (store *MapFileStore) GetKey(keys []string) (any, error) {
 	return DeepCopyValue(val), nil
 }
 
-// SetKey sets the value for the given key.
-// The key can be a dot-separated path to a nested value.
-func (store *MapFileStore) SetKey(keys []string, value any) error {
+func (store *MapFileStore) setKey(
+	keys []string,
+	value any,
+) (oldVal any, copyAfter map[string]any, err error) {
 	if len(keys) == 0 {
-		return errors.New("cannot set value at root")
+		return nil, nil, errors.New("cannot set value at root")
 	}
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
+	oldVal, _ = GetValueAtPath(store.data, keys)
 	if err := SetValueAtPath(store.data, keys, value); err != nil {
-		return fmt.Errorf("failed to set value at key %v: %w", keys, err)
+		return nil, nil, fmt.Errorf("failed to set value at key %v: %w", keys, err)
 	}
-
+	copyAfter = DeepCopyValue(store.data).(map[string]any)
 	if store.autoFlush {
-		if err := store.flush(); err != nil {
-			return fmt.Errorf("failed to save data after SetKey for keys %v: %w", keys, err)
+		if err := store.flushUnlocked(); err != nil {
+			return nil, nil, fmt.Errorf(
+				"failed to save data after SetKey for keys %v: %w",
+				keys,
+				err,
+			)
 		}
 	}
+	return oldVal, copyAfter, nil
+}
+
+// SetKey sets the value for the given key.
+// The key can be a dot-separated path to a nested value.
+func (store *MapFileStore) SetKey(keys []string, value any) error {
+	oldVal, copyAfter, err := store.setKey(keys, value)
+	if err != nil {
+		return err
+	}
+	store.fireEvent(Event{
+		Op:        OpSetKey,
+		File:      store.filename,
+		Keys:      slices.Clone(keys),
+		OldValue:  DeepCopyValue(oldVal),
+		NewValue:  DeepCopyValue(value),
+		Data:      copyAfter,
+		Timestamp: time.Now(),
+	})
 	return nil
+}
+
+func (store *MapFileStore) deleteKey(
+	keys []string,
+) (oldVal any, copyAfter map[string]any, err error) {
+	if len(keys) == 0 {
+		return nil, nil, errors.New("cannot delete value at root")
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
+	oldVal, _ = GetValueAtPath(store.data, keys)
+
+	if err := DeleteValueAtPath(store.data, keys); err != nil {
+		return nil, nil, fmt.Errorf("failed to delete key %v: %w", keys, err)
+	}
+	copyAfter = DeepCopyValue(store.data).(map[string]any)
+
+	if store.autoFlush {
+		if err := store.flushUnlocked(); err != nil {
+			return nil, nil, fmt.Errorf(
+				"failed to save data after DeleteKey for key %v: %w",
+				keys,
+				err,
+			)
+		}
+	}
+	return oldVal, copyAfter, nil
 }
 
 // DeleteKey deletes the value associated with the given key.
 // The key can be a dot-separated path to a nested value.
 func (store *MapFileStore) DeleteKey(keys []string) error {
-	if len(keys) == 0 {
-		return errors.New("cannot delete value at root")
+	oldVal, copyAfter, err := store.deleteKey(keys)
+	if err != nil {
+		return err
 	}
-	store.mu.Lock()
-	defer store.mu.Unlock()
-
-	if err := DeleteValueAtPath(store.data, keys); err != nil {
-		return fmt.Errorf("failed to delete key %v: %w", keys, err)
-	}
-
-	if store.autoFlush {
-		if err := store.flush(); err != nil {
-			return fmt.Errorf("failed to save data after DeleteKey for key %v: %w", keys, err)
-		}
-	}
+	store.fireEvent(Event{
+		Op:        OpDeleteKey,
+		File:      store.filename,
+		Keys:      slices.Clone(keys),
+		OldValue:  DeepCopyValue(oldVal),
+		NewValue:  nil,
+		Data:      copyAfter,
+		Timestamp: time.Now(),
+	})
 	return nil
 }
 
@@ -356,7 +481,7 @@ func encodeDecodeAllKeysRecursively(
 	}
 
 	for k, v := range currentMap {
-		newPath := pathSoFar
+		newPath := slices.Clone(pathSoFar)
 		newPath = append(newPath, k)
 		// Does the user want to rename THIS child's key?
 		if keyEncDec := getKeyEncDec(newPath); keyEncDec != nil {
@@ -393,7 +518,7 @@ func encodeDecodeAllKeysRecursively(
 	// 3) Now recurse into each child to see if they also want to rename sub-keys.
 	//    Note that if we changed a key from oldK -> newK, we pass newK in pathSoFar.
 	for k, v := range currentMap {
-		newPath := pathSoFar
+		newPath := slices.Clone(pathSoFar)
 		newPath = append(newPath, k)
 		// If the child's value is a map, keep going
 		if subMap, ok := v.(map[string]any); ok {
@@ -457,9 +582,11 @@ func encodeDecodeAllValuesRecursively(
 	}
 
 	for k, v := range m {
+		newPath := slices.Clone(pathSoFar)
+		newPath = append(newPath, k)
 		newChild, err := encodeDecodeAllValuesRecursively(
 			v,
-			append(pathSoFar, k),
+			newPath,
 			getValueEncDec,
 			encodeMode,
 		)

@@ -5,7 +5,9 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 )
@@ -529,10 +531,10 @@ func TestMapFileStore_NoAutoFlush(t *testing.T) {
 		t.Errorf("Expected error getting 'foo' from store2 as it should not be saved yet")
 	}
 
-	// Now save and reopen
-	err = store.Save()
+	// Now flush and reopen
+	err = store.Flush()
 	if err != nil {
-		t.Fatalf("Save failed: %v", err)
+		t.Fatalf("Flush failed: %v", err)
 	}
 
 	store3, err := NewMapFileStore(filename, defaultData)
@@ -745,9 +747,9 @@ func TestMapFileStore_KeyEncodingDecoding(t *testing.T) {
 	t.Run("Reloading the Store Should Decode Keys Correctly", func(t *testing.T) {
 		// We set some keys in the previous sub-test. Let's close the store,
 		// reopen it, and ensure we get the same data with the same key paths.
-		err := store.Save()
+		err := store.Flush()
 		if err != nil {
-			t.Fatalf("Unexpected error while saving: %v", err)
+			t.Fatalf("Unexpected error while flushing: %v", err)
 		}
 		store2, err := NewMapFileStore(
 			filename,
@@ -778,9 +780,9 @@ func TestMapFileStore_KeyEncodingDecoding(t *testing.T) {
 		// We'll forcibly write a key that is not valid base64 into the JSON file
 		// to mimic a corrupt on-disk scenario.
 		// Then, a new store load should fail because decode will error out on that key.
-		err := store.Save()
+		err := store.Flush()
 		if err != nil {
-			t.Fatalf("Unexpected error while saving: %v", err)
+			t.Fatalf("Unexpected error while flushing: %v", err)
 		}
 
 		// Overwrite the store file with one invalid key (like: {"bad-base64??===": "someVal"})
@@ -890,4 +892,212 @@ func getValueAtPath(m map[string]any, path []string) any {
 		current = subMap[p]
 	}
 	return current
+}
+
+/* ---------------------------------------------------------------
+   Helpers
+----------------------------------------------------------------*/
+
+func noTime(e Event) Event { e.Timestamp = time.Time{}; return e }
+
+func openStore(p string, opts ...Option) *MapFileStore {
+	s, err := NewMapFileStore(
+		p,
+		map[string]any{},
+		append(opts, WithCreateIfNotExists(true))...,
+	)
+	if err != nil {
+		panic(err) // tests – abort fast
+	}
+	return s
+}
+
+/* ---------------------------------------------------------------
+   1. Order & fan-out: multiple listeners receive identical sequence
+----------------------------------------------------------------*/
+
+func TestEvents_MultipleListeners_IdenticalOrder(t *testing.T) {
+	tmp := t.TempDir()
+	f := filepath.Join(tmp, "multi.json")
+
+	var aMu, bMu sync.Mutex
+	var recA, recB []Event
+
+	lA := func(e Event) { aMu.Lock(); recA = append(recA, noTime(e)); aMu.Unlock() }
+	lB := func(e Event) { bMu.Lock(); recB = append(recB, noTime(e)); bMu.Unlock() }
+
+	st := openStore(f, WithListeners(lA, lB))
+
+	_ = st.SetAll(map[string]any{"x": 1})
+	_ = st.SetKey([]string{"x"}, 2)
+	_ = st.DeleteKey([]string{"x"})
+	_ = st.Reset()
+
+	aMu.Lock()
+	bMu.Lock()
+	defer aMu.Unlock()
+	defer bMu.Unlock()
+
+	if !reflect.DeepEqual(recA, recB) {
+		t.Fatalf("listeners saw different events:\nA: %#v\nB: %#v", recA, recB)
+	}
+	if len(recA) != 4 {
+		t.Fatalf("want 4 events, got %d", len(recA))
+	}
+}
+
+/* ---------------------------------------------------------------
+   2. AutoFlush = false -> event fires, disk unchanged until Flush()
+----------------------------------------------------------------*/
+
+func TestEvents_AutoFlushFalse(t *testing.T) {
+	tmp := t.TempDir()
+	f := filepath.Join(tmp, "noflush.json")
+
+	var ev Event
+	st := openStore(
+		f,
+		WithAutoFlush(false),
+		WithListeners(func(e Event) { ev = noTime(e) }),
+	)
+
+	if err := st.SetKey([]string{"foo"}, "bar"); err != nil {
+		t.Fatalf("SetKey: %v", err)
+	}
+	if ev.Op != OpSetKey || ev.NewValue != "bar" {
+		t.Fatalf("unexpected event %+v", ev)
+	}
+
+	// reopen – change should NOT be on disk
+	reopen := openStore(f)
+	if _, err := reopen.GetKey([]string{"foo"}); err == nil {
+		t.Fatalf("value persisted although autoFlush was off")
+	}
+
+	// now flush & check again
+	if err := st.Flush(); err != nil {
+		t.Fatalf("flush: %v", err)
+	}
+	reopen2 := openStore(f)
+	got, err := reopen2.GetKey([]string{"foo"})
+	if err != nil || got != "bar" {
+		t.Fatalf("after flush expected bar, got %v err %v", got, err)
+	}
+}
+
+/* ---------------------------------------------------------------
+   3. Data snapshot matches store state for every op (table-driven)
+----------------------------------------------------------------*/
+
+func TestEvents_DataSnapshotMatchesStore(t *testing.T) {
+	tmp := t.TempDir()
+	f := filepath.Join(tmp, "datasnap.json")
+
+	var ev Event
+	st := openStore(f, WithListeners(func(e Event) { ev = noTime(e) }))
+
+	steps := []struct {
+		name string
+		op   func() error
+	}{
+		{
+			"SetAll",
+			func() error { return st.SetAll(map[string]any{"a": 1}) },
+		},
+		{
+			"SetKey",
+			func() error { return st.SetKey([]string{"b"}, 2) },
+		},
+		{
+			"DeleteKey",
+			func() error { return st.DeleteKey([]string{"a"}) },
+		},
+		{
+			"Reset",
+			func() error { return st.Reset() },
+		},
+	}
+
+	for _, stp := range steps {
+		t.Run(stp.name, func(t *testing.T) {
+			if err := stp.op(); err != nil {
+				t.Fatalf("op err: %v", err)
+			}
+			want, _ := st.GetAll(false)
+			if !reflect.DeepEqual(ev.Data, want) {
+				t.Fatalf("event.Data diverged\n have %v\n want %v", ev.Data, want)
+			}
+		})
+	}
+}
+
+/* ---------------------------------------------------------------
+   4. Concurrency – 100 goroutines issue SetKey; every event captured
+----------------------------------------------------------------*/
+
+func TestEvents_ConcurrentWrites(t *testing.T) {
+	tmp := t.TempDir()
+	f := filepath.Join(tmp, "concurrent.json")
+
+	var mu sync.Mutex
+	var evs []Event
+	st := openStore(
+		f,
+		WithListeners(func(e Event) {
+			mu.Lock()
+			evs = append(evs, noTime(e))
+			mu.Unlock()
+		}),
+	)
+
+	const n = 100
+	var wg sync.WaitGroup
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			_ = st.SetKey([]string{"k"}, i)
+		}(i)
+	}
+	wg.Wait()
+
+	// ensure we have exactly n events of type OpSetKey
+	mu.Lock()
+	defer mu.Unlock()
+	if len(evs) != n {
+		t.Fatalf("expected %d events, got %d", n, len(evs))
+	}
+	for _, e := range evs {
+		if e.Op != OpSetKey {
+			t.Fatalf("unexpected op %v", e.Op)
+		}
+	}
+	// final store value should equal last event.NewValue
+	last := evs[len(evs)-1].NewValue
+	got, _ := st.GetKey([]string{"k"})
+	if !reflect.DeepEqual(got, last) {
+		t.Fatalf("store value %v, last event %v mismatch", got, last)
+	}
+}
+
+/* ---------------------------------------------------------------
+   5. Panic isolation already tested, but also verify store keeps going
+----------------------------------------------------------------*/
+
+func TestEvents_PanicListener_DoesNotBreakNextListeners(t *testing.T) {
+	tmp := t.TempDir()
+	f := filepath.Join(tmp, "isolate.json")
+
+	var called bool
+	lGood := func(Event) { called = true }
+	lBad := func(Event) { panic("bad") }
+
+	st := openStore(f, WithListeners(lBad, lGood))
+
+	if err := st.SetKey([]string{"x"}, 1); err != nil {
+		t.Fatalf("SetKey: %v", err)
+	}
+	if !called {
+		t.Fatalf("good listener was not invoked after panic in bad listener")
+	}
 }

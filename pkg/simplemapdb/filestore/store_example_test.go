@@ -109,9 +109,9 @@ func TestMapFileStore(t *testing.T) {
 				t.Fatalf("failed to create store: %v", err)
 			}
 
-			// Save data
-			if err := store.Save(); err != nil {
-				t.Fatalf("failed to save data: %v", err)
+			// Flush data
+			if err := store.Flush(); err != nil {
+				t.Fatalf("failed to flush data: %v", err)
 			}
 
 			// Read raw data from file
@@ -202,9 +202,9 @@ func TestMapFileStore(t *testing.T) {
 				op.Execute(newStore, t)
 			}
 
-			// Save store after operations
-			if err := newStore.Save(); err != nil {
-				t.Fatalf("failed to save data after operations: %v", err)
+			// Flush store after operations
+			if err := newStore.Flush(); err != nil {
+				t.Fatalf("failed to flush data after operations: %v", err)
 			}
 
 			// Check final in-memory data
