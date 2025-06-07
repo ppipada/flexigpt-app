@@ -1,5 +1,10 @@
 package ftsengine
 
+import (
+	"context"
+	"database/sql"
+)
+
 const MemoryDBBaseDir = ":memory:"
 
 type SearchResult struct {
@@ -7,6 +12,12 @@ type SearchResult struct {
 	ID string
 	// Bm25.
 	Score float64
+}
+
+// ListResult is returned by BatchList().
+type ListResult struct {
+	ID     string
+	Values map[string]string
 }
 
 // Column declares one FTS5 column.
@@ -24,4 +35,9 @@ type Config struct {
 	DBFileName string   `json:"dbFileName"`
 	Table      string   `json:"table"`
 	Columns    []Column `json:"columns"`
+}
+
+type sqlExec interface {
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
 }

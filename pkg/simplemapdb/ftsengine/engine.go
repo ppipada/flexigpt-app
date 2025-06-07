@@ -46,8 +46,8 @@ func NewEngine(cfg Config) (*Engine, error) {
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(1)
+	db.SetMaxOpenConns(2)
+	db.SetMaxIdleConns(2)
 
 	e := &Engine{db: db, cfg: cfg}
 	e.hsh = schemaChecksum(e.cfg)
@@ -128,7 +128,7 @@ func (e *Engine) bootstrap(ctx context.Context) error {
 		var cols []string
 		cols = append(cols, `externalID UNINDEXED`)
 		for _, c := range e.cfg.Columns {
-			col := quote(c.Name)
+			col := c.Name
 			if c.Unindexed {
 				col += " UNINDEXED"
 			}
@@ -161,81 +161,6 @@ func (e *Engine) IsEmpty(ctx context.Context) (bool, error) {
 	return n == 0, nil
 }
 
-// Upsert inserts a new document, or replaces the existing one whose
-// string id is `externalID`.  The logic works with every SQLite ≥ 3.9 because
-// it uses INSERT and INSERT OR REPLACE, both supported by FTS5.
-func (e *Engine) Upsert(
-	ctx context.Context,
-	id string,
-	vals map[string]string,
-) error {
-	if id == "" {
-		return errors.New("ftsengine: empty id")
-	}
-
-	// Serialize writes inside this process.
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	// Does a row with this externalID already exist?
-	var rowid int64
-	const sqlSearchRow = `SELECT rowid FROM %s WHERE externalID=?`
-	err := e.db.QueryRowContext(
-		ctx,
-		fmt.Sprintf(sqlSearchRow, quote(e.cfg.Table)),
-		id,
-	).Scan(&rowid)
-
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		// Real DB error.
-		return err
-	}
-	exists := !errors.Is(err, sql.ErrNoRows)
-
-	numCols := 1 + len(e.cfg.Columns)
-	colNames := make([]string, 0, numCols)
-	marks := make([]string, 0, numCols)
-	args := make([]any, 0, numCols+1)
-
-	colNames = append(colNames, "externalID")
-	marks = append(marks, "?")
-	args = append(args, id)
-
-	for _, c := range e.cfg.Columns {
-		colNames = append(colNames, quote(c.Name))
-		marks = append(marks, "?")
-		args = append(args, vals[c.Name])
-	}
-
-	// Choose statement variant.
-	var sqlQ string
-	if exists {
-		// Prepend rowid for INSERT OR REPLACE.
-		colNames = append([]string{"rowid"}, colNames...)
-		marks = append([]string{"?"}, marks...)
-		args = append([]any{rowid}, args...)
-		const sqlInsertOrReplace = `INSERT OR REPLACE INTO %s (%s) VALUES (%s);`
-		sqlQ = fmt.Sprintf(
-			sqlInsertOrReplace,
-			quote(e.cfg.Table),
-			strings.Join(colNames, ","),
-			strings.Join(marks, ","),
-		)
-	} else {
-		// Fresh insert, rowid is omitted.
-		const sqlInsert = `INSERT INTO %s (%s) VALUES (%s);`
-		sqlQ = fmt.Sprintf(
-			sqlInsert,
-			quote(e.cfg.Table),
-			strings.Join(colNames, ","),
-			strings.Join(marks, ","),
-		)
-	}
-
-	_, err = e.db.ExecContext(ctx, sqlQ, args...)
-	return err
-}
-
 func (e *Engine) Delete(ctx context.Context, id string) error {
 	const sqlDel = `DELETE FROM %s WHERE externalID=?`
 	e.mu.Lock()
@@ -245,8 +170,386 @@ func (e *Engine) Delete(ctx context.Context, id string) error {
 	return err
 }
 
+// Upsert inserts a new document, or replaces the existing one whose
+// string id is `externalID`.  The logic works with every SQLite ≥ 3.9 because
+// it uses INSERT and INSERT OR REPLACE, both supported by FTS5.
+func (e *Engine) Upsert(ctx context.Context, id string, vals map[string]string) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.internalUpsert(ctx, nil, id, vals)
+}
+
+// BatchUpsert writes / updates all docs inside ONE transaction.  The map
+// key is the externalID, the value is the column map.
+func (e *Engine) BatchUpsert(
+	ctx context.Context,
+	docs map[string]map[string]string,
+) error {
+	if len(docs) == 0 {
+		return nil
+	}
+
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	tx, err := e.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	commit := func(err error) error {
+		if err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+		return tx.Commit()
+	}
+
+	// Gather existing rowids in one probe.
+	ids := make([]string, 0, len(docs))
+	for id := range docs {
+		ids = append(ids, id)
+	}
+	existing, err := e.lookupRowIDs(ctx, tx, ids)
+	if err != nil {
+		return commit(err)
+	}
+
+	for id, vals := range docs {
+		if err := e.internalUpsert(ctx, tx, id, vals, existing[id]); err != nil {
+			return commit(err)
+		}
+	}
+	return commit(nil)
+}
+
+func (e *Engine) lookupRowIDs(
+	ctx context.Context,
+	exec sqlExec,
+	ids []string,
+) (map[string]int64, error) {
+	if len(ids) == 0 {
+		return nil, errors.New("got empty id's for lookup")
+	}
+	var b strings.Builder
+	for i := range ids {
+		if i > 0 {
+			b.WriteByte(',')
+		}
+		b.WriteByte('?')
+	}
+
+	sqlQ := fmt.Sprintf(`SELECT externalID,rowid FROM %s WHERE externalID IN (%s);`,
+		quote(e.cfg.Table), b.String())
+
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		args[i] = id
+	}
+
+	rows, err := exec.QueryContext(ctx, sqlQ, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make(map[string]int64, len(ids))
+	for rows.Next() {
+		var id string
+		var rid int64
+		if err := rows.Scan(&id, &rid); err != nil {
+			return nil, err
+		}
+		out[id] = rid
+	}
+	return out, rows.Err()
+}
+
+// internalUpsert is shared by Upsert and BatchUpsert.
+// If tx == nil the engine's *sql.DB is used, otherwise the provided *sql.Tx is used.
+func (e *Engine) internalUpsert(
+	ctx context.Context,
+	tx *sql.Tx,
+	id string,
+	vals map[string]string,
+	// Optional optimisation from BatchUpsert.
+	knownRowID ...int64,
+) error {
+	if id == "" {
+		return errors.New("ftsengine: empty id")
+	}
+
+	var exec sqlExec = e.db
+	if tx != nil {
+		exec = tx
+	}
+
+	// Determine whether the document already exists.
+	var (
+		exists bool
+		rowid  int64
+	)
+	if len(knownRowID) == 1 && knownRowID[0] > 0 {
+		// Caller already knows the rowid.
+		exists = true
+		rowid = knownRowID[0]
+	} else {
+		sqlQ := fmt.Sprintf(`SELECT rowid FROM %s WHERE externalID=?`, quote(e.cfg.Table))
+		rows, err := exec.QueryContext(ctx, sqlQ, id)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		if rows.Next() {
+			if err := rows.Scan(&rowid); err != nil {
+				return err
+			}
+			exists = true
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+	}
+
+	// Build column list, placeholders and args slice.
+	colNames := []string{"externalID"}
+	marks := []string{"?"}
+	args := []any{id}
+
+	for _, c := range e.cfg.Columns {
+		colNames = append(colNames, quote(c.Name))
+		marks = append(marks, "?")
+		args = append(args, vals[c.Name])
+	}
+
+	// Choose INSERT vs INSERT OR REPLACE.
+	var sqlQ string
+	if exists {
+		colNames = append([]string{"rowid"}, colNames...)
+		marks = append([]string{"?"}, marks...)
+		args = append([]any{rowid}, args...)
+
+		sqlQ = fmt.Sprintf(`INSERT OR REPLACE INTO %s (%s) VALUES (%s);`,
+			quote(e.cfg.Table),
+			strings.Join(colNames, ","),
+			strings.Join(marks, ","))
+	} else {
+		sqlQ = fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s);`,
+			quote(e.cfg.Table),
+			strings.Join(colNames, ","),
+			strings.Join(marks, ","))
+	}
+
+	_, err := exec.ExecContext(ctx, sqlQ, args...)
+	return err
+}
+
+// BatchList pages over the whole table ordered by `compareColumn` + rowid.
+// If compareColumn == "" it falls back to ordering by rowid only (fast path).
+// WantedCols limits the data that is returned to the caller.
+// The slice must be a subset of cfg.Columns.
+// Nil / empty means "all".
+//
+// Returns rows, an opaque nextToken ("" == no more rows) and an error.
+func (e *Engine) BatchList(
+	ctx context.Context,
+	compareColumn string,
+	wantedCols []string,
+	pageToken string,
+	pageSize int,
+) (rows []ListResult, nextToken string, err error) {
+	const defaultCompareCol = "rowid"
+	if pageSize <= 0 {
+		pageSize = 1000
+	}
+	if pageSize > 10000 {
+		pageSize = 10000
+	}
+
+	// Validate / canonicalise wantedCols.
+	colExists := func(name string) bool {
+		for _, c := range e.cfg.Columns {
+			if c.Name == name {
+				return true
+			}
+		}
+		return false
+	}
+	if len(wantedCols) == 0 {
+		wantedCols = make([]string, 0, len(e.cfg.Columns))
+		for _, c := range e.cfg.Columns {
+			wantedCols = append(wantedCols, c.Name)
+		}
+	} else {
+		for _, n := range wantedCols {
+			if !colExists(n) {
+				return nil, "", fmt.Errorf("ftsengine: unknown column %q", n)
+			}
+		}
+	}
+
+	if compareColumn == "" {
+		compareColumn = defaultCompareCol
+	} else if compareColumn != defaultCompareCol && !colExists(compareColumn) {
+		return nil, "", fmt.Errorf("ftsengine: unknown compare column %q", compareColumn)
+	}
+
+	// Decode continuation token.
+	var (
+		// TEXT comparison   (rowid compare: unused).
+		lastCmp string
+		// Always included to disambiguate duplicates.
+		lastRID int64
+	)
+	if pageToken != "" {
+		var t struct {
+			C string `json:"c"`
+			R int64  `json:"r"`
+		}
+		if b, _ := base64.StdEncoding.DecodeString(pageToken); len(b) > 0 {
+			_ = json.Unmarshal(b, &t)
+			lastCmp = t.C
+			lastRID = t.R
+		}
+	}
+
+	// Build SELECT list.
+	selectCols := []string{defaultCompareCol, "externalID"}
+	needCmpInSelect := compareColumn != defaultCompareCol
+	if needCmpInSelect {
+		selectCols = append(selectCols, quote(compareColumn))
+	}
+	wantedColsNoCompare := make([]string, 0, len(wantedCols))
+	for _, c := range wantedCols {
+		if c == compareColumn {
+			continue
+		}
+		selectCols = append(selectCols, quote(c))
+		wantedColsNoCompare = append(wantedColsNoCompare, c)
+	}
+
+	// Build WHERE + ORDER BY.
+	var where string
+	var args []any
+	if compareColumn == defaultCompareCol {
+		where = defaultCompareCol + ">?"
+		args = append(args, lastRID)
+	} else {
+		// Actual: (cmp > lastCmp) OR (cmp = lastCmp AND rowid > lastRID).
+		where = fmt.Sprintf("(%s>? OR (%s=? AND %s>?))",
+			quote(compareColumn), quote(compareColumn), defaultCompareCol)
+		args = append(args, lastCmp, lastCmp, lastRID)
+	}
+
+	// We fetch one extra row to know if more data exists.
+	limitRows := pageSize + 1
+	args = append(args, limitRows)
+
+	const sqlSelect = `SELECT %s FROM %s WHERE %s ORDER BY %s,%s LIMIT ?;`
+	sqlQ := fmt.Sprintf(sqlSelect,
+		strings.Join(selectCols, ","),
+		quote(e.cfg.Table),
+		where,
+		quote(compareColumn),
+		defaultCompareCol,
+	)
+
+	// One read-only tx per page.
+	tx, err := e.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return nil, "", err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	r, err := tx.QueryContext(ctx, sqlQ, args...)
+	if err != nil {
+		return nil, "", err
+	}
+	defer r.Close()
+
+	// Prepare scan dest.
+	destCount := len(selectCols)
+	dest := make([]any, destCount)
+
+	var ridHolder int64
+	var idHolder string
+	dest[0] = &ridHolder
+	dest[1] = &idHolder
+
+	cmpIdx := -1
+	if needCmpInSelect {
+		cmpIdx = 2
+		dest[cmpIdx] = new(sql.NullString)
+	}
+
+	// Remaining wanted columns.
+	valHolders := make([]sql.NullString, len(wantedColsNoCompare))
+	// Position after rowid, externalID (+ maybe compareCol).
+	off := 2
+	if needCmpInSelect {
+		off++
+	}
+	for i := range valHolders {
+		dest[off+i] = &valHolders[i]
+	}
+
+	var haveMore bool
+	for r.Next() {
+		if err := r.Scan(dest...); err != nil {
+			return nil, "", err
+		}
+
+		// If we've already collected pageSize rows, this is the +1 look-ahead.
+		if len(rows) >= pageSize {
+			haveMore = true
+			break
+		}
+
+		vals := make(map[string]string, len(wantedCols))
+		j := 0
+		for _, col := range wantedCols {
+			if col == compareColumn {
+				// If user requested compareColumn, get it from cmpIdx.
+				if cmpIdx >= 0 {
+					if nv, ok := dest[cmpIdx].(*sql.NullString); ok && nv.Valid {
+						vals[col] = nv.String
+					}
+				}
+			} else {
+				if valHolders[j].Valid {
+					vals[col] = valHolders[j].String
+				}
+				j++
+			}
+		}
+		rows = append(rows, ListResult{ID: idHolder, Values: vals})
+		lastRID = ridHolder
+		if cmpIdx >= 0 {
+			if nv, ok := dest[cmpIdx].(*sql.NullString); ok && nv.Valid {
+				lastCmp = nv.String
+			}
+		}
+	}
+	if err := r.Err(); err != nil {
+		return nil, "", err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, "", err
+	}
+
+	// Produce nextToken only if a further row exists.
+	if haveMore {
+		buf, _ := json.Marshal(struct {
+			C string `json:"c"`
+			R int64  `json:"r"`
+		}{lastCmp, lastRID})
+		nextToken = base64.StdEncoding.EncodeToString(buf)
+	}
+	return rows, nextToken, nil
+}
+
 // Search returns one page of results and, if more results exist,
 // an opaque token for the next page.
+// The query is treated as a search literal and not a fts5 expression
 func (e *Engine) Search(
 	ctx context.Context,
 	query string,
@@ -291,10 +594,14 @@ func (e *Engine) Search(
 
 	sqlQ := fmt.Sprintf(sqlSearch,
 		quote(e.cfg.Table), paramPlaceholders(len(weights)),
-		quote(e.cfg.Table), quote(e.cfg.Table))
+		quote(e.cfg.Table), e.cfg.Table)
 
 	args := slices.Clone(weights)
-	args = append(args, query, pageSize, offset)
+	// Escape any embedded double quotes.
+	// FTS5 has special chars like - * etc that  that
+	// Only quote for SQL, not for token
+	quotedQuery := `"` + strings.ReplaceAll(query, `"`, `""`) + `"`
+	args = append(args, quotedQuery, pageSize, offset)
 
 	rows, err := e.db.QueryContext(ctx, sqlQ, args...)
 	if err != nil {
