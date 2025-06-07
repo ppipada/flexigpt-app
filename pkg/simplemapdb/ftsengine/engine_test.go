@@ -1085,3 +1085,225 @@ func TestVeryLongIDsAndValues(t *testing.T) {
 		t.Fatalf("long id/val search failed, hits=%+v", hits)
 	}
 }
+
+// Helper to insert docs for deletion tests.
+func insertDocs(t *testing.T, e *Engine, ids []string) {
+	for _, id := range ids {
+		if err := e.Upsert(t.Context(), id, map[string]string{"title": id, "body": "test"}); err != nil {
+			t.Fatalf("insert %q: %v", id, err)
+		}
+	}
+}
+
+func TestBatchDelete(t *testing.T) {
+	type testCase struct {
+		name         string
+		setupIDs     []string
+		deleteIDs    []string
+		expectRemain []string
+		expectErr    bool
+	}
+
+	const maxVars = 999
+
+	longID := strings.Repeat("x", 1000)
+	ids999 := make([]string, maxVars)
+	for i := range ids999 {
+		ids999[i] = fmt.Sprintf("id%03d", i)
+	}
+
+	tests := []testCase{
+		{
+			name:         "empty input is no-op",
+			setupIDs:     []string{"a", "b"},
+			deleteIDs:    nil,
+			expectRemain: []string{"a", "b"},
+		},
+		{
+			name:         "delete single existing",
+			setupIDs:     []string{"a", "b"},
+			deleteIDs:    []string{"a"},
+			expectRemain: []string{"b"},
+		},
+		{
+			name:         "delete all existing",
+			setupIDs:     []string{"a", "b"},
+			deleteIDs:    []string{"a", "b"},
+			expectRemain: nil,
+		},
+		{
+			name:         "delete non-existent id",
+			setupIDs:     []string{"a"},
+			deleteIDs:    []string{"notfound"},
+			expectRemain: []string{"a"},
+		},
+		{
+			name:         "delete mix of existing and non-existent",
+			setupIDs:     []string{"a", "b"},
+			deleteIDs:    []string{"a", "notfound"},
+			expectRemain: []string{"b"},
+		},
+		{
+			name:         "delete duplicate ids",
+			setupIDs:     []string{"a", "b"},
+			deleteIDs:    []string{"a", "a", "b"},
+			expectRemain: nil,
+		},
+		{
+			name:         "delete with long id",
+			setupIDs:     []string{longID, "short"},
+			deleteIDs:    []string{longID},
+			expectRemain: []string{"short"},
+		},
+		{
+			name:         "delete maxVars (999) in one call",
+			setupIDs:     ids999,
+			deleteIDs:    ids999,
+			expectRemain: nil,
+		},
+		{
+			name:         "delete more than maxVars (1001) triggers batching",
+			setupIDs:     append(ids999, "x1", "x2"),
+			deleteIDs:    append(ids999, "x1", "x2"),
+			expectRemain: nil,
+		},
+		{
+			name:         "delete with nil engine (closed)",
+			setupIDs:     []string{"a"},
+			deleteIDs:    []string{"a"},
+			expectRemain: nil,
+			// We'll close engine before delete.
+			expectErr: true,
+		},
+		{
+			name:      "delete after schema change (table recreated)",
+			setupIDs:  []string{"a"},
+			deleteIDs: []string{"a"},
+			// Table will be empty after schema change anyway.
+			expectRemain: nil,
+			expectErr:    false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			e := newTestEngine(t)
+			ctx := t.Context()
+			insertDocs(t, e, tc.setupIDs)
+
+			// Special handling for schema change test.
+			if tc.name == "delete after schema change (table recreated)" {
+				// Change schema (add a column), which drops all rows.
+				cfg := e.cfg
+				cfg.Columns = append(cfg.Columns, Column{Name: "extra"})
+				e.Close()
+				e2, err := NewEngine(cfg)
+				if err != nil {
+					t.Fatalf("schema change: %v", err)
+				}
+				defer e2.Close()
+				e = e2
+			}
+
+			// Special handling for closed engine.
+			if tc.name == "delete with nil engine (closed)" {
+				e.Close()
+			}
+
+			err := e.BatchDelete(ctx, tc.deleteIDs)
+			if tc.expectErr {
+				if err == nil {
+					t.Fatalf("expected error, got nil")
+				}
+				return
+			} else if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			// Check remaining docs.
+			rows, _, err := e.BatchList(ctx, "", nil, "", 1000)
+			if err != nil {
+				t.Fatalf("batchlist: %v", err)
+			}
+			got := make(map[string]bool)
+			for _, r := range rows {
+				got[r.ID] = true
+			}
+			for _, want := range tc.expectRemain {
+				if !got[want] {
+					t.Errorf("expected to find %q, but missing", want)
+				}
+				delete(got, want)
+			}
+			for extra := range got {
+				t.Errorf("unexpected extra doc: %q", extra)
+			}
+		})
+	}
+}
+
+func TestBatchDelete_Atomicity(t *testing.T) {
+	e := newTestEngine(t)
+	ctx := t.Context()
+	ids := []string{"a", "b", "c"}
+	insertDocs(t, e, ids)
+
+	// Try to delete with an empty string ID (should not error, but nothing deleted).
+	err := e.BatchDelete(ctx, []string{"a", ""})
+	if err != nil {
+		t.Fatalf("unexpected error for empty id: %v", err)
+	}
+	// Only "a" should be deleted.
+	rows, _, _ := e.BatchList(ctx, "", nil, "", 10)
+	got := make([]string, 0, len(rows))
+	for _, r := range rows {
+		got = append(got, r.ID)
+	}
+	if len(got) != 2 || (got[0] != "b" && got[1] != "c") {
+		t.Fatalf("expected b and c to remain, got %v", got)
+	}
+}
+
+func TestBatchDelete_AllRows(t *testing.T) {
+	e := newTestEngine(t)
+	ctx := t.Context()
+	ids := []string{"a", "b", "c"}
+	insertDocs(t, e, ids)
+	err := e.BatchDelete(ctx, ids)
+	if err != nil {
+		t.Fatalf("delete all: %v", err)
+	}
+	empty, _ := e.IsEmpty(ctx)
+	if !empty {
+		t.Fatalf("expected table to be empty after delete all")
+	}
+}
+
+func TestBatchDelete_NonexistentIDs(t *testing.T) {
+	e := newTestEngine(t)
+	ctx := t.Context()
+	insertDocs(t, e, []string{"a"})
+	err := e.BatchDelete(ctx, []string{"notfound"})
+	if err != nil {
+		t.Fatalf("delete non-existent: %v", err)
+	}
+	rows, _, _ := e.BatchList(ctx, "", nil, "", 10)
+	if len(rows) != 1 || rows[0].ID != "a" {
+		t.Fatalf("expected 'a' to remain, got %+v", rows)
+	}
+}
+
+func TestBatchDelete_SQLiteSpecialChars(t *testing.T) {
+	e := newTestEngine(t)
+	ctx := t.Context()
+	specialID := `weird"id'with,commas`
+	insertDocs(t, e, []string{specialID, "normal"})
+	err := e.BatchDelete(ctx, []string{specialID})
+	if err != nil {
+		t.Fatalf("delete special char id: %v", err)
+	}
+	rows, _, _ := e.BatchList(ctx, "", nil, "", 10)
+	if len(rows) != 1 || rows[0].ID != "normal" {
+		t.Fatalf("expected only 'normal' to remain, got %+v", rows)
+	}
+}
