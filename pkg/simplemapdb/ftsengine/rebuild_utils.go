@@ -93,13 +93,10 @@ func SyncDirToFTS(
 	}
 
 	err := filepath.WalkDir(baseDir, func(p string, d fs.DirEntry, we error) error {
-		if d.IsDir() {
+		if d.IsDir() || we != nil {
 			// Its a dir, we dont want to process it other than walking.
+			// There was some walk error in this particular path.
 			return we
-		}
-		if we != nil {
-			// There was some walk error in this particular path. Don't add in seen list and continue.
-			return nil
 		}
 
 		dec, err := processFile(ctx, baseDir, p, getPrev)

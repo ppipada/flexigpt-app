@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -15,10 +16,7 @@ import (
 // Helper: create a temp dir, cleanup after test.
 func withTempDir(t *testing.T, fn func(dir string)) {
 	t.Helper()
-	dir, err := os.MkdirTemp("", "ftsengine-test-*")
-	if err != nil {
-		t.Fatal(err)
-	}
+	dir := t.TempDir()
 	defer os.RemoveAll(dir)
 	fn(dir)
 }
@@ -30,7 +28,7 @@ func writeJSONFile(t *testing.T, path string, m map[string]any) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(path, b, 0666); err != nil {
+	if err := os.WriteFile(path, b, 0o600); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -66,32 +64,31 @@ func testProcessFile(
 	}
 	st, err := os.Stat(fullPath)
 	if err != nil {
-		return SyncDecision{Skip: true}, nil
+		return SyncDecision{Skip: true}, err
 	}
 	mtime := st.ModTime().UTC().Format(time.RFC3339Nano)
 	prev := getPrevCmp(fullPath)
 	if prev == mtime {
 		return SyncDecision{ID: fullPath, Unchanged: true}, nil
 	}
+	syncDecision := SyncDecision{Skip: true}
 	raw, err := os.ReadFile(fullPath)
-	if err != nil {
-		slog.Error("processFile", "error", err)
-		return SyncDecision{Skip: true}, nil
+	if err == nil {
+		var m map[string]any
+		if err := json.Unmarshal(raw, &m); err == nil {
+			vals := map[string]string{"title": ""}
+			if v, ok := m["title"].(string); ok {
+				vals["title"] = v
+			}
+			vals["mtime"] = mtime
+			syncDecision = SyncDecision{
+				ID:     fullPath,
+				CmpOut: mtime,
+				Vals:   vals,
+			}
+		}
 	}
-	var m map[string]any
-	if err := json.Unmarshal(raw, &m); err != nil {
-		return SyncDecision{Skip: true}, nil
-	}
-	vals := map[string]string{"title": ""}
-	if v, ok := m["title"].(string); ok {
-		vals["title"] = v
-	}
-	vals["mtime"] = mtime
-	return SyncDecision{
-		ID:     fullPath,
-		CmpOut: mtime,
-		Vals:   vals,
-	}, nil
+	return syncDecision, nil
 }
 
 func TestSyncDirToFTS_TableDriven(t *testing.T) {
@@ -117,11 +114,11 @@ func TestSyncDirToFTS_TableDriven(t *testing.T) {
 			Name         string
 			Files        []fileSpec
 			Dirs         []string
-			Remove       []string // files to remove after first sync
-			Modify       []string // files to touch after first sync
+			Remove       []string
+			Modify       []string
 			Add          []fileSpec
 			ChangeSchema bool
-			WantIDs      []string // expected IDs in FTS after sync
+			WantIDs      []string
 		}{
 			{
 				Name: "flat files",
@@ -142,8 +139,8 @@ func TestSyncDirToFTS_TableDriven(t *testing.T) {
 				},
 				Dirs: []string{"x"},
 				WantIDs: []string{
-					filepath.Join(tmpDir, "x/y/z.json"),
-					filepath.Join(tmpDir, "x/y2.json"),
+					filepath.Join(tmpDir, "x", "y", "z.json"),
+					filepath.Join(tmpDir, "x", "y2.json"),
 				},
 			},
 			{
@@ -199,21 +196,21 @@ func TestSyncDirToFTS_TableDriven(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.Name, func(t *testing.T) {
-				// Setup dirs
+				// Setup dirs.
 				for _, d := range tt.Dirs {
-					if err := os.MkdirAll(filepath.Join(tmpDir, d), 0777); err != nil {
+					if err := os.MkdirAll(filepath.Join(tmpDir, d), 0o777); err != nil {
 						t.Fatal(err)
 					}
 				}
-				// Write files
+				// Write files.
 				for _, f := range tt.Files {
 					full := filepath.Join(tmpDir, f.RelPath)
-					os.MkdirAll(filepath.Dir(full), 0777)
+					_ = os.MkdirAll(filepath.Dir(full), 0o777)
 					writeJSONFile(t, full, map[string]any{"title": f.Title})
 				}
-				// First sync
+				// First sync.
 				err := SyncDirToFTS(
-					context.Background(),
+					t.Context(),
 					engine,
 					tmpDir,
 					"mtime",
@@ -223,31 +220,31 @@ func TestSyncDirToFTS_TableDriven(t *testing.T) {
 				if err != nil {
 					t.Fatalf("first sync: %v", err)
 				}
-				// Remove files if needed
+				// Remove files if needed.
 				for _, rel := range tt.Remove {
 					full := filepath.Join(tmpDir, rel)
 					if err := os.Remove(full); err != nil {
 						t.Fatal(err)
 					}
 				}
-				// Modify files if needed
+				// Modify files if needed.
 				for _, rel := range tt.Modify {
 					full := filepath.Join(tmpDir, rel)
 					touchFile(t, full)
 				}
-				// Add files if needed
+				// Add files if needed.
 				for _, f := range tt.Add {
 					full := filepath.Join(tmpDir, f.RelPath)
-					os.MkdirAll(filepath.Dir(full), 0777)
+					_ = os.MkdirAll(filepath.Dir(full), 0o777)
 					writeJSONFile(t, full, map[string]any{"title": f.Title})
 				}
-				// Change schema if needed
+				// Change schema if needed.
 				if tt.ChangeSchema {
 					engine.Close()
 					cfg2 := minimalConfig(tmpDir, dbFile,
 						Column{Name: "title"},
 						Column{Name: "mtime"},
-						Column{Name: "extra"}, // new column
+						Column{Name: "extra"},
 					)
 					engine2, err := NewEngine(cfg2)
 					if err != nil {
@@ -255,9 +252,9 @@ func TestSyncDirToFTS_TableDriven(t *testing.T) {
 					}
 					engine = engine2
 				}
-				// Second sync
+				// Second sync.
 				err = SyncDirToFTS(
-					context.Background(),
+					t.Context(),
 					engine,
 					tmpDir,
 					"mtime",
@@ -267,12 +264,12 @@ func TestSyncDirToFTS_TableDriven(t *testing.T) {
 				if err != nil {
 					t.Fatalf("second sync: %v", err)
 				}
-				// Check FTS contents
+				// Check FTS contents.
 				gotIDs := []string{}
 				token := ""
 				for {
 					rows, next, err := engine.BatchList(
-						context.Background(),
+						t.Context(),
 						"mtime",
 						[]string{"mtime"},
 						token,
@@ -289,16 +286,16 @@ func TestSyncDirToFTS_TableDriven(t *testing.T) {
 					}
 					token = next
 				}
-				// Sort for comparison
-				want := append([]string{}, tt.WantIDs...)
-				got := append([]string{}, gotIDs...)
-				// Order doesn't matter
+				// Sort for comparison.
+				want := slices.Clone(tt.WantIDs)
+				got := slices.Clone(gotIDs)
+				// Order doesn't matter.
 				if !reflect.DeepEqual(stringSet(want), stringSet(got)) {
 					t.Errorf("want IDs %v, got %v", want, got)
 				}
-				// Clean up for next test
+				// Clean up for next test.
 				os.RemoveAll(tmpDir)
-				os.MkdirAll(tmpDir, 0777)
+				_ = os.MkdirAll(tmpDir, 0o777)
 			})
 		}
 	})
@@ -326,30 +323,30 @@ func TestSyncDirToFTS_ErrorCases(t *testing.T) {
 		}
 		defer engine.Close()
 
-		// Unreadable file
+		// Unreadable file.
 		badFile := filepath.Join(tmpDir, "bad.json")
 		writeJSONFile(t, badFile, map[string]any{"title": "bad"})
-		os.Chmod(badFile, 0000)
-		defer os.Chmod(badFile, 0666)
+		_ = os.Chmod(badFile, 0o000)
+		defer func() { _ = os.Chmod(badFile, 0o666) }()
 
-		// Invalid JSON
+		// Invalid JSON.
 		invalidFile := filepath.Join(tmpDir, "invalid.json")
-		os.WriteFile(invalidFile, []byte("{not json"), 0666)
+		_ = os.WriteFile(invalidFile, []byte("{not json"), 0o600)
 
-		// Non-json file
+		// Non-json file.
 		txtFile := filepath.Join(tmpDir, "note.txt")
-		os.WriteFile(txtFile, []byte("hello"), 0666)
+		_ = os.WriteFile(txtFile, []byte("hello"), 0o600)
 
-		err = SyncDirToFTS(context.Background(), engine, tmpDir, "mtime", 2, testProcessFile)
+		err = SyncDirToFTS(t.Context(), engine, tmpDir, "mtime", 2, testProcessFile)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
-		// Only valid files should be indexed (none in this case)
+		// Only valid files should be indexed (none in this case).
 		token := ""
 		var gotIDs []string
 		for {
 			rows, next, err := engine.BatchList(
-				context.Background(),
+				t.Context(),
 				"mtime",
 				[]string{"mtime"},
 				token,
@@ -383,20 +380,20 @@ func TestFTSEngine_IsEmpty(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer engine.Close()
-		empty, err := engine.IsEmpty(context.Background())
+		empty, err := engine.IsEmpty(t.Context())
 		if err != nil {
 			t.Fatal(err)
 		}
 		if !empty {
 			t.Error("expected empty")
 		}
-		// Add a file
+		// Add a file.
 		vals := map[string]string{"title": "foo", "mtime": time.Now().Format(time.RFC3339Nano)}
-		err = engine.Upsert(context.Background(), "id1", vals)
+		err = engine.Upsert(t.Context(), "id1", vals)
 		if err != nil {
 			t.Fatal(err)
 		}
-		empty, err = engine.IsEmpty(context.Background())
+		empty, err = engine.IsEmpty(t.Context())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -418,12 +415,12 @@ func TestFTSEngine_DeleteAndBatchDelete(t *testing.T) {
 		}
 		defer engine.Close()
 		vals := map[string]string{"title": "foo", "mtime": time.Now().Format(time.RFC3339Nano)}
-		engine.Upsert(context.Background(), "id1", vals)
-		engine.Upsert(context.Background(), "id2", vals)
-		engine.Upsert(context.Background(), "id3", vals)
-		engine.Delete(context.Background(), "id2")
-		engine.BatchDelete(context.Background(), []string{"id1", "id3"})
-		empty, err := engine.IsEmpty(context.Background())
+		_ = engine.Upsert(t.Context(), "id1", vals)
+		_ = engine.Upsert(t.Context(), "id2", vals)
+		_ = engine.Upsert(t.Context(), "id3", vals)
+		_ = engine.Delete(t.Context(), "id2")
+		_ = engine.BatchDelete(t.Context(), []string{"id1", "id3"})
+		empty, err := engine.IsEmpty(t.Context())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -444,17 +441,17 @@ func TestFTSEngine_Search(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer engine.Close()
-		engine.Upsert(
-			context.Background(),
+		_ = engine.Upsert(
+			t.Context(),
 			"id1",
 			map[string]string{"title": "hello world", "mtime": "1"},
 		)
-		engine.Upsert(
-			context.Background(),
+		_ = engine.Upsert(
+			t.Context(),
 			"id2",
 			map[string]string{"title": "foo bar", "mtime": "2"},
 		)
-		hits, next, err := engine.Search(context.Background(), "hello", "", 10)
+		hits, next, err := engine.Search(t.Context(), "hello", "", 10)
 		if err != nil {
 			t.Fatal(err)
 		}

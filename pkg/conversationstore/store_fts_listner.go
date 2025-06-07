@@ -121,7 +121,7 @@ func processFTSDataForFile(
 		}, nil
 	}
 
-	// Default skip file
+	// Default skip file.
 	syncDecision := skipSyncDecision
 
 	// Heavy part only if time stamp differs.
