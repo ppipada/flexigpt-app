@@ -30,18 +30,6 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 		setIsExpanded(!isExpanded);
 	};
 
-	// const handleFeedbackClick = () => {
-	// 	if (feedbackController.current) {
-	// 		feedbackController.current.value = '';
-	// 	}
-	// 	// Show the feedback dialog
-	// 	const feedback = window.prompt('Enter your feedback:');
-	// 	if (feedback) {
-	// 		// Assuming there's some way to send the feedback
-	// 		onSendFeedback();
-	// 	}
-	// };
-
 	return (
 		<div className="p-1">
 			<div className="flex justify-between items-center h-8">
@@ -72,14 +60,6 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 								<FiRepeat size={16} />
 							</button>
 						)}
-						{/* <button
-							className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
-							onClick={handleFeedbackClick}
-							aria-label="Submit Feedback"
-							title="Submit Feedback"
-						>
-							<FiMessageCircle size={16} />
-						</button> */}
 					</>
 				</div>
 				{isStreaming && (
@@ -101,7 +81,7 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 					<ChatMessageContent
 						content={messageDetails}
 						align="items-start text-left"
-						streamedMessage=""
+						streamedText=""
 						renderAsMarkdown={true}
 					/>
 				</div>

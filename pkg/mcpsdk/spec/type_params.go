@@ -10,21 +10,21 @@ type AdditionalParams map[string]any
 
 // UnmarshalJSON implements the json.Unmarshaler interface for AdditionalParams.
 func (a *AdditionalParams) UnmarshalJSON(data []byte) error {
-	// Unmarshal data into a temporary map
+	// Unmarshal data into a temporary map.
 	var tempMap map[string]any
 	if err := json.Unmarshal(data, &tempMap); err != nil {
 		return err
 	}
 
-	// Initialize the map if it is nil
+	// Initialize the map if it is nil.
 	if *a == nil {
 		*a = make(map[string]any)
 	}
 
-	// Iterate over the tempMap
+	// Iterate over the tempMap.
 	for key, value := range tempMap {
 		if key == "_meta" {
-			// Ensure that _meta is a map[string]any
+			// Ensure that _meta is a map[string]any.
 			if metaMap, ok := value.(map[string]any); ok {
 				(*a)[key] = metaMap
 			} else {
@@ -40,6 +40,6 @@ func (a *AdditionalParams) UnmarshalJSON(data []byte) error {
 
 // MarshalJSON implements the json.Marshaler interface for AdditionalParams.
 func (a AdditionalParams) MarshalJSON() ([]byte, error) {
-	// Simply marshal the map a to JSON
+	// Simply marshal the map a to JSON.
 	return json.Marshal(map[string]any(a))
 }

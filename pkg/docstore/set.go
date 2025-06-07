@@ -19,7 +19,7 @@ func InitDocumentDBSet(dds *DocumentDBSet, basePath string) error {
 	dds.basePath = basePath
 	dds.docDBs = make(map[spec.DocumentDBID]spec.IDocumentDB)
 
-	// Initialize default local filesystem docstore
+	// Initialize default local filesystem docstore.
 	cdb, err := NewChromemDocumentDB(
 		WithName(spec.ChromemDocStoreName),
 		WithMetadata(map[string]string{}),

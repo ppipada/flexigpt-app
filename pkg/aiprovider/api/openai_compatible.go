@@ -34,12 +34,12 @@ func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {
 	providerURL := "https://api.openai.com/v1"
 	if api.ProviderInfo.Origin != "" {
 		baseURL := api.ProviderInfo.Origin
-		// Remove trailing slash from baseURL if present
+		// Remove trailing slash from baseURL if present.
 		baseURL = strings.TrimSuffix(baseURL, "/")
 
 		pathPrefix := api.ProviderInfo.ChatCompletionPathPrefix
-		// Remove '/chat/completions' from pathPrefix if present
-		// This is because langchaingo adds '/chat/completions' internally
+		// Remove '/chat/completions' from pathPrefix if present,
+		// This is because langchaingo adds '/chat/completions' internally.
 		pathPrefix = strings.TrimSuffix(pathPrefix, "/chat/completions")
 		providerURL = baseURL + pathPrefix
 		options = append(options, langchainOpenAI.WithBaseURL(providerURL))

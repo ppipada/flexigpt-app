@@ -6,8 +6,6 @@ import (
 	jsonrpcReqResp "github.com/ppipada/flexigpt-app/pkg/jsonrpc/reqresp"
 )
 
-// /////////////// Handlers /////////////////
-
 // AddParams defines the parameters for the "add" method.
 type AddParams struct {
 	A int `json:"a"`
@@ -50,12 +48,10 @@ func PingEndpoint(ctx context.Context, params PingParams) error {
 }
 
 func NotifyEndpoint(ctx context.Context, params NotifyParams) error {
-	// Process notification
 	return nil
 }
 
 func GetMethodHandlers() map[string]jsonrpcReqResp.IMethodHandler {
-	// Define method maps
 	methodMap := map[string]jsonrpcReqResp.IMethodHandler{
 		"add": &jsonrpcReqResp.MethodHandler[AddParams, AddResult]{Endpoint: AddEndpoint},
 		"addpositional": &jsonrpcReqResp.MethodHandler[[]int, AddResult]{

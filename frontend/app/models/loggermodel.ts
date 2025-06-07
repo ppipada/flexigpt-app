@@ -21,7 +21,6 @@ export const noopLogger: ILogger = {
 
 /**
  * @public
- * Define a new console logger
  */
 export const consoleLogger: ILogger = {
 	log: (...args: unknown[]) => {

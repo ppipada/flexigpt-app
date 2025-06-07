@@ -17,7 +17,7 @@ func NewRole(value string) *Role {
 // UnmarshalJSON implements json.Unmarshaler for Role.
 func (r *Role) UnmarshalJSON(b []byte) error {
 	if r.StringUnion == nil {
-		// Initialize with allowed values if not already initialized
+		// Initialize with allowed values if not already initialized.
 		r.StringUnion = NewStringUnion(enumValuesRole...)
 	}
 	return r.StringUnion.UnmarshalJSON(b)

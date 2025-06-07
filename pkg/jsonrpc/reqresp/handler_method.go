@@ -48,24 +48,24 @@ func (m *MethodHandler[I, O]) Handle(
 ) Response[json.RawMessage] {
 	params, err := unmarshalData[I](req.Params)
 	if err != nil {
-		// Return InvalidParamsError
+		// Return InvalidParamsError.
 		return invalidParamsResponse(req, err)
 	}
 
-	// Call the handler
+	// Call the handler.
 	result, err := m.Endpoint(ctx, params)
 	if err != nil {
-		// Check if err is a *jsonrpc.Error (JSON-RPC error)
+		// Check if err is a *jsonrpc.Error (JSON-RPC error).
 		var jsonrpcErr *JSONRPCError
 		if errors.As(err, &jsonrpcErr) {
-			// Handler returned a JSON-RPC error
+			// Handler returned a JSON-RPC error.
 			return Response[json.RawMessage]{
 				JSONRPC: JSONRPCVersion,
 				ID:      &req.ID,
 				Error:   jsonrpcErr,
 			}
 		}
-		// Handler returned a standard error
+		// Handler returned a standard error.
 		return Response[json.RawMessage]{
 			JSONRPC: JSONRPCVersion,
 			ID:      &req.ID,
@@ -91,7 +91,7 @@ func (m *MethodHandler[I, O]) Handle(
 		}
 	}
 
-	// Return the response with the marshaled result
+	// Return the response with the marshaled result.
 	return Response[json.RawMessage]{
 		JSONRPC: JSONRPCVersion,
 		ID:      &req.ID,

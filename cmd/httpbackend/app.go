@@ -62,7 +62,7 @@ func (a *BackendApp) initSettingsStore() {
 		)
 		panic("Failed to initialize App")
 	}
-	// Initialize settings manager
+	// Initialize settings manager.
 	a.settingsFilePath = filepath.Join(a.settingsDirPath, "settings.json")
 	err := settingstore.InitSettingStore(a.settingStoreAPI, a.settingsFilePath)
 	if err != nil {

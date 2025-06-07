@@ -14,7 +14,7 @@ interface ChatMessageProps {
 	message: ConversationMessage;
 	onEdit: (editedText: string) => void;
 	onResend: () => void;
-	streamedMessage: string; // live chunks for *this* row
+	streamedMessage: string;
 }
 
 const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamedMessage }) => {
@@ -100,16 +100,15 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 	);
 };
 
-/* ----------  MEMO WRAPPER  ---------- */
 function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
-	/* 1️⃣  if the *object reference* for the ConversationMessage changes
-         React must re-render (content edited, message appended …)          */
+	// If the *object reference* for the ConversationMessage changes
+	// React must re-render (content edited, message appended …).
 	if (prev.message !== next.message) return false;
 
-	/* 2️⃣  we only care if THIS row’s streamed text changed    */
+	// We only care if THIS row’s streamed text changed.
 	if (prev.streamedMessage !== next.streamedMessage) return false;
 
-	/* everything else is the same → skip */
+	// Everything else is the same: skip.
 	return true;
 }
 

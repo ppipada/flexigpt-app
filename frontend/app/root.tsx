@@ -42,7 +42,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function Root() {
-	/* ----------------------------- init worker on mount --------------------------- */
+	// Init worker on mount.
 	useEffect(() => {
 		if ('requestIdleCallback' in window) requestIdleCallback(() => ensureWorker());
 		else setTimeout(() => ensureWorker(), 300);

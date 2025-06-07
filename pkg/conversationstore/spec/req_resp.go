@@ -36,9 +36,10 @@ type ListConversationsResponseBody struct {
 }
 
 type SearchConversationsRequest struct {
-	Query    string `query:"query"    required:"true"`
-	Token    string `query:"token"`
-	PageSize int    `query:"pageSize"` // default is 10
+	Query string `query:"query"    required:"true"`
+	Token string `query:"token"`
+	// default is 10
+	PageSize int `query:"pageSize"`
 }
 
 type SearchConversationsResponse struct {

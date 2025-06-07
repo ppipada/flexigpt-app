@@ -38,7 +38,7 @@ func (api *HuggingFaceCompatibleAPI) InitLLM(ctx context.Context) error {
 	// Setting a debug client is not supproted on HF by langchaingo
 	// if api.BaseAIAPI.Debug {
 	// 	options = append(options, langchainHuggingFace.WithHTTPClient(httputil.DebugHTTPClient))
-	// }
+	// }.
 	if api.ProviderInfo.APIKey == "" {
 		slog.Debug("No API key given. Not initializing Huggingface LLM object")
 		return nil

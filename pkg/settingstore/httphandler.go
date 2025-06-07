@@ -14,7 +14,6 @@ const (
 
 // InitSettingStoreHandlers registers all endpoints related to settings.
 func InitSettingStoreHandlers(api huma.API, settingsStoreAPI *SettingStore) {
-	// GET /settings
 	huma.Register(api, huma.Operation{
 		OperationID: "get-all-settings",
 		Method:      http.MethodGet,

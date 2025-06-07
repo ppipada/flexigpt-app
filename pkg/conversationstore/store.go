@@ -13,9 +13,16 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 )
 
-/* ------------------------------------------------------------------ */
-/*  Functional-options wiring                                         */
-/* ------------------------------------------------------------------ */
+type ConversationCollection struct {
+	baseDir   string
+	store     *dirstore.MapDirectoryStore
+	fts       *ftsengine.Engine
+	enableFTS bool
+	// File-name builder / parser.
+	fp filenameprovider.Provider
+	// Directory partitioning.
+	pp dirstore.PartitionProvider
+}
 
 type Option func(*ConversationCollection) error
 
@@ -40,28 +47,11 @@ func WithFTS(enabled bool) Option {
 	}
 }
 
-/* ------------------------------------------------------------------ */
-/*  ConversationCollection                                            */
-/* ------------------------------------------------------------------ */
-
-type ConversationCollection struct {
-	baseDir   string
-	store     *dirstore.MapDirectoryStore
-	fts       *ftsengine.Engine
-	enableFTS bool // default = false
-
-	// pluggable bits
-	fp filenameprovider.Provider  // file-name builder / parser
-	pp dirstore.PartitionProvider // directory partitioning
-}
-
-/*
-NewConversationCollection creates a collection with sensible defaults
-(UUID-v7 file names under yyyyMM partitions).  Callers may override either
-strategy via the Option functions above.
-
-	baseDir is the root directory for the map-directory store.
-*/
+// NewConversationCollection creates a collection with sensible defaults
+// (UUID-v7 file names under yyyyMM partitions).  Callers may override either
+// strategy via the Option functions above.
+//
+//	baseDir is the root directory for the map-directory store.
 func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCollection, error) {
 	defFP := filenameprovider.UUIDv7Provider{}
 	defPP := dirstore.MonthPartitionProvider{TimeFn: defFP.CreatedAt}
@@ -78,10 +68,10 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 		}
 	}
 
-	/* ------------- optional full-text engine ------------------------ */
+	// Optional full-text engine.
 	if cc.enableFTS {
 		var err error
-		cc.fts, err = ftsengine.New(ftsengine.Config{
+		cc.fts, err = ftsengine.NewEngine(ftsengine.Config{
 			DBPath: filepath.Join(baseDir, "conversations.fts.sqlite"),
 			Table:  "conversations",
 			Columns: []ftsengine.Column{
@@ -103,7 +93,6 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 		}
 	}
 
-	/* ------------- MapDirectoryStore -------------------------------- */
 	optsDir := []dirstore.Option{dirstore.WithPartitionProvider(cc.pp)}
 	if cc.fts != nil {
 		optsDir = append(optsDir, dirstore.WithListeners(NewFTSListner(cc.fts)))
@@ -116,10 +105,6 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 	return cc, nil
 }
 
-/* ------------------------------------------------------------------ */
-/*  internal helpers                                                  */
-/* ------------------------------------------------------------------ */
-
 func (cc *ConversationCollection) fileNameFromConversation(c spec.Conversation) (string, error) {
 	return cc.fp.Build(filenameprovider.FileInfo{
 		ID:        c.ID,
@@ -127,10 +112,6 @@ func (cc *ConversationCollection) fileNameFromConversation(c spec.Conversation) 
 		CreatedAt: c.CreatedAt,
 	})
 }
-
-/* ------------------------------------------------------------------ */
-/*  Public API                                                        */
-/* ------------------------------------------------------------------ */
 
 func (cc *ConversationCollection) SaveConversation(
 	ctx context.Context,
@@ -166,7 +147,7 @@ func (cc *ConversationCollection) DeleteConversation(
 	if err := cc.store.DeleteFile(fn); err != nil {
 		return nil, err
 	}
-	// purge from FTS (absolute path = docID)
+	// Purge from FTS (absolute path = docID).
 	if cc.fts != nil {
 		full := filepath.Join(cc.baseDir, cc.pp.GetPartitionDir(fn), fn)
 		_ = cc.fts.Delete(ctx, full)

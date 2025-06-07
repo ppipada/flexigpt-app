@@ -27,17 +27,19 @@ func (a StdioAddr) String() string {
 
 // StdioConn implements net.Conn over io.Reader and io.Writer.
 type StdioConn struct {
-	addr      net.Addr      // Connection address
-	closed    chan struct{} // Channel to signal connection closed
-	closeOnce sync.Once     // Ensures Close only runs once
+	addr net.Addr
+	// Channel to signal connection closed
+	closed chan struct{}
+	// Ensures Close only runs once
+	closeOnce sync.Once
 	// Client and Server will do buffering as needed. this conn does simple reader/writer interfacing
-	reader       io.Reader     // Underlying reader
-	writer       io.Writer     // Underlying writer
-	readTimeout  time.Duration // Read timeout duration
-	writeTimeout time.Duration // Write timeout duration
+	reader       io.Reader
+	writer       io.Writer
+	readTimeout  time.Duration
+	writeTimeout time.Duration
 
-	readCh  chan readResult   // Channel for read results
-	writeCh chan writeRequest // Channel for write requests
+	readCh  chan readResult
+	writeCh chan writeRequest
 }
 
 // readResult represents the result of a read operation.
@@ -71,8 +73,8 @@ func NewStdioConn(r io.Reader, w io.Writer, options ...StdioConnOption) *StdioCo
 		closed:       make(chan struct{}),
 		reader:       r,
 		writer:       w,
-		readTimeout:  0, // Default: no read timeout
-		writeTimeout: 0, // Default: no write timeout
+		readTimeout:  0,
+		writeTimeout: 0,
 		readCh:       make(chan readResult),
 		writeCh:      make(chan writeRequest),
 	}
@@ -155,7 +157,7 @@ func (c *StdioConn) readLoop() {
 	defer close(c.readCh)
 	for {
 		// Read from the underlying reader
-		buf := make([]byte, 4096) // Adjust buffer size as needed
+		buf := make([]byte, 4096)
 		n, err := c.reader.Read(buf)
 		res := readResult{data: buf[:n], err: err}
 

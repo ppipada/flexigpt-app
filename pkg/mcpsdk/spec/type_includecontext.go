@@ -23,7 +23,7 @@ func NewIncludeContext(
 // UnmarshalJSON implements json.Unmarshaler for IncludeContext.
 func (r *IncludeContext) UnmarshalJSON(b []byte) error {
 	if r.StringUnion == nil {
-		// Initialize with allowed values if not already initialized
+		// Initialize with allowed values if not already initialized.
 		r.StringUnion = NewStringUnion(
 			enumValuesIncludeContext...)
 	}

@@ -15,25 +15,16 @@ import { SanitizeLaTeX } from '@/lib/markdown_utils';
 
 import CodeBlock from '@/components/markdown_code_block';
 
-/* ------------------------------------------------------------------ */
-/*  plugins                                                           */
-/* ------------------------------------------------------------------ */
 const remarkPlugins = [remarkGemoji, supersub, remarkMath, remarkGfm];
 const remarkPluginsStreaming = [remarkGemoji, supersub, remarkGfm];
 const rehypePlugins = [rehypeKatex];
 
-/* ------------------------------------------------------------------ */
-/*  props                                                             */
-/* ------------------------------------------------------------------ */
 interface EnhancedMarkdownProps {
 	text: string;
 	align?: string;
 	isStreaming?: boolean;
 }
 
-/* ------------------------------------------------------------------ */
-/*  components                                                        */
-/* ------------------------------------------------------------------ */
 interface CodeComponentProps {
 	inline?: boolean;
 	className?: string;
@@ -45,32 +36,24 @@ interface PComponentProps {
 	children?: ReactNode;
 }
 
-/* ------------------------------------------------------------------ */
-/*  renderer                                                          */
-/* ------------------------------------------------------------------ */
 const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: EnhancedMarkdownProps) => {
-	/* ------------------------- pre-processing ------------------------ */
 	const processedText = useMemo(() => {
 		// During a stream skip LaTeX sanitisation for speed.
 		return isStreaming ? text : SanitizeLaTeX(text);
 	}, [text, isStreaming]);
 
-	/* --------------------------- overrides --------------------------- */
 	const components = useMemo(
 		() => ({
-			/* headings */
 			h1: ({ children }: PComponentProps) => <h1 className="text-xl font-bold my-2">{children}</h1>,
 			h2: ({ children }: PComponentProps) => <h2 className="text-lg font-bold my-2">{children}</h2>,
 			h3: ({ children }: PComponentProps) => <h3 className="text-base font-bold my-2">{children}</h3>,
 
-			/* paragraphs */
 			p: ({ className, children }: PComponentProps) => (
 				<p className={`${className ?? ''} my-2 ${align} break-words`} style={{ lineHeight: '1.5', fontSize: '14px' }}>
 					{children}
 				</p>
 			),
 
-			/* code / fenced code */
 			code: ({ inline, className, children, ...props }: CodeComponentProps) => {
 				if (inline || !className) {
 					return (
@@ -96,7 +79,6 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 				);
 			},
 
-			/* lists */
 			ul: ({ children }: PComponentProps) => (
 				<span>
 					<ul className="list-disc py-1">{children}</ul>
@@ -113,7 +95,6 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 				</span>
 			),
 
-			/* tables */
 			table: ({ children }: PComponentProps) => <table className="table-auto w-full">{children}</table>,
 			thead: ({ children }: PComponentProps) => <thead className="bg-base-300">{children}</thead>,
 			tbody: ({ children }: PComponentProps) => <tbody>{children}</tbody>,
@@ -121,7 +102,6 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 			th: ({ children }: PComponentProps) => <th className="px-4 py-2 text-left">{children}</th>,
 			td: ({ children }: PComponentProps) => <td className="px-4 py-2">{children}</td>,
 
-			/* links */
 			a: ({ href, children }: { href?: string; children?: ReactNode }) => (
 				<a
 					href={href}
@@ -137,7 +117,6 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 				</a>
 			),
 
-			/* blockquote */
 			blockquote: ({ children }: PComponentProps) => (
 				<blockquote className="border-l-4 border-neutral/20 pl-4 italic">{children}</blockquote>
 			),
@@ -145,7 +124,6 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 		[align, isStreaming]
 	);
 
-	/* ----------------------------- JSX ------------------------------ */
 	return (
 		<Markdown
 			remarkPlugins={isStreaming ? remarkPluginsStreaming : remarkPlugins}
@@ -157,5 +135,4 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 	);
 };
 
-/* export as a memoised component */
 export default memo(EnhancedMarkdown);

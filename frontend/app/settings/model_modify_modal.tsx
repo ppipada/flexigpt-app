@@ -9,18 +9,13 @@ import { PopulateModelSettingDefaults } from '@/apis/settingstore_helper';
 
 import Dropdown from '@/components/dropdown';
 
-/**
- * For ReasoningType: a record where every option is `isEnabled: true`.
- * That ensures the dropdown can show them. We also set filterDisabled={false} to skip filtering.
- */
+// For ReasoningType: a record where every option is `isEnabled: true`.
+// That ensures the dropdown can show them. We also set filterDisabled={false} to skip filtering.
 const reasoningTypeItems: Record<ReasoningType, { isEnabled: boolean; displayName: string }> = {
 	[ReasoningType.SingleWithLevels]: { isEnabled: true, displayName: 'Reasoning only, with Levels' },
 	[ReasoningType.HybridWithTokens]: { isEnabled: true, displayName: 'Hybrid, with Reasoning Tokens' },
 };
 
-/**
- * For ReasoningLevel: similarly set up your enumerated values.
- */
 const reasoningLevelItems: Record<ReasoningLevel, { isEnabled: boolean; displayName: string }> = {
 	[ReasoningLevel.Low]: { isEnabled: true, displayName: 'Low' },
 	[ReasoningLevel.Medium]: { isEnabled: true, displayName: 'Medium' },
@@ -32,15 +27,13 @@ interface ModifyModelModalProps {
 	onClose: () => void;
 	onSubmit: (modelName: ModelName, modelData: ModelSetting) => void;
 	providerName: ProviderName;
-	initialModelName?: ModelName; // if provided, indicates edit mode
-	initialData?: ModelSetting; // when editing existing model data
+	// If provided, indicates edit mode.
+	initialModelName?: ModelName;
+	// When editing existing model data.
+	initialData?: ModelSetting;
 	existingModels: Record<ModelName, ModelSetting>;
 }
 
-/**
- * We'll use this interface for the local form data,
- * especially for numeric fields, so we can store them as strings (allowing blank).
- */
 interface ModelSettingFormData {
 	displayName: string;
 	isEnabled: boolean;
@@ -49,7 +42,6 @@ interface ModelSettingFormData {
 	maxOutputLength: string;
 	temperature: string;
 
-	// New reasoning fields
 	reasoningSupport: boolean;
 	reasoningType?: ReasoningType;
 	reasoningLevel?: ReasoningLevel;
@@ -70,13 +62,13 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 }) => {
 	const isEditMode = Boolean(initialModelName);
 
-	// Default numeric values and placeholders
+	// Default numeric values and placeholders.
 	const [defaultValues, setDefaultValues] = useState<ModelSetting>(DefaultModelSetting);
 
-	// If not edit mode, user must provide a new modelName
+	// If not edit mode, user must provide a new modelName.
 	const [modelName, setModelName] = useState<ModelName>(initialModelName ?? ('' as ModelName));
 
-	// Local form data (storing numeric as strings for easy clearing)
+	// Local form data (storing numeric as strings for easy clearing).
 	const [formData, setFormData] = useState<ModelSettingFormData>({
 		displayName: '',
 		isEnabled: true,
@@ -92,7 +84,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		timeout: '',
 	});
 
-	// Validation errors
+	// Validation errors.
 	const [errors, setErrors] = useState<{
 		modelName?: string;
 		displayName?: string;
@@ -112,7 +104,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			const merged = await PopulateModelSettingDefaults(providerName, mName, initialData);
 			setDefaultValues(merged);
 
-			// Convert numbers to strings for the local form usage
+			// Convert numbers to strings for the local form usage.
 			setFormData({
 				displayName: merged.displayName,
 				isEnabled: merged.isEnabled,
@@ -137,9 +129,6 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		}
 	}, [isOpen, providerName, initialModelName, initialData]);
 
-	/**
-	 * Fields we validate
-	 */
 	type ValidationField =
 		| 'modelName'
 		| 'displayName'
@@ -151,14 +140,11 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 
 	type ValidationErrors = Partial<Record<ValidationField, string>>;
 
-	/**
-	 * Validate a single field
-	 */
 	const validateField = (field: ValidationField, value: unknown) => {
-		// Remove old error for this field
+		// Remove old error for this field.
 		const newErrors: ValidationErrors = Object.fromEntries(Object.entries(errors).filter(([key]) => key !== field));
 
-		// Model Name is required only if we're adding a new model (not edit mode)
+		// Model Name is required only if we're adding a new model (not edit mode).
 		if (field === 'modelName' && !isEditMode) {
 			if (typeof value === 'string' && !value.trim()) {
 				newErrors.modelName = 'Model name is required.';
@@ -167,14 +153,14 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			}
 		}
 
-		// Display Name is always required
+		// Display Name is always required.
 		if (field === 'displayName') {
 			if (typeof value === 'string' && !value.trim()) {
 				newErrors.displayName = 'Display name is required.';
 			}
 		}
 
-		// Validate numeric fields if a non-empty string is provided
+		// Validate numeric fields if a non-empty string is provided.
 		if (['temperature', 'maxPromptLength', 'maxOutputLength', 'timeout'].includes(field)) {
 			let strVal = '';
 			if (typeof value === 'number' || typeof value === 'boolean') {
@@ -198,7 +184,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			}
 		}
 
-		// Validate reasoningTokens if the reasoningType is HybridWithTokens
+		// Validate reasoningTokens if the reasoningType is HybridWithTokens.
 		if (field === 'reasoningTokens' && formData.reasoningType === ReasoningType.HybridWithTokens) {
 			if (typeof value === 'string') {
 				const strVal = value.trim();
@@ -214,19 +200,16 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		setErrors(newErrors);
 	};
 
-	/**
-	 * Handle changes for all fields
-	 */
+	// Handle changes for all fields.
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
 		const { name, value, type, checked } = e.target as HTMLInputElement;
 
-		// If checkbox
 		if (type === 'checkbox') {
 			setFormData(prev => ({ ...prev, [name]: checked }));
 			return;
 		}
 
-		// If changing "modelName" (only relevant if adding a new model)
+		// If changing "modelName" (only relevant if adding a new model).
 		if (name === 'modelName') {
 			setModelName(value);
 			validateField('modelName', value);
@@ -235,7 +218,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 
 		setFormData(prev => ({ ...prev, [name]: value }));
 
-		// Trigger validation for relevant fields
+		// Trigger validation for relevant fields.
 		if (name === 'displayName') {
 			validateField('displayName', value);
 		}
@@ -250,29 +233,25 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		}
 	};
 
-	/**
-	 * Compute if form is valid for "Add Model" / "Save Changes" button
-	 */
+	// Compute if form is valid for "Add Model" / "Save Changes" button.
 	const isAllValid = useMemo(() => {
-		// 1) No errors in the errors object
+		// No errors in the errors object.
 		const noErrors = !Object.values(errors).some(Boolean);
 
-		// 2) If adding a model, modelName must be non-empty
+		// If adding a model, modelName must be non-empty.
 		const modelNameValid = isEditMode || modelName.trim().length > 0;
 
-		// 3) Always require a non-empty displayName
+		// Always require a non-empty displayName.
 		const displayNameValid = formData.displayName.trim().length > 0;
 
 		return noErrors && modelNameValid && displayNameValid;
 	}, [errors, isEditMode, modelName, formData.displayName]);
 
-	/**
-	 * On form submit, parse final values and re-validate
-	 */
+	// On form submit, parse final values and re-validate.
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
-		// Re-validate fields
+		// Re-validate fields.
 		validateField('modelName', modelName);
 		validateField('displayName', formData.displayName);
 		validateField('temperature', formData.temperature);
@@ -281,13 +260,13 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		validateField('timeout', formData.timeout);
 		validateField('reasoningTokens', formData.reasoningTokens);
 
-		// If any errors remain, or the required fields are empty, do not proceed
+		// If any errors remain, or the required fields are empty, do not proceed.
 		const hasErrors = Object.keys(errors).length > 0;
 		if (hasErrors || !isAllValid) {
 			return;
 		}
 
-		// Convert strings to numbers (fallback to defaults) for numeric fields
+		// Convert strings to numbers (fallback to defaults) for numeric fields.
 		const parseOrDefault = (val: string, def: number) => (val.trim() === '' ? def : Number(val));
 
 		const finalData: ModelSetting = {
@@ -301,7 +280,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			timeout: parseOrDefault(formData.timeout, defaultValues.timeout ?? 60),
 		};
 
-		// Build reasoning object if reasoningSupport is true
+		// Build reasoning object if reasoningSupport is true.
 		if (formData.reasoningSupport) {
 			finalData.reasoning = {
 				type: formData.reasoningType ?? ReasoningType.SingleWithLevels,
@@ -315,12 +294,10 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		onSubmit(modelName, finalData);
 	};
 
-	// If the modal isn’t open, return null
+	// If the modal isn’t open, return null.
 	if (!isOpen) return null;
 
-	/**
-	 * Helper for numeric placeholders showing "Default: X"
-	 */
+	// Helper for numeric placeholders showing "Default: X".
 	const numPlaceholder = (field: keyof ModelSetting) => {
 		const value = defaultValues[field];
 		if (value === undefined || typeof value === 'object') {
@@ -329,7 +306,6 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		return `Default: ${String(value)}`;
 	};
 
-	// Render the dialog
 	return (
 		<dialog className="modal modal-open">
 			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">

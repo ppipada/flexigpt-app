@@ -52,12 +52,12 @@ func PingEndpoint(ctx context.Context, params PingParams) error {
 }
 
 func NotifyEndpoint(ctx context.Context, params NotifyParams) error {
-	// Process notification
+	// Process notification.
 	return nil
 }
 
 func TestBatchRequestHandler(t *testing.T) {
-	// Define method maps
+	// Define method maps.
 	methodMap := map[string]IMethodHandler{
 		"add": &MethodHandler[AddParams, AddResult]{Endpoint: AddEndpoint},
 		"addErrorSimple": &MethodHandler[AddParams, AddResult]{
@@ -96,7 +96,7 @@ func TestBatchRequestHandler(t *testing.T) {
 		return "add", nil
 	}
 
-	// Define test cases
+	// Define test cases.
 	tests := []struct {
 		name         string
 		metaReq      *BatchRequest
@@ -200,7 +200,8 @@ func TestBatchRequestHandler(t *testing.T) {
 					}},
 				},
 			},
-			expectedResp: nil, // Notifications do not produce a response
+			// Notifications do not produce a response.
+			expectedResp: nil,
 		},
 		{
 			name: "Processing single notification",
@@ -212,7 +213,7 @@ func TestBatchRequestHandler(t *testing.T) {
 							JSONRPC: JSONRPCVersion,
 							Method:  stringToPointer("notify"),
 							Params:  json.RawMessage(`{"message":"Hello"}`),
-							ID:      nil, // Notification
+							ID:      nil,
 						},
 					},
 				},
@@ -229,7 +230,7 @@ func TestBatchRequestHandler(t *testing.T) {
 							JSONRPC: JSONRPCVersion,
 							Method:  stringToPointer("notify"),
 							Params:  json.RawMessage(`{"message":123}`),
-							ID:      nil, // Notification
+							ID:      nil,
 						},
 					},
 				},
@@ -246,7 +247,7 @@ func TestBatchRequestHandler(t *testing.T) {
 							JSONRPC: JSONRPCVersion,
 							Method:  stringToPointer("errornotify"),
 							Params:  json.RawMessage(`{"message":"Hello"}`),
-							ID:      nil, // Notification
+							ID:      nil,
 						},
 					},
 				},
@@ -283,7 +284,7 @@ func TestBatchRequestHandler(t *testing.T) {
 							ID:      &RequestID{Value: 1},
 							Result:  json.RawMessage(`{"sum":3}`),
 						},
-						// No response for notification
+						// No response for notification.
 					},
 				},
 			},

@@ -29,7 +29,7 @@ export interface ChatInputFieldHandle {
 	focus: () => void;
 }
 
-// Custom hook for handling form submission on Enter key press
+// Custom hook for handling form submission on Enter key press.
 function useEnterSubmit(): {
 	formRef: React.RefObject<HTMLFormElement | null>;
 	onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
@@ -49,36 +49,23 @@ function useEnterSubmit(): {
 }
 
 const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ onSend, setInputHeight }, ref) => {
-	// For the main text area
 	const [text, setText] = useState<string>('');
 	const [isSendButtonEnabled, setIsSendButtonEnabled] = useState<boolean>(false);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const isSubmittingRef = useRef<boolean>(false);
-
-	// Model state
 	const [selectedModel, setSelectedModel] = useState<ChatOptions>(DefaultChatOptions);
-
-	// Whether the advanced params modal is open
 	const [isAdvancedModalOpen, setIsAdvancedModalOpen] = useState<boolean>(false);
-
-	// Hybrid reasoning
 	const [isHybridReasoningEnabled, setIsHybridReasoningEnabled] = useState<boolean>(true);
-
-	// Checkbox for "Disable previous messages"
 	const [disablePreviousMessages, setDisablePreviousMessages] = useState<boolean>(false);
-
-	// Model + advanced dropdown open states
 	const [isModelDropdownOpen, setIsModelDropdownOpen] = useState<boolean>(false);
 	const [isSecondaryDropdownOpen, setIsSecondaryDropdownOpen] = useState<boolean>(false);
-
-	// All available models
 	const [allOptions, setAllOptions] = useState<ChatOptions[]>([DefaultChatOptions]);
 
-	// Refs for the dropdown details elements
+	// Refs for the dropdown details elements.
 	const modelDetailsRef = useRef<HTMLDetailsElement>(null);
 	const secondaryDetailsRef = useRef<HTMLDetailsElement>(null);
 
-	// Close logic for model dropdown
+	// Close logic for model dropdown.
 	UseCloseDetails({
 		detailsRef: modelDetailsRef,
 		events: ['mousedown'],
@@ -87,7 +74,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		},
 	});
 
-	// Close logic for secondary dropdown (temperature or reasoning)
+	// Close logic for secondary dropdown (temperature or reasoning).
 	UseCloseDetails({
 		detailsRef: secondaryDetailsRef,
 		events: ['mousedown'],
@@ -96,12 +83,12 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		},
 	});
 
-	// Load initial model options
+	// Load initial model options.
 	const loadInitialItems = useCallback(async () => {
 		const r = await GetChatInputOptions();
 		setSelectedModel(r.default);
 
-		// Initialize hybrid reasoning enabled state based on model
+		// Initialize hybrid reasoning enabled state based on model.
 		setIsHybridReasoningEnabled(r.default.reasoning?.type === ReasoningType.HybridWithTokens);
 		setAllOptions(r.allOptions);
 	}, []);
@@ -110,17 +97,17 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		loadInitialItems();
 	}, [loadInitialItems]);
 
-	// When model changes, update hybrid reasoning enabled state
+	// When model changes, update hybrid reasoning enabled state.
 	useEffect(() => {
 		if (selectedModel.reasoning?.type === ReasoningType.HybridWithTokens) {
 			setIsHybridReasoningEnabled(true);
 		}
 	}, [selectedModel]);
 
-	// Enter key submission logic
+	// Enter key submission logic.
 	const { formRef, onKeyDown } = useEnterSubmit();
 
-	// Automatically resize the textarea
+	// Automatically resize the textarea.
 	const autoResizeTextarea = useCallback(() => {
 		if (inputRef.current) {
 			inputRef.current.style.height = 'auto';
@@ -141,11 +128,11 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		autoResizeTextarea();
 	}, [text, autoResizeTextarea]);
 
-	// Construct the final ChatOptions
+	// Construct the final ChatOptions.
 	const getFinalChatOptions = (): ChatOptions => {
 		const options = { ...selectedModel, disablePreviousMessages };
 
-		// If it's a hybrid reasoning model but user disabled reasoning, remove it
+		// If it's a hybrid reasoning model but user disabled reasoning, remove it.
 		if (selectedModel.reasoning?.type === ReasoningType.HybridWithTokens && !isHybridReasoningEnabled) {
 			const modifiedOptions = { ...options };
 			delete modifiedOptions.reasoning;
@@ -167,7 +154,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		setText('');
 		isSubmittingRef.current = false;
 
-		// Reset + refocus
+		// Reset + refocus.
 		if (inputRef.current) {
 			inputRef.current.style.height = 'auto';
 			inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, MAX_HEIGHT)}px`;
@@ -176,7 +163,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		}
 	};
 
-	// Expose the function to get current chat options + focus
+	// Expose the function to get current chat options + focus.
 	useImperativeHandle(ref, () => ({
 		getChatOptions: () => getFinalChatOptions(),
 		focus: () => {
@@ -186,7 +173,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		},
 	}));
 
-	// Clamps temperature to [0, 1]
+	// Clamps temperature to [0, 1].
 	const setTemperature = (temp: number) => {
 		const clampedTemp = Math.max(0, Math.min(1, temp));
 		setSelectedModel(prev => ({
@@ -195,19 +182,19 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		}));
 	};
 
-	// Set reasoning level for SingleWithLevels type
+	// Set reasoning level for SingleWithLevels type.
 	const setReasoningLevel = (newLevel: ReasoningLevel) => {
 		setSelectedModel(prev => ({
 			...prev,
 			reasoning: {
 				type: ReasoningType.SingleWithLevels,
 				level: newLevel,
-				tokens: 1024, // default tokens
+				tokens: 1024,
 			},
 		}));
 	};
 
-	// Set tokens for HybridWithTokens type
+	// Set tokens for HybridWithTokens type.
 	const setHybridTokens = (tokens: number) => {
 		setSelectedModel(prev => {
 			if (!prev.reasoning || prev.reasoning.type !== ReasoningType.HybridWithTokens) {
@@ -223,10 +210,8 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		});
 	};
 
-	/**
-	 * Handle saving the advanced parameters from the modal
-	 * We simply merge these changes back into selectedModel.
-	 */
+	// Handle saving the advanced parameters from the modal.
+	// We simply merge these changes back into selectedModel.
 	const handleSaveAdvancedParams = (updatedModel: ChatOptions) => {
 		setSelectedModel(prev => {
 			return {

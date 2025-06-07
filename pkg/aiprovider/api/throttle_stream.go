@@ -54,7 +54,8 @@ func NewBufferedStreamer(
 			data := buf.String()
 			buf.Reset()
 			mu.Unlock()
-			return onStreamData(data) // size-based flush
+			// size-based flush
+			return onStreamData(data)
 		}
 		mu.Unlock()
 		return nil

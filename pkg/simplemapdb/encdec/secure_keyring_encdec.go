@@ -41,24 +41,24 @@ func (e EncryptedStringValueEncoderDecoder) Decode(r io.Reader, value any) error
 		return err
 	}
 
-	// Use reflection to handle the value
+	// Use reflection to handle the value.
 	valuePtr := reflect.ValueOf(value)
 
-	// Check if value is a pointer
+	// Check if value is a pointer.
 	if valuePtr.Kind() != reflect.Ptr {
 		return fmt.Errorf("value must be a pointer. Kind: %v", valuePtr.Kind())
 	}
 
-	// Dereference the pointer to get the underlying value
+	// Dereference the pointer to get the underlying value.
 	valueElem := valuePtr.Elem()
 
-	// If the underlying value is an interface, set the decrypted data directly
+	// If the underlying value is an interface, set the decrypted data directly.
 	if valueElem.Kind() == reflect.Interface {
 		valueElem.Set(reflect.ValueOf(decryptedData))
 		return nil
 	}
 
-	// Otherwise, check if the underlying value is a string
+	// Otherwise, check if the underlying value is a string.
 	if valueElem.Kind() != reflect.String {
 		return fmt.Errorf(
 			"value must be a pointer to a string or interface. Kind: %v",
@@ -66,7 +66,7 @@ func (e EncryptedStringValueEncoderDecoder) Decode(r io.Reader, value any) error
 		)
 	}
 
-	// Set the decrypted data to the dereferenced value
+	// Set the decrypted data to the dereferenced value.
 	valueElem.SetString(decryptedData)
 
 	return nil
@@ -78,7 +78,8 @@ func getKey() ([]byte, error) {
 	const (
 		service = "FlexiGPTKeyRingEncDec"
 		user    = "user"
-		keySize = 32 // AES-256 requires a 32-byte key
+		// AES-256 requires a 32-byte key.
+		keySize = 32
 	)
 
 	// Attempt to retrieve the key from the keyring.

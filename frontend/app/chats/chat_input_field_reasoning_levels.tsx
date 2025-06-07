@@ -2,11 +2,8 @@ import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 import { ReasoningLevel } from '@/models/aiprovidermodel';
 
-/**
- * Subcomponent for Reasoning Level Selection
- * -------------------------------------
- * Displays three reasoning levels (low, medium, high) the user can select.
- */
+// Subcomponent for Reasoning Level Selection.
+// Displays three reasoning levels (low, medium, high) the user can select.
 export default function SingleReasoningDropdown(props: {
 	reasoningLevel: ReasoningLevel;
 	setReasoningLevel: (level: ReasoningLevel) => void;
@@ -16,7 +13,7 @@ export default function SingleReasoningDropdown(props: {
 }) {
 	const { reasoningLevel, setReasoningLevel, isOpen, setIsOpen, detailsRef } = props;
 
-	// Map reasoning levels to display names
+	// Map reasoning levels to display names.
 	const levelDisplayNames = {
 		[ReasoningLevel.Low]: 'Low',
 		[ReasoningLevel.Medium]: 'Medium',

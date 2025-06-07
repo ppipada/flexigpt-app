@@ -9,7 +9,7 @@ import (
 // INotificationHandler is an interface for handlers that process notifications (no response expected).
 type INotificationHandler interface {
 	// Even though there is a error return allowed this is mainly present for any debugging logs etc
-	// The client will never receive any error
+	// The client will never receive any error.
 	Handle(ctx context.Context, req Notification[json.RawMessage]) error
 	GetTypes() reflect.Type
 }
@@ -47,11 +47,11 @@ func (n *NotificationHandler[I]) Handle(
 ) error {
 	params, err := unmarshalData[I](req.Params)
 	if err != nil {
-		// Cannot send error to client in notification; possibly log internally
+		// Cannot send error to client in notification; possibly log internally.
 		return err
 	}
 
-	// Call the endpoint
+	// Call the endpoint.
 	return n.Endpoint(ctx, params)
 }
 

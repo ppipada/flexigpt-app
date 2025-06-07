@@ -34,7 +34,7 @@ func InitSettingStore(settingStore *SettingStore, filename string) error {
 		filestore.WithAutoFlush(true),
 		filestore.WithValueEncDecGetter(settingStore.ValueEncDecGetter),
 		// Lets not encode decode keys for now
-		// filestore.WithKeyEncDecGetter(settingStore.KeyEncDecGetter),
+		// filestore.WithKeyEncDecGetter(settingStore.KeyEncDecGetter).
 		filestore.WithEncoderDecoder(encdec.JSONEncoderDecoder{}))
 	if err != nil {
 		return fmt.Errorf("failed to create store: %w", err)
@@ -53,7 +53,7 @@ func (s *SettingStore) ValueEncDecGetter(pathSoFar []string) encdec.EncoderDecod
 	return nil
 }
 
-// func (s *SettingStore) KeyEncDecGetter(pathSoFar []string) encdec.StringEncoderDecoder {
+// Func (s *SettingStore) KeyEncDecGetter(pathSoFar []string) encdec.StringEncoderDecoder {
 // 	// 1) If pathSoFar == ["aiSettings", <providerName>], encode providerName
 // 	if len(pathSoFar) == 2 && pathSoFar[1] == "aiSettings" {
 // 		return s.keyEncDec
@@ -66,7 +66,7 @@ func (s *SettingStore) ValueEncDecGetter(pathSoFar []string) encdec.EncoderDecod
 // 	}
 // 	// Otherwise, no key-encoding
 // 	return nil
-// }
+// }.
 
 func (s *SettingStore) GetAllSettings(
 	ctx context.Context,
@@ -114,7 +114,7 @@ func (s *SettingStore) AddAISetting(
 		return nil, errors.New("request or request body cannot be nil")
 	}
 
-	// Pull current data
+	// Pull current data.
 	currentData, err := s.store.GetAll(false)
 	if err != nil {
 		return nil, fmt.Errorf("failed retrieving current data: %w", err)
@@ -125,7 +125,7 @@ func (s *SettingStore) AddAISetting(
 		return nil, errors.New("aiSettings is missing or not a map")
 	}
 
-	// If it already exists, return error
+	// If it already exists, return error.
 	if _, exists := aiSettings[string(req.ProviderName)]; exists {
 		return nil, fmt.Errorf("provider %q already exists", req.ProviderName)
 	}
@@ -152,7 +152,7 @@ func (s *SettingStore) DeleteAISetting(
 	if req == nil {
 		return nil, errors.New("request cannot be nil")
 	}
-	// Pull current data
+	// Pull current data.
 	currentData, err := s.store.GetAll(false)
 	if err != nil {
 		return nil, fmt.Errorf("failed retrieving current data: %w", err)
@@ -179,13 +179,13 @@ func (s *SettingStore) getProviderData(
 	providerName aiproviderSpec.ProviderName,
 	forceFetch bool,
 ) (currentData, aiSettings, providerData map[string]any, err error) {
-	// 1) GetAll with no forced fetch (or use the boolean if you sometimes need forced)
+	// 1) GetAll with no forced fetch (or use the boolean if you sometimes need forced).
 	currentData, err = s.store.GetAll(forceFetch)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to retrieve current data: %w", err)
 	}
 
-	// 2) aiSettings must be a map
+	// 2) aiSettings must be a map.
 	aiSettingsRaw, ok := currentData["aiSettings"]
 	if !ok {
 		return nil, nil, nil, errors.New("aiSettings missing from store")
@@ -195,7 +195,7 @@ func (s *SettingStore) getProviderData(
 		return nil, nil, nil, errors.New("aiSettings is not a map[string]any")
 	}
 
-	// 3) Check if provider exists
+	// 3) Check if provider exists.
 	providerRaw, ok := aiSettings[string(providerName)]
 	if !ok {
 		return nil, nil, nil, fmt.Errorf("provider %q does not exist in aiSettings", providerName)
@@ -216,12 +216,12 @@ func (s *SettingStore) SetAISettingAPIKey(
 		return nil, errors.New("request or request body cannot be nil")
 	}
 
-	// If APIKey is empty, do nothing
+	// If APIKey is empty, do nothing.
 	if req.Body.APIKey == "" {
 		return &spec.SetAISettingAPIKeyResponse{}, nil
 	}
 
-	// Check provider exists
+	// Check provider exists.
 	_, _, _, err := s.getProviderData(req.ProviderName, false)
 	if err != nil {
 		return nil, err
@@ -242,13 +242,13 @@ func (s *SettingStore) SetAISettingAttrs(
 		return nil, errors.New("request or request body cannot be nil")
 	}
 
-	// Make sure provider is in store
+	// Make sure provider is in store.
 	_, _, _, err := s.getProviderData(req.ProviderName, false)
 	if err != nil {
 		return nil, err
 	}
 
-	// For each non-nil field, set via dot key if it’s not empty (for strings)
+	// For each non-nil field, set via dot key if it’s not empty (for strings).
 	if req.Body.IsEnabled != nil {
 		if err := s.store.SetKey([]string{"aiSettings", string(req.ProviderName), "isEnabled"}, *req.Body.IsEnabled); err != nil {
 			return nil, fmt.Errorf("failed updating isEnabled: %w", err)
@@ -281,13 +281,13 @@ func (s *SettingStore) AddModelSetting(
 		return nil, errors.New("request or request body cannot be nil")
 	}
 
-	// Confirm provider existence
+	// Confirm provider existence.
 	_, _, _, err := s.getProviderData(req.ProviderName, false)
 	if err != nil {
 		return nil, err
 	}
 
-	// Overwrite or create the model
+	// Overwrite or create the model.
 	keys := []string{"aiSettings", string(req.ProviderName), "modelSettings", string(req.ModelName)}
 	val, err := encdec.StructWithJSONTagsToMap(req.Body)
 	if err != nil {
@@ -309,13 +309,13 @@ func (s *SettingStore) DeleteModelSetting(
 		return nil, errors.New("request cannot be nil")
 	}
 
-	// Confirm provider existence
+	// Confirm provider existence.
 	_, _, _, err := s.getProviderData(req.ProviderName, false)
 	if err != nil {
 		return nil, err
 	}
 
-	// Delete the model
+	// Delete the model.
 	keys := []string{"aiSettings", string(req.ProviderName), "modelSettings", string(req.ModelName)}
 	if err := s.store.DeleteKey(keys); err != nil {
 		return nil, fmt.Errorf("failed deleting model %q for provider %q: %w",

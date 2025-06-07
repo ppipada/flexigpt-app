@@ -54,7 +54,7 @@ func DeleteValueAtPath(data any, keys []string) error {
 	if err != nil {
 		var kne *KeyNotFoundError
 		if errors.As(err, &kne) {
-			// Path not found, Delete is a noop in this case
+			// Path not found, Delete is a noop in this case.
 			return nil
 		}
 		return err
@@ -82,7 +82,8 @@ func DeepCopyValue(value any) any {
 		}
 		return sliceCopy
 	default:
-		return v // For basic types, it's safe to return as is
+		// For basic types, it's safe to return as is.
+		return v
 	}
 }
 
@@ -108,7 +109,7 @@ func NavigateToParentMap(
 		next, ok := m[key]
 		if !ok {
 			if createMissing && key != "" {
-				// Create nested map
+				// Create nested map.
 				newMap := make(map[string]any)
 				m[key] = newMap
 				current = newMap

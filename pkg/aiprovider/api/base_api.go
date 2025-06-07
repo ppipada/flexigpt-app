@@ -73,16 +73,16 @@ func (api *BaseAIAPI) SetProviderAttribute(
 }
 
 func trimInbuiltPrompts(systemPrompt, inbuiltPrompt string) string {
-	// Split both prompts into lines
+	// Split both prompts into lines.
 	inbuiltLines := strings.Split(inbuiltPrompt, "\n")
 	promptLines := strings.Split(systemPrompt, "\n")
 
-	// Remove matching lines from the start
+	// Remove matching lines from the start.
 	for len(inbuiltLines) > 0 && len(promptLines) > 0 && promptLines[0] == inbuiltLines[0] {
 		promptLines = promptLines[1:]
 		inbuiltLines = inbuiltLines[1:]
 	}
-	// Re-join the remaining lines
+	// Re-join the remaining lines.
 	return inbuiltPrompt + "\n" + strings.TrimLeft(strings.Join(promptLines, "\n"), "\n")
 }
 
@@ -101,7 +101,7 @@ func (api *BaseAIAPI) getCompletionRequest(
 		},
 	}
 
-	// Cannot turn on streaming of it is set false in model
+	// Cannot turn on streaming of it is set false in model.
 	if inbuiltModelParams != nil && modelParams.Stream {
 		completionRequest.ModelParams.Stream = inbuiltModelParams.Stream
 	} else {
@@ -125,7 +125,7 @@ func (api *BaseAIAPI) getCompletionRequest(
 	if inbuiltModelParams != nil && inbuiltModelParams.Reasoning != nil &&
 		modelParams.Reasoning != nil &&
 		modelParams.Reasoning.Type != inbuiltModelParams.Reasoning.Type {
-		// Cannot have input reasoning different than models defined reasoning type
+		// Cannot have input reasoning different than models defined reasoning type.
 		completionRequest.ModelParams.Reasoning = nil
 	}
 
@@ -135,7 +135,7 @@ func (api *BaseAIAPI) getCompletionRequest(
 	}
 	completionRequest.ModelParams.SystemPrompt = reqSystemPrompt
 
-	// Handle messages
+	// Handle messages.
 	messages := slices.Clone(prevMessages)
 	if prompt != "" {
 		message := spec.ChatCompletionRequestMessage{
@@ -146,7 +146,7 @@ func (api *BaseAIAPI) getCompletionRequest(
 	}
 	completionRequest.Messages = messages
 
-	// Assuming filterMessagesByTokenCount is implemented elsewhere
+	// Assuming filterMessagesByTokenCount is implemented elsewhere.
 	completionRequest.Messages = FilterMessagesByTokenCount(
 		completionRequest.Messages,
 		completionRequest.ModelParams.MaxPromptLength,
@@ -165,8 +165,6 @@ func (api *BaseAIAPI) FetchCompletion(
 	prevMessages []spec.ChatCompletionRequestMessage,
 	onStreamData func(data string) error,
 ) (*spec.CompletionResponse, error) {
-	/* ------------------------- build completion request -------------------- */
-
 	input := api.getCompletionRequest(prompt, modelParams, inbuiltModelParams, prevMessages)
 	if len(input.Messages) == 0 {
 		return nil, errors.New("empty input messages")
@@ -178,7 +176,7 @@ func (api *BaseAIAPI) FetchCompletion(
 	options := []llms.CallOption{
 		llms.WithModel(string(input.ModelParams.Name)),
 	}
-	// PrintJSON(input.ModelParams)
+	// PrintJSON(input.ModelParams).
 
 	if input.ModelParams.Temperature != nil {
 		options = append(options, llms.WithTemperature(*input.ModelParams.Temperature))
@@ -201,7 +199,7 @@ func (api *BaseAIAPI) FetchCompletion(
 	}
 	options = append(options, llms.WithMaxTokens(input.ModelParams.MaxOutputLength))
 
-	/* --------------------------- wrap onStreamData -------------------------- */
+	// Wrap onStreamData.
 	var write func(string) error
 	var flush func()
 	if input.ModelParams.Stream && onStreamData != nil {
@@ -223,8 +221,6 @@ func (api *BaseAIAPI) FetchCompletion(
 		}
 	}
 
-	/* ------------------------------ content ------------------------------- */
-
 	content := []llms.MessageContent{}
 	if sp := input.ModelParams.SystemPrompt; sp != "" {
 		sysmsg := llms.TextParts(llms.ChatMessageTypeSystem, sp)
@@ -243,14 +239,12 @@ func (api *BaseAIAPI) FetchCompletion(
 		return nil, errors.New("empty input content messages")
 	}
 
-	/* --------------------------- call the model --------------------------- */
-
 	completionResp := &spec.CompletionResponse{}
 
 	ctx = AddDebugResponseToCtx(ctx)
 	resp, err := llm.GenerateContent(ctx, content, options...)
 
-	// make sure buffered data reaches the client
+	// Make sure buffered data reaches the client.
 	if flush != nil {
 		flush()
 	}
@@ -269,7 +263,7 @@ func (api *BaseAIAPI) FetchCompletion(
 		completionResp.ResponseDetails = debugResp.ResponseDetails
 	}
 
-	// PrintJSON(resp)
+	// PrintJSON(resp).
 
 	if resp == nil || len(resp.Choices) == 0 || resp.Choices[0] == nil {
 		if ok && debugResp != nil {
@@ -296,12 +290,12 @@ func (api *BaseAIAPI) FetchCompletion(
 }
 
 func getBlockQuotedReasoning(content string) string {
-	// Split the content into lines
+	// Split the content into lines.
 	lines := strings.Split(content, "\n")
-	// Prepend each line with "> "
+	// Prepend each line with "> ".
 	for i, line := range lines {
 		lines[i] = "> " + line
 	}
-	// Join the lines back together as blockquote
+	// Join the lines back together as blockquote.
 	return strings.Join(lines, "\n")
 }

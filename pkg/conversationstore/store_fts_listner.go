@@ -35,7 +35,6 @@ func extract(m map[string]any) map[string]string {
 		feedback bytes.Buffer
 	)
 
-	// iterate messages --------------------------------------------------
 	msgs, _ := m["messages"].([]any)
 	for _, raw := range msgs {
 		msg, ok := raw.(map[string]any)

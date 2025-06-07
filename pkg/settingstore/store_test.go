@@ -80,7 +80,8 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 				// Do nothing, file already has valid data
 				return nil
 			},
-			forceFetch:    true, // Force re-fetch from file
+			// Force re-fetch from file
+			forceFetch:    true,
 			expectedError: "",
 		},
 		{
@@ -486,7 +487,8 @@ func TestSettingStore_SetAISettingAPIKey(t *testing.T) {
 			req: &settingSpec.SetAISettingAPIKeyRequest{
 				ProviderName: spec.ProviderName("openai2"),
 				Body: &settingSpec.SetAISettingAPIKeyRequestBody{
-					APIKey: strings.Repeat("A", 1024), // 1KB of 'A'
+					// 1KB of 'A'
+					APIKey: strings.Repeat("A", 1024),
 				},
 			},
 			wantErr:       false,
@@ -787,7 +789,7 @@ func TestSettingStore_DeleteModelSetting(t *testing.T) {
 				ProviderName: spec.ProviderName("openai2"),
 				ModelName:    spec.ModelName(""),
 			},
-			wantErr: false, // noop
+			wantErr: false,
 		},
 	}
 

@@ -43,10 +43,10 @@ func initSlog(logsDirPath string, debug bool) *logrotate.Writer {
 	var stdoutHandler slog.Handler = slog.NewTextHandler(os.Stdout, slogOpts)
 	stdoutLogger := slog.New(stdoutHandler)
 
-	// Init logger
+	// Init logger.
 	opts := logrotate.Options{
 		Directory:            logsDirPath,
-		MaximumFileSize:      10 * 1024 * 1024, // 10 MB
+		MaximumFileSize:      10 * 1024 * 1024,
 		MaximumLifetime:      24 * time.Hour,
 		FileNameFunc:         logrotate.DefaultFilenameFunc,
 		FlushAfterEveryWrite: true,
@@ -90,7 +90,7 @@ func main() {
 		})
 
 		hooks.OnStop(func() {
-			// Gracefully shutdown your server here
+			// Gracefully shutdown your server here.
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			defer writer.Close()

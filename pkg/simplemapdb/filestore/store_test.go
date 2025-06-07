@@ -115,7 +115,8 @@ func TestNewMapFileStore(t *testing.T) {
 			}
 
 			defer func() {
-				_ = os.Chmod(tt.filename, 0o644) // Ensure we can clean up later
+				// Ensure we can clean up later
+				_ = os.Chmod(tt.filename, 0o644)
 			}()
 		}
 
@@ -621,10 +622,11 @@ func TestMapFileStore_NestedStructures(t *testing.T) {
 			value: true,
 		},
 		{
-			name:      "Set value where intermediate is not a map",
-			keys:      []string{"parent", "child", "key"},
-			value:     "invalid",
-			expectErr: true, // 'parent.child' is a string, cannot set 'key' under it
+			name:  "Set value where intermediate is not a map",
+			keys:  []string{"parent", "child", "key"},
+			value: "invalid",
+			// 'parent.child' is a string, cannot set 'key' under it
+			expectErr: true,
 		},
 	}
 
@@ -705,10 +707,11 @@ func TestMapFileStore_KeyEncodingDecoding(t *testing.T) {
 				value: true,
 			},
 			{
-				name:       "empty key slice",
-				keys:       []string{},
-				value:      "value",
-				wantErrSet: true, // cannot set root
+				name:  "empty key slice",
+				keys:  []string{},
+				value: "value",
+				// cannot set root
+				wantErrSet: true,
 			},
 		}
 
@@ -894,10 +897,6 @@ func getValueAtPath(m map[string]any, path []string) any {
 	return current
 }
 
-/* ---------------------------------------------------------------
-   Helpers
-----------------------------------------------------------------*/
-
 func noTime(e Event) Event { e.Timestamp = time.Time{}; return e }
 
 func openStore(p string, opts ...Option) *MapFileStore {
@@ -907,15 +906,12 @@ func openStore(p string, opts ...Option) *MapFileStore {
 		append(opts, WithCreateIfNotExists(true))...,
 	)
 	if err != nil {
-		panic(err) // tests – abort fast
+		panic(err)
 	}
 	return s
 }
 
-/* ---------------------------------------------------------------
-   1. Order & fan-out: multiple listeners receive identical sequence
-----------------------------------------------------------------*/
-
+// Order & fan-out: multiple listeners receive identical sequence.
 func TestEvents_MultipleListeners_IdenticalOrder(t *testing.T) {
 	tmp := t.TempDir()
 	f := filepath.Join(tmp, "multi.json")
@@ -946,10 +942,7 @@ func TestEvents_MultipleListeners_IdenticalOrder(t *testing.T) {
 	}
 }
 
-/* ---------------------------------------------------------------
-   2. AutoFlush = false -> event fires, disk unchanged until Flush()
-----------------------------------------------------------------*/
-
+// AutoFlush = false -> event fires, disk unchanged until Flush().
 func TestEvents_AutoFlushFalse(t *testing.T) {
 	const key = "foo"
 	const val = "bar"
@@ -987,10 +980,7 @@ func TestEvents_AutoFlushFalse(t *testing.T) {
 	}
 }
 
-/* ---------------------------------------------------------------
-   3. Data snapshot matches store state for every op (table-driven)
-----------------------------------------------------------------*/
-
+// Data snapshot matches store state for every op.
 func TestEvents_DataSnapshotMatchesStore(t *testing.T) {
 	tmp := t.TempDir()
 	f := filepath.Join(tmp, "datasnap.json")
@@ -1033,10 +1023,7 @@ func TestEvents_DataSnapshotMatchesStore(t *testing.T) {
 	}
 }
 
-/* ---------------------------------------------------------------
-   4. Concurrency – 100 goroutines issue SetKey; every event captured
-----------------------------------------------------------------*/
-
+// Concurrency – 100 goroutines issue SetKey; every event captured.
 func TestEvents_ConcurrentWrites(t *testing.T) {
 	tmp := t.TempDir()
 	f := filepath.Join(tmp, "concurrent.json")
@@ -1063,7 +1050,7 @@ func TestEvents_ConcurrentWrites(t *testing.T) {
 	}
 	wg.Wait()
 
-	// ensure we have exactly n events of type OpSetKey
+	// ensure we have exactly n events of type OpSetKey.
 	mu.Lock()
 	defer mu.Unlock()
 	if len(evs) != n {
@@ -1074,7 +1061,7 @@ func TestEvents_ConcurrentWrites(t *testing.T) {
 			t.Fatalf("unexpected op %v", e.Op)
 		}
 	}
-	// final store value should equal last event.NewValue
+	// final store value should equal last event.NewValue.
 	last := evs[len(evs)-1].NewValue
 	got, _ := st.GetKey([]string{"k"})
 	if !reflect.DeepEqual(got, last) {
@@ -1082,10 +1069,7 @@ func TestEvents_ConcurrentWrites(t *testing.T) {
 	}
 }
 
-/* ---------------------------------------------------------------
-   5. Panic isolation already tested, but also verify store keeps going
-----------------------------------------------------------------*/
-
+// Panic isolation.
 func TestEvents_PanicListener_DoesNotBreakNextListeners(t *testing.T) {
 	tmp := t.TempDir()
 	f := filepath.Join(tmp, "isolate.json")

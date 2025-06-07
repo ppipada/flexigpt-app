@@ -15,36 +15,49 @@ import (
 	"strings"
 	"sync"
 
-	_ "github.com/glebarez/go-sqlite" // pure-Go SQLite/FTS5 driver
+	_ "github.com/glebarez/go-sqlite"
 )
-
-// Result is returned by Search().
-type Result struct {
-	ID    string  // string id stored in the "externalID" column
-	Score float64 // bm25
-}
 
 type Engine struct {
 	db  *sql.DB
 	cfg Config
-	hsh string     // schema checksum
-	mu  sync.Mutex // serialises write-queries
+	// schema checksum
+	hsh string
+	// serialises write-queries
+	mu sync.Mutex
 }
 
-// Column declares one FTS5 column.
-type Column struct {
-	Name      string  `json:"name"`      // SQL identifier
-	Unindexed bool    `json:"unindexed"` // stored but not tokenised
-	Weight    float64 `json:"weight"`    // bm25 weight (0 → treated as 1)
+func NewEngine(cfg Config) (*Engine, error) {
+	err := validateConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	if dir := filepath.Dir(cfg.DBPath); dir != "" && dir != ":memory:" {
+		if err := os.MkdirAll(dir, 0o770); err != nil {
+			return nil, err
+		}
+	}
+
+	db, err := sql.Open("sqlite", cfg.DBPath+
+		"?busy_timeout=5000&_pragma=journal_mode(WAL)")
+	if err != nil {
+		return nil, err
+	}
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
+
+	e := &Engine{db: db, cfg: cfg}
+	e.hsh = schemaChecksum(e.cfg)
+
+	if err := e.bootstrap(context.Background()); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+
+	return e, nil
 }
 
-type Config struct {
-	DBPath  string   `json:"dbPath"`
-	Table   string   `json:"table"`
-	Columns []Column `json:"columns"`
-}
-
-func (c *Config) Validate() error {
+func validateConfig(c Config) error {
 	if len(c.Columns) == 0 {
 		return errors.New("ftsengine: need ≥1 column")
 	}
@@ -68,44 +81,19 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func New(cfg Config) (*Engine, error) {
-	err := cfg.Validate()
-	if err != nil {
-		return nil, err
-	}
-	if dir := filepath.Dir(cfg.DBPath); dir != "" && dir != ":memory:" {
-		if err := os.MkdirAll(dir, 0o770); err != nil {
-			return nil, err
-		}
-	}
-
-	db, err := sql.Open("sqlite", cfg.DBPath+
-		"?busy_timeout=5000&_pragma=journal_mode(WAL)")
-	if err != nil {
-		return nil, err
-	}
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(1)
-
-	e := &Engine{db: db, cfg: cfg}
-	e.hsh = e.schemaChecksum()
-
-	if err := e.bootstrap(context.Background()); err != nil {
-		_ = db.Close()
-		return nil, err
-	}
-
-	return e, nil
+func schemaChecksum(cfg Config) string {
+	h := sha256.New()
+	_ = json.NewEncoder(h).Encode(cfg)
+	return hex.EncodeToString(h.Sum(nil))
 }
 
-/* ------------------------------------------------------------------ */
-/*  internal helpers                                                  */
-/* ------------------------------------------------------------------ */
+func quote(id string) string { return `"` + strings.ReplaceAll(id, `"`, `""`) + `"` }
 
-func (e *Engine) schemaChecksum() string {
-	h := sha256.New()
-	_ = json.NewEncoder(h).Encode(e.cfg)
-	return hex.EncodeToString(h.Sum(nil))
+func paramPlaceholders(n int) string {
+	if n == 0 {
+		return ""
+	}
+	return strings.Repeat(",?", n)
 }
 
 func (e *Engine) bootstrap(ctx context.Context) error {
@@ -176,12 +164,11 @@ func (e *Engine) Upsert(
 		return errors.New("ftsengine: empty id")
 	}
 
-	e.mu.Lock() // serialise writes inside *this* process
+	// serialise writes inside *this* process
+	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	/* --------------------------------------------------------------
-	   1) Does a row with this externalID already exist?
-	----------------------------------------------------------------*/
+	// Does a row with this externalID already exist?
 	var rowid int64
 	const sqlSearchRow = `SELECT rowid FROM %s WHERE externalID=?`
 	err := e.db.QueryRowContext(
@@ -191,17 +178,18 @@ func (e *Engine) Upsert(
 	).Scan(&rowid)
 
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return err // real DB error
+		// real DB error
+		return err
 	}
 	exists := !errors.Is(err, sql.ErrNoRows)
 
-	/* --------------------------------------------------------------
-	   2) Build column lists and args
-	----------------------------------------------------------------*/
-	numCols := 1 + len(e.cfg.Columns) // externalID + N user columns
+	// Build column lists and args
+	// externalID + N user columns
+	numCols := 1 + len(e.cfg.Columns)
 	colNames := make([]string, 0, numCols)
 	marks := make([]string, 0, numCols)
-	args := make([]any, 0, numCols+1) // maybe +1 rowid
+	// maybe +1 rowid
+	args := make([]any, 0, numCols+1)
 
 	// externalID column
 	colNames = append(colNames, "externalID")
@@ -215,11 +203,8 @@ func (e *Engine) Upsert(
 		args = append(args, vals[c.Name])
 	}
 
-	/* --------------------------------------------------------------
-	   3) Choose statement variant
-	----------------------------------------------------------------*/
+	// Choose statement variant
 	var sqlQ string
-
 	if exists {
 		// prepend rowid for INSERT OR REPLACE
 		colNames = append([]string{"rowid"}, colNames...)
@@ -263,12 +248,12 @@ func (e *Engine) Search(
 	query string,
 	pageToken string,
 	pageSize int,
-) (hits []Result, nextToken string, err error) {
+) (hits []SearchResult, nextToken string, err error) {
 	if pageSize <= 0 || pageSize > 10000 {
 		pageSize = 10
 	}
 
-	// decode / reset token ---------------------------------------------
+	// decode / reset token
 	var offset int
 	if pageToken != "" {
 		var t struct {
@@ -279,12 +264,13 @@ func (e *Engine) Search(
 		if err == nil {
 			_ = json.Unmarshal(b, &t)
 		}
-		if t.Query == query { // token belongs to same query
+		// token belongs to same query
+		if t.Query == query {
 			offset = t.Offset
 		}
 	}
 
-	// bm25 weight parameters (one per column) --------------------------
+	// bm25 weight parameters (one per column)
 	var weights []any
 	for _, c := range e.cfg.Columns {
 		if c.Weight == 0 {
@@ -313,14 +299,14 @@ func (e *Engine) Search(
 	defer rows.Close()
 
 	for rows.Next() {
-		var r Result
+		var r SearchResult
 		if err := rows.Scan(&r.ID, &r.Score); err != nil {
 			return nil, "", err
 		}
 		hits = append(hits, r)
 	}
 
-	// build next token --------------------------------------------------
+	// build next token
 	if len(hits) == pageSize {
 		offset += pageSize
 		buf, _ := json.Marshal(struct {
@@ -333,16 +319,3 @@ func (e *Engine) Search(
 }
 
 func (e *Engine) Close() error { return e.db.Close() }
-
-/* ------------------------------------------------------------------ */
-/*  helpers                                                           */
-/* ------------------------------------------------------------------ */
-
-func quote(id string) string { return `"` + strings.ReplaceAll(id, `"`, `""`) + `"` }
-
-func paramPlaceholders(n int) string {
-	if n == 0 {
-		return ""
-	}
-	return strings.Repeat(",?", n)
-}

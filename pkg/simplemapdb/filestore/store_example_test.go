@@ -329,13 +329,9 @@ func reverseString(s string) string {
 	return string(runes)
 }
 
-/*
--------------------------------------------------------------------------------
-Example 1 – basic event flow
--------------------------------------------------------------------------------
-Sets a couple of keys, deletes them, then resets the file.  We attach a single
-listener that records every event and print a short, deterministic summary.
-*/
+// Basic event flow
+// Sets a couple of keys, deletes them, then resets the file.  We attach a single
+// listener that records every event and print a short, deterministic summary.
 func Example_events_basicFlow() {
 	tmp, _ := os.MkdirTemp("", "fs_example1")
 	defer os.RemoveAll(tmp)
@@ -356,7 +352,8 @@ func Example_events_basicFlow() {
 
 	store, _ := NewMapFileStore(
 		file,
-		nil, // no default data
+		// no default data
+		nil,
 		WithCreateIfNotExists(true),
 		WithListeners(rec),
 	)
@@ -374,7 +371,8 @@ func Example_events_basicFlow() {
 			fmt.Printf("%s → %v\n", ev.Op, ev.Data)
 		case OpResetFile:
 			fmt.Printf("%s\n", ev.Op)
-		default: // OpSetKey / OpDeleteKey
+		default:
+			// OpSetKey / OpDeleteKey
 			fmt.Printf("%s %v  old=%v  new=%v\n",
 				ev.Op, ev.Keys, ev.OldValue, ev.NewValue)
 		}
@@ -388,13 +386,9 @@ func Example_events_basicFlow() {
 	// resetFile
 }
 
-/*
--------------------------------------------------------------------------------
-Example 2 – AutoFlush =false
--------------------------------------------------------------------------------
-Shows that events are still delivered immediately, but the mutation only
-reaches disk after an explicit Flush().
-*/
+// AutoFlush =false
+// Shows that events are still delivered immediately, but the mutation only
+// reaches disk after an explicit Flush().
 func Example_events_autoFlush() {
 	tmp, _ := os.MkdirTemp("", "fs_example2")
 	defer os.RemoveAll(tmp)
@@ -407,7 +401,7 @@ func Example_events_autoFlush() {
 		file,
 		nil,
 		WithCreateIfNotExists(true),
-		WithAutoFlush(false), // important!
+		WithAutoFlush(false),
 		WithListeners(listener),
 	)
 
@@ -432,12 +426,8 @@ func Example_events_autoFlush() {
 	// on disk after flush: 123
 }
 
-/*
--------------------------------------------------------------------------------
-Example 3 – panic isolation between listeners
--------------------------------------------------------------------------------
-One listener panics; the second one must still be called.
-*/
+// Panic isolation between listeners
+// One listener panics; the second one must still be called.
 func Example_events_panicIsolation() {
 	tmp, _ := os.MkdirTemp("", "fs_example3")
 	defer os.RemoveAll(tmp)

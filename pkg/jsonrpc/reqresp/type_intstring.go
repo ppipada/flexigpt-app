@@ -13,25 +13,25 @@ type IntString struct {
 func (is *IntString) UnmarshalJSON(data []byte) error {
 	if string(data) == "null" {
 		// If the input is "null", return an error for non-pointer types
-		// (UnmarshalJSON is called only for non-pointer types in this case)
+		// (UnmarshalJSON is called only for non-pointer types in this case).
 		return errors.New("IntString cannot be null")
 	}
 
-	// Try to unmarshal data into an int
+	// Try to unmarshal data into an int.
 	var intValue int
 	if err := json.Unmarshal(data, &intValue); err == nil {
 		is.Value = intValue
 		return nil
 	}
 
-	// Try to unmarshal data into a string
+	// Try to unmarshal data into a string.
 	var strValue string
 	if err := json.Unmarshal(data, &strValue); err == nil {
 		is.Value = strValue
 		return nil
 	}
 
-	// If neither int nor string, return an error
+	// If neither int nor string, return an error.
 	return errors.New("IntString must be a string or an integer")
 }
 
@@ -69,14 +69,14 @@ func (is IntString) StringValue() (string, bool) {
 }
 
 func (is *IntString) Equal(other *IntString) bool {
-	// Handle nil cases
+	// Handle nil cases.
 	if is == nil && other == nil {
 		return true
 	}
 	if is == nil || other == nil {
 		return false
 	}
-	// Compare the underlying values based on their types
+	// Compare the underlying values based on their types.
 	switch v := is.Value.(type) {
 	case int:
 		ov, ok := other.Value.(int)

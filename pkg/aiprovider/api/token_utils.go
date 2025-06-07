@@ -35,7 +35,7 @@ func FilterMessagesByTokenCount(
 	totalTokens := 0
 	var filteredMessages []spec.ChatCompletionRequestMessage
 
-	// Loop through the messages in reverse order (prioritizing the last element)
+	// Loop through the messages in reverse order (prioritizing the last element).
 	for i := len(messages) - 1; i >= 0; i-- {
 		message := messages[i]
 		c := message.Content
@@ -45,12 +45,12 @@ func FilterMessagesByTokenCount(
 		}
 
 		// Check if adding this message will not exceed maxTokenCount
-		// or if the filteredMessages slice is empty, then at least add this message
+		// or if the filteredMessages slice is empty, then at least add this message.
 		if totalTokens+tokensInMessage <= maxTokenCount || len(filteredMessages) == 0 {
 			filteredMessages = append(filteredMessages, message)
 			totalTokens += tokensInMessage
 
-			// Always include at least one message, so if we've added one we can now enforce maxTokenCount
+			// Always include at least one message, so if we've added one we can now enforce maxTokenCount.
 			if totalTokens > maxTokenCount {
 				break
 			}
@@ -69,7 +69,7 @@ func FilterMessagesByTokenCount(
 		)
 	}
 
-	// Reverse the filteredMessages slice to maintain the original order
+	// Reverse the filteredMessages slice to maintain the original order.
 	for i, j := 0, len(filteredMessages)-1; i < j; i, j = i+1, j-1 {
 		filteredMessages[i], filteredMessages[j] = filteredMessages[j], filteredMessages[i]
 	}

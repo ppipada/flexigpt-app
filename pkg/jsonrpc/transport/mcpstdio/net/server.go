@@ -25,7 +25,8 @@ type Server struct {
 	handler  MessageHandler
 	done     chan struct{}
 	doneOnce sync.Once
-	wg       sync.WaitGroup // Tracks connection handler goroutines
+	// Tracks connection handler goroutines
+	wg sync.WaitGroup
 }
 
 // NewServer creates a new Server with provided components.
@@ -61,7 +62,8 @@ func (s *Server) handleConnection(conn net.Conn) {
 	for {
 		select {
 		case <-s.done:
-			return // Exit if shutdown signal is received
+			// Exit if shutdown signal is received
+			return
 		default:
 		}
 
@@ -69,12 +71,14 @@ func (s *Server) handleConnection(conn net.Conn) {
 		if err != nil {
 			if errors.Is(err, io.EOF) || strings.Contains(err.Error(), "EOF") ||
 				strings.Contains(err.Error(), "closed") {
-				return // Client closed the connection
+				// Client closed the connection
+				return
 			}
 			var ne net.Error
 			if ok := errors.As(err, &ne); ok && ne.Timeout() {
 				time.Sleep(10 * time.Microsecond)
-				continue // Temporary error, try reading again
+				// Temporary error, try reading again
+				continue
 			}
 			// Unrecoverable error, exit the connection handler
 			return
@@ -110,19 +114,23 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	// Signal to stop accepting new connections and stop processing
 	s.doneOnce.Do(func() {
 		close(s.done)
-		s.conn.Close() // Close the connection to unblock ReadMessage
+		// Close the connection to unblock ReadMessage
+		s.conn.Close()
 	})
 
 	doneChan := make(chan struct{})
 	go func() {
-		s.wg.Wait() // Wait for all connection handlers to finish
+		// Wait for all connection handlers to finish
+		s.wg.Wait()
 		close(doneChan)
 	}()
 
 	select {
 	case <-ctx.Done():
-		return ctx.Err() // Context canceled or timed out
+		// Context canceled or timed out
+		return ctx.Err()
 	case <-doneChan:
-		return nil // Shutdown complete
+		// Shutdown complete
+		return nil
 	}
 }

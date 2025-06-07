@@ -426,7 +426,7 @@ func TestSetValueAtPath(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		// Make a deep copy of the original data to avoid side effects
+		// Make a deep copy of the original data to avoid side effects.
 		dataCopy := DeepCopyValue(tt.data)
 		t.Run(tt.name, func(t *testing.T) {
 			err := SetValueAtPath(dataCopy, tt.keys, tt.value)
@@ -438,7 +438,7 @@ func TestSetValueAtPath(t *testing.T) {
 				return
 			}
 
-			// Compare the modified data with the expected data
+			// Compare the modified data with the expected data.
 			if !reflect.DeepEqual(dataCopy, tt.wantData) {
 				t.Errorf("After SetValueAtPath(), data = %v, want %v", dataCopy, tt.wantData)
 			}
@@ -540,8 +540,9 @@ func TestDeleteValueAtPath(t *testing.T) {
 			data: map[string]any{
 				"list": []any{"item1", "item2", "item3"},
 			},
-			keys:    []string{"list", "1"},
-			wantErr: true, // Deleting an index in a slice is not supported
+			keys: []string{"list", "1"},
+			// Deleting an index in a slice is not supported.
+			wantErr: true,
 		},
 		{
 			name: "Happy path - delete deep nested key",
@@ -640,12 +641,13 @@ func TestDeleteValueAtPath(t *testing.T) {
 			wantData: map[string]any{
 				"a": "value",
 			},
-			wantErr: true, // Cannot delete root data
+			// Cannot delete root data.
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
-		// Make a deep copy of the original data to avoid side effects
+		// Make a deep copy of the original data to avoid side effects.
 		dataCopy := DeepCopyValue(tt.data)
 		t.Run(tt.name, func(t *testing.T) {
 			err := DeleteValueAtPath(dataCopy, tt.keys)
@@ -657,7 +659,7 @@ func TestDeleteValueAtPath(t *testing.T) {
 				return
 			}
 
-			// Compare the modified data with the expected data
+			// Compare the modified data with the expected data.
 			if !reflect.DeepEqual(dataCopy, tt.wantData) {
 				t.Errorf("After DeleteValueAtPath(), data = %v, want %v", dataCopy, tt.wantData)
 			}
@@ -760,7 +762,7 @@ func TestDeepCopyValue(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue := DeepCopyValue(tt.value)
 
-			// Modify the original value to ensure deep copy
+			// Modify the original value to ensure deep copy.
 			modifyValue(tt.value)
 
 			if !reflect.DeepEqual(gotValue, tt.wantValue) {
@@ -987,7 +989,7 @@ func TestNavigateToParentMap(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		// Make a deep copy of the original data to avoid side effects
+		// Make a deep copy of the original data to avoid side effects.
 		dataCopy := DeepCopyValue(tt.data)
 		t.Run(tt.name, func(t *testing.T) {
 			gotMap, gotLastKey, err := NavigateToParentMap(dataCopy, tt.keys, tt.createMissing)
@@ -998,11 +1000,11 @@ func TestNavigateToParentMap(t *testing.T) {
 			if tt.wantErr {
 				return
 			}
-			// Compare gotMap with expected map
+			// Compare gotMap with expected map.
 			if !reflect.DeepEqual(gotMap, tt.wantMap) {
 				t.Errorf("NavigateToParentMap() gotMap = %v, want %v", gotMap, tt.wantMap)
 			}
-			// Compare gotLastKey with expected last key
+			// Compare gotLastKey with expected last key.
 			if gotLastKey != tt.wantLastKey {
 				t.Errorf(
 					"NavigateToParentMap() gotLastKey = %v, want %v",

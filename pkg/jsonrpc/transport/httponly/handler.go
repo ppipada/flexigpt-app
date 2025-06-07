@@ -14,9 +14,9 @@ func Register(api huma.API,
 	methodMap map[string]jsonrpcReqResp.IMethodHandler,
 	notificationMap map[string]jsonrpcReqResp.INotificationHandler,
 ) {
-	// Get default operation
+	// Get default operation.
 	op := humaadapter.GetDefaultOperation()
 	op.Path = JSONRPCEndpoint
-	// Register the methods
+	// Register the methods.
 	humaadapter.Register(api, op, methodMap, notificationMap, nil, nil)
 }

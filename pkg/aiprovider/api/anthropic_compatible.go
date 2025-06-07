@@ -33,12 +33,12 @@ func (api *AnthropicCompatibleAPI) InitLLM(ctx context.Context) error {
 	providerURL := "https://api.anthropic.com/v1"
 	if api.ProviderInfo.Origin != "" {
 		baseURL := api.ProviderInfo.Origin
-		// Remove trailing slash from baseURL if present
+		// Remove trailing slash from baseURL if present.
 		baseURL = strings.TrimSuffix(baseURL, "/")
 
 		pathPrefix := api.ProviderInfo.ChatCompletionPathPrefix
 		// Remove '/messages' from pathPrefix if present
-		// This is because langchaingo adds '/messages' internally
+		// This is because langchaingo adds '/messages' internally.
 		pathPrefix = strings.TrimSuffix(pathPrefix, "/messages")
 		providerURL = baseURL + pathPrefix
 		options = append(options, langchainAnthropic.WithBaseURL(providerURL))

@@ -22,15 +22,15 @@ type Options struct {
 }
 
 func SetupHTTPOnlyTransport() http.Handler {
-	// Use default go router
+	// Use default go router.
 	router := http.NewServeMux()
 
 	api := humago.New(router, huma.DefaultConfig("Example JSONRPC API", "1.0.0"))
-	// Add any middlewares
+	// Add any middlewares.
 	api.UseMiddleware(helpers_test.LoggingMiddleware)
 	handler := helpers_test.PanicRecoveryMiddleware(router)
 
-	// Init the servers method and notifications handlers
+	// Init the servers method and notifications handlers.
 	methodMap := helpers_test.GetMethodHandlers()
 	notificationMap := helpers_test.GetNotificationHandlers()
 
@@ -42,7 +42,7 @@ func GetHTTPServerCLI() humacli.CLI {
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {
 		log.Printf("Options are %+v\n", opts)
 		handler := SetupHTTPOnlyTransport()
-		// Initialize the http server
+		// Initialize the http server.
 		server := http.Server{
 			Addr:              fmt.Sprintf("%s:%d", opts.Host, opts.Port),
 			Handler:           handler,
@@ -57,7 +57,7 @@ func GetHTTPServerCLI() humacli.CLI {
 		})
 
 		hooks.OnStop(func() {
-			// Gracefully shutdown your server here
+			// Gracefully shutdown your server here.
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			_ = server.Shutdown(ctx)

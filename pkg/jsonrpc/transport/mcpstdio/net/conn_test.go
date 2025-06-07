@@ -105,7 +105,8 @@ func TestStdioConnWriteTimeout(t *testing.T) {
 		if err == nil {
 			t.Errorf("Write did not return an error as expected")
 		} else if ok := errors.As(err, &ne); !ok || !ne.Timeout() {
-			if !strings.Contains(err.Error(), "closed") { // May get a closed error
+			// May get a closed error.
+			if !strings.Contains(err.Error(), "closed") {
 				t.Errorf("Expected timeout error, got: %v", err)
 			}
 		}

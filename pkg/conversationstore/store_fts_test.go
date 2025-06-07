@@ -34,15 +34,11 @@ func newConv(t *testing.T, title string) *spec.Conversation {
 	}
 }
 
-/* ------------------------------------------------------------------ */
-/*  1. Search happy-path                                              */
-/* ------------------------------------------------------------------ */
-
 func TestFTSSearchHappyPath(t *testing.T) {
 	dir := t.TempDir()
 	cc := newCollection(t, dir, true)
 
-	c1 := newConv(t, "Banana split") // query in title
+	c1 := newConv(t, "Banana split")
 	_, _ = cc.SaveConversation(t.Context(), &spec.SaveConversationRequest{Body: c1})
 
 	resp, err := cc.SearchConversations(t.Context(), &spec.SearchConversationsRequest{
@@ -60,19 +56,15 @@ func TestFTSSearchHappyPath(t *testing.T) {
 	}
 }
 
-/* ------------------------------------------------------------------ */
-/*  2. Ranking: title beats body                                      */
-/* ------------------------------------------------------------------ */
-
 func TestFTSRankingTitleVsBody(t *testing.T) {
 	dir := t.TempDir()
 	cc := newCollection(t, dir, true)
 
-	// A: query term in title
+	// A: query term in title.
 	a := newConv(t, "Alpha winner")
 	_, _ = cc.SaveConversation(t.Context(), &spec.SaveConversationRequest{Body: a})
 
-	// B: query term only inside a message
+	// B: query term only inside a message.
 	b := newConv(t, "No match in title")
 	b.Messages = []spec.ConversationMessage{{
 		ID:      "m1",
@@ -88,10 +80,6 @@ func TestFTSRankingTitleVsBody(t *testing.T) {
 		t.Fatalf("ranking wrong, hits=%v", resp.Body.ConversationItems)
 	}
 }
-
-/* ------------------------------------------------------------------ */
-/*  3. Pagination token                                               */
-/* ------------------------------------------------------------------ */
 
 func TestFTSPagination(t *testing.T) {
 	dir := t.TempDir()
@@ -119,7 +107,7 @@ func TestFTSPagination(t *testing.T) {
 		}
 		total += len(res.Body.ConversationItems)
 		if res.Body.NextPageToken == nil || *res.Body.NextPageToken == "" {
-			if len(res.Body.ConversationItems) != 2 { // 12−10
+			if len(res.Body.ConversationItems) != 2 {
 				t.Fatalf("last page size want 2, got %d", len(res.Body.ConversationItems))
 			}
 			break
@@ -134,10 +122,6 @@ func TestFTSPagination(t *testing.T) {
 	}
 }
 
-/* ------------------------------------------------------------------ */
-/*  4. Delete removes from index                                      */
-/* ------------------------------------------------------------------ */
-
 func TestFTSDeletePurgesIndex(t *testing.T) {
 	dir := t.TempDir()
 	cc := newCollection(t, dir, true)
@@ -145,28 +129,24 @@ func TestFTSDeletePurgesIndex(t *testing.T) {
 	c := newConv(t, "Cherry pie")
 	_, _ = cc.SaveConversation(t.Context(), &spec.SaveConversationRequest{Body: c})
 
-	// ensure hit exists
+	// Ensure hit exists.
 	_, err := cc.SearchConversations(t.Context(),
 		&spec.SearchConversationsRequest{Query: "cherry"})
 	if err != nil {
 		t.Fatalf("initial search: %v", err)
 	}
 
-	// delete conversation
+	// Delete conversation.
 	_, _ = cc.DeleteConversation(t.Context(),
 		&spec.DeleteConversationRequest{ID: c.ID, Title: c.Title})
 
-	// expect zero hits
+	// Expect zero hits.
 	res, _ := cc.SearchConversations(t.Context(),
 		&spec.SearchConversationsRequest{Query: "cherry"})
 	if len(res.Body.ConversationItems) != 0 {
 		t.Fatalf("expected 0 hits after delete, got %d", len(res.Body.ConversationItems))
 	}
 }
-
-/* ------------------------------------------------------------------ */
-/*  5. AddMessage updates index                                       */
-/* ------------------------------------------------------------------ */
 
 func TestFTSAddMessageUpdatesIndex(t *testing.T) {
 	dir := t.TempDir()
@@ -175,7 +155,7 @@ func TestFTSAddMessageUpdatesIndex(t *testing.T) {
 	c := newConv(t, "Silent")
 	_, _ = cc.SaveConversation(t.Context(), &spec.SaveConversationRequest{Body: c})
 
-	// no hit yet
+	// No hit yet.
 	res, _ := cc.SearchConversations(t.Context(),
 		&spec.SearchConversationsRequest{Query: "whisper"})
 	if len(res.Body.ConversationItems) != 0 {
@@ -196,17 +176,13 @@ func TestFTSAddMessageUpdatesIndex(t *testing.T) {
 			},
 		})
 
-	// now should hit
+	// Now should hit.
 	res, _ = cc.SearchConversations(t.Context(),
 		&spec.SearchConversationsRequest{Query: "whisper"})
 	if len(res.Body.ConversationItems) != 1 {
 		t.Fatalf("want 1 hit after adding message, got %d", len(res.Body.ConversationItems))
 	}
 }
-
-/* ------------------------------------------------------------------ */
-/*  6. Search disabled when FTS off                                   */
-/* ------------------------------------------------------------------ */
 
 func TestFTSDisabled(t *testing.T) {
 	dir := t.TempDir()
@@ -219,10 +195,6 @@ func TestFTSDisabled(t *testing.T) {
 	}
 }
 
-/* ------------------------------------------------------------------ */
-/*  7. Scale: 100 conversations, 20 messages each                     */
-/* ------------------------------------------------------------------ */
-
 func TestFTSScaleSearch(t *testing.T) {
 	dir := t.TempDir()
 	cc := newCollection(t, dir, true)
@@ -233,7 +205,7 @@ func TestFTSScaleSearch(t *testing.T) {
 		pageSz    = 15
 	)
 
-	/* ---- create & save conversations ---------------------------------- */
+	// Create & save conversations.
 	for i := range nConvos {
 		c := newConv(t, fmt.Sprintf("Scale test fruit%d", i))
 		for m := range nMessages {
@@ -253,7 +225,7 @@ func TestFTSScaleSearch(t *testing.T) {
 		}
 	}
 
-	/* ---- single-doc search ------------------------------------------- */
+	// Single-doc search.
 	res, err := cc.SearchConversations(t.Context(),
 		&spec.SearchConversationsRequest{Query: "fruit42", PageSize: pageSz})
 	if err != nil {
@@ -263,7 +235,7 @@ func TestFTSScaleSearch(t *testing.T) {
 		t.Fatalf("expect 1 hit for fruit42, got %d", len(res.Body.ConversationItems))
 	}
 
-	/* ---- bulk search with pagination --------------------------------- */
+	// Bulk search with pagination.
 	token := ""
 	seen := map[string]bool{}
 	total := 0

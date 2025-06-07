@@ -85,8 +85,8 @@ func NewMapFileStore(
 		data:        make(map[string]any),
 		defaultData: defaultData,
 		filename:    filename,
-		autoFlush:   true,                                   // Default to true
-		encdec:      simplemapdbEncdec.JSONEncoderDecoder{}, // Default to JSON encoder/decoder
+		autoFlush:   true,
+		encdec:      simplemapdbEncdec.JSONEncoderDecoder{},
 	}
 
 	// Apply options
@@ -590,7 +590,8 @@ func encodeDecodeAllValuesRecursively(
 		if err != nil {
 			return obj, err
 		}
-		m[k] = newChild // store the possibly-encoded child back
+		// store the possibly-encoded child back
+		m[k] = newChild
 	}
 	return m, nil
 }

@@ -11,20 +11,18 @@ interface AddProviderModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (providerName: ProviderName, newSettings: AISetting) => void;
-	/**
-	 * List of existing provider names in your system.
-	 * Used to prevent duplicate providerName.
-	 */
+
+	// List of existing provider names in your system.
+	// Used to prevent duplicate providerName.
 	existingProviderNames: string[];
 }
 
-/** Local interface for our form data, to match the style of ModifyModelModal. */
 interface ProviderFormData {
 	providerName: string;
 	apiKey: string;
 	origin: string;
 	chatCompletionPathPrefix: string;
-	/** Must not be blank—once set by the child modal, user can proceed. */
+	// Must not be blank—once set by the child modal, user can proceed.
 	defaultModelName: string;
 }
 
@@ -37,11 +35,9 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 		defaultModelName: '',
 	});
 
-	// Model settings for the single default model
 	const [modelSettings, setModelSettings] = useState<Record<string, ModelSetting>>({});
 	const [isModifyModelModalOpen, setIsModifyModelModalOpen] = useState(false);
 
-	// Mirroring the error handling style in ModifyModelModal
 	const [errors, setErrors] = useState<{
 		providerName?: string;
 		apiKey?: string;
@@ -50,7 +46,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 		defaultModelName?: string;
 	}>({});
 
-	// Reset all states when the modal closes
+	// Reset all states when the modal closes.
 	useEffect(() => {
 		if (!isOpen) {
 			setFormData({
@@ -66,17 +62,14 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 		}
 	}, [isOpen]);
 
-	// We define the list of fields to validate
 	type ValidationField = 'providerName' | 'apiKey' | 'origin' | 'chatCompletionPathPrefix' | 'defaultModelName';
 
 	type ValidationErrors = Partial<Record<ValidationField, string>>;
 
-	/**
-	 * Field-level validation: run these checks whenever a user changes a field,
-	 * populating/clearing error messages as needed.
-	 */
+	// Field-level validation: run these checks whenever a user changes a field,
+	// populating/clearing error messages as needed.
 	const validateField = (field: keyof ProviderFormData, value: string) => {
-		// Copy existing errors minus any error tied to this field
+		// Copy existing errors minus any error tied to this field.
 		const newErrors: ValidationErrors = Object.fromEntries(Object.entries(errors).filter(([key]) => key !== field));
 
 		if (field === 'providerName') {
@@ -98,7 +91,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 				newErrors.origin = 'Origin is required.';
 			} else {
 				try {
-					// Attempt parsing as URL
+					// Attempt parsing as URL.
 					new URL(value);
 				} catch {
 					newErrors.origin = 'Origin must be a valid URL.';
@@ -115,37 +108,25 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 		setErrors(newErrors);
 	};
 
-	/**
-	 * Keep track of field changes and run validation as the user types.
-	 */
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target;
 		setFormData(prev => ({ ...prev, [name]: value }));
 		validateField(name as keyof ProviderFormData, value);
 	};
 
-	/**
-	 * Show the ModifyModelModal to allow user to define the default model.
-	 */
 	const handleAddDefaultModel = () => {
 		setIsModifyModelModalOpen(true);
 	};
 
-	/**
-	 * Called when user finishes configuring the default model in ModifyModelModal.
-	 */
 	const handleModifyModelSubmit = (modelName: string, modelData: ModelSetting) => {
 		setFormData(prev => ({ ...prev, defaultModelName: modelName }));
 		setModelSettings({ [modelName]: modelData });
 		setIsModifyModelModalOpen(false);
 	};
 
-	/**
-	 * Disable/enable the "Add Provider" button based on whether the form is valid.
-	 *
-	 * - No validation errors.
-	 * - All required fields are non-empty.
-	 */
+	// Disable/enable the "Add Provider" button based on whether the form is valid.
+	// - No validation errors.
+	// - All required fields are non-empty.
 	const isAllValid = useMemo(() => {
 		const hasNoErrors = !Object.values(errors).some(Boolean);
 		const hasRequiredFields =
@@ -156,27 +137,25 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 		return hasNoErrors && hasRequiredFields;
 	}, [errors, formData]);
 
-	/**
-	 * Final form submission. We do a last validation pass to ensure all fields are valid.
-	 */
+	// Final form submission. We do a last validation pass to ensure all fields are valid.
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
-		// Validate each field one last time:
+		// Validate each field one last time.
 		validateField('providerName', formData.providerName);
 		validateField('apiKey', formData.apiKey);
 		validateField('origin', formData.origin);
 		validateField('chatCompletionPathPrefix', formData.chatCompletionPathPrefix);
 		validateField('defaultModelName', formData.defaultModelName);
 
-		// After final validation, check for any errors
+		// After final validation, check for any errors.
 		const hasAnyErrors = Object.values(errors).some(Boolean);
 		if (hasAnyErrors) return;
 
-		// Also confirm that required fields are filled (defensive check)
+		// Also confirm that required fields are filled (defensive check).
 		if (!isAllValid) return;
 
-		// Construct the new provider settings
+		// Construct the new provider settings.
 		const newProviderSettings: AISetting = {
 			isEnabled: true,
 			apiKey: formData.apiKey,
@@ -369,12 +348,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 						<button type="button" className="btn rounded-xl" onClick={onClose}>
 							Cancel
 						</button>
-						<button
-							type="submit"
-							className="btn btn-primary rounded-xl"
-							disabled={!isAllValid}
-							/* <--- Disable if form not valid */
-						>
+						<button type="submit" className="btn btn-primary rounded-xl" disabled={!isAllValid}>
 							Add Provider
 						</button>
 					</div>

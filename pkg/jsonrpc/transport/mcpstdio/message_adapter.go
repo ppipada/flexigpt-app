@@ -37,12 +37,12 @@ func (w *ResponseWriter) Header() http.Header {
 // WriteHeader sends an HTTP response header with the provided status code.
 func (w *ResponseWriter) WriteHeader(statusCode int) {
 	if w.wroteHeader {
-		// Avoid multiple WriteHeader calls
+		// Avoid multiple WriteHeader calls.
 		return
 	}
 	w.statusCode = statusCode
 	w.wroteHeader = true
-	// We don't output the status code or headers in this
+	// We don't output the status code or headers in this.
 }
 
 // Write writes the data to the connection as part of an HTTP reply.
@@ -50,7 +50,7 @@ func (w *ResponseWriter) Write(b []byte) (int, error) {
 	w.writeMu.Lock()
 	defer w.writeMu.Unlock()
 
-	// Write to the connection
+	// Write to the connection.
 	return w.writer.Write(b)
 }
 
@@ -62,7 +62,7 @@ type HTTPMessageHandler struct {
 
 // NewHTTPMessageHandler creates a new HTTPMessageHandler.
 func NewHTTPMessageHandler(handler http.Handler, params RequestParams) *HTTPMessageHandler {
-	// Set default values if not provided
+	// Set default values if not provided.
 	if params.Method == "" {
 		params.Method = "POST"
 	}
@@ -80,14 +80,14 @@ func NewHTTPMessageHandler(handler http.Handler, params RequestParams) *HTTPMess
 
 // HandleMessage processes a single message.
 func (h *HTTPMessageHandler) HandleMessage(writer io.Writer, msg []byte) {
-	// log.Printf("MSG: %s", string(msg))
-	// Create a ResponseWriter for this handler
+	// Log.Printf("MSG: %s", string(msg))
+	// Create a ResponseWriter for this handler.
 	w := &ResponseWriter{
 		writer:  writer,
 		writeMu: &sync.Mutex{},
 	}
 
-	// Create Request with the message as the body
+	// Create Request with the message as the body.
 	req, err := http.NewRequestWithContext(
 		context.Background(),
 		h.RequestParams.Method,
@@ -95,18 +95,18 @@ func (h *HTTPMessageHandler) HandleMessage(writer io.Writer, msg []byte) {
 		bytes.NewReader(msg),
 	)
 	if err != nil {
-		// Log the error and return
+		// Log the error and return.
 		fmt.Fprintf(os.Stderr, "Error creating request: %v\n", err)
 		return
 	}
 
-	// Copy default headers
+	// Copy default headers.
 	for k, v := range h.RequestParams.Header {
 		for _, vv := range v {
 			req.Header.Add(k, vv)
 		}
 	}
 
-	// Handle the request
+	// Handle the request.
 	h.Handler.ServeHTTP(w, req)
 }

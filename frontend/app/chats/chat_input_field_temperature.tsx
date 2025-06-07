@@ -2,45 +2,39 @@ import { useEffect, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
-/**
- * Four default pre-set temperatures.
- */
 const defaultTemperatureOptions = [0.0, 0.1, 0.5, 1.0];
 
-/**
- * Subcomponent for Temperature Selection
- * -------------------------------------
- * Uses a string-based custom input and clamps the value to [0,1].
- * Also displays four pre-set temperatures the user can click on.
- */
+// Subcomponent for Temperature Selection.
+// Uses a string-based custom input and clamps the value to [0,1].
+// Also displays four pre-set temperatures the user can click on.
 export default function TemperatureDropdown(props: {
-	temperature: number; // The current temperature value
-	setTemperature: (temp: number) => void; // A function to update & clamp
-	isOpen: boolean; // Whether details is open
+	temperature: number;
+	setTemperature: (temp: number) => void;
+	isOpen: boolean;
 	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	detailsRef: React.RefObject<HTMLDetailsElement | null>;
 }) {
 	const { temperature, setTemperature, isOpen, setIsOpen, detailsRef } = props;
 
-	// local state for the custom text input (string-based)
+	// Local state for the custom text input (string-based).
 	const [customTemp, setCustomTemp] = useState(temperature.toString());
 
-	// Sync local string whenever "temperature" changes
+	// Sync local string whenever "temperature" changes.
 	useEffect(() => {
 		setCustomTemp(temperature.toString());
 	}, [temperature]);
 
-	// Called on blur so we clamp to [0,1], fallback to 0.1 if invalid
+	// Called on blur so we clamp to [0,1], fallback to 0.1 if invalid.
 	function clampOnBlur() {
 		let val = parseFloat(customTemp);
 		if (isNaN(val)) {
 			val = 0.1; // fallback if parse fails
 		}
-		// clamp
+		// Clamp.
 		val = Math.max(0, Math.min(1, val));
 		setTemperature(val);
 
-		// close after user is done typing
+		// Close after user is done typing.
 		if (detailsRef.current) {
 			detailsRef.current.open = false;
 		}

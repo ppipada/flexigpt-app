@@ -9,7 +9,7 @@ import (
 // IResponseHandler is an interface for handlers that processes responses (no call response expected).
 type IResponseHandler interface {
 	// Even though there is a error return allowed this is mainly present for any debugging logs etc
-	// The client will never receive any error
+	// The client will never receive any error.
 	Handle(ctx context.Context, req Response[json.RawMessage]) error
 	GetTypes() reflect.Type
 }
@@ -44,24 +44,24 @@ type IResponseHandler interface {
 //	    },
 //	}
 type ResponseHandler[T any] struct {
-	// Endpoint is called with the unmarshaled result (as pointer) and/or error
+	// Endpoint is called with the unmarshaled result (as pointer) and/or error.
 	Endpoint func(ctx context.Context, result *T, err *JSONRPCError) error
 }
 
 // Handle processes a JSON-RPC response.
 func (r *ResponseHandler[T]) Handle(ctx context.Context, resp Response[json.RawMessage]) error {
-	// If there's an error, call the endpoint with nil result and the error
+	// If there's an error, call the endpoint with nil result and the error.
 	if resp.Error != nil {
 		return r.Endpoint(ctx, nil, resp.Error)
 	}
 
-	// Unmarshal the result if present
+	// Unmarshal the result if present.
 	result, err := unmarshalData[T](resp.Result)
 	if err != nil {
 		return err
 	}
 
-	// Call the endpoint with the result and nil error
+	// Call the endpoint with the result and nil error.
 	return r.Endpoint(ctx, &result, nil)
 }
 
@@ -76,7 +76,7 @@ func handleResponse(
 	responseMap map[string]IResponseHandler,
 	responseHandlerMapper func(context.Context, Response[json.RawMessage]) (string, error),
 ) error {
-	// Create context with request info
+	// Create context with request info.
 	resp := Response[json.RawMessage]{
 		JSONRPC: request.JSONRPC,
 		ID:      request.ID,

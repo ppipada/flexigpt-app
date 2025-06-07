@@ -12,7 +12,8 @@ import (
 )
 
 type StdIOJSONRPCClient struct {
-	client *stdioNet.Client // Replace with actual stdio client type
+	// Replace with actual stdio client type.
+	client *stdioNet.Client
 }
 
 func (c *StdIOJSONRPCClient) Send(reqBytes []byte) ([]byte, error) {
@@ -25,7 +26,7 @@ func NewStdIOClient(t *testing.T) *StdIOJSONRPCClient {
 	serverReader, clientWriter := io.Pipe()
 
 	server := GetServer(serverReader, serverWriter, handler)
-	// Start the server in a goroutine
+	// Start the server in a goroutine.
 	go func() {
 		err := server.Serve()
 		if err != nil && errors.Is(err, net.ErrClosed) {

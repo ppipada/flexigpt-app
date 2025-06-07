@@ -43,7 +43,7 @@ func TestEncodeDecode(t *testing.T) {
 			if tc.tamperData {
 				data := buffer.Bytes()
 				if len(data) > 0 {
-					// Tamper with the last byte of the data
+					// Tamper with the last byte of the data.
 					data[len(data)-1] ^= 0xFF
 				}
 				buffer = bytes.NewBuffer(data)
@@ -167,7 +167,7 @@ func TestDecryptCiphertextTooShort(t *testing.T) {
 	}
 
 	nonceSize := aesGCM.NonceSize()
-	// Create a ciphertext shorter than nonceSize
+	// Create a ciphertext shorter than nonceSize.
 	shortCiphertext := make([]byte, nonceSize-1)
 
 	encoded := base64.StdEncoding.EncodeToString(shortCiphertext)
@@ -184,13 +184,13 @@ func TestDecryptInvalidCiphertext(t *testing.T) {
 		t.Fatalf("encryptString failed: %v", err)
 	}
 
-	// Modify the encrypted data slightly
+	// Modify the encrypted data slightly.
 	data, err := base64.StdEncoding.DecodeString(encrypted)
 	if err != nil {
 		t.Fatalf("Failed to decode base64: %v", err)
 	}
 
-	// Flip a bit in the ciphertext (after the nonce)
+	// Flip a bit in the ciphertext (after the nonce).
 	if len(data) > 0 {
 		data[len(data)-1] ^= 0xFF
 	}
@@ -226,7 +226,7 @@ func TestEncryptDecryptConsistency(t *testing.T) {
 func TestDecodeWithInterface(t *testing.T) {
 	encoderDecoder := EncryptedStringValueEncoderDecoder{}
 
-	// Prepare a valid encoded string
+	// Prepare a valid encoded string.
 	originalValue := "Test string for interface"
 	encodedBuffer := &bytes.Buffer{}
 	err := encoderDecoder.Encode(encodedBuffer, originalValue)
@@ -234,14 +234,14 @@ func TestDecodeWithInterface(t *testing.T) {
 		t.Fatalf("Encode failed: %v", err)
 	}
 
-	// Decode into an any
+	// Decode into an any.
 	var decodedValue any
 	err = encoderDecoder.Decode(encodedBuffer, &decodedValue)
 	if err != nil {
 		t.Fatalf("Decode failed: %v", err)
 	}
 
-	// Assert the type and value
+	// Assert the type and value.
 	strValue, ok := decodedValue.(string)
 	if !ok {
 		t.Errorf("Decoded value is not of type string")
@@ -258,7 +258,7 @@ func TestDecodeWithInterface(t *testing.T) {
 func TestDecodeWithNonStringInterface(t *testing.T) {
 	encoderDecoder := EncryptedStringValueEncoderDecoder{}
 
-	// Prepare a valid encoded string
+	// Prepare a valid encoded string.
 	originalValue := "Test string for non-string interface"
 	encodedBuffer := &bytes.Buffer{}
 	err := encoderDecoder.Encode(encodedBuffer, originalValue)
@@ -266,8 +266,9 @@ func TestDecodeWithNonStringInterface(t *testing.T) {
 		t.Fatalf("Encode failed: %v", err)
 	}
 
-	// Decode dest that is not a string
-	decodedValue := 123 // Initialize with a non-string type
+	// Decode dest that is not a string.
+	// Initialize with a non-string type.
+	decodedValue := 123
 	err = encoderDecoder.Decode(encodedBuffer, &decodedValue)
 	if err == nil {
 		t.Errorf("Expected error when decoding into a non-string interface, but got none")
@@ -277,7 +278,7 @@ func TestDecodeWithNonStringInterface(t *testing.T) {
 func TestDecodeWithNilInterface(t *testing.T) {
 	encoderDecoder := EncryptedStringValueEncoderDecoder{}
 
-	// Prepare a valid encoded string
+	// Prepare a valid encoded string.
 	originalValue := "Test string for nil interface"
 	encodedBuffer := &bytes.Buffer{}
 	err := encoderDecoder.Encode(encodedBuffer, originalValue)
@@ -285,7 +286,7 @@ func TestDecodeWithNilInterface(t *testing.T) {
 		t.Fatalf("Encode failed: %v", err)
 	}
 
-	// Decode into a nil interface
+	// Decode into a nil interface.
 	var decodedValue any
 	err = encoderDecoder.Decode(encodedBuffer, decodedValue)
 	if err == nil {

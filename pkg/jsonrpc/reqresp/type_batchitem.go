@@ -30,14 +30,14 @@ func unmarshalBatchItem[T any](data []byte, isBatch *bool, items *[]T) error {
 	}
 
 	data = bytes.TrimSpace(data)
-	// Try to unmarshal into []json.RawMessage to detect if it's a batch
+	// Try to unmarshal into []json.RawMessage to detect if it's a batch.
 	var rawMessages []json.RawMessage
 	if err := json.Unmarshal(data, &rawMessages); err == nil {
-		// Data is a batch
+		// Data is a batch.
 		*isBatch = true
-		// Process each message in the batch, empty slice input is also ok and valid
+		// Process each message in the batch, empty slice input is also ok and valid.
 		for _, msg := range rawMessages {
-			// Empty or null single item also should not be present
+			// Empty or null single item also should not be present.
 			if err := checkForEmptyOrNullData(msg); err != nil {
 				return err
 			}

@@ -6,7 +6,7 @@ import (
 )
 
 var LangchainRoleMap = map[spec.ChatCompletionRoleEnum]llms.ChatMessageType{
-	// No developer prompt support in langchain as of now
+	// No developer prompt support in langchain as of now.
 	spec.Developer: llms.ChatMessageTypeSystem,
 	spec.System:    llms.ChatMessageTypeSystem,
 	spec.User:      llms.ChatMessageTypeHuman,

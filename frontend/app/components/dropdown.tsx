@@ -15,45 +15,26 @@ export interface DropdownItem {
  * @public
  */
 export interface DropdownProps<K extends string> {
-	/**
-	 * The mapped dropdownItems (like modelSettings or aiSettings).
-	 */
+	// The mapped dropdownItems (like modelSettings or aiSettings).
 	dropdownItems: Record<K, DropdownItem>;
-
-	/**
-	 * The currently selected key (e.g. 'gpt-3.5' or 'openai').
-	 */
+	//  The currently selected key (e.g. 'gpt-3.5' or 'openai').
 	selectedKey: K;
-
-	/**
-	 * Called when user picks a new key.
-	 */
+	// Called when user picks a new key.
 	onChange: (key: K) => void;
-
-	/**
-	 * Optional. If you want to filter out items that
-	 * are not enabled unless they are the current selection,
-	 * set this to true. (Defaults to true)
-	 */
+	// Optional. If you want to filter out items that
+	// are not enabled unless they are the current selection,
+	// set this to true. (Defaults to true).
 	filterDisabled?: boolean;
-
-	/**
-	 * Optional text that appears in a tooltip or as a title
-	 * on the summary element.
-	 */
+	// Optional text that appears in a tooltip or as a title
+	// on the summary element.
 	title?: string;
-
-	/**
-	 * Optional callback to get the display name for an item in the dropdown.
-	 * If the item itself has a `displayName` property, that takes precedence.
-	 * Otherwise, this function (if present) will be used to determine the label.
-	 */
+	// Optional callback to get the display name for an item in the dropdown.
+	// If the item itself has a `displayName` property, that takes precedence.
+	// Otherwise, this function (if present) will be used to determine the label.
 	getDisplayName?: (key: K) => string;
 }
 
-/**
- * A single reusable dropdown that can be used by passing the appropriate config.
- */
+// A single reusable dropdown that can be used by passing the appropriate config.
 const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 	const {
 		dropdownItems,
@@ -67,7 +48,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const detailsRef = useRef<HTMLDetailsElement>(null);
 
-	// Close the details dropdown if the user clicks outside
+	// Close the details dropdown if the user clicks outside.
 	UseCloseDetails({
 		detailsRef,
 		events: ['mousedown'],
@@ -79,7 +60,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 	const handleSelection = (key: K) => {
 		onChange(key);
 		if (detailsRef.current) {
-			// Force-close the details dropdown
+			// Force-close the details dropdown.
 			detailsRef.current.open = false;
 		}
 		setIsOpen(false);
@@ -87,7 +68,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 
 	// Helper function to derive display name:
 	// 1. Use the consumer's getDisplayName callback if provided
-	// 2. Otherwise, fall back to the key itself
+	// 2. Otherwise, fall back to the key itself.
 	const getItemDisplayName = (key: K) => {
 		if (typeof getDisplayName === 'function') {
 			return getDisplayName(key);
@@ -95,12 +76,12 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 		return key;
 	};
 
-	// We can optionally filter out disabled items, unless they are already selected
+	// We can optionally filter out disabled items, unless they are already selected.
 	const filteredKeys = Object.keys(dropdownItems).filter(k => {
 		const typedKey = k as K;
 		const item = dropdownItems[typedKey];
 		if (!filterDisabled) return true;
-		// if the item is enabled or it is the selected key, we keep it
+		// If the item is enabled or it is the selected key, we keep it.
 		return item.isEnabled || typedKey === selectedKey;
 	}) as K[];
 

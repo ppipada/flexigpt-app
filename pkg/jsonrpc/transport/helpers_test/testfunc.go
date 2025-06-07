@@ -377,7 +377,7 @@ func TestBatchRequests(t *testing.T, client JSONRPCClient) {
 		// 			}`)}, // Incomplete closing square bracket
 		// 	expectedResponses:  1,
 		// 	expectedErrorCodes: []int{-32700},
-		// },
+		// },.
 		{
 			name: "Batch of notifications",
 			batchRequest: []any{
@@ -530,7 +530,7 @@ func jsonEqual(a, b json.RawMessage) bool {
 		return false
 	}
 	// Direct reflect Deepequal would have issues when there are pointers, keyorders etc.
-	// unmarshalling into a interface and then doing deepequal removes those issues
+	// unmarshalling into a interface and then doing deepequal removes those issues.
 	return reflect.DeepEqual(o1, o2)
 }
 

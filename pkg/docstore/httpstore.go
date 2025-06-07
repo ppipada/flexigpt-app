@@ -1,10 +1,10 @@
 package docstore
 
-// import (
+// Import (
 // 	"errors"
 
 // 	"github.com/ppipada/flexigpt-app/pkg/docstore/spec"
-// )
+// ).
 
 // // HTTPDocStore implements the DocStoreAdapter interface for HTTP-based storage
 // type HTTPDocStore struct {
@@ -13,7 +13,7 @@ package docstore
 // 	Collections map[spec.CollectionName]*spec.Collection
 // 	Endpoint    string
 // 	Headers     map[string]string
-// }
+// }.
 
 // // HTTPDocStore initializes a new DocStore
 // func NewHTTPDocStore(
@@ -28,12 +28,12 @@ package docstore
 // 		Endpoint:    endpoint,
 // 		Headers:     headers,
 // 	}
-// }
+// }.
 
 // // GetCollection retrieves a collection by name
 // func (hds *HTTPDocStore) GetCollections() (map[spec.CollectionName]*spec.Collection, error) {
 // 	return hds.Collections, nil
-// }
+// }.
 
 // // AddCollection adds a new collection
 // func (hds *HTTPDocStore) AddCollection(name spec.CollectionName) error {
@@ -45,19 +45,19 @@ package docstore
 // 		Documents: make(map[spec.DocumentID]*spec.Document),
 // 	}
 // 	return nil
-// }
+// }.
 
-// func (hds *HTTPDocStore) DeleteDocument(collection string, docID spec.DocumentID) error {
+// Func (hds *HTTPDocStore) DeleteDocument(collection string, docID spec.DocumentID) error {
 // 	// Implementation for local file system
 // 	return nil
-// }
+// }.
 
-// func (hds *HTTPDocStore) AddDocument(collection string, doc *spec.Document) error {
+// Func (hds *HTTPDocStore) AddDocument(collection string, doc *spec.Document) error {
 // 	// Implementation for local file system
 // 	return nil
-// }
+// }.
 
-// func (hds *HTTPDocStore) ListDocuments(collection string) ([]*spec.Document, error) {
+// Func (hds *HTTPDocStore) ListDocuments(collection string) ([]*spec.Document, error) {
 // 	// Implementation for local file system
 // 	return nil, nil
-// }
+// }.

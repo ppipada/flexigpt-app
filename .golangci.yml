@@ -350,6 +350,12 @@ linters:
         - rangeValCopy
         - commentedOutCode
 
+    godot:
+      # Comments to be checked: `declarations`, `toplevel`, `noinline` or `all`.
+      # Default: declarations
+      scope: all
+      capital: true
+
     nakedret: # was not in v2 migrated code
       # No naked returns, ever.
       max-func-lines: 0 # Default: 30

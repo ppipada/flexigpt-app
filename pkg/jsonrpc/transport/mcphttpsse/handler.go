@@ -54,10 +54,10 @@ func (s *SSETransport) Register(
 		Summary:     "Establishes an SSE connection",
 	}, messageTypes, s.handleSSEConnection)
 
-	// Get default operation
+	// Get default operation.
 	op := humaadapter.GetDefaultOperation()
 	op.Path = JSONRPCEndpoint
-	// Register the methods
+	// Register the methods.
 	humaadapter.Register(api, op, methodMap, notificationMap, nil, nil)
 }
 
@@ -70,7 +70,7 @@ func (s *SSETransport) handleSSEConnection(
 	// Generate a unique session ID.
 	u, err := uuid.NewV7()
 	if err != nil {
-		// TODO: Write error and close
+		// TODO: Write error and close.
 		return
 	}
 	sessionID := u.String()
@@ -84,10 +84,10 @@ func (s *SSETransport) handleSSEConnection(
 	log.Printf("New SSE connection established. Session ID: %s", sessionID)
 
 	// Send the endpoint event to the client with the session ID.
-	// The event is deduced from value type in the handler
+	// The event is deduced from value type in the handler.
 	err = send.Data(fmt.Sprintf("%s?sessionId=%s", JSONRPCEndpoint, sessionID))
 	if err != nil {
-		// TODO: Write error and close
+		// TODO: Write error and close.
 		return
 	}
 

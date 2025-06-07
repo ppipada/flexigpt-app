@@ -27,8 +27,7 @@ func GetDefaultOperation() huma.Operation {
 	}
 }
 
-// GetErrorHandler is a closure returning a function that converts any errors returned into a JSONRPC error.
-// response object. It implements the huma StatusError interface.
+// Response object. It implements the huma StatusError interface.
 // IF the JSONRPC handler is invoked, it should never throw an error, but should return a error response object.
 // JSONRPC requires a error case to be covered via the specifications error response object.
 func GetErrorHandler(
@@ -53,7 +52,7 @@ func GetErrorHandler(
 			var jsonRPCError jsonrpcReqResp.JSONRPCError
 			if converted, ok := err.(huma.ErrorDetailer); ok {
 				d := converted.ErrorDetail()
-				// See if this is parse error
+				// See if this is parse error.
 				if strings.Contains(d.Message, "unmarshal") ||
 					strings.Contains(d.Message, "invalid character") ||
 					strings.Contains(d.Message, "unexpected end") {
@@ -61,32 +60,32 @@ func GetErrorHandler(
 					message = jsonrpcReqResp.GetDefaultErrorMessage(jsonrpcReqResp.ParseError)
 				}
 			} else if errors.As(err, &jsonRPCError) {
-				// Check if the error is of type JSONRPCError
+				// Check if the error is of type JSONRPCError.
 				foundJSONRPCError = &jsonRPCError
 			}
 			details = append(details, err.Error())
 		}
 
-		// If a JSONRPCError was found, update the message and append JSON-encoded details
+		// If a JSONRPCError was found, update the message and append JSON-encoded details.
 		if foundJSONRPCError != nil {
 			message = foundJSONRPCError.Message
 			code = foundJSONRPCError.Code
 
-			// JSON encode the Data field of the found JSONRPCError
+			// JSON encode the Data field of the found JSONRPCError.
 			if jsonData, err := json.Marshal(foundJSONRPCError.Data); err == nil {
 				details = append(details, string(jsonData))
 			}
 		}
 
-		// Check for method not found
+		// Check for method not found.
 		if gotMessage == "validation failed" {
 			// Assume that the method name is in one of the error messages
-			// Look for "method:<methodName>"
+			// Look for "method:<methodName>".
 			var methodName string
 			for _, errMsg := range details {
 				idx := strings.Index(errMsg, "method:")
 				if idx != -1 {
-					// Extract method name up to the next space or bracket or end of string
+					// Extract method name up to the next space or bracket or end of string.
 					rest := errMsg[idx+len("method:"):]
 					endIdx := strings.IndexFunc(rest, func(r rune) bool {
 						return r == ' ' || r == ']' || r == ')'
@@ -99,12 +98,13 @@ func GetErrorHandler(
 					break
 				}
 			}
-			// Check if method exists in methodMap or notificationMap
+			// Check if method exists in methodMap or notificationMap.
 			if methodName != "" {
 				if _, exists := methodMap[methodName]; !exists {
 					if _, exists := notificationMap[methodName]; !exists {
-						// Method not found
-						code = jsonrpcReqResp.MethodNotFoundError // You need to define this constant
+						// Method not found.
+						// You need to define this constant.
+						code = jsonrpcReqResp.MethodNotFoundError
 						message = fmt.Sprintf("Method '%s' not found", methodName)
 					}
 				}

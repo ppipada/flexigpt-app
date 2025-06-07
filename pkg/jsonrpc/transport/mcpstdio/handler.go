@@ -16,19 +16,19 @@ func Register(api huma.API,
 	methodMap map[string]jsonrpcReqResp.IMethodHandler,
 	notificationMap map[string]jsonrpcReqResp.INotificationHandler,
 ) {
-	// Get default operation
+	// Get default operation.
 	op := humaadapter.GetDefaultOperation()
 	op.Path = JSONRPCEndpoint
-	// Register the methods
+	// Register the methods.
 	humaadapter.Register(api, op, methodMap, notificationMap, nil, nil)
 }
 
 // For actual runs os.Stdin, os.Stdout can be passed as reader and writer respectively.
 func GetServer(r io.Reader, w io.Writer, handler http.Handler) *stdioNet.Server {
-	// Create the MessageFramer
+	// Create the MessageFramer.
 	framer := &stdioNet.LineFramer{}
 
-	// Create the MessageHandler, below is a jsonrpc packet on stdio to http adapter
+	// Create the MessageHandler, below is a jsonrpc packet on stdio to http adapter.
 	requestParams := RequestParams{
 		Method: http.MethodPost,
 		URL:    JSONRPCEndpoint,

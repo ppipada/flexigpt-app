@@ -10,20 +10,25 @@ import (
 type Operation string
 
 const (
-	OpSetFile   Operation = "setFile"   // whole file created / replaced
-	OpResetFile Operation = "resetFile" // Reset()
-	OpSetKey    Operation = "setKey"    // SetKey()
-	OpDeleteKey Operation = "deleteKey" // DeleteKey()
+	OpSetFile   Operation = "setFile"
+	OpResetFile Operation = "resetFile"
+	OpSetKey    Operation = "setKey"
+	OpDeleteKey Operation = "deleteKey"
 )
 
 // Event is delivered *after* a mutation has been written to disk.
 type Event struct {
-	Op        Operation
-	File      string         // absolute path of the backing JSON file
-	Keys      []string       // nil for file-level ops
-	OldValue  any            // nil for OpSetFile / OpResetFile
-	NewValue  any            // nil for delete
-	Data      map[string]any // deep-copy of the *entire* map after the change
+	Op Operation
+	// absolute path of the backing JSON file
+	File string
+	// nil for file-level ops
+	Keys []string
+	// nil for OpSetFile / OpResetFile
+	OldValue any
+	// nil for delete
+	NewValue any
+	// deep-copy of the *entire* map after the change
+	Data      map[string]any
 	Timestamp time.Time
 }
 

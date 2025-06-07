@@ -17,7 +17,7 @@ func NewRef(value string) *Ref {
 // UnmarshalJSON implements json.Unmarshaler for Ref.
 func (r *Ref) UnmarshalJSON(b []byte) error {
 	if r.StringUnion == nil {
-		// Initialize with allowed values if not already initialized
+		// Initialize with allowed values if not already initialized.
 		r.StringUnion = NewStringUnion(enumValuesRef...)
 	}
 	return r.StringUnion.UnmarshalJSON(b)

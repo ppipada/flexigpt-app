@@ -18,8 +18,6 @@ import (
 	"time"
 )
 
-// Handlers
-
 // echoHandler echoes back the received message.
 type echoHandler struct{}
 
@@ -53,8 +51,10 @@ func initClientServer(
 	options ...ClientOption,
 ) (*Client, *Server, func()) {
 	// Create connected pipes to simulate stdin and stdout.
-	clientReader, serverWriter := io.Pipe() // Client writes to serverReader
-	serverReader, clientWriter := io.Pipe() // Server writes to clientReader
+	// Client writes to serverReader.
+	clientReader, serverWriter := io.Pipe()
+	// Server writes to clientReader.
+	serverReader, clientWriter := io.Pipe()
 
 	// Create StdioConn for the client and server using the connected pipes.
 	clientConn := NewStdioConn(
@@ -79,7 +79,7 @@ func initClientServer(
 			fmt.Printf("Server error: %v\n", err)
 		}
 	}()
-	// Client setup
+	// Client setup.
 	client := NewClient(clientConn, framer, options...)
 
 	// Teardown function to close client and server.
@@ -96,15 +96,16 @@ func randomBytes(n int) []byte {
 	b := make([]byte, n)
 	_, err := rand.Read(b)
 	if err != nil {
-		// Handle error appropriately in a real application
+		// Handle error appropriately in a real application.
 		fmt.Println("Error generating random bytes:", err)
 		return nil
 	}
 
-	// Replace any occurrence of '\n' with another character, e.g., 'A'
+	// Replace any occurrence of '\n' with another character, e.g., 'A'.
 	for i := range b {
 		if b[i] == '\n' {
-			b[i] = 'A' // Replace '\n' with 'A' or any other character you prefer
+			// Replace '\n' with 'A' or any other character you prefer.
+			b[i] = 'A'
 		}
 	}
 
@@ -146,8 +147,9 @@ func TestSynchronousSingleRequest(t *testing.T) {
 			expectedReply: []byte(strings.Repeat("A", 1024)),
 		},
 		{
-			name:          "Special characters",
-			message:       []byte("こんにちは世界"), // "Hello World" in Japanese
+			name: "Special characters",
+			// "Hello World" in Japanese.
+			message:       []byte("こんにちは世界"),
 			expectedReply: []byte("こんにちは世界"),
 		},
 		{
@@ -161,14 +163,16 @@ func TestSynchronousSingleRequest(t *testing.T) {
 			expectedReply: []byte("😊🌟🚀"),
 		},
 		{
-			name:          "Random data",
-			message:       randomBytes(512),
-			expectedReply: nil, // We'll compare the lengths instead
+			name:    "Random data",
+			message: randomBytes(512),
+			// We'll compare the lengths instead.
+			expectedReply: nil,
 		},
 		{
-			name:          "msg interface",
-			message:       msgReqBytes,
-			expectedReply: msgReqBytes, // We'll compare the lengths instead
+			name:    "msg interface",
+			message: msgReqBytes,
+			// We'll compare the lengths instead.
+			expectedReply: msgReqBytes,
 		},
 	}
 
@@ -258,7 +262,8 @@ func TestConcurrentRequestsSingleClient(t *testing.T) {
 }
 
 func TestClientRequestTimeout(t *testing.T) {
-	delay := 2 * time.Second // Server will delay response by 2 seconds
+	// Server will delay response by 2 seconds.
+	delay := 2 * time.Second
 	timeout := 1 * time.Second
 
 	handler := &delayHandler{delay: delay}

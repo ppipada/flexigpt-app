@@ -20,7 +20,8 @@ func NewHTTPClient(t *testing.T) *HTTPJSONRPCClient {
 	handler := SetupSSETransport()
 	server := httptest.NewUnstartedServer(handler)
 	server.Start()
-	t.Cleanup(server.Close) // Ensure server closes after test
+	// Ensure server closes after test.
+	t.Cleanup(server.Close)
 	client := server.Client()
 	url := server.URL + JSONRPCEndpoint
 	return &HTTPJSONRPCClient{

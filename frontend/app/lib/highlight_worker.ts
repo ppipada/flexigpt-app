@@ -27,9 +27,7 @@ const baseLangs = [
 	'cpp',
 ];
 
-/* ------------------------------------------------------------------ */
-/*  Singleton highlighter — store the PROMISE so we never create two  */
-/* ------------------------------------------------------------------ */
+// Singleton highlighter — store the PROMISE so we never create two.
 let highlighterPromise: Promise<Highlighter> | undefined;
 
 async function init(): Promise<Highlighter> {
@@ -42,12 +40,10 @@ async function init(): Promise<Highlighter> {
 	return highlighterPromise;
 }
 
-/*  Kick it off right now so grammars & wasm load while the UI idles.  */
+// Kick it off right now so grammars & wasm load while the UI idles.
 init().catch(console.error);
 
-/* ------------------------------------------------------------------ */
-/*  Message handler                                                    */
-/* ------------------------------------------------------------------ */
+// Message handler.
 self.onmessage = async (evt: MessageEvent<Request>) => {
 	const { id, code, lang } = evt.data;
 	const msg: Response = { id };
@@ -60,7 +56,7 @@ self.onmessage = async (evt: MessageEvent<Request>) => {
 		if (!known) {
 			msg.html = hl.codeToHtml(code, { lang: 'text', theme: 'monokai' });
 		} else {
-			/* load on demand – Shiki caches internally */
+			// Load on demand – Shiki caches internally.
 			if (!hl.getLoadedLanguages().includes(lang as any)) await hl.loadLanguage(lang as any);
 
 			msg.html = hl.codeToHtml(code, { lang, theme: 'monokai' });

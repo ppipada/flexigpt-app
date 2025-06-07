@@ -34,10 +34,10 @@ func FilterSensitiveInfo(data map[string]any) map[string]any {
 	filteredData := make(map[string]any)
 	for key, value := range data {
 		if containsSensitiveKey(key) {
-			// Mask the sensitive value
+			// Mask the sensitive value.
 			filteredData[key] = "***"
 		} else {
-			// Recursively process nested data structures
+			// Recursively process nested data structures.
 			filteredData[key] = deepCopyAndFilter(value)
 		}
 	}
@@ -49,17 +49,17 @@ func FilterSensitiveInfo(data map[string]any) map[string]any {
 func deepCopyAndFilter(value any) any {
 	switch v := value.(type) {
 	case map[string]any:
-		// Process nested map
+		// Process nested map.
 		return FilterSensitiveInfo(v)
 	case []any:
-		// Process each element in the slice
+		// Process each element in the slice.
 		newSlice := make([]any, len(v))
 		for i, elem := range v {
 			newSlice[i] = deepCopyAndFilter(elem)
 		}
 		return newSlice
 	default:
-		// Return the value as is for other data types
+		// Return the value as is for other data types.
 		return v
 	}
 }
@@ -78,24 +78,24 @@ func containsSensitiveKey(key string) bool {
 func generateCurlCommand(config *spec.APIRequestDetails) string {
 	var curlCommand strings.Builder
 
-	// Add HTTP method
+	// Add HTTP method.
 	if config.Method != nil {
 		curlCommand.WriteString("curl -X " + strings.ToUpper(*config.Method) + " ")
 	}
 
-	// Add URL
+	// Add URL.
 	if config.URL != nil {
 		curlCommand.WriteString("\"" + *config.URL + "\" ")
 	}
 
-	// Add headers
+	// Add headers.
 	if config.Headers != nil {
 		for key, value := range config.Headers {
 			curlCommand.WriteString(fmt.Sprintf("-H \"%s: %v\" ", key, value))
 		}
 	}
 
-	// Add data
+	// Add data.
 	if config.Data != nil {
 		dataBytes, err := json.Marshal(config.Data)
 		if err == nil {
@@ -116,7 +116,8 @@ func captureRequestDetails(req *http.Request) *spec.APIRequestDetails {
 	var data map[string]any
 	if req.Body != nil {
 		bodyBytes, _ := io.ReadAll(req.Body)
-		req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes)) // Reset body for further use
+		// Reset body for further use.
+		req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 		_ = json.Unmarshal(bodyBytes, &data)
 	}
 
@@ -149,10 +150,10 @@ func CaptureResponseDetails(
 	if resp.Body != nil {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err == nil {
-			// Attempt to unmarshal the body into 'data'
+			// Attempt to unmarshal the body into 'data'.
 			_ = json.Unmarshal(bodyBytes, &data)
 		}
-		// Reconstruct the body so it can be read again later
+		// Reconstruct the body so it can be read again later.
 		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	}
 
@@ -185,19 +186,19 @@ func (lc *loggingReadCloser) Close() error {
 	}
 	dataBytes := lc.buf.Bytes()
 
-	// Process the data based on its type
+	// Process the data based on its type.
 	var data any
 	err = json.Unmarshal(dataBytes, &data)
 	if err != nil {
-		// Text data
+		// Text data.
 		lc.debugResp.ResponseDetails.Data = string(dataBytes)
 	} else {
 		mapData, ok := data.(map[string]any)
 		if ok {
-			// JSON data
+			// JSON data.
 			lc.debugResp.ResponseDetails.Data = FilterSensitiveInfo(mapData)
 		} else {
-			// Text data
+			// Text data.
 			lc.debugResp.ResponseDetails.Data = string(dataBytes)
 		}
 	}
@@ -216,7 +217,8 @@ type LogTransport struct {
 }
 
 func getDetailsStr(v any) string {
-	s, err := json.MarshalIndent(v, "", "  ") // Two spaces for indentation
+	// Two spaces for indentation.
+	s, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return fmt.Sprintf("Could not get json of object: %+v", v)
 	}
@@ -233,35 +235,35 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		debugResp = &DebugHTTPResponse{}
 	}
 
-	// Capture request details
+	// Capture request details.
 	reqDetails := captureRequestDetails(req)
 	debugResp.RequestDetails = reqDetails
 
-	// Log request details if LogMode is enabled
+	// Log request details if LogMode is enabled.
 	if t.LogMode {
 		slog.Debug("Roundtripper", "Request Details", getDetailsStr(reqDetails))
 	}
 
-	// Perform the request
+	// Perform the request.
 	resp, err := t.Transport.RoundTrip(req)
 
-	// Capture response details
+	// Capture response details.
 	var respDetails *spec.APIResponseDetails
 	if resp != nil {
-		// Capture headers
+		// Capture headers.
 		headers := make(map[string]any)
 		for key, values := range resp.Header {
 			headers[key] = strings.Join(values, ", ")
 		}
 
-		// Initialize response details
+		// Initialize response details.
 		respDetails = &spec.APIResponseDetails{
 			Status:  resp.StatusCode,
 			Headers: FilterSensitiveInfo(headers),
 		}
 		debugResp.ResponseDetails = respDetails
 
-		// Wrap the response body
+		// Wrap the response body.
 		buffer := new(bytes.Buffer)
 		resp.Body = &loggingReadCloser{
 			ReadCloser: resp.Body,
@@ -271,7 +273,7 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 	}
 
-	// Capture error details if an error occurred
+	// Capture error details if an error occurred.
 	var errorDetails *spec.APIErrorDetails
 	if err != nil {
 		errorDetails = &spec.APIErrorDetails{
@@ -282,7 +284,7 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		debugResp.ErrorDetails = errorDetails
 	}
 
-	// Log response details if LogMode is enabled
+	// Log response details if LogMode is enabled.
 	if t.LogMode {
 		if respDetails != nil {
 			slog.Debug("Roundtripper", "Response Details", getDetailsStr(respDetails))
@@ -292,7 +294,7 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 	}
 
-	// Return the response and error
+	// Return the response and error.
 	return resp, err
 }
 
@@ -308,7 +310,7 @@ func NewDebugHTTPClient(logMode bool) *http.Client {
 
 func AddDebugResponseToCtx(ctx context.Context) context.Context {
 	debugResp := &DebugHTTPResponse{}
-	// Create a context with the DebugHTTPResponse
+	// Create a context with the DebugHTTPResponse.
 	return context.WithValue(ctx, debugHTTPResponseKey, debugResp)
 }
 

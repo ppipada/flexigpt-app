@@ -30,7 +30,7 @@ func getEmbeddingFunc(
 	apiKey string,
 ) (chromem.EmbeddingFunc, error) {
 	// These are from OpenAI platform
-	// If other providers like Azure or OLlama are to be used which provide OpenAI compatible API, declareNewIDs and use
+	// If other providers like Azure or OLlama are to be used which provide OpenAI compatible API, declareNewIDs and use.
 	omodel, exists := embeddingModelMapOpenAI[funcID]
 	if exists {
 		return chromem.NewEmbeddingFuncOpenAI(apiKey, omodel), nil
@@ -102,14 +102,14 @@ func NewChromemDocumentDB(options ...Option) (*ChromemDocumentDB, error) {
 		}
 	}
 
-	// Initialize the underlying chromem DB
+	// Initialize the underlying chromem DB.
 	chromemDB, err := chromem.NewPersistentDB(db.basePath, db.compress)
 	if err != nil {
 		return nil, err
 	}
 	db.chromemDB = chromemDB
 
-	// Generate a unique ID for the document DB
+	// Generate a unique ID for the document DB.
 	u, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -132,7 +132,7 @@ func (db *ChromemDocumentDB) CreateCollection(
 		return nil, err
 	}
 
-	// Add the name to the metadata
+	// Add the name to the metadata.
 	if metadata == nil {
 		metadata = make(map[string]string)
 	}
@@ -143,7 +143,7 @@ func (db *ChromemDocumentDB) CreateCollection(
 		return nil, err
 	}
 
-	// Use the generated ID as the name in chromem
+	// Use the generated ID as the name in chromem.
 	collectionID := spec.DocumentCollectionID(u.String())
 	_, err = db.chromemDB.CreateCollection(string(collectionID), metadata, efunc)
 	if err != nil {
@@ -173,7 +173,7 @@ func (db *ChromemDocumentDB) DeleteCollection(
 		return errors.New("collection not found")
 	}
 
-	// Use the collection ID as the name in chromem
+	// Use the collection ID as the name in chromem.
 	err := db.chromemDB.DeleteCollection(string(id))
 	if err != nil {
 		return err

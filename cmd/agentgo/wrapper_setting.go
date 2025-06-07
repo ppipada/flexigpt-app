@@ -37,7 +37,7 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 
 	for providerName, aiSetting := range allSettingsResponse.Body.AISettings {
 		if _, exists := aiproviderConsts.InbuiltProviderModels[providerName]; exists {
-			// Update inbuilt providers
+			// Update inbuilt providers.
 			if aiSetting.APIKey != "" {
 				_, err = p.SetProviderAPIKey(
 					&aiproviderSpec.SetProviderAPIKeyRequest{
@@ -65,7 +65,7 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 				return err
 			}
 		} else {
-			// Add custom providers
+			// Add custom providers.
 			_, err := p.AddProvider(&aiproviderSpec.AddProviderRequest{
 				Provider: providerName,
 				Body: &aiproviderSpec.AddProviderRequestBody{

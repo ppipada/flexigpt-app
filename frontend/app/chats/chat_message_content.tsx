@@ -5,20 +5,16 @@ import { useDebounced } from '@/lib/debounce';
 
 import EnhancedMarkdown from '@/components/markdown_enhanced';
 
-/* ------------------------------------------------------------------ */
-/*  props                                                             */
-/* ------------------------------------------------------------------ */
 interface ChatMessageContentProps {
-	content: string; // final text
-	streamedText?: string; // partial text while streaming
+	// Final text
+	content: string;
+	// Partial text while streaming.
+	streamedText?: string;
 	isStreaming?: boolean;
 	align: string;
 	renderAsMarkdown?: boolean;
 }
 
-/* ------------------------------------------------------------------ */
-/*  component                                                         */
-/* ------------------------------------------------------------------ */
 const ChatMessageContent = ({
 	content,
 	streamedText = '',
@@ -26,11 +22,10 @@ const ChatMessageContent = ({
 	align,
 	renderAsMarkdown = true,
 }: ChatMessageContentProps) => {
-	/* ----------------------- pick the live text ---------------------- */
 	const liveText = isStreaming ? streamedText : content;
-	const textToRender = useDebounced(liveText, 250); // max ~4×/sec
+	// Max ~4×/sec.
+	const textToRender = useDebounced(liveText, 250);
 
-	/* ---------------------- plain-text branch ------------------------ */
 	if (!renderAsMarkdown) {
 		const plainText = useMemo(
 			() =>
@@ -48,8 +43,6 @@ const ChatMessageContent = ({
 
 		return <div className="bg-base-100 px-4 py-2">{plainText}</div>;
 	}
-
-	/* ---------------------- markdown branch -------------------------- */
 	return (
 		<div className="bg-base-100 px-4 py-2">
 			<EnhancedMarkdown text={textToRender} align={align} isStreaming={isStreaming} />
@@ -57,9 +50,6 @@ const ChatMessageContent = ({
 	);
 };
 
-/* ------------------------------------------------------------------ */
-/*  memo                                                              */
-/* ------------------------------------------------------------------ */
 function areEqual(prev: ChatMessageContentProps, next: ChatMessageContentProps) {
 	return (
 		prev.content === next.content &&

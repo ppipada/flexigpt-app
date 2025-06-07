@@ -62,13 +62,13 @@ func NewMapDirectoryStore(
 	createIfNotExists bool,
 	opts ...Option,
 ) (*MapDirectoryStore, error) {
-	// Resolve the base directory path
+	// Resolve the base directory path.
 	baseDir, err := filepath.Abs(baseDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve base directory path: %w", err)
 	}
 
-	// Ensure the base directory exists or create it if allowed
+	// Ensure the base directory exists or create it if allowed.
 	if _, err := os.Stat(baseDir); os.IsNotExist(err) {
 		if createIfNotExists {
 			if err := os.MkdirAll(baseDir, os.ModePerm); err != nil {
@@ -80,9 +80,11 @@ func NewMapDirectoryStore(
 	}
 
 	mds := &MapDirectoryStore{
-		baseDir:           baseDir,
-		pageSize:          25,                     // Default page size
-		PartitionProvider: &NoPartitionProvider{}, // Default to no partitioning
+		baseDir: baseDir,
+		// Default page size.
+		pageSize: 25,
+		// Default to no partitioning.
+		PartitionProvider: &NoPartitionProvider{},
 	}
 
 	for _, opt := range opts {
@@ -95,7 +97,7 @@ func NewMapDirectoryStore(
 // SetFileData creates or truncates a file and sets the provided data.
 // If the data is nil, it initializes an empty map.
 func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]any) error {
-	// Check if the filename contains any directory components
+	// Check if the filename contains any directory components.
 	if strings.Contains(filename, string(os.PathSeparator)) {
 		return fmt.Errorf("filename should not contain directory components: %s", filename)
 	}
@@ -106,7 +108,7 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]any) 
 	partitionDir := mds.PartitionProvider.GetPartitionDir(filename)
 	filePath := filepath.Join(mds.baseDir, partitionDir, filename)
 
-	// Ensure the partition directory exists
+	// Ensure the partition directory exists.
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 		return fmt.Errorf(
 			"failed to create partition directory %s: %w",
@@ -115,7 +117,7 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]any) 
 		)
 	}
 
-	// Create or truncate the file
+	// Create or truncate the file.
 	store, err := simplemapdbFileStore.NewMapFileStore(
 		filePath,
 		data,
@@ -126,7 +128,7 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]any) 
 		return fmt.Errorf("failed to create or truncate file %s: %w", filename, err)
 	}
 
-	// Set data
+	// Set data.
 	if err := store.SetAll(data); err != nil {
 		return fmt.Errorf("failed to set data for file %s: %w", filename, err)
 	}
@@ -165,7 +167,7 @@ func (mds *MapDirectoryStore) DeleteFile(filename string) error {
 func (mds *MapDirectoryStore) ListFiles(
 	initialSortOrder, pageToken string,
 ) (filenames []string, nextPageToken string, err error) {
-	// Decode page token
+	// Decode page token.
 	var tokenData struct {
 		PartitionPageToken string `json:"PartitionPageToken"`
 		FileIndex          int    `json:"FileIndex"`
@@ -180,12 +182,12 @@ func (mds *MapDirectoryStore) ListFiles(
 			return nil, "", fmt.Errorf("invalid page token: %w", err)
 		}
 	} else {
-		// Use the initial sort order for the first page
+		// Use the initial sort order for the first page.
 		tokenData.SortOrder = initialSortOrder
 	}
 
 	for {
-		// Get a paginated list of partition directories
+		// Get a paginated list of partition directories.
 		partitions, nextPartitionPageToken, err := mds.PartitionProvider.ListPartitions(
 			mds.baseDir,
 			tokenData.SortOrder,
@@ -210,7 +212,7 @@ func (mds *MapDirectoryStore) ListFiles(
 			)
 		}
 
-		// Collect file names
+		// Collect file names.
 		var partitionFileNames []string
 		for _, file := range files {
 			if !file.IsDir() {
@@ -218,7 +220,7 @@ func (mds *MapDirectoryStore) ListFiles(
 			}
 		}
 
-		// Sort file names
+		// Sort file names.
 		switch strings.ToLower(tokenData.SortOrder) {
 		case "asc":
 			sort.Strings(partitionFileNames)
@@ -231,9 +233,9 @@ func (mds *MapDirectoryStore) ListFiles(
 		for j := tokenData.FileIndex; j < len(partitionFileNames); j++ {
 			filenames = append(filenames, filepath.Join(partitions[0], partitionFileNames[j]))
 			if len(filenames) >= mds.pageSize {
-				// Check if we are at the end of the current partition
+				// Check if we are at the end of the current partition.
 				if j+1 < len(partitionFileNames) {
-					// More files in the current partition
+					// More files in the current partition.
 					nextPageTokenData, _ := json.Marshal(struct {
 						PartitionPageToken string `json:"PartitionPageToken"`
 						FileIndex          int    `json:"FileIndex"`
@@ -242,7 +244,7 @@ func (mds *MapDirectoryStore) ListFiles(
 					nextPageToken = base64.StdEncoding.EncodeToString(nextPageTokenData)
 					return filenames, nextPageToken, nil
 				} else {
-					// Move to the next partition
+					// Move to the next partition.
 					nextPageTokenData, _ := json.Marshal(struct {
 						PartitionPageToken string `json:"PartitionPageToken"`
 						FileIndex          int    `json:"FileIndex"`
@@ -253,14 +255,15 @@ func (mds *MapDirectoryStore) ListFiles(
 				}
 			}
 		}
-		tokenData.FileIndex = 0 // Reset file index for the next partition
+		// Reset file index for the next partition.
+		tokenData.FileIndex = 0
 
-		// If there are no more partitions to process, break the loop
+		// If there are no more partitions to process, break the loop.
 		if nextPartitionPageToken == "" {
 			break
 		}
 
-		// Update the partition page token for the next iteration
+		// Update the partition page token for the next iteration.
 		tokenData.PartitionPageToken = nextPartitionPageToken
 	}
 

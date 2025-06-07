@@ -19,7 +19,8 @@ func (d JSONEncoderDecoder) Encode(w io.Writer, value any) error {
 	}
 
 	encoder := json.NewEncoder(w)
-	encoder.SetIndent("", "  ") // For pretty output
+	// For pretty output.
+	encoder.SetIndent("", "  ")
 
 	if err := encoder.Encode(value); err != nil {
 		return fmt.Errorf("failed to encode value: %w", err)
@@ -53,17 +54,17 @@ func (d JSONEncoderDecoder) Decode(r io.Reader, value any) error {
 }
 
 func StructWithJSONTagsToMap(data any) (map[string]any, error) {
-	// Check if the input is nil
+	// Check if the input is nil.
 	if data == nil {
 		return nil, errors.New("input data cannot be nil")
 	}
-	// Marshal the struct to JSON
+	// Marshal the struct to JSON.
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal struct to JSON: %w", err)
 	}
 
-	// Unmarshal the JSON into a map
+	// Unmarshal the JSON into a map.
 	var result map[string]any
 	if err := json.Unmarshal(jsonData, &result); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal JSON to map: %w", err)
@@ -77,28 +78,29 @@ func MapToStructWithJSONTags(data map[string]any, out any) error {
 		return errors.New("input data cannot be nil")
 	}
 
-	// Check if out is a pointer
+	// Check if out is a pointer.
 	v := reflect.ValueOf(out)
 	if v.Kind() != reflect.Ptr || v.IsNil() {
 		return errors.New("output parameter must be a non-nil pointer to a struct")
 	}
 
-	// Check if out is pointing to a struct
+	// Check if out is pointing to a struct.
 	if v.Elem().Kind() != reflect.Struct {
 		return errors.New("output parameter must be a pointer to a struct")
 	}
 
-	// Marshal the map to JSON
+	// Marshal the map to JSON.
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("failed to marshal map to JSON: %w", err)
 	}
 
-	// Use a JSON decoder with DisallowUnknownFields
+	// Use a JSON decoder with DisallowUnknownFields.
 	decoder := json.NewDecoder(strings.NewReader(string(jsonData)))
-	decoder.DisallowUnknownFields() // This will cause an error if there are unknown fields
+	// This will cause an error if there are unknown fields.
+	decoder.DisallowUnknownFields()
 
-	// Unmarshal the JSON into the struct
+	// Unmarshal the JSON into the struct.
 	if err := decoder.Decode(out); err != nil {
 		return fmt.Errorf("failed to unmarshal JSON to struct: %w", err)
 	}

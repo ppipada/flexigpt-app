@@ -229,7 +229,7 @@ func TestIntString_MarshalJSON(t *testing.T) {
 		{
 			name:  "String containing special characters",
 			value: "special_chars!@#$%^&*()",
-			// Need html escaped output
+			// Need html escaped output.
 			wantOutput: `"special_chars!@#$%^\u0026*()"`,
 			wantErr:    false,
 		},
@@ -385,7 +385,7 @@ func TestIntString_HelperMethods(t *testing.T) {
 
 // Additional test to ensure proper error messages.
 func TestIntString_ErrorMessages(t *testing.T) {
-	// Unmarshaling an array should return a specific error message
+	// Unmarshaling an array should return a specific error message.
 	data := `["hello", 123]`
 	var is IntString
 	err := json.Unmarshal([]byte(data), &is)
@@ -397,7 +397,7 @@ func TestIntString_ErrorMessages(t *testing.T) {
 		t.Errorf("Error message = %v, want %v", err.Error(), expectedErrMsg)
 	}
 
-	// Marshaling an unsupported type should return a specific error message
+	// Marshaling an unsupported type should return a specific error message.
 	is = IntString{Value: []int{1, 2, 3}}
 	_, err = json.Marshal(is)
 	if err == nil {

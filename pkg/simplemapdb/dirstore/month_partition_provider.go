@@ -45,7 +45,7 @@ func (p *MonthPartitionProvider) ListPartitions(
 		}
 	}
 
-	// Sort partitions
+	// Sort partitions.
 	switch strings.ToLower(sortOrder) {
 	case "asc":
 		sort.Strings(partitions)
@@ -55,7 +55,7 @@ func (p *MonthPartitionProvider) ListPartitions(
 		return nil, "", fmt.Errorf("invalid sort order: %s", sortOrder)
 	}
 
-	// Decode page token
+	// Decode page token.
 	start := 0
 	if pageToken != "" {
 		tokenData, err := base64.StdEncoding.DecodeString(pageToken)
@@ -67,10 +67,10 @@ func (p *MonthPartitionProvider) ListPartitions(
 		}
 	}
 
-	// Apply pagination
+	// Apply pagination.
 	end := min(start+pageSize, len(partitions))
 
-	// Generate next page token
+	// Generate next page token.
 	if end < len(partitions) {
 		nextPageTokenData, _ := json.Marshal(end)
 		nextPageToken = base64.StdEncoding.EncodeToString(nextPageTokenData)

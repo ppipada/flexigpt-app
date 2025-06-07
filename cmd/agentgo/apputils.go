@@ -19,7 +19,7 @@ func getActualURL(origurl string) string {
 		return callurl
 	}
 
-	// Handle if it's a page request
+	// Handle if it's a page request.
 	if strings.HasSuffix(callurl, "/") {
 		return callurl[len(FrontendPathPrefix):] + "index.html"
 	}
@@ -35,23 +35,23 @@ func getActualURL(origurl string) string {
 }
 
 func LogStackTrace() {
-	// Create a buffer to hold the stack trace
+	// Create a buffer to hold the stack trace.
 	buf := make([]byte, 1024)
-	// Capture the stack trace
+	// Capture the stack trace.
 	n := goruntime.Stack(buf, false)
-	// Log the stack trace
+	// Log the stack trace.
 	slog.Info("Stack", "Trace", string(buf[:n]))
 }
 
 func URLCleanerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		// Clean the URL using getActualURL
+		// Clean the URL using getActualURL.
 		cleanedURL := getActualURL(req.URL.Path)
 
-		// Update the request URL path
+		// Update the request URL path.
 		req.URL.Path = cleanedURL
 
-		// Call the next handler
+		// Call the next handler.
 		next.ServeHTTP(w, req)
 	})
 }

@@ -46,7 +46,7 @@ func WithRequestIDFunctions(
 func WithDeadLetterQueue(capacity int) ClientOption {
 	return func(c *Client) {
 		if capacity < 4096 {
-			capacity = 4096 // Ensure minimum capacity of 4096
+			capacity = 4096
 		}
 		c.deadLetters = make(chan DeadLetterItem, capacity)
 	}
@@ -89,8 +89,8 @@ func NewClient(conn net.Conn, framer MessageFramer, options ...ClientOption) *Cl
 
 		framer:         framer,
 		pending:        make(map[string]chan []byte),
-		deadLetters:    make(chan DeadLetterItem, 4096), // Default capacity 4096
-		requestTimeout: time.Minute,                     // Default timeout of 1 minute
+		deadLetters:    make(chan DeadLetterItem, 4096),
+		requestTimeout: time.Minute,
 		done:           make(chan struct{}),
 	}
 	// Apply options

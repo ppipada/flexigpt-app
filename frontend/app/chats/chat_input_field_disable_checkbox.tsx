@@ -1,6 +1,3 @@
-/**
- * Subcomponent for "Disable previous messages" checkbox
- */
 export default function DisablePreviousMessagesCheckbox(props: {
 	disablePreviousMessages: boolean;
 	setDisablePreviousMessages: React.Dispatch<React.SetStateAction<boolean>>;

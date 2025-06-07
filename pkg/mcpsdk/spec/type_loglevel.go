@@ -26,7 +26,7 @@ func NewLoggingLevel(value string) *LoggingLevel {
 // UnmarshalJSON implements json.Unmarshaler for LoggingLevel.
 func (r *LoggingLevel) UnmarshalJSON(b []byte) error {
 	if r.StringUnion == nil {
-		// Initialize with allowed values if not already initialized
+		// Initialize with allowed values if not already initialized.
 		r.StringUnion = NewStringUnion(enumValuesLoggingLevel...)
 	}
 	return r.StringUnion.UnmarshalJSON(b)

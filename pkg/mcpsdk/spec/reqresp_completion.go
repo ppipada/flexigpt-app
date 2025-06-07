@@ -26,9 +26,11 @@ type CompleteRequestParamsArgument struct {
 
 // Identifies a completion.
 type CompletionReference struct {
-	Type Ref     `json:"type"`
-	Name *string `json:"name"` // This should be present for prompt
-	URI  *string `json:"uri"`  // This should be present for resource
+	Type Ref `json:"type"`
+	// This should be present for prompt.
+	Name *string `json:"name"`
+	// This should be present for resource.
+	URI *string `json:"uri"`
 }
 
 // The server's response to a completion/complete request.

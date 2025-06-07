@@ -20,7 +20,7 @@ type Prompt struct {
 	// The name of the prompt or prompt template.
 	Name string `json:"name"`
 
-	// An optional description of what this prompt provides
+	// An optional description of what this prompt provides.
 	Description *string `json:"description,omitempty"`
 
 	// A list of arguments to use for templating the prompt.

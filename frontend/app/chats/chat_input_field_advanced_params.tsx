@@ -8,18 +8,12 @@ interface AdvancedParamsModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	currentModel: ChatOptions;
-	/**
-	 * Callback when the user saves changes. Returns the updated ChatOptions.
-	 */
 	onSave: (updatedModel: ChatOptions) => void;
 }
 
-/**
- * A modal that allows editing advanced parameters:
- * streaming, maxPromptLength, maxOutputLength, systemPrompt.
- *
- * It does simple numeric validations and then calls `onSave` with the updated model.
- */
+// A modal that allows editing advanced parameters:
+// streaming, maxPromptLength, maxOutputLength, systemPrompt.
+// It does simple numeric validations and then calls `onSave` with the updated model.
 const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, currentModel, onSave }) => {
 	// We store these fields locally as strings (for numeric fields) to allow easy blank entry.
 	const [stream, setStream] = useState<boolean>(false);
@@ -33,7 +27,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 		maxOutputLength?: string;
 	}>({});
 
-	/** On modal open, initialize local state with the currentModel fields */
+	// On modal open, initialize local state with the currentModel fields.
 	useEffect(() => {
 		if (isOpen) {
 			setStream(currentModel.stream);
@@ -48,7 +42,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 
 	type ValidationErrors = Partial<Record<ValidationField, string>>;
 
-	/** Validate a single field name, storing the result in `errors` state. */
+	// Validate a single field name, storing the result in `errors` state.
 	const validateField = (field: ValidationField, value: string) => {
 		const newErrors: ValidationErrors = Object.fromEntries(Object.entries(errors).filter(([key]) => key !== field));
 
@@ -62,30 +56,28 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 		setErrors(newErrors);
 	};
 
-	/** Check overall form validity by verifying no errors in `errors` */
 	const isFormValid = useMemo(() => {
 		return !Object.values(errors).some(Boolean);
 	}, [errors]);
 
-	/** Handle the user clicking "Save" in the modal */
 	const handleSave = (e: React.FormEvent) => {
 		e.preventDefault();
 
-		// Re-validate numeric fields
+		// Re-validate numeric fields.
 		validateField('maxPromptLength', maxPromptLength);
 		validateField('maxOutputLength', maxOutputLength);
 
 		if (!isFormValid) {
-			return; // there's an error, do not proceed
+			return; // there's an error, do not proceed.
 		}
 
-		// Parse numeric fields; if empty, let them remain as the existing model's values
+		// Parse numeric fields; if empty, let them remain as the existing model's values.
 		const parsedMaxPromptLength =
 			maxPromptLength.trim() === '' ? currentModel.maxPromptLength : Number(maxPromptLength.trim());
 		const parsedMaxOutputLength =
 			maxOutputLength.trim() === '' ? currentModel.maxOutputLength : Number(maxOutputLength.trim());
 
-		// Build the updated model
+		// Build the updated model.
 		const updatedModel: ChatOptions = {
 			...currentModel,
 			stream,
@@ -104,7 +96,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 	return (
 		<dialog className="modal modal-open">
 			<div className="modal-box max-w-xl max-h-[80vh] overflow-auto rounded-2xl">
-				{/* -- Header -- */}
+				{/* Header */}
 				<div className="flex justify-between items-center mb-4">
 					<h3 className="font-bold text-lg">Advanced Model Parameters</h3>
 					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close" title="Close">
@@ -112,7 +104,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 					</button>
 				</div>
 
-				{/* -- Form for advanced fields -- */}
+				{/* Form for advanced fields */}
 				<form onSubmit={handleSave} className="space-y-4">
 					{/* Toggle: stream */}
 					<div className="grid grid-cols-12 items-center gap-2">

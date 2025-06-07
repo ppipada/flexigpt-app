@@ -6,12 +6,10 @@ import (
 	"testing"
 )
 
-// helper --------------------------------------------------------------------
-
 func newTestEngine(t *testing.T) *Engine {
 	t.Helper()
 	tmp := t.TempDir()
-	e, err := New(Config{
+	e, err := NewEngine(Config{
 		DBPath: filepath.Join(tmp, "fts.sqlite"),
 		Table:  "docs",
 		Columns: []Column{
@@ -25,8 +23,6 @@ func newTestEngine(t *testing.T) *Engine {
 	return e
 }
 
-/* ------------------------------------------------------------------ */
-
 func TestIsEmptyAndCRUD(t *testing.T) {
 	e := newTestEngine(t)
 	isEmp, _ := e.IsEmpty(t.Context())
@@ -34,7 +30,7 @@ func TestIsEmptyAndCRUD(t *testing.T) {
 		t.Fatal("new engine should be empty")
 	}
 
-	// insert two docs ---------------------------------------------------
+	// insert  docs
 	if err := e.Upsert(t.Context(), "doc/alpha", map[string]string{
 		"title": "hello world",
 		"body":  "ignored",
@@ -52,14 +48,14 @@ func TestIsEmptyAndCRUD(t *testing.T) {
 		t.Fatal("index should not be empty after inserts")
 	}
 
-	// search – should hit two ------------------------------------------
+	// search – should hit two
 	hits, next, err := e.Search(t.Context(), "hello", "", 10)
 	if err != nil || len(hits) != 2 || next != "" {
 		t.Fatalf("search expected 2 hits, got %d (next=%q, err=%v)",
 			len(hits), next, err)
 	}
 
-	// update one, delete other -----------------------------------------
+	// update one, delete other
 	if err := e.Upsert(t.Context(), "doc/alpha", map[string]string{
 		"title": "updated",
 		"body":  "",
@@ -73,8 +69,6 @@ func TestIsEmptyAndCRUD(t *testing.T) {
 		t.Fatalf("expected 0 hits, got %d", len(hits))
 	}
 }
-
-/* ------------------------------------------------------------------ */
 
 func TestWeightRanking(t *testing.T) {
 	e := newTestEngine(t)
@@ -104,8 +98,6 @@ func TestWeightRanking(t *testing.T) {
 	}
 }
 
-/* ------------------------------------------------------------------ */
-
 func TestPaginationToken(t *testing.T) {
 	e := newTestEngine(t)
 
@@ -134,7 +126,8 @@ func TestPaginationToken(t *testing.T) {
 		}
 		total += len(hits)
 		if next == "" {
-			if len(hits) != 3 { // last page
+			// last page
+			if len(hits) != 3 {
 				t.Fatalf("last page size, want 3, got %d", len(hits))
 			}
 			break
@@ -149,16 +142,12 @@ func TestPaginationToken(t *testing.T) {
 	}
 }
 
-/* ------------------------------------------------------------------ */
-/*  new edge-case & error-path tests                                  */
-/* ------------------------------------------------------------------ */
-
 func TestEdgeCases(t *testing.T) {
 	t.Run("constructor failures", func(t *testing.T) {
-		if _, err := New(Config{DBPath: ":memory:", Table: "t"}); err == nil {
+		if _, err := NewEngine(Config{DBPath: ":memory:", Table: "t"}); err == nil {
 			t.Error("want error for no columns")
 		}
-		if _, err := New(Config{
+		if _, err := NewEngine(Config{
 			Table:   "t",
 			Columns: []Column{{Name: "c"}},
 		}); err == nil {

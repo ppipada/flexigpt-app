@@ -87,7 +87,7 @@ func TestMapDirectoryStore(t *testing.T) {
 			partitionDir := filepath.Join(baseDir, tt.expectedPartition)
 			filePath := filepath.Join(partitionDir, tt.filename)
 
-			// Check if the file exists
+			// Check if the file exists.
 			_, err = os.Stat(filePath)
 			if tt.expectedFileExists {
 				if os.IsNotExist(err) {
@@ -99,7 +99,7 @@ func TestMapDirectoryStore(t *testing.T) {
 				}
 			}
 
-			// Verify data if file exists
+			// Verify data if file exists.
 			if tt.expectedFileExists {
 				data, err := mds.GetFileData(tt.filename, false)
 				if err != nil {
@@ -132,7 +132,7 @@ func TestListFiles(t *testing.T) {
 		t.Fatalf("failed to create MapDirectoryStore: %v", err)
 	}
 
-	// Create some files
+	// Create some files.
 	files := []string{"file1.json", "file2.json", "file3.json"}
 	for _, file := range files {
 		err := mds.SetFileData(file, map[string]any{"key": "value"})
@@ -184,7 +184,7 @@ func TestListFiles(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
-			// Extract filenames without partition path
+			// Extract filenames without partition path.
 			var filenames []string
 			for _, file := range files {
 				_, filename := filepath.Split(file)
@@ -220,20 +220,20 @@ func TestDeleteFile(t *testing.T) {
 		t.Fatalf("failed to set file data: %v", err)
 	}
 
-	// Verify file exists
+	// Verify file exists.
 	filePath := filepath.Join(baseDir, filename)
 	_, err = os.Stat(filePath)
 	if os.IsNotExist(err) {
 		t.Fatalf("expected file to exist but it does not")
 	}
 
-	// Delete the file
+	// Delete the file.
 	err = mds.DeleteFile(filename)
 	if err != nil {
 		t.Fatalf("failed to delete file: %v", err)
 	}
 
-	// Verify file does not exist
+	// Verify file does not exist.
 	_, err = os.Stat(filePath)
 	if !os.IsNotExist(err) {
 		t.Fatalf("expected file not to exist but it does")
@@ -254,7 +254,7 @@ func TestListPartitionsPagination(t *testing.T) {
 		t.Fatalf("failed to create MapDirectoryStore: %v", err)
 	}
 
-	// Create partition directories
+	// Create partition directories.
 	partitions := []string{"202301", "202302", "202303"}
 	for _, partition := range partitions {
 		err := os.Mkdir(filepath.Join(baseDir, partition), os.ModePerm)
@@ -324,7 +324,7 @@ func TestListPartitionsPagination(t *testing.T) {
 				}
 			}
 
-			// Test pagination by checking the next page
+			// Test pagination by checking the next page.
 			if nextPageToken != "" {
 				partitions, _, err = mds.PartitionProvider.ListPartitions(
 					baseDir,
@@ -347,7 +347,7 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 	baseDir := filepath.Join(t.TempDir(), "listdir")
 	slog.Info("TestListFilesPaginationMonthPartition", "BaseDir", baseDir)
 
-	// Create some files across multiple partitions
+	// Create some files across multiple partitions.
 	partitions := []string{"202301", "202302", "202303"}
 	files := []string{"file1.json", "file2.json", "file3.json", "file4.json", "file5.json"}
 	testData := map[string]any{"key": "value"}
@@ -372,7 +372,7 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 		}
 	}
 
-	// Additional test cases for edge scenarios
+	// Additional test cases for edge scenarios.
 	tests := []struct {
 		name          string
 		sortOrder     string
@@ -576,7 +576,7 @@ func TestListFilesNoPartitionProvider(t *testing.T) {
 	baseDir := filepath.Join(t.TempDir(), "nolistdir")
 	slog.Info("TestListFilesNoPartitionProvider", "BaseDir", baseDir)
 
-	// Create some files in a single directory (no partitions)
+	// Create some files in a single directory (no partitions).
 	files := []string{
 		"file1.json",
 		"file2.json",
@@ -606,7 +606,7 @@ func TestListFilesNoPartitionProvider(t *testing.T) {
 		}
 	}
 
-	// Test cases for pagination without partition provider
+	// Test cases for pagination without partition provider.
 	tests := []struct {
 		name          string
 		sortOrder     string

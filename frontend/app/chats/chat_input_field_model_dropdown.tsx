@@ -2,9 +2,6 @@ import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 import type { ChatOptions } from '@/models/settingmodel';
 
-/**
- * Subcomponent for selecting the Model
- */
 export default function ModelDropdown(props: {
 	selectedModel: ChatOptions;
 	setSelectedModel: React.Dispatch<React.SetStateAction<ChatOptions>>;

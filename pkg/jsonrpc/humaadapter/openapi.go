@@ -38,7 +38,7 @@ func getTypeSchema(
 	} else if hint != "" {
 		// Base types
 		// E.g: For string param huma name will be String and hint will be the above.
-		// For Array
+		// For Array.
 		humaName := huma.DefaultSchemaNamer(mtype, hint)
 		titlecaseHint := strings.ToUpper(string(hint[0])) + hint[1:]
 		if titlecaseHint != humaName {
@@ -62,49 +62,50 @@ func isNillableType(t reflect.Type) bool {
 
 // Function to dynamically create the Request type with Params of type iType.
 func getRequestType(iType reflect.Type, isNotification bool) reflect.Type {
-	// Get the reflect.Type of Request[any]
+	// Get the reflect.Type of Request[any].
 	requestAnyType := reflect.TypeOf(RequestAny{})
 	if isNotification {
 		requestAnyType = reflect.TypeOf(NotificationAny{})
 	}
 
-	// Get the number of fields in the Request struct
+	// Get the number of fields in the Request struct.
 	numFields := requestAnyType.NumField()
 
-	// Create a slice to hold the StructField definitions
+	// Create a slice to hold the StructField definitions.
 	fields := make([]reflect.StructField, numFields)
 
-	// Iterate over each field in the Request struct
+	// Iterate over each field in the Request struct.
 	for i := range numFields {
-		field := requestAnyType.Field(i) // Get the field
+		// Get the field.
+		field := requestAnyType.Field(i)
 
-		// If the field is 'Params', replace its type with iType
+		// If the field is 'Params', replace its type with iType.
 		if field.Name == "Params" {
 			field.Type = iType
 			jsonTag := field.Tag.Get("json")
 
-			// If iType is pointer type, add omitempty to json tag
+			// If iType is pointer type, add omitempty to json tag.
 			if isNillableType(iType) {
 				if !strings.Contains(jsonTag, "omitempty") {
 					jsonTag += ",omitempty"
 				}
-				// Update the field's tag with the modified JSON and required tags
+				// Update the field's tag with the modified JSON and required tags.
 				field.Tag = reflect.StructTag(
 					fmt.Sprintf(`json:%q`, jsonTag),
 				)
 			} else {
 				// If iType is not a pointer, add required:true to required tag
-				// Update the field's tag with the modified JSON and required tags
+				// Update the field's tag with the modified JSON and required tags.
 				field.Tag = reflect.StructTag(
 					fmt.Sprintf(`json:%q required:"true"`, jsonTag),
 				)
 			}
 		}
 
-		// Add the field to the fields slice
+		// Add the field to the fields slice.
 		fields[i] = field
 	}
-	// Create a new struct type with the updated fields
+	// Create a new struct type with the updated fields.
 	reqType := reflect.StructOf(fields)
 	return reqType
 }
@@ -122,7 +123,7 @@ func getRequestSchema(
 	}
 	if reqSchema.Ref != "" {
 		reqSubSchema := api.OpenAPI().Components.Schemas.SchemaFromRef(reqSchema.Ref)
-		// Set method name as a constant in the schema
+		// Set method name as a constant in the schema.
 		reqSubSchema.Properties["method"] = &huma.Schema{
 			Type: "string",
 			Enum: []any{methodName},
@@ -140,14 +141,14 @@ func getResponseSchema(
 	methodName string,
 	paramType reflect.Type,
 ) *huma.Schema {
-	// Get the error type used in your application
+	// Get the error type used in your application.
 	errorType := reflect.TypeOf(jsonrpcReqResp.JSONRPCError{})
 
-	// Create dynamic types for success and error responses
+	// Create dynamic types for success and error responses.
 	successResponseType := getSuccessResponseType(paramType)
 	errorResponseType := getErrorResponseType(errorType)
 
-	// Generate schemas for these dynamic types
+	// Generate schemas for these dynamic types.
 	successSchema := getTypeSchema(
 		api,
 		methodName,
@@ -166,7 +167,7 @@ func getResponseSchema(
 		reqSubSchema.Required = append(reqSubSchema.Required, "id")
 	}
 
-	// Build the response schema with OneOf combining the two schemas
+	// Build the response schema with OneOf combining the two schemas.
 	responseSchema := &huma.Schema{
 		Title: strings.ToUpper(string(methodName[0])) + methodName[1:] + "Response",
 		OneOf: []*huma.Schema{
@@ -197,7 +198,7 @@ func getSuccessResponseType(resultType reflect.Type) reflect.Type {
 	resultField.Type = resultType
 
 	if isNillableType(resultType) {
-		// If resultType is a pointer, add omitempty to json tag
+		// If resultType is a pointer, add omitempty to json tag.
 		resultField.Tag = reflect.StructTag(`json:"result,omitempty"`)
 	} else {
 		resultField.Tag = reflect.StructTag(`json:"result" required:"true"`)
@@ -235,11 +236,11 @@ func AddSchemasToAPI(
 	methodMap map[string]jsonrpcReqResp.IMethodHandler,
 	notificationMap map[string]jsonrpcReqResp.INotificationHandler,
 ) {
-	// Prepare slices to hold per-method request and response schemas
+	// Prepare slices to hold per-method request and response schemas.
 	reqSchemas := make([]*huma.Schema, 0, len(methodMap)+len(notificationMap))
 	resSchemas := make([]*huma.Schema, 0, len(methodMap))
 
-	// Process method handlers
+	// Process method handlers.
 	for methodName, handler := range methodMap {
 		inputType, outputType := handler.GetTypes()
 
@@ -250,18 +251,18 @@ func AddSchemasToAPI(
 		resSchemas = append(resSchemas, respSchema)
 	}
 
-	// Process notification handlers
+	// Process notification handlers.
 	for methodName, handler := range notificationMap {
 		inputType := handler.GetTypes()
 		reqSchema := getRequestSchema(api, methodName, inputType, true)
 		reqSchemas = append(reqSchemas, reqSchema)
 	}
 
-	// Get base Request[json.RawMessage] and Response[json.RawMessage] schemas
+	// Get base Request[json.RawMessage] and Response[json.RawMessage] schemas.
 	reqType := reflect.TypeOf((*jsonrpcReqResp.Request[json.RawMessage])(nil)).Elem()
 	baseReqSchema := api.OpenAPI().Components.Schemas.Schema(reqType, false, "")
 	baseReqSchema.OneOf = reqSchemas
-	// Delete properties
+	// Delete properties.
 	baseReqSchema.Properties = make(map[string]*huma.Schema)
 	baseReqSchema.Required = []string{}
 	baseReqSchema.AdditionalProperties = true
@@ -270,7 +271,7 @@ func AddSchemasToAPI(
 	respType := reflect.TypeOf((*jsonrpcReqResp.Response[json.RawMessage])(nil)).Elem()
 	baseRespSchema := api.OpenAPI().Components.Schemas.Schema(respType, false, "")
 	baseRespSchema.OneOf = resSchemas
-	// Delete properties
+	// Delete properties.
 	baseRespSchema.Properties = make(map[string]*huma.Schema)
 	baseRespSchema.Required = []string{}
 	baseRespSchema.AdditionalProperties = true

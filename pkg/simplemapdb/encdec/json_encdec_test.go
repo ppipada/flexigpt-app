@@ -325,7 +325,7 @@ func TestMapToStructWithJSONTags(t *testing.T) {
 				Age:   30,
 				Email: "john.doe@example.com",
 			},
-			wantErr: true, // Now expecting an error due to extra fields
+			wantErr: true,
 		},
 		{
 			name: "invalid JSON structure",
@@ -340,8 +340,8 @@ func TestMapToStructWithJSONTags(t *testing.T) {
 		{
 			name: "incompatible types",
 			input: map[string]any{
-				"name": 123,      // expecting a string
-				"age":  "thirty", // expecting an int
+				"name": 123,
+				"age":  "thirty",
 			},
 			output:  &TestStruct{},
 			want:    TestStruct{},

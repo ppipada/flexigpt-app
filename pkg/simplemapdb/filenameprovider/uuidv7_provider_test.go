@@ -5,10 +5,6 @@ import (
 	"time"
 )
 
-/* ------------------------------------------------------------------- */
-/*  Test UUID-v7 Build                                                 */
-/* ------------------------------------------------------------------- */
-
 func TestUUIDv7Provider_Build(t *testing.T) {
 	p := &UUIDv7Provider{}
 
@@ -72,10 +68,6 @@ func TestUUIDv7Provider_Build(t *testing.T) {
 	}
 }
 
-/* ------------------------------------------------------------------- */
-/*  Test UUID-v7 Parse                                                 */
-/* ------------------------------------------------------------------- */
-
 func TestUUIDv7Provider_Parse(t *testing.T) {
 	p := &UUIDv7Provider{}
 
@@ -88,7 +80,8 @@ func TestUUIDv7Provider_Parse(t *testing.T) {
 		expectErr bool
 		wantID    string
 		wantTitle string
-		checkTime bool // assert that CreatedAt != zero
+		// assert that CreatedAt != zero
+		checkTime bool
 	}{
 		{
 			"valid",
@@ -138,10 +131,6 @@ func TestUUIDv7Provider_Parse(t *testing.T) {
 	}
 }
 
-/* ------------------------------------------------------------------- */
-/*  Build → Parse round-trip                                          */
-/* ------------------------------------------------------------------- */
-
 func TestUUIDv7Provider_BuildParse_RoundTrip(t *testing.T) {
 	p := &UUIDv7Provider{}
 	id := "018f1e3e-7c89-7b4b-8a3b-6f8e8f8e8f8e"
@@ -161,10 +150,6 @@ func TestUUIDv7Provider_BuildParse_RoundTrip(t *testing.T) {
 		t.Fatalf("round-trip failed: got file:%s %+v", file, info)
 	}
 }
-
-/* ------------------------------------------------------------------- */
-/*  CreatedAt convenience method                                       */
-/* ------------------------------------------------------------------- */
 
 func TestUUIDv7Provider_CreatedAt(t *testing.T) {
 	p := &UUIDv7Provider{}
