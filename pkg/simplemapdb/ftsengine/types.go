@@ -1,5 +1,7 @@
 package ftsengine
 
+const MemoryDBBaseDir = ":memory:"
+
 type SearchResult struct {
 	// String id stored in the "externalID" column.
 	ID string
@@ -18,7 +20,8 @@ type Column struct {
 }
 
 type Config struct {
-	DBPath  string   `json:"dbPath"`
-	Table   string   `json:"table"`
-	Columns []Column `json:"columns"`
+	BaseDir    string   `json:"baseDir"`
+	DBFileName string   `json:"dbFileName"`
+	Table      string   `json:"table"`
+	Columns    []Column `json:"columns"`
 }

@@ -32,14 +32,17 @@ func NewEngine(cfg Config) (*Engine, error) {
 	if err != nil {
 		return nil, err
 	}
-	if dir := filepath.Dir(cfg.DBPath); dir != "" && dir != ":memory:" {
+	if dir := filepath.Dir(cfg.BaseDir); dir != "" && dir != MemoryDBBaseDir {
 		if err := os.MkdirAll(dir, 0o770); err != nil {
 			return nil, err
 		}
 	}
 
-	db, err := sql.Open("sqlite", cfg.DBPath+
-		"?busy_timeout=5000&_pragma=journal_mode(WAL)")
+	dataSourceName := filepath.Join(
+		cfg.BaseDir,
+		cfg.DBFileName,
+	) + "?busy_timeout=5000&_pragma=journal_mode(WAL)"
+	db, err := sql.Open("sqlite", dataSourceName)
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +64,14 @@ func validateConfig(c Config) error {
 	if len(c.Columns) == 0 {
 		return errors.New("ftsengine: need ≥1 column")
 	}
-	if c.DBPath == "" {
-		return errors.New("ftsengine: DBPath missing")
+	if c.BaseDir == "" {
+		return errors.New("ftsengine: DB BaseDir incorrect")
+	}
+	if c.BaseDir == MemoryDBBaseDir && c.DBFileName != "" {
+		return errors.New("ftsengine: DB filename should be empty for memory db")
+	}
+	if c.BaseDir != MemoryDBBaseDir && c.DBFileName == "" {
+		return errors.New("ftsengine: DB filename incorrect")
 	}
 
 	if strings.TrimSpace(c.Table) == "" {

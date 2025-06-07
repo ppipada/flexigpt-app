@@ -1,7 +1,6 @@
 package ftsengine
 
 import (
-	"path/filepath"
 	"strconv"
 	"testing"
 )
@@ -10,8 +9,9 @@ func newTestEngine(t *testing.T) *Engine {
 	t.Helper()
 	tmp := t.TempDir()
 	e, err := NewEngine(Config{
-		DBPath: filepath.Join(tmp, "fts.sqlite"),
-		Table:  "docs",
+		BaseDir:    tmp,
+		DBFileName: "fts.sqlite",
+		Table:      "docs",
 		Columns: []Column{
 			{Name: "title", Weight: 1},
 			{Name: "body", Weight: 5},
@@ -144,7 +144,13 @@ func TestPaginationToken(t *testing.T) {
 
 func TestEdgeCases(t *testing.T) {
 	t.Run("constructor failures", func(t *testing.T) {
-		if _, err := NewEngine(Config{DBPath: ":memory:", Table: "t"}); err == nil {
+		if _, err := NewEngine(Config{BaseDir: MemoryDBBaseDir, DBFileName: "", Table: "t", Columns: []Column{{Name: "c"}}}); err != nil {
+			t.Error("empty db filename should be allowed for memory db")
+		}
+		if _, err := NewEngine(Config{BaseDir: MemoryDBBaseDir, DBFileName: "m", Table: "t", Columns: []Column{{Name: "c"}}}); err == nil {
+			t.Error("non empty db filename should not be allowed for memory db")
+		}
+		if _, err := NewEngine(Config{BaseDir: MemoryDBBaseDir, DBFileName: "", Table: "t"}); err == nil {
 			t.Error("want error for no columns")
 		}
 		if _, err := NewEngine(Config{

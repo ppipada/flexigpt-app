@@ -72,8 +72,9 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 	if cc.enableFTS {
 		var err error
 		cc.fts, err = ftsengine.NewEngine(ftsengine.Config{
-			DBPath: filepath.Join(baseDir, "conversations.fts.sqlite"),
-			Table:  "conversations",
+			BaseDir:    baseDir,
+			DBFileName: "conversations.fts.sqlite",
+			Table:      "conversations",
 			Columns: []ftsengine.Column{
 				{Name: "title", Weight: 1},
 				{Name: "system", Weight: 2},
