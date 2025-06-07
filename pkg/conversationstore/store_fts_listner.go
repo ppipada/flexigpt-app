@@ -121,26 +121,26 @@ func processFTSDataForFile(
 		}, nil
 	}
 
-	// Heavy part only if time stamp differs.
-	raw, err := os.ReadFile(fullPath)
-	if err != nil {
-		// Unreadable → skip.
-		return skipSyncDecision, err
-	}
+	// Default skip file
+	syncDecision := skipSyncDecision
 
+	// Heavy part only if time stamp differs.
 	var m map[string]any
-	if err := json.Unmarshal(raw, &m); err != nil {
-		// Invalid JSON → skip.
-		return skipSyncDecision, err
+	raw, err := os.ReadFile(fullPath)
+	if err == nil {
+		if err := json.Unmarshal(raw, &m); err == nil {
+			// Invalid JSON → skip.
+			vals := extract(fullPath, m)
+			syncDecision = ftsengine.SyncDecision{
+				ID:        fullPath,
+				CmpOut:    cmp,
+				Vals:      vals,
+				Unchanged: false,
+				Skip:      false,
+			}
+		}
 	}
-	vals := extract(fullPath, m)
-	return ftsengine.SyncDecision{
-		ID:        fullPath,
-		CmpOut:    cmp,
-		Vals:      vals,
-		Unchanged: false,
-		Skip:      false,
-	}, nil
+	return syncDecision, nil
 }
 
 func StartRebuild(ctx context.Context, baseDir string, e *ftsengine.Engine) {

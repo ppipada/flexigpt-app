@@ -9,6 +9,7 @@
 - [x] the engine somehow has path etc as inbuilt. It looks very tightly coupled to files or something called as path. Ideally it should have opaque and its own semantics that the consumer will adapt to
 - [ ] implement prompts and tools using dirstore+fts
 - [ ] spinner before first response (details if possible)
+- [ ] post last streamed msg the scroll is moving a bit up
 
 ## Tasks: Tools Implementation with CodeMirror
 

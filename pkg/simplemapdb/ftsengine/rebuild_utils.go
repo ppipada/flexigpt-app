@@ -27,6 +27,7 @@ type GetPrevCmp func(id string) string
 
 // ProcessFile is the single user callback.
 // It may call getPrev(id) zero or more times.
+// If this func returns a err the walk will be stopped.
 type ProcessFile func(
 	ctx context.Context,
 	baseDir, fullPath string,
@@ -92,19 +93,26 @@ func SyncDirToFTS(
 	}
 
 	err := filepath.WalkDir(baseDir, func(p string, d fs.DirEntry, we error) error {
-		if we != nil || d.IsDir() {
+		if d.IsDir() {
+			// Its a dir, we dont want to process it other than walking.
 			return we
+		}
+		if we != nil {
+			// There was some walk error in this particular path. Don't add in seen list and continue.
+			return nil
 		}
 
 		dec, err := processFile(ctx, baseDir, p, getPrev)
-		if err != nil || dec.Skip {
-			// Propagate error, silently skip on Skip==true.
+		if err != nil {
+			// Consumer returned a error, they want us to stop the walk.
 			return err
 		}
-		if dec.ID == "" {
-			// No valid id -> treat like Skip.
+		if dec.Skip || dec.ID == "" {
+			// Silently skip on Skip==true for a path in consumer.
+			// Or No valid id -> treat like Skip.
 			return nil
 		}
+
 		seenNow[dec.ID] = struct{}{}
 
 		if dec.Unchanged {
