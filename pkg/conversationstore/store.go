@@ -88,7 +88,12 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 		if err != nil {
 			return nil, err
 		}
-		err = rebuildIfEmpty(context.Background(), baseDir, cc.fts)
+		err = ftsengine.DirWalkAndRebuildIfEmpty(
+			context.Background(),
+			baseDir,
+			cc.fts,
+			getUpsertDataForFile,
+		)
 		if err != nil {
 			return nil, err
 		}

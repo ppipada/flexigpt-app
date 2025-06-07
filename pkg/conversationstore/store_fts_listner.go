@@ -4,10 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/fs"
-	"log/slog"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
@@ -85,47 +82,27 @@ func stringField(m map[string]any, key string) (string, bool) {
 	return "", false
 }
 
-func rebuild(ctx context.Context, baseDir string, e *ftsengine.Engine) error {
-	slog.Info("Conversations: starting fts rebuild")
-	// Walk the directory only once, if table was empty.
-	return filepath.WalkDir(baseDir, func(p string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() || !strings.HasSuffix(d.Name(), ".json") {
-			return err
-		}
-		raw, err := os.ReadFile(p)
-		var m map[string]any
-		if err == nil {
-			if err := json.Unmarshal(raw, &m); err == nil {
-				return e.Upsert(ctx, p, extract(m))
-			}
-		}
-		return nil
-	})
-}
-
-func rebuildIfEmpty(ctx context.Context, baseDir string, e *ftsengine.Engine) error {
-	isEmp, err := e.IsEmpty(ctx)
+func getUpsertDataForFile(
+	ctx context.Context,
+	baseDir, fileFullPath string,
+) (id string, vals map[string]string, skip bool) {
+	if !strings.HasSuffix(fileFullPath, ".json") {
+		// Skip non-json files.
+		return "", nil, true
+	}
+	raw, err := os.ReadFile(fileFullPath)
 	if err != nil {
-		slog.Error(
-			"DB empty check issue. possibly delete the .sqlite file and restart app again",
-			"basedir",
-			baseDir,
-			"error",
-			err,
-		)
-		return err
+		// Skip files that can't be read.
+		return "", nil, true
 	}
-	if isEmp {
-		go func() {
-			defer func() {
-				if r := recover(); r != nil {
-					slog.Error("fts rebuild panic", "error", r)
-				}
-			}()
-			if err := rebuild(ctx, baseDir, e); err != nil {
-				slog.Error("fts rebuild", "error", err)
-			}
-		}()
+
+	var m map[string]any
+	if err := json.Unmarshal(raw, &m); err != nil {
+		// Skip files that can't be decoded.
+		return "", nil, true
 	}
-	return nil
+
+	vals = extract(m)
+	id = fileFullPath
+	return id, vals, false
 }
