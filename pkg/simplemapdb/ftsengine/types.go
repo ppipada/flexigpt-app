@@ -5,10 +5,14 @@ import (
 	"database/sql"
 )
 
-const MemoryDBBaseDir = ":memory:"
+const (
+	MemoryDBBaseDir   = ":memory:"
+	ColNameExternalID = "externalid"
+	ColNameRowID      = "rowid"
+)
 
 type SearchResult struct {
-	// String id stored in the "externalID" column.
+	// String id stored in the ColNameExternalID column.
 	ID string
 	// Bm25.
 	Score float64
@@ -16,6 +20,7 @@ type SearchResult struct {
 
 // ListResult is returned by BatchList().
 type ListResult struct {
+	// String id stored in the ColNameExternalID column.
 	ID     string
 	Values map[string]string
 }

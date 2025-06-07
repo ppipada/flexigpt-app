@@ -88,15 +88,11 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 		if err != nil {
 			return nil, err
 		}
-		err = ftsengine.DirWalkAndRebuildIfEmpty(
+		StartRebuild(
 			context.Background(),
 			baseDir,
 			cc.fts,
-			getUpsertDataForFile,
 		)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	optsDir := []dirstore.Option{dirstore.WithPartitionProvider(cc.pp)}

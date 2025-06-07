@@ -126,7 +126,7 @@ func (e *Engine) bootstrap(ctx context.Context) error {
 	// Create / replace FTS virtual table.
 	if stored != e.hsh {
 		var cols []string
-		cols = append(cols, `externalID UNINDEXED`)
+		cols = append(cols, ColNameExternalID+" UNINDEXED")
 		for _, c := range e.cfg.Columns {
 			col := c.Name
 			if c.Unindexed {
@@ -162,25 +162,25 @@ func (e *Engine) IsEmpty(ctx context.Context) (bool, error) {
 }
 
 func (e *Engine) Delete(ctx context.Context, id string) error {
-	const sqlDel = `DELETE FROM %s WHERE externalID=?`
+	const sqlDel = `DELETE FROM %s WHERE %s=?`
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	_, err := e.db.ExecContext(ctx,
-		fmt.Sprintf(sqlDel, quote(e.cfg.Table)), id)
+		fmt.Sprintf(sqlDel, quote(e.cfg.Table), ColNameExternalID), id)
 	return err
 }
 
-// Upsert inserts a new document, or replaces the existing one whose
-// string id is `externalID`.  The logic works with every SQLite ≥ 3.9 because
-// it uses INSERT and INSERT OR REPLACE, both supported by FTS5.
+// Upsert inserts a new document, or replaces the existing one whose string id is present.
+// The logic works with every SQLite ≥ 3.9 because it uses INSERT and INSERT OR REPLACE, both supported by FTS5.
+// This is not multi process safe as this is serialized at application level.
 func (e *Engine) Upsert(ctx context.Context, id string, vals map[string]string) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	return e.internalUpsert(ctx, nil, id, vals)
 }
 
-// BatchUpsert writes / updates all docs inside ONE transaction.  The map
-// key is the externalID, the value is the column map.
+// BatchUpsert writes / updates all docs inside ONE transaction.
+// The map key is the externalID, the value is the column map.
 func (e *Engine) BatchUpsert(
 	ctx context.Context,
 	docs map[string]map[string]string,
@@ -238,8 +238,8 @@ func (e *Engine) lookupRowIDs(
 		b.WriteByte('?')
 	}
 
-	sqlQ := fmt.Sprintf(`SELECT externalID,rowid FROM %s WHERE externalID IN (%s);`,
-		quote(e.cfg.Table), b.String())
+	sqlQ := fmt.Sprintf(`SELECT %s,%s FROM %s WHERE %s IN (%s);`,
+		ColNameExternalID, ColNameRowID, quote(e.cfg.Table), ColNameExternalID, b.String())
 
 	args := make([]any, len(ids))
 	for i, id := range ids {
@@ -293,7 +293,7 @@ func (e *Engine) internalUpsert(
 		exists = true
 		rowid = knownRowID[0]
 	} else {
-		sqlQ := fmt.Sprintf(`SELECT rowid FROM %s WHERE externalID=?`, quote(e.cfg.Table))
+		sqlQ := fmt.Sprintf(`SELECT %s FROM %s WHERE %s=?`, ColNameRowID, quote(e.cfg.Table), ColNameExternalID)
 		rows, err := exec.QueryContext(ctx, sqlQ, id)
 		if err != nil {
 			return err
@@ -311,7 +311,7 @@ func (e *Engine) internalUpsert(
 	}
 
 	// Build column list, placeholders and args slice.
-	colNames := []string{"externalID"}
+	colNames := []string{ColNameExternalID}
 	marks := []string{"?"}
 	args := []any{id}
 
@@ -324,7 +324,7 @@ func (e *Engine) internalUpsert(
 	// Choose INSERT vs INSERT OR REPLACE.
 	var sqlQ string
 	if exists {
-		colNames = append([]string{"rowid"}, colNames...)
+		colNames = append([]string{ColNameRowID}, colNames...)
 		marks = append([]string{"?"}, marks...)
 		args = append([]any{rowid}, args...)
 
@@ -357,7 +357,6 @@ func (e *Engine) BatchList(
 	pageToken string,
 	pageSize int,
 ) (rows []ListResult, nextToken string, err error) {
-	const defaultCompareCol = "rowid"
 	if pageSize <= 0 {
 		pageSize = 1000
 	}
@@ -388,8 +387,8 @@ func (e *Engine) BatchList(
 	}
 
 	if compareColumn == "" {
-		compareColumn = defaultCompareCol
-	} else if compareColumn != defaultCompareCol && !colExists(compareColumn) {
+		compareColumn = ColNameRowID
+	} else if compareColumn != ColNameRowID && !colExists(compareColumn) {
 		return nil, "", fmt.Errorf("ftsengine: unknown compare column %q", compareColumn)
 	}
 
@@ -413,8 +412,8 @@ func (e *Engine) BatchList(
 	}
 
 	// Build SELECT list.
-	selectCols := []string{defaultCompareCol, "externalID"}
-	needCmpInSelect := compareColumn != defaultCompareCol
+	selectCols := []string{ColNameRowID, ColNameExternalID}
+	needCmpInSelect := compareColumn != ColNameRowID
 	if needCmpInSelect {
 		selectCols = append(selectCols, quote(compareColumn))
 	}
@@ -430,13 +429,13 @@ func (e *Engine) BatchList(
 	// Build WHERE + ORDER BY.
 	var where string
 	var args []any
-	if compareColumn == defaultCompareCol {
-		where = defaultCompareCol + ">?"
+	if compareColumn == ColNameRowID {
+		where = ColNameRowID + ">?"
 		args = append(args, lastRID)
 	} else {
 		// Actual: (cmp > lastCmp) OR (cmp = lastCmp AND rowid > lastRID).
 		where = fmt.Sprintf("(%s>? OR (%s=? AND %s>?))",
-			quote(compareColumn), quote(compareColumn), defaultCompareCol)
+			quote(compareColumn), quote(compareColumn), ColNameRowID)
 		args = append(args, lastCmp, lastCmp, lastRID)
 	}
 
@@ -450,7 +449,7 @@ func (e *Engine) BatchList(
 		quote(e.cfg.Table),
 		where,
 		quote(compareColumn),
-		defaultCompareCol,
+		ColNameRowID,
 	)
 
 	// One read-only tx per page.
@@ -549,7 +548,7 @@ func (e *Engine) BatchList(
 
 // Search returns one page of results and, if more results exist,
 // an opaque token for the next page.
-// The query is treated as a search literal and not a fts5 expression
+// The query is treated as a search literal and not a fts5 expression.
 func (e *Engine) Search(
 	ctx context.Context,
 	query string,
@@ -587,19 +586,18 @@ func (e *Engine) Search(
 		}
 	}
 
-	const sqlSearch = `SELECT externalID, bm25(%s%s) AS s
+	const sqlSearch = `SELECT %s, bm25(%s%s) AS s
 			FROM %s WHERE %s MATCH ?
-			ORDER BY s ASC, rowid
+			ORDER BY s ASC, %s
 			LIMIT ? OFFSET ?;`
 
-	sqlQ := fmt.Sprintf(sqlSearch,
+	sqlQ := fmt.Sprintf(sqlSearch, ColNameExternalID,
 		quote(e.cfg.Table), paramPlaceholders(len(weights)),
-		quote(e.cfg.Table), e.cfg.Table)
+		quote(e.cfg.Table), e.cfg.Table, ColNameRowID)
 
 	args := slices.Clone(weights)
 	// Escape any embedded double quotes.
-	// FTS5 has special chars like - * etc that  that
-	// Only quote for SQL, not for token
+	// FTS5 has special chars like - * etc that only quote for SQL, not for token.
 	quotedQuery := `"` + strings.ReplaceAll(query, `"`, `""`) + `"`
 	args = append(args, quotedQuery, pageSize, offset)
 
@@ -627,6 +625,46 @@ func (e *Engine) Search(
 		nextToken = base64.StdEncoding.EncodeToString(buf)
 	}
 	return hits, nextToken, rows.Err()
+}
+
+func (e *Engine) BatchDelete(ctx context.Context, ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	// SQLite default.
+	const maxVars = 999
+	toAny := func(ss []string) []any {
+		out := make([]any, len(ss))
+		for i, s := range ss {
+			out[i] = s
+		}
+		return out
+	}
+
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	for len(ids) != 0 {
+		n := min(len(ids), maxVars)
+		part := ids[:n]
+		ids = ids[n:]
+
+		var b strings.Builder
+		for i := range part {
+			if i > 0 {
+				b.WriteByte(',')
+			}
+			b.WriteByte('?')
+		}
+		const sqlDelete = `DELETE FROM %s WHERE %s IN (%s);`
+		sqlQ := fmt.Sprintf(sqlDelete, quote(e.cfg.Table), ColNameExternalID, b.String())
+
+		if _, err := e.db.ExecContext(ctx, sqlQ, toAny(part)...); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (e *Engine) Close() error { return e.db.Close() }
