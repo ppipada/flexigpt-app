@@ -11,9 +11,9 @@ import (
 // This is a huma middleware.
 // Either a huma middleware can be added or a http handler middleware can be added.
 func LoggingMiddleware(ctx huma.Context, next func(huma.Context)) {
-	// log.Printf("Received request: %v %v", ctx.URL().RawPath, ctx.Operation().Path)
+	// Log.Printf("Received request: %v %v", ctx.URL().RawPath, ctx.Operation().Path).
 	next(ctx)
-	// log.Printf("Responded to request: %v %v", ctx.URL().RawPath, ctx.Operation().Path)
+	// Log.Printf("Responded to request: %v %v", ctx.URL().RawPath, ctx.Operation().Path).
 }
 
 // This is a http handler middleware.
@@ -22,13 +22,13 @@ func PanicRecoveryMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				// Log the panic to stderr
+				// Log the panic to stderr.
 				log.Printf("Recovered from panic: %+v", err)
 
-				// Optionally, log the stack trace
+				// Optionally, log the stack trace.
 				log.Printf("%s", debug.Stack())
 
-				// Return a 500 Internal Server Error
+				// Return a 500 Internal Server Error.
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			}
 		}()

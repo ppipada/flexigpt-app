@@ -80,7 +80,7 @@ func TestUUIDv7Provider_Parse(t *testing.T) {
 		expectErr bool
 		wantID    string
 		wantTitle string
-		// assert that CreatedAt != zero
+		// Assert that CreatedAt != zero.
 		checkTime bool
 	}{
 		{

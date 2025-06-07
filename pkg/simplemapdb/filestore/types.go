@@ -19,15 +19,15 @@ const (
 // Event is delivered *after* a mutation has been written to disk.
 type Event struct {
 	Op Operation
-	// absolute path of the backing JSON file
+	// Absolute path of the backing JSON file.
 	File string
-	// nil for file-level ops
+	// Nil for file-level ops.
 	Keys []string
-	// nil for OpSetFile / OpResetFile
+	// Nil for OpSetFile / OpResetFile.
 	OldValue any
-	// nil for delete
+	// Nil for delete.
 	NewValue any
-	// deep-copy of the *entire* map after the change
+	// Deep-copy of the entire map after the change.
 	Data      map[string]any
 	Timestamp time.Time
 }

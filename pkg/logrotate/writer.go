@@ -60,29 +60,27 @@ type Options struct {
 type Writer struct {
 	logger *slog.Logger
 
-	// opts are the configuration options for this Writer
+	// Opts are the configuration options for this Writer.
 	opts Options
 
-	// f is the currently open file used for appends.
+	// F is the currently open file used for appends.
 	// Writes to f are only synchronized once Close() is called,
 	// or when files are being rotated.
 	f *os.File
-	// bw is a buffered writer for writing to f
+	// Bw is a buffered writer for writing to f.
 	bw *bufio.Writer
-	// bytesWritten is the number of bytes written to f so far,
-	// used for size based rotation
+	// BytesWritten is the number of bytes written to f so far,
+	// used for size based rotation.
 	bytesWritten int64
-	// ts is the creation timestamp of f,
-	// used for time based log rotation
+	// Ts is the creation timestamp of f, used for time based log rotation.
 	ts time.Time
-
-	// queue of entries awaiting to be written
+	// Queue of entries awaiting to be written.
 	queue chan []byte
-	// synchronize write which have started but not been queued up
+	// Synchronize write which have started but not been queued up.
 	pending sync.WaitGroup
-	// singal the writer should close
+	// Signal the writer should close.
 	closing chan struct{}
-	// signal the writer has finished writing all queued up entries.
+	// Signal the writer has finished writing all queued up entries.
 	done chan struct{}
 }
 

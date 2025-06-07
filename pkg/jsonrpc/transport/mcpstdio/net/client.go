@@ -93,11 +93,11 @@ func NewClient(conn net.Conn, framer MessageFramer, options ...ClientOption) *Cl
 		requestTimeout: time.Minute,
 		done:           make(chan struct{}),
 	}
-	// Apply options
+	// Apply options.
 	for _, opt := range options {
 		opt(client)
 	}
-	// Start the receiver goroutine ONLY if concurrency is enabled
+	// Start the receiver goroutine ONLY if concurrency is enabled.
 	if client.concurrencyEnabled {
 		if client.assignID == nil || client.extractID == nil {
 			panic("assignID and extractID functions must be set when concurrency is enabled")
@@ -128,22 +128,22 @@ func (c *Client) Send(msg []byte) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		// Read response
+		// Read response.
 		resp, err := c.framer.ReadMessage(c.reader)
-		// log.Printf("Got msg %s", string(resp))
+		// Log.Printf("Got msg %s", string(resp)).
 		if err != nil {
 			return nil, err
 		}
 		return resp, nil
 	}
 
-	// Assign a request ID
+	// Assign a request ID.
 	reqIDPtr, msgWithID, err := c.assignID(msg)
 	if err != nil {
 		return nil, err
 	}
 	if reqIDPtr == nil {
-		// No request ID, don't track responses
+		// No request ID, don't track responses.
 		return nil, c.writeMessage(msgWithID)
 	}
 	reqID := *reqIDPtr
@@ -152,7 +152,7 @@ func (c *Client) Send(msg []byte) ([]byte, error) {
 	c.pending[reqID] = responseCh
 	c.pendingMu.Unlock()
 
-	// Need to track requests
+	// Need to track requests.
 	err = c.writeMessage(msgWithID)
 	if err != nil {
 		c.pendingMu.Lock()
@@ -161,11 +161,11 @@ func (c *Client) Send(msg []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	// Wait for response or timeout
+	// Wait for response or timeout.
 	select {
 	case resp, ok := <-responseCh:
 		if !ok {
-			// Channel was closed, client is shutting down
+			// Channel was closed, client is shutting down.
 			return nil, errors.New("client closed")
 		}
 		return resp, nil
@@ -173,7 +173,7 @@ func (c *Client) Send(msg []byte) ([]byte, error) {
 		return nil, errors.New("client closed")
 	case <-time.After(c.requestTimeout):
 		// Timeout
-		// Clean up pending
+		// Clean up pending.
 		c.pendingMu.Lock()
 		delete(c.pending, reqID)
 		c.pendingMu.Unlock()
@@ -193,28 +193,28 @@ func (c *Client) receiver() {
 			resp, err := c.framer.ReadMessage(c.reader)
 			if err != nil {
 				if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
-					// Connection closed, terminate the receiver
+					// Connection closed, terminate the receiver.
 					return
 				}
-				// Handle other errors, add to dead letter queue
+				// Handle other errors, add to dead letter queue.
 				c.addToDeadLetter(DeadLetterItem{Response: resp, Err: err})
 				continue
 			}
 
-			// Extract request ID
+			// Extract request ID.
 			reqIDPtr, respWithoutID, err := c.extractID(resp)
 			if err != nil {
-				// Handle error, add to dead letter queue
+				// Handle error, add to dead letter queue.
 				c.addToDeadLetter(DeadLetterItem{Response: resp, Err: err})
 				continue
 			}
 			if reqIDPtr == nil {
-				// Request ID is nil, drop the response
+				// Request ID is nil, drop the response.
 				continue
 			}
 			reqID := *reqIDPtr
 
-			// Deliver response to waiting request
+			// Deliver response to waiting request.
 			c.pendingMu.Lock()
 			ch, ok := c.pending[reqID]
 			if ok {
@@ -223,7 +223,7 @@ func (c *Client) receiver() {
 				ch <- respWithoutID
 			} else {
 				c.pendingMu.Unlock()
-				// No pending request, add to dead letter queue
+				// No pending request, add to dead letter queue.
 				c.addToDeadLetter(DeadLetterItem{Response: resp, Err: errors.New("no pending request for response")})
 			}
 		}
@@ -234,26 +234,27 @@ func (c *Client) receiver() {
 func (c *Client) addToDeadLetter(item DeadLetterItem) {
 	select {
 	case c.deadLetters <- item:
-		// Added to queue
+		// Added to queue.
 	default:
-		// Dead letter queue is full, drop the item
+		// Dead letter queue is full, drop the item.
 	}
 }
 
 // Close closes the client and cleans up resources.
 func (c *Client) Close() error {
-	// log.Println("Closing client")
+	// Log.Println("Closing client").
 	c.closeOnce.Do(func() {
 		close(c.done)
 		c.conn.Close()
 	})
 
 	c.pendingMu.Lock()
-	// Do not close individual responseCh channels as explained before
-	c.pending = make(map[string]chan []byte) // Reset pending map without closing channels
+	// Do not close individual responseCh channels as explained before.
+	// Reset pending map without closing channels.
+	c.pending = make(map[string]chan []byte)
 	c.pendingMu.Unlock()
 
-	// Wait for goroutines to finish outside of the closeOnce block
+	// Wait for goroutines to finish outside of the closeOnce block.
 	if c.concurrencyEnabled {
 		c.wg.Wait()
 	}

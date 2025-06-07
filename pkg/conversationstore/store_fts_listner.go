@@ -76,7 +76,7 @@ func stringField(m map[string]any, key string) (string, bool) {
 			return s, true
 		}
 	}
-	// also accept “Title” from StructToMap
+	// Also accept “Title” from StructToMap.
 	if v, ok := m[strings.ToUpper(key[:1])+key[1:]]; ok {
 		if s, ok := v.(string); ok {
 			return s, true
@@ -87,7 +87,7 @@ func stringField(m map[string]any, key string) (string, bool) {
 
 func rebuild(ctx context.Context, baseDir string, e *ftsengine.Engine) error {
 	slog.Info("Conversations: starting fts rebuild")
-	// walk the directory only once, if table was empty
+	// Walk the directory only once, if table was empty.
 	return filepath.WalkDir(baseDir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || !strings.HasSuffix(d.Name(), ".json") {
 			return err

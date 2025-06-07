@@ -30,7 +30,7 @@ func TestIsEmptyAndCRUD(t *testing.T) {
 		t.Fatal("new engine should be empty")
 	}
 
-	// insert  docs
+	// Insert  docs.
 	if err := e.Upsert(t.Context(), "doc/alpha", map[string]string{
 		"title": "hello world",
 		"body":  "ignored",
@@ -48,14 +48,14 @@ func TestIsEmptyAndCRUD(t *testing.T) {
 		t.Fatal("index should not be empty after inserts")
 	}
 
-	// search – should hit two
+	// Search – should hit two.
 	hits, next, err := e.Search(t.Context(), "hello", "", 10)
 	if err != nil || len(hits) != 2 || next != "" {
 		t.Fatalf("search expected 2 hits, got %d (next=%q, err=%v)",
 			len(hits), next, err)
 	}
 
-	// update one, delete other
+	// Update one, delete other.
 	if err := e.Upsert(t.Context(), "doc/alpha", map[string]string{
 		"title": "updated",
 		"body":  "",
@@ -101,7 +101,7 @@ func TestWeightRanking(t *testing.T) {
 func TestPaginationToken(t *testing.T) {
 	e := newTestEngine(t)
 
-	// 15 docs containing "foo"
+	// 15 docs containing "foo".
 	for i := range 15 {
 		_ = e.Upsert(t.Context(), "id"+strconv.Itoa(i), map[string]string{
 			"title": "",
@@ -126,7 +126,7 @@ func TestPaginationToken(t *testing.T) {
 		}
 		total += len(hits)
 		if next == "" {
-			// last page
+			// Last page.
 			if len(hits) != 3 {
 				t.Fatalf("last page size, want 3, got %d", len(hits))
 			}
@@ -199,7 +199,7 @@ func TestEdgeCases(t *testing.T) {
 			t.Fatalf("setup failed, hits=%d token=%q", len(h1), tok)
 		}
 
-		// use token with a DIFFERENT query → offset must reset ⇒ 0 hits
+		// Use token with a DIFFERENT query, offset must reset, 0 hits.
 		h2, _, _ := e.Search(t.Context(), "banana", tok, 1)
 		if len(h2) != 0 {
 			t.Fatalf("token should reset for new query, got %d hits", len(h2))

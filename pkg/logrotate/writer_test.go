@@ -159,7 +159,7 @@ func TestRotateOnLifetime(t *testing.T) {
 		t.Fatalf("failed to create writer: %v", err)
 	}
 
-	// keep writing until lifetime + half of lifetime (middle of ticks) elapses
+	// Keep writing until lifetime + half of lifetime (middle of ticks) elapses.
 	end := time.Now().Add(lifetime + lifetime/2)
 	for time.Now().Before(end) {
 		if _, err := w.Write([]byte("message")); err != nil {
@@ -265,7 +265,7 @@ func TestFlushAfterEveryWrite(t *testing.T) {
 		t.Fatalf("failed to write: %v", err)
 	}
 
-	// The write is asynchronous, so we need to wait a bit
+	// The write is asynchronous, so we need to wait a bit.
 	time.Sleep(1 * time.Second)
 
 	files, err := os.ReadDir(dir)
@@ -276,7 +276,7 @@ func TestFlushAfterEveryWrite(t *testing.T) {
 		t.Fatalf("expected 1 file, got %d", len(files))
 	}
 
-	// Read the file
+	// Read the file.
 	written, err := os.ReadFile(path.Join(dir, files[0].Name()))
 	if err != nil {
 		t.Fatalf("failed to read file: %v", err)

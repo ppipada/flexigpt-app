@@ -21,9 +21,9 @@ import (
 type Engine struct {
 	db  *sql.DB
 	cfg Config
-	// schema checksum
+	// Schema checksum.
 	hsh string
-	// serialises write-queries
+	// Serializes write-queries.
 	mu sync.Mutex
 }
 
@@ -105,16 +105,16 @@ func (e *Engine) bootstrap(ctx context.Context) error {
 			tokenize='unicode61 remove_diacritics 1');`
 	const sqlDeleteAllRows = `DELETE FROM %s`
 
-	// meta for schema hash
+	// Meta for schema hash.
 	if _, err := e.db.ExecContext(ctx, sqlCreateMetaTable); err != nil {
 		return err
 	}
 
-	// existing hash?
+	// Existing hash?
 	var stored string
 	_ = e.db.QueryRowContext(ctx, sqlSelectMetaHash).Scan(&stored)
 
-	// create / replace FTS virtual table
+	// Create / replace FTS virtual table.
 	if stored != e.hsh {
 		var cols []string
 		cols = append(cols, `externalID UNINDEXED`)
@@ -133,7 +133,7 @@ func (e *Engine) bootstrap(ctx context.Context) error {
 		}
 		_, _ = e.db.ExecContext(ctx, sqlInsertMetaHash, e.hsh)
 
-		// schema changed → clear previous rows
+		// Schema changed, clear previous rows.
 		if stored != "" {
 			_, _ = e.db.ExecContext(ctx, fmt.Sprintf(sqlDeleteAllRows, quote(e.cfg.Table)))
 		}
@@ -164,7 +164,7 @@ func (e *Engine) Upsert(
 		return errors.New("ftsengine: empty id")
 	}
 
-	// serialise writes inside *this* process
+	// Serialize writes inside this process.
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -178,35 +178,30 @@ func (e *Engine) Upsert(
 	).Scan(&rowid)
 
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		// real DB error
+		// Real DB error.
 		return err
 	}
 	exists := !errors.Is(err, sql.ErrNoRows)
 
-	// Build column lists and args
-	// externalID + N user columns
 	numCols := 1 + len(e.cfg.Columns)
 	colNames := make([]string, 0, numCols)
 	marks := make([]string, 0, numCols)
-	// maybe +1 rowid
 	args := make([]any, 0, numCols+1)
 
-	// externalID column
 	colNames = append(colNames, "externalID")
 	marks = append(marks, "?")
 	args = append(args, id)
 
-	// user-defined columns
 	for _, c := range e.cfg.Columns {
 		colNames = append(colNames, quote(c.Name))
 		marks = append(marks, "?")
 		args = append(args, vals[c.Name])
 	}
 
-	// Choose statement variant
+	// Choose statement variant.
 	var sqlQ string
 	if exists {
-		// prepend rowid for INSERT OR REPLACE
+		// Prepend rowid for INSERT OR REPLACE.
 		colNames = append([]string{"rowid"}, colNames...)
 		marks = append([]string{"?"}, marks...)
 		args = append([]any{rowid}, args...)
@@ -218,7 +213,7 @@ func (e *Engine) Upsert(
 			strings.Join(marks, ","),
 		)
 	} else {
-		// fresh insert, rowid is omitted
+		// Fresh insert, rowid is omitted.
 		const sqlInsert = `INSERT INTO %s (%s) VALUES (%s);`
 		sqlQ = fmt.Sprintf(
 			sqlInsert,
@@ -253,7 +248,7 @@ func (e *Engine) Search(
 		pageSize = 10
 	}
 
-	// decode / reset token
+	// Decode / reset token.
 	var offset int
 	if pageToken != "" {
 		var t struct {
@@ -264,13 +259,13 @@ func (e *Engine) Search(
 		if err == nil {
 			_ = json.Unmarshal(b, &t)
 		}
-		// token belongs to same query
+		// Token belongs to same query.
 		if t.Query == query {
 			offset = t.Offset
 		}
 	}
 
-	// bm25 weight parameters (one per column)
+	// Bm25 weight parameters, one per column.
 	var weights []any
 	for _, c := range e.cfg.Columns {
 		if c.Weight == 0 {
@@ -306,7 +301,7 @@ func (e *Engine) Search(
 		hits = append(hits, r)
 	}
 
-	// build next token
+	// Build next token.
 	if len(hits) == pageSize {
 		offset += pageSize
 		buf, _ := json.Marshal(struct {

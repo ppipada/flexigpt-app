@@ -28,11 +28,12 @@ func (a StdioAddr) String() string {
 // StdioConn implements net.Conn over io.Reader and io.Writer.
 type StdioConn struct {
 	addr net.Addr
-	// Channel to signal connection closed
+	// Channel to signal connection closed.
 	closed chan struct{}
-	// Ensures Close only runs once
+	// Ensures Close only runs once.
 	closeOnce sync.Once
-	// Client and Server will do buffering as needed. this conn does simple reader/writer interfacing
+	// Client and Server will do buffering as needed.
+	// This conn does simple reader/writer interfacing.
 	reader       io.Reader
 	writer       io.Writer
 	readTimeout  time.Duration
@@ -79,12 +80,12 @@ func NewStdioConn(r io.Reader, w io.Writer, options ...StdioConnOption) *StdioCo
 		writeCh:      make(chan writeRequest),
 	}
 
-	// Apply options
+	// Apply options.
 	for _, option := range options {
 		option(c)
 	}
 
-	// Start the read and write loops
+	// Start the read and write loops.
 	go c.readLoop()
 	go c.writeLoop()
 
@@ -156,17 +157,17 @@ func (c *StdioConn) SetWriteDeadline(t time.Time) error {
 func (c *StdioConn) readLoop() {
 	defer close(c.readCh)
 	for {
-		// Read from the underlying reader
+		// Read from the underlying reader.
 		buf := make([]byte, 4096)
 		n, err := c.reader.Read(buf)
 		res := readResult{data: buf[:n], err: err}
 
-		// Send the result or exit if closed
+		// Send the result or exit if closed.
 		select {
 		case <-c.closed:
 			return
 		case c.readCh <- res:
-			// If an error occurred, exit the loop
+			// If an error occurred, exit the loop.
 			if err != nil {
 				return
 			}
@@ -176,19 +177,19 @@ func (c *StdioConn) readLoop() {
 
 // Read reads data from the connection, implementing net.Conn.
 func (c *StdioConn) Read(b []byte) (int, error) {
-	// Check if the connection is closed
+	// Check if the connection is closed.
 	select {
 	case <-c.closed:
 		return 0, io.EOF
 	default:
-		// Continue
+		// Continue.
 	}
 
-	// Determine timeout duration
+	// Determine timeout duration.
 	timeout := c.readTimeout
 
 	if timeout == 0 {
-		// No timeout
+		// No timeout.
 		select {
 		case res, ok := <-c.readCh:
 			if !ok {
@@ -201,7 +202,7 @@ func (c *StdioConn) Read(b []byte) (int, error) {
 		}
 	}
 
-	// Read with timeout
+	// Read with timeout.
 	select {
 	case res, ok := <-c.readCh:
 		if !ok {
@@ -228,10 +229,10 @@ func (c *StdioConn) writeLoop() {
 				return
 			}
 			if req.resCh == nil {
-				// Invalid write request, skip
+				// Invalid write request, skip.
 				continue
 			}
-			// Write to the underlying writer
+			// Write to the underlying writer.
 			n, err := c.writer.Write(req.data)
 			req.resCh <- writeResult{n: n, err: err}
 			if err != nil {
@@ -243,28 +244,28 @@ func (c *StdioConn) writeLoop() {
 
 // Write writes data to the connection, implementing net.Conn.
 func (c *StdioConn) Write(b []byte) (int, error) {
-	// Check if the connection is closed
+	// Check if the connection is closed.
 	select {
 	case <-c.closed:
 		return 0, io.ErrClosedPipe
 	default:
-		// Continue
+		// Continue.
 	}
 
-	// Prepare the write request
+	// Prepare the write request.
 	resCh := make(chan writeResult, 1)
-	// Make a copy of b to avoid data races
+	// Make a copy of b to avoid data races.
 	dataCopy := slices.Clone(b)
 	req := writeRequest{
 		data:  dataCopy,
 		resCh: resCh,
 	}
 
-	// Determine timeout duration
+	// Determine timeout duration.
 	timeout := c.writeTimeout
 
 	if timeout == 0 {
-		// No timeout
+		// No timeout.
 		select {
 		case c.writeCh <- req:
 			res := <-resCh
@@ -274,7 +275,7 @@ func (c *StdioConn) Write(b []byte) (int, error) {
 		}
 	}
 
-	// Write with timeout
+	// Write with timeout.
 	select {
 	case c.writeCh <- req:
 		select {

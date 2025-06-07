@@ -1,4 +1,3 @@
-// server.go
 package net
 
 import (
@@ -25,7 +24,7 @@ type Server struct {
 	handler  MessageHandler
 	done     chan struct{}
 	doneOnce sync.Once
-	// Tracks connection handler goroutines
+	// Tracks connection handler goroutines.
 	wg sync.WaitGroup
 }
 
@@ -62,7 +61,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 	for {
 		select {
 		case <-s.done:
-			// Exit if shutdown signal is received
+			// Exit if shutdown signal is received.
 			return
 		default:
 		}
@@ -71,39 +70,39 @@ func (s *Server) handleConnection(conn net.Conn) {
 		if err != nil {
 			if errors.Is(err, io.EOF) || strings.Contains(err.Error(), "EOF") ||
 				strings.Contains(err.Error(), "closed") {
-				// Client closed the connection
+				// Client closed the connection.
 				return
 			}
 			var ne net.Error
 			if ok := errors.As(err, &ne); ok && ne.Timeout() {
 				time.Sleep(10 * time.Microsecond)
-				// Temporary error, try reading again
+				// Temporary error, try reading again.
 				continue
 			}
-			// Unrecoverable error, exit the connection handler
+			// Unrecoverable error, exit the connection handler.
 			return
 		}
 
-		// Start a new goroutine to handle the message
+		// Start a new goroutine to handle the message.
 		handlerWG.Add(1)
 		go func(msgCopy []byte) {
 			defer handlerWG.Done()
-			// Create a buffer to collect the handler's output
+			// Create a buffer to collect the handler's output.
 			var responseBuffer bytes.Buffer
-			// Provide an io.Writer to the handler
+			// Provide an io.Writer to the handler.
 			s.handler.HandleMessage(&responseBuffer, msgCopy)
-			// Write the framed message to the underlying writer
+			// Write the framed message to the underlying writer.
 			writeMutex.Lock()
 			defer writeMutex.Unlock()
-			// Frame the message
+			// Frame the message.
 			err := s.framer.WriteMessage(writer, responseBuffer.Bytes())
 			if err != nil {
-				// Handle write error
+				// Handle write error.
 				return
 			}
 			err = writer.Flush()
 			if err != nil {
-				// Handle flush error
+				// Handle flush error.
 				return
 			}
 		}(msg)
@@ -111,26 +110,26 @@ func (s *Server) handleConnection(conn net.Conn) {
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
-	// Signal to stop accepting new connections and stop processing
+	// Signal to stop accepting new connections and stop processing.
 	s.doneOnce.Do(func() {
 		close(s.done)
-		// Close the connection to unblock ReadMessage
+		// Close the connection to unblock ReadMessage.
 		s.conn.Close()
 	})
 
 	doneChan := make(chan struct{})
 	go func() {
-		// Wait for all connection handlers to finish
+		// Wait for all connection handlers to finish.
 		s.wg.Wait()
 		close(doneChan)
 	}()
 
 	select {
 	case <-ctx.Done():
-		// Context canceled or timed out
+		// Context canceled or timed out.
 		return ctx.Err()
 	case <-doneChan:
-		// Shutdown complete
+		// Shutdown complete.
 		return nil
 	}
 }

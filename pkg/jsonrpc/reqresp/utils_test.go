@@ -18,7 +18,7 @@ func jsonEqual(a, b json.RawMessage) bool {
 		return false
 	}
 	// Direct reflect Deepequal would have issues when there are pointers, keyorders etc.
-	// unmarshalling into a interface and then doing deepequal removes those issues
+	// unmarshalling into a interface and then doing deepequal removes those issues.
 	return reflect.DeepEqual(o1, o2)
 }
 
@@ -31,7 +31,7 @@ func getJSONStrings(args ...any) ([]string, error) {
 	for _, a := range args {
 		jsonBytes, err := json.Marshal(a)
 		if err != nil {
-			// log.Printf("%s", err.Error())
+			// Log.Printf("%s", err.Error()).
 			return nil, err
 		}
 		ret = append(ret, string(jsonBytes))

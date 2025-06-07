@@ -24,7 +24,7 @@ func NewBufferedStreamer(
 	ticker := time.NewTicker(flushInterval)
 	done := make(chan struct{})
 
-	// background goroutine: time-based flush
+	// Background goroutine time-based flush.
 	go func() {
 		for {
 			select {
@@ -45,7 +45,7 @@ func NewBufferedStreamer(
 		}
 	}()
 
-	// returns the wrapped "write" func
+	// Returns the wrapped write.
 	write = func(chunk string) error {
 		mu.Lock()
 		buf.WriteString(chunk)
@@ -54,14 +54,14 @@ func NewBufferedStreamer(
 			data := buf.String()
 			buf.Reset()
 			mu.Unlock()
-			// size-based flush
+			// Size-based flush.
 			return onStreamData(data)
 		}
 		mu.Unlock()
 		return nil
 	}
 
-	// flush everything & stop ticker
+	// Flush everything, stop ticker.
 	flush = func() {
 		close(done)
 		mu.Lock()

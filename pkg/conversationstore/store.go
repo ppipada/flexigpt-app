@@ -193,7 +193,8 @@ func (cc *ConversationCollection) ListConversations(
 	for _, f := range files {
 		info, err := cc.fp.Parse(filepath.Base(f))
 		if err != nil {
-			continue // corrupted / foreign file – skip
+			// Corrupted/foreign file skip.
+			continue
 		}
 		items = append(items, spec.ConversationItem{
 			ID:        info.ID,

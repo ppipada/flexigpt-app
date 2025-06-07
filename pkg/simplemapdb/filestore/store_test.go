@@ -108,14 +108,14 @@ func TestNewMapFileStore(t *testing.T) {
 		}
 
 		if tt.name == "File exists but cannot open" {
-			// Create a file with no read permissions
+			// Create a file with no read permissions.
 			err := os.Chmod(tt.filename, 0o000)
 			if err != nil {
 				t.Fatalf("[%s] Failed to change file permissions: %v", tt.name, err)
 			}
 
 			defer func() {
-				// Ensure we can clean up later
+				// Ensure we can clean up later.
 				_ = os.Chmod(tt.filename, 0o644)
 			}()
 		}
@@ -236,7 +236,7 @@ func TestMapFileStore_SetKey_GetKey(t *testing.T) {
 func TestMapFileStore_DeleteKey(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore.json")
-	// Pre-populate the store
+	// Pre-populate the store.
 	initialData := map[string]any{
 		"foo":    "bar",
 		"parent": map[string]any{"child": "value"},
@@ -393,7 +393,7 @@ func TestMapFileStore_SetAll_GetAll(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset store to default before each subtest
+			// Reset store to default before each subtest.
 			err := store.Reset()
 			if err != nil {
 				t.Fatalf("[%s] Failed to reset store: %v", tt.name, err)
@@ -443,7 +443,7 @@ func TestMapFileStore_DeleteAll(t *testing.T) {
 		t.Fatalf("Failed to create store: %v", err)
 	}
 
-	// Re-populate the store
+	// Re-populate the store.
 	initialData := map[string]any{
 		"key1": "value1",
 		"key2": 2,
@@ -487,7 +487,7 @@ func TestMapFileStore_AutoFlush(t *testing.T) {
 		t.Fatalf("SetKey failed: %v", err)
 	}
 
-	// Reopen the store
+	// Reopen the store.
 	store2, err := NewMapFileStore(filename, defaultData)
 	if err != nil {
 		t.Fatalf("Failed to reopen store: %v", err)
@@ -521,7 +521,7 @@ func TestMapFileStore_NoAutoFlush(t *testing.T) {
 		t.Fatalf("SetKey failed: %v", err)
 	}
 
-	// Reopen the store
+	// Reopen the store.
 	store2, err := NewMapFileStore(filename, defaultData)
 	if err != nil {
 		t.Fatalf("Failed to reopen store: %v", err)
@@ -532,7 +532,7 @@ func TestMapFileStore_NoAutoFlush(t *testing.T) {
 		t.Errorf("Expected error getting 'foo' from store2 as it should not be saved yet")
 	}
 
-	// Now flush and reopen
+	// Now flush and reopen.
 	err = store.Flush()
 	if err != nil {
 		t.Fatalf("Flush failed: %v", err)
@@ -561,7 +561,7 @@ func TestMapFileStorePermissionErrorCases(t *testing.T) {
 		t.Fatalf("Failed to create store: %v", err)
 	}
 
-	// Simulate Save error by making the file unwritable
+	// Simulate Save error by making the file unwritable.
 	err = os.Chmod(filename, 0o444)
 	if err != nil {
 		t.Fatalf("Failed to change file permissions: %v", err)
@@ -574,7 +574,7 @@ func TestMapFileStorePermissionErrorCases(t *testing.T) {
 		t.Errorf("Expected error in SetKey due to unwritable file, but got nil")
 	}
 
-	// Simulate Decode error by writing invalid data into the file
+	// Simulate Decode error by writing invalid data into the file.
 	err = os.Chmod(filename, 0o666)
 	if err != nil {
 		t.Fatalf("Failed to change file permissions: %v", err)
@@ -599,7 +599,7 @@ func TestMapFileStore_NestedStructures(t *testing.T) {
 		t.Fatalf("Failed to create store: %v", err)
 	}
 
-	// Set nested data
+	// Set nested data.
 	tests := []struct {
 		name      string
 		keys      []string
@@ -625,7 +625,7 @@ func TestMapFileStore_NestedStructures(t *testing.T) {
 			name:  "Set value where intermediate is not a map",
 			keys:  []string{"parent", "child", "key"},
 			value: "invalid",
-			// 'parent.child' is a string, cannot set 'key' under it
+			// 'parent.child' is a string, cannot set 'key' under it.
 			expectErr: true,
 		},
 	}
@@ -664,14 +664,14 @@ func TestMapFileStore_KeyEncodingDecoding(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore_key_encdec.json")
 
-	// We'll define a function that returns mockB64KeyEncDec for *all* paths
+	// We'll define a function that returns mockB64KeyEncDec for all paths,
 	// i.e. it encodes/decodes every key in the store.
 	keyEncDecGetter := func(pathSoFar []string) encdec.StringEncoderDecoder {
-		// Always return the base64 encoder/decoder
+		// Always return the base64 encoder/decoder.
 		return encdec.Base64StringEncoderDecoder{}
 	}
 
-	// Create store with default data and our KeyEncDec
+	// Create store with default data and our KeyEncDec.
 	defaultData := map[string]any{"plainKey": "plainVal"}
 	store, err := NewMapFileStore(
 		filename,
@@ -710,7 +710,7 @@ func TestMapFileStore_KeyEncodingDecoding(t *testing.T) {
 				name:  "empty key slice",
 				keys:  []string{},
 				value: "value",
-				// cannot set root
+				// Cannot set root.
 				wantErrSet: true,
 			},
 		}
@@ -763,7 +763,7 @@ func TestMapFileStore_KeyEncodingDecoding(t *testing.T) {
 			t.Fatalf("Failed to reopen store after saving: %v", err)
 		}
 
-		// Try retrieving some keys we set in the previous sub-test:
+		// Try retrieving some keys we set in the previous sub-test.
 		keysToCheck := [][]string{
 			{"hello"},
 			{"level1", "level2"},
@@ -780,22 +780,21 @@ func TestMapFileStore_KeyEncodingDecoding(t *testing.T) {
 	})
 
 	t.Run("Invalid Base64 Key on Disk - Load Should Fail", func(t *testing.T) {
-		// We'll forcibly write a key that is not valid base64 into the JSON file
-		// to mimic a corrupt on-disk scenario.
+		// We'll forcibly write a key that is not valid base64 into the JSON file, to mimic a corrupt on-disk scenario.
 		// Then, a new store load should fail because decode will error out on that key.
 		err := store.Flush()
 		if err != nil {
 			t.Fatalf("Unexpected error while flushing: %v", err)
 		}
 
-		// Overwrite the store file with one invalid key (like: {"bad-base64??===": "someVal"})
+		// Overwrite the store file with one invalid key (like: {"bad-base64??===": "someVal"}).
 		invalidJSON := `{"bad-base64??===": "someVal"}`
 		err = os.WriteFile(filename, []byte(invalidJSON), 0o600)
 		if err != nil {
 			t.Fatalf("Failed to write invalid base64 key to file: %v", err)
 		}
 
-		// Now attempt to open a new store that uses the same KeyEncDec
+		// Now attempt to open a new store that uses the same KeyEncDec.
 		_, err = NewMapFileStore(
 			filename,
 			defaultData,
@@ -867,7 +866,7 @@ func TestMapFileStore_SetAll_KeyEncDec(t *testing.T) {
 				t.Errorf("[%s] SetAll error: %v", tc.name, err)
 				return
 			}
-			// Now retrieve them to ensure they're set properly
+			// Now retrieve them to ensure they're set properly.
 			for _, k := range tc.keysToCheck {
 				got, err := store.GetKey(k)
 				if err != nil {
@@ -963,13 +962,13 @@ func TestEvents_AutoFlushFalse(t *testing.T) {
 		t.Fatalf("unexpected event %+v", ev)
 	}
 
-	// reopen – change should NOT be on disk
+	// Reopen – change should NOT be on disk.
 	reopen := openStore(f)
 	if _, err := reopen.GetKey([]string{key}); err == nil {
 		t.Fatalf("value persisted although autoFlush was off")
 	}
 
-	// now flush & check again
+	// Now flush and check again.
 	if err := st.Flush(); err != nil {
 		t.Fatalf("flush: %v", err)
 	}
@@ -1050,7 +1049,7 @@ func TestEvents_ConcurrentWrites(t *testing.T) {
 	}
 	wg.Wait()
 
-	// ensure we have exactly n events of type OpSetKey.
+	// Ensure we have exactly n events of type OpSetKey.
 	mu.Lock()
 	defer mu.Unlock()
 	if len(evs) != n {
@@ -1061,7 +1060,7 @@ func TestEvents_ConcurrentWrites(t *testing.T) {
 			t.Fatalf("unexpected op %v", e.Op)
 		}
 	}
-	// final store value should equal last event.NewValue.
+	// Final store value should equal last event.NewValue.
 	last := evs[len(evs)-1].NewValue
 	got, _ := st.GetKey([]string{"k"})
 	if !reflect.DeepEqual(got, last) {

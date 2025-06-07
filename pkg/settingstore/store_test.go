@@ -38,7 +38,7 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 	// Pre-populate some settings by adding a provider, setting an API key, etc.
 	setupCtx := t.Context()
 
-	// Add a new provider "openai2"
+	// Add a new provider "openai2".
 	_, err = store.AddAISetting(
 		setupCtx,
 		&settingSpec.AddAISettingRequest{
@@ -54,7 +54,7 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 		t.Fatalf("Failed to add AI Setting: %v", err)
 	}
 
-	// Set an API key
+	// Set an API key.
 	_, err = store.SetAISettingAPIKey(
 		setupCtx,
 		&settingSpec.SetAISettingAPIKeyRequest{
@@ -77,17 +77,17 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 		{
 			name: "GetAllSettings_HappyPath",
 			setupFunc: func() error {
-				// Do nothing, file already has valid data
+				// Do nothing, file already has valid data.
 				return nil
 			},
-			// Force re-fetch from file
+			// Force re-fetch from file.
 			forceFetch:    true,
 			expectedError: "",
 		},
 		{
 			name: "GetAllSettings_InvalidSchema",
 			setupFunc: func() error {
-				// Overwrite file with invalid schema
+				// Overwrite file with invalid schema.
 				return os.WriteFile(filename, []byte(`{"invalid":"schema"}`), 0o600)
 			},
 			forceFetch:    true,
@@ -96,7 +96,7 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 		{
 			name: "GetAllSettings_EmptyFile",
 			setupFunc: func() error {
-				// Write an empty file
+				// Write an empty file.
 				return os.WriteFile(filename, []byte(``), 0o600)
 			},
 			forceFetch:    true,
@@ -105,7 +105,7 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		// capture range variable
+		// Capture range variable.
 		t.Run(tc.name, func(t *testing.T) {
 			if err := tc.setupFunc(); err != nil {
 				t.Fatalf("Setup failed: %v", err)
@@ -247,7 +247,7 @@ func TestSettingStore_AddAISetting(t *testing.T) {
 	}
 	ctx := t.Context()
 
-	// First, add a provider "openai2"
+	// First, add a provider "openai2".
 	_, err = store.AddAISetting(ctx, &settingSpec.AddAISettingRequest{
 		ProviderName: spec.ProviderName("openai2"),
 		Body: &settingSpec.AISetting{
@@ -341,7 +341,7 @@ func TestSettingStore_DeleteAISetting(t *testing.T) {
 	}
 	ctx := t.Context()
 
-	// Add a provider "openai2"
+	// Add a provider "openai2".
 	_, err = store.AddAISetting(ctx, &settingSpec.AddAISettingRequest{
 		ProviderName: spec.ProviderName("openai2"),
 		Body: &settingSpec.AISetting{
@@ -419,7 +419,7 @@ func TestSettingStore_SetAISettingAPIKey(t *testing.T) {
 	}
 	ctx := t.Context()
 
-	// Add a provider "openai2"
+	// Add a provider "openai2".
 	_, err = store.AddAISetting(ctx, &settingSpec.AddAISettingRequest{
 		ProviderName: spec.ProviderName("openai2"),
 		Body:         &settingSpec.AISetting{},
@@ -487,7 +487,7 @@ func TestSettingStore_SetAISettingAPIKey(t *testing.T) {
 			req: &settingSpec.SetAISettingAPIKeyRequest{
 				ProviderName: spec.ProviderName("openai2"),
 				Body: &settingSpec.SetAISettingAPIKeyRequestBody{
-					// 1KB of 'A'
+					// 1KB of 'A'.
 					APIKey: strings.Repeat("A", 1024),
 				},
 			},
@@ -527,7 +527,7 @@ func TestSettingStore_SetAISettingAttrs(t *testing.T) {
 	}
 	ctx := t.Context()
 
-	// Add one provider
+	// Add one provider.
 	_, err = store.AddAISetting(ctx, &settingSpec.AddAISettingRequest{
 		ProviderName: spec.ProviderName("openai2"),
 		Body:         &settingSpec.AISetting{},
@@ -636,7 +636,7 @@ func TestSettingStore_AddModelSetting(t *testing.T) {
 	}
 	ctx := t.Context()
 
-	// Add a provider
+	// Add a provider.
 	_, err = store.AddAISetting(ctx, &settingSpec.AddAISettingRequest{
 		ProviderName: spec.ProviderName("openai2"),
 		Body:         &settingSpec.AISetting{},
@@ -734,7 +734,7 @@ func TestSettingStore_DeleteModelSetting(t *testing.T) {
 	}
 	ctx := t.Context()
 
-	// Add a provider and a model
+	// Add a provider and a model.
 	_, err = store.AddAISetting(ctx, &settingSpec.AddAISettingRequest{
 		ProviderName: spec.ProviderName("openai2"),
 		Body:         &settingSpec.AISetting{},

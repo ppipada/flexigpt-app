@@ -61,10 +61,11 @@ func NewBatchRequestHandler(
 	opts ...HandlerOption,
 ) *BatchRequestHandler {
 	handler := &BatchRequestHandler{
-		methodMap:             make(map[string]IMethodHandler),
-		notificationMap:       make(map[string]INotificationHandler),
-		responseMap:           make(map[string]IResponseHandler),
-		responseHandlerMapper: nil, // or provide a default mapper if applicable
+		methodMap:       make(map[string]IMethodHandler),
+		notificationMap: make(map[string]INotificationHandler),
+		responseMap:     make(map[string]IResponseHandler),
+		// Or provide a default mapper if applicable.
+		responseHandlerMapper: nil,
 	}
 
 	for _, opt := range opts {
@@ -141,7 +142,7 @@ func (brh *BatchRequestHandler) Handle(
 	if len(resp.Body.Items) == 0 {
 		return &BatchResponse{}, nil
 	}
-	// log.Printf("%#v", resp.Body)
+	// Log.Printf("%#v", resp.Body).
 	return &resp, nil
 }
 
@@ -158,7 +159,7 @@ func (brh *BatchRequestHandler) detectMessageType(u UnionRequest) (MessageType, 
 		}
 
 	case u.Method != nil:
-		// Invalid if both method and result/error are present
+		// Invalid if both method and result/error are present.
 		if u.Result != nil || u.Error != nil {
 			return MessageTypeInvalid, &JSONRPCError{
 				Code: InvalidRequestError,
@@ -167,14 +168,14 @@ func (brh *BatchRequestHandler) detectMessageType(u UnionRequest) (MessageType, 
 				) + ": Invalid message: 'method' cannot coexist with 'result' or 'error'",
 			}
 		}
-		// It's a Request or Notification
+		// It's a Request or Notification.
 		if u.ID != nil {
 			return MessageTypeMethod, nil
 		}
 		return MessageTypeNotification, nil
 
 	case u.Result != nil || u.Error != nil:
-		// Invalid if both result and error are present
+		// Invalid if both result and error are present.
 		if u.Result != nil && u.Error != nil {
 			return MessageTypeInvalid, &JSONRPCError{
 				Code: InternalError,
@@ -184,7 +185,7 @@ func (brh *BatchRequestHandler) detectMessageType(u UnionRequest) (MessageType, 
 			}
 		}
 
-		// Response must have an ID
+		// Response must have an ID.
 		if u.ID != nil {
 			return MessageTypeResponse, nil
 		}
@@ -194,7 +195,7 @@ func (brh *BatchRequestHandler) detectMessageType(u UnionRequest) (MessageType, 
 		}
 
 	default:
-		// Invalid message
+		// Invalid message.
 		return MessageTypeInvalid, &JSONRPCError{
 			Code: InvalidRequestError,
 			Message: GetDefaultErrorMessage(

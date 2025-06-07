@@ -89,12 +89,12 @@ func NewMapFileStore(
 		encdec:      simplemapdbEncdec.JSONEncoderDecoder{},
 	}
 
-	// Apply options
+	// Apply options.
 	for _, opt := range opts {
 		opt(store)
 	}
 
-	// create file if not exists
+	// Create file if not exists.
 	err := store.createFileIfNotExists(filename)
 	if err != nil {
 		return nil, err
@@ -118,7 +118,7 @@ func (s *MapFileStore) fireEvent(e Event) {
 		func(cb Listener) {
 			defer func() {
 				if r := recover(); r != nil {
-					// log.Printf("filestore: listener panic: %v", r)
+					// Log.Printf("filestore: listener panic: %v", r).
 					slog.Error(
 						"Filestore listener panic",
 						"err",
@@ -137,35 +137,36 @@ func (s *MapFileStore) fireEvent(e Event) {
 
 // createFileIfNotExists checks if a file exists and creates it if it doesn't.
 func (store *MapFileStore) createFileIfNotExists(filename string) error {
-	// Check if the file exists
+	// Check if the file exists.
 	if _, err := os.Stat(filename); err == nil {
-		return nil // File exists, nothing to do
+		// File exists, nothing to do.
+		return nil
 	} else if !os.IsNotExist(err) {
 		return fmt.Errorf("failed to stat file %s: %w", filename, err)
 	}
 
-	// File does not exist
+	// File does not exist.
 	if !store.createIfNotExists {
 		return fmt.Errorf("file %s does not exist", filename)
 	}
 
-	// Copy default data to store
+	// Copy default data to store.
 	store.data = make(map[string]any)
 	maps.Copy(store.data, store.defaultData)
 
-	// Create directories if needed
+	// Create directories if needed.
 	if err := os.MkdirAll(filepath.Dir(filename), os.FileMode(0o770)); err != nil {
 		return fmt.Errorf("failed to create directories for file %s: %w", filename, err)
 	}
 
-	// Create the file
+	// Create the file.
 	f, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("failed to create file %s: %w", filename, err)
 	}
 	defer f.Close()
 
-	// Flush the store data to the file
+	// Flush the store data to the file.
 	if err := store.flushUnlocked(); err != nil {
 		return fmt.Errorf("failed to flush file %s: %w", filename, err)
 	}
@@ -178,28 +179,28 @@ func (store *MapFileStore) load() error {
 	store.mu.Lock()
 	defer store.mu.Unlock()
 
-	// Open the file
+	// Open the file.
 	f, err := os.Open(store.filename)
 	if err != nil {
 		return fmt.Errorf("failed to open file %s: %w", store.filename, err)
 	}
 	defer f.Close()
 
-	// Decode the data from the file
+	// Decode the data from the file.
 	store.data = make(map[string]any)
 	if err := store.encdec.Decode(f, &store.data); err != nil {
 		return fmt.Errorf("failed to decode data from file %s: %w", store.filename, err)
 	}
 
-	// Do processing in place for load as you want laoded data to be non encoded decoded
-	// First process keys in decode mode
+	// Do processing in place for load as you want loaded data to be non encoded decoded
+	// First process keys in decode mode.
 	encodeMode := false
 	err = encodeDecodeAllKeysRecursively(store.data, []string{}, store.getKeyEncDec, encodeMode)
 	if err != nil {
 		return err
 	}
 
-	// Then process values in decode mode
+	// Then process values in decode mode.
 	newObj, err := encodeDecodeAllValuesRecursively(
 		store.data,
 		[]string{},
@@ -215,11 +216,12 @@ func (store *MapFileStore) load() error {
 }
 
 func (store *MapFileStore) flushUnlocked() error {
-	// We'll make a deep copy so we don't mutate in-memory. no error as store.data is always a map
+	// We'll make a deep copy so we don't mutate in-memory.
+	// No error as store.data is always a map.
 	encodeMode := true
 	dataCopy, _ := DeepCopyValue(store.data).(map[string]any)
 
-	// First encode values so that all keys from in mem are non mutated
+	// First encode values so that all keys from in mem are non mutated.
 	// Encode KEYS next, so that on disk, the providers/modelnames become base64, etc.
 	tmpd, err := encodeDecodeAllValuesRecursively(
 		dataCopy,
@@ -297,7 +299,7 @@ func (store *MapFileStore) Reset() error {
 // GetAll returns a copy of all data in the store, refreshing from the file first.
 func (store *MapFileStore) GetAll(forceFetch bool) (map[string]any, error) {
 	if forceFetch {
-		// Refresh data from the file
+		// Refresh data from the file.
 		if err := store.load(); err != nil {
 			return nil, fmt.Errorf("failed to refresh data from file: %w", err)
 		}
@@ -306,7 +308,7 @@ func (store *MapFileStore) GetAll(forceFetch bool) (map[string]any, error) {
 	store.mu.RLock()
 	defer store.mu.RUnlock()
 
-	// Return a copy of the in-memory data
+	// Return a copy of the in-memory data.
 	dataCopy := make(map[string]any)
 	maps.Copy(dataCopy, store.data)
 	return dataCopy, nil
@@ -456,8 +458,7 @@ func (store *MapFileStore) DeleteKey(keys []string) error {
 	return nil
 }
 
-// encodeDecodeAllKeysRecursively walks the data as a map.
-// if "KeyEncDecGetter(pathSoFar)" returns a StringEncoderDecoder, it renames all immediate sub-keys using Encode() or Decode() depending on the mode.
+// If "KeyEncDecGetter(pathSoFar)" returns a StringEncoderDecoder, it renames all immediate sub-keys using Encode() or Decode() depending on the mode.
 // Then it recurses into each sub-value with an updated path.
 // Here obj needs to be any as we may get non map objects in recursive traversal, dont do anything.
 func encodeDecodeAllKeysRecursively(
@@ -480,7 +481,6 @@ func encodeDecodeAllKeysRecursively(
 	for k, v := range currentMap {
 		newPath := slices.Clone(pathSoFar)
 		newPath = append(newPath, k)
-		// Does the user want to rename THIS child's key?
 		if keyEncDec := getKeyEncDec(newPath); keyEncDec != nil {
 			if encodeMode {
 				newK := keyEncDec.Encode(k)
@@ -517,7 +517,7 @@ func encodeDecodeAllKeysRecursively(
 	for k, v := range currentMap {
 		newPath := slices.Clone(pathSoFar)
 		newPath = append(newPath, k)
-		// If the child's value is a map, keep going
+		// If the child's value is a map, keep going.
 		if subMap, ok := v.(map[string]any); ok {
 			if err := encodeDecodeAllKeysRecursively(subMap, newPath, getKeyEncDec, encodeMode); err != nil {
 				return err
@@ -534,7 +534,7 @@ func encodeDecodeAllValuesRecursively(
 	getValueEncDec ValueEncDecGetter,
 	encodeMode bool,
 ) (any, error) {
-	// If the user has a value-encoder for this path, encode/decode the *entire* obj here.
+	// If the user has a value-encoder for this path, encode/decode the entire obj here.
 	if getValueEncDec != nil {
 		valEncDec := getValueEncDec(pathSoFar)
 		if valEncDec != nil {
@@ -544,7 +544,6 @@ func encodeDecodeAllValuesRecursively(
 				base64Str string
 			)
 			if encodeMode {
-				// Encode obj to bytes -> base64 -> store as string
 				if err := valEncDec.Encode(&buf, obj); err != nil {
 					return obj, fmt.Errorf("failed encoding at path %v: %w", pathSoFar, err)
 				}
@@ -552,15 +551,15 @@ func encodeDecodeAllValuesRecursively(
 				return base64Str, nil
 			}
 
-			// Decode mode: obj should be a base64-encoded string...
+			// Decode mode obj should be a base64-encoded string.
 			strVal, ok := obj.(string)
 			if !ok {
-				// we expected it to be string but found something else, either error or just skip
+				// We expected it to be string but found something else, either error or just skip.
 				return obj, nil
 			}
 			rawBytes, err := base64.StdEncoding.DecodeString(strVal)
 			if err != nil {
-				// Move on or return an error
+				// Move on or return an error.
 				return obj, fmt.Errorf("failed base64 decode at path %v: %w", pathSoFar, err)
 			}
 			if err := valEncDec.Decode(bytes.NewReader(rawBytes), &finalVal); err != nil {
@@ -574,7 +573,7 @@ func encodeDecodeAllValuesRecursively(
 	// If obj is a map, recurse its children.
 	m, ok := obj.(map[string]any)
 	if !ok {
-		// Not a map => nothing left to do
+		// Not a map, nothing left to do.
 		return obj, nil
 	}
 
@@ -590,7 +589,7 @@ func encodeDecodeAllValuesRecursively(
 		if err != nil {
 			return obj, err
 		}
-		// store the possibly-encoded child back
+		// Store the possibly-encoded child back.
 		m[k] = newChild
 	}
 	return m, nil
