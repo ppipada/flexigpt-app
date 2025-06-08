@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"slices"
@@ -41,8 +42,9 @@ func NewEngine(cfg Config) (*Engine, error) {
 	dataSourceName := filepath.Join(
 		cfg.BaseDir,
 		cfg.DBFileName,
-	) + "?busy_timeout=5000&_pragma=journal_mode(WAL)"
-	db, err := sql.Open("sqlite", dataSourceName)
+	)
+
+	db, err := sql.Open("sqlite", dataSourceName+"?busy_timeout=5000&_pragma=journal_mode(WAL)")
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +53,7 @@ func NewEngine(cfg Config) (*Engine, error) {
 
 	e := &Engine{db: db, cfg: cfg}
 	e.hsh = schemaChecksum(e.cfg)
-
+	slog.Info("ftsengine bootstrap", "dbPath", dataSourceName)
 	if err := e.bootstrap(context.Background()); err != nil {
 		_ = db.Close()
 		return nil, err
@@ -119,12 +121,14 @@ func (e *Engine) bootstrap(ctx context.Context) error {
 		return err
 	}
 
-	// Existing hash?
+	// Existing hash.
 	var stored string
 	_ = e.db.QueryRowContext(ctx, sqlSelectMetaHash).Scan(&stored)
 
 	// Create / replace FTS virtual table.
+	slog.Debug("fst-engine bootstrap", "previousChecksum", stored, "newChecksum", e.cfg)
 	if stored != e.hsh {
+		slog.Info("fst-engine bootstrap: config checksum mismatch, create virtual table again.")
 		var cols []string
 		cols = append(cols, ColNameExternalID+" UNINDEXED")
 		for _, c := range e.cfg.Columns {
@@ -144,6 +148,7 @@ func (e *Engine) bootstrap(ctx context.Context) error {
 
 		// Schema changed, clear previous rows.
 		if stored != "" {
+			slog.Info("fst-engine bootstrap: config checksum mismatch, delete all rows.")
 			_, _ = e.db.ExecContext(ctx, fmt.Sprintf(sqlDeleteAllRows, quote(e.cfg.Table)))
 		}
 	}
