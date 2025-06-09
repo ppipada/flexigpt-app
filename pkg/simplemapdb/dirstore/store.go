@@ -164,7 +164,6 @@ func (mds *MapDirectoryStore) DeleteFile(filename string) error {
 	return nil
 }
 
-// Helper to read and sort files in a partition directory.
 func (mds *MapDirectoryStore) readPartitionFiles(
 	partitionPath, sortOrder string,
 ) ([]string, error) {
@@ -192,84 +191,120 @@ func (mds *MapDirectoryStore) readPartitionFiles(
 	return partitionFileNames, nil
 }
 
+type PartitionFilterPageToken struct {
+	PartitionIndex   int      `json:"partitionIndex"`
+	FilterPartitions []string `json:"filterPartitions"`
+}
+
+type PageTokenData struct {
+	FileIndex                 int                       `json:"fileIndex"`
+	SortOrder                 string                    `json:"sortOrder"`
+	PartitionListingPageToken string                    `json:"partitionListingPageToken,omitempty"`
+	PartitionFilterPageToken  *PartitionFilterPageToken `json:"partitionFilterPageToken,omitempty"`
+}
+
 func (mds *MapDirectoryStore) ListFiles(
 	initialSortOrder, pageToken string,
+	filterPartitions []string,
 ) (filenames []string, nextPageToken string, err error) {
-	// Decode page token.
-	var tokenData struct {
-		PartitionPageToken string `json:"PartitionPageToken"`
-		FileIndex          int    `json:"FileIndex"`
-		SortOrder          string `json:"SortOrder"`
-	}
+	var token PageTokenData
+
+	// Decode page token or initialize
 	if pageToken != "" {
 		tokenBytes, err := base64.StdEncoding.DecodeString(pageToken)
 		if err != nil {
 			return nil, "", fmt.Errorf("invalid page token: %w", err)
 		}
-		if err := json.Unmarshal(tokenBytes, &tokenData); err != nil {
+		if err := json.Unmarshal(tokenBytes, &token); err != nil {
 			return nil, "", fmt.Errorf("invalid page token: %w", err)
 		}
 	} else {
-		tokenData.SortOrder = initialSortOrder
+		token.SortOrder = initialSortOrder
+		token.FileIndex = 0
+		if len(filterPartitions) > 0 {
+			token.PartitionFilterPageToken = &PartitionFilterPageToken{
+				PartitionIndex:   0,
+				FilterPartitions: filterPartitions,
+			}
+		}
 	}
 
+	// Determine mode
+	isFiltered := token.PartitionFilterPageToken != nil
+
 	for {
-		// Get a paginated list of partition directories.
-		partitions, nextPartitionPageToken, err := mds.PartitionProvider.ListPartitions(
-			mds.baseDir,
-			tokenData.SortOrder,
-			tokenData.PartitionPageToken,
-			1,
-		)
-		if err != nil {
-			return nil, "", fmt.Errorf("failed to list partitions: %w", err)
+		var partitionName string
+		var nextPartitionListingPageToken string
+
+		if isFiltered {
+			pfpt := token.PartitionFilterPageToken
+			if pfpt.PartitionIndex >= len(pfpt.FilterPartitions) {
+				break // No more partitions
+			}
+			partitionName = pfpt.FilterPartitions[pfpt.PartitionIndex]
+		} else {
+			// Unfiltered mode: get next partition from provider
+			partitions, nextToken, err := mds.PartitionProvider.ListPartitions(
+				mds.baseDir,
+				token.SortOrder,
+				token.PartitionListingPageToken,
+				1,
+			)
+			if err != nil {
+				return nil, "", fmt.Errorf("failed to list partitions: %w", err)
+			}
+			if len(partitions) == 0 {
+				break
+			}
+			partitionName = partitions[0]
+			nextPartitionListingPageToken = nextToken
 		}
 
-		if len(partitions) == 0 {
-			break
-		}
-
-		partitionPath := filepath.Join(mds.baseDir, partitions[0])
-		partitionFileNames, err := mds.readPartitionFiles(partitionPath, tokenData.SortOrder)
+		partitionPath := filepath.Join(mds.baseDir, partitionName)
+		partitionFileNames, err := mds.readPartitionFiles(partitionPath, token.SortOrder)
 		if err != nil {
 			return nil, "", err
 		}
 
-		for j := tokenData.FileIndex; j < len(partitionFileNames); j++ {
-			filenames = append(filenames, filepath.Join(partitions[0], partitionFileNames[j]))
+		for j := token.FileIndex; j < len(partitionFileNames); j++ {
+			filenames = append(filenames, filepath.Join(partitionName, partitionFileNames[j]))
 			if len(filenames) >= mds.pageSize {
-				// Check if we are at the end of the current partition.
-				if j+1 < len(partitionFileNames) {
-					// More files in the current partition.
-					nextPageTokenData, _ := json.Marshal(struct {
-						PartitionPageToken string `json:"PartitionPageToken"`
-						FileIndex          int    `json:"FileIndex"`
-						SortOrder          string `json:"SortOrder"`
-					}{PartitionPageToken: tokenData.PartitionPageToken, FileIndex: j + 1, SortOrder: tokenData.SortOrder})
-					nextPageToken = base64.StdEncoding.EncodeToString(nextPageTokenData)
-					return filenames, nextPageToken, nil
-				} else {
-					// Move to the next partition.
-					nextPageTokenData, _ := json.Marshal(struct {
-						PartitionPageToken string `json:"PartitionPageToken"`
-						FileIndex          int    `json:"FileIndex"`
-						SortOrder          string `json:"SortOrder"`
-					}{PartitionPageToken: nextPartitionPageToken, FileIndex: 0, SortOrder: tokenData.SortOrder})
-					nextPageToken = base64.StdEncoding.EncodeToString(nextPageTokenData)
-					return filenames, nextPageToken, nil
+				// Prepare next page token
+				nextToken := PageTokenData{
+					SortOrder: token.SortOrder,
+					FileIndex: j + 1,
 				}
+				if isFiltered {
+					pfpt := *token.PartitionFilterPageToken
+					nextToken.PartitionFilterPageToken = &PartitionFilterPageToken{
+						PartitionIndex:   pfpt.PartitionIndex,
+						FilterPartitions: pfpt.FilterPartitions,
+					}
+				} else {
+					nextToken.PartitionListingPageToken = token.PartitionListingPageToken
+				}
+				nextPageTokenBytes, _ := json.Marshal(nextToken)
+				nextPageToken = base64.StdEncoding.EncodeToString(nextPageTokenBytes)
+				return filenames, nextPageToken, nil
 			}
 		}
-		// Reset file index for the next partition.
-		tokenData.FileIndex = 0
+		// Reset file index for next partition
+		token.FileIndex = 0
 
-		// If there are no more partitions to process, break the loop.
-		if nextPartitionPageToken == "" {
-			break
+		// Move to next partition
+		if isFiltered {
+			token.PartitionFilterPageToken.PartitionIndex++
+			if token.PartitionFilterPageToken.PartitionIndex >= len(
+				token.PartitionFilterPageToken.FilterPartitions,
+			) {
+				break
+			}
+		} else {
+			if nextPartitionListingPageToken == "" {
+				break
+			}
+			token.PartitionListingPageToken = nextPartitionListingPageToken
 		}
-
-		// Update the partition page token for the next iteration.
-		tokenData.PartitionPageToken = nextPartitionPageToken
 	}
 
 	return filenames, "", nil

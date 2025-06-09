@@ -206,7 +206,7 @@ func (cc *ConversationCollection) ListConversations(
 	if req != nil {
 		token = req.Token
 	}
-	files, next, err := cc.store.ListFiles("desc", token)
+	files, next, err := cc.store.ListFiles("desc", token, []string{})
 	if err != nil {
 		return nil, err
 	}
