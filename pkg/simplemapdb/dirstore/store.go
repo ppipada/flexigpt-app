@@ -164,6 +164,34 @@ func (mds *MapDirectoryStore) DeleteFile(filename string) error {
 	return nil
 }
 
+// Helper to read and sort files in a partition directory.
+func (mds *MapDirectoryStore) readPartitionFiles(
+	partitionPath, sortOrder string,
+) ([]string, error) {
+	files, err := os.ReadDir(partitionPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read partition directory %s: %w", partitionPath, err)
+	}
+
+	var partitionFileNames []string
+	for _, file := range files {
+		if !file.IsDir() {
+			partitionFileNames = append(partitionFileNames, file.Name())
+		}
+	}
+
+	switch strings.ToLower(sortOrder) {
+	case "asc":
+		sort.Strings(partitionFileNames)
+	case "desc":
+		sort.Sort(sort.Reverse(sort.StringSlice(partitionFileNames)))
+	default:
+		return nil, fmt.Errorf("invalid sort order: %s", sortOrder)
+	}
+
+	return partitionFileNames, nil
+}
+
 func (mds *MapDirectoryStore) ListFiles(
 	initialSortOrder, pageToken string,
 ) (filenames []string, nextPageToken string, err error) {
@@ -182,7 +210,6 @@ func (mds *MapDirectoryStore) ListFiles(
 			return nil, "", fmt.Errorf("invalid page token: %w", err)
 		}
 	} else {
-		// Use the initial sort order for the first page.
 		tokenData.SortOrder = initialSortOrder
 	}
 
@@ -203,31 +230,9 @@ func (mds *MapDirectoryStore) ListFiles(
 		}
 
 		partitionPath := filepath.Join(mds.baseDir, partitions[0])
-		files, err := os.ReadDir(partitionPath)
+		partitionFileNames, err := mds.readPartitionFiles(partitionPath, tokenData.SortOrder)
 		if err != nil {
-			return nil, "", fmt.Errorf(
-				"failed to read partition directory %s: %w",
-				partitionPath,
-				err,
-			)
-		}
-
-		// Collect file names.
-		var partitionFileNames []string
-		for _, file := range files {
-			if !file.IsDir() {
-				partitionFileNames = append(partitionFileNames, file.Name())
-			}
-		}
-
-		// Sort file names.
-		switch strings.ToLower(tokenData.SortOrder) {
-		case "asc":
-			sort.Strings(partitionFileNames)
-		case "desc":
-			sort.Sort(sort.Reverse(sort.StringSlice(partitionFileNames)))
-		default:
-			return nil, "", fmt.Errorf("invalid sort order: %s", tokenData.SortOrder)
+			return nil, "", err
 		}
 
 		for j := tokenData.FileIndex; j < len(partitionFileNames); j++ {
