@@ -138,6 +138,26 @@ func (cc *ConversationCollection) SaveConversation(
 	return &spec.SaveConversationResponse{}, nil
 }
 
+func (cc *ConversationCollection) AddMessageToConversation(
+	ctx context.Context,
+	req *spec.AddMessageToConversationRequest,
+) (*spec.AddMessageToConversationResponse, error) {
+	convoResp, err := cc.GetConversation(ctx,
+		&spec.GetConversationRequest{ID: req.ID, Title: req.Body.Title})
+	if err != nil {
+		return nil, err
+	}
+
+	convoResp.Body.Messages = append(convoResp.Body.Messages, req.Body.NewMessage)
+	convoResp.Body.ModifiedAt = time.Now()
+
+	if _, err := cc.SaveConversation(
+		ctx, &spec.SaveConversationRequest{Body: convoResp.Body}); err != nil {
+		return nil, err
+	}
+	return &spec.AddMessageToConversationResponse{}, nil
+}
+
 func (cc *ConversationCollection) DeleteConversation(
 	ctx context.Context,
 	req *spec.DeleteConversationRequest,
@@ -251,24 +271,4 @@ func (cc *ConversationCollection) SearchConversations(
 			NextPageToken:     &next,
 		},
 	}, nil
-}
-
-func (cc *ConversationCollection) AddMessageToConversation(
-	ctx context.Context,
-	req *spec.AddMessageToConversationRequest,
-) (*spec.AddMessageToConversationResponse, error) {
-	convoResp, err := cc.GetConversation(ctx,
-		&spec.GetConversationRequest{ID: req.ID, Title: req.Body.Title})
-	if err != nil {
-		return nil, err
-	}
-
-	convoResp.Body.Messages = append(convoResp.Body.Messages, req.Body.NewMessage)
-	convoResp.Body.ModifiedAt = time.Now()
-
-	if _, err := cc.SaveConversation(
-		ctx, &spec.SaveConversationRequest{Body: convoResp.Body}); err != nil {
-		return nil, err
-	}
-	return &spec.AddMessageToConversationResponse{}, nil
 }
