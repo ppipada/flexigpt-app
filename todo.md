@@ -5,11 +5,63 @@
 - [x] support events in simplemapdb
 - [x] add fts using sqlite for simplemapdb
 - [x] test and integrate fts with conversations
-- [ ] mtime should be added to cols in conversations and it should be used to do a incremental walk along with path used as externalID
+- [x] mtime should be added to cols in conversations and it should be used to do a incremental walk along with path used as externalID
 - [x] the engine somehow has path etc as inbuilt. It looks very tightly coupled to files or something called as path. Ideally it should have opaque and its own semantics that the consumer will adapt to
+
 - [ ] implement prompts and tools using dirstore+fts
 - [ ] spinner before first response (details if possible)
 - [ ] post last streamed msg the scroll is moving a bit up
+
+## UI integration for search fts of conversations
+
+- Entry Point (Focus / Empty Query)
+
+  - [ ] On focus, call `listConversations(pageSize=20)`
+    - [ ] Render a “Recent conversations” list inside the dropdown.
+  - [ ] Each row: title + last-modified date.
+  - [ ] Up/Down / mouse-hover highlight; ⏎ or click navigates to the convo.
+
+- Local Autocomplete (Query Length 1–2)
+
+  - [ ] Filter the already-loaded titles in memory; update instantly.
+  - [ ] Footer item: “Press Enter to search all messages” (inactive until length ≥ 3).
+  - [ ] No backend round-trip.
+
+- Debounced Full-Text Search (Query Length ≥ 3)
+
+  - [ ] After 300 ms of inactivity fire `searchConversations(q, undefined, 20)`.
+  - [ ] If another keystroke occurs, cancel the in-flight promise.
+  - [ ] Present results in two sub-groups
+    - [ ] 1. Title matches
+    - [ ] 2. Message matches (with 1-line highlighted snippet).
+  - [ ] Show spinner overlay while waiting; keep previous list dimmed for stability.
+
+- Scroll-to-Load “More Results”
+
+  - [ ] Dropdown body has its own scroll container (max-height ~60 vh).
+  - [ ] When the user scrolls to 80 % of the container and `nextToken` exists
+    - [ ] → automatically call `searchConversations(q, nextToken, 20)` and append rows.
+  - [ ] Optional footer: “End of results” or “Loading more…”.
+
+- Interaction Rules
+
+  - [ ] up/down moves through visible items; focus wraps at top/bottom.
+  - [ ] enter or click on an item → open convo.
+  - [ ] If item originated from a message match, auto-scroll & briefly highlight that message. (not sure how?)
+  - [ ] escape clears search & closes dropdown.
+  - [ ] If the user presses enter with no item highlighted, do nothing (they must choose).
+
+- Performance & Networking
+
+  - [ ] Debounce: 300 ms; per-query request count rarely > 4.
+  - [ ] Cache last 5 queries (query string → result set) for instant recall.
+  - [ ] Re-use a single `AbortController` per search bar instance to cancel stale fetches.
+
+- Edge & Empty States
+  - [ ] No recent conversations → “No conversations yet” illustration.
+  - [ ] No matches → “No results for ‘XYZ’”.
+  - [ ] Network / SQLite error → inline error row + toast “Retry”.
+  - [ ] Very long titles are ellipsized; full title appears in tooltip.
 
 ## Tasks: Tools Implementation with CodeMirror
 
