@@ -164,8 +164,36 @@ func (mds *MapDirectoryStore) DeleteFile(filename string) error {
 	return nil
 }
 
+// ListingConfig holds all options for listing files.
+type ListingConfig struct {
+	// "asc" or "desc".
+	SortOrder string
+	PageSize  int
+	// If empty, list all partitions.
+	FilterPartitions []string
+	// If non-empty, only return files with this prefix.
+	FilenamePrefix string
+}
+
+// PartitionFilterPageToken tracks progress through filtered partitions.
+type PartitionFilterPageToken struct {
+	PartitionIndex   int      `json:"partitionIndex"`
+	FilterPartitions []string `json:"filterPartitions"`
+}
+
+// PageTokenData encodes all paging state.
+type PageTokenData struct {
+	FileIndex                 int                       `json:"fileIndex"`
+	SortOrder                 string                    `json:"sortOrder"`
+	PageSize                  int                       `json:"pageSize"`
+	FilenamePrefix            string                    `json:"filenamePrefix,omitempty"`
+	PartitionListingPageToken string                    `json:"partitionListingPageToken,omitempty"`
+	PartitionFilterPageToken  *PartitionFilterPageToken `json:"partitionFilterPageToken,omitempty"`
+}
+
+// readPartitionFiles lists files in a partition, sorted and filtered by prefix.
 func (mds *MapDirectoryStore) readPartitionFiles(
-	partitionPath, sortOrder string,
+	partitionPath, sortOrder, filenamePrefix string,
 ) ([]string, error) {
 	files, err := os.ReadDir(partitionPath)
 	if err != nil {
@@ -175,7 +203,10 @@ func (mds *MapDirectoryStore) readPartitionFiles(
 	var partitionFileNames []string
 	for _, file := range files {
 		if !file.IsDir() {
-			partitionFileNames = append(partitionFileNames, file.Name())
+			name := file.Name()
+			if filenamePrefix == "" || strings.HasPrefix(name, filenamePrefix) {
+				partitionFileNames = append(partitionFileNames, name)
+			}
 		}
 	}
 
@@ -191,25 +222,14 @@ func (mds *MapDirectoryStore) readPartitionFiles(
 	return partitionFileNames, nil
 }
 
-type PartitionFilterPageToken struct {
-	PartitionIndex   int      `json:"partitionIndex"`
-	FilterPartitions []string `json:"filterPartitions"`
-}
-
-type PageTokenData struct {
-	FileIndex                 int                       `json:"fileIndex"`
-	SortOrder                 string                    `json:"sortOrder"`
-	PartitionListingPageToken string                    `json:"partitionListingPageToken,omitempty"`
-	PartitionFilterPageToken  *PartitionFilterPageToken `json:"partitionFilterPageToken,omitempty"`
-}
-
+// ListFiles lists files according to the config and page token.
 func (mds *MapDirectoryStore) ListFiles(
-	initialSortOrder, pageToken string,
-	filterPartitions []string,
+	config ListingConfig,
+	pageToken string,
 ) (filenames []string, nextPageToken string, err error) {
 	var token PageTokenData
 
-	// Decode page token or initialize
+	// Decode page token or initialize.
 	if pageToken != "" {
 		tokenBytes, err := base64.StdEncoding.DecodeString(pageToken)
 		if err != nil {
@@ -219,17 +239,24 @@ func (mds *MapDirectoryStore) ListFiles(
 			return nil, "", fmt.Errorf("invalid page token: %w", err)
 		}
 	} else {
-		token.SortOrder = initialSortOrder
+		token.SortOrder = config.SortOrder
+		if token.SortOrder == "" {
+			token.SortOrder = "asc"
+		}
 		token.FileIndex = 0
-		if len(filterPartitions) > 0 {
+		token.PageSize = config.PageSize
+		if token.PageSize <= 0 {
+			token.PageSize = mds.pageSize
+		}
+		token.FilenamePrefix = config.FilenamePrefix
+		if len(config.FilterPartitions) > 0 {
 			token.PartitionFilterPageToken = &PartitionFilterPageToken{
 				PartitionIndex:   0,
-				FilterPartitions: filterPartitions,
+				FilterPartitions: config.FilterPartitions,
 			}
 		}
 	}
 
-	// Determine mode
 	isFiltered := token.PartitionFilterPageToken != nil
 
 	for {
@@ -239,11 +266,11 @@ func (mds *MapDirectoryStore) ListFiles(
 		if isFiltered {
 			pfpt := token.PartitionFilterPageToken
 			if pfpt.PartitionIndex >= len(pfpt.FilterPartitions) {
-				break // No more partitions
+				// No more partitions.
+				break
 			}
 			partitionName = pfpt.FilterPartitions[pfpt.PartitionIndex]
 		} else {
-			// Unfiltered mode: get next partition from provider
 			partitions, nextToken, err := mds.PartitionProvider.ListPartitions(
 				mds.baseDir,
 				token.SortOrder,
@@ -261,18 +288,24 @@ func (mds *MapDirectoryStore) ListFiles(
 		}
 
 		partitionPath := filepath.Join(mds.baseDir, partitionName)
-		partitionFileNames, err := mds.readPartitionFiles(partitionPath, token.SortOrder)
+		partitionFileNames, err := mds.readPartitionFiles(
+			partitionPath,
+			token.SortOrder,
+			token.FilenamePrefix,
+		)
 		if err != nil {
 			return nil, "", err
 		}
 
 		for j := token.FileIndex; j < len(partitionFileNames); j++ {
 			filenames = append(filenames, filepath.Join(partitionName, partitionFileNames[j]))
-			if len(filenames) >= mds.pageSize {
-				// Prepare next page token
+			if len(filenames) > token.PageSize {
+				// Prepare next page token.
 				nextToken := PageTokenData{
-					SortOrder: token.SortOrder,
-					FileIndex: j + 1,
+					SortOrder:      token.SortOrder,
+					FileIndex:      j,
+					PageSize:       token.PageSize,
+					FilenamePrefix: token.FilenamePrefix,
 				}
 				if isFiltered {
 					pfpt := *token.PartitionFilterPageToken
@@ -285,13 +318,11 @@ func (mds *MapDirectoryStore) ListFiles(
 				}
 				nextPageTokenBytes, _ := json.Marshal(nextToken)
 				nextPageToken = base64.StdEncoding.EncodeToString(nextPageTokenBytes)
-				return filenames, nextPageToken, nil
+				return filenames[:token.PageSize], nextPageToken, nil
 			}
 		}
-		// Reset file index for next partition
 		token.FileIndex = 0
 
-		// Move to next partition
 		if isFiltered {
 			token.PartitionFilterPageToken.PartitionIndex++
 			if token.PartitionFilterPageToken.PartitionIndex >= len(
