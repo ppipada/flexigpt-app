@@ -67,10 +67,10 @@ func (ccw *ConversationCollectionWrapper) SearchConversations(
 	})
 }
 
-func (ccw *ConversationCollectionWrapper) AddMessageToConversation(
-	req *spec.AddMessageToConversationRequest,
-) (*spec.AddMessageToConversationResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.AddMessageToConversationResponse, error) {
-		return ccw.store.AddMessageToConversation(context.Background(), req)
+func (ccw *ConversationCollectionWrapper) PutMessagesToConversation(
+	req *spec.PutMessagesToConversationRequest,
+) (*spec.PutMessagesToConversationResponse, error) {
+	return middleware.WithRecoveryResp(func() (*spec.PutMessagesToConversationResponse, error) {
+		return ccw.store.PutMessagesToConversation(context.Background(), req)
 	})
 }

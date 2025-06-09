@@ -6,11 +6,11 @@ import type {
 } from '@/models/conversationmodel';
 
 import {
-	AddMessageToConversation,
 	DeleteConversation,
 	GetConversation,
 	ListConversations,
 	PutConversation,
+	PutMessagesToConversation,
 	SearchConversations,
 } from '@/apis/wailsjs/go/main/ConversationCollectionWrapper';
 import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
@@ -59,6 +59,6 @@ export class WailsConversationStoreAPI implements IConversationStoreAPI {
 				newMessage: newMessage,
 			},
 		};
-		await AddMessageToConversation(req as wailsSpec.AddMessageToConversationRequest);
+		await PutMessagesToConversation(req as wailsSpec.PutMessagesToConversationRequest);
 	}
 }

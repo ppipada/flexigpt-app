@@ -51,14 +51,14 @@ type SearchConversationsResponseBody struct {
 	NextPageToken     *string            `json:"nextPageToken"`
 }
 
-type AddMessageToConversationRequest struct {
+type PutMessagesToConversationRequest struct {
 	ID   string `path:"id" required:"true"`
-	Body *AddMessageToConversationRequestBody
+	Body *PutMessagesToConversationRequestBody
 }
 
-type AddMessageToConversationRequestBody struct {
+type PutMessagesToConversationRequestBody struct {
 	Title      string              `json:"title"      required:"true"`
 	NewMessage ConversationMessage `json:"newMessage" required:"true"`
 }
 
-type AddMessageToConversationResponse struct{}
+type PutMessagesToConversationResponse struct{}

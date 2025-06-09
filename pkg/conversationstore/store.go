@@ -138,10 +138,10 @@ func (cc *ConversationCollection) PutConversation(
 	return &spec.SaveConversationResponse{}, nil
 }
 
-func (cc *ConversationCollection) AddMessageToConversation(
+func (cc *ConversationCollection) PutMessagesToConversation(
 	ctx context.Context,
-	req *spec.AddMessageToConversationRequest,
-) (*spec.AddMessageToConversationResponse, error) {
+	req *spec.PutMessagesToConversationRequest,
+) (*spec.PutMessagesToConversationResponse, error) {
 	convoResp, err := cc.GetConversation(ctx,
 		&spec.GetConversationRequest{ID: req.ID, Title: req.Body.Title})
 	if err != nil {
@@ -155,7 +155,7 @@ func (cc *ConversationCollection) AddMessageToConversation(
 		ctx, &spec.SaveConversationRequest{Body: convoResp.Body}); err != nil {
 		return nil, err
 	}
-	return &spec.AddMessageToConversationResponse{}, nil
+	return &spec.PutMessagesToConversationResponse{}, nil
 }
 
 func (cc *ConversationCollection) DeleteConversation(

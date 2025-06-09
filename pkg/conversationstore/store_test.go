@@ -188,11 +188,11 @@ func TestConversationCollection(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				ctx := t.Context()
-				_, err := cc.AddMessageToConversation(
+				_, err := cc.PutMessagesToConversation(
 					ctx,
-					&spec.AddMessageToConversationRequest{
+					&spec.PutMessagesToConversationRequest{
 						ID: convo.ID,
-						Body: &spec.AddMessageToConversationRequestBody{
+						Body: &spec.PutMessagesToConversationRequestBody{
 							Title:      convo.Title,
 							NewMessage: tt.message,
 						},

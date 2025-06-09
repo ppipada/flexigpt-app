@@ -167,10 +167,10 @@ func TestFTSAddMessageUpdatesIndex(t *testing.T) {
 		Role:    spec.ConversationRoleAssistant,
 		Content: "let me whisper a secret",
 	}
-	_, _ = cc.AddMessageToConversation(t.Context(),
-		&spec.AddMessageToConversationRequest{
+	_, _ = cc.PutMessagesToConversation(t.Context(),
+		&spec.PutMessagesToConversationRequest{
 			ID: c.ID,
-			Body: &spec.AddMessageToConversationRequestBody{
+			Body: &spec.PutMessagesToConversationRequestBody{
 				Title:      c.Title,
 				NewMessage: msg,
 			},

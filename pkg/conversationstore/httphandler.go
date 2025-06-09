@@ -58,11 +58,11 @@ func InitConversationStoreHandlers(api huma.API, conversationStoreAPI *Conversat
 	}, conversationStoreAPI.GetConversation)
 
 	huma.Register(api, huma.Operation{
-		OperationID: "add-message-to-conversation",
-		Method:      http.MethodPost,
-		Path:        pathPrefix + "/{id}/messages/append",
-		Summary:     "Append a message to a conversation",
-		Description: "Append a message to a conversation",
+		OperationID: "put-messages-to-conversation",
+		Method:      http.MethodPut,
+		Path:        pathPrefix + "/{id}/messages",
+		Summary:     "Put messages to a conversation",
+		Description: "Put messages to a conversation",
 		Tags:        []string{tag},
-	}, conversationStoreAPI.AddMessageToConversation)
+	}, conversationStoreAPI.PutMessagesToConversation)
 }
