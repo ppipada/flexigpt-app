@@ -5,6 +5,73 @@ import { FiSearch } from 'react-icons/fi';
 
 import type { ConversationItem } from '@/models/conversationmodel';
 
+function groupItems(items: ConversationItem[]) {
+	const normalize = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+	const today = normalize(new Date());
+	const yesterday = new Date(today);
+	yesterday.setDate(today.getDate() - 1);
+	const last7Days = new Date(today);
+	last7Days.setDate(today.getDate() - 7);
+
+	const buckets: Record<string, ConversationItem[]> = {
+		Today: [],
+		Yesterday: [],
+		'Last 7 Days': [],
+		Older: [],
+	};
+
+	items.forEach(it => {
+		const day = normalize(new Date(it.createdAt));
+		if (day >= today) buckets['Today'].push(it);
+		else if (day >= yesterday) buckets['Yesterday'].push(it);
+		else if (day >= last7Days) buckets['Last 7 Days'].push(it);
+		else buckets['Older'].push(it);
+	});
+
+	return buckets;
+}
+
+interface GroupedDropdownProps {
+	items: ConversationItem[];
+	onClick: (item: ConversationItem) => void;
+	focusedIndex: number;
+}
+const GroupedDropdown: FC<GroupedDropdownProps> = ({ items, onClick, focusedIndex }) => {
+	const grouped = groupItems(items);
+
+	return (
+		<ul className="absolute left-0 right-0 mt-0 max-h-80 overflow-y-auto bg-base-200 rounded-2xl shadow-lg text-sm">
+			{Object.entries(grouped)
+				.filter(([, arr]) => arr.length)
+				.map(([title, arr]) => (
+					<Fragment key={title}>
+						<li className="px-12 py-2 text-neutral/60">{title}</li>
+						{arr.map((it, i) => (
+							<li
+								key={it.id}
+								onClick={() => {
+									onClick(it);
+								}}
+								className={`flex justify-between items-center px-12 py-2 cursor-pointer hover:bg-base-100 ${
+									i === focusedIndex ? 'bg-base-100' : ''
+								}`}
+							>
+								<span className="truncate">{it.title}</span>
+								<span className="hidden lg:block text-neutral text-xs">
+									{new Date(it.createdAt).toLocaleDateString('en-US', {
+										day: '2-digit',
+										month: 'short',
+										year: 'numeric',
+									})}
+								</span>
+							</li>
+						))}
+					</Fragment>
+				))}
+		</ul>
+	);
+};
+
 interface ChatSearchProps {
 	initialItems: ConversationItem[];
 	onSearch: (query: string) => Promise<ConversationItem[]>;
@@ -84,92 +151,8 @@ const ChatSearch: FC<ChatSearchProps> = ({ initialItems, onSearch, onSelectConve
 					spellCheck="false"
 				/>
 			</div>
-			{showDropdown && <GroupedDropdown items={items} handleItemClick={handleItemClick} focusedIndex={focusedIndex} />}
+			{showDropdown && <GroupedDropdown items={items} onClick={handleItemClick} focusedIndex={focusedIndex} />}
 		</div>
 	);
 };
 export default ChatSearch;
-
-function groupItems(items: ConversationItem[]) {
-	const normalizeDate = (date: Date): Date => {
-		const normalized = new Date(date);
-		normalized.setHours(0, 0, 0, 0);
-		return normalized;
-	};
-
-	const now = new Date();
-	const today = normalizeDate(now);
-
-	const yesterday = new Date(today);
-	yesterday.setDate(today.getDate() - 1);
-
-	const dayBeforeYesterday = new Date(today);
-	dayBeforeYesterday.setDate(today.getDate() - 2);
-
-	const last7Days = new Date(today);
-	last7Days.setDate(today.getDate() - 7);
-
-	const groups: { [key: string]: ConversationItem[] } = {
-		Today: [],
-		Yesterday: [],
-		'Last 7 Days': [],
-		Older: [],
-	};
-
-	items.forEach(item => {
-		const itemDate = normalizeDate(new Date(item.createdAt));
-
-		if (itemDate >= today) {
-			groups['Today'].push(item);
-		} else if (itemDate >= yesterday && itemDate < today) {
-			groups['Yesterday'].push(item);
-		} else if (itemDate >= last7Days && itemDate < today) {
-			groups['Last 7 Days'].push(item);
-		} else {
-			groups['Older'].push(item);
-		}
-	});
-
-	return groups;
-}
-interface GroupedDropdownProps {
-	items: ConversationItem[];
-	handleItemClick: (item: ConversationItem) => void;
-	focusedIndex: number;
-}
-
-const GroupedDropdown: FC<GroupedDropdownProps> = ({ items, handleItemClick, focusedIndex }) => {
-	const groupedItems = groupItems(items);
-
-	return (
-		<ul
-			className="absolute left-0 right-0 mt-0 max-h-80 overflow-y-auto bg-base-200 rounded-2xl shadow-lg"
-			style={{ fontSize: '14px' }}
-		>
-			{Object.entries(groupedItems)
-				// eslint-disable-next-line @typescript-eslint/no-unused-vars
-				.filter(([_, groupItems]) => groupItems.length > 0) // Filter out empty groups
-				.map(([groupTitle, groupItems]) => (
-					<Fragment key={groupTitle}>
-						<li className="text-neutral/60 text-sm px-12 py-2">{groupTitle}</li>
-						{groupItems.map((item, index) => (
-							<li
-								key={item.id}
-								onClick={() => {
-									handleItemClick(item);
-								}}
-								className={`flex justify-between items-center px-12 py-2 cursor-pointer hover:bg-base-100 ${index === focusedIndex ? 'bg-base-100' : ''}`}
-							>
-								<span>{item.title}</span>
-								<span className="text-neutral text-xs hidden lg:block">
-									{new Date(item.createdAt).getDate()}{' '}
-									{new Intl.DateTimeFormat('en-US', { month: 'short' }).format(new Date(item.createdAt))}{' '}
-									{new Date(item.createdAt).getFullYear()}
-								</span>
-							</li>
-						))}
-					</Fragment>
-				))}
-		</ul>
-	);
-};

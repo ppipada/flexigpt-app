@@ -126,7 +126,7 @@ func (e *Engine) bootstrap(ctx context.Context) error {
 	_ = e.db.QueryRowContext(ctx, sqlSelectMetaHash).Scan(&stored)
 
 	// Create / replace FTS virtual table.
-	slog.Debug("fst-engine bootstrap", "previousChecksum", stored, "newChecksum", e.cfg)
+	slog.Debug("fst-engine bootstrap", "previousChecksum", stored, "newChecksum", e.hsh)
 	if stored != e.hsh {
 		slog.Info("fst-engine bootstrap: config checksum mismatch, create virtual table again.")
 		var cols []string
