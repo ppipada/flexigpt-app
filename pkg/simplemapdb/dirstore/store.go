@@ -12,6 +12,11 @@ import (
 	simplemapdbFileStore "github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 )
 
+const (
+	SortOrderAscending  = "asc"
+	SortOrderDescending = "desc"
+)
+
 // PartitionProvider defines an interface for determining the partition directory for a file.
 type PartitionProvider interface {
 	GetPartitionDir(filename string) string
@@ -166,7 +171,6 @@ func (mds *MapDirectoryStore) DeleteFile(filename string) error {
 
 // ListingConfig holds all options for listing files.
 type ListingConfig struct {
-	// "asc" or "desc".
 	SortOrder string
 	PageSize  int
 	// If empty, list all partitions.
@@ -211,9 +215,9 @@ func (mds *MapDirectoryStore) readPartitionFiles(
 	}
 
 	switch strings.ToLower(sortOrder) {
-	case "asc":
+	case SortOrderAscending:
 		sort.Strings(partitionFileNames)
-	case "desc":
+	case SortOrderDescending:
 		sort.Sort(sort.Reverse(sort.StringSlice(partitionFileNames)))
 	default:
 		return nil, fmt.Errorf("invalid sort order: %s", sortOrder)
@@ -241,7 +245,7 @@ func (mds *MapDirectoryStore) ListFiles(
 	} else {
 		token.SortOrder = config.SortOrder
 		if token.SortOrder == "" {
-			token.SortOrder = "asc"
+			token.SortOrder = SortOrderAscending
 		}
 		token.FileIndex = 0
 		token.PageSize = config.PageSize

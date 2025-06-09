@@ -47,9 +47,9 @@ func (p *MonthPartitionProvider) ListPartitions(
 
 	// Sort partitions.
 	switch strings.ToLower(sortOrder) {
-	case "asc":
+	case SortOrderAscending:
 		sort.Strings(partitions)
-	case "desc":
+	case SortOrderDescending:
 		sort.Sort(sort.Reverse(sort.StringSlice(partitions)))
 	default:
 		return nil, "", fmt.Errorf("invalid sort order: %s", sortOrder)

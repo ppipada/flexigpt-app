@@ -206,7 +206,10 @@ func (cc *ConversationCollection) ListConversations(
 	if req != nil {
 		token = req.Token
 	}
-	files, next, err := cc.store.ListFiles(dirstore.ListingConfig{SortOrder: "desc"}, token)
+	files, next, err := cc.store.ListFiles(
+		dirstore.ListingConfig{SortOrder: dirstore.SortOrderDescending},
+		token,
+	)
 	if err != nil {
 		return nil, err
 	}

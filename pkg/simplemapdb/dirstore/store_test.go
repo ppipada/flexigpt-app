@@ -3,14 +3,17 @@ package dirstore
 import (
 	"encoding/base64"
 	"encoding/json"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 )
 
-func TestMapDirectoryStore(t *testing.T) {
+// CRUD Tests.
+
+func TestMapDirectoryStore_CRUD(t *testing.T) {
+	t.Parallel()
+	now := time.Now()
 	tests := []struct {
 		name               string
 		partitionProvider  PartitionProvider
@@ -21,7 +24,7 @@ func TestMapDirectoryStore(t *testing.T) {
 		expectError        bool
 	}{
 		{
-			name:               "Default Partition - Create File",
+			name:               "NoPartitionProvider - Create File",
 			partitionProvider:  &NoPartitionProvider{},
 			filename:           "testfile.json",
 			data:               map[string]any{"key": "value"},
@@ -30,18 +33,18 @@ func TestMapDirectoryStore(t *testing.T) {
 			expectError:        false,
 		},
 		{
-			name: "Month Partition - Create File",
+			name: "MonthPartitionProvider - Create File",
 			partitionProvider: &MonthPartitionProvider{
-				TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
+				TimeFn: func(filename string) (time.Time, error) { return now, nil },
 			},
 			filename:           "testfile.json",
 			data:               map[string]any{"key": "value"},
-			expectedPartition:  time.Now().Format("200601"),
+			expectedPartition:  now.Format("200601"),
 			expectedFileExists: true,
 			expectError:        false,
 		},
 		{
-			name:               "Default Partition - No Data",
+			name:               "NoPartitionProvider - Empty Data",
 			partitionProvider:  &NoPartitionProvider{},
 			filename:           "emptyfile.json",
 			data:               map[string]any{},
@@ -62,6 +65,7 @@ func TestMapDirectoryStore(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			baseDir := t.TempDir()
 			mds, err := NewMapDirectoryStore(
 				baseDir,
@@ -86,7 +90,6 @@ func TestMapDirectoryStore(t *testing.T) {
 			partitionDir := filepath.Join(baseDir, tt.expectedPartition)
 			filePath := filepath.Join(partitionDir, tt.filename)
 
-			// Check if the file exists.
 			_, err = os.Stat(filePath)
 			if tt.expectedFileExists {
 				if os.IsNotExist(err) {
@@ -98,7 +101,6 @@ func TestMapDirectoryStore(t *testing.T) {
 				}
 			}
 
-			// Verify data if file exists.
 			if tt.expectedFileExists {
 				data, err := mds.GetFileData(tt.filename, false)
 				if err != nil {
@@ -117,95 +119,8 @@ func TestMapDirectoryStore(t *testing.T) {
 	}
 }
 
-func TestListFiles(t *testing.T) {
-	baseDir := t.TempDir()
-	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
-	}
-	mds, err := NewMapDirectoryStore(
-		baseDir,
-		true,
-		WithPartitionProvider(partitionProvider),
-	)
-	if err != nil {
-		t.Fatalf("failed to create MapDirectoryStore: %v", err)
-	}
-
-	// Create some files.
-	files := []string{"file1.json", "file2.json", "file3.json"}
-	for _, file := range files {
-		err := mds.SetFileData(file, map[string]any{"key": "value"})
-		if err != nil {
-			t.Fatalf("failed to set file data: %v", err)
-		}
-	}
-
-	tests := []struct {
-		name          string
-		sortOrder     string
-		pageToken     string
-		expectedFiles []string
-		expectError   bool
-	}{
-		{
-			name:          "List Files Ascending",
-			sortOrder:     "asc",
-			pageToken:     "",
-			expectedFiles: files,
-			expectError:   false,
-		},
-		{
-			name:          "List Files Descending",
-			sortOrder:     "desc",
-			pageToken:     "",
-			expectedFiles: []string{"file3.json", "file2.json", "file1.json"},
-			expectError:   false,
-		},
-		{
-			name:          "Invalid Sort Order",
-			sortOrder:     "invalid",
-			pageToken:     "",
-			expectedFiles: nil,
-			expectError:   true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			files, _, err := mds.ListFiles(
-				ListingConfig{SortOrder: tt.sortOrder},
-				tt.pageToken,
-			)
-			if tt.expectError {
-				if err == nil {
-					t.Fatalf("expected error but got none")
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-
-			// Extract filenames without partition path.
-			var filenames []string
-			for _, file := range files {
-				_, filename := filepath.Split(file)
-				filenames = append(filenames, filename)
-			}
-
-			if len(filenames) != len(tt.expectedFiles) {
-				t.Fatalf("expected %d files, got %d", len(tt.expectedFiles), len(filenames))
-			}
-			for i, expectedFile := range tt.expectedFiles {
-				if filenames[i] != expectedFile {
-					t.Fatalf("expected file %s, got %s", expectedFile, filenames[i])
-				}
-			}
-		})
-	}
-}
-
-func TestDeleteFile(t *testing.T) {
+func TestMapDirectoryStore_DeleteFile(t *testing.T) {
+	t.Parallel()
 	baseDir := t.TempDir()
 	mds, err := NewMapDirectoryStore(
 		baseDir,
@@ -222,27 +137,26 @@ func TestDeleteFile(t *testing.T) {
 		t.Fatalf("failed to set file data: %v", err)
 	}
 
-	// Verify file exists.
 	filePath := filepath.Join(baseDir, filename)
 	_, err = os.Stat(filePath)
 	if os.IsNotExist(err) {
 		t.Fatalf("expected file to exist but it does not")
 	}
 
-	// Delete the file.
 	err = mds.DeleteFile(filename)
 	if err != nil {
 		t.Fatalf("failed to delete file: %v", err)
 	}
 
-	// Verify file does not exist.
 	_, err = os.Stat(filePath)
 	if !os.IsNotExist(err) {
 		t.Fatalf("expected file not to exist but it does")
 	}
 }
 
-func TestListPartitionsPagination(t *testing.T) {
+// Listing Tests: Basic, Pagination, Filtering, Prefix.
+
+func TestMapDirectoryStore_ListFiles_BasicAndSort(t *testing.T) {
 	baseDir := t.TempDir()
 	partitionProvider := &MonthPartitionProvider{
 		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
@@ -256,57 +170,39 @@ func TestListPartitionsPagination(t *testing.T) {
 		t.Fatalf("failed to create MapDirectoryStore: %v", err)
 	}
 
-	// Create partition directories.
-	partitions := []string{"202301", "202302", "202303"}
-	for _, partition := range partitions {
-		err := os.Mkdir(filepath.Join(baseDir, partition), os.ModePerm)
-		if err != nil {
-			t.Fatalf("failed to create partition directory: %v", err)
+	files := []string{"file1.json", "file2.json", "file3.json"}
+	for _, file := range files {
+		if err := mds.SetFileData(file, map[string]any{"key": "value"}); err != nil {
+			t.Fatalf("failed to set file data: %v", err)
 		}
 	}
 
 	tests := []struct {
 		name          string
 		sortOrder     string
-		pageToken     string
-		pageSize      int
-		expectedParts []string
+		expectedFiles []string
 		expectError   bool
 	}{
 		{
-			name:          "List Partitions Ascending",
-			sortOrder:     "asc",
-			pageToken:     "",
-			pageSize:      2,
-			expectedParts: []string{"202301", "202302"},
-			expectError:   false,
+			name:          "Ascending",
+			sortOrder:     SortOrderAscending,
+			expectedFiles: files,
 		},
 		{
-			name:          "List Partitions Descending",
-			sortOrder:     "desc",
-			pageToken:     "",
-			pageSize:      2,
-			expectedParts: []string{"202303", "202302"},
-			expectError:   false,
+			name:          "Descending",
+			sortOrder:     SortOrderDescending,
+			expectedFiles: []string{"file3.json", "file2.json", "file1.json"},
 		},
 		{
-			name:          "Invalid Sort Order",
-			sortOrder:     "invalid",
-			pageToken:     "",
-			pageSize:      2,
-			expectedParts: nil,
-			expectError:   true,
+			name:        "InvalidSortOrder",
+			sortOrder:   "invalid",
+			expectError: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			partitions, nextPageToken, err := mds.PartitionProvider.ListPartitions(
-				baseDir,
-				tt.sortOrder,
-				tt.pageToken,
-				tt.pageSize,
-			)
+			files, _, err := mds.ListFiles(ListingConfig{SortOrder: tt.sortOrder}, "")
 			if tt.expectError {
 				if err == nil {
 					t.Fatalf("expected error but got none")
@@ -316,75 +212,147 @@ func TestListPartitionsPagination(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-
-			if len(partitions) != len(tt.expectedParts) {
-				t.Fatalf("expected %d partitions, got %d", len(tt.expectedParts), len(partitions))
+			var filenames []string
+			for _, file := range files {
+				_, filename := filepath.Split(file)
+				filenames = append(filenames, filename)
 			}
-			for i, expectedPart := range tt.expectedParts {
-				if partitions[i] != expectedPart {
-					t.Fatalf("expected partition %s, got %s", expectedPart, partitions[i])
-				}
+			if len(filenames) != len(tt.expectedFiles) {
+				t.Fatalf("expected %d files, got %d", len(tt.expectedFiles), len(filenames))
 			}
-
-			// Test pagination by checking the next page.
-			if nextPageToken != "" {
-				partitions, _, err = mds.PartitionProvider.ListPartitions(
-					baseDir,
-					tt.sortOrder,
-					nextPageToken,
-					tt.pageSize,
-				)
-				if err != nil {
-					t.Fatalf("unexpected error on next page: %v", err)
-				}
-				if len(partitions) != 1 {
-					t.Fatalf("expected 1 partition on next page, got %d", len(partitions))
+			for i, expectedFile := range tt.expectedFiles {
+				if filenames[i] != expectedFile {
+					t.Fatalf("expected file %s, got %s", expectedFile, filenames[i])
 				}
 			}
 		})
 	}
 }
 
-func TestListFilesPaginationMonthPartition(t *testing.T) {
-	baseDir := filepath.Join(t.TempDir(), "listdir")
-	slog.Info("TestListFilesPaginationMonthPartition", "BaseDir", baseDir)
+func TestMapDirectoryStore_ListFiles_NoPartitionProvider_Pagination(t *testing.T) {
+	baseDir := t.TempDir()
+	files := []string{
+		"file1.json", "file2.json", "file3.json", "file4.json", "file5.json",
+		"file6.json", "file7.json", "file8.json", "file9.json",
+	}
+	testData := map[string]any{"key": "value"}
+	if err := os.MkdirAll(baseDir, os.ModePerm); err != nil {
+		t.Fatalf("failed to create dir: %v", err)
+	}
+	for _, file := range files {
+		filePath := filepath.Join(baseDir, file)
+		fileData, err := json.Marshal(testData)
+		if err != nil {
+			t.Fatalf("failed to marshal test data: %v", err)
+		}
+		if err := os.WriteFile(filePath, fileData, 0o600); err != nil {
+			t.Fatalf("failed to write test file: %v", err)
+		}
+	}
 
-	// Create some files across multiple partitions.
+	tests := []struct {
+		name          string
+		sortOrder     string
+		pageSize      int
+		expectedPages [][]string
+	}{
+		{
+			name:      "Ascending",
+			sortOrder: SortOrderAscending,
+			pageSize:  4,
+			expectedPages: [][]string{
+				{"file1.json", "file2.json", "file3.json", "file4.json"},
+				{"file5.json", "file6.json", "file7.json", "file8.json"},
+				{"file9.json"},
+			},
+		},
+		{
+			name:      "Descending",
+			sortOrder: SortOrderDescending,
+			pageSize:  4,
+			expectedPages: [][]string{
+				{"file9.json", "file8.json", "file7.json", "file6.json"},
+				{"file5.json", "file4.json", "file3.json", "file2.json"},
+				{"file1.json"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pageToken := ""
+			mds, err := NewMapDirectoryStore(
+				baseDir,
+				true,
+				WithPageSize(tt.pageSize),
+			)
+			if err != nil {
+				t.Fatalf("failed to create MapDirectoryStore: %v", err)
+			}
+			for pageIndex, expectedFiles := range tt.expectedPages {
+				files, nextPageToken, err := mds.ListFiles(
+					ListingConfig{SortOrder: tt.sortOrder},
+					pageToken,
+				)
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				if len(files) != len(expectedFiles) {
+					t.Fatalf(
+						"expected %d files on page %d, got %d",
+						len(expectedFiles),
+						pageIndex+1,
+						len(files),
+					)
+				}
+				for i, expectedFile := range expectedFiles {
+					if files[i] != expectedFile {
+						t.Fatalf(
+							"expected file %s on page %d, got %s",
+							expectedFile,
+							pageIndex+1,
+							files[i],
+						)
+					}
+				}
+				pageToken = nextPageToken
+			}
+		})
+	}
+}
+
+func TestMapDirectoryStore_ListFiles_MultiPartition_Pagination(t *testing.T) {
+	baseDir := filepath.Join(t.TempDir(), "listdir")
 	partitions := []string{"202301", "202302", "202303"}
 	files := []string{"file1.json", "file2.json", "file3.json", "file4.json", "file5.json"}
 	testData := map[string]any{"key": "value"}
 
 	for _, partition := range partitions {
 		partitionDir := filepath.Join(baseDir, partition)
-		err := os.MkdirAll(partitionDir, os.ModePerm)
-		if err != nil {
+		if err := os.MkdirAll(partitionDir, os.ModePerm); err != nil {
 			t.Fatalf("failed to create partition directory: %v", err)
 		}
-
 		for _, file := range files {
 			filePath := filepath.Join(partitionDir, file)
 			fileData, err := json.Marshal(testData)
 			if err != nil {
 				t.Fatalf("failed to marshal test data: %v", err)
 			}
-			err = os.WriteFile(filePath, fileData, 0o600)
-			if err != nil {
+			if err := os.WriteFile(filePath, fileData, 0o600); err != nil {
 				t.Fatalf("failed to write test file: %v", err)
 			}
 		}
 	}
 
-	// Additional test cases for edge scenarios.
 	tests := []struct {
 		name          string
 		sortOrder     string
 		pageSize      int
 		expectedPages [][]string
-		expectError   bool
 	}{
 		{
-			name:      "List Files Ascending with Pagination",
-			sortOrder: "asc",
+			name:      "Ascending",
+			sortOrder: SortOrderAscending,
 			pageSize:  4,
 			expectedPages: [][]string{
 				{
@@ -407,11 +375,10 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 				},
 				{"202303/file3.json", "202303/file4.json", "202303/file5.json"},
 			},
-			expectError: false,
 		},
 		{
-			name:      "List Files Descending with Pagination",
-			sortOrder: "desc",
+			name:      "Descending",
+			sortOrder: SortOrderDescending,
 			pageSize:  4,
 			expectedPages: [][]string{
 				{
@@ -434,90 +401,6 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 				},
 				{"202301/file3.json", "202301/file2.json", "202301/file1.json"},
 			},
-			expectError: false,
-		},
-		{
-			name:      "Exact Page Size",
-			sortOrder: "asc",
-			pageSize:  5,
-			expectedPages: [][]string{
-				{
-					"202301/file1.json",
-					"202301/file2.json",
-					"202301/file3.json",
-					"202301/file4.json",
-					"202301/file5.json",
-				},
-				{
-					"202302/file1.json",
-					"202302/file2.json",
-					"202302/file3.json",
-					"202302/file4.json",
-					"202302/file5.json",
-				},
-				{
-					"202303/file1.json",
-					"202303/file2.json",
-					"202303/file3.json",
-					"202303/file4.json",
-					"202303/file5.json",
-				},
-			},
-			expectError: false,
-		},
-		{
-			name:      "Single File in Partition",
-			sortOrder: "asc",
-			pageSize:  4,
-			expectedPages: [][]string{
-				{
-					"202301/file1.json",
-					"202301/file2.json",
-					"202301/file3.json",
-					"202301/file4.json",
-				},
-				{
-					"202301/file5.json",
-					"202302/file1.json",
-					"202302/file2.json",
-					"202302/file3.json",
-				},
-				{
-					"202302/file4.json",
-					"202302/file5.json",
-					"202303/file1.json",
-					"202303/file2.json",
-				},
-				{"202303/file3.json", "202303/file4.json", "202303/file5.json"},
-			},
-			expectError: false,
-		},
-		{
-			name:      "Empty Partition",
-			sortOrder: "asc",
-			pageSize:  4,
-			expectedPages: [][]string{
-				{
-					"202301/file1.json",
-					"202301/file2.json",
-					"202301/file3.json",
-					"202301/file4.json",
-				},
-				{
-					"202301/file5.json",
-					"202302/file1.json",
-					"202302/file2.json",
-					"202302/file3.json",
-				},
-				{
-					"202302/file4.json",
-					"202302/file5.json",
-					"202303/file1.json",
-					"202303/file2.json",
-				},
-				{"202303/file3.json", "202303/file4.json", "202303/file5.json"},
-			},
-			expectError: false,
 		},
 	}
 
@@ -537,18 +420,13 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to create MapDirectoryStore: %v", err)
 				}
-				files, nextPageToken, err := mds.ListFiles(ListingConfig{SortOrder: tt.sortOrder},
-					pageToken)
-				if tt.expectError {
-					if err == nil {
-						t.Fatalf("expected error but got none")
-					}
-					return
-				}
+				files, nextPageToken, err := mds.ListFiles(
+					ListingConfig{SortOrder: tt.sortOrder},
+					pageToken,
+				)
 				if err != nil {
 					t.Fatalf("unexpected error: %v", err)
 				}
-
 				if len(files) != len(expectedFiles) {
 					t.Fatalf(
 						"expected %d files on page %d, got %d",
@@ -557,7 +435,6 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 						len(files),
 					)
 				}
-
 				for i, expectedFile := range expectedFiles {
 					if files[i] != expectedFile {
 						t.Fatalf(
@@ -568,147 +445,15 @@ func TestListFilesPaginationMonthPartition(t *testing.T) {
 						)
 					}
 				}
-
 				pageToken = nextPageToken
 			}
 		})
 	}
 }
 
-func TestListFilesNoPartitionProvider(t *testing.T) {
-	baseDir := filepath.Join(t.TempDir(), "nolistdir")
-	slog.Info("TestListFilesNoPartitionProvider", "BaseDir", baseDir)
+// Listing Tests: Filtering by Partition and Filename Prefix.
 
-	// Create some files in a single directory (no partitions).
-	files := []string{
-		"file1.json",
-		"file2.json",
-		"file3.json",
-		"file4.json",
-		"file5.json",
-		"file6.json",
-		"file7.json",
-		"file8.json",
-		"file9.json",
-	}
-	testData := map[string]any{"key": "value"}
-	err := os.MkdirAll(baseDir, os.ModePerm)
-	if err != nil {
-		t.Fatalf("failed to create partition directory: %v", err)
-	}
-
-	for _, file := range files {
-		filePath := filepath.Join(baseDir, file)
-		fileData, err := json.Marshal(testData)
-		if err != nil {
-			t.Fatalf("failed to marshal test data: %v", err)
-		}
-		err = os.WriteFile(filePath, fileData, 0o600)
-		if err != nil {
-			t.Fatalf("failed to write test file: %v", err)
-		}
-	}
-
-	// Test cases for pagination without partition provider.
-	tests := []struct {
-		name          string
-		sortOrder     string
-		pageSize      int
-		expectedPages [][]string
-		expectError   bool
-	}{
-		{
-			name:      "List Files Ascending with Pagination",
-			sortOrder: "asc",
-			pageSize:  4,
-			expectedPages: [][]string{
-				{"file1.json", "file2.json", "file3.json", "file4.json"},
-				{"file5.json", "file6.json", "file7.json", "file8.json"},
-				{"file9.json"},
-			},
-			expectError: false,
-		},
-		{
-			name:      "List Files Descending with Pagination",
-			sortOrder: "desc",
-			pageSize:  4,
-			expectedPages: [][]string{
-				{"file9.json", "file8.json", "file7.json", "file6.json"},
-				{"file5.json", "file4.json", "file3.json", "file2.json"},
-				{"file1.json"},
-			},
-			expectError: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			pageToken := ""
-			mds, err := NewMapDirectoryStore(
-				baseDir,
-				true,
-				WithPageSize(tt.pageSize),
-			)
-			if err != nil {
-				t.Fatalf("failed to create MapDirectoryStore: %v", err)
-			}
-
-			for pageIndex, expectedFiles := range tt.expectedPages {
-				files, nextPageToken, err := mds.ListFiles(ListingConfig{SortOrder: tt.sortOrder},
-					pageToken)
-				if tt.expectError {
-					if err == nil {
-						t.Fatalf("expected error but got none")
-					}
-					return
-				}
-				if err != nil {
-					t.Fatalf("unexpected error: %v", err)
-				}
-
-				if len(files) != len(expectedFiles) {
-					t.Fatalf(
-						"expected %d files on page %d, got %d",
-						len(expectedFiles),
-						pageIndex+1,
-						len(files),
-					)
-				}
-
-				for i, expectedFile := range expectedFiles {
-					if files[i] != expectedFile {
-						t.Fatalf(
-							"expected file %s on page %d, got %s",
-							expectedFile,
-							pageIndex+1,
-							files[i],
-						)
-					}
-				}
-
-				pageToken = nextPageToken
-			}
-		})
-	}
-}
-
-// Helper to create files in partitions
-func createFiles(t *testing.T, baseDir string, partitions []string, files []string) {
-	for _, partition := range partitions {
-		dir := filepath.Join(baseDir, partition)
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			t.Fatalf("failed to create partition dir: %v", err)
-		}
-		for _, file := range files {
-			path := filepath.Join(dir, file)
-			if err := os.WriteFile(path, []byte(`{"k":"v"}`), 0o600); err != nil {
-				t.Fatalf("failed to write file: %v", err)
-			}
-		}
-	}
-}
-
-func TestListFiles_FilteredVsNonFiltered(t *testing.T) {
+func TestMapDirectoryStore_ListFiles_FilteredPartitions(t *testing.T) {
 	baseDir := t.TempDir()
 	partitions := []string{"202301", "202302", "202303"}
 	files := []string{"a.json", "b.json", "c.json"}
@@ -735,7 +480,7 @@ func TestListFiles_FilteredVsNonFiltered(t *testing.T) {
 	}{
 		{
 			name:             "Non-filtered, ascending",
-			sortOrder:        "asc",
+			sortOrder:        SortOrderAscending,
 			filterPartitions: nil,
 			expectedFiles: []string{
 				"202301/a.json", "202301/b.json", "202301/c.json",
@@ -745,7 +490,7 @@ func TestListFiles_FilteredVsNonFiltered(t *testing.T) {
 		},
 		{
 			name:             "Non-filtered, descending",
-			sortOrder:        "desc",
+			sortOrder:        SortOrderDescending,
 			filterPartitions: nil,
 			expectedFiles: []string{
 				"202303/c.json", "202303/b.json", "202303/a.json",
@@ -755,13 +500,13 @@ func TestListFiles_FilteredVsNonFiltered(t *testing.T) {
 		},
 		{
 			name:             "Filtered, single partition",
-			sortOrder:        "asc",
+			sortOrder:        SortOrderAscending,
 			filterPartitions: []string{"202302"},
 			expectedFiles:    []string{"202302/a.json", "202302/b.json", "202302/c.json"},
 		},
 		{
 			name:             "Filtered, multiple partitions, custom order",
-			sortOrder:        "asc",
+			sortOrder:        SortOrderAscending,
 			filterPartitions: []string{"202303", "202301"},
 			expectedFiles: []string{
 				"202303/a.json", "202303/b.json", "202303/c.json",
@@ -770,7 +515,7 @@ func TestListFiles_FilteredVsNonFiltered(t *testing.T) {
 		},
 		{
 			name:             "Filtered, multiple partitions, descending",
-			sortOrder:        "desc",
+			sortOrder:        SortOrderDescending,
 			filterPartitions: []string{"202302", "202301"},
 			expectedFiles: []string{
 				"202302/c.json", "202302/b.json", "202302/a.json",
@@ -779,7 +524,7 @@ func TestListFiles_FilteredVsNonFiltered(t *testing.T) {
 		},
 		{
 			name:             "Filtered, empty partition list",
-			sortOrder:        "asc",
+			sortOrder:        SortOrderAscending,
 			filterPartitions: []string{},
 			expectedFiles: []string{
 				"202301/a.json", "202301/b.json", "202301/c.json",
@@ -813,7 +558,7 @@ func TestListFiles_FilteredVsNonFiltered(t *testing.T) {
 	}
 }
 
-func TestListFiles_FilteredPagination(t *testing.T) {
+func TestMapDirectoryStore_ListFiles_FilteredPartitions_Pagination(t *testing.T) {
 	baseDir := t.TempDir()
 	partitions := []string{"202301", "202302"}
 	files := []string{"a.json", "b.json", "c.json", "d.json"}
@@ -841,7 +586,7 @@ func TestListFiles_FilteredPagination(t *testing.T) {
 	}{
 		{
 			name:             "Filtered, paginated, asc",
-			sortOrder:        "asc",
+			sortOrder:        SortOrderAscending,
 			filterPartitions: []string{"202301", "202302"},
 			expectedPages: [][]string{
 				{"202301/a.json", "202301/b.json", "202301/c.json"},
@@ -851,7 +596,7 @@ func TestListFiles_FilteredPagination(t *testing.T) {
 		},
 		{
 			name:             "Filtered, paginated, desc",
-			sortOrder:        "desc",
+			sortOrder:        SortOrderDescending,
 			filterPartitions: []string{"202302", "202301"},
 			expectedPages: [][]string{
 				{"202302/d.json", "202302/c.json", "202302/b.json"},
@@ -897,309 +642,12 @@ func TestListFiles_FilteredPagination(t *testing.T) {
 	}
 }
 
-// --- Error and edge case tests ---
-
-func TestListFiles_InvalidSortOrder(t *testing.T) {
-	baseDir := t.TempDir()
-	partitions := []string{"202301"}
-	files := []string{"a.json"}
-	createFiles(t, baseDir, partitions, files)
-
-	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
-	}
-	mds, err := NewMapDirectoryStore(
-		baseDir,
-		true,
-		WithPartitionProvider(partitionProvider),
-	)
-	if err != nil {
-		t.Fatalf("failed to create MapDirectoryStore: %v", err)
-	}
-
-	_, _, err = mds.ListFiles(ListingConfig{SortOrder: "notasort"}, "")
-
-	if err == nil {
-		t.Fatal("expected error for invalid sort order, got nil")
-	}
-}
-
-func TestListFiles_NonExistentPartition(t *testing.T) {
-	baseDir := t.TempDir()
-	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
-	}
-	mds, err := NewMapDirectoryStore(
-		baseDir,
-		true,
-		WithPartitionProvider(partitionProvider),
-	)
-	if err != nil {
-		t.Fatalf("failed to create MapDirectoryStore: %v", err)
-	}
-
-	// Filtered mode, but partition does not exist
-	files, nextPageToken, err := mds.ListFiles(
-		ListingConfig{SortOrder: "asc", FilterPartitions: []string{"doesnotexist"}},
-		"",
-	)
-	if err == nil {
-		t.Fatalf("expected error for non-existent partition, got nil")
-	}
-	if len(files) != 0 {
-		t.Fatalf("expected no files, got %v", files)
-	}
-	if nextPageToken != "" {
-		t.Fatalf("expected no next page token, got %q", nextPageToken)
-	}
-}
-
-func TestListFiles_UnreadablePartitionDir(t *testing.T) {
-	baseDir := t.TempDir()
-	partition := "202301"
-	dir := filepath.Join(baseDir, partition)
-	if err := os.MkdirAll(dir, 0o000); err != nil {
-		t.Fatalf("failed to create unreadable dir: %v", err)
-	}
-	defer os.Chmod(dir, 0o755) // restore permissions for cleanup
-
-	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
-	}
-	mds, err := NewMapDirectoryStore(
-		baseDir,
-		true,
-		WithPartitionProvider(partitionProvider),
-	)
-	if err != nil {
-		t.Fatalf("failed to create MapDirectoryStore: %v", err)
-	}
-
-	_, _, err = mds.ListFiles(
-		ListingConfig{SortOrder: "asc", FilterPartitions: []string{partition}},
-		"",
-	)
-	if err == nil {
-		t.Fatal("expected error for unreadable partition dir, got nil")
-	}
-}
-
-func TestListFiles_InvalidPageToken(t *testing.T) {
-	baseDir := t.TempDir()
-	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
-	}
-	mds, err := NewMapDirectoryStore(
-		baseDir,
-		true,
-		WithPartitionProvider(partitionProvider),
-	)
-	if err != nil {
-		t.Fatalf("failed to create MapDirectoryStore: %v", err)
-	}
-
-	// Not base64
-	_, _, err = mds.ListFiles(ListingConfig{SortOrder: "asc"}, "notbase64!")
-
-	if err == nil {
-		t.Fatal("expected error for invalid base64 page token, got nil")
-	}
-
-	// Base64 but not JSON
-	bad := base64.StdEncoding.EncodeToString([]byte("notjson"))
-	_, _, err = mds.ListFiles(ListingConfig{SortOrder: "asc"}, bad)
-	if err == nil {
-		t.Fatal("expected error for invalid JSON page token, got nil")
-	}
-}
-
-func TestListFiles_EmptyBaseDir(t *testing.T) {
-	baseDir := t.TempDir()
-	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
-	}
-	mds, err := NewMapDirectoryStore(
-		baseDir,
-		true,
-		WithPartitionProvider(partitionProvider),
-	)
-	if err != nil {
-		t.Fatalf("failed to create MapDirectoryStore: %v", err)
-	}
-
-	files, nextPageToken, err := mds.ListFiles(ListingConfig{SortOrder: "asc"}, "")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(files) != 0 {
-		t.Fatalf("expected no files, got %v", files)
-	}
-	if nextPageToken != "" {
-		t.Fatalf("expected no next page token, got %q", nextPageToken)
-	}
-}
-
-func TestListFiles_FilterWithNonExistentPartition(t *testing.T) {
-	baseDir := t.TempDir()
-	partitions := []string{"202301"}
-	files := []string{"a.json"}
-	createFiles(t, baseDir, partitions, files)
-
-	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
-	}
-	mds, err := NewMapDirectoryStore(
-		baseDir,
-		true,
-		WithPartitionProvider(partitionProvider),
-	)
-	if err != nil {
-		t.Fatalf("failed to create MapDirectoryStore: %v", err)
-	}
-
-	// Filtered mode, one partition exists, one does not
-	_, _, err = mds.ListFiles(
-		ListingConfig{SortOrder: "asc", FilterPartitions: []string{"202301", "doesnotexist"}},
-		"",
-	)
-	if err == nil {
-		t.Fatal("expected error for non-existent partition in filter, got nil")
-	}
-}
-
-func TestListFiles_PageSizeLargerThanFiles(t *testing.T) {
-	baseDir := t.TempDir()
-	partitions := []string{"202301"}
-	files := []string{"a.json", "b.json"}
-	createFiles(t, baseDir, partitions, files)
-
-	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
-	}
-	mds, err := NewMapDirectoryStore(
-		baseDir,
-		true,
-		WithPartitionProvider(partitionProvider),
-		WithPageSize(10),
-	)
-	if err != nil {
-		t.Fatalf("failed to create MapDirectoryStore: %v", err)
-	}
-
-	got, nextPageToken, err := mds.ListFiles(ListingConfig{SortOrder: "asc"}, "")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(got) != 2 {
-		t.Fatalf("expected 2 files, got %d", len(got))
-	}
-	if nextPageToken != "" {
-		t.Fatalf("expected no next page token, got %q", nextPageToken)
-	}
-}
-
-func TestListFiles_EmptyFilterPartitions(t *testing.T) {
-	baseDir := t.TempDir()
-	partitions := []string{"202301"}
-	files := []string{"a.json"}
-	createFiles(t, baseDir, partitions, files)
-
-	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
-	}
-	mds, err := NewMapDirectoryStore(
-		baseDir,
-		true,
-		WithPartitionProvider(partitionProvider),
-	)
-	if err != nil {
-		t.Fatalf("failed to create MapDirectoryStore: %v", err)
-	}
-
-	got, nextPageToken, err := mds.ListFiles(
-		ListingConfig{SortOrder: "asc", FilterPartitions: []string{}},
-		"",
-	)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(got) != 1 {
-		t.Fatalf("expected 1 file, got %d", len(got))
-	}
-	if nextPageToken != "" {
-		t.Fatalf("expected no next page token, got %q", nextPageToken)
-	}
-}
-
-func TestListFiles_CorruptedPageToken(t *testing.T) {
-	baseDir := t.TempDir()
-	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
-	}
-	mds, err := NewMapDirectoryStore(
-		baseDir,
-		true,
-		WithPartitionProvider(partitionProvider),
-	)
-	if err != nil {
-		t.Fatalf("failed to create MapDirectoryStore: %v", err)
-	}
-
-	// Corrupted JSON (valid base64)
-	bad := base64.StdEncoding.EncodeToString([]byte("{notjson:"))
-	_, _, err = mds.ListFiles(ListingConfig{SortOrder: "asc"}, bad)
-	if err == nil {
-		t.Fatal("expected error for corrupted JSON page token, got nil")
-	}
-}
-
-func TestListFiles_FilteredPagination_EmptyPartition(t *testing.T) {
-	baseDir := t.TempDir()
-
-	files := []string{"a.json"}
-	createFiles(t, baseDir, []string{"202301"}, files)
-	// 202302 exists but is empty
-	if err := os.MkdirAll(filepath.Join(baseDir, "202302"), 0o755); err != nil {
-		t.Fatalf("failed to create partition dir: %v", err)
-	}
-
-	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
-	}
-	mds, err := NewMapDirectoryStore(
-		baseDir,
-		true,
-		WithPartitionProvider(partitionProvider),
-		WithPageSize(1),
-	)
-	if err != nil {
-		t.Fatalf("failed to create MapDirectoryStore: %v", err)
-	}
-
-	// Should list only the file in 202301, then nothing from 202302
-	pageToken := ""
-	files1, nextPageToken, err := mds.ListFiles(
-		ListingConfig{SortOrder: "asc", FilterPartitions: []string{"202301", "202302"}},
-		pageToken,
-	)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(files1) != 1 || files1[0] != "202301/a.json" {
-		t.Fatalf("expected [202301/a.json], got %v", files1)
-	}
-	if nextPageToken != "" {
-		t.Fatalf("expected no next page token, got %q", nextPageToken)
-	}
-}
-
-func TestListFiles_FilenamePrefixFiltering(t *testing.T) {
+func TestMapDirectoryStore_ListFiles_FilenamePrefixFiltering(t *testing.T) {
 	baseDir := t.TempDir()
 	partitions := []string{"202301", "202302"}
 	files := []string{
 		"apple.json", "apricot.json", "banana.json", "berry.json", "cherry.json",
-		"apple_pie.json", "banana_bread.json", "berry_tart.json",
-		"zebra.json",
+		"apple_pie.json", "banana_bread.json", "berry_tart.json", "zebra.json",
 	}
 	createFiles(t, baseDir, partitions, files)
 
@@ -1216,9 +664,7 @@ func TestListFiles_FilenamePrefixFiltering(t *testing.T) {
 		t.Fatalf("failed to create MapDirectoryStore: %v", err)
 	}
 
-	type want struct {
-		files []string
-	}
+	type want struct{ files []string }
 	tests := []struct {
 		name             string
 		sortOrder        string
@@ -1228,7 +674,7 @@ func TestListFiles_FilenamePrefixFiltering(t *testing.T) {
 	}{
 		{
 			name:           "No prefix, ascending",
-			sortOrder:      "asc",
+			sortOrder:      SortOrderAscending,
 			filenamePrefix: "",
 			want: want{files: []string{
 				"202301/apple.json", "202301/apple_pie.json", "202301/apricot.json", "202301/banana.json", "202301/banana_bread.json", "202301/berry.json", "202301/berry_tart.json", "202301/cherry.json", "202301/zebra.json",
@@ -1237,7 +683,7 @@ func TestListFiles_FilenamePrefixFiltering(t *testing.T) {
 		},
 		{
 			name:           "Prefix 'apple', ascending",
-			sortOrder:      "asc",
+			sortOrder:      SortOrderAscending,
 			filenamePrefix: "apple",
 			want: want{files: []string{
 				"202301/apple.json", "202301/apple_pie.json",
@@ -1246,7 +692,7 @@ func TestListFiles_FilenamePrefixFiltering(t *testing.T) {
 		},
 		{
 			name:           "Prefix 'banana', ascending",
-			sortOrder:      "asc",
+			sortOrder:      SortOrderAscending,
 			filenamePrefix: "banana",
 			want: want{files: []string{
 				"202301/banana.json", "202301/banana_bread.json",
@@ -1255,7 +701,7 @@ func TestListFiles_FilenamePrefixFiltering(t *testing.T) {
 		},
 		{
 			name:           "Prefix 'berry', descending",
-			sortOrder:      "desc",
+			sortOrder:      SortOrderDescending,
 			filenamePrefix: "berry",
 			want: want{files: []string{
 				"202302/berry_tart.json", "202302/berry.json",
@@ -1264,7 +710,7 @@ func TestListFiles_FilenamePrefixFiltering(t *testing.T) {
 		},
 		{
 			name:           "Prefix 'z', ascending",
-			sortOrder:      "asc",
+			sortOrder:      SortOrderAscending,
 			filenamePrefix: "z",
 			want: want{files: []string{
 				"202301/zebra.json", "202302/zebra.json",
@@ -1272,13 +718,13 @@ func TestListFiles_FilenamePrefixFiltering(t *testing.T) {
 		},
 		{
 			name:           "Prefix 'notfound', ascending",
-			sortOrder:      "asc",
+			sortOrder:      SortOrderAscending,
 			filenamePrefix: "notfound",
 			want:           want{files: []string{}},
 		},
 		{
 			name:             "Prefix '', filtered partition",
-			sortOrder:        "asc",
+			sortOrder:        SortOrderAscending,
 			filterPartitions: []string{"202301"},
 			filenamePrefix:   "",
 			want: want{files: []string{
@@ -1287,7 +733,7 @@ func TestListFiles_FilenamePrefixFiltering(t *testing.T) {
 		},
 		{
 			name:             "Prefix 'ap', filtered partition",
-			sortOrder:        "asc",
+			sortOrder:        SortOrderAscending,
 			filterPartitions: []string{"202302"},
 			filenamePrefix:   "ap",
 			want: want{files: []string{
@@ -1296,7 +742,7 @@ func TestListFiles_FilenamePrefixFiltering(t *testing.T) {
 		},
 		{
 			name:             "Prefix 'berry', filtered partition, descending",
-			sortOrder:        "desc",
+			sortOrder:        SortOrderDescending,
 			filterPartitions: []string{"202301"},
 			filenamePrefix:   "berry",
 			want: want{files: []string{
@@ -1305,7 +751,7 @@ func TestListFiles_FilenamePrefixFiltering(t *testing.T) {
 		},
 		{
 			name:           "Prefix with underscore",
-			sortOrder:      "asc",
+			sortOrder:      SortOrderAscending,
 			filenamePrefix: "banana_",
 			want: want{files: []string{
 				"202301/banana_bread.json", "202302/banana_bread.json",
@@ -1313,7 +759,7 @@ func TestListFiles_FilenamePrefixFiltering(t *testing.T) {
 		},
 		{
 			name:           "Prefix with special char",
-			sortOrder:      "asc",
+			sortOrder:      SortOrderAscending,
 			filenamePrefix: "apple_",
 			want: want{files: []string{
 				"202301/apple_pie.json", "202302/apple_pie.json",
@@ -1349,13 +795,12 @@ func TestListFiles_FilenamePrefixFiltering(t *testing.T) {
 	}
 }
 
-func TestListFiles_FilenamePrefixFiltering_Pagination(t *testing.T) {
+func TestMapDirectoryStore_ListFiles_FilenamePrefixFiltering_Pagination(t *testing.T) {
 	baseDir := t.TempDir()
 	partitions := []string{"202301"}
 	files := []string{
 		"apple.json", "apricot.json", "banana.json", "berry.json", "cherry.json",
-		"apple_pie.json", "banana_bread.json", "berry_tart.json",
-		"zebra.json",
+		"apple_pie.json", "banana_bread.json", "berry_tart.json", "zebra.json",
 	}
 	createFiles(t, baseDir, partitions, files)
 
@@ -1373,9 +818,7 @@ func TestListFiles_FilenamePrefixFiltering_Pagination(t *testing.T) {
 		t.Fatalf("failed to create MapDirectoryStore: %v", err)
 	}
 
-	type pageWant struct {
-		files []string
-	}
+	type pageWant struct{ files []string }
 	tests := []struct {
 		name           string
 		sortOrder      string
@@ -1384,7 +827,7 @@ func TestListFiles_FilenamePrefixFiltering_Pagination(t *testing.T) {
 	}{
 		{
 			name:           "Prefix 'apple', ascending, paginated",
-			sortOrder:      "asc",
+			sortOrder:      SortOrderAscending,
 			filenamePrefix: "apple",
 			expectedPages: []pageWant{
 				{files: []string{"202301/apple.json", "202301/apple_pie.json"}},
@@ -1392,7 +835,7 @@ func TestListFiles_FilenamePrefixFiltering_Pagination(t *testing.T) {
 		},
 		{
 			name:           "Prefix 'b', ascending, paginated",
-			sortOrder:      "asc",
+			sortOrder:      SortOrderAscending,
 			filenamePrefix: "b",
 			expectedPages: []pageWant{
 				{files: []string{"202301/banana.json", "202301/banana_bread.json"}},
@@ -1401,7 +844,7 @@ func TestListFiles_FilenamePrefixFiltering_Pagination(t *testing.T) {
 		},
 		{
 			name:           "Prefix 'berry', ascending, paginated",
-			sortOrder:      "asc",
+			sortOrder:      SortOrderAscending,
 			filenamePrefix: "berry",
 			expectedPages: []pageWant{
 				{files: []string{"202301/berry.json", "202301/berry_tart.json"}},
@@ -1409,7 +852,7 @@ func TestListFiles_FilenamePrefixFiltering_Pagination(t *testing.T) {
 		},
 		{
 			name:           "Prefix 'z', ascending, paginated",
-			sortOrder:      "asc",
+			sortOrder:      SortOrderAscending,
 			filenamePrefix: "z",
 			expectedPages: []pageWant{
 				{files: []string{"202301/zebra.json"}},
@@ -1417,7 +860,7 @@ func TestListFiles_FilenamePrefixFiltering_Pagination(t *testing.T) {
 		},
 		{
 			name:           "Prefix '', ascending, paginated",
-			sortOrder:      "asc",
+			sortOrder:      SortOrderAscending,
 			filenamePrefix: "",
 			expectedPages: []pageWant{
 				{files: []string{"202301/apple.json", "202301/apple_pie.json"}},
@@ -1475,15 +918,10 @@ func TestListFiles_FilenamePrefixFiltering_Pagination(t *testing.T) {
 	}
 }
 
-func TestListFiles_FilenamePrefixFiltering_EmptyPartition(t *testing.T) {
-	baseDir := t.TempDir()
-	// 202301 has files, 202302 is empty
-	files := []string{"apple.json", "banana.json"}
-	createFiles(t, baseDir, []string{"202301"}, files)
-	if err := os.MkdirAll(filepath.Join(baseDir, "202302"), 0o755); err != nil {
-		t.Fatalf("failed to create partition dir: %v", err)
-	}
+// Listing Tests: Partition Listing & Pagination.
 
+func TestMapDirectoryStore_ListPartitions_Pagination(t *testing.T) {
+	baseDir := t.TempDir()
 	partitionProvider := &MonthPartitionProvider{
 		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
 	}
@@ -1491,62 +929,423 @@ func TestListFiles_FilenamePrefixFiltering_EmptyPartition(t *testing.T) {
 		baseDir,
 		true,
 		WithPartitionProvider(partitionProvider),
-		WithPageSize(1),
 	)
 	if err != nil {
 		t.Fatalf("failed to create MapDirectoryStore: %v", err)
 	}
 
-	// Should list only the file in 202301 with prefix "apple", then nothing from 202302
-	pageToken := ""
-	files1, nextPageToken, err := mds.ListFiles(
-		ListingConfig{
-			SortOrder:        "asc",
-			FilterPartitions: []string{"202301", "202302"},
-			FilenamePrefix:   "apple",
+	partitions := []string{"202301", "202302", "202303"}
+	for _, partition := range partitions {
+		if err := os.Mkdir(filepath.Join(baseDir, partition), os.ModePerm); err != nil {
+			t.Fatalf("failed to create partition directory: %v", err)
+		}
+	}
+
+	tests := []struct {
+		name          string
+		sortOrder     string
+		pageToken     string
+		pageSize      int
+		expectedParts []string
+		expectError   bool
+	}{
+		{
+			name:          "Ascending",
+			sortOrder:     SortOrderAscending,
+			pageToken:     "",
+			pageSize:      2,
+			expectedParts: []string{"202301", "202302"},
 		},
-		pageToken,
-	)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		{
+			name:          "Descending",
+			sortOrder:     SortOrderDescending,
+			pageToken:     "",
+			pageSize:      2,
+			expectedParts: []string{"202303", "202302"},
+		},
+		{
+			name:        "InvalidSortOrder",
+			sortOrder:   "invalid",
+			pageToken:   "",
+			pageSize:    2,
+			expectError: true,
+		},
 	}
-	if len(files1) != 1 || files1[0] != "202301/apple.json" {
-		t.Fatalf("expected [202301/apple.json], got %v", files1)
-	}
-	if nextPageToken != "" {
-		t.Fatalf("expected no next page token, got %q", nextPageToken)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			partitions, nextPageToken, err := mds.PartitionProvider.ListPartitions(
+				baseDir, tt.sortOrder, tt.pageToken, tt.pageSize,
+			)
+			if tt.expectError {
+				if err == nil {
+					t.Fatalf("expected error but got none")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if len(partitions) != len(tt.expectedParts) {
+				t.Fatalf("expected %d partitions, got %d", len(tt.expectedParts), len(partitions))
+			}
+			for i, expectedPart := range tt.expectedParts {
+				if partitions[i] != expectedPart {
+					t.Fatalf("expected partition %s, got %s", expectedPart, partitions[i])
+				}
+			}
+			if nextPageToken != "" {
+				partitions, _, err = mds.PartitionProvider.ListPartitions(
+					baseDir, tt.sortOrder, nextPageToken, tt.pageSize,
+				)
+				if err != nil {
+					t.Fatalf("unexpected error on next page: %v", err)
+				}
+				if len(partitions) != 1 {
+					t.Fatalf("expected 1 partition on next page, got %d", len(partitions))
+				}
+			}
+		})
 	}
 }
 
-func TestListFiles_FilenamePrefixFiltering_NoMatch(t *testing.T) {
-	baseDir := t.TempDir()
-	partitions := []string{"202301"}
-	files := []string{"apple.json", "banana.json"}
-	createFiles(t, baseDir, partitions, files)
+// Listing Tests: Edge Cases & Error Handling.
+
+func TestMapDirectoryStore_ListFiles_ErrorsAndEdgeCases(t *testing.T) {
+	t.Parallel()
 
 	partitionProvider := &MonthPartitionProvider{
 		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
 	}
-	mds, err := NewMapDirectoryStore(
-		baseDir,
-		true,
-		WithPartitionProvider(partitionProvider),
-	)
-	if err != nil {
-		t.Fatalf("failed to create MapDirectoryStore: %v", err)
-	}
 
-	got, nextPageToken, err := mds.ListFiles(
-		ListingConfig{SortOrder: "asc", FilenamePrefix: "zzz"},
-		"",
-	)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(got) != 0 {
-		t.Fatalf("expected 0 files, got %v", got)
-	}
-	if nextPageToken != "" {
-		t.Fatalf("expected no next page token, got %q", nextPageToken)
+	t.Run("InvalidSortOrder", func(t *testing.T) {
+		t.Parallel()
+		baseDir := t.TempDir()
+		mds, err := NewMapDirectoryStore(
+			baseDir,
+			true,
+			WithPartitionProvider(partitionProvider),
+		)
+		if err != nil {
+			t.Fatalf("failed to create MapDirectoryStore: %v", err)
+		}
+		_, _, err = mds.ListFiles(ListingConfig{SortOrder: "notasort"}, "")
+		if err == nil {
+			t.Fatal("expected error for invalid sort order, got nil")
+		}
+	})
+
+	t.Run("NonExistentPartition", func(t *testing.T) {
+		t.Parallel()
+		baseDir := t.TempDir()
+		mds, err := NewMapDirectoryStore(
+			baseDir,
+			true,
+			WithPartitionProvider(partitionProvider),
+		)
+		if err != nil {
+			t.Fatalf("failed to create MapDirectoryStore: %v", err)
+		}
+		files, nextPageToken, err := mds.ListFiles(
+			ListingConfig{
+				SortOrder:        SortOrderAscending,
+				FilterPartitions: []string{"doesnotexist"},
+			},
+			"",
+		)
+		if err == nil {
+			t.Fatalf("expected error for non-existent partition, got nil")
+		}
+		if len(files) != 0 {
+			t.Fatalf("expected no files, got %v", files)
+		}
+		if nextPageToken != "" {
+			t.Fatalf("expected no next page token, got %q", nextPageToken)
+		}
+	})
+
+	t.Run("UnreadablePartitionDir", func(t *testing.T) {
+		t.Parallel()
+		baseDir := t.TempDir()
+		mds, err := NewMapDirectoryStore(
+			baseDir,
+			true,
+			WithPartitionProvider(partitionProvider),
+		)
+		if err != nil {
+			t.Fatalf("failed to create MapDirectoryStore: %v", err)
+		}
+		partition := "202301"
+		dir := filepath.Join(baseDir, partition)
+		if err := os.MkdirAll(dir, 0o000); err != nil {
+			t.Fatalf("failed to create unreadable dir: %v", err)
+		}
+		defer func() { _ = os.Chmod(dir, 0o755) }()
+		_, _, err = mds.ListFiles(
+			ListingConfig{SortOrder: SortOrderAscending, FilterPartitions: []string{partition}}, "",
+		)
+		if err == nil {
+			t.Fatal("expected error for unreadable partition dir, got nil")
+		}
+	})
+
+	t.Run("InvalidPageToken", func(t *testing.T) {
+		t.Parallel()
+		baseDir := t.TempDir()
+		mds, err := NewMapDirectoryStore(
+			baseDir,
+			true,
+			WithPartitionProvider(partitionProvider),
+		)
+		if err != nil {
+			t.Fatalf("failed to create MapDirectoryStore: %v", err)
+		}
+		_, _, err = mds.ListFiles(ListingConfig{SortOrder: SortOrderAscending}, "notbase64!")
+		if err == nil {
+			t.Fatal("expected error for invalid base64 page token, got nil")
+		}
+		bad := base64.StdEncoding.EncodeToString([]byte("notjson"))
+		_, _, err = mds.ListFiles(ListingConfig{SortOrder: SortOrderAscending}, bad)
+		if err == nil {
+			t.Fatal("expected error for invalid JSON page token, got nil")
+		}
+	})
+
+	t.Run("CorruptedPageToken", func(t *testing.T) {
+		t.Parallel()
+		baseDir := t.TempDir()
+		mds, err := NewMapDirectoryStore(
+			baseDir,
+			true,
+			WithPartitionProvider(partitionProvider),
+		)
+		if err != nil {
+			t.Fatalf("failed to create MapDirectoryStore: %v", err)
+		}
+		bad := base64.StdEncoding.EncodeToString([]byte("{notjson:"))
+		_, _, err = mds.ListFiles(ListingConfig{SortOrder: SortOrderAscending}, bad)
+		if err == nil {
+			t.Fatal("expected error for corrupted JSON page token, got nil")
+		}
+	})
+
+	t.Run("EmptyBaseDir", func(t *testing.T) {
+		t.Parallel()
+		baseDir := t.TempDir()
+		mds, err := NewMapDirectoryStore(
+			baseDir,
+			true,
+			WithPartitionProvider(partitionProvider),
+		)
+		if err != nil {
+			t.Fatalf("failed to create MapDirectoryStore: %v", err)
+		}
+		files, nextPageToken, err := mds.ListFiles(ListingConfig{SortOrder: SortOrderAscending}, "")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(files) != 0 {
+			t.Fatalf("expected no files, got %v", files)
+		}
+		if nextPageToken != "" {
+			t.Fatalf("expected no next page token, got %q", nextPageToken)
+		}
+	})
+
+	t.Run("FilterWithNonExistentPartition", func(t *testing.T) {
+		t.Parallel()
+		baseDir := t.TempDir()
+		mds, err := NewMapDirectoryStore(
+			baseDir,
+			true,
+			WithPartitionProvider(partitionProvider),
+		)
+		if err != nil {
+			t.Fatalf("failed to create MapDirectoryStore: %v", err)
+		}
+		partitions := []string{"202302"}
+		files := []string{"a.json"}
+		createFiles(t, baseDir, partitions, files)
+		_, _, err = mds.ListFiles(
+			ListingConfig{
+				SortOrder:        SortOrderAscending,
+				FilterPartitions: []string{"202301", "doesnotexist"},
+			},
+			"",
+		)
+		if err == nil {
+			t.Fatal("expected error for non-existent partition in filter, got nil")
+		}
+	})
+
+	t.Run("PageSizeLargerThanFiles", func(t *testing.T) {
+		t.Parallel()
+		baseDir := t.TempDir()
+		partitions := []string{"202303"}
+		files := []string{"a.json", "b.json"}
+		createFiles(t, baseDir, partitions, files)
+		mds, err := NewMapDirectoryStore(
+			baseDir,
+			true,
+			WithPartitionProvider(partitionProvider),
+			WithPageSize(10),
+		)
+		if err != nil {
+			t.Fatalf("failed to create MapDirectoryStore: %v", err)
+		}
+		got, nextPageToken, err := mds.ListFiles(ListingConfig{SortOrder: SortOrderAscending}, "")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(got) != 2 {
+			t.Fatalf("expected 2 files, got %d", len(got))
+		}
+		if nextPageToken != "" {
+			t.Fatalf("expected no next page token, got %q", nextPageToken)
+		}
+	})
+
+	t.Run("EmptyFilterPartitions", func(t *testing.T) {
+		t.Parallel()
+		baseDir := t.TempDir()
+		partitions := []string{"202305"}
+		files := []string{"a.json"}
+		createFiles(t, baseDir, partitions, files)
+		mds, err := NewMapDirectoryStore(
+			baseDir,
+			true,
+			WithPartitionProvider(partitionProvider),
+		)
+		if err != nil {
+			t.Fatalf("failed to create MapDirectoryStore: %v", err)
+		}
+		got, nextPageToken, err := mds.ListFiles(
+			ListingConfig{SortOrder: SortOrderAscending, FilterPartitions: []string{}}, "",
+		)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(got) != 1 {
+			t.Fatalf("expected 1 file, got %d", len(got))
+		}
+		if nextPageToken != "" {
+			t.Fatalf("expected no next page token, got %q", nextPageToken)
+		}
+	})
+
+	t.Run("FilenamePrefixFiltering_NoMatch", func(t *testing.T) {
+		t.Parallel()
+		baseDir := t.TempDir()
+		partitions := []string{"202306"}
+		files := []string{"apple.json", "banana.json"}
+		createFiles(t, baseDir, partitions, files)
+		mds, err := NewMapDirectoryStore(
+			baseDir,
+			true,
+			WithPartitionProvider(partitionProvider),
+		)
+		if err != nil {
+			t.Fatalf("failed to create MapDirectoryStore: %v", err)
+		}
+		got, nextPageToken, err := mds.ListFiles(
+			ListingConfig{SortOrder: SortOrderAscending, FilenamePrefix: "zzz"}, "",
+		)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(got) != 0 {
+			t.Fatalf("expected 0 files, got %v", got)
+		}
+		if nextPageToken != "" {
+			t.Fatalf("expected no next page token, got %q", nextPageToken)
+		}
+	})
+
+	t.Run("FilteredPagination_EmptyPartition", func(t *testing.T) {
+		t.Parallel()
+		baseDir := t.TempDir()
+		files := []string{"a.json"}
+		createFiles(t, baseDir, []string{"202307"}, files)
+		if err := os.MkdirAll(filepath.Join(baseDir, "202302"), 0o755); err != nil {
+			t.Fatalf("failed to create partition dir: %v", err)
+		}
+		mds, err := NewMapDirectoryStore(
+			baseDir,
+			true,
+			WithPartitionProvider(partitionProvider),
+			WithPageSize(1),
+		)
+		if err != nil {
+			t.Fatalf("failed to create MapDirectoryStore: %v", err)
+		}
+		files1, nextPageToken, err := mds.ListFiles(
+			ListingConfig{
+				SortOrder:        SortOrderAscending,
+				FilterPartitions: []string{"202307", "202302"},
+			},
+			"",
+		)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(files1) != 1 || files1[0] != "202307/a.json" {
+			t.Fatalf("expected [202307/a.json], got %v", files1)
+		}
+		if nextPageToken != "" {
+			t.Fatalf("expected no next page token, got %q", nextPageToken)
+		}
+	})
+
+	t.Run("FilenamePrefixFiltering_EmptyPartition", func(t *testing.T) {
+		t.Parallel()
+		baseDir := t.TempDir()
+		files := []string{"apple.json", "banana.json"}
+		createFiles(t, baseDir, []string{"202308"}, files)
+		if err := os.MkdirAll(filepath.Join(baseDir, "202309"), 0o755); err != nil {
+			t.Fatalf("failed to create partition dir: %v", err)
+		}
+		mds, err := NewMapDirectoryStore(
+			baseDir,
+			true,
+			WithPartitionProvider(partitionProvider),
+			WithPageSize(1),
+		)
+		if err != nil {
+			t.Fatalf("failed to create MapDirectoryStore: %v", err)
+		}
+		files1, nextPageToken, err := mds.ListFiles(
+			ListingConfig{
+				SortOrder:        SortOrderAscending,
+				FilterPartitions: []string{"202308", "202309"},
+				FilenamePrefix:   "apple",
+			}, "",
+		)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(files1) != 1 || files1[0] != "202308/apple.json" {
+			t.Fatalf("expected [202308/apple.json], got %v", files1)
+		}
+		if nextPageToken != "" {
+			t.Fatalf("expected no next page token, got %q", nextPageToken)
+		}
+	})
+}
+
+// Helpers.
+
+func createFiles(t *testing.T, baseDir string, partitions, files []string) {
+	t.Helper()
+	for _, partition := range partitions {
+		dir := filepath.Join(baseDir, partition)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatalf("failed to create partition dir: %v", err)
+		}
+		for _, file := range files {
+			path := filepath.Join(dir, file)
+			if err := os.WriteFile(path, []byte(`{"k":"v"}`), 0o600); err != nil {
+				t.Fatalf("failed to write file: %v", err)
+			}
+		}
 	}
 }
