@@ -13,22 +13,13 @@ const (
 
 func InitConversationStoreHandlers(api huma.API, conversationStoreAPI *ConversationCollection) {
 	huma.Register(api, huma.Operation{
-		OperationID: "save-conversation",
-		Method:      http.MethodPut,
-		Path:        pathPrefix + "/{id}",
-		Summary:     "Save a conversation",
-		Description: "Save a conversation",
+		OperationID: "list-conversations",
+		Method:      http.MethodGet,
+		Path:        pathPrefix,
+		Summary:     "List conversations",
+		Description: "List conversation",
 		Tags:        []string{tag},
-	}, conversationStoreAPI.SaveConversation)
-
-	huma.Register(api, huma.Operation{
-		OperationID: "delete-conversation",
-		Method:      http.MethodDelete,
-		Path:        pathPrefix + "/{id}",
-		Summary:     "Delete a conversation",
-		Description: "Delete a conversation",
-		Tags:        []string{tag},
-	}, conversationStoreAPI.DeleteConversation)
+	}, conversationStoreAPI.ListConversations)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "search-conversations",
@@ -38,6 +29,24 @@ func InitConversationStoreHandlers(api huma.API, conversationStoreAPI *Conversat
 		Description: "Search conversation",
 		Tags:        []string{tag},
 	}, conversationStoreAPI.SearchConversations)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "put-conversation",
+		Method:      http.MethodPut,
+		Path:        pathPrefix + "/{id}",
+		Summary:     "Put a conversation",
+		Description: "Put a conversation",
+		Tags:        []string{tag},
+	}, conversationStoreAPI.PutConversation)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "delete-conversation",
+		Method:      http.MethodDelete,
+		Path:        pathPrefix + "/{id}",
+		Summary:     "Delete a conversation",
+		Description: "Delete a conversation",
+		Tags:        []string{tag},
+	}, conversationStoreAPI.DeleteConversation)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "get-conversation",
@@ -50,19 +59,10 @@ func InitConversationStoreHandlers(api huma.API, conversationStoreAPI *Conversat
 
 	huma.Register(api, huma.Operation{
 		OperationID: "add-message-to-conversation",
-		Method:      http.MethodPatch,
-		Path:        pathPrefix + "/{id}",
+		Method:      http.MethodPost,
+		Path:        pathPrefix + "/{id}/messages/append",
 		Summary:     "Append a message to a conversation",
 		Description: "Append a message to a conversation",
 		Tags:        []string{tag},
 	}, conversationStoreAPI.AddMessageToConversation)
-
-	huma.Register(api, huma.Operation{
-		OperationID: "list-conversations",
-		Method:      http.MethodGet,
-		Path:        pathPrefix,
-		Summary:     "List conversations",
-		Description: "List conversation",
-		Tags:        []string{tag},
-	}, conversationStoreAPI.ListConversations)
 }

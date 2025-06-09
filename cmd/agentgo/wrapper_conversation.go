@@ -27,11 +27,11 @@ func InitConversationCollectionWrapper(
 	return nil
 }
 
-func (ccw *ConversationCollectionWrapper) SaveConversation(
+func (ccw *ConversationCollectionWrapper) PutConversation(
 	req *spec.SaveConversationRequest,
 ) (*spec.SaveConversationResponse, error) {
 	return middleware.WithRecoveryResp(func() (*spec.SaveConversationResponse, error) {
-		return ccw.store.SaveConversation(context.Background(), req)
+		return ccw.store.PutConversation(context.Background(), req)
 	})
 }
 

@@ -69,7 +69,7 @@ const ChatScreen: FC = () => {
 			chatInputRef.current?.focus();
 			return;
 		}
-		conversationStoreAPI.saveConversation(chat);
+		conversationStoreAPI.putConversation(chat);
 		setChat(initConversation());
 		// New non-persisted conversation started.
 		isChatPersistedRef.current = false;
@@ -86,7 +86,7 @@ const ChatScreen: FC = () => {
 			}
 		}
 
-		conversationStoreAPI.saveConversation(updatedChat);
+		conversationStoreAPI.putConversation(updatedChat);
 		setChat(updatedChat);
 
 		// Detect "first save", now searchable.

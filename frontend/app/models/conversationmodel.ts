@@ -27,7 +27,7 @@ export type Conversation = ConversationItem & {
 };
 
 export interface IConversationStoreAPI {
-	saveConversation: (conversation: Conversation) => Promise<void>;
+	putConversation: (conversation: Conversation) => Promise<void>;
 	deleteConversation: (id: string, title: string) => Promise<void>;
 	getConversation: (id: string, title: string) => Promise<Conversation | null>;
 	listConversations: (token?: string) => Promise<{ conversations: ConversationItem[]; nextToken?: string }>;

@@ -18,8 +18,8 @@ export function ListConversations(arg1) {
   return window['go']['main']['ConversationCollectionWrapper']['ListConversations'](arg1);
 }
 
-export function SaveConversation(arg1) {
-  return window['go']['main']['ConversationCollectionWrapper']['SaveConversation'](arg1);
+export function PutConversation(arg1) {
+  return window['go']['main']['ConversationCollectionWrapper']['PutConversation'](arg1);
 }
 
 export function SearchConversations(arg1) {

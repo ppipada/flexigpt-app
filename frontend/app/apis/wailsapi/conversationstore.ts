@@ -10,7 +10,7 @@ import {
 	DeleteConversation,
 	GetConversation,
 	ListConversations,
-	SaveConversation,
+	PutConversation,
 	SearchConversations,
 } from '@/apis/wailsjs/go/main/ConversationCollectionWrapper';
 import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
@@ -19,9 +19,9 @@ import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
  * @public
  */
 export class WailsConversationStoreAPI implements IConversationStoreAPI {
-	async saveConversation(conversation: Conversation): Promise<void> {
+	async putConversation(conversation: Conversation): Promise<void> {
 		const req = { Body: conversation };
-		await SaveConversation(req as wailsSpec.SaveConversationRequest);
+		await PutConversation(req as wailsSpec.SaveConversationRequest);
 	}
 
 	async deleteConversation(id: string, title: string): Promise<void> {

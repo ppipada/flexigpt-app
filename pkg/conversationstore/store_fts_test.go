@@ -39,7 +39,7 @@ func TestFTSSearchHappyPath(t *testing.T) {
 	cc := newCollection(t, dir, true)
 
 	c1 := newConv(t, "Banana split")
-	_, _ = cc.SaveConversation(t.Context(), &spec.SaveConversationRequest{Body: c1})
+	_, _ = cc.PutConversation(t.Context(), &spec.SaveConversationRequest{Body: c1})
 
 	resp, err := cc.SearchConversations(t.Context(), &spec.SearchConversationsRequest{
 		Query: "banana",
@@ -62,7 +62,7 @@ func TestFTSRankingTitleVsBody(t *testing.T) {
 
 	// A: query term in title.
 	a := newConv(t, "Alpha winner")
-	_, _ = cc.SaveConversation(t.Context(), &spec.SaveConversationRequest{Body: a})
+	_, _ = cc.PutConversation(t.Context(), &spec.SaveConversationRequest{Body: a})
 
 	// B: query term only inside a message.
 	b := newConv(t, "No match in title")
@@ -71,7 +71,7 @@ func TestFTSRankingTitleVsBody(t *testing.T) {
 		Role:    spec.ConversationRoleUser,
 		Content: "alpha appears in body",
 	}}
-	_, _ = cc.SaveConversation(t.Context(), &spec.SaveConversationRequest{Body: b})
+	_, _ = cc.PutConversation(t.Context(), &spec.SaveConversationRequest{Body: b})
 
 	resp, _ := cc.SearchConversations(t.Context(),
 		&spec.SearchConversationsRequest{Query: "alpha"})
@@ -92,7 +92,7 @@ func TestFTSPagination(t *testing.T) {
 			Role:    spec.ConversationRoleUser,
 			Content: "kiwi everywhere",
 		}}
-		_, _ = cc.SaveConversation(t.Context(), &spec.SaveConversationRequest{Body: c})
+		_, _ = cc.PutConversation(t.Context(), &spec.SaveConversationRequest{Body: c})
 	}
 
 	var (
@@ -127,7 +127,7 @@ func TestFTSDeletePurgesIndex(t *testing.T) {
 	cc := newCollection(t, dir, true)
 
 	c := newConv(t, "Cherry pie")
-	_, _ = cc.SaveConversation(t.Context(), &spec.SaveConversationRequest{Body: c})
+	_, _ = cc.PutConversation(t.Context(), &spec.SaveConversationRequest{Body: c})
 
 	// Ensure hit exists.
 	_, err := cc.SearchConversations(t.Context(),
@@ -153,7 +153,7 @@ func TestFTSAddMessageUpdatesIndex(t *testing.T) {
 	cc := newCollection(t, dir, true)
 
 	c := newConv(t, "Silent")
-	_, _ = cc.SaveConversation(t.Context(), &spec.SaveConversationRequest{Body: c})
+	_, _ = cc.PutConversation(t.Context(), &spec.SaveConversationRequest{Body: c})
 
 	// No hit yet.
 	res, _ := cc.SearchConversations(t.Context(),
@@ -219,7 +219,7 @@ func TestFTSScaleSearch(t *testing.T) {
 				Content: fmt.Sprintf("This is message %d with common keyword", m),
 			})
 		}
-		if _, err := cc.SaveConversation(t.Context(),
+		if _, err := cc.PutConversation(t.Context(),
 			&spec.SaveConversationRequest{Body: c}); err != nil {
 			t.Fatalf("save %d: %v", i, err)
 		}

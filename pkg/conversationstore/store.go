@@ -115,7 +115,7 @@ func (cc *ConversationCollection) fileNameFromConversation(c spec.Conversation) 
 	})
 }
 
-func (cc *ConversationCollection) SaveConversation(
+func (cc *ConversationCollection) PutConversation(
 	ctx context.Context,
 	req *spec.SaveConversationRequest,
 ) (*spec.SaveConversationResponse, error) {
@@ -151,7 +151,7 @@ func (cc *ConversationCollection) AddMessageToConversation(
 	convoResp.Body.Messages = append(convoResp.Body.Messages, req.Body.NewMessage)
 	convoResp.Body.ModifiedAt = time.Now()
 
-	if _, err := cc.SaveConversation(
+	if _, err := cc.PutConversation(
 		ctx, &spec.SaveConversationRequest{Body: convoResp.Body}); err != nil {
 		return nil, err
 	}

@@ -99,7 +99,7 @@ func TestConversationCollection(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				ctx := t.Context()
-				_, err := cc.SaveConversation(
+				_, err := cc.PutConversation(
 					ctx,
 					&spec.SaveConversationRequest{Body: &tt.conversation},
 				)
@@ -132,7 +132,7 @@ func TestConversationCollection(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
 		}
-		_, err = cc.SaveConversation(ctx, &spec.SaveConversationRequest{Body: convo})
+		_, err = cc.PutConversation(ctx, &spec.SaveConversationRequest{Body: convo})
 		if err != nil {
 			t.Errorf("Failed to save conversation: %v", err)
 		}
@@ -160,7 +160,7 @@ func TestConversationCollection(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
 		}
-		_, err = cc.SaveConversation(ctx, &spec.SaveConversationRequest{Body: convo})
+		_, err = cc.PutConversation(ctx, &spec.SaveConversationRequest{Body: convo})
 		if err != nil {
 			t.Errorf("Failed to save conversation: %v", err)
 		}
@@ -238,11 +238,11 @@ func TestConversationCollectionListing(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to init conversation: %v", err)
 		}
-		_, err = cc.SaveConversation(ctx, &spec.SaveConversationRequest{Body: convo1})
+		_, err = cc.PutConversation(ctx, &spec.SaveConversationRequest{Body: convo1})
 		if err != nil {
 			t.Errorf("Failed to save conversation: %v", err)
 		}
-		_, err = cc.SaveConversation(ctx, &spec.SaveConversationRequest{Body: convo2})
+		_, err = cc.PutConversation(ctx, &spec.SaveConversationRequest{Body: convo2})
 		if err != nil {
 			t.Errorf("Failed to save conversation: %v", err)
 		}
