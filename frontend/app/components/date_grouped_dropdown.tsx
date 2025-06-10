@@ -4,26 +4,26 @@ import { groupByDateBuckets } from '@/lib/date_utils';
 
 interface GroupedDropdownProps<T> {
 	items: T[];
+	focused: number;
 	getDate: (item: T) => Date;
 	getKey: (item: T) => React.Key;
 	getLabel: (item: T) => React.ReactNode;
 	onPick: (item: T) => void;
-	focused: number;
 	renderItemExtra?: (item: T) => React.ReactNode;
 }
 
 export function GroupedDropdown<T>({
 	items,
+	focused,
 	getDate,
 	getKey,
 	getLabel,
 	onPick,
-	focused,
 	renderItemExtra,
 }: GroupedDropdownProps<T>) {
 	const buckets = groupByDateBuckets(items, getDate);
 
-	let itemIndex = 0; // For tracking focused index across all groups
+	let globalIndex = 0; // single running index for keyboard focus
 
 	return (
 		<ul className="absolute left-0 right-0 mt-0 max-h-80 overflow-y-auto bg-base-200 rounded-2xl shadow-lg text-sm">
@@ -31,12 +31,15 @@ export function GroupedDropdown<T>({
 				.filter(([, arr]) => arr.length)
 				.map(([label, arr]) => (
 					<Fragment key={label}>
-						<li className="px-12 py-2 text-neutral/60">{label}</li>
+						<li className="px-12 py-2 text-neutral/60 text-xs">{label}</li>
+
 						{arr.map(item => {
-							const isFocused = itemIndex === focused;
+							const isFocused = globalIndex === focused;
+
 							const li = (
 								<li
 									key={getKey(item)}
+									data-index={globalIndex}
 									onClick={() => {
 										onPick(item);
 									}}
@@ -45,12 +48,14 @@ export function GroupedDropdown<T>({
 									}`}
 								>
 									<span className="truncate">{getLabel(item)}</span>
+
 									{renderItemExtra && (
 										<span className="hidden lg:block text-neutral text-xs">{renderItemExtra(item)}</span>
 									)}
 								</li>
 							);
-							itemIndex++;
+
+							globalIndex++;
 							return li;
 						})}
 					</Fragment>

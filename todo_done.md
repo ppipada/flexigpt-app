@@ -306,3 +306,59 @@
 
   - [x] separate out put conversation and add messages to conversation so that things are idempotent and id based comparisons can be made in put
   - [x] need listfiles with filtering in dirstore
+
+## UI integration for search fts of conversations
+
+- Entry Point (Focus / Empty Query)
+
+  - [x] On focus, call `listConversations(pageSize=20)`
+    - [x] Render a “Recent conversations” list inside the dropdown.
+  - [x] Each row: title + last-modified date.
+  - [x] Up/Down / mouse-hover highlight; ⏎ or click navigates to the convo.
+
+- Local Autocomplete (Query Length 1–2)
+
+  - [x] Filter the already-loaded titles in memory; update instantly.
+  - [x] Footer item: “Press Enter to search all messages” (inactive until length ≥ 3).
+  - [x] No backend round-trip.
+
+- Debounced Full-Text Search (Query Length ≥ 3)
+
+  - [x] After 300 ms of inactivity fire `searchConversations(q, undefined, 20)`.
+  - [x] If another keystroke occurs, cancel the in-flight promise.
+  - [x] Present results in two sub-groups
+    - [x] 1. Title matches
+    - [x] 2. Message matches (with 1-line highlighted snippet).
+  - [x] Show spinner overlay while waiting; keep previous list dimmed for stability.
+
+- Scroll-to-Load “More Results”
+
+  - [x] Dropdown body has its own scroll container (max-height ~60 vh).
+  - [x] When the user scrolls to 80 % of the container and `nextToken` exists
+    - [x] → automatically call `searchConversations(q, nextToken, 20)` and append rows.
+  - [x] Optional footer: “End of results” or “Loading more…”.
+
+- Interaction Rules
+
+  - [x] up/down moves through visible items; focus wraps at top/bottom.
+  - [x] enter or click on an item → open convo.
+  - [ ] ~~If item originated from a message match, auto-scroll & briefly highlight that message. (not sure how?)~~
+  - [x] escape clears search & closes dropdown.
+  - [ ] ~~If the user presses enter with no item highlighted, do nothing (they must choose).~~
+
+- Performance & Networking
+
+  - [x] Debounce: 300 ms; per-query request count rarely > 4.
+  - [x] Cache last 5 queries (query string → result set) for instant recall.
+  - [x] Re-use a single `AbortController` per search bar instance to cancel stale fetches.
+
+- Edge & Empty States
+
+  - [x] No recent conversations → “No conversations yet” illustration.
+  - [x] No matches → “No results for ‘XYZ’”.
+  - [x] Network / SQLite error → inline error row + toast “Retry”.
+  - [x] Very long titles are ellipsized; full title appears in tooltip.
+
+- [x] Search extras
+  - [x] after load of prev conversation the cursor is still in box so for next time no one clicks or i can type again, but nothing happens there. ideally focus should move out so that user can come there again either via keyboard or click OR type should result in query
+  - [x] right now after one query I have to explicitly click to get things to show again, i.e click out and then click in again.
