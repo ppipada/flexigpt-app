@@ -1,14 +1,16 @@
-/********************************************************************
- *  Title generator – v2
- *  • paragraph-aware, code-aware, language-aware
- *  • ≤ 48 characters
- *******************************************************************/
 import nlp from 'compromise';
 import { removeStopwords } from 'stopword';
 
 /* ─────────────────────────  Constants  ─────────────────────────── */
 const MAX_LEN = 48;
 const DEFAULT_TITLE = 'New conversation';
+
+export interface TitleCandidate {
+	title: string; // already ≤ 48 chars, polished etc.
+	score: number; // “how good is this title?” 0…1  (1 = perfect)
+}
+
+const DEFAULT_TITLE_CANDIDATE: TitleCandidate = { title: DEFAULT_TITLE, score: 0.05 };
 
 /**
  * Very light-weight “does this line look like code?” heuristic.
@@ -97,55 +99,40 @@ function selectCandidateParagraphs(paragraphs: string[]): string[] {
 	return [paragraphs[0]];
 }
 
-/* ─────────────────────  Language detector  ─────────────────────── */
-function isEnglish(text: string): boolean {
-	const cleanedTxt = stripCode(text); // remove code again
-	const tokens = cleanedTxt.toLowerCase().match(/\b[a-z]{2,}\b/g) || [];
-	if (!tokens.length) return false;
-
-	const noStop: string[] = removeStopwords(tokens);
-	const stopRatio = 1 - noStop.length / tokens.length;
-
-	return stopRatio > 0.05; // heuristic threshold
-}
-
 /* ─────────────────────  Scoring heuristics  ────────────────────── */
 function scoreEn(s: string, idx: number, total: number): number {
 	const t = s.trim();
 	let pts = 0;
 
 	if (t.includes('?')) pts += 3;
-	if (/^(how|what|why|when|where|can|does|do|is|are|should|could|would|will)\b/i.test(t)) pts += 2;
+	if (/^(how|what|why|when|where|can|does|do|is|are|should|could|would|will|give)\b/i.test(t)) pts += 2;
 	if (/\b(error|issue|bug|fail|help)\b/i.test(t)) pts += 1.5;
 	if (idx === 0 || idx === total - 1) pts += 1;
 	if (/^(\s*[-*]\s+|\s*\d+\.\s+)/.test(t)) pts += 1;
 	if (t.length < 60) pts += 1;
 
 	const doc = nlp(t);
-	const uniq = new Set([...doc.nouns().out('array'), ...doc.verbs().out('array')]);
+	let uniq = new Set([...doc.nouns().out('array'), ...doc.verbs().out('array')]);
 	pts += 0.2 * uniq.size;
+	uniq = new Set([...doc.adjectives().out('array'), ...doc.adverbs().out('array')]);
+	pts += 0.1 * uniq.size;
+
+	const tokens = t.toLowerCase().match(/\b[a-z']{2,}\b/g) || [];
+	if (tokens.length > 0) {
+		const noStop: string[] = removeStopwords(tokens);
+		const stopRatio = 1 - noStop.length / tokens.length;
+		// Reward moderate stopword ratio (e.g., 0.2–0.6)
+		if (stopRatio > 0.15 && stopRatio < 0.65) pts += 1.5;
+		// Penalize very low or very high stopword ratio
+		else if (stopRatio <= 0.15 || stopRatio >= 0.65) pts -= 0.5;
+	}
 
 	return pts;
 }
 
-function pickBestEnglish(sentences: string[]): string {
-	let best = '';
-	let score = -Infinity;
-	sentences.forEach((s, i) => {
-		const pts = scoreEn(s, i, sentences.length);
-		if (pts > score) {
-			best = s;
-			score = pts;
-		}
-	});
-	return best;
-}
-
-function pickBestGeneric(sentences: string[]): string {
-	const first = sentences[0] ?? '';
-	const last = sentences[sentences.length - 1] ?? '';
-	const short = [...sentences].sort((a, b) => a.length - b.length)[0] ?? '';
-	return short.length <= 60 ? short : first.length <= 60 ? first : last;
+function normalise(raw: number): number {
+	// raw ≈ 0-12  →  0-1
+	return Math.max(0, Math.min(1, raw / 12));
 }
 
 /* ───────────────────────  Final polish  ────────────────────────── */
@@ -183,11 +170,11 @@ function finalise(raw: string): string {
 }
 
 /* ──────────────────────────  Public API  ───────────────────────── */
-export function generateTitle(firstMessage: string): string {
-	if (!firstMessage.trim()) return DEFAULT_TITLE;
+export function generateTitle(firstMessage: string): TitleCandidate {
+	if (!firstMessage.trim()) return DEFAULT_TITLE_CANDIDATE;
 
 	const paragraphs = splitParagraphs(firstMessage.trim());
-	if (!paragraphs.length) return DEFAULT_TITLE;
+	if (!paragraphs.length) return DEFAULT_TITLE_CANDIDATE;
 
 	/* ① choose candidate paragraphs */
 	const candidates = selectCandidateParagraphs(paragraphs);
@@ -196,14 +183,21 @@ export function generateTitle(firstMessage: string): string {
 	/* ② collect sentences & drop code-looking lines */
 	const sentences = candidates.flatMap(p => splitSentences(p)).filter(l => !looksLikeCodeLine(l));
 	// console.log('sentences', JSON.stringify(sentences, null, 2));
-	if (!sentences.length)
+	if (!sentences.length) {
 		// still nothing – just clean first paragraph
-		return finalise(stripCode(paragraphs[0]));
+		const t: TitleCandidate = { title: finalise(stripCode(paragraphs[0])), score: 0.2 };
+		return t;
+	}
 
-	/* ③ language detection & scoring */
-	const english = isEnglish(sentences.join(' '));
-	const best = english ? pickBestEnglish(sentences) : pickBestGeneric(sentences);
-
+	let best = '';
+	let bestRaw = -Infinity;
+	sentences.forEach((s, i) => {
+		const pts = scoreEn(s, i, sentences.length);
+		if (pts > bestRaw) {
+			bestRaw = pts;
+			best = s;
+		}
+	});
 	/* ④ final polish */
-	return finalise(best);
+	return { title: finalise(best), score: normalise(bestRaw) };
 }

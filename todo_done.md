@@ -292,3 +292,17 @@
 - [x] Use shiki instead of react syntax highlighter
 - [x] Nvidia issue debug and Ubuntu mate env vars fix
 - [x] Move syntax highlighting to a worker
+
+- [x] Better title deduce
+
+  - [x] Use compromise and stopword for heuristic based titles for now
+
+- [x] support events in simplemapdb
+- [x] add fts using sqlite for simplemapdb
+- [x] test and integrate fts with conversations
+- [x] mtime should be added to cols in conversations and it should be used to do a incremental walk along with path used as externalID
+- [x] the engine somehow has path etc as inbuilt. It looks very tightly coupled to files or something called as path. Ideally it should have opaque and its own semantics that the consumer will adapt to
+- [x] Title change in chat causes new file to be created. ideally we want to only one file.
+
+  - [x] separate out put conversation and add messages to conversation so that things are idempotent and id based comparisons can be made in put
+  - [x] need listfiles with filtering in dirstore

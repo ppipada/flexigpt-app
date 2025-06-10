@@ -4,7 +4,6 @@
 
 - [ ] Chat
 
-  - [ ] Better title deduce
   - [ ] Details of request are not visible immediately. We use a trapper in golang ai provider package to get req/resp details, that means until the completion returns there is no way of getting the request details. Some refactoring of workflow is needed to make this happen.
   - [ ] Need a stop streaming / cancel button on assistant
   - [ ] Think through:

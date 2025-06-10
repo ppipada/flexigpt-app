@@ -19,14 +19,10 @@ import ChatInputField, { type ChatInputFieldHandle } from '@/chats/chat_input_fi
 import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
 
-function deriveTitle(text: string) {
-	return generateTitle(text);
-}
-
 function initConversation(title = 'New Conversation'): Conversation {
 	return {
 		id: uuidv7(),
-		title: deriveTitle(title),
+		title: generateTitle(title).title,
 		createdAt: new Date(),
 		modifiedAt: new Date(),
 		messages: [],
@@ -86,14 +82,24 @@ const ChatScreen: FC = () => {
 	// •  Otherwise                                               → putMessagesToConversation
 	// putMessagesToConversation REQUIRES the *full* message list, so we just pass `updatedChat.messages` every time.
 	const saveUpdatedChat = (updatedChat: Conversation) => {
-		// detect title change
-		let titleChanged = false;
-		if (updatedChat.messages.length > 0) {
-			const newTitle = deriveTitle(updatedChat.messages[0].content);
-			if (newTitle && newTitle !== updatedChat.title) {
-				updatedChat.title = newTitle;
-				titleChanged = true;
+		let newTitle = updatedChat.title;
+		if (updatedChat.messages.length <= 4) {
+			const userMessages = updatedChat.messages.filter(m => m.role === ConversationRoleEnum.user);
+			if (userMessages.length === 1) {
+				// Always generate title from first user message
+				newTitle = generateTitle(userMessages[0].content).title;
+			} else if (userMessages.length === 2) {
+				// Generate titles from both messages, pick the one with higher score
+				const titleCondidate1 = generateTitle(userMessages[0].content);
+				const titleCondidate2 = generateTitle(userMessages[1].content);
+				console.log(titleCondidate2.title, titleCondidate2.score, titleCondidate1.title, titleCondidate1.score);
+				newTitle = titleCondidate2.score > titleCondidate1.score ? titleCondidate2.title : titleCondidate1.title;
 			}
+		}
+
+		const titleChanged = newTitle !== updatedChat.title;
+		if (titleChanged) {
+			updatedChat.title = newTitle;
 		}
 
 		// Decide which API to call
