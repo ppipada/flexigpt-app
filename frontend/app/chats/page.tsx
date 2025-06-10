@@ -11,6 +11,8 @@ import { type ChatOptions, DefaultChatOptions } from '@/models/settingmodel';
 import { GetCompletionMessage } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
 
+import { generateTitle } from '@/lib/title_generate';
+
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
 
 import ChatInputField, { type ChatInputFieldHandle } from '@/chats/chat_input_field';
@@ -18,8 +20,7 @@ import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
 
 function deriveTitle(text: string) {
-	const raw = text.substring(0, 48);
-	return raw.charAt(0).toUpperCase() + raw.slice(1);
+	return generateTitle(text);
 }
 
 function initConversation(title = 'New Conversation'): Conversation {

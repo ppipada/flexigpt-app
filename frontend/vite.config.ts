@@ -45,5 +45,15 @@ export default defineConfig(({ mode }) => {
 		resolve: {
 			mainFields: ['module', 'jsnext:main', 'jsnext'],
 		},
+
+		test: {
+			globals: true, // use `describe/it/expect` without imports
+			environment: 'jsdom', // DOM for React component tests
+			setupFiles: './vitest.setup.ts',
+			coverage: {
+				reporter: ['text', 'html'],
+				exclude: ['wailsjs', 'dist', 'vite.config.ts'],
+			},
+		},
 	};
 });
