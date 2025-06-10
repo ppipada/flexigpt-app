@@ -1,13 +1,24 @@
-import eslintPlugin from '@nabla/vite-plugin-eslint';
 import { reactRouter } from '@react-router/dev/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
+import checker from 'vite-plugin-checker';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig(({ mode }) => {
 	const isProd = mode === 'production';
 	return {
-		plugins: [tailwindcss(), reactRouter(), tsconfigPaths(), eslintPlugin()],
+		plugins: [
+			tailwindcss(),
+			reactRouter(),
+			tsconfigPaths(),
+			checker({
+				typescript: true,
+				eslint: {
+					lintCommand: 'eslint . -c ./eslint.config.mjs',
+					useFlatConfig: true,
+				},
+			}),
+		],
 		base: isProd ? '/frontend/dist/' : '/',
 
 		// Add these configurations for better ESM support

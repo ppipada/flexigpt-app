@@ -28,9 +28,9 @@ func InitConversationCollectionWrapper(
 }
 
 func (ccw *ConversationCollectionWrapper) PutConversation(
-	req *spec.SaveConversationRequest,
-) (*spec.SaveConversationResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.SaveConversationResponse, error) {
+	req *spec.PutConversationRequest,
+) (*spec.PutConversationResponse, error) {
+	return middleware.WithRecoveryResp(func() (*spec.PutConversationResponse, error) {
 		return ccw.store.PutConversation(context.Background(), req)
 	})
 }

@@ -64,21 +64,30 @@ const ChatScreen: FC = () => {
 		setSearchRefreshKey(k => k + 1);
 	};
 
-	const handleNewChat = useCallback(async () => {
+	const handleNewChat = async () => {
 		if (chat.messages.length === 0) {
 			chatInputRef.current?.focus();
 			return;
 		}
+		// Put the old conversation _fully_ before moving to new chat.
+		// Handles edge cases like someone calls newchat when streaming is ongoing,
+		// or if there is some bug below that forgets to call saveUpdated chat
 		conversationStoreAPI.putConversation(chat);
 		setChat(initConversation());
 		// New non-persisted conversation started.
 		isChatPersistedRef.current = false;
 		chatInputRef.current?.focus();
-	}, [chat]);
+	};
 
+	// Persist `updatedChat` using the cheapest API that is still correct.
+	// •  First time we ever write this conversation              → putConversation
+	// •  Title has changed (search index must be updated)        → putConversation
+	// •  Otherwise                                               → putMessagesToConversation
+	// putMessagesToConversation REQUIRES the *full* message list, so we just pass `updatedChat.messages` every time.
 	const saveUpdatedChat = (updatedChat: Conversation) => {
+		// detect title change
 		let titleChanged = false;
-		if (updatedChat.messages.length === 1) {
+		if (updatedChat.messages.length > 0) {
 			const newTitle = deriveTitle(updatedChat.messages[0].content);
 			if (newTitle && newTitle !== updatedChat.title) {
 				updatedChat.title = newTitle;
@@ -86,18 +95,23 @@ const ChatScreen: FC = () => {
 			}
 		}
 
-		conversationStoreAPI.putConversation(updatedChat);
-		setChat(updatedChat);
-
-		// Detect "first save", now searchable.
-		if (!isChatPersistedRef.current && updatedChat.messages.length > 0) {
-			// Title is fresh; no extra checks needed.
-			bumpSearchKey();
+		// Decide which API to call
+		if (!isChatPersistedRef.current) {
+			// 1st save → create the record + metadata work
+			conversationStoreAPI.putConversation(updatedChat);
 			isChatPersistedRef.current = true;
+			bumpSearchKey(); // now searchable
 		} else if (titleChanged) {
-			// Title change (e.g. first-message edit).
+			// metadata (title) changed → need the heavy PUT
+			conversationStoreAPI.putConversation(updatedChat);
 			bumpSearchKey();
+		} else {
+			// normal case → only messages changed
+			conversationStoreAPI.putMessagesToConversation(updatedChat.id, updatedChat.title, updatedChat.messages);
 		}
+
+		// update local React state
+		setChat(updatedChat);
 	};
 
 	// Scroll to bottom.

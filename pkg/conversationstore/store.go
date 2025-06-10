@@ -3,6 +3,7 @@ package conversationstore
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"path/filepath"
 	"time"
 
@@ -117,44 +118,94 @@ func (cc *ConversationCollection) fileNameFromConversation(c spec.Conversation) 
 
 func (cc *ConversationCollection) PutConversation(
 	ctx context.Context,
-	req *spec.SaveConversationRequest,
-) (*spec.SaveConversationResponse, error) {
-	if req == nil || req.Body == nil {
+	req *spec.PutConversationRequest,
+) (*spec.PutConversationResponse, error) {
+	if req == nil || req.Body == nil || req.ID == "" || req.Body.Title == "" {
 		return nil, errors.New("request or request body cannot be nil")
 	}
+	if req.ID == "" || req.Body.Title == "" {
+		return nil, errors.New("request ID an title are required")
+	}
 
-	fn, err := cc.fileNameFromConversation(*req.Body)
+	// Get filename from info.
+	fn, _ := cc.fp.Build(filenameprovider.FileInfo{
+		ID:        req.ID,
+		Title:     req.Body.Title,
+		CreatedAt: req.Body.CreatedAt,
+	})
+	partitionDirName := cc.pp.GetPartitionDir(fn)
+
+	// Check if there are files with same id as prefix
+	// We don't iterate as we expect only 1 file max with the id prefix of uuid.
+	files, _, err := cc.store.ListFiles(
+		dirstore.ListingConfig{
+			FilenamePrefix:   req.ID,
+			PageSize:         10,
+			FilterPartitions: []string{partitionDirName},
+		},
+		"",
+	)
 	if err != nil {
 		return nil, err
 	}
+	// If there is a file, that means its a replace of full conversation
+	// May be title has also changed
+	// Remove the current file and add new.
+	for idx := range files {
+		err := cc.store.DeleteFile(filepath.Base(files[idx]))
+		if err != nil {
+			slog.Warn("Put conversation remove existing file", "error", err)
+		}
+	}
 
-	data, err := encdec.StructWithJSONTagsToMap(req.Body)
+	currentConversation := &spec.Conversation{}
+	currentConversation.ID = req.ID
+	currentConversation.Title = req.Body.Title
+	currentConversation.CreatedAt = req.Body.CreatedAt
+	currentConversation.ModifiedAt = req.Body.ModifiedAt
+	currentConversation.Messages = req.Body.Messages
+
+	data, err := encdec.StructWithJSONTagsToMap(currentConversation)
 	if err != nil {
 		return nil, err
 	}
 	if err := cc.store.SetFileData(fn, data); err != nil {
 		return nil, err
 	}
-	return &spec.SaveConversationResponse{}, nil
+	return &spec.PutConversationResponse{}, nil
 }
 
 func (cc *ConversationCollection) PutMessagesToConversation(
 	ctx context.Context,
 	req *spec.PutMessagesToConversationRequest,
 ) (*spec.PutMessagesToConversationResponse, error) {
+	if req == nil || req.Body == nil || req.Body.Messages == nil || len(req.Body.Messages) == 0 {
+		return nil, errors.New("request or request body cannot be nil")
+	}
+
 	convoResp, err := cc.GetConversation(ctx,
 		&spec.GetConversationRequest{ID: req.ID, Title: req.Body.Title})
 	if err != nil {
 		return nil, err
 	}
 
-	convoResp.Body.Messages = append(convoResp.Body.Messages, req.Body.NewMessage)
-	convoResp.Body.ModifiedAt = time.Now()
+	currentConversation := convoResp.Body
+	currentConversation.ModifiedAt = time.Now()
+	currentConversation.Messages = req.Body.Messages
 
-	if _, err := cc.PutConversation(
-		ctx, &spec.SaveConversationRequest{Body: convoResp.Body}); err != nil {
+	fn, err := cc.fileNameFromConversation(*currentConversation)
+	if err != nil {
 		return nil, err
 	}
+
+	data, err := encdec.StructWithJSONTagsToMap(currentConversation)
+	if err != nil {
+		return nil, err
+	}
+	if err := cc.store.SetFileData(fn, data); err != nil {
+		return nil, err
+	}
+
 	return &spec.PutMessagesToConversationResponse{}, nil
 }
 

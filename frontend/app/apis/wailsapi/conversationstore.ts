@@ -20,8 +20,29 @@ import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
  */
 export class WailsConversationStoreAPI implements IConversationStoreAPI {
 	async putConversation(conversation: Conversation): Promise<void> {
-		const req = { Body: conversation };
-		await PutConversation(req as wailsSpec.SaveConversationRequest);
+		const req = {
+			ID: conversation.id,
+			Body: {
+				title: conversation.title,
+				createdAt: conversation.createdAt,
+				modifiedAt: conversation.modifiedAt,
+				messages: conversation.messages as wailsSpec.ConversationMessage[],
+			} as wailsSpec.PutConversationRequestBody,
+		};
+
+		await PutConversation(req as wailsSpec.PutConversationRequest);
+	}
+
+	async putMessagesToConversation(id: string, title: string, messages: ConversationMessage[]): Promise<void> {
+		const req = {
+			ID: id,
+			Body: {
+				title: title,
+				messages: messages as wailsSpec.ConversationMessage[],
+			} as wailsSpec.PutMessagesToConversationRequestBody,
+		};
+
+		await PutMessagesToConversation(req as wailsSpec.PutMessagesToConversationRequest);
 	}
 
 	async deleteConversation(id: string, title: string): Promise<void> {
@@ -49,16 +70,5 @@ export class WailsConversationStoreAPI implements IConversationStoreAPI {
 		const req = { Query: query, Token: token || '', PageSize: pageSize || 10 };
 		const resp = await SearchConversations(req as wailsSpec.SearchConversationsRequest);
 		return { conversations: resp.Body?.conversationItems as ConversationItem[], nextToken: resp.Body?.nextPageToken };
-	}
-
-	async addMessageToConversation(id: string, title: string, newMessage: ConversationMessage): Promise<void> {
-		const req = {
-			ID: id,
-			Body: {
-				title: title,
-				newMessage: newMessage,
-			},
-		};
-		await PutMessagesToConversation(req as wailsSpec.PutMessagesToConversationRequest);
 	}
 }

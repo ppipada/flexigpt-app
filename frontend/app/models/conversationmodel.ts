@@ -28,6 +28,7 @@ export type Conversation = ConversationItem & {
 
 export interface IConversationStoreAPI {
 	putConversation: (conversation: Conversation) => Promise<void>;
+	putMessagesToConversation(id: string, title: string, messages: ConversationMessage[]): Promise<void>;
 	deleteConversation: (id: string, title: string) => Promise<void>;
 	getConversation: (id: string, title: string) => Promise<Conversation | null>;
 	listConversations: (token?: string) => Promise<{ conversations: ConversationItem[]; nextToken?: string }>;
@@ -36,5 +37,4 @@ export interface IConversationStoreAPI {
 		token?: string,
 		pageSize?: number
 	) => Promise<{ conversations: ConversationItem[]; nextToken?: string }>;
-	addMessageToConversation(id: string, title: string, newMessage: ConversationMessage): Promise<void>;
 }

@@ -1053,8 +1053,11 @@ func TestMapDirectoryStore_ListFiles_ErrorsAndEdgeCases(t *testing.T) {
 			},
 			"",
 		)
-		if err == nil {
-			t.Fatalf("expected error for non-existent partition, got nil")
+		if err != nil {
+			t.Fatalf(
+				"expected partition skipped for non-existent partition in filter, got err %s",
+				err,
+			)
 		}
 		if len(files) != 0 {
 			t.Fatalf("expected no files, got %v", files)
@@ -1084,8 +1087,11 @@ func TestMapDirectoryStore_ListFiles_ErrorsAndEdgeCases(t *testing.T) {
 		_, _, err = mds.ListFiles(
 			ListingConfig{SortOrder: SortOrderAscending, FilterPartitions: []string{partition}}, "",
 		)
-		if err == nil {
-			t.Fatal("expected error for unreadable partition dir, got nil")
+		if err != nil {
+			t.Fatalf(
+				"expected partition skipped for unreadable partition in filter, got err %s",
+				err,
+			)
 		}
 	})
 
@@ -1173,8 +1179,11 @@ func TestMapDirectoryStore_ListFiles_ErrorsAndEdgeCases(t *testing.T) {
 			},
 			"",
 		)
-		if err == nil {
-			t.Fatal("expected error for non-existent partition in filter, got nil")
+		if err != nil {
+			t.Fatalf(
+				"expected partition skipped for non-existent partition in filter, got err %s",
+				err,
+			)
 		}
 	})
 

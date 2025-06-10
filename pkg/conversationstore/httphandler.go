@@ -40,6 +40,15 @@ func InitConversationStoreHandlers(api huma.API, conversationStoreAPI *Conversat
 	}, conversationStoreAPI.PutConversation)
 
 	huma.Register(api, huma.Operation{
+		OperationID: "put-messages-to-conversation",
+		Method:      http.MethodPut,
+		Path:        pathPrefix + "/{id}/messages",
+		Summary:     "Put messages to a conversation",
+		Description: "Put messages to a conversation",
+		Tags:        []string{tag},
+	}, conversationStoreAPI.PutMessagesToConversation)
+
+	huma.Register(api, huma.Operation{
 		OperationID: "delete-conversation",
 		Method:      http.MethodDelete,
 		Path:        pathPrefix + "/{id}",
@@ -56,13 +65,4 @@ func InitConversationStoreHandlers(api huma.API, conversationStoreAPI *Conversat
 		Description: "Get a conversation",
 		Tags:        []string{tag},
 	}, conversationStoreAPI.GetConversation)
-
-	huma.Register(api, huma.Operation{
-		OperationID: "put-messages-to-conversation",
-		Method:      http.MethodPut,
-		Path:        pathPrefix + "/{id}/messages",
-		Summary:     "Put messages to a conversation",
-		Description: "Put messages to a conversation",
-		Tags:        []string{tag},
-	}, conversationStoreAPI.PutMessagesToConversation)
 }

@@ -3,7 +3,9 @@ package dirstore
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -16,6 +18,8 @@ const (
 	SortOrderAscending  = "asc"
 	SortOrderDescending = "desc"
 )
+
+var ErrCannotReadPartition = errors.New("failed to read partition directory")
 
 // PartitionProvider defines an interface for determining the partition directory for a file.
 type PartitionProvider interface {
@@ -201,7 +205,7 @@ func (mds *MapDirectoryStore) readPartitionFiles(
 ) ([]string, error) {
 	files, err := os.ReadDir(partitionPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read partition directory %s: %w", partitionPath, err)
+		return nil, fmt.Errorf("partition %s: %w", partitionPath, ErrCannotReadPartition)
 	}
 
 	var partitionFileNames []string
@@ -297,7 +301,10 @@ func (mds *MapDirectoryStore) ListFiles(
 			token.SortOrder,
 			token.FilenamePrefix,
 		)
-		if err != nil {
+		if err != nil && errors.Is(err, ErrCannotReadPartition) {
+			slog.Debug("Skipping listing partition", "error", err)
+			token.PartitionFilterPageToken.PartitionIndex++
+		} else if err != nil {
 			return nil, "", err
 		}
 
@@ -329,11 +336,6 @@ func (mds *MapDirectoryStore) ListFiles(
 
 		if isFiltered {
 			token.PartitionFilterPageToken.PartitionIndex++
-			if token.PartitionFilterPageToken.PartitionIndex >= len(
-				token.PartitionFilterPageToken.FilterPartitions,
-			) {
-				break
-			}
 		} else {
 			if nextPartitionListingPageToken == "" {
 				break

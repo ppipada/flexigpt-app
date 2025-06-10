@@ -46,7 +46,7 @@ func (p *UUIDv7Provider) Parse(filename string) (*FileInfo, error) {
 		title = strings.ReplaceAll(parts[1], "_", " ")
 	}
 
-	created, err := createdAtFromUUIDv7(id)
+	created, err := ExtractTimeFromUUIDv7(id)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (p *UUIDv7Provider) CreatedAt(filename string) (time.Time, error) {
 	return info.CreatedAt, nil
 }
 
-func createdAtFromUUIDv7(uuidStr string) (time.Time, error) {
+func ExtractTimeFromUUIDv7(uuidStr string) (time.Time, error) {
 	if len(uuidStr) != 36 {
 		return time.Time{}, fmt.Errorf("invalid UUIDv7: %s", uuidStr)
 	}

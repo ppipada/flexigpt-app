@@ -11,6 +11,17 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
 )
 
+func getNewPutRequestFromConversation(c *spec.Conversation) *spec.PutConversationRequest {
+	return &spec.PutConversationRequest{
+		ID: c.ID,
+		Body: &spec.PutConversationRequestBody{
+			Title:     c.Title,
+			CreatedAt: c.CreatedAt,
+			Messages:  c.Messages,
+		},
+	}
+}
+
 func newCollection(t *testing.T, dir string, withFTS bool) *ConversationCollection {
 	t.Helper()
 	cc, err := NewConversationCollection(
@@ -39,7 +50,10 @@ func TestFTSSearchHappyPath(t *testing.T) {
 	cc := newCollection(t, dir, true)
 
 	c1 := newConv(t, "Banana split")
-	_, _ = cc.PutConversation(t.Context(), &spec.SaveConversationRequest{Body: c1})
+	_, _ = cc.PutConversation(
+		t.Context(),
+		getNewPutRequestFromConversation(c1),
+	)
 
 	resp, err := cc.SearchConversations(t.Context(), &spec.SearchConversationsRequest{
 		Query: "banana",
@@ -62,7 +76,7 @@ func TestFTSRankingTitleVsBody(t *testing.T) {
 
 	// A: query term in title.
 	a := newConv(t, "Alpha winner")
-	_, _ = cc.PutConversation(t.Context(), &spec.SaveConversationRequest{Body: a})
+	_, _ = cc.PutConversation(t.Context(), getNewPutRequestFromConversation(a))
 
 	// B: query term only inside a message.
 	b := newConv(t, "No match in title")
@@ -71,7 +85,7 @@ func TestFTSRankingTitleVsBody(t *testing.T) {
 		Role:    spec.ConversationRoleUser,
 		Content: "alpha appears in body",
 	}}
-	_, _ = cc.PutConversation(t.Context(), &spec.SaveConversationRequest{Body: b})
+	_, _ = cc.PutConversation(t.Context(), getNewPutRequestFromConversation(b))
 
 	resp, _ := cc.SearchConversations(t.Context(),
 		&spec.SearchConversationsRequest{Query: "alpha"})
@@ -92,7 +106,7 @@ func TestFTSPagination(t *testing.T) {
 			Role:    spec.ConversationRoleUser,
 			Content: "kiwi everywhere",
 		}}
-		_, _ = cc.PutConversation(t.Context(), &spec.SaveConversationRequest{Body: c})
+		_, _ = cc.PutConversation(t.Context(), getNewPutRequestFromConversation(c))
 	}
 
 	var (
@@ -127,7 +141,7 @@ func TestFTSDeletePurgesIndex(t *testing.T) {
 	cc := newCollection(t, dir, true)
 
 	c := newConv(t, "Cherry pie")
-	_, _ = cc.PutConversation(t.Context(), &spec.SaveConversationRequest{Body: c})
+	_, _ = cc.PutConversation(t.Context(), getNewPutRequestFromConversation(c))
 
 	// Ensure hit exists.
 	_, err := cc.SearchConversations(t.Context(),
@@ -153,7 +167,7 @@ func TestFTSAddMessageUpdatesIndex(t *testing.T) {
 	cc := newCollection(t, dir, true)
 
 	c := newConv(t, "Silent")
-	_, _ = cc.PutConversation(t.Context(), &spec.SaveConversationRequest{Body: c})
+	_, _ = cc.PutConversation(t.Context(), getNewPutRequestFromConversation(c))
 
 	// No hit yet.
 	res, _ := cc.SearchConversations(t.Context(),
@@ -171,8 +185,8 @@ func TestFTSAddMessageUpdatesIndex(t *testing.T) {
 		&spec.PutMessagesToConversationRequest{
 			ID: c.ID,
 			Body: &spec.PutMessagesToConversationRequestBody{
-				Title:      c.Title,
-				NewMessage: msg,
+				Title:    c.Title,
+				Messages: []spec.ConversationMessage{msg},
 			},
 		})
 
@@ -220,7 +234,7 @@ func TestFTSScaleSearch(t *testing.T) {
 			})
 		}
 		if _, err := cc.PutConversation(t.Context(),
-			&spec.SaveConversationRequest{Body: c}); err != nil {
+			getNewPutRequestFromConversation(c)); err != nil {
 			t.Fatalf("save %d: %v", i, err)
 		}
 	}
