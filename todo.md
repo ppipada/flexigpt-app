@@ -5,6 +5,9 @@
 - [ ] implement prompts and tools using dirstore+fts
 - [ ] spinner before first response (details if possible)
 - [ ] post last streamed msg the scroll is moving a bit up
+- [ ] Search extras
+  - [ ] after load of prev conversation thecursor is still in box so for next time no one clicks or i can type again, but nothing happens there. ideally focus should move out so that user can come there again either via keyboard or click OR type should result in query
+  - [ ] right now after one query I have to explicitly click to get things to show again
 
 ## UI integration for search fts of conversations
 

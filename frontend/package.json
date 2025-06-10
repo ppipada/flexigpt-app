@@ -88,6 +88,7 @@
 			"app/apis/wailsjs/go/main/SettingStoreWrapper.js",
 			"app/models/aiprovidermodel.ts",
 			"app/backendapihelper/conversation_cache.ts",
+			"app/apis/conversationstore_helper.ts",
 			"app/lib/highlight_worker.ts"
 		],
 		"ignoreBinaries": [],
