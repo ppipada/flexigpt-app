@@ -1,5 +1,5 @@
 import type { ChangeEvent, FC, KeyboardEvent } from 'react';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { FiSearch } from 'react-icons/fi';
 
@@ -7,62 +7,7 @@ import type { ConversationItem } from '@/models/conversationmodel';
 
 import { listAllConversations } from '@/apis/conversationstore_helper';
 
-function groupItems(items: ConversationItem[]) {
-	const norm = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-	const today = norm(new Date());
-	const yesterday = new Date(today);
-	yesterday.setDate(today.getDate() - 1);
-	const last7 = new Date(today);
-	last7.setDate(today.getDate() - 7);
-
-	const buckets: Record<string, ConversationItem[]> = { Today: [], Yesterday: [], 'Last 7 Days': [], Older: [] };
-
-	items.forEach(it => {
-		const day = norm(new Date(it.createdAt));
-		if (day >= today) buckets.Today.push(it);
-		else if (day >= yesterday) buckets.Yesterday.push(it);
-		else if (day >= last7) buckets['Last 7 Days'].push(it);
-		else buckets.Older.push(it);
-	});
-	return buckets;
-}
-
-interface GroupedProps {
-	items: ConversationItem[];
-	onPick: (i: ConversationItem) => void;
-	focused: number;
-}
-const GroupedDropdown: FC<GroupedProps> = ({ items, onPick, focused }) => (
-	<ul className="absolute left-0 right-0 mt-0 max-h-80 overflow-y-auto bg-base-200 rounded-2xl shadow-lg text-sm">
-		{Object.entries(groupItems(items))
-			.filter(([, arr]) => arr.length)
-			.map(([label, arr]) => (
-				<Fragment key={label}>
-					<li className="px-12 py-2 text-neutral/60">{label}</li>
-					{arr.map((it, i) => (
-						<li
-							key={it.id}
-							onClick={() => {
-								onPick(it);
-							}}
-							className={`flex justify-between items-center px-12 py-2 cursor-pointer hover:bg-base-100 ${
-								i === focused ? 'bg-base-100' : ''
-							}`}
-						>
-							<span className="truncate">{it.title}</span>
-							<span className="hidden lg:block text-neutral text-xs">
-								{new Date(it.createdAt).toLocaleDateString('en-US', {
-									day: '2-digit',
-									month: 'short',
-									year: 'numeric',
-								})}
-							</span>
-						</li>
-					))}
-				</Fragment>
-			))}
-	</ul>
-);
+import { GroupedDropdown } from '@/components/date_grouped_dropdown';
 
 interface ChatSearchProps {
 	onSelectConversation: (item: ConversationItem) => Promise<void>;
@@ -146,7 +91,25 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 				/>
 			</div>
 
-			{show && <GroupedDropdown items={visible} onPick={pick} focused={focusedIndex} />}
+			{show && (
+				<GroupedDropdown
+					items={visible}
+					getDate={item => new Date(item.createdAt)}
+					getKey={item => item.id}
+					getLabel={item => item.title}
+					onPick={item => {
+						pick(item);
+					}}
+					focused={focusedIndex}
+					renderItemExtra={item =>
+						new Date(item.createdAt).toLocaleDateString('en-US', {
+							day: '2-digit',
+							month: 'short',
+							year: 'numeric',
+						})
+					}
+				/>
+			)}
 		</div>
 	);
 };
