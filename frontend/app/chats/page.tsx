@@ -206,12 +206,12 @@ const ChatScreen: FC = () => {
 					messages: [...updatedChatWithConvoMessage.messages.slice(0, -1), respMessage],
 					modifiedAt: new Date(),
 				};
-				console.log('Saving final chat');
 
 				saveUpdatedChat(finalChat);
-
-				setIsStreaming(false);
 			}
+
+			setStreamedMessage('');
+			setIsStreaming(false);
 
 			isSubmittingRef.current = false;
 		},
@@ -277,7 +277,11 @@ const ChatScreen: FC = () => {
 	);
 
 	const renderedMessages = chat.messages.map((msg, idx) => {
-		const isPending = msg.role === ConversationRoleEnum.assistant && msg.content.length === 0;
+		const isPending =
+			isStreaming &&
+			idx === chat.messages.length - 1 &&
+			msg.role === ConversationRoleEnum.assistant &&
+			msg.content.length === 0;
 		const live =
 			isStreaming && idx === chat.messages.length - 1 && msg.role === ConversationRoleEnum.assistant
 				? streamedMessage

@@ -367,3 +367,4 @@
 
 - [x] post last streamed msg the scroll is moving a bit up
 - [x] spinner before first response ~~(details if possible)~~
+- [x] When scroll kicks in the font appears to be bolder. This is due to gpu composting issue with webkit. Put antialiasing on body to make experience consistent.

@@ -110,6 +110,8 @@ function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
 	// We only care if THIS row’s streamed text changed.
 	if (prev.streamedMessage !== next.streamedMessage) return false;
 
+	if (prev.isPending !== next.isPending) return false;
+
 	// Everything else is the same: skip.
 	return true;
 }
