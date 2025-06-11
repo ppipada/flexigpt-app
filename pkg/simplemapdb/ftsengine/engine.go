@@ -15,6 +15,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"unicode"
 
 	_ "github.com/glebarez/go-sqlite"
 )
@@ -551,6 +552,30 @@ func (e *Engine) BatchList(
 	return rows, nextToken, nil
 }
 
+// cleanQueryWithOr splits the input into tokens (words), splitting on any non-letter/number (including hyphens),
+// and returns a query string suitable for FTS5 literal token search with OR join.
+func cleanQueryWithOr(query string) string {
+	var tokens []string
+	var token strings.Builder
+
+	for _, r := range query {
+		if unicode.IsLetter(r) || unicode.IsNumber(r) {
+			token.WriteRune(r)
+		} else if token.Len() > 0 {
+			t := token.String()
+			tokens = append(tokens, `"`+strings.ReplaceAll(t, `"`, `""`)+`"`)
+			token.Reset()
+		}
+	}
+	if token.Len() > 0 {
+		t := token.String()
+		tokens = append(tokens, `"`+strings.ReplaceAll(t, `"`, `""`)+`"`)
+	}
+
+	// Join tokens with OR for partial matches.
+	return strings.Join(tokens, " OR ")
+}
+
 // Search returns one page of results and, if more results exist,
 // an opaque token for the next page.
 // The query is treated as a search literal and not a fts5 expression.
@@ -603,8 +628,8 @@ func (e *Engine) Search(
 	args := slices.Clone(weights)
 	// Escape any embedded double quotes.
 	// FTS5 has special chars like - * etc that only quote for SQL, not for token.
-	quotedQuery := `"` + strings.ReplaceAll(query, `"`, `""`) + `"`
-	args = append(args, quotedQuery, pageSize, offset)
+	cQ := cleanQueryWithOr(query)
+	args = append(args, cQ, pageSize, offset)
 
 	rows, err := e.db.QueryContext(ctx, sqlQ, args...)
 	if err != nil {
