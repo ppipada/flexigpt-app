@@ -1,7 +1,7 @@
 import type { ChangeEvent, FC, KeyboardEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { FiLoader, FiSearch } from 'react-icons/fi';
+import { FiSearch } from 'react-icons/fi';
 
 import type { ConversationItem } from '@/models/conversationmodel';
 
@@ -163,8 +163,8 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 
 				{loading && (
 					<div className="flex items-center justify-center py-4">
-						<FiLoader className="animate-spin mr-2 text-primary" size={16} />
 						<span className="text-sm text-neutral/60">{results.length ? 'Loading more…' : 'Searching…'}</span>
+						<span className="loading loading-dots loading-md"></span>
 					</div>
 				)}
 
@@ -269,8 +269,9 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 					searchCache.delete(oldest);
 				}
 			}
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (err) {
+			if ((err as DOMException).name === 'AbortError') return;
+
 			if (!abortControllerRef.current.signal.aborted) {
 				setSearchState(p => ({ ...p, loading: false, error: 'Search failed. Please try again.' }));
 			}
@@ -400,6 +401,10 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 					break;
 				case 'Enter':
 					e.preventDefault();
+					if (debounceTimeoutRef.current) {
+						clearTimeout(debounceTimeoutRef.current);
+						debounceTimeoutRef.current = null;
+					}
 					if (focusedIndex >= 0 && focusedIndex < searchState.results.length) {
 						handlePick(searchState.results[focusedIndex].conversation);
 					} else if (!searchState.loading && searchState.query.trim()) {
@@ -453,9 +458,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 					className="w-full bg-transparent outline-none text-sm placeholder:text-neutral/60"
 					spellCheck={false}
 				/>
-				{searchState.loading && !searchState.results.length && (
-					<FiLoader className="animate-spin mx-3 text-primary flex-shrink-0" size={16} />
-				)}
+				{searchState.loading && <span className="loading loading-dots loading-md"></span>}
 			</div>
 
 			{/* ---------------- dropdown ------------------- */}
