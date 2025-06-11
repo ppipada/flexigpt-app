@@ -26,3 +26,11 @@ export function groupByDateBuckets<T>(
 
 	return buckets;
 }
+
+export function formatDateAsString(d: Date | string): string {
+	return new Date(d).toLocaleDateString('en-US', {
+		day: '2-digit',
+		month: 'short',
+		year: 'numeric',
+	});
+}

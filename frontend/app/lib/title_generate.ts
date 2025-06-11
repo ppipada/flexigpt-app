@@ -7,7 +7,7 @@ const DEFAULT_TITLE = 'New conversation';
 
 export interface TitleCandidate {
 	title: string; // already ≤ 48 chars, polished etc.
-	score: number; // “how good is this title?” 0…1  (1 = perfect)
+	score: number; // “how good is this title?” 0 ... 1  (1 = perfect)
 }
 
 const DEFAULT_TITLE_CANDIDATE: TitleCandidate = { title: DEFAULT_TITLE, score: 0.05 };
@@ -29,7 +29,7 @@ function looksLikeCodeLine(line: string): boolean {
 	// comment markers at line start ( //  #  /*  *  <!-- )
 	if (/^\s*(\/\/|#|\/\*|\*|<!--)/.test(t)) return true;
 
-	// import / class / def … at beginning of line
+	// import / class / def at beginning of line
 	if (/^\s*(import|export|package|namespace|using|class|interface|def|func|lambda|const|async)\b/.test(t)) return true;
 
 	/* ---------- 2.  Count weaker indicators -------------------- */
@@ -39,7 +39,7 @@ function looksLikeCodeLine(line: string): boolean {
 	if (/[{}[$$;]/.test(t)) score++; // braces / semicolon
 	if (/=>|->|::|\+\+|--|&&|\|\||\?\.|\?\?/.test(t)) score++; // multi-char operators
 	if (/[=+\-*/%]=?\s*\w/.test(t)) score++; // assignments / operators
-	if (/\w+\s*$[^)]*$/.test(t)) score++; // foo(…)  or  bar()
+	if (/\w+\s*$[^)]*$/.test(t)) score++; // foo(...)  or  bar()
 	if (/(['"`]).*\1/.test(t)) score++; // string literal
 
 	/* ---------- 3.  Decision ----------------------------------- */
@@ -58,7 +58,7 @@ function isCodeParagraph(p: string): boolean {
 function stripCode(txt: string): string {
 	return (
 		txt
-			// ``` … ```  or  ~~~ … ~~~
+			// ``` ... ```  or  ~~~ ... ~~~
 			.replace(/```[\s\S]*?```|~~~[\s\S]*?~~~/g, '')
 			// 4-space / tab indented blocks
 			.replace(/^(?: {4}|\t).*\n?/gm, '')

@@ -26,7 +26,7 @@ export function GroupedDropdown<T>({
 	let globalIndex = 0; // single running index for keyboard focus
 
 	return (
-		<ul className="absolute left-0 right-0 mt-0 max-h-80 overflow-y-auto bg-base-200 rounded-2xl shadow-lg text-sm">
+		<ul className="w-full text-sm">
 			{Object.entries(buckets)
 				.filter(([, arr]) => arr.length)
 				.map(([label, arr]) => (
@@ -50,7 +50,7 @@ export function GroupedDropdown<T>({
 									<span className="truncate">{getLabel(item)}</span>
 
 									{renderItemExtra && (
-										<span className="hidden lg:block text-neutral text-xs">{renderItemExtra(item)}</span>
+										<span className="hidden lg:block text-neutral/60 text-xs">{renderItemExtra(item)}</span>
 									)}
 								</li>
 							);

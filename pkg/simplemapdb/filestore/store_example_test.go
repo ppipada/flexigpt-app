@@ -337,7 +337,7 @@ func Example_events_basicFlow() {
 	defer os.RemoveAll(tmp)
 	file := filepath.Join(tmp, "store.json")
 
-	// Record every event we receive ….
+	// Record every event we receive.
 	var mu sync.Mutex
 	var got []Event
 	rec := func(e Event) {

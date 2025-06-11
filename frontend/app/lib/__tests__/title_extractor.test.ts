@@ -11,7 +11,7 @@ const MAX_PREVIEW = 120; // truncate long log lines
 
 /* ─── debug printer ──────────────────────────────────────────────── */
 function debugPrint(label: string, input: string, cand: TitleCandidate) {
-	const crop = (t: string) => (t.length > MAX_PREVIEW ? t.slice(0, MAX_PREVIEW) + ' …' : t);
+	const crop = (t: string) => (t.length > MAX_PREVIEW ? t.slice(0, MAX_PREVIEW) + ' ...' : t);
 	console.log(
 		`\n${label}\n` +
 			`  input (${input.length}):  ${crop(input)}\n` +

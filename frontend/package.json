@@ -6,8 +6,8 @@
 	"private": true,
 	"scripts": {
 		"lint:knip": "knip --tags=-lintignore",
-		"lint:eslint": "eslint --env-info; eslint . -c ./eslint.config.mjs",
-		"lint": "pnpm run lint:eslint; pnpm run lint:knip",
+		"lint:eslint": "eslint --env-info && eslint . -c ./eslint.config.mjs",
+		"lint": "pnpm run lint:eslint && pnpm run lint:knip",
 		"lint:fix": "eslint . -c ./eslint.config.mjs --fix .",
 		"fmt": "prettier -c . --ignore-path ../.prettierignore",
 		"fmt:fix": "prettier -w . --ignore-path ../.prettierignore",

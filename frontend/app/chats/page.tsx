@@ -92,7 +92,6 @@ const ChatScreen: FC = () => {
 				// Generate titles from both messages, pick the one with higher score
 				const titleCondidate1 = generateTitle(userMessages[0].content);
 				const titleCondidate2 = generateTitle(userMessages[1].content);
-				console.log(titleCondidate2.title, titleCondidate2.score, titleCondidate1.title, titleCondidate1.score);
 				newTitle = titleCondidate2.score > titleCondidate1.score ? titleCondidate2.title : titleCondidate1.title;
 			}
 		}

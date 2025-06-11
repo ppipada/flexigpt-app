@@ -102,7 +102,7 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 
 function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
 	// If the *object reference* for the ConversationMessage changes
-	// React must re-render (content edited, message appended …).
+	// React must re-render (content edited, message appended).
 	if (prev.message !== next.message) return false;
 
 	// We only care if THIS row’s streamed text changed.

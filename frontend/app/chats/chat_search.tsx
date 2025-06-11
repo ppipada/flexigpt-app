@@ -7,17 +7,11 @@ import type { ConversationItem } from '@/models/conversationmodel';
 
 import { conversationStoreAPI } from '@/apis/baseapi';
 
+import { formatDateAsString } from '@/lib/date_utils';
+
 import { GroupedDropdown } from '@/components/date_grouped_dropdown';
 
-/* ------------------------------------------------------------------ */
-/*                              constants                              */
-/* ------------------------------------------------------------------ */
-
 const CACHE_EXPIRY_TIME = 60_000;
-
-/* ------------------------------------------------------------------ */
-/*                               types                                 */
-/* ------------------------------------------------------------------ */
 
 interface SearchResult {
 	conversation: ConversationItem;
@@ -32,6 +26,7 @@ interface SearchState {
 	loading: boolean;
 	error?: string;
 	hasMore: boolean;
+	searchedMessages: boolean;
 }
 
 interface SearchCacheEntry {
@@ -41,17 +36,6 @@ interface SearchCacheEntry {
 }
 
 const searchCache = new Map<string, SearchCacheEntry>();
-
-/* ------------------------------------------------------------------ */
-/*                           helper utils                              */
-/* ------------------------------------------------------------------ */
-
-const formatDate = (d: Date | string) =>
-	new Date(d).toLocaleDateString('en-US', {
-		day: '2-digit',
-		month: 'short',
-		year: 'numeric',
-	});
 
 // newest-first, title-matches before message-matches
 const sortResults = (a: SearchResult, b: SearchResult) => {
@@ -63,10 +47,6 @@ const sortResults = (a: SearchResult, b: SearchResult) => {
 	return a.matchType === 'title' ? -1 : 1;
 };
 
-/* ------------------------------------------------------------------ */
-/*                       dropdown (presentation)                       */
-/* ------------------------------------------------------------------ */
-
 interface SearchDropdownProps {
 	results: SearchResult[];
 	loading: boolean;
@@ -76,7 +56,7 @@ interface SearchDropdownProps {
 	focusedIndex: number;
 	onPick: (item: ConversationItem) => void;
 	query: string;
-	showSearchAllHint: boolean;
+	showSearchAllHintShortQuery: boolean;
 }
 
 const SearchDropdown: FC<SearchDropdownProps> = ({
@@ -88,7 +68,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 	focusedIndex,
 	onPick,
 	query,
-	showSearchAllHint,
+	showSearchAllHintShortQuery,
 }) => {
 	const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -106,7 +86,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 		el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 	}, [focusedIndex]);
 
-	/* --------------------------- states ----------------------------- */
+	/* --------------------------- error ------------------------------ */
 	if (error) {
 		return (
 			<div className="absolute left-0 right-0 mt-1 bg-base-200 rounded-2xl shadow-lg p-4 text-center z-50">
@@ -123,69 +103,99 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 		);
 	}
 
-	/* --------- NO LOCAL RESULTS  (early-return block) -------------- */
-	if (!results.length && !loading) {
-		return (
-			<div className="absolute left-0 right-0 mt-1 bg-base-200 rounded-2xl shadow-lg p-8 text-center z-50">
-				<div className="text-neutral/60 text-sm">{query ? `No results for "${query}"` : 'No conversations yet'}</div>
-				{!query && <div className="text-xs text-neutral/40 mt-2">Start a conversation to see it here</div>}
+	const SEARCHED_ALL = 'Searched all titles & messages';
+	const PRESS_ENTER_TO_SEARCH = 'Press Enter to search messages';
+	const NO_CONVO = 'No conversations yet';
 
-				{/* --- hint is now rendered here as well --- */}
-				{showSearchAllHint && (
-					<div className="mt-4 text-xs text-neutral/60">
-						Press <kbd className="kbd kbd-xs">Enter</kbd> to search all messages
-					</div>
-				)}
-			</div>
-		);
-	}
+	/* ---------------- top-bar content helpers ---------------------- */
+	const getTopBarContent = () => {
+		let left = '';
+		let right = '';
 
-	/* ------------------------- main list --------------------------- */
+		if (loading && !results.length) {
+			left = 'Searching...';
+		} else if (!results.length && !loading) {
+			if (query.length < 3) {
+				if (showSearchAllHintShortQuery) {
+					left = query ? `No title results for "${query} "` : NO_CONVO;
+					right = PRESS_ENTER_TO_SEARCH;
+				} else {
+					left = query ? `No results for "${query}"` : NO_CONVO;
+					right = SEARCHED_ALL;
+				}
+			} else {
+				left = query ? `No results for "${query}"` : NO_CONVO;
+				right = query ? SEARCHED_ALL : '';
+			}
+		} else {
+			// we have some results
+			if (query.length === 0) {
+				left = 'Titles';
+				right = 'Type to search';
+			} else if (query.length > 0 && query.length < 3) {
+				left = 'Title matches';
+				if (showSearchAllHintShortQuery) {
+					right = PRESS_ENTER_TO_SEARCH;
+				} else {
+					right = SEARCHED_ALL;
+				}
+			} else {
+				left = 'Title & message matches';
+			}
+		}
+
+		return { left, right };
+	};
+
+	const { left: barLeft, right: barRight } = getTopBarContent();
+
+	/* --------------------------- render ----------------------------- */
 	return (
-		<div className="absolute left-0 right-0 mt-1 bg-base-200 rounded-2xl shadow-lg z-50">
-			<div ref={scrollRef} className="max-h-[60vh] overflow-y-auto" onScroll={handleScroll}>
-				<GroupedDropdown<SearchResult>
-					items={results}
-					focused={focusedIndex}
-					getDate={r => new Date(r.conversation.createdAt)}
-					getKey={r => r.conversation.id}
-					getLabel={r => <span className="truncate">{r.conversation.title}</span>}
-					onPick={r => {
-						onPick(r.conversation);
-					}}
-					renderItemExtra={r => (
-						<span className="inline-flex items-center gap-4">
-							{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
-							<span className="whitespace-nowrap">{formatDate(r.conversation.createdAt)}</span>
-						</span>
-					)}
-				/>
-
-				{loading && (
-					<div className="flex items-center justify-center py-4">
-						<span className="text-sm text-neutral/60">{results.length ? 'Loading more…' : 'Searching…'}</span>
-						<span className="loading loading-dots loading-md"></span>
-					</div>
-				)}
-
-				{!loading && !hasMore && results.length > 0 && query && (
-					<div className="text-center py-3 text-xs text-neutral/60 border-t border-base-300">End of results</div>
-				)}
+		<div className="absolute left-0 right-0 mt-1 bg-base-200 rounded-2xl shadow-lg overflow-hidden z-50">
+			{/* ------- sticky status / hint bar (always visible) ---------- */}
+			<div className="flex justify-between items-center px-8 py-1 text-xs text-neutral/60 border-b border-base-300 sticky top-0">
+				<span className="truncate">{barLeft}</span>
+				{barRight && <span className="pl-4 shrink-0">{barRight}</span>}
 			</div>
 
-			{/* --- hint also visible when we DO have local results --- */}
-			{showSearchAllHint && (
-				<div className="px-4 py-3 text-center text-xs text-neutral/60 border-t border-base-300 bg-base-100 rounded-b-2xl">
-					Press <kbd className="kbd kbd-xs">Enter</kbd> to search all messages
+			{/* -------------- empty state OR results list ---------------- */}
+			{!results.length && !loading ? (
+				<div className="py-8 text-center text-sm text-neutral/60">
+					{query ? 'Try refining your search' : 'Start a conversation to see it here'}
+				</div>
+			) : (
+				<div ref={scrollRef} className="max-h-[60vh] overflow-y-auto" onScroll={handleScroll}>
+					<GroupedDropdown<SearchResult>
+						items={results}
+						focused={focusedIndex}
+						getDate={r => new Date(r.conversation.createdAt)}
+						getKey={r => r.conversation.id}
+						getLabel={r => <span className="truncate">{r.conversation.title}</span>}
+						onPick={r => {
+							onPick(r.conversation);
+						}}
+						renderItemExtra={r => (
+							<span className="inline-flex items-center gap-4">
+								{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
+								<span className="whitespace-nowrap">{formatDateAsString(r.conversation.createdAt)}</span>
+							</span>
+						)}
+					/>
+
+					{loading && (
+						<div className="flex items-center justify-center py-4">
+							<span className="text-sm text-neutral/60">{results.length ? 'Loading more…' : 'Searching…'}</span>
+							<span className="loading loading-dots loading-md" />
+						</div>
+					)}
+					{!loading && !hasMore && results.length > 0 && query && (
+						<div className="text-center py-1 text-xs text-neutral/60 border-t border-base-300">End of results</div>
+					)}
 				</div>
 			)}
 		</div>
 	);
 };
-
-/* ------------------------------------------------------------------ */
-/*                        main ChatSearch component                    */
-/* ------------------------------------------------------------------ */
 
 interface ChatSearchProps {
 	onSelectConversation: (item: ConversationItem) => Promise<void>;
@@ -199,6 +209,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 		results: [],
 		loading: false,
 		hasMore: false,
+		searchedMessages: false,
 	});
 	const [show, setShow] = useState(false);
 	const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -229,6 +240,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 					results: conversationsToResults(conversations),
 					loading: false,
 					hasMore: false,
+					searchedMessages: false,
 				});
 			}
 		} catch (e) {
@@ -242,28 +254,35 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 		if (abortControllerRef.current && !append) abortControllerRef.current.abort();
 		abortControllerRef.current = new AbortController();
 
-		if (!append) setSearchState(p => ({ ...p, loading: true, error: undefined }));
+		if (!append)
+			setSearchState(p => ({ ...p, loading: true, error: undefined, hasMore: false, searchedMessages: false }));
 
 		try {
-			const { conversations, nextToken } = await conversationStoreAPI.searchConversations(query, token, 20);
-
+			const res = await conversationStoreAPI.searchConversations(query, token, 20);
+			const conversations = res.conversations;
+			const nextToken = res.nextToken?.trim() || '';
 			const newResults: SearchResult[] = conversations.map(conv => ({
 				conversation: conv,
 				matchType: conv.title.toLowerCase().includes(query.toLowerCase()) ? 'title' : 'message',
-				snippet: `…Matched in a Message`,
+				snippet: `...Matched a Message`,
 			}));
 
 			setSearchState(p => ({
 				...p,
 				results: append ? [...p.results, ...newResults] : newResults,
 				nextToken,
-				hasMore: !!nextToken,
+				hasMore: !!nextToken && nextToken !== '',
 				loading: false,
+				searchedMessages: true,
 			}));
 
 			/* caching (first page only) */
 			if (!append) {
-				searchCache.set(query, { results: newResults, nextToken, timestamp: Date.now() });
+				searchCache.set(query, {
+					results: newResults,
+					nextToken,
+					timestamp: Date.now(),
+				});
 				while (searchCache.size > 5) {
 					const oldest = [...searchCache.entries()].reduce((a, b) => (a[1].timestamp < b[1].timestamp ? a : b))[0];
 					searchCache.delete(oldest);
@@ -273,7 +292,13 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 			if ((err as DOMException).name === 'AbortError') return;
 
 			if (!abortControllerRef.current.signal.aborted) {
-				setSearchState(p => ({ ...p, loading: false, error: 'Search failed. Please try again.' }));
+				setSearchState(p => ({
+					...p,
+					loading: false,
+					error: 'Search failed. Please try again.',
+					hasMore: false,
+					searchedMessages: true,
+				}));
 			}
 		}
 	}, []);
@@ -289,6 +314,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 				hasMore: false,
 				nextToken: undefined,
 				error: undefined,
+				searchedMessages: false,
 			}));
 		},
 		[recentConversations, conversationsToResults]
@@ -298,7 +324,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 	const handleInputChange = useCallback(
 		(e: ChangeEvent<HTMLInputElement>) => {
 			const q = e.target.value;
-			setSearchState(p => ({ ...p, query: q }));
+			setSearchState(p => ({ ...p, query: q, searchedMessages: false }));
 			setFocusedIndex(-1);
 
 			/* re-open dropdown if hidden */
@@ -314,6 +340,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 					hasMore: false,
 					nextToken: undefined,
 					error: undefined,
+					searchedMessages: false,
 				}));
 				return;
 			}
@@ -331,7 +358,8 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 					...p,
 					results: cached.results,
 					nextToken: cached.nextToken,
-					hasMore: !!cached.nextToken,
+					hasMore: !!cached.nextToken && cached.nextToken !== '',
+					searchedMessages: true,
 					loading: false,
 					error: undefined,
 				}));
@@ -344,12 +372,15 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 		[show, recentConversations, conversationsToResults, filterLocalResults, performSearch]
 	);
 
-	/* ------------------------- focus/blur -------------------------- */
+	/* ------------------------- focus / blur ------------------------ */
 	const handleFocus = useCallback(async () => {
 		setShow(true);
 		if (!recentConversations.length) await loadRecentConversations();
 		else if (!searchState.query && !searchState.results.length) {
-			setSearchState(p => ({ ...p, results: conversationsToResults(recentConversations) }));
+			setSearchState(p => ({
+				...p,
+				results: conversationsToResults(recentConversations),
+			}));
 		}
 	}, [
 		recentConversations,
@@ -369,7 +400,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 	const handlePick = useCallback(
 		async (conv: ConversationItem) => {
 			await onSelectConversation(conv);
-			setSearchState(p => ({ ...p, query: '' }));
+			setSearchState(p => ({ ...p, query: '', searchedMessages: false }));
 			setShow(false);
 			setFocusedIndex(-1);
 			inputRef.current?.blur();
@@ -415,7 +446,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 				case 'Escape':
 					setShow(false);
 					setFocusedIndex(-1);
-					if (searchState.query) setSearchState(p => ({ ...p, query: '' }));
+					if (searchState.query) setSearchState(p => ({ ...p, query: '', searchedMessages: false }));
 					break;
 			}
 		},
@@ -438,7 +469,11 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 	/* -------------------- derived / memo --------------------------- */
 	const orderedResults = useMemo(() => [...searchState.results].sort(sortResults), [searchState.results]);
 
-	const showSearchAllHint = searchState.query.length > 0 && searchState.query.length < 3 && !searchState.loading;
+	const showSearchAllHintShortQuery =
+		searchState.query.length > 0 && // something was typed
+		searchState.query.length < 3 && // short (1–2 chars)
+		!searchState.loading && // not currently searching
+		!searchState.searchedMessages; // backend not queried yet
 
 	/* --------------------------- render ---------------------------- */
 	return (
@@ -454,7 +489,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 					onFocus={handleFocus}
 					onBlur={handleBlur}
 					onKeyDown={handleKeyDown}
-					placeholder="Search conversations…"
+					placeholder="Search conversations..."
 					className="w-full bg-transparent outline-none text-sm placeholder:text-neutral/60"
 					spellCheck={false}
 				/>
@@ -472,7 +507,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 					focusedIndex={focusedIndex}
 					onPick={handlePick}
 					query={searchState.query}
-					showSearchAllHint={showSearchAllHint}
+					showSearchAllHintShortQuery={showSearchAllHintShortQuery}
 				/>
 			)}
 		</div>
