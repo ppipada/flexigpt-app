@@ -360,6 +360,9 @@
   - [x] Very long titles are ellipsized; full title appears in tooltip.
 
 - [x] Search extras
+
   - [x] after load of prev conversation the cursor is still in box so for next time no one clicks or i can type again, but nothing happens there. ideally focus should move out so that user can come there again either via keyboard or click OR type should result in query
   - [x] right now after one query I have to explicitly click to get things to show again, i.e click out and then click in again.
   - [x] Search fully when only few chars is broken
+
+- [x] post last streamed msg the scroll is moving a bit up

@@ -4,7 +4,6 @@
 
 - [ ] implement prompts and tools using dirstore+fts
 - [ ] spinner before first response (details if possible)
-- [ ] post last streamed msg the scroll is moving a bit up
 
 ## Tasks: Tools Implementation with CodeMirror
 

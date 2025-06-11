@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { v7 as uuidv7 } from 'uuid';
 
@@ -46,8 +46,10 @@ const ChatScreen: FC = () => {
 	const [streamedMessage, setStreamedMessage] = useState('');
 	const [isStreaming, setIsStreaming] = useState(false);
 
-	const chatContainerRef = useRef<HTMLDivElement>(null);
 	const chatInputRef = useRef<ChatInputFieldHandle>(null);
+	const chatContainerRef = useRef<HTMLDivElement>(null);
+	const bottomRef = useRef<HTMLDivElement>(null);
+
 	const isSubmittingRef = useRef(false);
 	// Has the current conversation already been persisted?
 	const isChatPersistedRef = useRef(false);
@@ -121,10 +123,10 @@ const ChatScreen: FC = () => {
 	};
 
 	// Scroll to bottom.
-	useEffect(() => {
-		if (chatContainerRef.current) {
-			chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-		}
+	// Tell the browser to bring the sentinel into view.
+	// useLayoutEffect guarantees it runs  *after* the DOM mutated but *before* the frame is painted.
+	useLayoutEffect(() => {
+		bottomRef.current?.scrollIntoView({ block: 'end' });
 	}, [chat.messages, streamedMessage]);
 
 	const handleSelectConversation = useCallback(async (item: ConversationItem) => {
@@ -305,6 +307,7 @@ const ChatScreen: FC = () => {
 				>
 					<div className="w-11/12 lg:w-4/5 xl:w-3/4">
 						<div className="w-full flex-1 space-y-4">{renderedMessages}</div>
+						<div ref={bottomRef} />
 					</div>
 				</div>
 
