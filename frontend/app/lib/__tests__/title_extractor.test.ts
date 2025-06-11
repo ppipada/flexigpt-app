@@ -3,7 +3,7 @@
 */
 import { describe, expect, it } from 'vitest';
 
-import { generateTitle, type TitleCandidate } from '../title_generate';
+import { generateTitle, type TitleCandidate } from '../text_utils';
 import { codeMessage } from './sample_code_message';
 
 const DEFAULT = 'New conversation';

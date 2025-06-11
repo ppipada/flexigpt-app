@@ -20,6 +20,21 @@ import (
 	_ "github.com/glebarez/go-sqlite"
 )
 
+const (
+	tokenizerOptions = "porter unicode61 remove_diacritics 1"
+)
+
+var ErrEmptyQuery = errors.New("empty query")
+
+func quote(id string) string { return `"` + strings.ReplaceAll(id, `"`, `""`) + `"` }
+
+func paramPlaceholders(n int) string {
+	if n == 0 {
+		return ""
+	}
+	return strings.Repeat(",?", n)
+}
+
 type Engine struct {
 	db  *sql.DB
 	cfg Config
@@ -53,7 +68,7 @@ func NewEngine(cfg Config) (*Engine, error) {
 	db.SetMaxIdleConns(2)
 
 	e := &Engine{db: db, cfg: cfg}
-	e.hsh = schemaChecksum(e.cfg)
+	e.hsh = schemaChecksum(e.cfg, tokenizerOptions)
 	slog.Info("ftsengine bootstrap", "dbPath", dataSourceName)
 	if err := e.bootstrap(context.Background()); err != nil {
 		_ = db.Close()
@@ -61,6 +76,14 @@ func NewEngine(cfg Config) (*Engine, error) {
 	}
 
 	return e, nil
+}
+
+func schemaChecksum(cfg Config, extra string) string {
+	h := sha256.New()
+	// Write the extra string first.
+	h.Write([]byte(extra))
+	_ = json.NewEncoder(h).Encode(cfg)
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func validateConfig(c Config) error {
@@ -93,28 +116,14 @@ func validateConfig(c Config) error {
 	return nil
 }
 
-func schemaChecksum(cfg Config) string {
-	h := sha256.New()
-	_ = json.NewEncoder(h).Encode(cfg)
-	return hex.EncodeToString(h.Sum(nil))
-}
-
-func quote(id string) string { return `"` + strings.ReplaceAll(id, `"`, `""`) + `"` }
-
-func paramPlaceholders(n int) string {
-	if n == 0 {
-		return ""
-	}
-	return strings.Repeat(",?", n)
-}
-
 func (e *Engine) bootstrap(ctx context.Context) error {
 	const sqlCreateMetaTable = `CREATE TABLE IF NOT EXISTS meta(k TEXT PRIMARY KEY,v TEXT);`
 	const sqlSelectMetaHash = `SELECT v FROM meta WHERE k='h'`
 	const sqlInsertMetaHash = `INSERT OR REPLACE INTO meta(k,v) VALUES('h',?)`
+	const sqlDropTable = `DROP TABLE IF EXISTS %s`
 	const sqlCreateVirtualTable = `CREATE VIRTUAL TABLE IF NOT EXISTS %s
 		USING fts5 (%s,
-			tokenize='unicode61 remove_diacritics 1');`
+			tokenize='%s');`
 	const sqlDeleteAllRows = `DELETE FROM %s`
 
 	// Meta for schema hash.
@@ -129,7 +138,14 @@ func (e *Engine) bootstrap(ctx context.Context) error {
 	// Create / replace FTS virtual table.
 	slog.Debug("fst-engine bootstrap", "previousChecksum", stored, "newChecksum", e.hsh)
 	if stored != e.hsh {
+		// Schema changed, clear previous rows.
+		if stored != "" {
+			slog.Info("fst-engine bootstrap: config checksum mismatch, delete all rows.")
+			_, _ = e.db.ExecContext(ctx, fmt.Sprintf(sqlDeleteAllRows, quote(e.cfg.Table)))
+		}
 		slog.Info("fst-engine bootstrap: config checksum mismatch, create virtual table again.")
+		_, _ = e.db.ExecContext(ctx, fmt.Sprintf(sqlDropTable, quote(e.cfg.Table)))
+
 		var cols []string
 		cols = append(cols, ColNameExternalID+" UNINDEXED")
 		for _, c := range e.cfg.Columns {
@@ -140,18 +156,13 @@ func (e *Engine) bootstrap(ctx context.Context) error {
 			cols = append(cols, col)
 		}
 		ddl := fmt.Sprintf(sqlCreateVirtualTable,
-			quote(e.cfg.Table), strings.Join(cols, ","))
+			quote(e.cfg.Table), strings.Join(cols, ","), tokenizerOptions)
 
 		if _, err := e.db.ExecContext(ctx, ddl); err != nil {
 			return err
 		}
 		_, _ = e.db.ExecContext(ctx, sqlInsertMetaHash, e.hsh)
 
-		// Schema changed, clear previous rows.
-		if stored != "" {
-			slog.Info("fst-engine bootstrap: config checksum mismatch, delete all rows.")
-			_, _ = e.db.ExecContext(ctx, fmt.Sprintf(sqlDeleteAllRows, quote(e.cfg.Table)))
-		}
 	}
 	return nil
 }
@@ -552,28 +563,57 @@ func (e *Engine) BatchList(
 	return rows, nextToken, nil
 }
 
-// cleanQueryWithOr splits the input into tokens (words), splitting on any non-letter/number (including hyphens),
-// and returns a query string suitable for FTS5 literal token search with OR join.
-func cleanQueryWithOr(query string) string {
+// cleanQueryWithOr converts a raw string into `"a" OR "b" OR "c"`.
+// Expect input: words separated by blanks.
+func cleanQueryWithOr(q string) string {
 	var tokens []string
-	var token strings.Builder
+	var buf strings.Builder
 
-	for _, r := range query {
+	flush := func() {
+		if buf.Len() == 0 {
+			return
+		}
+		tokens = append(tokens, buf.String())
+		buf.Reset()
+	}
+
+	for _, r := range q {
 		if unicode.IsLetter(r) || unicode.IsNumber(r) {
-			token.WriteRune(r)
-		} else if token.Len() > 0 {
-			t := token.String()
-			tokens = append(tokens, `"`+strings.ReplaceAll(t, `"`, `""`)+`"`)
-			token.Reset()
+			buf.WriteRune(r)
+		} else {
+			flush()
 		}
 	}
-	if token.Len() > 0 {
-		t := token.String()
-		tokens = append(tokens, `"`+strings.ReplaceAll(t, `"`, `""`)+`"`)
+	// Final word.
+	flush()
+
+	// Nothing to search for, only non alphanumeric input.
+	if len(tokens) == 0 {
+		// Caller can skip the SQL.
+		return ""
 	}
 
-	// Join tokens with OR for partial matches.
-	return strings.Join(tokens, " OR ")
+	// Deduplicate *before* quoting.
+	seen := make(map[string]struct{}, len(tokens))
+	out := make([]string, 0, len(tokens))
+	for _, t := range tokens {
+		if len(t) == 1 {
+			if !unicode.IsDigit(rune(t[0])) {
+				// Skip 1 char strings.
+				continue
+			}
+		}
+		if _, ok := seen[t]; !ok {
+			seen[t] = struct{}{}
+			out = append(out, quote(t))
+		}
+	}
+
+	if len(out) == 0 {
+		return strings.Join(tokens, " OR ")
+	}
+
+	return strings.Join(out, " OR ")
 }
 
 // Search returns one page of results and, if more results exist,
@@ -585,6 +625,10 @@ func (e *Engine) Search(
 	pageToken string,
 	pageSize int,
 ) (hits []SearchResult, nextToken string, err error) {
+	if query == "" {
+		return nil, "", ErrEmptyQuery
+	}
+
 	if pageSize <= 0 || pageSize > 10000 {
 		pageSize = 10
 	}
@@ -629,6 +673,10 @@ func (e *Engine) Search(
 	// Escape any embedded double quotes.
 	// FTS5 has special chars like - * etc that only quote for SQL, not for token.
 	cQ := cleanQueryWithOr(query)
+	if cQ == "" {
+		// Return empty result.
+		return []SearchResult{}, "", nil
+	}
 	args = append(args, cQ, pageSize, offset)
 
 	rows, err := e.db.QueryContext(ctx, sqlQ, args...)

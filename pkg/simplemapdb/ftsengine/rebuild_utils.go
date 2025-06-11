@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"path/filepath"
+	"time"
 )
 
 // SyncDecision tells the helper what to do with ONE file.
@@ -49,6 +50,7 @@ func SyncDirToFTS(
 		batchSize = 1000
 	}
 	const batchListPageSize = 10000
+	start := time.Now()
 
 	slog.Info("fts-sync start", "dir", baseDir, "cmpCol", compareColumn)
 
@@ -76,7 +78,16 @@ func SyncDirToFTS(
 		token = next
 	}
 	getPrev := func(id string) string { return existing[id] }
-
+	var (
+		// Files whose ID was accepted (Skip==false).
+		nProcessed int
+		// Skip==true or empty ID.
+		nSkipped int
+		// Dec.Unchanged==true.
+		nUnchanged int
+		// Rows really written to the index.
+		nUpserted int
+	)
 	// Walk directory – incremental updates in small batches.
 	seenNow := make(map[string]struct{}, 4096)
 	pending := make(map[string]map[string]string, batchSize)
@@ -88,6 +99,7 @@ func SyncDirToFTS(
 		if err := engine.BatchUpsert(ctx, pending); err != nil {
 			return err
 		}
+		nUpserted += len(pending)
 		pending = make(map[string]map[string]string, batchSize)
 		return nil
 	}
@@ -107,12 +119,15 @@ func SyncDirToFTS(
 		if dec.Skip || dec.ID == "" {
 			// Silently skip on Skip==true for a path in consumer.
 			// Or No valid id -> treat like Skip.
+			nSkipped++
 			return nil
 		}
 
 		seenNow[dec.ID] = struct{}{}
+		nProcessed++
 
 		if dec.Unchanged {
+			nUnchanged++
 			return nil
 		}
 
@@ -148,7 +163,12 @@ func SyncDirToFTS(
 
 	slog.Info("fts-sync done",
 		"dir", baseDir,
-		"upserts/kept", len(seenNow),
-		"deleted", len(toDelete))
+		"took", time.Since(start),
+		"processed", nProcessed,
+		"upserted", nUpserted,
+		"unchanged", nUnchanged,
+		"skipped", nSkipped,
+		"deleted", len(toDelete),
+	)
 	return nil
 }

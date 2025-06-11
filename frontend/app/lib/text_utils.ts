@@ -201,3 +201,30 @@ export function generateTitle(firstMessage: string): TitleCandidate {
 	/* ④ final polish */
 	return { title: finalise(best), score: normalise(bestRaw) };
 }
+
+const isSingleLetter = (tok: string) => {
+	return tok.length === 1 && /^[a-z]$/i.test(tok);
+};
+
+// Build a safe FTS5 MATCH string from raw user input.
+//  – lower-cases
+//  – removes stop-words
+//  – deduplicates
+//  - removes single chars
+export function cleanSearchQuery(input: string): string {
+	const raw = input.trim();
+	if (raw === '') return '';
+
+	const nlpTokens = (nlp(raw).terms().out('array') as string[]).map(t => t.toLowerCase());
+	const nonOneCharTokens = nlpTokens.filter(t => !isSingleLetter(t)); // drop 1-char words
+	if (nonOneCharTokens.length === 0) {
+		return raw.toLowerCase();
+	}
+
+	let noStopTokens: string[] = removeStopwords(nonOneCharTokens);
+	if (noStopTokens.length === 0) {
+		noStopTokens = nonOneCharTokens;
+	}
+
+	return Array.from(new Set(noStopTokens)).join(' ');
+}

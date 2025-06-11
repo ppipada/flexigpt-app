@@ -8,6 +8,7 @@ import type { ConversationItem } from '@/models/conversationmodel';
 import { conversationStoreAPI } from '@/apis/baseapi';
 
 import { formatDateAsString } from '@/lib/date_utils';
+import { cleanSearchQuery } from '@/lib/text_utils';
 
 import { GroupedDropdown } from '@/components/date_grouped_dropdown';
 
@@ -71,6 +72,8 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 	showSearchAllHintShortQuery,
 }) => {
 	const scrollRef = useRef<HTMLDivElement>(null);
+	/* inside the component body */
+	const shouldGroup = query.length === 0 || showSearchAllHintShortQuery;
 
 	/* ------------------------ infinite scroll ----------------------- */
 	const handleScroll = useCallback(() => {
@@ -133,10 +136,11 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 				left = 'Titles';
 				right = 'Type to search';
 			} else if (query.length > 0 && query.length < 3) {
-				left = 'Title matches';
 				if (showSearchAllHintShortQuery) {
+					left = 'Title matches';
 					right = PRESS_ENTER_TO_SEARCH;
 				} else {
+					left = 'Title & message matches';
 					right = SEARCHED_ALL;
 				}
 			} else {
@@ -164,28 +168,59 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 					{query ? 'Try refining your search' : 'Start a conversation to see it here'}
 				</div>
 			) : (
-				<div ref={scrollRef} className="max-h-[60vh] overflow-y-auto" onScroll={handleScroll}>
-					<GroupedDropdown<SearchResult>
-						items={results}
-						focused={focusedIndex}
-						getDate={r => new Date(r.conversation.createdAt)}
-						getKey={r => r.conversation.id}
-						getLabel={r => <span className="truncate">{r.conversation.title}</span>}
-						onPick={r => {
-							onPick(r.conversation);
-						}}
-						renderItemExtra={r => (
-							<span className="inline-flex items-center gap-4">
-								{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
-								<span className="whitespace-nowrap">{formatDateAsString(r.conversation.createdAt)}</span>
-							</span>
-						)}
-					/>
+				<div ref={scrollRef} className="max-h-[60vh] overflow-y-auto antialiased" onScroll={handleScroll}>
+					{shouldGroup ? (
+						/* ------------- GROUPED (recents / short local) ------------- */
+						<GroupedDropdown<SearchResult>
+							items={results}
+							focused={focusedIndex}
+							getDate={r => new Date(r.conversation.createdAt)}
+							getKey={r => r.conversation.id}
+							getLabel={r => <span className="truncate">{r.conversation.title}</span>}
+							onPick={r => {
+								onPick(r.conversation);
+							}}
+							renderItemExtra={r => (
+								<span className="inline-flex items-center gap-4">
+									{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
+									<span className="whitespace-nowrap">{formatDateAsString(r.conversation.createdAt)}</span>
+								</span>
+							)}
+						/>
+					) : (
+						/* ------------- FLAT (API results) -------------------------- */
+						<ul className="w-full text-sm">
+							{results.map((r, idx) => {
+								const isFocused = idx === focusedIndex;
+								return (
+									<li
+										key={r.conversation.id}
+										data-index={idx}
+										onClick={() => {
+											onPick(r.conversation);
+										}}
+										className={`flex justify-between items-center px-12 py-2 cursor-pointer hover:bg-base-100 ${
+											isFocused ? 'bg-base-100' : ''
+										}`}
+									>
+										<span className="truncate">{r.conversation.title}</span>
+
+										<span className="hidden lg:block text-neutral/60 text-xs">
+											<span className="inline-flex items-center gap-4">
+												{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
+												<span className="whitespace-nowrap">{formatDateAsString(r.conversation.createdAt)}</span>
+											</span>
+										</span>
+									</li>
+								);
+							})}
+						</ul>
+					)}
 
 					{loading && (
 						<div className="flex items-center justify-center py-4">
 							<span className="text-sm text-neutral/60">{results.length ? 'Loading more…' : 'Searching…'}</span>
-							<span className="loading loading-dots loading-md" />
+							<span className="loading loading-dots loading-sm" />
 						</div>
 					)}
 					{!loading && !hasMore && results.length > 0 && query && (
@@ -250,10 +285,25 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 	}, [searchState.query, conversationsToResults]);
 
 	/* --------------------------- search ---------------------------- */
-	const performSearch = useCallback(async (query: string, token?: string, append = false) => {
+	const performSearch = useCallback(async (rawQuery: string, token?: string, append = false) => {
 		if (abortControllerRef.current && !append) abortControllerRef.current.abort();
 		abortControllerRef.current = new AbortController();
-
+		const query = cleanSearchQuery(rawQuery);
+		// If the cleaner strips everything (stop-words, punctuation, …) the query is
+		//   effectively empty.  Instead of hitting the backend, immediately surface an
+		//   empty result-set and mark the search as “done”.
+		if (query === '') {
+			setSearchState(p => ({
+				...p,
+				results: [],
+				loading: false,
+				hasMore: false,
+				nextToken: undefined,
+				error: undefined,
+				searchedMessages: true, // we *consider* messages searched
+			}));
+			return;
+		}
 		if (!append)
 			setSearchState(p => ({ ...p, loading: true, error: undefined, hasMore: false, searchedMessages: false }));
 
@@ -263,8 +313,8 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 			const nextToken = res.nextToken?.trim() || '';
 			const newResults: SearchResult[] = conversations.map(conv => ({
 				conversation: conv,
-				matchType: conv.title.toLowerCase().includes(query.toLowerCase()) ? 'title' : 'message',
-				snippet: `...Matched a Message`,
+				matchType: conv.title.toLowerCase().includes(rawQuery.toLowerCase()) ? 'title' : 'message',
+				snippet: '',
 			}));
 
 			setSearchState(p => ({
@@ -352,7 +402,8 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 			}
 
 			/* check cache */
-			const cached = searchCache.get(q);
+			const cleaned = cleanSearchQuery(q);
+			const cached = searchCache.get(cleaned);
 			if (cached && Date.now() - cached.timestamp < CACHE_EXPIRY_TIME) {
 				setSearchState(p => ({
 					...p,
@@ -467,13 +518,20 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 	);
 
 	/* -------------------- derived / memo --------------------------- */
-	const orderedResults = useMemo(() => [...searchState.results].sort(sortResults), [searchState.results]);
 
 	const showSearchAllHintShortQuery =
 		searchState.query.length > 0 && // something was typed
 		searchState.query.length < 3 && // short (1–2 chars)
 		!searchState.loading && // not currently searching
 		!searchState.searchedMessages; // backend not queried yet
+
+	/* -------- do we have local (grouped) results? ---------- */
+	const isLocalMode = searchState.query.length === 0 || showSearchAllHintShortQuery;
+
+	const orderedResults = useMemo(
+		() => (isLocalMode ? [...searchState.results].sort(sortResults) : searchState.results),
+		[searchState.results, isLocalMode]
+	);
 
 	/* --------------------------- render ---------------------------- */
 	return (

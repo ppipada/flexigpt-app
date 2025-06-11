@@ -11,7 +11,7 @@ import { type ChatOptions, DefaultChatOptions } from '@/models/settingmodel';
 import { GetCompletionMessage } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
 
-import { generateTitle } from '@/lib/title_generate';
+import { generateTitle } from '@/lib/text_utils';
 
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
 
