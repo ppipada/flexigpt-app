@@ -59,6 +59,13 @@ const ChatScreen: FC = () => {
 		chatInputRef.current?.focus();
 	}, []);
 
+	// Scroll to bottom.
+	// Tell the browser to bring the sentinel into view.
+	// useLayoutEffect guarantees it runs  *after* the DOM mutated but *before* the frame is painted.
+	useLayoutEffect(() => {
+		bottomRef.current?.scrollIntoView({ block: 'end' });
+	}, [chat.messages, streamedMessage, isStreaming]);
+
 	const bumpSearchKey = () => {
 		setSearchRefreshKey(k => k + 1);
 	};
@@ -122,13 +129,6 @@ const ChatScreen: FC = () => {
 		setChat(updatedChat);
 	};
 
-	// Scroll to bottom.
-	// Tell the browser to bring the sentinel into view.
-	// useLayoutEffect guarantees it runs  *after* the DOM mutated but *before* the frame is painted.
-	useLayoutEffect(() => {
-		bottomRef.current?.scrollIntoView({ block: 'end' });
-	}, [chat.messages, streamedMessage]);
-
 	const handleSelectConversation = useCallback(async (item: ConversationItem) => {
 		const selectedChat = await conversationStoreAPI.getConversation(item.id, item.title);
 		if (selectedChat) {
@@ -160,6 +160,9 @@ const ChatScreen: FC = () => {
 				messages: [...updatedChatWithUserMessage.messages, convoMsg],
 				modifiedAt: new Date(),
 			};
+
+			// Make the empty assistant bubble appear immediately
+			setChat({ ...updatedChatWithConvoMessage, messages: [...updatedChatWithConvoMessage.messages] });
 
 			const onStreamData = (data: string) => {
 				setStreamedMessage(prev => {
@@ -196,10 +199,17 @@ const ChatScreen: FC = () => {
 
 			if (newMsg.responseMessage) {
 				const respMessage = newMsg.responseMessage;
-				updatedChatWithConvoMessage.messages.pop();
-				updatedChatWithConvoMessage.messages.push(respMessage);
-				updatedChatWithConvoMessage.modifiedAt = new Date();
-				saveUpdatedChat(updatedChatWithConvoMessage);
+				// Create FRESH objects so React sees the change even in non-streaming
+				// mode, where `streamedMessage` never changes.
+				const finalChat: Conversation = {
+					...updatedChatWithConvoMessage,
+					messages: [...updatedChatWithConvoMessage.messages.slice(0, -1), respMessage],
+					modifiedAt: new Date(),
+				};
+				console.log('Saving final chat');
+
+				saveUpdatedChat(finalChat);
+
 				setIsStreaming(false);
 			}
 
@@ -267,6 +277,7 @@ const ChatScreen: FC = () => {
 	);
 
 	const renderedMessages = chat.messages.map((msg, idx) => {
+		const isPending = msg.role === ConversationRoleEnum.assistant && msg.content.length === 0;
 		const live =
 			isStreaming && idx === chat.messages.length - 1 && msg.role === ConversationRoleEnum.assistant
 				? streamedMessage
@@ -279,6 +290,7 @@ const ChatScreen: FC = () => {
 				onEdit={txt => handleEdit(txt, msg.id)}
 				onResend={() => handleResend(msg.id)}
 				streamedMessage={live}
+				isPending={isPending}
 			/>
 		);
 	});

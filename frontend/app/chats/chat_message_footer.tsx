@@ -82,6 +82,7 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 						content={messageDetails}
 						align="items-start text-left"
 						streamedText=""
+						isPending={false}
 						renderAsMarkdown={true}
 					/>
 				</div>

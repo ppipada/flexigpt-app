@@ -15,9 +15,10 @@ interface ChatMessageProps {
 	onEdit: (editedText: string) => void;
 	onResend: () => void;
 	streamedMessage: string;
+	isPending: boolean;
 }
 
-const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamedMessage }) => {
+const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamedMessage, isPending }) => {
 	const isUser = message.role === ConversationRoleEnum.user;
 	const align = !isUser ? 'items-end text-left' : 'items-start text-left';
 	const leftColSpan = !isUser ? 'col-span-1 lg:col-span-2' : 'col-span-1';
@@ -67,6 +68,7 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 						content={message.content}
 						streamedText={streamedMessage}
 						isStreaming={!!streamedMessage}
+						isPending={isPending}
 						align={align}
 						renderAsMarkdown={!isUser}
 					/>

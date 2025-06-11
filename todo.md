@@ -3,7 +3,6 @@
 ## Laundry list
 
 - [ ] implement prompts and tools using dirstore+fts
-- [ ] spinner before first response (details if possible)
 
 ## Tasks: Tools Implementation with CodeMirror
 

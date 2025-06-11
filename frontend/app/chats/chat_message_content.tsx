@@ -11,6 +11,7 @@ interface ChatMessageContentProps {
 	// Partial text while streaming.
 	streamedText?: string;
 	isStreaming?: boolean;
+	isPending?: boolean;
 	align: string;
 	renderAsMarkdown?: boolean;
 }
@@ -19,12 +20,22 @@ const ChatMessageContent = ({
 	content,
 	streamedText = '',
 	isStreaming = false,
+	isPending = false,
 	align,
 	renderAsMarkdown = true,
 }: ChatMessageContentProps) => {
 	const liveText = isStreaming ? streamedText : content;
 	// Max ~4×/sec.
 	const textToRender = useDebounced(liveText, 250);
+
+	if (isPending && textToRender.trim() === '') {
+		return (
+			<div className="bg-base-100 px-4 py-2 flex items-center">
+				Thinking
+				<span className="ml-4 loading loading-dots loading-md" />
+			</div>
+		);
+	}
 
 	if (!renderAsMarkdown) {
 		const plainText = useMemo(
@@ -55,6 +66,7 @@ function areEqual(prev: ChatMessageContentProps, next: ChatMessageContentProps) 
 		prev.content === next.content &&
 		prev.streamedText === next.streamedText &&
 		prev.isStreaming === next.isStreaming &&
+		prev.isPending === next.isPending &&
 		prev.align === next.align &&
 		prev.renderAsMarkdown === next.renderAsMarkdown
 	);

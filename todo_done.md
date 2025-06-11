@@ -366,3 +366,4 @@
   - [x] Search fully when only few chars is broken
 
 - [x] post last streamed msg the scroll is moving a bit up
+- [x] spinner before first response ~~(details if possible)~~
