@@ -198,7 +198,7 @@ const DocumentStores: React.FC = () => {
 	if (loading) {
 		return (
 			<div className="flex justify-center items-center h-screen">
-				<span className="loading loading-spinner loading-lg"></span>
+				<span className="loading loading-spinner loading-sm"></span>
 			</div>
 		);
 	}

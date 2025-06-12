@@ -219,7 +219,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 
 					{loading && (
 						<div className="flex items-center justify-center py-4">
-							<span className="text-sm text-neutral/60">{results.length ? 'Loading more…' : 'Searching…'}</span>
+							<span className="text-sm text-neutral/60">{results.length ? 'Loading more...' : 'Searching...'}</span>
 							<span className="loading loading-dots loading-sm" />
 						</div>
 					)}
@@ -289,7 +289,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 		if (abortControllerRef.current && !append) abortControllerRef.current.abort();
 		abortControllerRef.current = new AbortController();
 		const query = cleanSearchQuery(rawQuery);
-		// If the cleaner strips everything (stop-words, punctuation, …) the query is
+		// If the cleaner strips everything (stop-words, punctuation, ...) the query is
 		//   effectively empty.  Instead of hitting the backend, immediately surface an
 		//   empty result-set and mark the search as “done”.
 		if (query === '') {
@@ -551,7 +551,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 					className="w-full bg-transparent outline-none text-sm placeholder:text-neutral/60"
 					spellCheck={false}
 				/>
-				{searchState.loading && <span className="loading loading-dots loading-md"></span>}
+				{searchState.loading && <span className="loading loading-dots loading-sm"></span>}
 			</div>
 
 			{/* ---------------- dropdown ------------------- */}

@@ -336,7 +336,7 @@
   - [x] Dropdown body has its own scroll container (max-height ~60 vh).
   - [x] When the user scrolls to 80 % of the container and `nextToken` exists
     - [x] → automatically call `searchConversations(q, nextToken, 20)` and append rows.
-  - [x] Optional footer: “End of results” or “Loading more…”.
+  - [x] Optional footer: “End of results” or “Loading more”.
 
 - Interaction Rules
 
