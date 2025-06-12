@@ -2,7 +2,12 @@
 
 export GIT_PAGER=cat
 
-# Usage: ./git_stats.sh <tag1: older tag> <tag2: newer tag>
+# Usage: ./scripts/git_tag_stats.sh <tag1: older tag> <tag2: newer tag>
+# Start of time to now.
+# ./scripts/git_tag_stats.sh  "$(git rev-list --max-parents=0 HEAD)" HEAD
+# Last two tags example.
+# ./scripts/git_tag_stats.sh v0.0.30 v0.0.31
+
 tag1="$1"
 tag2="$2"
 
