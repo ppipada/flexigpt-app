@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 
+	aiproviderAPI "github.com/ppipada/flexigpt-app/pkg/aiprovider/api"
 	aiproviderConsts "github.com/ppipada/flexigpt-app/pkg/aiprovider/consts"
-	aiproviderSpec "github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore/spec"
@@ -40,9 +40,9 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 			// Update inbuilt providers.
 			if aiSetting.APIKey != "" {
 				_, err = p.SetProviderAPIKey(
-					&aiproviderSpec.SetProviderAPIKeyRequest{
+					&aiproviderAPI.SetProviderAPIKeyRequest{
 						Provider: providerName,
-						Body: &aiproviderSpec.SetProviderAPIKeyRequestBody{
+						Body: &aiproviderAPI.SetProviderAPIKeyRequestBody{
 							APIKey: aiSetting.APIKey,
 						},
 					},
@@ -53,9 +53,9 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 			}
 
 			_, err = p.SetProviderAttribute(
-				&aiproviderSpec.SetProviderAttributeRequest{
+				&aiproviderAPI.SetProviderAttributeRequest{
 					Provider: providerName,
-					Body: &aiproviderSpec.SetProviderAttributeRequestBody{
+					Body: &aiproviderAPI.SetProviderAttributeRequestBody{
 						Origin:                   &aiSetting.Origin,
 						ChatCompletionPathPrefix: &aiSetting.ChatCompletionPathPrefix,
 					},
@@ -66,9 +66,9 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 			}
 		} else {
 			// Add custom providers.
-			_, err := p.AddProvider(&aiproviderSpec.AddProviderRequest{
+			_, err := p.AddProvider(&aiproviderAPI.AddProviderRequest{
 				Provider: providerName,
-				Body: &aiproviderSpec.AddProviderRequestBody{
+				Body: &aiproviderAPI.AddProviderRequestBody{
 					APIKey:                   aiSetting.APIKey,
 					Origin:                   aiSetting.Origin,
 					ChatCompletionPathPrefix: aiSetting.ChatCompletionPathPrefix,
@@ -79,8 +79,8 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 			}
 		}
 	}
-	_, err = p.SetDefaultProvider(&aiproviderSpec.SetDefaultProviderRequest{
-		Body: &aiproviderSpec.SetDefaultProviderRequestBody{
+	_, err = p.SetDefaultProvider(&aiproviderAPI.SetDefaultProviderRequest{
+		Body: &aiproviderAPI.SetDefaultProviderRequestBody{
 			Provider: allSettingsResponse.Body.App.DefaultProvider,
 		},
 	})

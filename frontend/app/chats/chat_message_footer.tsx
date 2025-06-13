@@ -83,9 +83,10 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 				<div className="mt-2 overflow-hidden shadow-lg rounded-2xl">
 					<ChatMessageContent
 						content={messageDetails}
-						align="items-start text-left"
 						streamedText=""
+						isStreaming={false}
 						isPending={false}
+						align="items-start text-left"
 						renderAsMarkdown={true}
 					/>
 				</div>

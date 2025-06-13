@@ -28,14 +28,13 @@
 
 - [ ] Conversations
 
-  - [ ] Support delete conversation.
-  - [ ] Maybe, have soft delete then hard delete workflow.
-  - [ ] Conversations ux decisions need to be reviewed again based on current experience with their usage.
+  - [ ] Support delete conversation. Maybe, have soft delete then hard delete workflow.
 
 - [ ] Settings
 
   - [ ] Need a settings data version and migration func
   - [ ] API key should never reach frontend after save: Need to verify if some place this is remaining
+  - [ ] theme setting persistance and usage across installs
 
 - [ ] Windows
 

@@ -26,7 +26,7 @@ func NewBaseAIAPI(p *spec.ProviderInfo, debug bool) *BaseAIAPI {
 
 // IsConfigured checks if the API is configured.
 func (api *BaseAIAPI) IsConfigured(ctx context.Context) bool {
-	return api.ProviderInfo.IsConfigured()
+	return api.ProviderInfo.APIKey != ""
 }
 
 func (api *BaseAIAPI) GetProviderInfo(ctx context.Context) *spec.ProviderInfo {
@@ -91,8 +91,8 @@ func (api *BaseAIAPI) getCompletionRequest(
 	modelParams spec.ModelParams,
 	inbuiltModelParams *spec.ModelParams,
 	prevMessages []spec.ChatCompletionRequestMessage,
-) *spec.CompletionRequest {
-	completionRequest := spec.CompletionRequest{
+) *CompletionRequest {
+	completionRequest := CompletionRequest{
 		ModelParams: spec.ModelParams{
 			Name:                 modelParams.Name,
 			AdditionalParameters: modelParams.AdditionalParameters,
@@ -164,7 +164,7 @@ func (api *BaseAIAPI) FetchCompletion(
 	inbuiltModelParams *spec.ModelParams,
 	prevMessages []spec.ChatCompletionRequestMessage,
 	onStreamData func(data string) error,
-) (*spec.CompletionResponse, error) {
+) (*CompletionResponse, error) {
 	input := api.getCompletionRequest(prompt, modelParams, inbuiltModelParams, prevMessages)
 	if len(input.Messages) == 0 {
 		return nil, errors.New("empty input messages")
@@ -239,7 +239,7 @@ func (api *BaseAIAPI) FetchCompletion(
 		return nil, errors.New("empty input content messages")
 	}
 
-	completionResp := &spec.CompletionResponse{}
+	completionResp := &CompletionResponse{}
 
 	ctx = AddDebugResponseToCtx(ctx)
 	resp, err := llm.GenerateContent(ctx, content, options...)
@@ -268,7 +268,7 @@ func (api *BaseAIAPI) FetchCompletion(
 	if resp == nil || len(resp.Choices) == 0 || resp.Choices[0] == nil {
 		if ok && debugResp != nil {
 			if completionResp.ErrorDetails == nil {
-				completionResp.ErrorDetails = &spec.APIErrorDetails{
+				completionResp.ErrorDetails = &APIErrorDetails{
 					Message: "got nil response from LLM api",
 				}
 			} else {

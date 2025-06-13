@@ -20,7 +20,7 @@ import {
 	SetProviderAPIKey,
 	SetProviderAttribute,
 } from '@/apis/wailsjs/go/main/ProviderSetWrapper';
-import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
+import type { api as wailsAIAPI, spec as wailsSpec } from '@/apis/wailsjs/go/models';
 import { EventsOn } from '@/apis/wailsjs/runtime/runtime';
 
 /**
@@ -29,11 +29,11 @@ import { EventsOn } from '@/apis/wailsjs/runtime/runtime';
 export class WailsProviderSetAPI implements IProviderSetAPI {
 	async setDefaultProvider(provider: ProviderName): Promise<void> {
 		const req = { Body: { provider: provider } };
-		await SetDefaultProvider(req as wailsSpec.SetDefaultProviderRequest);
+		await SetDefaultProvider(req as wailsAIAPI.SetDefaultProviderRequest);
 	}
 
 	async getConfigurationInfo(): Promise<ConfigurationResponse> {
-		const resp = await GetConfigurationInfo({} as wailsSpec.GetConfigurationInfoRequest);
+		const resp = await GetConfigurationInfo({} as wailsAIAPI.GetConfigurationInfoRequest);
 		const configInfo = resp.Body || {};
 		if (
 			!('configuredProviders' in configInfo) ||
@@ -76,14 +76,14 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 				chatCompletionPathPrefix: providerInfo.chatCompletionPathPrefix,
 			},
 		};
-		await AddProvider(req as wailsSpec.AddProviderRequest);
+		await AddProvider(req as wailsAIAPI.AddProviderRequest);
 	}
 
 	async deleteProvider(provider: ProviderName): Promise<void> {
 		const req = {
 			Provider: provider,
 		};
-		await DeleteProvider(req as wailsSpec.DeleteProviderRequest);
+		await DeleteProvider(req as wailsAIAPI.DeleteProviderRequest);
 	}
 
 	async setProviderAPIKey(provider: ProviderName, apiKey: string): Promise<void> {
@@ -93,7 +93,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 				apiKey: apiKey,
 			},
 		};
-		await SetProviderAPIKey(req as wailsSpec.SetProviderAPIKeyRequest);
+		await SetProviderAPIKey(req as wailsAIAPI.SetProviderAPIKeyRequest);
 	}
 
 	async setProviderAttribute(
@@ -108,7 +108,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 				chatCompletionPathPrefix: chatCompletionPathPrefix,
 			},
 		};
-		await SetProviderAttribute(req as wailsSpec.SetProviderAttributeRequest);
+		await SetProviderAttribute(req as wailsAIAPI.SetProviderAttributeRequest);
 	}
 	// Need an eventflow for getting completion.
 	// Implemented that in main App Wrapper than aiprovider go package.

@@ -9,8 +9,6 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
-
-	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 )
 
 // Sensitive keys to filter.
@@ -23,9 +21,9 @@ const debugHTTPResponseKey = contextKey("DebugHTTPResponse")
 
 // DebugHTTPResponse wraps http.Response and includes additional debug information.
 type DebugHTTPResponse struct {
-	RequestDetails  *spec.APIRequestDetails
-	ResponseDetails *spec.APIResponseDetails
-	ErrorDetails    *spec.APIErrorDetails
+	RequestDetails  *APIRequestDetails
+	ResponseDetails *APIResponseDetails
+	ErrorDetails    *APIErrorDetails
 }
 
 // FilterSensitiveInfo recursively filters out sensitive keys from a data structure.
@@ -75,7 +73,7 @@ func containsSensitiveKey(key string) bool {
 	return false
 }
 
-func generateCurlCommand(config *spec.APIRequestDetails) string {
+func generateCurlCommand(config *APIRequestDetails) string {
 	var curlCommand strings.Builder
 
 	// Add HTTP method.
@@ -107,7 +105,7 @@ func generateCurlCommand(config *spec.APIRequestDetails) string {
 }
 
 // captureRequestDetails captures details of the HTTP request.
-func captureRequestDetails(req *http.Request) *spec.APIRequestDetails {
+func captureRequestDetails(req *http.Request) *APIRequestDetails {
 	headers := make(map[string]any)
 	for key, values := range req.Header {
 		headers[key] = strings.Join(values, ", ")
@@ -124,7 +122,7 @@ func captureRequestDetails(req *http.Request) *spec.APIRequestDetails {
 	url := req.URL.String()
 	method := req.Method
 
-	apireq := &spec.APIRequestDetails{
+	apireq := &APIRequestDetails{
 		URL:     &url,
 		Method:  &method,
 		Headers: FilterSensitiveInfo(headers),
@@ -140,7 +138,7 @@ func captureRequestDetails(req *http.Request) *spec.APIRequestDetails {
 // captureResponseDetails captures details of the HTTP response.
 func CaptureResponseDetails(
 	resp *http.Response,
-) *spec.APIResponseDetails {
+) *APIResponseDetails {
 	headers := make(map[string]any)
 	for key, values := range resp.Header {
 		headers[key] = strings.Join(values, ", ")
@@ -157,7 +155,7 @@ func CaptureResponseDetails(
 		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	}
 
-	return &spec.APIResponseDetails{
+	return &APIResponseDetails{
 		Status:  resp.StatusCode,
 		Headers: FilterSensitiveInfo(headers),
 		Data:    FilterSensitiveInfo(data),
@@ -248,7 +246,7 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp, err := t.Transport.RoundTrip(req)
 
 	// Capture response details.
-	var respDetails *spec.APIResponseDetails
+	var respDetails *APIResponseDetails
 	if resp != nil {
 		// Capture headers.
 		headers := make(map[string]any)
@@ -257,7 +255,7 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 
 		// Initialize response details.
-		respDetails = &spec.APIResponseDetails{
+		respDetails = &APIResponseDetails{
 			Status:  resp.StatusCode,
 			Headers: FilterSensitiveInfo(headers),
 		}
@@ -274,9 +272,9 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	// Capture error details if an error occurred.
-	var errorDetails *spec.APIErrorDetails
+	var errorDetails *APIErrorDetails
 	if err != nil {
-		errorDetails = &spec.APIErrorDetails{
+		errorDetails = &APIErrorDetails{
 			Message:         err.Error(),
 			RequestDetails:  reqDetails,
 			ResponseDetails: respDetails,

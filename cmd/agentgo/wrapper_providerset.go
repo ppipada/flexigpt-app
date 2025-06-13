@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/ppipada/flexigpt-app/pkg/aiprovider"
+	aiproviderAPI "github.com/ppipada/flexigpt-app/pkg/aiprovider/api"
 	aiproviderSpec "github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
 
@@ -34,52 +35,52 @@ func SetWrappedProviderAppContext(w *ProviderSetWrapper, ctx context.Context) {
 }
 
 func (w *ProviderSetWrapper) SetDefaultProvider(
-	req *aiproviderSpec.SetDefaultProviderRequest,
-) (*aiproviderSpec.SetDefaultProviderResponse, error) {
-	return middleware.WithRecoveryResp(func() (*aiproviderSpec.SetDefaultProviderResponse, error) {
+	req *aiproviderAPI.SetDefaultProviderRequest,
+) (*aiproviderAPI.SetDefaultProviderResponse, error) {
+	return middleware.WithRecoveryResp(func() (*aiproviderAPI.SetDefaultProviderResponse, error) {
 		return w.providersetAPI.SetDefaultProvider(context.Background(), req)
 	})
 }
 
 func (w *ProviderSetWrapper) GetConfigurationInfo(
-	req *aiproviderSpec.GetConfigurationInfoRequest,
-) (*aiproviderSpec.GetConfigurationInfoResponse, error) {
+	req *aiproviderAPI.GetConfigurationInfoRequest,
+) (*aiproviderAPI.GetConfigurationInfoResponse, error) {
 	return middleware.WithRecoveryResp(
-		func() (*aiproviderSpec.GetConfigurationInfoResponse, error) {
+		func() (*aiproviderAPI.GetConfigurationInfoResponse, error) {
 			return w.providersetAPI.GetConfigurationInfo(context.Background(), req)
 		},
 	)
 }
 
 func (w *ProviderSetWrapper) AddProvider(
-	req *aiproviderSpec.AddProviderRequest,
-) (*aiproviderSpec.AddProviderResponse, error) {
-	return middleware.WithRecoveryResp(func() (*aiproviderSpec.AddProviderResponse, error) {
+	req *aiproviderAPI.AddProviderRequest,
+) (*aiproviderAPI.AddProviderResponse, error) {
+	return middleware.WithRecoveryResp(func() (*aiproviderAPI.AddProviderResponse, error) {
 		return w.providersetAPI.AddProvider(context.Background(), req)
 	})
 }
 
 func (w *ProviderSetWrapper) DeleteProvider(
-	req *aiproviderSpec.DeleteProviderRequest,
-) (*aiproviderSpec.DeleteProviderResponse, error) {
-	return middleware.WithRecoveryResp(func() (*aiproviderSpec.DeleteProviderResponse, error) {
+	req *aiproviderAPI.DeleteProviderRequest,
+) (*aiproviderAPI.DeleteProviderResponse, error) {
+	return middleware.WithRecoveryResp(func() (*aiproviderAPI.DeleteProviderResponse, error) {
 		return w.providersetAPI.DeleteProvider(context.Background(), req)
 	})
 }
 
 func (w *ProviderSetWrapper) SetProviderAPIKey(
-	req *aiproviderSpec.SetProviderAPIKeyRequest,
-) (*aiproviderSpec.SetProviderAPIKeyResponse, error) {
-	return middleware.WithRecoveryResp(func() (*aiproviderSpec.SetProviderAPIKeyResponse, error) {
+	req *aiproviderAPI.SetProviderAPIKeyRequest,
+) (*aiproviderAPI.SetProviderAPIKeyResponse, error) {
+	return middleware.WithRecoveryResp(func() (*aiproviderAPI.SetProviderAPIKeyResponse, error) {
 		return w.providersetAPI.SetProviderAPIKey(context.Background(), req)
 	})
 }
 
 func (w *ProviderSetWrapper) SetProviderAttribute(
-	req *aiproviderSpec.SetProviderAttributeRequest,
-) (*aiproviderSpec.SetProviderAttributeResponse, error) {
+	req *aiproviderAPI.SetProviderAttributeRequest,
+) (*aiproviderAPI.SetProviderAttributeResponse, error) {
 	return middleware.WithRecoveryResp(
-		func() (*aiproviderSpec.SetProviderAttributeResponse, error) {
+		func() (*aiproviderAPI.SetProviderAttributeResponse, error) {
 			return w.providersetAPI.SetProviderAttribute(context.Background(), req)
 		},
 	)
@@ -92,15 +93,15 @@ func (w *ProviderSetWrapper) FetchCompletion(
 	modelParams aiproviderSpec.ModelParams,
 	prevMessages []aiproviderSpec.ChatCompletionRequestMessage,
 	callbackID string,
-) (*aiproviderSpec.FetchCompletionResponse, error) {
-	return middleware.WithRecoveryResp(func() (*aiproviderSpec.FetchCompletionResponse, error) {
+) (*aiproviderAPI.FetchCompletionResponse, error) {
+	return middleware.WithRecoveryResp(func() (*aiproviderAPI.FetchCompletionResponse, error) {
 		onStreamData := func(data string) error {
 			runtime.EventsEmit(w.appContext, callbackID, data)
 			return nil
 		}
 
-		req := &aiproviderSpec.FetchCompletionRequest{
-			Body: &aiproviderSpec.FetchCompletionRequestBody{
+		req := &aiproviderAPI.FetchCompletionRequest{
+			Body: &aiproviderAPI.FetchCompletionRequestBody{
 				Provider:     aiproviderSpec.ProviderName(provider),
 				Prompt:       prompt,
 				ModelParams:  modelParams,

@@ -24,7 +24,7 @@ var HuggingfaceModels = map[spec.ModelName]spec.ModelParams{
 		Name:            DeepseekCoder13BInstruct,
 		MaxPromptLength: 4096,
 		MaxOutputLength: 4096,
-		Temperature:     spec.Float64Ptr(0.1),
+		Temperature:     Float64Ptr(0.1),
 		Stream:          true,
 		SystemPrompt:    "",
 		Timeout:         120,

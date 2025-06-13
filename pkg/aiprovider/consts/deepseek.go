@@ -32,7 +32,7 @@ var DeepseekModels = map[spec.ModelName]spec.ModelParams{
 		Name:            DeepseekChat,
 		MaxPromptLength: 8192,
 		MaxOutputLength: 8192,
-		Temperature:     spec.Float64Ptr(0.1),
+		Temperature:     Float64Ptr(0.1),
 		Stream:          true,
 		SystemPrompt:    "",
 		Timeout:         120,
@@ -41,7 +41,7 @@ var DeepseekModels = map[spec.ModelName]spec.ModelParams{
 		Name:            DeepseekChat,
 		MaxPromptLength: 8192,
 		MaxOutputLength: 8192,
-		Temperature:     spec.Float64Ptr(1.0),
+		Temperature:     Float64Ptr(1.0),
 		Stream:          true,
 		Reasoning: &spec.ReasoningParams{
 			Type:  spec.ReasoningTypeSingleWithLevels,
