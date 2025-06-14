@@ -47,6 +47,7 @@
 - [ ] Refactor provider in prep for presets and skills flow
   - [ ] Types in aiprovider
   - [ ] We should store all these preset files in settings or their own domain folders?
+  - [ ] Remove confusion of ModelParams vs ModelSettings vs ModelPreset. What is stored is a ModelPreset. What comes in is a ModelParam.
 
 ## Tasks: Tools Implementation with CodeMirror
 
