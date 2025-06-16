@@ -18,11 +18,11 @@ type ModelPreset struct {
 	AdditionalParameters map[string]any   `json:"additionalParameters,omitempty"`
 }
 
-type ProviderModelPreset map[ModelName]ModelPreset
+type ProviderModelPresets map[ModelName]ModelPreset
 
 type ModelPresetsSchema struct {
-	Version      string                               `json:"version"`
-	ModelPresets map[ProviderName]ProviderModelPreset `json:"modelPresets"`
+	Version      string                                `json:"version"`
+	ModelPresets map[ProviderName]ProviderModelPresets `json:"modelPresets"`
 }
 
 type GetAllModelPresetsRequest struct {
@@ -35,7 +35,7 @@ type GetAllModelPresetsResponse struct {
 
 type CreateModelPresetsRequest struct {
 	ProviderName ProviderName `path:"providerName"`
-	Body         *ProviderModelPreset
+	Body         *ProviderModelPresets
 }
 type CreateModelPresetsResponse struct{}
 

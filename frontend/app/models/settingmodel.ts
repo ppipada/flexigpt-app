@@ -1,10 +1,4 @@
-import {
-	DefaultModelParams,
-	type ModelName,
-	type ModelParams,
-	type ModelPreset,
-	type ProviderName,
-} from '@/models/aiprovidermodel';
+import { type ModelName, type ProviderName } from '@/models/aimodelmodel';
 
 export interface AISetting {
 	isEnabled: boolean;
@@ -12,7 +6,6 @@ export interface AISetting {
 	origin: string;
 	chatCompletionPathPrefix: string;
 	defaultModel: ModelName;
-	modelPresets: Record<ModelName, ModelPreset>;
 }
 
 export interface AISettingAttrs {
@@ -21,20 +14,6 @@ export interface AISettingAttrs {
 	chatCompletionPathPrefix?: string;
 	defaultModel?: ModelName;
 }
-
-export interface ChatOptions extends ModelParams {
-	title: string;
-	provider: ProviderName;
-	disablePreviousMessages: boolean;
-}
-
-export const DefaultChatOptions: ChatOptions = {
-	...DefaultModelParams,
-	provider: 'No Provider',
-	name: 'No Model',
-	title: 'No Model configured',
-	disablePreviousMessages: false,
-};
 
 export type SettingsSchema = {
 	aiSettings: Record<ProviderName, AISetting>;
@@ -45,12 +24,9 @@ export type SettingsSchema = {
 
 export interface ISettingStoreAPI {
 	getAllSettings: () => Promise<SettingsSchema>;
-	// setSetting: (key: string, value: any) => Promise<void>;
 	setAppSettings: (defaultProvider: ProviderName) => Promise<void>;
 	addAISetting: (providerName: ProviderName, aiSetting: AISetting) => Promise<void>;
 	deleteAISetting: (providerName: ProviderName) => Promise<void>;
 	setAISettingAPIKey: (providerName: ProviderName, apiKey: string) => Promise<void>;
 	setAISettingAttrs: (providerName: ProviderName, aiSettingAttrs: AISettingAttrs) => Promise<void>;
-	addModelPreset: (providerName: ProviderName, modelName: ModelName, modelPreset: ModelPreset) => Promise<void>;
-	deleteModelPreset: (providerName: ProviderName, modelName: ModelName) => Promise<void>;
 }

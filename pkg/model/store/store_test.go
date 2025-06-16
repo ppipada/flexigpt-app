@@ -19,19 +19,19 @@ func initTestFile(filePath string) error {
 	return nil
 }
 
-func newTestStore(t *testing.T, filename string) *store.ModelPresetsStore {
+func newTestStore(t *testing.T, filename string) *store.ModelPresetStore {
 	t.Helper()
 	if err := initTestFile(filename); err != nil {
 		t.Fatalf("Failed to init test file: %v", err)
 	}
-	s := &store.ModelPresetsStore{}
-	if err := store.InitModelPresetsStore(s, filename); err != nil {
-		t.Fatalf("InitModelPresetsStore failed: %v", err)
+	s := &store.ModelPresetStore{}
+	if err := store.InitModelPresetStore(s, filename); err != nil {
+		t.Fatalf("InitModelPresetStore failed: %v", err)
 	}
 	return s
 }
 
-func TestModelPresetsStore_GetAllModelPresets(t *testing.T) {
+func TestModelPresetStore_GetAllModelPresets(t *testing.T) {
 	filename := "test_modelpresets_getall.json"
 	defer os.Remove(filename)
 	s := newTestStore(t, filename)
@@ -46,7 +46,7 @@ func TestModelPresetsStore_GetAllModelPresets(t *testing.T) {
 		ShortCommand: "g4",
 		IsEnabled:    true,
 	}
-	body := spec.ProviderModelPreset{
+	body := spec.ProviderModelPresets{
 		modelName: preset,
 	}
 	_, err := s.CreateModelPresets(ctx, &spec.CreateModelPresetsRequest{
@@ -118,7 +118,7 @@ func TestModelPresetsStore_GetAllModelPresets(t *testing.T) {
 	}
 }
 
-func TestModelPresetsStore_CreateModelPresets(t *testing.T) {
+func TestModelPresetStore_CreateModelPresets(t *testing.T) {
 	filename := "test_modelpresets_create.json"
 	defer os.Remove(filename)
 	s := newTestStore(t, filename)
@@ -132,7 +132,7 @@ func TestModelPresetsStore_CreateModelPresets(t *testing.T) {
 		ShortCommand: "g4",
 		IsEnabled:    true,
 	}
-	body := spec.ProviderModelPreset{
+	body := spec.ProviderModelPresets{
 		modelName: preset,
 	}
 
@@ -203,7 +203,7 @@ func TestModelPresetsStore_CreateModelPresets(t *testing.T) {
 	}
 }
 
-func TestModelPresetsStore_DeleteModelPresets(t *testing.T) {
+func TestModelPresetStore_DeleteModelPresets(t *testing.T) {
 	filename := "test_modelpresets_delete.json"
 	defer os.Remove(filename)
 	s := newTestStore(t, filename)
@@ -211,7 +211,7 @@ func TestModelPresetsStore_DeleteModelPresets(t *testing.T) {
 
 	provider := spec.ProviderName("openai2")
 	modelName := spec.ModelName("gpt-4")
-	body := spec.ProviderModelPreset{
+	body := spec.ProviderModelPresets{
 		modelName: spec.ModelPreset{
 			Name:         modelName,
 			DisplayName:  "GPT-4",
@@ -290,7 +290,7 @@ func TestModelPresetsStore_DeleteModelPresets(t *testing.T) {
 	}
 }
 
-func TestModelPresetsStore_AddModelPreset(t *testing.T) {
+func TestModelPresetStore_AddModelPreset(t *testing.T) {
 	filename := "test_modelpresets_addmodel.json"
 	defer os.Remove(filename)
 	s := newTestStore(t, filename)
@@ -299,7 +299,7 @@ func TestModelPresetsStore_AddModelPreset(t *testing.T) {
 	provider := spec.ProviderName("openai2")
 	_, _ = s.CreateModelPresets(ctx, &spec.CreateModelPresetsRequest{
 		ProviderName: provider,
-		Body:         &spec.ProviderModelPreset{},
+		Body:         &spec.ProviderModelPresets{},
 	})
 
 	modelName := spec.ModelName("gpt-4")
@@ -381,7 +381,7 @@ func TestModelPresetsStore_AddModelPreset(t *testing.T) {
 	}
 }
 
-func TestModelPresetsStore_DeleteModelPreset(t *testing.T) {
+func TestModelPresetStore_DeleteModelPreset(t *testing.T) {
 	filename := "test_modelpresets_delmodel.json"
 	defer os.Remove(filename)
 	s := newTestStore(t, filename)
@@ -391,7 +391,7 @@ func TestModelPresetsStore_DeleteModelPreset(t *testing.T) {
 	modelName := spec.ModelName("gpt-4")
 	_, _ = s.CreateModelPresets(ctx, &spec.CreateModelPresetsRequest{
 		ProviderName: provider,
-		Body:         &spec.ProviderModelPreset{},
+		Body:         &spec.ProviderModelPresets{},
 	})
 	_, _ = s.AddModelPreset(ctx, &spec.AddModelPresetRequest{
 		ProviderName: provider,
@@ -477,7 +477,7 @@ func TestModelPresetsStore_DeleteModelPreset(t *testing.T) {
 	}
 }
 
-func TestModelPresetsStore_Persistence(t *testing.T) {
+func TestModelPresetStore_Persistence(t *testing.T) {
 	filename := "test_modelpresets_persist.json"
 	defer os.Remove(filename)
 	s := newTestStore(t, filename)
@@ -485,7 +485,7 @@ func TestModelPresetsStore_Persistence(t *testing.T) {
 
 	provider := spec.ProviderName("persistprov")
 	modelName := spec.ModelName("persistmodel")
-	body := spec.ProviderModelPreset{
+	body := spec.ProviderModelPresets{
 		modelName: spec.ModelPreset{
 			Name:         modelName,
 			DisplayName:  "Persist Model",
@@ -502,9 +502,9 @@ func TestModelPresetsStore_Persistence(t *testing.T) {
 	}
 
 	// Re-open store.
-	s2 := &store.ModelPresetsStore{}
-	if err := store.InitModelPresetsStore(s2, filename); err != nil {
-		t.Fatalf("InitModelPresetsStore failed: %v", err)
+	s2 := &store.ModelPresetStore{}
+	if err := store.InitModelPresetStore(s2, filename); err != nil {
+		t.Fatalf("InitModelPresetStore failed: %v", err)
 	}
 
 	resp, err := s2.GetAllModelPresets(ctx, &spec.GetAllModelPresetsRequest{})
@@ -524,14 +524,14 @@ func TestModelPresetsStore_Persistence(t *testing.T) {
 	}
 }
 
-func TestModelPresetsStore_BoundaryCases(t *testing.T) {
+func TestModelPresetStore_BoundaryCases(t *testing.T) {
 	filename := "test_modelpresets_boundary.json"
 	defer os.Remove(filename)
 	s := newTestStore(t, filename)
 	ctx := t.Context()
 	provider := spec.ProviderName("boundaryprov")
 	// Empty provider model preset.
-	body := spec.ProviderModelPreset{}
+	body := spec.ProviderModelPresets{}
 	_, err := s.CreateModelPresets(ctx, &spec.CreateModelPresetsRequest{
 		ProviderName: provider,
 		Body:         &body,

@@ -1,18 +1,16 @@
-import type { ModelName, ModelPreset, ProviderName } from '@/models/aiprovidermodel';
+import type { ProviderName } from '@/models/aimodelmodel';
 import type { AISetting, AISettingAttrs, ISettingStoreAPI, SettingsSchema } from '@/models/settingmodel';
 
 import {
 	AddAISetting,
-	AddModelPreset,
 	DeleteAISetting,
-	DeleteModelPreset,
 	GetAllSettings,
 	SetAISettingAPIKey,
 	SetAISettingAttrs,
 	SetAppSettings,
 } from '@/apis/wailsjs/go/main/SettingStoreWrapper';
 
-import type { spec } from '../wailsjs/go/models';
+import type { settingstore } from '../wailsjs/go/models';
 
 /**
  * @public
@@ -20,7 +18,7 @@ import type { spec } from '../wailsjs/go/models';
 export class WailsSettingStoreAPI implements ISettingStoreAPI {
 	// Implement the getAllSettings method
 	async getAllSettings(): Promise<SettingsSchema> {
-		const r: spec.GetAllSettingsRequest = { ForceFetch: false };
+		const r: settingstore.GetAllSettingsRequest = { ForceFetch: false };
 		const s = await GetAllSettings(r);
 		return s.Body as SettingsSchema;
 	}
@@ -36,7 +34,7 @@ export class WailsSettingStoreAPI implements ISettingStoreAPI {
 				defaultProvider: defaultProvider,
 			},
 		};
-		await SetAppSettings(r as spec.SetAppSettingsRequest);
+		await SetAppSettings(r as settingstore.SetAppSettingsRequest);
 	}
 
 	async addAISetting(providerName: ProviderName, aiSetting: AISetting): Promise<void> {
@@ -44,14 +42,14 @@ export class WailsSettingStoreAPI implements ISettingStoreAPI {
 			ProviderName: providerName,
 			Body: aiSetting,
 		};
-		await AddAISetting(r as spec.AddAISettingRequest);
+		await AddAISetting(r as settingstore.AddAISettingRequest);
 	}
 
 	async deleteAISetting(providerName: ProviderName): Promise<void> {
 		const r = {
 			ProviderName: providerName,
 		};
-		await DeleteAISetting(r as spec.DeleteAISettingRequest);
+		await DeleteAISetting(r as settingstore.DeleteAISettingRequest);
 	}
 
 	async setAISettingAPIKey(providerName: ProviderName, apiKey: string): Promise<void> {
@@ -61,7 +59,7 @@ export class WailsSettingStoreAPI implements ISettingStoreAPI {
 				apiKey: apiKey,
 			},
 		};
-		await SetAISettingAPIKey(r as spec.SetAISettingAPIKeyRequest);
+		await SetAISettingAPIKey(r as settingstore.SetAISettingAPIKeyRequest);
 	}
 
 	async setAISettingAttrs(providerName: ProviderName, aiSettingAttrs: AISettingAttrs): Promise<void> {
@@ -74,23 +72,6 @@ export class WailsSettingStoreAPI implements ISettingStoreAPI {
 				defaultModel: aiSettingAttrs.defaultModel,
 			},
 		};
-		await SetAISettingAttrs(r as spec.SetAISettingAttrsRequest);
-	}
-
-	async addModelPreset(providerName: ProviderName, modelName: ModelName, modelPreset: ModelPreset): Promise<void> {
-		const r = {
-			ProviderName: providerName,
-			ModelName: modelName,
-			Body: modelPreset,
-		};
-		await AddModelPreset(r as spec.AddModelPresetRequest);
-	}
-
-	async deleteModelPreset(providerName: ProviderName, modelName: ModelName): Promise<void> {
-		const r = {
-			ProviderName: providerName,
-			ModelName: modelName,
-		};
-		await DeleteModelPreset(r as spec.DeleteModelPresetRequest);
+		await SetAISettingAttrs(r as settingstore.SetAISettingAttrsRequest);
 	}
 }

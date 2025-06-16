@@ -1,4 +1,4 @@
-package spec
+package settingstore
 
 import (
 	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
@@ -6,12 +6,11 @@ import (
 
 // AISetting represents the settings for an AI provider.
 type AISetting struct {
-	IsEnabled                bool                                          `json:"isEnabled"`
-	APIKey                   string                                        `json:"apiKey"`
-	DefaultModel             modelSpec.ModelName                           `json:"defaultModel"`
-	Origin                   string                                        `json:"origin"`
-	ChatCompletionPathPrefix string                                        `json:"chatCompletionPathPrefix"`
-	ModelPresets             map[modelSpec.ModelName]modelSpec.ModelPreset `json:"modelPresets"`
+	IsEnabled                bool                `json:"isEnabled"`
+	APIKey                   string              `json:"apiKey"`
+	DefaultModel             modelSpec.ModelName `json:"defaultModel"`
+	Origin                   string              `json:"origin"`
+	ChatCompletionPathPrefix string              `json:"chatCompletionPathPrefix"`
 }
 
 // AISettingsSchema represents the schema for AI settings for different providers.

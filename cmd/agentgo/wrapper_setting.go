@@ -8,7 +8,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
 	modelConsts "github.com/ppipada/flexigpt-app/pkg/model/consts"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore"
-	"github.com/ppipada/flexigpt-app/pkg/settingstore/spec"
 )
 
 // SettingStoreWrapper is a wrapper around SettingStore that provides non-contextual APIs.
@@ -30,7 +29,7 @@ func InitSettingStoreWrapper(s *SettingStoreWrapper, filename string) error {
 }
 
 func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper) error {
-	allSettingsResponse, err := s.GetAllSettings(&spec.GetAllSettingsRequest{})
+	allSettingsResponse, err := s.GetAllSettings(&settingstore.GetAllSettingsRequest{})
 	if err != nil || allSettingsResponse.Body == nil {
 		return err
 	}
@@ -92,65 +91,49 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 }
 
 func (w *SettingStoreWrapper) GetAllSettings(
-	req *spec.GetAllSettingsRequest,
-) (*spec.GetAllSettingsResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.GetAllSettingsResponse, error) {
+	req *settingstore.GetAllSettingsRequest,
+) (*settingstore.GetAllSettingsResponse, error) {
+	return middleware.WithRecoveryResp(func() (*settingstore.GetAllSettingsResponse, error) {
 		return w.store.GetAllSettings(context.Background(), req)
 	})
 }
 
 func (w *SettingStoreWrapper) SetAppSettings(
-	req *spec.SetAppSettingsRequest,
-) (*spec.SetAppSettingsResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.SetAppSettingsResponse, error) {
+	req *settingstore.SetAppSettingsRequest,
+) (*settingstore.SetAppSettingsResponse, error) {
+	return middleware.WithRecoveryResp(func() (*settingstore.SetAppSettingsResponse, error) {
 		return w.store.SetAppSettings(context.Background(), req)
 	})
 }
 
 func (w *SettingStoreWrapper) AddAISetting(
-	req *spec.AddAISettingRequest,
-) (*spec.AddAISettingResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.AddAISettingResponse, error) {
+	req *settingstore.AddAISettingRequest,
+) (*settingstore.AddAISettingResponse, error) {
+	return middleware.WithRecoveryResp(func() (*settingstore.AddAISettingResponse, error) {
 		return w.store.AddAISetting(context.Background(), req)
 	})
 }
 
 func (w *SettingStoreWrapper) DeleteAISetting(
-	req *spec.DeleteAISettingRequest,
-) (*spec.DeleteAISettingResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.DeleteAISettingResponse, error) {
+	req *settingstore.DeleteAISettingRequest,
+) (*settingstore.DeleteAISettingResponse, error) {
+	return middleware.WithRecoveryResp(func() (*settingstore.DeleteAISettingResponse, error) {
 		return w.store.DeleteAISetting(context.Background(), req)
 	})
 }
 
 func (w *SettingStoreWrapper) SetAISettingAPIKey(
-	req *spec.SetAISettingAPIKeyRequest,
-) (*spec.SetAISettingAPIKeyResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.SetAISettingAPIKeyResponse, error) {
+	req *settingstore.SetAISettingAPIKeyRequest,
+) (*settingstore.SetAISettingAPIKeyResponse, error) {
+	return middleware.WithRecoveryResp(func() (*settingstore.SetAISettingAPIKeyResponse, error) {
 		return w.store.SetAISettingAPIKey(context.Background(), req)
 	})
 }
 
 func (w *SettingStoreWrapper) SetAISettingAttrs(
-	req *spec.SetAISettingAttrsRequest,
-) (*spec.SetAISettingAttrsResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.SetAISettingAttrsResponse, error) {
+	req *settingstore.SetAISettingAttrsRequest,
+) (*settingstore.SetAISettingAttrsResponse, error) {
+	return middleware.WithRecoveryResp(func() (*settingstore.SetAISettingAttrsResponse, error) {
 		return w.store.SetAISettingAttrs(context.Background(), req)
-	})
-}
-
-func (w *SettingStoreWrapper) AddModelPreset(
-	req *spec.AddModelPresetRequest,
-) (*spec.AddModelPresetResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.AddModelPresetResponse, error) {
-		return w.store.AddModelPreset(context.Background(), req)
-	})
-}
-
-func (w *SettingStoreWrapper) DeleteModelPreset(
-	req *spec.DeleteModelPresetRequest,
-) (*spec.DeleteModelPresetResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.DeleteModelPresetResponse, error) {
-		return w.store.DeleteModelPreset(context.Background(), req)
 	})
 }

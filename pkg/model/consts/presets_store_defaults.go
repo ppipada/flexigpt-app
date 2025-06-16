@@ -4,7 +4,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/model/spec"
 )
 
-var DefaultModelPresetsMap = map[spec.ProviderName]spec.ProviderModelPreset{
+var DefaultModelPresetsMap = map[spec.ProviderName]spec.ProviderModelPresets{
 	ProviderNameAnthropic: {
 		Claude4Sonnet: spec.ModelPreset{
 			Name:         Claude4Sonnet,

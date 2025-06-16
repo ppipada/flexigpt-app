@@ -2,8 +2,10 @@ import { type FC, useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiPlus, FiX } from 'react-icons/fi';
 
-import { type ModelPreset, type ProviderName } from '@/models/aiprovidermodel';
+import { type ModelPreset, type ProviderName } from '@/models/aimodelmodel';
 import type { AISetting } from '@/models/settingmodel';
+
+import { modelPresetStoreAPI } from '@/apis/baseapi';
 
 import ModifyModelModal from '@/settings/model_modify_modal';
 
@@ -11,6 +13,7 @@ interface AddProviderModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (providerName: ProviderName, newSettings: AISetting) => void;
+	onModelSubmit: (providerName: ProviderName, newPreset: ModelPreset) => void;
 
 	// List of existing provider names in your system.
 	// Used to prevent duplicate providerName.
@@ -26,7 +29,15 @@ interface ProviderFormData {
 	defaultModelName: string;
 }
 
-const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit, existingProviderNames }) => {
+const AddProviderModal: FC<AddProviderModalProps> = ({
+	isOpen,
+	onClose,
+	onSubmit,
+	onModelSubmit,
+	existingProviderNames,
+}) => {
+	const [defaultModelPreset, setDefaultModelPreset] = useState<ModelPreset | null>(null);
+
 	const [formData, setFormData] = useState<ProviderFormData>({
 		providerName: '',
 		apiKey: '',
@@ -35,7 +46,6 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 		defaultModelName: '',
 	});
 
-	const [modelPreset, setModelPreset] = useState<Record<string, ModelPreset>>({});
 	const [isModifyModelModalOpen, setIsModifyModelModalOpen] = useState(false);
 
 	const [errors, setErrors] = useState<{
@@ -56,7 +66,6 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 				chatCompletionPathPrefix: '',
 				defaultModelName: '',
 			});
-			setModelPreset({});
 			setIsModifyModelModalOpen(false);
 			setErrors({});
 		}
@@ -120,7 +129,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 
 	const handleModifyModelSubmit = (modelName: string, modelData: ModelPreset) => {
 		setFormData(prev => ({ ...prev, defaultModelName: modelName }));
-		setModelPreset({ [modelName]: modelData });
+		setDefaultModelPreset(modelData);
 		setIsModifyModelModalOpen(false);
 	};
 
@@ -162,10 +171,13 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 			origin: formData.origin,
 			chatCompletionPathPrefix: formData.chatCompletionPathPrefix,
 			defaultModel: formData.defaultModelName,
-			modelPresets: modelPreset,
 		};
 
 		onSubmit(formData.providerName, newProviderSettings);
+		if (defaultModelPreset) {
+			modelPresetStoreAPI.addModelPreset(formData.providerName, defaultModelPreset.name, defaultModelPreset);
+			onModelSubmit(formData.providerName, defaultModelPreset);
+		}
 		onClose();
 	};
 
@@ -365,8 +377,8 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 					onSubmit={handleModifyModelSubmit}
 					providerName={formData.providerName}
 					initialModelName={formData.defaultModelName || undefined}
-					initialData={formData.defaultModelName ? modelPreset[formData.defaultModelName] : undefined}
-					existingModels={modelPreset}
+					initialData={undefined}
+					existingModels={{}}
 				/>
 			)}
 		</dialog>

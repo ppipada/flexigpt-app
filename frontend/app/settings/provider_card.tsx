@@ -14,11 +14,11 @@ import {
 	FiXCircle,
 } from 'react-icons/fi';
 
-import type { ModelName, ModelPreset, ProviderName } from '@/models/aiprovidermodel';
-import { ProviderInfoDescription } from '@/models/aiprovidermodel';
+import type { ModelName, ModelPreset, ProviderName } from '@/models/aimodelmodel';
+import { ProviderInfoDescription } from '@/models/aimodelmodel';
 import type { AISetting, AISettingAttrs } from '@/models/settingmodel';
 
-import { settingstoreAPI } from '@/apis/baseapi';
+import { modelPresetStoreAPI } from '@/apis/baseapi';
 import { SetAISettingAPIKey, SetAISettingAttrs } from '@/apis/settingstore_helper';
 
 import ActionDeniedAlert from '@/components/action_denied';
@@ -33,6 +33,8 @@ interface AISettingsCardProps {
 	aiSettings: Record<string, AISetting>;
 	defaultProvider: ProviderName;
 	inbuiltProviderModels: Record<ModelName, ModelPreset> | undefined;
+	allModelPresets: Record<ModelName, ModelPreset>;
+	onModelPresetsChange: (provider: ProviderName, newPresets: Record<ModelName, ModelPreset>) => void;
 	onProviderSettingChange: (provider: ProviderName, settings: AISetting) => void;
 	onProviderDelete: (provider: ProviderName) => Promise<void>;
 }
@@ -43,6 +45,8 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	aiSettings,
 	defaultProvider,
 	inbuiltProviderModels,
+	allModelPresets,
+	onModelPresetsChange,
 	onProviderSettingChange,
 	onProviderDelete,
 }) => {
@@ -51,7 +55,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	const [showModal, setShowModal] = useState(false);
 	const [localSettings, setLocalSettings] = useState<AISetting>(settings);
 
-	const [modelPreset, setModelPreset] = useState<Record<ModelName, ModelPreset>>(settings.modelPresets);
+	const [modelPreset, setModelPreset] = useState<Record<ModelName, ModelPreset>>(allModelPresets);
 	const [isModifyModelModalOpen, setIsModifyModelModalOpen] = useState(false);
 	const [selectedModelName, setSelectedModelName] = useState<ModelName | null>(null);
 	const [isDeleteModelModalOpen, setIsDeleteModelModalOpen] = useState(false);
@@ -64,8 +68,8 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	useEffect(() => {
 		setIsEnabled(!!settings.isEnabled);
 		setLocalSettings(settings);
-		setModelPreset(settings.modelPresets);
-	}, [settings]);
+		setModelPreset(allModelPresets);
+	}, [settings, allModelPresets]);
 
 	const toggleExpand = () => {
 		if (isEnabled) {
@@ -114,10 +118,10 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 
 		// Update local state
 		setModelPreset(updatedModels);
-		updateLocalSettings('modelPresets', updatedModels);
+		onModelPresetsChange(provider, updatedModels);
 
 		// Persist to a backend
-		await settingstoreAPI.addModelPreset(provider, modelName, updatedModel);
+		await modelPresetStoreAPI.addModelPreset(provider, modelName, updatedModel);
 	};
 
 	// Handle setting changes and save to backend
@@ -187,8 +191,8 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		const updatedModels = Object.fromEntries(Object.entries(modelPreset).filter(([key]) => key !== modelName));
 
 		setModelPreset(updatedModels);
-		updateLocalSettings('modelPresets', updatedModels);
-		await settingstoreAPI.deleteModelPreset(provider, modelName);
+		onModelPresetsChange(provider, updatedModels);
+		await modelPresetStoreAPI.deleteModelPreset(provider, modelName);
 
 		setIsDeleteModelModalOpen(false);
 		setSelectedModelName(null);
@@ -203,8 +207,8 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		const updatedModels = { ...modelPreset };
 		updatedModels[modelName] = modelData;
 		setModelPreset(updatedModels);
-		updateLocalSettings('modelPresets', updatedModels);
-		await settingstoreAPI.addModelPreset(provider, modelName, modelData);
+		onModelPresetsChange(provider, updatedModels);
+		await modelPresetStoreAPI.addModelPreset(provider, modelName, modelData);
 		setIsModifyModelModalOpen(false);
 		setSelectedModelName(null);
 	};

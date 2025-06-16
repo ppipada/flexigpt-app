@@ -9,9 +9,9 @@ import {
 	type ProviderName,
 	ReasoningLevel,
 	ReasoningType,
-} from '@/models/aiprovidermodel';
+} from '@/models/aimodelmodel';
 
-import { PopulateModelPresetDefaults } from '@/apis/settingstore_helper';
+import { PopulateModelPresetDefaults } from '@/apis/modelpresetstore_helper';
 
 import Dropdown from '@/components/dropdown';
 

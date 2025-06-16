@@ -1,4 +1,4 @@
-package spec
+package settingstore
 
 import (
 	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
@@ -64,18 +64,3 @@ type SetAISettingAttrsRequestBody struct {
 }
 
 type SetAISettingAttrsResponse struct{}
-
-type AddModelPresetRequest struct {
-	ProviderName modelSpec.ProviderName `path:"providerName"`
-	ModelName    modelSpec.ModelName    `path:"modelName"`
-	Body         *modelSpec.ModelPreset
-}
-
-type AddModelPresetResponse struct{}
-
-type DeleteModelPresetRequest struct {
-	ProviderName modelSpec.ProviderName `path:"providerName"`
-	ModelName    modelSpec.ModelName    `path:"modelName"`
-}
-
-type DeleteModelPresetResponse struct{}

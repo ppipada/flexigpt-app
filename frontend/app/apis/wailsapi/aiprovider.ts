@@ -1,14 +1,10 @@
+import type { ModelName, ModelParams, ModelPreset, ProviderInfo, ProviderName } from '@/models/aimodelmodel';
 import type {
 	AddProviderRequest,
 	ChatCompletionRequestMessage,
 	CompletionResponse,
 	ConfigurationResponse,
 	IProviderSetAPI,
-	ModelName,
-	ModelParams,
-	ModelPreset,
-	ProviderInfo,
-	ProviderName,
 } from '@/models/aiprovidermodel';
 
 import {

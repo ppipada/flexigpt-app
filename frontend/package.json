@@ -86,6 +86,7 @@
 			"app/apis/wailsjs/go/main/ConversationCollectionWrapper.js",
 			"app/apis/wailsjs/go/main/ProviderSetWrapper.js",
 			"app/apis/wailsjs/go/main/SettingStoreWrapper.js",
+			"app/apis/wailsjs/go/main/ModelPresetStoreWrapper.js",
 			"app/models/aiprovidermodel.ts",
 			"app/lib/highlight_worker.ts"
 		],

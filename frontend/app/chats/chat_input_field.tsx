@@ -3,10 +3,9 @@ import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef,
 
 import { FiSend, FiSliders } from 'react-icons/fi';
 
-import { type ReasoningLevel, ReasoningType } from '@/models/aiprovidermodel';
-import { type ChatOptions, DefaultChatOptions } from '@/models/settingmodel';
+import { type ChatOptions, DefaultChatOptions, type ReasoningLevel, ReasoningType } from '@/models/aimodelmodel';
 
-import { GetChatInputOptions } from '@/apis/settingstore_helper';
+import { GetChatInputOptions } from '@/apis/modelpresetstore_helper';
 
 import { UseCloseDetails } from '@/lib/use_close_details';
 

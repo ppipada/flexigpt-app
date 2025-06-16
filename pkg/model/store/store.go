@@ -12,14 +12,14 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 )
 
-type ModelPresetsStore struct {
+type ModelPresetStore struct {
 	store         *filestore.MapFileStore
 	defaultData   spec.ModelPresetsSchema
 	encryptEncDec encdec.EncoderDecoder
 	keyEncDec     encdec.StringEncoderDecoder
 }
 
-func InitModelPresetsStore(mpStore *ModelPresetsStore, filename string) error {
+func InitModelPresetStore(mpStore *ModelPresetStore, filename string) error {
 	modelPresetsMap, err := encdec.StructWithJSONTagsToMap(consts.DefaultModelPresetsSchema)
 	if err != nil {
 		return errors.New("could not get map of model presets data")
@@ -41,7 +41,7 @@ func InitModelPresetsStore(mpStore *ModelPresetsStore, filename string) error {
 	return nil
 }
 
-func (s *ModelPresetsStore) GetAllModelPresets(
+func (s *ModelPresetStore) GetAllModelPresets(
 	ctx context.Context,
 	req *spec.GetAllModelPresetsRequest,
 ) (*spec.GetAllModelPresetsResponse, error) {
@@ -61,7 +61,7 @@ func (s *ModelPresetsStore) GetAllModelPresets(
 	return &spec.GetAllModelPresetsResponse{Body: &presets}, nil
 }
 
-func (s *ModelPresetsStore) CreateModelPresets(
+func (s *ModelPresetStore) CreateModelPresets(
 	ctx context.Context,
 	req *spec.CreateModelPresetsRequest,
 ) (*spec.CreateModelPresetsResponse, error) {
@@ -97,7 +97,7 @@ func (s *ModelPresetsStore) CreateModelPresets(
 	return &spec.CreateModelPresetsResponse{}, nil
 }
 
-func (s *ModelPresetsStore) DeleteModelPresets(
+func (s *ModelPresetStore) DeleteModelPresets(
 	ctx context.Context,
 	req *spec.DeleteModelPresetsRequest,
 ) (*spec.DeleteModelPresetsResponse, error) {
@@ -127,7 +127,7 @@ func (s *ModelPresetsStore) DeleteModelPresets(
 	return &spec.DeleteModelPresetsResponse{}, nil
 }
 
-func (s *ModelPresetsStore) getProviderData(
+func (s *ModelPresetStore) getProviderData(
 	providerName spec.ProviderName,
 	forceFetch bool,
 ) (currentData, modelPresets, providerData map[string]any, err error) {
@@ -160,7 +160,7 @@ func (s *ModelPresetsStore) getProviderData(
 	return currentData, modelPresets, providerData, nil
 }
 
-func (s *ModelPresetsStore) AddModelPreset(
+func (s *ModelPresetStore) AddModelPreset(
 	ctx context.Context,
 	req *spec.AddModelPresetRequest,
 ) (*spec.AddModelPresetResponse, error) {
@@ -192,7 +192,7 @@ func (s *ModelPresetsStore) AddModelPreset(
 	return &spec.AddModelPresetResponse{}, nil
 }
 
-func (s *ModelPresetsStore) DeleteModelPreset(
+func (s *ModelPresetStore) DeleteModelPreset(
 	ctx context.Context,
 	req *spec.DeleteModelPresetRequest,
 ) (*spec.DeleteModelPresetResponse, error) {

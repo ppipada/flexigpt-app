@@ -17,7 +17,7 @@ type BackendApp struct {
 	settingStoreAPI        *settingstore.SettingStore
 	conversationStoreAPI   *conversationstore.ConversationCollection
 	providerSetAPI         *inference.ProviderSetAPI
-	modelPresetsStoreAPI   *modelStore.ModelPresetsStore
+	modelPresetStoreAPI    *modelStore.ModelPresetStore
 	settingsDirPath        string
 	settingsFilePath       string
 	conversationsDirPath   string
@@ -55,7 +55,7 @@ func NewBackendApp(
 	app.initSettingsStore()
 	app.initConversationStore()
 	app.initProviderSet()
-	app.initModelPresetsStore()
+	app.initModelPresetStore()
 	return app
 }
 
@@ -117,8 +117,8 @@ func (a *BackendApp) initConversationStore() {
 	slog.Info("Conversation store initialized", "directory", a.conversationsDirPath)
 }
 
-func (a *BackendApp) initModelPresetsStore() {
-	a.modelPresetsStoreAPI = &modelStore.ModelPresetsStore{}
+func (a *BackendApp) initModelPresetStore() {
+	a.modelPresetStoreAPI = &modelStore.ModelPresetStore{}
 	if err := os.MkdirAll(a.skillsDirPath, os.FileMode(0o770)); err != nil {
 		slog.Error(
 			"Failed to create directories for skills",
@@ -130,8 +130,8 @@ func (a *BackendApp) initModelPresetsStore() {
 		panic("Failed to initialize App")
 	}
 	// Initialize model presets store.
-	a.modelPresetsFilePath = filepath.Join(a.skillsDirPath, "modelpresets.json")
-	err := modelStore.InitModelPresetsStore(a.modelPresetsStoreAPI, a.modelPresetsFilePath)
+	a.modelPresetsFilePath = filepath.Join(a.skillsDirPath, "modelpreset.json")
+	err := modelStore.InitModelPresetStore(a.modelPresetStoreAPI, a.modelPresetsFilePath)
 	if err != nil {
 		slog.Error(
 			"Couldnt initialize model presets store",

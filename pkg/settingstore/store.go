@@ -7,24 +7,23 @@ import (
 	"log/slog"
 
 	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
-	"github.com/ppipada/flexigpt-app/pkg/settingstore/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 )
 
 type SettingStore struct {
 	store         *filestore.MapFileStore
-	defaultData   spec.SettingsSchema
+	defaultData   SettingsSchema
 	encryptEncDec encdec.EncoderDecoder
 	keyEncDec     encdec.StringEncoderDecoder
 }
 
 func InitSettingStore(settingStore *SettingStore, filename string) error {
-	settingsMap, err := encdec.StructWithJSONTagsToMap(spec.DefaultSettingsData)
+	settingsMap, err := encdec.StructWithJSONTagsToMap(DefaultSettingsData)
 	if err != nil {
 		return errors.New("could not get map of settings data")
 	}
-	settingStore.defaultData = spec.DefaultSettingsData
+	settingStore.defaultData = DefaultSettingsData
 	settingStore.encryptEncDec = encdec.EncryptedStringValueEncoderDecoder{}
 	settingStore.keyEncDec = encdec.Base64StringEncoderDecoder{}
 	store, err := filestore.NewMapFileStore(
@@ -70,8 +69,8 @@ func (s *SettingStore) ValueEncDecGetter(pathSoFar []string) encdec.EncoderDecod
 
 func (s *SettingStore) GetAllSettings(
 	ctx context.Context,
-	req *spec.GetAllSettingsRequest,
-) (*spec.GetAllSettingsResponse, error) {
+	req *GetAllSettingsRequest,
+) (*GetAllSettingsResponse, error) {
 	forceFetch := false
 	if req != nil {
 		forceFetch = req.ForceFetch
@@ -80,18 +79,18 @@ func (s *SettingStore) GetAllSettings(
 	if err != nil {
 		return nil, err
 	}
-	var settings spec.SettingsSchema
+	var settings SettingsSchema
 	if err := encdec.MapToStructWithJSONTags(data, &settings); err != nil {
 		return nil, err
 	}
 
-	return &spec.GetAllSettingsResponse{Body: &settings}, nil
+	return &GetAllSettingsResponse{Body: &settings}, nil
 }
 
 func (s *SettingStore) SetAppSettings(
 	ctx context.Context,
-	req *spec.SetAppSettingsRequest,
-) (*spec.SetAppSettingsResponse, error) {
+	req *SetAppSettingsRequest,
+) (*SetAppSettingsResponse, error) {
 	if req == nil || req.Body == nil {
 		return nil, errors.New("request or request body cannot be nil")
 	}
@@ -103,13 +102,13 @@ func (s *SettingStore) SetAppSettings(
 	if err := s.store.SetKey([]string{"app", "defaultProvider"}, string(req.Body.DefaultProvider)); err != nil {
 		return nil, fmt.Errorf("failed to set app settings: %w", err)
 	}
-	return &spec.SetAppSettingsResponse{}, nil
+	return &SetAppSettingsResponse{}, nil
 }
 
 func (s *SettingStore) AddAISetting(
 	ctx context.Context,
-	req *spec.AddAISettingRequest,
-) (*spec.AddAISettingResponse, error) {
+	req *AddAISettingRequest,
+) (*AddAISettingResponse, error) {
 	if req == nil || req.Body == nil {
 		return nil, errors.New("request or request body cannot be nil")
 	}
@@ -131,9 +130,6 @@ func (s *SettingStore) AddAISetting(
 	}
 
 	keys := []string{"aiSettings", string(req.ProviderName)}
-	if req.Body.ModelPresets == nil {
-		req.Body.ModelPresets = make(map[modelSpec.ModelName]modelSpec.ModelPreset)
-	}
 	val, err := encdec.StructWithJSONTagsToMap(req.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add provider %q: %w", req.ProviderName, err)
@@ -142,13 +138,13 @@ func (s *SettingStore) AddAISetting(
 		return nil, fmt.Errorf("failed to add provider %q: %w", req.ProviderName, err)
 	}
 
-	return &spec.AddAISettingResponse{}, nil
+	return &AddAISettingResponse{}, nil
 }
 
 func (s *SettingStore) DeleteAISetting(
 	ctx context.Context,
-	req *spec.DeleteAISettingRequest,
-) (*spec.DeleteAISettingResponse, error) {
+	req *DeleteAISettingRequest,
+) (*DeleteAISettingResponse, error) {
 	if req == nil {
 		return nil, errors.New("request cannot be nil")
 	}
@@ -172,7 +168,7 @@ func (s *SettingStore) DeleteAISetting(
 		return nil, fmt.Errorf("failed to delete provider %q: %w", req.ProviderName, err)
 	}
 
-	return &spec.DeleteAISettingResponse{}, nil
+	return &DeleteAISettingResponse{}, nil
 }
 
 func (s *SettingStore) getProviderData(
@@ -210,15 +206,15 @@ func (s *SettingStore) getProviderData(
 
 func (s *SettingStore) SetAISettingAPIKey(
 	ctx context.Context,
-	req *spec.SetAISettingAPIKeyRequest,
-) (*spec.SetAISettingAPIKeyResponse, error) {
+	req *SetAISettingAPIKeyRequest,
+) (*SetAISettingAPIKeyResponse, error) {
 	if req == nil || req.Body == nil {
 		return nil, errors.New("request or request body cannot be nil")
 	}
 
 	// If APIKey is empty, do nothing.
 	if req.Body.APIKey == "" {
-		return &spec.SetAISettingAPIKeyResponse{}, nil
+		return &SetAISettingAPIKeyResponse{}, nil
 	}
 
 	// Check provider exists.
@@ -231,13 +227,13 @@ func (s *SettingStore) SetAISettingAPIKey(
 	if err := s.store.SetKey(keys, req.Body.APIKey); err != nil {
 		return nil, fmt.Errorf("failed to set AI API key: %w", err)
 	}
-	return &spec.SetAISettingAPIKeyResponse{}, nil
+	return &SetAISettingAPIKeyResponse{}, nil
 }
 
 func (s *SettingStore) SetAISettingAttrs(
 	ctx context.Context,
-	req *spec.SetAISettingAttrsRequest,
-) (*spec.SetAISettingAttrsResponse, error) {
+	req *SetAISettingAttrsRequest,
+) (*SetAISettingAttrsResponse, error) {
 	if req == nil || req.Body == nil {
 		return nil, errors.New("request or request body cannot be nil")
 	}
@@ -270,56 +266,5 @@ func (s *SettingStore) SetAISettingAttrs(
 		}
 	}
 
-	return &spec.SetAISettingAttrsResponse{}, nil
-}
-
-func (s *SettingStore) AddModelPreset(
-	ctx context.Context,
-	req *spec.AddModelPresetRequest,
-) (*spec.AddModelPresetResponse, error) {
-	if req == nil || req.Body == nil {
-		return nil, errors.New("request or request body cannot be nil")
-	}
-
-	// Confirm provider existence.
-	_, _, _, err := s.getProviderData(req.ProviderName, false)
-	if err != nil {
-		return nil, err
-	}
-
-	// Overwrite or create the model.
-	keys := []string{"aiSettings", string(req.ProviderName), "modelPresets", string(req.ModelName)}
-	val, err := encdec.StructWithJSONTagsToMap(req.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed setting model %q for provider %q: %w",
-			req.ModelName, req.ProviderName, err)
-	}
-	if err := s.store.SetKey(keys, val); err != nil {
-		return nil, fmt.Errorf("failed setting model %q for provider %q: %w",
-			req.ModelName, req.ProviderName, err)
-	}
-	return &spec.AddModelPresetResponse{}, nil
-}
-
-func (s *SettingStore) DeleteModelPreset(
-	ctx context.Context,
-	req *spec.DeleteModelPresetRequest,
-) (*spec.DeleteModelPresetResponse, error) {
-	if req == nil {
-		return nil, errors.New("request cannot be nil")
-	}
-
-	// Confirm provider existence.
-	_, _, _, err := s.getProviderData(req.ProviderName, false)
-	if err != nil {
-		return nil, err
-	}
-
-	// Delete the model.
-	keys := []string{"aiSettings", string(req.ProviderName), "modelPresets", string(req.ModelName)}
-	if err := s.store.DeleteKey(keys); err != nil {
-		return nil, fmt.Errorf("failed deleting model %q for provider %q: %w",
-			req.ModelName, req.ProviderName, err)
-	}
-	return &spec.DeleteModelPresetResponse{}, nil
+	return &SetAISettingAttrsResponse{}, nil
 }

@@ -1,0 +1,247 @@
+import {
+	type ChatOptions,
+	DefaultChatOptions,
+	DefaultModelParams,
+	DefaultModelPreset,
+	type ModelName,
+	type ModelParams,
+	type ModelPreset,
+	type ProviderModelPresets,
+	type ProviderName,
+	type ReasoningParams,
+} from '@/models/aimodelmodel';
+
+import { modelPresetStoreAPI, providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
+
+function mergeDefaultsModelPresetAndInbuilt(
+	providerName: ProviderName,
+	modelName: ModelName,
+	inbuiltProviderModels: Record<ProviderName, Record<ModelName, ModelPreset>>,
+	modelPreset: ModelPreset
+): ModelParams {
+	let inbuiltModelPreset: ModelPreset | undefined = undefined;
+	if (providerName in inbuiltProviderModels && modelName in inbuiltProviderModels[providerName]) {
+		inbuiltModelPreset = inbuiltProviderModels[providerName][modelName];
+	}
+
+	let temperature = DefaultModelParams.temperature ?? 0.1;
+	if (typeof modelPreset.temperature !== 'undefined') {
+		temperature = modelPreset.temperature;
+	} else if (inbuiltModelPreset && inbuiltModelPreset.temperature) {
+		temperature = inbuiltModelPreset.temperature;
+	}
+
+	let stream = DefaultModelParams.stream;
+	if (typeof modelPreset.stream !== 'undefined') {
+		stream = modelPreset.stream;
+	} else if (inbuiltModelPreset && inbuiltModelPreset.stream) {
+		stream = inbuiltModelPreset.stream;
+	}
+
+	let maxPromptLength = DefaultModelParams.maxPromptLength;
+	if (typeof modelPreset.maxPromptLength !== 'undefined') {
+		maxPromptLength = modelPreset.maxPromptLength;
+	} else if (inbuiltModelPreset && inbuiltModelPreset.maxPromptLength) {
+		maxPromptLength = inbuiltModelPreset.maxPromptLength;
+	}
+
+	let maxOutputLength = DefaultModelParams.maxOutputLength;
+	if (typeof modelPreset.maxOutputLength !== 'undefined') {
+		maxOutputLength = modelPreset.maxOutputLength;
+	} else if (inbuiltModelPreset && inbuiltModelPreset.maxOutputLength) {
+		maxOutputLength = inbuiltModelPreset.maxOutputLength;
+	}
+
+	let reasoning: ReasoningParams | undefined = undefined;
+	if (typeof modelPreset.reasoning !== 'undefined') {
+		reasoning = modelPreset.reasoning;
+	} else if (inbuiltModelPreset) {
+		reasoning = inbuiltModelPreset.reasoning;
+	}
+
+	let systemPrompt = DefaultModelParams.systemPrompt;
+	if (typeof modelPreset.systemPrompt !== 'undefined') {
+		systemPrompt = modelPreset.systemPrompt;
+	} else if (inbuiltModelPreset && inbuiltModelPreset.systemPrompt) {
+		systemPrompt = inbuiltModelPreset.systemPrompt;
+	}
+
+	let timeout = DefaultModelParams.timeout;
+	if (typeof modelPreset.timeout !== 'undefined') {
+		timeout = modelPreset.timeout;
+	} else if (inbuiltModelPreset && inbuiltModelPreset.timeout) {
+		timeout = inbuiltModelPreset.timeout;
+	}
+
+	let additionalParameters = { ...DefaultModelParams.additionalParameters };
+	if (modelPreset.additionalParameters) {
+		additionalParameters = { ...additionalParameters, ...modelPreset.additionalParameters };
+	}
+
+	return {
+		name: modelName,
+		stream: stream,
+		maxPromptLength: maxPromptLength,
+		maxOutputLength: maxOutputLength,
+		temperature: temperature,
+		reasoning: reasoning,
+		systemPrompt: systemPrompt,
+		timeout: timeout,
+		additionalParameters: additionalParameters,
+	};
+}
+
+export async function GetChatInputOptions(): Promise<{ allOptions: ChatOptions[]; default: ChatOptions }> {
+	try {
+		// Fetch configuration info and settings
+		const info = await providerSetAPI.getConfigurationInfo();
+		if (info.defaultProvider === '' || Object.keys(info.configuredProviders).length === 0) {
+			return { allOptions: [DefaultChatOptions], default: DefaultChatOptions };
+		}
+		const configDefaultProvider = info.defaultProvider;
+		const providerInfoDict = info.configuredProviders;
+		const inbuiltProviderModels = info.inbuiltProviderModels;
+
+		const onlySettings = await settingstoreAPI.getAllSettings();
+		const modelPresetsSchema = await modelPresetStoreAPI.getAllModelPresets();
+		const mergedPresets = MergeInbuiltModelsWithPresets(modelPresetsSchema.modelPresets, inbuiltProviderModels);
+		// Initialize default option and input models array
+		let defaultOption: ChatOptions | undefined;
+		const inputModels: ChatOptions[] = [];
+
+		for (const providerName of Object.keys(providerInfoDict)) {
+			if (
+				!(providerName in onlySettings.aiSettings) ||
+				!onlySettings.aiSettings[providerName].isEnabled ||
+				!(providerName in mergedPresets)
+			) {
+				// Skip disabled providers or ones without any data in mergedPresets.
+				continue;
+			}
+
+			const settingsDefaultModelName = onlySettings.aiSettings[providerName].defaultModel;
+
+			for (const [modelName, modelPreset] of Object.entries(mergedPresets[providerName])) {
+				if (!modelPreset.isEnabled) {
+					continue;
+				}
+				const mergedModelParam = mergeDefaultsModelPresetAndInbuilt(
+					providerName,
+					modelName,
+					inbuiltProviderModels,
+					modelPreset
+				);
+				const chatOption: ChatOptions = {
+					title: modelPreset.displayName,
+					provider: providerName,
+					name: modelName,
+					stream: mergedModelParam.stream,
+					maxPromptLength: mergedModelParam.maxPromptLength,
+					maxOutputLength: mergedModelParam.maxOutputLength,
+					temperature: mergedModelParam.temperature,
+					reasoning: mergedModelParam.reasoning,
+					systemPrompt: mergedModelParam.systemPrompt,
+					timeout: mergedModelParam.timeout,
+					additionalParameters: mergedModelParam.additionalParameters,
+					disablePreviousMessages: false,
+				};
+				inputModels.push(chatOption);
+				if (modelName === settingsDefaultModelName && providerName === configDefaultProvider) {
+					defaultOption = chatOption;
+				}
+			}
+		}
+
+		if (defaultOption === undefined || inputModels.length === 0) {
+			throw Error('No input option found !!!');
+		}
+		return { allOptions: inputModels, default: defaultOption };
+	} catch (error) {
+		console.error('Error fetching chat input options:', error);
+		return { allOptions: [DefaultChatOptions], default: DefaultChatOptions };
+	}
+}
+
+// Create a Model setting from default or inbuilt ModelParams if available
+export async function PopulateModelPresetDefaults(
+	providerName: ProviderName,
+	modelName: ModelName,
+	existingData?: ModelPreset
+): Promise<ModelPreset> {
+	const info = await providerSetAPI.getConfigurationInfo();
+	if (
+		info.defaultProvider === '' ||
+		Object.keys(info.configuredProviders).length === 0 ||
+		!(providerName in info.configuredProviders)
+	) {
+		return DefaultModelPreset;
+	}
+
+	let modelPreset = existingData;
+	if (typeof modelPreset === 'undefined') {
+		modelPreset = {
+			name: modelName,
+			displayName: modelName,
+			isEnabled: true,
+			shortCommand: modelName,
+		};
+	}
+
+	const mergedModelParam = mergeDefaultsModelPresetAndInbuilt(
+		providerName,
+		modelName,
+		info.inbuiltProviderModels,
+		modelPreset
+	);
+
+	return {
+		name: modelPreset.name,
+		displayName: modelPreset.displayName,
+		isEnabled: modelPreset.isEnabled,
+		shortCommand: modelPreset.shortCommand,
+		stream: mergedModelParam.stream,
+		maxPromptLength: mergedModelParam.maxPromptLength,
+		maxOutputLength: mergedModelParam.maxOutputLength,
+		temperature: mergedModelParam.temperature,
+		reasoning: mergedModelParam.reasoning,
+		systemPrompt: mergedModelParam.systemPrompt,
+		timeout: mergedModelParam.timeout,
+	};
+}
+
+export function MergeInbuiltModelsWithPresets(
+	modelPresets: Record<ProviderName, ProviderModelPresets>,
+	inbuiltProviderModels: Record<ProviderName, Record<ModelName, ModelPreset>>
+): Record<ProviderName, ProviderModelPresets> {
+	const newPresets = { ...modelPresets };
+
+	for (const provider in inbuiltProviderModels) {
+		if (!(provider in newPresets)) {
+			continue;
+		}
+
+		// For each model in inbuiltProviderInfo, ensure it exists in modelPresets
+		for (const model in inbuiltProviderModels[provider]) {
+			if (model in newPresets[provider]) {
+				continue;
+			}
+
+			newPresets[provider][model] = {
+				name: inbuiltProviderModels[provider][model].name,
+				displayName: inbuiltProviderModels[provider][model].displayName,
+				isEnabled: inbuiltProviderModels[provider][model].isEnabled,
+				shortCommand: inbuiltProviderModels[provider][model].shortCommand,
+				stream: inbuiltProviderModels[provider][model].stream,
+				maxPromptLength: inbuiltProviderModels[provider][model].maxPromptLength,
+				maxOutputLength: inbuiltProviderModels[provider][model].maxOutputLength,
+				temperature: inbuiltProviderModels[provider][model].temperature,
+				reasoning: inbuiltProviderModels[provider][model].reasoning,
+				systemPrompt: inbuiltProviderModels[provider][model].systemPrompt,
+				timeout: inbuiltProviderModels[provider][model].timeout,
+				additionalParameters: inbuiltProviderModels[provider][model].additionalParameters,
+			};
+		}
+	}
+
+	return newPresets;
+}

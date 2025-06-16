@@ -26,7 +26,7 @@ type App struct {
 	settingStoreAPI      *SettingStoreWrapper
 	conversationStoreAPI *ConversationCollectionWrapper
 	providerSetAPI       *ProviderSetWrapper
-	modelPresetsStoreAPI *ModelPresetsStoreWrapper
+	modelPresetStoreAPI  *ModelPresetStoreWrapper
 	configBasePath       string
 	dataBasePath         string
 	skillsBasePath       string
@@ -55,7 +55,7 @@ func NewApp() *App {
 	app.settingStoreAPI = &SettingStoreWrapper{}
 	app.conversationStoreAPI = &ConversationCollectionWrapper{}
 	app.providerSetAPI = &ProviderSetWrapper{}
-	app.modelPresetsStoreAPI = &ModelPresetsStoreWrapper{}
+	app.modelPresetStoreAPI = &ModelPresetStoreWrapper{}
 
 	if err := os.MkdirAll(app.configBasePath, os.FileMode(0o770)); err != nil {
 		slog.Error(
@@ -65,12 +65,12 @@ func NewApp() *App {
 			"Error",
 			err,
 		)
-		panic("Failed to initialize App")
+		panic("Failed to initialize app: config mkdir failed")
 	}
 	// This will create data dir too.
 	if err := os.MkdirAll(app.skillsBasePath, os.FileMode(0o770)); err != nil {
 		slog.Error("Failed to create directories", "app data", app.dataBasePath, "Error", err)
-		panic("Failed to initialize App")
+		panic("Failed to initialize app: data mkdir failed")
 	}
 	slog.Info(
 		"FlexiGPT Paths",
@@ -97,13 +97,13 @@ func (a *App) initManagers() {
 			"Error",
 			err,
 		)
-		panic("Failed to initialize Managers")
+		panic("Failed to initialize managers: settings store init failed")
 	}
 
 	// Initialize modelPresets manager
-	modelPresetsFilePath := filepath.Join(a.skillsBasePath, "modelpresets.json")
+	modelPresetsFilePath := filepath.Join(a.skillsBasePath, "modelpreset.json")
 	slog.Info("Model presets store created", "filepath", modelPresetsFilePath)
-	err = InitModelPresetsStoreWrapper(a.modelPresetsStoreAPI, modelPresetsFilePath)
+	err = InitModelPresetStoreWrapper(a.modelPresetStoreAPI, modelPresetsFilePath)
 	if err != nil {
 		slog.Error(
 			"Couldnt initialize model presets store",
@@ -112,7 +112,7 @@ func (a *App) initManagers() {
 			"Error",
 			err,
 		)
-		panic("Failed to initialize Managers")
+		panic("Failed to initialize managers: model presets store init failed")
 	}
 
 	// Initialize conversation manager
@@ -128,7 +128,7 @@ func (a *App) initManagers() {
 			"Error",
 			err,
 		)
-		panic("Failed to initialize Managers")
+		panic("Failed to initialize managers: conversations store init failed")
 	}
 
 	err = InitProviderSetWrapper(a.providerSetAPI, modelConsts.ProviderNameOpenAI)
@@ -138,7 +138,7 @@ func (a *App) initManagers() {
 			"Error",
 			err,
 		)
-		panic("Failed to initialize Managers")
+		panic("Failed to initialize managers: provider set init failed")
 	}
 
 	err = InitProviderSetUsingSettings(a.settingStoreAPI, a.providerSetAPI)
@@ -148,7 +148,7 @@ func (a *App) initManagers() {
 			"Error",
 			err,
 		)
-		panic("Failed to initialize Managers")
+		panic("Failed to initialize managers: provider set init using settings failed")
 	}
 }
 

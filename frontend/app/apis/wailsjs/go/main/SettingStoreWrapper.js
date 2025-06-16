@@ -6,16 +6,8 @@ export function AddAISetting(arg1) {
   return window['go']['main']['SettingStoreWrapper']['AddAISetting'](arg1);
 }
 
-export function AddModelPreset(arg1) {
-  return window['go']['main']['SettingStoreWrapper']['AddModelPreset'](arg1);
-}
-
 export function DeleteAISetting(arg1) {
   return window['go']['main']['SettingStoreWrapper']['DeleteAISetting'](arg1);
-}
-
-export function DeleteModelPreset(arg1) {
-  return window['go']['main']['SettingStoreWrapper']['DeleteModelPreset'](arg1);
 }
 
 export function GetAllSettings(arg1) {

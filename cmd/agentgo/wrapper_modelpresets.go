@@ -8,25 +8,25 @@ import (
 	modelStore "github.com/ppipada/flexigpt-app/pkg/model/store"
 )
 
-// ModelPresetsStoreWrapper is a wrapper around ModelPresetsStore that provides non-contextual APIs.
-type ModelPresetsStoreWrapper struct {
-	store *modelStore.ModelPresetsStore
+// ModelPresetStoreWrapper is a wrapper around ModelPresetStore that provides non-contextual APIs.
+type ModelPresetStoreWrapper struct {
+	store *modelStore.ModelPresetStore
 }
 
-func InitModelPresetsStoreWrapper(m *ModelPresetsStoreWrapper, filename string) error {
+func InitModelPresetStoreWrapper(m *ModelPresetStoreWrapper, filename string) error {
 	if m == nil {
 		panic("Initializing model presets store without a object")
 	}
-	modelPresetsStore := &modelStore.ModelPresetsStore{}
-	err := modelStore.InitModelPresetsStore(modelPresetsStore, filename)
+	modelPresetStore := &modelStore.ModelPresetStore{}
+	err := modelStore.InitModelPresetStore(modelPresetStore, filename)
 	if err != nil {
 		return err
 	}
-	m.store = modelPresetsStore
+	m.store = modelPresetStore
 	return nil
 }
 
-func (w *ModelPresetsStoreWrapper) GetAllModelPresets(
+func (w *ModelPresetStoreWrapper) GetAllModelPresets(
 	req *spec.GetAllModelPresetsRequest,
 ) (*spec.GetAllModelPresetsResponse, error) {
 	return middleware.WithRecoveryResp(func() (*spec.GetAllModelPresetsResponse, error) {
@@ -34,7 +34,7 @@ func (w *ModelPresetsStoreWrapper) GetAllModelPresets(
 	})
 }
 
-func (w *ModelPresetsStoreWrapper) CreateModelPresets(
+func (w *ModelPresetStoreWrapper) CreateModelPresets(
 	req *spec.CreateModelPresetsRequest,
 ) (*spec.CreateModelPresetsResponse, error) {
 	return middleware.WithRecoveryResp(func() (*spec.CreateModelPresetsResponse, error) {
@@ -42,7 +42,7 @@ func (w *ModelPresetsStoreWrapper) CreateModelPresets(
 	})
 }
 
-func (w *ModelPresetsStoreWrapper) DeleteModelPresets(
+func (w *ModelPresetStoreWrapper) DeleteModelPresets(
 	req *spec.DeleteModelPresetsRequest,
 ) (*spec.DeleteModelPresetsResponse, error) {
 	return middleware.WithRecoveryResp(func() (*spec.DeleteModelPresetsResponse, error) {
@@ -50,7 +50,7 @@ func (w *ModelPresetsStoreWrapper) DeleteModelPresets(
 	})
 }
 
-func (w *ModelPresetsStoreWrapper) AddModelPreset(
+func (w *ModelPresetStoreWrapper) AddModelPreset(
 	req *spec.AddModelPresetRequest,
 ) (*spec.AddModelPresetResponse, error) {
 	return middleware.WithRecoveryResp(func() (*spec.AddModelPresetResponse, error) {
@@ -58,7 +58,7 @@ func (w *ModelPresetsStoreWrapper) AddModelPreset(
 	})
 }
 
-func (w *ModelPresetsStoreWrapper) DeleteModelPreset(
+func (w *ModelPresetStoreWrapper) DeleteModelPreset(
 	req *spec.DeleteModelPresetRequest,
 ) (*spec.DeleteModelPresetResponse, error) {
 	return middleware.WithRecoveryResp(func() (*spec.DeleteModelPresetResponse, error) {

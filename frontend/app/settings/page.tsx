@@ -4,20 +4,20 @@ import { FiPlus } from 'react-icons/fi';
 
 import {
 	DefaultModelName,
+	DefaultModelTitle,
 	DefaultProviderName,
 	type ModelName,
 	type ModelPreset,
+	type ProviderModelPresets,
 	type ProviderName,
-} from '@/models/aiprovidermodel';
+} from '@/models/aimodelmodel';
 import type { AISetting } from '@/models/settingmodel';
 
-import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
-import {
-	AddAISetting,
-	DeleteAISetting,
-	MergeInbuiltModelsWithSettings,
-	SetAppSettings,
-} from '@/apis/settingstore_helper';
+import { modelPresetStoreAPI, providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
+import { MergeInbuiltModelsWithPresets } from '@/apis/modelpresetstore_helper';
+import { AddAISetting, DeleteAISetting, SetAppSettings } from '@/apis/settingstore_helper';
+
+import { omitManyKeys } from '@/lib/obj_utils';
 
 import DownloadButton from '@/components/download_button';
 import Dropdown from '@/components/dropdown';
@@ -33,13 +33,25 @@ const defaultAISettings: Record<ProviderName, AISetting> = {
 		origin: '',
 		chatCompletionPathPrefix: '',
 		defaultModel: DefaultModelName,
-		modelPresets: {},
+	},
+};
+
+const defaultProviderModelPresets: Record<ProviderName, ProviderModelPresets> = {
+	[DefaultProviderName]: {
+		[DefaultModelName]: {
+			name: DefaultModelName,
+			displayName: DefaultModelTitle,
+			isEnabled: true,
+			shortCommand: DefaultModelName,
+		},
 	},
 };
 
 const SettingsPage: FC = () => {
 	const [defaultProvider, setComponentDefaultProvider] = useState<ProviderName>(DefaultProviderName);
 	const [aiSettings, setAISettings] = useState<Record<string, AISetting>>(defaultAISettings);
+	const [providerModelPresets, setProviderModelPresets] =
+		useState<Record<string, ProviderModelPresets>>(defaultProviderModelPresets);
 	const [isAddProviderModalOpen, setIsAddProviderModalOpen] = useState(false);
 	const [inbuiltProviderInfo, setInbuiltProviderInfo] = useState<Record<ProviderName, Record<ModelName, ModelPreset>>>(
 		{}
@@ -49,6 +61,7 @@ const SettingsPage: FC = () => {
 		(async () => {
 			const settings = await settingstoreAPI.getAllSettings();
 			const info = await providerSetAPI.getConfigurationInfo();
+			const modelPresetsSchema = await modelPresetStoreAPI.getAllModelPresets();
 			const enabledProviders = Object.keys(settings.aiSettings).filter(
 				provider => settings.aiSettings[provider].isEnabled
 			);
@@ -60,8 +73,9 @@ const SettingsPage: FC = () => {
 
 			setInbuiltProviderInfo(info.inbuiltProviderModels);
 			setComponentDefaultProvider(enabledProviders.includes(defaultProv) ? defaultProv : enabledProviders[0]);
-			const newSettings = MergeInbuiltModelsWithSettings(settings.aiSettings, info.inbuiltProviderModels);
-			setAISettings(newSettings);
+			const newPresets = MergeInbuiltModelsWithPresets(modelPresetsSchema.modelPresets, info.inbuiltProviderModels);
+			setAISettings(settings.aiSettings);
+			setProviderModelPresets(newPresets);
 		})();
 	}, []);
 
@@ -101,9 +115,26 @@ const SettingsPage: FC = () => {
 		// Remove from local state
 		const newAISettings = Object.fromEntries(Object.entries(aiSettings).filter(([key]) => key !== providerName));
 		setAISettings(newAISettings);
-
+		setProviderModelPresets(prev => {
+			const copy = omitManyKeys(prev, [providerName]);
+			return copy;
+		});
 		await DeleteAISetting(providerName);
 		console.log(`Provider "${providerName}" removed successfully.`);
+	};
+
+	const handleModelPresetsChange = (provider: ProviderName, newPresets: ProviderModelPresets) => {
+		setProviderModelPresets(prev => ({ ...prev, [provider]: newPresets }));
+	};
+
+	const onModelSubmit = (providerName: ProviderName, newPreset: ModelPreset) => {
+		setProviderModelPresets(prev => ({
+			...prev,
+			[providerName]: {
+				...prev[providerName],
+				[newPreset.name]: newPreset,
+			},
+		}));
 	};
 
 	const fetchValue = async (): Promise<string> => {
@@ -200,6 +231,8 @@ const SettingsPage: FC = () => {
 										inbuiltProviderModels={
 											providerStr in inbuiltProviderInfo ? inbuiltProviderInfo[providerStr] : undefined
 										}
+										allModelPresets={providerModelPresets[providerStr]}
+										onModelPresetsChange={handleModelPresetsChange}
 										onProviderSettingChange={handleProviderSettingChange}
 										onProviderDelete={handleRemoveProvider}
 									/>
@@ -217,6 +250,7 @@ const SettingsPage: FC = () => {
 						setIsAddProviderModalOpen(false);
 					}}
 					onSubmit={handleAddProviderSubmit}
+					onModelSubmit={onModelSubmit}
 					existingProviderNames={Object.keys(aiSettings)}
 				/>
 			)}

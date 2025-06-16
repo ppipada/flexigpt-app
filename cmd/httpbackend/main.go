@@ -80,7 +80,7 @@ func main() {
 		settingstore.InitSettingStoreHandlers(api, app.settingStoreAPI)
 		conversationstore.InitConversationStoreHandlers(api, app.conversationStoreAPI)
 		inference.InitProviderSetHandlers(api, app.providerSetAPI)
-		modelStore.InitModelPresetsStoreHandlers(api, app.modelPresetsStoreAPI)
+		modelStore.InitModelPresetStoreHandlers(api, app.modelPresetStoreAPI)
 		// Create the HTTP server.
 		server := http.Server{
 			Addr:              fmt.Sprintf("%s:%d", opts.Host, opts.Port),

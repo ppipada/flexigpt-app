@@ -63,20 +63,4 @@ func InitSettingStoreHandlers(api huma.API, settingsStoreAPI *SettingStore) {
 		Summary:     "Partially update certain AI provider attributes",
 		Tags:        []string{tag},
 	}, settingsStoreAPI.SetAISettingAttrs)
-
-	huma.Register(api, huma.Operation{
-		OperationID: "add-model-setting",
-		Method:      http.MethodPut,
-		Path:        pathPrefix + "/aisettings/{providerName}/modelpresets/{modelName}",
-		Summary:     "Add or replace a single model setting for a given AI provider",
-		Tags:        []string{tag},
-	}, settingsStoreAPI.AddModelPreset)
-
-	huma.Register(api, huma.Operation{
-		OperationID: "delete-model-setting",
-		Method:      http.MethodDelete,
-		Path:        pathPrefix + "/aisettings/{providerName}/modelpresets/{modelName}",
-		Summary:     "Delete a single model setting for a given AI provider",
-		Tags:        []string{tag},
-	}, settingsStoreAPI.DeleteModelPreset)
 }

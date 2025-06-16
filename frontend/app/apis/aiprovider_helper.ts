@@ -1,10 +1,9 @@
-import type {
-	ChatCompletionRequestMessage,
-	CompletionResponse,
-	ModelParams,
-	ProviderName,
+import type { ModelParams, ProviderName } from '@/models/aimodelmodel';
+import {
+	type ChatCompletionRequestMessage,
+	ChatCompletionRoleEnum,
+	type CompletionResponse,
 } from '@/models/aiprovidermodel';
-import { ChatCompletionRoleEnum } from '@/models/aiprovidermodel';
 import type { ConversationMessage } from '@/models/conversationmodel';
 import { ConversationRoleEnum } from '@/models/conversationmodel';
 

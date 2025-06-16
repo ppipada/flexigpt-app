@@ -1,3 +1,4 @@
+import type { IModelPresetStoreAPI } from '@/models/aimodelmodel';
 import type { IProviderSetAPI } from '@/models/aiprovidermodel';
 import type { IBackendAPI } from '@/models/backendmodel';
 import type { IConversationStoreAPI } from '@/models/conversationmodel';
@@ -14,6 +15,7 @@ export let backendAPI: IBackendAPI;
 export let conversationStoreAPI: IConversationStoreAPI;
 export let providerSetAPI: IProviderSetAPI;
 export let settingstoreAPI: ISettingStoreAPI;
+export let modelPresetStoreAPI: IModelPresetStoreAPI;
 
 // Conditional initialization
 if (IS_WAILS_PLATFORM) {
@@ -23,6 +25,7 @@ if (IS_WAILS_PLATFORM) {
 	conversationStoreAPI = new wailsImpl.WailsConversationStoreAPI();
 	providerSetAPI = new wailsImpl.WailsProviderSetAPI();
 	settingstoreAPI = new wailsImpl.WailsSettingStoreAPI();
+	modelPresetStoreAPI = new wailsImpl.WailsModelPresetStoreAPI();
 } else {
 	// Error for unsupported platforms
 	throw new Error('Unsupported platform');

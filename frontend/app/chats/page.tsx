@@ -3,10 +3,10 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 
 import { v7 as uuidv7 } from 'uuid';
 
-import type { ModelParams } from '@/models/aiprovidermodel';
+import type { ModelParams } from '@/models/aimodelmodel';
+import { type ChatOptions, DefaultChatOptions } from '@/models/aimodelmodel';
 import type { Conversation, ConversationItem, ConversationMessage } from '@/models/conversationmodel';
 import { ConversationRoleEnum } from '@/models/conversationmodel';
-import { type ChatOptions, DefaultChatOptions } from '@/models/settingmodel';
 
 import { GetCompletionMessage } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
