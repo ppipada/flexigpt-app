@@ -4,6 +4,7 @@ export SERVICE_HOST="localhost"
 export SERVICE_PORT=8080
 export SERVICE_SETTINGS_DIR_PATH="./out/settings"
 export SERVICE_CONVERSATIONS_DIR_PATH="./out/conversations"
+export SERVICE_SKILLS_DIR_PATH="./out/skills"
 export SERVICE_LOGS_DIR_PATH="./out/logs"
 export SERVICE_DEBUG="true"
 
@@ -14,16 +15,16 @@ go run ./cmd/httpbackend &
 GO_PID=$!
 
 if [ -z "$GO_PID" ] || ! kill -0 $GO_PID 2>/dev/null; then
-    echo "No valid PID found. Exiting without opening the browser."
-    exit 1
+	echo "No valid PID found. Exiting without opening the browser."
+	exit 1
 fi
 
 echo "PID: ${GO_PID}"
 # Function to clean up and exit
 cleanup() {
-    echo "Cleaning up..."
-    kill $GO_PID 2>/dev/null
-    exit
+	echo "Cleaning up..."
+	kill $GO_PID 2>/dev/null
+	exit
 }
 
 # Trap Ctrl+C (SIGINT) and call cleanup
@@ -33,9 +34,9 @@ sleep 2
 
 # Open the default web browser
 if [ "$(uname)" = "Darwin" ]; then
-    open "http://$SERVICE_HOST:$SERVICE_PORT/docs"
+	open "http://$SERVICE_HOST:$SERVICE_PORT/docs"
 else
-    xdg-open "http://$SERVICE_HOST:$SERVICE_PORT/docs"
+	xdg-open "http://$SERVICE_HOST:$SERVICE_PORT/docs"
 fi
 
 # Wait for the Go process to finish

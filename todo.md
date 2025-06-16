@@ -8,9 +8,9 @@
 - [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
 
 - [ ] Refactor provider in prep for presets and skills flow
-  - [ ] Types in aiprovider
+  - [x] Types in aiprovider
   - [ ] We should store all these preset files in settings or their own domain folders?
-  - [ ] Remove confusion of ModelParams vs ModelSettings vs ModelPreset. What is stored is a ModelPreset. What comes in is a ModelParam.
+  - [x] Remove confusion of ModelParams vs ModelSettings vs ModelPreset. What is stored is a ModelPreset. What comes in is a ModelParam.
 
 ## Random notes from UX discussions
 

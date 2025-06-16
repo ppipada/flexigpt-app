@@ -37,21 +37,3 @@ type ModelParams struct {
 	Timeout              int              `json:"timeout"`
 	AdditionalParameters map[string]any   `json:"additionalParameters"`
 }
-
-// ModelPreset is the entire “model + default knobs” bundle the user can save.
-// Anything not present in the preset is considered to be taken as default from any global defaults or inbuilt model defaults.
-type ModelPreset struct {
-	Name         ModelName         `json:"name"         required:"true"`
-	DisplayName  ModelDisplayName  `json:"displayName"  required:"true"`
-	ShortCommand ModelShortCommand `json:"shortCommand" required:"true"`
-	IsEnabled    bool              `json:"isEnabled"    required:"true"`
-
-	Stream               *bool            `json:"stream,omitempty"`
-	MaxPromptLength      *int             `json:"maxPromptLength,omitempty"`
-	MaxOutputLength      *int             `json:"maxOutputLength,omitempty"`
-	Temperature          *float64         `json:"temperature,omitempty"`
-	Reasoning            *ReasoningParams `json:"reasoning,omitempty"`
-	SystemPrompt         *string          `json:"systemPrompt,omitempty"`
-	Timeout              *int             `json:"timeout,omitempty"`
-	AdditionalParameters map[string]any   `json:"additionalParameters,omitempty"`
-}

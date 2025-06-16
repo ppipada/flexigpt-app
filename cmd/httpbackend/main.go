@@ -19,6 +19,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/settingstore"
 
 	modelConsts "github.com/ppipada/flexigpt-app/pkg/model/consts"
+	modelStore "github.com/ppipada/flexigpt-app/pkg/model/store"
 )
 
 // Options for the server cli.
@@ -26,6 +27,7 @@ type Options struct {
 	Host                 string `doc:"Hostname to listen on."             default:"127.0.0.1"`
 	Port                 int    `doc:"Port to listen on"                  default:"8888"`
 	SettingsDirPath      string `doc:"path to directory of settings file"`
+	SkillsDirPath        string `doc:"path to skills data directory"`
 	ConversationsDirPath string `doc:"path to conversations directory"`
 	LogsDirPath          string `doc:"path to logs directory"`
 	Debug                bool   `doc:"Enable debug logs"`
@@ -73,10 +75,12 @@ func main() {
 			modelConsts.ProviderNameOpenAI,
 			opts.SettingsDirPath,
 			opts.ConversationsDirPath,
+			opts.SkillsDirPath,
 		)
 		settingstore.InitSettingStoreHandlers(api, app.settingStoreAPI)
 		conversationstore.InitConversationStoreHandlers(api, app.conversationStoreAPI)
 		inference.InitProviderSetHandlers(api, app.providerSetAPI)
+		modelStore.InitModelPresetsStoreHandlers(api, app.modelPresetsStoreAPI)
 		// Create the HTTP server.
 		server := http.Server{
 			Addr:              fmt.Sprintf("%s:%d", opts.Host, opts.Port),

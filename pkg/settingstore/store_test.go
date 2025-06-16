@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/ppipada/flexigpt-app/pkg/model/spec"
-	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore"
 	settingSpec "github.com/ppipada/flexigpt-app/pkg/settingstore/spec"
 )
@@ -675,7 +674,7 @@ func TestSettingStore_AddModelPreset(t *testing.T) {
 			req: &settingSpec.AddModelPresetRequest{
 				ProviderName: spec.ProviderName("cohere"),
 				ModelName:    spec.ModelName("cohere-model"),
-				Body:         &modelSpec.ModelPreset{},
+				Body:         &spec.ModelPreset{},
 			},
 			wantErr:       true,
 			expectedError: "does not exist in aiSettings",
@@ -685,7 +684,7 @@ func TestSettingStore_AddModelPreset(t *testing.T) {
 			req: &settingSpec.AddModelPresetRequest{
 				ProviderName: spec.ProviderName("openai2"),
 				ModelName:    spec.ModelName("gpt-4"),
-				Body: &modelSpec.ModelPreset{
+				Body: &spec.ModelPreset{
 					Temperature: newFloatPtr(0.7),
 				},
 			},
@@ -697,7 +696,7 @@ func TestSettingStore_AddModelPreset(t *testing.T) {
 			req: &settingSpec.AddModelPresetRequest{
 				ProviderName: spec.ProviderName("openai2"),
 				ModelName:    spec.ModelName("gpt-4"),
-				Body: &modelSpec.ModelPreset{
+				Body: &spec.ModelPreset{
 					Temperature: newFloatPtr(0.3),
 					IsEnabled:   true,
 				},
@@ -746,7 +745,7 @@ func TestSettingStore_DeleteModelPreset(t *testing.T) {
 	_, err = store.AddModelPreset(ctx, &settingSpec.AddModelPresetRequest{
 		ProviderName: spec.ProviderName("openai2"),
 		ModelName:    spec.ModelName("gpt-4"),
-		Body: &modelSpec.ModelPreset{
+		Body: &spec.ModelPreset{
 			Temperature: float64Ptr(0.65),
 		},
 	})

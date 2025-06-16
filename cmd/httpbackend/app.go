@@ -10,23 +10,28 @@ import (
 
 	"github.com/ppipada/flexigpt-app/pkg/inference"
 	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
+	modelStore "github.com/ppipada/flexigpt-app/pkg/model/store"
 )
 
 type BackendApp struct {
 	settingStoreAPI        *settingstore.SettingStore
 	conversationStoreAPI   *conversationstore.ConversationCollection
 	providerSetAPI         *inference.ProviderSetAPI
+	modelPresetsStoreAPI   *modelStore.ModelPresetsStore
 	settingsDirPath        string
 	settingsFilePath       string
 	conversationsDirPath   string
+	skillsDirPath          string
+	modelPresetsFilePath   string
 	defaultInbuiltProvider modelSpec.ProviderName
 }
 
 func NewBackendApp(
 	defaultInbuiltProvider modelSpec.ProviderName,
-	settingsDirPath, conversationsDirPath string,
+	settingsDirPath, conversationsDirPath, skillsDirPath string,
 ) *BackendApp {
-	if settingsDirPath == "" || conversationsDirPath == "" || defaultInbuiltProvider == "" {
+	if settingsDirPath == "" || conversationsDirPath == "" || defaultInbuiltProvider == "" ||
+		skillsDirPath == "" {
 		slog.Error(
 			"Invalid App input",
 			"settingsDirPath",
@@ -35,6 +40,8 @@ func NewBackendApp(
 			conversationsDirPath,
 			"defaultInbuiltProvider",
 			defaultInbuiltProvider,
+			"skillsDirPath",
+			skillsDirPath,
 		)
 		panic("Failed to initialize App")
 	}
@@ -43,10 +50,12 @@ func NewBackendApp(
 		settingsDirPath:        settingsDirPath,
 		conversationsDirPath:   conversationsDirPath,
 		defaultInbuiltProvider: defaultInbuiltProvider,
+		skillsDirPath:          skillsDirPath,
 	}
 	app.initSettingsStore()
 	app.initConversationStore()
 	app.initProviderSet()
+	app.initModelPresetsStore()
 	return app
 }
 
@@ -106,6 +115,34 @@ func (a *BackendApp) initConversationStore() {
 	}
 	a.conversationStoreAPI = cc
 	slog.Info("Conversation store initialized", "directory", a.conversationsDirPath)
+}
+
+func (a *BackendApp) initModelPresetsStore() {
+	a.modelPresetsStoreAPI = &modelStore.ModelPresetsStore{}
+	if err := os.MkdirAll(a.skillsDirPath, os.FileMode(0o770)); err != nil {
+		slog.Error(
+			"Failed to create directories for skills",
+			"skills dir",
+			a.skillsDirPath,
+			"Error",
+			err,
+		)
+		panic("Failed to initialize App")
+	}
+	// Initialize model presets store.
+	a.modelPresetsFilePath = filepath.Join(a.skillsDirPath, "modelpresets.json")
+	err := modelStore.InitModelPresetsStore(a.modelPresetsStoreAPI, a.modelPresetsFilePath)
+	if err != nil {
+		slog.Error(
+			"Couldnt initialize model presets store",
+			"Presets file",
+			a.modelPresetsFilePath,
+			"Error",
+			err,
+		)
+		panic("Failed to initialize model presets store")
+	}
+	slog.Info("Model Presets store created", "filepath", a.modelPresetsFilePath)
 }
 
 func (a *BackendApp) initProviderSet() {
