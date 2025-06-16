@@ -91,7 +91,6 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 	return nil
 }
 
-// GetAllSettings retrieves all settings without requiring a context.
 func (w *SettingStoreWrapper) GetAllSettings(
 	req *spec.GetAllSettingsRequest,
 ) (*spec.GetAllSettingsResponse, error) {
@@ -100,7 +99,6 @@ func (w *SettingStoreWrapper) GetAllSettings(
 	})
 }
 
-// SetAppSettings updates the "app" portion of settings without requiring a context.
 func (w *SettingStoreWrapper) SetAppSettings(
 	req *spec.SetAppSettingsRequest,
 ) (*spec.SetAppSettingsResponse, error) {
@@ -109,7 +107,6 @@ func (w *SettingStoreWrapper) SetAppSettings(
 	})
 }
 
-// AddAISetting creates a new AI provider without requiring a context.
 func (w *SettingStoreWrapper) AddAISetting(
 	req *spec.AddAISettingRequest,
 ) (*spec.AddAISettingResponse, error) {
@@ -118,7 +115,6 @@ func (w *SettingStoreWrapper) AddAISetting(
 	})
 }
 
-// DeleteAISetting removes an existing AI provider without requiring a context.
 func (w *SettingStoreWrapper) DeleteAISetting(
 	req *spec.DeleteAISettingRequest,
 ) (*spec.DeleteAISettingResponse, error) {
@@ -127,7 +123,6 @@ func (w *SettingStoreWrapper) DeleteAISetting(
 	})
 }
 
-// SetAISettingAPIKey updates the API key of a provider without requiring a context.
 func (w *SettingStoreWrapper) SetAISettingAPIKey(
 	req *spec.SetAISettingAPIKeyRequest,
 ) (*spec.SetAISettingAPIKeyResponse, error) {
@@ -136,7 +131,6 @@ func (w *SettingStoreWrapper) SetAISettingAPIKey(
 	})
 }
 
-// SetAISettingAttrs partially updates AI provider attributes without requiring a context.
 func (w *SettingStoreWrapper) SetAISettingAttrs(
 	req *spec.SetAISettingAttrsRequest,
 ) (*spec.SetAISettingAttrsResponse, error) {
@@ -145,7 +139,6 @@ func (w *SettingStoreWrapper) SetAISettingAttrs(
 	})
 }
 
-// AddModelPreset creates or replaces a single model setting for a provider without requiring a context.
 func (w *SettingStoreWrapper) AddModelPreset(
 	req *spec.AddModelPresetRequest,
 ) (*spec.AddModelPresetResponse, error) {
@@ -154,7 +147,6 @@ func (w *SettingStoreWrapper) AddModelPreset(
 	})
 }
 
-// DeleteModelPreset creates or replaces a single model setting for a provider without requiring a context.
 func (w *SettingStoreWrapper) DeleteModelPreset(
 	req *spec.DeleteModelPresetRequest,
 ) (*spec.DeleteModelPresetResponse, error) {

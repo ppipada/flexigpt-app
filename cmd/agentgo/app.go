@@ -26,8 +26,10 @@ type App struct {
 	settingStoreAPI      *SettingStoreWrapper
 	conversationStoreAPI *ConversationCollectionWrapper
 	providerSetAPI       *ProviderSetWrapper
+	modelPresetsStoreAPI *ModelPresetsStoreWrapper
 	configBasePath       string
 	dataBasePath         string
+	skillsBasePath       string
 }
 
 // NewApp creates a new App application struct
@@ -47,12 +49,13 @@ func NewApp() *App {
 	app := &App{}
 	app.configBasePath = filepath.Join(xdg.ConfigHome, (strings.ToLower(AppTitle)))
 	app.dataBasePath = filepath.Join(xdg.DataHome, (strings.ToLower(AppTitle)))
-
+	app.skillsBasePath = filepath.Join(app.dataBasePath, "skills")
 	// Wails needs some instance of an struct to create bindings from its methods.
 	// Therefore the pattern followed is that create a hollow struct in new and then init in startup
 	app.settingStoreAPI = &SettingStoreWrapper{}
 	app.conversationStoreAPI = &ConversationCollectionWrapper{}
 	app.providerSetAPI = &ProviderSetWrapper{}
+	app.modelPresetsStoreAPI = &ModelPresetsStoreWrapper{}
 
 	if err := os.MkdirAll(app.configBasePath, os.FileMode(0o770)); err != nil {
 		slog.Error(
@@ -64,11 +67,20 @@ func NewApp() *App {
 		)
 		panic("Failed to initialize App")
 	}
-	if err := os.MkdirAll(app.dataBasePath, os.FileMode(0o770)); err != nil {
+	// This will create data dir too.
+	if err := os.MkdirAll(app.skillsBasePath, os.FileMode(0o770)); err != nil {
 		slog.Error("Failed to create directories", "app data", app.dataBasePath, "Error", err)
 		panic("Failed to initialize App")
 	}
-	slog.Info("FlexiGPT Paths", "app data", app.dataBasePath, "config data", app.configBasePath)
+	slog.Info(
+		"FlexiGPT Paths",
+		"app data",
+		app.dataBasePath,
+		"skills data",
+		app.skillsBasePath,
+		"config data",
+		app.configBasePath,
+	)
 	return app
 }
 
@@ -82,6 +94,21 @@ func (a *App) initManagers() {
 			"Couldnt initialize setting store",
 			"Setting file",
 			settingsFilePath,
+			"Error",
+			err,
+		)
+		panic("Failed to initialize Managers")
+	}
+
+	// Initialize modelPresets manager
+	modelPresetsFilePath := filepath.Join(a.skillsBasePath, "modelpresets.json")
+	slog.Info("Model presets store created", "filepath", modelPresetsFilePath)
+	err = InitModelPresetsStoreWrapper(a.modelPresetsStoreAPI, modelPresetsFilePath)
+	if err != nil {
+		slog.Error(
+			"Couldnt initialize model presets store",
+			"file",
+			modelPresetsFilePath,
 			"Error",
 			err,
 		)
