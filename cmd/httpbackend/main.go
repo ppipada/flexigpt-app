@@ -13,12 +13,12 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
-	"github.com/ppipada/flexigpt-app/pkg/aiprovider"
 	"github.com/ppipada/flexigpt-app/pkg/conversationstore"
+	"github.com/ppipada/flexigpt-app/pkg/inference"
 	"github.com/ppipada/flexigpt-app/pkg/logrotate"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore"
 
-	aiproviderConsts "github.com/ppipada/flexigpt-app/pkg/aiprovider/consts"
+	modelConsts "github.com/ppipada/flexigpt-app/pkg/model/consts"
 )
 
 // Options for the server cli.
@@ -70,13 +70,13 @@ func main() {
 		router := http.NewServeMux()
 		api := humago.New(router, huma.DefaultConfig("FlexiGPTServer API", "1.0.0"))
 		app := NewBackendApp(
-			aiproviderConsts.ProviderNameOpenAI,
+			modelConsts.ProviderNameOpenAI,
 			opts.SettingsDirPath,
 			opts.ConversationsDirPath,
 		)
 		settingstore.InitSettingStoreHandlers(api, app.settingStoreAPI)
 		conversationstore.InitConversationStoreHandlers(api, app.conversationStoreAPI)
-		aiprovider.InitProviderSetHandlers(api, app.providerSetAPI)
+		inference.InitProviderSetHandlers(api, app.providerSetAPI)
 		// Create the HTTP server.
 		server := http.Server{
 			Addr:              fmt.Sprintf("%s:%d", opts.Host, opts.Port),

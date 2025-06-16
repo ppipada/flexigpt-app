@@ -1,38 +1,37 @@
-package aiprovider
+package inference
 
 import (
 	"context"
 	"errors"
 	"log/slog"
 
-	"github.com/ppipada/flexigpt-app/pkg/aiprovider/api"
-	"github.com/ppipada/flexigpt-app/pkg/aiprovider/consts"
-	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/model/consts"
+	"github.com/ppipada/flexigpt-app/pkg/model/spec"
 )
 
-func getInbuiltProviderAPI(debug bool) map[spec.ProviderName]api.CompletionProvider {
-	return map[spec.ProviderName]api.CompletionProvider{
-		consts.ProviderNameAnthropic: api.NewAnthropicCompatibleAPI(
+func getInbuiltProviderAPI(debug bool) map[spec.ProviderName]CompletionProvider {
+	return map[spec.ProviderName]CompletionProvider{
+		consts.ProviderNameAnthropic: NewAnthropicCompatibleAPI(
 			consts.AnthropicProviderInfo,
 			debug,
 		),
-		consts.ProviderNameDeepseek: api.NewOpenAICompatibleProvider(
+		consts.ProviderNameDeepseek: NewOpenAICompatibleProvider(
 			consts.DeepseekProviderInfo,
 			debug,
 		),
-		consts.ProviderNameGoogle: api.NewOpenAICompatibleProvider(
+		consts.ProviderNameGoogle: NewOpenAICompatibleProvider(
 			consts.GoogleProviderInfo,
 			debug,
 		),
-		consts.ProviderNameHuggingFace: api.NewHuggingFaceCompatibleAPI(
+		consts.ProviderNameHuggingFace: NewHuggingFaceCompatibleAPI(
 			consts.HuggingfaceProviderInfo,
 			debug,
 		),
-		consts.ProviderNameLlamaCPP: api.NewOpenAICompatibleProvider(
+		consts.ProviderNameLlamaCPP: NewOpenAICompatibleProvider(
 			consts.LlamacppProviderInfo,
 			debug,
 		),
-		consts.ProviderNameOpenAI: api.NewOpenAICompatibleProvider(
+		consts.ProviderNameOpenAI: NewOpenAICompatibleProvider(
 			consts.OpenAIProviderInfo,
 			debug,
 		),
@@ -42,7 +41,7 @@ func getInbuiltProviderAPI(debug bool) map[spec.ProviderName]api.CompletionProvi
 // Define the ProviderSetAPI struct.
 type ProviderSetAPI struct {
 	defaultProvider spec.ProviderName
-	providers       map[spec.ProviderName]api.CompletionProvider
+	providers       map[spec.ProviderName]CompletionProvider
 	debug           bool
 }
 
@@ -65,8 +64,8 @@ func NewProviderSetAPI(
 // SetDefaultProvider sets the default provider.
 func (ps *ProviderSetAPI) SetDefaultProvider(
 	ctx context.Context,
-	req *api.SetDefaultProviderRequest,
-) (*api.SetDefaultProviderResponse, error) {
+	req *SetDefaultProviderRequest,
+) (*SetDefaultProviderResponse, error) {
 	if req == nil || req.Body == nil {
 		return nil, errors.New("got empty provider input")
 	}
@@ -75,14 +74,14 @@ func (ps *ProviderSetAPI) SetDefaultProvider(
 		return nil, errors.New("invalid provider")
 	}
 	ps.defaultProvider = req.Body.Provider
-	return &api.SetDefaultProviderResponse{}, nil
+	return &SetDefaultProviderResponse{}, nil
 }
 
 // GetConfigurationInfo returns configuration information.
 func (ps *ProviderSetAPI) GetConfigurationInfo(
 	ctx context.Context,
-	req *api.GetConfigurationInfoRequest,
-) (*api.GetConfigurationInfoResponse, error) {
+	req *GetConfigurationInfoRequest,
+) (*GetConfigurationInfoResponse, error) {
 	configuredProviders := []spec.ProviderInfo{}
 
 	for _, providerAPI := range ps.providers {
@@ -90,8 +89,8 @@ func (ps *ProviderSetAPI) GetConfigurationInfo(
 			configuredProviders = append(configuredProviders, *providerAPI.GetProviderInfo(ctx))
 		}
 	}
-	return &api.GetConfigurationInfoResponse{
-		Body: &api.GetConfigurationInfoResponseBody{
+	return &GetConfigurationInfoResponse{
+		Body: &GetConfigurationInfoResponseBody{
 			DefaultProvider:              ps.defaultProvider,
 			ConfiguredProviders:          configuredProviders,
 			InbuiltProviderModels:        consts.InbuiltProviderModels,
@@ -104,8 +103,8 @@ func (ps *ProviderSetAPI) GetConfigurationInfo(
 // A provider with same name as inbuilt providers are not allowed.
 func (ps *ProviderSetAPI) AddProvider(
 	ctx context.Context,
-	req *api.AddProviderRequest,
-) (*api.AddProviderResponse, error) {
+	req *AddProviderRequest,
+) (*AddProviderResponse, error) {
 	if req == nil || req.Provider == "" {
 		return nil, errors.New("got empty provider input")
 	}
@@ -126,7 +125,7 @@ func (ps *ProviderSetAPI) AddProvider(
 		ChatCompletionPathPrefix: "",
 	}
 
-	ps.providers[req.Provider] = api.NewOpenAICompatibleProvider(
+	ps.providers[req.Provider] = NewOpenAICompatibleProvider(
 		providerInfo,
 		ps.debug,
 	)
@@ -153,13 +152,13 @@ func (ps *ProviderSetAPI) AddProvider(
 		return nil, err
 	}
 	slog.Info("AddProvider", "Name", req.Provider)
-	return &api.AddProviderResponse{}, nil
+	return &AddProviderResponse{}, nil
 }
 
 func (ps *ProviderSetAPI) DeleteProvider(
 	ctx context.Context,
-	req *api.DeleteProviderRequest,
-) (*api.DeleteProviderResponse, error) {
+	req *DeleteProviderRequest,
+) (*DeleteProviderResponse, error) {
 	if req == nil || req.Provider == "" {
 		return nil, errors.New("got empty provider input")
 	}
@@ -178,14 +177,14 @@ func (ps *ProviderSetAPI) DeleteProvider(
 	}
 	delete(ps.providers, req.Provider)
 	slog.Info("DeleteProvider", "Name", req.Provider)
-	return &api.DeleteProviderResponse{}, nil
+	return &DeleteProviderResponse{}, nil
 }
 
 // SetProviderAPIKey sets the key for a given provider.
 func (ps *ProviderSetAPI) SetProviderAPIKey(
 	ctx context.Context,
-	req *api.SetProviderAPIKeyRequest,
-) (*api.SetProviderAPIKeyResponse, error) {
+	req *SetProviderAPIKeyRequest,
+) (*SetProviderAPIKeyResponse, error) {
 	if req == nil || req.Body == nil {
 		return nil, errors.New("got empty provider input")
 	}
@@ -205,14 +204,14 @@ func (ps *ProviderSetAPI) SetProviderAPIKey(
 	if err != nil {
 		return nil, err
 	}
-	return &api.SetProviderAPIKeyResponse{}, nil
+	return &SetProviderAPIKeyResponse{}, nil
 }
 
 // SetProviderAttribute sets attributes for a given provider.
 func (ps *ProviderSetAPI) SetProviderAttribute(
 	ctx context.Context,
-	req *api.SetProviderAttributeRequest,
-) (*api.SetProviderAttributeResponse, error) {
+	req *SetProviderAttributeRequest,
+) (*SetProviderAttributeResponse, error) {
 	if req == nil || req.Body == nil {
 		return nil, errors.New("got empty provider input")
 	}
@@ -233,14 +232,14 @@ func (ps *ProviderSetAPI) SetProviderAttribute(
 	if err != nil {
 		return nil, err
 	}
-	return &api.SetProviderAttributeResponse{}, nil
+	return &SetProviderAttributeResponse{}, nil
 }
 
 // FetchCompletion processes a completion request for a given provider.
 func (ps *ProviderSetAPI) FetchCompletion(
 	ctx context.Context,
-	req *api.FetchCompletionRequest,
-) (*api.FetchCompletionResponse, error) {
+	req *FetchCompletionRequest,
+) (*FetchCompletionResponse, error) {
 	if req == nil || req.Body == nil || req.Body.Prompt == "" || req.Body.ModelParams.Name == "" {
 		return nil, errors.New("got empty provider/prompt/model input")
 	}
@@ -270,5 +269,5 @@ func (ps *ProviderSetAPI) FetchCompletion(
 		return nil, errors.Join(err, errors.New("error in fetch completion"))
 	}
 
-	return &api.FetchCompletionResponse{Body: resp}, nil
+	return &FetchCompletionResponse{Body: resp}, nil
 }

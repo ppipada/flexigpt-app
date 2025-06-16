@@ -1,11 +1,11 @@
-package api
+package inference
 
 import (
 	"context"
 	"log/slog"
 	"strings"
 
-	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/model/spec"
 
 	"github.com/tmc/langchaingo/llms"
 	langchainAnthropic "github.com/tmc/langchaingo/llms/anthropic"

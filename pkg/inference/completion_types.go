@@ -1,4 +1,4 @@
-package spec
+package inference
 
 type ChatCompletionRoleEnum string
 

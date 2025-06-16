@@ -1,4 +1,4 @@
-package api
+package inference
 
 import (
 	"context"
@@ -6,10 +6,46 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/ppipada/flexigpt-app/pkg/aiprovider/consts"
-	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/model/consts"
+	"github.com/ppipada/flexigpt-app/pkg/model/spec"
 	"github.com/tmc/langchaingo/llms"
 )
+
+type CompletionProvider interface {
+	GetProviderInfo(
+		ctx context.Context,
+	) *spec.ProviderInfo
+	IsConfigured(ctx context.Context) bool
+	GetLLMsModel(ctx context.Context) llms.Model
+	InitLLM(ctx context.Context) error
+	SetProviderAPIKey(
+		ctx context.Context,
+		apiKey string,
+	) error
+	SetProviderAttribute(
+		ctx context.Context,
+		origin *string,
+		chatCompletionPathPrefix *string,
+	) error
+	FetchCompletion(
+		ctx context.Context,
+		llm llms.Model,
+		prompt string,
+		modelParams spec.ModelParams,
+		inbuiltModelParams *spec.ModelParams,
+		prevMessages []ChatCompletionRequestMessage,
+		onStreamData func(data string) error,
+	) (*CompletionResponse, error)
+}
+
+var LangchainRoleMap = map[ChatCompletionRoleEnum]llms.ChatMessageType{
+	// No developer prompt support in langchain as of now.
+	Developer: llms.ChatMessageTypeSystem,
+	System:    llms.ChatMessageTypeSystem,
+	User:      llms.ChatMessageTypeHuman,
+	Assistant: llms.ChatMessageTypeAI,
+	Function:  llms.ChatMessageTypeTool,
+}
 
 type BaseAIAPI struct {
 	ProviderInfo *spec.ProviderInfo
@@ -90,7 +126,7 @@ func (api *BaseAIAPI) getCompletionRequest(
 	prompt string,
 	modelParams spec.ModelParams,
 	inbuiltModelParams *spec.ModelParams,
-	prevMessages []spec.ChatCompletionRequestMessage,
+	prevMessages []ChatCompletionRequestMessage,
 ) *CompletionRequest {
 	completionRequest := CompletionRequest{
 		ModelParams: spec.ModelParams{
@@ -138,7 +174,7 @@ func (api *BaseAIAPI) getCompletionRequest(
 	// Handle messages.
 	messages := slices.Clone(prevMessages)
 	if prompt != "" {
-		message := spec.ChatCompletionRequestMessage{
+		message := ChatCompletionRequestMessage{
 			Role:    "user",
 			Content: &prompt,
 		}
@@ -162,7 +198,7 @@ func (api *BaseAIAPI) FetchCompletion(
 	prompt string,
 	modelParams spec.ModelParams,
 	inbuiltModelParams *spec.ModelParams,
-	prevMessages []spec.ChatCompletionRequestMessage,
+	prevMessages []ChatCompletionRequestMessage,
 	onStreamData func(data string) error,
 ) (*CompletionResponse, error) {
 	input := api.getCompletionRequest(prompt, modelParams, inbuiltModelParams, prevMessages)

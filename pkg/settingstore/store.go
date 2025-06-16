@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	aiproviderSpec "github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
+	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
@@ -132,7 +132,7 @@ func (s *SettingStore) AddAISetting(
 
 	keys := []string{"aiSettings", string(req.ProviderName)}
 	if req.Body.ModelSettings == nil {
-		req.Body.ModelSettings = make(map[aiproviderSpec.ModelName]spec.ModelSetting)
+		req.Body.ModelSettings = make(map[modelSpec.ModelName]spec.ModelSetting)
 	}
 	val, err := encdec.StructWithJSONTagsToMap(req.Body)
 	if err != nil {
@@ -176,7 +176,7 @@ func (s *SettingStore) DeleteAISetting(
 }
 
 func (s *SettingStore) getProviderData(
-	providerName aiproviderSpec.ProviderName,
+	providerName modelSpec.ProviderName,
 	forceFetch bool,
 ) (currentData, aiSettings, providerData map[string]any, err error) {
 	// 1) GetAll with no forced fetch (or use the boolean if you sometimes need forced).

@@ -4,25 +4,24 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ppipada/flexigpt-app/pkg/aiprovider"
-	aiproviderAPI "github.com/ppipada/flexigpt-app/pkg/aiprovider/api"
-	aiproviderSpec "github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/inference"
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
+	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type ProviderSetWrapper struct {
-	providersetAPI *aiprovider.ProviderSetAPI
+	providersetAPI *inference.ProviderSetAPI
 	appContext     context.Context
 }
 
 // NewProviderSetWrapper creates a new ProviderSet with the specified default provider.
 func InitProviderSetWrapper(
 	ps *ProviderSetWrapper,
-	defaultInbuiltProvider aiproviderSpec.ProviderName,
+	defaultInbuiltProvider modelSpec.ProviderName,
 ) error {
-	p, err := aiprovider.NewProviderSetAPI(defaultInbuiltProvider, false)
+	p, err := inference.NewProviderSetAPI(defaultInbuiltProvider, false)
 	if err != nil {
 		return errors.Join(err, errors.New("invalid default provider"))
 	}
@@ -35,52 +34,52 @@ func SetWrappedProviderAppContext(w *ProviderSetWrapper, ctx context.Context) {
 }
 
 func (w *ProviderSetWrapper) SetDefaultProvider(
-	req *aiproviderAPI.SetDefaultProviderRequest,
-) (*aiproviderAPI.SetDefaultProviderResponse, error) {
-	return middleware.WithRecoveryResp(func() (*aiproviderAPI.SetDefaultProviderResponse, error) {
+	req *inference.SetDefaultProviderRequest,
+) (*inference.SetDefaultProviderResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inference.SetDefaultProviderResponse, error) {
 		return w.providersetAPI.SetDefaultProvider(context.Background(), req)
 	})
 }
 
 func (w *ProviderSetWrapper) GetConfigurationInfo(
-	req *aiproviderAPI.GetConfigurationInfoRequest,
-) (*aiproviderAPI.GetConfigurationInfoResponse, error) {
+	req *inference.GetConfigurationInfoRequest,
+) (*inference.GetConfigurationInfoResponse, error) {
 	return middleware.WithRecoveryResp(
-		func() (*aiproviderAPI.GetConfigurationInfoResponse, error) {
+		func() (*inference.GetConfigurationInfoResponse, error) {
 			return w.providersetAPI.GetConfigurationInfo(context.Background(), req)
 		},
 	)
 }
 
 func (w *ProviderSetWrapper) AddProvider(
-	req *aiproviderAPI.AddProviderRequest,
-) (*aiproviderAPI.AddProviderResponse, error) {
-	return middleware.WithRecoveryResp(func() (*aiproviderAPI.AddProviderResponse, error) {
+	req *inference.AddProviderRequest,
+) (*inference.AddProviderResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inference.AddProviderResponse, error) {
 		return w.providersetAPI.AddProvider(context.Background(), req)
 	})
 }
 
 func (w *ProviderSetWrapper) DeleteProvider(
-	req *aiproviderAPI.DeleteProviderRequest,
-) (*aiproviderAPI.DeleteProviderResponse, error) {
-	return middleware.WithRecoveryResp(func() (*aiproviderAPI.DeleteProviderResponse, error) {
+	req *inference.DeleteProviderRequest,
+) (*inference.DeleteProviderResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inference.DeleteProviderResponse, error) {
 		return w.providersetAPI.DeleteProvider(context.Background(), req)
 	})
 }
 
 func (w *ProviderSetWrapper) SetProviderAPIKey(
-	req *aiproviderAPI.SetProviderAPIKeyRequest,
-) (*aiproviderAPI.SetProviderAPIKeyResponse, error) {
-	return middleware.WithRecoveryResp(func() (*aiproviderAPI.SetProviderAPIKeyResponse, error) {
+	req *inference.SetProviderAPIKeyRequest,
+) (*inference.SetProviderAPIKeyResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inference.SetProviderAPIKeyResponse, error) {
 		return w.providersetAPI.SetProviderAPIKey(context.Background(), req)
 	})
 }
 
 func (w *ProviderSetWrapper) SetProviderAttribute(
-	req *aiproviderAPI.SetProviderAttributeRequest,
-) (*aiproviderAPI.SetProviderAttributeResponse, error) {
+	req *inference.SetProviderAttributeRequest,
+) (*inference.SetProviderAttributeResponse, error) {
 	return middleware.WithRecoveryResp(
-		func() (*aiproviderAPI.SetProviderAttributeResponse, error) {
+		func() (*inference.SetProviderAttributeResponse, error) {
 			return w.providersetAPI.SetProviderAttribute(context.Background(), req)
 		},
 	)
@@ -90,19 +89,19 @@ func (w *ProviderSetWrapper) SetProviderAttribute(
 func (w *ProviderSetWrapper) FetchCompletion(
 	provider string,
 	prompt string,
-	modelParams aiproviderSpec.ModelParams,
-	prevMessages []aiproviderSpec.ChatCompletionRequestMessage,
+	modelParams modelSpec.ModelParams,
+	prevMessages []inference.ChatCompletionRequestMessage,
 	callbackID string,
-) (*aiproviderAPI.FetchCompletionResponse, error) {
-	return middleware.WithRecoveryResp(func() (*aiproviderAPI.FetchCompletionResponse, error) {
+) (*inference.FetchCompletionResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inference.FetchCompletionResponse, error) {
 		onStreamData := func(data string) error {
 			runtime.EventsEmit(w.appContext, callbackID, data)
 			return nil
 		}
 
-		req := &aiproviderAPI.FetchCompletionRequest{
-			Body: &aiproviderAPI.FetchCompletionRequestBody{
-				Provider:     aiproviderSpec.ProviderName(provider),
+		req := &inference.FetchCompletionRequest{
+			Body: &inference.FetchCompletionRequestBody{
+				Provider:     modelSpec.ProviderName(provider),
 				Prompt:       prompt,
 				ModelParams:  modelParams,
 				PrevMessages: prevMessages,

@@ -4,9 +4,9 @@ import (
 	"context"
 	"log/slog"
 
-	aiproviderAPI "github.com/ppipada/flexigpt-app/pkg/aiprovider/api"
-	aiproviderConsts "github.com/ppipada/flexigpt-app/pkg/aiprovider/consts"
+	"github.com/ppipada/flexigpt-app/pkg/inference"
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
+	modelConsts "github.com/ppipada/flexigpt-app/pkg/model/consts"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore/spec"
 )
@@ -36,13 +36,13 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 	}
 
 	for providerName, aiSetting := range allSettingsResponse.Body.AISettings {
-		if _, exists := aiproviderConsts.InbuiltProviderModels[providerName]; exists {
+		if _, exists := modelConsts.InbuiltProviderModels[providerName]; exists {
 			// Update inbuilt providers.
 			if aiSetting.APIKey != "" {
 				_, err = p.SetProviderAPIKey(
-					&aiproviderAPI.SetProviderAPIKeyRequest{
+					&inference.SetProviderAPIKeyRequest{
 						Provider: providerName,
-						Body: &aiproviderAPI.SetProviderAPIKeyRequestBody{
+						Body: &inference.SetProviderAPIKeyRequestBody{
 							APIKey: aiSetting.APIKey,
 						},
 					},
@@ -53,9 +53,9 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 			}
 
 			_, err = p.SetProviderAttribute(
-				&aiproviderAPI.SetProviderAttributeRequest{
+				&inference.SetProviderAttributeRequest{
 					Provider: providerName,
-					Body: &aiproviderAPI.SetProviderAttributeRequestBody{
+					Body: &inference.SetProviderAttributeRequestBody{
 						Origin:                   &aiSetting.Origin,
 						ChatCompletionPathPrefix: &aiSetting.ChatCompletionPathPrefix,
 					},
@@ -66,9 +66,9 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 			}
 		} else {
 			// Add custom providers.
-			_, err := p.AddProvider(&aiproviderAPI.AddProviderRequest{
+			_, err := p.AddProvider(&inference.AddProviderRequest{
 				Provider: providerName,
-				Body: &aiproviderAPI.AddProviderRequestBody{
+				Body: &inference.AddProviderRequestBody{
 					APIKey:                   aiSetting.APIKey,
 					Origin:                   aiSetting.Origin,
 					ChatCompletionPathPrefix: aiSetting.ChatCompletionPathPrefix,
@@ -79,8 +79,8 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 			}
 		}
 	}
-	_, err = p.SetDefaultProvider(&aiproviderAPI.SetDefaultProviderRequest{
-		Body: &aiproviderAPI.SetDefaultProviderRequestBody{
+	_, err = p.SetDefaultProvider(&inference.SetDefaultProviderRequest{
+		Body: &inference.SetDefaultProviderRequestBody{
 			Provider: allSettingsResponse.Body.App.DefaultProvider,
 		},
 	})

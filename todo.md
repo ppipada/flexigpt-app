@@ -6,48 +6,49 @@
 - [ ] in modify modal, the search bar is visible i.e it doesnt get in background
 - [ ] details loading is very slow as of now
 - [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
-- [ ] Random notes from UX discussions
-
-  - [ ] chat window should add a "persona" in left top that can be used as a loader of a "agent preset"
-  - [ ] model preset can be laoded in input bar rather than just model. may need to figure out how to show/allwo edits to the persona vs model preset
-  - [ ] The details of request response can be added as "info" button that allows for dig down in a modal rather than append in footer.
-  - [ ] need better pins in home
-  - [ ] Side bar:
-
-    ```text
-    ──────────────────── (Top static)
-    🏠 Home                → Landing page, Recent activity, Dashboards
-    💬 Chat                → Chat UI, Conversation lists
-
-    ──────────────────── (Mid dynamic, Min 8px spacer above)
-
-    🟦 Apps                → Grid & marketplace of installable apps
-    🗒️ AI-Notepad          → Example pinned app
-    🖼️ Image-Gen           → Example pinned app
-    // max 5 pinned-app icons, drag to rearrange list
-
-    ──────────────────── (Mid dynamic, Min 8px spacer below)
-
-    ──────────────────── (Bottom static)
-    🧩 Skills             → Build & edit: (Below tabs in a expanded drawer)
-                            1. Prompts
-                            2. Tools
-                            3. Model presets
-                            4. Data/Doc Sources
-    📊 Insights           → Usage, cost, performance dashboards
-    ❓ Help               → Docs, tutorials, support
-    ⚙️👤 Account           → Manage: (Below tabs in a expanded drawer)
-                            1. Profile/Workspace
-                            2. Billing
-                            // May combine 3 and 4 if required, depends on density of info in each
-                            3. App preferences: Themes, shortcuts, etc.
-                            4. Security & Keys.
-    ```
 
 - [ ] Refactor provider in prep for presets and skills flow
   - [ ] Types in aiprovider
   - [ ] We should store all these preset files in settings or their own domain folders?
   - [ ] Remove confusion of ModelParams vs ModelSettings vs ModelPreset. What is stored is a ModelPreset. What comes in is a ModelParam.
+
+## Random notes from UX discussions
+
+- [ ] chat window should add a "persona" in left top that can be used as a loader of a "agent preset"
+- [ ] model preset can be laoded in input bar rather than just model. may need to figure out how to show/allwo edits to the persona vs model preset
+- [ ] The details of request response can be added as "info" button that allows for dig down in a modal rather than append in footer.
+- [ ] need better pins in home
+- [ ] Side bar:
+
+  ```text
+  ──────────────────── (Top static)
+  🏠 Home                → Landing page, Recent activity, Dashboards
+  💬 Chat                → Chat UI, Conversation lists
+
+  ──────────────────── (Mid dynamic, Min 8px spacer above)
+
+  🟦 Apps                → Grid & marketplace of installable apps
+  🗒️ AI-Notepad          → Example pinned app
+  🖼️ Image-Gen           → Example pinned app
+  // max 5 pinned-app icons, drag to rearrange list
+
+  ──────────────────── (Mid dynamic, Min 8px spacer below)
+
+  ──────────────────── (Bottom static)
+  🧩 Skills             → Build & edit: (Below tabs in a expanded drawer)
+                          1. Prompts
+                          2. Tools
+                          3. Model presets
+                          4. Data/Doc Sources
+  📊 Insights           → Usage, cost, performance dashboards
+  ❓ Help               → Docs, tutorials, support
+  ⚙️👤 Account           → Manage: (Below tabs in a expanded drawer)
+                          1. Profile/Workspace
+                          2. Billing
+                          // May combine 3 and 4 if required, depends on density of info in each
+                          3. App preferences: Themes, shortcuts, etc.
+                          4. Security & Keys.
+  ```
 
 ## Tasks: Tools Implementation with CodeMirror
 

@@ -1,4 +1,4 @@
-package aiprovider
+package inference
 
 import (
 	"net/http"

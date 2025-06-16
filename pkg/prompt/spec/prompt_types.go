@@ -4,6 +4,16 @@ import (
 	"time"
 )
 
+type PromptRoleEnum string
+
+const (
+	System    PromptRoleEnum = "system"
+	Developer PromptRoleEnum = "developer"
+	User      PromptRoleEnum = "user"
+	Assistant PromptRoleEnum = "assistant"
+	Function  PromptRoleEnum = "function"
+)
+
 // Variable types you care about.
 type VarType string
 
@@ -29,10 +39,10 @@ const (
 
 // A single role-tagged chunk of text.
 type MessageBlock struct {
-	ID      string                 `json:"id"`
-	Role    ChatCompletionRoleEnum `json:"role"`
-	Content string                 `json:"content"`
-	Enabled bool                   `json:"enabled,omitempty"`
+	ID      string         `json:"id"`
+	Role    PromptRoleEnum `json:"role"`
+	Content string         `json:"content"`
+	Enabled bool           `json:"enabled,omitempty"`
 }
 
 type PromptVariable struct {

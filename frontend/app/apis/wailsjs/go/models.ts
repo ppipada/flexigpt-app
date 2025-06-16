@@ -1,4 +1,23 @@
-export namespace api {
+export namespace frontend {
+	
+	export class FileFilter {
+	    DisplayName: string;
+	    Pattern: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new FileFilter(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.DisplayName = source["DisplayName"];
+	        this.Pattern = source["Pattern"];
+	    }
+	}
+
+}
+
+export namespace inference {
 	
 	export class APIResponseDetails {
 	    data: any;
@@ -157,6 +176,57 @@ export namespace api {
 	
 	    }
 	}
+	export class ChatCompletionRequestMessageFunctionCall {
+	    name?: string;
+	    arguments?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ChatCompletionRequestMessageFunctionCall(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.arguments = source["arguments"];
+	    }
+	}
+	export class ChatCompletionRequestMessage {
+	    role: string;
+	    content?: string;
+	    name?: string;
+	    functionCall?: ChatCompletionRequestMessageFunctionCall;
+	
+	    static createFrom(source: any = {}) {
+	        return new ChatCompletionRequestMessage(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.role = source["role"];
+	        this.content = source["content"];
+	        this.name = source["name"];
+	        this.functionCall = this.convertValues(source["functionCall"], ChatCompletionRequestMessageFunctionCall);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	export class CompletionResponse {
 	    requestDetails?: APIRequestDetails;
 	    responseDetails?: APIResponseDetails;
@@ -504,25 +574,6 @@ export namespace api {
 
 }
 
-export namespace frontend {
-	
-	export class FileFilter {
-	    DisplayName: string;
-	    Pattern: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new FileFilter(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.DisplayName = source["DisplayName"];
-	        this.Pattern = source["Pattern"];
-	    }
-	}
-
-}
-
 export namespace spec {
 	
 	export class ReasoningParams {
@@ -731,57 +782,6 @@ export namespace spec {
 	        this.defaultProvider = source["defaultProvider"];
 	    }
 	}
-	export class ChatCompletionRequestMessageFunctionCall {
-	    name?: string;
-	    arguments?: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new ChatCompletionRequestMessageFunctionCall(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.name = source["name"];
-	        this.arguments = source["arguments"];
-	    }
-	}
-	export class ChatCompletionRequestMessage {
-	    role: string;
-	    content?: string;
-	    name?: string;
-	    functionCall?: ChatCompletionRequestMessageFunctionCall;
-	
-	    static createFrom(source: any = {}) {
-	        return new ChatCompletionRequestMessage(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.role = source["role"];
-	        this.content = source["content"];
-	        this.name = source["name"];
-	        this.functionCall = this.convertValues(source["functionCall"], ChatCompletionRequestMessageFunctionCall);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	
 	export class ConversationMessage {
 	    id: string;
 	    // Go type: time

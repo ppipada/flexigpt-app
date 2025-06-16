@@ -1,10 +1,8 @@
-package api
+package inference
 
 import (
 	"log/slog"
 	"regexp"
-
-	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
 )
 
 func CountTokensInContent(content string) int {
@@ -29,11 +27,11 @@ func CountTokensInContent(content string) int {
 
 // FilterMessagesByTokenCount filters messages based on the maximum token count.
 func FilterMessagesByTokenCount(
-	messages []spec.ChatCompletionRequestMessage,
+	messages []ChatCompletionRequestMessage,
 	maxTokenCount int,
-) []spec.ChatCompletionRequestMessage {
+) []ChatCompletionRequestMessage {
 	totalTokens := 0
-	var filteredMessages []spec.ChatCompletionRequestMessage
+	var filteredMessages []ChatCompletionRequestMessage
 
 	// Loop through the messages in reverse order (prioritizing the last element).
 	for i := len(messages) - 1; i >= 0; i-- {

@@ -1,7 +1,7 @@
 package consts
 
 import (
-	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/model/spec"
 )
 
 const ProviderNameLlamaCPP spec.ProviderName = "llamacpp"

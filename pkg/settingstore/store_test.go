@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/model/spec"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore"
 	settingSpec "github.com/ppipada/flexigpt-app/pkg/settingstore/spec"
 )

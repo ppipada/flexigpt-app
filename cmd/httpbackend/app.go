@@ -8,22 +8,22 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/conversationstore"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore"
 
-	"github.com/ppipada/flexigpt-app/pkg/aiprovider"
-	aiproviderSpec "github.com/ppipada/flexigpt-app/pkg/aiprovider/spec"
+	"github.com/ppipada/flexigpt-app/pkg/inference"
+	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
 )
 
 type BackendApp struct {
 	settingStoreAPI        *settingstore.SettingStore
 	conversationStoreAPI   *conversationstore.ConversationCollection
-	providerSetAPI         *aiprovider.ProviderSetAPI
+	providerSetAPI         *inference.ProviderSetAPI
 	settingsDirPath        string
 	settingsFilePath       string
 	conversationsDirPath   string
-	defaultInbuiltProvider aiproviderSpec.ProviderName
+	defaultInbuiltProvider modelSpec.ProviderName
 }
 
 func NewBackendApp(
-	defaultInbuiltProvider aiproviderSpec.ProviderName,
+	defaultInbuiltProvider modelSpec.ProviderName,
 	settingsDirPath, conversationsDirPath string,
 ) *BackendApp {
 	if settingsDirPath == "" || conversationsDirPath == "" || defaultInbuiltProvider == "" {
@@ -109,7 +109,7 @@ func (a *BackendApp) initConversationStore() {
 }
 
 func (a *BackendApp) initProviderSet() {
-	p, err := aiprovider.NewProviderSetAPI(a.defaultInbuiltProvider, false)
+	p, err := inference.NewProviderSetAPI(a.defaultInbuiltProvider, false)
 	if err != nil {
 		panic("Invalid default provider")
 	}
