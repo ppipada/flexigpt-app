@@ -6,7 +6,7 @@ import {
 	DefaultModelName,
 	DefaultProviderName,
 	type ModelName,
-	type ModelParams,
+	type ModelPreset,
 	type ProviderName,
 } from '@/models/aiprovidermodel';
 import type { AISetting } from '@/models/settingmodel';
@@ -41,7 +41,7 @@ const SettingsPage: FC = () => {
 	const [defaultProvider, setComponentDefaultProvider] = useState<ProviderName>(DefaultProviderName);
 	const [aiSettings, setAISettings] = useState<Record<string, AISetting>>(defaultAISettings);
 	const [isAddProviderModalOpen, setIsAddProviderModalOpen] = useState(false);
-	const [inbuiltProviderInfo, setInbuiltProviderInfo] = useState<Record<ProviderName, Record<ModelName, ModelParams>>>(
+	const [inbuiltProviderInfo, setInbuiltProviderInfo] = useState<Record<ProviderName, Record<ModelName, ModelPreset>>>(
 		{}
 	);
 
@@ -60,11 +60,7 @@ const SettingsPage: FC = () => {
 
 			setInbuiltProviderInfo(info.inbuiltProviderModels);
 			setComponentDefaultProvider(enabledProviders.includes(defaultProv) ? defaultProv : enabledProviders[0]);
-			const newSettings = MergeInbuiltModelsWithSettings(
-				settings.aiSettings,
-				info.inbuiltProviderModels,
-				info.inbuiltProviderModelDefaults
-			);
+			const newSettings = MergeInbuiltModelsWithSettings(settings.aiSettings, info.inbuiltProviderModels);
 			setAISettings(newSettings);
 		})();
 	}, []);

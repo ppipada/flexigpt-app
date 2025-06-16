@@ -14,7 +14,7 @@ import {
 	FiXCircle,
 } from 'react-icons/fi';
 
-import type { ModelName, ModelParams, ProviderName } from '@/models/aiprovidermodel';
+import type { ModelName, ModelPreset, ProviderName } from '@/models/aiprovidermodel';
 import { ProviderInfoDescription } from '@/models/aiprovidermodel';
 import type { AISetting, AISettingAttrs, ModelSetting } from '@/models/settingmodel';
 
@@ -32,7 +32,7 @@ interface AISettingsCardProps {
 	settings: AISetting;
 	aiSettings: Record<string, AISetting>;
 	defaultProvider: ProviderName;
-	inbuiltProviderModels: Record<ModelName, ModelParams> | undefined;
+	inbuiltProviderModels: Record<ModelName, ModelPreset> | undefined;
 	onProviderSettingChange: (provider: ProviderName, settings: AISetting) => void;
 	onProviderDelete: (provider: ProviderName) => Promise<void>;
 }

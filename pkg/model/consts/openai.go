@@ -9,181 +9,150 @@ const (
 )
 
 const (
-	GPTO4Mini  spec.ModelName = "o4-mini"
-	GPTO3      spec.ModelName = "o3"
-	GPTO3Mini  spec.ModelName = "o3-mini"
-	GPTO1      spec.ModelName = "o1"
-	GPT41      spec.ModelName = "gpt-4.1"
-	GPT41Mini  spec.ModelName = "gpt-4.1-mini"
-	GPT4OMini  spec.ModelName = "gpt-4o-mini"
-	GPT4O      spec.ModelName = "gpt-4o"
-	GPT4       spec.ModelName = "gpt-4"
-	GPT35Turbo spec.ModelName = "gpt-3.5-turbo"
+	O4Mini    spec.ModelName = "o4-mini"
+	O3Pro     spec.ModelName = "o3-pro"
+	O3        spec.ModelName = "o3"
+	O3Mini    spec.ModelName = "o3-mini"
+	GPT41     spec.ModelName = "gpt-4.1"
+	GPT41Mini spec.ModelName = "gpt-4.1-mini"
+	GPT4O     spec.ModelName = "gpt-4o"
+	GPT4OMini spec.ModelName = "gpt-4o-mini"
 )
 
 const (
-	DisplayNameGPTO4Mini  = "OpenAI o4 mini"
-	DisplayNameGPTO3      = "OpenAI o3"
-	DisplayNameGPTO3Mini  = "OpenAI o3 mini"
-	DisplayNameGPTO1      = "OpenAI o1"
-	DisplayNameGPTO1Mini  = "OpenAI o1 mini"
-	DisplayNameGPT41      = "OpenAI GPT 4.1"
-	DisplayNameGPT41Mini  = "OpenAI GPT 4.1 mini"
-	DisplayNameGPT4OMini  = "OpenAI GPT 4o mini"
-	DisplayNameGPT4O      = "OpenAI GPT 4o"
-	DisplayNameGPT4       = "OpenAI GPT 4"
-	DisplayNameGPT35Turbo = "OpenAI GPT 3.5 turbo"
+	DisplayNameO4Mini    spec.ModelDisplayName = "OpenAI o4 Mini"
+	DisplayNameO3Pro     spec.ModelDisplayName = "OpenAI o3 Pro"
+	DisplayNameO3        spec.ModelDisplayName = "OpenAI o3"
+	DisplayNameO3Mini    spec.ModelDisplayName = "OpenAI o3 Mini"
+	DisplayNameGPT41     spec.ModelDisplayName = "OpenAI GPT 4.1"
+	DisplayNameGPT41Mini spec.ModelDisplayName = "OpenAI GPT 4.1 Mini"
+	DisplayNameGPT4O     spec.ModelDisplayName = "OpenAI GPT 4o"
+	DisplayNameGPT4OMini spec.ModelDisplayName = "OpenAI GPT 4o Mini"
 )
 
-var OpenAIModelDefaults = map[spec.ModelName]spec.ModelDefaults{
-	GPTO4Mini: {
-		DisplayName: DisplayNameGPTO4Mini,
-		IsEnabled:   true,
-	},
-	GPTO3: {
-		DisplayName: DisplayNameGPTO3,
-		IsEnabled:   true,
-	},
-	GPTO3Mini: {
-		DisplayName: DisplayNameGPTO3Mini,
-		IsEnabled:   false,
-	},
-	GPTO1: {
-		DisplayName: DisplayNameGPTO1,
-		IsEnabled:   false,
-	},
-	GPT41: {
-		DisplayName: DisplayNameGPT41,
-		IsEnabled:   true,
-	},
-	GPT41Mini: {
-		DisplayName: DisplayNameGPT41Mini,
-		IsEnabled:   false,
-	},
-	GPT4O: {
-		DisplayName: DisplayNameGPT4O,
-		IsEnabled:   false,
-	},
-	GPT4OMini: {
-		DisplayName: DisplayNameGPT4OMini,
-		IsEnabled:   false,
-	},
-	GPT4: {
-		DisplayName: DisplayNameGPT4,
-		IsEnabled:   false,
-	},
-	GPT35Turbo: {
-		DisplayName: DisplayNameGPT35Turbo,
-		IsEnabled:   false,
-	},
-}
+const (
+	ShortCommandO4Mini    spec.ModelShortCommand = "o4Mini"
+	ShortCommandO3Pro     spec.ModelShortCommand = "o3Pro"
+	ShortCommandO3        spec.ModelShortCommand = "o3"
+	ShortCommandO3Mini    spec.ModelShortCommand = "o3Mini"
+	ShortCommandGPT41     spec.ModelShortCommand = "gpt41"
+	ShortCommandGPT41Mini spec.ModelShortCommand = "gpt41Mini"
+	ShortCommandGPT4O     spec.ModelShortCommand = "gpt4o"
+	ShortCommandGPT4OMini spec.ModelShortCommand = "gpt4oMini"
+)
 
-var OpenAIModels = map[spec.ModelName]spec.ModelParams{
-	GPTO4Mini: {
-		Name:            GPTO4Mini,
-		Stream:          true,
-		MaxPromptLength: 32768,
-		MaxOutputLength: 32768,
+var OpenAIModels = map[spec.ModelName]spec.ModelPreset{
+	O4Mini: {
+		Name:            O4Mini,
+		DisplayName:     DisplayNameO4Mini,
+		IsEnabled:       false,
+		ShortCommand:    ShortCommandO4Mini,
+		Stream:          BoolPtr(true),
+		MaxPromptLength: IntPtr(32768),
+		MaxOutputLength: IntPtr(32768),
 		Temperature:     Float64Ptr(1.0),
 		Reasoning: &spec.ReasoningParams{
 			Type:  spec.ReasoningTypeSingleWithLevels,
 			Level: spec.ReasoningLevelMedium,
 		},
-		SystemPrompt: "Formatting re-enabled.\nAlways output in Markdown format.",
-		Timeout:      120,
+		SystemPrompt: StringPtr("Formatting re-enabled.\nAlways output in Markdown format."),
+		Timeout:      IntPtr(120),
 	},
-	GPTO3: {
-		Name:            GPTO3,
-		MaxPromptLength: 32768,
-		MaxOutputLength: 32768,
+	O3Pro: {
+		Name:            O3Pro,
+		DisplayName:     DisplayNameO3Pro,
+		IsEnabled:       false,
+		ShortCommand:    ShortCommandO3Pro,
+		MaxPromptLength: IntPtr(32768),
+		MaxOutputLength: IntPtr(32768),
 		Temperature:     Float64Ptr(1.0),
-		Stream:          true,
+		Stream:          BoolPtr(true),
 		Reasoning: &spec.ReasoningParams{
 			Type:  spec.ReasoningTypeSingleWithLevels,
 			Level: spec.ReasoningLevelMedium,
 		},
-		SystemPrompt: "Formatting re-enabled.\nAlways output in Markdown format.",
-		Timeout:      120,
+		SystemPrompt: StringPtr("Formatting re-enabled.\nAlways output in Markdown format."),
+		Timeout:      IntPtr(120),
 	},
-	GPTO3Mini: {
-		Name:            GPTO3Mini,
-		Stream:          true,
-		MaxPromptLength: 16384,
-		MaxOutputLength: 16384,
+	O3: {
+		Name:            O3,
+		DisplayName:     DisplayNameO3,
+		IsEnabled:       false,
+		ShortCommand:    ShortCommandO3,
+		MaxPromptLength: IntPtr(32768),
+		MaxOutputLength: IntPtr(32768),
 		Temperature:     Float64Ptr(1.0),
+		Stream:          BoolPtr(true),
 		Reasoning: &spec.ReasoningParams{
 			Type:  spec.ReasoningTypeSingleWithLevels,
 			Level: spec.ReasoningLevelMedium,
 		},
-		SystemPrompt: "Formatting re-enabled.\nAlways output in Markdown format.",
-		Timeout:      120,
+		SystemPrompt: StringPtr("Formatting re-enabled.\nAlways output in Markdown format."),
+		Timeout:      IntPtr(120),
 	},
-	GPTO1: {
-		Name:            GPTO1,
-		MaxPromptLength: 16384,
-		MaxOutputLength: 16384,
+	O3Mini: {
+		Name:            O3Mini,
+		DisplayName:     DisplayNameO3Mini,
+		IsEnabled:       false,
+		ShortCommand:    ShortCommandO3Mini,
+		Stream:          BoolPtr(true),
+		MaxPromptLength: IntPtr(16384),
+		MaxOutputLength: IntPtr(16384),
 		Temperature:     Float64Ptr(1.0),
-		Stream:          true,
 		Reasoning: &spec.ReasoningParams{
 			Type:  spec.ReasoningTypeSingleWithLevels,
 			Level: spec.ReasoningLevelMedium,
 		},
-		SystemPrompt: "Formatting re-enabled.\nAlways output in Markdown format.",
-		Timeout:      120,
+		SystemPrompt: StringPtr("Formatting re-enabled.\nAlways output in Markdown format."),
+		Timeout:      IntPtr(120),
 	},
 	GPT41: {
 		Name:            GPT41,
-		MaxPromptLength: 32768,
-		MaxOutputLength: 32768,
+		DisplayName:     DisplayNameGPT41,
+		IsEnabled:       false,
+		ShortCommand:    ShortCommandGPT41,
+		MaxPromptLength: IntPtr(16384),
+		MaxOutputLength: IntPtr(16384),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
+		Stream:          BoolPtr(true),
+		SystemPrompt:    StringPtr(""),
+		Timeout:         IntPtr(120),
 	},
 	GPT41Mini: {
 		Name:            GPT41Mini,
-		MaxPromptLength: 32768,
-		MaxOutputLength: 32768,
+		DisplayName:     DisplayNameGPT41Mini,
+		IsEnabled:       false,
+		ShortCommand:    ShortCommandGPT41Mini,
+		MaxPromptLength: IntPtr(32768),
+		MaxOutputLength: IntPtr(32768),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
+		Stream:          BoolPtr(true),
+		SystemPrompt:    StringPtr(""),
+		Timeout:         IntPtr(120),
 	},
 	GPT4O: {
 		Name:            GPT4O,
-		MaxPromptLength: 16384,
-		MaxOutputLength: 16384,
+		DisplayName:     DisplayNameGPT4O,
+		IsEnabled:       false,
+		ShortCommand:    ShortCommandGPT4O,
+		MaxPromptLength: IntPtr(16384),
+		MaxOutputLength: IntPtr(16384),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
-	},
-	GPT4: {
-		Name:            GPT4,
-		MaxPromptLength: 4096,
-		MaxOutputLength: 4096,
-		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
-	},
-	GPT35Turbo: {
-		Name:            GPT35Turbo,
-		MaxPromptLength: 2400,
-		MaxOutputLength: 2400,
-		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
+		Stream:          BoolPtr(true),
+		SystemPrompt:    StringPtr(""),
+		Timeout:         IntPtr(120),
 	},
 	GPT4OMini: {
 		Name:            GPT4OMini,
-		MaxPromptLength: 4096,
-		MaxOutputLength: 4096,
+		DisplayName:     DisplayNameGPT4OMini,
+		IsEnabled:       false,
+		ShortCommand:    ShortCommandGPT4OMini,
+		MaxPromptLength: IntPtr(4096),
+		MaxOutputLength: IntPtr(4096),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
+		Stream:          BoolPtr(true),
+		SystemPrompt:    StringPtr(""),
+		Timeout:         IntPtr(120),
 	},
 }
 

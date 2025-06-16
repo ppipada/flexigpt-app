@@ -7,27 +7,23 @@ import (
 const ProviderNameHuggingFace spec.ProviderName = "huggingface"
 
 const (
-	DeepseekCoder13BInstruct spec.ModelName = "deepseek-ai/deepseek-coder-1.3b-instruct"
+	DeepseekCoder13BInstruct             spec.ModelName         = "deepseek-ai/deepseek-coder-1.3b-instruct"
+	DisplayNameDeepseekCoder13BInstruct  spec.ModelDisplayName  = "HF Deepseek Coder 1.3b"
+	ShortCommandDeepseekCoder13BInstruct spec.ModelShortCommand = "hfDSCoder13"
 )
 
-const DisplayNameDeepseekCoder13BInstruct = "HF Deepseek Coder 1.3b"
-
-var HuggingfaceModelDefaults = map[spec.ModelName]spec.ModelDefaults{
-	DeepseekCoder13BInstruct: {
-		DisplayName: DisplayNameDeepseekCoder13BInstruct,
-		IsEnabled:   true,
-	},
-}
-
-var HuggingfaceModels = map[spec.ModelName]spec.ModelParams{
+var HuggingfaceModels = map[spec.ModelName]spec.ModelPreset{
 	DeepseekCoder13BInstruct: {
 		Name:            DeepseekCoder13BInstruct,
-		MaxPromptLength: 4096,
-		MaxOutputLength: 4096,
+		DisplayName:     DisplayNameDeepseekCoder13BInstruct,
+		IsEnabled:       true,
+		ShortCommand:    ShortCommandDeepseekCoder13BInstruct,
+		MaxPromptLength: IntPtr(4096),
+		MaxOutputLength: IntPtr(4096),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
+		Stream:          BoolPtr(true),
+		SystemPrompt:    StringPtr(""),
+		Timeout:         IntPtr(120),
 	},
 }
 

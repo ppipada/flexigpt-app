@@ -156,16 +156,25 @@ export interface CompletionResponse {
 	functionArgs?: any;
 }
 
-export interface ModelDefaults {
+export interface ModelPreset {
+	name: string;
 	displayName: string;
+	shortCommand: string;
 	isEnabled: boolean;
+	stream?: boolean;
+	maxPromptLength?: number;
+	maxOutputLength?: number;
+	temperature?: number;
+	reasoning?: ReasoningParams;
+	systemPrompt?: string;
+	timeout?: number;
+	additionalParameters?: Record<string, any>;
 }
 
 export interface ConfigurationResponse {
 	defaultProvider: ProviderName;
 	configuredProviders: Record<ProviderName, ProviderInfo>;
-	inbuiltProviderModels: Record<ProviderName, Record<ModelName, ModelParams>>;
-	inbuiltProviderModelDefaults: Record<ProviderName, Record<ModelName, ModelDefaults>>;
+	inbuiltProviderModels: Record<ProviderName, Record<ModelName, ModelPreset>>;
 }
 
 export interface AddProviderRequest {

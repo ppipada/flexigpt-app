@@ -12,141 +12,96 @@ const (
 	Claude37Sonnet spec.ModelName = "claude-3-7-sonnet-20250219"
 	Claude35Sonnet spec.ModelName = "claude-3-5-sonnet-20241022"
 	Claude35Haiku  spec.ModelName = "claude-3-5-haiku-20241022"
-	Claude3Opus    spec.ModelName = "claude-3-opus-20240229"
-	Claude3Sonnet  spec.ModelName = "claude-3-sonnet-20240229"
-	Claude3Haiku   spec.ModelName = "claude-3-haiku-20240307"
 )
 
 const (
-	DisplayNameClaude4Opus    = "Claude 4 Opus"
-	DisplayNameClaude4Sonnet  = "Claude 4 Sonnet"
-	DisplayNameClaude37Sonnet = "Claude 3.7 Sonnet"
-	DisplayNameClaude35Sonnet = "Claude 3.5 Sonnet"
-	DisplayNameClaude35Haiku  = "Claude 3.5 Haiku"
-	DisplayNameClaude3Opus    = "Claude 3 Opus"
-	DisplayNameClaude3Sonnet  = "Claude 3 Sonnet"
-	DisplayNameClaude3Haiku   = "Claude 3 Haiku"
+	DisplayNameClaude4Opus    spec.ModelDisplayName = "Claude 4 Opus"
+	DisplayNameClaude4Sonnet  spec.ModelDisplayName = "Claude 4 Sonnet"
+	DisplayNameClaude37Sonnet spec.ModelDisplayName = "Claude 3.7 Sonnet"
+	DisplayNameClaude35Sonnet spec.ModelDisplayName = "Claude 3.5 Sonnet"
+	DisplayNameClaude35Haiku  spec.ModelDisplayName = "Claude 3.5 Haiku"
 )
 
-var AnthropicModelDefaults = map[spec.ModelName]spec.ModelDefaults{
-	Claude4Opus: {
-		DisplayName: DisplayNameClaude4Opus,
-		IsEnabled:   true,
-	},
-	Claude4Sonnet: {
-		DisplayName: DisplayNameClaude4Sonnet,
-		IsEnabled:   true,
-	},
-	Claude37Sonnet: {
-		DisplayName: DisplayNameClaude37Sonnet,
-		IsEnabled:   false,
-	},
-	Claude35Sonnet: {
-		DisplayName: DisplayNameClaude35Sonnet,
-		IsEnabled:   false,
-	},
-	Claude35Haiku: {
-		DisplayName: DisplayNameClaude35Haiku,
-		IsEnabled:   false,
-	},
-	Claude3Opus: {
-		DisplayName: DisplayNameClaude3Opus,
-		IsEnabled:   false,
-	},
-	Claude3Sonnet: {
-		DisplayName: DisplayNameClaude3Sonnet,
-		IsEnabled:   false,
-	},
-	Claude3Haiku: {
-		DisplayName: DisplayNameClaude3Haiku,
-		IsEnabled:   false,
-	},
-}
+const (
+	ShortCommandClaude4Opus    spec.ModelShortCommand = "opus4"
+	ShortCommandClaude4Sonnet  spec.ModelShortCommand = "sonnet4"
+	ShortCommandClaude37Sonnet spec.ModelShortCommand = "sonnet37"
+	ShortCommandClaude35Sonnet spec.ModelShortCommand = "sonnet35"
+	ShortCommandClaude35Haiku  spec.ModelShortCommand = "haiku35"
+)
 
-var AnthropicModels = map[spec.ModelName]spec.ModelParams{
+var AnthropicModels = map[spec.ModelName]spec.ModelPreset{
 	Claude4Opus: {
 		Name:            Claude4Opus,
-		MaxPromptLength: 65536,
-		MaxOutputLength: 16384,
+		DisplayName:     DisplayNameClaude4Opus,
+		IsEnabled:       true,
+		ShortCommand:    ShortCommandClaude4Opus,
+		MaxPromptLength: IntPtr(65536),
+		MaxOutputLength: IntPtr(16384),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
+		Stream:          BoolPtr(true),
 		Reasoning: &spec.ReasoningParams{
 			Type:   spec.ReasoningTypeHybridWithTokens,
 			Tokens: 1024,
 		},
-		SystemPrompt: "",
-		Timeout:      120,
+		SystemPrompt: StringPtr(""),
+		Timeout:      IntPtr(120),
 	},
 	Claude4Sonnet: {
 		Name:            Claude4Sonnet,
-		MaxPromptLength: 65536,
-		MaxOutputLength: 16384,
+		DisplayName:     DisplayNameClaude4Sonnet,
+		IsEnabled:       true,
+		ShortCommand:    ShortCommandClaude4Sonnet,
+		MaxPromptLength: IntPtr(65536),
+		MaxOutputLength: IntPtr(16384),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
+		Stream:          BoolPtr(true),
 		Reasoning: &spec.ReasoningParams{
 			Type:   spec.ReasoningTypeHybridWithTokens,
 			Tokens: 1024,
 		},
-		SystemPrompt: "",
-		Timeout:      120,
+		SystemPrompt: StringPtr(""),
+		Timeout:      IntPtr(120),
 	},
 	Claude37Sonnet: {
 		Name:            Claude37Sonnet,
-		MaxPromptLength: 65536,
-		MaxOutputLength: 16384,
+		DisplayName:     DisplayNameClaude37Sonnet,
+		IsEnabled:       false,
+		ShortCommand:    ShortCommandClaude37Sonnet,
+		MaxPromptLength: IntPtr(65536),
+		MaxOutputLength: IntPtr(16384),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
+		Stream:          BoolPtr(true),
 		Reasoning: &spec.ReasoningParams{
 			Type:   spec.ReasoningTypeHybridWithTokens,
 			Tokens: 1024,
 		},
-		SystemPrompt: "",
-		Timeout:      120,
+		SystemPrompt: StringPtr(""),
+		Timeout:      IntPtr(120),
 	},
 	Claude35Sonnet: {
 		Name:            Claude35Sonnet,
-		MaxPromptLength: 16384,
-		MaxOutputLength: 8192,
+		DisplayName:     DisplayNameClaude35Sonnet,
+		IsEnabled:       false,
+		ShortCommand:    ShortCommandClaude35Sonnet,
+		MaxPromptLength: IntPtr(16384),
+		MaxOutputLength: IntPtr(8192),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
+		Stream:          BoolPtr(true),
+		SystemPrompt:    StringPtr(""),
+		Timeout:         IntPtr(120),
 	},
 	Claude35Haiku: {
 		Name:            Claude35Haiku,
-		MaxPromptLength: 16384,
-		MaxOutputLength: 8192,
+		DisplayName:     DisplayNameClaude35Haiku,
+		IsEnabled:       false,
+		ShortCommand:    ShortCommandClaude35Haiku,
+		MaxPromptLength: IntPtr(16384),
+		MaxOutputLength: IntPtr(8192),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
-	},
-	Claude3Opus: {
-		Name:            Claude3Opus,
-		MaxPromptLength: 16384,
-		MaxOutputLength: 4096,
-		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
-	},
-	Claude3Sonnet: {
-		Name:            Claude3Sonnet,
-		MaxPromptLength: 8192,
-		MaxOutputLength: 4096,
-		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
-	},
-	Claude3Haiku: {
-		Name:            Claude3Haiku,
-		MaxPromptLength: 8192,
-		MaxOutputLength: 4096,
-		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
+		Stream:          BoolPtr(true),
+		SystemPrompt:    StringPtr(""),
+		Timeout:         IntPtr(120),
 	},
 }
 

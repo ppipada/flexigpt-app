@@ -1,9 +1,9 @@
 import {
 	type AddProviderRequest,
 	DefaultModelParams,
-	type ModelDefaults,
 	type ModelName,
 	type ModelParams,
+	type ModelPreset,
 	type ProviderName,
 	type ReasoningParams,
 } from '@/models/aiprovidermodel';
@@ -62,61 +62,61 @@ export async function SetAISettingAttrs(providerName: ProviderName, aiSettingAtt
 function mergeDefaultsModelSettingAndInbuilt(
 	providerName: ProviderName,
 	modelName: ModelName,
-	inbuiltProviderModels: Record<ProviderName, Record<ModelName, ModelParams>>,
+	inbuiltProviderModels: Record<ProviderName, Record<ModelName, ModelPreset>>,
 	modelSetting: ModelSetting
 ): ModelParams {
-	let inbuiltModelParams: ModelParams | undefined = undefined;
+	let inbuiltModelPreset: ModelPreset | undefined = undefined;
 	if (providerName in inbuiltProviderModels && modelName in inbuiltProviderModels[providerName]) {
-		inbuiltModelParams = inbuiltProviderModels[providerName][modelName];
+		inbuiltModelPreset = inbuiltProviderModels[providerName][modelName];
 	}
 
 	let temperature = DefaultModelParams.temperature ?? 0.1;
 	if (typeof modelSetting.temperature !== 'undefined') {
 		temperature = modelSetting.temperature;
-	} else if (inbuiltModelParams) {
-		temperature = inbuiltModelParams.temperature ?? 0.1;
+	} else if (inbuiltModelPreset && inbuiltModelPreset.temperature) {
+		temperature = inbuiltModelPreset.temperature;
 	}
 
 	let stream = DefaultModelParams.stream;
 	if (typeof modelSetting.stream !== 'undefined') {
 		stream = modelSetting.stream;
-	} else if (inbuiltModelParams) {
-		stream = inbuiltModelParams.stream;
+	} else if (inbuiltModelPreset && inbuiltModelPreset.stream) {
+		stream = inbuiltModelPreset.stream;
 	}
 
 	let maxPromptLength = DefaultModelParams.maxPromptLength;
 	if (typeof modelSetting.maxPromptLength !== 'undefined') {
 		maxPromptLength = modelSetting.maxPromptLength;
-	} else if (inbuiltModelParams) {
-		maxPromptLength = inbuiltModelParams.maxPromptLength;
+	} else if (inbuiltModelPreset && inbuiltModelPreset.maxPromptLength) {
+		maxPromptLength = inbuiltModelPreset.maxPromptLength;
 	}
 
 	let maxOutputLength = DefaultModelParams.maxOutputLength;
 	if (typeof modelSetting.maxOutputLength !== 'undefined') {
 		maxOutputLength = modelSetting.maxOutputLength;
-	} else if (inbuiltModelParams) {
-		maxOutputLength = inbuiltModelParams.maxOutputLength;
+	} else if (inbuiltModelPreset && inbuiltModelPreset.maxOutputLength) {
+		maxOutputLength = inbuiltModelPreset.maxOutputLength;
 	}
 
 	let reasoning: ReasoningParams | undefined = undefined;
 	if (typeof modelSetting.reasoning !== 'undefined') {
 		reasoning = modelSetting.reasoning;
-	} else if (inbuiltModelParams) {
-		reasoning = inbuiltModelParams.reasoning;
+	} else if (inbuiltModelPreset) {
+		reasoning = inbuiltModelPreset.reasoning;
 	}
 
 	let systemPrompt = DefaultModelParams.systemPrompt;
 	if (typeof modelSetting.systemPrompt !== 'undefined') {
 		systemPrompt = modelSetting.systemPrompt;
-	} else if (inbuiltModelParams) {
-		systemPrompt = inbuiltModelParams.systemPrompt;
+	} else if (inbuiltModelPreset && inbuiltModelPreset.systemPrompt) {
+		systemPrompt = inbuiltModelPreset.systemPrompt;
 	}
 
 	let timeout = DefaultModelParams.timeout;
 	if (typeof modelSetting.timeout !== 'undefined') {
 		timeout = modelSetting.timeout;
-	} else if (inbuiltModelParams) {
-		timeout = inbuiltModelParams.timeout;
+	} else if (inbuiltModelPreset && inbuiltModelPreset.timeout) {
+		timeout = inbuiltModelPreset.timeout;
 	}
 
 	let additionalParameters = { ...DefaultModelParams.additionalParameters };
@@ -149,11 +149,7 @@ export async function GetChatInputOptions(): Promise<{ allOptions: ChatOptions[]
 		const inbuiltProviderModels = info.inbuiltProviderModels;
 
 		const onlySettings = await settingstoreAPI.getAllSettings();
-		const mergedSettings = MergeInbuiltModelsWithSettings(
-			onlySettings.aiSettings,
-			inbuiltProviderModels,
-			info.inbuiltProviderModelDefaults
-		);
+		const mergedSettings = MergeInbuiltModelsWithSettings(onlySettings.aiSettings, inbuiltProviderModels);
 		// Initialize default option and input models array
 		let defaultOption: ChatOptions | undefined;
 		const inputModels: ChatOptions[] = [];
@@ -249,8 +245,7 @@ export async function PopulateModelSettingDefaults(
 
 export function MergeInbuiltModelsWithSettings(
 	aiSettings: Record<ProviderName, AISetting>,
-	inbuiltProviderModels: Record<ProviderName, Record<ModelName, ModelParams>>,
-	inbuiltProviderModelDefaults: Record<ProviderName, Record<ModelName, ModelDefaults>>
+	inbuiltProviderModels: Record<ProviderName, Record<ModelName, ModelPreset>>
 ): Record<ProviderName, AISetting> {
 	const newSettings = { ...aiSettings };
 
@@ -267,8 +262,8 @@ export function MergeInbuiltModelsWithSettings(
 			}
 
 			newSettings[provider].modelSettings[model] = {
-				displayName: model,
-				isEnabled: false,
+				displayName: inbuiltProviderModels[provider][model].displayName,
+				isEnabled: inbuiltProviderModels[provider][model].isEnabled,
 				stream: inbuiltProviderModels[provider][model].stream,
 				maxPromptLength: inbuiltProviderModels[provider][model].maxPromptLength,
 				maxOutputLength: inbuiltProviderModels[provider][model].maxOutputLength,
@@ -278,11 +273,6 @@ export function MergeInbuiltModelsWithSettings(
 				timeout: inbuiltProviderModels[provider][model].timeout,
 				additionalParameters: inbuiltProviderModels[provider][model].additionalParameters,
 			};
-			if (provider in inbuiltProviderModelDefaults && model in inbuiltProviderModelDefaults[provider]) {
-				newSettings[provider].modelSettings[model].displayName =
-					inbuiltProviderModelDefaults[provider][model].displayName;
-				newSettings[provider].modelSettings[model].isEnabled = inbuiltProviderModelDefaults[provider][model].isEnabled;
-			}
 		}
 	}
 

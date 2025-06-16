@@ -15,7 +15,7 @@ var DefaultAISettings = map[modelSpec.ProviderName]AISetting{
 		ChatCompletionPathPrefix: modelConsts.AnthropicProviderInfo.ChatCompletionPathPrefix,
 		ModelSettings: map[modelSpec.ModelName]ModelSetting{
 			modelConsts.Claude4Sonnet: {
-				DisplayName: modelConsts.DisplayNameClaude4Sonnet,
+				DisplayName: string(modelConsts.DisplayNameClaude4Sonnet),
 				IsEnabled:   true,
 			},
 		},
@@ -29,7 +29,7 @@ var DefaultAISettings = map[modelSpec.ProviderName]AISetting{
 		ChatCompletionPathPrefix: modelConsts.DeepseekProviderInfo.ChatCompletionPathPrefix,
 		ModelSettings: map[modelSpec.ModelName]ModelSetting{
 			modelConsts.DeepseekChat: {
-				DisplayName: modelConsts.DisplayNameDeepseekChat,
+				DisplayName: string(modelConsts.DisplayNameDeepseekChat),
 				IsEnabled:   true,
 			},
 		},
@@ -42,7 +42,7 @@ var DefaultAISettings = map[modelSpec.ProviderName]AISetting{
 		ChatCompletionPathPrefix: modelConsts.GoogleProviderInfo.ChatCompletionPathPrefix,
 		ModelSettings: map[modelSpec.ModelName]ModelSetting{
 			modelConsts.Gemini25Flash: {
-				DisplayName: modelConsts.DisplayNameGemini25Flash,
+				DisplayName: string(modelConsts.DisplayNameGemini25Flash),
 				IsEnabled:   true,
 			},
 		},
@@ -55,7 +55,7 @@ var DefaultAISettings = map[modelSpec.ProviderName]AISetting{
 		ChatCompletionPathPrefix: modelConsts.HuggingfaceProviderInfo.ChatCompletionPathPrefix,
 		ModelSettings: map[modelSpec.ModelName]ModelSetting{
 			modelConsts.DeepseekCoder13BInstruct: {
-				DisplayName: modelConsts.DisplayNameDeepseekCoder13BInstruct,
+				DisplayName: string(modelConsts.DisplayNameDeepseekCoder13BInstruct),
 				IsEnabled:   true,
 			},
 		},
@@ -63,12 +63,12 @@ var DefaultAISettings = map[modelSpec.ProviderName]AISetting{
 	modelConsts.ProviderNameLlamaCPP: {
 		IsEnabled:                false,
 		APIKey:                   modelConsts.LlamacppProviderInfo.APIKey,
-		DefaultModel:             modelConsts.Llama31,
+		DefaultModel:             modelConsts.Llama4Scout,
 		Origin:                   modelConsts.LlamacppProviderInfo.Origin,
 		ChatCompletionPathPrefix: modelConsts.LlamacppProviderInfo.ChatCompletionPathPrefix,
 		ModelSettings: map[modelSpec.ModelName]ModelSetting{
-			modelConsts.Llama31: {
-				DisplayName: modelConsts.DisplayNameLlama31,
+			modelConsts.Llama4Scout: {
+				DisplayName: string(modelConsts.DisplayNameLlama4Scout),
 				IsEnabled:   true,
 			},
 		},
@@ -81,7 +81,7 @@ var DefaultAISettings = map[modelSpec.ProviderName]AISetting{
 		ChatCompletionPathPrefix: modelConsts.LlamacppProviderInfo.ChatCompletionPathPrefix,
 		ModelSettings: map[modelSpec.ModelName]ModelSetting{
 			modelConsts.GPT41: {
-				DisplayName: modelConsts.DisplayNameGPT41,
+				DisplayName: string(modelConsts.DisplayNameGPT41),
 				IsEnabled:   true,
 			},
 		},

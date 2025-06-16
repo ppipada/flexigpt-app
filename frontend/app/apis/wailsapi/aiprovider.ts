@@ -4,9 +4,9 @@ import type {
 	CompletionResponse,
 	ConfigurationResponse,
 	IProviderSetAPI,
-	ModelDefaults,
 	ModelName,
 	ModelParams,
+	ModelPreset,
 	ProviderInfo,
 	ProviderName,
 } from '@/models/aiprovidermodel';
@@ -38,14 +38,12 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		if (
 			!('configuredProviders' in configInfo) ||
 			!('defaultProvider' in configInfo) ||
-			!('inbuiltProviderModels' in configInfo) ||
-			!('inbuiltProviderModelDefaults' in configInfo)
+			!('inbuiltProviderModels' in configInfo)
 		) {
 			return {
 				defaultProvider: '',
 				configuredProviders: {},
 				inbuiltProviderModels: {},
-				inbuiltProviderModelDefaults: {},
 			};
 		}
 
@@ -58,11 +56,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 			configuredProviders: providerInfoDict,
 			inbuiltProviderModels: configInfo['inbuiltProviderModels'] as Record<
 				ProviderName,
-				Record<ModelName, ModelParams>
-			>,
-			inbuiltProviderModelDefaults: configInfo['inbuiltProviderModelDefaults'] as Record<
-				ProviderName,
-				Record<ModelName, ModelDefaults>
+				Record<ModelName, ModelPreset>
 			>,
 		};
 	}

@@ -7,44 +7,59 @@ import (
 const ProviderNameLlamaCPP spec.ProviderName = "llamacpp"
 
 const (
-	Llama3  spec.ModelName = "llama3"
-	Llama31 spec.ModelName = "llama3.1"
+	Llama4Behemoth spec.ModelName = "llama4-behemoth"
+	Llama4Maverick spec.ModelName = "llama4-maverick"
+	Llama4Scout    spec.ModelName = "llama4-scout"
 )
 
 const (
-	DisplayNameLlama3  = "Llama 3"
-	DisplayNameLlama31 = "Llama 3.1"
+	DisplayNameLlama4Behemoth spec.ModelDisplayName = "LLama 4 Behemoth"
+	DisplayNameLlama4Maverick spec.ModelDisplayName = "LLama 4 Maverick"
+	DisplayNameLlama4Scout    spec.ModelDisplayName = "LLama 4 Scout"
 )
 
-var LlamacppModelDefaults = map[spec.ModelName]spec.ModelDefaults{
-	Llama31: {
-		DisplayName: DisplayNameLlama31,
-		IsEnabled:   true,
-	},
-	Llama3: {
-		DisplayName: DisplayNameLlama3,
-		IsEnabled:   true,
-	},
-}
+const (
+	ShortCommandLlama4Behemoth spec.ModelShortCommand = "llama4Behemoth"
+	ShortCommandLlama4Maverick spec.ModelShortCommand = "llama4Maverick"
+	ShortCommandLlama4Scout    spec.ModelShortCommand = "llama4Scout"
+)
 
-var LlamacppModels = map[spec.ModelName]spec.ModelParams{
-	Llama3: {
-		Name:            Llama3,
-		MaxPromptLength: 4096,
-		MaxOutputLength: 4096,
+var LlamacppModels = map[spec.ModelName]spec.ModelPreset{
+	Llama4Behemoth: {
+		Name:            Llama4Behemoth,
+		DisplayName:     DisplayNameLlama4Behemoth,
+		IsEnabled:       true,
+		ShortCommand:    ShortCommandLlama4Behemoth,
+		MaxPromptLength: IntPtr(4096),
+		MaxOutputLength: IntPtr(4096),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
+		Stream:          BoolPtr(true),
+		SystemPrompt:    StringPtr(""),
+		Timeout:         IntPtr(120),
 	},
-	Llama31: {
-		Name:            Llama31,
-		MaxPromptLength: 4096,
-		MaxOutputLength: 4096,
+	Llama4Maverick: {
+		Name:            Llama4Maverick,
+		DisplayName:     DisplayNameLlama4Maverick,
+		IsEnabled:       true,
+		ShortCommand:    ShortCommandLlama4Maverick,
+		MaxPromptLength: IntPtr(4096),
+		MaxOutputLength: IntPtr(4096),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
+		Stream:          BoolPtr(true),
+		SystemPrompt:    StringPtr(""),
+		Timeout:         IntPtr(120),
+	},
+	Llama4Scout: {
+		Name:            Llama4Scout,
+		DisplayName:     DisplayNameLlama4Scout,
+		IsEnabled:       true,
+		ShortCommand:    ShortCommandLlama4Scout,
+		MaxPromptLength: IntPtr(4096),
+		MaxOutputLength: IntPtr(4096),
+		Temperature:     Float64Ptr(0.1),
+		Stream:          BoolPtr(true),
+		SystemPrompt:    StringPtr(""),
+		Timeout:         IntPtr(120),
 	},
 }
 

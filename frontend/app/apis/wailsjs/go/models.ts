@@ -337,7 +337,6 @@ export namespace inference {
 	    defaultProvider: string;
 	    configuredProviders: spec.ProviderInfo[];
 	    inbuiltProviderModels: Record<string, any>;
-	    inbuiltProviderModelDefaults: Record<string, any>;
 	
 	    static createFrom(source: any = {}) {
 	        return new GetConfigurationInfoResponseBody(source);
@@ -348,7 +347,6 @@ export namespace inference {
 	        this.defaultProvider = source["defaultProvider"];
 	        this.configuredProviders = this.convertValues(source["configuredProviders"], spec.ProviderInfo);
 	        this.inbuiltProviderModels = source["inbuiltProviderModels"];
-	        this.inbuiltProviderModelDefaults = source["inbuiltProviderModelDefaults"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1172,20 +1170,6 @@ export namespace spec {
 		}
 	}
 	
-	export class ModelDefaults {
-	    displayName: string;
-	    isEnabled: boolean;
-	
-	    static createFrom(source: any = {}) {
-	        return new ModelDefaults(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.displayName = source["displayName"];
-	        this.isEnabled = source["isEnabled"];
-	    }
-	}
 	export class ModelParams {
 	    name: string;
 	    stream: boolean;
@@ -1204,6 +1188,58 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
+	        this.stream = source["stream"];
+	        this.maxPromptLength = source["maxPromptLength"];
+	        this.maxOutputLength = source["maxOutputLength"];
+	        this.temperature = source["temperature"];
+	        this.reasoning = this.convertValues(source["reasoning"], ReasoningParams);
+	        this.systemPrompt = source["systemPrompt"];
+	        this.timeout = source["timeout"];
+	        this.additionalParameters = source["additionalParameters"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ModelPreset {
+	    name: string;
+	    displayName: string;
+	    shortCommand: string;
+	    isEnabled: boolean;
+	    stream?: boolean;
+	    maxPromptLength?: number;
+	    maxOutputLength?: number;
+	    temperature?: number;
+	    reasoning?: ReasoningParams;
+	    systemPrompt?: string;
+	    timeout?: number;
+	    additionalParameters?: Record<string, any>;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelPreset(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.displayName = source["displayName"];
+	        this.shortCommand = source["shortCommand"];
+	        this.isEnabled = source["isEnabled"];
 	        this.stream = source["stream"];
 	        this.maxPromptLength = source["maxPromptLength"];
 	        this.maxOutputLength = source["maxOutputLength"];

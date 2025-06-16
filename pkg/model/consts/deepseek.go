@@ -12,43 +12,43 @@ const (
 )
 
 const (
-	DisplayNameDeepseekChat     = "Deepseek Chat"
-	DisplayNameDeepseekReasoner = "Deepseek Reasoner"
+	DisplayNameDeepseekChat     spec.ModelDisplayName = "Deepseek Chat"
+	DisplayNameDeepseekReasoner spec.ModelDisplayName = "Deepseek Reasoner"
 )
 
-var DeepseekModelDefaults = map[spec.ModelName]spec.ModelDefaults{
-	DeepseekChat: {
-		DisplayName: DisplayNameDeepseekChat,
-		IsEnabled:   true,
-	},
-	DeepseekReasoner: {
-		DisplayName: DisplayNameDeepseekReasoner,
-		IsEnabled:   true,
-	},
-}
+const (
+	ShortCommandDeepseekChat     spec.ModelShortCommand = "dsChat"
+	ShortCommandDeepseekReasoner spec.ModelShortCommand = "dsReason"
+)
 
-var DeepseekModels = map[spec.ModelName]spec.ModelParams{
+var DeepseekModels = map[spec.ModelName]spec.ModelPreset{
 	DeepseekChat: {
 		Name:            DeepseekChat,
-		MaxPromptLength: 8192,
-		MaxOutputLength: 8192,
+		DisplayName:     DisplayNameDeepseekChat,
+		IsEnabled:       true,
+		ShortCommand:    ShortCommandDeepseekChat,
+		MaxPromptLength: IntPtr(8192),
+		MaxOutputLength: IntPtr(8192),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          true,
-		SystemPrompt:    "",
-		Timeout:         120,
+		Stream:          BoolPtr(true),
+		SystemPrompt:    StringPtr(""),
+		Timeout:         IntPtr(120),
 	},
 	DeepseekReasoner: {
 		Name:            DeepseekChat,
-		MaxPromptLength: 8192,
-		MaxOutputLength: 8192,
+		DisplayName:     DisplayNameDeepseekReasoner,
+		IsEnabled:       true,
+		ShortCommand:    ShortCommandDeepseekReasoner,
+		MaxPromptLength: IntPtr(8192),
+		MaxOutputLength: IntPtr(8192),
 		Temperature:     Float64Ptr(1.0),
-		Stream:          true,
+		Stream:          BoolPtr(true),
 		Reasoning: &spec.ReasoningParams{
 			Type:  spec.ReasoningTypeSingleWithLevels,
 			Level: spec.ReasoningLevelMedium,
 		},
-		SystemPrompt: "",
-		Timeout:      120,
+		SystemPrompt: StringPtr(""),
+		Timeout:      IntPtr(120),
 	},
 }
 
