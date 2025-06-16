@@ -590,8 +590,10 @@ export namespace spec {
 	        this.tokens = source["tokens"];
 	    }
 	}
-	export class ModelSetting {
+	export class ModelPreset {
+	    name: string;
 	    displayName: string;
+	    shortCommand: string;
 	    isEnabled: boolean;
 	    stream?: boolean;
 	    maxPromptLength?: number;
@@ -603,12 +605,14 @@ export namespace spec {
 	    additionalParameters?: Record<string, any>;
 	
 	    static createFrom(source: any = {}) {
-	        return new ModelSetting(source);
+	        return new ModelPreset(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
 	        this.displayName = source["displayName"];
+	        this.shortCommand = source["shortCommand"];
 	        this.isEnabled = source["isEnabled"];
 	        this.stream = source["stream"];
 	        this.maxPromptLength = source["maxPromptLength"];
@@ -644,7 +648,7 @@ export namespace spec {
 	    defaultModel: string;
 	    origin: string;
 	    chatCompletionPathPrefix: string;
-	    modelSettings: Record<string, ModelSetting>;
+	    modelPresets: Record<string, ModelPreset>;
 	
 	    static createFrom(source: any = {}) {
 	        return new AISetting(source);
@@ -657,7 +661,7 @@ export namespace spec {
 	        this.defaultModel = source["defaultModel"];
 	        this.origin = source["origin"];
 	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
-	        this.modelSettings = this.convertValues(source["modelSettings"], ModelSetting, true);
+	        this.modelPresets = this.convertValues(source["modelPresets"], ModelPreset, true);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -722,20 +726,20 @@ export namespace spec {
 	
 	    }
 	}
-	export class AddModelSettingRequest {
+	export class AddModelPresetRequest {
 	    ProviderName: string;
 	    ModelName: string;
-	    Body?: ModelSetting;
+	    Body?: ModelPreset;
 	
 	    static createFrom(source: any = {}) {
-	        return new AddModelSettingRequest(source);
+	        return new AddModelPresetRequest(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ProviderName = source["ProviderName"];
 	        this.ModelName = source["ModelName"];
-	        this.Body = this.convertValues(source["Body"], ModelSetting);
+	        this.Body = this.convertValues(source["Body"], ModelPreset);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -756,11 +760,11 @@ export namespace spec {
 		    return a;
 		}
 	}
-	export class AddModelSettingResponse {
+	export class AddModelPresetResponse {
 	
 	
 	    static createFrom(source: any = {}) {
-	        return new AddModelSettingResponse(source);
+	        return new AddModelPresetResponse(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -949,12 +953,12 @@ export namespace spec {
 	
 	    }
 	}
-	export class DeleteModelSettingRequest {
+	export class DeleteModelPresetRequest {
 	    ProviderName: string;
 	    ModelName: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new DeleteModelSettingRequest(source);
+	        return new DeleteModelPresetRequest(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -963,11 +967,11 @@ export namespace spec {
 	        this.ModelName = source["ModelName"];
 	    }
 	}
-	export class DeleteModelSettingResponse {
+	export class DeleteModelPresetResponse {
 	
 	
 	    static createFrom(source: any = {}) {
-	        return new DeleteModelSettingResponse(source);
+	        return new DeleteModelPresetResponse(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -1188,58 +1192,6 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
-	        this.stream = source["stream"];
-	        this.maxPromptLength = source["maxPromptLength"];
-	        this.maxOutputLength = source["maxOutputLength"];
-	        this.temperature = source["temperature"];
-	        this.reasoning = this.convertValues(source["reasoning"], ReasoningParams);
-	        this.systemPrompt = source["systemPrompt"];
-	        this.timeout = source["timeout"];
-	        this.additionalParameters = source["additionalParameters"];
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class ModelPreset {
-	    name: string;
-	    displayName: string;
-	    shortCommand: string;
-	    isEnabled: boolean;
-	    stream?: boolean;
-	    maxPromptLength?: number;
-	    maxOutputLength?: number;
-	    temperature?: number;
-	    reasoning?: ReasoningParams;
-	    systemPrompt?: string;
-	    timeout?: number;
-	    additionalParameters?: Record<string, any>;
-	
-	    static createFrom(source: any = {}) {
-	        return new ModelPreset(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.name = source["name"];
-	        this.displayName = source["displayName"];
-	        this.shortCommand = source["shortCommand"];
-	        this.isEnabled = source["isEnabled"];
 	        this.stream = source["stream"];
 	        this.maxPromptLength = source["maxPromptLength"];
 	        this.maxOutputLength = source["maxOutputLength"];

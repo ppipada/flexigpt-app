@@ -15,7 +15,7 @@ export interface DropdownItem {
  * @public
  */
 export interface DropdownProps<K extends string> {
-	// The mapped dropdownItems (like modelSettings or aiSettings).
+	// The mapped dropdownItems (like modelPresets or aiSettings).
 	dropdownItems: Record<K, DropdownItem>;
 	//  The currently selected key (e.g. 'gpt-3.5' or 'openai').
 	selectedKey: K;

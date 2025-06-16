@@ -2,8 +2,8 @@ import { type FC, useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiPlus, FiX } from 'react-icons/fi';
 
-import { type ProviderName } from '@/models/aiprovidermodel';
-import type { AISetting, ModelSetting } from '@/models/settingmodel';
+import { type ModelPreset, type ProviderName } from '@/models/aiprovidermodel';
+import type { AISetting } from '@/models/settingmodel';
 
 import ModifyModelModal from '@/settings/model_modify_modal';
 
@@ -35,7 +35,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 		defaultModelName: '',
 	});
 
-	const [modelSettings, setModelSettings] = useState<Record<string, ModelSetting>>({});
+	const [modelPreset, setModelPreset] = useState<Record<string, ModelPreset>>({});
 	const [isModifyModelModalOpen, setIsModifyModelModalOpen] = useState(false);
 
 	const [errors, setErrors] = useState<{
@@ -56,7 +56,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 				chatCompletionPathPrefix: '',
 				defaultModelName: '',
 			});
-			setModelSettings({});
+			setModelPreset({});
 			setIsModifyModelModalOpen(false);
 			setErrors({});
 		}
@@ -118,9 +118,9 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 		setIsModifyModelModalOpen(true);
 	};
 
-	const handleModifyModelSubmit = (modelName: string, modelData: ModelSetting) => {
+	const handleModifyModelSubmit = (modelName: string, modelData: ModelPreset) => {
 		setFormData(prev => ({ ...prev, defaultModelName: modelName }));
-		setModelSettings({ [modelName]: modelData });
+		setModelPreset({ [modelName]: modelData });
 		setIsModifyModelModalOpen(false);
 	};
 
@@ -162,7 +162,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 			origin: formData.origin,
 			chatCompletionPathPrefix: formData.chatCompletionPathPrefix,
 			defaultModel: formData.defaultModelName,
-			modelSettings,
+			modelPresets: modelPreset,
 		};
 
 		onSubmit(formData.providerName, newProviderSettings);
@@ -365,8 +365,8 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 					onSubmit={handleModifyModelSubmit}
 					providerName={formData.providerName}
 					initialModelName={formData.defaultModelName || undefined}
-					initialData={formData.defaultModelName ? modelSettings[formData.defaultModelName] : undefined}
-					existingModels={modelSettings}
+					initialData={formData.defaultModelName ? modelPreset[formData.defaultModelName] : undefined}
+					existingModels={modelPreset}
 				/>
 			)}
 		</dialog>

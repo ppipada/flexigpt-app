@@ -16,7 +16,7 @@ import {
 
 import type { ModelName, ModelPreset, ProviderName } from '@/models/aiprovidermodel';
 import { ProviderInfoDescription } from '@/models/aiprovidermodel';
-import type { AISetting, AISettingAttrs, ModelSetting } from '@/models/settingmodel';
+import type { AISetting, AISettingAttrs } from '@/models/settingmodel';
 
 import { settingstoreAPI } from '@/apis/baseapi';
 import { SetAISettingAPIKey, SetAISettingAttrs } from '@/apis/settingstore_helper';
@@ -51,7 +51,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	const [showModal, setShowModal] = useState(false);
 	const [localSettings, setLocalSettings] = useState<AISetting>(settings);
 
-	const [modelSettings, setModelSettings] = useState<Record<ModelName, ModelSetting>>(settings.modelSettings);
+	const [modelPreset, setModelPreset] = useState<Record<ModelName, ModelPreset>>(settings.modelPresets);
 	const [isModifyModelModalOpen, setIsModifyModelModalOpen] = useState(false);
 	const [selectedModelName, setSelectedModelName] = useState<ModelName | null>(null);
 	const [isDeleteModelModalOpen, setIsDeleteModelModalOpen] = useState(false);
@@ -64,7 +64,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	useEffect(() => {
 		setIsEnabled(!!settings.isEnabled);
 		setLocalSettings(settings);
-		setModelSettings(settings.modelSettings);
+		setModelPreset(settings.modelPresets);
 	}, [settings]);
 
 	const toggleExpand = () => {
@@ -99,7 +99,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	};
 
 	const toggleModelEnable = async (modelName: ModelName) => {
-		const model = modelSettings[modelName];
+		const model = modelPreset[modelName];
 
 		// If we are about to disable the default model, deny the action.
 		if (model.isEnabled && modelName === localSettings.defaultModel) {
@@ -110,14 +110,14 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 
 		// Otherwise proceed with toggling
 		const updatedModel = { ...model, isEnabled: !model.isEnabled };
-		const updatedModels = { ...modelSettings, [modelName]: updatedModel };
+		const updatedModels = { ...modelPreset, [modelName]: updatedModel };
 
 		// Update local state
-		setModelSettings(updatedModels);
-		updateLocalSettings('modelSettings', updatedModels);
+		setModelPreset(updatedModels);
+		updateLocalSettings('modelPresets', updatedModels);
 
 		// Persist to a backend
-		await settingstoreAPI.addModelSetting(provider, modelName, updatedModel);
+		await settingstoreAPI.addModelPreset(provider, modelName, updatedModel);
 	};
 
 	// Handle setting changes and save to backend
@@ -155,7 +155,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 	};
 
 	const isModelReasoningSupport = (modelName: ModelName) => {
-		if (modelSettings[modelName].reasoning) {
+		if (modelPreset[modelName].reasoning) {
 			return true;
 		}
 
@@ -184,11 +184,11 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 			return;
 		}
 
-		const updatedModels = Object.fromEntries(Object.entries(modelSettings).filter(([key]) => key !== modelName));
+		const updatedModels = Object.fromEntries(Object.entries(modelPreset).filter(([key]) => key !== modelName));
 
-		setModelSettings(updatedModels);
-		updateLocalSettings('modelSettings', updatedModels);
-		await settingstoreAPI.deleteModelSetting(provider, modelName);
+		setModelPreset(updatedModels);
+		updateLocalSettings('modelPresets', updatedModels);
+		await settingstoreAPI.deleteModelPreset(provider, modelName);
 
 		setIsDeleteModelModalOpen(false);
 		setSelectedModelName(null);
@@ -199,12 +199,12 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 		setSelectedModelName(null);
 	};
 
-	const handleModifyModelSubmit = async (modelName: ModelName, modelData: ModelSetting) => {
-		const updatedModels = { ...modelSettings };
+	const handleModifyModelSubmit = async (modelName: ModelName, modelData: ModelPreset) => {
+		const updatedModels = { ...modelPreset };
 		updatedModels[modelName] = modelData;
-		setModelSettings(updatedModels);
-		updateLocalSettings('modelSettings', updatedModels);
-		await settingstoreAPI.addModelSetting(provider, modelName, modelData);
+		setModelPreset(updatedModels);
+		updateLocalSettings('modelPresets', updatedModels);
+		await settingstoreAPI.addModelPreset(provider, modelName, modelData);
 		setIsModifyModelModalOpen(false);
 		setSelectedModelName(null);
 	};
@@ -356,7 +356,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						</label>
 						<div className="col-span-6">
 							<Dropdown<ModelName>
-								dropdownItems={modelSettings}
+								dropdownItems={modelPreset}
 								selectedKey={localSettings.defaultModel}
 								onChange={async (modelName: ModelName) => {
 									updateLocalSettings('defaultModel', modelName);
@@ -364,7 +364,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 								}}
 								filterDisabled={true}
 								title="Select Default Model"
-								getDisplayName={key => modelSettings[key].displayName}
+								getDisplayName={key => modelPreset[key].displayName}
 							/>
 						</div>
 						<div className="col-span-3 flex justify-end">
@@ -386,7 +386,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 								</tr>
 							</thead>
 							<tbody>
-								{Object.entries(modelSettings).map(([modelName, model]) => (
+								{Object.entries(modelPreset).map(([modelName, model]) => (
 									<tr key={modelName} className="hover:bg-base-300 border-none shadow-none">
 										<td>{model.displayName || modelName}</td>
 										<td className="flex items-center justify-center">
@@ -481,8 +481,8 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 					onSubmit={handleModifyModelSubmit}
 					providerName={provider}
 					initialModelName={selectedModelName || undefined}
-					initialData={selectedModelName ? modelSettings[selectedModelName] : undefined}
-					existingModels={modelSettings}
+					initialData={selectedModelName ? modelPreset[selectedModelName] : undefined}
+					existingModels={modelPreset}
 				/>
 			)}
 

@@ -53,6 +53,36 @@ export const DefaultModelParams: ModelParams = {
 	additionalParameters: {},
 };
 
+export interface ModelPreset {
+	name: string;
+	displayName: string;
+	shortCommand: string;
+	isEnabled: boolean;
+	stream?: boolean;
+	maxPromptLength?: number;
+	maxOutputLength?: number;
+	temperature?: number;
+	reasoning?: ReasoningParams;
+	systemPrompt?: string;
+	timeout?: number;
+	additionalParameters?: Record<string, any>;
+}
+
+export const DefaultModelPreset: ModelPreset = {
+	name: '',
+	displayName: '',
+	shortCommand: '',
+	isEnabled: true,
+	stream: DefaultModelParams.stream,
+	maxPromptLength: DefaultModelParams.maxPromptLength,
+	maxOutputLength: DefaultModelParams.maxOutputLength,
+	temperature: DefaultModelParams.temperature ?? 0.1,
+	reasoning: DefaultModelParams.reasoning,
+	systemPrompt: DefaultModelParams.systemPrompt,
+	timeout: DefaultModelParams.timeout,
+	additionalParameters: DefaultModelParams.additionalParameters,
+};
+
 export interface ProviderInfo {
 	name: ProviderName;
 	apiKey: string;
@@ -154,21 +184,6 @@ export interface CompletionResponse {
 	respContent?: string;
 	functionName?: string;
 	functionArgs?: any;
-}
-
-export interface ModelPreset {
-	name: string;
-	displayName: string;
-	shortCommand: string;
-	isEnabled: boolean;
-	stream?: boolean;
-	maxPromptLength?: number;
-	maxOutputLength?: number;
-	temperature?: number;
-	reasoning?: ReasoningParams;
-	systemPrompt?: string;
-	timeout?: number;
-	additionalParameters?: Record<string, any>;
 }
 
 export interface ConfigurationResponse {

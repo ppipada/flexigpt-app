@@ -33,7 +33,7 @@ const defaultAISettings: Record<ProviderName, AISetting> = {
 		origin: '',
 		chatCompletionPathPrefix: '',
 		defaultModel: DefaultModelName,
-		modelSettings: {},
+		modelPresets: {},
 	},
 };
 

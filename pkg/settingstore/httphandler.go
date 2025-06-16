@@ -67,16 +67,16 @@ func InitSettingStoreHandlers(api huma.API, settingsStoreAPI *SettingStore) {
 	huma.Register(api, huma.Operation{
 		OperationID: "add-model-setting",
 		Method:      http.MethodPut,
-		Path:        pathPrefix + "/aisettings/{providerName}/modelsettings/{modelName}",
+		Path:        pathPrefix + "/aisettings/{providerName}/modelpresets/{modelName}",
 		Summary:     "Add or replace a single model setting for a given AI provider",
 		Tags:        []string{tag},
-	}, settingsStoreAPI.AddModelSetting)
+	}, settingsStoreAPI.AddModelPreset)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "delete-model-setting",
 		Method:      http.MethodDelete,
-		Path:        pathPrefix + "/aisettings/{providerName}/modelsettings/{modelName}",
+		Path:        pathPrefix + "/aisettings/{providerName}/modelpresets/{modelName}",
 		Summary:     "Delete a single model setting for a given AI provider",
 		Tags:        []string{tag},
-	}, settingsStoreAPI.DeleteModelSetting)
+	}, settingsStoreAPI.DeleteModelPreset)
 }

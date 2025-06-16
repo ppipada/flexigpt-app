@@ -58,10 +58,10 @@ func (s *SettingStore) ValueEncDecGetter(pathSoFar []string) encdec.EncoderDecod
 // 	if len(pathSoFar) == 2 && pathSoFar[1] == "aiSettings" {
 // 		return s.keyEncDec
 // 	}
-// 	// 2) If pathSoFar == ["aiSettings", <providerName>, modelSettings, <modelName>], encode modelName
+// 	// 2) If pathSoFar == ["aiSettings", <providerName>, modelPresets, <modelName>], encode modelName
 // 	if len(pathSoFar) == 4 &&
 // 		pathSoFar[0] == "aiSettings" &&
-// 		pathSoFar[2] == "modelSettings" {
+// 		pathSoFar[2] == "modelPresets" {
 // 		return s.keyEncDec
 // 	}
 // 	// Otherwise, no key-encoding
@@ -131,8 +131,8 @@ func (s *SettingStore) AddAISetting(
 	}
 
 	keys := []string{"aiSettings", string(req.ProviderName)}
-	if req.Body.ModelSettings == nil {
-		req.Body.ModelSettings = make(map[modelSpec.ModelName]spec.ModelSetting)
+	if req.Body.ModelPresets == nil {
+		req.Body.ModelPresets = make(map[modelSpec.ModelName]modelSpec.ModelPreset)
 	}
 	val, err := encdec.StructWithJSONTagsToMap(req.Body)
 	if err != nil {
@@ -273,10 +273,10 @@ func (s *SettingStore) SetAISettingAttrs(
 	return &spec.SetAISettingAttrsResponse{}, nil
 }
 
-func (s *SettingStore) AddModelSetting(
+func (s *SettingStore) AddModelPreset(
 	ctx context.Context,
-	req *spec.AddModelSettingRequest,
-) (*spec.AddModelSettingResponse, error) {
+	req *spec.AddModelPresetRequest,
+) (*spec.AddModelPresetResponse, error) {
 	if req == nil || req.Body == nil {
 		return nil, errors.New("request or request body cannot be nil")
 	}
@@ -288,7 +288,7 @@ func (s *SettingStore) AddModelSetting(
 	}
 
 	// Overwrite or create the model.
-	keys := []string{"aiSettings", string(req.ProviderName), "modelSettings", string(req.ModelName)}
+	keys := []string{"aiSettings", string(req.ProviderName), "modelPresets", string(req.ModelName)}
 	val, err := encdec.StructWithJSONTagsToMap(req.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed setting model %q for provider %q: %w",
@@ -298,13 +298,13 @@ func (s *SettingStore) AddModelSetting(
 		return nil, fmt.Errorf("failed setting model %q for provider %q: %w",
 			req.ModelName, req.ProviderName, err)
 	}
-	return &spec.AddModelSettingResponse{}, nil
+	return &spec.AddModelPresetResponse{}, nil
 }
 
-func (s *SettingStore) DeleteModelSetting(
+func (s *SettingStore) DeleteModelPreset(
 	ctx context.Context,
-	req *spec.DeleteModelSettingRequest,
-) (*spec.DeleteModelSettingResponse, error) {
+	req *spec.DeleteModelPresetRequest,
+) (*spec.DeleteModelPresetResponse, error) {
 	if req == nil {
 		return nil, errors.New("request cannot be nil")
 	}
@@ -316,10 +316,10 @@ func (s *SettingStore) DeleteModelSetting(
 	}
 
 	// Delete the model.
-	keys := []string{"aiSettings", string(req.ProviderName), "modelSettings", string(req.ModelName)}
+	keys := []string{"aiSettings", string(req.ProviderName), "modelPresets", string(req.ModelName)}
 	if err := s.store.DeleteKey(keys); err != nil {
 		return nil, fmt.Errorf("failed deleting model %q for provider %q: %w",
 			req.ModelName, req.ProviderName, err)
 	}
-	return &spec.DeleteModelSettingResponse{}, nil
+	return &spec.DeleteModelPresetResponse{}, nil
 }

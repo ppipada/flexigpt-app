@@ -1,11 +1,11 @@
-import type { ModelName, ProviderName } from '@/models/aiprovidermodel';
-import type { AISetting, AISettingAttrs, ISettingStoreAPI, ModelSetting, SettingsSchema } from '@/models/settingmodel';
+import type { ModelName, ModelPreset, ProviderName } from '@/models/aiprovidermodel';
+import type { AISetting, AISettingAttrs, ISettingStoreAPI, SettingsSchema } from '@/models/settingmodel';
 
 import {
 	AddAISetting,
-	AddModelSetting,
+	AddModelPreset,
 	DeleteAISetting,
-	DeleteModelSetting,
+	DeleteModelPreset,
 	GetAllSettings,
 	SetAISettingAPIKey,
 	SetAISettingAttrs,
@@ -77,20 +77,20 @@ export class WailsSettingStoreAPI implements ISettingStoreAPI {
 		await SetAISettingAttrs(r as spec.SetAISettingAttrsRequest);
 	}
 
-	async addModelSetting(providerName: ProviderName, modelName: ModelName, modelSetting: ModelSetting): Promise<void> {
+	async addModelPreset(providerName: ProviderName, modelName: ModelName, modelPreset: ModelPreset): Promise<void> {
 		const r = {
 			ProviderName: providerName,
 			ModelName: modelName,
-			Body: modelSetting,
+			Body: modelPreset,
 		};
-		await AddModelSetting(r as spec.AddModelSettingRequest);
+		await AddModelPreset(r as spec.AddModelPresetRequest);
 	}
 
-	async deleteModelSetting(providerName: ProviderName, modelName: ModelName): Promise<void> {
+	async deleteModelPreset(providerName: ProviderName, modelName: ModelName): Promise<void> {
 		const r = {
 			ProviderName: providerName,
 			ModelName: modelName,
 		};
-		await DeleteModelSetting(r as spec.DeleteModelSettingRequest);
+		await DeleteModelPreset(r as spec.DeleteModelPresetRequest);
 	}
 }

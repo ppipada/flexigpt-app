@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ppipada/flexigpt-app/pkg/model/spec"
+	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore"
 	settingSpec "github.com/ppipada/flexigpt-app/pkg/settingstore/spec"
 )
@@ -621,8 +622,8 @@ func TestSettingStore_SetAISettingAttrs(t *testing.T) {
 	}
 }
 
-// TestSettingStore_AddModelSetting exercises the AddModelSetting method.
-func TestSettingStore_AddModelSetting(t *testing.T) {
+// TestSettingStore_AddModelPreset exercises the AddModelPreset method.
+func TestSettingStore_AddModelPreset(t *testing.T) {
 	filename := "test_add_model_setting.json"
 	if err := initTestFile(filename); err != nil {
 		t.Fatalf("Failed to init test file: %v", err)
@@ -649,7 +650,7 @@ func TestSettingStore_AddModelSetting(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		req           *settingSpec.AddModelSettingRequest
+		req           *settingSpec.AddModelPresetRequest
 		wantErr       bool
 		expectedError string
 	}{
@@ -661,7 +662,7 @@ func TestSettingStore_AddModelSetting(t *testing.T) {
 		},
 		{
 			name: "NilRequestBody",
-			req: &settingSpec.AddModelSettingRequest{
+			req: &settingSpec.AddModelPresetRequest{
 				ProviderName: spec.ProviderName("openai2"),
 				ModelName:    spec.ModelName("test-model"),
 				Body:         nil,
@@ -671,20 +672,20 @@ func TestSettingStore_AddModelSetting(t *testing.T) {
 		},
 		{
 			name: "UnknownProvider",
-			req: &settingSpec.AddModelSettingRequest{
+			req: &settingSpec.AddModelPresetRequest{
 				ProviderName: spec.ProviderName("cohere"),
 				ModelName:    spec.ModelName("cohere-model"),
-				Body:         &settingSpec.ModelSetting{},
+				Body:         &modelSpec.ModelPreset{},
 			},
 			wantErr:       true,
 			expectedError: "does not exist in aiSettings",
 		},
 		{
 			name: "ValidRequest",
-			req: &settingSpec.AddModelSettingRequest{
+			req: &settingSpec.AddModelPresetRequest{
 				ProviderName: spec.ProviderName("openai2"),
 				ModelName:    spec.ModelName("gpt-4"),
-				Body: &settingSpec.ModelSetting{
+				Body: &modelSpec.ModelPreset{
 					Temperature: newFloatPtr(0.7),
 				},
 			},
@@ -693,10 +694,10 @@ func TestSettingStore_AddModelSetting(t *testing.T) {
 		},
 		{
 			name: "OverwriteExistingModel",
-			req: &settingSpec.AddModelSettingRequest{
+			req: &settingSpec.AddModelPresetRequest{
 				ProviderName: spec.ProviderName("openai2"),
 				ModelName:    spec.ModelName("gpt-4"),
-				Body: &settingSpec.ModelSetting{
+				Body: &modelSpec.ModelPreset{
 					Temperature: newFloatPtr(0.3),
 					IsEnabled:   true,
 				},
@@ -708,19 +709,19 @@ func TestSettingStore_AddModelSetting(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := store.AddModelSetting(t.Context(), tc.req)
+			_, err := store.AddModelPreset(t.Context(), tc.req)
 			if (err != nil) != tc.wantErr {
-				t.Errorf("AddModelSetting() error = %v, wantErr=%v", err, tc.wantErr)
+				t.Errorf("AddModelPreset() error = %v, wantErr=%v", err, tc.wantErr)
 			}
 			if err != nil && !strings.Contains(err.Error(), tc.expectedError) {
-				t.Errorf("AddModelSetting() error = %v, want substring %q", err, tc.expectedError)
+				t.Errorf("AddModelPreset() error = %v, want substring %q", err, tc.expectedError)
 			}
 		})
 	}
 }
 
-// TestSettingStore_DeleteModelSetting exercises the DeleteModelSetting method.
-func TestSettingStore_DeleteModelSetting(t *testing.T) {
+// TestSettingStore_DeleteModelPreset exercises the DeleteModelPreset method.
+func TestSettingStore_DeleteModelPreset(t *testing.T) {
 	filename := "test_delete_model_setting.json"
 	if err := initTestFile(filename); err != nil {
 		t.Fatalf("Failed to init test file: %v", err)
@@ -742,10 +743,10 @@ func TestSettingStore_DeleteModelSetting(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to add AI Setting: %v", err)
 	}
-	_, err = store.AddModelSetting(ctx, &settingSpec.AddModelSettingRequest{
+	_, err = store.AddModelPreset(ctx, &settingSpec.AddModelPresetRequest{
 		ProviderName: spec.ProviderName("openai2"),
 		ModelName:    spec.ModelName("gpt-4"),
-		Body: &settingSpec.ModelSetting{
+		Body: &modelSpec.ModelPreset{
 			Temperature: float64Ptr(0.65),
 		},
 	})
@@ -755,7 +756,7 @@ func TestSettingStore_DeleteModelSetting(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		req           *settingSpec.DeleteModelSettingRequest
+		req           *settingSpec.DeleteModelPresetRequest
 		wantErr       bool
 		expectedError string
 	}{
@@ -767,7 +768,7 @@ func TestSettingStore_DeleteModelSetting(t *testing.T) {
 		},
 		{
 			name: "UnknownProvider",
-			req: &settingSpec.DeleteModelSettingRequest{
+			req: &settingSpec.DeleteModelPresetRequest{
 				ProviderName: spec.ProviderName("cohere"),
 				ModelName:    spec.ModelName("cohere-model"),
 			},
@@ -776,7 +777,7 @@ func TestSettingStore_DeleteModelSetting(t *testing.T) {
 		},
 		{
 			name: "DeleteExistingModel",
-			req: &settingSpec.DeleteModelSettingRequest{
+			req: &settingSpec.DeleteModelPresetRequest{
 				ProviderName: spec.ProviderName("openai2"),
 				ModelName:    spec.ModelName("gpt-4"),
 			},
@@ -785,7 +786,7 @@ func TestSettingStore_DeleteModelSetting(t *testing.T) {
 		},
 		{
 			name: "EmptyModelName",
-			req: &settingSpec.DeleteModelSettingRequest{
+			req: &settingSpec.DeleteModelPresetRequest{
 				ProviderName: spec.ProviderName("openai2"),
 				ModelName:    spec.ModelName(""),
 			},
@@ -795,12 +796,12 @@ func TestSettingStore_DeleteModelSetting(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := store.DeleteModelSetting(t.Context(), tc.req)
+			_, err := store.DeleteModelPreset(t.Context(), tc.req)
 			if (err != nil) != tc.wantErr {
-				t.Errorf("DeleteModelSetting() error = %v, wantErr=%v", err, tc.wantErr)
+				t.Errorf("DeleteModelPreset() error = %v, wantErr=%v", err, tc.wantErr)
 			}
 			if err != nil && !strings.Contains(err.Error(), tc.expectedError) {
-				t.Errorf("DeleteModelSetting() error = %v, want %q", err, tc.expectedError)
+				t.Errorf("DeleteModelPreset() error = %v, want %q", err, tc.expectedError)
 			}
 		})
 	}

@@ -145,20 +145,20 @@ func (w *SettingStoreWrapper) SetAISettingAttrs(
 	})
 }
 
-// AddModelSetting creates or replaces a single model setting for a provider without requiring a context.
-func (w *SettingStoreWrapper) AddModelSetting(
-	req *spec.AddModelSettingRequest,
-) (*spec.AddModelSettingResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.AddModelSettingResponse, error) {
-		return w.store.AddModelSetting(context.Background(), req)
+// AddModelPreset creates or replaces a single model setting for a provider without requiring a context.
+func (w *SettingStoreWrapper) AddModelPreset(
+	req *spec.AddModelPresetRequest,
+) (*spec.AddModelPresetResponse, error) {
+	return middleware.WithRecoveryResp(func() (*spec.AddModelPresetResponse, error) {
+		return w.store.AddModelPreset(context.Background(), req)
 	})
 }
 
-// DeleteModelSetting creates or replaces a single model setting for a provider without requiring a context.
-func (w *SettingStoreWrapper) DeleteModelSetting(
-	req *spec.DeleteModelSettingRequest,
-) (*spec.DeleteModelSettingResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.DeleteModelSettingResponse, error) {
-		return w.store.DeleteModelSetting(context.Background(), req)
+// DeleteModelPreset creates or replaces a single model setting for a provider without requiring a context.
+func (w *SettingStoreWrapper) DeleteModelPreset(
+	req *spec.DeleteModelPresetRequest,
+) (*spec.DeleteModelPresetResponse, error) {
+	return middleware.WithRecoveryResp(func() (*spec.DeleteModelPresetResponse, error) {
+		return w.store.DeleteModelPreset(context.Background(), req)
 	})
 }

@@ -4,11 +4,11 @@ import {spec} from '../models';
 
 export function AddAISetting(arg1:spec.AddAISettingRequest):Promise<spec.AddAISettingResponse>;
 
-export function AddModelSetting(arg1:spec.AddModelSettingRequest):Promise<spec.AddModelSettingResponse>;
+export function AddModelPreset(arg1:spec.AddModelPresetRequest):Promise<spec.AddModelPresetResponse>;
 
 export function DeleteAISetting(arg1:spec.DeleteAISettingRequest):Promise<spec.DeleteAISettingResponse>;
 
-export function DeleteModelSetting(arg1:spec.DeleteModelSettingRequest):Promise<spec.DeleteModelSettingResponse>;
+export function DeleteModelPreset(arg1:spec.DeleteModelPresetRequest):Promise<spec.DeleteModelPresetResponse>;
 
 export function GetAllSettings(arg1:spec.GetAllSettingsRequest):Promise<spec.GetAllSettingsResponse>;
 

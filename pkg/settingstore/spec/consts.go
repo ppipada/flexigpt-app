@@ -13,10 +13,12 @@ var DefaultAISettings = map[modelSpec.ProviderName]AISetting{
 		DefaultModel:             modelConsts.Claude4Sonnet,
 		Origin:                   modelConsts.AnthropicProviderInfo.Origin,
 		ChatCompletionPathPrefix: modelConsts.AnthropicProviderInfo.ChatCompletionPathPrefix,
-		ModelSettings: map[modelSpec.ModelName]ModelSetting{
+		ModelPresets: map[modelSpec.ModelName]modelSpec.ModelPreset{
 			modelConsts.Claude4Sonnet: {
-				DisplayName: string(modelConsts.DisplayNameClaude4Sonnet),
-				IsEnabled:   true,
+				Name:         modelConsts.Claude4Sonnet,
+				DisplayName:  modelConsts.DisplayNameClaude4Sonnet,
+				IsEnabled:    true,
+				ShortCommand: modelConsts.ShortCommandClaude4Sonnet,
 			},
 		},
 	},
@@ -27,10 +29,12 @@ var DefaultAISettings = map[modelSpec.ProviderName]AISetting{
 		DefaultModel:             modelConsts.DeepseekChat,
 		Origin:                   modelConsts.DeepseekProviderInfo.Origin,
 		ChatCompletionPathPrefix: modelConsts.DeepseekProviderInfo.ChatCompletionPathPrefix,
-		ModelSettings: map[modelSpec.ModelName]ModelSetting{
+		ModelPresets: map[modelSpec.ModelName]modelSpec.ModelPreset{
 			modelConsts.DeepseekChat: {
-				DisplayName: string(modelConsts.DisplayNameDeepseekChat),
-				IsEnabled:   true,
+				Name:         modelConsts.DeepseekChat,
+				DisplayName:  modelConsts.DisplayNameDeepseekChat,
+				IsEnabled:    true,
+				ShortCommand: modelConsts.ShortCommandDeepseekChat,
 			},
 		},
 	},
@@ -40,10 +44,12 @@ var DefaultAISettings = map[modelSpec.ProviderName]AISetting{
 		DefaultModel:             modelConsts.Gemini25Flash,
 		Origin:                   modelConsts.GoogleProviderInfo.Origin,
 		ChatCompletionPathPrefix: modelConsts.GoogleProviderInfo.ChatCompletionPathPrefix,
-		ModelSettings: map[modelSpec.ModelName]ModelSetting{
+		ModelPresets: map[modelSpec.ModelName]modelSpec.ModelPreset{
 			modelConsts.Gemini25Flash: {
-				DisplayName: string(modelConsts.DisplayNameGemini25Flash),
-				IsEnabled:   true,
+				Name:         modelConsts.Gemini25Flash,
+				DisplayName:  modelConsts.DisplayNameGemini25Flash,
+				IsEnabled:    true,
+				ShortCommand: modelConsts.ShortCommandGemini25Flash,
 			},
 		},
 	},
@@ -53,10 +59,12 @@ var DefaultAISettings = map[modelSpec.ProviderName]AISetting{
 		DefaultModel:             modelConsts.DeepseekCoder13BInstruct,
 		Origin:                   modelConsts.HuggingfaceProviderInfo.Origin,
 		ChatCompletionPathPrefix: modelConsts.HuggingfaceProviderInfo.ChatCompletionPathPrefix,
-		ModelSettings: map[modelSpec.ModelName]ModelSetting{
+		ModelPresets: map[modelSpec.ModelName]modelSpec.ModelPreset{
 			modelConsts.DeepseekCoder13BInstruct: {
-				DisplayName: string(modelConsts.DisplayNameDeepseekCoder13BInstruct),
-				IsEnabled:   true,
+				Name:         modelConsts.DeepseekCoder13BInstruct,
+				DisplayName:  modelConsts.DisplayNameDeepseekCoder13BInstruct,
+				IsEnabled:    true,
+				ShortCommand: modelConsts.ShortCommandDeepseekCoder13BInstruct,
 			},
 		},
 	},
@@ -66,10 +74,12 @@ var DefaultAISettings = map[modelSpec.ProviderName]AISetting{
 		DefaultModel:             modelConsts.Llama4Scout,
 		Origin:                   modelConsts.LlamacppProviderInfo.Origin,
 		ChatCompletionPathPrefix: modelConsts.LlamacppProviderInfo.ChatCompletionPathPrefix,
-		ModelSettings: map[modelSpec.ModelName]ModelSetting{
+		ModelPresets: map[modelSpec.ModelName]modelSpec.ModelPreset{
 			modelConsts.Llama4Scout: {
-				DisplayName: string(modelConsts.DisplayNameLlama4Scout),
-				IsEnabled:   true,
+				Name:         modelConsts.Llama4Scout,
+				DisplayName:  modelConsts.DisplayNameLlama4Scout,
+				IsEnabled:    true,
+				ShortCommand: modelConsts.ShortCommandLlama4Scout,
 			},
 		},
 	},
@@ -79,10 +89,12 @@ var DefaultAISettings = map[modelSpec.ProviderName]AISetting{
 		DefaultModel:             modelConsts.GPT41,
 		Origin:                   modelConsts.OpenAIProviderInfo.Origin,
 		ChatCompletionPathPrefix: modelConsts.LlamacppProviderInfo.ChatCompletionPathPrefix,
-		ModelSettings: map[modelSpec.ModelName]ModelSetting{
+		ModelPresets: map[modelSpec.ModelName]modelSpec.ModelPreset{
 			modelConsts.GPT41: {
-				DisplayName: string(modelConsts.DisplayNameGPT41),
-				IsEnabled:   true,
+				Name:         modelConsts.GPT41,
+				DisplayName:  modelConsts.DisplayNameGPT41,
+				IsEnabled:    true,
+				ShortCommand: modelConsts.ShortCommandGPT41,
 			},
 		},
 	},

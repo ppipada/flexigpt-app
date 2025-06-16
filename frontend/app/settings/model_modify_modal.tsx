@@ -2,10 +2,16 @@ import React, { type FC, useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
-import { type ModelName, type ProviderName, ReasoningLevel, ReasoningType } from '@/models/aiprovidermodel';
-import { DefaultModelSetting, type ModelSetting } from '@/models/settingmodel';
+import {
+	DefaultModelPreset,
+	type ModelName,
+	type ModelPreset,
+	type ProviderName,
+	ReasoningLevel,
+	ReasoningType,
+} from '@/models/aiprovidermodel';
 
-import { PopulateModelSettingDefaults } from '@/apis/settingstore_helper';
+import { PopulateModelPresetDefaults } from '@/apis/settingstore_helper';
 
 import Dropdown from '@/components/dropdown';
 
@@ -25,16 +31,16 @@ const reasoningLevelItems: Record<ReasoningLevel, { isEnabled: boolean; displayN
 interface ModifyModelModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSubmit: (modelName: ModelName, modelData: ModelSetting) => void;
+	onSubmit: (modelName: ModelName, modelData: ModelPreset) => void;
 	providerName: ProviderName;
 	// If provided, indicates edit mode.
 	initialModelName?: ModelName;
 	// When editing existing model data.
-	initialData?: ModelSetting;
-	existingModels: Record<ModelName, ModelSetting>;
+	initialData?: ModelPreset;
+	existingModels: Record<ModelName, ModelPreset>;
 }
 
-interface ModelSettingFormData {
+interface ModelPresetFormData {
 	displayName: string;
 	isEnabled: boolean;
 	stream: boolean;
@@ -63,13 +69,13 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 	const isEditMode = Boolean(initialModelName);
 
 	// Default numeric values and placeholders.
-	const [defaultValues, setDefaultValues] = useState<ModelSetting>(DefaultModelSetting);
+	const [defaultValues, setDefaultValues] = useState<ModelPreset>(DefaultModelPreset);
 
 	// If not edit mode, user must provide a new modelName.
 	const [modelName, setModelName] = useState<ModelName>(initialModelName ?? ('' as ModelName));
 
 	// Local form data (storing numeric as strings for easy clearing).
-	const [formData, setFormData] = useState<ModelSettingFormData>({
+	const [formData, setFormData] = useState<ModelPresetFormData>({
 		displayName: '',
 		isEnabled: true,
 		stream: false,
@@ -101,7 +107,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			if (initialModelName) {
 				mName = initialModelName;
 			}
-			const merged = await PopulateModelSettingDefaults(providerName, mName, initialData);
+			const merged = await PopulateModelPresetDefaults(providerName, mName, initialData);
 			setDefaultValues(merged);
 
 			// Convert numbers to strings for the local form usage.
@@ -269,9 +275,11 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		// Convert strings to numbers (fallback to defaults) for numeric fields.
 		const parseOrDefault = (val: string, def: number) => (val.trim() === '' ? def : Number(val));
 
-		const finalData: ModelSetting = {
+		const finalData: ModelPreset = {
+			name: modelName,
 			displayName: formData.displayName.trim(),
 			isEnabled: formData.isEnabled,
+			shortCommand: modelName,
 			stream: formData.stream,
 			maxPromptLength: parseOrDefault(formData.maxPromptLength, defaultValues.maxPromptLength ?? 2048),
 			maxOutputLength: parseOrDefault(formData.maxOutputLength, defaultValues.maxOutputLength ?? 1024),
@@ -298,7 +306,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 	if (!isOpen) return null;
 
 	// Helper for numeric placeholders showing "Default: X".
-	const numPlaceholder = (field: keyof ModelSetting) => {
+	const numPlaceholder = (field: keyof ModelPreset) => {
 		const value = defaultValues[field];
 		if (value === undefined || typeof value === 'object') {
 			return 'Default: N/A'; // or any other placeholder for null/undefined

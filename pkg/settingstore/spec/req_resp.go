@@ -65,17 +65,17 @@ type SetAISettingAttrsRequestBody struct {
 
 type SetAISettingAttrsResponse struct{}
 
-type AddModelSettingRequest struct {
+type AddModelPresetRequest struct {
 	ProviderName modelSpec.ProviderName `path:"providerName"`
 	ModelName    modelSpec.ModelName    `path:"modelName"`
-	Body         *ModelSetting
+	Body         *modelSpec.ModelPreset
 }
 
-type AddModelSettingResponse struct{}
+type AddModelPresetResponse struct{}
 
-type DeleteModelSettingRequest struct {
+type DeleteModelPresetRequest struct {
 	ProviderName modelSpec.ProviderName `path:"providerName"`
 	ModelName    modelSpec.ModelName    `path:"modelName"`
 }
 
-type DeleteModelSettingResponse struct{}
+type DeleteModelPresetResponse struct{}
