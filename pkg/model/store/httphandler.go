@@ -24,20 +24,28 @@ func InitModelPresetStoreHandlers(api huma.API, modelPresetStoreAPI *ModelPreset
 	}, modelPresetStoreAPI.GetAllModelPresets)
 
 	huma.Register(api, huma.Operation{
-		OperationID: "create-model-presets",
+		OperationID: "create-provider-preset",
 		Method:      http.MethodPost,
 		Path:        pathPrefix + "/{providerName}",
 		Summary:     "Create new model presets for a provider",
 		Tags:        []string{tag},
-	}, modelPresetStoreAPI.CreateModelPresets)
+	}, modelPresetStoreAPI.CreateProviderPreset)
 
 	huma.Register(api, huma.Operation{
-		OperationID: "delete-model-presets",
+		OperationID: "delete-provider-preset",
 		Method:      http.MethodDelete,
 		Path:        pathPrefix + "/{providerName}",
 		Summary:     "Delete all model presets for a provider",
 		Tags:        []string{tag},
-	}, modelPresetStoreAPI.DeleteModelPresets)
+	}, modelPresetStoreAPI.DeleteProviderPreset)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "set-default-model-preset",
+		Method:      http.MethodPut,
+		Path:        pathPrefix + "/{providerName}/default",
+		Summary:     "Set the default model preset for a provider",
+		Tags:        []string{tag},
+	}, modelPresetStoreAPI.SetDefaultModelPreset)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "add-model-preset",

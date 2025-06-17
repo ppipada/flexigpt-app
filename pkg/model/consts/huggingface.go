@@ -7,13 +7,14 @@ import (
 const ProviderNameHuggingFace spec.ProviderName = "huggingface"
 
 const (
-	DeepseekCoder13BInstruct             spec.ModelName         = "deepseek-ai/deepseek-coder-1.3b-instruct"
-	DisplayNameDeepseekCoder13BInstruct  spec.ModelDisplayName  = "HF Deepseek Coder 1.3b"
-	ShortCommandDeepseekCoder13BInstruct spec.ModelShortCommand = "hfDSCoder13"
+	DeepseekCoder13BInstruct              spec.ModelName         = "deepseek-ai/deepseek-coder-1.3b-instruct"
+	DisplayNameDeepseekCoder13BInstruct   spec.ModelDisplayName  = "HF Deepseek Coder 1.3b"
+	ShortCommandDeepseekCoder13BInstruct  spec.ModelShortCommand = "hfDSCoder13"
+	ModelPresetIDDeepseekCoder13BInstruct spec.ModelPresetID     = "hfDSCoder13"
 )
 
-var HuggingfaceModels = map[spec.ModelName]spec.ModelPreset{
-	DeepseekCoder13BInstruct: {
+var HuggingfaceModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
+	ModelPresetIDDeepseekCoder13BInstruct: {
 		Name:            DeepseekCoder13BInstruct,
 		DisplayName:     DisplayNameDeepseekCoder13BInstruct,
 		IsEnabled:       true,
@@ -25,6 +26,11 @@ var HuggingfaceModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},
+}
+
+var HuggingfaceProviderPreset = spec.ProviderPreset{
+	DefaultModelPresetID: ModelPresetIDDeepseekCoder13BInstruct,
+	ModelPresets:         HuggingfaceModelPresets,
 }
 
 var HuggingfaceProviderInfo = spec.ProviderInfo{

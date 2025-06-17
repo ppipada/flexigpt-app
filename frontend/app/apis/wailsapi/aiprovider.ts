@@ -1,4 +1,4 @@
-import type { ModelName, ModelParams, ModelPreset, ProviderInfo, ProviderName } from '@/models/aimodelmodel';
+import type { ModelParams, ModelPreset, ModelPresetID, ProviderInfo, ProviderName } from '@/models/aimodelmodel';
 import type {
 	AddProviderRequest,
 	ChatCompletionRequestMessage,
@@ -52,7 +52,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 			configuredProviders: providerInfoDict,
 			inbuiltProviderModels: configInfo['inbuiltProviderModels'] as Record<
 				ProviderName,
-				Record<ModelName, ModelPreset>
+				Record<ModelPresetID, ModelPreset>
 			>,
 		};
 	}

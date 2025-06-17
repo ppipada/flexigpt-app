@@ -57,10 +57,9 @@ type SetAISettingAttrsRequest struct {
 }
 
 type SetAISettingAttrsRequestBody struct {
-	IsEnabled                *bool                `json:"isEnabled,omitempty"`
-	Origin                   *string              `json:"origin,omitempty"`
-	ChatCompletionPathPrefix *string              `json:"chatCompletionPathPrefix,omitempty"`
-	DefaultModel             *modelSpec.ModelName `json:"defaultModel,omitempty"`
+	IsEnabled                *bool   `json:"isEnabled,omitempty"`
+	Origin                   *string `json:"origin,omitempty"`
+	ChatCompletionPathPrefix *string `json:"chatCompletionPathPrefix,omitempty"`
 }
 
 type SetAISettingAttrsResponse struct{}

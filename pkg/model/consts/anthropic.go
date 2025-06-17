@@ -30,8 +30,16 @@ const (
 	ShortCommandClaude35Haiku  spec.ModelShortCommand = "haiku35"
 )
 
-var AnthropicModels = map[spec.ModelName]spec.ModelPreset{
-	Claude4Opus: {
+const (
+	ModelPresetIDClaude4Opus    spec.ModelPresetID = "opus4"
+	ModelPresetIDClaude4Sonnet  spec.ModelPresetID = "sonnet4"
+	ModelPresetIDClaude37Sonnet spec.ModelPresetID = "sonnet37"
+	ModelPresetIDClaude35Sonnet spec.ModelPresetID = "sonnet35"
+	ModelPresetIDClaude35Haiku  spec.ModelPresetID = "haiku35"
+)
+
+var AnthropicModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
+	ModelPresetIDClaude4Opus: {
 		Name:            Claude4Opus,
 		DisplayName:     DisplayNameClaude4Opus,
 		IsEnabled:       true,
@@ -47,7 +55,7 @@ var AnthropicModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt: StringPtr(""),
 		Timeout:      IntPtr(120),
 	},
-	Claude4Sonnet: {
+	ModelPresetIDClaude4Sonnet: {
 		Name:            Claude4Sonnet,
 		DisplayName:     DisplayNameClaude4Sonnet,
 		IsEnabled:       true,
@@ -63,7 +71,7 @@ var AnthropicModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt: StringPtr(""),
 		Timeout:      IntPtr(120),
 	},
-	Claude37Sonnet: {
+	ModelPresetIDClaude37Sonnet: {
 		Name:            Claude37Sonnet,
 		DisplayName:     DisplayNameClaude37Sonnet,
 		IsEnabled:       false,
@@ -79,7 +87,7 @@ var AnthropicModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt: StringPtr(""),
 		Timeout:      IntPtr(120),
 	},
-	Claude35Sonnet: {
+	ModelPresetIDClaude35Sonnet: {
 		Name:            Claude35Sonnet,
 		DisplayName:     DisplayNameClaude35Sonnet,
 		IsEnabled:       false,
@@ -91,7 +99,7 @@ var AnthropicModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},
-	Claude35Haiku: {
+	ModelPresetIDClaude35Haiku: {
 		Name:            Claude35Haiku,
 		DisplayName:     DisplayNameClaude35Haiku,
 		IsEnabled:       false,
@@ -103,6 +111,11 @@ var AnthropicModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},
+}
+
+var AnthropicProviderPreset = spec.ProviderPreset{
+	DefaultModelPresetID: ModelPresetIDClaude4Sonnet,
+	ModelPresets:         AnthropicModelPresets,
 }
 
 var AnthropicProviderInfo = spec.ProviderInfo{

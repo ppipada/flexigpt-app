@@ -260,11 +260,6 @@ func (s *SettingStore) SetAISettingAttrs(
 			return nil, fmt.Errorf("failed updating chatCompletionPathPrefix: %w", err)
 		}
 	}
-	if req.Body.DefaultModel != nil && *req.Body.DefaultModel != "" {
-		if err := s.store.SetKey([]string{"aiSettings", string(req.ProviderName), "defaultModel"}, string(*req.Body.DefaultModel)); err != nil {
-			return nil, fmt.Errorf("failed updating defaultModel: %w", err)
-		}
-	}
 
 	return &SetAISettingAttrsResponse{}, nil
 }

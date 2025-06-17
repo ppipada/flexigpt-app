@@ -41,8 +41,19 @@ const (
 	ShortCommandGPT4OMini spec.ModelShortCommand = "gpt4oMini"
 )
 
-var OpenAIModels = map[spec.ModelName]spec.ModelPreset{
-	O4Mini: {
+const (
+	ModelPresetIDO4Mini    spec.ModelPresetID = "o4Mini"
+	ModelPresetIDO3Pro     spec.ModelPresetID = "o3Pro"
+	ModelPresetIDO3        spec.ModelPresetID = "o3"
+	ModelPresetIDO3Mini    spec.ModelPresetID = "o3Mini"
+	ModelPresetIDGPT41     spec.ModelPresetID = "gpt41"
+	ModelPresetIDGPT41Mini spec.ModelPresetID = "gpt41Mini"
+	ModelPresetIDGPT4O     spec.ModelPresetID = "gpt4o"
+	ModelPresetIDGPT4OMini spec.ModelPresetID = "gpt4oMini"
+)
+
+var OpenAIModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
+	ModelPresetIDO4Mini: {
 		Name:            O4Mini,
 		DisplayName:     DisplayNameO4Mini,
 		IsEnabled:       false,
@@ -58,7 +69,7 @@ var OpenAIModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt: StringPtr("Formatting re-enabled.\nAlways output in Markdown format."),
 		Timeout:      IntPtr(120),
 	},
-	O3Pro: {
+	ModelPresetIDO3Pro: {
 		Name:            O3Pro,
 		DisplayName:     DisplayNameO3Pro,
 		IsEnabled:       false,
@@ -74,7 +85,7 @@ var OpenAIModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt: StringPtr("Formatting re-enabled.\nAlways output in Markdown format."),
 		Timeout:      IntPtr(120),
 	},
-	O3: {
+	ModelPresetIDO3: {
 		Name:            O3,
 		DisplayName:     DisplayNameO3,
 		IsEnabled:       false,
@@ -90,7 +101,7 @@ var OpenAIModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt: StringPtr("Formatting re-enabled.\nAlways output in Markdown format."),
 		Timeout:      IntPtr(120),
 	},
-	O3Mini: {
+	ModelPresetIDO3Mini: {
 		Name:            O3Mini,
 		DisplayName:     DisplayNameO3Mini,
 		IsEnabled:       false,
@@ -106,7 +117,7 @@ var OpenAIModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt: StringPtr("Formatting re-enabled.\nAlways output in Markdown format."),
 		Timeout:      IntPtr(120),
 	},
-	GPT41: {
+	ModelPresetIDGPT41: {
 		Name:            GPT41,
 		DisplayName:     DisplayNameGPT41,
 		IsEnabled:       false,
@@ -118,7 +129,7 @@ var OpenAIModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},
-	GPT41Mini: {
+	ModelPresetIDGPT41Mini: {
 		Name:            GPT41Mini,
 		DisplayName:     DisplayNameGPT41Mini,
 		IsEnabled:       false,
@@ -130,7 +141,7 @@ var OpenAIModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},
-	GPT4O: {
+	ModelPresetIDGPT4O: {
 		Name:            GPT4O,
 		DisplayName:     DisplayNameGPT4O,
 		IsEnabled:       false,
@@ -142,7 +153,7 @@ var OpenAIModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},
-	GPT4OMini: {
+	ModelPresetIDGPT4OMini: {
 		Name:            GPT4OMini,
 		DisplayName:     DisplayNameGPT4OMini,
 		IsEnabled:       false,
@@ -154,6 +165,11 @@ var OpenAIModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},
+}
+
+var OpenAIProviderPreset = spec.ProviderPreset{
+	DefaultModelPresetID: ModelPresetIDGPT41,
+	ModelPresets:         OpenAIModelPresets,
 }
 
 var OpenAIProviderInfo = spec.ProviderInfo{

@@ -24,8 +24,14 @@ const (
 	ShortCommandLlama4Scout    spec.ModelShortCommand = "llama4Scout"
 )
 
-var LlamacppModels = map[spec.ModelName]spec.ModelPreset{
-	Llama4Behemoth: {
+const (
+	ModelPresetIDLlama4Behemoth spec.ModelPresetID = "llama4Behemoth"
+	ModelPresetIDLlama4Maverick spec.ModelPresetID = "llama4Maverick"
+	ModelPresetIDLlama4Scout    spec.ModelPresetID = "llama4Scout"
+)
+
+var LlamacppModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
+	ModelPresetIDLlama4Behemoth: {
 		Name:            Llama4Behemoth,
 		DisplayName:     DisplayNameLlama4Behemoth,
 		IsEnabled:       true,
@@ -37,7 +43,7 @@ var LlamacppModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},
-	Llama4Maverick: {
+	ModelPresetIDLlama4Maverick: {
 		Name:            Llama4Maverick,
 		DisplayName:     DisplayNameLlama4Maverick,
 		IsEnabled:       true,
@@ -49,7 +55,7 @@ var LlamacppModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},
-	Llama4Scout: {
+	ModelPresetIDLlama4Scout: {
 		Name:            Llama4Scout,
 		DisplayName:     DisplayNameLlama4Scout,
 		IsEnabled:       true,
@@ -61,6 +67,11 @@ var LlamacppModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},
+}
+
+var LlamacppProviderPreset = spec.ProviderPreset{
+	DefaultModelPresetID: ModelPresetIDLlama4Scout,
+	ModelPresets:         LlamacppModelPresets,
 }
 
 var LlamacppProviderInfo = spec.ProviderInfo{

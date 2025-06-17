@@ -1,17 +1,18 @@
 import type {
 	IModelPresetStoreAPI,
-	ModelName,
 	ModelPreset,
-	ModelPresetsSchema,
-	ProviderModelPresets,
+	ModelPresetID,
+	PresetsSchema,
 	ProviderName,
+	ProviderPreset,
 } from '@/models/aimodelmodel';
 
 import {
 	AddModelPreset,
-	CreateModelPresets,
+	CreateProviderPreset,
 	DeleteModelPreset,
 	GetAllModelPresets,
+	SetDefaultModelPreset,
 } from '../wailsjs/go/main/ModelPresetStoreWrapper';
 import type { spec } from '../wailsjs/go/models';
 
@@ -20,41 +21,55 @@ import type { spec } from '../wailsjs/go/models';
  */
 export class WailsModelPresetStoreAPI implements IModelPresetStoreAPI {
 	// Implement the getAllSettings method
-	async getAllModelPresets(): Promise<ModelPresetsSchema> {
+	async getAllModelPresets(): Promise<PresetsSchema> {
 		const r: spec.GetAllModelPresetsRequest = { ForceFetch: false };
 		const s = await GetAllModelPresets(r);
-		return s.Body as ModelPresetsSchema;
+		return s.Body as PresetsSchema;
 	}
 
-	async createModelPresets(providerName: ProviderName, providerModelPresets: ProviderModelPresets): Promise<void> {
+	async createProviderPreset(providerName: ProviderName, providerPreset: ProviderPreset): Promise<void> {
 		const r = {
 			ProviderName: providerName,
-			Body: providerModelPresets,
+			Body: providerPreset,
 		};
-		await CreateModelPresets(r as spec.CreateModelPresetsRequest);
+		await CreateProviderPreset(r as spec.CreateProviderPresetRequest);
 	}
 
-	async deleteModelPresets(providerName: ProviderName): Promise<void> {
+	async deleteProviderPreset(providerName: ProviderName): Promise<void> {
 		const r = {
 			ProviderName: providerName,
 		};
 		await DeleteModelPreset(r as spec.DeleteModelPresetRequest);
 	}
 
-	async addModelPreset(providerName: ProviderName, modelName: ModelName, modelPreset: ModelPreset): Promise<void> {
+	async addModelPreset(
+		providerName: ProviderName,
+		modelPresetID: ModelPresetID,
+		modelPreset: ModelPreset
+	): Promise<void> {
 		const r = {
 			ProviderName: providerName,
-			ModelName: modelName,
+			ModelPresetID: modelPresetID,
 			Body: modelPreset,
 		};
 		await AddModelPreset(r as spec.AddModelPresetRequest);
 	}
 
-	async deleteModelPreset(providerName: ProviderName, modelName: ModelName): Promise<void> {
+	async deleteModelPreset(providerName: ProviderName, modelPresetID: ModelPresetID): Promise<void> {
 		const r = {
 			ProviderName: providerName,
-			ModelName: modelName,
+			ModelPresetID: modelPresetID,
 		};
 		await DeleteModelPreset(r as spec.DeleteModelPresetRequest);
+	}
+
+	async setDefaultModelPreset(providerName: ProviderName, modelPresetID: ModelPresetID): Promise<void> {
+		const r = {
+			ProviderName: providerName,
+			Body: {
+				ModelPresetID: modelPresetID,
+			},
+		};
+		await SetDefaultModelPreset(r as spec.SetDefaultModelPresetRequest);
 	}
 }

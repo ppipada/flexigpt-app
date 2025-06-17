@@ -21,8 +21,13 @@ const (
 	ShortCommandDeepseekReasoner spec.ModelShortCommand = "dsReason"
 )
 
-var DeepseekModels = map[spec.ModelName]spec.ModelPreset{
-	DeepseekChat: {
+const (
+	ModelPresetIDDeepseekChat     spec.ModelPresetID = "dsChat"
+	ModelPresetIDDeepseekReasoner spec.ModelPresetID = "dsReason"
+)
+
+var DeepseekModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
+	ModelPresetIDDeepseekChat: {
 		Name:            DeepseekChat,
 		DisplayName:     DisplayNameDeepseekChat,
 		IsEnabled:       true,
@@ -34,7 +39,7 @@ var DeepseekModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},
-	DeepseekReasoner: {
+	ModelPresetIDDeepseekReasoner: {
 		Name:            DeepseekChat,
 		DisplayName:     DisplayNameDeepseekReasoner,
 		IsEnabled:       true,
@@ -50,6 +55,11 @@ var DeepseekModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt: StringPtr(""),
 		Timeout:      IntPtr(120),
 	},
+}
+
+var DeepseekProviderPreset = spec.ProviderPreset{
+	DefaultModelPresetID: ModelPresetIDDeepseekChat,
+	ModelPresets:         DeepseekModelPresets,
 }
 
 var DeepseekProviderInfo = spec.ProviderInfo{

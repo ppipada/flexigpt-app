@@ -9,8 +9,14 @@
 
 - [ ] Refactor provider in prep for presets and skills flow
   - [x] Types in aiprovider
-  - [ ] We should store all these preset files in settings or their own domain folders?
+  - [x] We should store all these preset files in settings or their own domain folders?
   - [x] Remove confusion of ModelParams vs ModelSettings vs ModelPreset. What is stored is a ModelPreset. What comes in is a ModelParam.
+  - [ ] Default model also should be with presets, with name being "default preset".
+  - [ ] Check if inbuilt models have tooltip mentioning internal defaults
+  - [ ] Presets should have shortcommand as unique, may be add id too as forward compatible thing.
+  - [x] font of settings page
+  - [ ] api key in settings page is not validated before send and then set
+  - [ ] no config in providers gives empty unhandled page rejection in console
 
 ## Random notes from UX discussions
 

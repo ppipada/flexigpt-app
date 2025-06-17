@@ -1,6 +1,8 @@
-export type ModelName = string;
-export const DefaultModelName: ModelName = 'gpt-4o';
-export const DefaultModelTitle = 'OpenAI GPT 4o';
+type ModelName = string;
+export type ModelPresetID = string;
+// export const DefaultModelName: ModelName = 'gpt-4o';
+// export const DefaultModelTitle = 'OpenAI GPT 4o';
+// export const DefaultModelPresetID = 'gpt4o';
 
 export type ProviderName = string;
 export const DefaultProviderName: ProviderName = 'openai';
@@ -65,7 +67,6 @@ export interface ProviderInfo {
 export const ProviderInfoDescription = {
 	apiKey: 'Your API key for the provider.',
 	origin: 'Origin/URL to use for requests. This can be used to talk to any server that serves a compatible API',
-	defaultModel: 'Default model to use for chat requests',
 	timeout: 'The timeout duration in milliseconds.',
 	apiKeyHeaderKey: 'The header key for the API key.',
 	defaultHeaders: 'The default headers to be included in requests.',
@@ -74,7 +75,8 @@ export const ProviderInfoDescription = {
 };
 
 export interface ModelPreset {
-	name: string;
+	id: ModelPresetID;
+	name: ModelName;
 	displayName: string;
 	shortCommand: string;
 	isEnabled: boolean;
@@ -89,6 +91,7 @@ export interface ModelPreset {
 }
 
 export const DefaultModelPreset: ModelPreset = {
+	id: '',
 	name: '',
 	displayName: '',
 	shortCommand: '',
@@ -117,17 +120,21 @@ export const DefaultChatOptions: ChatOptions = {
 	disablePreviousMessages: false,
 };
 
-export type ProviderModelPresets = Record<ModelName, ModelPreset>;
+export type ProviderPreset = {
+	defaultModelPresetID: ModelPresetID;
+	modelPresets: Record<ModelPresetID, ModelPreset>;
+};
 
-export type ModelPresetsSchema = {
+export type PresetsSchema = {
 	version: string;
-	modelPresets: Record<ProviderName, ProviderModelPresets>;
+	providerPresets: Record<ProviderName, ProviderPreset>;
 };
 
 export interface IModelPresetStoreAPI {
-	getAllModelPresets: () => Promise<ModelPresetsSchema>;
-	createModelPresets: (providerName: ProviderName, providerModelPresets: ProviderModelPresets) => Promise<void>;
-	deleteModelPresets: (providerName: ProviderName) => Promise<void>;
-	addModelPreset: (providerName: ProviderName, modelName: ModelName, modelPreset: ModelPreset) => Promise<void>;
-	deleteModelPreset: (providerName: ProviderName, modelName: ModelName) => Promise<void>;
+	getAllModelPresets: () => Promise<PresetsSchema>;
+	createProviderPreset: (providerName: ProviderName, providerPreset: ProviderPreset) => Promise<void>;
+	deleteProviderPreset: (providerName: ProviderName) => Promise<void>;
+	addModelPreset: (providerName: ProviderName, modelPresetID: ModelPresetID, modelPreset: ModelPreset) => Promise<void>;
+	deleteModelPreset: (providerName: ProviderName, modelPresetID: ModelPresetID) => Promise<void>;
+	setDefaultModelPreset: (providerName: ProviderName, modelPresetID: ModelPresetID) => Promise<void>;
 }

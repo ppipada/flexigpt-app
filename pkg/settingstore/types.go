@@ -6,11 +6,10 @@ import (
 
 // AISetting represents the settings for an AI provider.
 type AISetting struct {
-	IsEnabled                bool                `json:"isEnabled"`
-	APIKey                   string              `json:"apiKey"`
-	DefaultModel             modelSpec.ModelName `json:"defaultModel"`
-	Origin                   string              `json:"origin"`
-	ChatCompletionPathPrefix string              `json:"chatCompletionPathPrefix"`
+	IsEnabled                bool   `json:"isEnabled"`
+	APIKey                   string `json:"apiKey"`
+	Origin                   string `json:"origin"`
+	ChatCompletionPathPrefix string `json:"chatCompletionPathPrefix"`
 }
 
 // AISettingsSchema represents the schema for AI settings for different providers.

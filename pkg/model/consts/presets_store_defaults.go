@@ -4,59 +4,87 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/model/spec"
 )
 
-var DefaultModelPresetsMap = map[spec.ProviderName]spec.ProviderModelPresets{
+var DefaultProviderPresets = map[spec.ProviderName]spec.ProviderPreset{
 	ProviderNameAnthropic: {
-		Claude4Sonnet: spec.ModelPreset{
-			Name:         Claude4Sonnet,
-			DisplayName:  DisplayNameClaude4Sonnet,
-			IsEnabled:    true,
-			ShortCommand: ShortCommandClaude4Sonnet,
+		DefaultModelPresetID: ModelPresetIDClaude4Sonnet,
+		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
+			ModelPresetIDClaude4Sonnet: {
+				ID:           ModelPresetIDClaude4Sonnet,
+				Name:         Claude4Sonnet,
+				DisplayName:  DisplayNameClaude4Sonnet,
+				IsEnabled:    true,
+				ShortCommand: ShortCommandClaude4Sonnet,
+			},
 		},
 	},
 
 	ProviderNameDeepseek: {
-		DeepseekChat: {
-			Name:         DeepseekChat,
-			DisplayName:  DisplayNameDeepseekChat,
-			IsEnabled:    true,
-			ShortCommand: ShortCommandDeepseekChat,
+		DefaultModelPresetID: ModelPresetIDDeepseekChat,
+		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
+			ModelPresetIDDeepseekChat: {
+				ID:           ModelPresetIDDeepseekChat,
+				Name:         DeepseekChat,
+				DisplayName:  DisplayNameDeepseekChat,
+				IsEnabled:    true,
+				ShortCommand: ShortCommandDeepseekChat,
+			},
 		},
 	},
+
 	ProviderNameGoogle: {
-		Gemini25Flash: {
-			Name:         Gemini25Flash,
-			DisplayName:  DisplayNameGemini25Flash,
-			IsEnabled:    true,
-			ShortCommand: ShortCommandGemini25Flash,
+		DefaultModelPresetID: ModelPresetIDGemini25Flash,
+		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
+			ModelPresetIDGemini25Flash: {
+				ID:           ModelPresetIDGemini25Flash,
+				Name:         Gemini25Flash,
+				DisplayName:  DisplayNameGemini25Flash,
+				IsEnabled:    true,
+				ShortCommand: ShortCommandGemini25Flash,
+			},
 		},
 	},
+
 	ProviderNameHuggingFace: {
-		DeepseekCoder13BInstruct: {
-			Name:         DeepseekCoder13BInstruct,
-			DisplayName:  DisplayNameDeepseekCoder13BInstruct,
-			IsEnabled:    true,
-			ShortCommand: ShortCommandDeepseekCoder13BInstruct,
+		DefaultModelPresetID: ModelPresetIDDeepseekCoder13BInstruct,
+		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
+			ModelPresetIDDeepseekCoder13BInstruct: {
+				ID:           ModelPresetIDDeepseekCoder13BInstruct,
+				Name:         DeepseekCoder13BInstruct,
+				DisplayName:  DisplayNameDeepseekCoder13BInstruct,
+				IsEnabled:    true,
+				ShortCommand: ShortCommandDeepseekCoder13BInstruct,
+			},
 		},
 	},
+
 	ProviderNameLlamaCPP: {
-		Llama4Scout: {
-			Name:         Llama4Scout,
-			DisplayName:  DisplayNameLlama4Scout,
-			IsEnabled:    true,
-			ShortCommand: ShortCommandLlama4Scout,
+		DefaultModelPresetID: ModelPresetIDLlama4Scout,
+		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
+			ModelPresetIDLlama4Scout: {
+				ID:           ModelPresetIDLlama4Scout,
+				Name:         Llama4Scout,
+				DisplayName:  DisplayNameLlama4Scout,
+				IsEnabled:    true,
+				ShortCommand: ShortCommandLlama4Scout,
+			},
 		},
 	},
+
 	ProviderNameOpenAI: {
-		GPT41: {
-			Name:         GPT41,
-			DisplayName:  DisplayNameGPT41,
-			IsEnabled:    true,
-			ShortCommand: ShortCommandGPT41,
+		DefaultModelPresetID: ModelPresetIDGPT41,
+		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
+			ModelPresetIDGPT41: {
+				ID:           ModelPresetIDGPT41,
+				Name:         GPT41,
+				DisplayName:  DisplayNameGPT41,
+				IsEnabled:    true,
+				ShortCommand: ShortCommandGPT41,
+			},
 		},
 	},
 }
 
-var DefaultModelPresetsSchema = spec.ModelPresetsSchema{
-	Version:      "1.0",
-	ModelPresets: DefaultModelPresetsMap,
+var DefaultPresetsSchema = spec.PresetsSchema{
+	Version:         "1.0",
+	ProviderPresets: DefaultProviderPresets,
 }

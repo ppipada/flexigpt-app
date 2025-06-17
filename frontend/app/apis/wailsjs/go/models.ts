@@ -336,7 +336,7 @@ export namespace inference {
 	export class GetConfigurationInfoResponseBody {
 	    defaultProvider: string;
 	    configuredProviders: spec.ProviderInfo[];
-	    inbuiltProviderModels: Record<string, any>;
+	    inbuiltProviderModels: Record<string, spec.ProviderPreset>;
 	
 	    static createFrom(source: any = {}) {
 	        return new GetConfigurationInfoResponseBody(source);
@@ -346,7 +346,7 @@ export namespace inference {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.defaultProvider = source["defaultProvider"];
 	        this.configuredProviders = this.convertValues(source["configuredProviders"], spec.ProviderInfo);
-	        this.inbuiltProviderModels = source["inbuiltProviderModels"];
+	        this.inbuiltProviderModels = this.convertValues(source["inbuiltProviderModels"], spec.ProviderPreset, true);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -577,7 +577,6 @@ export namespace settingstore {
 	export class AISetting {
 	    isEnabled: boolean;
 	    apiKey: string;
-	    defaultModel: string;
 	    origin: string;
 	    chatCompletionPathPrefix: string;
 	
@@ -589,7 +588,6 @@ export namespace settingstore {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.isEnabled = source["isEnabled"];
 	        this.apiKey = source["apiKey"];
-	        this.defaultModel = source["defaultModel"];
 	        this.origin = source["origin"];
 	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
 	    }
@@ -811,7 +809,6 @@ export namespace settingstore {
 	    isEnabled?: boolean;
 	    origin?: string;
 	    chatCompletionPathPrefix?: string;
-	    defaultModel?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new SetAISettingAttrsRequestBody(source);
@@ -822,7 +819,6 @@ export namespace settingstore {
 	        this.isEnabled = source["isEnabled"];
 	        this.origin = source["origin"];
 	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
-	        this.defaultModel = source["defaultModel"];
 	    }
 	}
 	export class SetAISettingAttrsRequest {
@@ -934,6 +930,7 @@ export namespace spec {
 	    }
 	}
 	export class ModelPreset {
+	    id: string;
 	    name: string;
 	    displayName: string;
 	    shortCommand: string;
@@ -953,6 +950,7 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
 	        this.name = source["name"];
 	        this.displayName = source["displayName"];
 	        this.shortCommand = source["shortCommand"];
@@ -987,7 +985,7 @@ export namespace spec {
 	}
 	export class AddModelPresetRequest {
 	    ProviderName: string;
-	    ModelName: string;
+	    ModelPresetID: string;
 	    Body?: ModelPreset;
 	
 	    static createFrom(source: any = {}) {
@@ -997,7 +995,7 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ProviderName = source["ProviderName"];
-	        this.ModelName = source["ModelName"];
+	        this.ModelPresetID = source["ModelPresetID"];
 	        this.Body = this.convertValues(source["Body"], ModelPreset);
 	    }
 	
@@ -1150,18 +1148,18 @@ export namespace spec {
 		}
 	}
 	
-	export class CreateModelPresetsRequest {
-	    ProviderName: string;
-	    Body?: Record<string, ModelPreset>;
+	export class ProviderPreset {
+	    defaultModelPresetID: string;
+	    modelPresets: Record<string, ModelPreset>;
 	
 	    static createFrom(source: any = {}) {
-	        return new CreateModelPresetsRequest(source);
+	        return new ProviderPreset(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.ProviderName = source["ProviderName"];
-	        this.Body = this.convertValues(source["Body"], ModelPreset, true);
+	        this.defaultModelPresetID = source["defaultModelPresetID"];
+	        this.modelPresets = this.convertValues(source["modelPresets"], ModelPreset, true);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1182,11 +1180,43 @@ export namespace spec {
 		    return a;
 		}
 	}
-	export class CreateModelPresetsResponse {
+	export class CreateProviderPresetRequest {
+	    ProviderName: string;
+	    Body?: ProviderPreset;
+	
+	    static createFrom(source: any = {}) {
+	        return new CreateProviderPresetRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ProviderName = source["ProviderName"];
+	        this.Body = this.convertValues(source["Body"], ProviderPreset);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class CreateProviderPresetResponse {
 	
 	
 	    static createFrom(source: any = {}) {
-	        return new CreateModelPresetsResponse(source);
+	        return new CreateProviderPresetResponse(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -1222,7 +1252,7 @@ export namespace spec {
 	}
 	export class DeleteModelPresetRequest {
 	    ProviderName: string;
-	    ModelName: string;
+	    ModelPresetID: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new DeleteModelPresetRequest(source);
@@ -1231,7 +1261,7 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ProviderName = source["ProviderName"];
-	        this.ModelName = source["ModelName"];
+	        this.ModelPresetID = source["ModelPresetID"];
 	    }
 	}
 	export class DeleteModelPresetResponse {
@@ -1246,11 +1276,11 @@ export namespace spec {
 	
 	    }
 	}
-	export class DeleteModelPresetsRequest {
+	export class DeleteProviderPresetRequest {
 	    ProviderName: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new DeleteModelPresetsRequest(source);
+	        return new DeleteProviderPresetRequest(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -1258,11 +1288,11 @@ export namespace spec {
 	        this.ProviderName = source["ProviderName"];
 	    }
 	}
-	export class DeleteModelPresetsResponse {
+	export class DeleteProviderPresetResponse {
 	
 	
 	    static createFrom(source: any = {}) {
-	        return new DeleteModelPresetsResponse(source);
+	        return new DeleteProviderPresetResponse(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -1282,22 +1312,40 @@ export namespace spec {
 	        this.ForceFetch = source["ForceFetch"];
 	    }
 	}
-	export class ModelPresetsSchema {
+	export class PresetsSchema {
 	    version: string;
-	    modelPresets: Record<string, any>;
+	    providerPresets: Record<string, ProviderPreset>;
 	
 	    static createFrom(source: any = {}) {
-	        return new ModelPresetsSchema(source);
+	        return new PresetsSchema(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.version = source["version"];
-	        this.modelPresets = source["modelPresets"];
+	        this.providerPresets = this.convertValues(source["providerPresets"], ProviderPreset, true);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class GetAllModelPresetsResponse {
-	    Body?: ModelPresetsSchema;
+	    Body?: PresetsSchema;
 	
 	    static createFrom(source: any = {}) {
 	        return new GetAllModelPresetsResponse(source);
@@ -1305,7 +1353,7 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Body = this.convertValues(source["Body"], ModelPresetsSchema);
+	        this.Body = this.convertValues(source["Body"], PresetsSchema);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1517,6 +1565,7 @@ export namespace spec {
 	        this.type = source["type"];
 	    }
 	}
+	
 	export class PutConversationRequestBody {
 	    title: string;
 	    // Go type: time
@@ -1755,6 +1804,64 @@ export namespace spec {
 		    }
 		    return a;
 		}
+	}
+	
+	export class SetDefaultModelPresetRequestBody {
+	    ModelPresetID: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetDefaultModelPresetRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ModelPresetID = source["ModelPresetID"];
+	    }
+	}
+	export class SetDefaultModelPresetRequest {
+	    ProviderName: string;
+	    Body?: SetDefaultModelPresetRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new SetDefaultModelPresetRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ProviderName = source["ProviderName"];
+	        this.Body = this.convertValues(source["Body"], SetDefaultModelPresetRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class SetDefaultModelPresetResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new SetDefaultModelPresetResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
 	}
 
 }

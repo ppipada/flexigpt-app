@@ -42,9 +42,8 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 		&AddAISettingRequest{
 			ProviderName: spec.ProviderName("openai2"),
 			Body: &AISetting{
-				IsEnabled:    true,
-				Origin:       "https://test-origin",
-				DefaultModel: "gpt-4o",
+				IsEnabled: true,
+				Origin:    "https://test-origin",
 			},
 		},
 	)
@@ -125,13 +124,8 @@ func TestSettingStore_GetAllSettings(t *testing.T) {
 				t.Errorf("error = %v, expected substring %q", err, tc.expectedError)
 			}
 
-			// If no error, verify we can see the defaultModel we set.
 			if tc.expectedError == "" && got != nil {
-				if aiSetting, ok := got.Body.AISettings["openai2"]; ok {
-					if aiSetting.DefaultModel != "gpt-4o" {
-						t.Errorf("expected DefaultModel = gpt-4o, got %v", aiSetting.DefaultModel)
-					}
-				} else {
+				if _, ok := got.Body.AISettings["openai2"]; !ok {
 					t.Errorf("openai2 provider should be present in AISettings")
 				}
 			}
@@ -158,8 +152,7 @@ func TestSettingStore_SetAppSettings(t *testing.T) {
 	_, err = store.AddAISetting(ctx, &AddAISettingRequest{
 		ProviderName: spec.ProviderName("openai2"),
 		Body: &AISetting{
-			IsEnabled:    true,
-			DefaultModel: "gpt-3.5-turbo",
+			IsEnabled: true,
 		},
 	})
 	if err != nil {
@@ -290,8 +283,7 @@ func TestSettingStore_AddAISetting(t *testing.T) {
 			req: &AddAISettingRequest{
 				ProviderName: spec.ProviderName("azure"),
 				Body: &AISetting{
-					IsEnabled:    false,
-					DefaultModel: "azure-model",
+					IsEnabled: false,
 				},
 			},
 			wantErr:       false,
@@ -302,8 +294,7 @@ func TestSettingStore_AddAISetting(t *testing.T) {
 			req: &AddAISettingRequest{
 				ProviderName: spec.ProviderName("some@crazy#provider!"),
 				Body: &AISetting{
-					IsEnabled:    true,
-					DefaultModel: "crazy-model",
+					IsEnabled: true,
 				},
 			},
 			wantErr:       false,
@@ -536,10 +527,6 @@ func TestSettingStore_SetAISettingAttrs(t *testing.T) {
 
 	newBool := func(b bool) *bool { return &b }
 	newString := func(s string) *string { return &s }
-	newModelName := func(m string) *spec.ModelName {
-		tmp := spec.ModelName(m)
-		return &tmp
-	}
 
 	testCases := []struct {
 		name          string
@@ -578,9 +565,8 @@ func TestSettingStore_SetAISettingAttrs(t *testing.T) {
 			req: &SetAISettingAttrsRequest{
 				ProviderName: spec.ProviderName("openai2"),
 				Body: &SetAISettingAttrsRequestBody{
-					IsEnabled:    newBool(true),
-					Origin:       newString("some-origin"),
-					DefaultModel: newModelName("gpt-4"),
+					IsEnabled: newBool(true),
+					Origin:    newString("some-origin"),
 				},
 			},
 			wantErr:       false,
@@ -594,7 +580,6 @@ func TestSettingStore_SetAISettingAttrs(t *testing.T) {
 					IsEnabled:                newBool(false),
 					Origin:                   newString("test-origin"),
 					ChatCompletionPathPrefix: newString("/v1/complete-chat"),
-					DefaultModel:             newModelName("gpt-4-l"),
 				},
 			},
 			wantErr:       false,

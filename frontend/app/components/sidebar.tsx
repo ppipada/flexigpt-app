@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 
-import { FiCpu, FiDatabase, FiFilePlus, FiHome, FiMenu, FiMessageSquare, FiSettings } from 'react-icons/fi';
+import { FiCpu, FiDatabase, FiFilePlus, FiHome, FiMenu, FiMessageSquare, FiSettings, FiSliders } from 'react-icons/fi';
 import { Link } from 'react-router';
 
 import { FEATURE_FLAG_AGENTS, FEATURE_FLAG_DOCUMENT_STORES, FEATURE_FLAG_PROMPTS } from '@/lib/features';
@@ -76,6 +76,11 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 								</Link>
 							</li>
 						)}
+						<li className="mt-4" title="Model Presets" onClick={toggle} aria-label="Model Presets">
+							<Link to="/modelpresets/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
+								<FiSliders size={24} />
+							</Link>
+						</li>
 						<li className="mt-4" title="Settings" onClick={toggle} aria-label="Settings">
 							<Link to="/settings/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
 								<FiSettings size={24} />

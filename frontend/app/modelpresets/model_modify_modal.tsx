@@ -4,8 +4,8 @@ import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
 import {
 	DefaultModelPreset,
-	type ModelName,
 	type ModelPreset,
+	type ModelPresetID,
 	type ProviderName,
 	ReasoningLevel,
 	ReasoningType,
@@ -16,7 +16,6 @@ import { PopulateModelPresetDefaults } from '@/apis/modelpresetstore_helper';
 import Dropdown from '@/components/dropdown';
 
 // For ReasoningType: a record where every option is `isEnabled: true`.
-// That ensures the dropdown can show them. We also set filterDisabled={false} to skip filtering.
 const reasoningTypeItems: Record<ReasoningType, { isEnabled: boolean; displayName: string }> = {
 	[ReasoningType.SingleWithLevels]: { isEnabled: true, displayName: 'Reasoning only, with Levels' },
 	[ReasoningType.HybridWithTokens]: { isEnabled: true, displayName: 'Hybrid, with Reasoning Tokens' },
@@ -31,13 +30,13 @@ const reasoningLevelItems: Record<ReasoningLevel, { isEnabled: boolean; displayN
 interface ModifyModelModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSubmit: (modelName: ModelName, modelData: ModelPreset) => void;
+	onSubmit: (modelPresetID: ModelPresetID, modelData: ModelPreset) => void;
 	providerName: ProviderName;
 	// If provided, indicates edit mode.
-	initialModelName?: ModelName;
+	initialModelID?: ModelPresetID;
 	// When editing existing model data.
 	initialData?: ModelPreset;
-	existingModels: Record<ModelName, ModelPreset>;
+	existingModels: Record<ModelPresetID, ModelPreset>;
 }
 
 interface ModelPresetFormData {
@@ -62,17 +61,17 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 	onClose,
 	onSubmit,
 	providerName,
-	initialModelName,
+	initialModelID,
 	initialData,
 	existingModels,
 }) => {
-	const isEditMode = Boolean(initialModelName);
+	const isEditMode = Boolean(initialModelID);
 
 	// Default numeric values and placeholders.
 	const [defaultValues, setDefaultValues] = useState<ModelPreset>(DefaultModelPreset);
 
-	// If not edit mode, user must provide a new modelName.
-	const [modelName, setModelName] = useState<ModelName>(initialModelName ?? ('' as ModelName));
+	// If not edit mode, user must provide a new modelPresetID.
+	const [modelPresetID, setModelPresetID] = useState<ModelPresetID>(initialModelID ?? ('' as ModelPresetID));
 
 	// Local form data (storing numeric as strings for easy clearing).
 	const [formData, setFormData] = useState<ModelPresetFormData>({
@@ -92,7 +91,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 
 	// Validation errors.
 	const [errors, setErrors] = useState<{
-		modelName?: string;
+		modelPresetID?: string;
 		displayName?: string;
 		temperature?: string;
 		maxPromptLength?: string;
@@ -103,11 +102,11 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 
 	useEffect(() => {
 		async function loadData() {
-			let mName: ModelName = '';
-			if (initialModelName) {
-				mName = initialModelName;
+			let mID: ModelPresetID = '';
+			if (initialModelID) {
+				mID = initialModelID;
 			}
-			const merged = await PopulateModelPresetDefaults(providerName, mName, initialData);
+			const merged = await PopulateModelPresetDefaults(providerName, mID, initialData);
 			setDefaultValues(merged);
 
 			// Convert numbers to strings for the local form usage.
@@ -126,17 +125,17 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 				timeout: String(merged.timeout ?? ''),
 			});
 
-			setModelName(mName);
+			setModelPresetID(mID);
 			setErrors({});
 		}
 
 		if (isOpen) {
 			void loadData();
 		}
-	}, [isOpen, providerName, initialModelName, initialData]);
+	}, [isOpen, providerName, initialModelID, initialData]);
 
 	type ValidationField =
-		| 'modelName'
+		| 'modelPresetID'
 		| 'displayName'
 		| 'temperature'
 		| 'maxPromptLength'
@@ -150,12 +149,12 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		// Remove old error for this field.
 		const newErrors: ValidationErrors = Object.fromEntries(Object.entries(errors).filter(([key]) => key !== field));
 
-		// Model Name is required only if we're adding a new model (not edit mode).
-		if (field === 'modelName' && !isEditMode) {
+		// ModelPresetID is required only if we're adding a new model (not edit mode).
+		if (field === 'modelPresetID' && !isEditMode) {
 			if (typeof value === 'string' && !value.trim()) {
-				newErrors.modelName = 'Model name is required.';
+				newErrors.modelPresetID = 'Model ID is required.';
 			} else if (typeof value === 'string' && Object.prototype.hasOwnProperty.call(existingModels, value)) {
-				newErrors.modelName = 'Model name must be unique.';
+				newErrors.modelPresetID = 'Model ID must be unique.';
 			}
 		}
 
@@ -215,10 +214,10 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			return;
 		}
 
-		// If changing "modelName" (only relevant if adding a new model).
-		if (name === 'modelName') {
-			setModelName(value);
-			validateField('modelName', value);
+		// If changing "modelPresetID" (only relevant if adding a new model).
+		if (name === 'modelPresetID') {
+			setModelPresetID(value);
+			validateField('modelPresetID', value);
 			return;
 		}
 
@@ -244,21 +243,21 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		// No errors in the errors object.
 		const noErrors = !Object.values(errors).some(Boolean);
 
-		// If adding a model, modelName must be non-empty.
-		const modelNameValid = isEditMode || modelName.trim().length > 0;
+		// If adding a model, modelPresetID must be non-empty.
+		const modelPresetIDValid = isEditMode || modelPresetID.trim().length > 0;
 
 		// Always require a non-empty displayName.
 		const displayNameValid = formData.displayName.trim().length > 0;
 
-		return noErrors && modelNameValid && displayNameValid;
-	}, [errors, isEditMode, modelName, formData.displayName]);
+		return noErrors && modelPresetIDValid && displayNameValid;
+	}, [errors, isEditMode, modelPresetID, formData.displayName]);
 
 	// On form submit, parse final values and re-validate.
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
 		// Re-validate fields.
-		validateField('modelName', modelName);
+		validateField('modelPresetID', modelPresetID);
 		validateField('displayName', formData.displayName);
 		validateField('temperature', formData.temperature);
 		validateField('maxPromptLength', formData.maxPromptLength);
@@ -274,12 +273,14 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 
 		// Convert strings to numbers (fallback to defaults) for numeric fields.
 		const parseOrDefault = (val: string, def: number) => (val.trim() === '' ? def : Number(val));
+		const finalModelPresetID = modelPresetID;
 
 		const finalData: ModelPreset = {
-			name: modelName,
+			id: finalModelPresetID,
+			name: finalModelPresetID,
 			displayName: formData.displayName.trim(),
 			isEnabled: formData.isEnabled,
-			shortCommand: modelName,
+			shortCommand: finalModelPresetID,
 			stream: formData.stream,
 			maxPromptLength: parseOrDefault(formData.maxPromptLength, defaultValues.maxPromptLength ?? 2048),
 			maxOutputLength: parseOrDefault(formData.maxOutputLength, defaultValues.maxOutputLength ?? 1024),
@@ -299,7 +300,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			finalData.reasoning = undefined;
 		}
 
-		onSubmit(modelName, finalData);
+		onSubmit(finalModelPresetID, finalData);
 	};
 
 	// If the modal isn’t open, return null.
@@ -327,10 +328,10 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 
 				{/* Form */}
 				<form onSubmit={handleSubmit} className="space-y-4">
-					{/* Model Name (Internal Key) */}
+					{/* ModelPresetID (Internal Key) */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
-							<span className="label-text text-sm">Model Name*</span>
+							<span className="label-text text-sm">Model ID*</span>
 							<span className="label-text-alt tooltip" data-tip="Unique identifier for this model.">
 								<FiHelpCircle size={12} />
 							</span>
@@ -338,18 +339,18 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 						<div className="col-span-9">
 							<input
 								type="text"
-								name="modelName"
-								value={modelName}
+								name="modelPresetID"
+								value={modelPresetID}
 								onChange={handleChange}
-								className={`input input-bordered w-full rounded-xl ${errors.modelName ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-xl ${errors.modelPresetID ? 'input-error' : ''}`}
 								placeholder="e.g., gpt-4, claude-opus"
-								disabled={isEditMode} // Cannot change modelName if editing an existing model
+								disabled={isEditMode} // Cannot change modelPresetID if editing an existing model
 								spellCheck="false"
 							/>
-							{errors.modelName && (
+							{errors.modelPresetID && (
 								<div className="label">
 									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.modelName}
+										<FiAlertCircle size={12} /> {errors.modelPresetID}
 									</span>
 								</div>
 							)}

@@ -21,8 +21,13 @@ const (
 	ShortCommandGemini25Flash spec.ModelShortCommand = "gemini25Flash"
 )
 
-var GoogleModels = map[spec.ModelName]spec.ModelPreset{
-	Gemini25Pro: {
+const (
+	ModelPresetIDGemini25Pro   spec.ModelPresetID = "gemini25Pro"
+	ModelPresetIDGemini25Flash spec.ModelPresetID = "gemini25Flash"
+)
+
+var GoogleModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
+	ModelPresetIDGemini25Pro: {
 		Name:            Gemini25Pro,
 		DisplayName:     DisplayNameGemini25Pro,
 		IsEnabled:       true,
@@ -34,7 +39,7 @@ var GoogleModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},
-	Gemini25Flash: {
+	ModelPresetIDGemini25Flash: {
 		Name:            Gemini25Flash,
 		DisplayName:     DisplayNameGemini25Flash,
 		IsEnabled:       true,
@@ -46,6 +51,11 @@ var GoogleModels = map[spec.ModelName]spec.ModelPreset{
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},
+}
+
+var GoogleProviderPreset = spec.ProviderPreset{
+	DefaultModelPresetID: ModelPresetIDGemini25Flash,
+	ModelPresets:         GoogleModelPresets,
 }
 
 var GoogleProviderInfo = spec.ProviderInfo{

@@ -40,9 +40,9 @@ type GetConfigurationInfoResponse struct {
 }
 
 type GetConfigurationInfoResponseBody struct {
-	DefaultProvider       spec.ProviderName                                         `json:"defaultProvider"`
-	ConfiguredProviders   []spec.ProviderInfo                                       `json:"configuredProviders"`
-	InbuiltProviderModels map[spec.ProviderName]map[spec.ModelName]spec.ModelPreset `json:"inbuiltProviderModels"`
+	DefaultProvider       spec.ProviderName                         `json:"defaultProvider"`
+	ConfiguredProviders   []spec.ProviderInfo                       `json:"configuredProviders"`
+	InbuiltProviderModels map[spec.ProviderName]spec.ProviderPreset `json:"inbuiltProviderModels"`
 }
 
 type SetProviderAPIKeyRequestBody struct {

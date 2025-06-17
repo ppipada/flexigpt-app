@@ -4,10 +4,12 @@ import {spec} from '../models';
 
 export function AddModelPreset(arg1:spec.AddModelPresetRequest):Promise<spec.AddModelPresetResponse>;
 
-export function CreateModelPresets(arg1:spec.CreateModelPresetsRequest):Promise<spec.CreateModelPresetsResponse>;
+export function CreateProviderPreset(arg1:spec.CreateProviderPresetRequest):Promise<spec.CreateProviderPresetResponse>;
 
 export function DeleteModelPreset(arg1:spec.DeleteModelPresetRequest):Promise<spec.DeleteModelPresetResponse>;
 
-export function DeleteModelPresets(arg1:spec.DeleteModelPresetsRequest):Promise<spec.DeleteModelPresetsResponse>;
+export function DeleteProviderPreset(arg1:spec.DeleteProviderPresetRequest):Promise<spec.DeleteProviderPresetResponse>;
 
 export function GetAllModelPresets(arg1:spec.GetAllModelPresetsRequest):Promise<spec.GetAllModelPresetsResponse>;
+
+export function SetDefaultModelPreset(arg1:spec.SetDefaultModelPresetRequest):Promise<spec.SetDefaultModelPresetResponse>;

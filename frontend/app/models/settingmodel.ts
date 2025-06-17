@@ -1,18 +1,16 @@
-import { type ModelName, type ProviderName } from '@/models/aimodelmodel';
+import { type ProviderName } from '@/models/aimodelmodel';
 
 export interface AISetting {
 	isEnabled: boolean;
 	apiKey: string;
 	origin: string;
 	chatCompletionPathPrefix: string;
-	defaultModel: ModelName;
 }
 
 export interface AISettingAttrs {
 	isEnabled?: boolean;
 	origin?: string;
 	chatCompletionPathPrefix?: string;
-	defaultModel?: ModelName;
 }
 
 export type SettingsSchema = {

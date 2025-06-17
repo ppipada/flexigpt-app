@@ -30,6 +30,7 @@ func WithRecoveryResp[T any](fn func() (T, error)) (T, error) {
 	result, err = fn()
 	if err != nil {
 		slog.Error("Response", "Error", err.Error())
+		slog.Error(string(debug.Stack()))
 	}
 	return result, err
 }

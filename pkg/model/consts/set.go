@@ -18,13 +18,13 @@ var InbuiltProviders = map[spec.ProviderName]spec.ProviderInfo{
 	ProviderNameOpenAI:      OpenAIProviderInfo,
 }
 
-var InbuiltProviderModels = map[spec.ProviderName]map[spec.ModelName]spec.ModelPreset{
-	ProviderNameAnthropic:   AnthropicModels,
-	ProviderNameDeepseek:    DeepseekModels,
-	ProviderNameGoogle:      GoogleModels,
-	ProviderNameHuggingFace: HuggingfaceModels,
-	ProviderNameLlamaCPP:    LlamacppModels,
-	ProviderNameOpenAI:      OpenAIModels,
+var InbuiltProviderModels = map[spec.ProviderName]spec.ProviderPreset{
+	ProviderNameAnthropic:   AnthropicProviderPreset,
+	ProviderNameDeepseek:    DeepseekProviderPreset,
+	ProviderNameGoogle:      GoogleProviderPreset,
+	ProviderNameHuggingFace: HuggingfaceProviderPreset,
+	ProviderNameLlamaCPP:    LlamacppProviderPreset,
+	ProviderNameOpenAI:      OpenAIProviderPreset,
 }
 
 var GlobalModelParamsDefault = spec.ModelParams{

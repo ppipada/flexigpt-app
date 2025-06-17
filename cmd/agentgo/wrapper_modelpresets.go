@@ -34,19 +34,19 @@ func (w *ModelPresetStoreWrapper) GetAllModelPresets(
 	})
 }
 
-func (w *ModelPresetStoreWrapper) CreateModelPresets(
-	req *spec.CreateModelPresetsRequest,
-) (*spec.CreateModelPresetsResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.CreateModelPresetsResponse, error) {
-		return w.store.CreateModelPresets(context.Background(), req)
+func (w *ModelPresetStoreWrapper) CreateProviderPreset(
+	req *spec.CreateProviderPresetRequest,
+) (*spec.CreateProviderPresetResponse, error) {
+	return middleware.WithRecoveryResp(func() (*spec.CreateProviderPresetResponse, error) {
+		return w.store.CreateProviderPreset(context.Background(), req)
 	})
 }
 
-func (w *ModelPresetStoreWrapper) DeleteModelPresets(
-	req *spec.DeleteModelPresetsRequest,
-) (*spec.DeleteModelPresetsResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.DeleteModelPresetsResponse, error) {
-		return w.store.DeleteModelPresets(context.Background(), req)
+func (w *ModelPresetStoreWrapper) DeleteProviderPreset(
+	req *spec.DeleteProviderPresetRequest,
+) (*spec.DeleteProviderPresetResponse, error) {
+	return middleware.WithRecoveryResp(func() (*spec.DeleteProviderPresetResponse, error) {
+		return w.store.DeleteProviderPreset(context.Background(), req)
 	})
 }
 
@@ -63,5 +63,13 @@ func (w *ModelPresetStoreWrapper) DeleteModelPreset(
 ) (*spec.DeleteModelPresetResponse, error) {
 	return middleware.WithRecoveryResp(func() (*spec.DeleteModelPresetResponse, error) {
 		return w.store.DeleteModelPreset(context.Background(), req)
+	})
+}
+
+func (w *ModelPresetStoreWrapper) SetDefaultModelPreset(
+	req *spec.SetDefaultModelPresetRequest,
+) (*spec.SetDefaultModelPresetResponse, error) {
+	return middleware.WithRecoveryResp(func() (*spec.SetDefaultModelPresetResponse, error) {
+		return w.store.SetDefaultModelPreset(context.Background(), req)
 	})
 }

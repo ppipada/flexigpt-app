@@ -6,18 +6,22 @@ export function AddModelPreset(arg1) {
   return window['go']['main']['ModelPresetStoreWrapper']['AddModelPreset'](arg1);
 }
 
-export function CreateModelPresets(arg1) {
-  return window['go']['main']['ModelPresetStoreWrapper']['CreateModelPresets'](arg1);
+export function CreateProviderPreset(arg1) {
+  return window['go']['main']['ModelPresetStoreWrapper']['CreateProviderPreset'](arg1);
 }
 
 export function DeleteModelPreset(arg1) {
   return window['go']['main']['ModelPresetStoreWrapper']['DeleteModelPreset'](arg1);
 }
 
-export function DeleteModelPresets(arg1) {
-  return window['go']['main']['ModelPresetStoreWrapper']['DeleteModelPresets'](arg1);
+export function DeleteProviderPreset(arg1) {
+  return window['go']['main']['ModelPresetStoreWrapper']['DeleteProviderPreset'](arg1);
 }
 
 export function GetAllModelPresets(arg1) {
   return window['go']['main']['ModelPresetStoreWrapper']['GetAllModelPresets'](arg1);
+}
+
+export function SetDefaultModelPreset(arg1) {
+  return window['go']['main']['ModelPresetStoreWrapper']['SetDefaultModelPreset'](arg1);
 }

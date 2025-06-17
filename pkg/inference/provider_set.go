@@ -234,47 +234,6 @@ func (ps *ProviderSetAPI) SetProviderAttribute(
 	return &SetProviderAttributeResponse{}, nil
 }
 
-func presetToParams(preset spec.ModelPreset) *spec.ModelParams {
-	params := spec.ModelParams{
-		Name:                 preset.Name,
-		Stream:               consts.GlobalModelParamsDefault.Stream,
-		MaxPromptLength:      consts.GlobalModelParamsDefault.MaxPromptLength,
-		MaxOutputLength:      consts.GlobalModelParamsDefault.MaxOutputLength,
-		Temperature:          consts.GlobalModelParamsDefault.Temperature,
-		Reasoning:            consts.GlobalModelParamsDefault.Reasoning,
-		SystemPrompt:         consts.GlobalModelParamsDefault.SystemPrompt,
-		Timeout:              consts.GlobalModelParamsDefault.Timeout,
-		AdditionalParameters: consts.GlobalModelParamsDefault.AdditionalParameters,
-	}
-
-	if preset.Stream != nil {
-		params.Stream = *preset.Stream
-	}
-	if preset.MaxPromptLength != nil {
-		params.MaxPromptLength = *preset.MaxPromptLength
-	}
-	if preset.MaxOutputLength != nil {
-		params.MaxOutputLength = *preset.MaxOutputLength
-	}
-	if preset.Temperature != nil {
-		params.Temperature = preset.Temperature
-	}
-	if preset.Reasoning != nil {
-		params.Reasoning = preset.Reasoning
-	}
-	if preset.SystemPrompt != nil {
-		params.SystemPrompt = *preset.SystemPrompt
-	}
-	if preset.Timeout != nil {
-		params.Timeout = *preset.Timeout
-	}
-	if preset.AdditionalParameters != nil {
-		params.AdditionalParameters = preset.AdditionalParameters
-	}
-
-	return &params
-}
-
 // FetchCompletion processes a completion request for a given provider.
 func (ps *ProviderSetAPI) FetchCompletion(
 	ctx context.Context,
@@ -289,19 +248,11 @@ func (ps *ProviderSetAPI) FetchCompletion(
 		return nil, errors.New("invalid provider")
 	}
 
-	var inbuiltModelParams *spec.ModelParams = nil
-	if pmodels, providerExists := consts.InbuiltProviderModels[provider]; providerExists {
-		if preset, presetExists := pmodels[req.Body.ModelParams.Name]; presetExists {
-			inbuiltModelParams = presetToParams(preset)
-		}
-	}
-
 	resp, err := p.FetchCompletion(
 		ctx,
 		p.GetLLMsModel(ctx),
 		req.Body.Prompt,
 		req.Body.ModelParams,
-		inbuiltModelParams,
 		req.Body.PrevMessages,
 		req.Body.OnStreamData,
 	)

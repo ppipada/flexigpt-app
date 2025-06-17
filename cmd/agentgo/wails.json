@@ -6,7 +6,7 @@
 	"frontend:dir": "../../frontend",
 	"frontend:build": "pnpm run build:wails",
 	"frontend:dev:watcher": "pnpm run run:wailsdev",
-	"frontend:dev:serverUrl": "auto",
+	"frontend:dev:serverUrl": "http://localhost:5173",
 	"wailsjsdir": "../../frontend/app/apis",
 	"author": {
 		"name": "ppipada",

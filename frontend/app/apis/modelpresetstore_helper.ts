@@ -3,11 +3,11 @@ import {
 	DefaultChatOptions,
 	DefaultModelParams,
 	DefaultModelPreset,
-	type ModelName,
 	type ModelParams,
 	type ModelPreset,
-	type ProviderModelPresets,
+	type ModelPresetID,
 	type ProviderName,
+	type ProviderPreset,
 	type ReasoningParams,
 } from '@/models/aimodelmodel';
 
@@ -15,13 +15,13 @@ import { modelPresetStoreAPI, providerSetAPI, settingstoreAPI } from '@/apis/bas
 
 function mergeDefaultsModelPresetAndInbuilt(
 	providerName: ProviderName,
-	modelName: ModelName,
-	inbuiltProviderModels: Record<ProviderName, Record<ModelName, ModelPreset>>,
+	modelPresetID: ModelPresetID,
+	inbuiltProviderModels: Record<ProviderName, Record<ModelPresetID, ModelPreset>>,
 	modelPreset: ModelPreset
 ): ModelParams {
 	let inbuiltModelPreset: ModelPreset | undefined = undefined;
-	if (providerName in inbuiltProviderModels && modelName in inbuiltProviderModels[providerName]) {
-		inbuiltModelPreset = inbuiltProviderModels[providerName][modelName];
+	if (providerName in inbuiltProviderModels && modelPresetID in inbuiltProviderModels[providerName]) {
+		inbuiltModelPreset = inbuiltProviderModels[providerName][modelPresetID];
 	}
 
 	let temperature = DefaultModelParams.temperature ?? 0.1;
@@ -79,7 +79,7 @@ function mergeDefaultsModelPresetAndInbuilt(
 	}
 
 	return {
-		name: modelName,
+		name: modelPreset.name,
 		stream: stream,
 		maxPromptLength: maxPromptLength,
 		maxOutputLength: maxOutputLength,
@@ -104,7 +104,7 @@ export async function GetChatInputOptions(): Promise<{ allOptions: ChatOptions[]
 
 		const onlySettings = await settingstoreAPI.getAllSettings();
 		const modelPresetsSchema = await modelPresetStoreAPI.getAllModelPresets();
-		const mergedPresets = MergeInbuiltModelsWithPresets(modelPresetsSchema.modelPresets, inbuiltProviderModels);
+		const mergedPresets = MergeInbuiltModelsWithPresets(modelPresetsSchema.providerPresets, inbuiltProviderModels);
 		// Initialize default option and input models array
 		let defaultOption: ChatOptions | undefined;
 		const inputModels: ChatOptions[] = [];
@@ -119,9 +119,9 @@ export async function GetChatInputOptions(): Promise<{ allOptions: ChatOptions[]
 				continue;
 			}
 
-			const settingsDefaultModelName = onlySettings.aiSettings[providerName].defaultModel;
+			const settingsDefaultModelPresetID = mergedPresets[providerName].defaultModelPresetID;
 
-			for (const [modelName, modelPreset] of Object.entries(mergedPresets[providerName])) {
+			for (const [modelName, modelPreset] of Object.entries(mergedPresets[providerName].modelPresets)) {
 				if (!modelPreset.isEnabled) {
 					continue;
 				}
@@ -146,7 +146,7 @@ export async function GetChatInputOptions(): Promise<{ allOptions: ChatOptions[]
 					disablePreviousMessages: false,
 				};
 				inputModels.push(chatOption);
-				if (modelName === settingsDefaultModelName && providerName === configDefaultProvider) {
+				if (modelPreset.id === settingsDefaultModelPresetID && providerName === configDefaultProvider) {
 					defaultOption = chatOption;
 				}
 			}
@@ -165,7 +165,7 @@ export async function GetChatInputOptions(): Promise<{ allOptions: ChatOptions[]
 // Create a Model setting from default or inbuilt ModelParams if available
 export async function PopulateModelPresetDefaults(
 	providerName: ProviderName,
-	modelName: ModelName,
+	modelPresetID: ModelPresetID,
 	existingData?: ModelPreset
 ): Promise<ModelPreset> {
 	const info = await providerSetAPI.getConfigurationInfo();
@@ -180,21 +180,23 @@ export async function PopulateModelPresetDefaults(
 	let modelPreset = existingData;
 	if (typeof modelPreset === 'undefined') {
 		modelPreset = {
-			name: modelName,
-			displayName: modelName,
+			id: modelPresetID,
+			name: modelPresetID,
+			displayName: modelPresetID,
 			isEnabled: true,
-			shortCommand: modelName,
+			shortCommand: modelPresetID,
 		};
 	}
 
 	const mergedModelParam = mergeDefaultsModelPresetAndInbuilt(
 		providerName,
-		modelName,
+		modelPresetID,
 		info.inbuiltProviderModels,
 		modelPreset
 	);
 
 	return {
+		id: modelPreset.name,
 		name: modelPreset.name,
 		displayName: modelPreset.displayName,
 		isEnabled: modelPreset.isEnabled,
@@ -210,9 +212,9 @@ export async function PopulateModelPresetDefaults(
 }
 
 export function MergeInbuiltModelsWithPresets(
-	modelPresets: Record<ProviderName, ProviderModelPresets>,
-	inbuiltProviderModels: Record<ProviderName, Record<ModelName, ModelPreset>>
-): Record<ProviderName, ProviderModelPresets> {
+	modelPresets: Record<ProviderName, ProviderPreset>,
+	inbuiltProviderModels: Record<ProviderName, Record<ModelPresetID, ModelPreset>>
+): Record<ProviderName, ProviderPreset> {
 	const newPresets = { ...modelPresets };
 
 	for (const provider in inbuiltProviderModels) {
@@ -226,7 +228,8 @@ export function MergeInbuiltModelsWithPresets(
 				continue;
 			}
 
-			newPresets[provider][model] = {
+			newPresets[provider].modelPresets[model] = {
+				id: inbuiltProviderModels[provider][model].name,
 				name: inbuiltProviderModels[provider][model].name,
 				displayName: inbuiltProviderModels[provider][model].displayName,
 				isEnabled: inbuiltProviderModels[provider][model].isEnabled,

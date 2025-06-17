@@ -32,7 +32,6 @@ type CompletionProvider interface {
 		llm llms.Model,
 		prompt string,
 		modelParams spec.ModelParams,
-		inbuiltModelParams *spec.ModelParams,
 		prevMessages []ChatCompletionRequestMessage,
 		onStreamData func(data string) error,
 	) (*CompletionResponse, error)
@@ -108,7 +107,7 @@ func (api *BaseAIAPI) SetProviderAttribute(
 	return nil
 }
 
-func trimInbuiltPrompts(systemPrompt, inbuiltPrompt string) string {
+func TrimInbuiltPrompts(systemPrompt, inbuiltPrompt string) string {
 	// Split both prompts into lines.
 	inbuiltLines := strings.Split(inbuiltPrompt, "\n")
 	promptLines := strings.Split(systemPrompt, "\n")
@@ -125,7 +124,6 @@ func trimInbuiltPrompts(systemPrompt, inbuiltPrompt string) string {
 func (api *BaseAIAPI) getCompletionRequest(
 	prompt string,
 	modelParams spec.ModelParams,
-	inbuiltModelParams *spec.ModelParams,
 	prevMessages []ChatCompletionRequestMessage,
 ) *CompletionRequest {
 	completionRequest := CompletionRequest{
@@ -136,40 +134,6 @@ func (api *BaseAIAPI) getCompletionRequest(
 			Reasoning:            modelParams.Reasoning,
 		},
 	}
-
-	// Cannot turn on streaming of it is set false in model.
-	if inbuiltModelParams != nil && modelParams.Stream {
-		completionRequest.ModelParams.Stream = inbuiltModelParams.Stream
-	} else {
-		completionRequest.ModelParams.Stream = modelParams.Stream
-	}
-
-	if inbuiltModelParams != nil &&
-		modelParams.MaxOutputLength > inbuiltModelParams.MaxOutputLength {
-		completionRequest.ModelParams.MaxOutputLength = inbuiltModelParams.MaxOutputLength
-	} else {
-		completionRequest.ModelParams.MaxOutputLength = modelParams.MaxOutputLength
-	}
-
-	if inbuiltModelParams != nil &&
-		modelParams.MaxPromptLength > inbuiltModelParams.MaxPromptLength {
-		completionRequest.ModelParams.MaxPromptLength = inbuiltModelParams.MaxPromptLength
-	} else {
-		completionRequest.ModelParams.MaxPromptLength = modelParams.MaxPromptLength
-	}
-
-	if inbuiltModelParams != nil && inbuiltModelParams.Reasoning != nil &&
-		modelParams.Reasoning != nil &&
-		modelParams.Reasoning.Type != inbuiltModelParams.Reasoning.Type {
-		// Cannot have input reasoning different than models defined reasoning type.
-		completionRequest.ModelParams.Reasoning = nil
-	}
-
-	reqSystemPrompt := modelParams.SystemPrompt
-	if inbuiltModelParams != nil && inbuiltModelParams.SystemPrompt != "" {
-		reqSystemPrompt = trimInbuiltPrompts(reqSystemPrompt, inbuiltModelParams.SystemPrompt)
-	}
-	completionRequest.ModelParams.SystemPrompt = reqSystemPrompt
 
 	// Handle messages.
 	messages := slices.Clone(prevMessages)
@@ -197,11 +161,10 @@ func (api *BaseAIAPI) FetchCompletion(
 	llm llms.Model,
 	prompt string,
 	modelParams spec.ModelParams,
-	inbuiltModelParams *spec.ModelParams,
 	prevMessages []ChatCompletionRequestMessage,
 	onStreamData func(data string) error,
 ) (*CompletionResponse, error) {
-	input := api.getCompletionRequest(prompt, modelParams, inbuiltModelParams, prevMessages)
+	input := api.getCompletionRequest(prompt, modelParams, prevMessages)
 	if len(input.Messages) == 0 {
 		return nil, errors.New("empty input messages")
 	}

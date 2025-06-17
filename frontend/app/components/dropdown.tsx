@@ -97,7 +97,9 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 				className="flex btn w-full text-left shadow-none rounded-xl border-neutral/20 bg-base-100 justify-between items-center px-4 py-2 cursor-pointer"
 				title={title}
 			>
-				<span className="font-normal">{selectedKey ? getItemDisplayName(selectedKey) : 'Select an option'}</span>
+				<span className="font-normal truncate">
+					{selectedKey ? getItemDisplayName(selectedKey) : 'Select an option'}
+				</span>
 				{isOpen ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
 			</summary>
 
@@ -111,7 +113,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 						}}
 					>
 						<a className="flex justify-between items-center p-2 m-1">
-							<span>{getItemDisplayName(key)}</span>
+							<span className="truncate">{getItemDisplayName(key)}</span>
 							{key === selectedKey && <FiCheck />}
 						</a>
 					</li>

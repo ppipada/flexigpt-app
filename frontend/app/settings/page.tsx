@@ -1,20 +1,13 @@
-import { type FC, useEffect, useState } from 'react';
+import type { FC } from 'react';
+import { useEffect, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
 
-import {
-	DefaultModelName,
-	DefaultModelTitle,
-	DefaultProviderName,
-	type ModelName,
-	type ModelPreset,
-	type ProviderModelPresets,
-	type ProviderName,
-} from '@/models/aimodelmodel';
+import type { ModelPreset, ModelPresetID, ProviderName } from '@/models/aimodelmodel';
+import { DefaultProviderName } from '@/models/aimodelmodel';
 import type { AISetting } from '@/models/settingmodel';
 
-import { modelPresetStoreAPI, providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
-import { MergeInbuiltModelsWithPresets } from '@/apis/modelpresetstore_helper';
+import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
 import { AddAISetting, DeleteAISetting, SetAppSettings } from '@/apis/settingstore_helper';
 
 import { omitManyKeys } from '@/lib/obj_utils';
@@ -24,225 +17,152 @@ import Dropdown from '@/components/dropdown';
 import ThemeSwitch from '@/components/theme_switch';
 
 import AddProviderModal from '@/settings/provider_add_modal';
-import AISettingsCard from '@/settings/provider_card';
-
-const defaultAISettings: Record<ProviderName, AISetting> = {
-	[DefaultProviderName]: {
-		isEnabled: true,
-		apiKey: '',
-		origin: '',
-		chatCompletionPathPrefix: '',
-		defaultModel: DefaultModelName,
-	},
-};
-
-const defaultProviderModelPresets: Record<ProviderName, ProviderModelPresets> = {
-	[DefaultProviderName]: {
-		[DefaultModelName]: {
-			name: DefaultModelName,
-			displayName: DefaultModelTitle,
-			isEnabled: true,
-			shortCommand: DefaultModelName,
-		},
-	},
-};
+import ProviderSettingsCard from '@/settings/provider_card';
 
 const SettingsPage: FC = () => {
-	const [defaultProvider, setComponentDefaultProvider] = useState<ProviderName>(DefaultProviderName);
-	const [aiSettings, setAISettings] = useState<Record<string, AISetting>>(defaultAISettings);
-	const [providerModelPresets, setProviderModelPresets] =
-		useState<Record<string, ProviderModelPresets>>(defaultProviderModelPresets);
-	const [isAddProviderModalOpen, setIsAddProviderModalOpen] = useState(false);
-	const [inbuiltProviderInfo, setInbuiltProviderInfo] = useState<Record<ProviderName, Record<ModelName, ModelPreset>>>(
-		{}
-	);
+	/* ── state ─────────────────────────────────────────────── */
+	const [defaultProvider, setDefaultProvider] = useState<ProviderName>(DefaultProviderName);
+	const [aiSettings, setAISettings] = useState<Record<ProviderName, AISetting>>({});
+	const [inbuiltProviderInfo, setInbuiltProviderInfo] = useState<
+		Record<ProviderName, Record<ModelPresetID, ModelPreset>>
+	>({});
 
+	const [isAddProviderModalOpen, setIsAddProviderModalOpen] = useState(false);
+
+	/* ── initial load ──────────────────────────────────────── */
 	useEffect(() => {
 		(async () => {
 			const settings = await settingstoreAPI.getAllSettings();
 			const info = await providerSetAPI.getConfigurationInfo();
-			const modelPresetsSchema = await modelPresetStoreAPI.getAllModelPresets();
-			const enabledProviders = Object.keys(settings.aiSettings).filter(
-				provider => settings.aiSettings[provider].isEnabled
-			);
-
-			if (enabledProviders.length === 0) {
-				enabledProviders.push(DefaultProviderName);
-			}
-			const defaultProv = settings.app.defaultProvider;
+			// const schema = await modelPresetStoreAPI.getAllModelPresets();
 
 			setInbuiltProviderInfo(info.inbuiltProviderModels);
-			setComponentDefaultProvider(enabledProviders.includes(defaultProv) ? defaultProv : enabledProviders[0]);
-			const newPresets = MergeInbuiltModelsWithPresets(modelPresetsSchema.modelPresets, info.inbuiltProviderModels);
+			setDefaultProvider(settings.app.defaultProvider);
+
 			setAISettings(settings.aiSettings);
-			setProviderModelPresets(newPresets);
 		})();
 	}, []);
 
+	/* ── handlers ──────────────────────────────────────────── */
 	const handleDefaultProviderChange = async (value: ProviderName) => {
-		setComponentDefaultProvider(value);
+		setDefaultProvider(value);
 		await SetAppSettings(value);
 	};
 
-	const handleProviderSettingChange = (provider: ProviderName, updatedSettings: AISetting) => {
-		setAISettings(prev => ({
-			...prev,
-			[provider]: updatedSettings,
-		}));
+	const handleProviderSettingChange = (provider: ProviderName, updated: AISetting) => {
+		setAISettings(prev => ({ ...prev, [provider]: updated }));
 	};
 
-	const handleAddProviderSubmit = async (providerName: ProviderName, newProviderSettings: AISetting) => {
-		// Build the updated settings
-		const updatedSettings = {
-			...aiSettings,
-			[providerName]: newProviderSettings,
-		};
+	const handleAddProviderSubmit = async (providerName: ProviderName, newSettings: AISetting) => {
+		setAISettings(prev => ({ ...prev, [providerName]: newSettings }));
 
-		// Update React state with the same object
-		setAISettings(updatedSettings);
-
-		// Persist to setting store
-		await AddAISetting(providerName, newProviderSettings);
-		console.log(`Provider "${providerName}" added successfully.`);
+		await AddAISetting(providerName, newSettings);
 	};
 
 	const handleRemoveProvider = async (providerName: ProviderName) => {
-		if (providerName === defaultProvider) {
-			// This should never happen
-			console.log(`Provider "${providerName}" not removed.`);
-			return;
-		}
-		// Remove from local state
-		const newAISettings = Object.fromEntries(Object.entries(aiSettings).filter(([key]) => key !== providerName));
-		setAISettings(newAISettings);
-		setProviderModelPresets(prev => {
-			const copy = omitManyKeys(prev, [providerName]);
-			return copy;
+		if (providerName === defaultProvider) return;
+
+		setAISettings(prev => {
+			return omitManyKeys(prev, [providerName]);
 		});
+
 		await DeleteAISetting(providerName);
-		console.log(`Provider "${providerName}" removed successfully.`);
 	};
 
-	const handleModelPresetsChange = (provider: ProviderName, newPresets: ProviderModelPresets) => {
-		setProviderModelPresets(prev => ({ ...prev, [provider]: newPresets }));
-	};
+	const enabledProviders = Object.entries(aiSettings)
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		.filter(([_, s]) => s.isEnabled)
+		.map(([name]) => name);
 
-	const onModelSubmit = (providerName: ProviderName, newPreset: ModelPreset) => {
-		setProviderModelPresets(prev => ({
-			...prev,
-			[providerName]: {
-				...prev[providerName],
-				[newPreset.name]: newPreset,
-			},
-		}));
-	};
-
-	const fetchValue = async (): Promise<string> => {
-		// For download button
-		const value = JSON.stringify(
+	/* download settings helper */
+	const fetchValue = async () =>
+		JSON.stringify(
 			{
-				app: {
-					defaultProvider,
-				},
-				aiSettings: aiSettings,
+				app: { defaultProvider },
+				aiSettings,
 			},
 			null,
 			2
 		);
-		return value;
-	};
 
+	/* ── render ────────────────────────────────────────────── */
 	return (
-		<div className="flex flex-col items-center w-full h-full overflow-hidden">
-			<div className="w-full flex justify-center bg-transparent fixed top-2">
-				<div className="w-10/12 lg:w-2/3">
-					<div className="flex flex-row items-center justify-between p-2 mt-2 bg-transparent">
-						<div className="grow text-center">
-							<h1 className="text-xl font-semibold">Settings</h1>
-						</div>
-						<div className="ml-auto lg:pr-8">
-							<DownloadButton
-								title="Download Settings"
-								language="json"
-								valueFetcher={fetchValue}
-								size={24}
-								fileprefix="settings"
-								className="btn btn-sm btn-ghost"
-							/>
-						</div>
-					</div>
+		<div className="flex flex-col items-center w-full h-full">
+			{/* sticky header bar */}
+			<div className="w-full flex justify-center fixed top-2">
+				<div className="w-10/12 lg:w-2/3 flex items-center justify-between p-2">
+					<h1 className="text-xl font-semibold text-center flex-grow">Settings</h1>
+					<DownloadButton
+						title="Download Settings"
+						language="json"
+						valueFetcher={fetchValue}
+						size={24}
+						fileprefix="settings"
+						className="btn btn-sm btn-ghost"
+					/>
 				</div>
 			</div>
 
-			<div className="flex flex-col items-center w-full grow bg-transparent mt-18">
-				<div
-					className="flex flex-col items-center w-full grow overflow-y-auto"
-					style={{ maxHeight: `calc(100vh - 128px)` }}
-				>
-					<div className="flex flex-col space-y-4 w-11/12 lg:w-2/3">
-						{/* Theme Switch Card */}
-						<div className="bg-base-100 rounded-xl shadow-lg px-4 py-2 mb-8">
-							<div className="grid grid-cols-12 gap-4 items-center">
-								<div className="col-span-3 text-sm font-medium">Theme</div>
-								<div className="col-span-9">
-									<ThemeSwitch />
-								</div>
+			{/* content */}
+			<div className="flex flex-col items-center w-full grow mt-20 overflow-y-auto">
+				<div className="flex flex-col space-y-4 w-11/12 lg:w-2/3">
+					{/* ── Theme switch ─ */}
+					<div className="bg-base-100 rounded-xl shadow-lg px-4 py-2 mb-8">
+						<div className="grid grid-cols-12 items-center gap-4">
+							<div className="col-span-3 text-sm font-medium">Theme</div>
+							<div className="col-span-9">
+								<ThemeSwitch />
 							</div>
 						</div>
-
-						{/* Default Provider + Add Provider */}
-						<div className="bg-base-100 rounded-xl shadow-lg px-4 py-2 mb-8">
-							<div className="grid grid-cols-12 gap-4 items-center">
-								<label className="col-span-3 text-sm font-medium">Default Provider</label>
-								<div className="col-span-6">
-									<Dropdown<ProviderName>
-										dropdownItems={aiSettings}
-										selectedKey={defaultProvider}
-										onChange={handleDefaultProviderChange}
-										filterDisabled={true}
-										title="Select Default Provider"
-										getDisplayName={(key: string) => {
-											return key.charAt(0).toUpperCase() + key.slice(1);
-										}}
-									/>
-								</div>
-								<div className="col-span-3 flex justify-end">
-									<button
-										className="btn btn-md btn-ghost rounded-2xl flex items-center"
-										onClick={() => {
-											setIsAddProviderModalOpen(true);
-										}}
-									>
-										<FiPlus size={16} /> Add Provider
-									</button>
-								</div>
-							</div>
-						</div>
-
-						{/* AI Settings Cards */}
-						{Object.keys(aiSettings).map(providerStr => {
-							return (
-								<div key={providerStr} className="rounded-xl">
-									<AISettingsCard
-										provider={providerStr}
-										settings={aiSettings[providerStr]}
-										aiSettings={aiSettings}
-										defaultProvider={defaultProvider}
-										inbuiltProviderModels={
-											providerStr in inbuiltProviderInfo ? inbuiltProviderInfo[providerStr] : undefined
-										}
-										allModelPresets={providerModelPresets[providerStr]}
-										onModelPresetsChange={handleModelPresetsChange}
-										onProviderSettingChange={handleProviderSettingChange}
-										onProviderDelete={handleRemoveProvider}
-									/>
-								</div>
-							);
-						})}
 					</div>
+
+					{/* ── Default provider & add ─ */}
+					<div className="bg-base-100 rounded-xl shadow-lg px-4 py-2 mb-8">
+						<div className="grid grid-cols-12 items-center gap-4">
+							<label className="col-span-3 text-sm font-medium">Default Provider</label>
+							<div className="col-span-6">
+								<Dropdown<ProviderName>
+									dropdownItems={aiSettings}
+									selectedKey={defaultProvider}
+									onChange={handleDefaultProviderChange}
+									filterDisabled={true}
+									title="Select Provider"
+									getDisplayName={(key: string) => {
+										return key.charAt(0).toUpperCase() + key.slice(1);
+									}}
+								/>
+							</div>
+
+							<div className="col-span-3 flex justify-end">
+								<button
+									className="btn btn-ghost rounded-2xl flex items-center"
+									onClick={() => {
+										setIsAddProviderModalOpen(true);
+									}}
+								>
+									<FiPlus /> <span className="ml-1">Add Provider</span>
+								</button>
+							</div>
+						</div>
+					</div>
+
+					{/* ── provider cards ─ */}
+					{Object.keys(aiSettings).map(p => (
+						<ProviderSettingsCard
+							key={p}
+							provider={p}
+							settings={aiSettings[p]}
+							defaultProvider={defaultProvider}
+							inbuiltProvider={Boolean(inbuiltProviderInfo[p])}
+							enabledProviders={enabledProviders}
+							onProviderSettingChange={handleProviderSettingChange}
+							onProviderDelete={handleRemoveProvider}
+						/>
+					))}
 				</div>
 			</div>
 
+			{/* modal */}
 			{isAddProviderModalOpen && (
 				<AddProviderModal
 					isOpen={isAddProviderModalOpen}
@@ -250,7 +170,6 @@ const SettingsPage: FC = () => {
 						setIsAddProviderModalOpen(false);
 					}}
 					onSubmit={handleAddProviderSubmit}
-					onModelSubmit={onModelSubmit}
 					existingProviderNames={Object.keys(aiSettings)}
 				/>
 			)}

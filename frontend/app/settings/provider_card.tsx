@@ -1,244 +1,145 @@
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 
-import {
-	FiAlertTriangle,
-	FiCheck,
-	FiCheckCircle,
-	FiChevronDown,
-	FiChevronUp,
-	FiEdit,
-	FiPlus,
-	FiTrash2,
-	FiX,
-	FiXCircle,
-} from 'react-icons/fi';
+import { FiCheckCircle, FiChevronDown, FiChevronUp, FiTrash2, FiXCircle } from 'react-icons/fi';
 
-import type { ModelName, ModelPreset, ProviderName } from '@/models/aimodelmodel';
+import type { ProviderName } from '@/models/aimodelmodel';
 import { ProviderInfoDescription } from '@/models/aimodelmodel';
 import type { AISetting, AISettingAttrs } from '@/models/settingmodel';
 
-import { modelPresetStoreAPI } from '@/apis/baseapi';
 import { SetAISettingAPIKey, SetAISettingAttrs } from '@/apis/settingstore_helper';
 
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
-import Dropdown from '@/components/dropdown';
 
-import ModifyModelModal from '@/settings/model_modify_modal';
-
-interface AISettingsCardProps {
+interface ProviderSettingsCardProps {
 	provider: ProviderName;
 	settings: AISetting;
-	aiSettings: Record<string, AISetting>;
 	defaultProvider: ProviderName;
-	inbuiltProviderModels: Record<ModelName, ModelPreset> | undefined;
-	allModelPresets: Record<ModelName, ModelPreset>;
-	onModelPresetsChange: (provider: ProviderName, newPresets: Record<ModelName, ModelPreset>) => void;
+	inbuiltProvider?: boolean;
+	enabledProviders: ProviderName[];
 	onProviderSettingChange: (provider: ProviderName, settings: AISetting) => void;
 	onProviderDelete: (provider: ProviderName) => Promise<void>;
 }
 
-const AISettingsCard: FC<AISettingsCardProps> = ({
+const isValidUrl = (url: string) => {
+	try {
+		// Accept empty string as valid (optional: require non-empty)
+		if (!url) return false;
+		new URL(url);
+		return true;
+	} catch {
+		return false;
+	}
+};
+
+const ProviderSettingsCard: FC<ProviderSettingsCardProps> = ({
 	provider,
 	settings,
-	aiSettings,
 	defaultProvider,
-	inbuiltProviderModels,
-	allModelPresets,
-	onModelPresetsChange,
+	inbuiltProvider = false,
+	enabledProviders,
 	onProviderSettingChange,
 	onProviderDelete,
 }) => {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [isEnabled, setIsEnabled] = useState(!!settings.isEnabled);
-	const [showModal, setShowModal] = useState(false);
 	const [localSettings, setLocalSettings] = useState<AISetting>(settings);
-
-	const [modelPreset, setModelPreset] = useState<Record<ModelName, ModelPreset>>(allModelPresets);
-	const [isModifyModelModalOpen, setIsModifyModelModalOpen] = useState(false);
-	const [selectedModelName, setSelectedModelName] = useState<ModelName | null>(null);
-	const [isDeleteModelModalOpen, setIsDeleteModelModalOpen] = useState(false);
 
 	const [showActionDeniedAlert, setShowActionDeniedAlert] = useState(false);
 	const [actionDeniedMessage, setActionDeniedMessage] = useState('');
-	const [isDeleteProviderModalOpen, setIsDeleteProviderModalOpen] = useState(false);
+	const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-	// Update local state when props change
+	// Validation states
+	const [apiKeyError, setApiKeyError] = useState('');
+	const [originError, setOriginError] = useState('');
+	const [chatPathError, setChatPathError] = useState('');
+
+	const isLastEnabled = isEnabled && enabledProviders.length === 1;
+
 	useEffect(() => {
 		setIsEnabled(!!settings.isEnabled);
 		setLocalSettings(settings);
-		setModelPreset(allModelPresets);
-	}, [settings, allModelPresets]);
+	}, [settings]);
 
 	const toggleExpand = () => {
-		if (isEnabled) {
-			setIsExpanded(!isExpanded);
+		if (isEnabled) setIsExpanded(prev => !prev);
+	};
+
+	const updateLocalSettings = (key: keyof AISetting, value: any) => {
+		const updated = { ...localSettings, [key]: value };
+		setLocalSettings(updated);
+		onProviderSettingChange(provider, updated);
+	};
+
+	const validateApiKey = (apiKey: string) => {
+		if (!apiKey || apiKey.trim() === '') {
+			setApiKeyError('API Key cannot be empty.');
+			return false;
 		}
+		setApiKeyError('');
+		return true;
+	};
+
+	const validateOrigin = (origin: string) => {
+		if (!origin || !isValidUrl(origin)) {
+			setOriginError('Origin must be a valid URL (e.g., https://api.example.com)');
+			return false;
+		}
+		setOriginError('');
+		return true;
+	};
+
+	const validateChatPath = (path: string) => {
+		// Optional: require starts with /
+		if (path && !path.startsWith('/')) {
+			setChatPathError('Path should start with a "/"');
+			return false;
+		}
+		setChatPathError('');
+		return true;
 	};
 
 	const toggleProviderEnable = async () => {
-		const newIsEnabled = !isEnabled;
-		if (!newIsEnabled) {
-			// Prevent disabling the default provider
+		const newState = !isEnabled;
+
+		if (!newState) {
+			// guard: cannot disable default provider
 			if (provider === defaultProvider) {
-				setActionDeniedMessage(
-					'Cannot disable the default provider. Please select a different default provider first.'
-				);
+				setActionDeniedMessage('Cannot disable the default provider. Choose another default first.');
 				setShowActionDeniedAlert(true);
 				return;
 			}
-			const enabledProviders = Object.keys(aiSettings).filter(k => aiSettings[k].isEnabled && k !== provider);
-			if (enabledProviders.length === 0) {
-				setShowModal(true);
+			// Optional: Prevent disabling last enabled provider
+			if (isLastEnabled) {
+				setActionDeniedMessage('Cannot disable the last enabled provider.');
+				setShowActionDeniedAlert(true);
 				return;
 			}
 		}
-		setIsEnabled(newIsEnabled);
-		updateLocalSettings('isEnabled', newIsEnabled);
-		const aiSettingAttrs: AISettingAttrs = {
-			isEnabled: newIsEnabled,
-		};
-		await SetAISettingAttrs(provider, aiSettingAttrs);
+
+		setIsEnabled(newState);
+		updateLocalSettings('isEnabled', newState);
+		await SetAISettingAttrs(provider, { isEnabled: newState } as AISettingAttrs);
 	};
 
-	const toggleModelEnable = async (modelName: ModelName) => {
-		const model = modelPreset[modelName];
-
-		// If we are about to disable the default model, deny the action.
-		if (model.isEnabled && modelName === localSettings.defaultModel) {
-			setActionDeniedMessage('Cannot disable the default model. Please select a different default model first.');
+	const handleProviderDelete = () => {
+		if (provider === defaultProvider || inbuiltProvider) {
+			setActionDeniedMessage('Cannot delete the default or in-built provider.');
 			setShowActionDeniedAlert(true);
 			return;
 		}
-
-		// Otherwise proceed with toggling
-		const updatedModel = { ...model, isEnabled: !model.isEnabled };
-		const updatedModels = { ...modelPreset, [modelName]: updatedModel };
-
-		// Update local state
-		setModelPreset(updatedModels);
-		onModelPresetsChange(provider, updatedModels);
-
-		// Persist to a backend
-		await modelPresetStoreAPI.addModelPreset(provider, modelName, updatedModel);
+		setShowDeleteModal(true);
 	};
 
-	// Handle setting changes and save to backend
-	const updateLocalSettings = async (key: string, value: any) => {
-		const updatedSettings = {
-			...localSettings,
-			[key]: value,
-		};
-		setLocalSettings(updatedSettings);
-		onProviderSettingChange(provider, updatedSettings);
-	};
-
-	// Handlers for models
-	const handleAddModel = () => {
-		setSelectedModelName(null);
-		setIsModifyModelModalOpen(true);
-	};
-
-	const handleEditModel = (modelName: ModelName) => {
-		setSelectedModelName(modelName);
-		setIsModifyModelModalOpen(true);
-	};
-
-	const isModelRemovable = (modelName: ModelName) => {
-		// Cannot remove if it is the default model
-		if (modelName === localSettings.defaultModel) {
-			return false;
-		}
-		// Cannot remove if it is an inbuilt model
-		if (inbuiltProviderModels && modelName in inbuiltProviderModels) {
-			return false;
-		}
-
-		return true;
-	};
-
-	const isModelReasoningSupport = (modelName: ModelName) => {
-		if (modelPreset[modelName].reasoning) {
-			return true;
-		}
-
-		if (inbuiltProviderModels && modelName in inbuiltProviderModels && inbuiltProviderModels[modelName].reasoning) {
-			return true;
-		}
-
-		return false;
-	};
-
-	const handleDeleteModel = (modelName: ModelName) => {
-		if (!isModelRemovable(modelName)) {
-			setActionDeniedMessage('Cannot delete the default model or an inbuilt model.');
-			setShowActionDeniedAlert(true);
-			return;
-		}
-		setSelectedModelName(modelName);
-		setIsDeleteModelModalOpen(true);
-	};
-
-	const handleDeleteModelConfirm = async () => {
-		const modelName: ModelName = selectedModelName || '';
-		if (!isModelRemovable(modelName)) {
-			setActionDeniedMessage('Cannot delete the default model or an inbuilt model.');
-			setShowActionDeniedAlert(true);
-			return;
-		}
-
-		const updatedModels = Object.fromEntries(Object.entries(modelPreset).filter(([key]) => key !== modelName));
-
-		setModelPreset(updatedModels);
-		onModelPresetsChange(provider, updatedModels);
-		await modelPresetStoreAPI.deleteModelPreset(provider, modelName);
-
-		setIsDeleteModelModalOpen(false);
-		setSelectedModelName(null);
-	};
-
-	const closeDeleteModelModal = () => {
-		setIsDeleteModelModalOpen(false);
-		setSelectedModelName(null);
-	};
-
-	const handleModifyModelSubmit = async (modelName: ModelName, modelData: ModelPreset) => {
-		const updatedModels = { ...modelPreset };
-		updatedModels[modelName] = modelData;
-		setModelPreset(updatedModels);
-		onModelPresetsChange(provider, updatedModels);
-		await modelPresetStoreAPI.addModelPreset(provider, modelName, modelData);
-		setIsModifyModelModalOpen(false);
-		setSelectedModelName(null);
-	};
-
-	const isProviderRemovable = (provider: ProviderName) => {
-		if (provider === defaultProvider) return false;
-		if (inbuiltProviderModels) return false;
-		return true;
-	};
-
-	const handleDeleteProvider = (provider: ProviderName) => {
-		if (!isProviderRemovable(provider)) {
-			setActionDeniedMessage('Cannot delete the default provider or an inbuilt provider.');
-			setShowActionDeniedAlert(true);
-			return;
-		}
-		setIsDeleteProviderModalOpen(true);
-	};
-
-	const handleDeleteProviderConfirm = async () => {
-		await onProviderDelete(provider); // call parent to remove from state & store
-		setIsDeleteProviderModalOpen(false);
-	};
-
-	const closeDeleteProviderModal = () => {
-		setIsDeleteProviderModalOpen(false);
+	const confirmDelete = async () => {
+		await onProviderDelete(provider);
+		setShowDeleteModal(false);
 	};
 
 	return (
 		<div className="bg-base-100 rounded-xl shadow-lg p-4 mb-4">
+			{/* ── Header row ─────────────────────────────────────── */}
 			<div className="grid grid-cols-12 gap-4 items-center">
 				{/* Provider Title*/}
 				<div className="col-span-3 flex items-center space-x-4">
@@ -252,202 +153,117 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 						checked={isEnabled}
 						onChange={toggleProviderEnable}
 						className="toggle toggle-accent rounded-full"
-						spellCheck="false"
 					/>
 				</div>
-				{/* Full Settings with Chevron */}
-				<div className="col-span-6 cursor-pointer space-x-4 flex items-end justify-end" onClick={toggleExpand}>
+
+				{/* Status & chevron */}
+				<div className="col-span-6 cursor-pointer flex items-end justify-end gap-4" onClick={toggleExpand}>
 					<div className="flex items-center">
-						<span className="text-sm font-medium">API Key</span>
+						<span className="text-sm">API Key</span>
 						{localSettings.apiKey ? (
-							<FiCheckCircle className="text-green-500 mx-1" title="API Key Configured" />
+							<FiCheckCircle className="text-success mx-1" />
 						) : (
-							<FiXCircle className="text-red-500 mx-1" title="API Key Not Configured" />
+							<FiXCircle className="text-error mx-1" />
 						)}
 					</div>
 					<div className="flex items-center">
-						<span className="text-sm font-medium">Full Settings</span>
-						{isExpanded ? (
-							<FiChevronUp size={16} className="mx-1 text-neutral/60" />
-						) : (
-							<FiChevronDown size={16} className="mx-1 text-neutral/60" />
-						)}
+						<span className="text-sm">Details</span>
+						{isExpanded ? <FiChevronUp /> : <FiChevronDown />}
 					</div>
 				</div>
 			</div>
 
+			{/* ── Body ───────────────────────────────────────────── */}
 			{isEnabled && isExpanded && (
-				<div className="m-1 mt-8 space-y-4">
-					{/* API Key */}
+				<div className="mt-8 space-y-4">
+					{/* API-Key */}
 					<div className="grid grid-cols-12 gap-4 items-center">
-						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['apiKey']}>
+						<label className="col-span-3 text-sm tooltip" data-tip={ProviderInfoDescription.apiKey}>
 							API Key
 						</label>
-						<input
-							type="password"
-							className="input col-span-9 w-full h-10 rounded-xl border border-neutral/20 px-4 py-2"
-							style={{ fontSize: '14px' }}
-							value={localSettings.apiKey}
-							onChange={e => {
-								setLocalSettings({
-									...localSettings,
-									apiKey: e.target.value,
-								});
-							}}
-							onBlur={async e => {
-								updateLocalSettings('apiKey', e.target.value);
-								await SetAISettingAPIKey(provider, e.target.value);
-							}}
-							spellCheck="false"
-						/>
+						<div className="col-span-9">
+							<input
+								type="password"
+								className={`input w-full input-bordered rounded-xl ${apiKeyError ? 'input-error' : ''}`}
+								value={localSettings.apiKey}
+								onChange={e => {
+									setLocalSettings({ ...localSettings, apiKey: e.target.value });
+									if (apiKeyError) validateApiKey(e.target.value);
+								}}
+								onBlur={async e => {
+									if (!validateApiKey(e.target.value)) return;
+									updateLocalSettings('apiKey', e.target.value);
+									await SetAISettingAPIKey(provider, e.target.value);
+								}}
+								spellCheck="false"
+							/>
+							{apiKeyError && <div className="text-error text-xs mt-1">{apiKeyError}</div>}
+						</div>
 					</div>
 
 					{/* Origin */}
 					<div className="grid grid-cols-12 gap-4 items-center">
-						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['origin']}>
+						<label className="col-span-3 text-sm tooltip" data-tip={ProviderInfoDescription.origin}>
 							Origin
 						</label>
-						<input
-							type="text"
-							className="input col-span-9 w-full h-10 rounded-xl border border-neutral/20 px-4 py-2"
-							style={{ fontSize: '14px' }}
-							value={localSettings.origin}
-							onChange={e => {
-								setLocalSettings({
-									...localSettings,
-									origin: e.target.value,
-								});
-							}}
-							onBlur={async e => {
-								updateLocalSettings('origin', e.target.value);
-								await SetAISettingAttrs(provider, { origin: e.target.value } as AISettingAttrs);
-							}}
-							spellCheck="false"
-						/>
-					</div>
-
-					{/* Chat completion path prefix */}
-					<div className="grid grid-cols-12 gap-4 items-center">
-						<label
-							className="col-span-3 text-sm text-left tooltip"
-							data-tip={ProviderInfoDescription['chatCompletionPathPrefix']}
-						>
-							Chat Path Prefix
-						</label>
-						<input
-							type="text"
-							className="input col-span-9 w-full h-10 rounded-xl border border-neutral/20 px-4 py-2"
-							style={{ fontSize: '14px' }}
-							value={localSettings.chatCompletionPathPrefix}
-							onChange={e => {
-								setLocalSettings({
-									...localSettings,
-									chatCompletionPathPrefix: e.target.value,
-								});
-							}}
-							onBlur={async e => {
-								updateLocalSettings('chatCompletionPathPrefix', e.target.value);
-								await SetAISettingAttrs(provider, { chatCompletionPathPrefix: e.target.value } as AISettingAttrs);
-							}}
-							spellCheck="false"
-						/>
-					</div>
-
-					{/* Models : Default and add */}
-					<div className="grid grid-cols-12 gap-4 items-center">
-						<label className="col-span-3 text-sm text-left tooltip" data-tip={ProviderInfoDescription['defaultModel']}>
-							Default Model
-						</label>
-						<div className="col-span-6">
-							<Dropdown<ModelName>
-								dropdownItems={modelPreset}
-								selectedKey={localSettings.defaultModel}
-								onChange={async (modelName: ModelName) => {
-									updateLocalSettings('defaultModel', modelName);
-									await SetAISettingAttrs(provider, { defaultModel: modelName } as AISettingAttrs);
+						<div className="col-span-9">
+							<input
+								type="text"
+								className={`input w-full input-bordered rounded-xl ${originError ? 'input-error' : ''}`}
+								value={localSettings.origin}
+								onChange={e => {
+									setLocalSettings({ ...localSettings, origin: e.target.value });
+									if (originError) validateOrigin(e.target.value);
 								}}
-								filterDisabled={true}
-								title="Select Default Model"
-								getDisplayName={key => modelPreset[key].displayName}
+								onBlur={async e => {
+									if (!validateOrigin(e.target.value)) return;
+									updateLocalSettings('origin', e.target.value);
+									await SetAISettingAttrs(provider, { origin: e.target.value } as AISettingAttrs);
+								}}
+								spellCheck="false"
 							/>
-						</div>
-						<div className="col-span-3 flex justify-end">
-							<button className="btn btn-md btn-ghost rounded-xl flex items-center" onClick={handleAddModel}>
-								<FiPlus size={16} /> Add Model
-							</button>
+							{originError && <div className="text-error text-xs mt-1">{originError}</div>}
 						</div>
 					</div>
 
-					{/* Models Table */}
-					<div className="overflow-x-auto border border-base-content/10 rounded-2xl">
-						<table className="table table-zebra w-full">
-							<thead>
-								<tr className="font-semibold text-sm px-4 py-0 m-0 bg-base-300">
-									<th className="text-base-content">Model Name</th>
-									<th className="text-base-content text-center">Enabled</th>
-									<th className="text-base-content text-center">Reasoning</th>
-									<th className="text-base-content text-right pr-8">Actions</th>
-								</tr>
-							</thead>
-							<tbody>
-								{Object.entries(modelPreset).map(([modelName, model]) => (
-									<tr key={modelName} className="hover:bg-base-300 border-none shadow-none">
-										<td>{model.displayName || modelName}</td>
-										<td className="flex items-center justify-center">
-											<input
-												type="checkbox"
-												checked={model.isEnabled}
-												onChange={async () => {
-													await toggleModelEnable(modelName);
-												}}
-												className="toggle toggle-accent rounded-full"
-											/>
-										</td>
-										<td>
-											<div className="flex items-center justify-center">
-												{isModelReasoningSupport(modelName) ? <FiCheck size={16} /> : <FiX size={16} />}
-											</div>
-										</td>
-										<td className="text-right">
-											<button
-												className="btn btn-sm btn-ghost rounded-2xl"
-												aria-label="Edit Model"
-												title="Edit Model"
-												onClick={() => {
-													handleEditModel(modelName);
-												}}
-											>
-												<FiEdit size={16} />
-											</button>
-											<button
-												className="btn btn-sm btn-ghost rounded-2xl"
-												aria-label="Delete Model"
-												onClick={() => {
-													handleDeleteModel(modelName);
-												}}
-												disabled={!isModelRemovable(modelName)}
-												title={!isModelRemovable(modelName) ? 'Cannot Delete Default Or Inbuilt Model' : 'Delete Model'}
-											>
-												<FiTrash2 size={16} />
-											</button>
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
+					{/* Chat-completion prefix */}
+					<div className="grid grid-cols-12 gap-4 items-center">
+						<label className="col-span-3 text-sm tooltip" data-tip={ProviderInfoDescription.chatCompletionPathPrefix}>
+							Chat Path
+						</label>
+						<div className="col-span-9">
+							<input
+								type="text"
+								className={`input w-full input-bordered rounded-xl ${chatPathError ? 'input-error' : ''}`}
+								value={localSettings.chatCompletionPathPrefix}
+								onChange={e => {
+									setLocalSettings({ ...localSettings, chatCompletionPathPrefix: e.target.value });
+									if (chatPathError) validateChatPath(e.target.value);
+								}}
+								onBlur={async e => {
+									if (!validateChatPath(e.target.value)) return;
+									updateLocalSettings('chatCompletionPathPrefix', e.target.value);
+									await SetAISettingAttrs(provider, {
+										chatCompletionPathPrefix: e.target.value,
+									} as AISettingAttrs);
+								}}
+								spellCheck="false"
+							/>
+							{chatPathError && <div className="text-error text-xs mt-1">{chatPathError}</div>}
+						</div>
 					</div>
-					{/* End of Models */}
 
-					{/* Delete Provider */}
+					{/* Delete provider */}
 					<div className="flex justify-end">
 						<button
-							className="btn btn-md btn-ghost rounded-2xl flex items-center"
-							aria-label="Delete Provider"
-							onClick={() => {
-								handleDeleteProvider(provider);
-							}}
-							disabled={!isProviderRemovable(provider)}
-							title={!isProviderRemovable(provider) ? 'Cannot Delete Default Or Inbuilt Provider' : 'Delete Provider'}
+							className="btn btn-md btn-ghost rounded-xl flex items-center"
+							onClick={handleProviderDelete}
+							disabled={provider === defaultProvider || inbuiltProvider}
+							title={
+								provider === defaultProvider || inbuiltProvider
+									? 'Cannot delete default / in-built provider'
+									: 'Delete Provider'
+							}
 						>
 							<FiTrash2 size={16} /> Delete Provider
 						</button>
@@ -455,53 +271,7 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 				</div>
 			)}
 
-			{showModal && (
-				<dialog className="modal modal-open">
-					<div className="modal-box w-5/6 max-w-4xl">
-						<div className="flex flex-row items-center">
-							<FiAlertTriangle size={24} />
-							<p className="text-lg px-4">Cannot disable the last provider !!!</p>
-						</div>
-					</div>
-					<form method="dialog" className="modal-backdrop w-full">
-						<button
-							onClick={() => {
-								setShowModal(false);
-							}}
-						>
-							OK
-						</button>
-					</form>
-				</dialog>
-			)}
-
-			{/* Modify Model Modal */}
-			{isModifyModelModalOpen && (
-				<ModifyModelModal
-					isOpen={isModifyModelModalOpen}
-					onClose={() => {
-						setIsModifyModelModalOpen(false);
-					}}
-					onSubmit={handleModifyModelSubmit}
-					providerName={provider}
-					initialModelName={selectedModelName || undefined}
-					initialData={selectedModelName ? modelPreset[selectedModelName] : undefined}
-					existingModels={modelPreset}
-				/>
-			)}
-
-			{/* Delete Model Confirmation Modal */}
-			{isDeleteModelModalOpen && (
-				<DeleteConfirmationModal
-					isOpen={isDeleteModelModalOpen}
-					onClose={closeDeleteModelModal}
-					onConfirm={handleDeleteModelConfirm}
-					title="Delete Model"
-					message={`Are you sure you want to delete the model "${selectedModelName || ''}"? This action cannot be undone.`}
-					confirmButtonText="Delete"
-				/>
-			)}
-
+			{/* ── Modals / Alerts ───────────────────────────────── */}
 			{showActionDeniedAlert && (
 				<ActionDeniedAlert
 					isOpen={showActionDeniedAlert}
@@ -513,19 +283,20 @@ const AISettingsCard: FC<AISettingsCardProps> = ({
 				/>
 			)}
 
-			{/* ADDED: Delete Provider Modal */}
-			{isDeleteProviderModalOpen && (
+			{showDeleteModal && (
 				<DeleteConfirmationModal
-					isOpen={isDeleteProviderModalOpen}
-					onClose={closeDeleteProviderModal}
-					onConfirm={handleDeleteProviderConfirm}
+					isOpen={showDeleteModal}
 					title="Delete Provider"
-					message={`Are you sure you want to delete the entire provider "${provider}"? This action cannot be undone.`}
+					message={`Really delete provider “${provider}”?  This cannot be undone.`}
 					confirmButtonText="Delete"
+					onConfirm={confirmDelete}
+					onClose={() => {
+						setShowDeleteModal(false);
+					}}
 				/>
 			)}
 		</div>
 	);
 };
 
-export default AISettingsCard;
+export default ProviderSettingsCard;

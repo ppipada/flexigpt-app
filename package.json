@@ -22,7 +22,7 @@
 		"pack:macpkg": "gh act workflow_dispatch -W './.github/workflows/macpkg.yml' --artifact-server-path ./out --input tag=v0.0.1",
 		"build:double": "cd ./cmd/agentgo && pnpm run build:frontend && wails build -devtools -m -clean -v 2 -ldflags=\"-X main.Version=v0.0.1\"",
 		"build:withbindings": "cd ./cmd/agentgo && wails build -devtools -m -clean -v 2 -ldflags=\"-X main.Version=v0.0.1\"",
-		"run:watch": "cd ./cmd/agentgo && wails dev -s -v 2 -tags webkit2_41 -ldflags=\"-X main.Version=v0.0.1\"",
+		"run:watch": "cd ./cmd/agentgo && pnpm run build:frontend && wails dev -s -v 2 -tags webkit2_41 -ldflags=\"-X main.Version=v0.0.1\"",
 		"run:gobackend": "./scripts/run_backend.sh",
 		"lint:gopls": "./scripts/lint_gopls_check.sh",
 		"lint:goci": "golangci-lint run ./... -v",

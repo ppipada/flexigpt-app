@@ -69,7 +69,6 @@ export class WailsSettingStoreAPI implements ISettingStoreAPI {
 				isEnabled: aiSettingAttrs.isEnabled,
 				origin: aiSettingAttrs.origin,
 				chatCompletionPathPrefix: aiSettingAttrs.chatCompletionPathPrefix,
-				defaultModel: aiSettingAttrs.defaultModel,
 			},
 		};
 		await SetAISettingAttrs(r as settingstore.SetAISettingAttrsRequest);
