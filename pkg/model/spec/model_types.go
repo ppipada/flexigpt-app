@@ -27,13 +27,13 @@ type ReasoningParams struct {
 
 // ModelParams represents input information about a model to a completion.
 type ModelParams struct {
-	Name                 ModelName        `json:"name"`
-	Stream               bool             `json:"stream"`
-	MaxPromptLength      int              `json:"maxPromptLength"`
-	MaxOutputLength      int              `json:"maxOutputLength"`
-	Temperature          *float64         `json:"temperature,omitempty"`
-	Reasoning            *ReasoningParams `json:"reasoning,omitempty"`
-	SystemPrompt         string           `json:"systemPrompt"`
-	Timeout              int              `json:"timeout"`
-	AdditionalParameters map[string]any   `json:"additionalParameters"`
+	Name                        ModelName        `json:"name"`
+	Stream                      bool             `json:"stream"`
+	MaxPromptLength             int              `json:"maxPromptLength"`
+	MaxOutputLength             int              `json:"maxOutputLength"`
+	Temperature                 *float64         `json:"temperature,omitempty"`
+	Reasoning                   *ReasoningParams `json:"reasoning,omitempty"`
+	SystemPrompt                string           `json:"systemPrompt"`
+	Timeout                     int              `json:"timeout"`
+	AdditionalParametersRawJSON *string          `json:"additionalParametersRawJSON"`
 }

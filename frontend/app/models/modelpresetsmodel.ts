@@ -36,7 +36,7 @@ export interface ModelParams {
 	reasoning?: ReasoningParams;
 	systemPrompt: string;
 	timeout: number;
-	additionalParameters: Record<string, any>;
+	additionalParametersRawJSON?: string;
 }
 
 export const DefaultModelParams: ModelParams = {
@@ -52,7 +52,7 @@ export const DefaultModelParams: ModelParams = {
 	},
 	systemPrompt: '',
 	timeout: 60,
-	additionalParameters: {},
+	additionalParametersRawJSON: undefined,
 };
 
 export interface ProviderInfo {
@@ -87,7 +87,7 @@ export interface ModelPreset {
 	reasoning?: ReasoningParams;
 	systemPrompt?: string;
 	timeout?: number;
-	additionalParameters?: Record<string, any>;
+	additionalParametersRawJSON?: string;
 }
 
 export const DefaultModelPreset: ModelPreset = {
@@ -103,7 +103,7 @@ export const DefaultModelPreset: ModelPreset = {
 	reasoning: DefaultModelParams.reasoning,
 	systemPrompt: DefaultModelParams.systemPrompt,
 	timeout: DefaultModelParams.timeout,
-	additionalParameters: DefaultModelParams.additionalParameters,
+	additionalParametersRawJSON: DefaultModelParams.additionalParametersRawJSON,
 };
 
 export interface ChatOptions extends ModelParams {

@@ -28,13 +28,13 @@ var InbuiltProviderModels = map[spec.ProviderName]spec.ProviderPreset{
 }
 
 var GlobalModelParamsDefault = spec.ModelParams{
-	Name:                 "name",
-	Stream:               true,
-	MaxPromptLength:      2048,
-	MaxOutputLength:      512,
-	Temperature:          Float64Ptr(0.1),
-	Reasoning:            nil,
-	SystemPrompt:         "",
-	Timeout:              60,
-	AdditionalParameters: map[string]any{},
+	Name:                        "name",
+	Stream:                      true,
+	MaxPromptLength:             2048,
+	MaxOutputLength:             512,
+	Temperature:                 Float64Ptr(0.1),
+	Reasoning:                   nil,
+	SystemPrompt:                "",
+	Timeout:                     60,
+	AdditionalParametersRawJSON: nil,
 }

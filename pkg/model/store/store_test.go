@@ -1,6 +1,7 @@
 package store_test
 
 import (
+	"encoding/json"
 	"os"
 	"reflect"
 	"strings"
@@ -707,20 +708,22 @@ func TestModelPresetStore_BoundaryCases(t *testing.T) {
 		Level:  spec.ReasoningLevelHigh,
 		Tokens: 42,
 	}
+	rj, _ := json.Marshal(map[string]any{"foo": "bar"})
+	srj := string(rj)
 	fullPreset := spec.ModelPreset{
-		ID:                   modelPresetID2,
-		Name:                 modelName2,
-		DisplayName:          "Full",
-		ShortCommand:         "f",
-		IsEnabled:            true,
-		Stream:               boolPtr(true),
-		MaxPromptLength:      &maxPrompt,
-		MaxOutputLength:      &maxOutput,
-		Temperature:          &temp,
-		Reasoning:            reasoning,
-		SystemPrompt:         &systemPrompt,
-		Timeout:              &timeout,
-		AdditionalParameters: map[string]any{"foo": "bar"},
+		ID:                          modelPresetID2,
+		Name:                        modelName2,
+		DisplayName:                 "Full",
+		ShortCommand:                "f",
+		IsEnabled:                   true,
+		Stream:                      boolPtr(true),
+		MaxPromptLength:             &maxPrompt,
+		MaxOutputLength:             &maxOutput,
+		Temperature:                 &temp,
+		Reasoning:                   reasoning,
+		SystemPrompt:                &systemPrompt,
+		Timeout:                     &timeout,
+		AdditionalParametersRawJSON: &srj,
 	}
 	_, err = s.AddModelPreset(ctx, &spec.AddModelPresetRequest{
 		ProviderName:  provider,

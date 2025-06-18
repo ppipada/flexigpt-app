@@ -73,9 +73,9 @@ function mergeDefaultsModelPresetAndInbuilt(
 		timeout = inbuiltModelPreset.timeout;
 	}
 
-	let additionalParameters = { ...DefaultModelParams.additionalParameters };
-	if (modelPreset.additionalParameters) {
-		additionalParameters = { ...additionalParameters, ...modelPreset.additionalParameters };
+	let additionalParametersRawJSON = DefaultModelParams.additionalParametersRawJSON;
+	if (modelPreset.additionalParametersRawJSON) {
+		additionalParametersRawJSON = modelPreset.additionalParametersRawJSON;
 	}
 
 	return {
@@ -87,7 +87,7 @@ function mergeDefaultsModelPresetAndInbuilt(
 		reasoning: reasoning,
 		systemPrompt: systemPrompt,
 		timeout: timeout,
-		additionalParameters: additionalParameters,
+		additionalParametersRawJSON: additionalParametersRawJSON,
 	};
 }
 
@@ -148,7 +148,7 @@ export async function GetChatInputOptions(): Promise<{ allOptions: ChatOptions[]
 					reasoning: mergedModelParam.reasoning,
 					systemPrompt: mergedModelParam.systemPrompt,
 					timeout: mergedModelParam.timeout,
-					additionalParameters: mergedModelParam.additionalParameters,
+					additionalParametersRawJSON: mergedModelParam.additionalParametersRawJSON,
 					disablePreviousMessages: false,
 				};
 				inputModels.push(chatOption);
@@ -251,7 +251,8 @@ export function MergeInbuiltModelsWithPresets(
 				reasoning: inbuiltProviderPresets[provider].modelPresets[modelPresetID].reasoning,
 				systemPrompt: inbuiltProviderPresets[provider].modelPresets[modelPresetID].systemPrompt,
 				timeout: inbuiltProviderPresets[provider].modelPresets[modelPresetID].timeout,
-				additionalParameters: inbuiltProviderPresets[provider].modelPresets[modelPresetID].additionalParameters,
+				additionalParametersRawJSON:
+					inbuiltProviderPresets[provider].modelPresets[modelPresetID].additionalParametersRawJSON,
 			};
 		}
 	}

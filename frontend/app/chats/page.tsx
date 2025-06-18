@@ -185,7 +185,7 @@ const ChatScreen: FC = () => {
 				reasoning: options.reasoning,
 				systemPrompt: options.systemPrompt,
 				timeout: options.timeout,
-				additionalParameters: options.additionalParameters,
+				additionalParametersRawJSON: options.additionalParametersRawJSON,
 			};
 
 			const newMsg = await GetCompletionMessage(options.provider, inputParams, convoMsg, prevMessages, onStreamData);

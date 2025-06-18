@@ -942,7 +942,7 @@ export namespace spec {
 	    reasoning?: ReasoningParams;
 	    systemPrompt?: string;
 	    timeout?: number;
-	    additionalParameters?: Record<string, any>;
+	    additionalParametersRawJSON?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelPreset(source);
@@ -962,7 +962,7 @@ export namespace spec {
 	        this.reasoning = this.convertValues(source["reasoning"], ReasoningParams);
 	        this.systemPrompt = source["systemPrompt"];
 	        this.timeout = source["timeout"];
-	        this.additionalParameters = source["additionalParameters"];
+	        this.additionalParametersRawJSON = source["additionalParametersRawJSON"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1502,7 +1502,7 @@ export namespace spec {
 	    reasoning?: ReasoningParams;
 	    systemPrompt: string;
 	    timeout: number;
-	    additionalParameters: Record<string, any>;
+	    additionalParametersRawJSON?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModelParams(source);
@@ -1518,7 +1518,7 @@ export namespace spec {
 	        this.reasoning = this.convertValues(source["reasoning"], ReasoningParams);
 	        this.systemPrompt = source["systemPrompt"];
 	        this.timeout = source["timeout"];
-	        this.additionalParameters = source["additionalParameters"];
+	        this.additionalParametersRawJSON = source["additionalParametersRawJSON"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
