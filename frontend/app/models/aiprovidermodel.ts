@@ -1,4 +1,4 @@
-import type { ModelParams, ModelPreset, ModelPresetID, ProviderInfo, ProviderName } from '@/models/aimodelmodel';
+import type { ModelParams, ProviderInfo, ProviderName, ProviderPreset } from '@/models/aimodelmodel';
 
 export enum ChatCompletionRoleEnum {
 	system = 'system',
@@ -86,7 +86,7 @@ export interface CompletionResponse {
 export interface ConfigurationResponse {
 	defaultProvider: ProviderName;
 	configuredProviders: Record<ProviderName, ProviderInfo>;
-	inbuiltProviderModels: Record<ProviderName, Record<ModelPresetID, ModelPreset>>;
+	inbuiltProviderModels: Record<ProviderName, ProviderPreset>;
 }
 
 export interface AddProviderRequest {

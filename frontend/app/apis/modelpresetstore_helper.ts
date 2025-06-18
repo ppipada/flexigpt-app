@@ -16,12 +16,12 @@ import { modelPresetStoreAPI, providerSetAPI, settingstoreAPI } from '@/apis/bas
 function mergeDefaultsModelPresetAndInbuilt(
 	providerName: ProviderName,
 	modelPresetID: ModelPresetID,
-	inbuiltProviderModels: Record<ProviderName, Record<ModelPresetID, ModelPreset>>,
+	inbuiltProviderPresets: Record<ProviderName, ProviderPreset>,
 	modelPreset: ModelPreset
 ): ModelParams {
 	let inbuiltModelPreset: ModelPreset | undefined = undefined;
-	if (providerName in inbuiltProviderModels && modelPresetID in inbuiltProviderModels[providerName]) {
-		inbuiltModelPreset = inbuiltProviderModels[providerName][modelPresetID];
+	if (providerName in inbuiltProviderPresets && modelPresetID in inbuiltProviderPresets[providerName].modelPresets) {
+		inbuiltModelPreset = inbuiltProviderPresets[providerName].modelPresets[modelPresetID];
 	}
 
 	let temperature = DefaultModelParams.temperature ?? 0.1;
@@ -100,11 +100,11 @@ export async function GetChatInputOptions(): Promise<{ allOptions: ChatOptions[]
 		}
 		const configDefaultProvider = info.defaultProvider;
 		const providerInfoDict = info.configuredProviders;
-		const inbuiltProviderModels = info.inbuiltProviderModels;
+		const inbuiltProviderPresets = info.inbuiltProviderModels;
 
 		const onlySettings = await settingstoreAPI.getAllSettings();
 		const modelPresetsSchema = await modelPresetStoreAPI.getAllModelPresets();
-		const mergedPresets = MergeInbuiltModelsWithPresets(modelPresetsSchema.providerPresets, inbuiltProviderModels);
+		const mergedPresets = MergeInbuiltModelsWithPresets(modelPresetsSchema.providerPresets, inbuiltProviderPresets);
 		// Initialize default option and input models array
 		let defaultOption: ChatOptions | undefined;
 		const inputModels: ChatOptions[] = [];
@@ -128,7 +128,7 @@ export async function GetChatInputOptions(): Promise<{ allOptions: ChatOptions[]
 				const mergedModelParam = mergeDefaultsModelPresetAndInbuilt(
 					providerName,
 					modelName,
-					inbuiltProviderModels,
+					inbuiltProviderPresets,
 					modelPreset
 				);
 				const chatOption: ChatOptions = {
@@ -213,38 +213,41 @@ export async function PopulateModelPresetDefaults(
 
 export function MergeInbuiltModelsWithPresets(
 	modelPresets: Record<ProviderName, ProviderPreset>,
-	inbuiltProviderModels: Record<ProviderName, Record<ModelPresetID, ModelPreset>>
+	inbuiltProviderPresets: Record<ProviderName, ProviderPreset>
 ): Record<ProviderName, ProviderPreset> {
 	const newPresets = { ...modelPresets };
 
-	for (const provider in inbuiltProviderModels) {
+	for (const provider in inbuiltProviderPresets) {
 		if (!(provider in newPresets)) {
 			continue;
 		}
 
 		// For each model in inbuiltProviderInfo, ensure it exists in modelPresets
-		for (const model in inbuiltProviderModels[provider]) {
-			if (model in newPresets[provider]) {
+		for (const modelPresetID in inbuiltProviderPresets[provider].modelPresets) {
+			if (modelPresetID in newPresets[provider]) {
 				continue;
 			}
 
-			newPresets[provider].modelPresets[model] = {
-				id: inbuiltProviderModels[provider][model].name,
-				name: inbuiltProviderModels[provider][model].name,
-				displayName: inbuiltProviderModels[provider][model].displayName,
-				isEnabled: inbuiltProviderModels[provider][model].isEnabled,
-				shortCommand: inbuiltProviderModels[provider][model].shortCommand,
-				stream: inbuiltProviderModels[provider][model].stream,
-				maxPromptLength: inbuiltProviderModels[provider][model].maxPromptLength,
-				maxOutputLength: inbuiltProviderModels[provider][model].maxOutputLength,
-				temperature: inbuiltProviderModels[provider][model].temperature,
-				reasoning: inbuiltProviderModels[provider][model].reasoning,
-				systemPrompt: inbuiltProviderModels[provider][model].systemPrompt,
-				timeout: inbuiltProviderModels[provider][model].timeout,
-				additionalParameters: inbuiltProviderModels[provider][model].additionalParameters,
+			newPresets[provider].modelPresets[modelPresetID] = {
+				id: inbuiltProviderPresets[provider].modelPresets[modelPresetID].name,
+				name: inbuiltProviderPresets[provider].modelPresets[modelPresetID].name,
+				displayName: inbuiltProviderPresets[provider].modelPresets[modelPresetID].displayName,
+				isEnabled: inbuiltProviderPresets[provider].modelPresets[modelPresetID].isEnabled,
+				shortCommand: inbuiltProviderPresets[provider].modelPresets[modelPresetID].shortCommand,
+				stream: inbuiltProviderPresets[provider].modelPresets[modelPresetID].stream,
+				maxPromptLength: inbuiltProviderPresets[provider].modelPresets[modelPresetID].maxPromptLength,
+				maxOutputLength: inbuiltProviderPresets[provider].modelPresets[modelPresetID].maxOutputLength,
+				temperature: inbuiltProviderPresets[provider].modelPresets[modelPresetID].temperature,
+				reasoning: inbuiltProviderPresets[provider].modelPresets[modelPresetID].reasoning,
+				systemPrompt: inbuiltProviderPresets[provider].modelPresets[modelPresetID].systemPrompt,
+				timeout: inbuiltProviderPresets[provider].modelPresets[modelPresetID].timeout,
+				additionalParameters: inbuiltProviderPresets[provider].modelPresets[modelPresetID].additionalParameters,
 			};
 		}
 	}
+
+	// console.log('Inbuilt', JSON.stringify(inbuiltProviderPresets, null, 2));
+	// console.log('New', JSON.stringify(newPresets, null, 2));
 
 	return newPresets;
 }

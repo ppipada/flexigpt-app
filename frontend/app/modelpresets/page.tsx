@@ -1,13 +1,7 @@
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 
-import {
-	DefaultProviderName,
-	type ModelPreset,
-	type ModelPresetID,
-	type ProviderName,
-	type ProviderPreset,
-} from '@/models/aimodelmodel';
+import { DefaultProviderName, type ProviderName, type ProviderPreset } from '@/models/aimodelmodel';
 import type { AISetting } from '@/models/settingmodel';
 
 import { modelPresetStoreAPI, providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
@@ -24,9 +18,7 @@ const ModelPresetsPage: FC = () => {
 	/* ── state ─────────────────────────────────────────────── */
 	const [aiSettings, setAISettings] = useState<Record<ProviderName, AISetting>>({});
 	const [providerPresets, setProviderPresets] = useState<Record<ProviderName, ProviderPreset>>({});
-	const [inbuiltProviderInfo, setInbuiltProviderInfo] = useState<
-		Record<ProviderName, Record<ModelPresetID, ModelPreset>>
-	>({});
+	const [inbuiltProviderInfo, setInbuiltProviderInfo] = useState<Record<ProviderName, ProviderPreset>>({});
 
 	const [defaultProvider, setDefaultProvider] = useState<ProviderName>(DefaultProviderName);
 
@@ -134,7 +126,7 @@ const ModelPresetsPage: FC = () => {
 								provider={provider}
 								isEnabled={aiSettings[provider].isEnabled}
 								preset={preset}
-								inbuiltProviderModels={inbuiltProviderInfo[provider]}
+								inbuiltProviderPresets={inbuiltProviderInfo[provider].modelPresets}
 								defaultProvider={defaultProvider}
 								onPresetChange={handlePresetChange}
 								onProviderDelete={handleProviderDelete}

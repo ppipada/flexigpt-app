@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
 
-import type { ModelPreset, ModelPresetID, ProviderName } from '@/models/aimodelmodel';
+import type { ProviderName, ProviderPreset } from '@/models/aimodelmodel';
 import { DefaultProviderName } from '@/models/aimodelmodel';
 import type { AISetting } from '@/models/settingmodel';
 
@@ -23,9 +23,7 @@ const SettingsPage: FC = () => {
 	/* ── state ─────────────────────────────────────────────── */
 	const [defaultProvider, setDefaultProvider] = useState<ProviderName>(DefaultProviderName);
 	const [aiSettings, setAISettings] = useState<Record<ProviderName, AISetting>>({});
-	const [inbuiltProviderInfo, setInbuiltProviderInfo] = useState<
-		Record<ProviderName, Record<ModelPresetID, ModelPreset>>
-	>({});
+	const [inbuiltProviderInfo, setInbuiltProviderInfo] = useState<Record<ProviderName, ProviderPreset>>({});
 
 	const [isAddProviderModalOpen, setIsAddProviderModalOpen] = useState(false);
 

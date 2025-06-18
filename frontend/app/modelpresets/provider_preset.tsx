@@ -18,7 +18,7 @@ interface ProviderPresetCardProps {
 	provider: ProviderName;
 	isEnabled: boolean; // comes from aiSettings[provider].isEnabled
 	preset: ProviderPreset;
-	inbuiltProviderModels?: Record<ModelPresetID, ModelPreset>;
+	inbuiltProviderPresets?: Record<ModelPresetID, ModelPreset>;
 
 	defaultProvider: ProviderName; // only for “is deletable?” logic
 	onPresetChange: (provider: ProviderName, newPreset: ProviderPreset) => void;
@@ -29,7 +29,7 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 	provider,
 	isEnabled,
 	preset,
-	inbuiltProviderModels,
+	inbuiltProviderPresets,
 	defaultProvider,
 	onPresetChange,
 	onProviderDelete,
@@ -57,7 +57,7 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 	/* ── helpers ─────────────────────────────────────────────── */
 	const isModelRemovable = (id: ModelPresetID) => {
 		if (id === defaultModelID) return false;
-		if (inbuiltProviderModels && id in inbuiltProviderModels) return false;
+		if (inbuiltProviderPresets && id in inbuiltProviderPresets) return false;
 		return true;
 	};
 
@@ -66,10 +66,10 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 			return true;
 		}
 		if (
-			inbuiltProviderModels &&
-			id in inbuiltProviderModels &&
-			'reasoning' in inbuiltProviderModels[id] &&
-			inbuiltProviderModels[id].reasoning !== undefined
+			inbuiltProviderPresets &&
+			id in inbuiltProviderPresets &&
+			'reasoning' in inbuiltProviderPresets[id] &&
+			inbuiltProviderPresets[id].reasoning !== undefined
 		) {
 			return true;
 		}
@@ -172,7 +172,7 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 	};
 
 	/* provider deletion */
-	const isProviderRemovable = !inbuiltProviderModels && provider !== defaultProvider;
+	const isProviderRemovable = !inbuiltProviderPresets && provider !== defaultProvider;
 	const requestDeleteProvider = () => {
 		if (!isProviderRemovable) {
 			setActionDeniedMsg('Cannot delete default or in-built provider.');
