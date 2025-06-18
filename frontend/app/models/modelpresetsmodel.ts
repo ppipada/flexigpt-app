@@ -107,6 +107,7 @@ export const DefaultModelPreset: ModelPreset = {
 };
 
 export interface ChatOptions extends ModelParams {
+	id: string;
 	title: string;
 	provider: ProviderName;
 	disablePreviousMessages: boolean;
@@ -114,6 +115,7 @@ export interface ChatOptions extends ModelParams {
 
 export const DefaultChatOptions: ChatOptions = {
 	...DefaultModelParams,
+	id: 'NoModel',
 	provider: 'No Provider',
 	name: 'No Model',
 	title: 'No Model configured',

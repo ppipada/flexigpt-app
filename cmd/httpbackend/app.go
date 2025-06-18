@@ -130,7 +130,7 @@ func (a *BackendApp) initModelPresetStore() {
 		panic("Failed to initialize App")
 	}
 	// Initialize model presets store.
-	a.modelPresetsFilePath = filepath.Join(a.skillsDirPath, "modelconfig.json")
+	a.modelPresetsFilePath = filepath.Join(a.skillsDirPath, "modelpresets.json")
 	err := modelStore.InitModelPresetStore(a.modelPresetStoreAPI, a.modelPresetsFilePath)
 	if err != nil {
 		slog.Error(

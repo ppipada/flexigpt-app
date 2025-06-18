@@ -40,7 +40,8 @@ interface ModifyModelModalProps {
 }
 
 interface ModelPresetFormData {
-	displayName: string;
+	presetLabel: string; // replaces displayName
+	name: string; // Model Name (for completions API)
 	isEnabled: boolean;
 	stream: boolean;
 	maxPromptLength: string;
@@ -75,7 +76,8 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 
 	// Local form data (storing numeric as strings for easy clearing).
 	const [formData, setFormData] = useState<ModelPresetFormData>({
-		displayName: '',
+		presetLabel: '',
+		name: '',
 		isEnabled: true,
 		stream: false,
 		maxPromptLength: '',
@@ -89,10 +91,10 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		timeout: '',
 	});
 
-	// Validation errors.
 	const [errors, setErrors] = useState<{
 		modelPresetID?: string;
-		displayName?: string;
+		name?: string;
+		presetLabel?: string;
 		temperature?: string;
 		maxPromptLength?: string;
 		maxOutputLength?: string;
@@ -111,7 +113,8 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 
 			// Convert numbers to strings for the local form usage.
 			setFormData({
-				displayName: merged.displayName,
+				presetLabel: merged.displayName,
+				name: merged.name,
 				isEnabled: merged.isEnabled,
 				stream: merged.stream ?? false,
 				maxPromptLength: String(merged.maxPromptLength ?? ''),
@@ -136,7 +139,8 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 
 	type ValidationField =
 		| 'modelPresetID'
-		| 'displayName'
+		| 'name'
+		| 'presetLabel'
 		| 'temperature'
 		| 'maxPromptLength'
 		| 'maxOutputLength'
@@ -149,19 +153,31 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		// Remove old error for this field.
 		const newErrors: ValidationErrors = Object.fromEntries(Object.entries(errors).filter(([key]) => key !== field));
 
-		// ModelPresetID is required only if we're adding a new model (not edit mode).
+		// ModelPresetID: required, unique, alphanumeric only (no spaces or special chars)
 		if (field === 'modelPresetID' && !isEditMode) {
-			if (typeof value === 'string' && !value.trim()) {
-				newErrors.modelPresetID = 'Model ID is required.';
-			} else if (typeof value === 'string' && Object.prototype.hasOwnProperty.call(existingModels, value)) {
-				newErrors.modelPresetID = 'Model ID must be unique.';
+			if (typeof value === 'string') {
+				const trimmed = value.trim();
+				if (!trimmed) {
+					newErrors.modelPresetID = 'Model Preset ID is required.';
+				} else if (!/^[a-zA-Z0-9-]+$/.test(trimmed)) {
+					newErrors.modelPresetID = 'Only letters, numbers, and hyphens allowed.';
+				} else if (Object.prototype.hasOwnProperty.call(existingModels, trimmed)) {
+					newErrors.modelPresetID = 'Model Preset ID must be unique.';
+				}
 			}
 		}
 
-		// Display Name is always required.
-		if (field === 'displayName') {
+		// Model Name is always required.
+		if (field === 'name') {
 			if (typeof value === 'string' && !value.trim()) {
-				newErrors.displayName = 'Display name is required.';
+				newErrors.name = 'Model Name is required.';
+			}
+		}
+
+		// Preset Label is always required.
+		if (field === 'presetLabel') {
+			if (typeof value === 'string' && !value.trim()) {
+				newErrors.presetLabel = 'Preset Label is required.';
 			}
 		}
 
@@ -205,7 +221,6 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		setErrors(newErrors);
 	};
 
-	// Handle changes for all fields.
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
 		const { name, value, type, checked } = e.target as HTMLInputElement;
 
@@ -221,12 +236,20 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			return;
 		}
 
+		if (name === 'name') {
+			setFormData(prev => ({ ...prev, name: value }));
+			validateField('name', value);
+			return;
+		}
+
+		if (name === 'presetLabel') {
+			setFormData(prev => ({ ...prev, presetLabel: value }));
+			validateField('presetLabel', value);
+			return;
+		}
+
 		setFormData(prev => ({ ...prev, [name]: value }));
 
-		// Trigger validation for relevant fields.
-		if (name === 'displayName') {
-			validateField('displayName', value);
-		}
 		if (
 			name === 'temperature' ||
 			name === 'maxPromptLength' ||
@@ -238,47 +261,38 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 		}
 	};
 
-	// Compute if form is valid for "Add Model" / "Save Changes" button.
 	const isAllValid = useMemo(() => {
-		// No errors in the errors object.
 		const noErrors = !Object.values(errors).some(Boolean);
+		const modelPresetIDValid = isEditMode || (modelPresetID.trim().length > 0 && /^[a-zA-Z0-9-]+$/.test(modelPresetID));
+		const presetLabelValid = formData.presetLabel.trim().length > 0;
+		const nameValid = formData.name.trim().length > 0;
+		return noErrors && modelPresetIDValid && presetLabelValid && nameValid;
+	}, [errors, isEditMode, modelPresetID, formData.presetLabel, formData.name]);
 
-		// If adding a model, modelPresetID must be non-empty.
-		const modelPresetIDValid = isEditMode || modelPresetID.trim().length > 0;
-
-		// Always require a non-empty displayName.
-		const displayNameValid = formData.displayName.trim().length > 0;
-
-		return noErrors && modelPresetIDValid && displayNameValid;
-	}, [errors, isEditMode, modelPresetID, formData.displayName]);
-
-	// On form submit, parse final values and re-validate.
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
-		// Re-validate fields.
 		validateField('modelPresetID', modelPresetID);
-		validateField('displayName', formData.displayName);
+		validateField('name', formData.name);
+		validateField('presetLabel', formData.presetLabel);
 		validateField('temperature', formData.temperature);
 		validateField('maxPromptLength', formData.maxPromptLength);
 		validateField('maxOutputLength', formData.maxOutputLength);
 		validateField('timeout', formData.timeout);
 		validateField('reasoningTokens', formData.reasoningTokens);
 
-		// If any errors remain, or the required fields are empty, do not proceed.
 		const hasErrors = Object.keys(errors).length > 0;
 		if (hasErrors || !isAllValid) {
 			return;
 		}
 
-		// Convert strings to numbers (fallback to defaults) for numeric fields.
 		const parseOrDefault = (val: string, def: number) => (val.trim() === '' ? def : Number(val));
-		const finalModelPresetID = modelPresetID;
+		const finalModelPresetID = modelPresetID.trim();
 
 		const finalData: ModelPreset = {
 			id: finalModelPresetID,
-			name: finalModelPresetID,
-			displayName: formData.displayName.trim(),
+			name: formData.name.trim(),
+			displayName: formData.presetLabel.trim(),
 			isEnabled: formData.isEnabled,
 			shortCommand: finalModelPresetID,
 			stream: formData.stream,
@@ -310,7 +324,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 	const numPlaceholder = (field: keyof ModelPreset) => {
 		const value = defaultValues[field];
 		if (value === undefined || typeof value === 'object') {
-			return 'Default: N/A'; // or any other placeholder for null/undefined
+			return 'Default: N/A';
 		}
 		return `Default: ${String(value)}`;
 	};
@@ -320,7 +334,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
 				{/* Header */}
 				<div className="flex justify-between items-center mb-4">
-					<h3 className="font-bold text-lg">{isEditMode ? 'Edit Model' : 'Add New Model'}</h3>
+					<h3 className="font-bold text-lg">{isEditMode ? 'Edit Model Preset' : 'Add Model Preset'}</h3>
 					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close" title="Close">
 						<FiX size={12} />
 					</button>
@@ -331,8 +345,11 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 					{/* ModelPresetID (Internal Key) */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
-							<span className="label-text text-sm">Model ID*</span>
-							<span className="label-text-alt tooltip" data-tip="Unique identifier for this model.">
+							<span className="label-text text-sm">Model Preset ID*</span>
+							<span
+								className="label-text-alt tooltip tooltip-right"
+								data-tip="Unique identifier for this preset. Can use alphanumeric chars and hyphen."
+							>
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
@@ -343,9 +360,10 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								value={modelPresetID}
 								onChange={handleChange}
 								className={`input input-bordered w-full rounded-xl ${errors.modelPresetID ? 'input-error' : ''}`}
-								placeholder="e.g., gpt-4, claude-opus"
-								disabled={isEditMode} // Cannot change modelPresetID if editing an existing model
+								placeholder="e.g. gpt4preset, claudeOpus1"
+								disabled={isEditMode}
 								spellCheck="false"
+								autoComplete="off"
 							/>
 							{errors.modelPresetID && (
 								<div className="label">
@@ -357,28 +375,64 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 						</div>
 					</div>
 
-					{/* Display Name */}
+					{/* Model Name (for completions API) */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
-							<span className="label-text text-sm">Display Name*</span>
-							<span className="label-text-alt tooltip" data-tip="Name displayed to users">
+							<span className="label-text text-sm">Model Name*</span>
+							<span
+								className="label-text-alt tooltip tooltip-right"
+								data-tip="The model name to send to the completions API (e.g. gpt-4, anthropic/claude-3-opus-20240229)"
+							>
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
 						<div className="col-span-9">
 							<input
 								type="text"
-								name="displayName"
-								value={formData.displayName}
+								name="name"
+								value={formData.name}
 								onChange={handleChange}
-								className={`input input-bordered w-full rounded-xl ${errors.displayName ? 'input-error' : ''}`}
-								placeholder="e.g., GPT-4, Claude Opus"
+								className={`input input-bordered w-full rounded-xl ${errors.name ? 'input-error' : ''}`}
+								placeholder="e.g. gpt-4, anthropic/claude-3-opus-20240229"
 								spellCheck="false"
+								autoComplete="off"
 							/>
-							{errors.displayName && (
+							{errors.name && (
 								<div className="label">
 									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.displayName}
+										<FiAlertCircle size={12} /> {errors.name}
+									</span>
+								</div>
+							)}
+						</div>
+					</div>
+
+					{/* Preset Label */}
+					<div className="grid grid-cols-12 items-center gap-2">
+						<label className="label col-span-3">
+							<span className="label-text text-sm">Preset Label*</span>
+							<span
+								className="label-text-alt tooltip tooltip-right"
+								data-tip="A friendly name for this preset, shown in UI."
+							>
+								<FiHelpCircle size={12} />
+							</span>
+						</label>
+						<div className="col-span-9">
+							<input
+								type="text"
+								name="presetLabel"
+								value={formData.presetLabel}
+								onChange={handleChange}
+								className={`input input-bordered w-full rounded-xl ${errors.presetLabel ? 'input-error' : ''}`}
+								placeholder="e.g. GPT-4 (Creative), Claude Opus Fast"
+								spellCheck="false"
+								autoComplete="off"
+							/>
+							{errors.presetLabel && (
+								<div className="label">
+									<span className="label-text-alt text-error flex items-center gap-1">
+										<FiAlertCircle size={12} /> {errors.presetLabel}
 									</span>
 								</div>
 							)}
@@ -424,7 +478,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 						<label className="label col-span-3 cursor-pointer">
 							<span className="label-text text-sm">Supports Reasoning</span>
 							<span
-								className="label-text-alt tooltip"
+								className="label-text-alt tooltip tooltip-right"
 								data-tip="If enabled, configure below how the model handles reasoning"
 							>
 								<FiHelpCircle size={12} />
@@ -442,12 +496,12 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 						</div>
 					</div>
 
-					{/* Reasoning Type (use Dropdown instead of <select>) */}
+					{/* Reasoning Type */}
 					{formData.reasoningSupport && (
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Reasoning Type</span>
-								<span className="label-text-alt tooltip" data-tip="singleWithLevels or hybridWithTokens">
+								<span className="label-text-alt tooltip tooltip-right" data-tip="singleWithLevels or hybridWithTokens">
 									<FiHelpCircle size={12} />
 								</span>
 							</label>
@@ -466,12 +520,12 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 						</div>
 					)}
 
-					{/* Reasoning Level (use Dropdown if reasoningType === SingleWithLevels) */}
+					{/* Reasoning Level */}
 					{formData.reasoningSupport && formData.reasoningType === ReasoningType.SingleWithLevels && (
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Reasoning Level</span>
-								<span className="label-text-alt tooltip" data-tip="Pick how deep the chain-of-thought is">
+								<span className="label-text-alt tooltip tooltip-right" data-tip="Pick how deep the chain-of-thought is">
 									<FiHelpCircle size={12} />
 								</span>
 							</label>
@@ -490,12 +544,15 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 						</div>
 					)}
 
-					{/* Reasoning Tokens (show if reasoningType === hybridWithTokens) */}
+					{/* Reasoning Tokens */}
 					{formData.reasoningSupport && formData.reasoningType === ReasoningType.HybridWithTokens && (
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Reasoning Tokens</span>
-								<span className="label-text-alt tooltip" data-tip="Number of tokens dedicated to reasoning">
+								<span
+									className="label-text-alt tooltip tooltip-right"
+									data-tip="Number of tokens dedicated to reasoning"
+								>
 									<FiHelpCircle size={12} />
 								</span>
 							</label>
@@ -506,7 +563,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 									value={formData.reasoningTokens}
 									onChange={handleChange}
 									className={`input input-bordered w-full rounded-xl ${errors.reasoningTokens ? 'input-error' : ''}`}
-									placeholder="e.g., 1024"
+									placeholder="e.g. 1024"
 									spellCheck="false"
 								/>
 								{errors.reasoningTokens && (
@@ -525,7 +582,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Temperature (0.0-1.0)</span>
 							<span
-								className="label-text-alt tooltip"
+								className="label-text-alt tooltip tooltip-right"
 								data-tip="Controls randomness: lower values are more deterministic"
 							>
 								<FiHelpCircle size={12} />
@@ -554,8 +611,8 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 					{/* Timeout */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
-							<span className="label-text text-sm">Timeout (seconds)</span>
-							<span className="label-text-alt tooltip" data-tip="Maximum time to wait for response">
+							<span className="text-sm">Timeout (seconds)</span>
+							<span className="tooltip tooltip-right" data-tip="Maximum time to wait for response">
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
@@ -583,7 +640,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Max Prompt Tokens</span>
-							<span className="label-text-alt tooltip" data-tip="Maximum tokens for input">
+							<span className="label-text-alt tooltip tooltip-right" data-tip="Maximum tokens for input">
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
@@ -611,7 +668,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Max Output Tokens</span>
-							<span className="label-text-alt tooltip" data-tip="Maximum tokens for output">
+							<span className="label-text-alt tooltip tooltip-right" data-tip="Maximum tokens for output">
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
@@ -639,7 +696,10 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">System Prompt</span>
-							<span className="label-text-alt tooltip" data-tip="Instructions that define the model's behavior">
+							<span
+								className="label-text-alt tooltip tooltip-right"
+								data-tip="Instructions that define the model's behavior"
+							>
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
@@ -661,7 +721,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 							Cancel
 						</button>
 						<button type="submit" className="btn btn-primary rounded-xl" disabled={!isAllValid}>
-							{isEditMode ? 'Save Changes' : 'Add Model'}
+							{isEditMode ? 'Save Changes' : 'Add Preset'}
 						</button>
 					</div>
 				</form>

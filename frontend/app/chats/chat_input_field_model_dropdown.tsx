@@ -39,7 +39,7 @@ export default function ModelDropdown(props: {
 			<ul className="dropdown-content menu bg-base-100 rounded-xl w-full">
 				{allOptions.map(model => (
 					<li
-						key={`${model.provider}-${model.name}`}
+						key={`${model.provider}-${model.id}`}
 						className="cursor-pointer text-xs"
 						onClick={() => {
 							setSelectedModel(model);

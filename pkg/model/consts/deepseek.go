@@ -28,26 +28,30 @@ const (
 
 var DeepseekModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 	ModelPresetIDDeepseekChat: {
-		Name:            DeepseekChat,
-		DisplayName:     DisplayNameDeepseekChat,
-		IsEnabled:       true,
-		ShortCommand:    ShortCommandDeepseekChat,
+		ID:           ModelPresetIDDeepseekChat,
+		Name:         DeepseekChat,
+		DisplayName:  DisplayNameDeepseekChat,
+		ShortCommand: ShortCommandDeepseekChat,
+		IsEnabled:    true,
+
+		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(8192),
 		MaxOutputLength: IntPtr(8192),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          BoolPtr(true),
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},
 	ModelPresetIDDeepseekReasoner: {
-		Name:            DeepseekChat,
-		DisplayName:     DisplayNameDeepseekReasoner,
-		IsEnabled:       true,
-		ShortCommand:    ShortCommandDeepseekReasoner,
+		ID:           ModelPresetIDDeepseekReasoner,
+		Name:         DeepseekChat,
+		DisplayName:  DisplayNameDeepseekReasoner,
+		ShortCommand: ShortCommandDeepseekReasoner,
+		IsEnabled:    true,
+
+		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(8192),
 		MaxOutputLength: IntPtr(8192),
 		Temperature:     Float64Ptr(1.0),
-		Stream:          BoolPtr(true),
 		Reasoning: &spec.ReasoningParams{
 			Type:  spec.ReasoningTypeSingleWithLevels,
 			Level: spec.ReasoningLevelMedium,

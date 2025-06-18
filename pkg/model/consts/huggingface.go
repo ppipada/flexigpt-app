@@ -15,14 +15,16 @@ const (
 
 var HuggingfaceModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 	ModelPresetIDDeepseekCoder13BInstruct: {
-		Name:            DeepseekCoder13BInstruct,
-		DisplayName:     DisplayNameDeepseekCoder13BInstruct,
-		IsEnabled:       true,
-		ShortCommand:    ShortCommandDeepseekCoder13BInstruct,
+		ID:           ModelPresetIDDeepseekCoder13BInstruct,
+		Name:         DeepseekCoder13BInstruct,
+		DisplayName:  DisplayNameDeepseekCoder13BInstruct,
+		ShortCommand: ShortCommandDeepseekCoder13BInstruct,
+		IsEnabled:    true,
+
+		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(4096),
 		MaxOutputLength: IntPtr(4096),
 		Temperature:     Float64Ptr(0.1),
-		Stream:          BoolPtr(true),
 		SystemPrompt:    StringPtr(""),
 		Timeout:         IntPtr(120),
 	},

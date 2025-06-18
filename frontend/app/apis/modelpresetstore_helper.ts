@@ -121,20 +121,26 @@ export async function GetChatInputOptions(): Promise<{ allOptions: ChatOptions[]
 
 			const settingsDefaultModelPresetID = mergedPresets[providerName].defaultModelPresetID;
 
-			for (const [modelName, modelPreset] of Object.entries(mergedPresets[providerName].modelPresets)) {
+			for (const [modelPresetID, modelPreset] of Object.entries(mergedPresets[providerName].modelPresets)) {
+				if (modelPresetID === '') {
+					console.warn('Got empty model preset id in merged models. skipping. provider: ', providerName);
+					continue;
+				}
+				// console.log('Processing', JSON.stringify(modelPreset, null, 2));
 				if (!modelPreset.isEnabled) {
 					continue;
 				}
 				const mergedModelParam = mergeDefaultsModelPresetAndInbuilt(
 					providerName,
-					modelName,
+					modelPresetID,
 					inbuiltProviderPresets,
 					modelPreset
 				);
 				const chatOption: ChatOptions = {
+					id: modelPresetID,
 					title: modelPreset.displayName,
 					provider: providerName,
-					name: modelName,
+					name: mergedModelParam.name,
 					stream: mergedModelParam.stream,
 					maxPromptLength: mergedModelParam.maxPromptLength,
 					maxOutputLength: mergedModelParam.maxOutputLength,
@@ -224,12 +230,16 @@ export function MergeInbuiltModelsWithPresets(
 
 		// For each model in inbuiltProviderInfo, ensure it exists in modelPresets
 		for (const modelPresetID in inbuiltProviderPresets[provider].modelPresets) {
+			if (modelPresetID === '') {
+				console.warn('Got empty model preset id in inbuilt models. skipping. provider: ', provider);
+				continue;
+			}
 			if (modelPresetID in newPresets[provider]) {
 				continue;
 			}
 
 			newPresets[provider].modelPresets[modelPresetID] = {
-				id: inbuiltProviderPresets[provider].modelPresets[modelPresetID].name,
+				id: inbuiltProviderPresets[provider].modelPresets[modelPresetID].id,
 				name: inbuiltProviderPresets[provider].modelPresets[modelPresetID].name,
 				displayName: inbuiltProviderPresets[provider].modelPresets[modelPresetID].displayName,
 				isEnabled: inbuiltProviderPresets[provider].modelPresets[modelPresetID].isEnabled,

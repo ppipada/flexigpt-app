@@ -1,26 +1,22 @@
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 
-import { DefaultProviderName, type ProviderName, type ProviderPreset } from '@/models/modelpresetsmodel';
+import { type ProviderName, type ProviderPreset } from '@/models/modelpresetsmodel';
 import type { AISetting } from '@/models/settingmodel';
 
 import { modelPresetStoreAPI, providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
 import { MergeInbuiltModelsWithPresets } from '@/apis/modelpresetstore_helper';
 
-import { omitManyKeys } from '@/lib/obj_utils';
-
 import ActionDeniedAlert from '@/components/action_denied';
 import DownloadButton from '@/components/download_button';
 
-import ProviderPresetCard from '@/modelconfig/provider_model_card';
+import ProviderPresetCard from '@/modelpresets/provider_presets_card';
 
-const ModelConfigPage: FC = () => {
+const ModelPresetPage: FC = () => {
 	/* ── state ─────────────────────────────────────────────── */
 	const [aiSettings, setAISettings] = useState<Record<ProviderName, AISetting>>({});
 	const [providerPresets, setProviderPresets] = useState<Record<ProviderName, ProviderPreset>>({});
 	const [inbuiltProviderInfo, setInbuiltProviderInfo] = useState<Record<ProviderName, ProviderPreset>>({});
-
-	const [defaultProvider, setDefaultProvider] = useState<ProviderName>(DefaultProviderName);
 
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -39,7 +35,6 @@ const ModelConfigPage: FC = () => {
 				const schema = await modelPresetStoreAPI.getAllModelPresets();
 
 				setAISettings(settings.aiSettings);
-				setDefaultProvider(settings.app.defaultProvider);
 				setInbuiltProviderInfo(info.inbuiltProviderModels);
 
 				setProviderPresets(MergeInbuiltModelsWithPresets(schema.providerPresets, info.inbuiltProviderModels));
@@ -55,26 +50,6 @@ const ModelConfigPage: FC = () => {
 	/* ── handlers ──────────────────────────────────────────── */
 	const handlePresetChange = (provider: ProviderName, newPreset: ProviderPreset) => {
 		setProviderPresets(prev => ({ ...prev, [provider]: newPreset }));
-	};
-
-	const handleProviderDelete = async (provider: ProviderName) => {
-		if (provider === defaultProvider) {
-			setActionDeniedMsg('Cannot delete the default provider. Please select a different default provider first.');
-			setShowActionDenied(true);
-			return;
-		}
-
-		try {
-			setProviderPresets(prev => omitManyKeys(prev, [provider]));
-			setAISettings(prev => omitManyKeys(prev, [provider]));
-
-			await modelPresetStoreAPI.deleteProviderPreset(provider);
-			await settingstoreAPI.deleteAISetting(provider);
-		} catch (err) {
-			console.error('Failed to delete provider:', err, (err as Error).stack || '');
-			setActionDeniedMsg('Failed to delete provider. Please try again.');
-			setShowActionDenied(true);
-		}
 	};
 
 	/* download helper */
@@ -96,13 +71,13 @@ const ModelConfigPage: FC = () => {
 			{/* header */}
 			<div className="w-full flex justify-center fixed top-8">
 				<div className="w-10/12 lg:w-2/3 flex items-center justify-between p-2">
-					<h1 className="text-xl font-semibold text-center flex-grow">Model Config</h1>
+					<h1 className="text-xl font-semibold text-center flex-grow">Model Presets</h1>
 					<DownloadButton
-						title="Download Models"
+						title="Download Model Presets"
 						language="json"
 						valueFetcher={fetchValue}
 						size={24}
-						fileprefix="models"
+						fileprefix="modelpresets"
 						className="btn btn-sm btn-ghost"
 					/>
 				</div>
@@ -118,7 +93,7 @@ const ModelConfigPage: FC = () => {
 					{error && <p className="text-center text-error mt-8">{error}</p>}
 
 					{!loading && !error && Object.keys(providerPresets).length === 0 && (
-						<p className="text-center text-sm mt-8">No providers configured yet.</p>
+						<p className="text-center text-sm mt-8">No model presets configured yet.</p>
 					)}
 
 					{!loading &&
@@ -131,7 +106,6 @@ const ModelConfigPage: FC = () => {
 								preset={preset}
 								inbuiltProviderPresets={inbuiltProviderInfo[provider].modelPresets}
 								onPresetChange={handlePresetChange}
-								onProviderDelete={handleProviderDelete}
 							/>
 						))}
 				</div>
@@ -151,4 +125,4 @@ const ModelConfigPage: FC = () => {
 	);
 };
 
-export default ModelConfigPage;
+export default ModelPresetPage;

@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 
-import { FiCheckCircle, FiChevronDown, FiChevronUp, FiTrash2, FiXCircle } from 'react-icons/fi';
+import { FiCheckCircle, FiChevronDown, FiChevronUp, FiHelpCircle, FiTrash2, FiXCircle } from 'react-icons/fi';
 
 import type { ProviderName } from '@/models/modelpresetsmodel';
 import { ProviderInfoDescription } from '@/models/modelpresetsmodel';
@@ -178,8 +178,11 @@ const ProviderSettingsCard: FC<ProviderSettingsCardProps> = ({
 				<div className="mt-8 space-y-4">
 					{/* API-Key */}
 					<div className="grid grid-cols-12 gap-4 items-center">
-						<label className="col-span-3 text-sm tooltip" data-tip={ProviderInfoDescription.apiKey}>
-							API Key
+						<label className="label col-span-3">
+							<span className="text-sm">API Key</span>
+							<span className="tooltip tooltip-right" data-tip={ProviderInfoDescription.apiKey}>
+								<FiHelpCircle size={12} />
+							</span>
 						</label>
 						<div className="col-span-9">
 							<input
@@ -203,9 +206,13 @@ const ProviderSettingsCard: FC<ProviderSettingsCardProps> = ({
 
 					{/* Origin */}
 					<div className="grid grid-cols-12 gap-4 items-center">
-						<label className="col-span-3 text-sm tooltip" data-tip={ProviderInfoDescription.origin}>
-							Origin
+						<label className="label col-span-3">
+							<span className="text-sm">Origin</span>
+							<span className="tooltip tooltip-right" data-tip={ProviderInfoDescription.origin}>
+								<FiHelpCircle size={12} />
+							</span>
 						</label>
+
 						<div className="col-span-9">
 							<input
 								type="text"
@@ -228,8 +235,11 @@ const ProviderSettingsCard: FC<ProviderSettingsCardProps> = ({
 
 					{/* Chat-completion prefix */}
 					<div className="grid grid-cols-12 gap-4 items-center">
-						<label className="col-span-3 text-sm tooltip" data-tip={ProviderInfoDescription.chatCompletionPathPrefix}>
-							Chat Path
+						<label className="label col-span-3">
+							<span className="text-sm">Chat Path</span>
+							<span className="tooltip tooltip-right" data-tip={ProviderInfoDescription.chatCompletionPathPrefix}>
+								<FiHelpCircle size={12} />
+							</span>
 						</label>
 						<div className="col-span-9">
 							<input

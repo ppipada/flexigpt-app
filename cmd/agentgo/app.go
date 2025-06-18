@@ -101,7 +101,7 @@ func (a *App) initManagers() {
 	}
 
 	// Initialize modelPresets manager
-	modelPresetsFilePath := filepath.Join(a.skillsBasePath, "modelconfig.json")
+	modelPresetsFilePath := filepath.Join(a.skillsBasePath, "modelpresets.json")
 	slog.Info("Model presets store created", "filepath", modelPresetsFilePath)
 	err = InitModelPresetStoreWrapper(a.modelPresetStoreAPI, modelPresetsFilePath)
 	if err != nil {

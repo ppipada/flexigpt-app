@@ -76,8 +76,8 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 								</Link>
 							</li>
 						)}
-						<li className="mt-4" title="Model Config" onClick={toggle} aria-label="Model Config">
-							<Link to="/modelconfig/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
+						<li className="mt-4" title="Model Presets" onClick={toggle} aria-label="Model Presets">
+							<Link to="/modelpresets/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
 								<FiSliders size={24} />
 							</Link>
 						</li>
