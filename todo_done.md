@@ -368,3 +368,18 @@
 - [x] post last streamed msg the scroll is moving a bit up
 - [x] spinner before first response ~~(details if possible)~~
 - [x] When scroll kicks in the font appears to be bolder. This is due to gpu composting issue with webkit. Put antialiasing on body to make experience consistent.
+
+- [x] Refactor provider in prep for presets and skills flow
+
+  - [x] Types in aiprovider
+  - [x] We should store all these preset files in settings or their own domain folders?
+  - [x] Remove confusion of ModelParams vs ModelSettings vs ModelPreset. What is stored is a ModelPreset. What comes in is a ModelParam.
+  - [x] Default model also should be with presets, with name being "default preset".
+  - [x] Check if inbuilt models have tooltip mentioning internal defaults
+  - [x] Presets should have id/shortcommand as unique, may be add id too as forward compatible thing.
+  - [x] font of settings page
+  - [x] api key in settings page is not validated before send and then set
+  - [x] no config in providers gives empty unhandled page rejection in console
+  - [x] use preset in input field and completion
+
+- [x] Integrate presets end to end
