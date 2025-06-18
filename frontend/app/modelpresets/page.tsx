@@ -12,7 +12,7 @@ import { omitManyKeys } from '@/lib/obj_utils';
 import ActionDeniedAlert from '@/components/action_denied';
 import DownloadButton from '@/components/download_button';
 
-import ProviderPresetCard from '@/modelpresets/provider_preset';
+import ProviderPresetCard from '@/modelpresets/provider_model_card';
 
 const ModelPresetsPage: FC = () => {
 	/* ── state ─────────────────────────────────────────────── */
