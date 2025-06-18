@@ -1,4 +1,3 @@
-import type { ModelParams, ProviderInfo, ProviderName, ProviderPreset } from '@/models/aimodelmodel';
 import type {
 	AddProviderRequest,
 	ChatCompletionRequestMessage,
@@ -6,6 +5,7 @@ import type {
 	ConfigurationResponse,
 	IProviderSetAPI,
 } from '@/models/aiprovidermodel';
+import type { ModelParams, ProviderInfo, ProviderName, ProviderPreset } from '@/models/modelpresetsmodel';
 
 import {
 	AddProvider,

@@ -1,6 +1,6 @@
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
-import type { ChatOptions } from '@/models/aimodelmodel';
+import type { ChatOptions } from '@/models/modelpresetsmodel';
 
 export default function ModelDropdown(props: {
 	selectedModel: ChatOptions;

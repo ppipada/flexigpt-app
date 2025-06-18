@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 
-import { DefaultProviderName, type ProviderName, type ProviderPreset } from '@/models/aimodelmodel';
+import { DefaultProviderName, type ProviderName, type ProviderPreset } from '@/models/modelpresetsmodel';
 import type { AISetting } from '@/models/settingmodel';
 
 import { modelPresetStoreAPI, providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
@@ -12,9 +12,9 @@ import { omitManyKeys } from '@/lib/obj_utils';
 import ActionDeniedAlert from '@/components/action_denied';
 import DownloadButton from '@/components/download_button';
 
-import ProviderPresetCard from '@/modelpresets/provider_model_card';
+import ProviderPresetCard from '@/modelconfig/provider_model_card';
 
-const ModelPresetsPage: FC = () => {
+const ModelConfigPage: FC = () => {
 	/* ── state ─────────────────────────────────────────────── */
 	const [aiSettings, setAISettings] = useState<Record<ProviderName, AISetting>>({});
 	const [providerPresets, setProviderPresets] = useState<Record<ProviderName, ProviderPreset>>({});
@@ -94,23 +94,26 @@ const ModelPresetsPage: FC = () => {
 	return (
 		<div className="flex flex-col items-center w-full h-full">
 			{/* header */}
-			<div className="w-full flex justify-center fixed top-2 z-10">
+			<div className="w-full flex justify-center fixed top-8">
 				<div className="w-10/12 lg:w-2/3 flex items-center justify-between p-2">
-					<h1 className="text-xl font-semibold text-center flex-grow">Model Presets</h1>
+					<h1 className="text-xl font-semibold text-center flex-grow">Model Config</h1>
 					<DownloadButton
-						title="Download Presets"
+						title="Download Models"
 						language="json"
 						valueFetcher={fetchValue}
 						size={24}
-						fileprefix="presets"
+						fileprefix="models"
 						className="btn btn-sm btn-ghost"
 					/>
 				</div>
 			</div>
 
 			{/* body */}
-			<div className="flex flex-col items-center w-full grow mt-20 overflow-y-auto">
-				<div className="flex flex-col space-y-4 w-11/12 lg:w-2/3">
+			<div
+				className="flex flex-col items-center w-full grow mt-24 overflow-y-auto"
+				style={{ maxHeight: `calc(100vh - 128px)` }}
+			>
+				<div className="flex flex-col space-y-4 w-5/6 xl:w-2/3">
 					{loading && <p className="text-center text-sm mt-8">Loading model presets...</p>}
 					{error && <p className="text-center text-error mt-8">{error}</p>}
 
@@ -127,7 +130,6 @@ const ModelPresetsPage: FC = () => {
 								isEnabled={aiSettings[provider].isEnabled}
 								preset={preset}
 								inbuiltProviderPresets={inbuiltProviderInfo[provider].modelPresets}
-								defaultProvider={defaultProvider}
 								onPresetChange={handlePresetChange}
 								onProviderDelete={handleProviderDelete}
 							/>
@@ -149,4 +151,4 @@ const ModelPresetsPage: FC = () => {
 	);
 };
 
-export default ModelPresetsPage;
+export default ModelConfigPage;

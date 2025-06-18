@@ -1,4 +1,4 @@
-import type { ModelParams, ProviderInfo, ProviderName, ProviderPreset } from '@/models/aimodelmodel';
+import type { ModelParams, ProviderInfo, ProviderName, ProviderPreset } from '@/models/modelpresetsmodel';
 
 export enum ChatCompletionRoleEnum {
 	system = 'system',

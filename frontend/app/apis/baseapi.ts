@@ -1,8 +1,8 @@
-import type { IModelPresetStoreAPI } from '@/models/aimodelmodel';
 import type { IProviderSetAPI } from '@/models/aiprovidermodel';
 import type { IBackendAPI } from '@/models/backendmodel';
 import type { IConversationStoreAPI } from '@/models/conversationmodel';
 import type { ILogger } from '@/models/loggermodel';
+import type { IModelPresetStoreAPI } from '@/models/modelpresetsmodel';
 import type { ISettingStoreAPI } from '@/models/settingmodel';
 
 import { IS_WAILS_PLATFORM } from '@/lib/features';

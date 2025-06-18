@@ -1,5 +1,5 @@
-import { type ProviderName } from '@/models/aimodelmodel';
 import { type AddProviderRequest } from '@/models/aiprovidermodel';
+import { type ProviderName } from '@/models/modelpresetsmodel';
 import { type AISetting, type AISettingAttrs } from '@/models/settingmodel';
 
 import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';

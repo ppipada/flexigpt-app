@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 
 import { FiCheckCircle, FiChevronDown, FiChevronUp, FiTrash2, FiXCircle } from 'react-icons/fi';
 
-import type { ProviderName } from '@/models/aimodelmodel';
-import { ProviderInfoDescription } from '@/models/aimodelmodel';
+import type { ProviderName } from '@/models/modelpresetsmodel';
+import { ProviderInfoDescription } from '@/models/modelpresetsmodel';
 import type { AISetting, AISettingAttrs } from '@/models/settingmodel';
 
 import { SetAISettingAPIKey, SetAISettingAttrs } from '@/apis/settingstore_helper';
@@ -143,11 +143,11 @@ const ProviderSettingsCard: FC<ProviderSettingsCardProps> = ({
 			<div className="grid grid-cols-12 gap-4 items-center">
 				{/* Provider Title*/}
 				<div className="col-span-3 flex items-center space-x-4">
-					<h3 className="text-sm font-medium capitalize">{provider}</h3>
+					<h3 className="text-sm font-semibold capitalize">{provider}</h3>
 				</div>
 				{/* Enable/Disable Toggle */}
-				<div className="col-span-3 flex items-center space-x-4 ml-1">
-					<label className="text-sm font-medium">Enable</label>
+				<div className="col-span-3 flex items-center space-x-2 ml-1">
+					<label className="text-sm">Enable</label>
 					<input
 						type="checkbox"
 						checked={isEnabled}
@@ -161,14 +161,14 @@ const ProviderSettingsCard: FC<ProviderSettingsCardProps> = ({
 					<div className="flex items-center">
 						<span className="text-sm">API Key</span>
 						{localSettings.apiKey ? (
-							<FiCheckCircle className="text-success mx-1" />
+							<FiCheckCircle className="text-success mx-2" />
 						) : (
-							<FiXCircle className="text-error mx-1" />
+							<FiXCircle className="text-error mx-2" />
 						)}
 					</div>
 					<div className="flex items-center">
 						<span className="text-sm">Details</span>
-						{isExpanded ? <FiChevronUp /> : <FiChevronDown />}
+						{isExpanded ? <FiChevronUp className="mx-2" /> : <FiChevronDown className="mx-2" />}
 					</div>
 				</div>
 			</div>

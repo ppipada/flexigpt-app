@@ -1,4 +1,3 @@
-import type { ModelParams, ProviderName } from '@/models/aimodelmodel';
 import {
 	type ChatCompletionRequestMessage,
 	ChatCompletionRoleEnum,
@@ -6,6 +5,7 @@ import {
 } from '@/models/aiprovidermodel';
 import type { ConversationMessage } from '@/models/conversationmodel';
 import { ConversationRoleEnum } from '@/models/conversationmodel';
+import type { ModelParams, ProviderName } from '@/models/modelpresetsmodel';
 
 import { log, providerSetAPI } from '@/apis/baseapi';
 

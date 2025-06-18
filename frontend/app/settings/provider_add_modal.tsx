@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
-import type { ProviderName } from '@/models/aimodelmodel';
+import type { ProviderName } from '@/models/modelpresetsmodel';
 import type { AISetting } from '@/models/settingmodel';
 
 import { omitManyKeys } from '@/lib/obj_utils';

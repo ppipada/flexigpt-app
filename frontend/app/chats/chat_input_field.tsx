@@ -3,7 +3,7 @@ import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef,
 
 import { FiSend, FiSliders } from 'react-icons/fi';
 
-import { type ChatOptions, DefaultChatOptions, type ReasoningLevel, ReasoningType } from '@/models/aimodelmodel';
+import { type ChatOptions, DefaultChatOptions, type ReasoningLevel, ReasoningType } from '@/models/modelpresetsmodel';
 
 import { GetChatInputOptions } from '@/apis/modelpresetstore_helper';
 

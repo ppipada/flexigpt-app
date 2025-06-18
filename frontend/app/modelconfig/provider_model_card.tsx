@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp, FiEdit, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
-import type { ProviderPreset } from '@/models/aimodelmodel';
-import { type ModelPreset, type ModelPresetID, type ProviderName } from '@/models/aimodelmodel';
+import type { ProviderPreset } from '@/models/modelpresetsmodel';
+import { type ModelPreset, type ModelPresetID, type ProviderName } from '@/models/modelpresetsmodel';
 
 import { modelPresetStoreAPI } from '@/apis/baseapi';
 
@@ -12,7 +12,7 @@ import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 import Dropdown from '@/components/dropdown';
 
-import ModifyModelModal from '@/modelpresets/model_modify_modal';
+import ModifyModelModal from '@/modelconfig/model_modify_modal';
 
 interface ProviderPresetCardProps {
 	provider: ProviderName;
@@ -20,7 +20,6 @@ interface ProviderPresetCardProps {
 	preset: ProviderPreset;
 	inbuiltProviderPresets?: Record<ModelPresetID, ModelPreset>;
 
-	defaultProvider: ProviderName; // only for “is deletable?” logic
 	onPresetChange: (provider: ProviderName, newPreset: ProviderPreset) => void;
 	onProviderDelete: (provider: ProviderName) => Promise<void>;
 }
@@ -30,7 +29,6 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 	isEnabled,
 	preset,
 	inbuiltProviderPresets,
-	defaultProvider,
 	onPresetChange,
 	onProviderDelete,
 }) => {
@@ -171,17 +169,6 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 		}
 	};
 
-	/* provider deletion */
-	const isProviderRemovable = !inbuiltProviderPresets && provider !== defaultProvider;
-	const requestDeleteProvider = () => {
-		if (!isProviderRemovable) {
-			setActionDeniedMsg('Cannot delete default or in-built provider.');
-			setShowActionDenied(true);
-			return;
-		}
-		setIsDeleteProviderModalOpen(true);
-	};
-
 	const confirmDeleteProvider = async () => {
 		try {
 			await onProviderDelete(provider);
@@ -195,20 +182,22 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 
 	/* ── RENDER ──────────────────────────────────────────────── */
 	return (
-		<div className="bg-base-100 rounded-xl shadow-lg p-4 mb-4">
+		<div className="bg-base-100 rounded-xl shadow-lg px-4 py-2 mb-8">
 			{/* Header */}
-			<div className="grid grid-cols-12 gap-4 items-center">
-				{/* Provider name */}
-				<div className="col-span-3 capitalize font-medium">{provider}</div>
+			<div className="grid grid-cols-12 gap-2 items-center">
+				{/* Provider Title*/}
+				<div className="col-span-2 flex items-center space-x-4">
+					<h3 className="text-sm font-semibold capitalize">{provider}</h3>
+				</div>
 
 				{/* Provider status */}
-				<div className="col-span-3 text-sm">
-					Status:{' '}
+				<div className="col-span-2 text-sm font-medium">
 					<span className={isEnabled ? 'text-success' : 'text-error'}>{isEnabled ? 'Enabled' : 'Disabled'}</span>
 				</div>
 
 				{/* Default model dropdown */}
-				<div className="col-span-4">
+				<div className="flex items-center gap-x-2 col-span-6">
+					<label className="text-sm whitespace-nowrap">Default</label>
 					<Dropdown<ModelPresetID>
 						dropdownItems={modelPresets}
 						selectedKey={defaultModelID}
@@ -220,7 +209,8 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 				</div>
 
 				{/* Chevron */}
-				<div className="col-span-2 flex justify-end cursor-pointer" onClick={toggleExpand}>
+				<div className="col-span-2 flex justify-end items-center cursor-pointer gap-1" onClick={toggleExpand}>
+					<label className="text-sm whitespace-nowrap">All Models</label>
 					{isExpanded ? <FiChevronUp /> : <FiChevronDown />}
 				</div>
 			</div>
@@ -228,13 +218,6 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 			{/* Body – models table */}
 			{isExpanded && (
 				<div className="mt-8 space-y-4">
-					{/* Add-model button */}
-					<div className="flex justify-end">
-						<button className="btn btn-ghost rounded-xl flex items-center" onClick={handleAddModel}>
-							<FiPlus /> <span className="ml-1">Add Model</span>
-						</button>
-					</div>
-
 					{/* Models table */}
 					<div className="overflow-x-auto border border-base-content/10 rounded-2xl">
 						<table className="table table-zebra w-full">
@@ -289,15 +272,10 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 						</table>
 					</div>
 
-					{/* Delete provider */}
+					{/* Add-model button */}
 					<div className="flex justify-end">
-						<button
-							className="btn btn-ghost rounded-2xl flex items-center"
-							onClick={requestDeleteProvider}
-							disabled={!isProviderRemovable}
-							title={!isProviderRemovable ? 'Cannot delete default or in-built provider' : 'Delete Provider'}
-						>
-							<FiTrash2 size={16} /> Delete Provider
+						<button className="btn btn-ghost rounded-xl flex items-center" onClick={handleAddModel}>
+							<FiPlus /> <span className="ml-1">Add Model</span>
 						</button>
 					</div>
 				</div>

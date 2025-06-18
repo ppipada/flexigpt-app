@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
 
-import type { ProviderName, ProviderPreset } from '@/models/aimodelmodel';
-import { DefaultProviderName } from '@/models/aimodelmodel';
+import type { ProviderName, ProviderPreset } from '@/models/modelpresetsmodel';
+import { DefaultProviderName } from '@/models/modelpresetsmodel';
 import type { AISetting } from '@/models/settingmodel';
 
 import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
@@ -87,7 +87,7 @@ const SettingsPage: FC = () => {
 	return (
 		<div className="flex flex-col items-center w-full h-full">
 			{/* sticky header bar */}
-			<div className="w-full flex justify-center fixed top-2">
+			<div className="w-full flex justify-center fixed top-8">
 				<div className="w-10/12 lg:w-2/3 flex items-center justify-between p-2">
 					<h1 className="text-xl font-semibold text-center flex-grow">Settings</h1>
 					<DownloadButton
@@ -102,8 +102,11 @@ const SettingsPage: FC = () => {
 			</div>
 
 			{/* content */}
-			<div className="flex flex-col items-center w-full grow mt-20 overflow-y-auto">
-				<div className="flex flex-col space-y-4 w-11/12 lg:w-2/3">
+			<div
+				className="flex flex-col items-center w-full grow mt-24 overflow-y-auto"
+				style={{ maxHeight: `calc(100vh - 128px)` }}
+			>
+				<div className="flex flex-col space-y-4 w-5/6 xl:w-2/3">
 					{/* ── Theme switch ─ */}
 					<div className="bg-base-100 rounded-xl shadow-lg px-4 py-2 mb-8">
 						<div className="grid grid-cols-12 items-center gap-4">

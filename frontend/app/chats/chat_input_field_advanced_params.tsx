@@ -2,7 +2,7 @@ import React, { type FC, useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
-import type { ChatOptions } from '@/models/aimodelmodel';
+import type { ChatOptions } from '@/models/modelpresetsmodel';
 
 interface AdvancedParamsModalProps {
 	isOpen: boolean;
