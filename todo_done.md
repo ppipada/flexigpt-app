@@ -383,3 +383,8 @@
   - [x] use preset in input field and completion
 
 - [x] Integrate presets end to end
+- [x] details loading is very slow as of now
+- [x] request details are not visible in ui as of now.
+- [x] input text box seems to cause some cpu consumption and jerkiness.
+  - [x] autoresize is the issue.
+  - [ ] ~~may be memoize other toolbar components too~~
