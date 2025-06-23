@@ -12,9 +12,13 @@
 - [ ] chat window should add a "persona" in left top that can be used as a loader of a "agent preset"
 - [ ] The details of request response can be added as "info" button that allows for dig down in a modal rather than append in footer.
 - [ ] need better pins in home
+
 - [ ] The concept of "agent presets"/"assistants", which are not really app, but defined prompt templates + model presets + tools need to be there.
+
+  - [ ] ChatSession always boots from an AgentPreset/Assistant; if user just picks a PT, the system spins an implicit AgentPreset with defaults.
   - [ ] This is still inside chat UI but, with a defined persona.
-  - [ ] This and prompt templates seem to be a slightly gray area as of now. if tools are present in prompt tempaltes so that extra thing in agent presets is mostly about model presets and output formats and rag pipelines.
+  - [ ] Prompt templates are "templates" with placeholders. No linking anywhere. At runtime, or save time there can be validations if these placeholders are proper or not, but lets say later someone deletes a tool etc. the template should not be modified or touched in any way. If a tool exec or tool or anything else is not available anytime, the template place can be left empty.
+
 - [ ] Side bar:
 
   ```text
@@ -32,11 +36,14 @@
   ──────────────────── (Mid dynamic, Min 8px spacer below)
 
   ──────────────────── (Bottom static)
-  🧩 Skills             → Build & edit: (Below tabs in a expanded drawer)
+  // May be we can have "Assistants" in place of skills too and all the below are ways to create assistants
+  🧩 Skills             → Build & edit: (Below tabs in a expanded drawer).
                           1. Prompts
                           2. Tools
                           3. Model presets
                           4. Data/Doc Sources
+                          5. Assistants is a preset of things from above 4 things.
+
   📊 Insights           → Usage, cost, performance dashboards
   ❓ Help               → Docs, tutorials, support
   ⚙️👤 Account           → Manage: (Below tabs in a expanded drawer)
@@ -45,6 +52,77 @@
                           // May combine 3 and 4 if required, depends on density of info in each
                           3. App preferences: Themes, shortcuts, etc.
                           4. Security & Keys.
+  ```
+
+  ```mermaid
+  graph TD
+  %% ───────────────────────────────
+  %% 1. MAIN SIDEBAR NAVIGATION
+  %% ───────────────────────────────
+  home[🏠 Home]
+  chat[💬 Chat]
+  apps[🟦 Apps]
+  insights[📊 Insights]
+  help[❓ Help]
+  account[⚙️👤 Account]
+
+  %% sidebar order (dashed to show UI order, not data-flow)
+  home -.-> chat
+  chat -.-> apps
+  apps -.-> skillsSection
+  skillsSection -.-> insights
+  insights -.-> help
+  help -.-> account
+
+
+  %% ───────────────────────────────
+  %% 2. PINNED / MARKETPLACE APPS
+  %% ───────────────────────────────
+  aiNotepad["🗒️ AI-Notepad"]
+  imageGen["🖼️ Image-Gen"]
+
+  apps --> aiNotepad
+  apps --> imageGen
+
+
+  %% ───────────────────────────────
+  %% 3. SKILLS / ASSISTANTS AREA
+  %% ───────────────────────────────
+  subgraph skillsSection["🧩 Skills / Assistants"]
+    prompts["Prompt Templates"]
+    tools["Tools"]
+    modelPresets["Model Presets"]
+    dataSources["Data / Doc Sources"]
+    assistants["Assistants<br/>(Agent Presets)"]
+  end
+
+  prompts --> assistants
+  tools --> assistants
+  modelPresets --> assistants
+  dataSources --> assistants
+
+
+  %% ───────────────────────────────
+  %% 4. CHAT SESSION RELATION
+  %% ───────────────────────────────
+  chatSession["ChatSession<br/>(loads Persona)"]
+  assistants -->|persona loader| chatSession
+
+
+  %% ───────────────────────────────
+  %% 5. ACCOUNT DRAWER
+  %% ───────────────────────────────
+  subgraph accountDetails["Account Sections"]
+    profile["Profile / Workspace"]
+    billing["Billing"]
+    prefs["App Preferences"]
+    security["Security & Keys"]
+  end
+
+  account --> profile
+  account --> billing
+  account --> prefs
+  account --> security
   ```
 
 ## Tasks: Tools Implementation with CodeMirror
