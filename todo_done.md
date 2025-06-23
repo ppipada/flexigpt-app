@@ -381,6 +381,7 @@
   - [x] api key in settings page is not validated before send and then set
   - [x] no config in providers gives empty unhandled page rejection in console
   - [x] use preset in input field and completion
+  - [x] model preset can be loaded in input bar rather than just model. may need to figure out how to show/allow edits to the persona vs model preset
 
 - [x] Integrate presets end to end
 - [x] details loading is very slow as of now

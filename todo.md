@@ -10,7 +10,6 @@
 ## Random notes from UX discussions
 
 - [ ] chat window should add a "persona" in left top that can be used as a loader of a "agent preset"
-- [x] model preset can be loaded in input bar rather than just model. may need to figure out how to show/allow edits to the persona vs model preset
 - [ ] The details of request response can be added as "info" button that allows for dig down in a modal rather than append in footer.
 - [ ] need better pins in home
 - [ ] The concept of "agent presets"/"assistants", which are not really app, but defined prompt templates + model presets + tools need to be there.
