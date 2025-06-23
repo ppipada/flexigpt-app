@@ -8,6 +8,8 @@
 - [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
 - [x] request details are not visible in ui as of now.
 - [ ] input text box seems to cause some cpu consumption and jerkiness.
+  - [ ] autoresize is the issue.
+  - [ ] may be memoize other toolbar components too
 - [ ] CPU is high when "thinking". Need to debug
 
 ## Random notes from UX discussions

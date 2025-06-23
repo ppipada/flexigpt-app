@@ -49,7 +49,8 @@ function useEnterSubmit(): {
 
 const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ onSend, setInputHeight }, ref) => {
 	const [text, setText] = useState<string>('');
-	const [isSendButtonEnabled, setIsSendButtonEnabled] = useState<boolean>(false);
+	const isSendButtonEnabled = text.trim().length > 0;
+
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const isSubmittingRef = useRef<boolean>(false);
 	const [selectedModel, setSelectedModel] = useState<ChatOptions>(DefaultChatOptions);
@@ -119,7 +120,6 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	const handleTextChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
 		const value = event.target.value;
 		setText(value);
-		setIsSendButtonEnabled(value.trim().length > 0);
 		autoResizeTextarea();
 	};
 
@@ -146,7 +146,6 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		if (text.trim().length === 0 || isSubmittingRef.current) return;
 
 		isSubmittingRef.current = true;
-		setIsSendButtonEnabled(false);
 
 		onSend(text.trim(), getFinalChatOptions());
 
