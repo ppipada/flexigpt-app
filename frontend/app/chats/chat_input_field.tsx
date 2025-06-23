@@ -1,7 +1,12 @@
+/* -------------------------------------------------------------------------- */
+/* ChatInputField.tsx                                                         */
+/* -------------------------------------------------------------------------- */
 import type { ChangeEvent, KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 import { FiSend, FiSliders } from 'react-icons/fi';
+/* ----------  react-textarea-autosize  ------------------------------------ */
+import TextareaAutosize from 'react-textarea-autosize';
 
 import { type ChatOptions, DefaultChatOptions, type ReasoningLevel, ReasoningType } from '@/models/modelpresetsmodel';
 
@@ -15,8 +20,6 @@ import ModelDropdown from '@/chats/chat_input_field_model_dropdown';
 import { HybridReasoningCheckbox, ReasoningTokensDropdown } from '@/chats/chat_input_field_reasoning_hybrid';
 import SingleReasoningDropdown from '@/chats/chat_input_field_reasoning_levels';
 import TemperatureDropdown from '@/chats/chat_input_field_temperature';
-
-const MAX_HEIGHT = 240;
 
 interface ChatInputFieldProps {
 	onSend: (message: string, options: ChatOptions) => void;
@@ -51,7 +54,9 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	const [text, setText] = useState<string>('');
 	const isSendButtonEnabled = text.trim().length > 0;
 
+	/* The ref now points to the autosizing textarea */
 	const inputRef = useRef<HTMLTextAreaElement>(null);
+
 	const isSubmittingRef = useRef<boolean>(false);
 	const [selectedModel, setSelectedModel] = useState<ChatOptions>(DefaultChatOptions);
 	const [isAdvancedModalOpen, setIsAdvancedModalOpen] = useState<boolean>(false);
@@ -107,27 +112,20 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	// Enter key submission logic.
 	const { formRef, onKeyDown } = useEnterSubmit();
 
-	// Automatically resize the textarea.
-	const autoResizeTextarea = useCallback(() => {
-		if (inputRef.current) {
-			inputRef.current.style.height = 'auto';
-			const newHeight = Math.min(inputRef.current.scrollHeight, MAX_HEIGHT);
-			inputRef.current.style.height = `${newHeight}px`;
-			setInputHeight((prevHeight: number) => (prevHeight !== newHeight ? newHeight : prevHeight));
-		}
-	}, [setInputHeight]);
+	/* ------------- Update parent with actual textarea height ------------- */
+	const handleHeightChange = useCallback(
+		(height: number) => {
+			setInputHeight(height);
+		},
+		[setInputHeight]
+	);
 
+	/* -------------------------- onChange -------------------------------- */
 	const handleTextChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-		const value = event.target.value;
-		setText(value);
-		autoResizeTextarea();
+		setText(event.target.value);
 	};
 
-	useEffect(() => {
-		autoResizeTextarea();
-	}, [text, autoResizeTextarea]);
-
-	// Construct the final ChatOptions.
+	/* ------------------ build ChatOptions for submit -------------------- */
 	const getFinalChatOptions = (): ChatOptions => {
 		const options = { ...selectedModel, disablePreviousMessages };
 
@@ -152,32 +150,21 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		setText('');
 		isSubmittingRef.current = false;
 
-		// Reset + refocus.
-		if (inputRef.current) {
-			inputRef.current.style.height = 'auto';
-			inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, MAX_HEIGHT)}px`;
-			setInputHeight(Math.min(inputRef.current.scrollHeight, MAX_HEIGHT));
-			inputRef.current.focus();
-		}
+		inputRef.current?.focus();
 	};
 
 	// Expose the function to get current chat options + focus.
 	useImperativeHandle(ref, () => ({
 		getChatOptions: () => getFinalChatOptions(),
 		focus: () => {
-			if (inputRef.current) {
-				inputRef.current.focus();
-			}
+			inputRef.current?.focus();
 		},
 	}));
 
 	// Clamps temperature to [0, 1].
 	const setTemperature = (temp: number) => {
 		const clampedTemp = Math.max(0, Math.min(1, temp));
-		setSelectedModel(prev => ({
-			...prev,
-			temperature: clampedTemp,
-		}));
+		setSelectedModel(prev => ({ ...prev, temperature: clampedTemp }));
 	};
 
 	// Set reasoning level for SingleWithLevels type.
@@ -200,10 +187,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 			}
 			return {
 				...prev,
-				reasoning: {
-					...prev.reasoning,
-					tokens,
-				},
+				reasoning: { ...prev.reasoning, tokens },
 			};
 		});
 	};
@@ -226,8 +210,9 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 
 	return (
 		<div className="relative">
+			{/* ---------- First row : model & options ------------------------ */}
 			<div className="flex items-center justify-between bg-base-200 mb-1 mx-8">
-				{/* Model dropdown (1/3 width) */}
+				{/* Model dropdown */}
 				<div className="w-1/3">
 					<ModelDropdown
 						selectedModel={selectedModel}
@@ -239,9 +224,8 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					/>
 				</div>
 
-				{/* Flexible middle section */}
+				{/* Middle section (reasoning / temperature  */}
 				<div className="flex items-center justify-between w-2/3">
-					{/* If hybrid reasoning is available, show the checkbox */}
 					{selectedModel.reasoning?.type === ReasoningType.HybridWithTokens && (
 						<HybridReasoningCheckbox
 							isReasoningEnabled={isHybridReasoningEnabled}
@@ -249,15 +233,16 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 						/>
 					)}
 
-					{/* Show tokens dropdown if hybrid reasoning is enabled */}
-					{selectedModel.reasoning?.type === ReasoningType.HybridWithTokens && isHybridReasoningEnabled ? (
-						<ReasoningTokensDropdown
-							tokens={selectedModel.reasoning.tokens}
-							setTokens={setHybridTokens}
-							isOpen={isSecondaryDropdownOpen}
-							setIsOpen={setIsSecondaryDropdownOpen}
-							detailsRef={secondaryDetailsRef}
-						/>
+					{selectedModel.reasoning?.type === ReasoningType.HybridWithTokens ? (
+						isHybridReasoningEnabled && (
+							<ReasoningTokensDropdown
+								tokens={selectedModel.reasoning.tokens}
+								setTokens={setHybridTokens}
+								isOpen={isSecondaryDropdownOpen}
+								setIsOpen={setIsSecondaryDropdownOpen}
+								detailsRef={secondaryDetailsRef}
+							/>
+						)
 					) : selectedModel.reasoning?.type === ReasoningType.SingleWithLevels ? (
 						<SingleReasoningDropdown
 							reasoningLevel={selectedModel.reasoning.level}
@@ -281,7 +266,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 						setDisablePreviousMessages={setDisablePreviousMessages}
 					/>
 
-					{/* -- Sliders Icon to open advanced params modal -- */}
+					{/* Advanced params modal trigger */}
 					<button
 						type="button"
 						className="btn btn-sm btn-ghost mx-2 text-neutral/60"
@@ -294,7 +279,8 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					</button>
 				</div>
 			</div>
-			{/* -- Advanced Params Modal -- */}
+
+			{/* ------------------ Advanced params modal ---------------------- */}
 			{isAdvancedModalOpen && (
 				<AdvancedParamsModal
 					isOpen={isAdvancedModalOpen}
@@ -305,23 +291,32 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					onSave={handleSaveAdvancedParams}
 				/>
 			)}
-			{/* Main input form for messages */}
+
+			{/* -------------------- Main input form -------------------------- */}
 			<form
 				ref={formRef}
 				onSubmit={handleSubmit}
 				className="flex items-center bg-base-100 rounded-2xl border px-4 mx-2"
 			>
-				<textarea
+				{/* -----------------  react-textarea-autosize  ---------------- */}
+				<TextareaAutosize
 					ref={inputRef}
 					value={text}
 					onChange={handleTextChange}
 					onKeyDown={onKeyDown}
+					onHeightChange={handleHeightChange}
 					placeholder="Type message..."
-					className="flex-1 resize-none overflow-auto bg-transparent border-none outline-hidden text-neutral min-h-[24px] p-2"
-					rows={1}
-					style={{ fontSize: '14px' }}
-					spellCheck="false"
+					className="flex-1 resize-none overflow-auto bg-transparent border-none outline-none text-neutral
+                       min-h-[24px] p-2"
+					minRows={1}
+					maxRows={10}
+					style={{
+						fontSize: '14px',
+					}}
+					spellCheck={false}
 				/>
+
+				{/* --------------------- Send button ------------------------- */}
 				<button
 					type="submit"
 					className={`btn btn-md !bg-transparent border-none shadow-none px-1 ${
