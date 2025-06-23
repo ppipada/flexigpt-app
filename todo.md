@@ -4,16 +4,21 @@
 
 - [ ] implement prompts and tools using dirstore+fts
 - [ ] in modify modal, the search bar is visible i.e it doesnt get in background
-- [ ] details loading is very slow as of now
+- [x] details loading is very slow as of now
 - [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
-- [ ] request details are not visible in ui as of now.
+- [x] request details are not visible in ui as of now.
+- [ ] input text box seems to cause some cpu consumption and jerkiness.
+- [ ] CPU is high when "thinking". Need to debug
 
 ## Random notes from UX discussions
 
 - [ ] chat window should add a "persona" in left top that can be used as a loader of a "agent preset"
-- [ ] model preset can be laoded in input bar rather than just model. may need to figure out how to show/allwo edits to the persona vs model preset
+- [x] model preset can be loaded in input bar rather than just model. may need to figure out how to show/allow edits to the persona vs model preset
 - [ ] The details of request response can be added as "info" button that allows for dig down in a modal rather than append in footer.
 - [ ] need better pins in home
+- [ ] The concept of "agent presets"/"assistants", which are not really app, but defined prompt templates + model presets + tools need to be there.
+  - [ ] This is still inside chat UI but, with a defined persona.
+  - [ ] This and prompt templates seem to be a slightly gray area as of now. if tools are present in prompt tempaltes so that extra thing in agent presets is mostly about model presets and output formats and rag pipelines.
 - [ ] Side bar:
 
   ```text

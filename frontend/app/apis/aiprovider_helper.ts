@@ -96,7 +96,9 @@ export async function GetCompletionMessage(
 	onStreamData?: (data: string) => void
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
 	try {
+		// console.log(JSON.stringify(modelParams, null, 2));
 		const allMessages = convertConversationToChatMessages(messages);
+		// console.log(JSON.stringify(allMessages, null, 2));
 		const promptMsg = allMessages.pop();
 
 		const isStream = modelParams.stream || false;

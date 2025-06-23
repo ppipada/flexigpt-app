@@ -103,14 +103,19 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 };
 
 function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
-	// If the *object reference* for the ConversationMessage changes
-	// React must re-render (content edited, message appended).
-	if (prev.message !== next.message) return false;
-
+	if (prev.message.details !== next.message.details) {
+		//
+		// We need to check details as parent is updating details in place for previous message
+		return false;
+	}
 	// We only care if THIS row’s streamed text changed.
 	if (prev.streamedMessage !== next.streamedMessage) return false;
 
 	if (prev.isPending !== next.isPending) return false;
+
+	// If the *object reference* for the ConversationMessage changes
+	// React must re-render (content edited, message appended).
+	if (prev.message !== next.message) return false;
 
 	// Everything else is the same: skip.
 	return true;

@@ -192,8 +192,10 @@ const ChatScreen: FC = () => {
 
 			if (newMsg.requestDetails) {
 				if (updatedChatWithConvoMessage.messages.length > 1) {
-					updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 2].details =
-						newMsg.requestDetails;
+					const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
+					updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
+						i === prevIdx ? { ...m, details: newMsg.requestDetails } : m
+					);
 				}
 			}
 
@@ -244,7 +246,7 @@ const ChatScreen: FC = () => {
 			if (idx === -1) return;
 
 			const msgs = chat.messages.slice(0, idx + 1);
-			msgs[idx].content = edited;
+			msgs[idx] = { ...msgs[idx], content: edited };
 
 			const updated: Conversation = {
 				...chat,

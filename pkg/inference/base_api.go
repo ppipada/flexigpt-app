@@ -129,9 +129,14 @@ func (api *BaseAIAPI) getCompletionRequest(
 	completionRequest := CompletionRequest{
 		ModelParams: spec.ModelParams{
 			Name:                        modelParams.Name,
-			AdditionalParametersRawJSON: modelParams.AdditionalParametersRawJSON,
+			Stream:                      modelParams.Stream,
+			MaxPromptLength:             modelParams.MaxPromptLength,
+			MaxOutputLength:             modelParams.MaxOutputLength,
 			Temperature:                 modelParams.Temperature,
 			Reasoning:                   modelParams.Reasoning,
+			SystemPrompt:                modelParams.SystemPrompt,
+			Timeout:                     modelParams.Timeout,
+			AdditionalParametersRawJSON: modelParams.AdditionalParametersRawJSON,
 		},
 	}
 
