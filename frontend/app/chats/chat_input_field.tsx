@@ -308,7 +308,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					placeholder="Type message..."
 					className="flex-1 resize-none overflow-auto bg-transparent border-none outline-none text-neutral
                        min-h-[24px] p-2"
-					minRows={1}
+					minRows={2}
 					maxRows={10}
 					style={{
 						fontSize: '14px',

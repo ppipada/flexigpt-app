@@ -42,8 +42,9 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 							svg.style.display = 'block';
 							svg.style.marginLeft = 'auto';
 							svg.style.marginRight = 'auto';
-							svg.style.width = '80%';
+							svg.style.width = 'auto';
 							svg.style.height = 'auto';
+							svg.style.maxHeight = '60vh';
 							svg.style.maxWidth = '80%';
 						}
 						setError(null);
@@ -122,7 +123,7 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 						</text>
 					</svg>
 				) : (
-					<div ref={containerRef} className="w-full" />
+					<div ref={containerRef} className="w-full max-h-[60vh] overflow-auto" />
 				)}
 			</div>
 		</div>
