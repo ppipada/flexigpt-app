@@ -19,6 +19,19 @@
   - [ ] This is still inside chat UI but, with a defined persona.
   - [ ] Prompt templates are "templates" with placeholders. No linking anywhere. At runtime, or save time there can be validations if these placeholders are proper or not, but lets say later someone deletes a tool etc. the template should not be modified or touched in any way. If a tool exec or tool or anything else is not available anytime, the template place can be left empty.
 
+```shell
+  PromptTemplate
+    ├─ MessageBlocks      (role-tagged text)
+    ├─ Variables          (type, default, validation)
+    └─ PreProcessors[]    (may call helper ToolIDs)
+
+  Assistant
+    ├─ templateId         (FK -> PromptTemplate)
+    ├─ modelPresetId      (already handled)
+    ├─ toolBundleIds[]    ← LLM-callable tools live here
+    └─ dataSourceIds[]    (RAG etc.)
+```
+
 - [ ] Side bar:
 
   ```text

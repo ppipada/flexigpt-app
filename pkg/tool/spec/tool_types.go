@@ -15,6 +15,7 @@ type ToolParameter struct {
 type ToolSpec struct {
 	ID          string          `json:"id"`
 	Name        string          `json:"name"`
+	InvokeSlugs []string        `json:"invokeSlugs,omitempty"`
 	Description string          `json:"description"`
 	Parameters  []ToolParameter `json:"parameters"`
 	// Future-proofing hooks

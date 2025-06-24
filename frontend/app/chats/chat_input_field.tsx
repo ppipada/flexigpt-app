@@ -296,7 +296,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 			<form
 				ref={formRef}
 				onSubmit={handleSubmit}
-				className="flex items-center bg-base-100 rounded-2xl border px-4 mx-2"
+				className="flex items-center bg-base-100 rounded-2xl border border-base-300 focus-within:border-base-400 px-4 mx-2"
 			>
 				{/* -----------------  react-textarea-autosize  ---------------- */}
 				<TextareaAutosize
