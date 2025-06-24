@@ -389,3 +389,4 @@
 - [x] input text box seems to cause some cpu consumption and jerkiness.
   - [x] autoresize is the issue.
   - [ ] ~~may be memoize other toolbar components too~~
+- [x] Click on zoom for mermaid diagram

@@ -22,30 +22,34 @@ interface MermaidDiagramProps {
 }
 
 const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
-	const containerRef = useRef<HTMLDivElement | null>(null);
-	const uniqueId = useRef(`mermaid-${uuidv4()}`);
+	const inlineDiagramRef = useRef<HTMLDivElement | null>(null);
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
+	const modalRef = useRef<HTMLDivElement | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [svgNode, setSvgNode] = useState<SVGSVGElement | null>(null);
+	const [zoomOpen, setZoomOpen] = useState(false);
 
+	const uniqueId = useRef(`mermaid-${uuidv4()}`);
 	useEffect(() => {
 		initializeMermaid();
 		let isMounted = true;
-		if (containerRef.current) {
-			containerRef.current.innerHTML = '';
+		if (inlineDiagramRef.current) {
+			inlineDiagramRef.current.innerHTML = '';
 			mermaid
 				.render(uniqueId.current, code)
 				.then(renderResult => {
-					if (isMounted && containerRef.current) {
-						containerRef.current.innerHTML = renderResult.svg;
+					if (isMounted && inlineDiagramRef.current) {
+						inlineDiagramRef.current.innerHTML = renderResult.svg;
 						// Center the SVG with inline styles
-						const svg = containerRef.current.querySelector('svg');
+						const svg = inlineDiagramRef.current.querySelector('svg');
 						if (svg) {
 							svg.style.display = 'block';
-							svg.style.marginLeft = 'auto';
-							svg.style.marginRight = 'auto';
+							svg.style.margin = 'auto';
 							svg.style.width = 'auto';
 							svg.style.height = 'auto';
-							svg.style.maxHeight = '60vh';
 							svg.style.maxWidth = '80%';
+							svg.style.maxHeight = '60vh';
+							setSvgNode(svg.cloneNode(true) as SVGSVGElement);
 						}
 						setError(null);
 					}
@@ -59,9 +63,51 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 		};
 	}, [code]);
 
+	useEffect(() => {
+		const dlg = dialogRef.current;
+		if (!dlg) return;
+
+		if (zoomOpen && !dlg.open) {
+			dlg.showModal();
+		} else if (!zoomOpen && dlg.open) {
+			dlg.close();
+		}
+	}, [zoomOpen]);
+
+	/* When the dialog fires its native `close` event, update state */
+	useEffect(() => {
+		const dlg = dialogRef.current;
+		if (!dlg) return;
+
+		const handleClose = () => {
+			setZoomOpen(false);
+		};
+		dlg.addEventListener('close', handleClose);
+		return () => {
+			dlg.removeEventListener('close', handleClose);
+		};
+	}, []);
+
+	useEffect(() => {
+		if (!zoomOpen || !modalRef.current || !svgNode) return;
+
+		// Clean previous content
+		modalRef.current.innerHTML = '';
+
+		const newNode = svgNode.cloneNode(true) as SVGSVGElement;
+		newNode.style.display = 'block';
+		newNode.style.margin = 'auto';
+		newNode.style.width = 'auto';
+		newNode.style.height = 'auto';
+		newNode.style.maxWidth = '90vw';
+		newNode.style.maxHeight = '80vh';
+
+		modalRef.current.appendChild(newNode);
+	}, [zoomOpen, svgNode]);
+
 	const fetchDiagramAsBlob = async (): Promise<Blob> => {
-		if (!containerRef.current) throw new Error('Container not found');
-		const svg = containerRef.current.querySelector('svg');
+		if (!inlineDiagramRef.current) throw new Error('Container not found');
+		const svg = inlineDiagramRef.current.querySelector('svg');
 		if (!svg) throw new Error('SVG element not found in container');
 
 		const svgData = new XMLSerializer().serializeToString(svg);
@@ -102,31 +148,63 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 		});
 	};
 	return (
-		<div className="rounded-lg my-4 items-start overflow-hidden" style={{ backgroundColor: '#E5E9F0' }}>
-			<div className="flex justify-between items-center bg-gray-700 px-4">
-				<span className="text-white">Mermaid Diagram</span>
-				<DownloadButton
-					valueFetcher={fetchDiagramAsBlob}
-					size={16}
-					fileprefix="diagram"
-					isBinary={true}
-					language="mermaid"
-					className="btn btn-sm bg-transparent text-white border-none flex items-center shadow-none"
-				/>
+		<>
+			{/* ---------- Inline card -------------------------------- */}
+			<div className="rounded-lg my-4 overflow-hidden" style={{ backgroundColor: '#E5E9F0' }}>
+				{/* header bar */}
+				<div className="flex justify-between items-center bg-gray-700 px-4">
+					<span className="text-white">Mermaid diagram</span>
+
+					<DownloadButton
+						valueFetcher={fetchDiagramAsBlob}
+						size={16}
+						fileprefix="diagram"
+						isBinary={true}
+						language="mermaid"
+						className="btn btn-sm bg-transparent text-white border-none flex items-center shadow-none"
+					/>
+				</div>
+
+				<div
+					className="flex items-center justify-center text-center p-1 min-h-[250px] w-full overflow-auto cursor-zoom-in"
+					onClick={() => {
+						if (!error) {
+							setZoomOpen(true);
+						}
+					}}
+				>
+					{error ? (
+						<svg width="300" height="100" className="border-2 border-red-500 rounded">
+							<rect width="300" height="100" fill="#fff" stroke="#e53e3e" strokeWidth="2" rx="8" />
+							<text x="150" y="55" textAnchor="middle" fill="#e53e3e" fontSize="18" fontFamily="monospace">
+								Mermaid syntax error
+							</text>
+						</svg>
+					) : (
+						<div ref={inlineDiagramRef} className="w-full max-h-[60vh] overflow-auto" />
+					)}
+				</div>
 			</div>
-			<div className="flex items-center justify-center text-center p-1 min-h-[250px] w-full overflow-auto">
-				{error ? (
-					<svg width="300" height="100" style={{ background: '#fff', border: '2px solid #e53e3e', borderRadius: 8 }}>
-						<rect x="0" y="0" width="300" height="100" fill="#fff" stroke="#e53e3e" strokeWidth="2" rx="8" />
-						<text x="150" y="55" textAnchor="middle" fill="#e53e3e" fontSize="18" fontFamily="monospace">
-							Mermaid syntax error
-						</text>
-					</svg>
-				) : (
-					<div ref={containerRef} className="w-full max-h-[60vh] overflow-auto" />
-				)}
-			</div>
-		</div>
+
+			{/* ---------- Zoom modal (daisyUI v5) -------------------- */}
+			<dialog ref={dialogRef} className="modal" aria-label="Enlarged Mermaid diagram">
+				{/* backdrop – clicking it closes the dialog */}
+				<form method="dialog" className="modal-backdrop">
+					<button aria-label="Close"></button>
+				</form>
+
+				{/* modal box */}
+				<div
+					className="modal-box max-w-[90vw] h-[90vh] cursor-zoom-out flex items-center justify-center"
+					onClick={() => {
+						setZoomOpen(false);
+					}}
+				>
+					{/* enlarged diagram */}
+					<div ref={modalRef} className="overflow-auto w-full" style={{ pointerEvents: 'none' }} />
+				</div>
+			</dialog>
+		</>
 	);
 };
 
