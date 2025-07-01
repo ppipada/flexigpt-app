@@ -2,24 +2,20 @@ package spec
 
 import "time"
 
-type AssistantID string
-
 type Assistant struct {
-	ID          AssistantID `json:"id"`
-	Name        string      `json:"name"`
-	DisplayName string      `json:"displayName,omitempty"`
-	Description string      `json:"description,omitempty"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName,omitempty"`
+	Description string `json:"description,omitempty"`
+	InvokeSlug  string `json:"invokeSlug,omitempty"`
+	IsEnabled   bool   `json:"isEnabled"`
 
-	TemplateID    string   `json:"templateId"`
-	ModelPresetID string   `json:"modelPresetId"`
-	ToolBundleIDs []string `json:"toolBundleIds,omitempty"`
+	TemplateID               string            `json:"templateId"`
+	ModelPresetID            string            `json:"modelPresetId"`
+	ToolBundleIDs            []string          `json:"toolBundleIds,omitempty"`
+	DefaultTemplateVarValues map[string]string `json:"defaultTemplateVarValues,omitempty"`
 
-	// Default values for template variables (optional override).
-	DefaultTemplateVars map[string]string `json:"defaultTemplateVars,omitempty"`
-
-	Version    int       `json:"version"`
-	IsEnabled  bool      `json:"isEnabled"`
+	Version    string    `json:"version"`
 	CreatedAt  time.Time `json:"createdAt"`
 	ModifiedAt time.Time `json:"modifiedAt"`
-	Tags       []string  `json:"tags,omitempty"`
 }

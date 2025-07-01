@@ -12,16 +12,6 @@ const (
 	Function  PromptRoleEnum = "function"
 )
 
-// How variables appear inside MessageBlock.Content.
-type PlaceholderSyntax string
-
-const (
-	// {{Var}}.
-	PlaceholderDoubleCurly PlaceholderSyntax = "double_curly"
-	// ${Var}.
-	PlaceholderDollarBrace PlaceholderSyntax = "dollar_brace"
-)
-
 // Primitive variable kinds.
 type VarType string
 
@@ -50,7 +40,6 @@ type MessageBlock struct {
 	ID      string         `json:"id"`
 	Role    PromptRoleEnum `json:"role"`
 	Content string         `json:"content"`
-	Enabled bool           `json:"enabled,omitempty"`
 }
 
 // Declares a placeholder used somewhere in Blocks.
@@ -94,24 +83,21 @@ type PreProcessorCall struct {
 }
 
 type PromptTemplate struct {
-	ID          string   `json:"id"`
-	Version     string   `json:"version"`
-	Name        string   `json:"name"`
-	InvokeSlugs []string `json:"invokeSlugs,omitempty"`
-	Description string   `json:"description,omitempty"`
-	Tags        []string `json:"tags,omitempty"`
-
-	PlaceholderFormat PlaceholderSyntax `json:"placeholderFormat,omitempty"`
-
-	CreatedAt  time.Time `json:"createdAt"`
-	ModifiedAt time.Time `json:"modifiedAt"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName,omitempty"`
+	Description string `json:"description,omitempty"`
+	InvokeSlug  string `json:"invokeSlug,omitempty"`
+	IsEnabled   bool   `json:"isEnabled"`
 
 	// Ordered list of blocks that form the final prompt.
 	Blocks []MessageBlock `json:"blocks"`
-
 	// Declared placeholders.
 	Variables []PromptVariable `json:"variables,omitempty"`
-
 	// Helper steps executed before the prompt is sent.
 	PreProcessors []PreProcessorCall `json:"preProcessors,omitempty"`
+
+	Version    string    `json:"version"`
+	CreatedAt  time.Time `json:"createdAt"`
+	ModifiedAt time.Time `json:"modifiedAt"`
 }
