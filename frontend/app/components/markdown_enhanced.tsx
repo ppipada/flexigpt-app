@@ -4,6 +4,7 @@ import { memo, useMemo } from 'react';
 import 'katex/dist/katex.min.css';
 import Markdown from 'react-markdown';
 import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
 import remarkGemoji from 'remark-gemoji';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -17,7 +18,7 @@ import CodeBlock from '@/components/markdown_code_block';
 
 const remarkPlugins = [remarkGemoji, supersub, remarkMath, remarkGfm];
 const remarkPluginsStreaming = [remarkGemoji, supersub, remarkGfm];
-const rehypePlugins = [rehypeKatex];
+const rehypePlugins = [rehypeRaw, rehypeKatex];
 
 interface EnhancedMarkdownProps {
 	text: string;
