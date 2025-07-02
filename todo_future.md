@@ -1,5 +1,18 @@
 # Project Future notes
 
+## Future feature ideas
+
+- [ ] Start with the noted apps support
+- [ ] Observability: At least tokens and dollars need to be represented someplace
+- MCP handling
+  - [ ] MCP transport: mcp httpsse, stdio for mcp
+  - [ ] long future: add servers for: file, git, simplemapstore
+- [ ] Docs inside app
+  - [ ] Have docs pages inside app itself
+  - [ ] Docs should ideally have course work for very beginners that are users of genai, without any programming knowledge.
+  - [ ] MS course is fantastic, but requires lots of tech know how.
+- [ ] Add keyboard shortcuts and some tooltips for them to know what are these.
+
 ## Laundry list
 
 - [ ] Chat
@@ -41,9 +54,6 @@
   - [ ] Signing for Win
   - [ ] Test Windows build
 
-- [ ] Docs inside app
-  - [ ] Have docs pages inside app itself
-
 ## Stricken out list
 
 - [ ] ~~logger is imported in securejsondb before it is set as ipc file logger in appimage~~
@@ -51,15 +61,6 @@
 - [ ] ~~Electron: see about package distribution and updates~~
 - [ ] ~~Code interpreter for few languages baked in. This can be provided as a normal tool so that~~
 - [ ] ~~Container build and publish~~
-
-## MCP handling
-
-- [ ] MCP transport
-
-  - [ ] mcp httpsse
-  - [ ] stdio for mcp
-
-- [ ] Add servers for: file, git, simplemapstore
 
 ## Knowledge base
 
@@ -210,11 +211,3 @@ Implement a `DocStoreSet` that manages multiple `DocStore` instances within a Wa
 ### Entity: `VectorStore`
 
 - Use VectoreStore interface from langchaingo and implement for chromamem for local files
-
-## Observability
-
-- At least tokens and dollars need to be represented someplace
-
-## Apps
-
-- [ ] Start with the noted apps support

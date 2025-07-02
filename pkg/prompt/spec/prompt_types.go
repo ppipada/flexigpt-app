@@ -9,7 +9,6 @@ const (
 	Developer PromptRoleEnum = "developer"
 	User      PromptRoleEnum = "user"
 	Assistant PromptRoleEnum = "assistant"
-	Function  PromptRoleEnum = "function"
 )
 
 // Primitive variable kinds.
