@@ -10,29 +10,21 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filenameprovider"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
+	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
 )
+
+const conversationFileExtension = "json"
 
 type ConversationCollection struct {
 	baseDir   string
+	enableFTS bool
 	store     *dirstore.MapDirectoryStore
 	fts       *ftsengine.Engine
-	enableFTS bool
-	// File-name builder / parser.
-	fp filenameprovider.Provider
-	// Directory partitioning.
-	pp dirstore.PartitionProvider
+	pp        dirstore.PartitionProvider
 }
 
 type Option func(*ConversationCollection) error
-
-func WithFilenameProvider(fp filenameprovider.Provider) Option {
-	return func(cc *ConversationCollection) error {
-		cc.fp = fp
-		return nil
-	}
-}
 
 func WithPartitionProvider(pp dirstore.PartitionProvider) Option {
 	return func(cc *ConversationCollection) error {
@@ -54,12 +46,18 @@ func WithFTS(enabled bool) Option {
 //
 //	baseDir is the root directory for the map-directory store.
 func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCollection, error) {
-	defFP := filenameprovider.UUIDv7Provider{}
-	defPP := dirstore.MonthPartitionProvider{TimeFn: defFP.CreatedAt}
+	defPP := dirstore.MonthPartitionProvider{
+		TimeFn: func(fileKey dirstore.FileKey) (time.Time, error) {
+			u, err := uuidv7filename.Parse(fileKey.FileName)
+			if err != nil {
+				return time.Time{}, err
+			}
+			return u.Time, nil
+		},
+	}
 
 	cc := &ConversationCollection{
 		baseDir: filepath.Clean(baseDir),
-		fp:      &defFP,
 		pp:      &defPP,
 	}
 
@@ -109,11 +107,11 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 }
 
 func (cc *ConversationCollection) fileNameFromConversation(c spec.Conversation) (string, error) {
-	return cc.fp.Build(filenameprovider.FileInfo{
-		ID:        c.ID,
-		Title:     c.Title,
-		CreatedAt: c.CreatedAt,
-	})
+	info, err := uuidv7filename.Build(c.ID, c.Title, conversationFileExtension)
+	if err != nil {
+		return "", err
+	}
+	return info.FileName, nil
 }
 
 func (cc *ConversationCollection) PutConversation(
@@ -128,12 +126,15 @@ func (cc *ConversationCollection) PutConversation(
 	}
 
 	// Get filename from info.
-	fn, _ := cc.fp.Build(filenameprovider.FileInfo{
-		ID:        req.ID,
-		Title:     req.Body.Title,
-		CreatedAt: req.Body.CreatedAt,
-	})
-	partitionDirName := cc.pp.GetPartitionDir(fn)
+	info, err := uuidv7filename.Build(req.ID, req.Body.Title, conversationFileExtension)
+	if err != nil {
+		return nil, err
+	}
+	filename := info.FileName
+	partitionDirName, err := cc.pp.GetPartitionDir(dirstore.FileKey{FileName: filename})
+	if err != nil {
+		return nil, err
+	}
 
 	// Check if there are files with same id as prefix
 	// We don't iterate as we expect only 1 file max with the id prefix of uuid.
@@ -152,7 +153,7 @@ func (cc *ConversationCollection) PutConversation(
 	// May be title has also changed
 	// Remove the current file and add new.
 	for idx := range files {
-		err := cc.store.DeleteFile(filepath.Base(files[idx]))
+		err := cc.store.DeleteFile(dirstore.FileKey{FileName: filepath.Base(files[idx])})
 		if err != nil {
 			slog.Warn("Put conversation remove existing file", "error", err)
 		}
@@ -169,7 +170,7 @@ func (cc *ConversationCollection) PutConversation(
 	if err != nil {
 		return nil, err
 	}
-	if err := cc.store.SetFileData(fn, data); err != nil {
+	if err := cc.store.SetFileData(dirstore.FileKey{FileName: filename}, data); err != nil {
 		return nil, err
 	}
 	return &spec.PutConversationResponse{}, nil
@@ -193,7 +194,7 @@ func (cc *ConversationCollection) PutMessagesToConversation(
 	currentConversation.ModifiedAt = time.Now()
 	currentConversation.Messages = req.Body.Messages
 
-	fn, err := cc.fileNameFromConversation(*currentConversation)
+	filename, err := cc.fileNameFromConversation(*currentConversation)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +203,7 @@ func (cc *ConversationCollection) PutMessagesToConversation(
 	if err != nil {
 		return nil, err
 	}
-	if err := cc.store.SetFileData(fn, data); err != nil {
+	if err := cc.store.SetFileData(dirstore.FileKey{FileName: filename}, data); err != nil {
 		return nil, err
 	}
 
@@ -216,15 +217,16 @@ func (cc *ConversationCollection) DeleteConversation(
 	if req == nil {
 		return nil, errors.New("request cannot be nil")
 	}
-	fn, _ := cc.fp.Build(filenameprovider.FileInfo{ID: req.ID, Title: req.Title})
-	if err := cc.store.DeleteFile(fn); err != nil {
+	info, err := uuidv7filename.Build(req.ID, req.Title, conversationFileExtension)
+	if err != nil {
 		return nil, err
 	}
-	// Purge from FTS (absolute path = docID).
-	if cc.fts != nil {
-		full := filepath.Join(cc.baseDir, cc.pp.GetPartitionDir(fn), fn)
-		_ = cc.fts.Delete(ctx, full)
+	filename := info.FileName
+
+	if err := cc.store.DeleteFile(dirstore.FileKey{FileName: filename}); err != nil {
+		return nil, err
 	}
+
 	return &spec.DeleteConversationResponse{}, nil
 }
 
@@ -235,8 +237,13 @@ func (cc *ConversationCollection) GetConversation(
 	if req == nil {
 		return nil, errors.New("request or request body cannot be nil")
 	}
-	fn, _ := cc.fp.Build(filenameprovider.FileInfo{ID: req.ID, Title: req.Title})
-	raw, err := cc.store.GetFileData(fn, false)
+	info, err := uuidv7filename.Build(req.ID, req.Title, conversationFileExtension)
+	if err != nil {
+		return nil, err
+	}
+	filename := info.FileName
+
+	raw, err := cc.store.GetFileData(dirstore.FileKey{FileName: filename}, false)
 	if err != nil {
 		return nil, err
 	}
@@ -254,34 +261,37 @@ func (cc *ConversationCollection) ListConversations(
 	req *spec.ListConversationsRequest,
 ) (*spec.ListConversationsResponse, error) {
 	token := ""
+	pageSize := 10
 	if req != nil {
-		token = req.Token
+		token = req.PageToken
+		if req.PageSize > 0 || req.PageSize < 256 {
+			pageSize = req.PageSize
+		}
 	}
 	files, next, err := cc.store.ListFiles(
-		dirstore.ListingConfig{SortOrder: dirstore.SortOrderDescending},
+		dirstore.ListingConfig{SortOrder: dirstore.SortOrderDescending, PageSize: pageSize},
 		token,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]spec.ConversationItem, 0, len(files))
+	items := make([]spec.ConversationListItem, 0, len(files))
 	for _, f := range files {
-		info, err := cc.fp.Parse(filepath.Base(f))
+		info, err := uuidv7filename.Parse(filepath.Base(f))
 		if err != nil {
 			// Corrupted/foreign file skip.
 			continue
 		}
-		items = append(items, spec.ConversationItem{
-			ID:        info.ID,
-			Title:     info.Title,
-			CreatedAt: info.CreatedAt,
+		items = append(items, spec.ConversationListItem{
+			ID:             info.ID,
+			SanatizedTitle: info.Suffix,
 		})
 	}
 	return &spec.ListConversationsResponse{
 		Body: &spec.ListConversationsResponseBody{
-			ConversationItems: items,
-			NextPageToken:     &next,
+			ConversationListItems: items,
+			NextPageToken:         &next,
 		},
 	}, nil
 }
@@ -296,33 +306,31 @@ func (cc *ConversationCollection) SearchConversations(
 	if cc.fts == nil {
 		return nil, errors.New("full-text search is disabled")
 	}
-	pageSize := req.PageSize
-	if pageSize <= 0 || pageSize > 1000 {
-		pageSize = 10
+	pageSize := 10
+	if req.PageSize > 0 || req.PageSize < 256 {
+		pageSize = req.PageSize
 	}
 
-	hits, next, err := cc.fts.Search(ctx, req.Query, req.Token, pageSize)
+	hits, next, err := cc.fts.Search(ctx, req.Query, req.PageToken, pageSize)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]spec.ConversationItem, 0, len(hits))
+	items := make([]spec.ConversationListItem, 0, len(hits))
 	for _, h := range hits {
-		base := filepath.Base(h.ID)
-		info, err := cc.fp.Parse(base)
+		info, err := uuidv7filename.Parse(filepath.Base(h.ID))
 		if err != nil {
 			continue
 		}
-		items = append(items, spec.ConversationItem{
-			ID:        info.ID,
-			Title:     info.Title,
-			CreatedAt: info.CreatedAt,
+		items = append(items, spec.ConversationListItem{
+			ID:             info.ID,
+			SanatizedTitle: info.Suffix,
 		})
 	}
 	return &spec.SearchConversationsResponse{
 		Body: &spec.SearchConversationsResponseBody{
-			ConversationItems: items,
-			NextPageToken:     &next,
+			ConversationListItems: items,
+			NextPageToken:         &next,
 		},
 	}, nil
 }

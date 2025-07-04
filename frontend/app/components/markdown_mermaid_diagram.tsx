@@ -2,9 +2,9 @@ import type { FC } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 import mermaid from 'mermaid';
-import { v4 as uuidv4 } from 'uuid';
 
 import { Base64EncodeUTF8 } from '@/lib/encode_decode';
+import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import DownloadButton from '@/components/download_button';
 
@@ -29,7 +29,7 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 	const [svgNode, setSvgNode] = useState<SVGSVGElement | null>(null);
 	const [zoomOpen, setZoomOpen] = useState(false);
 
-	const uniqueId = useRef(`mermaid-${uuidv4()}`);
+	const uniqueId = useRef(`mermaid-${getUUIDv7()}`);
 	useEffect(() => {
 		initializeMermaid();
 		let isMounted = true;

@@ -2,7 +2,7 @@ import type { FC } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
 
-import type { ConversationItem } from '@/models/conversationmodel';
+import type { ConversationSearchItem } from '@/models/conversationmodel';
 
 import DownloadButton from '@/components/download_button';
 
@@ -11,7 +11,7 @@ import ChatSearch from '@/chats/chat_search';
 interface ChatNavBarProps {
 	onNewChat: () => void;
 	getConversationForExport: () => Promise<string>;
-	onSelectConversation: (item: ConversationItem) => Promise<void>;
+	onSelectConversation: (item: ConversationSearchItem) => Promise<void>;
 	chatTitle: string;
 	searchRefreshKey: number;
 }

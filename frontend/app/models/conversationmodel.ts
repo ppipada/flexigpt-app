@@ -10,18 +10,25 @@ export interface ConversationMessage {
 	createdAt?: Date;
 	role: ConversationRoleEnum;
 	content: string;
-	timestamp?: string;
 	name?: string;
 	details?: string;
 }
 
-export interface ConversationItem {
+export interface ConversationListItem {
+	id: string;
+	sanatizedTitle: string;
+}
+
+export type ConversationSearchItem = {
+	id: string;
+	title: string;
+	idDate: Date;
+};
+
+export type Conversation = {
 	id: string;
 	title: string;
 	createdAt: Date;
-}
-
-export type Conversation = ConversationItem & {
 	modifiedAt: Date;
 	messages: ConversationMessage[];
 };
@@ -31,10 +38,10 @@ export interface IConversationStoreAPI {
 	putMessagesToConversation(id: string, title: string, messages: ConversationMessage[]): Promise<void>;
 	deleteConversation: (id: string, title: string) => Promise<void>;
 	getConversation: (id: string, title: string) => Promise<Conversation | null>;
-	listConversations: (token?: string) => Promise<{ conversations: ConversationItem[]; nextToken?: string }>;
+	listConversations: (token?: string) => Promise<{ conversations: ConversationListItem[]; nextToken?: string }>;
 	searchConversations: (
 		query: string,
 		token?: string,
 		pageSize?: number
-	) => Promise<{ conversations: ConversationItem[]; nextToken?: string }>;
+	) => Promise<{ conversations: ConversationListItem[]; nextToken?: string }>;
 }

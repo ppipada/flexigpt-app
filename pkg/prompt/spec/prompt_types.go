@@ -69,7 +69,7 @@ const (
 
 // Runs a helper tool, optionally extracts a JSON sub-path and stores the value into a variable.
 type PreProcessorCall struct {
-	ID        string         `json:"id,omitempty"`
+	ID        string         `json:"id"`
 	ToolID    string         `json:"toolId"`
 	Arguments map[string]any `json:"args,omitempty"`
 
@@ -82,12 +82,12 @@ type PreProcessorCall struct {
 }
 
 type PromptTemplate struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	DisplayName string `json:"displayName,omitempty"`
-	Description string `json:"description,omitempty"`
-	InvokeSlug  string `json:"invokeSlug,omitempty"`
-	IsEnabled   bool   `json:"isEnabled"`
+	ID          string   `json:"id"`
+	DisplayName string   `json:"displayName"`
+	Slug        string   `json:"slug"`
+	IsEnabled   bool     `json:"isEnabled"`
+	Description string   `json:"description,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
 
 	// Ordered list of blocks that form the final prompt.
 	Blocks []MessageBlock `json:"blocks"`
@@ -97,6 +97,18 @@ type PromptTemplate struct {
 	PreProcessors []PreProcessorCall `json:"preProcessors,omitempty"`
 
 	Version    string    `json:"version"`
+	CreatedAt  time.Time `json:"createdAt"`
+	ModifiedAt time.Time `json:"modifiedAt"`
+}
+
+// Hard grouping & distribution unit.
+type PromptBundle struct {
+	ID          string `json:"id"`
+	Slug        string `json:"slug"`
+	DisplayName string `json:"displayName,omitempty"`
+	Description string `json:"description,omitempty"`
+	IsEnabled   bool   `json:"isEnabled"`
+
 	CreatedAt  time.Time `json:"createdAt"`
 	ModifiedAt time.Time `json:"modifiedAt"`
 }

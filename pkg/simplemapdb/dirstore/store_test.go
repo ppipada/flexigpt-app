@@ -35,7 +35,7 @@ func TestMapDirectoryStore_CRUD(t *testing.T) {
 		{
 			name: "MonthPartitionProvider - Create File",
 			partitionProvider: &MonthPartitionProvider{
-				TimeFn: func(filename string) (time.Time, error) { return now, nil },
+				TimeFn: func(fileKey FileKey) (time.Time, error) { return now, nil },
 			},
 			filename:           "testfile.json",
 			data:               map[string]any{"key": "value"},
@@ -76,7 +76,7 @@ func TestMapDirectoryStore_CRUD(t *testing.T) {
 				t.Fatalf("failed to create MapDirectoryStore: %v", err)
 			}
 
-			err = mds.SetFileData(tt.filename, tt.data)
+			err = mds.SetFileData(FileKey{FileName: tt.filename}, tt.data)
 			if tt.expectError {
 				if err == nil {
 					t.Fatalf("expected error but got none")
@@ -102,7 +102,7 @@ func TestMapDirectoryStore_CRUD(t *testing.T) {
 			}
 
 			if tt.expectedFileExists {
-				data, err := mds.GetFileData(tt.filename, false)
+				data, err := mds.GetFileData(FileKey{FileName: tt.filename}, false)
 				if err != nil {
 					t.Fatalf("failed to get file data: %v", err)
 				}
@@ -132,7 +132,7 @@ func TestMapDirectoryStore_DeleteFile(t *testing.T) {
 	}
 
 	filename := "testfile.json"
-	err = mds.SetFileData(filename, map[string]any{"key": "value"})
+	err = mds.SetFileData(FileKey{FileName: filename}, map[string]any{"key": "value"})
 	if err != nil {
 		t.Fatalf("failed to set file data: %v", err)
 	}
@@ -143,7 +143,7 @@ func TestMapDirectoryStore_DeleteFile(t *testing.T) {
 		t.Fatalf("expected file to exist but it does not")
 	}
 
-	err = mds.DeleteFile(filename)
+	err = mds.DeleteFile(FileKey{FileName: filename})
 	if err != nil {
 		t.Fatalf("failed to delete file: %v", err)
 	}
@@ -159,7 +159,7 @@ func TestMapDirectoryStore_DeleteFile(t *testing.T) {
 func TestMapDirectoryStore_ListFiles_BasicAndSort(t *testing.T) {
 	baseDir := t.TempDir()
 	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
+		TimeFn: func(filekey FileKey) (time.Time, error) { return time.Now(), nil },
 	}
 	mds, err := NewMapDirectoryStore(
 		baseDir,
@@ -171,8 +171,8 @@ func TestMapDirectoryStore_ListFiles_BasicAndSort(t *testing.T) {
 	}
 
 	files := []string{"file1.json", "file2.json", "file3.json"}
-	for _, file := range files {
-		if err := mds.SetFileData(file, map[string]any{"key": "value"}); err != nil {
+	for _, filename := range files {
+		if err := mds.SetFileData(FileKey{FileName: filename}, map[string]any{"key": "value"}); err != nil {
 			t.Fatalf("failed to set file data: %v", err)
 		}
 	}
@@ -409,7 +409,7 @@ func TestMapDirectoryStore_ListFiles_MultiPartition_Pagination(t *testing.T) {
 			pageToken := ""
 			for pageIndex, expectedFiles := range tt.expectedPages {
 				partitionProvider := &MonthPartitionProvider{
-					TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
+					TimeFn: func(filekey FileKey) (time.Time, error) { return time.Now(), nil },
 				}
 				mds, err := NewMapDirectoryStore(
 					baseDir,
@@ -451,7 +451,7 @@ func TestMapDirectoryStore_ListFiles_MultiPartition_Pagination(t *testing.T) {
 	}
 }
 
-// Listing Tests: Filtering by Partition and Filename Prefix.
+// Listing Tests: Filtering by Partition and FileName Prefix.
 
 func TestMapDirectoryStore_ListFiles_FilteredPartitions(t *testing.T) {
 	baseDir := t.TempDir()
@@ -460,7 +460,7 @@ func TestMapDirectoryStore_ListFiles_FilteredPartitions(t *testing.T) {
 	createFiles(t, baseDir, partitions, files)
 
 	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
+		TimeFn: func(filekey FileKey) (time.Time, error) { return time.Now(), nil },
 	}
 	mds, err := NewMapDirectoryStore(
 		baseDir,
@@ -565,7 +565,7 @@ func TestMapDirectoryStore_ListFiles_FilteredPartitions_Pagination(t *testing.T)
 	createFiles(t, baseDir, partitions, files)
 
 	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
+		TimeFn: func(filekey FileKey) (time.Time, error) { return time.Now(), nil },
 	}
 	pageSize := 3
 	mds, err := NewMapDirectoryStore(
@@ -652,7 +652,7 @@ func TestMapDirectoryStore_ListFiles_FilenamePrefixFiltering(t *testing.T) {
 	createFiles(t, baseDir, partitions, files)
 
 	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
+		TimeFn: func(filekey FileKey) (time.Time, error) { return time.Now(), nil },
 	}
 	mds, err := NewMapDirectoryStore(
 		baseDir,
@@ -805,7 +805,7 @@ func TestMapDirectoryStore_ListFiles_FilenamePrefixFiltering_Pagination(t *testi
 	createFiles(t, baseDir, partitions, files)
 
 	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
+		TimeFn: func(filekey FileKey) (time.Time, error) { return time.Now(), nil },
 	}
 	pageSize := 2
 	mds, err := NewMapDirectoryStore(
@@ -923,7 +923,7 @@ func TestMapDirectoryStore_ListFiles_FilenamePrefixFiltering_Pagination(t *testi
 func TestMapDirectoryStore_ListPartitions_Pagination(t *testing.T) {
 	baseDir := t.TempDir()
 	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
+		TimeFn: func(filekey FileKey) (time.Time, error) { return time.Now(), nil },
 	}
 	mds, err := NewMapDirectoryStore(
 		baseDir,
@@ -1015,7 +1015,7 @@ func TestMapDirectoryStore_ListFiles_ErrorsAndEdgeCases(t *testing.T) {
 	t.Parallel()
 
 	partitionProvider := &MonthPartitionProvider{
-		TimeFn: func(filename string) (time.Time, error) { return time.Now(), nil },
+		TimeFn: func(filekey FileKey) (time.Time, error) { return time.Now(), nil },
 	}
 
 	t.Run("InvalidSortOrder", func(t *testing.T) {

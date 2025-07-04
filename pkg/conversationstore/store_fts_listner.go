@@ -17,6 +17,8 @@ func NewFTSListner(e *ftsengine.Engine) filestore.Listener {
 		switch ev.Op {
 		case filestore.OpSetFile, filestore.OpResetFile:
 			_ = e.Upsert(context.Background(), ev.File, extract(ev.File, ev.Data))
+		case filestore.OpDeleteFile:
+			_ = e.Delete(context.Background(), ev.File)
 		}
 	}
 }

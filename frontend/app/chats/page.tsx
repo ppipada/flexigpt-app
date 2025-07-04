@@ -1,9 +1,7 @@
 import type { FC } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import { v7 as uuidv7 } from 'uuid';
-
-import type { Conversation, ConversationItem, ConversationMessage } from '@/models/conversationmodel';
+import type { Conversation, ConversationMessage, ConversationSearchItem } from '@/models/conversationmodel';
 import { ConversationRoleEnum } from '@/models/conversationmodel';
 import type { ModelParams } from '@/models/modelpresetsmodel';
 import { type ChatOptions, DefaultChatOptions } from '@/models/modelpresetsmodel';
@@ -12,6 +10,7 @@ import { GetCompletionMessage } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
 
 import { generateTitle } from '@/lib/text_utils';
+import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
 
@@ -21,7 +20,7 @@ import ChatNavBar from '@/chats/chat_navbar';
 
 function initConversation(title = 'New Conversation'): Conversation {
 	return {
-		id: uuidv7(),
+		id: getUUIDv7(),
 		title: generateTitle(title).title,
 		createdAt: new Date(),
 		modifiedAt: new Date(),
@@ -129,7 +128,7 @@ const ChatScreen: FC = () => {
 		setChat(updatedChat);
 	};
 
-	const handleSelectConversation = useCallback(async (item: ConversationItem) => {
+	const handleSelectConversation = useCallback(async (item: ConversationSearchItem) => {
 		const selectedChat = await conversationStoreAPI.getConversation(item.id, item.title);
 		if (selectedChat) {
 			setChat(selectedChat);

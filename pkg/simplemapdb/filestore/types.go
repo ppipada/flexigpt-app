@@ -1,19 +1,24 @@
 package filestore
 
 import (
+	"errors"
 	"time"
 
 	simplemapdbEncdec "github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 )
 
+// ErrConflict is returned when flush/delete detects that somebody modified the file since we last read or wrote it.
+var ErrConflict = errors.New("filestore: concurrent modification detected")
+
 // Operation is the kind of mutation that happened on a file or a key.
 type Operation string
 
 const (
-	OpSetFile   Operation = "setFile"
-	OpResetFile Operation = "resetFile"
-	OpSetKey    Operation = "setKey"
-	OpDeleteKey Operation = "deleteKey"
+	OpSetFile    Operation = "setFile"
+	OpResetFile  Operation = "resetFile"
+	OpDeleteFile Operation = "deleteFile"
+	OpSetKey     Operation = "setKey"
+	OpDeleteKey  Operation = "deleteKey"
 )
 
 // Event is delivered *after* a mutation has been written to disk.

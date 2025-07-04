@@ -45,7 +45,8 @@ type GetConversationResponse struct {
 }
 
 type ListConversationsRequest struct {
-	Token string `query:"token"`
+	PageSize  int    `query:"pageSize"`
+	PageToken string `query:"pageToken"`
 }
 
 type ListConversationsResponse struct {
@@ -53,15 +54,20 @@ type ListConversationsResponse struct {
 }
 
 type ListConversationsResponseBody struct {
-	ConversationItems []ConversationItem `json:"conversationItems"`
-	NextPageToken     *string            `json:"nextPageToken"`
+	ConversationListItems []ConversationListItem `json:"conversationListItems"`
+	NextPageToken         *string                `json:"nextPageToken,omitempty"`
+}
+
+// ConversationListItem represents a conversation with basic details.
+type ConversationListItem struct {
+	ID             string `json:"id"`
+	SanatizedTitle string `json:"sanatizedTitle"`
 }
 
 type SearchConversationsRequest struct {
-	Query string `query:"query"    required:"true"`
-	Token string `query:"token"`
-	// Default is 10.
-	PageSize int `query:"pageSize"`
+	Query     string `query:"q"         required:"true"`
+	PageToken string `query:"pageToken"`
+	PageSize  int    `query:"pageSize"`
 }
 
 type SearchConversationsResponse struct {
@@ -69,6 +75,6 @@ type SearchConversationsResponse struct {
 }
 
 type SearchConversationsResponseBody struct {
-	ConversationItems []ConversationItem `json:"conversationItems"`
-	NextPageToken     *string            `json:"nextPageToken"`
+	ConversationListItems []ConversationListItem `json:"conversationListItems"`
+	NextPageToken         *string                `json:"nextPageToken,omitempty"`
 }

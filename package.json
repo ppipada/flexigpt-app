@@ -11,6 +11,7 @@
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
 	"description": "FlexiGPT - An AI application platform",
 	"scripts": {
+		"touch:tmp": "node -e \"require('fs-extra').ensureFileSync('frontend/dist/client/a.tmp')\"",
 		"build:frontend": "pnpm -F frontend run build:wails",
 		"types:frontend": "pnpm -F frontend run typecheck",
 		"check:version": "node -e \"const t=process.env.VERSION_TAG;if(!t){console.error('VERSION_TAG not set');process.exit(1);}if(!/^v\\d+\\.\\d+\\.\\d+$/.test(t)){console.error('VERSION_TAG must match vX.Y.Z');process.exit(1);}\"",
@@ -20,8 +21,7 @@
 		"pack:flatpak": "gh act workflow_dispatch -W './.github/workflows/flatpak.yml' --artifact-server-path ./out --input tag=v0.0.1",
 		"pack:nsis": "gh act workflow_dispatch -W './.github/workflows/nsispak.yml' --artifact-server-path ./out --input tag=v0.0.1",
 		"pack:macpkg": "gh act workflow_dispatch -W './.github/workflows/macpkg.yml' --artifact-server-path ./out --input tag=v0.0.1",
-		"build:double": "cd ./cmd/agentgo && pnpm run build:frontend && wails build -devtools -m -clean -v 2 -ldflags=\"-X main.Version=v0.0.1\"",
-		"build:withbindings": "cd ./cmd/agentgo && wails build -devtools -m -clean -v 2 -ldflags=\"-X main.Version=v0.0.1\"",
+		"build:withbindings": "pnpm run touch:tmp && cd ./cmd/agentgo && wails build -devtools -m -clean -v 2 -ldflags=\"-X main.Version=v0.0.1\"",
 		"run:watch": "cd ./cmd/agentgo && pnpm run build:frontend && wails dev -s -v 2 -tags webkit2_41 -ldflags=\"-X main.Version=v0.0.1\"",
 		"run:gobackend": "./scripts/run_backend.sh",
 		"lint:gopls": "./scripts/lint_gopls_check.sh",
@@ -31,5 +31,8 @@
 		"test": "pnpm -F frontend run test && pnpm run test:go",
 		"lt": "pnpm run lint && pnpm run test"
 	},
-	"packageManager": "pnpm@10.7.1+sha512.2d92c86b7928dc8284f53494fb4201f983da65f0fb4f0d40baafa5cf628fa31dae3e5968f12466f17df7e97310e30f343a648baea1b9b350685dafafffdf5808"
+	"packageManager": "pnpm@10.7.1+sha512.2d92c86b7928dc8284f53494fb4201f983da65f0fb4f0d40baafa5cf628fa31dae3e5968f12466f17df7e97310e30f343a648baea1b9b350685dafafffdf5808",
+	"devDependencies": {
+		"fs-extra": "^11.3.0"
+	}
 }

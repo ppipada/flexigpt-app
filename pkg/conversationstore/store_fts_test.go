@@ -37,11 +37,14 @@ func newCollection(t *testing.T, dir string, withFTS bool) *ConversationCollecti
 func newConv(t *testing.T, title string) *spec.Conversation {
 	t.Helper()
 	id, _ := uuid.NewV7()
-	now := time.Now()
+	sec, nsec := id.Time().UnixTime()
+	createdAt := time.Unix(sec, nsec).UTC()
 	return &spec.Conversation{
-		ConversationItem: spec.ConversationItem{ID: id.String(), Title: title, CreatedAt: now},
-		ModifiedAt:       now,
-		Messages:         []spec.ConversationMessage{},
+		ID:         id.String(),
+		Title:      title,
+		CreatedAt:  createdAt,
+		ModifiedAt: createdAt,
+		Messages:   []spec.ConversationMessage{},
 	}
 }
 
@@ -56,17 +59,17 @@ func TestFTSSearchHappyPath(t *testing.T) {
 	)
 
 	resp, err := cc.SearchConversations(t.Context(), &spec.SearchConversationsRequest{
-		Query: "banana",
-		Token: "",
+		Query:     "banana",
+		PageToken: "",
 	})
 	if err != nil {
 		t.Fatalf("search: %v", err)
 	}
-	if len(resp.Body.ConversationItems) != 1 {
-		t.Fatalf("want 1 hit, got %d", len(resp.Body.ConversationItems))
+	if len(resp.Body.ConversationListItems) != 1 {
+		t.Fatalf("want 1 hit, got %d", len(resp.Body.ConversationListItems))
 	}
-	if resp.Body.ConversationItems[0].ID != c1.ID {
-		t.Fatalf("unexpected hit %q", resp.Body.ConversationItems[0].ID)
+	if resp.Body.ConversationListItems[0].ID != c1.ID {
+		t.Fatalf("unexpected hit %q", resp.Body.ConversationListItems[0].ID)
 	}
 }
 
@@ -89,9 +92,9 @@ func TestFTSRankingTitleVsBody(t *testing.T) {
 
 	resp, _ := cc.SearchConversations(t.Context(),
 		&spec.SearchConversationsRequest{Query: "alpha"})
-	if len(resp.Body.ConversationItems) != 2 ||
-		resp.Body.ConversationItems[0].ID != a.ID {
-		t.Fatalf("ranking wrong, hits=%v", resp.Body.ConversationItems)
+	if len(resp.Body.ConversationListItems) != 2 ||
+		resp.Body.ConversationListItems[0].ID != a.ID {
+		t.Fatalf("ranking wrong, hits=%v", resp.Body.ConversationListItems)
 	}
 }
 
@@ -115,19 +118,19 @@ func TestFTSPagination(t *testing.T) {
 	)
 	for {
 		res, err := cc.SearchConversations(t.Context(),
-			&spec.SearchConversationsRequest{Query: "kiwi", Token: token})
+			&spec.SearchConversationsRequest{Query: "kiwi", PageToken: token})
 		if err != nil {
 			t.Fatalf("search page: %v", err)
 		}
-		total += len(res.Body.ConversationItems)
+		total += len(res.Body.ConversationListItems)
 		if res.Body.NextPageToken == nil || *res.Body.NextPageToken == "" {
-			if len(res.Body.ConversationItems) != 2 {
-				t.Fatalf("last page size want 2, got %d", len(res.Body.ConversationItems))
+			if len(res.Body.ConversationListItems) != 2 {
+				t.Fatalf("last page size want 2, got %d", len(res.Body.ConversationListItems))
 			}
 			break
 		}
-		if len(res.Body.ConversationItems) != 10 {
-			t.Fatalf("full page size want 10 got %d", len(res.Body.ConversationItems))
+		if len(res.Body.ConversationListItems) != 10 {
+			t.Fatalf("full page size want 10 got %d", len(res.Body.ConversationListItems))
 		}
 		token = *res.Body.NextPageToken
 	}
@@ -157,8 +160,8 @@ func TestFTSDeletePurgesIndex(t *testing.T) {
 	// Expect zero hits.
 	res, _ := cc.SearchConversations(t.Context(),
 		&spec.SearchConversationsRequest{Query: "cherry"})
-	if len(res.Body.ConversationItems) != 0 {
-		t.Fatalf("expected 0 hits after delete, got %d", len(res.Body.ConversationItems))
+	if len(res.Body.ConversationListItems) != 0 {
+		t.Fatalf("expected 0 hits after delete, got %d", len(res.Body.ConversationListItems))
 	}
 }
 
@@ -172,7 +175,7 @@ func TestFTSAddMessageUpdatesIndex(t *testing.T) {
 	// No hit yet.
 	res, _ := cc.SearchConversations(t.Context(),
 		&spec.SearchConversationsRequest{Query: "whisper"})
-	if len(res.Body.ConversationItems) != 0 {
+	if len(res.Body.ConversationListItems) != 0 {
 		t.Fatal("should have no hits before message added")
 	}
 
@@ -193,8 +196,8 @@ func TestFTSAddMessageUpdatesIndex(t *testing.T) {
 	// Now should hit.
 	res, _ = cc.SearchConversations(t.Context(),
 		&spec.SearchConversationsRequest{Query: "whisper"})
-	if len(res.Body.ConversationItems) != 1 {
-		t.Fatalf("want 1 hit after adding message, got %d", len(res.Body.ConversationItems))
+	if len(res.Body.ConversationListItems) != 1 {
+		t.Fatalf("want 1 hit after adding message, got %d", len(res.Body.ConversationListItems))
 	}
 }
 
@@ -245,8 +248,8 @@ func TestFTSScaleSearch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("search fruit42: %v", err)
 	}
-	if len(res.Body.ConversationItems) != 1 {
-		t.Fatalf("expect 1 hit for fruit42, got %d", len(res.Body.ConversationItems))
+	if len(res.Body.ConversationListItems) != 1 {
+		t.Fatalf("expect 1 hit for fruit42, got %d", len(res.Body.ConversationListItems))
 	}
 
 	// Bulk search with pagination.
@@ -256,27 +259,27 @@ func TestFTSScaleSearch(t *testing.T) {
 	for page := 0; ; page++ {
 		r, err := cc.SearchConversations(t.Context(),
 			&spec.SearchConversationsRequest{
-				Query:    "common",
-				Token:    token,
-				PageSize: pageSz,
+				Query:     "common",
+				PageToken: token,
+				PageSize:  pageSz,
 			})
 		if err != nil {
 			t.Fatalf("page %d search: %v", page, err)
 		}
-		for _, it := range r.Body.ConversationItems {
+		for _, it := range r.Body.ConversationListItems {
 			if seen[it.ID] {
 				t.Fatalf("duplicate id %s on page %d", it.ID, page)
 			}
 			seen[it.ID] = true
 		}
-		total += len(r.Body.ConversationItems)
+		total += len(r.Body.ConversationListItems)
 
 		if r.Body.NextPageToken == nil || *r.Body.NextPageToken == "" {
 			break
 		}
-		if len(r.Body.ConversationItems) != pageSz {
+		if len(r.Body.ConversationListItems) != pageSz {
 			t.Fatalf("full page expected %d items, got %d", pageSz,
-				len(r.Body.ConversationItems))
+				len(r.Body.ConversationListItems))
 		}
 		token = *r.Body.NextPageToken
 	}

@@ -17,18 +17,29 @@ import (
 	simplemapdbEncdec "github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 )
 
+// isSameFileInfo compares inode+device, size and ModTime.
+func isSameFileInfo(a, b os.FileInfo) bool {
+	return a != nil && b != nil &&
+		os.SameFile(a, b) &&
+		a.Size() == b.Size() && a.ModTime().Equal(b.ModTime())
+}
+
 // MapFileStore is a file-backed implementation of a thread-safe key-value store.
 type MapFileStore struct {
-	data              map[string]any
-	defaultData       map[string]any
-	mu                sync.RWMutex
+	filename    string
+	data        map[string]any
+	defaultData map[string]any
+	mu          sync.RWMutex
+
+	// Snapshot for optimistic CAS (nil = unknown).
+	lastStat          os.FileInfo
 	encdec            simplemapdbEncdec.EncoderDecoder
-	filename          string
 	autoFlush         bool
 	createIfNotExists bool
-	getValueEncDec    ValueEncDecGetter
-	getKeyEncDec      KeyEncDecGetter
-	listeners         []Listener
+
+	getValueEncDec ValueEncDecGetter
+	getKeyEncDec   KeyEncDecGetter
+	listeners      []Listener
 }
 
 // Option defines a function type that applies a configuration option to the MapFileStore.
@@ -105,6 +116,11 @@ func NewMapFileStore(
 		return nil, err
 	}
 
+	if err := store.rememberStat(); err != nil {
+		// File disappeared between load and stat, extremely unlikely.
+		return nil, err
+	}
+
 	return store, nil
 }
 
@@ -135,6 +151,16 @@ func (s *MapFileStore) fireEvent(e Event) {
 	}
 }
 
+func (s *MapFileStore) rememberStat() error {
+	st, err := os.Stat(s.filename)
+	if err != nil {
+		// Caller decides whether ENOENT is fatal.
+		return err
+	}
+	s.lastStat = st
+	return nil
+}
+
 // createFileIfNotExists checks if a file exists and creates it if it doesn't.
 func (store *MapFileStore) createFileIfNotExists(filename string) error {
 	// Check if the file exists.
@@ -153,18 +179,6 @@ func (store *MapFileStore) createFileIfNotExists(filename string) error {
 	// Copy default data to store.
 	store.data = make(map[string]any)
 	maps.Copy(store.data, store.defaultData)
-
-	// Create directories if needed.
-	if err := os.MkdirAll(filepath.Dir(filename), os.FileMode(0o770)); err != nil {
-		return fmt.Errorf("failed to create directories for file %s: %w", filename, err)
-	}
-
-	// Create the file.
-	f, err := os.Create(filename)
-	if err != nil {
-		return fmt.Errorf("failed to create file %s: %w", filename, err)
-	}
-	defer f.Close()
 
 	// Flush the store data to the file.
 	if err := store.flushUnlocked(); err != nil {
@@ -212,7 +226,7 @@ func (store *MapFileStore) load() error {
 	}
 	store.data, _ = newObj.(map[string]any)
 
-	return nil
+	return store.rememberStat()
 }
 
 func (store *MapFileStore) flushUnlocked() error {
@@ -240,6 +254,25 @@ func (store *MapFileStore) flushUnlocked() error {
 		return err
 	}
 
+	if store.lastStat != nil {
+		// Optimistic CAS check.
+		if cur, err := os.Stat(store.filename); err == nil {
+			if !isSameFileInfo(cur, store.lastStat) {
+				return ErrConflict
+			}
+			f, permErr := os.OpenFile(store.filename, os.O_WRONLY, 0)
+			if permErr != nil {
+				return permErr
+			}
+			f.Close()
+		} else if !os.IsNotExist(err) {
+			return err
+		} else {
+			// File vanished, treat as conflict.
+			return ErrConflict
+		}
+	}
+
 	if err := os.MkdirAll(filepath.Dir(store.filename), 0o770); err != nil {
 		return fmt.Errorf(
 			"failed to ensure directory for file %s for flush: %w",
@@ -247,16 +280,27 @@ func (store *MapFileStore) flushUnlocked() error {
 			err,
 		)
 	}
-	f, err := os.Create(store.filename)
+	tmpName := fmt.Sprintf("%s.tmp-%d", store.filename, time.Now().UnixNano())
+	tmpFile, err := os.Create(tmpName)
 	if err != nil {
 		return fmt.Errorf("failed to open file %s for flush: %w", store.filename, err)
 	}
-	defer f.Close()
-
-	if err := store.encdec.Encode(f, dataCopy); err != nil {
+	if err := store.encdec.Encode(tmpFile, dataCopy); err != nil {
+		tmpFile.Close()
+		os.Remove(tmpName)
 		return fmt.Errorf("failed to encode data to file %s: %w", store.filename, err)
 	}
-	return nil
+	tmpFile.Close()
+	if store.lastStat != nil {
+		_ = os.Chmod(tmpName, store.lastStat.Mode().Perm())
+	}
+
+	if err := os.Rename(tmpName, store.filename); err != nil {
+		_ = os.Remove(tmpName)
+		return err
+	}
+
+	return store.rememberStat()
 }
 
 // Flush writes the current data to the file. No event is emitted for flush.
@@ -453,6 +497,37 @@ func (store *MapFileStore) DeleteKey(keys []string) error {
 		OldValue:  DeepCopyValue(oldVal),
 		NewValue:  nil,
 		Data:      copyAfter,
+		Timestamp: time.Now(),
+	})
+	return nil
+}
+
+// DeleteFile removes the backing file atomically, emits an OpDeleteFile event and clears lastStat.
+// Returns ErrConflict if the file changed since we last observed it.
+func (s *MapFileStore) DeleteFile() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.lastStat != nil {
+		if cur, err := os.Stat(s.filename); err == nil {
+			if !isSameFileInfo(cur, s.lastStat) {
+				return ErrConflict
+			}
+		} else if !os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	if err := os.Remove(s.filename); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	s.lastStat = nil
+	s.data = make(map[string]any)
+
+	s.fireEvent(Event{
+		Op:        OpDeleteFile,
+		File:      s.filename,
 		Timestamp: time.Now(),
 	})
 	return nil

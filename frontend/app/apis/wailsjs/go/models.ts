@@ -1035,7 +1035,6 @@ export namespace spec {
 	    createdAt?: any;
 	    role: string;
 	    content: string;
-	    timestamp?: string;
 	    name?: string;
 	    details?: string;
 	
@@ -1049,7 +1048,6 @@ export namespace spec {
 	        this.createdAt = this.convertValues(source["createdAt"], null);
 	        this.role = source["role"];
 	        this.content = source["content"];
-	        this.timestamp = source["timestamp"];
 	        this.name = source["name"];
 	        this.details = source["details"];
 	    }
@@ -1112,40 +1110,19 @@ export namespace spec {
 		    return a;
 		}
 	}
-	export class ConversationItem {
+	export class ConversationListItem {
 	    id: string;
-	    title: string;
-	    // Go type: time
-	    createdAt: any;
+	    sanatizedTitle: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new ConversationItem(source);
+	        return new ConversationListItem(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
-	        this.title = source["title"];
-	        this.createdAt = this.convertValues(source["createdAt"], null);
+	        this.sanatizedTitle = source["sanatizedTitle"];
 	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 	
 	export class ProviderPreset {
@@ -1419,7 +1396,8 @@ export namespace spec {
 		}
 	}
 	export class ListConversationsRequest {
-	    Token: string;
+	    PageSize: number;
+	    PageToken: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ListConversationsRequest(source);
@@ -1427,11 +1405,12 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Token = source["Token"];
+	        this.PageSize = source["PageSize"];
+	        this.PageToken = source["PageToken"];
 	    }
 	}
 	export class ListConversationsResponseBody {
-	    conversationItems: ConversationItem[];
+	    conversationListItems: ConversationListItem[];
 	    nextPageToken?: string;
 	
 	    static createFrom(source: any = {}) {
@@ -1440,7 +1419,7 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.conversationItems = this.convertValues(source["conversationItems"], ConversationItem);
+	        this.conversationListItems = this.convertValues(source["conversationListItems"], ConversationListItem);
 	        this.nextPageToken = source["nextPageToken"];
 	    }
 	
@@ -1729,7 +1708,7 @@ export namespace spec {
 	
 	export class SearchConversationsRequest {
 	    Query: string;
-	    Token: string;
+	    PageToken: string;
 	    PageSize: number;
 	
 	    static createFrom(source: any = {}) {
@@ -1739,12 +1718,12 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Query = source["Query"];
-	        this.Token = source["Token"];
+	        this.PageToken = source["PageToken"];
 	        this.PageSize = source["PageSize"];
 	    }
 	}
 	export class SearchConversationsResponseBody {
-	    conversationItems: ConversationItem[];
+	    conversationListItems: ConversationListItem[];
 	    nextPageToken?: string;
 	
 	    static createFrom(source: any = {}) {
@@ -1753,7 +1732,7 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.conversationItems = this.convertValues(source["conversationItems"], ConversationItem);
+	        this.conversationListItems = this.convertValues(source["conversationListItems"], ConversationListItem);
 	        this.nextPageToken = source["nextPageToken"];
 	    }
 	

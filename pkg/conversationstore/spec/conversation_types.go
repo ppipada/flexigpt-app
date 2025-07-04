@@ -21,21 +21,15 @@ type ConversationMessage struct {
 	CreatedAt *time.Time           `json:"createdAt,omitempty"`
 	Role      ConversationRoleEnum `json:"role"`
 	Content   string               `json:"content"`
-	Timestamp *string              `json:"timestamp,omitempty"`
 	Name      *string              `json:"name,omitempty"`
 	Details   *string              `json:"details,omitempty"`
 }
 
-// ConversationItem represents a conversation with basic details.
-type ConversationItem struct {
-	ID        string    `json:"id"`
-	Title     string    `json:"title"`
-	CreatedAt time.Time `json:"createdAt"`
-}
-
 // Conversation represents a conversation with messages.
 type Conversation struct {
-	ConversationItem
+	ID         string                `json:"id"`
+	Title      string                `json:"title"`
+	CreatedAt  time.Time             `json:"createdAt"`
 	ModifiedAt time.Time             `json:"modifiedAt"`
 	Messages   []ConversationMessage `json:"messages"`
 }

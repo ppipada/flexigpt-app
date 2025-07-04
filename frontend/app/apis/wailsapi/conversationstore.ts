@@ -1,6 +1,6 @@
 import type {
 	Conversation,
-	ConversationItem,
+	ConversationListItem,
 	ConversationMessage,
 	IConversationStoreAPI,
 } from '@/models/conversationmodel';
@@ -56,19 +56,25 @@ export class WailsConversationStoreAPI implements IConversationStoreAPI {
 		return c.Body as Conversation;
 	}
 
-	async listConversations(token?: string): Promise<{ conversations: ConversationItem[]; nextToken?: string }> {
-		const req = { Token: token || '' };
+	async listConversations(token?: string): Promise<{ conversations: ConversationListItem[]; nextToken?: string }> {
+		const req = { PageToken: token || '' };
 		const resp = await ListConversations(req as wailsSpec.ListConversationsRequest);
-		return { conversations: resp.Body?.conversationItems as ConversationItem[], nextToken: resp.Body?.nextPageToken };
+		return {
+			conversations: resp.Body?.conversationListItems as ConversationListItem[],
+			nextToken: resp.Body?.nextPageToken,
+		};
 	}
 
 	async searchConversations(
 		query: string,
 		token?: string,
 		pageSize?: number
-	): Promise<{ conversations: ConversationItem[]; nextToken?: string }> {
-		const req = { Query: query, Token: token || '', PageSize: pageSize || 10 };
+	): Promise<{ conversations: ConversationListItem[]; nextToken?: string }> {
+		const req = { Query: query, PageToken: token || '', PageSize: pageSize || 10 };
 		const resp = await SearchConversations(req as wailsSpec.SearchConversationsRequest);
-		return { conversations: resp.Body?.conversationItems as ConversationItem[], nextToken: resp.Body?.nextPageToken };
+		return {
+			conversations: resp.Body?.conversationListItems as ConversationListItem[],
+			nextToken: resp.Body?.nextPageToken,
+		};
 	}
 }

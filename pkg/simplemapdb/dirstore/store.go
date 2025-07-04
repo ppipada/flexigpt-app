@@ -21,15 +21,16 @@ const (
 
 var ErrCannotReadPartition = errors.New("failed to read partition directory")
 
+type FileKey struct {
+	FileName string
+	XAttr    any
+}
+
 // PartitionProvider defines an interface for determining the partition directory for a file.
 type PartitionProvider interface {
-	GetPartitionDir(filename string) string
-	ListPartitions(
-		baseDir string,
-		sortOrder string,
-		pageToken string,
-		pageSize int,
-	) ([]string, string, error)
+	GetPartitionDir(key FileKey) (string, error)
+	ListPartitions(baseDir, sortOrder, pageToken string,
+		pageSize int) ([]string, string, error)
 }
 
 // MapDirectoryStore manages multiple MapFileStores within a directory.
@@ -91,7 +92,7 @@ func NewMapDirectoryStore(
 	mds := &MapDirectoryStore{
 		baseDir: baseDir,
 		// Default page size.
-		pageSize: 25,
+		pageSize: 10,
 		// Default to no partitioning.
 		PartitionProvider: &NoPartitionProvider{},
 	}
@@ -103,19 +104,41 @@ func NewMapDirectoryStore(
 	return mds, nil
 }
 
-// SetFileData creates or truncates a file and sets the provided data.
-// If the data is nil, it initializes an empty map.
-func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]any) error {
-	// Check if the filename contains any directory components.
-	if strings.Contains(filename, string(os.PathSeparator)) {
-		return fmt.Errorf("filename should not contain directory components: %s", filename)
-	}
-	if data == nil {
-		return fmt.Errorf("cannot set nil data to file %s", filename)
+func (mds *MapDirectoryStore) validateAndGetFilePath(fileKey FileKey) (string, error) {
+	if fileKey.FileName == "" {
+		return "", fmt.Errorf("invalid request for file: %s", fileKey.FileName)
 	}
 
-	partitionDir := mds.PartitionProvider.GetPartitionDir(filename)
-	filePath := filepath.Join(mds.baseDir, partitionDir, filename)
+	// Check if the filename contains any directory components.
+	if strings.Contains(fileKey.FileName, string(os.PathSeparator)) {
+		return "", fmt.Errorf(
+			"filename should not contain directory components: %s",
+			fileKey.FileName,
+		)
+	}
+
+	partitionDir, err := mds.PartitionProvider.GetPartitionDir(fileKey)
+	if err != nil {
+		return "", fmt.Errorf(
+			"could not get partition dir for file: %s, err: %w",
+			fileKey.FileName,
+			err,
+		)
+	}
+	filePath := filepath.Join(mds.baseDir, partitionDir, fileKey.FileName)
+	return filePath, nil
+}
+
+// SetFileData creates or truncates a file and sets the provided data.
+// If the data is nil, it initializes an empty map.
+func (mds *MapDirectoryStore) SetFileData(fileKey FileKey, data map[string]any) error {
+	if data == nil {
+		return fmt.Errorf("invalid request for file: %s", fileKey.FileName)
+	}
+	filePath, err := mds.validateAndGetFilePath(fileKey)
+	if err != nil {
+		return fmt.Errorf("could not get filepath for file: %s, err: %w", fileKey.FileName, err)
+	}
 
 	// Ensure the partition directory exists.
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
@@ -134,12 +157,12 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]any) 
 		simplemapdbFileStore.WithListeners(mds.listeners...),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create or truncate file %s: %w", filename, err)
+		return fmt.Errorf("failed to create or truncate file %s: %w", fileKey.FileName, err)
 	}
 
 	// Set data.
 	if err := store.SetAll(data); err != nil {
-		return fmt.Errorf("failed to set data for file %s: %w", filename, err)
+		return fmt.Errorf("failed to set data for file %s: %w", fileKey.FileName, err)
 	}
 
 	return nil
@@ -147,30 +170,50 @@ func (mds *MapDirectoryStore) SetFileData(filename string, data map[string]any) 
 
 // GetFileData returns the data from the specified file in the store.
 func (mds *MapDirectoryStore) GetFileData(
-	filename string,
+	fileKey FileKey,
 	forceFetch bool,
 ) (map[string]any, error) {
-	partitionDir := mds.PartitionProvider.GetPartitionDir(filename)
-	filePath := filepath.Join(mds.baseDir, partitionDir, filename)
+	filePath, err := mds.validateAndGetFilePath(fileKey)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"could not get filepath for file: %s, err: %w",
+			fileKey.FileName,
+			err,
+		)
+	}
+
 	store, err := simplemapdbFileStore.NewMapFileStore(
 		filePath,
 		map[string]any{"k": "v"},
 		simplemapdbFileStore.WithListeners(mds.listeners...),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get file %s: %w", filename, err)
+		return nil, fmt.Errorf("failed to get file %s: %w", fileKey.FileName, err)
 	}
 	return store.GetAll(forceFetch)
 }
 
 // DeleteFile removes the file with the given filename from the base directory.
-func (mds *MapDirectoryStore) DeleteFile(filename string) error {
-	partitionDir := mds.PartitionProvider.GetPartitionDir(filename)
-	filePath := filepath.Join(mds.baseDir, partitionDir, filename)
-	if err := os.Remove(filePath); err != nil {
-		return fmt.Errorf("failed to delete file %s: %w", filename, err)
+func (mds *MapDirectoryStore) DeleteFile(fileKey FileKey) error {
+	filePath, err := mds.validateAndGetFilePath(fileKey)
+	if err != nil {
+		return fmt.Errorf(
+			"could not get filepath for file: %s, err: %w",
+			fileKey.FileName,
+			err,
+		)
 	}
-	return nil
+
+	store, err := simplemapdbFileStore.NewMapFileStore(
+		filePath,
+		map[string]any{"k": "v"},
+		simplemapdbFileStore.WithListeners(mds.listeners...),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to get file %s: %w", fileKey.FileName, err)
+	}
+
+	return store.DeleteFile()
 }
 
 // ListingConfig holds all options for listing files.

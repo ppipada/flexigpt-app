@@ -3,19 +3,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { FiSearch } from 'react-icons/fi';
 
-import type { ConversationItem } from '@/models/conversationmodel';
+import type { ConversationSearchItem } from '@/models/conversationmodel';
 
 import { conversationStoreAPI } from '@/apis/baseapi';
 
 import { formatDateAsString } from '@/lib/date_utils';
 import { cleanSearchQuery } from '@/lib/text_utils';
+import { extractTimeFromUUIDv7Str } from '@/lib/uuid_utils';
 
 import { GroupedDropdown } from '@/components/date_grouped_dropdown';
 
 const CACHE_EXPIRY_TIME = 60_000;
 
 interface SearchResult {
-	conversation: ConversationItem;
+	searchConversation: ConversationSearchItem;
 	matchType: 'title' | 'message';
 	snippet?: string;
 }
@@ -40,8 +41,8 @@ const searchCache = new Map<string, SearchCacheEntry>();
 
 // newest-first, title-matches before message-matches
 const sortResults = (a: SearchResult, b: SearchResult) => {
-	const tA = new Date(a.conversation.createdAt).getTime();
-	const tB = new Date(b.conversation.createdAt).getTime();
+	const tA = new Date(a.searchConversation.idDate).getTime();
+	const tB = new Date(b.searchConversation.idDate).getTime();
 
 	if (tA !== tB) return tB - tA;
 	if (a.matchType === b.matchType) return 0;
@@ -55,7 +56,7 @@ interface SearchDropdownProps {
 	hasMore: boolean;
 	onLoadMore: () => void;
 	focusedIndex: number;
-	onPick: (item: ConversationItem) => void;
+	onPick: (item: ConversationSearchItem) => void;
 	query: string;
 	showSearchAllHintShortQuery: boolean;
 }
@@ -174,16 +175,16 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 						<GroupedDropdown<SearchResult>
 							items={results}
 							focused={focusedIndex}
-							getDate={r => new Date(r.conversation.createdAt)}
-							getKey={r => r.conversation.id}
-							getLabel={r => <span className="truncate">{r.conversation.title}</span>}
+							getDate={r => new Date(r.searchConversation.idDate)}
+							getKey={r => r.searchConversation.id}
+							getLabel={r => <span className="truncate">{r.searchConversation.title}</span>}
 							onPick={r => {
-								onPick(r.conversation);
+								onPick(r.searchConversation);
 							}}
 							renderItemExtra={r => (
 								<span className="inline-flex items-center gap-4">
 									{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
-									<span className="whitespace-nowrap">{formatDateAsString(r.conversation.createdAt)}</span>
+									<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.idDate)}</span>
 								</span>
 							)}
 						/>
@@ -194,21 +195,21 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 								const isFocused = idx === focusedIndex;
 								return (
 									<li
-										key={r.conversation.id}
+										key={r.searchConversation.id}
 										data-index={idx}
 										onClick={() => {
-											onPick(r.conversation);
+											onPick(r.searchConversation);
 										}}
 										className={`flex justify-between items-center px-12 py-2 cursor-pointer hover:bg-base-100 ${
 											isFocused ? 'bg-base-100' : ''
 										}`}
 									>
-										<span className="truncate">{r.conversation.title}</span>
+										<span className="truncate">{r.searchConversation.title}</span>
 
 										<span className="hidden lg:block text-neutral/60 text-xs">
 											<span className="inline-flex items-center gap-4">
 												{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
-												<span className="whitespace-nowrap">{formatDateAsString(r.conversation.createdAt)}</span>
+												<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.idDate)}</span>
 											</span>
 										</span>
 									</li>
@@ -233,7 +234,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 };
 
 interface ChatSearchProps {
-	onSelectConversation: (item: ConversationItem) => Promise<void>;
+	onSelectConversation: (item: ConversationSearchItem) => Promise<void>;
 	refreshKey: number;
 }
 
@@ -248,7 +249,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 	});
 	const [show, setShow] = useState(false);
 	const [focusedIndex, setFocusedIndex] = useState(-1);
-	const [recentConversations, setRecentConversations] = useState<ConversationItem[]>([]);
+	const [recentConversations, setRecentConversations] = useState<ConversationSearchItem[]>([]);
 
 	/* ----------------------------- refs ---------------------------- */
 	const abortControllerRef = useRef<AbortController | null>(null);
@@ -257,8 +258,8 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 
 	/* --------------------------- helpers --------------------------- */
 	const conversationsToResults = useCallback(
-		(conversations: ConversationItem[]): SearchResult[] =>
-			conversations.map(c => ({ conversation: c, matchType: 'title' })),
+		(conversations: ConversationSearchItem[]): SearchResult[] =>
+			conversations.map(c => ({ searchConversation: c, matchType: 'title' })),
 		[]
 	);
 
@@ -267,12 +268,20 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 		try {
 			setSearchState(p => ({ ...p, loading: true }));
 			const { conversations } = await conversationStoreAPI.listConversations();
-			setRecentConversations(conversations);
+			const searchConversations: ConversationSearchItem[] = conversations.map(
+				conv =>
+					({
+						id: conv.id,
+						title: conv.sanatizedTitle,
+						idDate: extractTimeFromUUIDv7Str(conv.id),
+					}) as ConversationSearchItem
+			);
+			setRecentConversations(searchConversations);
 
 			if (!searchState.query) {
 				setSearchState({
 					...searchState,
-					results: conversationsToResults(conversations),
+					results: conversationsToResults(searchConversations),
 					loading: false,
 					hasMore: false,
 					searchedMessages: false,
@@ -311,9 +320,14 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 			const res = await conversationStoreAPI.searchConversations(query, token, 20);
 			const conversations = res.conversations;
 			const nextToken = res.nextToken?.trim() || '';
+
 			const newResults: SearchResult[] = conversations.map(conv => ({
-				conversation: conv,
-				matchType: conv.title.toLowerCase().includes(rawQuery.toLowerCase()) ? 'title' : 'message',
+				searchConversation: {
+					id: conv.id,
+					title: conv.sanatizedTitle,
+					idDate: extractTimeFromUUIDv7Str(conv.id),
+				} as ConversationSearchItem,
+				matchType: conv.sanatizedTitle.toLowerCase().includes(rawQuery.toLowerCase()) ? 'title' : 'message',
 				snippet: '',
 			}));
 
@@ -449,7 +463,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 
 	/* --------------------------- pick ------------------------------ */
 	const handlePick = useCallback(
-		async (conv: ConversationItem) => {
+		async (conv: ConversationSearchItem) => {
 			await onSelectConversation(conv);
 			setSearchState(p => ({ ...p, query: '', searchedMessages: false }));
 			setShow(false);
@@ -488,7 +502,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 						debounceTimeoutRef.current = null;
 					}
 					if (focusedIndex >= 0 && focusedIndex < searchState.results.length) {
-						handlePick(searchState.results[focusedIndex].conversation);
+						handlePick(searchState.results[focusedIndex].searchConversation);
 					} else if (!searchState.loading && searchState.query.trim()) {
 						/* allow *any* non-empty query, even 1–2 chars */
 						performSearch(searchState.query);

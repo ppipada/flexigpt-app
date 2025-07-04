@@ -11,8 +11,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
 )
 
-// Helpers.
-
 func getNewPutRequestFromConversation(c *spec.Conversation) *spec.PutConversationRequest {
 	return &spec.PutConversationRequest{
 		ID: c.ID,
@@ -428,21 +426,30 @@ func TestConversationCollection(t *testing.T) {
 		ctx := t.Context()
 		// Jan.
 		convo1 := &spec.Conversation{}
-		convo1.ID = uuid.New().String()
+		u, err := uuid.NewV7()
+		if err != nil {
+			t.Fatalf("Failed to get uuid: %v", err)
+		}
+		convo1.ID = u.String()
 		convo1.Title = "Jan"
 		convo1.CreatedAt = time.Date(2023, 1, 15, 10, 0, 0, 0, time.UTC)
 		convo1.ModifiedAt = time.Now()
 		convo1.Messages = []spec.ConversationMessage{}
 
 		// Feb.
+		u, err = uuid.NewV7()
+		if err != nil {
+			t.Fatalf("Failed to get uuid: %v", err)
+		}
+
 		convo2 := &spec.Conversation{}
-		convo2.ID = uuid.New().String()
+		convo2.ID = u.String()
 		convo2.Title = "Feb"
 		convo2.CreatedAt = time.Date(2023, 2, 15, 10, 0, 0, 0, time.UTC)
 		convo2.ModifiedAt = time.Now()
 		convo2.Messages = []spec.ConversationMessage{}
 
-		_, err := cc.PutConversation(ctx, getNewPutRequestFromConversation(convo1))
+		_, err = cc.PutConversation(ctx, getNewPutRequestFromConversation(convo1))
 		if err != nil {
 			t.Fatalf("Failed to save Jan conversation: %v", err)
 		}
@@ -455,11 +462,11 @@ func TestConversationCollection(t *testing.T) {
 			t.Fatalf("Failed to list conversations: %v", err)
 		}
 		foundJan, foundFeb := false, false
-		for _, item := range resp.Body.ConversationItems {
-			if item.Title == "Jan" {
+		for _, item := range resp.Body.ConversationListItems {
+			if item.SanatizedTitle == "Jan" {
 				foundJan = true
 			}
-			if item.Title == "Feb" {
+			if item.SanatizedTitle == "Feb" {
 				foundFeb = true
 			}
 		}
@@ -482,8 +489,8 @@ func TestConversationCollection(t *testing.T) {
 			t.Fatalf("Failed to list conversations: %v", err)
 		}
 		// Should not panic or include the bad file.
-		for _, item := range resp.Body.ConversationItems {
-			if item.ID == "" || item.Title == "" {
+		for _, item := range resp.Body.ConversationListItems {
+			if item.ID == "" || item.SanatizedTitle == "" {
 				t.Errorf("Corrupted file should not be included in results")
 			}
 		}
@@ -522,8 +529,8 @@ func TestConversationCollectionListing(t *testing.T) {
 			t.Fatalf("Failed to list conversations: %v", err)
 		}
 
-		if len(convoItems.Body.ConversationItems) != 2 {
-			t.Errorf("Expected 2 conversations, got %d", len(convoItems.Body.ConversationItems))
+		if len(convoItems.Body.ConversationListItems) != 2 {
+			t.Errorf("Expected 2 conversations, got %d", len(convoItems.Body.ConversationListItems))
 		}
 	})
 
@@ -546,19 +553,22 @@ func TestConversationCollectionListing(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to list conversations: %v", err)
 		}
-		if len(resp.Body.ConversationItems) < 10 {
-			t.Errorf("Expected at least 10 conversations, got %d", len(resp.Body.ConversationItems))
+		if len(resp.Body.ConversationListItems) < 10 {
+			t.Errorf(
+				"Expected at least 10 conversations, got %d",
+				len(resp.Body.ConversationListItems),
+			)
 		}
 		// If NextPageToken is present, fetch next page.
 		if resp.Body.NextPageToken != nil && *resp.Body.NextPageToken != "" {
 			resp2, err := cc.ListConversations(
 				ctx,
-				&spec.ListConversationsRequest{Token: *resp.Body.NextPageToken},
+				&spec.ListConversationsRequest{PageToken: *resp.Body.NextPageToken},
 			)
 			if err != nil {
 				t.Fatalf("Failed to list next page: %v", err)
 			}
-			if len(resp2.Body.ConversationItems) == 0 {
+			if len(resp2.Body.ConversationListItems) == 0 {
 				t.Errorf("Expected more conversations in next page")
 			}
 		}
