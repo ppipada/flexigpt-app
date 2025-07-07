@@ -82,8 +82,9 @@ type PreProcessorCall struct {
 }
 
 type PromptTemplate struct {
-	ID          string   `json:"id"`
-	DisplayName string   `json:"displayName"`
+	ID          string `json:"id"`
+	DisplayName string `json:"displayName"`
+	// Unique within a bundle.
 	Slug        string   `json:"slug"`
 	IsEnabled   bool     `json:"isEnabled"`
 	Description string   `json:"description,omitempty"`
@@ -96,6 +97,7 @@ type PromptTemplate struct {
 	// Helper steps executed before the prompt is sent.
 	PreProcessors []PreProcessorCall `json:"preProcessors,omitempty"`
 
+	// SemVer string.
 	Version    string    `json:"version"`
 	CreatedAt  time.Time `json:"createdAt"`
 	ModifiedAt time.Time `json:"modifiedAt"`
@@ -109,6 +111,7 @@ type PromptBundle struct {
 	Description string `json:"description,omitempty"`
 	IsEnabled   bool   `json:"isEnabled"`
 
-	CreatedAt  time.Time `json:"createdAt"`
-	ModifiedAt time.Time `json:"modifiedAt"`
+	CreatedAt     time.Time  `json:"createdAt"`
+	ModifiedAt    time.Time  `json:"modifiedAt"`
+	SoftDeletedAt *time.Time `json:"softDeletedAt,omitempty"`
 }

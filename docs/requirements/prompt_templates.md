@@ -1,128 +1,99 @@
-# Prompt Templates
+# Prompt Templates - Functional Specification
 
-This document distils all product notes above into an actionable engineering reference for the _Prompt Template_ feature set.
+## Terminology
 
-## Objectives
+| Term            | Meaning                                                                                                     |
+| --------------- | ----------------------------------------------------------------------------------------------------------- |
+| Prompt Template | A multi-message prompt with variables and optional pre-processors.                                          |
+| Prompt Bundle   | A named group of templates that can be enabled / disabled together.                                         |
+| Slug            | Human-readable identifier used in chat (`/slug`).                                                           |
+| Version         | Opaque label that distinguishes revisions of the same slug.                                                 |
+| Active version  | For a given `<bundle, slug>` the template with the greatest `ModifiedAt` timestamp and `isEnabled == true`. |
 
-- Allow end-users to save, manage and invoke reusable, variable-driven prompts inside the chat surface.
-- Group templates into **Prompt Bundles** that can be enabled/disabled in one switch.
-- Expose the feature across:
-  - Chat input (`/` palette + auto-complete).
-  - PromptTemplates page (CRUD & admin).
-- Keep the system offline-friendly and “loose-coupled”: deleting a tool, data-source or model _never_ modifies stored templates.
+## 2 Objectives
 
-## Lifecycle Requirements
+- End-users can save, manage and invoke reusable prompts in chat.
+- A single switch can enable / disable a whole bundle or an individual template version.
+- The system remains offline-friendly and loose-coupled: removing a model/tool never mutates stored templates.
+- Feature is exposed in two surfaces:
+  • Chat input palette (`/` autocomplete)
+  • `Prompt Templates` admin page (CRUD + search).
 
-- Create, read, update, delete Prompt Bundle
+## Data-model constraints
 
-- Create, read, delete Prompt Template
+- Slug and Version strings
 
-  - Version templates
-  - Validation:
-    - JSON schema + business rules
-    - Slug uniqueness within its bundle is mandatory at save-time
-    - Keep versioning, but treat slug + highest version as the “active” template.
-    - On duplicate‐slug PUT: accept only if version is strictly higher (semver monotonic, else Precondition Failed).
-  - Allow only duplicate and create new higher version for a prompt template
-  - If a slug has multiple versions in same bundle, only pick latest version
-  - API has a provision for fetching all versions of a template
-  - Hard-delete only removes local copy; existing chat messages keep a snapshot string of the rendered prompt
+  - Allowed rune categories : Unicode Letter (L\*) | Unicode Digit (Nd) | ASCII dash ‘-’
+  - Forbidden characters : dot . underscore \_ whitespace slash / \ any control / symbol
+  - Regex (Go‐style) : ^[\p{L}\p{Nd}-]+$
+  - Case-sensitive : yes
+  - Max length : 64 runes
+  - Version strings: No semantic ordering; the backend treats it as an opaque label.
+  - Within one bundle: `<slug, version>` must be unique.
+  - Across bundles the same pair may repeat.
 
-- Enable / disable a single template or an entire bundle
+- Timestamps
 
-  - Have immediate effect on search & invocation
+  - `CreatedAt` - first insertion (immutable).
+  - `ModifiedAt` - last structural change (body, tags, pre-processors).
+  - Enabling / disabling _does not_ rewrite `ModifiedAt`; use `EnabledAt` if UI needs it.
 
-- Search & Ranking
-  - Maintain client-side full-text index (async refresh on write)
-  - Apply weighted ranking rules (prefix > whole word > fuzzy > recency/popularity)
-  - Disabled rows are hidden from default results
+## 4 API surface (REST, JSON)
 
-## Workflows
+All routes are relative to `/prompts`.
 
-### Chat Invocation
+### Bundles
 
-- Typing `/` in chat opens palette
+| Verb   | Path                  | Body                                          | Notes                                                            |
+| ------ | --------------------- | --------------------------------------------- | ---------------------------------------------------------------- |
+| PUT    | `/bundles/{bundleID}` | `{slug, displayName, isEnabled, description}` | Create or replace.                                               |
+| PATCH  | `/bundles/{bundleID}` | `{isEnabled}`                                 | Toggle enabled flag.                                             |
+| DELETE | `/bundles/{bundleID}` | —                                             | Soft-delete.                                                     |
+| GET    | `/bundles`            | —                                             | Query params: `bundleIDs, includeDisabled, pageSize, pageToken`. |
 
-  - Palette is populated via full-text search
+### Templates
 
-- User can invoke by `/slug` or `/bundleAlias.slug`
+| Verb   | Path                                                       | Notes                                                                        |
+| ------ | ---------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| PUT    | `/bundles/{bundleID}/templates/{templateSlug}`             | conflict error if same `<slug,version>` exists.                              |
+| PATCH  | `/bundles/{bundleID}/templates/{templateSlug}`             | `{version,isEnabled}` Only enable/disable.                                   |
+| DELETE | `/bundles/{bundleID}/templates/{templateSlug}?version={v}` | Hard-delete local copy.                                                      |
+| GET    | `/bundles/{bundleID}/templates/{templateSlug}?version={v}` | Omit `version` → returns active version.                                     |
+| GET    | `/templates`                                               | global list: `tags,bundleIDs,includeDisabled,allVersions,pageSize,pageToken` |
+| GET    | `/templates/search`                                        | global search: `q,includeDisabled,pageSize,pageToken`                        |
 
-  - Parser must support real-time suggestions with fuzzy matching
+## 5 Behavioural rules
 
-- If multiple matches, show ranked list; **Enter** activates highlighted row
+- Active resolution: If several versions exist, the _active_ one is the enabled record with the greatest `ModifiedAt`.
+- PUT with existing `<slug,version>`: Must return conflict error; the existing template is left unchanged.
 
-- Variable Substitution Pipeline
+- Search & ranking:
 
-  - Collect defaults
-  - `${varName}` marker supports simple replacement only (no conditionals, loops in v1).
+  - The client maintains a local FTS index:
+  - `prefix` > `whole-word` > `fuzzy` > `recency` (ModifiedAt) > `popularity` (use count).
+  - Disabled rows are excluded unless `includeDisabled=true` was requested.
+
+- Soft-delete of bundle
+
+  - Marks `softDeletedAt` timestamp.
+  - Background task reaps after 60 min if the directory is still empty.
+  - Put and patch of things inside disabled bundles should nto be allowed.
+
+- Variable substitution pipeline (invocation time)
+
+  - collect defaults -> run pre-processors -> interpolate ${var} placeholders -> send to LLM
   - Undefined, non-required variables fallback to `""`.
-  - Run Pre-Processors (may mutate variables)
-  - Prompt blocks interpolation
-  - Send to LLM
 
-- Pre-Processor error-handling modes: `empty` (insert empty string) or `fail` (abort invocation and notify user)
+- Pre-processor error handling modes: `"empty"` or `"fail"`.
 
-- If a referenced tool/data-source is missing at runtime, treat as Pre-Processor error
+- Backward references
+  - Chat messages store the fully rendered prompt, so deleting / disabling a template does not alter existing chats.
+  - When a disabled template is referenced, UI shows a warning and can re-enable the template on demand.
 
-### Deleted Template in Chat
+## 6 Non-functional
 
-- If old chat links to a disabled template chat renders warning and shows text with disabled modifications; user may request re-enable to continue chat
-
-## Example API Surface
-
-```shell
-# Create bundle, no templates
-PUT    /prompts/bundles/{bundleID}
-# Delete bundle, only if empty. detect via scan. do a soft and deferred delete to avoid membership issues.
-DELETE /prompts/bundles/{bundleID}
-# Path a bundle: Only Enable/Disable support
-PATCH  /prompts/bundles/{bundleID}     {isEnabled:bool}
-# List bundles. Paginated
-GET /prompts/bundles?bundleIDs=i1,i2&includeDisabled=true&pageSize=<n>&pageToken=abc
-
-# Create/Replace a template
-PUT    /prompts/bundles/{bundleID}/templates/{templateID}
-# Delete a template
-DELETE /prompts/bundles/{bundleID}/templates/{templateID}?version=<version>
-# Path a template: Enable/Disable support only
-PATCH  /prompts/bundles/{bundleID}/templates/{templateID}   {version:vX.y.z, isEnabled:bool}
-# Get a template
-GET    /prompts/bundles/{bundleID}/templates/{templateID}?version=<version>
-# List templates. Paginated
-GET    /prompts/templates?tags=x,y,z&includeDisabled=<bool>&bundleIDs=a,b,c&allVersions=<bool>&pageSize=<n>&pageToken=<str>
-# Search templates
-GET    /prompts/templates/search?q=<str>&includeDisabled=<bool>&pageToken=<str>&pageSize=<n>
-```
-
-## Internal Notes
-
-- Storage
-
-  - Store path: `$APP_DATA/prompttemplates/<bundleid>/<template>.json`.
-
-- Ranked FTS support using reproducible sqlite. Sample weight factors (bigger = higher row):
-
-  | Weight | Condition                                        |
-  | -----: | ------------------------------------------------ |
-  |   +100 | slug **prefix** match                            |
-  |    +60 | full-word slug match                             |
-  |    +40 | displayName prefix                               |
-  |    +20 | fuzzy hit in name/description                    |
-  |    +15 | _recently used by me_                            |
-  |    +10 | _popular_ in workspace                           |
-  |     +5 | belongs to **enabled bundle**                    |
-  |    −20 | template `isEnabled==false` (but bundle enabled) |
-  |     −∞ | `effectiveEnabled==false` (drop)                 |
-
-- Invocation Flow (pseudocode)
-
-  ```go
-  tpl := ResolveTemplate(userInput)
-  vars := CollectVars(tpl, userContext)
-  vars = RunPreProcessors(tpl.PreProcessors, vars)   // handle OnError
-  finalPrompt := Render(tpl.Blocks, vars)
-  SendToLLM(finalPrompt, selectedModel)
-  ```
+- Offline-first storage: flat-file JSON + optional SQLite-FTS.
+- Concurrency: Duplicate writes across processes must be handled with file-locks so that the uniqueness guarantee is global.
 
 ## Open Questions / Future Work
 

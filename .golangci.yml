@@ -353,7 +353,7 @@ linters:
     godot:
       # Comments to be checked: `declarations`, `toplevel`, `noinline` or `all`.
       # Default: declarations
-      scope: all
+      scope: noinline
       capital: true
 
     nakedret: # was not in v2 migrated code

@@ -5,8 +5,8 @@
 
 REPO_OWNER="ppipada"
 REPO_NAME="flexigpt-app"
-# CUTOFF_DATE=$(date --date='10 days ago' +'%Y-%m-%dT%H:%M:%SZ')
-CUTOFF_DATE=$(date -u -v-10d +'%Y-%m-%dT%H:%M:%SZ')
+CUTOFF_DATE=$(date --date='10 days ago' +'%Y-%m-%dT%H:%M:%SZ')
+# CUTOFF_DATE=$(date -u -v-10d +'%Y-%m-%dT%H:%M:%SZ')
 PAGE=1
 
 while true; do

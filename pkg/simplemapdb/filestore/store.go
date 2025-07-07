@@ -17,6 +17,8 @@ import (
 	simplemapdbEncdec "github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 )
 
+const maxSetAllRetries = 3
+
 // isSameFileInfo compares inode+device, size and ModTime.
 func isSameFileInfo(a, b os.FileInfo) bool {
 	return a != nil && b != nil &&
@@ -171,10 +173,21 @@ func (store *MapFileStore) createFileIfNotExists(filename string) error {
 		return fmt.Errorf("failed to stat file %s: %w", filename, err)
 	}
 
-	// File does not exist.
 	if !store.createIfNotExists {
 		return fmt.Errorf("file %s does not exist", filename)
 	}
+
+	// Try to create the file atomically.
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o666)
+	if err != nil {
+		if os.IsExist(err) {
+			// Someone else created it first, nothing to do.
+			return nil
+		}
+		return fmt.Errorf("failed to create file %s: %w", filename, err)
+	}
+	// We just wanted to create the file, not write to it directly.
+	f.Close()
 
 	// Copy default data to store.
 	store.data = make(map[string]any)
@@ -343,12 +356,16 @@ func (store *MapFileStore) Reset() error {
 // GetAll returns a copy of all data in the store, refreshing from the file first.
 func (store *MapFileStore) GetAll(forceFetch bool) (map[string]any, error) {
 	if forceFetch {
-		// Refresh data from the file.
-		if err := store.load(); err != nil {
-			return nil, fmt.Errorf("failed to refresh data from file: %w", err)
+		stat, err := os.Stat(store.filename)
+		if err != nil {
+			return nil, fmt.Errorf("failed to stat file: %w", err)
+		}
+		if !isSameFileInfo(stat, store.lastStat) {
+			if err := store.load(); err != nil {
+				return nil, fmt.Errorf("failed to reload file: %w", err)
+			}
 		}
 	}
-
 	store.mu.RLock()
 	defer store.mu.RUnlock()
 
@@ -379,18 +396,41 @@ func (store *MapFileStore) setAll(data map[string]any) (copyAfter map[string]any
 }
 
 // SetAll overwrites all data in the store with the provided data.
+// It retries automatically if another writer wins the race and flushUnlocked returns ErrConflict.
 func (store *MapFileStore) SetAll(data map[string]any) error {
-	copyAfter, err := store.setAll(data)
-	if err != nil {
-		return err
+	if data == nil {
+		return errors.New("SetAll: nil data")
 	}
-	store.fireEvent(Event{
-		Op:        OpSetFile,
-		File:      store.filename,
-		Data:      copyAfter,
-		Timestamp: time.Now(),
-	})
-	return nil
+
+	var (
+		copyAfter map[string]any
+		err       error
+	)
+
+	for range maxSetAllRetries {
+		copyAfter, err = store.setAll(data)
+		if err == nil {
+			store.fireEvent(Event{
+				Op:        OpSetFile,
+				File:      store.filename,
+				Data:      copyAfter,
+				Timestamp: time.Now(),
+			})
+			return nil
+		}
+
+		// Any error that isn't ErrConflict is fatal.
+		if !errors.Is(err, ErrConflict) {
+			return err
+		}
+
+		// ErrConflict - reload latest on-disk state so that store.lastStat is refreshed, then retry.
+		if loadErr := store.load(); loadErr != nil {
+			return fmt.Errorf("SetAll conflict reload failed: %w", loadErr)
+		}
+	}
+
+	return fmt.Errorf("SetAll: %w after %d retries", ErrConflict, maxSetAllRetries)
 }
 
 // GetKey retrieves the value associated with the given key.
@@ -504,13 +544,13 @@ func (store *MapFileStore) DeleteKey(keys []string) error {
 
 // DeleteFile removes the backing file atomically, emits an OpDeleteFile event and clears lastStat.
 // Returns ErrConflict if the file changed since we last observed it.
-func (s *MapFileStore) DeleteFile() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (store *MapFileStore) DeleteFile() error {
+	store.mu.Lock()
+	defer store.mu.Unlock()
 
-	if s.lastStat != nil {
-		if cur, err := os.Stat(s.filename); err == nil {
-			if !isSameFileInfo(cur, s.lastStat) {
+	if store.lastStat != nil {
+		if cur, err := os.Stat(store.filename); err == nil {
+			if !isSameFileInfo(cur, store.lastStat) {
 				return ErrConflict
 			}
 		} else if !os.IsNotExist(err) {
@@ -518,18 +558,23 @@ func (s *MapFileStore) DeleteFile() error {
 		}
 	}
 
-	if err := os.Remove(s.filename); err != nil && !os.IsNotExist(err) {
+	if err := os.Remove(store.filename); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
-	s.lastStat = nil
-	s.data = make(map[string]any)
+	store.lastStat = nil
+	store.data = make(map[string]any)
 
-	s.fireEvent(Event{
+	store.fireEvent(Event{
 		Op:        OpDeleteFile,
-		File:      s.filename,
+		File:      store.filename,
 		Timestamp: time.Now(),
 	})
+	return nil
+}
+
+func (store *MapFileStore) Close() error {
+	// Should not flush here as file may be deleted.
 	return nil
 }
 

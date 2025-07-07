@@ -45,8 +45,6 @@ func initConversation(title string) (*spec.Conversation, error) {
 	return &c, nil
 }
 
-// Tests.
-
 func TestInitConversation(t *testing.T) {
 	tests := []struct {
 		name          string

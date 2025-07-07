@@ -6,6 +6,7 @@
 - [ ] in modify modal, the search bar is visible i.e it doesnt get in background
 - [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
 - [ ] CPU is high when "thinking". Need to debug
+- [ ] If there was some amount of data that was streamed, but error occured at end somepalce, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is.
 
 ## Random notes from UX discussions
 

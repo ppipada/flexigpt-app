@@ -14,7 +14,11 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
 )
 
-const conversationFileExtension = "json"
+const (
+	conversationFileExtension = "json"
+	maxPageSize               = 256
+	defPageSize               = 10
+)
 
 type ConversationCollection struct {
 	baseDir   string
@@ -226,7 +230,7 @@ func (cc *ConversationCollection) DeleteConversation(
 	if err := cc.store.DeleteFile(dirstore.FileKey{FileName: filename}); err != nil {
 		return nil, err
 	}
-
+	slog.Info("DeleteConversation", "file", filename)
 	return &spec.DeleteConversationResponse{}, nil
 }
 
@@ -261,10 +265,10 @@ func (cc *ConversationCollection) ListConversations(
 	req *spec.ListConversationsRequest,
 ) (*spec.ListConversationsResponse, error) {
 	token := ""
-	pageSize := 10
+	pageSize := defPageSize
 	if req != nil {
 		token = req.PageToken
-		if req.PageSize > 0 || req.PageSize < 256 {
+		if req.PageSize > 0 && req.PageSize <= maxPageSize {
 			pageSize = req.PageSize
 		}
 	}
@@ -306,8 +310,8 @@ func (cc *ConversationCollection) SearchConversations(
 	if cc.fts == nil {
 		return nil, errors.New("full-text search is disabled")
 	}
-	pageSize := 10
-	if req.PageSize > 0 || req.PageSize < 256 {
+	pageSize := defPageSize
+	if req.PageSize > 0 && req.PageSize <= maxPageSize {
 		pageSize = req.PageSize
 	}
 

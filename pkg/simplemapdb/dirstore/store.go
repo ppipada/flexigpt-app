@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	simplemapdbFileStore "github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 )
@@ -39,6 +40,10 @@ type MapDirectoryStore struct {
 	pageSize          int
 	PartitionProvider PartitionProvider
 	listeners         []simplemapdbFileStore.Listener
+
+	// OpenStores caches open MapFileStore instances per file path.
+	openStores map[string]*simplemapdbFileStore.MapFileStore
+	openMu     sync.Mutex
 }
 
 // Option is a functional option for configuring the MapDirectoryStore.
@@ -58,8 +63,7 @@ func WithPartitionProvider(provider PartitionProvider) Option {
 	}
 }
 
-// WithListeners registers one or more listeners when the directory store is
-// created.
+// WithListeners registers one or more listeners when the directory store is created.
 func WithListeners(ls ...simplemapdbFileStore.Listener) Option {
 	return func(mds *MapDirectoryStore) {
 		mds.listeners = append(mds.listeners, ls...)
@@ -90,11 +94,10 @@ func NewMapDirectoryStore(
 	}
 
 	mds := &MapDirectoryStore{
-		baseDir: baseDir,
-		// Default page size.
-		pageSize: 10,
-		// Default to no partitioning.
+		baseDir:           baseDir,
+		pageSize:          10,
 		PartitionProvider: &NoPartitionProvider{},
+		openStores:        make(map[string]*simplemapdbFileStore.MapFileStore),
 	}
 
 	for _, opt := range opts {
@@ -104,11 +107,11 @@ func NewMapDirectoryStore(
 	return mds, nil
 }
 
+// validateAndGetFilePath validates the FileKey and returns the absolute file path.
 func (mds *MapDirectoryStore) validateAndGetFilePath(fileKey FileKey) (string, error) {
 	if fileKey.FileName == "" {
 		return "", fmt.Errorf("invalid request for file: %s", fileKey.FileName)
 	}
-
 	// Check if the filename contains any directory components.
 	if strings.Contains(fileKey.FileName, string(os.PathSeparator)) {
 		return "", fmt.Errorf(
@@ -116,7 +119,6 @@ func (mds *MapDirectoryStore) validateAndGetFilePath(fileKey FileKey) (string, e
 			fileKey.FileName,
 		)
 	}
-
 	partitionDir, err := mds.PartitionProvider.GetPartitionDir(fileKey)
 	if err != nil {
 		return "", fmt.Errorf(
@@ -129,101 +131,138 @@ func (mds *MapDirectoryStore) validateAndGetFilePath(fileKey FileKey) (string, e
 	return filePath, nil
 }
 
-// SetFileData creates or truncates a file and sets the provided data.
-// If the data is nil, it initializes an empty map.
+// Open returns a cached or newly created MapFileStore for the given FileKey.
+// It is concurrency-safe and ensures only one instance per file path.
+func (mds *MapDirectoryStore) Open(
+	fileKey FileKey,
+	createIfNotExists bool,
+	defaultData map[string]any,
+) (*simplemapdbFileStore.MapFileStore, error) {
+	filePath, err := mds.validateAndGetFilePath(fileKey)
+	if err != nil {
+		return nil, err
+	}
+
+	mds.openMu.Lock()
+	defer mds.openMu.Unlock()
+	store, ok := mds.openStores[filePath]
+	if ok {
+		return store, nil
+	}
+
+	// Ensure the partition directory exists if creating.
+	if createIfNotExists {
+		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+			return nil, fmt.Errorf(
+				"failed to create partition directory %s: %w",
+				filepath.Dir(filePath),
+				err,
+			)
+		}
+	}
+
+	// Create a new MapFileStore.
+	store, err = simplemapdbFileStore.NewMapFileStore(
+		filePath,
+		defaultData,
+		simplemapdbFileStore.WithCreateIfNotExists(createIfNotExists),
+		simplemapdbFileStore.WithListeners(mds.listeners...),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file store for %s: %w", fileKey.FileName, err)
+	}
+
+	mds.openStores[filePath] = store
+
+	return store, nil
+}
+
+// SetFileData sets the provided data for the given file.
+// It is a thin wrapper around Open and SetAll.
 func (mds *MapDirectoryStore) SetFileData(fileKey FileKey, data map[string]any) error {
 	if data == nil {
 		return fmt.Errorf("invalid request for file: %s", fileKey.FileName)
 	}
-	filePath, err := mds.validateAndGetFilePath(fileKey)
+	store, err := mds.Open(fileKey, true, data)
 	if err != nil {
-		return fmt.Errorf("could not get filepath for file: %s, err: %w", fileKey.FileName, err)
+		return err
 	}
-
-	// Ensure the partition directory exists.
-	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
-		return fmt.Errorf(
-			"failed to create partition directory %s: %w",
-			filepath.Dir(filePath),
-			err,
-		)
-	}
-
-	// Create or truncate the file.
-	store, err := simplemapdbFileStore.NewMapFileStore(
-		filePath,
-		data,
-		simplemapdbFileStore.WithCreateIfNotExists(true),
-		simplemapdbFileStore.WithListeners(mds.listeners...),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create or truncate file %s: %w", fileKey.FileName, err)
-	}
-
-	// Set data.
-	if err := store.SetAll(data); err != nil {
-		return fmt.Errorf("failed to set data for file %s: %w", fileKey.FileName, err)
-	}
-
-	return nil
+	return store.SetAll(data)
 }
 
 // GetFileData returns the data from the specified file in the store.
+// It is a thin wrapper around Open and GetAll.
 func (mds *MapDirectoryStore) GetFileData(
 	fileKey FileKey,
 	forceFetch bool,
 ) (map[string]any, error) {
-	filePath, err := mds.validateAndGetFilePath(fileKey)
+	// Use a dummy defaultData for opening if file exists.
+	store, err := mds.Open(fileKey, false, map[string]any{})
 	if err != nil {
-		return nil, fmt.Errorf(
-			"could not get filepath for file: %s, err: %w",
-			fileKey.FileName,
-			err,
-		)
-	}
-
-	store, err := simplemapdbFileStore.NewMapFileStore(
-		filePath,
-		map[string]any{"k": "v"},
-		simplemapdbFileStore.WithListeners(mds.listeners...),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get file %s: %w", fileKey.FileName, err)
+		return nil, err
 	}
 	return store.GetAll(forceFetch)
 }
 
 // DeleteFile removes the file with the given filename from the base directory.
+// It is a thin wrapper around Open and DeleteFile.
 func (mds *MapDirectoryStore) DeleteFile(fileKey FileKey) error {
+	store, err := mds.Open(fileKey, false, map[string]any{})
+	if err != nil {
+		return err
+	}
+
+	if err := store.DeleteFile(); err != nil {
+		return err
+	}
+	return mds.Close(fileKey)
+}
+
+// Close closes the MapFileStore for the given FileKey (if it was opened) and removes it from the cache.
+func (mds *MapDirectoryStore) Close(fileKey FileKey) error {
 	filePath, err := mds.validateAndGetFilePath(fileKey)
 	if err != nil {
-		return fmt.Errorf(
-			"could not get filepath for file: %s, err: %w",
-			fileKey.FileName,
-			err,
-		)
+		return err
 	}
 
-	store, err := simplemapdbFileStore.NewMapFileStore(
-		filePath,
-		map[string]any{"k": "v"},
-		simplemapdbFileStore.WithListeners(mds.listeners...),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to get file %s: %w", fileKey.FileName, err)
+	mds.openMu.Lock()
+	store, ok := mds.openStores[filePath]
+	if ok {
+		delete(mds.openStores, filePath)
 	}
+	mds.openMu.Unlock()
 
-	return store.DeleteFile()
+	if ok {
+		return store.Close()
+	}
+	return nil
+}
+
+// CloseAll closes every cached MapFileStore in this directory instance and clears the cache.
+func (mds *MapDirectoryStore) CloseAll() error {
+	mds.openMu.Lock()
+	stores := make([]*simplemapdbFileStore.MapFileStore, 0, len(mds.openStores))
+	for _, st := range mds.openStores {
+		stores = append(stores, st)
+	}
+	mds.openStores = make(map[string]*simplemapdbFileStore.MapFileStore)
+	mds.openMu.Unlock()
+
+	var firstErr error
+	for _, st := range stores {
+		if err := st.Close(); err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	return firstErr
 }
 
 // ListingConfig holds all options for listing files.
 type ListingConfig struct {
-	SortOrder string
-	PageSize  int
-	// If empty, list all partitions.
-	FilterPartitions []string
-	// If non-empty, only return files with this prefix.
-	FilenamePrefix string
+	SortOrder        string
+	PageSize         int
+	FilterPartitions []string // If empty, list all partitions.
+	FilenamePrefix   string   // If non-empty, only return files with this prefix.
 }
 
 // PartitionFilterPageToken tracks progress through filtered partitions.

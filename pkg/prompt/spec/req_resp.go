@@ -48,14 +48,14 @@ type ListPromptBundlesResponseBody struct {
 }
 
 type PutPromptTemplateRequest struct {
-	BundleID   string                        `path:"bundleID"   required:"true"`
-	TemplateID string                        `path:"templateID" required:"true"`
-	Body       *PutPromptTemplateRequestBody `                                  json:"body"`
+	BundleID     string                        `path:"bundleID"     required:"true"`
+	TemplateSlug string                        `path:"templateSlug" required:"true"`
+	Body         *PutPromptTemplateRequestBody `                                    json:"body"`
 }
 
 type PutPromptTemplateRequestBody struct {
+	// Auto populate template id internally.
 	DisplayName string   `json:"displayName"           required:"true"`
-	Slug        string   `json:"slug"                  required:"true"`
 	IsEnabled   bool     `json:"isEnabled"             required:"true"`
 	Description string   `json:"description,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
@@ -73,16 +73,16 @@ type PutPromptTemplateRequestBody struct {
 type PutPromptTemplateResponse struct{}
 
 type DeletePromptTemplateRequest struct {
-	BundleID   string `path:"bundleID"   required:"true"`
-	TemplateID string `path:"templateID" required:"true"`
-	Version    string `                  required:"true" query:"version"`
+	BundleID     string `path:"bundleID"     required:"true"`
+	TemplateSlug string `path:"templateSlug" required:"true"`
+	Version      string `                    required:"true" query:"version"`
 }
 type DeletePromptTemplateResponse struct{}
 
 type PatchPromptTemplateRequest struct {
-	BundleID   string                          `path:"bundleID"   required:"true"`
-	TemplateID string                          `path:"templateID" required:"true"`
-	Body       *PatchPromptTemplateRequestBody `                                  json:"body"`
+	BundleID     string                          `path:"bundleID"     required:"true"`
+	TemplateSlug string                          `path:"templateSlug" required:"true"`
+	Body         *PatchPromptTemplateRequestBody `                                    json:"body"`
 }
 
 type PatchPromptTemplateRequestBody struct {
@@ -93,9 +93,9 @@ type PatchPromptTemplateRequestBody struct {
 type PatchPromptTemplateResponse struct{}
 
 type GetPromptTemplateRequest struct {
-	BundleID   string `path:"bundleID"   required:"true"`
-	TemplateID string `path:"templateID" required:"true"`
-	Version    string `                                  query:"version,omitempty"`
+	BundleID     string `path:"bundleID"     required:"true"`
+	TemplateSlug string `path:"templateSlug" required:"true"`
+	Version      string `                                    query:"version,omitempty"`
 }
 type GetPromptTemplateResponse struct{ Body *PromptTemplate }
 
@@ -116,7 +116,6 @@ type ListPromptTemplatesResponse struct {
 type PromptTemplateListItem struct {
 	BundleID        string `json:"bundleID"`
 	BundleSlug      string `json:"bundleSlug"`
-	TemplateID      string `json:"templateID"`
 	TemplateSlug    string `json:"templateSlug"`
 	TemplateVersion string `json:"templateVersion"`
 }
