@@ -1,4 +1,4 @@
-package conversationstore
+package store
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
+	"github.com/ppipada/flexigpt-app/pkg/conversation/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 )

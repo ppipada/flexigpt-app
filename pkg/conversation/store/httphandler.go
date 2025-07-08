@@ -1,4 +1,4 @@
-package conversationstore
+package store
 
 import (
 	"net/http"

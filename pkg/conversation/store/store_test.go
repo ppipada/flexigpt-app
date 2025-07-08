@@ -1,4 +1,4 @@
-package conversationstore_test
+package store
 
 import (
 	"os"
@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/ppipada/flexigpt-app/pkg/conversationstore"
-	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
+	"github.com/ppipada/flexigpt-app/pkg/conversation/spec"
 )
 
 func getNewPutRequestFromConversation(c *spec.Conversation) *spec.PutConversationRequest {
@@ -85,7 +84,7 @@ func TestInitConversation(t *testing.T) {
 func TestConversationCollection(t *testing.T) {
 	baseDir := t.TempDir()
 	defer os.RemoveAll(baseDir)
-	cc, err := conversationstore.NewConversationCollection(baseDir)
+	cc, err := NewConversationCollection(baseDir)
 	if err != nil {
 		t.Fatalf("Failed to create conversation collection: %v", err)
 	}
@@ -499,7 +498,7 @@ func TestConversationCollectionListing(t *testing.T) {
 	baseDir := filepath.Join(os.TempDir(), "conversationstore_test_list")
 	defer os.RemoveAll(baseDir)
 
-	cc, err := conversationstore.NewConversationCollection(baseDir)
+	cc, err := NewConversationCollection(baseDir)
 	if err != nil {
 		t.Fatalf("Failed to create conversation collection: %v", err)
 	}

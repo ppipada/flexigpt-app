@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ppipada/flexigpt-app/pkg/conversationstore"
+	conversationStore "github.com/ppipada/flexigpt-app/pkg/conversation/store"
 	"github.com/ppipada/flexigpt-app/pkg/inference"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore"
 
@@ -16,7 +16,7 @@ import (
 
 type BackendApp struct {
 	settingStoreAPI        *settingstore.SettingStore
-	conversationStoreAPI   *conversationstore.ConversationCollection
+	conversationStoreAPI   *conversationStore.ConversationCollection
 	providerSetAPI         *inference.ProviderSetAPI
 	modelPresetStoreAPI    *modelStore.ModelPresetStore
 	promptTemplateStoreAPI *promptStore.PromptTemplateStore
@@ -99,9 +99,9 @@ func (a *BackendApp) initConversationStore() {
 		panic("Failed to initialize BackendApp: could not create conversation store directory")
 	}
 
-	cc, err := conversationstore.NewConversationCollection(
+	cc, err := conversationStore.NewConversationCollection(
 		a.conversationsDirPath,
-		conversationstore.WithFTS(true),
+		conversationStore.WithFTS(true),
 	)
 	if err != nil {
 		slog.Error(

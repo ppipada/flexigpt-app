@@ -1,4 +1,4 @@
-package conversationstore
+package store
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
+	"github.com/ppipada/flexigpt-app/pkg/conversation/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"

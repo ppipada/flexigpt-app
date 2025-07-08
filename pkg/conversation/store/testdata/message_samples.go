@@ -3,7 +3,7 @@ package testdata
 import (
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
+	"github.com/ppipada/flexigpt-app/pkg/conversation/spec"
 )
 
 const tmpMessageDetails = `

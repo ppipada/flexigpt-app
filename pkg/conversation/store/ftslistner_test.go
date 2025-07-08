@@ -1,4 +1,4 @@
-package conversationstore
+package store
 
 import (
 	"fmt"
@@ -8,19 +8,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
+	"github.com/ppipada/flexigpt-app/pkg/conversation/spec"
 )
-
-func getNewPutRequestFromConversation(c *spec.Conversation) *spec.PutConversationRequest {
-	return &spec.PutConversationRequest{
-		ID: c.ID,
-		Body: &spec.PutConversationRequestBody{
-			Title:     c.Title,
-			CreatedAt: c.CreatedAt,
-			Messages:  c.Messages,
-		},
-	}
-}
 
 func newCollection(t *testing.T, dir string, withFTS bool) *ConversationCollection {
 	t.Helper()

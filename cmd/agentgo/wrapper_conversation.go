@@ -3,22 +3,23 @@ package main
 import (
 	"context"
 
-	"github.com/ppipada/flexigpt-app/pkg/conversationstore"
-	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
+	conversationStore "github.com/ppipada/flexigpt-app/pkg/conversation/store"
+
+	"github.com/ppipada/flexigpt-app/pkg/conversation/spec"
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
 )
 
 type ConversationCollectionWrapper struct {
-	store *conversationstore.ConversationCollection
+	store *conversationStore.ConversationCollection
 }
 
 func InitConversationCollectionWrapper(
 	c *ConversationCollectionWrapper,
 	conversationDir string,
 ) error {
-	conversationStoreAPI, err := conversationstore.NewConversationCollection(
+	conversationStoreAPI, err := conversationStore.NewConversationCollection(
 		conversationDir,
-		conversationstore.WithFTS(true),
+		conversationStore.WithFTS(true),
 	)
 	if err != nil {
 		return err
