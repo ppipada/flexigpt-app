@@ -97,7 +97,6 @@ type PromptTemplate struct {
 	// Helper steps executed before the prompt is sent.
 	PreProcessors []PreProcessorCall `json:"preProcessors,omitempty"`
 
-	// SemVer string.
 	Version    string    `json:"version"`
 	CreatedAt  time.Time `json:"createdAt"`
 	ModifiedAt time.Time `json:"modifiedAt"`

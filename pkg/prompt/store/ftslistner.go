@@ -6,11 +6,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"time"
 
+	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 )
@@ -26,11 +29,34 @@ const (
 // NewFTSListener returns a filestore.Listener that updates the FTS engine on file changes.
 func NewFTSListener(e *ftsengine.Engine) filestore.Listener {
 	return func(ev filestore.Event) {
+		defer func() {
+			if r := recover(); r != nil {
+				slog.Error("fts listener panic",
+					"op", ev.Op, "file", ev.File, "recover", r,
+					"stack", string(debug.Stack()))
+			}
+		}()
+		// Reject files that obviously do not belong to us.
+		if ev.File == "" || !strings.HasSuffix(ev.File, "."+promptTemplateFileExtension) ||
+			strings.HasSuffix(ev.File, sqliteDBFileName) ||
+			strings.HasSuffix(ev.File, bundlesMetaFileName) {
+			return
+		}
+		ctx := context.Background()
 		switch ev.Op {
 		case filestore.OpSetFile, filestore.OpResetFile:
-			_ = e.Upsert(context.Background(), ev.File, extractFTS(ev.File, ev.Data))
+			vals := extractFTS(ev.File, ev.Data)
+			if len(vals) == 0 {
+				slog.Warn("fts listener: nothing to index", "file", ev.File)
+				return
+			}
+			if err := e.Upsert(ctx, ev.File, vals); err != nil {
+				slog.Error("fts upsert failed", "file", ev.File, "err", err)
+			}
 		case filestore.OpDeleteFile:
-			_ = e.Delete(context.Background(), ev.File)
+			if err := e.Delete(ctx, ev.File); err != nil {
+				slog.Error("fts delete failed", "file", ev.File, "err", err)
+			}
 		}
 	}
 }
@@ -135,7 +161,9 @@ func processFTSSync(
 	}
 
 	// Only process files with the correct extension.
-	if !strings.HasSuffix(fullPath, "."+promptTemplateFileExtension) {
+	if !strings.HasSuffix(fullPath, "."+promptTemplateFileExtension) ||
+		strings.HasSuffix(fullPath, sqliteDBFileName) ||
+		strings.HasSuffix(fullPath, bundlesMetaFileName) {
 		return skipSyncDecision, nil
 	}
 
@@ -145,22 +173,32 @@ func processFTSSync(
 		return ftsengine.SyncDecision{ID: fullPath, Unchanged: true, Skip: false}, nil
 	}
 
-	syncDecision := skipSyncDecision
-	var m map[string]any
 	raw, err := os.ReadFile(fullPath)
-	if err == nil {
-		if err := json.Unmarshal(raw, &m); err == nil {
-			syncDecision = ftsengine.SyncDecision{
-				ID:        fullPath,
-				CmpOut:    cmp,
-				Vals:      extractFTS(fullPath, m),
-				Unchanged: false,
-				Skip:      false,
-			}
-		}
+	if err != nil {
+		slog.Error("prompt sync fts", "file", fullPath, "read error", err)
+		return skipSyncDecision, nil
 	}
 
-	return syncDecision, nil
+	pt := spec.PromptTemplate{}
+	if err := json.Unmarshal(raw, &pt); err != nil {
+		slog.Error("prompt sync fts", "file", fullPath, "non prompt template file error", err)
+		return skipSyncDecision, nil
+	}
+
+	var m map[string]any
+	if err := json.Unmarshal(raw, &m); err != nil {
+		slog.Error("sync fts got json error", "file", fullPath, "error", err)
+		return skipSyncDecision, nil
+	}
+
+	vals := extractFTS(fullPath, m)
+	return ftsengine.SyncDecision{
+		ID:        fullPath,
+		CmpOut:    cmp,
+		Vals:      vals,
+		Unchanged: false,
+		Skip:      false,
+	}, nil
 }
 
 // StartRebuild launches a goroutine to rebuild the FTS index for all prompt templates under baseDir.

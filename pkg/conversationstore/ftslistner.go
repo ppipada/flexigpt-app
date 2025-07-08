@@ -4,28 +4,53 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"log/slog"
 	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 
+	"github.com/ppipada/flexigpt-app/pkg/conversationstore/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 )
 
 func NewFTSListner(e *ftsengine.Engine) filestore.Listener {
 	return func(ev filestore.Event) {
+		defer func() {
+			if r := recover(); r != nil {
+				slog.Error("fts listener panic",
+					"op", ev.Op, "file", ev.File, "recover", r,
+					"stack", string(debug.Stack()))
+			}
+		}()
+		// Reject files that obviously do not belong to us.
+		if ev.File == "" || !strings.HasSuffix(ev.File, ".json") {
+			return
+		}
+
+		ctx := context.Background()
 		switch ev.Op {
 		case filestore.OpSetFile, filestore.OpResetFile:
-			_ = e.Upsert(context.Background(), ev.File, extract(ev.File, ev.Data))
+			vals := extractFTS(ev.File, ev.Data)
+			if len(vals) == 0 {
+				slog.Warn("fts listener: nothing to index", "file", ev.File)
+				return
+			}
+			if err := e.Upsert(ctx, ev.File, vals); err != nil {
+				slog.Error("fts upsert failed", "file", ev.File, "err", err)
+			}
 		case filestore.OpDeleteFile:
-			_ = e.Delete(context.Background(), ev.File)
+			if err := e.Delete(ctx, ev.File); err != nil {
+				slog.Error("fts delete failed", "file", ev.File, "err", err)
+			}
 		}
 	}
 }
 
-// extract converts the in-memory JSON map (produced by MapFileStore)
+// extractFTS converts the in-memory JSON map (produced by MapFileStore)
 // into the column → text map expected by ftsengine.
-func extract(fullPath string, m map[string]any) map[string]string {
+func extractFTS(fullPath string, m map[string]any) map[string]string {
 	var (
 		title, _ = stringField(m, "title")
 		system   bytes.Buffer
@@ -123,26 +148,33 @@ func processFTSDataForFile(
 		}, nil
 	}
 
-	// Default skip file.
-	syncDecision := skipSyncDecision
-
-	// Heavy part only if time stamp differs.
-	var m map[string]any
 	raw, err := os.ReadFile(fullPath)
-	if err == nil {
-		if err := json.Unmarshal(raw, &m); err == nil {
-			// Invalid JSON → skip.
-			vals := extract(fullPath, m)
-			syncDecision = ftsengine.SyncDecision{
-				ID:        fullPath,
-				CmpOut:    cmp,
-				Vals:      vals,
-				Unchanged: false,
-				Skip:      false,
-			}
-		}
+	if err != nil {
+		slog.Error("conversation sync fts", "file", fullPath, "read error", err)
+		return skipSyncDecision, nil
 	}
-	return syncDecision, nil
+
+	pt := spec.Conversation{}
+	if err := json.Unmarshal(raw, &pt); err != nil {
+		slog.Error("conversation sync fts", "file", fullPath, "non conversation file error", err)
+		return skipSyncDecision, nil
+	}
+
+	var m map[string]any
+	if err := json.Unmarshal(raw, &m); err != nil {
+		slog.Error("conversation sync fts", "file", fullPath, "json error", err)
+		return skipSyncDecision, nil
+	}
+
+	vals := extractFTS(fullPath, m)
+
+	return ftsengine.SyncDecision{
+		ID:        fullPath,
+		CmpOut:    cmp,
+		Vals:      vals,
+		Unchanged: false,
+		Skip:      false,
+	}, nil
 }
 
 func StartRebuild(ctx context.Context, baseDir string, e *ftsengine.Engine) {

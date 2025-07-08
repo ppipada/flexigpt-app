@@ -97,7 +97,7 @@ func NewMapFileStore(
 	store := &MapFileStore{
 		data:        make(map[string]any),
 		defaultData: defaultData,
-		filename:    filename,
+		filename:    filepath.Clean(filename),
 		autoFlush:   true,
 		encdec:      simplemapdbEncdec.JSONEncoderDecoder{},
 	}
