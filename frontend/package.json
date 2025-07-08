@@ -89,6 +89,7 @@
 			"app/apis/wailsjs/go/main/ProviderSetWrapper.js",
 			"app/apis/wailsjs/go/main/SettingStoreWrapper.js",
 			"app/apis/wailsjs/go/main/ModelPresetStoreWrapper.js",
+			"app/apis/wailsjs/go/main/PromptTemplateStoreWrapper.js",
 			"app/models/aiprovidermodel.ts",
 			"app/lib/highlight_worker.ts"
 		],

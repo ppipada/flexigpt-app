@@ -20,17 +20,19 @@ import (
 
 	modelConsts "github.com/ppipada/flexigpt-app/pkg/model/consts"
 	modelStore "github.com/ppipada/flexigpt-app/pkg/model/store"
+	promptStore "github.com/ppipada/flexigpt-app/pkg/prompt/store"
 )
 
 // Options for the server cli.
 type Options struct {
-	Host                 string `doc:"Hostname to listen on."             default:"127.0.0.1"`
-	Port                 int    `doc:"Port to listen on"                  default:"8888"`
-	SettingsDirPath      string `doc:"path to directory of settings file"`
-	SkillsDirPath        string `doc:"path to skills data directory"`
-	ConversationsDirPath string `doc:"path to conversations directory"`
-	LogsDirPath          string `doc:"path to logs directory"`
-	Debug                bool   `doc:"Enable debug logs"`
+	Host                   string `doc:"Hostname to listen on."                  default:"127.0.0.1"`
+	Port                   int    `doc:"Port to listen on"                       default:"8888"`
+	SettingsDirPath        string `doc:"path to directory of settings file"`
+	ConversationsDirPath   string `doc:"path to conversations directory"`
+	ModelPresetsDirPath    string `doc:"path to modelPresets data directory"`
+	PromptTemplatesDirPath string `doc:"path to prompt templates data directory"`
+	LogsDirPath            string `doc:"path to logs directory"`
+	Debug                  bool   `doc:"Enable debug logs"`
 }
 
 func initSlog(logsDirPath string, debug bool) *logrotate.Writer {
@@ -75,12 +77,14 @@ func main() {
 			modelConsts.ProviderNameOpenAI,
 			opts.SettingsDirPath,
 			opts.ConversationsDirPath,
-			opts.SkillsDirPath,
+			opts.ModelPresetsDirPath,
+			opts.PromptTemplatesDirPath,
 		)
 		settingstore.InitSettingStoreHandlers(api, app.settingStoreAPI)
 		conversationstore.InitConversationStoreHandlers(api, app.conversationStoreAPI)
 		inference.InitProviderSetHandlers(api, app.providerSetAPI)
 		modelStore.InitModelPresetStoreHandlers(api, app.modelPresetStoreAPI)
+		promptStore.InitPromptTemplateStoreHandlers(api, app.promptTemplateStoreAPI)
 		// Create the HTTP server.
 		server := http.Server{
 			Addr:              fmt.Sprintf("%s:%d", opts.Host, opts.Port),

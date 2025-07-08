@@ -4,7 +4,8 @@ export SERVICE_HOST="localhost"
 export SERVICE_PORT=8080
 export SERVICE_SETTINGS_DIR_PATH="./out/settings"
 export SERVICE_CONVERSATIONS_DIR_PATH="./out/conversations"
-export SERVICE_SKILLS_DIR_PATH="./out/skills"
+export SERVICE_MODEL_PRESETS_DIR_PATH="./out/modelpresets"
+export SERVICE_PROMPT_TEMPLATES_DIR_PATH="./out/prompttemplates"
 export SERVICE_LOGS_DIR_PATH="./out/logs"
 export SERVICE_DEBUG="true"
 

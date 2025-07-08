@@ -95,6 +95,7 @@ func main() {
 			app.conversationStoreAPI,
 			app.providerSetAPI,
 			app.modelPresetStoreAPI,
+			app.promptTemplateStoreAPI,
 		},
 		// Windows platform specific options
 		Windows: &windows.Options{

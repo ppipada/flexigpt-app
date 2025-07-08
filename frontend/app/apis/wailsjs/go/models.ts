@@ -1253,6 +1253,58 @@ export namespace spec {
 	
 	    }
 	}
+	export class DeletePromptBundleRequest {
+	    BundleID: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DeletePromptBundleRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	    }
+	}
+	export class DeletePromptBundleResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new DeletePromptBundleResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class DeletePromptTemplateRequest {
+	    BundleID: string;
+	    TemplateSlug: string;
+	    Version: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DeletePromptTemplateRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	        this.TemplateSlug = source["TemplateSlug"];
+	        this.Version = source["Version"];
+	    }
+	}
+	export class DeletePromptTemplateResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new DeletePromptTemplateResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
 	export class DeleteProviderPresetRequest {
 	    ProviderName: string;
 	
@@ -1395,6 +1447,172 @@ export namespace spec {
 		    return a;
 		}
 	}
+	export class GetPromptTemplateRequest {
+	    BundleID: string;
+	    TemplateSlug: string;
+	    Version: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new GetPromptTemplateRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	        this.TemplateSlug = source["TemplateSlug"];
+	        this.Version = source["Version"];
+	    }
+	}
+	export class PreProcessorCall {
+	    id: string;
+	    toolId: string;
+	    args?: Record<string, any>;
+	    saveAs: string;
+	    pathExpr?: string;
+	    onError?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PreProcessorCall(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.toolId = source["toolId"];
+	        this.args = source["args"];
+	        this.saveAs = source["saveAs"];
+	        this.pathExpr = source["pathExpr"];
+	        this.onError = source["onError"];
+	    }
+	}
+	export class PromptVariable {
+	    name: string;
+	    type: string;
+	    required: boolean;
+	    source: string;
+	    description?: string;
+	    staticVal?: string;
+	    toolId?: string;
+	    enumValues?: string[];
+	    default?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PromptVariable(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.type = source["type"];
+	        this.required = source["required"];
+	        this.source = source["source"];
+	        this.description = source["description"];
+	        this.staticVal = source["staticVal"];
+	        this.toolId = source["toolId"];
+	        this.enumValues = source["enumValues"];
+	        this.default = source["default"];
+	    }
+	}
+	export class MessageBlock {
+	    id: string;
+	    role: string;
+	    content: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new MessageBlock(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.role = source["role"];
+	        this.content = source["content"];
+	    }
+	}
+	export class PromptTemplate {
+	    id: string;
+	    displayName: string;
+	    slug: string;
+	    isEnabled: boolean;
+	    description?: string;
+	    tags?: string[];
+	    blocks: MessageBlock[];
+	    variables?: PromptVariable[];
+	    preProcessors?: PreProcessorCall[];
+	    version: string;
+	    // Go type: time
+	    createdAt: any;
+	    // Go type: time
+	    modifiedAt: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new PromptTemplate(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.displayName = source["displayName"];
+	        this.slug = source["slug"];
+	        this.isEnabled = source["isEnabled"];
+	        this.description = source["description"];
+	        this.tags = source["tags"];
+	        this.blocks = this.convertValues(source["blocks"], MessageBlock);
+	        this.variables = this.convertValues(source["variables"], PromptVariable);
+	        this.preProcessors = this.convertValues(source["preProcessors"], PreProcessorCall);
+	        this.version = source["version"];
+	        this.createdAt = this.convertValues(source["createdAt"], null);
+	        this.modifiedAt = this.convertValues(source["modifiedAt"], null);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class GetPromptTemplateResponse {
+	    Body?: PromptTemplate;
+	
+	    static createFrom(source: any = {}) {
+	        return new GetPromptTemplateResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], PromptTemplate);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ListConversationsRequest {
 	    PageSize: number;
 	    PageToken: string;
@@ -1472,6 +1690,238 @@ export namespace spec {
 		}
 	}
 	
+	export class ListPromptBundlesRequest {
+	    BundleIDs: string[];
+	    IncludeDisabled: boolean;
+	    PageSize: number;
+	    PageToken: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListPromptBundlesRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleIDs = source["BundleIDs"];
+	        this.IncludeDisabled = source["IncludeDisabled"];
+	        this.PageSize = source["PageSize"];
+	        this.PageToken = source["PageToken"];
+	    }
+	}
+	export class PromptBundle {
+	    id: string;
+	    slug: string;
+	    displayName?: string;
+	    description?: string;
+	    isEnabled: boolean;
+	    // Go type: time
+	    createdAt: any;
+	    // Go type: time
+	    modifiedAt: any;
+	    // Go type: time
+	    softDeletedAt?: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new PromptBundle(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.slug = source["slug"];
+	        this.displayName = source["displayName"];
+	        this.description = source["description"];
+	        this.isEnabled = source["isEnabled"];
+	        this.createdAt = this.convertValues(source["createdAt"], null);
+	        this.modifiedAt = this.convertValues(source["modifiedAt"], null);
+	        this.softDeletedAt = this.convertValues(source["softDeletedAt"], null);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ListPromptBundlesResponseBody {
+	    promptBundles: PromptBundle[];
+	    nextPageToken?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListPromptBundlesResponseBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.promptBundles = this.convertValues(source["promptBundles"], PromptBundle);
+	        this.nextPageToken = source["nextPageToken"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ListPromptBundlesResponse {
+	    Body?: ListPromptBundlesResponseBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListPromptBundlesResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], ListPromptBundlesResponseBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class ListPromptTemplatesRequest {
+	    BundleIDs: string[];
+	    Tags: string[];
+	    IncludeDisabled: boolean;
+	    AllVersions: boolean;
+	    PageSize: number;
+	    PageToken: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListPromptTemplatesRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleIDs = source["BundleIDs"];
+	        this.Tags = source["Tags"];
+	        this.IncludeDisabled = source["IncludeDisabled"];
+	        this.AllVersions = source["AllVersions"];
+	        this.PageSize = source["PageSize"];
+	        this.PageToken = source["PageToken"];
+	    }
+	}
+	export class PromptTemplateListItem {
+	    bundleID: string;
+	    bundleSlug: string;
+	    templateSlug: string;
+	    templateVersion: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PromptTemplateListItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.bundleID = source["bundleID"];
+	        this.bundleSlug = source["bundleSlug"];
+	        this.templateSlug = source["templateSlug"];
+	        this.templateVersion = source["templateVersion"];
+	    }
+	}
+	export class ListPromptTemplatesResponseBody {
+	    promptTemplateListItems: PromptTemplateListItem[];
+	    nextPageToken?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListPromptTemplatesResponseBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.promptTemplateListItems = this.convertValues(source["promptTemplateListItems"], PromptTemplateListItem);
+	        this.nextPageToken = source["nextPageToken"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ListPromptTemplatesResponse {
+	    Body?: ListPromptTemplatesResponseBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListPromptTemplatesResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], ListPromptTemplatesResponseBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
 	export class ModelParams {
 	    name: string;
 	    stream: boolean;
@@ -1518,6 +1968,129 @@ export namespace spec {
 		    return a;
 		}
 	}
+	
+	export class PatchPromptBundleRequestBody {
+	    isEnabled: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new PatchPromptBundleRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.isEnabled = source["isEnabled"];
+	    }
+	}
+	export class PatchPromptBundleRequest {
+	    BundleID: string;
+	    body?: PatchPromptBundleRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new PatchPromptBundleRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	        this.body = this.convertValues(source["body"], PatchPromptBundleRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class PatchPromptBundleResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new PatchPromptBundleResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class PatchPromptTemplateRequestBody {
+	    version: string;
+	    isEnabled: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new PatchPromptTemplateRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.version = source["version"];
+	        this.isEnabled = source["isEnabled"];
+	    }
+	}
+	export class PatchPromptTemplateRequest {
+	    BundleID: string;
+	    TemplateSlug: string;
+	    body?: PatchPromptTemplateRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new PatchPromptTemplateRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	        this.TemplateSlug = source["TemplateSlug"];
+	        this.body = this.convertValues(source["body"], PatchPromptTemplateRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class PatchPromptTemplateResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new PatchPromptTemplateResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	
+	
+	
+	
 	
 	
 	export class ProviderInfo {
@@ -1705,6 +2278,160 @@ export namespace spec {
 	
 	    }
 	}
+	export class PutPromptBundleRequestBody {
+	    slug: string;
+	    displayName: string;
+	    isEnabled: boolean;
+	    description?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PutPromptBundleRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.slug = source["slug"];
+	        this.displayName = source["displayName"];
+	        this.isEnabled = source["isEnabled"];
+	        this.description = source["description"];
+	    }
+	}
+	export class PutPromptBundleRequest {
+	    BundleID: string;
+	    body?: PutPromptBundleRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new PutPromptBundleRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	        this.body = this.convertValues(source["body"], PutPromptBundleRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class PutPromptBundleResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new PutPromptBundleResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class PutPromptTemplateRequestBody {
+	    displayName: string;
+	    isEnabled: boolean;
+	    description?: string;
+	    tags?: string[];
+	    blocks: MessageBlock[];
+	    variables?: PromptVariable[];
+	    preProcessors?: PreProcessorCall[];
+	    version: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PutPromptTemplateRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.displayName = source["displayName"];
+	        this.isEnabled = source["isEnabled"];
+	        this.description = source["description"];
+	        this.tags = source["tags"];
+	        this.blocks = this.convertValues(source["blocks"], MessageBlock);
+	        this.variables = this.convertValues(source["variables"], PromptVariable);
+	        this.preProcessors = this.convertValues(source["preProcessors"], PreProcessorCall);
+	        this.version = source["version"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class PutPromptTemplateRequest {
+	    BundleID: string;
+	    TemplateSlug: string;
+	    body?: PutPromptTemplateRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new PutPromptTemplateRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	        this.TemplateSlug = source["TemplateSlug"];
+	        this.body = this.convertValues(source["body"], PutPromptTemplateRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class PutPromptTemplateResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new PutPromptTemplateResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
 	
 	export class SearchConversationsRequest {
 	    Query: string;
@@ -1764,6 +2491,87 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Body = this.convertValues(source["Body"], SearchConversationsResponseBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class SearchPromptTemplatesRequest {
+	    Query: string;
+	    PageToken: string;
+	    PageSize: number;
+	    IncludeDisabled: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new SearchPromptTemplatesRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Query = source["Query"];
+	        this.PageToken = source["PageToken"];
+	        this.PageSize = source["PageSize"];
+	        this.IncludeDisabled = source["IncludeDisabled"];
+	    }
+	}
+	export class SearchPromptTemplatesResponseBody {
+	    promptTemplateListItems: PromptTemplateListItem[];
+	    nextPageToken?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SearchPromptTemplatesResponseBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.promptTemplateListItems = this.convertValues(source["promptTemplateListItems"], PromptTemplateListItem);
+	        this.nextPageToken = source["nextPageToken"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SearchPromptTemplatesResponse {
+	    Body?: SearchPromptTemplatesResponseBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new SearchPromptTemplatesResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], SearchPromptTemplatesResponseBody);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
