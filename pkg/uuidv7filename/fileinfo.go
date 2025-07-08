@@ -121,3 +121,11 @@ func Parse(filename string) (UUIDv7FileInfo, error) {
 		Time:      t,
 	}, nil
 }
+
+func NewUUID() (string, error) {
+	u, err := uuid.NewV7()
+	if err != nil {
+		return "", err
+	}
+	return u.String(), nil
+}

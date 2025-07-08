@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/ppipada/flexigpt-app/pkg/conversation/spec"
+	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
 )
 
 func getNewPutRequestFromConversation(c *spec.Conversation) *spec.PutConversationRequest {
@@ -31,11 +32,11 @@ func initConversation(title string) (*spec.Conversation, error) {
 	}
 
 	c := spec.Conversation{}
-	u, err := uuid.NewV7()
+	u, err := uuidv7filename.NewUUID()
 	if err != nil {
 		return nil, err
 	}
-	c.ID = u.String()
+	c.ID = u
 	c.Title = title
 	c.CreatedAt = time.Now()
 	c.ModifiedAt = time.Now()
@@ -423,24 +424,24 @@ func TestConversationCollection(t *testing.T) {
 		ctx := t.Context()
 		// Jan.
 		convo1 := &spec.Conversation{}
-		u, err := uuid.NewV7()
+		u, err := uuidv7filename.NewUUID()
 		if err != nil {
 			t.Fatalf("Failed to get uuid: %v", err)
 		}
-		convo1.ID = u.String()
+		convo1.ID = u
 		convo1.Title = "Jan"
 		convo1.CreatedAt = time.Date(2023, 1, 15, 10, 0, 0, 0, time.UTC)
 		convo1.ModifiedAt = time.Now()
 		convo1.Messages = []spec.ConversationMessage{}
 
 		// Feb.
-		u, err = uuid.NewV7()
+		u, err = uuidv7filename.NewUUID()
 		if err != nil {
 			t.Fatalf("Failed to get uuid: %v", err)
 		}
 
 		convo2 := &spec.Conversation{}
-		convo2.ID = u.String()
+		convo2.ID = u
 		convo2.Title = "Feb"
 		convo2.CreatedAt = time.Date(2023, 2, 15, 10, 0, 0, 0, time.UTC)
 		convo2.ModifiedAt = time.Now()
@@ -535,8 +536,12 @@ func TestConversationCollectionListing(t *testing.T) {
 	t.Run("ListConversationsPaging", func(t *testing.T) {
 		ctx := t.Context()
 		// Add 15 conversations.
-		for i := 0; i < 15; i++ {
-			convo, err := initConversation("Paged " + uuid.New().String())
+		for range 15 {
+			u, err := uuidv7filename.NewUUID()
+			if err != nil {
+				t.Fatalf("Failed to init conversation: %v", err)
+			}
+			convo, err := initConversation("Paged " + u)
 			if err != nil {
 				t.Fatalf("Failed to init conversation: %v", err)
 			}

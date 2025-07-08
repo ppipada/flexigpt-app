@@ -21,6 +21,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
+	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
 )
 
 const (
@@ -685,8 +686,13 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 
 	// Build object.
 	now := time.Now().UTC()
+	u, err := uuidv7filename.NewUUID()
+	if err != nil {
+		return nil, fmt.Errorf("uuid not available. err: %w", err)
+	}
+
 	tpl := spec.PromptTemplate{
-		ID:            fmt.Sprintf("%s_%s_%s", bundle.ID, req.TemplateSlug, req.Body.Version),
+		ID:            u,
 		DisplayName:   req.Body.DisplayName,
 		Slug:          req.TemplateSlug,
 		Description:   req.Body.Description,

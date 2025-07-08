@@ -9,9 +9,9 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/sse"
-	"github.com/google/uuid"
 	"github.com/ppipada/flexigpt-app/pkg/jsonrpc/humaadapter"
 	jsonrpcReqResp "github.com/ppipada/flexigpt-app/pkg/jsonrpc/reqresp"
+	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
 )
 
 const (
@@ -68,12 +68,12 @@ func (s *SSETransport) handleSSEConnection(
 	send sse.Sender,
 ) {
 	// Generate a unique session ID.
-	u, err := uuid.NewV7()
+	u, err := uuidv7filename.NewUUID()
 	if err != nil {
 		// TODO: Write error and close.
 		return
 	}
-	sessionID := u.String()
+	sessionID := u
 
 	// Store the sender associated with the session ID.
 	s.mu.Lock()

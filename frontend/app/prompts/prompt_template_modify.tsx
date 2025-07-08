@@ -1,14 +1,29 @@
+/*  prompt_template_modify.tsx
+ *  Lightweight “wizard” for creating / editing a prompt-template.
+ *  Focuses on the most common metadata; advanced fields such as
+ *  variables or pre-processors can be added later.
+ */
 import React, { useEffect, useState } from 'react';
 
 import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/models/commands';
-import type { PromptTemplate } from '@/models/promptmodel';
+import { PromptRoleEnum, type PromptTemplate } from '@/models/promptmodel';
+
+import { omitManyKeys } from '@/lib/obj_utils';
+import { getUUIDv7 } from '@/lib/uuid_utils';
+
+/* ---- local helper type identical to the one in the list view ---- */
+interface TemplateItem {
+	template: PromptTemplate;
+	bundleID: string;
+	templateSlug: string;
+}
 
 interface ModifyPromptTemplateProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (templateData: Partial<PromptTemplate>) => void;
-	initialData?: Partial<PromptTemplate>;
-	existingTemplates: PromptTemplate[];
+	initialData?: TemplateItem;
+	existingTemplates: TemplateItem[];
 }
 
 const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
@@ -18,124 +33,196 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 	initialData,
 	existingTemplates,
 }) => {
-	const [formData, setFormData] = useState<Partial<PromptTemplate>>({
-		name: '',
-		command: '',
-		template: '',
-		hasTools: false,
-		hasDocStore: false,
-		tokenCount: 0,
+	/* --- form state --- */
+	const [formData, setFormData] = useState({
+		displayName: '',
+		slug: '',
+		description: '',
+		content: '',
+		tags: '',
+		isEnabled: true,
 	});
-	const [errors, setErrors] = useState<{ name?: string; command?: string; template?: string }>({});
+	const [errors, setErrors] = useState<{ displayName?: string; slug?: string; content?: string }>({});
 
+	/* --- sync prop → state --- */
 	useEffect(() => {
 		if (isOpen) {
-			setFormData(
-				initialData || { name: '', command: '', template: '', hasTools: false, hasDocStore: false, tokenCount: 0 }
-			);
+			if (initialData) {
+				setFormData({
+					displayName: initialData.template.displayName,
+					slug: initialData.template.slug,
+					description: initialData.template.description ?? '',
+					content: initialData.template.blocks[0]?.content ?? '',
+					tags: (initialData.template.tags ?? []).join(', '),
+					isEnabled: initialData.template.isEnabled,
+				});
+			} else {
+				setFormData({ displayName: '', slug: '', description: '', content: '', tags: '', isEnabled: true });
+			}
 			setErrors({});
 		}
 	}, [isOpen, initialData]);
 
+	/* --- validation --- */
 	const validateField = (name: string, value: string) => {
-		const newErrors: { [key: string]: string | undefined } = {};
+		let newErrors = { ...errors };
 
 		if (!value.trim()) {
-			newErrors[name] = 'This field is required';
-		} else if (name === 'command') {
+			newErrors[name as keyof typeof newErrors] = 'This field is required';
+		} else if (name === 'slug') {
 			if (value.startsWith(PROMPT_TEMPLATE_INVOKE_CHAR)) {
-				newErrors[name] = `Command should not start with ${PROMPT_TEMPLATE_INVOKE_CHAR}`;
+				newErrors.slug = `Slug should not start with ${PROMPT_TEMPLATE_INVOKE_CHAR}`;
 			} else {
-				const isUnique = !existingTemplates.some(t => t.command === value && t.id !== initialData?.id);
-				if (!isUnique) {
-					newErrors[name] = 'This command is already in use';
-				}
+				const duplicate = existingTemplates.some(
+					t => t.template.slug === value && t.template.id !== initialData?.template.id
+				);
+				if (duplicate) newErrors.slug = 'This slug is already in use';
+				else delete newErrors.slug;
 			}
+		} else {
+			newErrors = omitManyKeys(errors, [name as keyof typeof newErrors]);
 		}
-
-		// Populate newErrors with existing errors except for the current field if it's valid
-		for (const key in errors) {
-			if (Object.prototype.hasOwnProperty.call(errors, key) && key !== name) {
-				newErrors[key] = errors[key as keyof typeof errors];
-			}
-		}
-
 		setErrors(newErrors);
 	};
+
+	/* --- change handlers --- */
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-		const { name, value } = e.target;
-		setFormData(prev => ({ ...prev, [name]: value }));
-		validateField(name, value);
+		const { name, value, type, checked } = e.target as any;
+		const newVal = type === 'checkbox' ? checked : value;
+		setFormData(prev => ({ ...prev, [name]: newVal }));
+		if (['displayName', 'slug', 'content'].includes(name)) validateField(name, newVal);
 	};
 
+	/* --- submit --- */
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
-		validateField('name', formData.name || '');
-		validateField('command', formData.command || '');
-		validateField('template', formData.template || '');
+		validateField('displayName', formData.displayName);
+		validateField('slug', formData.slug);
+		validateField('content', formData.content);
 
-		if (Object.keys(errors).length === 0 && formData.name && formData.command && formData.template) {
-			onSubmit(formData);
+		if (Object.keys(errors).length === 0 && formData.displayName && formData.slug && formData.content) {
+			const tagsArr = formData.tags
+				.split(',')
+				.map(t => t.trim())
+				.filter(Boolean);
+
+			const payload: Partial<PromptTemplate> = {
+				displayName: formData.displayName.trim(),
+				slug: formData.slug.trim(),
+				description: formData.description.trim() || undefined,
+				isEnabled: formData.isEnabled,
+				tags: tagsArr.length ? tagsArr : undefined,
+				blocks: [
+					{
+						id: initialData?.template.blocks[0]?.id ?? getUUIDv7(),
+						role: PromptRoleEnum.User,
+						content: formData.content,
+					},
+				],
+			};
+
+			onSubmit(payload);
 		}
 	};
 
+	/* --- early return --- */
 	if (!isOpen) return null;
 
+	/* --- render --- */
 	return (
 		<div className="modal modal-open">
 			<div className="modal-box rounded-2xl">
 				<h3 className="font-bold text-lg">{initialData ? 'Edit Prompt Template' : 'Add New Prompt Template'}</h3>
-				<form onSubmit={handleSubmit} className="mt-4">
-					<fieldset className="fieldset">
-						<label className="label" htmlFor="name">
-							Name*
-						</label>
+
+				<form onSubmit={handleSubmit} className="mt-4 space-y-3">
+					{/* Display Name */}
+					<fieldset>
+						<label className="label">Display Name*</label>
 						<input
+							name="displayName"
 							type="text"
-							name="name"
-							value={formData.name || ''}
+							value={formData.displayName}
 							onChange={handleChange}
-							className={`input rounded-2xl ${errors.name ? 'input-error' : ''}`}
+							className={`input rounded-2xl w-full ${errors.displayName ? 'input-error' : ''}`}
 							required
 							spellCheck="false"
 						/>
-						{errors.name && <p className="text-error text-sm mt-1">{errors.name}</p>}
+						{errors.displayName && <p className="text-error text-sm">{errors.displayName}</p>}
 					</fieldset>
-					<fieldset className="fieldset">
-						<label className="label" htmlFor="name">
-							Command*
-						</label>
+
+					{/* Slug */}
+					<fieldset>
+						<label className="label">Slug*</label>
 						<div className="relative">
-							<span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral/60">
+							<span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral/60">
 								{PROMPT_TEMPLATE_INVOKE_CHAR}
 							</span>
 							<input
+								name="slug"
 								type="text"
-								name="command"
-								value={formData.command || ''}
+								value={formData.slug}
 								onChange={handleChange}
-								className={`input rounded-2xl pl-8 ${errors.command ? 'input-error' : ''}`}
+								className={`input rounded-2xl pl-8 w-full ${errors.slug ? 'input-error' : ''}`}
 								required
 								spellCheck="false"
 							/>
 						</div>
-						{errors.command && <p className="text-error text-sm mt-1">{errors.command}</p>}
+						{errors.slug && <p className="text-error text-sm">{errors.slug}</p>}
 					</fieldset>
-					<fieldset className="fieldset">
-						<label className="label" htmlFor="name">
-							Template*
-						</label>
+
+					{/* Description */}
+					<fieldset>
+						<label className="label">Description</label>
 						<textarea
-							name="template"
-							value={formData.template || ''}
+							name="description"
+							value={formData.description}
 							onChange={handleChange}
-							className={`textarea rounded-2xl ${errors.template ? 'textarea-error' : ''}`}
+							className="textarea rounded-2xl w-full"
+							spellCheck="false"
+						/>
+					</fieldset>
+
+					{/* Prompt Block Content */}
+					<fieldset>
+						<label className="label">Prompt Content*</label>
+						<textarea
+							name="content"
+							value={formData.content}
+							onChange={handleChange}
+							className={`textarea rounded-2xl w-full ${errors.content ? 'textarea-error' : ''}`}
 							required
 							spellCheck="false"
 						/>
-						{errors.template && <p className="text-error text-sm mt-1">{errors.template}</p>}
+						{errors.content && <p className="text-error text-sm">{errors.content}</p>}
 					</fieldset>
+
+					{/* Tags */}
+					<fieldset>
+						<label className="label">Tags (comma separated)</label>
+						<input
+							name="tags"
+							type="text"
+							value={formData.tags}
+							onChange={handleChange}
+							className="input rounded-2xl w-full"
+							spellCheck="false"
+						/>
+					</fieldset>
+
+					{/* Enabled toggle */}
+					<fieldset className="flex items-center gap-2">
+						<input
+							type="checkbox"
+							name="isEnabled"
+							checked={formData.isEnabled}
+							onChange={handleChange}
+							className="checkbox checkbox-primary"
+						/>
+						<label className="label cursor-pointer">Enabled</label>
+					</fieldset>
+
+					{/* Actions */}
 					<div className="modal-action">
 						<button type="button" className="btn btn-ghost rounded-2xl" onClick={onClose}>
 							Cancel
@@ -144,12 +231,12 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 							type="submit"
 							className="btn btn-primary rounded-2xl"
 							disabled={
-								!!errors.name ||
-								!!errors.command ||
-								!!errors.template ||
-								!formData.name ||
-								!formData.command ||
-								!formData.template
+								!!errors.displayName ||
+								!!errors.slug ||
+								!!errors.content ||
+								!formData.displayName ||
+								!formData.slug ||
+								!formData.content
 							}
 						>
 							Save

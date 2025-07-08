@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { FiCpu, FiDatabase, FiFilePlus, FiHome, FiMenu, FiMessageSquare, FiSettings, FiSliders } from 'react-icons/fi';
 import { Link } from 'react-router';
 
-import { FEATURE_FLAG_AGENTS, FEATURE_FLAG_DOCUMENT_STORES, FEATURE_FLAG_PROMPTS } from '@/lib/features';
+import { FEATURE_FLAG_AGENTS, FEATURE_FLAG_DOCUMENT_STORES } from '@/lib/features';
 
 interface SidebarProps {
 	children: ReactNode;
@@ -62,13 +62,6 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 						)}
 					</div>
 					<div className="flex-col p-0 mb-8">
-						{FEATURE_FLAG_PROMPTS && (
-							<li className="mt-4" title="Prompts" onClick={toggle} aria-label="Prompts">
-								<Link to="/prompts/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
-									<FiFilePlus size={24} />
-								</Link>
-							</li>
-						)}
 						{FEATURE_FLAG_DOCUMENT_STORES && (
 							<li className="mt-4" title="Document Stores" onClick={toggle} aria-label="Document Stores">
 								<Link to="/docstores/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
@@ -76,6 +69,11 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 								</Link>
 							</li>
 						)}
+						<li className="mt-4" title="Prompts" onClick={toggle} aria-label="Prompts">
+							<Link to="/prompts/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
+								<FiFilePlus size={24} />
+							</Link>
+						</li>
 						<li className="mt-4" title="Model Presets" onClick={toggle} aria-label="Model Presets">
 							<Link to="/modelpresets/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
 								<FiSliders size={24} />
