@@ -118,6 +118,7 @@ type PromptTemplateListItem struct {
 	BundleSlug      string `json:"bundleSlug"`
 	TemplateSlug    string `json:"templateSlug"`
 	TemplateVersion string `json:"templateVersion"`
+	IsBuiltIn       bool   `json:"isBuiltIn"`
 }
 
 type ListPromptTemplatesResponseBody struct {

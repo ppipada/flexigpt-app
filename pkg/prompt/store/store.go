@@ -379,6 +379,7 @@ func (s *PromptTemplateStore) PutPromptBundle(
 		IsEnabled:     req.Body.IsEnabled,
 		CreatedAt:     createdAt,
 		ModifiedAt:    now,
+		IsBuiltIn:     false,
 		SoftDeletedAt: nil,
 	}
 	val, _ := encdec.StructWithJSONTagsToMap(b)
@@ -704,6 +705,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 		Version:       req.Body.Version,
 		CreatedAt:     now,
 		ModifiedAt:    now,
+		IsBuiltIn:     false,
 	}
 
 	// Validate template structure.
@@ -1000,6 +1002,7 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 			BundleSlug:      bdi.Slug,
 			TemplateSlug:    finf.Slug,
 			TemplateVersion: finf.Version,
+			IsBuiltIn:       false,
 		}
 		if allVersions {
 			items = append(items, it)
@@ -1098,6 +1101,7 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 			BundleSlug:      bdi.Slug,
 			TemplateSlug:    finf.Slug,
 			TemplateVersion: finf.Version,
+			IsBuiltIn:       false,
 		})
 
 		// Stop when we have enough results.

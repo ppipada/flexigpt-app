@@ -1544,6 +1544,7 @@ export namespace spec {
 	    createdAt: any;
 	    // Go type: time
 	    modifiedAt: any;
+	    isBuiltIn: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new PromptTemplate(source);
@@ -1563,6 +1564,7 @@ export namespace spec {
 	        this.version = source["version"];
 	        this.createdAt = this.convertValues(source["createdAt"], null);
 	        this.modifiedAt = this.convertValues(source["modifiedAt"], null);
+	        this.isBuiltIn = source["isBuiltIn"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1718,6 +1720,7 @@ export namespace spec {
 	    createdAt: any;
 	    // Go type: time
 	    modifiedAt: any;
+	    isBuiltIn: boolean;
 	    // Go type: time
 	    softDeletedAt?: any;
 	
@@ -1734,6 +1737,7 @@ export namespace spec {
 	        this.isEnabled = source["isEnabled"];
 	        this.createdAt = this.convertValues(source["createdAt"], null);
 	        this.modifiedAt = this.convertValues(source["modifiedAt"], null);
+	        this.isBuiltIn = source["isBuiltIn"];
 	        this.softDeletedAt = this.convertValues(source["softDeletedAt"], null);
 	    }
 	
@@ -1845,6 +1849,7 @@ export namespace spec {
 	    bundleSlug: string;
 	    templateSlug: string;
 	    templateVersion: string;
+	    isBuiltIn: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new PromptTemplateListItem(source);
@@ -1856,6 +1861,7 @@ export namespace spec {
 	        this.bundleSlug = source["bundleSlug"];
 	        this.templateSlug = source["templateSlug"];
 	        this.templateVersion = source["templateVersion"];
+	        this.isBuiltIn = source["isBuiltIn"];
 	    }
 	}
 	export class ListPromptTemplatesResponseBody {

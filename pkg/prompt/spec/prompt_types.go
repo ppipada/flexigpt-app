@@ -100,6 +100,7 @@ type PromptTemplate struct {
 	Version    string    `json:"version"`
 	CreatedAt  time.Time `json:"createdAt"`
 	ModifiedAt time.Time `json:"modifiedAt"`
+	IsBuiltIn  bool      `json:"isBuiltIn"`
 }
 
 // Hard grouping & distribution unit.
@@ -110,7 +111,9 @@ type PromptBundle struct {
 	Description string `json:"description,omitempty"`
 	IsEnabled   bool   `json:"isEnabled"`
 
-	CreatedAt     time.Time  `json:"createdAt"`
-	ModifiedAt    time.Time  `json:"modifiedAt"`
+	CreatedAt  time.Time `json:"createdAt"`
+	ModifiedAt time.Time `json:"modifiedAt"`
+	IsBuiltIn  bool      `json:"isBuiltIn"`
+
 	SoftDeletedAt *time.Time `json:"softDeletedAt,omitempty"`
 }

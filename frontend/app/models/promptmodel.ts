@@ -77,8 +77,9 @@ export interface PromptTemplate {
 	variables?: PromptVariable[];
 	preProcessors?: PreProcessorCall[];
 	version: string;
-	createdAt: string; // ISO8601
-	modifiedAt: string; // ISO8601
+	createdAt: string;
+	modifiedAt: string;
+	isBuiltIn: boolean;
 }
 
 export interface PromptBundle {
@@ -87,8 +88,9 @@ export interface PromptBundle {
 	displayName?: string;
 	description?: string;
 	isEnabled: boolean;
-	createdAt: string; // ISO8601
-	modifiedAt: string; // ISO8601
+	createdAt: string;
+	modifiedAt: string;
+	isBuiltIn: boolean;
 }
 
 export interface PromptTemplateListItem {
@@ -96,6 +98,7 @@ export interface PromptTemplateListItem {
 	bundleSlug: string;
 	templateSlug: string;
 	templateVersion: string;
+	isBuiltIn: boolean;
 }
 
 export interface Tool {
