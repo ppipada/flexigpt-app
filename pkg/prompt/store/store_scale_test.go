@@ -12,6 +12,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 )
 
+// drainErrors drains the error channel and fails the test for any error.
 func drainErrors(t *testing.T, ch <-chan error) {
 	t.Helper()
 	for err := range ch {
@@ -35,8 +36,8 @@ func collectTemplates(
 	)
 
 	for {
-		req := baseReq          // copy
-		req.PageSize = pageSize // ensure deterministic page size
+		req := baseReq          // Copy.
+		req.PageSize = pageSize // Ensure deterministic page size.
 		req.PageToken = token
 
 		resp, err := s.ListPromptTemplates(ctx, &req)
@@ -57,7 +58,7 @@ func collectTemplates(
 func uniqCntActive(list []spec.PromptTemplateListItem) int {
 	m := map[string]struct{}{}
 	for _, it := range list {
-		key := it.BundleID + "|" + it.TemplateSlug
+		key := string(it.BundleID) + "|" + string(it.TemplateSlug)
 		m[key] = struct{}{}
 	}
 	return len(m)
@@ -67,18 +68,25 @@ func uniqCntActive(list []spec.PromptTemplateListItem) int {
 func uniqCntAll(list []spec.PromptTemplateListItem) int {
 	m := map[string]struct{}{}
 	for _, it := range list {
-		key := it.BundleID + "|" + it.TemplateSlug + "|" + it.TemplateVersion
+		key := string(
+			it.BundleID,
+		) + "|" + string(
+			it.TemplateSlug,
+		) + "|" + string(
+			it.TemplateVersion,
+		)
 		m[key] = struct{}{}
 	}
 	return len(m)
 }
 
+// TestScale_LotsOfBundles tests scale with many bundles and some templates.
 func TestScale_LotsOfBundles(t *testing.T) {
 	const (
 		nBundles      = 300
-		nonEmptyEvery = 10 // every 10-th bundle -> try to add one template
-		deleteEvery   = 5  // try to delete every 5-th bundle
-		patchEvery    = 2  // toggle enabled flag every 2-nd bundle
+		nonEmptyEvery = 10 // Every 10-th bundle -> try to add one template.
+		deleteEvery   = 5  // Try to delete every 5-th bundle.
+		patchEvery    = 2  // Toggle enabled flag every 2-nd bundle.
 		concurrency   = 20
 	)
 
@@ -88,28 +96,28 @@ func TestScale_LotsOfBundles(t *testing.T) {
 	ctx := t.Context()
 	errCh := make(chan error, 8_000)
 
-	//    1. CREATE all bundles  (some will get exactly one template).
+	// 1. CREATE all bundles (some will get exactly one template).
 	var wg sync.WaitGroup
 	wg.Add(concurrency)
 
 	createJobs := make(chan int, nBundles)
-	for i := 0; i < nBundles; i++ {
+	for i := range nBundles {
 		createJobs <- i
 	}
 	close(createJobs)
 
-	for g := 0; g < concurrency; g++ {
+	for range concurrency {
 		go func() {
 			defer wg.Done()
 			for i := range createJobs {
-				bID := "bundle-" + strconv.Itoa(i)
+				bID := spec.BundleID("bundle-" + strconv.Itoa(i))
 
 				_, err := s.PutPromptBundle(ctx, &spec.PutPromptBundleRequest{
 					BundleID: bID,
 					Body: &spec.PutPromptBundleRequestBody{
-						Slug:        "slug-" + strconv.Itoa(i),
+						Slug:        spec.BundleSlug("slug-" + strconv.Itoa(i)),
 						DisplayName: "Bundle " + strconv.Itoa(i),
-						IsEnabled:   i%3 == 0, // enabled for 0,3,6,…
+						IsEnabled:   i%3 == 0, // Enabled for 0,3,6,…
 					},
 				})
 				if err != nil {
@@ -118,18 +126,18 @@ func TestScale_LotsOfBundles(t *testing.T) {
 				}
 
 				// Try to add a template – this succeeds only while the
-				//   bundle is ENABLED.  Ignore ErrBundleDisabled because
-				//   in that case the bundle legitimately stays empty.
+				// bundle is ENABLED. Ignore ErrBundleDisabled because
+				// in that case the bundle legitimately stays empty.
 				if i%nonEmptyEvery == 0 {
 					_, err = s.PutPromptTemplate(ctx, &spec.PutPromptTemplateRequest{
 						BundleID:     bID,
-						TemplateSlug: "t",
+						TemplateSlug: spec.TemplateSlug("t"),
 						Body: &spec.PutPromptTemplateRequestBody{
 							DisplayName: "dummy",
 							IsEnabled:   true,
-							Version:     "v1",
+							Version:     spec.TemplateVersion("v1"),
 							Blocks: []spec.MessageBlock{{
-								ID:      "1",
+								ID:      spec.MessageBlockID("1"),
 								Role:    spec.User,
 								Content: "hi",
 							}},
@@ -144,27 +152,27 @@ func TestScale_LotsOfBundles(t *testing.T) {
 	}
 	wg.Wait()
 
-	//   2. Concurrent PATCH (toggle) + DELETE.
+	// 2. Concurrent PATCH (toggle) + DELETE.
 	wg.Add(concurrency)
 
 	modJobs := make(chan int, nBundles)
-	for i := 0; i < nBundles; i++ {
+	for i := range nBundles {
 		modJobs <- i
 	}
 	close(modJobs)
 
-	for g := 0; g < concurrency; g++ {
+	for range concurrency {
 		go func() {
 			defer wg.Done()
 			for i := range modJobs {
-				bID := "bundle-" + strconv.Itoa(i)
+				bID := spec.BundleID("bundle-" + strconv.Itoa(i))
 
 				// PATCH – invert the enabled flag for every 2-nd bundle.
 				if i%patchEvery == 0 {
 					_, err := s.PatchPromptBundle(ctx, &spec.PatchPromptBundleRequest{
 						BundleID: bID,
 						Body: &spec.PatchPromptBundleRequestBody{
-							IsEnabled: i%3 != 0, // invert previous state
+							IsEnabled: i%3 != 0, // Invert previous state.
 						},
 					})
 					if err != nil {
@@ -178,10 +186,10 @@ func TestScale_LotsOfBundles(t *testing.T) {
 						BundleID: bID,
 					})
 
-					/* A bundle is *really* non-empty only when
-					   - we TRIED to add a template (i%nonEmptyEvery==0) AND
-					   - the bundle was enabled at that time (i%3==0)
-					   i.e. i divisible by both 10 and 3  → by 30            */
+					// A bundle is *really* non-empty only when
+					// - we TRIED to add a template (i%nonEmptyEvery==0) AND
+					// - the bundle was enabled at that time (i%3==0)
+					// i.e. i divisible by both 10 and 3  → by 30.
 					nonEmpty := (i%nonEmptyEvery == 0) && (i%3 == 0)
 
 					if nonEmpty && err == nil {
@@ -196,7 +204,7 @@ func TestScale_LotsOfBundles(t *testing.T) {
 	}
 	wg.Wait()
 
-	//   3. LIST sanity check  (default list must hide disabled).
+	// 3. LIST sanity check (default list must hide disabled).
 	resp, err := s.ListPromptBundles(ctx, &spec.ListPromptBundlesRequest{})
 	if err != nil {
 		errCh <- err
@@ -212,11 +220,11 @@ func TestScale_LotsOfBundles(t *testing.T) {
 	drainErrors(t, errCh)
 }
 
-// SCALE TEST B –  few bundles, many template versions.
+// TestScale_LotsOfTemplates tests scale with few bundles and many template versions.
 func TestScale_LotsOfTemplates(t *testing.T) {
 	const (
 		nBundles    = 3
-		nSlugs      = 120 // per bundle
+		nSlugs      = 120 // Per bundle.
 		nVersions   = 4
 		concurrency = 40
 	)
@@ -229,9 +237,9 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 	// 1. CREATE the bundles first.
 	for i := 0; i < nBundles; i++ {
 		_, err := s.PutPromptBundle(ctx, &spec.PutPromptBundleRequest{
-			BundleID: fmt.Sprintf("b%d", i),
+			BundleID: spec.BundleID(fmt.Sprintf("b%d", i)),
 			Body: &spec.PutPromptBundleRequestBody{
-				Slug:        fmt.Sprintf("slug-b%d", i),
+				Slug:        spec.BundleSlug(fmt.Sprintf("slug-b%d", i)),
 				DisplayName: fmt.Sprintf("Bundle %d", i),
 				IsEnabled:   true,
 			},
@@ -244,7 +252,7 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 	// 2. MASS-INSERT template versions concurrently.
 	type job struct{ b, s, v int }
 	insertJobs := make(chan job, nBundles*nSlugs*nVersions)
-	for b := range nBundles {
+	for b := 0; b < nBundles; b++ {
 		for sIdx := 0; sIdx < nSlugs; sIdx++ {
 			for v := 1; v <= nVersions; v++ {
 				insertJobs <- job{b, sIdx, v}
@@ -260,14 +268,14 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 			defer wg.Done()
 			for j := range insertJobs {
 				_, err := s.PutPromptTemplate(ctx, &spec.PutPromptTemplateRequest{
-					BundleID:     fmt.Sprintf("b%d", j.b),
-					TemplateSlug: fmt.Sprintf("tpl-%d", j.s),
+					BundleID:     spec.BundleID(fmt.Sprintf("b%d", j.b)),
+					TemplateSlug: spec.TemplateSlug(fmt.Sprintf("tpl-%d", j.s)),
 					Body: &spec.PutPromptTemplateRequestBody{
 						DisplayName: "T",
 						IsEnabled:   true,
-						Version:     fmt.Sprintf("v%d", j.v),
+						Version:     spec.TemplateVersion(fmt.Sprintf("v%d", j.v)),
 						Blocks: []spec.MessageBlock{{
-							ID:      "1",
+							ID:      spec.MessageBlockID("1"),
 							Role:    spec.User,
 							Content: "hi",
 						}},
@@ -276,7 +284,7 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 				if err != nil {
 					errCh <- err
 				}
-				time.Sleep(500 * time.Microsecond) // keep ModifiedAt monotonic per slug
+				time.Sleep(500 * time.Microsecond) // Keep ModifiedAt monotonic per slug.
 			}
 		}()
 	}
@@ -294,10 +302,10 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 	modJobs := make(chan job, nBundles*nSlugs)
 	for b := 0; b < nBundles; b++ {
 		for sIdx := 0; sIdx < nSlugs; sIdx++ {
-			if sIdx%2 == 0 { // disable v4
+			if sIdx%2 == 0 { // Disable v4.
 				modJobs <- job{b, sIdx, 4}
 			}
-			if sIdx%3 == 0 { // delete v1
+			if sIdx%3 == 0 { // Delete v1.
 				modJobs <- job{b, sIdx, 1}
 			}
 		}
@@ -309,26 +317,26 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := range modJobs {
-				bID := fmt.Sprintf("b%d", j.b)
-				slug := fmt.Sprintf("tpl-%d", j.s)
+				bID := spec.BundleID(fmt.Sprintf("b%d", j.b))
+				slug := spec.TemplateSlug(fmt.Sprintf("tpl-%d", j.s))
 
-				if j.v == 4 { // PATCH (disable)
+				if j.v == 4 { // PATCH (disable).
 					_, err := s.PatchPromptTemplate(ctx, &spec.PatchPromptTemplateRequest{
 						BundleID:     bID,
 						TemplateSlug: slug,
 						Body: &spec.PatchPromptTemplateRequestBody{
-							Version:   "v4",
+							Version:   spec.TemplateVersion("v4"),
 							IsEnabled: false,
 						},
 					})
 					if err != nil {
 						errCh <- err
 					}
-				} else { // DELETE v1
+				} else { // DELETE v1.
 					_, err := s.DeletePromptTemplate(ctx, &spec.DeletePromptTemplateRequest{
 						BundleID:     bID,
 						TemplateSlug: slug,
-						Version:      "v1",
+						Version:      spec.TemplateVersion("v1"),
 					})
 					if err != nil {
 						errCh <- err
@@ -349,7 +357,7 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 		errCh <- err
 	} else {
 		totalMade := nBundles * nSlugs * nVersions
-		deleted := nBundles * (nSlugs / 3) // every 3rd slug v1 deleted
+		deleted := nBundles * (nSlugs / 3) // Every 3rd slug v1 deleted.
 		want := totalMade - deleted
 		if got := uniqCntAll(all); got != want {
 			errCh <- fmt.Errorf("allVersions unique count mismatch got=%d want=%d", got, want)

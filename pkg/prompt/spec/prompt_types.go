@@ -1,6 +1,22 @@
 package spec
 
-import "time"
+import (
+	"time"
+)
+
+type (
+	BundleID           string
+	BundleSlug         string
+	TemplateID         string
+	TemplateSlug       string
+	TemplateVersion    string
+	MessageBlockID     string
+	PreProcessorCallID string
+)
+
+func (s BundleSlug) Validate() error      { return validateSlug(string(s)) }
+func (s TemplateSlug) Validate() error    { return validateSlug(string(s)) }
+func (v TemplateVersion) Validate() error { return validateVersion(string(v)) }
 
 type PromptRoleEnum string
 
@@ -36,12 +52,11 @@ const (
 
 // One role-tagged chunk of text.
 type MessageBlock struct {
-	ID      string         `json:"id"`
+	ID      MessageBlockID `json:"id"`
 	Role    PromptRoleEnum `json:"role"`
 	Content string         `json:"content"`
 }
 
-// Declares a placeholder used somewhere in Blocks.
 type PromptVariable struct {
 	Name        string    `json:"name"`
 	Type        VarType   `json:"type"`
@@ -69,9 +84,9 @@ const (
 
 // Runs a helper tool, optionally extracts a JSON sub-path and stores the value into a variable.
 type PreProcessorCall struct {
-	ID        string         `json:"id"`
-	ToolID    string         `json:"toolId"`
-	Arguments map[string]any `json:"args,omitempty"`
+	ID        PreProcessorCallID `json:"id"`
+	ToolID    string             `json:"toolId"`
+	Arguments map[string]any     `json:"args,omitempty"`
 
 	// Variable name.
 	SaveAs string `json:"saveAs"`
@@ -82,13 +97,13 @@ type PreProcessorCall struct {
 }
 
 type PromptTemplate struct {
-	ID          string `json:"id"`
-	DisplayName string `json:"displayName"`
+	ID          TemplateID `json:"id"`
+	DisplayName string     `json:"displayName"`
 	// Unique within a bundle.
-	Slug        string   `json:"slug"`
-	IsEnabled   bool     `json:"isEnabled"`
-	Description string   `json:"description,omitempty"`
-	Tags        []string `json:"tags,omitempty"`
+	Slug        TemplateSlug `json:"slug"`
+	IsEnabled   bool         `json:"isEnabled"`
+	Description string       `json:"description,omitempty"`
+	Tags        []string     `json:"tags,omitempty"`
 
 	// Ordered list of blocks that form the final prompt.
 	Blocks []MessageBlock `json:"blocks"`
@@ -97,23 +112,25 @@ type PromptTemplate struct {
 	// Helper steps executed before the prompt is sent.
 	PreProcessors []PreProcessorCall `json:"preProcessors,omitempty"`
 
-	Version    string    `json:"version"`
-	CreatedAt  time.Time `json:"createdAt"`
-	ModifiedAt time.Time `json:"modifiedAt"`
-	IsBuiltIn  bool      `json:"isBuiltIn"`
+	Version    TemplateVersion `json:"version"`
+	CreatedAt  time.Time       `json:"createdAt"`
+	ModifiedAt time.Time       `json:"modifiedAt"`
+	IsBuiltIn  bool            `json:"isBuiltIn"`
 }
 
 // Hard grouping & distribution unit.
 type PromptBundle struct {
-	ID          string `json:"id"`
-	Slug        string `json:"slug"`
-	DisplayName string `json:"displayName,omitempty"`
-	Description string `json:"description,omitempty"`
-	IsEnabled   bool   `json:"isEnabled"`
-
-	CreatedAt  time.Time `json:"createdAt"`
-	ModifiedAt time.Time `json:"modifiedAt"`
-	IsBuiltIn  bool      `json:"isBuiltIn"`
-
+	ID            BundleID   `json:"id"`
+	Slug          BundleSlug `json:"slug"`
+	DisplayName   string     `json:"displayName,omitempty"`
+	Description   string     `json:"description,omitempty"`
+	IsEnabled     bool       `json:"isEnabled"`
+	CreatedAt     time.Time  `json:"createdAt"`
+	ModifiedAt    time.Time  `json:"modifiedAt"`
+	IsBuiltIn     bool       `json:"isBuiltIn"`
 	SoftDeletedAt *time.Time `json:"softDeletedAt,omitempty"`
+}
+
+type AllBundles struct {
+	Bundles map[BundleID]PromptBundle `json:"bundles"`
 }

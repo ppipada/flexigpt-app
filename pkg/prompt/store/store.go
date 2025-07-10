@@ -67,8 +67,8 @@ func newSlugLocks() *slugLocks {
 }
 
 // lockKey returns the mutex for a given bundleID and slug, creating it if necessary.
-func (l *slugLocks) lockKey(bundleID, slug string) *sync.RWMutex {
-	k := bundleID + "|" + slug
+func (l *slugLocks) lockKey(bundleID spec.BundleID, slug spec.TemplateSlug) *sync.RWMutex {
+	k := string(bundleID) + "|" + string(slug)
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if lk, ok := l.m[k]; ok {
@@ -83,10 +83,10 @@ func (l *slugLocks) lockKey(bundleID, slug string) *sync.RWMutex {
 // This is a placeholder implementation that will be filled in later.
 func validateTemplate(tpl *spec.PromptTemplate) error {
 	// TODO: Implement comprehensive template validation:
-	// - Validate Variables reference existing placeholders in Blocks
-	// - Validate PreProcessors reference valid tools
-	// - Validate MessageBlock roles are valid
-	// - Validate variable types and constraints
+	// - Validate Variables reference existing placeholders in Blocks.
+	// - Validate PreProcessors reference valid tools.
+	// - Validate MessageBlock roles are valid.
+	// - Validate variable types and constraints.
 	// - Check for circular dependencies in preprocessors.
 	return nil
 }
@@ -139,8 +139,12 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 	}
 
 	// Initialize bundle meta store (single JSON file).
-	def := map[string]any{"bundles": map[string]any{}}
-	var err error
+	def, err := encdec.StructWithJSONTagsToMap(
+		spec.AllBundles{Bundles: map[spec.BundleID]spec.PromptBundle{}},
+	)
+	if err != nil {
+		return nil, err
+	}
 	s.bundleStore, err = filestore.NewMapFileStore(
 		filepath.Join(s.baseDir, bundlesMetaFileName),
 		def,
@@ -196,25 +200,37 @@ func isSoftDeleted(b spec.PromptBundle) bool {
 	return b.SoftDeletedAt != nil && !b.SoftDeletedAt.IsZero()
 }
 
+// readAllBundles loads and decodes the meta-file.
+func (s *PromptTemplateStore) readAllBundles(forceFetch bool) (spec.AllBundles, error) {
+	raw, err := s.bundleStore.GetAll(forceFetch)
+	if err != nil {
+		return spec.AllBundles{}, err
+	}
+	var ab spec.AllBundles
+	if err := encdec.MapToStructWithJSONTags(raw, &ab); err != nil {
+		return ab, err
+	}
+	return ab, nil
+}
+
+// writeAllBundles encodes and writes the strongly-typed value.
+func (s *PromptTemplateStore) writeAllBundles(ab spec.AllBundles) error {
+	mp, _ := encdec.StructWithJSONTagsToMap(ab)
+	return s.bundleStore.SetAll(mp)
+}
+
 // getBundle returns an active bundle (i.e., not soft-deleted) by ID.
-func (s *PromptTemplateStore) getBundle(id string) (spec.PromptBundle, error) {
-	all, err := s.bundleStore.GetAll(false)
+func (s *PromptTemplateStore) getBundle(id spec.BundleID) (spec.PromptBundle, error) {
+	all, err := s.readAllBundles(false)
 	if err != nil {
 		return spec.PromptBundle{}, err
 	}
 
-	mp, _ := all["bundles"].(map[string]any)
-	raw, ok := mp[id]
+	b, ok := all.Bundles[id]
 	if !ok {
 		return spec.PromptBundle{}, fmt.Errorf("%w: %s", ErrBundleNotFound, id)
 	}
 
-	var b spec.PromptBundle
-	if m, ok := raw.(map[string]any); ok {
-		if err := encdec.MapToStructWithJSONTags(m, &b); err != nil {
-			return b, err
-		}
-	}
 	if isSoftDeleted(b) {
 		return b, fmt.Errorf("%w: %s", ErrBundleDeleting, id)
 	}
@@ -275,44 +291,34 @@ func (s *PromptTemplateStore) Close() {
 	s.wg.Wait()
 }
 
-// sweepSoftDeleted performs hard deletion of bundles that have been soft-deleted and are past the grace period.
+// SweepSoftDeleted performs hard deletion of bundles that have been soft-deleted and are past the grace period.
 // Uses sweepMu to coordinate with bundle operations and prevent race conditions.
 func (s *PromptTemplateStore) sweepSoftDeleted() {
 	s.sweepMu.Lock()
 	defer s.sweepMu.Unlock()
 
-	all, err := s.bundleStore.GetAll(false)
+	all, err := s.readAllBundles(false)
 	if err != nil {
-		slog.Error("Sweep: bundleStore.GetAll.", "err", err)
+		slog.Error("Sweep: readAllBundles.", "err", err)
 		return
 	}
-	bundles, _ := all["bundles"].(map[string]any)
 	now := time.Now().UTC()
+	changed := false
 
-	for id, raw := range bundles {
-		mp, ok := raw.(map[string]any)
-		if !ok {
+	for id, b := range all.Bundles {
+		if b.SoftDeletedAt == nil || b.SoftDeletedAt.IsZero() {
 			continue
 		}
-		softStr, ok := mp[softDeletedKey].(string)
-		if !ok {
-			// Not soft-deleted.
-			continue
-		}
-		softAt, err := time.Parse(time.RFC3339Nano, softStr)
-		if err != nil || now.Sub(softAt) < softDeleteGrace {
+		if now.Sub(*b.SoftDeletedAt) < softDeleteGrace {
 			continue
 		}
 
-		// Directory name needs the slug, which is stored in the meta record.
-		slug, _ := mp["slug"].(string)
-		dirInfo, derr := buildBundleDir(id, slug)
+		dirInfo, derr := buildBundleDir(b.ID, b.Slug)
 		if derr != nil {
 			slog.Error("Sweep: buildBundleDir failed.", "bundleID", id, "err", derr)
 			continue
 		}
 
-		// If somebody recreated a template inside the directory, abort.
 		files, _, err := s.templateStore.ListFiles(
 			dirstore.ListingConfig{
 				FilterPartitions: []string{dirInfo.DirName},
@@ -324,15 +330,16 @@ func (s *PromptTemplateStore) sweepSoftDeleted() {
 			continue
 		}
 
-		// 1) Remove meta entry.
-		if err := s.bundleStore.DeleteKey([]string{"bundles", id}); err != nil {
-			slog.Error("Sweep: delete bundle meta.", "bundleID", id, "err", err)
-			continue
-		}
+		delete(all.Bundles, id)
+		changed = true
 
-		// 2) Remove directory (ignore error).
 		_ = os.RemoveAll(filepath.Join(s.baseDir, dirInfo.DirName))
 		slog.Info("Hard-deleted bundle.", "bundleID", id)
+	}
+	if changed {
+		if err := s.writeAllBundles(all); err != nil {
+			slog.Error("Sweep: writeAllBundles failed.", "err", err)
+		}
 	}
 }
 
@@ -344,30 +351,25 @@ func (s *PromptTemplateStore) PutPromptBundle(
 		req.BundleID == "" || req.Body.Slug == "" || req.Body.DisplayName == "" {
 		return nil, fmt.Errorf("%w: id, slug & displayName are required", ErrInvalidRequest)
 	}
-	if err := ValidateSlug(req.Body.Slug); err != nil {
+	if err := req.Body.Slug.Validate(); err != nil {
 		return nil, err
 	}
 
 	// Coordinate with sweep operations.
-	s.sweepMu.RLock()
-	defer s.sweepMu.RUnlock()
+	s.sweepMu.Lock()
+	defer s.sweepMu.Unlock()
 
-	all, err := s.bundleStore.GetAll(false)
+	all, err := s.readAllBundles(false)
 	if err != nil {
 		return nil, err
 	}
-	bundles, _ := all["bundles"].(map[string]any)
 
-	// Preserve CreatedAt if it existed; drop any previous soft-delete marker.
 	now := time.Now().UTC()
 	createdAt := now
 
-	if existingRaw, ok := bundles[req.BundleID].(map[string]any); ok {
-		var existing spec.PromptBundle
-		if err := encdec.MapToStructWithJSONTags(existingRaw, &existing); err == nil {
-			if !existing.CreatedAt.IsZero() {
-				createdAt = existing.CreatedAt
-			}
+	if existing, ok := all.Bundles[req.BundleID]; ok {
+		if !existing.CreatedAt.IsZero() {
+			createdAt = existing.CreatedAt
 		}
 	}
 
@@ -382,8 +384,8 @@ func (s *PromptTemplateStore) PutPromptBundle(
 		IsBuiltIn:     false,
 		SoftDeletedAt: nil,
 	}
-	val, _ := encdec.StructWithJSONTagsToMap(b)
-	if err := s.bundleStore.SetKey([]string{"bundles", req.BundleID}, val); err != nil {
+	all.Bundles[req.BundleID] = b
+	if err := s.writeAllBundles(all); err != nil {
 		return nil, err
 	}
 	slog.Info("PutPromptBundle.", "id", req.BundleID)
@@ -399,18 +401,22 @@ func (s *PromptTemplateStore) PatchPromptBundle(
 	}
 
 	// Coordinate with sweep operations.
-	s.sweepMu.RLock()
-	defer s.sweepMu.RUnlock()
+	s.sweepMu.Lock()
+	defer s.sweepMu.Unlock()
 
-	bundle, err := s.getBundle(req.BundleID)
+	all, err := s.readAllBundles(false)
 	if err != nil {
 		return nil, err
 	}
+	bundle, ok := all.Bundles[req.BundleID]
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", ErrBundleNotFound, req.BundleID)
+	}
 	bundle.IsEnabled = req.Body.IsEnabled
 	bundle.ModifiedAt = time.Now().UTC()
+	all.Bundles[req.BundleID] = bundle
 
-	val, _ := encdec.StructWithJSONTagsToMap(bundle)
-	if err := s.bundleStore.SetKey([]string{"bundles", req.BundleID}, val); err != nil {
+	if err := s.writeAllBundles(all); err != nil {
 		return nil, err
 	}
 	slog.Info("PatchPromptBundle.", "id", req.BundleID, "enabled", req.Body.IsEnabled)
@@ -426,13 +432,19 @@ func (s *PromptTemplateStore) DeletePromptBundle(
 	}
 
 	// Coordinate with sweep operations.
-	s.sweepMu.RLock()
-	defer s.sweepMu.RUnlock()
+	s.sweepMu.Lock()
+	defer s.sweepMu.Unlock()
 
-	// Ensure the bundle exists and is not already soft-deleted.
-	bundle, err := s.getBundle(req.BundleID)
+	all, err := s.readAllBundles(false)
 	if err != nil {
 		return nil, err
+	}
+	bundle, ok := all.Bundles[req.BundleID]
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", ErrBundleNotFound, req.BundleID)
+	}
+	if isSoftDeleted(bundle) {
+		return nil, fmt.Errorf("%w: %s", ErrBundleDeleting, req.BundleID)
 	}
 
 	dirInfo, derr := buildBundleDir(bundle.ID, bundle.Slug)
@@ -440,7 +452,6 @@ func (s *PromptTemplateStore) DeletePromptBundle(
 		return nil, derr
 	}
 
-	// 1) Is the bundle empty?
 	files, _, err := s.templateStore.ListFiles(
 		dirstore.ListingConfig{
 			FilterPartitions: []string{dirInfo.DirName},
@@ -454,22 +465,15 @@ func (s *PromptTemplateStore) DeletePromptBundle(
 		return nil, fmt.Errorf("%w: %s", ErrBundleNotEmpty, req.BundleID)
 	}
 
-	// 2) Mark as soft-deleted.
 	now := time.Now().UTC()
-	m, err := s.bundleStore.GetKey([]string{"bundles", req.BundleID})
-	if err != nil {
+	bundle.IsEnabled = false
+	bundle.SoftDeletedAt = &now
+	all.Bundles[req.BundleID] = bundle
+
+	if err := s.writeAllBundles(all); err != nil {
 		return nil, err
 	}
-	if mp, ok := m.(map[string]any); ok {
-		mp["isEnabled"] = false
-		mp[softDeletedKey] = now.Format(time.RFC3339Nano)
-		if err := s.bundleStore.SetKey([]string{"bundles", req.BundleID}, mp); err != nil {
-			return nil, err
-		}
-	}
 	slog.Info("DeletePromptBundle request.", "id", req.BundleID)
-
-	// Tell the background loop that a new bundle entered the grace period.
 	s.kickCleanupLoop()
 	return &spec.DeletePromptBundleResponse{}, nil
 }
@@ -479,30 +483,20 @@ func (s *PromptTemplateStore) ListPromptBundles(
 	ctx context.Context,
 	req *spec.ListPromptBundlesRequest,
 ) (*spec.ListPromptBundlesResponse, error) {
-	all, err := s.bundleStore.GetAll(false)
+	all, err := s.readAllBundles(false)
 	if err != nil {
 		return nil, err
 	}
-	bundlesMap, ok := all["bundles"].(map[string]any)
-	if !ok {
-		return nil, errors.New("bundles not found")
-	}
 
-	var bundles []spec.PromptBundle
-	for _, v := range bundlesMap {
-		if m, ok := v.(map[string]any); ok {
-			var b spec.PromptBundle
-			if err := encdec.MapToStructWithJSONTags(m, &b); err == nil {
-				if isSoftDeleted(b) {
-					// Hide soft-deleted.
-					continue
-				}
-				bundles = append(bundles, b)
-			}
+	bundles := make([]spec.PromptBundle, 0, len(all.Bundles))
+	for _, b := range all.Bundles {
+		if isSoftDeleted(b) {
+			continue
 		}
+		bundles = append(bundles, b)
 	}
 
-	wantIDs := map[string]struct{}{}
+	wantIDs := map[spec.BundleID]struct{}{}
 	if req != nil && len(req.BundleIDs) > 0 {
 		for _, id := range req.BundleIDs {
 			wantIDs[id] = struct{}{}
@@ -522,12 +516,10 @@ func (s *PromptTemplateStore) ListPromptBundles(
 		filtered = append(filtered, b)
 	}
 
-	// Sort by ModifiedAt DESC.
 	sort.Slice(filtered, func(i, j int) bool {
 		return filtered[i].ModifiedAt.After(filtered[j].ModifiedAt)
 	})
 
-	// Improved pagination using cursor-based approach.
 	pageSize := defPageSize
 	if req != nil && req.PageSize > 0 && req.PageSize <= maxPageSize {
 		pageSize = req.PageSize
@@ -535,7 +527,6 @@ func (s *PromptTemplateStore) ListPromptBundles(
 
 	start := 0
 	if req != nil && req.PageToken != "" {
-		// For bundles, we still use simple offset-based pagination since the dataset is small.
 		if idx, err := strconv.Atoi(req.PageToken); err == nil && idx >= 0 && idx < len(filtered) {
 			start = idx
 		}
@@ -561,8 +552,8 @@ func (s *PromptTemplateStore) ListPromptBundles(
 // between selection and reading, but this is acceptable for the current use case.
 func (s *PromptTemplateStore) findTemplate(
 	bdi bundleDirInfo,
-	slug string,
-	wantVersion string,
+	slug spec.TemplateSlug,
+	wantVersion spec.TemplateVersion,
 ) (fi fileInfo, fullPath string, err error) {
 	list, _, err := s.templateStore.ListFiles(
 		dirstore.ListingConfig{
@@ -581,10 +572,10 @@ func (s *PromptTemplateStore) findTemplate(
 			continue
 		}
 
-		if slug != "" && finf.Slug != slug {
+		if slug != "" && finf.Slug != string(slug) {
 			continue
 		}
-		if wantVersion != "" && finf.Version != wantVersion {
+		if wantVersion != "" && finf.Version != string(wantVersion) {
 			continue
 		}
 		// Read minimal JSON to confirm slug matches.
@@ -601,19 +592,16 @@ func (s *PromptTemplateStore) findTemplate(
 		if wantVersion != "" { // Exact match.
 			return finf, p, nil
 		}
-		// ----------  ACTIVE VERSION SELECTION ----------
-		// 1. Only enabled templates participate.
+		// Active version selection.
 		enabled, _ := raw["isEnabled"].(bool)
 		if !enabled {
 			continue
 		}
 
-		// 2. Compare ModifiedAt.
 		var modAt time.Time
 		if ts, ok := raw["modifiedAt"].(string); ok {
 			modAt, _ = time.Parse(time.RFC3339Nano, ts)
 		}
-		// Fallback (should never be needed, but keeps us safe).
 		if modAt.IsZero() {
 			if st, _ := os.Stat(filepath.Join(s.baseDir, p)); st != nil {
 				modAt = st.ModTime()
@@ -641,10 +629,10 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 	if req.BundleID == "" || req.TemplateSlug == "" || req.Body.Version == "" {
 		return nil, fmt.Errorf("%w: bundleID, templateSlug, version required", ErrInvalidRequest)
 	}
-	if err := ValidateSlug(req.TemplateSlug); err != nil {
+	if err := req.TemplateSlug.Validate(); err != nil {
 		return nil, err
 	}
-	if err := ValidateVersion(req.Body.Version); err != nil {
+	if err := req.Body.Version.Validate(); err != nil {
 		return nil, err
 	}
 	if len(req.Body.Blocks) == 0 || req.Body.DisplayName == "" {
@@ -693,7 +681,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 	}
 
 	tpl := spec.PromptTemplate{
-		ID:            u,
+		ID:            spec.TemplateID(u),
 		DisplayName:   req.Body.DisplayName,
 		Slug:          req.TemplateSlug,
 		Description:   req.Body.Description,
@@ -740,10 +728,10 @@ func (s *PromptTemplateStore) DeletePromptTemplate(
 	if req == nil || req.TemplateSlug == "" || req.BundleID == "" || req.Version == "" {
 		return nil, fmt.Errorf("%w: bundleID, templateSlug, version required", ErrInvalidRequest)
 	}
-	if err := ValidateSlug(req.TemplateSlug); err != nil {
+	if err := req.TemplateSlug.Validate(); err != nil {
 		return nil, err
 	}
-	if err := ValidateVersion(req.Version); err != nil {
+	if err := req.Version.Validate(); err != nil {
 		return nil, err
 	}
 	bundle, err := s.getBundle(req.BundleID)
@@ -789,10 +777,10 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 		req.TemplateSlug == "" || req.BundleID == "" || req.Body.Version == "" {
 		return nil, fmt.Errorf("%w: bundleID, templateSlug, version required", ErrInvalidRequest)
 	}
-	if err := ValidateSlug(req.TemplateSlug); err != nil {
+	if err := req.TemplateSlug.Validate(); err != nil {
 		return nil, err
 	}
-	if err := ValidateVersion(req.Body.Version); err != nil {
+	if err := req.Body.Version.Validate(); err != nil {
 		return nil, err
 	}
 	bundle, err := s.getBundle(req.BundleID)
@@ -857,7 +845,7 @@ func (s *PromptTemplateStore) GetPromptTemplate(
 	if req == nil || req.TemplateSlug == "" || req.BundleID == "" {
 		return nil, fmt.Errorf("%w: bundleID & templateSlug required", ErrInvalidRequest)
 	}
-	if err := ValidateSlug(req.TemplateSlug); err != nil {
+	if err := req.TemplateSlug.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -907,7 +895,7 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 	pageSize, pageToken := defPageSize, ""
 	includeDisabled, allVersions := false, false
 	tagFilter := map[string]struct{}{}
-	bundleFilter := map[string]struct{}{}
+	bundleFilter := map[spec.BundleID]struct{}{}
 
 	if req != nil {
 		if req.PageSize > 0 && req.PageSize <= maxPageSize {
@@ -961,12 +949,17 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 			continue
 		}
 
+		bid := spec.BundleID(bdi.ID)
+		bslug := spec.BundleSlug(bdi.Slug)
+		tslug := spec.TemplateSlug(finf.Slug)
+		tver := spec.TemplateVersion(finf.Version)
+
 		if len(bundleFilter) > 0 {
-			if _, ok := bundleFilter[bdi.ID]; !ok {
+			if _, ok := bundleFilter[bid]; !ok {
 				continue
 			}
 		}
-		if _, err := s.getBundle(bdi.ID); err != nil {
+		if _, err := s.getBundle(bid); err != nil {
 			continue
 		}
 
@@ -998,17 +991,17 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 		}
 
 		it := spec.PromptTemplateListItem{
-			BundleID:        bdi.ID,
-			BundleSlug:      bdi.Slug,
-			TemplateSlug:    finf.Slug,
-			TemplateVersion: finf.Version,
+			BundleID:        bid,
+			BundleSlug:      bslug,
+			TemplateSlug:    tslug,
+			TemplateVersion: tver,
 			IsBuiltIn:       false,
 		}
 		if allVersions {
 			items = append(items, it)
 			continue
 		}
-		k := bdi.ID + "|" + finf.Slug
+		k := string(bid) + "|" + string(tslug)
 		if prev, ok := latest[k]; ok {
 			if pt.ModifiedAt.After(prev.mt) {
 				latest[k] = rec{item: it, mt: pt.ModifiedAt}
@@ -1024,8 +1017,8 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 		}
 		// Sort by modification time for consistent ordering.
 		sort.Slice(items, func(i, j int) bool {
-			return latest[items[i].BundleID+"|"+items[i].TemplateSlug].mt.After(
-				latest[items[j].BundleID+"|"+items[j].TemplateSlug].mt)
+			return latest[string(items[i].BundleID)+"|"+string(items[i].TemplateSlug)].mt.After(
+				latest[string(items[j].BundleID)+"|"+string(items[j].TemplateSlug)].mt)
 		})
 	}
 
@@ -1071,7 +1064,10 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 		if err != nil {
 			continue
 		}
-		if _, err := s.getBundle(bdi.ID); err != nil {
+		bid := spec.BundleID(bdi.ID)
+		bslug := spec.BundleSlug(bdi.Slug)
+
+		if _, err := s.getBundle(bid); err != nil {
 			continue
 		}
 
@@ -1080,6 +1076,8 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 		if err != nil {
 			continue
 		}
+		tslug := spec.TemplateSlug(finf.Slug)
+		tver := spec.TemplateVersion(finf.Version)
 
 		raw, err := s.templateStore.GetFileData(dirstore.FileKey{
 			FileName: fn, XAttr: bundlePartitionAttr(dir),
@@ -1097,10 +1095,10 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 		}
 
 		items = append(items, spec.PromptTemplateListItem{
-			BundleID:        bdi.ID,
-			BundleSlug:      bdi.Slug,
-			TemplateSlug:    finf.Slug,
-			TemplateVersion: finf.Version,
+			BundleID:        bid,
+			BundleSlug:      bslug,
+			TemplateSlug:    tslug,
+			TemplateVersion: tver,
 			IsBuiltIn:       false,
 		})
 

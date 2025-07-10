@@ -3,7 +3,6 @@
 package store
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"log/slog"
@@ -26,6 +25,30 @@ const (
 	newline          = "\n"    // newline is the newline character.
 )
 
+type ftsDoc struct {
+	Slug        string `fts:"slug"`
+	DisplayName string `fts:"displayName"`
+	Desc        string `fts:"desc"`
+	Messages    string `fts:"messages"`
+	Tags        string `fts:"tags"`
+	Enabled     string `fts:"enabled"`
+	BundleID    string `fts:"bundleId"`
+	MTime       string `fts:"mtime"`
+}
+
+func (d ftsDoc) ToMap() map[string]string {
+	return map[string]string{
+		"slug":        d.Slug,
+		"displayName": d.DisplayName,
+		"desc":        d.Desc,
+		"messages":    d.Messages,
+		"tags":        d.Tags,
+		"enabled":     d.Enabled,
+		"bundleId":    d.BundleID,
+		"mtime":       d.MTime,
+	}
+}
+
 // NewFTSListener returns a filestore.Listener that updates the FTS engine on file changes.
 func NewFTSListener(e *ftsengine.Engine) filestore.Listener {
 	return func(ev filestore.Event) {
@@ -45,7 +68,7 @@ func NewFTSListener(e *ftsengine.Engine) filestore.Listener {
 		ctx := context.Background()
 		switch ev.Op {
 		case filestore.OpSetFile, filestore.OpResetFile:
-			vals := extractFTS(ev.File, ev.Data)
+			vals := extractFTS(ev.File, ev.Data).ToMap()
 			if len(vals) == 0 {
 				slog.Warn("fts listener: nothing to index", "file", ev.File)
 				return
@@ -63,67 +86,46 @@ func NewFTSListener(e *ftsengine.Engine) filestore.Listener {
 
 // extractFTS converts an in-memory JSON map to a column-to-text map for FTS indexing.
 // It extracts slug, displayName, description, tags, message blocks, enabled status, bundleId, and mtime.
-func extractFTS(fullPath string, m map[string]any) map[string]string {
-	var (
-		slug, _    = stringField(m, "slug")
-		display, _ = stringField(m, "displayName")
-		desc, _    = stringField(m, "description")
-		tagsBuf    bytes.Buffer
-		blockBuf   bytes.Buffer
-		enabled    = enabledFalse
-		mtime      = fileMTime(fullPath)
-		bundleId   = ""
-	)
+func extractFTS(fullPath string, m map[string]any) ftsDoc {
+	var doc ftsDoc
+	doc.Slug, _ = stringField(m, "slug")
+	doc.DisplayName, _ = stringField(m, "displayName")
+	doc.Desc, _ = stringField(m, "description")
+	doc.Enabled = enabledFalse
+	doc.MTime = fileMTime(fullPath)
 
-	// Extract enabled status.
 	if v, ok := m["isEnabled"].(bool); ok && v {
-		enabled = enabledTrue
+		doc.Enabled = enabledTrue
 	}
 
-	// Extract tags as newline-separated string.
 	if arr, ok := m["tags"].([]any); ok {
 		for _, t := range arr {
 			if s, ok := t.(string); ok {
-				tagsBuf.WriteString(s)
-				tagsBuf.WriteString(newline)
+				doc.Tags += s + newline
 			}
 		}
 	}
 
-	// Extract message blocks as newline-separated string.
 	if arr, ok := m["blocks"].([]any); ok {
 		for _, raw := range arr {
 			if blk, ok := raw.(map[string]any); ok {
 				if txt, ok := blk["content"].(string); ok {
-					blockBuf.WriteString(txt)
-					blockBuf.WriteString(newline)
+					doc.Messages += txt + newline
 				}
 			}
 		}
 	}
 
-	// Extract bundleId from parent directory.
 	if dir := filepath.Base(filepath.Dir(fullPath)); dir != "" {
 		if bd, err := parseBundleDir(dir); err == nil {
-			bundleId = bd.ID
+			doc.BundleID = bd.ID
 		}
 	}
 
-	// Extract modified time.
 	if ts, ok := stringField(m, "modifiedAt"); ok && ts != "" {
-		mtime = ts
+		doc.MTime = ts
 	}
-
-	return map[string]string{
-		"slug":        slug,
-		"displayName": display,
-		"desc":        desc,
-		"messages":    blockBuf.String(),
-		"tags":        tagsBuf.String(),
-		"enabled":     enabled,
-		"bundleId":    bundleId,
-		"mtime":       mtime,
-	}
+	return doc
 }
 
 // stringField extracts a string value for a given key from a map, if present.
@@ -191,7 +193,7 @@ func processFTSSync(
 		return skipSyncDecision, nil
 	}
 
-	vals := extractFTS(fullPath, m)
+	vals := extractFTS(fullPath, m).ToMap()
 	return ftsengine.SyncDecision{
 		ID:        fullPath,
 		CmpOut:    cmp,

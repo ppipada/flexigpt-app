@@ -36,7 +36,14 @@ func newTestStoreWithFTS(t *testing.T) (store *PromptTemplateStore, cleanup func
 }
 
 // mustPutBundle inserts a bundle or fails the test.
-func mustPutBundle(t *testing.T, s *PromptTemplateStore, id, slug, name string, enabled bool) {
+func mustPutBundle(
+	t *testing.T,
+	s *PromptTemplateStore,
+	id spec.BundleID,
+	slug spec.BundleSlug,
+	name string,
+	enabled bool,
+) {
 	t.Helper()
 	_, err := s.PutPromptBundle(t.Context(), &spec.PutPromptBundleRequest{
 		BundleID: id,
@@ -56,7 +63,7 @@ func mustPutBundle(t *testing.T, s *PromptTemplateStore, id, slug, name string, 
 func mustPutTemplate(
 	t *testing.T,
 	s *PromptTemplateStore,
-	bundleID, slug, version, name string,
+	bundleID spec.BundleID, slug spec.TemplateSlug, version spec.TemplateVersion, name string,
 	enabled bool,
 	tags ...string,
 ) {
@@ -83,8 +90,8 @@ func mustPutTemplate(
 func TestBundleCRUD(t *testing.T) {
 	tests := []struct {
 		name      string
-		bundleID  string
-		slug      string
+		bundleID  spec.BundleID
+		slug      spec.BundleSlug
 		dispName  string
 		enabled   bool
 		wantError bool
@@ -163,7 +170,7 @@ func TestBundleCRUD(t *testing.T) {
 		{
 			name:      "slug too long",
 			bundleID:  "b8",
-			slug:      strings.Repeat("a", 65),
+			slug:      spec.BundleSlug(strings.Repeat("a", 65)),
 			dispName:  "Name",
 			enabled:   true,
 			wantError: true,
@@ -172,7 +179,7 @@ func TestBundleCRUD(t *testing.T) {
 		{
 			name:      "valid long slug",
 			bundleID:  "b9",
-			slug:      strings.Repeat("a", 64),
+			slug:      spec.BundleSlug(strings.Repeat("a", 64)),
 			dispName:  "Name",
 			enabled:   true,
 			wantError: false,
@@ -258,7 +265,7 @@ func TestBundleUpdate(t *testing.T) {
 func TestBundlePatch(t *testing.T) {
 	tests := []struct {
 		name      string
-		bundleID  string
+		bundleID  spec.BundleID
 		initial   bool
 		patch     bool
 		wantError bool
@@ -327,7 +334,7 @@ func TestBundlePatch(t *testing.T) {
 func TestBundleDelete(t *testing.T) {
 	tests := []struct {
 		name         string
-		bundleID     string
+		bundleID     spec.BundleID
 		hasTemplates bool
 		wantError    bool
 		errorMsg     string
@@ -404,52 +411,52 @@ func TestBundleListFiltering(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		bundleIDs       []string
+		bundleIDs       []spec.BundleID
 		includeDisabled bool
 		wantCount       int
-		wantBundles     []string
+		wantBundles     []spec.BundleID
 	}{
 		{
 			name:            "enabled only",
 			bundleIDs:       nil,
 			includeDisabled: false,
 			wantCount:       2,
-			wantBundles:     []string{"b1", "b3"},
+			wantBundles:     []spec.BundleID{"b1", "b3"},
 		},
 		{
 			name:            "all bundles",
 			bundleIDs:       nil,
 			includeDisabled: true,
 			wantCount:       4,
-			wantBundles:     []string{"b1", "b2", "b3", "b4"},
+			wantBundles:     []spec.BundleID{"b1", "b2", "b3", "b4"},
 		},
 		{
 			name:            "specific bundle IDs",
-			bundleIDs:       []string{"b1", "b3"},
+			bundleIDs:       []spec.BundleID{"b1", "b3"},
 			includeDisabled: false,
 			wantCount:       2,
-			wantBundles:     []string{"b1", "b3"},
+			wantBundles:     []spec.BundleID{"b1", "b3"},
 		},
 		{
 			name:            "specific bundle IDs with disabled",
-			bundleIDs:       []string{"b2", "b4"},
+			bundleIDs:       []spec.BundleID{"b2", "b4"},
 			includeDisabled: true,
 			wantCount:       2,
-			wantBundles:     []string{"b2", "b4"},
+			wantBundles:     []spec.BundleID{"b2", "b4"},
 		},
 		{
 			name:            "specific bundle IDs without disabled",
-			bundleIDs:       []string{"b2", "b4"},
+			bundleIDs:       []spec.BundleID{"b2", "b4"},
 			includeDisabled: false,
 			wantCount:       0,
-			wantBundles:     []string{},
+			wantBundles:     []spec.BundleID{},
 		},
 		{
 			name:            "non-existent bundle IDs",
-			bundleIDs:       []string{"nope"},
+			bundleIDs:       []spec.BundleID{"nope"},
 			includeDisabled: true,
 			wantCount:       0,
-			wantBundles:     []string{},
+			wantBundles:     []spec.BundleID{},
 		},
 	}
 
@@ -470,7 +477,7 @@ func TestBundleListFiltering(t *testing.T) {
 				t.Errorf("Expected %d bundles, got %d", tt.wantCount, len(resp.Body.PromptBundles))
 			}
 
-			gotBundles := make(map[string]bool)
+			gotBundles := make(map[spec.BundleID]bool)
 			for _, b := range resp.Body.PromptBundles {
 				gotBundles[b.ID] = true
 			}
@@ -493,8 +500,8 @@ func TestBundleListPagination(t *testing.T) {
 		mustPutBundle(
 			t,
 			store,
-			fmt.Sprintf("b%d", i),
-			fmt.Sprintf("slug%d", i),
+			spec.BundleID((fmt.Sprintf("b%d", i))),
+			spec.BundleSlug(fmt.Sprintf("slug%d", i)),
 			fmt.Sprintf("Bundle %d", i),
 			true,
 		)
@@ -600,9 +607,9 @@ func TestTemplateCRUD(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		bundleID     string
-		templateSlug string
-		version      string
+		bundleID     spec.BundleID
+		templateSlug spec.TemplateSlug
+		version      spec.TemplateVersion
 		displayName  string
 		enabled      bool
 		wantError    bool
@@ -819,18 +826,18 @@ func TestTemplateActiveVersionSelection(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		slugName string
+		slugName spec.TemplateSlug
 		versions []struct {
-			version string
+			version spec.TemplateVersion
 			enabled bool
 		}
-		expectedActive string
+		expectedActive spec.TemplateVersion
 	}{
 		{
 			name:     "single enabled version",
 			slugName: "singleEnabledVersion",
 			versions: []struct {
-				version string
+				version spec.TemplateVersion
 				enabled bool
 			}{
 				{"v1", true},
@@ -841,7 +848,7 @@ func TestTemplateActiveVersionSelection(t *testing.T) {
 			name:     "latest enabled wins",
 			slugName: "latestEnabledWins",
 			versions: []struct {
-				version string
+				version spec.TemplateVersion
 				enabled bool
 			}{
 				{"v1", true},
@@ -853,7 +860,7 @@ func TestTemplateActiveVersionSelection(t *testing.T) {
 			name:     "skip disabled versions",
 			slugName: "skipDisabledVersions",
 			versions: []struct {
-				version string
+				version spec.TemplateVersion
 				enabled bool
 			}{
 				{"v1", true},
@@ -866,7 +873,7 @@ func TestTemplateActiveVersionSelection(t *testing.T) {
 			name:     "no enabled versions",
 			slugName: "noEnabledVersions",
 			versions: []struct {
-				version string
+				version spec.TemplateVersion
 				enabled bool
 			}{
 				{"v1", false},
@@ -994,7 +1001,7 @@ func TestTemplateListFiltering(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		bundleIDs       []string
+		bundleIDs       []spec.BundleID
 		tags            []string
 		includeDisabled bool
 		allVersions     bool
@@ -1018,7 +1025,7 @@ func TestTemplateListFiltering(t *testing.T) {
 		},
 		{
 			name:            "filter by bundle ID",
-			bundleIDs:       []string{"b1"},
+			bundleIDs:       []spec.BundleID{"b1"},
 			tags:            nil,
 			includeDisabled: true,
 			allVersions:     false,
@@ -1125,7 +1132,7 @@ func TestTemplateListPagination(t *testing.T) {
 			t,
 			store,
 			"b1",
-			fmt.Sprintf("template%d", i),
+			spec.TemplateSlug(fmt.Sprintf("template%d", i)),
 			"v1",
 			fmt.Sprintf("Template %d", i),
 			true,
@@ -1269,15 +1276,20 @@ func TestSearchTemplatesWithoutFTS(t *testing.T) {
 func TestSlugVersionValidation(t *testing.T) {
 	tests := []struct {
 		name    string
-		slug    string
-		version string
+		slug    spec.TemplateSlug
+		version spec.TemplateVersion
 		valid   bool
 	}{
 		{"valid basic", "abc", "v1", true},
 		{"valid with dash", "a-b-c", "v-1", true},
 		{"valid with numbers", "abc123", "v123", true},
 		{"valid uppercase", "ABC", "V1", true},
-		{"valid long", strings.Repeat("a", 64), strings.Repeat("v", 64), true},
+		{
+			"valid long",
+			spec.TemplateSlug(strings.Repeat("a", 64)),
+			spec.TemplateVersion(strings.Repeat("v", 64)),
+			true,
+		},
 		{"empty slug", "", "v1", false},
 		{"empty version", "abc", "", false},
 		{"slug with dot", "abc.def", "v1", false},
@@ -1288,16 +1300,16 @@ func TestSlugVersionValidation(t *testing.T) {
 		{"version with space", "abc", "v 1", false},
 		{"slug with slash", "abc/def", "v1", false},
 		{"version with slash", "abc", "v/1", false},
-		{"slug too long", strings.Repeat("a", 65), "v1", false},
-		{"version too long", "abc", strings.Repeat("v", 65), false},
+		{"slug too long", spec.TemplateSlug(strings.Repeat("a", 65)), "v1", false},
+		{"version too long", "abc", spec.TemplateVersion(strings.Repeat("v", 65)), false},
 		{"slug with special chars", "abc!", "v1", false},
 		{"version with special chars", "abc", "v1!", false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			slugErr := ValidateSlug(tt.slug)
-			versionErr := ValidateVersion(tt.version)
+			slugErr := tt.slug.Validate()
+			versionErr := tt.version.Validate()
 
 			if tt.valid {
 				if slugErr != nil {
@@ -1345,8 +1357,8 @@ func TestPaginationEdgeCases(t *testing.T) {
 				mustPutBundle(
 					t,
 					localStore,
-					fmt.Sprintf("b%d", i),
-					fmt.Sprintf("slug%d", i),
+					spec.BundleID(fmt.Sprintf("b%d", i)),
+					spec.BundleSlug(fmt.Sprintf("slug%d", i)),
 					fmt.Sprintf("Bundle %d", i),
 					true,
 				)

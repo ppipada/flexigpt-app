@@ -84,7 +84,7 @@ func TestFTSListener_Integration(t *testing.T) {
 	tpl := spec.PromptTemplate{
 		ID:          "id1",
 		DisplayName: "Test Template",
-		Slug:        tplSlug,
+		Slug:        spec.TemplateSlug(tplSlug),
 		IsEnabled:   true,
 		Description: "desc here",
 		Tags:        []string{"foo", "bar"},
@@ -92,7 +92,7 @@ func TestFTSListener_Integration(t *testing.T) {
 			{ID: "1", Role: spec.User, Content: "Hello"},
 			{ID: "2", Role: spec.Assistant, Content: "World"},
 		},
-		Version:    tplVersion,
+		Version:    spec.TemplateVersion(tplVersion),
 		CreatedAt:  time.Now().UTC(),
 		ModifiedAt: time.Now().UTC(),
 	}
@@ -166,7 +166,7 @@ func TestExtractFTS_AllFields(t *testing.T) {
 		"modifiedAt": now.Format(time.RFC3339Nano),
 	}
 	fakePath := "/tmp/bundleb1_sluggy/sluggy.v1.prompt.json"
-	vals := extractFTS(fakePath, m)
+	vals := extractFTS(fakePath, m).ToMap()
 	if vals["slug"] != "sluggy" {
 		t.Errorf("slug: got %q", vals["slug"])
 	}
@@ -199,7 +199,7 @@ func TestExtractFTS_EmptyAndEdgeCases(t *testing.T) {
 		"slug":      "",
 		"isEnabled": false,
 	}
-	vals := extractFTS("/tmp/bundles__bid__slug/slug.v1.prompt.json", m)
+	vals := extractFTS("/tmp/bundles__bid__slug/slug.v1.prompt.json", m).ToMap()
 	if vals["enabled"] != "false" {
 		t.Errorf("enabled: got %q", vals["enabled"])
 	}

@@ -1,5 +1,3 @@
-// Package store provides helpers for directory and filename layout for prompt templates.
-// It ensures all disk layout and naming conventions are enforced in one place.
 package store
 
 import (
@@ -8,57 +6,16 @@ import (
 	"net/url"
 	"path/filepath"
 	"strings"
-	"unicode"
 
+	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
 )
-
-// ErrInvalidSlug is returned when a slug is invalid.
-var ErrInvalidSlug = errors.New("invalid slug")
-
-// ErrInvalidVersion is returned when a version string is invalid.
-var ErrInvalidVersion = errors.New("invalid version")
 
 const (
 	promptTemplateFileExtension = "json"
 	sqliteDBFileName            = "prompttemplates.fts.sqlite"
 	bundlesMetaFileName         = "prompttemplates.bundles.json"
-	maxTokenLength              = 64 // maxTokenLength is the maximum allowed length for slugs and versions.
 )
-
-// validateToken checks that a string contains only allowed runes and is not too long.
-// Allowed: Unicode Letter, Unicode Digit, ASCII dash '-'. No dot, underscore, space, slash, etc.
-// Returns the provided error if invalid.
-func validateToken(tok string, errToReturn error) error {
-	if tok == "" {
-		return errToReturn
-	}
-	runeCount := 0
-	for _, r := range tok {
-		runeCount++
-		if r == '-' {
-			continue
-		}
-		if unicode.IsLetter(r) || unicode.IsDigit(r) {
-			continue
-		}
-		return errToReturn
-	}
-	if runeCount > maxTokenLength {
-		return errToReturn
-	}
-	return nil
-}
-
-// ValidateSlug validates a bundle or template slug.
-func ValidateSlug(slug string) error {
-	return validateToken(slug, ErrInvalidSlug)
-}
-
-// ValidateVersion validates a template version string.
-func ValidateVersion(v string) error {
-	return validateToken(v, ErrInvalidVersion)
-}
 
 // bundleDirInfo holds information about a bundle directory.
 type bundleDirInfo struct {
@@ -67,7 +24,7 @@ type bundleDirInfo struct {
 
 // sanitizeID removes all characters from id except [a-zA-Z0-9-_].
 // If the result is empty, returns "x".
-func sanitizeID(id string) string {
+func sanitizeID(id spec.BundleID) string {
 	var b strings.Builder
 	for _, r := range id {
 		switch {
@@ -86,12 +43,12 @@ func sanitizeID(id string) string {
 
 // buildBundleDir returns a bundleDirInfo with a directory name safe for all filesystems.
 // The directory name is "<sanitizedID>_<slug>".
-func buildBundleDir(id, slug string) (bundleDirInfo, error) {
-	if err := ValidateSlug(slug); err != nil {
+func buildBundleDir(id spec.BundleID, slug spec.BundleSlug) (bundleDirInfo, error) {
+	if err := slug.Validate(); err != nil {
 		return bundleDirInfo{}, fmt.Errorf("buildBundleDir: %w", err)
 	}
 	dir := fmt.Sprintf("%s_%s", sanitizeID(id), slug)
-	return bundleDirInfo{ID: id, Slug: slug, DirName: dir}, nil
+	return bundleDirInfo{ID: string(id), Slug: string(slug), DirName: dir}, nil
 }
 
 // parseBundleDir parses a bundle directory name into its ID and slug parts.
@@ -112,16 +69,16 @@ type fileInfo struct {
 // templateFileName returns the canonical filename for a (slug, version) pair.
 // Both slug and version must be validated before calling.
 // The filename is "<url-escaped-slug>_<url-escaped-version>.json".
-func templateFileName(slug, version string) (string, error) {
-	if err := ValidateSlug(slug); err != nil {
+func templateFileName(slug spec.TemplateSlug, version spec.TemplateVersion) (string, error) {
+	if err := slug.Validate(); err != nil {
 		return "", err
 	}
-	if err := ValidateVersion(version); err != nil {
+	if err := version.Validate(); err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("%s_%s.%s",
-		url.PathEscape(slug),
-		url.PathEscape(version),
+		url.PathEscape(string(slug)),
+		url.PathEscape(string(version)),
 		promptTemplateFileExtension,
 	), nil
 }
@@ -148,10 +105,10 @@ func parseTemplateFileName(fn string) (fileInfo, error) {
 	if err != nil {
 		return fileInfo{}, fmt.Errorf("invalid version escape in %q: %w", fn, err)
 	}
-	if err := ValidateSlug(slug); err != nil {
+	if err := spec.TemplateSlug(slug).Validate(); err != nil {
 		return fileInfo{}, err
 	}
-	if err := ValidateVersion(ver); err != nil {
+	if err := spec.TemplateVersion(ver).Validate(); err != nil {
 		return fileInfo{}, err
 	}
 	return fileInfo{Slug: slug, Version: ver, FileName: fn}, nil
