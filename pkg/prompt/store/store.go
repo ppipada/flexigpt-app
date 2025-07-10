@@ -28,7 +28,6 @@ const (
 	maxPageSize     = 256              // Maximum allowed page size for listing.
 	defPageSize     = 25               // Default page size for listing.
 	softDeleteGrace = 60 * time.Minute // Grace period before hard-deleting a soft-deleted bundle.
-	softDeletedKey  = "softDeletedAt"  // Key for soft-deleted timestamp in bundle meta.
 	cleanupInterval = 24 * time.Hour   // Interval for periodic cleanup sweep.
 )
 
