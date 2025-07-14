@@ -13,6 +13,10 @@
 - [ ] Ideally conversation list should be sorted based on modified time and not created time.
 - [ ] In hybrid mode, temprature setting is not comming for sonent etc
 - [ ] Input field height should go to 20 rows most probably
+- [x] Add builtin with overlay
+- [ ] Integrate builtin into prompt template store
+- [ ] Integrate the store with UI
+- [ ] Integrate store with llm. decide on if you want to popualte the prompt in input so that var expansion etc can be done properly.
 
 ## Random notes from UX discussions
 
