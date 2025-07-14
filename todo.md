@@ -7,6 +7,12 @@
 - [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
 - [ ] CPU is high when "thinking". Need to debug
 - [ ] If there was some amount of data that was streamed, but error occured at end somepalce, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is.
+- [ ] Startup issue in linux mint if sqlite file is missing.
+- [ ] For new month of conversations etc, if we set default provider preset it says read partition error
+- [ ] For we try to set a inbuilt preset as default for first time there is a error as of now.
+- [ ] Ideally conversation list should be sorted based on modified time and not created time.
+- [ ] In hybrid mode, temprature setting is not comming for sonent etc
+- [ ] Input field height should go to 20 rows most probably
 
 ## Random notes from UX discussions
 

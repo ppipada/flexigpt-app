@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ppipada/flexigpt-app/pkg/prompt/nameutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
@@ -26,25 +27,25 @@ const (
 )
 
 type ftsDoc struct {
-	Slug        string `fts:"slug"`
-	DisplayName string `fts:"displayName"`
-	Desc        string `fts:"desc"`
-	Messages    string `fts:"messages"`
-	Tags        string `fts:"tags"`
-	Enabled     string `fts:"enabled"`
-	BundleID    string `fts:"bundleId"`
-	MTime       string `fts:"mtime"`
+	Slug        spec.TemplateSlug `fts:"slug"`
+	DisplayName string            `fts:"displayName"`
+	Desc        string            `fts:"desc"`
+	Messages    string            `fts:"messages"`
+	Tags        string            `fts:"tags"`
+	Enabled     string            `fts:"enabled"`
+	BundleID    spec.BundleID     `fts:"bundleId"`
+	MTime       string            `fts:"mtime"`
 }
 
 func (d ftsDoc) ToMap() map[string]string {
 	return map[string]string{
-		"slug":        d.Slug,
+		"slug":        string(d.Slug),
 		"displayName": d.DisplayName,
 		"desc":        d.Desc,
 		"messages":    d.Messages,
 		"tags":        d.Tags,
 		"enabled":     d.Enabled,
-		"bundleId":    d.BundleID,
+		"bundleId":    string(d.BundleID),
 		"mtime":       d.MTime,
 	}
 }
@@ -60,9 +61,10 @@ func NewFTSListener(e *ftsengine.Engine) filestore.Listener {
 			}
 		}()
 		// Reject files that obviously do not belong to us.
-		if ev.File == "" || !strings.HasSuffix(ev.File, "."+promptTemplateFileExtension) ||
-			strings.HasSuffix(ev.File, sqliteDBFileName) ||
-			strings.HasSuffix(ev.File, bundlesMetaFileName) {
+		if ev.File == "" ||
+			!strings.HasSuffix(ev.File, "."+nameutils.PromptTemplateFileExtension) ||
+			strings.HasSuffix(ev.File, nameutils.SqliteDBFileName) ||
+			strings.HasSuffix(ev.File, nameutils.BundlesMetaFileName) {
 			return
 		}
 		ctx := context.Background()
@@ -88,7 +90,8 @@ func NewFTSListener(e *ftsengine.Engine) filestore.Listener {
 // It extracts slug, displayName, description, tags, message blocks, enabled status, bundleId, and mtime.
 func extractFTS(fullPath string, m map[string]any) ftsDoc {
 	var doc ftsDoc
-	doc.Slug, _ = stringField(m, "slug")
+	s, _ := stringField(m, "slug")
+	doc.Slug = spec.TemplateSlug(s)
 	doc.DisplayName, _ = stringField(m, "displayName")
 	doc.Desc, _ = stringField(m, "description")
 	doc.Enabled = enabledFalse
@@ -117,7 +120,7 @@ func extractFTS(fullPath string, m map[string]any) ftsDoc {
 	}
 
 	if dir := filepath.Base(filepath.Dir(fullPath)); dir != "" {
-		if bd, err := parseBundleDir(dir); err == nil {
+		if bd, err := nameutils.ParseBundleDir(dir); err == nil {
 			doc.BundleID = bd.ID
 		}
 	}
@@ -163,9 +166,9 @@ func processFTSSync(
 	}
 
 	// Only process files with the correct extension.
-	if !strings.HasSuffix(fullPath, "."+promptTemplateFileExtension) ||
-		strings.HasSuffix(fullPath, sqliteDBFileName) ||
-		strings.HasSuffix(fullPath, bundlesMetaFileName) {
+	if !strings.HasSuffix(fullPath, "."+nameutils.PromptTemplateFileExtension) ||
+		strings.HasSuffix(fullPath, nameutils.SqliteDBFileName) ||
+		strings.HasSuffix(fullPath, nameutils.BundlesMetaFileName) {
 		return skipSyncDecision, nil
 	}
 

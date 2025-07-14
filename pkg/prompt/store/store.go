@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ppipada/flexigpt-app/pkg/prompt/nameutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
@@ -129,7 +130,7 @@ func WithFTS(enabled bool) Option {
 func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStore, error) {
 	s := &PromptTemplateStore{
 		baseDir: filepath.Clean(baseDir),
-		pp:      &BundlePartitionProvider{},
+		pp:      &nameutils.BundlePartitionProvider{},
 	}
 	for _, o := range opts {
 		if err := o(s); err != nil {
@@ -145,7 +146,7 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 		return nil, err
 	}
 	s.bundleStore, err = filestore.NewMapFileStore(
-		filepath.Join(s.baseDir, bundlesMetaFileName),
+		filepath.Join(s.baseDir, nameutils.BundlesMetaFileName),
 		def,
 		filestore.WithCreateIfNotExists(true),
 		filestore.WithAutoFlush(true),
@@ -159,7 +160,7 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 	if s.enableFTS {
 		s.fts, err = ftsengine.NewEngine(ftsengine.Config{
 			BaseDir:    s.baseDir,
-			DBFileName: sqliteDBFileName,
+			DBFileName: nameutils.SqliteDBFileName,
 			Table:      "prompttemplates",
 			Columns: []ftsengine.Column{
 				{Name: "slug", Weight: 1},
@@ -312,9 +313,9 @@ func (s *PromptTemplateStore) sweepSoftDeleted() {
 			continue
 		}
 
-		dirInfo, derr := buildBundleDir(b.ID, b.Slug)
+		dirInfo, derr := nameutils.BuildBundleDir(b.ID, b.Slug)
 		if derr != nil {
-			slog.Error("Sweep: buildBundleDir failed.", "bundleID", id, "err", derr)
+			slog.Error("Sweep: nameutils.BuildBundleDir failed.", "bundleID", id, "err", derr)
 			continue
 		}
 
@@ -350,7 +351,7 @@ func (s *PromptTemplateStore) PutPromptBundle(
 		req.BundleID == "" || req.Body.Slug == "" || req.Body.DisplayName == "" {
 		return nil, fmt.Errorf("%w: id, slug & displayName are required", ErrInvalidRequest)
 	}
-	if err := req.Body.Slug.Validate(); err != nil {
+	if err := nameutils.ValidateBundleSlug(req.Body.Slug); err != nil {
 		return nil, err
 	}
 
@@ -446,7 +447,7 @@ func (s *PromptTemplateStore) DeletePromptBundle(
 		return nil, fmt.Errorf("%w: %s", ErrBundleDeleting, req.BundleID)
 	}
 
-	dirInfo, derr := buildBundleDir(bundle.ID, bundle.Slug)
+	dirInfo, derr := nameutils.BuildBundleDir(bundle.ID, bundle.Slug)
 	if derr != nil {
 		return nil, derr
 	}
@@ -550,10 +551,10 @@ func (s *PromptTemplateStore) ListPromptBundles(
 // Note: There is a potential race condition where the active version could be modified
 // between selection and reading, but this is acceptable for the current use case.
 func (s *PromptTemplateStore) findTemplate(
-	bdi bundleDirInfo,
+	bdi nameutils.BundleDirInfo,
 	slug spec.TemplateSlug,
 	wantVersion spec.TemplateVersion,
-) (fi fileInfo, fullPath string, err error) {
+) (fi nameutils.FileInfo, fullPath string, err error) {
 	list, _, err := s.templateStore.ListFiles(
 		dirstore.ListingConfig{
 			FilterPartitions: []string{bdi.DirName},
@@ -566,25 +567,26 @@ func (s *PromptTemplateStore) findTemplate(
 	var newestTime time.Time
 	for _, p := range list {
 		local := filepath.Base(p)
-		finf, perr := parseTemplateFileName(local)
+		finf, perr := nameutils.ParseTemplateFileName(local)
 		if perr != nil {
 			continue
 		}
 
-		if slug != "" && finf.Slug != string(slug) {
+		if slug != "" && finf.Slug != slug {
 			continue
 		}
-		if wantVersion != "" && finf.Version != string(wantVersion) {
+		if wantVersion != "" && finf.Version != wantVersion {
 			continue
 		}
 		// Read minimal JSON to confirm slug matches.
-		raw, gerr := s.templateStore.GetFileData(dirstore.FileKey{
-			FileName: local, XAttr: bundlePartitionAttr(bdi.DirName),
-		}, false)
+		raw, gerr := s.templateStore.GetFileData(
+			nameutils.GetBundlePartitionFileKey(local, bdi.DirName),
+			false,
+		)
 		if gerr != nil {
 			continue
 		}
-		if sVal, _ := raw["slug"].(string); sVal != finf.Slug {
+		if sVal, _ := raw["slug"].(string); sVal != string(finf.Slug) {
 			continue
 		}
 
@@ -628,10 +630,10 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 	if req.BundleID == "" || req.TemplateSlug == "" || req.Body.Version == "" {
 		return nil, fmt.Errorf("%w: bundleID, templateSlug, version required", ErrInvalidRequest)
 	}
-	if err := req.TemplateSlug.Validate(); err != nil {
+	if err := nameutils.ValidateTemplateSlug(req.TemplateSlug); err != nil {
 		return nil, err
 	}
-	if err := req.Body.Version.Validate(); err != nil {
+	if err := nameutils.ValidateTemplateVersion(req.Body.Version); err != nil {
 		return nil, err
 	}
 	if len(req.Body.Blocks) == 0 || req.Body.DisplayName == "" {
@@ -645,7 +647,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 	if !bundle.IsEnabled {
 		return nil, fmt.Errorf("%w: %s", ErrBundleDisabled, req.BundleID)
 	}
-	dirInfo, derr := buildBundleDir(bundle.ID, bundle.Slug)
+	dirInfo, derr := nameutils.BuildBundleDir(bundle.ID, bundle.Slug)
 	if derr != nil {
 		return nil, derr
 	}
@@ -655,19 +657,19 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 	lk.Lock()
 	defer lk.Unlock()
 
-	targetFN, ferr := templateFileName(req.TemplateSlug, req.Body.Version)
+	targetFN, ferr := nameutils.BuildTemplateFileInfo(req.TemplateSlug, req.Body.Version)
 	if ferr != nil {
 		return nil, ferr
 	}
 	existsList, _, _ := s.templateStore.ListFiles(
 		dirstore.ListingConfig{
 			FilterPartitions: []string{dirInfo.DirName},
-			FilenamePrefix:   targetFN, PageSize: 10,
+			FilenamePrefix:   targetFN.FileName, PageSize: 10,
 		}, "")
 
 	// Check for exact filename match.
 	for _, existing := range existsList {
-		if filepath.Base(existing) == targetFN {
+		if filepath.Base(existing) == targetFN.FileName {
 			return nil, fmt.Errorf("%w: slug+version already exists", ErrConflict)
 		}
 	}
@@ -702,10 +704,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 
 	mp, _ := encdec.StructWithJSONTagsToMap(tpl)
 
-	if err := s.templateStore.SetFileData(dirstore.FileKey{
-		FileName: targetFN,
-		XAttr:    bundlePartitionAttr(dirInfo.DirName),
-	}, mp); err != nil {
+	if err := s.templateStore.SetFileData(nameutils.GetBundlePartitionFileKey(targetFN.FileName, dirInfo.DirName), mp); err != nil {
 		return nil, err
 	}
 	slog.Debug(
@@ -727,17 +726,17 @@ func (s *PromptTemplateStore) DeletePromptTemplate(
 	if req == nil || req.TemplateSlug == "" || req.BundleID == "" || req.Version == "" {
 		return nil, fmt.Errorf("%w: bundleID, templateSlug, version required", ErrInvalidRequest)
 	}
-	if err := req.TemplateSlug.Validate(); err != nil {
+	if err := nameutils.ValidateTemplateSlug(req.TemplateSlug); err != nil {
 		return nil, err
 	}
-	if err := req.Version.Validate(); err != nil {
+	if err := nameutils.ValidateTemplateVersion(req.Version); err != nil {
 		return nil, err
 	}
 	bundle, err := s.getBundle(req.BundleID)
 	if err != nil {
 		return nil, err
 	}
-	dirInfo, derr := buildBundleDir(bundle.ID, bundle.Slug)
+	dirInfo, derr := nameutils.BuildBundleDir(bundle.ID, bundle.Slug)
 	if derr != nil {
 		return nil, derr
 	}
@@ -747,13 +746,11 @@ func (s *PromptTemplateStore) DeletePromptTemplate(
 	lk.Lock()
 	defer lk.Unlock()
 
-	targetFN, ferr := templateFileName(req.TemplateSlug, req.Version)
+	targetFN, ferr := nameutils.BuildTemplateFileInfo(req.TemplateSlug, req.Version)
 	if ferr != nil {
 		return nil, ferr
 	}
-	if err := s.templateStore.DeleteFile(dirstore.FileKey{
-		FileName: targetFN, XAttr: bundlePartitionAttr(dirInfo.DirName),
-	}); err != nil {
+	if err := s.templateStore.DeleteFile(nameutils.GetBundlePartitionFileKey(targetFN.FileName, dirInfo.DirName)); err != nil {
 		return nil, err
 	}
 	slog.Info(
@@ -776,10 +773,10 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 		req.TemplateSlug == "" || req.BundleID == "" || req.Body.Version == "" {
 		return nil, fmt.Errorf("%w: bundleID, templateSlug, version required", ErrInvalidRequest)
 	}
-	if err := req.TemplateSlug.Validate(); err != nil {
+	if err := nameutils.ValidateTemplateSlug(req.TemplateSlug); err != nil {
 		return nil, err
 	}
-	if err := req.Body.Version.Validate(); err != nil {
+	if err := nameutils.ValidateTemplateVersion(req.Body.Version); err != nil {
 		return nil, err
 	}
 	bundle, err := s.getBundle(req.BundleID)
@@ -789,7 +786,7 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 	if !bundle.IsEnabled {
 		return nil, fmt.Errorf("%w: %s", ErrBundleDisabled, req.BundleID)
 	}
-	dirInfo, derr := buildBundleDir(bundle.ID, bundle.Slug)
+	dirInfo, derr := nameutils.BuildBundleDir(bundle.ID, bundle.Slug)
 	if derr != nil {
 		return nil, derr
 	}
@@ -799,15 +796,11 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 	lk.Lock()
 	defer lk.Unlock()
 
-	targetFN, ferr := templateFileName(req.TemplateSlug, req.Body.Version)
+	targetFN, ferr := nameutils.BuildTemplateFileInfo(req.TemplateSlug, req.Body.Version)
 	if ferr != nil {
 		return nil, ferr
 	}
-	key := dirstore.FileKey{
-		FileName: targetFN,
-		XAttr:    bundlePartitionAttr(dirInfo.DirName),
-	}
-
+	key := nameutils.GetBundlePartitionFileKey(targetFN.FileName, dirInfo.DirName)
 	raw, err := s.templateStore.GetFileData(key, false)
 	if err != nil {
 		return nil, err
@@ -844,7 +837,7 @@ func (s *PromptTemplateStore) GetPromptTemplate(
 	if req == nil || req.TemplateSlug == "" || req.BundleID == "" {
 		return nil, fmt.Errorf("%w: bundleID & templateSlug required", ErrInvalidRequest)
 	}
-	if err := req.TemplateSlug.Validate(); err != nil {
+	if err := nameutils.ValidateTemplateSlug(req.TemplateSlug); err != nil {
 		return nil, err
 	}
 
@@ -853,7 +846,7 @@ func (s *PromptTemplateStore) GetPromptTemplate(
 		return nil, err
 	}
 
-	dirInfo, derr := buildBundleDir(bundle.ID, bundle.Slug)
+	dirInfo, derr := nameutils.BuildBundleDir(bundle.ID, bundle.Slug)
 	if derr != nil {
 		return nil, derr
 	}
@@ -863,7 +856,7 @@ func (s *PromptTemplateStore) GetPromptTemplate(
 	lk.RLock()
 	defer lk.RUnlock()
 
-	var finf fileInfo
+	var finf nameutils.FileInfo
 
 	if req.Version != "" {
 		finf, _, err = s.findTemplate(dirInfo, req.TemplateSlug, req.Version)
@@ -873,10 +866,10 @@ func (s *PromptTemplateStore) GetPromptTemplate(
 	if err != nil {
 		return nil, err
 	}
-	raw, err := s.templateStore.GetFileData(dirstore.FileKey{
-		FileName: finf.FileName,
-		XAttr:    bundlePartitionAttr(dirInfo.DirName),
-	}, false)
+	raw, err := s.templateStore.GetFileData(
+		nameutils.GetBundlePartitionFileKey(finf.FileName, dirInfo.DirName),
+		false,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -937,21 +930,21 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 	var items []spec.PromptTemplateListItem
 	for _, p := range files {
 		fn := filepath.Base(p)
-		finf, err := parseTemplateFileName(fn)
+		finf, err := nameutils.ParseTemplateFileName(fn)
 		if err != nil {
 			continue
 		}
 
 		dir := filepath.Base(filepath.Dir(p))
-		bdi, err := parseBundleDir(dir)
+		bdi, err := nameutils.ParseBundleDir(dir)
 		if err != nil {
 			continue
 		}
 
-		bid := spec.BundleID(bdi.ID)
-		bslug := spec.BundleSlug(bdi.Slug)
-		tslug := spec.TemplateSlug(finf.Slug)
-		tver := spec.TemplateVersion(finf.Version)
+		bid := bdi.ID
+		bslug := bdi.Slug
+		tslug := finf.Slug
+		tver := finf.Version
 
 		if len(bundleFilter) > 0 {
 			if _, ok := bundleFilter[bid]; !ok {
@@ -962,9 +955,7 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 			continue
 		}
 
-		raw, err := s.templateStore.GetFileData(dirstore.FileKey{
-			FileName: fn, XAttr: bundlePartitionAttr(dir),
-		}, false)
+		raw, err := s.templateStore.GetFileData(nameutils.GetBundlePartitionFileKey(fn, dir), false)
 		if err != nil {
 			continue
 		}
@@ -1059,28 +1050,26 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 	items := make([]spec.PromptTemplateListItem, 0, len(hits))
 	for _, h := range hits {
 		dir := filepath.Base(filepath.Dir(h.ID))
-		bdi, err := parseBundleDir(dir)
+		bdi, err := nameutils.ParseBundleDir(dir)
 		if err != nil {
 			continue
 		}
-		bid := spec.BundleID(bdi.ID)
-		bslug := spec.BundleSlug(bdi.Slug)
+		bid := bdi.ID
+		bslug := bdi.Slug
 
 		if _, err := s.getBundle(bid); err != nil {
 			continue
 		}
 
 		fn := filepath.Base(h.ID)
-		finf, err := parseTemplateFileName(fn)
+		finf, err := nameutils.ParseTemplateFileName(fn)
 		if err != nil {
 			continue
 		}
-		tslug := spec.TemplateSlug(finf.Slug)
-		tver := spec.TemplateVersion(finf.Version)
+		tslug := finf.Slug
+		tver := finf.Version
 
-		raw, err := s.templateStore.GetFileData(dirstore.FileKey{
-			FileName: fn, XAttr: bundlePartitionAttr(dir),
-		}, false)
+		raw, err := s.templateStore.GetFileData(nameutils.GetBundlePartitionFileKey(fn, dir), false)
 		if err != nil {
 			continue
 		}

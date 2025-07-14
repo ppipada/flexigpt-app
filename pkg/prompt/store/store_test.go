@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ppipada/flexigpt-app/pkg/prompt/nameutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 )
 
@@ -687,7 +688,7 @@ func TestTemplateCRUD(t *testing.T) {
 			name:         "invalid version",
 			bundleID:     "b1",
 			templateSlug: "template8",
-			version:      "bad.version",
+			version:      "bad&version",
 			displayName:  "Template 8",
 			enabled:      true,
 			wantError:    true,
@@ -1127,7 +1128,7 @@ func TestTemplateListPagination(t *testing.T) {
 	mustPutBundle(t, store, "b1", "slug1", "Bundle 1", true)
 
 	// Create 15 templates.
-	for i := 0; i < 15; i++ {
+	for i := range 15 {
 		mustPutTemplate(
 			t,
 			store,
@@ -1293,7 +1294,7 @@ func TestSlugVersionValidation(t *testing.T) {
 		{"empty slug", "", "v1", false},
 		{"empty version", "abc", "", false},
 		{"slug with dot", "abc.def", "v1", false},
-		{"version with dot", "abc", "v.1", false},
+		{"version with dot", "abc", "v.1", true},
 		{"slug with underscore", "abc_def", "v1", false},
 		{"version with underscore", "abc", "v_1", false},
 		{"slug with space", "abc def", "v1", false},
@@ -1308,8 +1309,8 @@ func TestSlugVersionValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			slugErr := tt.slug.Validate()
-			versionErr := tt.version.Validate()
+			slugErr := nameutils.ValidateTemplateSlug(tt.slug)
+			versionErr := nameutils.ValidateTemplateVersion(tt.version)
 
 			if tt.valid {
 				if slugErr != nil {

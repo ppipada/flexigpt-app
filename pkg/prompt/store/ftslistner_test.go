@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ppipada/flexigpt-app/pkg/prompt/nameutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
@@ -78,7 +79,10 @@ func TestFTSListener_Integration(t *testing.T) {
 	}
 	tplSlug := "myslug"
 	tplVersion := "v1"
-	tplFile := filepath.Join(bundleDir, tplSlug+"."+tplVersion+"."+promptTemplateFileExtension)
+	tplFile := filepath.Join(
+		bundleDir,
+		tplSlug+"."+tplVersion+"."+nameutils.PromptTemplateFileExtension,
+	)
 
 	// Compose a prompt template.
 	tpl := spec.PromptTemplate{

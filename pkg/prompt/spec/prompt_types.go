@@ -14,10 +14,6 @@ type (
 	PreProcessorCallID string
 )
 
-func (s BundleSlug) Validate() error      { return validateSlug(string(s)) }
-func (s TemplateSlug) Validate() error    { return validateSlug(string(s)) }
-func (v TemplateVersion) Validate() error { return validateVersion(string(v)) }
-
 type PromptRoleEnum string
 
 const (

@@ -235,7 +235,7 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 	errCh := make(chan error, 20_000)
 
 	// 1. CREATE the bundles first.
-	for i := 0; i < nBundles; i++ {
+	for i := range nBundles {
 		_, err := s.PutPromptBundle(ctx, &spec.PutPromptBundleRequest{
 			BundleID: spec.BundleID(fmt.Sprintf("b%d", i)),
 			Body: &spec.PutPromptBundleRequestBody{
@@ -252,8 +252,8 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 	// 2. MASS-INSERT template versions concurrently.
 	type job struct{ b, s, v int }
 	insertJobs := make(chan job, nBundles*nSlugs*nVersions)
-	for b := 0; b < nBundles; b++ {
-		for sIdx := 0; sIdx < nSlugs; sIdx++ {
+	for b := range nBundles {
+		for sIdx := range nSlugs {
 			for v := 1; v <= nVersions; v++ {
 				insertJobs <- job{b, sIdx, v}
 			}
@@ -263,7 +263,7 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(concurrency)
-	for g := 0; g < concurrency; g++ {
+	for range concurrency {
 		go func() {
 			defer wg.Done()
 			for j := range insertJobs {
@@ -300,8 +300,8 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 
 	// 4. Disable latest version of half the slugs, delete v1 of every 3rd.
 	modJobs := make(chan job, nBundles*nSlugs)
-	for b := 0; b < nBundles; b++ {
-		for sIdx := 0; sIdx < nSlugs; sIdx++ {
+	for b := range nBundles {
+		for sIdx := range nSlugs {
 			if sIdx%2 == 0 { // Disable v4.
 				modJobs <- job{b, sIdx, 4}
 			}
@@ -313,7 +313,7 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 	close(modJobs)
 
 	wg.Add(concurrency)
-	for g := 0; g < concurrency; g++ {
+	for range concurrency {
 		go func() {
 			defer wg.Done()
 			for j := range modJobs {
