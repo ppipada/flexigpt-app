@@ -15,6 +15,7 @@
 - [ ] Input field height should go to 20 rows most probably
 - [x] Add builtin with overlay
 - [ ] Integrate builtin into prompt template store
+  - [ ] fts and search pending
 - [ ] Integrate the store with UI
 - [ ] Integrate store with llm. decide on if you want to popualte the prompt in input so that var expansion etc can be done properly.
 
