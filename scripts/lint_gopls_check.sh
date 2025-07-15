@@ -1,38 +1,50 @@
 #!/usr/bin/env bash
-set -euo pipefail # use bash for pipefail, otherwise identical
+#
+# gopls_check.sh  [PATH] [JOBS]
+#
+# Runs "gopls check" on every *.go file under PATH (default ".")
+# using JOBS parallel workers (default 4).  Aggregates the results
+# and fails the build if any file reports diagnostics.
 
-FINDPATH=${1:-'.'}
+set -euo pipefail
+
+TARGET=${1:-'.'}
 JOBS=${2:-4}
 
-FILES=$(find "$FINDPATH" -type f -name '*.go')
+echo "==> gopls check (up to $JOBS parallel jobs)"
 
-echo "==> gopls check - up to $JOBS parallel jobs"
+# Collect Go files
+mapfile -d '' FILES < <(find "$TARGET" -type f -name '*.go' -print0)
 
-tmpfile=$(mktemp)
-trap 'rm -f "$tmpfile"' EXIT
-export TMPFILE=$tmpfile # let the subshells see it
+if ((${#FILES[@]} == 0)); then
+	echo "No Go files found under $TARGET"
+	exit 0
+fi
 
-# Find all *.go files and run gopls in parallel
+# Temp file to record failures
+FAIL_FILE=$(mktemp)
+trap 'rm -f "$FAIL_FILE"' EXIT
+export FAIL_FILE # so that the subshells can use it
 
-printf '%s\n' $FILES |
-	xargs -P"$JOBS" -I{} bash -c '
-		file=$1
-		# Capture gopls output
-		out=$(gopls check -- "$file" 2>&1)
-		if [ -n "$out" ]; then
-				# show diagnostics
-				printf "%s\n" "$out"
-				echo "$file:1" >> "$TMPFILE"   # mark as failed
-		else
-				echo "$file:0" >> "$TMPFILE"
-		fi
-		' _ {}
+# One gopls invocation per file
+printf '%s\0' "${FILES[@]}" |
+	xargs -0 -n1 -P"$JOBS" bash -c '
+    file="$0"                    # first arg after -c is $0
+    if ! out=$(gopls check -- "$file" 2>&1); then
+        printf "✗ %s\n%s\n\n" "$file" "$out"
+        echo "$file" >> "$FAIL_FILE"
+    else
+				cat
+        # printf "✓ %s\n" "$file"
+    fi
+'
 
-# If any file was marked :1, fail the script
-# cat $tmpfile
-if grep -q ":1$" "$tmpfile"; then
-	echo "✗ gopls check failed on at least one file"
+# Summary
+if [[ -s $FAIL_FILE ]]; then
+	echo
+	echo "✗ gopls check failed on $(wc -l <"$FAIL_FILE") file(s):"
+	cat "$FAIL_FILE"
 	exit 1
 fi
 
-echo "gopls check passed"
+echo "✓ gopls check passed"

@@ -144,15 +144,6 @@ func TestNewBuiltInData(t *testing.T) {
 				t.Errorf("overlay.json not created: %v", err)
 			}
 
-			// Verify snapshot max age handling.
-			expectedAge := tt.snapshotMaxAge
-			if expectedAge <= 0 {
-				expectedAge = time.Hour
-			}
-			if bi.snapshotMaxAge != expectedAge {
-				t.Errorf("snapshotMaxAge = %v, want %v", bi.snapshotMaxAge, expectedAge)
-			}
-
 			// Verify all bundles are marked as built-in.
 			for id, bundle := range bundles {
 				if !bundle.IsBuiltIn {

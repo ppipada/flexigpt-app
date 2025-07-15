@@ -5,14 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log/slog"
 	"maps"
 	"os"
 	"path"          // POSIX paths for embed.FS
 	"path/filepath" // OS paths for the real FS
-	"runtime/debug"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/booloverlay"
@@ -45,10 +42,7 @@ type BuiltInData struct {
 	viewBundles   map[spec.BundleID]spec.PromptBundle
 	viewTemplates map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate
 
-	lastFullBuild  int64
-	snapshotMaxAge time.Duration
-
-	rebuilding int32
+	rebuilder *builtin.AsyncRebuilder
 }
 
 // SnapshotMaxAge controls after how much time a background rebuild is triggered.
@@ -172,13 +166,23 @@ func NewBuiltInData(overlayBaseDir string, snapshotMaxAge time.Duration) (*Built
 		bundles:        bundleMap,
 		templates:      templateMap,
 		store:          store,
-		snapshotMaxAge: snapshotMaxAge,
 	}
 	data.mu.Lock()
-	defer data.mu.Unlock()
 	if err := data.rebuildSnapshot(); err != nil {
+		data.mu.Unlock()
 		return nil, err
 	}
+	data.mu.Unlock()
+
+	data.rebuilder = builtin.NewAsyncRebuilder(
+		snapshotMaxAge,
+		func() error {
+			data.mu.Lock()
+			defer data.mu.Unlock()
+			return data.rebuildSnapshot()
+		},
+	)
+	data.rebuilder.MarkFresh()
 
 	return data, nil
 }
@@ -198,7 +202,7 @@ func (d *BuiltInData) SetBundleEnabled(id spec.BundleID, enabled bool) error {
 	d.viewBundles[id] = b
 	d.mu.Unlock()
 
-	d.maybeAsyncRebuild()
+	d.rebuilder.Trigger()
 	return nil
 }
 
@@ -224,32 +228,8 @@ func (d *BuiltInData) SetTemplateEnabled(
 	d.viewTemplates[bundleID][templateID] = t
 	d.mu.Unlock()
 
-	d.maybeAsyncRebuild()
+	d.rebuilder.Trigger()
 	return nil
-}
-
-// maybeAsyncRebuild triggers a background rebuild when the snapshot is stale.
-func (d *BuiltInData) maybeAsyncRebuild() {
-	now := time.Now().UnixNano()
-	stale := now-atomic.LoadInt64(&d.lastFullBuild) > int64(d.snapshotMaxAge)
-	if !stale || !atomic.CompareAndSwapInt32(&d.rebuilding, 0, 1) {
-		return
-	}
-
-	go func() {
-		defer atomic.StoreInt32(&d.rebuilding, 0)
-		defer func() {
-			if r := recover(); r != nil {
-				// Keep the previous snapshot.
-				slog.Error("panic in rebuild", "error", r, "stack", debug.Stack())
-			}
-		}()
-		d.mu.Lock()
-		defer d.mu.Unlock()
-		if err := d.rebuildSnapshot(); err != nil {
-			slog.Error("rebuild snapshot failed", "error", err)
-		}
-	}()
 }
 
 // rebuildSnapshot regenerates the overlay-applied view.
@@ -287,25 +267,17 @@ func (d *BuiltInData) rebuildSnapshot() error {
 
 	d.viewBundles = newBundles
 	d.viewTemplates = newTemplates
-	atomic.StoreInt64(&d.lastFullBuild, time.Now().UnixNano())
 
 	return nil
-}
-
-func cloneBundles(src map[spec.BundleID]spec.PromptBundle) map[spec.BundleID]spec.PromptBundle {
-	dst := make(map[spec.BundleID]spec.PromptBundle, len(src))
-	maps.Copy(dst, src)
-	return dst
 }
 
 func cloneTemplates(
 	src map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate,
 ) map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate {
 	dst := make(map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate, len(src))
-	for bid, tm := range src {
-		sub := make(map[spec.TemplateID]spec.PromptTemplate, len(tm))
-		maps.Copy(sub, tm)
-		dst[bid] = sub
+	for bid, inner := range src {
+		// Clone each inner map so callers can’t mutate the originals.
+		dst[bid] = maps.Clone(inner)
 	}
 	return dst
 }
@@ -317,7 +289,7 @@ func (d *BuiltInData) List() (
 ) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
-	bundles = cloneBundles(d.viewBundles)
+	bundles = maps.Clone(d.viewBundles)
 	templates = cloneTemplates(d.viewTemplates)
 	return bundles, templates
 }
