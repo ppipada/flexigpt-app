@@ -2,14 +2,19 @@ package store
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
+	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
 )
 
 const corrupted = "corrupted"
@@ -579,5 +584,188 @@ func TestAsyncRebuild(t *testing.T) {
 	newBundles, _ := bi.List()
 	if newBundles[bundleID].IsEnabled == bundle.IsEnabled {
 		t.Error("async rebuild did not apply changes")
+	}
+}
+
+// newUUID returns a v7-UUID as string or fails the test.
+func newUUID(t *testing.T) string {
+	t.Helper()
+	u, err := uuidv7filename.NewUUID()
+	if err != nil {
+		t.Fatalf("uuidv7: %v", err)
+	}
+	return u
+}
+
+// buildManifest returns the JSON for a manifest that holds exactly one bundle.
+func buildManifest(bundleID, slug string) []byte {
+	manifest := spec.AllBundles{
+		Bundles: map[spec.BundleID]spec.PromptBundle{
+			spec.BundleID(bundleID): {
+				ID:        spec.BundleID(bundleID),
+				Slug:      spec.BundleSlug(slug),
+				IsEnabled: true,
+			},
+		},
+	}
+	b, _ := json.Marshal(manifest)
+	return b
+}
+
+// buildTemplate returns filename (slug_version.json), raw JSON and the template ID.
+func buildTemplate(t *testing.T, slug, ver string) (fileName string, raw []byte, tplID string) {
+	t.Helper()
+	tplID = newUUID(t)
+	tpl := spec.PromptTemplate{
+		ID:        spec.TemplateID(tplID),
+		Slug:      spec.TemplateSlug(slug),
+		Version:   spec.TemplateVersion(ver),
+		IsEnabled: true,
+	}
+	raw, _ = json.Marshal(tpl) // cannot fail
+	fileName = fmt.Sprintf("%s_%s.json", slug, ver)
+	return fileName, raw, tplID
+}
+
+// Constructor helper that injects the given fs.FS.
+func newFromFS(t *testing.T, mem fs.FS) (*BuiltInData, error) {
+	t.Helper()
+	return NewBuiltInData(t.TempDir(), time.Hour, WithBundlesFS(mem, "."))
+}
+
+func Test_NewBuiltInData_SyntheticFS_Errors(t *testing.T) {
+	bundleID := newUUID(t)
+	slug := "demo"
+
+	t.Run("missing_bundles_json", func(t *testing.T) {
+		_, err := newFromFS(t, fstest.MapFS{})
+		if !errors.Is(err, fs.ErrNotExist) {
+			t.Fatalf("want fs.ErrNotExist, got %v", err)
+		}
+	})
+
+	t.Run("invalid_bundles_json", func(t *testing.T) {
+		fsys := fstest.MapFS{
+			"bundles.json": {Data: []byte("{ oops ]")},
+		}
+		_, err := newFromFS(t, fsys)
+		if err == nil || !strings.Contains(err.Error(), "invalid") {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("no_bundles_in_manifest", func(t *testing.T) {
+		empty, _ := json.Marshal(spec.AllBundles{Bundles: map[spec.BundleID]spec.PromptBundle{}})
+		fsys := fstest.MapFS{"bundles.json": {Data: empty}}
+		_, err := newFromFS(t, fsys)
+		if err == nil || !strings.Contains(err.Error(), "contains no bundles") {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("bundle_has_no_templates", func(t *testing.T) {
+		dir := fmt.Sprintf("%s_%s", bundleID, slug)
+		fsys := fstest.MapFS{
+			"bundles.json": {Data: buildManifest(bundleID, slug)},
+			dir:            &fstest.MapFile{Mode: fs.ModeDir},
+		}
+		_, err := newFromFS(t, fsys)
+		if err == nil || !strings.Contains(err.Error(), "has no templates") {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("bundle_dir_not_in_manifest", func(t *testing.T) {
+		ghostID := newUUID(t)
+		ghostSlug := "ghost"
+		dir := fmt.Sprintf("%s_%s", ghostID, ghostSlug)
+
+		fn, raw, _ := buildTemplate(t, ghostSlug, "v1")
+		fsys := fstest.MapFS{
+			"bundles.json": {Data: buildManifest(bundleID, slug)},
+			dir:            &fstest.MapFile{Mode: fs.ModeDir},
+			dir + "/" + fn: {Data: raw},
+		}
+		_, err := newFromFS(t, fsys)
+		if err == nil || !strings.Contains(err.Error(), "not in bundles.json") {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("slug_mismatch_between_dir_and_manifest", func(t *testing.T) {
+		// Dir slug = wrong, manifest slug = demo.
+		dir := fmt.Sprintf("%s_%s", bundleID, "wrong")
+
+		fn, raw, _ := buildTemplate(t, "wrong", "v1")
+		fsys := fstest.MapFS{
+			"bundles.json": {Data: buildManifest(bundleID, slug)},
+			dir:            &fstest.MapFile{Mode: fs.ModeDir},
+			dir + "/" + fn: {Data: raw},
+		}
+		_, err := newFromFS(t, fsys)
+		if err == nil || !strings.Contains(err.Error(), "dir slug") {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("filename_slug_version_mismatch", func(t *testing.T) {
+		dir := fmt.Sprintf("%s_%s", bundleID, slug)
+
+		// Template JSON says slug=demo,ver=v1.
+		_, raw, _ := buildTemplate(t, slug, "v1")
+		// But store it under file name demo_v2.json.
+		fsys := fstest.MapFS{
+			"bundles.json":        {Data: buildManifest(bundleID, slug)},
+			dir:                   &fstest.MapFile{Mode: fs.ModeDir},
+			dir + "/demo_v2.json": {Data: raw},
+		}
+		_, err := newFromFS(t, fsys)
+		if err == nil || !strings.Contains(err.Error(), "filename") {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+}
+
+func Test_NewBuiltInData_SyntheticFS_HappyAndCRUD(t *testing.T) {
+	bid := newUUID(t)
+	slug := "demo"
+
+	// Build valid dir template.
+	dir := fmt.Sprintf("%s_%s", bid, slug)
+	fn, rawTpl, _ := buildTemplate(t, slug, "v1")
+
+	mem := fstest.MapFS{
+		"bundles.json": {Data: buildManifest(bid, slug)},
+		dir:            &fstest.MapFile{Mode: fs.ModeDir},
+		dir + "/" + fn: {Data: rawTpl},
+	}
+
+	tmp := t.TempDir()
+	bi, err := NewBuiltInData(tmp, 0, WithBundlesFS(mem, "."))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	bundles, tpls := bi.List()
+	if len(bundles) != 1 || len(tpls) != 1 {
+		t.Fatalf("want 1/1 objects, got %d/%d", len(bundles), len(tpls))
+	}
+
+	bundleID, bundle := anyBundle(bundles)
+	if err := bi.SetBundleEnabled(bundleID, !bundle.IsEnabled); err != nil {
+		t.Fatalf("SetBundleEnabled: %v", err)
+	}
+	if present, val := overlayOnDisk(t, tmp, "bundles", string(bundleID)); !present ||
+		val == bundle.IsEnabled {
+		t.Fatalf("bundle overlay not updated")
+	}
+
+	_, tmplID, tpl := anyTemplate(tpls)
+	if err := bi.SetTemplateEnabled(bundleID, tmplID, !tpl.IsEnabled); err != nil {
+		t.Fatalf("SetTemplateEnabled: %v", err)
+	}
+	if present, val := overlayOnDisk(t, tmp, "templates", string(tmplID)); !present ||
+		val == tpl.IsEnabled {
+		t.Fatalf("template overlay not updated")
 	}
 }

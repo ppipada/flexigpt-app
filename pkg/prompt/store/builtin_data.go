@@ -33,6 +33,8 @@ func (t BuiltInTemplateID) ID() string  { return string(t) }
 // BuiltInData keeps the built-in prompt assets and an overlay with enable flags.
 // A cached snapshot already has the overlay applied.
 type BuiltInData struct {
+	bundlesFS      fs.FS
+	bundlesDir     string
 	overlayBaseDir string
 	bundles        map[spec.BundleID]spec.PromptBundle
 	templates      map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate
@@ -45,12 +47,34 @@ type BuiltInData struct {
 	rebuilder *builtin.AsyncRebuilder
 }
 
-// SnapshotMaxAge controls after how much time a background rebuild is triggered.
-func NewBuiltInData(overlayBaseDir string, snapshotMaxAge time.Duration) (*BuiltInData, error) {
+type BuiltInDataOption func(*BuiltInData)
+
+// Option to override the FS.
+func WithBundlesFS(fsys fs.FS, rootDir string) BuiltInDataOption {
+	return func(b *BuiltInData) {
+		b.bundlesFS = fsys
+		b.bundlesDir = rootDir
+	}
+}
+
+func resolveBundlesFS(fsys fs.FS, dir string) (fs.FS, error) {
+	if dir == "" || dir == "." {
+		return fsys, nil
+	}
+	return fs.Sub(fsys, dir)
+}
+
+func NewBuiltInData(
+	overlayBaseDir string,
+	snapshotMaxAge time.Duration,
+	opts ...BuiltInDataOption,
+) (*BuiltInData, error) {
 	if snapshotMaxAge <= 0 {
 		snapshotMaxAge = time.Hour
 	}
-
+	if overlayBaseDir == "" {
+		return nil, errors.New("overlayBaseDir must not be empty")
+	}
 	if err := os.MkdirAll(overlayBaseDir, 0o755); err != nil {
 		return nil, err
 	}
@@ -63,21 +87,47 @@ func NewBuiltInData(overlayBaseDir string, snapshotMaxAge time.Duration) (*Built
 		return nil, err
 	}
 
-	bundlesFS, err := fs.Sub(
-		builtin.BuiltinPromptBundlesFS,
-		builtin.BuiltinPromptBundlesRootDir,
-	)
-	if err != nil {
+	data := &BuiltInData{
+		// Initialize with default fs, can override using opts.
+		bundlesFS:      builtin.BuiltinPromptBundlesFS,
+		bundlesDir:     builtin.BuiltinPromptBundlesRootDir,
+		overlayBaseDir: overlayBaseDir,
+		store:          store,
+	}
+	for _, o := range opts {
+		o(data)
+	}
+
+	if err := data.populateDataFromFS(); err != nil {
 		return nil, err
+	}
+	data.rebuilder = builtin.NewAsyncRebuilder(
+		snapshotMaxAge,
+		func() error {
+			data.mu.Lock()
+			defer data.mu.Unlock()
+			return data.rebuildSnapshot()
+		},
+	)
+	data.rebuilder.MarkFresh()
+
+	return data, nil
+}
+
+func (d *BuiltInData) populateDataFromFS() error {
+	// Pick the effective FS that we'll actually read from.
+	bundlesFS, err := resolveBundlesFS(d.bundlesFS, d.bundlesDir)
+	if err != nil {
+		return err
 	}
 	// Load bundles.json.
 	rawBundles, err := fs.ReadFile(bundlesFS, builtin.BuiltinPromptBundlesJSON)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	var manifest spec.AllBundles
 	if err := json.Unmarshal(rawBundles, &manifest); err != nil {
-		return nil, err
+		return err
 	}
 
 	bundleMap := make(map[spec.BundleID]spec.PromptBundle, len(manifest.Bundles))
@@ -86,6 +136,9 @@ func NewBuiltInData(overlayBaseDir string, snapshotMaxAge time.Duration) (*Built
 		b.IsBuiltIn = true
 		bundleMap[id] = b
 		templateMap[id] = make(map[spec.TemplateID]spec.PromptTemplate)
+	}
+	if len(bundleMap) == 0 {
+		return errors.New("built-in data: bundles.json contains no bundles")
 	}
 
 	// Walk & validate templates.
@@ -116,7 +169,7 @@ func NewBuiltInData(overlayBaseDir string, snapshotMaxAge time.Duration) (*Built
 				return fmt.Errorf("%s: bundle dir %q not in bundles.json", inPath, bundleID)
 			}
 			if dirInfo.Slug != bDef.Slug {
-				return fmt.Errorf("%s: dir slug %q ≠ manifest slug %q",
+				return fmt.Errorf("%s: dir slug %q not equal to manifest slug %q",
 					inPath, dirInfo.Slug, bDef.Slug)
 			}
 
@@ -143,8 +196,14 @@ func NewBuiltInData(overlayBaseDir string, snapshotMaxAge time.Duration) (*Built
 				return fmt.Errorf("%s: %w", inPath, err)
 			}
 			if info.Slug != tpl.Slug || info.Version != tpl.Version {
-				return fmt.Errorf("%s: filename (slug=%q,ver=%q) ≠ JSON (slug=%q,ver=%q)",
-					inPath, info.Slug, info.Version, tpl.Slug, tpl.Version)
+				return fmt.Errorf(
+					"%s: filename (slug=%q,ver=%q) not equal to JSON (slug=%q,ver=%q)",
+					inPath,
+					info.Slug,
+					info.Version,
+					tpl.Slug,
+					tpl.Version,
+				)
 			}
 
 			if prev := seenTpl[tpl.ID]; prev != "" {
@@ -158,33 +217,25 @@ func NewBuiltInData(overlayBaseDir string, snapshotMaxAge time.Duration) (*Built
 		},
 	)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	data := &BuiltInData{
-		overlayBaseDir: overlayBaseDir,
-		bundles:        bundleMap,
-		templates:      templateMap,
-		store:          store,
+	for id, tm := range templateMap {
+		if len(tm) == 0 {
+			return fmt.Errorf("built-in data: bundle %s has no templates", id)
+		}
 	}
-	data.mu.Lock()
-	if err := data.rebuildSnapshot(); err != nil {
-		data.mu.Unlock()
-		return nil, err
+
+	// Store the freshly loaded maps into the already created data.
+	d.bundles = bundleMap
+	d.templates = templateMap
+	d.mu.Lock()
+	if err := d.rebuildSnapshot(); err != nil {
+		d.mu.Unlock()
+		return err
 	}
-	data.mu.Unlock()
-
-	data.rebuilder = builtin.NewAsyncRebuilder(
-		snapshotMaxAge,
-		func() error {
-			data.mu.Lock()
-			defer data.mu.Unlock()
-			return data.rebuildSnapshot()
-		},
-	)
-	data.rebuilder.MarkFresh()
-
-	return data, nil
+	d.mu.Unlock()
+	return nil
 }
 
 // SetBundleEnabled toggles a bundle and schedules a rebuild if needed.
