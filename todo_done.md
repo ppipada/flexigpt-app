@@ -316,7 +316,7 @@
   - [x] Each row: title + last-modified date.
   - [x] Up/Down / mouse-hover highlight; ⏎ or click navigates to the convo.
 
-- Local Autocomplete (Query Length 1–2)
+- Local Autocomplete (Query Length 1-2)
 
   - [x] Filter the already-loaded titles in memory; update instantly.
   - [x] Footer item: “Press Enter to search all messages” (inactive until length ≥ 3).

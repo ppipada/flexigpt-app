@@ -88,7 +88,7 @@ func SyncDirToFTS(
 		// Rows really written to the index.
 		nUpserted int
 	)
-	// Walk directory – incremental updates in small batches.
+	// Walk directory incremental updates in small batches.
 	seenNow := make(map[string]struct{}, 4096)
 	pending := make(map[string]map[string]string, batchSize)
 

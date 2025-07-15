@@ -962,7 +962,7 @@ func TestEvents_AutoFlushFalse(t *testing.T) {
 		t.Fatalf("unexpected event %+v", ev)
 	}
 
-	// Reopen – change should NOT be on disk.
+	// Reopen - change should NOT be on disk.
 	reopen := openStore(f)
 	if _, err := reopen.GetKey([]string{key}); err == nil {
 		t.Fatalf("value persisted although autoFlush was off")
@@ -1022,7 +1022,7 @@ func TestEvents_DataSnapshotMatchesStore(t *testing.T) {
 	}
 }
 
-// Concurrency – 100 goroutines issue SetKey; every event captured.
+// Concurrency - 100 goroutines issue SetKey; every event captured.
 func TestEvents_ConcurrentWrites(t *testing.T) {
 	tmp := t.TempDir()
 	f := filepath.Join(tmp, "concurrent.json")

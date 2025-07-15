@@ -52,7 +52,7 @@ const PromptTemplates: React.FC = () => {
 						return { template: t, bundleID: item.bundleID, templateSlug: item.templateSlug };
 					}
 				} catch {
-					/* ignore single fetch error – keep the UI responsive */
+					/* ignore single fetch error - keep the UI responsive */
 				}
 				return undefined;
 			});

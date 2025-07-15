@@ -408,7 +408,7 @@ func Example_events_autoFlush() {
 	_ = st.SetKey([]string{"unsaved"}, 123)
 	fmt.Println("event op:", last.Op)
 
-	// Re-open the file – the key is not there yet.
+	// Re-open the file - the key is not there yet.
 	reopen1, _ := NewMapFileStore(file, nil)
 	if _, err := reopen1.GetKey([]string{"unsaved"}); err != nil {
 		fmt.Println("not on disk yet")

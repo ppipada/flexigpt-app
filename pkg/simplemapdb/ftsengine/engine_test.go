@@ -755,7 +755,7 @@ func TestBatchList_OrderingAndStability(t *testing.T) {
 	if len(ids) != 4 {
 		t.Fatalf("expected 4 docs, got %d", len(ids))
 	}
-	// Must be ordered by tag then rowid – therefore all “dup” first.
+	// Must be ordered by tag then rowid - therefore all “dup” first.
 	for i, id := range ids {
 		if docs[id]["tag"] == "unique" && i < 3 {
 			t.Fatalf("unique tag appeared before all dup ones")
@@ -840,7 +840,7 @@ func TestSchemaPersistenceUnchanged(t *testing.T) {
 	}
 	e1.Close()
 
-	// Re-open with the *identical* configuration – row must still exist.
+	// Re-open with the *identical* configuration - row must still exist.
 	e2, _ := NewEngine(cfg)
 	defer e2.Close()
 
@@ -887,7 +887,7 @@ func TestBatchUpsertAtomicity(t *testing.T) {
 
 	batch := map[string]map[string]string{
 		"good": {"title": "ok"},
-		"":     {"title": "bad"}, // Illegal id – should make the whole tx fail.
+		"":     {"title": "bad"}, // Illegal id - should make the whole tx fail.
 	}
 	if err := e.BatchUpsert(ctx, batch); err == nil {
 		t.Fatalf("want error for empty id, got nil")

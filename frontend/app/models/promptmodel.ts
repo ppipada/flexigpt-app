@@ -145,8 +145,7 @@ export interface IPromptStoreAPI {
 		bundleIDs?: string[],
 		tags?: string[],
 		includeDisabled?: boolean,
-		allVersions?: boolean,
-		pageSize?: number,
+		recommendedPageSize?: number,
 		pageToken?: string
 	): Promise<{ promptTemplateListItems: PromptTemplateListItem[]; nextPageToken?: string }>;
 

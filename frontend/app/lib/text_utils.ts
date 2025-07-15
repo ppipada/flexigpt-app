@@ -14,7 +14,7 @@ const DEFAULT_TITLE_CANDIDATE: TitleCandidate = { title: DEFAULT_TITLE, score: 0
 
 /**
  * Very light-weight “does this line look like code?” heuristic.
- * It is NOT 100 % accurate – it is only meant to be fast and
+ * It is NOT 100 % accurate - it is only meant to be fast and
  * surprisingly good for common cases.
  */
 function looksLikeCodeLine(line: string): boolean {
@@ -121,7 +121,7 @@ function scoreEn(s: string, idx: number, total: number): number {
 	if (tokens.length > 0) {
 		const noStop: string[] = removeStopwords(tokens);
 		const stopRatio = 1 - noStop.length / tokens.length;
-		// Reward moderate stopword ratio (e.g., 0.2–0.6)
+		// Reward moderate stopword ratio (e.g., 0.2-0.6)
 		if (stopRatio > 0.15 && stopRatio < 0.65) pts += 1.5;
 		// Penalize very low or very high stopword ratio
 		else if (stopRatio <= 0.15 || stopRatio >= 0.65) pts -= 0.5;
@@ -184,7 +184,7 @@ export function generateTitle(firstMessage: string): TitleCandidate {
 	const sentences = candidates.flatMap(p => splitSentences(p)).filter(l => !looksLikeCodeLine(l));
 	// console.log('sentences', JSON.stringify(sentences, null, 2));
 	if (!sentences.length) {
-		// still nothing – just clean first paragraph
+		// still nothing - just clean first paragraph
 		const t: TitleCandidate = { title: finalise(stripCode(paragraphs[0])), score: 0.2 };
 		return t;
 	}
@@ -207,9 +207,9 @@ const isSingleLetter = (tok: string) => {
 };
 
 // Build a safe FTS5 MATCH string from raw user input.
-//  – lower-cases
-//  – removes stop-words
-//  – deduplicates
+//  - lower-cases
+//  - removes stop-words
+//  - deduplicates
 //  - removes single chars
 export function cleanSearchQuery(input: string): string {
 	const raw = input.trim();

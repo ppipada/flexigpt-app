@@ -200,7 +200,7 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 				</div>
 			</div>
 
-			{/* Body – presets table */}
+			{/* Body - presets table */}
 			{isExpanded && (
 				<div className="mt-8 space-y-4">
 					{/* Presets table */}

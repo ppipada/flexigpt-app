@@ -5,14 +5,14 @@ package store
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"slices"
 	"sort"
-	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -30,18 +30,8 @@ const (
 	defPageSize     = 25               // Default page size for listing.
 	softDeleteGrace = 60 * time.Minute // Grace period before hard-deleting a soft-deleted bundle.
 	cleanupInterval = 24 * time.Hour   // Interval for periodic cleanup sweep.
-)
-
-// Error types for better error handling.
-var (
-	ErrBundleNotFound   = errors.New("bundle not found")
-	ErrTemplateNotFound = errors.New("template not found")
-	ErrBundleDisabled   = errors.New("bundle is disabled")
-	ErrBundleDeleting   = errors.New("bundle is being deleted")
-	ErrConflict         = errors.New("resource already exists")
-	ErrBundleNotEmpty   = errors.New("bundle still contains templates")
-	ErrInvalidRequest   = errors.New("invalid request")
-	ErrFTSDisabled      = errors.New("FTS is disabled")
+	snapshotMaxAge  = time.Hour
+	fetchBatch      = 512 // IO chunk for internal dir scans
 )
 
 // nullableStr returns a pointer to the string, or nil if the string is empty.
@@ -95,6 +85,7 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 // It manages bundle and template CRUD, soft deletion, background cleanup, and FTS integration.
 type PromptTemplateStore struct {
 	baseDir       string
+	builtinData   *BuiltInData
 	bundleStore   *filestore.MapFileStore
 	templateStore *dirstore.MapDirectoryStore
 	pp            dirstore.PartitionProvider
@@ -138,6 +129,11 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 		}
 	}
 
+	builtIn, err := NewBuiltInData(s.baseDir, snapshotMaxAge)
+	if err != nil {
+		return nil, err
+	}
+	s.builtinData = builtIn
 	// Initialize bundle meta store (single JSON file).
 	def, err := encdec.StructWithJSONTagsToMap(
 		spec.AllBundles{Bundles: map[spec.BundleID]spec.PromptBundle{}},
@@ -219,8 +215,8 @@ func (s *PromptTemplateStore) writeAllBundles(ab spec.AllBundles) error {
 	return s.bundleStore.SetAll(mp)
 }
 
-// getBundle returns an active bundle (i.e., not soft-deleted) by ID.
-func (s *PromptTemplateStore) getBundle(id spec.BundleID) (spec.PromptBundle, error) {
+// getUserBundle returns an active bundle (i.e., not soft-deleted) by ID.
+func (s *PromptTemplateStore) getUserBundle(id spec.BundleID) (spec.PromptBundle, error) {
 	all, err := s.readAllBundles(false)
 	if err != nil {
 		return spec.PromptBundle{}, err
@@ -235,6 +231,23 @@ func (s *PromptTemplateStore) getBundle(id spec.BundleID) (spec.PromptBundle, er
 		return b, fmt.Errorf("%w: %s", ErrBundleDeleting, id)
 	}
 	return b, nil
+}
+
+func (s *PromptTemplateStore) getAnyBundle(
+	id spec.BundleID,
+) (bundle spec.PromptBundle, isBuiltIn bool, err error) {
+	// Built-in?
+	if s.builtinData != nil {
+		if bundle, err = s.builtinData.GetBuiltInBundle(id); err == nil {
+			return bundle, true, nil
+		}
+	}
+	// User bundle?
+	if bundle, err = s.getUserBundle(id); err == nil {
+		return bundle, false, nil
+	}
+
+	return spec.PromptBundle{}, false, fmt.Errorf("%w: %s", ErrBundleNotFound, id)
 }
 
 // startCleanupLoop starts the background cleanup goroutine for hard-deleting bundles after the grace period.
@@ -279,7 +292,7 @@ func (s *PromptTemplateStore) kickCleanupLoop() {
 	select {
 	case s.cleanKick <- struct{}{}:
 	default:
-		// Queue already has a signal – that is good enough.
+		// Queue already has a signal - that is good enough.
 	}
 }
 
@@ -354,6 +367,13 @@ func (s *PromptTemplateStore) PutPromptBundle(
 	if err := nameutils.ValidateBundleSlug(req.Body.Slug); err != nil {
 		return nil, err
 	}
+	if s.builtinData != nil {
+		_, err := s.builtinData.GetBuiltInBundle(req.BundleID)
+		if err == nil {
+			return nil, fmt.Errorf("%w: bundleID: %q", ErrBuiltInReadOnly, req.BundleID)
+		}
+		// We allow same slug with different IDs in bundle.
+	}
 
 	// Coordinate with sweep operations.
 	s.sweepMu.Lock()
@@ -400,6 +420,16 @@ func (s *PromptTemplateStore) PatchPromptBundle(
 		return nil, fmt.Errorf("%w: bundleID required", ErrInvalidRequest)
 	}
 
+	if s.builtinData != nil {
+		if _, err := s.builtinData.GetBuiltInBundle(req.BundleID); err == nil {
+			if err := s.builtinData.SetBundleEnabled(req.BundleID, req.Body.IsEnabled); err != nil {
+				return nil, err
+			}
+			slog.Info("PatchPromptBundle.", "id", req.BundleID, "enabled", req.Body.IsEnabled)
+			return &spec.PatchPromptBundleResponse{}, nil
+		}
+	}
+
 	// Coordinate with sweep operations.
 	s.sweepMu.Lock()
 	defer s.sweepMu.Unlock()
@@ -429,6 +459,13 @@ func (s *PromptTemplateStore) DeletePromptBundle(
 ) (*spec.DeletePromptBundleResponse, error) {
 	if req == nil || req.BundleID == "" {
 		return nil, fmt.Errorf("%w: bundleID required", ErrInvalidRequest)
+	}
+
+	if s.builtinData != nil {
+		_, err := s.builtinData.GetBuiltInBundle(req.BundleID)
+		if err == nil {
+			return nil, fmt.Errorf("%w: bundleID: %q", ErrBuiltInReadOnly, req.BundleID)
+		}
 	}
 
 	// Coordinate with sweep operations.
@@ -479,32 +516,73 @@ func (s *PromptTemplateStore) DeletePromptBundle(
 }
 
 // ListPromptBundles lists prompt bundles with optional filtering and pagination.
+// If PageToken is provided its embedded parameters override the request body.
 func (s *PromptTemplateStore) ListPromptBundles(
 	ctx context.Context,
 	req *spec.ListPromptBundlesRequest,
 ) (*spec.ListPromptBundlesResponse, error) {
-	all, err := s.readAllBundles(false)
+	// Resolve paging / filter parameters.
+	var (
+		pageSize        = defPageSize
+		wantIDs         = map[spec.BundleID]struct{}{}
+		includeDisabled bool
+		cursorMod       time.Time
+		cursorID        spec.BundleID
+	)
+
+	// Token present? -> authoritative.
+	if req != nil && req.PageToken != "" {
+		if tok, err := base64JSONDecode[bundlePageToken](req.PageToken); err == nil {
+			pageSize = tok.PageSize
+			if pageSize <= 0 || pageSize > maxPageSize {
+				pageSize = defPageSize
+			}
+			includeDisabled = tok.IncludeDisabled
+			if tok.CursorMod != "" {
+				cursorMod, _ = time.Parse(time.RFC3339Nano, tok.CursorMod)
+				cursorID = tok.CursorID
+			}
+			for _, id := range tok.BundleIDs {
+				wantIDs[id] = struct{}{}
+			}
+		}
+	} else {
+		// No token, fall back to request fields.
+		if req != nil {
+			if req.PageSize > 0 && req.PageSize <= maxPageSize {
+				pageSize = req.PageSize
+			}
+			includeDisabled = req.IncludeDisabled
+			for _, id := range req.BundleIDs {
+				wantIDs[id] = struct{}{}
+			}
+		}
+	}
+
+	// Collect all bundles (built-in + user).
+	allBundles := make([]spec.PromptBundle, 0)
+
+	if s.builtinData != nil {
+		bi, _ := s.builtinData.List()
+		for _, b := range bi {
+			allBundles = append(allBundles, b)
+		}
+	}
+
+	user, err := s.readAllBundles(false)
 	if err != nil {
 		return nil, err
 	}
-
-	bundles := make([]spec.PromptBundle, 0, len(all.Bundles))
-	for _, b := range all.Bundles {
+	for _, b := range user.Bundles {
 		if isSoftDeleted(b) {
 			continue
 		}
-		bundles = append(bundles, b)
+		allBundles = append(allBundles, b)
 	}
 
-	wantIDs := map[spec.BundleID]struct{}{}
-	if req != nil && len(req.BundleIDs) > 0 {
-		for _, id := range req.BundleIDs {
-			wantIDs[id] = struct{}{}
-		}
-	}
-	includeDisabled := req != nil && req.IncludeDisabled
-	filtered := make([]spec.PromptBundle, 0, len(bundles))
-	for _, b := range bundles {
+	// Apply filters.
+	filtered := make([]spec.PromptBundle, 0, len(allBundles))
+	for _, b := range allBundles {
 		if len(wantIDs) > 0 {
 			if _, ok := wantIDs[b.ID]; !ok {
 				continue
@@ -516,107 +594,85 @@ func (s *PromptTemplateStore) ListPromptBundles(
 		filtered = append(filtered, b)
 	}
 
+	// Deterministic order.
 	sort.Slice(filtered, func(i, j int) bool {
+		if filtered[i].ModifiedAt.Equal(filtered[j].ModifiedAt) {
+			return filtered[i].ID < filtered[j].ID
+		}
 		return filtered[i].ModifiedAt.After(filtered[j].ModifiedAt)
 	})
 
-	pageSize := defPageSize
-	if req != nil && req.PageSize > 0 && req.PageSize <= maxPageSize {
-		pageSize = req.PageSize
-	}
-
-	start := 0
-	if req != nil && req.PageToken != "" {
-		if idx, err := strconv.Atoi(req.PageToken); err == nil && idx >= 0 && idx < len(filtered) {
-			start = idx
+	// Guard against stale, malicious index.
+	startIdx := 0
+	if !cursorMod.IsZero() || cursorID != "" {
+		for i, b := range filtered {
+			if b.ModifiedAt.Before(cursorMod) ||
+				(b.ModifiedAt.Equal(cursorMod) && b.ID == cursorID) {
+				startIdx = i + 1
+				break
+			}
 		}
+		// If cursorMod is newer than every element, startIdx will be len(filtered).
 	}
 
-	end := min(start+pageSize, len(filtered))
-	nextTok := ""
+	end := min(startIdx+pageSize, len(filtered))
+	nextToken := ""
 	if end < len(filtered) {
-		nextTok = strconv.Itoa(end)
+		ids := make([]spec.BundleID, 0, len(wantIDs))
+		for id := range wantIDs {
+			ids = append(ids, id)
+		}
+		slices.Sort(ids)
+
+		nextToken = base64JSONEncode(bundlePageToken{
+			CursorMod:       filtered[end-1].ModifiedAt.Format(time.RFC3339Nano),
+			CursorID:        filtered[end-1].ID,
+			BundleIDs:       ids,
+			IncludeDisabled: includeDisabled,
+			PageSize:        pageSize,
+		})
 	}
 
 	return &spec.ListPromptBundlesResponse{
 		Body: &spec.ListPromptBundlesResponseBody{
-			PromptBundles: filtered[start:end],
-			NextPageToken: nullableStr(nextTok),
+			PromptBundles: filtered[startIdx:end],
+			NextPageToken: nullableStr(nextToken),
 		},
 	}, nil
 }
 
-// findTemplate locates a template file by bundle, slug, and version.
-// If wantVersion is empty, returns the active version (enabled, most recent ModifiedAt).
-// Note: There is a potential race condition where the active version could be modified
-// between selection and reading, but this is acceptable for the current use case.
+// findTemplate locates a template file by bundle-dir, slug **and** version.
+// Both slug and version are required; wantVersion must NOT be empty.
 func (s *PromptTemplateStore) findTemplate(
 	bdi nameutils.BundleDirInfo,
 	slug spec.TemplateSlug,
 	wantVersion spec.TemplateVersion,
 ) (fi nameutils.FileInfo, fullPath string, err error) {
-	list, _, err := s.templateStore.ListFiles(
-		dirstore.ListingConfig{
-			FilterPartitions: []string{bdi.DirName},
-			PageSize:         10000,
-		}, "")
+	// Input must be complete.
+	if slug == "" || wantVersion == "" {
+		return fi, fullPath, ErrInvalidRequest
+	}
+
+	// Build the canonical filename and access it directly.
+	fi, err = nameutils.BuildTemplateFileInfo(slug, wantVersion)
 	if err != nil {
 		return fi, fullPath, err
 	}
 
-	var newestTime time.Time
-	for _, p := range list {
-		local := filepath.Base(p)
-		finf, perr := nameutils.ParseTemplateFileName(local)
-		if perr != nil {
-			continue
-		}
-
-		if slug != "" && finf.Slug != slug {
-			continue
-		}
-		if wantVersion != "" && finf.Version != wantVersion {
-			continue
-		}
-		// Read minimal JSON to confirm slug matches.
-		raw, gerr := s.templateStore.GetFileData(
-			nameutils.GetBundlePartitionFileKey(local, bdi.DirName),
-			false,
-		)
-		if gerr != nil {
-			continue
-		}
-		if sVal, _ := raw["slug"].(string); sVal != string(finf.Slug) {
-			continue
-		}
-
-		if wantVersion != "" { // Exact match.
-			return finf, p, nil
-		}
-		// Active version selection.
-		enabled, _ := raw["isEnabled"].(bool)
-		if !enabled {
-			continue
-		}
-
-		var modAt time.Time
-		if ts, ok := raw["modifiedAt"].(string); ok {
-			modAt, _ = time.Parse(time.RFC3339Nano, ts)
-		}
-		if modAt.IsZero() {
-			if st, _ := os.Stat(filepath.Join(s.baseDir, p)); st != nil {
-				modAt = st.ModTime()
-			}
-		}
-		if fi.FileName == "" || modAt.After(newestTime) {
-			newestTime = modAt
-			fi, fullPath = finf, p
-		}
+	key := nameutils.GetBundlePartitionFileKey(fi.FileName, bdi.DirName)
+	raw, err := s.templateStore.GetFileData(key, false)
+	if err != nil {
+		// File does not exist.
+		return fi, fullPath, fmt.Errorf("%w: %s", ErrTemplateNotFound, slug)
 	}
-	if fullPath == "" {
-		err = fmt.Errorf("%w: %s", ErrTemplateNotFound, slug)
+
+	// Minimal integrity check: the JSON must contain the same slug.
+	if sVal, _ := raw["slug"].(string); sVal != string(slug) {
+		return fi, fullPath, fmt.Errorf("%w: %s", ErrTemplateNotFound, slug)
 	}
-	return fi, fullPath, err
+
+	// Success - return relative path (same format the old code used).
+	return fi, filepath.Join(bdi.DirName, fi.FileName), nil
 }
 
 // PutPromptTemplate creates a new prompt template version.
@@ -640,9 +696,12 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 		return nil, fmt.Errorf("%w: displayName & ≥1 block required", ErrInvalidRequest)
 	}
 
-	bundle, err := s.getBundle(req.BundleID)
+	bundle, isBuiltIn, err := s.getAnyBundle(req.BundleID)
 	if err != nil {
 		return nil, err
+	}
+	if isBuiltIn {
+		return nil, fmt.Errorf("%w: bundleID: %q", ErrBuiltInReadOnly, req.BundleID)
 	}
 	if !bundle.IsEnabled {
 		return nil, fmt.Errorf("%w: %s", ErrBundleDisabled, req.BundleID)
@@ -732,10 +791,14 @@ func (s *PromptTemplateStore) DeletePromptTemplate(
 	if err := nameutils.ValidateTemplateVersion(req.Version); err != nil {
 		return nil, err
 	}
-	bundle, err := s.getBundle(req.BundleID)
+	bundle, isBuiltIn, err := s.getAnyBundle(req.BundleID)
 	if err != nil {
 		return nil, err
 	}
+	if isBuiltIn {
+		return nil, fmt.Errorf("%w: bundleID: %q", ErrBuiltInReadOnly, req.BundleID)
+	}
+
 	dirInfo, derr := nameutils.BuildBundleDir(bundle.ID, bundle.Slug)
 	if derr != nil {
 		return nil, derr
@@ -769,8 +832,8 @@ func (s *PromptTemplateStore) DeletePromptTemplate(
 func (s *PromptTemplateStore) PatchPromptTemplate(
 	ctx context.Context, req *spec.PatchPromptTemplateRequest,
 ) (*spec.PatchPromptTemplateResponse, error) {
-	if req == nil || req.Body == nil ||
-		req.TemplateSlug == "" || req.BundleID == "" || req.Body.Version == "" {
+	if req == nil || req.Body == nil || req.BundleID == "" || req.TemplateSlug == "" ||
+		req.Body.Version == "" {
 		return nil, fmt.Errorf("%w: bundleID, templateSlug, version required", ErrInvalidRequest)
 	}
 	if err := nameutils.ValidateTemplateSlug(req.TemplateSlug); err != nil {
@@ -779,10 +842,36 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 	if err := nameutils.ValidateTemplateVersion(req.Body.Version); err != nil {
 		return nil, err
 	}
-	bundle, err := s.getBundle(req.BundleID)
+	bundle, isBuiltIn, err := s.getAnyBundle(req.BundleID)
 	if err != nil {
 		return nil, err
 	}
+	if isBuiltIn {
+		tmpl, err := s.builtinData.GetBuiltInTemplate(
+			req.BundleID,
+			req.TemplateSlug,
+			req.Body.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.builtinData.SetTemplateEnabled(bundle.ID, tmpl.ID, req.Body.IsEnabled); err != nil {
+			return nil, err
+		}
+		slog.Info(
+			"PatchPromptTemplate.",
+			"bundleID",
+			req.BundleID,
+			"slug",
+			req.TemplateSlug,
+			"version",
+			req.Body.Version,
+			"enabled",
+			req.Body.IsEnabled,
+		)
+		return &spec.PatchPromptTemplateResponse{}, nil
+	}
+
 	if !bundle.IsEnabled {
 		return nil, fmt.Errorf("%w: %s", ErrBundleDisabled, req.BundleID)
 	}
@@ -834,16 +923,27 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 func (s *PromptTemplateStore) GetPromptTemplate(
 	ctx context.Context, req *spec.GetPromptTemplateRequest,
 ) (*spec.GetPromptTemplateResponse, error) {
-	if req == nil || req.TemplateSlug == "" || req.BundleID == "" {
-		return nil, fmt.Errorf("%w: bundleID & templateSlug required", ErrInvalidRequest)
+	if req == nil || req.BundleID == "" || req.TemplateSlug == "" || req.Version == "" {
+		return nil, fmt.Errorf("%w: bundleID, templateSlug, version required", ErrInvalidRequest)
 	}
 	if err := nameutils.ValidateTemplateSlug(req.TemplateSlug); err != nil {
 		return nil, err
 	}
 
-	bundle, err := s.getBundle(req.BundleID)
+	bundle, isBuiltIn, err := s.getAnyBundle(req.BundleID)
 	if err != nil {
 		return nil, err
+	}
+	if isBuiltIn {
+		tmpl, err := s.builtinData.GetBuiltInTemplate(
+			req.BundleID,
+			req.TemplateSlug,
+			req.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return &spec.GetPromptTemplateResponse{Body: &tmpl}, nil
 	}
 
 	dirInfo, derr := nameutils.BuildBundleDir(bundle.ID, bundle.Slug)
@@ -858,11 +958,7 @@ func (s *PromptTemplateStore) GetPromptTemplate(
 
 	var finf nameutils.FileInfo
 
-	if req.Version != "" {
-		finf, _, err = s.findTemplate(dirInfo, req.TemplateSlug, req.Version)
-	} else {
-		finf, _, err = s.findTemplate(dirInfo, req.TemplateSlug, "")
-	}
+	finf, _, err = s.findTemplate(dirInfo, req.TemplateSlug, req.Version)
 	if err != nil {
 		return nil, err
 	}
@@ -880,148 +976,195 @@ func (s *PromptTemplateStore) GetPromptTemplate(
 	return &spec.GetPromptTemplateResponse{Body: &tpl}, nil
 }
 
-// ListPromptTemplates lists templates with optional filtering and pagination.
+// ListPromptTemplates streams every stored version.
+// Server-side filters are bundle-IDs, tags and include disabled.
 func (s *PromptTemplateStore) ListPromptTemplates(
-	ctx context.Context, req *spec.ListPromptTemplatesRequest,
+	ctx context.Context,
+	req *spec.ListPromptTemplatesRequest,
 ) (*spec.ListPromptTemplatesResponse, error) {
-	pageSize, pageToken := defPageSize, ""
-	includeDisabled, allVersions := false, false
-	tagFilter := map[string]struct{}{}
+	//  Restore / initialise paging state.
+	tok := templatePageToken{}
+	if req != nil && req.PageToken != "" {
+		// Second and later calls.
+		_ = func() error {
+			t, err := base64JSONDecode[templatePageToken](req.PageToken)
+			if err == nil {
+				tok = t
+			}
+			return err
+		}() // Decode error is treated as start from scratch.
+	}
+
+	// First call, use request body.
+	if req != nil && req.PageToken == "" {
+		tok.RecommendedPageSize = req.RecommendedPageSize
+		tok.IncludeDisabled = req.IncludeDisabled
+		tok.BundleIDs = slices.Clone(req.BundleIDs)
+		slices.Sort(tok.BundleIDs)
+		tok.Tags = slices.Clone(req.Tags)
+		sort.Strings(tok.Tags)
+	}
+
+	pageHint := tok.RecommendedPageSize
+	if pageHint <= 0 || pageHint > maxPageSize {
+		pageHint = defPageSize
+	}
+
+	//  Prepare helpers / constant filters
 	bundleFilter := map[spec.BundleID]struct{}{}
-
-	if req != nil {
-		if req.PageSize > 0 && req.PageSize <= maxPageSize {
-			pageSize = req.PageSize
-		}
-		pageToken = req.PageToken
-		includeDisabled = req.IncludeDisabled
-		allVersions = req.AllVersions
-		for _, t := range req.Tags {
-			tagFilter[t] = struct{}{}
-		}
-		for _, id := range req.BundleIDs {
-			bundleFilter[id] = struct{}{}
-		}
+	for _, id := range tok.BundleIDs {
+		bundleFilter[id] = struct{}{}
+	}
+	tagFilter := map[string]struct{}{}
+	for _, tg := range tok.Tags {
+		tagFilter[tg] = struct{}{}
 	}
 
-	// Use improved pagination with larger initial fetch for better performance.
-	fetchSize := pageSize
-	if !allVersions {
-		// Need head-room because we might drop many versions
-		// while picking only the latest enabled one per slug.
-		fetchSize = pageSize * 2
-	}
-	files, next, err := s.templateStore.ListFiles(
-		dirstore.ListingConfig{
-			PageSize:  fetchSize,
-			SortOrder: dirstore.SortOrderDescending,
-		},
-		pageToken)
-	if err != nil {
-		return nil, err
-	}
-
-	type rec struct {
-		item spec.PromptTemplateListItem
-		mt   time.Time
-	}
-	latest := make(map[string]rec)
-
-	var items []spec.PromptTemplateListItem
-	for _, p := range files {
-		fn := filepath.Base(p)
-		finf, err := nameutils.ParseTemplateFileName(fn)
-		if err != nil {
-			continue
-		}
-
-		dir := filepath.Base(filepath.Dir(p))
-		bdi, err := nameutils.ParseBundleDir(dir)
-		if err != nil {
-			continue
-		}
-
-		bid := bdi.ID
-		bslug := bdi.Slug
-		tslug := finf.Slug
-		tver := finf.Version
-
-		if len(bundleFilter) > 0 {
+	addAllowed := func(bid spec.BundleID, tpl *spec.PromptTemplate) bool {
+		if len(bundleFilter) != 0 {
 			if _, ok := bundleFilter[bid]; !ok {
-				continue
+				return false
 			}
 		}
-		if _, err := s.getBundle(bid); err != nil {
-			continue
-		}
-
-		raw, err := s.templateStore.GetFileData(nameutils.GetBundlePartitionFileKey(fn, dir), false)
-		if err != nil {
-			continue
-		}
-		var pt spec.PromptTemplate
-		if err := encdec.MapToStructWithJSONTags(raw, &pt); err != nil {
-			continue
-		}
-
-		if !pt.IsEnabled && !includeDisabled {
-			continue
+		if !tpl.IsEnabled && !tok.IncludeDisabled {
+			return false
 		}
 		if len(tagFilter) != 0 {
-			found := false
-			for _, t := range pt.Tags {
+			hit := false
+			for _, t := range tpl.Tags {
 				if _, ok := tagFilter[t]; ok {
-					found = true
+					hit = true
 					break
 				}
 			}
-			if !found {
+			if !hit {
+				return false
+			}
+		}
+		return true
+	}
+
+	var out []spec.PromptTemplateListItem
+	scannedUsers := false
+	//  Emit built-ins once (can exceed pageHint).
+	if s.builtinData == nil {
+		tok.BuiltInDone = true
+	} else if !tok.BuiltInDone {
+		biBundles, biTpls := s.builtinData.List()
+
+		// Deterministic ordering.
+		var bidList []spec.BundleID
+		for bid := range biBundles {
+			bidList = append(bidList, bid)
+		}
+		slices.Sort(bidList)
+
+		for _, bid := range bidList {
+			bslug := biBundles[bid].Slug
+
+			var tidList []spec.TemplateID
+			for tid := range biTpls[bid] {
+				tidList = append(tidList, tid)
+			}
+			slices.SortFunc(tidList, func(a, b spec.TemplateID) int {
+				return strings.Compare(string(a), string(b))
+			})
+
+			for _, templateID := range tidList {
+				pt := biTpls[bid][templateID]
+				if addAllowed(bid, &pt) {
+					out = append(out, spec.PromptTemplateListItem{
+						BundleID:        bid,
+						BundleSlug:      bslug,
+						TemplateSlug:    pt.Slug,
+						TemplateVersion: pt.Version,
+						IsBuiltIn:       true,
+					})
+				}
+			}
+		}
+		tok.BuiltInDone = true
+	}
+
+	//  Stream user templates until we reach pageHint - always consume whole directory pages so that no object can be skipped.
+	for len(out) < pageHint {
+		files, nxt, err := s.templateStore.ListFiles(
+			dirstore.ListingConfig{
+				PageSize:  fetchBatch,
+				SortOrder: dirstore.SortOrderDescending,
+			}, tok.DirTok)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, p := range files {
+			fn := filepath.Base(p)
+			dir := filepath.Base(filepath.Dir(p))
+
+			// Quick reject on malformed names.
+			if _, err := nameutils.ParseTemplateFileName(fn); err != nil {
 				continue
 			}
-		}
-
-		it := spec.PromptTemplateListItem{
-			BundleID:        bid,
-			BundleSlug:      bslug,
-			TemplateSlug:    tslug,
-			TemplateVersion: tver,
-			IsBuiltIn:       false,
-		}
-		if allVersions {
-			items = append(items, it)
-			continue
-		}
-		k := string(bid) + "|" + string(tslug)
-		if prev, ok := latest[k]; ok {
-			if pt.ModifiedAt.After(prev.mt) {
-				latest[k] = rec{item: it, mt: pt.ModifiedAt}
+			bdi, err := nameutils.ParseBundleDir(dir)
+			if err != nil {
+				continue
 			}
-		} else {
-			latest[k] = rec{item: it, mt: pt.ModifiedAt}
+
+			raw, err := s.templateStore.GetFileData(
+				nameutils.GetBundlePartitionFileKey(fn, dir), false)
+			if err != nil {
+				continue
+			}
+			var pt spec.PromptTemplate
+			if err := encdec.MapToStructWithJSONTags(raw, &pt); err != nil {
+				continue
+			}
+			if !addAllowed(bdi.ID, &pt) {
+				continue
+			}
+
+			out = append(out, spec.PromptTemplateListItem{
+				BundleID:        bdi.ID,
+				BundleSlug:      bdi.Slug,
+				TemplateSlug:    pt.Slug,
+				TemplateVersion: pt.Version,
+				IsBuiltIn:       false,
+			})
+		}
+
+		tok.DirTok = nxt
+		scannedUsers = true
+		if tok.DirTok == "" { // fully consumed
+			break
 		}
 	}
 
-	if !allVersions {
-		for _, r := range latest {
-			items = append(items, r.item)
-		}
-		// Sort by modification time for consistent ordering.
-		sort.Slice(items, func(i, j int) bool {
-			return latest[string(items[i].BundleID)+"|"+string(items[i].TemplateSlug)].mt.After(
-				latest[string(items[j].BundleID)+"|"+string(items[j].TemplateSlug)].mt)
-		})
-	}
-
-	if !allVersions && len(items) > pageSize {
-		items = items[:pageSize]
+	//  Next-page token (or terminate stream).
+	var next *string
+	if needMorePages(tok.DirTok, scannedUsers) {
+		s := base64JSONEncode(tok)
+		next = &s
 	}
 
 	return &spec.ListPromptTemplatesResponse{
 		Body: &spec.ListPromptTemplatesResponseBody{
-			PromptTemplateListItems: items,
-			NextPageToken:           nullableStr(next),
+			PromptTemplateListItems: out,
+			NextPageToken:           next,
 		},
 	}, nil
+}
+
+func needMorePages(dirTok string, scannedUsers bool) bool {
+	// More user files waiting        → token.
+	if dirTok != "" {
+		return true
+	}
+	// We never scanned user files yet (built-ins overflow) → token.
+	if !scannedUsers {
+		return true
+	}
+	// Otherwise we are done.
+	return false
 }
 
 // SearchPromptTemplates performs a full-text search for templates using the FTS engine.
@@ -1057,7 +1200,7 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 		bid := bdi.ID
 		bslug := bdi.Slug
 
-		if _, err := s.getBundle(bid); err != nil {
+		if _, _, err := s.getAnyBundle(bid); err != nil {
 			continue
 		}
 

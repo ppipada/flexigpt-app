@@ -367,7 +367,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 		}
 	}, []);
 
-	/* -------------- local filter for 1–2 char queries -------------- */
+	/* -------------- local filter for 1-2 char queries -------------- */
 	const filterLocalResults = useCallback(
 		(q: string) => {
 			const filtered = recentConversations.filter(c => c.title.toLowerCase().includes(q.toLowerCase()));
@@ -504,7 +504,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 					if (focusedIndex >= 0 && focusedIndex < searchState.results.length) {
 						handlePick(searchState.results[focusedIndex].searchConversation);
 					} else if (!searchState.loading && searchState.query.trim()) {
-						/* allow *any* non-empty query, even 1–2 chars */
+						/* allow *any* non-empty query, even 1-2 chars */
 						performSearch(searchState.query);
 					}
 					break;
@@ -535,7 +535,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 
 	const showSearchAllHintShortQuery =
 		searchState.query.length > 0 && // something was typed
-		searchState.query.length < 3 && // short (1–2 chars)
+		searchState.query.length < 3 && // short (1-2 chars)
 		!searchState.loading && // not currently searching
 		!searchState.searchedMessages; // backend not queried yet
 

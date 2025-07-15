@@ -86,7 +86,6 @@ export class WailsPromptStoreAPI implements IPromptStoreAPI {
 		bundleIDs?: string[],
 		tags?: string[],
 		includeDisabled?: boolean,
-		allVersions?: boolean,
 		pageSize?: number,
 		pageToken?: string
 	): Promise<{ promptTemplateListItems: PromptTemplateListItem[]; nextPageToken?: string }> {
@@ -94,8 +93,7 @@ export class WailsPromptStoreAPI implements IPromptStoreAPI {
 			BundleIDs: bundleIDs,
 			Tags: tags,
 			IncludeDisabled: includeDisabled,
-			AllVersions: allVersions,
-			PageSize: pageSize,
+			RecommendedPageSize: pageSize,
 			PageToken: pageToken,
 		};
 		const resp = await ListPromptTemplates(req as spec.ListPromptTemplatesRequest);

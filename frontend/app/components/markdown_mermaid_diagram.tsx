@@ -188,7 +188,7 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 
 			{/* ---------- Zoom modal (daisyUI v5) -------------------- */}
 			<dialog ref={dialogRef} className="modal" aria-label="Enlarged Mermaid diagram">
-				{/* backdrop – clicking it closes the dialog */}
+				{/* backdrop - clicking it closes the dialog */}
 				<form method="dialog" className="modal-backdrop">
 					<button aria-label="Close"></button>
 				</form>

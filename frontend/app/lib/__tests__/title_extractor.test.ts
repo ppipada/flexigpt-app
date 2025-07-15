@@ -1,5 +1,5 @@
 /* tests/generateTitle.test.ts
-   – adapted for generateTitle ⇒ TitleCandidate
+   - adapted for generateTitle ⇒ TitleCandidate
 */
 import { describe, expect, it } from 'vitest';
 

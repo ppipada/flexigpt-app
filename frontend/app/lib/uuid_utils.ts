@@ -1,7 +1,7 @@
 import { parse as uuidParse, v7 as uuidv7, validate as uuidValidate, version as uuidVersion } from 'uuid';
 
 /**
- * Raised whenever the supplied string is not a valid RFC–4122 UUIDv7.
+ * Raised whenever the supplied string is not a valid RFC-4122 UUIDv7.
  */
 class UUIDv7Error extends Error {
 	constructor(message: string) {

@@ -241,7 +241,7 @@ func (d *BuiltInData) populateDataFromFS() error {
 // SetBundleEnabled toggles a bundle and schedules a rebuild if needed.
 func (d *BuiltInData) SetBundleEnabled(id spec.BundleID, enabled bool) error {
 	if _, ok := d.bundles[id]; !ok {
-		return errors.New("bundle not found in built-in data")
+		return fmt.Errorf("bundleid: %q, err: %w", id, ErrBuiltInBundleNotFound)
 	}
 	if err := d.store.SetEnabled(BuiltInBundleID(id), enabled); err != nil {
 		return err
@@ -264,10 +264,15 @@ func (d *BuiltInData) SetTemplateEnabled(
 	enabled bool,
 ) error {
 	if _, ok := d.templates[bundleID]; !ok {
-		return errors.New("bundle not found in built-in data")
+		return fmt.Errorf("bundleID: %q, err: %w", bundleID, ErrBuiltInBundleNotFound)
 	}
 	if _, ok := d.templates[bundleID][templateID]; !ok {
-		return errors.New("template not found in built-in data")
+		return fmt.Errorf(
+			"bundleID: %q, templateID: %q err: %w",
+			bundleID,
+			templateID,
+			ErrBuiltInTemplateNotFound,
+		)
 	}
 	if err := d.store.SetEnabled(BuiltInTemplateID(templateID), enabled); err != nil {
 		return err
@@ -343,4 +348,43 @@ func (d *BuiltInData) List() (
 	bundles = maps.Clone(d.viewBundles)
 	templates = cloneTemplates(d.viewTemplates)
 	return bundles, templates
+}
+
+func (d *BuiltInData) GetBuiltInBundle(
+	id spec.BundleID,
+) (spec.PromptBundle, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	b, ok := d.viewBundles[id]
+	if !ok {
+		return spec.PromptBundle{}, ErrBundleNotFound
+	}
+	return b, nil
+}
+
+func (d *BuiltInData) GetBuiltInTemplate(
+	bundleID spec.BundleID,
+	slug spec.TemplateSlug,
+	version spec.TemplateVersion,
+) (spec.PromptTemplate, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	templates, ok := d.viewTemplates[bundleID]
+	if !ok {
+		return spec.PromptTemplate{}, ErrBundleNotFound
+	}
+
+	for _, tpl := range templates {
+		if tpl.Slug != slug {
+			continue
+		}
+
+		if tpl.Version == version {
+			return tpl, nil
+		}
+	}
+
+	return spec.PromptTemplate{}, ErrTemplateNotFound
 }

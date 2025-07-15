@@ -8,7 +8,7 @@ on:
         required: true
         default: "v0.0.1"
 
-      # macOS/win-only switches – default is release behaviour
+      # macOS/win-only switches - default is release behaviour
       sign:
         description: "Code-sign macOS build"
         type: boolean

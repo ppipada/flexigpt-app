@@ -89,17 +89,16 @@ type PatchPromptTemplateResponse struct{}
 type GetPromptTemplateRequest struct {
 	BundleID     BundleID        `path:"bundleID"     required:"true"`
 	TemplateSlug TemplateSlug    `path:"templateSlug" required:"true"`
-	Version      TemplateVersion `                                    query:"version,omitempty"`
+	Version      TemplateVersion `                    required:"true" query:"version"`
 }
 type GetPromptTemplateResponse struct{ Body *PromptTemplate }
 
 type ListPromptTemplatesRequest struct {
-	BundleIDs       []BundleID `query:"bundleIDs"`
-	Tags            []string   `query:"tags"`
-	IncludeDisabled bool       `query:"includeDisabled"`
-	AllVersions     bool       `query:"allVersions"`
-	PageSize        int        `query:"pageSize"`
-	PageToken       string     `query:"pageToken"`
+	BundleIDs           []BundleID `query:"bundleIDs"`
+	Tags                []string   `query:"tags"`
+	IncludeDisabled     bool       `query:"includeDisabled"`
+	RecommendedPageSize int        `query:"recommendedPageSize"`
+	PageToken           string     `query:"pageToken"`
 }
 
 type ListPromptTemplatesResponse struct {

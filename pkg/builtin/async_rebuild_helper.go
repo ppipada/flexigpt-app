@@ -33,7 +33,7 @@ type AsyncRebuilder struct {
 	maxAge  time.Duration
 	fn      func() error
 	lastRun int64         // Unix-nanos of the successful run
-	running int32         // 0/1 – guarded with CAS
+	running int32         // 0/1 - guarded with CAS
 	done    chan struct{} // closed when the current rebuild finishes
 }
 

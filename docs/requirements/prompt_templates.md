@@ -60,14 +60,14 @@ All routes are relative to `/prompts`.
 
 ### Templates
 
-| Verb   | Path                                                       | Notes                                                                        |
-| ------ | ---------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| PUT    | `/bundles/{bundleID}/templates/{templateSlug}`             | conflict error if same `<slug,version>` exists.                              |
-| PATCH  | `/bundles/{bundleID}/templates/{templateSlug}`             | `{version,isEnabled}` Only enable/disable.                                   |
-| DELETE | `/bundles/{bundleID}/templates/{templateSlug}?version={v}` | Hard-delete local copy.                                                      |
-| GET    | `/bundles/{bundleID}/templates/{templateSlug}?version={v}` | Omit `version` → returns active version.                                     |
-| GET    | `/templates`                                               | global list: `tags,bundleIDs,includeDisabled,allVersions,pageSize,pageToken` |
-| GET    | `/templates/search`                                        | global search: `q,includeDisabled,pageSize,pageToken`                        |
+| Verb   | Path                                                       | Notes                                                                       |
+| ------ | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
+| PUT    | `/bundles/{bundleID}/templates/{templateSlug}`             | conflict error if same `<slug,version>` exists.                             |
+| PATCH  | `/bundles/{bundleID}/templates/{templateSlug}`             | `{version,isEnabled}` Only enable/disable.                                  |
+| DELETE | `/bundles/{bundleID}/templates/{templateSlug}?version={v}` | Hard-delete local copy.                                                     |
+| GET    | `/bundles/{bundleID}/templates/{templateSlug}?version={v}` | Omit `version` → returns active version.                                    |
+| GET    | `/templates`                                               | global list: `tags,bundleIDs,includeDisabled,recommendedPageSize,pageToken` |
+| GET    | `/templates/search`                                        | global search: `q,includeDisabled,pageSize,pageToken`                       |
 
 ## 5 Behavioural rules
 
