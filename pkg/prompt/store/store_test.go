@@ -1,8 +1,8 @@
 // The test-suite exercises the public behaviour of PromptTemplateStore after
 // the recent refactor that
-//   * removed the “latest/active” template convenience (version is now
+//   * removed the "latest/active" template convenience (version is now
 //     mandatory),
-//   * introduced “fluid” pagination (bundles first, then user objects),
+//   * introduced "fluid" pagination (bundles first, then user objects),
 //   * added an immutable built-in catalogue that can only be enabled / disabled.
 //
 // The tests are still table driven and only use Go’s std-lib.
@@ -112,7 +112,7 @@ func builtinStatistics(s *PromptTemplateStore) (bundleCnt, templateCnt int) {
 	if s.builtinData == nil {
 		return 0, 0
 	}
-	b, t := s.builtinData.List()
+	b, t, _ := s.builtinData.ListBuiltInData()
 	bundleCnt = len(b)
 	for _, tmplMap := range t {
 		templateCnt += len(tmplMap)
@@ -127,7 +127,7 @@ func firstBuiltIn(
 	if s.builtinData == nil {
 		return bid, slug, ver, ok
 	}
-	_, tmplM := s.builtinData.List()
+	_, tmplM, _ := s.builtinData.ListBuiltInData()
 	for bID, m := range tmplM {
 		for _, tpl := range m {
 			return bID, tpl.Slug, tpl.Version, true
@@ -203,14 +203,14 @@ func TestBuiltInBundleGuards(t *testing.T) {
 			DisplayName: "illegal update",
 			IsEnabled:   true,
 		},
-	}); !errors.Is(err, ErrBuiltInReadOnly) {
+	}); !errors.Is(err, spec.ErrBuiltInReadOnly) {
 		t.Fatalf("expected ErrBuiltInReadOnly, got %v", err)
 	}
 
 	// 2. Deleting a built-in bundle must be rejected.
 	if _, err := s.DeletePromptBundle(t.Context(), &spec.DeletePromptBundleRequest{
 		BundleID: bid,
-	}); !errors.Is(err, ErrBuiltInReadOnly) {
+	}); !errors.Is(err, spec.ErrBuiltInReadOnly) {
 		t.Fatalf("expected ErrBuiltInReadOnly on delete, got %v", err)
 	}
 
@@ -306,7 +306,7 @@ func TestTemplateVersionConflict(t *testing.T) {
 		},
 	})
 
-	if !errors.Is(err, ErrConflict) {
+	if !errors.Is(err, spec.ErrConflict) {
 		t.Fatalf("expected ErrConflict, got %v", err)
 	}
 }
@@ -331,7 +331,7 @@ func TestTemplateDisabledBundleGuard(t *testing.T) {
 			}},
 		},
 	})
-	if !errors.Is(err, ErrBundleDisabled) {
+	if !errors.Is(err, spec.ErrBundleDisabled) {
 		t.Fatalf("expected ErrBundleDisabled, got %v", err)
 	}
 }
@@ -366,7 +366,7 @@ func TestTemplateMultiVersionExact(t *testing.T) {
 	if _, err := s.GetPromptTemplate(t.Context(), &spec.GetPromptTemplateRequest{
 		BundleID:     "b1",
 		TemplateSlug: "tpl",
-	}); !errors.Is(err, ErrInvalidRequest) {
+	}); !errors.Is(err, spec.ErrInvalidRequest) {
 		t.Fatalf("expected ErrInvalidRequest for missing version, got %v", err)
 	}
 }
@@ -395,7 +395,7 @@ func TestBuiltInTemplateGuards(t *testing.T) {
 			}},
 		},
 	})
-	if !errors.Is(err, ErrBuiltInReadOnly) {
+	if !errors.Is(err, spec.ErrBuiltInReadOnly) {
 		t.Fatalf("expected ErrBuiltInReadOnly, got %v", err)
 	}
 
@@ -405,7 +405,7 @@ func TestBuiltInTemplateGuards(t *testing.T) {
 		TemplateSlug: slug,
 		Version:      ver,
 	})
-	if !errors.Is(err, ErrBuiltInReadOnly) {
+	if !errors.Is(err, spec.ErrBuiltInReadOnly) {
 		t.Fatalf("expected ErrBuiltInReadOnly on delete, got %v", err)
 	}
 
@@ -625,7 +625,7 @@ func TestSearchWithoutEngine(t *testing.T) {
 
 	if _, err := s.SearchPromptTemplates(t.Context(), &spec.SearchPromptTemplatesRequest{
 		Query: "x",
-	}); !errors.Is(err, ErrFTSDisabled) {
+	}); !errors.Is(err, spec.ErrFTSDisabled) {
 		t.Fatalf("expected ErrFTSDisabled, got %v", err)
 	}
 }
@@ -646,7 +646,7 @@ func TestSoftDeleteBehaviour(t *testing.T) {
 	}
 
 	// Verify state flag.
-	if _, err := s.getUserBundle("b1"); !errors.Is(err, ErrBundleDeleting) {
+	if _, err := s.getUserBundle("b1"); !errors.Is(err, spec.ErrBundleDeleting) {
 		t.Fatalf("expected ErrBundleDeleting, got %v", err)
 	}
 

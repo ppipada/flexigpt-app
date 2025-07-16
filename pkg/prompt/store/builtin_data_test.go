@@ -13,6 +13,7 @@ import (
 	"testing/fstest"
 	"time"
 
+	"github.com/ppipada/flexigpt-app/pkg/booloverlay"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
 )
@@ -44,13 +45,13 @@ func overlayOnDisk(t *testing.T, dir, group, id string) (present, value bool) {
 	if err != nil {
 		t.Fatalf("cannot read overlay file: %v", err)
 	}
-	var root map[string]map[string]bool
+	var root map[string]map[string]booloverlay.Flag
 	if err := json.Unmarshal(data, &root); err != nil {
 		t.Fatalf("invalid overlay JSON: %v", err)
 	}
 	if sub, ok := root[group]; ok {
 		v, ok := sub[id]
-		return ok, v
+		return ok, v.Enabled
 	}
 	return false, false
 }
@@ -136,7 +137,7 @@ func TestNewBuiltInData(t *testing.T) {
 			}
 
 			// Verify basic functionality.
-			bundles, templates := bi.List()
+			bundles, templates, _ := bi.ListBuiltInData()
 			if len(bundles) == 0 {
 				t.Error("expected at least one bundle")
 			}
@@ -177,7 +178,7 @@ func TestSetBundleEnabled(t *testing.T) {
 		{
 			name: "enable_existing_bundle",
 			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, bool) {
-				bundles, _ := bi.List()
+				bundles, _, _ := bi.ListBuiltInData()
 				id, bundle := anyBundle(bundles)
 				return id, !bundle.IsEnabled
 			},
@@ -186,7 +187,7 @@ func TestSetBundleEnabled(t *testing.T) {
 		{
 			name: "disable_existing_bundle",
 			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, bool) {
-				bundles, _ := bi.List()
+				bundles, _, _ := bi.ListBuiltInData()
 				id, bundle := anyBundle(bundles)
 				return id, !bundle.IsEnabled
 			},
@@ -233,7 +234,7 @@ func TestSetBundleEnabled(t *testing.T) {
 
 			// Verify the change is reflected in the snapshot
 			// Note: Due to async rebuild, we might need to wait or force rebuild.
-			bundles, _ := bi.List()
+			bundles, _, _ := bi.ListBuiltInData()
 			if got := bundles[bundleID].IsEnabled; got != enabled {
 				t.Errorf("bundle enabled state = %v, want %v", got, enabled)
 			}
@@ -261,7 +262,7 @@ func TestSetTemplateEnabled(t *testing.T) {
 		{
 			name: "enable_existing_template",
 			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, spec.TemplateID, bool) {
-				_, templates := bi.List()
+				_, templates, _ := bi.ListBuiltInData()
 				bid, tid, tpl := anyTemplate(templates)
 				return bid, tid, !tpl.IsEnabled
 			},
@@ -270,7 +271,7 @@ func TestSetTemplateEnabled(t *testing.T) {
 		{
 			name: "disable_existing_template",
 			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, spec.TemplateID, bool) {
-				_, templates := bi.List()
+				_, templates, _ := bi.ListBuiltInData()
 				bid, tid, tpl := anyTemplate(templates)
 				return bid, tid, !tpl.IsEnabled
 			},
@@ -286,7 +287,7 @@ func TestSetTemplateEnabled(t *testing.T) {
 		{
 			name: "nonexistent_template",
 			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, spec.TemplateID, bool) {
-				bundles, _ := bi.List()
+				bundles, _, _ := bi.ListBuiltInData()
 				bid, _ := anyBundle(bundles)
 				return bid, spec.TemplateID("does-not-exist"), true
 			},
@@ -295,7 +296,7 @@ func TestSetTemplateEnabled(t *testing.T) {
 		{
 			name: "empty_template_id",
 			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, spec.TemplateID, bool) {
-				bundles, _ := bi.List()
+				bundles, _, _ := bi.ListBuiltInData()
 				bid, _ := anyBundle(bundles)
 				return bid, spec.TemplateID(""), true
 			},
@@ -327,7 +328,7 @@ func TestSetTemplateEnabled(t *testing.T) {
 			}
 
 			// Verify the change is reflected in the snapshot.
-			_, templates := bi.List()
+			_, templates, _ := bi.ListBuiltInData()
 			if got := templates[bundleID][templateID].IsEnabled; got != enabled {
 				t.Errorf("template enabled state = %v, want %v", got, enabled)
 			}
@@ -354,8 +355,8 @@ func TestList(t *testing.T) {
 	}
 
 	t.Run("returns_independent_copies", func(t *testing.T) {
-		b1, t1 := bi.List()
-		b2, t2 := bi.List()
+		b1, t1, _ := bi.ListBuiltInData()
+		b2, t2, _ := bi.ListBuiltInData()
 
 		// Mutate first copy.
 		for id := range b1 {
@@ -390,7 +391,7 @@ func TestList(t *testing.T) {
 	})
 
 	t.Run("returns_consistent_data", func(t *testing.T) {
-		bundles, templates := bi.List()
+		bundles, templates, _ := bi.ListBuiltInData()
 
 		// Verify all bundles have corresponding template maps.
 		for bundleID := range bundles {
@@ -408,7 +409,7 @@ func TestList(t *testing.T) {
 	})
 
 	t.Run("all_items_marked_builtin", func(t *testing.T) {
-		bundles, templates := bi.List()
+		bundles, templates, _ := bi.ListBuiltInData()
 
 		for id, bundle := range bundles {
 			if !bundle.IsBuiltIn {
@@ -433,7 +434,7 @@ func TestConcurrency(t *testing.T) {
 		t.Fatalf("setup failed: %v", err)
 	}
 
-	bundles, templates := bi.List()
+	bundles, templates, _ := bi.ListBuiltInData()
 	if len(bundles) == 0 || len(templates) == 0 {
 		t.Skip("no test data available")
 	}
@@ -450,7 +451,7 @@ func TestConcurrency(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				for range 100 {
-					bundles, templates := bi.List()
+					bundles, templates, _ := bi.ListBuiltInData()
 					if len(bundles) == 0 || len(templates) == 0 {
 						t.Errorf("got empty results during concurrent read")
 						return
@@ -502,7 +503,7 @@ func TestConcurrency(t *testing.T) {
 					case <-done:
 						return
 					default:
-						bi.List()
+						_, _, _ = bi.ListBuiltInData()
 					}
 				}
 			}()
@@ -539,11 +540,12 @@ func TestRebuildSnapshot(t *testing.T) {
 		t.Fatalf("setup failed: %v", err)
 	}
 
-	bundles, _ := bi.List()
+	bundles, _, _ := bi.ListBuiltInData()
 	bundleID, bundle := anyBundle(bundles)
 
 	// Change the overlay directly.
-	if err := bi.store.SetEnabled(BuiltInBundleID(bundleID), !bundle.IsEnabled); err != nil {
+	_, err = bi.store.SetFlag(BuiltInBundleID(bundleID), !bundle.IsEnabled)
+	if err != nil {
 		t.Fatalf("failed to set overlay: %v", err)
 	}
 
@@ -553,7 +555,7 @@ func TestRebuildSnapshot(t *testing.T) {
 	}
 
 	// Verify the change is reflected.
-	newBundles, _ := bi.List()
+	newBundles, _, _ := bi.ListBuiltInData()
 	if newBundles[bundleID].IsEnabled == bundle.IsEnabled {
 		t.Error("rebuild did not apply overlay changes")
 	}
@@ -566,7 +568,7 @@ func TestAsyncRebuild(t *testing.T) {
 		t.Fatalf("setup failed: %v", err)
 	}
 
-	bundles, _ := bi.List()
+	bundles, _, _ := bi.ListBuiltInData()
 	bundleID, bundle := anyBundle(bundles)
 
 	// Trigger async rebuild by making the snapshot stale.
@@ -581,7 +583,7 @@ func TestAsyncRebuild(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	// Verify the change is eventually reflected.
-	newBundles, _ := bi.List()
+	newBundles, _, _ := bi.ListBuiltInData()
 	if newBundles[bundleID].IsEnabled == bundle.IsEnabled {
 		t.Error("async rebuild did not apply changes")
 	}
@@ -746,7 +748,7 @@ func Test_NewBuiltInData_SyntheticFS_HappyAndCRUD(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	bundles, tpls := bi.List()
+	bundles, tpls, _ := bi.ListBuiltInData()
 	if len(bundles) != 1 || len(tpls) != 1 {
 		t.Fatalf("want 1/1 objects, got %d/%d", len(bundles), len(tpls))
 	}

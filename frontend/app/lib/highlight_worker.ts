@@ -27,7 +27,7 @@ const baseLangs = [
 	'cpp',
 ];
 
-// Singleton highlighter — store the PROMISE so we never create two.
+// Singleton highlighter -- store the PROMISE so we never create two.
 let highlighterPromise: Promise<Highlighter> | undefined;
 
 async function init(): Promise<Highlighter> {

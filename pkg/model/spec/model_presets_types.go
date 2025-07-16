@@ -2,7 +2,7 @@ package spec
 
 type ModelPresetID string
 
-// ModelPreset is the entire “model + default knobs” bundle the user can save.
+// ModelPreset is the entire "model + default knobs" bundle the user can save.
 // Anything not present in the preset is considered to be taken as default from any global defaults or inbuilt model defaults.
 type ModelPreset struct {
 	ID           ModelPresetID     `json:"id"           required:"true"`

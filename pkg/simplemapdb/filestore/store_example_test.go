@@ -368,7 +368,7 @@ func Example_events_basicFlow() {
 	for _, ev := range got {
 		switch ev.Op {
 		case OpSetFile:
-			fmt.Printf("%s → %v\n", ev.Op, ev.Data)
+			fmt.Printf("%s -> %v\n", ev.Op, ev.Data)
 		case OpResetFile:
 			fmt.Printf("%s\n", ev.Op)
 		default:
@@ -380,7 +380,7 @@ func Example_events_basicFlow() {
 	mu.Unlock()
 
 	// Output:
-	// setFile → map[a:1]
+	// setFile -> map[a:1]
 	// setKey [a]  old=1  new=2
 	// deleteKey [a]  old=2  new=<nil>
 	// resetFile

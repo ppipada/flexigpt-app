@@ -1,8 +1,9 @@
+// Package store manages the read-only built-in prompt assets together with a
+// writable overlay that enables or disables individual bundles or templates.
 package store
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/fs"
 	"maps"
@@ -22,16 +23,15 @@ const overlayJSON = "overlay.json"
 
 type BuiltInBundleID spec.BundleID
 
-func (BuiltInBundleID) Group() string { return "bundles" }
-func (b BuiltInBundleID) ID() string  { return string(b) }
+func (BuiltInBundleID) Group() booloverlay.GroupID { return "bundles" }
+func (b BuiltInBundleID) ID() booloverlay.KeyID    { return booloverlay.KeyID(b) }
 
 type BuiltInTemplateID spec.TemplateID
 
-func (BuiltInTemplateID) Group() string { return "templates" }
-func (t BuiltInTemplateID) ID() string  { return string(t) }
+func (BuiltInTemplateID) Group() booloverlay.GroupID { return "templates" }
+func (t BuiltInTemplateID) ID() booloverlay.KeyID    { return booloverlay.KeyID(t) }
 
 // BuiltInData keeps the built-in prompt assets and an overlay with enable flags.
-// A cached snapshot already has the overlay applied.
 type BuiltInData struct {
 	bundlesFS      fs.FS
 	bundlesDir     string
@@ -49,7 +49,7 @@ type BuiltInData struct {
 
 type BuiltInDataOption func(*BuiltInData)
 
-// Option to override the FS.
+// WithBundlesFS overrides the default embedded FS.
 func WithBundlesFS(fsys fs.FS, rootDir string) BuiltInDataOption {
 	return func(b *BuiltInData) {
 		b.bundlesFS = fsys
@@ -73,7 +73,7 @@ func NewBuiltInData(
 		snapshotMaxAge = time.Hour
 	}
 	if overlayBaseDir == "" {
-		return nil, errors.New("overlayBaseDir must not be empty")
+		return nil, fmt.Errorf("%w: overlayBaseDir", spec.ErrInvalidDir)
 	}
 	if err := os.MkdirAll(overlayBaseDir, 0o755); err != nil {
 		return nil, err
@@ -88,7 +88,6 @@ func NewBuiltInData(
 	}
 
 	data := &BuiltInData{
-		// Initialize with default fs, can override using opts.
 		bundlesFS:      builtin.BuiltinPromptBundlesFS,
 		bundlesDir:     builtin.BuiltinPromptBundlesRootDir,
 		overlayBaseDir: overlayBaseDir,
@@ -115,12 +114,10 @@ func NewBuiltInData(
 }
 
 func (d *BuiltInData) populateDataFromFS() error {
-	// Pick the effective FS that we'll actually read from.
 	bundlesFS, err := resolveBundlesFS(d.bundlesFS, d.bundlesDir)
 	if err != nil {
 		return err
 	}
-	// Load bundles.json.
 	rawBundles, err := fs.ReadFile(bundlesFS, builtin.BuiltinPromptBundlesJSON)
 	if err != nil {
 		return err
@@ -138,25 +135,22 @@ func (d *BuiltInData) populateDataFromFS() error {
 		templateMap[id] = make(map[spec.TemplateID]spec.PromptTemplate)
 	}
 	if len(bundleMap) == 0 {
-		return errors.New("built-in data: bundles.json contains no bundles")
+		return fmt.Errorf("built-in data: %s/bundles.json contains no bundles", d.bundlesDir)
 	}
 
-	// Walk & validate templates.
 	seenTpl := make(map[spec.TemplateID]string)
 	err = fs.WalkDir(
 		bundlesFS,
 		".",
-		func(inPath string, d fs.DirEntry, _ error) error {
-			if d.IsDir() || path.Ext(inPath) != ".json" {
+		func(inPath string, de fs.DirEntry, _ error) error {
+			if de.IsDir() || path.Ext(inPath) != ".json" {
 				return nil
 			}
 			fn := path.Base(inPath)
-			if fn == builtin.BuiltinPromptBundlesJSON ||
-				fn == overlayJSON {
+			if fn == builtin.BuiltinPromptBundlesJSON || fn == overlayJSON {
 				return nil
 			}
 
-			// Validate bundle dir.
 			dir := path.Base(path.Dir(inPath))
 			dirInfo, derr := nameutils.ParseBundleDir(dir)
 			if derr != nil {
@@ -173,7 +167,6 @@ func (d *BuiltInData) populateDataFromFS() error {
 					inPath, dirInfo.Slug, bDef.Slug)
 			}
 
-			// Load template JSON.
 			raw, err := fs.ReadFile(bundlesFS, inPath)
 			if err != nil {
 				return err
@@ -226,7 +219,6 @@ func (d *BuiltInData) populateDataFromFS() error {
 		}
 	}
 
-	// Store the freshly loaded maps into the already created data.
 	d.bundles = bundleMap
 	d.templates = templateMap
 	d.mu.Lock()
@@ -238,18 +230,20 @@ func (d *BuiltInData) populateDataFromFS() error {
 	return nil
 }
 
-// SetBundleEnabled toggles a bundle and schedules a rebuild if needed.
+// SetBundleEnabled toggles a bundle flag.
 func (d *BuiltInData) SetBundleEnabled(id spec.BundleID, enabled bool) error {
 	if _, ok := d.bundles[id]; !ok {
-		return fmt.Errorf("bundleid: %q, err: %w", id, ErrBuiltInBundleNotFound)
+		return fmt.Errorf("bundleID: %q, err: %w", id, spec.ErrBuiltInBundleNotFound)
 	}
-	if err := d.store.SetEnabled(BuiltInBundleID(id), enabled); err != nil {
+	flag, err := d.store.SetFlag(BuiltInBundleID(id), enabled)
+	if err != nil {
 		return err
 	}
 
 	d.mu.Lock()
 	b := d.viewBundles[id]
 	b.IsEnabled = enabled
+	b.ModifiedAt = flag.ModifiedAt // update timestamp from overlay
 	d.viewBundles[id] = b
 	d.mu.Unlock()
 
@@ -257,31 +251,29 @@ func (d *BuiltInData) SetBundleEnabled(id spec.BundleID, enabled bool) error {
 	return nil
 }
 
-// SetTemplateEnabled toggles a template flag and schedules a rebuild if needed.
+// SetTemplateEnabled toggles a template flag.
 func (d *BuiltInData) SetTemplateEnabled(
 	bundleID spec.BundleID,
 	templateID spec.TemplateID,
 	enabled bool,
 ) error {
 	if _, ok := d.templates[bundleID]; !ok {
-		return fmt.Errorf("bundleID: %q, err: %w", bundleID, ErrBuiltInBundleNotFound)
+		return fmt.Errorf("bundleID: %q, err: %w", bundleID, spec.ErrBuiltInBundleNotFound)
 	}
 	if _, ok := d.templates[bundleID][templateID]; !ok {
-		return fmt.Errorf(
-			"bundleID: %q, templateID: %q err: %w",
-			bundleID,
-			templateID,
-			ErrBuiltInTemplateNotFound,
-		)
+		return fmt.Errorf("bundleID: %q, templateID: %q err: %w",
+			bundleID, templateID, spec.ErrBuiltInTemplateNotFound)
 	}
-	if err := d.store.SetEnabled(BuiltInTemplateID(templateID), enabled); err != nil {
+	flag, err := d.store.SetFlag(BuiltInTemplateID(templateID), enabled)
+	if err != nil {
 		return err
 	}
 
 	d.mu.Lock()
-	t := d.viewTemplates[bundleID][templateID]
-	t.IsEnabled = enabled
-	d.viewTemplates[bundleID][templateID] = t
+	tpl := d.viewTemplates[bundleID][templateID]
+	tpl.IsEnabled = enabled
+	tpl.ModifiedAt = flag.ModifiedAt // update timestamp from overlay
+	d.viewTemplates[bundleID][templateID] = tpl
 	d.mu.Unlock()
 
 	d.rebuilder.Trigger()
@@ -298,24 +290,30 @@ func (d *BuiltInData) rebuildSnapshot() error {
 	)
 
 	for id, b := range d.bundles {
-		en, err := d.store.IsEnabled(BuiltInBundleID(id), b.IsEnabled)
+		flag, ok, err := d.store.GetFlag(BuiltInBundleID(id))
 		if err != nil {
 			return err
 		}
 		bc := b
-		bc.IsEnabled = en
+		if ok {
+			bc.IsEnabled = flag.Enabled
+			bc.ModifiedAt = flag.ModifiedAt // take overlay timestamp
+		}
 		newBundles[id] = bc
 	}
 
 	for bid, tm := range d.templates {
 		sub := make(map[spec.TemplateID]spec.PromptTemplate, len(tm))
 		for tid, t := range tm {
-			en, err := d.store.IsEnabled(BuiltInTemplateID(tid), t.IsEnabled)
+			flag, ok, err := d.store.GetFlag(BuiltInTemplateID(tid))
 			if err != nil {
 				return err
 			}
 			tc := t
-			tc.IsEnabled = en
+			if ok {
+				tc.IsEnabled = flag.Enabled
+				tc.ModifiedAt = flag.ModifiedAt // take overlay timestamp
+			}
 			sub[tid] = tc
 		}
 		newTemplates[bid] = sub
@@ -323,7 +321,6 @@ func (d *BuiltInData) rebuildSnapshot() error {
 
 	d.viewBundles = newBundles
 	d.viewTemplates = newTemplates
-
 	return nil
 }
 
@@ -332,33 +329,30 @@ func cloneTemplates(
 ) map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate {
 	dst := make(map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate, len(src))
 	for bid, inner := range src {
-		// Clone each inner map so callers can’t mutate the originals.
 		dst[bid] = maps.Clone(inner)
 	}
 	return dst
 }
 
-// List returns a deep copy of the cached snapshot.
-func (d *BuiltInData) List() (
+// ListBuiltInData returns a deep copy of the cached snapshot.
+func (d *BuiltInData) ListBuiltInData() (
 	bundles map[spec.BundleID]spec.PromptBundle,
 	templates map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate,
+	err error,
 ) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	bundles = maps.Clone(d.viewBundles)
 	templates = cloneTemplates(d.viewTemplates)
-	return bundles, templates
+	return bundles, templates, nil
 }
 
-func (d *BuiltInData) GetBuiltInBundle(
-	id spec.BundleID,
-) (spec.PromptBundle, error) {
+func (d *BuiltInData) GetBuiltInBundle(id spec.BundleID) (spec.PromptBundle, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
-
 	b, ok := d.viewBundles[id]
 	if !ok {
-		return spec.PromptBundle{}, ErrBundleNotFound
+		return spec.PromptBundle{}, spec.ErrBundleNotFound
 	}
 	return b, nil
 }
@@ -370,21 +364,14 @@ func (d *BuiltInData) GetBuiltInTemplate(
 ) (spec.PromptTemplate, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
-
 	templates, ok := d.viewTemplates[bundleID]
 	if !ok {
-		return spec.PromptTemplate{}, ErrBundleNotFound
+		return spec.PromptTemplate{}, spec.ErrBundleNotFound
 	}
-
 	for _, tpl := range templates {
-		if tpl.Slug != slug {
-			continue
-		}
-
-		if tpl.Version == version {
+		if tpl.Slug == slug && tpl.Version == version {
 			return tpl, nil
 		}
 	}
-
-	return spec.PromptTemplate{}, ErrTemplateNotFound
+	return spec.PromptTemplate{}, spec.ErrTemplateNotFound
 }

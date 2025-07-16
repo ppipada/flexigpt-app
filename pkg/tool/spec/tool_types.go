@@ -27,7 +27,7 @@ type ToolSpec struct {
 	ModifiedAt time.Time `json:"modifiedAt"`
 }
 
-// Collection of tools that often travel together (e.g. “Web + Math”).
+// Collection of tools that often travel together (e.g. "Web + Math").
 type ToolBundle struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`

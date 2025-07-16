@@ -5,39 +5,35 @@ import (
 	"io/fs"
 	"log/slog"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
-// SyncDecision tells the helper what to do with ONE file.
 type SyncDecision struct {
-	// The consumer id of the doc (i.e externalID), must be non-empty if Skip == false.
+	// External identifier (rowid in the virtual table).
+	// Must be non-empty f Skip == false.
 	ID string
-	// New value for compareColumn (ignored if Unchanged).
+	// Value for compareColumn (mtime / hash / ...). Ignored when Unchanged.
 	CmpOut string
-	// FTS column map              (ignored if Unchanged).
+	// Column -> text map for FTS. Ignored when Unchanged.
 	Vals map[string]string
-	// Index already up-to-date, no processing needed.
+	// The row is already up-to-date, nothing to do.
 	Unchanged bool
-	// Ignore this file completely, delete if present.
+	// Ignore this document entirely (also triggers delete if it existed).
 	Skip bool
 }
 
-// GetPrevCmp lets the callback query the value that is *currently*
-// stored in compareColumn for a specific externalID ("" = not indexed).
+// GetPrevCmp allows producers to query the compareColumn value that is
+// currently stored for a specific ID ("" == not indexed yet).
 type GetPrevCmp func(id string) string
 
-// ProcessFile is the single user callback.
-// It may call getPrev(id) zero or more times.
-// If this func returns a err the walk will be stopped.
+// ProcessFile is the directory-walker callback.
 type ProcessFile func(
 	ctx context.Context,
 	baseDir, fullPath string,
 	getPrev GetPrevCmp,
 ) (SyncDecision, error)
 
-// SyncDirToFTS walks “baseDir” and brings the FTS table in sync.
-//
-// The compareColumn must exist in Engine.Config.Columns (mtime, hash, etc).
 func SyncDirToFTS(
 	ctx context.Context,
 	engine *Engine,
@@ -46,15 +42,57 @@ func SyncDirToFTS(
 	batchSize int,
 	processFile ProcessFile,
 ) error {
+	// Factory that converts the WalkDir stream into SyncDecision events.
+	iter := func(getPrev GetPrevCmp, emit func(SyncDecision) error) error {
+		return filepath.WalkDir(baseDir,
+			func(p string, d fs.DirEntry, walkErr error) error {
+				if walkErr != nil || d.IsDir() {
+					return walkErr
+				}
+				dec, err := processFile(ctx, baseDir, p, getPrev)
+				if err != nil {
+					return err
+				}
+				return emit(dec)
+			})
+	}
+
+	// A row belongs to this dataset when its ID starts with baseDir.
+	belongs := func(id string) bool { return strings.HasPrefix(id, baseDir) }
+
+	return SyncIterToFTS(
+		ctx,
+		engine,
+		compareColumn,
+		batchSize,
+		iter,
+		belongs,
+	)
+}
+
+// Iterate is the generic producer contract.
+// GetPrev      lets the producer look at the current compareColumn value.
+// Emit(dec)    must be invoked exactly once for every document that belongs to this dataset.
+type Iterate func(getPrev GetPrevCmp, emit func(SyncDecision) error) error
+
+// Belongs(id) must return true for all rows owned by this producer so that vanished rows can be deleted.
+func SyncIterToFTS(
+	ctx context.Context,
+	engine *Engine,
+	compareColumn string,
+	batchSize int,
+	iter Iterate,
+	belongs func(id string) bool,
+) error {
 	if batchSize <= 0 {
 		batchSize = 1000
 	}
-	const batchListPageSize = 10000
+	const listPage = 10_000
 	start := time.Now()
 
-	slog.Info("fts-sync start", "dir", baseDir, "cmpCol", compareColumn)
+	slog.Info("fts-sync start", "cmpCol", compareColumn)
 
-	// Read current index to get a map of externalID to compareValue.
+	// Fetch current state (ID -> compareColumn value).
 	existing := make(map[string]string)
 
 	token := ""
@@ -64,7 +102,7 @@ func SyncDirToFTS(
 			compareColumn,
 			[]string{compareColumn},
 			token,
-			batchListPageSize,
+			listPage,
 		)
 		if err != nil {
 			return err
@@ -78,17 +116,12 @@ func SyncDirToFTS(
 		token = next
 	}
 	getPrev := func(id string) string { return existing[id] }
+
+	// Incremental diff while the producer iterates over its dataset.
 	var (
-		// Files whose ID was accepted (Skip==false).
-		nProcessed int
-		// Skip==true or empty ID.
-		nSkipped int
-		// Dec.Unchanged==true.
-		nUnchanged int
-		// Rows really written to the index.
-		nUpserted int
+		nProcessed, nSkipped, nUnchanged, nUpserted int
 	)
-	// Walk directory incremental updates in small batches.
+
 	seenNow := make(map[string]struct{}, 4096)
 	pending := make(map[string]map[string]string, batchSize)
 
@@ -104,21 +137,8 @@ func SyncDirToFTS(
 		return nil
 	}
 
-	err := filepath.WalkDir(baseDir, func(p string, d fs.DirEntry, we error) error {
-		if d.IsDir() || we != nil {
-			// Its a dir, we dont want to process it other than walking.
-			// There was some walk error in this particular path.
-			return we
-		}
-
-		dec, err := processFile(ctx, baseDir, p, getPrev)
-		if err != nil {
-			// Consumer returned a error, they want us to stop the walk.
-			return err
-		}
+	emit := func(dec SyncDecision) error {
 		if dec.Skip || dec.ID == "" {
-			// Silently skip on Skip==true for a path in consumer.
-			// Or No valid id -> treat like Skip.
 			nSkipped++
 			return nil
 		}
@@ -142,27 +162,33 @@ func SyncDirToFTS(
 			return flush()
 		}
 		return nil
-	})
-	if err != nil {
+	}
+
+	if err := iter(getPrev, emit); err != nil {
 		return err
 	}
 	if err := flush(); err != nil {
 		return err
 	}
 
-	// Delete documents whose source file vanished.
+	// Delete documents that vanished from the producers dataset.
 	var toDelete []string
 	for id := range existing {
+		if !belongs(id) { // ignore rows owned by other producers
+			continue
+		}
 		if _, ok := seenNow[id]; !ok {
 			toDelete = append(toDelete, id)
 		}
 	}
-	if err := engine.BatchDelete(ctx, toDelete); err != nil {
-		return err
+	if len(toDelete) != 0 {
+		if err := engine.BatchDelete(ctx, toDelete); err != nil {
+			return err
+		}
 	}
 
+	// Done - statistics.
 	slog.Info("fts-sync done",
-		"dir", baseDir,
 		"took", time.Since(start),
 		"processed", nProcessed,
 		"upserted", nUpserted,

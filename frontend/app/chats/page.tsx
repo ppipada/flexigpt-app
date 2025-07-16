@@ -85,9 +85,9 @@ const ChatScreen: FC = () => {
 	};
 
 	// Persist `updatedChat` using the cheapest API that is still correct.
-	// •  First time we ever write this conversation              → putConversation
-	// •  Title has changed (search index must be updated)        → putConversation
-	// •  Otherwise                                               → putMessagesToConversation
+	// •  First time we ever write this conversation              -> putConversation
+	// •  Title has changed (search index must be updated)        -> putConversation
+	// •  Otherwise                                               -> putMessagesToConversation
 	// putMessagesToConversation REQUIRES the *full* message list, so we just pass `updatedChat.messages` every time.
 	const saveUpdatedChat = (updatedChat: Conversation) => {
 		let newTitle = updatedChat.title;
@@ -111,16 +111,16 @@ const ChatScreen: FC = () => {
 
 		// Decide which API to call
 		if (!isChatPersistedRef.current) {
-			// 1st save → create the record + metadata work
+			// 1st save -> create the record + metadata work
 			conversationStoreAPI.putConversation(updatedChat);
 			isChatPersistedRef.current = true;
 			bumpSearchKey(); // now searchable
 		} else if (titleChanged) {
-			// metadata (title) changed → need the heavy PUT
+			// metadata (title) changed -> need the heavy PUT
 			conversationStoreAPI.putConversation(updatedChat);
 			bumpSearchKey();
 		} else {
-			// normal case → only messages changed
+			// normal case -> only messages changed
 			conversationStoreAPI.putMessagesToConversation(updatedChat.id, updatedChat.title, updatedChat.messages);
 		}
 

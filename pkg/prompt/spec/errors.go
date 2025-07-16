@@ -1,8 +1,15 @@
-package store
+package spec
 
 import "errors"
 
 var (
+	ErrInvalidRequest  = errors.New("invalid request")
+	ErrInvalidSlug     = errors.New("invalid slug")
+	ErrInvalidVersion  = errors.New("invalid version")
+	ErrInvalidFilename = errors.New("invalid filename")
+	ErrInvalidDir      = errors.New("invalid directory")
+	ErrConflict        = errors.New("resource already exists")
+
 	ErrBuiltInBundleNotFound = errors.New("bundle not found in built-in data")
 	ErrBundleNotFound        = errors.New("bundle not found")
 	ErrBundleDisabled        = errors.New("bundle is disabled")
@@ -12,9 +19,8 @@ var (
 	ErrTemplateNotFound        = errors.New("template not found")
 	ErrBuiltInTemplateNotFound = errors.New("template not found in built-in data")
 
-	ErrConflict       = errors.New("resource already exists")
-	ErrInvalidRequest = errors.New("invalid request")
-	ErrFTSDisabled    = errors.New("FTS is disabled")
-
 	ErrBuiltInReadOnly = errors.New("built-in resource is read-only")
+
+	ErrFTSDisabled            = errors.New("FTS is disabled")
+	ErrBundleAttributeMissing = errors.New("missing bundle partition attribute")
 )

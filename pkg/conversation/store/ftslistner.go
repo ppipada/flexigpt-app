@@ -49,7 +49,7 @@ func NewFTSListner(e *ftsengine.Engine) filestore.Listener {
 }
 
 // extractFTS converts the in-memory JSON map (produced by MapFileStore)
-// into the column → text map expected by ftsengine.
+// into the column -> text map expected by ftsengine.
 func extractFTS(fullPath string, m map[string]any) map[string]string {
 	var (
 		title, _ = stringField(m, "title")
@@ -102,7 +102,7 @@ func stringField(m map[string]any, key string) (string, bool) {
 			return s, true
 		}
 	}
-	// Also accept “Title” from StructToMap.
+	// Also accept "Title" from StructToMap.
 	if v, ok := m[strings.ToUpper(key[:1])+key[1:]]; ok {
 		if s, ok := v.(string); ok {
 			return s, true

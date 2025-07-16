@@ -75,7 +75,7 @@ type (
 // sampling.
 //
 // Because LLMs can vary along multiple dimensions, choosing the "best" model is
-// rarely straightforward.  Different models excel in different areas—some are
+// rarely straightforward.  Different models excel in different areas--some are
 // faster but less capable, others are more capable but more expensive, and so
 // on. This interface allows servers to express their priorities across multiple
 // dimensions to help clients make an appropriate selection for their use case.

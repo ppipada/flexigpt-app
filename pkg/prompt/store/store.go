@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ppipada/flexigpt-app/pkg/prompt/fts"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/nameutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
@@ -26,21 +27,13 @@ import (
 )
 
 const (
+	fetchBatch      = 512              // IO chunk for internal dir scans
 	maxPageSize     = 256              // Maximum allowed page size for listing.
 	defPageSize     = 25               // Default page size for listing.
 	softDeleteGrace = 60 * time.Minute // Grace period before hard-deleting a soft-deleted bundle.
 	cleanupInterval = 24 * time.Hour   // Interval for periodic cleanup sweep.
 	snapshotMaxAge  = time.Hour
-	fetchBatch      = 512 // IO chunk for internal dir scans
 )
-
-// nullableStr returns a pointer to the string, or nil if the string is empty.
-func nullableStr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
 
 // slugLocks manages a RW-mutex per bundleID|slug for concurrency control on templates.
 // Note: This implementation allows indefinite growth of the lock map, which is acceptable
@@ -172,13 +165,13 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 		if err != nil {
 			return nil, err
 		}
-		StartRebuild(context.Background(), s.baseDir, s.fts)
+		fts.StartUserPromptsFTSRebuild(context.Background(), s.baseDir, s.fts)
 	}
 
 	// Initialize template directory store (per-bundle folder).
 	dirOpts := []dirstore.Option{dirstore.WithPartitionProvider(s.pp)}
 	if s.fts != nil {
-		dirOpts = append(dirOpts, dirstore.WithListeners(NewFTSListener(s.fts)))
+		dirOpts = append(dirOpts, dirstore.WithListeners(fts.NewUserPromptsFTSListener(s.fts)))
 	}
 	s.templateStore, err = dirstore.NewMapDirectoryStore(s.baseDir, true, dirOpts...)
 	if err != nil {
@@ -224,11 +217,11 @@ func (s *PromptTemplateStore) getUserBundle(id spec.BundleID) (spec.PromptBundle
 
 	b, ok := all.Bundles[id]
 	if !ok {
-		return spec.PromptBundle{}, fmt.Errorf("%w: %s", ErrBundleNotFound, id)
+		return spec.PromptBundle{}, fmt.Errorf("%w: %s", spec.ErrBundleNotFound, id)
 	}
 
 	if isSoftDeleted(b) {
-		return b, fmt.Errorf("%w: %s", ErrBundleDeleting, id)
+		return b, fmt.Errorf("%w: %s", spec.ErrBundleDeleting, id)
 	}
 	return b, nil
 }
@@ -247,7 +240,7 @@ func (s *PromptTemplateStore) getAnyBundle(
 		return bundle, false, nil
 	}
 
-	return spec.PromptBundle{}, false, fmt.Errorf("%w: %s", ErrBundleNotFound, id)
+	return spec.PromptBundle{}, false, fmt.Errorf("%w: %s", spec.ErrBundleNotFound, id)
 }
 
 // startCleanupLoop starts the background cleanup goroutine for hard-deleting bundles after the grace period.
@@ -362,7 +355,7 @@ func (s *PromptTemplateStore) PutPromptBundle(
 ) (*spec.PutPromptBundleResponse, error) {
 	if req == nil || req.Body == nil ||
 		req.BundleID == "" || req.Body.Slug == "" || req.Body.DisplayName == "" {
-		return nil, fmt.Errorf("%w: id, slug & displayName are required", ErrInvalidRequest)
+		return nil, fmt.Errorf("%w: id, slug & displayName are required", spec.ErrInvalidRequest)
 	}
 	if err := nameutils.ValidateBundleSlug(req.Body.Slug); err != nil {
 		return nil, err
@@ -370,7 +363,7 @@ func (s *PromptTemplateStore) PutPromptBundle(
 	if s.builtinData != nil {
 		_, err := s.builtinData.GetBuiltInBundle(req.BundleID)
 		if err == nil {
-			return nil, fmt.Errorf("%w: bundleID: %q", ErrBuiltInReadOnly, req.BundleID)
+			return nil, fmt.Errorf("%w: bundleID: %q", spec.ErrBuiltInReadOnly, req.BundleID)
 		}
 		// We allow same slug with different IDs in bundle.
 	}
@@ -417,7 +410,7 @@ func (s *PromptTemplateStore) PatchPromptBundle(
 	ctx context.Context, req *spec.PatchPromptBundleRequest,
 ) (*spec.PatchPromptBundleResponse, error) {
 	if req == nil || req.Body == nil || req.BundleID == "" {
-		return nil, fmt.Errorf("%w: bundleID required", ErrInvalidRequest)
+		return nil, fmt.Errorf("%w: bundleID required", spec.ErrInvalidRequest)
 	}
 
 	if s.builtinData != nil {
@@ -440,7 +433,7 @@ func (s *PromptTemplateStore) PatchPromptBundle(
 	}
 	bundle, ok := all.Bundles[req.BundleID]
 	if !ok {
-		return nil, fmt.Errorf("%w: %s", ErrBundleNotFound, req.BundleID)
+		return nil, fmt.Errorf("%w: %s", spec.ErrBundleNotFound, req.BundleID)
 	}
 	bundle.IsEnabled = req.Body.IsEnabled
 	bundle.ModifiedAt = time.Now().UTC()
@@ -458,13 +451,13 @@ func (s *PromptTemplateStore) DeletePromptBundle(
 	ctx context.Context, req *spec.DeletePromptBundleRequest,
 ) (*spec.DeletePromptBundleResponse, error) {
 	if req == nil || req.BundleID == "" {
-		return nil, fmt.Errorf("%w: bundleID required", ErrInvalidRequest)
+		return nil, fmt.Errorf("%w: bundleID required", spec.ErrInvalidRequest)
 	}
 
 	if s.builtinData != nil {
 		_, err := s.builtinData.GetBuiltInBundle(req.BundleID)
 		if err == nil {
-			return nil, fmt.Errorf("%w: bundleID: %q", ErrBuiltInReadOnly, req.BundleID)
+			return nil, fmt.Errorf("%w: bundleID: %q", spec.ErrBuiltInReadOnly, req.BundleID)
 		}
 	}
 
@@ -478,10 +471,10 @@ func (s *PromptTemplateStore) DeletePromptBundle(
 	}
 	bundle, ok := all.Bundles[req.BundleID]
 	if !ok {
-		return nil, fmt.Errorf("%w: %s", ErrBundleNotFound, req.BundleID)
+		return nil, fmt.Errorf("%w: %s", spec.ErrBundleNotFound, req.BundleID)
 	}
 	if isSoftDeleted(bundle) {
-		return nil, fmt.Errorf("%w: %s", ErrBundleDeleting, req.BundleID)
+		return nil, fmt.Errorf("%w: %s", spec.ErrBundleDeleting, req.BundleID)
 	}
 
 	dirInfo, derr := nameutils.BuildBundleDir(bundle.ID, bundle.Slug)
@@ -499,7 +492,7 @@ func (s *PromptTemplateStore) DeletePromptBundle(
 		return nil, err
 	}
 	if len(files) != 0 {
-		return nil, fmt.Errorf("%w: %s", ErrBundleNotEmpty, req.BundleID)
+		return nil, fmt.Errorf("%w: %s", spec.ErrBundleNotEmpty, req.BundleID)
 	}
 
 	now := time.Now().UTC()
@@ -563,7 +556,7 @@ func (s *PromptTemplateStore) ListPromptBundles(
 	allBundles := make([]spec.PromptBundle, 0)
 
 	if s.builtinData != nil {
-		bi, _ := s.builtinData.List()
+		bi, _, _ := s.builtinData.ListBuiltInData()
 		for _, b := range bi {
 			allBundles = append(allBundles, b)
 		}
@@ -650,7 +643,7 @@ func (s *PromptTemplateStore) findTemplate(
 ) (fi nameutils.FileInfo, fullPath string, err error) {
 	// Input must be complete.
 	if slug == "" || wantVersion == "" {
-		return fi, fullPath, ErrInvalidRequest
+		return fi, fullPath, spec.ErrInvalidRequest
 	}
 
 	// Build the canonical filename and access it directly.
@@ -663,12 +656,12 @@ func (s *PromptTemplateStore) findTemplate(
 	raw, err := s.templateStore.GetFileData(key, false)
 	if err != nil {
 		// File does not exist.
-		return fi, fullPath, fmt.Errorf("%w: %s", ErrTemplateNotFound, slug)
+		return fi, fullPath, fmt.Errorf("%w: %s", spec.ErrTemplateNotFound, slug)
 	}
 
 	// Minimal integrity check: the JSON must contain the same slug.
 	if sVal, _ := raw["slug"].(string); sVal != string(slug) {
-		return fi, fullPath, fmt.Errorf("%w: %s", ErrTemplateNotFound, slug)
+		return fi, fullPath, fmt.Errorf("%w: %s", spec.ErrTemplateNotFound, slug)
 	}
 
 	// Success - return relative path (same format the old code used).
@@ -681,10 +674,13 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 	ctx context.Context, req *spec.PutPromptTemplateRequest,
 ) (*spec.PutPromptTemplateResponse, error) {
 	if req == nil || req.Body == nil {
-		return nil, fmt.Errorf("%w: nil request/body", ErrInvalidRequest)
+		return nil, fmt.Errorf("%w: nil request/body", spec.ErrInvalidRequest)
 	}
 	if req.BundleID == "" || req.TemplateSlug == "" || req.Body.Version == "" {
-		return nil, fmt.Errorf("%w: bundleID, templateSlug, version required", ErrInvalidRequest)
+		return nil, fmt.Errorf(
+			"%w: bundleID, templateSlug, version required",
+			spec.ErrInvalidRequest,
+		)
 	}
 	if err := nameutils.ValidateTemplateSlug(req.TemplateSlug); err != nil {
 		return nil, err
@@ -693,7 +689,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 		return nil, err
 	}
 	if len(req.Body.Blocks) == 0 || req.Body.DisplayName == "" {
-		return nil, fmt.Errorf("%w: displayName & ≥1 block required", ErrInvalidRequest)
+		return nil, fmt.Errorf("%w: displayName & ≥1 block required", spec.ErrInvalidRequest)
 	}
 
 	bundle, isBuiltIn, err := s.getAnyBundle(req.BundleID)
@@ -701,10 +697,10 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 		return nil, err
 	}
 	if isBuiltIn {
-		return nil, fmt.Errorf("%w: bundleID: %q", ErrBuiltInReadOnly, req.BundleID)
+		return nil, fmt.Errorf("%w: bundleID: %q", spec.ErrBuiltInReadOnly, req.BundleID)
 	}
 	if !bundle.IsEnabled {
-		return nil, fmt.Errorf("%w: %s", ErrBundleDisabled, req.BundleID)
+		return nil, fmt.Errorf("%w: %s", spec.ErrBundleDisabled, req.BundleID)
 	}
 	dirInfo, derr := nameutils.BuildBundleDir(bundle.ID, bundle.Slug)
 	if derr != nil {
@@ -729,7 +725,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 	// Check for exact filename match.
 	for _, existing := range existsList {
 		if filepath.Base(existing) == targetFN.FileName {
-			return nil, fmt.Errorf("%w: slug+version already exists", ErrConflict)
+			return nil, fmt.Errorf("%w: slug+version already exists", spec.ErrConflict)
 		}
 	}
 
@@ -783,7 +779,10 @@ func (s *PromptTemplateStore) DeletePromptTemplate(
 	ctx context.Context, req *spec.DeletePromptTemplateRequest,
 ) (*spec.DeletePromptTemplateResponse, error) {
 	if req == nil || req.TemplateSlug == "" || req.BundleID == "" || req.Version == "" {
-		return nil, fmt.Errorf("%w: bundleID, templateSlug, version required", ErrInvalidRequest)
+		return nil, fmt.Errorf(
+			"%w: bundleID, templateSlug, version required",
+			spec.ErrInvalidRequest,
+		)
 	}
 	if err := nameutils.ValidateTemplateSlug(req.TemplateSlug); err != nil {
 		return nil, err
@@ -796,7 +795,7 @@ func (s *PromptTemplateStore) DeletePromptTemplate(
 		return nil, err
 	}
 	if isBuiltIn {
-		return nil, fmt.Errorf("%w: bundleID: %q", ErrBuiltInReadOnly, req.BundleID)
+		return nil, fmt.Errorf("%w: bundleID: %q", spec.ErrBuiltInReadOnly, req.BundleID)
 	}
 
 	dirInfo, derr := nameutils.BuildBundleDir(bundle.ID, bundle.Slug)
@@ -834,7 +833,10 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 ) (*spec.PatchPromptTemplateResponse, error) {
 	if req == nil || req.Body == nil || req.BundleID == "" || req.TemplateSlug == "" ||
 		req.Body.Version == "" {
-		return nil, fmt.Errorf("%w: bundleID, templateSlug, version required", ErrInvalidRequest)
+		return nil, fmt.Errorf(
+			"%w: bundleID, templateSlug, version required",
+			spec.ErrInvalidRequest,
+		)
 	}
 	if err := nameutils.ValidateTemplateSlug(req.TemplateSlug); err != nil {
 		return nil, err
@@ -873,7 +875,7 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 	}
 
 	if !bundle.IsEnabled {
-		return nil, fmt.Errorf("%w: %s", ErrBundleDisabled, req.BundleID)
+		return nil, fmt.Errorf("%w: %s", spec.ErrBundleDisabled, req.BundleID)
 	}
 	dirInfo, derr := nameutils.BuildBundleDir(bundle.ID, bundle.Slug)
 	if derr != nil {
@@ -924,7 +926,10 @@ func (s *PromptTemplateStore) GetPromptTemplate(
 	ctx context.Context, req *spec.GetPromptTemplateRequest,
 ) (*spec.GetPromptTemplateResponse, error) {
 	if req == nil || req.BundleID == "" || req.TemplateSlug == "" || req.Version == "" {
-		return nil, fmt.Errorf("%w: bundleID, templateSlug, version required", ErrInvalidRequest)
+		return nil, fmt.Errorf(
+			"%w: bundleID, templateSlug, version required",
+			spec.ErrInvalidRequest,
+		)
 	}
 	if err := nameutils.ValidateTemplateSlug(req.TemplateSlug); err != nil {
 		return nil, err
@@ -1050,7 +1055,7 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 	if s.builtinData == nil {
 		tok.BuiltInDone = true
 	} else if !tok.BuiltInDone {
-		biBundles, biTpls := s.builtinData.List()
+		biBundles, biTpls, _ := s.builtinData.ListBuiltInData()
 
 		// Deterministic ordering.
 		var bidList []spec.BundleID
@@ -1155,11 +1160,11 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 }
 
 func needMorePages(dirTok string, scannedUsers bool) bool {
-	// More user files waiting        → token.
+	// More user files waiting        -> token.
 	if dirTok != "" {
 		return true
 	}
-	// We never scanned user files yet (built-ins overflow) → token.
+	// We never scanned user files yet (built-ins overflow) -> token.
 	if !scannedUsers {
 		return true
 	}
@@ -1172,10 +1177,10 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 	ctx context.Context, req *spec.SearchPromptTemplatesRequest,
 ) (*spec.SearchPromptTemplatesResponse, error) {
 	if req == nil || req.Query == "" {
-		return nil, fmt.Errorf("%w: query required", ErrInvalidRequest)
+		return nil, fmt.Errorf("%w: query required", spec.ErrInvalidRequest)
 	}
 	if s.fts == nil {
-		return nil, ErrFTSDisabled
+		return nil, spec.ErrFTSDisabled
 	}
 
 	pageSize := defPageSize

@@ -1,5 +1,5 @@
 /*  prompt_template_modify.tsx
- *  Lightweight “wizard” for creating / editing a prompt-template.
+ *  Lightweight "wizard" for creating / editing a prompt-template.
  *  Focuses on the most common metadata; advanced fields such as
  *  variables or pre-processors can be added later.
  */
@@ -44,7 +44,7 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 	});
 	const [errors, setErrors] = useState<{ displayName?: string; slug?: string; content?: string }>({});
 
-	/* --- sync prop → state --- */
+	/* --- sync prop -> state --- */
 	useEffect(() => {
 		if (isOpen) {
 			if (initialData) {

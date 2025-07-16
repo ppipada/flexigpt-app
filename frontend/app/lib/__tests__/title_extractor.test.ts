@@ -97,9 +97,9 @@ describe('generateTitle - hard limits', () => {
 	});
 });
 
-/* ─── code sample → rectify request ─────────────────────────────── */
+/* ─── code sample -> rectify request ─────────────────────────────── */
 describe('generateTitle - code sample + rectify request', () => {
-	it('extracts the final “how do I fix” question', () => {
+	it('extracts the final "how do I fix" question', () => {
 		const msg = `
 Hi team,
 

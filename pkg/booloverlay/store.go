@@ -1,48 +1,51 @@
-// Thread-safe, reflection-free feature-toggle store.
-//
-//   • One JSON file keeps a map[string]bool per *group* ("bundles", "templates", ...).
-//   • A *key type* decides at compile time
-//         1) the group it belongs to   — Key.Group()
-//         2) how the value is encoded  — Key.ID()
-//   • Every key type must be registered via WithKeyType when the store
-//     is created.  Anything else is rejected with a clear error.
-
+// Package booloverlay provides a thread-safe feature-flag store that is
+// persisted as JSON through simplemapdb/filestore.
 package booloverlay
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 )
 
-// Key represents an identifier that can be toggled.
-//
-// Group() MUST return the *same* constant string for every value of the
-// concrete type and MUST be implemented on a *value* receiver so that it
-// can be called on the zero value in WithKeyType.
-//
-// ID() encodes the *value*; anything returning a unique string is fine.
+// GroupID is the compile-time type for group names stored on disk.
+type GroupID string
+
+// KeyID is the compile-time type for individual entry names.
+type KeyID string
+
+// Root is the complete in-memory image of the file.
+type Root map[GroupID]map[KeyID]Flag
+
+// Key identifies a single flag entry.
 type Key interface {
-	Group() string
-	ID() string
+	Group() GroupID
+	ID() KeyID
+}
+
+// Flag represents one feature-flag record.
+type Flag struct {
+	Enabled    bool      `json:"enabled"`
+	CreatedAt  time.Time `json:"created_at"`
+	ModifiedAt time.Time `json:"modified_at"`
 }
 
 type Store struct {
 	mu  sync.RWMutex
 	db  *filestore.MapFileStore
-	reg map[string]struct{}
+	reg map[GroupID]struct{}
 }
 
+// Option customises store construction.
 type Option func(*Store) error
 
-// WithKeyType registers the group for K and guarantees that the group
-// exists in the file.
-//
-// Note: Group() **must** be defined on the *value* receiver of K.
+// WithKeyType registers the group of key type K and guarantees its presence on disk.
 func WithKeyType[K Key]() Option {
-	var zero K // value receiver required
+	var zero K
 	group := zero.Group()
 
 	return func(s *Store) error {
@@ -51,7 +54,6 @@ func WithKeyType[K Key]() Option {
 		}
 		s.reg[group] = struct{}{}
 
-		// Ensure the group exists on disk.
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
@@ -60,27 +62,30 @@ func WithKeyType[K Key]() Option {
 			return err
 		}
 		if _, ok := root[group]; !ok {
-			root[group] = map[string]bool{}
+			root[group] = make(map[KeyID]Flag)
 			return s.writeRoot(root)
 		}
 		return nil
 	}
 }
 
-// NewStore opens (or creates) the JSON file and applies all options.
-func NewStore(filePath string, opts ...Option) (*Store, error) {
+// NewStore opens or creates the file and applies options.
+func NewStore(path string, opts ...Option) (*Store, error) {
 	fs, err := filestore.NewMapFileStore(
-		filePath,
-		map[string]any{},                      // default empty object
-		filestore.WithCreateIfNotExists(true), // create when missing
-		filestore.WithAutoFlush(true),         // flush on each write
+		path,
+		map[string]any{},
+		filestore.WithCreateIfNotExists(true),
+		filestore.WithAutoFlush(true),
 		filestore.WithEncoderDecoder(encdec.JSONEncoderDecoder{}),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	st := &Store{db: fs, reg: make(map[string]struct{})}
+	st := &Store{
+		db:  fs,
+		reg: make(map[GroupID]struct{}),
+	}
 	for _, opt := range opts {
 		if err := opt(st); err != nil {
 			return nil, err
@@ -89,31 +94,111 @@ func NewStore(filePath string, opts ...Option) (*Store, error) {
 	return st, nil
 }
 
-// IsEnabled returns the stored flag for k, or def when missing / on error.
-func (s *Store) IsEnabled(k Key, def bool) (bool, error) {
+func (s *Store) ensureRegistered(group GroupID) error {
+	if _, ok := s.reg[group]; !ok {
+		return fmt.Errorf("booloverlay: group %q is not registered", group)
+	}
+	return nil
+}
+
+// readRoot converts the loosely typed map from filestore into Root.
+func (s *Store) readRoot() (Root, error) {
+	raw, err := s.db.GetAll(false)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fast path for an empty file.
+	if len(raw) == 0 {
+		return make(Root), nil
+	}
+
+	// Marshal then unmarshal to leverage the JSON type conversion rules.
+	jsonData, err := json.Marshal(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	var root Root
+	if err := json.Unmarshal(jsonData, &root); err != nil {
+		return nil, err
+	}
+	if root == nil {
+		root = make(Root)
+	}
+	return root, nil
+}
+
+// writeRoot converts Root into the map[string]any format expected by filestore.
+func (s *Store) writeRoot(root Root) error {
+	mp, err := encdec.StructWithJSONTagsToMap(root)
+	if err != nil {
+		return err
+	}
+	return s.db.SetAll(mp)
+}
+
+// GetFlag returns the stored flag, a presence indicator and an error.
+func (s *Store) GetFlag(k Key) (Flag, bool, error) {
 	group := k.Group()
 	if err := s.ensureRegistered(group); err != nil {
-		return def, err
+		return Flag{}, false, err
 	}
 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.isEnabled(group, k.ID(), def)
+
+	root, err := s.readRoot()
+	if err != nil {
+		return Flag{}, false, err
+	}
+	if grp, ok := root[group]; ok {
+		if flag, ok2 := grp[k.ID()]; ok2 {
+			return flag, true, nil
+		}
+	}
+	return Flag{}, false, nil
 }
 
-// SetEnabled writes k ← enabled (creates the entry, group already exists).
-func (s *Store) SetEnabled(k Key, enabled bool) error {
+// SetFlag stores the enabled state and updates timestamps.
+func (s *Store) SetFlag(k Key, enabled bool) (Flag, error) {
 	group := k.Group()
 	if err := s.ensureRegistered(group); err != nil {
-		return err
+		return Flag{}, err
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.setEnabled(group, k.ID(), enabled)
+
+	root, err := s.readRoot()
+	if err != nil {
+		return Flag{}, err
+	}
+	if root[group] == nil {
+		root[group] = make(map[KeyID]Flag)
+	}
+
+	now := time.Now().UTC()
+	flag, exists := root[group][k.ID()]
+	if !exists {
+		flag = Flag{
+			Enabled:    enabled,
+			CreatedAt:  now,
+			ModifiedAt: now,
+		}
+	} else {
+		flag.Enabled = enabled
+		flag.ModifiedAt = now
+	}
+	root[group][k.ID()] = flag
+
+	if err := s.writeRoot(root); err != nil {
+		return Flag{}, err
+	}
+	return flag, nil
 }
 
-// Delete removes k from the store (NOP if it never existed).
+// Delete removes the flag entry if present.
 func (s *Store) Delete(k Key) error {
 	group := k.Group()
 	if err := s.ensureRegistered(group); err != nil {
@@ -122,81 +207,13 @@ func (s *Store) Delete(k Key) error {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.deleteKey(group, k.ID())
-}
 
-func (s *Store) ensureRegistered(group string) error {
-	if _, ok := s.reg[group]; !ok {
-		return fmt.Errorf("booloverlay: group %q is not registered", group)
-	}
-	return nil
-}
-
-func (s *Store) readRoot() (map[string]map[string]bool, error) {
-	raw, err := s.db.GetAll(false)
-	if err != nil {
-		return nil, err
-	}
-	root := make(map[string]map[string]bool, len(raw))
-	for g, v := range raw {
-		switch mm := v.(type) {
-		case map[string]any:
-			sub := make(map[string]bool, len(mm))
-			for k, vv := range mm {
-				if b, ok := vv.(bool); ok {
-					sub[k] = b
-				}
-			}
-			root[g] = sub
-		case map[string]bool:
-			root[g] = mm
-		}
-	}
-	return root, nil
-}
-
-func (s *Store) writeRoot(root map[string]map[string]bool) error {
-	raw := make(map[string]any, len(root))
-	for g, mm := range root {
-		sub := make(map[string]any, len(mm))
-		for k, v := range mm {
-			sub[k] = v
-		}
-		raw[g] = sub
-	}
-	return s.db.SetAll(raw)
-}
-
-func (s *Store) isEnabled(group, key string, def bool) (bool, error) {
-	root, err := s.readRoot()
-	if err != nil {
-		return def, err
-	}
-	if sub, ok := root[group]; ok {
-		if v, ok := sub[key]; ok {
-			return v, nil
-		}
-	}
-	return def, nil
-}
-
-func (s *Store) setEnabled(group, key string, enabled bool) error {
 	root, err := s.readRoot()
 	if err != nil {
 		return err
 	}
-	sub := root[group]
-	sub[key] = enabled
-	return s.writeRoot(root)
-}
-
-func (s *Store) deleteKey(group, key string) error {
-	root, err := s.readRoot()
-	if err != nil {
-		return err
-	}
-	if sub, ok := root[group]; ok {
-		delete(sub, key)
+	if grp, ok := root[group]; ok {
+		delete(grp, k.ID())
 	}
 	return s.writeRoot(root)
 }

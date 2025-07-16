@@ -7,13 +7,13 @@ const DEFAULT_TITLE = 'New conversation';
 
 export interface TitleCandidate {
 	title: string; // already ≤ 48 chars, polished etc.
-	score: number; // “how good is this title?” 0 ... 1  (1 = perfect)
+	score: number; // "how good is this title?" 0 ... 1  (1 = perfect)
 }
 
 const DEFAULT_TITLE_CANDIDATE: TitleCandidate = { title: DEFAULT_TITLE, score: 0.05 };
 
 /**
- * Very light-weight “does this line look like code?” heuristic.
+ * Very light-weight "does this line look like code?" heuristic.
  * It is NOT 100 % accurate - it is only meant to be fast and
  * surprisingly good for common cases.
  */
@@ -21,7 +21,7 @@ function looksLikeCodeLine(line: string): boolean {
 	const t = line.trim();
 	if (!t) return false; // blank line
 
-	/* ---------- 1.  Quick “certain” matches -------------------- */
+	/* ---------- 1.  Quick "certain" matches -------------------- */
 
 	// single brace / bracket / semicolon lines:  }, );, ]
 	if (/^[{}[\]()];?$/.test(t)) return true;
@@ -44,7 +44,7 @@ function looksLikeCodeLine(line: string): boolean {
 
 	/* ---------- 3.  Decision ----------------------------------- */
 
-	// At least two weak indicators → probably code
+	// At least two weak indicators -> probably code
 	return score >= 2;
 }
 
@@ -95,7 +95,7 @@ function selectCandidateParagraphs(paragraphs: string[]): string[] {
 	// ② otherwise take whatever non-code we have
 	if (nonCode.length) return nonCode;
 
-	// ③ nothing but code → fall back to very first paragraph
+	// ③ nothing but code -> fall back to very first paragraph
 	return [paragraphs[0]];
 }
 
@@ -131,7 +131,7 @@ function scoreEn(s: string, idx: number, total: number): number {
 }
 
 function normalise(raw: number): number {
-	// raw ≈ 0-12  →  0-1
+	// raw ≈ 0-12  ->  0-1
 	return Math.max(0, Math.min(1, raw / 12));
 }
 

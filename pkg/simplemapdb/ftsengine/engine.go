@@ -49,8 +49,10 @@ func NewEngine(cfg Config) (*Engine, error) {
 	if err != nil {
 		return nil, err
 	}
-	if dir := filepath.Dir(cfg.BaseDir); dir != "" && dir != MemoryDBBaseDir {
-		if err := os.MkdirAll(dir, 0o770); err != nil {
+
+	if cfg.BaseDir != MemoryDBBaseDir {
+		// Idempotent - harmless if it already exists.
+		if err := os.MkdirAll(cfg.BaseDir, 0o770); err != nil {
 			return nil, err
 		}
 	}

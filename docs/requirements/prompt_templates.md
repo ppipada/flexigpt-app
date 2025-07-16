@@ -55,8 +55,8 @@ All routes are relative to `/prompts`.
 | ------ | --------------------- | --------------------------------------------- | ---------------------------------------------------------------- |
 | PUT    | `/bundles/{bundleID}` | `{slug, displayName, isEnabled, description}` | Create or replace.                                               |
 | PATCH  | `/bundles/{bundleID}` | `{isEnabled}`                                 | Toggle enabled flag.                                             |
-| DELETE | `/bundles/{bundleID}` | —                                             | Soft-delete.                                                     |
-| GET    | `/bundles`            | —                                             | Query params: `bundleIDs, includeDisabled, pageSize, pageToken`. |
+| DELETE | `/bundles/{bundleID}` | --                                            | Soft-delete.                                                     |
+| GET    | `/bundles`            | --                                            | Query params: `bundleIDs, includeDisabled, pageSize, pageToken`. |
 
 ### Templates
 
@@ -65,7 +65,7 @@ All routes are relative to `/prompts`.
 | PUT    | `/bundles/{bundleID}/templates/{templateSlug}`             | conflict error if same `<slug,version>` exists.                             |
 | PATCH  | `/bundles/{bundleID}/templates/{templateSlug}`             | `{version,isEnabled}` Only enable/disable.                                  |
 | DELETE | `/bundles/{bundleID}/templates/{templateSlug}?version={v}` | Hard-delete local copy.                                                     |
-| GET    | `/bundles/{bundleID}/templates/{templateSlug}?version={v}` | Omit `version` → returns active version.                                    |
+| GET    | `/bundles/{bundleID}/templates/{templateSlug}?version={v}` | Omit `version` -> returns active version.                                   |
 | GET    | `/templates`                                               | global list: `tags,bundleIDs,includeDisabled,recommendedPageSize,pageToken` |
 | GET    | `/templates/search`                                        | global search: `q,includeDisabled,pageSize,pageToken`                       |
 

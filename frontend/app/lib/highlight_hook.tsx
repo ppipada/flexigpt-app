@@ -46,7 +46,7 @@ function highlightAsync(code: string, lang: string): Promise<string> {
 
 export function useHighlight(code: string, lang: string) {
 	const [html, setHtml] = useState<string | null>(null);
-	const ticket = useRef(0); // ← local for this CodeBlock
+	const ticket = useRef(0); // <- local for this CodeBlock
 
 	useEffect(() => {
 		if (!code.trim()) {

@@ -1,18 +1,11 @@
 package nameutils
 
 import (
-	"errors"
 	"fmt"
 	"unicode"
 
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 )
-
-// ErrInvalidSlug is returned when a slug is invalid.
-var ErrInvalidSlug = errors.New("invalid slug")
-
-// ErrInvalidVersion is returned when a version string is invalid.
-var ErrInvalidVersion = errors.New("invalid version")
 
 // maxTokenLength is the maximum allowed length for slugs and versions.
 const maxTokenLength = 64
@@ -46,12 +39,12 @@ func validateToken(tok string, allowDot bool, errToReturn error) error {
 
 // validateSlug validates a bundle or template slug.
 func validateSlug(slug string) error {
-	return validateToken(slug, false, ErrInvalidSlug)
+	return validateToken(slug, false, spec.ErrInvalidSlug)
 }
 
 // validateVersion validates a template version string.
 func validateVersion(v string) error {
-	return validateToken(v, true, ErrInvalidVersion)
+	return validateToken(v, true, spec.ErrInvalidVersion)
 }
 
 func ValidateBundleSlug(s spec.BundleSlug) error           { return validateSlug(string(s)) }

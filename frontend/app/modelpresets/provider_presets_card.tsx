@@ -42,7 +42,7 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 	const [showActionDenied, setShowActionDenied] = useState(false);
 	const [actionDeniedMsg, setActionDeniedMsg] = useState('');
 
-	/* sync props → state */
+	/* sync props -> state */
 	useEffect(() => {
 		setModelPresets(preset.modelPresets);
 		setDefaultModelID(preset.defaultModelPresetID);

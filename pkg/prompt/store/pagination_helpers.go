@@ -38,3 +38,11 @@ func base64JSONDecode[T any](s string) (T, error) {
 	err = json.Unmarshal(raw, &t)
 	return t, err
 }
+
+// nullableStr returns a pointer to the string, or nil if the string is empty.
+func nullableStr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}

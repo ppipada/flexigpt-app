@@ -1,12 +1,12 @@
 // Scale-tests for PromptTemplateStore (lots of bundles / lots of templates).
 // Updated for the current behaviour:
 //
-//   • template “active/latest” behaviour was removed – we now check
-//     presence per slug instead of “latest wins”.
-//   • built-in catalogue exists – all scale checks explicitly restrict the
+//   • template "active/latest" behaviour was removed - we now check
+//     presence per slug instead of "latest wins".
+//   • built-in catalogue exists - all scale checks explicitly restrict the
 //     BundleIDs filter to the bundles that are created in-test so that the
 //     reference numbers stay deterministic.
-//   • helper loops have been fixed (no more “range <int>”).
+//   • helper loops have been fixed (no more "range <int>").
 
 package store
 
@@ -115,7 +115,7 @@ func TestScale_LotsOfBundles(t *testing.T) {
 					Body: &spec.PutPromptBundleRequestBody{
 						Slug:        spec.BundleSlug("slug-" + strconv.Itoa(i)),
 						DisplayName: "Bundle " + strconv.Itoa(i),
-						IsEnabled:   i%3 == 0, // enabled for 0,3,6,…
+						IsEnabled:   i%3 == 0, // enabled for 0,3,6,...
 					},
 				})
 				if err != nil {
@@ -139,7 +139,7 @@ func TestScale_LotsOfBundles(t *testing.T) {
 							}},
 						},
 					})
-					if err != nil && !errors.Is(err, ErrBundleDisabled) {
+					if err != nil && !errors.Is(err, spec.ErrBundleDisabled) {
 						errCh <- err
 					}
 				}

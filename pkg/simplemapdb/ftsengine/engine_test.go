@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// newTestEngine returns an engine with the two canonical columns “title” and “body”.
+// newTestEngine returns an engine with the two canonical columns "title" and "body".
 func newTestEngine(t *testing.T) *Engine {
 	t.Helper()
 	tmp := t.TempDir()
@@ -184,7 +184,7 @@ func TestWeightRanking(t *testing.T) {
 func TestSearchPaginationAndTokenHandling(t *testing.T) {
 	e := newTestEngine(t)
 
-	// Insert 15 documents containing the term “foo”.
+	// Insert 15 documents containing the term "foo".
 	for i := range 15 {
 		_ = e.Upsert(t.Context(), "id"+strconv.Itoa(i), map[string]string{
 			"title": "",
@@ -755,7 +755,7 @@ func TestBatchList_OrderingAndStability(t *testing.T) {
 	if len(ids) != 4 {
 		t.Fatalf("expected 4 docs, got %d", len(ids))
 	}
-	// Must be ordered by tag then rowid - therefore all “dup” first.
+	// Must be ordered by tag then rowid - therefore all "dup" first.
 	for i, id := range ids {
 		if docs[id]["tag"] == "unique" && i < 3 {
 			t.Fatalf("unique tag appeared before all dup ones")
@@ -869,7 +869,7 @@ func TestUnindexedColumnIsNotSearchable(t *testing.T) {
 		"secret": "top-secret",
 	})
 
-	// “secret” must NOT be searchable.
+	// "secret" must NOT be searchable.
 	if hits, _, _ := e.Search(t.Context(), "top-secret", "", 5); len(hits) != 0 {
 		t.Fatalf("unindexed column affected search: %+v", hits)
 	}

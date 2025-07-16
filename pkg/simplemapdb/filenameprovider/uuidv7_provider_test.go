@@ -33,7 +33,7 @@ func TestUUIDv7Provider_Build(t *testing.T) {
 			false,
 		},
 		{
-			"empty title → default",
+			"empty title -> default",
 			"018f1e3e-7c89-7b4b-8a3b-6f8e8f8e8f8e",
 			"",
 			"018f1e3e-7c89-7b4b-8a3b-6f8e8f8e8f8e_New_Conversation.json",

@@ -297,7 +297,7 @@ const ProviderSettingsCard: FC<ProviderSettingsCardProps> = ({
 				<DeleteConfirmationModal
 					isOpen={showDeleteModal}
 					title="Delete Provider"
-					message={`Really delete provider “${provider}”?  This cannot be undone.`}
+					message={`Really delete provider "${provider}"?  This cannot be undone.`}
 					confirmButtonText="Delete"
 					onConfirm={confirmDelete}
 					onClose={() => {

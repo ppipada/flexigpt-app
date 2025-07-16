@@ -1,4 +1,4 @@
-package store
+package fts
 
 import (
 	"encoding/json"
@@ -68,7 +68,7 @@ func TestFTSListener_Integration(t *testing.T) {
 		t.Fatalf("ftsengine.NewEngine: %v", err)
 	}
 
-	listener := NewFTSListener(engine)
+	listener := NewUserPromptsFTSListener(engine)
 
 	// Prepare a bundle dir and template file.
 	bundleID := "b1"

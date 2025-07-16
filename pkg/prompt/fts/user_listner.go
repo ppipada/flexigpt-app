@@ -1,6 +1,4 @@
-// Package store provides FTS (Full Text Search) integration for prompt template storage.
-// It handles FTS indexing, extraction, and sync logic for prompt template files.
-package store
+package fts
 
 import (
 	"context"
@@ -10,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/prompt/nameutils"
@@ -18,40 +17,8 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 )
 
-const (
-	ftsSortField     = "mtime" // ftsSortField is the field used for FTS sort order.
-	ftsSyncBatchSize = 1000    // ftsSyncBatchSize is the batch size for FTS sync.
-	enabledTrue      = "true"  // enabledTrue is the string value for enabled templates.
-	enabledFalse     = "false" // enabledFalse is the string value for disabled templates.
-	newline          = "\n"    // newline is the newline character.
-)
-
-type ftsDoc struct {
-	Slug        spec.TemplateSlug `fts:"slug"`
-	DisplayName string            `fts:"displayName"`
-	Desc        string            `fts:"desc"`
-	Messages    string            `fts:"messages"`
-	Tags        string            `fts:"tags"`
-	Enabled     string            `fts:"enabled"`
-	BundleID    spec.BundleID     `fts:"bundleId"`
-	MTime       string            `fts:"mtime"`
-}
-
-func (d ftsDoc) ToMap() map[string]string {
-	return map[string]string{
-		"slug":        string(d.Slug),
-		"displayName": d.DisplayName,
-		"desc":        d.Desc,
-		"messages":    d.Messages,
-		"tags":        d.Tags,
-		"enabled":     d.Enabled,
-		"bundleId":    string(d.BundleID),
-		"mtime":       d.MTime,
-	}
-}
-
-// NewFTSListener returns a filestore.Listener that updates the FTS engine on file changes.
-func NewFTSListener(e *ftsengine.Engine) filestore.Listener {
+// NewUserPromptsFTSListener returns a filestore.Listener that updates the FTS engine on file changes.
+func NewUserPromptsFTSListener(e *ftsengine.Engine) filestore.Listener {
 	return func(ev filestore.Event) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -206,16 +173,31 @@ func processFTSSync(
 	}, nil
 }
 
-// StartRebuild launches a goroutine to rebuild the FTS index for all prompt templates under baseDir.
-func StartRebuild(ctx context.Context, baseDir string, e *ftsengine.Engine) {
+// StartUserPromptsFTSRebuild launches a goroutine to rebuild the FTS index for all prompt templates under baseDir.
+func StartUserPromptsFTSRebuild(ctx context.Context, baseDir string, e *ftsengine.Engine) {
+	if baseDir == "" || e == nil {
+		return
+	}
+
+	var once sync.Once
+
 	go func() {
-		_ = ftsengine.SyncDirToFTS(
-			ctx,
-			e,
-			baseDir,
-			ftsSortField,
-			ftsSyncBatchSize,
-			processFTSSync,
-		)
+		defer func() {
+			if rec := recover(); rec != nil {
+				slog.Error("panic in fts rebuild",
+					"err", rec,
+					"stack", debug.Stack())
+			}
+		}()
+		once.Do(func() {
+			_ = ftsengine.SyncDirToFTS(
+				ctx,
+				e,
+				baseDir,
+				compareColumn,
+				ftsSyncBatchSize,
+				processFTSSync,
+			)
+		})
 	}()
 }

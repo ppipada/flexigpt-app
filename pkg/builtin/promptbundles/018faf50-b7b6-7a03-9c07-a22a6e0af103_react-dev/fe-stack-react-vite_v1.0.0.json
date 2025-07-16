@@ -10,7 +10,7 @@
 		{
 			"id": "dev",
 			"role": "developer",
-			"content": "## 📝 Task\nProvide architecture overview, folder layout, sample code and styling tips.\n\n## 📦 Rules\n- Use Markdown H2/H3 headings.\n- Label code blocks (`tsx`, `bash`, …).\n- Functional components, React-Router v7, DaisyUI where styling.\n\n---"
+			"content": "## 📝 Task\nProvide architecture overview, folder layout, sample code and styling tips.\n\n## 📦 Rules\n- Use Markdown H2/H3 headings.\n- Label code blocks (`tsx`, `bash`, ...).\n- Functional components, React-Router v7, DaisyUI where styling.\n\n---"
 		},
 		{
 			"id": "usr",

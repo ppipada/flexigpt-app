@@ -300,7 +300,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 		const query = cleanSearchQuery(rawQuery);
 		// If the cleaner strips everything (stop-words, punctuation, ...) the query is
 		//   effectively empty.  Instead of hitting the backend, immediately surface an
-		//   empty result-set and mark the search as “done”.
+		//   empty result-set and mark the search as "done".
 		if (query === '') {
 			setSearchState(p => ({
 				...p,
@@ -409,7 +409,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 				return;
 			}
 
-			/* short query → only local filter */
+			/* short query -> only local filter */
 			if (q.length < 3) {
 				filterLocalResults(q);
 				return;
