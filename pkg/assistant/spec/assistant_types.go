@@ -10,9 +10,9 @@ type Assistant struct {
 	InvokeSlug  string `json:"invokeSlug,omitempty"`
 	IsEnabled   bool   `json:"isEnabled"`
 
-	TemplateID               string            `json:"templateId"`
-	ModelPresetID            string            `json:"modelPresetId"`
-	ToolBundleIDs            []string          `json:"toolBundleIds,omitempty"`
+	TemplateID               string            `json:"templateID"`
+	ModelPresetID            string            `json:"modelPresetID"`
+	ToolBundleIDs            []string          `json:"toolBundleIDs,omitempty"`
 	DefaultTemplateVarValues map[string]string `json:"defaultTemplateVarValues,omitempty"`
 
 	Version    string    `json:"version"`

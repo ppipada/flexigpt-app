@@ -58,7 +58,7 @@ func NewApp() *App {
 	app.conversationsDirPath = filepath.Join(app.dataBasePath, "conversations")
 	app.modelPresetsDirPath = filepath.Join(app.dataBasePath, "modelpresets")
 	app.modelPresetsFilePath = filepath.Join(app.modelPresetsDirPath, "modelpresets.json")
-	app.promptsDirPath = filepath.Join(app.dataBasePath, "prompttempaltes")
+	app.promptsDirPath = filepath.Join(app.dataBasePath, "prompttemplates")
 
 	if app.settingsFilePath == "" || app.conversationsDirPath == "" ||
 		app.modelPresetsDirPath == "" || app.promptsDirPath == "" {

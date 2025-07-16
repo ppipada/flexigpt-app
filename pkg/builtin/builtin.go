@@ -5,9 +5,9 @@ import (
 )
 
 //go:embed promptbundles
-var BuiltinPromptBundlesFS embed.FS
+var BuiltInPromptBundlesFS embed.FS
 
 const (
-	BuiltinPromptBundlesRootDir = "promptbundles"
-	BuiltinPromptBundlesJSON    = "bundles.json"
+	BuiltInPromptBundlesRootDir = "promptbundles"
+	BuiltInPromptBundlesJSON    = "bundles.json"
 )

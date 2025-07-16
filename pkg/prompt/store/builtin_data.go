@@ -19,8 +19,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 )
 
-const overlayJSON = "overlay.json"
-
 type BuiltInBundleID spec.BundleID
 
 func (BuiltInBundleID) Group() booloverlay.GroupID { return "bundles" }
@@ -79,7 +77,7 @@ func NewBuiltInData(
 		return nil, err
 	}
 	store, err := booloverlay.NewStore(
-		filepath.Join(overlayBaseDir, overlayJSON),
+		filepath.Join(overlayBaseDir, spec.BuiltInOverlayFileName),
 		booloverlay.WithKeyType[BuiltInBundleID](),
 		booloverlay.WithKeyType[BuiltInTemplateID](),
 	)
@@ -88,8 +86,8 @@ func NewBuiltInData(
 	}
 
 	data := &BuiltInData{
-		bundlesFS:      builtin.BuiltinPromptBundlesFS,
-		bundlesDir:     builtin.BuiltinPromptBundlesRootDir,
+		bundlesFS:      builtin.BuiltInPromptBundlesFS,
+		bundlesDir:     builtin.BuiltInPromptBundlesRootDir,
 		overlayBaseDir: overlayBaseDir,
 		store:          store,
 	}
@@ -118,7 +116,7 @@ func (d *BuiltInData) populateDataFromFS() error {
 	if err != nil {
 		return err
 	}
-	rawBundles, err := fs.ReadFile(bundlesFS, builtin.BuiltinPromptBundlesJSON)
+	rawBundles, err := fs.ReadFile(bundlesFS, builtin.BuiltInPromptBundlesJSON)
 	if err != nil {
 		return err
 	}
@@ -147,7 +145,7 @@ func (d *BuiltInData) populateDataFromFS() error {
 				return nil
 			}
 			fn := path.Base(inPath)
-			if fn == builtin.BuiltinPromptBundlesJSON || fn == overlayJSON {
+			if fn == builtin.BuiltInPromptBundlesJSON || fn == spec.BuiltInOverlayFileName {
 				return nil
 			}
 

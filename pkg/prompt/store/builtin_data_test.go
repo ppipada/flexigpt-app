@@ -41,7 +41,7 @@ func anyTemplate(
 
 func overlayOnDisk(t *testing.T, dir, group, id string) (present, value bool) {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join(dir, overlayJSON))
+	data, err := os.ReadFile(filepath.Join(dir, spec.BuiltInOverlayFileName))
 	if err != nil {
 		t.Fatalf("cannot read overlay file: %v", err)
 	}
@@ -146,8 +146,8 @@ func TestNewBuiltInData(t *testing.T) {
 			}
 
 			// Verify overlay file creation.
-			if _, err := os.Stat(filepath.Join(dir, overlayJSON)); err != nil {
-				t.Errorf("overlay.json not created: %v", err)
+			if _, err := os.Stat(filepath.Join(dir, spec.BuiltInOverlayFileName)); err != nil {
+				t.Errorf("overlay file not created: %v", err)
 			}
 
 			// Verify all bundles are marked as built-in.

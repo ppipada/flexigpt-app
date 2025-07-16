@@ -14,8 +14,8 @@
 - [ ] In hybrid mode, temprature setting is not comming for sonent etc
 - [ ] Input field height should go to 20 rows most probably
 - [x] Add builtin with overlay
-- [ ] Integrate builtin into prompt template store
-  - [ ] fts and search pending
+- [x] Integrate builtin into prompt template store
+  - [x] fts and search pending
 - [ ] Integrate the store with UI
 - [ ] Integrate store with llm. decide on if you want to popualte the prompt in input so that var expansion etc can be done properly.
 
@@ -38,7 +38,7 @@
     └─ PreProcessors[]    (may call helper ToolIDs)
 
   Assistant
-    ├─ templateId         (FK -> PromptTemplate)
+    ├─ templateID         (FK -> PromptTemplate)
     ├─ modelPresetId      (already handled)
     ├─ toolBundleIds[]    <- LLM-callable tools live here
     └─ dataSourceIds[]    (RAG etc.)

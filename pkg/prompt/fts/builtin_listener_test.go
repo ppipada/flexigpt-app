@@ -28,7 +28,7 @@ func newEngine(t *testing.T, dir string) *ftsengine.Engine {
 			{Name: "messages", Weight: 1},
 			{Name: "tags", Weight: 1},
 			{Name: "enabled", Unindexed: true},
-			{Name: "bundleId", Unindexed: true},
+			{Name: "bundleID", Unindexed: true},
 			{Name: "mtime", Unindexed: true},
 		},
 	})
@@ -97,7 +97,7 @@ func TestBuildDoc_HappyAndErrors(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected ok==true")
 	}
-	if !strings.HasPrefix(docID, builtinDocPrefix) {
+	if !strings.HasPrefix(docID, BuiltInDocPrefix) {
 		t.Fatalf("docID does not have builtin prefix: %s", docID)
 	}
 	if vals[compareColumn] == "" {
@@ -134,10 +134,12 @@ func TestSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 				bid, _, bundle := makeBundle(1, true)
 				tpl := makeTemplate(1, true)
 				return func() (map[spec.BundleID]spec.PromptBundle,
-					map[spec.BundleID][]spec.PromptTemplate, error,
+					map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate, error,
 				) {
 					return map[spec.BundleID]spec.PromptBundle{bid: bundle},
-						map[spec.BundleID][]spec.PromptTemplate{bid: {tpl}}, nil
+						map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate{bid: {
+							tpl.ID: tpl,
+						}}, nil
 				}
 			},
 			want: want{rows: 1},
@@ -156,10 +158,12 @@ func TestSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 				bid, _, bundle := makeBundle(2, true)
 				tpl := makeTemplate(2, true)
 				return func() (map[spec.BundleID]spec.PromptBundle,
-					map[spec.BundleID][]spec.PromptTemplate, error,
+					map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate, error,
 				) {
 					return map[spec.BundleID]spec.PromptBundle{bid: bundle},
-						map[spec.BundleID][]spec.PromptTemplate{bid: {tpl}}, nil
+						map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate{bid: {
+							tpl.ID: tpl,
+						}}, nil
 				}
 			},
 			want: want{rows: 1},
@@ -180,10 +184,12 @@ func TestSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 				bid, _, bundle := makeBundle(3, true)
 				tpl := makeTemplate(3, true) // fresh mtime
 				return func() (map[spec.BundleID]spec.PromptBundle,
-					map[spec.BundleID][]spec.PromptTemplate, error,
+					map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate, error,
 				) {
 					return map[spec.BundleID]spec.PromptBundle{bid: bundle},
-						map[spec.BundleID][]spec.PromptTemplate{bid: {tpl}}, nil
+						map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate{bid: {
+							tpl.ID: tpl,
+						}}, nil
 				}
 			},
 			after: func(t *testing.T, _ int) {
@@ -209,10 +215,9 @@ func TestSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 			lister: func() BuiltInLister {
 				// Return nothing.
 				return func() (map[spec.BundleID]spec.PromptBundle,
-					map[spec.BundleID][]spec.PromptTemplate, error,
+					map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate, error,
 				) {
-					return map[spec.BundleID]spec.PromptBundle{},
-						map[spec.BundleID][]spec.PromptTemplate{}, nil
+					return map[spec.BundleID]spec.PromptBundle{}, map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate{}, nil
 				}
 			},
 			want: want{rows: 0},
@@ -297,15 +302,16 @@ func TestSyncBuiltInsToFTS_BiggerThanBatchSize(t *testing.T) {
 	const total = upsertBatchSize + 25
 
 	bid, _, bundle := makeBundle(1234, true)
-	templates := make([]spec.PromptTemplate, 0, total)
+	templates := make(map[spec.TemplateID]spec.PromptTemplate)
 	for i := range total {
-		templates = append(templates, makeTemplate(i, true))
+		t := makeTemplate(i, true)
+		templates[t.ID] = t
 	}
 	lister := func() (map[spec.BundleID]spec.PromptBundle,
-		map[spec.BundleID][]spec.PromptTemplate, error,
+		map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate, error,
 	) {
 		return map[spec.BundleID]spec.PromptBundle{bid: bundle},
-			map[spec.BundleID][]spec.PromptTemplate{bid: templates}, nil
+			map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate{bid: templates}, nil
 	}
 
 	if err := syncBuiltInsToFTS(ctx, lister, engine); err != nil {
@@ -326,11 +332,14 @@ func TestSyncBuiltInsToFTS_CompareColumnStoresMTime(t *testing.T) {
 	tpl := makeTemplate(1, true)
 
 	lister := func() (map[spec.BundleID]spec.PromptBundle,
-		map[spec.BundleID][]spec.PromptTemplate, error,
+		map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate, error,
 	) {
 		return map[spec.BundleID]spec.PromptBundle{bid: bundle},
-			map[spec.BundleID][]spec.PromptTemplate{bid: {tpl}}, nil
+			map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate{bid: {
+				tpl.ID: tpl,
+			}}, nil
 	}
+
 	if err := syncBuiltInsToFTS(ctx, lister, engine); err != nil {
 		t.Fatalf("syncBuiltInsToFTS: %v", err)
 	}

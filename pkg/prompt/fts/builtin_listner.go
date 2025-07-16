@@ -18,7 +18,7 @@ import (
 // Overlay should already be applied, so that enabled flags are correct.
 type BuiltInLister func() (
 	bundles map[spec.BundleID]spec.PromptBundle,
-	templates map[spec.BundleID][]spec.PromptTemplate,
+	templates map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate,
 	err error,
 )
 
@@ -63,7 +63,7 @@ func syncBuiltInsToFTS(
 
 	// Predicate that tells the helper which rows belong to us.
 	belongs := func(id string) bool {
-		return strings.HasPrefix(id, builtinDocPrefix)
+		return strings.HasPrefix(id, BuiltInDocPrefix)
 	}
 
 	// Delegate to the generic helper.
@@ -97,7 +97,7 @@ func buildDoc(
 		return docID, vals, ok
 	}
 
-	docID = path.Join(builtinDocPrefix+dirInfo.DirName, fileInfo.FileName)
+	docID = path.Join(BuiltInDocPrefix+dirInfo.DirName, fileInfo.FileName)
 	doc := templateToFTSDoc(bid, tpl)
 	return docID, doc.ToMap(), true
 }

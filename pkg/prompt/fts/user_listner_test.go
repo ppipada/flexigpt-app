@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/prompt/nameutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
@@ -60,7 +59,7 @@ func TestFTSListener_Integration(t *testing.T) {
 			{Name: "messages", Weight: 4},
 			{Name: "tags", Weight: 5},
 			{Name: "enabled", Unindexed: true},
-			{Name: "bundleId", Unindexed: true},
+			{Name: "bundleID", Unindexed: true},
 			{Name: "mtime", Unindexed: true},
 		},
 	})
@@ -81,7 +80,7 @@ func TestFTSListener_Integration(t *testing.T) {
 	tplVersion := "v1"
 	tplFile := filepath.Join(
 		bundleDir,
-		tplSlug+"."+tplVersion+"."+nameutils.PromptTemplateFileExtension,
+		tplSlug+"."+tplVersion+"."+spec.PromptTemplateFileExtension,
 	)
 
 	// Compose a prompt template.
@@ -189,8 +188,8 @@ func TestExtractFTS_AllFields(t *testing.T) {
 	if vals["enabled"] != "true" {
 		t.Errorf("enabled: got %q", vals["enabled"])
 	}
-	if vals["bundleId"] != "bundleb1" {
-		t.Errorf("bundleId: got %q", vals["bundleId"])
+	if vals["bundleID"] != "bundleb1" {
+		t.Errorf("bundleID: got %q", vals["bundleID"])
 	}
 	if vals["mtime"] != now.Format(time.RFC3339Nano) {
 		t.Errorf("mtime: got %q", vals["mtime"])

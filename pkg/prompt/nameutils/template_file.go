@@ -29,7 +29,7 @@ func BuildTemplateFileInfo(slug spec.TemplateSlug, version spec.TemplateVersion)
 	fname := fmt.Sprintf("%s_%s.%s",
 		url.PathEscape(string(slug)),
 		url.PathEscape(string(version)),
-		PromptTemplateFileExtension,
+		spec.PromptTemplateFileExtension,
 	)
 	return FileInfo{Slug: slug, Version: version, FileName: fname}, nil
 }
@@ -38,7 +38,7 @@ func BuildTemplateFileInfo(slug spec.TemplateSlug, version spec.TemplateVersion)
 // Uses the last underscore as delimiter.
 func ParseTemplateFileName(fn string) (FileInfo, error) {
 	fn = filepath.Base(fn)
-	ext := "." + PromptTemplateFileExtension
+	ext := "." + spec.PromptTemplateFileExtension
 	if !strings.HasSuffix(fn, ext) {
 		return FileInfo{}, fmt.Errorf("not a %q file: %q", ext, fn)
 	}

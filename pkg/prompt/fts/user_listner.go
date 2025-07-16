@@ -29,9 +29,9 @@ func NewUserPromptsFTSListener(e *ftsengine.Engine) filestore.Listener {
 		}()
 		// Reject files that obviously do not belong to us.
 		if ev.File == "" ||
-			!strings.HasSuffix(ev.File, "."+nameutils.PromptTemplateFileExtension) ||
-			strings.HasSuffix(ev.File, nameutils.SqliteDBFileName) ||
-			strings.HasSuffix(ev.File, nameutils.BundlesMetaFileName) {
+			!strings.HasSuffix(ev.File, "."+spec.PromptTemplateFileExtension) ||
+			strings.HasSuffix(ev.File, spec.SqliteDBFileName) ||
+			strings.HasSuffix(ev.File, spec.BundlesMetaFileName) {
 			return
 		}
 		ctx := context.Background()
@@ -54,7 +54,7 @@ func NewUserPromptsFTSListener(e *ftsengine.Engine) filestore.Listener {
 }
 
 // extractFTS converts an in-memory JSON map to a column-to-text map for FTS indexing.
-// It extracts slug, displayName, description, tags, message blocks, enabled status, bundleId, and mtime.
+// It extracts slug, displayName, description, tags, message blocks, enabled status, bundleID, and mtime.
 func extractFTS(fullPath string, m map[string]any) ftsDoc {
 	var doc ftsDoc
 	s, _ := stringField(m, "slug")
@@ -133,9 +133,9 @@ func processFTSSync(
 	}
 
 	// Only process files with the correct extension.
-	if !strings.HasSuffix(fullPath, "."+nameutils.PromptTemplateFileExtension) ||
-		strings.HasSuffix(fullPath, nameutils.SqliteDBFileName) ||
-		strings.HasSuffix(fullPath, nameutils.BundlesMetaFileName) {
+	if !strings.HasSuffix(fullPath, "."+spec.PromptTemplateFileExtension) ||
+		strings.HasSuffix(fullPath, spec.SqliteDBFileName) ||
+		strings.HasSuffix(fullPath, spec.BundlesMetaFileName) {
 		return skipSyncDecision, nil
 	}
 

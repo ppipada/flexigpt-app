@@ -741,3 +741,88 @@ func TestSlugVersionValidation(t *testing.T) {
 		}
 	}
 }
+
+// Search & built-ins.
+func TestSearchFindsBuiltIn(t *testing.T) {
+	s, clean := newTestStoreWithFTS(t)
+	defer clean()
+
+	bid, slug, ver, ok := firstBuiltIn(s)
+	if !ok {
+		t.Skip("library compiled without built-in catalogue")
+	}
+
+	// Allow the asynchronous FTS rebuild to finish.
+	time.Sleep(200 * time.Millisecond)
+
+	resp, err := s.SearchPromptTemplates(t.Context(), &spec.SearchPromptTemplatesRequest{
+		Query: string(slug), // search by slug (always indexed)
+	})
+	if err != nil {
+		t.Fatalf("search failed: %v", err)
+	}
+
+	found := false
+	for _, it := range resp.Body.PromptTemplateListItems {
+		if it.IsBuiltIn &&
+			it.BundleID == bid &&
+			it.TemplateSlug == slug &&
+			it.TemplateVersion == ver {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("built-in template %s/%s/%s not returned by search", bid, slug, ver)
+	}
+}
+
+func TestSearchRespectsBuiltInEnableDisable(t *testing.T) {
+	s, clean := newTestStoreWithFTS(t)
+	defer clean()
+
+	bid, slug, _, ok := firstBuiltIn(s)
+	if !ok {
+		t.Skip("library compiled without built-in catalogue")
+	}
+
+	// Make sure everything is indexed first.
+	time.Sleep(200 * time.Millisecond)
+
+	// Disable the entire bundle – it must disappear from default search results (IncludeDisabled = false).
+	_, err := s.PatchPromptBundle(t.Context(), &spec.PatchPromptBundleRequest{
+		BundleID: bid,
+		Body: &spec.PatchPromptBundleRequestBody{
+			IsEnabled: false,
+		},
+	})
+	if err != nil {
+		t.Fatalf("disabling built-in bundle failed: %v", err)
+	}
+
+	// Wait for the background re-index to flush.
+	time.Sleep(150 * time.Millisecond)
+
+	resp, err := s.SearchPromptTemplates(t.Context(), &spec.SearchPromptTemplatesRequest{
+		Query:           string(slug),
+		IncludeDisabled: false,
+	})
+	if err != nil {
+		t.Fatalf("search failed: %v", err)
+	}
+	if len(resp.Body.PromptTemplateListItems) != 0 {
+		t.Fatalf("disabled built-in bundle still appears in search results")
+	}
+
+	// With IncludeDisabled = true the hit must show up again.
+	resp, err = s.SearchPromptTemplates(t.Context(), &spec.SearchPromptTemplatesRequest{
+		Query:           string(slug),
+		IncludeDisabled: true,
+	})
+	if err != nil {
+		t.Fatalf("search (includeDisabled) failed: %v", err)
+	}
+	if len(resp.Body.PromptTemplateListItems) == 0 {
+		t.Fatalf("expected built-in hit when IncludeDisabled=true")
+	}
+}

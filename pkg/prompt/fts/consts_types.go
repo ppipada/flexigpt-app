@@ -1,6 +1,9 @@
 package fts
 
-import "github.com/ppipada/flexigpt-app/pkg/prompt/spec"
+import (
+	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
+	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
+)
 
 const (
 	compareColumn    = "mtime" // compareColumn is the field used for FTS sort order.
@@ -8,10 +11,14 @@ const (
 	enabledTrue      = "true"  // enabledTrue is the string value for enabled templates.
 	enabledFalse     = "false" // enabledFalse is the string value for disabled templates.
 	newline          = "\n"    // newline is the newline character.
-	// Every built-in document ID is prefixed with this constant so that existing path-parsing code can still split bundleDir / fileName.
-	builtinDocPrefix = "builtin/"
 	// Batch size is deliberately small - the number of built-ins is tiny.
 	upsertBatchSize = 256
+)
+
+// Every built-in document ID is prefixed with this constant so that existing path-parsing code can still split bundleDir / fileName.
+const (
+	BuiltInDocPrefix  = "bi/"
+	sqliteDBTableName = "prompttemplates"
 )
 
 type ftsDoc struct {
@@ -21,7 +28,7 @@ type ftsDoc struct {
 	Messages    string            `fts:"messages"`
 	Tags        string            `fts:"tags"`
 	Enabled     string            `fts:"enabled"`
-	BundleID    spec.BundleID     `fts:"bundleId"`
+	BundleID    spec.BundleID     `fts:"bundleID"`
 	MTime       string            `fts:"mtime"`
 }
 
@@ -33,7 +40,18 @@ func (d ftsDoc) ToMap() map[string]string {
 		"messages":    d.Messages,
 		"tags":        d.Tags,
 		"enabled":     d.Enabled,
-		"bundleId":    string(d.BundleID),
+		"bundleID":    string(d.BundleID),
 		"mtime":       d.MTime,
 	}
+}
+
+var ftsColumns = []ftsengine.Column{
+	{Name: "slug", Weight: 1},
+	{Name: "displayName", Weight: 2},
+	{Name: "desc", Weight: 3},
+	{Name: "messages", Weight: 4},
+	{Name: "tags", Weight: 5},
+	{Name: "enabled", Unindexed: true},
+	{Name: "bundleID", Unindexed: true},
+	{Name: "mtime", Unindexed: true},
 }

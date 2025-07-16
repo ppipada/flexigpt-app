@@ -135,7 +135,7 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 		return nil, err
 	}
 	s.bundleStore, err = filestore.NewMapFileStore(
-		filepath.Join(s.baseDir, nameutils.BundlesMetaFileName),
+		filepath.Join(s.baseDir, spec.BundlesMetaFileName),
 		def,
 		filestore.WithCreateIfNotExists(true),
 		filestore.WithAutoFlush(true),
@@ -147,25 +147,19 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 
 	// Initialize FTS engine if enabled.
 	if s.enableFTS {
-		s.fts, err = ftsengine.NewEngine(ftsengine.Config{
-			BaseDir:    s.baseDir,
-			DBFileName: nameutils.SqliteDBFileName,
-			Table:      "prompttemplates",
-			Columns: []ftsengine.Column{
-				{Name: "slug", Weight: 1},
-				{Name: "displayName", Weight: 2},
-				{Name: "desc", Weight: 3},
-				{Name: "messages", Weight: 4},
-				{Name: "tags", Weight: 5},
-				{Name: "enabled", Unindexed: true},
-				{Name: "bundleId", Unindexed: true},
-				{Name: "mtime", Unindexed: true},
-			},
-		})
+		var lister fts.BuiltInLister
+		if s.builtinData != nil {
+			lister = s.builtinData.ListBuiltInData
+		}
+		s.fts, err = fts.InitFTSListeners(
+			context.Background(),
+			s.baseDir,
+			lister,
+		)
 		if err != nil {
 			return nil, err
 		}
-		fts.StartUserPromptsFTSRebuild(context.Background(), s.baseDir, s.fts)
+
 	}
 
 	// Initialize template directory store (per-bundle folder).
@@ -860,6 +854,22 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 		if err := s.builtinData.SetTemplateEnabled(bundle.ID, tmpl.ID, req.Body.IsEnabled); err != nil {
 			return nil, err
 		}
+		if s.fts != nil {
+			tmpl.IsEnabled = req.Body.IsEnabled
+			if err := fts.ReindexOneBuiltIn(
+				ctx, bundle.ID, bundle.Slug, tmpl, s.fts,
+			); err != nil {
+				slog.Warn(
+					"builtin-fts reindex(one) failed",
+					"bundleID",
+					bundle.ID,
+					"templateID",
+					tmpl.ID,
+					"err",
+					err,
+				)
+			}
+		}
 		slog.Info(
 			"PatchPromptTemplate.",
 			"bundleID",
@@ -1197,6 +1207,49 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 
 	items := make([]spec.PromptTemplateListItem, 0, len(hits))
 	for _, h := range hits {
+		if strings.HasPrefix(h.ID, fts.BuiltInDocPrefix) {
+			if s.builtinData == nil {
+				continue
+			}
+			rel := strings.TrimPrefix(h.ID, fts.BuiltInDocPrefix)
+			dir := filepath.Dir(rel)
+			file := filepath.Base(rel)
+
+			bdi, err := nameutils.ParseBundleDir(dir)
+			if err != nil {
+				continue
+			}
+			finf, err := nameutils.ParseTemplateFileName(file)
+			if err != nil {
+				continue
+			}
+			bundle, err := s.builtinData.GetBuiltInBundle(bdi.ID)
+			if err != nil {
+				continue
+			}
+			pt, err := s.builtinData.GetBuiltInTemplate(
+				bdi.ID, finf.Slug, finf.Version,
+			)
+			if err != nil {
+				continue
+			}
+			if !req.IncludeDisabled && (!pt.IsEnabled || !bundle.IsEnabled) {
+				continue
+			}
+
+			items = append(items, spec.PromptTemplateListItem{
+				BundleID:        bdi.ID,
+				BundleSlug:      bdi.Slug,
+				TemplateSlug:    finf.Slug,
+				TemplateVersion: finf.Version,
+				IsBuiltIn:       true,
+			})
+			if len(items) >= pageSize {
+				break
+			}
+			continue // done, next hit
+		}
+
 		dir := filepath.Base(filepath.Dir(h.ID))
 		bdi, err := nameutils.ParseBundleDir(dir)
 		if err != nil {
@@ -1205,7 +1258,8 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 		bid := bdi.ID
 		bslug := bdi.Slug
 
-		if _, _, err := s.getAnyBundle(bid); err != nil {
+		bundle, _, err := s.getAnyBundle(bid)
+		if err != nil {
 			continue
 		}
 
@@ -1226,7 +1280,7 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 			continue
 		}
 
-		if !req.IncludeDisabled && !pt.IsEnabled {
+		if !req.IncludeDisabled && (!pt.IsEnabled || !bundle.IsEnabled) {
 			continue
 		}
 
