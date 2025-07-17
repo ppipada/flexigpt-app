@@ -220,12 +220,12 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 									<tr key={id} className="hover:bg-base-300">
 										<td>{m.displayName || id}</td>
 										<td>{m.name}</td>
-										<td className="flex justify-center">
+										<td className="text-center align-middle">
 											<input
 												type="checkbox"
 												checked={m.isEnabled}
 												onChange={() => togglePresetEnable(id)}
-												className="toggle toggle-accent rounded-full"
+												className="toggle toggle-accent rounded-full align-middle"
 											/>
 										</td>
 										<td className="text-center">

@@ -103,7 +103,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 				{isOpen ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
 			</summary>
 
-			<ul tabIndex={0} className="dropdown-content menu rounded-xl w-full bg-base-200 z-10">
+			<ul tabIndex={0} className="dropdown-content menu rounded-xl w-full bg-base-200">
 				{filteredKeys.map(key => (
 					<li
 						key={key}

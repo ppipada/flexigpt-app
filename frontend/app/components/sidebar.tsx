@@ -39,7 +39,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 				{/* Page content here */}
 				<div className="flex-1 m-2 rounded-xl bg-base-200">{children}</div>
 			</div>
-			<div className="drawer-side z-20">
+			<div className="drawer-side z-10">
 				<label htmlFor="my-drawer" className="drawer-overlay"></label>
 				<ul className="menu justify-between h-full w-12 ms-0 ps-0 bg-base-300 text-base-content">
 					<div className="flex-col p-0">

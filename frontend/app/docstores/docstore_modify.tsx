@@ -101,7 +101,7 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 	if (!isOpen) return null;
 
 	return (
-		<div className="modal modal-open">
+		<dialog className="modal modal-open">
 			<div className="modal-box rounded-2xl">
 				<h3 className="font-bold text-lg">{initialData ? 'Edit Document Store' : 'Add New Document Store'}</h3>
 				<form onSubmit={handleSubmit} className="mt-4">
@@ -176,7 +176,7 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 					</div>
 				</form>
 			</div>
-		</div>
+		</dialog>
 	);
 };
 

@@ -303,7 +303,7 @@ const ChatScreen: FC = () => {
 	return (
 		<div className="flex flex-col items-center w-full h-full overflow-hidden">
 			{/* NAVBAR */}
-			<div className="w-full flex justify-center fixed top-2 z-10">
+			<div className="w-full flex justify-center fixed top-2">
 				<div className="w-11/12 lg:w-4/5 xl:w-3/4">
 					<ChatNavBar
 						onNewChat={handleNewChat}
@@ -337,7 +337,7 @@ const ChatScreen: FC = () => {
 			</div>
 
 			{/* SCROLL-TO-BOTTOM BUTTON */}
-			<div className="fixed bottom-0 right-0 mb-16 mr-0 lg:mr-16 z-10">
+			<div className="fixed bottom-0 right-0 mb-16 mr-0 lg:mr-16">
 				<ButtonScrollToBottom
 					scrollContainerRef={chatContainerRef}
 					size={32}

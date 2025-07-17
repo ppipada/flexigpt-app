@@ -22,7 +22,7 @@ const DeleteConfirmationModal: React.FC<ConfirmationModalProps> = ({
 	if (!isOpen) return null;
 
 	return (
-		<div className="modal modal-open">
+		<dialog className="modal modal-open">
 			<div className="modal-box rounded-2xl">
 				<h3 className="font-bold text-lg flex items-center">
 					<FiAlertTriangle className="text-warning mr-2" /> {title}
@@ -37,7 +37,7 @@ const DeleteConfirmationModal: React.FC<ConfirmationModalProps> = ({
 					</button>
 				</div>
 			</div>
-		</div>
+		</dialog>
 	);
 };
 

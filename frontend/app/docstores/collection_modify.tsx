@@ -79,7 +79,7 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 	if (!isOpen) return null;
 
 	return (
-		<div className="modal modal-open">
+		<dialog className="modal modal-open">
 			<div className="modal-box rounded-2xl">
 				<h3 className="font-bold text-lg">{initialData ? 'Edit Collection' : 'Add New Collection'}</h3>
 				<form onSubmit={handleSubmit} className="mt-4">
@@ -132,7 +132,7 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 					</div>
 				</form>
 			</div>
-		</div>
+		</dialog>
 	);
 };
 

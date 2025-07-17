@@ -2,22 +2,26 @@
 
 ## Laundry list
 
-- [ ] implement prompts and tools using dirstore+fts
-- [ ] in modify modal, the search bar is visible i.e it doesnt get in background
-- [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
 - [ ] CPU is high when "thinking". Need to debug
-- [ ] If there was some amount of data that was streamed, but error occured at end somepalce, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is.
-- [ ] Startup issue in linux mint if sqlite file is missing.
-- [ ] For new month of conversations etc, if we set default provider preset it says read partition error
+- [ ] If there was some amount of data that was streamed, but error occured at end someplace, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is.
 - [ ] For we try to set a inbuilt preset as default for first time there is a error as of now.
 - [ ] Ideally conversation list should be sorted based on modified time and not created time.
-- [ ] In hybrid mode, temprature setting is not comming for sonent etc
-- [ ] Input field height should go to 20 rows most probably
+- [ ] In hybrid mode, temperature setting is not coming for sonnet etc
+
+- [x] in modify modal, the search bar is visible i.e it doesnt get in background
+- [x] Input field height should go to 16 rows most probably
+- [x] prompt page table is not outlined
+
 - [x] Add builtin with overlay
 - [x] Integrate builtin into prompt template store
   - [x] fts and search pending
 - [ ] Integrate the store with UI
-- [ ] Integrate store with llm. decide on if you want to popualte the prompt in input so that var expansion etc can be done properly.
+- [ ] Integrate store with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
+
+- [ ] implement prompts and tools using dirstore+fts
+- [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
+- [ ] For new month of conversations etc, if we set default provider preset it says read partition error
+- [x] Startup issue in linux mint if sqlite file is missing.
 
 ## Random notes from UX discussions
 

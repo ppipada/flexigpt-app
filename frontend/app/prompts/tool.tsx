@@ -120,26 +120,26 @@ const Tools: React.FC = () => {
 				</button>
 			</div>
 			{/* Tools Table */}
-			<div className="overflow-x-auto">
+			<div className="overflow-x-auto border border-base-content/10 rounded-2xl">
 				<table className="table table-zebra w-full">
 					<thead>
 						<tr className="font-semibold text-sm px-4 py-0 m-0 bg-base-300">
-							<th className="rounded-tl-2xl">Tool Name</th>
-							<th>Use Command</th>
-							<th>Token Count</th>
-							<th className="text-right rounded-tr-2xl pr-8">Actions</th>
+							<th>Tool Name</th>
+							<th>Slug</th>
+							<th className="text-center">Token Count</th>
+							<th className="text-right pr-8">Actions</th>
 						</tr>
 					</thead>
 					<tbody>
-						{tools.map((tool, index) => (
-							<tr key={tool.id} className="hover:bg-base-300 border-none shadow-none">
-								<td className={index === tools.length - 1 ? 'rounded-bl-2xl' : ''}>{tool.name}</td>
+						{tools.map(tool => (
+							<tr key={tool.id} className="hover:bg-base-300">
+								<td>{tool.name}</td>
 								<td>
 									{TOOL_INVOKE_CHAR}
 									{tool.command}
 								</td>
-								<td>{tool.tokenCount}</td>
-								<td className={index === tools.length - 1 ? 'rounded-br-2xl text-right' : 'text-right'}>
+								<td className="text-center">{tool.tokenCount}</td>
+								<td className="text-right">
 									<button
 										className="btn btn-sm btn-ghost rounded-2xl"
 										aria-label="Edit Tool"

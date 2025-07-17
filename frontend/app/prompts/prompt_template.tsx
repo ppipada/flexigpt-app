@@ -181,36 +181,42 @@ const PromptTemplates: React.FC = () => {
 			</div>
 
 			{/* Table */}
-			<div className="overflow-x-auto">
+			<div className="overflow-x-auto border border-base-content/10 rounded-2xl">
 				<table className="table table-zebra w-full">
 					<thead>
 						<tr className="font-semibold text-sm bg-base-300">
 							<th className="rounded-tl-2xl">Display Name</th>
 							<th>Slug</th>
-							<th>Enabled</th>
-							<th>Version</th>
-							<th>Modified</th>
-							<th className="text-right rounded-tr-2xl pr-8">Actions</th>
+							<th className="text-center">Enabled</th>
+							<th className="text-center">Version</th>
+							<th className="text-center">Modified</th>
+							<th className="text-right pr-8">Actions</th>
 						</tr>
 					</thead>
 					<tbody>
-						{templates.map((item, idx) => (
-							<tr key={item.template.id} className="hover:bg-base-300 border-none shadow-none">
-								<td className={idx === templates.length - 1 ? 'rounded-bl-2xl' : ''}>{item.template.displayName}</td>
+						{templates.map(item => (
+							<tr key={item.template.id} className="hover:bg-base-300">
+								<td>{item.template.displayName}</td>
 								<td>
 									{PROMPT_TEMPLATE_INVOKE_CHAR}
 									{item.template.slug}
 								</td>
-								<td>
+								<td className="text-center align-middle">
 									{item.template.isEnabled ? (
-										<FiCheck className="text-success" size={24} />
+										<FiCheck className="text-success inline-block align-middle" size={20} />
 									) : (
-										<FiX className="text-error" size={24} />
+										<FiX className="text-error inline-block align-middle" size={20} />
 									)}
 								</td>
-								<td>{item.template.version}</td>
-								<td>{new Date(item.template.modifiedAt).toLocaleString()}</td>
-								<td className={idx === templates.length - 1 ? 'rounded-br-2xl text-right' : 'text-right'}>
+								<td className="text-center">{item.template.version}</td>
+								<td className="text-center">
+									{new Date(item.template.modifiedAt).toLocaleDateString('en-GB', {
+										day: 'numeric',
+										month: 'long',
+										year: 'numeric',
+									})}
+								</td>
+								<td className="text-right">
 									<button
 										className="btn btn-sm btn-ghost rounded-2xl"
 										aria-label="Edit"

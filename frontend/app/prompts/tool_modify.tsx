@@ -75,7 +75,7 @@ const ModifyTool: React.FC<ModifyToolProps> = ({ isOpen, onClose, onSubmit, init
 	if (!isOpen) return null;
 
 	return (
-		<div className="modal modal-open">
+		<dialog className="modal modal-open">
 			<div className="modal-box rounded-2xl">
 				<h3 className="font-bold text-lg">{initialData ? 'Edit Tool' : 'Add New Tool'}</h3>
 				<form onSubmit={handleSubmit} className="mt-4">
@@ -165,7 +165,7 @@ const ModifyTool: React.FC<ModifyToolProps> = ({ isOpen, onClose, onSubmit, init
 					</div>
 				</form>
 			</div>
-		</div>
+		</dialog>
 	);
 };
 

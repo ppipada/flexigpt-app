@@ -131,7 +131,7 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 
 	/* --- render --- */
 	return (
-		<div className="modal modal-open">
+		<dialog className="modal modal-open">
 			<div className="modal-box rounded-2xl">
 				<h3 className="font-bold text-lg">{initialData ? 'Edit Prompt Template' : 'Add New Prompt Template'}</h3>
 
@@ -244,7 +244,7 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 					</div>
 				</form>
 			</div>
-		</div>
+		</dialog>
 	);
 };
 

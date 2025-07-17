@@ -93,7 +93,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 	/* --------------------------- error ------------------------------ */
 	if (error) {
 		return (
-			<div className="absolute left-0 right-0 mt-1 bg-base-200 rounded-2xl shadow-lg p-4 text-center z-50">
+			<div className="absolute left-0 right-0 mt-1 bg-base-200 rounded-2xl shadow-lg p-4 text-center">
 				<p className="text-error text-sm mb-2">{error}</p>
 				<button
 					className="btn btn-sm btn-primary"
@@ -156,7 +156,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 
 	/* --------------------------- render ----------------------------- */
 	return (
-		<div className="absolute left-0 right-0 mt-1 bg-base-200 rounded-2xl shadow-lg overflow-hidden z-50">
+		<div className="absolute left-0 right-0 mt-1 bg-base-200 rounded-2xl shadow-lg overflow-hidden">
 			{/* ------- sticky status / hint bar (always visible) ---------- */}
 			<div className="flex justify-between items-center px-8 py-1 text-xs text-neutral/60 border-b border-base-300 sticky top-0">
 				<span className="truncate">{barLeft}</span>
