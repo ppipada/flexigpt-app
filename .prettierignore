@@ -7,4 +7,3 @@ frontend/app/apis/wailsjs
 .anima
 out
 build/flatpak/shared-modules
-pkg/mcpsdk/external
