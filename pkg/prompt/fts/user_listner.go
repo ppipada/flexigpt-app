@@ -31,7 +31,8 @@ func NewUserPromptsFTSListener(e *ftsengine.Engine) filestore.Listener {
 		if ev.File == "" ||
 			!strings.HasSuffix(ev.File, "."+spec.PromptTemplateFileExtension) ||
 			strings.HasSuffix(ev.File, spec.SqliteDBFileName) ||
-			strings.HasSuffix(ev.File, spec.BundlesMetaFileName) {
+			strings.HasSuffix(ev.File, spec.BundlesMetaFileName) ||
+			strings.HasSuffix(ev.File, spec.BuiltInOverlayFileName) {
 			return
 		}
 		ctx := context.Background()
@@ -135,7 +136,8 @@ func processFTSSync(
 	// Only process files with the correct extension.
 	if !strings.HasSuffix(fullPath, "."+spec.PromptTemplateFileExtension) ||
 		strings.HasSuffix(fullPath, spec.SqliteDBFileName) ||
-		strings.HasSuffix(fullPath, spec.BundlesMetaFileName) {
+		strings.HasSuffix(fullPath, spec.BundlesMetaFileName) ||
+		strings.HasSuffix(fullPath, spec.BuiltInOverlayFileName) {
 		return skipSyncDecision, nil
 	}
 
