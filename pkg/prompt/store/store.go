@@ -152,7 +152,6 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 			lister = s.builtinData.ListBuiltInData
 		}
 		s.fts, err = fts.InitFTSListeners(
-			context.Background(),
 			s.baseDir,
 			lister,
 		)

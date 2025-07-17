@@ -8,19 +8,20 @@ import (
 )
 
 func InitFTSListeners(
-	ctx context.Context,
 	baseDir string,
 	builtInLister BuiltInLister,
 ) (*ftsengine.Engine, error) {
-	ftsE, err := ftsengine.NewEngine(ftsengine.Config{
+	cfg := ftsengine.Config{
 		BaseDir:    baseDir,
 		DBFileName: spec.SqliteDBFileName,
 		Table:      sqliteDBTableName,
 		Columns:    ftsColumns,
-	})
+	}
+	ftsE, err := ftsengine.NewEngine(cfg)
 	if err != nil {
 		return nil, err
 	}
+	ctx := context.Background()
 	StartUserPromptsFTSRebuild(ctx, baseDir, ftsE)
 
 	if builtInLister != nil {
