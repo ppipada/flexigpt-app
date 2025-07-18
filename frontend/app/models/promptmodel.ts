@@ -33,8 +33,8 @@ export enum VarSource {
  * @public
  */
 export enum PreProcessorOnError {
-	Empty = 'empty',
-	Fail = 'fail',
+	OnErrorEmpty = 'empty',
+	OnErrorFail = 'fail',
 }
 
 // --- Core Types ---
@@ -99,15 +99,6 @@ export interface PromptTemplateListItem {
 	templateSlug: string;
 	templateVersion: string;
 	isBuiltIn: boolean;
-}
-
-export interface Tool {
-	id: string;
-	name: string;
-	command: string;
-	schema: string;
-	inFunc: string;
-	tokenCount: number;
 }
 
 // --- API Interface ---
@@ -178,5 +169,5 @@ export interface IPromptStoreAPI {
 	deletePromptTemplate(bundleID: string, templateSlug: string, version: string): Promise<void>;
 
 	/** Get a template version (or latest if version omitted). */
-	getPromptTemplate(bundleID: string, templateSlug: string, version?: string): Promise<PromptTemplate | undefined>;
+	getPromptTemplate(bundleID: string, templateSlug: string, version: string): Promise<PromptTemplate | undefined>;
 }

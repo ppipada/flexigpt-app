@@ -180,7 +180,7 @@ export class WailsPromptStoreAPI implements IPromptStoreAPI {
 	async getPromptTemplate(
 		bundleID: string,
 		templateSlug: string,
-		version?: string
+		version: string
 	): Promise<PromptTemplate | undefined> {
 		const req = {
 			BundleID: bundleID,

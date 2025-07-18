@@ -2348,12 +2348,12 @@ export namespace spec {
 	export class PutPromptTemplateRequestBody {
 	    displayName: string;
 	    isEnabled: boolean;
+	    version: string;
 	    description?: string;
-	    tags?: string[];
 	    blocks: MessageBlock[];
+	    tags?: string[];
 	    variables?: PromptVariable[];
 	    preProcessors?: PreProcessorCall[];
-	    version: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new PutPromptTemplateRequestBody(source);
@@ -2363,12 +2363,12 @@ export namespace spec {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.displayName = source["displayName"];
 	        this.isEnabled = source["isEnabled"];
+	        this.version = source["version"];
 	        this.description = source["description"];
-	        this.tags = source["tags"];
 	        this.blocks = this.convertValues(source["blocks"], MessageBlock);
+	        this.tags = source["tags"];
 	        this.variables = this.convertValues(source["variables"], PromptVariable);
 	        this.preProcessors = this.convertValues(source["preProcessors"], PreProcessorCall);
-	        this.version = source["version"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

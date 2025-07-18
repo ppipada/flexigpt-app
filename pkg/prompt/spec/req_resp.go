@@ -54,14 +54,15 @@ type PutPromptTemplateRequest struct {
 
 type PutPromptTemplateRequestBody struct {
 	// Auto populate template id internally.
-	DisplayName   string             `json:"displayName"             required:"true"`
-	IsEnabled     bool               `json:"isEnabled"               required:"true"`
-	Description   string             `json:"description,omitempty"`
-	Tags          []string           `json:"tags,omitempty"`
+	DisplayName string          `json:"displayName"           required:"true"`
+	IsEnabled   bool            `json:"isEnabled"             required:"true"`
+	Version     TemplateVersion `json:"version"               required:"true"`
+	Description string          `json:"description,omitempty"`
+
 	Blocks        []MessageBlock     `json:"blocks"                  required:"true"`
+	Tags          []string           `json:"tags,omitempty"`
 	Variables     []PromptVariable   `json:"variables,omitempty"`
 	PreProcessors []PreProcessorCall `json:"preProcessors,omitempty"`
-	Version       TemplateVersion    `json:"version"`
 }
 
 type PutPromptTemplateResponse struct{}
