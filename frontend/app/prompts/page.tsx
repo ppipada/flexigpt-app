@@ -1,22 +1,22 @@
 import { useState } from 'react';
 
-import PromptTemplates from '@/prompts/prompt_template';
+import PromptTemplates from '@/prompts/prompt_bundles_page';
 import Tools from '@/prompts/tool';
 
 const Prompts: React.FC = () => {
-	const [activeTab, setActiveTab] = useState('promptTemplates');
+	const [activeTab, setActiveTab] = useState('prompts');
 
 	return (
-		<div className="container mx-auto p-4">
-			<div role="tablist" className="tabs tabs-bordered tabs-lg">
+		<div className="flex flex-col w-full h-full overflow-hidden">
+			<div role="tablist" className="tabs tabs-bordered tabs-lg fixed">
 				<a
 					role="tab"
-					className={`tab ${activeTab === 'promptTemplates' ? 'tab-active font-bold' : 'font-bold'}`}
+					className={`tab ${activeTab === 'prompts' ? 'tab-active font-bold' : 'font-bold'}`}
 					onClick={() => {
-						setActiveTab('promptTemplates');
+						setActiveTab('prompts');
 					}}
 				>
-					Prompt Templates
+					Prompts
 				</a>
 				<a
 					role="tab"
@@ -29,8 +29,8 @@ const Prompts: React.FC = () => {
 				</a>
 			</div>
 
-			<div>
-				{activeTab === 'promptTemplates' && <PromptTemplates />}
+			<div className="flex-1 overflow-y-auto mt-16 overscroll-y-contain">
+				{activeTab === 'prompts' && <PromptTemplates />}
 				{activeTab === 'tools' && <Tools />}
 			</div>
 		</div>

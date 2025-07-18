@@ -138,7 +138,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 								name="providerName"
 								value={formData.providerName}
 								onChange={handleChange}
-								className={`input input-bordered w-full rounded-xl ${errors.providerName ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-2xl ${errors.providerName ? 'input-error' : ''}`}
 								placeholder="e.g. openai-alt"
 								spellCheck="false"
 							/>
@@ -166,7 +166,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 								name="apiKey"
 								value={formData.apiKey}
 								onChange={handleChange}
-								className={`input input-bordered w-full rounded-xl ${errors.apiKey ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-2xl ${errors.apiKey ? 'input-error' : ''}`}
 								placeholder="Your provider's API key"
 								spellCheck="false"
 							/>
@@ -197,7 +197,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 								name="origin"
 								value={formData.origin}
 								onChange={handleChange}
-								className={`input input-bordered w-full rounded-xl ${errors.origin ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-2xl ${errors.origin ? 'input-error' : ''}`}
 								placeholder="e.g. https://api.openai.com"
 								spellCheck="false"
 							/>
@@ -225,7 +225,7 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 								name="chatCompletionPathPrefix"
 								value={formData.chatCompletionPathPrefix}
 								onChange={handleChange}
-								className={`input input-bordered w-full rounded-xl ${errors.chatCompletionPathPrefix ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-2xl ${errors.chatCompletionPathPrefix ? 'input-error' : ''}`}
 								placeholder="e.g. /v1/chat/completions"
 								spellCheck="false"
 							/>
@@ -241,10 +241,10 @@ const AddProviderModal: FC<AddProviderModalProps> = ({ isOpen, onClose, onSubmit
 
 					{/* actions */}
 					<div className="modal-action mt-6">
-						<button type="button" className="btn btn-md rounded-xl" onClick={onClose}>
+						<button type="button" className="btn btn-md rounded-2xl" onClick={onClose}>
 							Cancel
 						</button>
-						<button type="submit" className="btn btn-md btn-primary rounded-xl" disabled={!isAllValid}>
+						<button type="submit" className="btn btn-md btn-primary rounded-2xl" disabled={!isAllValid}>
 							Add Provider
 						</button>
 					</div>

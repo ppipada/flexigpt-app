@@ -94,7 +94,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 			}}
 		>
 			<summary
-				className="flex btn w-full text-left shadow-none rounded-xl border-neutral/20 bg-base-100 justify-between items-center px-4 py-2 cursor-pointer"
+				className="flex btn w-full text-left shadow-none rounded-2xl border-neutral/20 bg-base-100 justify-between items-center px-4 py-2 cursor-pointer"
 				title={title}
 			>
 				<span className="font-normal truncate">
@@ -103,11 +103,11 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 				{isOpen ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
 			</summary>
 
-			<ul tabIndex={0} className="dropdown-content menu rounded-xl w-full bg-base-200">
+			<ul tabIndex={0} className="dropdown-content menu rounded-2xl w-full bg-base-200">
 				{filteredKeys.map(key => (
 					<li
 						key={key}
-						className="cursor-pointer rounded-xl"
+						className="cursor-pointer rounded-2xl"
 						onClick={() => {
 							handleSelection(key);
 						}}

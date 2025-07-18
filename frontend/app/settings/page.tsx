@@ -108,7 +108,7 @@ const SettingsPage: FC = () => {
 			>
 				<div className="flex flex-col space-y-4 w-5/6 xl:w-2/3">
 					{/* ── Theme switch ─ */}
-					<div className="bg-base-100 rounded-xl shadow-lg px-4 py-2 mb-8">
+					<div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2 mb-8">
 						<div className="grid grid-cols-12 items-center gap-4">
 							<div className="col-span-3 text-sm font-medium">Theme</div>
 							<div className="col-span-9">
@@ -118,7 +118,7 @@ const SettingsPage: FC = () => {
 					</div>
 
 					{/* ── Default provider & add ─ */}
-					<div className="bg-base-100 rounded-xl shadow-lg px-4 py-2 mb-8">
+					<div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2 mb-8">
 						<div className="grid grid-cols-12 items-center gap-4">
 							<label className="col-span-3 text-sm font-medium">Default Provider</label>
 							<div className="col-span-6">

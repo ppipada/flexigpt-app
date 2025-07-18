@@ -359,7 +359,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								name="modelPresetID"
 								value={modelPresetID}
 								onChange={handleChange}
-								className={`input input-bordered w-full rounded-xl ${errors.modelPresetID ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-2xl ${errors.modelPresetID ? 'input-error' : ''}`}
 								placeholder="e.g. gpt4preset, claudeOpus1"
 								disabled={isEditMode}
 								spellCheck="false"
@@ -392,7 +392,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								name="name"
 								value={formData.name}
 								onChange={handleChange}
-								className={`input input-bordered w-full rounded-xl ${errors.name ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-2xl ${errors.name ? 'input-error' : ''}`}
 								placeholder="e.g. gpt-4, anthropic/claude-3-opus-20240229"
 								spellCheck="false"
 								autoComplete="off"
@@ -424,7 +424,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								name="presetLabel"
 								value={formData.presetLabel}
 								onChange={handleChange}
-								className={`input input-bordered w-full rounded-xl ${errors.presetLabel ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-2xl ${errors.presetLabel ? 'input-error' : ''}`}
 								placeholder="e.g. GPT-4 (Creative), Claude Opus Fast"
 								spellCheck="false"
 								autoComplete="off"
@@ -562,7 +562,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 									name="reasoningTokens"
 									value={formData.reasoningTokens}
 									onChange={handleChange}
-									className={`input input-bordered w-full rounded-xl ${errors.reasoningTokens ? 'input-error' : ''}`}
+									className={`input input-bordered w-full rounded-2xl ${errors.reasoningTokens ? 'input-error' : ''}`}
 									placeholder="e.g. 1024"
 									spellCheck="false"
 								/>
@@ -595,7 +595,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								value={formData.temperature}
 								onChange={handleChange}
 								placeholder={numPlaceholder('temperature')}
-								className={`input input-bordered w-full rounded-xl ${errors.temperature ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-2xl ${errors.temperature ? 'input-error' : ''}`}
 								spellCheck="false"
 							/>
 							{errors.temperature && (
@@ -623,7 +623,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								value={formData.timeout}
 								onChange={handleChange}
 								placeholder={numPlaceholder('timeout')}
-								className={`input input-bordered w-full rounded-xl ${errors.timeout ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-2xl ${errors.timeout ? 'input-error' : ''}`}
 								spellCheck="false"
 							/>
 							{errors.timeout && (
@@ -651,7 +651,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								value={formData.maxPromptLength}
 								onChange={handleChange}
 								placeholder={numPlaceholder('maxPromptLength')}
-								className={`input input-bordered w-full rounded-xl ${errors.maxPromptLength ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-2xl ${errors.maxPromptLength ? 'input-error' : ''}`}
 								spellCheck="false"
 							/>
 							{errors.maxPromptLength && (
@@ -679,7 +679,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								value={formData.maxOutputLength}
 								onChange={handleChange}
 								placeholder={numPlaceholder('maxOutputLength')}
-								className={`input input-bordered w-full rounded-xl ${errors.maxOutputLength ? 'input-error' : ''}`}
+								className={`input input-bordered w-full rounded-2xl ${errors.maxOutputLength ? 'input-error' : ''}`}
 								spellCheck="false"
 							/>
 							{errors.maxOutputLength && (
@@ -708,7 +708,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								name="systemPrompt"
 								value={formData.systemPrompt}
 								onChange={handleChange}
-								className="textarea textarea-bordered w-full rounded-xl h-24"
+								className="textarea textarea-bordered w-full rounded-2xl h-24"
 								placeholder="Enter system prompt instructions here..."
 								spellCheck="false"
 							/>
@@ -717,10 +717,10 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 
 					{/* Actions */}
 					<div className="modal-action">
-						<button type="button" className="btn rounded-xl" onClick={onClose}>
+						<button type="button" className="btn rounded-2xl" onClick={onClose}>
 							Cancel
 						</button>
-						<button type="submit" className="btn btn-primary rounded-xl" disabled={!isAllValid}>
+						<button type="submit" className="btn btn-primary rounded-2xl" disabled={!isAllValid}>
 							{isEditMode ? 'Save Changes' : 'Add Preset'}
 						</button>
 					</div>

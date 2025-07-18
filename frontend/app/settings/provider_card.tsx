@@ -138,7 +138,7 @@ const ProviderSettingsCard: FC<ProviderSettingsCardProps> = ({
 	};
 
 	return (
-		<div className="bg-base-100 rounded-xl shadow-lg p-4 mb-4">
+		<div className="bg-base-100 rounded-2xl shadow-lg p-4 mb-8">
 			{/* ── Header row ─────────────────────────────────────── */}
 			<div className="grid grid-cols-12 gap-4 items-center">
 				{/* Provider Title*/}
@@ -187,7 +187,7 @@ const ProviderSettingsCard: FC<ProviderSettingsCardProps> = ({
 						<div className="col-span-9">
 							<input
 								type="password"
-								className={`input w-full input-bordered rounded-xl ${apiKeyError ? 'input-error' : ''}`}
+								className={`input w-full input-bordered rounded-2xl ${apiKeyError ? 'input-error' : ''}`}
 								value={localSettings.apiKey}
 								onChange={e => {
 									setLocalSettings({ ...localSettings, apiKey: e.target.value });
@@ -216,7 +216,7 @@ const ProviderSettingsCard: FC<ProviderSettingsCardProps> = ({
 						<div className="col-span-9">
 							<input
 								type="text"
-								className={`input w-full input-bordered rounded-xl ${originError ? 'input-error' : ''}`}
+								className={`input w-full input-bordered rounded-2xl ${originError ? 'input-error' : ''}`}
 								value={localSettings.origin}
 								onChange={e => {
 									setLocalSettings({ ...localSettings, origin: e.target.value });
@@ -244,7 +244,7 @@ const ProviderSettingsCard: FC<ProviderSettingsCardProps> = ({
 						<div className="col-span-9">
 							<input
 								type="text"
-								className={`input w-full input-bordered rounded-xl ${chatPathError ? 'input-error' : ''}`}
+								className={`input w-full input-bordered rounded-2xl ${chatPathError ? 'input-error' : ''}`}
 								value={localSettings.chatCompletionPathPrefix}
 								onChange={e => {
 									setLocalSettings({ ...localSettings, chatCompletionPathPrefix: e.target.value });
@@ -266,7 +266,7 @@ const ProviderSettingsCard: FC<ProviderSettingsCardProps> = ({
 					{/* Delete provider */}
 					<div className="flex justify-end">
 						<button
-							className="btn btn-md btn-ghost rounded-xl flex items-center"
+							className="btn btn-md btn-ghost rounded-2xl flex items-center"
 							onClick={handleProviderDelete}
 							disabled={provider === defaultProvider || inbuiltProvider}
 							title={

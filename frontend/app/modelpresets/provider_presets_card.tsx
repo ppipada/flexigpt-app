@@ -167,7 +167,7 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 
 	/* ── RENDER ──────────────────────────────────────────────── */
 	return (
-		<div className="bg-base-100 rounded-xl shadow-lg px-4 py-2 mb-8">
+		<div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2 mb-8">
 			{/* Header */}
 			<div className="grid grid-cols-12 gap-2 items-center">
 				{/* Provider Title*/}
@@ -264,7 +264,7 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 
 					{/* Add-preset button */}
 					<div className="flex justify-end">
-						<button className="btn btn-ghost rounded-xl flex items-center" onClick={handleAddPreset}>
+						<button className="btn btn-ghost rounded-2xl flex items-center" onClick={handleAddPreset}>
 							<FiPlus /> <span className="ml-1">Add Preset</span>
 						</button>
 					</div>

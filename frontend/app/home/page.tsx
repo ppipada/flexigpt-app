@@ -21,7 +21,7 @@ export default function Home() {
 			</div>
 			<div className="flex flex-col md:flex-row gap-6 h-36">
 				<Link to="/chats/">
-					<div className="cursor-pointer text-center p-6 bg-base-100 rounded-xl shadow-lg transition-transform transform hover:scale-105">
+					<div className="cursor-pointer text-center p-6 bg-base-100 rounded-2xl shadow-lg transition-transform transform hover:scale-105">
 						<h3 className="text-2xl font-semibold mb-3">Chat with AI</h3>
 						<p>Interact with LLMs and get assistance.</p>
 						<h3 className="text-2xl font-semibold mt-2">
@@ -31,7 +31,7 @@ export default function Home() {
 				</Link>
 				{FEATURE_FLAG_AGENTS && (
 					<Link to="/agents/">
-						<div className="cursor-pointer p-6 mb-4 text-center bg-base-100 rounded-xl shadow-lg transition-transform transform hover:scale-105">
+						<div className="cursor-pointer p-6 mb-4 text-center bg-base-100 rounded-2xl shadow-lg transition-transform transform hover:scale-105">
 							<h3 className="text-2xl font-semibold mb-3">Explore Agents</h3>
 							<p>Discover agents and their functionalities.</p>
 							<h3 className="text-2xl font-semibold mt-2">
