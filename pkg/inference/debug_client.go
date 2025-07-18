@@ -210,8 +210,9 @@ func (lc *loggingReadCloser) Close() error {
 
 // LogTransport is a custom http.RoundTripper that logs requests and responses.
 type LogTransport struct {
-	Transport http.RoundTripper
-	LogMode   bool
+	Transport           http.RoundTripper
+	LogMode             bool
+	CaptureResponseData bool
 }
 
 func getDetailsStr(v any) string {
@@ -262,12 +263,14 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		debugResp.ResponseDetails = respDetails
 
 		// Wrap the response body.
-		buffer := new(bytes.Buffer)
-		resp.Body = &loggingReadCloser{
-			ReadCloser: resp.Body,
-			buf:        buffer,
-			debugResp:  debugResp,
-			logMode:    t.LogMode,
+		if t.CaptureResponseData {
+			buffer := new(bytes.Buffer)
+			resp.Body = &loggingReadCloser{
+				ReadCloser: resp.Body,
+				buf:        buffer,
+				debugResp:  debugResp,
+				logMode:    t.LogMode,
+			}
 		}
 	}
 
@@ -297,11 +300,12 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 // NewDebugHTTPClient creates a new HTTP client with logging capabilities.
-func NewDebugHTTPClient(logMode bool) *http.Client {
+func NewDebugHTTPClient(logMode, captureResponseData bool) *http.Client {
 	return &http.Client{
 		Transport: &LogTransport{
-			Transport: http.DefaultTransport,
-			LogMode:   logMode,
+			Transport:           http.DefaultTransport,
+			LogMode:             logMode,
+			CaptureResponseData: captureResponseData,
 		},
 	}
 }

@@ -48,7 +48,7 @@ func (api *AnthropicCompatibleAPI) InitLLM(ctx context.Context) error {
 		return nil
 	}
 	options = append(options, langchainAnthropic.WithToken(api.ProviderInfo.APIKey))
-	newClient := NewDebugHTTPClient(api.Debug)
+	newClient := NewDebugHTTPClient(api.Debug, false)
 	options = append(options, langchainAnthropic.WithHTTPClient(newClient))
 
 	llm, err := langchainAnthropic.New(options...)

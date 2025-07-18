@@ -54,7 +54,7 @@ func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {
 		return nil
 	}
 	options = append(options, langchainOpenAI.WithToken(api.ProviderInfo.APIKey))
-	newClient := NewDebugHTTPClient(api.Debug)
+	newClient := NewDebugHTTPClient(api.Debug, false)
 	options = append(options, langchainOpenAI.WithHTTPClient(newClient))
 
 	llm, err := langchainOpenAI.New(options...)

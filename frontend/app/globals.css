@@ -101,7 +101,7 @@
 
 @layer base {
 	*::-webkit-scrollbar {
-		width: 4px;
+		width: 8px;
 	}
 
 	*::-webkit-scrollbar-thumb {
@@ -125,6 +125,8 @@
 
 .shiki-container code {
 	background: transparent !important;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
 }
 
 code {
