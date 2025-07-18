@@ -15,7 +15,7 @@
 - [x] Add builtin with overlay
 - [x] Integrate builtin into prompt template store
   - [x] fts and search pending
-- [ ] Integrate the store with UI
+- [x] Integrate the store with UI
 - [ ] Integrate store with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
 
 - [ ] implement prompts and tools using dirstore+fts
