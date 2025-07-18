@@ -91,7 +91,7 @@ func TestFTSPagination(t *testing.T) {
 	dir := t.TempDir()
 	cc := newCollection(t, dir, true)
 
-	for i := range 12 {
+	for i := range 14 {
 		c := newConv(t, "Kiwi talk "+strconv.Itoa(i))
 		c.Messages = []spec.ConversationMessage{{
 			ID:      "m",
@@ -118,13 +118,13 @@ func TestFTSPagination(t *testing.T) {
 			}
 			break
 		}
-		if len(res.Body.ConversationListItems) != 10 {
-			t.Fatalf("full page size want 10 got %d", len(res.Body.ConversationListItems))
+		if len(res.Body.ConversationListItems) != 12 {
+			t.Fatalf("full page size want 12 got %d", len(res.Body.ConversationListItems))
 		}
 		token = *res.Body.NextPageToken
 	}
-	if total != 12 {
-		t.Fatalf("expected 12 hits over all pages, got %d", total)
+	if total != 14 {
+		t.Fatalf("expected 14 hits over all pages, got %d", total)
 	}
 }
 

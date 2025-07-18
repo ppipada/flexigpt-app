@@ -17,7 +17,7 @@ import (
 const (
 	conversationFileExtension = "json"
 	maxPageSize               = 256
-	defPageSize               = 10
+	defPageSize               = 12
 )
 
 type ConversationCollection struct {

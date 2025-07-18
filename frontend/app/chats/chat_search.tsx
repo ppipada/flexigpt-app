@@ -232,6 +232,9 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 	);
 };
 
+const conversationsToResults = (c: ConversationSearchItem[]): SearchResult[] =>
+	c.map(conv => ({ searchConversation: conv, matchType: 'title' }));
+
 interface ChatSearchProps {
 	onSelectConversation: (item: ConversationSearchItem) => Promise<void>;
 	refreshKey: number;
@@ -255,35 +258,31 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 	const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 
-	/* --------------------------- helpers --------------------------- */
-	const conversationsToResults = useCallback(
-		(conversations: ConversationSearchItem[]): SearchResult[] =>
-			conversations.map(c => ({ searchConversation: c, matchType: 'title' })),
-		[]
-	);
-
 	/* ------------------------ load recents ------------------------- */
 	const loadRecentConversations = useCallback(async () => {
 		try {
 			setSearchState(p => ({ ...p, loading: true }));
+
 			const { conversations } = await conversationStoreAPI.listConversations();
 			setRecentConversations(conversations);
+			setSearchState(prev => {
+				// if the user has already started typing,
+				// do not overwrite the results that belong to his query
+				if (prev.query !== '') return prev;
 
-			if (!searchState.query) {
-				setSearchState({
-					...searchState,
+				return {
+					...prev,
 					results: conversationsToResults(conversations),
 					loading: false,
 					hasMore: false,
 					searchedMessages: false,
-				});
-			}
+				};
+			});
 		} catch (e) {
 			console.error(e);
 			setSearchState(p => ({ ...p, loading: false, error: 'Failed to load conversations' }));
 		}
-	}, [searchState.query, conversationsToResults, refreshKey]);
-
+	}, [refreshKey]);
 	/* --------------------------- search ---------------------------- */
 	const performSearch = useCallback(async (rawQuery: string, token?: string, append = false) => {
 		if (abortControllerRef.current && !append) abortControllerRef.current.abort();
@@ -367,7 +366,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 				searchedMessages: false,
 			}));
 		},
-		[recentConversations, conversationsToResults]
+		[recentConversations]
 	);
 
 	/* ------------------------ input change ------------------------- */
@@ -420,26 +419,20 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 			/* remote search (debounced) */
 			debounceTimeoutRef.current = setTimeout(() => performSearch(q), 300);
 		},
-		[show, recentConversations, conversationsToResults, filterLocalResults, performSearch]
+		[show, recentConversations, filterLocalResults, performSearch]
 	);
 
 	/* ------------------------- focus / blur ------------------------ */
 	const handleFocus = useCallback(async () => {
 		setShow(true);
 		if (!recentConversations.length) await loadRecentConversations();
-		else if (!searchState.query && !searchState.results.length) {
+		else if (!searchState.query) {
 			setSearchState(p => ({
 				...p,
 				results: conversationsToResults(recentConversations),
 			}));
 		}
-	}, [
-		recentConversations,
-		loadRecentConversations,
-		searchState.query,
-		searchState.results.length,
-		conversationsToResults,
-	]);
+	}, [recentConversations, loadRecentConversations, searchState.query]);
 
 	const handleBlur = useCallback(() => {
 		setTimeout(() => {
@@ -506,8 +499,9 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 
 	/* -------------------- mount / unmount -------------------------- */
 	useEffect(() => {
+		searchCache.clear();
 		loadRecentConversations();
-	}, [refreshKey]); // reload when refreshKey changes
+	}, [refreshKey, loadRecentConversations]); // reload when refreshKey changes
 
 	useEffect(
 		() => () => {

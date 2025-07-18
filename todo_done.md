@@ -400,3 +400,5 @@
   - [x] fts and search pending
 - [x] Integrate the store with UI
 - [x] Startup issue in linux mint if sqlite file is missing.
+- [x] Details expansion was giving large cpu
+- [x] Ideally conversation list should be sorted based on modified time and not created time.

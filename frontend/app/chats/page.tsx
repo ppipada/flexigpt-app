@@ -65,7 +65,8 @@ const ChatScreen: FC = () => {
 		bottomRef.current?.scrollIntoView({ block: 'end' });
 	}, [chat.messages, streamedMessage, isStreaming]);
 
-	const bumpSearchKey = () => {
+	const bumpSearchKey = async () => {
+		await new Promise(resolve => setTimeout(resolve, 50));
 		setSearchRefreshKey(k => k + 1);
 	};
 
