@@ -62,18 +62,6 @@ func (l *slugLocks) lockKey(bundleID spec.BundleID, slug spec.TemplateSlug) *syn
 	return lk
 }
 
-// validateTemplate validates the structure and content of a prompt template.
-// This is a placeholder implementation that will be filled in later.
-func validateTemplate(tpl *spec.PromptTemplate) error {
-	// TODO: Implement comprehensive template validation:
-	// - Validate Variables reference existing placeholders in Blocks.
-	// - Validate PreProcessors reference valid tools.
-	// - Validate MessageBlock roles are valid.
-	// - Validate variable types and constraints.
-	// - Check for circular dependencies in preprocessors.
-	return nil
-}
-
 // PromptTemplateStore is the main store for prompt bundles and templates.
 // It manages bundle and template CRUD, soft deletion, background cleanup, and FTS integration.
 type PromptTemplateStore struct {

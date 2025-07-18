@@ -390,3 +390,13 @@
   - [x] autoresize is the issue.
   - [ ] ~~may be memoize other toolbar components too~~
 - [x] Click on zoom for mermaid diagram
+
+- [x] in modify modal, the search bar is visible i.e it doesnt get in background
+- [x] Input field height should go to 16 rows most probably
+- [x] prompt page table is not outlined
+
+- [x] Add builtin with overlay
+- [x] Integrate builtin into prompt template store
+  - [x] fts and search pending
+- [x] Integrate the store with UI
+- [x] Startup issue in linux mint if sqlite file is missing.

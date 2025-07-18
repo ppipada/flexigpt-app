@@ -8,20 +8,11 @@
 - [ ] Ideally conversation list should be sorted based on modified time and not created time.
 - [ ] In hybrid mode, temperature setting is not coming for sonnet etc
 
-- [x] in modify modal, the search bar is visible i.e it doesnt get in background
-- [x] Input field height should go to 16 rows most probably
-- [x] prompt page table is not outlined
-
-- [x] Add builtin with overlay
-- [x] Integrate builtin into prompt template store
-  - [x] fts and search pending
-- [x] Integrate the store with UI
 - [ ] Integrate store with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
 
 - [ ] implement prompts and tools using dirstore+fts
 - [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
 - [ ] For new month of conversations etc, if we set default provider preset it says read partition error
-- [x] Startup issue in linux mint if sqlite file is missing.
 
 ## Random notes from UX discussions
 
