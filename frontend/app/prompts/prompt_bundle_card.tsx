@@ -29,6 +29,13 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [localTemplates, setLocalTemplates] = useState<PromptTemplate[]>(templates);
 
+	const [isBundleEnabled, setIsBundleEnabled] = useState(bundle.isEnabled);
+
+	useEffect(() => {
+		setIsBundleEnabled(bundle.isEnabled);
+	}, [bundle.isEnabled]);
+	/* --------------------------------------------- */
+
 	/* modals */
 	const [isDeleteTemplateModalOpen, setIsDeleteTemplateModalOpen] = useState(false);
 	const [templateToDelete, setTemplateToDelete] = useState<PromptTemplate | null>(null);
@@ -39,7 +46,7 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 	const [showAlert, setShowAlert] = useState(false);
 	const [alertMsg, setAlertMsg] = useState('');
 
-	/* sync */
+	/* sync templates coming from parent */
 	useEffect(() => {
 		setLocalTemplates(templates);
 	}, [templates]);
@@ -47,9 +54,10 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 	/* ---------- bundle enable toggle ---------- */
 	const toggleBundleEnable = async () => {
 		try {
-			const newVal = !bundle.isEnabled;
+			const newVal = !isBundleEnabled;
 			await promptStoreAPI.patchPromptBundle(bundle.id, newVal);
-			bundle.isEnabled = newVal; // mutate local copy
+			/* update local UI state */
+			setIsBundleEnabled(newVal);
 		} catch (err) {
 			console.error('Failed to toggle bundle:', err);
 			setAlertMsg('Failed to toggle bundle enable state.');
@@ -190,7 +198,7 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 					<input
 						type="checkbox"
 						className="toggle toggle-accent"
-						checked={bundle.isEnabled}
+						checked={isBundleEnabled}
 						onChange={toggleBundleEnable}
 					/>
 				</div>
