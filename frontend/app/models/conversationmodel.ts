@@ -14,15 +14,11 @@ export interface ConversationMessage {
 	details?: string;
 }
 
-export interface ConversationListItem {
-	id: string;
-	sanatizedTitle: string;
-}
-
 export type ConversationSearchItem = {
 	id: string;
 	title: string;
 	idDate: Date;
+	modifiedAt: Date;
 };
 
 export type Conversation = {
@@ -38,10 +34,10 @@ export interface IConversationStoreAPI {
 	putMessagesToConversation(id: string, title: string, messages: ConversationMessage[]): Promise<void>;
 	deleteConversation: (id: string, title: string) => Promise<void>;
 	getConversation: (id: string, title: string) => Promise<Conversation | null>;
-	listConversations: (token?: string) => Promise<{ conversations: ConversationListItem[]; nextToken?: string }>;
+	listConversations: (token?: string) => Promise<{ conversations: ConversationSearchItem[]; nextToken?: string }>;
 	searchConversations: (
 		query: string,
 		token?: string,
 		pageSize?: number
-	) => Promise<{ conversations: ConversationListItem[]; nextToken?: string }>;
+	) => Promise<{ conversations: ConversationSearchItem[]; nextToken?: string }>;
 }

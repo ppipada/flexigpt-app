@@ -142,7 +142,7 @@ func (cc *ConversationCollection) PutConversation(
 
 	// Check if there are files with same id as prefix
 	// We don't iterate as we expect only 1 file max with the id prefix of uuid.
-	files, _, err := cc.store.ListFiles(
+	fileEntries, _, err := cc.store.ListFiles(
 		dirstore.ListingConfig{
 			FilenamePrefix:   req.ID,
 			PageSize:         10,
@@ -156,8 +156,10 @@ func (cc *ConversationCollection) PutConversation(
 	// If there is a file, that means its a replace of full conversation
 	// May be title has also changed
 	// Remove the current file and add new.
-	for idx := range files {
-		err := cc.store.DeleteFile(dirstore.FileKey{FileName: filepath.Base(files[idx])})
+	for idx := range fileEntries {
+		err := cc.store.DeleteFile(
+			dirstore.FileKey{FileName: filepath.Base(fileEntries[idx].BaseRelativePath)},
+		)
 		if err != nil {
 			slog.Warn("Put conversation remove existing file", "error", err)
 		}
@@ -272,7 +274,7 @@ func (cc *ConversationCollection) ListConversations(
 			pageSize = req.PageSize
 		}
 	}
-	files, next, err := cc.store.ListFiles(
+	fileEntries, next, err := cc.store.ListFiles(
 		dirstore.ListingConfig{SortOrder: dirstore.SortOrderDescending, PageSize: pageSize},
 		token,
 	)
@@ -280,16 +282,18 @@ func (cc *ConversationCollection) ListConversations(
 		return nil, err
 	}
 
-	items := make([]spec.ConversationListItem, 0, len(files))
-	for _, f := range files {
-		info, err := uuidv7filename.Parse(filepath.Base(f))
+	items := make([]spec.ConversationListItem, 0, len(fileEntries))
+	for _, f := range fileEntries {
+		info, err := uuidv7filename.Parse(filepath.Base(f.BaseRelativePath))
 		if err != nil {
 			// Corrupted/foreign file skip.
 			continue
 		}
+		fileModTime := f.FileInfo.ModTime()
 		items = append(items, spec.ConversationListItem{
 			ID:             info.ID,
 			SanatizedTitle: info.Suffix,
+			ModifiedAt:     &fileModTime,
 		})
 	}
 	return &spec.ListConversationsResponse{

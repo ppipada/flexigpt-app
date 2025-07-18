@@ -5,9 +5,9 @@
 - [ ] CPU is high when "thinking". Need to debug
 - [ ] If there was some amount of data that was streamed, but error occured at end someplace, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is.
 - [x] Details expansion was giving large cpu
-- [ ] For we try to set a inbuilt preset as default for first time there is a error as of now.
-- [ ] Ideally conversation list should be sorted based on modified time and not created time.
+- [x] Ideally conversation list should be sorted based on modified time and not created time.
 - [ ] In hybrid mode, temperature setting is not coming for sonnet etc
+- [ ] For we try to set a inbuilt preset as default for first time there is a error as of now.
 
 - [ ] Integrate store with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
 

@@ -214,7 +214,7 @@ func TestMapDirectoryStore_ListFiles_BasicAndSort(t *testing.T) {
 			}
 			var filenames []string
 			for _, file := range files {
-				_, filename := filepath.Split(file)
+				_, filename := filepath.Split(file.BaseRelativePath)
 				filenames = append(filenames, filename)
 			}
 			if len(filenames) != len(tt.expectedFiles) {
@@ -306,7 +306,7 @@ func TestMapDirectoryStore_ListFiles_NoPartitionProvider_Pagination(t *testing.T
 					)
 				}
 				for i, expectedFile := range expectedFiles {
-					if files[i] != expectedFile {
+					if files[i].BaseRelativePath != expectedFile {
 						t.Fatalf(
 							"expected file %s on page %d, got %s",
 							expectedFile,
@@ -436,7 +436,7 @@ func TestMapDirectoryStore_ListFiles_MultiPartition_Pagination(t *testing.T) {
 					)
 				}
 				for i, expectedFile := range expectedFiles {
-					if files[i] != expectedFile {
+					if files[i].BaseRelativePath != expectedFile {
 						t.Fatalf(
 							"expected file %s on page %d, got %s",
 							expectedFile,
@@ -550,7 +550,7 @@ func TestMapDirectoryStore_ListFiles_FilteredPartitions(t *testing.T) {
 				t.Fatalf("expected %d files, got %d", len(tt.expectedFiles), len(files))
 			}
 			for i, want := range tt.expectedFiles {
-				if files[i] != want {
+				if files[i].BaseRelativePath != want {
 					t.Errorf("at %d: want %q, got %q", i, want, files[i])
 				}
 			}
@@ -626,7 +626,7 @@ func TestMapDirectoryStore_ListFiles_FilteredPartitions_Pagination(t *testing.T)
 					)
 				}
 				for i, want := range wantFiles {
-					if files[i] != want {
+					if files[i].BaseRelativePath != want {
 						t.Errorf("page %d, file %d: want %q, got %q", pageIdx+1, i, want, files[i])
 					}
 				}
@@ -787,7 +787,7 @@ func TestMapDirectoryStore_ListFiles_FilenamePrefixFiltering(t *testing.T) {
 				t.Fatalf("expected %d files, got %d: %v", len(tt.want.files), len(files), files)
 			}
 			for i, want := range tt.want.files {
-				if files[i] != want {
+				if files[i].BaseRelativePath != want {
 					t.Errorf("at %d: want %q, got %q", i, want, files[i])
 				}
 			}
@@ -896,7 +896,7 @@ func TestMapDirectoryStore_ListFiles_FilenamePrefixFiltering_Pagination(t *testi
 					)
 				}
 				for i, wantFile := range want.files {
-					if files[i] != wantFile {
+					if files[i].BaseRelativePath != wantFile {
 						t.Errorf(
 							"page %d, file %d: want %q, got %q",
 							pageIdx+1,
@@ -1297,7 +1297,7 @@ func TestMapDirectoryStore_ListFiles_ErrorsAndEdgeCases(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if len(files1) != 1 || files1[0] != "202307/a.json" {
+		if len(files1) != 1 || files1[0].BaseRelativePath != "202307/a.json" {
 			t.Fatalf("expected [202307/a.json], got %v", files1)
 		}
 		if nextPageToken != "" {
@@ -1332,7 +1332,7 @@ func TestMapDirectoryStore_ListFiles_ErrorsAndEdgeCases(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if len(files1) != 1 || files1[0] != "202308/apple.json" {
+		if len(files1) != 1 || files1[0].BaseRelativePath != "202308/apple.json" {
 			t.Fatalf("expected [202308/apple.json], got %v", files1)
 		}
 		if nextPageToken != "" {

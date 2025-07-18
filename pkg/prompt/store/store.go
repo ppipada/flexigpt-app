@@ -306,13 +306,13 @@ func (s *PromptTemplateStore) sweepSoftDeleted() {
 			continue
 		}
 
-		files, _, err := s.templateStore.ListFiles(
+		fileEntries, _, err := s.templateStore.ListFiles(
 			dirstore.ListingConfig{
 				FilterPartitions: []string{dirInfo.DirName},
 				PageSize:         1,
 			}, "",
 		)
-		if err != nil || len(files) != 0 {
+		if err != nil || len(fileEntries) != 0 {
 			slog.Warn("Sweep: bundle still contains templates, skipping.", "bundleID", id)
 			continue
 		}
@@ -463,7 +463,7 @@ func (s *PromptTemplateStore) DeletePromptBundle(
 		return nil, derr
 	}
 
-	files, _, err := s.templateStore.ListFiles(
+	fileEntries, _, err := s.templateStore.ListFiles(
 		dirstore.ListingConfig{
 			FilterPartitions: []string{dirInfo.DirName},
 			PageSize:         1,
@@ -472,7 +472,7 @@ func (s *PromptTemplateStore) DeletePromptBundle(
 	if err != nil {
 		return nil, err
 	}
-	if len(files) != 0 {
+	if len(fileEntries) != 0 {
 		return nil, fmt.Errorf("%w: %s", spec.ErrBundleNotEmpty, req.BundleID)
 	}
 
@@ -705,7 +705,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 
 	// Check for exact filename match.
 	for _, existing := range existsList {
-		if filepath.Base(existing) == targetFN.FileName {
+		if filepath.Base(existing.BaseRelativePath) == targetFN.FileName {
 			return nil, fmt.Errorf("%w: slug+version already exists", spec.ErrConflict)
 		}
 	}
@@ -1090,7 +1090,7 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 
 	//  Stream user templates until we reach pageHint - always consume whole directory pages so that no object can be skipped.
 	for len(out) < pageHint {
-		files, nxt, err := s.templateStore.ListFiles(
+		fileEntries, nxt, err := s.templateStore.ListFiles(
 			dirstore.ListingConfig{
 				PageSize:  fetchBatch,
 				SortOrder: dirstore.SortOrderDescending,
@@ -1099,9 +1099,9 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 			return nil, err
 		}
 
-		for _, p := range files {
-			fn := filepath.Base(p)
-			dir := filepath.Base(filepath.Dir(p))
+		for _, p := range fileEntries {
+			fn := filepath.Base(p.BaseRelativePath)
+			dir := filepath.Base(filepath.Dir(p.BaseRelativePath))
 
 			// Quick reject on malformed names.
 			if _, err := nameutils.ParseTemplateFileName(fn); err != nil {

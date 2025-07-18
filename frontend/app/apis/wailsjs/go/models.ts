@@ -1113,6 +1113,8 @@ export namespace spec {
 	export class ConversationListItem {
 	    id: string;
 	    sanatizedTitle: string;
+	    // Go type: time
+	    modifiedAt?: any;
 	
 	    static createFrom(source: any = {}) {
 	        return new ConversationListItem(source);
@@ -1122,7 +1124,26 @@ export namespace spec {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.sanatizedTitle = source["sanatizedTitle"];
+	        this.modifiedAt = this.convertValues(source["modifiedAt"], null);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	
 	export class ProviderPreset {

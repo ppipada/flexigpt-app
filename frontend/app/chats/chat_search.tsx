@@ -9,7 +9,6 @@ import { conversationStoreAPI } from '@/apis/baseapi';
 
 import { formatDateAsString } from '@/lib/date_utils';
 import { cleanSearchQuery } from '@/lib/text_utils';
-import { extractTimeFromUUIDv7Str } from '@/lib/uuid_utils';
 
 import { GroupedDropdown } from '@/components/date_grouped_dropdown';
 
@@ -41,8 +40,8 @@ const searchCache = new Map<string, SearchCacheEntry>();
 
 // newest-first, title-matches before message-matches
 const sortResults = (a: SearchResult, b: SearchResult) => {
-	const tA = new Date(a.searchConversation.idDate).getTime();
-	const tB = new Date(b.searchConversation.idDate).getTime();
+	const tA = new Date(a.searchConversation.modifiedAt).getTime();
+	const tB = new Date(b.searchConversation.modifiedAt).getTime();
 
 	if (tA !== tB) return tB - tA;
 	if (a.matchType === b.matchType) return 0;
@@ -175,7 +174,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 						<GroupedDropdown<SearchResult>
 							items={results}
 							focused={focusedIndex}
-							getDate={r => new Date(r.searchConversation.idDate)}
+							getDate={r => new Date(r.searchConversation.modifiedAt)}
 							getKey={r => r.searchConversation.id}
 							getLabel={r => <span className="truncate">{r.searchConversation.title}</span>}
 							onPick={r => {
@@ -184,7 +183,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 							renderItemExtra={r => (
 								<span className="inline-flex items-center gap-4">
 									{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
-									<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.idDate)}</span>
+									<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.modifiedAt)}</span>
 								</span>
 							)}
 						/>
@@ -209,7 +208,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 										<span className="hidden lg:block text-neutral/60 text-xs">
 											<span className="inline-flex items-center gap-4">
 												{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
-												<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.idDate)}</span>
+												<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.modifiedAt)}</span>
 											</span>
 										</span>
 									</li>
@@ -268,20 +267,12 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 		try {
 			setSearchState(p => ({ ...p, loading: true }));
 			const { conversations } = await conversationStoreAPI.listConversations();
-			const searchConversations: ConversationSearchItem[] = conversations.map(
-				conv =>
-					({
-						id: conv.id,
-						title: conv.sanatizedTitle,
-						idDate: extractTimeFromUUIDv7Str(conv.id),
-					}) as ConversationSearchItem
-			);
-			setRecentConversations(searchConversations);
+			setRecentConversations(conversations);
 
 			if (!searchState.query) {
 				setSearchState({
 					...searchState,
-					results: conversationsToResults(searchConversations),
+					results: conversationsToResults(conversations),
 					loading: false,
 					hasMore: false,
 					searchedMessages: false,
@@ -291,7 +282,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 			console.error(e);
 			setSearchState(p => ({ ...p, loading: false, error: 'Failed to load conversations' }));
 		}
-	}, [searchState.query, conversationsToResults]);
+	}, [searchState.query, conversationsToResults, refreshKey]);
 
 	/* --------------------------- search ---------------------------- */
 	const performSearch = useCallback(async (rawQuery: string, token?: string, append = false) => {
@@ -318,16 +309,11 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 
 		try {
 			const res = await conversationStoreAPI.searchConversations(query, token, 20);
-			const conversations = res.conversations;
 			const nextToken = res.nextToken?.trim() || '';
 
-			const newResults: SearchResult[] = conversations.map(conv => ({
-				searchConversation: {
-					id: conv.id,
-					title: conv.sanatizedTitle,
-					idDate: extractTimeFromUUIDv7Str(conv.id),
-				} as ConversationSearchItem,
-				matchType: conv.sanatizedTitle.toLowerCase().includes(rawQuery.toLowerCase()) ? 'title' : 'message',
+			const newResults: SearchResult[] = res.conversations.map(searchConv => ({
+				searchConversation: searchConv,
+				matchType: searchConv.title.toLowerCase().includes(rawQuery.toLowerCase()) ? 'title' : 'message',
 				snippet: '',
 			}));
 

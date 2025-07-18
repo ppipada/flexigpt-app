@@ -1,7 +1,7 @@
 import type {
 	Conversation,
-	ConversationListItem,
 	ConversationMessage,
+	ConversationSearchItem,
 	IConversationStoreAPI,
 } from '@/models/conversationmodel';
 
@@ -14,6 +14,9 @@ import {
 	SearchConversations,
 } from '@/apis/wailsjs/go/main/ConversationCollectionWrapper';
 import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
+
+import { parseAnyToTime } from '@/lib/date_utils';
+import { extractTimeFromUUIDv7Str } from '@/lib/uuid_utils';
 
 /**
  * @public
@@ -56,11 +59,11 @@ export class WailsConversationStoreAPI implements IConversationStoreAPI {
 		return c.Body as Conversation;
 	}
 
-	async listConversations(token?: string): Promise<{ conversations: ConversationListItem[]; nextToken?: string }> {
+	async listConversations(token?: string): Promise<{ conversations: ConversationSearchItem[]; nextToken?: string }> {
 		const req = { PageToken: token || '' };
 		const resp = await ListConversations(req as wailsSpec.ListConversationsRequest);
 		return {
-			conversations: resp.Body?.conversationListItems as ConversationListItem[],
+			conversations: mapConversationsToSearchItems(resp.Body ? resp.Body.conversationListItems : []),
 			nextToken: resp.Body?.nextPageToken,
 		};
 	}
@@ -69,12 +72,27 @@ export class WailsConversationStoreAPI implements IConversationStoreAPI {
 		query: string,
 		token?: string,
 		pageSize?: number
-	): Promise<{ conversations: ConversationListItem[]; nextToken?: string }> {
+	): Promise<{ conversations: ConversationSearchItem[]; nextToken?: string }> {
 		const req = { Query: query, PageToken: token || '', PageSize: pageSize || 10 };
 		const resp = await SearchConversations(req as wailsSpec.SearchConversationsRequest);
+
 		return {
-			conversations: resp.Body?.conversationListItems as ConversationListItem[],
+			conversations: mapConversationsToSearchItems(resp.Body ? resp.Body.conversationListItems : []),
 			nextToken: resp.Body?.nextPageToken,
 		};
 	}
+}
+
+function mapConversationsToSearchItems(conversations: Array<wailsSpec.ConversationListItem>): ConversationSearchItem[] {
+	return conversations.map(conv => {
+		const idDate = extractTimeFromUUIDv7Str(conv.id);
+		const modifiedAtDate = parseAnyToTime(conv.modifiedAt) ?? idDate;
+
+		return {
+			id: conv.id,
+			title: conv.sanatizedTitle,
+			idDate: idDate,
+			modifiedAt: modifiedAtDate,
+		} as ConversationSearchItem;
+	});
 }

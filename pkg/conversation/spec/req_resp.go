@@ -60,8 +60,9 @@ type ListConversationsResponseBody struct {
 
 // ConversationListItem represents a conversation with basic details.
 type ConversationListItem struct {
-	ID             string `json:"id"`
-	SanatizedTitle string `json:"sanatizedTitle"`
+	ID             string     `json:"id"`
+	SanatizedTitle string     `json:"sanatizedTitle"`
+	ModifiedAt     *time.Time `json:"modifiedAt"`
 }
 
 type SearchConversationsRequest struct {
