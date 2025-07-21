@@ -2,7 +2,7 @@ module github.com/ppipada/flexigpt-app
 
 go 1.24.2
 
-// We use golangci-lint and go-mod-upgrade as tools too,
+// We use golangci-lint, gopls modernize, gopls cli and go-mod-upgrade as tools too,
 // but have not added here as dependency as noted in golangci-lint website
 require (
 	github.com/adrg/xdg v0.5.3

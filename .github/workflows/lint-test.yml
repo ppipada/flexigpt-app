@@ -36,6 +36,17 @@ jobs:
         with:
           args: --verbose
 
+      - name: Cache modernize binary
+        id: cache-modernize
+        uses: actions/cache@v4
+        with:
+          path: ~/go/bin/modernize
+          key: modernize-bin-${{ runner.os }}-v1 # bump vN to force a rebuild
+
+      - name: Install modernize (if cache missed)
+        if: steps.cache-modernize.outputs.cache-hit != 'true'
+        run: go install golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest
+
       - name: Go modernize
         run: ./scripts/lint_gopls_modernize.sh
 
