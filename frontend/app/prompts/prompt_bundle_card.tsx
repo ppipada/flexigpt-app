@@ -220,7 +220,7 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 				</div>
 			</div>
 
-			{/* body – templates table */}
+			{/* body - templates table */}
 			{isExpanded && (
 				<div className="mt-8 space-y-4">
 					{/* table */}

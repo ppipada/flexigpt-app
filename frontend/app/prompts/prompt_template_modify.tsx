@@ -266,7 +266,7 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 							<span className="label-text text-sm">Prompt Content*</span>
 							<span
 								className="label-text-alt tooltip tooltip-right"
-								data-tip="First (user) message – add advanced messages later"
+								data-tip="First (user) message - add advanced messages later"
 							>
 								<FiHelpCircle size={12} />
 							</span>

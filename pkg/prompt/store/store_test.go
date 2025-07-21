@@ -787,7 +787,7 @@ func TestSearchRespectsBuiltInEnableDisable(t *testing.T) {
 	// Make sure everything is indexed first.
 	time.Sleep(200 * time.Millisecond)
 
-	// Disable the entire bundle – it must disappear from default search results (IncludeDisabled = false).
+	// Disable the entire bundle - it must disappear from default search results (IncludeDisabled = false).
 	_, err := s.PatchPromptBundle(t.Context(), &spec.PatchPromptBundleRequest{
 		BundleID: bid,
 		Body: &spec.PatchPromptBundleRequestBody{
