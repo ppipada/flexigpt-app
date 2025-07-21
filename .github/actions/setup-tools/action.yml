@@ -7,7 +7,7 @@ runs:
     - name: Setup GoLang
       uses: actions/setup-go@v5
       with:
-        go-version: ${{ env.COMMON_GO_VERSION }}
+        go-version-file: "go.mod"
 
     - name: Install pnpm
       uses: pnpm/action-setup@v4
