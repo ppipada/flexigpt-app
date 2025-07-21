@@ -31,6 +31,12 @@ jobs:
         with:
           go-version-file: "go.mod"
 
+      - name: Prepare embed placeholder
+        run: |
+          PLACEHOLDER="frontend/dist/client/.ci-placeholder"
+          mkdir -p "$(dirname "$PLACEHOLDER")"
+          touch "$PLACEHOLDER"
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
@@ -53,6 +59,10 @@ jobs:
 
       - name: Go tests
         run: go test ./... -v
+
+      - name: Remove embed placeholder
+        if: ${{ always() }}
+        run: rm -f frontend/dist/client/.ci-placeholder
 
   node:
     name: Node - knip / eslint / vitest
