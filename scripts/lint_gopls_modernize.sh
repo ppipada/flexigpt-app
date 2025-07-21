@@ -11,7 +11,8 @@ set -euo pipefail
 TARGET=${1:-'.'}
 
 echo "==> gopls modernize"
-tmp=$TARGET/frontend/dist/client/a.tmp
+mkdir -p frontend/dist/client
+tmp=frontend/dist/client/a.tmp
 touch tmp
 if out=$(go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest \
 	"$TARGET/..." 2>&1); then
