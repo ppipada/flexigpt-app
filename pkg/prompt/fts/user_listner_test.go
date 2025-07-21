@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
@@ -51,7 +52,7 @@ func TestFTSListener_Integration(t *testing.T) {
 	engine, err := ftsengine.NewEngine(ftsengine.Config{
 		BaseDir:    tmp,
 		DBFileName: "fts.db",
-		Table:      "prompttemplates",
+		Table:      sqliteDBTableName,
 		Columns: []ftsengine.Column{
 			{Name: "slug", Weight: 1},
 			{Name: "displayName", Weight: 2},
@@ -80,14 +81,14 @@ func TestFTSListener_Integration(t *testing.T) {
 	tplVersion := "v1"
 	tplFile := filepath.Join(
 		bundleDir,
-		tplSlug+"."+tplVersion+"."+spec.PromptTemplateFileExtension,
+		tplSlug+"."+tplVersion+"."+bundleitemutils.ItemFileExtension,
 	)
 
 	// Compose a prompt template.
 	tpl := spec.PromptTemplate{
 		ID:          "id1",
 		DisplayName: "Test Template",
-		Slug:        spec.TemplateSlug(tplSlug),
+		Slug:        bundleitemutils.ItemSlug(tplSlug),
 		IsEnabled:   true,
 		Description: "desc here",
 		Tags:        []string{"foo", "bar"},
@@ -95,7 +96,7 @@ func TestFTSListener_Integration(t *testing.T) {
 			{ID: "1", Role: spec.User, Content: "Hello"},
 			{ID: "2", Role: spec.Assistant, Content: "World"},
 		},
-		Version:    spec.TemplateVersion(tplVersion),
+		Version:    bundleitemutils.ItemVersion(tplVersion),
 		CreatedAt:  time.Now().UTC(),
 		ModifiedAt: time.Now().UTC(),
 	}

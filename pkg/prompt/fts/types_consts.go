@@ -1,7 +1,7 @@
 package fts
 
 import (
-	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 )
 
@@ -22,14 +22,14 @@ const (
 )
 
 type ftsDoc struct {
-	Slug        spec.TemplateSlug `fts:"slug"`
-	DisplayName string            `fts:"displayName"`
-	Desc        string            `fts:"desc"`
-	Messages    string            `fts:"messages"`
-	Tags        string            `fts:"tags"`
-	Enabled     string            `fts:"enabled"`
-	BundleID    spec.BundleID     `fts:"bundleID"`
-	MTime       string            `fts:"mtime"`
+	Slug        bundleitemutils.ItemSlug `fts:"slug"`
+	DisplayName string                   `fts:"displayName"`
+	Desc        string                   `fts:"desc"`
+	Messages    string                   `fts:"messages"`
+	Tags        string                   `fts:"tags"`
+	Enabled     string                   `fts:"enabled"`
+	BundleID    bundleitemutils.BundleID `fts:"bundleID"`
+	MTime       string                   `fts:"mtime"`
 }
 
 func (d ftsDoc) ToMap() map[string]string {

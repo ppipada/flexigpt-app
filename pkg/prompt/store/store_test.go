@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/prompt/nameutils"
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 )
 
@@ -50,8 +50,8 @@ func newTestStoreWithFTS(t *testing.T) (s *PromptTemplateStore, cleanup func()) 
 func mustPutBundle(
 	t *testing.T,
 	s *PromptTemplateStore,
-	id spec.BundleID,
-	slug spec.BundleSlug,
+	id bundleitemutils.BundleID,
+	slug bundleitemutils.BundleSlug,
 	display string,
 	enabled bool,
 ) {
@@ -75,9 +75,9 @@ func mustPutBundle(
 func mustPutTemplate(
 	t *testing.T,
 	s *PromptTemplateStore,
-	bid spec.BundleID,
-	slug spec.TemplateSlug,
-	ver spec.TemplateVersion,
+	bid bundleitemutils.BundleID,
+	slug bundleitemutils.ItemSlug,
+	ver bundleitemutils.ItemVersion,
 	display string,
 	enabled bool,
 	tags ...string,
@@ -123,7 +123,7 @@ func builtinStatistics(s *PromptTemplateStore) (bundleCnt, templateCnt int) {
 // located in that bundle.  Ok==false if no catalogue is available.
 func firstBuiltIn(
 	s *PromptTemplateStore,
-) (bid spec.BundleID, slug spec.TemplateSlug, ver spec.TemplateVersion, ok bool) {
+) (bid bundleitemutils.BundleID, slug bundleitemutils.ItemSlug, ver bundleitemutils.ItemVersion, ok bool) {
 	if s.builtinData == nil {
 		return bid, slug, ver, ok
 	}
@@ -143,8 +143,8 @@ func firstBuiltIn(
 func TestBundleCRUD(t *testing.T) {
 	cases := []struct {
 		name      string
-		id        spec.BundleID
-		slug      spec.BundleSlug
+		id        bundleitemutils.BundleID
+		slug      bundleitemutils.BundleSlug
 		display   string
 		enabled   bool
 		wantError bool
@@ -199,7 +199,7 @@ func TestBuiltInBundleGuards(t *testing.T) {
 	if _, err := s.PutPromptBundle(t.Context(), &spec.PutPromptBundleRequest{
 		BundleID: bid,
 		Body: &spec.PutPromptBundleRequestBody{
-			Slug:        spec.BundleSlug(slug), // any value
+			Slug:        bundleitemutils.BundleSlug(slug), // any value
 			DisplayName: "illegal update",
 			IsEnabled:   true,
 		},
@@ -238,9 +238,9 @@ func TestTemplateCRUD(t *testing.T) {
 
 	cases := []struct {
 		name      string
-		bid       spec.BundleID
-		slug      spec.TemplateSlug
-		ver       spec.TemplateVersion
+		bid       bundleitemutils.BundleID
+		slug      bundleitemutils.ItemSlug
+		ver       bundleitemutils.ItemVersion
 		display   string
 		wantError bool
 		msg       string
@@ -344,7 +344,7 @@ func TestTemplateMultiVersionExact(t *testing.T) {
 
 	vers := []string{"v1", "v2", "v3"}
 	for _, v := range vers {
-		mustPutTemplate(t, s, "b1", "tpl", spec.TemplateVersion(v), "disp "+v, true)
+		mustPutTemplate(t, s, "b1", "tpl", bundleitemutils.ItemVersion(v), "disp "+v, true)
 		time.Sleep(5 * time.Millisecond)
 	}
 
@@ -352,12 +352,12 @@ func TestTemplateMultiVersionExact(t *testing.T) {
 		resp, err := s.GetPromptTemplate(t.Context(), &spec.GetPromptTemplateRequest{
 			BundleID:     "b1",
 			TemplateSlug: "tpl",
-			Version:      spec.TemplateVersion(v),
+			Version:      bundleitemutils.ItemVersion(v),
 		})
 		if err != nil {
 			t.Fatalf("GetPromptTemplate(%s) failed: %v", v, err)
 		}
-		if resp.Body.Version != spec.TemplateVersion(v) {
+		if resp.Body.Version != bundleitemutils.ItemVersion(v) {
 			t.Fatalf("expected version %s, got %s", v, resp.Body.Version)
 		}
 	}
@@ -440,12 +440,12 @@ func TestBundleListFiltering(t *testing.T) {
 	tests := []struct {
 		name            string
 		includeDisabled bool
-		filterIDs       []spec.BundleID
+		filterIDs       []bundleitemutils.BundleID
 		expectUser      int
 	}{
 		{"enabledOnly", false, nil, 1},
 		{"allUsers", true, nil, 2},
-		{"filterUser", true, []spec.BundleID{"ub1"}, 1},
+		{"filterUser", true, []bundleitemutils.BundleID{"ub1"}, 1},
 	}
 
 	for _, tc := range tests {
@@ -469,7 +469,7 @@ func TestBundleListFiltering(t *testing.T) {
 
 			// Verify user bundles appear when expected.
 			if tc.expectUser > 0 {
-				find := func(id spec.BundleID) bool {
+				find := func(id bundleitemutils.BundleID) bool {
 					for _, b := range resp.Body.PromptBundles {
 						if b.ID == id {
 							return true
@@ -510,7 +510,9 @@ func TestTemplateListFiltering(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			resp, err := s.ListPromptTemplates(t.Context(), &spec.ListPromptTemplatesRequest{
-				BundleIDs:       []spec.BundleID{"ub1"}, // exclude built-ins for determinism
+				BundleIDs: []bundleitemutils.BundleID{
+					"ub1",
+				}, // exclude built-ins for determinism
 				Tags:            tc.tags,
 				IncludeDisabled: tc.includeDisabled,
 			})
@@ -530,11 +532,11 @@ func TestBundlePagination(t *testing.T) {
 	defer clean()
 
 	// User bundles.
-	ids := make([]spec.BundleID, 0, 30)
+	ids := make([]bundleitemutils.BundleID, 0, 30)
 	for i := range 30 {
-		id := spec.BundleID(fmt.Sprintf("u%02d", i))
+		id := bundleitemutils.BundleID(fmt.Sprintf("u%02d", i))
 		ids = append(ids, id)
-		mustPutBundle(t, s, id, spec.BundleSlug("slug"+strconv.Itoa(i)), "b", true)
+		mustPutBundle(t, s, id, bundleitemutils.BundleSlug("slug"+strconv.Itoa(i)), "b", true)
 	}
 
 	pageSize := 7
@@ -571,7 +573,7 @@ func TestTemplatePagination(t *testing.T) {
 
 	for i := range 23 {
 		mustPutTemplate(t, s, "ub1",
-			spec.TemplateSlug(fmt.Sprintf("t%02d", i)),
+			bundleitemutils.ItemSlug(fmt.Sprintf("t%02d", i)),
 			"v1", "d", true)
 	}
 
@@ -582,7 +584,7 @@ func TestTemplatePagination(t *testing.T) {
 		resp, err := s.ListPromptTemplates(t.Context(), &spec.ListPromptTemplatesRequest{
 			RecommendedPageSize: page,
 			PageToken:           token,
-			BundleIDs:           []spec.BundleID{"ub1"},
+			BundleIDs:           []bundleitemutils.BundleID{"ub1"},
 		})
 		if err != nil {
 			t.Fatalf("ListPromptTemplates() failed: %v", err)
@@ -711,14 +713,10 @@ func TestConcurrentTemplatePut(t *testing.T) {
 	}
 }
 
-/* --------------------------------------------------------------------- */
-/*  F.  Validation helpers from nameutils                                */
-/* ---------------------------------------------------------------------. */
-
 func TestSlugVersionValidation(t *testing.T) {
 	cases := []struct {
-		slug  spec.TemplateSlug
-		ver   spec.TemplateVersion
+		slug  bundleitemutils.ItemSlug
+		ver   bundleitemutils.ItemVersion
 		valid bool
 	}{
 		{"abc", "v1", true},
@@ -730,8 +728,8 @@ func TestSlugVersionValidation(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		errSlug := nameutils.ValidateTemplateSlug(c.slug)
-		errVer := nameutils.ValidateTemplateVersion(c.ver)
+		errSlug := bundleitemutils.ValidateItemSlug(c.slug)
+		errVer := bundleitemutils.ValidateItemVersion(c.ver)
 		if c.valid && (errSlug != nil || errVer != nil) {
 			t.Fatalf("expected valid slug/version (%s/%s) got errors %v %v",
 				c.slug, c.ver, errSlug, errVer)

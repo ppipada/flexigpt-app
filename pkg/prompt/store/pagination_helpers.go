@@ -4,24 +4,24 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
-	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 )
 
 type bundlePageToken struct {
-	BundleIDs       []spec.BundleID `json:"ids,omitempty"` // optional filter
-	IncludeDisabled bool            `json:"d,omitempty"`   // include disabled bundles?
-	PageSize        int             `json:"s"`             // page size
-	CursorMod       string          `json:"t,omitempty"`   // RFC-3339-nano
-	CursorID        spec.BundleID   `json:"id,omitempty"`
+	BundleIDs       []bundleitemutils.BundleID `json:"ids,omitempty"` // optional filter
+	IncludeDisabled bool                       `json:"d,omitempty"`   // include disabled bundles?
+	PageSize        int                        `json:"s"`             // page size
+	CursorMod       string                     `json:"t,omitempty"`   // RFC-3339-nano
+	CursorID        bundleitemutils.BundleID   `json:"id,omitempty"`
 }
 
 type templatePageToken struct {
-	RecommendedPageSize int             `json:"ps,omitempty"`
-	IncludeDisabled     bool            `json:"d,omitempty"`
-	BundleIDs           []spec.BundleID `json:"ids,omitempty"`
-	Tags                []string        `json:"tags,omitempty"`
-	BuiltInDone         bool            `json:"bd,omitempty"`
-	DirTok              string          `json:"dt,omitempty"`
+	RecommendedPageSize int                        `json:"ps,omitempty"`
+	IncludeDisabled     bool                       `json:"d,omitempty"`
+	BundleIDs           []bundleitemutils.BundleID `json:"ids,omitempty"`
+	Tags                []string                   `json:"tags,omitempty"`
+	BuiltInDone         bool                       `json:"bd,omitempty"`
+	DirTok              string                     `json:"dt,omitempty"`
 }
 
 func base64JSONEncode[T any](t T) string {

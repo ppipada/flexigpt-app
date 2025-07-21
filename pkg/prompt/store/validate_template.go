@@ -102,7 +102,7 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 			}
 		case spec.SourceTool:
 			if v.ToolID == "" {
-				return fmt.Errorf("variables[%d]: source 'tool' requires toolId", i)
+				return fmt.Errorf("variables[%d]: source 'tool' requires toolID", i)
 			}
 		}
 
@@ -131,7 +131,7 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 
 	for i, p := range tpl.PreProcessors {
 		if p.ToolID == "" {
-			return fmt.Errorf("preProcessors[%d]: toolId is empty", i)
+			return fmt.Errorf("preProcessors[%d]: toolID is empty", i)
 		}
 		if !nameRE.MatchString(p.SaveAs) {
 			return fmt.Errorf("preProcessors[%d]: invalid saveAs %q", i, p.SaveAs)

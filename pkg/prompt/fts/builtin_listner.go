@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/prompt/nameutils"
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 )
@@ -17,8 +17,8 @@ import (
 // BuiltInLister returns the current snapshot of all built-in bundles and templates.
 // Overlay should already be applied, so that enabled flags are correct.
 type BuiltInLister func() (
-	bundles map[spec.BundleID]spec.PromptBundle,
-	templates map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate,
+	bundles map[bundleitemutils.BundleID]spec.PromptBundle,
+	templates map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
 	err error,
 )
 
@@ -80,19 +80,19 @@ func syncBuiltInsToFTS(
 // buildDoc converts one template to (docID, columnMap).
 // If anything is structurally wrong - should never happen with validated built-ins - it logs and returns ok == false.
 func buildDoc(
-	bid spec.BundleID,
-	bslug spec.BundleSlug,
+	bid bundleitemutils.BundleID,
+	bslug bundleitemutils.BundleSlug,
 	tpl spec.PromptTemplate,
 ) (docID string, vals map[string]string, ok bool) {
-	dirInfo, err := nameutils.BuildBundleDir(bid, bslug)
+	dirInfo, err := bundleitemutils.BuildBundleDir(bid, bslug)
 	if err != nil {
 		slog.Error("builtin-fts: BuildBundleDir failed",
 			"bundleID", bid, "err", err)
 		return docID, vals, ok
 	}
-	fileInfo, err := nameutils.BuildTemplateFileInfo(tpl.Slug, tpl.Version)
+	fileInfo, err := bundleitemutils.BuildItemFileInfo(tpl.Slug, tpl.Version)
 	if err != nil {
-		slog.Error("builtin-fts: BuildTemplateFileInfo failed",
+		slog.Error("builtin-fts: BuildItemFileInfo failed",
 			"bundleID", bid, "slug", tpl.Slug, "ver", tpl.Version, "err", err)
 		return docID, vals, ok
 	}
@@ -103,7 +103,7 @@ func buildDoc(
 }
 
 // templateToFTSDoc fills an ftsDoc from a PromptTemplate.
-func templateToFTSDoc(bid spec.BundleID, tpl spec.PromptTemplate) ftsDoc {
+func templateToFTSDoc(bid bundleitemutils.BundleID, tpl spec.PromptTemplate) ftsDoc {
 	doc := ftsDoc{
 		Slug:        tpl.Slug,
 		DisplayName: tpl.DisplayName,
@@ -151,8 +151,8 @@ func StartBuiltInPromptsFTSRebuild(
 // ReindexOneBuiltIn updates exactly one built-in template (used by enable / disable mutators).
 func ReindexOneBuiltIn(
 	ctx context.Context,
-	bundleID spec.BundleID,
-	bundleSlug spec.BundleSlug,
+	bundleID bundleitemutils.BundleID,
+	bundleSlug bundleitemutils.BundleSlug,
 	template spec.PromptTemplate,
 	engine *ftsengine.Engine,
 ) error {

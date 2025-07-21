@@ -1,22 +1,20 @@
-package nameutils
+package bundleitemutils
 
 import (
 	"fmt"
 	"strings"
-
-	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 )
 
 // BundleDirInfo holds information about a bundle directory.
 type BundleDirInfo struct {
-	ID      spec.BundleID
-	Slug    spec.BundleSlug
+	ID      BundleID
+	Slug    BundleSlug
 	DirName string
 }
 
 // SanitizeBundleID removes all characters from id except [a-zA-Z0-9-_].
 // If the result is empty, returns "x".
-func SanitizeBundleID(id spec.BundleID) string {
+func SanitizeBundleID(id BundleID) string {
 	var b strings.Builder
 	for _, r := range id {
 		switch {
@@ -35,7 +33,7 @@ func SanitizeBundleID(id spec.BundleID) string {
 
 // BuildBundleDir returns a BundleDirInfo with a directory name safe for all filesystems.
 // The directory name is "<sanitizedID>_<slug>".
-func BuildBundleDir(id spec.BundleID, slug spec.BundleSlug) (BundleDirInfo, error) {
+func BuildBundleDir(id BundleID, slug BundleSlug) (BundleDirInfo, error) {
 	if err := ValidateBundleSlug(slug); err != nil {
 		return BundleDirInfo{}, fmt.Errorf("buildBundleDir: %w", err)
 	}
@@ -51,8 +49,8 @@ func ParseBundleDir(dir string) (BundleDirInfo, error) {
 		return BundleDirInfo{}, fmt.Errorf("invalid bundle dir: %q", dir)
 	}
 	return BundleDirInfo{
-		ID:      spec.BundleID(parts[0]),
-		Slug:    spec.BundleSlug(parts[1]),
+		ID:      BundleID(parts[0]),
+		Slug:    BundleSlug(parts[1]),
 		DirName: dir,
 	}, nil
 }

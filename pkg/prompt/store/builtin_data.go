@@ -15,16 +15,16 @@ import (
 
 	"github.com/ppipada/flexigpt-app/pkg/booloverlay"
 	"github.com/ppipada/flexigpt-app/pkg/builtin"
-	"github.com/ppipada/flexigpt-app/pkg/prompt/nameutils"
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 )
 
-type BuiltInBundleID spec.BundleID
+type BuiltInBundleID bundleitemutils.BundleID
 
 func (BuiltInBundleID) Group() booloverlay.GroupID { return "bundles" }
 func (b BuiltInBundleID) ID() booloverlay.KeyID    { return booloverlay.KeyID(b) }
 
-type BuiltInTemplateID spec.TemplateID
+type BuiltInTemplateID bundleitemutils.ItemID
 
 func (BuiltInTemplateID) Group() booloverlay.GroupID { return "templates" }
 func (t BuiltInTemplateID) ID() booloverlay.KeyID    { return booloverlay.KeyID(t) }
@@ -34,13 +34,13 @@ type BuiltInData struct {
 	bundlesFS      fs.FS
 	bundlesDir     string
 	overlayBaseDir string
-	bundles        map[spec.BundleID]spec.PromptBundle
-	templates      map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate
+	bundles        map[bundleitemutils.BundleID]spec.PromptBundle
+	templates      map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate
 	store          *booloverlay.Store
 
 	mu            sync.RWMutex
-	viewBundles   map[spec.BundleID]spec.PromptBundle
-	viewTemplates map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate
+	viewBundles   map[bundleitemutils.BundleID]spec.PromptBundle
+	viewTemplates map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate
 
 	rebuilder *builtin.AsyncRebuilder
 }
@@ -77,7 +77,7 @@ func NewBuiltInData(
 		return nil, err
 	}
 	store, err := booloverlay.NewStore(
-		filepath.Join(overlayBaseDir, spec.BuiltInOverlayFileName),
+		filepath.Join(overlayBaseDir, spec.PromptBuiltInOverlayFileName),
 		booloverlay.WithKeyType[BuiltInBundleID](),
 		booloverlay.WithKeyType[BuiltInTemplateID](),
 	)
@@ -125,18 +125,18 @@ func (d *BuiltInData) populateDataFromFS() error {
 		return err
 	}
 
-	bundleMap := make(map[spec.BundleID]spec.PromptBundle, len(manifest.Bundles))
-	templateMap := make(map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate)
+	bundleMap := make(map[bundleitemutils.BundleID]spec.PromptBundle, len(manifest.Bundles))
+	templateMap := make(map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate)
 	for id, b := range manifest.Bundles {
 		b.IsBuiltIn = true
 		bundleMap[id] = b
-		templateMap[id] = make(map[spec.TemplateID]spec.PromptTemplate)
+		templateMap[id] = make(map[bundleitemutils.ItemID]spec.PromptTemplate)
 	}
 	if len(bundleMap) == 0 {
 		return fmt.Errorf("built-in data: %s/bundles.json contains no bundles", d.bundlesDir)
 	}
 
-	seenTpl := make(map[spec.TemplateID]string)
+	seenTpl := make(map[bundleitemutils.ItemID]string)
 	err = fs.WalkDir(
 		bundlesFS,
 		".",
@@ -145,12 +145,12 @@ func (d *BuiltInData) populateDataFromFS() error {
 				return nil
 			}
 			fn := path.Base(inPath)
-			if fn == builtin.BuiltInPromptBundlesJSON || fn == spec.BuiltInOverlayFileName {
+			if fn == builtin.BuiltInPromptBundlesJSON || fn == spec.PromptBuiltInOverlayFileName {
 				return nil
 			}
 
 			dir := path.Base(path.Dir(inPath))
-			dirInfo, derr := nameutils.ParseBundleDir(dir)
+			dirInfo, derr := bundleitemutils.ParseBundleDir(dir)
 			if derr != nil {
 				return fmt.Errorf("%s: %w", inPath, derr)
 			}
@@ -175,18 +175,19 @@ func (d *BuiltInData) populateDataFromFS() error {
 			}
 			tpl.IsBuiltIn = true
 
-			if err := nameutils.ValidateTemplateSlug(tpl.Slug); err != nil {
+			if err := bundleitemutils.ValidateItemSlug(tpl.Slug); err != nil {
 				return fmt.Errorf("%s: %w", inPath, err)
 			}
-			if err := nameutils.ValidateTemplateVersion(tpl.Version); err != nil {
+			if err := bundleitemutils.ValidateItemVersion(tpl.Version); err != nil {
 				return fmt.Errorf("%s: %w", inPath, err)
 			}
 
-			info, err := nameutils.ParseTemplateFileName(fn)
+			info, err := bundleitemutils.ParseItemFileName(fn)
 			if err != nil {
 				return fmt.Errorf("%s: %w", inPath, err)
 			}
-			if info.Slug != tpl.Slug || info.Version != tpl.Version {
+			if info.Slug != tpl.Slug ||
+				info.Version != tpl.Version {
 				return fmt.Errorf(
 					"%s: filename (slug=%q,ver=%q) not equal to JSON (slug=%q,ver=%q)",
 					inPath,
@@ -229,7 +230,7 @@ func (d *BuiltInData) populateDataFromFS() error {
 }
 
 // SetBundleEnabled toggles a bundle flag.
-func (d *BuiltInData) SetBundleEnabled(id spec.BundleID, enabled bool) error {
+func (d *BuiltInData) SetBundleEnabled(id bundleitemutils.BundleID, enabled bool) error {
 	if _, ok := d.bundles[id]; !ok {
 		return fmt.Errorf("bundleID: %q, err: %w", id, spec.ErrBuiltInBundleNotFound)
 	}
@@ -251,8 +252,8 @@ func (d *BuiltInData) SetBundleEnabled(id spec.BundleID, enabled bool) error {
 
 // SetTemplateEnabled toggles a template flag.
 func (d *BuiltInData) SetTemplateEnabled(
-	bundleID spec.BundleID,
-	templateID spec.TemplateID,
+	bundleID bundleitemutils.BundleID,
+	templateID bundleitemutils.ItemID,
 	enabled bool,
 ) error {
 	if _, ok := d.templates[bundleID]; !ok {
@@ -281,9 +282,9 @@ func (d *BuiltInData) SetTemplateEnabled(
 // rebuildSnapshot regenerates the overlay-applied view.
 // Assumes that mu.Lock is held by caller.
 func (d *BuiltInData) rebuildSnapshot() error {
-	newBundles := make(map[spec.BundleID]spec.PromptBundle, len(d.bundles))
+	newBundles := make(map[bundleitemutils.BundleID]spec.PromptBundle, len(d.bundles))
 	newTemplates := make(
-		map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate,
+		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
 		len(d.templates),
 	)
 
@@ -301,7 +302,7 @@ func (d *BuiltInData) rebuildSnapshot() error {
 	}
 
 	for bid, tm := range d.templates {
-		sub := make(map[spec.TemplateID]spec.PromptTemplate, len(tm))
+		sub := make(map[bundleitemutils.ItemID]spec.PromptTemplate, len(tm))
 		for tid, t := range tm {
 			flag, ok, err := d.store.GetFlag(BuiltInTemplateID(tid))
 			if err != nil {
@@ -323,9 +324,12 @@ func (d *BuiltInData) rebuildSnapshot() error {
 }
 
 func cloneTemplates(
-	src map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate,
-) map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate {
-	dst := make(map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate, len(src))
+	src map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
+) map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate {
+	dst := make(
+		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
+		len(src),
+	)
 	for bid, inner := range src {
 		dst[bid] = maps.Clone(inner)
 	}
@@ -334,8 +338,8 @@ func cloneTemplates(
 
 // ListBuiltInData returns a deep copy of the cached snapshot.
 func (d *BuiltInData) ListBuiltInData() (
-	bundles map[spec.BundleID]spec.PromptBundle,
-	templates map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate,
+	bundles map[bundleitemutils.BundleID]spec.PromptBundle,
+	templates map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
 	err error,
 ) {
 	d.mu.RLock()
@@ -345,7 +349,7 @@ func (d *BuiltInData) ListBuiltInData() (
 	return bundles, templates, nil
 }
 
-func (d *BuiltInData) GetBuiltInBundle(id spec.BundleID) (spec.PromptBundle, error) {
+func (d *BuiltInData) GetBuiltInBundle(id bundleitemutils.BundleID) (spec.PromptBundle, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	b, ok := d.viewBundles[id]
@@ -356,9 +360,9 @@ func (d *BuiltInData) GetBuiltInBundle(id spec.BundleID) (spec.PromptBundle, err
 }
 
 func (d *BuiltInData) GetBuiltInTemplate(
-	bundleID spec.BundleID,
-	slug spec.TemplateSlug,
-	version spec.TemplateVersion,
+	bundleID bundleitemutils.BundleID,
+	slug bundleitemutils.ItemSlug,
+	version bundleitemutils.ItemVersion,
 ) (spec.PromptTemplate, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()

@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 )
 
@@ -108,12 +109,12 @@ func TestScale_LotsOfBundles(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for i := range createJobs {
-				bID := spec.BundleID("bundle-" + strconv.Itoa(i))
+				bID := bundleitemutils.BundleID("bundle-" + strconv.Itoa(i))
 
 				_, err := s.PutPromptBundle(ctx, &spec.PutPromptBundleRequest{
 					BundleID: bID,
 					Body: &spec.PutPromptBundleRequestBody{
-						Slug:        spec.BundleSlug("slug-" + strconv.Itoa(i)),
+						Slug:        bundleitemutils.BundleSlug("slug-" + strconv.Itoa(i)),
 						DisplayName: "Bundle " + strconv.Itoa(i),
 						IsEnabled:   i%3 == 0, // enabled for 0,3,6,...
 					},
@@ -159,7 +160,7 @@ func TestScale_LotsOfBundles(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for i := range modJobs {
-				bID := spec.BundleID("bundle-" + strconv.Itoa(i))
+				bID := bundleitemutils.BundleID("bundle-" + strconv.Itoa(i))
 
 				if i%patchEvery == 0 {
 					_, err := s.PatchPromptBundle(ctx, &spec.PatchPromptBundleRequest{
@@ -220,15 +221,15 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 	ctx := t.Context()
 	errCh := make(chan error, 20_000)
 
-	userBundles := make([]spec.BundleID, 0, nBundles)
+	userBundles := make([]bundleitemutils.BundleID, 0, nBundles)
 	for i := range nBundles {
-		bID := spec.BundleID(fmt.Sprintf("b%d", i))
+		bID := bundleitemutils.BundleID(fmt.Sprintf("b%d", i))
 		userBundles = append(userBundles, bID)
 
 		_, err := s.PutPromptBundle(ctx, &spec.PutPromptBundleRequest{
 			BundleID: bID,
 			Body: &spec.PutPromptBundleRequestBody{
-				Slug:        spec.BundleSlug(fmt.Sprintf("slug-%s", bID)),
+				Slug:        bundleitemutils.BundleSlug(fmt.Sprintf("slug-%s", bID)),
 				DisplayName: fmt.Sprintf("Bundle %d", i),
 				IsEnabled:   true,
 			},
@@ -256,12 +257,12 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 			defer wg.Done()
 			for j := range insertJobs {
 				_, err := s.PutPromptTemplate(ctx, &spec.PutPromptTemplateRequest{
-					BundleID:     spec.BundleID(fmt.Sprintf("b%d", j.b)),
-					TemplateSlug: spec.TemplateSlug(fmt.Sprintf("tpl-%d", j.s)),
+					BundleID:     bundleitemutils.BundleID(fmt.Sprintf("b%d", j.b)),
+					TemplateSlug: bundleitemutils.ItemSlug(fmt.Sprintf("tpl-%d", j.s)),
 					Body: &spec.PutPromptTemplateRequestBody{
 						DisplayName: "T",
 						IsEnabled:   true,
-						Version:     spec.TemplateVersion(fmt.Sprintf("v%d", j.v)),
+						Version:     bundleitemutils.ItemVersion(fmt.Sprintf("v%d", j.v)),
 						Blocks: []spec.MessageBlock{{
 							ID:      "1",
 							Role:    spec.User,
@@ -306,8 +307,8 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := range modJobs {
-				bID := spec.BundleID(fmt.Sprintf("b%d", j.b))
-				slug := spec.TemplateSlug(fmt.Sprintf("tpl-%d", j.s))
+				bID := bundleitemutils.BundleID(fmt.Sprintf("b%d", j.b))
+				slug := bundleitemutils.ItemSlug(fmt.Sprintf("tpl-%d", j.s))
 
 				if j.v == 4 { // patch disable
 					_, err := s.PatchPromptTemplate(ctx, &spec.PatchPromptTemplateRequest{

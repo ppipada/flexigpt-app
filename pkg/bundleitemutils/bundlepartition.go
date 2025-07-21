@@ -1,7 +1,6 @@
-package nameutils
+package bundleitemutils
 
 import (
-	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
 )
 
@@ -15,11 +14,11 @@ type BundlePartitionProvider struct{}
 // The directory is provided via the XAttr field.
 func (b *BundlePartitionProvider) GetPartitionDir(key dirstore.FileKey) (string, error) {
 	if key.FileName == "" {
-		return "", spec.ErrInvalidFilename
+		return "", ErrInvalidFilename
 	}
 	dir, ok := key.XAttr.(bundlePartitionAttr)
 	if !ok || dir == "" {
-		return "", spec.ErrBundleAttributeMissing
+		return "", ErrBundleAttributeMissing
 	}
 	return string(dir), nil
 }

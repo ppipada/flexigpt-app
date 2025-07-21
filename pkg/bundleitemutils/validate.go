@@ -1,10 +1,8 @@
-package nameutils
+package bundleitemutils
 
 import (
 	"fmt"
 	"unicode"
-
-	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 )
 
 // maxTokenLength is the maximum allowed length for slugs and versions.
@@ -37,16 +35,16 @@ func validateToken(tok string, allowDot bool, errToReturn error) error {
 	return nil
 }
 
-// validateSlug validates a bundle or template slug.
+// validateSlug validates a slug.
 func validateSlug(slug string) error {
-	return validateToken(slug, false, spec.ErrInvalidSlug)
+	return validateToken(slug, false, ErrInvalidSlug)
 }
 
-// validateVersion validates a template version string.
+// validateVersion validates a version string.
 func validateVersion(v string) error {
-	return validateToken(v, true, spec.ErrInvalidVersion)
+	return validateToken(v, true, ErrInvalidVersion)
 }
 
-func ValidateBundleSlug(s spec.BundleSlug) error           { return validateSlug(string(s)) }
-func ValidateTemplateSlug(s spec.TemplateSlug) error       { return validateSlug(string(s)) }
-func ValidateTemplateVersion(v spec.TemplateVersion) error { return validateVersion(string(v)) }
+func ValidateBundleSlug(s BundleSlug) error   { return validateSlug(string(s)) }
+func ValidateItemSlug(s ItemSlug) error       { return validateSlug(string(s)) }
+func ValidateItemVersion(v ItemVersion) error { return validateVersion(string(v)) }

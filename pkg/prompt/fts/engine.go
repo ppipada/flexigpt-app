@@ -13,7 +13,7 @@ func InitFTSListeners(
 ) (*ftsengine.Engine, error) {
 	cfg := ftsengine.Config{
 		BaseDir:    baseDir,
-		DBFileName: spec.SqliteDBFileName,
+		DBFileName: spec.PromptDBFileName,
 		Table:      sqliteDBTableName,
 		Columns:    ftsColumns,
 	}

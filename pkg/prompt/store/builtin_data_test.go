@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/booloverlay"
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
 )
@@ -21,7 +22,9 @@ import (
 const corrupted = "corrupted"
 
 // Test helpers.
-func anyBundle(m map[spec.BundleID]spec.PromptBundle) (spec.BundleID, spec.PromptBundle) {
+func anyBundle(
+	m map[bundleitemutils.BundleID]spec.PromptBundle,
+) (bundleitemutils.BundleID, spec.PromptBundle) {
 	for id, b := range m {
 		return id, b
 	}
@@ -29,8 +32,8 @@ func anyBundle(m map[spec.BundleID]spec.PromptBundle) (spec.BundleID, spec.Promp
 }
 
 func anyTemplate(
-	m map[spec.BundleID]map[spec.TemplateID]spec.PromptTemplate,
-) (spec.BundleID, spec.TemplateID, spec.PromptTemplate) {
+	m map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
+) (bundleitemutils.BundleID, bundleitemutils.ItemID, spec.PromptTemplate) {
 	for bid, tm := range m {
 		for tid, tpl := range tm {
 			return bid, tid, tpl
@@ -41,7 +44,7 @@ func anyTemplate(
 
 func overlayOnDisk(t *testing.T, dir, group, id string) (present, value bool) {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join(dir, spec.BuiltInOverlayFileName))
+	data, err := os.ReadFile(filepath.Join(dir, spec.PromptBuiltInOverlayFileName))
 	if err != nil {
 		t.Fatalf("cannot read overlay file: %v", err)
 	}
@@ -146,7 +149,7 @@ func TestNewBuiltInData(t *testing.T) {
 			}
 
 			// Verify overlay file creation.
-			if _, err := os.Stat(filepath.Join(dir, spec.BuiltInOverlayFileName)); err != nil {
+			if _, err := os.Stat(filepath.Join(dir, spec.PromptBuiltInOverlayFileName)); err != nil {
 				t.Errorf("overlay file not created: %v", err)
 			}
 
@@ -172,12 +175,12 @@ func TestNewBuiltInData(t *testing.T) {
 func TestSetBundleEnabled(t *testing.T) {
 	tests := []struct {
 		name    string
-		setup   func(t *testing.T, bi *BuiltInData) (spec.BundleID, bool)
+		setup   func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bool)
 		wantErr bool
 	}{
 		{
 			name: "enable_existing_bundle",
-			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, bool) {
+			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bool) {
 				bundles, _, _ := bi.ListBuiltInData()
 				id, bundle := anyBundle(bundles)
 				return id, !bundle.IsEnabled
@@ -186,7 +189,7 @@ func TestSetBundleEnabled(t *testing.T) {
 		},
 		{
 			name: "disable_existing_bundle",
-			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, bool) {
+			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bool) {
 				bundles, _, _ := bi.ListBuiltInData()
 				id, bundle := anyBundle(bundles)
 				return id, !bundle.IsEnabled
@@ -195,15 +198,15 @@ func TestSetBundleEnabled(t *testing.T) {
 		},
 		{
 			name: "nonexistent_bundle",
-			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, bool) {
-				return spec.BundleID("does-not-exist"), true
+			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bool) {
+				return bundleitemutils.BundleID("does-not-exist"), true
 			},
 			wantErr: true,
 		},
 		{
 			name: "empty_bundle_id",
-			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, bool) {
-				return spec.BundleID(""), true
+			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bool) {
+				return bundleitemutils.BundleID(""), true
 			},
 			wantErr: true,
 		},
@@ -256,12 +259,12 @@ func TestSetBundleEnabled(t *testing.T) {
 func TestSetTemplateEnabled(t *testing.T) {
 	tests := []struct {
 		name    string
-		setup   func(t *testing.T, bi *BuiltInData) (spec.BundleID, spec.TemplateID, bool)
+		setup   func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bundleitemutils.ItemID, bool)
 		wantErr bool
 	}{
 		{
 			name: "enable_existing_template",
-			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, spec.TemplateID, bool) {
+			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bundleitemutils.ItemID, bool) {
 				_, templates, _ := bi.ListBuiltInData()
 				bid, tid, tpl := anyTemplate(templates)
 				return bid, tid, !tpl.IsEnabled
@@ -270,7 +273,7 @@ func TestSetTemplateEnabled(t *testing.T) {
 		},
 		{
 			name: "disable_existing_template",
-			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, spec.TemplateID, bool) {
+			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bundleitemutils.ItemID, bool) {
 				_, templates, _ := bi.ListBuiltInData()
 				bid, tid, tpl := anyTemplate(templates)
 				return bid, tid, !tpl.IsEnabled
@@ -279,26 +282,30 @@ func TestSetTemplateEnabled(t *testing.T) {
 		},
 		{
 			name: "nonexistent_bundle",
-			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, spec.TemplateID, bool) {
-				return spec.BundleID("does-not-exist"), spec.TemplateID("template"), true
+			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bundleitemutils.ItemID, bool) {
+				return bundleitemutils.BundleID(
+						"does-not-exist",
+					), bundleitemutils.ItemID(
+						"template",
+					), true
 			},
 			wantErr: true,
 		},
 		{
 			name: "nonexistent_template",
-			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, spec.TemplateID, bool) {
+			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bundleitemutils.ItemID, bool) {
 				bundles, _, _ := bi.ListBuiltInData()
 				bid, _ := anyBundle(bundles)
-				return bid, spec.TemplateID("does-not-exist"), true
+				return bid, bundleitemutils.ItemID("does-not-exist"), true
 			},
 			wantErr: true,
 		},
 		{
 			name: "empty_template_id",
-			setup: func(t *testing.T, bi *BuiltInData) (spec.BundleID, spec.TemplateID, bool) {
+			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bundleitemutils.ItemID, bool) {
 				bundles, _, _ := bi.ListBuiltInData()
 				bid, _ := anyBundle(bundles)
-				return bid, spec.TemplateID(""), true
+				return bid, bundleitemutils.ItemID(""), true
 			},
 			wantErr: true,
 		},
@@ -602,10 +609,10 @@ func newUUID(t *testing.T) string {
 // buildManifest returns the JSON for a manifest that holds exactly one bundle.
 func buildManifest(bundleID, slug string) []byte {
 	manifest := spec.AllBundles{
-		Bundles: map[spec.BundleID]spec.PromptBundle{
-			spec.BundleID(bundleID): {
-				ID:        spec.BundleID(bundleID),
-				Slug:      spec.BundleSlug(slug),
+		Bundles: map[bundleitemutils.BundleID]spec.PromptBundle{
+			bundleitemutils.BundleID(bundleID): {
+				ID:        bundleitemutils.BundleID(bundleID),
+				Slug:      bundleitemutils.BundleSlug(slug),
 				IsEnabled: true,
 			},
 		},
@@ -619,9 +626,9 @@ func buildTemplate(t *testing.T, slug, ver string) (fileName string, raw []byte,
 	t.Helper()
 	tplID = newUUID(t)
 	tpl := spec.PromptTemplate{
-		ID:        spec.TemplateID(tplID),
-		Slug:      spec.TemplateSlug(slug),
-		Version:   spec.TemplateVersion(ver),
+		ID:        bundleitemutils.ItemID(tplID),
+		Slug:      bundleitemutils.ItemSlug(slug),
+		Version:   bundleitemutils.ItemVersion(ver),
 		IsEnabled: true,
 	}
 	raw, _ = json.Marshal(tpl) // cannot fail
@@ -657,7 +664,9 @@ func Test_NewBuiltInData_SyntheticFS_Errors(t *testing.T) {
 	})
 
 	t.Run("no_bundles_in_manifest", func(t *testing.T) {
-		empty, _ := json.Marshal(spec.AllBundles{Bundles: map[spec.BundleID]spec.PromptBundle{}})
+		empty, _ := json.Marshal(
+			spec.AllBundles{Bundles: map[bundleitemutils.BundleID]spec.PromptBundle{}},
+		)
 		fsys := fstest.MapFS{"bundles.json": {Data: empty}}
 		_, err := newFromFS(t, fsys)
 		if err == nil || !strings.Contains(err.Error(), "contains no bundles") {

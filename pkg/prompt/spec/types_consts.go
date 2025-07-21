@@ -1,15 +1,39 @@
 package spec
 
 import (
+	"errors"
 	"time"
+
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
+)
+
+const (
+	PromptBundlesMetaFileName    = "prompts.bundles.json"
+	PromptDBFileName             = "prompts.fts.sqlite"
+	PromptBuiltInOverlayFileName = "promptsbuiltin.overlay.json"
+)
+
+var (
+	ErrInvalidRequest = errors.New("invalid request")
+
+	ErrInvalidDir = errors.New("invalid directory")
+	ErrConflict   = errors.New("resource already exists")
+
+	ErrBuiltInBundleNotFound = errors.New("bundle not found in built-in data")
+	ErrBundleNotFound        = errors.New("bundle not found")
+	ErrBundleDisabled        = errors.New("bundle is disabled")
+	ErrBundleDeleting        = errors.New("bundle is being deleted")
+	ErrBundleNotEmpty        = errors.New("bundle still contains templates")
+
+	ErrTemplateNotFound        = errors.New("template not found")
+	ErrBuiltInTemplateNotFound = errors.New("template not found in built-in data")
+
+	ErrBuiltInReadOnly = errors.New("built-in resource is read-only")
+
+	ErrFTSDisabled = errors.New("FTS is disabled")
 )
 
 type (
-	BundleID           string
-	BundleSlug         string
-	TemplateID         string
-	TemplateSlug       string
-	TemplateVersion    string
 	MessageBlockID     string
 	PreProcessorCallID string
 )
@@ -63,7 +87,7 @@ type PromptVariable struct {
 	// SourceStatic.
 	StaticVal string `json:"staticVal,omitempty"`
 	// SourceTool.
-	ToolID string `json:"toolId,omitempty"`
+	ToolID string `json:"toolID,omitempty"`
 	// VarEnum.
 	EnumValues []string `json:"enumValues,omitempty"`
 
@@ -81,7 +105,7 @@ const (
 // Runs a helper tool, optionally extracts a JSON sub-path and stores the value into a variable.
 type PreProcessorCall struct {
 	ID        PreProcessorCallID `json:"id"`
-	ToolID    string             `json:"toolId"`
+	ToolID    string             `json:"toolID"`
 	Arguments map[string]any     `json:"args,omitempty"`
 
 	// Variable name.
@@ -93,13 +117,13 @@ type PreProcessorCall struct {
 }
 
 type PromptTemplate struct {
-	ID          TemplateID `json:"id"`
-	DisplayName string     `json:"displayName"`
+	ID          bundleitemutils.ItemID `json:"id"`
+	DisplayName string                 `json:"displayName"`
 	// Unique within a bundle.
-	Slug        TemplateSlug `json:"slug"`
-	IsEnabled   bool         `json:"isEnabled"`
-	Description string       `json:"description,omitempty"`
-	Tags        []string     `json:"tags,omitempty"`
+	Slug        bundleitemutils.ItemSlug `json:"slug"`
+	IsEnabled   bool                     `json:"isEnabled"`
+	Description string                   `json:"description,omitempty"`
+	Tags        []string                 `json:"tags,omitempty"`
 
 	// Ordered list of blocks that form the final prompt.
 	Blocks []MessageBlock `json:"blocks"`
@@ -108,25 +132,25 @@ type PromptTemplate struct {
 	// Helper steps executed before the prompt is sent.
 	PreProcessors []PreProcessorCall `json:"preProcessors,omitempty"`
 
-	Version    TemplateVersion `json:"version"`
-	CreatedAt  time.Time       `json:"createdAt"`
-	ModifiedAt time.Time       `json:"modifiedAt"`
-	IsBuiltIn  bool            `json:"isBuiltIn"`
+	Version    bundleitemutils.ItemVersion `json:"version"`
+	CreatedAt  time.Time                   `json:"createdAt"`
+	ModifiedAt time.Time                   `json:"modifiedAt"`
+	IsBuiltIn  bool                        `json:"isBuiltIn"`
 }
 
 // Hard grouping & distribution unit.
 type PromptBundle struct {
-	ID            BundleID   `json:"id"`
-	Slug          BundleSlug `json:"slug"`
-	DisplayName   string     `json:"displayName,omitempty"`
-	Description   string     `json:"description,omitempty"`
-	IsEnabled     bool       `json:"isEnabled"`
-	CreatedAt     time.Time  `json:"createdAt"`
-	ModifiedAt    time.Time  `json:"modifiedAt"`
-	IsBuiltIn     bool       `json:"isBuiltIn"`
-	SoftDeletedAt *time.Time `json:"softDeletedAt,omitempty"`
+	ID            bundleitemutils.BundleID   `json:"id"`
+	Slug          bundleitemutils.BundleSlug `json:"slug"`
+	DisplayName   string                     `json:"displayName,omitempty"`
+	Description   string                     `json:"description,omitempty"`
+	IsEnabled     bool                       `json:"isEnabled"`
+	CreatedAt     time.Time                  `json:"createdAt"`
+	ModifiedAt    time.Time                  `json:"modifiedAt"`
+	IsBuiltIn     bool                       `json:"isBuiltIn"`
+	SoftDeletedAt *time.Time                 `json:"softDeletedAt,omitempty"`
 }
 
 type AllBundles struct {
-	Bundles map[BundleID]PromptBundle `json:"bundles"`
+	Bundles map[bundleitemutils.BundleID]PromptBundle `json:"bundles"`
 }

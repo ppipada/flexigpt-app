@@ -11,7 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/prompt/nameutils"
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
+
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
@@ -29,10 +30,10 @@ func NewUserPromptsFTSListener(e *ftsengine.Engine) filestore.Listener {
 		}()
 		// Reject files that obviously do not belong to us.
 		if ev.File == "" ||
-			!strings.HasSuffix(ev.File, "."+spec.PromptTemplateFileExtension) ||
-			strings.HasSuffix(ev.File, spec.SqliteDBFileName) ||
-			strings.HasSuffix(ev.File, spec.BundlesMetaFileName) ||
-			strings.HasSuffix(ev.File, spec.BuiltInOverlayFileName) {
+			!strings.HasSuffix(ev.File, "."+bundleitemutils.ItemFileExtension) ||
+			strings.HasSuffix(ev.File, spec.PromptDBFileName) ||
+			strings.HasSuffix(ev.File, spec.PromptBundlesMetaFileName) ||
+			strings.HasSuffix(ev.File, spec.PromptBuiltInOverlayFileName) {
 			return
 		}
 		ctx := context.Background()
@@ -59,7 +60,7 @@ func NewUserPromptsFTSListener(e *ftsengine.Engine) filestore.Listener {
 func extractFTS(fullPath string, m map[string]any) ftsDoc {
 	var doc ftsDoc
 	s, _ := stringField(m, "slug")
-	doc.Slug = spec.TemplateSlug(s)
+	doc.Slug = bundleitemutils.ItemSlug(s)
 	doc.DisplayName, _ = stringField(m, "displayName")
 	doc.Desc, _ = stringField(m, "description")
 	doc.Enabled = enabledFalse
@@ -88,7 +89,7 @@ func extractFTS(fullPath string, m map[string]any) ftsDoc {
 	}
 
 	if dir := filepath.Base(filepath.Dir(fullPath)); dir != "" {
-		if bd, err := nameutils.ParseBundleDir(dir); err == nil {
+		if bd, err := bundleitemutils.ParseBundleDir(dir); err == nil {
 			doc.BundleID = bd.ID
 		}
 	}
@@ -134,10 +135,10 @@ func processFTSSync(
 	}
 
 	// Only process files with the correct extension.
-	if !strings.HasSuffix(fullPath, "."+spec.PromptTemplateFileExtension) ||
-		strings.HasSuffix(fullPath, spec.SqliteDBFileName) ||
-		strings.HasSuffix(fullPath, spec.BundlesMetaFileName) ||
-		strings.HasSuffix(fullPath, spec.BuiltInOverlayFileName) {
+	if !strings.HasSuffix(fullPath, "."+bundleitemutils.ItemFileExtension) ||
+		strings.HasSuffix(fullPath, spec.PromptDBFileName) ||
+		strings.HasSuffix(fullPath, spec.PromptBundlesMetaFileName) ||
+		strings.HasSuffix(fullPath, spec.PromptBuiltInOverlayFileName) {
 		return skipSyncDecision, nil
 	}
 
