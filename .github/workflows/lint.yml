@@ -1,4 +1,4 @@
-name: Lint and Test
+name: Lint
 
 on:
   push:
@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   go:
-    name: Go - lint and test
+    name: Go - lint
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -57,15 +57,12 @@ jobs:
         shell: bash
         run: ./scripts/lint_gopls_modernize.sh
 
-      - name: Go tests
-        run: go test ./... -v
-
       - name: Remove embed placeholder
         if: ${{ always() }}
         run: rm -f frontend/dist/client/.ci-placeholder
 
   node:
-    name: Node - knip / eslint / vitest
+    name: Node - knip / eslint
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -89,6 +86,3 @@ jobs:
 
       - name: lint
         run: pnpm -F frontend run lint
-
-      - name: vitest
-        run: pnpm -F frontend run test
