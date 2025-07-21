@@ -16,7 +16,7 @@ echo "==> gopls modernize (${TARGET}/...)"
 
 # --------------------------------------------------------------------------- #
 # Dummy file so that //go:embed globs match at least one file
-DUMMY="frontend/dist/client/.ci-placeholder"
+DUMMY="frontend/dist/client/.modernize-placeholder"
 mkdir -p "$(dirname "$DUMMY")"
 touch "$DUMMY"
 trap 'rm -f "$DUMMY"' EXIT      # make sure we delete it on success *or* failure
