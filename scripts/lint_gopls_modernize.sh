@@ -1,28 +1,33 @@
 #!/usr/bin/env bash
 #
-# gopls_modernize.sh  [PATH]
+# lint_gopls_modernize.sh  [DIR]
 #
-# Runs "gopls modernize" once for all packages under PATH
-# (defaults to the current directory).  Exits 0 on success,
-# non-zero otherwise.
+# Runs gopls’ modernize analysis on all Go packages under DIR
+# (defaults to ".").  In CI the front-end build artefacts do not exist;
+# a dummy file is created so that //go:embed directives that point to
+# frontend/dist/client do not break the build.
+#
 
 set -euo pipefail
 
-TARGET=${1:-'.'}
+TARGET=${1:-.}
 
-echo "==> gopls modernize"
-mkdir -p frontend/dist/client
-tmp=frontend/dist/client/a.tmp
-touch tmp
-if out=$(go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest \
-	"$TARGET/..." 2>&1); then
-	echo "✓ gopls modernize passed"
-	rm -f tmp
-	exit 0
+echo "==> gopls modernize (${TARGET}/...)"
+
+# --------------------------------------------------------------------------- #
+# Dummy file so that //go:embed globs match at least one file
+DUMMY="frontend/dist/client/.ci-placeholder"
+mkdir -p "$(dirname "$DUMMY")"
+touch "$DUMMY"
+trap 'rm -f "$DUMMY"' EXIT      # make sure we delete it on success *or* failure
+# --------------------------------------------------------------------------- #
+
+# Prefer cached binary; fall back to 'go run' when run locally.
+if command -v modernize >/dev/null 2>&1; then
+  modernize "${TARGET}/..."
 else
-	printf '%s\n' "$out"
-	echo "✗ gopls modernize failed"
-	rm -f tmp
-	exit 1
+  go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest \
+        "${TARGET}/..."
 fi
 
+echo "✓ gopls modernize passed"
