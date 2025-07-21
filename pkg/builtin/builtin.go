@@ -4,10 +4,15 @@ import (
 	"embed"
 )
 
-//go:embed promptbundles
+//go:embed prompts
 var BuiltInPromptBundlesFS embed.FS
 
+//go:embed tools
+var BuiltInToolBundlesFS embed.FS
+
 const (
-	BuiltInPromptBundlesRootDir = "promptbundles"
-	BuiltInPromptBundlesJSON    = "bundles.json"
+	BuiltInPromptBundlesRootDir = "prompts"
+	BuiltInPromptBundlesJSON    = "prompts.bundles.json"
+	BuiltInToolBundlesRootDir   = "tools"
+	BuiltInToolBundlesJSON      = "tools.bundles.json"
 )

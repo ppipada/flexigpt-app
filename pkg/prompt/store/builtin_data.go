@@ -133,7 +133,11 @@ func (d *BuiltInData) populateDataFromFS() error {
 		templateMap[id] = make(map[bundleitemutils.ItemID]spec.PromptTemplate)
 	}
 	if len(bundleMap) == 0 {
-		return fmt.Errorf("built-in data: %s/bundles.json contains no bundles", d.bundlesDir)
+		return fmt.Errorf(
+			"built-in data: %s/%s contains no bundles",
+			builtin.BuiltInPromptBundlesJSON,
+			d.bundlesDir,
+		)
 	}
 
 	seenTpl := make(map[bundleitemutils.ItemID]string)
@@ -158,7 +162,12 @@ func (d *BuiltInData) populateDataFromFS() error {
 
 			bDef, ok := bundleMap[bundleID]
 			if !ok {
-				return fmt.Errorf("%s: bundle dir %q not in bundles.json", inPath, bundleID)
+				return fmt.Errorf(
+					"%s: bundle dir %q not in %s",
+					inPath,
+					bundleID,
+					builtin.BuiltInPromptBundlesJSON,
+				)
 			}
 			if dirInfo.Slug != bDef.Slug {
 				return fmt.Errorf("%s: dir slug %q not equal to manifest slug %q",

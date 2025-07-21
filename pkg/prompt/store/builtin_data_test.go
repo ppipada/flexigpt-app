@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/booloverlay"
+	"github.com/ppipada/flexigpt-app/pkg/builtin"
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
@@ -655,7 +656,7 @@ func Test_NewBuiltInData_SyntheticFS_Errors(t *testing.T) {
 
 	t.Run("invalid_bundles_json", func(t *testing.T) {
 		fsys := fstest.MapFS{
-			"bundles.json": {Data: []byte("{ oops ]")},
+			builtin.BuiltInPromptBundlesJSON: {Data: []byte("{ oops ]")},
 		}
 		_, err := newFromFS(t, fsys)
 		if err == nil || !strings.Contains(err.Error(), "invalid") {
@@ -667,7 +668,7 @@ func Test_NewBuiltInData_SyntheticFS_Errors(t *testing.T) {
 		empty, _ := json.Marshal(
 			spec.AllBundles{Bundles: map[bundleitemutils.BundleID]spec.PromptBundle{}},
 		)
-		fsys := fstest.MapFS{"bundles.json": {Data: empty}}
+		fsys := fstest.MapFS{builtin.BuiltInPromptBundlesJSON: {Data: empty}}
 		_, err := newFromFS(t, fsys)
 		if err == nil || !strings.Contains(err.Error(), "contains no bundles") {
 			t.Fatalf("unexpected error: %v", err)
@@ -677,8 +678,8 @@ func Test_NewBuiltInData_SyntheticFS_Errors(t *testing.T) {
 	t.Run("bundle_has_no_templates", func(t *testing.T) {
 		dir := fmt.Sprintf("%s_%s", bundleID, slug)
 		fsys := fstest.MapFS{
-			"bundles.json": {Data: buildManifest(bundleID, slug)},
-			dir:            &fstest.MapFile{Mode: fs.ModeDir},
+			builtin.BuiltInPromptBundlesJSON: {Data: buildManifest(bundleID, slug)},
+			dir:                              &fstest.MapFile{Mode: fs.ModeDir},
 		}
 		_, err := newFromFS(t, fsys)
 		if err == nil || !strings.Contains(err.Error(), "has no templates") {
@@ -693,12 +694,16 @@ func Test_NewBuiltInData_SyntheticFS_Errors(t *testing.T) {
 
 		fn, raw, _ := buildTemplate(t, ghostSlug, "v1")
 		fsys := fstest.MapFS{
-			"bundles.json": {Data: buildManifest(bundleID, slug)},
-			dir:            &fstest.MapFile{Mode: fs.ModeDir},
-			dir + "/" + fn: {Data: raw},
+			builtin.BuiltInPromptBundlesJSON: {Data: buildManifest(bundleID, slug)},
+			dir:                              &fstest.MapFile{Mode: fs.ModeDir},
+			dir + "/" + fn:                   {Data: raw},
 		}
 		_, err := newFromFS(t, fsys)
-		if err == nil || !strings.Contains(err.Error(), "not in bundles.json") {
+		if err == nil ||
+			!strings.Contains(
+				err.Error(),
+				"not in "+builtin.BuiltInPromptBundlesJSON,
+			) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})
@@ -709,9 +714,9 @@ func Test_NewBuiltInData_SyntheticFS_Errors(t *testing.T) {
 
 		fn, raw, _ := buildTemplate(t, "wrong", "v1")
 		fsys := fstest.MapFS{
-			"bundles.json": {Data: buildManifest(bundleID, slug)},
-			dir:            &fstest.MapFile{Mode: fs.ModeDir},
-			dir + "/" + fn: {Data: raw},
+			builtin.BuiltInPromptBundlesJSON: {Data: buildManifest(bundleID, slug)},
+			dir:                              &fstest.MapFile{Mode: fs.ModeDir},
+			dir + "/" + fn:                   {Data: raw},
 		}
 		_, err := newFromFS(t, fsys)
 		if err == nil || !strings.Contains(err.Error(), "dir slug") {
@@ -726,9 +731,9 @@ func Test_NewBuiltInData_SyntheticFS_Errors(t *testing.T) {
 		_, raw, _ := buildTemplate(t, slug, "v1")
 		// But store it under file name demo_v2.json.
 		fsys := fstest.MapFS{
-			"bundles.json":        {Data: buildManifest(bundleID, slug)},
-			dir:                   &fstest.MapFile{Mode: fs.ModeDir},
-			dir + "/demo_v2.json": {Data: raw},
+			builtin.BuiltInPromptBundlesJSON: {Data: buildManifest(bundleID, slug)},
+			dir:                              &fstest.MapFile{Mode: fs.ModeDir},
+			dir + "/demo_v2.json":            {Data: raw},
 		}
 		_, err := newFromFS(t, fsys)
 		if err == nil || !strings.Contains(err.Error(), "filename") {
@@ -746,9 +751,9 @@ func Test_NewBuiltInData_SyntheticFS_HappyAndCRUD(t *testing.T) {
 	fn, rawTpl, _ := buildTemplate(t, slug, "v1")
 
 	mem := fstest.MapFS{
-		"bundles.json": {Data: buildManifest(bid, slug)},
-		dir:            &fstest.MapFile{Mode: fs.ModeDir},
-		dir + "/" + fn: {Data: rawTpl},
+		builtin.BuiltInPromptBundlesJSON: {Data: buildManifest(bid, slug)},
+		dir:                              &fstest.MapFile{Mode: fs.ModeDir},
+		dir + "/" + fn:                   {Data: rawTpl},
 	}
 
 	tmp := t.TempDir()

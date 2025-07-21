@@ -1,17 +1,16 @@
-# Prompt Templates - Functional Specification
+# Prompts - Functional Specification
 
 ## Terminology
 
-| Term                        | Meaning                                                                                                     |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Prompt Template             | A multi-message prompt with variables and optional pre-processors.                                          |
-| Prompt Bundle               | A named group of templates that can be enabled / disabled together.                                         |
-| Slug                        | Human-readable identifier used in chat (`/slug`).                                                           |
-| Version                     | Opaque label that distinguishes revisions of the same slug.                                                 |
-| Active version              | For a given `<bundle, slug>` the template with the greatest `ModifiedAt` timestamp and `isEnabled == true`. |
-| Built-in bundle or template | Content shipped by the application, cannot be edited or deleted, but may be disabled.                       |
+| Term                        | Meaning                                                                               |
+| --------------------------- | ------------------------------------------------------------------------------------- |
+| Prompt Template             | A multi-message prompt with variables and optional pre-processors.                    |
+| Prompt Bundle               | A named group of templates that can be enabled / disabled together.                   |
+| Slug                        | Human-readable identifier used in chat (`/slug`).                                     |
+| Version                     | Opaque label that distinguishes revisions of the same slug.                           |
+| Built-in bundle or template | Content shipped by the application, cannot be edited or deleted, but may be disabled. |
 
-## 2 Objectives
+## Objectives
 
 - End-users can save, manage and invoke reusable prompts in chat.
 - A single switch can enable / disable a whole bundle or an individual template version.
@@ -20,7 +19,7 @@
   • Chat input palette (`/` autocomplete)
   • `Prompt Templates` admin page (CRUD + search).
 
-## Data-model constraints
+## Data Model and Constraints
 
 - Slug and Version strings
 
@@ -45,7 +44,7 @@
   - The flag is server controlled.
   - When `isBuiltIn == true` the object can only be enabled/disabled, everything else is read-only.
 
-## 4 API surface (REST, JSON)
+## API surface (REST, JSON)
 
 All routes are relative to `/prompts`.
 
@@ -69,7 +68,7 @@ All routes are relative to `/prompts`.
 | GET    | `/templates`                                               | global list: `tags,bundleIDs,includeDisabled,recommendedPageSize,pageToken` |
 | GET    | `/templates/search`                                        | global search: `q,includeDisabled,pageSize,pageToken`                       |
 
-## 5 Behavioural rules
+## Behavioral rules
 
 - Active resolution: If several versions exist, the _active_ one is the enabled record with the greatest `ModifiedAt`.
 - PUT with existing `<slug,version>`: Must return conflict error; the existing template is left unchanged.
