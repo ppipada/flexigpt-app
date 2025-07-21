@@ -26,7 +26,7 @@ const ChatMessageContent = ({
 }: ChatMessageContentProps) => {
 	const liveText = isStreaming ? streamedText : content;
 	// Max ~4×/sec.
-	const textToRender = useDebounced(liveText, 250);
+	const textToRender = useDebounced(liveText, 128);
 
 	if (isPending && textToRender.trim() === '') {
 		return (
