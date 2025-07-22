@@ -278,7 +278,7 @@ func (d *BuiltInToolData) SetToolEnabled(
 	}
 	if _, ok := d.tools[bundleID][toolID]; !ok {
 		return fmt.Errorf("bundleID: %q, toolID: %q err: %w",
-			bundleID, toolID, spec.ErrBuiltInToolNotFound)
+			bundleID, toolID, spec.ErrToolNotFound)
 	}
 	flag, err := d.store.SetFlag(BuiltInToolID(toolID), enabled)
 	if err != nil {

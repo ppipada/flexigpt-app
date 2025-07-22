@@ -11,6 +11,9 @@ const (
 	ToolBundlesMetaFileName    = "tools.bundles.json"
 	ToolDBFileName             = "tools.fts.sqlite"
 	ToolBuiltInOverlayFileName = "toolsbuiltin.overlay.json"
+
+	// Current on-disk schema version.
+	SchemaVersion = "2025-07-01"
 )
 
 var (
@@ -24,12 +27,18 @@ var (
 	ErrToolBundleDeleting        = errors.New("tool bundle is being deleted")
 	ErrToolBundleNotEmpty        = errors.New("tool bundle still contains tools")
 
-	ErrToolNotFound        = errors.New("tool not found")
-	ErrBuiltInToolNotFound = errors.New("tool not found in built-in data")
+	ErrToolNotFound = errors.New("tool not found")
 
 	ErrBuiltInReadOnly = errors.New("built-in resource is read-only")
 
 	ErrFTSDisabled = errors.New("FTS is disabled")
+)
+
+type ToolType string
+
+const (
+	ToolTypeGo   ToolType = "go"
+	ToolTypeHTTP ToolType = "http"
 )
 
 // Primitive parameter kinds.
