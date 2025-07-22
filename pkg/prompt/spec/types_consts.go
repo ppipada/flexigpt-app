@@ -24,9 +24,7 @@ var (
 	ErrBundleDisabled        = errors.New("bundle is disabled")
 	ErrBundleDeleting        = errors.New("bundle is being deleted")
 	ErrBundleNotEmpty        = errors.New("bundle still contains templates")
-
-	ErrTemplateNotFound        = errors.New("template not found")
-	ErrBuiltInTemplateNotFound = errors.New("template not found in built-in data")
+	ErrTemplateNotFound      = errors.New("template not found")
 
 	ErrBuiltInReadOnly = errors.New("built-in resource is read-only")
 

@@ -23,9 +23,8 @@
 
 - Slug and Version strings
 
-  - Allowed rune categories : Unicode Letter (L\*) | Unicode Digit (Nd) | ASCII dash ‘-’
-  - Forbidden characters : dot . underscore \_ whitespace slash / \ any control / symbol
-  - Regex (Go‐style) : ^[\p{L}\p{Nd}-]+$
+  - Allowed rune categories : Unicode Letter, Digit, ASCII dash.
+  - Forbidden characters : underscore, whitespace, slashes, any control / symbol. Dot is allowed in version.
   - Case-sensitive : yes
   - Max length : 64 runes
   - Version strings: No semantic ordering; the backend treats it as an opaque label.
@@ -36,7 +35,6 @@
 
   - `CreatedAt` - first insertion (immutable).
   - `ModifiedAt` - last structural change (body, tags, pre-processors).
-  - Enabling / disabling _does not_ rewrite `ModifiedAt`; use `EnabledAt` if UI needs it.
 
 - Built-in
 
@@ -44,51 +42,47 @@
   - The flag is server controlled.
   - When `isBuiltIn == true` the object can only be enabled/disabled, everything else is read-only.
 
-## API surface (REST, JSON)
+## API Surface
 
 All routes are relative to `/prompts`.
 
 ### Bundles
 
-| Verb   | Path                  | Body                                          | Notes                                                            |
-| ------ | --------------------- | --------------------------------------------- | ---------------------------------------------------------------- |
-| PUT    | `/bundles/{bundleID}` | `{slug, displayName, isEnabled, description}` | Create or replace.                                               |
-| PATCH  | `/bundles/{bundleID}` | `{isEnabled}`                                 | Toggle enabled flag.                                             |
-| DELETE | `/bundles/{bundleID}` | --                                            | Soft-delete.                                                     |
-| GET    | `/bundles`            | --                                            | Query params: `bundleIDs, includeDisabled, pageSize, pageToken`. |
+| Verb   | Path                  | Body / Query                                                    | Notes                |
+| ------ | --------------------- | --------------------------------------------------------------- | -------------------- |
+| PUT    | `/bundles/{bundleID}` | Body: `{slug, displayName, isEnabled, description}`             | Create or replace.   |
+| PATCH  | `/bundles/{bundleID}` | Body: `{isEnabled}`                                             | Toggle enabled flag. |
+| DELETE | `/bundles/{bundleID}` | --                                                              | Soft-delete.         |
+| GET    | `/bundles`            | Query params: `bundleIDs, includeDisabled, pageSize, pageToken` |                      |
 
 ### Templates
 
 | Verb   | Path                                                       | Notes                                                                       |
 | ------ | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
-| PUT    | `/bundles/{bundleID}/templates/{templateSlug}`             | conflict error if same `<slug,version>` exists.                             |
-| PATCH  | `/bundles/{bundleID}/templates/{templateSlug}`             | `{version,isEnabled}` Only enable/disable.                                  |
-| DELETE | `/bundles/{bundleID}/templates/{templateSlug}?version={v}` | Hard-delete local copy.                                                     |
-| GET    | `/bundles/{bundleID}/templates/{templateSlug}?version={v}` | Omit `version` -> returns active version.                                   |
+| PUT    | `/bundles/{bundleID}/templates/{templateSlug}/version={v}` | conflict error if same `<slug,version>` exists.                             |
+| PATCH  | `/bundles/{bundleID}/templates/{templateSlug}/version={v}` | `{isEnabled}` Only enable/disable.                                          |
+| DELETE | `/bundles/{bundleID}/templates/{templateSlug}/version={v}` | Hard-delete local copy.                                                     |
+| GET    | `/bundles/{bundleID}/templates/{templateSlug}/version={v}` | --                                                                          |
 | GET    | `/templates`                                               | global list: `tags,bundleIDs,includeDisabled,recommendedPageSize,pageToken` |
 | GET    | `/templates/search`                                        | global search: `q,includeDisabled,pageSize,pageToken`                       |
 
-## Behavioral rules
-
-- Active resolution: If several versions exist, the _active_ one is the enabled record with the greatest `ModifiedAt`.
-- PUT with existing `<slug,version>`: Must return conflict error; the existing template is left unchanged.
+## Behavioral Rules
 
 - Search & ranking:
 
   - The client maintains a local FTS index:
-  - `prefix` > `whole-word` > `fuzzy` > `recency` (ModifiedAt) > `popularity` (use count).
+  - `prefix` > `whole-word` > `fuzzy` > `recency` (ModifiedAt).
   - Disabled rows are excluded unless `includeDisabled=true` was requested.
 
 - Soft-delete of bundle
 
   - Marks `softDeletedAt` timestamp.
-  - Background task reaps after 60 min if the directory is still empty.
+  - Background task reaps after 2 days if the directory is still empty.
   - Put and patch of things inside disabled bundles should not be allowed.
 
 - Built-in immutability
 
   - Any attempt to mutate (PUT / DELETE / non-enabled PATCH) a built-in bundle should not be allowed. The enabled/disabled flag is the only mutable attribute.
-  - Built-ins participate in _active version_ selection exactly like normal templates once they are enabled.
 
 - Variable substitution pipeline (invocation time)
 
@@ -101,9 +95,10 @@ All routes are relative to `/prompts`.
   - Chat messages store the fully rendered prompt, so deleting / disabling a template does not alter existing chats.
   - When a disabled template is referenced, UI shows a warning and can re-enable the template on demand.
 
-## 6 Non-functional
+## Non-Functional Requirements
 
-- Offline-first storage: flat-file JSON + optional SQLite-FTS.
+- Offline-first storage: flat-file JSON.
+- Search - optional SQLite FTS.
 - Concurrency: Duplicate writes across processes must be handled with file-locks so that the uniqueness guarantee is global.
 - BuiltIns should be served via normal APIs only.
 

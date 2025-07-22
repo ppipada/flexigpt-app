@@ -7,7 +7,7 @@
 | Tool          | A callable action. The call may execute local Go code or perform an outbound HTTP request. |
 | Tool Type     | `"go"` or `"http"`.                                                                        |
 | Tool Bundle   | Named container that groups related tools under a single on/off switch.                    |
-| Slug          | Short human-friendly identifier (`+weather`).                                              |
+| Slug          | Short human-friendly identifier (`+readfile`).                                             |
 | Version       | Opaque label that distinguishes revisions of the same slug.                                |
 | Built-in Tool | Tool compiled into the binary. Content is read-only; only the `isEnabled` flag may change. |
 
@@ -15,7 +15,7 @@
 
 - Let users list, enable/disable and invoke tools from:
   - The "+" invoke option/palette in chat
-  - A dedicated "Tools" admin screen (CRUD + live tester)
+  - A dedicated "Tools" admin screen (CRUD + live tester(?))
 - Support two execution back-ends:
   a. `go` - zero-latency local call (`func(ctx, jsonArgs) (jsonResp, error)`)
   b. `http` - one or many outbound REST calls with templated URLs
@@ -25,11 +25,13 @@
 
 ## Data Model and Constraints
 
-- `tool.json`
+- `bundleID` and `toolID` are present and are UUIDv7.
+- `tool.json` (Example schema)
 
   ```jsonc
   {
-    "bundleID"     : "utilities",
+    "schemaVersion" : "xyz",
+    "bundleID"     : "018faf50-b7b6-7a01-9a05-a22a6e0af101",
     "slug"         : "weather",
     "version"      : "v2",
     "displayName"  : "Weather report",
@@ -39,7 +41,7 @@
     "isBuiltIn"    : false,
     "argSchema"    : { ... },         // JSON-Schema
     "outputSchema" : { ... },         // JSON-Schema
-    "impl"         : { ... },
+    "impl"         : { ... },         // See below
     "createdAt"    : "2024-05-14T13:44:00Z",
     "modifiedAt"   : "2024-06-01T09:17:10Z"
   }
@@ -70,16 +72,23 @@
 - Validation rules
 
   - `urlTemplate` must start with `http://` or `https://`.
-  - Placeholders `${var}` come from call arguments, environment variables `${ENV}` or app-scoped secrets.
+  - Placeholders `${var}` come from call arguments, or app-scoped secrets.
   - Destination host must match `config.allowedHosts`.
 
-- Field limits
+- Slug and Version strings
 
-| Field      | Rule                                      |
-| ---------- | ----------------------------------------- |
-| `slug`     | `^[\p{L}\p{Nd}-]{1,64}$` (case-sensitive) |
-| `version`  | same as slug                              |
-| Uniqueness | (`bundleID`, `slug`, `version`) tuple     |
+  - Allowed rune categories : Unicode Letter, Digit, ASCII dash.
+  - Forbidden characters : underscore, whitespace, slashes, any control / symbol. Dot is allowed in version.
+  - Case-sensitive : yes
+  - Max length : 64 runes
+  - Version strings: No semantic ordering; the backend treats it as an opaque label.
+  - Within one bundle: `<slug, version>` must be unique.
+  - Across bundles the same pair may repeat.
+
+- Timestamps
+
+  - `CreatedAt` - first insertion (immutable).
+  - `ModifiedAt` - last structural change (body, tags, pre-processors).
 
 ## API Surface
 
@@ -87,61 +96,68 @@ All routes are relative to `/tools`.
 
 ### Bundles
 
-| Verb   | Path                  | Body                                          | Purpose                  |
-| ------ | --------------------- | --------------------------------------------- | ------------------------ |
-| PUT    | `/bundles/{bundleID}` | `{slug, displayName, description, isEnabled}` | Create or replace bundle |
-| PATCH  | `/bundles/{bundleID}` | `{isEnabled}`                                 | Toggle bundle            |
-| DELETE | `/bundles/{bundleID}` | —                                             | Soft-delete bundle       |
-| GET    | `/bundles`            | — + filters (`includeDisabled`, `page*`)      | List bundles             |
+| Verb   | Path                  | Body / Query                                                    | Notes                |
+| ------ | --------------------- | --------------------------------------------------------------- | -------------------- |
+| PUT    | `/bundles/{bundleID}` | Body: `{slug, displayName, isEnabled, description}`             | Create or replace.   |
+| PATCH  | `/bundles/{bundleID}` | Body: `{isEnabled}`                                             | Toggle enabled flag. |
+| DELETE | `/bundles/{bundleID}` | --                                                              | Soft-delete.         |
+| GET    | `/bundles`            | Query params: `bundleIDs, includeDisabled, pageSize, pageToken` |                      |
 
-### 4.2 Tools
+### Tools
 
-| Verb   | Path                                             | Body / Query                                        | Purpose                                |
-| ------ | ------------------------------------------------ | --------------------------------------------------- | -------------------------------------- |
-| PUT    | `/bundles/{bundleID}/tools/{toolSlug}`           | full tool spec                                      | Create new version                     |
-| PATCH  | `/bundles/{bundleID}/tools/{toolSlug}`           | `{version, isEnabled}`                              | Enable / disable a version             |
-| DELETE | `/bundles/{bundleID}/tools/{toolSlug}?version=x` | —                                                   | Hard-delete a version                  |
-| GET    | `/bundles/{bundleID}/tools/{toolSlug}?version=x` | —                                                   | Fetch specific or active version       |
-| GET    | `/tools`                                         | filters (`type, bundleIDs, includeDisabled, page*`) | Global list                            |
-| GET    | `/tools/search`                                  | `q, includeDisabled, pageSize, pageToken`           | Fuzzy search                           |
-| POST   | `/invoke`                                        | `{bundleID?, slug, args}`                           | Execute active version, returns result |
+| Verb   | Path                                                      | Notes                                                                       |
+| ------ | --------------------------------------------------------- | --------------------------------------------------------------------------- |
+| PUT    | `/bundles/{bundleID}/tools/{toolSlug}/version/{v}`        | conflict error if same `<slug,version>` exists.                             |
+| PATCH  | `/bundles/{bundleID}/tools/{toolSlug}/version/{v}`        | `{isEnabled}` Only enable/disable.                                          |
+| DELETE | `/bundles/{bundleID}/tools/{toolSlug}/version/{v}`        | Hard-delete local copy.                                                     |
+| GET    | `/bundles/{bundleID}/tools/{toolSlug}/version/{v}`        | --                                                                          |
+| POST   | `/bundles/{bundleID}/tools/{toolSlug}/version/{v}/invoke` | `{args}`                                                                    |
+| GET    | `/tools`                                                  | global list: `tags,bundleIDs,includeDisabled,recommendedPageSize,pageToken` |
+| GET    | `/tools/search`                                           | global search: `q,includeDisabled,pageSize,pageToken`                       |
 
-## Runtime Behavior
+## Behavioral Rules
+
+- PUT with existing `<slug,version>`: Must return conflict error; the existing tool is left unchanged.
+- Built-in immutability
+
+  - Any attempt to mutate (PUT / DELETE / non-enabled PATCH) a built-in bundle should not be allowed. The enabled/disabled flag is the only mutable attribute.
+
+- Search & ranking:
+
+  - The client maintains a local FTS index:
+  - `prefix` > `whole-word` > `fuzzy` > `recency` (ModifiedAt).
+  - Disabled rows are excluded unless `includeDisabled=true` was requested.
+
+- Soft-delete of bundle
+
+  - Marks `softDeletedAt` timestamp.
+  - Background task reaps after 2 days if the directory is still empty.
+  - Put and patch of things inside disabled bundles should not be allowed.
 
 - Invocation flow
 
-  - Resolve **active version** for given `(bundle?, slug)`.
   - Validate `args` against `argSchema` (reject with `400` on failure).
   - Dispatch:
-    - **Go** → `ctx, argsJSON` passed to registered func.
-    - **HTTP** → build request from templates, run with retry/back-off.
+    - Go - `ctx, argsJSON` passed to registered func.
+    - HTTP - build request from templates, run with retry/back-off.
   - Parse and validate response against `outputSchema`.
   - Return `{ok:true, value}` or `{ok:false, error}`.
   - Usage metrics (`lastCalledAt`, `callCount`) updated asynchronously.
 
-- Enable/Disable rules
-
-  - Disabling a bundle implicitly disables all contained tools.
-  - Built-in tools can only flip `isEnabled`; any other mutation ⇒ `403`.
-
-- Deletion
-
-  - Soft-deleted bundles are hidden immediately; a janitor task purges them if the directory remains empty for >60 min.
-
 ## Non-Functional Requirements
 
-- Storage - one JSON file per bundle in `~/.myapp/tools/{bundle}.json`.
-- Search - optional SQLite FTS; falls back to in-memory prefix scan when unavailable.
-- Concurrency - file-level lock while writing to enforce unique keys across processes.
-- Timeouts - default 10 s for HTTP, 5 s for Go; overridable downward but not above 60 s.
-- Observability - each call logs `(bundle, slug, duration, status)`; request/response bodies are only logged at DEBUG and redact secrets.
+- Offline-first storage: flat-file JSON.
+- Search - optional SQLite FTS.
+- Concurrency: Duplicate writes across processes must be handled with file-locks so that the uniqueness guarantee is global.
+- BuiltIns should be served via normal APIs only.
 
 ## Pending / Future
 
-- Auth helpers (HMAC, OAuth2 token refresh) for HTTP tools.
-- Streaming outputs (Server-Sent Events → chat tokens).
+- Auth helpers (HMAC, OAuth2 token refresh) for HTTP tools. (May need to do it immediately)
+- Tool limits: max sent bytes, max resp bytes, max retries, max no of tools allowed, etc.
+- Streaming outputs (Server-Sent Events - chat tokens).
 - Import / export bundles as ZIP.
 - Rate limiting per tool (`maxCallsPerMinute`).
 - UI recipe builder for non-technical users.
 - Multi-step tools (sequence or graph of sub-tools).
-- Internationalised names & descriptions.
+- Internationalization.

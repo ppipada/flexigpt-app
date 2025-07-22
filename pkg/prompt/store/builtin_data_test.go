@@ -223,7 +223,7 @@ func TestSetBundleEnabled(t *testing.T) {
 
 			bundleID, enabled := tt.setup(t, bi)
 
-			err = bi.SetBundleEnabled(bundleID, enabled)
+			_, err = bi.SetBundleEnabled(bundleID, enabled)
 
 			if tt.wantErr {
 				if err == nil {
@@ -260,53 +260,64 @@ func TestSetBundleEnabled(t *testing.T) {
 func TestSetTemplateEnabled(t *testing.T) {
 	tests := []struct {
 		name    string
-		setup   func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bundleitemutils.ItemID, bool)
+		setup   func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, spec.PromptTemplate, bool)
 		wantErr bool
 	}{
 		{
 			name: "enable_existing_template",
-			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bundleitemutils.ItemID, bool) {
+			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, spec.PromptTemplate, bool) {
 				_, templates, _ := bi.ListBuiltInData()
-				bid, tid, tpl := anyTemplate(templates)
-				return bid, tid, !tpl.IsEnabled
+				bid, _, tpl := anyTemplate(templates)
+				return bid, tpl, !tpl.IsEnabled
 			},
 			wantErr: false,
 		},
 		{
 			name: "disable_existing_template",
-			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bundleitemutils.ItemID, bool) {
+			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, spec.PromptTemplate, bool) {
 				_, templates, _ := bi.ListBuiltInData()
-				bid, tid, tpl := anyTemplate(templates)
-				return bid, tid, !tpl.IsEnabled
+				bid, _, tpl := anyTemplate(templates)
+				return bid, tpl, !tpl.IsEnabled
 			},
 			wantErr: false,
 		},
 		{
 			name: "nonexistent_bundle",
-			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bundleitemutils.ItemID, bool) {
+			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, spec.PromptTemplate, bool) {
 				return bundleitemutils.BundleID(
 						"does-not-exist",
-					), bundleitemutils.ItemID(
-						"template",
-					), true
+					), spec.PromptTemplate{
+						ID:      bundleitemutils.ItemID("template"),
+						Slug:    "template",
+						Version: "a",
+					}, true
 			},
 			wantErr: true,
 		},
 		{
 			name: "nonexistent_template",
-			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bundleitemutils.ItemID, bool) {
+			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, spec.PromptTemplate, bool) {
 				bundles, _, _ := bi.ListBuiltInData()
 				bid, _ := anyBundle(bundles)
-				return bid, bundleitemutils.ItemID("does-not-exist"), true
+				return bid, spec.PromptTemplate{
+						ID:      bundleitemutils.ItemID("does-not-exist"),
+						Slug:    "does-not-exist",
+						Version: "a",
+					},
+					true
 			},
 			wantErr: true,
 		},
 		{
 			name: "empty_template_id",
-			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bundleitemutils.ItemID, bool) {
+			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, spec.PromptTemplate, bool) {
 				bundles, _, _ := bi.ListBuiltInData()
 				bid, _ := anyBundle(bundles)
-				return bid, bundleitemutils.ItemID(""), true
+				return bid, spec.PromptTemplate{
+					ID:      "",
+					Slug:    "",
+					Version: "a",
+				}, true
 			},
 			wantErr: true,
 		},
@@ -320,9 +331,9 @@ func TestSetTemplateEnabled(t *testing.T) {
 				t.Fatalf("setup failed: %v", err)
 			}
 
-			bundleID, templateID, enabled := tt.setup(t, bi)
+			bundleID, template, enabled := tt.setup(t, bi)
 
-			err = bi.SetTemplateEnabled(bundleID, templateID, enabled)
+			_, err = bi.SetTemplateEnabled(bundleID, template.Slug, template.Version, enabled)
 
 			if tt.wantErr {
 				if err == nil {
@@ -337,12 +348,12 @@ func TestSetTemplateEnabled(t *testing.T) {
 
 			// Verify the change is reflected in the snapshot.
 			_, templates, _ := bi.ListBuiltInData()
-			if got := templates[bundleID][templateID].IsEnabled; got != enabled {
+			if got := templates[bundleID][template.ID].IsEnabled; got != enabled {
 				t.Errorf("template enabled state = %v, want %v", got, enabled)
 			}
 
 			// Verify persistence to disk.
-			if present, val := overlayOnDisk(t, dir, "templates", string(templateID)); !present ||
+			if present, val := overlayOnDisk(t, dir, "templates", string(template.ID)); !present ||
 				val != enabled {
 				t.Errorf(
 					"overlay: present=%v val=%v, want present=true val=%v",
@@ -448,7 +459,7 @@ func TestConcurrency(t *testing.T) {
 	}
 
 	bundleID, _ := anyBundle(bundles)
-	templateBundleID, templateID, _ := anyTemplate(templates)
+	templateBundleID, _, template := anyTemplate(templates)
 
 	t.Run("concurrent_reads", func(t *testing.T) {
 		var wg sync.WaitGroup
@@ -480,7 +491,7 @@ func TestConcurrency(t *testing.T) {
 			go func(i int) {
 				defer wg.Done()
 				enabled := i%2 == 0
-				if err := bi.SetBundleEnabled(bundleID, enabled); err != nil {
+				if _, err := bi.SetBundleEnabled(bundleID, enabled); err != nil {
 					t.Errorf("SetBundleEnabled failed: %v", err)
 				}
 			}(i)
@@ -488,7 +499,7 @@ func TestConcurrency(t *testing.T) {
 			go func(i int) {
 				defer wg.Done()
 				enabled := i%2 == 0
-				if err := bi.SetTemplateEnabled(templateBundleID, templateID, enabled); err != nil {
+				if _, err := bi.SetTemplateEnabled(templateBundleID, template.Slug, template.Version, enabled); err != nil {
 					t.Errorf("SetTemplateEnabled failed: %v", err)
 				}
 			}(i)
@@ -524,10 +535,10 @@ func TestConcurrency(t *testing.T) {
 				defer wg.Done()
 				for j := range 10 {
 					enabled := (i+j)%2 == 0
-					if e := bi.SetBundleEnabled(bundleID, enabled); e != nil {
+					if _, e := bi.SetBundleEnabled(bundleID, enabled); e != nil {
 						t.Errorf("SetBundleEnabled failed: %v", e)
 					}
-					if e := bi.SetTemplateEnabled(templateBundleID, templateID, enabled); e != nil {
+					if _, e := bi.SetTemplateEnabled(templateBundleID, template.Slug, template.Version, enabled); e != nil {
 						t.Errorf("SetTemplateEnabled failed: %v", e)
 					}
 				}
@@ -583,7 +594,7 @@ func TestAsyncRebuild(t *testing.T) {
 	time.Sleep(2 * time.Millisecond)
 
 	// Make a change that should trigger rebuild.
-	if err := bi.SetBundleEnabled(bundleID, !bundle.IsEnabled); err != nil {
+	if _, err := bi.SetBundleEnabled(bundleID, !bundle.IsEnabled); err != nil {
 		t.Fatalf("SetBundleEnabled failed: %v", err)
 	}
 
@@ -768,7 +779,7 @@ func Test_NewBuiltInData_SyntheticFS_HappyAndCRUD(t *testing.T) {
 	}
 
 	bundleID, bundle := anyBundle(bundles)
-	if err := bi.SetBundleEnabled(bundleID, !bundle.IsEnabled); err != nil {
+	if _, err := bi.SetBundleEnabled(bundleID, !bundle.IsEnabled); err != nil {
 		t.Fatalf("SetBundleEnabled: %v", err)
 	}
 	if present, val := overlayOnDisk(t, tmp, "bundles", string(bundleID)); !present ||
@@ -777,7 +788,7 @@ func Test_NewBuiltInData_SyntheticFS_HappyAndCRUD(t *testing.T) {
 	}
 
 	_, tmplID, tpl := anyTemplate(tpls)
-	if err := bi.SetTemplateEnabled(bundleID, tmplID, !tpl.IsEnabled); err != nil {
+	if _, err := bi.SetTemplateEnabled(bundleID, tpl.Slug, tpl.Version, !tpl.IsEnabled); err != nil {
 		t.Fatalf("SetTemplateEnabled: %v", err)
 	}
 	if present, val := overlayOnDisk(t, tmp, "templates", string(tmplID)); !present ||

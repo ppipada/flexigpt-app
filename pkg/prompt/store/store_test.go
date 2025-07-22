@@ -87,11 +87,11 @@ func mustPutTemplate(
 	_, err := s.PutPromptTemplate(t.Context(), &spec.PutPromptTemplateRequest{
 		BundleID:     bid,
 		TemplateSlug: slug,
+		Version:      ver,
 		Body: &spec.PutPromptTemplateRequestBody{
 			DisplayName: display,
 			Description: "test template",
 			IsEnabled:   enabled,
-			Version:     ver,
 			Blocks: []spec.MessageBlock{{
 				ID:      "b1",
 				Role:    spec.User,
@@ -259,10 +259,11 @@ func TestTemplateCRUD(t *testing.T) {
 			_, err := s.PutPromptTemplate(t.Context(), &spec.PutPromptTemplateRequest{
 				BundleID:     tc.bid,
 				TemplateSlug: tc.slug,
+				Version:      tc.ver,
 				Body: &spec.PutPromptTemplateRequestBody{
 					DisplayName: tc.display,
-					Version:     tc.ver,
-					IsEnabled:   true,
+
+					IsEnabled: true,
 					Blocks: []spec.MessageBlock{{
 						ID:      "1",
 						Role:    spec.User,
@@ -294,9 +295,9 @@ func TestTemplateVersionConflict(t *testing.T) {
 	_, err := s.PutPromptTemplate(t.Context(), &spec.PutPromptTemplateRequest{
 		BundleID:     "b1",
 		TemplateSlug: "tpl",
+		Version:      "v1",
 		Body: &spec.PutPromptTemplateRequestBody{
 			DisplayName: "dup",
-			Version:     "v1",
 			IsEnabled:   true,
 			Blocks: []spec.MessageBlock{{
 				ID:      "1",
@@ -320,9 +321,9 @@ func TestTemplateDisabledBundleGuard(t *testing.T) {
 	_, err := s.PutPromptTemplate(t.Context(), &spec.PutPromptTemplateRequest{
 		BundleID:     "b1",
 		TemplateSlug: "tpl",
+		Version:      "v1",
 		Body: &spec.PutPromptTemplateRequestBody{
 			DisplayName: "d",
-			Version:     "v1",
 			IsEnabled:   true,
 			Blocks: []spec.MessageBlock{{
 				ID:      "1",
@@ -384,9 +385,9 @@ func TestBuiltInTemplateGuards(t *testing.T) {
 	_, err := s.PutPromptTemplate(t.Context(), &spec.PutPromptTemplateRequest{
 		BundleID:     bid,
 		TemplateSlug: slug,
+		Version:      "v-new",
 		Body: &spec.PutPromptTemplateRequestBody{
 			DisplayName: "illegal",
-			Version:     "v-new",
 			IsEnabled:   true,
 			Blocks: []spec.MessageBlock{{
 				ID:      "1",
@@ -413,8 +414,8 @@ func TestBuiltInTemplateGuards(t *testing.T) {
 	_, err = s.PatchPromptTemplate(t.Context(), &spec.PatchPromptTemplateRequest{
 		BundleID:     bid,
 		TemplateSlug: slug,
+		Version:      ver,
 		Body: &spec.PatchPromptTemplateRequestBody{
-			Version:   ver,
 			IsEnabled: false,
 		},
 	})
@@ -677,9 +678,9 @@ func TestConcurrentTemplatePut(t *testing.T) {
 		_, err := s.PutPromptTemplate(t.Context(), &spec.PutPromptTemplateRequest{
 			BundleID:     "b1",
 			TemplateSlug: "concurrent",
+			Version:      "v1",
 			Body: &spec.PutPromptTemplateRequestBody{
 				DisplayName: "v1",
-				Version:     "v1",
 				IsEnabled:   true,
 				Blocks: []spec.MessageBlock{{
 					ID:      "1",
@@ -694,9 +695,9 @@ func TestConcurrentTemplatePut(t *testing.T) {
 		_, err := s.PutPromptTemplate(t.Context(), &spec.PutPromptTemplateRequest{
 			BundleID:     "b1",
 			TemplateSlug: "concurrent",
+			Version:      "v2",
 			Body: &spec.PutPromptTemplateRequestBody{
 				DisplayName: "v2",
-				Version:     "v2",
 				IsEnabled:   true,
 				Blocks: []spec.MessageBlock{{
 					ID:      "1",

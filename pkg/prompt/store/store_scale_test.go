@@ -129,10 +129,10 @@ func TestScale_LotsOfBundles(t *testing.T) {
 					_, err = s.PutPromptTemplate(ctx, &spec.PutPromptTemplateRequest{
 						BundleID:     bID,
 						TemplateSlug: "t",
+						Version:      "v1",
 						Body: &spec.PutPromptTemplateRequestBody{
 							DisplayName: "dummy",
 							IsEnabled:   true,
-							Version:     "v1",
 							Blocks: []spec.MessageBlock{{
 								ID:      "1",
 								Role:    spec.User,
@@ -259,10 +259,10 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 				_, err := s.PutPromptTemplate(ctx, &spec.PutPromptTemplateRequest{
 					BundleID:     bundleitemutils.BundleID(fmt.Sprintf("b%d", j.b)),
 					TemplateSlug: bundleitemutils.ItemSlug(fmt.Sprintf("tpl-%d", j.s)),
+					Version:      bundleitemutils.ItemVersion(fmt.Sprintf("v%d", j.v)),
 					Body: &spec.PutPromptTemplateRequestBody{
 						DisplayName: "T",
 						IsEnabled:   true,
-						Version:     bundleitemutils.ItemVersion(fmt.Sprintf("v%d", j.v)),
 						Blocks: []spec.MessageBlock{{
 							ID:      "1",
 							Role:    spec.User,
@@ -314,8 +314,8 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 					_, err := s.PatchPromptTemplate(ctx, &spec.PatchPromptTemplateRequest{
 						BundleID:     bID,
 						TemplateSlug: slug,
+						Version:      "v4",
 						Body: &spec.PatchPromptTemplateRequestBody{
-							Version:   "v4",
 							IsEnabled: false,
 						},
 					})

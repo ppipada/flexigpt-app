@@ -27,12 +27,12 @@ import (
 )
 
 const (
-	fetchBatch      = 512              // IO chunk for internal dir scans
-	maxPageSize     = 256              // Maximum allowed page size for listing.
-	defPageSize     = 25               // Default page size for listing.
-	softDeleteGrace = 60 * time.Minute // Grace period before hard-deleting a soft-deleted bundle.
-	cleanupInterval = 24 * time.Hour   // Interval for periodic cleanup sweep.
-	snapshotMaxAge  = time.Hour
+	fetchBatch            = 512            // IO chunk for internal dir scans
+	maxPageSize           = 256            // Maximum allowed page size for listing.
+	defPageSize           = 25             // Default page size for listing.
+	softDeleteGrace       = 48 * time.Hour // Grace period before hard-deleting a soft-deleted bundle.
+	cleanupInterval       = 24 * time.Hour // Interval for periodic cleanup sweep.
+	builtInSnapshotMaxAge = time.Hour
 )
 
 // slugLocks manages a RW-mutex per bundleID|slug for concurrency control on templates.
@@ -113,7 +113,7 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 		}
 	}
 
-	builtIn, err := NewBuiltInData(s.baseDir, snapshotMaxAge)
+	builtIn, err := NewBuiltInData(s.baseDir, builtInSnapshotMaxAge)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +401,7 @@ func (s *PromptTemplateStore) PatchPromptBundle(
 
 	if s.builtinData != nil {
 		if _, err := s.builtinData.GetBuiltInBundle(req.BundleID); err == nil {
-			if err := s.builtinData.SetBundleEnabled(req.BundleID, req.Body.IsEnabled); err != nil {
+			if _, err := s.builtinData.SetBundleEnabled(req.BundleID, req.Body.IsEnabled); err != nil {
 				return nil, err
 			}
 			slog.Info("PatchPromptBundle.", "id", req.BundleID, "enabled", req.Body.IsEnabled)
@@ -662,7 +662,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 	if req == nil || req.Body == nil {
 		return nil, fmt.Errorf("%w: nil request/body", spec.ErrInvalidRequest)
 	}
-	if req.BundleID == "" || req.TemplateSlug == "" || req.Body.Version == "" {
+	if req.BundleID == "" || req.TemplateSlug == "" || req.Version == "" {
 		return nil, fmt.Errorf(
 			"%w: bundleID, templateSlug, version required",
 			spec.ErrInvalidRequest,
@@ -671,7 +671,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 	if err := bundleitemutils.ValidateItemSlug(req.TemplateSlug); err != nil {
 		return nil, err
 	}
-	if err := bundleitemutils.ValidateItemVersion(req.Body.Version); err != nil {
+	if err := bundleitemutils.ValidateItemVersion(req.Version); err != nil {
 		return nil, err
 	}
 	if len(req.Body.Blocks) == 0 || req.Body.DisplayName == "" {
@@ -698,7 +698,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 	lk.Lock()
 	defer lk.Unlock()
 
-	targetFN, ferr := bundleitemutils.BuildItemFileInfo(req.TemplateSlug, req.Body.Version)
+	targetFN, ferr := bundleitemutils.BuildItemFileInfo(req.TemplateSlug, req.Version)
 	if ferr != nil {
 		return nil, ferr
 	}
@@ -732,7 +732,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 		Blocks:        req.Body.Blocks,
 		Variables:     req.Body.Variables,
 		PreProcessors: req.Body.PreProcessors,
-		Version:       req.Body.Version,
+		Version:       req.Version,
 		CreatedAt:     now,
 		ModifiedAt:    now,
 		IsBuiltIn:     false,
@@ -755,7 +755,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 		"slug",
 		req.TemplateSlug,
 		"version",
-		req.Body.Version,
+		req.Version,
 	)
 	return &spec.PutPromptTemplateResponse{}, nil
 }
@@ -818,7 +818,7 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 	ctx context.Context, req *spec.PatchPromptTemplateRequest,
 ) (*spec.PatchPromptTemplateResponse, error) {
 	if req == nil || req.Body == nil || req.BundleID == "" || req.TemplateSlug == "" ||
-		req.Body.Version == "" {
+		req.Version == "" {
 		return nil, fmt.Errorf(
 			"%w: bundleID, templateSlug, version required",
 			spec.ErrInvalidRequest,
@@ -827,7 +827,7 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 	if err := bundleitemutils.ValidateItemSlug(req.TemplateSlug); err != nil {
 		return nil, err
 	}
-	if err := bundleitemutils.ValidateItemVersion(req.Body.Version); err != nil {
+	if err := bundleitemutils.ValidateItemVersion(req.Version); err != nil {
 		return nil, err
 	}
 	bundle, isBuiltIn, err := s.getAnyBundle(req.BundleID)
@@ -835,28 +835,25 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 		return nil, err
 	}
 	if isBuiltIn {
-		tmpl, err := s.builtinData.GetBuiltInTemplate(
-			req.BundleID,
+		tpl, err := s.builtinData.SetTemplateEnabled(
+			bundle.ID,
 			req.TemplateSlug,
-			req.Body.Version,
+			req.Version,
+			req.Body.IsEnabled,
 		)
 		if err != nil {
 			return nil, err
 		}
-		if err := s.builtinData.SetTemplateEnabled(bundle.ID, tmpl.ID, req.Body.IsEnabled); err != nil {
-			return nil, err
-		}
 		if s.fts != nil {
-			tmpl.IsEnabled = req.Body.IsEnabled
 			if err := fts.ReindexOneBuiltIn(
-				ctx, bundle.ID, bundle.Slug, tmpl, s.fts,
+				ctx, bundle.ID, bundle.Slug, tpl, s.fts,
 			); err != nil {
 				slog.Warn(
 					"builtin-fts reindex(one) failed",
 					"bundleID",
 					bundle.ID,
 					"templateID",
-					tmpl.ID,
+					tpl.ID,
 					"err",
 					err,
 				)
@@ -869,7 +866,7 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 			"slug",
 			req.TemplateSlug,
 			"version",
-			req.Body.Version,
+			req.Version,
 			"enabled",
 			req.Body.IsEnabled,
 		)
@@ -889,7 +886,7 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 	lk.Lock()
 	defer lk.Unlock()
 
-	targetFN, ferr := bundleitemutils.BuildItemFileInfo(req.TemplateSlug, req.Body.Version)
+	targetFN, ferr := bundleitemutils.BuildItemFileInfo(req.TemplateSlug, req.Version)
 	if ferr != nil {
 		return nil, ferr
 	}
@@ -903,7 +900,7 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 		return nil, err
 	}
 	tpl.IsEnabled = req.Body.IsEnabled
-	// Do not update ModifiedAt for enable/disable as per spec.
+	tpl.ModifiedAt = time.Now()
 
 	mp, _ := encdec.StructWithJSONTagsToMap(tpl)
 	if err := s.templateStore.SetFileData(key, mp); err != nil {
@@ -916,7 +913,7 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 		"slug",
 		req.TemplateSlug,
 		"version",
-		req.Body.Version,
+		req.Version,
 		"enabled",
 		req.Body.IsEnabled,
 	)

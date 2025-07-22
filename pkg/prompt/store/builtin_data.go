@@ -64,11 +64,11 @@ func resolveBundlesFS(fsys fs.FS, dir string) (fs.FS, error) {
 
 func NewBuiltInData(
 	overlayBaseDir string,
-	snapshotMaxAge time.Duration,
+	builtInSnapshotMaxAge time.Duration,
 	opts ...BuiltInDataOption,
 ) (*BuiltInData, error) {
-	if snapshotMaxAge <= 0 {
-		snapshotMaxAge = time.Hour
+	if builtInSnapshotMaxAge <= 0 {
+		builtInSnapshotMaxAge = time.Hour
 	}
 	if overlayBaseDir == "" {
 		return nil, fmt.Errorf("%w: overlayBaseDir", spec.ErrInvalidDir)
@@ -99,7 +99,7 @@ func NewBuiltInData(
 		return nil, err
 	}
 	data.rebuilder = builtin.NewAsyncRebuilder(
-		snapshotMaxAge,
+		builtInSnapshotMaxAge,
 		func() error {
 			data.mu.Lock()
 			defer data.mu.Unlock()
@@ -238,56 +238,6 @@ func (d *BuiltInData) populateDataFromFS() error {
 	return nil
 }
 
-// SetBundleEnabled toggles a bundle flag.
-func (d *BuiltInData) SetBundleEnabled(id bundleitemutils.BundleID, enabled bool) error {
-	if _, ok := d.bundles[id]; !ok {
-		return fmt.Errorf("bundleID: %q, err: %w", id, spec.ErrBuiltInBundleNotFound)
-	}
-	flag, err := d.store.SetFlag(BuiltInBundleID(id), enabled)
-	if err != nil {
-		return err
-	}
-
-	d.mu.Lock()
-	b := d.viewBundles[id]
-	b.IsEnabled = enabled
-	b.ModifiedAt = flag.ModifiedAt // update timestamp from overlay
-	d.viewBundles[id] = b
-	d.mu.Unlock()
-
-	d.rebuilder.Trigger()
-	return nil
-}
-
-// SetTemplateEnabled toggles a template flag.
-func (d *BuiltInData) SetTemplateEnabled(
-	bundleID bundleitemutils.BundleID,
-	templateID bundleitemutils.ItemID,
-	enabled bool,
-) error {
-	if _, ok := d.templates[bundleID]; !ok {
-		return fmt.Errorf("bundleID: %q, err: %w", bundleID, spec.ErrBuiltInBundleNotFound)
-	}
-	if _, ok := d.templates[bundleID][templateID]; !ok {
-		return fmt.Errorf("bundleID: %q, templateID: %q err: %w",
-			bundleID, templateID, spec.ErrBuiltInTemplateNotFound)
-	}
-	flag, err := d.store.SetFlag(BuiltInTemplateID(templateID), enabled)
-	if err != nil {
-		return err
-	}
-
-	d.mu.Lock()
-	tpl := d.viewTemplates[bundleID][templateID]
-	tpl.IsEnabled = enabled
-	tpl.ModifiedAt = flag.ModifiedAt // update timestamp from overlay
-	d.viewTemplates[bundleID][templateID] = tpl
-	d.mu.Unlock()
-
-	d.rebuilder.Trigger()
-	return nil
-}
-
 // rebuildSnapshot regenerates the overlay-applied view.
 // Assumes that mu.Lock is held by caller.
 func (d *BuiltInData) rebuildSnapshot() error {
@@ -358,6 +308,34 @@ func (d *BuiltInData) ListBuiltInData() (
 	return bundles, templates, nil
 }
 
+// SetBundleEnabled toggles a bundle flag.
+func (d *BuiltInData) SetBundleEnabled(
+	id bundleitemutils.BundleID,
+	enabled bool,
+) (bundle spec.PromptBundle, err error) {
+	if _, ok := d.bundles[id]; !ok {
+		return spec.PromptBundle{}, fmt.Errorf(
+			"bundleID: %q, err: %w",
+			id,
+			spec.ErrBuiltInBundleNotFound,
+		)
+	}
+	flag, err := d.store.SetFlag(BuiltInBundleID(id), enabled)
+	if err != nil {
+		return spec.PromptBundle{}, err
+	}
+
+	d.mu.Lock()
+	b := d.viewBundles[id]
+	b.IsEnabled = enabled
+	b.ModifiedAt = flag.ModifiedAt // update timestamp from overlay
+	d.viewBundles[id] = b
+	d.mu.Unlock()
+
+	d.rebuilder.Trigger()
+	return b, nil
+}
+
 func (d *BuiltInData) GetBuiltInBundle(id bundleitemutils.BundleID) (spec.PromptBundle, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
@@ -385,4 +363,30 @@ func (d *BuiltInData) GetBuiltInTemplate(
 		}
 	}
 	return spec.PromptTemplate{}, spec.ErrTemplateNotFound
+}
+
+// SetTemplateEnabled toggles a template flag.
+func (d *BuiltInData) SetTemplateEnabled(
+	bundleID bundleitemutils.BundleID,
+	slug bundleitemutils.ItemSlug,
+	version bundleitemutils.ItemVersion,
+	enabled bool,
+) (template spec.PromptTemplate, err error) {
+	template, err = d.GetBuiltInTemplate(bundleID, slug, version)
+	if err != nil {
+		return template, err
+	}
+	flag, err := d.store.SetFlag(BuiltInTemplateID(template.ID), enabled)
+	if err != nil {
+		return spec.PromptTemplate{}, err
+	}
+
+	d.mu.Lock()
+	template.IsEnabled = enabled
+	template.ModifiedAt = flag.ModifiedAt // update timestamp from overlay
+	d.viewTemplates[bundleID][template.ID] = template
+	d.mu.Unlock()
+
+	d.rebuilder.Trigger()
+	return template, nil
 }
