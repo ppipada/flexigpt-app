@@ -19,6 +19,35 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
+// StartUserToolsFTSRebuild launches a goroutine to rebuild the FTS index
+// for all tool specs under baseDir.
+func StartUserToolsFTSRebuild(ctx context.Context, baseDir string, e *ftsengine.Engine) {
+	if baseDir == "" || e == nil {
+		return
+	}
+
+	var once sync.Once
+	go func() {
+		defer func() {
+			if rec := recover(); rec != nil {
+				slog.Error("panic in tool fts rebuild",
+					"err", rec,
+					"stack", debug.Stack())
+			}
+		}()
+		once.Do(func() {
+			_ = ftsengine.SyncDirToFTS(
+				ctx,
+				e,
+				baseDir,
+				compareColumn,
+				ftsSyncBatchSize,
+				processFTSSync,
+			)
+		})
+	}()
+}
+
 // NewUserToolsFTSListener returns a filestore.Listener that updates
 // the FTS engine on file changes.
 func NewUserToolsFTSListener(e *ftsengine.Engine) filestore.Listener {
@@ -56,6 +85,56 @@ func NewUserToolsFTSListener(e *ftsengine.Engine) filestore.Listener {
 			}
 		}
 	}
+}
+
+// processFTSSync determines if a file should be (re-)indexed in FTS, and extracts its FTS values.
+func processFTSSync(
+	ctx context.Context,
+	baseDir, fullPath string,
+	prevCmp ftsengine.GetPrevCmp,
+) (ftsengine.SyncDecision, error) {
+	skip := ftsengine.SyncDecision{
+		ID:   fullPath,
+		Skip: true,
+	}
+
+	// Only process files with the correct extension.
+	if !strings.HasSuffix(fullPath, "."+bundleitemutils.ItemFileExtension) ||
+		strings.HasSuffix(fullPath, spec.ToolDBFileName) ||
+		strings.HasSuffix(fullPath, spec.ToolBundlesMetaFileName) ||
+		strings.HasSuffix(fullPath, spec.ToolBuiltInOverlayFileName) {
+		return skip, nil
+	}
+
+	cmp := fileMTime(fullPath)
+	if cmp == prevCmp(fullPath) {
+		return ftsengine.SyncDecision{ID: fullPath, Unchanged: true}, nil
+	}
+
+	raw, err := os.ReadFile(fullPath)
+	if err != nil {
+		slog.Error("tool sync fts", "file", fullPath, "read error", err)
+		return skip, nil
+	}
+
+	tl := spec.ToolSpec{}
+	if err := json.Unmarshal(raw, &tl); err != nil {
+		slog.Error("tool sync fts", "file", fullPath, "non tool file error", err)
+		return skip, nil
+	}
+
+	var m map[string]any
+	if err := json.Unmarshal(raw, &m); err != nil {
+		slog.Error("tool sync fts got json error", "file", fullPath, "error", err)
+		return skip, nil
+	}
+
+	vals := extractFTS(fullPath, m).ToMap()
+	return ftsengine.SyncDecision{
+		ID:     fullPath,
+		CmpOut: cmp,
+		Vals:   vals,
+	}, nil
 }
 
 // extractFTS converts an in-memory JSON map to a column-to-text map for FTS indexing.
@@ -123,83 +202,4 @@ func fileMTime(path string) string {
 		return ""
 	}
 	return st.ModTime().UTC().Format(time.RFC3339Nano)
-}
-
-// processFTSSync determines if a file should be (re-)indexed in FTS, and extracts its FTS values.
-func processFTSSync(
-	ctx context.Context,
-	baseDir, fullPath string,
-	prevCmp ftsengine.GetPrevCmp,
-) (ftsengine.SyncDecision, error) {
-	skip := ftsengine.SyncDecision{
-		ID:   fullPath,
-		Skip: true,
-	}
-
-	// Only process files with the correct extension.
-	if !strings.HasSuffix(fullPath, "."+bundleitemutils.ItemFileExtension) ||
-		strings.HasSuffix(fullPath, spec.ToolDBFileName) ||
-		strings.HasSuffix(fullPath, spec.ToolBundlesMetaFileName) ||
-		strings.HasSuffix(fullPath, spec.ToolBuiltInOverlayFileName) {
-		return skip, nil
-	}
-
-	cmp := fileMTime(fullPath)
-	if cmp == prevCmp(fullPath) {
-		return ftsengine.SyncDecision{ID: fullPath, Unchanged: true}, nil
-	}
-
-	raw, err := os.ReadFile(fullPath)
-	if err != nil {
-		slog.Error("tool sync fts", "file", fullPath, "read error", err)
-		return skip, nil
-	}
-
-	tl := spec.ToolSpec{}
-	if err := json.Unmarshal(raw, &tl); err != nil {
-		slog.Error("tool sync fts", "file", fullPath, "non tool file error", err)
-		return skip, nil
-	}
-
-	var m map[string]any
-	if err := json.Unmarshal(raw, &m); err != nil {
-		slog.Error("tool sync fts got json error", "file", fullPath, "error", err)
-		return skip, nil
-	}
-
-	vals := extractFTS(fullPath, m).ToMap()
-	return ftsengine.SyncDecision{
-		ID:     fullPath,
-		CmpOut: cmp,
-		Vals:   vals,
-	}, nil
-}
-
-// StartUserToolsFTSRebuild launches a goroutine to rebuild the FTS index
-// for all tool specs under baseDir.
-func StartUserToolsFTSRebuild(ctx context.Context, baseDir string, e *ftsengine.Engine) {
-	if baseDir == "" || e == nil {
-		return
-	}
-
-	var once sync.Once
-	go func() {
-		defer func() {
-			if rec := recover(); rec != nil {
-				slog.Error("panic in tool fts rebuild",
-					"err", rec,
-					"stack", debug.Stack())
-			}
-		}()
-		once.Do(func() {
-			_ = ftsengine.SyncDirToFTS(
-				ctx,
-				e,
-				baseDir,
-				compareColumn,
-				ftsSyncBatchSize,
-				processFTSSync,
-			)
-		})
-	}()
 }

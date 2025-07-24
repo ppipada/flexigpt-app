@@ -22,124 +22,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 )
 
-// newTestStore creates a store rooted in a temporary directory and returns a
-// cleanup function that closes the store and removes the directory.
-func newTestStore(t *testing.T) (s *PromptTemplateStore, cleanup func()) {
-	t.Helper()
-
-	dir := t.TempDir()
-	s, err := NewPromptTemplateStore(dir)
-	if err != nil {
-		t.Fatalf("NewPromptTemplateStore() failed: %v", err)
-	}
-	return s, func() { s.Close(); _ = os.RemoveAll(dir) }
-}
-
-func newTestStoreWithFTS(t *testing.T) (s *PromptTemplateStore, cleanup func()) {
-	t.Helper()
-
-	dir := t.TempDir()
-	s, err := NewPromptTemplateStore(dir, WithFTS(true))
-	if err != nil {
-		t.Fatalf("NewPromptTemplateStore(FTS) failed: %v", err)
-	}
-	return s, func() { s.Close(); _ = os.RemoveAll(dir) }
-}
-
-// mustPutBundle creates a bundle or fails the test.
-func mustPutBundle(
-	t *testing.T,
-	s *PromptTemplateStore,
-	id bundleitemutils.BundleID,
-	slug bundleitemutils.BundleSlug,
-	display string,
-	enabled bool,
-) {
-	t.Helper()
-
-	_, err := s.PutPromptBundle(t.Context(), &spec.PutPromptBundleRequest{
-		BundleID: id,
-		Body: &spec.PutPromptBundleRequestBody{
-			Slug:        slug,
-			DisplayName: display,
-			Description: "test bundle",
-			IsEnabled:   enabled,
-		},
-	})
-	if err != nil {
-		t.Fatalf("PutPromptBundle() failed: %v", err)
-	}
-}
-
-// mustPutTemplate creates a template version or fails the test.
-func mustPutTemplate(
-	t *testing.T,
-	s *PromptTemplateStore,
-	bid bundleitemutils.BundleID,
-	slug bundleitemutils.ItemSlug,
-	ver bundleitemutils.ItemVersion,
-	display string,
-	enabled bool,
-	tags ...string,
-) {
-	t.Helper()
-
-	_, err := s.PutPromptTemplate(t.Context(), &spec.PutPromptTemplateRequest{
-		BundleID:     bid,
-		TemplateSlug: slug,
-		Version:      ver,
-		Body: &spec.PutPromptTemplateRequestBody{
-			DisplayName: display,
-			Description: "test template",
-			IsEnabled:   enabled,
-			Blocks: []spec.MessageBlock{{
-				ID:      "b1",
-				Role:    spec.User,
-				Content: "hello",
-			}},
-			Tags: tags,
-		},
-	})
-	if err != nil {
-		t.Fatalf("PutPromptTemplate() failed: %v", err)
-	}
-}
-
-// builtinStatistics returns how many built-in bundles / templates are embedded
-// in the library.  The helper is used to keep assertions robust, independent
-// from the actual catalogue size.
-func builtinStatistics(s *PromptTemplateStore) (bundleCnt, templateCnt int) {
-	if s.builtinData == nil {
-		return 0, 0
-	}
-	b, t, _ := s.builtinData.ListBuiltInData()
-	bundleCnt = len(b)
-	for _, tmplMap := range t {
-		templateCnt += len(tmplMap)
-	}
-	return bundleCnt, templateCnt
-}
-
-// located in that bundle.  Ok==false if no catalogue is available.
-func firstBuiltIn(
-	s *PromptTemplateStore,
-) (bid bundleitemutils.BundleID, slug bundleitemutils.ItemSlug, ver bundleitemutils.ItemVersion, ok bool) {
-	if s.builtinData == nil {
-		return bid, slug, ver, ok
-	}
-	_, tmplM, _ := s.builtinData.ListBuiltInData()
-	for bID, m := range tmplM {
-		for _, tpl := range m {
-			return bID, tpl.Slug, tpl.Version, true
-		}
-	}
-	return bid, slug, ver, ok
-}
-
-/* --------------------------------------------------------------------- */
-/*  A.  Bundle operations                                                */
-/* ---------------------------------------------------------------------. */
-
 func TestBundleCRUD(t *testing.T) {
 	cases := []struct {
 		name      string
@@ -824,4 +706,118 @@ func TestSearchRespectsBuiltInEnableDisable(t *testing.T) {
 	if len(resp.Body.PromptTemplateListItems) == 0 {
 		t.Fatalf("expected built-in hit when IncludeDisabled=true")
 	}
+}
+
+// builtinStatistics returns how many built-in bundles / templates are embedded
+// in the library.  The helper is used to keep assertions robust, independent
+// from the actual catalogue size.
+func builtinStatistics(s *PromptTemplateStore) (bundleCnt, templateCnt int) {
+	if s.builtinData == nil {
+		return 0, 0
+	}
+	b, t, _ := s.builtinData.ListBuiltInData()
+	bundleCnt = len(b)
+	for _, tmplMap := range t {
+		templateCnt += len(tmplMap)
+	}
+	return bundleCnt, templateCnt
+}
+
+// located in that bundle.  Ok==false if no catalogue is available.
+func firstBuiltIn(
+	s *PromptTemplateStore,
+) (bid bundleitemutils.BundleID, slug bundleitemutils.ItemSlug, ver bundleitemutils.ItemVersion, ok bool) {
+	if s.builtinData == nil {
+		return bid, slug, ver, ok
+	}
+	_, tmplM, _ := s.builtinData.ListBuiltInData()
+	for bID, m := range tmplM {
+		for _, tpl := range m {
+			return bID, tpl.Slug, tpl.Version, true
+		}
+	}
+	return bid, slug, ver, ok
+}
+
+// mustPutTemplate creates a template version or fails the test.
+func mustPutTemplate(
+	t *testing.T,
+	s *PromptTemplateStore,
+	bid bundleitemutils.BundleID,
+	slug bundleitemutils.ItemSlug,
+	ver bundleitemutils.ItemVersion,
+	display string,
+	enabled bool,
+	tags ...string,
+) {
+	t.Helper()
+
+	_, err := s.PutPromptTemplate(t.Context(), &spec.PutPromptTemplateRequest{
+		BundleID:     bid,
+		TemplateSlug: slug,
+		Version:      ver,
+		Body: &spec.PutPromptTemplateRequestBody{
+			DisplayName: display,
+			Description: "test template",
+			IsEnabled:   enabled,
+			Blocks: []spec.MessageBlock{{
+				ID:      "b1",
+				Role:    spec.User,
+				Content: "hello",
+			}},
+			Tags: tags,
+		},
+	})
+	if err != nil {
+		t.Fatalf("PutPromptTemplate() failed: %v", err)
+	}
+}
+
+// mustPutBundle creates a bundle or fails the test.
+func mustPutBundle(
+	t *testing.T,
+	s *PromptTemplateStore,
+	id bundleitemutils.BundleID,
+	slug bundleitemutils.BundleSlug,
+	display string,
+	enabled bool,
+) {
+	t.Helper()
+
+	_, err := s.PutPromptBundle(t.Context(), &spec.PutPromptBundleRequest{
+		BundleID: id,
+		Body: &spec.PutPromptBundleRequestBody{
+			Slug:        slug,
+			DisplayName: display,
+			Description: "test bundle",
+			IsEnabled:   enabled,
+		},
+	})
+	if err != nil {
+		t.Fatalf("PutPromptBundle() failed: %v", err)
+	}
+}
+
+func newTestStoreWithFTS(t *testing.T) (s *PromptTemplateStore, cleanup func()) {
+	t.Helper()
+
+	dir := t.TempDir()
+	s, err := NewPromptTemplateStore(dir, WithFTS(true))
+	if err != nil {
+		t.Fatalf("NewPromptTemplateStore(FTS) failed: %v", err)
+	}
+	return s, func() { s.Close(); _ = os.RemoveAll(dir) }
+}
+
+// newTestStore creates a store rooted in a temporary directory and returns a
+// cleanup function that closes the store and removes the directory.
+func newTestStore(t *testing.T) (s *PromptTemplateStore, cleanup func()) {
+	t.Helper()
+
+	dir := t.TempDir()
+	s, err := NewPromptTemplateStore(dir)
+	if err != nil {
+		t.Fatalf("NewPromptTemplateStore() failed: %v", err)
+	}
+	return s, func() { s.Close(); _ = os.RemoveAll(dir) }
 }

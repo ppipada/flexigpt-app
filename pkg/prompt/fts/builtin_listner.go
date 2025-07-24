@@ -14,6 +14,14 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 )
 
+// BuiltInLister returns the current snapshot of all built-in bundles and templates.
+// Overlay should already be applied, so that enabled flags are correct.
+type BuiltInLister func() (
+	bundles map[bundleitemutils.BundleID]spec.PromptBundle,
+	templates map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
+	err error,
+)
+
 // StartBuiltInPromptsFTSRebuild spawns a goroutine that synchronises the built-in templates with the FTS index.
 // Safe to call multiple times; the work is executed once.
 func StartBuiltInPromptsFTSRebuild(
@@ -62,14 +70,6 @@ func ReindexOneBuiltIn(
 	}
 	return nil
 }
-
-// BuiltInLister returns the current snapshot of all built-in bundles and templates.
-// Overlay should already be applied, so that enabled flags are correct.
-type BuiltInLister func() (
-	bundles map[bundleitemutils.BundleID]spec.PromptBundle,
-	templates map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
-	err error,
-)
 
 // syncBuiltInsToFTS performs a full synchronisation of the built-in data-set with the FTS table.
 func syncBuiltInsToFTS(

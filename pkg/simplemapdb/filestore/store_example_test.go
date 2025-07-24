@@ -20,6 +20,33 @@ type operation interface {
 	Execute(store *MapFileStore, t *testing.T)
 }
 
+// Below is your simple "reverse string" EncoderDecoder for demonstration.
+type reverseStringEncoderDecoder struct{}
+
+func (e reverseStringEncoderDecoder) Encode(w io.Writer, v any) error {
+	s, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("expected string value, got %T", v)
+	}
+	reversed := reverseString(s)
+	_, err := w.Write([]byte(reversed))
+	return err
+}
+
+func (e reverseStringEncoderDecoder) Decode(r io.Reader, v any) error {
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return err
+	}
+	reversed := reverseString(string(data))
+	ptr, ok := v.(*any)
+	if !ok {
+		return fmt.Errorf("expected *any pointer, got %T", v)
+	}
+	*ptr = reversed
+	return nil
+}
+
 type setKeyOperation struct {
 	key   string
 	value any
@@ -293,42 +320,6 @@ func TestMapFileStore(t *testing.T) {
 	}
 }
 
-// Below is your simple "reverse string" EncoderDecoder for demonstration.
-type reverseStringEncoderDecoder struct{}
-
-func (e reverseStringEncoderDecoder) Encode(w io.Writer, v any) error {
-	s, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("expected string value, got %T", v)
-	}
-	reversed := reverseString(s)
-	_, err := w.Write([]byte(reversed))
-	return err
-}
-
-func (e reverseStringEncoderDecoder) Decode(r io.Reader, v any) error {
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return err
-	}
-	reversed := reverseString(string(data))
-	ptr, ok := v.(*any)
-	if !ok {
-		return fmt.Errorf("expected *any pointer, got %T", v)
-	}
-	*ptr = reversed
-	return nil
-}
-
-func reverseString(s string) string {
-	runes := []rune(s)
-	n := len(runes)
-	for i := range n / 2 {
-		runes[i], runes[n-1-i] = runes[n-1-i], runes[i]
-	}
-	return string(runes)
-}
-
 // Basic event flow
 // Sets a couple of keys, deletes them, then resets the file.  We attach a single
 // listener that records every event and print a short, deterministic summary.
@@ -449,4 +440,13 @@ func Example_events_panicIsolation() {
 
 	// Output:
 	// good listener called: true
+}
+
+func reverseString(s string) string {
+	runes := []rune(s)
+	n := len(runes)
+	for i := range n / 2 {
+		runes[i], runes[n-1-i] = runes[n-1-i], runes[i]
+	}
+	return string(runes)
 }

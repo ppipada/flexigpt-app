@@ -35,57 +35,6 @@ type DuplicateBundleID string
 func (DuplicateBundleID) Group() GroupID { return "bundles" }
 func (d DuplicateBundleID) ID() KeyID    { return KeyID(d) }
 
-func tmpStore(t *testing.T, opts ...Option) (s *Store, path string) {
-	t.Helper()
-	dir := t.TempDir()
-	path = filepath.Join(dir, "overlay.json")
-	s, err := NewStore(path, opts...)
-	if err != nil {
-		t.Fatalf("NewStore failed: %v", err)
-	}
-	return s, path
-}
-
-func readFileJSON(t *testing.T, path string) map[string]any {
-	t.Helper()
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read file: %v", err)
-	}
-	var obj map[string]any
-	if err := json.Unmarshal(data, &obj); err != nil {
-		t.Fatalf("json decode: %v", err)
-	}
-	return obj
-}
-
-func contains(err error, substr string) bool {
-	return err != nil && substr != "" && (func() bool {
-		return (len(err.Error()) >= len(substr)) && (func() bool {
-			for i := range err.Error() {
-				if len(err.Error())-i < len(substr) {
-					return false
-				}
-				if err.Error()[i:i+len(substr)] == substr {
-					return true
-				}
-			}
-			return false
-		})()
-	})()
-}
-
-func getEnabled(st *Store, k Key, def bool) (bool, error) {
-	f, ok, err := st.GetFlag(k)
-	if err != nil {
-		return def, err
-	}
-	if !ok {
-		return def, nil
-	}
-	return f.Enabled, nil
-}
-
 func TestRegistrationAndGroupCreation(t *testing.T) {
 	st, path := tmpStore(t, WithKeyType[BundleID](), WithKeyType[TemplateID]())
 	obj := readFileJSON(t, path)
@@ -432,4 +381,55 @@ func TestSetFlagTimestamps(t *testing.T) {
 	if !f2.ModifiedAt.After(f2.CreatedAt) {
 		t.Fatalf("modified_at not updated: %+v", f2)
 	}
+}
+
+func tmpStore(t *testing.T, opts ...Option) (s *Store, path string) {
+	t.Helper()
+	dir := t.TempDir()
+	path = filepath.Join(dir, "overlay.json")
+	s, err := NewStore(path, opts...)
+	if err != nil {
+		t.Fatalf("NewStore failed: %v", err)
+	}
+	return s, path
+}
+
+func readFileJSON(t *testing.T, path string) map[string]any {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read file: %v", err)
+	}
+	var obj map[string]any
+	if err := json.Unmarshal(data, &obj); err != nil {
+		t.Fatalf("json decode: %v", err)
+	}
+	return obj
+}
+
+func contains(err error, substr string) bool {
+	return err != nil && substr != "" && (func() bool {
+		return (len(err.Error()) >= len(substr)) && (func() bool {
+			for i := range err.Error() {
+				if len(err.Error())-i < len(substr) {
+					return false
+				}
+				if err.Error()[i:i+len(substr)] == substr {
+					return true
+				}
+			}
+			return false
+		})()
+	})()
+}
+
+func getEnabled(st *Store, k Key, def bool) (bool, error) {
+	f, ok, err := st.GetFlag(k)
+	if err != nil {
+		return def, err
+	}
+	if !ok {
+		return def, nil
+	}
+	return f.Enabled, nil
 }

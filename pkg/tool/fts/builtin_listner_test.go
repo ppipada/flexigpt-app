@@ -14,82 +14,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
-func mustTempBuiltInDir(t *testing.T) string { t.Helper(); return t.TempDir() }
-
-func newEngine(t *testing.T, dir string) *ftsengine.Engine {
-	t.Helper()
-	e, err := ftsengine.NewEngine(ftsengine.Config{
-		BaseDir:    dir,
-		DBFileName: "fts.db",
-		Table:      sqliteDBTableName,
-		Columns: []ftsengine.Column{
-			{Name: "slug", Weight: 1},
-			{Name: "displayName", Weight: 1},
-			{Name: "desc", Weight: 1},
-			{Name: "parameters", Weight: 1},
-			{Name: "tags", Weight: 1},
-			{Name: "enabled", Unindexed: true},
-			{Name: "bundleID", Unindexed: true},
-			{Name: "mtime", Unindexed: true},
-		},
-	})
-	if err != nil {
-		t.Fatalf("NewEngine: %v", err)
-	}
-	return e
-}
-
-func makeBundle(
-	id int,
-	enabled bool,
-) (bundleitemutils.BundleID, bundleitemutils.BundleSlug, spec.ToolBundle) {
-	bid := bundleitemutils.BundleID("bundle-" + strconv.Itoa(id))
-	bslug := bundleitemutils.BundleSlug("bundleslug-" + strconv.Itoa(id))
-	return bid, bslug, spec.ToolBundle{
-		ID:        bid,
-		Slug:      bslug,
-		IsEnabled: enabled,
-	}
-}
-
-func makeTool(idx int, enabled bool) spec.ToolSpec {
-	return spec.ToolSpec{
-		ID:          bundleitemutils.ItemID("tool-" + strconv.Itoa(idx)),
-		DisplayName: "Tool " + strconv.Itoa(idx),
-		Slug:        bundleitemutils.ItemSlug("slug-" + strconv.Itoa(idx)),
-		Description: "desc",
-		Version:     bundleitemutils.ItemVersion("v1"),
-		IsEnabled:   enabled,
-		CreatedAt:   time.Now().UTC(),
-		ModifiedAt:  time.Now().UTC(),
-		Parameters: []spec.ToolParameter{
-			{Name: "p" + strconv.Itoa(idx), Type: spec.ParamString},
-		},
-		Tags: []string{"tag" + strconv.Itoa(idx)},
-	}
-}
-
-func listAllRows(t *testing.T, e *ftsengine.Engine) map[string]string {
-	t.Helper()
-	ctx := t.Context()
-	out := map[string]string{}
-	token := ""
-	for {
-		part, next, err := e.BatchList(ctx, compareColumn, []string{compareColumn}, token, 200)
-		if err != nil {
-			t.Fatalf("BatchList: %v", err)
-		}
-		for _, r := range part {
-			out[r.ID] = r.Values[compareColumn]
-		}
-		if next == "" {
-			break
-		}
-		token = next
-	}
-	return out
-}
-
 func TestToolsBuildDoc_HappyAndErrors(t *testing.T) {
 	bid, bslug, _ := makeBundle(1, true)
 	tool := makeTool(0, true)
@@ -340,3 +264,79 @@ func TestToolsBuildDoc_JSONRoundTrip(t *testing.T) {
 		t.Fatalf("values not json-able: %v", err)
 	}
 }
+
+func listAllRows(t *testing.T, e *ftsengine.Engine) map[string]string {
+	t.Helper()
+	ctx := t.Context()
+	out := map[string]string{}
+	token := ""
+	for {
+		part, next, err := e.BatchList(ctx, compareColumn, []string{compareColumn}, token, 200)
+		if err != nil {
+			t.Fatalf("BatchList: %v", err)
+		}
+		for _, r := range part {
+			out[r.ID] = r.Values[compareColumn]
+		}
+		if next == "" {
+			break
+		}
+		token = next
+	}
+	return out
+}
+
+func newEngine(t *testing.T, dir string) *ftsengine.Engine {
+	t.Helper()
+	e, err := ftsengine.NewEngine(ftsengine.Config{
+		BaseDir:    dir,
+		DBFileName: "fts.db",
+		Table:      sqliteDBTableName,
+		Columns: []ftsengine.Column{
+			{Name: "slug", Weight: 1},
+			{Name: "displayName", Weight: 1},
+			{Name: "desc", Weight: 1},
+			{Name: "parameters", Weight: 1},
+			{Name: "tags", Weight: 1},
+			{Name: "enabled", Unindexed: true},
+			{Name: "bundleID", Unindexed: true},
+			{Name: "mtime", Unindexed: true},
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewEngine: %v", err)
+	}
+	return e
+}
+
+func makeBundle(
+	id int,
+	enabled bool,
+) (bundleitemutils.BundleID, bundleitemutils.BundleSlug, spec.ToolBundle) {
+	bid := bundleitemutils.BundleID("bundle-" + strconv.Itoa(id))
+	bslug := bundleitemutils.BundleSlug("bundleslug-" + strconv.Itoa(id))
+	return bid, bslug, spec.ToolBundle{
+		ID:        bid,
+		Slug:      bslug,
+		IsEnabled: enabled,
+	}
+}
+
+func makeTool(idx int, enabled bool) spec.ToolSpec {
+	return spec.ToolSpec{
+		ID:          bundleitemutils.ItemID("tool-" + strconv.Itoa(idx)),
+		DisplayName: "Tool " + strconv.Itoa(idx),
+		Slug:        bundleitemutils.ItemSlug("slug-" + strconv.Itoa(idx)),
+		Description: "desc",
+		Version:     bundleitemutils.ItemVersion("v1"),
+		IsEnabled:   enabled,
+		CreatedAt:   time.Now().UTC(),
+		ModifiedAt:  time.Now().UTC(),
+		Parameters: []spec.ToolParameter{
+			{Name: "p" + strconv.Itoa(idx), Type: spec.ParamString},
+		},
+		Tags: []string{"tag" + strconv.Itoa(idx)},
+	}
+}
+
+func mustTempBuiltInDir(t *testing.T) string { t.Helper(); return t.TempDir() }

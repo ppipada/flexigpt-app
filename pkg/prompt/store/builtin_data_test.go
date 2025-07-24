@@ -22,44 +22,6 @@ import (
 
 const corrupted = "corrupted"
 
-// Test helpers.
-func anyBundle(
-	m map[bundleitemutils.BundleID]spec.PromptBundle,
-) (bundleitemutils.BundleID, spec.PromptBundle) {
-	for id, b := range m {
-		return id, b
-	}
-	return "", spec.PromptBundle{}
-}
-
-func anyTemplate(
-	m map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
-) (bundleitemutils.BundleID, bundleitemutils.ItemID, spec.PromptTemplate) {
-	for bid, tm := range m {
-		for tid, tpl := range tm {
-			return bid, tid, tpl
-		}
-	}
-	return "", "", spec.PromptTemplate{}
-}
-
-func overlayOnDisk(t *testing.T, dir, group, id string) (present, value bool) {
-	t.Helper()
-	data, err := os.ReadFile(filepath.Join(dir, spec.PromptBuiltInOverlayFileName))
-	if err != nil {
-		t.Fatalf("cannot read overlay file: %v", err)
-	}
-	var root map[string]map[string]booloverlay.Flag
-	if err := json.Unmarshal(data, &root); err != nil {
-		t.Fatalf("invalid overlay JSON: %v", err)
-	}
-	if sub, ok := root[group]; ok {
-		v, ok := sub[id]
-		return ok, v.Enabled
-	}
-	return false, false
-}
-
 func TestNewBuiltInData(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -608,52 +570,6 @@ func TestAsyncRebuild(t *testing.T) {
 	}
 }
 
-// newUUID returns a v7-UUID as string or fails the test.
-func newUUID(t *testing.T) string {
-	t.Helper()
-	u, err := uuidv7filename.NewUUID()
-	if err != nil {
-		t.Fatalf("uuidv7: %v", err)
-	}
-	return u
-}
-
-// buildManifest returns the JSON for a manifest that holds exactly one bundle.
-func buildManifest(bundleID, slug string) []byte {
-	manifest := spec.AllBundles{
-		Bundles: map[bundleitemutils.BundleID]spec.PromptBundle{
-			bundleitemutils.BundleID(bundleID): {
-				ID:        bundleitemutils.BundleID(bundleID),
-				Slug:      bundleitemutils.BundleSlug(slug),
-				IsEnabled: true,
-			},
-		},
-	}
-	b, _ := json.Marshal(manifest)
-	return b
-}
-
-// buildTemplate returns filename (slug_version.json), raw JSON and the template ID.
-func buildTemplate(t *testing.T, slug, ver string) (fileName string, raw []byte, tplID string) {
-	t.Helper()
-	tplID = newUUID(t)
-	tpl := spec.PromptTemplate{
-		ID:        bundleitemutils.ItemID(tplID),
-		Slug:      bundleitemutils.ItemSlug(slug),
-		Version:   bundleitemutils.ItemVersion(ver),
-		IsEnabled: true,
-	}
-	raw, _ = json.Marshal(tpl) // cannot fail
-	fileName = fmt.Sprintf("%s_%s.json", slug, ver)
-	return fileName, raw, tplID
-}
-
-// Constructor helper that injects the given fs.FS.
-func newFromFS(t *testing.T, mem fs.FS) (*BuiltInData, error) {
-	t.Helper()
-	return NewBuiltInData(t.TempDir(), time.Hour, WithBundlesFS(mem, "."))
-}
-
 func Test_NewBuiltInData_SyntheticFS_Errors(t *testing.T) {
 	bundleID := newUUID(t)
 	slug := "demo"
@@ -795,4 +711,87 @@ func Test_NewBuiltInData_SyntheticFS_HappyAndCRUD(t *testing.T) {
 		val == tpl.IsEnabled {
 		t.Fatalf("template overlay not updated")
 	}
+}
+
+func overlayOnDisk(t *testing.T, dir, group, id string) (present, value bool) {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join(dir, spec.PromptBuiltInOverlayFileName))
+	if err != nil {
+		t.Fatalf("cannot read overlay file: %v", err)
+	}
+	var root map[string]map[string]booloverlay.Flag
+	if err := json.Unmarshal(data, &root); err != nil {
+		t.Fatalf("invalid overlay JSON: %v", err)
+	}
+	if sub, ok := root[group]; ok {
+		v, ok := sub[id]
+		return ok, v.Enabled
+	}
+	return false, false
+}
+
+func anyTemplate(
+	m map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
+) (bundleitemutils.BundleID, bundleitemutils.ItemID, spec.PromptTemplate) {
+	for bid, tm := range m {
+		for tid, tpl := range tm {
+			return bid, tid, tpl
+		}
+	}
+	return "", "", spec.PromptTemplate{}
+}
+
+func anyBundle(
+	m map[bundleitemutils.BundleID]spec.PromptBundle,
+) (bundleitemutils.BundleID, spec.PromptBundle) {
+	for id, b := range m {
+		return id, b
+	}
+	return "", spec.PromptBundle{}
+}
+
+// buildManifest returns the JSON for a manifest that holds exactly one bundle.
+func buildManifest(bundleID, slug string) []byte {
+	manifest := spec.AllBundles{
+		Bundles: map[bundleitemutils.BundleID]spec.PromptBundle{
+			bundleitemutils.BundleID(bundleID): {
+				ID:        bundleitemutils.BundleID(bundleID),
+				Slug:      bundleitemutils.BundleSlug(slug),
+				IsEnabled: true,
+			},
+		},
+	}
+	b, _ := json.Marshal(manifest)
+	return b
+}
+
+// buildTemplate returns filename (slug_version.json), raw JSON and the template ID.
+func buildTemplate(t *testing.T, slug, ver string) (fileName string, raw []byte, tplID string) {
+	t.Helper()
+	tplID = newUUID(t)
+	tpl := spec.PromptTemplate{
+		ID:        bundleitemutils.ItemID(tplID),
+		Slug:      bundleitemutils.ItemSlug(slug),
+		Version:   bundleitemutils.ItemVersion(ver),
+		IsEnabled: true,
+	}
+	raw, _ = json.Marshal(tpl) // cannot fail
+	fileName = fmt.Sprintf("%s_%s.json", slug, ver)
+	return fileName, raw, tplID
+}
+
+// Constructor helper that injects the given fs.FS.
+func newFromFS(t *testing.T, mem fs.FS) (*BuiltInData, error) {
+	t.Helper()
+	return NewBuiltInData(t.TempDir(), time.Hour, WithBundlesFS(mem, "."))
+}
+
+// newUUID returns a v7-UUID as string or fails the test.
+func newUUID(t *testing.T) string {
+	t.Helper()
+	u, err := uuidv7filename.NewUUID()
+	if err != nil {
+		t.Fatalf("uuidv7: %v", err)
+	}
+	return u
 }

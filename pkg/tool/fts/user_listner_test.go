@@ -14,36 +14,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
-func mustTempDir(t *testing.T) string {
-	t.Helper()
-	return t.TempDir()
-}
-
-func mustRemoveAll(t *testing.T, dir string) {
-	t.Helper()
-	_ = os.RemoveAll(dir)
-}
-
-func mustWriteJSON(t *testing.T, path string, v any) {
-	t.Helper()
-	b, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		t.Fatalf("marshal: %v", err)
-	}
-	if err := os.WriteFile(path, b, 0o600); err != nil {
-		t.Fatalf("write: %v", err)
-	}
-}
-
-func mustReadFile(t *testing.T, path string) []byte {
-	t.Helper()
-	b, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read: %v", err)
-	}
-	return b
-}
-
 func TestToolsFTSListener_Integration(t *testing.T) {
 	tmp := mustTempDir(t)
 	defer mustRemoveAll(t, tmp)
@@ -279,4 +249,34 @@ func TestToolsProcessFTSSync_BadJSON(t *testing.T) {
 
 func bundleDirName(id, slug string) string {
 	return "bundles__" + id + "__" + slug
+}
+
+func mustRemoveAll(t *testing.T, dir string) {
+	t.Helper()
+	_ = os.RemoveAll(dir)
+}
+
+func mustWriteJSON(t *testing.T, path string, v any) {
+	t.Helper()
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if err := os.WriteFile(path, b, 0o600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+}
+
+func mustReadFile(t *testing.T, path string) []byte {
+	t.Helper()
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	return b
+}
+
+func mustTempDir(t *testing.T) string {
+	t.Helper()
+	return t.TempDir()
 }

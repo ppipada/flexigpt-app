@@ -24,6 +24,52 @@ type ToolBuiltInLister func() (
 	err error,
 )
 
+// StartBuiltInToolsFTSRebuild spawns a goroutine that synchronises the built-in tools with the FTS index.
+func StartBuiltInToolsFTSRebuild(
+	ctx context.Context,
+	lister ToolBuiltInLister,
+	engine *ftsengine.Engine,
+) {
+	if lister == nil || engine == nil {
+		return
+	}
+	go func() {
+		defer func() {
+			if rec := recover(); rec != nil {
+				slog.Error("builtin-tools-fts panic",
+					"err", rec, "stack", string(debug.Stack()))
+			}
+		}()
+		if err := syncBuiltInsToFTS(ctx, lister, engine); err != nil {
+			slog.Error("builtin-tools-fts initial sync failed", "err", err)
+		}
+	}()
+}
+
+// ReindexOneBuiltInTool updates exactly one built-in tool.
+func ReindexOneBuiltInTool(
+	ctx context.Context,
+	bundleID bundleitemutils.BundleID,
+	bundleSlug bundleitemutils.BundleSlug,
+	tool spec.ToolSpec,
+	engine *ftsengine.Engine,
+) error {
+	if engine == nil {
+		return spec.ErrInvalidRequest
+	}
+	docID, vals, ok := buildDoc(bundleID, bundleSlug, tool)
+	if !ok {
+		return fmt.Errorf(
+			"builtin-tools-fts cannot create doc for bundleID %q, bundleSlug %q, toolID %q",
+			bundleID, bundleSlug, tool.ID,
+		)
+	}
+	if err := engine.Upsert(ctx, docID, vals); err != nil {
+		return fmt.Errorf("builtin-tools-fts upsert(one) failed for %s: %w", docID, err)
+	}
+	return nil
+}
+
 // syncBuiltInsToFTS performs a full synchronisation of the built-in data-set with the FTS table.
 func syncBuiltInsToFTS(
 	ctx context.Context,
@@ -115,50 +161,4 @@ func toolToFTSDoc(bid bundleitemutils.BundleID, tl spec.ToolSpec) ftsDoc {
 		doc.Tags += tg + newline
 	}
 	return doc
-}
-
-// StartBuiltInToolsFTSRebuild spawns a goroutine that synchronises the built-in tools with the FTS index.
-func StartBuiltInToolsFTSRebuild(
-	ctx context.Context,
-	lister ToolBuiltInLister,
-	engine *ftsengine.Engine,
-) {
-	if lister == nil || engine == nil {
-		return
-	}
-	go func() {
-		defer func() {
-			if rec := recover(); rec != nil {
-				slog.Error("builtin-tools-fts panic",
-					"err", rec, "stack", string(debug.Stack()))
-			}
-		}()
-		if err := syncBuiltInsToFTS(ctx, lister, engine); err != nil {
-			slog.Error("builtin-tools-fts initial sync failed", "err", err)
-		}
-	}()
-}
-
-// ReindexOneBuiltInTool updates exactly one built-in tool.
-func ReindexOneBuiltInTool(
-	ctx context.Context,
-	bundleID bundleitemutils.BundleID,
-	bundleSlug bundleitemutils.BundleSlug,
-	tool spec.ToolSpec,
-	engine *ftsengine.Engine,
-) error {
-	if engine == nil {
-		return spec.ErrInvalidRequest
-	}
-	docID, vals, ok := buildDoc(bundleID, bundleSlug, tool)
-	if !ok {
-		return fmt.Errorf(
-			"builtin-tools-fts cannot create doc for bundleID %q, bundleSlug %q, toolID %q",
-			bundleID, bundleSlug, tool.ID,
-		)
-	}
-	if err := engine.Upsert(ctx, docID, vals); err != nil {
-		return fmt.Errorf("builtin-tools-fts upsert(one) failed for %s: %w", docID, err)
-	}
-	return nil
 }

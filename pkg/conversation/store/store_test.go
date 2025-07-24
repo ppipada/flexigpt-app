@@ -11,40 +11,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
 )
 
-func getNewPutRequestFromConversation(c *spec.Conversation) *spec.PutConversationRequest {
-	return &spec.PutConversationRequest{
-		ID: c.ID,
-		Body: &spec.PutConversationRequestBody{
-			Title:      c.Title,
-			CreatedAt:  c.CreatedAt,
-			ModifiedAt: c.ModifiedAt,
-			Messages:   c.Messages,
-		},
-	}
-}
-
-func initConversation(title string) (*spec.Conversation, error) {
-	if title == "" {
-		title = "New Conversation"
-	}
-	if len(title) > 64 {
-		title = title[:64]
-	}
-
-	c := spec.Conversation{}
-	u, err := uuidv7filename.NewUUID()
-	if err != nil {
-		return nil, err
-	}
-	c.ID = u
-	c.Title = title
-	c.CreatedAt = time.Now()
-	c.ModifiedAt = time.Now()
-	c.Messages = []spec.ConversationMessage{}
-
-	return &c, nil
-}
-
 func TestInitConversation(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -575,4 +541,38 @@ func TestConversationCollectionListing(t *testing.T) {
 			}
 		}
 	})
+}
+
+func getNewPutRequestFromConversation(c *spec.Conversation) *spec.PutConversationRequest {
+	return &spec.PutConversationRequest{
+		ID: c.ID,
+		Body: &spec.PutConversationRequestBody{
+			Title:      c.Title,
+			CreatedAt:  c.CreatedAt,
+			ModifiedAt: c.ModifiedAt,
+			Messages:   c.Messages,
+		},
+	}
+}
+
+func initConversation(title string) (*spec.Conversation, error) {
+	if title == "" {
+		title = "New Conversation"
+	}
+	if len(title) > 64 {
+		title = title[:64]
+	}
+
+	c := spec.Conversation{}
+	u, err := uuidv7filename.NewUUID()
+	if err != nil {
+		return nil, err
+	}
+	c.ID = u
+	c.Title = title
+	c.CreatedAt = time.Now()
+	c.ModifiedAt = time.Now()
+	c.Messages = []spec.ConversationMessage{}
+
+	return &c, nil
 }

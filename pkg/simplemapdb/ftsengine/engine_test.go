@@ -12,61 +12,6 @@ import (
 	"time"
 )
 
-// newTestEngine returns an engine with the two canonical columns "title" and "body".
-func newTestEngine(t *testing.T) *Engine {
-	t.Helper()
-	tmp := t.TempDir()
-	e, err := NewEngine(Config{
-		BaseDir:    tmp,
-		DBFileName: "fts.sqlite",
-		Table:      "docs",
-		Columns: []Column{
-			{Name: "title", Weight: 1},
-			{Name: "body", Weight: 5},
-		},
-	})
-	if err != nil {
-		t.Fatalf("engine init: %v", err)
-	}
-	return e
-}
-
-// newBatchTestEngine returns an engine with three columns, useful for batch tests.
-func newBatchTestEngine(t *testing.T) *Engine {
-	t.Helper()
-	tmp := t.TempDir()
-	e, err := NewEngine(Config{
-		BaseDir:    tmp,
-		DBFileName: "fts.sqlite",
-		Table:      "docs",
-		Columns: []Column{
-			{Name: "title", Weight: 1},
-			{Name: "body", Weight: 2},
-			{Name: "tag", Weight: 1},
-		},
-	})
-	if err != nil {
-		t.Fatalf("engine init: %v", err)
-	}
-	return e
-}
-
-// newMemoryEngine builds an in-memory database (MemoryDBBaseDir).
-func newMemoryEngine(t *testing.T) *Engine {
-	t.Helper()
-	e, err := NewEngine(Config{
-		BaseDir: MemoryDBBaseDir,
-		Table:   "memdocs",
-		Columns: []Column{
-			{Name: "c"},
-		},
-	})
-	if err != nil {
-		t.Fatalf("mem engine init: %v", err)
-	}
-	return e
-}
-
 func TestValidateConfigAndConstructor(t *testing.T) {
 	t.Run("happy in-memory engine", func(t *testing.T) {
 		_ = newMemoryEngine(t) // Should not panic.
@@ -1086,15 +1031,6 @@ func TestVeryLongIDsAndValues(t *testing.T) {
 	}
 }
 
-// Helper to insert docs for deletion tests.
-func insertDocs(t *testing.T, e *Engine, ids []string) {
-	for _, id := range ids {
-		if err := e.Upsert(t.Context(), id, map[string]string{"title": id, "body": "test"}); err != nil {
-			t.Fatalf("insert %q: %v", id, err)
-		}
-	}
-}
-
 func TestBatchDelete(t *testing.T) {
 	type testCase struct {
 		name         string
@@ -1306,4 +1242,68 @@ func TestBatchDelete_SQLiteSpecialChars(t *testing.T) {
 	if len(rows) != 1 || rows[0].ID != "normal" {
 		t.Fatalf("expected only 'normal' to remain, got %+v", rows)
 	}
+}
+
+// Helper to insert docs for deletion tests.
+func insertDocs(t *testing.T, e *Engine, ids []string) {
+	for _, id := range ids {
+		if err := e.Upsert(t.Context(), id, map[string]string{"title": id, "body": "test"}); err != nil {
+			t.Fatalf("insert %q: %v", id, err)
+		}
+	}
+}
+
+// newBatchTestEngine returns an engine with three columns, useful for batch tests.
+func newBatchTestEngine(t *testing.T) *Engine {
+	t.Helper()
+	tmp := t.TempDir()
+	e, err := NewEngine(Config{
+		BaseDir:    tmp,
+		DBFileName: "fts.sqlite",
+		Table:      "docs",
+		Columns: []Column{
+			{Name: "title", Weight: 1},
+			{Name: "body", Weight: 2},
+			{Name: "tag", Weight: 1},
+		},
+	})
+	if err != nil {
+		t.Fatalf("engine init: %v", err)
+	}
+	return e
+}
+
+// newTestEngine returns an engine with the two canonical columns "title" and "body".
+func newTestEngine(t *testing.T) *Engine {
+	t.Helper()
+	tmp := t.TempDir()
+	e, err := NewEngine(Config{
+		BaseDir:    tmp,
+		DBFileName: "fts.sqlite",
+		Table:      "docs",
+		Columns: []Column{
+			{Name: "title", Weight: 1},
+			{Name: "body", Weight: 5},
+		},
+	})
+	if err != nil {
+		t.Fatalf("engine init: %v", err)
+	}
+	return e
+}
+
+// newMemoryEngine builds an in-memory database (MemoryDBBaseDir).
+func newMemoryEngine(t *testing.T) *Engine {
+	t.Helper()
+	e, err := NewEngine(Config{
+		BaseDir: MemoryDBBaseDir,
+		Table:   "memdocs",
+		Columns: []Column{
+			{Name: "c"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("mem engine init: %v", err)
+	}
+	return e
 }

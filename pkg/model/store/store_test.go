@@ -11,27 +11,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/model/store"
 )
 
-func initTestFile(filePath string) error {
-	if _, err := os.Stat(filePath); err == nil {
-		return os.Remove(filePath)
-	} else if !os.IsNotExist(err) {
-		return err
-	}
-	return nil
-}
-
-func newTestStore(t *testing.T, filename string) *store.ModelPresetStore {
-	t.Helper()
-	if err := initTestFile(filename); err != nil {
-		t.Fatalf("Failed to init test file: %v", err)
-	}
-	s := &store.ModelPresetStore{}
-	if err := store.InitModelPresetStore(s, filename); err != nil {
-		t.Fatalf("InitModelPresetStore failed: %v", err)
-	}
-	return s
-}
-
 func TestModelPresetStore_GetAllModelPresets(t *testing.T) {
 	filename := "test_modelpresets_getall.json"
 	defer os.Remove(filename)
@@ -912,6 +891,27 @@ func TestModelPresetStore_SetDefaultModelPreset(t *testing.T) {
 			}
 		})
 	}
+}
+
+func newTestStore(t *testing.T, filename string) *store.ModelPresetStore {
+	t.Helper()
+	if err := initTestFile(filename); err != nil {
+		t.Fatalf("Failed to init test file: %v", err)
+	}
+	s := &store.ModelPresetStore{}
+	if err := store.InitModelPresetStore(s, filename); err != nil {
+		t.Fatalf("InitModelPresetStore failed: %v", err)
+	}
+	return s
+}
+
+func initTestFile(filePath string) error {
+	if _, err := os.Stat(filePath); err == nil {
+		return os.Remove(filePath)
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	return nil
 }
 
 func boolPtr(b bool) *bool { return &b }

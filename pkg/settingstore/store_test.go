@@ -8,17 +8,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/model/spec"
 )
 
-// initTestFile removes any existing file with the given path,
-// guaranteeing a clean file for each test run.
-func initTestFile(filePath string) error {
-	if _, err := os.Stat(filePath); err == nil {
-		return os.Remove(filePath)
-	} else if !os.IsNotExist(err) {
-		return err
-	}
-	return nil
-}
-
 // TestSettingStore_GetAllSettings exercises the GetAllSettings method.
 func TestSettingStore_GetAllSettings(t *testing.T) {
 	filename := "test_settings.json"
@@ -602,4 +591,15 @@ func TestSettingStore_SetAISettingAttrs(t *testing.T) {
 			}
 		})
 	}
+}
+
+// initTestFile removes any existing file with the given path,
+// guaranteeing a clean file for each test run.
+func initTestFile(filePath string) error {
+	if _, err := os.Stat(filePath); err == nil {
+		return os.Remove(filePath)
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	return nil
 }

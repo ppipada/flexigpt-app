@@ -10,6 +10,28 @@ import (
 	"testing"
 )
 
+func BenchmarkWriter(b *testing.B) {
+	tests := []struct {
+		name        string
+		messages    int
+		messageSize int
+		writers     int
+	}{
+		{"1000Messages_100BytesPerMessage_1Writer", 1000, 100, 1},
+		{"1000Messages_100BytesPerMessage_2Writers", 1000, 100, 2},
+		{"1000Messages_100BytesPerMessage_4Writers", 1000, 100, 4},
+		{"100000Messages_100BytesPerMessage_1Writer", 100000, 100, 1},
+		{"100000Messages_100BytesPerMessage_2Writers", 100000, 100, 2},
+		{"100000Messages_100BytesPerMessage_4Writers", 100000, 100, 4},
+	}
+
+	for _, tt := range tests {
+		b.Run(tt.name, func(b *testing.B) {
+			benchmarkWriter(b, tt.messages, tt.messageSize, tt.writers)
+		})
+	}
+}
+
 func benchmarkWriter(b *testing.B, messages, messageSize, writers int) {
 	slogOpts := &slog.HandlerOptions{
 		Level: slog.LevelDebug,
@@ -54,27 +76,5 @@ func benchmarkWriter(b *testing.B, messages, messageSize, writers int) {
 		if err := w.Close(); err != nil {
 			b.Fatalf("failed to close writer: %v", err)
 		}
-	}
-}
-
-func BenchmarkWriter(b *testing.B) {
-	tests := []struct {
-		name        string
-		messages    int
-		messageSize int
-		writers     int
-	}{
-		{"1000Messages_100BytesPerMessage_1Writer", 1000, 100, 1},
-		{"1000Messages_100BytesPerMessage_2Writers", 1000, 100, 2},
-		{"1000Messages_100BytesPerMessage_4Writers", 1000, 100, 4},
-		{"100000Messages_100BytesPerMessage_1Writer", 100000, 100, 1},
-		{"100000Messages_100BytesPerMessage_2Writers", 100000, 100, 2},
-		{"100000Messages_100BytesPerMessage_4Writers", 100000, 100, 4},
-	}
-
-	for _, tt := range tests {
-		b.Run(tt.name, func(b *testing.B) {
-			benchmarkWriter(b, tt.messages, tt.messageSize, tt.writers)
-		})
 	}
 }

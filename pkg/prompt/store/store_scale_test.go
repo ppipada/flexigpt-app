@@ -23,66 +23,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 )
 
-func drainErrors(t *testing.T, ch <-chan error) {
-	t.Helper()
-	for err := range ch {
-		if err != nil {
-			t.Errorf("scale-test error: %v", err)
-		}
-	}
-}
-
-// collectTemplates pages through ListPromptTemplates until NextPageToken=="".
-func collectTemplates(
-	ctx context.Context,
-	s *PromptTemplateStore,
-	baseReq spec.ListPromptTemplatesRequest,
-	pageHint int,
-) ([]spec.PromptTemplateListItem, error) {
-	var (
-		out   []spec.PromptTemplateListItem
-		token string
-	)
-
-	for {
-		req := baseReq // copy
-		req.RecommendedPageSize = pageHint
-		req.PageToken = token
-
-		resp, err := s.ListPromptTemplates(ctx, &req)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, resp.Body.PromptTemplateListItems...)
-
-		if resp.Body.NextPageToken == nil || *resp.Body.NextPageToken == "" {
-			break
-		}
-		token = *resp.Body.NextPageToken
-	}
-	return out, nil
-}
-
-func uniqCntSlug(list []spec.PromptTemplateListItem) int {
-	m := make(map[string]struct{}, len(list))
-	for _, it := range list {
-		k := string(it.BundleID) + "|" + string(it.TemplateSlug)
-		m[k] = struct{}{}
-	}
-	return len(m)
-}
-
-func uniqCntVersion(list []spec.PromptTemplateListItem) int {
-	m := make(map[string]struct{}, len(list))
-	for _, it := range list {
-		k := string(it.BundleID) + "|" + string(it.TemplateSlug) + "|" + string(it.TemplateVersion)
-		m[k] = struct{}{}
-	}
-	return len(m)
-}
-
-//  Lots of bundles.
-
 func TestScale_LotsOfBundles(t *testing.T) {
 	const (
 		nBundles      = 300
@@ -366,4 +306,62 @@ func TestScale_LotsOfTemplates(t *testing.T) {
 
 	close(errCh)
 	drainErrors(t, errCh)
+}
+
+// collectTemplates pages through ListPromptTemplates until NextPageToken=="".
+func collectTemplates(
+	ctx context.Context,
+	s *PromptTemplateStore,
+	baseReq spec.ListPromptTemplatesRequest,
+	pageHint int,
+) ([]spec.PromptTemplateListItem, error) {
+	var (
+		out   []spec.PromptTemplateListItem
+		token string
+	)
+
+	for {
+		req := baseReq // copy
+		req.RecommendedPageSize = pageHint
+		req.PageToken = token
+
+		resp, err := s.ListPromptTemplates(ctx, &req)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, resp.Body.PromptTemplateListItems...)
+
+		if resp.Body.NextPageToken == nil || *resp.Body.NextPageToken == "" {
+			break
+		}
+		token = *resp.Body.NextPageToken
+	}
+	return out, nil
+}
+
+func uniqCntSlug(list []spec.PromptTemplateListItem) int {
+	m := make(map[string]struct{}, len(list))
+	for _, it := range list {
+		k := string(it.BundleID) + "|" + string(it.TemplateSlug)
+		m[k] = struct{}{}
+	}
+	return len(m)
+}
+
+func uniqCntVersion(list []spec.PromptTemplateListItem) int {
+	m := make(map[string]struct{}, len(list))
+	for _, it := range list {
+		k := string(it.BundleID) + "|" + string(it.TemplateSlug) + "|" + string(it.TemplateVersion)
+		m[k] = struct{}{}
+	}
+	return len(m)
+}
+
+func drainErrors(t *testing.T, ch <-chan error) {
+	t.Helper()
+	for err := range ch {
+		if err != nil {
+			t.Errorf("scale-test error: %v", err)
+		}
+	}
 }

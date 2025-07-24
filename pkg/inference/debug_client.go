@@ -25,6 +25,60 @@ type DebugHTTPResponse struct {
 	ErrorDetails    *APIErrorDetails
 }
 
+type loggingReadCloser struct {
+	io.ReadCloser
+
+	buf       *bytes.Buffer
+	debugResp *DebugHTTPResponse
+	logMode   bool
+}
+
+func (lc *loggingReadCloser) Read(p []byte) (int, error) {
+	n, err := lc.ReadCloser.Read(p)
+	if n > 0 {
+		lc.buf.Write(p[:n])
+	}
+	return n, err
+}
+
+func (lc *loggingReadCloser) Close() error {
+	err := lc.ReadCloser.Close()
+	if err != nil {
+		return err
+	}
+	dataBytes := lc.buf.Bytes()
+
+	// Process the data based on its type.
+	var data any
+	err = json.Unmarshal(dataBytes, &data)
+	if err != nil {
+		// Text data.
+		lc.debugResp.ResponseDetails.Data = string(dataBytes)
+	} else {
+		mapData, ok := data.(map[string]any)
+		if ok {
+			// JSON data.
+			lc.debugResp.ResponseDetails.Data = filterSensitiveInfo(mapData)
+		} else {
+			// Text data.
+			lc.debugResp.ResponseDetails.Data = string(dataBytes)
+		}
+	}
+
+	if lc.logMode {
+		slog.Debug("Response", "Body", string(dataBytes)+"\n")
+	}
+
+	return err
+}
+
+// LogTransport is a custom http.RoundTripper that logs requests and responses.
+type LogTransport struct {
+	Transport           http.RoundTripper
+	LogMode             bool
+	CaptureResponseData bool
+}
+
 // NewDebugHTTPClient creates a new HTTP client with logging capabilities.
 func NewDebugHTTPClient(logMode, captureResponseData bool) *http.Client {
 	return &http.Client{
@@ -34,13 +88,6 @@ func NewDebugHTTPClient(logMode, captureResponseData bool) *http.Client {
 			CaptureResponseData: captureResponseData,
 		},
 	}
-}
-
-// LogTransport is a custom http.RoundTripper that logs requests and responses.
-type LogTransport struct {
-	Transport           http.RoundTripper
-	LogMode             bool
-	CaptureResponseData bool
 }
 
 // RoundTrip executes a single HTTP transaction and logs the request and response.
@@ -174,53 +221,6 @@ func captureRequestDetails(req *http.Request) *APIRequestDetails {
 // 	}
 // }
 // Done.
-
-type loggingReadCloser struct {
-	io.ReadCloser
-
-	buf       *bytes.Buffer
-	debugResp *DebugHTTPResponse
-	logMode   bool
-}
-
-func (lc *loggingReadCloser) Read(p []byte) (int, error) {
-	n, err := lc.ReadCloser.Read(p)
-	if n > 0 {
-		lc.buf.Write(p[:n])
-	}
-	return n, err
-}
-
-func (lc *loggingReadCloser) Close() error {
-	err := lc.ReadCloser.Close()
-	if err != nil {
-		return err
-	}
-	dataBytes := lc.buf.Bytes()
-
-	// Process the data based on its type.
-	var data any
-	err = json.Unmarshal(dataBytes, &data)
-	if err != nil {
-		// Text data.
-		lc.debugResp.ResponseDetails.Data = string(dataBytes)
-	} else {
-		mapData, ok := data.(map[string]any)
-		if ok {
-			// JSON data.
-			lc.debugResp.ResponseDetails.Data = filterSensitiveInfo(mapData)
-		} else {
-			// Text data.
-			lc.debugResp.ResponseDetails.Data = string(dataBytes)
-		}
-	}
-
-	if lc.logMode {
-		slog.Debug("Response", "Body", string(dataBytes)+"\n")
-	}
-
-	return err
-}
 
 func AddDebugResponseToCtx(ctx context.Context) context.Context {
 	debugResp := &DebugHTTPResponse{}

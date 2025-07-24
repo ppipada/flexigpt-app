@@ -14,36 +14,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 )
 
-func mustTempDir(t *testing.T) string {
-	t.Helper()
-	return t.TempDir()
-}
-
-func mustRemoveAll(t *testing.T, dir string) {
-	t.Helper()
-	_ = os.RemoveAll(dir)
-}
-
-func mustWriteJSON(t *testing.T, path string, v any) {
-	t.Helper()
-	b, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		t.Fatalf("marshal: %v", err)
-	}
-	if err := os.WriteFile(path, b, 0o600); err != nil {
-		t.Fatalf("write: %v", err)
-	}
-}
-
-func mustReadFile(t *testing.T, path string) []byte {
-	t.Helper()
-	b, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read: %v", err)
-	}
-	return b
-}
-
 func TestFTSListener_Integration(t *testing.T) {
 	tmp := mustTempDir(t)
 	defer mustRemoveAll(t, tmp)
@@ -284,6 +254,36 @@ func TestProcessFTSSync_BadJSON(t *testing.T) {
 	if dec.Skip != true {
 		t.Errorf("expected skip for bad json")
 	}
+}
+
+func mustTempDir(t *testing.T) string {
+	t.Helper()
+	return t.TempDir()
+}
+
+func mustRemoveAll(t *testing.T, dir string) {
+	t.Helper()
+	_ = os.RemoveAll(dir)
+}
+
+func mustWriteJSON(t *testing.T, path string, v any) {
+	t.Helper()
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if err := os.WriteFile(path, b, 0o600); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+}
+
+func mustReadFile(t *testing.T, path string) []byte {
+	t.Helper()
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	return b
 }
 
 func bundleDirName(id, slug string) string {

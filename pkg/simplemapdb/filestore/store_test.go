@@ -12,36 +12,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 )
 
-// deepEqual is a simple helper function to compare two any values for equality.
-func deepEqual(a, b any) bool {
-	switch aVal := a.(type) {
-	case map[string]any:
-		bVal, ok := b.(map[string]any)
-		if !ok || len(aVal) != len(bVal) {
-			return false
-		}
-		for k, v := range aVal {
-			if !deepEqual(v, bVal[k]) {
-				return false
-			}
-		}
-		return true
-	case []any:
-		bVal, ok := b.([]any)
-		if !ok || len(aVal) != len(bVal) {
-			return false
-		}
-		for i := range aVal {
-			if !deepEqual(aVal[i], bVal[i]) {
-				return false
-			}
-		}
-		return true
-	default:
-		return a == b
-	}
-}
-
 func TestNewMapFileStore(t *testing.T) {
 	tempDir := t.TempDir()
 	type testType struct {
@@ -882,34 +852,6 @@ func TestMapFileStore_SetAll_KeyEncDec(t *testing.T) {
 	}
 }
 
-// getValueAtPath is a helper to retrieve the value from a map at the given nested path.
-// This is only used in our test expansions for quick checking inside the table-driven tests.
-func getValueAtPath(m map[string]any, path []string) any {
-	current := any(m)
-	for _, p := range path {
-		subMap, ok := current.(map[string]any)
-		if !ok {
-			return nil
-		}
-		current = subMap[p]
-	}
-	return current
-}
-
-func noTime(e Event) Event { e.Timestamp = time.Time{}; return e }
-
-func openStore(p string, opts ...Option) *MapFileStore {
-	s, err := NewMapFileStore(
-		p,
-		map[string]any{},
-		append(opts, WithCreateIfNotExists(true))...,
-	)
-	if err != nil {
-		panic(err)
-	}
-	return s
-}
-
 // Order & fan-out: multiple listeners receive identical sequence.
 func TestEvents_MultipleListeners_IdenticalOrder(t *testing.T) {
 	tmp := t.TempDir()
@@ -1084,5 +1026,63 @@ func TestEvents_PanicListener_DoesNotBreakNextListeners(t *testing.T) {
 	}
 	if !called {
 		t.Fatalf("good listener was not invoked after panic in bad listener")
+	}
+}
+
+func openStore(p string, opts ...Option) *MapFileStore {
+	s, err := NewMapFileStore(
+		p,
+		map[string]any{},
+		append(opts, WithCreateIfNotExists(true))...,
+	)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
+// getValueAtPath is a helper to retrieve the value from a map at the given nested path.
+// This is only used in our test expansions for quick checking inside the table-driven tests.
+func getValueAtPath(m map[string]any, path []string) any {
+	current := any(m)
+	for _, p := range path {
+		subMap, ok := current.(map[string]any)
+		if !ok {
+			return nil
+		}
+		current = subMap[p]
+	}
+	return current
+}
+
+func noTime(e Event) Event { e.Timestamp = time.Time{}; return e }
+
+// deepEqual is a simple helper function to compare two any values for equality.
+func deepEqual(a, b any) bool {
+	switch aVal := a.(type) {
+	case map[string]any:
+		bVal, ok := b.(map[string]any)
+		if !ok || len(aVal) != len(bVal) {
+			return false
+		}
+		for k, v := range aVal {
+			if !deepEqual(v, bVal[k]) {
+				return false
+			}
+		}
+		return true
+	case []any:
+		bVal, ok := b.([]any)
+		if !ok || len(aVal) != len(bVal) {
+			return false
+		}
+		for i := range aVal {
+			if !deepEqual(aVal[i], bVal[i]) {
+				return false
+			}
+		}
+		return true
+	default:
+		return a == b
 	}
 }

@@ -14,85 +14,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 )
 
-func mustTempBuiltInDir(t *testing.T) string { t.Helper(); return t.TempDir() }
-
-func newEngine(t *testing.T, dir string) *ftsengine.Engine {
-	t.Helper()
-	e, err := ftsengine.NewEngine(ftsengine.Config{
-		BaseDir:    dir,
-		DBFileName: "fts.db",
-		Table:      sqliteDBTableName,
-		Columns: []ftsengine.Column{
-			{Name: "slug", Weight: 1},
-			{Name: "displayName", Weight: 1},
-			{Name: "desc", Weight: 1},
-			{Name: "messages", Weight: 1},
-			{Name: "tags", Weight: 1},
-			{Name: "enabled", Unindexed: true},
-			{Name: "bundleID", Unindexed: true},
-			{Name: "mtime", Unindexed: true},
-		},
-	})
-	if err != nil {
-		t.Fatalf("ftsengine.NewEngine: %v", err)
-	}
-	return e
-}
-
-func makeBundle(
-	id int,
-	enabled bool,
-) (bundleitemutils.BundleID, bundleitemutils.BundleSlug, spec.PromptBundle) {
-	bid := bundleitemutils.BundleID("bundle-" + strconv.Itoa(id))
-	bslug := bundleitemutils.BundleSlug("bundleslug-" + strconv.Itoa(id))
-	return bid, bslug, spec.PromptBundle{
-		ID:        bid,
-		Slug:      bslug,
-		IsEnabled: enabled,
-	}
-}
-
-func makeTemplate(idx int, enabled bool) spec.PromptTemplate {
-	return spec.PromptTemplate{
-		ID:          bundleitemutils.ItemID("tpl-" + strconv.Itoa(idx)),
-		DisplayName: "Template " + strconv.Itoa(idx),
-		Slug:        bundleitemutils.ItemSlug("slug-" + strconv.Itoa(idx)),
-		Description: "desc",
-		Version:     bundleitemutils.ItemVersion("v1"),
-		IsEnabled:   enabled,
-		CreatedAt:   time.Now().UTC(),
-		ModifiedAt:  time.Now().UTC(),
-		Blocks: []spec.MessageBlock{
-			{Role: spec.User, Content: "HelloMsg" + strconv.Itoa(idx)},
-		},
-		Tags: []string{"tag" + strconv.Itoa(idx)},
-	}
-}
-
-// listAllRows fetches every row that exists in the index.
-// Only the compare column is requested because that is what the production sync cares about.
-func listAllRows(t *testing.T, e *ftsengine.Engine) map[string]string {
-	t.Helper()
-	ctx := t.Context()
-
-	res := map[string]string{}
-	token := ""
-	for {
-		part, next, err := e.BatchList(ctx, compareColumn, []string{compareColumn}, token, 200)
-		if err != nil {
-			t.Fatalf("BatchList: %v", err)
-		}
-		for _, r := range part {
-			res[r.ID] = r.Values[compareColumn]
-		}
-		if next == "" {
-			break
-		}
-		token = next
-	}
-	return res
-}
-
 func TestBuildDoc_HappyAndErrors(t *testing.T) {
 	bid, bslug, _ := makeBundle(1, true)
 	tpl := makeTemplate(0, true)
@@ -380,3 +301,82 @@ func TestBuildDoc_JSONRoundTrip(t *testing.T) {
 		t.Fatalf("values not json-marshable: %v", err)
 	}
 }
+
+func newEngine(t *testing.T, dir string) *ftsengine.Engine {
+	t.Helper()
+	e, err := ftsengine.NewEngine(ftsengine.Config{
+		BaseDir:    dir,
+		DBFileName: "fts.db",
+		Table:      sqliteDBTableName,
+		Columns: []ftsengine.Column{
+			{Name: "slug", Weight: 1},
+			{Name: "displayName", Weight: 1},
+			{Name: "desc", Weight: 1},
+			{Name: "messages", Weight: 1},
+			{Name: "tags", Weight: 1},
+			{Name: "enabled", Unindexed: true},
+			{Name: "bundleID", Unindexed: true},
+			{Name: "mtime", Unindexed: true},
+		},
+	})
+	if err != nil {
+		t.Fatalf("ftsengine.NewEngine: %v", err)
+	}
+	return e
+}
+
+// listAllRows fetches every row that exists in the index.
+// Only the compare column is requested because that is what the production sync cares about.
+func listAllRows(t *testing.T, e *ftsengine.Engine) map[string]string {
+	t.Helper()
+	ctx := t.Context()
+
+	res := map[string]string{}
+	token := ""
+	for {
+		part, next, err := e.BatchList(ctx, compareColumn, []string{compareColumn}, token, 200)
+		if err != nil {
+			t.Fatalf("BatchList: %v", err)
+		}
+		for _, r := range part {
+			res[r.ID] = r.Values[compareColumn]
+		}
+		if next == "" {
+			break
+		}
+		token = next
+	}
+	return res
+}
+
+func makeTemplate(idx int, enabled bool) spec.PromptTemplate {
+	return spec.PromptTemplate{
+		ID:          bundleitemutils.ItemID("tpl-" + strconv.Itoa(idx)),
+		DisplayName: "Template " + strconv.Itoa(idx),
+		Slug:        bundleitemutils.ItemSlug("slug-" + strconv.Itoa(idx)),
+		Description: "desc",
+		Version:     bundleitemutils.ItemVersion("v1"),
+		IsEnabled:   enabled,
+		CreatedAt:   time.Now().UTC(),
+		ModifiedAt:  time.Now().UTC(),
+		Blocks: []spec.MessageBlock{
+			{Role: spec.User, Content: "HelloMsg" + strconv.Itoa(idx)},
+		},
+		Tags: []string{"tag" + strconv.Itoa(idx)},
+	}
+}
+
+func makeBundle(
+	id int,
+	enabled bool,
+) (bundleitemutils.BundleID, bundleitemutils.BundleSlug, spec.PromptBundle) {
+	bid := bundleitemutils.BundleID("bundle-" + strconv.Itoa(id))
+	bslug := bundleitemutils.BundleSlug("bundleslug-" + strconv.Itoa(id))
+	return bid, bslug, spec.PromptBundle{
+		ID:        bid,
+		Slug:      bslug,
+		IsEnabled: enabled,
+	}
+}
+
+func mustTempBuiltInDir(t *testing.T) string { t.Helper(); return t.TempDir() }

@@ -14,15 +14,6 @@ import (
 	"time"
 )
 
-func setup(t *testing.T) (dir string, cleanup func()) {
-	tdir := t.TempDir()
-
-	cleanup = func() {
-	}
-
-	return tdir, cleanup
-}
-
 func TestCreateTargetDirectory(t *testing.T) {
 	slogOpts := &slog.HandlerOptions{
 		Level: slog.LevelDebug,
@@ -288,4 +279,13 @@ func TestFlushAfterEveryWrite(t *testing.T) {
 	if err := w.Close(); err != nil {
 		t.Fatalf("failed to close writer: %v", err)
 	}
+}
+
+func setup(t *testing.T) (dir string, cleanup func()) {
+	tdir := t.TempDir()
+
+	cleanup = func() {
+	}
+
+	return tdir, cleanup
 }

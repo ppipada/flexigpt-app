@@ -13,84 +13,6 @@ import (
 	"time"
 )
 
-// Helper: create a temp dir, cleanup after test.
-func withTempDir(t *testing.T, fn func(dir string)) {
-	t.Helper()
-	dir := t.TempDir()
-	defer os.RemoveAll(dir)
-	fn(dir)
-}
-
-// Helper: write a JSON file.
-func writeJSONFile(t *testing.T, path string, m map[string]any) {
-	t.Helper()
-	b, err := json.MarshalIndent(m, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(path, b, 0o600); err != nil {
-		t.Fatal(err)
-	}
-}
-
-// Helper: touch file to update mtime.
-func touchFile(t *testing.T, path string) {
-	t.Helper()
-	now := time.Now().Add(time.Duration(1) * time.Second)
-	if err := os.Chtimes(path, now, now); err != nil {
-		t.Fatal(err)
-	}
-}
-
-// Helper: minimal FTS config.
-func minimalConfig(baseDir, dbFile string, cols ...Column) Config {
-	return Config{
-		BaseDir:    baseDir,
-		DBFileName: dbFile,
-		Table:      "docs",
-		Columns:    cols,
-	}
-}
-
-// Helper: processFile for test (like your consumer).
-func testProcessFile(
-	ctx context.Context,
-	baseDir, fullPath string,
-	getPrevCmp GetPrevCmp,
-) (SyncDecision, error) {
-	slog.Info("Processing", "file", fullPath)
-	if !strings.HasSuffix(fullPath, ".json") {
-		return SyncDecision{Skip: true}, nil
-	}
-	st, err := os.Stat(fullPath)
-	if err != nil {
-		return SyncDecision{Skip: true}, err
-	}
-	mtime := st.ModTime().UTC().Format(time.RFC3339Nano)
-	prev := getPrevCmp(fullPath)
-	if prev == mtime {
-		return SyncDecision{ID: fullPath, Unchanged: true}, nil
-	}
-	syncDecision := SyncDecision{Skip: true}
-	raw, err := os.ReadFile(fullPath)
-	if err == nil {
-		var m map[string]any
-		if err := json.Unmarshal(raw, &m); err == nil {
-			vals := map[string]string{"title": ""}
-			if v, ok := m["title"].(string); ok {
-				vals["title"] = v
-			}
-			vals["mtime"] = mtime
-			syncDecision = SyncDecision{
-				ID:     fullPath,
-				CmpOut: mtime,
-				Vals:   vals,
-			}
-		}
-	}
-	return syncDecision, nil
-}
-
 func TestSyncDirToFTS_TableDriven(t *testing.T) {
 	withTempDir(t, func(tmpDir string) {
 		dbFile := "fts.db"
@@ -462,4 +384,82 @@ func TestFTSEngine_Search(t *testing.T) {
 			t.Errorf("unexpected next token: %q", next)
 		}
 	})
+}
+
+// Helper: processFile for test (like your consumer).
+func testProcessFile(
+	ctx context.Context,
+	baseDir, fullPath string,
+	getPrevCmp GetPrevCmp,
+) (SyncDecision, error) {
+	slog.Info("Processing", "file", fullPath)
+	if !strings.HasSuffix(fullPath, ".json") {
+		return SyncDecision{Skip: true}, nil
+	}
+	st, err := os.Stat(fullPath)
+	if err != nil {
+		return SyncDecision{Skip: true}, err
+	}
+	mtime := st.ModTime().UTC().Format(time.RFC3339Nano)
+	prev := getPrevCmp(fullPath)
+	if prev == mtime {
+		return SyncDecision{ID: fullPath, Unchanged: true}, nil
+	}
+	syncDecision := SyncDecision{Skip: true}
+	raw, err := os.ReadFile(fullPath)
+	if err == nil {
+		var m map[string]any
+		if err := json.Unmarshal(raw, &m); err == nil {
+			vals := map[string]string{"title": ""}
+			if v, ok := m["title"].(string); ok {
+				vals["title"] = v
+			}
+			vals["mtime"] = mtime
+			syncDecision = SyncDecision{
+				ID:     fullPath,
+				CmpOut: mtime,
+				Vals:   vals,
+			}
+		}
+	}
+	return syncDecision, nil
+}
+
+// Helper: minimal FTS config.
+func minimalConfig(baseDir, dbFile string, cols ...Column) Config {
+	return Config{
+		BaseDir:    baseDir,
+		DBFileName: dbFile,
+		Table:      "docs",
+		Columns:    cols,
+	}
+}
+
+// Helper: create a temp dir, cleanup after test.
+func withTempDir(t *testing.T, fn func(dir string)) {
+	t.Helper()
+	dir := t.TempDir()
+	defer os.RemoveAll(dir)
+	fn(dir)
+}
+
+// Helper: write a JSON file.
+func writeJSONFile(t *testing.T, path string, m map[string]any) {
+	t.Helper()
+	b, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, b, 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Helper: touch file to update mtime.
+func touchFile(t *testing.T, path string) {
+	t.Helper()
+	now := time.Now().Add(time.Duration(1) * time.Second)
+	if err := os.Chtimes(path, now, now); err != nil {
+		t.Fatal(err)
+	}
 }

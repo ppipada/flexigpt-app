@@ -11,32 +11,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/conversation/spec"
 )
 
-func newCollection(t *testing.T, dir string, withFTS bool) *ConversationCollection {
-	t.Helper()
-	cc, err := NewConversationCollection(
-		dir,
-		WithFTS(withFTS),
-	)
-	if err != nil {
-		t.Fatalf("NewConversationCollection: %v", err)
-	}
-	return cc
-}
-
-func newConv(t *testing.T, title string) *spec.Conversation {
-	t.Helper()
-	id, _ := uuid.NewV7()
-	sec, nsec := id.Time().UnixTime()
-	createdAt := time.Unix(sec, nsec).UTC()
-	return &spec.Conversation{
-		ID:         id.String(),
-		Title:      title,
-		CreatedAt:  createdAt,
-		ModifiedAt: createdAt,
-		Messages:   []spec.ConversationMessage{},
-	}
-}
-
 func TestFTSSearchHappyPath(t *testing.T) {
 	dir := t.TempDir()
 	cc := newCollection(t, dir, true)
@@ -275,5 +249,31 @@ func TestFTSScaleSearch(t *testing.T) {
 
 	if total != nConvos {
 		t.Fatalf("expected %d total hits for 'common', got %d", nConvos, total)
+	}
+}
+
+func newCollection(t *testing.T, dir string, withFTS bool) *ConversationCollection {
+	t.Helper()
+	cc, err := NewConversationCollection(
+		dir,
+		WithFTS(withFTS),
+	)
+	if err != nil {
+		t.Fatalf("NewConversationCollection: %v", err)
+	}
+	return cc
+}
+
+func newConv(t *testing.T, title string) *spec.Conversation {
+	t.Helper()
+	id, _ := uuid.NewV7()
+	sec, nsec := id.Time().UnixTime()
+	createdAt := time.Unix(sec, nsec).UTC()
+	return &spec.Conversation{
+		ID:         id.String(),
+		Title:      title,
+		CreatedAt:  createdAt,
+		ModifiedAt: createdAt,
+		Messages:   []spec.ConversationMessage{},
 	}
 }
