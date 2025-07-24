@@ -107,30 +107,6 @@ func NewMapDirectoryStore(
 	return mds, nil
 }
 
-// validateAndGetFilePath validates the FileKey and returns the absolute file path.
-func (mds *MapDirectoryStore) validateAndGetFilePath(fileKey FileKey) (string, error) {
-	if fileKey.FileName == "" {
-		return "", fmt.Errorf("invalid request for file: %s", fileKey.FileName)
-	}
-	// Check if the filename contains any directory components.
-	if strings.Contains(fileKey.FileName, string(os.PathSeparator)) {
-		return "", fmt.Errorf(
-			"filename should not contain directory components: %s",
-			fileKey.FileName,
-		)
-	}
-	partitionDir, err := mds.PartitionProvider.GetPartitionDir(fileKey)
-	if err != nil {
-		return "", fmt.Errorf(
-			"could not get partition dir for file: %s, err: %w",
-			fileKey.FileName,
-			err,
-		)
-	}
-	filePath := filepath.Join(mds.baseDir, partitionDir, fileKey.FileName)
-	return filePath, nil
-}
-
 // Open returns a cached or newly created MapFileStore for the given FileKey.
 // It is concurrency-safe and ensures only one instance per file path.
 func (mds *MapDirectoryStore) Open(
@@ -281,40 +257,6 @@ type PageTokenData struct {
 	PartitionFilterPageToken  *PartitionFilterPageToken `json:"partitionFilterPageToken,omitempty"`
 }
 
-// readPartitionFiles lists files in a partition, sorted and filtered by prefix.
-func (mds *MapDirectoryStore) readPartitionFiles(
-	partitionPath, sortOrder, filenamePrefix string,
-) ([]os.FileInfo, error) {
-	files, err := os.ReadDir(partitionPath)
-	if err != nil {
-		return nil, fmt.Errorf("partition %s: %w", partitionPath, ErrCannotReadPartition)
-	}
-
-	var fileInfos []os.FileInfo
-	for _, file := range files {
-		if !file.IsDir() {
-			name := file.Name()
-			if filenamePrefix == "" || strings.HasPrefix(name, filenamePrefix) {
-				info, err := file.Info()
-				if err != nil {
-					return nil, fmt.Errorf("cannot stat file %s: %w", name, err)
-				}
-				fileInfos = append(fileInfos, info)
-			}
-		}
-	}
-
-	// Sort by name.
-	sort.Slice(fileInfos, func(i, j int) bool {
-		if strings.EqualFold(sortOrder, SortOrderDescending) {
-			return fileInfos[i].Name() > fileInfos[j].Name()
-		}
-		return fileInfos[i].Name() < fileInfos[j].Name()
-	})
-
-	return fileInfos, nil
-}
-
 type FileEntry struct {
 	BaseRelativePath string
 	PartitionName    string
@@ -443,4 +385,62 @@ func (mds *MapDirectoryStore) ListFiles(
 	}
 
 	return fileEntries, "", nil
+}
+
+// readPartitionFiles lists files in a partition, sorted and filtered by prefix.
+func (mds *MapDirectoryStore) readPartitionFiles(
+	partitionPath, sortOrder, filenamePrefix string,
+) ([]os.FileInfo, error) {
+	files, err := os.ReadDir(partitionPath)
+	if err != nil {
+		return nil, fmt.Errorf("partition %s: %w", partitionPath, ErrCannotReadPartition)
+	}
+
+	var fileInfos []os.FileInfo
+	for _, file := range files {
+		if !file.IsDir() {
+			name := file.Name()
+			if filenamePrefix == "" || strings.HasPrefix(name, filenamePrefix) {
+				info, err := file.Info()
+				if err != nil {
+					return nil, fmt.Errorf("cannot stat file %s: %w", name, err)
+				}
+				fileInfos = append(fileInfos, info)
+			}
+		}
+	}
+
+	// Sort by name.
+	sort.Slice(fileInfos, func(i, j int) bool {
+		if strings.EqualFold(sortOrder, SortOrderDescending) {
+			return fileInfos[i].Name() > fileInfos[j].Name()
+		}
+		return fileInfos[i].Name() < fileInfos[j].Name()
+	})
+
+	return fileInfos, nil
+}
+
+// validateAndGetFilePath validates the FileKey and returns the absolute file path.
+func (mds *MapDirectoryStore) validateAndGetFilePath(fileKey FileKey) (string, error) {
+	if fileKey.FileName == "" {
+		return "", fmt.Errorf("invalid request for file: %s", fileKey.FileName)
+	}
+	// Check if the filename contains any directory components.
+	if strings.Contains(fileKey.FileName, string(os.PathSeparator)) {
+		return "", fmt.Errorf(
+			"filename should not contain directory components: %s",
+			fileKey.FileName,
+		)
+	}
+	partitionDir, err := mds.PartitionProvider.GetPartitionDir(fileKey)
+	if err != nil {
+		return "", fmt.Errorf(
+			"could not get partition dir for file: %s, err: %w",
+			fileKey.FileName,
+			err,
+		)
+	}
+	filePath := filepath.Join(mds.baseDir, partitionDir, fileKey.FileName)
+	return filePath, nil
 }

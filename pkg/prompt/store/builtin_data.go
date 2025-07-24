@@ -111,6 +111,102 @@ func NewBuiltInData(
 	return data, nil
 }
 
+// ListBuiltInData returns a deep copy of the cached snapshot.
+func (d *BuiltInData) ListBuiltInData() (
+	bundles map[bundleitemutils.BundleID]spec.PromptBundle,
+	templates map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
+	err error,
+) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	bundles = maps.Clone(d.viewBundles)
+	templates = cloneTemplates(d.viewTemplates)
+	return bundles, templates, nil
+}
+
+// SetBundleEnabled toggles a bundle flag.
+func (d *BuiltInData) SetBundleEnabled(
+	id bundleitemutils.BundleID,
+	enabled bool,
+) (bundle spec.PromptBundle, err error) {
+	if _, ok := d.bundles[id]; !ok {
+		return spec.PromptBundle{}, fmt.Errorf(
+			"bundleID: %q, err: %w",
+			id,
+			spec.ErrBuiltInBundleNotFound,
+		)
+	}
+	flag, err := d.store.SetFlag(BuiltInBundleID(id), enabled)
+	if err != nil {
+		return spec.PromptBundle{}, err
+	}
+
+	d.mu.Lock()
+	b := d.viewBundles[id]
+	b.IsEnabled = enabled
+	b.ModifiedAt = flag.ModifiedAt // update timestamp from overlay
+	d.viewBundles[id] = b
+	d.mu.Unlock()
+
+	d.rebuilder.Trigger()
+	return b, nil
+}
+
+func (d *BuiltInData) GetBuiltInBundle(id bundleitemutils.BundleID) (spec.PromptBundle, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	b, ok := d.viewBundles[id]
+	if !ok {
+		return spec.PromptBundle{}, spec.ErrBundleNotFound
+	}
+	return b, nil
+}
+
+func (d *BuiltInData) GetBuiltInTemplate(
+	bundleID bundleitemutils.BundleID,
+	slug bundleitemutils.ItemSlug,
+	version bundleitemutils.ItemVersion,
+) (spec.PromptTemplate, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	templates, ok := d.viewTemplates[bundleID]
+	if !ok {
+		return spec.PromptTemplate{}, spec.ErrBundleNotFound
+	}
+	for _, tpl := range templates {
+		if tpl.Slug == slug && tpl.Version == version {
+			return tpl, nil
+		}
+	}
+	return spec.PromptTemplate{}, spec.ErrTemplateNotFound
+}
+
+// SetTemplateEnabled toggles a template flag.
+func (d *BuiltInData) SetTemplateEnabled(
+	bundleID bundleitemutils.BundleID,
+	slug bundleitemutils.ItemSlug,
+	version bundleitemutils.ItemVersion,
+	enabled bool,
+) (template spec.PromptTemplate, err error) {
+	template, err = d.GetBuiltInTemplate(bundleID, slug, version)
+	if err != nil {
+		return template, err
+	}
+	flag, err := d.store.SetFlag(BuiltInTemplateID(template.ID), enabled)
+	if err != nil {
+		return spec.PromptTemplate{}, err
+	}
+
+	d.mu.Lock()
+	template.IsEnabled = enabled
+	template.ModifiedAt = flag.ModifiedAt // update timestamp from overlay
+	d.viewTemplates[bundleID][template.ID] = template
+	d.mu.Unlock()
+
+	d.rebuilder.Trigger()
+	return template, nil
+}
+
 func (d *BuiltInData) populateDataFromFS() error {
 	bundlesFS, err := resolveBundlesFS(d.bundlesFS, d.bundlesDir)
 	if err != nil {
@@ -293,100 +389,4 @@ func cloneTemplates(
 		dst[bid] = maps.Clone(inner)
 	}
 	return dst
-}
-
-// ListBuiltInData returns a deep copy of the cached snapshot.
-func (d *BuiltInData) ListBuiltInData() (
-	bundles map[bundleitemutils.BundleID]spec.PromptBundle,
-	templates map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
-	err error,
-) {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-	bundles = maps.Clone(d.viewBundles)
-	templates = cloneTemplates(d.viewTemplates)
-	return bundles, templates, nil
-}
-
-// SetBundleEnabled toggles a bundle flag.
-func (d *BuiltInData) SetBundleEnabled(
-	id bundleitemutils.BundleID,
-	enabled bool,
-) (bundle spec.PromptBundle, err error) {
-	if _, ok := d.bundles[id]; !ok {
-		return spec.PromptBundle{}, fmt.Errorf(
-			"bundleID: %q, err: %w",
-			id,
-			spec.ErrBuiltInBundleNotFound,
-		)
-	}
-	flag, err := d.store.SetFlag(BuiltInBundleID(id), enabled)
-	if err != nil {
-		return spec.PromptBundle{}, err
-	}
-
-	d.mu.Lock()
-	b := d.viewBundles[id]
-	b.IsEnabled = enabled
-	b.ModifiedAt = flag.ModifiedAt // update timestamp from overlay
-	d.viewBundles[id] = b
-	d.mu.Unlock()
-
-	d.rebuilder.Trigger()
-	return b, nil
-}
-
-func (d *BuiltInData) GetBuiltInBundle(id bundleitemutils.BundleID) (spec.PromptBundle, error) {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-	b, ok := d.viewBundles[id]
-	if !ok {
-		return spec.PromptBundle{}, spec.ErrBundleNotFound
-	}
-	return b, nil
-}
-
-func (d *BuiltInData) GetBuiltInTemplate(
-	bundleID bundleitemutils.BundleID,
-	slug bundleitemutils.ItemSlug,
-	version bundleitemutils.ItemVersion,
-) (spec.PromptTemplate, error) {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-	templates, ok := d.viewTemplates[bundleID]
-	if !ok {
-		return spec.PromptTemplate{}, spec.ErrBundleNotFound
-	}
-	for _, tpl := range templates {
-		if tpl.Slug == slug && tpl.Version == version {
-			return tpl, nil
-		}
-	}
-	return spec.PromptTemplate{}, spec.ErrTemplateNotFound
-}
-
-// SetTemplateEnabled toggles a template flag.
-func (d *BuiltInData) SetTemplateEnabled(
-	bundleID bundleitemutils.BundleID,
-	slug bundleitemutils.ItemSlug,
-	version bundleitemutils.ItemVersion,
-	enabled bool,
-) (template spec.PromptTemplate, err error) {
-	template, err = d.GetBuiltInTemplate(bundleID, slug, version)
-	if err != nil {
-		return template, err
-	}
-	flag, err := d.store.SetFlag(BuiltInTemplateID(template.ID), enabled)
-	if err != nil {
-		return spec.PromptTemplate{}, err
-	}
-
-	d.mu.Lock()
-	template.IsEnabled = enabled
-	template.ModifiedAt = flag.ModifiedAt // update timestamp from overlay
-	d.viewTemplates[bundleID][template.ID] = template
-	d.mu.Unlock()
-
-	d.rebuilder.Trigger()
-	return template, nil
 }

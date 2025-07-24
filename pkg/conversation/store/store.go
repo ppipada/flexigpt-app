@@ -110,14 +110,6 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 	return cc, nil
 }
 
-func (cc *ConversationCollection) fileNameFromConversation(c spec.Conversation) (string, error) {
-	info, err := uuidv7filename.Build(c.ID, c.Title, conversationFileExtension)
-	if err != nil {
-		return "", err
-	}
-	return info.FileName, nil
-}
-
 func (cc *ConversationCollection) PutConversation(
 	ctx context.Context,
 	req *spec.PutConversationRequest,
@@ -341,4 +333,12 @@ func (cc *ConversationCollection) SearchConversations(
 			NextPageToken:         &next,
 		},
 	}, nil
+}
+
+func (cc *ConversationCollection) fileNameFromConversation(c spec.Conversation) (string, error) {
+	info, err := uuidv7filename.Build(c.ID, c.Title, conversationFileExtension)
+	if err != nil {
+		return "", err
+	}
+	return info.FileName, nil
 }

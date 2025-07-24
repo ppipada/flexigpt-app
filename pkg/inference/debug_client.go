@@ -164,6 +164,7 @@ func CaptureResponseDetails(
 
 type loggingReadCloser struct {
 	io.ReadCloser
+
 	buf       *bytes.Buffer
 	debugResp *DebugHTTPResponse
 	logMode   bool

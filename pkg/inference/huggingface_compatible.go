@@ -13,6 +13,7 @@ import (
 // HuggingFaceCompatibleAPI struct that implements the CompletionProvider interface.
 type HuggingFaceCompatibleAPI struct {
 	*BaseAIAPI
+
 	llm *langchainHuggingFace.LLM
 }
 

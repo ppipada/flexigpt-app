@@ -40,6 +40,7 @@ jobs:
         uses: golangci/golangci-lint-action@v7
         with:
           args: --verbose
+          version: v2.3
 
       - name: Cache modernize binary
         id: cache-modernize

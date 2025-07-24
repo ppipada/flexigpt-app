@@ -107,59 +107,6 @@ func (api *BaseAIAPI) SetProviderAttribute(
 	return nil
 }
 
-func TrimInbuiltPrompts(systemPrompt, inbuiltPrompt string) string {
-	// Split both prompts into lines.
-	inbuiltLines := strings.Split(inbuiltPrompt, "\n")
-	promptLines := strings.Split(systemPrompt, "\n")
-
-	// Remove matching lines from the start.
-	for len(inbuiltLines) > 0 && len(promptLines) > 0 && promptLines[0] == inbuiltLines[0] {
-		promptLines = promptLines[1:]
-		inbuiltLines = inbuiltLines[1:]
-	}
-	// Re-join the remaining lines.
-	return inbuiltPrompt + "\n" + strings.TrimLeft(strings.Join(promptLines, "\n"), "\n")
-}
-
-func (api *BaseAIAPI) getCompletionRequest(
-	prompt string,
-	modelParams spec.ModelParams,
-	prevMessages []ChatCompletionRequestMessage,
-) *CompletionRequest {
-	completionRequest := CompletionRequest{
-		ModelParams: spec.ModelParams{
-			Name:                        modelParams.Name,
-			Stream:                      modelParams.Stream,
-			MaxPromptLength:             modelParams.MaxPromptLength,
-			MaxOutputLength:             modelParams.MaxOutputLength,
-			Temperature:                 modelParams.Temperature,
-			Reasoning:                   modelParams.Reasoning,
-			SystemPrompt:                modelParams.SystemPrompt,
-			Timeout:                     modelParams.Timeout,
-			AdditionalParametersRawJSON: modelParams.AdditionalParametersRawJSON,
-		},
-	}
-
-	// Handle messages.
-	messages := slices.Clone(prevMessages)
-	if prompt != "" {
-		message := ChatCompletionRequestMessage{
-			Role:    "user",
-			Content: &prompt,
-		}
-		messages = append(messages, message)
-	}
-	completionRequest.Messages = messages
-
-	// Assuming filterMessagesByTokenCount is implemented elsewhere.
-	completionRequest.Messages = FilterMessagesByTokenCount(
-		completionRequest.Messages,
-		completionRequest.ModelParams.MaxPromptLength,
-	)
-
-	return &completionRequest
-}
-
 // FetchCompletion processes the completion request.
 func (api *BaseAIAPI) FetchCompletion(
 	ctx context.Context,
@@ -291,6 +238,59 @@ func (api *BaseAIAPI) FetchCompletion(
 	completionResp.RespContent = &full
 
 	return completionResp, nil
+}
+
+func (api *BaseAIAPI) getCompletionRequest(
+	prompt string,
+	modelParams spec.ModelParams,
+	prevMessages []ChatCompletionRequestMessage,
+) *CompletionRequest {
+	completionRequest := CompletionRequest{
+		ModelParams: spec.ModelParams{
+			Name:                        modelParams.Name,
+			Stream:                      modelParams.Stream,
+			MaxPromptLength:             modelParams.MaxPromptLength,
+			MaxOutputLength:             modelParams.MaxOutputLength,
+			Temperature:                 modelParams.Temperature,
+			Reasoning:                   modelParams.Reasoning,
+			SystemPrompt:                modelParams.SystemPrompt,
+			Timeout:                     modelParams.Timeout,
+			AdditionalParametersRawJSON: modelParams.AdditionalParametersRawJSON,
+		},
+	}
+
+	// Handle messages.
+	messages := slices.Clone(prevMessages)
+	if prompt != "" {
+		message := ChatCompletionRequestMessage{
+			Role:    "user",
+			Content: &prompt,
+		}
+		messages = append(messages, message)
+	}
+	completionRequest.Messages = messages
+
+	// Assuming filterMessagesByTokenCount is implemented elsewhere.
+	completionRequest.Messages = FilterMessagesByTokenCount(
+		completionRequest.Messages,
+		completionRequest.ModelParams.MaxPromptLength,
+	)
+
+	return &completionRequest
+}
+
+func TrimInbuiltPrompts(systemPrompt, inbuiltPrompt string) string {
+	// Split both prompts into lines.
+	inbuiltLines := strings.Split(inbuiltPrompt, "\n")
+	promptLines := strings.Split(systemPrompt, "\n")
+
+	// Remove matching lines from the start.
+	for len(inbuiltLines) > 0 && len(promptLines) > 0 && promptLines[0] == inbuiltLines[0] {
+		promptLines = promptLines[1:]
+		inbuiltLines = inbuiltLines[1:]
+	}
+	// Re-join the remaining lines.
+	return inbuiltPrompt + "\n" + strings.TrimLeft(strings.Join(promptLines, "\n"), "\n")
 }
 
 func getBlockQuotedReasoning(content string) string {

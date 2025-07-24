@@ -129,42 +129,6 @@ func (s *ModelPresetStore) DeleteProviderPreset(
 	return &spec.DeleteProviderPresetResponse{}, nil
 }
 
-func (s *ModelPresetStore) getProviderData(
-	providerName spec.ProviderName,
-	forceFetch bool,
-) (allData, allProviderPresets, providerPreset map[string]any, err error) {
-	// 1) GetAll with no forced fetch (or use the boolean if you sometimes need forced).
-	allData, err = s.store.GetAll(forceFetch)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to retrieve current data: %w", err)
-	}
-
-	// 2) providerPresets must be a map.
-	providerPresetsRaw, ok := allData["providerPresets"]
-	if !ok {
-		return nil, nil, nil, errors.New("providerPresets missing from store")
-	}
-	allProviderPresets, ok = providerPresetsRaw.(map[string]any)
-	if !ok {
-		return nil, nil, nil, errors.New("providerPresets is not a map[string]any")
-	}
-
-	// 3) Check if provider exists.
-	providerRaw, ok := allProviderPresets[string(providerName)]
-	if !ok {
-		return nil, nil, nil, fmt.Errorf(
-			"provider %q does not exist in providerPresets",
-			providerName,
-		)
-	}
-	providerPreset, ok = providerRaw.(map[string]any)
-	if !ok {
-		return nil, nil, nil, fmt.Errorf("provider %q data is not a map[string]any", providerName)
-	}
-
-	return allData, allProviderPresets, providerPreset, nil
-}
-
 func (s *ModelPresetStore) AddModelPreset(
 	ctx context.Context,
 	req *spec.AddModelPresetRequest,
@@ -269,4 +233,40 @@ func (s *ModelPresetStore) SetDefaultModelPreset(
 		return nil, fmt.Errorf("failed updating defaultModelPresetID: %w", err)
 	}
 	return &spec.SetDefaultModelPresetResponse{}, nil
+}
+
+func (s *ModelPresetStore) getProviderData(
+	providerName spec.ProviderName,
+	forceFetch bool,
+) (allData, allProviderPresets, providerPreset map[string]any, err error) {
+	// 1) GetAll with no forced fetch (or use the boolean if you sometimes need forced).
+	allData, err = s.store.GetAll(forceFetch)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to retrieve current data: %w", err)
+	}
+
+	// 2) providerPresets must be a map.
+	providerPresetsRaw, ok := allData["providerPresets"]
+	if !ok {
+		return nil, nil, nil, errors.New("providerPresets missing from store")
+	}
+	allProviderPresets, ok = providerPresetsRaw.(map[string]any)
+	if !ok {
+		return nil, nil, nil, errors.New("providerPresets is not a map[string]any")
+	}
+
+	// 3) Check if provider exists.
+	providerRaw, ok := allProviderPresets[string(providerName)]
+	if !ok {
+		return nil, nil, nil, fmt.Errorf(
+			"provider %q does not exist in providerPresets",
+			providerName,
+		)
+	}
+	providerPreset, ok = providerRaw.(map[string]any)
+	if !ok {
+		return nil, nil, nil, fmt.Errorf("provider %q data is not a map[string]any", providerName)
+	}
+
+	return allData, allProviderPresets, providerPreset, nil
 }

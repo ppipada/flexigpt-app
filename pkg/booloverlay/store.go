@@ -94,50 +94,6 @@ func NewStore(path string, opts ...Option) (*Store, error) {
 	return st, nil
 }
 
-func (s *Store) ensureRegistered(group GroupID) error {
-	if _, ok := s.reg[group]; !ok {
-		return fmt.Errorf("booloverlay: group %q is not registered", group)
-	}
-	return nil
-}
-
-// readRoot converts the loosely typed map from filestore into Root.
-func (s *Store) readRoot() (Root, error) {
-	raw, err := s.db.GetAll(false)
-	if err != nil {
-		return nil, err
-	}
-
-	// Fast path for an empty file.
-	if len(raw) == 0 {
-		return make(Root), nil
-	}
-
-	// Marshal then unmarshal to leverage the JSON type conversion rules.
-	jsonData, err := json.Marshal(raw)
-	if err != nil {
-		return nil, err
-	}
-
-	var root Root
-	if err := json.Unmarshal(jsonData, &root); err != nil {
-		return nil, err
-	}
-	if root == nil {
-		root = make(Root)
-	}
-	return root, nil
-}
-
-// writeRoot converts Root into the map[string]any format expected by filestore.
-func (s *Store) writeRoot(root Root) error {
-	mp, err := encdec.StructWithJSONTagsToMap(root)
-	if err != nil {
-		return err
-	}
-	return s.db.SetAll(mp)
-}
-
 // GetFlag returns the stored flag, a presence indicator and an error.
 func (s *Store) GetFlag(k Key) (Flag, bool, error) {
 	group := k.Group()
@@ -216,4 +172,48 @@ func (s *Store) Delete(k Key) error {
 		delete(grp, k.ID())
 	}
 	return s.writeRoot(root)
+}
+
+func (s *Store) ensureRegistered(group GroupID) error {
+	if _, ok := s.reg[group]; !ok {
+		return fmt.Errorf("booloverlay: group %q is not registered", group)
+	}
+	return nil
+}
+
+// readRoot converts the loosely typed map from filestore into Root.
+func (s *Store) readRoot() (Root, error) {
+	raw, err := s.db.GetAll(false)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fast path for an empty file.
+	if len(raw) == 0 {
+		return make(Root), nil
+	}
+
+	// Marshal then unmarshal to leverage the JSON type conversion rules.
+	jsonData, err := json.Marshal(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	var root Root
+	if err := json.Unmarshal(jsonData, &root); err != nil {
+		return nil, err
+	}
+	if root == nil {
+		root = make(Root)
+	}
+	return root, nil
+}
+
+// writeRoot converts Root into the map[string]any format expected by filestore.
+func (s *Store) writeRoot(root Root) error {
+	mp, err := encdec.StructWithJSONTagsToMap(root)
+	if err != nil {
+		return err
+	}
+	return s.db.SetAll(mp)
 }

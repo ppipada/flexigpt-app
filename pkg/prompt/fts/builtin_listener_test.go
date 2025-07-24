@@ -39,7 +39,10 @@ func newEngine(t *testing.T, dir string) *ftsengine.Engine {
 	return e
 }
 
-func makeBundle(id int, enabled bool) (bundleitemutils.BundleID, bundleitemutils.BundleSlug, spec.PromptBundle) {
+func makeBundle(
+	id int,
+	enabled bool,
+) (bundleitemutils.BundleID, bundleitemutils.BundleSlug, spec.PromptBundle) {
 	bid := bundleitemutils.BundleID("bundle-" + strconv.Itoa(id))
 	bslug := bundleitemutils.BundleSlug("bundleslug-" + strconv.Itoa(id))
 	return bid, bslug, spec.PromptBundle{
@@ -122,11 +125,12 @@ func TestSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 		rows int
 	}
 	cases := []struct {
+		want
+
 		name   string
 		before func()                       // pre-populate index if wanted
 		lister func() BuiltInLister         // returns the lister used for sync
 		after  func(t *testing.T, rows int) // extra custom asserts
-		want
 	}{
 		{
 			name:   "initial import inserts everything",
@@ -138,9 +142,11 @@ func TestSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.PromptBundle{bid: bundle},
-						map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate{bid: {
-							tpl.ID: tpl,
-						}}, nil
+						map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate{
+							bid: {
+								tpl.ID: tpl,
+							},
+						}, nil
 				}
 			},
 			want: want{rows: 1},
@@ -162,9 +168,11 @@ func TestSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.PromptBundle{bid: bundle},
-						map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate{bid: {
-							tpl.ID: tpl,
-						}}, nil
+						map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate{
+							bid: {
+								tpl.ID: tpl,
+							},
+						}, nil
 				}
 			},
 			want: want{rows: 1},
@@ -188,9 +196,11 @@ func TestSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.PromptBundle{bid: bundle},
-						map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate{bid: {
-							tpl.ID: tpl,
-						}}, nil
+						map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate{
+							bid: {
+								tpl.ID: tpl,
+							},
+						}, nil
 				}
 			},
 			after: func(t *testing.T, _ int) {
@@ -312,7 +322,9 @@ func TestSyncBuiltInsToFTS_BiggerThanBatchSize(t *testing.T) {
 		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate, error,
 	) {
 		return map[bundleitemutils.BundleID]spec.PromptBundle{bid: bundle},
-			map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate{bid: templates}, nil
+			map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate{
+				bid: templates,
+			}, nil
 	}
 
 	if err := syncBuiltInsToFTS(ctx, lister, engine); err != nil {

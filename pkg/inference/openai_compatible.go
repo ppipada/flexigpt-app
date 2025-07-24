@@ -14,6 +14,7 @@ import (
 // OpenAICompatibleAPI struct that implements the CompletionProvider interface.
 type OpenAICompatibleAPI struct {
 	*BaseAIAPI
+
 	llm *langchainOpenAI.LLM
 }
 

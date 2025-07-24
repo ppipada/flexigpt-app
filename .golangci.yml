@@ -1,4 +1,5 @@
-# All linters are checked and included either in enable or disable as of v2.0.2 of golangci-lint
+# All linters are checked and included either in enable or disable as of v2.3.0 of golangci-lint.
+# gofumpt is used as formatter, other formatters are not added here.
 version: "2"
 run:
   build-tags:
@@ -30,6 +31,9 @@ linters:
     # Check for two durations multiplied together.
     - durationcheck
 
+    # Check if embedded fields are at top of the struct. Mutex should not be embedded.
+    - embeddedstructfieldcheck
+
     # Forces to not skip error check.
     - errcheck
 
@@ -41,6 +45,9 @@ linters:
 
     # Finds forced type assertions.
     - forcetypeassert
+
+    # Check order of functions and constructors.
+    - funcorder
 
     # Run exhaustiveness checks on Go "sum types".
     - gochecksumtype
@@ -139,6 +146,9 @@ linters:
     - wastedassign
 
   disable:
+    #  Linter for ArangoDB go driver
+    - arangolint
+
     # Checks whether net/http.Header uses canonical header. Most probably good to have but not my use case
     - canonicalheader
 
@@ -276,6 +286,9 @@ linters:
     # Checks for a new line before return and branch statements to increase code clarity.
     - nlreturn
 
+    # Detect inline err handling. I prefer inline err handling if possible.
+    - noinlineerr
+
     # Reports all named returns, not that bad.
     - nonamedreturns
 
@@ -329,12 +342,16 @@ linters:
     - wrapcheck
 
     # Forces you to use empty lines.
-    - wsl
+    - wsl_v5
 
     # Detects the wrong usage of zerolog where a user forgets to dispatch with Send or Msg.
     - zerologlint
 
   settings:
+    embeddedstructfieldcheck:
+      # Checks that sync.Mutex and sync.RWMutex are not used as embedded fields.
+      forbid-mutex: true
+
     errcheck:
       # Report `a := b.(MyStruct)` when `a, ok := ...` should be.
       check-type-assertions: true # Default: false

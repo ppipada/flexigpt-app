@@ -14,6 +14,7 @@ import (
 // AnthropicCompatibleAPI struct that implements the CompletionProvider interface.
 type AnthropicCompatibleAPI struct {
 	*BaseAIAPI
+
 	llm *langchainAnthropic.LLM
 }
 

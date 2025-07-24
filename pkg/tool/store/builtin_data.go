@@ -55,13 +55,6 @@ func WithToolBundlesFS(fsys fs.FS, rootDir string) BuiltInToolDataOption {
 	}
 }
 
-func resolveToolBundlesFS(fsys fs.FS, dir string) (fs.FS, error) {
-	if dir == "" || dir == "." {
-		return fsys, nil
-	}
-	return fs.Sub(fsys, dir)
-}
-
 // NewBuiltInToolData instantiates a lazy-rebuilding cache over the embedded built-in tool assets.
 func NewBuiltInToolData(
 	overlayBaseDir string,
@@ -112,6 +105,102 @@ func NewBuiltInToolData(
 	data.rebuilder.MarkFresh()
 
 	return data, nil
+}
+
+// SetToolBundleEnabled toggles a bundle flag.
+func (d *BuiltInToolData) SetToolBundleEnabled(id bundleitemutils.BundleID, enabled bool) error {
+	if _, ok := d.bundles[id]; !ok {
+		return fmt.Errorf("bundleID: %q, err: %w", id, spec.ErrBuiltInToolBundleNotFound)
+	}
+	flag, err := d.store.SetFlag(BuiltInToolBundleID(id), enabled)
+	if err != nil {
+		return err
+	}
+
+	d.mu.Lock()
+	b := d.viewBundles[id]
+	b.IsEnabled = enabled
+	b.ModifiedAt = flag.ModifiedAt
+	d.viewBundles[id] = b
+	d.mu.Unlock()
+
+	d.rebuilder.Trigger()
+	return nil
+}
+
+// SetToolEnabled toggles a tool flag.
+func (d *BuiltInToolData) SetToolEnabled(
+	bundleID bundleitemutils.BundleID,
+	toolID bundleitemutils.ItemID,
+	enabled bool,
+) error {
+	if _, ok := d.tools[bundleID]; !ok {
+		return fmt.Errorf("bundleID: %q, err: %w", bundleID, spec.ErrBuiltInToolBundleNotFound)
+	}
+	if _, ok := d.tools[bundleID][toolID]; !ok {
+		return fmt.Errorf("bundleID: %q, toolID: %q err: %w",
+			bundleID, toolID, spec.ErrToolNotFound)
+	}
+	flag, err := d.store.SetFlag(BuiltInToolID(toolID), enabled)
+	if err != nil {
+		return err
+	}
+
+	d.mu.Lock()
+	t := d.viewTools[bundleID][toolID]
+	t.IsEnabled = enabled
+	t.ModifiedAt = flag.ModifiedAt
+	d.viewTools[bundleID][toolID] = t
+	d.mu.Unlock()
+
+	d.rebuilder.Trigger()
+	return nil
+}
+
+// ListBuiltInToolData returns a deep copy of the cached snapshot.
+func (d *BuiltInToolData) ListBuiltInToolData() (
+	bundles map[bundleitemutils.BundleID]spec.ToolBundle,
+	tools map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec,
+	err error,
+) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	bundles = maps.Clone(d.viewBundles)
+	tools = cloneToolSpecs(d.viewTools)
+	return bundles, tools, nil
+}
+
+// GetBuiltInToolBundle fetches a single bundle from the snapshot.
+func (d *BuiltInToolData) GetBuiltInToolBundle(
+	id bundleitemutils.BundleID,
+) (spec.ToolBundle, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	b, ok := d.viewBundles[id]
+	if !ok {
+		return spec.ToolBundle{}, spec.ErrToolBundleNotFound
+	}
+	return b, nil
+}
+
+// GetBuiltInTool fetches one tool by (bundle, slug, version).
+func (d *BuiltInToolData) GetBuiltInTool(
+	bundleID bundleitemutils.BundleID,
+	slug bundleitemutils.ItemSlug,
+	version bundleitemutils.ItemVersion,
+) (spec.ToolSpec, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	tools, ok := d.viewTools[bundleID]
+	if !ok {
+		return spec.ToolSpec{}, spec.ErrToolBundleNotFound
+	}
+	for _, tl := range tools {
+		if tl.Slug == slug && tl.Version == version {
+			return tl, nil
+		}
+	}
+	return spec.ToolSpec{}, spec.ErrToolNotFound
 }
 
 func (d *BuiltInToolData) populateDataFromFS() error {
@@ -246,56 +335,6 @@ func (d *BuiltInToolData) populateDataFromFS() error {
 	return nil
 }
 
-// SetToolBundleEnabled toggles a bundle flag.
-func (d *BuiltInToolData) SetToolBundleEnabled(id bundleitemutils.BundleID, enabled bool) error {
-	if _, ok := d.bundles[id]; !ok {
-		return fmt.Errorf("bundleID: %q, err: %w", id, spec.ErrBuiltInToolBundleNotFound)
-	}
-	flag, err := d.store.SetFlag(BuiltInToolBundleID(id), enabled)
-	if err != nil {
-		return err
-	}
-
-	d.mu.Lock()
-	b := d.viewBundles[id]
-	b.IsEnabled = enabled
-	b.ModifiedAt = flag.ModifiedAt
-	d.viewBundles[id] = b
-	d.mu.Unlock()
-
-	d.rebuilder.Trigger()
-	return nil
-}
-
-// SetToolEnabled toggles a tool flag.
-func (d *BuiltInToolData) SetToolEnabled(
-	bundleID bundleitemutils.BundleID,
-	toolID bundleitemutils.ItemID,
-	enabled bool,
-) error {
-	if _, ok := d.tools[bundleID]; !ok {
-		return fmt.Errorf("bundleID: %q, err: %w", bundleID, spec.ErrBuiltInToolBundleNotFound)
-	}
-	if _, ok := d.tools[bundleID][toolID]; !ok {
-		return fmt.Errorf("bundleID: %q, toolID: %q err: %w",
-			bundleID, toolID, spec.ErrToolNotFound)
-	}
-	flag, err := d.store.SetFlag(BuiltInToolID(toolID), enabled)
-	if err != nil {
-		return err
-	}
-
-	d.mu.Lock()
-	t := d.viewTools[bundleID][toolID]
-	t.IsEnabled = enabled
-	t.ModifiedAt = flag.ModifiedAt
-	d.viewTools[bundleID][toolID] = t
-	d.mu.Unlock()
-
-	d.rebuilder.Trigger()
-	return nil
-}
-
 // Assumes d.mu is already locked.
 func (d *BuiltInToolData) rebuildSnapshot() error {
 	newBundles := make(
@@ -342,6 +381,13 @@ func (d *BuiltInToolData) rebuildSnapshot() error {
 	return nil
 }
 
+func resolveToolBundlesFS(fsys fs.FS, dir string) (fs.FS, error) {
+	if dir == "" || dir == "." {
+		return fsys, nil
+	}
+	return fs.Sub(fsys, dir)
+}
+
 func cloneToolSpecs(
 	src map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec,
 ) map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec {
@@ -353,50 +399,4 @@ func cloneToolSpecs(
 		dst[bid] = maps.Clone(inner)
 	}
 	return dst
-}
-
-// ListBuiltInToolData returns a deep copy of the cached snapshot.
-func (d *BuiltInToolData) ListBuiltInToolData() (
-	bundles map[bundleitemutils.BundleID]spec.ToolBundle,
-	tools map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec,
-	err error,
-) {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-	bundles = maps.Clone(d.viewBundles)
-	tools = cloneToolSpecs(d.viewTools)
-	return bundles, tools, nil
-}
-
-// GetBuiltInToolBundle fetches a single bundle from the snapshot.
-func (d *BuiltInToolData) GetBuiltInToolBundle(
-	id bundleitemutils.BundleID,
-) (spec.ToolBundle, error) {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-	b, ok := d.viewBundles[id]
-	if !ok {
-		return spec.ToolBundle{}, spec.ErrToolBundleNotFound
-	}
-	return b, nil
-}
-
-// GetBuiltInTool fetches one tool by (bundle, slug, version).
-func (d *BuiltInToolData) GetBuiltInTool(
-	bundleID bundleitemutils.BundleID,
-	slug bundleitemutils.ItemSlug,
-	version bundleitemutils.ItemVersion,
-) (spec.ToolSpec, error) {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-	tools, ok := d.viewTools[bundleID]
-	if !ok {
-		return spec.ToolSpec{}, spec.ErrToolBundleNotFound
-	}
-	for _, tl := range tools {
-		if tl.Slug == slug && tl.Version == version {
-			return tl, nil
-		}
-	}
-	return spec.ToolSpec{}, spec.ErrToolNotFound
 }

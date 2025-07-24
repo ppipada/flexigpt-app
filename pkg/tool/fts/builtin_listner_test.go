@@ -120,11 +120,12 @@ func TestToolsSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 
 	type want struct{ rows int }
 	cases := []struct {
+		want
+
 		name   string
 		before func()
 		lister func() ToolBuiltInLister
 		after  func(*testing.T, int)
-		want
 	}{
 		{
 			name: "initial import",

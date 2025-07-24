@@ -171,39 +171,6 @@ func (s *SettingStore) DeleteAISetting(
 	return &DeleteAISettingResponse{}, nil
 }
 
-func (s *SettingStore) getProviderData(
-	providerName modelSpec.ProviderName,
-	forceFetch bool,
-) (currentData, aiSettings, providerData map[string]any, err error) {
-	// 1) GetAll with no forced fetch (or use the boolean if you sometimes need forced).
-	currentData, err = s.store.GetAll(forceFetch)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to retrieve current data: %w", err)
-	}
-
-	// 2) aiSettings must be a map.
-	aiSettingsRaw, ok := currentData["aiSettings"]
-	if !ok {
-		return nil, nil, nil, errors.New("aiSettings missing from store")
-	}
-	aiSettings, ok = aiSettingsRaw.(map[string]any)
-	if !ok {
-		return nil, nil, nil, errors.New("aiSettings is not a map[string]any")
-	}
-
-	// 3) Check if provider exists.
-	providerRaw, ok := aiSettings[string(providerName)]
-	if !ok {
-		return nil, nil, nil, fmt.Errorf("provider %q does not exist in aiSettings", providerName)
-	}
-	providerData, ok = providerRaw.(map[string]any)
-	if !ok {
-		return nil, nil, nil, fmt.Errorf("provider %q data is not a map[string]any", providerName)
-	}
-
-	return currentData, aiSettings, providerData, nil
-}
-
 func (s *SettingStore) SetAISettingAPIKey(
 	ctx context.Context,
 	req *SetAISettingAPIKeyRequest,
@@ -262,4 +229,37 @@ func (s *SettingStore) SetAISettingAttrs(
 	}
 
 	return &SetAISettingAttrsResponse{}, nil
+}
+
+func (s *SettingStore) getProviderData(
+	providerName modelSpec.ProviderName,
+	forceFetch bool,
+) (currentData, aiSettings, providerData map[string]any, err error) {
+	// 1) GetAll with no forced fetch (or use the boolean if you sometimes need forced).
+	currentData, err = s.store.GetAll(forceFetch)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to retrieve current data: %w", err)
+	}
+
+	// 2) aiSettings must be a map.
+	aiSettingsRaw, ok := currentData["aiSettings"]
+	if !ok {
+		return nil, nil, nil, errors.New("aiSettings missing from store")
+	}
+	aiSettings, ok = aiSettingsRaw.(map[string]any)
+	if !ok {
+		return nil, nil, nil, errors.New("aiSettings is not a map[string]any")
+	}
+
+	// 3) Check if provider exists.
+	providerRaw, ok := aiSettings[string(providerName)]
+	if !ok {
+		return nil, nil, nil, fmt.Errorf("provider %q does not exist in aiSettings", providerName)
+	}
+	providerData, ok = providerRaw.(map[string]any)
+	if !ok {
+		return nil, nil, nil, fmt.Errorf("provider %q data is not a map[string]any", providerName)
+	}
+
+	return currentData, aiSettings, providerData, nil
 }

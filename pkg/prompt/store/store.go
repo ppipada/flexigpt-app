@@ -168,171 +168,12 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 	return s, nil
 }
 
-// isSoftDeleted returns true if the bundle is soft-deleted.
-func isSoftDeleted(b spec.PromptBundle) bool {
-	return b.SoftDeletedAt != nil && !b.SoftDeletedAt.IsZero()
-}
-
-// readAllBundles loads and decodes the meta-file.
-func (s *PromptTemplateStore) readAllBundles(forceFetch bool) (spec.AllBundles, error) {
-	raw, err := s.bundleStore.GetAll(forceFetch)
-	if err != nil {
-		return spec.AllBundles{}, err
-	}
-	var ab spec.AllBundles
-	if err := encdec.MapToStructWithJSONTags(raw, &ab); err != nil {
-		return ab, err
-	}
-	return ab, nil
-}
-
-// writeAllBundles encodes and writes the strongly-typed value.
-func (s *PromptTemplateStore) writeAllBundles(ab spec.AllBundles) error {
-	mp, _ := encdec.StructWithJSONTagsToMap(ab)
-	return s.bundleStore.SetAll(mp)
-}
-
-// getUserBundle returns an active bundle (i.e., not soft-deleted) by ID.
-func (s *PromptTemplateStore) getUserBundle(
-	id bundleitemutils.BundleID,
-) (spec.PromptBundle, error) {
-	all, err := s.readAllBundles(false)
-	if err != nil {
-		return spec.PromptBundle{}, err
-	}
-
-	b, ok := all.Bundles[id]
-	if !ok {
-		return spec.PromptBundle{}, fmt.Errorf("%w: %s", spec.ErrBundleNotFound, id)
-	}
-
-	if isSoftDeleted(b) {
-		return b, fmt.Errorf("%w: %s", spec.ErrBundleDeleting, id)
-	}
-	return b, nil
-}
-
-func (s *PromptTemplateStore) getAnyBundle(
-	id bundleitemutils.BundleID,
-) (bundle spec.PromptBundle, isBuiltIn bool, err error) {
-	// Built-in?
-	if s.builtinData != nil {
-		if bundle, err = s.builtinData.GetBuiltInBundle(id); err == nil {
-			return bundle, true, nil
-		}
-	}
-	// User bundle?
-	if bundle, err = s.getUserBundle(id); err == nil {
-		return bundle, false, nil
-	}
-
-	return spec.PromptBundle{}, false, fmt.Errorf("%w: %s", spec.ErrBundleNotFound, id)
-}
-
-// startCleanupLoop starts the background cleanup goroutine for hard-deleting bundles after the grace period.
-func (s *PromptTemplateStore) startCleanupLoop() {
-	s.cleanOnce.Do(func() {
-		s.cleanKick = make(chan struct{}, 1)
-		s.cleanCtx, s.cleanStop = context.WithCancel(context.Background())
-
-		s.wg.Add(1)
-		go func() {
-			defer s.wg.Done()
-			ticker := time.NewTicker(cleanupInterval)
-			defer ticker.Stop()
-			defer func() {
-				if r := recover(); r != nil {
-					slog.Error("Panic in bundle cleanup loop.",
-						"err", r,
-						"stack", string(debug.Stack()))
-				}
-			}()
-
-			// Run once at start-up to clean up bundles left after a crash.
-			s.sweepSoftDeleted()
-
-			for {
-				select {
-				case <-s.cleanCtx.Done():
-					return
-				case <-ticker.C:
-					// Periodic sweep.
-				case <-s.cleanKick:
-					// Explicit sweep triggered by DeletePromptBundle.
-				}
-				s.sweepSoftDeleted()
-			}
-		}()
-	})
-}
-
-// kickCleanupLoop signals the cleanup goroutine to run immediately.
-func (s *PromptTemplateStore) kickCleanupLoop() {
-	select {
-	case s.cleanKick <- struct{}{}:
-	default:
-		// Queue already has a signal - that is good enough.
-	}
-}
-
 // Close gracefully terminates the background cleanup goroutine.
 func (s *PromptTemplateStore) Close() {
 	if s.cleanStop != nil {
 		s.cleanStop()
 	}
 	s.wg.Wait()
-}
-
-// SweepSoftDeleted performs hard deletion of bundles that have been soft-deleted and are past the grace period.
-// Uses sweepMu to coordinate with bundle operations and prevent race conditions.
-func (s *PromptTemplateStore) sweepSoftDeleted() {
-	s.sweepMu.Lock()
-	defer s.sweepMu.Unlock()
-
-	all, err := s.readAllBundles(false)
-	if err != nil {
-		slog.Error("Sweep: readAllBundles.", "err", err)
-		return
-	}
-	now := time.Now().UTC()
-	changed := false
-
-	for id, b := range all.Bundles {
-		if b.SoftDeletedAt == nil || b.SoftDeletedAt.IsZero() {
-			continue
-		}
-		if now.Sub(*b.SoftDeletedAt) < softDeleteGrace {
-			continue
-		}
-
-		dirInfo, derr := bundleitemutils.BuildBundleDir(b.ID, b.Slug)
-		if derr != nil {
-			slog.Error("Sweep: bundleitemutils.BuildBundleDir failed.", "bundleID", id, "err", derr)
-			continue
-		}
-
-		fileEntries, _, err := s.templateStore.ListFiles(
-			dirstore.ListingConfig{
-				FilterPartitions: []string{dirInfo.DirName},
-				PageSize:         1,
-			}, "",
-		)
-		if err != nil || len(fileEntries) != 0 {
-			slog.Warn("Sweep: bundle still contains templates, skipping.", "bundleID", id)
-			continue
-		}
-
-		delete(all.Bundles, id)
-		changed = true
-
-		_ = os.RemoveAll(filepath.Join(s.baseDir, dirInfo.DirName))
-		slog.Info("Hard-deleted bundle.", "bundleID", id)
-	}
-	if changed {
-		if err := s.writeAllBundles(all); err != nil {
-			slog.Error("Sweep: writeAllBundles failed.", "err", err)
-		}
-	}
 }
 
 // PutPromptBundle creates or replaces a prompt bundle.
@@ -618,40 +459,6 @@ func (s *PromptTemplateStore) ListPromptBundles(
 			NextPageToken: nullableStr(nextToken),
 		},
 	}, nil
-}
-
-// findTemplate locates a template file by bundle-dir, slug **and** version.
-// Both slug and version are required; wantVersion must NOT be empty.
-func (s *PromptTemplateStore) findTemplate(
-	bdi bundleitemutils.BundleDirInfo,
-	slug bundleitemutils.ItemSlug,
-	wantVersion bundleitemutils.ItemVersion,
-) (fi bundleitemutils.FileInfo, fullPath string, err error) {
-	// Input must be complete.
-	if slug == "" || wantVersion == "" {
-		return fi, fullPath, spec.ErrInvalidRequest
-	}
-
-	// Build the canonical filename and access it directly.
-	fi, err = bundleitemutils.BuildItemFileInfo(slug, wantVersion)
-	if err != nil {
-		return fi, fullPath, err
-	}
-
-	key := bundleitemutils.GetBundlePartitionFileKey(fi.FileName, bdi.DirName)
-	raw, err := s.templateStore.GetFileData(key, false)
-	if err != nil {
-		// File does not exist.
-		return fi, fullPath, fmt.Errorf("%w: %s", spec.ErrTemplateNotFound, slug)
-	}
-
-	// Minimal integrity check: the JSON must contain the same slug.
-	if sVal, _ := raw["slug"].(string); sVal != string(slug) {
-		return fi, fullPath, fmt.Errorf("%w: %s", spec.ErrTemplateNotFound, slug)
-	}
-
-	// Success - return relative path (same format the old code used).
-	return fi, filepath.Join(bdi.DirName, fi.FileName), nil
 }
 
 // PutPromptTemplate creates a new prompt template version.
@@ -1301,4 +1108,197 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 			NextPageToken:           nullableStr(next),
 		},
 	}, nil
+}
+
+// findTemplate locates a template file by bundle-dir, slug **and** version.
+// Both slug and version are required; wantVersion must NOT be empty.
+func (s *PromptTemplateStore) findTemplate(
+	bdi bundleitemutils.BundleDirInfo,
+	slug bundleitemutils.ItemSlug,
+	wantVersion bundleitemutils.ItemVersion,
+) (fi bundleitemutils.FileInfo, fullPath string, err error) {
+	// Input must be complete.
+	if slug == "" || wantVersion == "" {
+		return fi, fullPath, spec.ErrInvalidRequest
+	}
+
+	// Build the canonical filename and access it directly.
+	fi, err = bundleitemutils.BuildItemFileInfo(slug, wantVersion)
+	if err != nil {
+		return fi, fullPath, err
+	}
+
+	key := bundleitemutils.GetBundlePartitionFileKey(fi.FileName, bdi.DirName)
+	raw, err := s.templateStore.GetFileData(key, false)
+	if err != nil {
+		// File does not exist.
+		return fi, fullPath, fmt.Errorf("%w: %s", spec.ErrTemplateNotFound, slug)
+	}
+
+	// Minimal integrity check: the JSON must contain the same slug.
+	if sVal, _ := raw["slug"].(string); sVal != string(slug) {
+		return fi, fullPath, fmt.Errorf("%w: %s", spec.ErrTemplateNotFound, slug)
+	}
+
+	// Success - return relative path (same format the old code used).
+	return fi, filepath.Join(bdi.DirName, fi.FileName), nil
+}
+
+// isSoftDeleted returns true if the bundle is soft-deleted.
+func isSoftDeleted(b spec.PromptBundle) bool {
+	return b.SoftDeletedAt != nil && !b.SoftDeletedAt.IsZero()
+}
+
+// readAllBundles loads and decodes the meta-file.
+func (s *PromptTemplateStore) readAllBundles(forceFetch bool) (spec.AllBundles, error) {
+	raw, err := s.bundleStore.GetAll(forceFetch)
+	if err != nil {
+		return spec.AllBundles{}, err
+	}
+	var ab spec.AllBundles
+	if err := encdec.MapToStructWithJSONTags(raw, &ab); err != nil {
+		return ab, err
+	}
+	return ab, nil
+}
+
+// writeAllBundles encodes and writes the strongly-typed value.
+func (s *PromptTemplateStore) writeAllBundles(ab spec.AllBundles) error {
+	mp, _ := encdec.StructWithJSONTagsToMap(ab)
+	return s.bundleStore.SetAll(mp)
+}
+
+// getUserBundle returns an active bundle (i.e., not soft-deleted) by ID.
+func (s *PromptTemplateStore) getUserBundle(
+	id bundleitemutils.BundleID,
+) (spec.PromptBundle, error) {
+	all, err := s.readAllBundles(false)
+	if err != nil {
+		return spec.PromptBundle{}, err
+	}
+
+	b, ok := all.Bundles[id]
+	if !ok {
+		return spec.PromptBundle{}, fmt.Errorf("%w: %s", spec.ErrBundleNotFound, id)
+	}
+
+	if isSoftDeleted(b) {
+		return b, fmt.Errorf("%w: %s", spec.ErrBundleDeleting, id)
+	}
+	return b, nil
+}
+
+func (s *PromptTemplateStore) getAnyBundle(
+	id bundleitemutils.BundleID,
+) (bundle spec.PromptBundle, isBuiltIn bool, err error) {
+	// Built-in?
+	if s.builtinData != nil {
+		if bundle, err = s.builtinData.GetBuiltInBundle(id); err == nil {
+			return bundle, true, nil
+		}
+	}
+	// User bundle?
+	if bundle, err = s.getUserBundle(id); err == nil {
+		return bundle, false, nil
+	}
+
+	return spec.PromptBundle{}, false, fmt.Errorf("%w: %s", spec.ErrBundleNotFound, id)
+}
+
+// startCleanupLoop starts the background cleanup goroutine for hard-deleting bundles after the grace period.
+func (s *PromptTemplateStore) startCleanupLoop() {
+	s.cleanOnce.Do(func() {
+		s.cleanKick = make(chan struct{}, 1)
+		s.cleanCtx, s.cleanStop = context.WithCancel(context.Background())
+
+		s.wg.Add(1)
+		go func() {
+			defer s.wg.Done()
+			ticker := time.NewTicker(cleanupInterval)
+			defer ticker.Stop()
+			defer func() {
+				if r := recover(); r != nil {
+					slog.Error("Panic in bundle cleanup loop.",
+						"err", r,
+						"stack", string(debug.Stack()))
+				}
+			}()
+
+			// Run once at start-up to clean up bundles left after a crash.
+			s.sweepSoftDeleted()
+
+			for {
+				select {
+				case <-s.cleanCtx.Done():
+					return
+				case <-ticker.C:
+					// Periodic sweep.
+				case <-s.cleanKick:
+					// Explicit sweep triggered by DeletePromptBundle.
+				}
+				s.sweepSoftDeleted()
+			}
+		}()
+	})
+}
+
+// sweepSoftDeleted performs hard deletion of bundles that have been soft-deleted and are past the grace period.
+// Uses sweepMu to coordinate with bundle operations and prevent race conditions.
+func (s *PromptTemplateStore) sweepSoftDeleted() {
+	s.sweepMu.Lock()
+	defer s.sweepMu.Unlock()
+
+	all, err := s.readAllBundles(false)
+	if err != nil {
+		slog.Error("Sweep: readAllBundles.", "err", err)
+		return
+	}
+	now := time.Now().UTC()
+	changed := false
+
+	for id, b := range all.Bundles {
+		if b.SoftDeletedAt == nil || b.SoftDeletedAt.IsZero() {
+			continue
+		}
+		if now.Sub(*b.SoftDeletedAt) < softDeleteGrace {
+			continue
+		}
+
+		dirInfo, derr := bundleitemutils.BuildBundleDir(b.ID, b.Slug)
+		if derr != nil {
+			slog.Error("Sweep: bundleitemutils.BuildBundleDir failed.", "bundleID", id, "err", derr)
+			continue
+		}
+
+		fileEntries, _, err := s.templateStore.ListFiles(
+			dirstore.ListingConfig{
+				FilterPartitions: []string{dirInfo.DirName},
+				PageSize:         1,
+			}, "",
+		)
+		if err != nil || len(fileEntries) != 0 {
+			slog.Warn("Sweep: bundle still contains templates, skipping.", "bundleID", id)
+			continue
+		}
+
+		delete(all.Bundles, id)
+		changed = true
+
+		_ = os.RemoveAll(filepath.Join(s.baseDir, dirInfo.DirName))
+		slog.Info("Hard-deleted bundle.", "bundleID", id)
+	}
+	if changed {
+		if err := s.writeAllBundles(all); err != nil {
+			slog.Error("Sweep: writeAllBundles failed.", "err", err)
+		}
+	}
+}
+
+// kickCleanupLoop signals the cleanup goroutine to run immediately.
+func (s *PromptTemplateStore) kickCleanupLoop() {
+	select {
+	case s.cleanKick <- struct{}{}:
+	default:
+		// Queue already has a signal - that is good enough.
+	}
 }
