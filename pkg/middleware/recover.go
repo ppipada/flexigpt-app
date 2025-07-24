@@ -17,7 +17,7 @@ func WithRecoveryResp[T any](fn func() (T, error)) (T, error) {
 	defer func() {
 		if r := recover(); r != nil {
 			// Log the panic plus stack trace.
-			slog.Error("Panic recovered",
+			slog.Error("panic recovered",
 				slog.Any("panic", r),
 				slog.String("stacktrace", string(debug.Stack())),
 			)
@@ -29,7 +29,7 @@ func WithRecoveryResp[T any](fn func() (T, error)) (T, error) {
 
 	result, err = fn()
 	if err != nil {
-		slog.Error("Response", "Error", err.Error())
+		slog.Error("response", "error", err.Error())
 		slog.Error(string(debug.Stack()))
 	}
 	return result, err

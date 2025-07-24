@@ -41,7 +41,7 @@ func (api *HuggingFaceCompatibleAPI) InitLLM(ctx context.Context) error {
 	// 	options = append(options, langchainHuggingFace.WithHTTPClient(httputil.DebugHTTPClient))
 	// }.
 	if api.ProviderInfo.APIKey == "" {
-		slog.Debug("No API key given. Not initializing Huggingface LLM object")
+		slog.Debug("no API key given, not initializing Huggingface LLM object")
 		return nil
 	}
 	options = append(options, langchainHuggingFace.WithToken(api.ProviderInfo.APIKey))
@@ -50,6 +50,6 @@ func (api *HuggingFaceCompatibleAPI) InitLLM(ctx context.Context) error {
 		return err
 	}
 	api.llm = llm
-	slog.Info("LLM provider initialize", "Name", string(api.ProviderInfo.Name), "URL", providerURL)
+	slog.Info("LLM provider initialize", "name", string(api.ProviderInfo.Name), "url", providerURL)
 	return nil
 }

@@ -383,6 +383,11 @@ linters:
           # Too noisy
           disabled: true
 
+    sloglint:
+      msg-style: "lowercased"
+      # Doesnt support things like bundleID, can enable and just check for discovery, once in a while.
+      # key-naming-case: "camel"
+
   exclusions:
     presets:
       - comments

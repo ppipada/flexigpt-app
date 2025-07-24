@@ -64,8 +64,8 @@ func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {
 	}
 	api.llm = llm
 	slog.Info(
-		"OpenAICompatibleAPI LLM provider initialize",
-		"Name",
+		"openai compatible LLM provider initialized",
+		"name",
 		string(api.ProviderInfo.Name),
 		"URL",
 		providerURL,

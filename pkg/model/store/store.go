@@ -37,7 +37,7 @@ func InitModelPresetStore(mpStore *ModelPresetStore, filename string) error {
 		return fmt.Errorf("failed to create store: %w", err)
 	}
 	mpStore.store = store
-	slog.Info("Model presets store initialization done.")
+	slog.Info("model presets store initialization done")
 	return nil
 }
 

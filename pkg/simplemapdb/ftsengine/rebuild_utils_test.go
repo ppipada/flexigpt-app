@@ -392,7 +392,7 @@ func testProcessFile(
 	baseDir, fullPath string,
 	getPrevCmp GetPrevCmp,
 ) (SyncDecision, error) {
-	slog.Info("Processing", "file", fullPath)
+	slog.Info("processing", "file", fullPath)
 	if !strings.HasSuffix(fullPath, ".json") {
 		return SyncDecision{Skip: true}, nil
 	}

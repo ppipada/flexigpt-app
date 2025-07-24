@@ -86,7 +86,7 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 	if err != nil {
 		return err
 	}
-	slog.Info("InitProviderSetUsingSettings Done.")
+	slog.Info("initProviderSetUsingSettings Done.")
 	return nil
 }
 

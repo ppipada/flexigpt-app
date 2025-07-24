@@ -134,7 +134,7 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 
 	s.slugLock = newSlugLocks()
 	s.startCleanupLoop()
-	slog.Info("Prompt-store ready.", "baseDir", s.baseDir, "fts", s.enableFTS)
+	slog.Info("prompt-store ready", "baseDir", s.baseDir, "fts", s.enableFTS)
 	return s, nil
 }
 
@@ -198,7 +198,7 @@ func (s *PromptTemplateStore) PutPromptBundle(
 	if err := s.writeAllBundles(all); err != nil {
 		return nil, err
 	}
-	slog.Info("PutPromptBundle.", "id", req.BundleID)
+	slog.Info("putPromptBundle", "id", req.BundleID)
 	return &spec.PutPromptBundleResponse{}, nil
 }
 
@@ -215,7 +215,7 @@ func (s *PromptTemplateStore) PatchPromptBundle(
 			if _, err := s.builtinData.SetBundleEnabled(req.BundleID, req.Body.IsEnabled); err != nil {
 				return nil, err
 			}
-			slog.Info("PatchPromptBundle.", "id", req.BundleID, "enabled", req.Body.IsEnabled)
+			slog.Info("patchPromptBundle", "id", req.BundleID, "enabled", req.Body.IsEnabled)
 			return &spec.PatchPromptBundleResponse{}, nil
 		}
 	}
@@ -239,7 +239,7 @@ func (s *PromptTemplateStore) PatchPromptBundle(
 	if err := s.writeAllBundles(all); err != nil {
 		return nil, err
 	}
-	slog.Info("PatchPromptBundle.", "id", req.BundleID, "enabled", req.Body.IsEnabled)
+	slog.Info("patchPromptBundle", "id", req.BundleID, "enabled", req.Body.IsEnabled)
 	return &spec.PatchPromptBundleResponse{}, nil
 }
 
@@ -300,7 +300,7 @@ func (s *PromptTemplateStore) DeletePromptBundle(
 	if err := s.writeAllBundles(all); err != nil {
 		return nil, err
 	}
-	slog.Info("DeletePromptBundle request.", "id", req.BundleID)
+	slog.Info("deletePromptBundle request", "id", req.BundleID)
 	s.kickCleanupLoop()
 	return &spec.DeletePromptBundleResponse{}, nil
 }
@@ -526,8 +526,8 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 		return nil, err
 	}
 	slog.Debug(
-		"PutPromptTemplate.",
-		"bundleID",
+		"putPromptTemplate",
+		"bundleId",
 		req.BundleID,
 		"slug",
 		req.TemplateSlug,
@@ -579,8 +579,8 @@ func (s *PromptTemplateStore) DeletePromptTemplate(
 		return nil, err
 	}
 	slog.Info(
-		"DeletePromptTemplate.",
-		"bundleID",
+		"deletePromptTemplate",
+		"bundleId",
 		req.BundleID,
 		"slug",
 		req.TemplateSlug,
@@ -627,9 +627,9 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 			); err != nil {
 				slog.Warn(
 					"builtin-fts reindex(one) failed",
-					"bundleID",
+					"bundleId",
 					bundle.ID,
-					"templateID",
+					"templateId",
 					tpl.ID,
 					"err",
 					err,
@@ -637,8 +637,8 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 			}
 		}
 		slog.Info(
-			"PatchPromptTemplate.",
-			"bundleID",
+			"patchPromptTemplate",
+			"bundleId",
 			req.BundleID,
 			"slug",
 			req.TemplateSlug,
@@ -684,8 +684,8 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 		return nil, err
 	}
 	slog.Info(
-		"PatchPromptTemplate.",
-		"bundleID",
+		"patchPromptTemplate",
+		"bundleId",
 		req.BundleID,
 		"slug",
 		req.TemplateSlug,
@@ -1164,7 +1164,7 @@ func (s *PromptTemplateStore) startCleanupLoop() {
 			defer ticker.Stop()
 			defer func() {
 				if r := recover(); r != nil {
-					slog.Error("Panic in bundle cleanup loop.",
+					slog.Error("panic in bundle cleanup loop",
 						"err", r,
 						"stack", string(debug.Stack()))
 				}
@@ -1196,7 +1196,7 @@ func (s *PromptTemplateStore) sweepSoftDeleted() {
 
 	all, err := s.readAllBundles(false)
 	if err != nil {
-		slog.Error("Sweep: readAllBundles.", "err", err)
+		slog.Error("sweep - readAllBundles", "err", err)
 		return
 	}
 	now := time.Now().UTC()
@@ -1212,7 +1212,13 @@ func (s *PromptTemplateStore) sweepSoftDeleted() {
 
 		dirInfo, derr := bundleitemutils.BuildBundleDir(b.ID, b.Slug)
 		if derr != nil {
-			slog.Error("Sweep: bundleitemutils.BuildBundleDir failed.", "bundleID", id, "err", derr)
+			slog.Error(
+				"sweep - bundleitemutils.BuildBundleDir failed.",
+				"bundleId",
+				id,
+				"err",
+				derr,
+			)
 			continue
 		}
 
@@ -1223,7 +1229,7 @@ func (s *PromptTemplateStore) sweepSoftDeleted() {
 			}, "",
 		)
 		if err != nil || len(fileEntries) != 0 {
-			slog.Warn("Sweep: bundle still contains templates, skipping.", "bundleID", id)
+			slog.Warn("sweep - bundle still contains templates, skipping", "bundleId", id)
 			continue
 		}
 
@@ -1231,11 +1237,11 @@ func (s *PromptTemplateStore) sweepSoftDeleted() {
 		changed = true
 
 		_ = os.RemoveAll(filepath.Join(s.baseDir, dirInfo.DirName))
-		slog.Info("Hard-deleted bundle.", "bundleID", id)
+		slog.Info("hard-deleted bundle", "bundleId", id)
 	}
 	if changed {
 		if err := s.writeAllBundles(all); err != nil {
-			slog.Error("Sweep: writeAllBundles failed.", "err", err)
+			slog.Error("sweep - writeAllBundles failed", "err", err)
 		}
 	}
 }

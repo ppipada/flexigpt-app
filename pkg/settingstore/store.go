@@ -39,7 +39,7 @@ func InitSettingStore(settingStore *SettingStore, filename string) error {
 		return fmt.Errorf("failed to create store: %w", err)
 	}
 	settingStore.store = store
-	slog.Info("Store initialization done.")
+	slog.Info("store initialization done.")
 	return nil
 }
 

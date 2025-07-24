@@ -45,7 +45,7 @@ func (api *AnthropicCompatibleAPI) InitLLM(ctx context.Context) error {
 		options = append(options, langchainAnthropic.WithBaseURL(providerURL))
 	}
 	if api.ProviderInfo.APIKey == "" {
-		slog.Debug("No API key given. Not initializing Anthropic LLM object")
+		slog.Debug("no API key given, not initializing Anthropic LLM object")
 		return nil
 	}
 	options = append(options, langchainAnthropic.WithToken(api.ProviderInfo.APIKey))
@@ -57,6 +57,6 @@ func (api *AnthropicCompatibleAPI) InitLLM(ctx context.Context) error {
 		return err
 	}
 	api.llm = llm
-	slog.Info("LLM provider initialize", "Name", string(api.ProviderInfo.Name), "URL", providerURL)
+	slog.Info("LLM provider initialize", "name", string(api.ProviderInfo.Name), "url", providerURL)
 	return nil
 }

@@ -153,7 +153,7 @@ func (cc *ConversationCollection) PutConversation(
 			dirstore.FileKey{FileName: filepath.Base(fileEntries[idx].BaseRelativePath)},
 		)
 		if err != nil {
-			slog.Warn("Put conversation remove existing file", "error", err)
+			slog.Warn("put conversation remove existing file", "error", err)
 		}
 	}
 
@@ -224,7 +224,7 @@ func (cc *ConversationCollection) DeleteConversation(
 	if err := cc.store.DeleteFile(dirstore.FileKey{FileName: filename}); err != nil {
 		return nil, err
 	}
-	slog.Info("DeleteConversation", "file", filename)
+	slog.Info("delete conversation", "file", filename)
 	return &spec.DeleteConversationResponse{}, nil
 }
 

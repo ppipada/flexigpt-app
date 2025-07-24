@@ -99,7 +99,7 @@ func initSlog(logsDirPath string, debug bool) *logrotate.Writer {
 	}
 	writer, err := logrotate.New(stdoutLogger, opts)
 	if err != nil {
-		slog.Error("Failed to create log writer", "Error", err)
+		slog.Error("failed to create log writer", "error", err)
 		panic("Init logs failed")
 	}
 

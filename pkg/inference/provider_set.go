@@ -121,7 +121,7 @@ func (ps *ProviderSetAPI) AddProvider(
 	if err != nil {
 		return nil, err
 	}
-	slog.Info("AddProvider", "Name", req.Provider)
+	slog.Info("add provider", "name", req.Provider)
 	return &AddProviderResponse{}, nil
 }
 
@@ -146,7 +146,7 @@ func (ps *ProviderSetAPI) DeleteProvider(
 		)
 	}
 	delete(ps.providers, req.Provider)
-	slog.Info("DeleteProvider", "Name", req.Provider)
+	slog.Info("deleteProvider", "name", req.Provider)
 	return &DeleteProviderResponse{}, nil
 }
 

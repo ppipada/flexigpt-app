@@ -316,7 +316,7 @@ func (mds *MapDirectoryStore) ListFiles(
 			token.FilenamePrefix,
 		)
 		if err != nil && errors.Is(err, ErrCannotReadPartition) {
-			slog.Debug("Skipping listing partition", "error", err)
+			slog.Debug("skipping listing partition", "error", err)
 			token.PartitionFilterPageToken.PartitionIndex++
 		} else if err != nil {
 			return nil, "", err

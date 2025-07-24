@@ -556,7 +556,7 @@ func (s *MapFileStore) fireEvent(e Event) {
 				if r := recover(); r != nil {
 					// Log.Printf("filestore: listener panic: %v", r).
 					slog.Error(
-						"Filestore listener panic",
+						"filestore listener panic",
 						"err",
 						r,
 						"event",

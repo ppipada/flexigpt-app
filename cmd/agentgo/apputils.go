@@ -18,7 +18,7 @@ func EmbeddedFSWalker(assets embed.FS) {
 		if err != nil {
 			return err
 		}
-		slog.Info("Embedded walk", "Path", path)
+		slog.Info("embedded walk", "path", path)
 		return nil
 	})
 }
@@ -29,7 +29,7 @@ func LogStackTrace() {
 	// Capture the stack trace.
 	n := goruntime.Stack(buf, false)
 	// Log the stack trace.
-	slog.Info("Stack", "Trace", string(buf[:n]))
+	slog.Info("stack", "trace", string(buf[:n]))
 }
 
 func URLCleanerMiddleware(next http.Handler) http.Handler {

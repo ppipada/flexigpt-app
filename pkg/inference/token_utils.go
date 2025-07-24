@@ -39,10 +39,10 @@ func FilterMessagesByTokenCount(
 
 	if len(filteredMessages) < len(messages) {
 		slog.Debug(
-			"Filtered messages are less than input",
-			"message count",
+			"filtered messages are less than input",
+			"messageCount",
 			len(messages),
-			"filtered count",
+			"filteredCount",
 			len(filteredMessages),
 		)
 	}

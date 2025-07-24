@@ -38,14 +38,14 @@ func NewBackendApp(
 	if settingsDirPath == "" || conversationsDirPath == "" || defaultInbuiltProvider == "" ||
 		modelPresetsDirPath == "" || promptsDirPath == "" {
 		slog.Error(
-			"Invalid app path configuration",
+			"invalid app path configuration",
 			"settingsDirPath", settingsDirPath,
 			"conversationsDirPath", conversationsDirPath,
 			"defaultInbuiltProvider", defaultInbuiltProvider,
 			"modelPresetsDirPath", modelPresetsDirPath,
 			"promptsDirPath", promptsDirPath,
 		)
-		panic("Failed to initialize BackendApp: invalid path configuration")
+		panic("failed to initialize BackendApp: invalid path configuration")
 	}
 
 	app := &BackendApp{
@@ -70,33 +70,33 @@ func (a *BackendApp) initSettingsStore() {
 	a.settingStoreAPI = &settingstore.SettingStore{}
 	if err := os.MkdirAll(a.settingsDirPath, os.FileMode(0o770)); err != nil {
 		slog.Error(
-			"Failed to create settings directory",
+			"failed to create settings directory",
 			"settingsDirPath", a.settingsDirPath,
-			"Error", err,
+			"error", err,
 		)
-		panic("Failed to initialize BackendApp: could not create settings directory")
+		panic("failed to initialize BackendApp: could not create settings directory")
 	}
 	// Initialize settings manager.
 	err := settingstore.InitSettingStore(a.settingStoreAPI, a.settingsFilePath)
 	if err != nil {
 		slog.Error(
-			"Couldn't initialize settings store",
+			"couldn't initialize settings store",
 			"settingsFilePath", a.settingsFilePath,
-			"Error", err,
+			"error", err,
 		)
-		panic("Failed to initialize BackendApp: settings store initialization failed")
+		panic("dailed to initialize BackendApp: settings store initialization failed")
 	}
-	slog.Info("Settings store initialized", "filepath", a.settingsFilePath)
+	slog.Info("settings store initialized", "filepath", a.settingsFilePath)
 }
 
 func (a *BackendApp) initConversationStore() {
 	if err := os.MkdirAll(a.conversationsDirPath, os.FileMode(0o770)); err != nil {
 		slog.Error(
-			"Failed to create conversation store directory",
+			"failed to create conversation store directory",
 			"conversationsDirPath", a.conversationsDirPath,
-			"Error", err,
+			"error", err,
 		)
-		panic("Failed to initialize BackendApp: could not create conversation store directory")
+		panic("failed to initialize BackendApp: could not create conversation store directory")
 	}
 
 	cc, err := conversationStore.NewConversationCollection(
@@ -105,47 +105,47 @@ func (a *BackendApp) initConversationStore() {
 	)
 	if err != nil {
 		slog.Error(
-			"Couldn't initialize conversation store",
+			"couldn't initialize conversation store",
 			"conversationsDirPath", a.conversationsDirPath,
-			"Error", err,
+			"error", err,
 		)
-		panic("Failed to initialize BackendApp: conversation store initialization failed")
+		panic("failed to initialize BackendApp: conversation store initialization failed")
 	}
 	a.conversationStoreAPI = cc
-	slog.Info("Conversation store initialized", "directory", a.conversationsDirPath)
+	slog.Info("conversation store initialized", "directory", a.conversationsDirPath)
 }
 
 func (a *BackendApp) initModelPresetStore() {
 	a.modelPresetStoreAPI = &modelStore.ModelPresetStore{}
 	if err := os.MkdirAll(a.modelPresetsDirPath, os.FileMode(0o770)); err != nil {
 		slog.Error(
-			"Failed to create model presets directory",
+			"failed to create model presets directory",
 			"modelPresetsDirPath", a.modelPresetsDirPath,
-			"Error", err,
+			"error", err,
 		)
-		panic("Failed to initialize BackendApp: could not create model presets directory")
+		panic("failed to initialize BackendApp: could not create model presets directory")
 	}
 
 	err := modelStore.InitModelPresetStore(a.modelPresetStoreAPI, a.modelPresetsFilePath)
 	if err != nil {
 		slog.Error(
-			"Couldn't initialize model presets store",
+			"couldn't initialize model presets store",
 			"modelPresetsFilePath", a.modelPresetsFilePath,
-			"Error", err,
+			"error", err,
 		)
-		panic("Failed to initialize BackendApp: model presets store initialization failed")
+		panic("failed to initialize BackendApp: model presets store initialization failed")
 	}
-	slog.Info("Model presets store initialized", "filepath", a.modelPresetsFilePath)
+	slog.Info("model presets store initialized", "filepath", a.modelPresetsFilePath)
 }
 
 func (a *BackendApp) initPromptTemplateStore() {
 	if err := os.MkdirAll(a.promptsDirPath, os.FileMode(0o770)); err != nil {
 		slog.Error(
-			"Failed to create prompt templates directory",
+			"failed to create prompt templates directory",
 			"promptsDirPath", a.promptsDirPath,
-			"Error", err,
+			"error", err,
 		)
-		panic("Failed to initialize BackendApp: could not create prompt templates directory")
+		panic("failed to initialize BackendApp: could not create prompt templates directory")
 	}
 
 	ps, err := promptStore.NewPromptTemplateStore(
@@ -154,25 +154,25 @@ func (a *BackendApp) initPromptTemplateStore() {
 	)
 	if err != nil {
 		slog.Error(
-			"Couldn't initialize prompt template store",
+			"couldn't initialize prompt template store",
 			"promptsDirPath", a.promptsDirPath,
-			"Error", err,
+			"error", err,
 		)
-		panic("Failed to initialize BackendApp: prompt template store initialization failed")
+		panic("failed to initialize BackendApp: prompt template store initialization failed")
 	}
 	a.promptTemplateStoreAPI = ps
-	slog.Info("Prompt template store initialized", "directory", a.promptsDirPath)
+	slog.Info("prompt template store initialized", "directory", a.promptsDirPath)
 }
 
 func (a *BackendApp) initProviderSet() {
 	p, err := inference.NewProviderSetAPI(a.defaultInbuiltProvider, false)
 	if err != nil {
 		slog.Error(
-			"Failed to initialize provider set",
+			"failed to initialize provider set",
 			"defaultInbuiltProvider", a.defaultInbuiltProvider,
-			"Error", err,
+			"error", err,
 		)
-		panic("Failed to initialize BackendApp: invalid default provider")
+		panic("failed to initialize BackendApp: invalid default provider")
 	}
 	a.providerSetAPI = p
 }

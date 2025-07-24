@@ -66,7 +66,7 @@ func (lc *loggingReadCloser) Close() error {
 	}
 
 	if lc.logMode {
-		slog.Debug("Response", "Body", string(dataBytes)+"\n")
+		slog.Debug("response", "body", string(dataBytes)+"\n")
 	}
 
 	return err
@@ -106,7 +106,7 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	// Log request details if LogMode is enabled.
 	if t.LogMode {
-		slog.Debug("Roundtripper", "Request Details", getDetailsStr(reqDetails))
+		slog.Debug("roundtripper", "request", getDetailsStr(reqDetails))
 	}
 
 	// Perform the request.
@@ -154,10 +154,10 @@ func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Log response details if LogMode is enabled.
 	if t.LogMode {
 		if respDetails != nil {
-			slog.Debug("Roundtripper", "Response Details", getDetailsStr(respDetails))
+			slog.Debug("roundtripper", "responseDetails", getDetailsStr(respDetails))
 		}
 		if errorDetails != nil {
-			slog.Debug("Roundtripper", "Error Details", getDetailsStr(errorDetails))
+			slog.Debug("roundtripper", "errorDetails", getDetailsStr(errorDetails))
 		}
 	}
 
@@ -315,7 +315,7 @@ func generateCurlCommand(config *APIRequestDetails) string {
 func PrintJSON(v any) {
 	p, err := json.MarshalIndent(v, "", "")
 	if err == nil {
-		slog.Info("Request params", "JSON", string(p))
+		slog.Info("request params", "json", string(p))
 	}
 }
 

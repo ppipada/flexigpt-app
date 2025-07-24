@@ -150,7 +150,7 @@ func (w *Writer) listen() {
 	for b := range w.queue {
 		if w.f == nil {
 			if err := w.rotate(); err != nil {
-				w.logger.Error("Failed to create log file", "Error", err)
+				w.logger.Error("failed to create log file", "error", err)
 			}
 		}
 
@@ -158,29 +158,29 @@ func (w *Writer) listen() {
 
 		if w.opts.MaximumFileSize != 0 && size > w.opts.MaximumFileSize {
 			w.logger.Info(
-				"Attempting to write more bytes than allowed by MaximumFileSize. Skipping.",
+				"attempting to write more bytes than allowed by MaximumFileSize, skipping",
 			)
 			continue
 		}
 		if w.opts.MaximumFileSize != 0 && w.bytesWritten+size > w.opts.MaximumFileSize {
 			if err := w.rotate(); err != nil {
-				w.logger.Error("Failed to rotate log file", "Error", err)
+				w.logger.Error("failed to rotate log file", "error", err)
 			}
 		}
 
 		if w.opts.MaximumLifetime != 0 && time.Now().After(w.ts.Add(w.opts.MaximumLifetime)) {
 			if err := w.rotate(); err != nil {
-				w.logger.Error("Failed to rotate log file", "Error", err)
+				w.logger.Error("failed to rotate log file", "error", err)
 			}
 		}
 
 		if _, err := w.bw.Write(b); err != nil {
-			w.logger.Error("Failed to write to file.", "Error", err)
+			w.logger.Error("failed to write to file", "error", err)
 		}
 
 		if w.opts.FlushAfterEveryWrite {
 			if err := w.flushCurrentFile(); err != nil {
-				w.logger.Error("Failed to flush to file.", "Error", err)
+				w.logger.Error("failed to flush to file", "error", err)
 			}
 		}
 
