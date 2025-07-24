@@ -14,7 +14,6 @@ import (
 // Sensitive keys to filter.
 var sensitiveKeys = []string{"authorization", "key"}
 
-// Define a context key type to avoid collisions.
 type contextKey string
 
 const debugHTTPResponseKey = contextKey("DebugHTTPResponse")
@@ -26,9 +25,218 @@ type DebugHTTPResponse struct {
 	ErrorDetails    *APIErrorDetails
 }
 
-// FilterSensitiveInfo recursively filters out sensitive keys from a data structure.
+// NewDebugHTTPClient creates a new HTTP client with logging capabilities.
+func NewDebugHTTPClient(logMode, captureResponseData bool) *http.Client {
+	return &http.Client{
+		Transport: &LogTransport{
+			Transport:           http.DefaultTransport,
+			LogMode:             logMode,
+			CaptureResponseData: captureResponseData,
+		},
+	}
+}
+
+// LogTransport is a custom http.RoundTripper that logs requests and responses.
+type LogTransport struct {
+	Transport           http.RoundTripper
+	LogMode             bool
+	CaptureResponseData bool
+}
+
+// RoundTrip executes a single HTTP transaction and logs the request and response.
+func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	reqCtx := req.Context()
+	debugResp, ok := GetDebugHTTPResponse(reqCtx)
+	if !ok || debugResp == nil {
+		// Allocate a pointer for processing.
+		// This is not going to be available in consumer anycase, but is present for processing sakes only.
+		debugResp = &DebugHTTPResponse{}
+	}
+
+	// Capture request details.
+	reqDetails := captureRequestDetails(req)
+	debugResp.RequestDetails = reqDetails
+
+	// Log request details if LogMode is enabled.
+	if t.LogMode {
+		slog.Debug("Roundtripper", "Request Details", getDetailsStr(reqDetails))
+	}
+
+	// Perform the request.
+	resp, err := t.Transport.RoundTrip(req)
+
+	// Capture response details.
+	var respDetails *APIResponseDetails
+	if resp != nil {
+		// Capture headers.
+		headers := make(map[string]any)
+		for key, values := range resp.Header {
+			headers[key] = strings.Join(values, ", ")
+		}
+
+		// Initialize response details.
+		respDetails = &APIResponseDetails{
+			Status:  resp.StatusCode,
+			Headers: filterSensitiveInfo(headers),
+		}
+		debugResp.ResponseDetails = respDetails
+
+		// Wrap the response body.
+		if t.CaptureResponseData {
+			buffer := new(bytes.Buffer)
+			resp.Body = &loggingReadCloser{
+				ReadCloser: resp.Body,
+				buf:        buffer,
+				debugResp:  debugResp,
+				logMode:    t.LogMode,
+			}
+		}
+	}
+
+	// Capture error details if an error occurred.
+	var errorDetails *APIErrorDetails
+	if err != nil {
+		errorDetails = &APIErrorDetails{
+			Message:         err.Error(),
+			RequestDetails:  reqDetails,
+			ResponseDetails: respDetails,
+		}
+		debugResp.ErrorDetails = errorDetails
+	}
+
+	// Log response details if LogMode is enabled.
+	if t.LogMode {
+		if respDetails != nil {
+			slog.Debug("Roundtripper", "Response Details", getDetailsStr(respDetails))
+		}
+		if errorDetails != nil {
+			slog.Debug("Roundtripper", "Error Details", getDetailsStr(errorDetails))
+		}
+	}
+
+	// Return the response and error.
+	return resp, err
+}
+
+// captureRequestDetails captures details of the HTTP request.
+func captureRequestDetails(req *http.Request) *APIRequestDetails {
+	headers := make(map[string]any)
+	for key, values := range req.Header {
+		headers[key] = strings.Join(values, ", ")
+	}
+
+	var data map[string]any
+	if req.Body != nil {
+		bodyBytes, _ := io.ReadAll(req.Body)
+		// Reset body for further use.
+		req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		_ = json.Unmarshal(bodyBytes, &data)
+	}
+
+	url := req.URL.String()
+	method := req.Method
+
+	apireq := &APIRequestDetails{
+		URL:     &url,
+		Method:  &method,
+		Headers: filterSensitiveInfo(headers),
+		Data:    filterSensitiveInfo(data),
+	}
+
+	curlcmd := generateCurlCommand(apireq)
+	apireq.CurlCommand = &curlcmd
+
+	return apireq
+}
+
+// CaptureResponseDetails captures details of the HTTP response
+// func captureResponseDetails(
+// 	resp *http.Response,
+// ) *APIResponseDetails {
+// 	headers := make(map[string]any)
+// 	for key, values := range resp.Header {
+// 		headers[key] = strings.Join(values, ", ")
+// 	}
+// 	var data map[string]any
+// 	if resp.Body != nil {
+// 		bodyBytes, err := io.ReadAll(resp.Body)
+// 		if err == nil {
+// 			// Attempt to unmarshal the body into 'data'.
+// 			_ = json.Unmarshal(bodyBytes, &data)
+// 		}
+// 		// Reconstruct the body so it can be read again later.
+// 		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+// 	}
+// 	return &APIResponseDetails{
+// 		Status:  resp.StatusCode,
+// 		Headers: filterSensitiveInfo(headers),
+// 		Data:    filterSensitiveInfo(data),
+// 	}
+// }
+// Done.
+
+type loggingReadCloser struct {
+	io.ReadCloser
+
+	buf       *bytes.Buffer
+	debugResp *DebugHTTPResponse
+	logMode   bool
+}
+
+func (lc *loggingReadCloser) Read(p []byte) (int, error) {
+	n, err := lc.ReadCloser.Read(p)
+	if n > 0 {
+		lc.buf.Write(p[:n])
+	}
+	return n, err
+}
+
+func (lc *loggingReadCloser) Close() error {
+	err := lc.ReadCloser.Close()
+	if err != nil {
+		return err
+	}
+	dataBytes := lc.buf.Bytes()
+
+	// Process the data based on its type.
+	var data any
+	err = json.Unmarshal(dataBytes, &data)
+	if err != nil {
+		// Text data.
+		lc.debugResp.ResponseDetails.Data = string(dataBytes)
+	} else {
+		mapData, ok := data.(map[string]any)
+		if ok {
+			// JSON data.
+			lc.debugResp.ResponseDetails.Data = filterSensitiveInfo(mapData)
+		} else {
+			// Text data.
+			lc.debugResp.ResponseDetails.Data = string(dataBytes)
+		}
+	}
+
+	if lc.logMode {
+		slog.Debug("Response", "Body", string(dataBytes)+"\n")
+	}
+
+	return err
+}
+
+func AddDebugResponseToCtx(ctx context.Context) context.Context {
+	debugResp := &DebugHTTPResponse{}
+	// Create a context with the DebugHTTPResponse.
+	return context.WithValue(ctx, debugHTTPResponseKey, debugResp)
+}
+
+// Helper function to retrieve DebugHTTPResponse from context.
+func GetDebugHTTPResponse(ctx context.Context) (*DebugHTTPResponse, bool) {
+	debugResp, ok := ctx.Value(debugHTTPResponseKey).(*DebugHTTPResponse)
+	return debugResp, ok
+}
+
+// filterSensitiveInfo recursively filters out sensitive keys from a data structure.
 // It supports nested maps and slices.
-func FilterSensitiveInfo(data map[string]any) map[string]any {
+func filterSensitiveInfo(data map[string]any) map[string]any {
 	filteredData := make(map[string]any)
 	for key, value := range data {
 		if containsSensitiveKey(key) {
@@ -48,7 +256,7 @@ func deepCopyAndFilter(value any) any {
 	switch v := value.(type) {
 	case map[string]any:
 		// Process nested map.
-		return FilterSensitiveInfo(v)
+		return filterSensitiveInfo(v)
 	case []any:
 		// Process each element in the slice.
 		newSlice := make([]any, len(v))
@@ -104,116 +312,11 @@ func generateCurlCommand(config *APIRequestDetails) string {
 	return curlCommand.String()
 }
 
-// captureRequestDetails captures details of the HTTP request.
-func captureRequestDetails(req *http.Request) *APIRequestDetails {
-	headers := make(map[string]any)
-	for key, values := range req.Header {
-		headers[key] = strings.Join(values, ", ")
+func PrintJSON(v any) {
+	p, err := json.MarshalIndent(v, "", "")
+	if err == nil {
+		slog.Info("Request params", "JSON", string(p))
 	}
-
-	var data map[string]any
-	if req.Body != nil {
-		bodyBytes, _ := io.ReadAll(req.Body)
-		// Reset body for further use.
-		req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-		_ = json.Unmarshal(bodyBytes, &data)
-	}
-
-	url := req.URL.String()
-	method := req.Method
-
-	apireq := &APIRequestDetails{
-		URL:     &url,
-		Method:  &method,
-		Headers: FilterSensitiveInfo(headers),
-		Data:    FilterSensitiveInfo(data),
-	}
-
-	curlcmd := generateCurlCommand(apireq)
-	apireq.CurlCommand = &curlcmd
-
-	return apireq
-}
-
-// captureResponseDetails captures details of the HTTP response.
-func CaptureResponseDetails(
-	resp *http.Response,
-) *APIResponseDetails {
-	headers := make(map[string]any)
-	for key, values := range resp.Header {
-		headers[key] = strings.Join(values, ", ")
-	}
-
-	var data map[string]any
-	if resp.Body != nil {
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err == nil {
-			// Attempt to unmarshal the body into 'data'.
-			_ = json.Unmarshal(bodyBytes, &data)
-		}
-		// Reconstruct the body so it can be read again later.
-		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-	}
-
-	return &APIResponseDetails{
-		Status:  resp.StatusCode,
-		Headers: FilterSensitiveInfo(headers),
-		Data:    FilterSensitiveInfo(data),
-	}
-}
-
-type loggingReadCloser struct {
-	io.ReadCloser
-
-	buf       *bytes.Buffer
-	debugResp *DebugHTTPResponse
-	logMode   bool
-}
-
-func (lc *loggingReadCloser) Read(p []byte) (int, error) {
-	n, err := lc.ReadCloser.Read(p)
-	if n > 0 {
-		lc.buf.Write(p[:n])
-	}
-	return n, err
-}
-
-func (lc *loggingReadCloser) Close() error {
-	err := lc.ReadCloser.Close()
-	if err != nil {
-		return err
-	}
-	dataBytes := lc.buf.Bytes()
-
-	// Process the data based on its type.
-	var data any
-	err = json.Unmarshal(dataBytes, &data)
-	if err != nil {
-		// Text data.
-		lc.debugResp.ResponseDetails.Data = string(dataBytes)
-	} else {
-		mapData, ok := data.(map[string]any)
-		if ok {
-			// JSON data.
-			lc.debugResp.ResponseDetails.Data = FilterSensitiveInfo(mapData)
-		} else {
-			// Text data.
-			lc.debugResp.ResponseDetails.Data = string(dataBytes)
-		}
-	}
-
-	if lc.logMode {
-		slog.Debug("Response", "Body", string(dataBytes)+"\n")
-	}
-
-	return err
-}
-
-// LogTransport is a custom http.RoundTripper that logs requests and responses.
-type LogTransport struct {
-	Transport           http.RoundTripper
-	LogMode             bool
-	CaptureResponseData bool
 }
 
 func getDetailsStr(v any) string {
@@ -223,109 +326,4 @@ func getDetailsStr(v any) string {
 		return fmt.Sprintf("Could not get json of object: %+v", v)
 	}
 	return string(s)
-}
-
-// RoundTrip executes a single HTTP transaction and logs the request and response.
-func (t *LogTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	reqCtx := req.Context()
-	debugResp, ok := GetDebugHTTPResponse(reqCtx)
-	if !ok || debugResp == nil {
-		// Allocate a pointer for processing.
-		// This is not going to be available in consumer anycase, but is present for processing sakes only.
-		debugResp = &DebugHTTPResponse{}
-	}
-
-	// Capture request details.
-	reqDetails := captureRequestDetails(req)
-	debugResp.RequestDetails = reqDetails
-
-	// Log request details if LogMode is enabled.
-	if t.LogMode {
-		slog.Debug("Roundtripper", "Request Details", getDetailsStr(reqDetails))
-	}
-
-	// Perform the request.
-	resp, err := t.Transport.RoundTrip(req)
-
-	// Capture response details.
-	var respDetails *APIResponseDetails
-	if resp != nil {
-		// Capture headers.
-		headers := make(map[string]any)
-		for key, values := range resp.Header {
-			headers[key] = strings.Join(values, ", ")
-		}
-
-		// Initialize response details.
-		respDetails = &APIResponseDetails{
-			Status:  resp.StatusCode,
-			Headers: FilterSensitiveInfo(headers),
-		}
-		debugResp.ResponseDetails = respDetails
-
-		// Wrap the response body.
-		if t.CaptureResponseData {
-			buffer := new(bytes.Buffer)
-			resp.Body = &loggingReadCloser{
-				ReadCloser: resp.Body,
-				buf:        buffer,
-				debugResp:  debugResp,
-				logMode:    t.LogMode,
-			}
-		}
-	}
-
-	// Capture error details if an error occurred.
-	var errorDetails *APIErrorDetails
-	if err != nil {
-		errorDetails = &APIErrorDetails{
-			Message:         err.Error(),
-			RequestDetails:  reqDetails,
-			ResponseDetails: respDetails,
-		}
-		debugResp.ErrorDetails = errorDetails
-	}
-
-	// Log response details if LogMode is enabled.
-	if t.LogMode {
-		if respDetails != nil {
-			slog.Debug("Roundtripper", "Response Details", getDetailsStr(respDetails))
-		}
-		if errorDetails != nil {
-			slog.Debug("Roundtripper", "Error Details", getDetailsStr(errorDetails))
-		}
-	}
-
-	// Return the response and error.
-	return resp, err
-}
-
-// NewDebugHTTPClient creates a new HTTP client with logging capabilities.
-func NewDebugHTTPClient(logMode, captureResponseData bool) *http.Client {
-	return &http.Client{
-		Transport: &LogTransport{
-			Transport:           http.DefaultTransport,
-			LogMode:             logMode,
-			CaptureResponseData: captureResponseData,
-		},
-	}
-}
-
-func AddDebugResponseToCtx(ctx context.Context) context.Context {
-	debugResp := &DebugHTTPResponse{}
-	// Create a context with the DebugHTTPResponse.
-	return context.WithValue(ctx, debugHTTPResponseKey, debugResp)
-}
-
-// Helper function to retrieve DebugHTTPResponse from context.
-func GetDebugHTTPResponse(ctx context.Context) (*DebugHTTPResponse, bool) {
-	debugResp, ok := ctx.Value(debugHTTPResponseKey).(*DebugHTTPResponse)
-	return debugResp, ok
-}
-
-func PrintJSON(v any) {
-	p, err := json.MarshalIndent(v, "", "")
-	if err == nil {
-		slog.Info("Request params", "JSON", string(p))
-	}
 }

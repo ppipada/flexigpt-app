@@ -2,11 +2,6 @@ package spec
 
 import "time"
 
-type PutConversationRequest struct {
-	ID   string `path:"id" required:"true"`
-	Body *PutConversationRequestBody
-}
-
 type PutConversationRequestBody struct {
 	Title      string                `json:"title"      required:"true"`
 	CreatedAt  time.Time             `json:"createdAt"  required:"true"`
@@ -14,16 +9,21 @@ type PutConversationRequestBody struct {
 	Messages   []ConversationMessage `json:"messages"   required:"true"`
 }
 
-type PutConversationResponse struct{}
-
-type PutMessagesToConversationRequest struct {
+type PutConversationRequest struct {
 	ID   string `path:"id" required:"true"`
-	Body *PutMessagesToConversationRequestBody
+	Body *PutConversationRequestBody
 }
+
+type PutConversationResponse struct{}
 
 type PutMessagesToConversationRequestBody struct {
 	Title    string                `json:"title"    required:"true"`
 	Messages []ConversationMessage `json:"messages" required:"true"`
+}
+
+type PutMessagesToConversationRequest struct {
+	ID   string `path:"id" required:"true"`
+	Body *PutMessagesToConversationRequestBody
 }
 
 type PutMessagesToConversationResponse struct{}
@@ -49,8 +49,11 @@ type ListConversationsRequest struct {
 	PageToken string `query:"pageToken"`
 }
 
-type ListConversationsResponse struct {
-	Body *ListConversationsResponseBody
+// ConversationListItem represents a conversation with basic details.
+type ConversationListItem struct {
+	ID             string     `json:"id"`
+	SanatizedTitle string     `json:"sanatizedTitle"`
+	ModifiedAt     *time.Time `json:"modifiedAt"`
 }
 
 type ListConversationsResponseBody struct {
@@ -58,11 +61,8 @@ type ListConversationsResponseBody struct {
 	NextPageToken         *string                `json:"nextPageToken,omitempty"`
 }
 
-// ConversationListItem represents a conversation with basic details.
-type ConversationListItem struct {
-	ID             string     `json:"id"`
-	SanatizedTitle string     `json:"sanatizedTitle"`
-	ModifiedAt     *time.Time `json:"modifiedAt"`
+type ListConversationsResponse struct {
+	Body *ListConversationsResponseBody
 }
 
 type SearchConversationsRequest struct {
@@ -71,11 +71,11 @@ type SearchConversationsRequest struct {
 	PageSize  int    `query:"pageSize"`
 }
 
-type SearchConversationsResponse struct {
-	Body *SearchConversationsResponseBody
-}
-
 type SearchConversationsResponseBody struct {
 	ConversationListItems []ConversationListItem `json:"conversationListItems"`
 	NextPageToken         *string                `json:"nextPageToken,omitempty"`
+}
+
+type SearchConversationsResponse struct {
+	Body *SearchConversationsResponseBody
 }

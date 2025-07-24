@@ -2,16 +2,16 @@ package spec
 
 import "github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 
-type PutPromptBundleRequest struct {
-	BundleID bundleitemutils.BundleID    `path:"bundleID" required:"true"`
-	Body     *PutPromptBundleRequestBody `                                json:"body"`
-}
-
 type PutPromptBundleRequestBody struct {
 	Slug        bundleitemutils.BundleSlug `json:"slug"                  required:"true"`
 	DisplayName string                     `json:"displayName"           required:"true"`
 	IsEnabled   bool                       `json:"isEnabled"             required:"true"`
 	Description string                     `json:"description,omitempty"`
+}
+
+type PutPromptBundleRequest struct {
+	BundleID bundleitemutils.BundleID    `path:"bundleID" required:"true"`
+	Body     *PutPromptBundleRequestBody `                                json:"body"`
 }
 
 type PutPromptBundleResponse struct{}
@@ -21,13 +21,13 @@ type DeletePromptBundleRequest struct {
 }
 type DeletePromptBundleResponse struct{}
 
+type PatchPromptBundleRequestBody struct {
+	IsEnabled bool `json:"isEnabled" required:"true"`
+}
+
 type PatchPromptBundleRequest struct {
 	BundleID bundleitemutils.BundleID      `path:"bundleID" required:"true"`
 	Body     *PatchPromptBundleRequestBody `                                json:"body"`
-}
-
-type PatchPromptBundleRequestBody struct {
-	IsEnabled bool `json:"isEnabled" required:"true"`
 }
 
 type PatchPromptBundleResponse struct{}
@@ -39,20 +39,13 @@ type ListPromptBundlesRequest struct {
 	PageToken       string                     `query:"pageToken"`
 }
 
-type ListPromptBundlesResponse struct {
-	Body *ListPromptBundlesResponseBody
-}
-
 type ListPromptBundlesResponseBody struct {
 	PromptBundles []PromptBundle `json:"promptBundles"`
 	NextPageToken *string        `json:"nextPageToken,omitempty"`
 }
 
-type PutPromptTemplateRequest struct {
-	BundleID     bundleitemutils.BundleID      `path:"bundleID"     required:"true"`
-	TemplateSlug bundleitemutils.ItemSlug      `path:"templateSlug" required:"true"`
-	Version      bundleitemutils.ItemVersion   `path:"version"      required:"true"`
-	Body         *PutPromptTemplateRequestBody `                                    json:"body"`
+type ListPromptBundlesResponse struct {
+	Body *ListPromptBundlesResponseBody
 }
 
 type PutPromptTemplateRequestBody struct {
@@ -67,6 +60,13 @@ type PutPromptTemplateRequestBody struct {
 	PreProcessors []PreProcessorCall `json:"preProcessors,omitempty"`
 }
 
+type PutPromptTemplateRequest struct {
+	BundleID     bundleitemutils.BundleID      `path:"bundleID"     required:"true"`
+	TemplateSlug bundleitemutils.ItemSlug      `path:"templateSlug" required:"true"`
+	Version      bundleitemutils.ItemVersion   `path:"version"      required:"true"`
+	Body         *PutPromptTemplateRequestBody `                                    json:"body"`
+}
+
 type PutPromptTemplateResponse struct{}
 
 type DeletePromptTemplateRequest struct {
@@ -76,15 +76,15 @@ type DeletePromptTemplateRequest struct {
 }
 type DeletePromptTemplateResponse struct{}
 
+type PatchPromptTemplateRequestBody struct {
+	IsEnabled bool `json:"isEnabled" required:"true"`
+}
+
 type PatchPromptTemplateRequest struct {
 	BundleID     bundleitemutils.BundleID        `path:"bundleID"     required:"true"`
 	TemplateSlug bundleitemutils.ItemSlug        `path:"templateSlug" required:"true"`
 	Version      bundleitemutils.ItemVersion     `path:"version"      required:"true"`
 	Body         *PatchPromptTemplateRequestBody `                                    json:"body"`
-}
-
-type PatchPromptTemplateRequestBody struct {
-	IsEnabled bool `json:"isEnabled" required:"true"`
 }
 
 type PatchPromptTemplateResponse struct{}
@@ -104,10 +104,6 @@ type ListPromptTemplatesRequest struct {
 	PageToken           string                     `query:"pageToken"`
 }
 
-type ListPromptTemplatesResponse struct {
-	Body *ListPromptTemplatesResponseBody
-}
-
 type PromptTemplateListItem struct {
 	BundleID        bundleitemutils.BundleID    `json:"bundleID"`
 	BundleSlug      bundleitemutils.BundleSlug  `json:"bundleSlug"`
@@ -121,6 +117,9 @@ type ListPromptTemplatesResponseBody struct {
 	NextPageToken           *string                  `json:"nextPageToken,omitempty"`
 }
 
+type ListPromptTemplatesResponse struct {
+	Body *ListPromptTemplatesResponseBody
+}
 type SearchPromptTemplatesRequest struct {
 	Query           string `query:"q"               required:"true"`
 	PageToken       string `query:"pageToken"`

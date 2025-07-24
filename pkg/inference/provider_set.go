@@ -9,35 +9,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/model/spec"
 )
 
-func getInbuiltProviderAPI(debug bool) map[spec.ProviderName]CompletionProvider {
-	return map[spec.ProviderName]CompletionProvider{
-		consts.ProviderNameAnthropic: NewAnthropicCompatibleAPI(
-			consts.AnthropicProviderInfo,
-			debug,
-		),
-		consts.ProviderNameDeepseek: NewOpenAICompatibleProvider(
-			consts.DeepseekProviderInfo,
-			debug,
-		),
-		consts.ProviderNameGoogle: NewOpenAICompatibleProvider(
-			consts.GoogleProviderInfo,
-			debug,
-		),
-		consts.ProviderNameHuggingFace: NewHuggingFaceCompatibleAPI(
-			consts.HuggingfaceProviderInfo,
-			debug,
-		),
-		consts.ProviderNameLlamaCPP: NewOpenAICompatibleProvider(
-			consts.LlamacppProviderInfo,
-			debug,
-		),
-		consts.ProviderNameOpenAI: NewOpenAICompatibleProvider(
-			consts.OpenAIProviderInfo,
-			debug,
-		),
-	}
-}
-
 // Define the ProviderSetAPI struct.
 type ProviderSetAPI struct {
 	defaultProvider spec.ProviderName
@@ -261,4 +232,33 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	}
 
 	return &FetchCompletionResponse{Body: resp}, nil
+}
+
+func getInbuiltProviderAPI(debug bool) map[spec.ProviderName]CompletionProvider {
+	return map[spec.ProviderName]CompletionProvider{
+		consts.ProviderNameAnthropic: NewAnthropicCompatibleAPI(
+			consts.AnthropicProviderInfo,
+			debug,
+		),
+		consts.ProviderNameDeepseek: NewOpenAICompatibleProvider(
+			consts.DeepseekProviderInfo,
+			debug,
+		),
+		consts.ProviderNameGoogle: NewOpenAICompatibleProvider(
+			consts.GoogleProviderInfo,
+			debug,
+		),
+		consts.ProviderNameHuggingFace: NewHuggingFaceCompatibleAPI(
+			consts.HuggingfaceProviderInfo,
+			debug,
+		),
+		consts.ProviderNameLlamaCPP: NewOpenAICompatibleProvider(
+			consts.LlamacppProviderInfo,
+			debug,
+		),
+		consts.ProviderNameOpenAI: NewOpenAICompatibleProvider(
+			consts.OpenAIProviderInfo,
+			debug,
+		),
+	}
 }

@@ -5,26 +5,6 @@ import (
 	"regexp"
 )
 
-func CountTokensInContent(content string) int {
-	// Regular expression to split the content into tokens based on common delimiters.
-	// This includes whitespaces, brackets, arithmetic operators, and punctuation.
-	tokenRegex := regexp.MustCompile(`[\s{}\[\]()+\-=*/<>,;:.!&|\\]+`)
-
-	// Split the content into tokens based on the regex.
-	tokens := tokenRegex.Split(content, -1)
-
-	// Filter out empty strings and count the tokens.
-	count := 0
-	for _, token := range tokens {
-		if token != "" {
-			count++
-		}
-	}
-
-	// Return the count of tokens.
-	return count
-}
-
 // FilterMessagesByTokenCount filters messages based on the maximum token count.
 func FilterMessagesByTokenCount(
 	messages []ChatCompletionRequestMessage,
@@ -73,4 +53,24 @@ func FilterMessagesByTokenCount(
 	}
 
 	return filteredMessages
+}
+
+func CountTokensInContent(content string) int {
+	// Regular expression to split the content into tokens based on common delimiters.
+	// This includes whitespaces, brackets, arithmetic operators, and punctuation.
+	tokenRegex := regexp.MustCompile(`[\s{}\[\]()+\-=*/<>,;:.!&|\\]+`)
+
+	// Split the content into tokens based on the regex.
+	tokens := tokenRegex.Split(content, -1)
+
+	// Filter out empty strings and count the tokens.
+	count := 0
+	for _, token := range tokens {
+		if token != "" {
+			count++
+		}
+	}
+
+	// Return the count of tokens.
+	return count
 }

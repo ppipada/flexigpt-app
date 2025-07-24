@@ -35,38 +35,6 @@ type Options struct {
 	Debug                  bool   `doc:"Enable debug logs"`
 }
 
-func initSlog(logsDirPath string, debug bool) *logrotate.Writer {
-	level := slog.LevelInfo
-	if debug {
-		level = slog.LevelDebug
-	}
-	slogOpts := &slog.HandlerOptions{
-		Level: level,
-	}
-
-	var stdoutHandler slog.Handler = slog.NewTextHandler(os.Stdout, slogOpts)
-	stdoutLogger := slog.New(stdoutHandler)
-
-	// Init logger.
-	opts := logrotate.Options{
-		Directory:            logsDirPath,
-		MaximumFileSize:      10 * 1024 * 1024,
-		MaximumLifetime:      24 * time.Hour,
-		FileNameFunc:         logrotate.DefaultFilenameFunc,
-		FlushAfterEveryWrite: true,
-	}
-	writer, err := logrotate.New(stdoutLogger, opts)
-	if err != nil {
-		slog.Error("Failed to create log writer", "Error", err)
-		panic("Init logs failed")
-	}
-
-	var handler slog.Handler = slog.NewTextHandler(writer, slogOpts)
-	slogger := slog.New(handler)
-	slog.SetDefault(slogger)
-	return writer
-}
-
 func main() {
 	cli := humacli.New(func(hooks humacli.Hooks, opts *Options) {
 		log.Printf("Options are %+v\n", opts)
@@ -107,4 +75,36 @@ func main() {
 	})
 
 	cli.Run()
+}
+
+func initSlog(logsDirPath string, debug bool) *logrotate.Writer {
+	level := slog.LevelInfo
+	if debug {
+		level = slog.LevelDebug
+	}
+	slogOpts := &slog.HandlerOptions{
+		Level: level,
+	}
+
+	var stdoutHandler slog.Handler = slog.NewTextHandler(os.Stdout, slogOpts)
+	stdoutLogger := slog.New(stdoutHandler)
+
+	// Init logger.
+	opts := logrotate.Options{
+		Directory:            logsDirPath,
+		MaximumFileSize:      10 * 1024 * 1024,
+		MaximumLifetime:      24 * time.Hour,
+		FileNameFunc:         logrotate.DefaultFilenameFunc,
+		FlushAfterEveryWrite: true,
+	}
+	writer, err := logrotate.New(stdoutLogger, opts)
+	if err != nil {
+		slog.Error("Failed to create log writer", "Error", err)
+		panic("Init logs failed")
+	}
+
+	var handler slog.Handler = slog.NewTextHandler(writer, slogOpts)
+	slogger := slog.New(handler)
+	slog.SetDefault(slogger)
+	return writer
 }

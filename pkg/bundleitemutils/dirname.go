@@ -12,25 +12,6 @@ type BundleDirInfo struct {
 	DirName string
 }
 
-// SanitizeBundleID removes all characters from id except [a-zA-Z0-9-_].
-// If the result is empty, returns "x".
-func SanitizeBundleID(id BundleID) string {
-	var b strings.Builder
-	for _, r := range id {
-		switch {
-		case r >= '0' && r <= '9',
-			r >= 'a' && r <= 'z',
-			r >= 'A' && r <= 'Z',
-			r == '-', r == '_':
-			_, _ = b.WriteRune(r)
-		}
-	}
-	if b.Len() == 0 {
-		return "x"
-	}
-	return b.String()
-}
-
 // BuildBundleDir returns a BundleDirInfo with a directory name safe for all filesystems.
 // The directory name is "<sanitizedID>_<slug>".
 func BuildBundleDir(id BundleID, slug BundleSlug) (BundleDirInfo, error) {
@@ -53,4 +34,23 @@ func ParseBundleDir(dir string) (BundleDirInfo, error) {
 		Slug:    BundleSlug(parts[1]),
 		DirName: dir,
 	}, nil
+}
+
+// SanitizeBundleID removes all characters from id except [a-zA-Z0-9-_].
+// If the result is empty, returns "x".
+func SanitizeBundleID(id BundleID) string {
+	var b strings.Builder
+	for _, r := range id {
+		switch {
+		case r >= '0' && r <= '9',
+			r >= 'a' && r <= 'z',
+			r >= 'A' && r <= 'Z',
+			r == '-', r == '_':
+			_, _ = b.WriteRune(r)
+		}
+	}
+	if b.Len() == 0 {
+		return "x"
+	}
+	return b.String()
 }

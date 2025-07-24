@@ -63,13 +63,12 @@ type DeleteModelPresetRequest struct {
 }
 type DeleteModelPresetResponse struct{}
 
+type SetDefaultModelPresetRequestBody struct {
+	ModelPresetID ModelPresetID `path:"modelPresetID" required:"true"`
+}
 type SetDefaultModelPresetRequest struct {
 	ProviderName ProviderName `path:"providerName"`
 	Body         *SetDefaultModelPresetRequestBody
-}
-
-type SetDefaultModelPresetRequestBody struct {
-	ModelPresetID ModelPresetID `path:"modelPresetID" required:"true"`
 }
 
 type SetDefaultModelPresetResponse struct{}

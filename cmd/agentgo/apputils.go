@@ -13,25 +13,14 @@ const FrontendPathPrefix = "/frontend/dist"
 
 var DIRPages = []string{"/agents", "/chats", "/settings", "/404"}
 
-func getActualURL(origurl string) string {
-	callurl := origurl
-	if !strings.HasPrefix(callurl, FrontendPathPrefix) {
-		return callurl
-	}
-
-	// Handle if it's a page request.
-	if strings.HasSuffix(callurl, "/") {
-		return callurl[len(FrontendPathPrefix):] + "index.html"
-	}
-
-	for _, d := range DIRPages {
-		durl := FrontendPathPrefix + d
-		if callurl == durl {
-			return callurl[len(FrontendPathPrefix):] + "/index.html"
+func EmbeddedFSWalker(assets embed.FS) {
+	_ = fs.WalkDir(assets, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
-	}
-
-	return callurl[len(FrontendPathPrefix):]
+		slog.Info("Embedded walk", "Path", path)
+		return nil
+	})
 }
 
 func LogStackTrace() {
@@ -56,12 +45,23 @@ func URLCleanerMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func EmbeddedFSWalker(assets embed.FS) {
-	_ = fs.WalkDir(assets, ".", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
+func getActualURL(origurl string) string {
+	callurl := origurl
+	if !strings.HasPrefix(callurl, FrontendPathPrefix) {
+		return callurl
+	}
+
+	// Handle if it's a page request.
+	if strings.HasSuffix(callurl, "/") {
+		return callurl[len(FrontendPathPrefix):] + "index.html"
+	}
+
+	for _, d := range DIRPages {
+		durl := FrontendPathPrefix + d
+		if callurl == durl {
+			return callurl[len(FrontendPathPrefix):] + "/index.html"
 		}
-		slog.Info("Embedded walk", "Path", path)
-		return nil
-	})
+	}
+
+	return callurl[len(FrontendPathPrefix):]
 }

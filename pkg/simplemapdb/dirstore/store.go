@@ -15,25 +15,6 @@ import (
 	simplemapdbFileStore "github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 )
 
-const (
-	SortOrderAscending  = "asc"
-	SortOrderDescending = "desc"
-)
-
-var ErrCannotReadPartition = errors.New("failed to read partition directory")
-
-type FileKey struct {
-	FileName string
-	XAttr    any
-}
-
-// PartitionProvider defines an interface for determining the partition directory for a file.
-type PartitionProvider interface {
-	GetPartitionDir(key FileKey) (string, error)
-	ListPartitions(baseDir, sortOrder, pageToken string,
-		pageSize int) ([]string, string, error)
-}
-
 // MapDirectoryStore manages multiple MapFileStores within a directory.
 type MapDirectoryStore struct {
 	baseDir           string
@@ -107,6 +88,47 @@ func NewMapDirectoryStore(
 	return mds, nil
 }
 
+// SetFileData sets the provided data for the given file.
+// It is a thin wrapper around Open and SetAll.
+func (mds *MapDirectoryStore) SetFileData(fileKey FileKey, data map[string]any) error {
+	if data == nil {
+		return fmt.Errorf("invalid request for file: %s", fileKey.FileName)
+	}
+	store, err := mds.Open(fileKey, true, data)
+	if err != nil {
+		return err
+	}
+	return store.SetAll(data)
+}
+
+// GetFileData returns the data from the specified file in the store.
+// It is a thin wrapper around Open and GetAll.
+func (mds *MapDirectoryStore) GetFileData(
+	fileKey FileKey,
+	forceFetch bool,
+) (map[string]any, error) {
+	// Use a dummy defaultData for opening if file exists.
+	store, err := mds.Open(fileKey, false, map[string]any{})
+	if err != nil {
+		return nil, err
+	}
+	return store.GetAll(forceFetch)
+}
+
+// DeleteFile removes the file with the given filename from the base directory.
+// It is a thin wrapper around Open and DeleteFile.
+func (mds *MapDirectoryStore) DeleteFile(fileKey FileKey) error {
+	store, err := mds.Open(fileKey, false, map[string]any{})
+	if err != nil {
+		return err
+	}
+
+	if err := store.DeleteFile(); err != nil {
+		return err
+	}
+	return mds.Close(fileKey)
+}
+
 // Open returns a cached or newly created MapFileStore for the given FileKey.
 // It is concurrency-safe and ensures only one instance per file path.
 func (mds *MapDirectoryStore) Open(
@@ -151,47 +173,6 @@ func (mds *MapDirectoryStore) Open(
 	mds.openStores[filePath] = store
 
 	return store, nil
-}
-
-// SetFileData sets the provided data for the given file.
-// It is a thin wrapper around Open and SetAll.
-func (mds *MapDirectoryStore) SetFileData(fileKey FileKey, data map[string]any) error {
-	if data == nil {
-		return fmt.Errorf("invalid request for file: %s", fileKey.FileName)
-	}
-	store, err := mds.Open(fileKey, true, data)
-	if err != nil {
-		return err
-	}
-	return store.SetAll(data)
-}
-
-// GetFileData returns the data from the specified file in the store.
-// It is a thin wrapper around Open and GetAll.
-func (mds *MapDirectoryStore) GetFileData(
-	fileKey FileKey,
-	forceFetch bool,
-) (map[string]any, error) {
-	// Use a dummy defaultData for opening if file exists.
-	store, err := mds.Open(fileKey, false, map[string]any{})
-	if err != nil {
-		return nil, err
-	}
-	return store.GetAll(forceFetch)
-}
-
-// DeleteFile removes the file with the given filename from the base directory.
-// It is a thin wrapper around Open and DeleteFile.
-func (mds *MapDirectoryStore) DeleteFile(fileKey FileKey) error {
-	store, err := mds.Open(fileKey, false, map[string]any{})
-	if err != nil {
-		return err
-	}
-
-	if err := store.DeleteFile(); err != nil {
-		return err
-	}
-	return mds.Close(fileKey)
 }
 
 // Close closes the MapFileStore for the given FileKey (if it was opened) and removes it from the cache.

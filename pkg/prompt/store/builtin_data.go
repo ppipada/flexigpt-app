@@ -55,13 +55,6 @@ func WithBundlesFS(fsys fs.FS, rootDir string) BuiltInDataOption {
 	}
 }
 
-func resolveBundlesFS(fsys fs.FS, dir string) (fs.FS, error) {
-	if dir == "" || dir == "." {
-		return fsys, nil
-	}
-	return fs.Sub(fsys, dir)
-}
-
 func NewBuiltInData(
 	overlayBaseDir string,
 	builtInSnapshotMaxAge time.Duration,
@@ -162,25 +155,6 @@ func (d *BuiltInData) GetBuiltInBundle(id bundleitemutils.BundleID) (spec.Prompt
 	return b, nil
 }
 
-func (d *BuiltInData) GetBuiltInTemplate(
-	bundleID bundleitemutils.BundleID,
-	slug bundleitemutils.ItemSlug,
-	version bundleitemutils.ItemVersion,
-) (spec.PromptTemplate, error) {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-	templates, ok := d.viewTemplates[bundleID]
-	if !ok {
-		return spec.PromptTemplate{}, spec.ErrBundleNotFound
-	}
-	for _, tpl := range templates {
-		if tpl.Slug == slug && tpl.Version == version {
-			return tpl, nil
-		}
-	}
-	return spec.PromptTemplate{}, spec.ErrTemplateNotFound
-}
-
 // SetTemplateEnabled toggles a template flag.
 func (d *BuiltInData) SetTemplateEnabled(
 	bundleID bundleitemutils.BundleID,
@@ -205,6 +179,25 @@ func (d *BuiltInData) SetTemplateEnabled(
 
 	d.rebuilder.Trigger()
 	return template, nil
+}
+
+func (d *BuiltInData) GetBuiltInTemplate(
+	bundleID bundleitemutils.BundleID,
+	slug bundleitemutils.ItemSlug,
+	version bundleitemutils.ItemVersion,
+) (spec.PromptTemplate, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	templates, ok := d.viewTemplates[bundleID]
+	if !ok {
+		return spec.PromptTemplate{}, spec.ErrBundleNotFound
+	}
+	for _, tpl := range templates {
+		if tpl.Slug == slug && tpl.Version == version {
+			return tpl, nil
+		}
+	}
+	return spec.PromptTemplate{}, spec.ErrTemplateNotFound
 }
 
 func (d *BuiltInData) populateDataFromFS() error {
@@ -389,4 +382,11 @@ func cloneTemplates(
 		dst[bid] = maps.Clone(inner)
 	}
 	return dst
+}
+
+func resolveBundlesFS(fsys fs.FS, dir string) (fs.FS, error) {
+	if dir == "" || dir == "." {
+		return fsys, nil
+	}
+	return fs.Sub(fsys, dir)
 }

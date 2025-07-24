@@ -12,35 +12,6 @@ import (
 
 var nonAlphaNum = regexp.MustCompile(`[^a-zA-Z0-9]`)
 
-// cleanExt removes a leading dot from the extension, if present.
-func cleanExt(ext string) string {
-	if strings.HasPrefix(ext, ".") {
-		return ext[1:]
-	}
-	return ext
-}
-
-// ExtractUUIDv7 parses and validates a UUIDv7 string.
-func ExtractUUIDv7(s string) (uuid.UUID, error) {
-	u, err := uuid.Parse(s)
-	if err != nil {
-		return u, fmt.Errorf("invalid UUID: %w", err)
-	}
-	if u.Variant() != uuid.RFC4122 {
-		return u, fmt.Errorf("UUID %q is not RFC-4122 variant", s)
-	}
-	if u.Version() != 7 {
-		return u, fmt.Errorf("UUID %q is version %d, want 7", s, u.Version())
-	}
-	return u, nil
-}
-
-// extractTimeFromUUIDv7 extracts the time from a UUIDv7 object.
-func extractTimeFromUUIDv7(u uuid.UUID) (time.Time, error) {
-	sec, nsec := u.Time().UnixTime()
-	return time.Unix(sec, nsec).UTC(), nil
-}
-
 // UUIDv7FileInfo provides UUIDv7 based filenames "<uuid>_<sanitised-64-char-suffix>.<ext>".
 type UUIDv7FileInfo struct {
 	ID     string
@@ -122,10 +93,39 @@ func Parse(filename string) (UUIDv7FileInfo, error) {
 	}, nil
 }
 
+// ExtractUUIDv7 parses and validates a UUIDv7 string.
+func ExtractUUIDv7(s string) (uuid.UUID, error) {
+	u, err := uuid.Parse(s)
+	if err != nil {
+		return u, fmt.Errorf("invalid UUID: %w", err)
+	}
+	if u.Variant() != uuid.RFC4122 {
+		return u, fmt.Errorf("UUID %q is not RFC-4122 variant", s)
+	}
+	if u.Version() != 7 {
+		return u, fmt.Errorf("UUID %q is version %d, want 7", s, u.Version())
+	}
+	return u, nil
+}
+
 func NewUUID() (string, error) {
 	u, err := uuid.NewV7()
 	if err != nil {
 		return "", err
 	}
 	return u.String(), nil
+}
+
+// extractTimeFromUUIDv7 extracts the time from a UUIDv7 object.
+func extractTimeFromUUIDv7(u uuid.UUID) (time.Time, error) {
+	sec, nsec := u.Time().UnixTime()
+	return time.Unix(sec, nsec).UTC(), nil
+}
+
+// cleanExt removes a leading dot from the extension, if present.
+func cleanExt(ext string) string {
+	if strings.HasPrefix(ext, ".") {
+		return ext[1:]
+	}
+	return ext
 }

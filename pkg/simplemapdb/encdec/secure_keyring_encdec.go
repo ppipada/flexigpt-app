@@ -72,43 +72,6 @@ func (e EncryptedStringValueEncoderDecoder) Decode(r io.Reader, value any) error
 	return nil
 }
 
-// getKey retrieves or generates an AES-256 encryption key from the keyring.
-// If the key does not exist, it generates a new one, stores it, and returns it.
-func getKey() ([]byte, error) {
-	const (
-		service = "FlexiGPTKeyRingEncDec"
-		user    = "user"
-		// AES-256 requires a 32-byte key.
-		keySize = 32
-	)
-
-	// Attempt to retrieve the key from the keyring.
-	keyStr, err := keyring.Get(service, user)
-	switch {
-	case err == nil:
-		// Decode the base64-encoded key.
-		key, err := base64.StdEncoding.DecodeString(keyStr)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode key: %w", err)
-		}
-		return key, nil
-	case errors.Is(err, keyring.ErrNotFound):
-		// Generate a new 32-byte key if not found.
-		key := make([]byte, keySize)
-		if _, err := io.ReadFull(rand.Reader, key); err != nil {
-			return nil, fmt.Errorf("failed to generate key: %w", err)
-		}
-		// Store the key in the keyring.
-		keyStr := base64.StdEncoding.EncodeToString(key)
-		if err := keyring.Set(service, user, keyStr); err != nil {
-			return nil, fmt.Errorf("failed to store key in keyring: %w", err)
-		}
-		return key, nil
-	default:
-		return nil, fmt.Errorf("failed to retrieve key from keyring: %w", err)
-	}
-}
-
 // encryptString encrypts a string using AES-256-GCM and returns a base64-encoded string.
 func encryptString(plaintext string) (string, error) {
 	key, err := getKey()
@@ -170,4 +133,41 @@ func decryptString(encodedCiphertext string) (string, error) {
 		return "", fmt.Errorf("failed to decrypt ciphertext: %w", err)
 	}
 	return string(plaintext), nil
+}
+
+// getKey retrieves or generates an AES-256 encryption key from the keyring.
+// If the key does not exist, it generates a new one, stores it, and returns it.
+func getKey() ([]byte, error) {
+	const (
+		service = "FlexiGPTKeyRingEncDec"
+		user    = "user"
+		// AES-256 requires a 32-byte key.
+		keySize = 32
+	)
+
+	// Attempt to retrieve the key from the keyring.
+	keyStr, err := keyring.Get(service, user)
+	switch {
+	case err == nil:
+		// Decode the base64-encoded key.
+		key, err := base64.StdEncoding.DecodeString(keyStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode key: %w", err)
+		}
+		return key, nil
+	case errors.Is(err, keyring.ErrNotFound):
+		// Generate a new 32-byte key if not found.
+		key := make([]byte, keySize)
+		if _, err := io.ReadFull(rand.Reader, key); err != nil {
+			return nil, fmt.Errorf("failed to generate key: %w", err)
+		}
+		// Store the key in the keyring.
+		keyStr := base64.StdEncoding.EncodeToString(key)
+		if err := keyring.Set(service, user, keyStr); err != nil {
+			return nil, fmt.Errorf("failed to store key in keyring: %w", err)
+		}
+		return key, nil
+	default:
+		return nil, fmt.Errorf("failed to retrieve key from keyring: %w", err)
+	}
 }

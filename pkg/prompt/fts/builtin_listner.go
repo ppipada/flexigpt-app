@@ -14,6 +14,55 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 )
 
+// StartBuiltInPromptsFTSRebuild spawns a goroutine that synchronises the built-in templates with the FTS index.
+// Safe to call multiple times; the work is executed once.
+func StartBuiltInPromptsFTSRebuild(
+	ctx context.Context,
+	lister BuiltInLister,
+	engine *ftsengine.Engine,
+) {
+	if lister == nil || engine == nil {
+		return
+	}
+
+	go func() {
+		defer func() {
+			if rec := recover(); rec != nil {
+				slog.Error("builtin-fts panic",
+					"err", rec, "stack", string(debug.Stack()))
+			}
+		}()
+		if err := syncBuiltInsToFTS(ctx, lister, engine); err != nil {
+			slog.Error("builtin-fts initial sync failed", "err", err)
+		}
+	}()
+}
+
+// ReindexOneBuiltIn updates exactly one built-in template (used by enable / disable mutators).
+func ReindexOneBuiltIn(
+	ctx context.Context,
+	bundleID bundleitemutils.BundleID,
+	bundleSlug bundleitemutils.BundleSlug,
+	template spec.PromptTemplate,
+	engine *ftsengine.Engine,
+) error {
+	if engine == nil {
+		return spec.ErrInvalidRequest
+	}
+
+	docID, vals, ok := buildDoc(bundleID, bundleSlug, template)
+	if !ok {
+		return fmt.Errorf(
+			"builtin-fts cannot create doc for bundleID %q, bundleSlug %q, templateID %q",
+			bundleID, bundleSlug, template.ID,
+		)
+	}
+	if err := engine.Upsert(ctx, docID, vals); err != nil {
+		return fmt.Errorf("builtin-fts upsert(one) failed for %s: %w", docID, err)
+	}
+	return nil
+}
+
 // BuiltInLister returns the current snapshot of all built-in bundles and templates.
 // Overlay should already be applied, so that enabled flags are correct.
 type BuiltInLister func() (
@@ -122,53 +171,4 @@ func templateToFTSDoc(bid bundleitemutils.BundleID, tpl spec.PromptTemplate) fts
 		doc.Tags += tg + newline
 	}
 	return doc
-}
-
-// StartBuiltInPromptsFTSRebuild spawns a goroutine that synchronises the built-in templates with the FTS index.
-// Safe to call multiple times; the work is executed once.
-func StartBuiltInPromptsFTSRebuild(
-	ctx context.Context,
-	lister BuiltInLister,
-	engine *ftsengine.Engine,
-) {
-	if lister == nil || engine == nil {
-		return
-	}
-
-	go func() {
-		defer func() {
-			if rec := recover(); rec != nil {
-				slog.Error("builtin-fts panic",
-					"err", rec, "stack", string(debug.Stack()))
-			}
-		}()
-		if err := syncBuiltInsToFTS(ctx, lister, engine); err != nil {
-			slog.Error("builtin-fts initial sync failed", "err", err)
-		}
-	}()
-}
-
-// ReindexOneBuiltIn updates exactly one built-in template (used by enable / disable mutators).
-func ReindexOneBuiltIn(
-	ctx context.Context,
-	bundleID bundleitemutils.BundleID,
-	bundleSlug bundleitemutils.BundleSlug,
-	template spec.PromptTemplate,
-	engine *ftsengine.Engine,
-) error {
-	if engine == nil {
-		return spec.ErrInvalidRequest
-	}
-
-	docID, vals, ok := buildDoc(bundleID, bundleSlug, template)
-	if !ok {
-		return fmt.Errorf(
-			"builtin-fts cannot create doc for bundleID %q, bundleSlug %q, templateID %q",
-			bundleID, bundleSlug, template.ID,
-		)
-	}
-	if err := engine.Upsert(ctx, docID, vals); err != nil {
-		return fmt.Errorf("builtin-fts upsert(one) failed for %s: %w", docID, err)
-	}
-	return nil
 }

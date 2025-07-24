@@ -40,26 +40,25 @@ type DeleteAISettingRequest struct {
 }
 type DeleteAISettingResponse struct{}
 
+type SetAISettingAPIKeyRequestBody struct {
+	APIKey string `json:"apiKey"`
+}
+
 type SetAISettingAPIKeyRequest struct {
 	ProviderName modelSpec.ProviderName `path:"providerName"`
 	Body         *SetAISettingAPIKeyRequestBody
 }
 
-type SetAISettingAPIKeyRequestBody struct {
-	APIKey string `json:"apiKey"`
-}
-
 type SetAISettingAPIKeyResponse struct{}
-
-type SetAISettingAttrsRequest struct {
-	ProviderName modelSpec.ProviderName `path:"providerName"`
-	Body         *SetAISettingAttrsRequestBody
-}
 
 type SetAISettingAttrsRequestBody struct {
 	IsEnabled                *bool   `json:"isEnabled,omitempty"`
 	Origin                   *string `json:"origin,omitempty"`
 	ChatCompletionPathPrefix *string `json:"chatCompletionPathPrefix,omitempty"`
+}
+type SetAISettingAttrsRequest struct {
+	ProviderName modelSpec.ProviderName `path:"providerName"`
+	Body         *SetAISettingAttrsRequestBody
 }
 
 type SetAISettingAttrsResponse struct{}

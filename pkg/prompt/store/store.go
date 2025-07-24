@@ -35,36 +35,6 @@ const (
 	builtInSnapshotMaxAge = time.Hour
 )
 
-// slugLocks manages a RW-mutex per bundleID|slug for concurrency control on templates.
-// Note: This implementation allows indefinite growth of the lock map, which is acceptable
-// for the current use case as the number of unique bundle|slug combinations is expected
-// to be relatively small and bounded by actual usage patterns.
-type slugLocks struct {
-	mu sync.Mutex
-	m  map[string]*sync.RWMutex
-}
-
-// newSlugLocks creates a new slugLocks instance.
-func newSlugLocks() *slugLocks {
-	return &slugLocks{m: map[string]*sync.RWMutex{}}
-}
-
-// lockKey returns the mutex for a given bundleID and slug, creating it if necessary.
-func (l *slugLocks) lockKey(
-	bundleID bundleitemutils.BundleID,
-	slug bundleitemutils.ItemSlug,
-) *sync.RWMutex {
-	k := string(bundleID) + "|" + string(slug)
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	if lk, ok := l.m[k]; ok {
-		return lk
-	}
-	lk := &sync.RWMutex{}
-	l.m[k] = lk
-	return lk
-}
-
 // PromptTemplateStore is the main store for prompt bundles and templates.
 // It manages bundle and template CRUD, soft deletion, background cleanup, and FTS integration.
 type PromptTemplateStore struct {
@@ -1144,28 +1114,21 @@ func (s *PromptTemplateStore) findTemplate(
 	return fi, filepath.Join(bdi.DirName, fi.FileName), nil
 }
 
-// isSoftDeleted returns true if the bundle is soft-deleted.
-func isSoftDeleted(b spec.PromptBundle) bool {
-	return b.SoftDeletedAt != nil && !b.SoftDeletedAt.IsZero()
-}
-
-// readAllBundles loads and decodes the meta-file.
-func (s *PromptTemplateStore) readAllBundles(forceFetch bool) (spec.AllBundles, error) {
-	raw, err := s.bundleStore.GetAll(forceFetch)
-	if err != nil {
-		return spec.AllBundles{}, err
+func (s *PromptTemplateStore) getAnyBundle(
+	id bundleitemutils.BundleID,
+) (bundle spec.PromptBundle, isBuiltIn bool, err error) {
+	// Built-in?
+	if s.builtinData != nil {
+		if bundle, err = s.builtinData.GetBuiltInBundle(id); err == nil {
+			return bundle, true, nil
+		}
 	}
-	var ab spec.AllBundles
-	if err := encdec.MapToStructWithJSONTags(raw, &ab); err != nil {
-		return ab, err
+	// User bundle?
+	if bundle, err = s.getUserBundle(id); err == nil {
+		return bundle, false, nil
 	}
-	return ab, nil
-}
 
-// writeAllBundles encodes and writes the strongly-typed value.
-func (s *PromptTemplateStore) writeAllBundles(ab spec.AllBundles) error {
-	mp, _ := encdec.StructWithJSONTagsToMap(ab)
-	return s.bundleStore.SetAll(mp)
+	return spec.PromptBundle{}, false, fmt.Errorf("%w: %s", spec.ErrBundleNotFound, id)
 }
 
 // getUserBundle returns an active bundle (i.e., not soft-deleted) by ID.
@@ -1186,23 +1149,6 @@ func (s *PromptTemplateStore) getUserBundle(
 		return b, fmt.Errorf("%w: %s", spec.ErrBundleDeleting, id)
 	}
 	return b, nil
-}
-
-func (s *PromptTemplateStore) getAnyBundle(
-	id bundleitemutils.BundleID,
-) (bundle spec.PromptBundle, isBuiltIn bool, err error) {
-	// Built-in?
-	if s.builtinData != nil {
-		if bundle, err = s.builtinData.GetBuiltInBundle(id); err == nil {
-			return bundle, true, nil
-		}
-	}
-	// User bundle?
-	if bundle, err = s.getUserBundle(id); err == nil {
-		return bundle, false, nil
-	}
-
-	return spec.PromptBundle{}, false, fmt.Errorf("%w: %s", spec.ErrBundleNotFound, id)
 }
 
 // startCleanupLoop starts the background cleanup goroutine for hard-deleting bundles after the grace period.
@@ -1301,4 +1247,28 @@ func (s *PromptTemplateStore) kickCleanupLoop() {
 	default:
 		// Queue already has a signal - that is good enough.
 	}
+}
+
+// readAllBundles loads and decodes the meta-file.
+func (s *PromptTemplateStore) readAllBundles(forceFetch bool) (spec.AllBundles, error) {
+	raw, err := s.bundleStore.GetAll(forceFetch)
+	if err != nil {
+		return spec.AllBundles{}, err
+	}
+	var ab spec.AllBundles
+	if err := encdec.MapToStructWithJSONTags(raw, &ab); err != nil {
+		return ab, err
+	}
+	return ab, nil
+}
+
+// writeAllBundles encodes and writes the strongly-typed value.
+func (s *PromptTemplateStore) writeAllBundles(ab spec.AllBundles) error {
+	mp, _ := encdec.StructWithJSONTagsToMap(ab)
+	return s.bundleStore.SetAll(mp)
+}
+
+// isSoftDeleted returns true if the bundle is soft-deleted.
+func isSoftDeleted(b spec.PromptBundle) bool {
+	return b.SoftDeletedAt != nil && !b.SoftDeletedAt.IsZero()
 }

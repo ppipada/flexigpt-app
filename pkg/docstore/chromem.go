@@ -24,26 +24,6 @@ var embeddingModelMapCohere = map[spec.EmbeddingFuncID]chromem.EmbeddingModelCoh
 	spec.EmbeddingModelCohereEnglishV3:           chromem.EmbeddingModelCohereEnglishV3,
 }
 
-func getEmbeddingFunc(
-	_ context.Context,
-	funcID spec.EmbeddingFuncID,
-	apiKey string,
-) (chromem.EmbeddingFunc, error) {
-	// These are from OpenAI platform
-	// If other providers like Azure or OLlama are to be used which provide OpenAI compatible API, declareNewIDs and use.
-	omodel, exists := embeddingModelMapOpenAI[funcID]
-	if exists {
-		return chromem.NewEmbeddingFuncOpenAI(apiKey, omodel), nil
-	}
-
-	cmodel, exists := embeddingModelMapCohere[funcID]
-	if exists {
-		return chromem.NewEmbeddingFuncCohere(apiKey, cmodel), nil
-	}
-
-	return nil, errors.New("unsupported embedding function ID")
-}
-
 type ChromemDocumentDB struct {
 	id          spec.DocumentDBID
 	name        string
@@ -200,4 +180,24 @@ func (db *ChromemDocumentDB) ListCollections(
 	ctx context.Context,
 ) (map[spec.DocumentCollectionID]*spec.DocumentCollection, error) {
 	return db.collections, nil
+}
+
+func getEmbeddingFunc(
+	_ context.Context,
+	funcID spec.EmbeddingFuncID,
+	apiKey string,
+) (chromem.EmbeddingFunc, error) {
+	// These are from OpenAI platform
+	// If other providers like Azure or OLlama are to be used which provide OpenAI compatible API, declareNewIDs and use.
+	omodel, exists := embeddingModelMapOpenAI[funcID]
+	if exists {
+		return chromem.NewEmbeddingFuncOpenAI(apiKey, omodel), nil
+	}
+
+	cmodel, exists := embeddingModelMapCohere[funcID]
+	if exists {
+		return chromem.NewEmbeddingFuncCohere(apiKey, cmodel), nil
+	}
+
+	return nil, errors.New("unsupported embedding function ID")
 }

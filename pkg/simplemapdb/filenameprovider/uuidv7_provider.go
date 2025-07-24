@@ -31,6 +31,14 @@ func (p *UUIDv7Provider) Build(info FileInfo) (string, error) {
 	return fmt.Sprintf("%s_%s.json", info.ID, title), nil
 }
 
+func (p *UUIDv7Provider) CreatedAt(filename string) (time.Time, error) {
+	info, err := p.Parse(filename)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return info.CreatedAt, nil
+}
+
 // Parse does the opposite of build, but given that build is lossy i.e it looses non alpha numeric chars it is not a exact repro of title.
 func (p *UUIDv7Provider) Parse(filename string) (*FileInfo, error) {
 	base := filepath.Base(filename)
@@ -56,14 +64,6 @@ func (p *UUIDv7Provider) Parse(filename string) (*FileInfo, error) {
 		Title:     title,
 		CreatedAt: created,
 	}, nil
-}
-
-func (p *UUIDv7Provider) CreatedAt(filename string) (time.Time, error) {
-	info, err := p.Parse(filename)
-	if err != nil {
-		return time.Time{}, err
-	}
-	return info.CreatedAt, nil
 }
 
 func ExtractTimeFromUUIDv7(uuidStr string) (time.Time, error) {

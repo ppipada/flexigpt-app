@@ -11,18 +11,6 @@ import (
 	"time"
 )
 
-func newFile(path string) (*os.File, error) {
-	return os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0o666)
-}
-
-func DefaultFilenameFunc() string {
-	return fmt.Sprintf(
-		"%s-%s.log",
-		strings.ReplaceAll(time.Now().UTC().Format(time.RFC3339), ":", "-"),
-		RandomHash(3),
-	)
-}
-
 // Options define configuration options for Writer.
 type Options struct {
 	// Directory defines the directory where log files will be written to.
@@ -82,6 +70,43 @@ type Writer struct {
 	closing chan struct{}
 	// Signal the writer has finished writing all queued up entries.
 	done chan struct{}
+}
+
+// New creates a new concurrency safe Writer which performs log rotation.
+func New(logger *slog.Logger, opts Options) (*Writer, error) {
+	if _, err := os.Stat(opts.Directory); os.IsNotExist(err) {
+		if err := os.MkdirAll(opts.Directory, os.ModePerm); err != nil {
+			return nil, fmt.Errorf(
+				"directory %v does not exist and could not be created, %w",
+				opts.Directory,
+				err,
+			)
+		}
+	}
+
+	if opts.FileNameFunc == nil {
+		opts.FileNameFunc = DefaultFilenameFunc
+	}
+
+	w := &Writer{
+		logger:  logger,
+		opts:    opts,
+		queue:   make(chan []byte, 4096),
+		closing: make(chan struct{}),
+		done:    make(chan struct{}),
+	}
+
+	go w.listen()
+
+	return w, nil
+}
+
+func DefaultFilenameFunc() string {
+	return fmt.Sprintf(
+		"%s-%s.log",
+		strings.ReplaceAll(time.Now().UTC().Format(time.RFC3339), ":", "-"),
+		RandomHash(3),
+	)
 }
 
 // Write writes p into the current file, rotating if necessary.
@@ -165,28 +190,6 @@ func (w *Writer) listen() {
 	close(w.done)
 }
 
-func (w *Writer) flushCurrentFile() error {
-	if err := w.bw.Flush(); err != nil {
-		return fmt.Errorf("failed to flush buffered writer: %w", err)
-	}
-
-	if err := w.f.Sync(); err != nil {
-		return fmt.Errorf("failed to sync current log file: %w", err)
-	}
-
-	w.bytesWritten = 0
-
-	return nil
-}
-
-func (w *Writer) closeCurrentFile() error {
-	if err := w.flushCurrentFile(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (w *Writer) rotate() error {
 	if w.f != nil {
 		if err := w.closeCurrentFile(); err != nil {
@@ -208,31 +211,28 @@ func (w *Writer) rotate() error {
 	return nil
 }
 
-// New creates a new concurrency safe Writer which performs log rotation.
-func New(logger *slog.Logger, opts Options) (*Writer, error) {
-	if _, err := os.Stat(opts.Directory); os.IsNotExist(err) {
-		if err := os.MkdirAll(opts.Directory, os.ModePerm); err != nil {
-			return nil, fmt.Errorf(
-				"directory %v does not exist and could not be created, %w",
-				opts.Directory,
-				err,
-			)
-		}
+func (w *Writer) closeCurrentFile() error {
+	if err := w.flushCurrentFile(); err != nil {
+		return err
 	}
 
-	if opts.FileNameFunc == nil {
-		opts.FileNameFunc = DefaultFilenameFunc
+	return nil
+}
+
+func (w *Writer) flushCurrentFile() error {
+	if err := w.bw.Flush(); err != nil {
+		return fmt.Errorf("failed to flush buffered writer: %w", err)
 	}
 
-	w := &Writer{
-		logger:  logger,
-		opts:    opts,
-		queue:   make(chan []byte, 4096),
-		closing: make(chan struct{}),
-		done:    make(chan struct{}),
+	if err := w.f.Sync(); err != nil {
+		return fmt.Errorf("failed to sync current log file: %w", err)
 	}
 
-	go w.listen()
+	w.bytesWritten = 0
 
-	return w, nil
+	return nil
+}
+
+func newFile(path string) (*os.File, error) {
+	return os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0o666)
 }

@@ -432,6 +432,34 @@ func (store *MapFileStore) load() error {
 	return store.rememberStat()
 }
 
+func (store *MapFileStore) deleteKey(
+	keys []string,
+) (oldVal any, copyAfter map[string]any, err error) {
+	if len(keys) == 0 {
+		return nil, nil, errors.New("cannot delete value at root")
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
+	oldVal, _ = GetValueAtPath(store.data, keys)
+
+	if err := DeleteValueAtPath(store.data, keys); err != nil {
+		return nil, nil, fmt.Errorf("failed to delete key %v: %w", keys, err)
+	}
+	copyAfter, _ = DeepCopyValue(store.data).(map[string]any)
+
+	if store.autoFlush {
+		if err := store.flushUnlocked(); err != nil {
+			return nil, nil, fmt.Errorf(
+				"failed to save data after DeleteKey for key %v: %w",
+				keys,
+				err,
+			)
+		}
+	}
+	return oldVal, copyAfter, nil
+}
+
 func (store *MapFileStore) flushUnlocked() error {
 	// We'll make a deep copy so we don't mutate in-memory.
 	// No error as store.data is always a map.
@@ -504,34 +532,6 @@ func (store *MapFileStore) flushUnlocked() error {
 	}
 
 	return store.rememberStat()
-}
-
-func (store *MapFileStore) deleteKey(
-	keys []string,
-) (oldVal any, copyAfter map[string]any, err error) {
-	if len(keys) == 0 {
-		return nil, nil, errors.New("cannot delete value at root")
-	}
-	store.mu.Lock()
-	defer store.mu.Unlock()
-
-	oldVal, _ = GetValueAtPath(store.data, keys)
-
-	if err := DeleteValueAtPath(store.data, keys); err != nil {
-		return nil, nil, fmt.Errorf("failed to delete key %v: %w", keys, err)
-	}
-	copyAfter, _ = DeepCopyValue(store.data).(map[string]any)
-
-	if store.autoFlush {
-		if err := store.flushUnlocked(); err != nil {
-			return nil, nil, fmt.Errorf(
-				"failed to save data after DeleteKey for key %v: %w",
-				keys,
-				err,
-			)
-		}
-	}
-	return oldVal, copyAfter, nil
 }
 
 func (s *MapFileStore) rememberStat() error {
