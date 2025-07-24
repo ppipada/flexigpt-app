@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	simplemapdbFileStore "github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
+	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 )
 
 // MapDirectoryStore manages multiple MapFileStores within a directory.
@@ -20,10 +20,10 @@ type MapDirectoryStore struct {
 	baseDir           string
 	pageSize          int
 	PartitionProvider PartitionProvider
-	listeners         []simplemapdbFileStore.Listener
+	listeners         []filestore.Listener
 
 	// OpenStores caches open MapFileStore instances per file path.
-	openStores map[string]*simplemapdbFileStore.MapFileStore
+	openStores map[string]*filestore.MapFileStore
 	openMu     sync.Mutex
 }
 
@@ -45,7 +45,7 @@ func WithPartitionProvider(provider PartitionProvider) Option {
 }
 
 // WithListeners registers one or more listeners when the directory store is created.
-func WithListeners(ls ...simplemapdbFileStore.Listener) Option {
+func WithListeners(ls ...filestore.Listener) Option {
 	return func(mds *MapDirectoryStore) {
 		mds.listeners = append(mds.listeners, ls...)
 	}
@@ -78,7 +78,7 @@ func NewMapDirectoryStore(
 		baseDir:           baseDir,
 		pageSize:          10,
 		PartitionProvider: &NoPartitionProvider{},
-		openStores:        make(map[string]*simplemapdbFileStore.MapFileStore),
+		openStores:        make(map[string]*filestore.MapFileStore),
 	}
 
 	for _, opt := range opts {
@@ -135,7 +135,7 @@ func (mds *MapDirectoryStore) Open(
 	fileKey FileKey,
 	createIfNotExists bool,
 	defaultData map[string]any,
-) (*simplemapdbFileStore.MapFileStore, error) {
+) (*filestore.MapFileStore, error) {
 	filePath, err := mds.validateAndGetFilePath(fileKey)
 	if err != nil {
 		return nil, err
@@ -160,11 +160,11 @@ func (mds *MapDirectoryStore) Open(
 	}
 
 	// Create a new MapFileStore.
-	store, err = simplemapdbFileStore.NewMapFileStore(
+	store, err = filestore.NewMapFileStore(
 		filePath,
 		defaultData,
-		simplemapdbFileStore.WithCreateIfNotExists(createIfNotExists),
-		simplemapdbFileStore.WithListeners(mds.listeners...),
+		filestore.WithCreateIfNotExists(createIfNotExists),
+		filestore.WithListeners(mds.listeners...),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file store for %s: %w", fileKey.FileName, err)
@@ -198,11 +198,11 @@ func (mds *MapDirectoryStore) Close(fileKey FileKey) error {
 // CloseAll closes every cached MapFileStore in this directory instance and clears the cache.
 func (mds *MapDirectoryStore) CloseAll() error {
 	mds.openMu.Lock()
-	stores := make([]*simplemapdbFileStore.MapFileStore, 0, len(mds.openStores))
+	stores := make([]*filestore.MapFileStore, 0, len(mds.openStores))
 	for _, st := range mds.openStores {
 		stores = append(stores, st)
 	}
-	mds.openStores = make(map[string]*simplemapdbFileStore.MapFileStore)
+	mds.openStores = make(map[string]*filestore.MapFileStore)
 	mds.openMu.Unlock()
 
 	var firstErr error

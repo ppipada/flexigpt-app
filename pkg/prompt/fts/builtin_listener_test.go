@@ -125,6 +125,7 @@ func TestSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 				}
 			},
 			after: func(t *testing.T, _ int) {
+				t.Helper()
 				// Ensure the mtime is *not* the old sentinel value any more.
 				for id, val := range listAllRows(t, engine) {
 					if strings.Contains(id, "bundle-3") && val == "2000-01-01T00:00:00Z" {

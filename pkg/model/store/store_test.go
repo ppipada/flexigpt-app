@@ -821,6 +821,7 @@ func TestModelPresetStore_SetDefaultModelPreset(t *testing.T) {
 			},
 			wantErr: false,
 			verifyFunc: func(t *testing.T) {
+				t.Helper()
 				resp, err := s.GetAllModelPresets(ctx, &spec.GetAllModelPresetsRequest{})
 				if err != nil {
 					t.Fatalf("GetAllModelPresets failed: %v", err)
@@ -839,6 +840,7 @@ func TestModelPresetStore_SetDefaultModelPreset(t *testing.T) {
 			},
 			wantErr: false,
 			verifyFunc: func(t *testing.T) {
+				t.Helper()
 				resp, err := s.GetAllModelPresets(ctx, &spec.GetAllModelPresetsRequest{})
 				if err != nil {
 					t.Fatalf("GetAllModelPresets failed: %v", err)

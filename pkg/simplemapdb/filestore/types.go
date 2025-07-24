@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	simplemapdbEncdec "github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
+	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 )
 
 // ErrConflict is returned when flush/delete detects that somebody modified the file since we last read or wrote it.
@@ -42,8 +42,8 @@ type Listener func(Event)
 
 // KeyEncDecGetter: given the path so far, if applicable, returns a StringEncoderDecoder
 // It encodes decodes: The key at the path i.e last part of the path array.
-type KeyEncDecGetter func(pathSoFar []string) simplemapdbEncdec.StringEncoderDecoder
+type KeyEncDecGetter func(pathSoFar []string) encdec.StringEncoderDecoder
 
 // ValueEncDecGetter: given the path so far, if applicable, returns a EncoderDecoder
 // It encodes decodes: Value at the key i.e value at last part of the path array.
-type ValueEncDecGetter func(pathSoFar []string) simplemapdbEncdec.EncoderDecoder
+type ValueEncDecGetter func(pathSoFar []string) encdec.EncoderDecoder

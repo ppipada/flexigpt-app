@@ -104,6 +104,8 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 			if v.ToolID == "" {
 				return fmt.Errorf("variables[%d]: source 'tool' requires toolID", i)
 			}
+		case spec.SourceUser:
+			// No validations needed.
 		}
 
 		// Type-specific requirements.

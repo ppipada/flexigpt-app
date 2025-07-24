@@ -5,7 +5,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
-	goruntime "runtime"
+	"runtime"
 	"strings"
 )
 
@@ -25,9 +25,9 @@ func EmbeddedFSWalker(assets embed.FS) {
 
 func LogStackTrace() {
 	// Create a buffer to hold the stack trace.
-	buf := make([]byte, 1024)
+	buf := make([]byte, 0, 4096)
 	// Capture the stack trace.
-	n := goruntime.Stack(buf, false)
+	n := runtime.Stack(buf, false)
 	// Log the stack trace.
 	slog.Info("stack", "trace", string(buf[:n]))
 }

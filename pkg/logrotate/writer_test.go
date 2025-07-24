@@ -282,6 +282,7 @@ func TestFlushAfterEveryWrite(t *testing.T) {
 }
 
 func setup(t *testing.T) (dir string, cleanup func()) {
+	t.Helper()
 	tdir := t.TempDir()
 
 	cleanup = func() {

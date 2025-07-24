@@ -33,6 +33,7 @@ func BenchmarkWriter(b *testing.B) {
 }
 
 func benchmarkWriter(b *testing.B, messages, messageSize, writers int) {
+	b.Helper()
 	slogOpts := &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	}

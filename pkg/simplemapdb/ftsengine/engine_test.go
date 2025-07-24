@@ -1246,6 +1246,7 @@ func TestBatchDelete_SQLiteSpecialChars(t *testing.T) {
 
 // Helper to insert docs for deletion tests.
 func insertDocs(t *testing.T, e *Engine, ids []string) {
+	t.Helper()
 	for _, id := range ids {
 		if err := e.Upsert(t.Context(), id, map[string]string{"title": id, "body": "test"}); err != nil {
 			t.Fatalf("insert %q: %v", id, err)

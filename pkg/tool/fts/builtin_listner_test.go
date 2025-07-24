@@ -111,6 +111,7 @@ func TestToolsSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 				}
 			},
 			after: func(t *testing.T, _ int) {
+				t.Helper()
 				for id, val := range listAllRows(t, engine) {
 					if strings.Contains(id, "bundle-3") && val == "2000-01-01T00:00:00Z" {
 						t.Fatalf("row not updated")

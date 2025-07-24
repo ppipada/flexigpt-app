@@ -4,8 +4,8 @@ import "io"
 
 // EncoderDecoder is an interface that defines methods for encoding and decoding data.
 type EncoderDecoder interface {
-	Encode(io.Writer, any) error
-	Decode(io.Reader, any) error
+	Encode(w io.Writer, value any) error
+	Decode(r io.Reader, value any) error
 }
 
 type StringEncoderDecoder interface {

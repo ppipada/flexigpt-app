@@ -8,14 +8,14 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/model/spec"
 
 	"github.com/tmc/langchaingo/llms"
-	langchainAnthropic "github.com/tmc/langchaingo/llms/anthropic"
+	"github.com/tmc/langchaingo/llms/anthropic"
 )
 
 // AnthropicCompatibleAPI struct that implements the CompletionProvider interface.
 type AnthropicCompatibleAPI struct {
 	*BaseAIAPI
 
-	llm *langchainAnthropic.LLM
+	llm *anthropic.LLM
 }
 
 // NewAnthropicCompatibleAPI creates a new instance of AnthropicCompatibleAPI with default ProviderInfo.
@@ -30,7 +30,7 @@ func (api *AnthropicCompatibleAPI) GetLLMsModel(ctx context.Context) llms.Model 
 }
 
 func (api *AnthropicCompatibleAPI) InitLLM(ctx context.Context) error {
-	options := []langchainAnthropic.Option{}
+	options := []anthropic.Option{}
 	providerURL := "https://api.anthropic.com/v1"
 	if api.ProviderInfo.Origin != "" {
 		baseURL := api.ProviderInfo.Origin
@@ -42,17 +42,17 @@ func (api *AnthropicCompatibleAPI) InitLLM(ctx context.Context) error {
 		// This is because langchaingo adds '/messages' internally.
 		pathPrefix = strings.TrimSuffix(pathPrefix, "/messages")
 		providerURL = baseURL + pathPrefix
-		options = append(options, langchainAnthropic.WithBaseURL(providerURL))
+		options = append(options, anthropic.WithBaseURL(providerURL))
 	}
 	if api.ProviderInfo.APIKey == "" {
 		slog.Debug("no API key given, not initializing Anthropic LLM object")
 		return nil
 	}
-	options = append(options, langchainAnthropic.WithToken(api.ProviderInfo.APIKey))
+	options = append(options, anthropic.WithToken(api.ProviderInfo.APIKey))
 	newClient := NewDebugHTTPClient(api.Debug, false)
-	options = append(options, langchainAnthropic.WithHTTPClient(newClient))
+	options = append(options, anthropic.WithHTTPClient(newClient))
 
-	llm, err := langchainAnthropic.New(options...)
+	llm, err := anthropic.New(options...)
 	if err != nil {
 		return err
 	}

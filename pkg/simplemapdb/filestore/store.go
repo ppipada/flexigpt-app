@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	simplemapdbEncdec "github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
+	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 )
 
 const maxSetAllRetries = 3
@@ -28,7 +28,7 @@ type MapFileStore struct {
 
 	// Snapshot for optimistic CAS (nil = unknown).
 	lastStat          os.FileInfo
-	encdec            simplemapdbEncdec.EncoderDecoder
+	encdec            encdec.EncoderDecoder
 	autoFlush         bool
 	createIfNotExists bool
 
@@ -41,7 +41,7 @@ type MapFileStore struct {
 type Option func(*MapFileStore)
 
 // WithEncoderDecoder sets a custom encoder/decoder for the store.
-func WithEncoderDecoder(encoder simplemapdbEncdec.EncoderDecoder) Option {
+func WithEncoderDecoder(encoder encdec.EncoderDecoder) Option {
 	return func(store *MapFileStore) {
 		store.encdec = encoder
 	}
@@ -92,7 +92,7 @@ func NewMapFileStore(
 		defaultData: defaultData,
 		filename:    filepath.Clean(filename),
 		autoFlush:   true,
-		encdec:      simplemapdbEncdec.JSONEncoderDecoder{},
+		encdec:      encdec.JSONEncoderDecoder{},
 	}
 
 	// Apply options.

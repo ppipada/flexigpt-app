@@ -7,14 +7,14 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/model/spec"
 
 	"github.com/tmc/langchaingo/llms"
-	langchainHuggingFace "github.com/tmc/langchaingo/llms/huggingface"
+	"github.com/tmc/langchaingo/llms/huggingface"
 )
 
 // HuggingFaceCompatibleAPI struct that implements the CompletionProvider interface.
 type HuggingFaceCompatibleAPI struct {
 	*BaseAIAPI
 
-	llm *langchainHuggingFace.LLM
+	llm *huggingface.LLM
 }
 
 // NewHuggingFaceCompatibleAPI creates a new instance of HuggingFaceCompatibleAPI with default ProviderInfo.
@@ -29,23 +29,23 @@ func (api *HuggingFaceCompatibleAPI) GetLLMsModel(ctx context.Context) llms.Mode
 }
 
 func (api *HuggingFaceCompatibleAPI) InitLLM(ctx context.Context) error {
-	options := []langchainHuggingFace.Option{}
+	options := []huggingface.Option{}
 
 	providerURL := "https://api-inference.huggingface.co"
 	if api.ProviderInfo.Origin != "" {
 		providerURL = api.ProviderInfo.Origin
-		options = append(options, langchainHuggingFace.WithURL(providerURL))
+		options = append(options, huggingface.WithURL(providerURL))
 	}
 	// Setting a debug client is not supproted on HF by langchaingo
 	// if api.BaseAIAPI.Debug {
-	// 	options = append(options, langchainHuggingFace.WithHTTPClient(httputil.DebugHTTPClient))
+	// 	options = append(options, huggingface.WithHTTPClient(httputil.DebugHTTPClient))
 	// }.
 	if api.ProviderInfo.APIKey == "" {
 		slog.Debug("no API key given, not initializing Huggingface LLM object")
 		return nil
 	}
-	options = append(options, langchainHuggingFace.WithToken(api.ProviderInfo.APIKey))
-	llm, err := langchainHuggingFace.New(options...)
+	options = append(options, huggingface.WithToken(api.ProviderInfo.APIKey))
+	llm, err := huggingface.New(options...)
 	if err != nil {
 		return err
 	}

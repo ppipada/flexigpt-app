@@ -8,14 +8,14 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/model/spec"
 
 	"github.com/tmc/langchaingo/llms"
-	langchainOpenAI "github.com/tmc/langchaingo/llms/openai"
+	"github.com/tmc/langchaingo/llms/openai"
 )
 
 // OpenAICompatibleAPI struct that implements the CompletionProvider interface.
 type OpenAICompatibleAPI struct {
 	*BaseAIAPI
 
-	llm *langchainOpenAI.LLM
+	llm *openai.LLM
 }
 
 // NewOpenAICompatibleProvider creates a new instance of OpenAICompatibleProvider with the provided ProviderInfo.
@@ -30,7 +30,7 @@ func (api *OpenAICompatibleAPI) GetLLMsModel(ctx context.Context) llms.Model {
 }
 
 func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {
-	options := []langchainOpenAI.Option{}
+	options := []openai.Option{}
 
 	providerURL := "https://api.openai.com/v1"
 	if api.ProviderInfo.Origin != "" {
@@ -43,7 +43,7 @@ func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {
 		// This is because langchaingo adds '/chat/completions' internally.
 		pathPrefix = strings.TrimSuffix(pathPrefix, "/chat/completions")
 		providerURL = baseURL + pathPrefix
-		options = append(options, langchainOpenAI.WithBaseURL(providerURL))
+		options = append(options, openai.WithBaseURL(providerURL))
 	}
 
 	if api.ProviderInfo.APIKey == "" {
@@ -54,11 +54,11 @@ func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {
 		)
 		return nil
 	}
-	options = append(options, langchainOpenAI.WithToken(api.ProviderInfo.APIKey))
+	options = append(options, openai.WithToken(api.ProviderInfo.APIKey))
 	newClient := NewDebugHTTPClient(api.Debug, false)
-	options = append(options, langchainOpenAI.WithHTTPClient(newClient))
+	options = append(options, openai.WithHTTPClient(newClient))
 
-	llm, err := langchainOpenAI.New(options...)
+	llm, err := openai.New(options...)
 	if err != nil {
 		return err
 	}

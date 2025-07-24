@@ -33,6 +33,7 @@ func TestNewBuiltInData(t *testing.T) {
 		{
 			name: "happy_path",
 			setupDir: func(t *testing.T) string {
+				t.Helper()
 				return t.TempDir()
 			},
 			snapshotMaxAge: time.Hour,
@@ -41,6 +42,7 @@ func TestNewBuiltInData(t *testing.T) {
 		{
 			name: "zero_snapshot_age_defaults_to_hour",
 			setupDir: func(t *testing.T) string {
+				t.Helper()
 				return t.TempDir()
 			},
 			snapshotMaxAge: 0,
@@ -49,6 +51,7 @@ func TestNewBuiltInData(t *testing.T) {
 		{
 			name: "negative_snapshot_age_defaults_to_hour",
 			setupDir: func(t *testing.T) string {
+				t.Helper()
 				return t.TempDir()
 			},
 			snapshotMaxAge: -1,
@@ -57,6 +60,7 @@ func TestNewBuiltInData(t *testing.T) {
 		{
 			name: "base_dir_is_file",
 			setupDir: func(t *testing.T) string {
+				t.Helper()
 				tmp := t.TempDir()
 				file := filepath.Join(tmp, "not-a-dir")
 				if err := os.WriteFile(file, []byte("dummy"), 0o600); err != nil {
@@ -70,6 +74,7 @@ func TestNewBuiltInData(t *testing.T) {
 		{
 			name: "readonly_directory",
 			setupDir: func(t *testing.T) string {
+				t.Helper()
 				tmp := t.TempDir()
 				dir := filepath.Join(tmp, "readonly")
 				if err := os.MkdirAll(dir, 0o444); err != nil {
@@ -144,6 +149,7 @@ func TestSetBundleEnabled(t *testing.T) {
 		{
 			name: "enable_existing_bundle",
 			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bool) {
+				t.Helper()
 				bundles, _, _ := bi.ListBuiltInData()
 				id, bundle := anyBundle(bundles)
 				return id, !bundle.IsEnabled
@@ -153,6 +159,7 @@ func TestSetBundleEnabled(t *testing.T) {
 		{
 			name: "disable_existing_bundle",
 			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bool) {
+				t.Helper()
 				bundles, _, _ := bi.ListBuiltInData()
 				id, bundle := anyBundle(bundles)
 				return id, !bundle.IsEnabled
@@ -162,6 +169,7 @@ func TestSetBundleEnabled(t *testing.T) {
 		{
 			name: "nonexistent_bundle",
 			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bool) {
+				t.Helper()
 				return bundleitemutils.BundleID("does-not-exist"), true
 			},
 			wantErr: true,
@@ -169,6 +177,7 @@ func TestSetBundleEnabled(t *testing.T) {
 		{
 			name: "empty_bundle_id",
 			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, bool) {
+				t.Helper()
 				return bundleitemutils.BundleID(""), true
 			},
 			wantErr: true,
@@ -228,6 +237,7 @@ func TestSetTemplateEnabled(t *testing.T) {
 		{
 			name: "enable_existing_template",
 			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, spec.PromptTemplate, bool) {
+				t.Helper()
 				_, templates, _ := bi.ListBuiltInData()
 				bid, _, tpl := anyTemplate(templates)
 				return bid, tpl, !tpl.IsEnabled
@@ -237,6 +247,7 @@ func TestSetTemplateEnabled(t *testing.T) {
 		{
 			name: "disable_existing_template",
 			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, spec.PromptTemplate, bool) {
+				t.Helper()
 				_, templates, _ := bi.ListBuiltInData()
 				bid, _, tpl := anyTemplate(templates)
 				return bid, tpl, !tpl.IsEnabled
@@ -246,6 +257,7 @@ func TestSetTemplateEnabled(t *testing.T) {
 		{
 			name: "nonexistent_bundle",
 			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, spec.PromptTemplate, bool) {
+				t.Helper()
 				return bundleitemutils.BundleID(
 						"does-not-exist",
 					), spec.PromptTemplate{
@@ -259,6 +271,7 @@ func TestSetTemplateEnabled(t *testing.T) {
 		{
 			name: "nonexistent_template",
 			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, spec.PromptTemplate, bool) {
+				t.Helper()
 				bundles, _, _ := bi.ListBuiltInData()
 				bid, _ := anyBundle(bundles)
 				return bid, spec.PromptTemplate{
@@ -273,6 +286,7 @@ func TestSetTemplateEnabled(t *testing.T) {
 		{
 			name: "empty_template_id",
 			setup: func(t *testing.T, bi *BuiltInData) (bundleitemutils.BundleID, spec.PromptTemplate, bool) {
+				t.Helper()
 				bundles, _, _ := bi.ListBuiltInData()
 				bid, _ := anyBundle(bundles)
 				return bid, spec.PromptTemplate{

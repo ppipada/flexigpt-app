@@ -17,7 +17,7 @@ import (
 )
 
 type operation interface {
-	Execute(store *MapFileStore, t *testing.T)
+	Execute(t *testing.T, store *MapFileStore)
 }
 
 // Below is your simple "reverse string" EncoderDecoder for demonstration.
@@ -52,7 +52,8 @@ type setKeyOperation struct {
 	value any
 }
 
-func (op setKeyOperation) Execute(store *MapFileStore, t *testing.T) {
+func (op setKeyOperation) Execute(t *testing.T, store *MapFileStore) {
+	t.Helper()
 	if err := store.SetKey(strings.Split(op.key, "."), op.value); err != nil {
 		t.Errorf("failed to set key %s: %v", op.key, err)
 	}
@@ -63,7 +64,8 @@ type getKeyOperation struct {
 	expectedValue any
 }
 
-func (op getKeyOperation) Execute(store *MapFileStore, t *testing.T) {
+func (op getKeyOperation) Execute(t *testing.T, store *MapFileStore) {
+	t.Helper()
 	val, err := store.GetKey(strings.Split(op.key, "."))
 	if err != nil {
 		t.Errorf("failed to get key %s: %v", op.key, err)
@@ -228,7 +230,7 @@ func TestMapFileStore(t *testing.T) {
 
 			// Perform the user-defined operations.
 			for _, op := range tt.operations {
-				op.Execute(newStore, t)
+				op.Execute(t, newStore)
 			}
 
 			// Flush store after operations.
@@ -362,8 +364,7 @@ func Example_events_basicFlow() {
 			fmt.Printf("%s -> %v\n", ev.Op, ev.Data)
 		case OpResetFile:
 			fmt.Printf("%s\n", ev.Op)
-		default:
-			// OpSetKey / OpDeleteKey.
+		case OpDeleteFile, OpSetKey, OpDeleteKey:
 			fmt.Printf("%s %v  old=%v  new=%v\n",
 				ev.Op, ev.Keys, ev.OldValue, ev.NewValue)
 		}

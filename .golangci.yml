@@ -25,6 +25,9 @@ linters:
     # Detect if loop vars are copied
     - copyloopvar
 
+    # Check declaration order of types, constants, variables, and functions.
+    - decorder
+
     # Find duplicate words. Rare case but good to have.
     - dupword
 
@@ -43,11 +46,24 @@ linters:
     # Suggests to use `%w` for error-wrapping and other post 1.13 directives of Is, As etc.
     - errorlint
 
+    # Forces to handle more cases in enums.
+    - exhaustive
+
+    # Detects functions from golang.org/x/exp/ that can be replaced by standard functions.
+    # I don't prefer using exp at all, but good to keep it for preventing any accidents.
+    - exptostd
+
+    # Detects nested contexts in loops and function literals.
+    - fatcontext
+
     # Finds forced type assertions.
     - forcetypeassert
 
     # Check order of functions and constructors.
     - funcorder
+
+    # Checks that compiler directive comments (//go:) are valid.
+    - gocheckcompilerdirectives
 
     # Run exhaustiveness checks on Go "sum types".
     - gochecksumtype
@@ -71,8 +87,17 @@ linters:
     # Group declarations, for import, const, var, etc.
     - grouper
 
+    # Checks import alias consistency.
+    - importas
+
+    # Reports interfaces with unnamed method parameters.
+    - inamedparam
+
     # Detects when assignments to existing variables are not used.
     - ineffassign
+
+    # Reports wrong mirror patterns of bytes/strings usage.
+    - mirror
 
     # Fix all the misspells, amazing thing.
     - misspell
@@ -112,6 +137,9 @@ linters:
     # Super rare case but can catch bad things (like `io.EOF = nil`)
     - reassign
 
+    # Checks for receiver type consistency. Dont mix and match value and pointer receivers.
+    - recvcheck
+
     # Drop-in replacement of `golint`.
     - revive
 
@@ -126,6 +154,9 @@ linters:
 
     # Meta linter: golangci-lint runs all SA checks from staticcheck via this lint config
     - staticcheck
+
+    # Makes you add t.Helper() as the first line in test helpers.
+    - thelper
 
     # Reports uses of functions with replacements inside the testing package.
     - tparallel
@@ -162,9 +193,6 @@ linters:
     # (c) Bryan C. Mills / https://github.com/bcmills
     - cyclop
 
-    # Check declaration order of types, constants, variables, and functions.
-    - decorder
-
     # Checks if package imports are in a list of acceptable packages.
     # I'm very picky about what I import, so no automation.
     - depguard
@@ -178,21 +206,11 @@ linters:
     # Error lint covers all things from this and more.
     - err113
 
-    # I'm fine to check the error from json.Marshal.
+    # Checks if err from json functions can be ignored. I'm fine to check the error from json.Marshal.
     - errchkjson
 
-    # Forces to handle more cases in enums.
-    - exhaustive
-
-    # Forces to handle more cases in structs.
+    # Forces to initialize all fields of struct. Lots of issues in linter wrt empty struct, private fields etc.
     - exhaustruct
-
-    # Detects functions from golang.org/x/exp/ that can be replaced by standard functions.
-    # I don't prefer using exp at all.
-    - exptostd
-
-    # Detects nested contexts in loops and function literals.
-    - fatcontext
 
     # Forbids some identifiers. I don't have a case for it.
     - forbidigo
@@ -200,11 +218,8 @@ linters:
     # Function length checker. I might have long but a simple function.
     - funlen
 
-    # I'm not a fan of ginkgo and gomega packages.
+    # only if ginkgo and gomega packages are used.
     - ginkgolinter
-
-    # Checks that compiler directive comments (//go:) are valid. Very rare.
-    - gocheckcompilerdirectives
 
     # Check that no global variables exist. Globals are okay.
     - gochecknoglobals
@@ -230,9 +245,6 @@ linters:
     # Allowed/blocked packages to import. I prefer to do it manually.
     - gomodguard
 
-    # Reports certain internationalization anti-patterns.
-    - gosmopolitan
-
     # Printf-like functions must have 'f' at the end. Not useful to me.
     - goprintffuncname
 
@@ -242,16 +254,11 @@ linters:
     # Detects the incorrect use of interfaces to avoid interface pollution. Very subjective.
     - iface
 
-    # Checks import alias consistency. Very rare.
-    - importas
-
-    # Reports interfaces with unnamed method parameters.
-    - inamedparam
-
     # Forces tiny interfaces, very subjective.
     - interfacebloat
 
     # Finds places where for-loops could use an integer range.
+    # I use modernize from gopls outside golangci-lint as it gives much more.
     - intrange
 
     # Accept interfaces, return concrete types. Not always.
@@ -262,34 +269,32 @@ linters:
     # This is not really AST-based, so it has issues with long struct tags, etc.
     - lll
 
-    # Some log checkers might be useful. I tend to use log/slog.
+    # Some log checkers might be useful. I tend to use log/slog. govet checks the same thing for it post 1.21.
     - loggercheck
 
     # Maintainability index of each function, subjective.
     - maintidx
 
-    # Slice declarations with non-zero initial length. Not my case.
+    # Slice declarations with non-zero initial length.
     - makezero
 
-    # Reports wrong mirror patterns of bytes/strings usage.
-    - mirror
-
-    # Detects magic numbers.
+    # Detects magic numbers. I dont mind in some cases.
     - mnd
 
     # Deeply nested if statements, subjective.
     - nestif
 
     # Reports constructs that check 'err != nil' but return a different nil value error.
+    # nilerr covers the desired things.
     - nilnesserr
 
-    # Checks for a new line before return and branch statements to increase code clarity.
+    # Checks for a new line before return and branch statements to increase code clarity. Subjective.
     - nlreturn
 
     # Detect inline err handling. I prefer inline err handling if possible.
     - noinlineerr
 
-    # Reports all named returns, not that bad.
+    # Reports all named returns. Direct conflict with: unnamedResult from go-critic.
     - nonamedreturns
 
     # Finds misuse of Sprintf with host:port in a URL. Cool but rare.
@@ -303,9 +308,6 @@ linters:
 
     # Reports direct reads from proto message fields when getters should be used.
     - protogetter
-
-    # Checks for receiver type consistency.
-    - recvcheck
 
     # Checks for mistakes with OpenTelemetry/Census spans.
     - spancheck
@@ -324,9 +326,6 @@ linters:
 
     # Forces the use of a separate _test package. Often non-_test package is okay.
     - testpackage
-
-    # Makes you add t.Helper() as the first line in test helpers.
-    - thelper
 
     # Reports unused function parameters. Covered by revive.
     - unparam
@@ -373,7 +372,24 @@ linters:
       scope: noinline
       capital: true
 
-    nakedret: # was not in v2 migrated code
+    importas:
+      # Do not allow unaliased imports of aliased packages.
+      # https://github.com/julz/importas/issues/15
+      # no-unaliased: true
+
+      # Do not allow non-required aliases.
+      no-extra-aliases: true
+
+      # List of aliases
+      alias:
+        - pkg: github.com/ppipada/flexigpt-app/pkg/(\w+)/consts
+          alias: ${1}Consts
+        - pkg: github.com/ppipada/flexigpt-app/pkg/(\w+)/spec
+          alias: ${1}Spec
+        - pkg: github.com/ppipada/flexigpt-app/pkg/(\w+)/store
+          alias: ${1}Store
+
+    nakedret:
       # No naked returns, ever.
       max-func-lines: 0 # Default: 30
 

@@ -70,6 +70,7 @@ func TestNewMapFileStore(t *testing.T) {
 	}
 
 	runtNewMapFileStoreTestCase := func(t *testing.T, tt testType) {
+		t.Helper()
 		if tt.createFile {
 			err := os.WriteFile(tt.filename, []byte(tt.fileContent), 0o600)
 			if err != nil {

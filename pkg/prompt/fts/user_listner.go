@@ -80,6 +80,8 @@ func NewUserPromptsFTSListener(e *ftsengine.Engine) filestore.Listener {
 			if err := e.Delete(ctx, ev.File); err != nil {
 				slog.Error("fts delete failed", "file", ev.File, "err", err)
 			}
+		case filestore.OpSetKey, filestore.OpDeleteKey:
+			// Do nothing as we dont do key operations.
 		}
 	}
 }
