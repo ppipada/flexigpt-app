@@ -22,12 +22,6 @@ linters:
     # Check whether the function uses a non-inherited context.
     - contextcheck
 
-    # Detect if loop vars are copied
-    - copyloopvar
-
-    # Check declaration order of types, constants, variables, and functions.
-    - decorder
-
     # Find duplicate words. Rare case but good to have.
     - dupword
 
@@ -83,9 +77,6 @@ linters:
 
     # Official Go tool. Must have.
     - govet
-
-    # Group declarations, for import, const, var, etc.
-    - grouper
 
     # Checks import alias consistency.
     - importas
@@ -186,6 +177,9 @@ linters:
     # Detects struct containing context.Context field. Not a problem.
     - containedctx
 
+    # Detect if loop vars are copied. checked by modernize too.
+    - copyloopvar
+
     # Checks function and package cyclomatic complexity.
     # I can have a long but trivial switch-case.
     #
@@ -193,11 +187,15 @@ linters:
     # (c) Bryan C. Mills / https://github.com/bcmills
     - cyclop
 
+    # Check declaration order of types, constants, variables, and functions.
+    # I can have mixed things, like interface type and then its funcs and then other interface with its funcs etc.
+    - decorder
+
     # Checks if package imports are in a list of acceptable packages.
     # I'm very picky about what I import, so no automation.
     - depguard
 
-    # Checks assignments with too many blank identifiers.
+    # Checks assignments with too many blank identifiers. I amy have this as a conscious choice, in tests etc.
     - dogsled
 
     # Tool for code clone detection.
@@ -250,6 +248,9 @@ linters:
 
     # Reports certain internationalization anti-patterns.
     - gosmopolitan
+
+    # Group declarations, for import, const, var, etc. Dont have a need for it.
+    - grouper
 
     # Detects the incorrect use of interfaces to avoid interface pollution. Very subjective.
     - iface
