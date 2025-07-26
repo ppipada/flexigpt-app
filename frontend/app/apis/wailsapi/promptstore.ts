@@ -137,6 +137,7 @@ export class WailsPromptStoreAPI implements IPromptStoreAPI {
 		const req = {
 			BundleID: bundleID,
 			TemplateSlug: templateSlug,
+			Version: version,
 			body: {
 				displayName: displayName,
 				isEnabled: isEnabled,
@@ -145,7 +146,6 @@ export class WailsPromptStoreAPI implements IPromptStoreAPI {
 				blocks: blocks,
 				variables: variables,
 				preProcessors: preProcessors,
-				version: version,
 			},
 		};
 		await PutPromptTemplate(req as spec.PutPromptTemplateRequest);
@@ -160,8 +160,8 @@ export class WailsPromptStoreAPI implements IPromptStoreAPI {
 		const req = {
 			BundleID: bundleID,
 			TemplateSlug: templateSlug,
+			Version: version,
 			body: {
-				version: version,
 				isEnabled: isEnabled,
 			},
 		};
