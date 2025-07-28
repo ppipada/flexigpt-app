@@ -119,7 +119,7 @@ func processFTSSync(
 		return skip, nil
 	}
 
-	tl := spec.ToolSpec{}
+	tl := spec.Tool{}
 	if err := json.Unmarshal(raw, &tl); err != nil {
 		slog.Error("tool sync fts", "file", fullPath, "non tool file error", err)
 		return skip, nil
@@ -142,18 +142,15 @@ func processFTSSync(
 // extractFTS converts an in-memory JSON map to a column-to-text map for FTS indexing.
 func extractFTS(fullPath string, m map[string]any) ftsDoc {
 	var doc ftsDoc
-
 	s, _ := stringField(m, "slug")
 	doc.Slug = bundleitemutils.ItemSlug(s)
 	doc.DisplayName, _ = stringField(m, "displayName")
 	doc.Desc, _ = stringField(m, "description")
-
 	doc.Enabled = enabledFalse
 	doc.MTime = fileMTime(fullPath)
 	if v, ok := m["isEnabled"].(bool); ok && v {
 		doc.Enabled = enabledTrue
 	}
-
 	if arr, ok := m["tags"].([]any); ok {
 		for _, t := range arr {
 			if s, ok := t.(string); ok {
@@ -162,14 +159,26 @@ func extractFTS(fullPath string, m map[string]any) ftsDoc {
 		}
 	}
 
-	if arr, ok := m["parameters"].([]any); ok {
-		for _, raw := range arr {
-			if prm, ok := raw.(map[string]any); ok {
-				if n, ok := prm["name"].(string); ok {
-					doc.Parameters += n + newline
+	doc.Args = extractArgsFromSchema(m["argSchema"])
+
+	if v, ok := m["type"].(string); ok {
+		doc.Impl = v
+		switch v {
+		case string(spec.ToolTypeGo):
+			if gi, ok := m["goImpl"].(map[string]any); ok {
+				if fn, ok := gi["func"].(string); ok {
+					doc.ImplMeta = fn
 				}
-				if d, ok := prm["description"].(string); ok {
-					doc.Parameters += d + newline
+			}
+		case string(spec.ToolTypeHTTP):
+			if hi, ok := m["httpImpl"].(map[string]any); ok {
+				if req, ok := hi["request"].(map[string]any); ok {
+					if meth, ok := req["method"].(string); ok {
+						doc.ImplMeta += meth + " "
+					}
+					if urlT, ok := req["urlTemplate"].(string); ok {
+						doc.ImplMeta += urlT
+					}
 				}
 			}
 		}

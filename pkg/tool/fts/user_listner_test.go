@@ -26,8 +26,10 @@ func TestToolsFTSListener_Integration(t *testing.T) {
 			{Name: "slug", Weight: 1},
 			{Name: "displayName", Weight: 2},
 			{Name: "desc", Weight: 3},
-			{Name: "parameters", Weight: 4},
+			{Name: "args", Weight: 4},
 			{Name: "tags", Weight: 5},
+			{Name: "impl", Weight: 6},
+			{Name: "implMeta", Weight: 7},
 			{Name: "enabled", Unindexed: true},
 			{Name: "bundleID", Unindexed: true},
 			{Name: "mtime", Unindexed: true},
@@ -53,21 +55,23 @@ func TestToolsFTSListener_Integration(t *testing.T) {
 		toolSlug+"."+toolVersion+"."+bundleitemutils.ItemFileExtension,
 	)
 
-	tool := spec.ToolSpec{
+	// Use a Go tool with argSchema and tags.
+	tool := spec.Tool{
 		ID:          "id1",
 		DisplayName: "Test Tool",
 		Slug:        bundleitemutils.ItemSlug(toolSlug),
 		IsEnabled:   true,
 		Description: "tool desc",
 		Tags:        []string{"foo", "bar"},
-		Parameters: []spec.ToolParameter{
-			{
-				Name:        "param1",
-				Type:        spec.ParamString,
-				Description: "first parameter",
-				Required:    true,
-			},
-		},
+		ArgSchema: json.RawMessage(`{
+			"type": "object",
+			"properties": {
+				"alpha": { "type": "string", "title": "Alpha Title", "description": "Alpha Desc" },
+				"beta": { "type": "integer", "description": "Beta Desc" }
+			}
+		}`),
+		Type:       spec.ToolTypeGo,
+		GoImpl:     &spec.GoToolImpl{Func: "github.com/acme/flexigpt/tools.MyFunc"},
 		Version:    bundleitemutils.ItemVersion(toolVersion),
 		CreatedAt:  time.Now().UTC(),
 		ModifiedAt: time.Now().UTC(),
@@ -89,7 +93,7 @@ func TestToolsFTSListener_Integration(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	ctx := t.Context()
-	hits, next, err := engine.Search(ctx, "param1", "", 10)
+	hits, next, err := engine.Search(ctx, "alpha", "", 10)
 	if err != nil {
 		t.Fatalf("search: %v", err)
 	}
@@ -112,7 +116,7 @@ func TestToolsFTSListener_Integration(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	hits, _, err = engine.Search(ctx, "param1", "", 10)
+	hits, _, err = engine.Search(ctx, "alpha", "", 10)
 	if err != nil {
 		t.Fatalf("search: %v", err)
 	}
@@ -128,9 +132,23 @@ func TestToolsExtractFTS_AllFields(t *testing.T) {
 		"displayName": "disp",
 		"description": "desc",
 		"tags":        []any{"a", "b"},
-		"parameters": []any{
-			map[string]any{"name": "p1", "description": "d1"},
-			map[string]any{"name": "p2"},
+		"argSchema": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"foo": map[string]any{
+					"type":        "string",
+					"title":       "Foo Title",
+					"description": "Foo Desc",
+				},
+				"bar": map[string]any{"type": "integer", "description": "Bar Desc"},
+			},
+		},
+		"type": string(spec.ToolTypeHTTP),
+		"httpImpl": map[string]any{
+			"request": map[string]any{
+				"method":      "POST",
+				"urlTemplate": "https://api.example.com/do",
+			},
 		},
 		"isEnabled":  true,
 		"modifiedAt": now.Format(time.RFC3339Nano),
@@ -147,8 +165,12 @@ func TestToolsExtractFTS_AllFields(t *testing.T) {
 	if vals["desc"] != "desc" {
 		t.Errorf("desc: %q", vals["desc"])
 	}
-	if !strings.Contains(vals["parameters"], "p1") || !strings.Contains(vals["parameters"], "p2") {
-		t.Errorf("parameters: %q", vals["parameters"])
+	if !strings.Contains(vals["args"], "foo") || !strings.Contains(vals["args"], "Foo Title") ||
+		!strings.Contains(vals["args"], "Foo Desc") {
+		t.Errorf("args: %q", vals["args"])
+	}
+	if !strings.Contains(vals["args"], "bar") || !strings.Contains(vals["args"], "Bar Desc") {
+		t.Errorf("args: %q", vals["args"])
 	}
 	if !strings.Contains(vals["tags"], "a") || !strings.Contains(vals["tags"], "b") {
 		t.Errorf("tags: %q", vals["tags"])
@@ -158,6 +180,13 @@ func TestToolsExtractFTS_AllFields(t *testing.T) {
 	}
 	if vals["mtime"] != now.Format(time.RFC3339Nano) {
 		t.Errorf("mtime: %q", vals["mtime"])
+	}
+	if vals["impl"] != string(spec.ToolTypeHTTP) {
+		t.Errorf("impl: %q", vals["impl"])
+	}
+	if !strings.Contains(vals["implMeta"], "POST") ||
+		!strings.Contains(vals["implMeta"], "api.example.com") {
+		t.Errorf("implMeta: %q", vals["implMeta"])
 	}
 }
 
@@ -173,8 +202,14 @@ func TestToolsExtractFTS_EmptyAndEdgeCases(t *testing.T) {
 	if vals["tags"] != "" {
 		t.Errorf("tags: %q", vals["tags"])
 	}
-	if vals["parameters"] != "" {
-		t.Errorf("parameters: %q", vals["parameters"])
+	if vals["args"] != "" {
+		t.Errorf("args: %q", vals["args"])
+	}
+	if vals["impl"] != "" {
+		t.Errorf("impl: %q", vals["impl"])
+	}
+	if vals["implMeta"] != "" {
+		t.Errorf("implMeta: %q", vals["implMeta"])
 	}
 }
 
@@ -206,7 +241,7 @@ func TestToolsProcessFTSSync_Unchanged(t *testing.T) {
 	_ = os.MkdirAll(bundleDir, 0o755)
 	toolFile := filepath.Join(bundleDir, "mytool.v1.tool.json")
 
-	tool := spec.ToolSpec{
+	tool := spec.Tool{
 		ID:          "id1",
 		DisplayName: "Tool",
 		Slug:        "mytool",
@@ -214,6 +249,9 @@ func TestToolsProcessFTSSync_Unchanged(t *testing.T) {
 		Version:     "v1",
 		CreatedAt:   time.Now().UTC(),
 		ModifiedAt:  time.Now().UTC(),
+		Type:        spec.ToolTypeGo,
+		GoImpl:      &spec.GoToolImpl{Func: "github.com/acme/flexigpt/tools.MyFunc"},
+		ArgSchema:   json.RawMessage(`{"type":"object","properties":{"x":{"type":"string"}}}`),
 	}
 	mustWriteJSON(t, toolFile, tool)
 

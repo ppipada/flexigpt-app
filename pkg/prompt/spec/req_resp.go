@@ -17,7 +17,7 @@ type PutPromptBundleRequest struct {
 type PutPromptBundleResponse struct{}
 
 type DeletePromptBundleRequest struct {
-	BundleID bundleitemutils.BundleID `path:"bundleID"`
+	BundleID bundleitemutils.BundleID `path:"bundleID" required:"true"`
 }
 type DeletePromptBundleResponse struct{}
 

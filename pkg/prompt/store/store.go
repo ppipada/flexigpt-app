@@ -184,6 +184,7 @@ func (s *PromptTemplateStore) PutPromptBundle(
 	}
 
 	b := spec.PromptBundle{
+		SchemaVersion: spec.SchemaVersion,
 		ID:            req.BundleID,
 		Slug:          req.Body.Slug,
 		DisplayName:   req.Body.DisplayName,
@@ -500,6 +501,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 	}
 
 	tpl := spec.PromptTemplate{
+		SchemaVersion: spec.SchemaVersion,
 		ID:            bundleitemutils.ItemID(u),
 		DisplayName:   req.Body.DisplayName,
 		Slug:          req.TemplateSlug,

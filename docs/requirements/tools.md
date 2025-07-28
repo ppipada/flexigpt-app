@@ -26,48 +26,6 @@
 ## Data Model and Constraints
 
 - `bundleID` and `toolID` are present and are UUIDv7.
-- `tool.json` (Example schema)
-
-  ```jsonc
-  {
-    "schemaVersion" : "xyz",
-    "bundleID"     : "018faf50-b7b6-7a01-9a05-a22a6e0af101",
-    "slug"         : "weather",
-    "version"      : "v2",
-    "displayName"  : "Weather report",
-    "description"  : "Fetch current weather for a city",
-    "type"         : "http",          // "go" or "http"
-    "isEnabled"    : true,
-    "isBuiltIn"    : false,
-    "argSchema"    : { ... },         // JSON-Schema
-    "outputSchema" : { ... },         // JSON-Schema
-    "impl"         : { ... },         // See below
-    "createdAt"    : "2024-05-14T13:44:00Z",
-    "modifiedAt"   : "2024-06-01T09:17:10Z"
-  }
-  ```
-
-- Implementation block - Go (`type:"go"`)
-
-  ```jsonc
-  { "goFunc": "github.com/acme/agent/tools.Weather" }
-  ```
-
-- Implementation block - HTTP (`type:"http"`)
-
-```jsonc
-{
-  "method": "GET",
-  "urlTemplate": "https://api.weatherapi.com/v1/current.json?q=${city}&key=${WEATHER_API_KEY}",
-  "headers": { "User-Agent": "MyApp/${version}" },
-  "bodyTemplate": "",
-  "successCodes": [200],
-  "timeoutMs": 10000,
-  "responseEncoding": "json", // "json" | "text"
-  "extractExpr": "$.current.condition.text", // JSONPath or Regex
-  "errorMode": "fail" // "fail" | "empty"
-}
-```
 
 - Validation rules
 
@@ -105,15 +63,15 @@ All routes are relative to `/tools`.
 
 ### Tools
 
-| Verb   | Path                                                      | Notes                                                                       |
-| ------ | --------------------------------------------------------- | --------------------------------------------------------------------------- |
-| PUT    | `/bundles/{bundleID}/tools/{toolSlug}/version/{v}`        | conflict error if same `<slug,version>` exists.                             |
-| PATCH  | `/bundles/{bundleID}/tools/{toolSlug}/version/{v}`        | `{isEnabled}` Only enable/disable.                                          |
-| DELETE | `/bundles/{bundleID}/tools/{toolSlug}/version/{v}`        | Hard-delete local copy.                                                     |
-| GET    | `/bundles/{bundleID}/tools/{toolSlug}/version/{v}`        | --                                                                          |
-| POST   | `/bundles/{bundleID}/tools/{toolSlug}/version/{v}/invoke` | `{args}`                                                                    |
-| GET    | `/tools`                                                  | global list: `tags,bundleIDs,includeDisabled,recommendedPageSize,pageToken` |
-| GET    | `/tools/search`                                           | global search: `q,includeDisabled,pageSize,pageToken`                       |
+| Verb   | Path                                                            | Notes                                                                       |
+| ------ | --------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| PUT    | `/bundles/{bundleID}/tools/{toolSlug}/version/{version}`        | conflict error if same `<slug,version>` exists.                             |
+| PATCH  | `/bundles/{bundleID}/tools/{toolSlug}/version/{version}`        | `{isEnabled}` Only enable/disable.                                          |
+| DELETE | `/bundles/{bundleID}/tools/{toolSlug}/version/{version}`        | Hard-delete local copy.                                                     |
+| GET    | `/bundles/{bundleID}/tools/{toolSlug}/version/{version}`        | --                                                                          |
+| POST   | `/bundles/{bundleID}/tools/{toolSlug}/version/{version}/invoke` | `{args}`                                                                    |
+| GET    | `/tools`                                                        | global list: `tags,bundleIDs,includeDisabled,recommendedPageSize,pageToken` |
+| GET    | `/tools/search`                                                 | global search: `q,includeDisabled,pageSize,pageToken`                       |
 
 ## Behavioral Rules
 

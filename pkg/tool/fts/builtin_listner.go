@@ -20,7 +20,7 @@ import (
 // Overlay should already be applied, so that enabled flags are correct.
 type ToolBuiltInLister func() (
 	bundles map[bundleitemutils.BundleID]spec.ToolBundle,
-	tools map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec,
+	tools map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool,
 	err error,
 )
 
@@ -51,7 +51,7 @@ func ReindexOneBuiltInTool(
 	ctx context.Context,
 	bundleID bundleitemutils.BundleID,
 	bundleSlug bundleitemutils.BundleSlug,
-	tool spec.ToolSpec,
+	tool spec.Tool,
 	engine *ftsengine.Engine,
 ) error {
 	if engine == nil {
@@ -118,7 +118,7 @@ func syncBuiltInsToFTS(
 func buildDoc(
 	bid bundleitemutils.BundleID,
 	bslug bundleitemutils.BundleSlug,
-	tl spec.ToolSpec,
+	tl spec.Tool,
 ) (docID string, vals map[string]string, ok bool) {
 	dirInfo, err := bundleitemutils.BuildBundleDir(bid, bslug)
 	if err != nil {
@@ -139,26 +139,32 @@ func buildDoc(
 }
 
 // toolToFTSDoc fills an ftsDoc from a ToolSpec.
-func toolToFTSDoc(bid bundleitemutils.BundleID, tl spec.ToolSpec) ftsDoc {
+func toolToFTSDoc(bid bundleitemutils.BundleID, tl spec.Tool) ftsDoc {
 	doc := ftsDoc{
 		Slug:        tl.Slug,
 		DisplayName: tl.DisplayName,
 		Desc:        tl.Description,
-		BundleID:    bid,
+		Tags:        strings.Join(tl.Tags, newline) + newline,
+		Args:        extractArgsFromRaw(tl.ArgSchema),
+		Impl:        string(tl.Type),
 		MTime:       tl.ModifiedAt.UTC().Format(time.RFC3339Nano),
+		BundleID:    bid,
 		Enabled:     enabledFalse,
 	}
+
 	if tl.IsEnabled {
 		doc.Enabled = enabledTrue
 	}
-	for _, p := range tl.Parameters {
-		doc.Parameters += p.Name + newline
-		if p.Description != "" {
-			doc.Parameters += p.Description + newline
+
+	switch tl.Type {
+	case spec.ToolTypeGo:
+		if tl.GoImpl != nil {
+			doc.ImplMeta = tl.GoImpl.Func
 		}
-	}
-	for _, tg := range tl.Tags {
-		doc.Tags += tg + newline
+	case spec.ToolTypeHTTP:
+		if tl.HTTP != nil {
+			doc.ImplMeta = tl.HTTP.Request.Method + " " + tl.HTTP.Request.URLTemplate
+		}
 	}
 	return doc
 }

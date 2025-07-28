@@ -29,6 +29,17 @@ func TestToolsBuildDoc_HappyAndErrors(t *testing.T) {
 		t.Fatalf("missing compare column")
 	}
 
+	// Check new fields.
+	if vals["args"] == "" {
+		t.Errorf("args field should not be empty")
+	}
+	if vals["impl"] != string(tool.Type) {
+		t.Errorf("impl field mismatch: got %q want %q", vals["impl"], tool.Type)
+	}
+	if tool.Type == spec.ToolTypeGo && !strings.Contains(vals["implMeta"], "ToolFunc") {
+		t.Errorf("implMeta for Go tool should contain func name")
+	}
+
 	// Invalid slug should fail.
 	bad := tool
 	bad.Slug = "white space"
@@ -57,10 +68,10 @@ func TestToolsSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 				bid, _, b := makeBundle(1, true)
 				tool := makeTool(1, true)
 				return func() (map[bundleitemutils.BundleID]spec.ToolBundle,
-					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec, error,
+					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.ToolBundle{bid: b},
-						map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec{bid: {
+						map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool{bid: {
 							tool.ID: tool,
 						}}, nil
 				}
@@ -79,10 +90,10 @@ func TestToolsSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 				bid, _, b := makeBundle(2, true)
 				tool := makeTool(2, true)
 				return func() (map[bundleitemutils.BundleID]spec.ToolBundle,
-					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec, error,
+					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.ToolBundle{bid: b},
-						map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec{bid: {
+						map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool{bid: {
 							tool.ID: tool,
 						}}, nil
 				}
@@ -102,18 +113,19 @@ func TestToolsSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 				bid, _, b := makeBundle(3, true)
 				tool := makeTool(3, true)
 				return func() (map[bundleitemutils.BundleID]spec.ToolBundle,
-					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec, error,
+					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.ToolBundle{bid: b},
-						map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec{bid: {
+						map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool{bid: {
 							tool.ID: tool,
 						}}, nil
 				}
 			},
 			after: func(t *testing.T, _ int) {
 				t.Helper()
-				for id, val := range listAllRows(t, engine) {
-					if strings.Contains(id, "bundle-3") && val == "2000-01-01T00:00:00Z" {
+				for id, vals := range listAllRows(t, engine) {
+					if strings.Contains(id, "bundle-3") &&
+						vals[compareColumn] == "2000-01-01T00:00:00Z" {
 						t.Fatalf("row not updated")
 					}
 				}
@@ -130,10 +142,10 @@ func TestToolsSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 			},
 			lister: func() ToolBuiltInLister {
 				return func() (map[bundleitemutils.BundleID]spec.ToolBundle,
-					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec, error,
+					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.ToolBundle{},
-						map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec{}, nil
+						map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool{}, nil
 				}
 			},
 			want: want{rows: 0},
@@ -210,16 +222,16 @@ func TestToolsSyncBuiltInsToFTS_BiggerThanBatchSize(t *testing.T) {
 
 	const total = upsertBatchSize + 25
 	bid, _, bundle := makeBundle(1234, true)
-	tools := make(map[bundleitemutils.ItemID]spec.ToolSpec)
+	tools := make(map[bundleitemutils.ItemID]spec.Tool)
 	for i := range total {
 		tl := makeTool(i, true)
 		tools[tl.ID] = tl
 	}
 	lister := func() (map[bundleitemutils.BundleID]spec.ToolBundle,
-		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec, error,
+		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool, error,
 	) {
 		return map[bundleitemutils.BundleID]spec.ToolBundle{bid: bundle},
-			map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec{bid: tools}, nil
+			map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool{bid: tools}, nil
 	}
 	if err := syncBuiltInsToFTS(ctx, lister, engine); err != nil {
 		t.Fatalf("sync: %v", err)
@@ -237,18 +249,18 @@ func TestToolsSyncBuiltInsToFTS_CompareColumnStoresMTime(t *testing.T) {
 	bid, _, bundle := makeBundle(55, true)
 	tool := makeTool(1, true)
 	lister := func() (map[bundleitemutils.BundleID]spec.ToolBundle,
-		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec, error,
+		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool, error,
 	) {
 		return map[bundleitemutils.BundleID]spec.ToolBundle{bid: bundle},
-			map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec{bid: {
+			map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool{bid: {
 				tool.ID: tool,
 			}}, nil
 	}
 	if err := syncBuiltInsToFTS(ctx, lister, engine); err != nil {
 		t.Fatalf("sync: %v", err)
 	}
-	for _, v := range listAllRows(t, engine) {
-		if _, err := time.Parse(time.RFC3339Nano, v); err != nil {
+	for _, vals := range listAllRows(t, engine) {
+		if _, err := time.Parse(time.RFC3339Nano, vals[compareColumn]); err != nil {
 			t.Fatalf("compare column not RFC3339Nano: %v", err)
 		}
 	}
@@ -266,18 +278,149 @@ func TestToolsBuildDoc_JSONRoundTrip(t *testing.T) {
 	}
 }
 
-func listAllRows(t *testing.T, e *ftsengine.Engine) map[string]string {
+func TestFTSContent_GoAndHTTP(t *testing.T) {
+	tmp := mustTempBuiltInDir(t)
+	engine := newEngine(t, tmp)
+	ctx := t.Context()
+
+	bid, _, bundle := makeBundle(42, true)
+	goTool := makeTool(0, true)   // Go tool
+	httpTool := makeTool(1, true) // HTTP tool
+
+	lister := func() (map[bundleitemutils.BundleID]spec.ToolBundle,
+		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool, error,
+	) {
+		return map[bundleitemutils.BundleID]spec.ToolBundle{bid: bundle},
+			map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool{bid: {
+				goTool.ID:   goTool,
+				httpTool.ID: httpTool,
+			}}, nil
+	}
+	if err := syncBuiltInsToFTS(ctx, lister, engine); err != nil {
+		t.Fatalf("sync: %v", err)
+	}
+	rows := listAllRows(t, engine)
+	foundGo, foundHTTP := false, false
+	for _, vals := range rows {
+		switch vals["impl"] {
+		case string(spec.ToolTypeGo):
+			foundGo = true
+			if !strings.Contains(vals["implMeta"], "ToolFunc") {
+				t.Errorf("Go tool implMeta should contain func name, got: %q", vals["implMeta"])
+			}
+			if !strings.Contains(vals["args"], "foo") ||
+				!strings.Contains(vals["args"], "Foo Title") ||
+				!strings.Contains(vals["args"], "Foo Desc") {
+				t.Errorf("Go tool args field missing expected content: %q", vals["args"])
+			}
+		case string(spec.ToolTypeHTTP):
+			foundHTTP = true
+			if !strings.Contains(vals["implMeta"], "POST") ||
+				!strings.Contains(vals["implMeta"], "api.example.com") {
+				t.Errorf(
+					"HTTP tool implMeta should contain method and URL, got: %q",
+					vals["implMeta"],
+				)
+			}
+			if !strings.Contains(vals["args"], "bar") ||
+				!strings.Contains(vals["args"], "Bar Desc") {
+				t.Errorf("HTTP tool args field missing expected content: %q", vals["args"])
+			}
+		}
+		if !strings.Contains(vals["tags"], "common") {
+			t.Errorf("tags field missing expected tag: %q", vals["tags"])
+		}
+	}
+	if !foundGo || !foundHTTP {
+		t.Errorf("Expected both Go and HTTP tools indexed, got: %+v", rows)
+	}
+}
+
+func makeBundle(
+	id int,
+	enabled bool,
+) (bundleitemutils.BundleID, bundleitemutils.BundleSlug, spec.ToolBundle) {
+	bid := bundleitemutils.BundleID("bundle-" + strconv.Itoa(id))
+	bslug := bundleitemutils.BundleSlug("bundleslug-" + strconv.Itoa(id))
+	return bid, bslug, spec.ToolBundle{
+		ID:        bid,
+		Slug:      bslug,
+		IsEnabled: enabled,
+	}
+}
+
+// makeTool returns a Tool with either Go or HTTP implementation, and a simple argSchema.
+func makeTool(idx int, enabled bool) spec.Tool {
+	argSchema := json.RawMessage(`{
+		"type": "object",
+		"properties": {
+			"foo": { "type": "string", "title": "Foo Title", "description": "Foo Desc" },
+			"bar": { "type": "integer", "description": "Bar Desc" }
+		}
+	}`)
+	tags := []string{"tag" + strconv.Itoa(idx), "common"}
+
+	// Alternate between Go and HTTP tools for variety.
+	if idx%2 == 0 {
+		return spec.Tool{
+			ID:           bundleitemutils.ItemID("tool-" + strconv.Itoa(idx)),
+			DisplayName:  "Go Tool " + strconv.Itoa(idx),
+			Slug:         bundleitemutils.ItemSlug("slug-" + strconv.Itoa(idx)),
+			Description:  "desc go",
+			Version:      bundleitemutils.ItemVersion("v1"),
+			IsEnabled:    enabled,
+			CreatedAt:    time.Now().UTC(),
+			ModifiedAt:   time.Now().UTC(),
+			ArgSchema:    argSchema,
+			OutputSchema: json.RawMessage(`{"type":"object"}`),
+			Type:         spec.ToolTypeGo,
+			GoImpl: &spec.GoToolImpl{
+				Func: "github.com/acme/flexigpt/tools.ToolFunc" + strconv.Itoa(idx),
+			},
+			Tags: tags,
+		}
+	} else {
+		return spec.Tool{
+			ID:           bundleitemutils.ItemID("tool-" + strconv.Itoa(idx)),
+			DisplayName:  "HTTP Tool " + strconv.Itoa(idx),
+			Slug:         bundleitemutils.ItemSlug("slug-" + strconv.Itoa(idx)),
+			Description:  "desc http",
+			Version:      bundleitemutils.ItemVersion("v1"),
+			IsEnabled:    enabled,
+			CreatedAt:    time.Now().UTC(),
+			ModifiedAt:   time.Now().UTC(),
+			ArgSchema:    argSchema,
+			OutputSchema: json.RawMessage(`{"type":"object"}`),
+			Type:         spec.ToolTypeHTTP,
+			HTTP: &spec.HTTPToolImpl{
+				Request: spec.HTTPRequest{
+					Method:      "POST",
+					URLTemplate: "https://api.example.com/do",
+				},
+				Response: spec.HTTPResponse{
+					SuccessCodes: []int{200},
+					Encoding:     "json",
+				},
+			},
+			Tags: tags,
+		}
+	}
+}
+
+func listAllRows(t *testing.T, e *ftsengine.Engine) map[string]map[string]string {
 	t.Helper()
 	ctx := t.Context()
-	out := map[string]string{}
+	out := map[string]map[string]string{}
 	token := ""
 	for {
-		part, next, err := e.BatchList(ctx, compareColumn, []string{compareColumn}, token, 200)
+		part, next, err := e.BatchList(ctx, compareColumn, []string{
+			"slug", "displayName", "desc", "args", "tags", "impl", "implMeta", "enabled", "bundleID", "mtime",
+		}, token, 200)
 		if err != nil {
 			t.Fatalf("BatchList: %v", err)
 		}
 		for _, r := range part {
-			out[r.ID] = r.Values[compareColumn]
+			out[r.ID] = r.Values
 		}
 		if next == "" {
 			break
@@ -295,10 +438,12 @@ func newEngine(t *testing.T, dir string) *ftsengine.Engine {
 		Table:      sqliteDBTableName,
 		Columns: []ftsengine.Column{
 			{Name: "slug", Weight: 1},
-			{Name: "displayName", Weight: 1},
-			{Name: "desc", Weight: 1},
-			{Name: "parameters", Weight: 1},
-			{Name: "tags", Weight: 1},
+			{Name: "displayName", Weight: 2},
+			{Name: "desc", Weight: 3},
+			{Name: "args", Weight: 4},
+			{Name: "tags", Weight: 5},
+			{Name: "impl", Weight: 6},
+			{Name: "implMeta", Weight: 7},
 			{Name: "enabled", Unindexed: true},
 			{Name: "bundleID", Unindexed: true},
 			{Name: "mtime", Unindexed: true},
@@ -308,36 +453,6 @@ func newEngine(t *testing.T, dir string) *ftsengine.Engine {
 		t.Fatalf("NewEngine: %v", err)
 	}
 	return e
-}
-
-func makeBundle(
-	id int,
-	enabled bool,
-) (bundleitemutils.BundleID, bundleitemutils.BundleSlug, spec.ToolBundle) {
-	bid := bundleitemutils.BundleID("bundle-" + strconv.Itoa(id))
-	bslug := bundleitemutils.BundleSlug("bundleslug-" + strconv.Itoa(id))
-	return bid, bslug, spec.ToolBundle{
-		ID:        bid,
-		Slug:      bslug,
-		IsEnabled: enabled,
-	}
-}
-
-func makeTool(idx int, enabled bool) spec.ToolSpec {
-	return spec.ToolSpec{
-		ID:          bundleitemutils.ItemID("tool-" + strconv.Itoa(idx)),
-		DisplayName: "Tool " + strconv.Itoa(idx),
-		Slug:        bundleitemutils.ItemSlug("slug-" + strconv.Itoa(idx)),
-		Description: "desc",
-		Version:     bundleitemutils.ItemVersion("v1"),
-		IsEnabled:   enabled,
-		CreatedAt:   time.Now().UTC(),
-		ModifiedAt:  time.Now().UTC(),
-		Parameters: []spec.ToolParameter{
-			{Name: "p" + strconv.Itoa(idx), Type: spec.ParamString},
-		},
-		Tags: []string{"tag" + strconv.Itoa(idx)},
-	}
 }
 
 func mustTempBuiltInDir(t *testing.T) string { t.Helper(); return t.TempDir() }

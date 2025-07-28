@@ -1,4 +1,5 @@
 {
+	"schemaVersion": "2025-07-01",
 	"id": "018faf50-b7b6-7e01-a00b-a22a6e0af107",
 	"displayName": "React-Router v7 + Vite + Tailwind 4",
 	"slug": "fe-stack-react-vite",

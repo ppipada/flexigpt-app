@@ -34,9 +34,10 @@ type BuiltInData struct {
 	bundlesFS      fs.FS
 	bundlesDir     string
 	overlayBaseDir string
-	bundles        map[bundleitemutils.BundleID]spec.PromptBundle
-	templates      map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate
-	store          *booloverlay.Store
+
+	bundles   map[bundleitemutils.BundleID]spec.PromptBundle
+	templates map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate
+	store     *booloverlay.Store
 
 	mu            sync.RWMutex
 	viewBundles   map[bundleitemutils.BundleID]spec.PromptBundle

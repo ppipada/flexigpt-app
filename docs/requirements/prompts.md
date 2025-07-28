@@ -57,14 +57,14 @@ All routes are relative to `/prompts`.
 
 ### Templates
 
-| Verb   | Path                                                       | Notes                                                                       |
-| ------ | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
-| PUT    | `/bundles/{bundleID}/templates/{templateSlug}/version={v}` | conflict error if same `<slug,version>` exists.                             |
-| PATCH  | `/bundles/{bundleID}/templates/{templateSlug}/version={v}` | `{isEnabled}` Only enable/disable.                                          |
-| DELETE | `/bundles/{bundleID}/templates/{templateSlug}/version={v}` | Hard-delete local copy.                                                     |
-| GET    | `/bundles/{bundleID}/templates/{templateSlug}/version={v}` | --                                                                          |
-| GET    | `/templates`                                               | global list: `tags,bundleIDs,includeDisabled,recommendedPageSize,pageToken` |
-| GET    | `/templates/search`                                        | global search: `q,includeDisabled,pageSize,pageToken`                       |
+| Verb   | Path                                                             | Notes                                                                       |
+| ------ | ---------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| PUT    | `/bundles/{bundleID}/templates/{templateSlug}/version/{version}` | conflict error if same `<slug,version>` exists.                             |
+| PATCH  | `/bundles/{bundleID}/templates/{templateSlug}/version/{version}` | `{isEnabled}` Only enable/disable.                                          |
+| DELETE | `/bundles/{bundleID}/templates/{templateSlug}/version/{version}` | Hard-delete local copy.                                                     |
+| GET    | `/bundles/{bundleID}/templates/{templateSlug}/version/{version}` | --                                                                          |
+| GET    | `/templates`                                                     | global list: `tags,bundleIDs,includeDisabled,recommendedPageSize,pageToken` |
+| GET    | `/templates/search`                                              | global search: `q,includeDisabled,pageSize,pageToken`                       |
 
 ## Behavioral Rules
 

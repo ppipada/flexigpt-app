@@ -48,7 +48,7 @@ func InitPromptTemplateStoreHandlers(api huma.API, store *PromptTemplateStore) {
 	huma.Register(api, huma.Operation{
 		OperationID: "put-prompt-template",
 		Method:      http.MethodPut,
-		Path:        pathPrefix + "/bundles/{bundleID}/templates/{templateSlug}",
+		Path:        pathPrefix + "/bundles/{bundleID}/templates/{templateSlug}/version/{version}",
 		Summary:     "Create a new prompt template version",
 		Tags:        []string{tag},
 	}, store.PutPromptTemplate)
@@ -56,7 +56,7 @@ func InitPromptTemplateStoreHandlers(api huma.API, store *PromptTemplateStore) {
 	huma.Register(api, huma.Operation{
 		OperationID: "patch-prompt-template",
 		Method:      http.MethodPatch,
-		Path:        pathPrefix + "/bundles/{bundleID}/templates/{templateSlug}",
+		Path:        pathPrefix + "/bundles/{bundleID}/templates/{templateSlug}/version/{version}",
 		Summary:     "Enable or disable a prompt template version",
 		Tags:        []string{tag},
 	}, store.PatchPromptTemplate)
@@ -64,7 +64,7 @@ func InitPromptTemplateStoreHandlers(api huma.API, store *PromptTemplateStore) {
 	huma.Register(api, huma.Operation{
 		OperationID: "delete-prompt-template",
 		Method:      http.MethodDelete,
-		Path:        pathPrefix + "/bundles/{bundleID}/templates/{templateSlug}",
+		Path:        pathPrefix + "/bundles/{bundleID}/templates/{templateSlug}/version/{version}",
 		Summary:     "Hard-delete a prompt template version",
 		Tags:        []string{tag},
 	}, store.DeletePromptTemplate)
@@ -72,8 +72,8 @@ func InitPromptTemplateStoreHandlers(api huma.API, store *PromptTemplateStore) {
 	huma.Register(api, huma.Operation{
 		OperationID: "get-prompt-template",
 		Method:      http.MethodGet,
-		Path:        pathPrefix + "/bundles/{bundleID}/templates/{templateSlug}",
-		Summary:     "Get a prompt template version (or active version if version omitted)",
+		Path:        pathPrefix + "/bundles/{bundleID}/templates/{templateSlug}/version/{version}",
+		Summary:     "Get a prompt template version",
 		Tags:        []string{tag},
 	}, store.GetPromptTemplate)
 

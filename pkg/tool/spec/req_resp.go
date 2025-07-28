@@ -1,6 +1,8 @@
 package spec
 
-import "github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
+import (
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
+)
 
 type PutToolBundleRequestBody struct {
 	Slug        bundleitemutils.BundleSlug `json:"slug"                  required:"true"`
@@ -17,7 +19,7 @@ type PutToolBundleRequest struct {
 type PutToolBundleResponse struct{}
 
 type DeleteToolBundleRequest struct {
-	BundleID bundleitemutils.BundleID `path:"bundleID"`
+	BundleID bundleitemutils.BundleID `path:"bundleID" required:"true"`
 }
 type DeleteToolBundleResponse struct{}
 
@@ -49,37 +51,44 @@ type ListToolBundlesResponse struct {
 }
 
 type PutToolRequestBody struct {
-	DisplayName string                      `json:"displayName"           required:"true"`
-	IsEnabled   bool                        `json:"isEnabled"             required:"true"`
-	Version     bundleitemutils.ItemVersion `json:"version"               required:"true"`
-	Description string                      `json:"description,omitempty"`
-	Tags        []string                    `json:"tags,omitempty"`
-	Parameters  []ToolParameter             `json:"parameters,omitempty"`
+	DisplayName string   `json:"displayName"           required:"true"`
+	Description string   `json:"description,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+	IsEnabled   bool     `json:"isEnabled"             required:"true"`
+
+	ArgSchema    JSONSchema `json:"argSchema"    required:"true"`
+	OutputSchema JSONSchema `json:"outputSchema" required:"true"`
+
+	Type   ToolType      `json:"type"               required:"true"`
+	GoImpl *GoToolImpl   `json:"goImpl,omitempty"`
+	HTTP   *HTTPToolImpl `json:"httpImpl,omitempty"`
 }
 
 type PutToolRequest struct {
-	BundleID bundleitemutils.BundleID `path:"bundleID" required:"true"`
-	ToolSlug bundleitemutils.ItemSlug `path:"toolSlug" required:"true"`
-	Body     *PutToolRequestBody      `                                json:"body"`
+	BundleID bundleitemutils.BundleID    `path:"bundleID" required:"true"`
+	ToolSlug bundleitemutils.ItemSlug    `path:"toolSlug" required:"true"`
+	Version  bundleitemutils.ItemVersion `path:"version"  required:"true"`
+	Body     *PutToolRequestBody         `                                json:"body"`
 }
 type PutToolResponse struct{}
 
 type DeleteToolRequest struct {
 	BundleID bundleitemutils.BundleID    `path:"bundleID" required:"true"`
 	ToolSlug bundleitemutils.ItemSlug    `path:"toolSlug" required:"true"`
-	Version  bundleitemutils.ItemVersion `                required:"true" query:"version"`
+	Version  bundleitemutils.ItemVersion `path:"version"  required:"true"`
 }
 type DeleteToolResponse struct{}
 
 type PatchToolRequestBody struct {
-	Version   bundleitemutils.ItemVersion `json:"version"   required:"true"`
-	IsEnabled bool                        `json:"isEnabled" required:"true"`
+	IsEnabled bool `json:"isEnabled" required:"true"`
 }
 
 type PatchToolRequest struct {
-	BundleID bundleitemutils.BundleID `path:"bundleID" required:"true"`
-	ToolSlug bundleitemutils.ItemSlug `path:"toolSlug" required:"true"`
-	Body     *PatchToolRequestBody    `                                json:"body"`
+	BundleID bundleitemutils.BundleID    `path:"bundleID" required:"true"`
+	ToolSlug bundleitemutils.ItemSlug    `path:"toolSlug" required:"true"`
+	Version  bundleitemutils.ItemVersion `path:"version"  required:"true"`
+
+	Body *PatchToolRequestBody `json:"body"`
 }
 
 type PatchToolResponse struct{}
@@ -87,9 +96,9 @@ type PatchToolResponse struct{}
 type GetToolRequest struct {
 	BundleID bundleitemutils.BundleID    `path:"bundleID" required:"true"`
 	ToolSlug bundleitemutils.ItemSlug    `path:"toolSlug" required:"true"`
-	Version  bundleitemutils.ItemVersion `                required:"true" query:"version"`
+	Version  bundleitemutils.ItemVersion `path:"version"  required:"true"`
 }
-type GetToolResponse struct{ Body *ToolSpec }
+type GetToolResponse struct{ Body *Tool }
 
 type ListToolsRequest struct {
 	BundleIDs           []bundleitemutils.BundleID `query:"bundleIDs"`

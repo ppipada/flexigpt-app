@@ -1,3 +1,6 @@
+// Package store keeps the read-only built-in tool assets together with
+// a writable overlay that enables or disables individual bundles or
+// tools.
 package store
 
 import (
@@ -17,37 +20,34 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
-// BuiltInToolBundleID is a wrapper that lets booloverlay.Store distinguish bundle flags from tool flags.
 type BuiltInToolBundleID bundleitemutils.BundleID
 
 func (BuiltInToolBundleID) Group() booloverlay.GroupID { return "bundles" }
 func (b BuiltInToolBundleID) ID() booloverlay.KeyID    { return booloverlay.KeyID(b) }
 
-// BuiltInToolID is the overlay key for individual tools.
 type BuiltInToolID bundleitemutils.ItemID
 
 func (BuiltInToolID) Group() booloverlay.GroupID { return "tools" }
 func (t BuiltInToolID) ID() booloverlay.KeyID    { return booloverlay.KeyID(t) }
 
-// BuiltInToolData keeps the built-in tool assets and an overlay with enable flags.
 type BuiltInToolData struct {
 	toolsFS        fs.FS
 	toolsDir       string
 	overlayBaseDir string
 
 	bundles map[bundleitemutils.BundleID]spec.ToolBundle
-	tools   map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec
+	tools   map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool
 	store   *booloverlay.Store
 
 	mu          sync.RWMutex
 	viewBundles map[bundleitemutils.BundleID]spec.ToolBundle
-	viewTools   map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec
-	rebuilder   *builtin.AsyncRebuilder
+	viewTools   map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool
+
+	rebuilder *builtin.AsyncRebuilder
 }
 
 type BuiltInToolDataOption func(*BuiltInToolData)
 
-// WithToolBundlesFS overrides the default embedded FS.
 func WithToolBundlesFS(fsys fs.FS, rootDir string) BuiltInToolDataOption {
 	return func(d *BuiltInToolData) {
 		d.toolsFS = fsys
@@ -55,7 +55,6 @@ func WithToolBundlesFS(fsys fs.FS, rootDir string) BuiltInToolDataOption {
 	}
 }
 
-// NewBuiltInToolData instantiates a lazy-rebuilding cache over the embedded built-in tool assets.
 func NewBuiltInToolData(
 	overlayBaseDir string,
 	snapshotMaxAge time.Duration,
@@ -80,87 +79,94 @@ func NewBuiltInToolData(
 		return nil, err
 	}
 
-	data := &BuiltInToolData{
+	d := &BuiltInToolData{
 		toolsFS:        builtin.BuiltInToolBundlesFS,
 		toolsDir:       builtin.BuiltInToolBundlesRootDir,
 		overlayBaseDir: overlayBaseDir,
 		store:          store,
 	}
 	for _, o := range opts {
-		o(data)
+		o(d)
 	}
 
-	if err := data.populateDataFromFS(); err != nil {
+	if err := d.populateDataFromFS(); err != nil {
 		return nil, err
 	}
 
-	data.rebuilder = builtin.NewAsyncRebuilder(
+	d.rebuilder = builtin.NewAsyncRebuilder(
 		snapshotMaxAge,
 		func() error {
-			data.mu.Lock()
-			defer data.mu.Unlock()
-			return data.rebuildSnapshot()
+			d.mu.Lock()
+			defer d.mu.Unlock()
+			return d.rebuildSnapshot()
 		},
 	)
-	data.rebuilder.MarkFresh()
+	d.rebuilder.MarkFresh()
 
-	return data, nil
+	return d, nil
 }
 
-// SetToolBundleEnabled toggles a bundle flag.
-func (d *BuiltInToolData) SetToolBundleEnabled(id bundleitemutils.BundleID, enabled bool) error {
+// SetToolBundleEnabled toggles a bundle flag and returns the updated bundle.
+func (d *BuiltInToolData) SetToolBundleEnabled(
+	id bundleitemutils.BundleID,
+	enabled bool,
+) (spec.ToolBundle, error) {
 	if _, ok := d.bundles[id]; !ok {
-		return fmt.Errorf("bundleID: %q, err: %w", id, spec.ErrBuiltInToolBundleNotFound)
+		return spec.ToolBundle{}, fmt.Errorf(
+			"bundleID: %q, err: %w", id, spec.ErrBuiltInBundleNotFound)
 	}
+
 	flag, err := d.store.SetFlag(BuiltInToolBundleID(id), enabled)
 	if err != nil {
-		return err
+		return spec.ToolBundle{}, err
 	}
 
 	d.mu.Lock()
+	defer d.mu.Unlock()
+
 	b := d.viewBundles[id]
 	b.IsEnabled = enabled
 	b.ModifiedAt = flag.ModifiedAt
 	d.viewBundles[id] = b
-	d.mu.Unlock()
 
 	d.rebuilder.Trigger()
-	return nil
+
+	return b, nil
 }
 
-// SetToolEnabled toggles a tool flag.
+// SetToolEnabled toggles one tool (identified by slug+version) and
+// returns the updated object.  Deriving the primary key from slug &
+// version keeps the API parallel to the prompt store.
 func (d *BuiltInToolData) SetToolEnabled(
 	bundleID bundleitemutils.BundleID,
-	toolID bundleitemutils.ItemID,
+	slug bundleitemutils.ItemSlug,
+	version bundleitemutils.ItemVersion,
 	enabled bool,
-) error {
-	if _, ok := d.tools[bundleID]; !ok {
-		return fmt.Errorf("bundleID: %q, err: %w", bundleID, spec.ErrBuiltInToolBundleNotFound)
-	}
-	if _, ok := d.tools[bundleID][toolID]; !ok {
-		return fmt.Errorf("bundleID: %q, toolID: %q err: %w",
-			bundleID, toolID, spec.ErrToolNotFound)
-	}
-	flag, err := d.store.SetFlag(BuiltInToolID(toolID), enabled)
+) (spec.Tool, error) {
+	tool, err := d.GetBuiltInTool(bundleID, slug, version)
 	if err != nil {
-		return err
+		return spec.Tool{}, err
+	}
+	flag, err := d.store.SetFlag(BuiltInToolID(tool.ID), enabled)
+	if err != nil {
+		return spec.Tool{}, err
 	}
 
 	d.mu.Lock()
-	t := d.viewTools[bundleID][toolID]
-	t.IsEnabled = enabled
-	t.ModifiedAt = flag.ModifiedAt
-	d.viewTools[bundleID][toolID] = t
-	d.mu.Unlock()
+	defer d.mu.Unlock()
+
+	tool.IsEnabled = enabled
+	tool.ModifiedAt = flag.ModifiedAt
+	d.viewTools[bundleID][tool.ID] = tool
 
 	d.rebuilder.Trigger()
-	return nil
+
+	return tool, nil
 }
 
-// ListBuiltInToolData returns a deep copy of the cached snapshot.
 func (d *BuiltInToolData) ListBuiltInToolData() (
 	bundles map[bundleitemutils.BundleID]spec.ToolBundle,
-	tools map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec,
+	tools map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool,
 	err error,
 ) {
 	d.mu.RLock()
@@ -170,7 +176,6 @@ func (d *BuiltInToolData) ListBuiltInToolData() (
 	return bundles, tools, nil
 }
 
-// GetBuiltInToolBundle fetches a single bundle from the snapshot.
 func (d *BuiltInToolData) GetBuiltInToolBundle(
 	id bundleitemutils.BundleID,
 ) (spec.ToolBundle, error) {
@@ -178,29 +183,28 @@ func (d *BuiltInToolData) GetBuiltInToolBundle(
 	defer d.mu.RUnlock()
 	b, ok := d.viewBundles[id]
 	if !ok {
-		return spec.ToolBundle{}, spec.ErrToolBundleNotFound
+		return spec.ToolBundle{}, spec.ErrBundleNotFound
 	}
 	return b, nil
 }
 
-// GetBuiltInTool fetches one tool by (bundle, slug, version).
 func (d *BuiltInToolData) GetBuiltInTool(
 	bundleID bundleitemutils.BundleID,
 	slug bundleitemutils.ItemSlug,
 	version bundleitemutils.ItemVersion,
-) (spec.ToolSpec, error) {
+) (spec.Tool, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	tools, ok := d.viewTools[bundleID]
 	if !ok {
-		return spec.ToolSpec{}, spec.ErrToolBundleNotFound
+		return spec.Tool{}, spec.ErrBundleNotFound
 	}
 	for _, tl := range tools {
 		if tl.Slug == slug && tl.Version == version {
 			return tl, nil
 		}
 	}
-	return spec.ToolSpec{}, spec.ErrToolNotFound
+	return spec.Tool{}, spec.ErrToolNotFound
 }
 
 func (d *BuiltInToolData) populateDataFromFS() error {
@@ -214,22 +218,22 @@ func (d *BuiltInToolData) populateDataFromFS() error {
 		return err
 	}
 
-	var manifest spec.AllToolBundles
+	var manifest spec.AllBundles
 	if err := json.Unmarshal(rawManifest, &manifest); err != nil {
 		return err
 	}
 
 	bundleMap := make(
 		map[bundleitemutils.BundleID]spec.ToolBundle,
-		len(manifest.ToolBundles),
+		len(manifest.Bundles),
 	)
 	toolMap := make(
-		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec,
+		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool,
 	)
-	for id, b := range manifest.ToolBundles {
+	for id, b := range manifest.Bundles {
 		b.IsBuiltIn = true
 		bundleMap[id] = b
-		toolMap[id] = make(map[bundleitemutils.ItemID]spec.ToolSpec)
+		toolMap[id] = make(map[bundleitemutils.ItemID]spec.Tool)
 	}
 	if len(bundleMap) == 0 {
 		return fmt.Errorf("built-in data: %s/%s contains no bundles",
@@ -275,7 +279,7 @@ func (d *BuiltInToolData) populateDataFromFS() error {
 			if err != nil {
 				return err
 			}
-			var tool spec.ToolSpec
+			var tool spec.Tool
 			if err := json.Unmarshal(raw, &tool); err != nil {
 				return fmt.Errorf("%s: %w", inPath, err)
 			}
@@ -342,7 +346,7 @@ func (d *BuiltInToolData) rebuildSnapshot() error {
 		len(d.bundles),
 	)
 	newTools := make(
-		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec,
+		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool,
 		len(d.tools),
 	)
 
@@ -360,7 +364,7 @@ func (d *BuiltInToolData) rebuildSnapshot() error {
 	}
 
 	for bid, tm := range d.tools {
-		sub := make(map[bundleitemutils.ItemID]spec.ToolSpec, len(tm))
+		sub := make(map[bundleitemutils.ItemID]spec.Tool, len(tm))
 		for tid, t := range tm {
 			flag, ok, err := d.store.GetFlag(BuiltInToolID(tid))
 			if err != nil {
@@ -389,10 +393,10 @@ func resolveToolBundlesFS(fsys fs.FS, dir string) (fs.FS, error) {
 }
 
 func cloneToolSpecs(
-	src map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec,
-) map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec {
+	src map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool,
+) map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool {
 	dst := make(
-		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.ToolSpec,
+		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool,
 		len(src),
 	)
 	for bid, inner := range src {

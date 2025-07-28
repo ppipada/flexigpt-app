@@ -1,6 +1,7 @@
 {
 	"bundles": {
 		"018faf50-b7b6-7a01-9a05-a22a6e0af101": {
+			"schemaVersion": "2025-07-01",
 			"id": "018faf50-b7b6-7a01-9a05-a22a6e0af101",
 			"slug": "software-design",
 			"displayName": "Software-Design Prompts",
@@ -11,6 +12,7 @@
 			"isBuiltIn": true
 		},
 		"018faf50-b7b6-7a02-9b06-a22a6e0af102": {
+			"schemaVersion": "2025-07-01",
 			"id": "018faf50-b7b6-7a02-9b06-a22a6e0af102",
 			"slug": "go-dev",
 			"displayName": "Go-Developer Prompts",
@@ -21,6 +23,7 @@
 			"isBuiltIn": true
 		},
 		"018faf50-b7b6-7a03-9c07-a22a6e0af103": {
+			"schemaVersion": "2025-07-01",
 			"id": "018faf50-b7b6-7a03-9c07-a22a6e0af103",
 			"slug": "react-dev",
 			"displayName": "React Front-End Prompts",

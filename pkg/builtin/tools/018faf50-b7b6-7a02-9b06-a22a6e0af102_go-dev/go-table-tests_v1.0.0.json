@@ -1,4 +1,5 @@
 {
+	"schemaVersion": "2025-07-01",
 	"id": "018faf50-b7b6-7d01-9f0a-a22a6e0af106",
 	"displayName": "Go Table-Driven Tests (stdlib-only)",
 	"slug": "go-table-tests",
