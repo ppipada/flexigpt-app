@@ -5,8 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/ppipada/flexigpt-app/pkg/model/spec"
-
+	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
 )
@@ -18,8 +17,8 @@ type OpenAICompatibleAPI struct {
 	llm *openai.LLM
 }
 
-// NewOpenAICompatibleProvider creates a new instance of OpenAICompatibleProvider with the provided ProviderInfo.
-func NewOpenAICompatibleProvider(pi spec.ProviderInfo, debug bool) *OpenAICompatibleAPI {
+// NewOpenAICompatibleProvider creates a new instance of OpenAICompatibleProvider with the provided ProviderParams.
+func NewOpenAICompatibleProvider(pi spec.ProviderParams, debug bool) *OpenAICompatibleAPI {
 	return &OpenAICompatibleAPI{
 		BaseAIAPI: NewBaseAIAPI(&pi, debug),
 	}
@@ -33,12 +32,12 @@ func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {
 	options := []openai.Option{}
 
 	providerURL := "https://api.openai.com/v1"
-	if api.ProviderInfo.Origin != "" {
-		baseURL := api.ProviderInfo.Origin
+	if api.ProviderParams.Origin != "" {
+		baseURL := api.ProviderParams.Origin
 		// Remove trailing slash from baseURL if present.
 		baseURL = strings.TrimSuffix(baseURL, "/")
 
-		pathPrefix := api.ProviderInfo.ChatCompletionPathPrefix
+		pathPrefix := api.ProviderParams.ChatCompletionPathPrefix
 		// Remove '/chat/completions' from pathPrefix if present,
 		// This is because langchaingo adds '/chat/completions' internally.
 		pathPrefix = strings.TrimSuffix(pathPrefix, "/chat/completions")
@@ -46,15 +45,15 @@ func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {
 		options = append(options, openai.WithBaseURL(providerURL))
 	}
 
-	if api.ProviderInfo.APIKey == "" {
+	if api.ProviderParams.APIKey == "" {
 		slog.Debug(
 			string(
-				api.ProviderInfo.Name,
+				api.ProviderParams.Name,
 			) + ": No API key given. Not initializing OpenAICompatibleAPI LLM object",
 		)
 		return nil
 	}
-	options = append(options, openai.WithToken(api.ProviderInfo.APIKey))
+	options = append(options, openai.WithToken(api.ProviderParams.APIKey))
 	newClient := NewDebugHTTPClient(api.Debug, false)
 	options = append(options, openai.WithHTTPClient(newClient))
 
@@ -66,7 +65,7 @@ func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {
 	slog.Info(
 		"openai compatible LLM provider initialized",
 		"name",
-		string(api.ProviderInfo.Name),
+		string(api.ProviderParams.Name),
 		"URL",
 		providerURL,
 	)

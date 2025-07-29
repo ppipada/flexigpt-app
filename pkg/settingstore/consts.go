@@ -1,6 +1,7 @@
 package settingstore
 
 import (
+	inferenceSpec "github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelConsts "github.com/ppipada/flexigpt-app/pkg/model/consts"
 	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
 )
@@ -9,44 +10,43 @@ import (
 var DefaultAISettings = map[modelSpec.ProviderName]AISetting{
 	modelConsts.ProviderNameAnthropic: {
 		IsEnabled:                true,
-		APIKey:                   modelConsts.AnthropicProviderInfo.APIKey,
-		Origin:                   modelConsts.AnthropicProviderInfo.Origin,
-		ChatCompletionPathPrefix: modelConsts.AnthropicProviderInfo.ChatCompletionPathPrefix,
+		APIKey:                   inferenceSpec.AnthropicProviderInfo.APIKey,
+		Origin:                   inferenceSpec.AnthropicProviderInfo.Origin,
+		ChatCompletionPathPrefix: inferenceSpec.AnthropicProviderInfo.ChatCompletionPathPrefix,
 	},
 
 	modelConsts.ProviderNameDeepseek: {
 		IsEnabled:                false,
-		APIKey:                   modelConsts.DeepseekProviderInfo.APIKey,
-		Origin:                   modelConsts.DeepseekProviderInfo.Origin,
-		ChatCompletionPathPrefix: modelConsts.DeepseekProviderInfo.ChatCompletionPathPrefix,
+		APIKey:                   inferenceSpec.DeepseekProviderInfo.APIKey,
+		Origin:                   inferenceSpec.DeepseekProviderInfo.Origin,
+		ChatCompletionPathPrefix: inferenceSpec.DeepseekProviderInfo.ChatCompletionPathPrefix,
 	},
 	modelConsts.ProviderNameGoogle: {
 		IsEnabled:                false,
-		APIKey:                   modelConsts.GoogleProviderInfo.APIKey,
-		Origin:                   modelConsts.GoogleProviderInfo.Origin,
-		ChatCompletionPathPrefix: modelConsts.GoogleProviderInfo.ChatCompletionPathPrefix,
+		APIKey:                   inferenceSpec.GoogleProviderInfo.APIKey,
+		Origin:                   inferenceSpec.GoogleProviderInfo.Origin,
+		ChatCompletionPathPrefix: inferenceSpec.GoogleProviderInfo.ChatCompletionPathPrefix,
 	},
 	modelConsts.ProviderNameHuggingFace: {
 		IsEnabled:                false,
-		APIKey:                   modelConsts.HuggingfaceProviderInfo.APIKey,
-		Origin:                   modelConsts.HuggingfaceProviderInfo.Origin,
-		ChatCompletionPathPrefix: modelConsts.HuggingfaceProviderInfo.ChatCompletionPathPrefix,
+		APIKey:                   inferenceSpec.HuggingfaceProviderInfo.APIKey,
+		Origin:                   inferenceSpec.HuggingfaceProviderInfo.Origin,
+		ChatCompletionPathPrefix: inferenceSpec.HuggingfaceProviderInfo.ChatCompletionPathPrefix,
 	},
 	modelConsts.ProviderNameLlamaCPP: {
 		IsEnabled:                false,
-		APIKey:                   modelConsts.LlamacppProviderInfo.APIKey,
-		Origin:                   modelConsts.LlamacppProviderInfo.Origin,
-		ChatCompletionPathPrefix: modelConsts.LlamacppProviderInfo.ChatCompletionPathPrefix,
+		APIKey:                   inferenceSpec.LlamacppProviderInfo.APIKey,
+		Origin:                   inferenceSpec.LlamacppProviderInfo.Origin,
+		ChatCompletionPathPrefix: inferenceSpec.LlamacppProviderInfo.ChatCompletionPathPrefix,
 	},
 	modelConsts.ProviderNameOpenAI: {
 		IsEnabled:                true,
-		APIKey:                   modelConsts.OpenAIProviderInfo.APIKey,
-		Origin:                   modelConsts.OpenAIProviderInfo.Origin,
-		ChatCompletionPathPrefix: modelConsts.LlamacppProviderInfo.ChatCompletionPathPrefix,
+		APIKey:                   inferenceSpec.OpenAIProviderInfo.APIKey,
+		Origin:                   inferenceSpec.OpenAIProviderInfo.Origin,
+		ChatCompletionPathPrefix: inferenceSpec.LlamacppProviderInfo.ChatCompletionPathPrefix,
 	},
 }
 
-// Define the default settings data.
 var DefaultSettingsData = SettingsSchema{
 	Version: "1.0",
 	App: AppSettings{

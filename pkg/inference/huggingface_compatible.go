@@ -4,8 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/ppipada/flexigpt-app/pkg/model/spec"
-
+	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/huggingface"
 )
@@ -17,8 +16,8 @@ type HuggingFaceCompatibleAPI struct {
 	llm *huggingface.LLM
 }
 
-// NewHuggingFaceCompatibleAPI creates a new instance of HuggingFaceCompatibleAPI with default ProviderInfo.
-func NewHuggingFaceCompatibleAPI(pi spec.ProviderInfo, debug bool) *HuggingFaceCompatibleAPI {
+// NewHuggingFaceCompatibleAPI creates a new instance of HuggingFaceCompatibleAPI with default ProviderParams.
+func NewHuggingFaceCompatibleAPI(pi spec.ProviderParams, debug bool) *HuggingFaceCompatibleAPI {
 	return &HuggingFaceCompatibleAPI{
 		BaseAIAPI: NewBaseAIAPI(&pi, debug),
 	}
@@ -32,24 +31,30 @@ func (api *HuggingFaceCompatibleAPI) InitLLM(ctx context.Context) error {
 	options := []huggingface.Option{}
 
 	providerURL := "https://api-inference.huggingface.co"
-	if api.ProviderInfo.Origin != "" {
-		providerURL = api.ProviderInfo.Origin
+	if api.ProviderParams.Origin != "" {
+		providerURL = api.ProviderParams.Origin
 		options = append(options, huggingface.WithURL(providerURL))
 	}
 	// Setting a debug client is not supproted on HF by langchaingo
 	// if api.BaseAIAPI.Debug {
 	// 	options = append(options, huggingface.WithHTTPClient(httputil.DebugHTTPClient))
 	// }.
-	if api.ProviderInfo.APIKey == "" {
+	if api.ProviderParams.APIKey == "" {
 		slog.Debug("no API key given, not initializing Huggingface LLM object")
 		return nil
 	}
-	options = append(options, huggingface.WithToken(api.ProviderInfo.APIKey))
+	options = append(options, huggingface.WithToken(api.ProviderParams.APIKey))
 	llm, err := huggingface.New(options...)
 	if err != nil {
 		return err
 	}
 	api.llm = llm
-	slog.Info("LLM provider initialize", "name", string(api.ProviderInfo.Name), "url", providerURL)
+	slog.Info(
+		"LLM provider initialize",
+		"name",
+		string(api.ProviderParams.Name),
+		"url",
+		providerURL,
+	)
 	return nil
 }

@@ -79,14 +79,3 @@ var LlamacppProviderPreset = spec.ProviderPreset{
 	DefaultModelPresetID: ModelPresetIDLlama4Scout,
 	ModelPresets:         LlamacppModelPresets,
 }
-
-var LlamacppProviderInfo = spec.ProviderInfo{
-	Name:   ProviderNameLlamaCPP,
-	APIKey: "",
-	Origin: "http://127.0.0.1:8080",
-	Type:   spec.InbuiltOpenAICompatible,
-
-	APIKeyHeaderKey:          OpenAICompatibleAPIKeyHeaderKey,
-	DefaultHeaders:           OpenAICompatibleDefaultHeaders,
-	ChatCompletionPathPrefix: OpenAICompatibleChatCompletionPathPrefix,
-}

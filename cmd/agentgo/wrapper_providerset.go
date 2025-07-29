@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/ppipada/flexigpt-app/pkg/inference"
+	inferenceSpec "github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
 	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
 
@@ -34,52 +35,52 @@ func SetWrappedProviderAppContext(w *ProviderSetWrapper, ctx context.Context) {
 }
 
 func (w *ProviderSetWrapper) SetDefaultProvider(
-	req *inference.SetDefaultProviderRequest,
-) (*inference.SetDefaultProviderResponse, error) {
-	return middleware.WithRecoveryResp(func() (*inference.SetDefaultProviderResponse, error) {
+	req *inferenceSpec.SetDefaultProviderRequest,
+) (*inferenceSpec.SetDefaultProviderResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inferenceSpec.SetDefaultProviderResponse, error) {
 		return w.providersetAPI.SetDefaultProvider(context.Background(), req)
 	})
 }
 
 func (w *ProviderSetWrapper) GetConfigurationInfo(
-	req *inference.GetConfigurationInfoRequest,
-) (*inference.GetConfigurationInfoResponse, error) {
+	req *inferenceSpec.GetConfigurationInfoRequest,
+) (*inferenceSpec.GetConfigurationInfoResponse, error) {
 	return middleware.WithRecoveryResp(
-		func() (*inference.GetConfigurationInfoResponse, error) {
+		func() (*inferenceSpec.GetConfigurationInfoResponse, error) {
 			return w.providersetAPI.GetConfigurationInfo(context.Background(), req)
 		},
 	)
 }
 
 func (w *ProviderSetWrapper) AddProvider(
-	req *inference.AddProviderRequest,
-) (*inference.AddProviderResponse, error) {
-	return middleware.WithRecoveryResp(func() (*inference.AddProviderResponse, error) {
+	req *inferenceSpec.AddProviderRequest,
+) (*inferenceSpec.AddProviderResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inferenceSpec.AddProviderResponse, error) {
 		return w.providersetAPI.AddProvider(context.Background(), req)
 	})
 }
 
 func (w *ProviderSetWrapper) DeleteProvider(
-	req *inference.DeleteProviderRequest,
-) (*inference.DeleteProviderResponse, error) {
-	return middleware.WithRecoveryResp(func() (*inference.DeleteProviderResponse, error) {
+	req *inferenceSpec.DeleteProviderRequest,
+) (*inferenceSpec.DeleteProviderResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inferenceSpec.DeleteProviderResponse, error) {
 		return w.providersetAPI.DeleteProvider(context.Background(), req)
 	})
 }
 
 func (w *ProviderSetWrapper) SetProviderAPIKey(
-	req *inference.SetProviderAPIKeyRequest,
-) (*inference.SetProviderAPIKeyResponse, error) {
-	return middleware.WithRecoveryResp(func() (*inference.SetProviderAPIKeyResponse, error) {
+	req *inferenceSpec.SetProviderAPIKeyRequest,
+) (*inferenceSpec.SetProviderAPIKeyResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inferenceSpec.SetProviderAPIKeyResponse, error) {
 		return w.providersetAPI.SetProviderAPIKey(context.Background(), req)
 	})
 }
 
 func (w *ProviderSetWrapper) SetProviderAttribute(
-	req *inference.SetProviderAttributeRequest,
-) (*inference.SetProviderAttributeResponse, error) {
+	req *inferenceSpec.SetProviderAttributeRequest,
+) (*inferenceSpec.SetProviderAttributeResponse, error) {
 	return middleware.WithRecoveryResp(
-		func() (*inference.SetProviderAttributeResponse, error) {
+		func() (*inferenceSpec.SetProviderAttributeResponse, error) {
 			return w.providersetAPI.SetProviderAttribute(context.Background(), req)
 		},
 	)
@@ -89,18 +90,18 @@ func (w *ProviderSetWrapper) SetProviderAttribute(
 func (w *ProviderSetWrapper) FetchCompletion(
 	provider string,
 	prompt string,
-	modelParams modelSpec.ModelParams,
-	prevMessages []inference.ChatCompletionRequestMessage,
+	modelParams inferenceSpec.ModelParams,
+	prevMessages []inferenceSpec.ChatCompletionRequestMessage,
 	callbackID string,
-) (*inference.FetchCompletionResponse, error) {
-	return middleware.WithRecoveryResp(func() (*inference.FetchCompletionResponse, error) {
+) (*inferenceSpec.FetchCompletionResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inferenceSpec.FetchCompletionResponse, error) {
 		onStreamData := func(data string) error {
 			runtime.EventsEmit(w.appContext, callbackID, data)
 			return nil
 		}
 
-		req := &inference.FetchCompletionRequest{
-			Body: &inference.FetchCompletionRequestBody{
+		req := &inferenceSpec.FetchCompletionRequest{
+			Body: &inferenceSpec.FetchCompletionRequestBody{
 				Provider:     modelSpec.ProviderName(provider),
 				Prompt:       prompt,
 				ModelParams:  modelParams,

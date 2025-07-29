@@ -79,14 +79,3 @@ var GoogleProviderPreset = spec.ProviderPreset{
 	DefaultModelPresetID: ModelPresetIDGemini25Flash,
 	ModelPresets:         GoogleModelPresets,
 }
-
-var GoogleProviderInfo = spec.ProviderInfo{
-	Name:   ProviderNameGoogle,
-	APIKey: "",
-	Origin: "https://generativelanguage.googleapis.com",
-	Type:   spec.InbuiltOpenAICompatible,
-
-	APIKeyHeaderKey:          OpenAICompatibleAPIKeyHeaderKey,
-	DefaultHeaders:           OpenAICompatibleDefaultHeaders,
-	ChatCompletionPathPrefix: "/v1beta/openai/chat/completions",
-}

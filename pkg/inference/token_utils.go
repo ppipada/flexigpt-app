@@ -3,15 +3,17 @@ package inference
 import (
 	"log/slog"
 	"regexp"
+
+	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 )
 
 // FilterMessagesByTokenCount filters messages based on the maximum token count.
 func FilterMessagesByTokenCount(
-	messages []ChatCompletionRequestMessage,
+	messages []spec.ChatCompletionRequestMessage,
 	maxTokenCount int,
-) []ChatCompletionRequestMessage {
+) []spec.ChatCompletionRequestMessage {
 	totalTokens := 0
-	var filteredMessages []ChatCompletionRequestMessage
+	var filteredMessages []spec.ChatCompletionRequestMessage
 
 	// Loop through the messages in reverse order (prioritizing the last element).
 	for i := len(messages) - 1; i >= 0; i-- {

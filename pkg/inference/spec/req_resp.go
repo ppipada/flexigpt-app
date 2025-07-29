@@ -1,7 +1,7 @@
-package inference
+package spec
 
 import (
-	"github.com/ppipada/flexigpt-app/pkg/model/spec"
+	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
 )
 
 type APIRequestDetails struct {
@@ -43,7 +43,7 @@ type CompletionResponse struct {
 	FunctionArgs    any                 `json:"functionArgs,omitempty"`
 }
 type CompletionRequest struct {
-	ModelParams  spec.ModelParams                        `json:"modelParams"`
+	ModelParams  ModelParams                             `json:"modelParams"`
 	Messages     []ChatCompletionRequestMessage          `json:"messages,omitempty"`
 	Functions    []ChatCompletionFunctions               `json:"functions,omitempty"`
 	FunctionCall CreateChatCompletionRequestFunctionCall `json:"functionCall,omitempty"`
@@ -55,20 +55,20 @@ type AddProviderRequestBody struct {
 }
 
 type AddProviderRequest struct {
-	Provider spec.ProviderName `path:"provider" required:"true"`
+	Provider modelSpec.ProviderName `path:"provider" required:"true"`
 	Body     *AddProviderRequestBody
 }
 
 type AddProviderResponse struct{}
 
 type DeleteProviderRequest struct {
-	Provider spec.ProviderName `path:"provider" required:"true"`
+	Provider modelSpec.ProviderName `path:"provider" required:"true"`
 }
 
 type DeleteProviderResponse struct{}
 
 type SetDefaultProviderRequestBody struct {
-	Provider spec.ProviderName `json:"provider" required:"true"`
+	Provider modelSpec.ProviderName `json:"provider" required:"true"`
 }
 
 type SetDefaultProviderRequest struct {
@@ -80,9 +80,9 @@ type SetDefaultProviderResponse struct{}
 type GetConfigurationInfoRequest struct{}
 
 type GetConfigurationInfoResponseBody struct {
-	DefaultProvider       spec.ProviderName                         `json:"defaultProvider"`
-	ConfiguredProviders   []spec.ProviderInfo                       `json:"configuredProviders"`
-	InbuiltProviderModels map[spec.ProviderName]spec.ProviderPreset `json:"inbuiltProviderModels"`
+	DefaultProvider       modelSpec.ProviderName                              `json:"defaultProvider"`
+	ConfiguredProviders   []ProviderParams                                    `json:"configuredProviders"`
+	InbuiltProviderModels map[modelSpec.ProviderName]modelSpec.ProviderPreset `json:"inbuiltProviderModels"`
 }
 
 type GetConfigurationInfoResponse struct {
@@ -94,7 +94,7 @@ type SetProviderAPIKeyRequestBody struct {
 }
 
 type SetProviderAPIKeyRequest struct {
-	Provider spec.ProviderName `path:"provider" required:"true"`
+	Provider modelSpec.ProviderName `path:"provider" required:"true"`
 	Body     *SetProviderAPIKeyRequestBody
 }
 
@@ -106,16 +106,16 @@ type SetProviderAttributeRequestBody struct {
 }
 
 type SetProviderAttributeRequest struct {
-	Provider spec.ProviderName `path:"provider" required:"true"`
+	Provider modelSpec.ProviderName `path:"provider" required:"true"`
 	Body     *SetProviderAttributeRequestBody
 }
 
 type SetProviderAttributeResponse struct{}
 
 type FetchCompletionRequestBody struct {
-	Provider     spec.ProviderName              `json:"provider"         required:"true"`
+	Provider     modelSpec.ProviderName         `json:"provider"         required:"true"`
 	Prompt       string                         `json:"prompt"           required:"true"`
-	ModelParams  spec.ModelParams               `json:"spec.ModelParams" required:"true"`
+	ModelParams  ModelParams                    `json:"spec.ModelParams" required:"true"`
 	PrevMessages []ChatCompletionRequestMessage `json:"prevMessages"`
 	OnStreamData func(data string) error        `json:"-"`
 }

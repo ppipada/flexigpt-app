@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/ppipada/flexigpt-app/pkg/inference"
+	inferenceSpec "github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
 	modelConsts "github.com/ppipada/flexigpt-app/pkg/model/consts"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore"
@@ -39,9 +39,9 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 			// Update inbuilt providers.
 			if aiSetting.APIKey != "" {
 				_, err = p.SetProviderAPIKey(
-					&inference.SetProviderAPIKeyRequest{
+					&inferenceSpec.SetProviderAPIKeyRequest{
 						Provider: providerName,
-						Body: &inference.SetProviderAPIKeyRequestBody{
+						Body: &inferenceSpec.SetProviderAPIKeyRequestBody{
 							APIKey: aiSetting.APIKey,
 						},
 					},
@@ -52,9 +52,9 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 			}
 
 			_, err = p.SetProviderAttribute(
-				&inference.SetProviderAttributeRequest{
+				&inferenceSpec.SetProviderAttributeRequest{
 					Provider: providerName,
-					Body: &inference.SetProviderAttributeRequestBody{
+					Body: &inferenceSpec.SetProviderAttributeRequestBody{
 						Origin:                   &aiSetting.Origin,
 						ChatCompletionPathPrefix: &aiSetting.ChatCompletionPathPrefix,
 					},
@@ -65,9 +65,9 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 			}
 		} else {
 			// Add custom providers.
-			_, err := p.AddProvider(&inference.AddProviderRequest{
+			_, err := p.AddProvider(&inferenceSpec.AddProviderRequest{
 				Provider: providerName,
-				Body: &inference.AddProviderRequestBody{
+				Body: &inferenceSpec.AddProviderRequestBody{
 					APIKey:                   aiSetting.APIKey,
 					Origin:                   aiSetting.Origin,
 					ChatCompletionPathPrefix: aiSetting.ChatCompletionPathPrefix,
@@ -78,8 +78,8 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 			}
 		}
 	}
-	_, err = p.SetDefaultProvider(&inference.SetDefaultProviderRequest{
-		Body: &inference.SetDefaultProviderRequestBody{
+	_, err = p.SetDefaultProvider(&inferenceSpec.SetDefaultProviderRequest{
+		Body: &inferenceSpec.SetDefaultProviderRequestBody{
 			Provider: allSettingsResponse.Body.App.DefaultProvider,
 		},
 	})

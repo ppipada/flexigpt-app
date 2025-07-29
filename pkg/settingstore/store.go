@@ -32,8 +32,6 @@ func InitSettingStore(settingStore *SettingStore, filename string) error {
 		filestore.WithCreateIfNotExists(true),
 		filestore.WithAutoFlush(true),
 		filestore.WithValueEncDecGetter(settingStore.ValueEncDecGetter),
-		// Lets not encode decode keys for now
-		// filestore.WithKeyEncDecGetter(settingStore.KeyEncDecGetter).
 		filestore.WithEncoderDecoder(encdec.JSONEncoderDecoder{}))
 	if err != nil {
 		return fmt.Errorf("failed to create store: %w", err)
@@ -51,21 +49,6 @@ func (s *SettingStore) ValueEncDecGetter(pathSoFar []string) encdec.EncoderDecod
 	}
 	return nil
 }
-
-// Func (s *SettingStore) KeyEncDecGetter(pathSoFar []string) encdec.StringEncoderDecoder {
-// 	// 1) If pathSoFar == ["aiSettings", <providerName>], encode providerName
-// 	if len(pathSoFar) == 2 && pathSoFar[1] == "aiSettings" {
-// 		return s.keyEncDec
-// 	}
-// 	// 2) If pathSoFar == ["aiSettings", <providerName>, modelPresets, <modelName>], encode modelName
-// 	if len(pathSoFar) == 4 &&
-// 		pathSoFar[0] == "aiSettings" &&
-// 		pathSoFar[2] == "modelPresets" {
-// 		return s.keyEncDec
-// 	}
-// 	// Otherwise, no key-encoding
-// 	return nil
-// }.
 
 func (s *SettingStore) GetAllSettings(
 	ctx context.Context,

@@ -187,13 +187,3 @@ var OpenAIProviderPreset = spec.ProviderPreset{
 	DefaultModelPresetID: ModelPresetIDGPT41,
 	ModelPresets:         OpenAIModelPresets,
 }
-
-var OpenAIProviderInfo = spec.ProviderInfo{
-	Name:                     ProviderNameOpenAI,
-	APIKey:                   "",
-	Origin:                   "https://api.openai.com",
-	Type:                     spec.InbuiltOpenAICompatible,
-	APIKeyHeaderKey:          OpenAICompatibleAPIKeyHeaderKey,
-	DefaultHeaders:           OpenAICompatibleDefaultHeaders,
-	ChatCompletionPathPrefix: OpenAICompatibleChatCompletionPathPrefix,
-}

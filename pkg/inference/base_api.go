@@ -6,15 +6,16 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	"github.com/ppipada/flexigpt-app/pkg/model/consts"
-	"github.com/ppipada/flexigpt-app/pkg/model/spec"
+	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
 	"github.com/tmc/langchaingo/llms"
 )
 
 type CompletionProvider interface {
 	GetProviderInfo(
 		ctx context.Context,
-	) *spec.ProviderInfo
+	) *spec.ProviderParams
 	IsConfigured(ctx context.Context) bool
 	GetLLMsModel(ctx context.Context) llms.Model
 	InitLLM(ctx context.Context) error
@@ -32,40 +33,40 @@ type CompletionProvider interface {
 		llm llms.Model,
 		prompt string,
 		modelParams spec.ModelParams,
-		prevMessages []ChatCompletionRequestMessage,
+		prevMessages []spec.ChatCompletionRequestMessage,
 		onStreamData func(data string) error,
-	) (*CompletionResponse, error)
+	) (*spec.CompletionResponse, error)
 }
 
-var LangchainRoleMap = map[ChatCompletionRoleEnum]llms.ChatMessageType{
+var LangchainRoleMap = map[spec.ChatCompletionRoleEnum]llms.ChatMessageType{
 	// No developer prompt support in langchain as of now.
-	Developer: llms.ChatMessageTypeSystem,
-	System:    llms.ChatMessageTypeSystem,
-	User:      llms.ChatMessageTypeHuman,
-	Assistant: llms.ChatMessageTypeAI,
-	Function:  llms.ChatMessageTypeTool,
+	spec.Developer: llms.ChatMessageTypeSystem,
+	spec.System:    llms.ChatMessageTypeSystem,
+	spec.User:      llms.ChatMessageTypeHuman,
+	spec.Assistant: llms.ChatMessageTypeAI,
+	spec.Function:  llms.ChatMessageTypeTool,
 }
 
 type BaseAIAPI struct {
-	ProviderInfo *spec.ProviderInfo
-	Debug        bool
+	ProviderParams *spec.ProviderParams
+	Debug          bool
 }
 
-// NewOpenAIAPI creates a new instance of BaseAIAPI with input ProviderInfo.
-func NewBaseAIAPI(p *spec.ProviderInfo, debug bool) *BaseAIAPI {
+// NewOpenAIAPI creates a new instance of BaseAIAPI with input ProviderParams.
+func NewBaseAIAPI(p *spec.ProviderParams, debug bool) *BaseAIAPI {
 	return &BaseAIAPI{
-		ProviderInfo: p,
-		Debug:        debug,
+		ProviderParams: p,
+		Debug:          debug,
 	}
 }
 
 // IsConfigured checks if the API is configured.
 func (api *BaseAIAPI) IsConfigured(ctx context.Context) bool {
-	return api.ProviderInfo.APIKey != ""
+	return api.ProviderParams.APIKey != ""
 }
 
-func (api *BaseAIAPI) GetProviderInfo(ctx context.Context) *spec.ProviderInfo {
-	return api.ProviderInfo
+func (api *BaseAIAPI) GetProviderInfo(ctx context.Context) *spec.ProviderParams {
+	return api.ProviderParams
 }
 
 // SetProviderAPIKey sets the key for a provider.
@@ -76,11 +77,11 @@ func (api *BaseAIAPI) SetProviderAPIKey(
 	if apiKey == "" {
 		return errors.New("invalid apikey provided")
 	}
-	if api.ProviderInfo == nil {
-		return errors.New("no ProviderInfo found")
+	if api.ProviderParams == nil {
+		return errors.New("no ProviderParams found")
 	}
 
-	api.ProviderInfo.APIKey = apiKey
+	api.ProviderParams.APIKey = apiKey
 
 	return nil
 }
@@ -94,14 +95,14 @@ func (api *BaseAIAPI) SetProviderAttribute(
 	if origin == nil && chatCompletionPathPrefix == nil {
 		return errors.New("no attribute provided for set")
 	}
-	if api.ProviderInfo == nil {
-		return errors.New("no ProviderInfo found")
+	if api.ProviderParams == nil {
+		return errors.New("no ProviderParams found")
 	}
 	if origin != nil && *origin != "" {
-		api.ProviderInfo.Origin = *origin
+		api.ProviderParams.Origin = *origin
 	}
 	if chatCompletionPathPrefix != nil {
-		api.ProviderInfo.ChatCompletionPathPrefix = *chatCompletionPathPrefix
+		api.ProviderParams.ChatCompletionPathPrefix = *chatCompletionPathPrefix
 	}
 
 	return nil
@@ -113,9 +114,9 @@ func (api *BaseAIAPI) FetchCompletion(
 	llm llms.Model,
 	prompt string,
 	modelParams spec.ModelParams,
-	prevMessages []ChatCompletionRequestMessage,
+	prevMessages []spec.ChatCompletionRequestMessage,
 	onStreamData func(data string) error,
-) (*CompletionResponse, error) {
+) (*spec.CompletionResponse, error) {
 	input := api.getCompletionRequest(prompt, modelParams, prevMessages)
 	if len(input.Messages) == 0 {
 		return nil, errors.New("empty input messages")
@@ -133,7 +134,7 @@ func (api *BaseAIAPI) FetchCompletion(
 		options = append(options, llms.WithTemperature(*input.ModelParams.Temperature))
 	}
 	if rp := input.ModelParams.Reasoning; rp != nil &&
-		rp.Type == spec.ReasoningTypeHybridWithTokens {
+		rp.Type == modelSpec.ReasoningTypeHybridWithTokens {
 		options = append(options, llms.WithReasoning(llms.Reasoning{
 			IsEnabled: true,
 			Mode:      llms.ReasoningModeTokens,
@@ -141,7 +142,7 @@ func (api *BaseAIAPI) FetchCompletion(
 		}))
 	}
 	if rp := input.ModelParams.Reasoning; rp != nil &&
-		rp.Type == spec.ReasoningTypeSingleWithLevels {
+		rp.Type == modelSpec.ReasoningTypeSingleWithLevels {
 		options = append(options, llms.WithReasoning(llms.Reasoning{
 			IsEnabled: true,
 			Mode:      llms.ReasoningModeLevel,
@@ -175,7 +176,7 @@ func (api *BaseAIAPI) FetchCompletion(
 	content := []llms.MessageContent{}
 	if sp := input.ModelParams.SystemPrompt; sp != "" {
 		sysmsg := llms.TextParts(llms.ChatMessageTypeSystem, sp)
-		if api.ProviderInfo.Name == consts.ProviderNameOpenAI &&
+		if api.ProviderParams.Name == consts.ProviderNameOpenAI &&
 			strings.HasPrefix(string(input.ModelParams.Name), "o") {
 			sysmsg = llms.TextParts(llms.ChatMessageTypeDeveloper, sp)
 		}
@@ -190,7 +191,7 @@ func (api *BaseAIAPI) FetchCompletion(
 		return nil, errors.New("empty input content messages")
 	}
 
-	completionResp := &CompletionResponse{}
+	completionResp := &spec.CompletionResponse{}
 
 	ctx = AddDebugResponseToCtx(ctx)
 	resp, err := llm.GenerateContent(ctx, content, options...)
@@ -219,7 +220,7 @@ func (api *BaseAIAPI) FetchCompletion(
 	if resp == nil || len(resp.Choices) == 0 || resp.Choices[0] == nil {
 		if ok && debugResp != nil {
 			if completionResp.ErrorDetails == nil {
-				completionResp.ErrorDetails = &APIErrorDetails{
+				completionResp.ErrorDetails = &spec.APIErrorDetails{
 					Message: "got nil response from LLM api",
 				}
 			} else {
@@ -243,9 +244,9 @@ func (api *BaseAIAPI) FetchCompletion(
 func (api *BaseAIAPI) getCompletionRequest(
 	prompt string,
 	modelParams spec.ModelParams,
-	prevMessages []ChatCompletionRequestMessage,
-) *CompletionRequest {
-	completionRequest := CompletionRequest{
+	prevMessages []spec.ChatCompletionRequestMessage,
+) *spec.CompletionRequest {
+	completionRequest := spec.CompletionRequest{
 		ModelParams: spec.ModelParams{
 			Name:                        modelParams.Name,
 			Stream:                      modelParams.Stream,
@@ -262,7 +263,7 @@ func (api *BaseAIAPI) getCompletionRequest(
 	// Handle messages.
 	messages := slices.Clone(prevMessages)
 	if prompt != "" {
-		message := ChatCompletionRequestMessage{
+		message := spec.ChatCompletionRequestMessage{
 			Role:    "user",
 			Content: &prompt,
 		}

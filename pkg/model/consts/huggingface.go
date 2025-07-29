@@ -34,14 +34,3 @@ var HuggingfaceProviderPreset = spec.ProviderPreset{
 	DefaultModelPresetID: ModelPresetIDDeepseekCoder13BInstruct,
 	ModelPresets:         HuggingfaceModelPresets,
 }
-
-var HuggingfaceProviderInfo = spec.ProviderInfo{
-	Name:   ProviderNameHuggingFace,
-	APIKey: "",
-	Origin: "https://api-inference.huggingface.co",
-	Type:   spec.InbuiltSpecific,
-
-	APIKeyHeaderKey:          "Authorization",
-	DefaultHeaders:           map[string]string{"content-type": "application/json"},
-	ChatCompletionPathPrefix: "/models",
-}

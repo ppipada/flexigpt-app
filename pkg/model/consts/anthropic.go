@@ -127,18 +127,3 @@ var AnthropicProviderPreset = spec.ProviderPreset{
 	DefaultModelPresetID: ModelPresetIDClaude4Sonnet,
 	ModelPresets:         AnthropicModelPresets,
 }
-
-var AnthropicProviderInfo = spec.ProviderInfo{
-	Name:   ProviderNameAnthropic,
-	APIKey: "",
-	Origin: "https://api.anthropic.com",
-	Type:   spec.InbuiltSpecific,
-
-	APIKeyHeaderKey: "x-api-key",
-	DefaultHeaders: map[string]string{
-		"content-type":      "application/json",
-		"accept":            "application/json",
-		"anthropic-version": "2023-06-01",
-	},
-	ChatCompletionPathPrefix: "/v1/messages",
-}

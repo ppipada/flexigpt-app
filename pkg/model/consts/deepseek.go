@@ -65,14 +65,3 @@ var DeepseekProviderPreset = spec.ProviderPreset{
 	DefaultModelPresetID: ModelPresetIDDeepseekChat,
 	ModelPresets:         DeepseekModelPresets,
 }
-
-var DeepseekProviderInfo = spec.ProviderInfo{
-	Name:   ProviderNameDeepseek,
-	APIKey: "",
-	Origin: "https://api.deepseek.com",
-	Type:   spec.InbuiltOpenAICompatible,
-
-	APIKeyHeaderKey:          OpenAICompatibleAPIKeyHeaderKey,
-	DefaultHeaders:           OpenAICompatibleDefaultHeaders,
-	ChatCompletionPathPrefix: OpenAICompatibleChatCompletionPathPrefix,
-}
