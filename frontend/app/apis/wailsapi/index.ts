@@ -4,3 +4,4 @@ export * from './conversationstore';
 export * from './modelpresetstore';
 export * from './promptstore';
 export * from './settingstore';
+export * from './toolstore';

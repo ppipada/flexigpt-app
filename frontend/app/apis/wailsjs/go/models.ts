@@ -1350,6 +1350,58 @@ export namespace spec {
 	
 	    }
 	}
+	export class DeleteToolBundleRequest {
+	    BundleID: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DeleteToolBundleRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	    }
+	}
+	export class DeleteToolBundleResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new DeleteToolBundleResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class DeleteToolRequest {
+	    BundleID: string;
+	    ToolSlug: string;
+	    Version: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DeleteToolRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	        this.ToolSlug = source["ToolSlug"];
+	        this.Version = source["Version"];
+	    }
+	}
+	export class DeleteToolResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new DeleteToolResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
 	export class GetAllModelPresetsRequest {
 	    ForceFetch: boolean;
 	
@@ -1551,10 +1603,11 @@ export namespace spec {
 	    }
 	}
 	export class PromptTemplate {
+	    schemaVersion: string;
 	    id: string;
-	    displayName: string;
 	    slug: string;
 	    isEnabled: boolean;
+	    displayName: string;
 	    description?: string;
 	    tags?: string[];
 	    blocks: MessageBlock[];
@@ -1573,10 +1626,11 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.schemaVersion = source["schemaVersion"];
 	        this.id = source["id"];
-	        this.displayName = source["displayName"];
 	        this.slug = source["slug"];
 	        this.isEnabled = source["isEnabled"];
+	        this.displayName = source["displayName"];
 	        this.description = source["description"];
 	        this.tags = source["tags"];
 	        this.blocks = this.convertValues(source["blocks"], MessageBlock);
@@ -1636,6 +1690,241 @@ export namespace spec {
 		    return a;
 		}
 	}
+	export class GetToolRequest {
+	    BundleID: string;
+	    ToolSlug: string;
+	    Version: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new GetToolRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	        this.ToolSlug = source["ToolSlug"];
+	        this.Version = source["Version"];
+	    }
+	}
+	export class HTTPResponse {
+	    successCodes?: number[];
+	    encoding?: string;
+	    selector?: string;
+	    errorMode?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new HTTPResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.successCodes = source["successCodes"];
+	        this.encoding = source["encoding"];
+	        this.selector = source["selector"];
+	        this.errorMode = source["errorMode"];
+	    }
+	}
+	export class HTTPAuth {
+	    type: string;
+	    in?: string;
+	    name?: string;
+	    valueTemplate: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new HTTPAuth(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.in = source["in"];
+	        this.name = source["name"];
+	        this.valueTemplate = source["valueTemplate"];
+	    }
+	}
+	export class HTTPRequest {
+	    method?: string;
+	    urlTemplate: string;
+	    query?: Record<string, string>;
+	    headers?: Record<string, string>;
+	    body?: string;
+	    auth?: HTTPAuth;
+	    timeoutMs?: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new HTTPRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.method = source["method"];
+	        this.urlTemplate = source["urlTemplate"];
+	        this.query = source["query"];
+	        this.headers = source["headers"];
+	        this.body = source["body"];
+	        this.auth = this.convertValues(source["auth"], HTTPAuth);
+	        this.timeoutMs = source["timeoutMs"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class HTTPToolImpl {
+	    request: HTTPRequest;
+	    response: HTTPResponse;
+	
+	    static createFrom(source: any = {}) {
+	        return new HTTPToolImpl(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.request = this.convertValues(source["request"], HTTPRequest);
+	        this.response = this.convertValues(source["response"], HTTPResponse);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class GoToolImpl {
+	    func: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new GoToolImpl(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.func = source["func"];
+	    }
+	}
+	export class Tool {
+	    schemaVersion: string;
+	    id: string;
+	    slug: string;
+	    version: string;
+	    displayName: string;
+	    description?: string;
+	    tags?: string[];
+	    argSchema: number[];
+	    outputSchema: number[];
+	    type: string;
+	    goImpl?: GoToolImpl;
+	    httpImpl?: HTTPToolImpl;
+	    isEnabled: boolean;
+	    isBuiltIn: boolean;
+	    // Go type: time
+	    createdAt: any;
+	    // Go type: time
+	    modifiedAt: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new Tool(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.schemaVersion = source["schemaVersion"];
+	        this.id = source["id"];
+	        this.slug = source["slug"];
+	        this.version = source["version"];
+	        this.displayName = source["displayName"];
+	        this.description = source["description"];
+	        this.tags = source["tags"];
+	        this.argSchema = source["argSchema"];
+	        this.outputSchema = source["outputSchema"];
+	        this.type = source["type"];
+	        this.goImpl = this.convertValues(source["goImpl"], GoToolImpl);
+	        this.httpImpl = this.convertValues(source["httpImpl"], HTTPToolImpl);
+	        this.isEnabled = source["isEnabled"];
+	        this.isBuiltIn = source["isBuiltIn"];
+	        this.createdAt = this.convertValues(source["createdAt"], null);
+	        this.modifiedAt = this.convertValues(source["modifiedAt"], null);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class GetToolResponse {
+	    Body?: Tool;
+	
+	    static createFrom(source: any = {}) {
+	        return new GetToolResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], Tool);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
+	
+	
+	
 	export class ListConversationsRequest {
 	    PageSize: number;
 	    PageToken: string;
@@ -1732,6 +2021,7 @@ export namespace spec {
 	    }
 	}
 	export class PromptBundle {
+	    schemaVersion: string;
 	    id: string;
 	    slug: string;
 	    displayName?: string;
@@ -1751,6 +2041,7 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.schemaVersion = source["schemaVersion"];
 	        this.id = source["id"];
 	        this.slug = source["slug"];
 	        this.displayName = source["displayName"];
@@ -1946,6 +2237,241 @@ export namespace spec {
 		}
 	}
 	
+	export class ListToolBundlesRequest {
+	    BundleIDs: string[];
+	    IncludeDisabled: boolean;
+	    PageSize: number;
+	    PageToken: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListToolBundlesRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleIDs = source["BundleIDs"];
+	        this.IncludeDisabled = source["IncludeDisabled"];
+	        this.PageSize = source["PageSize"];
+	        this.PageToken = source["PageToken"];
+	    }
+	}
+	export class ToolBundle {
+	    schemaVersion: string;
+	    id: string;
+	    slug: string;
+	    displayName?: string;
+	    description?: string;
+	    isEnabled: boolean;
+	    isBuiltIn: boolean;
+	    // Go type: time
+	    createdAt: any;
+	    // Go type: time
+	    modifiedAt: any;
+	    // Go type: time
+	    softDeletedAt?: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new ToolBundle(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.schemaVersion = source["schemaVersion"];
+	        this.id = source["id"];
+	        this.slug = source["slug"];
+	        this.displayName = source["displayName"];
+	        this.description = source["description"];
+	        this.isEnabled = source["isEnabled"];
+	        this.isBuiltIn = source["isBuiltIn"];
+	        this.createdAt = this.convertValues(source["createdAt"], null);
+	        this.modifiedAt = this.convertValues(source["modifiedAt"], null);
+	        this.softDeletedAt = this.convertValues(source["softDeletedAt"], null);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ListToolBundlesResponseBody {
+	    toolBundles: ToolBundle[];
+	    nextPageToken?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListToolBundlesResponseBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.toolBundles = this.convertValues(source["toolBundles"], ToolBundle);
+	        this.nextPageToken = source["nextPageToken"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ListToolBundlesResponse {
+	    Body?: ListToolBundlesResponseBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListToolBundlesResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], ListToolBundlesResponseBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class ListToolsRequest {
+	    BundleIDs: string[];
+	    Tags: string[];
+	    IncludeDisabled: boolean;
+	    RecommendedPageSize: number;
+	    PageToken: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListToolsRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleIDs = source["BundleIDs"];
+	        this.Tags = source["Tags"];
+	        this.IncludeDisabled = source["IncludeDisabled"];
+	        this.RecommendedPageSize = source["RecommendedPageSize"];
+	        this.PageToken = source["PageToken"];
+	    }
+	}
+	export class ToolListItem {
+	    bundleID: string;
+	    bundleSlug: string;
+	    toolSlug: string;
+	    toolVersion: string;
+	    isBuiltIn: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ToolListItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.bundleID = source["bundleID"];
+	        this.bundleSlug = source["bundleSlug"];
+	        this.toolSlug = source["toolSlug"];
+	        this.toolVersion = source["toolVersion"];
+	        this.isBuiltIn = source["isBuiltIn"];
+	    }
+	}
+	export class ListToolsResponseBody {
+	    toolListItems: ToolListItem[];
+	    nextPageToken?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListToolsResponseBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.toolListItems = this.convertValues(source["toolListItems"], ToolListItem);
+	        this.nextPageToken = source["nextPageToken"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ListToolsResponse {
+	    Body?: ListToolsResponseBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new ListToolsResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], ListToolsResponseBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	
 	export class ModelParams {
 	    name: string;
@@ -2105,6 +2631,124 @@ export namespace spec {
 	
 	    static createFrom(source: any = {}) {
 	        return new PatchPromptTemplateResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class PatchToolBundleRequestBody {
+	    isEnabled: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new PatchToolBundleRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.isEnabled = source["isEnabled"];
+	    }
+	}
+	export class PatchToolBundleRequest {
+	    BundleID: string;
+	    body?: PatchToolBundleRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new PatchToolBundleRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	        this.body = this.convertValues(source["body"], PatchToolBundleRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class PatchToolBundleResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new PatchToolBundleResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class PatchToolRequestBody {
+	    isEnabled: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new PatchToolRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.isEnabled = source["isEnabled"];
+	    }
+	}
+	export class PatchToolRequest {
+	    BundleID: string;
+	    ToolSlug: string;
+	    Version: string;
+	    body?: PatchToolRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new PatchToolRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	        this.ToolSlug = source["ToolSlug"];
+	        this.Version = source["Version"];
+	        this.body = this.convertValues(source["body"], PatchToolRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class PatchToolResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new PatchToolResponse(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -2457,6 +3101,164 @@ export namespace spec {
 	
 	    }
 	}
+	export class PutToolBundleRequestBody {
+	    slug: string;
+	    displayName: string;
+	    isEnabled: boolean;
+	    description?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PutToolBundleRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.slug = source["slug"];
+	        this.displayName = source["displayName"];
+	        this.isEnabled = source["isEnabled"];
+	        this.description = source["description"];
+	    }
+	}
+	export class PutToolBundleRequest {
+	    BundleID: string;
+	    body?: PutToolBundleRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new PutToolBundleRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	        this.body = this.convertValues(source["body"], PutToolBundleRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class PutToolBundleResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new PutToolBundleResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class PutToolRequestBody {
+	    displayName: string;
+	    description?: string;
+	    tags?: string[];
+	    isEnabled: boolean;
+	    argSchema: number[];
+	    outputSchema: number[];
+	    type: string;
+	    goImpl?: GoToolImpl;
+	    httpImpl?: HTTPToolImpl;
+	
+	    static createFrom(source: any = {}) {
+	        return new PutToolRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.displayName = source["displayName"];
+	        this.description = source["description"];
+	        this.tags = source["tags"];
+	        this.isEnabled = source["isEnabled"];
+	        this.argSchema = source["argSchema"];
+	        this.outputSchema = source["outputSchema"];
+	        this.type = source["type"];
+	        this.goImpl = this.convertValues(source["goImpl"], GoToolImpl);
+	        this.httpImpl = this.convertValues(source["httpImpl"], HTTPToolImpl);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class PutToolRequest {
+	    BundleID: string;
+	    ToolSlug: string;
+	    Version: string;
+	    body?: PutToolRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new PutToolRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	        this.ToolSlug = source["ToolSlug"];
+	        this.Version = source["Version"];
+	        this.body = this.convertValues(source["body"], PutToolRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class PutToolResponse {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new PutToolResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
 	
 	export class SearchConversationsRequest {
 	    Query: string;
@@ -2618,6 +3420,87 @@ export namespace spec {
 		}
 	}
 	
+	export class SearchToolsRequest {
+	    Query: string;
+	    PageToken: string;
+	    PageSize: number;
+	    IncludeDisabled: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new SearchToolsRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Query = source["Query"];
+	        this.PageToken = source["PageToken"];
+	        this.PageSize = source["PageSize"];
+	        this.IncludeDisabled = source["IncludeDisabled"];
+	    }
+	}
+	export class SearchToolsResponseBody {
+	    toolListItems: ToolListItem[];
+	    nextPageToken?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SearchToolsResponseBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.toolListItems = this.convertValues(source["toolListItems"], ToolListItem);
+	        this.nextPageToken = source["nextPageToken"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SearchToolsResponse {
+	    Body?: SearchToolsResponseBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new SearchToolsResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], SearchToolsResponseBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	export class SetDefaultModelPresetRequestBody {
 	    ModelPresetID: string;
 	
@@ -2675,6 +3558,8 @@ export namespace spec {
 	
 	    }
 	}
+	
+	
 
 }
 

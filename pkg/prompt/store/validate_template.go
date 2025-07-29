@@ -13,7 +13,6 @@ import (
 // Regular expressions.
 var (
 	placeholderRE = regexp.MustCompile(`\{\{([a-zA-Z_][a-zA-Z0-9_-]*)\}\}`)
-	nameRE        = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_-]*$`)
 )
 
 // validateTemplate performs a structural and referential integrity check.
@@ -96,9 +95,10 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 	varNames := map[string]spec.VarSource{}
 	for i, v := range tpl.Variables {
 		v.Name = strings.TrimSpace(v.Name)
-		if !nameRE.MatchString(v.Name) {
-			return fmt.Errorf("variables[%d]: invalid name %q", i, v.Name)
+		if err := bundleitemutils.ValidateTag(v.Name); err != nil {
+			return fmt.Errorf("variables[%d]: invalid name %q, err %w", i, v.Name, err)
 		}
+
 		if _, dup := varNames[v.Name]; dup {
 			return fmt.Errorf("duplicate variable %q", v.Name)
 		}
@@ -166,9 +166,10 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 		if strings.TrimSpace(p.ToolID) == "" {
 			return fmt.Errorf("preProcessors[%d]: toolID is empty", i)
 		}
-		if !nameRE.MatchString(p.SaveAs) {
-			return fmt.Errorf("preProcessors[%d]: invalid saveAs %q", i, p.SaveAs)
+		if err := bundleitemutils.ValidateTag(p.SaveAs); err != nil {
+			return fmt.Errorf("preProcessors[%d]: invalid saveAs %q err %w", i, p.SaveAs, err)
 		}
+
 		src, ok := varNames[p.SaveAs]
 		if !ok {
 			return fmt.Errorf(
@@ -205,18 +206,8 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 		return fmt.Errorf("variable %q declared but never used", n)
 	}
 
-	// Validate tags.
-	tagSeen := map[string]struct{}{}
-	for i, t := range tpl.Tags {
-		t = strings.TrimSpace(t)
-		if !nameRE.MatchString(t) {
-			return fmt.Errorf("tags[%d]: invalid tag %q", i, t)
-		}
-		if _, dup := tagSeen[t]; dup {
-			return fmt.Errorf("duplicate tag %q", t)
-		}
-		tagSeen[t] = struct{}{}
+	if err := bundleitemutils.ValidateTags(tpl.Tags); err != nil {
+		return err
 	}
-
 	return nil
 }

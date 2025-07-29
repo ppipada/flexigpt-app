@@ -6,6 +6,7 @@ import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/models/commands';
 import { PromptRoleEnum, type PromptTemplate } from '@/models/promptmodel';
 
 import { omitManyKeys } from '@/lib/obj_utils';
+import { validateSlug, validateTags } from '@/lib/text_utils';
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
 /* ---------- local helper types ---------- */
@@ -46,6 +47,7 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 		displayName?: string;
 		slug?: string;
 		content?: string;
+		tags?: string;
 	}>({});
 
 	const isEditMode = Boolean(initialData);
@@ -88,10 +90,21 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 			if (v.startsWith(PROMPT_TEMPLATE_INVOKE_CHAR)) {
 				newErrs.slug = `Do not prefix with "${PROMPT_TEMPLATE_INVOKE_CHAR}".`;
 			} else {
-				const clash = existingTemplates.some(t => t.template.slug === v && t.template.id !== initialData?.template.id);
-				if (clash) newErrs.slug = 'Slug already in use.';
-				else newErrs = omitManyKeys(newErrs, ['slug']);
+				const err = validateSlug(v);
+				if (err) {
+					newErrs.slug = err;
+				} else {
+					const clash = existingTemplates.some(
+						t => t.template.slug === v && t.template.id !== initialData?.template.id
+					);
+					if (clash) newErrs.slug = 'Slug already in use.';
+					else newErrs = omitManyKeys(newErrs, ['slug']);
+				}
 			}
+		} else if (field === 'tags') {
+			const err = validateTags(val);
+			if (err) newErrs.tags = err;
+			else newErrs = omitManyKeys(newErrs, ['tags']);
 		} else {
 			newErrs = omitManyKeys(newErrs, [field]);
 		}
@@ -105,7 +118,7 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 
 		setFormData(prev => ({ ...prev, [name]: newVal }));
 
-		if (name === 'displayName' || name === 'slug' || name === 'content') {
+		if (name === 'displayName' || name === 'slug' || name === 'content' || name === 'tags') {
 			validateField(name, String(newVal));
 		}
 	};
@@ -124,6 +137,7 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 		validateField('displayName', formData.displayName);
 		validateField('slug', formData.slug);
 		validateField('content', formData.content);
+		validateField('tags', formData.tags);
 
 		if (!isAllValid) return;
 
@@ -302,13 +316,19 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 								name="tags"
 								value={formData.tags}
 								onChange={handleInput}
-								className="input input-bordered w-full rounded-2xl"
+								className={`input input-bordered w-full rounded-2xl ${errors.tags ? 'input-error' : ''}`}
 								placeholder="comma, separated, tags"
 								spellCheck="false"
 							/>
+							{errors.tags && (
+								<div className="label">
+									<span className="label-text-alt text-error flex items-center gap-1">
+										<FiAlertCircle size={12} /> {errors.tags}
+									</span>
+								</div>
+							)}
 						</div>
 					</div>
-
 					{/* actions */}
 					<div className="modal-action">
 						<button type="button" className="btn rounded-2xl" onClick={onClose}>

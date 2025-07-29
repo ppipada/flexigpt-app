@@ -6,6 +6,7 @@ export SERVICE_SETTINGS_DIR_PATH="./out/settings"
 export SERVICE_CONVERSATIONS_DIR_PATH="./out/conversations"
 export SERVICE_MODEL_PRESETS_DIR_PATH="./out/modelpresets"
 export SERVICE_PROMPT_TEMPLATES_DIR_PATH="./out/prompttemplates"
+export SERVICE_TOOLS_DIR_PATH="./out/tools"
 export SERVICE_LOGS_DIR_PATH="./out/logs"
 export SERVICE_DEBUG="true"
 

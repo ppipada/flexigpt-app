@@ -9,7 +9,7 @@
 
 - [ ] Integrate store with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
 
-- [ ] implement prompts and tools using dirstore+fts
+- [x] implement prompts and tools using dirstore+fts
 - [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
 - [ ] For new month of conversations etc, if we set default provider preset it says read partition error
 
@@ -182,8 +182,8 @@
 
 - Backend
 
-  - [ ] Integrate with json store for tool storage.
-  - [ ] Implement API endpoints for creating, retrieving, updating, and deleting tools.
+  - [x] Integrate with json store for tool storage.
+  - [x] Implement API endpoints for creating, retrieving, updating, and deleting tools.
   - [ ] Ensure schema validation and function execution are supported on the backend.
 
 ## Tasks: Prompt templates
@@ -217,18 +217,18 @@
     - [x] Use tooltips or inline messages for guidance on template strings.
     - [x] Ensure keyboard navigability.
     - [x] Implement ARIA labels and roles for screen readers.
-  - [ ] Detect template strings and dynamically add them to a "Variables" section.
-    - [ ] This should be below the scrollable area
-    - [ ] Automatically populate variables section with detected template strings.
-    - [ ] Implement fields for variable name, type dropdown, and default value.
+  - [x] Detect template strings and dynamically add them to a "Variables" section.
+    - [x] This should be below the scrollable area
+    - [x] Automatically populate variables section with detected template strings.
+    - [x] Implement fields for variable name, type dropdown, and default value.
   - [x] Action area: should be below variables
     - [x] Implement a "Save & Close" option.
     - [x] Add a "Discard" button to exit without saving changes.
 
 - Backend
 
-  - [ ] Integrate with JSON file store per prompt
-  - [ ] get list of prompts using the partitioned file store
+  - [x] Integrate with JSON file store per prompt
+  - [x] get list of prompts using the partitioned file store
 
 - Integration of prompts in chat
   - [ ] Once defined all prompts should be available to use in chat via some keystroke (??).

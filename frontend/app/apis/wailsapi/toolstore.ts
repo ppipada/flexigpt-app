@@ -1,0 +1,189 @@
+import type {
+	GoToolImpl,
+	HTTPToolImpl,
+	IToolStoreAPI,
+	JSONSchema,
+	Tool,
+	ToolBundle,
+	ToolListItem,
+	ToolType,
+} from '@/models/toolmodel';
+
+import {
+	DeleteTool,
+	DeleteToolBundle,
+	GetTool,
+	ListToolBundles,
+	ListTools,
+	PatchTool,
+	PatchToolBundle,
+	PutTool,
+	PutToolBundle,
+	SearchTools,
+} from '../wailsjs/go/main/ToolStoreWrapper';
+import type { spec } from '../wailsjs/go/models';
+
+export class WailsToolStoreAPI implements IToolStoreAPI {
+	// --- Bundle Operations ---
+
+	async listToolBundles(
+		bundleIDs?: string[],
+		includeDisabled?: boolean,
+		pageSize?: number,
+		pageToken?: string
+	): Promise<{ toolBundles: ToolBundle[]; nextPageToken?: string }> {
+		const req = {
+			BundleIDs: bundleIDs,
+			IncludeDisabled: includeDisabled,
+			PageSize: pageSize,
+			PageToken: pageToken,
+		};
+		const resp = await ListToolBundles(req as spec.ListToolBundlesRequest);
+		return {
+			toolBundles: (resp.Body?.toolBundles ?? []) as ToolBundle[],
+			nextPageToken: resp.Body?.nextPageToken ?? undefined,
+		};
+	}
+
+	async putToolBundle(
+		bundleID: string,
+		slug: string,
+		displayName: string,
+		isEnabled: boolean,
+		description?: string
+	): Promise<void> {
+		const req = {
+			BundleID: bundleID,
+			body: {
+				slug: slug,
+				displayName: displayName,
+				isEnabled: isEnabled,
+				description: description,
+			} as spec.PutToolBundleRequestBody,
+		};
+		await PutToolBundle(req as spec.PutToolBundleRequest);
+	}
+
+	async patchToolBundle(bundleID: string, isEnabled: boolean): Promise<void> {
+		const req = {
+			BundleID: bundleID,
+			body: {
+				isEnabled: isEnabled,
+			},
+		};
+		await PatchToolBundle(req as spec.PatchToolBundleRequest);
+	}
+
+	async deleteToolBundle(bundleID: string): Promise<void> {
+		const req: spec.DeleteToolBundleRequest = {
+			BundleID: bundleID,
+		};
+		await DeleteToolBundle(req);
+	}
+
+	// --- Tool Operations ---
+
+	async listTools(
+		bundleIDs?: string[],
+		tags?: string[],
+		includeDisabled?: boolean,
+		pageSize?: number,
+		pageToken?: string
+	): Promise<{ toolListItems: ToolListItem[]; nextPageToken?: string }> {
+		const req = {
+			BundleIDs: bundleIDs,
+			Tags: tags,
+			IncludeDisabled: includeDisabled,
+			RecommendedPageSize: pageSize,
+			PageToken: pageToken,
+		};
+		const resp = await ListTools(req as spec.ListToolsRequest);
+		return {
+			toolListItems: (resp.Body?.toolListItems ?? []) as ToolListItem[],
+			nextPageToken: resp.Body?.nextPageToken ?? undefined,
+		};
+	}
+
+	async searchTools(
+		query: string,
+		pageToken?: string,
+		pageSize?: number,
+		includeDisabled?: boolean
+	): Promise<{ toolListItems: ToolListItem[]; nextPageToken?: string }> {
+		const req = {
+			Query: query,
+			PageToken: pageToken,
+			PageSize: pageSize,
+			IncludeDisabled: includeDisabled,
+		};
+		const resp = await SearchTools(req as spec.SearchToolsRequest);
+		return {
+			toolListItems: (resp.Body?.toolListItems ?? []) as ToolListItem[],
+			nextPageToken: resp.Body?.nextPageToken ?? undefined,
+		};
+	}
+
+	async putTool(
+		bundleID: string,
+		toolSlug: string,
+		version: string,
+		displayName: string,
+		isEnabled: boolean,
+		argSchema: JSONSchema,
+		outputSchema: JSONSchema,
+		type: ToolType,
+		goImpl?: GoToolImpl,
+		httpImpl?: HTTPToolImpl,
+		description?: string,
+		tags?: string[]
+	): Promise<void> {
+		const req = {
+			BundleID: bundleID,
+			ToolSlug: toolSlug,
+			Version: version,
+			body: {
+				displayName: displayName,
+				isEnabled: isEnabled,
+				description: description,
+				tags: tags,
+				argSchema: argSchema,
+				outputSchema: outputSchema,
+				type: type,
+				goImpl: goImpl,
+				httpImpl: httpImpl,
+			} as spec.PutToolRequestBody,
+		};
+		await PutTool(req as spec.PutToolRequest);
+	}
+
+	async patchTool(bundleID: string, toolSlug: string, version: string, isEnabled: boolean): Promise<void> {
+		const req = {
+			BundleID: bundleID,
+			ToolSlug: toolSlug,
+			Version: version,
+			body: {
+				isEnabled: isEnabled,
+			},
+		};
+		await PatchTool(req as spec.PatchToolRequest);
+	}
+
+	async deleteTool(bundleID: string, toolSlug: string, version: string): Promise<void> {
+		const req: spec.DeleteToolRequest = {
+			BundleID: bundleID,
+			ToolSlug: toolSlug,
+			Version: version,
+		};
+		await DeleteTool(req);
+	}
+
+	async getTool(bundleID: string, toolSlug: string, version: string): Promise<Tool | undefined> {
+		const req: spec.GetToolRequest = {
+			BundleID: bundleID,
+			ToolSlug: toolSlug,
+			Version: version,
+		};
+		const resp = await GetTool(req);
+		return resp.Body as Tool | undefined;
+	}
+}

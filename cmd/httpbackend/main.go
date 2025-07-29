@@ -21,6 +21,7 @@ import (
 	modelConsts "github.com/ppipada/flexigpt-app/pkg/model/consts"
 	modelStore "github.com/ppipada/flexigpt-app/pkg/model/store"
 	promptStore "github.com/ppipada/flexigpt-app/pkg/prompt/store"
+	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
 )
 
 // Options for the server cli.
@@ -31,6 +32,7 @@ type Options struct {
 	ConversationsDirPath   string `doc:"path to conversations directory"`
 	ModelPresetsDirPath    string `doc:"path to modelPresets data directory"`
 	PromptTemplatesDirPath string `doc:"path to prompt templates data directory"`
+	ToolsDirPath           string `doc:"path to tools data directory"`
 	LogsDirPath            string `doc:"path to logs directory"`
 	Debug                  bool   `doc:"Enable debug logs"`
 }
@@ -47,12 +49,14 @@ func main() {
 			opts.ConversationsDirPath,
 			opts.ModelPresetsDirPath,
 			opts.PromptTemplatesDirPath,
+			opts.ToolsDirPath,
 		)
 		settingstore.InitSettingStoreHandlers(api, app.settingStoreAPI)
 		conversationStore.InitConversationStoreHandlers(api, app.conversationStoreAPI)
 		inference.InitProviderSetHandlers(api, app.providerSetAPI)
 		modelStore.InitModelPresetStoreHandlers(api, app.modelPresetStoreAPI)
 		promptStore.InitPromptTemplateStoreHandlers(api, app.promptTemplateStoreAPI)
+		toolStore.InitToolStoreHandlers(api, app.toolStoreAPI)
 		// Create the HTTP server.
 		server := http.Server{
 			Addr:              fmt.Sprintf("%s:%d", opts.Host, opts.Port),

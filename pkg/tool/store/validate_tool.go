@@ -3,15 +3,11 @@ package store
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
-
-// Use the same name pattern as prompt validator (allow dash and underscore).
-var nameRE = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_-]*$`)
 
 // validateTool performs structural validation of a Tool object.
 func validateTool(t *spec.Tool) error {
@@ -73,18 +69,8 @@ func validateTool(t *spec.Tool) error {
 		return fmt.Errorf("invalid type %q", t.Type)
 	}
 
-	// Tags.
-	tagSeen := map[string]struct{}{}
-	for i, tg := range t.Tags {
-		tg = strings.TrimSpace(tg)
-		if !nameRE.MatchString(tg) {
-			return fmt.Errorf("tags[%d]: invalid tag %q", i, tg)
-		}
-		if _, dup := tagSeen[tg]; dup {
-			return fmt.Errorf("duplicate tag %q", tg)
-		}
-		tagSeen[tg] = struct{}{}
+	if err := bundleitemutils.ValidateTags(t.Tags); err != nil {
+		return err
 	}
-
 	return nil
 }

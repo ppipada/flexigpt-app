@@ -1,25 +1,18 @@
-import { type FC, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
 import { omitManyKeys } from '@/lib/obj_utils';
 import { validateSlug } from '@/lib/text_utils';
 
-/* ------------------------------------------------------------------ */
-/*                               props                                */
-/* ------------------------------------------------------------------ */
-interface AddBundleModalProps {
+interface AddToolBundleModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (slug: string, display: string, description?: string) => void;
 	existingSlugs: string[];
 }
 
-/* ------------------------------------------------------------------ */
-/*                              component                             */
-/* ------------------------------------------------------------------ */
-const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, existingSlugs }) => {
-	/* -------------------------- form state ------------------------- */
+const AddToolBundleModal: React.FC<AddToolBundleModalProps> = ({ isOpen, onClose, onSubmit, existingSlugs }) => {
 	const [form, setForm] = useState({
 		slug: '',
 		displayName: '',
@@ -27,18 +20,15 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 	});
 	const [errors, setErrors] = useState<{ slug?: string; displayName?: string }>({});
 
-	/* ----------------------- reset on open ------------------------- */
 	useEffect(() => {
 		if (!isOpen) return;
 		setForm({ slug: '', displayName: '', description: '' });
 		setErrors({});
 	}, [isOpen]);
 
-	/* ---------------------- field validation ----------------------- */
 	const validate = (field: keyof typeof errors, val: string) => {
 		const v = val.trim();
 		let copy = { ...errors };
-
 		if (!v) {
 			copy[field] = 'This field is required.';
 		} else if (field === 'slug') {
@@ -56,41 +46,32 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 		setErrors(copy);
 	};
 
-	/* ------------------- overall validity flag --------------------- */
 	const isAllValid = useMemo(
 		() => form.slug.trim() && form.displayName.trim() && Object.keys(errors).length === 0,
 		[form, errors]
 	);
 
-	/* -------------------------- submit ----------------------------- */
 	const handleSubmit = (e?: React.FormEvent) => {
 		if (e) e.preventDefault();
-
 		validate('slug', form.slug);
 		validate('displayName', form.displayName);
-
 		if (!isAllValid) return;
-
 		onSubmit(form.slug.trim(), form.displayName.trim(), form.description.trim() || undefined);
 	};
 
-	/* ----------------------- early return -------------------------- */
 	if (!isOpen) return null;
 
-	/* -------------------------- render ----------------------------- */
 	return (
 		<dialog className="modal modal-open">
 			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
-				{/* header */}
 				<div className="flex justify-between items-center mb-4">
-					<h3 className="font-bold text-lg">Add Prompt Bundle</h3>
+					<h3 className="font-bold text-lg">Add Tool Bundle</h3>
 					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close" title="Close">
 						<FiX size={12} />
 					</button>
 				</div>
-
 				<form onSubmit={handleSubmit} className="space-y-4">
-					{/* ----------- Slug --------------------------------- */}
+					{/* Slug */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Bundle Slug*</span>
@@ -98,7 +79,6 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
-
 						<div className="col-span-9">
 							<input
 								type="text"
@@ -120,13 +100,11 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 							)}
 						</div>
 					</div>
-
-					{/* -------- Display Name --------------------------- */}
+					{/* Display Name */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Display Name*</span>
 						</label>
-
 						<div className="col-span-9">
 							<input
 								type="text"
@@ -148,13 +126,11 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 							)}
 						</div>
 					</div>
-
-					{/* ---------- Description -------------------------- */}
+					{/* Description */}
 					<div className="grid grid-cols-12 items-start gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Description</span>
 						</label>
-
 						<div className="col-span-9">
 							<textarea
 								className="textarea textarea-bordered w-full rounded-2xl h-24"
@@ -166,8 +142,7 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 							/>
 						</div>
 					</div>
-
-					{/* -------------- actions -------------------------- */}
+					{/* Actions */}
 					<div className="modal-action">
 						<button type="button" className="btn rounded-2xl" onClick={onClose}>
 							Cancel
@@ -182,4 +157,4 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 	);
 };
 
-export default AddBundleModal;
+export default AddToolBundleModal;

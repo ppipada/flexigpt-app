@@ -27,6 +27,7 @@ type App struct {
 	conversationStoreAPI   *ConversationCollectionWrapper
 	modelPresetStoreAPI    *ModelPresetStoreWrapper
 	promptTemplateStoreAPI *PromptTemplateStoreWrapper
+	toolStoreAPI           *ToolStoreWrapper
 	providerSetAPI         *ProviderSetWrapper
 
 	configBasePath string
@@ -37,6 +38,7 @@ type App struct {
 	modelPresetsDirPath  string
 	modelPresetsFilePath string
 	promptsDirPath       string
+	toolsDirPath         string
 }
 
 // NewApp creates a new App application struct
@@ -59,15 +61,17 @@ func NewApp() *App {
 	app.modelPresetsDirPath = filepath.Join(app.dataBasePath, "modelpresets")
 	app.modelPresetsFilePath = filepath.Join(app.modelPresetsDirPath, "modelpresets.json")
 	app.promptsDirPath = filepath.Join(app.dataBasePath, "prompttemplates")
+	app.toolsDirPath = filepath.Join(app.dataBasePath, "tools")
 
 	if app.settingsFilePath == "" || app.conversationsDirPath == "" ||
-		app.modelPresetsDirPath == "" || app.promptsDirPath == "" {
+		app.modelPresetsDirPath == "" || app.promptsDirPath == "" || app.toolsDirPath == "" {
 		slog.Error(
 			"Invalid app path configuration",
 			"settingsFilePath", app.settingsFilePath,
 			"conversationsDirPath", app.conversationsDirPath,
 			"modelPresetsDirPath", app.modelPresetsDirPath,
 			"promptsDirPath", app.promptsDirPath,
+			"toolsDirPath", app.toolsDirPath,
 		)
 		panic("Failed to initialize App: invalid path configuration")
 	}
@@ -79,6 +83,7 @@ func NewApp() *App {
 	app.providerSetAPI = &ProviderSetWrapper{}
 	app.modelPresetStoreAPI = &ModelPresetStoreWrapper{}
 	app.promptTemplateStoreAPI = &PromptTemplateStoreWrapper{}
+	app.toolStoreAPI = &ToolStoreWrapper{}
 
 	if err := os.MkdirAll(app.configBasePath, os.FileMode(0o770)); err != nil {
 		slog.Error(
@@ -112,6 +117,14 @@ func NewApp() *App {
 		)
 		panic("Failed to initialize App: could not create prompt templates directory")
 	}
+	if err := os.MkdirAll(app.toolsDirPath, os.FileMode(0o770)); err != nil {
+		slog.Error(
+			"Failed to create tools directory",
+			"Tools path", app.toolsDirPath,
+			"Error", err,
+		)
+		panic("Failed to initialize App: could not create tools directory")
+	}
 	slog.Info(
 		"FlexiGPT paths initialized",
 		"app data", app.dataBasePath,
@@ -120,6 +133,7 @@ func NewApp() *App {
 		"conversationsDirPath", app.conversationsDirPath,
 		"modelPresetsDirPath", app.modelPresetsDirPath,
 		"promptsDirPath", app.promptsDirPath,
+		"toolsDirPath", app.toolsDirPath,
 	)
 	return app
 }
@@ -167,6 +181,16 @@ func (a *App) initManagers() {
 			"Error", err,
 		)
 		panic("Failed to initialize managers: prompt template store initialization failed")
+	}
+
+	err = InitToolStoreWrapper(a.toolStoreAPI, a.toolsDirPath)
+	if err != nil {
+		slog.Error(
+			"Couldn't initialize tool store",
+			"Directory", a.toolsDirPath,
+			"Error", err,
+		)
+		panic("Failed to initialize managers: tool store initialization failed")
 	}
 
 	err = InitProviderSetWrapper(a.providerSetAPI, modelConsts.ProviderNameOpenAI)

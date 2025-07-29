@@ -12,6 +12,7 @@ import (
 	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
 	modelStore "github.com/ppipada/flexigpt-app/pkg/model/store"
 	promptStore "github.com/ppipada/flexigpt-app/pkg/prompt/store"
+	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
 )
 
 type BackendApp struct {
@@ -20,6 +21,7 @@ type BackendApp struct {
 	providerSetAPI         *inference.ProviderSetAPI
 	modelPresetStoreAPI    *modelStore.ModelPresetStore
 	promptTemplateStoreAPI *promptStore.PromptTemplateStore
+	toolStoreAPI           *toolStore.ToolStore
 
 	settingsDirPath      string
 	settingsFilePath     string
@@ -27,16 +29,17 @@ type BackendApp struct {
 	modelPresetsDirPath  string
 	modelPresetsFilePath string
 	promptsDirPath       string
+	toolsDirPath         string
 
 	defaultInbuiltProvider modelSpec.ProviderName
 }
 
 func NewBackendApp(
 	defaultInbuiltProvider modelSpec.ProviderName,
-	settingsDirPath, conversationsDirPath, modelPresetsDirPath, promptsDirPath string,
+	settingsDirPath, conversationsDirPath, modelPresetsDirPath, promptsDirPath, toolsDirPath string,
 ) *BackendApp {
 	if settingsDirPath == "" || conversationsDirPath == "" || defaultInbuiltProvider == "" ||
-		modelPresetsDirPath == "" || promptsDirPath == "" {
+		modelPresetsDirPath == "" || promptsDirPath == "" || toolsDirPath == "" {
 		slog.Error(
 			"invalid app path configuration",
 			"settingsDirPath", settingsDirPath,
@@ -44,6 +47,7 @@ func NewBackendApp(
 			"defaultInbuiltProvider", defaultInbuiltProvider,
 			"modelPresetsDirPath", modelPresetsDirPath,
 			"promptsDirPath", promptsDirPath,
+			"toolsDirPath", toolsDirPath,
 		)
 		panic("failed to initialize BackendApp: invalid path configuration")
 	}
@@ -55,6 +59,7 @@ func NewBackendApp(
 		modelPresetsDirPath:    modelPresetsDirPath,
 		modelPresetsFilePath:   filepath.Join(modelPresetsDirPath, "modelpresets.json"),
 		promptsDirPath:         promptsDirPath,
+		toolsDirPath:           toolsDirPath,
 		defaultInbuiltProvider: defaultInbuiltProvider,
 	}
 
@@ -63,6 +68,7 @@ func NewBackendApp(
 	app.initProviderSet()
 	app.initModelPresetStore()
 	app.initPromptTemplateStore()
+	app.initToolStore()
 	return app
 }
 
@@ -162,6 +168,32 @@ func (a *BackendApp) initPromptTemplateStore() {
 	}
 	a.promptTemplateStoreAPI = ps
 	slog.Info("prompt template store initialized", "directory", a.promptsDirPath)
+}
+
+func (a *BackendApp) initToolStore() {
+	if err := os.MkdirAll(a.toolsDirPath, os.FileMode(0o770)); err != nil {
+		slog.Error(
+			"failed to create tools directory",
+			"toolsDirPath", a.toolsDirPath,
+			"error", err,
+		)
+		panic("failed to initialize BackendApp: could not create tools directory")
+	}
+
+	ps, err := toolStore.NewToolStore(
+		a.toolsDirPath,
+		toolStore.WithFTS(true),
+	)
+	if err != nil {
+		slog.Error(
+			"couldn't initialize tools store",
+			"toolsDirPath", a.toolsDirPath,
+			"error", err,
+		)
+		panic("failed to initialize BackendApp: tool store initialization failed")
+	}
+	a.toolStoreAPI = ps
+	slog.Info("tool store initialized", "directory", a.toolsDirPath)
 }
 
 func (a *BackendApp) initProviderSet() {

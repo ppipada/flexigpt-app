@@ -1,12 +1,47 @@
 package bundleitemutils
 
 import (
+	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 	"unicode"
 )
 
 // maxTokenLength is the maximum allowed length for slugs and versions.
 const maxTokenLength = 64
+
+var tagNameRE = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_-]*$`)
+
+// ValidateTags checks a slice of tags for format, length, and duplicates.
+func ValidateTags(tags []string) error {
+	seen := map[string]struct{}{}
+	for i, tag := range tags {
+		if err := ValidateTag(tag); err != nil {
+			return fmt.Errorf("tags[%d]: %w", i, err)
+		}
+		if _, dup := seen[tag]; dup {
+			return fmt.Errorf("duplicate tag %q", tag)
+		}
+		seen[tag] = struct{}{}
+	}
+	return nil
+}
+
+// ValidateTag checks a single tag for format and length.
+func ValidateTag(tag string) error {
+	tag = strings.TrimSpace(tag)
+	if tag == "" {
+		return errors.New("tag is empty")
+	}
+	if len(tag) > maxTokenLength {
+		return fmt.Errorf("tag %q is too long (max %d)", tag, maxTokenLength)
+	}
+	if !tagNameRE.MatchString(tag) {
+		return fmt.Errorf("invalid tag %q", tag)
+	}
+	return nil
+}
 
 func ValidateBundleSlug(s BundleSlug) error   { return validateSlug(string(s)) }
 func ValidateItemSlug(s ItemSlug) error       { return validateSlug(string(s)) }
