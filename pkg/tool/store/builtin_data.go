@@ -285,11 +285,8 @@ func (d *BuiltInToolData) populateDataFromFS() error {
 			}
 			tool.IsBuiltIn = true
 
-			if err := bundleitemutils.ValidateItemSlug(tool.Slug); err != nil {
-				return fmt.Errorf("%s: %w", inPath, err)
-			}
-			if err := bundleitemutils.ValidateItemVersion(tool.Version); err != nil {
-				return fmt.Errorf("%s: %w", inPath, err)
+			if err := validateTool(&tool); err != nil {
+				return fmt.Errorf("%s: invalid tool: %w", inPath, err)
 			}
 
 			info, err := bundleitemutils.ParseItemFileName(fn)

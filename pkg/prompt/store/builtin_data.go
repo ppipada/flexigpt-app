@@ -273,12 +273,8 @@ func (d *BuiltInData) populateDataFromFS() error {
 				return fmt.Errorf("%s: %w", inPath, err)
 			}
 			tpl.IsBuiltIn = true
-
-			if err := bundleitemutils.ValidateItemSlug(tpl.Slug); err != nil {
-				return fmt.Errorf("%s: %w", inPath, err)
-			}
-			if err := bundleitemutils.ValidateItemVersion(tpl.Version); err != nil {
-				return fmt.Errorf("%s: %w", inPath, err)
+			if err := validateTemplate(&tpl); err != nil {
+				return fmt.Errorf("%s: invalid template: %w", inPath, err)
 			}
 
 			info, err := bundleitemutils.ParseItemFileName(fn)

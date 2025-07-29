@@ -784,10 +784,21 @@ func buildTemplate(t *testing.T, slug, ver string) (fileName string, raw []byte,
 	t.Helper()
 	tplID = newUUID(t)
 	tpl := spec.PromptTemplate{
-		ID:        bundleitemutils.ItemID(tplID),
-		Slug:      bundleitemutils.ItemSlug(slug),
-		Version:   bundleitemutils.ItemVersion(ver),
-		IsEnabled: true,
+		SchemaVersion: spec.SchemaVersion,
+		ID:            bundleitemutils.ItemID(tplID),
+		Slug:          bundleitemutils.ItemSlug(slug),
+		Version:       bundleitemutils.ItemVersion(ver),
+		DisplayName:   slug,
+		Blocks: []spec.MessageBlock{
+			{
+				ID:      spec.MessageBlockID("a"),
+				Role:    spec.System,
+				Content: "hey",
+			},
+		},
+		IsEnabled:  true,
+		CreatedAt:  time.Now(),
+		ModifiedAt: time.Now(),
 	}
 	raw, _ = json.Marshal(tpl) // cannot fail
 	fileName = fmt.Sprintf("%s_%s.json", slug, ver)

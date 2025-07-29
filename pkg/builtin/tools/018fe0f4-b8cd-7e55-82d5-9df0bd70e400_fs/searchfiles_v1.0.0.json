@@ -1,0 +1,52 @@
+{
+	"schemaVersion": "2025-07-01",
+	"id": "018fe0f4-b8cd-7e55-82d5-9df0bd70e4bc",
+	"slug": "searchfiles",
+	"version": "v1.0.0",
+	"displayName": "Search files (content or path)",
+	"description": "Recursively search files whose name or textual content matches a regular expression.",
+	"tags": ["fs", "search"],
+	"argSchema": {
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"type": "object",
+		"properties": {
+			"root": {
+				"type": "string",
+				"description": "Directory to start searching from.",
+				"default": "."
+			},
+			"pattern": {
+				"type": "string",
+				"description": "RE2 regular expression applied to file path and file content."
+			},
+			"maxResults": {
+				"type": "integer",
+				"description": "Stop after this many matches (0 = unlimited).",
+				"default": 100
+			}
+		},
+		"required": ["pattern"],
+		"additionalProperties": false
+	},
+	"outputSchema": {
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"type": "object",
+		"properties": {
+			"matches": {
+				"type": "array",
+				"items": { "type": "string" },
+				"description": "Paths of files that matched."
+			}
+		},
+		"required": ["matches"],
+		"additionalProperties": false
+	},
+	"type": "go",
+	"goImpl": {
+		"func": "github.com/ppipada/flexigpt-app/pkg/builtin/gotools/fs.SearchFiles"
+	},
+	"isEnabled": true,
+	"isBuiltIn": true,
+	"createdAt": "2025-07-02T12:00:00Z",
+	"modifiedAt": "2025-07-02T12:00:00Z"
+}

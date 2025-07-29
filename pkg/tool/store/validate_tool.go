@@ -6,28 +6,48 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
-// Re-use the simple “name” pattern from the prompt validator.
-var nameRE = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+// Use the same name pattern as prompt validator (allow dash and underscore).
+var nameRE = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_-]*$`)
 
 // validateTool performs structural validation of a Tool object.
 func validateTool(t *spec.Tool) error {
 	if t == nil {
 		return errors.New("tool is nil")
 	}
+	if t.SchemaVersion != spec.SchemaVersion {
+		return fmt.Errorf(
+			"schemaVersion %q does not match expected %q",
+			t.SchemaVersion,
+			spec.SchemaVersion,
+		)
+	}
+	if err := bundleitemutils.ValidateItemSlug(t.Slug); err != nil {
+		return fmt.Errorf("invalid slug: %w", err)
+	}
+	if err := bundleitemutils.ValidateItemVersion(t.Version); err != nil {
+		return fmt.Errorf("invalid version: %w", err)
+	}
 	if strings.TrimSpace(t.DisplayName) == "" {
 		return errors.New("displayName is empty")
 	}
-	if t.Slug == "" {
-		return errors.New("slug is empty")
+	if strings.TrimSpace(string(t.ID)) == "" {
+		return errors.New("id is empty")
 	}
 	if t.ArgSchema == nil {
 		return errors.New("argSchema is missing")
 	}
 	if t.OutputSchema == nil {
 		return errors.New("outputSchema is missing")
+	}
+	if t.CreatedAt.IsZero() {
+		return errors.New("createdAt is zero")
+	}
+	if t.ModifiedAt.IsZero() {
+		return errors.New("modifiedAt is zero")
 	}
 
 	// Type / implementation sanity.
@@ -54,15 +74,17 @@ func validateTool(t *spec.Tool) error {
 	}
 
 	// Tags.
-	seen := map[string]struct{}{}
+	tagSeen := map[string]struct{}{}
 	for i, tg := range t.Tags {
+		tg = strings.TrimSpace(tg)
 		if !nameRE.MatchString(tg) {
 			return fmt.Errorf("tags[%d]: invalid tag %q", i, tg)
 		}
-		if _, dup := seen[tg]; dup {
+		if _, dup := tagSeen[tg]; dup {
 			return fmt.Errorf("duplicate tag %q", tg)
 		}
-		seen[tg] = struct{}{}
+		tagSeen[tg] = struct{}{}
 	}
+
 	return nil
 }

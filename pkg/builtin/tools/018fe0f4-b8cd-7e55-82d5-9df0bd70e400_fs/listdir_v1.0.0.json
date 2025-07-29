@@ -1,0 +1,47 @@
+{
+	"schemaVersion": "2025-07-01",
+	"id": "018fe0f4-b8cd-7e55-82d5-9df0bd70e4bb",
+	"slug": "listdir",
+	"version": "v1.0.0",
+	"displayName": "List directory",
+	"description": "Return the names of files/directories at the given path (optionally filtered by glob).",
+	"tags": ["fs", "list"],
+	"argSchema": {
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"type": "object",
+		"properties": {
+			"path": {
+				"type": "string",
+				"description": "Directory path to list.",
+				"default": "."
+			},
+			"pattern": {
+				"type": "string",
+				"description": "Optional glob pattern (e.g. \"*.txt\") to filter results."
+			}
+		},
+		"required": [],
+		"additionalProperties": false
+	},
+	"outputSchema": {
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"type": "object",
+		"properties": {
+			"entries": {
+				"type": "array",
+				"items": { "type": "string" },
+				"description": "List of matching file or directory names (not full paths)."
+			}
+		},
+		"required": ["entries"],
+		"additionalProperties": false
+	},
+	"type": "go",
+	"goImpl": {
+		"func": "github.com/ppipada/flexigpt-app/pkg/builtin/gotools/fs.ListDirectory"
+	},
+	"isEnabled": true,
+	"isBuiltIn": true,
+	"createdAt": "2025-07-02T12:00:00Z",
+	"modifiedAt": "2025-07-02T12:00:00Z"
+}

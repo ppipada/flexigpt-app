@@ -6,13 +6,14 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 )
 
 // Regular expressions.
 var (
-	placeholderRE = regexp.MustCompile(`\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}`)
-	nameRE        = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+	placeholderRE = regexp.MustCompile(`\{\{([a-zA-Z_][a-zA-Z0-9_-]*)\}\}`)
+	nameRE        = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_-]*$`)
 )
 
 // validateTemplate performs a structural and referential integrity check.
@@ -20,11 +21,27 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 	if tpl == nil {
 		return errors.New("template is nil")
 	}
+	if tpl.SchemaVersion != spec.SchemaVersion {
+		return fmt.Errorf(
+			"schemaVersion %q does not match expected %q",
+			tpl.SchemaVersion,
+			spec.SchemaVersion,
+		)
+	}
+	if err := bundleitemutils.ValidateItemSlug(tpl.Slug); err != nil {
+		return fmt.Errorf("invalid slug: %w", err)
+	}
+	if err := bundleitemutils.ValidateItemVersion(tpl.Version); err != nil {
+		return fmt.Errorf("invalid version: %w", err)
+	}
 	if strings.TrimSpace(tpl.DisplayName) == "" {
 		return errors.New("displayName is empty")
 	}
-	if strings.TrimSpace(string(tpl.Slug)) == "" {
-		return errors.New("slug is empty")
+	if tpl.CreatedAt.IsZero() {
+		return errors.New("createdAt is zero")
+	}
+	if tpl.ModifiedAt.IsZero() {
+		return errors.New("modifiedAt is zero")
 	}
 	if len(tpl.Blocks) == 0 {
 		return errors.New("at least one message block required")
@@ -47,7 +64,7 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 		if strings.TrimSpace(b.Content) == "" {
 			return fmt.Errorf("blocks[%d]: content is empty", i)
 		}
-		if b.ID == "" {
+		if strings.TrimSpace(string(b.ID)) == "" {
 			return fmt.Errorf("blocks[%d]: id is empty", i)
 		}
 		if _, dup := blockIDs[b.ID]; dup {
@@ -78,6 +95,7 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 
 	varNames := map[string]spec.VarSource{}
 	for i, v := range tpl.Variables {
+		v.Name = strings.TrimSpace(v.Name)
 		if !nameRE.MatchString(v.Name) {
 			return fmt.Errorf("variables[%d]: invalid name %q", i, v.Name)
 		}
@@ -94,14 +112,14 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 		// Source-specific requirements.
 		switch v.Source {
 		case spec.SourceStatic:
-			if v.StaticVal == "" {
+			if strings.TrimSpace(v.StaticVal) == "" {
 				return fmt.Errorf("variables[%d]: source 'static' requires staticVal", i)
 			}
 			if v.Required {
 				return fmt.Errorf("variables[%d]: static variables cannot be required", i)
 			}
 		case spec.SourceTool:
-			if v.ToolID == "" {
+			if strings.TrimSpace(v.ToolID) == "" {
 				return fmt.Errorf("variables[%d]: source 'tool' requires toolID", i)
 			}
 		case spec.SourceUser:
@@ -109,8 +127,21 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 		}
 
 		// Type-specific requirements.
-		if v.Type == spec.VarEnum && len(v.EnumValues) == 0 {
-			return fmt.Errorf("variables[%d]: enum type requires enumValues", i)
+		if v.Type == spec.VarEnum {
+			if len(v.EnumValues) == 0 {
+				return fmt.Errorf("variables[%d]: enum type requires enumValues", i)
+			}
+			seenEnum := map[string]struct{}{}
+			for j, ev := range v.EnumValues {
+				ev = strings.TrimSpace(ev)
+				if ev == "" {
+					return fmt.Errorf("variables[%d]: enumValues[%d] is empty", i, j)
+				}
+				if _, dup := seenEnum[ev]; dup {
+					return fmt.Errorf("variables[%d]: duplicate enum value %q", i, ev)
+				}
+				seenEnum[ev] = struct{}{}
+			}
 		}
 
 		varNames[v.Name] = v.Source
@@ -132,20 +163,21 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 	saveTargets := map[string]struct{}{}
 
 	for i, p := range tpl.PreProcessors {
-		if p.ToolID == "" {
+		if strings.TrimSpace(p.ToolID) == "" {
 			return fmt.Errorf("preProcessors[%d]: toolID is empty", i)
 		}
 		if !nameRE.MatchString(p.SaveAs) {
 			return fmt.Errorf("preProcessors[%d]: invalid saveAs %q", i, p.SaveAs)
 		}
-		if _, ok := varNames[p.SaveAs]; !ok {
+		src, ok := varNames[p.SaveAs]
+		if !ok {
 			return fmt.Errorf(
 				"preProcessors[%d]: saveAs %q is not a declared variable",
 				i,
 				p.SaveAs,
 			)
 		}
-		if varNames[p.SaveAs] != spec.SourceTool {
+		if src != spec.SourceTool {
 			return fmt.Errorf("preProcessors[%d]: variable %q must have source 'tool'", i, p.SaveAs)
 		}
 		if _, dup := saveTargets[p.SaveAs]; dup {
@@ -166,7 +198,7 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 		if _, produced := saveTargets[n]; produced {
 			continue
 		}
-		if src == spec.SourceStatic && tpl.Version == "" {
+		if src == spec.SourceStatic {
 			// Static variables may legitimately stay unused in blocks.
 			continue
 		}
@@ -176,6 +208,7 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 	// Validate tags.
 	tagSeen := map[string]struct{}{}
 	for i, t := range tpl.Tags {
+		t = strings.TrimSpace(t)
 		if !nameRE.MatchString(t) {
 			return fmt.Errorf("tags[%d]: invalid tag %q", i, t)
 		}
