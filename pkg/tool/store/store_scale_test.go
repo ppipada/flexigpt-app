@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"sync"
 	"testing"
@@ -357,16 +356,4 @@ func drainErrors(t *testing.T, ch <-chan error) {
 			t.Errorf("scale-test error: %v", err)
 		}
 	}
-}
-
-// newTestToolStore creates a ToolStore for testing and returns a cleanup function.
-func newTestToolStore(t *testing.T) (s *ToolStore, cleanup func()) {
-	t.Helper()
-
-	dir := t.TempDir()
-	s, err := NewToolStore(dir)
-	if err != nil {
-		t.Fatalf("NewToolStore() failed: %v", err)
-	}
-	return s, func() { s.Close(); _ = os.RemoveAll(dir) }
 }
