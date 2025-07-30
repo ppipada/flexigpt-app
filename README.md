@@ -211,9 +211,14 @@ Launch FlexiGPT, open Settings -> Providers, paste your API key, start chatting.
 - [Wails](https://wails.io/) as a desktop application building platform.
 - [Vite](https://vite.dev/) + [React Router v7](https://reactrouter.com/) frontend.
 - [DaisyUI](https://daisyui.com/) with [TailwindCSS](https://tailwindcss.com/) for styling.
+
 - Tooling:
+
+  - [Gopls](https://pkg.go.dev/golang.org/x/tools/gopls) and [Modernize](https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize)
   - [Golangci-lint](https://golangci-lint.run/)
   - [Knip](https://knip.dev/)
   - [ESLint](https://eslint.org/)
   - [Prettier](https://prettier.io/)
   - [Github actions](https://github.com/features/actions)
+
+- Data storage: `JSON` and `SQLite` files in local filesystem.
