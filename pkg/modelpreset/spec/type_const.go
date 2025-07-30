@@ -11,12 +11,12 @@ const (
 var OpenAICompatibleDefaultHeaders = map[string]string{"content-type": "application/json"}
 
 type (
-	ModelName         string
-	ModelDisplayName  string
-	ModelShortCommand string
-	ModelPresetID     string
-	ReasoningLevel    string
-	ReasoningType     string
+	ModelName        string
+	ModelDisplayName string
+	ModelSlug        string
+	ModelPresetID    string
+	ReasoningLevel   string
+	ReasoningType    string
 
 	ProviderName        string
 	ProviderAPIType     string
@@ -50,12 +50,12 @@ type ReasoningParams struct {
 // ModelPreset is the entire "model + default knobs" bundle the user can save.
 // Anything not present in the preset is considered to be taken as default from any global defaults or inbuilt model defaults.
 type ModelPreset struct {
-	SchemaVersion string            `json:"schemaVersion" required:"true"`
-	ID            ModelPresetID     `json:"id"            required:"true"`
-	Name          ModelName         `json:"name"          required:"true"`
-	DisplayName   ModelDisplayName  `json:"displayName"   required:"true"`
-	ShortCommand  ModelShortCommand `json:"shortCommand"  required:"true"`
-	IsEnabled     bool              `json:"isEnabled"     required:"true"`
+	SchemaVersion string           `json:"schemaVersion" required:"true"`
+	ID            ModelPresetID    `json:"id"            required:"true"`
+	Name          ModelName        `json:"name"          required:"true"`
+	DisplayName   ModelDisplayName `json:"displayName"   required:"true"`
+	Slug          ModelSlug        `json:"slug"          required:"true"`
+	IsEnabled     bool             `json:"isEnabled"     required:"true"`
 
 	Stream                      *bool            `json:"stream,omitempty"`
 	MaxPromptLength             *int             `json:"maxPromptLength,omitempty"`

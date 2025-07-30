@@ -23,11 +23,11 @@ const (
 )
 
 const (
-	ShortCommandClaude4Opus    spec.ModelShortCommand = "opus4"
-	ShortCommandClaude4Sonnet  spec.ModelShortCommand = "sonnet4"
-	ShortCommandClaude37Sonnet spec.ModelShortCommand = "sonnet37"
-	ShortCommandClaude35Sonnet spec.ModelShortCommand = "sonnet35"
-	ShortCommandClaude35Haiku  spec.ModelShortCommand = "haiku35"
+	SlugClaude4Opus    spec.ModelSlug = "opus4"
+	SlugClaude4Sonnet  spec.ModelSlug = "sonnet4"
+	SlugClaude37Sonnet spec.ModelSlug = "sonnet37"
+	SlugClaude35Sonnet spec.ModelSlug = "sonnet35"
+	SlugClaude35Haiku  spec.ModelSlug = "haiku35"
 )
 
 const (
@@ -40,11 +40,11 @@ const (
 
 var AnthropicModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 	ModelPresetIDClaude4Opus: {
-		ID:           ModelPresetIDClaude4Opus,
-		Name:         Claude4Opus,
-		DisplayName:  DisplayNameClaude4Opus,
-		ShortCommand: ShortCommandClaude4Opus,
-		IsEnabled:    true,
+		ID:          ModelPresetIDClaude4Opus,
+		Name:        Claude4Opus,
+		DisplayName: DisplayNameClaude4Opus,
+		Slug:        SlugClaude4Opus,
+		IsEnabled:   true,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(65536),
@@ -58,11 +58,11 @@ var AnthropicModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:      IntPtr(120),
 	},
 	ModelPresetIDClaude4Sonnet: {
-		ID:           ModelPresetIDClaude4Sonnet,
-		Name:         Claude4Sonnet,
-		DisplayName:  DisplayNameClaude4Sonnet,
-		ShortCommand: ShortCommandClaude4Sonnet,
-		IsEnabled:    true,
+		ID:          ModelPresetIDClaude4Sonnet,
+		Name:        Claude4Sonnet,
+		DisplayName: DisplayNameClaude4Sonnet,
+		Slug:        SlugClaude4Sonnet,
+		IsEnabled:   true,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(65536),
@@ -76,11 +76,11 @@ var AnthropicModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:      IntPtr(120),
 	},
 	ModelPresetIDClaude37Sonnet: {
-		ID:           ModelPresetIDClaude37Sonnet,
-		Name:         Claude37Sonnet,
-		DisplayName:  DisplayNameClaude37Sonnet,
-		ShortCommand: ShortCommandClaude37Sonnet,
-		IsEnabled:    false,
+		ID:          ModelPresetIDClaude37Sonnet,
+		Name:        Claude37Sonnet,
+		DisplayName: DisplayNameClaude37Sonnet,
+		Slug:        SlugClaude37Sonnet,
+		IsEnabled:   false,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(65536),
@@ -94,11 +94,11 @@ var AnthropicModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:      IntPtr(120),
 	},
 	ModelPresetIDClaude35Sonnet: {
-		ID:           ModelPresetIDClaude35Sonnet,
-		Name:         Claude35Sonnet,
-		DisplayName:  DisplayNameClaude35Sonnet,
-		ShortCommand: ShortCommandClaude35Sonnet,
-		IsEnabled:    false,
+		ID:          ModelPresetIDClaude35Sonnet,
+		Name:        Claude35Sonnet,
+		DisplayName: DisplayNameClaude35Sonnet,
+		Slug:        SlugClaude35Sonnet,
+		IsEnabled:   false,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(16384),
@@ -108,11 +108,11 @@ var AnthropicModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:         IntPtr(120),
 	},
 	ModelPresetIDClaude35Haiku: {
-		ID:           ModelPresetIDClaude35Haiku,
-		Name:         Claude35Haiku,
-		DisplayName:  DisplayNameClaude35Haiku,
-		ShortCommand: ShortCommandClaude35Haiku,
-		IsEnabled:    false,
+		ID:          ModelPresetIDClaude35Haiku,
+		Name:        Claude35Haiku,
+		DisplayName: DisplayNameClaude35Haiku,
+		Slug:        SlugClaude35Haiku,
+		IsEnabled:   false,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(16384),

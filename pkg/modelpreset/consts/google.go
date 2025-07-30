@@ -19,9 +19,9 @@ const (
 )
 
 const (
-	ShortCommandGemini25Pro       spec.ModelShortCommand = "gemini25Pro"
-	ShortCommandGemini25Flash     spec.ModelShortCommand = "gemini25Flash"
-	ShortCommandGemini25FlashLite spec.ModelShortCommand = "gemini25FlashLite"
+	SlugGemini25Pro       spec.ModelSlug = "gemini25Pro"
+	SlugGemini25Flash     spec.ModelSlug = "gemini25Flash"
+	SlugGemini25FlashLite spec.ModelSlug = "gemini25FlashLite"
 )
 
 const (
@@ -32,11 +32,11 @@ const (
 
 var GoogleModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 	ModelPresetIDGemini25Pro: {
-		ID:           ModelPresetIDGemini25Pro,
-		Name:         Gemini25Pro,
-		DisplayName:  DisplayNameGemini25Pro,
-		ShortCommand: ShortCommandGemini25Pro,
-		IsEnabled:    true,
+		ID:          ModelPresetIDGemini25Pro,
+		Name:        Gemini25Pro,
+		DisplayName: DisplayNameGemini25Pro,
+		Slug:        SlugGemini25Pro,
+		IsEnabled:   true,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(32768),
@@ -46,11 +46,11 @@ var GoogleModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:         IntPtr(120),
 	},
 	ModelPresetIDGemini25Flash: {
-		ID:           ModelPresetIDGemini25Flash,
-		Name:         Gemini25Flash,
-		DisplayName:  DisplayNameGemini25Flash,
-		ShortCommand: ShortCommandGemini25Flash,
-		IsEnabled:    true,
+		ID:          ModelPresetIDGemini25Flash,
+		Name:        Gemini25Flash,
+		DisplayName: DisplayNameGemini25Flash,
+		Slug:        SlugGemini25Flash,
+		IsEnabled:   true,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(32768),
@@ -60,11 +60,11 @@ var GoogleModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:         IntPtr(120),
 	},
 	ModelPresetIDGemini25FlashLite: {
-		ID:           ModelPresetIDGemini25FlashLite,
-		Name:         Gemini25FlashLite,
-		DisplayName:  DisplayNameGemini25FlashLite,
-		ShortCommand: ShortCommandGemini25FlashLite,
-		IsEnabled:    true,
+		ID:          ModelPresetIDGemini25FlashLite,
+		Name:        Gemini25FlashLite,
+		DisplayName: DisplayNameGemini25FlashLite,
+		Slug:        SlugGemini25FlashLite,
+		IsEnabled:   true,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(32768),

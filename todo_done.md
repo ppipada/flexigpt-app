@@ -376,7 +376,7 @@
   - [x] Remove confusion of ModelParams vs ModelSettings vs ModelPreset. What is stored is a ModelPreset. What comes in is a ModelParam.
   - [x] Default model also should be with presets, with name being "default preset".
   - [x] Check if inbuilt models have tooltip mentioning internal defaults
-  - [x] Presets should have id/shortcommand as unique, may be add id too as forward compatible thing.
+  - [x] Presets should have id/slug as unique, may be add id too as forward compatible thing.
   - [x] font of settings page
   - [x] api key in settings page is not validated before send and then set
   - [x] no config in providers gives empty unhandled page rejection in console

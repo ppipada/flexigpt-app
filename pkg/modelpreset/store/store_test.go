@@ -22,11 +22,11 @@ func TestModelPresetStore_GetAllModelPresets(t *testing.T) {
 	modelName := spec.ModelName("gpt-4")
 	modelPresetID := spec.ModelPresetID("gpt4")
 	preset := spec.ModelPreset{
-		ID:           modelPresetID,
-		Name:         modelName,
-		DisplayName:  "GPT-4",
-		ShortCommand: "g4",
-		IsEnabled:    true,
+		ID:          modelPresetID,
+		Name:        modelName,
+		DisplayName: "GPT-4",
+		Slug:        "g4",
+		IsEnabled:   true,
 	}
 	body := spec.ProviderPreset{
 		DefaultModelPresetID: modelPresetID,
@@ -113,11 +113,11 @@ func TestModelPresetStore_CreateProviderPreset(t *testing.T) {
 	modelPresetID := spec.ModelPresetID("gpt4")
 	modelName := spec.ModelName("gpt-4")
 	preset := spec.ModelPreset{
-		ID:           modelPresetID,
-		Name:         modelName,
-		DisplayName:  "GPT-4",
-		ShortCommand: "g4",
-		IsEnabled:    true,
+		ID:          modelPresetID,
+		Name:        modelName,
+		DisplayName: "GPT-4",
+		Slug:        "g4",
+		IsEnabled:   true,
 	}
 	body := spec.ProviderPreset{
 		DefaultModelPresetID: modelPresetID,
@@ -241,11 +241,11 @@ func TestModelPresetStore_DeleteProviderPreset(t *testing.T) {
 		DefaultModelPresetID: modelPresetID,
 		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
 			modelPresetID: {
-				ID:           modelPresetID,
-				Name:         modelName,
-				DisplayName:  "GPT-4",
-				ShortCommand: "g4",
-				IsEnabled:    true,
+				ID:          modelPresetID,
+				Name:        modelName,
+				DisplayName: "GPT-4",
+				Slug:        "g4",
+				IsEnabled:   true,
 			},
 		},
 	}
@@ -337,11 +337,11 @@ func TestModelPresetStore_AddModelPreset(t *testing.T) {
 		DefaultModelPresetID: modelPresetID,
 		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
 			spec.ModelPresetID("g1"): {
-				ID:           "g1",
-				Name:         "g-1",
-				DisplayName:  "G-1",
-				ShortCommand: "g1",
-				IsEnabled:    true,
+				ID:          "g1",
+				Name:        "g-1",
+				DisplayName: "G-1",
+				Slug:        "g1",
+				IsEnabled:   true,
 			},
 		},
 	}
@@ -354,11 +354,11 @@ func TestModelPresetStore_AddModelPreset(t *testing.T) {
 	}
 
 	preset := spec.ModelPreset{
-		ID:           modelPresetID,
-		Name:         modelName,
-		DisplayName:  "GPT-4",
-		ShortCommand: "g4",
-		IsEnabled:    true,
+		ID:          modelPresetID,
+		Name:        modelName,
+		DisplayName: "GPT-4",
+		Slug:        "g4",
+		IsEnabled:   true,
 	}
 
 	testCases := []struct {
@@ -409,11 +409,11 @@ func TestModelPresetStore_AddModelPreset(t *testing.T) {
 				ProviderName:  provider,
 				ModelPresetID: modelPresetID,
 				Body: &spec.ModelPreset{
-					ID:           "",
-					Name:         modelName,
-					DisplayName:  "GPT-4",
-					ShortCommand: "g4",
-					IsEnabled:    true,
+					ID:          "",
+					Name:        modelName,
+					DisplayName: "GPT-4",
+					Slug:        "g4",
+					IsEnabled:   true,
 				},
 			},
 			wantErr:       true,
@@ -425,11 +425,11 @@ func TestModelPresetStore_AddModelPreset(t *testing.T) {
 				ProviderName:  "cohere",
 				ModelPresetID: "foo",
 				Body: &spec.ModelPreset{
-					ID:           "foo",
-					Name:         "foo",
-					DisplayName:  "Foo",
-					ShortCommand: "f",
-					IsEnabled:    true,
+					ID:          "foo",
+					Name:        "foo",
+					DisplayName: "Foo",
+					Slug:        "f",
+					IsEnabled:   true,
 				},
 			},
 			wantErr:       true,
@@ -450,11 +450,11 @@ func TestModelPresetStore_AddModelPreset(t *testing.T) {
 				ProviderName:  provider,
 				ModelPresetID: modelPresetID,
 				Body: &spec.ModelPreset{
-					ID:           modelPresetID,
-					Name:         modelName,
-					DisplayName:  "Changed",
-					ShortCommand: "g4",
-					IsEnabled:    false,
+					ID:          modelPresetID,
+					Name:        modelName,
+					DisplayName: "Changed",
+					Slug:        "g4",
+					IsEnabled:   false,
 				},
 			},
 			wantErr: false,
@@ -488,11 +488,11 @@ func TestModelPresetStore_DeleteModelPreset(t *testing.T) {
 		DefaultModelPresetID: modelPresetID,
 		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
 			spec.ModelPresetID("g1"): {
-				ID:           "g1",
-				Name:         "g-1",
-				DisplayName:  "G-1",
-				ShortCommand: "g1",
-				IsEnabled:    true,
+				ID:          "g1",
+				Name:        "g-1",
+				DisplayName: "G-1",
+				Slug:        "g1",
+				IsEnabled:   true,
 			},
 		},
 	}
@@ -507,11 +507,11 @@ func TestModelPresetStore_DeleteModelPreset(t *testing.T) {
 		ProviderName:  provider,
 		ModelPresetID: modelPresetID,
 		Body: &spec.ModelPreset{
-			ID:           modelPresetID,
-			Name:         modelName,
-			DisplayName:  "GPT-4",
-			ShortCommand: "g4",
-			IsEnabled:    true,
+			ID:          modelPresetID,
+			Name:        modelName,
+			DisplayName: "GPT-4",
+			Slug:        "g4",
+			IsEnabled:   true,
 		},
 	})
 	if err != nil {
@@ -604,11 +604,11 @@ func TestModelPresetStore_Persistence(t *testing.T) {
 		DefaultModelPresetID: modelPresetID,
 		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
 			modelPresetID: {
-				ID:           modelPresetID,
-				Name:         modelName,
-				DisplayName:  "Persist Model",
-				ShortCommand: "pm",
-				IsEnabled:    true,
+				ID:          modelPresetID,
+				Name:        modelName,
+				DisplayName: "Persist Model",
+				Slug:        "pm",
+				IsEnabled:   true,
 			},
 		},
 	}
@@ -656,11 +656,11 @@ func TestModelPresetStore_BoundaryCases(t *testing.T) {
 
 	// Create provider with empty ModelPresets, but valid DefaultModelPresetID (must be present and in map).
 	emptyPreset := spec.ModelPreset{
-		ID:           modelPresetID1,
-		Name:         modelName1,
-		DisplayName:  "",
-		ShortCommand: "",
-		IsEnabled:    false,
+		ID:          modelPresetID1,
+		Name:        modelName1,
+		DisplayName: "",
+		Slug:        "",
+		IsEnabled:   false,
 	}
 	providerBody := spec.ProviderPreset{
 		DefaultModelPresetID: modelPresetID1,
@@ -693,7 +693,7 @@ func TestModelPresetStore_BoundaryCases(t *testing.T) {
 		ID:                          modelPresetID2,
 		Name:                        modelName2,
 		DisplayName:                 "Full",
-		ShortCommand:                "f",
+		Slug:                        "f",
 		IsEnabled:                   true,
 		Stream:                      boolPtr(true),
 		MaxPromptLength:             &maxPrompt,
@@ -740,18 +740,18 @@ func TestModelPresetStore_SetDefaultModelPreset(t *testing.T) {
 		DefaultModelPresetID: modelPresetID1,
 		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
 			modelPresetID1: {
-				ID:           modelPresetID1,
-				Name:         modelName1,
-				DisplayName:  "GPT-4",
-				ShortCommand: "g4",
-				IsEnabled:    true,
+				ID:          modelPresetID1,
+				Name:        modelName1,
+				DisplayName: "GPT-4",
+				Slug:        "g4",
+				IsEnabled:   true,
 			},
 			modelPresetID2: {
-				ID:           modelPresetID2,
-				Name:         modelName2,
-				DisplayName:  "GPT-3",
-				ShortCommand: "g3",
-				IsEnabled:    true,
+				ID:          modelPresetID2,
+				Name:        modelName2,
+				DisplayName: "GPT-3",
+				Slug:        "g3",
+				IsEnabled:   true,
 			},
 		},
 	}

@@ -475,7 +475,7 @@ export namespace spec {
 	    id: string;
 	    name: string;
 	    displayName: string;
-	    shortCommand: string;
+	    slug: string;
 	    isEnabled: boolean;
 	    stream?: boolean;
 	    maxPromptLength?: number;
@@ -501,7 +501,7 @@ export namespace spec {
 	        this.id = source["id"];
 	        this.name = source["name"];
 	        this.displayName = source["displayName"];
-	        this.shortCommand = source["shortCommand"];
+	        this.slug = source["slug"];
 	        this.isEnabled = source["isEnabled"];
 	        this.stream = source["stream"];
 	        this.maxPromptLength = source["maxPromptLength"];

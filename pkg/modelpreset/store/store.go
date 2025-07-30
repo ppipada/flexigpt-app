@@ -134,7 +134,7 @@ func (s *ModelPresetStore) AddModelPreset(
 	req *spec.AddModelPresetRequest,
 ) (*spec.AddModelPresetResponse, error) {
 	if req == nil || req.Body == nil || req.ProviderName == "" || req.ModelPresetID == "" ||
-		req.Body.ID == "" || req.Body.Name == "" || req.Body.DisplayName == "" || req.Body.ShortCommand == "" {
+		req.Body.ID == "" || req.Body.Name == "" || req.Body.DisplayName == "" || req.Body.Slug == "" {
 		return nil, errors.New("invalid request")
 	}
 

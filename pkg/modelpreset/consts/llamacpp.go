@@ -19,9 +19,9 @@ const (
 )
 
 const (
-	ShortCommandLlama4Behemoth spec.ModelShortCommand = "llama4Behemoth"
-	ShortCommandLlama4Maverick spec.ModelShortCommand = "llama4Maverick"
-	ShortCommandLlama4Scout    spec.ModelShortCommand = "llama4Scout"
+	SlugLlama4Behemoth spec.ModelSlug = "llama4Behemoth"
+	SlugLlama4Maverick spec.ModelSlug = "llama4Maverick"
+	SlugLlama4Scout    spec.ModelSlug = "llama4Scout"
 )
 
 const (
@@ -32,11 +32,11 @@ const (
 
 var LlamacppModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 	ModelPresetIDLlama4Behemoth: {
-		ID:           ModelPresetIDLlama4Behemoth,
-		Name:         Llama4Behemoth,
-		DisplayName:  DisplayNameLlama4Behemoth,
-		ShortCommand: ShortCommandLlama4Behemoth,
-		IsEnabled:    true,
+		ID:          ModelPresetIDLlama4Behemoth,
+		Name:        Llama4Behemoth,
+		DisplayName: DisplayNameLlama4Behemoth,
+		Slug:        SlugLlama4Behemoth,
+		IsEnabled:   true,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(4096),
@@ -46,11 +46,11 @@ var LlamacppModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:         IntPtr(120),
 	},
 	ModelPresetIDLlama4Maverick: {
-		ID:           ModelPresetIDLlama4Maverick,
-		Name:         Llama4Maverick,
-		DisplayName:  DisplayNameLlama4Maverick,
-		ShortCommand: ShortCommandLlama4Maverick,
-		IsEnabled:    true,
+		ID:          ModelPresetIDLlama4Maverick,
+		Name:        Llama4Maverick,
+		DisplayName: DisplayNameLlama4Maverick,
+		Slug:        SlugLlama4Maverick,
+		IsEnabled:   true,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(4096),
@@ -60,11 +60,11 @@ var LlamacppModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:         IntPtr(120),
 	},
 	ModelPresetIDLlama4Scout: {
-		ID:           ModelPresetIDLlama4Scout,
-		Name:         Llama4Scout,
-		DisplayName:  DisplayNameLlama4Scout,
-		ShortCommand: ShortCommandLlama4Scout,
-		IsEnabled:    true,
+		ID:          ModelPresetIDLlama4Scout,
+		Name:        Llama4Scout,
+		DisplayName: DisplayNameLlama4Scout,
+		Slug:        SlugLlama4Scout,
+		IsEnabled:   true,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(4096),

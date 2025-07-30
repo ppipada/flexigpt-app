@@ -17,8 +17,8 @@ const (
 )
 
 const (
-	ShortCommandDeepseekChat     spec.ModelShortCommand = "dsChat"
-	ShortCommandDeepseekReasoner spec.ModelShortCommand = "dsReason"
+	SlugDeepseekChat     spec.ModelSlug = "dsChat"
+	SlugDeepseekReasoner spec.ModelSlug = "dsReason"
 )
 
 const (
@@ -28,11 +28,11 @@ const (
 
 var DeepseekModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 	ModelPresetIDDeepseekChat: {
-		ID:           ModelPresetIDDeepseekChat,
-		Name:         DeepseekChat,
-		DisplayName:  DisplayNameDeepseekChat,
-		ShortCommand: ShortCommandDeepseekChat,
-		IsEnabled:    true,
+		ID:          ModelPresetIDDeepseekChat,
+		Name:        DeepseekChat,
+		DisplayName: DisplayNameDeepseekChat,
+		Slug:        SlugDeepseekChat,
+		IsEnabled:   true,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(8192),
@@ -42,11 +42,11 @@ var DeepseekModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:         IntPtr(120),
 	},
 	ModelPresetIDDeepseekReasoner: {
-		ID:           ModelPresetIDDeepseekReasoner,
-		Name:         DeepseekChat,
-		DisplayName:  DisplayNameDeepseekReasoner,
-		ShortCommand: ShortCommandDeepseekReasoner,
-		IsEnabled:    true,
+		ID:          ModelPresetIDDeepseekReasoner,
+		Name:        DeepseekChat,
+		DisplayName: DisplayNameDeepseekReasoner,
+		Slug:        SlugDeepseekReasoner,
+		IsEnabled:   true,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(8192),

@@ -294,7 +294,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 			name: formData.name.trim(),
 			displayName: formData.presetLabel.trim(),
 			isEnabled: formData.isEnabled,
-			shortCommand: finalModelPresetID,
+			slug: finalModelPresetID,
 			stream: formData.stream,
 			maxPromptLength: parseOrDefault(formData.maxPromptLength, defaultValues.maxPromptLength ?? 2048),
 			maxOutputLength: parseOrDefault(formData.maxOutputLength, defaultValues.maxOutputLength ?? 1024),

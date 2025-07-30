@@ -190,7 +190,7 @@ export async function PopulateModelPresetDefaults(
 			name: modelPresetID,
 			displayName: modelPresetID,
 			isEnabled: true,
-			shortCommand: modelPresetID,
+			slug: modelPresetID,
 		};
 	}
 
@@ -206,7 +206,7 @@ export async function PopulateModelPresetDefaults(
 		name: modelPreset.name,
 		displayName: modelPreset.displayName,
 		isEnabled: modelPreset.isEnabled,
-		shortCommand: modelPreset.shortCommand,
+		slug: modelPreset.slug,
 		stream: mergedModelParam.stream,
 		maxPromptLength: mergedModelParam.maxPromptLength,
 		maxOutputLength: mergedModelParam.maxOutputLength,
@@ -243,7 +243,7 @@ export function MergeInbuiltModelsWithPresets(
 				name: inbuiltProviderPresets[provider].modelPresets[modelPresetID].name,
 				displayName: inbuiltProviderPresets[provider].modelPresets[modelPresetID].displayName,
 				isEnabled: inbuiltProviderPresets[provider].modelPresets[modelPresetID].isEnabled,
-				shortCommand: inbuiltProviderPresets[provider].modelPresets[modelPresetID].shortCommand,
+				slug: inbuiltProviderPresets[provider].modelPresets[modelPresetID].slug,
 				stream: inbuiltProviderPresets[provider].modelPresets[modelPresetID].stream,
 				maxPromptLength: inbuiltProviderPresets[provider].modelPresets[modelPresetID].maxPromptLength,
 				maxOutputLength: inbuiltProviderPresets[provider].modelPresets[modelPresetID].maxOutputLength,

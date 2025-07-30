@@ -31,14 +31,14 @@ const (
 )
 
 const (
-	ShortCommandO4Mini    spec.ModelShortCommand = "o4Mini"
-	ShortCommandO3Pro     spec.ModelShortCommand = "o3Pro"
-	ShortCommandO3        spec.ModelShortCommand = "o3"
-	ShortCommandO3Mini    spec.ModelShortCommand = "o3Mini"
-	ShortCommandGPT41     spec.ModelShortCommand = "gpt41"
-	ShortCommandGPT41Mini spec.ModelShortCommand = "gpt41Mini"
-	ShortCommandGPT4O     spec.ModelShortCommand = "gpt4o"
-	ShortCommandGPT4OMini spec.ModelShortCommand = "gpt4oMini"
+	SlugO4Mini    spec.ModelSlug = "o4Mini"
+	SlugO3Pro     spec.ModelSlug = "o3Pro"
+	SlugO3        spec.ModelSlug = "o3"
+	SlugO3Mini    spec.ModelSlug = "o3Mini"
+	SlugGPT41     spec.ModelSlug = "gpt41"
+	SlugGPT41Mini spec.ModelSlug = "gpt41Mini"
+	SlugGPT4O     spec.ModelSlug = "gpt4o"
+	SlugGPT4OMini spec.ModelSlug = "gpt4oMini"
 )
 
 const (
@@ -54,11 +54,11 @@ const (
 
 var OpenAIModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 	ModelPresetIDO4Mini: {
-		ID:           ModelPresetIDO4Mini,
-		Name:         O4Mini,
-		DisplayName:  DisplayNameO4Mini,
-		ShortCommand: ShortCommandO4Mini,
-		IsEnabled:    false,
+		ID:          ModelPresetIDO4Mini,
+		Name:        O4Mini,
+		DisplayName: DisplayNameO4Mini,
+		Slug:        SlugO4Mini,
+		IsEnabled:   false,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(32768),
@@ -72,11 +72,11 @@ var OpenAIModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:      IntPtr(120),
 	},
 	ModelPresetIDO3Pro: {
-		ID:           ModelPresetIDO3Pro,
-		Name:         O3Pro,
-		DisplayName:  DisplayNameO3Pro,
-		ShortCommand: ShortCommandO3Pro,
-		IsEnabled:    false,
+		ID:          ModelPresetIDO3Pro,
+		Name:        O3Pro,
+		DisplayName: DisplayNameO3Pro,
+		Slug:        SlugO3Pro,
+		IsEnabled:   false,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(32768),
@@ -90,11 +90,11 @@ var OpenAIModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:      IntPtr(120),
 	},
 	ModelPresetIDO3: {
-		ID:           ModelPresetIDO3,
-		Name:         O3,
-		DisplayName:  DisplayNameO3,
-		ShortCommand: ShortCommandO3,
-		IsEnabled:    true,
+		ID:          ModelPresetIDO3,
+		Name:        O3,
+		DisplayName: DisplayNameO3,
+		Slug:        SlugO3,
+		IsEnabled:   true,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(32768),
@@ -108,11 +108,11 @@ var OpenAIModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:      IntPtr(120),
 	},
 	ModelPresetIDO3Mini: {
-		ID:           ModelPresetIDO3Mini,
-		Name:         O3Mini,
-		DisplayName:  DisplayNameO3Mini,
-		ShortCommand: ShortCommandO3Mini,
-		IsEnabled:    false,
+		ID:          ModelPresetIDO3Mini,
+		Name:        O3Mini,
+		DisplayName: DisplayNameO3Mini,
+		Slug:        SlugO3Mini,
+		IsEnabled:   false,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(16384),
@@ -126,11 +126,11 @@ var OpenAIModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:      IntPtr(120),
 	},
 	ModelPresetIDGPT41: {
-		ID:           ModelPresetIDGPT41,
-		Name:         GPT41,
-		DisplayName:  DisplayNameGPT41,
-		ShortCommand: ShortCommandGPT41,
-		IsEnabled:    true,
+		ID:          ModelPresetIDGPT41,
+		Name:        GPT41,
+		DisplayName: DisplayNameGPT41,
+		Slug:        SlugGPT41,
+		IsEnabled:   true,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(16384),
@@ -140,11 +140,11 @@ var OpenAIModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:         IntPtr(120),
 	},
 	ModelPresetIDGPT41Mini: {
-		ID:           ModelPresetIDGPT41Mini,
-		Name:         GPT41Mini,
-		DisplayName:  DisplayNameGPT41Mini,
-		ShortCommand: ShortCommandGPT41Mini,
-		IsEnabled:    false,
+		ID:          ModelPresetIDGPT41Mini,
+		Name:        GPT41Mini,
+		DisplayName: DisplayNameGPT41Mini,
+		Slug:        SlugGPT41Mini,
+		IsEnabled:   false,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(32768),
@@ -154,11 +154,11 @@ var OpenAIModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:         IntPtr(120),
 	},
 	ModelPresetIDGPT4O: {
-		ID:           ModelPresetIDGPT4O,
-		Name:         GPT4O,
-		DisplayName:  DisplayNameGPT4O,
-		ShortCommand: ShortCommandGPT4O,
-		IsEnabled:    false,
+		ID:          ModelPresetIDGPT4O,
+		Name:        GPT4O,
+		DisplayName: DisplayNameGPT4O,
+		Slug:        SlugGPT4O,
+		IsEnabled:   false,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(16384),
@@ -168,11 +168,11 @@ var OpenAIModelPresets = map[spec.ModelPresetID]spec.ModelPreset{
 		Timeout:         IntPtr(120),
 	},
 	ModelPresetIDGPT4OMini: {
-		ID:           ModelPresetIDGPT4OMini,
-		Name:         GPT4OMini,
-		DisplayName:  DisplayNameGPT4OMini,
-		ShortCommand: ShortCommandGPT4OMini,
-		IsEnabled:    false,
+		ID:          ModelPresetIDGPT4OMini,
+		Name:        GPT4OMini,
+		DisplayName: DisplayNameGPT4OMini,
+		Slug:        SlugGPT4OMini,
+		IsEnabled:   false,
 
 		Stream:          BoolPtr(true),
 		MaxPromptLength: IntPtr(4096),

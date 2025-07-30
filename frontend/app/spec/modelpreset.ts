@@ -78,7 +78,7 @@ export interface ModelPreset {
 	id: ModelPresetID;
 	name: ModelName;
 	displayName: string;
-	shortCommand: string;
+	slug: string;
 	isEnabled: boolean;
 	stream?: boolean;
 	maxPromptLength?: number;
@@ -94,7 +94,7 @@ export const DefaultModelPreset: ModelPreset = {
 	id: '',
 	name: '',
 	displayName: '',
-	shortCommand: '',
+	slug: '',
 	isEnabled: true,
 	stream: DefaultModelParams.stream,
 	maxPromptLength: DefaultModelParams.maxPromptLength,
