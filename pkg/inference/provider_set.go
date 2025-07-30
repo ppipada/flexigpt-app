@@ -65,7 +65,7 @@ func (ps *ProviderSetAPI) GetConfigurationInfo(
 		Body: &spec.GetConfigurationInfoResponseBody{
 			DefaultProvider:       ps.defaultProvider,
 			ConfiguredProviders:   configuredProviders,
-			InbuiltProviderModels: consts.InbuiltProviderModels,
+			InbuiltProviderModels: spec.InbuiltProviderModels,
 		},
 	}, nil
 }
@@ -89,8 +89,8 @@ func (ps *ProviderSetAPI) AddProvider(
 	providerInfo := spec.ProviderParams{
 		Name:                     req.Provider,
 		Type:                     modelpresetSpec.CustomOpenAICompatible,
-		APIKeyHeaderKey:          consts.OpenAICompatibleAPIKeyHeaderKey,
-		DefaultHeaders:           consts.OpenAICompatibleDefaultHeaders,
+		APIKeyHeaderKey:          modelpresetSpec.OpenAICompatibleAPIKeyHeaderKey,
+		DefaultHeaders:           modelpresetSpec.OpenAICompatibleDefaultHeaders,
 		APIKey:                   "",
 		Origin:                   "",
 		ChatCompletionPathPrefix: "",

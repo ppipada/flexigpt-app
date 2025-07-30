@@ -2,7 +2,13 @@ package spec
 
 import "time"
 
-const SchemaVersion = "2025-07-01"
+const (
+	OpenAICompatibleAPIKeyHeaderKey          = "Authorization"
+	OpenAICompatibleChatCompletionPathPrefix = "/v1/chat/completions"
+	SchemaVersion                            = "2025-07-01"
+)
+
+var OpenAICompatibleDefaultHeaders = map[string]string{"content-type": "application/json"}
 
 type (
 	ModelName         string

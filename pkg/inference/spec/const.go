@@ -26,9 +26,9 @@ var DeepseekProviderInfo = ProviderParams{
 	Origin: "https://api.deepseek.com",
 	Type:   modelpresetSpec.InbuiltOpenAICompatible,
 
-	APIKeyHeaderKey:          modelpresetConsts.OpenAICompatibleAPIKeyHeaderKey,
-	DefaultHeaders:           modelpresetConsts.OpenAICompatibleDefaultHeaders,
-	ChatCompletionPathPrefix: modelpresetConsts.OpenAICompatibleChatCompletionPathPrefix,
+	APIKeyHeaderKey:          modelpresetSpec.OpenAICompatibleAPIKeyHeaderKey,
+	DefaultHeaders:           modelpresetSpec.OpenAICompatibleDefaultHeaders,
+	ChatCompletionPathPrefix: modelpresetSpec.OpenAICompatibleChatCompletionPathPrefix,
 }
 
 var GoogleProviderInfo = ProviderParams{
@@ -37,8 +37,8 @@ var GoogleProviderInfo = ProviderParams{
 	Origin: "https://generativelanguage.googleapis.com",
 	Type:   modelpresetSpec.InbuiltOpenAICompatible,
 
-	APIKeyHeaderKey:          modelpresetConsts.OpenAICompatibleAPIKeyHeaderKey,
-	DefaultHeaders:           modelpresetConsts.OpenAICompatibleDefaultHeaders,
+	APIKeyHeaderKey:          modelpresetSpec.OpenAICompatibleAPIKeyHeaderKey,
+	DefaultHeaders:           modelpresetSpec.OpenAICompatibleDefaultHeaders,
 	ChatCompletionPathPrefix: "/v1beta/openai/chat/completions",
 }
 
@@ -59,9 +59,9 @@ var LlamacppProviderInfo = ProviderParams{
 	Origin: "http://127.0.0.1:8080",
 	Type:   modelpresetSpec.InbuiltOpenAICompatible,
 
-	APIKeyHeaderKey:          modelpresetConsts.OpenAICompatibleAPIKeyHeaderKey,
-	DefaultHeaders:           modelpresetConsts.OpenAICompatibleDefaultHeaders,
-	ChatCompletionPathPrefix: modelpresetConsts.OpenAICompatibleChatCompletionPathPrefix,
+	APIKeyHeaderKey:          modelpresetSpec.OpenAICompatibleAPIKeyHeaderKey,
+	DefaultHeaders:           modelpresetSpec.OpenAICompatibleDefaultHeaders,
+	ChatCompletionPathPrefix: modelpresetSpec.OpenAICompatibleChatCompletionPathPrefix,
 }
 
 var OpenAIProviderInfo = ProviderParams{
@@ -70,9 +70,9 @@ var OpenAIProviderInfo = ProviderParams{
 	Origin: "https://api.openai.com",
 	Type:   modelpresetSpec.InbuiltOpenAICompatible,
 
-	APIKeyHeaderKey:          modelpresetConsts.OpenAICompatibleAPIKeyHeaderKey,
-	DefaultHeaders:           modelpresetConsts.OpenAICompatibleDefaultHeaders,
-	ChatCompletionPathPrefix: modelpresetConsts.OpenAICompatibleChatCompletionPathPrefix,
+	APIKeyHeaderKey:          modelpresetSpec.OpenAICompatibleAPIKeyHeaderKey,
+	DefaultHeaders:           modelpresetSpec.OpenAICompatibleDefaultHeaders,
+	ChatCompletionPathPrefix: modelpresetSpec.OpenAICompatibleChatCompletionPathPrefix,
 }
 
 var InbuiltProviders = map[modelpresetSpec.ProviderName]ProviderParams{
@@ -82,4 +82,13 @@ var InbuiltProviders = map[modelpresetSpec.ProviderName]ProviderParams{
 	modelpresetConsts.ProviderNameHuggingFace: HuggingfaceProviderInfo,
 	modelpresetConsts.ProviderNameLlamaCPP:    LlamacppProviderInfo,
 	modelpresetConsts.ProviderNameOpenAI:      OpenAIProviderInfo,
+}
+
+var InbuiltProviderModels = map[modelpresetSpec.ProviderName]modelpresetSpec.ProviderPreset{
+	modelpresetConsts.ProviderNameAnthropic:   modelpresetConsts.AnthropicProviderPreset,
+	modelpresetConsts.ProviderNameDeepseek:    modelpresetConsts.DeepseekProviderPreset,
+	modelpresetConsts.ProviderNameGoogle:      modelpresetConsts.GoogleProviderPreset,
+	modelpresetConsts.ProviderNameHuggingFace: modelpresetConsts.HuggingfaceProviderPreset,
+	modelpresetConsts.ProviderNameLlamaCPP:    modelpresetConsts.LlamacppProviderPreset,
+	modelpresetConsts.ProviderNameOpenAI:      modelpresetConsts.OpenAIProviderPreset,
 }
