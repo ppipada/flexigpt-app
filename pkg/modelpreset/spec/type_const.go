@@ -1,14 +1,35 @@
 package spec
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 const (
+	ModelPresetsBuiltInOverlayFileName = "modelpresetsbuiltin.overlay.json"
+
 	OpenAICompatibleAPIKeyHeaderKey          = "Authorization"
 	OpenAICompatibleChatCompletionPathPrefix = "/v1/chat/completions"
-	SchemaVersion                            = "2025-07-01"
+
+	SchemaVersion = "2025-07-01"
 )
 
 var OpenAICompatibleDefaultHeaders = map[string]string{"content-type": "application/json"}
+
+var (
+	ErrInvalidDir = errors.New("invalid directory")
+
+	// Look-ups.
+	ErrProviderNotFound      = errors.New("provider not found")
+	ErrModelPresetNotFound   = errors.New("model preset not found")
+	ErrBuiltInProviderAbsent = errors.New("provider not found in built-in data")
+
+	// Validation.
+	ErrNilProvider      = errors.New("provider preset is nil")
+	ErrNilModelPreset   = errors.New("model preset is nil")
+	ErrNoModelPresets   = errors.New("provider has no model presets")
+	ErrInvalidTimestamp = errors.New("zero timestamp")
+)
 
 type (
 	ModelName        string
