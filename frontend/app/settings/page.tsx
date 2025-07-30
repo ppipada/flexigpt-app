@@ -3,14 +3,14 @@ import { useEffect, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
 
-import type { ProviderName, ProviderPreset } from '@/models/modelpresetsmodel';
-import { DefaultProviderName } from '@/models/modelpresetsmodel';
-import type { AISetting } from '@/models/settingmodel';
+import type { ProviderName, ProviderPreset } from '@/spec/modelpreset';
+import { DefaultProviderName } from '@/spec/modelpreset';
+import type { AISetting } from '@/spec/setting';
+
+import { omitManyKeys } from '@/lib/obj_utils';
 
 import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
 import { AddAISetting, DeleteAISetting, SetAppSettings } from '@/apis/settingstore_helper';
-
-import { omitManyKeys } from '@/lib/obj_utils';
 
 import DownloadButton from '@/components/download_button';
 import Dropdown from '@/components/dropdown';

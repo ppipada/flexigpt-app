@@ -43,7 +43,7 @@
 	},
 	"type": "go",
 	"goImpl": {
-		"func": "github.com/ppipada/flexigpt-app/pkg/builtin/gotools/fs.SearchFiles"
+		"func": "github.com/ppipada/flexigpt-app/pkg/builtin/gotool/fs.SearchFiles"
 	},
 	"isEnabled": true,
 	"isBuiltIn": true,

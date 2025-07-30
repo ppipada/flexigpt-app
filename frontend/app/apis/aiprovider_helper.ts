@@ -1,11 +1,7 @@
-import {
-	type ChatCompletionRequestMessage,
-	ChatCompletionRoleEnum,
-	type CompletionResponse,
-} from '@/models/aiprovidermodel';
-import type { ConversationMessage } from '@/models/conversationmodel';
-import { ConversationRoleEnum } from '@/models/conversationmodel';
-import type { ModelParams, ProviderName } from '@/models/modelpresetsmodel';
+import { type ChatCompletionRequestMessage, ChatCompletionRoleEnum, type CompletionResponse } from '@/spec/aiprovider';
+import type { ConversationMessage } from '@/spec/conversation';
+import { ConversationRoleEnum } from '@/spec/conversation';
+import type { ModelParams, ProviderName } from '@/spec/modelpreset';
 
 import { log, providerSetAPI } from '@/apis/baseapi';
 

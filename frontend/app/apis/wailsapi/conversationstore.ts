@@ -3,7 +3,10 @@ import type {
 	ConversationMessage,
 	ConversationSearchItem,
 	IConversationStoreAPI,
-} from '@/models/conversationmodel';
+} from '@/spec/conversation';
+
+import { parseAnyToTime } from '@/lib/date_utils';
+import { extractTimeFromUUIDv7Str } from '@/lib/uuid_utils';
 
 import {
 	DeleteConversation,
@@ -14,9 +17,6 @@ import {
 	SearchConversations,
 } from '@/apis/wailsjs/go/main/ConversationCollectionWrapper';
 import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
-
-import { parseAnyToTime } from '@/lib/date_utils';
-import { extractTimeFromUUIDv7Str } from '@/lib/uuid_utils';
 
 /**
  * @public

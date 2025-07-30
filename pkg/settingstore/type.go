@@ -1,7 +1,7 @@
 package settingstore
 
 import (
-	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
+	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
 // AISetting represents the settings for an AI provider.
@@ -13,11 +13,11 @@ type AISetting struct {
 }
 
 // AISettingsSchema represents the schema for AI settings for different providers.
-type AISettingsSchema map[modelSpec.ProviderName]AISetting
+type AISettingsSchema map[modelpresetSpec.ProviderName]AISetting
 
 // AppSettings app settings.
 type AppSettings struct {
-	DefaultProvider modelSpec.ProviderName `json:"defaultProvider"`
+	DefaultProvider modelpresetSpec.ProviderName `json:"defaultProvider"`
 }
 
 // SettingsSchema represents the complete settings schema including app settings.

@@ -4,8 +4,8 @@ import type {
 	CompletionResponse,
 	ConfigurationResponse,
 	IProviderSetAPI,
-} from '@/models/aiprovidermodel';
-import type { ModelParams, ProviderInfo, ProviderName, ProviderPreset } from '@/models/modelpresetsmodel';
+} from '@/spec/aiprovider';
+import type { ModelParams, ProviderInfo, ProviderName, ProviderPreset } from '@/spec/modelpreset';
 
 import {
 	AddProvider,

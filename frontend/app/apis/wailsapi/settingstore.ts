@@ -1,5 +1,5 @@
-import type { ProviderName } from '@/models/modelpresetsmodel';
-import type { AISetting, AISettingAttrs, ISettingStoreAPI, SettingsSchema } from '@/models/settingmodel';
+import type { ProviderName } from '@/spec/modelpreset';
+import type { AISetting, AISettingAttrs, ISettingStoreAPI, SettingsSchema } from '@/spec/setting';
 
 import {
 	AddAISetting,

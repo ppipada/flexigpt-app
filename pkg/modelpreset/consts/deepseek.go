@@ -1,7 +1,7 @@
 package consts
 
 import (
-	"github.com/ppipada/flexigpt-app/pkg/model/spec"
+	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
 const ProviderNameDeepseek spec.ProviderName = "deepseek"

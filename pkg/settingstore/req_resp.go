@@ -1,7 +1,7 @@
 package settingstore
 
 import (
-	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
+	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
 type GetAllSettingsRequest struct {
@@ -30,13 +30,13 @@ type SetAppSettingsRequest struct {
 type SetAppSettingsResponse struct{}
 
 type AddAISettingRequest struct {
-	ProviderName modelSpec.ProviderName `path:"providerName"`
+	ProviderName modelpresetSpec.ProviderName `path:"providerName"`
 	Body         *AISetting
 }
 type AddAISettingResponse struct{}
 
 type DeleteAISettingRequest struct {
-	ProviderName modelSpec.ProviderName `path:"providerName"`
+	ProviderName modelpresetSpec.ProviderName `path:"providerName"`
 }
 type DeleteAISettingResponse struct{}
 
@@ -45,7 +45,7 @@ type SetAISettingAPIKeyRequestBody struct {
 }
 
 type SetAISettingAPIKeyRequest struct {
-	ProviderName modelSpec.ProviderName `path:"providerName"`
+	ProviderName modelpresetSpec.ProviderName `path:"providerName"`
 	Body         *SetAISettingAPIKeyRequestBody
 }
 
@@ -57,7 +57,7 @@ type SetAISettingAttrsRequestBody struct {
 	ChatCompletionPathPrefix *string `json:"chatCompletionPathPrefix,omitempty"`
 }
 type SetAISettingAttrsRequest struct {
-	ProviderName modelSpec.ProviderName `path:"providerName"`
+	ProviderName modelpresetSpec.ProviderName `path:"providerName"`
 	Body         *SetAISettingAttrsRequestBody
 }
 

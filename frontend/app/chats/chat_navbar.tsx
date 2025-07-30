@@ -2,7 +2,7 @@ import type { FC } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
 
-import type { ConversationSearchItem } from '@/models/conversationmodel';
+import type { ConversationSearchItem } from '@/spec/conversation';
 
 import DownloadButton from '@/components/download_button';
 

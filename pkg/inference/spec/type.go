@@ -1,6 +1,6 @@
 package spec
 
-import "github.com/ppipada/flexigpt-app/pkg/model/spec"
+import "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 
 type ChatCompletionRoleEnum string
 

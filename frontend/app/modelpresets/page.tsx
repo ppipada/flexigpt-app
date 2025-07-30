@@ -1,8 +1,8 @@
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 
-import { type ProviderName, type ProviderPreset } from '@/models/modelpresetsmodel';
-import type { AISetting } from '@/models/settingmodel';
+import { type ProviderName, type ProviderPreset } from '@/spec/modelpreset';
+import type { AISetting } from '@/spec/setting';
 
 import { modelPresetStoreAPI, providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
 import { MergeInbuiltModelsWithPresets } from '@/apis/modelpresetstore_helper';

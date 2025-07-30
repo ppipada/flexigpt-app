@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/ppipada/flexigpt-app/pkg/model/consts"
-	"github.com/ppipada/flexigpt-app/pkg/model/spec"
+	"github.com/ppipada/flexigpt-app/pkg/modelpreset/consts"
+	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 )

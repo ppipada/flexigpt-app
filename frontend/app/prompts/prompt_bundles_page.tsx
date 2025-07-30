@@ -2,11 +2,11 @@ import { type FC, useEffect, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
 
-import type { PromptBundle, PromptTemplate } from '@/models/promptmodel';
-
-import { promptStoreAPI } from '@/apis/baseapi';
+import type { PromptBundle, PromptTemplate } from '@/spec/prompt';
 
 import { getUUIDv7 } from '@/lib/uuid_utils';
+
+import { promptStoreAPI } from '@/apis/baseapi';
 
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';

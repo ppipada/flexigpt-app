@@ -1,4 +1,4 @@
-package gotools
+package gotool
 
 import (
 	"context"

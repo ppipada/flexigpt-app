@@ -29,7 +29,7 @@ import (
 const (
 	fetchBatch            = 512            // IO chunk for internal dir scans
 	maxPageSize           = 256            // Maximum allowed page size for listing.
-	defPageSize           = 25             // Default page size for listing.
+	defaultPageSize       = 25             // Default page size for listing.
 	softDeleteGrace       = 48 * time.Hour // Grace period before hard-deleting a soft-deleted bundle.
 	cleanupInterval       = 24 * time.Hour // Interval for periodic cleanup sweep.
 	builtInSnapshotMaxAge = time.Hour
@@ -314,7 +314,7 @@ func (s *PromptTemplateStore) ListPromptBundles(
 ) (*spec.ListPromptBundlesResponse, error) {
 	// Resolve paging / filter parameters.
 	var (
-		pageSize        = defPageSize
+		pageSize        = defaultPageSize
 		wantIDs         = map[bundleitemutils.BundleID]struct{}{}
 		includeDisabled bool
 		cursorMod       time.Time
@@ -326,7 +326,7 @@ func (s *PromptTemplateStore) ListPromptBundles(
 		if tok, err := base64JSONDecode[bundlePageToken](req.PageToken); err == nil {
 			pageSize = tok.PageSize
 			if pageSize <= 0 || pageSize > maxPageSize {
-				pageSize = defPageSize
+				pageSize = defaultPageSize
 			}
 			includeDisabled = tok.IncludeDisabled
 			if tok.CursorMod != "" {
@@ -790,7 +790,7 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 
 	pageHint := tok.RecommendedPageSize
 	if pageHint <= 0 || pageHint > maxPageSize {
-		pageHint = defPageSize
+		pageHint = defaultPageSize
 	}
 
 	//  Prepare helpers / constant filters
@@ -961,7 +961,7 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 		return nil, spec.ErrFTSDisabled
 	}
 
-	pageSize := defPageSize
+	pageSize := defaultPageSize
 	if req.PageSize > 0 && req.PageSize <= maxPageSize {
 		pageSize = req.PageSize
 	}

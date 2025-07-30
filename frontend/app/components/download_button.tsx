@@ -3,12 +3,12 @@ import { type ButtonHTMLAttributes, type FC, useState } from 'react';
 
 import { FiDownload } from 'react-icons/fi';
 
-import type { FileFilter } from '@/models/backendmodel';
-
-import { backendAPI } from '@/apis/baseapi';
+import type { FileFilter } from '@/spec/backend';
 
 import { Base64EncodeUTF8, GenerateRandomString } from '@/lib/encode_decode';
 import { MimeTypeMap, ProgrammingLanguages } from '@/lib/markdown_utils';
+
+import { backendAPI } from '@/apis/baseapi';
 
 async function saveFile(defaultFilename: string, contentBase64: string, filters: Array<FileFilter>): Promise<void> {
 	await backendAPI.savefile(defaultFilename, contentBase64, filters);

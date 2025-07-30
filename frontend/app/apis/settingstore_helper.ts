@@ -1,6 +1,6 @@
-import { type AddProviderRequest } from '@/models/aiprovidermodel';
-import { type ProviderName } from '@/models/modelpresetsmodel';
-import { type AISetting, type AISettingAttrs } from '@/models/settingmodel';
+import { type AddProviderRequest } from '@/spec/aiprovider';
+import { type ProviderName } from '@/spec/modelpreset';
+import { type AISetting, type AISettingAttrs } from '@/spec/setting';
 
 import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
 

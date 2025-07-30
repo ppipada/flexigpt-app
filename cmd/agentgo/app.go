@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	modelConsts "github.com/ppipada/flexigpt-app/pkg/model/consts"
+	modelpresetConsts "github.com/ppipada/flexigpt-app/pkg/modelpreset/consts"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
@@ -193,7 +193,7 @@ func (a *App) initManagers() {
 		panic("Failed to initialize managers: tool store initialization failed")
 	}
 
-	err = InitProviderSetWrapper(a.providerSetAPI, modelConsts.ProviderNameOpenAI)
+	err = InitProviderSetWrapper(a.providerSetAPI, modelpresetConsts.ProviderNameOpenAI)
 	if err != nil {
 		slog.Error(
 			"Couldn't initialize provider set",

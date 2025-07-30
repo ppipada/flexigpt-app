@@ -4,21 +4,21 @@ import (
 	"context"
 
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
-	"github.com/ppipada/flexigpt-app/pkg/model/spec"
-	modelStore "github.com/ppipada/flexigpt-app/pkg/model/store"
+	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	modelpresetStore "github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
 )
 
 // ModelPresetStoreWrapper is a wrapper around ModelPresetStore that provides non-contextual APIs.
 type ModelPresetStoreWrapper struct {
-	store *modelStore.ModelPresetStore
+	store *modelpresetStore.ModelPresetStore
 }
 
 func InitModelPresetStoreWrapper(m *ModelPresetStoreWrapper, filename string) error {
 	if m == nil {
 		panic("Initializing model presets store without a object")
 	}
-	modelPresetStore := &modelStore.ModelPresetStore{}
-	err := modelStore.InitModelPresetStore(modelPresetStore, filename)
+	modelPresetStore := &modelpresetStore.ModelPresetStore{}
+	err := modelpresetStore.InitModelPresetStore(modelPresetStore, filename)
 	if err != nil {
 		return err
 	}

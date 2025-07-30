@@ -1,16 +1,16 @@
 import type { FC } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import type { Conversation, ConversationMessage, ConversationSearchItem } from '@/models/conversationmodel';
-import { ConversationRoleEnum } from '@/models/conversationmodel';
-import type { ModelParams } from '@/models/modelpresetsmodel';
-import { type ChatOptions, DefaultChatOptions } from '@/models/modelpresetsmodel';
-
-import { GetCompletionMessage } from '@/apis/aiprovider_helper';
-import { conversationStoreAPI } from '@/apis/baseapi';
+import type { Conversation, ConversationMessage, ConversationSearchItem } from '@/spec/conversation';
+import { ConversationRoleEnum } from '@/spec/conversation';
+import type { ModelParams } from '@/spec/modelpreset';
+import { type ChatOptions, DefaultChatOptions } from '@/spec/modelpreset';
 
 import { generateTitle } from '@/lib/text_utils';
 import { getUUIDv7 } from '@/lib/uuid_utils';
+
+import { GetCompletionMessage } from '@/apis/aiprovider_helper';
+import { conversationStoreAPI } from '@/apis/baseapi';
 
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import type { DocStore } from '@/models/docstoremodel';
+import type { DocStore } from '@/spec/docstore';
 
 interface ModifyStoreProps {
 	isOpen: boolean;

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ppipada/flexigpt-app/pkg/model/spec"
-	"github.com/ppipada/flexigpt-app/pkg/model/store"
+	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	"github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
 )
 
 func TestModelPresetStore_GetAllModelPresets(t *testing.T) {

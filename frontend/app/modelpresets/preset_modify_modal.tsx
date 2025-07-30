@@ -9,7 +9,7 @@ import {
 	type ProviderName,
 	ReasoningLevel,
 	ReasoningType,
-} from '@/models/modelpresetsmodel';
+} from '@/spec/modelpreset';
 
 import { PopulateModelPresetDefaults } from '@/apis/modelpresetstore_helper';
 

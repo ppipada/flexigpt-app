@@ -7,7 +7,7 @@ import type {
 	ToolBundle,
 	ToolListItem,
 	ToolType,
-} from '@/models/toolmodel';
+} from '@/spec/tool';
 
 import {
 	DeleteTool,

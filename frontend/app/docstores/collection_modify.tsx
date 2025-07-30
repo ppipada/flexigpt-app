@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
-import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/models/commands';
-import type { Collection } from '@/models/docstoremodel';
+import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/spec/command';
+import type { Collection } from '@/spec/docstore';
 
 interface ModifyCollectionProps {
 	isOpen: boolean;

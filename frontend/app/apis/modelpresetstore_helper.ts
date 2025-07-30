@@ -9,7 +9,7 @@ import {
 	type ProviderName,
 	type ProviderPreset,
 	type ReasoningParams,
-} from '@/models/modelpresetsmodel';
+} from '@/spec/modelpreset';
 
 import { modelPresetStoreAPI, providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
 

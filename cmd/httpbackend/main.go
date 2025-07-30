@@ -18,8 +18,8 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/settingstore"
 
 	conversationStore "github.com/ppipada/flexigpt-app/pkg/conversation/store"
-	modelConsts "github.com/ppipada/flexigpt-app/pkg/model/consts"
-	modelStore "github.com/ppipada/flexigpt-app/pkg/model/store"
+	modelpresetConsts "github.com/ppipada/flexigpt-app/pkg/modelpreset/consts"
+	modelpresetStore "github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
 	promptStore "github.com/ppipada/flexigpt-app/pkg/prompt/store"
 	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
 )
@@ -44,7 +44,7 @@ func main() {
 		router := http.NewServeMux()
 		api := humago.New(router, huma.DefaultConfig("FlexiGPTServer API", "1.0.0"))
 		app := NewBackendApp(
-			modelConsts.ProviderNameOpenAI,
+			modelpresetConsts.ProviderNameOpenAI,
 			opts.SettingsDirPath,
 			opts.ConversationsDirPath,
 			opts.ModelPresetsDirPath,
@@ -54,7 +54,7 @@ func main() {
 		settingstore.InitSettingStoreHandlers(api, app.settingStoreAPI)
 		conversationStore.InitConversationStoreHandlers(api, app.conversationStoreAPI)
 		inference.InitProviderSetHandlers(api, app.providerSetAPI)
-		modelStore.InitModelPresetStoreHandlers(api, app.modelPresetStoreAPI)
+		modelpresetStore.InitModelPresetStoreHandlers(api, app.modelPresetStoreAPI)
 		promptStore.InitPromptTemplateStoreHandlers(api, app.promptTemplateStoreAPI)
 		toolStore.InitToolStoreHandlers(api, app.toolStoreAPI)
 		// Create the HTTP server.

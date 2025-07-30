@@ -1,7 +1,7 @@
 package spec
 
 import (
-	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
+	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
 type APIRequestDetails struct {
@@ -55,20 +55,20 @@ type AddProviderRequestBody struct {
 }
 
 type AddProviderRequest struct {
-	Provider modelSpec.ProviderName `path:"provider" required:"true"`
+	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
 	Body     *AddProviderRequestBody
 }
 
 type AddProviderResponse struct{}
 
 type DeleteProviderRequest struct {
-	Provider modelSpec.ProviderName `path:"provider" required:"true"`
+	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
 }
 
 type DeleteProviderResponse struct{}
 
 type SetDefaultProviderRequestBody struct {
-	Provider modelSpec.ProviderName `json:"provider" required:"true"`
+	Provider modelpresetSpec.ProviderName `json:"provider" required:"true"`
 }
 
 type SetDefaultProviderRequest struct {
@@ -80,9 +80,9 @@ type SetDefaultProviderResponse struct{}
 type GetConfigurationInfoRequest struct{}
 
 type GetConfigurationInfoResponseBody struct {
-	DefaultProvider       modelSpec.ProviderName                              `json:"defaultProvider"`
-	ConfiguredProviders   []ProviderParams                                    `json:"configuredProviders"`
-	InbuiltProviderModels map[modelSpec.ProviderName]modelSpec.ProviderPreset `json:"inbuiltProviderModels"`
+	DefaultProvider       modelpresetSpec.ProviderName                                    `json:"defaultProvider"`
+	ConfiguredProviders   []ProviderParams                                                `json:"configuredProviders"`
+	InbuiltProviderModels map[modelpresetSpec.ProviderName]modelpresetSpec.ProviderPreset `json:"inbuiltProviderModels"`
 }
 
 type GetConfigurationInfoResponse struct {
@@ -94,7 +94,7 @@ type SetProviderAPIKeyRequestBody struct {
 }
 
 type SetProviderAPIKeyRequest struct {
-	Provider modelSpec.ProviderName `path:"provider" required:"true"`
+	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
 	Body     *SetProviderAPIKeyRequestBody
 }
 
@@ -106,14 +106,14 @@ type SetProviderAttributeRequestBody struct {
 }
 
 type SetProviderAttributeRequest struct {
-	Provider modelSpec.ProviderName `path:"provider" required:"true"`
+	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
 	Body     *SetProviderAttributeRequestBody
 }
 
 type SetProviderAttributeResponse struct{}
 
 type FetchCompletionRequestBody struct {
-	Provider     modelSpec.ProviderName         `json:"provider"         required:"true"`
+	Provider     modelpresetSpec.ProviderName   `json:"provider"         required:"true"`
 	Prompt       string                         `json:"prompt"           required:"true"`
 	ModelParams  ModelParams                    `json:"spec.ModelParams" required:"true"`
 	PrevMessages []ChatCompletionRequestMessage `json:"prevMessages"`

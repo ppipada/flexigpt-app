@@ -10,9 +10,9 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import supersub from 'remark-supersub';
 
-import { backendAPI } from '@/apis/baseapi';
-
 import { SanitizeLaTeX } from '@/lib/markdown_utils';
+
+import { backendAPI } from '@/apis/baseapi';
 
 import CodeBlock from '@/components/markdown_code_block';
 

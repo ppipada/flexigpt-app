@@ -1,7 +1,7 @@
 import { sprintf } from 'sprintf-js';
 
-import type { FileFilter, IBackendAPI } from '@/models/backendmodel';
-import type { ILogger } from '@/models/loggermodel';
+import type { FileFilter, IBackendAPI } from '@/spec/backend';
+import type { ILogger } from '@/spec/logger';
 
 import { Ping, SaveFile } from '@/apis/wailsjs/go/main/App';
 import { BrowserOpenURL, LogDebug, LogError, LogInfo, LogWarning } from '@/apis/wailsjs/runtime/runtime';

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
+	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 )
@@ -215,7 +215,7 @@ func (s *SettingStore) SetAISettingAttrs(
 }
 
 func (s *SettingStore) getProviderData(
-	providerName modelSpec.ProviderName,
+	providerName modelpresetSpec.ProviderName,
 	forceFetch bool,
 ) (currentData, aiSettings, providerData map[string]any, err error) {
 	// 1) GetAll with no forced fetch (or use the boolean if you sometimes need forced).

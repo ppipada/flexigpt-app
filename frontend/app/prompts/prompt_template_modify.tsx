@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
-import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/models/commands';
-import { PromptRoleEnum, type PromptTemplate } from '@/models/promptmodel';
+import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/spec/command';
+import { PromptRoleEnum, type PromptTemplate } from '@/spec/prompt';
 
 import { omitManyKeys } from '@/lib/obj_utils';
 import { validateSlug, validateTags } from '@/lib/text_utils';

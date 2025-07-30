@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
-import { TOOL_INVOKE_CHAR } from '@/models/commands';
-import { type Tool, ToolType } from '@/models/toolmodel';
+import { TOOL_INVOKE_CHAR } from '@/spec/command';
+import { type Tool, ToolType } from '@/spec/tool';
 
 import { omitManyKeys } from '@/lib/obj_utils';
 import { validateSlug, validateTags } from '@/lib/text_utils';

@@ -38,7 +38,7 @@
 	},
 	"type": "go",
 	"goImpl": {
-		"func": "github.com/ppipada/flexigpt-app/pkg/builtin/gotools/fs.ReadFile"
+		"func": "github.com/ppipada/flexigpt-app/pkg/builtin/gotool/fs.ReadFile"
 	},
 	"isEnabled": true,
 	"isBuiltIn": true,

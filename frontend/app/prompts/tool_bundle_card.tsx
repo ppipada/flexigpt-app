@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp, FiEdit, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
-import { TOOL_INVOKE_CHAR } from '@/models/commands';
+import { TOOL_INVOKE_CHAR } from '@/spec/command';
 // You need to implement this
 
-import { type Tool, type ToolBundle, ToolType } from '@/models/toolmodel';
+import { type Tool, type ToolBundle, ToolType } from '@/spec/tool';
 
 import { toolStoreAPI } from '@/apis/baseapi';
 

@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
 
-import type { Tool, ToolBundle } from '@/models/toolmodel';
-
-import { toolStoreAPI } from '@/apis/baseapi';
+import type { Tool, ToolBundle } from '@/spec/tool';
 
 // Your IToolStoreAPI instance
 import { getUUIDv7 } from '@/lib/uuid_utils';
+
+import { toolStoreAPI } from '@/apis/baseapi';
 
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';

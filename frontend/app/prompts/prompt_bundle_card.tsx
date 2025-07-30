@@ -2,8 +2,8 @@ import { type FC, useEffect, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp, FiEdit, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
-import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/models/commands';
-import type { PromptBundle, PromptTemplate } from '@/models/promptmodel';
+import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/spec/command';
+import type { PromptBundle, PromptTemplate } from '@/spec/prompt';
 
 import { promptStoreAPI } from '@/apis/baseapi';
 

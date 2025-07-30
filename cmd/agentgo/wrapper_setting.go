@@ -6,7 +6,7 @@ import (
 
 	inferenceSpec "github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
-	modelConsts "github.com/ppipada/flexigpt-app/pkg/model/consts"
+	modelpresetConsts "github.com/ppipada/flexigpt-app/pkg/modelpreset/consts"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore"
 )
 
@@ -35,7 +35,7 @@ func InitProviderSetUsingSettings(s *SettingStoreWrapper, p *ProviderSetWrapper)
 	}
 
 	for providerName, aiSetting := range allSettingsResponse.Body.AISettings {
-		if _, exists := modelConsts.InbuiltProviderModels[providerName]; exists {
+		if _, exists := modelpresetConsts.InbuiltProviderModels[providerName]; exists {
 			// Update inbuilt providers.
 			if aiSetting.APIKey != "" {
 				_, err = p.SetProviderAPIKey(

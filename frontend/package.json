@@ -90,7 +90,7 @@
 			"app/apis/wailsjs/go/main/SettingStoreWrapper.js",
 			"app/apis/wailsjs/go/main/ModelPresetStoreWrapper.js",
 			"app/apis/wailsjs/go/main/PromptTemplateStoreWrapper.js",
-			"app/models/aiprovidermodel.ts",
+			"app/spec/aiprovider.ts",
 			"app/lib/highlight_worker.ts"
 		],
 		"ignoreBinaries": [],
@@ -123,9 +123,9 @@
 		"importOrder": [
 			"^react$",
 			"<THIRD_PARTY_MODULES>",
-			"^@/models/(.*)$",
-			"^@/apis/(.*)$",
+			"^@/spec/(.*)$",
 			"^@/lib/(.*)$",
+			"^@/apis/(.*)$",
 			"^@/components/(.*)$",
 			"^@/(.*)$",
 			"^[./]"

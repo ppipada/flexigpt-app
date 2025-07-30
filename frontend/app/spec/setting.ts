@@ -1,4 +1,4 @@
-import { type ProviderName } from '@/models/modelpresetsmodel';
+import { type ProviderName } from '@/spec/modelpreset';
 
 export interface AISetting {
 	isEnabled: boolean;

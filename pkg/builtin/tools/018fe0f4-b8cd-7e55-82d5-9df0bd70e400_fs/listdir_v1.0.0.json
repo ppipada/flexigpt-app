@@ -38,7 +38,7 @@
 	},
 	"type": "go",
 	"goImpl": {
-		"func": "github.com/ppipada/flexigpt-app/pkg/builtin/gotools/fs.ListDirectory"
+		"func": "github.com/ppipada/flexigpt-app/pkg/builtin/gotool/fs.ListDirectory"
 	},
 	"isEnabled": true,
 	"isBuiltIn": true,

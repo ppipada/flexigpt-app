@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react';
 
 import { FiCheckCircle, FiChevronDown, FiChevronUp, FiHelpCircle, FiTrash2, FiXCircle } from 'react-icons/fi';
 
-import type { ProviderName } from '@/models/modelpresetsmodel';
-import { ProviderInfoDescription } from '@/models/modelpresetsmodel';
-import type { AISetting, AISettingAttrs } from '@/models/settingmodel';
+import type { ProviderName } from '@/spec/modelpreset';
+import { ProviderInfoDescription } from '@/spec/modelpreset';
+import type { AISetting, AISettingAttrs } from '@/spec/setting';
 
 import { SetAISettingAPIKey, SetAISettingAttrs } from '@/apis/settingstore_helper';
 

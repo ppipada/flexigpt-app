@@ -4,6 +4,12 @@ import (
 	"time"
 )
 
+const (
+	ConversationFileExtension = "json"
+	MaxPageSize               = 256
+	DefaultPageSize           = 12
+)
+
 // ConversationRoleEnum represents the role of a participant in a conversation.
 type ConversationRoleEnum string
 

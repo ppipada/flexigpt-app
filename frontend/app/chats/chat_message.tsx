@@ -3,8 +3,8 @@ import { memo, useState } from 'react';
 
 import { FiCompass, FiUser } from 'react-icons/fi';
 
-import type { ConversationMessage } from '@/models/conversationmodel';
-import { ConversationRoleEnum } from '@/models/conversationmodel';
+import type { ConversationMessage } from '@/spec/conversation';
+import { ConversationRoleEnum } from '@/spec/conversation';
 
 import ChatMessageContent from '@/chats/chat_message_content';
 import EditBox from '@/chats/chat_message_editbox';

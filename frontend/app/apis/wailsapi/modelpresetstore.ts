@@ -5,7 +5,7 @@ import type {
 	PresetsSchema,
 	ProviderName,
 	ProviderPreset,
-} from '@/models/modelpresetsmodel';
+} from '@/spec/modelpreset';
 
 import {
 	AddModelPreset,

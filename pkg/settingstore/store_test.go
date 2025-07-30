@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ppipada/flexigpt-app/pkg/model/spec"
+	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
 // TestSettingStore_GetAllSettings exercises the GetAllSettings method.

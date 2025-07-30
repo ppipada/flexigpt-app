@@ -6,7 +6,7 @@ import type {
 	PromptTemplate,
 	PromptTemplateListItem,
 	PromptVariable,
-} from '@/models/promptmodel';
+} from '@/spec/prompt';
 
 import {
 	DeletePromptBundle,

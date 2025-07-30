@@ -6,20 +6,20 @@ import (
 	"log/slog"
 
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
-	"github.com/ppipada/flexigpt-app/pkg/model/consts"
-	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
+	"github.com/ppipada/flexigpt-app/pkg/modelpreset/consts"
+	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
 // Define the ProviderSetAPI struct.
 type ProviderSetAPI struct {
-	defaultProvider modelSpec.ProviderName
-	providers       map[modelSpec.ProviderName]CompletionProvider
+	defaultProvider modelpresetSpec.ProviderName
+	providers       map[modelpresetSpec.ProviderName]CompletionProvider
 	debug           bool
 }
 
 // NewProviderSetAPI creates a new ProviderSet with the specified default provider.
 func NewProviderSetAPI(
-	defaultInbuiltProvider modelSpec.ProviderName,
+	defaultInbuiltProvider modelpresetSpec.ProviderName,
 	debug bool,
 ) (*ProviderSetAPI, error) {
 	_, exists := spec.InbuiltProviders[defaultInbuiltProvider]
@@ -88,7 +88,7 @@ func (ps *ProviderSetAPI) AddProvider(
 
 	providerInfo := spec.ProviderParams{
 		Name:                     req.Provider,
-		Type:                     modelSpec.CustomOpenAICompatible,
+		Type:                     modelpresetSpec.CustomOpenAICompatible,
 		APIKeyHeaderKey:          consts.OpenAICompatibleAPIKeyHeaderKey,
 		DefaultHeaders:           consts.OpenAICompatibleDefaultHeaders,
 		APIKey:                   "",
@@ -141,9 +141,9 @@ func (ps *ProviderSetAPI) DeleteProvider(
 	}
 
 	pinfo := papi.GetProviderInfo(ctx)
-	if pinfo.Type == modelSpec.InbuiltOpenAICompatible ||
-		pinfo.Type == modelSpec.InbuiltAnthropicCompatible ||
-		pinfo.Type == modelSpec.InbuiltHuggingFaceCompatible {
+	if pinfo.Type == modelpresetSpec.InbuiltOpenAICompatible ||
+		pinfo.Type == modelpresetSpec.InbuiltAnthropicCompatible ||
+		pinfo.Type == modelpresetSpec.InbuiltHuggingFaceCompatible {
 		return nil, errors.New(
 			"invalid provider: cannot delete inbuilt provider",
 		)
@@ -237,8 +237,8 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	return &spec.FetchCompletionResponse{Body: resp}, nil
 }
 
-func getInbuiltProviderAPI(debug bool) map[modelSpec.ProviderName]CompletionProvider {
-	return map[modelSpec.ProviderName]CompletionProvider{
+func getInbuiltProviderAPI(debug bool) map[modelpresetSpec.ProviderName]CompletionProvider {
+	return map[modelpresetSpec.ProviderName]CompletionProvider{
 		consts.ProviderNameAnthropic: NewAnthropicCompatibleAPI(
 			spec.AnthropicProviderInfo,
 			debug,

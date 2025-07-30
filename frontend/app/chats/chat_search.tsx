@@ -3,12 +3,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { FiSearch } from 'react-icons/fi';
 
-import type { ConversationSearchItem } from '@/models/conversationmodel';
-
-import { conversationStoreAPI } from '@/apis/baseapi';
+import type { ConversationSearchItem } from '@/spec/conversation';
 
 import { formatDateAsString } from '@/lib/date_utils';
 import { cleanSearchQuery } from '@/lib/text_utils';
+
+import { conversationStoreAPI } from '@/apis/baseapi';
 
 import { GroupedDropdown } from '@/components/date_grouped_dropdown';
 

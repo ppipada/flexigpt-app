@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp, FiEdit, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
-import type { ProviderPreset } from '@/models/modelpresetsmodel';
-import { type ModelPreset, type ModelPresetID, type ProviderName } from '@/models/modelpresetsmodel';
+import type { ProviderPreset } from '@/spec/modelpreset';
+import { type ModelPreset, type ModelPresetID, type ProviderName } from '@/spec/modelpreset';
 
 import { modelPresetStoreAPI } from '@/apis/baseapi';
 

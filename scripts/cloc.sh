@@ -81,8 +81,8 @@ cloc --vcs=git --ignored=ignored.txt --exclude_ext=yaml,sum,mod .
 # .prettierignore:  language unknown (#3)
 # .prettierrc:  language unknown (#3)
 # agentts/.eslintrc.json:  duplicate of pkgts/winstonlogger/.eslintrc.json
-# frontend/app/models/aiprovidermodel/chat_types.ts:  duplicate of pkgts/aiprovider/spec/chat_types.ts
-# frontend/app/models/conversationmodel.ts:  duplicate of pkgts/conversationstore/conversation_types.ts
+# frontend/app/models/aiprovider/chat_types.ts:  duplicate of pkgts/aiprovider/spec/chat_types.ts
+# frontend/app/models/conversation.ts:  duplicate of pkgts/conversationstore/conversation_types.ts
 # frontend/package.json.md5:  language unknown (#3)
 # go.mod:  listed in $Not_Code_Extension{mod}
 # go.sum:  listed in $Not_Code_Extension{sum}

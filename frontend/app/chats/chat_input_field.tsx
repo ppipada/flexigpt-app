@@ -8,11 +8,11 @@ import { FiSend, FiSliders } from 'react-icons/fi';
 /* ----------  react-textarea-autosize  ------------------------------------ */
 import TextareaAutosize from 'react-textarea-autosize';
 
-import { type ChatOptions, DefaultChatOptions, type ReasoningLevel, ReasoningType } from '@/models/modelpresetsmodel';
-
-import { GetChatInputOptions } from '@/apis/modelpresetstore_helper';
+import { type ChatOptions, DefaultChatOptions, type ReasoningLevel, ReasoningType } from '@/spec/modelpreset';
 
 import { UseCloseDetails } from '@/lib/use_close_details';
+
+import { GetChatInputOptions } from '@/apis/modelpresetstore_helper';
 
 import AdvancedParamsModal from '@/chats/chat_input_field_advanced_params';
 import DisablePreviousMessagesCheckbox from '@/chats/chat_input_field_disable_checkbox';

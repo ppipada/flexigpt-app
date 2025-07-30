@@ -1,11 +1,11 @@
-import type { IProviderSetAPI } from '@/models/aiprovidermodel';
-import type { IBackendAPI } from '@/models/backendmodel';
-import type { IConversationStoreAPI } from '@/models/conversationmodel';
-import type { ILogger } from '@/models/loggermodel';
-import type { IModelPresetStoreAPI } from '@/models/modelpresetsmodel';
-import type { IPromptStoreAPI } from '@/models/promptmodel';
-import type { ISettingStoreAPI } from '@/models/settingmodel';
-import type { IToolStoreAPI } from '@/models/toolmodel';
+import type { IProviderSetAPI } from '@/spec/aiprovider';
+import type { IBackendAPI } from '@/spec/backend';
+import type { IConversationStoreAPI } from '@/spec/conversation';
+import type { ILogger } from '@/spec/logger';
+import type { IModelPresetStoreAPI } from '@/spec/modelpreset';
+import type { IPromptStoreAPI } from '@/spec/prompt';
+import type { ISettingStoreAPI } from '@/spec/setting';
+import type { IToolStoreAPI } from '@/spec/tool';
 
 import { IS_WAILS_PLATFORM } from '@/lib/features';
 

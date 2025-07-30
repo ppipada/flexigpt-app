@@ -1,6 +1,6 @@
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
-import { ReasoningLevel } from '@/models/modelpresetsmodel';
+import { ReasoningLevel } from '@/spec/modelpreset';
 
 // Subcomponent for Reasoning Level Selection.
 // Displays three reasoning levels (low, medium, high) the user can select.

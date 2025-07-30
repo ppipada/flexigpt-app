@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
-	"github.com/ppipada/flexigpt-app/pkg/model/consts"
-	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
+	"github.com/ppipada/flexigpt-app/pkg/modelpreset/consts"
+	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	"github.com/tmc/langchaingo/llms"
 )
 
@@ -134,7 +134,7 @@ func (api *BaseAIAPI) FetchCompletion(
 		options = append(options, llms.WithTemperature(*input.ModelParams.Temperature))
 	}
 	if rp := input.ModelParams.Reasoning; rp != nil &&
-		rp.Type == modelSpec.ReasoningTypeHybridWithTokens {
+		rp.Type == modelpresetSpec.ReasoningTypeHybridWithTokens {
 		options = append(options, llms.WithReasoning(llms.Reasoning{
 			IsEnabled: true,
 			Mode:      llms.ReasoningModeTokens,
@@ -142,7 +142,7 @@ func (api *BaseAIAPI) FetchCompletion(
 		}))
 	}
 	if rp := input.ModelParams.Reasoning; rp != nil &&
-		rp.Type == modelSpec.ReasoningTypeSingleWithLevels {
+		rp.Type == modelpresetSpec.ReasoningTypeSingleWithLevels {
 		options = append(options, llms.WithReasoning(llms.Reasoning{
 			IsEnabled: true,
 			Mode:      llms.ReasoningModeLevel,

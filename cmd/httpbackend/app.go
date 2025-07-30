@@ -9,8 +9,8 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/inference"
 	"github.com/ppipada/flexigpt-app/pkg/settingstore"
 
-	modelSpec "github.com/ppipada/flexigpt-app/pkg/model/spec"
-	modelStore "github.com/ppipada/flexigpt-app/pkg/model/store"
+	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	modelpresetStore "github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
 	promptStore "github.com/ppipada/flexigpt-app/pkg/prompt/store"
 	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
 )
@@ -19,7 +19,7 @@ type BackendApp struct {
 	settingStoreAPI        *settingstore.SettingStore
 	conversationStoreAPI   *conversationStore.ConversationCollection
 	providerSetAPI         *inference.ProviderSetAPI
-	modelPresetStoreAPI    *modelStore.ModelPresetStore
+	modelPresetStoreAPI    *modelpresetStore.ModelPresetStore
 	promptTemplateStoreAPI *promptStore.PromptTemplateStore
 	toolStoreAPI           *toolStore.ToolStore
 
@@ -31,11 +31,11 @@ type BackendApp struct {
 	promptsDirPath       string
 	toolsDirPath         string
 
-	defaultInbuiltProvider modelSpec.ProviderName
+	defaultInbuiltProvider modelpresetSpec.ProviderName
 }
 
 func NewBackendApp(
-	defaultInbuiltProvider modelSpec.ProviderName,
+	defaultInbuiltProvider modelpresetSpec.ProviderName,
 	settingsDirPath, conversationsDirPath, modelPresetsDirPath, promptsDirPath, toolsDirPath string,
 ) *BackendApp {
 	if settingsDirPath == "" || conversationsDirPath == "" || defaultInbuiltProvider == "" ||
@@ -122,7 +122,7 @@ func (a *BackendApp) initConversationStore() {
 }
 
 func (a *BackendApp) initModelPresetStore() {
-	a.modelPresetStoreAPI = &modelStore.ModelPresetStore{}
+	a.modelPresetStoreAPI = &modelpresetStore.ModelPresetStore{}
 	if err := os.MkdirAll(a.modelPresetsDirPath, os.FileMode(0o770)); err != nil {
 		slog.Error(
 			"failed to create model presets directory",
@@ -132,7 +132,7 @@ func (a *BackendApp) initModelPresetStore() {
 		panic("failed to initialize BackendApp: could not create model presets directory")
 	}
 
-	err := modelStore.InitModelPresetStore(a.modelPresetStoreAPI, a.modelPresetsFilePath)
+	err := modelpresetStore.InitModelPresetStore(a.modelPresetStoreAPI, a.modelPresetsFilePath)
 	if err != nil {
 		slog.Error(
 			"couldn't initialize model presets store",

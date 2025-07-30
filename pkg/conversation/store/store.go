@@ -14,12 +14,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
 )
 
-const (
-	conversationFileExtension = "json"
-	maxPageSize               = 256
-	defPageSize               = 12
-)
-
 type ConversationCollection struct {
 	baseDir   string
 	enableFTS bool
@@ -122,7 +116,7 @@ func (cc *ConversationCollection) PutConversation(
 	}
 
 	// Get filename from info.
-	info, err := uuidv7filename.Build(req.ID, req.Body.Title, conversationFileExtension)
+	info, err := uuidv7filename.Build(req.ID, req.Body.Title, spec.ConversationFileExtension)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +209,7 @@ func (cc *ConversationCollection) DeleteConversation(
 	if req == nil {
 		return nil, errors.New("request cannot be nil")
 	}
-	info, err := uuidv7filename.Build(req.ID, req.Title, conversationFileExtension)
+	info, err := uuidv7filename.Build(req.ID, req.Title, spec.ConversationFileExtension)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +229,7 @@ func (cc *ConversationCollection) GetConversation(
 	if req == nil {
 		return nil, errors.New("request or request body cannot be nil")
 	}
-	info, err := uuidv7filename.Build(req.ID, req.Title, conversationFileExtension)
+	info, err := uuidv7filename.Build(req.ID, req.Title, spec.ConversationFileExtension)
 	if err != nil {
 		return nil, err
 	}
@@ -259,10 +253,10 @@ func (cc *ConversationCollection) ListConversations(
 	req *spec.ListConversationsRequest,
 ) (*spec.ListConversationsResponse, error) {
 	token := ""
-	pageSize := defPageSize
+	pageSize := spec.DefaultPageSize
 	if req != nil {
 		token = req.PageToken
-		if req.PageSize > 0 && req.PageSize <= maxPageSize {
+		if req.PageSize > 0 && req.PageSize <= spec.MaxPageSize {
 			pageSize = req.PageSize
 		}
 	}
@@ -306,8 +300,8 @@ func (cc *ConversationCollection) SearchConversations(
 	if cc.fts == nil {
 		return nil, errors.New("full-text search is disabled")
 	}
-	pageSize := defPageSize
-	if req.PageSize > 0 && req.PageSize <= maxPageSize {
+	pageSize := spec.DefaultPageSize
+	if req.PageSize > 0 && req.PageSize <= spec.MaxPageSize {
 		pageSize = req.PageSize
 	}
 
@@ -336,7 +330,7 @@ func (cc *ConversationCollection) SearchConversations(
 }
 
 func (cc *ConversationCollection) fileNameFromConversation(c spec.Conversation) (string, error) {
-	info, err := uuidv7filename.Build(c.ID, c.Title, conversationFileExtension)
+	info, err := uuidv7filename.Build(c.ID, c.Title, spec.ConversationFileExtension)
 	if err != nil {
 		return "", err
 	}

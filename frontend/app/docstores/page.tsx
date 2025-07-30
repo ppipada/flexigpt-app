@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 
 import { FiEdit, FiFolder, FiPlus, FiServer, FiTrash2 } from 'react-icons/fi';
 
-import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/models/commands';
-import type { Collection, DocStore } from '@/models/docstoremodel';
+import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/spec/command';
+import type { Collection, DocStore } from '@/spec/docstore';
 
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 
