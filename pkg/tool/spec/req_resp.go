@@ -34,6 +34,15 @@ type PatchToolBundleRequest struct {
 
 type PatchToolBundleResponse struct{}
 
+// BundlePageToken is the opaque cursor used when paging over tool-bundles.
+type BundlePageToken struct {
+	BundleIDs       []bundleitemutils.BundleID `json:"ids,omitempty"` // Optional bundle-ID filter.
+	IncludeDisabled bool                       `json:"d,omitempty"`   // Include disabled bundles?
+	PageSize        int                        `json:"s"`             // Requested page-size.
+	CursorMod       string                     `json:"t,omitempty"`   // RFC-3339-nano modification timestamp.
+	CursorID        bundleitemutils.BundleID   `json:"id,omitempty"`  // Tie-breaker for equal timestamps.
+}
+
 type ListToolBundlesRequest struct {
 	BundleIDs       []bundleitemutils.BundleID `query:"bundleIDs"`
 	IncludeDisabled bool                       `query:"includeDisabled"`
@@ -99,6 +108,17 @@ type GetToolRequest struct {
 	Version  bundleitemutils.ItemVersion `path:"version"  required:"true"`
 }
 type GetToolResponse struct{ Body *Tool }
+
+// ToolPageToken is the opaque cursor used when paging over individual tool
+// versions (ListTools API).
+type ToolPageToken struct {
+	RecommendedPageSize int                        `json:"ps,omitempty"`
+	IncludeDisabled     bool                       `json:"d,omitempty"`
+	BundleIDs           []bundleitemutils.BundleID `json:"ids,omitempty"`
+	Tags                []string                   `json:"tags,omitempty"`
+	BuiltInDone         bool                       `json:"bd,omitempty"` // Built-ins already emitted?
+	DirTok              string                     `json:"dt,omitempty"` // Directory-store cursor.
+}
 
 type ListToolsRequest struct {
 	BundleIDs           []bundleitemutils.BundleID `query:"bundleIDs"`

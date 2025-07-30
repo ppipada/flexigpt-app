@@ -323,7 +323,7 @@ func (s *PromptTemplateStore) ListPromptBundles(
 
 	// Token present? -> authoritative.
 	if req != nil && req.PageToken != "" {
-		if tok, err := base64JSONDecode[bundlePageToken](req.PageToken); err == nil {
+		if tok, err := encdec.Base64JSONDecode[spec.BundlePageToken](req.PageToken); err == nil {
 			pageSize = tok.PageSize
 			if pageSize <= 0 || pageSize > maxPageSize {
 				pageSize = defaultPageSize
@@ -415,7 +415,7 @@ func (s *PromptTemplateStore) ListPromptBundles(
 		}
 		slices.Sort(ids)
 
-		nextToken = base64JSONEncode(bundlePageToken{
+		nextToken = encdec.Base64JSONEncode(spec.BundlePageToken{
 			CursorMod:       filtered[end-1].ModifiedAt.Format(time.RFC3339Nano),
 			CursorID:        filtered[end-1].ID,
 			BundleIDs:       ids,
@@ -766,11 +766,11 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 	req *spec.ListPromptTemplatesRequest,
 ) (*spec.ListPromptTemplatesResponse, error) {
 	//  Restore / initialise paging state.
-	tok := templatePageToken{}
+	tok := spec.TemplatePageToken{}
 	if req != nil && req.PageToken != "" {
 		// Second and later calls.
 		_ = func() error {
-			t, err := base64JSONDecode[templatePageToken](req.PageToken)
+			t, err := encdec.Base64JSONDecode[spec.TemplatePageToken](req.PageToken)
 			if err == nil {
 				tok = t
 			}
@@ -925,7 +925,7 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 	//  Next-page token (or terminate stream).
 	var next *string
 	if needMorePages(tok.DirTok, scannedUsers) {
-		s := base64JSONEncode(tok)
+		s := encdec.Base64JSONEncode(tok)
 		next = &s
 	}
 
@@ -1279,4 +1279,12 @@ func (s *PromptTemplateStore) writeAllBundles(ab spec.AllBundles) error {
 // isSoftDeleted returns true if the bundle is soft-deleted.
 func isSoftDeleted(b spec.PromptBundle) bool {
 	return b.SoftDeletedAt != nil && !b.SoftDeletedAt.IsZero()
+}
+
+// nullableStr returns a pointer to the string, or nil if the string is empty.
+func nullableStr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }

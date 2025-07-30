@@ -2,10 +2,11 @@ package encdec
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 )
 
-// Base64StringEncoderDecoder is a simple KeyEncoderDecoder that uses base64 (URL variant).
+// Base64StringEncoderDecoder is a simple KeyEncoderDecoder that uses base64.
 type Base64StringEncoderDecoder struct{}
 
 func (b Base64StringEncoderDecoder) Encode(plain string) string {
@@ -18,4 +19,19 @@ func (b Base64StringEncoderDecoder) Decode(encoded string) (string, error) {
 		return "", fmt.Errorf("failed to base64-decode %q: %w", encoded, err)
 	}
 	return string(raw), nil
+}
+
+func Base64JSONEncode[T any](t T) string {
+	raw, _ := json.Marshal(t)
+	return base64.StdEncoding.EncodeToString(raw)
+}
+
+func Base64JSONDecode[T any](s string) (T, error) {
+	var t T
+	raw, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return t, err
+	}
+	err = json.Unmarshal(raw, &t)
+	return t, err
 }

@@ -315,7 +315,7 @@ func (ts *ToolStore) ListToolBundles(
 
 	// Token overrides parameters.
 	if req != nil && req.PageToken != "" {
-		if tok, err := base64JSONDecode[bundlePageToken](req.PageToken); err == nil {
+		if tok, err := encdec.Base64JSONDecode[spec.BundlePageToken](req.PageToken); err == nil {
 			pageSize = tok.PageSize
 			if pageSize <= 0 || pageSize > maxPageSizeTools {
 				pageSize = defPageSizeTools
@@ -399,7 +399,7 @@ func (ts *ToolStore) ListToolBundles(
 		}
 		slices.Sort(ids)
 
-		next := base64JSONEncode(bundlePageToken{
+		next := encdec.Base64JSONEncode(spec.BundlePageToken{
 			BundleIDs:       ids,
 			IncludeDisabled: includeDisabled,
 			PageSize:        pageSize,
@@ -650,10 +650,10 @@ func (ts *ToolStore) ListTools(
 	ctx context.Context, req *spec.ListToolsRequest,
 ) (*spec.ListToolsResponse, error) {
 	// Initialise / resume paging.
-	tok := toolPageToken{}
+	tok := spec.ToolPageToken{}
 	if req != nil && req.PageToken != "" {
 		_ = func() error {
-			t, err := base64JSONDecode[toolPageToken](req.PageToken)
+			t, err := encdec.Base64JSONDecode[spec.ToolPageToken](req.PageToken)
 			if err == nil {
 				tok = t
 			}
@@ -800,7 +800,7 @@ func (ts *ToolStore) ListTools(
 
 	var nextTok *string
 	if tok.DirTok != "" || !scannedUsers { // Need more pages.
-		s := base64JSONEncode(tok)
+		s := encdec.Base64JSONEncode(tok)
 		nextTok = &s
 	}
 
@@ -1091,4 +1091,12 @@ func (ts *ToolStore) writeAllBundles(ab spec.AllBundles) error {
 // isSoftDeletedTool returns true if bundle is in soft-deleted state.
 func isSoftDeletedTool(b spec.ToolBundle) bool {
 	return b.SoftDeletedAt != nil && !b.SoftDeletedAt.IsZero()
+}
+
+// nullableStr returns &s unless s=="" in which case it returns nil.
+func nullableStr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }

@@ -32,6 +32,14 @@ type PatchPromptBundleRequest struct {
 
 type PatchPromptBundleResponse struct{}
 
+type BundlePageToken struct {
+	BundleIDs       []bundleitemutils.BundleID `json:"ids,omitempty"` // optional filter
+	IncludeDisabled bool                       `json:"d,omitempty"`   // include disabled bundles?
+	PageSize        int                        `json:"s"`             // page size
+	CursorMod       string                     `json:"t,omitempty"`   // RFC-3339-nano
+	CursorID        bundleitemutils.BundleID   `json:"id,omitempty"`
+}
+
 type ListPromptBundlesRequest struct {
 	BundleIDs       []bundleitemutils.BundleID `query:"bundleIDs"`
 	IncludeDisabled bool                       `query:"includeDisabled"`
@@ -95,6 +103,15 @@ type GetPromptTemplateRequest struct {
 	Version      bundleitemutils.ItemVersion `path:"version"      required:"true"`
 }
 type GetPromptTemplateResponse struct{ Body *PromptTemplate }
+
+type TemplatePageToken struct {
+	RecommendedPageSize int                        `json:"ps,omitempty"`
+	IncludeDisabled     bool                       `json:"d,omitempty"`
+	BundleIDs           []bundleitemutils.BundleID `json:"ids,omitempty"`
+	Tags                []string                   `json:"tags,omitempty"`
+	BuiltInDone         bool                       `json:"bd,omitempty"`
+	DirTok              string                     `json:"dt,omitempty"`
+}
 
 type ListPromptTemplatesRequest struct {
 	BundleIDs           []bundleitemutils.BundleID `query:"bundleIDs"`
