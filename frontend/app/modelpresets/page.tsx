@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { type ProviderName, type ProviderPreset } from '@/spec/modelpreset';
 import type { AISetting } from '@/spec/setting';
 
-import { modelPresetStoreAPI, providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
-import { MergeInbuiltModelsWithPresets } from '@/apis/modelpresetstore_helper';
+import { settingstoreAPI } from '@/apis/baseapi';
+import { getAllProviderPresetsMap, getBuiltInPresets } from '@/apis/modelpresetstore_helper';
 
 import ActionDeniedAlert from '@/components/action_denied';
 import DownloadButton from '@/components/download_button';
@@ -16,7 +16,7 @@ const ModelPresetPage: FC = () => {
 	/* ── state ─────────────────────────────────────────────── */
 	const [aiSettings, setAISettings] = useState<Record<ProviderName, AISetting>>({});
 	const [providerPresets, setProviderPresets] = useState<Record<ProviderName, ProviderPreset>>({});
-	const [inbuiltProviderInfo, setInbuiltProviderInfo] = useState<Record<ProviderName, ProviderPreset>>({});
+	const [BuiltInProviderInfo, setBuiltInProviderInfo] = useState<Record<ProviderName, ProviderPreset>>({});
 
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -31,13 +31,12 @@ const ModelPresetPage: FC = () => {
 			setError(null);
 			try {
 				const settings = await settingstoreAPI.getAllSettings();
-				const info = await providerSetAPI.getConfigurationInfo();
-				const schema = await modelPresetStoreAPI.getAllModelPresets();
+				const presets = await getAllProviderPresetsMap();
+				const builtInPresets = getBuiltInPresets(presets);
 
 				setAISettings(settings.aiSettings);
-				setInbuiltProviderInfo(info.inbuiltProviderModels);
-
-				setProviderPresets(MergeInbuiltModelsWithPresets(schema.providerPresets, info.inbuiltProviderModels));
+				setBuiltInProviderInfo(builtInPresets);
+				setProviderPresets(presets);
 			} catch (err) {
 				console.error('Error loading model presets:', err, (err as Error).stack || '');
 				setError('Failed to load model presets. Please try again.');
@@ -55,8 +54,8 @@ const ModelPresetPage: FC = () => {
 	/* download helper */
 	const fetchValue = async () => {
 		try {
-			const schema = await modelPresetStoreAPI.getAllModelPresets();
-			return JSON.stringify(schema, null, 2);
+			const presets = await getAllProviderPresetsMap();
+			return JSON.stringify(presets, null, 2);
 		} catch (err) {
 			console.error('Failed to fetch presets for download:', err, (err as Error).stack || '');
 			setActionDeniedMsg('Failed to fetch presets for download.');
@@ -104,7 +103,7 @@ const ModelPresetPage: FC = () => {
 								provider={provider}
 								isEnabled={aiSettings[provider].isEnabled}
 								preset={preset}
-								inbuiltProviderPresets={inbuiltProviderInfo[provider].modelPresets}
+								inbuiltProviderPresets={BuiltInProviderInfo[provider].modelPresets}
 								onPresetChange={handlePresetChange}
 							/>
 						))}

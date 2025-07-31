@@ -90,7 +90,7 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 			const newMap = { ...modelPresets, [id]: data };
 			setModelPresets(newMap);
 			onPresetChange(provider, { ...preset, modelPresets: newMap });
-			await modelPresetStoreAPI.addModelPreset(provider, id, data);
+			await modelPresetStoreAPI.putModelPreset(provider, id, data);
 			setIsModifyModalOpen(false);
 			setSelectedModelID(null);
 		} catch (err) {
@@ -113,7 +113,7 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 			const newMap = { ...modelPresets, [id]: updated };
 			setModelPresets(newMap);
 			onPresetChange(provider, { ...preset, modelPresets: newMap });
-			await modelPresetStoreAPI.addModelPreset(provider, id, updated);
+			await modelPresetStoreAPI.patchModelPreset(provider, id, updated.isEnabled);
 		} catch (err) {
 			console.error('Failed to update preset enable state:', err, (err as Error).stack || '');
 			setActionDeniedMsg('Failed to update preset enable state. Please try again.');
@@ -157,7 +157,7 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 		try {
 			setDefaultModelID(id);
 			onPresetChange(provider, { ...preset, defaultModelPresetID: id });
-			await modelPresetStoreAPI.setDefaultModelPreset(provider, id);
+			await modelPresetStoreAPI.patchProviderPreset(provider, undefined, id);
 		} catch (err) {
 			console.error('Failed to set default preset:', err, (err as Error).stack || '');
 			setActionDeniedMsg('Failed to set default preset. Please try again.');

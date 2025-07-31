@@ -10,8 +10,8 @@ type PutPromptBundleRequestBody struct {
 }
 
 type PutPromptBundleRequest struct {
-	BundleID bundleitemutils.BundleID    `path:"bundleID" required:"true"`
-	Body     *PutPromptBundleRequestBody `                                json:"body"`
+	BundleID bundleitemutils.BundleID `path:"bundleID" required:"true"`
+	Body     *PutPromptBundleRequestBody
 }
 
 type PutPromptBundleResponse struct{}
@@ -26,8 +26,8 @@ type PatchPromptBundleRequestBody struct {
 }
 
 type PatchPromptBundleRequest struct {
-	BundleID bundleitemutils.BundleID      `path:"bundleID" required:"true"`
-	Body     *PatchPromptBundleRequestBody `                                json:"body"`
+	BundleID bundleitemutils.BundleID `path:"bundleID" required:"true"`
+	Body     *PatchPromptBundleRequestBody
 }
 
 type PatchPromptBundleResponse struct{}
@@ -69,10 +69,10 @@ type PutPromptTemplateRequestBody struct {
 }
 
 type PutPromptTemplateRequest struct {
-	BundleID     bundleitemutils.BundleID      `path:"bundleID"     required:"true"`
-	TemplateSlug bundleitemutils.ItemSlug      `path:"templateSlug" required:"true"`
-	Version      bundleitemutils.ItemVersion   `path:"version"      required:"true"`
-	Body         *PutPromptTemplateRequestBody `                                    json:"body"`
+	BundleID     bundleitemutils.BundleID    `path:"bundleID"     required:"true"`
+	TemplateSlug bundleitemutils.ItemSlug    `path:"templateSlug" required:"true"`
+	Version      bundleitemutils.ItemVersion `path:"version"      required:"true"`
+	Body         *PutPromptTemplateRequestBody
 }
 
 type PutPromptTemplateResponse struct{}
@@ -89,10 +89,10 @@ type PatchPromptTemplateRequestBody struct {
 }
 
 type PatchPromptTemplateRequest struct {
-	BundleID     bundleitemutils.BundleID        `path:"bundleID"     required:"true"`
-	TemplateSlug bundleitemutils.ItemSlug        `path:"templateSlug" required:"true"`
-	Version      bundleitemutils.ItemVersion     `path:"version"      required:"true"`
-	Body         *PatchPromptTemplateRequestBody `                                    json:"body"`
+	BundleID     bundleitemutils.BundleID    `path:"bundleID"     required:"true"`
+	TemplateSlug bundleitemutils.ItemSlug    `path:"templateSlug" required:"true"`
+	Version      bundleitemutils.ItemVersion `path:"version"      required:"true"`
+	Body         *PatchPromptTemplateRequestBody
 }
 
 type PatchPromptTemplateResponse struct{}

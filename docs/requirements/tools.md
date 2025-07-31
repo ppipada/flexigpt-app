@@ -1,4 +1,4 @@
-# Tools – Functional Specification
+# Tools - Functional Specification
 
 ## Terminology
 

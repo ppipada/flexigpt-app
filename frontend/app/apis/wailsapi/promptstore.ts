@@ -53,7 +53,7 @@ export class WailsPromptStoreAPI implements IPromptStoreAPI {
 	): Promise<void> {
 		const req = {
 			BundleID: bundleID,
-			body: {
+			Body: {
 				slug: slug,
 				displayName: displayName,
 				isEnabled: isEnabled,
@@ -66,7 +66,7 @@ export class WailsPromptStoreAPI implements IPromptStoreAPI {
 	async patchPromptBundle(bundleID: string, isEnabled: boolean): Promise<void> {
 		const req = {
 			BundleID: bundleID,
-			body: {
+			Body: {
 				isEnabled: isEnabled,
 			},
 		};
@@ -138,7 +138,7 @@ export class WailsPromptStoreAPI implements IPromptStoreAPI {
 			BundleID: bundleID,
 			TemplateSlug: templateSlug,
 			Version: version,
-			body: {
+			Body: {
 				displayName: displayName,
 				isEnabled: isEnabled,
 				description: description,
@@ -161,7 +161,7 @@ export class WailsPromptStoreAPI implements IPromptStoreAPI {
 			BundleID: bundleID,
 			TemplateSlug: templateSlug,
 			Version: version,
-			body: {
+			Body: {
 				isEnabled: isEnabled,
 			},
 		};

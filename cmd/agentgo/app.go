@@ -36,7 +36,6 @@ type App struct {
 	settingsFilePath     string
 	conversationsDirPath string
 	modelPresetsDirPath  string
-	modelPresetsFilePath string
 	promptsDirPath       string
 	toolsDirPath         string
 }
@@ -59,7 +58,6 @@ func NewApp() *App {
 	app.settingsFilePath = filepath.Join(app.configBasePath, "settings.json")
 	app.conversationsDirPath = filepath.Join(app.dataBasePath, "conversations")
 	app.modelPresetsDirPath = filepath.Join(app.dataBasePath, "modelpresets")
-	app.modelPresetsFilePath = filepath.Join(app.modelPresetsDirPath, "modelpresets.json")
 	app.promptsDirPath = filepath.Join(app.dataBasePath, "prompttemplates")
 	app.toolsDirPath = filepath.Join(app.dataBasePath, "tools")
 
@@ -162,16 +160,16 @@ func (a *App) initManagers() {
 	}
 	slog.Info("Conversation store initialized", "directory", a.conversationsDirPath)
 
-	err = InitModelPresetStoreWrapper(a.modelPresetStoreAPI, a.modelPresetsFilePath)
+	err = InitModelPresetStoreWrapper(a.modelPresetStoreAPI, a.modelPresetsDirPath)
 	if err != nil {
 		slog.Error(
 			"Couldn't initialize model presets store",
-			"File", a.modelPresetsFilePath,
+			"Dir", a.modelPresetsDirPath,
 			"Error", err,
 		)
 		panic("Failed to initialize managers: model presets store initialization failed")
 	}
-	slog.Info("Model presets store initialized", "filepath", a.modelPresetsFilePath)
+	slog.Info("Model presets store initialized", "dir", a.modelPresetsDirPath)
 
 	err = InitPromptTemplateStoreWrapper(a.promptTemplateStoreAPI, a.promptsDirPath)
 	if err != nil {

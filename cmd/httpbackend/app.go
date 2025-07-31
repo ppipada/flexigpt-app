@@ -27,7 +27,6 @@ type BackendApp struct {
 	settingsFilePath     string
 	conversationsDirPath string
 	modelPresetsDirPath  string
-	modelPresetsFilePath string
 	promptsDirPath       string
 	toolsDirPath         string
 
@@ -57,7 +56,6 @@ func NewBackendApp(
 		settingsFilePath:       filepath.Join(settingsDirPath, "settings.json"),
 		conversationsDirPath:   conversationsDirPath,
 		modelPresetsDirPath:    modelPresetsDirPath,
-		modelPresetsFilePath:   filepath.Join(modelPresetsDirPath, "modelpresets.json"),
 		promptsDirPath:         promptsDirPath,
 		toolsDirPath:           toolsDirPath,
 		defaultInbuiltProvider: defaultInbuiltProvider,
@@ -122,7 +120,6 @@ func (a *BackendApp) initConversationStore() {
 }
 
 func (a *BackendApp) initModelPresetStore() {
-	a.modelPresetStoreAPI = &modelpresetStore.ModelPresetStore{}
 	if err := os.MkdirAll(a.modelPresetsDirPath, os.FileMode(0o770)); err != nil {
 		slog.Error(
 			"failed to create model presets directory",
@@ -132,16 +129,18 @@ func (a *BackendApp) initModelPresetStore() {
 		panic("failed to initialize BackendApp: could not create model presets directory")
 	}
 
-	err := modelpresetStore.InitModelPresetStore(a.modelPresetStoreAPI, a.modelPresetsFilePath)
+	ms, err := modelpresetStore.NewModelPresetStore(a.modelPresetsDirPath)
 	if err != nil {
 		slog.Error(
 			"couldn't initialize model presets store",
-			"modelPresetsFilePath", a.modelPresetsFilePath,
+			"modelPresetsDirPath", a.modelPresetsDirPath,
 			"error", err,
 		)
 		panic("failed to initialize BackendApp: model presets store initialization failed")
 	}
-	slog.Info("model presets store initialized", "filepath", a.modelPresetsFilePath)
+	a.modelPresetStoreAPI = ms
+
+	slog.Info("model presets store initialized", "filepath", a.modelPresetsDirPath)
 }
 
 func (a *BackendApp) initPromptTemplateStore() {

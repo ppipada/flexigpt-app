@@ -54,7 +54,7 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 			</div>
 
 			<div
-				className={`col-span-10 lg:col-span-9 row-start-1 row-end-1 overflow-hidden rounded-2xl ${streamedMessage ? '' : 'shadow-lg'}`}
+				className={`col-span-10 lg:col-span-9 row-start-1 row-end-1 overflow-x-auto rounded-2xl ${streamedMessage ? '' : 'shadow-lg'}`}
 			>
 				{isEditing ? (
 					<EditBox

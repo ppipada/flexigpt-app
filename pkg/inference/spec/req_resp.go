@@ -80,9 +80,8 @@ type SetDefaultProviderResponse struct{}
 type GetConfigurationInfoRequest struct{}
 
 type GetConfigurationInfoResponseBody struct {
-	DefaultProvider       modelpresetSpec.ProviderName                                    `json:"defaultProvider"`
-	ConfiguredProviders   []ProviderParams                                                `json:"configuredProviders"`
-	InbuiltProviderModels map[modelpresetSpec.ProviderName]modelpresetSpec.ProviderPreset `json:"inbuiltProviderModels"`
+	DefaultProvider     modelpresetSpec.ProviderName `json:"defaultProvider"`
+	ConfiguredProviders []ProviderParams             `json:"configuredProviders"`
 }
 
 type GetConfigurationInfoResponse struct {

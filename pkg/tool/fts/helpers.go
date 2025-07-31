@@ -44,6 +44,6 @@ func extractArgsFromRaw(raw spec.JSONSchema) string {
 		return ""
 	}
 	var m map[string]any
-	_ = json.Unmarshal(raw, &m) // ignore error – we just fall back to “”
+	_ = json.Unmarshal(raw, &m) // ignore error - we just fall back to “”
 	return extractArgsFromSchema(m)
 }

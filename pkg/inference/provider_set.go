@@ -63,9 +63,8 @@ func (ps *ProviderSetAPI) GetConfigurationInfo(
 	}
 	return &spec.GetConfigurationInfoResponse{
 		Body: &spec.GetConfigurationInfoResponseBody{
-			DefaultProvider:       ps.defaultProvider,
-			ConfiguredProviders:   configuredProviders,
-			InbuiltProviderModels: spec.InbuiltProviderModels,
+			DefaultProvider:     ps.defaultProvider,
+			ConfiguredProviders: configuredProviders,
 		},
 	}, nil
 }

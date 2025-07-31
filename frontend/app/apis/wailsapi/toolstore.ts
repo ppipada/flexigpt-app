@@ -54,7 +54,7 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 	): Promise<void> {
 		const req = {
 			BundleID: bundleID,
-			body: {
+			Body: {
 				slug: slug,
 				displayName: displayName,
 				isEnabled: isEnabled,
@@ -67,7 +67,7 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 	async patchToolBundle(bundleID: string, isEnabled: boolean): Promise<void> {
 		const req = {
 			BundleID: bundleID,
-			body: {
+			Body: {
 				isEnabled: isEnabled,
 			},
 		};
@@ -141,7 +141,7 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 			BundleID: bundleID,
 			ToolSlug: toolSlug,
 			Version: version,
-			body: {
+			Body: {
 				displayName: displayName,
 				isEnabled: isEnabled,
 				description: description,
@@ -161,7 +161,7 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 			BundleID: bundleID,
 			ToolSlug: toolSlug,
 			Version: version,
-			body: {
+			Body: {
 				isEnabled: isEnabled,
 			},
 		};

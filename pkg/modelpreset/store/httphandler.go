@@ -9,27 +9,26 @@ import (
 // We keep a few constants for organization.
 const (
 	tag        = "ModelPresetStore"
-	pathPrefix = "/modelpresetstore"
+	pathPrefix = "/modelpresets/providers"
 )
 
 // InitModelPresetStoreHandlers registers all endpoints related to settings.
 func InitModelPresetStoreHandlers(api huma.API, modelPresetStoreAPI *ModelPresetStore) {
 	huma.Register(api, huma.Operation{
-		OperationID: "get-all-model-presets",
-		Method:      http.MethodGet,
-		Path:        pathPrefix,
-		Summary:     "Get all model presets",
-		Description: "Get the entire model presets object from the store",
+		OperationID: "put-provider-preset",
+		Method:      http.MethodPut,
+		Path:        pathPrefix + "/{providerName}",
+		Summary:     "Put new provider preset",
 		Tags:        []string{tag},
-	}, modelPresetStoreAPI.GetAllModelPresets)
+	}, modelPresetStoreAPI.PutProviderPreset)
 
 	huma.Register(api, huma.Operation{
-		OperationID: "create-provider-preset",
-		Method:      http.MethodPost,
+		OperationID: "patch-provider-preset",
+		Method:      http.MethodPatch,
 		Path:        pathPrefix + "/{providerName}",
-		Summary:     "Create new model presets for a provider",
+		Summary:     "Patch a provider preset. Only enable/disable and set default provider supported as of now.",
 		Tags:        []string{tag},
-	}, modelPresetStoreAPI.CreateProviderPreset)
+	}, modelPresetStoreAPI.PatchProviderPreset)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "delete-provider-preset",
@@ -40,26 +39,35 @@ func InitModelPresetStoreHandlers(api huma.API, modelPresetStoreAPI *ModelPreset
 	}, modelPresetStoreAPI.DeleteProviderPreset)
 
 	huma.Register(api, huma.Operation{
-		OperationID: "set-default-model-preset",
+		OperationID: "put-model-preset",
 		Method:      http.MethodPut,
-		Path:        pathPrefix + "/{providerName}/default",
-		Summary:     "Set the default model preset for a provider",
-		Tags:        []string{tag},
-	}, modelPresetStoreAPI.SetDefaultModelPreset)
-
-	huma.Register(api, huma.Operation{
-		OperationID: "add-model-preset",
-		Method:      http.MethodPut,
-		Path:        pathPrefix + "/{providerName}/modelpresets/{modelName}",
+		Path:        pathPrefix + "/{providerName}/models/{modelPresetID}",
 		Summary:     "Add or replace a single model preset for a given provider",
 		Tags:        []string{tag},
-	}, modelPresetStoreAPI.AddModelPreset)
+	}, modelPresetStoreAPI.PutModelPreset)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "patch-model-preset",
+		Method:      http.MethodPatch,
+		Path:        pathPrefix + "/{providerName}/models/{modelPresetID}",
+		Summary:     "Configure properties of a single model preset. Only enable disable allowed as of now",
+		Tags:        []string{tag},
+	}, modelPresetStoreAPI.PatchModelPreset)
 
 	huma.Register(api, huma.Operation{
 		OperationID: "delete-model-preset",
 		Method:      http.MethodDelete,
-		Path:        pathPrefix + "/{providerName}/modelpresets/{modelName}",
+		Path:        pathPrefix + "/{providerName}/models/{modelPresetID}",
 		Summary:     "Delete a single model preset for a given provider",
 		Tags:        []string{tag},
 	}, modelPresetStoreAPI.DeleteModelPreset)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "list-all-provider-presets",
+		Method:      http.MethodGet,
+		Path:        pathPrefix,
+		Summary:     "List all presets",
+		Description: "List the entire presets object from the store",
+		Tags:        []string{tag},
+	}, modelPresetStoreAPI.ListProviderPresets)
 }

@@ -5,7 +5,7 @@ import type {
 	ConfigurationResponse,
 	IProviderSetAPI,
 } from '@/spec/aiprovider';
-import type { ModelParams, ProviderInfo, ProviderName, ProviderPreset } from '@/spec/modelpreset';
+import type { ModelParams, ProviderInfo, ProviderName } from '@/spec/modelpreset';
 
 import {
 	AddProvider,
@@ -31,15 +31,10 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 	async getConfigurationInfo(): Promise<ConfigurationResponse> {
 		const resp = await GetConfigurationInfo({} as wailsSpec.GetConfigurationInfoRequest);
 		const configInfo = resp.Body || {};
-		if (
-			!('configuredProviders' in configInfo) ||
-			!('defaultProvider' in configInfo) ||
-			!('inbuiltProviderModels' in configInfo)
-		) {
+		if (!('configuredProviders' in configInfo) || !('defaultProvider' in configInfo)) {
 			return {
 				defaultProvider: '',
 				configuredProviders: {},
-				inbuiltProviderModels: {},
 			};
 		}
 
@@ -50,7 +45,6 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		return {
 			defaultProvider: configInfo['defaultProvider'] as ProviderName,
 			configuredProviders: providerInfoDict,
-			inbuiltProviderModels: configInfo['inbuiltProviderModels'] as Record<ProviderName, ProviderPreset>,
 		};
 	}
 

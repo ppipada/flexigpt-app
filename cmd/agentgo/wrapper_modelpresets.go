@@ -1,3 +1,6 @@
+// Package main (or your own wrapper package) provides a small helper layer
+// that turns the context-aware APIs exposed by ModelPresetStore into simple
+// “context-less” helpers while adding the panic-to-error recovery middleware.
 package main
 
 import (
@@ -8,37 +11,36 @@ import (
 	modelpresetStore "github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
 )
 
-// ModelPresetStoreWrapper is a wrapper around ModelPresetStore that provides non-contextual APIs.
 type ModelPresetStoreWrapper struct {
 	store *modelpresetStore.ModelPresetStore
 }
 
-func InitModelPresetStoreWrapper(m *ModelPresetStoreWrapper, filename string) error {
+// InitModelPresetStoreWrapper initialises the wrapped store in `baseDir`.
+func InitModelPresetStoreWrapper(m *ModelPresetStoreWrapper, baseDir string) error {
 	if m == nil {
-		panic("Initializing model presets store without a object")
+		panic("initialising model-preset store wrapper on a nil receiver")
 	}
-	modelPresetStore := &modelpresetStore.ModelPresetStore{}
-	err := modelpresetStore.InitModelPresetStore(modelPresetStore, filename)
+	s, err := modelpresetStore.NewModelPresetStore(baseDir)
 	if err != nil {
 		return err
 	}
-	m.store = modelPresetStore
+	m.store = s
 	return nil
 }
 
-func (w *ModelPresetStoreWrapper) GetAllModelPresets(
-	req *spec.GetAllModelPresetsRequest,
-) (*spec.GetAllModelPresetsResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.GetAllModelPresetsResponse, error) {
-		return w.store.GetAllModelPresets(context.Background(), req)
+func (w *ModelPresetStoreWrapper) PutProviderPreset(
+	req *spec.PutProviderPresetRequest,
+) (*spec.PutProviderPresetResponse, error) {
+	return middleware.WithRecoveryResp(func() (*spec.PutProviderPresetResponse, error) {
+		return w.store.PutProviderPreset(context.Background(), req)
 	})
 }
 
-func (w *ModelPresetStoreWrapper) CreateProviderPreset(
-	req *spec.CreateProviderPresetRequest,
-) (*spec.CreateProviderPresetResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.CreateProviderPresetResponse, error) {
-		return w.store.CreateProviderPreset(context.Background(), req)
+func (w *ModelPresetStoreWrapper) PatchProviderPreset(
+	req *spec.PatchProviderPresetRequest,
+) (*spec.PatchProviderPresetResponse, error) {
+	return middleware.WithRecoveryResp(func() (*spec.PatchProviderPresetResponse, error) {
+		return w.store.PatchProviderPreset(context.Background(), req)
 	})
 }
 
@@ -50,11 +52,27 @@ func (w *ModelPresetStoreWrapper) DeleteProviderPreset(
 	})
 }
 
-func (w *ModelPresetStoreWrapper) AddModelPreset(
-	req *spec.AddModelPresetRequest,
-) (*spec.AddModelPresetResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.AddModelPresetResponse, error) {
-		return w.store.AddModelPreset(context.Background(), req)
+func (w *ModelPresetStoreWrapper) ListProviderPresets(
+	req *spec.ListProviderPresetsRequest,
+) (*spec.ListProviderPresetsResponse, error) {
+	return middleware.WithRecoveryResp(func() (*spec.ListProviderPresetsResponse, error) {
+		return w.store.ListProviderPresets(context.Background(), req)
+	})
+}
+
+func (w *ModelPresetStoreWrapper) PutModelPreset(
+	req *spec.PutModelPresetRequest,
+) (*spec.PutModelPresetResponse, error) {
+	return middleware.WithRecoveryResp(func() (*spec.PutModelPresetResponse, error) {
+		return w.store.PutModelPreset(context.Background(), req)
+	})
+}
+
+func (w *ModelPresetStoreWrapper) PatchModelPreset(
+	req *spec.PatchModelPresetRequest,
+) (*spec.PatchModelPresetResponse, error) {
+	return middleware.WithRecoveryResp(func() (*spec.PatchModelPresetResponse, error) {
+		return w.store.PatchModelPreset(context.Background(), req)
 	})
 }
 
@@ -63,13 +81,5 @@ func (w *ModelPresetStoreWrapper) DeleteModelPreset(
 ) (*spec.DeleteModelPresetResponse, error) {
 	return middleware.WithRecoveryResp(func() (*spec.DeleteModelPresetResponse, error) {
 		return w.store.DeleteModelPreset(context.Background(), req)
-	})
-}
-
-func (w *ModelPresetStoreWrapper) SetDefaultModelPreset(
-	req *spec.SetDefaultModelPresetRequest,
-) (*spec.SetDefaultModelPresetResponse, error) {
-	return middleware.WithRecoveryResp(func() (*spec.SetDefaultModelPresetResponse, error) {
-		return w.store.SetDefaultModelPreset(context.Background(), req)
 	})
 }

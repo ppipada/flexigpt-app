@@ -100,11 +100,10 @@ export async function GetChatInputOptions(): Promise<{ allOptions: ChatOptions[]
 		}
 		const configDefaultProvider = info.defaultProvider;
 		const providerInfoDict = info.configuredProviders;
-		const inbuiltProviderPresets = info.inbuiltProviderModels;
-
 		const onlySettings = await settingstoreAPI.getAllSettings();
-		const modelPresetsSchema = await modelPresetStoreAPI.getAllModelPresets();
-		const mergedPresets = MergeInbuiltModelsWithPresets(modelPresetsSchema.providerPresets, inbuiltProviderPresets);
+		const mergedPresets = await getAllProviderPresetsMap();
+		const inbuiltProviderPresets = getBuiltInPresets(mergedPresets);
+
 		// Initialize default option and input models array
 		let defaultOption: ChatOptions | undefined;
 		const inputModels: ChatOptions[] = [];
@@ -175,6 +174,8 @@ export async function PopulateModelPresetDefaults(
 	existingData?: ModelPreset
 ): Promise<ModelPreset> {
 	const info = await providerSetAPI.getConfigurationInfo();
+	const mergedPresets = await getAllProviderPresetsMap();
+	const inbuiltProviderPresets = getBuiltInPresets(mergedPresets);
 	if (
 		info.defaultProvider === '' ||
 		Object.keys(info.configuredProviders).length === 0 ||
@@ -197,7 +198,7 @@ export async function PopulateModelPresetDefaults(
 	const mergedModelParam = mergeDefaultsModelPresetAndInbuilt(
 		providerName,
 		modelPresetID,
-		info.inbuiltProviderModels,
+		inbuiltProviderPresets,
 		modelPreset
 	);
 
@@ -217,48 +218,30 @@ export async function PopulateModelPresetDefaults(
 	};
 }
 
-export function MergeInbuiltModelsWithPresets(
-	modelPresets: Record<ProviderName, ProviderPreset>,
-	inbuiltProviderPresets: Record<ProviderName, ProviderPreset>
-): Record<ProviderName, ProviderPreset> {
-	const newPresets = { ...modelPresets };
+export async function getAllProviderPresetsMap(): Promise<Record<ProviderName, ProviderPreset>> {
+	let pageToken: string | undefined = undefined;
+	const result: Record<ProviderName, ProviderPreset> = {};
+	let pageCount = 0;
+	const MAX_PAGES = 20;
 
-	for (const provider in inbuiltProviderPresets) {
-		if (!(provider in newPresets)) {
-			continue;
+	do {
+		const { providers, nextPageToken } = await modelPresetStoreAPI.listProviderPresets(
+			undefined,
+			undefined,
+			undefined,
+			pageToken
+		);
+		for (const preset of providers) {
+			result[preset.name] = preset;
 		}
+		pageToken = nextPageToken;
+		pageCount++;
+		if (pageCount >= MAX_PAGES) break;
+	} while (pageToken);
 
-		// For each model in inbuiltProviderInfo, ensure it exists in modelPresets
-		for (const modelPresetID in inbuiltProviderPresets[provider].modelPresets) {
-			if (modelPresetID === '') {
-				console.warn('Got empty model preset id in inbuilt models. skipping. provider: ', provider);
-				continue;
-			}
-			if (modelPresetID in newPresets[provider]) {
-				continue;
-			}
+	return result;
+}
 
-			newPresets[provider].modelPresets[modelPresetID] = {
-				id: inbuiltProviderPresets[provider].modelPresets[modelPresetID].id,
-				name: inbuiltProviderPresets[provider].modelPresets[modelPresetID].name,
-				displayName: inbuiltProviderPresets[provider].modelPresets[modelPresetID].displayName,
-				isEnabled: inbuiltProviderPresets[provider].modelPresets[modelPresetID].isEnabled,
-				slug: inbuiltProviderPresets[provider].modelPresets[modelPresetID].slug,
-				stream: inbuiltProviderPresets[provider].modelPresets[modelPresetID].stream,
-				maxPromptLength: inbuiltProviderPresets[provider].modelPresets[modelPresetID].maxPromptLength,
-				maxOutputLength: inbuiltProviderPresets[provider].modelPresets[modelPresetID].maxOutputLength,
-				temperature: inbuiltProviderPresets[provider].modelPresets[modelPresetID].temperature,
-				reasoning: inbuiltProviderPresets[provider].modelPresets[modelPresetID].reasoning,
-				systemPrompt: inbuiltProviderPresets[provider].modelPresets[modelPresetID].systemPrompt,
-				timeout: inbuiltProviderPresets[provider].modelPresets[modelPresetID].timeout,
-				additionalParametersRawJSON:
-					inbuiltProviderPresets[provider].modelPresets[modelPresetID].additionalParametersRawJSON,
-			};
-		}
-	}
-
-	// console.log('Inbuilt', JSON.stringify(inbuiltProviderPresets, null, 2));
-	// console.log('New', JSON.stringify(newPresets, null, 2));
-
-	return newPresets;
+export function getBuiltInPresets(presets: Record<ProviderName, ProviderPreset>): Record<ProviderName, ProviderPreset> {
+	return Object.fromEntries(Object.entries(presets).filter(([_, providerPreset]) => providerPreset.isBuiltIn));
 }

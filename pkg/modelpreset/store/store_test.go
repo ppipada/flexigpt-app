@@ -1,9 +1,10 @@
 package store_test
 
 import (
+	"context"
+	"encoding/base64"
 	"encoding/json"
-	"os"
-	"reflect"
+	"errors"
 	"strings"
 	"testing"
 
@@ -11,909 +12,763 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
 )
 
-func TestModelPresetStore_GetAllModelPresets(t *testing.T) {
-	filename := "test_modelpresets_getall.json"
-	defer os.Remove(filename)
-	s := newTestStore(t, filename)
+func TestPutProviderPreset(t *testing.T) {
 	ctx := t.Context()
+	s := newTestStore(t)
 
-	// Add a provider for happy path.
-	provider := spec.ProviderName("openai2")
-	modelName := spec.ModelName("gpt-4")
-	modelPresetID := spec.ModelPresetID("gpt4")
-	preset := spec.ModelPreset{
-		ID:          modelPresetID,
-		Name:        modelName,
-		DisplayName: "GPT-4",
-		Slug:        "g4",
-		IsEnabled:   true,
-	}
-	body := spec.ProviderPreset{
-		DefaultModelPresetID: modelPresetID,
-		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
-			modelPresetID: preset,
-		},
-	}
-	_, err := s.CreateProviderPreset(ctx, &spec.CreateProviderPresetRequest{
-		ProviderName: provider,
-		Body:         &body,
-	})
-	if err != nil {
-		t.Fatalf("Failed to add provider: %v", err)
-	}
+	// First successful insert - used by several scenarios later on.
+	okBody := validProviderBody("openai2")
 
-	testCases := []struct {
-		name          string
-		setupFunc     func() error
-		forceFetch    bool
-		expectedError string
+	tests := []struct {
+		name        string
+		req         *spec.PutProviderPresetRequest
+		expectError error
+		verify      func(t *testing.T)
 	}{
 		{
-			name: "HappyPath",
-			setupFunc: func() error {
-				return nil
-			},
-			forceFetch:    true,
-			expectedError: "",
-		},
-		{
-			name: "InvalidSchema",
-			setupFunc: func() error {
-				return os.WriteFile(filename, []byte(`{"invalid":"schema"}`), 0o600)
-			},
-			forceFetch:    true,
-			expectedError: "unknown field",
-		},
-		{
-			name: "EmptyFile",
-			setupFunc: func() error {
-				return os.WriteFile(filename, []byte(``), 0o600)
-			},
-			forceFetch:    true,
-			expectedError: "EOF",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			if err := tc.setupFunc(); err != nil {
-				t.Fatalf("Setup failed: %v", err)
-			}
-			got, err := s.GetAllModelPresets(
-				ctx,
-				&spec.GetAllModelPresetsRequest{ForceFetch: tc.forceFetch},
-			)
-			if err != nil && tc.expectedError == "" {
-				t.Errorf("unexpected error = %v", err)
-				return
-			}
-			if err == nil && tc.expectedError != "" {
-				t.Errorf("expected error containing %q, got nil", tc.expectedError)
-				return
-			}
-			if err != nil && !strings.Contains(err.Error(), tc.expectedError) {
-				t.Errorf("error = %v, expected substring %q", err, tc.expectedError)
-			}
-			if tc.expectedError == "" && got != nil {
-				if _, ok := got.Body.ProviderPresets[provider].ModelPresets[modelPresetID]; !ok {
-					t.Errorf("expected provider/model to be present")
-				}
-			}
-		})
-	}
-}
-
-func TestModelPresetStore_CreateProviderPreset(t *testing.T) {
-	filename := "test_modelpresets_create.json"
-	defer os.Remove(filename)
-	s := newTestStore(t, filename)
-	ctx := t.Context()
-
-	provider := spec.ProviderName("openai2")
-	modelPresetID := spec.ModelPresetID("gpt4")
-	modelName := spec.ModelName("gpt-4")
-	preset := spec.ModelPreset{
-		ID:          modelPresetID,
-		Name:        modelName,
-		DisplayName: "GPT-4",
-		Slug:        "g4",
-		IsEnabled:   true,
-	}
-	body := spec.ProviderPreset{
-		DefaultModelPresetID: modelPresetID,
-		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
-			modelPresetID: preset,
-		},
-	}
-
-	testCases := []struct {
-		name          string
-		req           *spec.CreateProviderPresetRequest
-		setupFunc     func() error
-		wantErr       bool
-		expectedError string
-	}{
-		{
-			name:    "NilRequest",
-			req:     nil,
-			wantErr: true, expectedError: "invalid request",
+			name:        "NilRequest",
+			req:         nil,
+			expectError: spec.ErrInvalidDir,
 		},
 		{
 			name: "NilBody",
-			req: &spec.CreateProviderPresetRequest{
-				ProviderName: provider,
+			req: &spec.PutProviderPresetRequest{
+				ProviderName: "openai2",
 				Body:         nil,
 			},
-			wantErr: true, expectedError: "invalid request",
+			expectError: spec.ErrInvalidDir,
 		},
 		{
-			name: "MissingDefaultModelPresetID",
-			req: &spec.CreateProviderPresetRequest{
-				ProviderName: provider,
-				Body: &spec.ProviderPreset{
-					DefaultModelPresetID: "",
-					ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
-						modelPresetID: preset,
-					},
-				},
+			name: "NameMismatch",
+			req: &spec.PutProviderPresetRequest{
+				ProviderName: "openai2",
+				Body:         validProviderBody("mismatch"),
 			},
-			wantErr: true, expectedError: "invalid request",
-		},
-		{
-			name: "MissingModelPresets",
-			req: &spec.CreateProviderPresetRequest{
-				ProviderName: provider,
-				Body: &spec.ProviderPreset{
-					DefaultModelPresetID: modelPresetID,
-					ModelPresets:         nil,
-				},
-			},
-			wantErr: true, expectedError: "invalid request",
-		},
-		{
-			name: "EmptyModelPresets",
-			req: &spec.CreateProviderPresetRequest{
-				ProviderName: provider,
-				Body: &spec.ProviderPreset{
-					DefaultModelPresetID: modelPresetID,
-					ModelPresets:         map[spec.ModelPresetID]spec.ModelPreset{},
-				},
-			},
-			wantErr: true, expectedError: "invalid request",
+			expectError: spec.ErrInvalidDir,
 		},
 		{
 			name: "HappyPath",
-			req: &spec.CreateProviderPresetRequest{
-				ProviderName: provider,
-				Body:         &body,
+			req: &spec.PutProviderPresetRequest{
+				ProviderName: "openai2",
+				Body:         okBody,
 			},
-			wantErr: false,
 		},
 		{
-			name: "DuplicateProvider",
-			req: &spec.CreateProviderPresetRequest{
-				ProviderName: provider,
-				Body:         &body,
+			name: "OverwriteProviderKeepsCreatedAtUpdatesModifiedAt",
+			req: &spec.PutProviderPresetRequest{
+				ProviderName: "openai2",
+				Body: func() *spec.PutProviderPresetRequestBody {
+					b := *okBody
+					b.DisplayName = "OPEN-AI-TWO(renamed)"
+					return &b
+				}(),
 			},
-			setupFunc: func() error {
-				_, err := s.CreateProviderPreset(ctx, &spec.CreateProviderPresetRequest{
-					ProviderName: provider,
-					Body:         &body,
+			verify: func(t *testing.T) {
+				t.Helper()
+				resp, err := s.ListProviderPresets(ctx, &spec.ListProviderPresetsRequest{
+					Names: []spec.ProviderName{"openai2"},
 				})
-				return err
+				if err != nil {
+					t.Fatalf("list failed: %v", err)
+				}
+				got := resp.Body.Providers[0]
+				if string(got.DisplayName) != "OPEN-AI-TWO(renamed)" {
+					t.Errorf("DisplayName not updated")
+				}
+				if got.CreatedAt.After(got.ModifiedAt) {
+					t.Errorf("CreatedAt must not be after ModifiedAt")
+				}
 			},
-			wantErr:       true,
-			expectedError: "already exists",
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.setupFunc != nil {
-				_ = tc.setupFunc()
+			_, err := s.PutProviderPreset(ctx, tc.req)
+			if tc.expectError != nil {
+				if err == nil || !errors.Is(err, tc.expectError) {
+					t.Fatalf("expected %v, got %v", tc.expectError, err)
+				}
+				return
 			}
-			_, err := s.CreateProviderPreset(ctx, tc.req)
-			if (err != nil) != tc.wantErr {
-				t.Errorf("CreateProviderPreset() error = %v, wantErr=%v", err, tc.wantErr)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
-			if err != nil && tc.expectedError != "" &&
-				!strings.Contains(err.Error(), tc.expectedError) {
-				t.Errorf(
-					"CreateProviderPreset() error = %v, want substring %q",
-					err,
-					tc.expectedError,
-				)
+			if tc.verify != nil {
+				tc.verify(t)
 			}
 		})
 	}
 }
 
-func TestModelPresetStore_DeleteProviderPreset(t *testing.T) {
-	filename := "test_modelpresets_delete.json"
-	defer os.Remove(filename)
-	s := newTestStore(t, filename)
+func TestPatchProviderPreset(t *testing.T) {
 	ctx := t.Context()
+	s := newTestStore(t)
 
-	provider := spec.ProviderName("openai2")
-	modelPresetID := spec.ModelPresetID("gpt4")
-	modelName := spec.ModelName("gpt-4")
-	body := spec.ProviderPreset{
-		DefaultModelPresetID: modelPresetID,
-		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
-			modelPresetID: {
-				ID:          modelPresetID,
-				Name:        modelName,
-				DisplayName: "GPT-4",
-				Slug:        "g4",
-				IsEnabled:   true,
-			},
+	// Prepare provider with two model presets.
+	createProvider(t, s, "provA", true)
+	createModelPreset(t, s, "provA", "m1", true, "")
+	createModelPreset(t, s, "provA", "m2", true, "")
+	// Make m1 default to start with.
+	_, _ = s.PatchProviderPreset(ctx, &spec.PatchProviderPresetRequest{
+		ProviderName: "provA",
+		Body: &spec.PatchProviderPresetRequestBody{
+			DefaultModelPresetID: ptrMPID("m1"),
 		},
-	}
-	_, err := s.CreateProviderPreset(ctx, &spec.CreateProviderPresetRequest{
-		ProviderName: provider,
-		Body:         &body,
 	})
-	if err != nil {
-		t.Fatalf("Failed to add provider: %v", err)
-	}
 
-	testCases := []struct {
-		name          string
-		req           *spec.DeleteProviderPresetRequest
-		wantErr       bool
-		setupFunc     func() error
-		expectedError string
+	tests := []struct {
+		name        string
+		req         *spec.PatchProviderPresetRequest
+		expectError error
+		verify      func(t *testing.T)
 	}{
 		{
-			name:          "NilRequest",
-			req:           nil,
-			wantErr:       true,
-			expectedError: "invalid request",
+			name:        "NilRequest",
+			req:         nil,
+			expectError: spec.ErrInvalidDir,
 		},
 		{
-			name: "DeleteNonExistingProvider",
-			req: &spec.DeleteProviderPresetRequest{
-				ProviderName: "cohere",
+			name: "BothFieldsNil",
+			req: &spec.PatchProviderPresetRequest{
+				ProviderName: "provA",
+				Body:         &spec.PatchProviderPresetRequestBody{},
 			},
-			wantErr:       true,
-			expectedError: "does not exist",
-		},
-		{
-			name: "DeleteExistingProvider",
-			req: &spec.DeleteProviderPresetRequest{
-				ProviderName: provider,
-			},
-			wantErr: false,
-		},
-		{
-			name: "DeleteAgain",
-			req: &spec.DeleteProviderPresetRequest{
-				ProviderName: provider,
-			},
-			setupFunc: func() error {
-				_, _ = s.DeleteProviderPreset(
-					ctx,
-					&spec.DeleteProviderPresetRequest{ProviderName: provider},
-				)
-				return nil
-			},
-			wantErr:       true,
-			expectedError: "does not exist",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			if tc.setupFunc != nil {
-				_ = tc.setupFunc()
-			}
-			_, err := s.DeleteProviderPreset(ctx, tc.req)
-			if (err != nil) != tc.wantErr {
-				t.Errorf("DeleteProviderPreset() error = %v, wantErr=%v", err, tc.wantErr)
-			}
-			if err != nil && tc.expectedError != "" &&
-				!strings.Contains(err.Error(), tc.expectedError) {
-				t.Errorf(
-					"DeleteProviderPreset() error = %v, want substring %q",
-					err,
-					tc.expectedError,
-				)
-			}
-		})
-	}
-}
-
-func TestModelPresetStore_AddModelPreset(t *testing.T) {
-	filename := "test_modelpresets_addmodel.json"
-	defer os.Remove(filename)
-	s := newTestStore(t, filename)
-	ctx := t.Context()
-
-	provider := spec.ProviderName("openai2")
-	modelPresetID := spec.ModelPresetID("gpt4")
-	modelName := spec.ModelName("gpt-4")
-	// Add provider first.
-	providerBody := spec.ProviderPreset{
-		DefaultModelPresetID: modelPresetID,
-		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
-			spec.ModelPresetID("g1"): {
-				ID:          "g1",
-				Name:        "g-1",
-				DisplayName: "G-1",
-				Slug:        "g1",
-				IsEnabled:   true,
-			},
-		},
-	}
-	_, err := s.CreateProviderPreset(ctx, &spec.CreateProviderPresetRequest{
-		ProviderName: provider,
-		Body:         &providerBody,
-	})
-	if err != nil {
-		t.Fatalf("Failed to add provider: %v", err)
-	}
-
-	preset := spec.ModelPreset{
-		ID:          modelPresetID,
-		Name:        modelName,
-		DisplayName: "GPT-4",
-		Slug:        "g4",
-		IsEnabled:   true,
-	}
-
-	testCases := []struct {
-		name          string
-		req           *spec.AddModelPresetRequest
-		wantErr       bool
-		expectedError string
-	}{
-		{
-			name:          "NilRequest",
-			req:           nil,
-			wantErr:       true,
-			expectedError: "invalid request",
-		},
-		{
-			name: "NilBody",
-			req: &spec.AddModelPresetRequest{
-				ProviderName:  provider,
-				ModelPresetID: modelPresetID,
-				Body:          nil,
-			},
-			wantErr:       true,
-			expectedError: "invalid request",
-		},
-		{
-			name: "EmptyProviderName",
-			req: &spec.AddModelPresetRequest{
-				ProviderName:  "",
-				ModelPresetID: modelPresetID,
-				Body:          &preset,
-			},
-			wantErr:       true,
-			expectedError: "invalid request",
-		},
-		{
-			name: "EmptyModelPresetID",
-			req: &spec.AddModelPresetRequest{
-				ProviderName:  provider,
-				ModelPresetID: "",
-				Body:          &preset,
-			},
-			wantErr:       true,
-			expectedError: "invalid request",
-		},
-		{
-			name: "EmptyBodyID",
-			req: &spec.AddModelPresetRequest{
-				ProviderName:  provider,
-				ModelPresetID: modelPresetID,
-				Body: &spec.ModelPreset{
-					ID:          "",
-					Name:        modelName,
-					DisplayName: "GPT-4",
-					Slug:        "g4",
-					IsEnabled:   true,
-				},
-			},
-			wantErr:       true,
-			expectedError: "invalid request",
+			expectError: spec.ErrInvalidDir,
 		},
 		{
 			name: "UnknownProvider",
-			req: &spec.AddModelPresetRequest{
-				ProviderName:  "cohere",
-				ModelPresetID: "foo",
-				Body: &spec.ModelPreset{
-					ID:          "foo",
-					Name:        "foo",
-					DisplayName: "Foo",
-					Slug:        "f",
+			req: &spec.PatchProviderPresetRequest{
+				ProviderName: "ghost",
+				Body:         &spec.PatchProviderPresetRequestBody{IsEnabled: boolPtr(false)},
+			},
+			expectError: spec.ErrProviderNotFound,
+		},
+		{
+			name: "SetIsEnabledFalse",
+			req: &spec.PatchProviderPresetRequest{
+				ProviderName: "provA",
+				Body:         &spec.PatchProviderPresetRequestBody{IsEnabled: boolPtr(false)},
+			},
+			verify: func(t *testing.T) {
+				t.Helper()
+				pp := fetchProvider(t, s, ctx, "provA")
+				if pp.IsEnabled {
+					t.Errorf("provider still enabled")
+				}
+			},
+		},
+		{
+			name: "ChangeDefaultModelPresetID",
+			req: &spec.PatchProviderPresetRequest{
+				ProviderName: "provA",
+				Body: &spec.PatchProviderPresetRequestBody{
+					DefaultModelPresetID: ptrMPID("m2"),
+				},
+			},
+			verify: func(t *testing.T) {
+				t.Helper()
+				pp := fetchProvider(t, s, ctx, "provA")
+				if pp.DefaultModelPresetID != "m2" {
+					t.Errorf("default not updated - got %q", pp.DefaultModelPresetID)
+				}
+			},
+		},
+		{
+			name: "DefaultModelPresetNotFound",
+			req: &spec.PatchProviderPresetRequest{
+				ProviderName: "provA",
+				Body: &spec.PatchProviderPresetRequestBody{
+					DefaultModelPresetID: ptrMPID("missing"),
+				},
+			},
+			expectError: spec.ErrModelPresetNotFound,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := s.PatchProviderPreset(ctx, tc.req)
+			if tc.expectError != nil {
+				if err == nil || !errors.Is(err, tc.expectError) {
+					t.Fatalf("want %v got %v", tc.expectError, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if tc.verify != nil {
+				tc.verify(t)
+			}
+		})
+	}
+}
+
+func TestDeleteProviderPreset(t *testing.T) {
+	ctx := t.Context()
+	s := newTestStore(t)
+
+	createProvider(t, s, "provDel", true)
+	createModelPreset(t, s, "provDel", "mx", true, "")
+
+	tests := []struct {
+		name        string
+		req         *spec.DeleteProviderPresetRequest
+		expectError error
+	}{
+		{
+			name:        "NilRequest",
+			req:         nil,
+			expectError: spec.ErrInvalidDir,
+		},
+		{
+			name: "CannotDeleteNonEmptyProvider",
+			req: &spec.DeleteProviderPresetRequest{
+				ProviderName: "provDel",
+			},
+			expectError: nil, // function returns ordinary error string - sentinel not exported.
+		},
+		{
+			name: "DeleteAfterRemovingModels",
+			req: &spec.DeleteProviderPresetRequest{
+				ProviderName: "provDel",
+			},
+		},
+		{
+			name:        "DeleteAgain",
+			req:         &spec.DeleteProviderPresetRequest{ProviderName: "provDel"},
+			expectError: spec.ErrProviderNotFound,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := s.DeleteProviderPreset(ctx, tc.req)
+			if tc.expectError != nil {
+				if err == nil || !errors.Is(err, tc.expectError) {
+					t.Fatalf("want %v got %v", tc.expectError, err)
+				}
+				return
+			}
+			if tc.name == "CannotDeleteNonEmptyProvider" {
+				if err == nil {
+					t.Fatalf("expected error - provider still had model presets")
+				}
+				// Remove model before second delete scenario.
+				_, _ = s.DeleteModelPreset(ctx, &spec.DeleteModelPresetRequest{
+					ProviderName:  "provDel",
+					ModelPresetID: "mx",
+				})
+
+				return
+
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
+func TestPutModelPreset(t *testing.T) {
+	ctx := t.Context()
+	s := newTestStore(t)
+	createProvider(t, s, "provM", true)
+
+	tests := []struct {
+		name        string
+		req         *spec.PutModelPresetRequest
+		expectError error
+	}{
+		{
+			name:        "NilRequest",
+			req:         nil,
+			expectError: spec.ErrInvalidDir,
+		},
+		{
+			name: "NilBody",
+			req: &spec.PutModelPresetRequest{
+				ProviderName:  "provM",
+				ModelPresetID: "m1",
+				Body:          nil,
+			},
+			expectError: spec.ErrInvalidDir,
+		},
+		{
+			name: "InvalidSlug",
+			req: &spec.PutModelPresetRequest{
+				ProviderName:  "provM",
+				ModelPresetID: "m1",
+				Body: &spec.PutModelPresetRequestBody{
+					Name:        "model-one",
+					DisplayName: "Model-1",
+					Slug:        "white space",
 					IsEnabled:   true,
 				},
 			},
-			wantErr:       true,
-			expectedError: "does not exist",
+			expectError: errors.New("invalid tag"),
 		},
 		{
-			name: "ValidRequest",
-			req: &spec.AddModelPresetRequest{
-				ProviderName:  provider,
-				ModelPresetID: modelPresetID,
-				Body:          &preset,
+			name: "UnknownProvider",
+			req: &spec.PutModelPresetRequest{
+				ProviderName:  "ghost",
+				ModelPresetID: "m1",
+				Body: &spec.PutModelPresetRequestBody{
+					Name:        "m-ghost",
+					DisplayName: "Ghost",
+					Slug:        "g",
+					IsEnabled:   true,
+				},
 			},
-			wantErr: false,
+			expectError: spec.ErrProviderNotFound,
+		},
+		{
+			name: "HappyPath",
+			req: &spec.PutModelPresetRequest{
+				ProviderName:  "provM",
+				ModelPresetID: "m1",
+				Body: &spec.PutModelPresetRequestBody{
+					Name:        "model-one",
+					DisplayName: "Model-1",
+					Slug:        "m1",
+					IsEnabled:   true,
+				},
+			},
 		},
 		{
 			name: "OverwriteExistingModel",
-			req: &spec.AddModelPresetRequest{
-				ProviderName:  provider,
-				ModelPresetID: modelPresetID,
-				Body: &spec.ModelPreset{
-					ID:          modelPresetID,
-					Name:        modelName,
-					DisplayName: "Changed",
-					Slug:        "g4",
+			req: &spec.PutModelPresetRequest{
+				ProviderName:  "provM",
+				ModelPresetID: "m1",
+				Body: &spec.PutModelPresetRequestBody{
+					Name:        "model-one",
+					DisplayName: "Model-ONE-RENAMED",
+					Slug:        "m1",
 					IsEnabled:   false,
 				},
 			},
-			wantErr: false,
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := s.AddModelPreset(ctx, tc.req)
-			if (err != nil) != tc.wantErr {
-				t.Errorf("AddModelPreset() error = %v, wantErr=%v", err, tc.wantErr)
+			_, err := s.PutModelPreset(ctx, tc.req)
+			if tc.expectError != nil {
+				if err == nil || !strings.Contains(err.Error(), tc.expectError.Error()) {
+					t.Fatalf("want %v got %v", tc.expectError, err)
+				}
+				return
 			}
-			if err != nil && tc.expectedError != "" &&
-				!strings.Contains(err.Error(), tc.expectedError) {
-				t.Errorf("AddModelPreset() error = %v, want substring %q", err, tc.expectedError)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
 		})
 	}
 }
 
-func TestModelPresetStore_DeleteModelPreset(t *testing.T) {
-	filename := "test_modelpresets_delmodel.json"
-	defer os.Remove(filename)
-	s := newTestStore(t, filename)
+func TestPatchModelPreset(t *testing.T) {
 	ctx := t.Context()
+	s := newTestStore(t)
+	createProvider(t, s, "provPM", true)
+	createModelPreset(t, s, "provPM", "mA", true, "")
 
-	provider := spec.ProviderName("openai2")
-	modelPresetID := spec.ModelPresetID("gpt4")
-	modelName := spec.ModelName("gpt-4")
-	providerBody := spec.ProviderPreset{
-		DefaultModelPresetID: modelPresetID,
-		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
-			spec.ModelPresetID("g1"): {
-				ID:          "g1",
-				Name:        "g-1",
-				DisplayName: "G-1",
-				Slug:        "g1",
-				IsEnabled:   true,
+	tests := []struct {
+		name        string
+		req         *spec.PatchModelPresetRequest
+		expectError error
+		verify      func(t *testing.T)
+	}{
+		{
+			name:        "NilRequest",
+			req:         nil,
+			expectError: spec.ErrInvalidDir,
+		},
+		{
+			name: "UnknownProvider",
+			req: &spec.PatchModelPresetRequest{
+				ProviderName:  "ghost",
+				ModelPresetID: "mA",
+				Body:          &spec.PatchModelPresetRequestBody{IsEnabled: true},
+			},
+			expectError: spec.ErrProviderNotFound,
+		},
+		{
+			name: "DisableModel",
+			req: &spec.PatchModelPresetRequest{
+				ProviderName:  "provPM",
+				ModelPresetID: "mA",
+				Body:          &spec.PatchModelPresetRequestBody{IsEnabled: false},
+			},
+			verify: func(t *testing.T) {
+				t.Helper()
+				pp := fetchProvider(t, s, ctx, "provPM")
+				if pp.ModelPresets["mA"].IsEnabled {
+					t.Errorf("model still enabled")
+				}
 			},
 		},
 	}
-	_, err := s.CreateProviderPreset(ctx, &spec.CreateProviderPresetRequest{
-		ProviderName: provider,
-		Body:         &providerBody,
-	})
-	if err != nil {
-		t.Fatalf("Failed to add provider: %v", err)
-	}
-	_, err = s.AddModelPreset(ctx, &spec.AddModelPresetRequest{
-		ProviderName:  provider,
-		ModelPresetID: modelPresetID,
-		Body: &spec.ModelPreset{
-			ID:          modelPresetID,
-			Name:        modelName,
-			DisplayName: "GPT-4",
-			Slug:        "g4",
-			IsEnabled:   true,
-		},
-	})
-	if err != nil {
-		t.Fatalf("Failed to add model preset: %v", err)
-	}
 
-	testCases := []struct {
-		name          string
-		req           *spec.DeleteModelPresetRequest
-		setupFunc     func() error
-		wantErr       bool
-		expectedError string
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := s.PatchModelPreset(ctx, tc.req)
+			if tc.expectError != nil {
+				if err == nil || !errors.Is(err, tc.expectError) {
+					t.Fatalf("want %v got %v", tc.expectError, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if tc.verify != nil {
+				tc.verify(t)
+			}
+		})
+	}
+}
+
+func TestDeleteModelPreset(t *testing.T) {
+	ctx := t.Context()
+	s := newTestStore(t)
+	createProvider(t, s, "provDM", true)
+	createModelPreset(t, s, "provDM", "toDie", true, "")
+
+	tests := []struct {
+		name        string
+		req         *spec.DeleteModelPresetRequest
+		expectError error
 	}{
 		{
-			name:          "NilRequest",
-			req:           nil,
-			wantErr:       true,
-			expectedError: "request cannot be nil",
+			name:        "NilRequest",
+			req:         nil,
+			expectError: spec.ErrInvalidDir,
 		},
 		{
 			name: "UnknownProvider",
 			req: &spec.DeleteModelPresetRequest{
-				ProviderName:  "cohere",
-				ModelPresetID: "foo",
+				ProviderName:  "ghost",
+				ModelPresetID: "x",
 			},
-			wantErr:       true,
-			expectedError: "does not exist",
+			expectError: spec.ErrProviderNotFound,
 		},
 		{
-			name: "DeleteExistingModel",
+			name: "HappyPath",
 			req: &spec.DeleteModelPresetRequest{
-				ProviderName:  provider,
-				ModelPresetID: modelPresetID,
+				ProviderName:  "provDM",
+				ModelPresetID: "toDie",
 			},
-			wantErr: false,
 		},
 		{
 			name: "DeleteAgain",
 			req: &spec.DeleteModelPresetRequest{
-				ProviderName:  provider,
-				ModelPresetID: modelPresetID,
+				ProviderName:  "provDM",
+				ModelPresetID: "toDie",
 			},
-			setupFunc: func() error {
-				_, _ = s.DeleteModelPreset(ctx, &spec.DeleteModelPresetRequest{
-					ProviderName:  provider,
-					ModelPresetID: modelPresetID,
-				})
-				return nil
-			},
-			wantErr: false,
-		},
-		{
-			name: "EmptyModelPresetID",
-			req: &spec.DeleteModelPresetRequest{
-				ProviderName:  provider,
-				ModelPresetID: "",
-			},
-			// Should not error, just no-op.
-			wantErr: false,
+			expectError: spec.ErrModelPresetNotFound,
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.setupFunc != nil {
-				_ = tc.setupFunc()
-			}
 			_, err := s.DeleteModelPreset(ctx, tc.req)
-			if (err != nil) != tc.wantErr {
-				t.Errorf("DeleteModelPreset() error = %v, wantErr=%v", err, tc.wantErr)
+			if tc.expectError != nil {
+				if err == nil || !errors.Is(err, tc.expectError) {
+					t.Fatalf("want %v got %v", tc.expectError, err)
+				}
+				return
 			}
-			if err != nil && tc.expectedError != "" &&
-				!strings.Contains(err.Error(), tc.expectedError) {
-				t.Errorf("DeleteModelPreset() error = %v, want substring %q", err, tc.expectedError)
+			if err != nil {
+				t.Fatalf("unexpected: %v", err)
 			}
 		})
 	}
 }
 
-func TestModelPresetStore_Persistence(t *testing.T) {
-	filename := "test_modelpresets_persist.json"
-	defer os.Remove(filename)
-	s := newTestStore(t, filename)
+func TestListProviderPresetsPagingAndFiltering(t *testing.T) {
 	ctx := t.Context()
+	s := newTestStore(t)
 
-	provider := spec.ProviderName("persistprov")
-	modelPresetID := spec.ModelPresetID("persistmodelid")
-	modelName := spec.ModelName("persistmodel")
-	body := spec.ProviderPreset{
-		DefaultModelPresetID: modelPresetID,
-		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
-			modelPresetID: {
-				ID:          modelPresetID,
-				Name:        modelName,
-				DisplayName: "Persist Model",
-				Slug:        "pm",
-				IsEnabled:   true,
-			},
-		},
-	}
-	_, err := s.CreateProviderPreset(ctx, &spec.CreateProviderPresetRequest{
-		ProviderName: provider,
-		Body:         &body,
-	})
+	createProvider(t, s, "p1", true)
+	createProvider(t, s, "p2", false) // disabled
+	createProvider(t, s, "p3", true)
+
+	// Default request - disabled filtered out.
+	resp, err := s.ListProviderPresets(ctx, &spec.ListProviderPresetsRequest{})
 	if err != nil {
-		t.Fatalf("CreateProviderPreset failed: %v", err)
+		t.Fatalf("list failed: %v", err)
 	}
-
-	// Re-open store.
-	s2 := &store.ModelPresetStore{}
-	if err := store.InitModelPresetStore(s2, filename); err != nil {
-		t.Fatalf("InitModelPresetStore failed: %v", err)
-	}
-
-	resp, err := s2.GetAllModelPresets(ctx, &spec.GetAllModelPresetsRequest{})
-	if err != nil {
-		t.Fatalf("GetAllModelPresets failed: %v", err)
-	}
-	found := false
-	for pname, pp := range resp.Body.ProviderPresets {
-		if pname == provider {
-			if _, ok := pp.ModelPresets[modelPresetID]; ok {
-				found = true
-			}
+	providers1 := make([]spec.ProviderPreset, 0)
+	for _, p := range resp.Body.Providers {
+		if p.IsBuiltIn != true {
+			providers1 = append(providers1, p)
 		}
 	}
-	if !found {
-		t.Errorf("persisted provider/model not found after reload")
+	if len(providers1) != 2 {
+		t.Fatalf("expected 2 enabled providers, got %d", len(providers1))
+	}
+
+	// Include disabled.
+	resp, err = s.ListProviderPresets(ctx, &spec.ListProviderPresetsRequest{IncludeDisabled: true})
+	if err != nil {
+		t.Fatalf("list failed: %v", err)
+	}
+	providers2 := make([]spec.ProviderPreset, 0)
+	for _, p := range resp.Body.Providers {
+		if p.IsBuiltIn != true {
+			providers2 = append(providers2, p)
+		}
+	}
+	if len(providers2) != 3 {
+		t.Fatalf("expected 3 providers, got %d", len(providers2))
+	}
+
+	// Names filter.
+	resp, err = s.ListProviderPresets(ctx, &spec.ListProviderPresetsRequest{
+		Names: []spec.ProviderName{"p2"},
+	})
+	if err != nil {
+		t.Fatalf("list failed: %v", err)
+	}
+	if len(resp.Body.Providers) != 0 {
+		t.Fatalf("disabled provider should be filtered when IncludeDisabled=false")
+	}
+
+	// Names + includeDisabled.
+	resp, _ = s.ListProviderPresets(ctx, &spec.ListProviderPresetsRequest{
+		Names:           []spec.ProviderName{"p2"},
+		IncludeDisabled: true,
+	})
+	if len(resp.Body.Providers) != 1 || resp.Body.Providers[0].Name != "p2" {
+		t.Fatalf("filter on names failed")
+	}
+
+	// Paging - pageSize 2.
+	resp1, _ := s.ListProviderPresets(ctx, &spec.ListProviderPresetsRequest{
+		PageSize:        2,
+		IncludeDisabled: true,
+	})
+	if len(resp1.Body.Providers) != 2 || resp1.Body.NextPageToken == nil {
+		t.Fatalf("expected first page size=2 with token")
+	}
+	// Second page using token.
+	resp2, err := s.ListProviderPresets(ctx, &spec.ListProviderPresetsRequest{
+		PageToken: *resp1.Body.NextPageToken,
+	})
+	if err != nil {
+		t.Fatalf("second page error: %v", err)
+	}
+
+	providers3 := make([]spec.ProviderPreset, 0)
+	for _, p := range resp2.Body.Providers {
+		if p.IsBuiltIn != true {
+			providers3 = append(providers3, p)
+		}
+	}
+
+	if len(providers3) != 1 {
+		t.Fatalf("expected remaining 1 provider")
+	}
+
+	// Sanity - decode token and ensure cursor matches.
+	var tok spec.ProviderPageToken
+	_ = jsonDecodeB64(*resp1.Body.NextPageToken, &tok)
+	if tok.CursorSlug != resp1.Body.Providers[len(resp1.Body.Providers)-1].Name {
+		t.Errorf("cursor mismatch")
 	}
 }
 
-func TestModelPresetStore_BoundaryCases(t *testing.T) {
-	filename := "test_modelpresets_boundary.json"
-	defer os.Remove(filename)
-	s := newTestStore(t, filename)
+func TestBuiltInProviderReadOnlyAndToggle(t *testing.T) {
 	ctx := t.Context()
-	provider := spec.ProviderName("boundaryprov")
-	modelPresetID1 := spec.ModelPresetID("minmodelid")
-	modelName1 := spec.ModelName("minmodel")
-	modelPresetID2 := spec.ModelPresetID("fullmodelid")
-	modelName2 := spec.ModelName("fullmodel")
+	s := newTestStore(t) // Loads built-ins automatically.
 
-	// Create provider with empty ModelPresets, but valid DefaultModelPresetID (must be present and in map).
-	emptyPreset := spec.ModelPreset{
-		ID:          modelPresetID1,
-		Name:        modelName1,
-		DisplayName: "",
-		Slug:        "",
-		IsEnabled:   false,
-	}
-	providerBody := spec.ProviderPreset{
-		DefaultModelPresetID: modelPresetID1,
-		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
-			modelPresetID1: emptyPreset,
-		},
-	}
-	_, err := s.CreateProviderPreset(ctx, &spec.CreateProviderPresetRequest{
-		ProviderName: provider,
-		Body:         &providerBody,
-	})
-	if err != nil {
-		t.Fatalf("CreateProviderPreset failed: %v", err)
+	const (
+		builtinProvider = spec.ProviderName("openai") // shipped built-in.
+		builtinModelID  = spec.ModelPresetID("gpt4o") // ditto model-preset.
+	)
+
+	// Sanity: the built-in provider must be present right after store creation.
+	if !providerExists(t, s, ctx, builtinProvider) {
+		t.Fatalf("built-in provider %q not found - fixture / embedding broken", builtinProvider)
 	}
 
-	// Add model with all optional fields set.
-	temp := 0.5
-	maxPrompt := 1000
-	maxOutput := 200
-	timeout := 30
-	systemPrompt := "sys"
-	reasoning := &spec.ReasoningParams{
-		Type:   spec.ReasoningTypeHybridWithTokens,
-		Level:  spec.ReasoningLevelHigh,
-		Tokens: 42,
-	}
-	rj, _ := json.Marshal(map[string]any{"foo": "bar"})
-	srj := string(rj)
-	fullPreset := spec.ModelPreset{
-		ID:                          modelPresetID2,
-		Name:                        modelName2,
-		DisplayName:                 "Full",
-		Slug:                        "f",
-		IsEnabled:                   true,
-		Stream:                      boolPtr(true),
-		MaxPromptLength:             &maxPrompt,
-		MaxOutputLength:             &maxOutput,
-		Temperature:                 &temp,
-		Reasoning:                   reasoning,
-		SystemPrompt:                &systemPrompt,
-		Timeout:                     &timeout,
-		AdditionalParametersRawJSON: &srj,
-	}
-	_, err = s.AddModelPreset(ctx, &spec.AddModelPresetRequest{
-		ProviderName:  provider,
-		ModelPresetID: modelPresetID2,
-		Body:          &fullPreset,
-	})
-	if err != nil {
-		t.Fatalf("AddModelPreset (full) failed: %v", err)
-	}
-	// Check round-trip.
-	resp, err := s.GetAllModelPresets(ctx, &spec.GetAllModelPresetsRequest{})
-	if err != nil {
-		t.Fatalf("GetAllModelPresets failed: %v", err)
-	}
-	got := resp.Body.ProviderPresets[provider].ModelPresets[modelPresetID2]
-	if !reflect.DeepEqual(got, fullPreset) {
-		t.Errorf("round-trip mismatch: got %+v, want %+v", got, fullPreset)
-	}
-}
-
-func TestModelPresetStore_SetDefaultModelPreset(t *testing.T) {
-	filename := "test_modelpresets_setdefault.json"
-	defer os.Remove(filename)
-	s := newTestStore(t, filename)
-	ctx := t.Context()
-
-	provider := spec.ProviderName("openai2")
-	modelPresetID1 := spec.ModelPresetID("gpt4")
-	modelPresetID2 := spec.ModelPresetID("gpt3")
-	modelName1 := spec.ModelName("gpt-4")
-	modelName2 := spec.ModelName("gpt-3")
-
-	// Add provider with two model presets.
-	body := spec.ProviderPreset{
-		DefaultModelPresetID: modelPresetID1,
-		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
-			modelPresetID1: {
-				ID:          modelPresetID1,
-				Name:        modelName1,
-				DisplayName: "GPT-4",
-				Slug:        "g4",
-				IsEnabled:   true,
-			},
-			modelPresetID2: {
-				ID:          modelPresetID2,
-				Name:        modelName2,
-				DisplayName: "GPT-3",
-				Slug:        "g3",
-				IsEnabled:   true,
-			},
-		},
-	}
-	_, err := s.CreateProviderPreset(ctx, &spec.CreateProviderPresetRequest{
-		ProviderName: provider,
-		Body:         &body,
-	})
-	if err != nil {
-		t.Fatalf("Failed to add provider: %v", err)
-	}
-
-	testCases := []struct {
-		name          string
-		req           *spec.SetDefaultModelPresetRequest
-		setupFunc     func() error
-		wantErr       bool
-		expectedError string
-		verifyFunc    func(t *testing.T)
-	}{
-		{
-			name:          "NilRequest",
-			req:           nil,
-			wantErr:       true,
-			expectedError: "invalid request",
-		},
-		{
-			name: "NilBody",
-			req: &spec.SetDefaultModelPresetRequest{
-				ProviderName: provider,
-				Body:         nil,
-			},
-			wantErr:       true,
-			expectedError: "invalid request",
-		},
-		{
-			name: "EmptyModelPresetID",
-			req: &spec.SetDefaultModelPresetRequest{
-				ProviderName: provider,
-				Body:         &spec.SetDefaultModelPresetRequestBody{ModelPresetID: ""},
-			},
-			wantErr:       true,
-			expectedError: "invalid request",
-		},
-		{
-			name: "UnknownProvider",
-			req: &spec.SetDefaultModelPresetRequest{
-				ProviderName: "unknownprov",
-				Body:         &spec.SetDefaultModelPresetRequestBody{ModelPresetID: modelPresetID1},
-			},
-			wantErr:       true,
-			expectedError: "does not exist",
-		},
-		{
-			name: "UnknownModelPresetID",
-			req: &spec.SetDefaultModelPresetRequest{
-				ProviderName: provider,
-				Body:         &spec.SetDefaultModelPresetRequestBody{ModelPresetID: "notfound"},
-			},
-			wantErr:       true,
-			expectedError: "model preset not found",
-		},
-		{
-			name: "HappyPath",
-			req: &spec.SetDefaultModelPresetRequest{
-				ProviderName: provider,
-				Body:         &spec.SetDefaultModelPresetRequestBody{ModelPresetID: modelPresetID2},
-			},
-			wantErr: false,
-			verifyFunc: func(t *testing.T) {
-				t.Helper()
-				resp, err := s.GetAllModelPresets(ctx, &spec.GetAllModelPresetsRequest{})
-				if err != nil {
-					t.Fatalf("GetAllModelPresets failed: %v", err)
-				}
-				got := resp.Body.ProviderPresets[provider].DefaultModelPresetID
-				if got != modelPresetID2 {
-					t.Errorf("DefaultModelPresetID = %v, want %v", got, modelPresetID2)
-				}
-			},
-		},
-		{
-			name: "ChangeDefaultAgain",
-			req: &spec.SetDefaultModelPresetRequest{
-				ProviderName: provider,
-				Body:         &spec.SetDefaultModelPresetRequestBody{ModelPresetID: modelPresetID1},
-			},
-			wantErr: false,
-			verifyFunc: func(t *testing.T) {
-				t.Helper()
-				resp, err := s.GetAllModelPresets(ctx, &spec.GetAllModelPresetsRequest{})
-				if err != nil {
-					t.Fatalf("GetAllModelPresets failed: %v", err)
-				}
-				got := resp.Body.ProviderPresets[provider].DefaultModelPresetID
-				if got != modelPresetID1 {
-					t.Errorf("DefaultModelPresetID = %v, want %v", got, modelPresetID1)
-				}
-			},
-		},
-		{
-			name: "ModelPresetIDPresentButNotInMap",
-			req: &spec.SetDefaultModelPresetRequest{
-				ProviderName: provider,
-				Body:         &spec.SetDefaultModelPresetRequestBody{ModelPresetID: "ghost"},
-			},
-			wantErr:       true,
-			expectedError: "model preset not found",
-		},
-		{
-			name: "ModelPresetIDIsEmptyString",
-			req: &spec.SetDefaultModelPresetRequest{
-				ProviderName: provider,
-				Body:         &spec.SetDefaultModelPresetRequestBody{ModelPresetID: ""},
-			},
-			wantErr:       true,
-			expectedError: "invalid request",
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			if tc.setupFunc != nil {
-				_ = tc.setupFunc()
-			}
-			_, err := s.SetDefaultModelPreset(ctx, tc.req)
-			if (err != nil) != tc.wantErr {
-				t.Errorf("SetDefaultModelPreset() error = %v, wantErr=%v", err, tc.wantErr)
-			}
-			if err != nil && tc.expectedError != "" &&
-				!strings.Contains(err.Error(), tc.expectedError) {
-				t.Errorf(
-					"SetDefaultModelPreset() error = %v, want substring %q",
-					err,
-					tc.expectedError,
-				)
-			}
-			if err == nil && tc.verifyFunc != nil {
-				tc.verifyFunc(t)
-			}
+	t.Run("PutProviderPreset_disallowed", func(t *testing.T) {
+		_, err := s.PutProviderPreset(ctx, &spec.PutProviderPresetRequest{
+			ProviderName: builtinProvider,
+			Body:         validProviderBody(string(builtinProvider)),
 		})
-	}
+		if !errors.Is(err, spec.ErrBuiltInReadOnly) {
+			t.Fatalf("expected ErrBuiltInReadOnly, got %v", err)
+		}
+	})
+
+	t.Run("DeleteProviderPreset_disallowed", func(t *testing.T) {
+		_, err := s.DeleteProviderPreset(ctx, &spec.DeleteProviderPresetRequest{
+			ProviderName: builtinProvider,
+		})
+		if !errors.Is(err, spec.ErrBuiltInReadOnly) {
+			t.Fatalf("expected ErrBuiltInReadOnly, got %v", err)
+		}
+	})
+
+	t.Run("PutModelPreset_disallowed", func(t *testing.T) {
+		_, err := s.PutModelPreset(ctx, &spec.PutModelPresetRequest{
+			ProviderName:  builtinProvider,
+			ModelPresetID: "whatever",
+			Body: &spec.PutModelPresetRequestBody{
+				Name:        "foo",
+				DisplayName: "Foo",
+				Slug:        "foo",
+				IsEnabled:   true,
+			},
+		})
+		if !errors.Is(err, spec.ErrBuiltInReadOnly) {
+			t.Fatalf("expected ErrBuiltInReadOnly, got %v", err)
+		}
+	})
+
+	t.Run("Disable_and_enable_provider", func(t *testing.T) {
+		// Disable.
+		_, err := s.PatchProviderPreset(ctx, &spec.PatchProviderPresetRequest{
+			ProviderName: builtinProvider,
+			Body:         &spec.PatchProviderPresetRequestBody{IsEnabled: boolPtr(false)},
+		})
+		if err != nil {
+			t.Fatalf("disable failed: %v", err)
+		}
+		if fetchProvider(t, s, ctx, string(builtinProvider)).IsEnabled {
+			t.Fatalf("provider is still enabled after disable patch")
+		}
+
+		// Enable again.
+		_, err = s.PatchProviderPreset(ctx, &spec.PatchProviderPresetRequest{
+			ProviderName: builtinProvider,
+			Body:         &spec.PatchProviderPresetRequestBody{IsEnabled: boolPtr(true)},
+		})
+		if err != nil {
+			t.Fatalf("enable failed: %v", err)
+		}
+		if !fetchProvider(t, s, ctx, string(builtinProvider)).IsEnabled {
+			t.Fatalf("provider is still disabled after enable patch")
+		}
+	})
+
+	t.Run("Disable_model_preset_inside_built_in_provider", func(t *testing.T) {
+		_, err := s.PatchModelPreset(ctx, &spec.PatchModelPresetRequest{
+			ProviderName:  builtinProvider,
+			ModelPresetID: builtinModelID,
+			Body:          &spec.PatchModelPresetRequestBody{IsEnabled: false},
+		})
+		if err != nil {
+			t.Fatalf("patch builtin model failed: %v", err)
+		}
+
+		pp := fetchProvider(t, s, ctx, string(builtinProvider))
+		if mp, ok := pp.ModelPresets[builtinModelID]; !ok || mp.IsEnabled {
+			t.Fatalf("model-preset not disabled inside provider map")
+		}
+	})
 }
 
-func newTestStore(t *testing.T, filename string) *store.ModelPresetStore {
+// providerExists is a lightweight presence check.
+func providerExists(t *testing.T, s *store.ModelPresetStore, ctx context.Context,
+	name spec.ProviderName,
+) bool {
 	t.Helper()
-	if err := initTestFile(filename); err != nil {
-		t.Fatalf("Failed to init test file: %v", err)
+	resp, err := s.ListProviderPresets(ctx, &spec.ListProviderPresetsRequest{
+		Names:           []spec.ProviderName{name},
+		IncludeDisabled: true,
+	})
+	if err != nil {
+		t.Fatalf("ListProviderPresets failed: %v", err)
 	}
-	s := &store.ModelPresetStore{}
-	if err := store.InitModelPresetStore(s, filename); err != nil {
-		t.Fatalf("InitModelPresetStore failed: %v", err)
+	return len(resp.Body.Providers) == 1
+}
+
+// newTestStore creates a temporary on-disk store for every test.
+func newTestStore(t *testing.T) *store.ModelPresetStore {
+	t.Helper()
+	s, err := store.NewModelPresetStore(t.TempDir())
+	if err != nil {
+		t.Fatalf("store init failed: %v", err)
 	}
 	return s
 }
 
-func initTestFile(filePath string) error {
-	if _, err := os.Stat(filePath); err == nil {
-		return os.Remove(filePath)
-	} else if !os.IsNotExist(err) {
-		return err
+// createProvider inserts a provider quickly or fails the test.
+func createProvider(t *testing.T, s *store.ModelPresetStore, name string, enabled bool) {
+	t.Helper()
+	body := validProviderBody(name)
+	body.IsEnabled = enabled
+	_, err := s.PutProviderPreset(t.Context(), &spec.PutProviderPresetRequest{
+		ProviderName: spec.ProviderName(name),
+		Body:         body,
+	})
+	if err != nil {
+		t.Fatalf("createProvider(%s) failed: %v", name, err)
 	}
-	return nil
 }
 
-func boolPtr(b bool) *bool { return &b }
+// createModelPreset adds a model to an existing provider.
+func createModelPreset(t *testing.T, s *store.ModelPresetStore,
+	prov, id string, enabled bool, slug string,
+) {
+	t.Helper()
+	if slug == "" {
+		slug = id
+	}
+	_, err := s.PutModelPreset(t.Context(), &spec.PutModelPresetRequest{
+		ProviderName:  spec.ProviderName(prov),
+		ModelPresetID: spec.ModelPresetID(id),
+		Body: &spec.PutModelPresetRequestBody{
+			Name:        spec.ModelName(id),
+			DisplayName: spec.ModelDisplayName(strings.ToUpper(id)),
+			Slug:        spec.ModelSlug(slug),
+			IsEnabled:   enabled,
+		},
+	})
+	if err != nil {
+		t.Fatalf("createModelPreset(%s/%s) failed: %v", prov, id, err)
+	}
+}
+
+// validProviderBody returns a minimal but valid provider preset body.
+func validProviderBody(name string) *spec.PutProviderPresetRequestBody {
+	return &spec.PutProviderPresetRequestBody{
+		Name:                     spec.ProviderName(name),
+		DisplayName:              spec.ProviderDisplayName(strings.ToUpper(name)),
+		APIType:                  spec.CustomOpenAICompatible,
+		IsEnabled:                true,
+		Origin:                   "https://api." + name + ".example.com",
+		ChatCompletionPathPrefix: spec.OpenAICompatibleChatCompletionPathPrefix,
+		APIKeyHeaderKey:          spec.OpenAICompatibleAPIKeyHeaderKey,
+		DefaultHeaders:           spec.OpenAICompatibleDefaultHeaders,
+	}
+}
+
+// fetchProvider pulls a single provider by name, fails the test if missing.
+func fetchProvider(t *testing.T, s *store.ModelPresetStore, ctx context.Context,
+	name string,
+) spec.ProviderPreset {
+	t.Helper()
+	resp, err := s.ListProviderPresets(ctx, &spec.ListProviderPresetsRequest{
+		Names:           []spec.ProviderName{spec.ProviderName(name)},
+		IncludeDisabled: true,
+	})
+	if err != nil {
+		t.Fatalf("list failed: %v", err)
+	}
+	if len(resp.Body.Providers) != 1 {
+		t.Fatalf("provider %s not found", name)
+	}
+	return resp.Body.Providers[0]
+}
+
+// Utility helpers.
+func boolPtr(b bool) *bool                  { return &b }
+func ptrMPID(id string) *spec.ModelPresetID { mpid := spec.ModelPresetID(id); return &mpid }
+func jsonDecodeB64(in string, out any) error {
+	raw, _ := base64.StdEncoding.DecodeString(in)
+	return json.Unmarshal(raw, out)
+}

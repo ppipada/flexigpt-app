@@ -1,30 +1,72 @@
 package spec
 
-type GetAllModelPresetsRequest struct {
-	ForceFetch bool `query:"forceFetch" doc:"Force refresh the model presets and get" required:"false"`
+type PutProviderPresetRequestBody struct {
+	Name                     ProviderName        `json:"name"                      required:"true"`
+	DisplayName              ProviderDisplayName `json:"displayName"               required:"true"`
+	APIType                  ProviderAPIType     `json:"apiType"                   required:"true"`
+	IsEnabled                bool                `json:"isEnabled"                 required:"true"`
+	Origin                   string              `json:"origin"                    required:"true"`
+	ChatCompletionPathPrefix string              `json:"chatCompletionPathPrefix"  required:"true"`
+	APIKeyHeaderKey          string              `json:"apiKeyHeaderKey,omitempty"`
+	DefaultHeaders           map[string]string   `json:"defaultHeaders,omitempty"`
 }
-
-type GetAllModelPresetsResponse struct {
-	Body *PresetsSchema
-}
-
-type CreateProviderPresetRequest struct {
+type PutProviderPresetRequest struct {
 	ProviderName ProviderName `path:"providerName" required:"true"`
-	Body         *ProviderPreset
+	Body         *PutProviderPresetRequestBody
 }
-type CreateProviderPresetResponse struct{}
+
+type PutProviderPresetResponse struct{}
+
+type PatchProviderPresetRequestBody struct {
+	IsEnabled            *bool          `json:"isEnabled,omitempty"`
+	DefaultModelPresetID *ModelPresetID `json:"defaultModelPresetID,omitempty"`
+}
+
+type PatchProviderPresetRequest struct {
+	ProviderName ProviderName `path:"providerName" required:"true"`
+	Body         *PatchProviderPresetRequestBody
+}
+
+type PatchProviderPresetResponse struct{}
 
 type DeleteProviderPresetRequest struct {
 	ProviderName ProviderName `path:"providerName" required:"true"`
 }
 type DeleteProviderPresetResponse struct{}
 
-type AddModelPresetRequest struct {
+type PutModelPresetRequestBody struct {
+	Name        ModelName        `json:"name"        required:"true"`
+	Slug        ModelSlug        `json:"slug"        required:"true"`
+	DisplayName ModelDisplayName `json:"displayName" required:"true"`
+	IsEnabled   bool             `json:"isEnabled"   required:"true"`
+
+	Stream                      *bool            `json:"stream,omitempty"`
+	MaxPromptLength             *int             `json:"maxPromptLength,omitempty"`
+	MaxOutputLength             *int             `json:"maxOutputLength,omitempty"`
+	Temperature                 *float64         `json:"temperature,omitempty"`
+	Reasoning                   *ReasoningParams `json:"reasoning,omitempty"`
+	SystemPrompt                *string          `json:"systemPrompt,omitempty"`
+	Timeout                     *int             `json:"timeout,omitempty"`
+	AdditionalParametersRawJSON *string          `json:"additionalParametersRawJSON,omitempty"`
+}
+
+type PutModelPresetRequest struct {
 	ProviderName  ProviderName  `path:"providerName"  required:"true"`
 	ModelPresetID ModelPresetID `path:"modelPresetID" required:"true"`
-	Body          *ModelPreset
+	Body          *PutModelPresetRequestBody
 }
-type AddModelPresetResponse struct{}
+type PutModelPresetResponse struct{}
+
+type PatchModelPresetRequestBody struct {
+	IsEnabled bool `json:"isEnabled" required:"true"`
+}
+
+type PatchModelPresetRequest struct {
+	ProviderName  ProviderName  `path:"providerName"  required:"true"`
+	ModelPresetID ModelPresetID `path:"modelPresetID" required:"true"`
+	Body          *PatchModelPresetRequestBody
+}
+type PatchModelPresetResponse struct{}
 
 type DeleteModelPresetRequest struct {
 	ProviderName  ProviderName  `path:"providerName"  required:"true"`
@@ -32,12 +74,23 @@ type DeleteModelPresetRequest struct {
 }
 type DeleteModelPresetResponse struct{}
 
-type SetDefaultModelPresetRequestBody struct {
-	ModelPresetID ModelPresetID `path:"modelPresetID" required:"true"`
-}
-type SetDefaultModelPresetRequest struct {
-	ProviderName ProviderName `path:"providerName"`
-	Body         *SetDefaultModelPresetRequestBody
+type ProviderPageToken struct {
+	Names           []ProviderName `json:"n,omitempty"`
+	IncludeDisabled bool           `json:"d,omitempty"`
+	PageSize        int            `json:"s,omitempty"`
+	CursorSlug      ProviderName   `json:"c,omitempty"`
 }
 
-type SetDefaultModelPresetResponse struct{}
+type ListProviderPresetsRequest struct {
+	Names           []ProviderName `query:"names"`
+	IncludeDisabled bool           `query:"includeDisabled"`
+	PageSize        int            `query:"pageSize"`
+	PageToken       string         `query:"pageToken"`
+}
+type ListProviderPresetsResponseBody struct {
+	Providers     []ProviderPreset `json:"providers"`
+	NextPageToken *string          `json:"nextPageToken,omitempty"`
+}
+type ListProviderPresetsResponse struct {
+	Body *ListProviderPresetsResponseBody
+}

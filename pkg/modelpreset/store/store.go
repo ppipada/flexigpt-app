@@ -1,272 +1,570 @@
+// Package store implements the provider / model-preset storage layer.
+// It offers CRUD operations for both providers and model-presets, integrates
+// read-only built-in data, performs structural validation and supports
+// paged listing with opaque tokens.
 package store
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
+	"path/filepath"
+	"slices"
+	"sort"
+	"sync"
+	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/modelpreset/consts"
 	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 )
 
+// ModelPresetStore is the main storage façade for provider / model-preset data.
 type ModelPresetStore struct {
-	store         *filestore.MapFileStore
-	defaultData   spec.PresetsSchema
-	encryptEncDec encdec.EncoderDecoder
-	keyEncDec     encdec.StringEncoderDecoder
+	baseDir string
+
+	// User-modifiable provider / model presets.
+	userStore *filestore.MapFileStore
+
+	// Read-only built-ins with overlay enable/disable flags.
+	builtinData *BuiltInPresets
+
+	mu sync.RWMutex // Guards userStore modifications.
 }
 
-func InitModelPresetStore(mpStore *ModelPresetStore, filename string) error {
-	modelPresetsMap, err := encdec.StructWithJSONTagsToMap(consts.DefaultPresetsSchema)
+// NewModelPresetStore initialises the storage in baseDir.
+// Built-in data are automatically loaded and overlaid.
+func NewModelPresetStore(baseDir string) (*ModelPresetStore, error) {
+	s := &ModelPresetStore{baseDir: filepath.Clean(baseDir)}
+
+	bi, err := NewBuiltInPresets(baseDir, spec.BuiltInSnapshotMaxAge)
 	if err != nil {
-		return errors.New("could not get map of model presets data")
+		return nil, err
 	}
-	mpStore.defaultData = consts.DefaultPresetsSchema
-	mpStore.encryptEncDec = encdec.EncryptedStringValueEncoderDecoder{}
-	mpStore.keyEncDec = encdec.Base64StringEncoderDecoder{}
-	store, err := filestore.NewMapFileStore(
-		filename,
-		modelPresetsMap,
+	s.builtinData = bi
+
+	def, err := encdec.StructWithJSONTagsToMap(spec.PresetsSchema{
+		Version:         spec.SchemaVersion,
+		ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{},
+	})
+	if err != nil {
+		return nil, err
+	}
+	s.userStore, err = filestore.NewMapFileStore(
+		filepath.Join(baseDir, spec.ModelPresetsPresetsFile),
+		def,
 		filestore.WithCreateIfNotExists(true),
 		filestore.WithAutoFlush(true),
-		filestore.WithEncoderDecoder(encdec.JSONEncoderDecoder{}))
-	if err != nil {
-		return fmt.Errorf("failed to create store: %w", err)
-	}
-	mpStore.store = store
-	slog.Info("model presets store initialization done")
-	return nil
-}
-
-func (s *ModelPresetStore) GetAllModelPresets(
-	ctx context.Context,
-	req *spec.GetAllModelPresetsRequest,
-) (*spec.GetAllModelPresetsResponse, error) {
-	forceFetch := false
-	if req != nil {
-		forceFetch = req.ForceFetch
-	}
-	data, err := s.store.GetAll(forceFetch)
+		filestore.WithEncoderDecoder(encdec.JSONEncoderDecoder{}),
+	)
 	if err != nil {
 		return nil, err
 	}
-	var presets spec.PresetsSchema
-	if err := encdec.MapToStructWithJSONTags(data, &presets); err != nil {
+
+	slog.Info("model-preset store ready", "baseDir", s.baseDir)
+	return s, nil
+}
+
+// PutProviderPreset creates or replaces a provider preset.
+func (s *ModelPresetStore) PutProviderPreset(
+	ctx context.Context, req *spec.PutProviderPresetRequest,
+) (*spec.PutProviderPresetResponse, error) {
+	if req == nil || req.Body == nil || req.ProviderName == "" {
+		return nil, fmt.Errorf("%w: providerName & body required", spec.ErrInvalidDir)
+	}
+	if req.Body.Name != req.ProviderName {
+		return nil, fmt.Errorf("%w: body name %q not equal to path.providerName %q",
+			spec.ErrInvalidDir, req.Body.Name, req.ProviderName)
+	}
+	// Reject built-ins.
+	if _, err := s.builtinData.GetBuiltInProvider(req.ProviderName); err == nil {
+		return nil, fmt.Errorf("%w: providerName: %q",
+			spec.ErrBuiltInReadOnly, req.ProviderName)
+	}
+
+	now := time.Now().UTC()
+
+	// Build object - keep CreatedAt if provider existed.
+	pp := spec.ProviderPreset{
+		SchemaVersion:            spec.SchemaVersion,
+		Name:                     req.Body.Name,
+		DisplayName:              req.Body.DisplayName,
+		APIType:                  req.Body.APIType,
+		IsEnabled:                req.Body.IsEnabled,
+		CreatedAt:                now,
+		ModifiedAt:               now,
+		IsBuiltIn:                false,
+		Origin:                   req.Body.Origin,
+		ChatCompletionPathPrefix: req.Body.ChatCompletionPathPrefix,
+		APIKeyHeaderKey:          req.Body.APIKeyHeaderKey,
+		DefaultHeaders:           req.Body.DefaultHeaders,
+		ModelPresets:             map[spec.ModelPresetID]spec.ModelPreset{},
+	}
+
+	// Validate.
+	if err := validateProviderPreset(&pp); err != nil {
 		return nil, err
 	}
 
-	return &spec.GetAllModelPresetsResponse{Body: &presets}, nil
+	// Persist.
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	all, err := s.readAllUserPresets(false)
+	if err != nil {
+		return nil, err
+	}
+	if existing, ok := all.ProviderPresets[req.ProviderName]; ok {
+		pp.CreatedAt = existing.CreatedAt
+	}
+	pp.ModifiedAt = now
+	all.ProviderPresets[req.ProviderName] = pp
+	if err := s.writeAllUserPresets(all); err != nil {
+		return nil, err
+	}
+	slog.Info("putProviderPreset", "provider", req.ProviderName)
+	return &spec.PutProviderPresetResponse{}, nil
 }
 
-func (s *ModelPresetStore) CreateProviderPreset(
-	ctx context.Context,
-	req *spec.CreateProviderPresetRequest,
-) (*spec.CreateProviderPresetResponse, error) {
-	if req == nil || req.Body == nil || req.Body.DefaultModelPresetID == "" ||
-		req.Body.ModelPresets == nil ||
-		len(req.Body.ModelPresets) == 0 {
-		return nil, errors.New("invalid request")
+// PatchProviderPreset updates a provider preset.
+// It can (independently or simultaneously)
+//   - enable / disable the provider (body.isEnabled)
+//   - change the provider-level default model-preset (body.defaultModelPresetID).
+//
+// At least one of the two fields must be supplied.
+func (s *ModelPresetStore) PatchProviderPreset(
+	ctx context.Context, req *spec.PatchProviderPresetRequest,
+) (*spec.PatchProviderPresetResponse, error) {
+	if req == nil || req.Body == nil || req.ProviderName == "" {
+		return nil, fmt.Errorf("%w: providerName required", spec.ErrInvalidDir)
+	}
+	if req.Body.IsEnabled == nil && req.Body.DefaultModelPresetID == nil {
+		return nil, fmt.Errorf("%w: either isEnabled or defaultModelPresetID must be supplied",
+			spec.ErrInvalidDir)
+	}
+	if req.Body.DefaultModelPresetID != nil {
+		if err := validateModelPresetID(*req.Body.DefaultModelPresetID); err != nil {
+			return nil, err
+		}
 	}
 
-	// Pull current data.
-	currentData, err := s.store.GetAll(false)
+	if _, err := s.builtinData.GetBuiltInProvider(req.ProviderName); err == nil {
+
+		// Enable / disable.
+		if req.Body.IsEnabled != nil {
+			if _, err := s.builtinData.SetProviderEnabled(
+				req.ProviderName, *req.Body.IsEnabled,
+			); err != nil {
+				return nil, err
+			}
+		}
+
+		// Change default model-preset (placeholder - to be implemented later).
+
+		//nolint:staticcheck // builtinstore needs to add this.
+		if req.Body.DefaultModelPresetID != nil {
+			//nolint:godot // builtinstore needs to add this.
+			// if _, err := s.builtinData.SetDefaultModelPreset( // TODO: implement.
+			// 	req.ProviderName, *req.Body.DefaultModelPresetID,
+			// ); err != nil {
+			// 	return nil, err
+			// }
+		}
+
+		slog.Info("patchProviderPreset.builtin",
+			"provider", req.ProviderName,
+			"isEnabled", req.Body.IsEnabled,
+			"defaultModelPresetID", req.Body.DefaultModelPresetID)
+		return &spec.PatchProviderPresetResponse{}, nil
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	all, err := s.readAllUserPresets(false)
 	if err != nil {
-		return nil, fmt.Errorf("failed retrieving current data: %w", err)
+		return nil, err
 	}
 
-	providerPresets, ok := currentData["providerPresets"].(map[string]any)
+	pp, ok := all.ProviderPresets[req.ProviderName]
 	if !ok {
-		return nil, errors.New("providerPresets is missing or not a map")
+		return nil, fmt.Errorf("%w: %s", spec.ErrProviderNotFound, req.ProviderName)
 	}
 
-	// If it already exists, return error.
-	if _, exists := providerPresets[string(req.ProviderName)]; exists {
-		return nil, fmt.Errorf("provider %q already exists", req.ProviderName)
+	changed := false
+
+	// Enable / disable.
+	if req.Body.IsEnabled != nil && pp.IsEnabled != *req.Body.IsEnabled {
+		pp.IsEnabled = *req.Body.IsEnabled
+		changed = true
 	}
 
-	keys := []string{"providerPresets", string(req.ProviderName)}
-	val, err := encdec.StructWithJSONTagsToMap(req.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to add provider %q: %w", req.ProviderName, err)
-	}
-	if err := s.store.SetKey(keys, val); err != nil {
-		return nil, fmt.Errorf("failed to add provider %q: %w", req.ProviderName, err)
+	// Default model-preset.
+	if req.Body.DefaultModelPresetID != nil &&
+		pp.DefaultModelPresetID != *req.Body.DefaultModelPresetID {
+
+		if _, ok := pp.ModelPresets[*req.Body.DefaultModelPresetID]; !ok {
+			return nil, fmt.Errorf("%w: %s",
+				spec.ErrModelPresetNotFound, *req.Body.DefaultModelPresetID)
+		}
+		pp.DefaultModelPresetID = *req.Body.DefaultModelPresetID
+		changed = true
 	}
 
-	return &spec.CreateProviderPresetResponse{}, nil
+	if !changed {
+		// Nothing to do - silently succeed.
+		return &spec.PatchProviderPresetResponse{}, nil
+	}
+
+	pp.ModifiedAt = time.Now().UTC()
+	all.ProviderPresets[req.ProviderName] = pp
+
+	if err := s.writeAllUserPresets(all); err != nil {
+		return nil, err
+	}
+
+	slog.Info("patchProviderPreset",
+		"provider", req.ProviderName,
+		"isEnabled", req.Body.IsEnabled,
+		"defaultModelPresetID", req.Body.DefaultModelPresetID)
+
+	return &spec.PatchProviderPresetResponse{}, nil
 }
 
+// DeleteProviderPreset removes a provider if it has no model presets.
 func (s *ModelPresetStore) DeleteProviderPreset(
-	ctx context.Context,
-	req *spec.DeleteProviderPresetRequest,
+	ctx context.Context, req *spec.DeleteProviderPresetRequest,
 ) (*spec.DeleteProviderPresetResponse, error) {
-	if req == nil {
-		return nil, errors.New("invalid request")
+	if req == nil || req.ProviderName == "" {
+		return nil, fmt.Errorf("%w: providerName required", spec.ErrInvalidDir)
 	}
-	// Pull current data.
-	currentData, err := s.store.GetAll(false)
+	// Built-ins are read-only.
+	if _, err := s.builtinData.GetBuiltInProvider(req.ProviderName); err == nil {
+		return nil, fmt.Errorf("%w: providerName: %q",
+			spec.ErrBuiltInReadOnly, req.ProviderName)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	all, err := s.readAllUserPresets(true)
 	if err != nil {
-		return nil, fmt.Errorf("failed retrieving current data: %w", err)
+		return nil, err
 	}
-
-	providerPresets, ok := currentData["providerPresets"].(map[string]any)
+	pp, ok := all.ProviderPresets[req.ProviderName]
 	if !ok {
-		return nil, errors.New("providerPresets missing or not a map")
+		return nil, fmt.Errorf("%w: %s", spec.ErrProviderNotFound, req.ProviderName)
 	}
-
-	if _, exists := providerPresets[string(req.ProviderName)]; !exists {
-		return nil, fmt.Errorf("provider %q does not exist", req.ProviderName)
+	if len(pp.ModelPresets) != 0 {
+		return nil, fmt.Errorf("provider %q is not empty", req.ProviderName)
 	}
+	delete(all.ProviderPresets, req.ProviderName)
 
-	keys := []string{"providerPresets", string(req.ProviderName)}
-	if err := s.store.DeleteKey(keys); err != nil {
-		return nil, fmt.Errorf("failed to delete provider %q: %w", req.ProviderName, err)
+	if err := s.writeAllUserPresets(all); err != nil {
+		return nil, err
 	}
-
+	slog.Info("deleteProviderPreset", "provider", req.ProviderName)
 	return &spec.DeleteProviderPresetResponse{}, nil
 }
 
-func (s *ModelPresetStore) AddModelPreset(
-	ctx context.Context,
-	req *spec.AddModelPresetRequest,
-) (*spec.AddModelPresetResponse, error) {
-	if req == nil || req.Body == nil || req.ProviderName == "" || req.ModelPresetID == "" ||
-		req.Body.ID == "" || req.Body.Name == "" || req.Body.DisplayName == "" || req.Body.Slug == "" {
-		return nil, errors.New("invalid request")
+// ListProviderPresets lists provider presets with optional filters and paging.
+func (s *ModelPresetStore) ListProviderPresets(
+	ctx context.Context, req *spec.ListProviderPresetsRequest,
+) (*spec.ListProviderPresetsResponse, error) {
+	// Resolve parameters - defaults first.
+	pageSize := spec.DefaultPageSize
+	includeDisabled := false
+	want := map[spec.ProviderName]struct{}{}
+	cursor := spec.ProviderName("")
+
+	// Token overrides everything.
+	if req != nil && req.PageToken != "" {
+		if tok, err := encdec.Base64JSONDecode[spec.ProviderPageToken](req.PageToken); err == nil {
+			pageSize = tok.PageSize
+			if pageSize <= 0 || pageSize > spec.MaxPageSize {
+				pageSize = spec.DefaultPageSize
+			}
+			includeDisabled = tok.IncludeDisabled
+			cursor = tok.CursorSlug
+			for _, n := range tok.Names {
+				want[n] = struct{}{}
+			}
+		}
+	} else if req != nil {
+		if req.PageSize > 0 && req.PageSize <= spec.DefaultPageSize {
+			pageSize = req.PageSize
+		}
+		includeDisabled = req.IncludeDisabled
+		for _, n := range req.Names {
+			want[n] = struct{}{}
+		}
 	}
 
-	// Confirm provider existence.
-	_, _, _, err := s.getProviderData(req.ProviderName, false)
+	// Collect built-ins.
+	all := make([]spec.ProviderPreset, 0)
+	if s.builtinData != nil {
+		bi, _, _ := s.builtinData.ListBuiltInPresets()
+		for _, p := range bi {
+			all = append(all, p)
+		}
+	}
+	// Collect user.
+	user, err := s.readAllUserPresets(false)
 	if err != nil {
 		return nil, err
 	}
+	for _, p := range user.ProviderPresets {
+		all = append(all, p)
+	}
 
-	// Overwrite or create the model.
-	keys := []string{
-		"providerPresets",
-		string(req.ProviderName),
-		"modelPresets",
-		string(req.ModelPresetID),
+	// Filtering.
+	filtered := make([]spec.ProviderPreset, 0, len(all))
+	for _, p := range all {
+		if len(want) != 0 {
+			if _, ok := want[p.Name]; !ok {
+				continue
+			}
+		}
+		if !includeDisabled && !p.IsEnabled {
+			continue
+		}
+		filtered = append(filtered, p)
 	}
-	val, err := encdec.StructWithJSONTagsToMap(req.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed putting preset model %q for provider %q: %w",
-			req.ModelPresetID, req.ProviderName, err)
+
+	// Ordering.
+	sort.Slice(filtered, func(i, j int) bool {
+		if filtered[i].ModifiedAt.Equal(filtered[j].ModifiedAt) {
+			return filtered[i].Name < filtered[j].Name
+		}
+		return filtered[i].ModifiedAt.After(filtered[j].ModifiedAt)
+	})
+
+	// Cursor.
+	start := 0
+	if cursor != "" {
+		for i, p := range filtered {
+			if p.Name == cursor {
+				start = i + 1
+				break
+			}
+		}
 	}
-	if err := s.store.SetKey(keys, val); err != nil {
-		return nil, fmt.Errorf("failed putting preset model %q for provider %q: %w",
-			req.ModelPresetID, req.ProviderName, err)
+
+	end := min(start+pageSize, len(filtered))
+	var nextToken *string
+	if end < len(filtered) {
+		// Preserve filter parameters in token.
+		names := make([]spec.ProviderName, 0, len(want))
+		for n := range want {
+			names = append(names, n)
+		}
+		slices.Sort(names)
+
+		tok := spec.ProviderPageToken{
+			Names:           names,
+			IncludeDisabled: includeDisabled,
+			PageSize:        pageSize,
+			CursorSlug:      filtered[end-1].Name,
+		}
+		ns := encdec.Base64JSONEncode(tok)
+		nextToken = &ns
 	}
-	return &spec.AddModelPresetResponse{}, nil
+
+	return &spec.ListProviderPresetsResponse{
+		Body: &spec.ListProviderPresetsResponseBody{
+			Providers:     filtered[start:end],
+			NextPageToken: nextToken,
+		},
+	}, nil
 }
 
-func (s *ModelPresetStore) DeleteModelPreset(
-	ctx context.Context,
-	req *spec.DeleteModelPresetRequest,
-) (*spec.DeleteModelPresetResponse, error) {
-	if req == nil {
-		return nil, errors.New("request cannot be nil")
+// PutModelPreset creates or replaces a model preset on a user provider.
+func (s *ModelPresetStore) PutModelPreset(
+	ctx context.Context, req *spec.PutModelPresetRequest,
+) (*spec.PutModelPresetResponse, error) {
+	if req == nil || req.Body == nil ||
+		req.ProviderName == "" || req.ModelPresetID == "" {
+		return nil, fmt.Errorf("%w: providerName & modelPresetID required", spec.ErrInvalidDir)
+	}
+	if err := validateModelPresetID(req.ModelPresetID); err != nil {
+		return nil, err
+	}
+	if err := validateModelSlug(req.Body.Slug); err != nil {
+		return nil, err
+	}
+	// Reject built-ins.
+	if _, err := s.builtinData.GetBuiltInProvider(req.ProviderName); err == nil {
+		return nil, fmt.Errorf("%w: providerName: %q",
+			spec.ErrBuiltInReadOnly, req.ProviderName)
 	}
 
-	// Confirm provider existence.
-	_, _, _, err := s.getProviderData(req.ProviderName, false)
-	if err != nil {
+	now := time.Now().UTC()
+
+	// Build model preset.
+	mp := spec.ModelPreset{
+		SchemaVersion:               spec.SchemaVersion,
+		ID:                          req.ModelPresetID,
+		Name:                        req.Body.Name,
+		DisplayName:                 req.Body.DisplayName,
+		Slug:                        req.Body.Slug,
+		IsEnabled:                   req.Body.IsEnabled,
+		Stream:                      req.Body.Stream,
+		MaxPromptLength:             req.Body.MaxPromptLength,
+		MaxOutputLength:             req.Body.MaxOutputLength,
+		Temperature:                 req.Body.Temperature,
+		Reasoning:                   req.Body.Reasoning,
+		SystemPrompt:                req.Body.SystemPrompt,
+		Timeout:                     req.Body.Timeout,
+		AdditionalParametersRawJSON: req.Body.AdditionalParametersRawJSON,
+		CreatedAt:                   now,
+		ModifiedAt:                  now,
+		IsBuiltIn:                   false,
+	}
+	if err := validateModelPreset(&mp); err != nil {
 		return nil, err
 	}
 
-	// Delete the model.
-	keys := []string{
-		"providerPresets",
-		string(req.ProviderName),
-		"modelPresets",
-		string(req.ModelPresetID),
+	// Persist.
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	all, err := s.readAllUserPresets(false)
+	if err != nil {
+		return nil, err
 	}
-	if err := s.store.DeleteKey(keys); err != nil {
-		return nil, fmt.Errorf("failed deleting preset model %q for provider %q: %w",
-			req.ModelPresetID, req.ProviderName, err)
+	pp, ok := all.ProviderPresets[req.ProviderName]
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", spec.ErrProviderNotFound, req.ProviderName)
 	}
+	// Keep createdAt if overwriting.
+	if old, ok := pp.ModelPresets[req.ModelPresetID]; ok {
+		mp.CreatedAt = old.CreatedAt
+	}
+	if pp.ModelPresets == nil {
+		pp.ModelPresets = map[spec.ModelPresetID]spec.ModelPreset{}
+	}
+	mp.ModifiedAt = now
+	pp.ModelPresets[req.ModelPresetID] = mp
+	pp.ModifiedAt = now
+	all.ProviderPresets[req.ProviderName] = pp
+
+	if err := s.writeAllUserPresets(all); err != nil {
+		return nil, err
+	}
+	slog.Info("putModelPreset",
+		"provider", req.ProviderName, "modelPresetID", req.ModelPresetID)
+	return &spec.PutModelPresetResponse{}, nil
+}
+
+// PatchModelPreset enables or disables a model preset.
+func (s *ModelPresetStore) PatchModelPreset(
+	ctx context.Context, req *spec.PatchModelPresetRequest,
+) (*spec.PatchModelPresetResponse, error) {
+	if req == nil || req.Body == nil ||
+		req.ProviderName == "" || req.ModelPresetID == "" {
+		return nil, fmt.Errorf("%w: providerName & modelPresetID required", spec.ErrInvalidDir)
+	}
+
+	// Built-in branch.
+	if _, err := s.builtinData.GetBuiltInProvider(req.ProviderName); err == nil {
+		if _, err := s.builtinData.SetModelPresetEnabled(
+			req.ProviderName, req.ModelPresetID, req.Body.IsEnabled,
+		); err != nil {
+			return nil, err
+		}
+		slog.Info("patchModelPreset.builtin",
+			"provider", req.ProviderName, "modelPresetID", req.ModelPresetID,
+			"enabled", req.Body.IsEnabled)
+		return &spec.PatchModelPresetResponse{}, nil
+	}
+
+	// User branch.
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	all, err := s.readAllUserPresets(false)
+	if err != nil {
+		return nil, err
+	}
+	pp, ok := all.ProviderPresets[req.ProviderName]
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", spec.ErrProviderNotFound, req.ProviderName)
+	}
+	mp, ok := pp.ModelPresets[req.ModelPresetID]
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", spec.ErrModelPresetNotFound, req.ModelPresetID)
+	}
+	mp.IsEnabled = req.Body.IsEnabled
+	mp.ModifiedAt = time.Now().UTC()
+	pp.ModelPresets[req.ModelPresetID] = mp
+	pp.ModifiedAt = mp.ModifiedAt
+	all.ProviderPresets[req.ProviderName] = pp
+
+	if err := s.writeAllUserPresets(all); err != nil {
+		return nil, err
+	}
+	slog.Info("patchModelPreset",
+		"provider", req.ProviderName, "modelPresetID", req.ModelPresetID,
+		"enabled", req.Body.IsEnabled)
+	return &spec.PatchModelPresetResponse{}, nil
+}
+
+// DeleteModelPreset removes a model preset.
+func (s *ModelPresetStore) DeleteModelPreset(
+	ctx context.Context, req *spec.DeleteModelPresetRequest,
+) (*spec.DeleteModelPresetResponse, error) {
+	if req == nil || req.ProviderName == "" || req.ModelPresetID == "" {
+		return nil, fmt.Errorf("%w: providerName & modelPresetID required", spec.ErrInvalidDir)
+	}
+	// Built-in are read-only.
+	if _, err := s.builtinData.GetBuiltInProvider(req.ProviderName); err == nil {
+		return nil, fmt.Errorf("%w: providerName: %q",
+			spec.ErrBuiltInReadOnly, req.ProviderName)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	all, err := s.readAllUserPresets(false)
+	if err != nil {
+		return nil, err
+	}
+	pp, ok := all.ProviderPresets[req.ProviderName]
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", spec.ErrProviderNotFound, req.ProviderName)
+	}
+	if _, ok := pp.ModelPresets[req.ModelPresetID]; !ok {
+		return nil, fmt.Errorf("%w: %s", spec.ErrModelPresetNotFound, req.ModelPresetID)
+	}
+	delete(pp.ModelPresets, req.ModelPresetID)
+	// Reset default if it pointed to the deleted model.
+	if pp.DefaultModelPresetID == req.ModelPresetID {
+		pp.DefaultModelPresetID = ""
+	}
+	pp.ModifiedAt = time.Now().UTC()
+	all.ProviderPresets[req.ProviderName] = pp
+
+	if err := s.writeAllUserPresets(all); err != nil {
+		return nil, err
+	}
+	slog.Info("deleteModelPreset",
+		"provider", req.ProviderName, "modelPresetID", req.ModelPresetID)
 	return &spec.DeleteModelPresetResponse{}, nil
 }
 
-func (s *ModelPresetStore) SetDefaultModelPreset(
-	ctx context.Context,
-	req *spec.SetDefaultModelPresetRequest,
-) (*spec.SetDefaultModelPresetResponse, error) {
-	if req == nil || req.Body == nil || req.Body.ModelPresetID == "" {
-		return nil, errors.New("invalid request")
-	}
-
-	// Make sure provider is in store.
-	_, _, providerPreset, err := s.getProviderData(req.ProviderName, false)
+func (s *ModelPresetStore) readAllUserPresets(force bool) (spec.PresetsSchema, error) {
+	raw, err := s.userStore.GetAll(force)
 	if err != nil {
-		return nil, err
+		return spec.PresetsSchema{}, err
 	}
-
-	modelPresetsRaw, ok := providerPreset["modelPresets"]
-	if !ok {
-		return nil, fmt.Errorf(
-			"provider %q: modelpresets doesnt exist",
-			req.ProviderName,
-		)
+	var ps spec.PresetsSchema
+	if err := encdec.MapToStructWithJSONTags(raw, &ps); err != nil {
+		return ps, err
 	}
-
-	modelPresets, ok := modelPresetsRaw.(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf(
-			"provider %q modelpresets data is not a map[string]any",
-			req.ProviderName,
-		)
-	}
-
-	if _, ok := modelPresets[string(req.Body.ModelPresetID)]; !ok {
-		return nil, errors.New("model preset not found. id: " + string(req.Body.ModelPresetID))
-	}
-	keys := []string{
-		"providerPresets",
-		string(req.ProviderName),
-		"defaultModelPresetID",
-	}
-	if err := s.store.SetKey(keys, req.Body.ModelPresetID); err != nil {
-		return nil, fmt.Errorf("failed updating defaultModelPresetID: %w", err)
-	}
-	return &spec.SetDefaultModelPresetResponse{}, nil
+	return ps, nil
 }
 
-func (s *ModelPresetStore) getProviderData(
-	providerName spec.ProviderName,
-	forceFetch bool,
-) (allData, allProviderPresets, providerPreset map[string]any, err error) {
-	// 1) GetAll with no forced fetch (or use the boolean if you sometimes need forced).
-	allData, err = s.store.GetAll(forceFetch)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to retrieve current data: %w", err)
-	}
-
-	// 2) providerPresets must be a map.
-	providerPresetsRaw, ok := allData["providerPresets"]
-	if !ok {
-		return nil, nil, nil, errors.New("providerPresets missing from store")
-	}
-	allProviderPresets, ok = providerPresetsRaw.(map[string]any)
-	if !ok {
-		return nil, nil, nil, errors.New("providerPresets is not a map[string]any")
-	}
-
-	// 3) Check if provider exists.
-	providerRaw, ok := allProviderPresets[string(providerName)]
-	if !ok {
-		return nil, nil, nil, fmt.Errorf(
-			"provider %q does not exist in providerPresets",
-			providerName,
-		)
-	}
-	providerPreset, ok = providerRaw.(map[string]any)
-	if !ok {
-		return nil, nil, nil, fmt.Errorf("provider %q data is not a map[string]any", providerName)
-	}
-
-	return allData, allProviderPresets, providerPreset, nil
+func (s *ModelPresetStore) writeAllUserPresets(ps spec.PresetsSchema) error {
+	mp, _ := encdec.StructWithJSONTagsToMap(ps)
+	return s.userStore.SetAll(mp)
 }

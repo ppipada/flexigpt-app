@@ -305,7 +305,7 @@ const ChatScreen: FC = () => {
 		<div className="flex flex-col items-center w-full h-full overflow-hidden">
 			{/* NAVBAR */}
 			<div className="w-full flex justify-center fixed top-2">
-				<div className="w-11/12 lg:w-4/5 xl:w-3/4">
+				<div className="w-11/12 lg:w-5/6">
 					<ChatNavBar
 						onNewChat={handleNewChat}
 						getConversationForExport={getConversationForExport}
@@ -323,7 +323,7 @@ const ChatScreen: FC = () => {
 					ref={chatContainerRef}
 					style={{ maxHeight: `calc(100vh - 196px - ${inputHeight}px)` }}
 				>
-					<div className="w-11/12 lg:w-4/5 xl:w-3/4">
+					<div className="w-11/12 lg:w-5/6">
 						<div className="w-full flex-1 space-y-4">{renderedMessages}</div>
 						<div ref={bottomRef} />
 					</div>
@@ -331,7 +331,7 @@ const ChatScreen: FC = () => {
 
 				{/* INPUT */}
 				<div className="w-full flex justify-center fixed bottom-0 mb-3">
-					<div className="w-11/12 lg:w-4/5 xl:w-3/4">
+					<div className="w-11/12 lg:w-5/6">
 						<ChatInputField ref={chatInputRef} onSend={sendMessage} setInputHeight={setInputHeight} />
 					</div>
 				</div>

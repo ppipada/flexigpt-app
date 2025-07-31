@@ -12,8 +12,8 @@ type PutToolBundleRequestBody struct {
 }
 
 type PutToolBundleRequest struct {
-	BundleID bundleitemutils.BundleID  `path:"bundleID" required:"true"`
-	Body     *PutToolBundleRequestBody `                                json:"body"`
+	BundleID bundleitemutils.BundleID `path:"bundleID" required:"true"`
+	Body     *PutToolBundleRequestBody
 }
 
 type PutToolBundleResponse struct{}
@@ -28,8 +28,8 @@ type PatchToolBundleRequestBody struct {
 }
 
 type PatchToolBundleRequest struct {
-	BundleID bundleitemutils.BundleID    `path:"bundleID" required:"true"`
-	Body     *PatchToolBundleRequestBody `                                json:"body"`
+	BundleID bundleitemutils.BundleID `path:"bundleID" required:"true"`
+	Body     *PatchToolBundleRequestBody
 }
 
 type PatchToolBundleResponse struct{}
@@ -77,7 +77,7 @@ type PutToolRequest struct {
 	BundleID bundleitemutils.BundleID    `path:"bundleID" required:"true"`
 	ToolSlug bundleitemutils.ItemSlug    `path:"toolSlug" required:"true"`
 	Version  bundleitemutils.ItemVersion `path:"version"  required:"true"`
-	Body     *PutToolRequestBody         `                                json:"body"`
+	Body     *PutToolRequestBody
 }
 type PutToolResponse struct{}
 
@@ -97,7 +97,7 @@ type PatchToolRequest struct {
 	ToolSlug bundleitemutils.ItemSlug    `path:"toolSlug" required:"true"`
 	Version  bundleitemutils.ItemVersion `path:"version"  required:"true"`
 
-	Body *PatchToolRequestBody `json:"body"`
+	Body *PatchToolRequestBody
 }
 
 type PatchToolResponse struct{}

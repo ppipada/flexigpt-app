@@ -9,7 +9,8 @@ import type { AISetting } from '@/spec/setting';
 
 import { omitManyKeys } from '@/lib/obj_utils';
 
-import { providerSetAPI, settingstoreAPI } from '@/apis/baseapi';
+import { settingstoreAPI } from '@/apis/baseapi';
+import { getAllProviderPresetsMap, getBuiltInPresets } from '@/apis/modelpresetstore_helper';
 import { AddAISetting, DeleteAISetting, SetAppSettings } from '@/apis/settingstore_helper';
 
 import DownloadButton from '@/components/download_button';
@@ -23,7 +24,7 @@ const SettingsPage: FC = () => {
 	/* ── state ─────────────────────────────────────────────── */
 	const [defaultProvider, setDefaultProvider] = useState<ProviderName>(DefaultProviderName);
 	const [aiSettings, setAISettings] = useState<Record<ProviderName, AISetting>>({});
-	const [inbuiltProviderInfo, setInbuiltProviderInfo] = useState<Record<ProviderName, ProviderPreset>>({});
+	const [BuiltInProviderInfo, setBuiltInProviderInfo] = useState<Record<ProviderName, ProviderPreset>>({});
 
 	const [isAddProviderModalOpen, setIsAddProviderModalOpen] = useState(false);
 
@@ -31,10 +32,10 @@ const SettingsPage: FC = () => {
 	useEffect(() => {
 		(async () => {
 			const settings = await settingstoreAPI.getAllSettings();
-			const info = await providerSetAPI.getConfigurationInfo();
-			// const schema = await modelPresetStoreAPI.getAllModelPresets();
+			const presets = await getAllProviderPresetsMap();
+			const builtInPresets = getBuiltInPresets(presets);
 
-			setInbuiltProviderInfo(info.inbuiltProviderModels);
+			setBuiltInProviderInfo(builtInPresets);
 			setDefaultProvider(settings.app.defaultProvider);
 
 			setAISettings(settings.aiSettings);
@@ -68,7 +69,6 @@ const SettingsPage: FC = () => {
 	};
 
 	const enabledProviders = Object.entries(aiSettings)
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		.filter(([_, s]) => s.isEnabled)
 		.map(([name]) => name);
 
@@ -154,7 +154,7 @@ const SettingsPage: FC = () => {
 							provider={p}
 							settings={aiSettings[p]}
 							defaultProvider={defaultProvider}
-							inbuiltProvider={Boolean(inbuiltProviderInfo[p])}
+							inbuiltProvider={Boolean(BuiltInProviderInfo[p])}
 							enabledProviders={enabledProviders}
 							onProviderSettingChange={handleProviderSettingChange}
 							onProviderDelete={handleRemoveProvider}

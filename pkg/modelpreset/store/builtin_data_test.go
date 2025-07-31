@@ -388,15 +388,6 @@ func Test_NewBuiltInPresets_SyntheticFS_Errors(t *testing.T) {
 		}
 	})
 
-	t.Run("provider_without_models", func(t *testing.T) {
-		schema := buildSchemaWithoutModels(provName)
-		fsys := fstest.MapFS{builtin.BuiltInModelPresetsJSON: {Data: schema}}
-		_, err := newPresetsFromFS(t, fsys)
-		if err == nil || !strings.Contains(err.Error(), "no model presets") {
-			t.Fatalf("unexpected: %v", err)
-		}
-	})
-
 	t.Run("default_model_missing", func(t *testing.T) {
 		s := buildSchemaDefaultMissing(provName, modelID)
 		fsys := fstest.MapFS{builtin.BuiltInModelPresetsJSON: {Data: s}}
@@ -495,28 +486,6 @@ func anyModel(m map[spec.ProviderName]map[spec.ModelPresetID]spec.ModelPreset,
 func newPresetsFromFS(t *testing.T, mem fs.FS) (*BuiltInPresets, error) {
 	t.Helper()
 	return NewBuiltInPresets(t.TempDir(), time.Hour, WithModelPresetsFS(mem, "."))
-}
-
-// Synthetic schema builders.
-
-func buildSchemaWithoutModels(pn spec.ProviderName) []byte {
-	pp := spec.ProviderPreset{
-		SchemaVersion:            spec.SchemaVersion,
-		Name:                     pn,
-		DisplayName:              "Demo",
-		APIType:                  spec.InbuiltOpenAICompatible,
-		IsEnabled:                true,
-		CreatedAt:                time.Now(),
-		ModifiedAt:               time.Now(),
-		Origin:                   "https://example.com",
-		ChatCompletionPathPrefix: spec.OpenAICompatibleChatCompletionPathPrefix,
-	}
-	s := spec.PresetsSchema{
-		Version:         spec.SchemaVersion,
-		ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{pn: pp},
-	}
-	b, _ := json.Marshal(s)
-	return b
 }
 
 func buildSchemaDefaultMissing(pn spec.ProviderName, mpid spec.ModelPresetID) []byte {

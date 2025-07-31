@@ -1,26 +1,32 @@
+// --- Type Aliases & Enums ---
+
 type ModelName = string;
+type ModelDisplayName = string;
+type ModelSlug = string;
 export type ModelPresetID = string;
-// export const DefaultModelName: ModelName = 'gpt-4o';
-// export const DefaultModelTitle = 'OpenAI GPT 4o';
-// export const DefaultModelPresetID = 'gpt4o';
 
 export type ProviderName = string;
 export const DefaultProviderName: ProviderName = 'openai';
+type ProviderDisplayName = string;
+type ProviderAPIType =
+	| 'inbuiltAnthropicCompatible'
+	| 'inbuiltHuggingFaceCompatible'
+	| 'inbuiltOpenAICompatible'
+	| 'customOpenAICompatible';
 
-// Define the ReasoningType enum
 export enum ReasoningType {
 	HybridWithTokens = 'hybridWithTokens',
 	SingleWithLevels = 'singleWithLevels',
 }
 
-// Define the ReasoningLevel enum
 export enum ReasoningLevel {
 	Low = 'low',
 	Medium = 'medium',
 	High = 'high',
 }
 
-// Define the ReasoningParams interface
+// --- Core Shared Interfaces ---
+
 export interface ReasoningParams {
 	type: ReasoningType;
 	level: ReasoningLevel;
@@ -39,6 +45,24 @@ export interface ModelParams {
 	additionalParametersRawJSON?: string;
 }
 
+export interface ProviderInfo {
+	name: ProviderName;
+	apiKey: string;
+	origin: string;
+	chatCompletionPathPrefix: string;
+	apiKeyHeaderKey: string;
+	defaultHeaders: Record<string, string>;
+}
+
+export interface ChatOptions extends ModelParams {
+	id: string;
+	title: string;
+	provider: ProviderName;
+	disablePreviousMessages: boolean;
+}
+
+// --- Default Values ---
+
 export const DefaultModelParams: ModelParams = {
 	name: '',
 	stream: false,
@@ -55,14 +79,14 @@ export const DefaultModelParams: ModelParams = {
 	additionalParametersRawJSON: undefined,
 };
 
-export interface ProviderInfo {
-	name: ProviderName;
-	apiKey: string;
-	origin: string;
-	chatCompletionPathPrefix: string;
-	apiKeyHeaderKey: string;
-	defaultHeaders: Record<string, string>;
-}
+export const DefaultChatOptions: ChatOptions = {
+	...DefaultModelParams,
+	id: 'NoModel',
+	provider: 'No Provider',
+	name: 'No Model',
+	title: 'No Model configured',
+	disablePreviousMessages: false,
+};
 
 export const ProviderInfoDescription = {
 	apiKey: 'Your API key for the provider.',
@@ -74,11 +98,23 @@ export const ProviderInfoDescription = {
 	modelPrefixes: 'Optional prefixes for models.',
 };
 
-export interface ModelPreset {
-	id: ModelPresetID;
+// --- API Payload Types ---
+
+export interface PutProviderPresetPayload {
+	name: ProviderName;
+	displayName: ProviderDisplayName;
+	apiType: ProviderAPIType;
+	isEnabled: boolean;
+	origin: string;
+	chatCompletionPathPrefix: string;
+	apiKeyHeaderKey: string;
+	defaultHeaders: Record<string, string>;
+}
+
+export interface PutModelPresetPayload {
 	name: ModelName;
-	displayName: string;
-	slug: string;
+	slug: ModelSlug;
+	displayName: ModelDisplayName;
 	isEnabled: boolean;
 	stream?: boolean;
 	maxPromptLength?: number;
@@ -88,6 +124,12 @@ export interface ModelPreset {
 	systemPrompt?: string;
 	timeout?: number;
 	additionalParametersRawJSON?: string;
+}
+
+// --- API Response Types ---
+
+export interface ModelPreset extends PutModelPresetPayload {
+	id: ModelPresetID;
 }
 
 export const DefaultModelPreset: ModelPreset = {
@@ -106,37 +148,40 @@ export const DefaultModelPreset: ModelPreset = {
 	additionalParametersRawJSON: DefaultModelParams.additionalParametersRawJSON,
 };
 
-export interface ChatOptions extends ModelParams {
-	id: string;
-	title: string;
-	provider: ProviderName;
-	disablePreviousMessages: boolean;
-}
-
-export const DefaultChatOptions: ChatOptions = {
-	...DefaultModelParams,
-	id: 'NoModel',
-	provider: 'No Provider',
-	name: 'No Model',
-	title: 'No Model configured',
-	disablePreviousMessages: false,
-};
-
-export type ProviderPreset = {
+export interface ProviderPreset extends PutProviderPresetPayload {
+	schemaVersion: string;
+	createdAt: string; // ISO date string
+	modifiedAt: string; // ISO date string
+	isBuiltIn: boolean;
 	defaultModelPresetID: ModelPresetID;
 	modelPresets: Record<ModelPresetID, ModelPreset>;
-};
-
-export type PresetsSchema = {
-	version: string;
-	providerPresets: Record<ProviderName, ProviderPreset>;
-};
+}
 
 export interface IModelPresetStoreAPI {
-	getAllModelPresets: () => Promise<PresetsSchema>;
-	createProviderPreset: (providerName: ProviderName, providerPreset: ProviderPreset) => Promise<void>;
-	deleteProviderPreset: (providerName: ProviderName) => Promise<void>;
-	addModelPreset: (providerName: ProviderName, modelPresetID: ModelPresetID, modelPreset: ModelPreset) => Promise<void>;
-	deleteModelPreset: (providerName: ProviderName, modelPresetID: ModelPresetID) => Promise<void>;
-	setDefaultModelPreset: (providerName: ProviderName, modelPresetID: ModelPresetID) => Promise<void>;
+	putProviderPreset(providerName: ProviderName, payload: PutProviderPresetPayload): Promise<void>;
+
+	patchProviderPreset(
+		providerName: ProviderName,
+		isEnabled?: boolean,
+		defaultModelPresetID?: ModelPresetID
+	): Promise<void>;
+
+	deleteProviderPreset(providerName: ProviderName): Promise<void>;
+
+	putModelPreset(
+		providerName: ProviderName,
+		modelPresetID: ModelPresetID,
+		payload: PutModelPresetPayload
+	): Promise<void>;
+
+	patchModelPreset(providerName: ProviderName, modelPresetID: ModelPresetID, isEnabled: boolean): Promise<void>;
+
+	deleteModelPreset(providerName: ProviderName, modelPresetID: ModelPresetID): Promise<void>;
+
+	listProviderPresets(
+		names?: ProviderName[],
+		includeDisabled?: boolean,
+		pageSize?: number,
+		pageToken?: string
+	): Promise<{ providers: ProviderPreset[]; nextPageToken?: string }>;
 }

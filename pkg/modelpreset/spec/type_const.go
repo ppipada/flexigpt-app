@@ -6,12 +6,17 @@ import (
 )
 
 const (
+	ModelPresetsPresetsFile            = "modelpresets.json" // Single JSON file.
 	ModelPresetsBuiltInOverlayFileName = "modelpresetsbuiltin.overlay.json"
 
 	OpenAICompatibleAPIKeyHeaderKey          = "Authorization"
 	OpenAICompatibleChatCompletionPathPrefix = "/v1/chat/completions"
 
 	SchemaVersion = "2025-07-01"
+
+	MaxPageSize           = 256 // Max allowed page size.
+	DefaultPageSize       = 256 // Default page size.
+	BuiltInSnapshotMaxAge = time.Hour
 )
 
 var OpenAICompatibleDefaultHeaders = map[string]string{"content-type": "application/json"}
@@ -29,6 +34,7 @@ var (
 	ErrNilModelPreset   = errors.New("model preset is nil")
 	ErrNoModelPresets   = errors.New("provider has no model presets")
 	ErrInvalidTimestamp = errors.New("zero timestamp")
+	ErrBuiltInReadOnly  = errors.New("built-in resource is read-only")
 )
 
 type (
@@ -105,7 +111,7 @@ type ProviderPreset struct {
 
 	Origin                   string            `json:"origin"                   required:"true"`
 	ChatCompletionPathPrefix string            `json:"chatCompletionPathPrefix" required:"true"`
-	APIKeyHeaderKey          string            `json:"apiKeyHeaderKey"`
+	APIKeyHeaderKey          string            `json:"apiKeyHeaderKey"          required:"true"`
 	DefaultHeaders           map[string]string `json:"defaultHeaders"`
 
 	DefaultModelPresetID ModelPresetID                 `json:"defaultModelPresetID"`

@@ -1,18 +1,20 @@
 import type {
 	IModelPresetStoreAPI,
-	ModelPreset,
 	ModelPresetID,
-	PresetsSchema,
 	ProviderName,
 	ProviderPreset,
+	PutModelPresetPayload,
+	PutProviderPresetPayload,
 } from '@/spec/modelpreset';
 
 import {
-	AddModelPreset,
-	CreateProviderPreset,
 	DeleteModelPreset,
-	GetAllModelPresets,
-	SetDefaultModelPreset,
+	DeleteProviderPreset,
+	ListProviderPresets,
+	PatchModelPreset,
+	PatchProviderPreset,
+	PutModelPreset,
+	PutProviderPreset,
 } from '../wailsjs/go/main/ModelPresetStoreWrapper';
 import type { spec } from '../wailsjs/go/models';
 
@@ -20,56 +22,88 @@ import type { spec } from '../wailsjs/go/models';
  * @public
  */
 export class WailsModelPresetStoreAPI implements IModelPresetStoreAPI {
-	// Implement the getAllSettings method
-	async getAllModelPresets(): Promise<PresetsSchema> {
-		const r: spec.GetAllModelPresetsRequest = { ForceFetch: false };
-		const s = await GetAllModelPresets(r);
-		return s.Body as PresetsSchema;
-	}
-
-	async createProviderPreset(providerName: ProviderName, providerPreset: ProviderPreset): Promise<void> {
+	async putProviderPreset(providerName: ProviderName, payload: PutProviderPresetPayload): Promise<void> {
+		if (!providerName) throw new Error('Missing providerName or payload');
 		const r = {
 			ProviderName: providerName,
-			Body: providerPreset,
+			Body: payload,
 		};
-		await CreateProviderPreset(r as spec.CreateProviderPresetRequest);
+		await PutProviderPreset(r as spec.PutProviderPresetRequest);
 	}
 
-	async deleteProviderPreset(providerName: ProviderName): Promise<void> {
-		const r = {
-			ProviderName: providerName,
-		};
-		await DeleteModelPreset(r as spec.DeleteModelPresetRequest);
-	}
-
-	async addModelPreset(
+	async patchProviderPreset(
 		providerName: ProviderName,
-		modelPresetID: ModelPresetID,
-		modelPreset: ModelPreset
+		isEnabled?: boolean,
+		defaultModelPresetID?: ModelPresetID
 	): Promise<void> {
-		const r = {
-			ProviderName: providerName,
-			ModelPresetID: modelPresetID,
-			Body: modelPreset,
-		};
-		await AddModelPreset(r as spec.AddModelPresetRequest);
-	}
-
-	async deleteModelPreset(providerName: ProviderName, modelPresetID: ModelPresetID): Promise<void> {
-		const r = {
-			ProviderName: providerName,
-			ModelPresetID: modelPresetID,
-		};
-		await DeleteModelPreset(r as spec.DeleteModelPresetRequest);
-	}
-
-	async setDefaultModelPreset(providerName: ProviderName, modelPresetID: ModelPresetID): Promise<void> {
+		if (!providerName) throw new Error('Missing providerName');
 		const r = {
 			ProviderName: providerName,
 			Body: {
-				ModelPresetID: modelPresetID,
+				isEnabled: isEnabled ?? undefined,
+				defaultModelPresetID: defaultModelPresetID ?? undefined,
 			},
 		};
-		await SetDefaultModelPreset(r as spec.SetDefaultModelPresetRequest);
+		await PatchProviderPreset(r as spec.PatchProviderPresetRequest);
+	}
+
+	async deleteProviderPreset(providerName: ProviderName): Promise<void> {
+		if (!providerName) throw new Error('Missing providerName');
+		const r = {
+			ProviderName: providerName,
+		};
+		await DeleteProviderPreset(r as spec.DeleteProviderPresetRequest);
+	}
+
+	async putModelPreset(
+		providerName: ProviderName,
+		modelPresetID: ModelPresetID,
+		payload: PutModelPresetPayload
+	): Promise<void> {
+		if (!providerName || !modelPresetID) throw new Error('Missing arguments');
+		const r = {
+			ProviderName: providerName,
+			ModelPresetID: modelPresetID,
+			Body: payload,
+		};
+		await PutModelPreset(r as spec.PutModelPresetRequest);
+	}
+
+	async patchModelPreset(providerName: ProviderName, modelPresetID: ModelPresetID, isEnabled: boolean): Promise<void> {
+		if (!providerName || !modelPresetID) throw new Error('Missing arguments');
+		const r = {
+			ProviderName: providerName,
+			ModelPresetID: modelPresetID,
+			Body: { isEnabled: isEnabled } as spec.PatchModelPresetRequestBody,
+		} as spec.PatchModelPresetRequest;
+		await PatchModelPreset(r);
+	}
+
+	async deleteModelPreset(providerName: ProviderName, modelPresetID: ModelPresetID): Promise<void> {
+		if (!providerName || !modelPresetID) throw new Error('Missing arguments');
+		const r = {
+			ProviderName: providerName,
+			ModelPresetID: modelPresetID,
+		};
+		await DeleteModelPreset(r as spec.DeleteModelPresetRequest);
+	}
+
+	async listProviderPresets(
+		names?: ProviderName[],
+		includeDisabled?: boolean,
+		pageSize?: number,
+		pageToken?: string
+	): Promise<{ providers: ProviderPreset[]; nextPageToken?: string }> {
+		const r: spec.ListProviderPresetsRequest = {
+			Names: names ?? [],
+			IncludeDisabled: includeDisabled ?? false,
+			PageSize: pageSize ?? 256,
+			PageToken: pageToken ?? '',
+		};
+		const resp = await ListProviderPresets(r);
+		return {
+			providers: (resp.Body?.providers ?? []) as ProviderPreset[],
+			nextPageToken: resp.Body?.nextPageToken ?? undefined,
+		};
 	}
 }

@@ -1,4 +1,4 @@
-// Package store contains helpers shared by all preset–handling logic.
+// Package store contains helpers shared by all preset-handling logic.
 package store
 
 import (
@@ -17,7 +17,7 @@ func validateProviderPreset(pp *spec.ProviderPreset) error {
 		return spec.ErrNilProvider
 	}
 	if pp.SchemaVersion != spec.SchemaVersion {
-		return fmt.Errorf("provider %q: schemaVersion %q ≠ %q",
+		return fmt.Errorf("provider %q: schemaVersion %q not equal to %q",
 			pp.Name, pp.SchemaVersion, spec.SchemaVersion)
 	}
 	if err := validateProviderName(pp.Name); err != nil {
@@ -35,10 +35,6 @@ func validateProviderPreset(pp *spec.ProviderPreset) error {
 	if strings.TrimSpace(pp.ChatCompletionPathPrefix) == "" {
 		return fmt.Errorf("provider %q: chatCompletionPathPrefix is empty", pp.Name)
 	}
-	if len(pp.ModelPresets) == 0 {
-		return fmt.Errorf("provider %q: %w", pp.Name, spec.ErrNoModelPresets)
-	}
-
 	// Per-model validation and duplicate ID detection.
 	seenModel := map[spec.ModelPresetID]string{}
 	for mid, mp := range pp.ModelPresets {
@@ -68,7 +64,7 @@ func validateModelPreset(mp *spec.ModelPreset) error {
 		return spec.ErrNilModelPreset
 	}
 	if mp.SchemaVersion != spec.SchemaVersion {
-		return fmt.Errorf("schemaVersion %q ≠ %q",
+		return fmt.Errorf("schemaVersion %q not equal to %q",
 			mp.SchemaVersion, spec.SchemaVersion)
 	}
 	if err := validateModelPresetID(mp.ID); err != nil {

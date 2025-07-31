@@ -210,7 +210,7 @@ func (b *BuiltInPresets) loadFromFS() error {
 		return err
 	}
 	if schema.Version != spec.SchemaVersion {
-		return fmt.Errorf("schemaVersion %q ≠ %q",
+		return fmt.Errorf("schemaVersion %q not equal to %q",
 			schema.Version, spec.SchemaVersion)
 	}
 	if len(schema.ProviderPresets) == 0 {
