@@ -4,8 +4,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
-const ProviderNameDeepseek spec.ProviderName = "deepseek"
-
 const (
 	DeepseekChat     spec.ModelName = "deepseek-chat"
 	DeepseekReasoner spec.ModelName = "deepseek-reasoner"

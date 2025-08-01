@@ -1,76 +1,77 @@
-import type { ProviderName } from '@/spec/modelpreset';
-import type { AISetting, AISettingAttrs, ISettingStoreAPI, SettingsSchema } from '@/spec/setting';
+import type {
+	AppTheme,
+	AuthKey,
+	AuthKeyMeta,
+	AuthKeyName,
+	AuthKeyType,
+	ISettingStoreAPI,
+	SettingsSchema,
+	ThemeType,
+} from '@/spec/setting';
 
 import {
-	AddAISetting,
-	DeleteAISetting,
-	GetAllSettings,
-	SetAISettingAPIKey,
-	SetAISettingAttrs,
-	SetAppSettings,
+	DeleteAuthKey,
+	GetAuthKey,
+	GetSettings,
+	SetAppTheme,
+	SetAuthKey,
 } from '@/apis/wailsjs/go/main/SettingStoreWrapper';
 
-import type { settingstore } from '../wailsjs/go/models';
+import { type spec as wailsSpec } from '../wailsjs/go/models';
 
 /**
  * @public
  */
 export class WailsSettingStoreAPI implements ISettingStoreAPI {
-	// Implement the getAllSettings method
-	async getAllSettings(): Promise<SettingsSchema> {
-		const r: settingstore.GetAllSettingsRequest = { ForceFetch: false };
-		const s = await GetAllSettings(r);
-		return s.Body as SettingsSchema;
-	}
-
-	// async setSetting(key: string, value: any): Promise<void> {
-	// 	const r = { Key: key, Body: { value: value } };
-	// 	await SetSetting(r as spec.SetSettingRequest);
-	// }
-
-	async setAppSettings(defaultProvider: ProviderName): Promise<void> {
+	async setAppTheme(theme: AppTheme): Promise<void> {
 		const r = {
 			Body: {
-				defaultProvider: defaultProvider,
-			},
+				type: theme.type,
+				name: theme.name,
+			} as wailsSpec.SetAppThemeRequestBody,
 		};
-		await SetAppSettings(r as settingstore.SetAppSettingsRequest);
+		await SetAppTheme(r as wailsSpec.SetAppThemeRequest);
 	}
 
-	async addAISetting(providerName: ProviderName, aiSetting: AISetting): Promise<void> {
+	async getAuthKey(type: AuthKeyType, keyName: AuthKeyName): Promise<AuthKey> {
 		const r = {
-			ProviderName: providerName,
-			Body: aiSetting,
+			Type: type,
+			KeyName: keyName,
 		};
-		await AddAISetting(r as settingstore.AddAISettingRequest);
+		const resp = await GetAuthKey(r as wailsSpec.GetAuthKeyRequest);
+		return { secret: resp.Body?.secret ?? '', sha256: resp.Body?.sha256 ?? '', nonEmpty: resp.Body?.nonEmpty ?? false };
 	}
 
-	async deleteAISetting(providerName: ProviderName): Promise<void> {
+	async deleteAuthKey(type: AuthKeyType, keyName: AuthKeyName): Promise<void> {
 		const r = {
-			ProviderName: providerName,
+			Type: type,
+			KeyName: keyName,
 		};
-		await DeleteAISetting(r as settingstore.DeleteAISettingRequest);
+		await DeleteAuthKey(r as wailsSpec.DeleteAuthKeyRequest);
 	}
 
-	async setAISettingAPIKey(providerName: ProviderName, apiKey: string): Promise<void> {
+	async setAuthKey(type: AuthKeyType, keyName: AuthKeyName, secret: string): Promise<void> {
 		const r = {
-			ProviderName: providerName,
+			Type: type,
+			KeyName: keyName,
 			Body: {
-				apiKey: apiKey,
+				secret: secret,
 			},
 		};
-		await SetAISettingAPIKey(r as settingstore.SetAISettingAPIKeyRequest);
+		await SetAuthKey(r as wailsSpec.SetAuthKeyRequest);
 	}
 
-	async setAISettingAttrs(providerName: ProviderName, aiSettingAttrs: AISettingAttrs): Promise<void> {
-		const r = {
-			ProviderName: providerName,
-			Body: {
-				isEnabled: aiSettingAttrs.isEnabled,
-				origin: aiSettingAttrs.origin,
-				chatCompletionPathPrefix: aiSettingAttrs.chatCompletionPathPrefix,
-			},
+	async getSettings(forceFetch?: boolean): Promise<SettingsSchema> {
+		const r: wailsSpec.GetSettingsRequest = {
+			ForceFetch: !!forceFetch,
 		};
-		await SetAISettingAttrs(r as settingstore.SetAISettingAttrsRequest);
+		const resp = await GetSettings(r);
+		return {
+			appTheme: {
+				type: resp.Body?.appTheme.type as ThemeType,
+				name: resp.Body?.appTheme.name ?? '',
+			},
+			authKeys: resp.Body?.authKeys as AuthKeyMeta[],
+		};
 	}
 }

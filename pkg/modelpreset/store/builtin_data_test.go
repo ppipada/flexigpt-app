@@ -378,12 +378,13 @@ func Test_NewBuiltInPresets_SyntheticFS_Errors(t *testing.T) {
 
 	t.Run("no_providers", func(t *testing.T) {
 		empty, _ := json.Marshal(spec.PresetsSchema{
-			Version:         spec.SchemaVersion,
+			SchemaVersion:   spec.SchemaVersion,
 			ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{},
 		})
 		fsys := fstest.MapFS{builtin.BuiltInModelPresetsJSON: {Data: empty}}
 		_, err := newPresetsFromFS(t, fsys)
-		if err == nil || !strings.Contains(err.Error(), "no providers") {
+		if err == nil || (!strings.Contains(err.Error(), "no providers") &&
+			!strings.Contains(err.Error(), "no default provider in builtin")) {
 			t.Fatalf("unexpected: %v", err)
 		}
 	})
@@ -494,7 +495,7 @@ func buildSchemaDefaultMissing(pn spec.ProviderName, mpid spec.ModelPresetID) []
 		SchemaVersion:            spec.SchemaVersion,
 		Name:                     pn,
 		DisplayName:              "Demo",
-		APIType:                  spec.InbuiltOpenAICompatible,
+		APIType:                  spec.ProviderAPITypeOpenAICompatible,
 		IsEnabled:                true,
 		CreatedAt:                time.Now(),
 		ModifiedAt:               time.Now(),
@@ -504,7 +505,8 @@ func buildSchemaDefaultMissing(pn spec.ProviderName, mpid spec.ModelPresetID) []
 		ModelPresets:             map[spec.ModelPresetID]spec.ModelPreset{mpid: model},
 	}
 	s := spec.PresetsSchema{
-		Version:         spec.SchemaVersion,
+		SchemaVersion:   spec.SchemaVersion,
+		DefaultProvider: pn,
 		ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{pn: pp},
 	}
 	b, _ := json.Marshal(s)
@@ -521,7 +523,7 @@ func buildSchemaDuplicateModel(mpid spec.ModelPresetID) []byte {
 			SchemaVersion:            spec.SchemaVersion,
 			Name:                     name,
 			DisplayName:              "X",
-			APIType:                  spec.InbuiltOpenAICompatible,
+			APIType:                  spec.ProviderAPITypeOpenAICompatible,
 			IsEnabled:                true,
 			CreatedAt:                time.Now(),
 			ModifiedAt:               time.Now(),
@@ -531,7 +533,8 @@ func buildSchemaDuplicateModel(mpid spec.ModelPresetID) []byte {
 		}
 	}
 	s := spec.PresetsSchema{
-		Version: spec.SchemaVersion,
+		SchemaVersion:   spec.SchemaVersion,
+		DefaultProvider: p1,
 		ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{
 			p1: makeProv(p1),
 			p2: makeProv(p2),
@@ -547,7 +550,7 @@ func buildHappySchema(pn spec.ProviderName, mpid spec.ModelPresetID) []byte {
 		SchemaVersion:            spec.SchemaVersion,
 		Name:                     pn,
 		DisplayName:              "Demo",
-		APIType:                  spec.InbuiltOpenAICompatible,
+		APIType:                  spec.ProviderAPITypeOpenAICompatible,
 		IsEnabled:                true,
 		CreatedAt:                time.Now(),
 		ModifiedAt:               time.Now(),
@@ -557,7 +560,8 @@ func buildHappySchema(pn spec.ProviderName, mpid spec.ModelPresetID) []byte {
 		ModelPresets:             map[spec.ModelPresetID]spec.ModelPreset{mpid: model},
 	}
 	s := spec.PresetsSchema{
-		Version:         spec.SchemaVersion,
+		SchemaVersion:   spec.SchemaVersion,
+		DefaultProvider: pp.Name,
 		ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{pn: pp},
 	}
 	b, _ := json.Marshal(s)

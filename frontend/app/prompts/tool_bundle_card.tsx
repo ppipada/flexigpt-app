@@ -12,7 +12,7 @@ import { toolStoreAPI } from '@/apis/baseapi';
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 
-import ToolModifyModal from './tool_modify';
+import ToolModifyModal from '@/prompts/tool_modify';
 
 interface ToolBundleCardProps {
 	bundle: ToolBundle;

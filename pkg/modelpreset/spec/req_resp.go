@@ -1,7 +1,25 @@
 package spec
 
+type PatchDefaultProviderRequestBody struct {
+	DefaultProvider ProviderName `json:"defaultProvider" required:"true"`
+}
+
+type PatchDefaultProviderRequest struct {
+	Body *PatchDefaultProviderRequestBody
+}
+
+type PatchDefaultProviderResponse struct{}
+
+type GetDefaultProviderRequest struct{}
+
+type GetDefaultProviderResponseBody struct {
+	DefaultProvider ProviderName
+}
+type GetDefaultProviderResponse struct {
+	Body *GetDefaultProviderResponseBody
+}
+
 type PutProviderPresetRequestBody struct {
-	Name                     ProviderName        `json:"name"                      required:"true"`
 	DisplayName              ProviderDisplayName `json:"displayName"               required:"true"`
 	APIType                  ProviderAPIType     `json:"apiType"                   required:"true"`
 	IsEnabled                bool                `json:"isEnabled"                 required:"true"`

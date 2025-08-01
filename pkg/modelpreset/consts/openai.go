@@ -5,10 +5,6 @@ import (
 )
 
 const (
-	ProviderNameOpenAI spec.ProviderName = "openai"
-)
-
-const (
 	O4Mini    spec.ModelName = "o4-mini"
 	O3Pro     spec.ModelName = "o3-pro"
 	O3        spec.ModelName = "o3"

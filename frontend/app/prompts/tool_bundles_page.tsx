@@ -12,8 +12,8 @@ import { toolStoreAPI } from '@/apis/baseapi';
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 
-import AddToolBundleModal from './tool_bundle_add';
-import ToolBundleCard from './tool_bundle_card';
+import AddToolBundleModal from '@/prompts/tool_bundle_add';
+import ToolBundleCard from '@/prompts/tool_bundle_card';
 
 interface BundleData {
 	bundle: ToolBundle;

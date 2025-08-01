@@ -3,13 +3,17 @@ import { useEffect } from 'react';
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 
 import { IS_WAILS_PLATFORM } from '@/lib/features';
-import { ensureWorker } from '@/lib/highlight_hook';
-import { ThemeSwitchProvider } from '@/lib/theme_provider';
+
+import { initBuiltIns } from '@/apis/builtin_provider_cache';
+import { initStartupTheme } from '@/apis/builtin_theme_cache';
 
 import Sidebar from '@/components/sidebar';
+import { ThemeSwitchProvider } from '@/components/theme';
+
+import '@/globals.css';
+import { ensureWorker } from '@/hooks/use_highlight';
 
 import type { Route } from './+types/root';
-import './globals.css';
 
 export const meta: Route.MetaFunction = () => [
 	{ title: 'FlexiGPT' },
@@ -41,12 +45,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
 	);
 }
 
+export async function clientLoader() {
+	// Wait for DOM content to be loaded and Wails runtime to be injected
+	if (document.readyState !== 'complete' && document.readyState !== 'interactive') {
+		await new Promise(resolve => {
+			document.addEventListener('DOMContentLoaded', resolve, { once: true });
+		});
+	}
+	// Now it's safe to call Wails backend functions
+	await Promise.all([initBuiltIns(), initStartupTheme()]);
+	// console.log('root builtins loaded');
+}
+
+// Important! Force the client loader to run during hydration and not just during ssr build.
+clientLoader.hydrate = true as const;
+
 export default function Root() {
 	// Init worker on mount.
 	useEffect(() => {
 		if ('requestIdleCallback' in window) requestIdleCallback(() => ensureWorker());
 		else setTimeout(() => ensureWorker(), 300);
 	}, []);
+
 	return (
 		<ThemeSwitchProvider>
 			<Sidebar>

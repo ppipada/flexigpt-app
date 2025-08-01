@@ -48,10 +48,13 @@ type CompletionRequest struct {
 	Functions    []ChatCompletionFunctions               `json:"functions,omitempty"`
 	FunctionCall CreateChatCompletionRequestFunctionCall `json:"functionCall,omitempty"`
 }
+
 type AddProviderRequestBody struct {
-	APIKey                   string `json:"apiKey"`
-	Origin                   string `json:"origin"`
-	ChatCompletionPathPrefix string `json:"chatCompletionPathPrefix"`
+	APIType                  modelpresetSpec.ProviderAPIType `json:"apiType"`
+	Origin                   string                          `json:"origin"`
+	ChatCompletionPathPrefix string                          `json:"chatCompletionPathPrefix"`
+	APIKeyHeaderKey          string                          `json:"apiKeyHeaderKey"`
+	DefaultHeaders           map[string]string               `json:"defaultHeaders"`
 }
 
 type AddProviderRequest struct {
@@ -67,27 +70,6 @@ type DeleteProviderRequest struct {
 
 type DeleteProviderResponse struct{}
 
-type SetDefaultProviderRequestBody struct {
-	Provider modelpresetSpec.ProviderName `json:"provider" required:"true"`
-}
-
-type SetDefaultProviderRequest struct {
-	Body *SetDefaultProviderRequestBody
-}
-
-type SetDefaultProviderResponse struct{}
-
-type GetConfigurationInfoRequest struct{}
-
-type GetConfigurationInfoResponseBody struct {
-	DefaultProvider     modelpresetSpec.ProviderName `json:"defaultProvider"`
-	ConfiguredProviders []ProviderParams             `json:"configuredProviders"`
-}
-
-type GetConfigurationInfoResponse struct {
-	Body *GetConfigurationInfoResponseBody
-}
-
 type SetProviderAPIKeyRequestBody struct {
 	APIKey string `json:"apiKey" required:"true"`
 }
@@ -98,18 +80,6 @@ type SetProviderAPIKeyRequest struct {
 }
 
 type SetProviderAPIKeyResponse struct{}
-
-type SetProviderAttributeRequestBody struct {
-	Origin                   *string `json:"origin,omitempty"`
-	ChatCompletionPathPrefix *string `json:"chatCompletionPathPrefix,omitempty"`
-}
-
-type SetProviderAttributeRequest struct {
-	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
-	Body     *SetProviderAttributeRequestBody
-}
-
-type SetProviderAttributeResponse struct{}
 
 type FetchCompletionRequestBody struct {
 	Provider     modelpresetSpec.ProviderName   `json:"provider"         required:"true"`

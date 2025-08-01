@@ -3,20 +3,18 @@ package main
 import (
 	"log/slog"
 	"os"
-	"path/filepath"
+
+	"github.com/ppipada/flexigpt-app/pkg/inference"
 
 	conversationStore "github.com/ppipada/flexigpt-app/pkg/conversation/store"
-	"github.com/ppipada/flexigpt-app/pkg/inference"
-	"github.com/ppipada/flexigpt-app/pkg/settingstore"
-
-	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	modelpresetStore "github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
 	promptStore "github.com/ppipada/flexigpt-app/pkg/prompt/store"
+	settingStore "github.com/ppipada/flexigpt-app/pkg/setting/store"
 	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
 )
 
 type BackendApp struct {
-	settingStoreAPI        *settingstore.SettingStore
+	settingStoreAPI        *settingStore.SettingStore
 	conversationStoreAPI   *conversationStore.ConversationCollection
 	providerSetAPI         *inference.ProviderSetAPI
 	modelPresetStoreAPI    *modelpresetStore.ModelPresetStore
@@ -24,26 +22,21 @@ type BackendApp struct {
 	toolStoreAPI           *toolStore.ToolStore
 
 	settingsDirPath      string
-	settingsFilePath     string
 	conversationsDirPath string
 	modelPresetsDirPath  string
 	promptsDirPath       string
 	toolsDirPath         string
-
-	defaultInbuiltProvider modelpresetSpec.ProviderName
 }
 
 func NewBackendApp(
-	defaultInbuiltProvider modelpresetSpec.ProviderName,
 	settingsDirPath, conversationsDirPath, modelPresetsDirPath, promptsDirPath, toolsDirPath string,
 ) *BackendApp {
-	if settingsDirPath == "" || conversationsDirPath == "" || defaultInbuiltProvider == "" ||
+	if settingsDirPath == "" || conversationsDirPath == "" ||
 		modelPresetsDirPath == "" || promptsDirPath == "" || toolsDirPath == "" {
 		slog.Error(
 			"invalid app path configuration",
 			"settingsDirPath", settingsDirPath,
 			"conversationsDirPath", conversationsDirPath,
-			"defaultInbuiltProvider", defaultInbuiltProvider,
 			"modelPresetsDirPath", modelPresetsDirPath,
 			"promptsDirPath", promptsDirPath,
 			"toolsDirPath", toolsDirPath,
@@ -52,13 +45,11 @@ func NewBackendApp(
 	}
 
 	app := &BackendApp{
-		settingsDirPath:        settingsDirPath,
-		settingsFilePath:       filepath.Join(settingsDirPath, "settings.json"),
-		conversationsDirPath:   conversationsDirPath,
-		modelPresetsDirPath:    modelPresetsDirPath,
-		promptsDirPath:         promptsDirPath,
-		toolsDirPath:           toolsDirPath,
-		defaultInbuiltProvider: defaultInbuiltProvider,
+		settingsDirPath:      settingsDirPath,
+		conversationsDirPath: conversationsDirPath,
+		modelPresetsDirPath:  modelPresetsDirPath,
+		promptsDirPath:       promptsDirPath,
+		toolsDirPath:         toolsDirPath,
 	}
 
 	app.initSettingsStore()
@@ -71,7 +62,6 @@ func NewBackendApp(
 }
 
 func (a *BackendApp) initSettingsStore() {
-	a.settingStoreAPI = &settingstore.SettingStore{}
 	if err := os.MkdirAll(a.settingsDirPath, os.FileMode(0o770)); err != nil {
 		slog.Error(
 			"failed to create settings directory",
@@ -81,16 +71,17 @@ func (a *BackendApp) initSettingsStore() {
 		panic("failed to initialize BackendApp: could not create settings directory")
 	}
 	// Initialize settings manager.
-	err := settingstore.InitSettingStore(a.settingStoreAPI, a.settingsFilePath)
+	ss, err := settingStore.NewSettingStore(a.settingsDirPath)
 	if err != nil {
 		slog.Error(
 			"couldn't initialize settings store",
-			"settingsFilePath", a.settingsFilePath,
+			"settingsDirPath", a.settingsDirPath,
 			"error", err,
 		)
 		panic("dailed to initialize BackendApp: settings store initialization failed")
 	}
-	slog.Info("settings store initialized", "filepath", a.settingsFilePath)
+	a.settingStoreAPI = ss
+	slog.Info("settings store initialized", "dir", a.settingsDirPath)
 }
 
 func (a *BackendApp) initConversationStore() {
@@ -196,11 +187,10 @@ func (a *BackendApp) initToolStore() {
 }
 
 func (a *BackendApp) initProviderSet() {
-	p, err := inference.NewProviderSetAPI(a.defaultInbuiltProvider, false)
+	p, err := inference.NewProviderSetAPI(false)
 	if err != nil {
 		slog.Error(
 			"failed to initialize provider set",
-			"defaultInbuiltProvider", a.defaultInbuiltProvider,
 			"error", err,
 		)
 		panic("failed to initialize BackendApp: invalid default provider")

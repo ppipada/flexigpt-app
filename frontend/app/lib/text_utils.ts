@@ -274,3 +274,13 @@ export function validateVersion(version: string): string | undefined {
 	}
 	return undefined;
 }
+
+export const isValidUrl = (url: string) => {
+	try {
+		if (!url) return false;
+		new URL(url);
+		return true;
+	} catch {
+		return false;
+	}
+};

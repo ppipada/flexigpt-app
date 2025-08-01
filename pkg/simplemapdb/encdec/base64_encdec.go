@@ -1,7 +1,9 @@
 package encdec
 
 import (
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 )
@@ -34,4 +36,10 @@ func Base64JSONDecode[T any](s string) (T, error) {
 	}
 	err = json.Unmarshal(raw, &t)
 	return t, err
+}
+
+// ComputeSHA returns the hex SHA-256 of the given string.
+func ComputeSHA(in string) string {
+	sum := sha256.Sum256([]byte(in))
+	return hex.EncodeToString(sum[:])
 }

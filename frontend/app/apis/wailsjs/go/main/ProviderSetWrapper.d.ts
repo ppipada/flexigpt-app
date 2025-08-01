@@ -8,10 +8,4 @@ export function DeleteProvider(arg1:spec.DeleteProviderRequest):Promise<spec.Del
 
 export function FetchCompletion(arg1:string,arg2:string,arg3:spec.ModelParams,arg4:Array<spec.ChatCompletionRequestMessage>,arg5:string):Promise<spec.FetchCompletionResponse>;
 
-export function GetConfigurationInfo(arg1:spec.GetConfigurationInfoRequest):Promise<spec.GetConfigurationInfoResponse>;
-
-export function SetDefaultProvider(arg1:spec.SetDefaultProviderRequest):Promise<spec.SetDefaultProviderResponse>;
-
 export function SetProviderAPIKey(arg1:spec.SetProviderAPIKeyRequest):Promise<spec.SetProviderAPIKeyResponse>;
-
-export function SetProviderAttribute(arg1:spec.SetProviderAttributeRequest):Promise<spec.SetProviderAttributeResponse>;

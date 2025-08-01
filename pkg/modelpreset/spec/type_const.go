@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	ModelPresetsPresetsFile            = "modelpresets.json" // Single JSON file.
+	ModelPresetsFile                   = "modelpresets.json" // Single JSON file.
 	ModelPresetsBuiltInOverlayFileName = "modelpresetsbuiltin.overlay.json"
 
 	OpenAICompatibleAPIKeyHeaderKey          = "Authorization"
@@ -51,10 +51,9 @@ type (
 )
 
 const (
-	InbuiltAnthropicCompatible   ProviderAPIType = "inbuiltAnthropicCompatible"
-	InbuiltHuggingFaceCompatible ProviderAPIType = "inbuiltHuggingFaceCompatible"
-	InbuiltOpenAICompatible      ProviderAPIType = "inbuiltOpenAICompatible"
-	CustomOpenAICompatible       ProviderAPIType = "customOpenAICompatible"
+	ProviderAPITypeAnthropicCompatible   ProviderAPIType = "providerAPITypeAnthropicCompatible"
+	ProviderAPITypeHuggingFaceCompatible ProviderAPIType = "providerAPITypeHuggingFaceCompatible"
+	ProviderAPITypeOpenAICompatible      ProviderAPIType = "providerAPITypeOpenAICompatible"
 )
 
 const (
@@ -119,6 +118,7 @@ type ProviderPreset struct {
 }
 
 type PresetsSchema struct {
-	Version         string                          `json:"version"`
+	SchemaVersion   string                          `json:"schemaVersion"`
+	DefaultProvider ProviderName                    `json:"defaultProvider"`
 	ProviderPresets map[ProviderName]ProviderPreset `json:"providerPresets"`
 }

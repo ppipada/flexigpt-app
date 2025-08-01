@@ -18,14 +18,31 @@ type AnthropicCompatibleAPI struct {
 }
 
 // NewAnthropicCompatibleAPI creates a new instance of AnthropicCompatibleAPI with default ProviderParams.
-func NewAnthropicCompatibleAPI(pi spec.ProviderParams, debug bool) *AnthropicCompatibleAPI {
-	return &AnthropicCompatibleAPI{
-		BaseAIAPI: NewBaseAIAPI(&pi, debug),
+func NewAnthropicCompatibleAPI(
+	pi spec.ProviderParams,
+	debug bool,
+) (*AnthropicCompatibleAPI, error) {
+	a, err := NewBaseAIAPI(&pi, debug)
+	if err != nil {
+		return nil, err
 	}
+	return &AnthropicCompatibleAPI{
+		BaseAIAPI: a,
+	}, nil
 }
 
 func (api *AnthropicCompatibleAPI) GetLLMsModel(ctx context.Context) llms.Model {
 	return api.llm
+}
+
+func (api *AnthropicCompatibleAPI) DeInitLLM(ctx context.Context) error {
+	api.llm = nil
+	slog.Info(
+		"anthropic compatible LLM provider de initialized",
+		"name",
+		string(api.ProviderParams.Name),
+	)
+	return nil
 }
 
 func (api *AnthropicCompatibleAPI) InitLLM(ctx context.Context) error {

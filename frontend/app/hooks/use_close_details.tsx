@@ -1,17 +1,17 @@
 import type { RefObject } from 'react';
 import { useEffect } from 'react';
 
-type UseCloseDetailsProps = {
+type useCloseDetailsProps = {
 	detailsRef: RefObject<HTMLDetailsElement | null>;
 	events?: (keyof DocumentEventMap)[];
 	onClose?: () => void;
 };
 
-export function UseCloseDetails({
+export function useCloseDetails({
 	detailsRef,
 	events = ['mousedown'], // default is 'mousedown'
 	onClose,
-}: UseCloseDetailsProps) {
+}: useCloseDetailsProps) {
 	useEffect(() => {
 		function handleClickOutside(event: Event) {
 			if (detailsRef.current && !detailsRef.current.contains(event.target as Node)) {

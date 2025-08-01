@@ -1,10 +1,10 @@
 import type { FC } from 'react';
 
-import { useHighlight } from '@/lib/highlight_hook';
-
 import CopyButton from '@/components/copy_button';
 import DownloadButton from '@/components/download_button';
 import MermaidDiagram from '@/components/markdown_mermaid_diagram';
+
+import { useHighlight } from '@/hooks/use_highlight';
 
 interface CodeProps {
 	language: string;

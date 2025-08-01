@@ -8,12 +8,29 @@ import (
 
 // We keep a few constants for organization.
 const (
-	tag        = "ModelPresetStore"
-	pathPrefix = "/modelpresets/providers"
+	tag           = "ModelPresetStore"
+	topPathPrefix = "/modelpresets"
+	pathPrefix    = topPathPrefix + "/providers"
 )
 
 // InitModelPresetStoreHandlers registers all endpoints related to settings.
 func InitModelPresetStoreHandlers(api huma.API, modelPresetStoreAPI *ModelPresetStore) {
+	huma.Register(api, huma.Operation{
+		OperationID: "patch-default-provider",
+		Method:      http.MethodPatch,
+		Path:        topPathPrefix + "/defaultprovider",
+		Summary:     "Set a default provider",
+		Tags:        []string{tag},
+	}, modelPresetStoreAPI.PatchDefaultProvider)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-default-provider",
+		Method:      http.MethodGet,
+		Path:        topPathPrefix + "/defaultprovider",
+		Summary:     "Get the default provider",
+		Tags:        []string{tag},
+	}, modelPresetStoreAPI.GetDefaultProvider)
+
 	huma.Register(api, huma.Operation{
 		OperationID: "put-provider-preset",
 		Method:      http.MethodPut,

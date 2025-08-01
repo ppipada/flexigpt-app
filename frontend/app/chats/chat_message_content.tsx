@@ -1,9 +1,8 @@
 import { memo, useMemo } from 'react';
 
-// <-- adjust path
-import { useDebounced } from '@/lib/debounce';
-
 import EnhancedMarkdown from '@/components/markdown_enhanced';
+
+import { useDebounced } from '@/hooks/use_debounced';
 
 interface ChatMessageContentProps {
 	// Final text

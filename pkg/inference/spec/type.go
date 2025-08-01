@@ -58,10 +58,10 @@ type ModelParams struct {
 // ProviderParams represents information about a provider.
 type ProviderParams struct {
 	Name                     spec.ProviderName    `json:"name"`
+	APIType                  spec.ProviderAPIType `json:"apiType"`
 	APIKey                   string               `json:"apiKey"`
 	Origin                   string               `json:"origin"`
 	ChatCompletionPathPrefix string               `json:"chatCompletionPathPrefix"`
 	APIKeyHeaderKey          string               `json:"apiKeyHeaderKey"`
 	DefaultHeaders           map[string]string    `json:"defaultHeaders"`
-	Type                     spec.ProviderAPIType `json:"type"`
 }

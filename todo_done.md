@@ -402,3 +402,9 @@
 - [x] Startup issue in linux mint if sqlite file is missing.
 - [x] Details expansion was giving large cpu
 - [x] Ideally conversation list should be sorted based on modified time and not created time.
+
+- [x] implement prompts and tools using dirstore+fts
+- [x] set default provider is pending
+- [x] Inbuilt model handling is pending in modelpresets.
+- [x] May be in settings too, check.
+- [x] In hybrid mode, temperature setting is not coming for sonnet etc

@@ -18,14 +18,28 @@ type OpenAICompatibleAPI struct {
 }
 
 // NewOpenAICompatibleProvider creates a new instance of OpenAICompatibleProvider with the provided ProviderParams.
-func NewOpenAICompatibleProvider(pi spec.ProviderParams, debug bool) *OpenAICompatibleAPI {
-	return &OpenAICompatibleAPI{
-		BaseAIAPI: NewBaseAIAPI(&pi, debug),
+func NewOpenAICompatibleProvider(pi spec.ProviderParams, debug bool) (*OpenAICompatibleAPI, error) {
+	a, err := NewBaseAIAPI(&pi, debug)
+	if err != nil {
+		return nil, err
 	}
+	return &OpenAICompatibleAPI{
+		BaseAIAPI: a,
+	}, nil
 }
 
 func (api *OpenAICompatibleAPI) GetLLMsModel(ctx context.Context) llms.Model {
 	return api.llm
+}
+
+func (api *OpenAICompatibleAPI) DeInitLLM(ctx context.Context) error {
+	api.llm = nil
+	slog.Info(
+		"openai compatible LLM provider de initialized",
+		"name",
+		string(api.ProviderParams.Name),
+	)
+	return nil
 }
 
 func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {

@@ -11,8 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	modelpresetConsts "github.com/ppipada/flexigpt-app/pkg/modelpreset/consts"
-
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/adrg/xdg"
@@ -30,10 +28,9 @@ type App struct {
 	toolStoreAPI           *ToolStoreWrapper
 	providerSetAPI         *ProviderSetWrapper
 
-	configBasePath string
-	dataBasePath   string
+	dataBasePath string
 
-	settingsFilePath     string
+	settingsDirPath      string
 	conversationsDirPath string
 	modelPresetsDirPath  string
 	promptsDirPath       string
@@ -42,30 +39,28 @@ type App struct {
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	if xdg.ConfigHome == "" || xdg.DataHome == "" {
+	if xdg.DataHome == "" {
 		slog.Error(
 			"Could not resolve XDG data paths",
-			"XDG Config dir", xdg.ConfigHome,
 			"XDG Data dir", xdg.DataHome,
 		)
 		panic("Failed to initialize App: XDG paths not set")
 	}
 
 	app := &App{}
-	app.configBasePath = filepath.Join(xdg.ConfigHome, strings.ToLower(AppTitle))
 	app.dataBasePath = filepath.Join(xdg.DataHome, strings.ToLower(AppTitle))
 
-	app.settingsFilePath = filepath.Join(app.configBasePath, "settings.json")
+	app.settingsDirPath = filepath.Join(app.dataBasePath, "settings")
 	app.conversationsDirPath = filepath.Join(app.dataBasePath, "conversations")
 	app.modelPresetsDirPath = filepath.Join(app.dataBasePath, "modelpresets")
 	app.promptsDirPath = filepath.Join(app.dataBasePath, "prompttemplates")
 	app.toolsDirPath = filepath.Join(app.dataBasePath, "tools")
 
-	if app.settingsFilePath == "" || app.conversationsDirPath == "" ||
+	if app.settingsDirPath == "" || app.conversationsDirPath == "" ||
 		app.modelPresetsDirPath == "" || app.promptsDirPath == "" || app.toolsDirPath == "" {
 		slog.Error(
 			"Invalid app path configuration",
-			"settingsFilePath", app.settingsFilePath,
+			"settingsDirPath", app.settingsDirPath,
 			"conversationsDirPath", app.conversationsDirPath,
 			"modelPresetsDirPath", app.modelPresetsDirPath,
 			"promptsDirPath", app.promptsDirPath,
@@ -83,13 +78,13 @@ func NewApp() *App {
 	app.promptTemplateStoreAPI = &PromptTemplateStoreWrapper{}
 	app.toolStoreAPI = &ToolStoreWrapper{}
 
-	if err := os.MkdirAll(app.configBasePath, os.FileMode(0o770)); err != nil {
+	if err := os.MkdirAll(app.settingsDirPath, os.FileMode(0o770)); err != nil {
 		slog.Error(
-			"Failed to create config directory",
-			"Config path", app.configBasePath,
+			"Failed to create settings directory",
+			"Settings path", app.settingsDirPath,
 			"Error", err,
 		)
-		panic("Failed to initialize App: could not create config directory")
+		panic("Failed to initialize App: could not create settings directory")
 	}
 	if err := os.MkdirAll(app.conversationsDirPath, os.FileMode(0o770)); err != nil {
 		slog.Error(
@@ -126,8 +121,7 @@ func NewApp() *App {
 	slog.Info(
 		"FlexiGPT paths initialized",
 		"app data", app.dataBasePath,
-		"config data", app.configBasePath,
-		"settingsFilePath", app.settingsFilePath,
+		"settingsDirPath", app.settingsDirPath,
 		"conversationsDirPath", app.conversationsDirPath,
 		"modelPresetsDirPath", app.modelPresetsDirPath,
 		"promptsDirPath", app.promptsDirPath,
@@ -137,17 +131,41 @@ func NewApp() *App {
 }
 
 func (a *App) initManagers() {
-	// Initialize settings manager.
-	err := InitSettingStoreWrapper(a.settingStoreAPI, a.settingsFilePath)
+	err := InitProviderSetWrapper(a.providerSetAPI)
+	if err != nil {
+		slog.Error(
+			"Couldn't initialize provider set",
+			"Error", err,
+		)
+		panic("Failed to initialize managers: provider set initialization failed")
+	}
+
+	err = InitSettingStoreWrapper(a.settingStoreAPI, a.providerSetAPI, a.settingsDirPath)
 	if err != nil {
 		slog.Error(
 			"Couldn't initialize settings store",
-			"Settings file", a.settingsFilePath,
+			"Directory", a.settingsDirPath,
 			"Error", err,
 		)
 		panic("Failed to initialize managers: settings store initialization failed")
 	}
-	slog.Info("Settings store initialized", "filepath", a.settingsFilePath)
+	slog.Info("Settings store initialized", "directory", a.settingsDirPath)
+
+	err = InitModelPresetStoreWrapper(
+		a.modelPresetStoreAPI,
+		a.settingStoreAPI,
+		a.providerSetAPI,
+		a.modelPresetsDirPath,
+	)
+	if err != nil {
+		slog.Error(
+			"Couldn't initialize model presets store",
+			"Dir", a.modelPresetsDirPath,
+			"Error", err,
+		)
+		panic("Failed to initialize managers: model presets store initialization failed")
+	}
+	slog.Info("Model presets store initialized", "dir", a.modelPresetsDirPath)
 
 	err = InitConversationCollectionWrapper(a.conversationStoreAPI, a.conversationsDirPath)
 	if err != nil {
@@ -159,17 +177,6 @@ func (a *App) initManagers() {
 		panic("Failed to initialize managers: conversation store initialization failed")
 	}
 	slog.Info("Conversation store initialized", "directory", a.conversationsDirPath)
-
-	err = InitModelPresetStoreWrapper(a.modelPresetStoreAPI, a.modelPresetsDirPath)
-	if err != nil {
-		slog.Error(
-			"Couldn't initialize model presets store",
-			"Dir", a.modelPresetsDirPath,
-			"Error", err,
-		)
-		panic("Failed to initialize managers: model presets store initialization failed")
-	}
-	slog.Info("Model presets store initialized", "dir", a.modelPresetsDirPath)
 
 	err = InitPromptTemplateStoreWrapper(a.promptTemplateStoreAPI, a.promptsDirPath)
 	if err != nil {
@@ -189,24 +196,6 @@ func (a *App) initManagers() {
 			"Error", err,
 		)
 		panic("Failed to initialize managers: tool store initialization failed")
-	}
-
-	err = InitProviderSetWrapper(a.providerSetAPI, modelpresetConsts.ProviderNameOpenAI)
-	if err != nil {
-		slog.Error(
-			"Couldn't initialize provider set",
-			"Error", err,
-		)
-		panic("Failed to initialize managers: provider set initialization failed")
-	}
-
-	err = InitProviderSetUsingSettings(a.settingStoreAPI, a.providerSetAPI)
-	if err != nil {
-		slog.Error(
-			"Couldn't initialize provider set from settings",
-			"Error", err,
-		)
-		panic("Failed to initialize managers: provider set initialization from settings failed")
 	}
 }
 

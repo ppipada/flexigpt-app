@@ -4,8 +4,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
-const ProviderNameLlamaCPP spec.ProviderName = "llamacpp"
-
 const (
 	Llama4Behemoth spec.ModelName = "llama4-behemoth"
 	Llama4Maverick spec.ModelName = "llama4-maverick"

@@ -17,14 +17,31 @@ type HuggingFaceCompatibleAPI struct {
 }
 
 // NewHuggingFaceCompatibleAPI creates a new instance of HuggingFaceCompatibleAPI with default ProviderParams.
-func NewHuggingFaceCompatibleAPI(pi spec.ProviderParams, debug bool) *HuggingFaceCompatibleAPI {
-	return &HuggingFaceCompatibleAPI{
-		BaseAIAPI: NewBaseAIAPI(&pi, debug),
+func NewHuggingFaceCompatibleAPI(
+	pi spec.ProviderParams,
+	debug bool,
+) (*HuggingFaceCompatibleAPI, error) {
+	a, err := NewBaseAIAPI(&pi, debug)
+	if err != nil {
+		return nil, err
 	}
+	return &HuggingFaceCompatibleAPI{
+		BaseAIAPI: a,
+	}, nil
 }
 
 func (api *HuggingFaceCompatibleAPI) GetLLMsModel(ctx context.Context) llms.Model {
 	return api.llm
+}
+
+func (api *HuggingFaceCompatibleAPI) DeInitLLM(ctx context.Context) error {
+	api.llm = nil
+	slog.Info(
+		"huggingface compatible LLM provider de initialized",
+		"name",
+		string(api.ProviderParams.Name),
+	)
+	return nil
 }
 
 func (api *HuggingFaceCompatibleAPI) InitLLM(ctx context.Context) error {

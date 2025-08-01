@@ -1,16 +1,16 @@
 import type { FC } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
+import type { ModelParams } from '@/spec/aiprovider';
 import type { Conversation, ConversationMessage, ConversationSearchItem } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
-import type { ModelParams } from '@/spec/modelpreset';
-import { type ChatOptions, DefaultChatOptions } from '@/spec/modelpreset';
 
 import { generateTitle } from '@/lib/text_utils';
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { GetCompletionMessage } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
+import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
 
@@ -143,7 +143,7 @@ const ChatScreen: FC = () => {
 	}, [chat.id, chat.title]);
 
 	const updateStreamingMessage = useCallback(
-		async (updatedChatWithUserMessage: Conversation, options: ChatOptions) => {
+		async (updatedChatWithUserMessage: Conversation, options: ChatOption) => {
 			let prevMessages = updatedChatWithUserMessage.messages;
 			if (options.disablePreviousMessages) {
 				prevMessages = [updatedChatWithUserMessage.messages[updatedChatWithUserMessage.messages.length - 1]];
@@ -188,7 +188,13 @@ const ChatScreen: FC = () => {
 				additionalParametersRawJSON: options.additionalParametersRawJSON,
 			};
 
-			const newMsg = await GetCompletionMessage(options.provider, inputParams, convoMsg, prevMessages, onStreamData);
+			const newMsg = await GetCompletionMessage(
+				options.providerName,
+				inputParams,
+				convoMsg,
+				prevMessages,
+				onStreamData
+			);
 
 			if (newMsg.requestDetails) {
 				if (updatedChatWithConvoMessage.messages.length > 1) {
@@ -220,7 +226,7 @@ const ChatScreen: FC = () => {
 		[saveUpdatedChat]
 	);
 
-	const sendMessage = async (text: string, options: ChatOptions) => {
+	const sendMessage = async (text: string, options: ChatOption) => {
 		if (isSubmittingRef.current) return;
 		isSubmittingRef.current = true;
 

@@ -91,7 +91,7 @@
 			"app/apis/wailsjs/go/main/ModelPresetStoreWrapper.js",
 			"app/apis/wailsjs/go/main/PromptTemplateStoreWrapper.js",
 			"app/spec/aiprovider.ts",
-			"app/lib/highlight_worker.ts"
+			"app/hooks/highlight_worker.ts"
 		],
 		"ignoreBinaries": [],
 		"ignoreDependencies": [

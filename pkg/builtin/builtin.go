@@ -23,3 +23,21 @@ const (
 	BuiltInPromptBundlesRootDir = "prompts"
 	BuiltInPromptBundlesJSON    = "prompts.bundles.json"
 )
+
+const (
+	ProviderNameAnthropic   = "anthropic"
+	ProviderNameDeepseek    = "deepseek"
+	ProviderNameGoogle      = "google"
+	ProviderNameHuggingFace = "huggingface"
+	ProviderNameLlamaCPP    = "llamacpp"
+	ProviderNameOpenAI      = "openai"
+)
+
+var BuiltInProviderNames = []string{
+	ProviderNameAnthropic,
+	ProviderNameDeepseek,
+	ProviderNameGoogle,
+	ProviderNameHuggingFace,
+	ProviderNameLlamaCPP,
+	ProviderNameOpenAI,
+}

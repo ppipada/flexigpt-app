@@ -13,14 +13,12 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
+	conversationStore "github.com/ppipada/flexigpt-app/pkg/conversation/store"
 	"github.com/ppipada/flexigpt-app/pkg/inference"
 	"github.com/ppipada/flexigpt-app/pkg/logrotate"
-	"github.com/ppipada/flexigpt-app/pkg/settingstore"
-
-	conversationStore "github.com/ppipada/flexigpt-app/pkg/conversation/store"
-	modelpresetConsts "github.com/ppipada/flexigpt-app/pkg/modelpreset/consts"
 	modelpresetStore "github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
 	promptStore "github.com/ppipada/flexigpt-app/pkg/prompt/store"
+	settingStore "github.com/ppipada/flexigpt-app/pkg/setting/store"
 	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
 )
 
@@ -44,14 +42,13 @@ func main() {
 		router := http.NewServeMux()
 		api := humago.New(router, huma.DefaultConfig("FlexiGPTServer API", "1.0.0"))
 		app := NewBackendApp(
-			modelpresetConsts.ProviderNameOpenAI,
 			opts.SettingsDirPath,
 			opts.ConversationsDirPath,
 			opts.ModelPresetsDirPath,
 			opts.PromptTemplatesDirPath,
 			opts.ToolsDirPath,
 		)
-		settingstore.InitSettingStoreHandlers(api, app.settingStoreAPI)
+		settingStore.InitSettingStoreHandlers(api, app.settingStoreAPI)
 		conversationStore.InitConversationStoreHandlers(api, app.conversationStoreAPI)
 		inference.InitProviderSetHandlers(api, app.providerSetAPI)
 		modelpresetStore.InitModelPresetStoreHandlers(api, app.modelPresetStoreAPI)

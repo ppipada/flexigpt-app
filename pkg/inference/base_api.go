@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/ppipada/flexigpt-app/pkg/builtin"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
-	"github.com/ppipada/flexigpt-app/pkg/modelpreset/consts"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	"github.com/tmc/langchaingo/llms"
 )
@@ -19,14 +19,10 @@ type CompletionProvider interface {
 	IsConfigured(ctx context.Context) bool
 	GetLLMsModel(ctx context.Context) llms.Model
 	InitLLM(ctx context.Context) error
+	DeInitLLM(ctx context.Context) error
 	SetProviderAPIKey(
 		ctx context.Context,
 		apiKey string,
-	) error
-	SetProviderAttribute(
-		ctx context.Context,
-		origin *string,
-		chatCompletionPathPrefix *string,
 	) error
 	FetchCompletion(
 		ctx context.Context,
@@ -53,11 +49,14 @@ type BaseAIAPI struct {
 }
 
 // NewOpenAIAPI creates a new instance of BaseAIAPI with input ProviderParams.
-func NewBaseAIAPI(p *spec.ProviderParams, debug bool) *BaseAIAPI {
+func NewBaseAIAPI(p *spec.ProviderParams, debug bool) (*BaseAIAPI, error) {
+	if p == nil || p.Name == "" || p.Origin == "" {
+		return nil, errors.New("invalid args")
+	}
 	return &BaseAIAPI{
 		ProviderParams: p,
 		Debug:          debug,
-	}
+	}, nil
 }
 
 // IsConfigured checks if the API is configured.
@@ -82,28 +81,6 @@ func (api *BaseAIAPI) SetProviderAPIKey(
 	}
 
 	api.ProviderParams.APIKey = apiKey
-
-	return nil
-}
-
-// SetProviderAttribute sets the attributes of a provider.
-func (api *BaseAIAPI) SetProviderAttribute(
-	ctx context.Context,
-	origin *string,
-	chatCompletionPathPrefix *string,
-) error {
-	if origin == nil && chatCompletionPathPrefix == nil {
-		return errors.New("no attribute provided for set")
-	}
-	if api.ProviderParams == nil {
-		return errors.New("no ProviderParams found")
-	}
-	if origin != nil && *origin != "" {
-		api.ProviderParams.Origin = *origin
-	}
-	if chatCompletionPathPrefix != nil {
-		api.ProviderParams.ChatCompletionPathPrefix = *chatCompletionPathPrefix
-	}
 
 	return nil
 }
@@ -176,7 +153,7 @@ func (api *BaseAIAPI) FetchCompletion(
 	content := []llms.MessageContent{}
 	if sp := input.ModelParams.SystemPrompt; sp != "" {
 		sysmsg := llms.TextParts(llms.ChatMessageTypeSystem, sp)
-		if api.ProviderParams.Name == consts.ProviderNameOpenAI &&
+		if api.ProviderParams.Name == builtin.ProviderNameOpenAI &&
 			strings.HasPrefix(string(input.ModelParams.Name), "o") {
 			sysmsg = llms.TextParts(llms.ChatMessageTypeDeveloper, sp)
 		}

@@ -32,7 +32,7 @@ export function ensureWorker(): Worker {
 
 		waiting.delete(id);
 	};
-
+	console.log('highlight worker initialized');
 	return worker;
 }
 

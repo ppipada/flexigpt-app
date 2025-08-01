@@ -4,8 +4,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
-const ProviderNameHuggingFace spec.ProviderName = "huggingface"
-
 const (
 	DeepseekCoder13BInstruct              spec.ModelName        = "deepseek-ai/deepseek-coder-1.3b-instruct"
 	DisplayNameDeepseekCoder13BInstruct   spec.ModelDisplayName = "HF Deepseek Coder 1.3b"

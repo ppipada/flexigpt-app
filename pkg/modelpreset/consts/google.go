@@ -4,8 +4,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
-const ProviderNameGoogle spec.ProviderName = "google"
-
 const (
 	Gemini25Pro       spec.ModelName = "gemini-2.5-pro"
 	Gemini25Flash     spec.ModelName = "gemini-2.5-flash"

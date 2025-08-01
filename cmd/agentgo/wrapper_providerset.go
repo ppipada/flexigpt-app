@@ -20,9 +20,8 @@ type ProviderSetWrapper struct {
 // NewProviderSetWrapper creates a new ProviderSet with the specified default provider.
 func InitProviderSetWrapper(
 	ps *ProviderSetWrapper,
-	defaultInbuiltProvider modelpresetSpec.ProviderName,
 ) error {
-	p, err := inference.NewProviderSetAPI(defaultInbuiltProvider, false)
+	p, err := inference.NewProviderSetAPI(false)
 	if err != nil {
 		return errors.Join(err, errors.New("invalid default provider"))
 	}
@@ -32,24 +31,6 @@ func InitProviderSetWrapper(
 
 func SetWrappedProviderAppContext(w *ProviderSetWrapper, ctx context.Context) {
 	w.appContext = ctx
-}
-
-func (w *ProviderSetWrapper) SetDefaultProvider(
-	req *inferenceSpec.SetDefaultProviderRequest,
-) (*inferenceSpec.SetDefaultProviderResponse, error) {
-	return middleware.WithRecoveryResp(func() (*inferenceSpec.SetDefaultProviderResponse, error) {
-		return w.providersetAPI.SetDefaultProvider(context.Background(), req)
-	})
-}
-
-func (w *ProviderSetWrapper) GetConfigurationInfo(
-	req *inferenceSpec.GetConfigurationInfoRequest,
-) (*inferenceSpec.GetConfigurationInfoResponse, error) {
-	return middleware.WithRecoveryResp(
-		func() (*inferenceSpec.GetConfigurationInfoResponse, error) {
-			return w.providersetAPI.GetConfigurationInfo(context.Background(), req)
-		},
-	)
 }
 
 func (w *ProviderSetWrapper) AddProvider(
@@ -74,16 +55,6 @@ func (w *ProviderSetWrapper) SetProviderAPIKey(
 	return middleware.WithRecoveryResp(func() (*inferenceSpec.SetProviderAPIKeyResponse, error) {
 		return w.providersetAPI.SetProviderAPIKey(context.Background(), req)
 	})
-}
-
-func (w *ProviderSetWrapper) SetProviderAttribute(
-	req *inferenceSpec.SetProviderAttributeRequest,
-) (*inferenceSpec.SetProviderAttributeResponse, error) {
-	return middleware.WithRecoveryResp(
-		func() (*inferenceSpec.SetProviderAttributeResponse, error) {
-			return w.providersetAPI.SetProviderAttribute(context.Background(), req)
-		},
-	)
 }
 
 // FetchCompletion handles the completion request and streams data back to the frontend.

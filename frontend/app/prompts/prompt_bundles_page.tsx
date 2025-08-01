@@ -1,3 +1,4 @@
+/* pages/prompt_bundles_page.tsx */
 import { type FC, useEffect, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
@@ -10,10 +11,10 @@ import { promptStoreAPI } from '@/apis/baseapi';
 
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
+import Loader from '@/components/loader';
 
+import AddBundleModal from '@/prompts/prompt_bundle_add';
 import PromptBundleCard from '@/prompts/prompt_bundle_card';
-
-import AddBundleModal from './prompt_bundle_add';
 
 /* ---------- local types ---------- */
 interface BundleData {
@@ -42,10 +43,12 @@ const PromptBundlesPage: FC = () => {
 		setLoading(true);
 		try {
 			const { promptBundles } = await promptStoreAPI.listPromptBundles(undefined, true);
+
 			const bundleResults: BundleData[] = await Promise.all(
 				promptBundles.map(async b => {
 					try {
 						const { promptTemplateListItems } = await promptStoreAPI.listPromptTemplates([b.id], undefined, true);
+
 						const tplPromises = promptTemplateListItems.map(itm =>
 							promptStoreAPI.getPromptTemplate(itm.bundleID, itm.templateSlug, itm.templateVersion)
 						);
@@ -56,6 +59,7 @@ const PromptBundlesPage: FC = () => {
 					}
 				})
 			);
+
 			setBundles(bundleResults);
 		} catch (err) {
 			console.error('Failed to load bundles:', err);
@@ -103,6 +107,12 @@ const PromptBundlesPage: FC = () => {
 	};
 
 	/* ---------- render ---------- */
+
+	// full-page loader while first fetch is running
+	if (loading) {
+		return <Loader text="Loading bundles…" />;
+	}
+
 	return (
 		<div>
 			{/* header */}
@@ -124,11 +134,10 @@ const PromptBundlesPage: FC = () => {
 			{/* body */}
 			<div
 				className="flex flex-col items-center w-full grow mt-12 overflow-y-auto"
-				style={{ maxHeight: `calc(100vh - 144px)` }}
+				style={{ maxHeight: 'calc(100vh - 144px)' }}
 			>
 				<div className="flex flex-col space-y-4 w-5/6 xl:w-2/3">
-					{loading && <p className="text-center text-sm mt-8">Loading bundles…</p>}
-					{!loading && bundles.length === 0 && <p className="text-center text-sm mt-8">No bundles configured yet.</p>}
+					{bundles.length === 0 && <p className="text-center text-sm mt-8">No bundles configured yet.</p>}
 
 					{bundles.map(bd => (
 						<PromptBundleCard

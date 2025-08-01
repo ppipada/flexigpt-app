@@ -4,6 +4,7 @@ package store
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"maps"
@@ -30,8 +31,9 @@ func (k builtInModelKey) ID() booloverlay.KeyID    { return booloverlay.KeyID(k)
 // BuiltInPresets loads built-in preset assets and maintains an overlay store.
 type BuiltInPresets struct {
 	// Immutable original data.
-	providers map[spec.ProviderName]spec.ProviderPreset
-	models    map[spec.ProviderName]map[spec.ModelPresetID]spec.ModelPreset
+	defaultProvider spec.ProviderName
+	providers       map[spec.ProviderName]spec.ProviderPreset
+	models          map[spec.ProviderName]map[spec.ModelPresetID]spec.ModelPreset
 
 	// View after overlay application, guarded by mu.
 	mu         sync.RWMutex
@@ -115,6 +117,16 @@ func (b *BuiltInPresets) ListBuiltInPresets() (
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 	return maps.Clone(b.viewProv), cloneModels(b.viewModels), nil
+}
+
+// GetBuiltInDefaultProviderName fetches the default provider name in builtin.
+func (b *BuiltInPresets) GetBuiltInDefaultProviderName() (spec.ProviderName, error) {
+	defaultProvider := b.defaultProvider
+
+	if defaultProvider == "" {
+		defaultProvider = builtin.ProviderNameOpenAI
+	}
+	return defaultProvider, nil
 }
 
 // GetBuiltInProvider fetches a provider from the snapshot.
@@ -209,9 +221,12 @@ func (b *BuiltInPresets) loadFromFS() error {
 	if err := json.Unmarshal(raw, &schema); err != nil {
 		return err
 	}
-	if schema.Version != spec.SchemaVersion {
+	if schema.SchemaVersion != spec.SchemaVersion {
 		return fmt.Errorf("schemaVersion %q not equal to %q",
-			schema.Version, spec.SchemaVersion)
+			schema.SchemaVersion, spec.SchemaVersion)
+	}
+	if schema.DefaultProvider == "" {
+		return errors.New("no default provider in builtin")
 	}
 	if len(schema.ProviderPresets) == 0 {
 		return fmt.Errorf("%s contains no providers", builtin.BuiltInModelPresetsJSON)
@@ -242,6 +257,11 @@ func (b *BuiltInPresets) loadFromFS() error {
 		models[name] = sub
 	}
 
+	if _, ok := prov[schema.DefaultProvider]; !ok {
+		return errors.New("default provider not present in presets")
+	}
+
+	b.defaultProvider = schema.DefaultProvider
 	b.providers = prov
 	b.models = models
 

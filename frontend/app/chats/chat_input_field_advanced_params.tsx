@@ -1,112 +1,92 @@
-import React, { type FC, useEffect, useMemo, useState } from 'react';
+import React, { type FC, useEffect, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
-import type { ChatOptions } from '@/spec/modelpreset';
+import type { ChatOption } from '@/apis/chatoption_helper';
 
 interface AdvancedParamsModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	currentModel: ChatOptions;
-	onSave: (updatedModel: ChatOptions) => void;
+	currentModel: ChatOption;
+	onSave: (updatedModel: ChatOption) => void;
 }
 
-// A modal that allows editing advanced parameters:
-// streaming, maxPromptLength, maxOutputLength, systemPrompt.
-// It does simple numeric validations and then calls `onSave` with the updated model.
 const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, currentModel, onSave }) => {
-	// We store these fields locally as strings (for numeric fields) to allow easy blank entry.
-	const [stream, setStream] = useState<boolean>(false);
-	const [maxPromptLength, setMaxPromptLength] = useState<string>('');
-	const [maxOutputLength, setMaxOutputLength] = useState<string>('');
-	const [systemPrompt, setSystemPrompt] = useState<string>('');
+	/* local form state (strings for easy blank entry) */
+	const [stream, setStream] = useState(false);
+	const [maxPromptLength, setMaxPromptLength] = useState('');
+	const [maxOutputLength, setMaxOutputLength] = useState('');
+	const [systemPrompt, setSystemPrompt] = useState('');
 
-	// For tracking/validating errors:
-	const [errors, setErrors] = useState<{
-		maxPromptLength?: string;
-		maxOutputLength?: string;
-	}>({});
+	/* validation errors */
+	const [errors, setErrors] = useState<Partial<Record<'maxPromptLength' | 'maxOutputLength', string>>>({});
 
-	// On modal open, initialize local state with the currentModel fields.
+	/* reset form every time the modal opens or the model changes */
 	useEffect(() => {
-		if (isOpen) {
-			setStream(currentModel.stream);
-			setMaxPromptLength(String(currentModel.maxPromptLength));
-			setMaxOutputLength(String(currentModel.maxOutputLength));
-			setSystemPrompt(currentModel.systemPrompt);
-			setErrors({});
-		}
-	}, [isOpen]);
+		if (!isOpen) return;
 
-	type ValidationField = 'maxPromptLength' | 'maxOutputLength';
+		setStream(currentModel.stream);
+		setMaxPromptLength(String(currentModel.maxPromptLength));
+		setMaxOutputLength(String(currentModel.maxOutputLength));
+		setSystemPrompt(currentModel.systemPrompt);
+		setErrors({});
+	}, [isOpen, currentModel]);
 
-	type ValidationErrors = Partial<Record<ValidationField, string>>;
+	const validateNumberField = (field: 'maxPromptLength' | 'maxOutputLength', value: string) => {
+		const num = value.trim() === '' ? undefined : Number(value.trim());
 
-	// Validate a single field name, storing the result in `errors` state.
-	const validateField = (field: ValidationField, value: string) => {
-		const newErrors: ValidationErrors = Object.fromEntries(Object.entries(errors).filter(([key]) => key !== field));
-
-		if (value.trim() !== '') {
-			const numValue = Number(value.trim());
-			if (Number.isNaN(numValue) || numValue <= 0) {
-				newErrors[field] = `${field} must be a positive number.`;
-			}
-		}
-
-		setErrors(newErrors);
+		return num && Number.isFinite(num) && num > 0 ? undefined : `${field} must be a positive number.`;
 	};
 
-	const isFormValid = useMemo(() => {
-		return !Object.values(errors).some(Boolean);
-	}, [errors]);
+	const updateField = (
+		field: 'maxPromptLength' | 'maxOutputLength',
+		value: string,
+		setter: React.Dispatch<React.SetStateAction<string>>
+	) => {
+		setter(value);
+		setErrors(prev => ({ ...prev, [field]: validateNumberField(field, value) }));
+	};
+
+	const formHasErrors = Object.values(errors).some(Boolean);
 
 	const handleSave = (e: React.FormEvent) => {
 		e.preventDefault();
 
-		// Re-validate numeric fields.
-		validateField('maxPromptLength', maxPromptLength);
-		validateField('maxOutputLength', maxOutputLength);
+		/* final synchronous validation */
+		const maxPromptErr = validateNumberField('maxPromptLength', maxPromptLength);
+		const maxOutputErr = validateNumberField('maxOutputLength', maxOutputLength);
 
-		if (!isFormValid) {
-			return; // there's an error, do not proceed.
+		if (maxPromptErr || maxOutputErr) {
+			setErrors({ maxPromptLength: maxPromptErr, maxOutputLength: maxOutputErr });
+			return;
 		}
 
-		// Parse numeric fields; if empty, let them remain as the existing model's values.
-		const parsedMaxPromptLength =
-			maxPromptLength.trim() === '' ? currentModel.maxPromptLength : Number(maxPromptLength.trim());
-		const parsedMaxOutputLength =
-			maxOutputLength.trim() === '' ? currentModel.maxOutputLength : Number(maxOutputLength.trim());
-
-		// Build the updated model.
-		const updatedModel: ChatOptions = {
+		const updatedModel: ChatOption = {
 			...currentModel,
 			stream,
-			maxPromptLength: parsedMaxPromptLength,
-			maxOutputLength: parsedMaxOutputLength,
+			maxPromptLength: maxPromptLength.trim() === '' ? currentModel.maxPromptLength : Number(maxPromptLength.trim()),
+			maxOutputLength: maxOutputLength.trim() === '' ? currentModel.maxOutputLength : Number(maxOutputLength.trim()),
 			systemPrompt,
 		};
 
 		onSave(updatedModel);
 	};
 
-	if (!isOpen) {
-		return null;
-	}
+	if (!isOpen) return null;
 
 	return (
 		<dialog className="modal modal-open">
 			<div className="modal-box max-w-xl max-h-[80vh] overflow-auto rounded-2xl">
-				{/* Header */}
+				{/* header */}
 				<div className="flex justify-between items-center mb-4">
 					<h3 className="font-bold text-lg">Advanced Model Parameters</h3>
-					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close" title="Close">
+					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close">
 						<FiX size={12} />
 					</button>
 				</div>
 
-				{/* Form for advanced fields */}
 				<form onSubmit={handleSave} className="space-y-4">
-					{/* Toggle: stream */}
+					{/* stream toggle */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-4 cursor-pointer">
 							<span className="label-text text-sm">Streaming</span>
@@ -122,12 +102,11 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 									setStream(e.target.checked);
 								}}
 								className="toggle toggle-accent rounded-full"
-								spellCheck="false"
 							/>
 						</div>
 					</div>
 
-					{/* Max Prompt Length */}
+					{/* max prompt length */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-4">
 							<span className="label-text text-sm">Max Prompt Tokens</span>
@@ -140,8 +119,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 								type="text"
 								value={maxPromptLength}
 								onChange={e => {
-									setMaxPromptLength(e.target.value);
-									validateField('maxPromptLength', e.target.value);
+									updateField('maxPromptLength', e.target.value, setMaxPromptLength);
 								}}
 								className={`input input-bordered w-full rounded-xl ${errors.maxPromptLength ? 'input-error' : ''}`}
 								placeholder={`Default: ${currentModel.maxPromptLength}`}
@@ -157,7 +135,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 						</div>
 					</div>
 
-					{/* Max Output Length */}
+					{/* max output length */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-4">
 							<span className="label-text text-sm">Max Output Tokens</span>
@@ -170,8 +148,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 								type="text"
 								value={maxOutputLength}
 								onChange={e => {
-									setMaxOutputLength(e.target.value);
-									validateField('maxOutputLength', e.target.value);
+									updateField('maxOutputLength', e.target.value, setMaxOutputLength);
 								}}
 								className={`input input-bordered w-full rounded-xl ${errors.maxOutputLength ? 'input-error' : ''}`}
 								placeholder={`Default: ${currentModel.maxOutputLength}`}
@@ -187,11 +164,11 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 						</div>
 					</div>
 
-					{/* System Prompt */}
+					{/* system prompt */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-4">
 							<span className="label-text text-sm">System Prompt</span>
-							<span className="label-text-alt tooltip" data-tip="Behavior instructions.">
+							<span className="label-text-alt tooltip" data-tip="Behavior instructions">
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
@@ -208,12 +185,12 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 						</div>
 					</div>
 
-					{/* Action buttons */}
+					{/* footer buttons */}
 					<div className="modal-action">
 						<button type="button" className="btn rounded-xl" onClick={onClose}>
 							Cancel
 						</button>
-						<button type="submit" className="btn btn-primary rounded-xl" disabled={!isFormValid}>
+						<button type="submit" className="btn btn-primary rounded-xl" disabled={formHasErrors}>
 							Save
 						</button>
 					</div>

@@ -4,8 +4,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
-const ProviderNameAnthropic spec.ProviderName = "anthropic"
-
 const (
 	Claude4Opus    spec.ModelName = "claude-opus-4-20250514"
 	Claude4Sonnet  spec.ModelName = "claude-sonnet-4-20250514"

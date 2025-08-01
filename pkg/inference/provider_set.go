@@ -6,121 +6,58 @@ import (
 	"log/slog"
 
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
-	"github.com/ppipada/flexigpt-app/pkg/modelpreset/consts"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
 // Define the ProviderSetAPI struct.
 type ProviderSetAPI struct {
-	defaultProvider modelpresetSpec.ProviderName
-	providers       map[modelpresetSpec.ProviderName]CompletionProvider
-	debug           bool
+	providers map[modelpresetSpec.ProviderName]CompletionProvider
+	debug     bool
 }
 
 // NewProviderSetAPI creates a new ProviderSet with the specified default provider.
 func NewProviderSetAPI(
-	defaultInbuiltProvider modelpresetSpec.ProviderName,
 	debug bool,
 ) (*ProviderSetAPI, error) {
-	_, exists := spec.InbuiltProviders[defaultInbuiltProvider]
-	if !exists {
-		return nil, errors.New("invalid inbuilt provider")
-	}
 	return &ProviderSetAPI{
-		defaultProvider: defaultInbuiltProvider,
-		providers:       getInbuiltProviderAPI(debug),
-		debug:           debug,
+		providers: map[modelpresetSpec.ProviderName]CompletionProvider{},
+		debug:     debug,
 	}, nil
 }
 
-// SetDefaultProvider sets the default provider.
-func (ps *ProviderSetAPI) SetDefaultProvider(
-	ctx context.Context,
-	req *spec.SetDefaultProviderRequest,
-) (*spec.SetDefaultProviderResponse, error) {
-	if req == nil || req.Body == nil {
-		return nil, errors.New("got empty provider input")
-	}
-	_, exists := ps.providers[req.Body.Provider]
-	if !exists {
-		return nil, errors.New("invalid provider")
-	}
-	ps.defaultProvider = req.Body.Provider
-	return &spec.SetDefaultProviderResponse{}, nil
-}
-
-// GetConfigurationInfo returns configuration information.
-func (ps *ProviderSetAPI) GetConfigurationInfo(
-	ctx context.Context,
-	req *spec.GetConfigurationInfoRequest,
-) (*spec.GetConfigurationInfoResponse, error) {
-	configuredProviders := []spec.ProviderParams{}
-
-	for _, providerAPI := range ps.providers {
-		if providerAPI.IsConfigured(ctx) {
-			configuredProviders = append(configuredProviders, *providerAPI.GetProviderInfo(ctx))
-		}
-	}
-	return &spec.GetConfigurationInfoResponse{
-		Body: &spec.GetConfigurationInfoResponseBody{
-			DefaultProvider:     ps.defaultProvider,
-			ConfiguredProviders: configuredProviders,
-		},
-	}, nil
-}
-
-// AddProvider adds a custom provider.
-// A provider with same name as inbuilt providers are not allowed.
 func (ps *ProviderSetAPI) AddProvider(
 	ctx context.Context,
 	req *spec.AddProviderRequest,
 ) (*spec.AddProviderResponse, error) {
-	if req == nil || req.Provider == "" {
-		return nil, errors.New("got empty provider input")
+	if req == nil || req.Provider == "" || req.Body == nil || req.Body.Origin == "" {
+		return nil, errors.New("invalid params")
 	}
 	_, exists := ps.providers[req.Provider]
 	if exists {
 		return nil, errors.New(
-			"invalid provider: cannot add a provider with same name as an existing provider",
+			"invalid provider: cannot add a provider with same name as an existing provider, delete first",
 		)
+	}
+	if ok := isProviderAPITypeSupported(req.Body.APIType); !ok {
+		return nil, errors.New("unsupported provider api type")
 	}
 
 	providerInfo := spec.ProviderParams{
 		Name:                     req.Provider,
-		Type:                     modelpresetSpec.CustomOpenAICompatible,
-		APIKeyHeaderKey:          modelpresetSpec.OpenAICompatibleAPIKeyHeaderKey,
-		DefaultHeaders:           modelpresetSpec.OpenAICompatibleDefaultHeaders,
+		APIType:                  req.Body.APIType,
 		APIKey:                   "",
-		Origin:                   "",
-		ChatCompletionPathPrefix: "",
+		Origin:                   req.Body.Origin,
+		ChatCompletionPathPrefix: req.Body.ChatCompletionPathPrefix,
+		APIKeyHeaderKey:          req.Body.APIKeyHeaderKey,
+		DefaultHeaders:           req.Body.DefaultHeaders,
 	}
 
-	ps.providers[req.Provider] = NewOpenAICompatibleProvider(
-		providerInfo,
-		ps.debug,
-	)
-	if req.Body.APIKey != "" {
-		err := ps.providers[req.Provider].SetProviderAPIKey(ctx, req.Body.APIKey)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if req.Body.Origin != "" || req.Body.ChatCompletionPathPrefix != "" {
-		err := ps.providers[req.Provider].SetProviderAttribute(
-			ctx,
-			&req.Body.Origin,
-			&req.Body.ChatCompletionPathPrefix,
-		)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	err := ps.providers[req.Provider].InitLLM(ctx)
+	cp, err := getProviderAPI(providerInfo, ps.debug)
 	if err != nil {
 		return nil, err
 	}
+	ps.providers[req.Provider] = cp
+
 	slog.Info("add provider", "name", req.Provider)
 	return &spec.AddProviderResponse{}, nil
 }
@@ -132,19 +69,10 @@ func (ps *ProviderSetAPI) DeleteProvider(
 	if req == nil || req.Provider == "" {
 		return nil, errors.New("got empty provider input")
 	}
-	papi, exists := ps.providers[req.Provider]
+	_, exists := ps.providers[req.Provider]
 	if !exists {
 		return nil, errors.New(
 			"invalid provider: provider does not exist",
-		)
-	}
-
-	pinfo := papi.GetProviderInfo(ctx)
-	if pinfo.Type == modelpresetSpec.InbuiltOpenAICompatible ||
-		pinfo.Type == modelpresetSpec.InbuiltAnthropicCompatible ||
-		pinfo.Type == modelpresetSpec.InbuiltHuggingFaceCompatible {
-		return nil, errors.New(
-			"invalid provider: cannot delete inbuilt provider",
 		)
 	}
 	delete(ps.providers, req.Provider)
@@ -164,7 +92,10 @@ func (ps *ProviderSetAPI) SetProviderAPIKey(
 	if !exists {
 		return nil, errors.New("invalid provider")
 	}
-
+	if req.Body.APIKey == "" {
+		err := p.DeInitLLM(ctx)
+		return &spec.SetProviderAPIKeyResponse{}, err
+	}
 	err := p.SetProviderAPIKey(
 		ctx,
 		req.Body.APIKey,
@@ -177,34 +108,6 @@ func (ps *ProviderSetAPI) SetProviderAPIKey(
 		return nil, err
 	}
 	return &spec.SetProviderAPIKeyResponse{}, nil
-}
-
-// SetProviderAttribute sets attributes for a given provider.
-func (ps *ProviderSetAPI) SetProviderAttribute(
-	ctx context.Context,
-	req *spec.SetProviderAttributeRequest,
-) (*spec.SetProviderAttributeResponse, error) {
-	if req == nil || req.Body == nil {
-		return nil, errors.New("got empty provider input")
-	}
-	p, exists := ps.providers[req.Provider]
-	if !exists {
-		return nil, errors.New("invalid provider")
-	}
-
-	err := p.SetProviderAttribute(
-		ctx,
-		req.Body.Origin,
-		req.Body.ChatCompletionPathPrefix,
-	)
-	if err != nil {
-		return nil, err
-	}
-	err = p.InitLLM(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &spec.SetProviderAttributeResponse{}, nil
 }
 
 // FetchCompletion processes a completion request for a given provider.
@@ -236,31 +139,26 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	return &spec.FetchCompletionResponse{Body: resp}, nil
 }
 
-func getInbuiltProviderAPI(debug bool) map[modelpresetSpec.ProviderName]CompletionProvider {
-	return map[modelpresetSpec.ProviderName]CompletionProvider{
-		consts.ProviderNameAnthropic: NewAnthropicCompatibleAPI(
-			spec.AnthropicProviderInfo,
-			debug,
-		),
-		consts.ProviderNameDeepseek: NewOpenAICompatibleProvider(
-			spec.DeepseekProviderInfo,
-			debug,
-		),
-		consts.ProviderNameGoogle: NewOpenAICompatibleProvider(
-			spec.GoogleProviderInfo,
-			debug,
-		),
-		consts.ProviderNameHuggingFace: NewHuggingFaceCompatibleAPI(
-			spec.HuggingfaceProviderInfo,
-			debug,
-		),
-		consts.ProviderNameLlamaCPP: NewOpenAICompatibleProvider(
-			spec.LlamacppProviderInfo,
-			debug,
-		),
-		consts.ProviderNameOpenAI: NewOpenAICompatibleProvider(
-			spec.OpenAIProviderInfo,
-			debug,
-		),
+func isProviderAPITypeSupported(t modelpresetSpec.ProviderAPIType) bool {
+	if t == modelpresetSpec.ProviderAPITypeOpenAICompatible ||
+		t == modelpresetSpec.ProviderAPITypeAnthropicCompatible ||
+		t == modelpresetSpec.ProviderAPITypeHuggingFaceCompatible {
+		return true
 	}
+	return false
+}
+
+func getProviderAPI(p spec.ProviderParams, debug bool) (CompletionProvider, error) {
+	switch p.APIType {
+	case modelpresetSpec.ProviderAPITypeAnthropicCompatible:
+		return NewAnthropicCompatibleAPI(p, debug)
+
+	case modelpresetSpec.ProviderAPITypeHuggingFaceCompatible:
+		return NewHuggingFaceCompatibleAPI(p, debug)
+
+	case modelpresetSpec.ProviderAPITypeOpenAICompatible:
+		return NewOpenAICompatibleProvider(p, debug)
+	}
+
+	return nil, errors.New("invalid provider api type")
 }

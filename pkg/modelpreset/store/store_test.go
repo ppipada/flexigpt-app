@@ -38,14 +38,7 @@ func TestPutProviderPreset(t *testing.T) {
 			},
 			expectError: spec.ErrInvalidDir,
 		},
-		{
-			name: "NameMismatch",
-			req: &spec.PutProviderPresetRequest{
-				ProviderName: "openai2",
-				Body:         validProviderBody("mismatch"),
-			},
-			expectError: spec.ErrInvalidDir,
-		},
+
 		{
 			name: "HappyPath",
 			req: &spec.PutProviderPresetRequest{
@@ -736,9 +729,8 @@ func createModelPreset(t *testing.T, s *store.ModelPresetStore,
 // validProviderBody returns a minimal but valid provider preset body.
 func validProviderBody(name string) *spec.PutProviderPresetRequestBody {
 	return &spec.PutProviderPresetRequestBody{
-		Name:                     spec.ProviderName(name),
 		DisplayName:              spec.ProviderDisplayName(strings.ToUpper(name)),
-		APIType:                  spec.CustomOpenAICompatible,
+		APIType:                  spec.ProviderAPITypeOpenAICompatible,
 		IsEnabled:                true,
 		Origin:                   "https://api." + name + ".example.com",
 		ChatCompletionPathPrefix: spec.OpenAICompatibleChatCompletionPathPrefix,

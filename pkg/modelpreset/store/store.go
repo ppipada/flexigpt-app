@@ -42,16 +42,24 @@ func NewModelPresetStore(baseDir string) (*ModelPresetStore, error) {
 		return nil, err
 	}
 	s.builtinData = bi
+	var defaultProvider spec.ProviderName = ""
+	if s.builtinData != nil {
+		defaultProvider, err = s.builtinData.GetBuiltInDefaultProviderName()
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	def, err := encdec.StructWithJSONTagsToMap(spec.PresetsSchema{
-		Version:         spec.SchemaVersion,
+		SchemaVersion:   spec.SchemaVersion,
+		DefaultProvider: defaultProvider,
 		ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{},
 	})
 	if err != nil {
 		return nil, err
 	}
 	s.userStore, err = filestore.NewMapFileStore(
-		filepath.Join(baseDir, spec.ModelPresetsPresetsFile),
+		filepath.Join(baseDir, spec.ModelPresetsFile),
 		def,
 		filestore.WithCreateIfNotExists(true),
 		filestore.WithAutoFlush(true),
@@ -65,6 +73,80 @@ func NewModelPresetStore(baseDir string) (*ModelPresetStore, error) {
 	return s, nil
 }
 
+func (s *ModelPresetStore) GetDefaultProvider(
+	ctx context.Context, req *spec.GetDefaultProviderRequest,
+) (*spec.GetDefaultProviderResponse, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	all, err := s.readAllUserPresets(false)
+	if err != nil {
+		return nil, err
+	}
+	defaultProvider := all.DefaultProvider
+	if defaultProvider == "" {
+		defaultProvider, err = s.builtinData.GetBuiltInDefaultProviderName()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &spec.GetDefaultProviderResponse{
+		Body: &spec.GetDefaultProviderResponseBody{
+			DefaultProvider: defaultProvider,
+		},
+	}, nil
+}
+
+func (s *ModelPresetStore) PatchDefaultProvider(
+	ctx context.Context, req *spec.PatchDefaultProviderRequest,
+) (*spec.PatchDefaultProviderResponse, error) {
+	if req == nil || req.Body == nil || req.Body.DefaultProvider == "" {
+		return nil, fmt.Errorf("%w: providerName required", spec.ErrProviderNotFound)
+	}
+
+	providerName := req.Body.DefaultProvider
+
+	found := false
+	if s.builtinData != nil {
+		if _, err := s.builtinData.GetBuiltInProvider(providerName); err == nil {
+			found = true
+		}
+	}
+	if !found {
+		s.mu.RLock()
+		all, err := s.readAllUserPresets(false)
+		s.mu.RUnlock()
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := all.ProviderPresets[providerName]; ok {
+			found = true
+		}
+	}
+
+	if !found {
+		return nil, fmt.Errorf(
+			"%w: providerName %q not found",
+			spec.ErrProviderNotFound,
+			providerName,
+		)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	all, err := s.readAllUserPresets(false)
+	if err != nil {
+		return nil, err
+	}
+	all.DefaultProvider = providerName
+	if err := s.writeAllUserPresets(all); err != nil {
+		return nil, err
+	}
+
+	slog.Info("patchDefaultProvider", "defaultProvider", providerName)
+	return &spec.PatchDefaultProviderResponse{}, nil
+}
+
 // PutProviderPreset creates or replaces a provider preset.
 func (s *ModelPresetStore) PutProviderPreset(
 	ctx context.Context, req *spec.PutProviderPresetRequest,
@@ -72,10 +154,7 @@ func (s *ModelPresetStore) PutProviderPreset(
 	if req == nil || req.Body == nil || req.ProviderName == "" {
 		return nil, fmt.Errorf("%w: providerName & body required", spec.ErrInvalidDir)
 	}
-	if req.Body.Name != req.ProviderName {
-		return nil, fmt.Errorf("%w: body name %q not equal to path.providerName %q",
-			spec.ErrInvalidDir, req.Body.Name, req.ProviderName)
-	}
+
 	// Reject built-ins.
 	if _, err := s.builtinData.GetBuiltInProvider(req.ProviderName); err == nil {
 		return nil, fmt.Errorf("%w: providerName: %q",
@@ -87,7 +166,7 @@ func (s *ModelPresetStore) PutProviderPreset(
 	// Build object - keep CreatedAt if provider existed.
 	pp := spec.ProviderPreset{
 		SchemaVersion:            spec.SchemaVersion,
-		Name:                     req.Body.Name,
+		Name:                     req.ProviderName,
 		DisplayName:              req.Body.DisplayName,
 		APIType:                  req.Body.APIType,
 		IsEnabled:                req.Body.IsEnabled,

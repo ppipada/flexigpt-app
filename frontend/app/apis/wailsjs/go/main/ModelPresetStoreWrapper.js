@@ -10,8 +10,16 @@ export function DeleteProviderPreset(arg1) {
   return window['go']['main']['ModelPresetStoreWrapper']['DeleteProviderPreset'](arg1);
 }
 
+export function GetDefaultProvider(arg1) {
+  return window['go']['main']['ModelPresetStoreWrapper']['GetDefaultProvider'](arg1);
+}
+
 export function ListProviderPresets(arg1) {
   return window['go']['main']['ModelPresetStoreWrapper']['ListProviderPresets'](arg1);
+}
+
+export function PatchDefaultProvider(arg1) {
+  return window['go']['main']['ModelPresetStoreWrapper']['PatchDefaultProvider'](arg1);
 }
 
 export function PatchModelPreset(arg1) {

@@ -6,7 +6,11 @@ export function DeleteModelPreset(arg1:spec.DeleteModelPresetRequest):Promise<sp
 
 export function DeleteProviderPreset(arg1:spec.DeleteProviderPresetRequest):Promise<spec.DeleteProviderPresetResponse>;
 
+export function GetDefaultProvider(arg1:spec.GetDefaultProviderRequest):Promise<spec.GetDefaultProviderResponse>;
+
 export function ListProviderPresets(arg1:spec.ListProviderPresetsRequest):Promise<spec.ListProviderPresetsResponse>;
+
+export function PatchDefaultProvider(arg1:spec.PatchDefaultProviderRequest):Promise<spec.PatchDefaultProviderResponse>;
 
 export function PatchModelPreset(arg1:spec.PatchModelPresetRequest):Promise<spec.PatchModelPresetResponse>;
 

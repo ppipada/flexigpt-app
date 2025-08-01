@@ -1,4 +1,4 @@
-import type { ModelParams, ProviderInfo, ProviderName } from '@/spec/modelpreset';
+import type { ModelName, ProviderName, ReasoningParams } from '@/spec/modelpreset';
 
 export enum ChatCompletionRoleEnum {
 	system = 'system',
@@ -35,6 +35,18 @@ export type CreateChatCompletionRequestFunctionCall = CreateChatCompletionReques
 
 export interface CreateChatCompletionRequestFunctionCallOneOf {
 	name: string;
+}
+
+export interface ModelParams {
+	name: ModelName;
+	stream: boolean;
+	maxPromptLength: number;
+	maxOutputLength: number;
+	temperature?: number;
+	reasoning?: ReasoningParams;
+	systemPrompt: string;
+	timeout: number;
+	additionalParametersRawJSON?: string;
 }
 
 export interface CompletionRequest {
@@ -83,25 +95,7 @@ export interface CompletionResponse {
 	functionArgs?: any;
 }
 
-export interface ConfigurationResponse {
-	defaultProvider: ProviderName;
-	configuredProviders: Record<ProviderName, ProviderInfo>;
-}
-
-export interface AddProviderRequest {
-	provider: ProviderName;
-	apiKey: string;
-	origin: string;
-	chatCompletionPathPrefix: string;
-}
-
 export interface IProviderSetAPI {
-	setDefaultProvider(provider: ProviderName): Promise<void>;
-	getConfigurationInfo(): Promise<ConfigurationResponse>;
-	addProvider(providerInfo: AddProviderRequest): Promise<void>;
-	deleteProvider(provider: ProviderName): Promise<void>;
-	setProviderAPIKey(provider: ProviderName, apiKey: string): Promise<void>;
-	setProviderAttribute(provider: ProviderName, origin?: string, chatCompletionPathPrefix?: string): Promise<void>;
 	completion(
 		provider: ProviderName,
 		prompt: string,

@@ -3,175 +3,100 @@ import { useEffect, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
 
-import type { ProviderName, ProviderPreset } from '@/spec/modelpreset';
-import { DefaultProviderName } from '@/spec/modelpreset';
-import type { AISetting } from '@/spec/setting';
-
-import { omitManyKeys } from '@/lib/obj_utils';
+import { type AuthKeyMeta } from '@/spec/setting';
 
 import { settingstoreAPI } from '@/apis/baseapi';
-import { getAllProviderPresetsMap, getBuiltInPresets } from '@/apis/modelpresetstore_helper';
-import { AddAISetting, DeleteAISetting, SetAppSettings } from '@/apis/settingstore_helper';
 
 import DownloadButton from '@/components/download_button';
-import Dropdown from '@/components/dropdown';
-import ThemeSwitch from '@/components/theme_switch';
+import { ThemeSelector } from '@/components/theme';
 
-import AddProviderModal from '@/settings/provider_add_modal';
-import ProviderSettingsCard from '@/settings/provider_card';
+import AddEditAuthKeyModal from '@/settings/authkey_modal';
+import AuthKeyTable from '@/settings/authkey_table';
 
 const SettingsPage: FC = () => {
-	/* ── state ─────────────────────────────────────────────── */
-	const [defaultProvider, setDefaultProvider] = useState<ProviderName>(DefaultProviderName);
-	const [aiSettings, setAISettings] = useState<Record<ProviderName, AISetting>>({});
-	const [BuiltInProviderInfo, setBuiltInProviderInfo] = useState<Record<ProviderName, ProviderPreset>>({});
+	const [authKeys, setAuthKeys] = useState<AuthKeyMeta[]>([]);
+	const [refreshToggle, setRefresh] = useState(false); // helper to force list refresh
 
-	const [isAddProviderModalOpen, setIsAddProviderModalOpen] = useState(false);
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [modalInitial, setModalInitial] = useState<AuthKeyMeta | null>(null); // null = Add
 
-	/* ── initial load ──────────────────────────────────────── */
 	useEffect(() => {
 		(async () => {
-			const settings = await settingstoreAPI.getAllSettings();
-			const presets = await getAllProviderPresetsMap();
-			const builtInPresets = getBuiltInPresets(presets);
-
-			setBuiltInProviderInfo(builtInPresets);
-			setDefaultProvider(settings.app.defaultProvider);
-
-			setAISettings(settings.aiSettings);
+			const settings = await settingstoreAPI.getSettings();
+			setAuthKeys(settings.authKeys);
 		})();
-	}, []);
+	}, [refreshToggle]);
 
-	/* ── handlers ──────────────────────────────────────────── */
-	const handleDefaultProviderChange = async (value: ProviderName) => {
-		setDefaultProvider(value);
-		await SetAppSettings(value);
+	const refresh = () => {
+		setRefresh(p => !p);
+	};
+	const showAddModal = () => {
+		setModalInitial(null);
+		setIsModalOpen(true);
+	};
+	const showEditModal = (meta: AuthKeyMeta) => {
+		setModalInitial(meta);
+		setIsModalOpen(true);
 	};
 
-	const handleProviderSettingChange = (provider: ProviderName, updated: AISetting) => {
-		setAISettings(prev => ({ ...prev, [provider]: updated }));
+	const exportSettings = async () => {
+		const settings = await settingstoreAPI.getSettings(true);
+		return JSON.stringify(settings, null, 2);
 	};
 
-	const handleAddProviderSubmit = async (providerName: ProviderName, newSettings: AISetting) => {
-		setAISettings(prev => ({ ...prev, [providerName]: newSettings }));
-
-		await AddAISetting(providerName, newSettings);
-	};
-
-	const handleRemoveProvider = async (providerName: ProviderName) => {
-		if (providerName === defaultProvider) return;
-
-		setAISettings(prev => {
-			return omitManyKeys(prev, [providerName]);
-		});
-
-		await DeleteAISetting(providerName);
-	};
-
-	const enabledProviders = Object.entries(aiSettings)
-		.filter(([_, s]) => s.isEnabled)
-		.map(([name]) => name);
-
-	/* download settings helper */
-	const fetchValue = async () =>
-		JSON.stringify(
-			{
-				app: { defaultProvider },
-				aiSettings,
-			},
-			null,
-			2
-		);
-
-	/* ── render ────────────────────────────────────────────── */
 	return (
 		<div className="flex flex-col items-center w-full h-full">
-			{/* sticky header bar */}
-			<div className="w-full flex justify-center fixed top-8">
+			{/* sticky header */}
+			<header className="w-full flex justify-center fixed top-8 z-20">
 				<div className="w-10/12 lg:w-2/3 flex items-center justify-between p-2">
-					<h1 className="text-xl font-semibold text-center flex-grow">Settings</h1>
+					<h1 className="text-xl font-semibold">Settings</h1>
 					<DownloadButton
 						title="Download Settings"
 						language="json"
-						valueFetcher={fetchValue}
+						valueFetcher={exportSettings}
 						size={24}
 						fileprefix="settings"
 						className="btn btn-sm btn-ghost"
+						isBinary={false}
 					/>
 				</div>
-			</div>
+			</header>
 
-			{/* content */}
-			<div
+			<main
 				className="flex flex-col items-center w-full grow mt-24 overflow-y-auto"
-				style={{ maxHeight: `calc(100vh - 128px)` }}
+				style={{ maxHeight: 'calc(100vh - 128px)' }}
 			>
-				<div className="flex flex-col space-y-4 w-5/6 xl:w-2/3">
-					{/* ── Theme switch ─ */}
-					<div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2 mb-8">
-						<div className="grid grid-cols-12 items-center gap-4">
-							<div className="col-span-3 text-sm font-medium">Theme</div>
-							<div className="col-span-9">
-								<ThemeSwitch />
-							</div>
+				<div className="flex flex-col gap-8 w-5/6 xl:w-2/3">
+					{/* ── Theme selector ──────────────────────────── */}
+					<section className="bg-base-100 rounded-2xl shadow-lg px-6 py-4">
+						<h2 className="text-sm font-medium mb-4">Theme</h2>
+						<ThemeSelector />
+					</section>
+
+					{/* ── Auth-Key table ─────────────────────────── */}
+					<section className="bg-base-100 rounded-2xl shadow-lg px-4 py-2">
+						<div className="flex justify-between items-center mb-4">
+							<h2 className="text-sm font-medium">Auth Keys</h2>
+							<button className="btn btn-ghost rounded-2xl btn-sm flex items-center" onClick={showAddModal}>
+								<FiPlus className="mr-1" /> Add Key
+							</button>
 						</div>
-					</div>
 
-					{/* ── Default provider & add ─ */}
-					<div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2 mb-8">
-						<div className="grid grid-cols-12 items-center gap-4">
-							<label className="col-span-3 text-sm font-medium">Default Provider</label>
-							<div className="col-span-6">
-								<Dropdown<ProviderName>
-									dropdownItems={aiSettings}
-									selectedKey={defaultProvider}
-									onChange={handleDefaultProviderChange}
-									filterDisabled={true}
-									title="Select Provider"
-									getDisplayName={(key: string) => {
-										return key.charAt(0).toUpperCase() + key.slice(1);
-									}}
-								/>
-							</div>
-
-							<div className="col-span-3 flex justify-end">
-								<button
-									className="btn btn-ghost rounded-2xl flex items-center"
-									onClick={() => {
-										setIsAddProviderModalOpen(true);
-									}}
-								>
-									<FiPlus /> <span className="ml-1">Add Provider</span>
-								</button>
-							</div>
-						</div>
-					</div>
-
-					{/* ── provider cards ─ */}
-					{Object.keys(aiSettings).map(p => (
-						<ProviderSettingsCard
-							key={p}
-							provider={p}
-							settings={aiSettings[p]}
-							defaultProvider={defaultProvider}
-							inbuiltProvider={Boolean(BuiltInProviderInfo[p])}
-							enabledProviders={enabledProviders}
-							onProviderSettingChange={handleProviderSettingChange}
-							onProviderDelete={handleRemoveProvider}
-						/>
-					))}
+						<AuthKeyTable authKeys={authKeys} onEdit={showEditModal} onChanged={refresh} />
+					</section>
 				</div>
-			</div>
+			</main>
 
 			{/* modal */}
-			{isAddProviderModalOpen && (
-				<AddProviderModal
-					isOpen={isAddProviderModalOpen}
+			{isModalOpen && (
+				<AddEditAuthKeyModal
+					isOpen={isModalOpen}
+					initial={modalInitial}
+					existing={authKeys}
 					onClose={() => {
-						setIsAddProviderModalOpen(false);
+						setIsModalOpen(false);
 					}}
-					onSubmit={handleAddProviderSubmit}
-					existingProviderNames={Object.keys(aiSettings)}
+					onChanged={refresh}
 				/>
 			)}
 		</div>

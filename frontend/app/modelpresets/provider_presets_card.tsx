@@ -1,10 +1,19 @@
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 
-import { FiCheck, FiChevronDown, FiChevronUp, FiEdit, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
+import {
+	FiCheck,
+	FiCheckCircle,
+	FiChevronDown,
+	FiChevronUp,
+	FiEdit,
+	FiPlus,
+	FiTrash2,
+	FiX,
+	FiXCircle,
+} from 'react-icons/fi';
 
-import type { ProviderPreset } from '@/spec/modelpreset';
-import { type ModelPreset, type ModelPresetID, type ProviderName } from '@/spec/modelpreset';
+import { type ModelPreset, type ModelPresetID, type ProviderName, type ProviderPreset } from '@/spec/modelpreset';
 
 import { modelPresetStoreAPI } from '@/apis/baseapi';
 
@@ -12,198 +21,270 @@ import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 import Dropdown from '@/components/dropdown';
 
-import ModifyModelModal from '@/modelpresets/preset_modify_modal';
+import ModifyModelModal from '@/modelpresets/modelpreset_modify_modal';
 
-interface ProviderPresetCardProps {
+interface Props {
 	provider: ProviderName;
-	isEnabled: boolean; // comes from aiSettings[provider].isEnabled
 	preset: ProviderPreset;
-	inbuiltProviderPresets?: Record<ModelPresetID, ModelPreset>;
+	defaultProvider: ProviderName;
+	authKeySet: boolean;
+	enabledProviders: ProviderName[];
 
-	onPresetChange: (provider: ProviderName, newPreset: ProviderPreset) => void;
+	onProviderPresetChange: (provider: ProviderName, newPreset: ProviderPreset) => void;
+	onProviderDelete: (provider: ProviderName) => Promise<void>;
+	onRequestEdit: (provider: ProviderName) => void; // open edit-modal
 }
 
-const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
+const ProviderPresetCard: FC<Props> = ({
 	provider,
-	isEnabled,
 	preset,
-	inbuiltProviderPresets,
-	onPresetChange,
+	defaultProvider,
+	authKeySet,
+	enabledProviders,
+	onProviderPresetChange,
+	onProviderDelete,
+	onRequestEdit,
 }) => {
-	/* ── local state ──────────────────────────────────────────── */
-	const [isExpanded, setIsExpanded] = useState(false);
-	const [modelPresets, setModelPresets] = useState<Record<ModelPresetID, ModelPreset>>(preset.modelPresets);
-	const [defaultModelID, setDefaultModelID] = useState<ModelPresetID>(preset.defaultModelPresetID);
-
-	const [selectedModelID, setSelectedModelID] = useState<ModelPresetID | null>(null);
-	const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
-	const [isDeleteModelModalOpen, setIsDeleteModelModalOpen] = useState(false);
-
-	const [showActionDenied, setShowActionDenied] = useState(false);
-	const [actionDeniedMsg, setActionDeniedMsg] = useState('');
-
-	/* sync props -> state */
+	/* local-state sync ─────────────────────────────────── */
+	const [localPreset, setLocalPreset] = useState<ProviderPreset>(preset);
 	useEffect(() => {
-		setModelPresets(preset.modelPresets);
-		setDefaultModelID(preset.defaultModelPresetID);
+		setLocalPreset(preset);
 	}, [preset]);
 
-	/* ── helpers ─────────────────────────────────────────────── */
-	const isPresetRemovable = (id: ModelPresetID) => {
-		if (id === defaultModelID) return false;
-		if (inbuiltProviderPresets && id in inbuiltProviderPresets) return false;
-		return true;
+	const [expanded, setExpanded] = useState(false);
+
+	const [selectedModelID, setSelectedModelID] = useState<ModelPresetID | null>(null);
+	const [showModifyModal, setShowModifyModal] = useState(false);
+	const [showDelProviderModal, setShowDelProviderModal] = useState(false);
+	const [showDelModelModal, setShowDelModelModal] = useState(false);
+
+	const [deniedMsg, setDeniedMsg] = useState('');
+	const [showDenied, setShowDenied] = useState(false);
+
+	const isLastEnabled = localPreset.isEnabled && enabledProviders.length === 1;
+	const providerIsBuiltIn = localPreset.isBuiltIn;
+
+	/* helper to update parent + local copy */
+	const updateLocal = (updater: (p: ProviderPreset) => ProviderPreset) => {
+		setLocalPreset(prev => {
+			const upd = updater(prev);
+			onProviderPresetChange(provider, upd);
+			return upd;
+		});
 	};
 
-	const isPresetReasoning = (id: ModelPresetID) => {
-		if (id in modelPresets && 'reasoning' in modelPresets[id] && modelPresets[id].reasoning !== undefined) {
-			return true;
+	/* enable / disable provider ───────────────────────── */
+	const toggleProviderEnable = async () => {
+		if (!localPreset.isEnabled) {
+			await modelPresetStoreAPI.patchProviderPreset(provider, true);
+			updateLocal(p => ({ ...p, isEnabled: true }));
+			return;
 		}
-		if (
-			inbuiltProviderPresets &&
-			id in inbuiltProviderPresets &&
-			'reasoning' in inbuiltProviderPresets[id] &&
-			inbuiltProviderPresets[id].reasoning !== undefined
-		) {
-			return true;
+
+		// disabling
+		if (provider === defaultProvider) {
+			setDeniedMsg('Cannot disable the default provider. Pick another default first.');
+			setShowDenied(true);
+			return;
 		}
-		return false;
+		if (isLastEnabled) {
+			setDeniedMsg('Cannot disable the last enabled provider.');
+			setShowDenied(true);
+			return;
+		}
+
+		try {
+			await modelPresetStoreAPI.patchProviderPreset(provider, false);
+			updateLocal(p => ({ ...p, isEnabled: false }));
+		} catch (err) {
+			console.error(err);
+			setDeniedMsg('Failed toggling provider.');
+			setShowDenied(true);
+		}
 	};
 
-	/* ── UI handlers ─────────────────────────────────────────── */
+	/* expand */
 	const toggleExpand = () => {
-		if (isEnabled) setIsExpanded(prev => !prev);
+		if (localPreset.isEnabled) setExpanded(p => !p);
 	};
 
-	const handleAddPreset = () => {
-		setSelectedModelID(null);
-		setIsModifyModalOpen(true);
-	};
-
-	const handleEditPreset = (id: ModelPresetID) => {
-		setSelectedModelID(id);
-		setIsModifyModalOpen(true);
-	};
-
-	const handleModifyPresetSubmit = async (id: ModelPresetID, data: ModelPreset) => {
-		try {
-			const newMap = { ...modelPresets, [id]: data };
-			setModelPresets(newMap);
-			onPresetChange(provider, { ...preset, modelPresets: newMap });
-			await modelPresetStoreAPI.putModelPreset(provider, id, data);
-			setIsModifyModalOpen(false);
-			setSelectedModelID(null);
-		} catch (err) {
-			console.error('Failed to save preset:', err, (err as Error).stack || '');
-			setActionDeniedMsg('Failed to save preset. Please try again.');
-			setShowActionDenied(true);
-		}
-	};
-
-	/* enable / disable preset */
-	const togglePresetEnable = async (id: ModelPresetID) => {
-		if (id === defaultModelID && modelPresets[id].isEnabled) {
-			setActionDeniedMsg('Cannot disable the default preset. Choose another default first.');
-			setShowActionDenied(true);
+	/* delete provider */
+	const requestDeleteProvider = () => {
+		if (providerIsBuiltIn) {
+			setDeniedMsg('Built-in providers cannot be deleted.');
+			setShowDenied(true);
 			return;
 		}
-
-		try {
-			const updated = { ...modelPresets[id], isEnabled: !modelPresets[id].isEnabled };
-			const newMap = { ...modelPresets, [id]: updated };
-			setModelPresets(newMap);
-			onPresetChange(provider, { ...preset, modelPresets: newMap });
-			await modelPresetStoreAPI.patchModelPreset(provider, id, updated.isEnabled);
-		} catch (err) {
-			console.error('Failed to update preset enable state:', err, (err as Error).stack || '');
-			setActionDeniedMsg('Failed to update preset enable state. Please try again.');
-			setShowActionDenied(true);
-		}
+		setShowDelProviderModal(true);
+	};
+	const confirmDeleteProvider = async () => {
+		await onProviderDelete(provider);
+		setShowDelProviderModal(false);
 	};
 
-	/* deletion */
-	const handleDeletePresetRequest = (id: ModelPresetID) => {
-		if (!isPresetRemovable(id)) {
-			setActionDeniedMsg('Cannot delete the default or in-built preset.');
-			setShowActionDenied(true);
-			return;
-		}
-		setSelectedModelID(id);
-		setIsDeleteModelModalOpen(true);
-	};
-
-	const confirmDeletePreset = async () => {
-		if (!selectedModelID) return;
-		if (!isPresetRemovable(selectedModelID)) return;
-
+	/* default model change */
+	const handleDefaultModelChange = async (id: ModelPresetID) => {
 		try {
-			const newMap = Object.fromEntries(Object.entries(modelPresets).filter(([k]) => k !== selectedModelID));
-			setModelPresets(newMap);
-			onPresetChange(provider, { ...preset, modelPresets: newMap });
-
-			await modelPresetStoreAPI.deleteModelPreset(provider, selectedModelID);
-
-			setIsDeleteModelModalOpen(false);
-			setSelectedModelID(null);
-		} catch (err) {
-			console.error('Failed to delete preset:', err, (err as Error).stack || '');
-			setActionDeniedMsg('Failed to delete preset. Please try again.');
-			setShowActionDenied(true);
-		}
-	};
-
-	/* default preset change */
-	const handleDefaultPresetChange = async (id: ModelPresetID) => {
-		try {
-			setDefaultModelID(id);
-			onPresetChange(provider, { ...preset, defaultModelPresetID: id });
 			await modelPresetStoreAPI.patchProviderPreset(provider, undefined, id);
-		} catch (err) {
-			console.error('Failed to set default preset:', err, (err as Error).stack || '');
-			setActionDeniedMsg('Failed to set default preset. Please try again.');
-			setShowActionDenied(true);
+			updateLocal(p => ({ ...p, defaultModelPresetID: id }));
+		} catch {
+			setDeniedMsg('Failed setting default model.');
+			setShowDenied(true);
 		}
 	};
 
-	/* ── RENDER ──────────────────────────────────────────────── */
+	/* enable/disable model */
+	const toggleModelEnable = async (id: ModelPresetID) => {
+		const m = localPreset.modelPresets[id];
+		if (id === localPreset.defaultModelPresetID && m.isEnabled) {
+			setDeniedMsg('Cannot disable the default preset. Choose another default first.');
+			setShowDenied(true);
+			return;
+		}
+		try {
+			await modelPresetStoreAPI.patchModelPreset(provider, id, !m.isEnabled);
+			updateLocal(p => ({
+				...p,
+				modelPresets: {
+					...p.modelPresets,
+					[id]: { ...m, isEnabled: !m.isEnabled },
+				},
+			}));
+		} catch {
+			setDeniedMsg('Failed toggling model.');
+			setShowDenied(true);
+		}
+	};
+
+	/* add / edit model */
+	const openAddModel = () => {
+		if (providerIsBuiltIn) {
+			setDeniedMsg('Cannot add presets to a built-in provider.');
+			setShowDenied(true);
+			return;
+		}
+		setSelectedModelID(null);
+		setShowModifyModal(true);
+	};
+	const openEditModel = (id: ModelPresetID) => {
+		if (localPreset.modelPresets[id].isBuiltIn) {
+			setDeniedMsg('Built-in presets cannot be edited.');
+			setShowDenied(true);
+			return;
+		}
+		setSelectedModelID(id);
+		setShowModifyModal(true);
+	};
+
+	const handleModifyModelSubmit = async (id: ModelPresetID, data: ModelPreset) => {
+		try {
+			// strip fields not in payload
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { id: _id, isBuiltIn, ...payload } = data;
+			await modelPresetStoreAPI.putModelPreset(provider, id, payload);
+			updateLocal(p => ({
+				...p,
+				modelPresets: { ...p.modelPresets, [id]: data },
+			}));
+			setShowModifyModal(false);
+		} catch {
+			setDeniedMsg('Failed saving preset.');
+			setShowDenied(true);
+		}
+	};
+
+	/* delete model */
+	const requestDeleteModel = (id: ModelPresetID) => {
+		if (localPreset.modelPresets[id].isBuiltIn) {
+			setDeniedMsg('Built-in presets cannot be deleted.');
+			setShowDenied(true);
+			return;
+		}
+		setSelectedModelID(id);
+		setShowDelModelModal(true);
+	};
+	const confirmDeleteModel = async () => {
+		if (!selectedModelID) return;
+		try {
+			await modelPresetStoreAPI.deleteModelPreset(provider, selectedModelID);
+			updateLocal(p => {
+				const { [selectedModelID]: _, ...rest } = p.modelPresets;
+				return { ...p, modelPresets: rest };
+			});
+			setShowDelModelModal(false);
+		} catch {
+			setDeniedMsg('Failed deleting preset.');
+			setShowDenied(true);
+		}
+	};
+
+	/* render ───────────────────────────────────────────── */
+	const { modelPresets, defaultModelPresetID } = localPreset;
+
 	return (
 		<div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2 mb-8">
-			{/* Header */}
+			{/* header row */}
 			<div className="grid grid-cols-12 gap-2 items-center">
-				{/* Provider Title*/}
-				<div className="col-span-2 flex items-center space-x-4">
-					<h3 className="text-sm font-semibold capitalize">{provider}</h3>
+				<div className="col-span-3">
+					<h3 className="text-sm font-semibold capitalize">{localPreset.displayName || provider}</h3>
 				</div>
 
-				{/* Provider status */}
-				<div className="col-span-2 text-sm font-medium">
-					<span className={isEnabled ? 'text-success' : 'text-error'}>{isEnabled ? 'Enabled' : 'Disabled'}</span>
-				</div>
-
-				{/* Default preset dropdown */}
-				<div className="flex items-center gap-x-2 col-span-6">
-					<label className="text-sm whitespace-nowrap">Default Preset</label>
-					<Dropdown<ModelPresetID>
-						dropdownItems={modelPresets}
-						selectedKey={defaultModelID}
-						onChange={handleDefaultPresetChange}
-						filterDisabled={true}
-						title="Select Default Preset"
-						getDisplayName={k => modelPresets[k].displayName}
+				{/* enable toggle */}
+				<div className="col-span-3 flex items-center gap-2">
+					<label className="text-sm">Enable</label>
+					<input
+						type="checkbox"
+						className="toggle toggle-accent rounded-full"
+						checked={localPreset.isEnabled}
+						onChange={toggleProviderEnable}
 					/>
 				</div>
 
-				{/* Chevron */}
-				<div className="col-span-2 flex justify-end items-center cursor-pointer gap-1" onClick={toggleExpand}>
-					<label className="text-sm whitespace-nowrap">All Presets</label>
-					{isExpanded ? <FiChevronUp /> : <FiChevronDown />}
+				{/* api-key status + chevron */}
+				<div className="col-span-6 flex items-end justify-end gap-4 cursor-pointer" onClick={toggleExpand}>
+					<div className="flex items-center">
+						<span className="text-sm">API-Key</span>
+						{authKeySet ? <FiCheckCircle className="text-success mx-1" /> : <FiXCircle className="text-error mx-1" />}
+					</div>
+
+					<div className="flex items-center">
+						<span className="text-sm">Details</span>
+						{expanded ? <FiChevronUp className="mx-1" /> : <FiChevronDown className="mx-1" />}
+					</div>
 				</div>
 			</div>
 
-			{/* Body - presets table */}
-			{isExpanded && (
-				<div className="mt-8 space-y-4">
-					{/* Presets table */}
+			{/* body */}
+			{localPreset.isEnabled && expanded && (
+				<div className="mt-8 space-y-6">
+					{/* readonly provider details */}
+					<div className="grid grid-cols-12 gap-2">
+						<label className="col-span-3 text-sm">Origin:</label>
+						<p className="col-span-9 text-sm">{localPreset.origin}</p>
+
+						<label className="col-span-3 text-sm">Chat Path:</label>
+						<p className="col-span-9 text-sm">{localPreset.chatCompletionPathPrefix}</p>
+
+						<label className="col-span-3 text-sm">API Type:</label>
+						<p className="col-span-9 text-sm">{localPreset.apiType}</p>
+					</div>
+
+					{/* default model dropdown */}
+					<div className="grid grid-cols-12 items-center gap-2">
+						<label className="col-span-3 text-sm">Default Model</label>
+						<div className="col-span-9">
+							<Dropdown<ModelPresetID>
+								dropdownItems={modelPresets}
+								selectedKey={defaultModelPresetID}
+								onChange={handleDefaultModelChange}
+								filterDisabled={false}
+								title="Select default model"
+								getDisplayName={k => modelPresets[k].displayName || k}
+							/>
+						</div>
+					</div>
+
+					{/* model presets table */}
 					<div className="overflow-x-auto border border-base-content/10 rounded-2xl">
 						<table className="table table-zebra w-full">
 							<thead>
@@ -216,97 +297,159 @@ const ProviderPresetCard: FC<ProviderPresetCardProps> = ({
 								</tr>
 							</thead>
 							<tbody>
-								{Object.entries(modelPresets).map(([id, m]) => (
-									<tr key={id} className="hover:bg-base-300">
-										<td>{m.displayName || id}</td>
-										<td>{m.name}</td>
-										<td className="text-center align-middle">
-											<input
-												type="checkbox"
-												checked={m.isEnabled}
-												onChange={() => togglePresetEnable(id)}
-												className="toggle toggle-accent rounded-full align-middle"
-											/>
-										</td>
-										<td className="text-center">
-											{isPresetReasoning(id) ? <FiCheck className="mx-auto" /> : <FiX className="mx-auto" />}
-										</td>
-
-										<td className="text-right">
-											{/* edit */}
-											<button
-												className="btn btn-sm btn-ghost rounded-2xl"
-												onClick={() => {
-													handleEditPreset(id);
-												}}
-												title="Edit Preset"
-											>
-												<FiEdit size={16} />
-											</button>
-
-											{/* delete */}
-											<button
-												className="btn btn-sm btn-ghost rounded-2xl"
-												onClick={() => {
-													handleDeletePresetRequest(id);
-												}}
-												disabled={!isPresetRemovable(id)}
-												title={isPresetRemovable(id) ? 'Delete Preset' : 'Cannot delete default or in-built preset'}
-											>
-												<FiTrash2 size={16} />
-											</button>
-										</td>
-									</tr>
-								))}
+								{Object.entries(modelPresets).map(([id, m]) => {
+									const canModifyModel = !m.isBuiltIn;
+									return (
+										<tr key={id} className="hover:bg-base-300">
+											<td>{m.displayName || id}</td>
+											<td>{m.name}</td>
+											<td className="text-center">
+												<input
+													type="checkbox"
+													className="toggle toggle-accent rounded-full"
+													checked={m.isEnabled}
+													onChange={() => toggleModelEnable(id)}
+												/>
+											</td>
+											<td className="text-center">
+												{'reasoning' in m && m.reasoning ? (
+													<FiCheck className="mx-auto" />
+												) : (
+													<FiX className="mx-auto" />
+												)}
+											</td>
+											<td className="text-right">
+												{canModifyModel ? (
+													<>
+														{/* edit */}
+														<button
+															className="btn btn-sm btn-ghost rounded-2xl"
+															onClick={() => {
+																openEditModel(id);
+															}}
+															title="Edit Preset"
+														>
+															<FiEdit size={16} />
+														</button>
+														{/* delete */}
+														<button
+															className="btn btn-sm btn-ghost rounded-2xl"
+															onClick={() => {
+																requestDeleteModel(id);
+															}}
+															title="Delete Preset"
+														>
+															<FiTrash2 size={16} />
+														</button>
+													</>
+												) : (
+													<span className="text-xs opacity-50">built-in</span>
+												)}
+											</td>
+										</tr>
+									);
+								})}
 							</tbody>
 						</table>
 					</div>
 
-					{/* Add-preset button */}
-					<div className="flex justify-end">
-						<button className="btn btn-ghost rounded-2xl flex items-center" onClick={handleAddPreset}>
+					{/* bottom bar */}
+					<div className="flex justify-between items-center mt-4">
+						<div className="flex gap-2">
+							{/* edit provider */}
+							<button
+								className={`btn btn-ghost rounded-2xl flex items-center ${
+									providerIsBuiltIn ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
+								}`}
+								onClick={() => {
+									if (!providerIsBuiltIn) onRequestEdit(provider);
+									else {
+										setDeniedMsg('Built-in providers cannot be edited.');
+										setShowDenied(true);
+									}
+								}}
+								title="Edit provider details"
+								disabled={providerIsBuiltIn}
+							>
+								<FiEdit /> <span className="ml-1">Edit</span>
+							</button>
+
+							{/* delete provider */}
+							<button
+								className={`btn btn-ghost rounded-2xl flex items-center ${
+									providerIsBuiltIn ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
+								}`}
+								onClick={requestDeleteProvider}
+								title="Delete provider"
+								disabled={providerIsBuiltIn}
+							>
+								<FiTrash2 /> <span className="ml-1">Delete</span>
+							</button>
+						</div>
+
+						{/* add preset */}
+						<button
+							className={`btn btn-ghost rounded-2xl flex items-center ${
+								providerIsBuiltIn ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
+							}`}
+							onClick={openAddModel}
+							disabled={providerIsBuiltIn}
+						>
 							<FiPlus /> <span className="ml-1">Add Preset</span>
 						</button>
 					</div>
 				</div>
 			)}
 
-			{/* ── Dialogs / Alerts ─────────────────────────────── */}
-			{isModifyModalOpen && (
-				<ModifyModelModal
-					isOpen={isModifyModalOpen}
+			{/* dialogs / alerts */}
+			{showDelProviderModal && (
+				<DeleteConfirmationModal
+					isOpen={showDelProviderModal}
 					onClose={() => {
-						setIsModifyModalOpen(false);
+						setShowDelProviderModal(false);
 					}}
-					onSubmit={handleModifyPresetSubmit}
+					onConfirm={confirmDeleteProvider}
+					title="Delete Provider"
+					message={`Delete provider "${provider}"? This action cannot be undone.`}
+					confirmButtonText="Delete"
+				/>
+			)}
+
+			{showDelModelModal && (
+				<DeleteConfirmationModal
+					isOpen={showDelModelModal}
+					onClose={() => {
+						setShowDelModelModal(false);
+					}}
+					onConfirm={confirmDeleteModel}
+					title="Delete Preset"
+					message={`Delete preset "${selectedModelID}"? This action cannot be undone.`}
+					confirmButtonText="Delete"
+				/>
+			)}
+
+			{showModifyModal && (
+				<ModifyModelModal
+					isOpen={showModifyModal}
+					onClose={() => {
+						setShowModifyModal(false);
+					}}
+					onSubmit={handleModifyModelSubmit}
 					providerName={provider}
-					initialModelID={selectedModelID || undefined}
+					initialModelID={selectedModelID ?? undefined}
 					initialData={selectedModelID ? modelPresets[selectedModelID] : undefined}
 					existingModels={modelPresets}
 				/>
 			)}
 
-			{isDeleteModelModalOpen && (
-				<DeleteConfirmationModal
-					isOpen={isDeleteModelModalOpen}
-					onClose={() => {
-						setIsDeleteModelModalOpen(false);
-					}}
-					onConfirm={confirmDeletePreset}
-					title="Delete Preset"
-					message={`Delete preset "${selectedModelID ?? ''}"? This action cannot be undone.`}
-					confirmButtonText="Delete"
-				/>
-			)}
-
-			{showActionDenied && (
+			{showDenied && (
 				<ActionDeniedAlert
-					isOpen={showActionDenied}
+					isOpen={showDenied}
 					onClose={() => {
-						setShowActionDenied(false);
-						setActionDeniedMsg('');
+						setShowDenied(false);
+						setDeniedMsg('');
 					}}
-					message={actionDeniedMsg}
+					message={deniedMsg}
 				/>
 			)}
 		</div>

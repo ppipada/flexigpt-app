@@ -8,11 +8,9 @@ import { FiSend, FiSliders } from 'react-icons/fi';
 /* ----------  react-textarea-autosize  ------------------------------------ */
 import TextareaAutosize from 'react-textarea-autosize';
 
-import { type ChatOptions, DefaultChatOptions, type ReasoningLevel, ReasoningType } from '@/spec/modelpreset';
+import { type ReasoningLevel, ReasoningType } from '@/spec/modelpreset';
 
-import { UseCloseDetails } from '@/lib/use_close_details';
-
-import { GetChatInputOptions } from '@/apis/modelpresetstore_helper';
+import { type ChatOption, DefaultChatOptions, getChatInputOptions } from '@/apis/chatoption_helper';
 
 import AdvancedParamsModal from '@/chats/chat_input_field_advanced_params';
 import DisablePreviousMessagesCheckbox from '@/chats/chat_input_field_disable_checkbox';
@@ -20,14 +18,15 @@ import ModelDropdown from '@/chats/chat_input_field_model_dropdown';
 import { HybridReasoningCheckbox, ReasoningTokensDropdown } from '@/chats/chat_input_field_reasoning_hybrid';
 import SingleReasoningDropdown from '@/chats/chat_input_field_reasoning_levels';
 import TemperatureDropdown from '@/chats/chat_input_field_temperature';
+import { useCloseDetails } from '@/hooks/use_close_details';
 
 interface ChatInputFieldProps {
-	onSend: (message: string, options: ChatOptions) => void;
+	onSend: (message: string, options: ChatOption) => void;
 	setInputHeight: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export interface ChatInputFieldHandle {
-	getChatOptions: () => ChatOptions;
+	getChatOptions: () => ChatOption;
 	focus: () => void;
 }
 
@@ -58,20 +57,20 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 
 	const isSubmittingRef = useRef<boolean>(false);
-	const [selectedModel, setSelectedModel] = useState<ChatOptions>(DefaultChatOptions);
+	const [selectedModel, setSelectedModel] = useState<ChatOption>(DefaultChatOptions);
 	const [isAdvancedModalOpen, setIsAdvancedModalOpen] = useState<boolean>(false);
 	const [isHybridReasoningEnabled, setIsHybridReasoningEnabled] = useState<boolean>(true);
 	const [disablePreviousMessages, setDisablePreviousMessages] = useState<boolean>(false);
 	const [isModelDropdownOpen, setIsModelDropdownOpen] = useState<boolean>(false);
 	const [isSecondaryDropdownOpen, setIsSecondaryDropdownOpen] = useState<boolean>(false);
-	const [allOptions, setAllOptions] = useState<ChatOptions[]>([DefaultChatOptions]);
+	const [allOptions, setAllOptions] = useState<ChatOption[]>([DefaultChatOptions]);
 
 	// Refs for the dropdown details elements.
 	const modelDetailsRef = useRef<HTMLDetailsElement>(null);
 	const secondaryDetailsRef = useRef<HTMLDetailsElement>(null);
 
 	// Close logic for model dropdown.
-	UseCloseDetails({
+	useCloseDetails({
 		detailsRef: modelDetailsRef,
 		events: ['mousedown'],
 		onClose: () => {
@@ -80,7 +79,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 	});
 
 	// Close logic for secondary dropdown (temperature or reasoning).
-	UseCloseDetails({
+	useCloseDetails({
 		detailsRef: secondaryDetailsRef,
 		events: ['mousedown'],
 		onClose: () => {
@@ -90,7 +89,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 
 	// Load initial model options.
 	const loadInitialItems = useCallback(async () => {
-		const r = await GetChatInputOptions();
+		const r = await getChatInputOptions();
 		setSelectedModel(r.default);
 
 		// Initialize hybrid reasoning enabled state based on model.
@@ -104,9 +103,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 
 	// When model changes, update hybrid reasoning enabled state.
 	useEffect(() => {
-		if (selectedModel.reasoning?.type === ReasoningType.HybridWithTokens) {
-			setIsHybridReasoningEnabled(true);
-		}
+		setIsHybridReasoningEnabled(selectedModel.reasoning?.type === ReasoningType.HybridWithTokens);
 	}, [selectedModel]);
 
 	// Enter key submission logic.
@@ -125,8 +122,8 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 		setText(event.target.value);
 	};
 
-	/* ------------------ build ChatOptions for submit -------------------- */
-	const getFinalChatOptions = (): ChatOptions => {
+	/* ------------------ build ChatOption for submit -------------------- */
+	const getFinalChatOptions = (): ChatOption => {
 		const options = { ...selectedModel, disablePreviousMessages };
 
 		// If it's a hybrid reasoning model but user disabled reasoning, remove it.
@@ -194,18 +191,15 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 
 	// Handle saving the advanced parameters from the modal.
 	// We simply merge these changes back into selectedModel.
-	const handleSaveAdvancedParams = (updatedModel: ChatOptions) => {
-		setSelectedModel(prev => {
-			return {
-				...prev,
-				stream: updatedModel.stream,
-				maxOutputLength: updatedModel.maxOutputLength,
-				maxPromptLength: updatedModel.maxPromptLength,
-				systemPrompt: updatedModel.systemPrompt,
-			};
-		});
+	const handleSaveAdvancedParams = (updatedModel: ChatOption) => {
 		setSelectedModel(updatedModel);
 		setIsAdvancedModalOpen(false);
+	};
+
+	const secondaryProps = {
+		isOpen: isSecondaryDropdownOpen,
+		setIsOpen: setIsSecondaryDropdownOpen,
+		detailsRef: secondaryDetailsRef,
 	};
 
 	return (
@@ -234,30 +228,34 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					)}
 
 					{selectedModel.reasoning?.type === ReasoningType.HybridWithTokens ? (
-						isHybridReasoningEnabled && (
+						isHybridReasoningEnabled ? (
+							/* ─── checkbox ON → tokens ─── */
 							<ReasoningTokensDropdown
 								tokens={selectedModel.reasoning.tokens}
 								setTokens={setHybridTokens}
-								isOpen={isSecondaryDropdownOpen}
-								setIsOpen={setIsSecondaryDropdownOpen}
-								detailsRef={secondaryDetailsRef}
+								{...secondaryProps}
+							/>
+						) : (
+							/* ─── checkbox OFF → temperature ─── */
+							<TemperatureDropdown
+								temperature={selectedModel.temperature ?? 0.1}
+								setTemperature={setTemperature}
+								{...secondaryProps}
 							/>
 						)
 					) : selectedModel.reasoning?.type === ReasoningType.SingleWithLevels ? (
+						/* single-level reasoning */
 						<SingleReasoningDropdown
 							reasoningLevel={selectedModel.reasoning.level}
 							setReasoningLevel={setReasoningLevel}
-							isOpen={isSecondaryDropdownOpen}
-							setIsOpen={setIsSecondaryDropdownOpen}
-							detailsRef={secondaryDetailsRef}
+							{...secondaryProps}
 						/>
 					) : (
+						/* model has no reasoning field at all */
 						<TemperatureDropdown
 							temperature={selectedModel.temperature ?? 0.1}
 							setTemperature={setTemperature}
-							isOpen={isSecondaryDropdownOpen}
-							setIsOpen={setIsSecondaryDropdownOpen}
-							detailsRef={secondaryDetailsRef}
+							{...secondaryProps}
 						/>
 					)}
 

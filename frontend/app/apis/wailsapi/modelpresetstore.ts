@@ -10,7 +10,9 @@ import type {
 import {
 	DeleteModelPreset,
 	DeleteProviderPreset,
+	GetDefaultProvider,
 	ListProviderPresets,
+	PatchDefaultProvider,
 	PatchModelPreset,
 	PatchProviderPreset,
 	PutModelPreset,
@@ -22,11 +24,24 @@ import type { spec } from '../wailsjs/go/models';
  * @public
  */
 export class WailsModelPresetStoreAPI implements IModelPresetStoreAPI {
+	async getDefaultProvider(): Promise<ProviderName> {
+		const resp = await GetDefaultProvider({});
+		return resp.Body?.DefaultProvider ?? '';
+	}
+
+	async patchDefaultProvider(providerName: ProviderName): Promise<void> {
+		if (!providerName) throw new Error('Missing providerName or payload');
+		const r = {
+			Body: { defaultProvider: providerName } as spec.PatchDefaultProviderRequestBody,
+		};
+		await PatchDefaultProvider(r as spec.PatchDefaultProviderRequest);
+	}
+
 	async putProviderPreset(providerName: ProviderName, payload: PutProviderPresetPayload): Promise<void> {
 		if (!providerName) throw new Error('Missing providerName or payload');
 		const r = {
 			ProviderName: providerName,
-			Body: payload,
+			Body: payload as spec.PutProviderPresetRequestBody,
 		};
 		await PutProviderPreset(r as spec.PutProviderPresetRequest);
 	}

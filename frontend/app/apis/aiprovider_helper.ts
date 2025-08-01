@@ -1,7 +1,12 @@
-import { type ChatCompletionRequestMessage, ChatCompletionRoleEnum, type CompletionResponse } from '@/spec/aiprovider';
+import {
+	type ChatCompletionRequestMessage,
+	ChatCompletionRoleEnum,
+	type CompletionResponse,
+	type ModelParams,
+} from '@/spec/aiprovider';
 import type { ConversationMessage } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
-import type { ModelParams, ProviderName } from '@/spec/modelpreset';
+import type { ProviderName } from '@/spec/modelpreset';
 
 import { log, providerSetAPI } from '@/apis/baseapi';
 

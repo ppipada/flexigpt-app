@@ -1,30 +1,41 @@
-import { type ProviderName } from '@/spec/modelpreset';
-
-export interface AISetting {
-	isEnabled: boolean;
-	apiKey: string;
-	origin: string;
-	chatCompletionPathPrefix: string;
+export enum ThemeType {
+	System = 'system',
+	Light = 'light',
+	Dark = 'dark',
+	Other = 'other',
+}
+export interface AppTheme {
+	type: ThemeType;
+	name: string;
 }
 
-export interface AISettingAttrs {
-	isEnabled?: boolean;
-	origin?: string;
-	chatCompletionPathPrefix?: string;
+export type AuthKeyType = string;
+export const AuthKeyTypeProvider = 'provider';
+
+export type AuthKeyName = string;
+
+export interface AuthKey {
+	secret: string;
+	sha256: string;
+	nonEmpty: boolean;
 }
 
-export type SettingsSchema = {
-	aiSettings: Record<ProviderName, AISetting>;
-	app: {
-		defaultProvider: ProviderName;
-	};
-};
+export interface AuthKeyMeta {
+	type: AuthKeyType;
+	keyName: AuthKeyName;
+	sha256: string;
+	nonEmpty: boolean;
+}
+
+export interface SettingsSchema {
+	appTheme: AppTheme;
+	authKeys: AuthKeyMeta[];
+}
 
 export interface ISettingStoreAPI {
-	getAllSettings: () => Promise<SettingsSchema>;
-	setAppSettings: (defaultProvider: ProviderName) => Promise<void>;
-	addAISetting: (providerName: ProviderName, aiSetting: AISetting) => Promise<void>;
-	deleteAISetting: (providerName: ProviderName) => Promise<void>;
-	setAISettingAPIKey: (providerName: ProviderName, apiKey: string) => Promise<void>;
-	setAISettingAttrs: (providerName: ProviderName, aiSettingAttrs: AISettingAttrs) => Promise<void>;
+	setAppTheme: (theme: AppTheme) => Promise<void>;
+	getAuthKey: (type: AuthKeyType, keyName: AuthKeyName) => Promise<AuthKey>;
+	deleteAuthKey: (type: AuthKeyType, keyName: AuthKeyName) => Promise<void>;
+	setAuthKey: (type: AuthKeyType, keyName: AuthKeyName, secret: string) => Promise<void>;
+	getSettings: (forceFetch?: boolean) => Promise<SettingsSchema>;
 }

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
-import { UseCloseDetails } from '@/lib/use_close_details';
+import { useCloseDetails } from '@/hooks/use_close_details';
 
 /**
  * @public
@@ -49,7 +49,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 	const detailsRef = useRef<HTMLDetailsElement>(null);
 
 	// Close the details dropdown if the user clicks outside.
-	UseCloseDetails({
+	useCloseDetails({
 		detailsRef,
 		events: ['mousedown'],
 		onClose: () => {
