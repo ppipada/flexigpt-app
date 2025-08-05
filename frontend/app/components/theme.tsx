@@ -1,68 +1,73 @@
-/* ────────────────────────────────────────────────────────────────
-   src/lib/theme_provider.tsx
-   ──────────────────────────────────────────────────────────────── */
 import type { FC, JSX } from 'react';
-import React, { useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { ThemeProvider, useTheme } from 'next-themes';
 import { FiMonitor, FiMoon, FiSun } from 'react-icons/fi';
 
 import { type AppTheme, ThemeType } from '@/spec/setting';
 
+import { useTheme } from '@/hooks/use_theme';
+
 import { settingstoreAPI } from '@/apis/baseapi';
 import { getStartupThemeSync, updateStartupTheme } from '@/apis/builtin_theme_cache';
 
-/* ------------------------------------------------------------------
-			small helpers
-			------------------------------------------------------------------ */
+import Dropdown, { type DropdownItem } from '@/components/dropdown';
 
-const toNextThemesName = (t: ThemeType | AppTheme): string => {
+export const CustomThemeLight = 'nordsnowstorm';
+export const CustomThemeDark = 'nordpolarnight';
+
+const DAISYUI_BUILTIN_THEMES = [
+	'abyss',
+	'acid',
+	'aqua',
+	'autumn',
+	'black',
+	'bumblebee',
+	'business',
+	'caramellatte',
+	'cmyk',
+	'coffee',
+	'corporate',
+	'cupcake',
+	'cyberpunk',
+	'dark',
+	'dim',
+	'dracula',
+	'emerald',
+	'fantasy',
+	'forest',
+	'garden',
+	'halloween',
+	'lemonade',
+	'light',
+	'lofi',
+	'luxury',
+	'night',
+	'nord',
+	'pastel',
+	'retro',
+	'silk',
+	'sunset',
+	'synthwave',
+	'valentine',
+	'winter',
+	'wireframe',
+] as const;
+
+type OtherThemeName = (typeof DAISYUI_BUILTIN_THEMES)[number];
+const isOtherThemeName = (n: string): n is OtherThemeName => (DAISYUI_BUILTIN_THEMES as readonly string[]).includes(n);
+
+export const toProviderName = (t: ThemeType | AppTheme): string => {
 	const type = typeof t === 'string' ? t : t.type;
-	switch (type) {
-		case ThemeType.System:
-			return 'system';
-		case ThemeType.Light:
-			return 'light';
-		case ThemeType.Dark:
-			return 'dark';
-		default:
-			return typeof t === 'string' ? t : t.name; // ThemeType.Other
-	}
+	if (type === ThemeType.System) return 'system';
+	if (type === ThemeType.Light) return CustomThemeLight;
+	if (type === ThemeType.Dark) return CustomThemeDark;
+	return typeof t === 'string' ? t : t.name; /* ThemeType.Other */
 };
-
 const toThemeType = (name: string): ThemeType => {
-	switch (name) {
-		case 'light':
-			return ThemeType.Light;
-		case 'dark':
-			return ThemeType.Dark;
-		case 'system':
-			return ThemeType.System;
-		default:
-			return ThemeType.Other;
-	}
-};
-
-/* ------------------------------------------------------------------
-			1.  Provider that must wrap the whole app
-			------------------------------------------------------------------ */
-
-export const ThemeSwitchProvider: FC<{ children: React.ReactNode }> = ({ children }) => {
-	// guaranteed to be initialised by rootLoader()
-	const startupTheme = getStartupThemeSync();
-
-	return (
-		<ThemeProvider
-			attribute="data-theme"
-			/* daisyUI palette map */
-			value={{ light: 'nordsnowstorm', dark: 'nordpolarnight' }}
-			/* we supply the default ourselves – no automatic system switch */
-			defaultTheme={toNextThemesName(startupTheme)}
-			enableSystem={false}
-		>
-			{children}
-		</ThemeProvider>
-	);
+	if (name === CustomThemeLight || name === 'light') return ThemeType.Light;
+	if (name === CustomThemeDark || name === 'dark') return ThemeType.Dark;
+	if (name === 'system') return ThemeType.System;
+	return ThemeType.Other;
 };
 
 interface ThemeRadioProps {
@@ -83,40 +88,84 @@ const ThemeRadio: FC<ThemeRadioProps> = ({ label, value, icon, current, onChange
 				onChange(value);
 			}}
 		/>
-		{icon} <span className="text-sm">{label}</span>
+		{icon}
+		<span className="text-sm">{label}</span>
 	</label>
 );
 
 export const ThemeSelector: FC = () => {
-	const { setTheme, theme } = useTheme();
-	const [current, setCurrent] = useState<ThemeType>(toThemeType(theme ?? toNextThemesName(getStartupThemeSync())));
+	const { theme: providerTheme, setTheme } = useTheme();
+	const current = useMemo(() => toThemeType(providerTheme), [providerTheme]);
 
-	/* when user picks a different option -------------------------------- */
-	const handleChange = async (type: ThemeType) => {
-		setCurrent(type);
+	const [otherName, setOtherName] = useState<OtherThemeName | undefined>(() => {
+		const t = getStartupThemeSync();
+		return t.type === ThemeType.Other && isOtherThemeName(t.name) ? t.name : undefined;
+	});
 
-		/* 1. apply visually right away */
-		setTheme(toNextThemesName(type));
+	const dropdownItems = useMemo(
+		() =>
+			Object.fromEntries(DAISYUI_BUILTIN_THEMES.map(t => [t, { isEnabled: true }])) as Record<
+				OtherThemeName,
+				DropdownItem
+			>,
+		[]
+	);
 
-		/* 2. update session-wide singleton cache */
-		const newTheme: AppTheme = { type, name: type };
-		updateStartupTheme(newTheme);
+	const applyTheme = async (type: ThemeType, name?: OtherThemeName) => {
+		const providerKey = type === ThemeType.Other ? (name ?? otherName) : toProviderName(type);
+		if (!providerKey) return;
 
-		/* 3. persist to backend */
-		await settingstoreAPI.setAppTheme(newTheme);
+		/* optimistic */
+		setTheme(providerKey);
+
+		const newTheme: AppTheme = {
+			type,
+			name: type === ThemeType.Other ? providerKey : String(type),
+		};
+
+		try {
+			await settingstoreAPI.setAppTheme(newTheme);
+			updateStartupTheme(newTheme);
+			console.log('[Theme] changed to', newTheme.name);
+		} catch (err) {
+			console.error('[Theme] failed to persist, reverting', err);
+			setTheme(toProviderName(getStartupThemeSync()));
+		}
 	};
 
 	return (
-		<div className="flex gap-6">
+		<div className="flex gap-6 items-center">
 			<ThemeRadio
 				label="System"
 				value={ThemeType.System}
 				icon={<FiMonitor />}
 				current={current}
-				onChange={handleChange}
+				onChange={applyTheme}
 			/>
-			<ThemeRadio label="Light" value={ThemeType.Light} icon={<FiSun />} current={current} onChange={handleChange} />
-			<ThemeRadio label="Dark" value={ThemeType.Dark} icon={<FiMoon />} current={current} onChange={handleChange} />
+			<ThemeRadio label="Light" value={ThemeType.Light} icon={<FiSun />} current={current} onChange={applyTheme} />
+			<ThemeRadio label="Dark" value={ThemeType.Dark} icon={<FiMoon />} current={current} onChange={applyTheme} />
+
+			<label className="flex items-center gap-2 cursor-pointer">
+				<input
+					type="radio"
+					className="radio radio-accent"
+					checked={current === ThemeType.Other}
+					onChange={() => applyTheme(ThemeType.Other, otherName)}
+				/>
+				<div className="w-50">
+					<Dropdown<OtherThemeName>
+						dropdownItems={dropdownItems}
+						selectedKey={otherName ?? DAISYUI_BUILTIN_THEMES[0]}
+						onChange={async key => {
+							setOtherName(key);
+							await applyTheme(ThemeType.Other, key);
+						}}
+						filterDisabled={false}
+						title="Select Theme"
+						getDisplayName={k => k[0].toUpperCase() + k.slice(1)}
+					/>
+				</div>
+			</label>
 		</div>
 	);
 };

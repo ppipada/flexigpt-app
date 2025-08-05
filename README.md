@@ -17,6 +17,7 @@ Launch FlexiGPT, open Settings -> Providers, paste your API key, start chatting.
 - [Feature: Model Presets](#feature-model-presets)
 - [Feature: Prompt Templates](#feature-prompt-templates)
 - [Built With](#built-with)
+- [Contributing](#contributing)
 
 ## Quick Start
 
@@ -222,3 +223,7 @@ Launch FlexiGPT, open Settings -> Providers, paste your API key, start chatting.
   - [Github actions](https://github.com/features/actions)
 
 - Data storage: `JSON` and `SQLite` files in local filesystem.
+
+## Contributing
+
+- The dev setup docs are located at [devsetup.md](./docs/contributing/devsetup.md)

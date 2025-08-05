@@ -10,6 +10,8 @@ import TextareaAutosize from 'react-textarea-autosize';
 
 import { type ReasoningLevel, ReasoningType } from '@/spec/modelpreset';
 
+import { useCloseDetails } from '@/hooks/use_close_details';
+
 import { type ChatOption, DefaultChatOptions, getChatInputOptions } from '@/apis/chatoption_helper';
 
 import AdvancedParamsModal from '@/chats/chat_input_field_advanced_params';
@@ -18,7 +20,6 @@ import ModelDropdown from '@/chats/chat_input_field_model_dropdown';
 import { HybridReasoningCheckbox, ReasoningTokensDropdown } from '@/chats/chat_input_field_reasoning_hybrid';
 import SingleReasoningDropdown from '@/chats/chat_input_field_reasoning_levels';
 import TemperatureDropdown from '@/chats/chat_input_field_temperature';
-import { useCloseDetails } from '@/hooks/use_close_details';
 
 interface ChatInputFieldProps {
 	onSend: (message: string, options: ChatOption) => void;

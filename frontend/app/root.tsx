@@ -1,19 +1,44 @@
-import { useEffect } from 'react';
+import { type FC, useEffect } from 'react';
 
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 
+import { type AppTheme, ThemeType } from '@/spec/setting';
+
 import { IS_WAILS_PLATFORM } from '@/lib/features';
 
+import { ensureWorker } from '@/hooks/use_highlight';
+import { GenericThemeProvider } from '@/hooks/use_theme';
+
 import { initBuiltIns } from '@/apis/builtin_provider_cache';
-import { initStartupTheme } from '@/apis/builtin_theme_cache';
+import { getStartupThemeSync, initStartupTheme } from '@/apis/builtin_theme_cache';
 
 import Sidebar from '@/components/sidebar';
-import { ThemeSwitchProvider } from '@/components/theme';
+import { CustomThemeDark, CustomThemeLight, toProviderName } from '@/components/theme';
 
 import '@/globals.css';
-import { ensureWorker } from '@/hooks/use_highlight';
 
 import type { Route } from './+types/root';
+
+export const CustomThemeProvider: FC<{ children: React.ReactNode }> = ({ children }) => {
+	const startup: AppTheme = (() => {
+		try {
+			return getStartupThemeSync();
+		} catch {
+			return { type: ThemeType.System, name: 'system' } as AppTheme;
+		}
+	})();
+
+	return (
+		<GenericThemeProvider
+			storageKey="flexigpt-theme"
+			defaultTheme={toProviderName(startup)}
+			lightTheme={CustomThemeLight}
+			darkTheme={CustomThemeDark}
+		>
+			{children}
+		</GenericThemeProvider>
+	);
+};
 
 export const meta: Route.MetaFunction = () => [
 	{ title: 'FlexiGPT' },
@@ -68,11 +93,11 @@ export default function Root() {
 	}, []);
 
 	return (
-		<ThemeSwitchProvider>
+		<CustomThemeProvider>
 			<Sidebar>
 				<Outlet />
 			</Sidebar>
-		</ThemeSwitchProvider>
+		</CustomThemeProvider>
 	);
 }
 

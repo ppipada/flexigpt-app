@@ -68,16 +68,16 @@ const SettingsPage: FC = () => {
 			>
 				<div className="flex flex-col gap-8 w-5/6 xl:w-2/3">
 					{/* ── Theme selector ──────────────────────────── */}
-					<section className="bg-base-100 rounded-2xl shadow-lg px-6 py-4">
-						<h2 className="text-sm font-medium mb-4">Theme</h2>
+					<section className="flex items-center bg-base-100 rounded-2xl shadow-lg p-4">
+						<h2 className="font-semibold mr-8">Theme</h2>
 						<ThemeSelector />
 					</section>
 
 					{/* ── Auth-Key table ─────────────────────────── */}
-					<section className="bg-base-100 rounded-2xl shadow-lg px-4 py-2">
+					<section className="bg-base-100 rounded-2xl shadow-lg p-4">
 						<div className="flex justify-between items-center mb-4">
-							<h2 className="text-sm font-medium">Auth Keys</h2>
-							<button className="btn btn-ghost rounded-2xl btn-sm flex items-center" onClick={showAddModal}>
+							<h2 className="font-semibold">Auth Keys</h2>
+							<button className="btn btn-ghost rounded-2xl flex items-center" onClick={showAddModal}>
 								<FiPlus className="mr-1" /> Add Key
 							</button>
 						</div>

@@ -20,9 +20,9 @@ const AuthKeyTable: FC<AuthKeyTableProps> = ({ authKeys, onEdit, onChanged }) =>
 	if (!authKeys.length) return <p className="text-sm text-center text-neutral/70 my-6">No keys defined.</p>;
 
 	return (
-		<div className="overflow-x-auto">
-			<table className="table table-zebra">
-				<thead>
+		<div className="overflow-x-auto rounded-2xl">
+			<table className="table table-zebra w-full">
+				<thead className="text-sm font-semibold bg-base-300">
 					<tr className="text-sm">
 						<th>Type</th>
 						<th>Key Name</th>
@@ -82,7 +82,7 @@ const AuthKeyRow: FC<RowProps> = ({ meta, onEdit, onChanged }) => {
 
 	return (
 		<>
-			<tr>
+			<tr className="hover:bg-base-300 border-none shadow-none">
 				<td className="capitalize">{meta.type}</td>
 				<td>{meta.keyName}</td>
 				<td className="font-mono text-xs">{meta.nonEmpty ? meta.sha256.slice(0, 10) + '…' : '—'}</td>

@@ -32,6 +32,7 @@ export interface DropdownProps<K extends string> {
 	// If the item itself has a `displayName` property, that takes precedence.
 	// Otherwise, this function (if present) will be used to determine the label.
 	getDisplayName?: (key: K) => string;
+	maxMenuHeight?: number | string; // Optional, default 300
 }
 
 // A single reusable dropdown that can be used by passing the appropriate config.
@@ -43,6 +44,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 		filterDisabled = true,
 		title = 'Select an option',
 		getDisplayName,
+		maxMenuHeight = 300,
 	} = props;
 
 	const [isOpen, setIsOpen] = useState(false);
@@ -103,11 +105,17 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 				{isOpen ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
 			</summary>
 
-			<ul tabIndex={0} className="dropdown-content menu rounded-2xl w-full bg-base-200">
+			<ul
+				tabIndex={0}
+				className="flex flex-col flex-nowrap dropdown-content menu rounded-2xl border-neutral/20 shadow-sm bg-base-200 overflow-y-auto overflow-x-hidden w-full"
+				style={{
+					maxHeight: typeof maxMenuHeight === 'number' ? `${maxMenuHeight}px` : maxMenuHeight,
+				}}
+			>
 				{filteredKeys.map(key => (
 					<li
 						key={key}
-						className="cursor-pointer rounded-2xl"
+						className="w-full cursor-pointer rounded-2xl"
 						onClick={() => {
 							handleSelection(key);
 						}}

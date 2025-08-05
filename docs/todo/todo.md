@@ -2,6 +2,7 @@
 
 ## Laundry list
 
+- [ ] UI adjustments for settings/models/prompts/tools
 - [ ] Add other daisyui themes to settings and then use them as a dropdown
 - [ ] backend should check if atleast one of reasoning or temp is set
 - [ ] overlay needs to have non bool flag support too, need it for default model support

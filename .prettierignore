@@ -1,9 +1,9 @@
-frontend/.next/
-frontend/.react-router/
 /dist/
+/out/
 /node_modules/
 /stories/
+frontend/.next/
+frontend/.react-router/
+frontend/dist/
 frontend/app/apis/wailsjs
-.anima
-out
 build/flatpak/shared-modules

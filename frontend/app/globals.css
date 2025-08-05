@@ -7,14 +7,8 @@
 		'Noto Color Emoji';
 }
 
-@plugin "daisyui" {
-	prefix: '';
-	exclude: rootscrollgutter;
-}
-
 @plugin "daisyui/theme" {
 	name: 'nordsnowstorm';
-	default: true;
 	color-scheme: 'light';
 	--color-base-100: oklch(95.127% 0.007 260.731);
 	--color-base-200: oklch(93.299% 0.01 261.788);
@@ -48,7 +42,6 @@
 
 @plugin "daisyui/theme" {
 	name: 'nordpolarnight';
-	default: false;
 	color-scheme: 'dark';
 	--color-base-100: oklch(45.23% 0.035 264.13);
 	--color-base-200: oklch(41.57% 0.032 264.13);
@@ -80,6 +73,49 @@
 	--noise: 0;
 }
 
+@plugin "daisyui" {
+	prefix: '';
+	exclude: rootscrollgutter;
+	themes:
+		'nordsnowstorm' --default,
+		'nordpolarnight' --prefersdark,
+		'abyss',
+		'acid',
+		'aqua',
+		'autumn',
+		'black',
+		'bumblebee',
+		'business',
+		'caramellatte',
+		'cmyk',
+		'coffee',
+		'corporate',
+		'cupcake',
+		'cyberpunk',
+		'dark',
+		'dim',
+		'dracula',
+		'emerald',
+		'fantasy',
+		'forest',
+		'garden',
+		'halloween',
+		'lemonade',
+		'light',
+		'lofi',
+		'luxury',
+		'night',
+		'nord',
+		'pastel',
+		'retro',
+		'silk',
+		'sunset',
+		'synthwave',
+		'valentine',
+		'winter',
+		'wireframe';
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 /*
   The default border color has changed to `currentColor` in Tailwind CSS v4,
@@ -102,6 +138,7 @@
 @layer base {
 	*::-webkit-scrollbar {
 		width: 8px;
+		height: 8px;
 	}
 
 	*::-webkit-scrollbar-thumb {
