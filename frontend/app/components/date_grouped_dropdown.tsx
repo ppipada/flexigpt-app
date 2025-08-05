@@ -31,7 +31,7 @@ export function GroupedDropdown<T>({
 				.filter(([, arr]) => arr.length)
 				.map(([label, arr]) => (
 					<Fragment key={label}>
-						<li className="px-12 py-2 text-neutral/60 text-xs">{label}</li>
+						<li className="px-12 py-2 text-neutral-custom text-xs">{label}</li>
 
 						{arr.map(item => {
 							const isFocused = globalIndex === focused;
@@ -50,7 +50,7 @@ export function GroupedDropdown<T>({
 									<span className="truncate">{getLabel(item)}</span>
 
 									{renderItemExtra && (
-										<span className="hidden lg:block text-neutral/60 text-xs">{renderItemExtra(item)}</span>
+										<span className="hidden lg:block text-neutral-custom text-xs">{renderItemExtra(item)}</span>
 									)}
 								</li>
 							);

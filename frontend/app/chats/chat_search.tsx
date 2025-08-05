@@ -157,14 +157,14 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 	return (
 		<div className="absolute left-0 right-0 mt-1 bg-base-200 rounded-2xl shadow-lg overflow-hidden">
 			{/* ------- sticky status / hint bar (always visible) ---------- */}
-			<div className="flex justify-between items-center px-8 py-1 text-xs text-neutral/60 border-b border-base-300 sticky top-0">
+			<div className="flex justify-between items-center px-8 py-1 text-xs text-neutral-custom border-b border-base-300 sticky top-0">
 				<span className="truncate">{barLeft}</span>
 				{barRight && <span className="pl-4 shrink-0">{barRight}</span>}
 			</div>
 
 			{/* -------------- empty state OR results list ---------------- */}
 			{!results.length && !loading ? (
-				<div className="py-8 text-center text-sm text-neutral/60">
+				<div className="py-8 text-center text-sm text-neutral-custom">
 					{query ? 'Try refining your search' : 'Start a conversation to see it here'}
 				</div>
 			) : (
@@ -205,7 +205,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 									>
 										<span className="truncate">{r.searchConversation.title}</span>
 
-										<span className="hidden lg:block text-neutral/60 text-xs">
+										<span className="hidden lg:block text-neutral-custom text-xs">
 											<span className="inline-flex items-center gap-4">
 												{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
 												<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.modifiedAt)}</span>
@@ -219,12 +219,12 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 
 					{loading && (
 						<div className="flex items-center justify-center py-4">
-							<span className="text-sm text-neutral/60">{results.length ? 'Loading more...' : 'Searching...'}</span>
+							<span className="text-sm text-neutral-custom">{results.length ? 'Loading more...' : 'Searching...'}</span>
 							<span className="loading loading-dots loading-sm" />
 						</div>
 					)}
 					{!loading && !hasMore && results.length > 0 && query && (
-						<div className="text-center py-1 text-xs text-neutral/60 border-t border-base-300">End of results</div>
+						<div className="text-center py-1 text-xs text-neutral-custom border-t border-base-300">End of results</div>
 					)}
 				</div>
 			)}
@@ -532,7 +532,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 		<div className="relative">
 			{/* ---------------- search input ---------------- */}
 			<div className="flex items-center bg-base-100 py-3 px-1 rounded-2xl border border-base-300 focus-within:border-base-400 transition-colors">
-				<FiSearch size={20} className="mx-3 text-neutral/60 flex-shrink-0" />
+				<FiSearch size={20} className="mx-3 text-neutral-custom flex-shrink-0" />
 				<input
 					ref={inputRef}
 					type="text"
@@ -542,7 +542,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 					onBlur={handleBlur}
 					onKeyDown={handleKeyDown}
 					placeholder="Search conversations..."
-					className="w-full bg-transparent outline-none text-sm placeholder:text-neutral/60"
+					className="w-full bg-transparent outline-none text-sm placeholder:text-neutral-custom"
 					spellCheck={false}
 				/>
 				{searchState.loading && <span className="loading loading-dots loading-sm"></span>}

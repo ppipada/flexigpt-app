@@ -52,7 +52,7 @@ export default function TemperatureDropdown(props: {
 				open={isOpen}
 			>
 				<summary
-					className="btn btn-xs text-nowrap text-neutral/60 shadow-none border-none overflow-hidden"
+					className="btn btn-xs text-nowrap text-neutral-custom shadow-none border-none overflow-hidden"
 					title="Set Temperature"
 				>
 					<div className="flex">

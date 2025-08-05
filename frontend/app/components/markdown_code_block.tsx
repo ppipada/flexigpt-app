@@ -18,7 +18,7 @@ const CodeBlock: FC<CodeProps> = ({ language, value, isStreaming }) => {
 	const isMermaid = language.toLowerCase() === 'mermaid';
 
 	const fallback = (
-		<pre className="bg-transparent text-gray-100 p-2 rounded overflow-auto text-sm">
+		<pre className="bg-transparent text-code p-2 rounded overflow-auto text-sm">
 			<code>{value}</code>
 		</pre>
 	);
@@ -27,25 +27,25 @@ const CodeBlock: FC<CodeProps> = ({ language, value, isStreaming }) => {
 
 	return (
 		<>
-			<div className="rounded-lg bg-gray-800 my-4 items-start overflow-hidden">
-				<div className="flex justify-between items-center bg-gray-700 px-4">
-					<span className="text-white">{language}</span>
+			<div className="rounded-lg bg-code my-4 items-start overflow-hidden">
+				<div className="flex justify-between items-center bg-code-header px-4">
+					<span className="text-code capitalize text-sm">{language}</span>
 					<div className="flex space-x-2">
 						<DownloadButton
 							language={language}
 							valueFetcher={fetchValue}
 							size={16}
-							className="btn btn-sm bg-transparent text-white border-none flex items-center shadow-none"
+							className="btn btn-sm bg-transparent text-code border-none flex items-center shadow-none"
 						/>
 						<CopyButton
 							value={value}
-							className="btn btn-sm bg-transparent text-white border-none flex items-center shadow-none"
+							className="btn btn-sm bg-transparent text-code border-none flex items-center shadow-none"
 							size={16}
 						/>
 					</div>
 				</div>
 
-				<div className="p-1" style={{ fontSize: 14, lineHeight: 1.5 }}>
+				<div className="p-1 text-code" style={{ fontSize: 14, lineHeight: 1.5 }}>
 					{showFallback ? fallback : <div className="shiki-container" dangerouslySetInnerHTML={{ __html: html }} />}
 				</div>
 			</div>

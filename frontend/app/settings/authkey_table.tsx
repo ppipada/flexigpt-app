@@ -17,7 +17,7 @@ interface AuthKeyTableProps {
 	onChanged: () => void; // parent refetch
 }
 const AuthKeyTable: FC<AuthKeyTableProps> = ({ authKeys, onEdit, onChanged }) => {
-	if (!authKeys.length) return <p className="text-sm text-center text-neutral/70 my-6">No keys defined.</p>;
+	if (!authKeys.length) return <p className="text-sm text-center text-neutral-custom my-6">No keys defined.</p>;
 
 	return (
 		<div className="overflow-x-auto rounded-2xl">

@@ -268,13 +268,13 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					{/* Advanced params modal trigger */}
 					<button
 						type="button"
-						className="btn btn-sm btn-ghost mx-2 text-neutral/60"
+						className="btn btn-sm btn-ghost mx-2 text-neutral-custom"
 						onClick={() => {
 							setIsAdvancedModalOpen(true);
 						}}
 						title="Set Advanced Params"
 					>
-						<FiSliders size={16} />
+						<FiSliders color="text-neutral-custom" size={16} />
 					</button>
 				</div>
 			</div>
@@ -305,8 +305,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(({ 
 					onKeyDown={onKeyDown}
 					onHeightChange={handleHeightChange}
 					placeholder="Type message..."
-					className="flex-1 resize-none overflow-auto bg-transparent border-none outline-none text-neutral
-                       min-h-[24px] p-2"
+					className="flex-1 resize-none overflow-auto bg-transparent border-none outline-none text-neutral-custom min-h-[24px] p-2"
 					minRows={2}
 					maxRows={16}
 					style={{

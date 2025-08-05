@@ -15,7 +15,7 @@ export function HybridReasoningCheckbox({
 }) {
 	return (
 		<div className="flex w-full justify-center mx-2">
-			<label className="flex text-neutral/60 cursor-pointer">
+			<label className="flex text-neutral-custom cursor-pointer">
 				<input
 					type="checkbox"
 					className="checkbox checkbox-xs rounded-full"
@@ -24,7 +24,7 @@ export function HybridReasoningCheckbox({
 						setIsReasoningEnabled(e.target.checked);
 					}}
 				/>
-				<span className="text-xs ml-2">Hybrid Reasoning</span>
+				<span className="text-xs text-neutral-custom ml-2">Hybrid Reasoning</span>
 			</label>
 		</div>
 	);
@@ -72,7 +72,7 @@ export function ReasoningTokensDropdown(props: {
 				open={isOpen}
 			>
 				<summary
-					className="btn btn-xs text-left text-nowrap text-neutral/60 shadow-none border-none overflow-hidden"
+					className="btn btn-xs text-left text-nowrap text-neutral-custom shadow-none border-none overflow-hidden"
 					title="Set Tokens"
 				>
 					<div className="flex">

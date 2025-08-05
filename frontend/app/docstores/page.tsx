@@ -248,7 +248,7 @@ const DocumentStores: React.FC = () => {
 							</div>
 
 							{/* DocStore URL and Action Buttons */}
-							<div className="flex text-neutral/60 items-center justify-between text-sm">
+							<div className="flex text-neutral-custom items-center justify-between text-sm">
 								<span>{docStore.url}</span>
 								<div>
 									<button

@@ -28,7 +28,7 @@ export default function ModelDropdown(props: ModelDropdownProps) {
 			}}
 		>
 			<summary
-				className="btn btn-xs w-full text-left text-nowrap text-neutral/60 shadow-none border-none overflow-hidden"
+				className="btn btn-xs w-full text-left text-nowrap text-neutral-custom shadow-none border-none overflow-hidden"
 				title="Select Model"
 			>
 				<div className="flex items-center">

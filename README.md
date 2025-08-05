@@ -56,7 +56,7 @@ Launch FlexiGPT, open Settings -> Providers, paste your API key, start chatting.
   - Turn complex prompts into reusable `/<shortcuts>` with variables and pre-processing tools
   - If required, group into toggle-able bundles.
 
-- **Light/Dark mode** supported with auto-detect & manual toggle.
+- **System/Light/Dark Themes** supported with auto-detect & manual toggle, with an option to choose any of the [**DaisyUI themes**](https://daisyui.com/docs/themes/?lang=en#list-of-themes).
 
 ## Install
 

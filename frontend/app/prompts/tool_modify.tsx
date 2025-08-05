@@ -308,7 +308,7 @@ const ModifyToolModal: React.FC<ModifyToolModalProps> = ({ isOpen, onClose, onSu
 						</label>
 						<div className="col-span-9">
 							<div className="relative">
-								<span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral/60">{TOOL_INVOKE_CHAR}</span>
+								<span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-custom">{TOOL_INVOKE_CHAR}</span>
 								<input
 									type="text"
 									name="slug"

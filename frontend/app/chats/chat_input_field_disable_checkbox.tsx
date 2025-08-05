@@ -6,7 +6,7 @@ export default function DisablePreviousMessagesCheckbox(props: {
 
 	return (
 		<div className="flex w-full justify-center">
-			<label className="flex ml-4 space-x-2 text-neutral/60 overflow-hidden" title="Send Only This Message To AI">
+			<label className="flex ml-4 space-x-2 overflow-hidden" title="Send Only This Message To AI">
 				<input
 					type="checkbox"
 					checked={disablePreviousMessages}
@@ -16,7 +16,7 @@ export default function DisablePreviousMessagesCheckbox(props: {
 					className="checkbox checkbox-xs rounded-full"
 					spellCheck="false"
 				/>
-				<span className="text-xs text-nowrap">Ignore chat history</span>
+				<span className="text-xs text-neutral-custom text-nowrap">Ignore chat history</span>
 			</label>
 		</div>
 	);
