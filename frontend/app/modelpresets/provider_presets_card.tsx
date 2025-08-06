@@ -262,7 +262,7 @@ const ProviderPresetCard: FC<Props> = ({
 	return (
 		<div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2 mb-8">
 			{/* ─── header ─── */}
-			<div className="grid grid-cols-12 gap-2 items-center">
+			<div className="grid grid-cols-12 gap-2 items-center py-2">
 				<div className="col-span-3">
 					<h3 className="text-sm font-semibold capitalize">{localPreset.displayName || provider}</h3>
 				</div>
@@ -294,9 +294,9 @@ const ProviderPresetCard: FC<Props> = ({
 
 			{/* ─── body ─── */}
 			{localPreset.isEnabled && expanded && (
-				<div className="mt-8 space-y-6">
+				<div className="mt-4 space-y-6">
 					{/* provider-details table (no header) */}
-					<div className="overflow-x-auto border border-base-content/10 rounded-2xl">
+					<div className="overflow-x-auto border border-base-content/10 rounded-2xl mb-4">
 						<table className="table w-full">
 							<tbody>
 								{/* actions row (delete / api-key / edit) */}
@@ -353,7 +353,7 @@ const ProviderPresetCard: FC<Props> = ({
 					</div>
 
 					{/* model preset table */}
-					<div className="overflow-x-auto border border-base-content/10 rounded-2xl">
+					<div className="overflow-x-auto border border-base-content/10 rounded-2xl mb-2">
 						{/* default-model selector */}
 						{hasModels && (
 							<div className="grid grid-cols-12 items-center gap-4 px-4 py-2">
@@ -448,7 +448,7 @@ const ProviderPresetCard: FC<Props> = ({
 					</div>
 
 					{/* add model preset button */}
-					<div className="flex justify-end items-center mt-4">
+					<div className="flex justify-end items-center mt-2">
 						<button
 							className={`btn btn-ghost rounded-2xl flex items-center ${
 								providerIsBuiltIn ? 'btn-disabled opacity-50 cursor-not-allowed' : ''

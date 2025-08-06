@@ -2,11 +2,13 @@
 
 ## Laundry list
 
+- [ ] scroll non needed on assistents reply, let it be where it is.
+- [ ] the scroll down buttons possition needs adjusting a bit
 - [ ] Settings/Presets/Prompt/tool:
 
   - UI
 
-    - [ ] Add Auth keys for provider should be allowed for current providers, else point to add provider page
+    - [x] Add Auth keys for provider should be allowed for current providers, else point to add provider page
     - [ ] In Add mode, it should be allowed to copy data from one of current things for all, with some mods in conflict avoiding fields
 
   - Backend:
