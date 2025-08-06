@@ -6,7 +6,7 @@
 - [x] theming adjustments for mermaid and code
 - [x] scroll non needed on assistents reply, let it be where it is.
 - [x] the scroll down buttons possition needs adjusting a bit
-- [ ] Scroll button needs to become visible as soon as some streamed message arrives
+- [x] Scroll button needs to become visible as soon as some streamed message arrives
 
 - [ ] Settings/Presets/Prompt/tool:
 

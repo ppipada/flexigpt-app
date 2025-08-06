@@ -8,6 +8,8 @@ import { ConversationRoleEnum } from '@/spec/conversation';
 import { generateTitle } from '@/lib/text_utils';
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
+import { useAtBottom } from '@/hooks/use_at_bottom';
+
 import { GetCompletionMessage } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
@@ -51,18 +53,34 @@ const ChatScreen: FC = () => {
 	const isSubmittingRef = useRef(false);
 	// Has the current conversation already been persisted?
 	const isChatPersistedRef = useRef(false);
+	const { isAtBottom, isScrollable, checkScroll } = useAtBottom(chatContainerRef);
 
 	// Focus on mount.
 	useEffect(() => {
 		chatInputRef.current?.focus();
 	}, []);
 
+	const scrollToBottom = () => {
+		if (chatContainerRef.current) {
+			chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
+		}
+	};
+	useEffect(() => {
+		if (!isStreaming) return;
+
+		const interval = setInterval(() => {
+			checkScroll();
+		}, 100);
+
+		return () => {
+			clearInterval(interval);
+		};
+	}, [isStreaming, checkScroll]);
+
 	// Scroll to bottom. Tell the browser to bring the sentinel into view.
 	useEffect(() => {
 		const timeout = setTimeout(() => {
-			if (chatContainerRef.current) {
-				chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
-			}
+			scrollToBottom();
 		}, 100);
 		return () => {
 			clearTimeout(timeout);
@@ -350,7 +368,9 @@ const ChatScreen: FC = () => {
 			<div className="fixed bottom-0 right-0 mb-28 mr-0 lg:mr-16">
 				<ButtonScrollToBottom
 					scrollContainerRef={chatContainerRef}
-					size={32}
+					iconSize={32}
+					isAtBottom={isAtBottom}
+					isScrollable={isScrollable}
 					className="btn btn-md bg-transparent border-none flex items-center shadow-none"
 				/>
 			</div>

@@ -2,16 +2,20 @@ import type { ButtonHTMLAttributes, FC, RefObject } from 'react';
 
 import { FiArrowDownCircle } from 'react-icons/fi';
 
-import { useAtBottom } from '@/hooks/use_at_bottom';
-
 interface ButtonScrollToBottomProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	scrollContainerRef: RefObject<HTMLElement | null>;
-	size: number;
+	iconSize: number;
+	isAtBottom: boolean;
+	isScrollable: boolean;
 }
 
-const ButtonScrollToBottom: FC<ButtonScrollToBottomProps> = ({ scrollContainerRef, size, ...props }) => {
-	const { isAtBottom, isScrollable } = useAtBottom(scrollContainerRef);
-
+const ButtonScrollToBottom: FC<ButtonScrollToBottomProps> = ({
+	scrollContainerRef,
+	iconSize,
+	isAtBottom,
+	isScrollable,
+	...props
+}) => {
 	return (
 		isScrollable &&
 		!isAtBottom && (
@@ -29,7 +33,7 @@ const ButtonScrollToBottom: FC<ButtonScrollToBottomProps> = ({ scrollContainerRe
 				}}
 				{...props}
 			>
-				<FiArrowDownCircle size={size} />
+				<FiArrowDownCircle size={iconSize} />
 			</button>
 		)
 	);

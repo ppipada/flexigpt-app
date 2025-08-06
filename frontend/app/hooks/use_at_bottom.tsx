@@ -1,7 +1,13 @@
 import type { RefObject } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-export function useAtBottom(ref: RefObject<HTMLElement | null>, offset = 0) {
+interface UseAtBottomResult {
+	isAtBottom: boolean;
+	isScrollable: boolean;
+	checkScroll: () => void;
+}
+
+export function useAtBottom(ref: RefObject<HTMLElement | null>, offset = 0): UseAtBottomResult {
 	const [isAtBottom, setIsAtBottom] = useState(false);
 	const [isScrollable, setIsScrollable] = useState(false);
 
@@ -9,25 +15,28 @@ export function useAtBottom(ref: RefObject<HTMLElement | null>, offset = 0) {
 	// ResizeObserver can call the *same* function
 	const handleScrollRef = useRef(() => {});
 
+	// The actual scroll check logic, memoized for consumer use
+	const checkScroll = useCallback(() => {
+		const current = ref.current;
+		if (!current) return;
+		const { scrollTop, scrollHeight, clientHeight } = current;
+		setIsScrollable(scrollHeight > clientHeight);
+		setIsAtBottom(scrollTop + clientHeight >= scrollHeight - offset - 10);
+	}, [ref, offset]);
+
 	useEffect(() => {
 		const current = ref.current;
 		if (!current) return;
 
-		const handleScroll = () => {
-			const { scrollTop, scrollHeight, clientHeight } = current;
-			setIsScrollable(scrollHeight > clientHeight);
-			setIsAtBottom(scrollTop + clientHeight >= scrollHeight - offset - 10);
-		};
-
-		// save it in the ref so it can be used inside ResizeObserver callback
-		handleScrollRef.current = handleScroll;
+		// Save the latest checkScroll in the ref for ResizeObserver
+		handleScrollRef.current = checkScroll;
 
 		// --- scroll listener (throttled) ---------------------------------
 		let throttleTimeout: NodeJS.Timeout | null = null;
 		const throttledScroll = () => {
 			if (throttleTimeout == null) {
 				throttleTimeout = setTimeout(() => {
-					handleScroll();
+					checkScroll();
 					throttleTimeout = null;
 				}, 100);
 			}
@@ -43,14 +52,14 @@ export function useAtBottom(ref: RefObject<HTMLElement | null>, offset = 0) {
 		resizeObserver.observe(current);
 
 		// run once on mount
-		handleScroll();
+		checkScroll();
 
 		return () => {
 			current.removeEventListener('scroll', throttledScroll);
 			resizeObserver.disconnect();
 			if (throttleTimeout) clearTimeout(throttleTimeout);
 		};
-	}, [ref, offset]);
+	}, [ref, offset, checkScroll]);
 
-	return { isAtBottom, isScrollable };
+	return { isAtBottom, isScrollable, checkScroll };
 }
