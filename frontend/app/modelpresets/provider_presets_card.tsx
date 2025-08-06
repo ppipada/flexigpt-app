@@ -312,7 +312,8 @@ const ProviderPresetCard: FC<Props> = ({
 												title="Delete Provider"
 												disabled={providerIsBuiltIn}
 											>
-												<FiTrash2 /> <span className="ml-1 hidden md:inline">Delete Provider</span>
+												<FiTrash2 />
+												<span className="ml-1 hidden md:inline">Delete Provider</span>
 											</button>
 
 											{/* api-key + edit on right */}
@@ -322,7 +323,7 @@ const ProviderPresetCard: FC<Props> = ({
 													onClick={openSetApiKey}
 													title={keySet ? 'Update API Key' : 'Set API Key'}
 												>
-													<FiKey />{' '}
+													<FiKey />
 													<span className="ml-1 hidden md:inline">{keySet ? 'Update Key' : 'Set API Key'}</span>
 												</button>
 
@@ -334,7 +335,8 @@ const ProviderPresetCard: FC<Props> = ({
 													title="Edit Provider"
 													disabled={providerIsBuiltIn}
 												>
-													<FiEdit /> <span className="ml-1 hidden md:inline">Edit Provider</span>
+													<FiEdit />
+													<span className="ml-1 hidden md:inline">Edit Provider</span>
 												</button>
 											</div>
 										</div>
@@ -352,13 +354,14 @@ const ProviderPresetCard: FC<Props> = ({
 						</table>
 					</div>
 
-					{/* model preset table */}
+					{/* ─── model presets section ─── */}
 					<div className="overflow-x-auto border border-base-content/10 rounded-2xl mb-2">
-						{/* default-model selector */}
-						{hasModels && (
-							<div className="grid grid-cols-12 items-center gap-4 px-4 py-2">
-								<span className="col-span-3 text-sm font-semibold">Default Model</span>
-								<div className="col-span-9 flex-1">
+						{/* default model selector row (always present) */}
+						<div className="grid grid-cols-12 items-center gap-4 px-4 py-2">
+							<span className="col-span-3 text-sm font-semibold">Default Model</span>
+
+							<div className="col-span-6">
+								{hasModels ? (
 									<Dropdown<ModelPresetID>
 										dropdownItems={modelPresets}
 										selectedKey={defaultModelPresetID}
@@ -367,24 +370,42 @@ const ProviderPresetCard: FC<Props> = ({
 										title="Select default model"
 										getDisplayName={k => modelPresets[k].displayName || k}
 									/>
-								</div>
+								) : (
+									<span className="italic text-sm">No model presets configured.</span>
+								)}
 							</div>
-						)}
-						<table className="table table-zebra w-full">
-							<thead>
-								<tr className="text-sm font-semibold bg-base-300">
-									<th>Model Preset Label</th>
-									<th>Model Name</th>
-									<th className="text-center">Enabled</th>
-									<th className="text-center">Reasoning</th>
-									<th className="text-center">Actions</th>
-								</tr>
-							</thead>
 
-							<tbody>
-								{/* model rows */}
-								{hasModels ? (
-									modelEntries.map(([id, m]) => {
+							{/* Add model button on the right */}
+							<div className="col-span-3 flex justify-end">
+								<button
+									className={`btn btn-ghost rounded-2xl flex items-center ${
+										providerIsBuiltIn ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
+									}`}
+									onClick={openAddModel}
+									disabled={providerIsBuiltIn}
+									title="Add Model Preset"
+								>
+									<FiPlus />
+									<span className="ml-1 hidden md:inline">Add Model Preset</span>
+								</button>
+							</div>
+						</div>
+
+						{/* model preset table (only if at least one model) */}
+						{hasModels && (
+							<table className="table table-zebra w-full">
+								<thead>
+									<tr className="text-sm font-semibold bg-base-300">
+										<th>Model Preset Label</th>
+										<th>Model Name</th>
+										<th className="text-center">Enabled</th>
+										<th className="text-center">Reasoning</th>
+										<th className="text-center">Actions</th>
+									</tr>
+								</thead>
+
+								<tbody>
+									{modelEntries.map(([id, m]) => {
 										const canModify = !m.isBuiltIn;
 										return (
 											<tr key={id} className="hover:bg-base-300">
@@ -416,7 +437,6 @@ const ProviderPresetCard: FC<Props> = ({
 																title="Edit Model Preset"
 															>
 																<FiEdit size={16} />
-																<span className="ml-1 hidden md:inline">Edit Preset</span>
 															</button>
 															<button
 																className="btn btn-sm btn-ghost rounded-2xl"
@@ -426,38 +446,18 @@ const ProviderPresetCard: FC<Props> = ({
 																title="Delete Model Preset"
 															>
 																<FiTrash2 size={16} />
-																<span className="ml-1 hidden md:inline">Delete Preset</span>
 															</button>
 														</>
 													) : (
-														<span className="text-xs opacity-50">built-in</span>
+														<span className="text-xs opacity-50">Built-in</span>
 													)}
 												</td>
 											</tr>
 										);
-									})
-								) : (
-									<tr>
-										<td colSpan={5} className="py-4 text-center text-sm italic">
-											No model presets configured.
-										</td>
-									</tr>
-								)}
-							</tbody>
-						</table>
-					</div>
-
-					{/* add model preset button */}
-					<div className="flex justify-end items-center mt-2">
-						<button
-							className={`btn btn-ghost rounded-2xl flex items-center ${
-								providerIsBuiltIn ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
-							}`}
-							onClick={openAddModel}
-							disabled={providerIsBuiltIn}
-						>
-							<FiPlus /> <span className="ml-1">Add Model Preset</span>
-						</button>
+									})}
+								</tbody>
+							</table>
+						)}
 					</div>
 				</div>
 			)}
