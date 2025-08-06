@@ -335,6 +335,7 @@ const ModelPresetPage: FC = () => {
 									onProviderPresetChange={handleProviderPresetChange}
 									onProviderDelete={handleProviderDelete}
 									onRequestEdit={openEditModal}
+									allProviderPresets={providerPresets}
 								/>
 							))}
 				</div>

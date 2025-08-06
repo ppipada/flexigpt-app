@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
 	FiCheck,
@@ -33,6 +33,7 @@ interface Props {
 	defaultProvider: ProviderName;
 	authKeySet: boolean;
 	enabledProviders: ProviderName[];
+	allProviderPresets: Record<ProviderName, ProviderPreset>;
 
 	onProviderPresetChange: (provider: ProviderName, newPreset: ProviderPreset) => void;
 	onProviderDelete: (provider: ProviderName) => Promise<void>;
@@ -45,6 +46,7 @@ const ProviderPresetCard: FC<Props> = ({
 	defaultProvider,
 	authKeySet,
 	enabledProviders,
+	allProviderPresets,
 	onProviderPresetChange,
 	onProviderDelete,
 	onRequestEdit,
@@ -79,6 +81,14 @@ const ProviderPresetCard: FC<Props> = ({
 	const modelEntries = Object.entries(modelPresets);
 	const hasModels = modelEntries.length > 0;
 	const canDeleteProvider = !providerIsBuiltIn && !hasModels;
+
+	const allModelPresets = useMemo(() => {
+		const o: Record<ProviderName, Record<ModelPresetID, ModelPreset>> = {};
+		for (const [prov, pp] of Object.entries(allProviderPresets)) {
+			o[prov] = pp.modelPresets;
+		}
+		return o;
+	}, [allProviderPresets]);
 
 	/* ───────── provider enable / disable ───────── */
 	const toggleProviderEnable = async () => {
@@ -522,6 +532,7 @@ const ProviderPresetCard: FC<Props> = ({
 					initialModelID={selectedID ?? undefined}
 					initialData={selectedID ? modelPresets[selectedID] : undefined}
 					existingModels={modelPresets}
+					allModelPresets={allModelPresets}
 				/>
 			)}
 

@@ -1,6 +1,6 @@
 import React, { type FC, useEffect, useMemo, useState } from 'react';
 
-import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
+import { FiAlertCircle, FiHelpCircle, FiUpload, FiX } from 'react-icons/fi';
 
 import {
 	type ModelPreset,
@@ -29,7 +29,7 @@ const reasoningLevelItems: Record<ReasoningLevel, { isEnabled: boolean; displayN
 	[ReasoningLevel.High]: { isEnabled: true, displayName: 'High' },
 };
 
-/** Defaults we want to *apply* in **Add** mode (placeholders use it too). */
+/** Defaults we *apply* while in **Add** mode (place-holders also use them). */
 const AddModeDefaults: ModelPreset = {
 	id: '',
 	name: '',
@@ -70,10 +70,11 @@ interface AddEditModelPresetModalProps {
 	onClose: () => void;
 	onSubmit: (modelPresetID: ModelPresetID, modelData: ModelPreset) => void;
 	providerName: ProviderName;
-
 	initialModelID?: ModelPresetID; // ⇒ edit mode when truthy
 	initialData?: ModelPreset;
 	existingModels: Record<ModelPresetID, ModelPreset>;
+
+	allModelPresets: Record<ProviderName, Record<ModelPresetID, ModelPreset>>;
 }
 
 const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
@@ -83,9 +84,9 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 	initialModelID,
 	initialData,
 	existingModels,
+	allModelPresets,
 }) => {
 	const isEditMode = Boolean(initialModelID);
-
 	const [defaultValues] = useState<ModelPreset>(AddModeDefaults);
 	const [modelPresetID, setModelPresetID] = useState<ModelPresetID>(initialModelID ?? ('' as ModelPresetID));
 
@@ -107,12 +108,66 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 
 	const [formData, setFormData] = useState<ModelPresetFormData>(blankForm);
 
+	/* ────────────────────── PREFILL ‑ from existing ──────────────────── */
+	/** composite-key:  `${provider}::${modelID}`  */
+	type PrefillKey = string;
+
+	const prefillSourceMap = useMemo<Record<PrefillKey, ModelPreset>>(() => {
+		const m: Record<PrefillKey, ModelPreset> = {};
+		for (const [prov, presets] of Object.entries(allModelPresets)) {
+			for (const [mid, mp] of Object.entries(presets)) {
+				m[`${prov}::${mid}`] = mp;
+			}
+		}
+		return m;
+	}, [allModelPresets]);
+
+	const prefillDropdownItems: Record<PrefillKey, { isEnabled: boolean; displayName: string }> = useMemo(() => {
+		const o: Record<PrefillKey, { isEnabled: boolean; displayName: string }> = {};
+		for (const [key, mp] of Object.entries(prefillSourceMap)) {
+			const [prov] = key.split('::');
+			o[key] = { isEnabled: true, displayName: `${prov} / ${mp.displayName || mp.id}` };
+		}
+		return o;
+	}, [prefillSourceMap]);
+
+	const [prefillMode, setPrefillMode] = useState(false);
+	const [selectedPrefillKey, setSelectedPrefillKey] = useState<PrefillKey | null>(null);
+
+	const applyPrefill = (key: PrefillKey) => {
+		const src = prefillSourceMap[key];
+
+		setFormData(prev => ({
+			...prev,
+
+			/* IDs are *NOT* copied intentionally */
+			name: src.name,
+			presetLabel: src.displayName,
+
+			stream: src.stream ?? prev.stream,
+			isEnabled: true, // always create *enabled* presets when adding
+
+			maxPromptLength: src.maxPromptLength !== undefined ? String(src.maxPromptLength) : prev.maxPromptLength,
+			maxOutputLength: src.maxOutputLength !== undefined ? String(src.maxOutputLength) : prev.maxOutputLength,
+			temperature: src.temperature !== undefined ? String(src.temperature) : prev.temperature,
+
+			reasoningSupport: !!src.reasoning,
+			reasoningType: src.reasoning?.type ?? prev.reasoningType,
+			reasoningLevel: src.reasoning?.level ?? prev.reasoningLevel,
+			reasoningTokens: src.reasoning?.tokens !== undefined ? String(src.reasoning.tokens) : prev.reasoningTokens,
+
+			systemPrompt: src.systemPrompt ?? prev.systemPrompt,
+			timeout: src.timeout !== undefined ? String(src.timeout) : prev.timeout,
+		}));
+	};
+
+	/* ───────────────────────── load / reset ──────────────────────────── */
 	useEffect(() => {
 		if (!isOpen) return;
 
 		const loadData = () => {
 			if (isEditMode && initialData) {
-				/* ---------- EDIT mode: copy ONLY what exists ---------------- */
+				/* ───── EDIT mode: copy ONLY what exists ───── */
 				setFormData({
 					presetLabel: initialData.displayName,
 					name: initialData.name,
@@ -130,7 +185,6 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 				});
 				setModelPresetID(initialData.id);
 			} else {
-				/* ---------- ADD mode: pre-fill with defaults ---------------- */
 				setFormData({
 					presetLabel: '',
 					name: '',
@@ -147,13 +201,16 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 					timeout: String(AddModeDefaults.timeout ?? ''),
 				});
 				setModelPresetID('' as ModelPresetID);
+				/* reset prefill helpers */
+				setPrefillMode(false);
+				setSelectedPrefillKey(null);
 			}
 
 			setErrors({});
 		};
 
 		loadData();
-	}, [isOpen]); // keep deps minimal to avoid needless reloads
+	}, [isOpen]);
 
 	type ValidationField =
 		| 'modelPresetID'
@@ -233,7 +290,6 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 		setFormData(prev => ({ ...prev, [field]: value }));
 	};
 
-	/* unified change handler for inputs ------------------------------- */
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
 		const { name, value, type, checked } = e.target as HTMLInputElement;
 
@@ -259,7 +315,6 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 
 		const newErrors = runValidation();
 		setErrors(newErrors);
-
 		if (Object.keys(newErrors).length !== 0) return;
 
 		const finalModelPresetID = modelPresetID.trim();
@@ -280,7 +335,6 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 			timeout: parseOrDefault(formData.timeout, defaultValues.timeout ?? 60),
 
 			systemPrompt: formData.systemPrompt,
-			// additionalParametersRawJSON intentionally omitted unless you add a field
 		};
 
 		if (formData.reasoningSupport) {
@@ -314,6 +368,59 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 
 				{/* FORM ---------------------------------------------------- */}
 				<form onSubmit={handleSubmit} className="space-y-4">
+					{/* ───── Prefill (ADD mode only) ───── */}
+					{!isEditMode && (
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Prefill from Existing</span>
+							</label>
+
+							<div className="col-span-9 flex items-center gap-2">
+								{!prefillMode && (
+									<button
+										type="button"
+										className="btn btn-sm btn-ghost rounded-2xl flex items-center"
+										onClick={() => {
+											setPrefillMode(true);
+										}}
+									>
+										<FiUpload size={14} />
+										<span className="ml-1">Copy Existing Preset</span>
+									</button>
+								)}
+
+								{prefillMode && (
+									<>
+										<Dropdown<PrefillKey>
+											dropdownItems={prefillDropdownItems}
+											selectedKey={selectedPrefillKey ?? ('' as PrefillKey)}
+											onChange={key => {
+												setSelectedPrefillKey(key);
+												applyPrefill(key);
+												/* automatically close dropdown afterwards */
+												setPrefillMode(false);
+											}}
+											filterDisabled={false}
+											title="Select model preset to copy"
+											getDisplayName={k => prefillDropdownItems[k].displayName}
+										/>
+										<button
+											type="button"
+											className="btn btn-sm btn-ghost rounded-2xl"
+											onClick={() => {
+												setPrefillMode(false);
+												setSelectedPrefillKey(null);
+											}}
+											title="Cancel prefill"
+										>
+											<FiX size={12} />
+										</button>
+									</>
+								)}
+							</div>
+						</div>
+					)}
+
 					{/* ModelPresetID ------------------------------------- */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
@@ -631,6 +738,7 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 						</div>
 					</div>
 
+					{/* ACTIONS ------------------------------------------ */}
 					<div className="modal-action">
 						<button type="button" className="btn rounded-2xl" onClick={onClose}>
 							Cancel
