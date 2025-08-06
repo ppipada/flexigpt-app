@@ -351,6 +351,7 @@ const ModelPresetPage: FC = () => {
 					}}
 					onSubmit={(n, payload, key) => handleProviderModalSubmit(n, payload, key, modalMode === 'edit')}
 					existingProviderNames={Object.keys(providerPresets)}
+					allProviderPresets={providerPresets}
 					initialPreset={modalMode === 'edit' && editProvider ? providerPresets[editProvider] : undefined}
 					apiKeyAlreadySet={editProvider ? !!providerKeySet[editProvider] : false}
 				/>

@@ -1,12 +1,15 @@
 import type { FC } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
-import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
+import { FiAlertCircle, FiHelpCircle, FiUpload, FiX } from 'react-icons/fi';
 
 import { ProviderAPIType, type ProviderName, type ProviderPreset } from '@/spec/modelpreset';
 
+import { GenerateRandomNumberString } from '@/lib/encode_decode';
 import { omitManyKeys } from '@/lib/obj_utils';
 import { isValidUrl } from '@/lib/text_utils';
+
+import Dropdown from '@/components/dropdown';
 
 type FormData = {
 	providerName: string;
@@ -42,8 +45,11 @@ interface Props {
 		apiKey: string | null
 	) => void;
 	existingProviderNames: ProviderName[];
-	initialPreset?: ProviderPreset; // for edit
-	apiKeyAlreadySet?: boolean; // for edit
+	allProviderPresets: Record<ProviderName, ProviderPreset>;
+
+	/* edit-mode helpers */
+	initialPreset?: ProviderPreset;
+	apiKeyAlreadySet?: boolean;
 }
 
 const AddEditProviderPresetModal: FC<Props> = ({
@@ -52,11 +58,41 @@ const AddEditProviderPresetModal: FC<Props> = ({
 	onClose,
 	onSubmit,
 	existingProviderNames,
+	allProviderPresets,
 	initialPreset,
 	apiKeyAlreadySet = false,
 }) => {
 	const [formData, setFormData] = useState<FormData>(DEFAULT_FORM);
 	const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+
+	const prefillDropdownItems: Record<ProviderName, { isEnabled: boolean; displayName: string }> = useMemo(() => {
+		const o: Record<ProviderName, { isEnabled: boolean; displayName: string }> = {} as any;
+		for (const [name, p] of Object.entries(allProviderPresets)) {
+			o[name] = { isEnabled: true, displayName: p.displayName || name };
+		}
+		return o;
+	}, [allProviderPresets]);
+
+	const [prefillMode, setPrefillMode] = useState(false);
+	const [selectedPrefillKey, setSelectedPrefillKey] = useState<ProviderName | null>(null);
+
+	const applyPrefill = (key: ProviderName) => {
+		const src = allProviderPresets[key];
+
+		setFormData(prev => ({
+			...prev,
+
+			/* IDs & secrets are intentionally NOT copied */
+			displayName: src.displayName + '-' + GenerateRandomNumberString(3),
+			apiType: src.apiType,
+			isEnabled: true, // always enable newly added presets
+			origin: src.origin,
+			chatCompletionPathPrefix: src.chatCompletionPathPrefix,
+			apiKeyHeaderKey: src.apiKeyHeaderKey,
+			defaultHeadersRawJSON: JSON.stringify(src.defaultHeaders, null, 2),
+			apiKey: '',
+		}));
+	};
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -75,13 +111,15 @@ const AddEditProviderPresetModal: FC<Props> = ({
 			});
 		} else {
 			setFormData(DEFAULT_FORM);
+			/* reset prefill helpers */
+			setPrefillMode(false);
+			setSelectedPrefillKey(null);
 		}
 		setErrors({});
 	}, [isOpen, mode, initialPreset]);
 
 	const validateField = (field: keyof FormData, val: string) => {
 		let newErrs = { ...errors };
-
 		const v = val.trim();
 
 		if (field === 'providerName' && mode === 'add') {
@@ -145,6 +183,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
+		/* final validation pass */
 		(Object.entries(formData) as [keyof FormData, string][]).forEach(([k, v]) => {
 			if (typeof v === 'string') validateField(k, v);
 		});
@@ -179,7 +218,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 	return (
 		<dialog className="modal modal-open">
 			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
-				{/* header */}
+				{/* Header */}
 				<div className="flex justify-between items-center mb-4">
 					<h3 className="font-bold text-lg">{mode === 'add' ? 'Add Provider' : 'Edit Provider'}</h3>
 					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close" title="Close">
@@ -188,6 +227,58 @@ const AddEditProviderPresetModal: FC<Props> = ({
 				</div>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
+					{/* PREFILL (ADD mode only) */}
+					{mode === 'add' && (
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Prefill from Existing</span>
+							</label>
+
+							<div className="col-span-9 flex items-center gap-2">
+								{!prefillMode && (
+									<button
+										type="button"
+										className="btn btn-sm btn-ghost rounded-2xl flex items-center"
+										onClick={() => {
+											setPrefillMode(true);
+										}}
+									>
+										<FiUpload size={14} />
+										<span className="ml-1">Copy Existing Provider</span>
+									</button>
+								)}
+
+								{prefillMode && (
+									<>
+										<Dropdown<ProviderName>
+											dropdownItems={prefillDropdownItems}
+											selectedKey={selectedPrefillKey ?? ('' as ProviderName)}
+											onChange={key => {
+												setSelectedPrefillKey(key);
+												applyPrefill(key);
+												setPrefillMode(false); // auto-close
+											}}
+											filterDisabled={false}
+											title="Select provider to copy"
+											getDisplayName={k => prefillDropdownItems[k].displayName}
+										/>
+										<button
+											type="button"
+											className="btn btn-sm btn-ghost rounded-2xl"
+											onClick={() => {
+												setPrefillMode(false);
+												setSelectedPrefillKey(null);
+											}}
+											title="Cancel prefill"
+										>
+											<FiX size={12} />
+										</button>
+									</>
+								)}
+							</div>
+						</div>
+					)}
+
 					{/* Provider ID */}
 					<div className="grid grid-cols-12 gap-2 items-center">
 						<label className="label col-span-3">
@@ -293,7 +384,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 						</div>
 					</div>
 
-					{/* API-secret header key */}
+					{/* API-key header key */}
 					<div className="grid grid-cols-12 gap-2 items-center">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">API-Key Header Key</span>
@@ -336,18 +427,14 @@ const AddEditProviderPresetModal: FC<Props> = ({
 						</div>
 					</div>
 
-					{/* API-secret */}
+					{/* API-Key */}
 					<div className="grid grid-cols-12 gap-2 items-center">
 						<label className="label col-span-3 flex flex-col items-start gap-0.5">
-							{/* main label */}
 							<span className="label-text text-sm">API-Key*</span>
-
-							{/* optional note shown only when editing and a key is already set */}
 							{mode === 'edit' && apiKeyAlreadySet && (
 								<span className="label-text-alt text-xs">(leave blank to keep current)</span>
 							)}
 						</label>
-
 						<div className="col-span-9">
 							<input
 								type="password"
@@ -359,7 +446,6 @@ const AddEditProviderPresetModal: FC<Props> = ({
 								spellCheck="false"
 								autoComplete="off"
 							/>
-
 							{errors.apiKey && (
 								<div className="label">
 									<span className="label-text-alt text-error flex items-center gap-1">
@@ -369,6 +455,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 							)}
 						</div>
 					</div>
+
 					{/* Enabled toggle */}
 					<div className="grid grid-cols-12 gap-2 items-center">
 						<label className="label col-span-3 cursor-pointer">
@@ -385,7 +472,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 						</div>
 					</div>
 
-					{/* actions */}
+					{/* Actions */}
 					<div className="modal-action">
 						<button type="button" className="btn rounded-2xl" onClick={onClose}>
 							Cancel
