@@ -130,7 +130,7 @@
 		--text-neutral-custom-light: color-mix(in oklch, var(--color-neutral) 80%, white 20%);
 
 		/* dark versions */
-		--bg-mermaid-dark: color-mix(in oklch, var(--color-neutral) 50%, white 50%);
+		--bg-mermaid-dark: var(--color-base-300);
 		--bg-code-dark: var(--color-base-300);
 		--bg-code-header-dark: var(--color-base-200);
 		--text-code-dark: var(--color-base-content);
@@ -148,10 +148,10 @@
 
 	[data-theme='nordpolarnight'],
 	[data-theme='abyss'],
+	[data-theme='aqua'],
 	[data-theme='black'],
 	[data-theme='business'],
 	[data-theme='coffee'],
-	[data-theme='cyberpunk'],
 	[data-theme='dark'],
 	[data-theme='dim'],
 	[data-theme='dracula'],
@@ -159,7 +159,6 @@
 	[data-theme='halloween'],
 	[data-theme='luxury'],
 	[data-theme='night'],
-	[data-theme='nord'],
 	[data-theme='sunset'],
 	[data-theme='synthwave'] {
 		--bg-mermaid: var(--bg-mermaid-dark);

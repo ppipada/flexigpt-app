@@ -2,8 +2,9 @@
 
 ## Laundry list
 
-- [ ] scroll non needed on assistents reply, let it be where it is.
-- [ ] the scroll down buttons possition needs adjusting a bit
+- [ ] theming adjustments for mermaid and code
+- [x] scroll non needed on assistents reply, let it be where it is.
+- [x] the scroll down buttons possition needs adjusting a bit
 - [ ] Settings/Presets/Prompt/tool:
 
   - UI

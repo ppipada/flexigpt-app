@@ -3,6 +3,7 @@ import { type FC, useEffect } from 'react';
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 
 import { type AppTheme, ThemeType } from '@/spec/setting';
+import { CustomThemeDark, CustomThemeLight } from '@/spec/theme_consts';
 
 import { IS_WAILS_PLATFORM } from '@/lib/features';
 
@@ -13,7 +14,7 @@ import { initBuiltIns } from '@/apis/builtin_provider_cache';
 import { getStartupThemeSync, initStartupTheme } from '@/apis/builtin_theme_cache';
 
 import Sidebar from '@/components/sidebar';
-import { CustomThemeDark, CustomThemeLight, toProviderName } from '@/components/theme';
+import { toProviderName } from '@/components/theme';
 
 import '@/globals.css';
 

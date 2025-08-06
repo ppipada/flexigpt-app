@@ -1,27 +1,22 @@
 import type { FC } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import mermaid from 'mermaid';
+import mermaid, { type MermaidConfig } from 'mermaid';
 
 import { Base64EncodeUTF8 } from '@/lib/encode_decode';
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
+import { useIsDarkMermaid } from '@/hooks/use_is_dark_mermaid';
+
 import DownloadButton from '@/components/download_button';
-
-let mermaidInitialized = false;
-
-function initializeMermaid() {
-	if (!mermaidInitialized) {
-		mermaid.initialize({ startOnLoad: false, theme: 'default', suppressErrorRendering: true, securityLevel: 'loose' });
-		mermaidInitialized = true;
-	}
-}
 
 interface MermaidDiagramProps {
 	code: string;
 }
 
 const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
+	const isDark = useIsDarkMermaid();
+
 	const inlineDiagramRef = useRef<HTMLDivElement | null>(null);
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
 	const modalRef = useRef<HTMLDivElement | null>(null);
@@ -30,8 +25,28 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 	const [zoomOpen, setZoomOpen] = useState(false);
 
 	const uniqueId = useRef(`mermaid-${getUUIDv7()}`);
+
+	const mermaidConfig = useMemo<MermaidConfig>(
+		() => ({
+			startOnLoad: false,
+			theme: isDark ? 'dark' : 'default',
+			suppressErrorRendering: true,
+			securityLevel: 'loose',
+		}),
+		[isDark]
+	);
+
+	/* Initialise Mermaid only when the theme changes */
+	const lastTheme = useRef<'dark' | 'default'>('default');
 	useEffect(() => {
-		initializeMermaid();
+		const t = mermaidConfig.theme as 'dark' | 'default';
+		if (t !== lastTheme.current) {
+			mermaid.initialize(mermaidConfig);
+			lastTheme.current = t;
+		}
+	}, [mermaidConfig]);
+
+	useEffect(() => {
 		let isMounted = true;
 		if (inlineDiagramRef.current) {
 			inlineDiagramRef.current.innerHTML = '';
@@ -61,7 +76,7 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 		return () => {
 			isMounted = false;
 		};
-	}, [code]);
+	}, [code, isDark]);
 
 	useEffect(() => {
 		const dlg = dialogRef.current;
@@ -195,7 +210,7 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 
 				{/* modal box */}
 				<div
-					className="modal-box max-w-[90vw] h-[90vh] cursor-zoom-out flex items-center justify-center"
+					className="modal-box max-w-[90vw] h-[90vh] cursor-zoom-out flex items-center justify-center bg-mermaid"
 					onClick={() => {
 						setZoomOpen(false);
 					}}

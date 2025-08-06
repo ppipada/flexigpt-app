@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { FiMonitor, FiMoon, FiSun } from 'react-icons/fi';
 
 import { type AppTheme, ThemeType } from '@/spec/setting';
+import { CustomThemeDark, CustomThemeLight, DAISYUI_BUILTIN_THEMES } from '@/spec/theme_consts';
 
 import { useTheme } from '@/hooks/use_theme';
 
@@ -12,49 +13,8 @@ import { getStartupThemeSync, updateStartupTheme } from '@/apis/builtin_theme_ca
 
 import Dropdown, { type DropdownItem } from '@/components/dropdown';
 
-export const CustomThemeLight = 'nordsnowstorm';
-export const CustomThemeDark = 'nordpolarnight';
-
-const DAISYUI_BUILTIN_THEMES = [
-	'abyss',
-	'acid',
-	'aqua',
-	'autumn',
-	'black',
-	'bumblebee',
-	'business',
-	'caramellatte',
-	'cmyk',
-	'coffee',
-	'corporate',
-	'cupcake',
-	'cyberpunk',
-	'dark',
-	'dim',
-	'dracula',
-	'emerald',
-	'fantasy',
-	'forest',
-	'garden',
-	'halloween',
-	'lemonade',
-	'light',
-	'lofi',
-	'luxury',
-	'night',
-	'nord',
-	'pastel',
-	'retro',
-	'silk',
-	'sunset',
-	'synthwave',
-	'valentine',
-	'winter',
-	'wireframe',
-] as const;
-
 type OtherThemeName = (typeof DAISYUI_BUILTIN_THEMES)[number];
-const isOtherThemeName = (n: string): n is OtherThemeName => (DAISYUI_BUILTIN_THEMES as readonly string[]).includes(n);
+const isOtherThemeName = (n: string): n is OtherThemeName => DAISYUI_BUILTIN_THEMES.includes(n);
 
 export const toProviderName = (t: ThemeType | AppTheme): string => {
 	const type = typeof t === 'string' ? t : t.type;
