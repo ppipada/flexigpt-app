@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ModelParams } from '@/spec/aiprovider';
 import type { Conversation, ConversationMessage, ConversationSearchItem } from '@/spec/conversation';
@@ -47,7 +47,6 @@ const ChatScreen: FC = () => {
 
 	const chatInputRef = useRef<ChatInputFieldHandle>(null);
 	const chatContainerRef = useRef<HTMLDivElement>(null);
-	const bottomRef = useRef<HTMLDivElement>(null);
 
 	const isSubmittingRef = useRef(false);
 	// Has the current conversation already been persisted?
@@ -58,12 +57,17 @@ const ChatScreen: FC = () => {
 		chatInputRef.current?.focus();
 	}, []);
 
-	// Scroll to bottom.
-	// Tell the browser to bring the sentinel into view.
-	// useLayoutEffect guarantees it runs  *after* the DOM mutated but *before* the frame is painted.
-	useLayoutEffect(() => {
-		bottomRef.current?.scrollIntoView({ block: 'end' });
-	}, [chat.messages, streamedMessage, isStreaming]);
+	// Scroll to bottom. Tell the browser to bring the sentinel into view.
+	useEffect(() => {
+		const timeout = setTimeout(() => {
+			if (chatContainerRef.current) {
+				chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
+			}
+		}, 100);
+		return () => {
+			clearTimeout(timeout);
+		};
+	}, [chat.messages]);
 
 	const bumpSearchKey = async () => {
 		await new Promise(resolve => setTimeout(resolve, 50));
@@ -331,7 +335,6 @@ const ChatScreen: FC = () => {
 				>
 					<div className="w-11/12 lg:w-5/6">
 						<div className="w-full flex-1 space-y-4">{renderedMessages}</div>
-						<div ref={bottomRef} />
 					</div>
 				</div>
 
@@ -344,7 +347,7 @@ const ChatScreen: FC = () => {
 			</div>
 
 			{/* SCROLL-TO-BOTTOM BUTTON */}
-			<div className="fixed bottom-0 right-0 mb-16 mr-0 lg:mr-16">
+			<div className="fixed bottom-0 right-0 mb-28 mr-0 lg:mr-16">
 				<ButtonScrollToBottom
 					scrollContainerRef={chatContainerRef}
 					size={32}

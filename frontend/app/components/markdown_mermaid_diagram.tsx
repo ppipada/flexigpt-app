@@ -150,10 +150,10 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 	return (
 		<>
 			{/* ---------- Inline card -------------------------------- */}
-			<div className="rounded-lg my-4 overflow-hidden" style={{ backgroundColor: '#E5E9F0' }}>
+			<div className="rounded-lg my-4 overflow-hidden bg-mermaid">
 				{/* header bar */}
-				<div className="flex justify-between items-center bg-gray-700 px-4">
-					<span className="text-white">Mermaid diagram</span>
+				<div className="flex justify-between items-center bg-code-header px-4">
+					<span className="text-code">Mermaid diagram</span>
 
 					<DownloadButton
 						valueFetcher={fetchDiagramAsBlob}
@@ -161,7 +161,7 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 						fileprefix="diagram"
 						isBinary={true}
 						language="mermaid"
-						className="btn btn-sm bg-transparent text-white border-none flex items-center shadow-none"
+						className="btn btn-sm bg-transparent text-code border-none flex items-center shadow-none"
 					/>
 				</div>
 
