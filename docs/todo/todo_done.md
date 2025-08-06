@@ -408,3 +408,15 @@
 - [x] Inbuilt model handling is pending in modelpresets.
 - [x] May be in settings too, check.
 - [x] In hybrid mode, temperature setting is not coming for sonnet etc
+
+- [x] Add other daisyui themes to settings and then use them as a dropdown
+- [x] theming adjustments for mermaid and code
+- [x] scroll non needed on assistents reply, let it be where it is.
+- [x] the scroll down buttons possition needs adjusting a bit
+- [x] Scroll button needs to become visible as soon as some streamed message arrives
+
+- Settings/Presets/Prompt/tool UI
+
+  - [x] Add Auth keys for provider should be allowed for current providers, else point to add provider page
+  - [x] In Add mode, it should be allowed to copy data from one of current things for all, with some mods in conflict avoiding fields
+  - [x] If we try to set a inbuilt preset as default for first time there is a error as of now.
