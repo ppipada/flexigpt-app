@@ -112,7 +112,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 					maxHeight: typeof maxMenuHeight === 'number' ? `${maxMenuHeight}px` : maxMenuHeight,
 				}}
 			>
-				{filteredKeys.map(key => (
+				{filteredKeys.sort().map(key => (
 					<li
 						key={key}
 						className="w-full cursor-pointer rounded-2xl"

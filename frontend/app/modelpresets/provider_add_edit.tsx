@@ -296,7 +296,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 					{/* API-secret header key */}
 					<div className="grid grid-cols-12 gap-2 items-center">
 						<label className="label col-span-3">
-							<span className="label-text text-sm">API-Auth-Key Header</span>
+							<span className="label-text text-sm">API-Key Header Key</span>
 						</label>
 						<div className="col-span-9">
 							<input
@@ -340,14 +340,11 @@ const AddEditProviderPresetModal: FC<Props> = ({
 					<div className="grid grid-cols-12 gap-2 items-center">
 						<label className="label col-span-3 flex flex-col items-start gap-0.5">
 							{/* main label */}
-							<span className="label-text text-sm">API-Auth-Key</span>
+							<span className="label-text text-sm">API-Key*</span>
 
 							{/* optional note shown only when editing and a key is already set */}
-							{mode === 'edit' && apiKeyAlreadySet ? (
-								<span className="label-text-alt text-xs text-gray-500">(leave blank to keep current)</span>
-							) : (
-								/* the asterisk for required field in “add” mode */
-								<span className="label-text-alt text-error text-xs">*</span>
+							{mode === 'edit' && apiKeyAlreadySet && (
+								<span className="label-text-alt text-xs">(leave blank to keep current)</span>
 							)}
 						</label>
 

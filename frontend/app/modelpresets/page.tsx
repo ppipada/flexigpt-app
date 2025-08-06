@@ -11,23 +11,25 @@ import { getAllProviderPresetsMap } from '@/apis/modelpreset_helper';
 
 import ActionDeniedAlert from '@/components/action_denied';
 import DownloadButton from '@/components/download_button';
-import Dropdown from '@/components/dropdown';
+import Dropdown, { type DropdownItem } from '@/components/dropdown';
 import Loader from '@/components/loader';
 
 import AddEditProviderPresetModal from '@/modelpresets/provider_add_edit';
 import ProviderPresetCard from '@/modelpresets/provider_presets_card';
 
-const ModelPresetPage: FC = () => {
-	/* ─────────────── state ─────────────── */
-	// default provider is *unknown* until it is fetched
-	const [defaultProvider, setDefaultProvider] = useState<ProviderName | undefined>(undefined);
+// put it somewhere near the top of the file
+const sortByDisplayName = ([, a]: [string, ProviderPreset], [, b]: [string, ProviderPreset]) =>
+	a.displayName.localeCompare(b.displayName);
+/* -------------------------------------------------------------------------- */
 
+const ModelPresetPage: FC = () => {
+	/* ----------------------------- local states ---------------------------- */
+	const [defaultProvider, setDefaultProvider] = useState<ProviderName | undefined>(undefined);
 	const [providerPresets, setProviderPresets] = useState<Record<ProviderName, ProviderPreset>>({});
 	const [providerKeySet, setProviderKeySet] = useState<Record<ProviderName, boolean>>({});
 
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-
 	const [showDenied, setShowDenied] = useState(false);
 	const [deniedMsg, setDeniedMsg] = useState('');
 
@@ -35,24 +37,21 @@ const ModelPresetPage: FC = () => {
 	const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
 	const [editProvider, setEditProvider] = useState<ProviderName | null>(null);
 
-	/* ─────────────── data fetch ─────────────── */
+	/* ---------------------------------------------------------------------- */
+	/*                             initial loading                            */
+	/* ---------------------------------------------------------------------- */
 	useEffect(() => {
 		(async () => {
-			setLoading(true);
-			setError(null);
 			try {
-				const settingsPromise = settingstoreAPI.getSettings();
-				const defProvPromise = modelPresetStoreAPI.getDefaultProvider();
-				const presetsPromise = getAllProviderPresetsMap(true);
-
-				const [settings, defProv, allProviderPresets] = await Promise.all([
-					settingsPromise,
-					defProvPromise,
-					presetsPromise,
+				setLoading(true);
+				const [settings, defProv, presets] = await Promise.all([
+					settingstoreAPI.getSettings(),
+					modelPresetStoreAPI.getDefaultProvider(),
+					getAllProviderPresetsMap(true),
 				]);
 
 				setDefaultProvider(defProv);
-				setProviderPresets(allProviderPresets);
+				setProviderPresets(presets);
 				setProviderKeySet(
 					Object.fromEntries(
 						settings.authKeys.filter(k => k.type === AuthKeyTypeProvider).map(k => [k.keyName, k.nonEmpty])
@@ -67,8 +66,10 @@ const ModelPresetPage: FC = () => {
 		})();
 	}, []);
 
-	/* ─────────────── derived ─────────────── */
-	const enabledProviders = useMemo(
+	/* ---------------------------------------------------------------------- */
+	/*                            derived helpers                             */
+	/* ---------------------------------------------------------------------- */
+	const enabledProviderNames = useMemo(
 		() =>
 			Object.values(providerPresets)
 				.filter(p => p.isEnabled)
@@ -76,7 +77,48 @@ const ModelPresetPage: FC = () => {
 		[providerPresets]
 	);
 
-	/* ─────────────── handlers ─────────────── */
+	/* ------------------------------------------------------------------ */
+	/* enabledProviderPresets – contains ONLY the enabled providers       */
+	/* ------------------------------------------------------------------ */
+	const enabledProviderPresets = useMemo<Partial<Record<ProviderName, ProviderPreset>>>(() => {
+		const obj: Partial<Record<ProviderName, ProviderPreset>> = {};
+		for (const [name, preset] of Object.entries(providerPresets)) {
+			if (preset.isEnabled) obj[name] = preset;
+		}
+		return obj;
+	}, [providerPresets]);
+
+	/* ------------------------------------------------------------------ */
+	/* safeDefaultKey – use it only if it exists inside the partial map   */
+	/* ------------------------------------------------------------------ */
+	const safeDefaultKey: ProviderName | undefined =
+		defaultProvider && defaultProvider in enabledProviderPresets ? defaultProvider : undefined;
+	/* ---------------------------------------------------------------------- */
+	/*                          automatic default fix                         */
+	/* ---------------------------------------------------------------------- */
+	/* If no default is set OR the current default somehow became disabled,
+	   automatically pick the first enabled provider (if any).                */
+	useEffect(() => {
+		if (enabledProviderNames.length === 0) return; // nothing enabled ⇒ nothing to do
+
+		if (!defaultProvider || !providerPresets[defaultProvider].isEnabled) {
+			const first = enabledProviderNames[0];
+			(async () => {
+				try {
+					await modelPresetStoreAPI.patchDefaultProvider(first);
+					setDefaultProvider(first);
+				} catch (err) {
+					console.error(err);
+					setDeniedMsg('Failed setting default provider.');
+					setShowDenied(true);
+				}
+			})();
+		}
+	}, [enabledProviderNames, defaultProvider, providerPresets]);
+
+	/* ---------------------------------------------------------------------- */
+	/*                              event handlers                            */
+	/* ---------------------------------------------------------------------- */
 	const handleDefaultProviderChange = async (prov: ProviderName) => {
 		try {
 			setDefaultProvider(prov);
@@ -88,8 +130,21 @@ const ModelPresetPage: FC = () => {
 		}
 	};
 
+	/* Prevent disabling the current default provider */
 	const handleProviderPresetChange = (name: ProviderName, newPreset: ProviderPreset) => {
+		if (name === defaultProvider && !newPreset.isEnabled) {
+			setDeniedMsg('Cannot disable the current default provider. Pick another default first.');
+			setShowDenied(true);
+			return;
+		}
+
 		setProviderPresets(prev => ({ ...prev, [name]: newPreset }));
+
+		/* If there is no default yet and this preset has just been enabled,
+		   make it the default automatically. */
+		if (!defaultProvider && newPreset.isEnabled) {
+			handleDefaultProviderChange(name);
+		}
 	};
 
 	const handleProviderDelete = async (name: ProviderName) => {
@@ -99,22 +154,22 @@ const ModelPresetPage: FC = () => {
 			return;
 		}
 
-		try {
-			if (name === defaultProvider) {
-				setDeniedMsg('Cannot delete the current default provider. Pick another default first.');
-				setShowDenied(true);
-				return;
-			}
+		if (name === defaultProvider) {
+			setDeniedMsg('Cannot delete the current default provider. Pick another default first.');
+			setShowDenied(true);
+			return;
+		}
 
+		try {
 			await modelPresetStoreAPI.deleteProviderPreset(name);
-			await settingstoreAPI.deleteAuthKey(AuthKeyTypeProvider, name).catch(() => void 0); // ignore if not existing
+			await settingstoreAPI.deleteAuthKey(AuthKeyTypeProvider, name).catch(() => void 0); // ignore missing key
 
 			setProviderPresets(prev => {
-				const { [name]: _, ...rest } = prev;
+				const { [name]: _removed, ...rest } = prev;
 				return rest;
 			});
 			setProviderKeySet(prev => {
-				const { [name]: _, ...rest } = prev;
+				const { [name]: _removed, ...rest } = prev;
 				return rest;
 			});
 		} catch (err) {
@@ -130,13 +185,19 @@ const ModelPresetPage: FC = () => {
 		apiKey: string | null,
 		isEdit: boolean
 	) => {
+		/* Cannot disable current default */
+		if (isEdit && name === defaultProvider && !payload.isEnabled) {
+			setDeniedMsg('Cannot disable the current default provider. Pick another default first.');
+			setShowDenied(true);
+			return;
+		}
+
 		try {
 			await modelPresetStoreAPI.putProviderPreset(name, payload);
 			if (apiKey && apiKey.trim()) {
 				await settingstoreAPI.setAuthKey(AuthKeyTypeProvider, name, apiKey.trim());
 			}
 
-			// optimistic update
 			setProviderPresets(prev => ({
 				...prev,
 				[name]: {
@@ -147,7 +208,16 @@ const ModelPresetPage: FC = () => {
 					modelPresets: {},
 				} as ProviderPreset,
 			}));
-			if (apiKey && apiKey.trim()) setProviderKeySet(prev => ({ ...prev, [name]: true }));
+
+			if (apiKey && apiKey.trim()) {
+				setProviderKeySet(prev => ({ ...prev, [name]: true }));
+			}
+
+			/* Auto-set default if none exists & this one is enabled */
+			if (!defaultProvider && payload.isEnabled) {
+				await modelPresetStoreAPI.patchDefaultProvider(name);
+				setDefaultProvider(name);
+			}
 		} catch (err) {
 			console.error(err);
 			setDeniedMsg(isEdit ? 'Failed updating provider.' : 'Failed adding provider.');
@@ -155,7 +225,7 @@ const ModelPresetPage: FC = () => {
 		}
 	};
 
-	/* ---------- helpers ---------- */
+	/* ---------------------------- misc helpers ---------------------------- */
 	const fetchValue = async () => {
 		try {
 			const [{ providers }, defProv] = await Promise.all([
@@ -188,14 +258,15 @@ const ModelPresetPage: FC = () => {
 		setModalOpen(true);
 	};
 
-	// show full-page loader until the first batch of data arrives
-	if (loading) {
-		return <Loader text="Loading model presets..." />;
-	}
+	/* ---------------------------------------------------------------------- */
+	/*                                  UI                                    */
+	/* ---------------------------------------------------------------------- */
+
+	if (loading) return <Loader text="Loading model presets…" />;
 
 	return (
 		<div className="flex flex-col items-center w-full h-full">
-			{/* header */}
+			{/* ------------------------------ header ----------------------------- */}
 			<div className="w-full flex justify-center fixed top-8 z-10">
 				<div className="w-10/12 lg:w-2/3 flex items-center justify-between p-2">
 					<h1 className="text-xl font-semibold flex-grow text-center">Model Presets</h1>
@@ -211,28 +282,31 @@ const ModelPresetPage: FC = () => {
 				</div>
 			</div>
 
-			{/* body */}
+			{/* ------------------------------ body ------------------------------ */}
 			<div
 				className="flex flex-col items-center w-full grow mt-24 overflow-y-auto"
 				style={{ maxHeight: 'calc(100vh - 128px)' }}
 			>
 				<div className="flex flex-col space-y-4 w-5/6 xl:w-2/3">
-					{/* default-provider row */}
+					{/* --------------- default-provider selection row ---------------- */}
 					<div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2 mb-8">
 						<div className="grid grid-cols-12 items-center gap-4">
 							<label className="col-span-3 text-sm font-medium">Default Provider</label>
 
 							<div className="col-span-6">
-								{/* render dropdown only when we have both data pieces */}
-								{defaultProvider && Object.keys(providerPresets).length > 0 && (
+								{enabledProviderNames.length > 0 && safeDefaultKey ? (
 									<Dropdown<ProviderName>
-										dropdownItems={providerPresets}
-										selectedKey={defaultProvider}
+										dropdownItems={enabledProviderPresets as Record<string, DropdownItem>}
+										/* use the safe key */
+										selectedKey={safeDefaultKey}
 										onChange={handleDefaultProviderChange}
 										filterDisabled={false}
 										title="Select default provider"
-										getDisplayName={k => providerPresets[k].displayName}
+										/* fallback so it never crashes */
+										getDisplayName={k => enabledProviderPresets[k]?.displayName ?? ''}
 									/>
+								) : (
+									<span className="text-sm text-error">Enable at least one provider first.</span>
 								)}
 							</div>
 
@@ -244,27 +318,29 @@ const ModelPresetPage: FC = () => {
 						</div>
 					</div>
 
-					{/* provider cards / errors */}
+					{/* -------------------- provider cards / errors ------------------ */}
 					{error && <p className="text-error text-center mt-8">{error}</p>}
 
 					{!error &&
-						Object.entries(providerPresets).map(([name, p]) => (
-							<ProviderPresetCard
-								key={name}
-								provider={name}
-								preset={p}
-								defaultProvider={defaultProvider ?? ''}
-								authKeySet={!!providerKeySet[name]}
-								enabledProviders={enabledProviders}
-								onProviderPresetChange={handleProviderPresetChange}
-								onProviderDelete={handleProviderDelete}
-								onRequestEdit={openEditModal}
-							/>
-						))}
+						Object.entries(providerPresets)
+							.sort(sortByDisplayName)
+							.map(([name, p]) => (
+								<ProviderPresetCard
+									key={name}
+									provider={name}
+									preset={p}
+									defaultProvider={defaultProvider ?? ''}
+									authKeySet={!!providerKeySet[name]}
+									enabledProviders={enabledProviderNames}
+									onProviderPresetChange={handleProviderPresetChange}
+									onProviderDelete={handleProviderDelete}
+									onRequestEdit={openEditModal}
+								/>
+							))}
 				</div>
 			</div>
 
-			{/* add / edit modal */}
+			{/* ----------------------- Add / Edit modal ------------------------ */}
 			{modalOpen && (
 				<AddEditProviderPresetModal
 					isOpen={modalOpen}
@@ -279,7 +355,7 @@ const ModelPresetPage: FC = () => {
 				/>
 			)}
 
-			{/* alerts */}
+			{/* ---------------------------- alerts ----------------------------- */}
 			{showDenied && (
 				<ActionDeniedAlert
 					isOpen={showDenied}

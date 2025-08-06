@@ -67,11 +67,12 @@ func (w *ModelPresetStoreWrapper) PutProviderPreset(
 	req *spec.PutProviderPresetRequest,
 ) (*spec.PutProviderPresetResponse, error) {
 	return middleware.WithRecoveryResp(func() (*spec.PutProviderPresetResponse, error) {
-		resp, err := w.store.PutProviderPreset(context.Background(), req)
-		if err != nil {
-			return nil, err
-		}
-		if _, err = w.providerSetWrapper.AddProvider(
+		// First try to delete from provider apis, it is ok if it is not present.
+		_, _ = w.providerSetWrapper.DeleteProvider(
+			&inferenceSpec.DeleteProviderRequest{Provider: req.ProviderName},
+		)
+		// Then try to add in provider apis, need to skip adding to store if it cannot be added.
+		if _, err := w.providerSetWrapper.AddProvider(
 			&inferenceSpec.AddProviderRequest{
 				Provider: req.ProviderName,
 				Body: &inferenceSpec.AddProviderRequestBody{
@@ -82,6 +83,10 @@ func (w *ModelPresetStoreWrapper) PutProviderPreset(
 					DefaultHeaders:           req.Body.DefaultHeaders,
 				},
 			}); err != nil {
+			return nil, err
+		}
+		resp, err := w.store.PutProviderPreset(context.Background(), req)
+		if err != nil {
 			return nil, err
 		}
 		return resp, nil

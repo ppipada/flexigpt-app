@@ -49,56 +49,42 @@ const ProviderPresetCard: FC<Props> = ({
 	onProviderDelete,
 	onRequestEdit,
 }) => {
-	/* ───────── local & derived ───────── */
-	const [localPreset, setLocalPreset] = useState<ProviderPreset>(preset);
-	useEffect(() => {
-		setLocalPreset(preset);
-	}, [preset]);
+	/* ───────── local ui-state ───────── */
+	const [expanded, setExpanded] = useState(false);
 
-	/* api-key state (keeps up-to-date once user sets key) */
+	/* keep key status fresh */
 	const [keySet, setKeySet] = useState(authKeySet);
 	useEffect(() => {
 		setKeySet(authKeySet);
 	}, [authKeySet]);
 
-	const [expanded, setExpanded] = useState(false);
-
 	const [selectedID, setSelectedID] = useState<ModelPresetID | null>(null);
 	const [showModModal, setShowModModal] = useState(false);
-
 	const [showDelProv, setShowDelProv] = useState(false);
 	const [showDelModel, setShowDelModel] = useState(false);
-
 	const [showDenied, setShowDenied] = useState(false);
 	const [deniedMsg, setDeniedMsg] = useState('');
 
-	/* auth-key modal */
+	/* api-key modal */
 	const [showKeyModal, setShowKeyModal] = useState(false);
 	const [authKeys, setAuthKeys] = useState<AuthKeyMeta[]>([]);
 	const [keyModalInitial, setKeyModalInitial] = useState<AuthKeyMeta | null>(null);
 
-	/* helpers */
-	const isLastEnabled = localPreset.isEnabled && enabledProviders.length === 1;
-	const providerIsBuiltIn = localPreset.isBuiltIn;
+	/* ───────── derived helpers ───────── */
+	const isLastEnabled = preset.isEnabled && enabledProviders.length === 1;
+	const providerIsBuiltIn = preset.isBuiltIn;
 
-	const modelPresets = localPreset.modelPresets;
-	const defaultModelPresetID = localPreset.defaultModelPresetID;
+	const modelPresets = preset.modelPresets;
+	const defaultModelPresetID = preset.defaultModelPresetID;
 	const modelEntries = Object.entries(modelPresets);
 	const hasModels = modelEntries.length > 0;
-
-	const updateLocal = (updater: (p: ProviderPreset) => ProviderPreset) => {
-		setLocalPreset(prev => {
-			const upd = updater(prev);
-			onProviderPresetChange(provider, upd);
-			return upd;
-		});
-	};
+	const canDeleteProvider = !providerIsBuiltIn && !hasModels;
 
 	/* ───────── provider enable / disable ───────── */
 	const toggleProviderEnable = async () => {
-		if (!localPreset.isEnabled) {
+		if (!preset.isEnabled) {
 			await modelPresetStoreAPI.patchProviderPreset(provider, true);
-			updateLocal(p => ({ ...p, isEnabled: true }));
+			onProviderPresetChange(provider, { ...preset, isEnabled: true });
 			return;
 		}
 
@@ -115,7 +101,7 @@ const ProviderPresetCard: FC<Props> = ({
 
 		try {
 			await modelPresetStoreAPI.patchProviderPreset(provider, false);
-			updateLocal(p => ({ ...p, isEnabled: false }));
+			onProviderPresetChange(provider, { ...preset, isEnabled: false });
 		} catch {
 			setDeniedMsg('Failed toggling provider.');
 			setShowDenied(true);
@@ -124,7 +110,7 @@ const ProviderPresetCard: FC<Props> = ({
 
 	/* ───────── expand / collapse ───────── */
 	const toggleExpand = () => {
-		if (localPreset.isEnabled) setExpanded(p => !p);
+		if (preset.isEnabled) setExpanded(p => !p);
 	};
 
 	/* ───────── delete provider ───────── */
@@ -134,18 +120,22 @@ const ProviderPresetCard: FC<Props> = ({
 			setShowDenied(true);
 			return;
 		}
+		if (hasModels) {
+			setDeniedMsg('Only empty providers can be deleted. Remove all model presets first.');
+			setShowDenied(true);
+			return;
+		}
 		setShowDelProv(true);
 	};
 	const confirmDeleteProvider = async () => {
 		await onProviderDelete(provider);
 		setShowDelProv(false);
 	};
-
 	/* ───────── default model change ───────── */
 	const handleDefaultModelChange = async (id: ModelPresetID) => {
 		try {
 			await modelPresetStoreAPI.patchProviderPreset(provider, undefined, id);
-			updateLocal(p => ({ ...p, defaultModelPresetID: id }));
+			onProviderPresetChange(provider, { ...preset, defaultModelPresetID: id });
 		} catch {
 			setDeniedMsg('Failed setting default model.');
 			setShowDenied(true);
@@ -162,10 +152,10 @@ const ProviderPresetCard: FC<Props> = ({
 		}
 		try {
 			await modelPresetStoreAPI.patchModelPreset(provider, id, !m.isEnabled);
-			updateLocal(p => ({
-				...p,
-				modelPresets: { ...p.modelPresets, [id]: { ...m, isEnabled: !m.isEnabled } },
-			}));
+			onProviderPresetChange(provider, {
+				...preset,
+				modelPresets: { ...modelPresets, [id]: { ...m, isEnabled: !m.isEnabled } },
+			});
 		} catch {
 			setDeniedMsg('Failed toggling model.');
 			setShowDenied(true);
@@ -197,10 +187,18 @@ const ProviderPresetCard: FC<Props> = ({
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			const { id: _id, isBuiltIn, ...payload } = data;
 			await modelPresetStoreAPI.putModelPreset(provider, id, payload);
-			updateLocal(p => ({
-				...p,
-				modelPresets: { ...p.modelPresets, [id]: data },
-			}));
+			let newDefault = defaultModelPresetID;
+			if (!defaultModelPresetID) {
+				await modelPresetStoreAPI.patchProviderPreset(provider, undefined, id);
+				newDefault = id;
+			}
+
+			onProviderPresetChange(provider, {
+				...preset,
+				modelPresets: { ...modelPresets, [id]: data },
+				defaultModelPresetID: newDefault,
+			});
+
 			setShowModModal(false);
 		} catch {
 			setDeniedMsg('Failed saving model preset.');
@@ -218,14 +216,28 @@ const ProviderPresetCard: FC<Props> = ({
 		setSelectedID(id);
 		setShowDelModel(true);
 	};
+
 	const confirmDeleteModel = async () => {
 		if (!selectedID) return;
 		try {
 			await modelPresetStoreAPI.deleteModelPreset(provider, selectedID);
-			updateLocal(p => {
-				const { [selectedID]: _, ...rest } = p.modelPresets;
-				return { ...p, modelPresets: rest };
+			const { [selectedID]: _removed, ...rest } = modelPresets;
+
+			/* ── if the deleted one was the default, pick a new default (or undefined) ── */
+			let newDefault = defaultModelPresetID;
+			if (selectedID === defaultModelPresetID) {
+				newDefault = Object.keys(rest)[0] ?? '';
+				if (newDefault !== '') {
+					await modelPresetStoreAPI.patchProviderPreset(provider, undefined, newDefault);
+				}
+			}
+
+			onProviderPresetChange(provider, {
+				...preset,
+				modelPresets: rest,
+				defaultModelPresetID: newDefault,
 			});
+
 			setShowDelModel(false);
 		} catch {
 			setDeniedMsg('Failed deleting model preset.');
@@ -264,7 +276,7 @@ const ProviderPresetCard: FC<Props> = ({
 			{/* ─── header ─── */}
 			<div className="grid grid-cols-12 gap-2 items-center py-2">
 				<div className="col-span-3">
-					<h3 className="text-sm font-semibold capitalize">{localPreset.displayName || provider}</h3>
+					<h3 className="text-sm font-semibold capitalize">{preset.displayName || provider}</h3>
 				</div>
 
 				{/* enable toggle */}
@@ -273,7 +285,7 @@ const ProviderPresetCard: FC<Props> = ({
 					<input
 						type="checkbox"
 						className="toggle toggle-accent rounded-full"
-						checked={localPreset.isEnabled}
+						checked={preset.isEnabled}
 						onChange={toggleProviderEnable}
 					/>
 				</div>
@@ -293,30 +305,40 @@ const ProviderPresetCard: FC<Props> = ({
 			</div>
 
 			{/* ─── body ─── */}
-			{localPreset.isEnabled && expanded && (
+			{preset.isEnabled && expanded && (
 				<div className="mt-4 space-y-6">
-					{/* provider-details table (no header) */}
+					{/* provider-details table */}
 					<div className="overflow-x-auto border border-base-content/10 rounded-2xl mb-4">
 						<table className="table w-full">
 							<tbody>
-								{/* actions row (delete / api-key / edit) */}
+								{/* actions row */}
 								<tr>
 									<td colSpan={2} className="py-0.5">
 										<div className="flex justify-between items-center">
-											{/* delete on left */}
-											<button
-												className={`btn btn-ghost rounded-2xl flex items-center ${
-													providerIsBuiltIn ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
-												}`}
-												onClick={requestDeleteProvider}
-												title="Delete Provider"
-												disabled={providerIsBuiltIn}
+											{/* delete */}
+											<span
+												className="label-text-alt tooltip tooltip-right"
+												data-tip={
+													providerIsBuiltIn
+														? 'Built-in providers cannot be deleted.'
+														: hasModels
+															? 'Only empty providers can be deleted.'
+															: 'Delete Empty Provider'
+												}
 											>
-												<FiTrash2 />
-												<span className="ml-1 hidden md:inline">Delete Provider</span>
-											</button>
-
-											{/* api-key + edit on right */}
+												<button
+													className={`btn btn-ghost rounded-2xl flex items-center ${
+														!canDeleteProvider ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
+													}`}
+													onClick={canDeleteProvider ? requestDeleteProvider : undefined}
+													title={'Delete Provider'}
+													disabled={!canDeleteProvider}
+												>
+													<FiTrash2 />
+													<span className="ml-1 hidden md:inline">Delete Provider</span>
+												</button>
+											</span>
+											{/* api-key + edit */}
 											<div className="flex gap-2">
 												<button
 													className="btn btn-ghost rounded-2xl flex items-center"
@@ -324,7 +346,7 @@ const ProviderPresetCard: FC<Props> = ({
 													title={keySet ? 'Update API Key' : 'Set API Key'}
 												>
 													<FiKey />
-													<span className="ml-1 hidden md:inline">{keySet ? 'Update Key' : 'Set API Key'}</span>
+													<span className="ml-1 hidden md:inline">{keySet ? 'Update API Key' : 'Set API Key'}</span>
 												</button>
 
 												<button
@@ -344,11 +366,11 @@ const ProviderPresetCard: FC<Props> = ({
 								</tr>
 								<tr className="hover:bg-base-300">
 									<td className="w-1/3 text-sm">Origin</td>
-									<td className="text-sm">{localPreset.origin}</td>
+									<td className="text-sm">{preset.origin}</td>
 								</tr>
 								<tr className="hover:bg-base-300">
 									<td className="w-1/3 text-sm">Chat Path</td>
-									<td className="text-sm">{localPreset.chatCompletionPathPrefix}</td>
+									<td className="text-sm">{preset.chatCompletionPathPrefix}</td>
 								</tr>
 							</tbody>
 						</table>
@@ -360,7 +382,7 @@ const ProviderPresetCard: FC<Props> = ({
 						<div className="grid grid-cols-12 items-center gap-4 px-4 py-2">
 							<span className="col-span-3 text-sm font-semibold">Default Model</span>
 
-							<div className="col-span-6">
+							<div className="col-span-6 ml-8">
 								{hasModels ? (
 									<Dropdown<ModelPresetID>
 										dropdownItems={modelPresets}
@@ -375,7 +397,7 @@ const ProviderPresetCard: FC<Props> = ({
 								)}
 							</div>
 
-							{/* Add model button on the right */}
+							{/* add model btn */}
 							<div className="col-span-3 flex justify-end">
 								<button
 									className={`btn btn-ghost rounded-2xl flex items-center ${
@@ -385,13 +407,13 @@ const ProviderPresetCard: FC<Props> = ({
 									disabled={providerIsBuiltIn}
 									title="Add Model Preset"
 								>
-									<FiPlus />
+									<FiPlus size={16} />
 									<span className="ml-1 hidden md:inline">Add Model Preset</span>
 								</button>
 							</div>
 						</div>
 
-						{/* model preset table (only if at least one model) */}
+						{/* table only if models exist */}
 						{hasModels && (
 							<table className="table table-zebra w-full">
 								<thead>
@@ -463,7 +485,6 @@ const ProviderPresetCard: FC<Props> = ({
 			)}
 
 			{/* ───────── dialogs & alerts ───────── */}
-			{/* provider delete */}
 			{showDelProv && (
 				<DeleteConfirmationModal
 					isOpen={showDelProv}
@@ -477,7 +498,6 @@ const ProviderPresetCard: FC<Props> = ({
 				/>
 			)}
 
-			{/* model delete */}
 			{showDelModel && (
 				<DeleteConfirmationModal
 					isOpen={showDelModel}
@@ -491,7 +511,6 @@ const ProviderPresetCard: FC<Props> = ({
 				/>
 			)}
 
-			{/* model add / edit */}
 			{showModModal && (
 				<AddEditModelPresetModal
 					isOpen={showModModal}
@@ -506,12 +525,14 @@ const ProviderPresetCard: FC<Props> = ({
 				/>
 			)}
 
-			{/* api-key modal */}
+			{/* ───────── auth-key modal ───────── */}
 			{showKeyModal && (
 				<AddEditAuthKeyModal
 					isOpen={showKeyModal}
-					initial={keyModalInitial}
+					initial={keyModalInitial} // edit-mode when not null
 					existing={authKeys}
+					/* NEW – provide the (type,keyName) to pre-select when we are in pure “add” mode */
+					prefill={!keyModalInitial ? { type: AuthKeyTypeProvider, keyName: provider } : undefined}
 					onClose={() => {
 						setShowKeyModal(false);
 					}}
@@ -522,7 +543,6 @@ const ProviderPresetCard: FC<Props> = ({
 				/>
 			)}
 
-			{/* denied alert */}
 			{showDenied && (
 				<ActionDeniedAlert
 					isOpen={showDenied}

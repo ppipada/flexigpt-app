@@ -10,14 +10,13 @@
 
     - [x] Add Auth keys for provider should be allowed for current providers, else point to add provider page
     - [ ] In Add mode, it should be allowed to copy data from one of current things for all, with some mods in conflict avoiding fields
+    - [x] If we try to set a inbuilt preset as default for first time there is a error as of now.
 
   - Backend:
 
     - [ ] Integrate store with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
-    - [ ] overlay needs to have non bool flag support too, need it for default model support
+    - [ ] overlay needs to have non bool flag support too, need it for default model support, currently no default model change supported for inbuilt ones
     - [ ] backend should check if atleast one of reasoning or temp is set
-
-  - [ ] If we try to set a inbuilt preset as default for first time there is a error as of now.
 
 - [x] Add other daisyui themes to settings and then use them as a dropdown
 

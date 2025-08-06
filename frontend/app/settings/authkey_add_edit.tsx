@@ -18,27 +18,35 @@ import Dropdown from '@/components/dropdown';
 /* ────────────────────────── props & helpers ────────────────────────── */
 interface Props {
 	isOpen: boolean;
-	initial: AuthKeyMeta | null; // null ⇒ create mode
-	existing: AuthKeyMeta[]; // existing list (for duplicates / filtering)
+	initial: AuthKeyMeta | null; // “edit” when NOT null
+	existing: AuthKeyMeta[]; // list of existing keys
 	onClose: () => void;
 	onChanged: () => void; // parent should refetch on success
+	// In pure "add" mode (initial === null) you can still send a pre-selected (type, keyName).
+	// These fields will be rendered already filled-in and read-only,
+	// exactly like in edit-mode, but the entry will still be created.
+	prefill?: { type: string; keyName: string } | null;
 }
+
 const sentinelAddNew = '__add_new__';
 
 interface FormData {
-	type: string;
-	keyName: string;
-	secret: string;
-	newType: string; // only when sentinel chosen
+	type: string; // existing type | sentinelAddNew
+	keyName: string; // provider name | free string
+	secret: string; // the secret the user types
+	newType: string; // only when sentinelAddNew chosen
 }
 
-const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, onChanged }) => {
-	const isEdit = Boolean(initial);
+const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, onChanged, prefill = null }) => {
+	/* -------------------------------- flags ------------------------------- */
+	const isEdit = Boolean(initial); // “edit” = we already have that record
+	const isPrefilled = !isEdit && !!prefill; // “add”, but (type,keyName) should be fixed
+	const isReadOnly = isEdit || isPrefilled; // helper for rendering
 
-	/* ───────────────────────────── state ───────────────────────────── */
+	/* ------------------------------- state -------------------------------- */
 	const [form, setForm] = useState<FormData>({
-		type: initial?.type ?? AuthKeyTypeProvider,
-		keyName: initial?.keyName ?? '',
+		type: initial?.type ?? prefill?.type ?? AuthKeyTypeProvider,
+		keyName: initial?.keyName ?? prefill?.keyName ?? '',
 		secret: '',
 		newType: '',
 	});
@@ -47,23 +55,28 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 	/* raw provider presets fetched from backend */
 	const [providerPresets, setProviderPresets] = useState<Record<ProviderName, ProviderPreset>>({});
 
-	/* ───────────────────────────── derived ───────────────────────────── */
+	/* ------------------------------ derived ------------------------------- */
 
 	/* list of *types* that already exist (for dropdown) */
 	const existingTypes = useMemo(() => [...new Set(existing.map(k => k.type))], [existing]);
 
-	/* provider names that already HAVE an auth-key */
+	/* provider names that ALREADY have an auth-key */
 	const usedProviderNames = useMemo(
 		() => new Set(existing.filter(k => k.type === AuthKeyTypeProvider).map(k => k.keyName)),
 		[existing]
 	);
 
-	/* provider presets that are still AVAILABLE for “create” -------------
-	   (i.e. have no auth-key yet)                                         */
+	/* provider presets still AVAILABLE for creating new key */
 	const availableProviderPresets = useMemo(() => {
-		/* in edit mode we must still allow the current provider name */
 		const allowed = new Set<ProviderName>();
-		if (isEdit && initial?.type === AuthKeyTypeProvider) allowed.add(initial.keyName);
+
+		// allow the current provider name when editing OR when pre-filled
+		if (isEdit && initial?.type === AuthKeyTypeProvider) {
+			allowed.add(initial.keyName);
+		}
+		if (isPrefilled && prefill.type === AuthKeyTypeProvider) {
+			allowed.add(prefill.keyName);
+		}
 
 		const out: Record<ProviderName, ProviderPreset> = {};
 		Object.entries(providerPresets).forEach(([name, preset]) => {
@@ -72,7 +85,7 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 			}
 		});
 		return out;
-	}, [providerPresets, usedProviderNames, isEdit, initial]);
+	}, [providerPresets, usedProviderNames, isEdit, initial, isPrefilled, prefill]);
 
 	/* dropdown items for provider-name selection (create-mode only) */
 	const providerDropdownItems = useMemo(() => {
@@ -88,9 +101,9 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 
 	/* whether *no* provider is available to create a new key for */
 	const noProviderAvailable =
-		!isEdit && form.type === AuthKeyTypeProvider && Object.keys(providerDropdownItems).length === 0;
+		!isEdit && !isPrefilled && form.type === AuthKeyTypeProvider && Object.keys(providerDropdownItems).length === 0;
 
-	/* type dropdown items (include existing + sentinel) */
+	/* type dropdown items (existing + sentinel) */
 	const typeDropdownItems = useMemo(() => {
 		const obj: Record<string, DropdownItem> = {};
 		existingTypes.forEach(t => (obj[t] = { isEnabled: true }));
@@ -98,20 +111,20 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 		return obj;
 	}, [existingTypes]);
 
-	/* ───────────────────────────── effects ───────────────────────────── */
+	/* ------------------------------ effects ------------------------------- */
 
-	/* reset the form when (re)opened */
+	/* reset the form when the modal (re)opens */
 	useEffect(() => {
 		if (!isOpen) {
 			setForm({
-				type: initial?.type ?? AuthKeyTypeProvider,
-				keyName: initial?.keyName ?? '',
+				type: initial?.type ?? prefill?.type ?? AuthKeyTypeProvider,
+				keyName: initial?.keyName ?? prefill?.keyName ?? '',
 				secret: '',
 				newType: '',
 			});
 			setErrors({});
 		}
-	}, [isOpen, initial]);
+	}, [isOpen, initial, prefill]);
 
 	/* fetch provider presets once needed */
 	useEffect(() => {
@@ -127,11 +140,18 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 		}
 	}, [isOpen, form.type, providerPresets]);
 
+	/* ------------------------------ helpers ------------------------------- */
+	const checkDuplicate = (t: string, n: string) =>
+		existing.some(k => {
+			if (k.type !== t || k.keyName !== n) return false; // different pair
+			// allow the SAME pair that we're editing / pre-filling
+			if (isEdit && k === initial) return false;
+			if (isPrefilled && prefill.type === t && prefill.keyName === n) return false;
+			return true;
+		});
+
 	const validate = (field: keyof FormData, value: string) => {
 		const next = omitManyKeys(errors, [field]) as Partial<Record<keyof FormData, string>>;
-
-		const checkDuplicate = (t: string, n: string) =>
-			existing.some(k => k.type === t && k.keyName === n && !(isEdit && k === initial));
 
 		switch (field) {
 			case 'type':
@@ -158,7 +178,7 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 		setErrors(next);
 	};
 
-	/* ─────────── handlers ─────────── */
+	/* ------------------------------ handlers ------------------------------ */
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
 		const { name, value } = e.target;
 		setForm(prev => ({ ...prev, [name]: value }));
@@ -188,14 +208,15 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 		if (!form.secret.trim()) return false;
 		if (form.type === sentinelAddNew && !form.newType.trim()) return false;
 		if (!form.keyName.trim()) return false;
+
 		return Object.values(errors).every(v => !v);
 	}, [form, errors, noProviderAvailable]);
 
-	/* ───────────────────────── submit ───────────────────────── */
+	/* ------------------------------ submit ------------------------------- */
 	const submit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		/* run validation on every field explicitly */
+		// explicit validation trigger
 		(Object.entries(form) as [keyof FormData, string][]).forEach(([k, v]) => {
 			validate(k, v);
 		});
@@ -212,7 +233,7 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 	/* closed → nothing to render */
 	if (!isOpen) return null;
 
-	/* ─────────────────────────── render ─────────────────────────── */
+	/* ------------------------------ render ------------------------------- */
 	return (
 		<dialog className="modal modal-open">
 			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
@@ -234,7 +255,7 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 							</span>
 						</label>
 						<div className="col-span-9">
-							{isEdit ? (
+							{isReadOnly ? (
 								<input className="input input-bordered w-full rounded-2xl" value={form.type} disabled />
 							) : (
 								<Dropdown<string>
@@ -251,7 +272,7 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 					</div>
 
 					{/* NEW TYPE (only when sentinel) -------------------------------------- */}
-					{!isEdit && form.type === sentinelAddNew && (
+					{!isReadOnly && form.type === sentinelAddNew && (
 						<div className="grid grid-cols-12 gap-2 items-center">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">New Type*</span>
@@ -277,7 +298,7 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 						</label>
 						<div className="col-span-9">
 							{/* provider-type dropdown (create) */}
-							{!isEdit && form.type === AuthKeyTypeProvider ? (
+							{!isReadOnly && form.type === AuthKeyTypeProvider ? (
 								Object.keys(providerDropdownItems).length > 0 ? (
 									<Dropdown<ProviderName>
 										dropdownItems={providerDropdownItems}
@@ -288,7 +309,7 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 										getDisplayName={k => availableProviderPresets[k].displayName || k}
 									/>
 								) : (
-									/* no provider left ─ show static disabled input */
+									/* no provider left – show disabled input */
 									<input
 										className="input input-bordered w-full rounded-2xl"
 										value="All providers already configured"
@@ -296,14 +317,14 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 									/>
 								)
 							) : (
-								/* simple text input (non-provider or edit-mode) */
+								/* simple text input (non-provider OR read-only mode) */
 								<input
 									type="text"
 									name="keyName"
 									value={form.keyName}
 									onChange={handleChange}
 									className={`input input-bordered w-full rounded-2xl ${errors.keyName ? 'input-error' : ''}`}
-									disabled={isEdit && form.type === AuthKeyTypeProvider}
+									disabled={isReadOnly}
 									spellCheck="false"
 								/>
 							)}
