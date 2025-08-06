@@ -16,7 +16,7 @@ interface TemplateItem {
 	templateSlug: string;
 }
 
-interface ModifyPromptTemplateProps {
+interface AddEditPromptTemplateProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (templateData: Partial<PromptTemplate>) => void;
@@ -26,7 +26,7 @@ interface ModifyPromptTemplateProps {
 
 /* ---------- component ---------- */
 
-const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
+const AddEditPromptTemplate: React.FC<AddEditPromptTemplateProps> = ({
 	isOpen,
 	onClose,
 	onSubmit,
@@ -344,4 +344,4 @@ const ModifyPromptTemplate: React.FC<ModifyPromptTemplateProps> = ({
 	);
 };
 
-export default ModifyPromptTemplate;
+export default AddEditPromptTemplate;

@@ -16,13 +16,10 @@ import Loader from '@/components/loader';
 import AddBundleModal from '@/prompts/prompt_bundle_add';
 import PromptBundleCard from '@/prompts/prompt_bundle_card';
 
-/* ---------- local types ---------- */
 interface BundleData {
 	bundle: PromptBundle;
 	templates: PromptTemplate[];
 }
-
-/* ---------- page component ---------- */
 
 const PromptBundlesPage: FC = () => {
 	const [bundles, setBundles] = useState<BundleData[]>([]);
@@ -38,7 +35,6 @@ const PromptBundlesPage: FC = () => {
 	/* add-bundle modal */
 	const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-	/* ---------- data fetch ---------- */
 	const fetchAll = async () => {
 		setLoading(true);
 		try {
@@ -74,7 +70,6 @@ const PromptBundlesPage: FC = () => {
 		fetchAll();
 	}, []);
 
-	/* ---------- bundle helpers ---------- */
 	const onTemplatesChange = (bundleID: string, newTpl: PromptTemplate[]) => {
 		setBundles(prev => prev.map(bd => (bd.bundle.id === bundleID ? { ...bd, templates: newTpl } : bd)));
 	};
@@ -105,8 +100,6 @@ const PromptBundlesPage: FC = () => {
 			setShowAlert(true);
 		}
 	};
-
-	/* ---------- render ---------- */
 
 	// full-page loader while first fetch is running
 	if (loading) {

@@ -14,7 +14,7 @@ import DownloadButton from '@/components/download_button';
 import Dropdown from '@/components/dropdown';
 import Loader from '@/components/loader';
 
-import AddEditProviderPresetModal from '@/modelpresets/provider_add_edit_modal';
+import AddEditProviderPresetModal from '@/modelpresets/provider_add_edit';
 import ProviderPresetCard from '@/modelpresets/provider_presets_card';
 
 const ModelPresetPage: FC = () => {
@@ -142,6 +142,9 @@ const ModelPresetPage: FC = () => {
 				[name]: {
 					...(prev[name] ?? {}),
 					...payload,
+					defaultModelPresetID: '',
+					isBuiltIn: false,
+					modelPresets: {},
 				} as ProviderPreset,
 			}));
 			if (apiKey && apiKey.trim()) setProviderKeySet(prev => ({ ...prev, [name]: true }));
@@ -264,8 +267,8 @@ const ModelPresetPage: FC = () => {
 			{/* add / edit modal */}
 			{modalOpen && (
 				<AddEditProviderPresetModal
-					mode={modalMode}
 					isOpen={modalOpen}
+					mode={modalMode}
 					onClose={() => {
 						setModalOpen(false);
 					}}

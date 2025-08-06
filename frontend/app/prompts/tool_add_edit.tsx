@@ -14,7 +14,7 @@ interface ToolItem {
 	toolSlug: string;
 }
 
-interface ModifyToolModalProps {
+interface AddEditToolModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (toolData: Partial<Tool>) => void;
@@ -27,7 +27,13 @@ const TOOL_TYPE_OPTIONS = [
 	{ value: ToolType.HTTP, label: 'HTTP' },
 ];
 
-const ModifyToolModal: React.FC<ModifyToolModalProps> = ({ isOpen, onClose, onSubmit, initialData, existingTools }) => {
+const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
+	isOpen,
+	onClose,
+	onSubmit,
+	initialData,
+	existingTools,
+}) => {
 	const [formData, setFormData] = useState({
 		displayName: '',
 		slug: '',
@@ -717,4 +723,4 @@ const ModifyToolModal: React.FC<ModifyToolModalProps> = ({ isOpen, onClose, onSu
 	);
 };
 
-export default ModifyToolModal;
+export default AddEditToolModal;

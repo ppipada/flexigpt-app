@@ -114,9 +114,9 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 	/* ui */
 	return (
 		<dialog className="modal modal-open">
-			<div className="modal-box max-w-2xl rounded-2xl">
+			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
 				{/* title */}
-				<div className="flex justify-between items-center mb-2">
+				<div className="flex justify-between items-center mb-4">
 					<h3 className="font-bold text-lg">{isEdit ? 'Edit Auth Key' : 'Add Auth Key'}</h3>
 					<button className="btn btn-sm btn-circle" onClick={onClose}>
 						<FiX size={12} />
@@ -126,13 +126,13 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 				<form onSubmit={submit} className="space-y-4">
 					{/* ----- type ----- */}
 					<div className="grid grid-cols-12 gap-2 items-center">
-						<label className="label col-span-4">
+						<label className="label col-span-3">
 							<span className="label-text text-sm">Type*</span>
 							<span className="label-text-alt tooltip" data-tip="Logical grouping of keys">
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
-						<div className="col-span-8">
+						<div className="col-span-9">
 							{isEdit ? (
 								<input className="input input-bordered w-full rounded-2xl" value={form.type} disabled />
 							) : (
@@ -157,10 +157,10 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 					{/* new type input */}
 					{!isEdit && form.type === sentinelAddNew && (
 						<div className="grid grid-cols-12 gap-2 items-center">
-							<label className="label col-span-4">
+							<label className="label col-span-3">
 								<span className="label-text text-sm">New Type*</span>
 							</label>
-							<div className="col-span-8">
+							<div className="col-span-9">
 								<input
 									type="text"
 									name="newType"
@@ -176,10 +176,10 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 
 					{/* key name */}
 					<div className="grid grid-cols-12 gap-2 items-center">
-						<label className="label col-span-4">
+						<label className="label col-span-3">
 							<span className="label-text text-sm">Key Name*</span>
 						</label>
-						<div className="col-span-8">
+						<div className="col-span-9">
 							<input
 								type="text"
 								name="keyName"
@@ -195,10 +195,10 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 
 					{/* secret */}
 					<div className="grid grid-cols-12 gap-2 items-center">
-						<label className="label col-span-4">
+						<label className="label col-span-3">
 							<span className="label-text text-sm">Secret*</span>
 						</label>
-						<div className="col-span-8">
+						<div className="col-span-9">
 							<input
 								type="password"
 								name="secret"

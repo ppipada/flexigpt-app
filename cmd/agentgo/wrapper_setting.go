@@ -62,17 +62,20 @@ func (w *SettingStoreWrapper) SetAuthKey(
 	req *settingSpec.SetAuthKeyRequest,
 ) (*settingSpec.SetAuthKeyResponse, error) {
 	return middleware.WithRecoveryResp(func() (*settingSpec.SetAuthKeyResponse, error) {
-		resp, err := w.store.SetAuthKey(context.Background(), req)
-		if err != nil {
-			return nil, err
-		}
 		if req.Type == settingSpec.AuthKeyTypeProvider {
-			_, _ = w.providerSetWrapper.SetProviderAPIKey(
+			_, err := w.providerSetWrapper.SetProviderAPIKey(
 				&inferenceSpec.SetProviderAPIKeyRequest{
 					Provider: spec.ProviderName(req.KeyName),
 					Body:     &inferenceSpec.SetProviderAPIKeyRequestBody{APIKey: req.Body.Secret},
 				},
 			)
+			if err != nil {
+				return nil, err
+			}
+		}
+		resp, err := w.store.SetAuthKey(context.Background(), req)
+		if err != nil {
+			return nil, err
 		}
 		return resp, nil
 	})

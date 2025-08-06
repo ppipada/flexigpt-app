@@ -10,7 +10,7 @@ import { settingstoreAPI } from '@/apis/baseapi';
 import DownloadButton from '@/components/download_button';
 import { ThemeSelector } from '@/components/theme';
 
-import AddEditAuthKeyModal from '@/settings/authkey_modal';
+import AddEditAuthKeyModal from '@/settings/authkey_add_edit';
 import AuthKeyTable from '@/settings/authkey_table';
 
 const SettingsPage: FC = () => {
@@ -69,14 +69,14 @@ const SettingsPage: FC = () => {
 				<div className="flex flex-col gap-8 w-5/6 xl:w-2/3">
 					{/* ── Theme selector ──────────────────────────── */}
 					<section className="flex items-center bg-base-100 rounded-2xl shadow-lg p-4">
-						<h2 className="font-semibold mr-8">Theme</h2>
+						<h2 className="font-semibold ml-4 mr-8">Theme</h2>
 						<ThemeSelector />
 					</section>
 
 					{/* ── Auth-Key table ─────────────────────────── */}
 					<section className="bg-base-100 rounded-2xl shadow-lg p-4">
 						<div className="flex justify-between items-center mb-4">
-							<h2 className="font-semibold">Auth Keys</h2>
+							<h2 className="font-semibold ml-4 mr-8">Auth Keys</h2>
 							<button className="btn btn-ghost rounded-2xl flex items-center" onClick={showAddModal}>
 								<FiPlus className="mr-1" /> Add Key
 							</button>

@@ -12,7 +12,7 @@ import { toolStoreAPI } from '@/apis/baseapi';
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 
-import ToolModifyModal from '@/prompts/tool_modify';
+import ToolModifyModal from '@/prompts/tool_add_edit';
 
 interface ToolBundleCardProps {
 	bundle: ToolBundle;
@@ -217,7 +217,7 @@ const ToolBundleCard: React.FC<ToolBundleCardProps> = ({ bundle, tools, onToolsC
 									<th className="text-center">Enabled</th>
 									<th className="text-center">Version</th>
 									<th className="text-center">Built-In</th>
-									<th className="text-right pr-8">Actions</th>
+									<th className="text-center">Actions</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -240,7 +240,7 @@ const ToolBundleCard: React.FC<ToolBundleCardProps> = ({ bundle, tools, onToolsC
 										<td className="text-center">
 											{tool.isBuiltIn ? <FiCheck className="mx-auto" /> : <FiX className="mx-auto" />}
 										</td>
-										<td className="text-right">
+										<td className="text-center">
 											<div className="inline-flex gap-2">
 												<button
 													className="btn btn-sm btn-ghost rounded-2xl"

@@ -1,6 +1,6 @@
 import { type FC, useState } from 'react';
 
-import { FiCheckCircle, FiEdit2, FiRefreshCw, FiTrash2, FiXCircle } from 'react-icons/fi';
+import { FiCheckCircle, FiDelete, FiEdit2, FiTrash2, FiXCircle } from 'react-icons/fi';
 
 import type { AuthKeyMeta } from '@/spec/setting';
 
@@ -26,9 +26,9 @@ const AuthKeyTable: FC<AuthKeyTableProps> = ({ authKeys, onEdit, onChanged }) =>
 					<tr className="text-sm">
 						<th>Type</th>
 						<th>Key Name</th>
-						<th className="w-[11rem]">SHA-256</th>
-						<th>Status</th>
-						<th className="text-right">Actions</th>
+						<th className="text-center">SHA-256</th>
+						<th className="text-center">Secret</th>
+						<th className="text-center">Actions</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -85,27 +85,31 @@ const AuthKeyRow: FC<RowProps> = ({ meta, onEdit, onChanged }) => {
 			<tr className="hover:bg-base-300 border-none shadow-none">
 				<td className="capitalize">{meta.type}</td>
 				<td>{meta.keyName}</td>
-				<td className="font-mono text-xs">{meta.nonEmpty ? meta.sha256.slice(0, 10) + '…' : '—'}</td>
-				<td>
+				<td className="text-center align-middle font-mono text-xs">
+					{meta.nonEmpty ? meta.sha256.slice(0, 10) + '...' : '--'}
+				</td>
+				<td className="text-center align-middle">
 					{meta.nonEmpty ? (
 						<FiCheckCircle className="text-success inline" />
 					) : (
 						<FiXCircle className="text-error inline" />
 					)}
 				</td>
-				<td className="flex gap-3 justify-end">
-					<button className="btn btn-xs btn-ghost" onClick={onEdit} title="Edit">
-						<FiEdit2 size={14} />
+				<td className="flex gap-3 items-center justify-center text-center">
+					<button className="btn btn-xs btn-ghost rounded-2xl" onClick={onEdit} title="Edit">
+						<FiEdit2 size={16} />
 					</button>
-					{inbuilt ? (
-						<button className="btn btn-xs btn-ghost" onClick={resetKey} title="Reset">
-							<FiRefreshCw size={14} />
-						</button>
-					) : (
-						<button className="btn btn-xs btn-ghost" onClick={handleDelete} title="Delete">
-							<FiTrash2 size={14} />
-						</button>
-					)}
+					<button className="btn btn-xs btn-ghost rounded-2xl" onClick={resetKey} title="Reset Secret">
+						<FiDelete size={16} />
+					</button>
+					<button
+						className="btn btn-xs btn-ghost rounded-2xl"
+						onClick={inbuilt ? undefined : handleDelete}
+						title={inbuilt ? 'Cannot delete in-built key' : 'Delete'}
+						disabled={inbuilt}
+					>
+						<FiTrash2 size={16} />
+					</button>
 				</td>
 			</tr>
 

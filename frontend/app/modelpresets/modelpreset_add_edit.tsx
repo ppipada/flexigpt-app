@@ -47,17 +47,6 @@ const AddModeDefaults: ModelPreset = {
 	additionalParametersRawJSON: undefined,
 };
 
-interface ModifyModelModalProps {
-	isOpen: boolean;
-	onClose: () => void;
-	onSubmit: (modelPresetID: ModelPresetID, modelData: ModelPreset) => void;
-	providerName: ProviderName;
-
-	initialModelID?: ModelPresetID; // ⇒ edit mode when truthy
-	initialData?: ModelPreset;
-	existingModels: Record<ModelPresetID, ModelPreset>;
-}
-
 interface ModelPresetFormData {
 	presetLabel: string;
 	name: string;
@@ -76,7 +65,18 @@ interface ModelPresetFormData {
 	timeout: string;
 }
 
-const ModifyModelModal: FC<ModifyModelModalProps> = ({
+interface AddEditModelPresetModalProps {
+	isOpen: boolean;
+	onClose: () => void;
+	onSubmit: (modelPresetID: ModelPresetID, modelData: ModelPreset) => void;
+	providerName: ProviderName;
+
+	initialModelID?: ModelPresetID; // ⇒ edit mode when truthy
+	initialData?: ModelPreset;
+	existingModels: Record<ModelPresetID, ModelPreset>;
+}
+
+const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 	isOpen,
 	onClose,
 	onSubmit,
@@ -467,9 +467,6 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">Reasoning Type</span>
-									<span className="label-text-alt tooltip tooltip-right">
-										<FiHelpCircle size={12} />
-									</span>
 								</label>
 								<div className="col-span-9">
 									<Dropdown<ReasoningType>
@@ -490,9 +487,6 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								<div className="grid grid-cols-12 items-center gap-2">
 									<label className="label col-span-3">
 										<span className="label-text text-sm">Reasoning Level</span>
-										<span className="label-text-alt tooltip tooltip-right">
-											<FiHelpCircle size={12} />
-										</span>
 									</label>
 									<div className="col-span-9">
 										<Dropdown<ReasoningLevel>
@@ -514,9 +508,6 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								<div className="grid grid-cols-12 items-center gap-2">
 									<label className="label col-span-3">
 										<span className="label-text text-sm">Reasoning Tokens</span>
-										<span className="label-text-alt tooltip tooltip-right">
-											<FiHelpCircle size={12} />
-										</span>
 									</label>
 									<div className="col-span-9">
 										<input
@@ -548,9 +539,6 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Temperature (0-1)</span>
-							<span className="label-text-alt tooltip tooltip-right">
-								<FiHelpCircle size={12} />
-							</span>
 						</label>
 						<div className="col-span-9">
 							<input
@@ -575,10 +563,7 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 					{/* Timeout ------------------------------------------ */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
-							<span className="label-text text-sm">Timeout (s)</span>
-							<span className="label-text-alt tooltip tooltip-right">
-								<FiHelpCircle size={12} />
-							</span>
+							<span className="label-text text-sm">Timeout (seconds)</span>
 						</label>
 						<div className="col-span-9">
 							<input
@@ -607,9 +592,6 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 								<span className="label-text text-sm">
 									{f === 'maxPromptLength' ? 'Max Prompt Tokens' : 'Max Output Tokens'}
 								</span>
-								<span className="label-text-alt tooltip tooltip-right">
-									<FiHelpCircle size={12} />
-								</span>
 							</label>
 							<div className="col-span-9">
 								<input
@@ -636,9 +618,6 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">System Prompt</span>
-							<span className="label-text-alt tooltip tooltip-right">
-								<FiHelpCircle size={12} />
-							</span>
 						</label>
 						<div className="col-span-9">
 							<textarea
@@ -652,7 +631,6 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 						</div>
 					</div>
 
-					{/* Actions ------------------------------------------ */}
 					<div className="modal-action">
 						<button type="button" className="btn rounded-2xl" onClick={onClose}>
 							Cancel
@@ -667,4 +645,4 @@ const ModifyModelModal: FC<ModifyModelModalProps> = ({
 	);
 };
 
-export default ModifyModelModal;
+export default AddEditModelPresetModal;

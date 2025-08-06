@@ -5,9 +5,6 @@ import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 import { omitManyKeys } from '@/lib/obj_utils';
 import { validateSlug } from '@/lib/text_utils';
 
-/* ------------------------------------------------------------------ */
-/*                               props                                */
-/* ------------------------------------------------------------------ */
 interface AddBundleModalProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -15,11 +12,7 @@ interface AddBundleModalProps {
 	existingSlugs: string[];
 }
 
-/* ------------------------------------------------------------------ */
-/*                              component                             */
-/* ------------------------------------------------------------------ */
 const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, existingSlugs }) => {
-	/* -------------------------- form state ------------------------- */
 	const [form, setForm] = useState({
 		slug: '',
 		displayName: '',
@@ -27,14 +20,12 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 	});
 	const [errors, setErrors] = useState<{ slug?: string; displayName?: string }>({});
 
-	/* ----------------------- reset on open ------------------------- */
 	useEffect(() => {
 		if (!isOpen) return;
 		setForm({ slug: '', displayName: '', description: '' });
 		setErrors({});
 	}, [isOpen]);
 
-	/* ---------------------- field validation ----------------------- */
 	const validate = (field: keyof typeof errors, val: string) => {
 		const v = val.trim();
 		let copy = { ...errors };
@@ -56,13 +47,11 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 		setErrors(copy);
 	};
 
-	/* ------------------- overall validity flag --------------------- */
 	const isAllValid = useMemo(
 		() => form.slug.trim() && form.displayName.trim() && Object.keys(errors).length === 0,
 		[form, errors]
 	);
 
-	/* -------------------------- submit ----------------------------- */
 	const handleSubmit = (e?: React.FormEvent) => {
 		if (e) e.preventDefault();
 
@@ -74,10 +63,8 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 		onSubmit(form.slug.trim(), form.displayName.trim(), form.description.trim() || undefined);
 	};
 
-	/* ----------------------- early return -------------------------- */
 	if (!isOpen) return null;
 
-	/* -------------------------- render ----------------------------- */
 	return (
 		<dialog className="modal modal-open">
 			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
@@ -90,7 +77,6 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 				</div>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
-					{/* ----------- Slug --------------------------------- */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Bundle Slug*</span>
@@ -121,7 +107,6 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 						</div>
 					</div>
 
-					{/* -------- Display Name --------------------------- */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Display Name*</span>
@@ -149,7 +134,6 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 						</div>
 					</div>
 
-					{/* ---------- Description -------------------------- */}
 					<div className="grid grid-cols-12 items-start gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Description</span>
@@ -167,7 +151,6 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 						</div>
 					</div>
 
-					{/* -------------- actions -------------------------- */}
 					<div className="modal-action">
 						<button type="button" className="btn rounded-2xl" onClick={onClose}>
 							Cancel

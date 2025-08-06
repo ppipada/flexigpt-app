@@ -7,6 +7,7 @@ import {
 	FiChevronDown,
 	FiChevronUp,
 	FiEdit,
+	FiKey,
 	FiPlus,
 	FiTrash2,
 	FiX,
@@ -14,14 +15,17 @@ import {
 } from 'react-icons/fi';
 
 import { type ModelPreset, type ModelPresetID, type ProviderName, type ProviderPreset } from '@/spec/modelpreset';
+import type { AuthKeyMeta } from '@/spec/setting';
+import { AuthKeyTypeProvider } from '@/spec/setting';
 
-import { modelPresetStoreAPI } from '@/apis/baseapi';
+import { modelPresetStoreAPI, settingstoreAPI } from '@/apis/baseapi';
 
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 import Dropdown from '@/components/dropdown';
 
-import ModifyModelModal from '@/modelpresets/modelpreset_modify_modal';
+import AddEditModelPresetModal from '@/modelpresets/modelpreset_add_edit';
+import AddEditAuthKeyModal from '@/settings/authkey_add_edit';
 
 interface Props {
 	provider: ProviderName;
@@ -45,26 +49,43 @@ const ProviderPresetCard: FC<Props> = ({
 	onProviderDelete,
 	onRequestEdit,
 }) => {
-	/* local-state sync ─────────────────────────────────── */
+	/* ───────── local & derived ───────── */
 	const [localPreset, setLocalPreset] = useState<ProviderPreset>(preset);
 	useEffect(() => {
 		setLocalPreset(preset);
 	}, [preset]);
 
+	/* api-key state (keeps up-to-date once user sets key) */
+	const [keySet, setKeySet] = useState(authKeySet);
+	useEffect(() => {
+		setKeySet(authKeySet);
+	}, [authKeySet]);
+
 	const [expanded, setExpanded] = useState(false);
 
-	const [selectedModelID, setSelectedModelID] = useState<ModelPresetID | null>(null);
-	const [showModifyModal, setShowModifyModal] = useState(false);
-	const [showDelProviderModal, setShowDelProviderModal] = useState(false);
-	const [showDelModelModal, setShowDelModelModal] = useState(false);
+	const [selectedID, setSelectedID] = useState<ModelPresetID | null>(null);
+	const [showModModal, setShowModModal] = useState(false);
 
-	const [deniedMsg, setDeniedMsg] = useState('');
+	const [showDelProv, setShowDelProv] = useState(false);
+	const [showDelModel, setShowDelModel] = useState(false);
+
 	const [showDenied, setShowDenied] = useState(false);
+	const [deniedMsg, setDeniedMsg] = useState('');
 
+	/* auth-key modal */
+	const [showKeyModal, setShowKeyModal] = useState(false);
+	const [authKeys, setAuthKeys] = useState<AuthKeyMeta[]>([]);
+	const [keyModalInitial, setKeyModalInitial] = useState<AuthKeyMeta | null>(null);
+
+	/* helpers */
 	const isLastEnabled = localPreset.isEnabled && enabledProviders.length === 1;
 	const providerIsBuiltIn = localPreset.isBuiltIn;
 
-	/* helper to update parent + local copy */
+	const modelPresets = localPreset.modelPresets;
+	const defaultModelPresetID = localPreset.defaultModelPresetID;
+	const modelEntries = Object.entries(modelPresets);
+	const hasModels = modelEntries.length > 0;
+
 	const updateLocal = (updater: (p: ProviderPreset) => ProviderPreset) => {
 		setLocalPreset(prev => {
 			const upd = updater(prev);
@@ -73,7 +94,7 @@ const ProviderPresetCard: FC<Props> = ({
 		});
 	};
 
-	/* enable / disable provider ───────────────────────── */
+	/* ───────── provider enable / disable ───────── */
 	const toggleProviderEnable = async () => {
 		if (!localPreset.isEnabled) {
 			await modelPresetStoreAPI.patchProviderPreset(provider, true);
@@ -81,7 +102,6 @@ const ProviderPresetCard: FC<Props> = ({
 			return;
 		}
 
-		// disabling
 		if (provider === defaultProvider) {
 			setDeniedMsg('Cannot disable the default provider. Pick another default first.');
 			setShowDenied(true);
@@ -96,33 +116,32 @@ const ProviderPresetCard: FC<Props> = ({
 		try {
 			await modelPresetStoreAPI.patchProviderPreset(provider, false);
 			updateLocal(p => ({ ...p, isEnabled: false }));
-		} catch (err) {
-			console.error(err);
+		} catch {
 			setDeniedMsg('Failed toggling provider.');
 			setShowDenied(true);
 		}
 	};
 
-	/* expand */
+	/* ───────── expand / collapse ───────── */
 	const toggleExpand = () => {
 		if (localPreset.isEnabled) setExpanded(p => !p);
 	};
 
-	/* delete provider */
+	/* ───────── delete provider ───────── */
 	const requestDeleteProvider = () => {
 		if (providerIsBuiltIn) {
 			setDeniedMsg('Built-in providers cannot be deleted.');
 			setShowDenied(true);
 			return;
 		}
-		setShowDelProviderModal(true);
+		setShowDelProv(true);
 	};
 	const confirmDeleteProvider = async () => {
 		await onProviderDelete(provider);
-		setShowDelProviderModal(false);
+		setShowDelProv(false);
 	};
 
-	/* default model change */
+	/* ───────── default model change ───────── */
 	const handleDefaultModelChange = async (id: ModelPresetID) => {
 		try {
 			await modelPresetStoreAPI.patchProviderPreset(provider, undefined, id);
@@ -133,11 +152,11 @@ const ProviderPresetCard: FC<Props> = ({
 		}
 	};
 
-	/* enable/disable model */
+	/* ───────── enable / disable model ───────── */
 	const toggleModelEnable = async (id: ModelPresetID) => {
-		const m = localPreset.modelPresets[id];
-		if (id === localPreset.defaultModelPresetID && m.isEnabled) {
-			setDeniedMsg('Cannot disable the default preset. Choose another default first.');
+		const m = modelPresets[id];
+		if (id === defaultModelPresetID && m.isEnabled) {
+			setDeniedMsg('Cannot disable the default model preset. Choose another default first.');
 			setShowDenied(true);
 			return;
 		}
@@ -145,10 +164,7 @@ const ProviderPresetCard: FC<Props> = ({
 			await modelPresetStoreAPI.patchModelPreset(provider, id, !m.isEnabled);
 			updateLocal(p => ({
 				...p,
-				modelPresets: {
-					...p.modelPresets,
-					[id]: { ...m, isEnabled: !m.isEnabled },
-				},
+				modelPresets: { ...p.modelPresets, [id]: { ...m, isEnabled: !m.isEnabled } },
 			}));
 		} catch {
 			setDeniedMsg('Failed toggling model.');
@@ -156,29 +172,28 @@ const ProviderPresetCard: FC<Props> = ({
 		}
 	};
 
-	/* add / edit model */
+	/* ───────── add / edit model ───────── */
 	const openAddModel = () => {
 		if (providerIsBuiltIn) {
-			setDeniedMsg('Cannot add presets to a built-in provider.');
+			setDeniedMsg('Cannot add model presets to a built-in provider.');
 			setShowDenied(true);
 			return;
 		}
-		setSelectedModelID(null);
-		setShowModifyModal(true);
+		setSelectedID(null);
+		setShowModModal(true);
 	};
 	const openEditModel = (id: ModelPresetID) => {
-		if (localPreset.modelPresets[id].isBuiltIn) {
-			setDeniedMsg('Built-in presets cannot be edited.');
+		if (modelPresets[id].isBuiltIn) {
+			setDeniedMsg('Built-in model presets cannot be edited.');
 			setShowDenied(true);
 			return;
 		}
-		setSelectedModelID(id);
-		setShowModifyModal(true);
+		setSelectedID(id);
+		setShowModModal(true);
 	};
 
 	const handleModifyModelSubmit = async (id: ModelPresetID, data: ModelPreset) => {
 		try {
-			// strip fields not in payload
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			const { id: _id, isBuiltIn, ...payload } = data;
 			await modelPresetStoreAPI.putModelPreset(provider, id, payload);
@@ -186,44 +201,67 @@ const ProviderPresetCard: FC<Props> = ({
 				...p,
 				modelPresets: { ...p.modelPresets, [id]: data },
 			}));
-			setShowModifyModal(false);
+			setShowModModal(false);
 		} catch {
-			setDeniedMsg('Failed saving preset.');
+			setDeniedMsg('Failed saving model preset.');
 			setShowDenied(true);
 		}
 	};
 
-	/* delete model */
+	/* ───────── delete model ───────── */
 	const requestDeleteModel = (id: ModelPresetID) => {
-		if (localPreset.modelPresets[id].isBuiltIn) {
-			setDeniedMsg('Built-in presets cannot be deleted.');
+		if (modelPresets[id].isBuiltIn) {
+			setDeniedMsg('Built-in model presets cannot be deleted.');
 			setShowDenied(true);
 			return;
 		}
-		setSelectedModelID(id);
-		setShowDelModelModal(true);
+		setSelectedID(id);
+		setShowDelModel(true);
 	};
 	const confirmDeleteModel = async () => {
-		if (!selectedModelID) return;
+		if (!selectedID) return;
 		try {
-			await modelPresetStoreAPI.deleteModelPreset(provider, selectedModelID);
+			await modelPresetStoreAPI.deleteModelPreset(provider, selectedID);
 			updateLocal(p => {
-				const { [selectedModelID]: _, ...rest } = p.modelPresets;
+				const { [selectedID]: _, ...rest } = p.modelPresets;
 				return { ...p, modelPresets: rest };
 			});
-			setShowDelModelModal(false);
+			setShowDelModel(false);
 		} catch {
-			setDeniedMsg('Failed deleting preset.');
+			setDeniedMsg('Failed deleting model preset.');
 			setShowDenied(true);
 		}
 	};
 
-	/* render ───────────────────────────────────────────── */
-	const { modelPresets, defaultModelPresetID } = localPreset;
+	/* ───────── api-key modal helpers ───────── */
+	const openSetApiKey = async () => {
+		try {
+			const settings = await settingstoreAPI.getSettings();
+			setAuthKeys(settings.authKeys);
 
+			const meta = settings.authKeys.find(k => k.type === AuthKeyTypeProvider && k.keyName === provider) ?? null;
+
+			setKeyModalInitial(meta);
+			setShowKeyModal(true);
+		} catch (err) {
+			console.error(err);
+			setDeniedMsg('Failed loading auth keys.');
+			setShowDenied(true);
+		}
+	};
+
+	const handleEditProvider = () => {
+		if (!providerIsBuiltIn) onRequestEdit(provider);
+		else {
+			setDeniedMsg('Built-in providers cannot be edited.');
+			setShowDenied(true);
+		}
+	};
+
+	/* ─────────────────────────── render ─────────────────────────── */
 	return (
 		<div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2 mb-8">
-			{/* header row */}
+			{/* ─── header ─── */}
 			<div className="grid grid-cols-12 gap-2 items-center">
 				<div className="col-span-3">
 					<h3 className="text-sm font-semibold capitalize">{localPreset.displayName || provider}</h3>
@@ -240,11 +278,11 @@ const ProviderPresetCard: FC<Props> = ({
 					/>
 				</div>
 
-				{/* api-key status + chevron */}
+				{/* key status & expand */}
 				<div className="col-span-6 flex items-end justify-end gap-4 cursor-pointer" onClick={toggleExpand}>
 					<div className="flex items-center">
 						<span className="text-sm">API-Key</span>
-						{authKeySet ? <FiCheckCircle className="text-success mx-1" /> : <FiXCircle className="text-error mx-1" />}
+						{keySet ? <FiCheckCircle className="text-success mx-1" /> : <FiXCircle className="text-error mx-1" />}
 					</div>
 
 					<div className="flex items-center">
@@ -254,140 +292,163 @@ const ProviderPresetCard: FC<Props> = ({
 				</div>
 			</div>
 
-			{/* body */}
+			{/* ─── body ─── */}
 			{localPreset.isEnabled && expanded && (
 				<div className="mt-8 space-y-6">
-					{/* readonly provider details */}
-					<div className="grid grid-cols-12 gap-2">
-						<label className="col-span-3 text-sm">Origin:</label>
-						<p className="col-span-9 text-sm">{localPreset.origin}</p>
-
-						<label className="col-span-3 text-sm">Chat Path:</label>
-						<p className="col-span-9 text-sm">{localPreset.chatCompletionPathPrefix}</p>
-
-						<label className="col-span-3 text-sm">API Type:</label>
-						<p className="col-span-9 text-sm">{localPreset.apiType}</p>
-					</div>
-
-					{/* default model dropdown */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="col-span-3 text-sm">Default Model</label>
-						<div className="col-span-9">
-							<Dropdown<ModelPresetID>
-								dropdownItems={modelPresets}
-								selectedKey={defaultModelPresetID}
-								onChange={handleDefaultModelChange}
-								filterDisabled={false}
-								title="Select default model"
-								getDisplayName={k => modelPresets[k].displayName || k}
-							/>
-						</div>
-					</div>
-
-					{/* model presets table */}
+					{/* provider-details table (no header) */}
 					<div className="overflow-x-auto border border-base-content/10 rounded-2xl">
-						<table className="table table-zebra w-full">
-							<thead>
-								<tr className="text-sm font-semibold bg-base-300">
-									<th>Preset Label</th>
-									<th>Model Name</th>
-									<th className="text-center">Enabled</th>
-									<th className="text-center">Reasoning</th>
-									<th className="text-right pr-8">Actions</th>
-								</tr>
-							</thead>
+						<table className="table w-full">
 							<tbody>
-								{Object.entries(modelPresets).map(([id, m]) => {
-									const canModifyModel = !m.isBuiltIn;
-									return (
-										<tr key={id} className="hover:bg-base-300">
-											<td>{m.displayName || id}</td>
-											<td>{m.name}</td>
-											<td className="text-center">
-												<input
-													type="checkbox"
-													className="toggle toggle-accent rounded-full"
-													checked={m.isEnabled}
-													onChange={() => toggleModelEnable(id)}
-												/>
-											</td>
-											<td className="text-center">
-												{'reasoning' in m && m.reasoning ? (
-													<FiCheck className="mx-auto" />
-												) : (
-													<FiX className="mx-auto" />
-												)}
-											</td>
-											<td className="text-right">
-												{canModifyModel ? (
-													<>
-														{/* edit */}
-														<button
-															className="btn btn-sm btn-ghost rounded-2xl"
-															onClick={() => {
-																openEditModel(id);
-															}}
-															title="Edit Preset"
-														>
-															<FiEdit size={16} />
-														</button>
-														{/* delete */}
-														<button
-															className="btn btn-sm btn-ghost rounded-2xl"
-															onClick={() => {
-																requestDeleteModel(id);
-															}}
-															title="Delete Preset"
-														>
-															<FiTrash2 size={16} />
-														</button>
-													</>
-												) : (
-													<span className="text-xs opacity-50">built-in</span>
-												)}
-											</td>
-										</tr>
-									);
-								})}
+								{/* actions row (delete / api-key / edit) */}
+								<tr>
+									<td colSpan={2} className="py-0.5">
+										<div className="flex justify-between items-center">
+											{/* delete on left */}
+											<button
+												className={`btn btn-ghost rounded-2xl flex items-center ${
+													providerIsBuiltIn ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
+												}`}
+												onClick={requestDeleteProvider}
+												title="Delete Provider"
+												disabled={providerIsBuiltIn}
+											>
+												<FiTrash2 /> <span className="ml-1 hidden md:inline">Delete Provider</span>
+											</button>
+
+											{/* api-key + edit on right */}
+											<div className="flex gap-2">
+												<button
+													className="btn btn-ghost rounded-2xl flex items-center"
+													onClick={openSetApiKey}
+													title={keySet ? 'Update API Key' : 'Set API Key'}
+												>
+													<FiKey />{' '}
+													<span className="ml-1 hidden md:inline">{keySet ? 'Update Key' : 'Set API Key'}</span>
+												</button>
+
+												<button
+													className={`btn btn-ghost rounded-2xl flex items-center ${
+														providerIsBuiltIn ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
+													}`}
+													onClick={handleEditProvider}
+													title="Edit Provider"
+													disabled={providerIsBuiltIn}
+												>
+													<FiEdit /> <span className="ml-1 hidden md:inline">Edit Provider</span>
+												</button>
+											</div>
+										</div>
+									</td>
+								</tr>
+								<tr className="hover:bg-base-300">
+									<td className="w-1/3 text-sm">Origin</td>
+									<td className="text-sm">{localPreset.origin}</td>
+								</tr>
+								<tr className="hover:bg-base-300">
+									<td className="w-1/3 text-sm">Chat Path</td>
+									<td className="text-sm">{localPreset.chatCompletionPathPrefix}</td>
+								</tr>
 							</tbody>
 						</table>
 					</div>
 
-					{/* bottom bar */}
-					<div className="flex justify-between items-center mt-4">
-						<div className="flex gap-2">
-							{/* edit provider */}
-							<button
-								className={`btn btn-ghost rounded-2xl flex items-center ${
-									providerIsBuiltIn ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
-								}`}
-								onClick={() => {
-									if (!providerIsBuiltIn) onRequestEdit(provider);
-									else {
-										setDeniedMsg('Built-in providers cannot be edited.');
-										setShowDenied(true);
-									}
-								}}
-								title="Edit provider details"
-								disabled={providerIsBuiltIn}
-							>
-								<FiEdit /> <span className="ml-1">Edit</span>
-							</button>
+					{/* model preset table */}
+					<div className="overflow-x-auto border border-base-content/10 rounded-2xl">
+						{/* default-model selector */}
+						{hasModels && (
+							<div className="grid grid-cols-12 items-center gap-4 px-4 py-2">
+								<span className="col-span-3 text-sm font-semibold">Default Model</span>
+								<div className="col-span-9 flex-1">
+									<Dropdown<ModelPresetID>
+										dropdownItems={modelPresets}
+										selectedKey={defaultModelPresetID}
+										onChange={handleDefaultModelChange}
+										filterDisabled={false}
+										title="Select default model"
+										getDisplayName={k => modelPresets[k].displayName || k}
+									/>
+								</div>
+							</div>
+						)}
+						<table className="table table-zebra w-full">
+							<thead>
+								<tr className="text-sm font-semibold bg-base-300">
+									<th>Model Preset Label</th>
+									<th>Model Name</th>
+									<th className="text-center">Enabled</th>
+									<th className="text-center">Reasoning</th>
+									<th className="text-center">Actions</th>
+								</tr>
+							</thead>
 
-							{/* delete provider */}
-							<button
-								className={`btn btn-ghost rounded-2xl flex items-center ${
-									providerIsBuiltIn ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
-								}`}
-								onClick={requestDeleteProvider}
-								title="Delete provider"
-								disabled={providerIsBuiltIn}
-							>
-								<FiTrash2 /> <span className="ml-1">Delete</span>
-							</button>
-						</div>
+							<tbody>
+								{/* model rows */}
+								{hasModels ? (
+									modelEntries.map(([id, m]) => {
+										const canModify = !m.isBuiltIn;
+										return (
+											<tr key={id} className="hover:bg-base-300">
+												<td>{m.displayName || id}</td>
+												<td>{m.name}</td>
+												<td className="text-center">
+													<input
+														type="checkbox"
+														className="toggle toggle-accent rounded-full"
+														checked={m.isEnabled}
+														onChange={() => toggleModelEnable(id)}
+													/>
+												</td>
+												<td className="text-center">
+													{'reasoning' in m && m.reasoning ? (
+														<FiCheck className="mx-auto" />
+													) : (
+														<FiX className="mx-auto" />
+													)}
+												</td>
+												<td className="text-center space-x-1">
+													{canModify ? (
+														<>
+															<button
+																className="btn btn-sm btn-ghost rounded-2xl"
+																onClick={() => {
+																	openEditModel(id);
+																}}
+																title="Edit Model Preset"
+															>
+																<FiEdit size={16} />
+																<span className="ml-1 hidden md:inline">Edit Preset</span>
+															</button>
+															<button
+																className="btn btn-sm btn-ghost rounded-2xl"
+																onClick={() => {
+																	requestDeleteModel(id);
+																}}
+																title="Delete Model Preset"
+															>
+																<FiTrash2 size={16} />
+																<span className="ml-1 hidden md:inline">Delete Preset</span>
+															</button>
+														</>
+													) : (
+														<span className="text-xs opacity-50">built-in</span>
+													)}
+												</td>
+											</tr>
+										);
+									})
+								) : (
+									<tr>
+										<td colSpan={5} className="py-4 text-center text-sm italic">
+											No model presets configured.
+										</td>
+									</tr>
+								)}
+							</tbody>
+						</table>
+					</div>
 
-						{/* add preset */}
+					{/* add model preset button */}
+					<div className="flex justify-end items-center mt-4">
 						<button
 							className={`btn btn-ghost rounded-2xl flex items-center ${
 								providerIsBuiltIn ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
@@ -395,53 +456,73 @@ const ProviderPresetCard: FC<Props> = ({
 							onClick={openAddModel}
 							disabled={providerIsBuiltIn}
 						>
-							<FiPlus /> <span className="ml-1">Add Preset</span>
+							<FiPlus /> <span className="ml-1">Add Model Preset</span>
 						</button>
 					</div>
 				</div>
 			)}
 
-			{/* dialogs / alerts */}
-			{showDelProviderModal && (
+			{/* ───────── dialogs & alerts ───────── */}
+			{/* provider delete */}
+			{showDelProv && (
 				<DeleteConfirmationModal
-					isOpen={showDelProviderModal}
+					isOpen={showDelProv}
 					onClose={() => {
-						setShowDelProviderModal(false);
+						setShowDelProv(false);
 					}}
 					onConfirm={confirmDeleteProvider}
 					title="Delete Provider"
-					message={`Delete provider "${provider}"? This action cannot be undone.`}
+					message={`Delete provider “${provider}”? This action cannot be undone.`}
 					confirmButtonText="Delete"
 				/>
 			)}
 
-			{showDelModelModal && (
+			{/* model delete */}
+			{showDelModel && (
 				<DeleteConfirmationModal
-					isOpen={showDelModelModal}
+					isOpen={showDelModel}
 					onClose={() => {
-						setShowDelModelModal(false);
+						setShowDelModel(false);
 					}}
 					onConfirm={confirmDeleteModel}
-					title="Delete Preset"
-					message={`Delete preset "${selectedModelID}"? This action cannot be undone.`}
+					title="Delete Model Preset"
+					message={`Delete model preset “${selectedID}”? This action cannot be undone.`}
 					confirmButtonText="Delete"
 				/>
 			)}
 
-			{showModifyModal && (
-				<ModifyModelModal
-					isOpen={showModifyModal}
+			{/* model add / edit */}
+			{showModModal && (
+				<AddEditModelPresetModal
+					isOpen={showModModal}
 					onClose={() => {
-						setShowModifyModal(false);
+						setShowModModal(false);
 					}}
 					onSubmit={handleModifyModelSubmit}
 					providerName={provider}
-					initialModelID={selectedModelID ?? undefined}
-					initialData={selectedModelID ? modelPresets[selectedModelID] : undefined}
+					initialModelID={selectedID ?? undefined}
+					initialData={selectedID ? modelPresets[selectedID] : undefined}
 					existingModels={modelPresets}
 				/>
 			)}
 
+			{/* api-key modal */}
+			{showKeyModal && (
+				<AddEditAuthKeyModal
+					isOpen={showKeyModal}
+					initial={keyModalInitial}
+					existing={authKeys}
+					onClose={() => {
+						setShowKeyModal(false);
+					}}
+					onChanged={() => {
+						setShowKeyModal(false);
+						setKeySet(true);
+					}}
+				/>
+			)}
+
+			{/* denied alert */}
 			{showDenied && (
 				<ActionDeniedAlert
 					isOpen={showDenied}
