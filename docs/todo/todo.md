@@ -2,9 +2,12 @@
 
 ## Laundry list
 
-- [ ] theming adjustments for mermaid and code
+- [x] Add other daisyui themes to settings and then use them as a dropdown
+- [x] theming adjustments for mermaid and code
 - [x] scroll non needed on assistents reply, let it be where it is.
 - [x] the scroll down buttons possition needs adjusting a bit
+- [ ] Scroll button needs to become visible as soon as some streamed message arrives
+
 - [ ] Settings/Presets/Prompt/tool:
 
   - UI
@@ -18,8 +21,6 @@
     - [ ] overlay needs to have non bool flag support too, need it for default model support, currently no default model change supported for inbuilt ones
     - [ ] backend should check if atleast one of reasoning or temp is set
     - [ ] Integrate store with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
-
-- [x] Add other daisyui themes to settings and then use them as a dropdown
 
 - [ ] CPU is high when "thinking". Need to debug
 - [ ] If there was some amount of data that was streamed, but error occured at end someplace, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is.
