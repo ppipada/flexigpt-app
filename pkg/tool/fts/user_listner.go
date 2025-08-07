@@ -64,7 +64,7 @@ func NewUserToolsFTSListener(e *ftsengine.Engine) filestore.Listener {
 			!strings.HasSuffix(ev.File, "."+bundleitemutils.ItemFileExtension) ||
 			strings.HasSuffix(ev.File, spec.ToolDBFileName) ||
 			strings.HasSuffix(ev.File, spec.ToolBundlesMetaFileName) ||
-			strings.HasSuffix(ev.File, spec.ToolBuiltInOverlayFileName) {
+			strings.HasSuffix(ev.File, spec.ToolBuiltInOverlayDBFileName) {
 			return
 		}
 
@@ -104,7 +104,7 @@ func processFTSSync(
 	if !strings.HasSuffix(fullPath, "."+bundleitemutils.ItemFileExtension) ||
 		strings.HasSuffix(fullPath, spec.ToolDBFileName) ||
 		strings.HasSuffix(fullPath, spec.ToolBundlesMetaFileName) ||
-		strings.HasSuffix(fullPath, spec.ToolBuiltInOverlayFileName) {
+		strings.HasSuffix(fullPath, spec.ToolBuiltInOverlayDBFileName) {
 		return skip, nil
 	}
 

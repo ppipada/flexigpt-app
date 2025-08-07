@@ -13,7 +13,6 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/booloverlay"
 	"github.com/ppipada/flexigpt-app/pkg/builtin"
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
@@ -89,9 +88,10 @@ func TestNewBuiltInToolData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := t.Context()
 			dir := tt.setupDir(t)
 
-			bi, err := NewBuiltInToolData(dir, tt.snapshotMaxAge)
+			bi, err := NewBuiltInToolData(ctx, dir, tt.snapshotMaxAge)
 
 			if tt.wantErr {
 				if err == nil {
@@ -108,7 +108,7 @@ func TestNewBuiltInToolData(t *testing.T) {
 			}
 
 			// Verify basic functionality.
-			bundles, tools, _ := bi.ListBuiltInToolData()
+			bundles, tools, _ := bi.ListBuiltInToolData(ctx)
 			if len(bundles) == 0 {
 				t.Error("expected at least one bundle")
 			}
@@ -117,7 +117,7 @@ func TestNewBuiltInToolData(t *testing.T) {
 			}
 
 			// Verify overlay file creation.
-			if _, err := os.Stat(filepath.Join(dir, spec.ToolBuiltInOverlayFileName)); err != nil {
+			if _, err := os.Stat(filepath.Join(dir, spec.ToolBuiltInOverlayDBFileName)); err != nil {
 				t.Errorf("overlay file not created: %v", err)
 			}
 
@@ -150,7 +150,7 @@ func TestSetToolBundleEnabled(t *testing.T) {
 			name: "enable_existing_bundle",
 			setup: func(t *testing.T, bi *BuiltInToolData) (bundleitemutils.BundleID, bool) {
 				t.Helper()
-				bundles, _, _ := bi.ListBuiltInToolData()
+				bundles, _, _ := bi.ListBuiltInToolData(t.Context())
 				id, bundle := anyToolBundle(bundles)
 				return id, !bundle.IsEnabled
 			},
@@ -160,7 +160,7 @@ func TestSetToolBundleEnabled(t *testing.T) {
 			name: "disable_existing_bundle",
 			setup: func(t *testing.T, bi *BuiltInToolData) (bundleitemutils.BundleID, bool) {
 				t.Helper()
-				bundles, _, _ := bi.ListBuiltInToolData()
+				bundles, _, _ := bi.ListBuiltInToolData(t.Context())
 				id, bundle := anyToolBundle(bundles)
 				return id, !bundle.IsEnabled
 			},
@@ -186,15 +186,16 @@ func TestSetToolBundleEnabled(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := t.Context()
 			dir := t.TempDir()
-			bi, err := NewBuiltInToolData(dir, 0)
+			bi, err := NewBuiltInToolData(ctx, dir, 0)
 			if err != nil {
 				t.Fatalf("setup failed: %v", err)
 			}
 
 			bundleID, enabled := tt.setup(t, bi)
 
-			_, err = bi.SetToolBundleEnabled(bundleID, enabled)
+			_, err = bi.SetToolBundleEnabled(ctx, bundleID, enabled)
 
 			if tt.wantErr {
 				if err == nil {
@@ -208,18 +209,21 @@ func TestSetToolBundleEnabled(t *testing.T) {
 			}
 
 			// Verify the change is reflected in the snapshot.
-			bundles, _, _ := bi.ListBuiltInToolData()
+			bundles, _, _ := bi.ListBuiltInToolData(ctx)
 			if got := bundles[bundleID].IsEnabled; got != enabled {
 				t.Errorf("bundle enabled state = %v, want %v", got, enabled)
 			}
 
-			// Verify persistence to disk.
-			if present, val := overlayOnDisk(t, dir, "bundles", string(bundleID), spec.ToolBuiltInOverlayFileName); !present ||
-				val != enabled {
+			// Verify overlay state via bundleOverlayFlags API.
+			flag, ok, err := bi.bundleOverlayFlags.GetFlag(ctx, BuiltInToolBundleID(bundleID))
+			if err != nil {
+				t.Fatalf("bundleOverlayFlags.GetFlag: %v", err)
+			}
+			if !ok || flag.Value != enabled {
 				t.Errorf(
 					"overlay: present=%v val=%v, want present=true val=%v",
-					present,
-					val,
+					ok,
+					flag.Value,
 					enabled,
 				)
 			}
@@ -237,7 +241,7 @@ func TestSetToolEnabled(t *testing.T) {
 			name: "enable_existing_tool",
 			setup: func(t *testing.T, bi *BuiltInToolData) (bundleitemutils.BundleID, spec.Tool, bool) {
 				t.Helper()
-				_, tools, _ := bi.ListBuiltInToolData()
+				_, tools, _ := bi.ListBuiltInToolData(t.Context())
 				bid, _, tool := anyTool(tools)
 				return bid, tool, !tool.IsEnabled
 			},
@@ -247,7 +251,7 @@ func TestSetToolEnabled(t *testing.T) {
 			name: "disable_existing_tool",
 			setup: func(t *testing.T, bi *BuiltInToolData) (bundleitemutils.BundleID, spec.Tool, bool) {
 				t.Helper()
-				_, tools, _ := bi.ListBuiltInToolData()
+				_, tools, _ := bi.ListBuiltInToolData(t.Context())
 				bid, _, tool := anyTool(tools)
 				return bid, tool, !tool.IsEnabled
 			},
@@ -267,7 +271,7 @@ func TestSetToolEnabled(t *testing.T) {
 			name: "nonexistent_tool",
 			setup: func(t *testing.T, bi *BuiltInToolData) (bundleitemutils.BundleID, spec.Tool, bool) {
 				t.Helper()
-				bundles, _, _ := bi.ListBuiltInToolData()
+				bundles, _, _ := bi.ListBuiltInToolData(t.Context())
 				bid, _ := anyToolBundle(bundles)
 				return bid, buildValidTool(t, "does-not-exist", "a", "does-not-exist"), true
 			},
@@ -277,7 +281,7 @@ func TestSetToolEnabled(t *testing.T) {
 			name: "empty_tool_id",
 			setup: func(t *testing.T, bi *BuiltInToolData) (bundleitemutils.BundleID, spec.Tool, bool) {
 				t.Helper()
-				bundles, _, _ := bi.ListBuiltInToolData()
+				bundles, _, _ := bi.ListBuiltInToolData(t.Context())
 				bid, _ := anyToolBundle(bundles)
 				return bid, buildValidTool(t, "", "a", ""), true
 			},
@@ -287,15 +291,16 @@ func TestSetToolEnabled(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := t.Context()
 			dir := t.TempDir()
-			bi, err := NewBuiltInToolData(dir, 0)
+			bi, err := NewBuiltInToolData(ctx, dir, 0)
 			if err != nil {
 				t.Fatalf("setup failed: %v", err)
 			}
 
 			bundleID, tool, enabled := tt.setup(t, bi)
 
-			_, err = bi.SetToolEnabled(bundleID, tool.Slug, tool.Version, enabled)
+			_, err = bi.SetToolEnabled(ctx, bundleID, tool.Slug, tool.Version, enabled)
 
 			if tt.wantErr {
 				if err == nil {
@@ -309,18 +314,21 @@ func TestSetToolEnabled(t *testing.T) {
 			}
 
 			// Verify the change is reflected in the snapshot.
-			_, tools, _ := bi.ListBuiltInToolData()
+			_, tools, _ := bi.ListBuiltInToolData(ctx)
 			if got := tools[bundleID][tool.ID].IsEnabled; got != enabled {
 				t.Errorf("tool enabled state = %v, want %v", got, enabled)
 			}
 
-			// Verify persistence to disk.
-			if present, val := overlayOnDisk(t, dir, "tools", string(tool.ID), spec.ToolBuiltInOverlayFileName); !present ||
-				val != enabled {
+			// Verify overlay state via toolOverlayFlags API.
+			flag, ok, err := bi.toolOverlayFlags.GetFlag(ctx, BuiltInToolID(tool.ID))
+			if err != nil {
+				t.Fatalf("toolOverlayFlags.GetFlag: %v", err)
+			}
+			if !ok || flag.Value != enabled {
 				t.Errorf(
 					"overlay: present=%v val=%v, want present=true val=%v",
-					present,
-					val,
+					ok,
+					flag.Value,
 					enabled,
 				)
 			}
@@ -329,15 +337,16 @@ func TestSetToolEnabled(t *testing.T) {
 }
 
 func TestListBuiltInToolData(t *testing.T) {
+	ctx := t.Context()
 	dir := t.TempDir()
-	bi, err := NewBuiltInToolData(dir, 0)
+	bi, err := NewBuiltInToolData(ctx, dir, 0)
 	if err != nil {
 		t.Fatalf("setup failed: %v", err)
 	}
 
 	t.Run("returns_independent_copies", func(t *testing.T) {
-		b1, t1, _ := bi.ListBuiltInToolData()
-		b2, t2, _ := bi.ListBuiltInToolData()
+		b1, t1, _ := bi.ListBuiltInToolData(ctx)
+		b2, t2, _ := bi.ListBuiltInToolData(ctx)
 
 		// Mutate first copy.
 		for id := range b1 {
@@ -372,7 +381,7 @@ func TestListBuiltInToolData(t *testing.T) {
 	})
 
 	t.Run("returns_consistent_data", func(t *testing.T) {
-		bundles, tools, _ := bi.ListBuiltInToolData()
+		bundles, tools, _ := bi.ListBuiltInToolData(ctx)
 
 		// Verify all bundles have corresponding tool maps.
 		for bundleID := range bundles {
@@ -390,7 +399,7 @@ func TestListBuiltInToolData(t *testing.T) {
 	})
 
 	t.Run("all_items_marked_builtin", func(t *testing.T) {
-		bundles, tools, _ := bi.ListBuiltInToolData()
+		bundles, tools, _ := bi.ListBuiltInToolData(ctx)
 
 		for id, bundle := range bundles {
 			if !bundle.IsBuiltIn {
@@ -409,13 +418,14 @@ func TestListBuiltInToolData(t *testing.T) {
 }
 
 func TestToolConcurrency(t *testing.T) {
+	ctx := t.Context()
 	dir := t.TempDir()
-	bi, err := NewBuiltInToolData(dir, time.Millisecond*10)
+	bi, err := NewBuiltInToolData(ctx, dir, time.Millisecond*10)
 	if err != nil {
 		t.Fatalf("setup failed: %v", err)
 	}
 
-	bundles, tools, _ := bi.ListBuiltInToolData()
+	bundles, tools, _ := bi.ListBuiltInToolData(ctx)
 	if len(bundles) == 0 || len(tools) == 0 {
 		t.Skip("no test data available")
 	}
@@ -432,7 +442,7 @@ func TestToolConcurrency(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				for range 100 {
-					bundles, tools, _ := bi.ListBuiltInToolData()
+					bundles, tools, _ := bi.ListBuiltInToolData(ctx)
 					if len(bundles) == 0 || len(tools) == 0 {
 						t.Errorf("got empty results during concurrent read")
 						return
@@ -453,7 +463,7 @@ func TestToolConcurrency(t *testing.T) {
 			go func(i int) {
 				defer wg.Done()
 				enabled := i%2 == 0
-				if _, err := bi.SetToolBundleEnabled(bundleID, enabled); err != nil {
+				if _, err := bi.SetToolBundleEnabled(ctx, bundleID, enabled); err != nil {
 					t.Errorf("SetToolBundleEnabled failed: %v", err)
 				}
 			}(i)
@@ -461,7 +471,7 @@ func TestToolConcurrency(t *testing.T) {
 			go func(i int) {
 				defer wg.Done()
 				enabled := i%2 == 0
-				if _, err := bi.SetToolEnabled(toolBundleID, tool.Slug, tool.Version, enabled); err != nil {
+				if _, err := bi.SetToolEnabled(ctx, toolBundleID, tool.Slug, tool.Version, enabled); err != nil {
 					t.Errorf("SetToolEnabled failed: %v", err)
 				}
 			}(i)
@@ -484,7 +494,7 @@ func TestToolConcurrency(t *testing.T) {
 					case <-done:
 						return
 					default:
-						_, _, _ = bi.ListBuiltInToolData()
+						_, _, _ = bi.ListBuiltInToolData(ctx)
 					}
 				}
 			}()
@@ -497,10 +507,10 @@ func TestToolConcurrency(t *testing.T) {
 				defer wg.Done()
 				for j := range 10 {
 					enabled := (i+j)%2 == 0
-					if _, e := bi.SetToolBundleEnabled(bundleID, enabled); e != nil {
+					if _, e := bi.SetToolBundleEnabled(ctx, bundleID, enabled); e != nil {
 						t.Errorf("SetToolBundleEnabled failed: %v", e)
 					}
-					if _, e := bi.SetToolEnabled(toolBundleID, tool.Slug, tool.Version, enabled); e != nil {
+					if _, e := bi.SetToolEnabled(ctx, toolBundleID, tool.Slug, tool.Version, enabled); e != nil {
 						t.Errorf("SetToolEnabled failed: %v", e)
 					}
 				}
@@ -514,52 +524,54 @@ func TestToolConcurrency(t *testing.T) {
 }
 
 func TestRebuildToolSnapshot(t *testing.T) {
+	ctx := t.Context()
 	dir := t.TempDir()
-	bi, err := NewBuiltInToolData(dir, time.Hour)
+	bi, err := NewBuiltInToolData(ctx, dir, time.Hour)
 	if err != nil {
 		t.Fatalf("setup failed: %v", err)
 	}
 
-	bundles, _, _ := bi.ListBuiltInToolData()
+	bundles, _, _ := bi.ListBuiltInToolData(ctx)
 	bundleID, bundle := anyToolBundle(bundles)
 
 	// Change the overlay directly.
-	_, err = bi.store.SetFlag(BuiltInToolBundleID(bundleID), !bundle.IsEnabled)
+	_, err = bi.bundleOverlayFlags.SetFlag(ctx, BuiltInToolBundleID(bundleID), !bundle.IsEnabled)
 	if err != nil {
 		t.Fatalf("failed to set overlay: %v", err)
 	}
 
 	// Force rebuild.
-	if err := bi.rebuildSnapshot(); err != nil {
+	if err := bi.rebuildSnapshot(ctx); err != nil {
 		t.Fatalf("rebuildSnapshot failed: %v", err)
 	}
 
 	// Verify the change is reflected.
-	newBundles, _, _ := bi.ListBuiltInToolData()
+	newBundles, _, _ := bi.ListBuiltInToolData(ctx)
 	if newBundles[bundleID].IsEnabled == bundle.IsEnabled {
 		t.Error("rebuild did not apply overlay changes")
 	}
 }
 
 func TestAsyncToolRebuild(t *testing.T) {
+	ctx := t.Context()
 	dir := t.TempDir()
-	bi, err := NewBuiltInToolData(dir, time.Millisecond)
+	bi, err := NewBuiltInToolData(ctx, dir, time.Millisecond)
 	if err != nil {
 		t.Fatalf("setup failed: %v", err)
 	}
 
-	bundles, _, _ := bi.ListBuiltInToolData()
+	bundles, _, _ := bi.ListBuiltInToolData(ctx)
 	bundleID, bundle := anyToolBundle(bundles)
 
 	time.Sleep(2 * time.Millisecond)
 
-	if _, err := bi.SetToolBundleEnabled(bundleID, !bundle.IsEnabled); err != nil {
+	if _, err := bi.SetToolBundleEnabled(ctx, bundleID, !bundle.IsEnabled); err != nil {
 		t.Fatalf("SetToolBundleEnabled failed: %v", err)
 	}
 
 	time.Sleep(10 * time.Millisecond)
 
-	newBundles, _, _ := bi.ListBuiltInToolData()
+	newBundles, _, _ := bi.ListBuiltInToolData(ctx)
 	if newBundles[bundleID].IsEnabled == bundle.IsEnabled {
 		t.Error("async rebuild did not apply changes")
 	}
@@ -678,6 +690,7 @@ func Test_NewBuiltInToolData_SyntheticFS_Errors(t *testing.T) {
 }
 
 func Test_NewBuiltInToolData_SyntheticFS_HappyAndCRUD(t *testing.T) {
+	ctx := t.Context()
 	bid := newUUID(t)
 	slug := "demo"
 
@@ -691,51 +704,39 @@ func Test_NewBuiltInToolData_SyntheticFS_HappyAndCRUD(t *testing.T) {
 	}
 
 	tmp := t.TempDir()
-	bi, err := NewBuiltInToolData(tmp, 0, WithToolBundlesFS(mem, "."))
+	bi, err := NewBuiltInToolData(ctx, tmp, 0, WithToolBundlesFS(mem, "."))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	bundles, tools, err := bi.ListBuiltInToolData()
+	bundles, tools, err := bi.ListBuiltInToolData(ctx)
 	if err != nil || len(bundles) != 1 || len(tools) != 1 {
 		t.Fatalf("want 1/1 objects, got %d/%d", len(bundles), len(tools))
 	}
 
 	bundleID, bundle := anyToolBundle(bundles)
-	if _, err := bi.SetToolBundleEnabled(bundleID, !bundle.IsEnabled); err != nil {
+	if _, err := bi.SetToolBundleEnabled(ctx, bundleID, !bundle.IsEnabled); err != nil {
 		t.Fatalf("SetToolBundleEnabled: %v", err)
 	}
-	if present, val := overlayOnDisk(t, tmp, "bundles", string(bundleID), spec.ToolBuiltInOverlayFileName); !present ||
-		val == bundle.IsEnabled {
+	flag, ok, err := bi.bundleOverlayFlags.GetFlag(ctx, BuiltInToolBundleID(bundleID))
+	if err != nil {
+		t.Fatalf("bundleOverlayFlags.GetFlag: %v", err)
+	}
+	if !ok || flag.Value == bundle.IsEnabled {
 		t.Fatalf("bundle overlay not updated")
 	}
 
 	_, toolID, tool := anyTool(tools)
-	if _, err := bi.SetToolEnabled(bundleID, tool.Slug, tool.Version, !tool.IsEnabled); err != nil {
+	if _, err := bi.SetToolEnabled(ctx, bundleID, tool.Slug, tool.Version, !tool.IsEnabled); err != nil {
 		t.Fatalf("SetToolEnabled: %v", err)
 	}
-	if present, val := overlayOnDisk(t, tmp, "tools", string(toolID), spec.ToolBuiltInOverlayFileName); !present ||
-		val == tool.IsEnabled {
+	tflag, ok, err := bi.toolOverlayFlags.GetFlag(ctx, BuiltInToolID(toolID))
+	if err != nil {
+		t.Fatalf("toolOverlayFlags.GetFlag: %v", err)
+	}
+	if !ok || tflag.Value == tool.IsEnabled {
 		t.Fatalf("tool overlay not updated")
 	}
-}
-
-// overlayOnDisk returns whether the overlay file contains a value for the given group/id and its value.
-func overlayOnDisk(t *testing.T, dir, group, id, overlayFile string) (present, value bool) {
-	t.Helper()
-	data, err := os.ReadFile(filepath.Join(dir, overlayFile))
-	if err != nil {
-		t.Fatalf("cannot read overlay file: %v", err)
-	}
-	var root map[string]map[string]booloverlay.Flag
-	if err := json.Unmarshal(data, &root); err != nil {
-		t.Fatalf("invalid overlay JSON: %v", err)
-	}
-	if sub, ok := root[group]; ok {
-		v, ok := sub[id]
-		return ok, v.Enabled
-	}
-	return false, false
 }
 
 // anyTool returns any tool from the map.
@@ -832,7 +833,8 @@ func buildValidTool(t *testing.T, slug, ver, id string) spec.Tool {
 // newToolFromFS constructs BuiltInToolData from a synthetic fs.FS.
 func newToolFromFS(t *testing.T, mem fs.FS) (*BuiltInToolData, error) {
 	t.Helper()
-	return NewBuiltInToolData(t.TempDir(), time.Hour, WithToolBundlesFS(mem, "."))
+	ctx := t.Context()
+	return NewBuiltInToolData(ctx, t.TempDir(), time.Hour, WithToolBundlesFS(mem, "."))
 }
 
 // newUUID returns a v7-UUID as string or fails the test.

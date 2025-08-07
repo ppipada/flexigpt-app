@@ -6,10 +6,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/setting/spec"
 )
 
-func getThemeString(s spec.ThemeType) string {
-	return string(s)
-}
-
 // validateTheme checks a theme for correctness.
 func validateTheme(th *spec.AppTheme) error {
 	if th == nil {
@@ -29,4 +25,8 @@ func validateTheme(th *spec.AppTheme) error {
 	default:
 		return spec.ErrInvalidTheme
 	}
+}
+
+func getThemeString(s spec.ThemeType) string {
+	return string(s)
 }

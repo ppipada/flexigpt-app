@@ -16,7 +16,7 @@ import (
 
 // BuiltInLister returns the current snapshot of all built-in bundles and templates.
 // Overlay should already be applied, so that enabled flags are correct.
-type BuiltInLister func() (
+type BuiltInLister func(ctx context.Context) (
 	bundles map[bundleitemutils.BundleID]spec.PromptBundle,
 	templates map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
 	err error,
@@ -82,7 +82,7 @@ func syncBuiltInsToFTS(
 		getPrev ftsengine.GetPrevCmp,
 		emit func(ftsengine.SyncDecision) error,
 	) error {
-		bundles, tpls, err := lister()
+		bundles, tpls, err := lister(ctx)
 		if err != nil {
 			return err
 		}

@@ -4,6 +4,7 @@
 package store
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -14,21 +15,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/booloverlay"
 	"github.com/ppipada/flexigpt-app/pkg/builtin"
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
+	"github.com/ppipada/flexigpt-app/pkg/overlay"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
 type BuiltInToolBundleID bundleitemutils.BundleID
 
-func (BuiltInToolBundleID) Group() booloverlay.GroupID { return "bundles" }
-func (b BuiltInToolBundleID) ID() booloverlay.KeyID    { return booloverlay.KeyID(b) }
+func (BuiltInToolBundleID) Group() overlay.GroupID { return "bundles" }
+func (b BuiltInToolBundleID) ID() overlay.KeyID    { return overlay.KeyID(b) }
 
 type BuiltInToolID bundleitemutils.ItemID
 
-func (BuiltInToolID) Group() booloverlay.GroupID { return "tools" }
-func (t BuiltInToolID) ID() booloverlay.KeyID    { return booloverlay.KeyID(t) }
+func (BuiltInToolID) Group() overlay.GroupID { return "tools" }
+func (t BuiltInToolID) ID() overlay.KeyID    { return overlay.KeyID(t) }
 
 type BuiltInToolData struct {
 	toolsFS        fs.FS
@@ -37,7 +38,10 @@ type BuiltInToolData struct {
 
 	bundles map[bundleitemutils.BundleID]spec.ToolBundle
 	tools   map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool
-	store   *booloverlay.Store
+
+	store              *overlay.Store
+	bundleOverlayFlags *overlay.TypedGroup[BuiltInToolBundleID, bool]
+	toolOverlayFlags   *overlay.TypedGroup[BuiltInToolID, bool]
 
 	mu          sync.RWMutex
 	viewBundles map[bundleitemutils.BundleID]spec.ToolBundle
@@ -56,6 +60,7 @@ func WithToolBundlesFS(fsys fs.FS, rootDir string) BuiltInToolDataOption {
 }
 
 func NewBuiltInToolData(
+	ctx context.Context,
 	overlayBaseDir string,
 	snapshotMaxAge time.Duration,
 	opts ...BuiltInToolDataOption,
@@ -70,26 +75,38 @@ func NewBuiltInToolData(
 		return nil, err
 	}
 
-	store, err := booloverlay.NewStore(
-		filepath.Join(overlayBaseDir, spec.ToolBuiltInOverlayFileName),
-		booloverlay.WithKeyType[BuiltInToolBundleID](),
-		booloverlay.WithKeyType[BuiltInToolID](),
+	store, err := overlay.NewOverlayStore(
+		ctx,
+		filepath.Join(overlayBaseDir, spec.ToolBuiltInOverlayDBFileName),
+		overlay.WithKeyType[BuiltInToolBundleID](),
+		overlay.WithKeyType[BuiltInToolID](),
 	)
 	if err != nil {
 		return nil, err
 	}
 
+	bundleOverlayFlags, err := overlay.NewTypedGroup[BuiltInToolBundleID, bool](ctx, store)
+	if err != nil {
+		return nil, err
+	}
+	toolOverlayFlags, err := overlay.NewTypedGroup[BuiltInToolID, bool](ctx, store)
+	if err != nil {
+		return nil, err
+	}
+
 	d := &BuiltInToolData{
-		toolsFS:        builtin.BuiltInToolBundlesFS,
-		toolsDir:       builtin.BuiltInToolBundlesRootDir,
-		overlayBaseDir: overlayBaseDir,
-		store:          store,
+		toolsFS:            builtin.BuiltInToolBundlesFS,
+		toolsDir:           builtin.BuiltInToolBundlesRootDir,
+		overlayBaseDir:     overlayBaseDir,
+		store:              store,
+		bundleOverlayFlags: bundleOverlayFlags,
+		toolOverlayFlags:   toolOverlayFlags,
 	}
 	for _, o := range opts {
 		o(d)
 	}
 
-	if err := d.populateDataFromFS(); err != nil {
+	if err := d.populateDataFromFS(ctx); err != nil {
 		return nil, err
 	}
 
@@ -98,7 +115,7 @@ func NewBuiltInToolData(
 		func() error {
 			d.mu.Lock()
 			defer d.mu.Unlock()
-			return d.rebuildSnapshot()
+			return d.rebuildSnapshot(ctx)
 		},
 	)
 	d.rebuilder.MarkFresh()
@@ -108,6 +125,7 @@ func NewBuiltInToolData(
 
 // SetToolBundleEnabled toggles a bundle flag and returns the updated bundle.
 func (d *BuiltInToolData) SetToolBundleEnabled(
+	ctx context.Context,
 	id bundleitemutils.BundleID,
 	enabled bool,
 ) (spec.ToolBundle, error) {
@@ -116,7 +134,7 @@ func (d *BuiltInToolData) SetToolBundleEnabled(
 			"bundleID: %q, err: %w", id, spec.ErrBuiltInBundleNotFound)
 	}
 
-	flag, err := d.store.SetFlag(BuiltInToolBundleID(id), enabled)
+	flag, err := d.bundleOverlayFlags.SetFlag(ctx, BuiltInToolBundleID(id), enabled)
 	if err != nil {
 		return spec.ToolBundle{}, err
 	}
@@ -138,16 +156,17 @@ func (d *BuiltInToolData) SetToolBundleEnabled(
 // returns the updated object.  Deriving the primary key from slug &
 // version keeps the API parallel to the prompt store.
 func (d *BuiltInToolData) SetToolEnabled(
+	ctx context.Context,
 	bundleID bundleitemutils.BundleID,
 	slug bundleitemutils.ItemSlug,
 	version bundleitemutils.ItemVersion,
 	enabled bool,
 ) (spec.Tool, error) {
-	tool, err := d.GetBuiltInTool(bundleID, slug, version)
+	tool, err := d.GetBuiltInTool(ctx, bundleID, slug, version)
 	if err != nil {
 		return spec.Tool{}, err
 	}
-	flag, err := d.store.SetFlag(BuiltInToolID(tool.ID), enabled)
+	flag, err := d.toolOverlayFlags.SetFlag(ctx, BuiltInToolID(tool.ID), enabled)
 	if err != nil {
 		return spec.Tool{}, err
 	}
@@ -164,7 +183,7 @@ func (d *BuiltInToolData) SetToolEnabled(
 	return tool, nil
 }
 
-func (d *BuiltInToolData) ListBuiltInToolData() (
+func (d *BuiltInToolData) ListBuiltInToolData(ctx context.Context) (
 	bundles map[bundleitemutils.BundleID]spec.ToolBundle,
 	tools map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool,
 	err error,
@@ -177,6 +196,7 @@ func (d *BuiltInToolData) ListBuiltInToolData() (
 }
 
 func (d *BuiltInToolData) GetBuiltInToolBundle(
+	ctx context.Context,
 	id bundleitemutils.BundleID,
 ) (spec.ToolBundle, error) {
 	d.mu.RLock()
@@ -189,6 +209,7 @@ func (d *BuiltInToolData) GetBuiltInToolBundle(
 }
 
 func (d *BuiltInToolData) GetBuiltInTool(
+	ctx context.Context,
 	bundleID bundleitemutils.BundleID,
 	slug bundleitemutils.ItemSlug,
 	version bundleitemutils.ItemVersion,
@@ -207,7 +228,7 @@ func (d *BuiltInToolData) GetBuiltInTool(
 	return spec.Tool{}, spec.ErrToolNotFound
 }
 
-func (d *BuiltInToolData) populateDataFromFS() error {
+func (d *BuiltInToolData) populateDataFromFS(ctx context.Context) error {
 	toolsFS, err := resolveToolBundlesFS(d.toolsFS, d.toolsDir)
 	if err != nil {
 		return err
@@ -250,7 +271,7 @@ func (d *BuiltInToolData) populateDataFromFS() error {
 				return nil
 			}
 			fn := path.Base(inPath)
-			if fn == builtin.BuiltInToolBundlesJSON || fn == spec.ToolBuiltInOverlayFileName {
+			if fn == builtin.BuiltInToolBundlesJSON || fn == spec.ToolBuiltInOverlayDBFileName {
 				return nil
 			}
 
@@ -327,7 +348,7 @@ func (d *BuiltInToolData) populateDataFromFS() error {
 	d.tools = toolMap
 
 	d.mu.Lock()
-	if err := d.rebuildSnapshot(); err != nil {
+	if err := d.rebuildSnapshot(ctx); err != nil {
 		d.mu.Unlock()
 		return err
 	}
@@ -337,7 +358,7 @@ func (d *BuiltInToolData) populateDataFromFS() error {
 }
 
 // Assumes d.mu is already locked.
-func (d *BuiltInToolData) rebuildSnapshot() error {
+func (d *BuiltInToolData) rebuildSnapshot(ctx context.Context) error {
 	newBundles := make(
 		map[bundleitemutils.BundleID]spec.ToolBundle,
 		len(d.bundles),
@@ -348,13 +369,13 @@ func (d *BuiltInToolData) rebuildSnapshot() error {
 	)
 
 	for id, b := range d.bundles {
-		flag, ok, err := d.store.GetFlag(BuiltInToolBundleID(id))
+		flag, ok, err := d.bundleOverlayFlags.GetFlag(ctx, BuiltInToolBundleID(id))
 		if err != nil {
 			return err
 		}
 		bc := b
 		if ok {
-			bc.IsEnabled = flag.Enabled
+			bc.IsEnabled = flag.Value
 			bc.ModifiedAt = flag.ModifiedAt
 		}
 		newBundles[id] = bc
@@ -363,13 +384,13 @@ func (d *BuiltInToolData) rebuildSnapshot() error {
 	for bid, tm := range d.tools {
 		sub := make(map[bundleitemutils.ItemID]spec.Tool, len(tm))
 		for tid, t := range tm {
-			flag, ok, err := d.store.GetFlag(BuiltInToolID(tid))
+			flag, ok, err := d.toolOverlayFlags.GetFlag(ctx, BuiltInToolID(tid))
 			if err != nil {
 				return err
 			}
 			tc := t
 			if ok {
-				tc.IsEnabled = flag.Enabled
+				tc.IsEnabled = flag.Value
 				tc.ModifiedAt = flag.ModifiedAt
 			}
 			sub[tid] = tc

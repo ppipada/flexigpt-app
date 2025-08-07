@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	ToolBundlesMetaFileName    = "tools.bundles.json"
-	ToolDBFileName             = "tools.fts.sqlite"
-	ToolBuiltInOverlayFileName = "toolsbuiltin.overlay.json"
+	ToolBundlesMetaFileName      = "tools.bundles.json"
+	ToolDBFileName               = "tools.fts.sqlite"
+	ToolBuiltInOverlayDBFileName = "toolsbuiltin.overlay.sqlite"
 
 	// Current on-disk schema version.
 	SchemaVersion        = "2025-07-01"

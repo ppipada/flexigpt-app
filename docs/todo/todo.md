@@ -4,7 +4,8 @@
 
 - Settings/Presets/Prompt/tool Backend:
 
-  - [ ] overlay needs to have non bool flag support too, need it for default model support, currently no default model change supported for inbuilt ones
+  - [x] overlay needs to have non bool flag support too, need it for default model support, currently no default model change supported for inbuilt ones
+  - [ ] Add default model in non bool overlay
   - [ ] backend should check if atleast one of reasoning or temp is set
   - [ ] Integrate store with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
 

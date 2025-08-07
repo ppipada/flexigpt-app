@@ -13,7 +13,6 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/booloverlay"
 	"github.com/ppipada/flexigpt-app/pkg/builtin"
 	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
@@ -77,8 +76,9 @@ func TestNewBuiltInPresets(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			ctx := t.Context()
 			dir := tc.setupDir(t)
-			bi, err := NewBuiltInPresets(dir, tc.snapshotMaxAge)
+			bi, err := NewBuiltInPresets(ctx, dir, tc.snapshotMaxAge)
 
 			if tc.wantErr {
 				if err == nil {
@@ -93,11 +93,11 @@ func TestNewBuiltInPresets(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
-			prov, models, _ := bi.ListBuiltInPresets()
+			prov, models, _ := bi.ListBuiltInPresets(ctx)
 			if len(prov) == 0 || len(models) == 0 {
 				t.Fatal("expected non-empty data")
 			}
-			if _, err := os.Stat(filepath.Join(dir, spec.ModelPresetsBuiltInOverlayFileName)); err != nil {
+			if _, err := os.Stat(filepath.Join(dir, spec.ModelPresetsBuiltInOverlayDBFileName)); err != nil {
 				t.Fatalf("overlay file missing: %v", err)
 			}
 			for n, p := range prov {
@@ -119,20 +119,22 @@ func TestNewBuiltInPresets(t *testing.T) {
 func TestSetProviderEnabled(t *testing.T) {
 	tests := []struct {
 		name    string
-		setup   func(*BuiltInPresets) (spec.ProviderName, bool)
+		setup   func(*testing.T, *BuiltInPresets) (spec.ProviderName, bool)
 		wantErr bool
 	}{
 		{
 			name: "toggle_existing_provider",
-			setup: func(bi *BuiltInPresets) (spec.ProviderName, bool) {
-				prov, _, _ := bi.ListBuiltInPresets()
+			setup: func(t *testing.T, bi *BuiltInPresets) (spec.ProviderName, bool) {
+				t.Helper()
+				prov, _, _ := bi.ListBuiltInPresets(t.Context())
 				id, p := anyProvider(prov)
 				return id, !p.IsEnabled
 			},
 		},
 		{
 			name: "nonexistent_provider",
-			setup: func(*BuiltInPresets) (spec.ProviderName, bool) {
+			setup: func(t *testing.T, _ *BuiltInPresets) (spec.ProviderName, bool) {
+				t.Helper()
 				return spec.ProviderName("ghost"), true
 			},
 			wantErr: true,
@@ -141,10 +143,11 @@ func TestSetProviderEnabled(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			ctx := t.Context()
 			dir := t.TempDir()
-			bi, _ := NewBuiltInPresets(dir, 0)
-			pname, enabled := tc.setup(bi)
-			_, err := bi.SetProviderEnabled(pname, enabled)
+			bi, _ := NewBuiltInPresets(ctx, dir, 0)
+			pname, enabled := tc.setup(t, bi)
+			_, err := bi.SetProviderEnabled(ctx, pname, enabled)
 
 			if tc.wantErr {
 				if err == nil {
@@ -155,15 +158,22 @@ func TestSetProviderEnabled(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected: %v", err)
 			}
-			prov, _, _ := bi.ListBuiltInPresets()
-			// PrintJSON(prov).
-			// PrintJSON(models).
+			prov, _, _ := bi.ListBuiltInPresets(ctx)
 			if prov[pname].IsEnabled != enabled {
 				t.Errorf("flag mismatch want %v", enabled)
 			}
-			if present, val := overlayFlagOnDisk(t, dir, "providers", string(pname)); !present ||
-				val != enabled {
-				t.Errorf("overlay mismatch")
+			// Check overlay state via providerOverlayFlags API.
+			flag, ok, err := bi.providerOverlayFlags.GetFlag(ctx, builtInProviderKey(pname))
+			if err != nil {
+				t.Fatalf("providerOverlayFlags.GetFlag: %v", err)
+			}
+			if !ok || flag.Value != enabled {
+				t.Errorf(
+					"overlay mismatch: present=%v, value=%v, want present=true, value=%v",
+					ok,
+					flag.Value,
+					enabled,
+				)
 			}
 		})
 	}
@@ -172,28 +182,30 @@ func TestSetProviderEnabled(t *testing.T) {
 func TestSetModelPresetEnabled(t *testing.T) {
 	tests := []struct {
 		name    string
-		setup   func(*BuiltInPresets) (spec.ProviderName, spec.ModelPreset, bool)
+		setup   func(*testing.T, *BuiltInPresets) (spec.ProviderName, spec.ModelPreset, bool)
 		wantErr bool
 	}{
 		{
 			name: "toggle_existing_model",
-			setup: func(bi *BuiltInPresets) (spec.ProviderName, spec.ModelPreset, bool) {
-				_, models, _ := bi.ListBuiltInPresets()
+			setup: func(t *testing.T, bi *BuiltInPresets) (spec.ProviderName, spec.ModelPreset, bool) {
+				t.Helper()
+				_, models, _ := bi.ListBuiltInPresets(t.Context())
 				pn, _, mp := anyModel(models)
 				return pn, mp, !mp.IsEnabled
 			},
 		},
 		{
 			name: "nonexistent_provider",
-			setup: func(*BuiltInPresets) (spec.ProviderName, spec.ModelPreset, bool) {
+			setup: func(*testing.T, *BuiltInPresets) (spec.ProviderName, spec.ModelPreset, bool) {
 				return spec.ProviderName("ghost"), spec.ModelPreset{ID: "m"}, true
 			},
 			wantErr: true,
 		},
 		{
 			name: "nonexistent_model",
-			setup: func(bi *BuiltInPresets) (spec.ProviderName, spec.ModelPreset, bool) {
-				prov, _, _ := bi.ListBuiltInPresets()
+			setup: func(t *testing.T, bi *BuiltInPresets) (spec.ProviderName, spec.ModelPreset, bool) {
+				t.Helper()
+				prov, _, _ := bi.ListBuiltInPresets(t.Context())
 				pn, _ := anyProvider(prov)
 				return pn, spec.ModelPreset{ID: "ghost"}, true
 			},
@@ -203,10 +215,11 @@ func TestSetModelPresetEnabled(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			ctx := t.Context()
 			dir := t.TempDir()
-			bi, _ := NewBuiltInPresets(dir, 0)
-			pn, mp, enabled := tc.setup(bi)
-			_, err := bi.SetModelPresetEnabled(pn, mp.ID, enabled)
+			bi, _ := NewBuiltInPresets(ctx, dir, 0)
+			pn, mp, enabled := tc.setup(t, bi)
+			_, err := bi.SetModelPresetEnabled(ctx, pn, mp.ID, enabled)
 
 			if tc.wantErr {
 				if err == nil {
@@ -217,25 +230,35 @@ func TestSetModelPresetEnabled(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected: %v", err)
 			}
-			_, models, _ := bi.ListBuiltInPresets()
+			_, models, _ := bi.ListBuiltInPresets(ctx)
 			if models[pn][mp.ID].IsEnabled != enabled {
 				t.Errorf("flag mismatch want %v", enabled)
 			}
-			if present, val := overlayFlagOnDisk(t, dir, "models", string(mp.ID)); !present ||
-				val != enabled {
-				t.Errorf("overlay mismatch")
+			// Check overlay state via modelOverlayFlags API.
+			flag, ok, err := bi.modelOverlayFlags.GetFlag(ctx, builtInModelKey(mp.ID))
+			if err != nil {
+				t.Fatalf("modelOverlayFlags.GetFlag: %v", err)
+			}
+			if !ok || flag.Value != enabled {
+				t.Errorf(
+					"overlay mismatch: present=%v, value=%v, want present=true, value=%v",
+					ok,
+					flag.Value,
+					enabled,
+				)
 			}
 		})
 	}
 }
 
 func TestListBuiltInPresets(t *testing.T) {
+	ctx := t.Context()
 	dir := t.TempDir()
-	bi, _ := NewBuiltInPresets(dir, 0)
+	bi, _ := NewBuiltInPresets(ctx, dir, 0)
 
 	t.Run("independent_copies", func(t *testing.T) {
-		p1, m1, _ := bi.ListBuiltInPresets()
-		p2, m2, _ := bi.ListBuiltInPresets()
+		p1, m1, _ := bi.ListBuiltInPresets(ctx)
+		p2, m2, _ := bi.ListBuiltInPresets(ctx)
 
 		for n := range p1 {
 			p1[n] = spec.ProviderPreset{DisplayName: corrupted}
@@ -265,7 +288,7 @@ func TestListBuiltInPresets(t *testing.T) {
 	})
 
 	t.Run("consistent_maps", func(t *testing.T) {
-		prov, models, _ := bi.ListBuiltInPresets()
+		prov, models, _ := bi.ListBuiltInPresets(ctx)
 		for pn := range prov {
 			if _, ok := models[pn]; !ok {
 				t.Errorf("provider %s has no model map", pn)
@@ -280,11 +303,12 @@ func TestListBuiltInPresets(t *testing.T) {
 }
 
 func TestConcurrencyPresets(t *testing.T) {
+	ctx := t.Context()
 	dir := t.TempDir()
-	bi, _ := NewBuiltInPresets(dir, 10*time.Millisecond)
+	bi, _ := NewBuiltInPresets(ctx, dir, 10*time.Millisecond)
 
 	// Fetch sample keys.
-	prov, models, _ := bi.ListBuiltInPresets()
+	prov, models, _ := bi.ListBuiltInPresets(ctx)
 	pname, _ := anyProvider(prov)
 	pn, mid, _ := anyModel(models)
 
@@ -297,7 +321,7 @@ func TestConcurrencyPresets(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				for range 100 {
-					_, _, _ = bi.ListBuiltInPresets()
+					_, _, _ = bi.ListBuiltInPresets(ctx)
 				}
 			}()
 		}
@@ -312,11 +336,11 @@ func TestConcurrencyPresets(t *testing.T) {
 			wg.Add(2)
 			go func(i int) {
 				defer wg.Done()
-				_, _ = bi.SetProviderEnabled(pname, i%2 == 0)
+				_, _ = bi.SetProviderEnabled(ctx, pname, i%2 == 0)
 			}(i)
 			go func(i int) {
 				defer wg.Done()
-				_, _ = bi.SetModelPresetEnabled(pn, mid, i%2 == 0)
+				_, _ = bi.SetModelPresetEnabled(ctx, pn, mid, i%2 == 0)
 			}(i)
 		}
 		wg.Wait()
@@ -324,34 +348,39 @@ func TestConcurrencyPresets(t *testing.T) {
 }
 
 func TestRebuildSnapshotPresets(t *testing.T) {
+	ctx := t.Context()
 	dir := t.TempDir()
-	bi, _ := NewBuiltInPresets(dir, time.Hour)
+	bi, _ := NewBuiltInPresets(ctx, dir, time.Hour)
 
-	prov, _, _ := bi.ListBuiltInPresets()
+	prov, _, _ := bi.ListBuiltInPresets(ctx)
 	pn, p := anyProvider(prov)
-	_, _ = bi.store.SetFlag(builtInProviderKey(pn), !p.IsEnabled)
+	_, err := bi.providerOverlayFlags.SetFlag(ctx, builtInProviderKey(pn), !p.IsEnabled)
+	if err != nil {
+		t.Fatalf("providerOverlayFlags.SetFlag: %v", err)
+	}
 
 	bi.mu.Lock()
-	_ = bi.rebuildSnapshot()
+	_ = bi.rebuildSnapshot(ctx)
 	bi.mu.Unlock()
 
-	prov2, _, _ := bi.ListBuiltInPresets()
+	prov2, _, _ := bi.ListBuiltInPresets(ctx)
 	if prov2[pn].IsEnabled == p.IsEnabled {
 		t.Error("rebuild did not apply overlay")
 	}
 }
 
 func TestAsyncRebuildPresets(t *testing.T) {
+	ctx := t.Context()
 	dir := t.TempDir()
-	bi, _ := NewBuiltInPresets(dir, time.Millisecond)
+	bi, _ := NewBuiltInPresets(ctx, dir, time.Millisecond)
 
-	prov, _, _ := bi.ListBuiltInPresets()
+	prov, _, _ := bi.ListBuiltInPresets(ctx)
 	pn, p := anyProvider(prov)
 	time.Sleep(2 * time.Millisecond)
-	_, _ = bi.SetProviderEnabled(pn, !p.IsEnabled)
+	_, _ = bi.SetProviderEnabled(ctx, pn, !p.IsEnabled)
 	time.Sleep(10 * time.Millisecond)
 
-	prov2, _, _ := bi.ListBuiltInPresets()
+	prov2, _, _ := bi.ListBuiltInPresets(ctx)
 	if prov2[pn].IsEnabled == p.IsEnabled {
 		t.Error("async rebuild missed change")
 	}
@@ -409,6 +438,7 @@ func Test_NewBuiltInPresets_SyntheticFS_Errors(t *testing.T) {
 }
 
 func Test_NewBuiltInPresets_SyntheticFS_HappyAndCRUD(t *testing.T) {
+	ctx := t.Context()
 	pn := spec.ProviderName("demo")
 	mpid := spec.ModelPresetID("m1")
 
@@ -416,53 +446,37 @@ func Test_NewBuiltInPresets_SyntheticFS_HappyAndCRUD(t *testing.T) {
 	fsys := fstest.MapFS{builtin.BuiltInModelPresetsJSON: {Data: schema}}
 
 	dir := t.TempDir()
-	bi, err := NewBuiltInPresets(dir, 0, WithModelPresetsFS(fsys, "."))
+	bi, err := NewBuiltInPresets(ctx, dir, 0, WithModelPresetsFS(fsys, "."))
 	if err != nil {
 		t.Fatalf("unexpected: %v", err)
 	}
 
-	prov, models, _ := bi.ListBuiltInPresets()
+	prov, models, _ := bi.ListBuiltInPresets(ctx)
 	if len(prov) != 1 || len(models) != 1 {
 		t.Fatalf("want 1/1 objects, got %d/%d", len(prov), len(models))
 	}
 
 	// Toggle provider.
 	p := prov[pn]
-	_, _ = bi.SetProviderEnabled(pn, !p.IsEnabled)
-	if present, val := overlayFlagOnDisk(t, dir, "providers", string(pn)); !present ||
-		val == p.IsEnabled {
+	_, _ = bi.SetProviderEnabled(ctx, pn, !p.IsEnabled)
+	flag, ok, err := bi.providerOverlayFlags.GetFlag(ctx, builtInProviderKey(pn))
+	if err != nil {
+		t.Fatalf("providerOverlayFlags.GetFlag: %v", err)
+	}
+	if !ok || flag.Value == p.IsEnabled {
 		t.Fatal("provider overlay not updated")
 	}
 
 	// Toggle model preset.
 	mp := models[pn][mpid]
-	_, _ = bi.SetModelPresetEnabled(pn, mpid, !mp.IsEnabled)
-	if present, val := overlayFlagOnDisk(t, dir, "models", string(mpid)); !present ||
-		val == mp.IsEnabled {
+	_, _ = bi.SetModelPresetEnabled(ctx, pn, mpid, !mp.IsEnabled)
+	mflag, ok, err := bi.modelOverlayFlags.GetFlag(ctx, builtInModelKey(mpid))
+	if err != nil {
+		t.Fatalf("modelOverlayFlags.GetFlag: %v", err)
+	}
+	if !ok || mflag.Value == mp.IsEnabled {
 		t.Fatal("model overlay not updated")
 	}
-}
-
-func overlayFlagOnDisk(t *testing.T, dir, group, id string) (present, val bool) {
-	t.Helper()
-	present = false
-	val = false
-	t.Helper()
-	bytes, err := os.ReadFile(filepath.Join(dir, spec.ModelPresetsBuiltInOverlayFileName))
-	if err != nil {
-		t.Fatalf("read overlay: %v", err)
-	}
-	var root map[string]map[string]booloverlay.Flag
-	if err := json.Unmarshal(bytes, &root); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-	if sub, ok := root[group]; ok {
-		if f, ok := sub[id]; ok {
-			present, val = true, f.Enabled
-			return present, val
-		}
-	}
-	return present, val
 }
 
 func anyProvider(
@@ -486,7 +500,8 @@ func anyModel(m map[spec.ProviderName]map[spec.ModelPresetID]spec.ModelPreset,
 
 func newPresetsFromFS(t *testing.T, mem fs.FS) (*BuiltInPresets, error) {
 	t.Helper()
-	return NewBuiltInPresets(t.TempDir(), time.Hour, WithModelPresetsFS(mem, "."))
+	ctx := t.Context()
+	return NewBuiltInPresets(ctx, t.TempDir(), time.Hour, WithModelPresetsFS(mem, "."))
 }
 
 func buildSchemaDefaultMissing(pn spec.ProviderName, mpid spec.ModelPresetID) []byte {

@@ -1,6 +1,9 @@
-package booloverlay
+package overlay
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // GroupID is the compile-time type for group names stored on disk.
 type GroupID string
@@ -10,7 +13,13 @@ type KeyID string
 
 // Flag represents one feature-flag record.
 type Flag struct {
-	Enabled    bool      `json:"enabled"`
+	Value      json.RawMessage `json:"value"`
+	CreatedAt  time.Time       `json:"created_at"`
+	ModifiedAt time.Time       `json:"modified_at"`
+}
+
+type TypedFlag[ValT any] struct {
+	Value      ValT      `json:"value"`
 	CreatedAt  time.Time `json:"created_at"`
 	ModifiedAt time.Time `json:"modified_at"`
 }

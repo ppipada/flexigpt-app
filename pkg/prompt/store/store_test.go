@@ -72,7 +72,7 @@ func TestBuiltInBundleGuards(t *testing.T) {
 	s, clean := newTestStore(t)
 	defer clean()
 
-	bid, slug, _, ok := firstBuiltIn(s)
+	bid, slug, _, ok := firstBuiltIn(t, s)
 	if !ok {
 		t.Skip("library compiled without built-in catalogue - skipping test")
 	}
@@ -258,7 +258,7 @@ func TestBuiltInTemplateGuards(t *testing.T) {
 	s, clean := newTestStore(t)
 	defer clean()
 
-	bid, slug, ver, ok := firstBuiltIn(s)
+	bid, slug, ver, ok := firstBuiltIn(t, s)
 	if !ok {
 		t.Skip("no built-in catalogue present")
 	}
@@ -306,15 +306,11 @@ func TestBuiltInTemplateGuards(t *testing.T) {
 	}
 }
 
-/* --------------------------------------------------------------------- */
-/*  C.  Listing & pagination                                             */
-/* ---------------------------------------------------------------------. */
-
 func TestBundleListFiltering(t *testing.T) {
 	s, clean := newTestStore(t)
 	defer clean()
 
-	builtInCnt, _ := builtinStatistics(s)
+	builtInCnt, _ := builtinStatistics(t, s)
 
 	// User data.
 	mustPutBundle(t, s, "ub1", "slug1", "Bundle1", true)
@@ -628,7 +624,7 @@ func TestSearchFindsBuiltIn(t *testing.T) {
 	s, clean := newTestStoreWithFTS(t)
 	defer clean()
 
-	bid, slug, ver, ok := firstBuiltIn(s)
+	bid, slug, ver, ok := firstBuiltIn(t, s)
 	if !ok {
 		t.Skip("library compiled without built-in catalogue")
 	}
@@ -662,7 +658,7 @@ func TestSearchRespectsBuiltInEnableDisable(t *testing.T) {
 	s, clean := newTestStoreWithFTS(t)
 	defer clean()
 
-	bid, slug, _, ok := firstBuiltIn(s)
+	bid, slug, _, ok := firstBuiltIn(t, s)
 	if !ok {
 		t.Skip("library compiled without built-in catalogue")
 	}
@@ -711,13 +707,14 @@ func TestSearchRespectsBuiltInEnableDisable(t *testing.T) {
 // builtinStatistics returns how many built-in bundles / templates are embedded
 // in the library.  The helper is used to keep assertions robust, independent
 // from the actual catalogue size.
-func builtinStatistics(s *PromptTemplateStore) (bundleCnt, templateCnt int) {
+func builtinStatistics(t *testing.T, s *PromptTemplateStore) (bundleCnt, templateCnt int) {
+	t.Helper()
 	if s.builtinData == nil {
 		return 0, 0
 	}
-	b, t, _ := s.builtinData.ListBuiltInData()
+	b, tm, _ := s.builtinData.ListBuiltInData(t.Context())
 	bundleCnt = len(b)
-	for _, tmplMap := range t {
+	for _, tmplMap := range tm {
 		templateCnt += len(tmplMap)
 	}
 	return bundleCnt, templateCnt
@@ -725,12 +722,14 @@ func builtinStatistics(s *PromptTemplateStore) (bundleCnt, templateCnt int) {
 
 // located in that bundle.  Ok==false if no catalogue is available.
 func firstBuiltIn(
+	t *testing.T,
 	s *PromptTemplateStore,
 ) (bid bundleitemutils.BundleID, slug bundleitemutils.ItemSlug, ver bundleitemutils.ItemVersion, ok bool) {
+	t.Helper()
 	if s.builtinData == nil {
 		return bid, slug, ver, ok
 	}
-	_, tmplM, _ := s.builtinData.ListBuiltInData()
+	_, tmplM, _ := s.builtinData.ListBuiltInData(t.Context())
 	for bID, m := range tmplM {
 		for _, tpl := range m {
 			return bID, tpl.Slug, tpl.Version, true

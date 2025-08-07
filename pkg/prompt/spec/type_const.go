@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	PromptBundlesMetaFileName    = "prompts.bundles.json"
-	PromptDBFileName             = "prompts.fts.sqlite"
-	PromptBuiltInOverlayFileName = "promptsbuiltin.overlay.json"
+	PromptBundlesMetaFileName      = "prompts.bundles.json"
+	PromptDBFileName               = "prompts.fts.sqlite"
+	PromptBuiltInOverlayDBFileName = "promptsbuiltin.overlay.sqlite"
 
 	// Current on-disk schema version.
 	SchemaVersion = "2025-07-01"

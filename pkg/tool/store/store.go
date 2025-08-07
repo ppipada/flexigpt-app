@@ -84,9 +84,10 @@ func NewToolStore(baseDir string, opts ...Option) (*ToolStore, error) {
 			return nil, err
 		}
 	}
+	ctx := context.Background()
 
 	// Built-in overlay.
-	bi, err := NewBuiltInToolData(ts.baseDir, builtInSnapshotMaxAge)
+	bi, err := NewBuiltInToolData(ctx, ts.baseDir, builtInSnapshotMaxAge)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +159,7 @@ func (ts *ToolStore) PutToolBundle(
 
 	// Built-ins are immutable.
 	if ts.builtinData != nil {
-		if _, err := ts.builtinData.GetBuiltInToolBundle(req.BundleID); err == nil {
+		if _, err := ts.builtinData.GetBuiltInToolBundle(ctx, req.BundleID); err == nil {
 			return nil, fmt.Errorf("%w: bundleID %q", spec.ErrBuiltInReadOnly, req.BundleID)
 		}
 	}
@@ -208,8 +209,8 @@ func (ts *ToolStore) PatchToolBundle(
 
 	// Built-in?
 	if ts.builtinData != nil {
-		if _, err := ts.builtinData.GetBuiltInToolBundle(req.BundleID); err == nil {
-			if _, err := ts.builtinData.SetToolBundleEnabled(req.BundleID, req.Body.IsEnabled); err != nil {
+		if _, err := ts.builtinData.GetBuiltInToolBundle(ctx, req.BundleID); err == nil {
+			if _, err := ts.builtinData.SetToolBundleEnabled(ctx, req.BundleID, req.Body.IsEnabled); err != nil {
 				return nil, err
 			}
 			slog.Info(
@@ -254,7 +255,7 @@ func (ts *ToolStore) DeleteToolBundle(
 
 	// Built-ins are immutable.
 	if ts.builtinData != nil {
-		if _, err := ts.builtinData.GetBuiltInToolBundle(req.BundleID); err == nil {
+		if _, err := ts.builtinData.GetBuiltInToolBundle(ctx, req.BundleID); err == nil {
 			return nil, fmt.Errorf("%w: bundleID %q", spec.ErrBuiltInReadOnly, req.BundleID)
 		}
 	}
@@ -342,7 +343,7 @@ func (ts *ToolStore) ListToolBundles(
 	// Collect bundles (built-in + user).
 	bundles := make([]spec.ToolBundle, 0)
 	if ts.builtinData != nil {
-		bi, _, _ := ts.builtinData.ListBuiltInToolData()
+		bi, _, _ := ts.builtinData.ListBuiltInToolData(ctx)
 		for _, b := range bi {
 			bundles = append(bundles, b)
 		}
@@ -432,7 +433,7 @@ func (ts *ToolStore) PutTool(
 		return nil, err
 	}
 
-	bundle, isBI, err := ts.getAnyBundle(req.BundleID)
+	bundle, isBI, err := ts.getAnyBundle(ctx, req.BundleID)
 	if err != nil {
 		return nil, err
 	}
@@ -515,12 +516,12 @@ func (ts *ToolStore) PatchTool(
 		return nil, err
 	}
 
-	bundle, isBI, err := ts.getAnyBundle(req.BundleID)
+	bundle, isBI, err := ts.getAnyBundle(ctx, req.BundleID)
 	if err != nil {
 		return nil, err
 	}
 	if isBI {
-		tool, err := ts.builtinData.SetToolEnabled(
+		tool, err := ts.builtinData.SetToolEnabled(ctx,
 			bundle.ID, req.ToolSlug, req.Version, req.Body.IsEnabled,
 		)
 		if err != nil {
@@ -582,7 +583,7 @@ func (ts *ToolStore) DeleteTool(
 	if err := bundleitemutils.ValidateItemVersion(req.Version); err != nil {
 		return nil, err
 	}
-	bundle, isBI, err := ts.getAnyBundle(req.BundleID)
+	bundle, isBI, err := ts.getAnyBundle(ctx, req.BundleID)
 	if err != nil {
 		return nil, err
 	}
@@ -612,12 +613,12 @@ func (ts *ToolStore) GetTool(
 	if req == nil || req.BundleID == "" || req.ToolSlug == "" || req.Version == "" {
 		return nil, fmt.Errorf("%w: bundleID, toolSlug, version required", spec.ErrInvalidRequest)
 	}
-	bundle, isBI, err := ts.getAnyBundle(req.BundleID)
+	bundle, isBI, err := ts.getAnyBundle(ctx, req.BundleID)
 	if err != nil {
 		return nil, err
 	}
 	if isBI {
-		tool, err := ts.builtinData.GetBuiltInTool(bundle.ID, req.ToolSlug, req.Version)
+		tool, err := ts.builtinData.GetBuiltInTool(ctx, bundle.ID, req.ToolSlug, req.Version)
 		if err != nil {
 			return nil, err
 		}
@@ -714,7 +715,7 @@ func (ts *ToolStore) ListTools(
 	if ts.builtinData == nil {
 		tok.BuiltInDone = true
 	} else if !tok.BuiltInDone {
-		biBundles, biTools, _ := ts.builtinData.ListBuiltInToolData()
+		biBundles, biTools, _ := ts.builtinData.ListBuiltInToolData(ctx)
 
 		var bidList []bundleitemutils.BundleID
 		for bid := range biBundles {
@@ -853,11 +854,11 @@ func (ts *ToolStore) SearchTools(
 			if err != nil {
 				continue
 			}
-			bundle, err := ts.builtinData.GetBuiltInToolBundle(bdi.ID)
+			bundle, err := ts.builtinData.GetBuiltInToolBundle(ctx, bdi.ID)
 			if err != nil {
 				continue
 			}
-			t, err := ts.builtinData.GetBuiltInTool(bdi.ID, finf.Slug, finf.Version)
+			t, err := ts.builtinData.GetBuiltInTool(ctx, bdi.ID, finf.Slug, finf.Version)
 			if err != nil {
 				continue
 			}
@@ -883,7 +884,7 @@ func (ts *ToolStore) SearchTools(
 		if err != nil {
 			continue
 		}
-		bundle, _, err := ts.getAnyBundle(bdi.ID)
+		bundle, _, err := ts.getAnyBundle(ctx, bdi.ID)
 		if err != nil {
 			continue
 		}
@@ -956,10 +957,11 @@ func (ts *ToolStore) findTool(
 
 // getAnyBundle returns either a built-in or user bundle by ID.
 func (ts *ToolStore) getAnyBundle(
+	ctx context.Context,
 	id bundleitemutils.BundleID,
 ) (spec.ToolBundle, bool, error) {
 	if ts.builtinData != nil {
-		if b, err := ts.builtinData.GetBuiltInToolBundle(id); err == nil {
+		if b, err := ts.builtinData.GetBuiltInToolBundle(ctx, id); err == nil {
 			return b, true, nil
 		}
 	}

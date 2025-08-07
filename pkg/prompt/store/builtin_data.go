@@ -3,6 +3,7 @@
 package store
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -13,21 +14,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/booloverlay"
 	"github.com/ppipada/flexigpt-app/pkg/builtin"
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
+	"github.com/ppipada/flexigpt-app/pkg/overlay"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 )
 
 type BuiltInBundleID bundleitemutils.BundleID
 
-func (BuiltInBundleID) Group() booloverlay.GroupID { return "bundles" }
-func (b BuiltInBundleID) ID() booloverlay.KeyID    { return booloverlay.KeyID(b) }
+func (BuiltInBundleID) Group() overlay.GroupID { return "bundles" }
+func (b BuiltInBundleID) ID() overlay.KeyID    { return overlay.KeyID(b) }
 
 type BuiltInTemplateID bundleitemutils.ItemID
 
-func (BuiltInTemplateID) Group() booloverlay.GroupID { return "templates" }
-func (t BuiltInTemplateID) ID() booloverlay.KeyID    { return booloverlay.KeyID(t) }
+func (BuiltInTemplateID) Group() overlay.GroupID { return "templates" }
+func (t BuiltInTemplateID) ID() overlay.KeyID    { return overlay.KeyID(t) }
 
 // BuiltInData keeps the built-in prompt assets and an overlay with enable flags.
 type BuiltInData struct {
@@ -37,7 +38,10 @@ type BuiltInData struct {
 
 	bundles   map[bundleitemutils.BundleID]spec.PromptBundle
 	templates map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate
-	store     *booloverlay.Store
+
+	store                *overlay.Store
+	bundleOverlayFlags   *overlay.TypedGroup[BuiltInBundleID, bool]
+	templateOverlayFlags *overlay.TypedGroup[BuiltInTemplateID, bool]
 
 	mu            sync.RWMutex
 	viewBundles   map[bundleitemutils.BundleID]spec.PromptBundle
@@ -57,6 +61,7 @@ func WithBundlesFS(fsys fs.FS, rootDir string) BuiltInDataOption {
 }
 
 func NewBuiltInData(
+	ctx context.Context,
 	overlayBaseDir string,
 	builtInSnapshotMaxAge time.Duration,
 	opts ...BuiltInDataOption,
@@ -70,26 +75,38 @@ func NewBuiltInData(
 	if err := os.MkdirAll(overlayBaseDir, 0o755); err != nil {
 		return nil, err
 	}
-	store, err := booloverlay.NewStore(
-		filepath.Join(overlayBaseDir, spec.PromptBuiltInOverlayFileName),
-		booloverlay.WithKeyType[BuiltInBundleID](),
-		booloverlay.WithKeyType[BuiltInTemplateID](),
+	store, err := overlay.NewOverlayStore(
+		ctx,
+		filepath.Join(overlayBaseDir, spec.PromptBuiltInOverlayDBFileName),
+		overlay.WithKeyType[BuiltInBundleID](),
+		overlay.WithKeyType[BuiltInTemplateID](),
 	)
 	if err != nil {
 		return nil, err
 	}
 
+	bundleOverlayFlags, err := overlay.NewTypedGroup[BuiltInBundleID, bool](ctx, store)
+	if err != nil {
+		return nil, err
+	}
+	templateOverlayFlags, err := overlay.NewTypedGroup[BuiltInTemplateID, bool](ctx, store)
+	if err != nil {
+		return nil, err
+	}
+
 	data := &BuiltInData{
-		bundlesFS:      builtin.BuiltInPromptBundlesFS,
-		bundlesDir:     builtin.BuiltInPromptBundlesRootDir,
-		overlayBaseDir: overlayBaseDir,
-		store:          store,
+		bundlesFS:            builtin.BuiltInPromptBundlesFS,
+		bundlesDir:           builtin.BuiltInPromptBundlesRootDir,
+		overlayBaseDir:       overlayBaseDir,
+		store:                store,
+		bundleOverlayFlags:   bundleOverlayFlags,
+		templateOverlayFlags: templateOverlayFlags,
 	}
 	for _, o := range opts {
 		o(data)
 	}
 
-	if err := data.populateDataFromFS(); err != nil {
+	if err := data.populateDataFromFS(ctx); err != nil {
 		return nil, err
 	}
 	data.rebuilder = builtin.NewAsyncRebuilder(
@@ -97,7 +114,7 @@ func NewBuiltInData(
 		func() error {
 			data.mu.Lock()
 			defer data.mu.Unlock()
-			return data.rebuildSnapshot()
+			return data.rebuildSnapshot(ctx)
 		},
 	)
 	data.rebuilder.MarkFresh()
@@ -106,7 +123,7 @@ func NewBuiltInData(
 }
 
 // ListBuiltInData returns a deep copy of the cached snapshot.
-func (d *BuiltInData) ListBuiltInData() (
+func (d *BuiltInData) ListBuiltInData(ctx context.Context) (
 	bundles map[bundleitemutils.BundleID]spec.PromptBundle,
 	templates map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
 	err error,
@@ -120,6 +137,7 @@ func (d *BuiltInData) ListBuiltInData() (
 
 // SetBundleEnabled toggles a bundle flag.
 func (d *BuiltInData) SetBundleEnabled(
+	ctx context.Context,
 	id bundleitemutils.BundleID,
 	enabled bool,
 ) (bundle spec.PromptBundle, err error) {
@@ -130,7 +148,7 @@ func (d *BuiltInData) SetBundleEnabled(
 			spec.ErrBuiltInBundleNotFound,
 		)
 	}
-	flag, err := d.store.SetFlag(BuiltInBundleID(id), enabled)
+	flag, err := d.bundleOverlayFlags.SetFlag(ctx, BuiltInBundleID(id), enabled)
 	if err != nil {
 		return spec.PromptBundle{}, err
 	}
@@ -146,7 +164,10 @@ func (d *BuiltInData) SetBundleEnabled(
 	return b, nil
 }
 
-func (d *BuiltInData) GetBuiltInBundle(id bundleitemutils.BundleID) (spec.PromptBundle, error) {
+func (d *BuiltInData) GetBuiltInBundle(
+	ctx context.Context,
+	id bundleitemutils.BundleID,
+) (spec.PromptBundle, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	b, ok := d.viewBundles[id]
@@ -158,16 +179,17 @@ func (d *BuiltInData) GetBuiltInBundle(id bundleitemutils.BundleID) (spec.Prompt
 
 // SetTemplateEnabled toggles a template flag.
 func (d *BuiltInData) SetTemplateEnabled(
+	ctx context.Context,
 	bundleID bundleitemutils.BundleID,
 	slug bundleitemutils.ItemSlug,
 	version bundleitemutils.ItemVersion,
 	enabled bool,
 ) (template spec.PromptTemplate, err error) {
-	template, err = d.GetBuiltInTemplate(bundleID, slug, version)
+	template, err = d.GetBuiltInTemplate(ctx, bundleID, slug, version)
 	if err != nil {
 		return template, err
 	}
-	flag, err := d.store.SetFlag(BuiltInTemplateID(template.ID), enabled)
+	flag, err := d.templateOverlayFlags.SetFlag(ctx, BuiltInTemplateID(template.ID), enabled)
 	if err != nil {
 		return spec.PromptTemplate{}, err
 	}
@@ -183,6 +205,7 @@ func (d *BuiltInData) SetTemplateEnabled(
 }
 
 func (d *BuiltInData) GetBuiltInTemplate(
+	ctx context.Context,
 	bundleID bundleitemutils.BundleID,
 	slug bundleitemutils.ItemSlug,
 	version bundleitemutils.ItemVersion,
@@ -201,7 +224,7 @@ func (d *BuiltInData) GetBuiltInTemplate(
 	return spec.PromptTemplate{}, spec.ErrTemplateNotFound
 }
 
-func (d *BuiltInData) populateDataFromFS() error {
+func (d *BuiltInData) populateDataFromFS(ctx context.Context) error {
 	bundlesFS, err := resolveBundlesFS(d.bundlesFS, d.bundlesDir)
 	if err != nil {
 		return err
@@ -239,7 +262,7 @@ func (d *BuiltInData) populateDataFromFS() error {
 				return nil
 			}
 			fn := path.Base(inPath)
-			if fn == builtin.BuiltInPromptBundlesJSON || fn == spec.PromptBuiltInOverlayFileName {
+			if fn == builtin.BuiltInPromptBundlesJSON || fn == spec.PromptBuiltInOverlayDBFileName {
 				return nil
 			}
 
@@ -316,7 +339,7 @@ func (d *BuiltInData) populateDataFromFS() error {
 	d.bundles = bundleMap
 	d.templates = templateMap
 	d.mu.Lock()
-	if err := d.rebuildSnapshot(); err != nil {
+	if err := d.rebuildSnapshot(ctx); err != nil {
 		d.mu.Unlock()
 		return err
 	}
@@ -326,7 +349,7 @@ func (d *BuiltInData) populateDataFromFS() error {
 
 // rebuildSnapshot regenerates the overlay-applied view.
 // Assumes that mu.Lock is held by caller.
-func (d *BuiltInData) rebuildSnapshot() error {
+func (d *BuiltInData) rebuildSnapshot(ctx context.Context) error {
 	newBundles := make(map[bundleitemutils.BundleID]spec.PromptBundle, len(d.bundles))
 	newTemplates := make(
 		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate,
@@ -334,13 +357,13 @@ func (d *BuiltInData) rebuildSnapshot() error {
 	)
 
 	for id, b := range d.bundles {
-		flag, ok, err := d.store.GetFlag(BuiltInBundleID(id))
+		flag, ok, err := d.bundleOverlayFlags.GetFlag(ctx, BuiltInBundleID(id))
 		if err != nil {
 			return err
 		}
 		bc := b
 		if ok {
-			bc.IsEnabled = flag.Enabled
+			bc.IsEnabled = flag.Value
 			bc.ModifiedAt = flag.ModifiedAt // take overlay timestamp
 		}
 		newBundles[id] = bc
@@ -349,13 +372,13 @@ func (d *BuiltInData) rebuildSnapshot() error {
 	for bid, tm := range d.templates {
 		sub := make(map[bundleitemutils.ItemID]spec.PromptTemplate, len(tm))
 		for tid, t := range tm {
-			flag, ok, err := d.store.GetFlag(BuiltInTemplateID(tid))
+			flag, ok, err := d.templateOverlayFlags.GetFlag(ctx, BuiltInTemplateID(tid))
 			if err != nil {
 				return err
 			}
 			tc := t
 			if ok {
-				tc.IsEnabled = flag.Enabled
+				tc.IsEnabled = flag.Value
 				tc.ModifiedAt = flag.ModifiedAt // take overlay timestamp
 			}
 			sub[tid] = tc

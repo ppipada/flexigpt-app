@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	ModelPresetsFile                   = "modelpresets.json" // Single JSON file.
-	ModelPresetsBuiltInOverlayFileName = "modelpresetsbuiltin.overlay.json"
+	ModelPresetsFile                     = "modelpresets.json" // Single JSON file.
+	ModelPresetsBuiltInOverlayDBFileName = "modelpresetsbuiltin.overlay.sqlite"
 
 	OpenAICompatibleAPIKeyHeaderKey          = "Authorization"
 	OpenAICompatibleChatCompletionPathPrefix = "/v1/chat/completions"

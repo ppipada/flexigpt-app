@@ -63,7 +63,7 @@ func TestToolBuiltInBundleGuards(t *testing.T) {
 	s, clean := newTestToolStore(t)
 	defer clean()
 
-	bid, slug, _, ok := firstBuiltInTool(s)
+	bid, slug, _, ok := firstBuiltInTool(t, s)
 	if !ok {
 		t.Skip("No built-in catalogue present.")
 	}
@@ -228,7 +228,7 @@ func TestToolBuiltInGuards(t *testing.T) {
 	s, clean := newTestToolStore(t)
 	defer clean()
 
-	bid, slug, ver, ok := firstBuiltInTool(s)
+	bid, slug, ver, ok := firstBuiltInTool(t, s)
 	if !ok {
 		t.Skip("No built-in catalogue present.")
 	}
@@ -268,7 +268,7 @@ func TestToolBundleListFiltering(t *testing.T) {
 	s, clean := newTestToolStore(t)
 	defer clean()
 
-	builtInCnt, _ := builtinToolStatistics(s)
+	builtInCnt, _ := builtinToolStatistics(t, s)
 
 	mustPutToolBundle(t, s, "ub1", "slug1", "Bundle1", true)
 	mustPutToolBundle(t, s, "ub2", "slug2", "Bundle2", false)
@@ -467,7 +467,7 @@ func TestSearchFindsBuiltInTool(t *testing.T) {
 	s, clean := newTestToolStoreWithFTS(t)
 	defer clean()
 
-	bid, slug, ver, ok := firstBuiltInTool(s)
+	bid, slug, ver, ok := firstBuiltInTool(t, s)
 	if !ok {
 		t.Skip("No built-in catalogue present.")
 	}
@@ -500,7 +500,7 @@ func TestSearchRespectsBuiltInEnableDisableTool(t *testing.T) {
 	s, clean := newTestToolStoreWithFTS(t)
 	defer clean()
 
-	bid, slug, _, ok := firstBuiltInTool(s)
+	bid, slug, _, ok := firstBuiltInTool(t, s)
 	if !ok {
 		t.Skip("No built-in catalogue present.")
 	}
@@ -633,26 +633,29 @@ func TestToolSlugVersionValidation(t *testing.T) {
 	}
 }
 
-func builtinToolStatistics(s *ToolStore) (bundleCnt, toolCnt int) {
+func builtinToolStatistics(t *testing.T, s *ToolStore) (bundleCnt, toolCnt int) {
+	t.Helper()
 	if s.builtinData == nil {
 		return 0, 0
 	}
-	b, t, _ := s.builtinData.ListBuiltInToolData()
+	b, tm, _ := s.builtinData.ListBuiltInToolData(t.Context())
 	bundleCnt = len(b)
-	for _, toolMap := range t {
+	for _, toolMap := range tm {
 		toolCnt += len(toolMap)
 	}
 	return bundleCnt, toolCnt
 }
 
 func firstBuiltInTool(
+	t *testing.T,
 	s *ToolStore,
 ) (bid bundleitemutils.BundleID, slug bundleitemutils.ItemSlug, ver bundleitemutils.ItemVersion, ok bool) {
+	t.Helper()
 	if s.builtinData == nil {
 		return bid, slug, ver, ok
 	}
-	_, t, _ := s.builtinData.ListBuiltInToolData()
-	for bID, m := range t {
+	_, tm, _ := s.builtinData.ListBuiltInToolData(t.Context())
+	for bID, m := range tm {
 		for _, tool := range m {
 			return bID, tool.Slug, tool.Version, true
 		}

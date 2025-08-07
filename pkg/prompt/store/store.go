@@ -82,8 +82,9 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 			return nil, err
 		}
 	}
+	ctx := context.Background()
 
-	builtIn, err := NewBuiltInData(s.baseDir, builtInSnapshotMaxAge)
+	builtIn, err := NewBuiltInData(ctx, s.baseDir, builtInSnapshotMaxAge)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +159,7 @@ func (s *PromptTemplateStore) PutPromptBundle(
 		return nil, err
 	}
 	if s.builtinData != nil {
-		_, err := s.builtinData.GetBuiltInBundle(req.BundleID)
+		_, err := s.builtinData.GetBuiltInBundle(ctx, req.BundleID)
 		if err == nil {
 			return nil, fmt.Errorf("%w: bundleID: %q", spec.ErrBuiltInReadOnly, req.BundleID)
 		}
@@ -212,8 +213,8 @@ func (s *PromptTemplateStore) PatchPromptBundle(
 	}
 
 	if s.builtinData != nil {
-		if _, err := s.builtinData.GetBuiltInBundle(req.BundleID); err == nil {
-			if _, err := s.builtinData.SetBundleEnabled(req.BundleID, req.Body.IsEnabled); err != nil {
+		if _, err := s.builtinData.GetBuiltInBundle(ctx, req.BundleID); err == nil {
+			if _, err := s.builtinData.SetBundleEnabled(ctx, req.BundleID, req.Body.IsEnabled); err != nil {
 				return nil, err
 			}
 			slog.Info("patchPromptBundle", "id", req.BundleID, "enabled", req.Body.IsEnabled)
@@ -253,7 +254,7 @@ func (s *PromptTemplateStore) DeletePromptBundle(
 	}
 
 	if s.builtinData != nil {
-		_, err := s.builtinData.GetBuiltInBundle(req.BundleID)
+		_, err := s.builtinData.GetBuiltInBundle(ctx, req.BundleID)
 		if err == nil {
 			return nil, fmt.Errorf("%w: bundleID: %q", spec.ErrBuiltInReadOnly, req.BundleID)
 		}
@@ -354,7 +355,7 @@ func (s *PromptTemplateStore) ListPromptBundles(
 	allBundles := make([]spec.PromptBundle, 0)
 
 	if s.builtinData != nil {
-		bi, _, _ := s.builtinData.ListBuiltInData()
+		bi, _, _ := s.builtinData.ListBuiltInData(ctx)
 		for _, b := range bi {
 			allBundles = append(allBundles, b)
 		}
@@ -456,7 +457,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 		return nil, fmt.Errorf("%w: displayName & ≥1 block required", spec.ErrInvalidRequest)
 	}
 
-	bundle, isBuiltIn, err := s.getAnyBundle(req.BundleID)
+	bundle, isBuiltIn, err := s.getAnyBundle(ctx, req.BundleID)
 	if err != nil {
 		return nil, err
 	}
@@ -555,7 +556,7 @@ func (s *PromptTemplateStore) DeletePromptTemplate(
 	if err := bundleitemutils.ValidateItemVersion(req.Version); err != nil {
 		return nil, err
 	}
-	bundle, isBuiltIn, err := s.getAnyBundle(req.BundleID)
+	bundle, isBuiltIn, err := s.getAnyBundle(ctx, req.BundleID)
 	if err != nil {
 		return nil, err
 	}
@@ -609,12 +610,13 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 	if err := bundleitemutils.ValidateItemVersion(req.Version); err != nil {
 		return nil, err
 	}
-	bundle, isBuiltIn, err := s.getAnyBundle(req.BundleID)
+	bundle, isBuiltIn, err := s.getAnyBundle(ctx, req.BundleID)
 	if err != nil {
 		return nil, err
 	}
 	if isBuiltIn {
 		tpl, err := s.builtinData.SetTemplateEnabled(
+			ctx,
 			bundle.ID,
 			req.TemplateSlug,
 			req.Version,
@@ -713,12 +715,13 @@ func (s *PromptTemplateStore) GetPromptTemplate(
 		return nil, err
 	}
 
-	bundle, isBuiltIn, err := s.getAnyBundle(req.BundleID)
+	bundle, isBuiltIn, err := s.getAnyBundle(ctx, req.BundleID)
 	if err != nil {
 		return nil, err
 	}
 	if isBuiltIn {
 		tmpl, err := s.builtinData.GetBuiltInTemplate(
+			ctx,
 			req.BundleID,
 			req.TemplateSlug,
 			req.Version,
@@ -833,7 +836,7 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 	if s.builtinData == nil {
 		tok.BuiltInDone = true
 	} else if !tok.BuiltInDone {
-		biBundles, biTpls, _ := s.builtinData.ListBuiltInData()
+		biBundles, biTpls, _ := s.builtinData.ListBuiltInData(ctx)
 
 		// Deterministic ordering.
 		var bidList []bundleitemutils.BundleID
@@ -991,11 +994,12 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 			if err != nil {
 				continue
 			}
-			bundle, err := s.builtinData.GetBuiltInBundle(bdi.ID)
+			bundle, err := s.builtinData.GetBuiltInBundle(ctx, bdi.ID)
 			if err != nil {
 				continue
 			}
 			pt, err := s.builtinData.GetBuiltInTemplate(
+				ctx,
 				bdi.ID, finf.Slug, finf.Version,
 			)
 			if err != nil {
@@ -1026,7 +1030,7 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 		bid := bdi.ID
 		bslug := bdi.Slug
 
-		bundle, _, err := s.getAnyBundle(bid)
+		bundle, _, err := s.getAnyBundle(ctx, bid)
 		if err != nil {
 			continue
 		}
@@ -1117,11 +1121,12 @@ func (s *PromptTemplateStore) findTemplate(
 }
 
 func (s *PromptTemplateStore) getAnyBundle(
+	ctx context.Context,
 	id bundleitemutils.BundleID,
 ) (bundle spec.PromptBundle, isBuiltIn bool, err error) {
 	// Built-in?
 	if s.builtinData != nil {
-		if bundle, err = s.builtinData.GetBuiltInBundle(id); err == nil {
+		if bundle, err = s.builtinData.GetBuiltInBundle(ctx, id); err == nil {
 			return bundle, true, nil
 		}
 	}

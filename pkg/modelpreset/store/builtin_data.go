@@ -3,6 +3,7 @@
 package store
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,20 +14,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/booloverlay"
 	"github.com/ppipada/flexigpt-app/pkg/builtin"
 	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	"github.com/ppipada/flexigpt-app/pkg/overlay"
 )
 
 type builtInProviderKey spec.ProviderName
 
-func (builtInProviderKey) Group() booloverlay.GroupID { return "providers" }
-func (k builtInProviderKey) ID() booloverlay.KeyID    { return booloverlay.KeyID(k) }
+func (builtInProviderKey) Group() overlay.GroupID { return "providers" }
+func (k builtInProviderKey) ID() overlay.KeyID    { return overlay.KeyID(k) }
 
 type builtInModelKey spec.ModelPresetID
 
-func (builtInModelKey) Group() booloverlay.GroupID { return "models" }
-func (k builtInModelKey) ID() booloverlay.KeyID    { return booloverlay.KeyID(k) }
+func (builtInModelKey) Group() overlay.GroupID { return "models" }
+func (k builtInModelKey) ID() overlay.KeyID    { return overlay.KeyID(k) }
 
 // BuiltInPresets loads built-in preset assets and maintains an overlay store.
 type BuiltInPresets struct {
@@ -44,8 +45,12 @@ type BuiltInPresets struct {
 	presetsFS      fs.FS
 	presetsDir     string
 	overlayBaseDir string
-	store          *booloverlay.Store
-	rebuilder      *builtin.AsyncRebuilder
+
+	store                *overlay.Store
+	providerOverlayFlags *overlay.TypedGroup[builtInProviderKey, bool]
+	modelOverlayFlags    *overlay.TypedGroup[builtInModelKey, bool]
+
+	rebuilder *builtin.AsyncRebuilder
 }
 
 type PresetStoreOption func(*BuiltInPresets)
@@ -60,6 +65,7 @@ func WithModelPresetsFS(fsys fs.FS, root string) PresetStoreOption {
 
 // NewBuiltInPresets prepares the presets store and loads a first snapshot.
 func NewBuiltInPresets(
+	ctx context.Context,
 	overlayBaseDir string,
 	maxSnapshotAge time.Duration,
 	opts ...PresetStoreOption,
@@ -74,25 +80,36 @@ func NewBuiltInPresets(
 		return nil, err
 	}
 
-	overlay, err := booloverlay.NewStore(
-		filepath.Join(overlayBaseDir, spec.ModelPresetsBuiltInOverlayFileName),
-		booloverlay.WithKeyType[builtInProviderKey](),
-		booloverlay.WithKeyType[builtInModelKey](),
+	store, err := overlay.NewOverlayStore(ctx,
+		filepath.Join(overlayBaseDir, spec.ModelPresetsBuiltInOverlayDBFileName),
+		overlay.WithKeyType[builtInProviderKey](),
+		overlay.WithKeyType[builtInModelKey](),
 	)
 	if err != nil {
 		return nil, err
 	}
 
+	providerOverlayFlags, err := overlay.NewTypedGroup[builtInProviderKey, bool](ctx, store)
+	if err != nil {
+		return nil, err
+	}
+	modelOverlayFlags, err := overlay.NewTypedGroup[builtInModelKey, bool](ctx, store)
+	if err != nil {
+		return nil, err
+	}
+
 	b := &BuiltInPresets{
-		presetsFS:      builtin.BuiltInModelPresetsFS,
-		presetsDir:     builtin.BuiltInModelPresetsRootDir,
-		overlayBaseDir: overlayBaseDir,
-		store:          overlay,
+		presetsFS:            builtin.BuiltInModelPresetsFS,
+		presetsDir:           builtin.BuiltInModelPresetsRootDir,
+		overlayBaseDir:       overlayBaseDir,
+		store:                store,
+		providerOverlayFlags: providerOverlayFlags,
+		modelOverlayFlags:    modelOverlayFlags,
 	}
 	for _, o := range opts {
 		o(b)
 	}
-	if err := b.loadFromFS(); err != nil {
+	if err := b.loadFromFS(ctx); err != nil {
 		return nil, err
 	}
 
@@ -101,7 +118,7 @@ func NewBuiltInPresets(
 		func() error {
 			b.mu.Lock()
 			defer b.mu.Unlock()
-			return b.rebuildSnapshot()
+			return b.rebuildSnapshot(ctx)
 		},
 	)
 	b.rebuilder.MarkFresh()
@@ -109,7 +126,7 @@ func NewBuiltInPresets(
 }
 
 // ListBuiltInPresets returns deep-copied snapshots.
-func (b *BuiltInPresets) ListBuiltInPresets() (
+func (b *BuiltInPresets) ListBuiltInPresets(ctx context.Context) (
 	providerPresets map[spec.ProviderName]spec.ProviderPreset,
 	modelPresets map[spec.ProviderName]map[spec.ModelPresetID]spec.ModelPreset,
 	err error,
@@ -120,7 +137,9 @@ func (b *BuiltInPresets) ListBuiltInPresets() (
 }
 
 // GetBuiltInDefaultProviderName fetches the default provider name in builtin.
-func (b *BuiltInPresets) GetBuiltInDefaultProviderName() (spec.ProviderName, error) {
+func (b *BuiltInPresets) GetBuiltInDefaultProviderName(
+	ctx context.Context,
+) (spec.ProviderName, error) {
 	defaultProvider := b.defaultProvider
 
 	if defaultProvider == "" {
@@ -130,7 +149,10 @@ func (b *BuiltInPresets) GetBuiltInDefaultProviderName() (spec.ProviderName, err
 }
 
 // GetBuiltInProvider fetches a provider from the snapshot.
-func (b *BuiltInPresets) GetBuiltInProvider(name spec.ProviderName) (spec.ProviderPreset, error) {
+func (b *BuiltInPresets) GetBuiltInProvider(
+	ctx context.Context,
+	name spec.ProviderName,
+) (spec.ProviderPreset, error) {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 	p, ok := b.viewProv[name]
@@ -140,33 +162,16 @@ func (b *BuiltInPresets) GetBuiltInProvider(name spec.ProviderName) (spec.Provid
 	return p, nil
 }
 
-// GetBuiltInModelPreset fetches a model preset.
-func (b *BuiltInPresets) GetBuiltInModelPreset(
-	provider spec.ProviderName,
-	modelID spec.ModelPresetID,
-) (spec.ModelPreset, error) {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-	pm, ok := b.viewModels[provider]
-	if !ok {
-		return spec.ModelPreset{}, spec.ErrProviderNotFound
-	}
-	mp, ok := pm[modelID]
-	if !ok {
-		return spec.ModelPreset{}, spec.ErrModelPresetNotFound
-	}
-	return mp, nil
-}
-
 // SetProviderEnabled toggles a provider.
 func (b *BuiltInPresets) SetProviderEnabled(
+	ctx context.Context,
 	name spec.ProviderName,
 	enabled bool,
 ) (spec.ProviderPreset, error) {
 	if _, ok := b.providers[name]; !ok {
 		return spec.ProviderPreset{}, spec.ErrBuiltInProviderAbsent
 	}
-	flag, err := b.store.SetFlag(builtInProviderKey(name), enabled)
+	flag, err := b.providerOverlayFlags.SetFlag(ctx, builtInProviderKey(name), enabled)
 	if err != nil {
 		return spec.ProviderPreset{}, err
 	}
@@ -184,15 +189,16 @@ func (b *BuiltInPresets) SetProviderEnabled(
 
 // SetModelPresetEnabled toggles a model preset.
 func (b *BuiltInPresets) SetModelPresetEnabled(
+	ctx context.Context,
 	provider spec.ProviderName,
 	modelID spec.ModelPresetID,
 	enabled bool,
 ) (spec.ModelPreset, error) {
-	mp, err := b.GetBuiltInModelPreset(provider, modelID)
+	mp, err := b.GetBuiltInModelPreset(ctx, provider, modelID)
 	if err != nil {
 		return mp, err
 	}
-	flag, err := b.store.SetFlag(builtInModelKey(modelID), enabled)
+	flag, err := b.modelOverlayFlags.SetFlag(ctx, builtInModelKey(modelID), enabled)
 	if err != nil {
 		return spec.ModelPreset{}, err
 	}
@@ -207,7 +213,26 @@ func (b *BuiltInPresets) SetModelPresetEnabled(
 	return mp, nil
 }
 
-func (b *BuiltInPresets) loadFromFS() error {
+// GetBuiltInModelPreset fetches a model preset.
+func (b *BuiltInPresets) GetBuiltInModelPreset(
+	ctx context.Context,
+	provider spec.ProviderName,
+	modelID spec.ModelPresetID,
+) (spec.ModelPreset, error) {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	pm, ok := b.viewModels[provider]
+	if !ok {
+		return spec.ModelPreset{}, spec.ErrProviderNotFound
+	}
+	mp, ok := pm[modelID]
+	if !ok {
+		return spec.ModelPreset{}, spec.ErrModelPresetNotFound
+	}
+	return mp, nil
+}
+
+func (b *BuiltInPresets) loadFromFS(ctx context.Context) error {
 	subFS, err := resolvePresetsFS(b.presetsFS, b.presetsDir)
 	if err != nil {
 		return err
@@ -267,20 +292,20 @@ func (b *BuiltInPresets) loadFromFS() error {
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	return b.rebuildSnapshot()
+	return b.rebuildSnapshot(ctx)
 }
 
 // rebuildSnapshot applies overlay flags onto the immutable base sets.
 // Caller must hold write lock.
-func (b *BuiltInPresets) rebuildSnapshot() error {
+func (b *BuiltInPresets) rebuildSnapshot(ctx context.Context) error {
 	newProv := make(map[spec.ProviderName]spec.ProviderPreset, len(b.providers))
 	newModels := make(map[spec.ProviderName]map[spec.ModelPresetID]spec.ModelPreset, len(b.models))
 
 	for pname, p := range b.providers {
-		if flag, ok, err := b.store.GetFlag(builtInProviderKey(pname)); err != nil {
+		if flag, ok, err := b.providerOverlayFlags.GetFlag(ctx, builtInProviderKey(pname)); err != nil {
 			return err
 		} else if ok {
-			p.IsEnabled = flag.Enabled
+			p.IsEnabled = flag.Value
 			p.ModifiedAt = flag.ModifiedAt
 		}
 		newProv[pname] = p
@@ -289,10 +314,10 @@ func (b *BuiltInPresets) rebuildSnapshot() error {
 	for pname, mm := range b.models {
 		sub := make(map[spec.ModelPresetID]spec.ModelPreset, len(mm))
 		for mid, m := range mm {
-			if flag, ok, err := b.store.GetFlag(builtInModelKey(mid)); err != nil {
+			if flag, ok, err := b.modelOverlayFlags.GetFlag(ctx, builtInModelKey(mid)); err != nil {
 				return err
 			} else if ok {
-				m.IsEnabled = flag.Enabled
+				m.IsEnabled = flag.Value
 				m.ModifiedAt = flag.ModifiedAt
 			}
 			sub[mid] = m

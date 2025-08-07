@@ -1,6 +1,7 @@
 package fts
 
 import (
+	"context"
 	"encoding/json"
 	"path/filepath"
 	"strconv"
@@ -59,7 +60,7 @@ func TestSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 			lister: func() BuiltInLister {
 				bid, _, bundle := makeBundle(1, true)
 				tpl := makeTemplate(1, true)
-				return func() (map[bundleitemutils.BundleID]spec.PromptBundle,
+				return func(ctx context.Context) (map[bundleitemutils.BundleID]spec.PromptBundle,
 					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.PromptBundle{bid: bundle},
@@ -85,7 +86,7 @@ func TestSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 			lister: func() BuiltInLister {
 				bid, _, bundle := makeBundle(2, true)
 				tpl := makeTemplate(2, true)
-				return func() (map[bundleitemutils.BundleID]spec.PromptBundle,
+				return func(ctx context.Context) (map[bundleitemutils.BundleID]spec.PromptBundle,
 					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.PromptBundle{bid: bundle},
@@ -113,7 +114,7 @@ func TestSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 			lister: func() BuiltInLister {
 				bid, _, bundle := makeBundle(3, true)
 				tpl := makeTemplate(3, true) // fresh mtime
-				return func() (map[bundleitemutils.BundleID]spec.PromptBundle,
+				return func(ctx context.Context) (map[bundleitemutils.BundleID]spec.PromptBundle,
 					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.PromptBundle{bid: bundle},
@@ -147,7 +148,7 @@ func TestSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 			},
 			lister: func() BuiltInLister {
 				// Return nothing.
-				return func() (map[bundleitemutils.BundleID]spec.PromptBundle,
+				return func(ctx context.Context) (map[bundleitemutils.BundleID]spec.PromptBundle,
 					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.PromptBundle{}, map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate{}, nil
@@ -240,7 +241,7 @@ func TestSyncBuiltInsToFTS_BiggerThanBatchSize(t *testing.T) {
 		t := makeTemplate(i, true)
 		templates[t.ID] = t
 	}
-	lister := func() (map[bundleitemutils.BundleID]spec.PromptBundle,
+	lister := func(ctx context.Context) (map[bundleitemutils.BundleID]spec.PromptBundle,
 		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate, error,
 	) {
 		return map[bundleitemutils.BundleID]spec.PromptBundle{bid: bundle},
@@ -266,7 +267,7 @@ func TestSyncBuiltInsToFTS_CompareColumnStoresMTime(t *testing.T) {
 	bid, _, bundle := makeBundle(55, true)
 	tpl := makeTemplate(1, true)
 
-	lister := func() (map[bundleitemutils.BundleID]spec.PromptBundle,
+	lister := func(ctx context.Context) (map[bundleitemutils.BundleID]spec.PromptBundle,
 		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate, error,
 	) {
 		return map[bundleitemutils.BundleID]spec.PromptBundle{bid: bundle},

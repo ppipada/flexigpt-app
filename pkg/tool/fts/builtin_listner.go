@@ -18,7 +18,7 @@ import (
 
 // ToolBuiltInLister returns the current snapshot of all built-in bundles and tools.
 // Overlay should already be applied, so that enabled flags are correct.
-type ToolBuiltInLister func() (
+type ToolBuiltInLister func(ctx context.Context) (
 	bundles map[bundleitemutils.BundleID]spec.ToolBundle,
 	tools map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool,
 	err error,
@@ -80,7 +80,7 @@ func syncBuiltInsToFTS(
 		getPrev ftsengine.GetPrevCmp,
 		emit func(ftsengine.SyncDecision) error,
 	) error {
-		bundles, tools, err := lister()
+		bundles, tools, err := lister(ctx)
 		if err != nil {
 			return err
 		}

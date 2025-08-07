@@ -1,6 +1,7 @@
 package fts
 
 import (
+	"context"
 	"encoding/json"
 	"path/filepath"
 	"strconv"
@@ -67,7 +68,7 @@ func TestToolsSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 			lister: func() ToolBuiltInLister {
 				bid, _, b := makeBundle(1, true)
 				tool := makeTool(1, true)
-				return func() (map[bundleitemutils.BundleID]spec.ToolBundle,
+				return func(ctx context.Context) (map[bundleitemutils.BundleID]spec.ToolBundle,
 					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.ToolBundle{bid: b},
@@ -89,7 +90,7 @@ func TestToolsSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 			lister: func() ToolBuiltInLister {
 				bid, _, b := makeBundle(2, true)
 				tool := makeTool(2, true)
-				return func() (map[bundleitemutils.BundleID]spec.ToolBundle,
+				return func(ctx context.Context) (map[bundleitemutils.BundleID]spec.ToolBundle,
 					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.ToolBundle{bid: b},
@@ -112,7 +113,7 @@ func TestToolsSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 			lister: func() ToolBuiltInLister {
 				bid, _, b := makeBundle(3, true)
 				tool := makeTool(3, true)
-				return func() (map[bundleitemutils.BundleID]spec.ToolBundle,
+				return func(ctx context.Context) (map[bundleitemutils.BundleID]spec.ToolBundle,
 					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.ToolBundle{bid: b},
@@ -141,7 +142,7 @@ func TestToolsSyncBuiltInsToFTS_Scenarios(t *testing.T) {
 				_ = engine.Upsert(ctx, docID, vals)
 			},
 			lister: func() ToolBuiltInLister {
-				return func() (map[bundleitemutils.BundleID]spec.ToolBundle,
+				return func(ctx context.Context) (map[bundleitemutils.BundleID]spec.ToolBundle,
 					map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool, error,
 				) {
 					return map[bundleitemutils.BundleID]spec.ToolBundle{},
@@ -227,7 +228,7 @@ func TestToolsSyncBuiltInsToFTS_BiggerThanBatchSize(t *testing.T) {
 		tl := makeTool(i, true)
 		tools[tl.ID] = tl
 	}
-	lister := func() (map[bundleitemutils.BundleID]spec.ToolBundle,
+	lister := func(ctx context.Context) (map[bundleitemutils.BundleID]spec.ToolBundle,
 		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool, error,
 	) {
 		return map[bundleitemutils.BundleID]spec.ToolBundle{bid: bundle},
@@ -248,7 +249,7 @@ func TestToolsSyncBuiltInsToFTS_CompareColumnStoresMTime(t *testing.T) {
 
 	bid, _, bundle := makeBundle(55, true)
 	tool := makeTool(1, true)
-	lister := func() (map[bundleitemutils.BundleID]spec.ToolBundle,
+	lister := func(ctx context.Context) (map[bundleitemutils.BundleID]spec.ToolBundle,
 		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool, error,
 	) {
 		return map[bundleitemutils.BundleID]spec.ToolBundle{bid: bundle},
@@ -287,7 +288,7 @@ func TestFTSContent_GoAndHTTP(t *testing.T) {
 	goTool := makeTool(0, true)   // Go tool
 	httpTool := makeTool(1, true) // HTTP tool
 
-	lister := func() (map[bundleitemutils.BundleID]spec.ToolBundle,
+	lister := func(ctx context.Context) (map[bundleitemutils.BundleID]spec.ToolBundle,
 		map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool, error,
 	) {
 		return map[bundleitemutils.BundleID]spec.ToolBundle{bid: bundle},

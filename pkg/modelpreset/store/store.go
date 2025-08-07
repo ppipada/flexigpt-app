@@ -36,15 +36,15 @@ type ModelPresetStore struct {
 // Built-in data are automatically loaded and overlaid.
 func NewModelPresetStore(baseDir string) (*ModelPresetStore, error) {
 	s := &ModelPresetStore{baseDir: filepath.Clean(baseDir)}
-
-	bi, err := NewBuiltInPresets(baseDir, spec.BuiltInSnapshotMaxAge)
+	ctx := context.Background()
+	bi, err := NewBuiltInPresets(ctx, baseDir, spec.BuiltInSnapshotMaxAge)
 	if err != nil {
 		return nil, err
 	}
 	s.builtinData = bi
 	var defaultProvider spec.ProviderName = ""
 	if s.builtinData != nil {
-		defaultProvider, err = s.builtinData.GetBuiltInDefaultProviderName()
+		defaultProvider, err = s.builtinData.GetBuiltInDefaultProviderName(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +84,7 @@ func (s *ModelPresetStore) GetDefaultProvider(
 	}
 	defaultProvider := all.DefaultProvider
 	if defaultProvider == "" {
-		defaultProvider, err = s.builtinData.GetBuiltInDefaultProviderName()
+		defaultProvider, err = s.builtinData.GetBuiltInDefaultProviderName(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +107,7 @@ func (s *ModelPresetStore) PatchDefaultProvider(
 
 	found := false
 	if s.builtinData != nil {
-		if _, err := s.builtinData.GetBuiltInProvider(providerName); err == nil {
+		if _, err := s.builtinData.GetBuiltInProvider(ctx, providerName); err == nil {
 			found = true
 		}
 	}
@@ -156,7 +156,7 @@ func (s *ModelPresetStore) PutProviderPreset(
 	}
 
 	// Reject built-ins.
-	if _, err := s.builtinData.GetBuiltInProvider(req.ProviderName); err == nil {
+	if _, err := s.builtinData.GetBuiltInProvider(ctx, req.ProviderName); err == nil {
 		return nil, fmt.Errorf("%w: providerName: %q",
 			spec.ErrBuiltInReadOnly, req.ProviderName)
 	}
@@ -227,11 +227,11 @@ func (s *ModelPresetStore) PatchProviderPreset(
 		}
 	}
 
-	if _, err := s.builtinData.GetBuiltInProvider(req.ProviderName); err == nil {
+	if _, err := s.builtinData.GetBuiltInProvider(ctx, req.ProviderName); err == nil {
 
 		// Enable / disable.
 		if req.Body.IsEnabled != nil {
-			if _, err := s.builtinData.SetProviderEnabled(
+			if _, err := s.builtinData.SetProviderEnabled(ctx,
 				req.ProviderName, *req.Body.IsEnabled,
 			); err != nil {
 				return nil, err
@@ -252,7 +252,6 @@ func (s *ModelPresetStore) PatchProviderPreset(
 
 		slog.Info("patchProviderPreset.builtin",
 			"provider", req.ProviderName,
-			"isEnabled", req.Body.IsEnabled,
 			"defaultModelPresetID", req.Body.DefaultModelPresetID)
 		return &spec.PatchProviderPresetResponse{}, nil
 	}
@@ -304,7 +303,6 @@ func (s *ModelPresetStore) PatchProviderPreset(
 
 	slog.Info("patchProviderPreset",
 		"provider", req.ProviderName,
-		"isEnabled", req.Body.IsEnabled,
 		"defaultModelPresetID", req.Body.DefaultModelPresetID)
 
 	return &spec.PatchProviderPresetResponse{}, nil
@@ -318,7 +316,7 @@ func (s *ModelPresetStore) DeleteProviderPreset(
 		return nil, fmt.Errorf("%w: providerName required", spec.ErrInvalidDir)
 	}
 	// Built-ins are read-only.
-	if _, err := s.builtinData.GetBuiltInProvider(req.ProviderName); err == nil {
+	if _, err := s.builtinData.GetBuiltInProvider(ctx, req.ProviderName); err == nil {
 		return nil, fmt.Errorf("%w: providerName: %q",
 			spec.ErrBuiltInReadOnly, req.ProviderName)
 	}
@@ -382,7 +380,7 @@ func (s *ModelPresetStore) ListProviderPresets(
 	// Collect built-ins.
 	all := make([]spec.ProviderPreset, 0)
 	if s.builtinData != nil {
-		bi, _, _ := s.builtinData.ListBuiltInPresets()
+		bi, _, _ := s.builtinData.ListBuiltInPresets(ctx)
 		for _, p := range bi {
 			all = append(all, p)
 		}
@@ -472,7 +470,7 @@ func (s *ModelPresetStore) PutModelPreset(
 		return nil, err
 	}
 	// Reject built-ins.
-	if _, err := s.builtinData.GetBuiltInProvider(req.ProviderName); err == nil {
+	if _, err := s.builtinData.GetBuiltInProvider(ctx, req.ProviderName); err == nil {
 		return nil, fmt.Errorf("%w: providerName: %q",
 			spec.ErrBuiltInReadOnly, req.ProviderName)
 	}
@@ -545,8 +543,9 @@ func (s *ModelPresetStore) PatchModelPreset(
 	}
 
 	// Built-in branch.
-	if _, err := s.builtinData.GetBuiltInProvider(req.ProviderName); err == nil {
+	if _, err := s.builtinData.GetBuiltInProvider(ctx, req.ProviderName); err == nil {
 		if _, err := s.builtinData.SetModelPresetEnabled(
+			ctx,
 			req.ProviderName, req.ModelPresetID, req.Body.IsEnabled,
 		); err != nil {
 			return nil, err
@@ -596,7 +595,7 @@ func (s *ModelPresetStore) DeleteModelPreset(
 		return nil, fmt.Errorf("%w: providerName & modelPresetID required", spec.ErrInvalidDir)
 	}
 	// Built-in are read-only.
-	if _, err := s.builtinData.GetBuiltInProvider(req.ProviderName); err == nil {
+	if _, err := s.builtinData.GetBuiltInProvider(ctx, req.ProviderName); err == nil {
 		return nil, fmt.Errorf("%w: providerName: %q",
 			spec.ErrBuiltInReadOnly, req.ProviderName)
 	}
