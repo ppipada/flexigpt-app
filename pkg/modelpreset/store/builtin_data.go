@@ -29,6 +29,11 @@ type builtInModelKey spec.ModelPresetID
 func (builtInModelKey) Group() overlay.GroupID { return "models" }
 func (k builtInModelKey) ID() overlay.KeyID    { return overlay.KeyID(k) }
 
+type builtInProviderDefaultModelIDKey spec.ProviderName
+
+func (builtInProviderDefaultModelIDKey) Group() overlay.GroupID { return "providerDefaultModelIDs" }
+func (k builtInProviderDefaultModelIDKey) ID() overlay.KeyID    { return overlay.KeyID(k) }
+
 // BuiltInPresets loads built-in preset assets and maintains an overlay store.
 type BuiltInPresets struct {
 	// Immutable original data.
@@ -46,9 +51,10 @@ type BuiltInPresets struct {
 	presetsDir     string
 	overlayBaseDir string
 
-	store                *overlay.Store
-	providerOverlayFlags *overlay.TypedGroup[builtInProviderKey, bool]
-	modelOverlayFlags    *overlay.TypedGroup[builtInModelKey, bool]
+	store                              *overlay.Store
+	providerOverlayFlags               *overlay.TypedGroup[builtInProviderKey, bool]
+	modelOverlayFlags                  *overlay.TypedGroup[builtInModelKey, bool]
+	providerDefaultModelIDOverlayFlags *overlay.TypedGroup[builtInProviderDefaultModelIDKey, spec.ModelPresetID]
 
 	rebuilder *builtin.AsyncRebuilder
 }
@@ -84,6 +90,7 @@ func NewBuiltInPresets(
 		filepath.Join(overlayBaseDir, spec.ModelPresetsBuiltInOverlayDBFileName),
 		overlay.WithKeyType[builtInProviderKey](),
 		overlay.WithKeyType[builtInModelKey](),
+		overlay.WithKeyType[builtInProviderDefaultModelIDKey](),
 	)
 	if err != nil {
 		return nil, err
@@ -98,13 +105,20 @@ func NewBuiltInPresets(
 		return nil, err
 	}
 
+	providerDefaultModelIDOverlayFlags, err := overlay.NewTypedGroup[
+		builtInProviderDefaultModelIDKey, spec.ModelPresetID](ctx, store)
+	if err != nil {
+		return nil, err
+	}
+
 	b := &BuiltInPresets{
-		presetsFS:            builtin.BuiltInModelPresetsFS,
-		presetsDir:           builtin.BuiltInModelPresetsRootDir,
-		overlayBaseDir:       overlayBaseDir,
-		store:                store,
-		providerOverlayFlags: providerOverlayFlags,
-		modelOverlayFlags:    modelOverlayFlags,
+		presetsFS:                          builtin.BuiltInModelPresetsFS,
+		presetsDir:                         builtin.BuiltInModelPresetsRootDir,
+		overlayBaseDir:                     overlayBaseDir,
+		store:                              store,
+		providerOverlayFlags:               providerOverlayFlags,
+		modelOverlayFlags:                  modelOverlayFlags,
+		providerDefaultModelIDOverlayFlags: providerDefaultModelIDOverlayFlags,
 	}
 	for _, o := range opts {
 		o(b)
@@ -232,6 +246,40 @@ func (b *BuiltInPresets) GetBuiltInModelPreset(
 	return mp, nil
 }
 
+func (b *BuiltInPresets) SetDefaultModelPreset(
+	ctx context.Context,
+	provider spec.ProviderName,
+	modelID spec.ModelPresetID,
+) (spec.ProviderPreset, error) {
+	// Validate provider existence.
+	pm, ok := b.models[provider]
+	if !ok {
+		return spec.ProviderPreset{}, spec.ErrProviderNotFound
+	}
+	// Validate model existence.
+	if _, ok := pm[modelID]; !ok {
+		return spec.ProviderPreset{}, spec.ErrModelPresetNotFound
+	}
+
+	// Persist in overlay.
+	flag, err := b.providerDefaultModelIDOverlayFlags.SetFlag(
+		ctx, builtInProviderDefaultModelIDKey(provider), modelID)
+	if err != nil {
+		return spec.ProviderPreset{}, err
+	}
+
+	// Update hot snapshot.
+	b.mu.Lock()
+	pp := b.viewProv[provider]
+	pp.DefaultModelPresetID = modelID
+	pp.ModifiedAt = flag.ModifiedAt
+	b.viewProv[provider] = pp
+	b.mu.Unlock()
+
+	b.rebuilder.Trigger()
+	return pp, nil
+}
+
 func (b *BuiltInPresets) loadFromFS(ctx context.Context) error {
 	subFS, err := resolvePresetsFS(b.presetsFS, b.presetsDir)
 	if err != nil {
@@ -302,12 +350,23 @@ func (b *BuiltInPresets) rebuildSnapshot(ctx context.Context) error {
 	newModels := make(map[spec.ProviderName]map[spec.ModelPresetID]spec.ModelPreset, len(b.models))
 
 	for pname, p := range b.providers {
+		if flag, ok, err := b.providerDefaultModelIDOverlayFlags.GetFlag(
+			ctx, builtInProviderDefaultModelIDKey(pname)); err != nil {
+			return err
+		} else if ok {
+			p.DefaultModelPresetID = flag.Value
+			p.ModifiedAt = flag.ModifiedAt
+		}
+
 		if flag, ok, err := b.providerOverlayFlags.GetFlag(ctx, builtInProviderKey(pname)); err != nil {
 			return err
 		} else if ok {
 			p.IsEnabled = flag.Value
-			p.ModifiedAt = flag.ModifiedAt
+			if flag.ModifiedAt.After(p.ModifiedAt) {
+				p.ModifiedAt = flag.ModifiedAt
+			}
 		}
+
 		newProv[pname] = p
 	}
 

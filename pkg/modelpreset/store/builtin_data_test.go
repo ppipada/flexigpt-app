@@ -479,6 +479,158 @@ func Test_NewBuiltInPresets_SyntheticFS_HappyAndCRUD(t *testing.T) {
 	}
 }
 
+func TestSetDefaultModelPreset(t *testing.T) {
+	tests := []struct {
+		name    string
+		setup   func(*testing.T, *BuiltInPresets) (spec.ProviderName, spec.ModelPresetID)
+		wantErr bool
+	}{
+		{
+			name: "change_existing_provider",
+			setup: func(t *testing.T, bi *BuiltInPresets) (spec.ProviderName, spec.ModelPresetID) {
+				t.Helper()
+				_, models, _ := bi.ListBuiltInPresets(t.Context())
+				for pn, mm := range models {
+					if len(mm) < 2 {
+						continue // need at least 2 models to change default
+					}
+					ids := make([]spec.ModelPresetID, 0, len(mm))
+					for mid := range mm {
+						ids = append(ids, mid)
+					}
+					return pn, ids[1] // pick a non-default one
+				}
+				t.Skip("test data has no provider with ≥2 models")
+				return "", ""
+			},
+		},
+		{
+			name: "nonexistent_provider",
+			setup: func(*testing.T, *BuiltInPresets) (spec.ProviderName, spec.ModelPresetID) {
+				return spec.ProviderName("ghost"), spec.ModelPresetID("m1")
+			},
+			wantErr: true,
+		},
+		{
+			name: "nonexistent_model",
+			setup: func(t *testing.T, bi *BuiltInPresets) (spec.ProviderName, spec.ModelPresetID) {
+				t.Helper()
+				prov, _, _ := bi.ListBuiltInPresets(t.Context())
+				pn, _ := anyProvider(prov)
+				return pn, spec.ModelPresetID("ghost")
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := t.Context()
+			dir := t.TempDir()
+			bi, _ := NewBuiltInPresets(ctx, dir, 0)
+
+			pn, mid := tc.setup(t, bi)
+			if pn == "" {
+				return // skipped inside setup
+			}
+
+			_, err := bi.SetDefaultModelPreset(ctx, pn, mid)
+
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("expected error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected: %v", err)
+			}
+
+			// Snapshot must reflect the change.
+			prov, _, _ := bi.ListBuiltInPresets(ctx)
+			if prov[pn].DefaultModelPresetID != mid {
+				t.Errorf("defaultModelPresetID not updated, want %s", mid)
+			}
+
+			// Overlay flag must be present and consistent.
+			flag, ok, err := bi.providerDefaultModelIDOverlayFlags.GetFlag(
+				ctx, builtInProviderDefaultModelIDKey(pn))
+			if err != nil {
+				t.Fatalf("providerDefaultModelIDOverlayFlags.GetFlag: %v", err)
+			}
+			if !ok || flag.Value != mid {
+				t.Errorf("overlay mismatch: present=%v, value=%s, want present=true, value=%s",
+					ok, flag.Value, mid)
+			}
+		})
+	}
+}
+
+func TestRebuildSnapshot_DefaultModelPreset(t *testing.T) {
+	ctx := t.Context()
+	dir := t.TempDir()
+	bi, _ := NewBuiltInPresets(ctx, dir, time.Hour)
+
+	_, models, _ := bi.ListBuiltInPresets(ctx)
+	pn, _, mp := anyModel(models)
+
+	// Need another model ID to switch to – if there is none, skip.
+	var newID spec.ModelPresetID
+	for id := range models[pn] {
+		if id != mp.ID {
+			newID = id
+			break
+		}
+	}
+	if newID == "" {
+		t.Skip("dataset has only one model – cannot test rebuild for default overlay")
+	}
+
+	// Directly set flag (bypassing helper) then call rebuild.
+	_, _ = bi.providerDefaultModelIDOverlayFlags.SetFlag(
+		ctx, builtInProviderDefaultModelIDKey(pn), newID)
+
+	bi.mu.Lock()
+	_ = bi.rebuildSnapshot(ctx)
+	bi.mu.Unlock()
+
+	prov, _, _ := bi.ListBuiltInPresets(ctx)
+	if prov[pn].DefaultModelPresetID != newID {
+		t.Error("rebuild did not apply default-model overlay")
+	}
+}
+
+func TestAsyncRebuild_DefaultModelPreset(t *testing.T) {
+	ctx := t.Context()
+	dir := t.TempDir()
+	bi, _ := NewBuiltInPresets(ctx, dir, 5*time.Millisecond)
+
+	_, models, _ := bi.ListBuiltInPresets(ctx)
+	pn, _, mp := anyModel(models)
+
+	// Need another model ID to switch to.
+	var newID spec.ModelPresetID
+	for id := range models[pn] {
+		if id != mp.ID {
+			newID = id
+			break
+		}
+	}
+	if newID == "" {
+		t.Skip("dataset has only one model – cannot test async rebuild")
+	}
+
+	time.Sleep(10 * time.Millisecond) // ensure snapshot considered stale
+
+	_, _ = bi.SetDefaultModelPreset(ctx, pn, newID)
+	time.Sleep(20 * time.Millisecond) // allow async worker to run
+
+	prov, _, _ := bi.ListBuiltInPresets(ctx)
+	if prov[pn].DefaultModelPresetID != newID {
+		t.Error("async rebuild missed default-model change")
+	}
+}
+
 func anyProvider(
 	m map[spec.ProviderName]spec.ProviderPreset,
 ) (spec.ProviderName, spec.ProviderPreset) {

@@ -236,23 +236,23 @@ func (s *ModelPresetStore) PatchProviderPreset(
 			); err != nil {
 				return nil, err
 			}
+			slog.Info("patchProviderPreset.builtin",
+				"provider", req.ProviderName,
+				"isEnabled", *req.Body.IsEnabled)
 		}
 
 		// Change default model-preset (placeholder - to be implemented later).
-
-		//nolint:staticcheck // builtinstore needs to add this.
 		if req.Body.DefaultModelPresetID != nil {
-			//nolint:godot // builtinstore needs to add this.
-			// if _, err := s.builtinData.SetDefaultModelPreset( // TODO: implement.
-			// 	req.ProviderName, *req.Body.DefaultModelPresetID,
-			// ); err != nil {
-			// 	return nil, err
-			// }
+			if _, err := s.builtinData.SetDefaultModelPreset(
+				ctx, req.ProviderName, *req.Body.DefaultModelPresetID,
+			); err != nil {
+				return nil, err
+			}
+			slog.Info("patchProviderPreset.builtin",
+				"provider", req.ProviderName,
+				"defaultModelPresetID", *req.Body.DefaultModelPresetID)
 		}
 
-		slog.Info("patchProviderPreset.builtin",
-			"provider", req.ProviderName,
-			"defaultModelPresetID", req.Body.DefaultModelPresetID)
 		return &spec.PatchProviderPresetResponse{}, nil
 	}
 
@@ -303,7 +303,8 @@ func (s *ModelPresetStore) PatchProviderPreset(
 
 	slog.Info("patchProviderPreset",
 		"provider", req.ProviderName,
-		"defaultModelPresetID", req.Body.DefaultModelPresetID)
+		"isEnabled", pp.IsEnabled,
+		"defaultModelPresetID", pp.DefaultModelPresetID)
 
 	return &spec.PatchProviderPresetResponse{}, nil
 }
