@@ -83,6 +83,11 @@ func validateModelPreset(mp *spec.ModelPreset) error {
 		return spec.ErrInvalidTimestamp
 	}
 
+	// Either Reasoning or Temperature must be provided (both cannot be nil).
+	if mp.Reasoning == nil && mp.Temperature == nil {
+		return errors.New("either reasoning or temperature must be set")
+	}
+
 	// Reasoning checks (optional).
 	if mp.Reasoning != nil {
 		if err := validateReasoning(mp.Reasoning); err != nil {

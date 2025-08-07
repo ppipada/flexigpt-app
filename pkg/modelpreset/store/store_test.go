@@ -268,7 +268,7 @@ func TestPutModelPreset(t *testing.T) {
 	ctx := t.Context()
 	s := newTestStore(t)
 	createProvider(t, s, "provM", true)
-
+	temp := 0.1
 	tests := []struct {
 		name        string
 		req         *spec.PutModelPresetRequest
@@ -298,6 +298,7 @@ func TestPutModelPreset(t *testing.T) {
 					DisplayName: "Model-1",
 					Slug:        "white space",
 					IsEnabled:   true,
+					Temperature: &temp,
 				},
 			},
 			expectError: errors.New("invalid tag"),
@@ -312,6 +313,7 @@ func TestPutModelPreset(t *testing.T) {
 					DisplayName: "Ghost",
 					Slug:        "g",
 					IsEnabled:   true,
+					Temperature: &temp,
 				},
 			},
 			expectError: spec.ErrProviderNotFound,
@@ -326,6 +328,7 @@ func TestPutModelPreset(t *testing.T) {
 					DisplayName: "Model-1",
 					Slug:        "m1",
 					IsEnabled:   true,
+					Temperature: &temp,
 				},
 			},
 		},
@@ -339,6 +342,7 @@ func TestPutModelPreset(t *testing.T) {
 					DisplayName: "Model-ONE-RENAMED",
 					Slug:        "m1",
 					IsEnabled:   false,
+					Temperature: &temp,
 				},
 			},
 		},
@@ -711,6 +715,7 @@ func createModelPreset(t *testing.T, s *store.ModelPresetStore,
 	if slug == "" {
 		slug = id
 	}
+	temp := 0.1
 	_, err := s.PutModelPreset(t.Context(), &spec.PutModelPresetRequest{
 		ProviderName:  spec.ProviderName(prov),
 		ModelPresetID: spec.ModelPresetID(id),
@@ -719,6 +724,7 @@ func createModelPreset(t *testing.T, s *store.ModelPresetStore,
 			DisplayName: spec.ModelDisplayName(strings.ToUpper(id)),
 			Slug:        spec.ModelSlug(slug),
 			IsEnabled:   enabled,
+			Temperature: &temp,
 		},
 	})
 	if err != nil {

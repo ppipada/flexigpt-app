@@ -736,6 +736,7 @@ func buildHappySchema(pn spec.ProviderName, mpid spec.ModelPresetID) []byte {
 }
 
 func makeModelPreset(mpid spec.ModelPresetID) spec.ModelPreset {
+	temp := 0.1
 	return spec.ModelPreset{
 		SchemaVersion: spec.SchemaVersion,
 		ID:            mpid,
@@ -745,6 +746,7 @@ func makeModelPreset(mpid spec.ModelPresetID) spec.ModelPreset {
 		IsEnabled:     true,
 		CreatedAt:     time.Now(),
 		ModifiedAt:    time.Now(),
+		Temperature:   &temp,
 	}
 }
 

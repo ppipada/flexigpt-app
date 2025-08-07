@@ -40,7 +40,7 @@ const AddModeDefaults: ModelPreset = {
 	stream: true,
 	maxPromptLength: 2048,
 	maxOutputLength: 1024,
-	temperature: 0.1,
+	temperature: undefined,
 	reasoning: undefined,
 	systemPrompt: '',
 	timeout: 60,
@@ -273,6 +273,11 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 		if (formData.reasoningSupport && formData.reasoningType === ReasoningType.HybridWithTokens) {
 			maybe('reasoningTokens', { min: 1024 });
 		}
+		/* at least one of "reasoning" or "temperature" should be present*/
+		const hasTemp = formData.temperature.trim() !== '';
+		if (!formData.reasoningSupport && !hasTemp) {
+			v.temperature = 'Provide either Temperature or enable Reasoning.';
+		}
 		const newV: ValidationErrors = Object.fromEntries(
 			Object.entries(v).filter(([key]) => v[key as ValidationField] !== undefined)
 		);
@@ -331,10 +336,14 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 
 			maxPromptLength: parseOrDefault(formData.maxPromptLength, defaultValues.maxPromptLength ?? 2048),
 			maxOutputLength: parseOrDefault(formData.maxOutputLength, defaultValues.maxOutputLength ?? 1024),
-			temperature: parseOrDefault(formData.temperature, defaultValues.temperature ?? 0.1),
-			timeout: parseOrDefault(formData.timeout, defaultValues.timeout ?? 60),
 
+			timeout: parseOrDefault(formData.timeout, defaultValues.timeout ?? 60),
 			systemPrompt: formData.systemPrompt,
+
+			/* only include temperature when user actually entered a value */
+			...(formData.temperature.trim() !== '' && {
+				temperature: parseOrDefault(formData.temperature, defaultValues.temperature ?? 0.1),
+			}),
 		};
 
 		if (formData.reasoningSupport) {
@@ -646,6 +655,9 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Temperature (0-1)</span>
+							<span className="label-text-alt tooltip tooltip-right" data-tip="This or Reasoning is needed">
+								<FiHelpCircle size={12} />
+							</span>
 						</label>
 						<div className="col-span-9">
 							<input

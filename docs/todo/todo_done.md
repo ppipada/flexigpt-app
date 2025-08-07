@@ -307,8 +307,6 @@
   - [x] separate out put conversation and add messages to conversation so that things are idempotent and id based comparisons can be made in put
   - [x] need listfiles with filtering in dirstore
 
-## UI integration for search fts of conversations
-
 - Entry Point (Focus / Empty Query)
 
   - [x] On focus, call `listConversations(pageSize=20)`
@@ -420,3 +418,7 @@
   - [x] Add Auth keys for provider should be allowed for current providers, else point to add provider page
   - [x] In Add mode, it should be allowed to copy data from one of current things for all, with some mods in conflict avoiding fields
   - [x] If we try to set a inbuilt preset as default for first time there is a error as of now.
+
+  - [x] overlay needs to have non bool flag support too, need it for default model support, currently no default model change supported for inbuilt ones
+  - [x] Add default model in non bool overlay
+  - [x] backend should check if atleast one of reasoning or temp is set
