@@ -60,11 +60,7 @@ const ChatScreen: FC = () => {
 		chatInputRef.current?.focus();
 	}, []);
 
-	const scrollToBottom = () => {
-		if (chatContainerRef.current) {
-			chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
-		}
-	};
+	// Get the scroll down button active via regular check.
 	useEffect(() => {
 		if (!isStreaming) return;
 
@@ -78,6 +74,11 @@ const ChatScreen: FC = () => {
 	}, [isStreaming, checkScroll]);
 
 	// Scroll to bottom. Tell the browser to bring the sentinel into view.
+	const scrollToBottom = () => {
+		if (chatContainerRef.current) {
+			chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
+		}
+	};
 	useEffect(() => {
 		const timeout = setTimeout(() => {
 			scrollToBottom();
