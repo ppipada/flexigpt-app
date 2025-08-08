@@ -2,14 +2,14 @@
 
 ## Laundry list
 
-- Settings/Presets/Prompt/tool Backend:
+- Completions API backend
 
-  - [ ] Integrate store with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
+  - [ ] Integrate stores with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
+  - [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
+  - [ ] If there was some amount of data that was streamed, but error occured at end someplace, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is.
+  - [ ] langchaingo seem to be moving very slow with no thinking support. better use official sdks from openai and anthropic
 
 - [ ] CPU is high when "thinking". Need to debug
-- [ ] If there was some amount of data that was streamed, but error occured at end someplace, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is.
-- [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
-- [ ] For new month of conversations etc, if we set default provider preset it says read partition error
 
 ## Random notes from UX discussions
 

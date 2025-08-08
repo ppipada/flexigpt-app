@@ -45,9 +45,9 @@
 
 - [ ] Settings
 
-  - [ ] Need a settings data version and migration func
-  - [ ] API key should never reach frontend after save: Need to verify if some place this is remaining
-  - [ ] theme setting persistance and usage across installs
+  - [x] Need a settings data version and migration func
+  - [x] API key should never reach frontend after save: Need to verify if some place this is remaining
+  - [x] theme setting persistance and usage across installs
 
 - [ ] Windows
 

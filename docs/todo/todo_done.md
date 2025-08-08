@@ -237,11 +237,12 @@
   - [x] Add reasoning support in modelparams
   - [x] reasoning effort comes in multiple flavors: medium high less etc. number from x to y. find a way to represent them.
   - [x] See if temperature is almost always optional. Anthropic supports reasoning + normal mode too. Need to see how to represent that too without real overwhelming of the user. Represent appropriately in UI
+
     - [x] For anthropic: temp and thinking are not compatible. streaming is present. thinking is controlled as "budget tokens "
     - [x] For openai: temp and thinking are not compatible. can pass temp as 1 to some models after dec 24. streaming is present in newer api. thinking is controlled as effort, low medium high
     - [x] google doesnt mention any control on thinking model
-  - [x] langchaingo seem to be moving very slow with no thinking support. better use official sdks from openai and anthropic
-    - [x] created a fork and try to merge pr
+
+  - [x] created a fork and try to merge pr for anthropic and openai in until we move away from langchaingo.
 
 - [x] Support additional params from UI to backend
 - [x] Represent reasoning process in UI
@@ -422,3 +423,6 @@
   - [x] overlay needs to have non bool flag support too, need it for default model support, currently no default model change supported for inbuilt ones
   - [x] Add default model in non bool overlay
   - [x] backend should check if atleast one of reasoning or temp is set
+
+- [x] For new month of conversations etc, if we set default provider preset it says read partition error
+  - [x] This is ok as it is read error at start and then next dr is created
