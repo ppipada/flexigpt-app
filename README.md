@@ -103,7 +103,7 @@ Launch FlexiGPT, open Settings -> Providers, paste your API key, start chatting.
     - Open bugs in upstream projects that cause this: [Webkit issue 180739](https://bugs.webkit.org/show_bug.cgi?id=180739), [Webkit issue 262607](https://bugs.webkit.org/show_bug.cgi?id=262607), [Debian issue 1082139](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1082139), [Wails issue 2977](https://github.com/wailsapp/wails/issues/2977)
 
 - Your local data (settings, conversations, logs) will be at:
-  - `~/.var/app/io.github.flexigpt.client/`
+  - `~/.var/app/io.github.flexigpt.client/data/flexigpt`
 
 ## Feature: Conversation History
 
