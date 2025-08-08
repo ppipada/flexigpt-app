@@ -377,7 +377,7 @@
 			"defaultHeaders": {
 				"content-type": "application/json"
 			},
-			"defaultModelPresetID": "gpt41",
+			"defaultModelPresetID": "gpt5",
 			"modelPresets": {
 				"o4Mini": {
 					"schemaVersion": "2025-07-01",
@@ -436,7 +436,7 @@
 					"temperature": 1.0,
 					"reasoning": {
 						"type": "singleWithLevels",
-						"level": "medium",
+						"level": "high",
 						"tokens": 0
 					},
 					"systemPrompt": "Formatting re-enabled.\nAlways output in Markdown format.",
@@ -458,7 +458,51 @@
 					"temperature": 1.0,
 					"reasoning": {
 						"type": "singleWithLevels",
-						"level": "medium",
+						"level": "high",
+						"tokens": 0
+					},
+					"systemPrompt": "Formatting re-enabled.\nAlways output in Markdown format.",
+					"timeout": 120,
+					"createdAt": "2025-07-30T00:00:00Z",
+					"modifiedAt": "2025-07-30T00:00:00Z",
+					"isBuiltIn": true
+				},
+				"gpt5": {
+					"schemaVersion": "2025-07-01",
+					"id": "gpt5",
+					"name": "gpt-5",
+					"displayName": "OpenAI GPT 5",
+					"slug": "gpt5",
+					"isEnabled": true,
+					"stream": true,
+					"maxPromptLength": 32768,
+					"maxOutputLength": 32768,
+					"temperature": 1.0,
+					"reasoning": {
+						"type": "singleWithLevels",
+						"level": "high",
+						"tokens": 0
+					},
+					"systemPrompt": "Formatting re-enabled.\nAlways output in Markdown format.",
+					"timeout": 120,
+					"createdAt": "2025-07-30T00:00:00Z",
+					"modifiedAt": "2025-07-30T00:00:00Z",
+					"isBuiltIn": true
+				},
+				"gpt5Mini": {
+					"schemaVersion": "2025-07-01",
+					"id": "gpt5Mini",
+					"name": "gpt-5-mini",
+					"displayName": "OpenAI GPT 5 Mini",
+					"slug": "gpt5Mini",
+					"isEnabled": true,
+					"stream": true,
+					"maxPromptLength": 32768,
+					"maxOutputLength": 32768,
+					"temperature": 1.0,
+					"reasoning": {
+						"type": "singleWithLevels",
+						"level": "high",
 						"tokens": 0
 					},
 					"systemPrompt": "Formatting re-enabled.\nAlways output in Markdown format.",
@@ -473,7 +517,7 @@
 					"name": "gpt-4.1",
 					"displayName": "OpenAI GPT 4.1",
 					"slug": "gpt41",
-					"isEnabled": true,
+					"isEnabled": false,
 					"stream": true,
 					"maxPromptLength": 16384,
 					"maxOutputLength": 16384,
