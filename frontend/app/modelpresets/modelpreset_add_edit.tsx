@@ -43,7 +43,7 @@ const AddModeDefaults: ModelPreset = {
 	temperature: undefined,
 	reasoning: undefined,
 	systemPrompt: '',
-	timeout: 60,
+	timeout: 300,
 	additionalParametersRawJSON: undefined,
 };
 
@@ -337,7 +337,7 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 			maxPromptLength: parseOrDefault(formData.maxPromptLength, defaultValues.maxPromptLength ?? 2048),
 			maxOutputLength: parseOrDefault(formData.maxOutputLength, defaultValues.maxOutputLength ?? 1024),
 
-			timeout: parseOrDefault(formData.timeout, defaultValues.timeout ?? 60),
+			timeout: parseOrDefault(formData.timeout, defaultValues.timeout ?? 300),
 			systemPrompt: formData.systemPrompt,
 
 			/* only include temperature when user actually entered a value */

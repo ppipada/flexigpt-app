@@ -10,6 +10,7 @@ const (
 	User      ChatCompletionRoleEnum = "user"
 	Assistant ChatCompletionRoleEnum = "assistant"
 	Function  ChatCompletionRoleEnum = "function"
+	Tool      ChatCompletionRoleEnum = "tool"
 )
 
 type ChatCompletionFunctions struct {

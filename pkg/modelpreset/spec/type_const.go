@@ -62,9 +62,10 @@ const (
 )
 
 const (
-	ReasoningLevelLow    ReasoningLevel = "low"
-	ReasoningLevelMedium ReasoningLevel = "medium"
-	ReasoningLevelHigh   ReasoningLevel = "high"
+	ReasoningLevelMinimal ReasoningLevel = "minimal"
+	ReasoningLevelLow     ReasoningLevel = "low"
+	ReasoningLevelMedium  ReasoningLevel = "medium"
+	ReasoningLevelHigh    ReasoningLevel = "high"
 )
 
 type ReasoningParams struct {

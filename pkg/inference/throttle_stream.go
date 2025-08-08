@@ -8,7 +8,7 @@ import (
 
 const (
 	FlushInterval  = 256 * time.Millisecond
-	FlushChunkSize = 512
+	FlushChunkSize = 1024
 )
 
 // NewBufferedStreamer returns two functions:
@@ -61,18 +61,21 @@ func NewBufferedStreamer(
 		return nil
 	}
 
+	var once sync.Once
 	// Flush everything, stop ticker.
 	flush = func() {
-		close(done)
-		mu.Lock()
-		if buf.Len() > 0 {
-			data := buf.String()
-			buf.Reset()
+		once.Do(func() {
+			close(done)
+			mu.Lock()
+			if buf.Len() > 0 {
+				data := buf.String()
+				buf.Reset()
+				mu.Unlock()
+				_ = onStreamData(data)
+				return
+			}
 			mu.Unlock()
-			_ = onStreamData(data)
-			return
-		}
-		mu.Unlock()
+		})
 	}
 
 	return write, flush

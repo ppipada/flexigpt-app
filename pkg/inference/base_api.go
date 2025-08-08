@@ -13,17 +13,17 @@ import (
 )
 
 type CompletionProvider interface {
+	InitLLM(ctx context.Context) error
+	DeInitLLM(ctx context.Context) error
 	GetProviderInfo(
 		ctx context.Context,
 	) *spec.ProviderParams
 	IsConfigured(ctx context.Context) bool
-	GetLLMsModel(ctx context.Context) llms.Model
-	InitLLM(ctx context.Context) error
-	DeInitLLM(ctx context.Context) error
 	SetProviderAPIKey(
 		ctx context.Context,
 		apiKey string,
 	) error
+	GetLLMsModel(ctx context.Context) llms.Model
 	FetchCompletion(
 		ctx context.Context,
 		llm llms.Model,
@@ -94,7 +94,7 @@ func (api *BaseAIAPI) FetchCompletion(
 	prevMessages []spec.ChatCompletionRequestMessage,
 	onStreamData func(data string) error,
 ) (*spec.CompletionResponse, error) {
-	input := api.getCompletionRequest(prompt, modelParams, prevMessages)
+	input := getCompletionRequest(prompt, modelParams, prevMessages)
 	if len(input.Messages) == 0 {
 		return nil, errors.New("empty input messages")
 	}
@@ -178,34 +178,10 @@ func (api *BaseAIAPI) FetchCompletion(
 		flush()
 	}
 
-	debugResp, ok := GetDebugHTTPResponse(ctx)
-	if err != nil {
-		if ok && debugResp != nil && debugResp.ErrorDetails != nil {
-			completionResp.ErrorDetails = debugResp.ErrorDetails
-			return completionResp, nil
-		}
-		return nil, err
-	}
-	if ok && debugResp != nil {
-		completionResp.RequestDetails = debugResp.RequestDetails
-		completionResp.ErrorDetails = debugResp.ErrorDetails
-		completionResp.ResponseDetails = debugResp.ResponseDetails
-	}
-
-	// PrintJSON(resp).
-
-	if resp == nil || len(resp.Choices) == 0 || resp.Choices[0] == nil {
-		if ok && debugResp != nil {
-			if completionResp.ErrorDetails == nil {
-				completionResp.ErrorDetails = &spec.APIErrorDetails{
-					Message: "got nil response from LLM api",
-				}
-			} else {
-				completionResp.ErrorDetails.Message += " got nil response from LLM api"
-			}
-			return completionResp, nil
-		}
-		return nil, errors.New("got nil response from LLM api")
+	isNilResp := resp == nil || len(resp.Choices) == 0 || resp.Choices[0] == nil
+	attachDebugResp(ctx, completionResp, err, isNilResp)
+	if isNilResp {
+		return completionResp, nil
 	}
 
 	reasoningContent := ""
@@ -218,7 +194,61 @@ func (api *BaseAIAPI) FetchCompletion(
 	return completionResp, nil
 }
 
-func (api *BaseAIAPI) getCompletionRequest(
+// attachDebugResp adds HTTP-debug information and error context—without panics.
+//
+// – ctx may or may not contain debug information.
+// – respErr is the transport/SDK error (may be nil).
+// – isNilResp tells whether the model returned an empty/invalid response.
+func attachDebugResp(
+	ctx context.Context,
+	completionResp *spec.CompletionResponse,
+	respErr error,
+	isNilResp bool,
+) {
+	if completionResp == nil {
+		return
+	}
+
+	debugResp, _ := GetDebugHTTPResponse(ctx)
+
+	// Always attach request/response debug info if available.
+	if debugResp != nil {
+		completionResp.RequestDetails = debugResp.RequestDetails
+		completionResp.ResponseDetails = debugResp.ResponseDetails
+	}
+
+	// Gather error-message fragments.
+	var msgParts []string
+	if debugResp != nil && debugResp.ErrorDetails != nil {
+		if m := strings.TrimSpace(debugResp.ErrorDetails.Message); m != "" {
+			msgParts = append(msgParts, m)
+		}
+	}
+	if respErr != nil {
+		msgParts = append(msgParts, respErr.Error())
+	}
+	if isNilResp {
+		msgParts = append(msgParts, "got nil response from LLM api")
+	}
+
+	if len(msgParts) == 0 {
+		// Nothing to write; leave ErrorDetails as-is (nil or previously set).
+		return
+	}
+
+	// Prepare ErrorDetails without aliasing the debug struct pointer.
+	if debugResp != nil && debugResp.ErrorDetails != nil {
+		ed := *debugResp.ErrorDetails
+		ed.Message = strings.Join(msgParts, "; ")
+		completionResp.ErrorDetails = &ed
+	} else {
+		completionResp.ErrorDetails = &spec.APIErrorDetails{
+			Message: strings.Join(msgParts, "; "),
+		}
+	}
+}
+
+func getCompletionRequest(
 	prompt string,
 	modelParams spec.ModelParams,
 	prevMessages []spec.ChatCompletionRequestMessage,
