@@ -39,6 +39,7 @@ type CompletionResponse struct {
 	ResponseDetails *APIResponseDetails `json:"responseDetails,omitempty"`
 	ErrorDetails    *APIErrorDetails    `json:"errorDetails,omitempty"`
 	RespContent     *string             `json:"respContent,omitempty"`
+	ThinkingContent *string             `json:"thinkingContent,omitempty"`
 	FunctionName    *string             `json:"functionName,omitempty"`
 	FunctionArgs    any                 `json:"functionArgs,omitempty"`
 }
@@ -82,11 +83,12 @@ type SetProviderAPIKeyRequest struct {
 type SetProviderAPIKeyResponse struct{}
 
 type FetchCompletionRequestBody struct {
-	Provider     modelpresetSpec.ProviderName   `json:"provider"         required:"true"`
-	Prompt       string                         `json:"prompt"           required:"true"`
-	ModelParams  ModelParams                    `json:"spec.ModelParams" required:"true"`
-	PrevMessages []ChatCompletionRequestMessage `json:"prevMessages"`
-	OnStreamData func(data string) error        `json:"-"`
+	Provider             modelpresetSpec.ProviderName    `json:"provider"         required:"true"`
+	Prompt               string                          `json:"prompt"           required:"true"`
+	ModelParams          ModelParams                     `json:"spec.ModelParams" required:"true"`
+	PrevMessages         []ChatCompletionRequestMessage  `json:"prevMessages"`
+	OnStreamTextData     func(textData string) error     `json:"-"`
+	OnStreamThinkingData func(thinkingData string) error `json:"-"`
 }
 
 type FetchCompletionRequest struct {

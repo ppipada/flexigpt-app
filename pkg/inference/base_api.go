@@ -30,7 +30,8 @@ type CompletionProvider interface {
 		prompt string,
 		modelParams spec.ModelParams,
 		prevMessages []spec.ChatCompletionRequestMessage,
-		onStreamData func(data string) error,
+		OnStreamTextData func(textData string) error,
+		OnStreamThinkingData func(thinkingData string) error,
 	) (*spec.CompletionResponse, error)
 }
 
@@ -92,7 +93,7 @@ func (api *BaseAIAPI) FetchCompletion(
 	prompt string,
 	modelParams spec.ModelParams,
 	prevMessages []spec.ChatCompletionRequestMessage,
-	onStreamData func(data string) error,
+	onStreamTextData, onStreamThinkingData func(string) error,
 ) (*spec.CompletionResponse, error) {
 	input := getCompletionRequest(prompt, modelParams, prevMessages)
 	if len(input.Messages) == 0 {
@@ -128,23 +129,37 @@ func (api *BaseAIAPI) FetchCompletion(
 	}
 	options = append(options, llms.WithMaxTokens(input.ModelParams.MaxOutputLength))
 
-	// Wrap onStreamData.
-	var write func(string) error
-	var flush func()
-	if input.ModelParams.Stream && onStreamData != nil {
-		write, flush = NewBufferedStreamer(onStreamData, FlushInterval, FlushChunkSize)
+	var textWriter func(string) error
+	var textFlush func()
+
+	var thinkingWriter func(string) error
+	var thinkingFlush func()
+	if input.ModelParams.Stream && onStreamThinkingData != nil && onStreamTextData != nil {
+		textWriter, textFlush = NewBufferedStreamer(onStreamTextData, FlushInterval, FlushChunkSize)
 		if input.ModelParams.Reasoning != nil {
+			thinkingWriter, thinkingFlush = NewBufferedStreamer(
+				onStreamThinkingData,
+				FlushInterval,
+				FlushChunkSize,
+			)
 			streamingReasoningFunc := func(ctx context.Context, reasoningChunk []byte, chunk []byte) error {
 				rc := string(reasoningChunk)
+				var thinkErr error
+				var textErr error
 				if rc != "" {
-					rc = getBlockQuotedReasoning(rc)
+					thinkErr = thinkingWriter(rc)
 				}
-				return write(rc + string(chunk))
+				t := string(chunk)
+				if t != "" {
+					textErr = textWriter(t)
+				}
+
+				return errors.Join(thinkErr, textErr)
 			}
 			options = append(options, llms.WithStreamingReasoningFunc(streamingReasoningFunc))
 		} else {
 			streamingFunc := func(ctx context.Context, chunk []byte) error {
-				return write(string(chunk))
+				return textWriter(string(chunk))
 			}
 			options = append(options, llms.WithStreamingFunc(streamingFunc))
 		}
@@ -174,8 +189,11 @@ func (api *BaseAIAPI) FetchCompletion(
 	resp, err := llm.GenerateContent(ctx, content, options...)
 
 	// Make sure buffered data reaches the client.
-	if flush != nil {
-		flush()
+	if textFlush != nil {
+		textFlush()
+	}
+	if thinkingFlush != nil {
+		thinkingFlush()
 	}
 
 	isNilResp := resp == nil || len(resp.Choices) == 0 || resp.Choices[0] == nil
@@ -184,11 +202,10 @@ func (api *BaseAIAPI) FetchCompletion(
 		return completionResp, nil
 	}
 
-	reasoningContent := ""
 	if rc := resp.Choices[0].ReasoningContent; rc != "" {
-		reasoningContent = "> Thought process:\n\n" + getBlockQuotedReasoning(rc) + "\n\n"
+		completionResp.ThinkingContent = &rc
 	}
-	full := reasoningContent + resp.Choices[0].Content
+	full := resp.Choices[0].Content
 	completionResp.RespContent = &full
 
 	return completionResp, nil
@@ -299,15 +316,4 @@ func TrimInbuiltPrompts(systemPrompt, inbuiltPrompt string) string {
 	}
 	// Re-join the remaining lines.
 	return inbuiltPrompt + "\n" + strings.TrimLeft(strings.Join(promptLines, "\n"), "\n")
-}
-
-func getBlockQuotedReasoning(content string) string {
-	// Split the content into lines.
-	lines := strings.Split(content, "\n")
-	// Prepend each line with "> ".
-	for i, line := range lines {
-		lines[i] = "> " + line
-	}
-	// Join the lines back together as blockquote.
-	return strings.Join(lines, "\n")
 }

@@ -215,7 +215,7 @@ func TestSetBundleEnabled(t *testing.T) {
 			}
 
 			// Verify persistence to overlay store (not disk).
-			flag, ok, err := bi.bundleOverlayFlags.GetFlag(ctx, BuiltInBundleID(bundleID))
+			flag, ok, err := bi.bundleOverlayFlags.GetFlag(ctx, builtInBundleID(bundleID))
 			if err != nil {
 				t.Fatalf("overlay store: %v", err)
 			}
@@ -333,7 +333,10 @@ func TestSetTemplateEnabled(t *testing.T) {
 			}
 
 			// Verify persistence to overlay store (not disk).
-			flag, ok, err := bi.templateOverlayFlags.GetFlag(ctx, BuiltInTemplateID(template.ID))
+			flag, ok, err := bi.templateOverlayFlags.GetFlag(
+				ctx,
+				getTemplateKey(bundleID, template.ID),
+			)
 			if err != nil {
 				t.Fatalf("overlay store: %v", err)
 			}
@@ -549,7 +552,7 @@ func TestRebuildSnapshot(t *testing.T) {
 	bundleID, bundle := anyBundle(bundles)
 
 	// Change the overlay directly.
-	_, err = bi.bundleOverlayFlags.SetFlag(ctx, BuiltInBundleID(bundleID), !bundle.IsEnabled)
+	_, err = bi.bundleOverlayFlags.SetFlag(ctx, builtInBundleID(bundleID), !bundle.IsEnabled)
 	if err != nil {
 		t.Fatalf("failed to set overlay: %v", err)
 	}
@@ -725,7 +728,7 @@ func Test_NewBuiltInData_SyntheticFS_HappyAndCRUD(t *testing.T) {
 		t.Fatalf("SetBundleEnabled: %v", err)
 	}
 
-	flag, ok, err := bi.bundleOverlayFlags.GetFlag(ctx, BuiltInBundleID(bundleID))
+	flag, ok, err := bi.bundleOverlayFlags.GetFlag(ctx, builtInBundleID(bundleID))
 	if err != nil {
 		t.Fatalf("bundleFlags.GetFlag: %v", err)
 	}
@@ -743,7 +746,7 @@ func Test_NewBuiltInData_SyntheticFS_HappyAndCRUD(t *testing.T) {
 		t.Fatalf("SetTemplateEnabled: %v", err)
 	}
 
-	tflag, ok, err := bi.templateOverlayFlags.GetFlag(ctx, BuiltInTemplateID(tmplID))
+	tflag, ok, err := bi.templateOverlayFlags.GetFlag(ctx, getTemplateKey(bundleID, tmplID))
 	if err != nil {
 		t.Fatalf("templateFlags.GetFlag: %v", err)
 	}

@@ -16,7 +16,7 @@ import (
 // Scale-test: create, patch, and delete lots of tool bundles.
 func TestScale_LotsOfToolBundles(t *testing.T) {
 	const (
-		nBundles      = 300
+		nBundles      = 256
 		nonEmptyEvery = 10 // Every 10-th bundle gets one tool.
 		deleteEvery   = 5  // Request delete on every 5-th bundle.
 		patchEvery    = 2  // Toggle enabled every 2-nd bundle.

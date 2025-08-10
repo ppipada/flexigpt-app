@@ -6,14 +6,15 @@ go 1.24.2
 // but have not added here as dependency as noted in golangci-lint website
 require (
 	github.com/adrg/xdg v0.5.3
+	github.com/anthropics/anthropic-sdk-go v1.7.0
 	github.com/danielgtaylor/huma/v2 v2.34.1
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/google/uuid v1.6.0
+	github.com/openai/openai-go/v2 v2.0.0
 	github.com/philippgille/chromem-go v0.7.0
 	github.com/tmc/langchaingo v0.0.0-00010101000000-000000000000
 	github.com/wailsapp/wails/v2 v2.10.2
 	github.com/zalando/go-keyring v0.2.6
-	github.com/openai/openai-go/v2 v2.0.0
 )
 
 require (

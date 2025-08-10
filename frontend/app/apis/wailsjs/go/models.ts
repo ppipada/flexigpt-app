@@ -268,6 +268,7 @@ export namespace spec {
 	    responseDetails?: APIResponseDetails;
 	    errorDetails?: APIErrorDetails;
 	    respContent?: string;
+	    thinkingContent?: string;
 	    functionName?: string;
 	    functionArgs?: any;
 	
@@ -281,6 +282,7 @@ export namespace spec {
 	        this.responseDetails = this.convertValues(source["responseDetails"], APIResponseDetails);
 	        this.errorDetails = this.convertValues(source["errorDetails"], APIErrorDetails);
 	        this.respContent = source["respContent"];
+	        this.thinkingContent = source["thinkingContent"];
 	        this.functionName = source["functionName"];
 	        this.functionArgs = source["functionArgs"];
 	    }

@@ -29,6 +29,10 @@ type builtInModelKey spec.ModelPresetID
 func (builtInModelKey) Group() overlay.GroupID { return "models" }
 func (k builtInModelKey) ID() overlay.KeyID    { return overlay.KeyID(k) }
 
+func getModelKey(pName spec.ProviderName, modelID spec.ModelPresetID) builtInModelKey {
+	return builtInModelKey(fmt.Sprintf("%s::%s", pName, modelID))
+}
+
 type builtInProviderDefaultModelIDKey spec.ProviderName
 
 func (builtInProviderDefaultModelIDKey) Group() overlay.GroupID { return "providerDefaultModelIDs" }
@@ -212,7 +216,7 @@ func (b *BuiltInPresets) SetModelPresetEnabled(
 	if err != nil {
 		return mp, err
 	}
-	flag, err := b.modelOverlayFlags.SetFlag(ctx, builtInModelKey(modelID), enabled)
+	flag, err := b.modelOverlayFlags.SetFlag(ctx, getModelKey(provider, modelID), enabled)
 	if err != nil {
 		return spec.ModelPreset{}, err
 	}
@@ -221,6 +225,14 @@ func (b *BuiltInPresets) SetModelPresetEnabled(
 	mp.IsEnabled = enabled
 	mp.ModifiedAt = flag.ModifiedAt
 	b.viewModels[provider][modelID] = mp
+
+	// Keep provider snapshot consistent for immediate reads.
+	pp := b.viewProv[provider]
+	if pp.ModelPresets == nil {
+		pp.ModelPresets = map[spec.ModelPresetID]spec.ModelPreset{}
+	}
+	pp.ModelPresets[modelID] = mp
+	b.viewProv[provider] = pp
 	b.mu.Unlock()
 
 	b.rebuilder.Trigger()
@@ -308,7 +320,6 @@ func (b *BuiltInPresets) loadFromFS(ctx context.Context) error {
 	// Parse + validate.
 	prov := make(map[spec.ProviderName]spec.ProviderPreset, len(schema.ProviderPresets))
 	models := make(map[spec.ProviderName]map[spec.ModelPresetID]spec.ModelPreset)
-	seenModelGlobal := map[spec.ModelPresetID]struct{}{}
 
 	for name, pp := range schema.ProviderPresets {
 		if err := validateProviderPreset(&pp); err != nil {
@@ -319,11 +330,6 @@ func (b *BuiltInPresets) loadFromFS(ctx context.Context) error {
 
 		sub := make(map[spec.ModelPresetID]spec.ModelPreset, len(pp.ModelPresets))
 		for mid, mp := range pp.ModelPresets {
-			if _, dup := seenModelGlobal[mid]; dup {
-				return fmt.Errorf("duplicate modelPresetID %q across providers", mid)
-			}
-			seenModelGlobal[mid] = struct{}{}
-
 			mp.IsBuiltIn = true
 			sub[mid] = mp
 		}
@@ -349,6 +355,20 @@ func (b *BuiltInPresets) rebuildSnapshot(ctx context.Context) error {
 	newProv := make(map[spec.ProviderName]spec.ProviderPreset, len(b.providers))
 	newModels := make(map[spec.ProviderName]map[spec.ModelPresetID]spec.ModelPreset, len(b.models))
 
+	for pname, mm := range b.models {
+		sub := make(map[spec.ModelPresetID]spec.ModelPreset, len(mm))
+		for mid, m := range mm {
+			if flag, ok, err := b.modelOverlayFlags.GetFlag(ctx, getModelKey(pname, mid)); err != nil {
+				return err
+			} else if ok {
+				m.IsEnabled = flag.Value
+				m.ModifiedAt = flag.ModifiedAt
+			}
+			sub[mid] = m
+		}
+		newModels[pname] = sub
+	}
+
 	for pname, p := range b.providers {
 		if flag, ok, err := b.providerDefaultModelIDOverlayFlags.GetFlag(
 			ctx, builtInProviderDefaultModelIDKey(pname)); err != nil {
@@ -366,22 +386,10 @@ func (b *BuiltInPresets) rebuildSnapshot(ctx context.Context) error {
 				p.ModifiedAt = flag.ModifiedAt
 			}
 		}
+		// Need to apply the overlayed model presets.
+		p.ModelPresets = newModels[pname]
 
 		newProv[pname] = p
-	}
-
-	for pname, mm := range b.models {
-		sub := make(map[spec.ModelPresetID]spec.ModelPreset, len(mm))
-		for mid, m := range mm {
-			if flag, ok, err := b.modelOverlayFlags.GetFlag(ctx, builtInModelKey(mid)); err != nil {
-				return err
-			} else if ok {
-				m.IsEnabled = flag.Value
-				m.ModifiedAt = flag.ModifiedAt
-			}
-			sub[mid] = m
-		}
-		newModels[pname] = sub
 	}
 
 	b.viewProv = newProv

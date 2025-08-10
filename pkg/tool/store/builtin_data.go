@@ -21,15 +21,19 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
-type BuiltInToolBundleID bundleitemutils.BundleID
+type builtInToolBundleID bundleitemutils.BundleID
 
-func (BuiltInToolBundleID) Group() overlay.GroupID { return "bundles" }
-func (b BuiltInToolBundleID) ID() overlay.KeyID    { return overlay.KeyID(b) }
+func (builtInToolBundleID) Group() overlay.GroupID { return "bundles" }
+func (b builtInToolBundleID) ID() overlay.KeyID    { return overlay.KeyID(b) }
 
-type BuiltInToolID bundleitemutils.ItemID
+type builtInToolID bundleitemutils.ItemID
 
-func (BuiltInToolID) Group() overlay.GroupID { return "tools" }
-func (t BuiltInToolID) ID() overlay.KeyID    { return overlay.KeyID(t) }
+func (builtInToolID) Group() overlay.GroupID { return "tools" }
+func (t builtInToolID) ID() overlay.KeyID    { return overlay.KeyID(t) }
+
+func getToolKey(bid bundleitemutils.BundleID, tid bundleitemutils.ItemID) builtInToolID {
+	return builtInToolID(fmt.Sprintf("%s::%s", bid, tid))
+}
 
 type BuiltInToolData struct {
 	toolsFS        fs.FS
@@ -40,8 +44,8 @@ type BuiltInToolData struct {
 	tools   map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool
 
 	store              *overlay.Store
-	bundleOverlayFlags *overlay.TypedGroup[BuiltInToolBundleID, bool]
-	toolOverlayFlags   *overlay.TypedGroup[BuiltInToolID, bool]
+	bundleOverlayFlags *overlay.TypedGroup[builtInToolBundleID, bool]
+	toolOverlayFlags   *overlay.TypedGroup[builtInToolID, bool]
 
 	mu          sync.RWMutex
 	viewBundles map[bundleitemutils.BundleID]spec.ToolBundle
@@ -78,18 +82,18 @@ func NewBuiltInToolData(
 	store, err := overlay.NewOverlayStore(
 		ctx,
 		filepath.Join(overlayBaseDir, spec.ToolBuiltInOverlayDBFileName),
-		overlay.WithKeyType[BuiltInToolBundleID](),
-		overlay.WithKeyType[BuiltInToolID](),
+		overlay.WithKeyType[builtInToolBundleID](),
+		overlay.WithKeyType[builtInToolID](),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	bundleOverlayFlags, err := overlay.NewTypedGroup[BuiltInToolBundleID, bool](ctx, store)
+	bundleOverlayFlags, err := overlay.NewTypedGroup[builtInToolBundleID, bool](ctx, store)
 	if err != nil {
 		return nil, err
 	}
-	toolOverlayFlags, err := overlay.NewTypedGroup[BuiltInToolID, bool](ctx, store)
+	toolOverlayFlags, err := overlay.NewTypedGroup[builtInToolID, bool](ctx, store)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +138,7 @@ func (d *BuiltInToolData) SetToolBundleEnabled(
 			"bundleID: %q, err: %w", id, spec.ErrBuiltInBundleNotFound)
 	}
 
-	flag, err := d.bundleOverlayFlags.SetFlag(ctx, BuiltInToolBundleID(id), enabled)
+	flag, err := d.bundleOverlayFlags.SetFlag(ctx, builtInToolBundleID(id), enabled)
 	if err != nil {
 		return spec.ToolBundle{}, err
 	}
@@ -166,7 +170,7 @@ func (d *BuiltInToolData) SetToolEnabled(
 	if err != nil {
 		return spec.Tool{}, err
 	}
-	flag, err := d.toolOverlayFlags.SetFlag(ctx, BuiltInToolID(tool.ID), enabled)
+	flag, err := d.toolOverlayFlags.SetFlag(ctx, getToolKey(bundleID, tool.ID), enabled)
 	if err != nil {
 		return spec.Tool{}, err
 	}
@@ -369,7 +373,7 @@ func (d *BuiltInToolData) rebuildSnapshot(ctx context.Context) error {
 	)
 
 	for id, b := range d.bundles {
-		flag, ok, err := d.bundleOverlayFlags.GetFlag(ctx, BuiltInToolBundleID(id))
+		flag, ok, err := d.bundleOverlayFlags.GetFlag(ctx, builtInToolBundleID(id))
 		if err != nil {
 			return err
 		}
@@ -384,7 +388,7 @@ func (d *BuiltInToolData) rebuildSnapshot(ctx context.Context) error {
 	for bid, tm := range d.tools {
 		sub := make(map[bundleitemutils.ItemID]spec.Tool, len(tm))
 		for tid, t := range tm {
-			flag, ok, err := d.toolOverlayFlags.GetFlag(ctx, BuiltInToolID(tid))
+			flag, ok, err := d.toolOverlayFlags.GetFlag(ctx, getToolKey(bid, tid))
 			if err != nil {
 				return err
 			}

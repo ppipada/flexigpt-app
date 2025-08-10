@@ -284,3 +284,14 @@ export const isValidUrl = (url: string) => {
 		return false;
 	}
 };
+
+export function getBlockQuotedLines(content: string): string {
+	// Split the content into lines.
+	const lines = content.split('\n');
+	// Prepend each line with "> ".
+	for (let i = 0; i < lines.length; i++) {
+		lines[i] = '> ' + lines[i];
+	}
+	// Join the lines back together as blockquote.
+	return lines.join('\n');
+}

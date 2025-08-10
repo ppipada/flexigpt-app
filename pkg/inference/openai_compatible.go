@@ -26,8 +26,8 @@ type OpenAICompatibleAPI struct {
 	client         *openai.Client
 }
 
-// NewOpenAICompatibleProvider creates a new instance of OpenAICompatibleProvider with the provided ProviderParams.
-func NewOpenAICompatibleProvider(pi spec.ProviderParams, debug bool) (*OpenAICompatibleAPI, error) {
+// NewOpenAICompatibleAPI creates a new instance of OpenAICompatibleProvider with the provided ProviderParams.
+func NewOpenAICompatibleAPI(pi spec.ProviderParams, debug bool) (*OpenAICompatibleAPI, error) {
 	if pi.Name == "" || pi.Origin == "" {
 		return nil, errors.New("openai compatible LLM: invalid args")
 	}
@@ -51,16 +51,19 @@ func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {
 		option.WithAPIKey(api.ProviderParams.APIKey),
 	}
 
-	providerURL := "https://api.openai.com/v1"
+	providerURL := modelpresetSpec.DefaultOpenAIOrigin
 	if api.ProviderParams.Origin != "" {
 		baseURL := api.ProviderParams.Origin
 		// Remove trailing slash from baseURL if present.
 		baseURL = strings.TrimSuffix(baseURL, "/")
 
 		pathPrefix := api.ProviderParams.ChatCompletionPathPrefix
-		// Remove '/chat/completions' from pathPrefix if present,
-		// This is because openai sdk adds '/chat/completions' internally.
-		pathPrefix = strings.TrimSuffix(pathPrefix, "/chat/completions")
+		// Remove 'chat/completions' from pathPrefix if present,
+		// This is because openai sdk adds 'chat/completions' internally.
+		pathPrefix = strings.TrimSuffix(
+			pathPrefix,
+			"chat/completions",
+		)
 		providerURL = baseURL + pathPrefix
 		opts = append(opts, option.WithBaseURL(strings.TrimSuffix(providerURL, "/")))
 	}
@@ -70,7 +73,10 @@ func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {
 	}
 
 	if api.ProviderParams.APIKeyHeaderKey != "" &&
-		api.ProviderParams.APIKeyHeaderKey != "Authorization" {
+		!strings.EqualFold(
+			api.ProviderParams.APIKeyHeaderKey,
+			modelpresetSpec.DefaultAuthorizationHeaderKey,
+		) {
 		opts = append(
 			opts,
 			option.WithHeader(api.ProviderParams.APIKeyHeaderKey, api.ProviderParams.APIKey),
@@ -137,7 +143,7 @@ func (api *OpenAICompatibleAPI) FetchCompletion(
 	prompt string,
 	modelParams spec.ModelParams,
 	prevMessages []spec.ChatCompletionRequestMessage,
-	onStreamData func(data string) error,
+	onStreamTextData, onStreamThinkingData func(string) error,
 ) (*spec.CompletionResponse, error) {
 	if api.client == nil {
 		return nil, errors.New("openai compatible LLM: client not initialized")
@@ -161,8 +167,8 @@ func (api *OpenAICompatibleAPI) FetchCompletion(
 
 	params := openai.ChatCompletionNewParams{
 		Model:               shared.ChatModel(input.ModelParams.Name),
-		Messages:            msgs,
 		MaxCompletionTokens: openai.Int(int64(input.ModelParams.MaxOutputLength)),
+		Messages:            msgs,
 	}
 	if input.ModelParams.Temperature != nil {
 		params.Temperature = openai.Float(*input.ModelParams.Temperature)
@@ -181,13 +187,13 @@ func (api *OpenAICompatibleAPI) FetchCompletion(
 
 		}
 	}
-	timeout := 300 * time.Second
+	timeout := modelpresetSpec.DefaultAPITimeout
 	if input.ModelParams.Timeout > 0 {
 		timeout = time.Duration(input.ModelParams.Timeout) * time.Second
 	}
 
-	if input.ModelParams.Stream && onStreamData != nil {
-		return api.doStreaming(ctx, params, onStreamData, timeout)
+	if input.ModelParams.Stream && onStreamTextData != nil && onStreamThinkingData != nil {
+		return api.doStreaming(ctx, params, onStreamTextData, onStreamThinkingData, timeout)
 	}
 	return api.doNonStreaming(ctx, params, timeout)
 }
@@ -213,10 +219,11 @@ func (api *OpenAICompatibleAPI) doNonStreaming(
 func (api *OpenAICompatibleAPI) doStreaming(
 	ctx context.Context,
 	params openai.ChatCompletionNewParams,
-	onStreamData func(data string) error,
+	onStreamTextData, onStreamThinkingData func(string) error,
 	timeout time.Duration,
 ) (*spec.CompletionResponse, error) {
-	write, flush := NewBufferedStreamer(onStreamData, FlushInterval, FlushChunkSize)
+	// No thinking data available in openai chat completions API, hence no thinking writer.
+	write, flush := NewBufferedStreamer(onStreamTextData, FlushInterval, FlushChunkSize)
 
 	completionResp := &spec.CompletionResponse{}
 	ctx = AddDebugResponseToCtx(ctx)
@@ -247,31 +254,25 @@ func (api *OpenAICompatibleAPI) doStreaming(
 		// It's best to use chunks after handling JustFinished events.
 		if len(chunk.Choices) > 0 && chunk.Choices[0].Delta.Content != "" {
 			streamWriteErr = write(chunk.Choices[0].Delta.Content)
+			if streamWriteErr != nil {
+				break
+			}
 		}
 	}
-	streamErr := stream.Err()
-	var err error
-	switch {
-	case streamWriteErr != nil && streamErr != nil:
-		err = fmt.Errorf("streaming errors: write: %w; stream: %w", streamWriteErr, streamErr)
-	case streamWriteErr != nil:
-		err = fmt.Errorf("stream write error: %w", streamWriteErr)
-	case streamErr != nil:
-		err = fmt.Errorf("stream error: %w", streamErr)
-	}
-
 	if flush != nil {
 		flush()
 	}
+
+	streamErr := errors.Join(stream.Err(), streamWriteErr)
 	isNilResp := len(acc.Choices) == 0
-	attachDebugResp(ctx, completionResp, err, isNilResp)
+	attachDebugResp(ctx, completionResp, streamErr, isNilResp)
 	if isNilResp {
 		return completionResp, nil
 	}
 
 	fullResp := acc.Choices[0].Message.Content
 	completionResp.RespContent = &fullResp
-	return completionResp, err
+	return completionResp, streamErr
 }
 
 func toOpenAIChatMessages(

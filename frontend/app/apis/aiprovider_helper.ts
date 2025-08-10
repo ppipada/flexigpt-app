@@ -8,6 +8,8 @@ import type { ConversationMessage } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 import type { ProviderName } from '@/spec/modelpreset';
 
+import { getBlockQuotedLines } from '@/lib/text_utils';
+
 import { log, providerSetAPI } from '@/apis/baseapi';
 
 const roleMap: Record<ConversationRoleEnum, ChatCompletionRoleEnum> = {
@@ -40,8 +42,11 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Compl
 	let respDetails: string | undefined;
 	let requestDetails: string | undefined;
 	if (providerResp) {
+		if (providerResp.thinkingContent) {
+			respContent += getBlockQuotedLines(providerResp.thinkingContent) + '\n';
+		}
 		if (providerResp.respContent) {
-			respContent = providerResp.respContent;
+			respContent += providerResp.respContent;
 		}
 		if (providerResp.responseDetails) {
 			respDetails = getQuotedJSON(providerResp.responseDetails);
@@ -83,9 +88,17 @@ async function handleStreamedCompletion(
 	prompt: string,
 	modelParams: ModelParams,
 	prevMessages: Array<ChatCompletionRequestMessage>,
-	onStreamData: (data: string) => void
+	onStreamTextData?: (textData: string) => void,
+	onStreamThinkingData?: (thinkingData: string) => void
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
-	const providerResp = await providerSetAPI.completion(provider, prompt, modelParams, prevMessages, onStreamData);
+	const providerResp = await providerSetAPI.completion(
+		provider,
+		prompt,
+		modelParams,
+		prevMessages,
+		onStreamTextData,
+		onStreamThinkingData
+	);
 	return parseAPIResponse(convoMessage, providerResp);
 }
 
@@ -94,7 +107,8 @@ export async function GetCompletionMessage(
 	modelParams: ModelParams,
 	convoMessage: ConversationMessage,
 	messages?: Array<ConversationMessage>,
-	onStreamData?: (data: string) => void
+	onStreamTextData?: (textData: string) => void,
+	onStreamThinkingData?: (thinkingData: string) => void
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
 	try {
 		// console.log(JSON.stringify(modelParams, null, 2));
@@ -104,14 +118,15 @@ export async function GetCompletionMessage(
 
 		const isStream = modelParams.stream || false;
 		// log.info('CompletionRequest', defaultProvider, JSON.stringify(fullCompletionRequest, null, 2));
-		if (isStream && onStreamData) {
+		if (isStream && onStreamTextData && onStreamThinkingData) {
 			return await handleStreamedCompletion(
 				convoMessage,
 				provider,
 				promptMsg?.content || '',
 				modelParams,
 				allMessages,
-				onStreamData
+				onStreamTextData,
+				onStreamThinkingData
 			);
 		} else {
 			modelParams.stream = false;

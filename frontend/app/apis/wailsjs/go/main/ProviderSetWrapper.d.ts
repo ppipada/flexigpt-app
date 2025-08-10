@@ -6,6 +6,6 @@ export function AddProvider(arg1:spec.AddProviderRequest):Promise<spec.AddProvid
 
 export function DeleteProvider(arg1:spec.DeleteProviderRequest):Promise<spec.DeleteProviderResponse>;
 
-export function FetchCompletion(arg1:string,arg2:string,arg3:spec.ModelParams,arg4:Array<spec.ChatCompletionRequestMessage>,arg5:string):Promise<spec.FetchCompletionResponse>;
+export function FetchCompletion(arg1:string,arg2:string,arg3:spec.ModelParams,arg4:Array<spec.ChatCompletionRequestMessage>,arg5:string,arg6:string):Promise<spec.FetchCompletionResponse>;
 
 export function SetProviderAPIKey(arg1:spec.SetProviderAPIKeyRequest):Promise<spec.SetProviderAPIKeyResponse>;

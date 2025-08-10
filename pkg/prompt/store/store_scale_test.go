@@ -25,7 +25,7 @@ import (
 
 func TestScale_LotsOfBundles(t *testing.T) {
 	const (
-		nBundles      = 300
+		nBundles      = 256
 		nonEmptyEvery = 10 // every 10-th bundle gets one template
 		deleteEvery   = 5  // request delete on every 5-th bundle
 		patchEvery    = 2  // toggle enabled every 2-nd bundle

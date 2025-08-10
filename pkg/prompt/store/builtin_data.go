@@ -20,15 +20,19 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 )
 
-type BuiltInBundleID bundleitemutils.BundleID
+type builtInBundleID bundleitemutils.BundleID
 
-func (BuiltInBundleID) Group() overlay.GroupID { return "bundles" }
-func (b BuiltInBundleID) ID() overlay.KeyID    { return overlay.KeyID(b) }
+func (builtInBundleID) Group() overlay.GroupID { return "bundles" }
+func (b builtInBundleID) ID() overlay.KeyID    { return overlay.KeyID(b) }
 
-type BuiltInTemplateID bundleitemutils.ItemID
+type builtInTemplateID bundleitemutils.ItemID
 
-func (BuiltInTemplateID) Group() overlay.GroupID { return "templates" }
-func (t BuiltInTemplateID) ID() overlay.KeyID    { return overlay.KeyID(t) }
+func (builtInTemplateID) Group() overlay.GroupID { return "templates" }
+func (t builtInTemplateID) ID() overlay.KeyID    { return overlay.KeyID(t) }
+
+func getTemplateKey(bid bundleitemutils.BundleID, tid bundleitemutils.ItemID) builtInTemplateID {
+	return builtInTemplateID(fmt.Sprintf("%s::%s", bid, tid))
+}
 
 // BuiltInData keeps the built-in prompt assets and an overlay with enable flags.
 type BuiltInData struct {
@@ -40,8 +44,8 @@ type BuiltInData struct {
 	templates map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.PromptTemplate
 
 	store                *overlay.Store
-	bundleOverlayFlags   *overlay.TypedGroup[BuiltInBundleID, bool]
-	templateOverlayFlags *overlay.TypedGroup[BuiltInTemplateID, bool]
+	bundleOverlayFlags   *overlay.TypedGroup[builtInBundleID, bool]
+	templateOverlayFlags *overlay.TypedGroup[builtInTemplateID, bool]
 
 	mu            sync.RWMutex
 	viewBundles   map[bundleitemutils.BundleID]spec.PromptBundle
@@ -78,18 +82,18 @@ func NewBuiltInData(
 	store, err := overlay.NewOverlayStore(
 		ctx,
 		filepath.Join(overlayBaseDir, spec.PromptBuiltInOverlayDBFileName),
-		overlay.WithKeyType[BuiltInBundleID](),
-		overlay.WithKeyType[BuiltInTemplateID](),
+		overlay.WithKeyType[builtInBundleID](),
+		overlay.WithKeyType[builtInTemplateID](),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	bundleOverlayFlags, err := overlay.NewTypedGroup[BuiltInBundleID, bool](ctx, store)
+	bundleOverlayFlags, err := overlay.NewTypedGroup[builtInBundleID, bool](ctx, store)
 	if err != nil {
 		return nil, err
 	}
-	templateOverlayFlags, err := overlay.NewTypedGroup[BuiltInTemplateID, bool](ctx, store)
+	templateOverlayFlags, err := overlay.NewTypedGroup[builtInTemplateID, bool](ctx, store)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +152,7 @@ func (d *BuiltInData) SetBundleEnabled(
 			spec.ErrBuiltInBundleNotFound,
 		)
 	}
-	flag, err := d.bundleOverlayFlags.SetFlag(ctx, BuiltInBundleID(id), enabled)
+	flag, err := d.bundleOverlayFlags.SetFlag(ctx, builtInBundleID(id), enabled)
 	if err != nil {
 		return spec.PromptBundle{}, err
 	}
@@ -189,7 +193,11 @@ func (d *BuiltInData) SetTemplateEnabled(
 	if err != nil {
 		return template, err
 	}
-	flag, err := d.templateOverlayFlags.SetFlag(ctx, BuiltInTemplateID(template.ID), enabled)
+	flag, err := d.templateOverlayFlags.SetFlag(
+		ctx,
+		getTemplateKey(bundleID, template.ID),
+		enabled,
+	)
 	if err != nil {
 		return spec.PromptTemplate{}, err
 	}
@@ -357,7 +365,7 @@ func (d *BuiltInData) rebuildSnapshot(ctx context.Context) error {
 	)
 
 	for id, b := range d.bundles {
-		flag, ok, err := d.bundleOverlayFlags.GetFlag(ctx, BuiltInBundleID(id))
+		flag, ok, err := d.bundleOverlayFlags.GetFlag(ctx, builtInBundleID(id))
 		if err != nil {
 			return err
 		}
@@ -372,7 +380,7 @@ func (d *BuiltInData) rebuildSnapshot(ctx context.Context) error {
 	for bid, tm := range d.templates {
 		sub := make(map[bundleitemutils.ItemID]spec.PromptTemplate, len(tm))
 		for tid, t := range tm {
-			flag, ok, err := d.templateOverlayFlags.GetFlag(ctx, BuiltInTemplateID(tid))
+			flag, ok, err := d.templateOverlayFlags.GetFlag(ctx, getTemplateKey(bid, tid))
 			if err != nil {
 				return err
 			}

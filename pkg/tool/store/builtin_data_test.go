@@ -215,7 +215,7 @@ func TestSetToolBundleEnabled(t *testing.T) {
 			}
 
 			// Verify overlay state via bundleOverlayFlags API.
-			flag, ok, err := bi.bundleOverlayFlags.GetFlag(ctx, BuiltInToolBundleID(bundleID))
+			flag, ok, err := bi.bundleOverlayFlags.GetFlag(ctx, builtInToolBundleID(bundleID))
 			if err != nil {
 				t.Fatalf("bundleOverlayFlags.GetFlag: %v", err)
 			}
@@ -320,7 +320,7 @@ func TestSetToolEnabled(t *testing.T) {
 			}
 
 			// Verify overlay state via toolOverlayFlags API.
-			flag, ok, err := bi.toolOverlayFlags.GetFlag(ctx, BuiltInToolID(tool.ID))
+			flag, ok, err := bi.toolOverlayFlags.GetFlag(ctx, getToolKey(bundleID, tool.ID))
 			if err != nil {
 				t.Fatalf("toolOverlayFlags.GetFlag: %v", err)
 			}
@@ -535,7 +535,7 @@ func TestRebuildToolSnapshot(t *testing.T) {
 	bundleID, bundle := anyToolBundle(bundles)
 
 	// Change the overlay directly.
-	_, err = bi.bundleOverlayFlags.SetFlag(ctx, BuiltInToolBundleID(bundleID), !bundle.IsEnabled)
+	_, err = bi.bundleOverlayFlags.SetFlag(ctx, builtInToolBundleID(bundleID), !bundle.IsEnabled)
 	if err != nil {
 		t.Fatalf("failed to set overlay: %v", err)
 	}
@@ -718,7 +718,7 @@ func Test_NewBuiltInToolData_SyntheticFS_HappyAndCRUD(t *testing.T) {
 	if _, err := bi.SetToolBundleEnabled(ctx, bundleID, !bundle.IsEnabled); err != nil {
 		t.Fatalf("SetToolBundleEnabled: %v", err)
 	}
-	flag, ok, err := bi.bundleOverlayFlags.GetFlag(ctx, BuiltInToolBundleID(bundleID))
+	flag, ok, err := bi.bundleOverlayFlags.GetFlag(ctx, builtInToolBundleID(bundleID))
 	if err != nil {
 		t.Fatalf("bundleOverlayFlags.GetFlag: %v", err)
 	}
@@ -730,7 +730,7 @@ func Test_NewBuiltInToolData_SyntheticFS_HappyAndCRUD(t *testing.T) {
 	if _, err := bi.SetToolEnabled(ctx, bundleID, tool.Slug, tool.Version, !tool.IsEnabled); err != nil {
 		t.Fatalf("SetToolEnabled: %v", err)
 	}
-	tflag, ok, err := bi.toolOverlayFlags.GetFlag(ctx, BuiltInToolID(toolID))
+	tflag, ok, err := bi.toolOverlayFlags.GetFlag(ctx, getToolKey(bundleID, toolID))
 	if err != nil {
 		t.Fatalf("toolOverlayFlags.GetFlag: %v", err)
 	}

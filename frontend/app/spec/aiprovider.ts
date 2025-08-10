@@ -91,6 +91,7 @@ export interface CompletionResponse {
 	responseDetails?: APIResponseDetails;
 	errorDetails?: APIErrorDetails;
 	respContent?: string;
+	thinkingContent?: string;
 	functionName?: string;
 	functionArgs?: any;
 }
@@ -101,6 +102,7 @@ export interface IProviderSetAPI {
 		prompt: string,
 		modelParams: ModelParams,
 		prevMessages?: Array<ChatCompletionRequestMessage>,
-		onStreamData?: (data: string) => void
+		onStreamTextData?: (textData: string) => void,
+		onStreamThinkingData?: (thinkingData: string) => void
 	): Promise<CompletionResponse | undefined>;
 }

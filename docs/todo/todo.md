@@ -5,9 +5,22 @@
 - Completions API backend
 
   - [ ] Integrate stores with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
-  - [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
-  - [ ] If there was some amount of data that was streamed, but error occured at end someplace, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is.
+
   - [ ] langchaingo seem to be moving very slow with no thinking support. better use official sdks from openai and anthropic
+
+    - [x] Openai
+    - [x] Anthropic
+    - [ ] Google
+
+  - [ ] UI:
+
+    - [ ] Thinking should be a collapsible card / dropdown / something inside the message block. Figure out the UX and implement.
+    - [ ] Create provider should allow to choose the api sdk type
+    - [ ] create model preset should allow the api function type
+    - [ ] Need to check provider compatibility during "copy existing" flow
+    - [ ] If there was some amount of data that was streamed, but error occured at end someplace, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is. This is mostly UI issue.
+
+  - [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
 
 - [ ] CPU is high when "thinking". Need to debug
 

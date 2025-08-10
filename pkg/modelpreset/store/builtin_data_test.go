@@ -235,7 +235,7 @@ func TestSetModelPresetEnabled(t *testing.T) {
 				t.Errorf("flag mismatch want %v", enabled)
 			}
 			// Check overlay state via modelOverlayFlags API.
-			flag, ok, err := bi.modelOverlayFlags.GetFlag(ctx, builtInModelKey(mp.ID))
+			flag, ok, err := bi.modelOverlayFlags.GetFlag(ctx, getModelKey(pn, mp.ID))
 			if err != nil {
 				t.Fatalf("modelOverlayFlags.GetFlag: %v", err)
 			}
@@ -426,15 +426,6 @@ func Test_NewBuiltInPresets_SyntheticFS_Errors(t *testing.T) {
 			t.Fatalf("unexpected: %v", err)
 		}
 	})
-
-	t.Run("duplicate_model_across_providers", func(t *testing.T) {
-		s := buildSchemaDuplicateModel(modelID)
-		fsys := fstest.MapFS{builtin.BuiltInModelPresetsJSON: {Data: s}}
-		_, err := newPresetsFromFS(t, fsys)
-		if err == nil || !strings.Contains(err.Error(), "duplicate modelPresetID") {
-			t.Fatalf("unexpected: %v", err)
-		}
-	})
 }
 
 func Test_NewBuiltInPresets_SyntheticFS_HappyAndCRUD(t *testing.T) {
@@ -470,7 +461,7 @@ func Test_NewBuiltInPresets_SyntheticFS_HappyAndCRUD(t *testing.T) {
 	// Toggle model preset.
 	mp := models[pn][mpid]
 	_, _ = bi.SetModelPresetEnabled(ctx, pn, mpid, !mp.IsEnabled)
-	mflag, ok, err := bi.modelOverlayFlags.GetFlag(ctx, builtInModelKey(mpid))
+	mflag, ok, err := bi.modelOverlayFlags.GetFlag(ctx, getModelKey(pn, mpid))
 	if err != nil {
 		t.Fatalf("modelOverlayFlags.GetFlag: %v", err)
 	}
@@ -631,6 +622,385 @@ func TestAsyncRebuild_DefaultModelPreset(t *testing.T) {
 	}
 }
 
+func TestProviderModelSync_Scenarios(t *testing.T) {
+	ctx := t.Context()
+	dir := t.TempDir()
+	bi, err := NewBuiltInPresets(ctx, dir, time.Hour)
+	if err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+
+	prov, models, _ := bi.ListBuiltInPresets(ctx)
+	pn, mid, mp := anyModel(models)
+	pname, p := anyProvider(prov)
+
+	// Try to find a provider with ≥2 models to test default-model flip.
+	var pn2 spec.ProviderName
+	var secondModelID spec.ModelPresetID
+	for provName, mm := range models {
+		if len(mm) >= 2 {
+			pn2 = provName
+			for id := range mm {
+				if id != prov[provName].DefaultModelPresetID {
+					secondModelID = id
+					break
+				}
+			}
+			break
+		}
+	}
+	if pn2 == "" {
+		t.Log(
+			"dataset has no provider with ≥2 models; the default-model change subtest will be skipped",
+		)
+	}
+
+	tests := []struct {
+		name string
+		run  func(t *testing.T)
+	}{
+		{
+			name: "model_toggle_is_reflected_in_provider_snapshot",
+			run: func(t *testing.T) {
+				t.Helper()
+				newEnabled := !mp.IsEnabled
+
+				// Toggle model flag (provider-model sync target).
+				if _, err := bi.SetModelPresetEnabled(ctx, pn, mid, newEnabled); err != nil {
+					t.Fatalf("SetModelPresetEnabled: %v", err)
+				}
+
+				// Force a snapshot rebuild to ensure provider snapshot gets the model overlay applied.
+				bi.mu.Lock()
+				_ = bi.rebuildSnapshot(ctx)
+				bi.mu.Unlock()
+
+				prov2, models2, _ := bi.ListBuiltInPresets(ctx)
+
+				// Model map reflects the new flag.
+				if models2[pn][mid].IsEnabled != newEnabled {
+					t.Fatalf(
+						"models view mismatch: got %v, want %v",
+						models2[pn][mid].IsEnabled,
+						newEnabled,
+					)
+				}
+				// Provider snapshot reflects the same flag for the same model.
+				if prov2[pn].ModelPresets[mid].IsEnabled != newEnabled {
+					t.Fatalf("provider snapshot not in sync: got %v, want %v",
+						prov2[pn].ModelPresets[mid].IsEnabled, newEnabled)
+				}
+
+				// Check some other properties remain built-in and consistent across both views.
+				if !prov2[pn].ModelPresets[mid].IsBuiltIn || !models2[pn][mid].IsBuiltIn {
+					t.Fatal("model lost IsBuiltIn flag after overlay")
+				}
+
+				// ModifiedAt of the model should match the overlay flag's ModifiedAt as applied in snapshot.
+				flag, ok, err := bi.modelOverlayFlags.GetFlag(ctx, getModelKey(pn, mid))
+				if err != nil {
+					t.Fatalf("modelOverlayFlags.GetFlag: %v", err)
+				}
+				if !ok {
+					t.Fatal("expected model overlay flag to be present")
+				}
+				gotProvMod := prov2[pn].ModelPresets[mid].ModifiedAt
+				gotModelsMod := models2[pn][mid].ModifiedAt
+				if !gotProvMod.Equal(flag.ModifiedAt) || !gotModelsMod.Equal(flag.ModifiedAt) {
+					t.Fatalf("ModifiedAt mismatch: provider=%v models=%v overlay=%v",
+						gotProvMod, gotModelsMod, flag.ModifiedAt)
+				}
+			},
+		},
+		{
+			name: "provider_toggle_does_not_change_models",
+			run: func(t *testing.T) {
+				t.Helper()
+				// Take a stable snapshot of models for this provider.
+				_, beforeModels, _ := bi.ListBuiltInPresets(ctx)
+				before := beforeModels[pname]
+
+				// Toggle the provider flag.
+				newEnabled := !p.IsEnabled
+				if _, err := bi.SetProviderEnabled(ctx, pname, newEnabled); err != nil {
+					t.Fatalf("SetProviderEnabled: %v", err)
+				}
+
+				// Rebuild to ensure provider snapshot reflects the change.
+				bi.mu.Lock()
+				_ = bi.rebuildSnapshot(ctx)
+				bi.mu.Unlock()
+
+				_, afterModels, _ := bi.ListBuiltInPresets(ctx)
+				after := afterModels[pname]
+
+				// Models map should remain unchanged for this provider (no side effects of provider toggle).
+				if len(before) != len(after) {
+					t.Fatalf(
+						"model count changed after provider toggle: before=%d after=%d",
+						len(before),
+						len(after),
+					)
+				}
+				for id, bm := range before {
+					am, ok := after[id]
+					if !ok {
+						t.Fatalf("model %q disappeared after provider toggle", id)
+					}
+					if bm.IsEnabled != am.IsEnabled {
+						t.Fatalf(
+							"model %q IsEnabled changed after provider toggle: %v -> %v",
+							id,
+							bm.IsEnabled,
+							am.IsEnabled,
+						)
+					}
+				}
+			},
+		},
+		{
+			name: "default_model_change_reflected_and_model_map_consistent",
+			run: func(t *testing.T) {
+				t.Helper()
+				if pn2 == "" || secondModelID == "" {
+					t.Skip("no provider with ≥2 models; skipping default model change scenario")
+				}
+
+				// Change provider default model.
+				if _, err := bi.SetDefaultModelPreset(ctx, pn2, secondModelID); err != nil {
+					t.Fatalf("SetDefaultModelPreset: %v", err)
+				}
+
+				// Force rebuild to apply overlay onto view.
+				bi.mu.Lock()
+				_ = bi.rebuildSnapshot(ctx)
+				bi.mu.Unlock()
+
+				prov2, models2, _ := bi.ListBuiltInPresets(ctx)
+				if prov2[pn2].DefaultModelPresetID != secondModelID {
+					t.Fatalf("defaultModelPresetID not updated: got=%s want=%s",
+						prov2[pn2].DefaultModelPresetID, secondModelID)
+				}
+
+				// Consistency: provider.ModelPresets must have the exact same keys as models map.
+				mpMap := prov2[pn2].ModelPresets
+				if len(mpMap) != len(models2[pn2]) {
+					t.Fatalf(
+						"provider.ModelPresets key-count mismatch: %d vs %d",
+						len(mpMap),
+						len(models2[pn2]),
+					)
+				}
+				for id := range models2[pn2] {
+					if _, ok := mpMap[id]; !ok {
+						t.Fatalf("provider.ModelPresets missing model %q present in models map", id)
+					}
+				}
+
+				// Overlay flag must be present and consistent for default-model.
+				flag, ok, err := bi.providerDefaultModelIDOverlayFlags.GetFlag(
+					ctx,
+					builtInProviderDefaultModelIDKey(pn2),
+				)
+				if err != nil {
+					t.Fatalf("providerDefaultModelIDOverlayFlags.GetFlag: %v", err)
+				}
+				if !ok || flag.Value != secondModelID {
+					t.Fatalf(
+						"default-model overlay mismatch: present=%v value=%s want present=true value=%s",
+						ok,
+						flag.Value,
+						secondModelID,
+					)
+				}
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, tc.run)
+	}
+}
+
+func TestScopedModelIDs_AcrossProviders_OverlayIsolation(t *testing.T) {
+	ctx := t.Context()
+
+	p1 := spec.ProviderName("provA")
+	p2 := spec.ProviderName("provB")
+	commonID := spec.ModelPresetID("m1")
+	otherID := spec.ModelPresetID("m2")
+
+	// Build a schema where both providers have the same model ID "m1".
+	s := buildSchemaScopedDuplicateIDs(p1, p2, commonID, otherID)
+	fsys := fstest.MapFS{builtin.BuiltInModelPresetsJSON: {Data: s}}
+
+	dir := t.TempDir()
+	bi, err := NewBuiltInPresets(ctx, dir, time.Hour, WithModelPresetsFS(fsys, "."))
+	if err != nil {
+		t.Fatalf("unexpected: %v", err)
+	}
+
+	// Sanity checks: both providers and the common model exist in their own namespaces.
+	prov, models, _ := bi.ListBuiltInPresets(ctx)
+	if len(prov) != 2 {
+		t.Fatalf("want 2 providers, got %d", len(prov))
+	}
+	if _, ok := models[p1][commonID]; !ok {
+		t.Fatalf("provider %s missing model %s", p1, commonID)
+	}
+	if _, ok := models[p2][commonID]; !ok {
+		t.Fatalf("provider %s missing model %s", p2, commonID)
+	}
+
+	// Table-driven: toggle in p1, verify no effect on p2; then toggle in p2 and verify independence again.
+	tests := []struct {
+		name       string
+		targetProv spec.ProviderName
+		targetID   spec.ModelPresetID
+		newEnabled bool
+		otherProv  spec.ProviderName
+	}{
+		{
+			name:       "toggle_common_model_in_first_provider_only",
+			targetProv: p1,
+			targetID:   commonID,
+			newEnabled: false,
+			otherProv:  p2,
+		},
+		{
+			name:       "toggle_common_model_in_second_provider_only",
+			targetProv: p2,
+			targetID:   commonID,
+			newEnabled: true,
+			otherProv:  p1,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Snapshot current state.
+			_, before, _ := bi.ListBuiltInPresets(ctx)
+
+			beforeOther := before[tc.otherProv][tc.targetID].IsEnabled
+
+			// Apply overlay to target provider's common model ID.
+			if _, err := bi.SetModelPresetEnabled(ctx, tc.targetProv, tc.targetID, tc.newEnabled); err != nil {
+				t.Fatalf("SetModelPresetEnabled: %v", err)
+			}
+
+			// Force rebuild to propagate provider snapshot update.
+			bi.mu.Lock()
+			_ = bi.rebuildSnapshot(ctx)
+			bi.mu.Unlock()
+
+			prov2, after, _ := bi.ListBuiltInPresets(ctx)
+
+			// Target provider changed as requested (both in models view and provider snapshot).
+			if after[tc.targetProv][tc.targetID].IsEnabled != tc.newEnabled {
+				t.Fatalf("target models view mismatch: got %v, want %v",
+					after[tc.targetProv][tc.targetID].IsEnabled, tc.newEnabled)
+			}
+			if prov2[tc.targetProv].ModelPresets[tc.targetID].IsEnabled != tc.newEnabled {
+				t.Fatalf("target provider snapshot mismatch: got %v, want %v",
+					prov2[tc.targetProv].ModelPresets[tc.targetID].IsEnabled, tc.newEnabled)
+			}
+
+			// Other provider remains unaffected.
+			if after[tc.otherProv][tc.targetID].IsEnabled != beforeOther {
+				t.Fatalf("other provider's model was affected: before=%v after=%v",
+					beforeOther, after[tc.otherProv][tc.targetID].IsEnabled)
+			}
+			if prov2[tc.otherProv].ModelPresets[tc.targetID].IsEnabled != beforeOther {
+				t.Fatalf("other provider snapshot was affected: before=%v after=%v",
+					beforeOther, prov2[tc.otherProv].ModelPresets[tc.targetID].IsEnabled)
+			}
+
+			// Overlay rows should be isolated by provider.
+			flag1, ok1, err := bi.modelOverlayFlags.GetFlag(
+				ctx,
+				getModelKey(tc.targetProv, tc.targetID),
+			)
+			if err != nil {
+				t.Fatalf("modelOverlayFlags.GetFlag(target): %v", err)
+			}
+			if !ok1 || flag1.Value != tc.newEnabled {
+				t.Fatalf(
+					"target overlay row missing or incorrect; present=%v value=%v want=%v",
+					ok1,
+					flag1.Value,
+					tc.newEnabled,
+				)
+			}
+
+			// Other provider should not have a flag unless it was changed earlier in the suite.
+			flag2, ok2, err := bi.modelOverlayFlags.GetFlag(
+				ctx,
+				getModelKey(tc.otherProv, tc.targetID),
+			)
+			if err != nil {
+				t.Fatalf("modelOverlayFlags.GetFlag(other): %v", err)
+			}
+			// We tolerate "ok2 == true but value == beforeOther" if previous subtest toggled it.
+			if ok2 && flag2.Value != beforeOther {
+				t.Fatalf(
+					"unexpected overlay for other provider: present=%v value=%v want(before)=%v",
+					ok2,
+					flag2.Value,
+					beforeOther,
+				)
+			}
+		})
+	}
+}
+
+// Helper: schema with same model ID present in two different providers (scoped uniqueness).
+func buildSchemaScopedDuplicateIDs(
+	p1, p2 spec.ProviderName,
+	commonID spec.ModelPresetID,
+	extraID spec.ModelPresetID,
+) []byte {
+	mCommon := makeModelPreset(commonID)
+	mExtra := makeModelPreset(extraID)
+
+	pp1 := spec.ProviderPreset{
+		SchemaVersion:            spec.SchemaVersion,
+		Name:                     p1,
+		DisplayName:              "Provider A",
+		APIType:                  spec.ProviderAPITypeOpenAICompatible,
+		IsEnabled:                true,
+		CreatedAt:                time.Now(),
+		ModifiedAt:               time.Now(),
+		Origin:                   "https://example.com/a",
+		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionPrefix,
+		DefaultModelPresetID:     commonID,
+		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
+			commonID: mCommon,
+			extraID:  mExtra,
+		},
+	}
+	pp2 := spec.ProviderPreset{
+		SchemaVersion:            spec.SchemaVersion,
+		Name:                     p2,
+		DisplayName:              "Provider B",
+		APIType:                  spec.ProviderAPITypeOpenAICompatible,
+		IsEnabled:                true,
+		CreatedAt:                time.Now(),
+		ModifiedAt:               time.Now(),
+		Origin:                   "https://example.com/b",
+		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionPrefix,
+		DefaultModelPresetID:     commonID,
+		ModelPresets:             map[spec.ModelPresetID]spec.ModelPreset{commonID: mCommon},
+	}
+
+	s := spec.PresetsSchema{
+		SchemaVersion:   spec.SchemaVersion,
+		DefaultProvider: p1,
+		ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{p1: pp1, p2: pp2},
+	}
+	b, _ := json.Marshal(s)
+	return b
+}
+
 func anyProvider(
 	m map[spec.ProviderName]spec.ProviderPreset,
 ) (spec.ProviderName, spec.ProviderPreset) {
@@ -667,7 +1037,7 @@ func buildSchemaDefaultMissing(pn spec.ProviderName, mpid spec.ModelPresetID) []
 		CreatedAt:                time.Now(),
 		ModifiedAt:               time.Now(),
 		Origin:                   "https://x",
-		ChatCompletionPathPrefix: spec.OpenAICompatibleChatCompletionPathPrefix,
+		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionPrefix,
 		DefaultModelPresetID:     "ghost",
 		ModelPresets:             map[spec.ModelPresetID]spec.ModelPreset{mpid: model},
 	}
@@ -675,37 +1045,6 @@ func buildSchemaDefaultMissing(pn spec.ProviderName, mpid spec.ModelPresetID) []
 		SchemaVersion:   spec.SchemaVersion,
 		DefaultProvider: pn,
 		ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{pn: pp},
-	}
-	b, _ := json.Marshal(s)
-	return b
-}
-
-func buildSchemaDuplicateModel(mpid spec.ModelPresetID) []byte {
-	p1 := spec.ProviderName("p1")
-	p2 := spec.ProviderName("p2")
-
-	model := makeModelPreset(mpid)
-	makeProv := func(name spec.ProviderName) spec.ProviderPreset {
-		return spec.ProviderPreset{
-			SchemaVersion:            spec.SchemaVersion,
-			Name:                     name,
-			DisplayName:              "X",
-			APIType:                  spec.ProviderAPITypeOpenAICompatible,
-			IsEnabled:                true,
-			CreatedAt:                time.Now(),
-			ModifiedAt:               time.Now(),
-			Origin:                   "o",
-			ChatCompletionPathPrefix: spec.OpenAICompatibleChatCompletionPathPrefix,
-			ModelPresets:             map[spec.ModelPresetID]spec.ModelPreset{mpid: model},
-		}
-	}
-	s := spec.PresetsSchema{
-		SchemaVersion:   spec.SchemaVersion,
-		DefaultProvider: p1,
-		ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{
-			p1: makeProv(p1),
-			p2: makeProv(p2),
-		},
 	}
 	b, _ := json.Marshal(s)
 	return b
@@ -722,7 +1061,7 @@ func buildHappySchema(pn spec.ProviderName, mpid spec.ModelPresetID) []byte {
 		CreatedAt:                time.Now(),
 		ModifiedAt:               time.Now(),
 		Origin:                   "https://example.com",
-		ChatCompletionPathPrefix: spec.OpenAICompatibleChatCompletionPathPrefix,
+		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionPrefix,
 		DefaultModelPresetID:     mpid,
 		ModelPresets:             map[spec.ModelPresetID]spec.ModelPreset{mpid: model},
 	}

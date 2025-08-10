@@ -8,15 +8,26 @@ import (
 const (
 	ModelPresetsFile                     = "modelpresets.json" // Single JSON file.
 	ModelPresetsBuiltInOverlayDBFileName = "modelpresetsbuiltin.overlay.sqlite"
+)
 
-	OpenAICompatibleAPIKeyHeaderKey          = "Authorization"
-	OpenAICompatibleChatCompletionPathPrefix = "/v1/chat/completions"
-
+const (
 	SchemaVersion = "2025-07-01"
 
 	MaxPageSize           = 256 // Max allowed page size.
 	DefaultPageSize       = 256 // Default page size.
 	BuiltInSnapshotMaxAge = time.Hour
+)
+
+const (
+	DefaultAuthorizationHeaderKey = "Authorization"
+	DefaultAPITimeout             = 300 * time.Second
+
+	DefaultAnthropicOrigin                 = "https://api.anthropic.com"
+	DefaultAnthropicChatCompletionPrefix   = "/v1/messages"
+	DefaultAnthropicAuthorizationHeaderKey = "x-api-key"
+
+	DefaultOpenAIOrigin               = "https://api.openai.com"
+	DefaultOpenAIChatCompletionPrefix = "/v1/chat/completions"
 )
 
 var OpenAICompatibleDefaultHeaders = map[string]string{"content-type": "application/json"}

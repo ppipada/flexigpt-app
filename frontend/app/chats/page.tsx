@@ -5,7 +5,7 @@ import type { ModelParams } from '@/spec/aiprovider';
 import type { Conversation, ConversationMessage, ConversationSearchItem } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 
-import { generateTitle } from '@/lib/text_utils';
+import { generateTitle, getBlockQuotedLines } from '@/lib/text_utils';
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { useAtBottom } from '@/hooks/use_at_bottom';
@@ -187,15 +187,29 @@ const ChatScreen: FC = () => {
 			// Make the empty assistant bubble appear immediately
 			setChat({ ...updatedChatWithConvoMessage, messages: [...updatedChatWithConvoMessage.messages] });
 
-			const onStreamData = (data: string) => {
+			const onStreamTextData = (textData: string) => {
 				setStreamedMessage(prev => {
-					if (prev === '') {
-						updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 1].content = data;
-						updatedChatWithConvoMessage.modifiedAt = new Date();
-						setChat(updatedChatWithConvoMessage);
-						return data;
+					if (prev !== '') {
+						return prev + textData;
 					}
-					return prev + data;
+					updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 1].content = textData;
+					updatedChatWithConvoMessage.modifiedAt = new Date();
+					setChat(updatedChatWithConvoMessage);
+					return textData;
+				});
+			};
+
+			const onStreamThinkingData = (thinkingData: string) => {
+				setStreamedMessage(prev => {
+					const data = thinkingData ? getBlockQuotedLines(thinkingData) + '\n' : '';
+					console.log(data);
+					if (prev !== '') {
+						return prev + data;
+					}
+					updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 1].content = data;
+					updatedChatWithConvoMessage.modifiedAt = new Date();
+					setChat(updatedChatWithConvoMessage);
+					return data;
 				});
 			};
 
@@ -216,7 +230,8 @@ const ChatScreen: FC = () => {
 				inputParams,
 				convoMsg,
 				prevMessages,
-				onStreamData
+				onStreamTextData,
+				onStreamThinkingData
 			);
 
 			if (newMsg.requestDetails) {

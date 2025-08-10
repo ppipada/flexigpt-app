@@ -63,22 +63,29 @@ func (w *ProviderSetWrapper) FetchCompletion(
 	prompt string,
 	modelParams inferenceSpec.ModelParams,
 	prevMessages []inferenceSpec.ChatCompletionRequestMessage,
-	callbackID string,
+	textCallbackID string,
+	thinkingCallbackID string,
 ) (*inferenceSpec.FetchCompletionResponse, error) {
 	return middleware.WithRecoveryResp(func() (*inferenceSpec.FetchCompletionResponse, error) {
-		onStreamData := func(data string) error {
-			runtime.EventsEmit(w.appContext, callbackID, data)
-			return nil
+		reqBody := &inferenceSpec.FetchCompletionRequestBody{
+			Provider:     modelpresetSpec.ProviderName(provider),
+			Prompt:       prompt,
+			ModelParams:  modelParams,
+			PrevMessages: prevMessages,
+		}
+		if textCallbackID != "" && thinkingCallbackID != "" {
+			reqBody.OnStreamTextData = func(textData string) error {
+				runtime.EventsEmit(w.appContext, textCallbackID, textData)
+				return nil
+			}
+			reqBody.OnStreamThinkingData = func(thinkingData string) error {
+				runtime.EventsEmit(w.appContext, thinkingCallbackID, thinkingData)
+				return nil
+			}
 		}
 
 		req := &inferenceSpec.FetchCompletionRequest{
-			Body: &inferenceSpec.FetchCompletionRequestBody{
-				Provider:     modelpresetSpec.ProviderName(provider),
-				Prompt:       prompt,
-				ModelParams:  modelParams,
-				PrevMessages: prevMessages,
-				OnStreamData: onStreamData,
-			},
+			Body: reqBody,
 		}
 		resp, err := w.providersetAPI.FetchCompletion(
 			context.Background(),

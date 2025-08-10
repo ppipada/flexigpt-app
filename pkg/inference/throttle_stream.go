@@ -12,10 +12,10 @@ const (
 )
 
 // NewBufferedStreamer returns two functions:
-//   - write(chunk)  -> use this instead of onStreamData
+//   - write(chunk)  -> use this instead of onDataFlush
 //   - flush()       -> call once when streaming is finished
 func NewBufferedStreamer(
-	onStreamData func(string) error,
+	onDataFlush func(string) error,
 	flushInterval time.Duration,
 	maxSize int,
 ) (write func(string) error, flush func()) {
@@ -34,7 +34,7 @@ func NewBufferedStreamer(
 					data := buf.String()
 					buf.Reset()
 					mu.Unlock()
-					_ = onStreamData(data)
+					_ = onDataFlush(data)
 				} else {
 					mu.Unlock()
 				}
@@ -55,7 +55,7 @@ func NewBufferedStreamer(
 			buf.Reset()
 			mu.Unlock()
 			// Size-based flush.
-			return onStreamData(data)
+			return onDataFlush(data)
 		}
 		mu.Unlock()
 		return nil
@@ -71,7 +71,7 @@ func NewBufferedStreamer(
 				data := buf.String()
 				buf.Reset()
 				mu.Unlock()
-				_ = onStreamData(data)
+				_ = onDataFlush(data)
 				return
 			}
 			mu.Unlock()

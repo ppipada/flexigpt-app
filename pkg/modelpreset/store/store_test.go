@@ -739,8 +739,8 @@ func validProviderBody(name string) *spec.PutProviderPresetRequestBody {
 		APIType:                  spec.ProviderAPITypeOpenAICompatible,
 		IsEnabled:                true,
 		Origin:                   "https://api." + name + ".example.com",
-		ChatCompletionPathPrefix: spec.OpenAICompatibleChatCompletionPathPrefix,
-		APIKeyHeaderKey:          spec.OpenAICompatibleAPIKeyHeaderKey,
+		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionPrefix,
+		APIKeyHeaderKey:          spec.DefaultAuthorizationHeaderKey,
 		DefaultHeaders:           spec.OpenAICompatibleDefaultHeaders,
 	}
 }

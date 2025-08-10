@@ -130,7 +130,8 @@ func (ps *ProviderSetAPI) FetchCompletion(
 		req.Body.Prompt,
 		req.Body.ModelParams,
 		req.Body.PrevMessages,
-		req.Body.OnStreamData,
+		req.Body.OnStreamTextData,
+		req.Body.OnStreamThinkingData,
 	)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("error in fetch completion"))
@@ -157,7 +158,7 @@ func getProviderAPI(p spec.ProviderParams, debug bool) (CompletionProvider, erro
 		return NewHuggingFaceCompatibleAPI(p, debug)
 
 	case modelpresetSpec.ProviderAPITypeOpenAICompatible:
-		return NewOpenAICompatibleProvider(p, debug)
+		return NewOpenAICompatibleAPI(p, debug)
 	}
 
 	return nil, errors.New("invalid provider api type")
