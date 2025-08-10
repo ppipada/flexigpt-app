@@ -88,7 +88,7 @@ func main() {
 		OnDomReady:       app.domReady,
 		OnBeforeClose:    app.beforeClose,
 		OnShutdown:       app.shutdown,
-		WindowStartState: options.Normal,
+		WindowStartState: options.Fullscreen,
 		Bind: []any{
 			app,
 			app.settingStoreAPI,

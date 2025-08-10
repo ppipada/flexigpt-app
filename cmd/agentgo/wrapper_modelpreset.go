@@ -76,7 +76,7 @@ func (w *ModelPresetStoreWrapper) PutProviderPreset(
 			&inferenceSpec.AddProviderRequest{
 				Provider: req.ProviderName,
 				Body: &inferenceSpec.AddProviderRequestBody{
-					APIType:                  req.Body.APIType,
+					SDKType:                  req.Body.SDKType,
 					Origin:                   req.Body.Origin,
 					ChatCompletionPathPrefix: req.Body.ChatCompletionPathPrefix,
 					APIKeyHeaderKey:          req.Body.APIKeyHeaderKey,

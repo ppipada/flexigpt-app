@@ -5,11 +5,23 @@ export type ModelPresetID = string;
 
 export type ProviderName = string;
 export type ProviderDisplayName = string;
-export enum ProviderAPIType {
-	AnthropicCompatible = 'providerAPITypeAnthropicCompatible',
-	HuggingFaceCompatible = 'providerAPITypeHuggingFaceCompatible',
-	OpenAICompatible = 'providerAPITypeOpenAICompatible',
+
+export enum ProviderSDKType {
+	ProviderSDKTypeAnthropic = 'providerSDKTypeAnthropic',
+	ProviderSDKTypeHuggingFace = 'providerSDKTypeHuggingFace',
+	ProviderSDKTypeOpenAI = 'providerSDKTypeOpenAI',
 }
+export const SDK_TYPE_LABELS: Record<ProviderSDKType, string> = {
+	[ProviderSDKType.ProviderSDKTypeOpenAI]: 'OpenAI-compatible',
+	[ProviderSDKType.ProviderSDKTypeAnthropic]: 'Anthropic',
+	[ProviderSDKType.ProviderSDKTypeHuggingFace]: 'Hugging Face',
+};
+
+export const DEFAULT_CHAT_PATH_BY_SDK: Record<ProviderSDKType, string> = {
+	[ProviderSDKType.ProviderSDKTypeOpenAI]: '/v1/chat/completions',
+	[ProviderSDKType.ProviderSDKTypeAnthropic]: '/v1/messages',
+	[ProviderSDKType.ProviderSDKTypeHuggingFace]: '/v1/chat/completions',
+};
 
 export enum ReasoningType {
 	HybridWithTokens = 'hybridWithTokens',
@@ -51,7 +63,7 @@ export interface ModelPreset extends PutModelPresetPayload {
 export interface PutProviderPresetPayload {
 	name: ProviderName;
 	displayName: ProviderDisplayName;
-	apiType: ProviderAPIType;
+	sdkType: ProviderSDKType;
 	isEnabled: boolean;
 	origin: string;
 	chatCompletionPathPrefix: string;

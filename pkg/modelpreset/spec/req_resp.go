@@ -21,7 +21,7 @@ type GetDefaultProviderResponse struct {
 
 type PutProviderPresetRequestBody struct {
 	DisplayName              ProviderDisplayName `json:"displayName"               required:"true"`
-	APIType                  ProviderAPIType     `json:"apiType"                   required:"true"`
+	SDKType                  ProviderSDKType     `json:"sdkType"                   required:"true"`
 	IsEnabled                bool                `json:"isEnabled"                 required:"true"`
 	Origin                   string              `json:"origin"                    required:"true"`
 	ChatCompletionPathPrefix string              `json:"chatCompletionPathPrefix"  required:"true"`

@@ -57,14 +57,14 @@ type (
 	ReasoningType    string
 
 	ProviderName        string
-	ProviderAPIType     string
+	ProviderSDKType     string
 	ProviderDisplayName string
 )
 
 const (
-	ProviderAPITypeAnthropicCompatible   ProviderAPIType = "providerAPITypeAnthropicCompatible"
-	ProviderAPITypeHuggingFaceCompatible ProviderAPIType = "providerAPITypeHuggingFaceCompatible"
-	ProviderAPITypeOpenAICompatible      ProviderAPIType = "providerAPITypeOpenAICompatible"
+	ProviderSDKTypeAnthropic   ProviderSDKType = "providerSDKTypeAnthropic"
+	ProviderSDKTypeHuggingFace ProviderSDKType = "providerSDKTypeHuggingFace"
+	ProviderSDKTypeOpenAI      ProviderSDKType = "providerSDKTypeOpenAI"
 )
 
 const (
@@ -113,7 +113,7 @@ type ProviderPreset struct {
 	SchemaVersion string              `json:"schemaVersion" required:"true"`
 	Name          ProviderName        `json:"name"          required:"true"`
 	DisplayName   ProviderDisplayName `json:"displayName"   required:"true"`
-	APIType       ProviderAPIType     `json:"apiType"`
+	SDKType       ProviderSDKType     `json:"sdkType"`
 	IsEnabled     bool                `json:"isEnabled"     required:"true"`
 
 	CreatedAt  time.Time `json:"createdAt"`

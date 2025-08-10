@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiUpload, FiX } from 'react-icons/fi';
 
-import { ProviderAPIType, type ProviderName, type ProviderPreset } from '@/spec/modelpreset';
+import { type ProviderName, type ProviderPreset, ProviderSDKType } from '@/spec/modelpreset';
 
 import { GenerateRandomNumberString } from '@/lib/encode_decode';
 import { omitManyKeys } from '@/lib/obj_utils';
@@ -14,7 +14,7 @@ import Dropdown from '@/components/dropdown';
 type FormData = {
 	providerName: string;
 	displayName: string;
-	apiType: ProviderAPIType;
+	sdkType: ProviderSDKType;
 	isEnabled: boolean;
 	origin: string;
 	chatCompletionPathPrefix: string;
@@ -26,7 +26,7 @@ type FormData = {
 const DEFAULT_FORM: FormData = {
 	providerName: '',
 	displayName: '',
-	apiType: ProviderAPIType.OpenAICompatible,
+	sdkType: ProviderSDKType.ProviderSDKTypeOpenAI,
 	isEnabled: true,
 	origin: '',
 	chatCompletionPathPrefix: '/v1/chat/completions',
@@ -84,7 +84,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 
 			/* IDs & secrets are intentionally NOT copied */
 			displayName: src.displayName + '-' + GenerateRandomNumberString(3),
-			apiType: src.apiType,
+			sdkType: src.sdkType,
 			isEnabled: true, // always enable newly added presets
 			origin: src.origin,
 			chatCompletionPathPrefix: src.chatCompletionPathPrefix,
@@ -101,7 +101,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 			setFormData({
 				providerName: initialPreset.name,
 				displayName: initialPreset.displayName,
-				apiType: initialPreset.apiType,
+				sdkType: initialPreset.sdkType,
 				isEnabled: initialPreset.isEnabled,
 				origin: initialPreset.origin,
 				chatCompletionPathPrefix: initialPreset.chatCompletionPathPrefix,
@@ -201,7 +201,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 		const payload = {
 			name: formData.providerName.trim(),
 			displayName: formData.displayName.trim(),
-			apiType: formData.apiType,
+			sdkType: formData.sdkType,
 			isEnabled: formData.isEnabled,
 			origin: formData.origin.trim(),
 			chatCompletionPathPrefix: formData.chatCompletionPathPrefix.trim(),

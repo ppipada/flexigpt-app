@@ -51,7 +51,7 @@ type CompletionRequest struct {
 }
 
 type AddProviderRequestBody struct {
-	APIType                  modelpresetSpec.ProviderAPIType `json:"apiType"`
+	SDKType                  modelpresetSpec.ProviderSDKType `json:"sdkType"`
 	Origin                   string                          `json:"origin"`
 	ChatCompletionPathPrefix string                          `json:"chatCompletionPathPrefix"`
 	APIKeyHeaderKey          string                          `json:"apiKeyHeaderKey"`

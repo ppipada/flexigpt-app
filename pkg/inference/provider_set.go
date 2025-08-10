@@ -38,13 +38,13 @@ func (ps *ProviderSetAPI) AddProvider(
 			"invalid provider: cannot add a provider with same name as an existing provider, delete first",
 		)
 	}
-	if ok := isProviderAPITypeSupported(req.Body.APIType); !ok {
+	if ok := isProviderSDKTypeSupported(req.Body.SDKType); !ok {
 		return nil, errors.New("unsupported provider api type")
 	}
 
 	providerInfo := spec.ProviderParams{
 		Name:                     req.Provider,
-		APIType:                  req.Body.APIType,
+		SDKType:                  req.Body.SDKType,
 		APIKey:                   "",
 		Origin:                   req.Body.Origin,
 		ChatCompletionPathPrefix: req.Body.ChatCompletionPathPrefix,
@@ -140,24 +140,24 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	return &spec.FetchCompletionResponse{Body: resp}, nil
 }
 
-func isProviderAPITypeSupported(t modelpresetSpec.ProviderAPIType) bool {
-	if t == modelpresetSpec.ProviderAPITypeOpenAICompatible ||
-		t == modelpresetSpec.ProviderAPITypeAnthropicCompatible ||
-		t == modelpresetSpec.ProviderAPITypeHuggingFaceCompatible {
+func isProviderSDKTypeSupported(t modelpresetSpec.ProviderSDKType) bool {
+	if t == modelpresetSpec.ProviderSDKTypeOpenAI ||
+		t == modelpresetSpec.ProviderSDKTypeAnthropic ||
+		t == modelpresetSpec.ProviderSDKTypeHuggingFace {
 		return true
 	}
 	return false
 }
 
 func getProviderAPI(p spec.ProviderParams, debug bool) (CompletionProvider, error) {
-	switch p.APIType {
-	case modelpresetSpec.ProviderAPITypeAnthropicCompatible:
+	switch p.SDKType {
+	case modelpresetSpec.ProviderSDKTypeAnthropic:
 		return NewAnthropicCompatibleAPI(p, debug)
 
-	case modelpresetSpec.ProviderAPITypeHuggingFaceCompatible:
+	case modelpresetSpec.ProviderSDKTypeHuggingFace:
 		return NewHuggingFaceCompatibleAPI(p, debug)
 
-	case modelpresetSpec.ProviderAPITypeOpenAICompatible:
+	case modelpresetSpec.ProviderSDKTypeOpenAI:
 		return NewOpenAICompatibleAPI(p, debug)
 	}
 

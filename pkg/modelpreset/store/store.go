@@ -168,7 +168,7 @@ func (s *ModelPresetStore) PutProviderPreset(
 		SchemaVersion:            spec.SchemaVersion,
 		Name:                     req.ProviderName,
 		DisplayName:              req.Body.DisplayName,
-		APIType:                  req.Body.APIType,
+		SDKType:                  req.Body.SDKType,
 		IsEnabled:                req.Body.IsEnabled,
 		CreatedAt:                now,
 		ModifiedAt:               now,

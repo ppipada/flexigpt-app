@@ -116,7 +116,7 @@ export namespace spec {
 	
 	
 	export class AddProviderRequestBody {
-	    apiType: string;
+	    sdkType: string;
 	    origin: string;
 	    chatCompletionPathPrefix: string;
 	    apiKeyHeaderKey: string;
@@ -128,7 +128,7 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.apiType = source["apiType"];
+	        this.sdkType = source["sdkType"];
 	        this.origin = source["origin"];
 	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];
 	        this.apiKeyHeaderKey = source["apiKeyHeaderKey"];
@@ -1736,7 +1736,7 @@ export namespace spec {
 	    schemaVersion: string;
 	    name: string;
 	    displayName: string;
-	    apiType: string;
+	    sdkType: string;
 	    isEnabled: boolean;
 	    // Go type: time
 	    createdAt: any;
@@ -1759,7 +1759,7 @@ export namespace spec {
 	        this.schemaVersion = source["schemaVersion"];
 	        this.name = source["name"];
 	        this.displayName = source["displayName"];
-	        this.apiType = source["apiType"];
+	        this.sdkType = source["sdkType"];
 	        this.isEnabled = source["isEnabled"];
 	        this.createdAt = this.convertValues(source["createdAt"], null);
 	        this.modifiedAt = this.convertValues(source["modifiedAt"], null);
@@ -2966,7 +2966,7 @@ export namespace spec {
 	}
 	export class PutProviderPresetRequestBody {
 	    displayName: string;
-	    apiType: string;
+	    sdkType: string;
 	    isEnabled: boolean;
 	    origin: string;
 	    chatCompletionPathPrefix: string;
@@ -2980,7 +2980,7 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.displayName = source["displayName"];
-	        this.apiType = source["apiType"];
+	        this.sdkType = source["sdkType"];
 	        this.isEnabled = source["isEnabled"];
 	        this.origin = source["origin"];
 	        this.chatCompletionPathPrefix = source["chatCompletionPathPrefix"];

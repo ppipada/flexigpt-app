@@ -119,7 +119,7 @@ func initProviders(
 		}
 
 		body := &inferenceSpec.AddProviderRequestBody{
-			APIType:                  pp.APIType,
+			SDKType:                  pp.SDKType,
 			Origin:                   pp.Origin,
 			ChatCompletionPathPrefix: pp.ChatCompletionPathPrefix,
 			APIKeyHeaderKey:          pp.APIKeyHeaderKey,
