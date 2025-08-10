@@ -261,7 +261,8 @@ func (d *BuiltInData) populateDataFromFS(ctx context.Context) error {
 		)
 	}
 
-	seenTpl := make(map[bundleitemutils.ItemID]string)
+	seenTplPerBundle := make(map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]string)
+
 	err = fs.WalkDir(
 		bundlesFS,
 		".",
@@ -324,11 +325,15 @@ func (d *BuiltInData) populateDataFromFS(ctx context.Context) error {
 				)
 			}
 
-			if prev := seenTpl[tpl.ID]; prev != "" {
-				return fmt.Errorf("%s: duplicate template ID %s (also %s)",
-					inPath, tpl.ID, prev)
+			if seenTplPerBundle[bundleID] == nil {
+				seenTplPerBundle[bundleID] = make(map[bundleitemutils.ItemID]string)
 			}
-			seenTpl[tpl.ID] = inPath
+
+			if prev := seenTplPerBundle[bundleID][tpl.ID]; prev != "" {
+				return fmt.Errorf("%s: duplicate template ID %s within bundle %s (also %s)",
+					inPath, tpl.ID, bundleID, prev)
+			}
+			seenTplPerBundle[bundleID][tpl.ID] = inPath
 
 			templateMap[bundleID][tpl.ID] = tpl
 			return nil

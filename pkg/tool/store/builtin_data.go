@@ -265,7 +265,7 @@ func (d *BuiltInToolData) populateDataFromFS(ctx context.Context) error {
 			d.toolsDir, builtin.BuiltInToolBundlesJSON)
 	}
 
-	seenTools := make(map[bundleitemutils.ItemID]string)
+	seenToolPerBundle := make(map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]string)
 
 	err = fs.WalkDir(
 		toolsFS,
@@ -329,11 +329,15 @@ func (d *BuiltInToolData) populateDataFromFS(ctx context.Context) error {
 				)
 			}
 
-			if prev := seenTools[tool.ID]; prev != "" {
-				return fmt.Errorf("%s: duplicate tool ID %s (also %s)",
-					inPath, tool.ID, prev)
+			if seenToolPerBundle[bundleID] == nil {
+				seenToolPerBundle[bundleID] = make(map[bundleitemutils.ItemID]string)
 			}
-			seenTools[tool.ID] = inPath
+			if prev := seenToolPerBundle[bundleID][tool.ID]; prev != "" {
+				return fmt.Errorf("%s: duplicate tool ID %s within bundle %s (also %s)",
+					inPath, tool.ID, bundleID, prev)
+			}
+			seenToolPerBundle[bundleID][tool.ID] = inPath
+
 			toolMap[bundleID][tool.ID] = tool
 			return nil
 		},
