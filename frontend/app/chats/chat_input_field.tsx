@@ -218,7 +218,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 				{isBusy && (
 					<div className="flex items-center justify-center bg-base-200 mb-1 mx-8">
 						<button
-							className="btn btn-sm bg-neutral text-neutral-content shadow-none border-none gap-1"
+							className="btn btn-sm bg-neutral text-neutral-content shadow-none border-none gap-1 rounded-xl"
 							onClick={() => {
 								setShowAbortModal(true);
 							}}

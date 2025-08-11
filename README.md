@@ -30,7 +30,7 @@ Launch FlexiGPT, open Settings -> Providers, paste your API key, start chatting.
 
 - **Multi-provider Connectivity**
 
-  - First-class connectors for OpenAI, Anthropic, Google, DeepSeek, **plus any local/remote OpenAI-compatible endpoint**.
+  - First-class connectors for OpenAI, Anthropic, Google, DeepSeek, xAI, Huggingface, Openrouter, Local LLamaCPP, **plus any local/remote OpenAI or Anthropic compatible endpoint**.
   - API keys are stored securely in your OS keyring - never in plain text.
 
 - **Unified Chat Workspace**
