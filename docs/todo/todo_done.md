@@ -425,4 +425,20 @@
   - [x] backend should check if atleast one of reasoning or temp is set
 
 - [x] For new month of conversations etc, if we set default provider preset it says read partition error
+
   - [x] This is ok as it is read error at start and then next dr is created
+
+- [x] Settings
+
+  - [x] Need a settings data version and migration func
+  - [x] API key should never reach frontend after save: Need to verify if some place this is remaining
+  - [x] theme setting persistance and usage across installs
+
+- [x] langchaingo seem to be moving very slow with no thinking support. better use official sdks from openai and anthropic
+
+  - [x] Openai
+
+    - [x] Add openai compatible provider presets: hf, deepseek, xai groq, openrouter, llamacpp as presets.
+    - [x] Add Google also as openai compatible provider for now. gemini dev ai additions.
+
+  - [x] Anthropic

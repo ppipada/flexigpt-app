@@ -41,8 +41,86 @@ func NewSettingStore(baseDir string) (*SettingStore, error) {
 	}
 
 	st.store = fs
+	if err := st.Migrate(context.Background()); err != nil {
+		return nil, fmt.Errorf("settings migration failed: %w", err)
+	}
 	slog.Info("settings store ready", "file", file)
 	return st, nil
+}
+
+// Migrate ensures the store is up-to-date with built-in data.
+// - Adds missing built-in auth keys as empty entries.
+// - Updates schemaVersion if changed.
+func (s *SettingStore) Migrate(ctx context.Context) error {
+	// Force re-read from disk to be safe during startup.
+	raw, err := s.store.GetAll(true)
+	if err != nil {
+		return fmt.Errorf("migrate: read store: %w", err)
+	}
+
+	var schema spec.SettingsSchema
+	if err := encdec.MapToStructWithJSONTags(raw, &schema); err != nil {
+		return fmt.Errorf("migrate: decode: %w", err)
+	}
+
+	added := 0
+
+	// Ensure the authKeys map and the required nested maps exist,
+	// by using SetKey to create them on demand, but check via the decoded schema.
+	for t, names := range BuiltInAuthKeys {
+		for _, name := range names {
+			exists := false
+			if schema.AuthKeys != nil {
+				if m, ok := schema.AuthKeys[t]; ok {
+					if _, ok := m[name]; ok {
+						exists = true
+					}
+				}
+			}
+			if exists {
+				continue
+			}
+
+			// Create an empty key: encrypted secret "", sha of "", nonEmpty false.
+			secret := ""
+			sha := encdec.ComputeSHA(secret)
+
+			if err := s.store.SetKey([]string{
+				"authKeys", string(t), string(name), "secret",
+			}, secret); err != nil {
+				return fmt.Errorf("settings migrate: set secret for %s/%s: %w", t, name, err)
+			}
+
+			if err := s.store.SetKey([]string{
+				"authKeys", string(t), string(name), "sha256",
+			}, sha); err != nil {
+				return fmt.Errorf("settings migrate: set sha256 for %s/%s: %w", t, name, err)
+			}
+
+			if err := s.store.SetKey([]string{
+				"authKeys", string(t), string(name), "nonEmpty",
+			}, false); err != nil {
+				return fmt.Errorf("settings migrate: set nonEmpty for %s/%s: %w", t, name, err)
+			}
+
+			added++
+		}
+	}
+
+	// Optionally bump schemaVersion if changed or missing.
+	if schema.SchemaVersion != spec.SchemaVersion {
+		if err := s.store.SetKey([]string{"schemaVersion"}, spec.SchemaVersion); err != nil {
+			return fmt.Errorf("migrate: update schemaVersion: %w", err)
+		}
+	}
+
+	if added > 0 {
+		slog.Info("settings migration complete: added missing built-in auth keys", "added", added)
+	} else {
+		slog.Info("settings migration: no changes needed")
+	}
+
+	return nil
 }
 
 // SetAppTheme validates and persists a new theme.

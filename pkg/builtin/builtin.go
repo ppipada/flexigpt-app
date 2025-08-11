@@ -31,6 +31,8 @@ const (
 	ProviderNameHuggingFace = "huggingface"
 	ProviderNameLlamaCPP    = "llamacpp"
 	ProviderNameOpenAI      = "openai"
+	ProviderNameOpenRouter  = "openrouter"
+	ProviderNameXAI         = "xai"
 )
 
 var BuiltInProviderNames = []string{
@@ -40,4 +42,6 @@ var BuiltInProviderNames = []string{
 	ProviderNameHuggingFace,
 	ProviderNameLlamaCPP,
 	ProviderNameOpenAI,
+	ProviderNameOpenRouter,
+	ProviderNameXAI,
 }

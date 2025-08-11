@@ -205,10 +205,10 @@
 			}
 		},
 
-		"google": {
+		"googlegemini": {
 			"schemaVersion": "2025-07-01",
-			"name": "google",
-			"displayName": "Google",
+			"name": "googlegemini",
+			"displayName": "Google Gemini API",
 			"sdkType": "providerSDKTypeOpenAI",
 			"isEnabled": true,
 			"createdAt": "2025-07-30T00:00:00Z",
@@ -226,13 +226,18 @@
 					"schemaVersion": "2025-07-01",
 					"id": "gemini25Pro",
 					"name": "gemini-2.5-pro",
-					"displayName": "Google Gemini 2.5 Pro",
+					"displayName": "GoogleAI Gemini 2.5 Pro",
 					"slug": "gemini25Pro",
 					"isEnabled": true,
 					"stream": true,
 					"maxPromptLength": 32768,
 					"maxOutputLength": 32768,
 					"temperature": 1.0,
+					"reasoning": {
+						"type": "singleWithLevels",
+						"level": "high",
+						"tokens": 0
+					},
 					"systemPrompt": "",
 					"timeout": 300,
 					"createdAt": "2025-07-30T00:00:00Z",
@@ -243,13 +248,18 @@
 					"schemaVersion": "2025-07-01",
 					"id": "gemini25Flash",
 					"name": "gemini-2.5-flash",
-					"displayName": "Google Gemini 2.5 Flash",
+					"displayName": "GoogleAI Gemini 2.5 Flash",
 					"slug": "gemini25Flash",
 					"isEnabled": true,
 					"stream": true,
 					"maxPromptLength": 32768,
 					"maxOutputLength": 32768,
 					"temperature": 0.1,
+					"reasoning": {
+						"type": "singleWithLevels",
+						"level": "medium",
+						"tokens": 0
+					},
 					"systemPrompt": "",
 					"timeout": 300,
 					"createdAt": "2025-07-30T00:00:00Z",
@@ -260,13 +270,18 @@
 					"schemaVersion": "2025-07-01",
 					"id": "gemini25FlashLite",
 					"name": "gemini-2.5-flash-lite-preview-06-17",
-					"displayName": "Google Gemini 2.5 Flash Lite",
+					"displayName": "GoogleAI Gemini 2.5 Flash Lite",
 					"slug": "gemini25FlashLite",
 					"isEnabled": true,
 					"stream": true,
 					"maxPromptLength": 32768,
 					"maxOutputLength": 32768,
 					"temperature": 0.1,
+					"reasoning": {
+						"type": "singleWithLevels",
+						"level": "medium",
+						"tokens": 0
+					},
 					"systemPrompt": "",
 					"timeout": 300,
 					"createdAt": "2025-07-30T00:00:00Z",
@@ -639,6 +654,121 @@
 					"maxPromptLength": 4096,
 					"maxOutputLength": 4096,
 					"temperature": 0.1,
+					"systemPrompt": "",
+					"timeout": 300,
+					"createdAt": "2025-07-30T00:00:00Z",
+					"modifiedAt": "2025-07-30T00:00:00Z",
+					"isBuiltIn": true
+				}
+			}
+		},
+
+		"openrouter": {
+			"schemaVersion": "2025-07-01",
+			"name": "openrouter",
+			"displayName": "OpenRouter",
+			"sdkType": "providerSDKTypeOpenAI",
+			"isEnabled": true,
+			"createdAt": "2025-07-30T00:00:00Z",
+			"modifiedAt": "2025-07-30T00:00:00Z",
+			"isBuiltIn": true,
+			"origin": "https://openrouter.ai",
+			"chatCompletionPathPrefix": "/api/v1/chat/completions",
+			"apiKeyHeaderKey": "Authorization",
+			"defaultHeaders": {
+				"content-type": "application/json",
+				"HTTP-Referer": "https://github.com/ppipada/flexigpt-app",
+				"X-Title": "FlexiGPT"
+			},
+			"defaultModelPresetID": "qwen3CoderFree",
+			"modelPresets": {
+				"qwen3CoderFree": {
+					"schemaVersion": "2025-07-01",
+					"id": "qwen3CoderFree",
+					"name": "qwen/qwen3-coder:free",
+					"displayName": "OR Qwen 3 Coder Free",
+					"slug": "qwen3CoderFree",
+					"isEnabled": true,
+					"stream": true,
+					"maxPromptLength": 32768,
+					"maxOutputLength": 32768,
+					"temperature": 0.1,
+					"systemPrompt": "",
+					"timeout": 300,
+					"createdAt": "2025-07-30T00:00:00Z",
+					"modifiedAt": "2025-07-30T00:00:00Z",
+					"isBuiltIn": true
+				}
+			}
+		},
+
+		"xai": {
+			"schemaVersion": "2025-07-01",
+			"name": "xai",
+			"displayName": "X AI",
+			"sdkType": "providerSDKTypeOpenAI",
+			"isEnabled": true,
+			"createdAt": "2025-07-30T00:00:00Z",
+			"modifiedAt": "2025-07-30T00:00:00Z",
+			"isBuiltIn": true,
+			"origin": "https://api.x.ai",
+			"chatCompletionPathPrefix": "/v1/chat/completions",
+			"apiKeyHeaderKey": "Authorization",
+			"defaultHeaders": {
+				"content-type": "application/json"
+			},
+			"defaultModelPresetID": "grok4",
+			"modelPresets": {
+				"grok4": {
+					"schemaVersion": "2025-07-01",
+					"id": "grok4",
+					"name": "grok-4",
+					"displayName": "xAI Grok 4",
+					"slug": "grok4",
+					"isEnabled": true,
+					"stream": true,
+					"maxPromptLength": 32768,
+					"maxOutputLength": 32768,
+					"temperature": 1.0,
+					"systemPrompt": "",
+					"timeout": 300,
+					"createdAt": "2025-07-30T00:00:00Z",
+					"modifiedAt": "2025-07-30T00:00:00Z",
+					"isBuiltIn": true
+				},
+				"grok3": {
+					"schemaVersion": "2025-07-01",
+					"id": "grok3",
+					"name": "grok-3",
+					"displayName": "xAI Grok 3",
+					"slug": "grok3",
+					"isEnabled": true,
+					"stream": true,
+					"maxPromptLength": 32768,
+					"maxOutputLength": 32768,
+					"temperature": 1.0,
+					"systemPrompt": "",
+					"timeout": 300,
+					"createdAt": "2025-07-30T00:00:00Z",
+					"modifiedAt": "2025-07-30T00:00:00Z",
+					"isBuiltIn": true
+				},
+				"grok3mini": {
+					"schemaVersion": "2025-07-01",
+					"id": "grok3mini",
+					"name": "grok-3-mini",
+					"displayName": "xAI Grok 3 Mini",
+					"slug": "grok3mini",
+					"isEnabled": true,
+					"stream": true,
+					"maxPromptLength": 32768,
+					"maxOutputLength": 32768,
+					"temperature": 1.0,
+					"reasoning": {
+						"type": "singleWithLevels",
+						"level": "medium",
+						"tokens": 0
+					},
 					"systemPrompt": "",
 					"timeout": 300,
 					"createdAt": "2025-07-30T00:00:00Z",

@@ -22,8 +22,8 @@ Launch FlexiGPT, open Settings -> Providers, paste your API key, start chatting.
 ## Quick Start
 
 - Install FlexiGPT [for your OS](#install).
-- Launch and Open **Settings -> Providers**.
-- Paste your API key.
+- Launch and Open **Settings**.
+- In **Auth Keys** -> Paste the API key for your provider.
 - Start chatting!
 
 ## Key Features at a Glance

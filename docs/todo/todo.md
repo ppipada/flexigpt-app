@@ -6,16 +6,8 @@
 
   - [ ] Integrate stores with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
 
-  - [ ] langchaingo seem to be moving very slow with no thinking support. better use official sdks from openai and anthropic
-
-    - [x] Openai
-
-      - [ ] Add openai compatible provider presets: hf, xai groq, openrouter, llama, ollama as presets
-      - [ ] Add Google also as openai compatible provider for now. Check vertex ai + gemini dev ai additions
-
-    - [x] Anthropic
-
-    - [ ] Add AWS bedrock too. May be anthropic api as of now for claude on bedrock models?
+  - [ ] Add AWS bedrock too. May be anthropic api as of now for claude on bedrock models?
+  - [ ] Check vertex ai for google: needs google dedicated sdk
 
   - [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
 
@@ -25,7 +17,8 @@
 
     - [ ] Thinking should be a collapsible card / dropdown / something inside the message block. Figure out the UX and implement.
     - [x] Create provider should allow to choose the api sdk type
-    - [ ] ~~Need to check provider compatibility during "copy existing" flow~~
+    - [ ] Need to allow adding models to inbuilt providers, may need to list compatible ones in existing copy flow
+    - [ ] Need to check provider compatibility during "copy existing" flow for models i.e sdk should match
     - [ ] If there was some amount of data that was streamed, but error occured at end someplace, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is. This is mostly UI issue.
 
 - [ ] CPU is high when "thinking". Need to debug
