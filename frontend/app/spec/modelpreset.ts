@@ -8,21 +8,34 @@ export type ProviderDisplayName = string;
 
 export enum ProviderSDKType {
 	ProviderSDKTypeAnthropic = 'providerSDKTypeAnthropic',
-	ProviderSDKTypeHuggingFace = 'providerSDKTypeHuggingFace',
 	ProviderSDKTypeOpenAI = 'providerSDKTypeOpenAI',
 }
-export const SDK_TYPE_LABELS: Record<ProviderSDKType, string> = {
+
+export const SDK_DISPLAY_NAME: Record<ProviderSDKType, string> = {
 	[ProviderSDKType.ProviderSDKTypeOpenAI]: 'OpenAI-compatible',
 	[ProviderSDKType.ProviderSDKTypeAnthropic]: 'Anthropic',
-	[ProviderSDKType.ProviderSDKTypeHuggingFace]: 'Hugging Face',
 };
 
-export const DEFAULT_CHAT_PATH_BY_SDK: Record<ProviderSDKType, string> = {
-	[ProviderSDKType.ProviderSDKTypeOpenAI]: '/v1/chat/completions',
-	[ProviderSDKType.ProviderSDKTypeAnthropic]: '/v1/messages',
-	[ProviderSDKType.ProviderSDKTypeHuggingFace]: '/v1/chat/completions',
+export const SDK_DEFAULTS: Record<
+	ProviderSDKType,
+	{ chatPath: string; apiKeyHeaderKey: string; defaultHeaders: Record<string, string> }
+> = {
+	[ProviderSDKType.ProviderSDKTypeOpenAI]: {
+		chatPath: '/v1/chat/completions',
+		apiKeyHeaderKey: 'Authorization',
+		defaultHeaders: {
+			'Content-Type': 'application/json',
+		},
+	},
+	[ProviderSDKType.ProviderSDKTypeAnthropic]: {
+		chatPath: '/v1/messages',
+		apiKeyHeaderKey: 'x-api-key',
+		defaultHeaders: {
+			'Content-Type': 'application/json',
+			'anthropic-version': '2023-06-01',
+		},
+	},
 };
-
 export enum ReasoningType {
 	HybridWithTokens = 'hybridWithTokens',
 	SingleWithLevels = 'singleWithLevels',

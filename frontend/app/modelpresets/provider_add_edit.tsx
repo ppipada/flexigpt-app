@@ -3,7 +3,13 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiUpload, FiX } from 'react-icons/fi';
 
-import { type ProviderName, type ProviderPreset, ProviderSDKType } from '@/spec/modelpreset';
+import {
+	type ProviderName,
+	type ProviderPreset,
+	ProviderSDKType,
+	SDK_DEFAULTS,
+	SDK_DISPLAY_NAME,
+} from '@/spec/modelpreset';
 
 import { GenerateRandomNumberString } from '@/lib/encode_decode';
 import { omitManyKeys } from '@/lib/obj_utils';
@@ -72,6 +78,20 @@ const AddEditProviderPresetModal: FC<Props> = ({
 		}
 		return o;
 	}, [allProviderPresets]);
+
+	const sdkDropdownItems: Record<ProviderSDKType, { isEnabled: boolean; displayName: string }> = useMemo(
+		() => ({
+			[ProviderSDKType.ProviderSDKTypeOpenAI]: {
+				isEnabled: true,
+				displayName: SDK_DISPLAY_NAME[ProviderSDKType.ProviderSDKTypeOpenAI],
+			},
+			[ProviderSDKType.ProviderSDKTypeAnthropic]: {
+				isEnabled: true,
+				displayName: SDK_DISPLAY_NAME[ProviderSDKType.ProviderSDKTypeAnthropic],
+			},
+		}),
+		[]
+	);
 
 	const [prefillMode, setPrefillMode] = useState(false);
 	const [selectedPrefillKey, setSelectedPrefillKey] = useState<ProviderName | null>(null);
@@ -155,6 +175,11 @@ const AddEditProviderPresetModal: FC<Props> = ({
 			else newErrs = omitManyKeys(newErrs, ['apiKey']);
 		}
 
+		if (field === 'sdkType') {
+			if (!Object.values(ProviderSDKType).includes(v as ProviderSDKType)) newErrs.sdkType = 'Invalid SDK type.';
+			else newErrs = omitManyKeys(newErrs, ['sdkType']);
+		}
+
 		setErrors(newErrs);
 	};
 
@@ -167,6 +192,22 @@ const AddEditProviderPresetModal: FC<Props> = ({
 		if (['providerName', 'displayName', 'origin', 'defaultHeadersRawJSON', 'apiKey'].includes(name)) {
 			validateField(name as keyof FormData, String(newVal));
 		}
+	};
+
+	const onSdkTypeChange = (key: ProviderSDKType) => {
+		setFormData(prev => {
+			const next = { ...prev, sdkType: key };
+			const defaults = SDK_DEFAULTS[key];
+
+			// Fill associated fields only if empty
+			if (!prev.chatCompletionPathPrefix.trim()) next.chatCompletionPathPrefix = defaults.chatPath;
+			if (!prev.apiKeyHeaderKey.trim()) next.apiKeyHeaderKey = defaults.apiKeyHeaderKey;
+			if (!prev.defaultHeadersRawJSON.trim())
+				next.defaultHeadersRawJSON = JSON.stringify(defaults.defaultHeaders, null, 2);
+
+			return next;
+		});
+		validateField('sdkType', key);
 	};
 
 	const allValid = useMemo(() => {
@@ -278,6 +319,36 @@ const AddEditProviderPresetModal: FC<Props> = ({
 							</div>
 						</div>
 					)}
+
+					{/* SDK Type */}
+					<div className="grid grid-cols-12 gap-2 items-center">
+						<label className="label col-span-3">
+							<span className="label-text text-sm">SDK Type*</span>
+							<span
+								className="label-text-alt tooltip tooltip-right"
+								data-tip="Select the backend SDK/API compatibility for this provider."
+							>
+								<FiHelpCircle size={12} />
+							</span>
+						</label>
+						<div className="col-span-9">
+							<Dropdown<ProviderSDKType>
+								dropdownItems={sdkDropdownItems}
+								selectedKey={formData.sdkType}
+								onChange={onSdkTypeChange}
+								filterDisabled={false}
+								title="Select SDK Type"
+								getDisplayName={k => sdkDropdownItems[k].displayName}
+							/>
+							{errors.sdkType && (
+								<div className="label">
+									<span className="label-text-alt text-error flex items-center gap-1">
+										<FiAlertCircle size={12} /> {errors.sdkType}
+									</span>
+								</div>
+							)}
+						</div>
+					</div>
 
 					{/* Provider ID */}
 					<div className="grid grid-cols-12 gap-2 items-center">

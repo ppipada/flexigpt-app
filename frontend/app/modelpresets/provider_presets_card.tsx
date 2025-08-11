@@ -375,6 +375,10 @@ const ProviderPresetCard: FC<Props> = ({
 									</td>
 								</tr>
 								<tr className="hover:bg-base-300">
+									<td className="w-1/3 text-sm">ID</td>
+									<td className="text-sm">{preset.name}</td>
+								</tr>
+								<tr className="hover:bg-base-300">
 									<td className="w-1/3 text-sm">Origin</td>
 									<td className="text-sm">{preset.origin}</td>
 								</tr>

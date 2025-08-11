@@ -15,7 +15,7 @@
   - [ ] UI:
 
     - [ ] Thinking should be a collapsible card / dropdown / something inside the message block. Figure out the UX and implement.
-    - [ ] Create provider should allow to choose the api sdk type
+    - [x] Create provider should allow to choose the api sdk type
     - [ ] create model preset should allow the api function type
     - [ ] Need to check provider compatibility during "copy existing" flow
     - [ ] If there was some amount of data that was streamed, but error occured at end someplace, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is. This is mostly UI issue.
