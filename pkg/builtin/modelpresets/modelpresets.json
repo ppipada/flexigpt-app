@@ -521,7 +521,7 @@
 						"tokens": 0
 					},
 					"systemPrompt": "Formatting re-enabled.\nAlways output in Markdown format.",
-					"timeout": 300,
+					"timeout": 600,
 					"createdAt": "2025-07-30T00:00:00Z",
 					"modifiedAt": "2025-07-30T00:00:00Z",
 					"isBuiltIn": true
@@ -565,7 +565,7 @@
 						"tokens": 0
 					},
 					"systemPrompt": "Formatting re-enabled.\nAlways output in Markdown format.",
-					"timeout": 300,
+					"timeout": 1200,
 					"createdAt": "2025-07-30T00:00:00Z",
 					"modifiedAt": "2025-07-30T00:00:00Z",
 					"isBuiltIn": true

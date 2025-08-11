@@ -13,6 +13,9 @@
   - [ ] MS course is fantastic, but requires lots of tech know how.
 - [ ] Add keyboard shortcuts and some tooltips for them to know what are these.
 
+  - [ ] Add AWS bedrock too. May be anthropic api as of now for claude on bedrock models?
+  - [ ] Check vertex ai for google: needs google dedicated sdk
+
 ## Laundry list
 
 - [ ] Chat

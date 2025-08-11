@@ -250,7 +250,7 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 					<div className="grid grid-cols-12 gap-2 items-center">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Type*</span>
-							<span className="label-text-alt tooltip" data-tip="Logical grouping of keys">
+							<span className="label-text-alt tooltip tooltip-right" data-tip="Logical grouping of keys">
 								<FiHelpCircle size={12} />
 							</span>
 						</label>

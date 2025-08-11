@@ -17,9 +17,10 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 	const [maxPromptLength, setMaxPromptLength] = useState('');
 	const [maxOutputLength, setMaxOutputLength] = useState('');
 	const [systemPrompt, setSystemPrompt] = useState('');
+	const [timeout, setTimeout] = useState('');
 
 	/* validation errors */
-	const [errors, setErrors] = useState<Partial<Record<'maxPromptLength' | 'maxOutputLength', string>>>({});
+	const [errors, setErrors] = useState<Partial<Record<'maxPromptLength' | 'maxOutputLength' | 'timeout', string>>>({});
 
 	/* reset form every time the modal opens or the model changes */
 	useEffect(() => {
@@ -28,18 +29,20 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 		setStream(currentModel.stream);
 		setMaxPromptLength(String(currentModel.maxPromptLength));
 		setMaxOutputLength(String(currentModel.maxOutputLength));
+		setTimeout(String(currentModel.timeout));
+
 		setSystemPrompt(currentModel.systemPrompt);
 		setErrors({});
 	}, [isOpen, currentModel]);
 
-	const validateNumberField = (field: 'maxPromptLength' | 'maxOutputLength', value: string) => {
+	const validateNumberField = (field: 'maxPromptLength' | 'maxOutputLength' | 'timeout', value: string) => {
 		const num = value.trim() === '' ? undefined : Number(value.trim());
 
 		return num && Number.isFinite(num) && num > 0 ? undefined : `${field} must be a positive number.`;
 	};
 
 	const updateField = (
-		field: 'maxPromptLength' | 'maxOutputLength',
+		field: 'maxPromptLength' | 'maxOutputLength' | 'timeout',
 		value: string,
 		setter: React.Dispatch<React.SetStateAction<string>>
 	) => {
@@ -55,9 +58,10 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 		/* final synchronous validation */
 		const maxPromptErr = validateNumberField('maxPromptLength', maxPromptLength);
 		const maxOutputErr = validateNumberField('maxOutputLength', maxOutputLength);
+		const timeoutErr = validateNumberField('timeout', maxOutputLength);
 
-		if (maxPromptErr || maxOutputErr) {
-			setErrors({ maxPromptLength: maxPromptErr, maxOutputLength: maxOutputErr });
+		if (maxPromptErr || maxOutputErr || timeoutErr) {
+			setErrors({ maxPromptLength: maxPromptErr, maxOutputLength: maxOutputErr, timeout: timeoutErr });
 			return;
 		}
 
@@ -66,6 +70,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 			stream,
 			maxPromptLength: maxPromptLength.trim() === '' ? currentModel.maxPromptLength : Number(maxPromptLength.trim()),
 			maxOutputLength: maxOutputLength.trim() === '' ? currentModel.maxOutputLength : Number(maxOutputLength.trim()),
+			timeout: timeout.trim() === '' ? currentModel.timeout : Number(timeout.trim()),
 			systemPrompt,
 		};
 
@@ -90,7 +95,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-4 cursor-pointer">
 							<span className="label-text text-sm">Streaming</span>
-							<span className="label-text-alt tooltip" data-tip="Stream data continuously.">
+							<span className="label-text-alt tooltip tooltip-right" data-tip="Stream data continuously.">
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
@@ -110,7 +115,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-4">
 							<span className="label-text text-sm">Max Prompt Tokens</span>
-							<span className="label-text-alt tooltip" data-tip="Maximum tokens for input prompt">
+							<span className="label-text-alt tooltip tooltip-right" data-tip="Maximum tokens for input prompt">
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
@@ -139,7 +144,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-4">
 							<span className="label-text text-sm">Max Output Tokens</span>
-							<span className="label-text-alt tooltip" data-tip="Maximum tokens for model output">
+							<span className="label-text-alt tooltip tooltip-right" data-tip="Maximum tokens for model output">
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
@@ -164,11 +169,43 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 						</div>
 					</div>
 
+					{/* timeout */}
+					<div className="grid grid-cols-12 items-center gap-2">
+						<label className="label col-span-4">
+							<span className="label-text text-sm">Timeout&nbsp;(s)</span>
+							<span
+								className="label-text-alt tooltip tooltip-right"
+								data-tip="Maximum time a request can take (seconds)"
+							>
+								<FiHelpCircle size={12} />
+							</span>
+						</label>
+						<div className="col-span-8">
+							<input
+								type="text"
+								value={timeout}
+								onChange={e => {
+									updateField('timeout', e.target.value, setTimeout);
+								}}
+								className={`input input-bordered w-full rounded-xl ${errors.timeout ? 'input-error' : ''}`}
+								placeholder={`Default: ${currentModel.timeout}`}
+								spellCheck="false"
+							/>
+							{errors.timeout && (
+								<div className="label">
+									<span className="label-text-alt text-error flex items-center gap-1">
+										<FiAlertCircle size={12} /> {errors.timeout}
+									</span>
+								</div>
+							)}
+						</div>
+					</div>
+
 					{/* system prompt */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-4">
 							<span className="label-text text-sm">System Prompt</span>
-							<span className="label-text-alt tooltip" data-tip="Behavior instructions">
+							<span className="label-text-alt tooltip tooltip-right" data-tip="Behavior instructions">
 								<FiHelpCircle size={12} />
 							</span>
 						</label>

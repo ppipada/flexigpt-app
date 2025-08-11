@@ -189,27 +189,32 @@ const ChatScreen: FC = () => {
 
 			const onStreamTextData = (textData: string) => {
 				setStreamedMessage(prev => {
-					if (prev !== '') {
-						return prev + textData;
-					}
-					updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 1].content = textData;
+					const next = prev + textData;
+
+					/* Always copy the current assistant text into the conversation message
+					       object so that we do not lose it when the stream aborts.                */
+					const lastIdx = updatedChatWithConvoMessage.messages.length - 1;
+					updatedChatWithConvoMessage.messages[lastIdx].content = next;
 					updatedChatWithConvoMessage.modifiedAt = new Date();
-					setChat(updatedChatWithConvoMessage);
-					return textData;
+
+					/* A full re-render is only needed for the very first token.               */
+					if (prev === '') setChat({ ...updatedChatWithConvoMessage });
+
+					return next;
 				});
 			};
 
 			const onStreamThinkingData = (thinkingData: string) => {
 				setStreamedMessage(prev => {
 					const data = thinkingData ? getBlockQuotedLines(thinkingData) + '\n' : '';
-					console.log(data);
-					if (prev !== '') {
-						return prev + data;
-					}
-					updatedChatWithConvoMessage.messages[updatedChatWithConvoMessage.messages.length - 1].content = data;
+					const next = prev + data;
+					const last = updatedChatWithConvoMessage.messages.length - 1;
+
+					updatedChatWithConvoMessage.messages[last].content = next;
 					updatedChatWithConvoMessage.modifiedAt = new Date();
-					setChat(updatedChatWithConvoMessage);
-					return data;
+					if (prev === '') setChat({ ...updatedChatWithConvoMessage });
+
+					return next;
 				});
 			};
 

@@ -38,15 +38,20 @@ function getQuotedJSON(obj: any): string {
 }
 
 function parseAPIResponse(convoMessage: ConversationMessage, providerResp: CompletionResponse | undefined) {
-	let respContent = '';
+	/* Start with whatever has been streamed already so we never lose it. */
+	let respContent = convoMessage.content || '';
+
 	let respDetails: string | undefined;
 	let requestDetails: string | undefined;
 	if (providerResp) {
-		if (providerResp.thinkingContent) {
-			respContent += getBlockQuotedLines(providerResp.thinkingContent) + '\n';
-		}
-		if (providerResp.respContent) {
-			respContent += providerResp.respContent;
+		/* If we have the **full** answer overwrite the streamed one,
+		       otherwise leave the streamed part untouched.                         */
+		if (providerResp.thinkingContent || providerResp.respContent) {
+			respContent = '';
+			if (providerResp.thinkingContent) {
+				respContent += getBlockQuotedLines(providerResp.thinkingContent) + '\n';
+			}
+			if (providerResp.respContent) respContent += providerResp.respContent;
 		}
 		if (providerResp.responseDetails) {
 			respDetails = getQuotedJSON(providerResp.responseDetails);
@@ -62,7 +67,7 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Compl
 			if (providerResp.errorDetails.requestDetails) {
 				requestDetails = getQuotedJSON(providerResp.errorDetails.requestDetails);
 			}
-			respContent += '\nGot error in api processing. Check details...';
+			respContent += '\n\n>Got error in api processing. Check details...';
 		}
 	}
 
