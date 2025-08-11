@@ -2,14 +2,10 @@ package inference
 
 import (
 	"context"
-	"errors"
 	"slices"
 	"strings"
 
-	"github.com/ppipada/flexigpt-app/pkg/builtin"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
-	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
-	"github.com/tmc/langchaingo/llms"
 )
 
 type CompletionProvider interface {
@@ -23,192 +19,14 @@ type CompletionProvider interface {
 		ctx context.Context,
 		apiKey string,
 	) error
-	GetLLMsModel(ctx context.Context) llms.Model
 	FetchCompletion(
 		ctx context.Context,
-		llm llms.Model,
 		prompt string,
 		modelParams spec.ModelParams,
 		prevMessages []spec.ChatCompletionRequestMessage,
 		OnStreamTextData func(textData string) error,
 		OnStreamThinkingData func(thinkingData string) error,
 	) (*spec.CompletionResponse, error)
-}
-
-var LangchainRoleMap = map[spec.ChatCompletionRoleEnum]llms.ChatMessageType{
-	// No developer prompt support in langchain as of now.
-	spec.Developer: llms.ChatMessageTypeSystem,
-	spec.System:    llms.ChatMessageTypeSystem,
-	spec.User:      llms.ChatMessageTypeHuman,
-	spec.Assistant: llms.ChatMessageTypeAI,
-	spec.Function:  llms.ChatMessageTypeTool,
-}
-
-type BaseAIAPI struct {
-	ProviderParams *spec.ProviderParams
-	Debug          bool
-}
-
-// NewOpenAIAPI creates a new instance of BaseAIAPI with input ProviderParams.
-func NewBaseAIAPI(p *spec.ProviderParams, debug bool) (*BaseAIAPI, error) {
-	if p == nil || p.Name == "" || p.Origin == "" {
-		return nil, errors.New("invalid args")
-	}
-	return &BaseAIAPI{
-		ProviderParams: p,
-		Debug:          debug,
-	}, nil
-}
-
-// IsConfigured checks if the API is configured.
-func (api *BaseAIAPI) IsConfigured(ctx context.Context) bool {
-	return api.ProviderParams.APIKey != ""
-}
-
-func (api *BaseAIAPI) GetProviderInfo(ctx context.Context) *spec.ProviderParams {
-	return api.ProviderParams
-}
-
-// SetProviderAPIKey sets the key for a provider.
-func (api *BaseAIAPI) SetProviderAPIKey(
-	ctx context.Context,
-	apiKey string,
-) error {
-	if apiKey == "" {
-		return errors.New("invalid apikey provided")
-	}
-	if api.ProviderParams == nil {
-		return errors.New("no ProviderParams found")
-	}
-
-	api.ProviderParams.APIKey = apiKey
-
-	return nil
-}
-
-// FetchCompletion processes the completion request.
-func (api *BaseAIAPI) FetchCompletion(
-	ctx context.Context,
-	llm llms.Model,
-	prompt string,
-	modelParams spec.ModelParams,
-	prevMessages []spec.ChatCompletionRequestMessage,
-	onStreamTextData, onStreamThinkingData func(string) error,
-) (*spec.CompletionResponse, error) {
-	input := getCompletionRequest(prompt, modelParams, prevMessages)
-	if len(input.Messages) == 0 {
-		return nil, errors.New("empty input messages")
-	}
-	if llm == nil {
-		return nil, errors.New("llm not initialized")
-	}
-
-	options := []llms.CallOption{
-		llms.WithModel(string(input.ModelParams.Name)),
-	}
-	// PrintJSON(input.ModelParams).
-
-	if input.ModelParams.Temperature != nil {
-		options = append(options, llms.WithTemperature(*input.ModelParams.Temperature))
-	}
-	if rp := input.ModelParams.Reasoning; rp != nil &&
-		rp.Type == modelpresetSpec.ReasoningTypeHybridWithTokens {
-		options = append(options, llms.WithReasoning(llms.Reasoning{
-			IsEnabled: true,
-			Mode:      llms.ReasoningModeTokens,
-			Tokens:    rp.Tokens,
-		}))
-	}
-	if rp := input.ModelParams.Reasoning; rp != nil &&
-		rp.Type == modelpresetSpec.ReasoningTypeSingleWithLevels {
-		options = append(options, llms.WithReasoning(llms.Reasoning{
-			IsEnabled: true,
-			Mode:      llms.ReasoningModeLevel,
-			Level:     llms.ReasoningLevel(rp.Level),
-		}))
-	}
-	options = append(options, llms.WithMaxTokens(input.ModelParams.MaxOutputLength))
-
-	var textWriter func(string) error
-	var textFlush func()
-
-	var thinkingWriter func(string) error
-	var thinkingFlush func()
-	if input.ModelParams.Stream && onStreamThinkingData != nil && onStreamTextData != nil {
-		textWriter, textFlush = NewBufferedStreamer(onStreamTextData, FlushInterval, FlushChunkSize)
-		if input.ModelParams.Reasoning != nil {
-			thinkingWriter, thinkingFlush = NewBufferedStreamer(
-				onStreamThinkingData,
-				FlushInterval,
-				FlushChunkSize,
-			)
-			streamingReasoningFunc := func(ctx context.Context, reasoningChunk []byte, chunk []byte) error {
-				rc := string(reasoningChunk)
-				var thinkErr error
-				var textErr error
-				if rc != "" {
-					thinkErr = thinkingWriter(rc)
-				}
-				t := string(chunk)
-				if t != "" {
-					textErr = textWriter(t)
-				}
-
-				return errors.Join(thinkErr, textErr)
-			}
-			options = append(options, llms.WithStreamingReasoningFunc(streamingReasoningFunc))
-		} else {
-			streamingFunc := func(ctx context.Context, chunk []byte) error {
-				return textWriter(string(chunk))
-			}
-			options = append(options, llms.WithStreamingFunc(streamingFunc))
-		}
-	}
-
-	content := []llms.MessageContent{}
-	if sp := input.ModelParams.SystemPrompt; sp != "" {
-		sysmsg := llms.TextParts(llms.ChatMessageTypeSystem, sp)
-		if api.ProviderParams.Name == builtin.ProviderNameOpenAI &&
-			strings.HasPrefix(string(input.ModelParams.Name), "o") {
-			sysmsg = llms.TextParts(llms.ChatMessageTypeDeveloper, sp)
-		}
-		content = append(content, sysmsg)
-	}
-	for _, msg := range input.Messages {
-		if msg.Content != nil {
-			content = append(content, llms.TextParts(LangchainRoleMap[msg.Role], *msg.Content))
-		}
-	}
-	if len(content) == 0 {
-		return nil, errors.New("empty input content messages")
-	}
-
-	completionResp := &spec.CompletionResponse{}
-
-	ctx = AddDebugResponseToCtx(ctx)
-	resp, err := llm.GenerateContent(ctx, content, options...)
-
-	// Make sure buffered data reaches the client.
-	if textFlush != nil {
-		textFlush()
-	}
-	if thinkingFlush != nil {
-		thinkingFlush()
-	}
-
-	isNilResp := resp == nil || len(resp.Choices) == 0 || resp.Choices[0] == nil
-	attachDebugResp(ctx, completionResp, err, isNilResp)
-	if isNilResp {
-		return completionResp, nil
-	}
-
-	if rc := resp.Choices[0].ReasoningContent; rc != "" {
-		completionResp.ThinkingContent = &rc
-	}
-	full := resp.Choices[0].Content
-	completionResp.RespContent = &full
-
-	return completionResp, nil
 }
 
 // attachDebugResp adds HTTP-debug information and error context—without panics.

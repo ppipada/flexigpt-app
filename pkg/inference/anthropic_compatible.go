@@ -10,8 +10,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 
-	"github.com/tmc/langchaingo/llms"
-
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
 )
@@ -128,14 +126,8 @@ func (api *AnthropicCompatibleAPI) SetProviderAPIKey(ctx context.Context, apiKey
 	return nil
 }
 
-func (api *AnthropicCompatibleAPI) GetLLMsModel(ctx context.Context) llms.Model {
-	// Not using langchaingo model here; return nil.
-	return nil
-}
-
 func (api *AnthropicCompatibleAPI) FetchCompletion(
 	ctx context.Context,
-	_ llms.Model, // Unused.
 	prompt string,
 	modelParams spec.ModelParams,
 	prevMessages []spec.ChatCompletionRequestMessage,

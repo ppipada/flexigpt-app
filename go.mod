@@ -12,16 +12,13 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/openai/openai-go/v2 v2.0.0
 	github.com/philippgille/chromem-go v0.7.0
-	github.com/tmc/langchaingo v0.0.0-00010101000000-000000000000
 	github.com/wailsapp/wails/v2 v2.10.2
 	github.com/zalando/go-keyring v0.2.6
 )
 
 require (
-	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/pkoukk/tiktoken-go v0.1.7 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/spf13/cobra v1.9.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
@@ -65,5 +62,3 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
 )
-
-replace github.com/tmc/langchaingo => github.com/ppipada/langchaingo v0.0.0-20250418112152-5e6e671ff95a

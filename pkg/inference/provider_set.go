@@ -126,7 +126,6 @@ func (ps *ProviderSetAPI) FetchCompletion(
 
 	resp, err := p.FetchCompletion(
 		ctx,
-		p.GetLLMsModel(ctx),
 		req.Body.Prompt,
 		req.Body.ModelParams,
 		req.Body.PrevMessages,

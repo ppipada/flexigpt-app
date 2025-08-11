@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tmc/langchaingo/llms"
-
 	"github.com/openai/openai-go/v2"
 	"github.com/openai/openai-go/v2/option"
 	"github.com/openai/openai-go/v2/shared"
@@ -133,13 +131,8 @@ func (api *OpenAICompatibleAPI) SetProviderAPIKey(
 	return nil
 }
 
-func (api *OpenAICompatibleAPI) GetLLMsModel(ctx context.Context) llms.Model {
-	return nil
-}
-
 func (api *OpenAICompatibleAPI) FetchCompletion(
 	ctx context.Context,
-	_ llms.Model, // Unused.
 	prompt string,
 	modelParams spec.ModelParams,
 	prevMessages []spec.ChatCompletionRequestMessage,
