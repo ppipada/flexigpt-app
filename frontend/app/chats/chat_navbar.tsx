@@ -14,6 +14,7 @@ interface ChatNavBarProps {
 	onSelectConversation: (item: ConversationSearchItem) => Promise<void>;
 	chatTitle: string;
 	searchRefreshKey: number;
+	disabled: boolean;
 }
 
 const ChatNavBar: FC<ChatNavBarProps> = ({
@@ -22,6 +23,7 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 	onSelectConversation,
 	chatTitle,
 	searchRefreshKey,
+	disabled,
 }) => {
 	return (
 		<div className="flex-1 flex-col items-center">
@@ -32,6 +34,7 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 				<button
 					className="btn btn-sm btn-ghost mx-1"
 					onClick={onNewChat}
+					disabled={disabled}
 					aria-label="Create New Chat"
 					title="Create New Chat"
 				>

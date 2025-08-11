@@ -10,15 +10,7 @@
 
     - [ ] create model preset should allow the api function type
 
-  - [ ] UI:
-
-    - [ ] Thinking should be a collapsible card / dropdown / something inside the message block. Figure out the UX and implement.
-    - [x] Create provider should allow to choose the api sdk type
-    - [ ] ~~Need to allow adding models to inbuilt providers, may need to list compatible ones in existing copy flow~~
-    - [ ] ~~Need to check provider compatibility during "copy existing" flow for models i.e sdk should match. Add current providers models first, then add such models and then incompatable ones after that.~~
-    - [x] If there was some amount of data that was streamed, but error occured at end someplace, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is. This is mostly UI issue.
-    - [x] Need timeout in chat input field edit at runtime
-    - [ ] Need request cancel and request resend and response fetch synchronizations
+  - [ ] Thinking should be a collapsible card / dropdown / something inside the message block. Figure out the UX and implement.
 
 - [ ] CPU is high when "thinking". Need to debug
 

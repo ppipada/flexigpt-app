@@ -102,7 +102,10 @@ export interface IProviderSetAPI {
 		prompt: string,
 		modelParams: ModelParams,
 		prevMessages?: Array<ChatCompletionRequestMessage>,
+		requestId?: string,
+		signal?: AbortSignal,
 		onStreamTextData?: (textData: string) => void,
 		onStreamThinkingData?: (thinkingData: string) => void
 	): Promise<CompletionResponse | undefined>;
+	cancelCompletion(requestId: string): Promise<void>;
 }

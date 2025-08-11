@@ -442,3 +442,12 @@
     - [x] Add Google also as openai compatible provider for now. gemini dev ai additions.
 
   - [x] Anthropic
+
+  - [x] UI:
+
+    - [x] Create provider should allow to choose the api sdk type
+    - [ ] ~~Need to allow adding models to inbuilt providers, may need to list compatible ones in existing copy flow~~
+    - [ ] ~~Need to check provider compatibility during "copy existing" flow for models i.e sdk should match. Add current providers models first, then add such models and then incompatable ones after that.~~
+    - [x] If there was some amount of data that was streamed, but error occured at end someplace, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is. This is mostly UI issue.
+    - [x] Need timeout in chat input field edit at runtime
+    - [x] Need request cancel and request resend and response fetch synchronizations

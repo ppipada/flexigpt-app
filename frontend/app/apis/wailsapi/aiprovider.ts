@@ -1,9 +1,9 @@
 import type { ChatCompletionRequestMessage, CompletionResponse, IProviderSetAPI, ModelParams } from '@/spec/aiprovider';
 import type { ProviderName } from '@/spec/modelpreset';
 
-import { FetchCompletion } from '@/apis/wailsjs/go/main/ProviderSetWrapper';
+import { CancelCompletion, FetchCompletion } from '@/apis/wailsjs/go/main/ProviderSetWrapper';
 import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
-import { EventsOn } from '@/apis/wailsjs/runtime/runtime';
+import { EventsOff, EventsOn } from '@/apis/wailsjs/runtime/runtime';
 
 /**
  * @public
@@ -16,45 +16,87 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		provider: ProviderName,
 		prompt: string,
 		modelParams: ModelParams,
-		prevMessages?: Array<ChatCompletionRequestMessage>,
-		onStreamTextData?: (textData: string) => void,
-		onStreamThinkingData?: (thinkingData: string) => void
+		prevMessages?: ChatCompletionRequestMessage[],
+		requestId?: string,
+		signal?: AbortSignal,
+		onStreamTextData?: (text: string) => void,
+		onStreamThinkingData?: (text: string) => void
 	): Promise<CompletionResponse | undefined> {
-		let textCallbackId: string = '';
-		let thinkingCallbackId: string = '';
+		let textCallbackId = '';
+		let thinkingCallbackId = '';
 
 		if (onStreamTextData && onStreamThinkingData) {
-			let prevTextData: string = '';
-			textCallbackId = `text-${Date.now().toString()}-${Math.random().toString(36).substring(2, 9)}`;
-			const cbText = (textData: string) => {
-				const d = textData.trim();
-				if (d !== prevTextData) {
-					prevTextData = d;
+			const uid = requestId ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+			textCallbackId = `text-${uid}`;
+			thinkingCallbackId = `thinking-${uid}`;
+
+			let lastText = '';
+			const textCb = (t: string) => {
+				const d = t.trim();
+				if (d !== lastText) {
+					lastText = d;
 					onStreamTextData(d);
 				}
 			};
-			EventsOn(textCallbackId, cbText);
+			EventsOn(textCallbackId, textCb);
 
-			let prevThinkingData: string = '';
-			thinkingCallbackId = `thinking-${Date.now().toString()}-${Math.random().toString(36).substring(2, 9)}`;
-			const cbThinking = (thinkingData: string) => {
-				const d = thinkingData.trim();
-				if (d !== prevThinkingData) {
-					prevThinkingData = d;
+			let lastThinking = '';
+			const thinkingCb = (t: string) => {
+				const d = t.trim();
+				if (d !== lastThinking) {
+					lastThinking = d;
 					onStreamThinkingData(d);
 				}
 			};
-			EventsOn(thinkingCallbackId, cbThinking);
+			EventsOn(thinkingCallbackId, thinkingCb);
 		}
 
-		const response = await FetchCompletion(
+		const responsePromise = FetchCompletion(
 			provider,
 			prompt,
 			modelParams as wailsSpec.ModelParams,
 			prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionRequestMessage[]) : [],
 			textCallbackId,
-			thinkingCallbackId
+			thinkingCallbackId,
+			requestId ?? ''
 		);
-		return response.Body as CompletionResponse;
+
+		const abortPromise: Promise<never> = new Promise((_, reject) => {
+			// Already aborted before we even start?
+			if (signal?.aborted) {
+				reject(new DOMException('Aborted', 'AbortError'));
+				return;
+			}
+
+			const abortHandler = () => {
+				/* Detach server-side and local listeners */
+				this.cancelCompletion(requestId ?? '').catch(() => {});
+				EventsOff(textCallbackId);
+				EventsOff(thinkingCallbackId);
+
+				reject(new DOMException('Aborted', 'AbortError'));
+			};
+
+			signal?.addEventListener('abort', abortHandler, { once: true });
+		});
+
+		try {
+			const resp = await Promise.race([responsePromise, abortPromise]);
+			return resp.Body as CompletionResponse;
+		} finally {
+			/* Always clean up – even when the race rejected with AbortError */
+			if (textCallbackId) EventsOff(textCallbackId);
+			if (thinkingCallbackId) EventsOff(thinkingCallbackId);
+		}
+	}
+
+	async cancelCompletion(requestId: string): Promise<void> {
+		if (!requestId) return;
+		try {
+			await CancelCompletion(requestId);
+		} catch {
+			/* Swallow any Go-side error; we only care that the signal aborts */
+		}
 	}
 }

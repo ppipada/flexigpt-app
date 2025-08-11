@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"sync"
 
 	"github.com/ppipada/flexigpt-app/pkg/inference"
 	inferenceSpec "github.com/ppipada/flexigpt-app/pkg/inference/spec"
@@ -13,8 +14,10 @@ import (
 )
 
 type ProviderSetWrapper struct {
-	providersetAPI *inference.ProviderSetAPI
-	appContext     context.Context
+	providersetAPI      *inference.ProviderSetAPI
+	appContext          context.Context
+	completionCancelMux sync.Mutex
+	completionCancels   map[string]context.CancelFunc
 }
 
 // NewProviderSetWrapper creates a new ProviderSet with the specified default provider.
@@ -26,6 +29,7 @@ func InitProviderSetWrapper(
 		return errors.Join(err, errors.New("invalid default provider"))
 	}
 	ps.providersetAPI = p
+	ps.completionCancels = map[string]context.CancelFunc{}
 	return nil
 }
 
@@ -65,8 +69,30 @@ func (w *ProviderSetWrapper) FetchCompletion(
 	prevMessages []inferenceSpec.ChatCompletionRequestMessage,
 	textCallbackID string,
 	thinkingCallbackID string,
+	requestID string,
 ) (*inferenceSpec.FetchCompletionResponse, error) {
 	return middleware.WithRecoveryResp(func() (*inferenceSpec.FetchCompletionResponse, error) {
+		if requestID == "" {
+			return nil, errors.New("requestID is empty")
+		}
+
+		ctx, cancel := context.WithCancel(w.appContext)
+
+		w.completionCancelMux.Lock()
+		w.completionCancels[requestID] = cancel
+		w.completionCancelMux.Unlock()
+		defer func() {
+			w.completionCancelMux.Lock()
+			delete(w.completionCancels, requestID)
+			w.completionCancelMux.Unlock()
+			if textCallbackID != "" {
+				runtime.EventsOff(w.appContext, textCallbackID)
+			}
+			if thinkingCallbackID != "" {
+				runtime.EventsOff(w.appContext, thinkingCallbackID)
+			}
+		}()
+
 		reqBody := &inferenceSpec.FetchCompletionRequestBody{
 			Provider:     modelpresetSpec.ProviderName(provider),
 			Prompt:       prompt,
@@ -88,7 +114,7 @@ func (w *ProviderSetWrapper) FetchCompletion(
 			Body: reqBody,
 		}
 		resp, err := w.providersetAPI.FetchCompletion(
-			context.Background(),
+			ctx,
 			req,
 		)
 		if err != nil {
@@ -97,4 +123,13 @@ func (w *ProviderSetWrapper) FetchCompletion(
 
 		return resp, nil
 	})
+}
+
+func (w *ProviderSetWrapper) CancelCompletion(id string) {
+	w.completionCancelMux.Lock()
+	defer w.completionCancelMux.Unlock()
+	if c, ok := w.completionCancels[id]; ok {
+		c()
+		delete(w.completionCancels, id)
+	}
 }

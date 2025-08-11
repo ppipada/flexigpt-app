@@ -6,12 +6,16 @@ export function AddProvider(arg1) {
   return window['go']['main']['ProviderSetWrapper']['AddProvider'](arg1);
 }
 
+export function CancelCompletion(arg1) {
+  return window['go']['main']['ProviderSetWrapper']['CancelCompletion'](arg1);
+}
+
 export function DeleteProvider(arg1) {
   return window['go']['main']['ProviderSetWrapper']['DeleteProvider'](arg1);
 }
 
-export function FetchCompletion(arg1, arg2, arg3, arg4, arg5, arg6) {
-  return window['go']['main']['ProviderSetWrapper']['FetchCompletion'](arg1, arg2, arg3, arg4, arg5, arg6);
+export function FetchCompletion(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
+  return window['go']['main']['ProviderSetWrapper']['FetchCompletion'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
 export function SetProviderAPIKey(arg1) {

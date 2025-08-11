@@ -44,13 +44,18 @@ const ChatScreen: FC = () => {
 	const [chat, setChat] = useState<Conversation>(initConversation());
 	const [searchRefreshKey, setSearchRefreshKey] = useState(0);
 	const [inputHeight, setInputHeight] = useState(0);
+
 	const [streamedMessage, setStreamedMessage] = useState('');
-	const [isStreaming, setIsStreaming] = useState(false);
+	const [isBusy, setIsBusy] = useState(false);
+
+	/* Currently running request */
+	const abortRef = useRef<AbortController | null>(null);
+	const requestIdRef = useRef<string | null>(null); // will go to backend for cancellation
 
 	const chatInputRef = useRef<ChatInputFieldHandle>(null);
 	const chatContainerRef = useRef<HTMLDivElement>(null);
+	const tokensReceivedRef = useRef<boolean | null>(false);
 
-	const isSubmittingRef = useRef(false);
 	// Has the current conversation already been persisted?
 	const isChatPersistedRef = useRef(false);
 	const { isAtBottom, isScrollable, checkScroll } = useAtBottom(chatContainerRef);
@@ -62,7 +67,7 @@ const ChatScreen: FC = () => {
 
 	// Get the scroll down button active via regular check.
 	useEffect(() => {
-		if (!isStreaming) return;
+		if (!isBusy) return;
 
 		const interval = setInterval(() => {
 			checkScroll();
@@ -71,7 +76,7 @@ const ChatScreen: FC = () => {
 		return () => {
 			clearInterval(interval);
 		};
-	}, [isStreaming, checkScroll]);
+	}, [isBusy, checkScroll]);
 
 	// Scroll to bottom. Tell the browser to bring the sentinel into view.
 	const scrollToBottom = () => {
@@ -80,11 +85,9 @@ const ChatScreen: FC = () => {
 		}
 	};
 	useEffect(() => {
-		const timeout = setTimeout(() => {
-			scrollToBottom();
-		}, 100);
+		const t = setTimeout(scrollToBottom, 100);
 		return () => {
-			clearTimeout(timeout);
+			clearTimeout(t);
 		};
 	}, [chat.messages]);
 
@@ -94,6 +97,7 @@ const ChatScreen: FC = () => {
 	};
 
 	const handleNewChat = async () => {
+		if (isBusy) return;
 		if (chat.messages.length === 0) {
 			chatInputRef.current?.focus();
 			return;
@@ -149,7 +153,7 @@ const ChatScreen: FC = () => {
 		}
 
 		// update local React state
-		setChat(updatedChat);
+		setChat({ ...updatedChat, messages: [...updatedChat.messages] });
 	};
 
 	const handleSelectConversation = useCallback(async (item: ConversationSearchItem) => {
@@ -167,12 +171,21 @@ const ChatScreen: FC = () => {
 
 	const updateStreamingMessage = useCallback(
 		async (updatedChatWithUserMessage: Conversation, options: ChatOption) => {
+			// Abort older request (if any) and reset UI
+			abortRef.current?.abort();
+			tokensReceivedRef.current = false;
+			setIsBusy(true);
+
+			abortRef.current = new AbortController();
+
+			/* Generate a unique request-ID so that the Go side can cancel, too */
+			requestIdRef.current = crypto.randomUUID();
+
 			let prevMessages = updatedChatWithUserMessage.messages;
 			if (options.disablePreviousMessages) {
 				prevMessages = [updatedChatWithUserMessage.messages[updatedChatWithUserMessage.messages.length - 1]];
 			}
 
-			setIsStreaming(true);
 			setStreamedMessage('');
 
 			await new Promise(res => setTimeout(res, 0));
@@ -188,6 +201,8 @@ const ChatScreen: FC = () => {
 			setChat({ ...updatedChatWithConvoMessage, messages: [...updatedChatWithConvoMessage.messages] });
 
 			const onStreamTextData = (textData: string) => {
+				if (textData) tokensReceivedRef.current = true;
+
 				setStreamedMessage(prev => {
 					const next = prev + textData;
 
@@ -205,6 +220,7 @@ const ChatScreen: FC = () => {
 			};
 
 			const onStreamThinkingData = (thinkingData: string) => {
+				if (thinkingData) tokensReceivedRef.current = true;
 				setStreamedMessage(prev => {
 					const data = thinkingData ? getBlockQuotedLines(thinkingData) + '\n' : '';
 					const next = prev + data;
@@ -229,53 +245,75 @@ const ChatScreen: FC = () => {
 				timeout: options.timeout,
 				additionalParametersRawJSON: options.additionalParametersRawJSON,
 			};
+			try {
+				const newMsg = await GetCompletionMessage(
+					options.providerName,
+					inputParams,
+					convoMsg,
+					prevMessages,
+					requestIdRef.current,
+					abortRef.current.signal,
+					onStreamTextData,
+					onStreamThinkingData
+				);
 
-			const newMsg = await GetCompletionMessage(
-				options.providerName,
-				inputParams,
-				convoMsg,
-				prevMessages,
-				onStreamTextData,
-				onStreamThinkingData
-			);
-
-			if (newMsg.requestDetails) {
-				if (updatedChatWithConvoMessage.messages.length > 1) {
-					const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
-					updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
-						i === prevIdx ? { ...m, details: newMsg.requestDetails } : m
-					);
+				if (newMsg.requestDetails) {
+					if (updatedChatWithConvoMessage.messages.length > 1) {
+						const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
+						updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
+							i === prevIdx ? { ...m, details: newMsg.requestDetails } : m
+						);
+					}
 				}
+
+				if (newMsg.responseMessage) {
+					const respMessage = newMsg.responseMessage;
+					// Create FRESH objects so React sees the change even in non-streaming
+					// mode, where `streamedMessage` never changes.
+					const finalChat: Conversation = {
+						...updatedChatWithConvoMessage,
+						messages: [...updatedChatWithConvoMessage.messages.slice(0, -1), respMessage],
+						modifiedAt: new Date(),
+					};
+
+					saveUpdatedChat(finalChat);
+				}
+			} catch (e) {
+				if ((e as DOMException).name === 'AbortError') {
+					// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+					if (!tokensReceivedRef.current) {
+						removeAssistantPlaceholder(convoMsg.id);
+					} else {
+						const last = updatedChatWithConvoMessage.messages.length - 1;
+
+						updatedChatWithConvoMessage.messages[last].content += '\n\n>API Aborted after partial response...';
+						updatedChatWithConvoMessage.modifiedAt = new Date();
+						saveUpdatedChat({ ...updatedChatWithConvoMessage });
+					}
+				} else {
+					console.error(e);
+				}
+			} finally {
+				setStreamedMessage('');
+				setIsBusy(false);
 			}
-
-			if (newMsg.responseMessage) {
-				const respMessage = newMsg.responseMessage;
-				// Create FRESH objects so React sees the change even in non-streaming
-				// mode, where `streamedMessage` never changes.
-				const finalChat: Conversation = {
-					...updatedChatWithConvoMessage,
-					messages: [...updatedChatWithConvoMessage.messages.slice(0, -1), respMessage],
-					modifiedAt: new Date(),
-				};
-
-				saveUpdatedChat(finalChat);
-			}
-
-			setStreamedMessage('');
-			setIsStreaming(false);
-
-			isSubmittingRef.current = false;
 		},
 		[saveUpdatedChat]
 	);
 
+	const removeAssistantPlaceholder = (msgId: string) => {
+		setChat(c => ({
+			...c,
+			messages: c.messages.filter(m => m.id !== msgId),
+			modifiedAt: new Date(),
+		}));
+	};
+
 	const sendMessage = async (text: string, options: ChatOption) => {
-		if (isSubmittingRef.current) return;
-		isSubmittingRef.current = true;
+		if (isBusy) return;
 
 		const trimmed = text.trim();
 		if (!trimmed) {
-			isSubmittingRef.current = false;
 			return;
 		}
 
@@ -291,6 +329,7 @@ const ChatScreen: FC = () => {
 
 	const handleEdit = useCallback(
 		async (edited: string, id: string) => {
+			if (isBusy) return;
 			const idx = chat.messages.findIndex(m => m.id === id);
 			if (idx === -1) return;
 
@@ -313,6 +352,7 @@ const ChatScreen: FC = () => {
 
 	const handleResend = useCallback(
 		async (id: string) => {
+			if (isBusy) return;
 			const idx = chat.messages.findIndex(m => m.id === id);
 			if (idx === -1) return;
 
@@ -329,14 +369,12 @@ const ChatScreen: FC = () => {
 
 	const renderedMessages = chat.messages.map((msg, idx) => {
 		const isPending =
-			isStreaming &&
+			isBusy &&
 			idx === chat.messages.length - 1 &&
 			msg.role === ConversationRoleEnum.assistant &&
 			msg.content.length === 0;
 		const live =
-			isStreaming && idx === chat.messages.length - 1 && msg.role === ConversationRoleEnum.assistant
-				? streamedMessage
-				: '';
+			isBusy && idx === chat.messages.length - 1 && msg.role === ConversationRoleEnum.assistant ? streamedMessage : '';
 
 		return (
 			<ChatMessage
@@ -346,6 +384,7 @@ const ChatScreen: FC = () => {
 				onResend={() => handleResend(msg.id)}
 				streamedMessage={live}
 				isPending={isPending}
+				isBusy={isBusy}
 			/>
 		);
 	});
@@ -361,6 +400,7 @@ const ChatScreen: FC = () => {
 						onSelectConversation={handleSelectConversation}
 						chatTitle={chat.title}
 						searchRefreshKey={searchRefreshKey}
+						disabled={isBusy}
 					/>
 				</div>
 			</div>
@@ -370,17 +410,22 @@ const ChatScreen: FC = () => {
 				<div
 					className="w-full grow flex justify-center overflow-y-auto"
 					ref={chatContainerRef}
-					style={{ maxHeight: `calc(100vh - 196px - ${inputHeight}px)` }}
+					style={{ maxHeight: `calc(100vh - 208px - ${inputHeight}px)` }}
 				>
 					<div className="w-11/12 lg:w-5/6">
 						<div className="w-full flex-1 space-y-4">{renderedMessages}</div>
 					</div>
 				</div>
-
 				{/* INPUT */}
 				<div className="w-full flex justify-center fixed bottom-0 mb-3">
 					<div className="w-11/12 lg:w-5/6">
-						<ChatInputField ref={chatInputRef} onSend={sendMessage} setInputHeight={setInputHeight} />
+						<ChatInputField
+							ref={chatInputRef}
+							onSend={sendMessage}
+							setInputHeight={setInputHeight}
+							isBusy={isBusy}
+							abortRef={abortRef}
+						/>
 					</div>
 				</div>
 			</div>

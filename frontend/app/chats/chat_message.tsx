@@ -16,9 +16,10 @@ interface ChatMessageProps {
 	onResend: () => void;
 	streamedMessage: string;
 	isPending: boolean;
+	isBusy: boolean;
 }
 
-const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamedMessage, isPending }) => {
+const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamedMessage, isPending, isBusy }) => {
 	const isUser = message.role === ConversationRoleEnum.user;
 	const align = !isUser ? 'items-end text-left' : 'items-start text-left';
 	const leftColSpan = !isUser ? 'col-span-1 lg:col-span-2' : 'col-span-1';
@@ -54,7 +55,7 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 			</div>
 
 			<div
-				className={`col-span-10 lg:col-span-9 row-start-1 row-end-1 overflow-x-auto rounded-2xl ${streamedMessage ? '' : 'shadow-lg'}`}
+				className={`bg-base-100 col-span-10 lg:col-span-9 row-start-1 row-end-1 overflow-x-auto rounded-2xl ${streamedMessage ? '' : 'shadow-lg'}`}
 			>
 				{isEditing ? (
 					<EditBox
@@ -94,6 +95,7 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 						onResend={onResend}
 						messageDetails={message.details ?? ''}
 						isStreaming={!!streamedMessage}
+						isBusy={isBusy}
 					/>
 				)}
 			</div>
@@ -112,6 +114,7 @@ function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
 	if (prev.streamedMessage !== next.streamedMessage) return false;
 
 	if (prev.isPending !== next.isPending) return false;
+	if (prev.isBusy !== next.isBusy) return false;
 
 	// If the *object reference* for the ConversationMessage changes
 	// React must re-render (content edited, message appended).

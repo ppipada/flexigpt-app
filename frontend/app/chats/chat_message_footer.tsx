@@ -14,6 +14,7 @@ interface ChatMessageFooterAreaProps {
 	onResend: () => void;
 	messageDetails: string;
 	isStreaming: boolean;
+	isBusy: boolean;
 }
 
 const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
@@ -23,6 +24,7 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 	onResend,
 	messageDetails,
 	isStreaming,
+	isBusy,
 }) => {
 	const [isExpanded, setIsExpanded] = useState(false);
 
@@ -33,34 +35,34 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 	return (
 		<div className="p-1">
 			<div className="flex justify-between items-center h-8">
-				<div className="flex items-center">
-					<>
-						<CopyButton
-							value={cardContent}
-							className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
-							size={16}
-						/>
-						{isUser && (
-							<button
-								className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
-								onClick={onEdit}
-								aria-label="Edit Message"
-								title="Edit Message"
-							>
-								<FiEdit size={16} />
-							</button>
-						)}
-						{isUser && (
-							<button
-								className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
-								onClick={onResend}
-								aria-label="Resend Message"
-								title="Resend Message"
-							>
-								<FiRepeat size={16} />
-							</button>
-						)}
-					</>
+				<div className="flex items-center gap-1">
+					<CopyButton
+						value={cardContent}
+						className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
+						size={16}
+					/>
+					{isUser && (
+						<button
+							className={`btn btn-sm !bg-transparent border-none flex items-center shadow-none ${isBusy ? 'btn-disabled' : ''}`}
+							onClick={onEdit}
+							aria-label="Edit Message"
+							title="Edit Message"
+							disabled={isBusy}
+						>
+							<FiEdit size={16} />
+						</button>
+					)}
+					{isUser && (
+						<button
+							className={`btn btn-sm !bg-transparent border-none flex items-center shadow-none ${isBusy ? 'btn-disabled' : ''}`}
+							onClick={onResend}
+							aria-label="Resend Message"
+							title="Resend Message"
+							disabled={isBusy}
+						>
+							<FiRepeat size={16} />
+						</button>
+					)}
 				</div>
 				{isStreaming && (
 					<div className="text-sm">
@@ -80,7 +82,7 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 				</button>
 			</div>
 			{isExpanded && messageDetails && (
-				<div className="mt-2 overflow-hidden shadow-lg rounded-2xl">
+				<div className="bg-base-100 mt-2 overflow-hidden shadow-lg rounded-2xl">
 					<ChatMessageContent
 						content={messageDetails}
 						streamedText=""

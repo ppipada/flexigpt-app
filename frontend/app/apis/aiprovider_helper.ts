@@ -39,20 +39,16 @@ function getQuotedJSON(obj: any): string {
 
 function parseAPIResponse(convoMessage: ConversationMessage, providerResp: CompletionResponse | undefined) {
 	/* Start with whatever has been streamed already so we never lose it. */
-	let respContent = convoMessage.content || '';
+	let respContent = '';
 
 	let respDetails: string | undefined;
 	let requestDetails: string | undefined;
 	if (providerResp) {
-		/* If we have the **full** answer overwrite the streamed one,
-		       otherwise leave the streamed part untouched.                         */
-		if (providerResp.thinkingContent || providerResp.respContent) {
-			respContent = '';
-			if (providerResp.thinkingContent) {
-				respContent += getBlockQuotedLines(providerResp.thinkingContent) + '\n';
-			}
-			if (providerResp.respContent) respContent += providerResp.respContent;
+		if (providerResp.thinkingContent) {
+			respContent += getBlockQuotedLines(providerResp.thinkingContent) + '\n';
 		}
+		if (providerResp.respContent) respContent += providerResp.respContent;
+
 		if (providerResp.responseDetails) {
 			respDetails = getQuotedJSON(providerResp.responseDetails);
 		}
@@ -67,8 +63,15 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Compl
 			if (providerResp.errorDetails.requestDetails) {
 				requestDetails = getQuotedJSON(providerResp.errorDetails.requestDetails);
 			}
+			if (respContent === '') {
+				respContent = convoMessage.content;
+			}
 			respContent += '\n\n>Got error in api processing. Check details...';
 		}
+	}
+
+	if (respContent === '') {
+		respContent = convoMessage.content;
 	}
 
 	convoMessage.content = respContent;
@@ -81,9 +84,11 @@ async function handleDirectCompletion(
 	provider: ProviderName,
 	prompt: string,
 	modelParams: ModelParams,
-	prevMessages: Array<ChatCompletionRequestMessage>
+	prevMessages: Array<ChatCompletionRequestMessage>,
+	requestId?: string,
+	signal?: AbortSignal
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
-	const providerResp = await providerSetAPI.completion(provider, prompt, modelParams, prevMessages);
+	const providerResp = await providerSetAPI.completion(provider, prompt, modelParams, prevMessages, requestId, signal);
 	return parseAPIResponse(convoMessage, providerResp);
 }
 
@@ -93,6 +98,8 @@ async function handleStreamedCompletion(
 	prompt: string,
 	modelParams: ModelParams,
 	prevMessages: Array<ChatCompletionRequestMessage>,
+	requestId?: string,
+	signal?: AbortSignal,
 	onStreamTextData?: (textData: string) => void,
 	onStreamThinkingData?: (thinkingData: string) => void
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
@@ -101,6 +108,8 @@ async function handleStreamedCompletion(
 		prompt,
 		modelParams,
 		prevMessages,
+		requestId,
+		signal,
 		onStreamTextData,
 		onStreamThinkingData
 	);
@@ -112,6 +121,8 @@ export async function GetCompletionMessage(
 	modelParams: ModelParams,
 	convoMessage: ConversationMessage,
 	messages?: Array<ConversationMessage>,
+	requestId?: string,
+	signal?: AbortSignal,
 	onStreamTextData?: (textData: string) => void,
 	onStreamThinkingData?: (thinkingData: string) => void
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
@@ -130,15 +141,28 @@ export async function GetCompletionMessage(
 				promptMsg?.content || '',
 				modelParams,
 				allMessages,
+				requestId,
+				signal,
 				onStreamTextData,
 				onStreamThinkingData
 			);
 		} else {
 			modelParams.stream = false;
-			return await handleDirectCompletion(convoMessage, provider, promptMsg?.content || '', modelParams, allMessages);
+			return await handleDirectCompletion(
+				convoMessage,
+				provider,
+				promptMsg?.content || '',
+				modelParams,
+				allMessages,
+				requestId,
+				signal
+			);
 		}
 	} catch (error) {
-		const msg = 'Got error in api processing. Check details...';
+		if ((error as DOMException).name === 'AbortError') {
+			throw error; // let the caller decide
+		}
+		const msg = '\n\n>Got error in api processing. Check details...';
 		const details = JSON.stringify(error, null, 2);
 		log.error(msg, details);
 		convoMessage.content = msg;

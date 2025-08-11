@@ -29,7 +29,7 @@ const ChatMessageContent = ({
 
 	if (isPending && textToRender.trim() === '') {
 		return (
-			<div className="bg-base-100 px-4 py-2 flex items-center">
+			<div className="px-4 py-2 flex items-center">
 				Thinking
 				<span className="ml-4 loading loading-dots loading-sm" />
 			</div>
@@ -51,10 +51,10 @@ const ChatMessageContent = ({
 			[textToRender, align]
 		);
 
-		return <div className="bg-base-100 px-4 py-2">{plainText}</div>;
+		return <div className="px-4 py-2">{plainText}</div>;
 	}
 	return (
-		<div className="bg-base-100 px-4 py-2">
+		<div className="px-4 py-2">
 			<EnhancedMarkdown text={textToRender} align={align} isStreaming={isStreaming} />
 		</div>
 	);
