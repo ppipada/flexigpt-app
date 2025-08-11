@@ -142,8 +142,7 @@ func (ps *ProviderSetAPI) FetchCompletion(
 
 func isProviderSDKTypeSupported(t modelpresetSpec.ProviderSDKType) bool {
 	if t == modelpresetSpec.ProviderSDKTypeOpenAI ||
-		t == modelpresetSpec.ProviderSDKTypeAnthropic ||
-		t == modelpresetSpec.ProviderSDKTypeHuggingFace {
+		t == modelpresetSpec.ProviderSDKTypeAnthropic {
 		return true
 	}
 	return false
@@ -153,9 +152,6 @@ func getProviderAPI(p spec.ProviderParams, debug bool) (CompletionProvider, erro
 	switch p.SDKType {
 	case modelpresetSpec.ProviderSDKTypeAnthropic:
 		return NewAnthropicCompatibleAPI(p, debug)
-
-	case modelpresetSpec.ProviderSDKTypeHuggingFace:
-		return NewHuggingFaceCompatibleAPI(p, debug)
 
 	case modelpresetSpec.ProviderSDKTypeOpenAI:
 		return NewOpenAICompatibleAPI(p, debug)

@@ -85,10 +85,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 				isEnabled: true,
 				displayName: SDK_DISPLAY_NAME[ProviderSDKType.ProviderSDKTypeAnthropic],
 			},
-			[ProviderSDKType.ProviderSDKTypeHuggingFace]: {
-				isEnabled: true,
-				displayName: SDK_DISPLAY_NAME[ProviderSDKType.ProviderSDKTypeHuggingFace],
-			},
+
 			[ProviderSDKType.ProviderSDKTypeOpenAI]: {
 				isEnabled: true,
 				displayName: SDK_DISPLAY_NAME[ProviderSDKType.ProviderSDKTypeOpenAI],

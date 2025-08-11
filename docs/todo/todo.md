@@ -9,8 +9,17 @@
   - [ ] langchaingo seem to be moving very slow with no thinking support. better use official sdks from openai and anthropic
 
     - [x] Openai
+
+      - [ ] Add openai compatible provider presets: hf, xai groq, openrouter, llama, ollama as presets
+      - [ ] Add Google also as openai compatible provider for now. Check vertex ai + gemini dev ai additions
+
     - [x] Anthropic
-    - [ ] Google
+
+    - [ ] Add AWS bedrock too. May be anthropic api as of now for claude on bedrock models?
+
+  - [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
+
+    - [ ] create model preset should allow the api function type
 
   - [ ] UI:
 
@@ -18,9 +27,6 @@
     - [x] Create provider should allow to choose the api sdk type
     - [ ] ~~Need to check provider compatibility during "copy existing" flow~~
     - [ ] If there was some amount of data that was streamed, but error occured at end someplace, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is. This is mostly UI issue.
-
-  - [ ] responses api integration for o3-pro. should be done with moving away from langchaingo item
-    - [ ] create model preset should allow the api function type
 
 - [ ] CPU is high when "thinking". Need to debug
 

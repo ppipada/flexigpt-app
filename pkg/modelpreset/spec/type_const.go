@@ -62,9 +62,8 @@ type (
 )
 
 const (
-	ProviderSDKTypeAnthropic   ProviderSDKType = "providerSDKTypeAnthropic"
-	ProviderSDKTypeHuggingFace ProviderSDKType = "providerSDKTypeHuggingFace"
-	ProviderSDKTypeOpenAI      ProviderSDKType = "providerSDKTypeOpenAI"
+	ProviderSDKTypeAnthropic ProviderSDKType = "providerSDKTypeAnthropic"
+	ProviderSDKTypeOpenAI    ProviderSDKType = "providerSDKTypeOpenAI"
 )
 
 const (
