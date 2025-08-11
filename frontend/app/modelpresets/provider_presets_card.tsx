@@ -14,7 +14,13 @@ import {
 	FiXCircle,
 } from 'react-icons/fi';
 
-import { type ModelPreset, type ModelPresetID, type ProviderName, type ProviderPreset } from '@/spec/modelpreset';
+import {
+	type ModelPreset,
+	type ModelPresetID,
+	type ProviderName,
+	type ProviderPreset,
+	SDK_DISPLAY_NAME,
+} from '@/spec/modelpreset';
 import type { AuthKeyMeta } from '@/spec/setting';
 import { AuthKeyTypeProvider } from '@/spec/setting';
 
@@ -377,6 +383,10 @@ const ProviderPresetCard: FC<Props> = ({
 								<tr className="hover:bg-base-300">
 									<td className="w-1/3 text-sm">ID</td>
 									<td className="text-sm">{preset.name}</td>
+								</tr>
+								<tr className="hover:bg-base-300">
+									<td className="w-1/3 text-sm">SDK Type</td>
+									<td className="text-sm">{SDK_DISPLAY_NAME[preset.sdkType]}</td>
 								</tr>
 								<tr className="hover:bg-base-300">
 									<td className="w-1/3 text-sm">Origin</td>

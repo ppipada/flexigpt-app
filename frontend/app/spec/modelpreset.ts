@@ -9,11 +9,13 @@ export type ProviderDisplayName = string;
 export enum ProviderSDKType {
 	ProviderSDKTypeAnthropic = 'providerSDKTypeAnthropic',
 	ProviderSDKTypeOpenAI = 'providerSDKTypeOpenAI',
+	ProviderSDKTypeHuggingFace = 'providerSDKTypeHuggingFace',
 }
 
 export const SDK_DISPLAY_NAME: Record<ProviderSDKType, string> = {
-	[ProviderSDKType.ProviderSDKTypeOpenAI]: 'OpenAI-compatible',
+	[ProviderSDKType.ProviderSDKTypeOpenAI]: 'OpenAI',
 	[ProviderSDKType.ProviderSDKTypeAnthropic]: 'Anthropic',
+	[ProviderSDKType.ProviderSDKTypeHuggingFace]: 'HuggingFace',
 };
 
 export const SDK_DEFAULTS: Record<
@@ -33,6 +35,13 @@ export const SDK_DEFAULTS: Record<
 		defaultHeaders: {
 			'Content-Type': 'application/json',
 			'anthropic-version': '2023-06-01',
+		},
+	},
+	[ProviderSDKType.ProviderSDKTypeHuggingFace]: {
+		chatPath: '/models',
+		apiKeyHeaderKey: 'Authorization',
+		defaultHeaders: {
+			'Content-Type': 'application/json',
 		},
 	},
 };

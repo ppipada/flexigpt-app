@@ -539,7 +539,7 @@
 					"name": "gpt-4.1",
 					"displayName": "OpenAI GPT 4.1",
 					"slug": "gpt41",
-					"isEnabled": false,
+					"isEnabled": true,
 					"stream": true,
 					"maxPromptLength": 16384,
 					"maxOutputLength": 16384,

@@ -81,13 +81,17 @@ const AddEditProviderPresetModal: FC<Props> = ({
 
 	const sdkDropdownItems: Record<ProviderSDKType, { isEnabled: boolean; displayName: string }> = useMemo(
 		() => ({
-			[ProviderSDKType.ProviderSDKTypeOpenAI]: {
-				isEnabled: true,
-				displayName: SDK_DISPLAY_NAME[ProviderSDKType.ProviderSDKTypeOpenAI],
-			},
 			[ProviderSDKType.ProviderSDKTypeAnthropic]: {
 				isEnabled: true,
 				displayName: SDK_DISPLAY_NAME[ProviderSDKType.ProviderSDKTypeAnthropic],
+			},
+			[ProviderSDKType.ProviderSDKTypeHuggingFace]: {
+				isEnabled: true,
+				displayName: SDK_DISPLAY_NAME[ProviderSDKType.ProviderSDKTypeHuggingFace],
+			},
+			[ProviderSDKType.ProviderSDKTypeOpenAI]: {
+				isEnabled: true,
+				displayName: SDK_DISPLAY_NAME[ProviderSDKType.ProviderSDKTypeOpenAI],
 			},
 		}),
 		[]

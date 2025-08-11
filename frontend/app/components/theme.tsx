@@ -80,7 +80,7 @@ export const ThemeSelector: FC = () => {
 
 		const newTheme: AppTheme = {
 			type,
-			name: type === ThemeType.Other ? providerKey : String(type),
+			name: type === ThemeType.Other ? providerKey : type,
 		};
 
 		try {

@@ -330,7 +330,7 @@ const ModelPresetPage: FC = () => {
 									provider={name}
 									preset={p}
 									defaultProvider={defaultProvider ?? ''}
-									authKeySet={!!providerKeySet[name]}
+									authKeySet={providerKeySet[name]}
 									enabledProviders={enabledProviderNames}
 									onProviderPresetChange={handleProviderPresetChange}
 									onProviderDelete={handleProviderDelete}
@@ -353,7 +353,7 @@ const ModelPresetPage: FC = () => {
 					existingProviderNames={Object.keys(providerPresets)}
 					allProviderPresets={providerPresets}
 					initialPreset={modalMode === 'edit' && editProvider ? providerPresets[editProvider] : undefined}
-					apiKeyAlreadySet={editProvider ? !!providerKeySet[editProvider] : false}
+					apiKeyAlreadySet={editProvider ? providerKeySet[editProvider] : false}
 				/>
 			)}
 
