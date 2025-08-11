@@ -46,7 +46,7 @@
 		"uuid": "^11.0.3"
 	},
 	"devDependencies": {
-		"@eslint/js": "^9.32.0",
+		"@eslint/js": "^9.33.0",
 		"@tailwindcss/vite": "^4.1.11",
 		"@testing-library/jest-dom": "^6.6.3",
 		"@testing-library/react": "^16.3.0",
@@ -61,9 +61,9 @@
 		"@vitest/coverage-v8": "^3.2.4",
 		"cross-env": "^10.0.0",
 		"daisyui": "^5.0.46",
-		"eslint": "^9.32.0",
+		"eslint": "^9.33.0",
 		"eslint-config-prettier": "^10.1.8",
-		"eslint-plugin-prettier": "^5.5.3",
+		"eslint-plugin-prettier": "^5.5.4",
 		"eslint-plugin-react": "^7.37.5",
 		"globals": "^16.3.0",
 		"jiti": "^2.4.2",
