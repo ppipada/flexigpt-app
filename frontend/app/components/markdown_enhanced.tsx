@@ -15,6 +15,7 @@ import { SanitizeLaTeX } from '@/lib/markdown_utils';
 import { backendAPI } from '@/apis/baseapi';
 
 import CodeBlock from '@/components/markdown_code_block';
+import ThinkingFence from '@/components/thinking_fence';
 
 const remarkPlugins = [remarkGemoji, supersub, remarkMath, remarkGfm];
 const remarkPluginsStreaming = [remarkGemoji, supersub, remarkGfm];
@@ -69,15 +70,13 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 
 				const match = /lang-(\w+)/.exec(className || '') || /language-(\w+)/.exec(className || '');
 				const language = match && match[1] ? match[1] : 'text';
+				// eslint-disable-next-line @typescript-eslint/no-base-to-string
+				const value = String(children).replace(/\n$/, '');
+				if (language === 'thinking' || language === 'thought' || language === 'reasoning') {
+					return <ThinkingFence text={value} isStreaming={isStreaming} />;
+				}
 
-				return (
-					<CodeBlock
-						language={language}
-						// eslint-disable-next-line @typescript-eslint/no-base-to-string
-						value={String(children).replace(/\n$/, '')}
-						isStreaming={isStreaming}
-					/>
-				);
+				return <CodeBlock language={language} value={value} isStreaming={isStreaming} />;
 			},
 
 			ul: ({ children }: PComponentProps) => (

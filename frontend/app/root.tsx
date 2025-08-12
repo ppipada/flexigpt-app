@@ -2,19 +2,17 @@ import { type FC, useEffect } from 'react';
 
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 
-import { type AppTheme, ThemeType } from '@/spec/setting';
+import { type AppTheme, ThemeType, toProviderName } from '@/spec/setting';
 import { CustomThemeDark, CustomThemeLight } from '@/spec/theme_consts';
 
 import { IS_WAILS_PLATFORM } from '@/lib/features';
 
+import { initBuiltIns } from '@/hooks/use_builtin_provider';
 import { ensureWorker } from '@/hooks/use_highlight';
-import { GenericThemeProvider } from '@/hooks/use_theme';
-
-import { initBuiltIns } from '@/apis/builtin_provider_cache';
-import { getStartupThemeSync, initStartupTheme } from '@/apis/builtin_theme_cache';
+import { getStartupThemeSync, initStartupTheme } from '@/hooks/use_startup_theme';
+import { GenericThemeProvider } from '@/hooks/use_theme_provider';
 
 import Sidebar from '@/components/sidebar';
-import { toProviderName } from '@/components/theme';
 
 import '@/globals.css';
 

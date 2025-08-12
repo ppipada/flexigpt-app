@@ -86,14 +86,21 @@ export interface APIFetchResponse<T> {
 	errorDetails?: APIErrorDetails;
 }
 
+export enum ResponseContentType {
+	Text = 'text',
+	Thinking = 'thinking',
+}
+
+export interface ResponseContent {
+	type: ResponseContentType;
+	content: string;
+}
+
 export interface CompletionResponse {
 	requestDetails?: APIRequestDetails;
 	responseDetails?: APIResponseDetails;
 	errorDetails?: APIErrorDetails;
-	respContent?: string;
-	thinkingContent?: string;
-	functionName?: string;
-	functionArgs?: any;
+	responseContent?: ResponseContent[];
 }
 
 export interface IProviderSetAPI {

@@ -3,12 +3,11 @@ import {
 	ChatCompletionRoleEnum,
 	type CompletionResponse,
 	type ModelParams,
+	ResponseContentType,
 } from '@/spec/aiprovider';
 import type { ConversationMessage } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 import type { ProviderName } from '@/spec/modelpreset';
-
-import { getBlockQuotedLines } from '@/lib/text_utils';
 
 import { log, providerSetAPI } from '@/apis/baseapi';
 
@@ -37,17 +36,43 @@ function getQuotedJSON(obj: any): string {
 	return '```json\n' + JSON.stringify(obj, null, 2) + '\n```';
 }
 
-function parseAPIResponse(convoMessage: ConversationMessage, providerResp: CompletionResponse | undefined) {
-	/* Start with whatever has been streamed already so we never lose it. */
-	let respContent = '';
+// export const normalizeThinkingChunk = (s: string) => s.replace(/~~~+/g, '~~\u200b~'); // break accidental fences
 
+function parseAPIResponse(convoMessage: ConversationMessage, providerResp: CompletionResponse | undefined) {
+	let respContent = '';
 	let respDetails: string | undefined;
 	let requestDetails: string | undefined;
+
 	if (providerResp) {
-		if (providerResp.thinkingContent) {
-			respContent += getBlockQuotedLines(providerResp.thinkingContent) + '\n';
+		if (providerResp.responseContent && providerResp.responseContent.length) {
+			type ContentChunk = { type: ResponseContentType; content: string };
+
+			// 1) Collapse adjacent same-type blocks
+			const collapsed: ContentChunk[] = [];
+			let last: ContentChunk | undefined;
+			for (const chunk of providerResp.responseContent as ContentChunk[]) {
+				if (last && last.type === chunk.type) {
+					// Merge with a newline separator if there's already content
+					last.content += (last.content ? '\n' : '') + chunk.content;
+				} else {
+					// Copy to avoid mutating original
+					collapsed.push({ type: chunk.type, content: chunk.content });
+				}
+				last = chunk;
+			}
+
+			// 2) Fence the Thinking blocks and 3) concat result
+			let respFullText = '';
+			for (const chunk of collapsed) {
+				if (chunk.type === ResponseContentType.Thinking) {
+					respFullText += `\n~~~thinking\n${chunk.content}\n~~~\n`;
+				} else {
+					respFullText += `\n${chunk.content}\n`;
+				}
+			}
+
+			respContent += respFullText;
 		}
-		if (providerResp.respContent) respContent += providerResp.respContent;
 
 		if (providerResp.responseDetails) {
 			respDetails = getQuotedJSON(providerResp.responseDetails);
@@ -63,20 +88,20 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Compl
 			if (providerResp.errorDetails.requestDetails) {
 				requestDetails = getQuotedJSON(providerResp.errorDetails.requestDetails);
 			}
-			if (respContent === '') {
-				respContent = convoMessage.content;
+			if (!respContent) {
+				respContent = convoMessage.content || '';
 			}
 			respContent += '\n\n>Got error in api processing. Check details...';
 		}
 	}
 
-	if (respContent === '') {
-		respContent = convoMessage.content;
+	if (!respContent) {
+		respContent = convoMessage.content || '';
 	}
 
 	convoMessage.content = respContent;
 	convoMessage.details = respDetails;
-	return { responseMessage: convoMessage, requestDetails: requestDetails };
+	return { responseMessage: convoMessage, requestDetails };
 }
 
 async function handleDirectCompletion(

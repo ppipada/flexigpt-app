@@ -4,8 +4,9 @@ import { FiCheckCircle, FiDelete, FiEdit2, FiTrash2, FiXCircle } from 'react-ico
 
 import type { AuthKeyMeta } from '@/spec/setting';
 
+import { isBuiltInProviderAuthKeyName, useBuiltInsReady } from '@/hooks/use_builtin_provider';
+
 import { settingstoreAPI } from '@/apis/baseapi';
-import { isBuiltInProviderAuthKeyName } from '@/apis/builtin_provider_cache';
 
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
@@ -17,15 +18,14 @@ interface AuthKeyTableProps {
 }
 
 const AuthKeyTable: FC<AuthKeyTableProps> = ({ authKeys, onEdit, onChanged }) => {
-	/* ------------------------------------------------------------------ */
-	/* centralised modal / alert state (kept OUTSIDE the <table>)         */
-	/* ------------------------------------------------------------------ */
+	const builtInsReady = useBuiltInsReady();
 	const [deleteTarget, setDeleteTarget] = useState<AuthKeyMeta | null>(null);
 	const [alertMsg, setAlertMsg] = useState<string>('');
 
-	/* ------------------------------------------------------------------ */
-	/* helpers                                                            */
-	/* ------------------------------------------------------------------ */
+	if (!builtInsReady) {
+		return <span className="loading loading-dots loading-sm" />;
+	}
+
 	const resetKey = async (meta: AuthKeyMeta) => {
 		await settingstoreAPI.setAuthKey(meta.type, meta.keyName, '');
 		onChanged();

@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+
 import type { ProviderName, ProviderPreset } from '@/spec/modelpreset';
 import { type AuthKeyName, type AuthKeyType, AuthKeyTypeProvider } from '@/spec/setting';
 
@@ -54,4 +56,17 @@ export function getBuiltInProviderAuthKeyNamesSync(): ReadonlySet<AuthKeyName> {
 export function isBuiltInProviderAuthKeyName(authKeyType: AuthKeyType, name: AuthKeyName): boolean {
 	if (authKeyType !== AuthKeyTypeProvider) return false;
 	return getBuiltInProviderAuthKeyNamesSync().has(name);
+}
+
+export function useBuiltInsReady(): boolean {
+	const [ready, setReady] = useState(false);
+
+	useEffect(() => {
+		// the global promise is created only once
+		initBuiltIns().then(() => {
+			setReady(true);
+		});
+	}, []);
+
+	return ready;
 }

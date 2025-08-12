@@ -194,9 +194,8 @@ func (api *AnthropicCompatibleAPI) doNonStreaming(
 		return completionResp, nil
 	}
 
-	textContent, thinkingContent := extractTextFromAnthropicMessage(resp)
-	completionResp.RespContent = &textContent
-	completionResp.ThinkingContent = &thinkingContent
+	respContent := getResponseContentFromAnthropicMessage(resp)
+	completionResp.ResponseContent = respContent
 	return completionResp, nil
 }
 
@@ -280,9 +279,8 @@ func (api *AnthropicCompatibleAPI) doStreaming(
 		return completionResp, nil
 	}
 
-	textContent, thinkingContent := extractTextFromAnthropicMessage(&respFull)
-	completionResp.RespContent = &textContent
-	completionResp.ThinkingContent = &thinkingContent
+	respContent := getResponseContentFromAnthropicMessage(&respFull)
+	completionResp.ResponseContent = respContent
 	return completionResp, streamErr
 }
 
@@ -365,16 +363,17 @@ func toAnthropicMessages(
 	return out, sysParams, nil
 }
 
-func extractTextFromAnthropicMessage(msg *anthropic.Message) (textContent, thinkingContent string) {
+func getResponseContentFromAnthropicMessage(msg *anthropic.Message) []spec.ResponseContent {
 	if msg == nil {
-		return textContent, thinkingContent
+		return []spec.ResponseContent{}
 	}
+	resp := make([]spec.ResponseContent, 0, len(msg.Content))
 	for _, content := range msg.Content {
 		switch variant := content.AsAny().(type) {
 		case anthropic.TextBlock:
-			textContent += variant.Text + "\n"
+			resp = append(resp, spec.ResponseContent{Type: spec.ResponseContentTypeText, Content: variant.Text})
 		case anthropic.ThinkingBlock:
-			thinkingContent += variant.Thinking + "\n"
+			resp = append(resp, spec.ResponseContent{Type: spec.ResponseContentTypeThinking, Content: variant.Thinking})
 		case anthropic.RedactedThinkingBlock:
 		case anthropic.ToolUseBlock:
 		case anthropic.ServerToolUseBlock:
@@ -383,5 +382,5 @@ func extractTextFromAnthropicMessage(msg *anthropic.Message) (textContent, think
 			// Invalid variant, dont handle as of now.
 		}
 	}
-	return textContent, thinkingContent
+	return resp
 }

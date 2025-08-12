@@ -295,3 +295,8 @@ export function getBlockQuotedLines(content: string): string {
 	// Join the lines back together as blockquote.
 	return lines.join('\n');
 }
+
+export function stripThinkingFences(markdown: string): string {
+	// Remove all ~~~thinking blocks
+	return markdown.replace(/(^|\n)~~~thinking\s*[\s\S]*?\n~~~\s*/g, '$1');
+}

@@ -5,6 +5,7 @@ import { useDebounced } from '@/hooks/use_debounced';
 import EnhancedMarkdown from '@/components/markdown_enhanced';
 
 interface ChatMessageContentProps {
+	messageID: string;
 	// Final text
 	content: string;
 	// Partial text while streaming.
@@ -16,6 +17,7 @@ interface ChatMessageContentProps {
 }
 
 const ChatMessageContent = ({
+	messageID,
 	content,
 	streamedText = '',
 	isStreaming = false,
@@ -55,7 +57,12 @@ const ChatMessageContent = ({
 	}
 	return (
 		<div className="px-4 py-2">
-			<EnhancedMarkdown text={textToRender} align={align} isStreaming={isStreaming} />
+			<EnhancedMarkdown
+				key={`${messageID}:${isStreaming ? 'live' : 'done'}`}
+				text={textToRender}
+				align={align}
+				isStreaming={isStreaming}
+			/>
 		</div>
 	);
 };

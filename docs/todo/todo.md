@@ -10,9 +10,6 @@
 
     - [ ] create model preset should allow the api function type
 
-  - [ ] Thinking should be a collapsible card / dropdown / something inside the message block. Figure out the UX and implement.
-  - [ ] Should nto throw stack trace in fetch completion in case of abort
-
 - [ ] CPU is high when "thinking". Need to debug
 
 ## Random notes from UX discussions

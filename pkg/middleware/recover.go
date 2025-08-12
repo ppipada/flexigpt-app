@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"runtime/debug"
+	"strings"
 )
 
 // WithRecoveryResp is a helper that recovers from any panic, logs the stack trace,
@@ -29,8 +30,30 @@ func WithRecoveryResp[T any](fn func() (T, error)) (T, error) {
 
 	result, err = fn()
 	if err != nil {
-		slog.Error("response", "error", err.Error())
-		slog.Error(string(debug.Stack()))
+		msg := err.Error()
+		slog.Error("response", "error", msg)
+		if !isStackTraceSkippable(msg) {
+			slog.Error(string(debug.Stack()))
+		}
 	}
 	return result, err
+}
+
+var stackTraceSkippableErrs = []string{
+	"context canceled",
+	"context cancelled",
+	"context deadline exceeded",
+	"request canceled",
+	"operation was canceled",
+	"operation aborted",
+}
+
+func isStackTraceSkippable(msg string) bool {
+	msg = strings.ToLower(msg)
+	for _, errStr := range stackTraceSkippableErrs {
+		if strings.Contains(msg, errStr) {
+			return true
+		}
+	}
+	return false
 }

@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+
 import { type AppTheme, ThemeType } from '@/spec/setting';
 
 import { settingstoreAPI } from '@/apis/baseapi';
@@ -36,4 +38,20 @@ export function getStartupThemeSync(): Readonly<AppTheme> {
 //  Call after the user changes the theme successfully.
 export function updateStartupTheme(theme: AppTheme): void {
 	_startupTheme = Object.freeze(theme);
+}
+
+export function useStartupTheme(): [AppTheme | null, boolean] {
+	const [theme, setTheme] = useState<AppTheme | null>(_startupTheme);
+	const [ready, setReady] = useState<boolean>(!!_startupTheme);
+
+	useEffect(() => {
+		if (!ready) {
+			initStartupTheme().then(t => {
+				setTheme(t);
+				setReady(true);
+			});
+		}
+	}, [ready]);
+
+	return [theme, ready];
 }

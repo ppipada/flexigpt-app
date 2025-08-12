@@ -451,3 +451,6 @@
     - [x] If there was some amount of data that was streamed, but error occured at end someplace, the whole message goes away and only error is visible. Ideally you want to concat the issue at end and leave text as is. This is mostly UI issue.
     - [x] Need timeout in chat input field edit at runtime
     - [x] Need request cancel and request resend and response fetch synchronizations
+    - [x] Thinking should be a collapsible card / dropdown / something inside the message block. Figure out the UX and implement.
+
+- [x] Should not throw stack trace in fetch completion in case of abort

@@ -275,7 +275,10 @@ func deepCopyAndFilter(value any) any {
 // containsSensitiveKey checks if a key contains any sensitive keywords.
 func containsSensitiveKey(key string) bool {
 	for _, sensitiveKey := range sensitiveKeys {
-		if strings.EqualFold(key, sensitiveKey) {
+		if strings.Contains(
+			strings.ToLower(key),
+			strings.ToLower(sensitiveKey),
+		) {
 			return true
 		}
 	}

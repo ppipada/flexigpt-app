@@ -263,14 +263,25 @@ export namespace spec {
 		}
 	}
 	
+	export class ResponseContent {
+	    type: string;
+	    content: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResponseContent(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.content = source["content"];
+	    }
+	}
 	export class CompletionResponse {
 	    requestDetails?: APIRequestDetails;
 	    responseDetails?: APIResponseDetails;
 	    errorDetails?: APIErrorDetails;
-	    respContent?: string;
-	    thinkingContent?: string;
-	    functionName?: string;
-	    functionArgs?: any;
+	    responseContent?: ResponseContent[];
 	
 	    static createFrom(source: any = {}) {
 	        return new CompletionResponse(source);
@@ -281,10 +292,7 @@ export namespace spec {
 	        this.requestDetails = this.convertValues(source["requestDetails"], APIRequestDetails);
 	        this.responseDetails = this.convertValues(source["responseDetails"], APIResponseDetails);
 	        this.errorDetails = this.convertValues(source["errorDetails"], APIErrorDetails);
-	        this.respContent = source["respContent"];
-	        this.thinkingContent = source["thinkingContent"];
-	        this.functionName = source["functionName"];
-	        this.functionArgs = source["functionArgs"];
+	        this.responseContent = this.convertValues(source["responseContent"], ResponseContent);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -3191,6 +3199,7 @@ export namespace spec {
 	
 	    }
 	}
+	
 	
 	export class SearchConversationsRequest {
 	    Query: string;

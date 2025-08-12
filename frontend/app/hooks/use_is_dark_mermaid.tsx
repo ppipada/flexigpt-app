@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 
 import { ALL_DARK_THEMES } from '@/spec/theme_consts';
 
-import { useTheme } from '@/hooks/use_theme';
+import { useTheme } from '@/hooks/use_theme_provider';
 
 export function useIsDarkMermaid(): boolean {
 	const { theme: providerTheme } = useTheme(); // e.g. "nordpolarnight" | "acid" | "system" | …

@@ -205,7 +205,9 @@ func (api *OpenAICompatibleAPI) doNonStreaming(
 		return completionResp, nil
 	}
 	full := resp.Choices[0].Message.Content
-	completionResp.RespContent = &full
+	completionResp.ResponseContent = []spec.ResponseContent{
+		{Type: spec.ResponseContentTypeText, Content: full},
+	}
 	return completionResp, nil
 }
 
@@ -264,7 +266,9 @@ func (api *OpenAICompatibleAPI) doStreaming(
 	}
 
 	fullResp := acc.Choices[0].Message.Content
-	completionResp.RespContent = &fullResp
+	completionResp.ResponseContent = []spec.ResponseContent{
+		{Type: spec.ResponseContentTypeText, Content: fullResp},
+	}
 	return completionResp, streamErr
 }
 

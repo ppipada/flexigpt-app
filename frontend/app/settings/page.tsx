@@ -8,10 +8,10 @@ import { type AuthKeyMeta } from '@/spec/setting';
 import { settingstoreAPI } from '@/apis/baseapi';
 
 import DownloadButton from '@/components/download_button';
-import { ThemeSelector } from '@/components/theme';
 
 import AddEditAuthKeyModal from '@/settings/authkey_add_edit';
 import AuthKeyTable from '@/settings/authkey_table';
+import { ThemeSelector } from '@/settings/theme';
 
 const SettingsPage: FC = () => {
 	const [authKeys, setAuthKeys] = useState<AuthKeyMeta[]>([]);

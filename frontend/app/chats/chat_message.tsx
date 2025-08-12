@@ -66,6 +66,7 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 					/>
 				) : (
 					<ChatMessageContent
+						messageID={message.id}
 						content={message.content}
 						streamedText={streamedMessage}
 						isStreaming={!!streamedMessage}
@@ -89,8 +90,9 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 			<div className="col-span-10 lg:col-span-9 row-start-2 row-end-2">
 				{!isEditing && (
 					<ChatMessageFooterArea
+						messageID={message.id}
 						isUser={isUser}
-						cardContent={message.content}
+						cardCopyContent={message.content}
 						onEdit={handleEditClick}
 						onResend={onResend}
 						messageDetails={message.details ?? ''}

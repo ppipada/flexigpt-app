@@ -220,12 +220,14 @@ const ChatScreen: FC = () => {
 			};
 
 			const onStreamThinkingData = (thinkingData: string) => {
-				if (thinkingData) tokensReceivedRef.current = true;
+				if (!thinkingData) {
+					return;
+				}
+				tokensReceivedRef.current = true;
 				setStreamedMessage(prev => {
 					const data = thinkingData ? getBlockQuotedLines(thinkingData) + '\n' : '';
 					const next = prev + data;
 					const last = updatedChatWithConvoMessage.messages.length - 1;
-
 					updatedChatWithConvoMessage.messages[last].content = next;
 					updatedChatWithConvoMessage.modifiedAt = new Date();
 					if (prev === '') setChat({ ...updatedChatWithConvoMessage });
@@ -234,18 +236,18 @@ const ChatScreen: FC = () => {
 				});
 			};
 
-			const inputParams: ModelParams = {
-				name: options.name,
-				temperature: options.temperature,
-				stream: options.stream,
-				maxPromptLength: options.maxPromptLength,
-				maxOutputLength: options.maxOutputLength,
-				reasoning: options.reasoning,
-				systemPrompt: options.systemPrompt,
-				timeout: options.timeout,
-				additionalParametersRawJSON: options.additionalParametersRawJSON,
-			};
 			try {
+				const inputParams: ModelParams = {
+					name: options.name,
+					temperature: options.temperature,
+					stream: options.stream,
+					maxPromptLength: options.maxPromptLength,
+					maxOutputLength: options.maxOutputLength,
+					reasoning: options.reasoning,
+					systemPrompt: options.systemPrompt,
+					timeout: options.timeout,
+					additionalParametersRawJSON: options.additionalParametersRawJSON,
+				};
 				const newMsg = await GetCompletionMessage(
 					options.providerName,
 					inputParams,
@@ -267,7 +269,7 @@ const ChatScreen: FC = () => {
 				}
 
 				if (newMsg.responseMessage) {
-					const respMessage = newMsg.responseMessage;
+					const respMessage = { ...newMsg.responseMessage };
 					// Create FRESH objects so React sees the change even in non-streaming
 					// mode, where `streamedMessage` never changes.
 					const finalChat: Conversation = {
@@ -280,6 +282,7 @@ const ChatScreen: FC = () => {
 				}
 			} catch (e) {
 				if ((e as DOMException).name === 'AbortError') {
+					// ESlint cannot see async updates in streaming, hence disable the lint warning.
 					// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 					if (!tokensReceivedRef.current) {
 						removeAssistantPlaceholder(convoMsg.id);
@@ -413,7 +416,7 @@ const ChatScreen: FC = () => {
 					style={{ maxHeight: `calc(100vh - 208px - ${inputHeight}px)` }}
 				>
 					<div className="w-11/12 lg:w-5/6">
-						<div className="w-full flex-1 space-y-4">{renderedMessages}</div>
+						<div className="w-full flex-1 space-y-4 mb-4">{renderedMessages}</div>
 					</div>
 				</div>
 				{/* INPUT */}

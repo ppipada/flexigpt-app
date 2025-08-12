@@ -34,15 +34,25 @@ type APIFetchResponse[T any] struct {
 	ErrorDetails    *APIErrorDetails    `json:"errorDetails,omitempty"`
 }
 
+type ResponseContentType string
+
+const (
+	ResponseContentTypeText     = "text"
+	ResponseContentTypeThinking = "thinking"
+)
+
+type ResponseContent struct {
+	Type    ResponseContentType `json:"type"`
+	Content string              `json:"content"`
+}
+
 type CompletionResponse struct {
 	RequestDetails  *APIRequestDetails  `json:"requestDetails,omitempty"`
 	ResponseDetails *APIResponseDetails `json:"responseDetails,omitempty"`
 	ErrorDetails    *APIErrorDetails    `json:"errorDetails,omitempty"`
-	RespContent     *string             `json:"respContent,omitempty"`
-	ThinkingContent *string             `json:"thinkingContent,omitempty"`
-	FunctionName    *string             `json:"functionName,omitempty"`
-	FunctionArgs    any                 `json:"functionArgs,omitempty"`
+	ResponseContent []ResponseContent   `json:"responseContent,omitempty"`
 }
+
 type CompletionRequest struct {
 	ModelParams  ModelParams                             `json:"modelParams"`
 	Messages     []ChatCompletionRequestMessage          `json:"messages,omitempty"`
