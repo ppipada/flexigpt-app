@@ -6,9 +6,11 @@
 
   - [ ] Integrate stores with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
 
-  - [ ] responses api integration for o3-pro.
+- [ ] Conversations
 
-    - [ ] create model preset should allow the api function type
+  - [x] load all pages via infiinitew scroll for titles too.
+  - [ ] Support delete conversation. Maybe, have soft delete then hard delete workflow.
+  - [ ] Support edit convo title too
 
 - [ ] CPU is high when "thinking". Need to debug
 

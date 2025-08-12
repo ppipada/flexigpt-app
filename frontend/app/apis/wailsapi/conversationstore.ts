@@ -59,8 +59,11 @@ export class WailsConversationStoreAPI implements IConversationStoreAPI {
 		return c.Body as Conversation;
 	}
 
-	async listConversations(token?: string): Promise<{ conversations: ConversationSearchItem[]; nextToken?: string }> {
-		const req = { PageToken: token || '' };
+	async listConversations(
+		token?: string,
+		pageSize?: number
+	): Promise<{ conversations: ConversationSearchItem[]; nextToken?: string }> {
+		const req = { PageToken: token || '', PageSize: pageSize ?? 20 };
 		const resp = await ListConversations(req as wailsSpec.ListConversationsRequest);
 		return {
 			conversations: mapConversationsToSearchItems(resp.Body ? resp.Body.conversationListItems : []),
