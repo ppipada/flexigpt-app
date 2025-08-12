@@ -1,7 +1,7 @@
 import type { ChangeEvent, FC, KeyboardEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { FiSearch } from 'react-icons/fi';
+import { FiSearch, FiTrash2 } from 'react-icons/fi';
 
 import type { ConversationSearchItem } from '@/spec/conversation';
 
@@ -11,6 +11,7 @@ import { cleanSearchQuery } from '@/lib/text_utils';
 import { conversationStoreAPI } from '@/apis/baseapi';
 
 import { GroupedDropdown } from '@/components/date_grouped_dropdown';
+import DeleteConfirmationModal from '@/components/delete_confirmation';
 
 const CACHE_EXPIRY_TIME = 60_000; // 1 min
 
@@ -64,8 +65,10 @@ interface SearchDropdownProps {
 	onLoadMore: () => void;
 	focusedIndex: number;
 	onPick: (item: ConversationSearchItem) => void;
+	onDelete: (item: ConversationSearchItem) => void;
 	query: string;
 	showSearchAllHintShortQuery: boolean;
+	currentConversationId: string;
 }
 
 const SearchDropdown: FC<SearchDropdownProps> = ({
@@ -76,8 +79,10 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 	onLoadMore,
 	focusedIndex,
 	onPick,
+	onDelete,
 	query,
 	showSearchAllHintShortQuery,
+	currentConversationId,
 }) => {
 	const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -190,6 +195,17 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 								<span className="inline-flex items-center gap-4">
 									{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
 									<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.modifiedAt)}</span>
+									{/* delete (not for active conv) */}
+									{r.searchConversation.id !== currentConversationId && (
+										<FiTrash2
+											size={14}
+											className="shrink-0 text-neutral-custom hover:text-error cursor-pointer"
+											onClick={e => {
+												e.stopPropagation(); // don’t trigger onPick
+												onDelete(r.searchConversation);
+											}}
+										/>
+									)}
 								</span>
 							)}
 						/>
@@ -214,6 +230,17 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 											<span className="inline-flex items-center gap-4">
 												{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
 												<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.modifiedAt)}</span>
+												{/* delete (not for active conv) */}
+												{r.searchConversation.id !== currentConversationId && (
+													<FiTrash2
+														size={14}
+														className="shrink-0 text-neutral-custom hover:text-error cursor-pointer"
+														onClick={e => {
+															e.stopPropagation();
+															onDelete(r.searchConversation);
+														}}
+													/>
+												)}
 											</span>
 										</span>
 									</li>
@@ -241,9 +268,10 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 interface ChatSearchProps {
 	onSelectConversation: (item: ConversationSearchItem) => Promise<void>;
 	refreshKey: number;
+	currentConversationId: string;
 }
 
-const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) => {
+const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, currentConversationId }) => {
 	/* state ---------------------------------------------------------- */
 	const [searchState, setSearchState] = useState<SearchState>({
 		query: '',
@@ -254,6 +282,8 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 	});
 	const [show, setShow] = useState(false);
 	const [focusedIndex, setFocusedIndex] = useState(-1);
+	const [deleteTarget, setDeleteTarget] = useState<ConversationSearchItem | null>(null);
+	const [deleteLoading, setDeleteLoading] = useState(false);
 
 	/** all conversations fetched so far (used for local filtering) */
 	const [recentConversations, setRecentConversations] = useState<ConversationSearchItem[]>([]);
@@ -479,6 +509,47 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 		[onSelectConversation]
 	);
 
+	/* ------------ delete flow -------------------------------------- */
+	const handleAskDelete = useCallback((conv: ConversationSearchItem) => {
+		setDeleteTarget(conv);
+	}, []);
+
+	const handleDeleteConfirm = useCallback(async () => {
+		if (!deleteTarget) return;
+		setDeleteLoading(true);
+
+		try {
+			await conversationStoreAPI.deleteConversation(deleteTarget.id, deleteTarget.title);
+
+			/* prune from local caches --------------------------------*/
+			setRecentConversations(prev => prev.filter(c => c.id !== deleteTarget.id));
+			setSearchState(prev => ({
+				...prev,
+				results: prev.results.filter(r => r.searchConversation.id !== deleteTarget.id),
+			}));
+
+			/* ---- prune *ALL* cached search pages --------------------- */
+			searchCache.forEach((entry, key) => {
+				const filtered = entry.results.filter(r => r.searchConversation.id !== deleteTarget.id);
+				if (filtered.length === 0) {
+					searchCache.delete(key);
+				} else if (filtered.length !== entry.results.length) {
+					searchCache.set(key, { ...entry, results: filtered });
+				}
+			});
+			/* ---- (optional) refresh the first page of recents -------- */
+			// Only if the dropdown is currently showing recents.
+			if (searchState.query.trim() === '') {
+				loadRecentConversations(); // pull a fresh page
+			}
+		} catch (err) {
+			console.error(err);
+		} finally {
+			setDeleteLoading(false);
+			setDeleteTarget(null);
+		}
+	}, [deleteTarget]);
+
 	const showSearchAllHintShortQuery =
 		searchState.query.length > 0 &&
 		searchState.query.length < 3 &&
@@ -582,8 +653,24 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey }) =
 					onLoadMore={handleLoadMore}
 					focusedIndex={focusedIndex}
 					onPick={handlePick}
+					onDelete={handleAskDelete}
 					query={searchState.query}
 					showSearchAllHintShortQuery={showSearchAllHintShortQuery}
+					currentConversationId={currentConversationId}
+				/>
+			)}
+			{deleteTarget && (
+				<DeleteConfirmationModal
+					isOpen={!!deleteTarget}
+					onClose={() => {
+						if (!deleteLoading) {
+							setDeleteTarget(null);
+						}
+					}}
+					onConfirm={handleDeleteConfirm}
+					title="Delete conversation?"
+					message={`Are you sure you want to delete "${deleteTarget.title}"? This action cannot be undone.`}
+					confirmButtonText={deleteLoading ? 'Deleting…' : 'Delete'}
 				/>
 			)}
 		</div>

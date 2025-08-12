@@ -402,6 +402,7 @@ const ChatScreen: FC = () => {
 						getConversationForExport={getConversationForExport}
 						onSelectConversation={handleSelectConversation}
 						chatTitle={chat.title}
+						chatID={chat.id}
 						searchRefreshKey={searchRefreshKey}
 						disabled={isBusy}
 					/>

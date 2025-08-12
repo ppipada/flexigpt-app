@@ -13,6 +13,7 @@ interface ChatNavBarProps {
 	getConversationForExport: () => Promise<string>;
 	onSelectConversation: (item: ConversationSearchItem) => Promise<void>;
 	chatTitle: string;
+	chatID: string;
 	searchRefreshKey: number;
 	disabled: boolean;
 }
@@ -22,13 +23,18 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 	getConversationForExport,
 	onSelectConversation,
 	chatTitle,
+	chatID,
 	searchRefreshKey,
 	disabled,
 }) => {
 	return (
 		<div className="flex-1 flex-col items-center">
 			<div className="flex-1 items-center justify-between p-2 bg-transparent ml-8 md:ml-0">
-				<ChatSearch onSelectConversation={onSelectConversation} refreshKey={searchRefreshKey} />
+				<ChatSearch
+					onSelectConversation={onSelectConversation}
+					refreshKey={searchRefreshKey}
+					currentConversationId={chatID}
+				/>
 			</div>
 			<div className="flex items-center justify-between p-0 mt-2 max-h-8 bg-transparent">
 				<button
