@@ -5,7 +5,7 @@ import type { ModelParams } from '@/spec/aiprovider';
 import type { Conversation, ConversationMessage, ConversationSearchItem } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 
-import { generateTitle, getBlockQuotedLines } from '@/lib/text_utils';
+import { generateTitle, getBlockQuotedLines, sanitizeConversationTitle } from '@/lib/text_utils';
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { useAtBottom } from '@/hooks/use_at_bottom';
@@ -59,6 +59,7 @@ const ChatScreen: FC = () => {
 	// Has the current conversation already been persisted?
 	const isChatPersistedRef = useRef(false);
 	const { isAtBottom, isScrollable, checkScroll } = useAtBottom(chatContainerRef);
+	const manualTitleLockedRef = useRef(false);
 
 	// Focus on mount.
 	useEffect(() => {
@@ -109,6 +110,8 @@ const ChatScreen: FC = () => {
 		setChat(initConversation());
 		// New non-persisted conversation started.
 		isChatPersistedRef.current = false;
+		manualTitleLockedRef.current = false;
+
 		chatInputRef.current?.focus();
 	};
 
@@ -117,9 +120,9 @@ const ChatScreen: FC = () => {
 	// •  Title has changed (search index must be updated)        -> putConversation
 	// •  Otherwise                                               -> putMessagesToConversation
 	// putMessagesToConversation REQUIRES the *full* message list, so we just pass `updatedChat.messages` every time.
-	const saveUpdatedChat = (updatedChat: Conversation) => {
+	const saveUpdatedChat = (updatedChat: Conversation, titleWasExternallyChanged = false) => {
 		let newTitle = updatedChat.title;
-		if (updatedChat.messages.length <= 4) {
+		if (!manualTitleLockedRef.current && updatedChat.messages.length <= 4) {
 			const userMessages = updatedChat.messages.filter(m => m.role === ConversationRoleEnum.user);
 			if (userMessages.length === 1) {
 				// Always generate title from first user message
@@ -130,12 +133,15 @@ const ChatScreen: FC = () => {
 				const titleCondidate2 = generateTitle(userMessages[1].content);
 				newTitle = titleCondidate2.score > titleCondidate1.score ? titleCondidate2.title : titleCondidate1.title;
 			}
+			newTitle = sanitizeConversationTitle(newTitle);
 		}
 
-		const titleChanged = newTitle !== updatedChat.title;
-		if (titleChanged) {
+		const titleChangedByFunction = newTitle !== updatedChat.title;
+		if (titleChangedByFunction) {
 			updatedChat.title = newTitle;
 		}
+
+		const titleChanged = titleWasExternallyChanged || titleChangedByFunction;
 
 		// Decide which API to call
 		if (!isChatPersistedRef.current) {
@@ -161,8 +167,30 @@ const ChatScreen: FC = () => {
 		if (selectedChat) {
 			setChat(selectedChat);
 			isChatPersistedRef.current = true;
+			manualTitleLockedRef.current = false; // fresh load – don’t assume manual lock
 		}
 	}, []);
+
+	/* ----------------------------------------------------------------
+	 * manual rename handler
+	 * ----------------------------------------------------------------*/
+	const handleRenameTitle = useCallback(
+		(newTitle: string) => {
+			const sanitized = sanitizeConversationTitle(newTitle.trim());
+			if (!sanitized || sanitized === chat.title) return;
+
+			manualTitleLockedRef.current = true;
+
+			const updatedChat: Conversation = {
+				...chat,
+				title: sanitized,
+				modifiedAt: new Date(),
+			};
+
+			saveUpdatedChat(updatedChat, true);
+		},
+		[chat, saveUpdatedChat]
+	);
 
 	const getConversationForExport = useCallback(async (): Promise<string> => {
 		const selectedChat = await conversationStoreAPI.getConversation(chat.id, chat.title);
@@ -399,12 +427,14 @@ const ChatScreen: FC = () => {
 				<div className="w-11/12 lg:w-5/6">
 					<ChatNavBar
 						onNewChat={handleNewChat}
+						onRenameTitle={handleRenameTitle}
 						getConversationForExport={getConversationForExport}
 						onSelectConversation={handleSelectConversation}
 						chatTitle={chat.title}
 						chatID={chat.id}
 						searchRefreshKey={searchRefreshKey}
 						disabled={isBusy}
+						renameEnabled={chat.messages.length > 0}
 					/>
 				</div>
 			</div>
@@ -414,7 +444,7 @@ const ChatScreen: FC = () => {
 				<div
 					className="w-full grow flex justify-center overflow-y-auto"
 					ref={chatContainerRef}
-					style={{ maxHeight: `calc(100vh - 208px - ${inputHeight}px)` }}
+					style={{ maxHeight: `calc(100vh - 216px - ${inputHeight}px)` }}
 				>
 					<div className="w-11/12 lg:w-5/6">
 						<div className="w-full flex-1 space-y-4 mb-4">{renderedMessages}</div>

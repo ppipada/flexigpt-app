@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var nonAlphaNum = regexp.MustCompile(`[^a-zA-Z0-9]`)
+var nonAlphaNum = regexp.MustCompile(`[^a-zA-Z0-9-]`)
 
 // UUIDv7FileInfo provides UUIDv7 based filenames "<uuid>_<sanitised-64-char-suffix>.<ext>".
 type UUIDv7FileInfo struct {

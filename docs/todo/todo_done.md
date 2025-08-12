@@ -454,3 +454,9 @@
     - [x] Thinking should be a collapsible card / dropdown / something inside the message block. Figure out the UX and implement.
 
 - [x] Should not throw stack trace in fetch completion in case of abort
+
+- [x] Conversations
+
+  - [x] load all pages via infinite scroll for titles too.
+  - [x] Support delete conversation. ~~Maybe, have soft delete then hard delete workflow.~~
+  - [x] Support edit convo title too

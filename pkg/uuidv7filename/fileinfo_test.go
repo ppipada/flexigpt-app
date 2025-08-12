@@ -43,6 +43,15 @@ func TestBuild(t *testing.T) {
 			wantExt:    fileExtension,
 		},
 		{
+			name:       "hyphen",
+			id:         validUUIDv7,
+			suffix:     "Chat with-AI!",
+			extension:  fileExtension,
+			wantName:   validUUIDv7 + "_Chat_with-AI_.json",
+			wantSuffix: "Chat_with-AI_",
+			wantExt:    fileExtension,
+		},
+		{
 			name:       "extension with dot",
 			id:         validUUIDv7,
 			suffix:     "Chat",

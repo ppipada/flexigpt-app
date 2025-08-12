@@ -6,12 +6,6 @@
 
   - [ ] Integrate stores with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
 
-- [ ] Conversations
-
-  - [x] load all pages via infinite scroll for titles too.
-  - [x] Support delete conversation. ~~Maybe, have soft delete then hard delete workflow.~~
-  - [ ] Support edit convo title too
-
 - [ ] CPU is high when "thinking". Need to debug
 
 ## Random notes from UX discussions
