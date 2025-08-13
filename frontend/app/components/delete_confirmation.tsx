@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { createPortal } from 'react-dom';
 import { FiAlertTriangle } from 'react-icons/fi';
 
 interface ConfirmationModalProps {
@@ -21,7 +22,7 @@ const DeleteConfirmationModal: React.FC<ConfirmationModalProps> = ({
 }) => {
 	if (!isOpen) return null;
 
-	return (
+	return createPortal(
 		<dialog className="modal modal-open">
 			<div className="modal-box rounded-2xl">
 				<h3 className="font-bold text-lg flex items-center">
@@ -37,7 +38,8 @@ const DeleteConfirmationModal: React.FC<ConfirmationModalProps> = ({
 					</button>
 				</div>
 			</div>
-		</dialog>
+		</dialog>,
+		document.body
 	);
 };
 

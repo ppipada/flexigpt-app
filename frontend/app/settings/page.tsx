@@ -82,7 +82,6 @@ const SettingsPage: FC = () => {
 				</div>
 			</main>
 
-			{/* modal */}
 			{isModalOpen && (
 				<AddEditAuthKeyModal
 					isOpen={isModalOpen}
