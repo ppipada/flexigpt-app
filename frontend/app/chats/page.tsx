@@ -423,20 +423,18 @@ const ChatScreen: FC = () => {
 	return (
 		<div className="flex flex-col items-center w-full h-full overflow-hidden">
 			{/* NAVBAR */}
-			<div className="w-full flex justify-center fixed top-2">
-				<div className="w-11/12 lg:w-5/6">
-					<ChatNavBar
-						onNewChat={handleNewChat}
-						onRenameTitle={handleRenameTitle}
-						getConversationForExport={getConversationForExport}
-						onSelectConversation={handleSelectConversation}
-						chatTitle={chat.title}
-						chatID={chat.id}
-						searchRefreshKey={searchRefreshKey}
-						disabled={isBusy}
-						renameEnabled={chat.messages.length > 0}
-					/>
-				</div>
+			<div className="flex w-11/12 lg:w-5/6 justify-center fixed top-2">
+				<ChatNavBar
+					onNewChat={handleNewChat}
+					onRenameTitle={handleRenameTitle}
+					getConversationForExport={getConversationForExport}
+					onSelectConversation={handleSelectConversation}
+					chatTitle={chat.title}
+					chatID={chat.id}
+					searchRefreshKey={searchRefreshKey}
+					disabled={isBusy}
+					renameEnabled={chat.messages.length > 0}
+				/>
 			</div>
 
 			{/* MESSAGES */}
@@ -447,20 +445,18 @@ const ChatScreen: FC = () => {
 					style={{ maxHeight: `calc(100vh - 160px - ${inputHeight}px)` }}
 				>
 					<div className="w-11/12 lg:w-5/6">
-						<div className="w-full flex-1 space-y-4 mb-4">{renderedMessages}</div>
+						<div className="flex-1 space-y-4 mb-4">{renderedMessages}</div>
 					</div>
 				</div>
 				{/* INPUT */}
-				<div className="w-full flex justify-center fixed bottom-0 mb-3">
-					<div className="w-11/12 lg:w-5/6">
-						<ChatInputField
-							ref={chatInputRef}
-							onSend={sendMessage}
-							setInputHeight={setInputHeight}
-							isBusy={isBusy}
-							abortRef={abortRef}
-						/>
-					</div>
+				<div className="w-11/12 lg:w-5/6 flex justify-center fixed bottom-0 mb-3">
+					<ChatInputField
+						ref={chatInputRef}
+						onSend={sendMessage}
+						setInputHeight={setInputHeight}
+						isBusy={isBusy}
+						abortRef={abortRef}
+					/>
 				</div>
 			</div>
 

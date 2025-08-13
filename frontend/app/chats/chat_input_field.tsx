@@ -214,7 +214,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 		};
 
 		return (
-			<div className="relative">
+			<div className="flex-1">
 				{isBusy && (
 					<div className="flex items-center justify-center bg-base-200 mb-1 mx-8">
 						<button
