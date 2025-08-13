@@ -73,7 +73,7 @@ const EditBox: FC<EditBoxProps> = ({ editText, onTextChange, onSubmit, onDiscard
 					aria-label="Discard Changes"
 					title="Discard Changes"
 				>
-					<FiX size={24} />
+					<FiX size={20} />
 				</button>
 				<button
 					onClick={handleSubmit}
@@ -82,7 +82,7 @@ const EditBox: FC<EditBoxProps> = ({ editText, onTextChange, onSubmit, onDiscard
 					aria-label="Send Edited Message"
 					title="Send Edited Message"
 				>
-					<FiSend size={24} />
+					<FiSend size={20} />
 				</button>
 			</div>
 		</div>

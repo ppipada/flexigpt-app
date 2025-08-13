@@ -267,19 +267,16 @@ const ModelPresetPage: FC = () => {
 	return (
 		<div className="flex flex-col items-center w-full h-full">
 			{/* ------------------------------ header ----------------------------- */}
-			<div className="w-full flex justify-center fixed top-8 z-10">
-				<div className="w-10/12 lg:w-2/3 flex items-center justify-between p-2">
-					<h1 className="text-xl font-semibold flex-grow text-center">Model Presets</h1>
-
-					<DownloadButton
-						title="Download Model Presets"
-						language="json"
-						valueFetcher={fetchValue}
-						size={24}
-						fileprefix="modelpresets"
-						className="btn btn-sm btn-ghost"
-					/>
-				</div>
+			<div className="flex w-10/12 lg:w-2/3 items-center fixed mt-8 p-2">
+				<h1 className="flex grow items-center justify-center text-xl font-semibold">Model Presets</h1>
+				<DownloadButton
+					title="Download Model Presets"
+					language="json"
+					valueFetcher={fetchValue}
+					size={20}
+					fileprefix="modelpresets"
+					className="btn btn-sm btn-ghost"
+				/>
 			</div>
 
 			{/* ------------------------------ body ------------------------------ */}

@@ -364,7 +364,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 						aria-label="Send Message"
 						title="Send Message"
 					>
-						<FiSend size={24} />
+						<FiSend size={20} />
 					</button>
 				</form>
 			</div>

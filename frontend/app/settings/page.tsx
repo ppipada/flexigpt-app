@@ -47,25 +47,20 @@ const SettingsPage: FC = () => {
 	return (
 		<div className="flex flex-col items-center w-full h-full">
 			{/* sticky header */}
-			<header className="w-full flex justify-center fixed top-8 z-20">
-				<div className="w-10/12 lg:w-2/3 flex items-center justify-between p-2">
-					<h1 className="text-xl font-semibold">Settings</h1>
-					<DownloadButton
-						title="Download Settings"
-						language="json"
-						valueFetcher={exportSettings}
-						size={24}
-						fileprefix="settings"
-						className="btn btn-sm btn-ghost"
-						isBinary={false}
-					/>
-				</div>
+			<header className="flex w-10/12 lg:w-2/3 items-center fixed mt-8 p-2">
+				<h1 className="flex grow items-center justify-center text-xl font-semibold">Settings</h1>
+				<DownloadButton
+					title="Download Settings"
+					language="json"
+					valueFetcher={exportSettings}
+					size={20}
+					fileprefix="settings"
+					className="btn btn-sm btn-ghost"
+					isBinary={false}
+				/>
 			</header>
 
-			<main
-				className="flex flex-col items-center w-full grow mt-24 overflow-y-auto"
-				style={{ maxHeight: 'calc(100vh - 128px)' }}
-			>
+			<main className="flex flex-col items-center w-full grow mt-24 overflow-y-auto">
 				<div className="flex flex-col gap-8 w-5/6 xl:w-2/3">
 					{/* ── Theme selector ──────────────────────────── */}
 					<section className="flex items-center bg-base-100 rounded-2xl shadow-lg p-4">

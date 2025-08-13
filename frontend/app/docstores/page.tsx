@@ -222,7 +222,7 @@ const DocumentStores: React.FC = () => {
 				<h1 className="text-3xl font-bold text-center">Document Stores</h1>
 				<div className="text-right">
 					<button className="btn btn-lg btn-ghost rounded-2xl" onClick={handleAddDocStore}>
-						<FiPlus size={24} />
+						<FiPlus size={20} />
 					</button>
 				</div>
 			</div>
