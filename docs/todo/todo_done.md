@@ -460,3 +460,4 @@
   - [x] load all pages via infinite scroll for titles too.
   - [x] Support delete conversation. ~~Maybe, have soft delete then hard delete workflow.~~
   - [x] Support edit convo title too
+  - [x] Check if title edits are proper and manual is preserved in second message edits too.

@@ -440,11 +440,11 @@ const ChatScreen: FC = () => {
 			</div>
 
 			{/* MESSAGES */}
-			<div className="flex flex-col items-center w-full grow overflow-hidden mt-32">
+			<div className="flex flex-col items-center w-full grow overflow-hidden mt-24">
 				<div
 					className="w-full grow flex justify-center overflow-y-auto"
 					ref={chatContainerRef}
-					style={{ maxHeight: `calc(100vh - 216px - ${inputHeight}px)` }}
+					style={{ maxHeight: `calc(100vh - 160px - ${inputHeight}px)` }}
 				>
 					<div className="w-11/12 lg:w-5/6">
 						<div className="w-full flex-1 space-y-4 mb-4">{renderedMessages}</div>

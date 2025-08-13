@@ -56,7 +56,7 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 	return (
 		<div className="flex-1 flex-col items-center">
 			{/* search ------------------------------------------------ */}
-			<div className="flex-1 items-center justify-between p-2 bg-transparent ml-8 md:ml-0">
+			<div className="flex-1 items-center justify-between py-1 px-2 bg-transparent ml-8 md:ml-0">
 				<ChatSearch
 					onSelectConversation={onSelectConversation}
 					refreshKey={searchRefreshKey}
@@ -65,7 +65,7 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 			</div>
 
 			{/* controls / title ------------------------------------ */}
-			<div className="flex items-center justify-between p-0 mt-2 max-h-8 bg-transparent">
+			<div className="flex items-center justify-between py-1 px-2 max-h-8 bg-transparent">
 				{/* new chat */}
 				<button
 					className="btn btn-sm btn-ghost mx-1"
@@ -74,7 +74,7 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 					aria-label="Create New Chat"
 					title="Create New Chat"
 				>
-					<FiPlus size={24} />
+					<FiPlus size={20} />
 				</button>
 
 				{/* title or editor */}
@@ -119,14 +119,14 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 					aria-label="Rename Conversation"
 					title="Rename Conversation"
 				>
-					<FiEdit size={24} />
+					<FiEdit size={20} />
 				</button>
 
 				{/* download */}
 				<DownloadButton
 					language="json"
 					valueFetcher={getConversationForExport}
-					size={24}
+					size={20}
 					fileprefix="conversation"
 					className="btn btn-sm btn-ghost mx-1"
 					aria-label="Export Chat"

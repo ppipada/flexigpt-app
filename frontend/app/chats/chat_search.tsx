@@ -167,100 +167,108 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 
 	/* render --------------------------------------------------------- */
 	return (
-		<div className="absolute left-0 right-0 mt-1 bg-base-200 rounded-2xl shadow-lg overflow-hidden">
-			{/* sticky status / hint bar -------------------------------- */}
-			<div className="flex justify-between items-center px-8 py-1 text-xs text-neutral-custom border-b border-base-300 sticky top-0">
-				<span className="truncate">{barLeft}</span>
-				{barRight && <span className="pl-4 shrink-0">{barRight}</span>}
-			</div>
-
-			{/* results -------------------------------------------------- */}
-			{!results.length && !loading ? (
-				<div className="py-8 text-center text-sm text-neutral-custom">
-					{query ? 'Try refining your search' : 'Start a conversation to see it here'}
+		<div className="relative">
+			<div className="absolute left-0 right-0 mt-1 bg-base-200 rounded-2xl shadow-lg overflow-hidden">
+				{/* sticky status / hint bar -------------------------------- */}
+				<div className="flex justify-between items-center px-8 py-1 text-xs text-neutral-custom border-b border-base-300 sticky top-0">
+					<span className="truncate">{barLeft}</span>
+					{barRight && <span className="pl-4 shrink-0">{barRight}</span>}
 				</div>
-			) : (
-				<div ref={scrollRef} className="max-h-[60vh] overflow-y-auto antialiased" onScroll={handleScroll}>
-					{shouldGroup ? (
-						<GroupedDropdown<SearchResult>
-							items={results}
-							focused={focusedIndex}
-							getDate={r => new Date(r.searchConversation.modifiedAt)}
-							getKey={r => r.searchConversation.id}
-							getLabel={r => <span className="truncate">{r.searchConversation.title}</span>}
-							onPick={r => {
-								onPick(r.searchConversation);
-							}}
-							renderItemExtra={r => (
-								<span className="inline-flex items-center gap-4">
-									{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
-									<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.modifiedAt)}</span>
-									{/* delete (not for active conv) */}
-									{r.searchConversation.id !== currentConversationId && (
-										<FiTrash2
-											size={14}
-											className="shrink-0 text-neutral-custom hover:text-error cursor-pointer"
-											onClick={e => {
-												e.stopPropagation(); // don’t trigger onPick
-												onDelete(r.searchConversation);
+
+				{/* results -------------------------------------------------- */}
+				{!results.length && !loading ? (
+					<div className="py-8 text-center text-sm text-neutral-custom">
+						{query ? 'Try refining your search' : 'Start a conversation to see it here'}
+					</div>
+				) : (
+					<div ref={scrollRef} className="max-h-[60vh] overflow-y-auto antialiased" onScroll={handleScroll}>
+						{shouldGroup ? (
+							<GroupedDropdown<SearchResult>
+								items={results}
+								focused={focusedIndex}
+								getDate={r => new Date(r.searchConversation.modifiedAt)}
+								getKey={r => r.searchConversation.id}
+								getLabel={r => <span className="truncate">{r.searchConversation.title}</span>}
+								onPick={r => {
+									onPick(r.searchConversation);
+								}}
+								renderItemExtra={r => (
+									<span className="inline-flex items-center gap-4">
+										{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
+										<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.modifiedAt)}</span>
+										{/* delete (not for active conv) */}
+										{r.searchConversation.id !== currentConversationId && (
+											<FiTrash2
+												size={14}
+												className="shrink-0 text-neutral-custom hover:text-error cursor-pointer"
+												onClick={e => {
+													e.stopPropagation(); // don’t trigger onPick
+													onDelete(r.searchConversation);
+												}}
+											/>
+										)}
+									</span>
+								)}
+							/>
+						) : (
+							<ul className="w-full text-sm">
+								{results.map((r, idx) => {
+									const isFocused = idx === focusedIndex;
+									return (
+										<li
+											key={r.searchConversation.id}
+											data-index={idx}
+											onClick={() => {
+												onPick(r.searchConversation);
 											}}
-										/>
-									)}
-								</span>
-							)}
-						/>
-					) : (
-						<ul className="w-full text-sm">
-							{results.map((r, idx) => {
-								const isFocused = idx === focusedIndex;
-								return (
-									<li
-										key={r.searchConversation.id}
-										data-index={idx}
-										onClick={() => {
-											onPick(r.searchConversation);
-										}}
-										className={`flex justify-between items-center px-12 py-2 cursor-pointer hover:bg-base-100 ${
-											isFocused ? 'bg-base-100' : ''
-										}`}
-									>
-										<span className="truncate">{r.searchConversation.title}</span>
+											className={`flex justify-between items-center px-12 py-2 cursor-pointer hover:bg-base-100 ${
+												isFocused ? 'bg-base-100' : ''
+											}`}
+										>
+											<span className="truncate">{r.searchConversation.title}</span>
 
-										<span className="hidden lg:block text-neutral-custom text-xs">
-											<span className="inline-flex items-center gap-4">
-												{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
-												<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.modifiedAt)}</span>
-												{/* delete (not for active conv) */}
-												{r.searchConversation.id !== currentConversationId && (
-													<FiTrash2
-														size={14}
-														className="shrink-0 text-neutral-custom hover:text-error cursor-pointer"
-														onClick={e => {
-															e.stopPropagation();
-															onDelete(r.searchConversation);
-														}}
-													/>
-												)}
+											<span className="hidden lg:block text-neutral-custom text-xs">
+												<span className="inline-flex items-center gap-4">
+													{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
+													<span className="whitespace-nowrap">
+														{formatDateAsString(r.searchConversation.modifiedAt)}
+													</span>
+													{/* delete (not for active conv) */}
+													{r.searchConversation.id !== currentConversationId && (
+														<FiTrash2
+															size={14}
+															className="shrink-0 text-neutral-custom hover:text-error cursor-pointer"
+															onClick={e => {
+																e.stopPropagation();
+																onDelete(r.searchConversation);
+															}}
+														/>
+													)}
+												</span>
 											</span>
-										</span>
-									</li>
-								);
-							})}
-						</ul>
-					)}
+										</li>
+									);
+								})}
+							</ul>
+						)}
 
-					{/* footer / loader ------------------------------------ */}
-					{loading && (
-						<div className="flex items-center justify-center py-4">
-							<span className="text-sm text-neutral-custom">{results.length ? 'Loading more...' : 'Searching...'}</span>
-							<span className="loading loading-dots loading-sm" />
-						</div>
-					)}
-					{!loading && !hasMore && results.length > 0 && query && (
-						<div className="text-center py-1 text-xs text-neutral-custom border-t border-base-300">End of results</div>
-					)}
-				</div>
-			)}
+						{/* footer / loader ------------------------------------ */}
+						{loading && (
+							<div className="flex items-center justify-center py-4">
+								<span className="text-sm text-neutral-custom">
+									{results.length ? 'Loading more...' : 'Searching...'}
+								</span>
+								<span className="loading loading-dots loading-sm" />
+							</div>
+						)}
+						{!loading && !hasMore && results.length > 0 && query && (
+							<div className="text-center py-1 text-xs text-neutral-custom border-t border-base-300">
+								End of results
+							</div>
+						)}
+					</div>
+				)}
+			</div>
 		</div>
 	);
 };
@@ -624,9 +632,9 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 	);
 
 	return (
-		<div className="relative">
+		<div>
 			{/* input --------------------------------------------------- */}
-			<div className="flex items-center bg-base-100 py-3 px-1 rounded-2xl border border-base-300 focus-within:border-base-400 transition-colors">
+			<div className="flex items-center bg-base-100 p-2 rounded-2xl border border-base-300 focus-within:border-base-400 transition-colors">
 				<FiSearch size={20} className="mx-3 text-neutral-custom flex-shrink-0" />
 				<input
 					ref={inputRef}
