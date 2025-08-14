@@ -4,7 +4,7 @@ import { useDebounced } from '@/hooks/use_debounced';
 
 import EnhancedMarkdown from '@/components/markdown_enhanced';
 
-interface ChatMessageContentProps {
+interface MessageContentProps {
 	messageID: string;
 	// Final text
 	content: string;
@@ -16,7 +16,7 @@ interface ChatMessageContentProps {
 	renderAsMarkdown?: boolean;
 }
 
-const ChatMessageContent = ({
+const MessageContent = ({
 	messageID,
 	content,
 	streamedText = '',
@@ -24,7 +24,7 @@ const ChatMessageContent = ({
 	isPending = false,
 	align,
 	renderAsMarkdown = true,
-}: ChatMessageContentProps) => {
+}: MessageContentProps) => {
 	const liveText = isStreaming ? streamedText : content;
 	// Max ~4×/sec.
 	const textToRender = useDebounced(liveText, 128);
@@ -67,7 +67,7 @@ const ChatMessageContent = ({
 	);
 };
 
-function areEqual(prev: ChatMessageContentProps, next: ChatMessageContentProps) {
+function areEqual(prev: MessageContentProps, next: MessageContentProps) {
 	return (
 		prev.content === next.content &&
 		prev.streamedText === next.streamedText &&
@@ -78,4 +78,4 @@ function areEqual(prev: ChatMessageContentProps, next: ChatMessageContentProps) 
 	);
 }
 
-export default memo(ChatMessageContent, areEqual);
+export default memo(MessageContent, areEqual);

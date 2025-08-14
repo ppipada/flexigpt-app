@@ -7,9 +7,9 @@ import { stripThinkingFences } from '@/lib/text_utils';
 
 import CopyButton from '@/components/copy_button';
 
-import ChatMessageContent from '@/chats/chat_message_content';
+import MessageContent from '@/chats/messagebox/message_content';
 
-interface ChatMessageFooterAreaProps {
+interface MessageFooterAreaProps {
 	messageID: string;
 	isUser: boolean;
 	cardCopyContent: string;
@@ -20,7 +20,7 @@ interface ChatMessageFooterAreaProps {
 	isBusy: boolean;
 }
 
-const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
+const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 	messageID,
 	isUser,
 	cardCopyContent,
@@ -92,7 +92,7 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 			</div>
 			{isExpanded && messageDetails && (
 				<div className="bg-base-100 mt-2 overflow-hidden shadow-lg rounded-2xl">
-					<ChatMessageContent
+					<MessageContent
 						messageID={messageID}
 						content={messageDetails}
 						streamedText=""
@@ -107,4 +107,4 @@ const ChatMessageFooterArea: FC<ChatMessageFooterAreaProps> = ({
 	);
 };
 
-export default ChatMessageFooterArea;
+export default MessageFooterArea;

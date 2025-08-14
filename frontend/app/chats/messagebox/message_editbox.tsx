@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { FiSend, FiX } from 'react-icons/fi';
 
-interface EditBoxProps {
+interface MessageEditBoxProps {
 	editText: string;
 	onTextChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
 	onSubmit: (text: string) => void;
@@ -12,7 +12,7 @@ interface EditBoxProps {
 
 const MAX_HEIGHT = 420;
 
-const EditBox: FC<EditBoxProps> = ({ editText, onTextChange, onSubmit, onDiscard }) => {
+const MessageEditBox: FC<MessageEditBoxProps> = ({ editText, onTextChange, onSubmit, onDiscard }) => {
 	const [isSendButtonEnabled, setIsSendButtonEnabled] = useState<boolean>(editText.trim().length > 0);
 	const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -89,4 +89,4 @@ const EditBox: FC<EditBoxProps> = ({ editText, onTextChange, onSubmit, onDiscard
 	);
 };
 
-export default EditBox;
+export default MessageEditBox;

@@ -6,9 +6,9 @@ import { FiCompass, FiUser } from 'react-icons/fi';
 import type { ConversationMessage } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 
-import ChatMessageContent from '@/chats/chat_message_content';
-import EditBox from '@/chats/chat_message_editbox';
-import ChatMessageFooterArea from '@/chats/chat_message_footer';
+import MessageContent from '@/chats/messagebox/message_content';
+import MessageEditBox from '@/chats/messagebox/message_editbox';
+import MessageFooterArea from '@/chats/messagebox/message_footer';
 
 interface ChatMessageProps {
 	message: ConversationMessage;
@@ -58,14 +58,14 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 				className={`bg-base-100 col-span-10 lg:col-span-9 row-start-1 row-end-1 overflow-x-auto rounded-2xl ${streamedMessage ? '' : 'shadow-lg'}`}
 			>
 				{isEditing ? (
-					<EditBox
+					<MessageEditBox
 						editText={editText}
 						onTextChange={handleTextChange}
 						onSubmit={handleSubmit}
 						onDiscard={handleDiscard}
 					/>
 				) : (
-					<ChatMessageContent
+					<MessageContent
 						messageID={message.id}
 						content={message.content}
 						streamedText={streamedMessage}
@@ -89,7 +89,7 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 			<div className={`${leftColSpan} row-start-2 row-end-2`} />
 			<div className="col-span-10 lg:col-span-9 row-start-2 row-end-2">
 				{!isEditing && (
-					<ChatMessageFooterArea
+					<MessageFooterArea
 						messageID={message.id}
 						isUser={isUser}
 						cardCopyContent={message.content}

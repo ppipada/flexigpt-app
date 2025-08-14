@@ -17,8 +17,8 @@ import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
 
 import ChatInputField, { type ChatInputFieldHandle } from '@/chats/chat_input_field';
-import ChatMessage from '@/chats/chat_message';
 import ChatNavBar from '@/chats/chat_navbar';
+import ChatMessage from '@/chats/messagebox/message';
 
 function initConversation(title = 'New Conversation'): Conversation {
 	return {
