@@ -84,8 +84,7 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 							autoFocus
 							value={draftTitle}
 							onChange={e => {
-								const cleaned = sanitizeConversationTitle(e.target.value);
-								setDraftTitle(cleaned);
+								setDraftTitle(e.target.value);
 							}}
 							onBlur={finishEdit}
 							onKeyDown={e => {
