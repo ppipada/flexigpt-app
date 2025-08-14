@@ -11,11 +11,11 @@ import { type ChatOption } from '@/apis/chatoption_helper';
 import AdvancedParamsModal from '@/chats/modelparams/advanced_params_modal';
 import DisablePreviousMessagesCheckbox from '@/chats/modelparams/disable_checkbox';
 import ModelDropdown from '@/chats/modelparams/model_dropdown';
-import { HybridReasoningCheckbox, ReasoningTokensDropdown } from '@/chats/modelparams/reasoning_hybrid';
+import ReasoningTokensDropdown, { HybridReasoningCheckbox } from '@/chats/modelparams/reasoning_hybrid';
 import SingleReasoningDropdown from '@/chats/modelparams/reasoning_levels_dropdown';
 import TemperatureDropdown from '@/chats/modelparams/temperature_dropdown';
 
-type ChatModelParamsBarProps = {
+type ModelParamsBarProps = {
 	selectedModel: ChatOption;
 	setSelectedModel: React.Dispatch<React.SetStateAction<ChatOption>>;
 	allOptions: ChatOption[];
@@ -27,7 +27,7 @@ type ChatModelParamsBarProps = {
 	setIsHybridReasoningEnabled: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-const ModelParamsBar: React.FC<ChatModelParamsBarProps> = ({
+const ModelParamsBar: React.FC<ModelParamsBarProps> = ({
 	selectedModel,
 	setSelectedModel,
 	allOptions,
@@ -94,23 +94,17 @@ const ModelParamsBar: React.FC<ChatModelParamsBarProps> = ({
 		[setSelectedModel]
 	);
 
-	const secondaryProps = {
-		isOpen: isSecondaryDropdownOpen,
-		setIsOpen: setIsSecondaryDropdownOpen,
-		detailsRef: secondaryDetailsRef,
-	};
-
 	return (
 		<div className="flex items-center justify-between bg-base-200 mb-1 mx-8">
 			{/* Model dropdown */}
 			<div className="w-1/3">
 				<ModelDropdown
+					ref={modelDetailsRef}
 					selectedModel={selectedModel}
 					setSelectedModel={setSelectedModel}
 					allOptions={allOptions}
 					isOpen={isModelDropdownOpen}
 					setIsOpen={setIsModelDropdownOpen}
-					detailsRef={modelDetailsRef}
 				/>
 			</div>
 
@@ -126,28 +120,36 @@ const ModelParamsBar: React.FC<ChatModelParamsBarProps> = ({
 				{selectedModel.reasoning?.type === ReasoningType.HybridWithTokens ? (
 					isHybridReasoningEnabled ? (
 						<ReasoningTokensDropdown
+							ref={secondaryDetailsRef}
 							tokens={selectedModel.reasoning.tokens}
 							setTokens={setHybridTokens}
-							{...secondaryProps}
+							isOpen={isSecondaryDropdownOpen}
+							setIsOpen={setIsSecondaryDropdownOpen}
 						/>
 					) : (
 						<TemperatureDropdown
+							ref={secondaryDetailsRef}
 							temperature={selectedModel.temperature ?? 0.1}
 							setTemperature={setTemperature}
-							{...secondaryProps}
+							isOpen={isSecondaryDropdownOpen}
+							setIsOpen={setIsSecondaryDropdownOpen}
 						/>
 					)
 				) : selectedModel.reasoning?.type === ReasoningType.SingleWithLevels ? (
 					<SingleReasoningDropdown
+						ref={secondaryDetailsRef}
 						reasoningLevel={selectedModel.reasoning.level}
 						setReasoningLevel={setReasoningLevel}
-						{...secondaryProps}
+						isOpen={isSecondaryDropdownOpen}
+						setIsOpen={setIsSecondaryDropdownOpen}
 					/>
 				) : (
 					<TemperatureDropdown
 						temperature={selectedModel.temperature ?? 0.1}
 						setTemperature={setTemperature}
-						{...secondaryProps}
+						isOpen={isSecondaryDropdownOpen}
+						setIsOpen={setIsSecondaryDropdownOpen}
+						ref={secondaryDetailsRef}
 					/>
 				)}
 

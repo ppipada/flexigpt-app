@@ -53,8 +53,8 @@ export class WailsConversationStoreAPI implements IConversationStoreAPI {
 		await DeleteConversation(req as wailsSpec.DeleteConversationRequest);
 	}
 
-	async getConversation(id: string, title: string): Promise<Conversation | null> {
-		const req = { ID: id, Title: title };
+	async getConversation(id: string, title: string, forceFetch?: boolean): Promise<Conversation | null> {
+		const req = { ID: id, Title: title, ForceFetch: forceFetch ?? false };
 		const c = await GetConversation(req as wailsSpec.GetConversationRequest);
 		return c.Body as Conversation;
 	}

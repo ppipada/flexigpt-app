@@ -4,7 +4,6 @@ import { memo, useMemo } from 'react';
 import 'katex/dist/katex.min.css';
 import Markdown from 'react-markdown';
 import rehypeKatex from 'rehype-katex';
-import rehypeRaw from 'rehype-raw';
 import remarkGemoji from 'remark-gemoji';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -15,11 +14,12 @@ import { SanitizeLaTeX } from '@/lib/markdown_utils';
 import { backendAPI } from '@/apis/baseapi';
 
 import CodeBlock from '@/components/markdown_code_block';
+import { MdErrorBoundary } from '@/components/markdown_error_boundary';
 import ThinkingFence from '@/components/thinking_fence';
 
 const remarkPlugins = [remarkGemoji, supersub, remarkMath, remarkGfm];
 const remarkPluginsStreaming = [remarkGemoji, supersub, remarkGfm];
-const rehypePlugins = [rehypeRaw, rehypeKatex];
+const rehypePlugins = [rehypeKatex];
 
 interface EnhancedMarkdownProps {
 	text: string;
@@ -125,13 +125,16 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 	);
 
 	return (
-		<Markdown
-			remarkPlugins={isStreaming ? remarkPluginsStreaming : remarkPlugins}
-			rehypePlugins={isStreaming ? [] : rehypePlugins}
-			components={components}
-		>
-			{processedText}
-		</Markdown>
+		<MdErrorBoundary source={processedText}>
+			<Markdown
+				remarkPlugins={isStreaming ? remarkPluginsStreaming : remarkPlugins}
+				rehypePlugins={isStreaming ? [] : rehypePlugins}
+				components={components}
+				skipHtml={false}
+			>
+				{processedText}
+			</Markdown>
+		</MdErrorBoundary>
 	);
 };
 

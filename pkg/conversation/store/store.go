@@ -177,7 +177,7 @@ func (cc *ConversationCollection) PutMessagesToConversation(
 	}
 
 	convoResp, err := cc.GetConversation(ctx,
-		&spec.GetConversationRequest{ID: req.ID, Title: req.Body.Title})
+		&spec.GetConversationRequest{ID: req.ID, Title: req.Body.Title, ForceFetch: false})
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (cc *ConversationCollection) GetConversation(
 	ctx context.Context,
 	req *spec.GetConversationRequest,
 ) (*spec.GetConversationResponse, error) {
-	if req == nil {
+	if req == nil || req.Title == "" || req.ID == "" {
 		return nil, errors.New("request or request body cannot be nil")
 	}
 	info, err := uuidv7filename.Build(req.ID, req.Title, spec.ConversationFileExtension)
@@ -235,7 +235,8 @@ func (cc *ConversationCollection) GetConversation(
 	}
 	filename := info.FileName
 
-	raw, err := cc.store.GetFileData(dirstore.FileKey{FileName: filename}, false)
+	// Force get the data for single get.
+	raw, err := cc.store.GetFileData(dirstore.FileKey{FileName: filename}, req.ForceFetch)
 	if err != nil {
 		return nil, err
 	}

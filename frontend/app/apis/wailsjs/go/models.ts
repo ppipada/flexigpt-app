@@ -754,6 +754,7 @@ export namespace spec {
 	export class GetConversationRequest {
 	    ID: string;
 	    Title: string;
+	    ForceFetch: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new GetConversationRequest(source);
@@ -763,6 +764,7 @@ export namespace spec {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ID = source["ID"];
 	        this.Title = source["Title"];
+	        this.ForceFetch = source["ForceFetch"];
 	    }
 	}
 	export class GetConversationResponse {

@@ -163,7 +163,7 @@ const ChatScreen: FC = () => {
 	};
 
 	const handleSelectConversation = useCallback(async (item: ConversationSearchItem) => {
-		const selectedChat = await conversationStoreAPI.getConversation(item.id, item.title);
+		const selectedChat = await conversationStoreAPI.getConversation(item.id, item.title, true);
 		if (selectedChat) {
 			setChat(selectedChat);
 			isChatPersistedRef.current = true;
@@ -193,7 +193,7 @@ const ChatScreen: FC = () => {
 	);
 
 	const getConversationForExport = useCallback(async (): Promise<string> => {
-		const selectedChat = await conversationStoreAPI.getConversation(chat.id, chat.title);
+		const selectedChat = await conversationStoreAPI.getConversation(chat.id, chat.title, true);
 		return JSON.stringify(selectedChat, null, 2);
 	}, [chat.id, chat.title]);
 

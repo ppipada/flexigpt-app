@@ -36,8 +36,9 @@ type DeleteConversationRequest struct {
 type DeleteConversationResponse struct{}
 
 type GetConversationRequest struct {
-	ID    string `path:"id" required:"true"`
-	Title string `          required:"true" query:"title"`
+	ID         string `path:"id" required:"true"`
+	Title      string `          required:"true" query:"title"`
+	ForceFetch bool   `                          query:"forceFetch"`
 }
 
 type GetConversationResponse struct {

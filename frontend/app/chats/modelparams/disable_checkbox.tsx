@@ -1,9 +1,14 @@
-export default function DisablePreviousMessagesCheckbox(props: {
+import type { FC } from 'react';
+
+type DisablePreviousMessagesCheckboxProps = {
 	disablePreviousMessages: boolean;
 	setDisablePreviousMessages: React.Dispatch<React.SetStateAction<boolean>>;
-}) {
-	const { disablePreviousMessages, setDisablePreviousMessages } = props;
+};
 
+const DisablePreviousMessagesCheckbox: FC<DisablePreviousMessagesCheckboxProps> = ({
+	disablePreviousMessages,
+	setDisablePreviousMessages,
+}) => {
 	return (
 		<div className="flex w-full justify-center">
 			<label className="flex ml-4 space-x-2 overflow-hidden" title="Send Only This Message To AI">
@@ -20,4 +25,6 @@ export default function DisablePreviousMessagesCheckbox(props: {
 			</label>
 		</div>
 	);
-}
+};
+
+export default DisablePreviousMessagesCheckbox;

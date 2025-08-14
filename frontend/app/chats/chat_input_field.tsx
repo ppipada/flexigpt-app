@@ -9,7 +9,7 @@ import { type ChatOption, DefaultChatOptions, getChatInputOptions } from '@/apis
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 
 import ChatTextInput, { type ChatTextInputHandle } from '@/chats/inputbox/text_input';
-import ChatModelParamsBar from '@/chats/modelparams/modelparams_bar';
+import ModelParamsBar from '@/chats/modelparams/modelparams_bar';
 
 interface ChatInputFieldProps {
 	onSend: (message: string, options: ChatOption) => void;
@@ -100,7 +100,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 				)}
 
 				{/* Model params bar */}
-				<ChatModelParamsBar
+				<ModelParamsBar
 					selectedModel={selectedModel}
 					setSelectedModel={setSelectedModel}
 					allOptions={allOptions}

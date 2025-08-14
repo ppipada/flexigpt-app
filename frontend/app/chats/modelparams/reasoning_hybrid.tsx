@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { forwardRef, useEffect, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
@@ -30,103 +30,107 @@ export function HybridReasoningCheckbox({
 	);
 }
 
-export function ReasoningTokensDropdown(props: {
+type ReasoningTokensDropdownProps = {
 	tokens: number;
 	setTokens: (tokens: number) => void;
 	isOpen: boolean;
 	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-	detailsRef: React.RefObject<HTMLDetailsElement | null>;
-}) {
-	const { tokens, setTokens, isOpen, setIsOpen, detailsRef } = props;
+};
 
-	const [customTokens, setCustomTokens] = useState<string>(String(tokens));
+const ReasoningTokensDropdown = forwardRef<HTMLDetailsElement, ReasoningTokensDropdownProps>(
+	({ tokens, setTokens, isOpen, setIsOpen }, detailsRef) => {
+		const [customTokens, setCustomTokens] = useState<string>(String(tokens));
 
-	useEffect(() => {
-		setCustomTokens(String(tokens));
-	}, [tokens]);
+		useEffect(() => {
+			setCustomTokens(String(tokens));
+		}, [tokens]);
 
-	function clampTokensOnBlur() {
-		let val = parseInt(customTokens, 10);
-		if (isNaN(val)) {
-			val = 1024;
+		function clampTokensOnBlur() {
+			let val = parseInt(customTokens, 10);
+			if (isNaN(val)) {
+				val = 1024;
+			}
+			if (val < 1024) {
+				val = 1024;
+			}
+			setTokens(val);
+
+			if (detailsRef && typeof detailsRef !== 'function' && detailsRef.current) {
+				detailsRef.current.open = false;
+			}
+			setIsOpen(false);
 		}
-		if (val < 1024) {
-			val = 1024;
-		}
-		setTokens(val);
 
-		if (detailsRef.current) {
-			detailsRef.current.open = false;
-		}
-		setIsOpen(false);
-	}
-
-	return (
-		<div className="flex w-full justify-center">
-			<details
-				ref={detailsRef}
-				className="dropdown dropdown-top dropdown-end"
-				onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
-					setIsOpen((event.currentTarget as HTMLDetailsElement).open);
-				}}
-				open={isOpen}
-			>
-				<summary
-					className="btn btn-xs text-left text-nowrap text-neutral-custom shadow-none border-none overflow-hidden"
-					title="Set Tokens"
+		return (
+			<div className="flex w-full justify-center">
+				<details
+					ref={detailsRef}
+					className="dropdown dropdown-top dropdown-end"
+					onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
+						setIsOpen((event.currentTarget as HTMLDetailsElement).open);
+					}}
+					open={isOpen}
 				>
-					<div className="flex">
-						<span className="text-xs font-normal sm:hidden mr-2">Tokens: </span>
-						<span className="text-xs font-normal hidden sm:inline mr-2">Effort Tokens: </span>{' '}
-						<span className="text-xs font-normal">{tokens}</span>
-						{isOpen ? (
-							<FiChevronDown size={16} className="ml-1 md:ml-2" />
-						) : (
-							<FiChevronUp size={16} className="ml-1 md:ml-2" />
-						)}
-					</div>
-				</summary>
+					<summary
+						className="btn btn-xs text-left text-nowrap text-neutral-custom shadow-none border-none overflow-hidden"
+						title="Set Tokens"
+					>
+						<div className="flex">
+							<span className="text-xs font-normal sm:hidden mr-2">Tokens: </span>
+							<span className="text-xs font-normal hidden sm:inline mr-2">Effort Tokens: </span>{' '}
+							<span className="text-xs font-normal">{tokens}</span>
+							{isOpen ? (
+								<FiChevronDown size={16} className="ml-1 md:ml-2" />
+							) : (
+								<FiChevronUp size={16} className="ml-1 md:ml-2" />
+							)}
+						</div>
+					</summary>
 
-				<ul className="dropdown-content menu bg-base-100 rounded-xl w-full p-4">
-					{defaultTokenOptions.map(tk => (
-						<li
-							key={tk}
-							className="cursor-pointer text-xs"
-							onClick={() => {
-								setTokens(tk);
-								if (detailsRef.current) {
-									detailsRef.current.open = false;
-								}
-								setIsOpen(false);
-							}}
-						>
-							<a className="justify-between items-center p-1 m-0">
-								<span>{tk}</span>
-								{tokens === tk && <FiCheck />}
-							</a>
-						</li>
-					))}
-
-					<li className="text-xs">
-						<hr className="p-0 my-2 border-0 border-t border-neutral/20" />
-						<label className="tooltip tooltip-top outline-none border-none">
-							<div className="tooltip-content">
-								<div className="text-xs">Custom tokens (≥ 1024)</div>
-							</div>
-							<input
-								type="text"
-								className="input input-xs w-full"
-								placeholder="Enter a custom integer ≥ 1024"
-								value={customTokens}
-								onChange={e => {
-									setCustomTokens(e.target.value);
+					<ul className="dropdown-content menu bg-base-100 rounded-xl w-full p-4">
+						{defaultTokenOptions.map(tk => (
+							<li
+								key={tk}
+								className="cursor-pointer text-xs"
+								onClick={() => {
+									setTokens(tk);
+									if (detailsRef && typeof detailsRef !== 'function' && detailsRef.current) {
+										detailsRef.current.open = false;
+									}
+									setIsOpen(false);
 								}}
-								onBlur={clampTokensOnBlur}
-							/>
-						</label>
-					</li>
-				</ul>
-			</details>
-		</div>
-	);
-}
+							>
+								<a className="justify-between items-center p-1 m-0">
+									<span>{tk}</span>
+									{tokens === tk && <FiCheck />}
+								</a>
+							</li>
+						))}
+
+						<li className="text-xs">
+							<hr className="p-0 my-2 border-0 border-t border-neutral/20" />
+							<label className="tooltip tooltip-top outline-none border-none">
+								<div className="tooltip-content">
+									<div className="text-xs">Custom tokens (≥ 1024)</div>
+								</div>
+								<input
+									type="text"
+									className="input input-xs w-full"
+									placeholder="Enter a custom integer ≥ 1024"
+									value={customTokens}
+									onChange={e => {
+										setCustomTokens(e.target.value);
+									}}
+									onBlur={clampTokensOnBlur}
+								/>
+							</label>
+						</li>
+					</ul>
+				</details>
+			</div>
+		);
+	}
+);
+
+ReasoningTokensDropdown.displayName = 'ReasoningTokensDropdown';
+export default ReasoningTokensDropdown;

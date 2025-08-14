@@ -33,7 +33,7 @@ export interface IConversationStoreAPI {
 	putConversation: (conversation: Conversation) => Promise<void>;
 	putMessagesToConversation(id: string, title: string, messages: ConversationMessage[]): Promise<void>;
 	deleteConversation: (id: string, title: string) => Promise<void>;
-	getConversation: (id: string, title: string) => Promise<Conversation | null>;
+	getConversation: (id: string, title: string, forceFetch?: boolean) => Promise<Conversation | null>;
 	listConversations: (
 		token?: string,
 		pageSize?: number

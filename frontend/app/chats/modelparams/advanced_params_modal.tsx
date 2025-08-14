@@ -5,12 +5,12 @@ import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
 import type { ChatOption } from '@/apis/chatoption_helper';
 
-interface AdvancedParamsModalProps {
+type AdvancedParamsModalProps = {
 	isOpen: boolean;
 	onClose: () => void;
 	currentModel: ChatOption;
 	onSave: (updatedModel: ChatOption) => void;
-}
+};
 
 const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, currentModel, onSave }) => {
 	/* local form state (strings for easy blank entry) */
