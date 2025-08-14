@@ -4,6 +4,8 @@ import { memo, useMemo } from 'react';
 import 'katex/dist/katex.min.css';
 import Markdown from 'react-markdown';
 import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import remarkGemoji from 'remark-gemoji';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -17,9 +19,15 @@ import CodeBlock from '@/components/markdown_code_block';
 import { MdErrorBoundary } from '@/components/markdown_error_boundary';
 import ThinkingFence from '@/components/thinking_fence';
 
-const remarkPlugins = [remarkGemoji, supersub, remarkMath, remarkGfm];
-const remarkPluginsStreaming = [remarkGemoji, supersub, remarkGfm];
-const rehypePlugins = [rehypeKatex];
+const strictSchema = {
+	...defaultSchema, // keep ancestors / clobber / prefix logic
+	attributes: {
+		...defaultSchema.attributes,
+		// The `language-*` regex is allowed by default.
+		code: [['className', /^language-./, /^math-./]],
+		input: defaultSchema.attributes?.input.filter(a => a !== 'value' && a !== 'checked'),
+	},
+};
 
 interface EnhancedMarkdownProps {
 	text: string;
@@ -127,8 +135,10 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 	return (
 		<MdErrorBoundary source={processedText}>
 			<Markdown
-				remarkPlugins={isStreaming ? remarkPluginsStreaming : remarkPlugins}
-				rehypePlugins={isStreaming ? [] : rehypePlugins}
+				remarkPlugins={
+					isStreaming ? [remarkGemoji, supersub, remarkGfm] : [remarkGemoji, supersub, remarkMath, remarkGfm]
+				}
+				rehypePlugins={isStreaming ? [] : [rehypeRaw, [rehypeSanitize, { ...strictSchema }], rehypeKatex]}
 				components={components}
 				skipHtml={false}
 			>
