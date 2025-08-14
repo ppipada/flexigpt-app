@@ -1,10 +1,8 @@
-import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 import { FiSquare } from 'react-icons/fi';
 
-import { ReasoningType } from '@/spec/modelpreset';
-
-import { type ChatOption, DefaultChatOptions, getChatInputOptions } from '@/apis/chatoption_helper';
+import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 
@@ -25,66 +23,48 @@ export interface ChatInputFieldHandle {
 
 const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 	({ onSend, setInputHeight, isBusy, abortRef }, ref) => {
-		const [selectedModel, setSelectedModel] = useState<ChatOption>(DefaultChatOptions);
-		const [allOptions, setAllOptions] = useState<ChatOption[]>([DefaultChatOptions]);
+		/* ------------------------------------------------------------------
+		 * Aggregated chat-options (provided by <ModelParamsBar />)
+		 * ------------------------------------------------------------------ */
+		const [chatOptions, setChatOptions] = useState<ChatOption>(DefaultChatOptions);
 
-		const [isHybridReasoningEnabled, setIsHybridReasoningEnabled] = useState<boolean>(true);
-		const [disablePreviousMessages, setDisablePreviousMessages] = useState<boolean>(false);
-
+		/* ------------------------------------------------------------------
+		 * Abort-handling helpers
+		 * ------------------------------------------------------------------ */
 		const [showAbortModal, setShowAbortModal] = useState(false);
-
-		const inputAreaRef = useRef<ChatTextInputHandle>(null);
 
 		useEffect(() => {
 			if (!isBusy) setShowAbortModal(false);
 		}, [isBusy]);
 
-		// Load initial model options
-		const loadInitialItems = useCallback(async () => {
-			const r = await getChatInputOptions();
-			setSelectedModel(r.default);
+		/* ------------------------------------------------------------------
+		 * <ChatTextInput /> ref utilities
+		 * ------------------------------------------------------------------ */
+		const inputAreaRef = useRef<ChatTextInputHandle>(null);
 
-			// Initialize hybrid reasoning enabled state based on model.
-			setIsHybridReasoningEnabled(r.default.reasoning?.type === ReasoningType.HybridWithTokens);
-			setAllOptions(r.allOptions);
-		}, []);
-
-		useEffect(() => {
-			loadInitialItems();
-		}, [loadInitialItems]);
-
-		// When model changes, update hybrid reasoning enabled state.
-		useEffect(() => {
-			setIsHybridReasoningEnabled(selectedModel.reasoning?.type === ReasoningType.HybridWithTokens);
-		}, [selectedModel]);
-
-		// Build ChatOption for submit
-		const getFinalChatOptions = (): ChatOption => {
-			const options = { ...selectedModel, disablePreviousMessages };
-
-			// If it's a hybrid reasoning model but user disabled reasoning, remove it.
-			if (selectedModel.reasoning?.type === ReasoningType.HybridWithTokens && !isHybridReasoningEnabled) {
-				const modifiedOptions = { ...options };
-				delete modifiedOptions.reasoning;
-				return modifiedOptions;
-			}
-
-			return options;
-		};
-
+		/* ------------------------------------------------------------------
+		 * Send-message
+		 * ------------------------------------------------------------------ */
 		const handleSubmitMessage = (text: string) => {
-			onSend(text, getFinalChatOptions());
+			onSend(text, chatOptions);
 		};
 
+		/* ------------------------------------------------------------------
+		 * Expose imperative API
+		 * ------------------------------------------------------------------ */
 		useImperativeHandle(ref, () => ({
-			getChatOptions: () => getFinalChatOptions(),
+			getChatOptions: () => chatOptions,
 			focus: () => {
 				inputAreaRef.current?.focus();
 			},
 		}));
 
+		/* ------------------------------------------------------------------
+		 * Render
+		 * ------------------------------------------------------------------ */
 		return (
 			<div className="flex-1">
+				{/* Busy / abort banner ------------------------------------------------ */}
 				{isBusy && (
 					<div className="flex items-center justify-center bg-base-200 mb-1 mx-8">
 						<button
@@ -99,18 +79,10 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 					</div>
 				)}
 
-				{/* Model params bar */}
-				<ModelParamsBar
-					selectedModel={selectedModel}
-					setSelectedModel={setSelectedModel}
-					allOptions={allOptions}
-					disablePreviousMessages={disablePreviousMessages}
-					setDisablePreviousMessages={setDisablePreviousMessages}
-					isHybridReasoningEnabled={isHybridReasoningEnabled}
-					setIsHybridReasoningEnabled={setIsHybridReasoningEnabled}
-				/>
+				{/* Model- / params-bar ---------------------------------------------- */}
+				<ModelParamsBar onOptionsChange={setChatOptions} /* hand the aggregated options up */ />
 
-				{/* Abort confirmation dialog */}
+				{/* Abort confirmation dialog ---------------------------------------- */}
 				{showAbortModal && (
 					<DeleteConfirmationModal
 						isOpen={showAbortModal}
@@ -127,7 +99,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 					/>
 				)}
 
-				{/* Input area */}
+				{/* Chat text-input --------------------------------------------------- */}
 				<ChatTextInput
 					ref={inputAreaRef}
 					isBusy={isBusy}
