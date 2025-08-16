@@ -65,7 +65,7 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 			</div>
 
 			{/* controls / title ------------------------------------ */}
-			<div className="flex items-center justify-between py-1 px-2 max-h-8 bg-transparent">
+			<div className="flex items-center justify-between p-2 bg-transparent">
 				{/* new chat */}
 				<button
 					className="btn btn-sm btn-ghost mx-1"

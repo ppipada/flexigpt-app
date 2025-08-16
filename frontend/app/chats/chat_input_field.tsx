@@ -64,7 +64,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 		 * Render
 		 * ------------------------------------------------------------------ */
 		return (
-			<div className="flex-1">
+			<div className="flex-1 bg-base-200">
 				{/* Busy / abort banner ------------------------------------------------ */}
 				{isBusy && (
 					<div className="flex items-center justify-center bg-base-200 mb-1 mx-8">

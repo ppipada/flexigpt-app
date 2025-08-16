@@ -104,7 +104,8 @@
 			"app/spec/aiprovider.ts",
 			"app/hooks/highlight_worker.ts",
 			"app/chats/inputbox/text_input.tsx",
-			"app/hooks/use_mounted.tsx"
+			"app/hooks/use_mounted.tsx",
+			"app/components/editor/plugins/markdown_kit.tsx"
 		],
 		"ignoreBinaries": [],
 		"ignoreDependencies": [

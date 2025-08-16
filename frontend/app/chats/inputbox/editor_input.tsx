@@ -25,22 +25,42 @@ interface EditorTextInputProps {
 	setInputHeight: React.Dispatch<React.SetStateAction<number>>;
 }
 
-// Convert Plate Value (nodes) to plain text for chat submission and button state.
-function nodesToPlainText(nodes: Value): string {
-	const walk = (node: any): string => {
-		if (node.text !== undefined) {
-			return String(node.text ?? '');
-		}
-		if (Array.isArray(node.children)) {
-			return String(node.children.map(walk).join(''));
-		}
-		return '';
-	};
+const EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
 
-	return nodes.map((n, i) => walk(n) + (i < nodes.length - 1 ? '\n' : '')).join('');
+function expandTabs(line: string, tabSize = 2) {
+	let out = '';
+	let col = 0;
+	for (const ch of line) {
+		if (ch === '\t') {
+			const n = tabSize - (col % tabSize);
+			out += ' '.repeat(n);
+			col += n;
+		} else {
+			out += ch;
+			col = ch === '\n' ? 0 : col + 1;
+		}
+	}
+	return out;
 }
 
-const EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
+function insertPlainTextAsSingleBlock(editor: ReturnType<typeof usePlateEditor>, text: string, tabSize = 2) {
+	if (!editor) {
+		return;
+	}
+	const normalized = text.replace(/\r\n?/g, '\n');
+	const lines = normalized.split('\n').map(l => expandTabs(l, tabSize));
+
+	editor.tf.insertText(lines[0] ?? '');
+	for (let i = 1; i < lines.length; i++) {
+		if (editor.tf.insertSoftBreak) {
+			editor.tf.insertSoftBreak();
+		} else {
+			// Fallback: literal newline works with white-space: break-spaces
+			editor.tf.insertText('\n');
+		}
+		editor.tf.insertText(lines[i]);
+	}
+}
 
 function useEnterSubmit() {
 	const formRef = useRef<HTMLFormElement>(null);
@@ -88,10 +108,10 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 				...BasicMarksKit,
 				...LineHeightKit,
 				...AlignKit,
-				...AutoformatKit,
 				...EmojiKit,
 				...IndentKit,
 				...ListKit,
+				...AutoformatKit,
 			],
 
 			value: EMPTY_VALUE,
@@ -132,7 +152,8 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 			if (!isSendButtonEnabled || isSubmittingRef.current) return;
 
 			isSubmittingRef.current = true;
-			const textToSend = plainText.trim();
+			// const textToSend = editor.api.markdown.serialize().trim();
+			const textToSend = editor.api.string([]);
 
 			try {
 				onSubmit(textToSend);
@@ -140,7 +161,6 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 				// Clear editor and state after submitting
 				// Prefer setValue over reset so we truly empty the content
 				editor.tf.setValue(EMPTY_VALUE);
-				setPlainText('');
 				// Focus back into the editor
 				editor.tf.focus();
 				isSubmittingRef.current = false;
@@ -161,9 +181,8 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 			>
 				<Plate
 					editor={editor}
-					onChange={({ value }) => {
-						// Keep form state light: only compute a plain string for chat use
-						setPlainText(nodesToPlainText(value));
+					onChange={() => {
+						setPlainText(editor.api.string([]));
 					}}
 				>
 					<PlateContent
@@ -178,12 +197,26 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 								editorRef,
 							});
 						}}
+						onPaste={e => {
+							e.preventDefault();
+							e.stopPropagation();
+							const text = e.clipboardData.getData('text/plain');
+							if (!text) return;
+							insertPlainTextAsSingleBlock(editor, text);
+							e.clipboardData.clearData('text/plain');
+							e.clipboardData.clearData('text/html');
+						}}
 						className="
-              flex-1 overflow-auto resize-none bg-transparent outline-none focus:outline-none
-              min-h-[24px] p-2
-              max-h-64
-            "
-						style={{ fontSize: '14px' }}
+							flex-1 overflow-auto resize-none bg-transparent outline-none focus:outline-none
+							min-h-[24px] p-2 max-h-64
+							whitespace-break-spaces
+							[tab-size:2]
+						"
+						style={{
+							fontSize: '14px',
+							whiteSpace: 'break-spaces',
+							tabSize: 2,
+						}}
 					/>
 				</Plate>
 
