@@ -21,10 +21,19 @@
 	"keywords": [],
 	"author": "ppipada",
 	"dependencies": {
+		"@ariakit/react": "^0.4.18",
+		"@emoji-mart/data": "^1.2.1",
 		"@fontsource-variable/inter": "^5.2.6",
+		"@platejs/autoformat": "^49.0.0",
 		"@platejs/basic-nodes": "^49.0.0",
+		"@platejs/basic-styles": "^49.0.0",
+		"@platejs/combobox": "^49.0.0",
+		"@platejs/emoji": "^49.0.0",
+		"@platejs/indent": "^49.0.0",
+		"@platejs/list": "^49.2.0",
 		"@react-router/dev": "^7.8.0",
 		"@react-router/node": "^7.8.0",
+		"class-variance-authority": "^0.7.1",
 		"compromise": "^14.14.4",
 		"isbot": "^5.1.28",
 		"katex": "^0.16.22",
@@ -93,7 +102,9 @@
 			"app/apis/wailsjs/go/main/ModelPresetStoreWrapper.js",
 			"app/apis/wailsjs/go/main/PromptTemplateStoreWrapper.js",
 			"app/spec/aiprovider.ts",
-			"app/hooks/highlight_worker.ts"
+			"app/hooks/highlight_worker.ts",
+			"app/chats/inputbox/text_input.tsx",
+			"app/hooks/use_mounted.tsx"
 		],
 		"ignoreBinaries": [],
 		"ignoreDependencies": [
@@ -106,8 +117,7 @@
 			"shiki",
 			"@testing-library/react",
 			"@testing-library/user-event",
-			"platejs",
-			"@platejs/basic-nodes"
+			"react-textarea-autosize"
 		]
 	},
 	"prettier": {

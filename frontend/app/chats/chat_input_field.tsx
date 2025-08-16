@@ -6,7 +6,7 @@ import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 
-import ChatTextInput, { type ChatTextInputHandle } from '@/chats/inputbox/text_input';
+import EditorTextInput, { type EditorTextInputHandle } from '@/chats/inputbox/editor_input';
 import ModelParamsBar from '@/chats/modelparams/modelparams_bar';
 
 interface ChatInputFieldProps {
@@ -40,7 +40,8 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 		/* ------------------------------------------------------------------
 		 * <ChatTextInput /> ref utilities
 		 * ------------------------------------------------------------------ */
-		const inputAreaRef = useRef<ChatTextInputHandle>(null);
+		// const inputAreaRef = useRef<ChatTextInputHandle>(null);
+		const inputAreaRef = useRef<EditorTextInputHandle>(null);
 
 		/* ------------------------------------------------------------------
 		 * Send-message
@@ -98,14 +99,21 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 						confirmButtonText="Abort"
 					/>
 				)}
-
-				{/* Chat text-input --------------------------------------------------- */}
-				<ChatTextInput
+				<div className="flex-1 overflow-y-auto overflow-x-auto">
+					{/* Chat text-input --------------------------------------------------- */}
+					{/* <ChatTextInput
 					ref={inputAreaRef}
 					isBusy={isBusy}
 					onSubmit={handleSubmitMessage}
 					setInputHeight={setInputHeight}
-				/>
+				/> */}
+					<EditorTextInput
+						ref={inputAreaRef}
+						isBusy={isBusy}
+						onSubmit={handleSubmitMessage}
+						setInputHeight={setInputHeight}
+					/>
+				</div>
 			</div>
 		);
 	}

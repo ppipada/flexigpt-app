@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 
-import { useDebounced } from '@/hooks/use_debounced';
+import { useDebounce } from '@/hooks/use_debounce';
 
 import EnhancedMarkdown from '@/components/markdown_enhanced';
 
@@ -27,7 +27,7 @@ const MessageContent = ({
 }: MessageContentProps) => {
 	const liveText = isStreaming ? streamedText : content;
 	// Max ~4×/sec.
-	const textToRender = useDebounced(liveText, 128);
+	const textToRender = useDebounce(liveText, 128);
 
 	if (isPending && textToRender.trim() === '') {
 		return (
