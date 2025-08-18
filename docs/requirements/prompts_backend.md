@@ -1,4 +1,4 @@
-# Prompts - Functional Specification
+# Prompts Backend - Functional Specification
 
 ## Terminology
 
@@ -16,8 +16,8 @@
 - A single switch can enable / disable a whole bundle or an individual template version.
 - The system remains offline-friendly and loose-coupled: removing a model/tool never mutates stored templates.
 - Feature is exposed in two surfaces:
-  • Chat input palette (`/` autocomplete)
-  • `Prompt Templates` admin page (CRUD + search).
+  - Chat input palette (`/` autocomplete)
+  - `Prompt Templates` admin page (CRUD + search).
 
 ## Data Model and Constraints
 
@@ -104,7 +104,5 @@ All routes are relative to `/prompts`.
 
 ## Open Questions / Future Work
 
-- Template import/export (JSON, Bundle marketplace, etc).
-- Variable UI wizard for multi-step filling.
 - Pre-Processor graph execution (dependencies between calls).
 - Internationalization.
