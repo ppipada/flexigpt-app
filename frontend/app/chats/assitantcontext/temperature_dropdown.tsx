@@ -52,12 +52,12 @@ const TemperatureDropdown = forwardRef<HTMLDetailsElement, TemperatureDropdownPr
 					open={isOpen}
 				>
 					<summary
-						className="btn btn-xs text-nowrap text-neutral-custom shadow-none border-none overflow-hidden"
+						className="btn btn-xs text-neutral-custom overflow-hidden border-none text-nowrap shadow-none"
 						title="Set Temperature"
 					>
 						<div className="flex">
-							<span className="text-xs font-normal sm:hidden mr-2">Temp: </span>
-							<span className="text-xs font-normal hidden sm:inline mr-2">Temperature: </span>{' '}
+							<span className="mr-2 text-xs font-normal sm:hidden">Temp: </span>
+							<span className="mr-2 hidden text-xs font-normal sm:inline">Temperature: </span>{' '}
 							<span className="text-xs font-normal">{temperature.toFixed(2)} </span>
 							{isOpen ? (
 								<FiChevronDown size={16} className="ml-1 md:ml-2" />
@@ -67,7 +67,7 @@ const TemperatureDropdown = forwardRef<HTMLDetailsElement, TemperatureDropdownPr
 						</div>
 					</summary>
 
-					<ul className="dropdown-content menu bg-base-100 rounded-xl w-full p-4">
+					<ul className="dropdown-content menu bg-base-100 w-full rounded-xl p-4">
 						{/* Default temperature options */}
 						{defaultTemperatureOptions.map(tempVal => (
 							<li
@@ -81,7 +81,7 @@ const TemperatureDropdown = forwardRef<HTMLDetailsElement, TemperatureDropdownPr
 									setIsOpen(false);
 								}}
 							>
-								<a className="justify-between items-center p-1 m-0">
+								<a className="m-0 items-center justify-between p-1">
 									<span>{tempVal.toFixed(1)}</span>
 									{temperature.toFixed(1) === tempVal.toFixed(1) && <FiCheck />}
 								</a>
@@ -90,8 +90,8 @@ const TemperatureDropdown = forwardRef<HTMLDetailsElement, TemperatureDropdownPr
 
 						{/* Custom temperature input */}
 						<li className="text-xs">
-							<hr className="p-0 my-2 border-0 border-t border-neutral/20" />
-							<label className="tooltip tooltip-top outline-none border-none">
+							<hr className="border-neutral/20 my-2 border-0 border-t p-0" />
+							<label className="tooltip tooltip-top border-none outline-none">
 								<div className="tooltip-content">
 									<div className="text-xs">Custom value (0.0 - 1.0)</div>
 								</div>

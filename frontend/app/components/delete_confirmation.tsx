@@ -25,7 +25,7 @@ const DeleteConfirmationModal: React.FC<ConfirmationModalProps> = ({
 	return createPortal(
 		<dialog className="modal modal-open">
 			<div className="modal-box rounded-2xl">
-				<h3 className="font-bold text-lg flex items-center">
+				<h3 className="flex items-center text-lg font-bold">
 					<FiAlertTriangle className="text-warning mr-2" /> {title}
 				</h3>
 				<p className="py-4">{message}</p>

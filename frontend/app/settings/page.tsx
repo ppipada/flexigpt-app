@@ -45,9 +45,9 @@ const SettingsPage: FC = () => {
 	};
 
 	return (
-		<div className="flex flex-col items-center w-full h-full">
+		<div className="flex h-full w-full flex-col items-center">
 			{/* sticky header */}
-			<header className="flex w-10/12 lg:w-2/3 items-center fixed mt-8 p-2">
+			<header className="fixed mt-8 flex w-10/12 items-center p-2 lg:w-2/3">
 				<h1 className="flex grow items-center justify-center text-xl font-semibold">Settings</h1>
 				<DownloadButton
 					title="Download Settings"
@@ -60,19 +60,19 @@ const SettingsPage: FC = () => {
 				/>
 			</header>
 
-			<main className="flex flex-col items-center w-full grow mt-24 overflow-y-auto">
-				<div className="flex flex-col gap-8 w-5/6 xl:w-2/3">
+			<main className="mt-24 flex w-full grow flex-col items-center overflow-y-auto">
+				<div className="flex w-5/6 flex-col gap-8 xl:w-2/3">
 					{/* ── Theme selector ──────────────────────────── */}
-					<section className="flex items-center bg-base-100 rounded-2xl shadow-lg p-4">
-						<h2 className="font-semibold ml-4 mr-8">Theme</h2>
+					<section className="bg-base-100 flex items-center rounded-2xl p-4 shadow-lg">
+						<h2 className="mr-8 ml-4 font-semibold">Theme</h2>
 						<ThemeSelector />
 					</section>
 
 					{/* ── Auth-Key table ─────────────────────────── */}
-					<section className="bg-base-100 rounded-2xl shadow-lg p-4">
-						<div className="flex justify-between items-center mb-4">
-							<h2 className="font-semibold ml-4 mr-8">Auth Keys</h2>
-							<button className="btn btn-ghost rounded-2xl flex items-center" onClick={showAddModal}>
+					<section className="bg-base-100 rounded-2xl p-4 shadow-lg">
+						<div className="mb-4 flex items-center justify-between">
+							<h2 className="mr-8 ml-4 font-semibold">Auth Keys</h2>
+							<button className="btn btn-ghost flex items-center rounded-2xl" onClick={showAddModal}>
 								<FiPlus className="mr-1" /> Add Key
 							</button>
 						</div>

@@ -103,7 +103,7 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 	return (
 		<dialog className="modal modal-open">
 			<div className="modal-box rounded-2xl">
-				<h3 className="font-bold text-lg">{initialData ? 'Edit Document Store' : 'Add New Document Store'}</h3>
+				<h3 className="text-lg font-bold">{initialData ? 'Edit Document Store' : 'Add New Document Store'}</h3>
 				<form onSubmit={handleSubmit} className="mt-4">
 					<fieldset className="fieldset">
 						<label className="label" htmlFor="name">
@@ -118,7 +118,7 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 							required
 							spellCheck="false"
 						/>
-						{errors.name && <p className="text-error text-sm mt-1">{errors.name}</p>}
+						{errors.name && <p className="text-error mt-1 text-sm">{errors.name}</p>}
 					</fieldset>
 					<fieldset className="fieldset">
 						<label className="label" htmlFor="name">
@@ -133,7 +133,7 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 							required
 							spellCheck="false"
 						/>
-						{errors.url && <p className="text-error text-sm mt-1">{errors.url}</p>}
+						{errors.url && <p className="text-error mt-1 text-sm">{errors.url}</p>}
 					</fieldset>
 					<fieldset className="fieldset">
 						<label className="label" htmlFor="name">
@@ -160,7 +160,7 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 							required
 							spellCheck="false"
 						/>
-						{errors.dbName && <p className="text-error text-sm mt-1">{errors.dbName}</p>}
+						{errors.dbName && <p className="text-error mt-1 text-sm">{errors.dbName}</p>}
 					</fieldset>
 					<div className="modal-action">
 						<button type="button" className="btn btn-ghost rounded-2xl" onClick={onClose}>

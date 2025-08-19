@@ -177,7 +177,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 			<form
 				ref={formRef}
 				onSubmit={handleSubmit}
-				className="flex items-center bg-base-100 rounded-2xl border border-base-300 focus-within:border-base-400 px-4 mx-2"
+				className="bg-base-100 border-base-300 focus-within:border-base-400 mx-2 flex items-center rounded-2xl border px-4"
 			>
 				<Plate
 					editor={editor}
@@ -206,12 +206,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 							e.clipboardData.clearData('text/plain');
 							e.clipboardData.clearData('text/html');
 						}}
-						className="
-							flex-1 overflow-auto resize-none bg-transparent outline-none focus:outline-none
-							min-h-[24px] p-2 max-h-64
-							whitespace-break-spaces
-							[tab-size:2]
-						"
+						className="max-h-64 min-h-[24px] flex-1 resize-none overflow-auto bg-transparent p-2 whitespace-break-spaces outline-none [tab-size:2] focus:outline-none"
 						style={{
 							fontSize: '14px',
 							whiteSpace: 'break-spaces',
@@ -222,7 +217,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 
 				<button
 					type="submit"
-					className={`btn btn-md !bg-transparent border-none shadow-none px-1 ${
+					className={`btn btn-md border-none !bg-transparent px-1 shadow-none ${
 						!isSendButtonEnabled || isBusy ? 'btn-disabled' : ''
 					}`}
 					disabled={isBusy || !isSendButtonEnabled}

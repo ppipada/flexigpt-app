@@ -32,55 +32,55 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 				{/* Hamburger menu button */}
 				<label
 					htmlFor="my-drawer"
-					className="btn drawer-button md:hidden bg-transparent shadow-none fixed top-4 left-4 py-2 pl-1 pr-0 z-10"
+					className="btn drawer-button fixed top-4 left-4 z-10 bg-transparent py-2 pr-0 pl-1 shadow-none md:hidden"
 				>
-					<FiMenu className="w-6 h-6" aria-label="Open" title="Open" />
+					<FiMenu className="h-6 w-6" aria-label="Open" title="Open" />
 				</label>
 				{/* Page content here */}
-				<div className="flex-1 m-2 rounded-xl bg-base-200">{children}</div>
+				<div className="bg-base-200 m-2 flex-1 rounded-xl">{children}</div>
 			</div>
 			<div className="drawer-side z-10">
 				<label htmlFor="my-drawer" className="drawer-overlay"></label>
-				<ul className="menu justify-between h-full w-12 ms-0 ps-0 bg-base-300 text-base-content">
+				<ul className="menu bg-base-300 text-base-content ms-0 h-full w-12 justify-between ps-0">
 					<div className="flex-col p-0">
 						<li className="mt-16" title="Home" aria-label="Home" onClick={toggle}>
-							<Link to="/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
+							<Link to="/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
 								<FiHome size={24} />
 							</Link>
 						</li>
 						<li className="mt-4" title="Chats" onClick={toggle} aria-label="Chats">
-							<Link to="/chats/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
+							<Link to="/chats/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
 								<FiMessageSquare size={24} />
 							</Link>
 						</li>
 						{FEATURE_FLAG_AGENTS && (
 							<li className="mt-4" title="Agents" onClick={toggle} aria-label="Agents">
-								<Link to="/agents/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
+								<Link to="/agents/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
 									<FiCpu size={24} />
 								</Link>
 							</li>
 						)}
 					</div>
-					<div className="flex-col p-0 mb-8">
+					<div className="mb-8 flex-col p-0">
 						{FEATURE_FLAG_DOCUMENT_STORES && (
 							<li className="mt-4" title="Document Stores" onClick={toggle} aria-label="Document Stores">
-								<Link to="/docstores/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
+								<Link to="/docstores/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
 									<FiDatabase size={24} />
 								</Link>
 							</li>
 						)}
 						<li className="mt-4" title="Prompts" onClick={toggle} aria-label="Prompts">
-							<Link to="/prompts/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
+							<Link to="/prompts/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
 								<FiFilePlus size={24} />
 							</Link>
 						</li>
 						<li className="mt-4" title="Model Presets" onClick={toggle} aria-label="Model Presets">
-							<Link to="/modelpresets/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
+							<Link to="/modelpresets/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
 								<FiSliders size={24} />
 							</Link>
 						</li>
 						<li className="mt-4" title="Settings" onClick={toggle} aria-label="Settings">
-							<Link to="/settings/" className="flex w-12 h-12 p-0 items-center justify-center rounded-lg">
+							<Link to="/settings/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
 								<FiSettings size={24} />
 							</Link>
 						</li>

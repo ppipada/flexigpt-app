@@ -421,9 +421,9 @@ const ChatScreen: FC = () => {
 	});
 
 	return (
-		<div className="flex flex-col items-center w-full h-full overflow-hidden">
+		<div className="flex h-full w-full flex-col items-center overflow-hidden">
 			{/* NAVBAR */}
-			<div className="flex w-11/12 lg:w-5/6 justify-center fixed top-2">
+			<div className="fixed top-2 flex w-11/12 justify-center lg:w-5/6">
 				<ChatNavBar
 					onNewChat={handleNewChat}
 					onRenameTitle={handleRenameTitle}
@@ -438,18 +438,18 @@ const ChatScreen: FC = () => {
 			</div>
 
 			{/* MESSAGES */}
-			<div className="flex flex-col items-center w-full grow overflow-hidden mt-24">
+			<div className="mt-24 flex w-full grow flex-col items-center overflow-hidden">
 				<div
-					className="w-full grow flex justify-center overflow-y-auto"
+					className="flex w-full grow justify-center overflow-y-auto"
 					ref={chatContainerRef}
 					style={{ maxHeight: `calc(100vh - 184px - ${inputHeight}px)` }}
 				>
 					<div className="w-11/12 lg:w-5/6">
-						<div className="flex-1 space-y-4 mb-4">{renderedMessages}</div>
+						<div className="mb-4 flex-1 space-y-4">{renderedMessages}</div>
 					</div>
 				</div>
 				{/* INPUT */}
-				<div className="w-11/12 lg:w-5/6 flex justify-center fixed bottom-0 mb-3">
+				<div className="fixed bottom-0 mb-3 flex w-11/12 justify-center lg:w-5/6">
 					<ChatInputField
 						ref={chatInputRef}
 						onSend={sendMessage}
@@ -461,13 +461,13 @@ const ChatScreen: FC = () => {
 			</div>
 
 			{/* SCROLL-TO-BOTTOM BUTTON */}
-			<div className="fixed bottom-0 right-0 mb-28 mr-0 lg:mr-16">
+			<div className="fixed right-0 bottom-0 mr-0 mb-28 lg:mr-16">
 				<ButtonScrollToBottom
 					scrollContainerRef={chatContainerRef}
 					iconSize={32}
 					isAtBottom={isAtBottom}
 					isScrollable={isScrollable}
-					className="btn btn-md bg-transparent border-none flex items-center shadow-none"
+					className="btn btn-md flex items-center border-none bg-transparent shadow-none"
 				/>
 			</div>
 		</div>

@@ -49,14 +49,14 @@ const AuthKeyTable: FC<AuthKeyTableProps> = ({ authKeys, onEdit, onChanged }) =>
 	/* ------------------------------------------------------------------ */
 	/* render                                                             */
 	/* ------------------------------------------------------------------ */
-	if (!authKeys.length) return <p className="text-sm text-center text-neutral-custom my-6">No keys defined.</p>;
+	if (!authKeys.length) return <p className="text-neutral-custom my-6 text-center text-sm">No keys defined.</p>;
 
 	return (
 		<>
 			{/* --------------------------- TABLE --------------------------- */}
 			<div className="overflow-x-auto rounded-2xl">
-				<table className="table table-zebra w-full">
-					<thead className="text-sm font-semibold bg-base-300">
+				<table className="table-zebra table w-full">
+					<thead className="bg-base-300 text-sm font-semibold">
 						<tr className="text-sm">
 							<th>Type</th>
 							<th>Key Name</th>
@@ -88,7 +88,7 @@ const AuthKeyTable: FC<AuthKeyTableProps> = ({ authKeys, onEdit, onChanged }) =>
 										)}
 									</td>
 
-									<td className="flex gap-3 items-center justify-center text-center">
+									<td className="flex items-center justify-center gap-3 text-center">
 										<button
 											className="btn btn-xs btn-ghost rounded-2xl"
 											onClick={() => {

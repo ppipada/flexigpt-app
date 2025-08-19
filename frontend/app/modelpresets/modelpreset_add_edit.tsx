@@ -366,10 +366,10 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 
 	return (
 		<dialog className="modal modal-open">
-			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
+			<div className="modal-box max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
 				{/* Header -------------------------------------------------- */}
-				<div className="flex justify-between items-center mb-4">
-					<h3 className="font-bold text-lg">{isEditMode ? 'Edit Model Preset' : 'Add Model Preset'}</h3>
+				<div className="mb-4 flex items-center justify-between">
+					<h3 className="text-lg font-bold">{isEditMode ? 'Edit Model Preset' : 'Add Model Preset'}</h3>
 					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close" title="Close">
 						<FiX size={12} />
 					</button>
@@ -388,7 +388,7 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 								{!prefillMode && (
 									<button
 										type="button"
-										className="btn btn-sm btn-ghost rounded-2xl flex items-center"
+										className="btn btn-sm btn-ghost flex items-center rounded-2xl"
 										onClick={() => {
 											setPrefillMode(true);
 										}}
@@ -741,7 +741,7 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 						<div className="col-span-9">
 							<textarea
 								name="systemPrompt"
-								className="textarea textarea-bordered w-full rounded-2xl h-24"
+								className="textarea textarea-bordered h-24 w-full rounded-2xl"
 								value={formData.systemPrompt}
 								onChange={handleChange}
 								placeholder="Enter instructions here…"

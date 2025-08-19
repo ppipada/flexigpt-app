@@ -96,10 +96,10 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 			}}
 		>
 			<summary
-				className="flex btn w-full text-left shadow-none rounded-2xl border-neutral/20 bg-base-100 justify-between items-center px-4 py-2 cursor-pointer"
+				className="btn border-neutral/20 bg-base-100 flex w-full cursor-pointer items-center justify-between rounded-2xl px-4 py-2 text-left shadow-none"
 				title={title}
 			>
-				<span className="font-normal truncate">
+				<span className="truncate font-normal">
 					{selectedKey ? getItemDisplayName(selectedKey) : 'Select an option'}
 				</span>
 				{isOpen ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
@@ -107,7 +107,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 
 			<ul
 				tabIndex={0}
-				className="flex flex-col flex-nowrap dropdown-content menu rounded-2xl border-neutral/20 shadow-sm bg-base-200 overflow-y-auto overflow-x-hidden w-full"
+				className="dropdown-content menu border-neutral/20 bg-base-200 flex w-full flex-col flex-nowrap overflow-x-hidden overflow-y-auto rounded-2xl shadow-sm"
 				style={{
 					maxHeight: typeof maxMenuHeight === 'number' ? `${maxMenuHeight}px` : maxMenuHeight,
 				}}
@@ -120,7 +120,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 							handleSelection(key);
 						}}
 					>
-						<a className="flex justify-between items-center p-2 m-1">
+						<a className="m-1 flex items-center justify-between p-2">
 							<span className="truncate">{getItemDisplayName(key)}</span>
 							{key === selectedKey && <FiCheck />}
 						</a>

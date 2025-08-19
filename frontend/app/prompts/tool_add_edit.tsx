@@ -268,10 +268,10 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 
 	return (
 		<dialog className="modal modal-open">
-			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
+			<div className="modal-box max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
 				{/* header */}
-				<div className="flex justify-between items-center mb-4">
-					<h3 className="font-bold text-lg">{isEditMode ? 'Edit Tool' : 'Add Tool'}</h3>
+				<div className="mb-4 flex items-center justify-between">
+					<h3 className="text-lg font-bold">{isEditMode ? 'Edit Tool' : 'Add Tool'}</h3>
 					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close" title="Close">
 						<FiX size={12} />
 					</button>
@@ -280,7 +280,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 				{/* form */}
 				<form onSubmit={handleSubmit} className="space-y-4">
 					{/* Display Name */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Display Name*</span>
 						</label>
@@ -305,7 +305,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 					</div>
 
 					{/* Slug */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Slug*</span>
 							<span className="label-text-alt tooltip tooltip-right" data-tip="Lower-case, URL-friendly.">
@@ -314,13 +314,13 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 						</label>
 						<div className="col-span-9">
 							<div className="relative">
-								<span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-custom">{TOOL_INVOKE_CHAR}</span>
+								<span className="text-neutral-custom absolute top-1/2 left-3 -translate-y-1/2">{TOOL_INVOKE_CHAR}</span>
 								<input
 									type="text"
 									name="slug"
 									value={formData.slug}
 									onChange={handleInput}
-									className={`input input-bordered w-full pl-8 rounded-2xl ${errors.slug ? 'input-error' : ''}`}
+									className={`input input-bordered w-full rounded-2xl pl-8 ${errors.slug ? 'input-error' : ''}`}
 									spellCheck="false"
 									autoComplete="off"
 									disabled={isEditMode && initialData?.tool.isBuiltIn}
@@ -353,7 +353,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 					</div>
 
 					{/* Type */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Type*</span>
 						</label>
@@ -382,7 +382,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 					</div>
 
 					{/* Description */}
-					<div className="grid grid-cols-12 gap-2 items-start">
+					<div className="grid grid-cols-12 items-start gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Description</span>
 						</label>
@@ -391,14 +391,14 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 								name="description"
 								value={formData.description}
 								onChange={handleInput}
-								className="textarea textarea-bordered w-full rounded-2xl h-20"
+								className="textarea textarea-bordered h-20 w-full rounded-2xl"
 								spellCheck="false"
 							/>
 						</div>
 					</div>
 
 					{/* Arg Schema */}
-					<div className="grid grid-cols-12 gap-2 items-start">
+					<div className="grid grid-cols-12 items-start gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Arg Schema (JSON)*</span>
 							<span className="label-text-alt tooltip tooltip-right" data-tip="JSON Schema for arguments">
@@ -410,7 +410,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 								name="argSchema"
 								value={formData.argSchema}
 								onChange={handleInput}
-								className={`textarea textarea-bordered w-full rounded-2xl h-24 ${errors.argSchema ? 'textarea-error' : ''}`}
+								className={`textarea textarea-bordered h-24 w-full rounded-2xl ${errors.argSchema ? 'textarea-error' : ''}`}
 								spellCheck="false"
 							/>
 							{errors.argSchema && (
@@ -424,7 +424,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 					</div>
 
 					{/* Output Schema */}
-					<div className="grid grid-cols-12 gap-2 items-start">
+					<div className="grid grid-cols-12 items-start gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Output Schema (JSON)*</span>
 							<span className="label-text-alt tooltip tooltip-right" data-tip="JSON Schema for output">
@@ -436,7 +436,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 								name="outputSchema"
 								value={formData.outputSchema}
 								onChange={handleInput}
-								className={`textarea textarea-bordered w-full rounded-2xl h-24 ${errors.outputSchema ? 'textarea-error' : ''}`}
+								className={`textarea textarea-bordered h-24 w-full rounded-2xl ${errors.outputSchema ? 'textarea-error' : ''}`}
 								spellCheck="false"
 							/>
 							{errors.outputSchema && (
@@ -451,7 +451,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 
 					{/* Go Impl */}
 					{formData.type === ToolType.Go && (
-						<div className="grid grid-cols-12 gap-2 items-center">
+						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Go Func*</span>
 								<span
@@ -485,7 +485,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 					{/* HTTP Impl */}
 					{formData.type === ToolType.HTTP && (
 						<>
-							<div className="grid grid-cols-12 gap-2 items-center">
+							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">HTTP URL*</span>
 								</label>
@@ -508,7 +508,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 									)}
 								</div>
 							</div>
-							<div className="grid grid-cols-12 gap-2 items-center">
+							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">HTTP Method</span>
 								</label>
@@ -524,7 +524,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 									/>
 								</div>
 							</div>
-							<div className="grid grid-cols-12 gap-2 items-center">
+							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">Headers (JSON)</span>
 								</label>
@@ -533,12 +533,12 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 										name="httpHeaders"
 										value={formData.httpHeaders}
 										onChange={handleInput}
-										className="textarea textarea-bordered w-full rounded-2xl h-16"
+										className="textarea textarea-bordered h-16 w-full rounded-2xl"
 										spellCheck="false"
 									/>
 								</div>
 							</div>
-							<div className="grid grid-cols-12 gap-2 items-center">
+							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">Query (JSON)</span>
 								</label>
@@ -547,12 +547,12 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 										name="httpQuery"
 										value={formData.httpQuery}
 										onChange={handleInput}
-										className="textarea textarea-bordered w-full rounded-2xl h-16"
+										className="textarea textarea-bordered h-16 w-full rounded-2xl"
 										spellCheck="false"
 									/>
 								</div>
 							</div>
-							<div className="grid grid-cols-12 gap-2 items-center">
+							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">Body</span>
 								</label>
@@ -561,13 +561,13 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 										name="httpBody"
 										value={formData.httpBody}
 										onChange={handleInput}
-										className="textarea textarea-bordered w-full rounded-2xl h-16"
+										className="textarea textarea-bordered h-16 w-full rounded-2xl"
 										spellCheck="false"
 									/>
 								</div>
 							</div>
 							{/* Auth */}
-							<div className="grid grid-cols-12 gap-2 items-center">
+							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">Auth Type</span>
 								</label>
@@ -583,7 +583,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 									/>
 								</div>
 							</div>
-							<div className="grid grid-cols-12 gap-2 items-center">
+							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">Auth Name</span>
 								</label>
@@ -599,7 +599,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 									/>
 								</div>
 							</div>
-							<div className="grid grid-cols-12 gap-2 items-center">
+							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">Auth Value Template</span>
 								</label>
@@ -616,7 +616,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 								</div>
 							</div>
 							{/* Response */}
-							<div className="grid grid-cols-12 gap-2 items-center">
+							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">Success Codes (comma)</span>
 								</label>
@@ -632,7 +632,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 									/>
 								</div>
 							</div>
-							<div className="grid grid-cols-12 gap-2 items-center">
+							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">Encoding</span>
 								</label>
@@ -648,7 +648,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 									/>
 								</div>
 							</div>
-							<div className="grid grid-cols-12 gap-2 items-center">
+							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">Selector</span>
 								</label>
@@ -664,7 +664,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 									/>
 								</div>
 							</div>
-							<div className="grid grid-cols-12 gap-2 items-center">
+							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">Error Mode</span>
 								</label>
@@ -684,7 +684,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 					)}
 
 					{/* Tags */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Tags</span>
 						</label>

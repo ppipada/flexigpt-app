@@ -37,19 +37,19 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 	};
 
 	return (
-		<div className="px-1 pt-0 py-1">
-			<div className="flex justify-between items-center h-8">
+		<div className="px-1 py-1 pt-0">
+			<div className="flex h-8 items-center justify-between">
 				{!isStreaming && (
 					<div className="flex items-center gap-1">
 						<CopyButton
 							value={stripThinkingFences(cardCopyContent)}
 							// value={cardCopyContent}
-							className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
+							className="btn btn-sm flex items-center border-none bg-transparent shadow-none"
 							size={16}
 						/>
 						{isUser && (
 							<button
-								className={`btn btn-sm !bg-transparent border-none flex items-center shadow-none ${isBusy ? 'btn-disabled' : ''}`}
+								className={`btn btn-sm flex items-center border-none !bg-transparent shadow-none ${isBusy ? 'btn-disabled' : ''}`}
 								onClick={onEdit}
 								aria-label="Edit Message"
 								title="Edit Message"
@@ -60,7 +60,7 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 						)}
 						{isUser && (
 							<button
-								className={`btn btn-sm !bg-transparent border-none flex items-center shadow-none ${isBusy ? 'btn-disabled' : ''}`}
+								className={`btn btn-sm flex items-center border-none !bg-transparent shadow-none ${isBusy ? 'btn-disabled' : ''}`}
 								onClick={onResend}
 								aria-label="Resend Message"
 								title="Resend Message"
@@ -73,15 +73,15 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 				)}
 				{isStreaming && (
 					<div className="text-sm">
-						<div className="bg-transparent px-4 py-2 flex items-center">
+						<div className="flex items-center bg-transparent px-4 py-2">
 							Streaming
-							<span className="ml-4 loading loading-dots loading-sm" />
+							<span className="loading loading-dots loading-sm ml-4" />
 						</div>
 					</div>
 				)}
 				{!isStreaming && (
 					<button
-						className="btn btn-sm bg-transparent border-none flex items-center shadow-none"
+						className="btn btn-sm flex items-center border-none bg-transparent shadow-none"
 						onClick={toggleExpanded}
 						aria-label="Details"
 						title="Details"
@@ -91,7 +91,7 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 				)}
 			</div>
 			{isExpanded && messageDetails && (
-				<div className="bg-base-100 mt-2 overflow-hidden shadow-lg rounded-2xl">
+				<div className="bg-base-100 mt-2 overflow-hidden rounded-2xl shadow-lg">
 					<MessageContent
 						messageID={messageID}
 						content={messageDetails}

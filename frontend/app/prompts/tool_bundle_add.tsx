@@ -63,9 +63,9 @@ const AddToolBundleModal: React.FC<AddToolBundleModalProps> = ({ isOpen, onClose
 
 	return (
 		<dialog className="modal modal-open">
-			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
-				<div className="flex justify-between items-center mb-4">
-					<h3 className="font-bold text-lg">Add Tool Bundle</h3>
+			<div className="modal-box max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
+				<div className="mb-4 flex items-center justify-between">
+					<h3 className="text-lg font-bold">Add Tool Bundle</h3>
 					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close" title="Close">
 						<FiX size={12} />
 					</button>
@@ -133,7 +133,7 @@ const AddToolBundleModal: React.FC<AddToolBundleModalProps> = ({ isOpen, onClose
 						</label>
 						<div className="col-span-9">
 							<textarea
-								className="textarea textarea-bordered w-full rounded-2xl h-24"
+								className="textarea textarea-bordered h-24 w-full rounded-2xl"
 								value={form.description}
 								onChange={e => {
 									setForm(p => ({ ...p, description: e.target.value }));

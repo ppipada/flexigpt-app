@@ -225,8 +225,8 @@ const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) 
 		<Portal>
 			<ComboboxPopover
 				className={cn(
-					'z-50 max-h-[288px] w-[300px] overflow-y-auto rounded-box bg-base-100 text-base-content',
-					'border border-base-300 shadow-xl p-1',
+					'rounded-box bg-base-100 text-base-content z-50 max-h-[288px] w-[300px] overflow-y-auto',
+					'border-base-300 border p-1 shadow-xl',
 					className
 				)}
 				{...props}
@@ -329,7 +329,7 @@ function InlineComboboxGroup({ className, ...props }: React.ComponentProps<typeo
 	return (
 		<ComboboxGroup
 			{...props}
-			className={cn('hidden [&:has([role=option])]:block', 'py-1 border-b border-base-200 last:border-b-0', className)}
+			className={cn('hidden [&:has([role=option])]:block', 'border-base-200 border-b py-1 last:border-b-0', className)}
 		/>
 	);
 }
@@ -338,7 +338,7 @@ function InlineComboboxGroupLabel({ className, ...props }: React.ComponentProps<
 	return (
 		<ComboboxGroupLabel
 			{...props}
-			className={cn('mt-1.5 mb-2 px-3 text-xs font-semibold uppercase text-base-content/60', className)}
+			className={cn('text-base-content/60 mt-1.5 mb-2 px-3 text-xs font-semibold uppercase', className)}
 		/>
 	);
 }

@@ -54,9 +54,9 @@ const AddPromptModal: React.FC<{
 
 	return createPortal(
 		<dialog className="modal modal-open">
-			<div className="modal-box max-w-xl max-h-[80vh] overflow-auto rounded-2xl">
-				<div className="flex justify-between items-center mb-4">
-					<h3 className="font-bold text-lg">Add System Prompt</h3>
+			<div className="modal-box max-h-[80vh] max-w-xl overflow-auto rounded-2xl">
+				<div className="mb-4 flex items-center justify-between">
+					<h3 className="text-lg font-bold">Add System Prompt</h3>
 					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close">
 						<FiX size={12} />
 					</button>
@@ -65,7 +65,7 @@ const AddPromptModal: React.FC<{
 				<form onSubmit={save} className="space-y-4">
 					<div>
 						<textarea
-							className="textarea textarea-bordered w-full rounded-xl h-32"
+							className="textarea textarea-bordered h-32 w-full rounded-xl"
 							value={value}
 							onChange={e => {
 								setValue(e.target.value);
@@ -112,7 +112,7 @@ const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptDropdown
 					}}
 				>
 					<summary
-						className="btn btn-xs text-nowrap text-neutral-custom shadow-none border-none overflow-hidden"
+						className="btn btn-xs text-neutral-custom overflow-hidden border-none text-nowrap shadow-none"
 						title="System Prompt"
 					>
 						<div className="flex items-center">
@@ -125,7 +125,7 @@ const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptDropdown
 						</div>
 					</summary>
 
-					<ul className="dropdown-content menu bg-base-100 rounded-xl w-full p-2">
+					<ul className="dropdown-content menu bg-base-100 w-full rounded-xl p-2">
 						{prompts.length > 0 ? (
 							prompts.map(item => (
 								<li
@@ -136,7 +136,7 @@ const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptDropdown
 										closeDropdown();
 									}}
 								>
-									<a className="flex justify-between items-center p-1 m-0" title={item.prompt}>
+									<a className="m-0 flex items-center justify-between p-1" title={item.prompt}>
 										<span>{item.title}</span>
 										{selectedPromptId === item.id && <FiCheck />}
 									</a>
@@ -144,17 +144,17 @@ const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptDropdown
 							))
 						) : (
 							<li className="text-xs opacity-70">
-								<a className="flex justify-between items-center p-1 m-0 cursor-default">
+								<a className="m-0 flex cursor-default items-center justify-between p-1">
 									<span>No saved prompts</span>
 								</a>
 							</li>
 						)}
 
 						<li className="text-xs">
-							<hr className="p-0 my-2 border-0 border-t border-neutral/20" />
+							<hr className="border-neutral/20 my-2 border-0 border-t p-0" />
 							<button
 								type="button"
-								className="btn btn-ghost btn-xs w-full rounded-lg justify-center"
+								className="btn btn-ghost btn-xs w-full justify-center rounded-lg"
 								onClick={() => {
 									closeDropdown();
 									setIsAddOpen(true);

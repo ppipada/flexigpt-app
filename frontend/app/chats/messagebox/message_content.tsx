@@ -31,9 +31,9 @@ const MessageContent = ({
 
 	if (isPending && textToRender.trim() === '') {
 		return (
-			<div className="px-4 py-2 flex items-center">
+			<div className="flex items-center px-4 py-2">
 				Thinking
-				<span className="ml-4 loading loading-dots loading-sm" />
+				<span className="loading loading-dots loading-sm ml-4" />
 			</div>
 		);
 	}

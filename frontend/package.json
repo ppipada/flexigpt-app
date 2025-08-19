@@ -115,13 +115,11 @@
 			"isbot",
 			"daisyui",
 			"react-router-devtools",
-			"tailwindcss",
 			"@fontsource-variable/inter",
 			"shiki",
 			"@testing-library/react",
 			"@testing-library/user-event",
-			"react-textarea-autosize",
-			"eslint-plugin-tailwindcss"
+			"react-textarea-autosize"
 		]
 	},
 	"prettier": {

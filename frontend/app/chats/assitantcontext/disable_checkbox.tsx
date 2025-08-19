@@ -11,7 +11,7 @@ const DisablePreviousMessagesCheckbox: FC<DisablePreviousMessagesCheckboxProps> 
 }) => {
 	return (
 		<div className="flex w-full justify-center">
-			<label className="flex ml-4 space-x-2 truncate" title="Send only the new message to AI">
+			<label className="ml-4 flex space-x-2 truncate" title="Send only the new message to AI">
 				<input
 					type="checkbox"
 					checked={disablePreviousMessages}
@@ -21,7 +21,7 @@ const DisablePreviousMessagesCheckbox: FC<DisablePreviousMessagesCheckboxProps> 
 					className="checkbox checkbox-xs rounded-full"
 					spellCheck="false"
 				/>
-				<span className="text-xs text-neutral-custom text-nowrap">Ignore chat</span>
+				<span className="text-neutral-custom text-xs text-nowrap">Ignore chat</span>
 			</label>
 		</div>
 	);

@@ -44,18 +44,18 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 	};
 
 	return (
-		<div className="grid grid-cols-12 grid-rows-[auto_auto] gap-2 mb-4" style={{ fontSize: 14 }}>
+		<div className="mb-4 grid grid-cols-12 grid-rows-[auto_auto] gap-2" style={{ fontSize: 14 }}>
 			{/* Row 1 ── icon + message bubble */}
-			<div className={`${leftColSpan} flex justify-end row-start-1 row-end-1`}>
+			<div className={`${leftColSpan} row-start-1 row-end-1 flex justify-end`}>
 				{isUser && (
-					<div className="flex w-10 h-10 items-center justify-center rounded-full self-end">
+					<div className="flex h-10 w-10 items-center justify-center self-end rounded-full">
 						<FiUser size={24} />
 					</div>
 				)}
 			</div>
 
 			<div
-				className={`bg-base-100 col-span-10 lg:col-span-9 row-start-1 row-end-1 overflow-x-auto rounded-2xl ${streamedMessage ? '' : 'shadow-lg'}`}
+				className={`bg-base-100 col-span-10 row-start-1 row-end-1 overflow-x-auto rounded-2xl lg:col-span-9 ${streamedMessage ? '' : 'shadow-lg'}`}
 			>
 				{isEditing ? (
 					<MessageEditBox
@@ -77,9 +77,9 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 				)}
 			</div>
 
-			<div className={`${rightColSpan} flex justify-start row-start-1 row-end-1`}>
+			<div className={`${rightColSpan} row-start-1 row-end-1 flex justify-start`}>
 				{!isUser && (
-					<div className="flex w-10 h-10 items-center justify-center rounded-full self-end">
+					<div className="flex h-10 w-10 items-center justify-center self-end rounded-full">
 						<FiCompass size={24} />
 					</div>
 				)}
@@ -87,7 +87,7 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 
 			{/* Row 2 ── footer bar */}
 			<div className={`${leftColSpan} row-start-2 row-end-2`} />
-			<div className="col-span-10 lg:col-span-9 row-start-2 row-end-2">
+			<div className="col-span-10 row-start-2 row-end-2 lg:col-span-9">
 				{!isEditing && (
 					<MessageFooterArea
 						messageID={message.id}

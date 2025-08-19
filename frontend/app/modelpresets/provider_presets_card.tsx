@@ -288,9 +288,9 @@ const ProviderPresetCard: FC<Props> = ({
 
 	/* ─────────────────────────── render ─────────────────────────── */
 	return (
-		<div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2 mb-8">
+		<div className="bg-base-100 mb-8 rounded-2xl px-4 py-2 shadow-lg">
 			{/* ─── header ─── */}
-			<div className="grid grid-cols-12 gap-2 items-center py-2">
+			<div className="grid grid-cols-12 items-center gap-2 py-2">
 				<div className="col-span-3">
 					<h3 className="text-sm font-semibold capitalize">{preset.displayName || provider}</h3>
 				</div>
@@ -307,7 +307,7 @@ const ProviderPresetCard: FC<Props> = ({
 				</div>
 
 				{/* key status & expand */}
-				<div className="col-span-6 flex items-end justify-end gap-4 cursor-pointer" onClick={toggleExpand}>
+				<div className="col-span-6 flex cursor-pointer items-end justify-end gap-4" onClick={toggleExpand}>
 					<div className="flex items-center">
 						<span className="text-sm">API-Key</span>
 						{keySet ? <FiCheckCircle className="text-success mx-1" /> : <FiXCircle className="text-error mx-1" />}
@@ -324,13 +324,13 @@ const ProviderPresetCard: FC<Props> = ({
 			{preset.isEnabled && expanded && (
 				<div className="mt-4 space-y-6">
 					{/* provider-details table */}
-					<div className="overflow-x-auto border border-base-content/10 rounded-2xl mb-4">
+					<div className="border-base-content/10 mb-4 overflow-x-auto rounded-2xl border">
 						<table className="table w-full">
 							<tbody>
 								{/* actions row */}
 								<tr>
 									<td colSpan={2} className="py-0.5">
-										<div className="flex justify-between items-center">
+										<div className="flex items-center justify-between">
 											{/* delete */}
 											<span
 												className="label-text-alt tooltip tooltip-right"
@@ -343,8 +343,8 @@ const ProviderPresetCard: FC<Props> = ({
 												}
 											>
 												<button
-													className={`btn btn-ghost rounded-2xl flex items-center ${
-														!canDeleteProvider ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
+													className={`btn btn-ghost flex items-center rounded-2xl ${
+														!canDeleteProvider ? 'btn-disabled cursor-not-allowed opacity-50' : ''
 													}`}
 													onClick={canDeleteProvider ? requestDeleteProvider : undefined}
 													title={'Delete Provider'}
@@ -357,7 +357,7 @@ const ProviderPresetCard: FC<Props> = ({
 											{/* api-key + edit */}
 											<div className="flex gap-2">
 												<button
-													className="btn btn-ghost rounded-2xl flex items-center"
+													className="btn btn-ghost flex items-center rounded-2xl"
 													onClick={openSetApiKey}
 													title={keySet ? 'Update API Key' : 'Set API Key'}
 												>
@@ -366,8 +366,8 @@ const ProviderPresetCard: FC<Props> = ({
 												</button>
 
 												<button
-													className={`btn btn-ghost rounded-2xl flex items-center ${
-														providerIsBuiltIn ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
+													className={`btn btn-ghost flex items-center rounded-2xl ${
+														providerIsBuiltIn ? 'btn-disabled cursor-not-allowed opacity-50' : ''
 													}`}
 													onClick={handleEditProvider}
 													title="Edit Provider"
@@ -401,7 +401,7 @@ const ProviderPresetCard: FC<Props> = ({
 					</div>
 
 					{/* ─── model presets section ─── */}
-					<div className="overflow-x-auto border border-base-content/10 rounded-2xl mb-2">
+					<div className="border-base-content/10 mb-2 overflow-x-auto rounded-2xl border">
 						{/* default model selector row (always present) */}
 						<div className="grid grid-cols-12 items-center gap-4 px-4 py-2">
 							<span className="col-span-3 text-sm font-semibold">Default Model</span>
@@ -417,15 +417,15 @@ const ProviderPresetCard: FC<Props> = ({
 										getDisplayName={k => modelPresets[k].displayName || k}
 									/>
 								) : (
-									<span className="italic text-sm">No model presets configured.</span>
+									<span className="text-sm italic">No model presets configured.</span>
 								)}
 							</div>
 
 							{/* add model btn */}
 							<div className="col-span-3 flex justify-end">
 								<button
-									className={`btn btn-ghost rounded-2xl flex items-center ${
-										providerIsBuiltIn ? 'btn-disabled opacity-50 cursor-not-allowed' : ''
+									className={`btn btn-ghost flex items-center rounded-2xl ${
+										providerIsBuiltIn ? 'btn-disabled cursor-not-allowed opacity-50' : ''
 									}`}
 									onClick={openAddModel}
 									disabled={providerIsBuiltIn}
@@ -439,9 +439,9 @@ const ProviderPresetCard: FC<Props> = ({
 
 						{/* table only if models exist */}
 						{hasModels && (
-							<table className="table table-zebra w-full">
+							<table className="table-zebra table w-full">
 								<thead>
-									<tr className="text-sm font-semibold bg-base-300">
+									<tr className="bg-base-300 text-sm font-semibold">
 										<th>Model Preset Label</th>
 										<th>Model Name</th>
 										<th className="text-center">Enabled</th>
@@ -472,7 +472,7 @@ const ProviderPresetCard: FC<Props> = ({
 														<FiX className="mx-auto" />
 													)}
 												</td>
-												<td className="text-center space-x-1">
+												<td className="space-x-1 text-center">
 													{canModify ? (
 														<>
 															<button

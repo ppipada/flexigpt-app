@@ -16,13 +16,13 @@ const ThinkingFence: React.FC<ThinkingFenceProps> = ({ text, isStreaming, maxHei
 			onToggle={e => {
 				setOpen((e.currentTarget as HTMLDetailsElement).open);
 			}}
-			className="group rounded shadow-none my-1 overflow-hidden bg-base-200/70"
+			className="group bg-base-200/70 my-1 overflow-hidden rounded shadow-none"
 		>
-			<summary className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none text-xs transition-colors">
+			<summary className="flex cursor-pointer items-center gap-2 px-3 py-2 text-xs transition-colors select-none">
 				<span className="text-xs">Thinking</span>
 				{/* simple chevron */}
 				<svg
-					className="w-3 h-3 ml-1 transition-transform group-open:rotate-90"
+					className="ml-1 h-3 w-3 transition-transform group-open:rotate-90"
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"
@@ -34,7 +34,7 @@ const ThinkingFence: React.FC<ThinkingFenceProps> = ({ text, isStreaming, maxHei
 			</summary>
 
 			{/* body */}
-			<div className={`px-3 pb-3 whitespace-pre-wrap break-words ${maxHeightClass} overflow-y-auto text-xs`}>
+			<div className={`px-3 pb-3 break-words whitespace-pre-wrap ${maxHeightClass} overflow-y-auto text-xs`}>
 				{text || '...'}
 			</div>
 		</details>

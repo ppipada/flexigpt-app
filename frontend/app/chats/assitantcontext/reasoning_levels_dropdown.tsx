@@ -31,12 +31,12 @@ const SingleReasoningDropdown = forwardRef<HTMLDetailsElement, SingleReasoningDr
 					open={isOpen}
 				>
 					<summary
-						className="btn btn-xs text-left text-nowrap text-neutral-custom shadow-none border-none overflow-hidden"
+						className="btn btn-xs text-neutral-custom overflow-hidden border-none text-left text-nowrap shadow-none"
 						title="Set Reasoning Level"
 					>
 						<div className="flex">
-							<span className="text-xs font-normal sm:hidden mr-2">Reasoning: </span>
-							<span className="text-xs font-normal hidden sm:inline mr-2">Reasoning Level: </span>
+							<span className="mr-2 text-xs font-normal sm:hidden">Reasoning: </span>
+							<span className="mr-2 hidden text-xs font-normal sm:inline">Reasoning Level: </span>
 							<span className="text-xs font-normal"> {levelDisplayNames[reasoningLevel]} </span>
 							{isOpen ? (
 								<FiChevronDown size={16} className="ml-1 md:ml-2" />
@@ -46,7 +46,7 @@ const SingleReasoningDropdown = forwardRef<HTMLDetailsElement, SingleReasoningDr
 						</div>
 					</summary>
 
-					<ul className="dropdown-content menu bg-base-100 rounded-xl w-full p-4">
+					<ul className="dropdown-content menu bg-base-100 w-full rounded-xl p-4">
 						{/* Reasoning level options */}
 						{Object.values(ReasoningLevel).map(level => (
 							<li
@@ -60,7 +60,7 @@ const SingleReasoningDropdown = forwardRef<HTMLDetailsElement, SingleReasoningDr
 									setIsOpen(false);
 								}}
 							>
-								<a className="justify-between items-center p-1 m-0">
+								<a className="m-0 items-center justify-between p-1">
 									<span>{levelDisplayNames[level]}</span>
 									{reasoningLevel === level && <FiCheck />}
 								</a>

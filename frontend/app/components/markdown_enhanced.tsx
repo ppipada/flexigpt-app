@@ -54,9 +54,9 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 
 	const components = useMemo(
 		() => ({
-			h1: ({ children }: PComponentProps) => <h1 className="text-xl font-bold my-2">{children}</h1>,
-			h2: ({ children }: PComponentProps) => <h2 className="text-lg font-bold my-2">{children}</h2>,
-			h3: ({ children }: PComponentProps) => <h3 className="text-base font-bold my-2">{children}</h3>,
+			h1: ({ children }: PComponentProps) => <h1 className="my-2 text-xl font-bold">{children}</h1>,
+			h2: ({ children }: PComponentProps) => <h2 className="my-2 text-lg font-bold">{children}</h2>,
+			h3: ({ children }: PComponentProps) => <h3 className="my-2 text-base font-bold">{children}</h3>,
 
 			p: ({ className, children }: PComponentProps) => (
 				<p className={`${className ?? ''} my-2 ${align} break-words`} style={{ lineHeight: '1.5', fontSize: '14px' }}>
@@ -69,7 +69,7 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 					return (
 						<code
 							{...props}
-							className={`bg-base-200 inline text-wrap whitespace-pre-wrap break-words ${className ?? ''}`}
+							className={`bg-base-200 inline text-wrap break-words whitespace-pre-wrap ${className ?? ''}`}
 						>
 							{children}
 						</code>
@@ -103,7 +103,7 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 				</span>
 			),
 
-			table: ({ children }: PComponentProps) => <table className="table-auto w-full">{children}</table>,
+			table: ({ children }: PComponentProps) => <table className="w-full table-auto">{children}</table>,
 			thead: ({ children }: PComponentProps) => <thead className="bg-base-300">{children}</thead>,
 			tbody: ({ children }: PComponentProps) => <tbody>{children}</tbody>,
 			tr: ({ children }: PComponentProps) => <tr className="border-t">{children}</tr>,
@@ -115,7 +115,7 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 					href={href}
 					target={href?.startsWith('http') ? '_blank' : undefined}
 					rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
-					className="underline text-blue-600 hover:text-blue-800 cursor-pointer"
+					className="cursor-pointer text-blue-600 underline hover:text-blue-800"
 					onClick={e => {
 						e.preventDefault();
 						if (href) backendAPI.openurl(href);
@@ -126,7 +126,7 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 			),
 
 			blockquote: ({ children }: PComponentProps) => (
-				<blockquote className="border-l-4 border-neutral/20 pl-4 italic">{children}</blockquote>
+				<blockquote className="border-neutral/20 border-l-4 pl-4 italic">{children}</blockquote>
 			),
 		}),
 		[align, isStreaming]

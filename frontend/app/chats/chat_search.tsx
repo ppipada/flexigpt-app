@@ -105,8 +105,8 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 	/* error ---------------------------------------------------------- */
 	if (error) {
 		return (
-			<div className="absolute left-0 right-0 mt-1 bg-base-200 rounded-2xl shadow-lg p-4 text-center">
-				<p className="text-error text-sm mb-2">{error}</p>
+			<div className="bg-base-200 absolute right-0 left-0 mt-1 rounded-2xl p-4 text-center shadow-lg">
+				<p className="text-error mb-2 text-sm">{error}</p>
 				<button
 					className="btn btn-sm btn-primary"
 					onClick={() => {
@@ -168,16 +168,16 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 	/* render --------------------------------------------------------- */
 	return (
 		<div className="relative">
-			<div className="absolute left-0 right-0 mt-1 bg-base-200 rounded-2xl shadow-lg overflow-hidden">
+			<div className="bg-base-200 absolute right-0 left-0 mt-1 overflow-hidden rounded-2xl shadow-lg">
 				{/* sticky status / hint bar -------------------------------- */}
-				<div className="flex justify-between items-center px-8 py-1 text-xs text-neutral-custom border-b border-base-300 sticky top-0">
+				<div className="text-neutral-custom border-base-300 sticky top-0 flex items-center justify-between border-b px-8 py-1 text-xs">
 					<span className="truncate">{barLeft}</span>
-					{barRight && <span className="pl-4 shrink-0">{barRight}</span>}
+					{barRight && <span className="shrink-0 pl-4">{barRight}</span>}
 				</div>
 
 				{/* results -------------------------------------------------- */}
 				{!results.length && !loading ? (
-					<div className="py-8 text-center text-sm text-neutral-custom">
+					<div className="text-neutral-custom py-8 text-center text-sm">
 						{query ? 'Try refining your search' : 'Start a conversation to see it here'}
 					</div>
 				) : (
@@ -194,13 +194,13 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 								}}
 								renderItemExtra={r => (
 									<span className="inline-flex items-center gap-4">
-										{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
+										{r.matchType === 'message' && <span className="max-w-[12rem] truncate">{r.snippet}</span>}
 										<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.modifiedAt)}</span>
 										{/* delete (not for active conv) */}
 										{r.searchConversation.id !== currentConversationId && (
 											<FiTrash2
 												size={14}
-												className="shrink-0 text-neutral-custom hover:text-error cursor-pointer"
+												className="text-neutral-custom hover:text-error shrink-0 cursor-pointer"
 												onClick={e => {
 													e.stopPropagation(); // don’t trigger onPick
 													onDelete(r.searchConversation);
@@ -221,15 +221,15 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 											onClick={() => {
 												onPick(r.searchConversation);
 											}}
-											className={`flex justify-between items-center px-12 py-2 cursor-pointer hover:bg-base-100 ${
+											className={`hover:bg-base-100 flex cursor-pointer items-center justify-between px-12 py-2 ${
 												isFocused ? 'bg-base-100' : ''
 											}`}
 										>
 											<span className="truncate">{r.searchConversation.title}</span>
 
-											<span className="hidden lg:block text-neutral-custom text-xs">
+											<span className="text-neutral-custom hidden text-xs lg:block">
 												<span className="inline-flex items-center gap-4">
-													{r.matchType === 'message' && <span className="truncate max-w-[12rem]">{r.snippet}</span>}
+													{r.matchType === 'message' && <span className="max-w-[12rem] truncate">{r.snippet}</span>}
 													<span className="whitespace-nowrap">
 														{formatDateAsString(r.searchConversation.modifiedAt)}
 													</span>
@@ -237,7 +237,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 													{r.searchConversation.id !== currentConversationId && (
 														<FiTrash2
 															size={14}
-															className="shrink-0 text-neutral-custom hover:text-error cursor-pointer"
+															className="text-neutral-custom hover:text-error shrink-0 cursor-pointer"
 															onClick={e => {
 																e.stopPropagation();
 																onDelete(r.searchConversation);
@@ -255,14 +255,14 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 						{/* footer / loader ------------------------------------ */}
 						{loading && (
 							<div className="flex items-center justify-center py-4">
-								<span className="text-sm text-neutral-custom">
+								<span className="text-neutral-custom text-sm">
 									{results.length ? 'Loading more...' : 'Searching...'}
 								</span>
 								<span className="loading loading-dots loading-sm" />
 							</div>
 						)}
 						{!loading && !hasMore && results.length > 0 && query && (
-							<div className="text-center py-1 text-xs text-neutral-custom border-t border-base-300">
+							<div className="text-neutral-custom border-base-300 border-t py-1 text-center text-xs">
 								End of results
 							</div>
 						)}
@@ -634,8 +634,8 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 	return (
 		<div>
 			{/* input --------------------------------------------------- */}
-			<div className="flex items-center bg-base-100 p-2 rounded-2xl border border-base-300 focus-within:border-base-400 transition-colors">
-				<FiSearch size={20} className="mx-3 text-neutral-custom flex-shrink-0" />
+			<div className="bg-base-100 border-base-300 focus-within:border-base-400 flex items-center rounded-2xl border p-2 transition-colors">
+				<FiSearch size={20} className="text-neutral-custom mx-3 flex-shrink-0" />
 				<input
 					ref={inputRef}
 					type="text"
@@ -645,7 +645,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 					onBlur={handleBlur}
 					onKeyDown={handleKeyDown}
 					placeholder="Search conversations..."
-					className="w-full bg-transparent outline-none text-sm placeholder:text-neutral-custom"
+					className="placeholder:text-neutral-custom w-full bg-transparent text-sm outline-none"
 					spellCheck={false}
 				/>
 				{searchState.loading && <span className="loading loading-dots loading-sm" />}

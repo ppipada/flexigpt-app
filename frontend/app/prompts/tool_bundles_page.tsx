@@ -97,11 +97,11 @@ const ToolsPage: React.FC = () => {
 	return (
 		<div>
 			{/* header */}
-			<div className="w-full flex justify-center fixed top-12">
-				<div className="w-10/12 lg:w-2/3 flex items-center justify-between p-0">
-					<h1 className="text-xl font-semibold text-center flex-grow">Tool Bundles</h1>
+			<div className="fixed top-12 flex w-full justify-center">
+				<div className="flex w-10/12 items-center justify-between p-0 lg:w-2/3">
+					<h1 className="flex-grow text-center text-xl font-semibold">Tool Bundles</h1>
 					<button
-						className="btn btn-ghost rounded-2xl flex items-center"
+						className="btn btn-ghost flex items-center rounded-2xl"
 						onClick={() => {
 							setIsAddModalOpen(true);
 						}}
@@ -113,13 +113,13 @@ const ToolsPage: React.FC = () => {
 
 			{/* body */}
 			<div
-				className="flex flex-col items-center w-full grow mt-12 overflow-y-auto"
+				className="mt-12 flex w-full grow flex-col items-center overflow-y-auto"
 				style={{ maxHeight: `calc(100vh - 144px)` }}
 			>
-				<div className="flex flex-col space-y-4 w-5/6 xl:w-2/3">
-					{loading && <p className="text-center text-sm mt-8">Loading bundles…</p>}
+				<div className="flex w-5/6 flex-col space-y-4 xl:w-2/3">
+					{loading && <p className="mt-8 text-center text-sm">Loading bundles…</p>}
 					{!loading && bundles.length === 0 && (
-						<p className="text-center text-sm mt-8">No tool bundles configured yet.</p>
+						<p className="mt-8 text-center text-sm">No tool bundles configured yet.</p>
 					)}
 
 					{bundles.map(bd => (

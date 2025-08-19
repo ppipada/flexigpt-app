@@ -169,10 +169,10 @@ const AddEditPromptTemplate: React.FC<AddEditPromptTemplateProps> = ({
 	/* ---------- render ---------- */
 	return (
 		<dialog className="modal modal-open">
-			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
+			<div className="modal-box max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
 				{/* header */}
-				<div className="flex justify-between items-center mb-4">
-					<h3 className="font-bold text-lg">{isEditMode ? 'Edit Prompt Template' : 'Add Prompt Template'}</h3>
+				<div className="mb-4 flex items-center justify-between">
+					<h3 className="text-lg font-bold">{isEditMode ? 'Edit Prompt Template' : 'Add Prompt Template'}</h3>
 					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close" title="Close">
 						<FiX size={12} />
 					</button>
@@ -181,7 +181,7 @@ const AddEditPromptTemplate: React.FC<AddEditPromptTemplateProps> = ({
 				{/* form */}
 				<form onSubmit={handleSubmit} className="space-y-4">
 					{/* Display Name */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Display Name*</span>
 						</label>
@@ -206,7 +206,7 @@ const AddEditPromptTemplate: React.FC<AddEditPromptTemplateProps> = ({
 					</div>
 
 					{/* Slug */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Slug*</span>
 							<span
@@ -218,7 +218,7 @@ const AddEditPromptTemplate: React.FC<AddEditPromptTemplateProps> = ({
 						</label>
 						<div className="col-span-9">
 							<div className="relative">
-								<span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-custom">
+								<span className="text-neutral-custom absolute top-1/2 left-3 -translate-y-1/2">
 									{PROMPT_TEMPLATE_INVOKE_CHAR}
 								</span>
 								<input
@@ -226,7 +226,7 @@ const AddEditPromptTemplate: React.FC<AddEditPromptTemplateProps> = ({
 									name="slug"
 									value={formData.slug}
 									onChange={handleInput}
-									className={`input input-bordered w-full pl-8 rounded-2xl ${errors.slug ? 'input-error' : ''}`}
+									className={`input input-bordered w-full rounded-2xl pl-8 ${errors.slug ? 'input-error' : ''}`}
 									spellCheck="false"
 									autoComplete="off"
 									disabled={isEditMode && initialData?.template.isBuiltIn}
@@ -259,7 +259,7 @@ const AddEditPromptTemplate: React.FC<AddEditPromptTemplateProps> = ({
 					</div>
 
 					{/* Description */}
-					<div className="grid grid-cols-12 gap-2 items-start">
+					<div className="grid grid-cols-12 items-start gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Description</span>
 						</label>
@@ -268,14 +268,14 @@ const AddEditPromptTemplate: React.FC<AddEditPromptTemplateProps> = ({
 								name="description"
 								value={formData.description}
 								onChange={handleInput}
-								className="textarea textarea-bordered w-full rounded-2xl h-20"
+								className="textarea textarea-bordered h-20 w-full rounded-2xl"
 								spellCheck="false"
 							/>
 						</div>
 					</div>
 
 					{/* Content */}
-					<div className="grid grid-cols-12 gap-2 items-start">
+					<div className="grid grid-cols-12 items-start gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Prompt Content*</span>
 							<span
@@ -290,7 +290,7 @@ const AddEditPromptTemplate: React.FC<AddEditPromptTemplateProps> = ({
 								name="content"
 								value={formData.content}
 								onChange={handleInput}
-								className={`textarea textarea-bordered w-full rounded-2xl h-32 ${
+								className={`textarea textarea-bordered h-32 w-full rounded-2xl ${
 									errors.content ? 'textarea-error' : ''
 								}`}
 								spellCheck="false"
@@ -306,7 +306,7 @@ const AddEditPromptTemplate: React.FC<AddEditPromptTemplateProps> = ({
 					</div>
 
 					{/* Tags */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Tags</span>
 						</label>

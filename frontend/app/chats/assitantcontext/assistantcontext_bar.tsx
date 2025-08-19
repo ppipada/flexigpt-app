@@ -160,7 +160,7 @@ const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChan
 		[setSelectedModel]
 	);
 	return (
-		<div className="flex items-center justify-between bg-base-200 mb-1 mx-4">
+		<div className="bg-base-200 mx-4 mb-1 flex items-center justify-between">
 			{/* --------------------------- Model dropdown ----------------------- */}
 
 			<ModelDropdown

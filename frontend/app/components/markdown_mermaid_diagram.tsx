@@ -165,9 +165,9 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 	return (
 		<>
 			{/* ---------- Inline card -------------------------------- */}
-			<div className="rounded-lg my-4 overflow-hidden bg-mermaid">
+			<div className="bg-mermaid my-4 overflow-hidden rounded-lg">
 				{/* header bar */}
-				<div className="flex justify-between items-center bg-code-header px-4">
+				<div className="bg-code-header flex items-center justify-between px-4">
 					<span className="text-code">Mermaid diagram</span>
 
 					<DownloadButton
@@ -176,12 +176,12 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 						fileprefix="diagram"
 						isBinary={true}
 						language="mermaid"
-						className="btn btn-sm bg-transparent text-code border-none flex items-center shadow-none"
+						className="btn btn-sm text-code flex items-center border-none bg-transparent shadow-none"
 					/>
 				</div>
 
 				<div
-					className="flex items-center justify-center text-center p-1 min-h-[250px] w-full overflow-auto cursor-zoom-in"
+					className="flex min-h-[250px] w-full cursor-zoom-in items-center justify-center overflow-auto p-1 text-center"
 					onClick={() => {
 						if (!error) {
 							setZoomOpen(true);
@@ -189,14 +189,14 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 					}}
 				>
 					{error ? (
-						<svg width="300" height="100" className="border-2 border-red-500 rounded">
+						<svg width="300" height="100" className="rounded border-2 border-red-500">
 							<rect width="300" height="100" fill="#fff" stroke="#e53e3e" strokeWidth="2" rx="8" />
 							<text x="150" y="55" textAnchor="middle" fill="#e53e3e" fontSize="18" fontFamily="monospace">
 								Mermaid syntax error
 							</text>
 						</svg>
 					) : (
-						<div ref={inlineDiagramRef} className="w-full max-h-[60vh] overflow-auto" />
+						<div ref={inlineDiagramRef} className="max-h-[60vh] w-full overflow-auto" />
 					)}
 				</div>
 			</div>
@@ -210,13 +210,13 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 
 				{/* modal box */}
 				<div
-					className="modal-box max-w-[90vw] h-[90vh] cursor-zoom-out flex items-center justify-center bg-mermaid"
+					className="modal-box bg-mermaid flex h-[90vh] max-w-[90vw] cursor-zoom-out items-center justify-center"
 					onClick={() => {
 						setZoomOpen(false);
 					}}
 				>
 					{/* enlarged diagram */}
-					<div ref={modalRef} className="overflow-auto w-full" style={{ pointerEvents: 'none' }} />
+					<div ref={modalRef} className="w-full overflow-auto" style={{ pointerEvents: 'none' }} />
 				</div>
 			</dialog>
 		</>

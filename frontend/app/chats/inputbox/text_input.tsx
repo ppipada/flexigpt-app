@@ -70,7 +70,7 @@ const ChatTextInput = forwardRef<ChatTextInputHandle, ChatTextInputProps>(
 			<form
 				ref={formRef}
 				onSubmit={handleSubmit}
-				className="flex items-center bg-base-100 rounded-2xl border border-base-300 focus-within:border-base-400 px-4 mx-2"
+				className="bg-base-100 border-base-300 focus-within:border-base-400 mx-2 flex items-center rounded-2xl border px-4"
 			>
 				<TextareaAutosize
 					ref={inputRef}
@@ -79,7 +79,7 @@ const ChatTextInput = forwardRef<ChatTextInputHandle, ChatTextInputProps>(
 					onKeyDown={onKeyDown}
 					onHeightChange={handleHeightChange}
 					placeholder="Type message..."
-					className="flex-1 resize-none overflow-auto bg-transparent border-none outline-none min-h-[24px] p-2"
+					className="min-h-[24px] flex-1 resize-none overflow-auto border-none bg-transparent p-2 outline-none"
 					minRows={2}
 					maxRows={16}
 					style={{ fontSize: '14px' }}
@@ -89,7 +89,7 @@ const ChatTextInput = forwardRef<ChatTextInputHandle, ChatTextInputProps>(
 
 				<button
 					type="submit"
-					className={`btn btn-md !bg-transparent border-none shadow-none px-1 ${!isSendButtonEnabled || isBusy ? 'btn-disabled' : ''}`}
+					className={`btn btn-md border-none !bg-transparent px-1 shadow-none ${!isSendButtonEnabled || isBusy ? 'btn-disabled' : ''}`}
 					disabled={isBusy || !isSendButtonEnabled}
 					aria-label="Send Message"
 					title="Send Message"

@@ -7,7 +7,7 @@ const Prompts: React.FC = () => {
 	const [activeTab, setActiveTab] = useState('prompts');
 
 	return (
-		<div className="flex flex-col w-full h-full overflow-hidden">
+		<div className="flex h-full w-full flex-col overflow-hidden">
 			<div role="tablist" className="tabs tabs-bordered tabs-lg fixed">
 				<a
 					role="tab"
@@ -29,7 +29,7 @@ const Prompts: React.FC = () => {
 				</a>
 			</div>
 
-			<div className="flex-1 overflow-y-auto mt-16 overscroll-y-contain">
+			<div className="mt-16 flex-1 overflow-y-auto overscroll-y-contain">
 				{activeTab === 'prompts' && <PromptTemplates />}
 				{activeTab === 'tools' && <Tools />}
 			</div>

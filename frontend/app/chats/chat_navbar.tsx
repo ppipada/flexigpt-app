@@ -56,7 +56,7 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 	return (
 		<div className="flex-1 flex-col items-center">
 			{/* search ------------------------------------------------ */}
-			<div className="flex-1 items-center justify-between py-1 px-2 bg-transparent ml-8 md:ml-0">
+			<div className="ml-8 flex-1 items-center justify-between bg-transparent px-2 py-1 md:ml-0">
 				<ChatSearch
 					onSelectConversation={onSelectConversation}
 					refreshKey={searchRefreshKey}
@@ -65,7 +65,7 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 			</div>
 
 			{/* controls / title ------------------------------------ */}
-			<div className="flex items-center justify-between p-2 bg-transparent">
+			<div className="flex items-center justify-between bg-transparent p-2">
 				{/* new chat */}
 				<button
 					className="btn btn-sm btn-ghost mx-1"
@@ -78,7 +78,7 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 				</button>
 
 				{/* title or editor */}
-				<div className="flex-1 flex justify-center px-2">
+				<div className="flex flex-1 justify-center px-2">
 					{isEditing ? (
 						<input
 							autoFocus
@@ -91,11 +91,11 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 								if (e.key === 'Enter') finishEdit();
 								else if (e.key === 'Escape') setIsEditing(false);
 							}}
-							className="text-xl font-semibold text-center bg-base-100 rounded px-2 py-1 w-full max-w-[60vw] outline-none"
+							className="bg-base-100 w-full max-w-[60vw] rounded px-2 py-1 text-center text-xl font-semibold outline-none"
 						/>
 					) : (
 						<h1
-							className="text-xl font-semibold text-center text-nowrap overflow-hidden cursor-pointer"
+							className="cursor-pointer overflow-hidden text-center text-xl font-semibold text-nowrap"
 							title="Double-click or click the pencil to rename"
 							onDoubleClick={() => {
 								if (!editDisabled) {

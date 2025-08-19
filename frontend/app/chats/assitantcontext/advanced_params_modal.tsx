@@ -79,10 +79,10 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 
 	return createPortal(
 		<dialog className="modal modal-open">
-			<div className="modal-box max-w-xl max-h-[80vh] overflow-auto rounded-2xl">
+			<div className="modal-box max-h-[80vh] max-w-xl overflow-auto rounded-2xl">
 				{/* header */}
-				<div className="flex justify-between items-center mb-4">
-					<h3 className="font-bold text-lg">Advanced Model Parameters</h3>
+				<div className="mb-4 flex items-center justify-between">
+					<h3 className="text-lg font-bold">Advanced Model Parameters</h3>
 					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close">
 						<FiX size={12} />
 					</button>

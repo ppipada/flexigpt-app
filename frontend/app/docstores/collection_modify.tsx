@@ -81,7 +81,7 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 	return (
 		<dialog className="modal modal-open">
 			<div className="modal-box rounded-2xl">
-				<h3 className="font-bold text-lg">{initialData ? 'Edit Collection' : 'Add New Collection'}</h3>
+				<h3 className="text-lg font-bold">{initialData ? 'Edit Collection' : 'Add New Collection'}</h3>
 				<form onSubmit={handleSubmit} className="mt-4">
 					<fieldset className="fieldset">
 						<label className="label" htmlFor="name">
@@ -96,14 +96,14 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 							required
 							spellCheck="false"
 						/>
-						{errors.name && <p className="text-error text-sm mt-1">{errors.name}</p>}
+						{errors.name && <p className="text-error mt-1 text-sm">{errors.name}</p>}
 					</fieldset>
 					<fieldset className="fieldset">
 						<label className="label" htmlFor="name">
 							Command*
 						</label>
 						<div className="relative">
-							<span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-custom">
+							<span className="text-neutral-custom absolute top-1/2 left-3 -translate-y-1/2 transform">
 								{DOCUMENT_COLLECTION_INVOKE_CHAR}
 							</span>
 							<input
@@ -116,7 +116,7 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 								spellCheck="false"
 							/>
 						</div>
-						{errors.command && <p className="text-error text-sm mt-1">{errors.command}</p>}
+						{errors.command && <p className="text-error mt-1 text-sm">{errors.command}</p>}
 					</fieldset>
 					<div className="modal-action">
 						<button type="button" className="btn btn-ghost rounded-2xl" onClick={onClose}>

@@ -67,10 +67,10 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 
 	return (
 		<dialog className="modal modal-open">
-			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
+			<div className="modal-box max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
 				{/* header */}
-				<div className="flex justify-between items-center mb-4">
-					<h3 className="font-bold text-lg">Add Prompt Bundle</h3>
+				<div className="mb-4 flex items-center justify-between">
+					<h3 className="text-lg font-bold">Add Prompt Bundle</h3>
 					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close" title="Close">
 						<FiX size={12} />
 					</button>
@@ -141,7 +141,7 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 
 						<div className="col-span-9">
 							<textarea
-								className="textarea textarea-bordered w-full rounded-2xl h-24"
+								className="textarea textarea-bordered h-24 w-full rounded-2xl"
 								value={form.description}
 								onChange={e => {
 									setForm(p => ({ ...p, description: e.target.value }));

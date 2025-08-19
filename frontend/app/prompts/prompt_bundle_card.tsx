@@ -177,9 +177,9 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 
 	/* ---------- render ---------- */
 	return (
-		<div className="bg-base-100 rounded-2xl shadow-lg p-4 mb-8">
+		<div className="bg-base-100 mb-8 rounded-2xl p-4 shadow-lg">
 			{/* header */}
-			<div className="grid grid-cols-12 gap-2 items-center">
+			<div className="grid grid-cols-12 items-center gap-2">
 				{/* label + name + slug */}
 				<div className="col-span-4 flex items-center gap-2">
 					<h3 className="text-sm font-semibold">
@@ -188,7 +188,7 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 					</h3>
 				</div>
 				<div className="col-span-1 flex items-center gap-2">
-					<span className="text-xs uppercase tracking-wide text-base-content/60">
+					<span className="text-base-content/60 text-xs tracking-wide uppercase">
 						{bundle.isBuiltIn ? 'Built-in' : 'Custom'}
 					</span>
 				</div>
@@ -210,7 +210,7 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 
 				{/* chevron */}
 				<div
-					className="col-span-2 flex justify-end items-center cursor-pointer gap-1"
+					className="col-span-2 flex cursor-pointer items-center justify-end gap-1"
 					onClick={() => {
 						setIsExpanded(p => !p);
 					}}
@@ -224,10 +224,10 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 			{isExpanded && (
 				<div className="mt-8 space-y-4">
 					{/* table */}
-					<div className="overflow-x-auto border border-base-content/10 rounded-2xl">
-						<table className="table table-zebra w-full">
+					<div className="border-base-content/10 overflow-x-auto rounded-2xl border">
+						<table className="table-zebra table w-full">
 							<thead>
-								<tr className="text-sm font-semibold bg-base-300">
+								<tr className="bg-base-300 text-sm font-semibold">
 									<th>Display Name</th>
 									<th>Slug</th>
 									<th className="text-center">Enabled</th>
@@ -285,7 +285,7 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 								))}
 								{localTemplates.length === 0 && (
 									<tr>
-										<td colSpan={6} className="text-center py-3 text-sm">
+										<td colSpan={6} className="py-3 text-center text-sm">
 											No templates in this bundle.
 										</td>
 									</tr>
@@ -296,9 +296,9 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 
 					{/* bottom-row actions (only for custom bundles) */}
 					{!bundle.isBuiltIn && (
-						<div className="flex justify-between items-center">
+						<div className="flex items-center justify-between">
 							<button
-								className="btn btn-md btn-ghost rounded-2xl flex items-center"
+								className="btn btn-md btn-ghost flex items-center rounded-2xl"
 								onClick={() => {
 									onBundleDeleted(bundle);
 								}}
@@ -307,7 +307,7 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 							</button>
 
 							<button
-								className="btn btn-md btn-ghost rounded-2xl flex items-center"
+								className="btn btn-md btn-ghost flex items-center rounded-2xl"
 								onClick={() => {
 									openModifyModal(undefined);
 								}}

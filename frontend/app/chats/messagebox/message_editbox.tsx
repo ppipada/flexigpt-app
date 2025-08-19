@@ -53,23 +53,23 @@ const MessageEditBox: FC<MessageEditBoxProps> = ({ editText, onTextChange, onSub
 	};
 
 	return (
-		<div className="flex flex-col w-full p-2">
-			<div className="relative w-full rounded-2xl overflow-hidden">
+		<div className="flex w-full flex-col p-2">
+			<div className="relative w-full overflow-hidden rounded-2xl">
 				<textarea
 					ref={textAreaRef}
 					value={editText}
 					onChange={handleTextChange}
 					onKeyDown={handleKeyDown}
-					className="resize-none bg-base-100 p-4 w-full"
+					className="bg-base-100 w-full resize-none p-4"
 					rows={4}
 					style={{ fontSize: '14px' }}
 					spellCheck="false"
 				/>
 			</div>
-			<div className="flex justify-end mt-0 mr-2 space-x-2">
+			<div className="mt-0 mr-2 flex justify-end space-x-2">
 				<button
 					onClick={onDiscard}
-					className="btn btn-md bg-transparent rounded-xl border-none shadow-none px-2"
+					className="btn btn-md rounded-xl border-none bg-transparent px-2 shadow-none"
 					aria-label="Discard Changes"
 					title="Discard Changes"
 				>
@@ -77,7 +77,7 @@ const MessageEditBox: FC<MessageEditBoxProps> = ({ editText, onTextChange, onSub
 				</button>
 				<button
 					onClick={handleSubmit}
-					className={`btn btn-md bg-transparent rounded-xl border-none shadow-none px-2 ${!isSendButtonEnabled ? 'btn-disabled' : ''}`}
+					className={`btn btn-md rounded-xl border-none bg-transparent px-2 shadow-none ${!isSendButtonEnabled ? 'btn-disabled' : ''}`}
 					disabled={!isSendButtonEnabled}
 					aria-label="Send Edited Message"
 					title="Send Edited Message"

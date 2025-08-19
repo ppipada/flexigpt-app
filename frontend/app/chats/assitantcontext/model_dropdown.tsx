@@ -28,22 +28,22 @@ const ModelDropdown = forwardRef<HTMLDetailsElement, ModelDropdownProps>(
 				}}
 			>
 				<summary
-					className="btn btn-xs w-full text-left text-nowrap text-neutral-custom shadow-none border-none overflow-hidden"
+					className="btn btn-xs text-neutral-custom w-full overflow-hidden border-none text-left text-nowrap shadow-none"
 					title="Select Model"
 				>
-					<div className="flex items-center w-full min-w-0">
-						<span className="text-xs text-center font-normal truncate min-w-0 flex-1">
+					<div className="flex w-full min-w-0 items-center">
+						<span className="min-w-0 flex-1 truncate text-center text-xs font-normal">
 							{selectedModel.modelDisplayName}
 						</span>
 						{isOpen ? (
-							<FiChevronDown size={16} className="ml-1 md:ml-2 shrink-0" />
+							<FiChevronDown size={16} className="ml-1 shrink-0 md:ml-2" />
 						) : (
-							<FiChevronUp size={16} className="ml-1 md:ml-2 shrink-0" />
+							<FiChevronUp size={16} className="ml-1 shrink-0 md:ml-2" />
 						)}
 					</div>
 				</summary>
 
-				<ul className="dropdown-content menu bg-base-100 rounded-xl w-full">
+				<ul className="dropdown-content menu bg-base-100 w-full rounded-xl">
 					{allOptions.map(model => (
 						<li
 							key={`${model.providerName}-${model.modelPresetID}`}
@@ -57,7 +57,7 @@ const ModelDropdown = forwardRef<HTMLDetailsElement, ModelDropdownProps>(
 								setIsOpen(false);
 							}}
 						>
-							<a className="flex justify-between items-center p-1 m-0">
+							<a className="m-0 flex items-center justify-between p-1">
 								<span>{model.modelDisplayName}</span>
 								{isCurrent(model) && <FiCheck />}
 							</a>

@@ -14,8 +14,8 @@ export function HybridReasoningCheckbox({
 	setIsReasoningEnabled: (enabled: boolean) => void;
 }) {
 	return (
-		<div className="flex w-full justify-center mx-2">
-			<label className="flex text-neutral-custom cursor-pointer">
+		<div className="mx-2 flex w-full justify-center">
+			<label className="text-neutral-custom flex cursor-pointer">
 				<input
 					type="checkbox"
 					className="checkbox checkbox-xs rounded-full"
@@ -24,7 +24,7 @@ export function HybridReasoningCheckbox({
 						setIsReasoningEnabled(e.target.checked);
 					}}
 				/>
-				<span className="text-xs text-neutral-custom ml-2">Hybrid Reasoning</span>
+				<span className="text-neutral-custom ml-2 text-xs">Hybrid Reasoning</span>
 			</label>
 		</div>
 	);
@@ -72,12 +72,12 @@ const ReasoningTokensDropdown = forwardRef<HTMLDetailsElement, ReasoningTokensDr
 					open={isOpen}
 				>
 					<summary
-						className="btn btn-xs text-left text-nowrap text-neutral-custom shadow-none border-none overflow-hidden"
+						className="btn btn-xs text-neutral-custom overflow-hidden border-none text-left text-nowrap shadow-none"
 						title="Set Tokens"
 					>
 						<div className="flex">
-							<span className="text-xs font-normal sm:hidden mr-2">Tokens: </span>
-							<span className="text-xs font-normal hidden sm:inline mr-2">Effort Tokens: </span>{' '}
+							<span className="mr-2 text-xs font-normal sm:hidden">Tokens: </span>
+							<span className="mr-2 hidden text-xs font-normal sm:inline">Effort Tokens: </span>{' '}
 							<span className="text-xs font-normal">{tokens}</span>
 							{isOpen ? (
 								<FiChevronDown size={16} className="ml-1 md:ml-2" />
@@ -87,7 +87,7 @@ const ReasoningTokensDropdown = forwardRef<HTMLDetailsElement, ReasoningTokensDr
 						</div>
 					</summary>
 
-					<ul className="dropdown-content menu bg-base-100 rounded-xl w-full p-4">
+					<ul className="dropdown-content menu bg-base-100 w-full rounded-xl p-4">
 						{defaultTokenOptions.map(tk => (
 							<li
 								key={tk}
@@ -100,7 +100,7 @@ const ReasoningTokensDropdown = forwardRef<HTMLDetailsElement, ReasoningTokensDr
 									setIsOpen(false);
 								}}
 							>
-								<a className="justify-between items-center p-1 m-0">
+								<a className="m-0 items-center justify-between p-1">
 									<span>{tk}</span>
 									{tokens === tk && <FiCheck />}
 								</a>
@@ -108,8 +108,8 @@ const ReasoningTokensDropdown = forwardRef<HTMLDetailsElement, ReasoningTokensDr
 						))}
 
 						<li className="text-xs">
-							<hr className="p-0 my-2 border-0 border-t border-neutral/20" />
-							<label className="tooltip tooltip-top outline-none border-none">
+							<hr className="border-neutral/20 my-2 border-0 border-t p-0" />
+							<label className="tooltip tooltip-top border-none outline-none">
 								<div className="tooltip-content">
 									<div className="text-xs">Custom tokens (≥ 1024)</div>
 								</div>

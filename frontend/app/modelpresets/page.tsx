@@ -265,9 +265,9 @@ const ModelPresetPage: FC = () => {
 	if (loading) return <Loader text="Loading model presets…" />;
 
 	return (
-		<div className="flex flex-col items-center w-full h-full">
+		<div className="flex h-full w-full flex-col items-center">
 			{/* ------------------------------ header ----------------------------- */}
-			<div className="flex w-10/12 lg:w-2/3 items-center fixed mt-8 p-2">
+			<div className="fixed mt-8 flex w-10/12 items-center p-2 lg:w-2/3">
 				<h1 className="flex grow items-center justify-center text-xl font-semibold">Model Presets</h1>
 				<DownloadButton
 					title="Download Model Presets"
@@ -281,12 +281,12 @@ const ModelPresetPage: FC = () => {
 
 			{/* ------------------------------ body ------------------------------ */}
 			<div
-				className="flex flex-col items-center w-full grow mt-24 overflow-y-auto"
+				className="mt-24 flex w-full grow flex-col items-center overflow-y-auto"
 				style={{ maxHeight: 'calc(100vh - 128px)' }}
 			>
-				<div className="flex flex-col space-y-4 w-5/6 xl:w-2/3">
+				<div className="flex w-5/6 flex-col space-y-4 xl:w-2/3">
 					{/* --------------- default-provider selection row ---------------- */}
-					<div className="bg-base-100 rounded-2xl shadow-lg px-4 py-2 mb-8">
+					<div className="bg-base-100 mb-8 rounded-2xl px-4 py-2 shadow-lg">
 						<div className="grid grid-cols-12 items-center gap-4">
 							<label className="col-span-3 text-sm font-medium">Default Provider</label>
 
@@ -303,12 +303,12 @@ const ModelPresetPage: FC = () => {
 										getDisplayName={k => enabledProviderPresets[k]?.displayName ?? ''}
 									/>
 								) : (
-									<span className="text-sm text-error">Enable at least one provider first.</span>
+									<span className="text-error text-sm">Enable at least one provider first.</span>
 								)}
 							</div>
 
 							<div className="col-span-3 flex justify-end">
-								<button className="btn btn-ghost rounded-2xl flex items-center" onClick={openAddModal}>
+								<button className="btn btn-ghost flex items-center rounded-2xl" onClick={openAddModal}>
 									<FiPlus /> <span className="ml-1">Add Provider</span>
 								</button>
 							</div>
@@ -316,7 +316,7 @@ const ModelPresetPage: FC = () => {
 					</div>
 
 					{/* -------------------- provider cards / errors ------------------ */}
-					{error && <p className="text-error text-center mt-8">{error}</p>}
+					{error && <p className="text-error mt-8 text-center">{error}</p>}
 
 					{!error &&
 						Object.entries(providerPresets)

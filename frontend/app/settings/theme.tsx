@@ -27,7 +27,7 @@ interface ThemeRadioProps {
 }
 
 const ThemeRadio: FC<ThemeRadioProps> = ({ label, value, icon, current, onChange }) => (
-	<label className="flex items-center gap-2 cursor-pointer">
+	<label className="flex cursor-pointer items-center gap-2">
 		<input
 			type="radio"
 			className="radio radio-accent"
@@ -107,7 +107,7 @@ export const ThemeSelector: FC = () => {
 	}
 
 	return (
-		<div className="flex gap-6 items-center">
+		<div className="flex items-center gap-6">
 			<ThemeRadio
 				label="System"
 				value={ThemeType.System}

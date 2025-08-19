@@ -197,7 +197,7 @@ const DocumentStores: React.FC = () => {
 	// Loading state
 	if (loading) {
 		return (
-			<div className="flex justify-center items-center h-screen">
+			<div className="flex h-screen items-center justify-center">
 				<span className="loading loading-spinner loading-sm"></span>
 			</div>
 		);
@@ -206,7 +206,7 @@ const DocumentStores: React.FC = () => {
 	// Error state
 	if (error) {
 		return (
-			<div className="flex justify-center items-center h-screen">
+			<div className="flex h-screen items-center justify-center">
 				<div className="alert alert-error">
 					<span>{error}</span>
 				</div>
@@ -217,9 +217,9 @@ const DocumentStores: React.FC = () => {
 	return (
 		<div className="container mx-auto p-4">
 			{/* Heading Row */}
-			<div className="grid grid-cols-3 items-center mb-6">
+			<div className="mb-6 grid grid-cols-3 items-center">
 				<div></div>
-				<h1 className="text-3xl font-bold text-center">Document Stores</h1>
+				<h1 className="text-center text-3xl font-bold">Document Stores</h1>
 				<div className="text-right">
 					<button className="btn btn-lg btn-ghost rounded-2xl" onClick={handleAddDocStore}>
 						<FiPlus size={20} />
@@ -230,7 +230,7 @@ const DocumentStores: React.FC = () => {
 			{/* DocStore Cards */}
 			<div className="space-y-4">
 				{docStores.map(docStore => (
-					<div key={docStore.id} className="card bg-base-100 shadow-xl rounded-2xl">
+					<div key={docStore.id} className="card bg-base-100 rounded-2xl shadow-xl">
 						<div className="card-body p-4">
 							{/* DocStore Info Row */}
 							<div className="flex items-center justify-between pr-2 pb-2">
@@ -248,7 +248,7 @@ const DocumentStores: React.FC = () => {
 							</div>
 
 							{/* DocStore URL and Action Buttons */}
-							<div className="flex text-neutral-custom items-center justify-between text-sm">
+							<div className="text-neutral-custom flex items-center justify-between text-sm">
 								<span>{docStore.url}</span>
 								<div>
 									<button
@@ -280,14 +280,14 @@ const DocumentStores: React.FC = () => {
 
 							{/* Collections Table */}
 							<div className="overflow-x-auto">
-								<table className="table table-zebra w-full">
+								<table className="table-zebra table w-full">
 									<thead>
-										<tr className="font-semibold text-sm px-4 py-0 m-0 bg-base-300">
+										<tr className="bg-base-300 m-0 px-4 py-0 text-sm font-semibold">
 											<th className="rounded-tl-2xl">Collection Name</th>
 											<th>Use Command</th>
 											<th>Documents</th>
 											<th>Chunks</th>
-											<th className="text-right rounded-tr-2xl pr-8">Actions</th>
+											<th className="rounded-tr-2xl pr-8 text-right">Actions</th>
 										</tr>
 									</thead>
 									<tbody>

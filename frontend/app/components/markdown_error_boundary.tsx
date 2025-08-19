@@ -21,7 +21,7 @@ export class MdErrorBoundary extends Component<MdErrProps, MdErrState> {
 		if (this.state.hasError) {
 			/* You see the warning + the untouched markdown */
 			return (
-				<pre className="bg-base-200 text-error p-2 rounded overflow-x-auto">
+				<pre className="bg-base-200 text-error overflow-x-auto rounded p-2">
 					{`⚠️ Failed to render message. Showing raw content below:
 
 ${this.props.source}`}

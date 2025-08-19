@@ -259,10 +259,10 @@ const AddEditProviderPresetModal: FC<Props> = ({
 
 	return (
 		<dialog className="modal modal-open">
-			<div className="modal-box max-w-3xl max-h-[80vh] overflow-auto rounded-2xl">
+			<div className="modal-box max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
 				{/* Header */}
-				<div className="flex justify-between items-center mb-4">
-					<h3 className="font-bold text-lg">{mode === 'add' ? 'Add Provider' : 'Edit Provider'}</h3>
+				<div className="mb-4 flex items-center justify-between">
+					<h3 className="text-lg font-bold">{mode === 'add' ? 'Add Provider' : 'Edit Provider'}</h3>
 					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close" title="Close">
 						<FiX size={12} />
 					</button>
@@ -280,7 +280,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 								{!prefillMode && (
 									<button
 										type="button"
-										className="btn btn-sm btn-ghost rounded-2xl flex items-center"
+										className="btn btn-sm btn-ghost flex items-center rounded-2xl"
 										onClick={() => {
 											setPrefillMode(true);
 										}}
@@ -322,7 +322,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 					)}
 
 					{/* SDK Type */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">SDK Type*</span>
 							<span
@@ -352,7 +352,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 					</div>
 
 					{/* Provider ID */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Provider ID*</span>
 							{mode === 'add' && (
@@ -386,7 +386,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 					</div>
 
 					{/* Display Name */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Display Name*</span>
 						</label>
@@ -411,7 +411,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 					</div>
 
 					{/* Origin */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Origin*</span>
 						</label>
@@ -436,7 +436,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 					</div>
 
 					{/* Chat-completion Path */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Chat Path*</span>
 							<span className="label-text-alt tooltip tooltip-right" data-tip="Endpoint path for chat completions.">
@@ -457,7 +457,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 					</div>
 
 					{/* API-key header key */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">API-Key Header Key</span>
 						</label>
@@ -475,7 +475,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 					</div>
 
 					{/* Default Headers */}
-					<div className="grid grid-cols-12 gap-2 items-start">
+					<div className="grid grid-cols-12 items-start gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Default Headers (JSON)</span>
 						</label>
@@ -484,7 +484,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 								name="defaultHeadersRawJSON"
 								value={formData.defaultHeadersRawJSON}
 								onChange={handleInput}
-								className={`textarea textarea-bordered w-full rounded-2xl h-24 ${
+								className={`textarea textarea-bordered h-24 w-full rounded-2xl ${
 									errors.defaultHeadersRawJSON ? 'textarea-error' : ''
 								}`}
 								spellCheck="false"
@@ -500,7 +500,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 					</div>
 
 					{/* API-Key */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3 flex flex-col items-start gap-0.5">
 							<span className="label-text text-sm">API-Key*</span>
 							{mode === 'edit' && apiKeyAlreadySet && (
@@ -529,7 +529,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 					</div>
 
 					{/* Enabled toggle */}
-					<div className="grid grid-cols-12 gap-2 items-center">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3 cursor-pointer">
 							<span className="label-text text-sm">Enabled</span>
 						</label>
