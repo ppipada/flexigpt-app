@@ -35,13 +35,7 @@ const SingleReasoningDropdown = forwardRef<HTMLDetailsElement, SingleReasoningDr
 						title="Set Reasoning Level"
 					>
 						<div className="flex">
-							<span
-								className="text-xs font-normalconst SingleReasoningDropdown = forwardRef<HTMLDetailsElement, SingleReasoningDropdownProps>(
-							({ reasoningLevel, setReasoningLevel, isOpen, setIsOpen }, detailsRef) => {
-						 sm:hidden mr-2"
-							>
-								Reasoning:{' '}
-							</span>
+							<span className="text-xs font-normal sm:hidden mr-2">Reasoning: </span>
 							<span className="text-xs font-normal hidden sm:inline mr-2">Reasoning Level: </span>
 							<span className="text-xs font-normal"> {levelDisplayNames[reasoningLevel]} </span>
 							{isOpen ? (

@@ -17,7 +17,6 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 	const [stream, setStream] = useState(false);
 	const [maxPromptLength, setMaxPromptLength] = useState('');
 	const [maxOutputLength, setMaxOutputLength] = useState('');
-	const [systemPrompt, setSystemPrompt] = useState('');
 	const [timeout, setTimeout] = useState('');
 
 	/* validation errors */
@@ -32,7 +31,6 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 		setMaxOutputLength(String(currentModel.maxOutputLength));
 		setTimeout(String(currentModel.timeout));
 
-		setSystemPrompt(currentModel.systemPrompt);
 		setErrors({});
 	}, [isOpen, currentModel]);
 
@@ -59,7 +57,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 		/* final synchronous validation */
 		const maxPromptErr = validateNumberField('maxPromptLength', maxPromptLength);
 		const maxOutputErr = validateNumberField('maxOutputLength', maxOutputLength);
-		const timeoutErr = validateNumberField('timeout', maxOutputLength);
+		const timeoutErr = validateNumberField('timeout', timeout);
 
 		if (maxPromptErr || maxOutputErr || timeoutErr) {
 			setErrors({ maxPromptLength: maxPromptErr, maxOutputLength: maxOutputErr, timeout: timeoutErr });
@@ -72,7 +70,6 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 			maxPromptLength: maxPromptLength.trim() === '' ? currentModel.maxPromptLength : Number(maxPromptLength.trim()),
 			maxOutputLength: maxOutputLength.trim() === '' ? currentModel.maxOutputLength : Number(maxOutputLength.trim()),
 			timeout: timeout.trim() === '' ? currentModel.timeout : Number(timeout.trim()),
-			systemPrompt,
 		};
 
 		onSave(updatedModel);
@@ -199,27 +196,6 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 									</span>
 								</div>
 							)}
-						</div>
-					</div>
-
-					{/* system prompt */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-4">
-							<span className="label-text text-sm">System Prompt</span>
-							<span className="label-text-alt tooltip tooltip-right" data-tip="Behavior instructions">
-								<FiHelpCircle size={12} />
-							</span>
-						</label>
-						<div className="col-span-8">
-							<textarea
-								value={systemPrompt}
-								onChange={e => {
-									setSystemPrompt(e.target.value);
-								}}
-								className="textarea textarea-bordered w-full rounded-xl h-24"
-								placeholder="Enter system prompt instructions here..."
-								spellCheck="false"
-							/>
 						</div>
 					</div>
 

@@ -21,7 +21,7 @@ const ModelDropdown = forwardRef<HTMLDetailsElement, ModelDropdownProps>(
 		return (
 			<details
 				ref={detailsRef}
-				className="dropdown dropdown-top dropdown-end w-full"
+				className="dropdown dropdown-top dropdown-end w-full justify-center"
 				open={isOpen}
 				onToggle={e => {
 					setIsOpen((e.currentTarget as HTMLDetailsElement).open);
@@ -31,15 +31,14 @@ const ModelDropdown = forwardRef<HTMLDetailsElement, ModelDropdownProps>(
 					className="btn btn-xs w-full text-left text-nowrap text-neutral-custom shadow-none border-none overflow-hidden"
 					title="Select Model"
 				>
-					<div className="flex items-center">
-						{/* truncate on very small screens */}
-						<span className="text-xs font-normal sm:hidden">{selectedModel.modelDisplayName.slice(0, 8)}</span>
-						<span className="text-xs font-normal hidden sm:inline">{selectedModel.modelDisplayName}</span>
-
+					<div className="flex items-center w-full min-w-0">
+						<span className="text-xs text-center font-normal truncate min-w-0 flex-1">
+							{selectedModel.modelDisplayName}
+						</span>
 						{isOpen ? (
-							<FiChevronDown size={16} className="ml-1 md:ml-2" />
+							<FiChevronDown size={16} className="ml-1 md:ml-2 shrink-0" />
 						) : (
-							<FiChevronUp size={16} className="ml-1 md:ml-2" />
+							<FiChevronUp size={16} className="ml-1 md:ml-2 shrink-0" />
 						)}
 					</div>
 				</summary>

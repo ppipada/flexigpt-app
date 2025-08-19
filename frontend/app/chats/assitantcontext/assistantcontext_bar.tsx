@@ -13,47 +13,53 @@ import DisablePreviousMessagesCheckbox from '@/chats/assitantcontext/disable_che
 import ModelDropdown from '@/chats/assitantcontext/model_dropdown';
 import ReasoningTokensDropdown, { HybridReasoningCheckbox } from '@/chats/assitantcontext/reasoning_hybrid';
 import SingleReasoningDropdown from '@/chats/assitantcontext/reasoning_levels_dropdown';
+import SystemPromptDropdown, {
+	createSystemPromptItem,
+	type SystemPromptItem,
+} from '@/chats/assitantcontext/system_prompt_modal';
 import TemperatureDropdown from '@/chats/assitantcontext/temperature_dropdown';
 
 type AssistantContextBarProps = {
-	/*  Emits the final, ready-to-use ChatOption every time something changes  */
 	onOptionsChange: (options: ChatOption) => void;
 };
 
 const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChange }) => {
-	/* --------------------------------------------------------------------
-	 * Internal state – everything that belongs only to the params-bar
-	 * ------------------------------------------------------------------ */
 	const [selectedModel, setSelectedModel] = useState<ChatOption>(DefaultChatOptions);
 	const [allOptions, setAllOptions] = useState<ChatOption[]>([DefaultChatOptions]);
 
 	const [isHybridReasoningEnabled, setIsHybridReasoningEnabled] = useState(true);
 	const [disablePreviousMessages, setDisablePreviousMessages] = useState(false);
+	const [systemPrompts, setSystemPrompts] = useState<SystemPromptItem[]>([]);
 
-	/* --------------------------------------------------------------------
-	 * Fetch initial model list / defaults
-	 * ------------------------------------------------------------------ */
 	const loadInitialItems = useCallback(async () => {
 		const r = await getChatInputOptions();
 		setSelectedModel(r.default);
 		setAllOptions(r.allOptions);
 		setIsHybridReasoningEnabled(r.default.reasoning?.type === ReasoningType.HybridWithTokens);
+		// Seed system prompts with current default if available
+		const initialSP = r.default.systemPrompt.trim();
+		if (initialSP) {
+			setSystemPrompts(prev =>
+				prev.some(i => i.prompt === initialSP) ? prev : [...prev, createSystemPromptItem(initialSP)]
+			);
+		}
 	}, []);
 
 	useEffect(() => {
 		loadInitialItems();
 	}, [loadInitialItems]);
 
-	/* --------------------------------------------------------------------
-	 * Keep `isHybridReasoningEnabled` in sync with the model selection
-	 * ------------------------------------------------------------------ */
 	useEffect(() => {
 		setIsHybridReasoningEnabled(selectedModel.reasoning?.type === ReasoningType.HybridWithTokens);
 	}, [selectedModel]);
 
-	/* --------------------------------------------------------------------
-	 * Derive the final ChatOption & bubble it up whenever dependencies change
-	 * ------------------------------------------------------------------ */
+	useEffect(() => {
+		const sp = selectedModel.systemPrompt.trim();
+		if (sp) {
+			setSystemPrompts(prev => (prev.some(i => i.prompt === sp) ? prev : [...prev, createSystemPromptItem(sp)]));
+		}
+	}, [selectedModel.systemPrompt]);
+
 	const buildFinalOptions = useCallback((): ChatOption => {
 		const base = { ...selectedModel, disablePreviousMessages };
 
@@ -71,13 +77,13 @@ const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChan
 		onOptionsChange(buildFinalOptions());
 	}, [buildFinalOptions, onOptionsChange]);
 
-	/* --------------------------------------------------------------------
-	 * Refs / open-state for dropdowns
-	 * ------------------------------------------------------------------ */
 	const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
 	const [isSecondaryDropdownOpen, setIsSecondaryDropdownOpen] = useState(false);
+	const [isSystemDropdownOpen, setIsSystemDropdownOpen] = useState(false);
+
 	const modelDetailsRef = useRef<HTMLDetailsElement>(null);
 	const secondaryDetailsRef = useRef<HTMLDetailsElement>(null);
+	const systemDetailsRef = useRef<HTMLDetailsElement>(null);
 
 	useCloseDetails({
 		detailsRef: modelDetailsRef,
@@ -95,14 +101,16 @@ const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChan
 		},
 	});
 
-	/* --------------------------------------------------------------------
-	 * Advanced params modal state
-	 * ------------------------------------------------------------------ */
+	useCloseDetails({
+		detailsRef: systemDetailsRef,
+		events: ['mousedown'],
+		onClose: () => {
+			setIsSystemDropdownOpen(false);
+		},
+	});
+
 	const [isAdvancedModalOpen, setIsAdvancedModalOpen] = useState(false);
 
-	/* --------------------------------------------------------------------
-	 * Helpers for updating individual params
-	 * ------------------------------------------------------------------ */
 	const setTemperature = useCallback(
 		(temp: number) => {
 			const clampedTemp = Math.max(0, Math.min(1, temp));
@@ -135,55 +143,50 @@ const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChan
 		[setSelectedModel]
 	);
 
-	/* --------------------------------------------------------------------
-	 * Render
-	 * ------------------------------------------------------------------ */
+	const selectSystemPrompt = useCallback(
+		(item: SystemPromptItem) => {
+			setSelectedModel(prev => ({ ...prev, systemPrompt: item.prompt }));
+		},
+		[setSelectedModel]
+	);
+
+	const addSystemPrompt = useCallback(
+		(item: SystemPromptItem) => {
+			const p = item.prompt.trim();
+			if (!p) return;
+			setSystemPrompts(prev => (prev.some(i => i.prompt === p) ? prev : [...prev, item]));
+			setSelectedModel(prev => ({ ...prev, systemPrompt: p }));
+		},
+		[setSelectedModel]
+	);
 	return (
-		<div className="flex items-center justify-between bg-base-200 mb-1 mx-8">
+		<div className="flex items-center justify-between bg-base-200 mb-1 mx-4">
 			{/* --------------------------- Model dropdown ----------------------- */}
-			<div className="w-1/3">
-				<ModelDropdown
-					ref={modelDetailsRef}
-					selectedModel={selectedModel}
-					setSelectedModel={setSelectedModel}
-					allOptions={allOptions}
-					isOpen={isModelDropdownOpen}
-					setIsOpen={setIsModelDropdownOpen}
-				/>
-			</div>
+
+			<ModelDropdown
+				ref={modelDetailsRef}
+				selectedModel={selectedModel}
+				setSelectedModel={setSelectedModel}
+				allOptions={allOptions}
+				isOpen={isModelDropdownOpen}
+				setIsOpen={setIsModelDropdownOpen}
+			/>
 
 			{/* ---------------- Reasoning / temperature / checkboxes ------------ */}
-			<div className="flex items-center justify-between w-2/3">
-				{selectedModel.reasoning?.type === ReasoningType.HybridWithTokens && (
-					<HybridReasoningCheckbox
-						isReasoningEnabled={isHybridReasoningEnabled}
-						setIsReasoningEnabled={setIsHybridReasoningEnabled}
-					/>
-				)}
 
-				{selectedModel.reasoning?.type === ReasoningType.HybridWithTokens ? (
-					isHybridReasoningEnabled ? (
-						<ReasoningTokensDropdown
-							ref={secondaryDetailsRef}
-							tokens={selectedModel.reasoning.tokens}
-							setTokens={setHybridTokens}
-							isOpen={isSecondaryDropdownOpen}
-							setIsOpen={setIsSecondaryDropdownOpen}
-						/>
-					) : (
-						<TemperatureDropdown
-							ref={secondaryDetailsRef}
-							temperature={selectedModel.temperature ?? 0.1}
-							setTemperature={setTemperature}
-							isOpen={isSecondaryDropdownOpen}
-							setIsOpen={setIsSecondaryDropdownOpen}
-						/>
-					)
-				) : selectedModel.reasoning?.type === ReasoningType.SingleWithLevels ? (
-					<SingleReasoningDropdown
+			{selectedModel.reasoning?.type === ReasoningType.HybridWithTokens && (
+				<HybridReasoningCheckbox
+					isReasoningEnabled={isHybridReasoningEnabled}
+					setIsReasoningEnabled={setIsHybridReasoningEnabled}
+				/>
+			)}
+
+			{selectedModel.reasoning?.type === ReasoningType.HybridWithTokens ? (
+				isHybridReasoningEnabled ? (
+					<ReasoningTokensDropdown
 						ref={secondaryDetailsRef}
-						reasoningLevel={selectedModel.reasoning.level}
-						setReasoningLevel={setReasoningLevel}
+						tokens={selectedModel.reasoning.tokens}
+						setTokens={setHybridTokens}
 						isOpen={isSecondaryDropdownOpen}
 						setIsOpen={setIsSecondaryDropdownOpen}
 					/>
@@ -195,25 +198,51 @@ const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChan
 						isOpen={isSecondaryDropdownOpen}
 						setIsOpen={setIsSecondaryDropdownOpen}
 					/>
-				)}
-
-				<DisablePreviousMessagesCheckbox
-					disablePreviousMessages={disablePreviousMessages}
-					setDisablePreviousMessages={setDisablePreviousMessages}
+				)
+			) : selectedModel.reasoning?.type === ReasoningType.SingleWithLevels ? (
+				<SingleReasoningDropdown
+					ref={secondaryDetailsRef}
+					reasoningLevel={selectedModel.reasoning.level}
+					setReasoningLevel={setReasoningLevel}
+					isOpen={isSecondaryDropdownOpen}
+					setIsOpen={setIsSecondaryDropdownOpen}
 				/>
+			) : (
+				<TemperatureDropdown
+					ref={secondaryDetailsRef}
+					temperature={selectedModel.temperature ?? 0.1}
+					setTemperature={setTemperature}
+					isOpen={isSecondaryDropdownOpen}
+					setIsOpen={setIsSecondaryDropdownOpen}
+				/>
+			)}
 
-				{/* ---------------- Advanced params button ----------------------- */}
-				<button
-					type="button"
-					className="btn btn-sm btn-ghost mx-2 text-neutral-custom"
-					onClick={() => {
-						setIsAdvancedModalOpen(true);
-					}}
-					title="Set Advanced Params"
-				>
-					<FiSliders size={16} />
-				</button>
-			</div>
+			<SystemPromptDropdown
+				ref={systemDetailsRef}
+				prompts={systemPrompts}
+				selectedPromptId={systemPrompts.find(i => i.prompt === (selectedModel.systemPrompt.trim() || ''))?.id}
+				onSelect={selectSystemPrompt}
+				onAdd={addSystemPrompt}
+				isOpen={isSystemDropdownOpen}
+				setIsOpen={setIsSystemDropdownOpen}
+			/>
+
+			<DisablePreviousMessagesCheckbox
+				disablePreviousMessages={disablePreviousMessages}
+				setDisablePreviousMessages={setDisablePreviousMessages}
+			/>
+
+			{/* ---------------- Advanced params button ----------------------- */}
+			<button
+				type="button"
+				className="btn btn-sm btn-ghost text-neutral-custom"
+				onClick={() => {
+					setIsAdvancedModalOpen(true);
+				}}
+				title="Set Advanced Params"
+			>
+				<FiSliders size={16} />
+			</button>
 
 			{/* ---------------- Advanced params modal -------------------------- */}
 			{isAdvancedModalOpen && (
