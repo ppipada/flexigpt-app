@@ -27,7 +27,7 @@
 - Defaults come from the Assistant. Any user change persists for the chat until changed again.
 - Clear scoping: Assistant defaults → chat-level selections → per-turn additions.
 - Deterministic composition order; minimal surprises.
-- Inline, keyboard-first template UX; no heavy modals (use a non-blocking drawer).
+- Inline, keyboard-first template UX.
 - Happy path: type → (optional /template) → send.
 - Backend prompts/tools/docs are out of scope here; this is UI/flow.
 
@@ -56,7 +56,7 @@
 - Tools and Knowledge: availability and chat defaults only. Selection is per turn, see Composer.
 
   - Managed via dropdowns (select-only, no freeform). Selections persist for the chat and are used by default on each turn.
-  - Details and larger sets are managed in a non-blocking drawer.
+  - Details and larger sets are managed in a advanced params modal.
 
 - System prompt:
 
@@ -70,8 +70,7 @@
   - Knowledge dropdown: multi-select of allowed sources (select-only). Selections persist for the chat (defaults). Turn-level additions via “#” don’t change this.
 
 - Sliders button:
-  - Opens a non-blocking drawer for Additional context (tools, knowledge, extra params).
-  - Always available (small screens use drawer for everything).
+  - Opens a advanced params modal for Additional context (tools, knowledge, extra params).
 
 ## Turn details and Inspector (per message)
 
@@ -97,7 +96,7 @@
     - Actions: Copy JSON, Download response.
 
 - Behavior
-  - Single Inspector component; opens as a right-side drawer on desktop, full-screen sheet on mobile. If your product prefers modal, use the same component in modal presentation (keep it non-blocking if possible).
+  - Single Inspector component; opens as a modal.
   - Keyboard: Esc closes; focus returns to the triggering message/action.
   - Privacy: hide/redact sensitive variable values by default with a “show values” toggle (sticky per session).
 
@@ -143,7 +142,7 @@
 
   - Inline “+” opens select-only autocomplete for allowed tools to mark them “eligible/selected” for this turn.
   - Selection ≠ invocation; the model decides, user may confirm/deny calls if required.
-  - Inline additions do not change chat defaults unless the user also updates the Tools dropdown/drawer.
+  - Inline additions do not change chat defaults unless the user also updates the Tools dropdown.
 
 - Action: Attach Knowledge (#)
 
@@ -175,12 +174,12 @@
 - After send
   - Clear template mode state (chips, preprocessors, mapping).
   - If the template had a System, it’s now added and selected in the System dropdown (chat-level).
-  - Tools/sources added via inline triggers apply only to that turn unless separately selected in dropdown/drawer.
+  - Tools/sources added via inline triggers apply only to that turn unless separately selected in dropdown.
 
 ## Acceptance criteria (MVP)
 
 - Every chat starts with an Assistant (Default Assistant if none chosen).
-- Assistant Context Bar includes: Assistant, Model, Temperature, Reasoning, History toggle, System prompt dropdown, Tools dropdown, Knowledge dropdown, Sliders (drawer), Inspector.
+- Assistant Context Bar includes: Assistant, Model, Temperature, Reasoning, History toggle, System prompt dropdown, Tools dropdown, Knowledge dropdown, Sliders (modal).
 - On Assistant switch, incompatible chat selections auto-fallback.
   - System recents are Assistant-scoped; switching Assistant clears recents and reverts System to new Assistant default.
 - User selections (model, temp, reasoning, history, system, tools, knowledge) persist at chat level until the user changes them.

@@ -96,7 +96,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-4 cursor-pointer">
 							<span className="label-text text-sm">Streaming</span>
-							<span className="label-text-alt tmodalooltip tooltip-right" data-tip="Stream data continuously.">
+							<span className="label-text-alt tooltip tooltip-right" data-tip="Stream data continuously.">
 								<FiHelpCircle size={12} />
 							</span>
 						</label>
@@ -132,7 +132,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 								spellCheck="false"
 							/>
 							{errors.maxPromptLength && (
-								<div className="labmodalel">
+								<div className="label">
 									<span className="label-text-alt text-error flex items-center gap-1">
 										<FiAlertCircle size={12} /> {errors.maxPromptLength}
 									</span>
@@ -168,7 +168,6 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 								</div>
 							)}
 						</div>
-						modal
 					</div>
 
 					{/* timeout */}
@@ -204,7 +203,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 					</div>
 
 					{/* system prompt */}
-					<div className="grid gridmodal-cols-12 items-center gap-2">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-4">
 							<span className="label-text text-sm">System Prompt</span>
 							<span className="label-text-alt tooltip tooltip-right" data-tip="Behavior instructions">
