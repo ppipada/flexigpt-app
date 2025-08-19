@@ -6,8 +6,8 @@ import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 
+import AssistantContextBar from '@/chats/assitantcontext/assistantcontext_bar';
 import EditorTextInput, { type EditorTextInputHandle } from '@/chats/inputbox/editor_input';
-import ModelParamsBar from '@/chats/modelparams/modelparams_bar';
 
 interface ChatInputFieldProps {
 	onSend: (message: string, options: ChatOption) => void;
@@ -24,7 +24,7 @@ export interface ChatInputFieldHandle {
 const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 	({ onSend, setInputHeight, isBusy, abortRef }, ref) => {
 		/* ------------------------------------------------------------------
-		 * Aggregated chat-options (provided by <ModelParamsBar />)
+		 * Aggregated chat-options (provided by <AssistantContextBar />)
 		 * ------------------------------------------------------------------ */
 		const [chatOptions, setChatOptions] = useState<ChatOption>(DefaultChatOptions);
 
@@ -81,7 +81,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 				)}
 
 				{/* Model- / params-bar ---------------------------------------------- */}
-				<ModelParamsBar onOptionsChange={setChatOptions} /* hand the aggregated options up */ />
+				<AssistantContextBar onOptionsChange={setChatOptions} /* hand the aggregated options up */ />
 
 				{/* Abort confirmation dialog ---------------------------------------- */}
 				{showAbortModal && (

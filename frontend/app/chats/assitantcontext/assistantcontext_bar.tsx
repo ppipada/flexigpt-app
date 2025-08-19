@@ -8,19 +8,19 @@ import { useCloseDetails } from '@/hooks/use_close_details';
 
 import { type ChatOption, DefaultChatOptions, getChatInputOptions } from '@/apis/chatoption_helper';
 
-import AdvancedParamsModal from '@/chats/modelparams/advanced_params_modal';
-import DisablePreviousMessagesCheckbox from '@/chats/modelparams/disable_checkbox';
-import ModelDropdown from '@/chats/modelparams/model_dropdown';
-import ReasoningTokensDropdown, { HybridReasoningCheckbox } from '@/chats/modelparams/reasoning_hybrid';
-import SingleReasoningDropdown from '@/chats/modelparams/reasoning_levels_dropdown';
-import TemperatureDropdown from '@/chats/modelparams/temperature_dropdown';
+import AdvancedParamsModal from '@/chats/assitantcontext/advanced_params_modal';
+import DisablePreviousMessagesCheckbox from '@/chats/assitantcontext/disable_checkbox';
+import ModelDropdown from '@/chats/assitantcontext/model_dropdown';
+import ReasoningTokensDropdown, { HybridReasoningCheckbox } from '@/chats/assitantcontext/reasoning_hybrid';
+import SingleReasoningDropdown from '@/chats/assitantcontext/reasoning_levels_dropdown';
+import TemperatureDropdown from '@/chats/assitantcontext/temperature_dropdown';
 
-type ModelParamsBarProps = {
+type AssistantContextBarProps = {
 	/*  Emits the final, ready-to-use ChatOption every time something changes  */
 	onOptionsChange: (options: ChatOption) => void;
 };
 
-const ModelParamsBar: React.FC<ModelParamsBarProps> = ({ onOptionsChange }) => {
+const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChange }) => {
 	/* --------------------------------------------------------------------
 	 * Internal state – everything that belongs only to the params-bar
 	 * ------------------------------------------------------------------ */
@@ -233,4 +233,4 @@ const ModelParamsBar: React.FC<ModelParamsBarProps> = ({ onOptionsChange }) => {
 	);
 };
 
-export default ModelParamsBar;
+export default AssistantContextBar;
