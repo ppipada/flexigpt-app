@@ -11,7 +11,7 @@ export type SystemPromptItem = {
 	prompt: string;
 };
 
-export function buildTitleFromPrompt(p: string): string {
+function buildTitleFromPrompt(p: string): string {
 	const s = (p || '').trim();
 	if (!s) return '(empty)';
 	return s.length > 24 ? `${s.slice(0, 24)}…` : s;

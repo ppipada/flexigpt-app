@@ -118,7 +118,7 @@ export const ThemeSelector: FC = () => {
 			<ThemeRadio label="Light" value={ThemeType.Light} icon={<FiSun />} current={current} onChange={applyTheme} />
 			<ThemeRadio label="Dark" value={ThemeType.Dark} icon={<FiMoon />} current={current} onChange={applyTheme} />
 
-			<label className="flex items-center gap-2 cursor-pointer">
+			<label className="flex cursor-pointer items-center gap-2">
 				<input
 					type="radio"
 					className="radio radio-accent"

@@ -81,4 +81,12 @@ export default tseslint.config(
 			],
 		},
 	}
+	// ...tailwind.configs['flat/recommended'],
+	// {
+	// 	settings: {
+	// 		tailwindcss: {
+	// 			config: path.resolve(__dirname, './app/globals.css'),
+	// 		},
+	// 	},
+	// }
 );
