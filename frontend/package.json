@@ -119,7 +119,9 @@
 			"shiki",
 			"@testing-library/react",
 			"@testing-library/user-event",
-			"react-textarea-autosize"
+			"react-textarea-autosize",
+			"eslint-plugin-tailwindcss",
+			"tailwindcss"
 		]
 	},
 	"prettier": {

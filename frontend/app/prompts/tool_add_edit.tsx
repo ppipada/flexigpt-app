@@ -8,6 +8,8 @@ import { type Tool, ToolType } from '@/spec/tool';
 import { omitManyKeys } from '@/lib/obj_utils';
 import { validateSlug, validateTags } from '@/lib/text_utils';
 
+import Dropdown from '@/components/dropdown';
+
 interface ToolItem {
 	tool: Tool;
 	bundleID: string;
@@ -22,10 +24,8 @@ interface AddEditToolModalProps {
 	existingTools: ToolItem[];
 }
 
-const TOOL_TYPE_OPTIONS = [
-	{ value: ToolType.Go, label: 'Go' },
-	{ value: ToolType.HTTP, label: 'HTTP' },
-];
+const TOOL_TYPE_LABEL_GO = 'Go';
+const TOOL_TYPE_LABEL_HTTP = 'HTTP';
 
 const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 	isOpen,
@@ -129,6 +129,15 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 		}
 		setErrors({});
 	}, [isOpen, initialData]);
+
+	const toolTypeDropdownItems = useMemo(
+		() =>
+			({
+				[ToolType.Go]: { isEnabled: true, displayName: TOOL_TYPE_LABEL_GO },
+				[ToolType.HTTP]: { isEnabled: true, displayName: TOOL_TYPE_LABEL_HTTP },
+			}) as Record<ToolType, { isEnabled: boolean; displayName: string }>,
+		[]
+	);
 
 	// Validation
 	const validateField = (field: keyof typeof errors, val: string) => {
@@ -264,6 +273,11 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 		});
 	};
 
+	const onToolTypeChange = (key: ToolType) => {
+		setFormData(prev => ({ ...prev, type: key }));
+		validateField('type', key);
+	};
+
 	if (!isOpen) return null;
 
 	return (
@@ -357,20 +371,15 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Type*</span>
 						</label>
-						<div className="col-span-9">
-							<select
-								name="type"
-								value={formData.type}
-								onChange={handleInput}
-								className="select select-bordered w-full rounded-2xl"
-								disabled={isEditMode}
-							>
-								{TOOL_TYPE_OPTIONS.map(opt => (
-									<option key={opt.value} value={opt.value}>
-										{opt.label}
-									</option>
-								))}
-							</select>
+						<div className={`col-span-9 ${isEditMode ? 'pointer-events-none opacity-60' : ''}`}>
+							<Dropdown<ToolType>
+								dropdownItems={toolTypeDropdownItems}
+								selectedKey={formData.type}
+								onChange={onToolTypeChange}
+								filterDisabled={false}
+								title="Select tool type"
+								getDisplayName={k => toolTypeDropdownItems[k].displayName}
+							/>
 							{errors.type && (
 								<div className="label">
 									<span className="label-text-alt text-error flex items-center gap-1">
@@ -382,7 +391,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 					</div>
 
 					{/* Description */}
-					<div className="grid grid-cols-12 items-start gap-2">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Description</span>
 						</label>
@@ -398,9 +407,9 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 					</div>
 
 					{/* Arg Schema */}
-					<div className="grid grid-cols-12 items-start gap-2">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
-							<span className="label-text text-sm">Arg Schema (JSON)*</span>
+							<span className="label-text text-sm">Arg JSONSchema*</span>
 							<span className="label-text-alt tooltip tooltip-right" data-tip="JSON Schema for arguments">
 								<FiHelpCircle size={12} />
 							</span>
@@ -424,9 +433,9 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 					</div>
 
 					{/* Output Schema */}
-					<div className="grid grid-cols-12 items-start gap-2">
+					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
-							<span className="label-text text-sm">Output Schema (JSON)*</span>
+							<span className="label-text text-sm">Output JSONSchema*</span>
 							<span className="label-text-alt tooltip tooltip-right" data-tip="JSON Schema for output">
 								<FiHelpCircle size={12} />
 							</span>

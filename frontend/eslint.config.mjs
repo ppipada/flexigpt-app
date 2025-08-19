@@ -2,7 +2,6 @@ import js from '@eslint/js';
 import prettier from 'eslint-plugin-prettier';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import react from 'eslint-plugin-react';
-import tailwind from 'eslint-plugin-tailwindcss';
 import globals from 'globals';
 import path from 'path';
 import tseslint, { configs } from 'typescript-eslint';
@@ -18,8 +17,8 @@ export default tseslint.config(
 	js.configs.recommended,
 	configs.strictTypeChecked,
 	eslintPluginPrettierRecommended,
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-	...tailwind.configs['flat/recommended'],
+
+	// ...tailwind.configs['flat/recommended'],
 	{
 		files: ['**/*.{js,jsx,mjs,ts,tsx}'],
 		plugins: {
@@ -49,9 +48,9 @@ export default tseslint.config(
 			react: {
 				version: 'detect',
 			},
-			tailwindcss: {
-				config: path.resolve(__dirname, './app/globals.css'),
-			},
+			// tailwindcss: {
+			// 	config: path.resolve(__dirname, './app/globals.css'),
+			// },
 		},
 		rules: {
 			'@typescript-eslint/consistent-type-imports': 'error',
@@ -85,10 +84,10 @@ export default tseslint.config(
 					},
 				},
 			],
-			// There is some issue with daisyui classname detection with eslint tailwind 4 beta
-			'tailwindcss/no-custom-classname': 'off',
-			// We use prettier for classname order
-			'tailwindcss/classnames-order': 'off',
+			// // There is some issue with daisyui classname detection with eslint tailwind 4 beta
+			// 'tailwindcss/no-custom-classname': 'off',
+			// // We use prettier for classname order
+			// 'tailwindcss/classnames-order': 'off',
 		},
 	}
 );

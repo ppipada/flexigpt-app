@@ -45,26 +45,24 @@ const TemperatureDropdown = forwardRef<HTMLDetailsElement, TemperatureDropdownPr
 			<div className="flex w-full justify-center">
 				<details
 					ref={detailsRef}
-					className="dropdown dropdown-top dropdown-end"
+					className="dropdown dropdown-top dropdown-end w-full justify-center"
 					onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
 						setIsOpen((event.currentTarget as HTMLDetailsElement).open);
 					}}
 					open={isOpen}
 				>
 					<summary
-						className="btn btn-xs text-neutral-custom overflow-hidden border-none text-nowrap shadow-none"
+						className="btn btn-xs text-neutral-custom w-full flex-1 items-center overflow-hidden border-none text-left text-nowrap shadow-none"
 						title="Set Temperature"
 					>
-						<div className="flex">
-							<span className="mr-2 text-xs font-normal sm:hidden">Temp: </span>
-							<span className="mr-2 hidden text-xs font-normal sm:inline">Temperature: </span>{' '}
-							<span className="text-xs font-normal">{temperature.toFixed(2)} </span>
-							{isOpen ? (
-								<FiChevronDown size={16} className="ml-1 md:ml-2" />
-							) : (
-								<FiChevronUp size={16} className="ml-1 md:ml-2" />
-							)}
-						</div>
+						<span className="mr-2 text-xs font-normal sm:hidden">Temp:</span>
+						<span className="mr-2 hidden text-xs font-normal sm:inline">Temperature:</span>
+						<span className="text-xs font-normal">{temperature.toFixed(2)} </span>
+						{isOpen ? (
+							<FiChevronDown size={16} className="ml-1 shrink-0 md:ml-2" />
+						) : (
+							<FiChevronUp size={16} className="ml-1 shrink-0 md:ml-2" />
+						)}
 					</summary>
 
 					<ul className="dropdown-content menu bg-base-100 w-full rounded-xl p-4">

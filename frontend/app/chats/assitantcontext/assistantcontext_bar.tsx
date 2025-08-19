@@ -16,7 +16,7 @@ import SingleReasoningDropdown from '@/chats/assitantcontext/reasoning_levels_dr
 import SystemPromptDropdown, {
 	createSystemPromptItem,
 	type SystemPromptItem,
-} from '@/chats/assitantcontext/system_prompt_modal';
+} from '@/chats/assitantcontext/system_prompt';
 import TemperatureDropdown from '@/chats/assitantcontext/temperature_dropdown';
 
 type AssistantContextBarProps = {
@@ -40,7 +40,7 @@ const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChan
 		const initialSP = r.default.systemPrompt.trim();
 		if (initialSP) {
 			setSystemPrompts(prev =>
-				prev.some(i => i.prompt === initialSP) ? prev : [...prev, createSystemPromptItem(initialSP)]
+				prev.some(i => i.prompt === initialSP) ? prev : [...prev, createSystemPromptItem(initialSP, { locked: true })]
 			);
 		}
 	}, []);
@@ -150,6 +150,35 @@ const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChan
 		[setSelectedModel]
 	);
 
+	const clearSystemPrompt = useCallback(() => {
+		setSelectedModel(prev => ({ ...prev, systemPrompt: '' }));
+	}, []);
+
+	const editSystemPrompt = useCallback(
+		(id: string, updatedPrompt: string) => {
+			const updatedText = updatedPrompt.trim();
+			if (!updatedText) return;
+			setSystemPrompts(prev => {
+				const oldItem = prev.find(i => i.id === id);
+				if (!oldItem) return prev;
+				const updated = prev.map(i =>
+					i.id === id
+						? {
+								...i,
+								prompt: updatedText,
+								title: updatedText.length > 24 ? `${updatedText.slice(0, 24)}…` : updatedText || '(empty)',
+							}
+						: i
+				);
+				if ((selectedModel.systemPrompt || '').trim() === (oldItem.prompt || '').trim()) {
+					setSelectedModel(sel => ({ ...sel, systemPrompt: updatedText }));
+				}
+				return updated;
+			});
+		},
+		[selectedModel.systemPrompt]
+	);
+
 	const addSystemPrompt = useCallback(
 		(item: SystemPromptItem) => {
 			const p = item.prompt.trim();
@@ -159,6 +188,14 @@ const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChan
 		},
 		[setSelectedModel]
 	);
+
+	const removeSystemPrompt = useCallback((id: string) => {
+		setSystemPrompts(prev => {
+			const target = prev.find(i => i.id === id);
+			if (target?.locked) return prev; // don't remove locked default
+			return prev.filter(i => i.id !== id);
+		});
+	}, []);
 	return (
 		<div className="bg-base-200 mx-4 mb-1 flex items-center justify-between">
 			{/* --------------------------- Model dropdown ----------------------- */}
@@ -223,6 +260,9 @@ const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChan
 				selectedPromptId={systemPrompts.find(i => i.prompt === (selectedModel.systemPrompt.trim() || ''))?.id}
 				onSelect={selectSystemPrompt}
 				onAdd={addSystemPrompt}
+				onEdit={editSystemPrompt}
+				onRemove={removeSystemPrompt}
+				onClear={clearSystemPrompt}
 				isOpen={isSystemDropdownOpen}
 				setIsOpen={setIsSystemDropdownOpen}
 			/>

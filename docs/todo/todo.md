@@ -4,6 +4,7 @@
 
 - [ ] Chat input UI
 
+  - [x] Add system prompt array to main bar.
   - [x] Move input to editor from text field
   - [ ] Think through and enhance tools create/edit and prompts create/edit modals
     - [ ] Implement a schema area using CodeMirror for defining the tool's/prompts schema. (deferred)
