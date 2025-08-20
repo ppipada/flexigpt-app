@@ -56,18 +56,15 @@
 - Tools and Knowledge: availability and chat defaults only. Selection is per turn, see Composer.
 
   - Managed via dropdowns (select-only, no freeform). Selections persist for the chat and are used by default on each turn.
-  - Details and larger sets are managed in a advanced params modal.
+  - Tools dropdown: multi-select of allowed tools (select-only). Selections persist for the chat (defaults). Turn-level additions via “+” don’t change this.
+  - Knowledge dropdown: multi-select of allowed sources (select-only). Selections persist for the chat (defaults). Turn-level additions via “#” don’t change this.
+  - Managed in a advanced params modal.
 
 - System prompt:
 
   - Dropdown shows: Assistant default (checked), prior selections (recents, max ~5), and any template-injected options after send.
   - When a template with a System is sent, it is appended here and becomes the active selection; removal before send does not add it.
   - During editing and before send, an indicator can show “new system” (e.g., tinted preview) if a template is previewing a different System.
-
-- Additional dropdowns on larger screens
-
-  - Tools dropdown: multi-select of allowed tools (select-only). Selections persist for the chat (defaults). Turn-level additions via “+” don’t change this.
-  - Knowledge dropdown: multi-select of allowed sources (select-only). Selections persist for the chat (defaults). Turn-level additions via “#” don’t change this.
 
 - Sliders button:
   - Opens a advanced params modal for Additional context (tools, knowledge, extra params).
