@@ -111,14 +111,15 @@
 - Action: Attach Templates (/)
 
   - Per-message intent; variables filled inline; preprocessors run pre-send with retry; manual override allowed.
-  - Last User block behavior (primary mental model):
-    - If the template’s last message is a User block, its compiled content becomes the current message text for this turn.
-    - By default, insert the compiled User content into the composer at the cursor (users can edit before sending).
-    - Earlier User/Assistant blocks (if any) become hidden examples for this turn and do not appear in the transcript (shown in Inspector).
-  - No last User block:
-    - The template contributes only non-User blocks (System/Developer/Assistant/examples). Composer text remains the user’s message.
-    - If composer is empty and there’s no processed attachment text, Send stays disabled.
-  - System from template is preview-only until send; on send it is added to the System dropdown and becomes the current chat selection.
+  - Multi Role/Message block behavior
+    - Last User block behavior (primary mental model):
+      - If the template’s last message is a User block, its compiled content becomes the current message text for this turn.
+      - By default, insert the compiled User content into the composer at the cursor (users can edit before sending).
+      - Earlier User/Assistant blocks (if any) become hidden examples for this turn and do not appear in the transcript (shown in Inspector).
+    - No last User block:
+      - The template contributes only non-User blocks (System/Developer/Assistant/examples). Composer text remains the user’s message.
+      - If composer is empty and there’s no processed attachment text, Send stays disabled.
+    - System from template is preview-only until send; on send it is added to the System dropdown and becomes the current chat selection.
   - Slash (/) opens inline combobox above the composer.
     - Rows: name, short description, role icons (S/D/U/A), “needs preprocessors” icon when applicable, and a “helper” badge for preprocessor-only templates.
     - Enter to select → enter Template mode.

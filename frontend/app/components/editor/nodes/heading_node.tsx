@@ -18,11 +18,9 @@ const headingVariants = cva('relative mb-1', {
 /**
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 export function HeadingElement({ variant = 'h1', ...props }: PlateElementProps & VariantProps<typeof headingVariants>) {
 	return (
 		<PlateElement as={variant ? variant : 'h2'} className={headingVariants({ variant })} {...props}>
-			{/* eslint-disable-next-line @typescript-eslint/no-unsafe-member-access */}
 			{props.children}
 		</PlateElement>
 	);

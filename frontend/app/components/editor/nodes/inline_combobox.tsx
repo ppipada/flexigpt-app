@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import * as React from 'react';
 
 import {
@@ -270,7 +269,6 @@ const InlineComboboxItem = ({
 	group?: string;
 	keywords?: string[];
 	label?: string;
-	// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 } & ComboboxItemProps &
 	Required<Pick<ComboboxItemProps, 'value'>>) => {
 	const { value } = props;
