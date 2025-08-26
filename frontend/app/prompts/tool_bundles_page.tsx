@@ -8,6 +8,7 @@ import type { Tool, ToolBundle } from '@/spec/tool';
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { toolStoreAPI } from '@/apis/baseapi';
+import { getAllToolBundles, getAllTools } from '@/apis/list_helper';
 
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
@@ -34,11 +35,11 @@ const ToolsPage: React.FC = () => {
 	const fetchAll = async () => {
 		setLoading(true);
 		try {
-			const { toolBundles } = await toolStoreAPI.listToolBundles(undefined, true);
+			const toolBundles = await getAllToolBundles(undefined, true);
 			const bundleResults: BundleData[] = await Promise.all(
 				toolBundles.map(async b => {
 					try {
-						const { toolListItems } = await toolStoreAPI.listTools([b.id], undefined, true);
+						const toolListItems = await getAllTools([b.id], undefined, true);
 						const toolPromises = toolListItems.map(itm =>
 							toolStoreAPI.getTool(itm.bundleID, itm.toolSlug, itm.toolVersion)
 						);

@@ -11,7 +11,7 @@ import {
 import { AuthKeyTypeProvider, type SettingsSchema } from '@/spec/setting';
 
 import { modelPresetStoreAPI, settingstoreAPI } from '@/apis/baseapi';
-import { getAllProviderPresetsMap } from '@/apis/modelpreset_helper';
+import { getAllProviderPresetsMap } from '@/apis/list_helper';
 
 export interface ChatOption extends ModelParams {
 	providerName: ProviderName;

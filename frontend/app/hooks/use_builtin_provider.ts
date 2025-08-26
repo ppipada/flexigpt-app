@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import type { ProviderName, ProviderPreset } from '@/spec/modelpreset';
 import { type AuthKeyName, type AuthKeyType, AuthKeyTypeProvider } from '@/spec/setting';
 
-import { getAllProviderPresetsMap } from '@/apis/modelpreset_helper';
+import { getAllProviderPresetsMap } from '@/apis/list_helper';
 
 /* ────────────────────────────────────────────────────────────────────────── */
 /*  Internal cache (module scope = one copy per page-load)                   */

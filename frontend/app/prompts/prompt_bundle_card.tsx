@@ -6,6 +6,7 @@ import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/spec/command';
 import type { PromptBundle, PromptTemplate } from '@/spec/prompt';
 
 import { promptStoreAPI } from '@/apis/baseapi';
+import { getAllPromptTemplates } from '@/apis/list_helper';
 
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
@@ -158,7 +159,7 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 				);
 			}
 			/* refresh local list */
-			const { promptTemplateListItems } = await promptStoreAPI.listPromptTemplates([bundle.id], undefined, true);
+			const promptTemplateListItems = await getAllPromptTemplates([bundle.id], undefined, true);
 			const tplPromises = promptTemplateListItems.map(li =>
 				promptStoreAPI.getPromptTemplate(li.bundleID, li.templateSlug, li.templateVersion)
 			);

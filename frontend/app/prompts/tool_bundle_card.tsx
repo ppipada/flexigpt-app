@@ -8,6 +8,7 @@ import { TOOL_INVOKE_CHAR } from '@/spec/command';
 import { type Tool, type ToolBundle, ToolType } from '@/spec/tool';
 
 import { toolStoreAPI } from '@/apis/baseapi';
+import { getAllTools } from '@/apis/list_helper';
 
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
@@ -152,7 +153,7 @@ const ToolBundleCard: React.FC<ToolBundleCardProps> = ({ bundle, tools, onToolsC
 				);
 			}
 			// refresh local list
-			const { toolListItems } = await toolStoreAPI.listTools([bundle.id], undefined, true);
+			const toolListItems = await getAllTools([bundle.id], undefined, true);
 			const toolPromises = toolListItems.map(li => toolStoreAPI.getTool(li.bundleID, li.toolSlug, li.toolVersion));
 			const fresh = (await Promise.all(toolPromises)).filter((t): t is Tool => t !== undefined);
 			setLocalTools(fresh);

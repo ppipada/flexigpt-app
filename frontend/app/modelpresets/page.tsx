@@ -7,7 +7,7 @@ import { type ProviderName, type ProviderPreset } from '@/spec/modelpreset';
 import { AuthKeyTypeProvider } from '@/spec/setting';
 
 import { modelPresetStoreAPI, settingstoreAPI } from '@/apis/baseapi';
-import { getAllProviderPresetsMap } from '@/apis/modelpreset_helper';
+import { getAllProviderPresetsMap } from '@/apis/list_helper';
 
 import ActionDeniedAlert from '@/components/action_denied';
 import DownloadButton from '@/components/download_button';
@@ -228,11 +228,11 @@ const ModelPresetPage: FC = () => {
 	/* ---------------------------- misc helpers ---------------------------- */
 	const fetchValue = async () => {
 		try {
-			const [{ providers }, defProv] = await Promise.all([
-				modelPresetStoreAPI.listProviderPresets(undefined, true),
+			const [providerPresetMap, defProv] = await Promise.all([
+				getAllProviderPresetsMap(true),
 				modelPresetStoreAPI.getDefaultProvider(),
 			]);
-			return JSON.stringify({ defaultProvider: defProv, providers }, null, 2);
+			return JSON.stringify({ defaultProvider: defProv, providers: providerPresetMap }, null, 2);
 		} catch (err) {
 			console.log('fetch preset error', err);
 			setDeniedMsg('Failed fetching presets.');

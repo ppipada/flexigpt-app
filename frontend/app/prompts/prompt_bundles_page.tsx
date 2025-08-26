@@ -8,6 +8,7 @@ import type { PromptBundle, PromptTemplate } from '@/spec/prompt';
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { promptStoreAPI } from '@/apis/baseapi';
+import { getAllPromptBundles, getAllPromptTemplates } from '@/apis/list_helper';
 
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
@@ -38,12 +39,12 @@ const PromptBundlesPage: FC = () => {
 	const fetchAll = async () => {
 		setLoading(true);
 		try {
-			const { promptBundles } = await promptStoreAPI.listPromptBundles(undefined, true);
+			const promptBundles = await getAllPromptBundles(undefined, true);
 
 			const bundleResults: BundleData[] = await Promise.all(
 				promptBundles.map(async b => {
 					try {
-						const { promptTemplateListItems } = await promptStoreAPI.listPromptTemplates([b.id], undefined, true);
+						const promptTemplateListItems = await getAllPromptTemplates([b.id], undefined, true);
 
 						const tplPromises = promptTemplateListItems.map(itm =>
 							promptStoreAPI.getPromptTemplate(itm.bundleID, itm.templateSlug, itm.templateVersion)

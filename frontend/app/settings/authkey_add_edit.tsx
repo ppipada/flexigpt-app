@@ -10,7 +10,7 @@ import { AuthKeyTypeProvider } from '@/spec/setting';
 import { omitManyKeys } from '@/lib/obj_utils';
 
 import { settingstoreAPI } from '@/apis/baseapi';
-import { getAllProviderPresetsMap } from '@/apis/modelpreset_helper';
+import { getAllProviderPresetsMap } from '@/apis/list_helper';
 
 import type { DropdownItem } from '@/components/dropdown';
 import Dropdown from '@/components/dropdown';
