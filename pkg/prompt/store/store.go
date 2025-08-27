@@ -1108,12 +1108,22 @@ func (s *PromptTemplateStore) findTemplate(
 	raw, err := s.templateStore.GetFileData(key, false)
 	if err != nil {
 		// File does not exist.
-		return fi, fullPath, fmt.Errorf("%w: %s", spec.ErrTemplateNotFound, slug)
+		return fi, fullPath, fmt.Errorf(
+			"%w: bundle slug-%s, item slug-%s",
+			spec.ErrTemplateNotFound,
+			bdi.Slug,
+			slug,
+		)
 	}
 
 	// Minimal integrity check: the JSON must contain the same slug.
 	if sVal, _ := raw["slug"].(string); sVal != string(slug) {
-		return fi, fullPath, fmt.Errorf("%w: %s", spec.ErrTemplateNotFound, slug)
+		return fi, fullPath, fmt.Errorf(
+			"%w: bundle slug-%s, item slug-%s",
+			spec.ErrTemplateNotFound,
+			bdi.Slug,
+			slug,
+		)
 	}
 
 	// Success - return relative path (same format the old code used).

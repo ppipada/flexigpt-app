@@ -229,7 +229,12 @@ func (d *BuiltInData) GetBuiltInTemplate(
 			return tpl, nil
 		}
 	}
-	return spec.PromptTemplate{}, spec.ErrTemplateNotFound
+	return spec.PromptTemplate{}, fmt.Errorf(
+		"%w: bundle id-%s, item slug-%s",
+		spec.ErrTemplateNotFound,
+		bundleID,
+		slug,
+	)
 }
 
 func (d *BuiltInData) populateDataFromFS(ctx context.Context) error {

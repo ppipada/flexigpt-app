@@ -105,7 +105,7 @@
 			"app/apis/wailsjs/go/main/PromptTemplateStoreWrapper.js",
 			"app/spec/aiprovider.ts",
 			"app/hooks/highlight_worker.ts",
-			"app/chats/inputbox/text_input.tsx",
+			"app/chats/inputtextarea/text_input.tsx",
 			"app/hooks/use_mounted.tsx",
 			"app/components/editor/plugins/markdown_kit.tsx"
 		],

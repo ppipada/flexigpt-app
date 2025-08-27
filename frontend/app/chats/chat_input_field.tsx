@@ -7,7 +7,7 @@ import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 
 import AssistantContextBar from '@/chats/assitantcontext/assistantcontext_bar';
-import EditorTextInput, { type EditorTextInputHandle } from '@/chats/inputbox/editor_input';
+import EditorTextInput, { type EditorTextInputHandle } from '@/chats/inputeditor/editor_text_input';
 
 interface ChatInputFieldProps {
 	onSend: (message: string, options: ChatOption) => void;

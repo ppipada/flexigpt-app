@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import type { KeyboardEvent, RefObject } from 'react';
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 import { FiSend } from 'react-icons/fi';
+
+import { expandTabsToSpaces } from '@/lib/text_utils';
+
+import { useEnterSubmit } from '@/hooks/use_enter_submit';
 
 import { AlignKit } from '@/components/editor/plugins/align_kit';
 import { AutoformatKit } from '@/components/editor/plugins/auto_format_kit';
@@ -14,6 +17,9 @@ import { EmojiKit } from '@/components/editor/plugins/emoji_kit';
 import { IndentKit } from '@/components/editor/plugins/indent_kit';
 import { LineHeightKit } from '@/components/editor/plugins/line_height_kit';
 import { ListKit } from '@/components/editor/plugins/list_kit';
+
+import { TemplateSlashKit } from '@/chats/inputeditor/slashtemplate/template_plugin';
+import { getTemplateSelections } from '@/chats/inputeditor/slashtemplate/template_selection_element';
 
 export interface EditorTextInputHandle {
 	focus: () => void;
@@ -27,28 +33,12 @@ interface EditorTextInputProps {
 
 const EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
 
-function expandTabs(line: string, tabSize = 2) {
-	let out = '';
-	let col = 0;
-	for (const ch of line) {
-		if (ch === '\t') {
-			const n = tabSize - (col % tabSize);
-			out += ' '.repeat(n);
-			col += n;
-		} else {
-			out += ch;
-			col = ch === '\n' ? 0 : col + 1;
-		}
-	}
-	return out;
-}
-
 function insertPlainTextAsSingleBlock(editor: ReturnType<typeof usePlateEditor>, text: string, tabSize = 2) {
 	if (!editor) {
 		return;
 	}
 	const normalized = text.replace(/\r\n?/g, '\n');
-	const lines = normalized.split('\n').map(l => expandTabs(l, tabSize));
+	const lines = normalized.split('\n').map(l => expandTabsToSpaces(l, tabSize));
 
 	editor.tf.insertText(lines[0] ?? '');
 	for (let i = 1; i < lines.length; i++) {
@@ -60,43 +50,6 @@ function insertPlainTextAsSingleBlock(editor: ReturnType<typeof usePlateEditor>,
 		}
 		editor.tf.insertText(lines[i]);
 	}
-}
-
-function useEnterSubmit() {
-	const formRef = useRef<HTMLFormElement>(null);
-
-	const onKeyDown = (
-		e: KeyboardEvent<HTMLDivElement>,
-		opts: {
-			isBusy: boolean;
-			getCanSubmit: () => boolean;
-			editorRef: RefObject<ReturnType<typeof usePlateEditor> | null>;
-		}
-	) => {
-		// Let Plate plugins (e.g., mentions) handle the key if they already prevented it
-		if ((e as any).defaultPrevented) return;
-
-		const native = e.nativeEvent as KeyboardEvent['nativeEvent'] & { isComposing?: boolean };
-		const isComposing = native.isComposing;
-
-		// Shift+Enter => insert a soft break (new line) instead of submitting
-		if (e.key === 'Enter' && e.shiftKey && !isComposing) {
-			// Try to insert a soft break if supported. Otherwise, allow default behavior.
-			opts.editorRef.current?.tf?.insertSoftBreak?.();
-			e.preventDefault();
-			return;
-		}
-
-		// Enter (no shift) => submit
-		if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
-			if (!opts.isBusy && opts.getCanSubmit()) {
-				formRef.current?.requestSubmit();
-			}
-			e.preventDefault();
-		}
-	};
-
-	return { formRef, onKeyDown };
 }
 
 const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
@@ -112,6 +65,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 				...IndentKit,
 				...ListKit,
 				...AutoformatKit,
+				...TemplateSlashKit,
 			],
 
 			value: EMPTY_VALUE,
@@ -125,7 +79,14 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 		const editorRef = useRef(editor);
 		editorRef.current = editor; // keep a live ref for key handlers
 
-		const { formRef, onKeyDown } = useEnterSubmit();
+		const { formRef, onKeyDown } = useEnterSubmit({
+			isBusy,
+			canSubmit: () => plainText.trim().length > 0,
+			insertSoftBreak: () => {
+				editor.tf.insertSoftBreak();
+			},
+			// onSubmitRequest: () => formRef.current?.requestSubmit() // optional override
+		});
 
 		// Height sync using ResizeObserver on content editable container
 		useEffect(() => {
@@ -153,8 +114,11 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 
 			isSubmittingRef.current = true;
 			// const textToSend = editor.api.markdown.serialize().trim();
-			const textToSend = editor.api.string([]);
-
+			let textToSend = editor.api.string([]);
+			const promptsToSend = getTemplateSelections(editor);
+			if (promptsToSend.length > 0) {
+				textToSend += '\n\nprompts:\n' + JSON.stringify(promptsToSend, null, 2);
+			}
 			try {
 				onSubmit(textToSend);
 			} finally {
@@ -190,13 +154,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 						placeholder="Type message..."
 						spellCheck={false}
 						readOnly={isBusy}
-						onKeyDown={e => {
-							onKeyDown(e as unknown as KeyboardEvent<HTMLDivElement>, {
-								isBusy,
-								getCanSubmit: () => plainText.trim().length > 0,
-								editorRef,
-							});
-						}}
+						onKeyDown={onKeyDown}
 						onPaste={e => {
 							e.preventDefault();
 							e.stopPropagation();

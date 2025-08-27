@@ -6,13 +6,36 @@
 
   - [x] Add system prompt array to main bar.
   - [x] Move input to editor from text field
-  - [ ] Think through and enhance tools create/edit and prompts create/edit modals
-    - [ ] Implement a schema area using CodeMirror for defining the tool's/prompts schema. (deferred)
-      - [ ] Configure CodeMirror to support JSON syntax highlighting and validation.
-      - [ ] Allow users to define input and output parameters using JSON schema.
-    - [ ] Implement a function area using CodeMirror for accepting/implementing the schema.
-      - [ ] Configure CodeMirror to support TypeScript syntax highlighting and validation.
-      - [ ] Allow users to write an asynchronous TypeScript function that utilizes the defined schema.
+
+  - [ ] prompt/tool inline elements:
+
+    - [x] slash command plumbing
+    - [x] prompt templates via slash command
+
+    - [ ] prompt visual filling via toolbar
+
+      - [ ] prompt toolbar/editing implementation
+      - [ ] system prompt updates from prompts
+      - [ ] may be allow expand/decompose for prompts user message
+
+    - [ ] prompt and tool processing for ai completion call
+
+      - [ ] only prompt should be allowed to be sent to ai rather than some text compulsory
+      - [ ] for tools atleast prompt/text may be needed
+
+    - [ ] tools via slash command
+    - [ ] check if proper memo etc is there for usetempaltes and use tools etc
+
+    - [ ] tools slash command hooking, tools should be added to bottom of the editor rather than inline
+
+- [ ] Think through and enhance tools create/edit and prompts create/edit modals
+
+  - [ ] Implement a schema area using CodeMirror for defining the tool's/prompts schema. (deferred)
+    - [ ] Configure CodeMirror to support JSON syntax highlighting and validation.
+    - [ ] Allow users to define input and output parameters using JSON schema.
+  - [ ] Implement a function area using CodeMirror for accepting/implementing the schema.
+    - [ ] Configure CodeMirror to support TypeScript syntax highlighting and validation.
+    - [ ] Allow users to write an asynchronous TypeScript function that utilizes the defined schema.
 
 - Completions API backend
 

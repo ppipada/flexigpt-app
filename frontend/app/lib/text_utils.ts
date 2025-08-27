@@ -306,3 +306,19 @@ export const sanitizeConversationTitle = (raw: string): string =>
 		.replace(/[^a-zA-Z0-9 -]/g, '') //  ← note the blank space and the hyphen at the end
 		.trim()
 		.slice(0, 64);
+
+export function expandTabsToSpaces(line: string, tabSize = 2) {
+	let out = '';
+	let col = 0;
+	for (const ch of line) {
+		if (ch === '\t') {
+			const n = tabSize - (col % tabSize);
+			out += ' '.repeat(n);
+			col += n;
+		} else {
+			out += ch;
+			col = ch === '\n' ? 0 : col + 1;
+		}
+	}
+	return out;
+}
