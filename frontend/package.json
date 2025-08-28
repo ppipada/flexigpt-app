@@ -31,6 +31,7 @@
 		"@platejs/emoji": "^49.0.0",
 		"@platejs/indent": "^49.0.0",
 		"@platejs/list": "^49.2.0",
+		"@platejs/tabbable": "^49.0.0",
 		"@react-router/dev": "^7.8.0",
 		"@react-router/node": "^7.8.0",
 		"class-variance-authority": "^0.7.1",

@@ -16,6 +16,7 @@ import { EmojiKit } from '@/components/editor/plugins/emoji_kit';
 import { IndentKit } from '@/components/editor/plugins/indent_kit';
 import { LineHeightKit } from '@/components/editor/plugins/line_height_kit';
 import { ListKit } from '@/components/editor/plugins/list_kit';
+import { TabbableKit } from '@/components/editor/plugins/tabbable_kit';
 
 import { TemplateSlashKit } from '@/chats/inputeditor/slashtemplate/template_plugin';
 import { getTemplateSelections } from '@/chats/inputeditor/slashtemplate/template_selection_element';
@@ -60,6 +61,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 				...IndentKit,
 				...ListKit,
 				...AutoformatKit,
+				...TabbableKit,
 				...TemplateSlashKit,
 			],
 
