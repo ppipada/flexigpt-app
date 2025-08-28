@@ -13,6 +13,7 @@ import { AutoformatKit } from '@/components/editor/plugins/auto_format_kit';
 import { BasicBlocksKit } from '@/components/editor/plugins/basic_blocks_kit';
 import { BasicMarksKit } from '@/components/editor/plugins/basic_marks_kit';
 import { EmojiKit } from '@/components/editor/plugins/emoji_kit';
+import { FloatingToolbarKit } from '@/components/editor/plugins/floating_toolbar_kit';
 import { IndentKit } from '@/components/editor/plugins/indent_kit';
 import { LineHeightKit } from '@/components/editor/plugins/line_height_kit';
 import { ListKit } from '@/components/editor/plugins/list_kit';
@@ -63,6 +64,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 				...AutoformatKit,
 				...TabbableKit,
 				...TemplateSlashKit,
+				...FloatingToolbarKit,
 			],
 
 			value: EMPTY_VALUE,

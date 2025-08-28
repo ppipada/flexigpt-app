@@ -16,13 +16,10 @@ import {
 } from '@ariakit/react';
 import { filterWords } from '@platejs/combobox';
 import { useComboboxInput, type UseComboboxInputResult, useHTMLInputCursorState } from '@platejs/combobox/react';
+import { cn } from '@udecode/cn';
 import { cva } from 'class-variance-authority';
 import type { Point, TElement } from 'platejs';
 import { useComposedRef, useEditorRef } from 'platejs/react';
-
-function cn(...classes: Array<string | undefined | null | false>) {
-	return classes.filter(Boolean).join(' ');
-}
 
 type FilterFn = (
 	item: { value: string; group?: string; keywords?: string[]; label?: string },

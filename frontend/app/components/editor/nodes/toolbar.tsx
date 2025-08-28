@@ -1,0 +1,258 @@
+import * as React from 'react';
+
+import { cn } from '@udecode/cn';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { FiChevronDown } from 'react-icons/fi';
+
+/* Root toolbar */
+export const Toolbar = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(function Toolbar(
+	{ className, ...props },
+	ref
+) {
+	return <div ref={ref} className={cn('relative flex items-center gap-1 select-none', className)} {...props} />;
+});
+
+/* Grouping container (use with join for button groups) */
+export const ToolbarToggleGroup = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+	function ToolbarToggleGroup({ className, ...props }, ref) {
+		return <div ref={ref} className={cn('join flex items-center', className)} {...props} />;
+	}
+);
+
+export const ToolbarLink = React.forwardRef<HTMLAnchorElement, React.AnchorHTMLAttributes<HTMLAnchorElement>>(
+	function ToolbarLink({ className, ...props }, ref) {
+		return <a ref={ref} className={cn('link link-hover font-medium', className)} {...props} />;
+	}
+);
+
+/* Vertical separator */
+export function ToolbarSeparator({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
+	return <span className={cn('bg-base-300 mx-2 my-1 w-px self-stretch', className)} {...props} />;
+}
+
+/* Button variants (DaisyUI) */
+const toolbarButtonVariants = cva(
+	// base
+	'btn normal-case gap-2 join-item [&>svg]:shrink-0',
+	{
+		variants: {
+			size: {
+				sm: 'btn-sm',
+				default: '',
+				lg: 'btn-lg',
+			},
+			variant: {
+				default: 'btn-ghost',
+				outline: 'btn-outline',
+			},
+		},
+		defaultVariants: {
+			size: 'sm',
+			variant: 'default',
+		},
+	}
+);
+
+/* For the narrow dropdown arrow piece */
+const dropdownArrowVariants = cva('btn btn-square join-item', {
+	variants: {
+		size: {
+			sm: 'btn-sm',
+			default: '',
+			lg: 'btn-lg',
+		},
+		variant: {
+			default: 'btn-ghost',
+			outline: 'btn-outline',
+		},
+	},
+	defaultVariants: {
+		size: 'sm',
+		variant: 'default',
+	},
+});
+
+/* DaisyUI tooltip HOC (string-only content) */
+type Tooltipable = {
+	tooltip?: string;
+	tooltipClassName?: string;
+	tooltipPosition?: 'top' | 'right' | 'bottom' | 'left';
+};
+
+function withTooltip<P extends Tooltipable>(Component: React.ComponentType<P>) {
+	return function WithTooltip(props: P) {
+		const { tooltip, tooltipClassName, tooltipPosition = 'bottom', ...rest } = props;
+
+		const content = <Component {...(rest as P)} />;
+
+		if (!tooltip) return content;
+
+		return (
+			<div className={cn('tooltip', `tooltip-${tooltipPosition}`, tooltipClassName)} data-tip={tooltip}>
+				{content}
+			</div>
+		);
+	};
+}
+
+/* Toggle item (DaisyUI) */
+type ToolbarToggleItemProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onChange'> &
+	VariantProps<typeof toolbarButtonVariants> & {
+		pressed?: boolean;
+		defaultPressed?: boolean;
+		onPressedChange?: (pressed: boolean) => void;
+	};
+
+export const ToolbarToggleItem = React.forwardRef<HTMLButtonElement, ToolbarToggleItemProps>(function ToolbarToggleItem(
+	{ className, size = 'sm', variant, pressed, defaultPressed, onPressedChange, onClick, disabled, ...props },
+	ref
+) {
+	const isControlled = typeof pressed === 'boolean';
+	const [internalPressed, setInternalPressed] = React.useState<boolean>(defaultPressed ?? false);
+
+	const isPressed = isControlled ? pressed : internalPressed;
+
+	const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+		if (disabled) return;
+		onClick?.(e);
+		if (!e.defaultPrevented) {
+			const next = !isPressed;
+			if (!isControlled) setInternalPressed(next);
+			onPressedChange?.(next);
+		}
+	};
+
+	return (
+		<button
+			ref={ref}
+			type="button"
+			aria-pressed={isPressed}
+			disabled={disabled}
+			className={cn(toolbarButtonVariants({ size, variant }), isPressed && 'btn-active', className)}
+			onClick={handleClick}
+			{...props}
+		/>
+	);
+});
+
+/* ToolbarButton: toggling if pressed provided, else normal button */
+type ToolbarButtonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onChange'> &
+	VariantProps<typeof toolbarButtonVariants> &
+	Tooltipable & {
+		isDropdown?: boolean;
+		pressed?: boolean;
+		defaultPressed?: boolean;
+		onPressedChange?: (pressed: boolean) => void;
+	};
+
+const RawToolbarButton = React.forwardRef<HTMLButtonElement, ToolbarButtonProps>(function RawToolbarButton(
+	{ children, className, isDropdown, size = 'sm', variant, pressed, defaultPressed, onPressedChange, ...props },
+	ref
+) {
+	const inner = (
+		<span className={cn('inline-flex items-center', isDropdown && 'gap-1')}>
+			<span className={cn(isDropdown && 'flex-1 whitespace-nowrap')}>{children}</span>
+			{isDropdown && <FiChevronDown className="text-base-content/70" aria-hidden />}
+		</span>
+	);
+
+	if (typeof pressed === 'boolean' || typeof defaultPressed === 'boolean') {
+		// Toggle button
+		return (
+			<ToolbarToggleItem
+				ref={ref}
+				className={className}
+				size={size}
+				variant={variant}
+				pressed={pressed}
+				defaultPressed={defaultPressed}
+				onPressedChange={onPressedChange}
+				{...props}
+			>
+				{inner}
+			</ToolbarToggleItem>
+		);
+	}
+
+	// Plain button
+	return (
+		<button ref={ref} type="button" className={cn(toolbarButtonVariants({ size, variant }), className)} {...props}>
+			{inner}
+		</button>
+	);
+});
+
+export const ToolbarButton = withTooltip(RawToolbarButton);
+
+/* Split button: primary + secondary in a join group */
+export type ToolbarSplitButtonProps = Omit<ToolbarButtonProps, 'isDropdown'>;
+
+export const ToolbarSplitButton = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+	function ToolbarSplitButton({ className, ...props }, ref) {
+		return <div ref={ref} className={cn('join', className)} {...props} />;
+	}
+);
+
+type ToolbarSplitButtonPrimaryProps = Omit<ToolbarToggleItemProps, 'defaultPressed' | 'onPressedChange'> & Tooltipable;
+
+const RawToolbarSplitButtonPrimary = React.forwardRef<HTMLButtonElement, ToolbarSplitButtonPrimaryProps>(
+	function RawToolbarSplitButtonPrimary({ className, size = 'sm', variant, children, ...props }, ref) {
+		return (
+			<ToolbarToggleItem ref={ref} size={size} variant={variant} className={cn('rounded-r-none', className)} {...props}>
+				{children}
+			</ToolbarToggleItem>
+		);
+	}
+);
+
+export const ToolbarSplitButtonPrimary = withTooltip(RawToolbarSplitButtonPrimary);
+
+type ToolbarSplitButtonSecondaryProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
+	VariantProps<typeof dropdownArrowVariants> &
+	Tooltipable;
+
+const RawToolbarSplitButtonSecondary = React.forwardRef<HTMLButtonElement, ToolbarSplitButtonSecondaryProps>(
+	function RawToolbarSplitButtonSecondary({ className, size = 'sm', variant, onClick, ...props }, ref) {
+		return (
+			<button
+				ref={ref}
+				type="button"
+				className={cn(dropdownArrowVariants({ size, variant }), 'rounded-l-none', className)}
+				onClick={e => {
+					e.stopPropagation();
+					onClick?.(e);
+				}}
+				{...props}
+				aria-label="More"
+			>
+				<FiChevronDown className="text-base-content/70" aria-hidden />
+			</button>
+		);
+	}
+);
+
+export const ToolbarSplitButtonSecondary = withTooltip(RawToolbarSplitButtonSecondary);
+
+/* Simple grouping wrapper, use ToolbarSeparator between groups */
+export function ToolbarGroup({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+	return (
+		<div className={cn('flex items-center', className)} {...props}>
+			{children}
+		</div>
+	);
+}
+
+/* DaisyUI menu group (use inside a <ul className="menu">) */
+export function ToolbarMenuGroup({
+	className,
+	label,
+	children,
+	...props
+}: React.HTMLAttributes<HTMLLIElement> & { label?: string }) {
+	return (
+		<li className={cn('', className)} {...props}>
+			{label && <h2 className="menu-title">{label}</h2>}
+			<ul>{children}</ul>
+		</li>
+	);
+}

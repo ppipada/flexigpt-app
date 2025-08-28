@@ -29,11 +29,13 @@
 		"@platejs/basic-styles": "^49.0.0",
 		"@platejs/combobox": "^49.0.0",
 		"@platejs/emoji": "^49.0.0",
+		"@platejs/floating": "^49.0.0",
 		"@platejs/indent": "^49.0.0",
 		"@platejs/list": "^49.2.0",
 		"@platejs/tabbable": "^49.0.0",
 		"@react-router/dev": "^7.8.0",
 		"@react-router/node": "^7.8.0",
+		"@udecode/cn": "^49.0.15",
 		"class-variance-authority": "^0.7.1",
 		"compromise": "^14.14.4",
 		"isbot": "^5.1.28",
@@ -108,7 +110,9 @@
 			"app/hooks/highlight_worker.ts",
 			"app/chats/inputtextarea/text_input.tsx",
 			"app/hooks/use_mounted.tsx",
-			"app/components/editor/plugins/markdown_kit.tsx"
+			"app/components/editor/plugins/markdown_kit.tsx",
+			"app/components/editor/nodes/toolbar.tsx",
+			"app/components/editor/nodes/fixed_toolbar.tsx"
 		],
 		"ignoreBinaries": [],
 		"ignoreDependencies": [
