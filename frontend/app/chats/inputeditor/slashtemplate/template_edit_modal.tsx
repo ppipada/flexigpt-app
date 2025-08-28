@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { PlateEditor } from 'platejs/react';
 import { createPortal } from 'react-dom';
-import { FiPlay } from 'react-icons/fi';
+import { FiAlertCircle, FiHelpCircle, FiPlay, FiX } from 'react-icons/fi';
 
 import { type PreProcessorCall, type PromptVariable, VarSource, VarType } from '@/spec/prompt';
 
@@ -26,6 +26,7 @@ export function TemplateEditModal({
 	editor: PlateEditor;
 	path: any;
 }) {
+	// Compute current effective template for rendering
 	const { template, blocks, variablesSchema, preProcessors } = computeEffectiveTemplate(tsenode);
 
 	// Local form state
@@ -41,16 +42,14 @@ export function TemplateEditModal({
 	const [blockEdits, setBlockEdits] = React.useState(blocks);
 
 	// Variable values
-	const initialVarValues = React.useMemo(() => {
+	const [varValues, setVarValues] = React.useState<Record<string, unknown>>(() => {
 		const vals: Record<string, unknown> = { ...tsenode.variables };
 		for (const v of variablesSchema) {
 			const val = effectiveVarValueSafe(v, tsenode.variables, tsenode.toolStates);
 			if (val !== undefined) vals[v.name] = val;
 		}
 		return vals;
-	}, [variablesSchema, tsenode.variables, tsenode.toolStates]);
-
-	const [varValues, setVarValues] = React.useState<Record<string, unknown>>(initialVarValues);
+	});
 
 	// Preprocessor args and statuses
 	const [toolArgs, setToolArgs] = React.useState<Record<string, Record<string, any>>>(() => {
@@ -62,27 +61,48 @@ export function TemplateEditModal({
 	});
 	const [toolStatuses, setToolStatuses] = React.useState<Record<string, ToolState>>(tsenode.toolStates ?? {});
 
+	// Track JSON validity of each tool args editor to safely enable/disable Save
+	const [toolArgsValidity, setToolArgsValidity] = React.useState<Record<string, boolean>>(() => {
+		const init: Record<string, boolean> = {};
+		for (const p of preProcessors) init[p.id] = true;
+		return init;
+	});
+
+	// Rehydrate form when opening or when the node reference changes
 	React.useEffect(() => {
 		if (!open) return;
-		// Rehydrate on open in case node changed
-		setDisplayName(tsenode.overrides?.displayName ?? template?.displayName ?? tsenode.templateSlug);
-		setDescription(tsenode.overrides?.description ?? template?.description ?? '');
-		setTags((tsenode.overrides?.tags ?? template?.tags ?? []).join(', '));
-		setBlockEdits(blocks);
+
+		// Recompute effective template inside the effect to avoid depending on changing references
+		const eff = computeEffectiveTemplate(tsenode);
+		const t = eff.template;
+		const blks = eff.blocks;
+		const varsSchema = eff.variablesSchema;
+		const tools = eff.preProcessors;
+
+		setDisplayName(tsenode.overrides?.displayName ?? t?.displayName ?? tsenode.templateSlug);
+		setDescription(tsenode.overrides?.description ?? t?.description ?? '');
+		setTags((tsenode.overrides?.tags ?? t?.tags ?? []).join(', '));
+		setBlockEdits(blks);
+
 		const vals: Record<string, unknown> = { ...tsenode.variables };
-		for (const v of variablesSchema) {
+		for (const v of varsSchema) {
 			const val = effectiveVarValueSafe(v, tsenode.variables, tsenode.toolStates);
 			if (val !== undefined) vals[v.name] = val;
 		}
 		setVarValues(vals);
 
 		const targs: Record<string, Record<string, any>> = {};
-		for (const p of preProcessors) {
+		for (const p of tools) {
 			targs[p.id] = tsenode.toolStates?.[p.id]?.args ?? p.args ?? {};
 		}
 		setToolArgs(targs);
 		setToolStatuses(tsenode.toolStates ?? {});
-	}, [open]);
+
+		// Valid by default when hydrated from structured data
+		const validity: Record<string, boolean> = {};
+		for (const p of tools) validity[p.id] = true;
+		setToolArgsValidity(validity);
+	}, [open, tsenode]);
 
 	function saveAndClose() {
 		const nextOverrides = {
@@ -128,55 +148,116 @@ export function TemplateEditModal({
 	}
 
 	const req = computeRequirements(variablesSchema, varValues, preProcessors, toolStatuses);
+	const hasToolJsonErrors = Object.values(toolArgsValidity).some(v => !v);
+
 	if (!open) return null;
 
 	return createPortal(
-		<dialog className="modal modal-open" onClose={onClose}>
-			<div className="modal-box max-w-3xl">
-				<h3 className="flex items-center gap-2 text-lg font-bold">
-					Edit Template
-					<span className="badge badge-neutral">{displayName}</span>
-				</h3>
+		<dialog className="modal modal-open">
+			<div className="modal-box max-h-[85vh] max-w-3xl overflow-auto rounded-2xl">
+				{/* Header */}
+				<div className="mb-4 flex items-center justify-between gap-2">
+					<div className="flex items-center gap-2">
+						<h3 className="text-lg font-bold">Edit Template</h3>
+						<span className="badge badge-neutral">{displayName}</span>
+					</div>
+					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close">
+						<FiX size={12} />
+					</button>
+				</div>
 
-				<div className="mt-4 space-y-6">
+				<form
+					onSubmit={e => {
+						e.preventDefault();
+						if (!hasToolJsonErrors) saveAndClose();
+					}}
+					className="space-y-6"
+				>
+					{/* Overview */}
 					<section>
-						<h4 className="mb-2 font-semibold">Overview</h4>
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-							<label className="form-control w-full">
-								<span className="label-text">Display Name (local)</span>
-								<input
-									className="input input-bordered input-sm"
-									value={displayName}
-									onChange={e => {
-										setDisplayName(e.target.value);
-									}}
-								/>
-							</label>
-							<label className="form-control w-full">
-								<span className="label-text">Tags (comma-separated)</span>
-								<input
-									className="input input-bordered input-sm"
-									value={tags}
-									onChange={e => {
-										setTags(e.target.value);
-									}}
-								/>
-							</label>
+						<h4 className="text-base-content/70 mb-3 text-sm font-semibold tracking-wide uppercase">Overview</h4>
+						<div className="space-y-3">
+							<div className="grid grid-cols-12 items-center gap-3">
+								<label className="label col-span-12 md:col-span-4">
+									<span className="label-text text-sm">Display Name (local)</span>
+									<span className="label-text-alt tooltip tooltip-right" data-tip="Local override; visible only here.">
+										<FiHelpCircle size={12} />
+									</span>
+								</label>
+								<div className="col-span-12 md:col-span-8">
+									<input
+										className="input input-bordered input-sm w-full rounded-xl"
+										value={displayName}
+										onChange={e => {
+											setDisplayName(e.target.value);
+										}}
+										placeholder={template?.displayName ?? tsenode.templateSlug}
+									/>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-12 items-center gap-3">
+								<label className="label col-span-12 md:col-span-4">
+									<span className="label-text text-sm">Tags</span>
+									<span
+										className="label-text-alt tooltip tooltip-right"
+										data-tip="Comma-separated tags used for filtering."
+									>
+										<FiHelpCircle size={12} />
+									</span>
+								</label>
+								<div className="col-span-12 md:col-span-8">
+									<input
+										className="input input-bordered input-sm w-full rounded-xl"
+										value={tags}
+										onChange={e => {
+											setTags(e.target.value);
+										}}
+										placeholder="e.g. brainstorm, draft, review"
+									/>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-12 items-start gap-3">
+								<label className="label col-span-12 md:col-span-4">
+									<span className="label-text text-sm">Description (local)</span>
+									<span
+										className="label-text-alt tooltip tooltip-right"
+										data-tip="Local description for your reference."
+									>
+										<FiHelpCircle size={12} />
+									</span>
+								</label>
+								<div className="col-span-12 md:col-span-8">
+									<textarea
+										className="textarea textarea-bordered w-full rounded-xl"
+										value={description}
+										onChange={e => {
+											setDescription(e.target.value);
+										}}
+										placeholder={template?.description ?? 'Describe how this template should be used...'}
+									/>
+								</div>
+							</div>
 						</div>
-						<label className="form-control mt-2 w-full">
-							<span className="label-text">Description (local)</span>
-							<textarea
-								className="textarea textarea-bordered"
-								value={description}
-								onChange={e => {
-									setDescription(e.target.value);
-								}}
-							/>
-						</label>
 					</section>
 
+					<div className="divider before:bg-base-300 after:bg-base-300 my-0" />
+
+					{/* Variables */}
 					<section>
-						<h4 className="mb-2 font-semibold">Variables</h4>
+						<div className="mb-3 flex items-center justify-between">
+							<h4 className="text-base-content/70 text-sm font-semibold tracking-wide uppercase">Variables</h4>
+							{req.requiredCount > 0 ? (
+								<div className="text-warning flex items-center gap-2 text-sm">
+									<FiAlertCircle size={14} />
+									<span>Required remaining: {req.requiredVariables.join(', ')}</span>
+								</div>
+							) : (
+								<div className="badge badge-success badge-outline">All required variables provided</div>
+							)}
+						</div>
+
 						<div className="space-y-3">
 							{variablesSchema.length === 0 && (
 								<div className="text-sm opacity-70">No variables defined for this template.</div>
@@ -192,17 +273,22 @@ export function TemplateEditModal({
 								/>
 							))}
 						</div>
-						<div className="mt-2 text-sm">
-							{req.requiredCount > 0 ? (
-								<span className="text-warning">Required remaining: {req.requiredVariables.join(', ')}</span>
-							) : (
-								<span className="text-success">All required variables provided.</span>
-							)}
-						</div>
 					</section>
 
+					<div className="divider before:bg-base-300 after:bg-base-300 my-0" />
+
+					{/* Pre-processors */}
 					<section>
-						<h4 className="mb-2 font-semibold">Pre-processors</h4>
+						<div className="mb-3 flex items-center justify-between">
+							<h4 className="text-base-content/70 text-sm font-semibold tracking-wide uppercase">Pre-processors</h4>
+							{hasToolJsonErrors ? (
+								<div className="text-error flex items-center gap-2 text-sm">
+									<FiAlertCircle size={14} />
+									<span>Fix invalid JSON args before saving</span>
+								</div>
+							) : null}
+						</div>
+
 						<div className="space-y-3">
 							{preProcessors.length === 0 && <div className="text-sm opacity-70">No pre-processors configured.</div>}
 							{preProcessors.map(p => (
@@ -212,36 +298,41 @@ export function TemplateEditModal({
 									args={toolArgs[p.id]}
 									status={toolStatuses[p.id].status}
 									onArgsChange={next => {
-										setToolArgs(s => ({
-											...s,
-											[p.id]: next,
-										}));
+										setToolArgs(s => ({ ...s, [p.id]: next }));
 									}}
 									onRunNow={() => {
 										markToolReady(p);
 									}}
+									onValidityChange={valid => {
+										setToolArgsValidity(prev => ({ ...prev, [p.id]: valid }));
+									}}
 								/>
 							))}
 							{preProcessors.some(p => toolStatuses[p.id].status !== 'done') && (
-								<div className="flex items-center gap-2 text-sm">
+								<div className="flex items-center gap-2 text-sm opacity-80">
 									<FiPlay />
-									Marked tools as "Run now" will be returned to caller with args for execution.
+									<span>Marked tools as "Run now" will be returned to the caller with args for execution.</span>
 								</div>
 							)}
 						</div>
 					</section>
 
+					<div className="divider before:bg-base-300 after:bg-base-300 my-0" />
+
+					{/* Blocks */}
 					<section>
-						<h4 className="mb-2 font-semibold">Blocks (local override)</h4>
+						<h4 className="text-base-content/70 mb-3 text-sm font-semibold tracking-wide uppercase">
+							Blocks (local override)
+						</h4>
 						<div className="space-y-3">
 							{blockEdits.map((b, idx) => (
-								<div key={b.id} className="rounded border p-2">
+								<div key={b.id} className="rounded-xl border p-3">
 									<div className="mb-2 flex items-center gap-2 text-sm opacity-70">
 										<span className="badge badge-outline">{b.role}</span>
 										<span className="opacity-60">#{idx + 1}</span>
 									</div>
 									<textarea
-										className="textarea textarea-bordered min-h-24 w-full"
+										className="textarea textarea-bordered min-h-32 w-full rounded-xl"
 										value={b.content}
 										onChange={e => {
 											setBlockEdits(arr => {
@@ -255,19 +346,28 @@ export function TemplateEditModal({
 							))}
 						</div>
 					</section>
-				</div>
 
-				<div className="modal-action">
-					<button className="btn btn-ghost" onClick={onClose}>
-						Cancel
-					</button>
-					<button className="btn btn-primary" onClick={saveAndClose}>
-						Save
-					</button>
-				</div>
+					{/* Footer */}
+					<div className="modal-action">
+						<button type="button" className="btn rounded-xl" onClick={onClose}>
+							Cancel
+						</button>
+						<button type="submit" className="btn btn-primary rounded-xl" disabled={hasToolJsonErrors}>
+							Save
+						</button>
+					</div>
+				</form>
 			</div>
-			<form method="dialog" className="modal-backdrop" onSubmit={onClose}>
-				<button>close</button>
+
+			<form
+				method="dialog"
+				className="modal-backdrop"
+				onSubmit={e => {
+					e.preventDefault();
+					onClose();
+				}}
+			>
+				<button aria-label="Close">close</button>
 			</form>
 		</dialog>,
 		document.body
@@ -283,114 +383,143 @@ function VariableEditorRow({
 	value: unknown;
 	onChange: (val: unknown) => void;
 }) {
+	const id = React.useId();
 	const label = `${varDef.name}${varDef.required ? ' *' : ''}`;
-	const help =
-		varDef.description ??
-		(varDef.source === VarSource.Static
+	const sourceText =
+		varDef.source === VarSource.Static
 			? `Static${varDef.staticVal ? `: ${varDef.staticVal}` : ''}`
 			: varDef.source === VarSource.Tool
 				? `From tool${varDef.default ? `, default: ${varDef.default}` : ''}`
-				: `User${varDef.default ? `, default: ${varDef.default}` : ''}`);
+				: `User${varDef.default ? `, default: ${varDef.default}` : ''}`;
+	const help = varDef.description ? `${varDef.description} (${sourceText})` : sourceText;
 
-	const common = (
-		<div className="text-xs opacity-70">
-			{help}
-			{varDef.type === VarType.Enum && varDef.enumValues?.length ? ` | options: ${varDef.enumValues.join(', ')}` : ''}
+	const isDisabled = varDef.source === VarSource.Static;
+	const commonHelp = (
+		<div className="label">
+			<span className="label-text-alt text-xs opacity-70">
+				{help}
+				{varDef.type === VarType.Enum && varDef.enumValues?.length ? ` | options: ${varDef.enumValues.join(', ')}` : ''}
+			</span>
 		</div>
+	);
+
+	const labelCol = (
+		<label htmlFor={id} className="label col-span-12 md:col-span-4">
+			<span className="label-text text-sm">{label}</span>
+			<span className="label-text-alt tooltip tooltip-right" data-tip={help}>
+				<FiHelpCircle size={12} />
+			</span>
+		</label>
 	);
 
 	switch (varDef.type) {
 		case VarType.Boolean:
 			return (
-				<label className="form-control w-full">
-					<div className="label">
-						<span className="label-text">{label}</span>
+				<div className="grid grid-cols-12 items-center gap-3">
+					{labelCol}
+					<div className="col-span-12 md:col-span-8">
+						<input
+							id={id}
+							type="checkbox"
+							className="toggle toggle-accent rounded-full"
+							checked={Boolean(value)}
+							disabled={isDisabled}
+							onChange={e => {
+								onChange(e.target.checked);
+							}}
+						/>
+						{commonHelp}
 					</div>
-					<input
-						type="checkbox"
-						className="toggle"
-						checked={Boolean(value)}
-						onChange={e => {
-							onChange(e.target.checked);
-						}}
-					/>
-					{common}
-				</label>
+				</div>
 			);
+
 		case VarType.Number:
 			return (
-				<label className="form-control w-full">
-					<div className="label">
-						<span className="label-text">{label}</span>
+				<div className="grid grid-cols-12 items-center gap-3">
+					{labelCol}
+					<div className="col-span-12 md:col-span-8">
+						<input
+							id={id}
+							type="number"
+							className="input input-bordered input-sm w-full rounded-xl"
+							value={value === undefined || value === null ? '' : (value as number).toString()}
+							disabled={isDisabled}
+							onChange={e => {
+								const v = e.target.value;
+								onChange(v === '' ? undefined : Number(v));
+							}}
+							placeholder={varDef.default !== undefined ? varDef.default : ''}
+						/>
+						{commonHelp}
 					</div>
-					<input
-						type="number"
-						className="input input-bordered input-sm"
-						value={value === undefined || value === null ? '' : (value as string)}
-						onChange={e => {
-							const v = e.target.value;
-							onChange(v === '' ? undefined : Number(v));
-						}}
-					/>
-					{common}
-				</label>
+				</div>
 			);
+
 		case VarType.Enum:
 			return (
-				<label className="form-control w-full">
-					<div className="label">
-						<span className="label-text">{label}</span>
+				<div className="grid grid-cols-12 items-center gap-3">
+					{labelCol}
+					<div className="col-span-12 md:col-span-8">
+						<select
+							id={id}
+							className="select select-bordered select-sm w-full rounded-xl"
+							value={value === undefined || value === null ? '' : (value as string)}
+							disabled={isDisabled}
+							onChange={e => {
+								onChange(e.target.value || undefined);
+							}}
+						>
+							<option value="">-- select --</option>
+							{(varDef.enumValues ?? []).map(opt => (
+								<option value={opt} key={opt}>
+									{opt}
+								</option>
+							))}
+						</select>
+						{commonHelp}
 					</div>
-					<select
-						className="select select-bordered select-sm"
-						value={value === undefined || value === null ? '' : (value as string)}
-						onChange={e => {
-							onChange(e.target.value || undefined);
-						}}
-					>
-						<option value="">-- select --</option>
-						{(varDef.enumValues ?? []).map(opt => (
-							<option value={opt} key={opt}>
-								{opt}
-							</option>
-						))}
-					</select>
-					{common}
-				</label>
+				</div>
 			);
+
 		case VarType.Date:
 			return (
-				<label className="form-control w-full">
-					<div className="label">
-						<span className="label-text">{label}</span>
+				<div className="grid grid-cols-12 items-center gap-3">
+					{labelCol}
+					<div className="col-span-12 md:col-span-8">
+						<input
+							id={id}
+							type="date"
+							className="input input-bordered input-sm w-full rounded-xl"
+							value={value ? (value as string) : ''}
+							disabled={isDisabled}
+							onChange={e => {
+								onChange(e.target.value || undefined);
+							}}
+						/>
+						{commonHelp}
 					</div>
-					<input
-						type="date"
-						className="input input-bordered input-sm"
-						value={value ? (value as string) : ''}
-						onChange={e => {
-							onChange(e.target.value || undefined);
-						}}
-					/>
-					{common}
-				</label>
+				</div>
 			);
+
 		case VarType.String:
 		default:
 			return (
-				<label className="form-control w-full">
-					<div className="label">
-						<span className="label-text">{label}</span>
+				<div className="grid grid-cols-12 items-center gap-3">
+					{labelCol}
+					<div className="col-span-12 md:col-span-8">
+						<input
+							id={id}
+							className="input input-bordered input-sm w-full rounded-xl"
+							value={value === undefined || value === null ? '' : (value as string)}
+							disabled={isDisabled}
+							onChange={e => {
+								onChange(e.target.value || undefined);
+							}}
+							placeholder={varDef.default !== undefined ? varDef.default : ''}
+						/>
+						{commonHelp}
 					</div>
-					<input
-						className="input input-bordered input-sm"
-						value={value === undefined || value === null ? '' : (value as string)}
-						onChange={e => {
-							onChange(e.target.value || undefined);
-						}}
-					/>
-					{common}
-				</label>
+				</div>
 			);
 	}
 }
@@ -401,33 +530,59 @@ function PreProcessorRow({
 	status,
 	onArgsChange,
 	onRunNow,
+	onValidityChange,
 }: {
 	call: PreProcessorCall;
 	args?: Record<string, any>;
 	status: ToolState['status'];
 	onArgsChange: (next: Record<string, any>) => void;
 	onRunNow: () => void;
+	onValidityChange?: (valid: boolean) => void;
 }) {
 	const [argsText, setArgsText] = React.useState<string>(JSON.stringify(args ?? {}, null, 2));
 	const [jsonError, setJsonError] = React.useState<string | undefined>();
 
+	// Keep in sync when parent args change
 	React.useEffect(() => {
-		setArgsText(JSON.stringify(args ?? {}, null, 2));
-	}, [args]);
+		const next = JSON.stringify(args ?? {}, null, 2);
+		setArgsText(next);
+		setJsonError(undefined);
+		onValidityChange?.(true);
+	}, [args, onValidityChange]);
+
+	// Validate as user types so parent can disable Save if invalid
+	React.useEffect(() => {
+		try {
+			if (argsText.trim() === '') {
+				setJsonError(undefined);
+				onValidityChange?.(true);
+			} else {
+				JSON.parse(argsText);
+				setJsonError(undefined);
+				onValidityChange?.(true);
+			}
+		} catch {
+			setJsonError('Invalid JSON');
+			onValidityChange?.(false);
+		}
+	}, [argsText, onValidityChange]);
 
 	function handleBlur() {
+		// Commit only when valid or empty
 		try {
 			const parsed = argsText.trim() ? JSON.parse(argsText) : {};
 			setJsonError(undefined);
+			onValidityChange?.(true);
 			onArgsChange(parsed);
 		} catch {
 			setJsonError('Invalid JSON');
+			onValidityChange?.(false);
 		}
 	}
 
 	return (
-		<div className="space-y-2 rounded border p-2">
-			<div className="flex items-center justify-between">
+		<div className="space-y-2 rounded-xl border p-3">
+			<div className="flex items-center justify-between gap-2">
 				<div className="text-sm">
 					<div className="flex items-center gap-2 font-medium">
 						<span className="badge badge-outline">Tool</span>
@@ -453,25 +608,34 @@ function PreProcessorRow({
 					>
 						{status}
 					</span>
-					<button className="btn btn-xs" onClick={onRunNow} type="button" title="Mark to run now">
+					<button className="btn btn-xs rounded-xl" onClick={onRunNow} type="button" title="Mark to run now">
 						<FiPlay className="mr-1" /> Run tool now
 					</button>
 				</div>
 			</div>
+
 			<div>
 				<div className="label">
 					<span className="label-text">Args (JSON)</span>
+					<span className="label-text-alt tooltip tooltip-left" data-tip="JSON arguments to pass to the tool">
+						<FiHelpCircle size={12} />
+					</span>
 				</div>
 				<textarea
-					className={`textarea textarea-bordered w-full font-mono ${jsonError ? 'textarea-error' : ''}`}
+					className={`textarea textarea-bordered w-full rounded-xl font-mono ${jsonError ? 'textarea-error' : ''}`}
 					rows={6}
 					value={argsText}
 					onChange={e => {
 						setArgsText(e.target.value);
 					}}
 					onBlur={handleBlur}
+					spellCheck={false}
 				/>
-				{jsonError && <div className="text-error mt-1 text-xs">{jsonError}</div>}
+				{jsonError && (
+					<div className="text-error mt-1 flex items-center gap-1 text-xs">
+						<FiAlertCircle size={12} /> {jsonError}
+					</div>
+				)}
 			</div>
 		</div>
 	);
@@ -487,7 +651,7 @@ function effectiveVarValueSafe(
 	if (userValues[varDef.name] !== undefined && userValues[varDef.name] !== null) {
 		return userValues[varDef.name];
 	}
-	if (varDef.source === VarSource.Static && varDef.staticVal) {
+	if (varDef.source === VarSource.Static && varDef.staticVal !== undefined) {
 		return varDef.staticVal;
 	}
 	if (varDef.default !== undefined && varDef.default !== '') {
