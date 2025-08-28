@@ -59,7 +59,7 @@ export function FloatingToolbar({
 				ref={ref}
 				className={cn(
 					// Positioning/box
-					'p-1 whitespace-nowrap',
+					'absolute p-1 whitespace-nowrap',
 					// DaisyUI surface
 					'border-base-300 bg-base-100 rounded-xl border shadow',
 					// Misc
