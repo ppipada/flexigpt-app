@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import * as React from 'react';
 
 import {
@@ -47,7 +46,7 @@ const InlineComboboxContext = React.createContext<InlineComboboxContextValue>(
 const defaultFilter: FilterFn = ({ group, keywords = [], label, value }, search) => {
 	const uniqueTerms = new Set([value, ...keywords, group, label].filter(Boolean));
 
-	return Array.from(uniqueTerms).some(keyword => filterWords(keyword!, search));
+	return Array.from(uniqueTerms).some(keyword => filterWords(keyword ?? '', search));
 };
 
 interface InlineComboboxProps {
@@ -181,7 +180,10 @@ const InlineComboboxInput = React.forwardRef<HTMLInputElement, React.HTMLAttribu
 	({ className, ...props }, propRef) => {
 		const { inputProps, inputRef: contextRef, showTrigger, trigger } = React.useContext(InlineComboboxContext);
 
-		const store = useComboboxContext()!;
+		const store = useComboboxContext();
+		if (!store) {
+			throw new Error('Combobox must be wrapped in ComboboxProvider');
+		}
 		const value = useStoreState(store, 'value');
 
 		const ref = useComposedRef(propRef, contextRef);
@@ -275,7 +277,11 @@ const InlineComboboxItem = ({
 
 	const { filter, removeInput } = React.useContext(InlineComboboxContext);
 
-	const store = useComboboxContext()!;
+	const store = useComboboxContext();
+
+	if (!store) {
+		throw new Error('Combobox must be wrapped in ComboboxProvider');
+	}
 
 	// Optimization: Do not subscribe to value if filter is false
 	const search = filter && useStoreState(store, 'value');
@@ -301,7 +307,10 @@ const InlineComboboxItem = ({
 
 const InlineComboboxEmpty = ({ children, className }: React.HTMLAttributes<HTMLDivElement>) => {
 	const { setHasEmpty } = React.useContext(InlineComboboxContext);
-	const store = useComboboxContext()!;
+	const store = useComboboxContext();
+	if (!store) {
+		throw new Error('Combobox must be wrapped in ComboboxProvider');
+	}
 	const items = useStoreState(store, 'items');
 
 	React.useEffect(() => {

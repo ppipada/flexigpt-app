@@ -33,6 +33,9 @@ export function usePromptTemplates() {
 	return { data, loading };
 }
 
+/**
+ * @public
+ */
 export function usePromptTemplate(bundleID: string, slug: string, version: string) {
 	const [tmpl, setTmpl] = useState<PromptTemplate | undefined>();
 	useEffect(() => {

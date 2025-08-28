@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import * as React from 'react';
 
 import { EmojiInlineIndexSearch, insertEmoji } from '@platejs/emoji';
@@ -19,7 +18,7 @@ import {
 
 export function EmojiInputElement(props: PlateElementProps) {
 	const { children, editor, element } = props;
-	const data = usePluginOption(EmojiPlugin, 'data')!;
+	const data = usePluginOption(EmojiPlugin, 'data');
 	const [value, setValue] = React.useState('');
 	const debouncedValue = useDebounce(value, 100);
 	const isPending = value !== debouncedValue;

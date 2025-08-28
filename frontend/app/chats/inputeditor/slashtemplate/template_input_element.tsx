@@ -3,24 +3,43 @@ import React from 'react';
 import type { PlateEditor } from 'platejs/react';
 import { FiZap } from 'react-icons/fi';
 
+import type { PromptTemplate } from '@/spec/prompt';
+
 import { usePromptTemplates } from '@/hooks/use_template';
+
+import { promptStoreAPI } from '@/apis/baseapi';
 
 import { SlashInputElement } from '@/components/editor/nodes/slash_node';
 
+import { buildInitialToolStates } from '@/chats/inputeditor/slashtemplate/template_processing';
 import { KEY_TEMPLATE_SELECTION } from '@/chats/inputeditor/slashtemplate/template_selection_element';
 
 function insertTemplateSelectionNode(
 	editor: PlateEditor,
 	bundleID: string,
 	templateSlug: string,
-	templateVersion: string
+	templateVersion: string,
+	template?: PromptTemplate
 ) {
 	const node = {
 		type: KEY_TEMPLATE_SELECTION,
 		bundleID,
 		templateSlug,
 		templateVersion,
-		variables: {},
+		variables: {} as Record<string, unknown>,
+		// Snapshot full template for downstream sync "get" to have the full context.
+		templateSnapshot: template,
+		// Local overrides
+		overrides: {} as {
+			displayName?: string;
+			description?: string;
+			tags?: string[];
+			blocks?: PromptTemplate['blocks'];
+			variables?: PromptTemplate['variables'];
+			preProcessors?: PromptTemplate['preProcessors'];
+		},
+		// Each preprocessor call state
+		toolStates: buildInitialToolStates(template),
 		// void elements still need one empty text child in Slate
 		children: [{ text: '' }],
 	};
@@ -49,11 +68,21 @@ export function TemplateSlashInputElement(props: Omit<Parameters<typeof SlashInp
 					icon: <FiZap />,
 					data: t,
 					focusEditor: false,
-					onSelect: (
+					onSelect: async (
 						editor: PlateEditor,
 						item: { bundleID: string; templateSlug: string; templateVersion: string }
 					) => {
-						insertTemplateSelectionNode(editor, item.bundleID, item.templateSlug, item.templateVersion);
+						try {
+							const tmpl = await promptStoreAPI.getPromptTemplate(
+								item.bundleID,
+								item.templateSlug,
+								item.templateVersion
+							);
+							insertTemplateSelectionNode(editor, item.bundleID, item.templateSlug, item.templateVersion, tmpl);
+						} catch {
+							// Fallback insert without snapshot if API fails.
+							insertTemplateSelectionNode(editor, item.bundleID, item.templateSlug, item.templateVersion);
+						}
 					},
 				})),
 			},

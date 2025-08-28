@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import React from 'react';
 
 import { isOrderedList } from '@platejs/list';
@@ -35,21 +34,21 @@ function List(props: PlateElementProps) {
 	const { Li, Marker } = config[listStyleType] ?? {};
 	const ordered = isOrderedList(props.element);
 
-	const className = cx('relative m-0 p-0', attributes?.className);
+	const className = cx('relative m-0 p-0', attributes.className);
 
 	if (ordered) {
 		return (
 			<ol {...attributes} className={className} style={{ listStyleType }} start={listStart}>
-				{Marker && <Marker {...props} />}
-				{Li ? <Li {...props} /> : <li>{props.children}</li>}
+				{<Marker {...props} />}
+				{<Li {...props} />}
 			</ol>
 		);
 	}
 
 	return (
 		<ul {...attributes} className={className} style={{ listStyleType }}>
-			{Marker && <Marker {...props} />}
-			{Li ? <Li {...props} /> : <li>{props.children}</li>}
+			{<Marker {...props} />}
+			{<Li {...props} />}
 		</ul>
 	);
 }
@@ -76,7 +75,6 @@ function TodoMarker(props: PlateElementProps) {
 function TodoLi(props: PlateElementProps) {
 	const isChecked =
 		typeof props.element === 'object' &&
-		props.element !== null &&
 		'checked' in props.element &&
 		Boolean((props.element as { checked?: boolean }).checked);
 

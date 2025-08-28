@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 import { SingleBlockPlugin, type Value } from 'platejs';
-import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
+import { Plate, PlateContent, type PlateEditor, usePlateEditor } from 'platejs/react';
 import { FiSend } from 'react-icons/fi';
 
 import { expandTabsToSpaces } from '@/lib/text_utils';
@@ -33,21 +32,17 @@ interface EditorTextInputProps {
 
 const EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
 
-function insertPlainTextAsSingleBlock(editor: ReturnType<typeof usePlateEditor>, text: string, tabSize = 2) {
-	if (!editor) {
+function insertPlainTextAsSingleBlock(ed: ReturnType<typeof usePlateEditor>, text: string, tabSize = 2) {
+	if (!ed) {
 		return;
 	}
+	const editor = ed as PlateEditor;
 	const normalized = text.replace(/\r\n?/g, '\n');
 	const lines = normalized.split('\n').map(l => expandTabsToSpaces(l, tabSize));
 
 	editor.tf.insertText(lines[0] ?? '');
 	for (let i = 1; i < lines.length; i++) {
-		if (editor.tf.insertSoftBreak) {
-			editor.tf.insertSoftBreak();
-		} else {
-			// Fallback: literal newline works with white-space: break-spaces
-			editor.tf.insertText('\n');
-		}
+		editor.tf.insertSoftBreak();
 		editor.tf.insertText(lines[i]);
 	}
 }
