@@ -116,12 +116,15 @@ export function TemplateEditModal({
 			blocks: blockEdits,
 		};
 
-		// Merge tool states with edited args
+		// Merge tool states with edited args and current statuses
 		const nextToolStates: Record<string, ToolState> = { ...(tsenode.toolStates ?? {}) };
 		for (const p of preProcessors) {
+			const prev = nextToolStates[p.id] ?? { status: 'pending' as ToolState['status'] };
 			nextToolStates[p.id] = {
-				...(nextToolStates[p.id] ?? { status: 'pending' }),
+				...prev,
 				args: toolArgs[p.id],
+				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+				status: toolStatuses[p.id]?.status ?? prev.status ?? 'pending',
 			};
 		}
 
@@ -296,7 +299,8 @@ export function TemplateEditModal({
 									key={p.id}
 									call={p}
 									args={toolArgs[p.id]}
-									status={toolStatuses[p.id].status}
+									// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+									status={toolStatuses[p.id]?.status ?? 'pending'}
 									onArgsChange={next => {
 										setToolArgs(s => ({ ...s, [p.id]: next }));
 									}}
@@ -534,7 +538,7 @@ function PreProcessorRow({
 }: {
 	call: PreProcessorCall;
 	args?: Record<string, any>;
-	status: ToolState['status'];
+	status?: ToolState['status'];
 	onArgsChange: (next: Record<string, any>) => void;
 	onRunNow: () => void;
 	onValidityChange?: (valid: boolean) => void;
@@ -602,11 +606,15 @@ function PreProcessorRow({
 				<div className="flex items-center gap-2">
 					<span
 						className={`badge badge-sm ${
-							status === 'done' ? 'badge-success' : status === 'ready' ? 'badge-warning' : 'badge-neutral'
+							(status ?? 'pending') === 'done'
+								? 'badge-success'
+								: (status ?? 'pending') === 'ready'
+									? 'badge-warning'
+									: 'badge-neutral'
 						}`}
 						title="Status"
 					>
-						{status}
+						{status ?? 'pending'}
 					</span>
 					<button className="btn btn-xs rounded-xl" onClick={onRunNow} type="button" title="Mark to run now">
 						<FiPlay className="mr-1" /> Run tool now

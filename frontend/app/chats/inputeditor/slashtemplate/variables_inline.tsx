@@ -21,6 +21,8 @@ type TemplateVariableElementNode = {
 	type: typeof KEY_TEMPLATE_VARIABLE;
 	bundleID: string;
 	templateSlug: string;
+	templateVersion: string;
+
 	name: string;
 	// for layout only (computed again at render)
 	required?: boolean;
@@ -33,20 +35,17 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 	const el = element as TemplateVariableElementNode;
 	const plEditor = editor as PlateEditor;
 
-	const tpl = findTemplateNode(plEditor, el.bundleID, el.templateSlug);
+	const tpl = findTemplateNode(plEditor, el.bundleID, el.templateSlug, el.templateVersion);
 	const [tsenode, tsPath] = tpl ?? [];
-	const { variablesSchema } = tsenode ? computeEffectiveTemplate(tsenode) : { variablesSchema: [] };
+	const eff = tsenode ? computeEffectiveTemplate(tsenode) : undefined;
+	const variablesSchema = eff?.variablesSchema ?? [];
+
 	const varDef = variablesSchema.find(v => v.name === el.name);
 	const isRequired = Boolean(varDef?.required);
 
-	// Compute requirements for status color
+	// Compute requirements for status color using effective preProcessors (overrides included)
 	const req = tsenode
-		? computeRequirements(
-				variablesSchema,
-				tsenode.variables,
-				tsenode.overrides?.preProcessors ?? [],
-				tsenode.toolStates
-			)
+		? computeRequirements(variablesSchema, tsenode.variables, eff?.preProcessors ?? [], tsenode.toolStates)
 		: { variableValues: {}, requiredVariables: [] as string[], requiredCount: 0 };
 
 	const isMissing = isRequired && req.requiredVariables.includes(el.name);
@@ -125,6 +124,7 @@ export function buildUserInlineChildrenFromText(tsenode: TemplateSelectionElemen
 				type: KEY_TEMPLATE_VARIABLE,
 				bundleID: tsenode.bundleID,
 				templateSlug: tsenode.templateSlug,
+				templateVersion: tsenode.templateVersion,
 				name: varName,
 				required: variablesSchema.find(v => v.name === varName)?.required ?? false,
 				children: [{ text: '' }],
@@ -144,9 +144,7 @@ export function buildUserInlineChildrenFromText(tsenode: TemplateSelectionElemen
 	return result;
 }
 
-/**
- * Flatten current editor content into plain text, replacing variable pills with value (or {{name}} if not set).
- */
+// Flatten current editor content into plain text, replacing variable pills with value (or {{name}} if not set).
 export function toPlainTextReplacingVariables(editor: PlateEditor): string {
 	// Find the first selection node for context (variables and values)
 	const tpl = getFirstTemplateNodeWithPath(editor);
@@ -208,13 +206,18 @@ function isTemplateVarNode(n: unknown): n is TemplateVariableElementNode {
 function findTemplateNode(
 	editor: PlateEditor,
 	bundleID: string,
-	templateSlug: string
+	templateSlug: string,
+	templateVersion: string
 ): [TemplateSelectionElementNode, any] | undefined {
 	const els = NodeApi.elements(editor);
 	for (const [el, path] of els) {
 		if (el.type === KEY_TEMPLATE_SELECTION) {
 			const node = el as unknown as TemplateSelectionElementNode;
-			if (node.bundleID === bundleID && node.templateSlug === templateSlug) {
+			if (
+				node.bundleID === bundleID &&
+				node.templateSlug === templateSlug &&
+				node.templateVersion === templateVersion
+			) {
 				return [node, path];
 			}
 		}

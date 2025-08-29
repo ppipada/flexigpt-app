@@ -37,6 +37,18 @@ export function getFirstTemplateNodeWithPath(editor: PlateEditor): [TemplateSele
 	return undefined;
 }
 
+// Utility to get all template selection nodes with their paths (document order)
+export function getTemplateNodesWithPath(editor: PlateEditor): Array<[TemplateSelectionElementNode, any]> {
+	const out: Array<[TemplateSelectionElementNode, any]> = [];
+	const elList = NodeApi.elements(editor);
+	for (const [el, path] of elList) {
+		if (ElementApi.isElementType(el, KEY_TEMPLATE_SELECTION)) {
+			out.push([el as unknown as TemplateSelectionElementNode, path]);
+		}
+	}
+	return out;
+}
+
 /**
  * Template selection element (data carrier).
  * We render it as a hidden inline element so it doesn't affect the text layout.
@@ -54,7 +66,7 @@ export function TemplateSelectionElement(props: PlateElementProps<any>) {
 		<span
 			{...attributes}
 			contentEditable={false}
-			className="hidden"
+			className="pointer-events-none sr-only"
 			data-template-chip
 			title={`Template: ${el.overrides?.displayName ?? template?.displayName ?? el.templateSlug} • pending vars: ${req.requiredCount} • tools: ${
 				preProcessors.length
