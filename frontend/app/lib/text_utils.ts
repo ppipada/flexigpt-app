@@ -322,3 +322,11 @@ export function expandTabsToSpaces(line: string, tabSize = 2) {
 	}
 	return out;
 }
+
+export function cssEscape(s: string) {
+	try {
+		return CSS.escape(s);
+	} catch {
+		return s.replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+	}
+}

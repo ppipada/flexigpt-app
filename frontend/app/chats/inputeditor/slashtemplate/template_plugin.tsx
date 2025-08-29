@@ -6,6 +6,7 @@ import {
 	KEY_TEMPLATE_SELECTION,
 	TemplateSelectionElement,
 } from '@/chats/inputeditor/slashtemplate/template_selection_element';
+import { KEY_TEMPLATE_VARIABLE, TemplateVariableElement } from '@/chats/inputeditor/slashtemplate/variables_inline';
 
 const KEY_TEMPLATE_SLASH_COMMAND = 'templateSlash';
 const KEY_TEMPLATE_SLASH_INPUT = 'templateInput';
@@ -42,8 +43,15 @@ const TemplateSelectionPlugin = createSlatePlugin({
 	node: { isElement: true, isInline: true, isVoid: true },
 });
 
+// Plugin
+const TemplateVariablePlugin = createSlatePlugin({
+	key: KEY_TEMPLATE_VARIABLE,
+	node: { isElement: true, isInline: true, isVoid: true },
+});
+
 export const TemplateSlashKit = [
 	TemplateSelectionPlugin.withComponent(TemplateSelectionElement),
 	TemplateSlashPlugin.configure({}),
 	TemplateSlashInputPlugin.withComponent(TemplateSlashInputElement),
+	TemplateVariablePlugin.withComponent(TemplateVariableElement),
 ];

@@ -16,8 +16,7 @@ import {
 	SetAppTheme,
 	SetAuthKey,
 } from '@/apis/wailsjs/go/main/SettingStoreWrapper';
-
-import { type spec as wailsSpec } from '../wailsjs/go/models';
+import { type spec as wailsSpec } from '@/apis/wailsjs/go/models';
 
 /**
  * @public

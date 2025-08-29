@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-imports */
 export * from './aiprovider';
 export * from './backend';
 export * from './conversationstore';

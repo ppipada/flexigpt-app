@@ -9,7 +9,7 @@ import type { IToolStoreAPI } from '@/spec/tool';
 
 import { IS_WAILS_PLATFORM } from '@/lib/features';
 
-import * as wailsImpl from './wailsapi';
+import * as wailsImpl from '@/apis/wailsapi';
 
 export let log: ILogger;
 export let backendAPI: IBackendAPI;

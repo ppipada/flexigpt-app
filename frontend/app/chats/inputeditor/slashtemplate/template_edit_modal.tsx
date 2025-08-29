@@ -657,8 +657,7 @@ function effectiveVarValueSafe(
 	if (varDef.default !== undefined && varDef.default !== '') {
 		return varDef.default;
 	}
-	// Try tool result if any attached
-	if (varDef.source === VarSource.Tool && toolStates) {
+	if (toolStates) {
 		const hit = Object.values(toolStates).find(st => st.result !== undefined);
 		if (hit?.result !== undefined) return hit.result;
 	}

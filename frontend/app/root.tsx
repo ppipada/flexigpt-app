@@ -16,6 +16,7 @@ import Sidebar from '@/components/sidebar';
 
 import '@/globals.css';
 
+// eslint-disable-next-line no-restricted-imports
 import type { Route } from './+types/root';
 
 export const CustomThemeProvider: FC<{ children: React.ReactNode }> = ({ children }) => {

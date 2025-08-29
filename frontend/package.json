@@ -106,6 +106,7 @@
 			"app/apis/wailsjs/go/main/SettingStoreWrapper.js",
 			"app/apis/wailsjs/go/main/ModelPresetStoreWrapper.js",
 			"app/apis/wailsjs/go/main/PromptTemplateStoreWrapper.js",
+			"app/apis/wailsjs/go/main/ToolStoreWrapper.js",
 			"app/spec/aiprovider.ts",
 			"app/hooks/highlight_worker.ts",
 			"app/chats/inputtextarea/text_input.tsx",

@@ -1,10 +1,7 @@
-/* tests/generateTitle.test.ts
-   - adapted for generateTitle ⇒ TitleCandidate
-*/
 import { describe, expect, it } from 'vitest';
 
-import { generateTitle, type TitleCandidate } from '../text_utils';
-import { codeMessage } from './sample_code_message';
+import { codeMessage } from '@/lib/__tests__/sample_code_message';
+import { generateTitle, type TitleCandidate } from '@/lib/text_utils';
 
 const DEFAULT = 'New conversation';
 const MAX_PREVIEW = 120; // truncate long log lines

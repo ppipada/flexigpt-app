@@ -17,8 +17,8 @@ import {
 	PatchProviderPreset,
 	PutModelPreset,
 	PutProviderPreset,
-} from '../wailsjs/go/main/ModelPresetStoreWrapper';
-import type { spec } from '../wailsjs/go/models';
+} from '@/apis/wailsjs/go/main/ModelPresetStoreWrapper';
+import type { spec } from '@/apis/wailsjs/go/models';
 
 /**
  * @public

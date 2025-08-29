@@ -20,8 +20,8 @@ import {
 	PutTool,
 	PutToolBundle,
 	SearchTools,
-} from '../wailsjs/go/main/ToolStoreWrapper';
-import type { spec } from '../wailsjs/go/models';
+} from '@/apis/wailsjs/go/main/ToolStoreWrapper';
+import type { spec } from '@/apis/wailsjs/go/models';
 
 export class WailsToolStoreAPI implements IToolStoreAPI {
 	// --- Bundle Operations ---

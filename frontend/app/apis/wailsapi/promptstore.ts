@@ -19,8 +19,8 @@ import {
 	PutPromptBundle,
 	PutPromptTemplate,
 	SearchPromptTemplates,
-} from '../wailsjs/go/main/PromptTemplateStoreWrapper';
-import type { spec } from '../wailsjs/go/models';
+} from '@/apis/wailsjs/go/main/PromptTemplateStoreWrapper';
+import type { spec } from '@/apis/wailsjs/go/models';
 
 export class WailsPromptStoreAPI implements IPromptStoreAPI {
 	// --- Bundle Operations ---

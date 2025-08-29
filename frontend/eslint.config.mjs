@@ -53,6 +53,17 @@ export default tseslint.config(
 			// },
 		},
 		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: ['./', '../'],
+							message: 'Relative imports are not allowed.',
+						},
+					],
+				},
+			],
 			'@typescript-eslint/consistent-type-imports': 'error',
 			'@typescript-eslint/no-explicit-any': 'off',
 			'@typescript-eslint/no-unsafe-assignment': 'off',

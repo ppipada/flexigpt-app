@@ -178,7 +178,7 @@ export function computeRequirements(
 		};
 	});
 
-	const pendingToolsCount = toolsToRun.filter(t => t.status !== 'done').length;
+	const pendingToolsCount = toolsToRun.filter(t => t.status === 'pending').length;
 
 	return {
 		variableValues: values,
@@ -227,4 +227,17 @@ export function makeSelectedTemplateForRun(tsenode: TemplateSelectionElementNode
 		toolsToRun: req.toolsToRun,
 		isReady: req.requiredCount === 0 && req.toolsToRun.every(t => t.status === 'done'),
 	};
+}
+
+// Returns the content of the last block as plain text if it is from role user.
+// If not found, returns empty string.
+export function getLastUserBlockContent(el: TemplateSelectionElementNode): string {
+	const { blocks } = computeEffectiveTemplate(el);
+	if (blocks.length > 0) {
+		const b = blocks[blocks.length - 1];
+		if (b.role.toLowerCase() === 'user') {
+			return b.content;
+		}
+	}
+	return '';
 }
