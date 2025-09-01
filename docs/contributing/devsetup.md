@@ -2,12 +2,12 @@
 
 ## Setup
 
-- Install `go > 1.24`.
+- Install `go > 1.25`.
   - For Ubuntu you can do install via standard download and install OR via `asdf` or through the backports channel:
     - `sudo add-apt-repository ppa:longsleep/golang-backports`
     - `sudo apt update`
-    - `sudo apt install golang-1.24`
-    - You can see that go is installed in `/lib/go-1.24/bin/go`
+    - `sudo apt install golang-1.25`
+    - You can see that go is installed in `/lib/go-1.25/bin/go`
     - Additional reference can be found at [Go Ubuntu Wiki](https://go.dev/wiki/Ubuntu)
   - Check Go is installed correctly: `go version`
 - Install go tool prerequisites:

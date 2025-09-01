@@ -454,9 +454,7 @@ func TestConcurrency(t *testing.T) {
 		const numReaders = 10
 
 		for range numReaders {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				for range 100 {
 					bundles, templates, _ := bi.ListBuiltInData(ctx)
 					if len(bundles) == 0 || len(templates) == 0 {
@@ -464,7 +462,7 @@ func TestConcurrency(t *testing.T) {
 						return
 					}
 				}
-			}()
+			})
 		}
 
 		wg.Wait()
@@ -502,9 +500,7 @@ func TestConcurrency(t *testing.T) {
 
 		// Start readers.
 		for range 5 {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				for {
 					select {
 					case <-done:
@@ -513,7 +509,7 @@ func TestConcurrency(t *testing.T) {
 						_, _, _ = bi.ListBuiltInData(ctx)
 					}
 				}
-			}()
+			})
 		}
 
 		// Start writers.

@@ -117,8 +117,6 @@
 		],
 		"ignoreBinaries": [],
 		"ignoreDependencies": [
-			"@react-router/node",
-			"isbot",
 			"daisyui",
 			"react-router-devtools",
 			"@fontsource-variable/inter",

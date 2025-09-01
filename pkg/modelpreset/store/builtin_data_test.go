@@ -317,13 +317,11 @@ func TestConcurrencyPresets(t *testing.T) {
 		var wg sync.WaitGroup
 		const loops = 10
 		for range loops {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				for range 100 {
 					_, _, _ = bi.ListBuiltInPresets(ctx)
 				}
-			}()
+			})
 		}
 		wg.Wait()
 	})

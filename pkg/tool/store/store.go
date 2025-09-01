@@ -989,10 +989,7 @@ func (ts *ToolStore) startCleanupLoop() {
 	ts.cleanOnce.Do(func() {
 		ts.cleanKick = make(chan struct{}, 1)
 		ts.cleanCtx, ts.cleanStop = context.WithCancel(context.Background())
-
-		ts.wg.Add(1)
-		go func() {
-			defer ts.wg.Done()
+		ts.wg.Go(func() {
 			tick := time.NewTicker(cleanupIntervalTools)
 			defer tick.Stop()
 			defer func() {
@@ -1018,7 +1015,7 @@ func (ts *ToolStore) startCleanupLoop() {
 				}
 				ts.sweepSoftDeleted()
 			}
-		}()
+		})
 	})
 }
 

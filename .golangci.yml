@@ -4,6 +4,7 @@ version: "2"
 run:
   build-tags:
     - codeanalysis
+  modules-download-mode: readonly
 linters:
   default: none
   enable:

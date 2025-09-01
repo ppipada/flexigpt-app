@@ -1173,10 +1173,7 @@ func (s *PromptTemplateStore) startCleanupLoop() {
 	s.cleanOnce.Do(func() {
 		s.cleanKick = make(chan struct{}, 1)
 		s.cleanCtx, s.cleanStop = context.WithCancel(context.Background())
-
-		s.wg.Add(1)
-		go func() {
-			defer s.wg.Done()
+		s.wg.Go(func() {
 			ticker := time.NewTicker(cleanupInterval)
 			defer ticker.Stop()
 			defer func() {
@@ -1201,7 +1198,7 @@ func (s *PromptTemplateStore) startCleanupLoop() {
 				}
 				s.sweepSoftDeleted()
 			}
-		}()
+		})
 	})
 }
 
