@@ -22,7 +22,7 @@ type TemplateVariableElementNode = {
 	bundleID: string;
 	templateSlug: string;
 	templateVersion: string;
-
+	selectionID: string;
 	name: string;
 	// for layout only (computed again at render)
 	required?: boolean;
@@ -35,7 +35,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 	const el = element as TemplateVariableElementNode;
 	const plEditor = editor as PlateEditor;
 
-	const tpl = findTemplateNode(plEditor, el.bundleID, el.templateSlug, el.templateVersion);
+	const tpl = findTemplateNode(plEditor, el.bundleID, el.templateSlug, el.templateVersion, el.selectionID);
 	const [tsenode, tsPath] = tpl ?? [];
 	const eff = tsenode ? computeEffectiveTemplate(tsenode) : undefined;
 	const variablesSchema = eff?.variablesSchema ?? [];
@@ -109,6 +109,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 export function buildUserInlineChildrenFromText(tsenode: TemplateSelectionElementNode, text: string): any[] {
 	const { variablesSchema } = computeEffectiveTemplate(tsenode);
 	const known = new Set(variablesSchema.map(v => v.name));
+	const selectionID: string | undefined = tsenode.selectionID;
 
 	const result: any[] = [];
 	const re = /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g;
@@ -116,7 +117,8 @@ export function buildUserInlineChildrenFromText(tsenode: TemplateSelectionElemen
 	let m: RegExpExecArray | null;
 	while ((m = re.exec(text)) !== null) {
 		const pre = text.slice(idx, m.index);
-		if (pre) result.push({ text: pre });
+
+		if (pre) result.push({ text: pre, ownerSelectionID: selectionID });
 
 		const varName = m[1];
 		if (known.has(varName)) {
@@ -125,6 +127,7 @@ export function buildUserInlineChildrenFromText(tsenode: TemplateSelectionElemen
 				bundleID: tsenode.bundleID,
 				templateSlug: tsenode.templateSlug,
 				templateVersion: tsenode.templateVersion,
+				selectionID: selectionID,
 				name: varName,
 				required: variablesSchema.find(v => v.name === varName)?.required ?? false,
 				children: [{ text: '' }],
@@ -138,7 +141,7 @@ export function buildUserInlineChildrenFromText(tsenode: TemplateSelectionElemen
 		idx = m.index + m[0].length;
 	}
 	const tail = text.slice(idx);
-	if (tail) result.push({ text: tail });
+	if (tail) result.push({ text: tail, ownerSelectionID: selectionID });
 
 	if (result.length === 0) result.push({ text: '' });
 	return result;
@@ -207,17 +210,18 @@ function findTemplateNode(
 	editor: PlateEditor,
 	bundleID: string,
 	templateSlug: string,
-	templateVersion: string
+	templateVersion: string,
+	selectionID: string
 ): [TemplateSelectionElementNode, any] | undefined {
 	const els = NodeApi.elements(editor);
 	for (const [el, path] of els) {
 		if (el.type === KEY_TEMPLATE_SELECTION) {
 			const node = el as unknown as TemplateSelectionElementNode;
-			if (
-				node.bundleID === bundleID &&
-				node.templateSlug === templateSlug &&
-				node.templateVersion === templateVersion
-			) {
+			const nodeSelectionID = node.selectionID as string | undefined;
+			const matchesById = selectionID && nodeSelectionID === selectionID;
+			const matchesByTriple =
+				node.bundleID === bundleID && node.templateSlug === templateSlug && node.templateVersion === templateVersion;
+			if (matchesById || matchesByTriple) {
 				return [node, path];
 			}
 		}

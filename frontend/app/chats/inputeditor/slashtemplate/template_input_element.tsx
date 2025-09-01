@@ -21,11 +21,15 @@ function insertTemplateSelectionNode(
 	templateVersion: string,
 	template?: PromptTemplate
 ) {
+	const selectionID = `tpl:${bundleID}/${templateSlug}@${templateVersion}:${Date.now().toString(36)}${Math.random()
+		.toString(36)
+		.slice(2, 8)}`;
 	const node = {
 		type: KEY_TEMPLATE_SELECTION,
 		bundleID,
 		templateSlug,
 		templateVersion,
+		selectionID,
 		variables: {} as Record<string, unknown>,
 		// Snapshot full template for downstream sync "get" to have the full context.
 		templateSnapshot: template,

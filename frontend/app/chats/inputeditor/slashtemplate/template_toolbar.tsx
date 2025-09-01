@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { NodeApi, type Path, type TElement } from 'platejs';
+import { NodeApi, type Path, type TElement, type TNode } from 'platejs';
 import { type PlateEditor, useEditorRef } from 'platejs/react';
 
 import { TemplateEditModal } from '@/chats/inputeditor/slashtemplate/template_edit_modal';
@@ -50,33 +50,30 @@ function replaceVariablesForSelectionWithText(
 	editor: PlateEditor,
 	bundleID: string,
 	templateSlug: string,
-	templateVersion: string
+	templateVersion: string,
+	pathOfSelection?: Path
 ) {
 	// Replace all variable chips belonging to this selection with their current value (or {{name}} if empty)
 	// Then remove the selection chip itself.
 	// Note: we do not flatten other templates.
 	const varEntries: Array<[TElement, Path]> = [];
-
-	// Collect variable chips for this selection
-	for (const [el, p] of NodeApi.elements(editor)) {
-		if (
-			el.type === KEY_TEMPLATE_VARIABLE &&
-			el.bundleID === bundleID &&
-			el.templateSlug === templateSlug &&
-			el.templateVersion === templateVersion
-		) {
-			varEntries.push([el, p]);
-		}
-	}
-
 	// Find the matching selection node to read variable values and to remove it at the end
 	let tsNodeWithPath: [TemplateSelectionElementNode, Path] | undefined;
-	for (const [el, p] of NodeApi.elements(editor)) {
-		if (el.type === KEY_TEMPLATE_SELECTION) {
-			const n = el as unknown as TemplateSelectionElementNode;
-			if (n.bundleID === bundleID && n.templateSlug === templateSlug && n.templateVersion === templateVersion) {
-				tsNodeWithPath = [n, p];
-				break;
+
+	if (pathOfSelection) {
+		const got = NodeApi.get(editor, pathOfSelection);
+		if (got && got.type === KEY_TEMPLATE_SELECTION) {
+			tsNodeWithPath = [got as unknown as TemplateSelectionElementNode, pathOfSelection];
+		}
+	}
+	if (!tsNodeWithPath) {
+		for (const [el, p] of NodeApi.elements(editor)) {
+			if (el.type === KEY_TEMPLATE_SELECTION) {
+				const n = el as unknown as TemplateSelectionElementNode;
+				if (n.bundleID === bundleID && n.templateSlug === templateSlug && n.templateVersion === templateVersion) {
+					tsNodeWithPath = [n, p];
+					break;
+				}
 			}
 		}
 	}
@@ -84,6 +81,20 @@ function replaceVariablesForSelectionWithText(
 	const tsNode = tsNodeWithPath?.[0];
 	const EMPTY_VARS: Record<string, unknown> = Object.freeze({}) as Record<string, unknown>;
 	const vars: Record<string, unknown> = tsNode?.variables ?? EMPTY_VARS;
+
+	const selectionID: string | undefined = tsNode?.selectionID;
+
+	// Collect variable chips for this specific selection instance (prefer selectionId)
+	for (const [el, p] of NodeApi.elements(editor)) {
+		if (el.type === KEY_TEMPLATE_VARIABLE) {
+			const sameInstance = selectionID
+				? el.selectionID === selectionID
+				: el.bundleID === bundleID && el.templateSlug === templateSlug && el.templateVersion === templateVersion;
+			if (sameInstance) {
+				varEntries.push([el, p]);
+			}
+		}
+	}
 
 	// Replace vars from deepest path to shallow to keep paths valid while mutating
 	varEntries
@@ -119,12 +130,36 @@ function removeSelection(
 	pathOfSelection?: any
 ) {
 	editor.tf.withoutNormalizing(() => {
+		// Identify target selection (get selectionId for precise removal)
+		let targetSelection: [TemplateSelectionElementNode, Path] | undefined = undefined;
+		if (pathOfSelection) {
+			const got = NodeApi.get(editor, pathOfSelection);
+			if (got && got.type === KEY_TEMPLATE_SELECTION) {
+				targetSelection = [got as unknown as TemplateSelectionElementNode, pathOfSelection];
+			}
+		}
+		if (!targetSelection) {
+			for (const [el, p] of NodeApi.elements(editor)) {
+				if (
+					el.type === KEY_TEMPLATE_SELECTION &&
+					el.bundleID === bundleID &&
+					el.templateSlug === templateSlug &&
+					el.templateVersion === templateVersion
+				) {
+					targetSelection = [el as unknown as TemplateSelectionElementNode, p];
+					break;
+				}
+			}
+		}
+		const selectionID: string | undefined = targetSelection?.[0]?.selectionID;
+
 		// Remove variable chips for this selection
 		const entries: Array<[any, any]> = [];
 		const it = NodeApi.elements(editor);
 		for (const [el, p] of it) {
 			if (
 				el.type === KEY_TEMPLATE_VARIABLE &&
+				(selectionID ? el.selectionID === selectionID : true) &&
 				el.bundleID === bundleID &&
 				el.templateSlug === templateSlug &&
 				el.templateVersion === templateVersion
@@ -132,8 +167,18 @@ function removeSelection(
 				entries.push([el, p]);
 			}
 		}
+		const textEntries: Array<[TNode, Path]> = [];
+		for (const [nnode, p] of NodeApi.nodes(editor)) {
+			if (typeof nnode === 'object' && 'text' in nnode) {
+				const ownerId = nnode.ownerSelectionID as string | undefined;
+				if (ownerId && selectionID && ownerId === selectionID) {
+					textEntries.push([nnode, p]);
+				}
+			}
+		}
+
 		// Remove deepest first
-		entries
+		[...entries, ...textEntries]
 			.sort((a, b) => {
 				const pa = a[1] as number[];
 				const pb = b[1] as number[];
@@ -144,22 +189,8 @@ function removeSelection(
 			});
 
 		// Remove the selection chip
-		if (pathOfSelection) {
-			editor.tf.removeNodes({ at: pathOfSelection });
-		} else {
-			// fallback by matching ids
-			const it2 = NodeApi.elements(editor);
-			for (const [el, p] of it2) {
-				if (
-					el.type === KEY_TEMPLATE_SELECTION &&
-					el.bundleID === bundleID &&
-					el.templateSlug === templateSlug &&
-					el.templateVersion === templateVersion
-				) {
-					editor.tf.removeNodes({ at: p });
-					break;
-				}
-			}
+		if (targetSelection) {
+			editor.tf.removeNodes({ at: targetSelection[1] });
 		}
 	});
 	editor.tf.focus();
@@ -213,7 +244,13 @@ export function TemplateToolbars() {
 							}}
 							onFlatten={() => {
 								editor.tf.withoutNormalizing(() => {
-									replaceVariablesForSelectionWithText(editor, sel.bundleID, sel.templateSlug, sel.templateVersion);
+									replaceVariablesForSelectionWithText(
+										editor,
+										sel.bundleID,
+										sel.templateSlug,
+										sel.templateVersion,
+										tsPath
+									);
 								});
 								editor.tf.focus();
 							}}

@@ -28,7 +28,7 @@ import {
 	getFirstTemplateNodeWithPath,
 	getTemplateSelections,
 } from '@/chats/inputeditor/slashtemplate/template_selection_element';
-import { TemplateToolbars } from '@/chats/inputeditor/slashtemplate/template_toolbar_kit';
+import { TemplateToolbars } from '@/chats/inputeditor/slashtemplate/template_toolbar';
 import {
 	buildUserInlineChildrenFromText,
 	toPlainTextReplacingVariables,
@@ -92,8 +92,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 		// doc version tick to re-run selection computations on any editor change (even if text string doesn't change)
 		const [docVersion, setDocVersion] = useState(0);
 
-		// When a template is inserted the first time, populate editor with user last-block text + inline variable pills.
-		const populatedFromTemplateRef = useRef<boolean>(false);
+		const lastPopulatedSelectionKeyRef = useRef<string | null>(null);
 
 		// Compute selection info from the editor value; re-run whenever the doc changes
 		const selectionInfo = useMemo(() => {
@@ -161,10 +160,16 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 		// Populate editor with effective last-USER block when a template is added (once)
 		useEffect(() => {
 			const tplNodeWithPath = selectionInfo.tplNodeWithPath;
-			if (!tplNodeWithPath || populatedFromTemplateRef.current) return;
+			if (!tplNodeWithPath) {
+				lastPopulatedSelectionKeyRef.current = null;
+				return;
+			}
 			const [tsenode, tsPath] = tplNodeWithPath;
 			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 			if (!tsenode) return;
+			const selectionID: string = tsenode.selectionID;
+			const currKey = selectionID;
+			if (lastPopulatedSelectionKeyRef.current === currKey) return;
 
 			// Build children: keep the selection node (for data + toolbar), add parsed user text with variable pills
 			const userText = getLastUserBlockContent(tsenode);
@@ -190,7 +195,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 				// Last-resort fallback: insert at selection (or end)
 				editor.tf.insertNodes(inlineChildren);
 			}
-			populatedFromTemplateRef.current = true;
+			lastPopulatedSelectionKeyRef.current = currKey;
 
 			// Focus first variable pill, if any
 			setTimeout(() => {
@@ -246,7 +251,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 			} finally {
 				// Clear editor and state after submitting
 				editor.tf.setValue(EMPTY_VALUE);
-				populatedFromTemplateRef.current = false;
+				lastPopulatedSelectionKeyRef.current = null;
 
 				// Focus back into the editor
 				editor.tf.focus();

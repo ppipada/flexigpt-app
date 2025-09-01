@@ -19,6 +19,7 @@ export type TemplateSelectionElementNode = {
 	bundleID: string;
 	templateSlug: string;
 	templateVersion: string;
+	selectionID: string;
 
 	// User-provided variable values
 	variables: Record<string, unknown>;

@@ -157,7 +157,21 @@ export function TemplateEditModal({
 
 	return createPortal(
 		<dialog className="modal modal-open">
-			<div className="modal-box max-h-[85vh] max-w-3xl overflow-auto rounded-2xl">
+			<div
+				className="modal-box max-h-[85vh] max-w-3xl overflow-auto rounded-2xl"
+				onKeyDownCapture={e => {
+					e.stopPropagation();
+				}}
+				onKeyUpCapture={e => {
+					e.stopPropagation();
+				}}
+				onMouseDownCapture={e => {
+					e.stopPropagation();
+				}}
+				onClickCapture={e => {
+					e.stopPropagation();
+				}}
+			>
 				{/* Header */}
 				<div className="mb-4 flex items-center justify-between gap-2">
 					<div className="flex items-center gap-2">
@@ -175,6 +189,12 @@ export function TemplateEditModal({
 						if (!hasToolJsonErrors) saveAndClose();
 					}}
 					className="space-y-6"
+					onMouseDownCapture={e => {
+						e.stopPropagation();
+					}}
+					onClickCapture={e => {
+						e.stopPropagation();
+					}}
 				>
 					{/* Overview */}
 					<section>
