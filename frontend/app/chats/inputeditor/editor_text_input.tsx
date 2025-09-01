@@ -26,6 +26,7 @@ import {
 } from '@/chats/inputeditor/slashtemplate/template_processing';
 import {
 	getFirstTemplateNodeWithPath,
+	getTemplateNodesWithPath,
 	getTemplateSelections,
 } from '@/chats/inputeditor/slashtemplate/template_selection_element';
 import { TemplateToolbars } from '@/chats/inputeditor/slashtemplate/template_toolbar';
@@ -92,7 +93,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 		// doc version tick to re-run selection computations on any editor change (even if text string doesn't change)
 		const [docVersion, setDocVersion] = useState(0);
 
-		const lastPopulatedSelectionKeyRef = useRef<string | null>(null);
+		const lastPopulatedSelectionKeyRef = useRef<Set<string>>(new Set());
 
 		// Compute selection info from the editor value; re-run whenever the doc changes
 		const selectionInfo = useMemo(() => {
@@ -157,60 +158,63 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 			return plainText.trim().length > 0;
 		}, [isBusy, selectionInfo, plainText]);
 
-		// Populate editor with effective last-USER block when a template is added (once)
+		// Populate editor with effective last-USER block for EACH template selection (once per selectionID)
 		useEffect(() => {
-			const tplNodeWithPath = selectionInfo.tplNodeWithPath;
-			if (!tplNodeWithPath) {
-				lastPopulatedSelectionKeyRef.current = null;
-				return;
-			}
-			const [tsenode, tsPath] = tplNodeWithPath;
-			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-			if (!tsenode) return;
-			const selectionID: string = tsenode.selectionID;
-			const currKey = selectionID;
-			if (lastPopulatedSelectionKeyRef.current === currKey) return;
+			const populated = lastPopulatedSelectionKeyRef.current;
+			const nodes = getTemplateNodesWithPath(editor);
+			const insertedIds: string[] = [];
 
-			// Build children: keep the selection node (for data + toolbar), add parsed user text with variable pills
-			const userText = getLastUserBlockContent(tsenode);
-			const inlineChildren = buildUserInlineChildrenFromText(tsenode, userText);
+			for (const [tsenode, tsPath] of nodes) {
+				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+				if (!tsenode || !tsenode.selectionID) continue;
+				const selectionID: string = tsenode.selectionID;
+				if (populated.has(selectionID)) continue;
 
-			// Insert inline children as siblings right after the selection chip; preserve existing content
-			try {
-				editor.tf.withoutNormalizing(() => {
-					// tsPath points to the selection chip (inline void) inside the paragraph.
-					// Insert after that index inside the same paragraph.
-					const pathArr = Array.isArray(tsPath) ? (tsPath as number[]) : [];
-					if (pathArr.length >= 2) {
-						const blockPath = pathArr.slice(0, pathArr.length - 1); // parent paragraph path
-						const indexAfter = pathArr[pathArr.length - 1] + 1;
-						const atPath = [...blockPath, indexAfter] as any;
-						editor.tf.insertNodes(inlineChildren, { at: atPath });
-					} else {
-						// Fallback: insert at start of first paragraph
-						editor.tf.insertNodes(inlineChildren, { at: [0, 0] as any });
-					}
-				});
-			} catch {
-				// Last-resort fallback: insert at selection (or end)
-				editor.tf.insertNodes(inlineChildren);
-			}
-			lastPopulatedSelectionKeyRef.current = currKey;
+				// Build children: keep the selection chip, add parsed user text with variable pills
+				const userText = getLastUserBlockContent(tsenode);
+				const inlineChildren = buildUserInlineChildrenFromText(tsenode, userText);
 
-			// Focus first variable pill, if any
-			setTimeout(() => {
 				try {
-					const els = Array.from(contentRef.current?.querySelectorAll('span[data-template-variable]') ?? []);
-					if (els.length > 0 && els[0] && 'focus' in els[0] && typeof els[0].focus === 'function') {
-						els[0].focus();
-					} else {
+					editor.tf.withoutNormalizing(() => {
+						const pathArr = Array.isArray(tsPath) ? (tsPath as number[]) : [];
+						if (pathArr.length >= 2) {
+							const blockPath = pathArr.slice(0, pathArr.length - 1); // parent paragraph path
+							const indexAfter = pathArr[pathArr.length - 1] + 1;
+							const atPath = [...blockPath, indexAfter] as any;
+							editor.tf.insertNodes(inlineChildren, { at: atPath });
+						} else {
+							// Fallback: insert at start of first paragraph
+							editor.tf.insertNodes(inlineChildren, { at: [0, 0] as any });
+						}
+					});
+				} catch {
+					// Last-resort fallback: insert at selection (or end)
+					editor.tf.insertNodes(inlineChildren);
+				}
+
+				populated.add(selectionID);
+				insertedIds.push(selectionID);
+			}
+
+			// Focus first variable pill of the last inserted selection (if any)
+			if (insertedIds.length > 0) {
+				const focusId = insertedIds[insertedIds.length - 1];
+				setTimeout(() => {
+					try {
+						const sel = contentRef.current?.querySelector(
+							`span[data-template-variable][data-selection-id="${cssEscape(focusId)}"]`
+						) as HTMLElement | null;
+						if (sel && 'focus' in sel && typeof sel.focus === 'function') {
+							sel.focus();
+						} else {
+							editor.tf.focus();
+						}
+					} catch {
 						editor.tf.focus();
 					}
-				} catch {
-					editor.tf.focus();
-				}
-			}, 0);
-		}, [editor, selectionInfo.tplNodeWithPath]);
+				}, 0);
+			}
+		}, [editor, docVersion]);
 
 		const handleSubmit = (e?: React.FormEvent) => {
 			if (e) e.preventDefault();
@@ -251,7 +255,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 			} finally {
 				// Clear editor and state after submitting
 				editor.tf.setValue(EMPTY_VALUE);
-				lastPopulatedSelectionKeyRef.current = null;
+				lastPopulatedSelectionKeyRef.current.clear();
 
 				// Focus back into the editor
 				editor.tf.focus();

@@ -105,7 +105,7 @@ function replaceVariablesForSelectionWithText(
 			return pb.length - pa.length || pb[pb.length - 1] - pa[pa.length - 1];
 		})
 		.forEach(([, path]) => {
-			const nentry = NodeApi.get(editor, path)?.[0];
+			const nentry = NodeApi.get(editor, path);
 			if (!nentry) return;
 			const name: string = (nentry as TElement).name as string;
 			const value = vars[name];
@@ -116,7 +116,8 @@ function replaceVariablesForSelectionWithText(
 			editor.tf.insertNodes({ text }, { at: path });
 		});
 
-	// Remove only this selection chip
+	// IMPORTANT: Do NOT remove plain text nodes; they are already plain text.
+	// Only remove the selection chip itself so the toolbar disappears.
 	if (tsNodeWithPath) {
 		editor.tf.removeNodes({ at: tsNodeWithPath[1] });
 	}
@@ -253,6 +254,14 @@ export function TemplateToolbars() {
 									);
 								});
 								editor.tf.focus();
+								// Ensure any badges re-render if they were visible briefly.
+								if (nodeWithPath?.[0]?.selectionID) {
+									window.dispatchEvent(
+										new CustomEvent('tpl-vars:updated', {
+											detail: { selectionID: nodeWithPath[0].selectionID },
+										})
+									);
+								}
 							}}
 						/>
 

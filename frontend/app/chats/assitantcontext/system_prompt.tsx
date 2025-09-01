@@ -219,7 +219,7 @@ const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptDropdown
 						className="btn btn-xs text-neutral-custom w-full flex-1 items-center overflow-hidden border-none text-center text-nowrap shadow-none"
 						title={selectedPromptId ? 'System Prompt (enabled)' : 'System Prompt (disabled)'}
 					>
-						<span className="min-w-0 truncate text-center text-xs font-normal">System Prompt:</span>
+						<span className="min-w-0 truncate text-center text-xs font-normal">System Prompt?</span>
 						{selectedPromptId ? (
 							<FiCheck size={16} className="m-0 shrink-0 p-0" />
 						) : (

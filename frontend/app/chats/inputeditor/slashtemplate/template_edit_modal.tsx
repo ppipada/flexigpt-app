@@ -137,6 +137,9 @@ export function TemplateEditModal({
 			{ at: path }
 		);
 
+		if (tsenode.selectionID) {
+			window.dispatchEvent(new CustomEvent('tpl-vars:updated', { detail: { selectionID: tsenode.selectionID } }));
+		}
 		onClose();
 	}
 
@@ -157,28 +160,14 @@ export function TemplateEditModal({
 
 	return createPortal(
 		<dialog className="modal modal-open">
-			<div
-				className="modal-box max-h-[85vh] max-w-3xl overflow-auto rounded-2xl"
-				onKeyDownCapture={e => {
-					e.stopPropagation();
-				}}
-				onKeyUpCapture={e => {
-					e.stopPropagation();
-				}}
-				onMouseDownCapture={e => {
-					e.stopPropagation();
-				}}
-				onClickCapture={e => {
-					e.stopPropagation();
-				}}
-			>
+			<div className="modal-box max-h-[85vh] max-w-3xl overflow-auto rounded-2xl">
 				{/* Header */}
 				<div className="mb-4 flex items-center justify-between gap-2">
 					<div className="flex items-center gap-2">
 						<h3 className="text-lg font-bold">Edit Template</h3>
 						<span className="badge badge-neutral">{displayName}</span>
 					</div>
-					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close">
+					<button type="button" className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close">
 						<FiX size={12} />
 					</button>
 				</div>
@@ -189,10 +178,11 @@ export function TemplateEditModal({
 						if (!hasToolJsonErrors) saveAndClose();
 					}}
 					className="space-y-6"
-					onMouseDownCapture={e => {
+					onKeyDownCapture={e => {
+						// Prevent outer editor form shortcuts/submit
 						e.stopPropagation();
 					}}
-					onClickCapture={e => {
+					onKeyUpCapture={e => {
 						e.stopPropagation();
 					}}
 				>
@@ -388,6 +378,9 @@ export function TemplateEditModal({
 				className="modal-backdrop"
 				onSubmit={e => {
 					e.preventDefault();
+					onClose();
+				}}
+				onClick={() => {
 					onClose();
 				}}
 			>
