@@ -19,6 +19,10 @@ import { LineHeightKit } from '@/components/editor/plugins/line_height_kit';
 import { ListKit } from '@/components/editor/plugins/list_kit';
 import { TabbableKit } from '@/components/editor/plugins/tabbable_kit';
 
+import {
+	buildUserInlineChildrenFromText,
+	toPlainTextReplacingVariables,
+} from '@/chats/inputeditor/slashtemplate/tempalte_variables_inline';
 import { TemplateSlashKit } from '@/chats/inputeditor/slashtemplate/template_plugin';
 import {
 	getLastUserBlockContent,
@@ -28,12 +32,8 @@ import {
 	getFirstTemplateNodeWithPath,
 	getTemplateNodesWithPath,
 	getTemplateSelections,
-} from '@/chats/inputeditor/slashtemplate/template_selection_element';
-import { TemplateToolbars } from '@/chats/inputeditor/slashtemplate/template_toolbar';
-import {
-	buildUserInlineChildrenFromText,
-	toPlainTextReplacingVariables,
-} from '@/chats/inputeditor/slashtemplate/variables_inline';
+} from '@/chats/inputeditor/slashtemplate/template_slash_selection';
+import { TemplateToolbars } from '@/chats/inputeditor/slashtemplate/template_toolbars';
 
 export interface EditorTextInputHandle {
 	focus: () => void;

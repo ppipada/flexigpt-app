@@ -12,7 +12,7 @@ import { promptStoreAPI } from '@/apis/baseapi';
 import { SlashInputElement } from '@/components/editor/nodes/slash_node';
 
 import { buildInitialToolStates } from '@/chats/inputeditor/slashtemplate/template_processing';
-import { KEY_TEMPLATE_SELECTION } from '@/chats/inputeditor/slashtemplate/template_selection_element';
+import { KEY_TEMPLATE_SELECTION } from '@/chats/inputeditor/slashtemplate/template_slash_selection';
 
 function insertTemplateSelectionNode(
 	editor: PlateEditor,

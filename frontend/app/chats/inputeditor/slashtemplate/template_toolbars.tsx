@@ -3,15 +3,15 @@ import * as React from 'react';
 import { NodeApi, type Path, type TElement, type TNode } from 'platejs';
 import { type PlateEditor, useEditorRef } from 'platejs/react';
 
+import { KEY_TEMPLATE_VARIABLE } from '@/chats/inputeditor/slashtemplate/tempalte_variables_inline';
 import { TemplateEditModal } from '@/chats/inputeditor/slashtemplate/template_edit_modal';
-import { TemplateFixedToolbar } from '@/chats/inputeditor/slashtemplate/template_fixed_toolbar';
 import type { TemplateSelectionElementNode } from '@/chats/inputeditor/slashtemplate/template_processing';
 import {
 	getTemplateNodesWithPath,
 	getTemplateSelections,
 	KEY_TEMPLATE_SELECTION,
-} from '@/chats/inputeditor/slashtemplate/template_selection_element';
-import { KEY_TEMPLATE_VARIABLE } from '@/chats/inputeditor/slashtemplate/variables_inline';
+} from '@/chats/inputeditor/slashtemplate/template_slash_selection';
+import { TemplateFixedToolbar } from '@/chats/inputeditor/slashtemplate/template_toolbar_fixed';
 
 function useFlashSignal() {
 	const [flashAll, setFlashAll] = React.useState(false);
@@ -282,16 +282,3 @@ export function TemplateToolbars() {
 		</div>
 	);
 }
-
-// const KEY_TEMPLATE_TOOLBAR = 'template-fixed-toolbar';
-// export const TemplateToolbarKit = [
-// 	createPlatePlugin({
-// 		key: KEY_TEMPLATE_TOOLBAR,
-// 		render: {
-// 			beforeEditable: () => {
-// 				// Render a fixed toolbar before the editable area whenever a template selection exists
-// 				return <TemplateToolbars />;
-// 			},
-// 		},
-// 	}),
-// ];

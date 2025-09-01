@@ -17,7 +17,7 @@ import {
 import {
 	getFirstTemplateNodeWithPath,
 	KEY_TEMPLATE_SELECTION,
-} from '@/chats/inputeditor/slashtemplate/template_selection_element';
+} from '@/chats/inputeditor/slashtemplate/template_slash_selection';
 
 export const KEY_TEMPLATE_VARIABLE = 'templateVariable';
 

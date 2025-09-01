@@ -1,12 +1,15 @@
 import { type TriggerComboboxPluginOptions, withTriggerCombobox } from '@platejs/combobox';
 import { createSlatePlugin, createTSlatePlugin, KEYS, type PluginConfig } from 'platejs';
 
-import { TemplateSlashInputElement } from '@/chats/inputeditor/slashtemplate/template_input_element';
+import {
+	KEY_TEMPLATE_VARIABLE,
+	TemplateVariableElement,
+} from '@/chats/inputeditor/slashtemplate/tempalte_variables_inline';
+import { TemplateSlashInputElement } from '@/chats/inputeditor/slashtemplate/template_slash_input';
 import {
 	KEY_TEMPLATE_SELECTION,
 	TemplateSelectionElement,
-} from '@/chats/inputeditor/slashtemplate/template_selection_element';
-import { KEY_TEMPLATE_VARIABLE, TemplateVariableElement } from '@/chats/inputeditor/slashtemplate/variables_inline';
+} from '@/chats/inputeditor/slashtemplate/template_slash_selection';
 
 const KEY_TEMPLATE_SLASH_COMMAND = 'templateSlash';
 const KEY_TEMPLATE_SLASH_INPUT = 'templateInput';
