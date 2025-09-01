@@ -37,10 +37,10 @@ jobs:
           touch "$PLACEHOLDER"
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v8
         with:
           args: --verbose
-          version: v2.3
+          version: v2.4
 
       - name: Cache modernize binary
         id: cache-modernize
