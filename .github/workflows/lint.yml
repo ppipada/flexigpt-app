@@ -47,7 +47,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/go/bin/modernize
-          key: modernize-bin-${{ runner.os }}-v1 # bump vN to force a rebuild
+          key: modernize-bin-${{ runner.os }}-v2 # bump vN to force a rebuild
 
       - name: Install modernize (if cache missed)
         if: steps.cache-modernize.outputs.cache-hit != 'true'
