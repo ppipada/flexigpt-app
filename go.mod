@@ -7,8 +7,10 @@ go 1.25.0
 // Updating in linux
 // 	- go: asdf install golang 1.25.0 ; asdf global golang 1.25.0
 //  - golangci-lint: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.4.0
+//       - update lint.yml for version too
 //  - gopls: go install golang.org/x/tools/gopls@latest
 //  - modernize: go install golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest; modernize -V=full
+//       - update lint.yml for version increment too
 //  - helper to upgrade modules: go-mod-upgrade
 require (
 	github.com/adrg/xdg v0.5.3

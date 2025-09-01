@@ -15,13 +15,12 @@ export const KEY_TEMPLATE_SELECTION = 'templateSelection';
 export function getTemplateSelections(editor: PlateEditor): SelectedTemplateForRun[] {
 	const elList = NodeApi.elements(editor);
 	const selections: SelectedTemplateForRun[] = [];
-
-	elList.forEach(([el]) => {
+	for (const [el, _path] of elList) {
 		if (ElementApi.isElementType(el, KEY_TEMPLATE_SELECTION)) {
 			const node = el as unknown as TemplateSelectionElementNode;
 			selections.push(makeSelectedTemplateForRun(node));
 		}
-	});
+	}
 
 	return selections;
 }
