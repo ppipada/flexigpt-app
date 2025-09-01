@@ -2,17 +2,14 @@ import { type TriggerComboboxPluginOptions, withTriggerCombobox } from '@platejs
 import { createSlatePlugin, createTSlatePlugin, KEYS, type PluginConfig } from 'platejs';
 
 import {
-	KEY_TEMPLATE_VARIABLE,
-	TemplateVariableElement,
-} from '@/chats/inputeditor/slashtemplate/tempalte_variables_inline';
-import { TemplateSlashInputElement } from '@/chats/inputeditor/slashtemplate/template_slash_input';
-import {
 	KEY_TEMPLATE_SELECTION,
-	TemplateSelectionElement,
-} from '@/chats/inputeditor/slashtemplate/template_slash_selection';
-
-const KEY_TEMPLATE_SLASH_COMMAND = 'templateSlash';
-const KEY_TEMPLATE_SLASH_INPUT = 'templateInput';
+	KEY_TEMPLATE_SLASH_COMMAND,
+	KEY_TEMPLATE_SLASH_INPUT,
+	KEY_TEMPLATE_VARIABLE,
+} from '@/chats/inputeditor/slashtemplate/editor_utils';
+import { TemplateVariableElement } from '@/chats/inputeditor/slashtemplate/tempalte_variables_inline';
+import { TemplateSlashInputElement } from '@/chats/inputeditor/slashtemplate/template_slash_input';
+import { TemplateSelectionElement } from '@/chats/inputeditor/slashtemplate/template_slash_selection';
 
 type TemplateSlashConfig = PluginConfig<typeof KEY_TEMPLATE_SLASH_COMMAND, TriggerComboboxPluginOptions>;
 

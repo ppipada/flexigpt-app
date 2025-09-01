@@ -66,12 +66,24 @@ export function TemplateFixedToolbar(props: {
 			<div className="grow" />
 
 			{/* Expand to plain text */}
-			<button type="button" className="btn btn-ghost btn-sm" onClick={onFlatten} title="Convert chips into plain text">
+			<button
+				type="button"
+				className="btn btn-ghost btn-sm"
+				onClick={onFlatten}
+				title="Convert chips into plain text"
+				aria-label="Convert template chips into plain text"
+			>
 				<FiFileText />
 			</button>
 
 			{/* Remove template */}
-			<button type="button" className="btn btn-ghost btn-sm text-error" onClick={onRemove} title="Remove template">
+			<button
+				type="button"
+				className="btn btn-ghost btn-sm text-error"
+				onClick={onRemove}
+				title="Remove template"
+				aria-label="Remove template"
+			>
 				<FiX />
 			</button>
 		</div>

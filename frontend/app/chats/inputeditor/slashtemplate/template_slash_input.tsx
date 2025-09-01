@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { KEYS } from 'platejs';
 import type { PlateEditor } from 'platejs/react';
 import { FiZap } from 'react-icons/fi';
 
@@ -11,8 +12,8 @@ import { promptStoreAPI } from '@/apis/baseapi';
 
 import { SlashInputElement } from '@/components/editor/nodes/slash_node';
 
+import { KEY_TEMPLATE_SELECTION } from '@/chats/inputeditor/slashtemplate/editor_utils';
 import { buildInitialToolStates } from '@/chats/inputeditor/slashtemplate/template_processing';
-import { KEY_TEMPLATE_SELECTION } from '@/chats/inputeditor/slashtemplate/template_slash_selection';
 
 function insertTemplateSelectionNode(
 	editor: PlateEditor,
@@ -24,7 +25,7 @@ function insertTemplateSelectionNode(
 	const selectionID = `tpl:${bundleID}/${templateSlug}@${templateVersion}:${Date.now().toString(36)}${Math.random()
 		.toString(36)
 		.slice(2, 8)}`;
-	const node = {
+	const nnode = {
 		type: KEY_TEMPLATE_SELECTION,
 		bundleID,
 		templateSlug,
@@ -50,12 +51,12 @@ function insertTemplateSelectionNode(
 
 	editor.tf.withoutNormalizing(() => {
 		// Insert the chip (inline+void)
-		editor.tf.insertNodes(node, { select: true });
-
+		editor.tf.insertNodes([nnode, { type: KEYS.p, text: '\n' }], { select: true });
 		// Move caret after the chip and add a trailing space so the user can keep typing
 		editor.tf.collapse({ edge: 'end' });
-		editor.tf.insertText(' ');
+		editor.tf.select(undefined, { edge: 'end' }); // Select end of block above
 	});
+	editor.tf.focus();
 }
 
 export function TemplateSlashInputElement(props: Omit<Parameters<typeof SlashInputElement>[0], 'trigger' | 'groups'>) {

@@ -1,52 +1,10 @@
-import { ElementApi, NodeApi } from 'platejs';
-import type { PlateEditor, PlateElementProps } from 'platejs/react';
+import type { PlateElementProps } from 'platejs/react';
 
 import {
 	computeEffectiveTemplate,
 	computeRequirements,
-	makeSelectedTemplateForRun,
-	type SelectedTemplateForRun,
 	type TemplateSelectionElementNode,
 } from '@/chats/inputeditor/slashtemplate/template_processing';
-
-export const KEY_TEMPLATE_SELECTION = 'templateSelection';
-
-// Utility to get selections for sending
-export function getTemplateSelections(editor: PlateEditor): SelectedTemplateForRun[] {
-	const elList = NodeApi.elements(editor);
-	const selections: SelectedTemplateForRun[] = [];
-	for (const [el, _path] of elList) {
-		if (ElementApi.isElementType(el, KEY_TEMPLATE_SELECTION)) {
-			const node = el as unknown as TemplateSelectionElementNode;
-			selections.push(makeSelectedTemplateForRun(node));
-		}
-	}
-
-	return selections;
-}
-
-// Utility to get the first template node with its path
-export function getFirstTemplateNodeWithPath(editor: PlateEditor): [TemplateSelectionElementNode, any] | undefined {
-	const elList = NodeApi.elements(editor);
-	for (const [el, path] of elList) {
-		if (ElementApi.isElementType(el, KEY_TEMPLATE_SELECTION)) {
-			return [el as unknown as TemplateSelectionElementNode, path];
-		}
-	}
-	return undefined;
-}
-
-// Utility to get all template selection nodes with their paths (document order)
-export function getTemplateNodesWithPath(editor: PlateEditor): Array<[TemplateSelectionElementNode, any]> {
-	const out: Array<[TemplateSelectionElementNode, any]> = [];
-	const elList = NodeApi.elements(editor);
-	for (const [el, path] of elList) {
-		if (ElementApi.isElementType(el, KEY_TEMPLATE_SELECTION)) {
-			out.push([el as unknown as TemplateSelectionElementNode, path]);
-		}
-	}
-	return out;
-}
 
 /**
  * Template selection element (data carrier).

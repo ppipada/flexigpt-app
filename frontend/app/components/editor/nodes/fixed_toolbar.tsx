@@ -10,7 +10,7 @@ export function FixedToolbar(props: React.ComponentProps<typeof Toolbar>) {
 			{...props}
 			className={cn(
 				// Layout/position
-				'sticky top-0 left-0 z-50 w-full justify-between overflow-x-auto',
+				'sticky top-0 left-0 w-full justify-between overflow-x-auto',
 				// DaisyUI look & feel
 				'border-base-300 rounded-t-[var(--rounded-box)] border-b',
 				// Background + blur (with graceful supports fallback)

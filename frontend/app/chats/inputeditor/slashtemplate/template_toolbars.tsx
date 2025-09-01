@@ -3,14 +3,15 @@ import * as React from 'react';
 import { NodeApi, type Path, type TElement, type TNode } from 'platejs';
 import { type PlateEditor, useEditorRef } from 'platejs/react';
 
-import { KEY_TEMPLATE_VARIABLE } from '@/chats/inputeditor/slashtemplate/tempalte_variables_inline';
-import { TemplateEditModal } from '@/chats/inputeditor/slashtemplate/template_edit_modal';
-import type { TemplateSelectionElementNode } from '@/chats/inputeditor/slashtemplate/template_processing';
 import {
+	comparePathDeepestFirst,
 	getTemplateNodesWithPath,
 	getTemplateSelections,
 	KEY_TEMPLATE_SELECTION,
-} from '@/chats/inputeditor/slashtemplate/template_slash_selection';
+	KEY_TEMPLATE_VARIABLE,
+} from '@/chats/inputeditor/slashtemplate/editor_utils';
+import { TemplateEditModal } from '@/chats/inputeditor/slashtemplate/template_edit_modal';
+import type { TemplateSelectionElementNode } from '@/chats/inputeditor/slashtemplate/template_processing';
 import { TemplateFixedToolbar } from '@/chats/inputeditor/slashtemplate/template_toolbar_fixed';
 
 function useFlashSignal() {
@@ -98,12 +99,7 @@ function replaceVariablesForSelectionWithText(
 
 	// Replace vars from deepest path to shallow to keep paths valid while mutating
 	varEntries
-		.sort((a, b) => {
-			const pa = a[1] as number[];
-			const pb = b[1] as number[];
-			// deeper first
-			return pb.length - pa.length || pb[pb.length - 1] - pa[pa.length - 1];
-		})
+		.sort((a, b) => comparePathDeepestFirst(a[1] as number[], b[1] as number[]))
 		.forEach(([, path]) => {
 			const nentry = NodeApi.get(editor, path);
 			if (!nentry) return;
@@ -155,7 +151,7 @@ function removeSelection(
 		const selectionID: string | undefined = targetSelection?.[0]?.selectionID;
 
 		// Remove variable chips for this selection
-		const entries: Array<[any, any]> = [];
+		const entries: Array<[TElement, Path]> = [];
 		const it = NodeApi.elements(editor);
 		for (const [el, p] of it) {
 			if (
@@ -180,11 +176,7 @@ function removeSelection(
 
 		// Remove deepest first
 		[...entries, ...textEntries]
-			.sort((a, b) => {
-				const pa = a[1] as number[];
-				const pb = b[1] as number[];
-				return pb.length - pa.length || pb[pb.length - 1] - pa[pa.length - 1];
-			})
+			.sort((a, b) => comparePathDeepestFirst(a[1] as number[], b[1] as number[]))
 			.forEach(([, p]) => {
 				editor.tf.removeNodes({ at: p });
 			});
@@ -210,10 +202,11 @@ export function TemplateToolbars() {
 	const items = selections.map(sel => {
 		const entry = nodesWithPath.find(([n, p]) => {
 			const ok =
-				n.bundleID === sel.bundleID &&
-				n.templateSlug === sel.templateSlug &&
-				n.templateVersion === sel.templateVersion &&
-				!used.has(pathKey(p));
+				(sel.selectionID
+					? n.selectionID === sel.selectionID
+					: n.bundleID === sel.bundleID &&
+						n.templateSlug === sel.templateSlug &&
+						n.templateVersion === sel.templateVersion) && !used.has(pathKey(p));
 			if (ok) used.add(pathKey(p));
 			return ok;
 		});
@@ -227,7 +220,7 @@ export function TemplateToolbars() {
 	if (items.length === 0) return null;
 
 	return (
-		<div className="border-base-300 bg-base-100/95 supports-[backdrop-filter]:bg-base-100/60 sticky top-0 left-0 z-50 w-full border-b backdrop-blur">
+		<div className="border-base-300 bg-base-100/95 supports-[backdrop-filter]:bg-base-100/60 sticky top-0 left-0 w-full border-b backdrop-blur">
 			{items.map(({ id, sel, nodeWithPath }) => {
 				const [tsNode, tsPath] = nodeWithPath ?? [];
 				const flashing = flashAll;

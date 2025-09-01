@@ -5,33 +5,19 @@ import { NodeApi } from 'platejs';
 import type { PlateEditor, PlateElementProps } from 'platejs/react';
 import { FiEdit2 } from 'react-icons/fi';
 
-import type { PromptVariable } from '@/spec/prompt';
-import { VarSource, VarType } from '@/spec/prompt';
+import { VarType } from '@/spec/prompt';
 
+import {
+	KEY_TEMPLATE_SELECTION,
+	KEY_TEMPLATE_VARIABLE,
+	type TemplateVariableElementNode,
+} from '@/chats/inputeditor/slashtemplate/editor_utils';
 import {
 	computeEffectiveTemplate,
 	computeRequirements,
+	effectiveVarValueLocal,
 	type TemplateSelectionElementNode,
-	type ToolState,
 } from '@/chats/inputeditor/slashtemplate/template_processing';
-import {
-	getFirstTemplateNodeWithPath,
-	KEY_TEMPLATE_SELECTION,
-} from '@/chats/inputeditor/slashtemplate/template_slash_selection';
-
-export const KEY_TEMPLATE_VARIABLE = 'templateVariable';
-
-type TemplateVariableElementNode = {
-	type: typeof KEY_TEMPLATE_VARIABLE;
-	bundleID: string;
-	templateSlug: string;
-	templateVersion: string;
-	selectionID: string;
-	name: string;
-	// for layout only (computed again at render)
-	required?: boolean;
-	children: [{ text: '' }];
-};
 
 function useEvent(eventName: string, handler: (e: any) => void) {
 	React.useEffect(() => {
@@ -64,27 +50,6 @@ function findTemplateNode(
 				return [node, path];
 			}
 		}
-	}
-	return undefined;
-}
-
-function effectiveVarValueLocal(
-	varDef: PromptVariable,
-	userValues: Record<string, unknown>,
-	toolStates?: Record<string, ToolState>
-): unknown {
-	if (userValues[varDef.name] !== undefined && userValues[varDef.name] !== null) {
-		return userValues[varDef.name];
-	}
-	if (varDef.source === VarSource.Static && varDef.staticVal !== undefined) {
-		return varDef.staticVal;
-	}
-	if (varDef.default !== undefined && varDef.default !== '') {
-		return varDef.default;
-	}
-	if (varDef.source === VarSource.Tool && toolStates) {
-		const hit = Object.values(toolStates).find(st => st.result !== undefined);
-		if (hit?.result !== undefined) return hit.result;
 	}
 	return undefined;
 }
@@ -125,9 +90,9 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 	// Current effective value for display and starting edit
 	const currentValue = React.useMemo(() => {
 		if (!tsenode || !varDef) return undefined;
-		const v = effectiveVarValueLocal(varDef, tsenode.variables ?? {}, tsenode.toolStates);
+		const v = effectiveVarValueLocal(varDef, tsenode.variables ?? {}, tsenode.toolStates, eff?.preProcessors);
 		return v;
-	}, [tsenode?.variables, tsenode?.toolStates, varDef?.name, refreshTick]);
+	}, [tsenode?.variables, tsenode?.toolStates, varDef?.name, eff?.preProcessors, refreshTick]);
 
 	// Commit helper
 	function commitValue(next: unknown) {
@@ -209,6 +174,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 						type="checkbox"
 						className="toggle toggle-accent toggle-xs rounded-full"
 						checked={Boolean(currentValue)}
+						aria-label={`Set ${el.name}`}
 						onChange={e => {
 							commitValue(e.target.checked);
 						}}
@@ -227,6 +193,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 					autoFocus
 					type="number"
 					className="input input-ghost input-xs w-28 min-w-20 rounded-md bg-transparent"
+					aria-label={`Set number for ${el.name}`}
 					defaultValue={currentValue === undefined || currentValue === null ? '' : String(currentValue as number)}
 					placeholder={varDef?.default !== undefined ? varDef.default : ''}
 					onBlur={e => {
@@ -243,6 +210,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 				<select
 					autoFocus
 					className="select select-ghost select-xs w-32 min-w-24 bg-transparent"
+					aria-label={`Select ${el.name}`}
 					defaultValue={currentValue === undefined || currentValue === null ? '' : (currentValue as string)}
 					onChange={e => {
 						commitValue(e.target.value || undefined);
@@ -268,6 +236,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 					autoFocus
 					type="date"
 					className="input input-ghost input-xs w-36 min-w-28 bg-transparent"
+					aria-label={`Pick date for ${el.name}`}
 					defaultValue={currentValue ? (currentValue as string) : ''}
 					onBlur={e => {
 						commitValue(e.currentTarget.value || undefined);
@@ -282,6 +251,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 			<input
 				autoFocus
 				className="input input-ghost input-xs w-40 min-w-24 rounded-md bg-transparent"
+				aria-label={`Set ${el.name}`}
 				// eslint-disable-next-line @typescript-eslint/no-base-to-string
 				defaultValue={currentValue === undefined || currentValue === null ? '' : String(currentValue)}
 				maxLength={32}
@@ -299,8 +269,19 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 			{...attributes}
 			contentEditable={false}
 			tabIndex={0}
+			role="button"
+			aria-label={
+				isEditing
+					? `Editing variable ${el.name}`
+					: isMissing
+						? `Variable ${el.name} is required. Press Enter or Space to edit`
+						: `Variable ${el.name}. Press Enter or Space to edit`
+			}
+			aria-required={isRequired || undefined}
+			aria-invalid={isMissing || undefined}
 			data-template-variable
 			data-var-name={el.name}
+			data-selection-id={el.selectionID}
 			data-state={isMissing ? 'required' : 'ready'}
 			className={`badge inline-flex items-center gap-1 whitespace-nowrap select-none ${
 				isMissing ? 'badge-warning' : 'badge-success'
@@ -308,15 +289,16 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 			title={isEditing ? `Editing: ${el.name}` : isMissing ? `Required: ${el.name}` : `Variable: ${el.name}`}
 			onKeyDown={e => {
 				// Enter toggles inline edit; Esc handled inside edit
-				if (e.key === 'Enter' && !isEditing) {
+				if ((e.key === 'Enter' || e.key === ' ') && !isEditing) {
 					e.preventDefault();
 					e.stopPropagation();
 					setIsEditing(true);
 				}
 			}}
 			onMouseDown={e => {
-				// allow focusing pill without bubbling into editor selection changes
+				// allow focusing pill without bubbling into editor selection changes and ensure the pill gets focus
 				e.preventDefault();
+				(e.currentTarget as HTMLElement).focus();
 			}}
 			onClick={() => {
 				setIsEditing(true);
@@ -380,56 +362,4 @@ export function buildUserInlineChildrenFromText(tsenode: TemplateSelectionElemen
 
 	if (result.length === 0) result.push({ text: '' });
 	return result;
-}
-
-// Flatten current editor content into plain text (single-block), replacing variable pills of the first template.
-// Used when extracting text to submit without mutating content.
-export function toPlainTextReplacingVariables(editor: PlateEditor): string {
-	// Find the first selection node for context (variables and values)
-	const tpl = getFirstTemplateNodeWithPath(editor);
-	const [tsenode] = tpl ?? [];
-	const vars = tsenode ? tsenode.variables : {};
-
-	// Walk the top-level single paragraph
-	const childnodes = (editor.children?.[0]?.children ?? []) as any[];
-	const parts: string[] = [];
-
-	childnodes.forEach(n => {
-		if (isTemplateVarNode(n)) {
-			const name = n.name;
-			const v = vars[name];
-			if (v !== undefined && v !== null && v !== '') {
-				// eslint-disable-next-line @typescript-eslint/no-base-to-string
-				parts.push(String(v));
-			} else {
-				parts.push(`{{${name}}}`);
-			}
-		} else {
-			const s = toStringDeep(n);
-			if (s) parts.push(s);
-		}
-	});
-
-	return parts.join('');
-}
-
-function toStringDeep(n: any): string {
-	if (!n || typeof n !== 'object' || n === null) return '';
-
-	const obj = n as Record<PropertyKey, unknown>;
-
-	if ('text' in obj && typeof obj.text === 'string') {
-		return obj.text;
-	}
-
-	if ('children' in obj && Array.isArray(obj.children)) {
-		return obj.children.map(toStringDeep).join('');
-	}
-	return '';
-}
-
-function isTemplateVarNode(n: unknown): n is TemplateVariableElementNode {
-	if (!n || typeof n !== 'object') return false;
-	const obj = n as Record<PropertyKey, unknown>;
-	return 'type' in obj && obj.type === KEY_TEMPLATE_VARIABLE && 'name' in obj && typeof obj.name === 'string';
 }

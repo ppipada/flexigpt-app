@@ -10,7 +10,7 @@ import AssistantContextBar from '@/chats/assitantcontext/assistantcontext_bar';
 import EditorTextInput, { type EditorTextInputHandle } from '@/chats/inputeditor/editor_text_input';
 
 interface ChatInputFieldProps {
-	onSend: (message: string, options: ChatOption) => void;
+	onSend: (message: string, options: ChatOption) => Promise<void>;
 	setInputHeight: React.Dispatch<React.SetStateAction<number>>;
 	isBusy: boolean;
 	abortRef: React.RefObject<AbortController | null>;
@@ -46,7 +46,7 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 		/* ------------------------------------------------------------------
 		 * Send-message
 		 * ------------------------------------------------------------------ */
-		const handleSubmitMessage = (text: string) => {
+		const handleSubmitMessage = async (text: string) => {
 			onSend(text, chatOptions);
 		};
 

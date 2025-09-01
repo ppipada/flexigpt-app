@@ -442,7 +442,7 @@ const ChatScreen: FC = () => {
 				<div
 					className="flex w-full grow justify-center overflow-y-auto"
 					ref={chatContainerRef}
-					style={{ maxHeight: `calc(100vh - 188px - ${inputHeight}px)` }}
+					style={{ maxHeight: `calc(100vh - 196px - ${inputHeight}px)` }}
 				>
 					<div className="w-11/12 lg:w-5/6">
 						<div className="mb-4 flex-1 space-y-4">{renderedMessages}</div>

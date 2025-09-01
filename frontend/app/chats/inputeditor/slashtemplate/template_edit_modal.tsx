@@ -9,6 +9,7 @@ import { type PreProcessorCall, type PromptVariable, VarSource, VarType } from '
 import {
 	computeEffectiveTemplate,
 	computeRequirements,
+	effectiveVarValueLocal,
 	type TemplateSelectionElementNode,
 	type ToolState,
 } from '@/chats/inputeditor/slashtemplate/template_processing';
@@ -45,7 +46,7 @@ export function TemplateEditModal({
 	const [varValues, setVarValues] = React.useState<Record<string, unknown>>(() => {
 		const vals: Record<string, unknown> = { ...tsenode.variables };
 		for (const v of variablesSchema) {
-			const val = effectiveVarValueSafe(v, tsenode.variables, tsenode.toolStates);
+			const val = effectiveVarValueLocal(v, tsenode.variables, tsenode.toolStates);
 			if (val !== undefined) vals[v.name] = val;
 		}
 		return vals;
@@ -86,7 +87,7 @@ export function TemplateEditModal({
 
 		const vals: Record<string, unknown> = { ...tsenode.variables };
 		for (const v of varsSchema) {
-			const val = effectiveVarValueSafe(v, tsenode.variables, tsenode.toolStates);
+			const val = effectiveVarValueLocal(v, tsenode.variables, tsenode.toolStates);
 			if (val !== undefined) vals[v.name] = val;
 		}
 		setVarValues(vals);
@@ -558,14 +559,30 @@ function PreProcessorRow({
 }) {
 	const [argsText, setArgsText] = React.useState<string>(JSON.stringify(args ?? {}, null, 2));
 	const [jsonError, setJsonError] = React.useState<string | undefined>();
+	const debounceRef = React.useRef<number | null>(null);
 
 	// Keep in sync when parent args change
 	React.useEffect(() => {
-		const next = JSON.stringify(args ?? {}, null, 2);
-		setArgsText(next);
-		setJsonError(undefined);
-		onValidityChange?.(true);
-	}, [args, onValidityChange]);
+		if (debounceRef.current) window.clearTimeout(debounceRef.current);
+		debounceRef.current = window.setTimeout(() => {
+			try {
+				if (argsText.trim() === '') {
+					setJsonError(undefined);
+					onValidityChange?.(true);
+				} else {
+					JSON.parse(argsText);
+					setJsonError(undefined);
+					onValidityChange?.(true);
+				}
+			} catch {
+				setJsonError('Invalid JSON');
+				onValidityChange?.(false);
+			}
+		}, 200);
+		return () => {
+			if (debounceRef.current) window.clearTimeout(debounceRef.current);
+		};
+	}, [argsText, onValidityChange]);
 
 	// Validate as user types so parent can disable Save if invalid
 	React.useEffect(() => {
@@ -650,37 +667,15 @@ function PreProcessorRow({
 						setArgsText(e.target.value);
 					}}
 					onBlur={handleBlur}
+					aria-invalid={Boolean(jsonError)}
 					spellCheck={false}
 				/>
 				{jsonError && (
-					<div className="text-error mt-1 flex items-center gap-1 text-xs">
+					<div className="text-error mt-1 flex items-center gap-1 text-xs" aria-live="polite">
 						<FiAlertCircle size={12} /> {jsonError}
 					</div>
 				)}
 			</div>
 		</div>
 	);
-}
-
-// Safe wrapper to avoid circular import of VarType/VarSource enums in UI file
-function effectiveVarValueSafe(
-	varDef: PromptVariable,
-	userValues: Record<string, unknown>,
-	toolStates?: Record<string, ToolState>
-): unknown {
-	// Inline minimal effective logic to avoid re-import if desired
-	if (userValues[varDef.name] !== undefined && userValues[varDef.name] !== null) {
-		return userValues[varDef.name];
-	}
-	if (varDef.source === VarSource.Static && varDef.staticVal !== undefined) {
-		return varDef.staticVal;
-	}
-	if (varDef.default !== undefined && varDef.default !== '') {
-		return varDef.default;
-	}
-	if (toolStates) {
-		const hit = Object.values(toolStates).find(st => st.result !== undefined);
-		if (hit?.result !== undefined) return hit.result;
-	}
-	return undefined;
 }

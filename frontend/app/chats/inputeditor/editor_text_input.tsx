@@ -1,10 +1,10 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
-import { SingleBlockPlugin, type Value } from 'platejs';
-import { Plate, PlateContent, type PlateEditor, usePlateEditor } from 'platejs/react';
+import { SingleBlockPlugin } from 'platejs';
+import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 import { FiSend } from 'react-icons/fi';
 
-import { cssEscape, expandTabsToSpaces } from '@/lib/text_utils';
+import { cssEscape } from '@/lib/text_utils';
 
 import { useEnterSubmit } from '@/hooks/use_enter_submit';
 
@@ -20,19 +20,18 @@ import { ListKit } from '@/components/editor/plugins/list_kit';
 import { TabbableKit } from '@/components/editor/plugins/tabbable_kit';
 
 import {
-	buildUserInlineChildrenFromText,
-	toPlainTextReplacingVariables,
-} from '@/chats/inputeditor/slashtemplate/tempalte_variables_inline';
-import { TemplateSlashKit } from '@/chats/inputeditor/slashtemplate/template_plugin';
-import {
-	getLastUserBlockContent,
-	type SelectedTemplateForRun,
-} from '@/chats/inputeditor/slashtemplate/template_processing';
-import {
+	compareEntryByPathDeepestFirst,
+	EMPTY_VALUE,
 	getFirstTemplateNodeWithPath,
 	getTemplateNodesWithPath,
 	getTemplateSelections,
-} from '@/chats/inputeditor/slashtemplate/template_slash_selection';
+	hasNonEmptyUserText,
+	insertPlainTextAsSingleBlock,
+	toPlainTextReplacingVariables,
+} from '@/chats/inputeditor/slashtemplate/editor_utils';
+import { buildUserInlineChildrenFromText } from '@/chats/inputeditor/slashtemplate/tempalte_variables_inline';
+import { TemplateSlashKit } from '@/chats/inputeditor/slashtemplate/template_plugin';
+import { getLastUserBlockContent } from '@/chats/inputeditor/slashtemplate/template_processing';
 import { TemplateToolbars } from '@/chats/inputeditor/slashtemplate/template_toolbars';
 
 export interface EditorTextInputHandle {
@@ -41,25 +40,8 @@ export interface EditorTextInputHandle {
 
 interface EditorTextInputProps {
 	isBusy: boolean;
-	onSubmit: (text: string) => void;
+	onSubmit: (text: string) => Promise<void>;
 	setInputHeight: React.Dispatch<React.SetStateAction<number>>;
-}
-
-const EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
-
-function insertPlainTextAsSingleBlock(ed: ReturnType<typeof usePlateEditor>, text: string, tabSize = 2) {
-	if (!ed) {
-		return;
-	}
-	const editor = ed as PlateEditor;
-	const normalized = text.replace(/\r\n?/g, '\n');
-	const lines = normalized.split('\n').map(l => expandTabsToSpaces(l, tabSize));
-
-	editor.tf.insertText(lines[0] ?? '');
-	for (let i = 1; i < lines.length; i++) {
-		editor.tf.insertSoftBreak();
-		editor.tf.insertText(lines[i]);
-	}
 }
 
 const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
@@ -88,32 +70,34 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 		const editorRef = useRef(editor);
 		editorRef.current = editor; // keep a live ref for key handlers
 
-		// Track plain text for enabling/disabling send button
-		const [plainText, setPlainText] = useState<string>('');
 		// doc version tick to re-run selection computations on any editor change (even if text string doesn't change)
 		const [docVersion, setDocVersion] = useState(0);
 
 		const lastPopulatedSelectionKeyRef = useRef<Set<string>>(new Set());
 
-		// Compute selection info from the editor value; re-run whenever the doc changes
 		const selectionInfo = useMemo(() => {
-			// First (primary) template selection, if any
 			const tplNodeWithPath = getFirstTemplateNodeWithPath(editor);
 			const selections = getTemplateSelections(editor);
-			let primary: SelectedTemplateForRun | undefined;
+			const hasTemplate = selections.length > 0;
+
+			let requiredCount = 0;
 			let pendingTools = 0;
-			if (selections.length > 0) {
-				primary = selections[0];
-				pendingTools = primary.toolsToRun.filter(t => t.status === 'pending').length;
+			let firstPendingVar: { name: string; selectionID?: string } | undefined = undefined;
+
+			for (const s of selections) {
+				requiredCount += s.requiredCount;
+				pendingTools += s.toolsToRun.filter(t => t.status === 'pending').length;
+				if (!firstPendingVar && s.requiredVariables.length > 0) {
+					firstPendingVar = { name: s.requiredVariables[0], selectionID: s.selectionID };
+				}
 			}
 
 			return {
-				primary,
 				tplNodeWithPath,
-				hasTemplate: selections.length > 0,
-				requiredCount: primary?.requiredCount ?? 0,
+				hasTemplate,
+				requiredCount,
 				pendingTools,
-				firstPendingVar: primary?.requiredVariables[0],
+				firstPendingVar,
 			};
 		}, [editor, docVersion]);
 
@@ -124,7 +108,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 				if (hasTemplate) {
 					return selectionInfo.requiredCount === 0 && selectionInfo.pendingTools === 0;
 				}
-				return plainText.trim().length > 0;
+				return hasNonEmptyUserText(editorRef.current);
 			},
 
 			insertSoftBreak: () => {
@@ -155,8 +139,8 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 			if (selectionInfo.hasTemplate) {
 				return selectionInfo.requiredCount === 0 && selectionInfo.pendingTools === 0;
 			}
-			return plainText.trim().length > 0;
-		}, [isBusy, selectionInfo, plainText]);
+			return hasNonEmptyUserText(editorRef.current);
+		}, [isBusy, selectionInfo, docVersion]);
 
 		// Populate editor with effective last-USER block for EACH template selection (once per selectionID)
 		useEffect(() => {
@@ -164,7 +148,10 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 			const nodes = getTemplateNodesWithPath(editor);
 			const insertedIds: string[] = [];
 
-			for (const [tsenode, tsPath] of nodes) {
+			// Process in reverse document order to keep captured paths valid
+			const nodesRev = [...nodes].sort(compareEntryByPathDeepestFirst);
+
+			for (const [tsenode, originalPath] of nodesRev) {
 				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 				if (!tsenode || !tsenode.selectionID) continue;
 				const selectionID: string = tsenode.selectionID;
@@ -176,7 +163,9 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 
 				try {
 					editor.tf.withoutNormalizing(() => {
-						const pathArr = Array.isArray(tsPath) ? (tsPath as number[]) : [];
+						// Recompute a fresh path to guard against prior insertions shifting indices
+						const pathArr = Array.isArray(originalPath) ? (originalPath as number[]) : [];
+
 						if (pathArr.length >= 2) {
 							const blockPath = pathArr.slice(0, pathArr.length - 1); // parent paragraph path
 							const indexAfter = pathArr[pathArr.length - 1] + 1;
@@ -199,7 +188,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 			// Focus first variable pill of the last inserted selection (if any)
 			if (insertedIds.length > 0) {
 				const focusId = insertedIds[insertedIds.length - 1];
-				setTimeout(() => {
+				requestAnimationFrame(() => {
 					try {
 						const sel = contentRef.current?.querySelector(
 							`span[data-template-variable][data-selection-id="${cssEscape(focusId)}"]`
@@ -212,7 +201,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 					} catch {
 						editor.tf.focus();
 					}
-				}, 0);
+				});
 			}
 		}, [editor, docVersion]);
 
@@ -225,10 +214,11 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 					window.dispatchEvent(new CustomEvent('tpl-toolbar:flash'));
 
 					// Focus first pending variable pill (if any)
-					const varName = selectionInfo.firstPendingVar;
-					if (varName && contentRef.current) {
+					const fpv = selectionInfo.firstPendingVar;
+					if (fpv?.name && contentRef.current) {
+						const idSegment = fpv.selectionID ? `[data-selection-id="${cssEscape(fpv.selectionID)}"]` : '';
 						const sel = contentRef.current.querySelector(
-							`span[data-template-variable][data-var-name="${cssEscape(varName)}"]`
+							`span[data-template-variable][data-var-name="${cssEscape(fpv.name)}"]${idSegment}`
 						);
 						if (sel && 'focus' in sel && typeof sel.focus === 'function') {
 							sel.focus();
@@ -250,17 +240,20 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 			if (hasTpl) {
 				textToSend += '\n\nprompts:\n' + JSON.stringify(promptsToSend, null, 2);
 			}
-			try {
-				onSubmit(textToSend);
-			} finally {
-				// Clear editor and state after submitting
-				editor.tf.setValue(EMPTY_VALUE);
-				lastPopulatedSelectionKeyRef.current.clear();
+			// Fire and hold guard until resolved, but keep "clear immediately".
+			const submitPromise = onSubmit(textToSend).catch(() => {
+				/* swallow, guard released below */
+			});
 
-				// Focus back into the editor
-				editor.tf.focus();
+			// Clear editor and state right away
+			editor.tf.setValue(EMPTY_VALUE);
+			lastPopulatedSelectionKeyRef.current.clear();
+			editor.tf.focus();
+
+			// Release guard only after onSubmit resolves
+			submitPromise.finally(() => {
 				isSubmittingRef.current = false;
-			}
+			});
 		};
 
 		useImperativeHandle(ref, () => ({
@@ -278,7 +271,6 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 				<Plate
 					editor={editor}
 					onChange={() => {
-						setPlainText(editor.api.string([]));
 						setDocVersion(v => v + 1); // tick any time the doc changes
 					}}
 				>
