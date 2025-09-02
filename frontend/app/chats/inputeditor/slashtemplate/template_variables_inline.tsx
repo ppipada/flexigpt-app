@@ -23,6 +23,7 @@ import {
 	effectiveVarValueLocal,
 	type TemplateSelectionElementNode,
 } from '@/chats/inputeditor/slashtemplate/template_processing';
+import { EnumDropdownInline } from '@/chats/inputeditor/slashtemplate/template_variable_enum_dropdown';
 
 function findTemplateNode(
 	editor: PlateEditor,
@@ -134,7 +135,6 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 					cancelEdit();
 				}
 				if (e.key === 'Enter') {
-					// For inputs where Enter is meaningful, we commit. Select/checkbox commit on change anyway.
 					e.preventDefault();
 					const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 					if (type === VarType.Number) {
@@ -195,31 +195,6 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 			);
 		}
 
-		if (type === VarType.Enum) {
-			return (
-				<select
-					autoFocus
-					className="select select-ghost select-xs w-32 min-w-24 bg-transparent"
-					aria-label={`Select ${el.name}`}
-					defaultValue={currentValue === undefined || currentValue === null ? '' : (currentValue as string)}
-					onChange={e => {
-						commitValue(e.target.value || undefined);
-					}}
-					onBlur={() => {
-						cancelEdit();
-					}}
-					{...commonProps}
-				>
-					<option value="">-- select --</option>
-					{(varDef?.enumValues ?? []).map(opt => (
-						<option value={opt} key={opt}>
-							{opt}
-						</option>
-					))}
-				</select>
-			);
-		}
-
 		if (type === VarType.Date) {
 			return (
 				<input
@@ -273,9 +248,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 			data-var-name={el.name}
 			data-selection-id={el.selectionID}
 			data-state={isMissing ? 'required' : 'ready'}
-			className={`badge inline-flex items-center gap-1 whitespace-nowrap select-none ${
-				isMissing ? 'badge-warning' : 'badge-success'
-			}`}
+			className={`badge badge-sm gap-1 py-0 whitespace-nowrap select-none ${isMissing ? 'badge-warning' : 'badge-success'}`}
 			title={isEditing ? `Editing: ${el.name}` : isMissing ? `Required: ${el.name}` : `Variable: ${el.name}`}
 			onKeyDown={e => {
 				// Enter toggles inline edit; Esc handled inside edit
@@ -296,12 +269,41 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 		>
 			{isEditing ? (
 				<div className="flex items-center gap-1">
-					<InlineEditor />
+					{/* For enum type only, add a key to force a fresh instance when things change */}
+					{varDef?.type === VarType.Enum ? (
+						<EnumDropdownInline
+							key={`enum-${el.selectionID}-${el.name}-${refreshTick}`}
+							options={varDef?.enumValues ?? []}
+							value={
+								currentValue === undefined || currentValue === null || currentValue === ''
+									? undefined
+									: // eslint-disable-next-line @typescript-eslint/no-base-to-string
+										String(currentValue)
+							}
+							onChange={val => {
+								commitValue(val);
+							}}
+							withinSlate
+							autoOpen
+							onCancel={cancelEdit}
+							size="xs"
+							triggerClassName="btn btn-ghost btn-xs font-normal w-40 min-w-24 justify-between truncate bg-transparent"
+							placeholder="-- select --"
+							clearLabel="Clear"
+						/>
+					) : (
+						<InlineEditor />
+					)}
 				</div>
 			) : (
-				<span className="flex items-center gap-1">
-					<span className="font-medium">{el.name}</span>
-					<FiEdit2 className="opacity-70" size={12} />
+				<span className="flex items-center gap-1 font-mono text-xs">
+					<span>{el.name}</span>
+					{currentValue !== undefined && currentValue !== null && (
+						<span className="ml-1">
+							= <span>{currentValue as string}</span>
+						</span>
+					)}
+					<FiEdit2 size={10} />
 				</span>
 			)}
 			{children}

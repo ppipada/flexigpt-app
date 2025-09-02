@@ -7,9 +7,9 @@ import {
 	KEY_TEMPLATE_SLASH_INPUT,
 	KEY_TEMPLATE_VARIABLE,
 } from '@/chats/inputeditor/slashtemplate/editor_utils';
-import { TemplateVariableElement } from '@/chats/inputeditor/slashtemplate/tempalte_variables_inline';
 import { TemplateSlashInputElement } from '@/chats/inputeditor/slashtemplate/template_slash_input';
 import { TemplateSelectionElement } from '@/chats/inputeditor/slashtemplate/template_slash_selection';
+import { TemplateVariableElement } from '@/chats/inputeditor/slashtemplate/template_variables_inline';
 
 type TemplateSlashConfig = PluginConfig<typeof KEY_TEMPLATE_SLASH_COMMAND, TriggerComboboxPluginOptions>;
 

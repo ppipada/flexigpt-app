@@ -12,11 +12,12 @@
     - [x] slash command plumbing
     - [x] prompt templates via slash command
 
-    - [ ] prompt visual filling via toolbar
+    - [x] prompt visual filling via toolbar
 
-      - [ ] prompt toolbar/editing implementation
-      - [ ] system prompt updates from prompts
-      - [ ] may be allow expand/decompose for prompts user message
+      - [x] prompt toolbar/editing implementation
+      - [x] system prompt updates from prompts
+      - [x] may be allow expand/decompose for prompts user message
+      - [ ] toolbar outline and stacking with shadows and round corners styling
 
     - [ ] prompt and tool processing for ai completion call
 
@@ -24,7 +25,7 @@
       - [ ] for tools atleast prompt/text may be needed
 
     - [ ] tools via slash command
-    - [ ] check if proper memo etc is there for usetempaltes and use tools etc
+    - [x] check if proper memo etc is there for usetempaltes and use tools etc
 
     - [ ] tools slash command hooking, tools should be added to bottom of the editor rather than inline
 

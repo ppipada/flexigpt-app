@@ -31,10 +31,10 @@ import {
 	insertPlainTextAsSingleBlock,
 	toPlainTextReplacingVariables,
 } from '@/chats/inputeditor/slashtemplate/editor_utils';
-import { buildUserInlineChildrenFromText } from '@/chats/inputeditor/slashtemplate/tempalte_variables_inline';
 import { TemplateSlashKit } from '@/chats/inputeditor/slashtemplate/template_plugin';
 import { getLastUserBlockContent } from '@/chats/inputeditor/slashtemplate/template_processing';
 import { TemplateToolbars } from '@/chats/inputeditor/slashtemplate/template_toolbars';
+import { buildUserInlineChildrenFromText } from '@/chats/inputeditor/slashtemplate/template_variables_inline';
 
 export interface EditorTextInputHandle {
 	focus: () => void;

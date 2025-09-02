@@ -16,6 +16,7 @@ import {
 	type TemplateSelectionElementNode,
 	type ToolState,
 } from '@/chats/inputeditor/slashtemplate/template_processing';
+import { EnumDropdownInline } from '@/chats/inputeditor/slashtemplate/template_variable_enum_dropdown';
 
 export function TemplateEditModal({
 	open,
@@ -476,27 +477,28 @@ function VariableEditorRow({
 				</div>
 			);
 
+		// 1) Import at the top
+		// import { EnumDropdownInline } from '@/components/EnumDropdownInline';
+
 		case VarType.Enum:
 			return (
 				<div className="grid grid-cols-12 items-center gap-3">
 					{labelCol}
 					<div className="col-span-12 md:col-span-8">
-						<select
-							id={id}
-							className="select select-bordered select-sm w-full rounded-xl"
-							value={value === undefined || value === null ? '' : (value as string)}
-							disabled={isDisabled}
-							onChange={e => {
-								onChange(e.target.value || undefined);
+						<EnumDropdownInline
+							options={varDef.enumValues ?? []}
+							// eslint-disable-next-line @typescript-eslint/no-base-to-string
+							value={value === undefined || value === null ? undefined : String(value)}
+							onChange={val => {
+								onChange(val);
 							}}
-						>
-							<option value="">-- select --</option>
-							{(varDef.enumValues ?? []).map(opt => (
-								<option value={opt} key={opt}>
-									{opt}
-								</option>
-							))}
-						</select>
+							disabled={isDisabled}
+							size="sm"
+							triggerClassName="btn btn-ghost btn-sm w-full justify-between overflow-hidden"
+							placeholder="-- select --"
+							clearLabel="Clear"
+							// autoOpen={false} // default
+						/>
 						{commonHelp}
 					</div>
 				</div>
