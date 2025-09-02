@@ -2,16 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { FiChevronDown, FiChevronUp, FiMoreHorizontal } from 'react-icons/fi';
 
-type TipKey = 'lastWins' | 'remove' | 'collapse' | 'edit' | 'multi';
+type TipKey = 'lastWins' | 'remove' | 'collapse';
 
 const tipsText: Record<TipKey, string> = {
 	lastWins: 'Last system prompt wins: when multiple templates add system prompts, the last one added becomes active.',
 	remove: 'Removing a template also removes the system prompt that came from it (if it was created by that template).',
 	collapse:
-		'Collapse to text decouples the system prompt: it stays saved and currently selected, but no longer tied to that template.',
-	edit: 'You can edit the system prompt in the template edit modal. Saving sets it as the current system prompt.',
-	multi:
-		'In multi-template scenarios: last added template’s system prompt wins. Flattening unlinks; removing deletes only the template-created prompt.',
+		'Collapse to text decouples removes the system prompts, vars, tools. The current user block with placeholders for vars is inserted as plain text',
 };
 
 const CommandTipsBar: React.FC = () => {
@@ -23,8 +20,6 @@ const CommandTipsBar: React.FC = () => {
 			{ key: 'lastWins' as TipKey, title: 'Last system prompt wins', description: tipsText.lastWins },
 			{ key: 'remove' as TipKey, title: 'Removing a template', description: tipsText.remove },
 			{ key: 'collapse' as TipKey, title: 'Collapse to text decouples', description: tipsText.collapse },
-			{ key: 'edit' as TipKey, title: 'Edit the system prompt', description: tipsText.edit },
-			{ key: 'multi' as TipKey, title: 'Multi-template scenarios', description: tipsText.multi },
 		],
 		[]
 	);

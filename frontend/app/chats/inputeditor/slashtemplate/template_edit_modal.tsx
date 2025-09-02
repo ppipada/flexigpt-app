@@ -8,7 +8,7 @@ import type { PlateEditor } from 'platejs/react';
 
 import { type PreProcessorCall, type PromptVariable, VarSource, VarType } from '@/spec/prompt';
 
-import { dispatchTemplateVarsUpdated } from '@/chats/inputeditor/slashtemplate/template_events';
+import { dispatchTemplateVarsUpdated } from '@/chats/events/template_toolbar_vars_updated';
 import {
 	computeEffectiveTemplate,
 	computeRequirements,

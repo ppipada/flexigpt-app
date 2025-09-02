@@ -1,4 +1,4 @@
-import { FiCheck, FiMaximize2, FiTool, FiX } from 'react-icons/fi';
+import { FiCheck, FiEdit2, FiMaximize2, FiTool, FiUpload, FiX } from 'react-icons/fi';
 
 import { PromptRoleEnum } from '@/spec/prompt';
 
@@ -10,96 +10,131 @@ export function TemplateFixedToolbar(props: {
 	onOpenModal: () => void;
 	onRemove: () => void;
 	onFlatten: () => void;
+	onSetAsSystemPrompt: () => void;
 }) {
-	const { selection, flashing, onOpenModal, onRemove, onFlatten } = props;
+	const { selection, flashing, onOpenModal, onRemove, onFlatten, onSetAsSystemPrompt } = props;
 
 	const templateName =
 		selection.template.displayName || selection.templateSlug || selection.template.slug || 'Template';
 
-	const varBadge =
-		selection.requiredCount > 0 ? (
-			<span
-				className="badge badge-warning"
-				title="Required variables pending"
-			>{`pending ${selection.requiredCount} vars`}</span>
-		) : (
-			<span className="badge badge-success" title="All variables provided">
-				vars ok
-			</span>
-		);
-
 	const totalTools = selection.toolsToRun.length;
 	const pendingTools = selection.toolsToRun.filter(t => t.status === 'pending').length;
-	const toolsBadge =
-		totalTools > 0 ? (
-			<span
-				className={`badge ${pendingTools > 0 ? 'badge-info' : 'badge-success'}`}
-				title={pendingTools > 0 ? `${pendingTools} tools pending` : 'All tools ready/done'}
-			>
-				<FiTool className="mr-1" /> {totalTools} tool{totalTools === 1 ? '' : 's'}
-			</span>
-		) : (
-			<span className="badge" title="No tools configured">
-				<FiTool className="mr-1" /> 0 tool
-			</span>
-		);
 
 	const hasSystemBlock = selection.blocks.some(
 		b => [PromptRoleEnum.Developer, PromptRoleEnum.System].includes(b.role) && b.content.trim() !== ''
 	);
-	const systemBadge = hasSystemBlock ? (
-		<span className="badge badge-success" title="Template contains a system/dev prompt block">
-			<FiCheck className="mr-1" /> system
-		</span>
-	) : (
-		<span className="badge" title="No system/dev prompt block in template">
-			system ✕
-		</span>
-	);
 
 	return (
 		<div
-			className={`flex w-full items-center gap-3 border-b px-3 py-2 ${
+			className={`flex w-full items-center gap-3 border-b px-2 py-0 ${
 				flashing ? 'ring-error rounded-t-2xl ring ring-offset-0' : ''
 			}`}
 			data-template-toolbar
 		>
-			{/* Clickable area opens modal (except buttons on the right) */}
-			<button
-				type="button"
-				className="btn btn-ghost btn-sm no-animation flex items-center gap-3"
-				onClick={onOpenModal}
-				title="Open template editor"
-			>
-				<span className="font-medium">{templateName}</span>
-				{varBadge}
-				{systemBadge}
-				{toolsBadge}
-			</button>
+			<span className="text-xs" title={templateName}>
+				{templateName.length > 32 ? templateName.slice(0, 32) + '...' : templateName}
+			</span>
 
+			<div
+				className={`flex items-center gap-1 rounded-2xl px-2 py-0 ${selection.variablesSchema.length > 0 ? (selection.requiredCount > 0 ? 'bg-warning' : 'bg-success') : 'bg-base-200'}`}
+			>
+				{selection.variablesSchema.length > 0 ? (
+					<>
+						<span
+							className="flex items-center gap-1 px-2 py-0 text-sm"
+							title={selection.requiredCount > 0 ? `pending ${selection.requiredCount} vars` : 'All vars provided'}
+						>
+							{selection.variablesSchema.length} var{selection.variablesSchema.length === 1 ? '' : 's'}:{' '}
+							{`pending ${selection.requiredCount}`}
+						</span>
+					</>
+				) : (
+					<span className="flex items-center gap-1 px-2 py-0 text-sm" title="No vars configured">
+						0 vars <FiX />
+					</span>
+				)}
+			</div>
+
+			<div
+				className={`flex items-center gap-1 rounded-2xl px-2 py-0 ${totalTools > 0 ? (pendingTools > 0 ? 'bg-info' : 'bg-success') : 'bg-base-200'}`}
+			>
+				{totalTools > 0 ? (
+					<>
+						<span
+							className="flex items-center gap-1 px-2 py-0 text-sm"
+							title={pendingTools > 0 ? `${pendingTools} tools pending` : 'All tools ready/done'}
+						>
+							{totalTools} tool{totalTools === 1 ? '' : 's'} <FiTool />
+						</span>
+					</>
+				) : (
+					<span className="flex items-center gap-1 px-2 py-0 text-sm" title="No tools configured">
+						0 tools <FiX />
+					</span>
+				)}
+			</div>
+
+			<div className={`flex items-center gap-1 rounded-2xl px-2 py-0 ${hasSystemBlock ? 'bg-success' : 'bg-base-200'}`}>
+				{hasSystemBlock ? (
+					<>
+						<span
+							className="flex items-center gap-1 px-2 py-0 text-sm"
+							title="Template contains a system/dev prompt block"
+						>
+							system <FiCheck />
+						</span>
+						<button
+							type="button"
+							className="btn btn-xs shrink-0 items-center border-none bg-transparent px-2 py-0"
+							onClick={onSetAsSystemPrompt}
+							title="Set system prompt for chat"
+							aria-label="Set system prompt for chat"
+							disabled={!hasSystemBlock}
+						>
+							<FiUpload />
+						</button>
+					</>
+				) : (
+					<span
+						className="flex items-center gap-1 px-2 py-0 text-sm"
+						title="Template contains a system/dev prompt block"
+					>
+						system <FiX />
+					</span>
+				)}
+			</div>
 			<div className="grow" />
+			<div className="flex items-center gap-2 px-2 py-0">
+				<button
+					type="button"
+					className="btn btn-ghost btn-sm shrink-0 px-2 py-0 shadow-none"
+					onClick={onOpenModal}
+					title="Edit in template editor"
+				>
+					<FiEdit2 />
+				</button>
+				{/* Expand to plain text */}
+				<button
+					type="button"
+					className="btn btn-ghost btn-sm shrink-0 px-2 py-0 shadow-none"
+					onClick={onFlatten}
+					title="Convert chips into plain text"
+					aria-label="Convert template chips into plain text"
+				>
+					<FiMaximize2 />
+				</button>
 
-			{/* Expand to plain text */}
-			<button
-				type="button"
-				className="btn btn-ghost btn-sm"
-				onClick={onFlatten}
-				title="Convert chips into plain text"
-				aria-label="Convert template chips into plain text"
-			>
-				<FiMaximize2 />
-			</button>
-
-			{/* Remove template */}
-			<button
-				type="button"
-				className="btn btn-ghost btn-sm text-error"
-				onClick={onRemove}
-				title="Remove template"
-				aria-label="Remove template"
-			>
-				<FiX />
-			</button>
+				{/* Remove template */}
+				<button
+					type="button"
+					className="btn btn-ghost btn-sm text-error shrink-0 px-2 py-0"
+					onClick={onRemove}
+					title="Remove template"
+					aria-label="Remove template"
+				>
+					<FiX />
+				</button>
+			</div>
 		</div>
 	);
 }

@@ -18,6 +18,7 @@ import SystemPromptDropdown, {
 	type SystemPromptItem,
 } from '@/chats/assitantcontext/system_prompt';
 import TemperatureDropdown from '@/chats/assitantcontext/temperature_dropdown';
+import { useSetSystemPromptForChat } from '@/chats/events/set_system_prompt';
 
 type AssistantContextBarProps = {
 	onOptionsChange: (options: ChatOption) => void;
@@ -196,10 +197,16 @@ const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChan
 			return prev.filter(i => i.id !== id);
 		});
 	}, []);
+
+	useSetSystemPromptForChat(prompt => {
+		const p = (prompt || '').trim();
+		if (!p) return;
+		setSystemPrompts(prev => (prev.some(i => i.prompt === p) ? prev : [...prev, createSystemPromptItem(p)]));
+		setSelectedModel(prev => ({ ...prev, systemPrompt: p }));
+	});
+
 	return (
 		<div className="bg-base-200 mx-4 mb-1 flex items-center justify-between">
-			{/* --------------------------- Model dropdown ----------------------- */}
-
 			<ModelDropdown
 				ref={modelDetailsRef}
 				selectedModel={selectedModel}

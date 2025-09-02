@@ -3,6 +3,13 @@ import * as React from 'react';
 import { NodeApi, type Path, type TElement, type TNode } from 'platejs';
 import { type PlateEditor, useEditorRef } from 'platejs/react';
 
+import { PromptRoleEnum } from '@/spec/prompt';
+
+import { replaceDoubleBraces } from '@/lib/text_utils';
+
+import { dispatchSetSystemPromptForChat } from '@/chats/events/set_system_prompt';
+import { useTemplateFlashEvent } from '@/chats/events/template_flash';
+import { dispatchTemplateVarsUpdated } from '@/chats/events/template_toolbar_vars_updated';
 import {
 	comparePathDeepestFirst,
 	getTemplateNodesWithPath,
@@ -11,7 +18,6 @@ import {
 	KEY_TEMPLATE_VARIABLE,
 } from '@/chats/inputeditor/slashtemplate/editor_utils';
 import { TemplateEditModal } from '@/chats/inputeditor/slashtemplate/template_edit_modal';
-import { dispatchTemplateVarsUpdated, useTemplateFlashEvent } from '@/chats/inputeditor/slashtemplate/template_events';
 import type { TemplateSelectionElementNode } from '@/chats/inputeditor/slashtemplate/template_processing';
 import { TemplateFixedToolbar } from '@/chats/inputeditor/slashtemplate/template_toolbar_fixed';
 
@@ -163,6 +169,15 @@ function removeSelection(
 	editor.tf.focus();
 }
 
+function buildSystemPromptFromSelection(sel: ReturnType<typeof getTemplateSelections>[number]): string {
+	// include both System and Developer blocks (order preserved)
+	const sysOrDev = sel.blocks.filter(b => [PromptRoleEnum.Developer, PromptRoleEnum.System].includes(b.role));
+	if (sysOrDev.length === 0) return '';
+	const vv = sel.variableValues;
+	const parts = sysOrDev.map(b => replaceDoubleBraces(b.content, vv));
+	return parts.join('\n\n');
+}
+
 export function TemplateToolbars() {
 	const editor = useEditorRef() as PlateEditor;
 	const flashAll = useTemplateFlashEvent();
@@ -209,6 +224,12 @@ export function TemplateToolbars() {
 							}}
 							onRemove={() => {
 								removeSelection(editor, sel.bundleID, sel.templateSlug, sel.templateVersion, tsPath);
+							}}
+							onSetAsSystemPrompt={() => {
+								const prompt = buildSystemPromptFromSelection(sel).trim();
+								if (prompt) {
+									dispatchSetSystemPromptForChat(prompt);
+								}
 							}}
 							onFlatten={() => {
 								editor.tf.withoutNormalizing(() => {

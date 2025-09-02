@@ -9,14 +9,14 @@ import type { PlateEditor, PlateElementProps } from 'platejs/react';
 import { VarType } from '@/spec/prompt';
 
 import {
+	dispatchTemplateVarsUpdated,
+	useTemplateVarsUpdatedForSelection,
+} from '@/chats/events/template_toolbar_vars_updated';
+import {
 	KEY_TEMPLATE_SELECTION,
 	KEY_TEMPLATE_VARIABLE,
 	type TemplateVariableElementNode,
 } from '@/chats/inputeditor/slashtemplate/editor_utils';
-import {
-	dispatchTemplateVarsUpdated,
-	useTemplateVarsUpdatedForSelection,
-} from '@/chats/inputeditor/slashtemplate/template_events';
 import {
 	computeEffectiveTemplate,
 	computeRequirements,

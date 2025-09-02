@@ -20,6 +20,7 @@ import { LineHeightKit } from '@/components/editor/plugins/line_height_kit';
 import { ListKit } from '@/components/editor/plugins/list_kit';
 import { TabbableKit } from '@/components/editor/plugins/tabbable_kit';
 
+import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
 import {
 	compareEntryByPathDeepestFirst,
 	EMPTY_VALUE,
@@ -31,7 +32,6 @@ import {
 	toPlainTextReplacingVariables,
 } from '@/chats/inputeditor/slashtemplate/editor_utils';
 import { buildUserInlineChildrenFromText } from '@/chats/inputeditor/slashtemplate/tempalte_variables_inline';
-import { dispatchTemplateFlashEvent } from '@/chats/inputeditor/slashtemplate/template_events';
 import { TemplateSlashKit } from '@/chats/inputeditor/slashtemplate/template_plugin';
 import { getLastUserBlockContent } from '@/chats/inputeditor/slashtemplate/template_processing';
 import { TemplateToolbars } from '@/chats/inputeditor/slashtemplate/template_toolbars';
@@ -278,7 +278,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 				>
 					<TemplateToolbars />
 					{/* Row: send button (left) + editor (right, flex-1) */}
-					<div className="flex min-h-20 items-center gap-2 p-0">
+					<div className="flex min-h-16 items-center gap-2 p-0">
 						<PlateContent
 							ref={contentRef}
 							placeholder="Type message..."
@@ -297,7 +297,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 								fontSize: '14px',
 								whiteSpace: 'break-spaces',
 								tabSize: 2,
-								minHeight: '6rem',
+								minHeight: '4rem',
 							}}
 						/>
 						<button
