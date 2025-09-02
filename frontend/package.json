@@ -145,6 +145,8 @@
 		],
 		"importOrder": [
 			"^react$",
+			"^react-dom$",
+			"^react-icons/(.*)$",
 			"<THIRD_PARTY_MODULES>",
 			"^@/spec/(.*)$",
 			"^@/lib/(.*)$",

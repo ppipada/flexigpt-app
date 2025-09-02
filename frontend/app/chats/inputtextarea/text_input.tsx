@@ -2,6 +2,7 @@ import type { ChangeEvent, KeyboardEvent } from 'react';
 import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 
 import { FiSend } from 'react-icons/fi';
+
 import TextareaAutosize from 'react-textarea-autosize';
 
 export interface ChatTextInputHandle {

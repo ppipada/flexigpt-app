@@ -1,8 +1,9 @@
 import React from 'react';
 
+import { FiZap } from 'react-icons/fi';
+
 import { KEYS } from 'platejs';
 import type { PlateEditor } from 'platejs/react';
-import { FiZap } from 'react-icons/fi';
 
 import type { PromptTemplate } from '@/spec/prompt';
 

@@ -2,6 +2,7 @@
 import type { FC } from 'react';
 
 import { createPortal } from 'react-dom';
+
 import { FiAlertTriangle } from 'react-icons/fi';
 
 interface ActionDeniedAlertProps {

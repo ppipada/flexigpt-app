@@ -1,8 +1,10 @@
 import React from 'react';
 
-import type { PlateEditor } from 'platejs/react';
 import { createPortal } from 'react-dom';
+
 import { FiAlertCircle, FiHelpCircle, FiPlay, FiX } from 'react-icons/fi';
+
+import type { PlateEditor } from 'platejs/react';
 
 import { type PreProcessorCall, type PromptVariable, VarSource, VarType } from '@/spec/prompt';
 

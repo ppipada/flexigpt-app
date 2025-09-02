@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 
 import { FiCpu, FiDatabase, FiFilePlus, FiHome, FiMenu, FiMessageSquare, FiSettings, FiSliders } from 'react-icons/fi';
+
 import { Link } from 'react-router';
 
 import { FEATURE_FLAG_AGENTS, FEATURE_FLAG_DOCUMENT_STORES } from '@/lib/features';

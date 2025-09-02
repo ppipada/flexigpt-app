@@ -1,8 +1,9 @@
 import * as React from 'react';
 
+import { FiChevronDown } from 'react-icons/fi';
+
 import { cn } from '@udecode/cn';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { FiChevronDown } from 'react-icons/fi';
 
 /* Root toolbar */
 export const Toolbar = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(function Toolbar(

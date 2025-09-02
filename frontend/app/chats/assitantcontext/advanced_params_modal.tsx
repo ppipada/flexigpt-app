@@ -1,6 +1,7 @@
 import React, { type FC, useEffect, useState } from 'react';
 
 import { createPortal } from 'react-dom';
+
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
 import type { ChatOption } from '@/apis/chatoption_helper';

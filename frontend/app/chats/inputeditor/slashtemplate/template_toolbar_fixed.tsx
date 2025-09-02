@@ -1,4 +1,6 @@
-import { FiFileText, FiTool, FiX } from 'react-icons/fi';
+import { FiCheck, FiMaximize2, FiTool, FiX } from 'react-icons/fi';
+
+import { PromptRoleEnum } from '@/spec/prompt';
 
 import type { SelectedTemplateForRun } from '@/chats/inputeditor/slashtemplate/template_processing';
 
@@ -42,6 +44,19 @@ export function TemplateFixedToolbar(props: {
 			</span>
 		);
 
+	const hasSystemBlock = selection.blocks.some(
+		b => [PromptRoleEnum.Developer, PromptRoleEnum.System].includes(b.role) && b.content.trim() !== ''
+	);
+	const systemBadge = hasSystemBlock ? (
+		<span className="badge badge-success" title="Template contains a system/dev prompt block">
+			<FiCheck className="mr-1" /> system
+		</span>
+	) : (
+		<span className="badge" title="No system/dev prompt block in template">
+			system ✕
+		</span>
+	);
+
 	return (
 		<div
 			className={`flex w-full items-center gap-3 border-b px-3 py-2 ${
@@ -57,9 +72,8 @@ export function TemplateFixedToolbar(props: {
 				title="Open template editor"
 			>
 				<span className="font-medium">{templateName}</span>
-				<span className="opacity-60">·</span>
 				{varBadge}
-				<span className="opacity-60">·</span>
+				{systemBadge}
 				{toolsBadge}
 			</button>
 
@@ -73,7 +87,7 @@ export function TemplateFixedToolbar(props: {
 				title="Convert chips into plain text"
 				aria-label="Convert template chips into plain text"
 			>
-				<FiFileText />
+				<FiMaximize2 />
 			</button>
 
 			{/* Remove template */}

@@ -1,6 +1,7 @@
 import React, { forwardRef, useEffect, useMemo, useState } from 'react';
 
 import { createPortal } from 'react-dom';
+
 import { FiCheck, FiChevronDown, FiChevronUp, FiCopy, FiEdit2, FiPlus, FiTrash, FiX } from 'react-icons/fi';
 
 import { getUUIDv7 } from '@/lib/uuid_utils';

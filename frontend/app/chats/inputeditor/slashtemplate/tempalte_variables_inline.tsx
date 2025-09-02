@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import * as React from 'react';
 
+import { FiEdit2 } from 'react-icons/fi';
+
 import { NodeApi } from 'platejs';
 import type { PlateEditor, PlateElementProps } from 'platejs/react';
-import { FiEdit2 } from 'react-icons/fi';
 
 import { VarType } from '@/spec/prompt';
 

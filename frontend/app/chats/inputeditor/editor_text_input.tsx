@@ -1,8 +1,9 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
+import { FiSend } from 'react-icons/fi';
+
 import { SingleBlockPlugin } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
-import { FiSend } from 'react-icons/fi';
 
 import { cssEscape } from '@/lib/text_utils';
 
@@ -271,12 +272,12 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 				<Plate
 					editor={editor}
 					onChange={() => {
-						setDocVersion(v => v + 1); // tick any time the doc changes
+						setDocVersion(v => v + 1);
 					}}
 				>
 					<TemplateToolbars />
 					{/* Row: send button (left) + editor (right, flex-1) */}
-					<div className="flex items-center gap-2 px-2 py-1">
+					<div className="flex min-h-20 items-center gap-2 p-0">
 						<PlateContent
 							ref={contentRef}
 							placeholder="Type message..."
@@ -290,16 +291,17 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 								if (!text) return;
 								insertPlainTextAsSingleBlock(editor, text);
 							}}
-							className="max-h-64 min-h-[24px] min-w-0 flex-1 resize-none overflow-auto bg-transparent px-4 py-2 whitespace-break-spaces outline-none [tab-size:2] focus:outline-none"
+							className="max-h-96 min-w-0 flex-1 resize-none overflow-auto bg-transparent px-4 py-2 whitespace-break-spaces outline-none [tab-size:2] focus:outline-none"
 							style={{
 								fontSize: '14px',
 								whiteSpace: 'break-spaces',
 								tabSize: 2,
+								minHeight: '6rem',
 							}}
 						/>
 						<button
 							type="submit"
-							className={`btn btn-circle btn-ghost shrink-0 self-end ${!isSendButtonEnabled || isBusy ? 'btn-disabled' : ''}`}
+							className={`btn btn-circle btn-ghost shrink-0 ${!isSendButtonEnabled || isBusy ? 'btn-disabled' : ''}`}
 							disabled={isBusy || !isSendButtonEnabled}
 							aria-label="Send Message"
 							title="Send Message"

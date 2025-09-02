@@ -7,6 +7,7 @@ import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 
 import AssistantContextBar from '@/chats/assitantcontext/assistantcontext_bar';
+import CommandTipsBar from '@/chats/command_tips_bar';
 import EditorTextInput, { type EditorTextInputHandle } from '@/chats/inputeditor/editor_text_input';
 
 interface ChatInputFieldProps {
@@ -113,6 +114,10 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 						onSubmit={handleSubmitMessage}
 						setInputHeight={setInputHeight}
 					/>
+				</div>
+				{/* Neutral tips bar under the editor */}
+				<div className="mx-4 my-0">
+					<CommandTipsBar />
 				</div>
 			</div>
 		);

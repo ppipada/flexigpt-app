@@ -449,7 +449,7 @@ const ChatScreen: FC = () => {
 					</div>
 				</div>
 				{/* INPUT */}
-				<div className="fixed bottom-0 mb-3 flex w-11/12 justify-center lg:w-5/6">
+				<div className="fixed bottom-0 mb-2 flex w-11/12 justify-center lg:w-5/6">
 					<ChatInputField
 						ref={chatInputRef}
 						onSend={sendMessage}
