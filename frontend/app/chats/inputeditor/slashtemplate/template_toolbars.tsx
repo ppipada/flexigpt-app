@@ -11,35 +11,9 @@ import {
 	KEY_TEMPLATE_VARIABLE,
 } from '@/chats/inputeditor/slashtemplate/editor_utils';
 import { TemplateEditModal } from '@/chats/inputeditor/slashtemplate/template_edit_modal';
+import { dispatchTemplateVarsUpdated, useTemplateFlashEvent } from '@/chats/inputeditor/slashtemplate/template_events';
 import type { TemplateSelectionElementNode } from '@/chats/inputeditor/slashtemplate/template_processing';
 import { TemplateFixedToolbar } from '@/chats/inputeditor/slashtemplate/template_toolbar_fixed';
-
-function useFlashSignal() {
-	const [flashAll, setFlashAll] = React.useState(false);
-	const timeoutRef = React.useRef<number | null>(null);
-
-	React.useEffect(() => {
-		const handler = () => {
-			setFlashAll(true);
-			if (timeoutRef.current) {
-				window.clearTimeout(timeoutRef.current);
-			}
-			timeoutRef.current = window.setTimeout(() => {
-				setFlashAll(false);
-				timeoutRef.current = null;
-			}, 800);
-		};
-		window.addEventListener('tpl-toolbar:flash', handler);
-		return () => {
-			window.removeEventListener('tpl-toolbar:flash', handler);
-			if (timeoutRef.current) {
-				window.clearTimeout(timeoutRef.current);
-			}
-		};
-	}, []);
-
-	return flashAll;
-}
 
 type TplKey = string; // path-based unique key
 
@@ -191,7 +165,7 @@ function removeSelection(
 
 export function TemplateToolbars() {
 	const editor = useEditorRef() as PlateEditor;
-	const flashAll = useFlashSignal();
+	const flashAll = useTemplateFlashEvent();
 
 	// Build a stable mapping selection <-> its node+path by document order.
 	const selections = getTemplateSelections(editor);
@@ -249,11 +223,7 @@ export function TemplateToolbars() {
 								editor.tf.focus();
 								// Ensure any badges re-render if they were visible briefly.
 								if (nodeWithPath?.[0]?.selectionID) {
-									window.dispatchEvent(
-										new CustomEvent('tpl-vars:updated', {
-											detail: { selectionID: nodeWithPath[0].selectionID },
-										})
-									);
+									dispatchTemplateVarsUpdated(nodeWithPath[0].selectionID);
 								}
 							}}
 						/>

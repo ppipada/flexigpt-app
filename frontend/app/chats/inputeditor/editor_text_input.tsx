@@ -31,6 +31,7 @@ import {
 	toPlainTextReplacingVariables,
 } from '@/chats/inputeditor/slashtemplate/editor_utils';
 import { buildUserInlineChildrenFromText } from '@/chats/inputeditor/slashtemplate/tempalte_variables_inline';
+import { dispatchTemplateFlashEvent } from '@/chats/inputeditor/slashtemplate/template_events';
 import { TemplateSlashKit } from '@/chats/inputeditor/slashtemplate/template_plugin';
 import { getLastUserBlockContent } from '@/chats/inputeditor/slashtemplate/template_processing';
 import { TemplateToolbars } from '@/chats/inputeditor/slashtemplate/template_toolbars';
@@ -212,7 +213,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 				// If invalid, flash and focus first pending pill
 				if (selectionInfo.hasTemplate && (selectionInfo.requiredCount > 0 || selectionInfo.pendingTools > 0)) {
 					// ask the toolbar (rendered via plugin) to flash
-					window.dispatchEvent(new CustomEvent('tpl-toolbar:flash'));
+					dispatchTemplateFlashEvent();
 
 					// Focus first pending variable pill (if any)
 					const fpv = selectionInfo.firstPendingVar;

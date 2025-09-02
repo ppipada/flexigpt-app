@@ -8,6 +8,7 @@ import type { PlateEditor } from 'platejs/react';
 
 import { type PreProcessorCall, type PromptVariable, VarSource, VarType } from '@/spec/prompt';
 
+import { dispatchTemplateVarsUpdated } from '@/chats/inputeditor/slashtemplate/template_events';
 import {
 	computeEffectiveTemplate,
 	computeRequirements,
@@ -141,7 +142,7 @@ export function TemplateEditModal({
 		);
 
 		if (tsenode.selectionID) {
-			window.dispatchEvent(new CustomEvent('tpl-vars:updated', { detail: { selectionID: tsenode.selectionID } }));
+			dispatchTemplateVarsUpdated(tsenode.selectionID);
 		}
 		onClose();
 	}

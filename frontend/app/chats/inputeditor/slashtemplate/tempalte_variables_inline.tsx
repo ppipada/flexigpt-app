@@ -14,23 +14,15 @@ import {
 	type TemplateVariableElementNode,
 } from '@/chats/inputeditor/slashtemplate/editor_utils';
 import {
+	dispatchTemplateVarsUpdated,
+	useTemplateVarsUpdatedForSelection,
+} from '@/chats/inputeditor/slashtemplate/template_events';
+import {
 	computeEffectiveTemplate,
 	computeRequirements,
 	effectiveVarValueLocal,
 	type TemplateSelectionElementNode,
 } from '@/chats/inputeditor/slashtemplate/template_processing';
-
-function useEvent(eventName: string, handler: (e: any) => void) {
-	React.useEffect(() => {
-		const h = (e: Event) => {
-			handler(e);
-		};
-		window.addEventListener(eventName, h);
-		return () => {
-			window.removeEventListener(eventName, h);
-		};
-	}, [eventName, handler]);
-}
 
 function findTemplateNode(
 	editor: PlateEditor,
@@ -81,11 +73,8 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 	const [refreshTick, setRefreshTick] = React.useState(0);
 
 	// Ensure badges re-render when variables updated from modal or elsewhere
-	useEvent('tpl-vars:updated', (e: CustomEvent<{ selectionID?: string }>) => {
-		if (!el.selectionID) return;
-		if (e?.detail?.selectionID === el.selectionID) {
-			setRefreshTick(t => t + 1);
-		}
+	useTemplateVarsUpdatedForSelection(el.selectionID, () => {
+		setRefreshTick(t => t + 1);
 	});
 
 	// Current effective value for display and starting edit
@@ -119,7 +108,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 
 		// Signal badges/toolbar for this selection only
 		if (tsenode.selectionID) {
-			window.dispatchEvent(new CustomEvent('tpl-vars:updated', { detail: { selectionID: tsenode.selectionID } }));
+			dispatchTemplateVarsUpdated(tsenode.selectionID);
 		}
 
 		setIsEditing(false);
