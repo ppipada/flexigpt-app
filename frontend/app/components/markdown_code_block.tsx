@@ -1,11 +1,10 @@
-import { type FC, lazy, Suspense } from 'react';
+import type { FC } from 'react';
 
 import { useHighlight } from '@/hooks/use_highlight';
 
 import CopyButton from '@/components/copy_button';
 import DownloadButton from '@/components/download_button';
-
-const MermaidDiagramLazy = lazy(() => import('@/components/markdown_mermaid_diagram'));
+import MermaidDiagram from '@/components/markdown_mermaid_diagram';
 
 interface CodeProps {
 	language: string;
@@ -51,11 +50,7 @@ const CodeBlock: FC<CodeProps> = ({ language, value, isBusy }) => {
 				</div>
 			</div>
 
-			{isMermaid && !isBusy && (
-				<Suspense fallback={<div className="bg-mermaid my-4 rounded-lg">Loading diagram...</div>}>
-					<MermaidDiagramLazy code={value} />
-				</Suspense>
-			)}
+			{isMermaid && !isBusy && <MermaidDiagram code={value} />}
 		</>
 	);
 };

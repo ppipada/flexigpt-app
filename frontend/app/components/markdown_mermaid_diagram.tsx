@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type { FC } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import mermaid, { type MermaidConfig } from 'mermaid';
+
 import { Base64EncodeUTF8 } from '@/lib/encode_decode';
-import { loadMermaid, type MermaidConfig } from '@/lib/lazy_mermaid_loader';
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { useIsDarkMermaid } from '@/hooks/use_is_dark_mermaid';
@@ -24,6 +24,8 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 	const [svgNode, setSvgNode] = useState<SVGSVGElement | null>(null);
 	const [zoomOpen, setZoomOpen] = useState(false);
 
+	const uniqueId = useRef(`mermaid-${getUUIDv7()}`);
+
 	const mermaidConfig = useMemo<MermaidConfig>(
 		() => ({
 			startOnLoad: false,
@@ -34,63 +36,52 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 		[isDark]
 	);
 
-	// Ensure initialize happens before render, every time we render (safe to call repeatedly).
-	// Also make each render id unique to avoid collisions.
-	const renderSeq = useRef(0);
+	/* Initialise Mermaid only when the theme changes */
+	const lastTheme = useRef<'dark' | 'default'>('default');
 	useEffect(() => {
-		const container = inlineDiagramRef.current;
-		if (!container) return;
+		const t = mermaidConfig.theme as 'dark' | 'default';
+		if (t !== lastTheme.current) {
+			mermaid.initialize(mermaidConfig);
+			lastTheme.current = t;
+		}
+	}, [mermaidConfig]);
 
-		const seq = ++renderSeq.current;
-		let cancelled = false;
-
-		// Clear old content and optimistic-clear error to avoid sticky error box
-		container.innerHTML = '';
-		setError(null);
-
-		(async () => {
-			try {
-				const mermaid = await loadMermaid();
-				if (cancelled || renderSeq.current !== seq) return;
-
-				mermaid.initialize(mermaidConfig); // safe to call on every render
-
-				// Optional: validate first for clearer failure and to avoid partial DOM updates
-				await mermaid.parse(code);
-
-				const id = `mermaid-${getUUIDv7()}`; // unique per render call
-				const { svg } = await mermaid.render(id, code);
-
-				if (cancelled || renderSeq.current !== seq) return;
-				if (!inlineDiagramRef.current) return;
-
-				inlineDiagramRef.current.innerHTML = svg;
-
-				const svgEl = inlineDiagramRef.current.querySelector('svg');
-				if (svgEl) {
-					svgEl.style.display = 'block';
-					svgEl.style.margin = 'auto';
-					svgEl.style.width = 'auto';
-					svgEl.style.height = 'auto';
-					svgEl.style.maxWidth = '80%';
-					svgEl.style.maxHeight = '60vh';
-					setSvgNode(svgEl.cloneNode(true) as SVGSVGElement);
-				}
-				setError(null);
-			} catch (e) {
-				if (!cancelled && renderSeq.current === seq) {
-					setError('Failed to render diagram. Please check the syntax.');
-					console.error('syntax error:', e);
-				} else {
-					console.error('mermaid render error:', e);
-				}
-			}
-		})();
-
+	useEffect(() => {
+		let isMounted = true;
+		if (inlineDiagramRef.current) {
+			inlineDiagramRef.current.innerHTML = '';
+			mermaid
+				.render(uniqueId.current, code)
+				.then(renderResult => {
+					if (isMounted && inlineDiagramRef.current) {
+						inlineDiagramRef.current.innerHTML = renderResult.svg;
+						// Center the SVG with inline styles
+						const svg = inlineDiagramRef.current.querySelector('svg');
+						if (svg) {
+							svg.style.display = 'block';
+							svg.style.margin = 'auto';
+							svg.style.width = 'auto';
+							svg.style.height = 'auto';
+							svg.style.maxWidth = '80%';
+							svg.style.maxHeight = '60vh';
+							setSvgNode(svg.cloneNode(true) as SVGSVGElement);
+						}
+						setError(null);
+					}
+				})
+				.catch((e: unknown) => {
+					if (isMounted) {
+						setError('Failed to render diagram. Please check the syntax.');
+						console.error('syntax error:', e);
+					} else {
+						console.error('mermaid render error:', e);
+					}
+				});
+		}
 		return () => {
-			cancelled = true;
+			isMounted = false;
 		};
-	}, [code, mermaidConfig]);
+	}, [code, isDark]);
 
 	useEffect(() => {
 		const dlg = dialogRef.current;
@@ -103,6 +94,7 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 		}
 	}, [zoomOpen]);
 
+	/* When the dialog fires its native `close` event, update state */
 	useEffect(() => {
 		const dlg = dialogRef.current;
 		if (!dlg) return;
@@ -119,6 +111,7 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 	useEffect(() => {
 		if (!zoomOpen || !modalRef.current || !svgNode) return;
 
+		// Clean previous content
 		modalRef.current.innerHTML = '';
 
 		const newNode = svgNode.cloneNode(true) as SVGSVGElement;
@@ -138,6 +131,7 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 		if (!svg) throw new Error('SVG element not found in container');
 
 		const svgData = new XMLSerializer().serializeToString(svg);
+		// Encode SVG as base64 data URL
 		const svgBase64 = Base64EncodeUTF8(svgData);
 		const dataUrl = `data:image/svg+xml;base64,${svgBase64}`;
 
@@ -158,7 +152,6 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 				ctx.fillStyle = 'white';
 				ctx.fillRect(0, 0, canvas.width, canvas.height);
 				ctx.drawImage(img, 0, 0);
-
 				canvas.toBlob(
 					blob => {
 						if (blob) resolve(blob);
@@ -174,12 +167,14 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 			img.src = dataUrl;
 		});
 	};
-
 	return (
 		<>
+			{/* ---------- Inline card -------------------------------- */}
 			<div className="bg-mermaid my-4 overflow-hidden rounded-lg">
+				{/* header bar */}
 				<div className="bg-code-header flex items-center justify-between px-4">
 					<span className="text-code">Mermaid diagram</span>
+
 					<DownloadButton
 						valueFetcher={fetchDiagramAsBlob}
 						size={16}
@@ -193,7 +188,9 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 				<div
 					className="flex min-h-[250px] w-full cursor-zoom-in items-center justify-center overflow-auto p-1 text-center"
 					onClick={() => {
-						if (!error) setZoomOpen(true);
+						if (!error) {
+							setZoomOpen(true);
+						}
 					}}
 				>
 					{error ? (
@@ -209,16 +206,21 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 				</div>
 			</div>
 
+			{/* ---------- Zoom modal (daisyUI v5) -------------------- */}
 			<dialog ref={dialogRef} className="modal" aria-label="Enlarged Mermaid diagram">
+				{/* backdrop - clicking it closes the dialog */}
 				<form method="dialog" className="modal-backdrop">
 					<button aria-label="Close"></button>
 				</form>
+
+				{/* modal box */}
 				<div
 					className="modal-box bg-mermaid flex h-[90vh] max-w-[90vw] cursor-zoom-out items-center justify-center"
 					onClick={() => {
 						setZoomOpen(false);
 					}}
 				>
+					{/* enlarged diagram */}
 					<div ref={modalRef} className="w-full overflow-auto" style={{ pointerEvents: 'none' }} />
 				</div>
 			</dialog>
