@@ -70,6 +70,7 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 						content={message.content}
 						streamedText={streamedMessage}
 						isStreaming={!!streamedMessage}
+						isBusy={isBusy}
 						isPending={isPending}
 						align={align}
 						renderAsMarkdown={!isUser}

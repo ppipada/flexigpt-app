@@ -1,6 +1,6 @@
 import { type FC, useEffect, useState } from 'react';
 
-import { FiCheck, FiChevronDown, FiChevronUp, FiEdit, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
+import { FiCheck, FiChevronDown, FiChevronUp, FiEdit2, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
 import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/spec/command';
 import type { PromptBundle, PromptTemplate } from '@/spec/prompt';
@@ -267,7 +267,7 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 													disabled={tpl.isBuiltIn || bundle.isBuiltIn}
 													title={tpl.isBuiltIn || bundle.isBuiltIn ? 'Editing disabled for built-in items' : 'Edit'}
 												>
-													<FiEdit size={16} />
+													<FiEdit2 size={16} />
 												</button>
 
 												<button

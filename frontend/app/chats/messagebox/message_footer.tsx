@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { useState } from 'react';
 
-import { FiChevronDown, FiChevronUp, FiEdit, FiRepeat } from 'react-icons/fi';
+import { FiChevronDown, FiChevronUp, FiEdit2, FiRepeat } from 'react-icons/fi';
 
 import { stripThinkingFences } from '@/lib/text_utils';
 
@@ -55,7 +55,7 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 								title="Edit Message"
 								disabled={isBusy}
 							>
-								<FiEdit size={16} />
+								<FiEdit2 size={16} />
 							</button>
 						)}
 						{isUser && (
@@ -97,6 +97,7 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 						content={messageDetails}
 						streamedText=""
 						isStreaming={false}
+						isBusy={isBusy}
 						isPending={false}
 						align="items-start text-left"
 						renderAsMarkdown={true}

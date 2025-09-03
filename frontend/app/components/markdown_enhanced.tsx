@@ -32,7 +32,7 @@ const strictSchema = {
 interface EnhancedMarkdownProps {
 	text: string;
 	align?: string;
-	isStreaming?: boolean;
+	isBusy?: boolean;
 }
 
 interface CodeComponentProps {
@@ -46,11 +46,11 @@ interface PComponentProps {
 	children?: ReactNode;
 }
 
-const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: EnhancedMarkdownProps) => {
+const EnhancedMarkdown = ({ text, align = 'left', isBusy = false }: EnhancedMarkdownProps) => {
 	const processedText = useMemo(() => {
 		// During a stream skip LaTeX sanitisation for speed.
-		return isStreaming ? text : SanitizeLaTeX(text);
-	}, [text, isStreaming]);
+		return isBusy ? text : SanitizeLaTeX(text);
+	}, [text, isBusy]);
 
 	const components = useMemo(
 		() => ({
@@ -81,10 +81,10 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 				// eslint-disable-next-line @typescript-eslint/no-base-to-string
 				const value = String(children).replace(/\n$/, '');
 				if (language === 'thinking' || language === 'thought' || language === 'reasoning') {
-					return <ThinkingFence text={value} isStreaming={isStreaming} />;
+					return <ThinkingFence text={value} isBusy={isBusy} />;
 				}
 
-				return <CodeBlock language={language} value={value} isStreaming={isStreaming} />;
+				return <CodeBlock language={language} value={value} isBusy={isBusy} />;
 			},
 
 			ul: ({ children }: PComponentProps) => (
@@ -129,16 +129,14 @@ const EnhancedMarkdown = ({ text, align = 'left', isStreaming = false }: Enhance
 				<blockquote className="border-neutral/20 border-l-4 pl-4 italic">{children}</blockquote>
 			),
 		}),
-		[align, isStreaming]
+		[align, isBusy]
 	);
 
 	return (
 		<MdErrorBoundary source={processedText}>
 			<Markdown
-				remarkPlugins={
-					isStreaming ? [remarkGemoji, supersub, remarkGfm] : [remarkGemoji, supersub, remarkMath, remarkGfm]
-				}
-				rehypePlugins={isStreaming ? [] : [rehypeRaw, [rehypeSanitize, { ...strictSchema }], rehypeKatex]}
+				remarkPlugins={isBusy ? [remarkGemoji, supersub, remarkGfm] : [remarkGemoji, supersub, remarkMath, remarkGfm]}
+				rehypePlugins={isBusy ? [] : [rehypeRaw, [rehypeSanitize, { ...strictSchema }], rehypeKatex]}
 				components={components}
 				skipHtml={false}
 			>

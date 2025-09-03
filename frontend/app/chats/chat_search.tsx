@@ -6,7 +6,7 @@ import { FiSearch, FiTrash2 } from 'react-icons/fi';
 import type { ConversationSearchItem } from '@/spec/conversation';
 
 import { formatDateAsString } from '@/lib/date_utils';
-import { cleanSearchQuery } from '@/lib/text_utils';
+import { cleanSearchQuery } from '@/lib/title_utils';
 
 import { conversationStoreAPI } from '@/apis/baseapi';
 

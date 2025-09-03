@@ -268,7 +268,7 @@ const EditorTextInput = forwardRef<EditorTextInputHandle, EditorTextInputProps>(
 			<form
 				ref={formRef}
 				onSubmit={handleSubmit}
-				className="bg-base-100 border-base-300 focus-within:border-base-400 mx-2 flex flex-col rounded-2xl border"
+				className="bg-base-100 border-base-300 focus-within:border-base-400 mx-2 flex flex-col overflow-hidden rounded-2xl border"
 			>
 				<Plate
 					editor={editor}

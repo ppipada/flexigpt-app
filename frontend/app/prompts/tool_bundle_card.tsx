@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { FiCheck, FiChevronDown, FiChevronUp, FiEdit, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
+import { FiCheck, FiChevronDown, FiChevronUp, FiEdit2, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
 import { TOOL_INVOKE_CHAR } from '@/spec/command';
 // You need to implement this
@@ -251,7 +251,7 @@ const ToolBundleCard: React.FC<ToolBundleCardProps> = ({ bundle, tools, onToolsC
 													disabled={tool.isBuiltIn || bundle.isBuiltIn}
 													title={tool.isBuiltIn || bundle.isBuiltIn ? 'Editing disabled for built-in items' : 'Edit'}
 												>
-													<FiEdit size={16} />
+													<FiEdit2 size={16} />
 												</button>
 												<button
 													className="btn btn-sm btn-ghost rounded-2xl"

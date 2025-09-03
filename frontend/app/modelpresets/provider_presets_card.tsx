@@ -6,7 +6,7 @@ import {
 	FiCheckCircle,
 	FiChevronDown,
 	FiChevronUp,
-	FiEdit,
+	FiEdit2,
 	FiKey,
 	FiPlus,
 	FiTrash2,
@@ -373,7 +373,7 @@ const ProviderPresetCard: FC<Props> = ({
 													title="Edit Provider"
 													disabled={providerIsBuiltIn}
 												>
-													<FiEdit />
+													<FiEdit2 />
 													<span className="ml-1 hidden md:inline">Edit Provider</span>
 												</button>
 											</div>
@@ -482,7 +482,7 @@ const ProviderPresetCard: FC<Props> = ({
 																}}
 																title="Edit Model Preset"
 															>
-																<FiEdit size={16} />
+																<FiEdit2 size={16} />
 															</button>
 															<button
 																className="btn btn-sm btn-ghost rounded-2xl"

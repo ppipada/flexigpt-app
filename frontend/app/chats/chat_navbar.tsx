@@ -1,6 +1,6 @@
 import { type FC, useCallback, useEffect, useState } from 'react';
 
-import { FiEdit, FiPlus } from 'react-icons/fi';
+import { FiEdit2, FiPlus } from 'react-icons/fi';
 
 import type { ConversationSearchItem } from '@/spec/conversation';
 
@@ -118,7 +118,7 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 					aria-label="Rename Conversation"
 					title="Rename Conversation"
 				>
-					<FiEdit size={20} />
+					<FiEdit2 size={20} />
 				</button>
 
 				{/* download */}

@@ -11,6 +11,7 @@ interface MessageContentProps {
 	// Partial text while streaming.
 	streamedText?: string;
 	isStreaming?: boolean;
+	isBusy?: boolean;
 	isPending?: boolean;
 	align: string;
 	renderAsMarkdown?: boolean;
@@ -21,6 +22,7 @@ const MessageContent = ({
 	content,
 	streamedText = '',
 	isStreaming = false,
+	isBusy = false,
 	isPending = false,
 	align,
 	renderAsMarkdown = true,
@@ -58,10 +60,10 @@ const MessageContent = ({
 	return (
 		<div className="px-4 py-2">
 			<EnhancedMarkdown
-				key={`${messageID}:${isStreaming ? 'live' : 'done'}`}
+				key={`${messageID}:${isBusy ? 'live' : 'done'}`}
 				text={textToRender}
 				align={align}
-				isStreaming={isStreaming}
+				isBusy={isBusy}
 			/>
 		</div>
 	);
@@ -72,6 +74,7 @@ function areEqual(prev: MessageContentProps, next: MessageContentProps) {
 		prev.content === next.content &&
 		prev.streamedText === next.streamedText &&
 		prev.isStreaming === next.isStreaming &&
+		prev.isBusy === next.isBusy &&
 		prev.isPending === next.isPending &&
 		prev.align === next.align &&
 		prev.renderAsMarkdown === next.renderAsMarkdown

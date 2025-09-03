@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { FiEdit, FiFolder, FiPlus, FiServer, FiTrash2 } from 'react-icons/fi';
+import { FiEdit2, FiFolder, FiPlus, FiServer, FiTrash2 } from 'react-icons/fi';
 
 import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/spec/command';
 import type { Collection, DocStore } from '@/spec/docstore';
@@ -265,7 +265,7 @@ const DocumentStores: React.FC = () => {
 											handleEditDocStore(docStore);
 										}}
 									>
-										<FiEdit />
+										<FiEdit2 />
 									</button>
 									<button
 										className="btn btn-sm btn-ghost rounded-2xl"
@@ -318,7 +318,7 @@ const DocumentStores: React.FC = () => {
 															handleEditCollection(docStore.id, collection);
 														}}
 													>
-														<FiEdit />
+														<FiEdit2 />
 													</button>
 													<button
 														className="btn btn-sm btn-ghost rounded-2xl"

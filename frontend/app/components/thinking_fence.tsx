@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 
 interface ThinkingFenceProps {
 	text: string;
-	isStreaming: boolean;
+	isBusy: boolean;
 	maxHeightClass?: string; // e.g. 'max-h-[50vh]' or 'max-h-60'
 }
 
-const ThinkingFence: React.FC<ThinkingFenceProps> = ({ text, isStreaming, maxHeightClass = 'max-h-[50vh]' }) => {
+const ThinkingFence: React.FC<ThinkingFenceProps> = ({ text, isBusy, maxHeightClass = 'max-h-[50vh]' }) => {
 	const [open, setOpen] = useState(false);
 
 	return (
@@ -30,7 +30,7 @@ const ThinkingFence: React.FC<ThinkingFenceProps> = ({ text, isStreaming, maxHei
 					<path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
 				</svg>
 
-				{isStreaming && <span className="loading loading-dots loading-xs ml-auto" />}
+				{isBusy && <span className="loading loading-dots loading-xs ml-auto" />}
 			</summary>
 
 			{/* body */}

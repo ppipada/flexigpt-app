@@ -5,7 +5,8 @@ import type { ModelParams } from '@/spec/aiprovider';
 import type { Conversation, ConversationMessage, ConversationSearchItem } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 
-import { generateTitle, getBlockQuotedLines, sanitizeConversationTitle } from '@/lib/text_utils';
+import { getBlockQuotedLines, sanitizeConversationTitle } from '@/lib/text_utils';
+import { generateTitle } from '@/lib/title_utils';
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { useAtBottom } from '@/hooks/use_at_bottom';
@@ -461,7 +462,7 @@ const ChatScreen: FC = () => {
 			</div>
 
 			{/* SCROLL-TO-BOTTOM BUTTON */}
-			<div className="fixed right-0 bottom-0 mr-0 mb-28 lg:mr-16">
+			<div className="fixed right-0 bottom-0 mr-0 mb-36 lg:mr-16">
 				<ButtonScrollToBottom
 					scrollContainerRef={chatContainerRef}
 					iconSize={32}
