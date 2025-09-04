@@ -6,7 +6,7 @@ import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 
-import AssistantContextBar from '@/chats/assitantcontext/assistantcontext_bar';
+import AssistantContextBar from '@/chats/assitantcontexts/context_bar';
 import CommandTipsBar from '@/chats/input/command_tips_bar';
 import EditorArea, { type EditorAreaHandle } from '@/chats/input/editor_area';
 

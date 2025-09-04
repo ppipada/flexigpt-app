@@ -8,16 +8,16 @@ import { useCloseDetails } from '@/hooks/use_close_details';
 
 import { type ChatOption, DefaultChatOptions, getChatInputOptions } from '@/apis/chatoption_helper';
 
-import AdvancedParamsModal from '@/chats/assitantcontext/advanced_params_modal';
-import DisablePreviousMessagesCheckbox from '@/chats/assitantcontext/disable_checkbox';
-import ModelDropdown from '@/chats/assitantcontext/model_dropdown';
-import ReasoningTokensDropdown, { HybridReasoningCheckbox } from '@/chats/assitantcontext/reasoning_hybrid';
-import SingleReasoningDropdown from '@/chats/assitantcontext/reasoning_levels_dropdown';
+import AdvancedParamsModal from '@/chats/assitantcontexts/advanced_params_modal';
+import DisablePreviousMessagesCheckbox from '@/chats/assitantcontexts/disable_checkbox';
+import ModelDropdown from '@/chats/assitantcontexts/model_dropdown';
+import ReasoningTokensDropdown, { HybridReasoningCheckbox } from '@/chats/assitantcontexts/reasoning_hybrid';
+import SingleReasoningDropdown from '@/chats/assitantcontexts/reasoning_levels_dropdown';
 import SystemPromptDropdown, {
 	createSystemPromptItem,
 	type SystemPromptItem,
-} from '@/chats/assitantcontext/system_prompt';
-import TemperatureDropdown from '@/chats/assitantcontext/temperature_dropdown';
+} from '@/chats/assitantcontexts/system_prompt';
+import TemperatureDropdown from '@/chats/assitantcontexts/temperature_dropdown';
 import { useSetSystemPromptForChat } from '@/chats/events/set_system_prompt';
 
 type AssistantContextBarProps = {
