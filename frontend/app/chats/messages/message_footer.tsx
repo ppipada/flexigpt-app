@@ -7,7 +7,7 @@ import { stripThinkingFences } from '@/lib/text_utils';
 
 import CopyButton from '@/components/copy_button';
 
-import MessageContent from '@/chats/messagebox/message_content';
+import MessageContent from '@/chats/messages/message_content';
 
 interface MessageFooterAreaProps {
 	messageID: string;

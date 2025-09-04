@@ -6,9 +6,9 @@ import { FiCompass, FiUser } from 'react-icons/fi';
 import type { ConversationMessage } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 
-import MessageContent from '@/chats/messagebox/message_content';
-import MessageEditBox from '@/chats/messagebox/message_editbox';
-import MessageFooterArea from '@/chats/messagebox/message_footer';
+import MessageContent from '@/chats/messages/message_content';
+import MessageEditBox from '@/chats/messages/message_editbox';
+import MessageFooterArea from '@/chats/messages/message_footer';
 
 interface ChatMessageProps {
 	message: ConversationMessage;

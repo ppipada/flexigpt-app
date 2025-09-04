@@ -19,7 +19,7 @@ import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
 
 import ChatNavBar from '@/chats/chat_navbar';
 import InputField, { type InputFieldHandle } from '@/chats/input/input_field';
-import ChatMessage from '@/chats/messagebox/message';
+import ChatMessage from '@/chats/messages/message';
 
 function initConversation(title = 'New Conversation'): Conversation {
 	return {
