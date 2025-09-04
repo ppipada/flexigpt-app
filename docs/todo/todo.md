@@ -17,7 +17,7 @@
       - [x] prompt toolbar/editing implementation
       - [x] system prompt updates from prompts
       - [x] may be allow expand/decompose for prompts user message
-      - [ ] toolbar outline and stacking with shadows and round corners styling
+      - [x] toolbar outline and stacking with shadows and round corners styling
 
     - [ ] prompt and tool processing for ai completion call
 

@@ -13,8 +13,8 @@ import { promptStoreAPI } from '@/apis/baseapi';
 
 import { SlashInputElement } from '@/components/editor/nodes/slash_node';
 
-import { KEY_TEMPLATE_SELECTION } from '@/chats/inputeditor/slashtemplate/editor_utils';
-import { buildInitialToolStates } from '@/chats/inputeditor/slashtemplate/template_processing';
+import { KEY_TEMPLATE_SELECTION } from '@/chats/slashtemplate/editor_utils';
+import { buildInitialToolStates } from '@/chats/slashtemplate/template_processing';
 
 function insertTemplateSelectionNode(
 	editor: PlateEditor,

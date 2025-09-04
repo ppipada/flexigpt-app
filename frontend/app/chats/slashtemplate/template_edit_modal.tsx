@@ -15,8 +15,8 @@ import {
 	effectiveVarValueLocal,
 	type TemplateSelectionElementNode,
 	type ToolState,
-} from '@/chats/inputeditor/slashtemplate/template_processing';
-import { EnumDropdownInline } from '@/chats/inputeditor/slashtemplate/template_variable_enum_dropdown';
+} from '@/chats/slashtemplate/template_processing';
+import { EnumDropdownInline } from '@/chats/slashtemplate/template_variable_enum_dropdown';
 
 export function TemplateEditModal({
 	open,

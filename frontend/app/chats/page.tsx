@@ -17,8 +17,8 @@ import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
 
-import ChatInputField, { type ChatInputFieldHandle } from '@/chats/chat_input_field';
 import ChatNavBar from '@/chats/chat_navbar';
+import InputField, { type InputFieldHandle } from '@/chats/input/input_field';
 import ChatMessage from '@/chats/messagebox/message';
 
 function initConversation(title = 'New Conversation'): Conversation {
@@ -53,7 +53,7 @@ const ChatScreen: FC = () => {
 	const abortRef = useRef<AbortController | null>(null);
 	const requestIdRef = useRef<string | null>(null); // will go to backend for cancellation
 
-	const chatInputRef = useRef<ChatInputFieldHandle>(null);
+	const chatInputRef = useRef<InputFieldHandle>(null);
 	const chatContainerRef = useRef<HTMLDivElement>(null);
 	const tokensReceivedRef = useRef<boolean | null>(false);
 
@@ -451,7 +451,7 @@ const ChatScreen: FC = () => {
 				</div>
 				{/* INPUT */}
 				<div className="fixed bottom-0 mb-2 flex w-11/12 justify-center lg:w-5/6">
-					<ChatInputField
+					<InputField
 						ref={chatInputRef}
 						onSend={sendMessage}
 						setInputHeight={setInputHeight}

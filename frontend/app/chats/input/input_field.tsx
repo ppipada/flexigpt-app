@@ -7,22 +7,22 @@ import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 
 import AssistantContextBar from '@/chats/assitantcontext/assistantcontext_bar';
-import CommandTipsBar from '@/chats/command_tips_bar';
-import EditorTextInput, { type EditorTextInputHandle } from '@/chats/inputeditor/editor_text_input';
+import CommandTipsBar from '@/chats/input/command_tips_bar';
+import EditorArea, { type EditorAreaHandle } from '@/chats/input/editor_area';
 
-interface ChatInputFieldProps {
+interface InputFieldProps {
 	onSend: (message: string, options: ChatOption) => Promise<void>;
 	setInputHeight: React.Dispatch<React.SetStateAction<number>>;
 	isBusy: boolean;
 	abortRef: React.RefObject<AbortController | null>;
 }
 
-export interface ChatInputFieldHandle {
+export interface InputFieldHandle {
 	getChatOptions: () => ChatOption;
 	focus: () => void;
 }
 
-const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
+const InputField = forwardRef<InputFieldHandle, InputFieldProps>(
 	({ onSend, setInputHeight, isBusy, abortRef }, ref) => {
 		/* ------------------------------------------------------------------
 		 * Aggregated chat-options (provided by <AssistantContextBar />)
@@ -39,10 +39,10 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 		}, [isBusy]);
 
 		/* ------------------------------------------------------------------
-		 * <ChatTextInput /> ref utilities
+		 * <TextArea /> ref utilities
 		 * ------------------------------------------------------------------ */
-		// const inputAreaRef = useRef<ChatTextInputHandle>(null);
-		const inputAreaRef = useRef<EditorTextInputHandle>(null);
+		// const inputAreaRef = useRef<TextAreaHandle>(null);
+		const inputAreaRef = useRef<EditorAreaHandle>(null);
 
 		/* ------------------------------------------------------------------
 		 * Send-message
@@ -102,13 +102,13 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 				)}
 				<div className="flex-1 overflow-auto">
 					{/* Chat text-input --------------------------------------------------- */}
-					{/* <ChatTextInput
+					{/* <TextArea
 					ref={inputAreaRef}
 					isBusy={isBusy}
 					onSubmit={handleSubmitMessage}
 					setInputHeight={setInputHeight}
 				/> */}
-					<EditorTextInput
+					<EditorArea
 						ref={inputAreaRef}
 						isBusy={isBusy}
 						onSubmit={handleSubmitMessage}
@@ -124,6 +124,6 @@ const ChatInputField = forwardRef<ChatInputFieldHandle, ChatInputFieldProps>(
 	}
 );
 
-ChatInputField.displayName = 'ChatInputField';
+InputField.displayName = 'InputField';
 
-export default ChatInputField;
+export default InputField;

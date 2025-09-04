@@ -16,10 +16,10 @@ import {
 	getTemplateSelections,
 	KEY_TEMPLATE_SELECTION,
 	KEY_TEMPLATE_VARIABLE,
-} from '@/chats/inputeditor/slashtemplate/editor_utils';
-import { TemplateEditModal } from '@/chats/inputeditor/slashtemplate/template_edit_modal';
-import type { TemplateSelectionElementNode } from '@/chats/inputeditor/slashtemplate/template_processing';
-import { TemplateFixedToolbar } from '@/chats/inputeditor/slashtemplate/template_toolbar_fixed';
+} from '@/chats/slashtemplate/editor_utils';
+import { TemplateEditModal } from '@/chats/slashtemplate/template_edit_modal';
+import type { TemplateSelectionElementNode } from '@/chats/slashtemplate/template_processing';
+import { TemplateFixedToolbar } from '@/chats/slashtemplate/template_toolbar_fixed';
 
 type TplKey = string; // path-based unique key
 
