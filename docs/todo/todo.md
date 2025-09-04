@@ -2,7 +2,7 @@
 
 ## Laundry list
 
-- [ ] input area spacing and size when streaming back from assistant needs relook
+- [x] input area spacing and size when streaming back from assistant needs relook
 - [ ] prompt and tool processing for ai completion call
 
   - [ ] only prompt should be allowed to be sent to ai rather than some text compulsory
