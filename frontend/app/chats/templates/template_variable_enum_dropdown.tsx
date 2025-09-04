@@ -45,6 +45,9 @@ export function EnumDropdownInline({
 	const [open, setOpen] = React.useState(false);
 	const triggerRef = React.useRef<HTMLButtonElement | null>(null);
 	const menuRef = React.useRef<HTMLDivElement | null>(null);
+	const optionRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
+	const [activeIndex, setActiveIndex] = React.useState<number>(-1);
+	const listboxId = React.useId();
 
 	// Positioning: use absolute + scroll offsets (more robust with modals/backdrops/filters)
 	const [style, setStyle] = React.useState<React.CSSProperties>({
@@ -130,6 +133,14 @@ export function EnumDropdownInline({
 	const close = React.useCallback(
 		(cancel = true) => {
 			setOpen(false);
+			// Return focus to trigger for accessibility
+			requestAnimationFrame(() => {
+				try {
+					triggerRef.current?.focus();
+				} catch {
+					/*swallow */
+				}
+			});
 			if (cancel) onCancel?.();
 		},
 		[onCancel]
@@ -145,6 +156,38 @@ export function EnumDropdownInline({
 		if (!open) return;
 		updatePosition();
 	}, [open, updatePosition]);
+
+	// Set initial active item and focus when menu opens
+	React.useEffect(() => {
+		if (!open) return;
+		const selectedIdx = value ? options.findIndex(opt => opt === value) : -1;
+		const idx = selectedIdx >= 0 ? selectedIdx : 0;
+		setActiveIndex(idx);
+		requestAnimationFrame(() => {
+			const btn = optionRefs.current[idx];
+			if (btn) {
+				btn.focus();
+			} else {
+				// fallback
+				try {
+					menuRef.current?.focus();
+				} catch {
+					/*swallow*/
+				}
+			}
+		});
+	}, [open, options, value]);
+
+	// Keep active option in view as user navigates with keyboard
+	React.useEffect(() => {
+		if (!open) return;
+		const btn = optionRefs.current[activeIndex];
+		try {
+			btn?.scrollIntoView({ block: 'nearest' });
+		} catch {
+			// noop
+		}
+	}, [activeIndex, open]);
 
 	// Reposition and outside click handling
 	React.useEffect(() => {
@@ -193,6 +236,42 @@ export function EnumDropdownInline({
 		requestAnimationFrame(() => triggerRef.current?.focus());
 	}, [autoOpen]);
 
+	const onMenuKeyDown = (e: React.KeyboardEvent) => {
+		if (withinSlate) {
+			e.stopPropagation();
+		}
+		const maxIdx = options.length - 1;
+		if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			const next = Math.min(maxIdx, activeIndex < 0 ? 0 : activeIndex + 1);
+			setActiveIndex(next);
+			requestAnimationFrame(() => optionRefs.current[next]?.focus());
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			const next = Math.max(0, activeIndex < 0 ? 0 : activeIndex - 1);
+			setActiveIndex(next);
+			requestAnimationFrame(() => optionRefs.current[next]?.focus());
+		} else if (e.key === 'Home') {
+			e.preventDefault();
+			setActiveIndex(0);
+			requestAnimationFrame(() => optionRefs.current[0]?.focus());
+		} else if (e.key === 'End') {
+			e.preventDefault();
+			setActiveIndex(maxIdx);
+			requestAnimationFrame(() => optionRefs.current[maxIdx]?.focus());
+		} else if (e.key === 'Enter') {
+			e.preventDefault();
+			if (activeIndex >= 0 && activeIndex <= maxIdx) {
+				const opt = options[activeIndex];
+				onChange(opt);
+				close(false);
+			}
+		} else if (e.key === 'Escape') {
+			e.preventDefault();
+			close(true);
+		}
+	};
+
 	return (
 		<>
 			<button
@@ -202,6 +281,7 @@ export function EnumDropdownInline({
 				aria-haspopup="listbox"
 				aria-expanded={open}
 				aria-label="Open selection menu"
+				aria-controls={open ? listboxId : undefined}
 				title="Open selection"
 				disabled={disabled}
 				onMouseDown={stopForSlate}
@@ -223,6 +303,10 @@ export function EnumDropdownInline({
 					} else if (e.key === 'ArrowDown') {
 						e.preventDefault();
 						setOpen(true);
+					} else if (e.key === 'ArrowUp') {
+						// Open and let initial focus go to selected or first item
+						e.preventDefault();
+						setOpen(true);
 					}
 				}}
 			>
@@ -238,34 +322,44 @@ export function EnumDropdownInline({
 						ref={menuRef}
 						style={style}
 						className="bg-base-100 rounded-xl border p-1 shadow"
+						tabIndex={-1}
 						onMouseDown={stopForSlate}
 						onPointerDown={stopForSlate}
 						onClick={stopForSlate}
+						onKeyDown={onMenuKeyDown}
 					>
 						<ul
 							role="listbox"
-							className="w-full"
+							id={listboxId}
+							className="w-full p-1"
 							style={{ maxHeight: menuMaxHeightPx, overflow: 'auto', minWidth: style.minWidth }}
 						>
-							{options.map(opt => {
+							{options.map((opt, idx) => {
 								const isActive = (value ?? '') === opt;
+								const isFocused = idx === activeIndex;
+
 								return (
 									<li key={opt} className="w-full">
 										<button
 											type="button"
 											role="option"
 											aria-selected={isActive}
-											className={`hover:bg-base-200 w-full justify-start rounded-lg px-2 py-1 text-left font-normal ${
+											ref={el => {
+												optionRefs.current[idx] = el;
+											}}
+											className={`w-full justify-start rounded-lg px-2 py-1 text-left font-normal ${
 												size === 'xs' ? 'text-xs' : size === 'sm' ? 'text-sm' : 'text-base'
-											}`}
+											} ${isFocused ? 'bg-base-200' : 'hover:bg-base-200'}`}
 											onClick={e => {
 												stopForSlate(e);
 												onChange(opt);
-												setOpen(false);
+												close(false);
 											}}
 										>
-											<span className="truncate">{opt}</span>
-											{isActive && <FiCheck size={12} className="ml-2 inline-block" />}
+											<div className="flex justify-between">
+												<span className="truncate">{opt}</span>
+												{isActive && <FiCheck size={12} className="ml-2 inline-block" />}
+											</div>
 										</button>
 									</li>
 								);
@@ -280,7 +374,7 @@ export function EnumDropdownInline({
 										onClick={e => {
 											stopForSlate(e);
 											onChange(undefined);
-											setOpen(false);
+											close(false);
 										}}
 									>
 										<FiX /> {clearLabel}
