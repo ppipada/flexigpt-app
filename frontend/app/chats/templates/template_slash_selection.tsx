@@ -4,7 +4,7 @@ import {
 	computeEffectiveTemplate,
 	computeRequirements,
 	type TemplateSelectionElementNode,
-} from '@/chats/slashtemplate/template_processing';
+} from '@/chats/templates/template_processing';
 
 /**
  * Template selection element (data carrier).

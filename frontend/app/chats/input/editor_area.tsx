@@ -30,11 +30,11 @@ import {
 	hasNonEmptyUserText,
 	insertPlainTextAsSingleBlock,
 	toPlainTextReplacingVariables,
-} from '@/chats/slashtemplate/template_editor_utils';
-import { TemplateSlashKit } from '@/chats/slashtemplate/template_plugin';
-import { getLastUserBlockContent } from '@/chats/slashtemplate/template_processing';
-import { TemplateToolbars } from '@/chats/slashtemplate/template_toolbars';
-import { buildUserInlineChildrenFromText } from '@/chats/slashtemplate/template_variables_inline';
+} from '@/chats/templates/template_editor_utils';
+import { TemplateSlashKit } from '@/chats/templates/template_plugin';
+import { getLastUserBlockContent } from '@/chats/templates/template_processing';
+import { TemplateToolbars } from '@/chats/templates/template_toolbars';
+import { buildUserInlineChildrenFromText } from '@/chats/templates/template_variables_inline';
 
 export interface EditorAreaHandle {
 	focus: () => void;

@@ -10,16 +10,16 @@ import { replaceDoubleBraces } from '@/lib/text_utils';
 import { dispatchSetSystemPromptForChat } from '@/chats/events/set_system_prompt';
 import { useTemplateFlashEvent } from '@/chats/events/template_flash';
 import { dispatchTemplateVarsUpdated } from '@/chats/events/template_toolbar_vars_updated';
-import { TemplateEditModal } from '@/chats/slashtemplate/template_edit_modal';
+import { TemplateEditModal } from '@/chats/templates/template_edit_modal';
 import {
 	comparePathDeepestFirst,
 	getTemplateNodesWithPath,
 	getTemplateSelections,
 	KEY_TEMPLATE_SELECTION,
 	KEY_TEMPLATE_VARIABLE,
-} from '@/chats/slashtemplate/template_editor_utils';
-import type { TemplateSelectionElementNode } from '@/chats/slashtemplate/template_processing';
-import { TemplateFixedToolbar } from '@/chats/slashtemplate/template_toolbar_fixed';
+} from '@/chats/templates/template_editor_utils';
+import type { TemplateSelectionElementNode } from '@/chats/templates/template_processing';
+import { TemplateFixedToolbar } from '@/chats/templates/template_toolbar_fixed';
 
 type TplKey = string; // path-based unique key
 

@@ -6,10 +6,10 @@ import {
 	KEY_TEMPLATE_SLASH_COMMAND,
 	KEY_TEMPLATE_SLASH_INPUT,
 	KEY_TEMPLATE_VARIABLE,
-} from '@/chats/slashtemplate/template_editor_utils';
-import { TemplateSlashInputElement } from '@/chats/slashtemplate/template_slash_input';
-import { TemplateSelectionElement } from '@/chats/slashtemplate/template_slash_selection';
-import { TemplateVariableElement } from '@/chats/slashtemplate/template_variables_inline';
+} from '@/chats/templates/template_editor_utils';
+import { TemplateSlashInputElement } from '@/chats/templates/template_slash_input';
+import { TemplateSelectionElement } from '@/chats/templates/template_slash_selection';
+import { TemplateVariableElement } from '@/chats/templates/template_variables_inline';
 
 type TemplateSlashConfig = PluginConfig<typeof KEY_TEMPLATE_SLASH_COMMAND, TriggerComboboxPluginOptions>;
 

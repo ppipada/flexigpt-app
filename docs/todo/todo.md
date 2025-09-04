@@ -25,6 +25,7 @@
       - [ ] for tools atleast prompt/text may be needed
 
     - [ ] tools via slash command
+    - [ ] input area spacing and size when streaming back from assistant needs relook
     - [x] check if proper memo etc is there for usetemplates and use tools etc
 
     - [ ] tools slash command hooking, tools should be added to bottom of the editor rather than inline

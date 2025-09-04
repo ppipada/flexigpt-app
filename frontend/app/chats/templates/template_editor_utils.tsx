@@ -3,8 +3,8 @@ import type { PlateEditor, usePlateEditor } from 'platejs/react';
 
 import { expandTabsToSpaces } from '@/lib/text_utils';
 
-import type { SelectedTemplateForRun, TemplateSelectionElementNode } from '@/chats/slashtemplate/template_processing';
-import { makeSelectedTemplateForRun } from '@/chats/slashtemplate/template_processing';
+import type { SelectedTemplateForRun, TemplateSelectionElementNode } from '@/chats/templates/template_processing';
+import { makeSelectedTemplateForRun } from '@/chats/templates/template_processing';
 
 export const KEY_TEMPLATE_SELECTION = 'templateSelection';
 export const KEY_TEMPLATE_VARIABLE = 'templateVariable';
