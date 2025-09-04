@@ -1,0 +1,120 @@
+import { ElementApi, KEYS, NodeApi, type Path } from 'platejs';
+import type { PlateEditor } from 'platejs/react';
+
+import type { Tool } from '@/spec/tool';
+
+// Keys for the tools combobox and inline elements
+export const KEY_TOOL_SELECTION = 'toolSelection';
+export const KEY_TOOL_PLUS_COMMAND = 'toolPlus';
+export const KEY_TOOL_PLUS_INPUT = 'toolPlusInput';
+
+export type ToolSelectionElementNode = {
+	type: typeof KEY_TOOL_SELECTION;
+	bundleID: string;
+	bundleSlug?: string;
+	toolSlug: string;
+	toolVersion: string;
+	selectionID: string;
+
+	toolSnapshot?: Tool;
+	overrides?: {
+		displayName?: string;
+		description?: string;
+		tags?: string[];
+	};
+
+	// inline+void node needs a text child
+	children: [{ text: '' }];
+};
+
+/**
+ * @public
+ * */
+export type AttachedTool = {
+	type: 'tool';
+	selectionID: string;
+	bundleID: string;
+	bundleSlug?: string;
+	toolSlug: string;
+	toolVersion: string;
+	displayName?: string; // from overrides or snapshot
+	id?: string; // toolSnapshot.id if present
+};
+
+// Insert a hidden tool selection chip (inline+void) to drive bottom bar UI.
+export function insertToolSelectionNode(
+	editor: PlateEditor,
+	item: {
+		bundleID: string;
+		bundleSlug?: string;
+		toolSlug: string;
+		toolVersion: string;
+	},
+	toolSnapshot?: Tool
+) {
+	const selectionID = `tool:${item.bundleID}/${item.toolSlug}@${item.toolVersion}:${Date.now().toString(36)}${Math.random()
+		.toString(36)
+		.slice(2, 8)}`;
+
+	const node: ToolSelectionElementNode = {
+		type: KEY_TOOL_SELECTION,
+		bundleID: item.bundleID,
+		bundleSlug: item.bundleSlug,
+		toolSlug: item.toolSlug,
+		toolVersion: item.toolVersion,
+		selectionID,
+		toolSnapshot,
+		overrides: {},
+		children: [{ text: '' }],
+	};
+
+	editor.tf.withoutNormalizing(() => {
+		// Insert the tool chip (invisible inline) followed by a paragraph separator for smoother typing.
+		editor.tf.insertNodes([node, { type: KEYS.p, text: '\n' }], { select: true });
+		editor.tf.collapse({ edge: 'end' });
+		editor.tf.select(undefined, { edge: 'end' });
+	});
+
+	editor.tf.focus();
+}
+
+// List all tool nodes with path in document order.
+export function getToolNodesWithPath(editor: PlateEditor): Array<[ToolSelectionElementNode, Path]> {
+	const out: Array<[ToolSelectionElementNode, Path]> = [];
+	for (const [el, path] of NodeApi.elements(editor)) {
+		if (ElementApi.isElementType(el, KEY_TOOL_SELECTION)) {
+			out.push([el as unknown as ToolSelectionElementNode, path]);
+		}
+	}
+	return out;
+}
+
+export function removeToolAtPath(editor: PlateEditor, path: Path) {
+	try {
+		editor.tf.removeNodes({ at: path });
+	} catch {
+		// swallow
+	}
+	editor.tf.focus();
+}
+
+// Build a serializable list of attached tools for submission
+export function getAttachedTools(editor: PlateEditor): AttachedTool[] {
+	const items: AttachedTool[] = [];
+	for (const [el] of NodeApi.elements(editor)) {
+		if (ElementApi.isElementType(el, KEY_TOOL_SELECTION)) {
+			const n = el as unknown as ToolSelectionElementNode;
+			items.push({
+				type: 'tool',
+				selectionID: n.selectionID,
+				bundleID: n.bundleID,
+				bundleSlug: n.bundleSlug,
+				toolSlug: n.toolSlug,
+				toolVersion: n.toolVersion,
+				displayName: n.overrides?.displayName ?? n.toolSnapshot?.displayName,
+				id: n.toolSnapshot?.id,
+			});
+		}
+	}
+	return items;
+}

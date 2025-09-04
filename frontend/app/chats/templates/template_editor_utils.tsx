@@ -1,10 +1,12 @@
-import { ElementApi, NodeApi, type Value } from 'platejs';
+import { ElementApi, KEYS, NodeApi, type Value } from 'platejs';
 import type { PlateEditor, usePlateEditor } from 'platejs/react';
+
+import type { PromptTemplate } from '@/spec/prompt';
 
 import { expandTabsToSpaces } from '@/lib/text_utils';
 
 import type { SelectedTemplateForRun, TemplateSelectionElementNode } from '@/chats/templates/template_processing';
-import { makeSelectedTemplateForRun } from '@/chats/templates/template_processing';
+import { buildInitialToolStates, makeSelectedTemplateForRun } from '@/chats/templates/template_processing';
 
 export const KEY_TEMPLATE_SELECTION = 'templateSelection';
 export const KEY_TEMPLATE_VARIABLE = 'templateVariable';
@@ -24,6 +26,50 @@ export type TemplateVariableElementNode = {
 	required?: boolean;
 	children: [{ text: '' }];
 };
+
+export function insertTemplateSelectionNode(
+	editor: PlateEditor,
+	bundleID: string,
+	templateSlug: string,
+	templateVersion: string,
+	template?: PromptTemplate
+) {
+	const selectionID = `tpl:${bundleID}/${templateSlug}@${templateVersion}:${Date.now().toString(36)}${Math.random()
+		.toString(36)
+		.slice(2, 8)}`;
+	const nnode = {
+		type: KEY_TEMPLATE_SELECTION,
+		bundleID,
+		templateSlug,
+		templateVersion,
+		selectionID,
+		variables: {} as Record<string, unknown>,
+		// Snapshot full template for downstream sync "get" to have the full context.
+		templateSnapshot: template,
+		// Local overrides
+		overrides: {} as {
+			displayName?: string;
+			description?: string;
+			tags?: string[];
+			blocks?: PromptTemplate['blocks'];
+			variables?: PromptTemplate['variables'];
+			preProcessors?: PromptTemplate['preProcessors'];
+		},
+		// Each preprocessor call state
+		toolStates: buildInitialToolStates(template),
+		// void elements still need one empty text child in Slate
+		children: [{ text: '' }],
+	};
+
+	editor.tf.withoutNormalizing(() => {
+		// Insert the chip (inline+void)
+		editor.tf.insertNodes([nnode, { type: KEYS.p, text: '\n' }], { select: true });
+		// Move caret after the chip and add a trailing space so the user can keep typing
+		editor.tf.collapse({ edge: 'end' });
+		editor.tf.select(undefined, { edge: 'end' }); // Select end of block above
+	});
+	editor.tf.focus();
+}
 
 // Utility to get selections for sending
 export function getTemplateSelections(editor: PlateEditor): SelectedTemplateForRun[] {
@@ -123,21 +169,6 @@ export function insertPlainTextAsSingleBlock(ed: ReturnType<typeof usePlateEdito
 		editor.tf.insertSoftBreak();
 		editor.tf.insertText(lines[i]);
 	}
-}
-
-// Deeper (longer) paths first; for equal depth, lexicographic descending.
-export function comparePathDeepestFirst(a: ReadonlyArray<number>, b: ReadonlyArray<number>): number {
-	if (a.length !== b.length) return b.length - a.length;
-	for (let i = 0; i < a.length; i++) {
-		const da = a[i] ?? 0;
-		const db = b[i] ?? 0;
-		if (da !== db) return db - da;
-	}
-	return 0;
-}
-
-export function compareEntryByPathDeepestFirst<T extends [unknown, ReadonlyArray<number>]>(a: T, b: T): number {
-	return comparePathDeepestFirst(a[1], b[1]);
 }
 
 export function hasNonEmptyUserText(ed: PlateEditor | null | undefined): boolean {

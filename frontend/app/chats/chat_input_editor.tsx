@@ -5,6 +5,7 @@ import { FiSend } from 'react-icons/fi';
 import { SingleBlockPlugin } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
+import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
 import { cssEscape } from '@/lib/text_utils';
 
 import { useEnterSubmit } from '@/hooks/use_enter_submit';
@@ -20,9 +21,11 @@ import { LineHeightKit } from '@/components/editor/plugins/line_height_kit';
 import { ListKit } from '@/components/editor/plugins/list_kit';
 import { TabbableKit } from '@/components/editor/plugins/tabbable_kit';
 
+import { AttachmentBottomBar } from '@/chats/attachments/attachment_bottom_bar';
+import { getAttachedTools } from '@/chats/attachments/tool_editor_utils';
+import { ToolPlusKit } from '@/chats/attachments/tool_plugin';
 import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
 import {
-	compareEntryByPathDeepestFirst,
 	EMPTY_VALUE,
 	getFirstTemplateNodeWithPath,
 	getTemplateNodesWithPath,
@@ -60,6 +63,8 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 			...AutoformatKit,
 			...TabbableKit,
 			...TemplateSlashKit,
+			...ToolPlusKit,
+
 			...FloatingToolbarKit, // Keep floating formatting toolbar
 		],
 
@@ -82,12 +87,12 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 		const hasTemplate = selections.length > 0;
 
 		let requiredCount = 0;
-		let pendingTools = 0;
+		let pendingPreTools = 0;
 		let firstPendingVar: { name: string; selectionID?: string } | undefined = undefined;
 
 		for (const s of selections) {
 			requiredCount += s.requiredCount;
-			pendingTools += s.toolsToRun.filter(t => t.status === 'pending').length;
+			pendingPreTools += s.toolsToRun.filter(t => t.status === 'pending').length;
 			if (!firstPendingVar && s.requiredVariables.length > 0) {
 				firstPendingVar = { name: s.requiredVariables[0], selectionID: s.selectionID };
 			}
@@ -97,7 +102,7 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 			tplNodeWithPath,
 			hasTemplate,
 			requiredCount,
-			pendingTools,
+			pendingPreTools,
 			firstPendingVar,
 		};
 	}, [editor, docVersion]);
@@ -107,7 +112,7 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 		canSubmit: () => {
 			const hasTemplate = selectionInfo.hasTemplate;
 			if (hasTemplate) {
-				return selectionInfo.requiredCount === 0 && selectionInfo.pendingTools === 0;
+				return selectionInfo.requiredCount === 0 && selectionInfo.pendingPreTools === 0;
 			}
 			return hasNonEmptyUserText(editorRef.current);
 		},
@@ -138,7 +143,7 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 	const isSendButtonEnabled = useMemo(() => {
 		if (isBusy) return false;
 		if (selectionInfo.hasTemplate) {
-			return selectionInfo.requiredCount === 0 && selectionInfo.pendingTools === 0;
+			return selectionInfo.requiredCount === 0 && selectionInfo.pendingPreTools === 0;
 		}
 		return hasNonEmptyUserText(editorRef.current);
 	}, [isBusy, selectionInfo, docVersion]);
@@ -210,7 +215,7 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 		if (e) e.preventDefault();
 		if (!isSendButtonEnabled || isSubmittingRef.current) {
 			// If invalid, flash and focus first pending pill
-			if (selectionInfo.hasTemplate && (selectionInfo.requiredCount > 0 || selectionInfo.pendingTools > 0)) {
+			if (selectionInfo.hasTemplate && (selectionInfo.requiredCount > 0 || selectionInfo.pendingPreTools > 0)) {
 				// ask the toolbar (rendered via plugin) to flash
 				dispatchTemplateFlashEvent();
 
@@ -235,11 +240,19 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 		}
 
 		isSubmittingRef.current = true;
+
 		const promptsToSend = getTemplateSelections(editor);
+		const attachedTools = getAttachedTools(editor);
 		const hasTpl = promptsToSend.length > 0;
+		const hasTools = attachedTools.length > 0;
+
 		let textToSend = hasTpl ? toPlainTextReplacingVariables(editor) : editor.api.string([]);
+
 		if (hasTpl) {
 			textToSend += '\n\nprompts:\n' + JSON.stringify(promptsToSend, null, 2);
+		}
+		if (hasTools) {
+			textToSend += '\n\ntools:\n' + JSON.stringify(attachedTools, null, 2);
 		}
 		// Fire and hold guard until resolved, but keep "clear immediately".
 		const submitPromise = onSubmit(textToSend).catch(() => {
@@ -309,6 +322,7 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 						<FiSend size={18} />
 					</button>
 				</div>
+				<AttachmentBottomBar />
 			</Plate>
 		</form>
 	);

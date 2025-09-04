@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
 
-import type { PromptTemplate, PromptTemplateListItem } from '@/spec/prompt';
+import type { Tool, ToolListItem } from '@/spec/tool';
 
-import { promptStoreAPI } from '@/apis/baseapi';
-import { getAllPromptTemplates } from '@/apis/list_helper';
+import { toolStoreAPI } from '@/apis/baseapi';
+import { getAllTools } from '@/apis/list_helper';
 
-export function usePromptTemplates() {
-	const [data, setData] = useState<PromptTemplateListItem[]>([]);
+export function useTools() {
+	const [data, setData] = useState<ToolListItem[]>([]);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
 		let cancelled = false;
 		setLoading(true);
-		getAllPromptTemplates()
+		getAllTools()
 			.then(res => {
 				if (cancelled) {
 					return;
@@ -36,22 +36,22 @@ export function usePromptTemplates() {
 /**
  * @public
  */
-export function usePromptTemplate(bundleID: string, slug: string, version: string) {
-	const [tmpl, setTmpl] = useState<PromptTemplate | undefined>();
+export function useTool(bundleID: string, slug: string, version: string) {
+	const [tool, setTool] = useState<Tool | undefined>();
 	useEffect(() => {
 		if (!bundleID || !slug || !version) return;
 
 		let cancelled = false;
-		promptStoreAPI.getPromptTemplate(bundleID, slug, version).then(res => {
+		toolStoreAPI.getTool(bundleID, slug, version).then(res => {
 			if (cancelled) {
 				return;
 			}
-			setTmpl(res);
+			setTool(res);
 		});
 		return () => {
 			cancelled = true;
 		};
 	}, [bundleID, slug, version]);
 
-	return tmpl;
+	return tool;
 }
