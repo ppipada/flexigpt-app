@@ -6,7 +6,7 @@ import {
 	KEY_TEMPLATE_SLASH_COMMAND,
 	KEY_TEMPLATE_SLASH_INPUT,
 	KEY_TEMPLATE_VARIABLE,
-} from '@/chats/slashtemplate/editor_utils';
+} from '@/chats/slashtemplate/template_editor_utils';
 import { TemplateSlashInputElement } from '@/chats/slashtemplate/template_slash_input';
 import { TemplateSelectionElement } from '@/chats/slashtemplate/template_slash_selection';
 import { TemplateVariableElement } from '@/chats/slashtemplate/template_variables_inline';

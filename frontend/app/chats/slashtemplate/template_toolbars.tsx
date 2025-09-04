@@ -10,14 +10,14 @@ import { replaceDoubleBraces } from '@/lib/text_utils';
 import { dispatchSetSystemPromptForChat } from '@/chats/events/set_system_prompt';
 import { useTemplateFlashEvent } from '@/chats/events/template_flash';
 import { dispatchTemplateVarsUpdated } from '@/chats/events/template_toolbar_vars_updated';
+import { TemplateEditModal } from '@/chats/slashtemplate/template_edit_modal';
 import {
 	comparePathDeepestFirst,
 	getTemplateNodesWithPath,
 	getTemplateSelections,
 	KEY_TEMPLATE_SELECTION,
 	KEY_TEMPLATE_VARIABLE,
-} from '@/chats/slashtemplate/editor_utils';
-import { TemplateEditModal } from '@/chats/slashtemplate/template_edit_modal';
+} from '@/chats/slashtemplate/template_editor_utils';
 import type { TemplateSelectionElementNode } from '@/chats/slashtemplate/template_processing';
 import { TemplateFixedToolbar } from '@/chats/slashtemplate/template_toolbar_fixed';
 

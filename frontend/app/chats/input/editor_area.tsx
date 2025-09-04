@@ -30,7 +30,7 @@ import {
 	hasNonEmptyUserText,
 	insertPlainTextAsSingleBlock,
 	toPlainTextReplacingVariables,
-} from '@/chats/slashtemplate/editor_utils';
+} from '@/chats/slashtemplate/template_editor_utils';
 import { TemplateSlashKit } from '@/chats/slashtemplate/template_plugin';
 import { getLastUserBlockContent } from '@/chats/slashtemplate/template_processing';
 import { TemplateToolbars } from '@/chats/slashtemplate/template_toolbars';

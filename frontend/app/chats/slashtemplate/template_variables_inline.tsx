@@ -16,7 +16,7 @@ import {
 	KEY_TEMPLATE_SELECTION,
 	KEY_TEMPLATE_VARIABLE,
 	type TemplateVariableElementNode,
-} from '@/chats/slashtemplate/editor_utils';
+} from '@/chats/slashtemplate/template_editor_utils';
 import {
 	computeEffectiveTemplate,
 	computeRequirements,
