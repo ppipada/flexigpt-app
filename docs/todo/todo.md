@@ -2,33 +2,11 @@
 
 ## Laundry list
 
-- [ ] Chat input UI
+- [ ] input area spacing and size when streaming back from assistant needs relook
+- [ ] prompt and tool processing for ai completion call
 
-  - [x] Add system prompt array to main bar.
-  - [x] Move input to editor from text field
-
-  - [ ] prompt/tool inline elements:
-
-    - [x] slash command plumbing
-    - [x] prompt templates via slash command
-
-    - [x] prompt visual filling via toolbar
-
-      - [x] prompt toolbar/editing implementation
-      - [x] system prompt updates from prompts
-      - [x] may be allow expand/decompose for prompts user message
-      - [x] toolbar outline and stacking with shadows and round corners styling
-
-    - [ ] prompt and tool processing for ai completion call
-
-      - [ ] only prompt should be allowed to be sent to ai rather than some text compulsory
-      - [ ] for tools atleast prompt/text may be needed
-
-    - [ ] tools via slash command
-    - [ ] input area spacing and size when streaming back from assistant needs relook
-    - [x] check if proper memo etc is there for usetemplates and use tools etc
-
-    - [ ] tools slash command hooking, tools should be added to bottom of the editor rather than inline
+  - [ ] only prompt should be allowed to be sent to ai rather than some text compulsory
+  - [ ] for tools atleast prompt/text may be needed
 
 - [ ] Think through and enhance tools create/edit and prompts create/edit modals
 

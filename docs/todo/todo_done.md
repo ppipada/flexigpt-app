@@ -546,8 +546,30 @@
   - [x] get list of prompts using the partitioned file store
 
 - Integration of prompts in chat
+
   - [ ] ~~Once defined all prompts should be available to use in chat via some keystroke (??).~~
   - [ ] ~~Would also need some way to indicate if someone wants to add a prompt as a system prompt or just prompt~~
   - [ ] ~~Ideally if it is just prompt it should just expand the prompt in the input box~~
   - [ ] ~~For any prompt with vars, the vars should be injected with defaults properly so that a user can edit them and frontend can parse it to create a proper string too.~~
   - [ ] ~~Can vars be few system functions like open file (??)~~
+
+- [x] Chat input UI
+
+  - [x] Add system prompt array to main bar.
+  - [x] Move input to editor from text field
+
+  - [x] prompt/tool inline elements:
+
+    - [x] slash command plumbing
+    - [x] prompt templates via slash command
+
+    - [x] prompt visual filling via toolbar
+
+      - [x] prompt toolbar/editing implementation
+      - [x] system prompt updates from prompts
+      - [x] may be allow expand/decompose for prompts user message
+      - [x] toolbar outline and stacking with shadows and round corners styling
+
+    - [x] tools via slash command
+    - [x] check if proper memo etc is there for usetemplates and use tools etc
+    - [x] tools slash command hooking, tools should be added to bottom of the editor rather than inline

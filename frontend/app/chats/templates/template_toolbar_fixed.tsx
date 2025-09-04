@@ -34,7 +34,7 @@ export function TemplateFixedToolbar(props: {
 			<span title={templateName}>{templateName.length > 32 ? templateName.slice(0, 32) + '...' : templateName}</span>
 
 			<div
-				className={`flex items-center gap-1 rounded-2xl px-2 py-0 ${selection.variablesSchema.length > 0 ? (selection.requiredCount > 0 ? 'bg-warning' : 'bg-success') : 'bg-base-200'}`}
+				className={`flex items-center gap-1 rounded-2xl px-2 py-0 ${selection.variablesSchema.length > 0 ? (selection.requiredCount > 0 ? 'bg-warning text-warning-content' : 'bg-success text-success-content') : 'bg-base-200'}`}
 			>
 				{selection.variablesSchema.length > 0 ? (
 					<>
@@ -54,7 +54,7 @@ export function TemplateFixedToolbar(props: {
 			</div>
 
 			<div
-				className={`flex items-center gap-1 rounded-2xl px-2 py-0 ${totalTools > 0 ? (pendingTools > 0 ? 'bg-info' : 'bg-success') : 'bg-base-200'}`}
+				className={`flex items-center gap-1 rounded-2xl px-2 py-0 ${totalTools > 0 ? (pendingTools > 0 ? 'bg-info text-info-content' : 'bg-success text-success-content') : 'bg-base-200'}`}
 			>
 				{totalTools > 0 ? (
 					<>
@@ -72,7 +72,9 @@ export function TemplateFixedToolbar(props: {
 				)}
 			</div>
 
-			<div className={`flex items-center gap-1 rounded-2xl px-2 py-0 ${hasSystemBlock ? 'bg-success' : 'bg-base-200'}`}>
+			<div
+				className={`flex items-center gap-1 rounded-2xl px-2 py-0 ${hasSystemBlock ? 'bg-success text-success-content' : 'bg-base-200'}`}
+			>
 				{hasSystemBlock ? (
 					<span className="flex items-center gap-1 px-2 py-0" title="Template contains a system/dev prompt block">
 						system <FiCheck />
