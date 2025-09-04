@@ -1,6 +1,54 @@
 #!/bin/bash
 
-cloc --vcs=git --ignored=ignored.txt --exclude_ext=yaml,sum,mod .
+cloc \
+		--vcs=git \
+		--ignored=ignored.txt \
+		--force-lang=Mustache,tmpl --force-lang=INI,env --force-lang=INI,dev --force-lang=INI,prod \
+		--exclude_ext=yaml,sum,mod,md5 \
+		--not-match-f='LICENSE$|\.npmrc$|\.prettierignore$|\.gitignore$|\.gitattributes$|\.gitmodules$' \
+		.
+
+# ===
+# Output on 4 September 2025
+#      364 text files.
+#      359 unique files.
+# Wrote ignored.txt
+#       11 files ignored.
+
+# github.com/AlDanial/cloc v 1.98  T=0.49 s (727.6 files/s, 128578.0 lines/s)
+# -------------------------------------------------------------------------------
+# Language                     files          blank        comment           code
+# -------------------------------------------------------------------------------
+# Go                             131           3532           1594          28499
+# TypeScript                     156           2765           1011          19651
+# JSON                            19             15              0           1617
+# Markdown                         9            403              0           1224
+# YAML                            10            204            186            824
+# Bourne Shell                    13            124            196            508
+# JavaScript                       9            103             65            383
+# CSS                              1             22              4            241
+# Mustache                         6              9              0            115
+# XML                              1              0              0             68
+# INI                              4             11              0             66
+# -------------------------------------------------------------------------------
+# SUM:                           359           7188           3056          53196
+# -------------------------------------------------------------------------------
+
+# ignored.txt
+
+# .gitattributes:  --not-match-d =LICENSE$|\.npmrc$|\.prettierignore$|\.gitignore$|\.gitattributes$|\.gitmodules$
+# .gitignore:  --not-match-d =LICENSE$|\.npmrc$|\.prettierignore$|\.gitignore$|\.gitattributes$|\.gitmodules$
+# .gitmodules:  --not-match-d =LICENSE$|\.npmrc$|\.prettierignore$|\.gitignore$|\.gitattributes$|\.gitmodules$
+# .npmrc:  --not-match-d =LICENSE$|\.npmrc$|\.prettierignore$|\.gitignore$|\.gitattributes$|\.gitmodules$
+# .prettierignore:  --not-match-d =LICENSE$|\.npmrc$|\.prettierignore$|\.gitignore$|\.gitattributes$|\.gitmodules$
+# LICENSE:  --not-match-d =LICENSE$|\.npmrc$|\.prettierignore$|\.gitignore$|\.gitattributes$|\.gitmodules$
+# frontend/package.json.md5:  listed in $Not_Code_Extension{md5}
+# go.mod:  listed in $Not_Code_Extension{mod}
+# go.sum:  listed in $Not_Code_Extension{sum}
+# pnpm-lock.yaml:  listed in $Not_Code_Extension{yaml}
+# pnpm-workspace.yaml:  listed in $Not_Code_Extension{yaml}
+
+# ===
 
 # ===
 # Output on 16 Apr 2025
