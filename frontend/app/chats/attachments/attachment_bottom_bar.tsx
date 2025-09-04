@@ -36,7 +36,7 @@ export function AttachmentBottomBar() {
 						return (
 							<div
 								key={n.selectionID}
-								className="bg-base-200 hover:bg-base-300/80 text-base-content flex shrink-0 items-center gap-2 rounded-2xl px-2 py-[2px]"
+								className="bg-base-200 hover:bg-base-300/80 text-base-content flex shrink-0 items-center gap-2 rounded-2xl px-2 py-0 text-xs"
 								title={`Tool - ${display} (${slug})`}
 								data-attachment-chip="tool"
 								data-selection-id={n.selectionID}
