@@ -41,6 +41,34 @@ export type AttachedTool = {
 	id?: string; // toolSnapshot.id if present
 };
 
+// Build a stable identity key for a tool selection (bundle + slug + version).
+// Prefer bundleID when present, otherwise fall back to bundleSlug.
+export function toolIdentityKey(
+	bundleID: string | undefined,
+	bundleSlug: string | undefined,
+	toolSlug: string,
+	toolVersion: string
+): string {
+	const bundlePart = bundleID ? `id:${bundleID}` : `slug:${bundleSlug ?? ''}`;
+	return `${bundlePart}/${toolSlug}@${toolVersion}`;
+}
+
+function toolIdentityKeyFromNode(
+	n: Pick<ToolSelectionElementNode, 'bundleID' | 'bundleSlug' | 'toolSlug' | 'toolVersion'>
+): string {
+	return toolIdentityKey(n.bundleID, n.bundleSlug, n.toolSlug, n.toolVersion);
+}
+
+function getAttachedToolKeySet(editor: PlateEditor): Set<string> {
+	const keys = new Set<string>();
+	for (const [el] of NodeApi.elements(editor)) {
+		if (ElementApi.isElementType(el, KEY_TOOL_SELECTION)) {
+			keys.add(toolIdentityKeyFromNode(el as unknown as ToolSelectionElementNode));
+		}
+	}
+	return keys;
+}
+
 // Insert a hidden tool selection chip (inline+void) to drive bottom bar UI.
 export function insertToolSelectionNode(
 	editor: PlateEditor,
@@ -52,6 +80,12 @@ export function insertToolSelectionNode(
 	},
 	toolSnapshot?: Tool
 ) {
+	const identity = toolIdentityKey(item.bundleID, item.bundleSlug, item.toolSlug, item.toolVersion);
+	if (getAttachedToolKeySet(editor).has(identity)) {
+		editor.tf.focus();
+		return;
+	}
+
 	const selectionID = `tool:${item.bundleID}/${item.toolSlug}@${item.toolVersion}:${Date.now().toString(36)}${Math.random()
 		.toString(36)
 		.slice(2, 8)}`;
@@ -78,22 +112,47 @@ export function insertToolSelectionNode(
 	editor.tf.focus();
 }
 
-// List all tool nodes with path in document order.
-export function getToolNodesWithPath(editor: PlateEditor): Array<[ToolSelectionElementNode, Path]> {
+// List tool nodes with path in document order.
+// By default, returns only the first occurrence for each unique tool identity.
+export function getToolNodesWithPath(
+	editor: PlateEditor,
+	uniqueByIdentity?: boolean
+): Array<[ToolSelectionElementNode, Path]> {
 	const out: Array<[ToolSelectionElementNode, Path]> = [];
+	const unique = uniqueByIdentity ?? true;
+	const seen = unique ? new Set<string>() : undefined;
 	for (const [el, path] of NodeApi.elements(editor)) {
 		if (ElementApi.isElementType(el, KEY_TOOL_SELECTION)) {
-			out.push([el as unknown as ToolSelectionElementNode, path]);
+			const n = el as unknown as ToolSelectionElementNode;
+			if (unique) {
+				const key = toolIdentityKeyFromNode(n);
+				if ((seen as Set<string>).has(key)) continue;
+				(seen as Set<string>).add(key);
+			}
+			out.push([n, path]);
 		}
 	}
 	return out;
 }
 
-export function removeToolAtPath(editor: PlateEditor, path: Path) {
-	try {
-		editor.tf.removeNodes({ at: path });
-	} catch {
-		// swallow
+// Remove all instances of a tool by identity key (bundle+slug+version).
+export function removeToolByKey(editor: PlateEditor, identityKey: string) {
+	const paths: Path[] = [];
+	for (const [el, path] of NodeApi.elements(editor)) {
+		if (ElementApi.isElementType(el, KEY_TOOL_SELECTION)) {
+			const n = el as unknown as ToolSelectionElementNode;
+			if (toolIdentityKeyFromNode(n) === identityKey) {
+				paths.push(path);
+			}
+		}
+	}
+	// Remove from last to first to avoid path shift issues.
+	for (const p of paths.reverse()) {
+		try {
+			editor.tf.removeNodes({ at: p });
+		} catch {
+			// swallow
+		}
 	}
 	editor.tf.focus();
 }
@@ -101,9 +160,14 @@ export function removeToolAtPath(editor: PlateEditor, path: Path) {
 // Build a serializable list of attached tools for submission
 export function getAttachedTools(editor: PlateEditor): AttachedTool[] {
 	const items: AttachedTool[] = [];
+	const seen = new Set<string>();
+
 	for (const [el] of NodeApi.elements(editor)) {
 		if (ElementApi.isElementType(el, KEY_TOOL_SELECTION)) {
 			const n = el as unknown as ToolSelectionElementNode;
+			const key = toolIdentityKeyFromNode(n);
+			if (seen.has(key)) continue;
+			seen.add(key);
 			items.push({
 				type: 'tool',
 				selectionID: n.selectionID,

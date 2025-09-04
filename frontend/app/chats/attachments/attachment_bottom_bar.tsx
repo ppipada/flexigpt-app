@@ -2,7 +2,7 @@ import { FiTool, FiX } from 'react-icons/fi';
 
 import { type PlateEditor, useEditorRef } from 'platejs/react';
 
-import { getToolNodesWithPath, removeToolAtPath } from '@/chats/attachments/tool_editor_utils';
+import { getToolNodesWithPath, removeToolByKey, toolIdentityKey } from '@/chats/attachments/tool_editor_utils';
 
 /**
   Bottom bar for rendering attached items (Tools/Files/Docs).
@@ -28,10 +28,11 @@ export function AttachmentBottomBar() {
 			<div className="flex items-center gap-2 px-2 py-1 font-mono text-xs">
 				{/* Chips scroller */}
 				<div className="no-scrollbar flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-0">
-					{toolEntries.map(([node, path]) => {
+					{toolEntries.map(([node]) => {
 						const n = node;
 						const display = n.toolSnapshot?.displayName ?? n.toolSlug;
 						const slug = `${n.bundleSlug ?? n.bundleID}/${n.toolSlug}@${n.toolVersion}`;
+						const identityKey = toolIdentityKey(n.bundleID, n.bundleSlug, n.toolSlug, n.toolVersion);
 
 						return (
 							<div
@@ -47,7 +48,7 @@ export function AttachmentBottomBar() {
 									type="button"
 									className="btn btn-ghost btn-xs text-error shrink-0 px-1 py-0 shadow-none"
 									onClick={() => {
-										removeToolAtPath(editor, path);
+										removeToolByKey(editor, identityKey);
 									}}
 									title="Remove tool"
 									aria-label="Remove tool"

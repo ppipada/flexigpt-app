@@ -33,7 +33,7 @@ const ToolPlusPlugin = createTSlatePlugin<ToolPlusConfig>({
 
 const ToolSelectionPlugin = createSlatePlugin({
 	key: KEY_TOOL_SELECTION,
-	node: { isElement: true, isInline: true, isVoid: true },
+	node: { isElement: true, isInline: true, isVoid: true, isSelectable: false },
 	editOnly: true,
 });
 

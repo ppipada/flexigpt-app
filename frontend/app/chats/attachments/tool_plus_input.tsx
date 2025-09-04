@@ -2,7 +2,7 @@ import React from 'react';
 
 import { FiTool } from 'react-icons/fi';
 
-import type { PlateEditor } from 'platejs/react';
+import { type PlateEditor, useEditorRef } from 'platejs/react';
 
 import type { ToolListItem } from '@/spec/tool';
 
@@ -14,17 +14,30 @@ import { toolStoreAPI } from '@/apis/baseapi';
 
 import { SlashInputElement } from '@/components/editor/nodes/slash_node';
 
-import { insertToolSelectionNode } from '@/chats/attachments/tool_editor_utils';
+import { getToolNodesWithPath, insertToolSelectionNode, toolIdentityKey } from '@/chats/attachments/tool_editor_utils';
 
 export function ToolPlusInputElement(props: Omit<Parameters<typeof SlashInputElement>[0], 'trigger' | 'groups'>) {
 	const { data, loading } = useTools();
-
+	const editor = useEditorRef() as PlateEditor;
+	const attachedKeys = React.useMemo(() => {
+		const keys = new Set<string>();
+		for (const [node] of getToolNodesWithPath(editor, false)) {
+			const n = node;
+			keys.add(toolIdentityKey(n.bundleID, n.bundleSlug, n.toolSlug, n.toolVersion));
+		}
+		return keys;
+	}, [editor, editor.children]);
 	const groups = React.useMemo(() => {
 		if (loading) return [];
+		// Filter out tools already attached in the current document.
+		const filtered = data.filter(it => {
+			// Some lists might not provide bundleID; toolIdentityKey handles fallback to slug.
+			return !attachedKeys.has(toolIdentityKey(it.bundleID, it.bundleSlug, it.toolSlug, it.toolVersion));
+		});
 		return [
 			{
 				group: 'Tools',
-				items: data.map(it => {
+				items: filtered.map(it => {
 					const pretty = it.toolSlug.replace(/[-_]/g, ' ');
 					return {
 						slug: `${it.bundleSlug}/${it.toolSlug}`,
@@ -61,7 +74,7 @@ export function ToolPlusInputElement(props: Omit<Parameters<typeof SlashInputEle
 				}),
 			},
 		];
-	}, [data, loading]);
+	}, [data, loading, attachedKeys]);
 
 	return <SlashInputElement {...props} trigger="+" groups={groups} />;
 }
