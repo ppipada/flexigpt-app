@@ -137,52 +137,49 @@ func (api *AnthropicCompatibleAPI) BuildCompletionData(
 
 func (api *AnthropicCompatibleAPI) FetchCompletion(
 	ctx context.Context,
-	prompt string,
-	modelParams spec.ModelParams,
-	prevMessages []spec.ChatCompletionDataMessage,
+
+	completionData *spec.CompletionData,
 	onStreamTextData, onStreamThinkingData func(string) error,
 ) (*spec.CompletionResponse, error) {
 	if api.client == nil {
 		return nil, errors.New("anthropic compatible LLM: client not initialized")
 	}
-
-	input := getCompletionData(prompt, modelParams, prevMessages)
-	if len(input.Messages) == 0 && strings.TrimSpace(input.ModelParams.SystemPrompt) == "" {
-		return nil, errors.New("anthropic compatible LLM: empty input messages")
+	if completionData == nil || len(completionData.Messages) == 0 {
+		return nil, errors.New("anthropic compatible LLM: empty completion data")
 	}
 
 	msgs, sysParams, err := toAnthropicMessages(
-		input.ModelParams.SystemPrompt,
-		input.Messages,
+		completionData.ModelParams.SystemPrompt,
+		completionData.Messages,
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	params := anthropic.MessageNewParams{
-		Model:     anthropic.Model(input.ModelParams.Name),
-		MaxTokens: int64(input.ModelParams.MaxOutputLength),
+		Model:     anthropic.Model(completionData.ModelParams.Name),
+		MaxTokens: int64(completionData.ModelParams.MaxOutputLength),
 		Messages:  msgs,
 	}
 	if len(sysParams) > 0 {
 		params.System = sysParams
 	}
 
-	if rp := input.ModelParams.Reasoning; rp != nil &&
+	if rp := completionData.ModelParams.Reasoning; rp != nil &&
 		rp.Type == modelpresetSpec.ReasoningTypeHybridWithTokens &&
 		rp.Tokens > 0 {
 		tokens := max(rp.Tokens, 1024)
 		params.Thinking = anthropic.ThinkingConfigParamOfEnabled(int64(tokens))
-	} else if t := input.ModelParams.Temperature; t != nil {
+	} else if t := completionData.ModelParams.Temperature; t != nil {
 		params.Temperature = anthropic.Float(*t)
 	}
 
 	timeout := modelpresetSpec.DefaultAPITimeout
-	if input.ModelParams.Timeout > 0 {
-		timeout = time.Duration(input.ModelParams.Timeout) * time.Second
+	if completionData.ModelParams.Timeout > 0 {
+		timeout = time.Duration(completionData.ModelParams.Timeout) * time.Second
 	}
 
-	if input.ModelParams.Stream && onStreamTextData != nil && onStreamThinkingData != nil {
+	if completionData.ModelParams.Stream && onStreamTextData != nil && onStreamThinkingData != nil {
 		return api.doStreaming(ctx, params, onStreamTextData, onStreamThinkingData, timeout)
 	}
 	return api.doNonStreaming(ctx, params, timeout)

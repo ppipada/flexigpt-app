@@ -41,9 +41,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 	// Wrapper redirects to providerSet after doing event handling
 	async completion(
 		provider: ProviderName,
-		prompt: string,
-		modelParams: ModelParams,
-		prevMessages?: ChatCompletionDataMessage[],
+		completionData: CompletionData,
 		requestId?: string,
 		signal?: AbortSignal,
 		onStreamTextData?: (text: string) => void,
@@ -81,9 +79,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 
 		const responsePromise = FetchCompletion(
 			provider,
-			prompt,
-			modelParams as wailsSpec.ModelParams,
-			prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionDataMessage[]) : [],
+			completionData as wailsSpec.CompletionData,
 			textCallbackId,
 			thinkingCallbackId,
 			requestId ?? ''

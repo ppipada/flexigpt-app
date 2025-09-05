@@ -140,8 +140,8 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	ctx context.Context,
 	req *spec.FetchCompletionRequest,
 ) (*spec.FetchCompletionResponse, error) {
-	if req == nil || req.Body == nil || req.Body.Prompt == "" || req.Body.ModelParams.Name == "" {
-		return nil, errors.New("got empty provider/prompt/model input")
+	if req == nil || req.Body == nil || req.Body.CompletionData == nil {
+		return nil, errors.New("got empty fetch completion input")
 	}
 	provider := req.Provider
 	p, exists := ps.providers[provider]
@@ -151,9 +151,7 @@ func (ps *ProviderSetAPI) FetchCompletion(
 
 	resp, err := p.FetchCompletion(
 		ctx,
-		req.Body.Prompt,
-		req.Body.ModelParams,
-		req.Body.PrevMessages,
+		req.Body.CompletionData,
 		req.Body.OnStreamTextData,
 		req.Body.OnStreamThinkingData,
 	)

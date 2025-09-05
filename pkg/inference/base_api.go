@@ -27,9 +27,7 @@ type CompletionProvider interface {
 	) (*spec.CompletionData, error)
 	FetchCompletion(
 		ctx context.Context,
-		prompt string,
-		modelParams spec.ModelParams,
-		prevMessages []spec.ChatCompletionDataMessage,
+		completionData *spec.CompletionData,
 		OnStreamTextData func(textData string) error,
 		OnStreamThinkingData func(thinkingData string) error,
 	) (*spec.CompletionResponse, error)

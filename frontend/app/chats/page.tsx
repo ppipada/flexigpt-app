@@ -11,7 +11,7 @@ import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { useAtBottom } from '@/hooks/use_at_bottom';
 
-import { GetCompletionMessage } from '@/apis/aiprovider_helper';
+import { BuildCompletionData, GetCompletionMessage, getQuotedJSON } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
@@ -277,25 +277,47 @@ const ChatScreen: FC = () => {
 					timeout: options.timeout,
 					additionalParametersRawJSON: options.additionalParametersRawJSON,
 				};
+				const completionData = await BuildCompletionData(options.providerName, inputParams, prevMessages);
+				if (updatedChatWithConvoMessage.messages.length > 1) {
+					const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
+					if (updatedChatWithConvoMessage.messages[prevIdx].role === ConversationRoleEnum.user) {
+						const completionDataJSONString = 'Completion data:\n' + getQuotedJSON(completionData);
+						updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
+							i === prevIdx
+								? { ...m, details: completionDataJSONString } // overwrite details data in case of resend
+								: m
+						);
+						saveUpdatedChat({ ...updatedChatWithConvoMessage });
+					}
+				}
 				const newMsg = await GetCompletionMessage(
 					options.providerName,
-					inputParams,
+					completionData,
 					convoMsg,
-					prevMessages,
 					requestIdRef.current,
 					abortRef.current.signal,
 					onStreamTextData,
 					onStreamThinkingData
 				);
 
-				if (newMsg.requestDetails) {
-					if (updatedChatWithConvoMessage.messages.length > 1) {
-						const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
-						updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
-							i === prevIdx ? { ...m, details: newMsg.requestDetails } : m
-						);
-					}
-				}
+				// This is heavier and mostly same as completion data as of now.
+				// We want completion data as in abort/fail cases req details are not available.
+				// May want to rethink how to dedup this info with completion data or remove completion data when api data is available.
+				// Also rethink on how to better manage curl as the "data" part is again very much a duplicate.
+				// if (newMsg.requestDetails) {
+				// 	if (updatedChatWithConvoMessage.messages.length > 1) {
+				// 		const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
+				// 		const reqData = 'API request data:\n' + newMsg.requestDetails;
+				// 		updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
+				// 			i === prevIdx
+				// 				? {
+				// 						...m,
+				// 						details: m.details ? m.details + '\n' + reqData : reqData,
+				// 					}
+				// 				: m
+				// 		);
+				// 	}
+				// }
 
 				if (newMsg.responseMessage) {
 					const respMessage = { ...newMsg.responseMessage };

@@ -112,9 +112,7 @@ export interface IProviderSetAPI {
 	): Promise<CompletionData>;
 	completion(
 		provider: ProviderName,
-		prompt: string,
-		modelParams: ModelParams,
-		prevMessages?: Array<ChatCompletionDataMessage>,
+		completionData: CompletionData,
 		requestId?: string,
 		signal?: AbortSignal,
 		onStreamTextData?: (textData: string) => void,

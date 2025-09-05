@@ -142,25 +142,21 @@ func (api *OpenAICompatibleAPI) BuildCompletionData(
 
 func (api *OpenAICompatibleAPI) FetchCompletion(
 	ctx context.Context,
-	prompt string,
-	modelParams spec.ModelParams,
-	prevMessages []spec.ChatCompletionDataMessage,
+	completionData *spec.CompletionData,
 	onStreamTextData, onStreamThinkingData func(string) error,
 ) (*spec.CompletionResponse, error) {
 	if api.client == nil {
 		return nil, errors.New("openai compatible LLM: client not initialized")
 	}
-
-	input := getCompletionData(prompt, modelParams, prevMessages)
-	if len(input.Messages) == 0 && strings.TrimSpace(input.ModelParams.SystemPrompt) == "" {
-		return nil, errors.New("openai compatible LLM: empty input messages")
+	if completionData == nil || len(completionData.Messages) == 0 {
+		return nil, errors.New("openai compatible LLM: empty completion data")
 	}
 
 	// Build OpenAI chat messages.
 	msgs, err := toOpenAIChatMessages(
-		input.ModelParams.SystemPrompt,
-		input.Messages,
-		string(input.ModelParams.Name),
+		completionData.ModelParams.SystemPrompt,
+		completionData.Messages,
+		string(completionData.ModelParams.Name),
 		api.ProviderParams.Name,
 	)
 	if err != nil {
@@ -168,15 +164,15 @@ func (api *OpenAICompatibleAPI) FetchCompletion(
 	}
 
 	params := openai.ChatCompletionNewParams{
-		Model:               shared.ChatModel(input.ModelParams.Name),
-		MaxCompletionTokens: openai.Int(int64(input.ModelParams.MaxOutputLength)),
+		Model:               shared.ChatModel(completionData.ModelParams.Name),
+		MaxCompletionTokens: openai.Int(int64(completionData.ModelParams.MaxOutputLength)),
 		Messages:            msgs,
 	}
-	if input.ModelParams.Temperature != nil {
-		params.Temperature = openai.Float(*input.ModelParams.Temperature)
+	if completionData.ModelParams.Temperature != nil {
+		params.Temperature = openai.Float(*completionData.ModelParams.Temperature)
 	}
 
-	if rp := input.ModelParams.Reasoning; rp != nil &&
+	if rp := completionData.ModelParams.Reasoning; rp != nil &&
 		rp.Type == modelpresetSpec.ReasoningTypeSingleWithLevels {
 		switch rp.Level {
 		case modelpresetSpec.ReasoningLevelLow,
@@ -190,11 +186,11 @@ func (api *OpenAICompatibleAPI) FetchCompletion(
 		}
 	}
 	timeout := modelpresetSpec.DefaultAPITimeout
-	if input.ModelParams.Timeout > 0 {
-		timeout = time.Duration(input.ModelParams.Timeout) * time.Second
+	if completionData.ModelParams.Timeout > 0 {
+		timeout = time.Duration(completionData.ModelParams.Timeout) * time.Second
 	}
 
-	if input.ModelParams.Stream && onStreamTextData != nil && onStreamThinkingData != nil {
+	if completionData.ModelParams.Stream && onStreamTextData != nil && onStreamThinkingData != nil {
 		return api.doStreaming(ctx, params, onStreamTextData, onStreamThinkingData, timeout)
 	}
 	return api.doNonStreaming(ctx, params, timeout)

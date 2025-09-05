@@ -108,9 +108,7 @@ type BuildCompletionDataResponse struct {
 }
 
 type FetchCompletionRequestBody struct {
-	Prompt               string                          `json:"prompt"       required:"true"`
-	ModelParams          ModelParams                     `json:"modelParams"  required:"true"`
-	PrevMessages         []ChatCompletionDataMessage     `json:"prevMessages"`
+	CompletionData       *CompletionData                 `json:"completionData" required:"true"`
 	OnStreamTextData     func(textData string) error     `json:"-"`
 	OnStreamThinkingData func(thinkingData string) error `json:"-"`
 }

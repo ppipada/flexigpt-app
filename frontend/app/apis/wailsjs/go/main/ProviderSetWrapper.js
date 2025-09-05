@@ -18,8 +18,8 @@ export function DeleteProvider(arg1) {
   return window['go']['main']['ProviderSetWrapper']['DeleteProvider'](arg1);
 }
 
-export function FetchCompletion(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
-  return window['go']['main']['ProviderSetWrapper']['FetchCompletion'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+export function FetchCompletion(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['ProviderSetWrapper']['FetchCompletion'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function SetProviderAPIKey(arg1) {

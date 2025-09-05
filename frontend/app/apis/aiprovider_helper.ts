@@ -1,6 +1,7 @@
 import {
 	type ChatCompletionDataMessage,
 	ChatCompletionRoleEnum,
+	type CompletionData,
 	type CompletionResponse,
 	type ModelParams,
 	ResponseContentType,
@@ -30,7 +31,7 @@ function convertConversationToChatMessages(conversationMessages?: ConversationMe
 	return chatMessages;
 }
 
-function getQuotedJSON(obj: any): string {
+export function getQuotedJSON(obj: any): string {
 	return '```json\n' + JSON.stringify(obj, null, 2) + '\n```';
 }
 
@@ -84,7 +85,8 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Compl
 				respDetails += '\n### Response Details\n' + getQuotedJSON(providerResp.errorDetails.responseDetails);
 			}
 			if (providerResp.errorDetails.requestDetails) {
-				requestDetails = getQuotedJSON(providerResp.errorDetails.requestDetails);
+				const r = providerResp.errorDetails.requestDetails;
+				requestDetails = getQuotedJSON(r);
 			}
 			if (!respContent) {
 				respContent = convoMessage.content || '';
@@ -105,22 +107,18 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Compl
 async function handleDirectCompletion(
 	convoMessage: ConversationMessage,
 	provider: ProviderName,
-	prompt: string,
-	modelParams: ModelParams,
-	prevMessages: Array<ChatCompletionDataMessage>,
+	completionData: CompletionData,
 	requestId?: string,
 	signal?: AbortSignal
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
-	const providerResp = await providerSetAPI.completion(provider, prompt, modelParams, prevMessages, requestId, signal);
+	const providerResp = await providerSetAPI.completion(provider, completionData, requestId, signal);
 	return parseAPIResponse(convoMessage, providerResp);
 }
 
 async function handleStreamedCompletion(
 	convoMessage: ConversationMessage,
 	provider: ProviderName,
-	prompt: string,
-	modelParams: ModelParams,
-	prevMessages: Array<ChatCompletionDataMessage>,
+	completionData: CompletionData,
 	requestId?: string,
 	signal?: AbortSignal,
 	onStreamTextData?: (textData: string) => void,
@@ -128,9 +126,7 @@ async function handleStreamedCompletion(
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
 	const providerResp = await providerSetAPI.completion(
 		provider,
-		prompt,
-		modelParams,
-		prevMessages,
+		completionData,
 		requestId,
 		signal,
 		onStreamTextData,
@@ -139,47 +135,48 @@ async function handleStreamedCompletion(
 	return parseAPIResponse(convoMessage, providerResp);
 }
 
-export async function GetCompletionMessage(
+export async function BuildCompletionData(
 	provider: ProviderName,
 	modelParams: ModelParams,
+	messages?: Array<ConversationMessage>
+): Promise<CompletionData> {
+	const allMessages = convertConversationToChatMessages(messages);
+	// console.log(JSON.stringify(allMessages, null, 2));
+	const promptMsg = allMessages.pop();
+	const completionData = providerSetAPI.buildCompletionData(
+		provider,
+		promptMsg?.content || '',
+		modelParams,
+		allMessages
+	);
+	return completionData;
+}
+
+export async function GetCompletionMessage(
+	provider: ProviderName,
+	completionData: CompletionData,
 	convoMessage: ConversationMessage,
-	messages?: Array<ConversationMessage>,
 	requestId?: string,
 	signal?: AbortSignal,
 	onStreamTextData?: (textData: string) => void,
 	onStreamThinkingData?: (thinkingData: string) => void
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
 	try {
-		// console.log(JSON.stringify(modelParams, null, 2));
-		const allMessages = convertConversationToChatMessages(messages);
-		// console.log(JSON.stringify(allMessages, null, 2));
-		const promptMsg = allMessages.pop();
-
-		const isStream = modelParams.stream || false;
+		const isStream = completionData.modelParams.stream || false;
 		// log.info('CompletionData', defaultProvider, JSON.stringify(fullCompletionData, null, 2));
 		if (isStream && onStreamTextData && onStreamThinkingData) {
 			return await handleStreamedCompletion(
 				convoMessage,
 				provider,
-				promptMsg?.content || '',
-				modelParams,
-				allMessages,
+				completionData,
 				requestId,
 				signal,
 				onStreamTextData,
 				onStreamThinkingData
 			);
 		} else {
-			modelParams.stream = false;
-			return await handleDirectCompletion(
-				convoMessage,
-				provider,
-				promptMsg?.content || '',
-				modelParams,
-				allMessages,
-				requestId,
-				signal
-			);
+			completionData.modelParams.stream = false;
+			return await handleDirectCompletion(convoMessage, provider, completionData, requestId, signal);
 		}
 	} catch (error) {
 		if ((error as DOMException).name === 'AbortError') {
