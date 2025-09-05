@@ -23,7 +23,7 @@ export function insertTemplateSelectionNode(
 	const selectionID = `tpl:${bundleID}/${templateSlug}@${templateVersion}:${Date.now().toString(36)}${Math.random()
 		.toString(36)
 		.slice(2, 8)}`;
-	const nnode = {
+	const nnode: TemplateSelectionElementNode = {
 		type: KEY_TEMPLATE_SELECTION,
 		bundleID,
 		templateSlug,
