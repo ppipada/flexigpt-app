@@ -12,7 +12,6 @@ import (
 	"github.com/openai/openai-go/v2/option"
 	"github.com/openai/openai-go/v2/shared"
 
-	"github.com/ppipada/flexigpt-app/pkg/builtin"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
@@ -156,7 +155,7 @@ func (api *OpenAICompatibleAPI) FetchCompletion(
 	msgs, err := toOpenAIChatMessages(
 		completionData.ModelParams.SystemPrompt,
 		completionData.Messages,
-		string(completionData.ModelParams.Name),
+		completionData.ModelParams.Name,
 		api.ProviderParams.Name,
 	)
 	if err != nil {
@@ -280,20 +279,14 @@ func (api *OpenAICompatibleAPI) doStreaming(
 func toOpenAIChatMessages(
 	systemPrompt string,
 	messages []spec.ChatCompletionDataMessage,
-	modelName string,
+	modelName modelpresetSpec.ModelName,
 	providerName modelpresetSpec.ProviderName,
 ) ([]openai.ChatCompletionMessageParamUnion, error) {
 	var out []openai.ChatCompletionMessageParamUnion
 
 	// System/developer prompt.
-	if sp := strings.TrimSpace(systemPrompt); sp != "" {
-		msg := openai.SystemMessage(sp)
-		if providerName == builtin.ProviderNameOpenAI &&
-			(strings.HasPrefix(modelName, "o") || (strings.HasPrefix(modelName, "gpt-5"))) {
-			// If the SDK exposes an enum for this, use it; otherwise the raw string works.
-			msg = openai.DeveloperMessage(sp)
-		}
-		out = append(out, msg)
+	if msg := getOpenAIMessageFromSystemPrompt(string(providerName), string(modelName), systemPrompt); msg != nil {
+		out = append(out, *msg)
 	}
 
 	for _, m := range messages {
@@ -315,4 +308,21 @@ func toOpenAIChatMessages(
 		}
 	}
 	return out, nil
+}
+
+func getOpenAIMessageFromSystemPrompt(
+	providerName, modelName, systemPrompt string,
+) *openai.ChatCompletionMessageParamUnion {
+	sp := strings.TrimSpace(systemPrompt)
+	if sp == "" {
+		return nil
+	}
+	msg := openai.SystemMessage(sp)
+	// Convert a system message t oa developer message for o series models
+	if providerName == "openai" &&
+		(strings.HasPrefix(modelName, "o") || (strings.HasPrefix(modelName, "gpt-5"))) {
+		// If the SDK exposes an enum for this, use it; otherwise the raw string works.
+		msg = openai.DeveloperMessage(sp)
+	}
+	return &msg
 }

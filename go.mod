@@ -12,6 +12,9 @@ go 1.25.0
 //  - modernize: go install golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest; modernize -V=full
 //       - update lint.yml for version increment too
 //  - helper to upgrade modules: go-mod-upgrade
+
+// Dependency inspector. Install godepgraph and graphwiz and run
+// godepgraph -s -o github.com/ppipada/flexigpt-app,command-line-arguments  cmd/agentgo/main.go | dot -Tpng -o godepgraph.png
 require (
 	github.com/adrg/xdg v0.5.3
 	github.com/anthropics/anthropic-sdk-go v1.9.1
@@ -72,3 +75,4 @@ require (
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 )
+
