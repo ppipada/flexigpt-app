@@ -1,10 +1,7 @@
 import type { PlateElementProps } from 'platejs/react';
 
-import {
-	computeEffectiveTemplate,
-	computeRequirements,
-	type TemplateSelectionElementNode,
-} from '@/chats/templates/template_processing';
+import { computeEffectiveTemplate, computeRequirements } from '@/chats/templates/template_processing';
+import { type TemplateSelectionElementNode } from '@/chats/templates/template_spec';
 
 /**
  * Template selection element (data carrier).

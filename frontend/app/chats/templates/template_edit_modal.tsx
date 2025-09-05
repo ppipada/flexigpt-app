@@ -13,9 +13,8 @@ import {
 	computeEffectiveTemplate,
 	computeRequirements,
 	effectiveVarValueLocal,
-	type TemplateSelectionElementNode,
-	type ToolState,
 } from '@/chats/templates/template_processing';
+import { type TemplateSelectionElementNode, type ToolState } from '@/chats/templates/template_spec';
 import { EnumDropdownInline } from '@/chats/templates/template_variable_enum_dropdown';
 
 export function TemplateEditModal({

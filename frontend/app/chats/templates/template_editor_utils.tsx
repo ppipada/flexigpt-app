@@ -1,31 +1,17 @@
-import { ElementApi, KEYS, NodeApi, type Value } from 'platejs';
+import { ElementApi, KEYS, NodeApi } from 'platejs';
 import type { PlateEditor, usePlateEditor } from 'platejs/react';
 
 import type { PromptTemplate } from '@/spec/prompt';
 
 import { expandTabsToSpaces } from '@/lib/text_utils';
 
-import type { SelectedTemplateForRun, TemplateSelectionElementNode } from '@/chats/templates/template_processing';
 import { buildInitialToolStates, makeSelectedTemplateForRun } from '@/chats/templates/template_processing';
-
-export const KEY_TEMPLATE_SELECTION = 'templateSelection';
-export const KEY_TEMPLATE_VARIABLE = 'templateVariable';
-export const KEY_TEMPLATE_SLASH_COMMAND = 'templateSlash';
-export const KEY_TEMPLATE_SLASH_INPUT = 'templateInput';
-
-export const EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
-
-export type TemplateVariableElementNode = {
-	type: typeof KEY_TEMPLATE_VARIABLE;
-	bundleID: string;
-	templateSlug: string;
-	templateVersion: string;
-	selectionID: string;
-	name: string;
-	// for layout only (computed again at render)
-	required?: boolean;
-	children: [{ text: '' }];
-};
+import type { SelectedTemplateForRun, TemplateSelectionElementNode } from '@/chats/templates/template_spec';
+import {
+	KEY_TEMPLATE_SELECTION,
+	KEY_TEMPLATE_VARIABLE,
+	type TemplateVariableElementNode,
+} from '@/chats/templates/template_spec';
 
 export function insertTemplateSelectionNode(
 	editor: PlateEditor,

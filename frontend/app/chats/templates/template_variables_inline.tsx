@@ -13,16 +13,16 @@ import {
 	useTemplateVarsUpdatedForSelection,
 } from '@/chats/events/template_toolbar_vars_updated';
 import {
-	KEY_TEMPLATE_SELECTION,
-	KEY_TEMPLATE_VARIABLE,
-	type TemplateVariableElementNode,
-} from '@/chats/templates/template_editor_utils';
-import {
 	computeEffectiveTemplate,
 	computeRequirements,
 	effectiveVarValueLocal,
-	type TemplateSelectionElementNode,
 } from '@/chats/templates/template_processing';
+import {
+	KEY_TEMPLATE_SELECTION,
+	KEY_TEMPLATE_VARIABLE,
+	type TemplateSelectionElementNode,
+	type TemplateVariableElementNode,
+} from '@/chats/templates/template_spec';
 import { EnumDropdownInline } from '@/chats/templates/template_variable_enum_dropdown';
 
 function findTemplateNode(

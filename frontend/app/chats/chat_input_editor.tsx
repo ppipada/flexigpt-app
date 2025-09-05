@@ -2,7 +2,7 @@ import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, use
 
 import { FiSend } from 'react-icons/fi';
 
-import { SingleBlockPlugin } from 'platejs';
+import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -26,7 +26,6 @@ import { getAttachedTools } from '@/chats/attachments/tool_editor_utils';
 import { ToolPlusKit } from '@/chats/attachments/tool_plugin';
 import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
 import {
-	EMPTY_VALUE,
 	getFirstTemplateNodeWithPath,
 	getTemplateNodesWithPath,
 	getTemplateSelections,
@@ -42,6 +41,8 @@ import { buildUserInlineChildrenFromText } from '@/chats/templates/template_vari
 export interface EditorAreaHandle {
 	focus: () => void;
 }
+
+const EDITOR_EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
 
 interface EditorAreaProps {
 	isBusy: boolean;
@@ -64,11 +65,10 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 			...TabbableKit,
 			...TemplateSlashKit,
 			...ToolPlusKit,
-
 			...FloatingToolbarKit, // Keep floating formatting toolbar
 		],
 
-		value: EMPTY_VALUE,
+		value: EDITOR_EMPTY_VALUE,
 	});
 
 	const isSubmittingRef = useRef<boolean>(false);
@@ -260,7 +260,7 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 		});
 
 		// Clear editor and state right away
-		editor.tf.setValue(EMPTY_VALUE);
+		editor.tf.setValue(EDITOR_EMPTY_VALUE);
 		lastPopulatedSelectionKeyRef.current.clear();
 		editor.tf.focus();
 
