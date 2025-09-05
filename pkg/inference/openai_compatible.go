@@ -318,7 +318,7 @@ func getOpenAIMessageFromSystemPrompt(
 		return nil
 	}
 	msg := openai.SystemMessage(sp)
-	// Convert a system message t oa developer message for o series models
+	// Convert a system message to a developer message for o series models.
 	if providerName == "openai" &&
 		(strings.HasPrefix(modelName, "o") || (strings.HasPrefix(modelName, "gpt-5"))) {
 		// If the SDK exposes an enum for this, use it; otherwise the raw string works.
