@@ -212,12 +212,12 @@ export namespace spec {
 	        this.nonEmpty = source["nonEmpty"];
 	    }
 	}
-	export class ChatCompletionRequestMessageFunctionCall {
+	export class ChatCompletionDataMessageFunctionCall {
 	    name?: string;
 	    arguments?: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new ChatCompletionRequestMessageFunctionCall(source);
+	        return new ChatCompletionDataMessageFunctionCall(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -226,14 +226,14 @@ export namespace spec {
 	        this.arguments = source["arguments"];
 	    }
 	}
-	export class ChatCompletionRequestMessage {
+	export class ChatCompletionDataMessage {
 	    role: string;
 	    content?: string;
 	    name?: string;
-	    functionCall?: ChatCompletionRequestMessageFunctionCall;
+	    functionCall?: ChatCompletionDataMessageFunctionCall;
 	
 	    static createFrom(source: any = {}) {
-	        return new ChatCompletionRequestMessage(source);
+	        return new ChatCompletionDataMessage(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -241,7 +241,7 @@ export namespace spec {
 	        this.role = source["role"];
 	        this.content = source["content"];
 	        this.name = source["name"];
-	        this.functionCall = this.convertValues(source["functionCall"], ChatCompletionRequestMessageFunctionCall);
+	        this.functionCall = this.convertValues(source["functionCall"], ChatCompletionDataMessageFunctionCall);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -262,6 +262,220 @@ export namespace spec {
 		    return a;
 		}
 	}
+	export class ReasoningParams {
+	    type: string;
+	    level: string;
+	    tokens: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ReasoningParams(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.level = source["level"];
+	        this.tokens = source["tokens"];
+	    }
+	}
+	export class ModelParams {
+	    name: string;
+	    stream: boolean;
+	    maxPromptLength: number;
+	    maxOutputLength: number;
+	    temperature?: number;
+	    reasoning?: ReasoningParams;
+	    systemPrompt: string;
+	    timeout: number;
+	    additionalParametersRawJSON?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelParams(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.stream = source["stream"];
+	        this.maxPromptLength = source["maxPromptLength"];
+	        this.maxOutputLength = source["maxOutputLength"];
+	        this.temperature = source["temperature"];
+	        this.reasoning = this.convertValues(source["reasoning"], ReasoningParams);
+	        this.systemPrompt = source["systemPrompt"];
+	        this.timeout = source["timeout"];
+	        this.additionalParametersRawJSON = source["additionalParametersRawJSON"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class BuildCompletionDataRequestBody {
+	    prompt: string;
+	    modelParams: ModelParams;
+	    prevMessages: ChatCompletionDataMessage[];
+	
+	    static createFrom(source: any = {}) {
+	        return new BuildCompletionDataRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.prompt = source["prompt"];
+	        this.modelParams = this.convertValues(source["modelParams"], ModelParams);
+	        this.prevMessages = this.convertValues(source["prevMessages"], ChatCompletionDataMessage);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class BuildCompletionDataRequest {
+	    Provider: string;
+	    Body?: BuildCompletionDataRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new BuildCompletionDataRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Provider = source["Provider"];
+	        this.Body = this.convertValues(source["Body"], BuildCompletionDataRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class ChatCompletionFunctions {
+	    name: string;
+	    description?: string;
+	    parameters?: Record<string, any>;
+	
+	    static createFrom(source: any = {}) {
+	        return new ChatCompletionFunctions(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.description = source["description"];
+	        this.parameters = source["parameters"];
+	    }
+	}
+	export class CompletionData {
+	    modelParams: ModelParams;
+	    messages?: ChatCompletionDataMessage[];
+	    functions?: ChatCompletionFunctions[];
+	    functionCall?: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new CompletionData(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.modelParams = this.convertValues(source["modelParams"], ModelParams);
+	        this.messages = this.convertValues(source["messages"], ChatCompletionDataMessage);
+	        this.functions = this.convertValues(source["functions"], ChatCompletionFunctions);
+	        this.functionCall = source["functionCall"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class BuildCompletionDataResponse {
+	    Body?: CompletionData;
+	
+	    static createFrom(source: any = {}) {
+	        return new BuildCompletionDataResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], CompletionData);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
+	
 	
 	export class ResponseContent {
 	    type: string;
@@ -1662,22 +1876,6 @@ export namespace spec {
 	        this.PageToken = source["PageToken"];
 	    }
 	}
-	export class ReasoningParams {
-	    type: string;
-	    level: string;
-	    tokens: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new ReasoningParams(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.type = source["type"];
-	        this.level = source["level"];
-	        this.tokens = source["tokens"];
-	    }
-	}
 	export class ModelPreset {
 	    schemaVersion: string;
 	    id: string;
@@ -2099,52 +2297,7 @@ export namespace spec {
 	}
 	
 	
-	export class ModelParams {
-	    name: string;
-	    stream: boolean;
-	    maxPromptLength: number;
-	    maxOutputLength: number;
-	    temperature?: number;
-	    reasoning?: ReasoningParams;
-	    systemPrompt: string;
-	    timeout: number;
-	    additionalParametersRawJSON?: string;
 	
-	    static createFrom(source: any = {}) {
-	        return new ModelParams(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.name = source["name"];
-	        this.stream = source["stream"];
-	        this.maxPromptLength = source["maxPromptLength"];
-	        this.maxOutputLength = source["maxOutputLength"];
-	        this.temperature = source["temperature"];
-	        this.reasoning = this.convertValues(source["reasoning"], ReasoningParams);
-	        this.systemPrompt = source["systemPrompt"];
-	        this.timeout = source["timeout"];
-	        this.additionalParametersRawJSON = source["additionalParametersRawJSON"];
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
 	
 	export class PatchDefaultProviderRequestBody {
 	    defaultProvider: string;

@@ -131,18 +131,27 @@ func (api *OpenAICompatibleAPI) SetProviderAPIKey(
 	return nil
 }
 
+func (api *OpenAICompatibleAPI) BuildCompletionData(
+	ctx context.Context,
+	prompt string,
+	modelParams spec.ModelParams,
+	prevMessages []spec.ChatCompletionDataMessage,
+) (*spec.CompletionData, error) {
+	return getCompletionData(prompt, modelParams, prevMessages), nil
+}
+
 func (api *OpenAICompatibleAPI) FetchCompletion(
 	ctx context.Context,
 	prompt string,
 	modelParams spec.ModelParams,
-	prevMessages []spec.ChatCompletionRequestMessage,
+	prevMessages []spec.ChatCompletionDataMessage,
 	onStreamTextData, onStreamThinkingData func(string) error,
 ) (*spec.CompletionResponse, error) {
 	if api.client == nil {
 		return nil, errors.New("openai compatible LLM: client not initialized")
 	}
 
-	input := getCompletionRequest(prompt, modelParams, prevMessages)
+	input := getCompletionData(prompt, modelParams, prevMessages)
 	if len(input.Messages) == 0 && strings.TrimSpace(input.ModelParams.SystemPrompt) == "" {
 		return nil, errors.New("openai compatible LLM: empty input messages")
 	}
@@ -274,7 +283,7 @@ func (api *OpenAICompatibleAPI) doStreaming(
 
 func toOpenAIChatMessages(
 	systemPrompt string,
-	messages []spec.ChatCompletionRequestMessage,
+	messages []spec.ChatCompletionDataMessage,
 	modelName string,
 	providerName modelpresetSpec.ProviderName,
 ) ([]openai.ChatCompletionMessageParamUnion, error) {

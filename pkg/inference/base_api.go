@@ -19,11 +19,17 @@ type CompletionProvider interface {
 		ctx context.Context,
 		apiKey string,
 	) error
+	BuildCompletionData(
+		ctx context.Context,
+		prompt string,
+		modelParams spec.ModelParams,
+		prevMessages []spec.ChatCompletionDataMessage,
+	) (*spec.CompletionData, error)
 	FetchCompletion(
 		ctx context.Context,
 		prompt string,
 		modelParams spec.ModelParams,
-		prevMessages []spec.ChatCompletionRequestMessage,
+		prevMessages []spec.ChatCompletionDataMessage,
 		OnStreamTextData func(textData string) error,
 		OnStreamThinkingData func(thinkingData string) error,
 	) (*spec.CompletionResponse, error)
@@ -83,12 +89,12 @@ func attachDebugResp(
 	}
 }
 
-func getCompletionRequest(
+func getCompletionData(
 	prompt string,
 	modelParams spec.ModelParams,
-	prevMessages []spec.ChatCompletionRequestMessage,
-) *spec.CompletionRequest {
-	completionRequest := spec.CompletionRequest{
+	prevMessages []spec.ChatCompletionDataMessage,
+) *spec.CompletionData {
+	completionData := spec.CompletionData{
 		ModelParams: spec.ModelParams{
 			Name:                        modelParams.Name,
 			Stream:                      modelParams.Stream,
@@ -105,21 +111,21 @@ func getCompletionRequest(
 	// Handle messages.
 	messages := slices.Clone(prevMessages)
 	if prompt != "" {
-		message := spec.ChatCompletionRequestMessage{
+		message := spec.ChatCompletionDataMessage{
 			Role:    "user",
 			Content: &prompt,
 		}
 		messages = append(messages, message)
 	}
-	completionRequest.Messages = messages
+	completionData.Messages = messages
 
 	// Assuming filterMessagesByTokenCount is implemented elsewhere.
-	completionRequest.Messages = FilterMessagesByTokenCount(
-		completionRequest.Messages,
-		completionRequest.ModelParams.MaxPromptLength,
+	completionData.Messages = FilterMessagesByTokenCount(
+		completionData.Messages,
+		completionData.ModelParams.MaxPromptLength,
 	)
 
-	return &completionRequest
+	return &completionData
 }
 
 func TrimInbuiltPrompts(systemPrompt, inbuiltPrompt string) string {

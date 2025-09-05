@@ -9,11 +9,11 @@ import (
 
 // FilterMessagesByTokenCount filters messages based on the maximum token count.
 func FilterMessagesByTokenCount(
-	messages []spec.ChatCompletionRequestMessage,
+	messages []spec.ChatCompletionDataMessage,
 	maxTokenCount int,
-) []spec.ChatCompletionRequestMessage {
+) []spec.ChatCompletionDataMessage {
 	totalTokens := 0
-	var filteredMessages []spec.ChatCompletionRequestMessage
+	var filteredMessages []spec.ChatCompletionDataMessage
 
 	// Loop through the messages in reverse order (prioritizing the last element).
 	for i := len(messages) - 1; i >= 0; i-- {

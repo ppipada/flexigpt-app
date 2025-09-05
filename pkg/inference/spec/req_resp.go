@@ -4,6 +4,38 @@ import (
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
+type AddProviderRequestBody struct {
+	SDKType                  modelpresetSpec.ProviderSDKType `json:"sdkType"`
+	Origin                   string                          `json:"origin"`
+	ChatCompletionPathPrefix string                          `json:"chatCompletionPathPrefix"`
+	APIKeyHeaderKey          string                          `json:"apiKeyHeaderKey"`
+	DefaultHeaders           map[string]string               `json:"defaultHeaders"`
+}
+
+type AddProviderRequest struct {
+	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
+	Body     *AddProviderRequestBody
+}
+
+type AddProviderResponse struct{}
+
+type DeleteProviderRequest struct {
+	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
+}
+
+type DeleteProviderResponse struct{}
+
+type SetProviderAPIKeyRequestBody struct {
+	APIKey string `json:"apiKey" required:"true"`
+}
+
+type SetProviderAPIKeyRequest struct {
+	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
+	Body     *SetProviderAPIKeyRequestBody
+}
+
+type SetProviderAPIKeyResponse struct{}
+
 type APIRequestDetails struct {
 	URL         *string        `json:"url,omitempty"`
 	Method      *string        `json:"method,omitempty"`
@@ -53,56 +85,39 @@ type CompletionResponse struct {
 	ResponseContent []ResponseContent   `json:"responseContent,omitempty"`
 }
 
-type CompletionRequest struct {
-	ModelParams  ModelParams                             `json:"modelParams"`
-	Messages     []ChatCompletionRequestMessage          `json:"messages,omitempty"`
-	Functions    []ChatCompletionFunctions               `json:"functions,omitempty"`
-	FunctionCall CreateChatCompletionRequestFunctionCall `json:"functionCall,omitempty"`
+type CompletionData struct {
+	ModelParams  ModelParams                          `json:"modelParams"`
+	Messages     []ChatCompletionDataMessage          `json:"messages,omitempty"`
+	Functions    []ChatCompletionFunctions            `json:"functions,omitempty"`
+	FunctionCall CreateChatCompletionDataFunctionCall `json:"functionCall,omitempty"`
 }
 
-type AddProviderRequestBody struct {
-	SDKType                  modelpresetSpec.ProviderSDKType `json:"sdkType"`
-	Origin                   string                          `json:"origin"`
-	ChatCompletionPathPrefix string                          `json:"chatCompletionPathPrefix"`
-	APIKeyHeaderKey          string                          `json:"apiKeyHeaderKey"`
-	DefaultHeaders           map[string]string               `json:"defaultHeaders"`
+type BuildCompletionDataRequestBody struct {
+	Prompt       string                      `json:"prompt"       required:"true"`
+	ModelParams  ModelParams                 `json:"modelParams"  required:"true"`
+	PrevMessages []ChatCompletionDataMessage `json:"prevMessages"`
 }
 
-type AddProviderRequest struct {
+type BuildCompletionDataRequest struct {
 	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
-	Body     *AddProviderRequestBody
+	Body     *BuildCompletionDataRequestBody
 }
 
-type AddProviderResponse struct{}
-
-type DeleteProviderRequest struct {
-	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
+type BuildCompletionDataResponse struct {
+	Body *CompletionData
 }
-
-type DeleteProviderResponse struct{}
-
-type SetProviderAPIKeyRequestBody struct {
-	APIKey string `json:"apiKey" required:"true"`
-}
-
-type SetProviderAPIKeyRequest struct {
-	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
-	Body     *SetProviderAPIKeyRequestBody
-}
-
-type SetProviderAPIKeyResponse struct{}
 
 type FetchCompletionRequestBody struct {
-	Provider             modelpresetSpec.ProviderName    `json:"provider"         required:"true"`
-	Prompt               string                          `json:"prompt"           required:"true"`
-	ModelParams          ModelParams                     `json:"spec.ModelParams" required:"true"`
-	PrevMessages         []ChatCompletionRequestMessage  `json:"prevMessages"`
+	Prompt               string                          `json:"prompt"       required:"true"`
+	ModelParams          ModelParams                     `json:"modelParams"  required:"true"`
+	PrevMessages         []ChatCompletionDataMessage     `json:"prevMessages"`
 	OnStreamTextData     func(textData string) error     `json:"-"`
 	OnStreamThinkingData func(thinkingData string) error `json:"-"`
 }
 
 type FetchCompletionRequest struct {
-	Body *FetchCompletionRequestBody
+	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
+	Body     *FetchCompletionRequestBody
 }
 
 type FetchCompletionResponse struct {

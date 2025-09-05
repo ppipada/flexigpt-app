@@ -1,5 +1,5 @@
 import {
-	type ChatCompletionRequestMessage,
+	type ChatCompletionDataMessage,
 	ChatCompletionRoleEnum,
 	type CompletionResponse,
 	type ModelParams,
@@ -19,13 +19,11 @@ const roleMap: Record<ConversationRoleEnum, ChatCompletionRoleEnum> = {
 	[ConversationRoleEnum.feedback]: ChatCompletionRoleEnum.user,
 };
 
-function convertConversationToChatMessages(
-	conversationMessages?: ConversationMessage[]
-): ChatCompletionRequestMessage[] {
+function convertConversationToChatMessages(conversationMessages?: ConversationMessage[]): ChatCompletionDataMessage[] {
 	if (!conversationMessages) {
 		return [];
 	}
-	const chatMessages: ChatCompletionRequestMessage[] = [];
+	const chatMessages: ChatCompletionDataMessage[] = [];
 	conversationMessages.forEach(convoMsg => {
 		chatMessages.push({ role: roleMap[convoMsg.role], content: convoMsg.content });
 	});
@@ -109,7 +107,7 @@ async function handleDirectCompletion(
 	provider: ProviderName,
 	prompt: string,
 	modelParams: ModelParams,
-	prevMessages: Array<ChatCompletionRequestMessage>,
+	prevMessages: Array<ChatCompletionDataMessage>,
 	requestId?: string,
 	signal?: AbortSignal
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
@@ -122,7 +120,7 @@ async function handleStreamedCompletion(
 	provider: ProviderName,
 	prompt: string,
 	modelParams: ModelParams,
-	prevMessages: Array<ChatCompletionRequestMessage>,
+	prevMessages: Array<ChatCompletionDataMessage>,
 	requestId?: string,
 	signal?: AbortSignal,
 	onStreamTextData?: (textData: string) => void,
@@ -158,7 +156,7 @@ export async function GetCompletionMessage(
 		const promptMsg = allMessages.pop();
 
 		const isStream = modelParams.stream || false;
-		// log.info('CompletionRequest', defaultProvider, JSON.stringify(fullCompletionRequest, null, 2));
+		// log.info('CompletionData', defaultProvider, JSON.stringify(fullCompletionData, null, 2));
 		if (isStream && onStreamTextData && onStreamThinkingData) {
 			return await handleStreamedCompletion(
 				convoMessage,

@@ -110,6 +110,31 @@ func (ps *ProviderSetAPI) SetProviderAPIKey(
 	return &spec.SetProviderAPIKeyResponse{}, nil
 }
 
+func (ps *ProviderSetAPI) BuildCompletionData(
+	ctx context.Context,
+	req *spec.BuildCompletionDataRequest,
+) (*spec.BuildCompletionDataResponse, error) {
+	if req == nil || req.Body == nil || req.Body.Prompt == "" || req.Body.ModelParams.Name == "" {
+		return nil, errors.New("got empty provider/prompt/model input")
+	}
+	provider := req.Provider
+	p, exists := ps.providers[provider]
+	if !exists {
+		return nil, errors.New("invalid provider")
+	}
+	resp, err := p.BuildCompletionData(
+		ctx,
+		req.Body.Prompt,
+		req.Body.ModelParams,
+		req.Body.PrevMessages,
+	)
+	if err != nil {
+		return nil, errors.Join(err, errors.New("error in building completion data"))
+	}
+
+	return &spec.BuildCompletionDataResponse{Body: resp}, nil
+}
+
 // FetchCompletion processes a completion request for a given provider.
 func (ps *ProviderSetAPI) FetchCompletion(
 	ctx context.Context,
@@ -118,7 +143,7 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	if req == nil || req.Body == nil || req.Body.Prompt == "" || req.Body.ModelParams.Name == "" {
 		return nil, errors.New("got empty provider/prompt/model input")
 	}
-	provider := req.Body.Provider
+	provider := req.Provider
 	p, exists := ps.providers[provider]
 	if !exists {
 		return nil, errors.New("invalid provider")

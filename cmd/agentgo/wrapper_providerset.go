@@ -61,12 +61,20 @@ func (w *ProviderSetWrapper) SetProviderAPIKey(
 	})
 }
 
+func (w *ProviderSetWrapper) BuildCompletionData(
+	req *inferenceSpec.BuildCompletionDataRequest,
+) (*inferenceSpec.BuildCompletionDataResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inferenceSpec.BuildCompletionDataResponse, error) {
+		return w.providersetAPI.BuildCompletionData(context.Background(), req)
+	})
+}
+
 // FetchCompletion handles the completion request and streams data back to the frontend.
 func (w *ProviderSetWrapper) FetchCompletion(
 	provider string,
 	prompt string,
 	modelParams inferenceSpec.ModelParams,
-	prevMessages []inferenceSpec.ChatCompletionRequestMessage,
+	prevMessages []inferenceSpec.ChatCompletionDataMessage,
 	textCallbackID string,
 	thinkingCallbackID string,
 	requestID string,
@@ -94,7 +102,6 @@ func (w *ProviderSetWrapper) FetchCompletion(
 		}()
 
 		reqBody := &inferenceSpec.FetchCompletionRequestBody{
-			Provider:     modelpresetSpec.ProviderName(provider),
 			Prompt:       prompt,
 			ModelParams:  modelParams,
 			PrevMessages: prevMessages,
@@ -111,7 +118,8 @@ func (w *ProviderSetWrapper) FetchCompletion(
 		}
 
 		req := &inferenceSpec.FetchCompletionRequest{
-			Body: reqBody,
+			Provider: modelpresetSpec.ProviderName(provider),
+			Body:     reqBody,
 		}
 		resp, err := w.providersetAPI.FetchCompletion(
 			ctx,

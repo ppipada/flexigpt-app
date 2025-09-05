@@ -1,7 +1,13 @@
-import type { ChatCompletionRequestMessage, CompletionResponse, IProviderSetAPI, ModelParams } from '@/spec/aiprovider';
+import type {
+	ChatCompletionDataMessage,
+	CompletionData,
+	CompletionResponse,
+	IProviderSetAPI,
+	ModelParams,
+} from '@/spec/aiprovider';
 import type { ProviderName } from '@/spec/modelpreset';
 
-import { CancelCompletion, FetchCompletion } from '@/apis/wailsjs/go/main/ProviderSetWrapper';
+import { BuildCompletionData, CancelCompletion, FetchCompletion } from '@/apis/wailsjs/go/main/ProviderSetWrapper';
 import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
 import { EventsOff, EventsOn } from '@/apis/wailsjs/runtime/runtime';
 
@@ -9,6 +15,27 @@ import { EventsOff, EventsOn } from '@/apis/wailsjs/runtime/runtime';
  * @public
  */
 export class WailsProviderSetAPI implements IProviderSetAPI {
+	async buildCompletionData(
+		provider: ProviderName,
+		prompt: string,
+		modelParams: ModelParams,
+		prevMessages?: Array<ChatCompletionDataMessage>
+	): Promise<CompletionData> {
+		const req = {
+			Provider: provider,
+			Body: {
+				prompt: prompt,
+				modelParams: modelParams as wailsSpec.ModelParams,
+				prevMessages: prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionDataMessage[]) : [],
+			} as wailsSpec.BuildCompletionDataRequestBody,
+		};
+
+		const resp = await BuildCompletionData(req as wailsSpec.BuildCompletionDataRequest);
+		const respBody = resp.Body as wailsSpec.CompletionData;
+		// console.log(JSON.stringify(respBody, undefined, 2));
+		return respBody as CompletionData;
+	}
+
 	// Need an eventflow for getting completion.
 	// Implemented that in main App Wrapper than aiprovider go package.
 	// Wrapper redirects to providerSet after doing event handling
@@ -16,7 +43,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		provider: ProviderName,
 		prompt: string,
 		modelParams: ModelParams,
-		prevMessages?: ChatCompletionRequestMessage[],
+		prevMessages?: ChatCompletionDataMessage[],
 		requestId?: string,
 		signal?: AbortSignal,
 		onStreamTextData?: (text: string) => void,
@@ -56,7 +83,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 			provider,
 			prompt,
 			modelParams as wailsSpec.ModelParams,
-			prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionRequestMessage[]) : [],
+			prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionDataMessage[]) : [],
 			textCallbackId,
 			thinkingCallbackId,
 			requestId ?? ''

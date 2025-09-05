@@ -126,18 +126,27 @@ func (api *AnthropicCompatibleAPI) SetProviderAPIKey(ctx context.Context, apiKey
 	return nil
 }
 
+func (api *AnthropicCompatibleAPI) BuildCompletionData(
+	ctx context.Context,
+	prompt string,
+	modelParams spec.ModelParams,
+	prevMessages []spec.ChatCompletionDataMessage,
+) (*spec.CompletionData, error) {
+	return getCompletionData(prompt, modelParams, prevMessages), nil
+}
+
 func (api *AnthropicCompatibleAPI) FetchCompletion(
 	ctx context.Context,
 	prompt string,
 	modelParams spec.ModelParams,
-	prevMessages []spec.ChatCompletionRequestMessage,
+	prevMessages []spec.ChatCompletionDataMessage,
 	onStreamTextData, onStreamThinkingData func(string) error,
 ) (*spec.CompletionResponse, error) {
 	if api.client == nil {
 		return nil, errors.New("anthropic compatible LLM: client not initialized")
 	}
 
-	input := getCompletionRequest(prompt, modelParams, prevMessages)
+	input := getCompletionData(prompt, modelParams, prevMessages)
 	if len(input.Messages) == 0 && strings.TrimSpace(input.ModelParams.SystemPrompt) == "" {
 		return nil, errors.New("anthropic compatible LLM: empty input messages")
 	}
@@ -327,7 +336,7 @@ func handleContentBlockDeltaEvent(
 
 func toAnthropicMessages(
 	systemPrompt string,
-	messages []spec.ChatCompletionRequestMessage,
+	messages []spec.ChatCompletionDataMessage,
 ) (msgs []anthropic.MessageParam, sysPrompts []anthropic.TextBlockParam, err error) {
 	var out []anthropic.MessageParam
 	var sysParts []string

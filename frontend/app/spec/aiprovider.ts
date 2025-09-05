@@ -13,27 +13,27 @@ export interface ChatCompletionFunctions {
 	parameters?: { [key: string]: any };
 }
 
-export interface ChatCompletionRequestMessageFunctionCall {
+export interface ChatCompletionDataMessageFunctionCall {
 	name?: string;
 	arguments?: string;
 }
 
-export interface ChatCompletionRequestMessage {
+export interface ChatCompletionDataMessage {
 	role: ChatCompletionRoleEnum;
 	content?: string;
 	name?: string;
-	functionCall?: ChatCompletionRequestMessageFunctionCall;
+	functionCall?: ChatCompletionDataMessageFunctionCall;
 }
 
 export interface ChatCompletionResponseMessage {
 	role: ChatCompletionRoleEnum;
 	content?: string;
-	functionCall?: ChatCompletionRequestMessageFunctionCall;
+	functionCall?: ChatCompletionDataMessageFunctionCall;
 }
 
-export type CreateChatCompletionRequestFunctionCall = CreateChatCompletionRequestFunctionCallOneOf | string;
+export type CreateChatCompletionDataFunctionCall = CreateChatCompletionDataFunctionCallOneOf | string;
 
-export interface CreateChatCompletionRequestFunctionCallOneOf {
+export interface CreateChatCompletionDataFunctionCallOneOf {
 	name: string;
 }
 
@@ -49,11 +49,11 @@ export interface ModelParams {
 	additionalParametersRawJSON?: string;
 }
 
-export interface CompletionRequest {
+export interface CompletionData {
 	modelParams: ModelParams;
-	messages?: ChatCompletionRequestMessage[];
+	messages?: ChatCompletionDataMessage[];
 	functions?: ChatCompletionFunctions[];
-	functionCall?: CreateChatCompletionRequestFunctionCall;
+	functionCall?: CreateChatCompletionDataFunctionCall;
 }
 
 export interface APIRequestDetails {
@@ -104,11 +104,17 @@ export interface CompletionResponse {
 }
 
 export interface IProviderSetAPI {
+	buildCompletionData(
+		provider: ProviderName,
+		prompt: string,
+		modelParams: ModelParams,
+		prevMessages?: Array<ChatCompletionDataMessage>
+	): Promise<CompletionData>;
 	completion(
 		provider: ProviderName,
 		prompt: string,
 		modelParams: ModelParams,
-		prevMessages?: Array<ChatCompletionRequestMessage>,
+		prevMessages?: Array<ChatCompletionDataMessage>,
 		requestId?: string,
 		signal?: AbortSignal,
 		onStreamTextData?: (textData: string) => void,

@@ -19,27 +19,27 @@ type ChatCompletionFunctions struct {
 	Parameters  map[string]any `json:"parameters,omitempty"`
 }
 
-type ChatCompletionRequestMessageFunctionCall struct {
+type ChatCompletionDataMessageFunctionCall struct {
 	Name      *string `json:"name,omitempty"`
 	Arguments *string `json:"arguments,omitempty"`
 }
 
-type ChatCompletionRequestMessage struct {
-	Role         ChatCompletionRoleEnum                    `json:"role"`
-	Content      *string                                   `json:"content,omitempty"`
-	Name         *string                                   `json:"name,omitempty"`
-	FunctionCall *ChatCompletionRequestMessageFunctionCall `json:"functionCall,omitempty"`
+type ChatCompletionDataMessage struct {
+	Role         ChatCompletionRoleEnum                 `json:"role"`
+	Content      *string                                `json:"content,omitempty"`
+	Name         *string                                `json:"name,omitempty"`
+	FunctionCall *ChatCompletionDataMessageFunctionCall `json:"functionCall,omitempty"`
 }
 
 type ChatCompletionResponseMessage struct {
-	Role         ChatCompletionRoleEnum                    `json:"role"`
-	Content      *string                                   `json:"content,omitempty"`
-	FunctionCall *ChatCompletionRequestMessageFunctionCall `json:"functionCall,omitempty"`
+	Role         ChatCompletionRoleEnum                 `json:"role"`
+	Content      *string                                `json:"content,omitempty"`
+	FunctionCall *ChatCompletionDataMessageFunctionCall `json:"functionCall,omitempty"`
 }
 
-type CreateChatCompletionRequestFunctionCall any
+type CreateChatCompletionDataFunctionCall any
 
-type CreateChatCompletionRequestFunctionCallOneOf struct {
+type CreateChatCompletionDataFunctionCallOneOf struct {
 	Name string `json:"name"`
 }
 
