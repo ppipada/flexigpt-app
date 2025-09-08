@@ -84,7 +84,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 		const v = effectiveVarValueLocal(varDef, tsenode.variables ?? {}, tsenode.toolStates, eff?.preProcessors);
 		return v;
 	}, [tsenode?.variables, tsenode?.toolStates, varDef?.name, eff?.preProcessors, refreshTick]);
-
+	// console.log(varDef, tsenode?.variables);
 	// Commit helper
 	function commitValue(next: unknown) {
 		if (!tsenode || !tsPath) return;
@@ -92,7 +92,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 		const nextVars = { ...(tsenode.variables ?? {}) };
 
 		// Normalize empty to undefined (remove)
-		const shouldUnset = next === '' || next === undefined || next === null;
+		const shouldUnset = next === undefined || next === null;
 		if (shouldUnset) {
 			// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 			delete nextVars[el.name];
@@ -229,6 +229,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 		);
 	}
 
+	// console.log(el.name, currentValue);
 	return (
 		<span
 			{...attributes}
@@ -300,7 +301,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 					<span>{el.name}</span>
 					{currentValue !== undefined && currentValue !== null && (
 						<span className="ml-1">
-							= <span>{currentValue as string}</span>
+							= <span>"{currentValue as string}"</span>
 						</span>
 					)}
 					<FiEdit2 size={10} />

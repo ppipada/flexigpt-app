@@ -1,12 +1,17 @@
 import { ElementApi, KEYS, NodeApi } from 'platejs';
 import type { PlateEditor, usePlateEditor } from 'platejs/react';
 
-import type { PromptTemplate } from '@/spec/prompt';
+import type { PreProcessorCall, PromptTemplate, PromptVariable } from '@/spec/prompt';
 
 import { expandTabsToSpaces } from '@/lib/text_utils';
 
-import { buildInitialToolStates, makeSelectedTemplateForRun } from '@/chats/templates/template_processing';
-import type { SelectedTemplateForRun, TemplateSelectionElementNode } from '@/chats/templates/template_spec';
+import {
+	buildInitialToolStates,
+	computeEffectiveTemplate,
+	effectiveVarValueLocal,
+	makeSelectedTemplateForRun,
+} from '@/chats/templates/template_processing';
+import type { SelectedTemplateForRun, TemplateSelectionElementNode, ToolState } from '@/chats/templates/template_spec';
 import {
 	KEY_TEMPLATE_SELECTION,
 	KEY_TEMPLATE_VARIABLE,
@@ -97,26 +102,55 @@ export function getTemplateNodesWithPath(editor: PlateEditor): Array<[TemplateSe
 // Flatten current editor content into plain text (single-block), replacing variable pills of the first template.
 // Used when extracting text to submit without mutating content.
 export function toPlainTextReplacingVariables(editor: PlateEditor): string {
-	// Map selectionID -> variables for correct per-chip resolution
+	// Build per-selection effective context (defs + overrides + tools) so we can resolve values consistently
 	const selections = getTemplateNodesWithPath(editor);
-	const varsBySelection = new Map<string, Record<string, unknown>>();
-	selections.forEach(([node]) => {
-		if (node.selectionID) varsBySelection.set(node.selectionID, node.variables);
-	});
+	const ctxBySelection = new Map<
+		string,
+		{
+			defsByName: Map<string, PromptVariable>;
+			userValues: Record<string, unknown>;
+			preProcessors: PreProcessorCall[];
+			toolStates?: Record<string, ToolState>;
+		}
+	>();
 
+	for (const [node] of selections) {
+		if (!node.selectionID) continue;
+		const { variablesSchema, preProcessors } = computeEffectiveTemplate(node);
+		ctxBySelection.set(node.selectionID, {
+			defsByName: new Map(variablesSchema.map(v => [v.name, v] as const)),
+			userValues: node.variables,
+			preProcessors,
+			toolStates: node.toolStates,
+		});
+	}
 	function toStringDeepWithVars(n: any): string {
 		if (!n || typeof n !== 'object' || n === null) return '';
 
 		if (isTemplateVarNode(n)) {
 			const name = n.name;
 			const sid = n.selectionID as string | undefined;
-			const vars = ((sid && varsBySelection.get(sid)) ?? {}) as Record<PropertyKey, unknown>;
-			let v = `{{${name}}}`;
-			if (name in vars && vars[name] !== undefined && vars[name] !== null && vars[name] !== '') {
+			const placeholder = `{{${name}}}`;
+
+			if (!sid) return placeholder;
+			const ctx = ctxBySelection.get(sid);
+			if (!ctx) return placeholder;
+
+			const def = ctx.defsByName.get(name);
+			if (!def) return placeholder; // unknown var (shouldn't happen)
+
+			// Resolve the effective value like the inline pill does
+			const val = effectiveVarValueLocal(def, ctx.userValues, ctx.toolStates, ctx.preProcessors);
+			if (val !== undefined && val !== null) {
 				// eslint-disable-next-line @typescript-eslint/no-base-to-string
-				v = String(vars[name]);
+				return String(val);
 			}
-			return v;
+			// If variable is optional and still unresolved, substitute empty string
+			if (!def.required) {
+				return '';
+			}
+			// For required or unknown vars, keep the placeholder to signal missing data
+			return placeholder;
 		}
 
 		const obj = n as Record<PropertyKey, unknown>;

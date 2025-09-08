@@ -4,6 +4,7 @@ import {
 	type PromptTemplate,
 	type PromptVariable,
 	VarSource,
+	VarType,
 } from '@/spec/prompt';
 
 import type { SelectedTemplateForRun, TemplateSelectionElementNode, ToolState } from '@/chats/templates/template_spec';
@@ -49,10 +50,13 @@ export function effectiveVarValueLocal(
 	if (varDef.source === VarSource.Static && varDef.staticVal !== undefined) {
 		return varDef.staticVal;
 	}
-	if (varDef.default !== undefined && varDef.default !== '') {
+	if (varDef.default !== undefined) {
 		return varDef.default;
 	}
 
+	if (varDef.type === VarType.String && !varDef.required) {
+		return '';
+	}
 	if (varDef.source === VarSource.Tool && toolStates) {
 		const bySaveAs = new Map<string, any>();
 		(preProcessors ?? []).forEach(p => {
