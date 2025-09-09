@@ -1,5 +1,7 @@
 import type { ChangeEvent, FC, KeyboardEvent } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+
+import { createPortal } from 'react-dom';
 
 import { FiSearch, FiTrash2 } from 'react-icons/fi';
 
@@ -14,6 +16,41 @@ import { GroupedDropdown } from '@/components/date_grouped_dropdown';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 
 const CACHE_EXPIRY_TIME = 60_000; // 1 min
+
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+const uniqBy = <T, K>(arr: T[], getKey: (t: T) => K): T[] => {
+	const seen = new Set<K>();
+	const out: T[] = [];
+	for (const item of arr) {
+		const k = getKey(item);
+		if (!seen.has(k)) {
+			seen.add(k);
+			out.push(item);
+		}
+	}
+	return out;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+const mergeUniqBy = <T, K>(a: T[], b: T[], getKey: (t: T) => K): T[] => {
+	const seen = new Set<K>();
+	const out: T[] = [];
+	for (const x of a) {
+		const k = getKey(x);
+		if (!seen.has(k)) {
+			seen.add(k);
+			out.push(x);
+		}
+	}
+	for (const x of b) {
+		const k = getKey(x);
+		if (!seen.has(k)) {
+			seen.add(k);
+			out.push(x);
+		}
+	}
+	return out;
+};
 
 /** newest-first, title-matches before message-matches */
 const sortResults = (a: SearchResult, b: SearchResult) => {
@@ -167,108 +204,100 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 
 	/* render --------------------------------------------------------- */
 	return (
-		<div className="relative">
-			<div className="bg-base-200 absolute right-0 left-0 mt-1 overflow-hidden rounded-2xl shadow-lg">
-				{/* sticky status / hint bar -------------------------------- */}
-				<div className="text-neutral-custom border-base-300 sticky top-0 flex items-center justify-between border-b px-8 py-1 text-xs">
-					<span className="truncate">{barLeft}</span>
-					{barRight && <span className="shrink-0 pl-4">{barRight}</span>}
-				</div>
-
-				{/* results -------------------------------------------------- */}
-				{!results.length && !loading ? (
-					<div className="text-neutral-custom py-8 text-center text-sm">
-						{query ? 'Try refining your search' : 'Start a conversation to see it here'}
-					</div>
-				) : (
-					<div ref={scrollRef} className="max-h-[60vh] overflow-y-auto antialiased" onScroll={handleScroll}>
-						{shouldGroup ? (
-							<GroupedDropdown<SearchResult>
-								items={results}
-								focused={focusedIndex}
-								getDate={r => new Date(r.searchConversation.modifiedAt)}
-								getKey={r => r.searchConversation.id}
-								getLabel={r => <span className="truncate">{r.searchConversation.title}</span>}
-								onPick={r => {
-									onPick(r.searchConversation);
-								}}
-								renderItemExtra={r => (
-									<span className="inline-flex items-center gap-4">
-										{r.matchType === 'message' && <span className="max-w-[12rem] truncate">{r.snippet}</span>}
-										<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.modifiedAt)}</span>
-										{/* delete (not for active conv) */}
-										{r.searchConversation.id !== currentConversationId && (
-											<FiTrash2
-												size={14}
-												className="text-neutral-custom hover:text-error shrink-0 cursor-pointer"
-												onClick={e => {
-													e.stopPropagation(); // don’t trigger onPick
-													onDelete(r.searchConversation);
-												}}
-											/>
-										)}
-									</span>
-								)}
-							/>
-						) : (
-							<ul className="w-full text-sm">
-								{results.map((r, idx) => {
-									const isFocused = idx === focusedIndex;
-									return (
-										<li
-											key={r.searchConversation.id}
-											data-index={idx}
-											onClick={() => {
-												onPick(r.searchConversation);
-											}}
-											className={`hover:bg-base-100 flex cursor-pointer items-center justify-between px-12 py-2 ${
-												isFocused ? 'bg-base-100' : ''
-											}`}
-										>
-											<span className="truncate">{r.searchConversation.title}</span>
-
-											<span className="text-neutral-custom hidden text-xs lg:block">
-												<span className="inline-flex items-center gap-4">
-													{r.matchType === 'message' && <span className="max-w-[12rem] truncate">{r.snippet}</span>}
-													<span className="whitespace-nowrap">
-														{formatDateAsString(r.searchConversation.modifiedAt)}
-													</span>
-													{/* delete (not for active conv) */}
-													{r.searchConversation.id !== currentConversationId && (
-														<FiTrash2
-															size={14}
-															className="text-neutral-custom hover:text-error shrink-0 cursor-pointer"
-															onClick={e => {
-																e.stopPropagation();
-																onDelete(r.searchConversation);
-															}}
-														/>
-													)}
-												</span>
-											</span>
-										</li>
-									);
-								})}
-							</ul>
-						)}
-
-						{/* footer / loader ------------------------------------ */}
-						{loading && (
-							<div className="flex items-center justify-center py-4">
-								<span className="text-neutral-custom text-sm">
-									{results.length ? 'Loading more...' : 'Searching...'}
-								</span>
-								<span className="loading loading-dots loading-sm" />
-							</div>
-						)}
-						{!loading && !hasMore && results.length > 0 && query && (
-							<div className="text-neutral-custom border-base-300 border-t py-1 text-center text-xs">
-								End of results
-							</div>
-						)}
-					</div>
-				)}
+		<div className="bg-base-200 overflow-hidden rounded-2xl shadow-lg">
+			{/* sticky status / hint bar -------------------------------- */}
+			<div className="text-neutral-custom border-base-300 sticky top-0 flex items-center justify-between border-b px-8 py-1 text-xs">
+				<span className="truncate">{barLeft}</span>
+				{barRight && <span className="shrink-0 pl-4">{barRight}</span>}
 			</div>
+
+			{/* results -------------------------------------------------- */}
+			{!results.length && !loading ? (
+				<div className="text-neutral-custom py-8 text-center text-sm">
+					{query ? 'Try refining your search' : 'Start a conversation to see it here'}
+				</div>
+			) : (
+				<div ref={scrollRef} className="max-h-[60vh] overflow-y-auto antialiased" onScroll={handleScroll}>
+					{shouldGroup ? (
+						<GroupedDropdown<SearchResult>
+							items={results}
+							focused={focusedIndex}
+							getDate={r => new Date(r.searchConversation.modifiedAt)}
+							getKey={r => r.searchConversation.id}
+							getLabel={r => <span className="truncate">{r.searchConversation.title}</span>}
+							onPick={r => {
+								onPick(r.searchConversation);
+							}}
+							renderItemExtra={r => (
+								<span className="inline-flex items-center gap-4">
+									{r.matchType === 'message' && <span className="max-w-[12rem] truncate">{r.snippet}</span>}
+									<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.modifiedAt)}</span>
+									{/* delete (not for active conv) */}
+									{r.searchConversation.id !== currentConversationId && (
+										<FiTrash2
+											size={14}
+											className="text-neutral-custom hover:text-error shrink-0 cursor-pointer"
+											onClick={e => {
+												e.stopPropagation(); // don’t trigger onPick
+												onDelete(r.searchConversation);
+											}}
+										/>
+									)}
+								</span>
+							)}
+						/>
+					) : (
+						<ul className="w-full text-sm">
+							{results.map((r, idx) => {
+								const isFocused = idx === focusedIndex;
+								return (
+									<li
+										key={r.searchConversation.id}
+										data-index={idx}
+										onClick={() => {
+											onPick(r.searchConversation);
+										}}
+										className={`hover:bg-base-100 flex cursor-pointer items-center justify-between px-12 py-2 ${
+											isFocused ? 'bg-base-100' : ''
+										}`}
+									>
+										<span className="truncate">{r.searchConversation.title}</span>
+
+										<span className="text-neutral-custom hidden text-xs lg:block">
+											<span className="inline-flex items-center gap-4">
+												{r.matchType === 'message' && <span className="max-w-[12rem] truncate">{r.snippet}</span>}
+												<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.modifiedAt)}</span>
+												{/* delete (not for active conv) */}
+												{r.searchConversation.id !== currentConversationId && (
+													<FiTrash2
+														size={14}
+														className="text-neutral-custom hover:text-error shrink-0 cursor-pointer"
+														onClick={e => {
+															e.stopPropagation();
+															onDelete(r.searchConversation);
+														}}
+													/>
+												)}
+											</span>
+										</span>
+									</li>
+								);
+							})}
+						</ul>
+					)}
+
+					{/* footer / loader ------------------------------------ */}
+					{loading && (
+						<div className="flex items-center justify-center py-4">
+							<span className="text-neutral-custom text-sm">{results.length ? 'Loading more...' : 'Searching...'}</span>
+							<span className="loading loading-dots loading-sm" />
+						</div>
+					)}
+					{!loading && !hasMore && results.length > 0 && query && (
+						<div className="text-neutral-custom border-base-300 border-t py-1 text-center text-xs">End of results</div>
+					)}
+				</div>
+			)}
 		</div>
 	);
 };
@@ -300,6 +329,15 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 	const abortControllerRef = useRef<AbortController | null>(null);
 	const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const searchDivRef = useRef<HTMLDivElement>(null);
+	const recentsNextTokenRef = useRef<string | undefined>(undefined);
+	const recentsHasMoreRef = useRef<boolean>(false);
+
+	const [dropdownPos, setDropdownPos] = useState<{
+		top: number;
+		left: number;
+		width: number;
+	} | null>(null);
 
 	const loadRecentConversations = useCallback(async (token?: string, append = false) => {
 		try {
@@ -308,12 +346,16 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 			const { conversations, nextToken } = await conversationStoreAPI.listConversations(token, 20);
 			const trimmedNext = nextToken?.trim() || '';
 
-			setRecentConversations(prev => (append ? [...prev, ...conversations] : [...conversations]));
+			// track recents pagination for local mode
+			recentsNextTokenRef.current = trimmedNext || undefined;
+			recentsHasMoreRef.current = !!trimmedNext;
 
-			/* update visible list **only** when we are in “recents” mode
-							(i.e. an empty query) so we don’t clobber search results.  */
+			// keep local cache of recents deduped
+			setRecentConversations(prev => (append ? mergeUniqBy(prev, conversations, c => c.id) : [...conversations]));
+
 			setSearchState(prev => {
 				if (prev.query !== '' && !append) {
+					// if we’re in search mode and this was not an append, don’t clobber search results
 					return {
 						...prev,
 						loading: false,
@@ -322,9 +364,10 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 					};
 				}
 
-				const newRes = conversationsToResults(
-					append ? [...prev.results.map(r => r.searchConversation), ...conversations] : conversations
-				);
+				const prevConvs = append ? prev.results.map(r => r.searchConversation) : [];
+				const mergedConvs = append ? mergeUniqBy(prevConvs, conversations, c => c.id) : conversations;
+
+				const newRes = conversationsToResults(mergedConvs);
 
 				return {
 					...prev,
@@ -348,7 +391,6 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 
 		const query = cleanSearchQuery(rawQuery);
 
-		/* if cleaner strips everything -> immediate empty result-set */
 		if (query === '') {
 			setSearchState(p => ({
 				...p,
@@ -362,7 +404,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 			return;
 		}
 
-		if (!append)
+		if (!append) {
 			setSearchState(p => ({
 				...p,
 				loading: true,
@@ -370,34 +412,41 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 				hasMore: false,
 				searchedMessages: false,
 			}));
+		}
 
 		try {
 			const res = await conversationStoreAPI.searchConversations(query, token, 20);
 			const nextToken = res.nextToken?.trim() || '';
 
-			const newResults: SearchResult[] = res.conversations.map(searchConv => ({
+			const pageResults: SearchResult[] = res.conversations.map(searchConv => ({
 				searchConversation: searchConv,
 				matchType: searchConv.title.toLowerCase().includes(rawQuery.toLowerCase()) ? 'title' : 'message',
 				snippet: '',
 			}));
 
-			setSearchState(p => ({
-				...p,
-				results: append ? [...p.results, ...newResults] : newResults,
-				nextToken,
-				hasMore: !!nextToken,
-				loading: false,
-				searchedMessages: true,
-			}));
+			// dedupe the incoming page first (defensive)
+			const uniquePage = uniqBy(pageResults, r => r.searchConversation.id);
 
-			/* cache (first page only) -------------------------------- */
+			setSearchState(p => {
+				const results = append ? mergeUniqBy(p.results, uniquePage, r => r.searchConversation.id) : uniquePage;
+
+				return {
+					...p,
+					results,
+					nextToken,
+					hasMore: !!nextToken,
+					loading: false,
+					searchedMessages: true,
+				};
+			});
+
+			// cache first page only
 			if (!append) {
 				searchCache.set(query, {
-					results: newResults,
+					results: uniquePage,
 					nextToken,
 					timestamp: Date.now(),
 				});
-				/* keep cache small (5 entries) */
 				while (searchCache.size > 5) {
 					const oldest = [...searchCache.entries()].reduce((a, b) => (a[1].timestamp < b[1].timestamp ? a : b))[0];
 					searchCache.delete(oldest);
@@ -405,7 +454,6 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 			}
 		} catch (err) {
 			if ((err as DOMException).name === 'AbortError') return;
-
 			if (!abortControllerRef.current.signal.aborted) {
 				setSearchState(p => ({
 					...p,
@@ -426,9 +474,8 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 				...p,
 				results: conversationsToResults(filtered),
 				loading: false,
-				/* keep pagination information so recents can still load   */
-				hasMore: p.hasMore,
-				nextToken: p.nextToken,
+				hasMore: recentsHasMoreRef.current,
+				nextToken: recentsNextTokenRef.current,
 				error: undefined,
 				searchedMessages: false,
 			}));
@@ -453,7 +500,8 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 					...p,
 					results: conversationsToResults(recentConversations),
 					loading: false,
-					/* keep nextToken / hasMore so scrolling continues        */
+					hasMore: recentsHasMoreRef.current,
+					nextToken: recentsNextTokenRef.current,
 					error: undefined,
 					searchedMessages: false,
 				}));
@@ -488,9 +536,45 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 		[show, recentConversations, filterLocalResults, performSearch]
 	);
 
+	// Compute and keep dropdown position in sync with the input
+	const updateDropdownPos = useCallback(() => {
+		const el = searchDivRef.current;
+		if (!el) {
+			setDropdownPos(null);
+			return;
+		}
+		const r = el.getBoundingClientRect();
+		// 4px gap under the input; adjust if you want
+		setDropdownPos({ top: r.bottom + 12, left: r.left, width: r.width });
+	}, []);
+
+	useLayoutEffect(() => {
+		if (!show) return;
+		updateDropdownPos();
+	}, [show, updateDropdownPos]);
+
+	useEffect(() => {
+		if (!show) return;
+		const onResize = () => {
+			updateDropdownPos();
+		};
+		// use capture to respond to scrolls in any scrollable ancestor
+		const onScroll = () => {
+			updateDropdownPos();
+		};
+		window.addEventListener('resize', onResize);
+		window.addEventListener('scroll', onScroll, true);
+		return () => {
+			window.removeEventListener('resize', onResize);
+			window.removeEventListener('scroll', onScroll, true);
+		};
+	}, [show, updateDropdownPos]);
+
 	/* ------------------------- focus / blur ------------------------ */
 	const handleFocus = useCallback(async () => {
 		setShow(true);
+		updateDropdownPos();
+
 		if (!recentConversations.length) await loadRecentConversations();
 		else if (!searchState.query) {
 			setSearchState(p => ({
@@ -634,7 +718,10 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 	return (
 		<div>
 			{/* input --------------------------------------------------- */}
-			<div className="bg-base-100 border-base-300 focus-within:border-base-400 flex items-center rounded-2xl border p-2 transition-colors">
+			<div
+				ref={searchDivRef}
+				className="bg-base-100 border-base-300 focus-within:border-base-400 flex items-center rounded-2xl border p-2 transition-colors"
+			>
 				<FiSearch size={20} className="text-neutral-custom mx-3 flex-shrink-0" />
 				<input
 					ref={inputRef}
@@ -652,21 +739,33 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 			</div>
 
 			{/* dropdown ------------------------------------------------ */}
-			{show && (
-				<SearchDropdown
-					results={orderedResults}
-					loading={searchState.loading}
-					error={searchState.error}
-					hasMore={searchState.hasMore}
-					onLoadMore={handleLoadMore}
-					focusedIndex={focusedIndex}
-					onPick={handlePick}
-					onDelete={handleAskDelete}
-					query={searchState.query}
-					showSearchAllHintShortQuery={showSearchAllHintShortQuery}
-					currentConversationId={currentConversationId}
-				/>
-			)}
+			{show &&
+				dropdownPos &&
+				createPortal(
+					<div
+						className="fixed z-[9999]" // effectively topmost
+						style={{
+							top: dropdownPos.top,
+							left: dropdownPos.left,
+							width: dropdownPos.width,
+						}}
+					>
+						<SearchDropdown
+							results={orderedResults}
+							loading={searchState.loading}
+							error={searchState.error}
+							hasMore={searchState.hasMore}
+							onLoadMore={handleLoadMore}
+							focusedIndex={focusedIndex}
+							onPick={handlePick}
+							onDelete={handleAskDelete}
+							query={searchState.query}
+							showSearchAllHintShortQuery={showSearchAllHintShortQuery}
+							currentConversationId={currentConversationId}
+						/>
+					</div>,
+					document.body
+				)}
 			{deleteTarget && (
 				<DeleteConfirmationModal
 					isOpen={!!deleteTarget}

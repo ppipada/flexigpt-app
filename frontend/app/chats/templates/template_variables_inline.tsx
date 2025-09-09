@@ -330,7 +330,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 								= <span>"{currentValue as string}"</span>
 							</span>
 						)}
-						+ {/* Tool indicators/actions */}
+						{/* Tool indicators/actions */}
 						{isToolRunning ? (
 							<FiLoader size={12} className="text-accent animate-spin" title="Running tool..." />
 						) : isToolDone ? (

@@ -18,6 +18,8 @@ interface MessageFooterAreaProps {
 	messageDetails: string;
 	isStreaming: boolean;
 	isBusy: boolean;
+	disableMarkdown: boolean;
+	onDisableMarkdownChange: (checked: boolean) => void;
 }
 
 const MessageFooterArea: FC<MessageFooterAreaProps> = ({
@@ -29,6 +31,8 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 	messageDetails,
 	isStreaming,
 	isBusy,
+	disableMarkdown,
+	onDisableMarkdownChange,
 }) => {
 	const [isExpanded, setIsExpanded] = useState(false);
 
@@ -39,38 +43,34 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 	return (
 		<div className="px-1 py-1 pt-0">
 			<div className="flex h-8 items-center justify-between">
-				{!isStreaming && (
-					<div className="flex items-center gap-1">
-						<CopyButton
-							value={stripThinkingFences(cardCopyContent)}
-							// value={cardCopyContent}
-							className="btn btn-sm flex items-center border-none bg-transparent shadow-none"
-							size={16}
+				<div className="flex">
+					<button
+						className={`btn btn-sm flex items-center border-none !bg-transparent shadow-none ${isBusy ? 'btn-disabled' : ''}`}
+						onClick={toggleExpanded}
+						aria-label="Details"
+						title="Details"
+						disabled={isBusy}
+					>
+						{isExpanded ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+					</button>
+					<label
+						className={`ml-1 flex items-center space-x-2 truncate ${isBusy ? 'cursor-not-allowed opacity-50' : ''}`}
+						title="Disable Markdown"
+					>
+						<input
+							type="checkbox"
+							checked={disableMarkdown}
+							onChange={e => {
+								onDisableMarkdownChange(e.target.checked);
+							}}
+							className="checkbox checkbox-xs rounded-full"
+							spellCheck="false"
+							disabled={isBusy}
 						/>
-						{isUser && (
-							<button
-								className={`btn btn-sm flex items-center border-none !bg-transparent shadow-none ${isBusy ? 'btn-disabled' : ''}`}
-								onClick={onEdit}
-								aria-label="Edit Message"
-								title="Edit Message"
-								disabled={isBusy}
-							>
-								<FiEdit2 size={16} />
-							</button>
-						)}
-						{isUser && (
-							<button
-								className={`btn btn-sm flex items-center border-none !bg-transparent shadow-none ${isBusy ? 'btn-disabled' : ''}`}
-								onClick={onResend}
-								aria-label="Resend Message"
-								title="Resend Message"
-								disabled={isBusy}
-							>
-								<FiRepeat size={16} />
-							</button>
-						)}
-					</div>
-				)}
+						<span className="text-neutral-custom text-xs text-nowrap">Disable Markdown</span>
+					</label>
+				</div>
+
 				{isStreaming && (
 					<div className="text-sm">
 						<div className="flex items-center bg-transparent px-4 py-2">
@@ -79,16 +79,38 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 						</div>
 					</div>
 				)}
-				{!isStreaming && (
-					<button
-						className="btn btn-sm flex items-center border-none bg-transparent shadow-none"
-						onClick={toggleExpanded}
-						aria-label="Details"
-						title="Details"
-					>
-						{isExpanded ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
-					</button>
-				)}
+
+				<div className="flex items-center gap-1">
+					{isUser && (
+						<button
+							className={`btn btn-sm flex items-center border-none !bg-transparent shadow-none ${isBusy ? 'btn-disabled' : ''}`}
+							onClick={onResend}
+							aria-label="Resend Message"
+							title="Resend Message"
+							disabled={isBusy}
+						>
+							<FiRepeat size={16} />
+						</button>
+					)}
+					{isUser && (
+						<button
+							className={`btn btn-sm flex items-center border-none !bg-transparent shadow-none ${isBusy ? 'btn-disabled' : ''}`}
+							onClick={onEdit}
+							aria-label="Edit Message"
+							title="Edit Message"
+							disabled={isBusy}
+						>
+							<FiEdit2 size={16} />
+						</button>
+					)}
+
+					<CopyButton
+						value={stripThinkingFences(cardCopyContent)}
+						className={`btn btn-sm flex items-center border-none !bg-transparent shadow-none ${isBusy ? 'btn-disabled' : ''}`}
+						size={16}
+						disabled={isBusy}
+					/>
+				</div>
 			</div>
 			{isExpanded && messageDetails && (
 				<div className="bg-base-100 mt-2 overflow-hidden rounded-2xl shadow-lg">

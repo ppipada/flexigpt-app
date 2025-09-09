@@ -27,6 +27,7 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 
 	const [isEditing, setIsEditing] = useState(false);
 	const [editText, setEditText] = useState(message.content);
+	const [renderMarkdown, setRenderMarkdown] = useState(!isUser);
 
 	const handleEditClick = () => {
 		setIsEditing(true);
@@ -73,7 +74,7 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 						isBusy={isBusy}
 						isPending={isPending}
 						align={align}
-						renderAsMarkdown={!isUser}
+						renderAsMarkdown={renderMarkdown}
 					/>
 				)}
 			</div>
@@ -99,6 +100,10 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 						messageDetails={message.details ?? ''}
 						isStreaming={!!streamedMessage}
 						isBusy={isBusy}
+						disableMarkdown={!renderMarkdown}
+						onDisableMarkdownChange={checked => {
+							setRenderMarkdown(!checked);
+						}}
 					/>
 				)}
 			</div>

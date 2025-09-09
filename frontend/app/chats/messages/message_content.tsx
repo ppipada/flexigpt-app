@@ -31,6 +31,21 @@ const MessageContent = ({
 	// Max ~4×/sec.
 	const textToRender = useDebounce(liveText, 128);
 
+	// Compute plain-text nodes unconditionally to keep hook order stable.
+	// Work is gated by renderAsMarkdown so we avoid heavy work when Markdown is on.
+	const plainTextNodes = useMemo(() => {
+		if (renderAsMarkdown) return null;
+		return textToRender.split('\n').map((line, idx) => (
+			<p
+				key={idx}
+				className={`${align} break-words`}
+				style={{ whiteSpace: 'pre-wrap', lineHeight: '1.5', fontSize: '14px' }}
+			>
+				{line || '\u00A0' /* Use non-breaking space for empty lines */}
+			</p>
+		));
+	}, [textToRender, align, renderAsMarkdown]);
+
 	if (isPending && textToRender.trim() === '') {
 		return (
 			<div className="flex items-center px-4 py-2">
@@ -41,22 +56,9 @@ const MessageContent = ({
 	}
 
 	if (!renderAsMarkdown) {
-		const plainText = useMemo(
-			() =>
-				textToRender.split('\n').map((line, idx) => (
-					<p
-						key={idx}
-						className={`${align} break-words`}
-						style={{ whiteSpace: 'pre-wrap', lineHeight: '1.5', fontSize: '14px' }}
-					>
-						{line || '\u00A0' /* Use non-breaking space for empty lines */}
-					</p>
-				)),
-			[textToRender, align]
-		);
-
-		return <div className="px-4 py-2">{plainText}</div>;
+		return <div className="px-4 py-2">{plainTextNodes}</div>;
 	}
+
 	return (
 		<div className="px-4 py-2">
 			<EnhancedMarkdown
