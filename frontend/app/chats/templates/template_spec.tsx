@@ -23,11 +23,20 @@ export type TemplateVariableElementNode = {
 	children: [{ text: '' }];
 };
 
+export enum ToolStatus {
+	PENDING = 'pending',
+	READY = 'ready',
+	RUNNING = 'running',
+	DONE = 'done',
+	ERROR = 'error',
+}
+
 export type ToolState = {
 	args?: Record<string, any>;
-	status: 'pending' | 'ready' | 'done' | 'error';
+	status: ToolStatus;
 	result?: any;
 	error?: string;
+	lastRunAt?: string;
 };
 
 export type TemplateSelectionElementNode = {
@@ -88,7 +97,8 @@ export interface SelectedTemplateForRun {
 		saveAs: string;
 		pathExpr?: string;
 		onError?: PreProcessorOnError;
-		status: 'pending' | 'ready' | 'done' | 'error';
+		status: ToolStatus;
+		unresolved?: string[]; // unresolved variable tokens after arg resolution (if any)
 	}>;
 
 	// Convenience

@@ -1,13 +1,19 @@
 import {
 	type MessageBlock,
 	type PreProcessorCall,
+	type PreProcessorOnError,
 	type PromptTemplate,
 	type PromptVariable,
 	VarSource,
 	VarType,
 } from '@/spec/prompt';
 
-import type { SelectedTemplateForRun, TemplateSelectionElementNode, ToolState } from '@/chats/templates/template_spec';
+import {
+	type SelectedTemplateForRun,
+	type TemplateSelectionElementNode,
+	type ToolState,
+	ToolStatus,
+} from '@/chats/templates/template_spec';
 
 export function buildInitialToolStates(template?: PromptTemplate): Record<string, ToolState> {
 	const states: Record<string, ToolState> = {};
@@ -15,7 +21,7 @@ export function buildInitialToolStates(template?: PromptTemplate): Record<string
 		for (const p of template.preProcessors) {
 			states[p.id] = {
 				args: p.args ?? {},
-				status: 'pending',
+				status: ToolStatus.PENDING,
 			};
 		}
 	}
@@ -112,6 +118,17 @@ function effectiveVarValue(
 	return undefined;
 }
 
+export interface ToolToRun {
+	id: string;
+	toolID: string;
+	args: Record<string, unknown>;
+	saveAs: string;
+	pathExpr: string | undefined;
+	onError: PreProcessorOnError | undefined;
+	status: ToolStatus;
+	unresolved: string[];
+}
+
 export function computeRequirements(
 	variablesSchema: PromptVariable[],
 	variableValues: Record<string, unknown>,
@@ -153,18 +170,33 @@ export function computeRequirements(
 	// Tools to run summary
 	const toolsToRun = preProcessors.map(p => {
 		const st = toolStates?.[p.id];
+		const baseArgs = st?.args ?? p.args ?? {};
+		const { resolved, unresolved } = resolveArgsPlaceholders(baseArgs, values);
+
+		let status: ToolState['status'];
+		if (st?.status === ToolStatus.ERROR) status = ToolStatus.ERROR;
+		else if (st?.status === ToolStatus.RUNNING) status = ToolStatus.RUNNING;
+		else if (st?.status === ToolStatus.DONE || st?.result !== undefined) status = ToolStatus.DONE;
+		else if (unresolved.size > 0)
+			status = ToolStatus.PENDING; // args missing
+		else status = ToolStatus.READY; // args resolved, not yet run
+
 		return {
 			id: p.id,
 			toolID: p.toolID,
-			args: st?.args ?? p.args,
+			args: resolved as Record<string, unknown>,
 			saveAs: p.saveAs,
 			pathExpr: p.pathExpr,
 			onError: p.onError,
-			status: st?.status ?? 'pending',
+			status,
+			unresolved: Array.from(unresolved),
 		};
-	});
+	}) as ToolToRun[];
 
-	const pendingToolsCount = toolsToRun.filter(t => t.status === 'pending').length;
+	const notReadyToolsCount = toolsToRun.filter(t => t.status === ToolStatus.PENDING).length;
+	const runningToolsCount = toolsToRun.filter(t => t.status === ToolStatus.RUNNING).length;
+	const readyButNotDoneCount = toolsToRun.filter(t => t.status === ToolStatus.READY).length;
+	const pendingToolsCount = notReadyToolsCount + runningToolsCount + readyButNotDoneCount;
 
 	return {
 		variableValues: values,
@@ -172,6 +204,9 @@ export function computeRequirements(
 		requiredCount: requiredNames.length,
 		toolsToRun,
 		pendingToolsCount,
+		notReadyToolsCount,
+		runningToolsCount,
+		readyButNotDoneCount,
 	};
 }
 
@@ -212,8 +247,49 @@ export function makeSelectedTemplateForRun(tsenode: TemplateSelectionElementNode
 		requiredVariables: req.requiredVariables,
 		requiredCount: req.requiredCount,
 		toolsToRun: req.toolsToRun,
-		isReady: req.requiredCount === 0 && req.toolsToRun.every(t => t.status === 'done'),
+
+		isReady:
+			req.requiredCount === 0 &&
+			req.toolsToRun.every(
+				t => t.status === ToolStatus.DONE || t.status === ToolStatus.READY || t.status === ToolStatus.RUNNING
+			),
 	};
+}
+
+// Replace {{var}} tokens in strings using provided values.
+// Returns resolved args and a set of unresolved tokens.
+function resolveArgsPlaceholders(
+	input: unknown,
+	values: Record<string, unknown>
+): { resolved: unknown; unresolved: Set<string> } {
+	const unresolved = new Set<string>();
+
+	const replaceString = (s: string) =>
+		s.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_m, name: string) => {
+			const v = values[name];
+			if (v === undefined || v === null || v === '') {
+				unresolved.add(name);
+				return '';
+			}
+			// eslint-disable-next-line @typescript-eslint/no-base-to-string
+			return String(v);
+		});
+
+	const walk = (val: unknown): unknown => {
+		if (val == null) return val;
+		if (typeof val === 'string') return replaceString(val);
+		if (Array.isArray(val)) return val.map(walk);
+		if (typeof val === 'object') {
+			const out: Record<string, unknown> = {};
+			for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+				out[k] = walk(v);
+			}
+			return out;
+		}
+		return val;
+	};
+
+	return { resolved: walk(input), unresolved };
 }
 
 // Returns the content of the last block as plain text if it is from role user.

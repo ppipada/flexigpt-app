@@ -5,9 +5,11 @@ import type { PreProcessorCall, PromptTemplate, PromptVariable } from '@/spec/pr
 
 import { expandTabsToSpaces } from '@/lib/text_utils';
 
+import { dispatchTemplateVarsUpdated } from '@/chats/events/template_toolbar_vars_updated';
 import {
 	buildInitialToolStates,
 	computeEffectiveTemplate,
+	computeRequirements,
 	effectiveVarValueLocal,
 	makeSelectedTemplateForRun,
 } from '@/chats/templates/template_processing';
@@ -16,7 +18,9 @@ import {
 	KEY_TEMPLATE_SELECTION,
 	KEY_TEMPLATE_VARIABLE,
 	type TemplateVariableElementNode,
+	ToolStatus,
 } from '@/chats/templates/template_spec';
+import { runPreprocessor } from '@/chats/templates/template_tool_processing';
 
 export function insertTemplateSelectionNode(
 	editor: PlateEditor,
@@ -198,4 +202,120 @@ export function hasNonEmptyUserText(ed: PlateEditor | null | undefined): boolean
 		if (t.text.trim().length > 0) return true;
 	}
 	return false;
+}
+
+function patchToolState(editor: PlateEditor, tsPath: any, toolId: string, patch: Partial<ToolState>) {
+	const nnode = NodeApi.get(editor, tsPath);
+	if (!nnode) return;
+	const el = nnode as unknown as TemplateSelectionElementNode;
+	const prev = el.toolStates ?? {};
+	const nextTool = { ...(prev[toolId] ?? {}), ...patch };
+	const next = { ...prev, [toolId]: nextTool };
+	editor.tf.setNodes({ toolStates: next }, { at: tsPath });
+}
+
+function getResolvedToolEntryForSelection(
+	tsenode: TemplateSelectionElementNode,
+	toolId: string
+): {
+	args: Record<string, unknown>;
+	unresolved: string[];
+	status: ToolState['status'];
+} {
+	const { variablesSchema, preProcessors } = computeEffectiveTemplate(tsenode);
+	const req = computeRequirements(variablesSchema, tsenode.variables, preProcessors, tsenode.toolStates);
+	const t = req.toolsToRun.find(tt => tt.id === toolId);
+	return {
+		args: t?.args as Record<string, unknown>,
+		unresolved: t?.unresolved ?? [],
+		status: t?.status as ToolState['status'],
+	};
+}
+
+export async function runPreprocessorForSelection(
+	editor: PlateEditor,
+	tsenode: TemplateSelectionElementNode,
+	tsPath: any,
+	preproc: PreProcessorCall
+): Promise<{ ok: boolean; error?: string }> {
+	const { args, unresolved } = getResolvedToolEntryForSelection(tsenode, preproc.id);
+	if (unresolved.length > 0) {
+		return { ok: false, error: `Missing values: ${unresolved.join(', ')}` };
+	}
+
+	// Guard against duplicate clicks
+	const st = tsenode.toolStates?.[preproc.id];
+	if (st?.status === ToolStatus.RUNNING) return { ok: true };
+
+	patchToolState(editor, tsPath, preproc.id, {
+		status: ToolStatus.RUNNING,
+		error: undefined,
+		lastRunAt: new Date().toISOString(),
+	});
+
+	try {
+		const result = await runPreprocessor(preproc.toolID, args);
+		// Save result and mark done
+		patchToolState(editor, tsPath, preproc.id, {
+			status: ToolStatus.DONE,
+			result,
+			error: undefined,
+		});
+		if (tsenode.selectionID) {
+			dispatchTemplateVarsUpdated(tsenode.selectionID);
+		}
+		return { ok: true };
+	} catch (e) {
+		const errMsg =
+			e && typeof e === 'object' && 'message' in e ? (e.message as string | undefined) : 'Tool execution failed';
+		patchToolState(editor, tsPath, preproc.id, {
+			status: ToolStatus.ERROR,
+			error: errMsg,
+		});
+		if (tsenode.selectionID) {
+			dispatchTemplateVarsUpdated(tsenode.selectionID);
+		}
+		return { ok: false, error: errMsg };
+	}
+}
+
+async function runReadyPreprocessorsForSelection(
+	editor: PlateEditor,
+	tsenode: TemplateSelectionElementNode,
+	tsPath: any
+): Promise<{ ok: boolean; errors: Array<{ preprocId: string; saveAs: string; error: string }> }> {
+	const { preProcessors, variablesSchema } = computeEffectiveTemplate(tsenode);
+	const req = computeRequirements(variablesSchema, tsenode.variables, preProcessors, tsenode.toolStates);
+
+	const ready = req.toolsToRun.filter(t => t.status === ToolStatus.READY);
+	const errors: Array<{ preprocId: string; saveAs: string; error: string }> = [];
+
+	for (const t of ready) {
+		const p = preProcessors.find(pp => pp.id === t.id);
+		if (!p) continue;
+		const r = await runPreprocessorForSelection(editor, tsenode, tsPath, p);
+		if (!r.ok) {
+			errors.push({ preprocId: p.id, saveAs: p.saveAs, error: r.error ?? 'Tool execution failed' });
+		}
+	}
+
+	return { ok: errors.length === 0, errors };
+}
+
+export async function runAllReadyPreprocessors(editor: PlateEditor): Promise<{
+	ok: boolean;
+	errors: Array<{ selectionID?: string; preprocId: string; saveAs: string; error: string }>;
+}> {
+	const items = getTemplateNodesWithPath(editor);
+	const allErrors: Array<{ selectionID?: string; preprocId: string; saveAs: string; error: string }> = [];
+
+	for (const [tsenode, tsPath] of items) {
+		const r = await runReadyPreprocessorsForSelection(editor, tsenode, tsPath);
+		if (!r.ok) {
+			for (const e of r.errors) {
+				allErrors.push({ selectionID: tsenode.selectionID, ...e });
+			}
+		}
+	}
+	return { ok: allErrors.length === 0, errors: allErrors };
 }

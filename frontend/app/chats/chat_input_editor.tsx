@@ -31,10 +31,12 @@ import {
 	getTemplateSelections,
 	hasNonEmptyUserText,
 	insertPlainTextAsSingleBlock,
+	runAllReadyPreprocessors,
 	toPlainTextReplacingVariables,
 } from '@/chats/templates/template_editor_utils';
 import { TemplateSlashKit } from '@/chats/templates/template_plugin';
 import { getLastUserBlockContent } from '@/chats/templates/template_processing';
+import { ToolStatus } from '@/chats/templates/template_spec';
 import { TemplateToolbars } from '@/chats/templates/template_toolbars';
 import { buildUserInlineChildrenFromText } from '@/chats/templates/template_variables_inline';
 
@@ -92,9 +94,17 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 
 		for (const s of selections) {
 			requiredCount += s.requiredCount;
-			pendingPreTools += s.toolsToRun.filter(t => t.status === 'pending').length;
-			if (!firstPendingVar && s.requiredVariables.length > 0) {
-				firstPendingVar = { name: s.requiredVariables[0], selectionID: s.selectionID };
+			const notReady = s.toolsToRun.filter(t => t.status === ToolStatus.PENDING);
+			pendingPreTools += notReady.length;
+			if (!firstPendingVar) {
+				if (s.requiredVariables.length > 0) {
+					firstPendingVar = { name: s.requiredVariables[0], selectionID: s.selectionID };
+				} else if (notReady.length > 0) {
+					const unresolvedName = notReady[0]?.unresolved?.[0];
+					if (unresolvedName) {
+						firstPendingVar = { name: unresolvedName, selectionID: s.selectionID };
+					}
+				}
 			}
 		}
 
@@ -241,31 +251,55 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 
 		isSubmittingRef.current = true;
 
-		const promptsToSend = getTemplateSelections(editor);
-		const attachedTools = getAttachedTools(editor);
-		const hasTpl = promptsToSend.length > 0;
-		const hasTools = attachedTools.length > 0;
+		(async () => {
+			// If there are template selections, auto-run any ready tools before sending.
+			const selections = getTemplateSelections(editor);
+			const hasTpl = selections.length > 0;
+			if (hasTpl) {
+				const { ok, errors } = await runAllReadyPreprocessors(editor);
+				if (!ok) {
+					// Surface first error and abort send
+					dispatchTemplateFlashEvent();
+					const first = errors[0];
+					if (first.saveAs && contentRef.current) {
+						const idSegment = first.selectionID ? `[data-selection-id="${cssEscape(first.selectionID)}"]` : '';
+						const sel = contentRef.current.querySelector(
+							`span[data-template-variable][data-var-name="${cssEscape(first.saveAs)}"]${idSegment}`
+						);
+						if (sel && 'focus' in sel && typeof sel.focus === 'function') {
+							sel.focus();
+						} else {
+							editor.tf.focus();
+						}
+					}
+					isSubmittingRef.current = false;
+					return;
+				}
+			}
 
-		let textToSend = hasTpl ? toPlainTextReplacingVariables(editor) : editor.api.string([]);
+			const promptsToSend = getTemplateSelections(editor);
+			const attachedTools = getAttachedTools(editor);
+			const hasTools = attachedTools.length > 0;
 
-		if (hasTpl) {
-			textToSend += '\n\nprompts:\n' + JSON.stringify(promptsToSend, null, 2);
-		}
-		if (hasTools) {
-			textToSend += '\n\ntools:\n' + JSON.stringify(attachedTools, null, 2);
-		}
-		// Fire and hold guard until resolved, but keep "clear immediately".
-		const submitPromise = onSubmit(textToSend).catch(() => {
-			/* swallow, guard released below */
-		});
+			let textToSend = hasTpl ? toPlainTextReplacingVariables(editor) : editor.api.string([]);
 
-		// Clear editor and state right away
-		editor.tf.setValue(EDITOR_EMPTY_VALUE);
-		lastPopulatedSelectionKeyRef.current.clear();
-		editor.tf.focus();
+			if (hasTpl) {
+				textToSend += '\n\nprompts:\n' + JSON.stringify(promptsToSend, null, 2);
+			}
+			if (hasTools) {
+				textToSend += '\n\ntools:\n' + JSON.stringify(attachedTools, null, 2);
+			}
 
-		// Release guard only after onSubmit resolves
-		submitPromise.finally(() => {
+			try {
+				await onSubmit(textToSend);
+			} finally {
+				// Clear editor and state after successful preprocessor runs and submit
+				editor.tf.setValue(EDITOR_EMPTY_VALUE);
+				lastPopulatedSelectionKeyRef.current.clear();
+				editor.tf.focus();
+				isSubmittingRef.current = false;
+			}
+		})().catch(() => {
 			isSubmittingRef.current = false;
 		});
 	};

@@ -2,7 +2,7 @@ import { FiCheck, FiEdit2, FiMaximize2, FiTool, FiUpload, FiX } from 'react-icon
 
 import { PromptRoleEnum } from '@/spec/prompt';
 
-import type { SelectedTemplateForRun } from '@/chats/templates/template_spec';
+import { type SelectedTemplateForRun, ToolStatus } from '@/chats/templates/template_spec';
 
 export function TemplateFixedToolbar(props: {
 	selection: SelectedTemplateForRun;
@@ -18,7 +18,8 @@ export function TemplateFixedToolbar(props: {
 		selection.template.displayName || selection.templateSlug || selection.template.slug || 'Template';
 
 	const totalTools = selection.toolsToRun.length;
-	const pendingTools = selection.toolsToRun.filter(t => t.status === 'pending').length;
+	const pendingTools = selection.toolsToRun.filter(t => t.status === ToolStatus.PENDING).length;
+	const runningTools = selection.toolsToRun.filter(t => t.status === ToolStatus.RUNNING).length;
 
 	const hasSystemBlock = selection.blocks.some(
 		b => [PromptRoleEnum.Developer, PromptRoleEnum.System].includes(b.role) && b.content.trim() !== ''
@@ -54,13 +55,27 @@ export function TemplateFixedToolbar(props: {
 			</div>
 
 			<div
-				className={`flex items-center gap-1 rounded-2xl px-2 py-0 ${totalTools > 0 ? (pendingTools > 0 ? 'bg-info text-info-content' : 'bg-success text-success-content') : 'bg-base-200'}`}
+				className={`flex items-center gap-1 rounded-2xl px-2 py-0 ${
+					totalTools > 0
+						? pendingTools > 0
+							? 'bg-warning text-warning-content'
+							: runningTools > 0
+								? 'bg-info text-info-content'
+								: 'bg-success text-success-content'
+						: 'bg-base-200'
+				}`}
 			>
 				{totalTools > 0 ? (
 					<>
 						<span
 							className="flex items-center gap-1 px-2 py-0"
-							title={pendingTools > 0 ? `${pendingTools} tools pending` : 'All tools ready/done'}
+							title={
+								pendingTools > 0
+									? `${pendingTools} tools pending`
+									: runningTools > 0
+										? `${runningTools} tools running`
+										: 'All tools ready/done'
+							}
 						>
 							{totalTools} tool{totalTools === 1 ? '' : 's'} <FiTool />
 						</span>

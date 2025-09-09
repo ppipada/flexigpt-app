@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import * as React from 'react';
 
-import { FiEdit2 } from 'react-icons/fi';
+import { FiAlertTriangle, FiCheckCircle, FiEdit2, FiLoader, FiPlay, FiRefreshCcw } from 'react-icons/fi';
 
 import { NodeApi } from 'platejs';
 import type { PlateEditor, PlateElementProps } from 'platejs/react';
@@ -12,16 +12,19 @@ import {
 	dispatchTemplateVarsUpdated,
 	useTemplateVarsUpdatedForSelection,
 } from '@/chats/events/template_toolbar_vars_updated';
+import { runPreprocessorForSelection } from '@/chats/templates/template_editor_utils';
 import {
 	computeEffectiveTemplate,
 	computeRequirements,
 	effectiveVarValueLocal,
+	type ToolToRun,
 } from '@/chats/templates/template_processing';
 import {
 	KEY_TEMPLATE_SELECTION,
 	KEY_TEMPLATE_VARIABLE,
 	type TemplateSelectionElementNode,
 	type TemplateVariableElementNode,
+	ToolStatus,
 } from '@/chats/templates/template_spec';
 import { EnumDropdownInline } from '@/chats/templates/template_variable_enum_dropdown';
 
@@ -58,14 +61,15 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 	const [tsenode, tsPath] = tpl ?? [];
 	const eff = tsenode ? computeEffectiveTemplate(tsenode) : undefined;
 	const variablesSchema = eff?.variablesSchema ?? [];
+	const preProcessors = eff?.preProcessors ?? [];
 
 	const varDef = variablesSchema.find(v => v.name === el.name);
 	const isRequired = Boolean(varDef?.required);
 
 	// Compute requirements for status color using effective preProcessors (overrides included)
 	const req = tsenode
-		? computeRequirements(variablesSchema, tsenode.variables, eff?.preProcessors ?? [], tsenode.toolStates)
-		: { variableValues: {}, requiredVariables: [] as string[], requiredCount: 0 };
+		? computeRequirements(variablesSchema, tsenode.variables, preProcessors ?? [], tsenode.toolStates)
+		: { variableValues: {}, requiredVariables: [] as string[], requiredCount: 0, toolsToRun: [] as ToolToRun[] };
 
 	const isMissing = isRequired && req.requiredVariables.includes(el.name);
 
@@ -81,9 +85,9 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 	// Current effective value for display and starting edit
 	const currentValue = React.useMemo(() => {
 		if (!tsenode || !varDef) return undefined;
-		const v = effectiveVarValueLocal(varDef, tsenode.variables ?? {}, tsenode.toolStates, eff?.preProcessors);
+		const v = effectiveVarValueLocal(varDef, tsenode.variables ?? {}, tsenode.toolStates, preProcessors);
 		return v;
-	}, [tsenode?.variables, tsenode?.toolStates, varDef?.name, eff?.preProcessors, refreshTick]);
+	}, [tsenode?.variables, tsenode?.toolStates, varDef?.name, preProcessors, refreshTick]);
 	// console.log(varDef, tsenode?.variables);
 	// Commit helper
 	function commitValue(next: unknown) {
@@ -122,6 +126,24 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 		setIsEditing(false);
 		plEditor.tf.focus();
 	}
+
+	// If this variable is produced by a preprocessor (saveAs === var name), track its tool status
+	const producingPreproc = React.useMemo(() => preProcessors.find(p => p.saveAs === el.name), [preProcessors, el.name]);
+	const toolStatus = React.useMemo(() => {
+		if (!tsenode || !producingPreproc) return undefined;
+		const t = req.toolsToRun.find(tt => tt.id === producingPreproc.id);
+		return t?.status;
+	}, [req.toolsToRun, tsenode, producingPreproc?.id]);
+	const toolError = React.useMemo(() => {
+		if (!tsenode || !producingPreproc) return undefined;
+		return tsenode.toolStates?.[producingPreproc.id]?.error;
+	}, [tsenode?.toolStates, producingPreproc?.id, refreshTick]);
+	const canRunToolInline = Boolean(
+		tsenode && producingPreproc && (toolStatus === ToolStatus.READY || toolStatus === ToolStatus.ERROR)
+	);
+	const isToolRunning = toolStatus === ToolStatus.RUNNING;
+	const isToolDone = toolStatus === ToolStatus.DONE;
+	const showErrorTip = toolStatus === ToolStatus.ERROR && !!toolError;
 
 	// Inline input renderer based on var type
 	function InlineEditor() {
@@ -268,45 +290,79 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 				setIsEditing(true);
 			}}
 		>
-			{isEditing ? (
-				<div className="flex items-center gap-1">
-					{/* For enum type only, add a key to force a fresh instance when things change */}
-					{varDef?.type === VarType.Enum ? (
-						<EnumDropdownInline
-							key={`enum-${el.selectionID}-${el.name}-${refreshTick}`}
-							options={varDef?.enumValues ?? []}
-							value={
-								currentValue === undefined || currentValue === null || currentValue === ''
-									? undefined
-									: // eslint-disable-next-line @typescript-eslint/no-base-to-string
-										String(currentValue)
-							}
-							onChange={val => {
-								commitValue(val);
-							}}
-							withinSlate
-							autoOpen
-							onCancel={cancelEdit}
-							size="xs"
-							triggerClassName="btn btn-ghost btn-xs font-normal w-40 min-w-24 justify-between truncate bg-transparent"
-							placeholder="-- select --"
-							clearLabel="Clear"
-						/>
-					) : (
-						<InlineEditor />
-					)}
-				</div>
-			) : (
-				<span className="flex items-center gap-1 font-mono text-xs">
-					<span>{el.name}</span>
-					{currentValue !== undefined && currentValue !== null && (
-						<span className="ml-1">
-							= <span>"{currentValue as string}"</span>
-						</span>
-					)}
-					<FiEdit2 size={10} />
-				</span>
-			)}
+			<span
+				className={showErrorTip ? 'tooltip tooltip-open tooltip-error' : ''}
+				data-tip={showErrorTip ? toolError || 'Tool failed' : undefined}
+			>
+				{isEditing ? (
+					<div className="flex items-center gap-1">
+						{/* For enum type only, add a key to force a fresh instance when things change */}
+						{varDef?.type === VarType.Enum ? (
+							<EnumDropdownInline
+								key={`enum-${el.selectionID}-${el.name}-${refreshTick}`}
+								options={varDef?.enumValues ?? []}
+								value={
+									currentValue === undefined || currentValue === null || currentValue === ''
+										? undefined
+										: // eslint-disable-next-line @typescript-eslint/no-base-to-string
+											String(currentValue)
+								}
+								onChange={val => {
+									commitValue(val);
+								}}
+								withinSlate
+								autoOpen
+								onCancel={cancelEdit}
+								size="xs"
+								triggerClassName="btn btn-ghost btn-xs font-normal w-40 min-w-24 justify-between truncate bg-transparent"
+								placeholder="-- select --"
+								clearLabel="Clear"
+							/>
+						) : (
+							<InlineEditor />
+						)}
+					</div>
+				) : (
+					<span className="flex items-center gap-1 font-mono text-xs">
+						<span>{el.name}</span>
+						{currentValue !== undefined && currentValue !== null && (
+							<span className="ml-1">
+								= <span>"{currentValue as string}"</span>
+							</span>
+						)}
+						+ {/* Tool indicators/actions */}
+						{isToolRunning ? (
+							<FiLoader size={12} className="text-accent animate-spin" title="Running tool..." />
+						) : isToolDone ? (
+							<FiCheckCircle size={12} className="text-success" title="Tool done" />
+						) : null}
+						{showErrorTip ? (
+							<FiAlertTriangle size={12} className="text-error" title={toolError || 'Tool failed'} />
+						) : null}
+						{canRunToolInline ? (
+							<button
+								type="button"
+								className="btn btn-ghost btn-xs h-6 min-h-0 px-2"
+								title={toolStatus === ToolStatus.ERROR ? 'Retry tool' : 'Run tool'}
+								aria-label={toolStatus === ToolStatus.ERROR ? 'Retry tool' : 'Run tool'}
+								onMouseDown={e => {
+									e.stopPropagation();
+								}}
+								onClick={async e => {
+									e.stopPropagation();
+									if (tsenode && tsPath && producingPreproc) {
+										await runPreprocessorForSelection(plEditor, tsenode, tsPath, producingPreproc);
+										setRefreshTick(t => t + 1);
+									}
+								}}
+							>
+								{toolStatus === ToolStatus.ERROR ? <FiRefreshCcw size={12} /> : <FiPlay size={12} />}
+							</button>
+						) : null}
+						<FiEdit2 size={10} className="opacity-70" />
+					</span>
+				)}
+			</span>
 			{children}
 		</span>
 	);

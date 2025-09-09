@@ -2,7 +2,7 @@ import React from 'react';
 
 import { createPortal } from 'react-dom';
 
-import { FiAlertCircle, FiHelpCircle, FiPlay, FiX } from 'react-icons/fi';
+import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
 import type { PlateEditor } from 'platejs/react';
 
@@ -14,7 +14,7 @@ import {
 	computeRequirements,
 	effectiveVarValueLocal,
 } from '@/chats/templates/template_processing';
-import { type TemplateSelectionElementNode, type ToolState } from '@/chats/templates/template_spec';
+import { type TemplateSelectionElementNode, type ToolState, ToolStatus } from '@/chats/templates/template_spec';
 import { EnumDropdownInline } from '@/chats/templates/template_variable_enum_dropdown';
 
 export function TemplateEditModal({
@@ -49,7 +49,7 @@ export function TemplateEditModal({
 	const [varValues, setVarValues] = React.useState<Record<string, unknown>>(() => {
 		const vals: Record<string, unknown> = { ...tsenode.variables };
 		for (const v of variablesSchema) {
-			const val = effectiveVarValueLocal(v, tsenode.variables, tsenode.toolStates);
+			const val = effectiveVarValueLocal(v, tsenode.variables, tsenode.toolStates, preProcessors);
 			if (val !== undefined) vals[v.name] = val;
 		}
 		return vals;
@@ -90,7 +90,7 @@ export function TemplateEditModal({
 
 		const vals: Record<string, unknown> = { ...tsenode.variables };
 		for (const v of varsSchema) {
-			const val = effectiveVarValueLocal(v, tsenode.variables, tsenode.toolStates);
+			const val = effectiveVarValueLocal(v, tsenode.variables, tsenode.toolStates, tools);
 			if (val !== undefined) vals[v.name] = val;
 		}
 		setVarValues(vals);
@@ -123,12 +123,16 @@ export function TemplateEditModal({
 		// Merge tool states with edited args and current statuses
 		const nextToolStates: Record<string, ToolState> = { ...(tsenode.toolStates ?? {}) };
 		for (const p of preProcessors) {
-			const prev = nextToolStates[p.id] ?? { status: 'pending' as ToolState['status'] };
+			const prev = nextToolStates[p.id] ?? ({ status: ToolStatus.PENDING } as ToolState);
+			const prevArgs = prev.args ?? p.args ?? {};
+			const newArgs = toolArgs[p.id] ?? {};
+			const changed = JSON.stringify(prevArgs) !== JSON.stringify(newArgs);
 			nextToolStates[p.id] = {
 				...prev,
-				args: toolArgs[p.id],
-				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-				status: toolStatuses[p.id]?.status ?? prev.status ?? 'pending',
+				args: newArgs,
+				status: changed ? ToolStatus.PENDING : toolStatuses[p.id].status,
+				result: changed ? undefined : prev.result,
+				error: changed ? undefined : prev.error,
 			};
 		}
 
@@ -147,14 +151,22 @@ export function TemplateEditModal({
 		onClose();
 	}
 
-	function markToolReady(preProc: PreProcessorCall) {
-		const next = { ...toolStatuses };
-		next[preProc.id] = {
-			...(next[preProc.id] ?? {}),
-			status: 'ready',
-			args: toolArgs[preProc.id],
-		};
-		setToolStatuses(next);
+	// No inline execution from modal; it only edits. When args change, mark status pending and clear previous result/error.
+	function handleToolArgsChange(id: string, nextArgs: Record<string, any>) {
+		setToolArgs(s => ({ ...s, [id]: nextArgs }));
+		setToolStatuses(prev => {
+			const prevOne = prev[id] ?? ({} as ToolState);
+			return {
+				...prev,
+				[id]: {
+					...prevOne,
+					args: nextArgs,
+					status: ToolStatus.PENDING,
+					error: undefined,
+					result: undefined,
+				},
+			};
+		});
 	}
 
 	const req = computeRequirements(variablesSchema, varValues, preProcessors, toolStatuses);
@@ -308,30 +320,27 @@ export function TemplateEditModal({
 
 						<div className="space-y-3">
 							{preProcessors.length === 0 && <div className="text-sm opacity-70">No pre-processors configured.</div>}
-							{preProcessors.map(p => (
-								<PreProcessorRow
-									key={p.id}
-									call={p}
-									args={toolArgs[p.id]}
-									// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-									status={toolStatuses[p.id]?.status ?? 'pending'}
-									onArgsChange={next => {
-										setToolArgs(s => ({ ...s, [p.id]: next }));
-									}}
-									onRunNow={() => {
-										markToolReady(p);
-									}}
-									onValidityChange={valid => {
-										setToolArgsValidity(prev => ({ ...prev, [p.id]: valid }));
-									}}
-								/>
-							))}
-							{preProcessors.some(p => toolStatuses[p.id].status !== 'done') && (
-								<div className="flex items-center gap-2 text-sm opacity-80">
-									<FiPlay />
-									<span>Marked tools as "Run now" will be returned to the caller with args for execution.</span>
-								</div>
-							)}
+							{preProcessors.map(p => {
+								const derived = req.toolsToRun.find(t => t.id === p.id);
+								const derivedStatus = derived?.status;
+								const unresolved = derived?.unresolved ?? [];
+								return (
+									<PreProcessorRow
+										key={p.id}
+										call={p}
+										args={toolArgs[p.id]}
+										// Prefer derived status from requirements (args + values)
+										status={derivedStatus ?? toolStatuses[p.id].status}
+										unresolved={unresolved}
+										onArgsChange={next => {
+											handleToolArgsChange(p.id, next);
+										}}
+										onValidityChange={valid => {
+											setToolArgsValidity(prev => ({ ...prev, [p.id]: valid }));
+										}}
+									/>
+								);
+							})}
 						</div>
 					</section>
 
@@ -550,15 +559,15 @@ function PreProcessorRow({
 	call,
 	args,
 	status,
+	unresolved,
 	onArgsChange,
-	onRunNow,
 	onValidityChange,
 }: {
 	call: PreProcessorCall;
 	args?: Record<string, any>;
 	status?: ToolState['status'];
+	unresolved?: string[];
 	onArgsChange: (next: Record<string, any>) => void;
-	onRunNow: () => void;
 	onValidityChange?: (valid: boolean) => void;
 }) {
 	const [argsText, setArgsText] = React.useState<string>(JSON.stringify(args ?? {}, null, 2));
@@ -640,21 +649,28 @@ function PreProcessorRow({
 				<div className="flex items-center gap-2">
 					<span
 						className={`badge badge-sm ${
-							(status ?? 'pending') === 'done'
+							(status ?? ToolStatus.PENDING) === ToolStatus.DONE
 								? 'badge-success'
-								: (status ?? 'pending') === 'ready'
+								: (status ?? ToolStatus.PENDING) === ToolStatus.READY
 									? 'badge-warning'
-									: 'badge-neutral'
+									: (status ?? ToolStatus.PENDING) === ToolStatus.RUNNING
+										? 'badge-info'
+										: (status ?? ToolStatus.PENDING) === ToolStatus.ERROR
+											? 'badge-error'
+											: 'badge-neutral'
 						}`}
 						title="Status"
 					>
-						{status ?? 'pending'}
+						{(status ?? ToolStatus.PENDING).toLowerCase()}
 					</span>
-					<button className="btn btn-xs rounded-xl" onClick={onRunNow} type="button" title="Mark to run now">
-						<FiPlay className="mr-1" /> Run tool now
-					</button>
 				</div>
 			</div>
+			{unresolved && unresolved.length > 0 && (
+				<div className="text-warning flex items-center gap-2 text-xs">
+					<FiAlertCircle size={12} />
+					<span>Missing values: {unresolved.join(', ')}</span>
+				</div>
+			)}
 
 			<div>
 				<div className="label">
