@@ -29,10 +29,6 @@ type builtInModelKey spec.ModelPresetID
 func (builtInModelKey) Group() overlay.GroupID { return "models" }
 func (k builtInModelKey) ID() overlay.KeyID    { return overlay.KeyID(k) }
 
-func getModelKey(pName spec.ProviderName, modelID spec.ModelPresetID) builtInModelKey {
-	return builtInModelKey(fmt.Sprintf("%s::%s", pName, modelID))
-}
-
 type builtInProviderDefaultModelIDKey spec.ProviderName
 
 func (builtInProviderDefaultModelIDKey) Group() overlay.GroupID { return "providerDefaultModelIDs" }
@@ -412,4 +408,8 @@ func resolvePresetsFS(fsys fs.FS, dir string) (fs.FS, error) {
 		return fsys, nil
 	}
 	return fs.Sub(fsys, dir)
+}
+
+func getModelKey(pName spec.ProviderName, modelID spec.ModelPresetID) builtInModelKey {
+	return builtInModelKey(fmt.Sprintf("%s::%s", pName, modelID))
 }

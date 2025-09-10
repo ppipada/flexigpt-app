@@ -30,10 +30,6 @@ type builtInTemplateID bundleitemutils.ItemID
 func (builtInTemplateID) Group() overlay.GroupID { return "templates" }
 func (t builtInTemplateID) ID() overlay.KeyID    { return overlay.KeyID(t) }
 
-func getTemplateKey(bid bundleitemutils.BundleID, tid bundleitemutils.ItemID) builtInTemplateID {
-	return builtInTemplateID(fmt.Sprintf("%s::%s", bid, tid))
-}
-
 // BuiltInData keeps the built-in prompt assets and an overlay with enable flags.
 type BuiltInData struct {
 	bundlesFS      fs.FS
@@ -427,4 +423,8 @@ func resolveBundlesFS(fsys fs.FS, dir string) (fs.FS, error) {
 		return fsys, nil
 	}
 	return fs.Sub(fsys, dir)
+}
+
+func getTemplateKey(bid bundleitemutils.BundleID, tid bundleitemutils.ItemID) builtInTemplateID {
+	return builtInTemplateID(fmt.Sprintf("%s::%s", bid, tid))
 }

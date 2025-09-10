@@ -7,6 +7,16 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
+// Convenience when we already have spec.JSONSchema.
+func extractArgsFromRaw(raw spec.JSONSchema) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	var m map[string]any
+	_ = json.Unmarshal(raw, &m) // ignore error - we just fall back to “”
+	return extractArgsFromSchema(m)
+}
+
 // digs into a JSON-Schema object, collecting property names / titles / descriptions.
 func extractArgsFromSchema(anySchema any) string {
 	sch, ok := anySchema.(map[string]any)
@@ -36,14 +46,4 @@ func extractArgsFromSchema(anySchema any) string {
 		}
 	}
 	return sb.String()
-}
-
-// Convenience when we already have spec.JSONSchema.
-func extractArgsFromRaw(raw spec.JSONSchema) string {
-	if len(raw) == 0 {
-		return ""
-	}
-	var m map[string]any
-	_ = json.Unmarshal(raw, &m) // ignore error - we just fall back to “”
-	return extractArgsFromSchema(m)
 }
