@@ -259,21 +259,21 @@ func filterSensitiveInfo(data map[string]any) map[string]any {
 	// Track visited maps and slices by their pointer identity to prevent infinite recursion on cycles.
 	seen := make(map[uintptr]struct{})
 
-	// pointerOf returns a stable pointer identity for maps and slices, or 0 otherwise.
+	// Returns a stable pointer identity for maps and slices, or 0 otherwise.
 	pointerOf := func(x any) uintptr {
 		rv := reflect.ValueOf(x)
-		switch rv.Kind() {
-		case reflect.Map, reflect.Slice:
+		ki := rv.Kind()
+		if ki == reflect.Map || ki == reflect.Slice {
 			if rv.IsNil() {
 				return 0
 			}
 			return rv.Pointer()
-		default:
-			return 0
 		}
+
+		return 0
 	}
 
-	// scrub walks the structure recursively, redacting sensitive values and deep-copying maps and slices.
+	// Scrub walks the structure recursively, redacting sensitive values and deep-copying maps and slices.
 	var scrub func(v any, depth int) any
 	scrub = func(v any, depth int) any {
 		// Enforce a hard recursion limit.

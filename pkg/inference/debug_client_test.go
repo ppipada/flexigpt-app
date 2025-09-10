@@ -273,12 +273,12 @@ func TestFilterSensitiveInfo_Immutability(t *testing.T) {
 			clean := filterSensitiveInfo(orig)
 
 			// Mutate original after sanitization.
-			origCar := orig["Car"].(map[string]any)
+			origCar, _ := orig["Car"].(map[string]any)
 			origCar["Model"] = "Accord"
 			origCar["Key"] = "changed"
 
 			// Ensure the sanitized copy did not change.
-			cleanCar := clean["Car"].(map[string]any)
+			cleanCar, _ := clean["Car"].(map[string]any)
 			if got, want := cleanCar["Model"], "Civic"; got != want {
 				t.Fatalf("sanitized copy mutated: Model got = %v, want = %v.", got, want)
 			}
