@@ -19,6 +19,8 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 	"github.com/ppipada/flexigpt-app/pkg/tool/fts"
+	"github.com/ppipada/flexigpt-app/pkg/tool/httprunner"
+	"github.com/ppipada/flexigpt-app/pkg/tool/localrunner"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
 )
@@ -604,6 +606,128 @@ func (ts *ToolStore) DeleteTool(
 	}
 	slog.Info("deleteTool", "bundleID", req.BundleID, "slug", req.ToolSlug, "ver", req.Version)
 	return &spec.DeleteToolResponse{}, nil
+}
+
+// InvokeTool locates a tool version and executes it according to its type.
+// - Validates struct (validateTool), bundle/tool enabled state.
+// - Dispatches to HTTP or Go runner with functional options constructed from the request body.
+func (ts *ToolStore) InvokeTool(
+	ctx context.Context,
+	req *spec.InvokeToolRequest,
+) (*spec.InvokeToolResponse, error) {
+	if req == nil || req.Body == nil ||
+		req.BundleID == "" || req.ToolSlug == "" || req.Version == "" {
+		return nil, fmt.Errorf(
+			"%w: bundleID, toolSlug, version and body required",
+			spec.ErrInvalidRequest,
+		)
+	}
+	if err := bundleitemutils.ValidateItemSlug(req.ToolSlug); err != nil {
+		return nil, err
+	}
+	if err := bundleitemutils.ValidateItemVersion(req.Version); err != nil {
+		return nil, err
+	}
+	args := req.Body.Args
+	if args == nil {
+		args = map[string]any{}
+	}
+
+	// Load bundle and tool; re-use existing GetTool for a single source of truth.
+	bundle, isBI, err := ts.getAnyBundle(ctx, req.BundleID)
+	if err != nil {
+		return nil, err
+	}
+	if !bundle.IsEnabled {
+		return nil, fmt.Errorf("%w: bundle %s", spec.ErrToolDisabled, req.BundleID)
+	}
+
+	gtResp, err := ts.GetTool(ctx, &spec.GetToolRequest{
+		BundleID: req.BundleID,
+		ToolSlug: req.ToolSlug,
+		Version:  req.Version,
+	})
+	if err != nil {
+		return nil, err
+	}
+	tool := gtResp.Body
+	if tool == nil {
+		return nil, fmt.Errorf("%w: nil tool body", spec.ErrToolNotFound)
+	}
+	if !tool.IsEnabled {
+		return nil, fmt.Errorf(
+			"%w: %s/%s@%s",
+			spec.ErrToolDisabled,
+			req.BundleID,
+			req.ToolSlug,
+			req.Version,
+		)
+	}
+
+	// Defensive validation of the tool record.
+	if err := validateTool(tool); err != nil {
+		return nil, fmt.Errorf("tool validation failed: %w", err)
+	}
+
+	var (
+		out any
+		md  map[string]any
+	)
+
+	switch tool.Type {
+	case spec.ToolTypeHTTP:
+		var hopts []httprunner.HTTPOption
+		if req.Body.HTTPOptions != nil {
+			if req.Body.HTTPOptions.TimeoutMs > 0 {
+				hopts = append(hopts, httprunner.WithHTTPTimeoutMs(req.Body.HTTPOptions.TimeoutMs))
+			}
+			if len(req.Body.HTTPOptions.ExtraHeaders) > 0 {
+				hopts = append(
+					hopts,
+					httprunner.WithHTTPExtraHeaders(req.Body.HTTPOptions.ExtraHeaders),
+				)
+			}
+			if len(req.Body.HTTPOptions.Secrets) > 0 {
+				hopts = append(hopts, httprunner.WithHTTPSecrets(req.Body.HTTPOptions.Secrets))
+			}
+		}
+		r, err2 := httprunner.NewHTTPToolRunner(*tool.HTTP, hopts...)
+		if err2 != nil {
+			return nil, err2
+		}
+		out, md, err = r.Run(ctx, args)
+
+	case spec.ToolTypeGo:
+		reg := localrunner.DefaultGoRegistry()
+		var gopts []localrunner.GoOption
+		if req.Body.GoOptions != nil && req.Body.GoOptions.TimeoutMs > 0 {
+			gopts = append(
+				gopts,
+				localrunner.WithGoTimeout(
+					time.Duration(req.Body.GoOptions.TimeoutMs)*time.Millisecond,
+				),
+			)
+		}
+		r, err2 := localrunner.NewGoToolRunner(strings.TrimSpace(tool.GoImpl.Func), reg, gopts...)
+		if err2 != nil {
+			return nil, err2
+		}
+		out, md, err = r.Run(ctx, args)
+
+	default:
+		return nil, fmt.Errorf("unsupported tool type: %s", tool.Type)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &spec.InvokeToolResponse{
+		Body: &spec.InvokeToolResponseBody{
+			Output:    out,
+			Meta:      md,
+			IsBuiltIn: isBI,
+		},
+	}, nil
 }
 
 // GetTool retrieves a specific tool version.

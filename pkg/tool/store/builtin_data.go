@@ -31,10 +31,6 @@ type builtInToolID bundleitemutils.ItemID
 func (builtInToolID) Group() overlay.GroupID { return "tools" }
 func (t builtInToolID) ID() overlay.KeyID    { return overlay.KeyID(t) }
 
-func getToolKey(bid bundleitemutils.BundleID, tid bundleitemutils.ItemID) builtInToolID {
-	return builtInToolID(fmt.Sprintf("%s::%s", bid, tid))
-}
-
 type BuiltInToolData struct {
 	toolsFS        fs.FS
 	toolsDir       string
@@ -429,4 +425,8 @@ func cloneToolSpecs(
 		dst[bid] = maps.Clone(inner)
 	}
 	return dst
+}
+
+func getToolKey(bid bundleitemutils.BundleID, tid bundleitemutils.ItemID) builtInToolID {
+	return builtInToolID(fmt.Sprintf("%s::%s", bid, tid))
 }

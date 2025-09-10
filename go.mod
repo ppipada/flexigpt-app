@@ -3,7 +3,9 @@ module github.com/ppipada/flexigpt-app
 go 1.25.0
 
 // We use golangci-lint, gopls modernize, gopls cli and go-mod-upgrade as tools too,
-// but have not added here as dependency as noted in golangci-lint website
+// but have not added here as dependency as noted in golangci-lint website.
+//
+// When updating go version, update tools too
 // Updating in linux
 // 	- go: asdf install golang 1.25.0 ; asdf global golang 1.25.0
 //  - golangci-lint: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.4.0
@@ -12,6 +14,8 @@ go 1.25.0
 //  - modernize: go install golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest; modernize -V=full
 //       - update lint.yml for version increment too
 //  - helper to upgrade modules: go-mod-upgrade
+//  - refdir: This has false positives, but can be useful sometiems to sort go functions in a file. see command line used in package.json.
+//			 - go install github.com/devnev/refdir@latest
 
 // Dependency inspector. Install godepgraph and graphwiz and run
 // godepgraph -s -o github.com/ppipada/flexigpt-app,command-line-arguments  cmd/agentgo/main.go | dot -Tpng -o godepgraph.png
@@ -21,6 +25,7 @@ require (
 	github.com/danielgtaylor/huma/v2 v2.34.1
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/google/uuid v1.6.0
+	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
 	github.com/openai/openai-go/v2 v2.1.1
 	github.com/philippgille/chromem-go v0.7.0
 	github.com/wailsapp/wails/v2 v2.10.2

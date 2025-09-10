@@ -1,6 +1,9 @@
 import type {
 	GoToolImpl,
 	HTTPToolImpl,
+	InvokeGoOptions,
+	InvokeHTTPOptions,
+	InvokeToolResponse,
 	IToolStoreAPI,
 	JSONSchema,
 	Tool,
@@ -13,6 +16,7 @@ import {
 	DeleteTool,
 	DeleteToolBundle,
 	GetTool,
+	InvokeTool,
 	ListToolBundles,
 	ListTools,
 	PatchTool,
@@ -175,6 +179,28 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 			Version: version,
 		};
 		await DeleteTool(req);
+	}
+
+	async invokeTool(
+		bundleID: string,
+		toolSlug: string,
+		version: string,
+		args?: Record<string, any>,
+		httpOptions?: InvokeHTTPOptions,
+		goOptions?: InvokeGoOptions
+	): Promise<any> {
+		const req = {
+			BundleID: bundleID,
+			ToolSlug: toolSlug,
+			Version: version,
+			Body: {
+				args: args ?? {},
+				httpOptions: httpOptions as spec.InvokeHTTPOptions,
+				goOptions: goOptions as spec.InvokeGoOptions,
+			} as spec.InvokeToolRequestBody,
+		} as spec.InvokeToolRequest;
+		const resp = await InvokeTool(req);
+		return resp.Body as InvokeToolResponse;
 	}
 
 	async getTool(bundleID: string, toolSlug: string, version: string): Promise<Tool | undefined> {

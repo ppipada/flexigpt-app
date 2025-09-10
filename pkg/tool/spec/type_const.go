@@ -16,7 +16,9 @@ const (
 	// Current on-disk schema version.
 	SchemaVersion        = "2025-07-01"
 	DefaultHTTPTimeoutMs = 10_000
-	DefaultHTTPEncoding  = "json"
+	JSONEncoding         = "json"
+	TextEncoding         = "text"
+	DefaultHTTPEncoding  = JSONEncoding
 	DefaultHTTPErrorMode = "fail"
 )
 
@@ -35,7 +37,8 @@ var (
 
 	ErrBuiltInReadOnly = errors.New("built-in resource is read-only")
 
-	ErrFTSDisabled = errors.New("FTS is disabled")
+	ErrFTSDisabled  = errors.New("FTS is disabled")
+	ErrToolDisabled = errors.New("tool is disabled")
 )
 
 type (

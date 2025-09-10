@@ -1546,6 +1546,152 @@ export namespace spec {
 	
 	
 	
+	export class InvokeGoOptions {
+	    timeoutMs?: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new InvokeGoOptions(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.timeoutMs = source["timeoutMs"];
+	    }
+	}
+	export class InvokeHTTPOptions {
+	    timeoutMs?: number;
+	    extraHeaders?: Record<string, string>;
+	    secrets?: Record<string, string>;
+	
+	    static createFrom(source: any = {}) {
+	        return new InvokeHTTPOptions(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.timeoutMs = source["timeoutMs"];
+	        this.extraHeaders = source["extraHeaders"];
+	        this.secrets = source["secrets"];
+	    }
+	}
+	export class InvokeToolRequestBody {
+	    args: Record<string, any>;
+	    httpOptions?: InvokeHTTPOptions;
+	    goOptions?: InvokeGoOptions;
+	
+	    static createFrom(source: any = {}) {
+	        return new InvokeToolRequestBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.args = source["args"];
+	        this.httpOptions = this.convertValues(source["httpOptions"], InvokeHTTPOptions);
+	        this.goOptions = this.convertValues(source["goOptions"], InvokeGoOptions);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class InvokeToolRequest {
+	    BundleID: string;
+	    ToolSlug: string;
+	    Version: string;
+	    Body?: InvokeToolRequestBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new InvokeToolRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.BundleID = source["BundleID"];
+	        this.ToolSlug = source["ToolSlug"];
+	        this.Version = source["Version"];
+	        this.Body = this.convertValues(source["Body"], InvokeToolRequestBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class InvokeToolResponseBody {
+	    output: any;
+	    meta?: Record<string, any>;
+	    isBuiltIn: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new InvokeToolResponseBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.output = source["output"];
+	        this.meta = source["meta"];
+	        this.isBuiltIn = source["isBuiltIn"];
+	    }
+	}
+	export class InvokeToolResponse {
+	    Body?: InvokeToolResponseBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new InvokeToolResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], InvokeToolResponseBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	export class ListConversationsRequest {
 	    PageSize: number;
 	    PageToken: string;

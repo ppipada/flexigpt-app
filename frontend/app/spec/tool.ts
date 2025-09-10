@@ -100,6 +100,21 @@ export interface ToolListItem {
 	isBuiltIn: boolean;
 }
 
+export interface InvokeHTTPOptions {
+	timeoutMs?: number;
+	extraHeaders?: Record<string, string>;
+	secrets?: Record<string, string>;
+}
+
+export interface InvokeGoOptions {
+	timeoutMs?: number;
+}
+
+export interface InvokeToolResponse {
+	output: any;
+	meta?: Record<string, any>;
+	isBuiltIn: boolean;
+}
 export interface IToolStoreAPI {
 	// --- Bundle Operations ---
 
@@ -167,6 +182,16 @@ export interface IToolStoreAPI {
 	/** Delete a tool version. */
 	deleteTool(bundleID: string, toolSlug: string, version: string): Promise<void>;
 
-	/** Get a tool version (or latest if version omitted). */
+	/** Invoke a tool version. */
+	invokeTool(
+		bundleID: string,
+		toolSlug: string,
+		version: string,
+		args?: Record<string, any>,
+		httpOptions?: InvokeHTTPOptions,
+		goOptions?: InvokeGoOptions
+	): Promise<InvokeToolResponse>;
+
+	/** Get a tool version. */
 	getTool(bundleID: string, toolSlug: string, version: string): Promise<Tool | undefined>;
 }

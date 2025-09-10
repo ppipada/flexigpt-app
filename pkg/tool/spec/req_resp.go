@@ -158,3 +158,55 @@ type SearchToolsResponseBody struct {
 type SearchToolsResponse struct {
 	Body *SearchToolsResponseBody
 }
+
+// InvokeHTTPOptions contains options specific to HTTP tool invocations.
+// These are part of the HTTP request body (OpenAPI-compatible).
+type InvokeHTTPOptions struct {
+	// Overrides the tool-level HTTP timeout (in milliseconds). Optional.
+	TimeoutMs int `json:"timeoutMs,omitempty"`
+	// ExtraHeaders will be merged into the outgoing request headers (taking precedence).
+	ExtraHeaders map[string]string `json:"extraHeaders,omitempty"`
+	// Secrets are key->value mappings used for template substitution in HTTP request
+	// components (e.g. ${SECRET}). Optional.
+	Secrets map[string]string `json:"secrets,omitempty"`
+}
+
+// InvokeGoOptions contains options specific to Go tool invocations.
+// These are part of the HTTP request body (OpenAPI-compatible).
+type InvokeGoOptions struct {
+	// Overrides the tool invocation timeout (in milliseconds). Optional.
+	TimeoutMs int `json:"timeoutMs,omitempty"`
+}
+
+// InvokeToolRequestBody is the body for invoking a tool.
+type InvokeToolRequestBody struct {
+	// Arguments passed to the tool. Must be JSON-serializable.
+	Args map[string]any `json:"args"                  required:"true"`
+	// Tool-type-specific options (only one of these is used depending on the tool type).
+	HTTPOptions *InvokeHTTPOptions `json:"httpOptions,omitempty"`
+	GoOptions   *InvokeGoOptions   `json:"goOptions,omitempty"`
+}
+
+// InvokeToolRequest is the huma/OpenAPI-compatible request to invoke a tool version.
+type InvokeToolRequest struct {
+	BundleID bundleitemutils.BundleID    `path:"bundleID" required:"true"`
+	ToolSlug bundleitemutils.ItemSlug    `path:"toolSlug" required:"true"`
+	Version  bundleitemutils.ItemVersion `path:"version"  required:"true"`
+	Body     *InvokeToolRequestBody
+}
+
+// InvokeToolResponseBody is the result of a tool invocation.
+type InvokeToolResponseBody struct {
+	// Output is the JSON-serializable result produced by the tool. Its shape depends on
+	// the tool definition and response encoding.
+	Output any `json:"output"`
+	// Meta contains implementation-specific metadata (e.g., HTTP status, duration, etc.).
+	Meta map[string]any `json:"meta,omitempty"`
+	// True if the tool was served from the built-in data overlay.
+	IsBuiltIn bool `json:"isBuiltIn"`
+}
+
+// InvokeToolResponse wraps the response body (huma/OpenAPI-compatible).
+type InvokeToolResponse struct {
+	Body *InvokeToolResponseBody
+}
