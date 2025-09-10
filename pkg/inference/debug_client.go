@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
@@ -237,39 +238,98 @@ func GetDebugHTTPResponse(ctx context.Context) (*DebugHTTPResponse, bool) {
 }
 
 // filterSensitiveInfo recursively filters out sensitive keys from a data structure.
-// It supports nested maps and slices.
+// It returns a deep-copied map with sensitive values redacted, handling nested maps and slices safely.
+// The function is hardened to avoid cycles and excessive recursion depth.
 func filterSensitiveInfo(data map[string]any) map[string]any {
-	filteredData := make(map[string]any)
-	for key, value := range data {
-		if containsSensitiveKey(key) {
-			// Mask the sensitive value.
-			filteredData[key] = "***"
-		} else {
-			// Recursively process nested data structures.
-			filteredData[key] = deepCopyAndFilter(value)
-		}
+	// Return nil for nil input.
+	if data == nil {
+		return nil
 	}
-	return filteredData
-}
 
-// deepCopyAndFilter recursively traverses the data structure,
-// filtering sensitive keys from maps and processing slices.
-func deepCopyAndFilter(value any) any {
-	switch v := value.(type) {
-	case map[string]any:
-		// Process nested map.
-		return filterSensitiveInfo(v)
-	case []any:
-		// Process each element in the slice.
-		newSlice := make([]any, len(v))
-		for i, elem := range v {
-			newSlice[i] = deepCopyAndFilter(elem)
+	const (
+		// Redaction token used for sensitive values.
+		mask = "***"
+		// Maximum allowed recursion depth to mitigate pathological inputs.
+		maxDepth = 4096
+		// Tokens to indicate cycle or depth limit encountered.
+		cycleToken = "<cycle>"
+		depthToken = "<max-depth>"
+	)
+
+	// Track visited maps and slices by their pointer identity to prevent infinite recursion on cycles.
+	seen := make(map[uintptr]struct{})
+
+	// pointerOf returns a stable pointer identity for maps and slices, or 0 otherwise.
+	pointerOf := func(x any) uintptr {
+		rv := reflect.ValueOf(x)
+		switch rv.Kind() {
+		case reflect.Map, reflect.Slice:
+			if rv.IsNil() {
+				return 0
+			}
+			return rv.Pointer()
+		default:
+			return 0
 		}
-		return newSlice
-	default:
-		// Return the value as is for other data types.
-		return v
 	}
+
+	// scrub walks the structure recursively, redacting sensitive values and deep-copying maps and slices.
+	var scrub func(v any, depth int) any
+	scrub = func(v any, depth int) any {
+		// Enforce a hard recursion limit.
+		if depth > maxDepth {
+			return depthToken
+		}
+
+		switch vv := v.(type) {
+		case map[string]any:
+			// Detect reference cycles for maps.
+			if p := pointerOf(vv); p != 0 {
+				if _, ok := seen[p]; ok {
+					return cycleToken
+				}
+				seen[p] = struct{}{}
+				defer delete(seen, p)
+			}
+
+			out := make(map[string]any, len(vv))
+			for k, val := range vv {
+				if containsSensitiveKey(k) {
+					out[k] = mask
+					continue
+				}
+				out[k] = scrub(val, depth+1)
+			}
+			return out
+
+		case []any:
+			// Detect reference cycles for slices.
+			if p := pointerOf(vv); p != 0 {
+				if _, ok := seen[p]; ok {
+					return cycleToken
+				}
+				seen[p] = struct{}{}
+				defer delete(seen, p)
+			}
+
+			out := make([]any, len(vv))
+			for i := range vv {
+				out[i] = scrub(vv[i], depth+1)
+			}
+			return out
+
+		default:
+			// Return the value as-is for other data types.
+			return vv
+		}
+	}
+
+	// Start the recursive walk and ensure we return a map for the API contract.
+	result, _ := scrub(data, 0).(map[string]any)
+	if result == nil {
+		return map[string]any{}
+	}
+	return result
 }
 
 // containsSensitiveKey checks if a key contains any sensitive keywords.
