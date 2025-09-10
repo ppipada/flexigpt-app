@@ -3,10 +3,17 @@
 ## Laundry list
 
 - [x] input area spacing and size when streaming back from assistant needs relook
-- [ ] prompt and tool processing for ai completion call
+- [ ] Tool invocation in backend
 
-  - [ ] only prompt should be allowed to be sent to ai rather than some text compulsory
-  - [ ] for tools atleast prompt/text may be needed
+  - [x] base support
+  - [ ] dont add go tools at runtime i.e only compiled tools are there
+  - [ ] invocation tests for go
+  - [ ] invocation tests for http, inbuilt and externally added
+
+- [ ] Tool invoke when doing prompt template preprocess run
+- [ ] prompt tempaltes to fill in full text including preprocessors and then give back message blocks to caller for exec.
+- [ ] attached tools to be given back as schema to consumers for exec
+- [ ] prompt and tool processing for ai completion call
 
 - [ ] Think through and enhance tools create/edit and prompts create/edit modals
 
