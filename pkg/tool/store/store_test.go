@@ -13,6 +13,20 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
+func dummyHTTPTool() *spec.HTTPToolImpl {
+	return &spec.HTTPToolImpl{
+		Request: spec.HTTPRequest{
+			Method:      "GET",
+			URLTemplate: "https://example.com",
+			TimeoutMs:   1000,
+		},
+		Response: spec.HTTPResponse{
+			SuccessCodes: []int{200},
+			ErrorMode:    "fail",
+		},
+	}
+}
+
 func TestToolBundleCRUD(t *testing.T) {
 	cases := []struct {
 		name      string
@@ -134,8 +148,8 @@ func TestToolCRUD(t *testing.T) {
 					IsEnabled:    true,
 					ArgSchema:    `{}`,
 					OutputSchema: `{}`,
-					Type:         spec.ToolTypeGo,
-					GoImpl:       &spec.GoToolImpl{Func: "main.Foo"},
+					Type:         spec.ToolTypeHTTP,
+					HTTP:         dummyHTTPTool(),
 				},
 			})
 
@@ -162,9 +176,12 @@ func TestToolVersionConflict(t *testing.T) {
 	_, err := s.PutTool(t.Context(), &spec.PutToolRequest{
 		BundleID: "b1", ToolSlug: "tool", Version: "v1",
 		Body: &spec.PutToolRequestBody{
-			DisplayName: "dup", IsEnabled: true,
-			ArgSchema: `{}`, OutputSchema: `{}`,
-			Type: spec.ToolTypeGo, GoImpl: &spec.GoToolImpl{Func: "main.Foo"},
+			DisplayName:  "dup",
+			IsEnabled:    true,
+			ArgSchema:    `{}`,
+			OutputSchema: `{}`,
+			Type:         spec.ToolTypeHTTP,
+			HTTP:         dummyHTTPTool(),
 		},
 	})
 	if !errors.Is(err, spec.ErrConflict) {
@@ -181,9 +198,12 @@ func TestToolDisabledBundleGuard(t *testing.T) {
 	_, err := s.PutTool(t.Context(), &spec.PutToolRequest{
 		BundleID: "b1", ToolSlug: "tool", Version: "v1",
 		Body: &spec.PutToolRequestBody{
-			DisplayName: "d", IsEnabled: true,
-			ArgSchema: `{}`, OutputSchema: `{}`,
-			Type: spec.ToolTypeGo, GoImpl: &spec.GoToolImpl{Func: "main.Foo"},
+			DisplayName:  "d",
+			IsEnabled:    true,
+			ArgSchema:    `{}`,
+			OutputSchema: `{}`,
+			Type:         spec.ToolTypeHTTP,
+			HTTP:         dummyHTTPTool(),
 		},
 	})
 	if !errors.Is(err, spec.ErrBundleDisabled) {
@@ -237,9 +257,12 @@ func TestToolBuiltInGuards(t *testing.T) {
 	_, err := s.PutTool(t.Context(), &spec.PutToolRequest{
 		BundleID: bid, ToolSlug: slug, Version: "v-new",
 		Body: &spec.PutToolRequestBody{
-			DisplayName: "illegal", IsEnabled: true,
-			ArgSchema: `{}`, OutputSchema: `{}`,
-			Type: spec.ToolTypeGo, GoImpl: &spec.GoToolImpl{Func: "main.Foo"},
+			DisplayName:  "illegal",
+			IsEnabled:    true,
+			ArgSchema:    `{}`,
+			OutputSchema: `{}`,
+			Type:         spec.ToolTypeHTTP,
+			HTTP:         dummyHTTPTool(),
 		},
 	})
 	if !errors.Is(err, spec.ErrBuiltInReadOnly) {
@@ -582,9 +605,12 @@ func TestConcurrentToolPut(t *testing.T) {
 		_, err := s.PutTool(t.Context(), &spec.PutToolRequest{
 			BundleID: "b1", ToolSlug: "concurrent", Version: "v1",
 			Body: &spec.PutToolRequestBody{
-				DisplayName: "v1", IsEnabled: true,
-				ArgSchema: `{}`, OutputSchema: `{}`,
-				Type: spec.ToolTypeGo, GoImpl: &spec.GoToolImpl{Func: "main.Foo"},
+				DisplayName:  "v1",
+				IsEnabled:    true,
+				ArgSchema:    `{}`,
+				OutputSchema: `{}`,
+				Type:         spec.ToolTypeHTTP,
+				HTTP:         dummyHTTPTool(),
 			},
 		})
 		errCh <- err
@@ -593,9 +619,12 @@ func TestConcurrentToolPut(t *testing.T) {
 		_, err := s.PutTool(t.Context(), &spec.PutToolRequest{
 			BundleID: "b1", ToolSlug: "concurrent", Version: "v2",
 			Body: &spec.PutToolRequestBody{
-				DisplayName: "v2", IsEnabled: true,
-				ArgSchema: `{}`, OutputSchema: `{}`,
-				Type: spec.ToolTypeGo, GoImpl: &spec.GoToolImpl{Func: "main.Foo"},
+				DisplayName:  "v2",
+				IsEnabled:    true,
+				ArgSchema:    `{}`,
+				OutputSchema: `{}`,
+				Type:         spec.ToolTypeHTTP,
+				HTTP:         dummyHTTPTool(),
 			},
 		})
 		errCh <- err
@@ -685,8 +714,8 @@ func mustPutTool(
 			Tags:         tags,
 			ArgSchema:    `{}`,
 			OutputSchema: `{}`,
-			Type:         spec.ToolTypeGo,
-			GoImpl:       &spec.GoToolImpl{Func: "main.Foo"},
+			Type:         spec.ToolTypeHTTP,
+			HTTP:         dummyHTTPTool(),
 		},
 	})
 	if err != nil {

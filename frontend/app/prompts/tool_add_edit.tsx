@@ -40,7 +40,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 		description: '',
 		tags: '',
 		isEnabled: true,
-		type: ToolType.Go as ToolType,
+		type: ToolType.HTTP as ToolType,
 		argSchema: '{}',
 		outputSchema: '{}',
 		goFunc: '',
@@ -104,7 +104,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 				description: '',
 				tags: '',
 				isEnabled: true,
-				type: ToolType.Go,
+				type: ToolType.HTTP,
 				argSchema: '{}',
 				outputSchema: '{}',
 				goFunc: '',
@@ -127,10 +127,10 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 	const toolTypeDropdownItems = useMemo(
 		() =>
 			({
-				[ToolType.Go]: { isEnabled: true, displayName: TOOL_TYPE_LABEL_GO },
+				[ToolType.Go]: { isEnabled: isEditMode, displayName: TOOL_TYPE_LABEL_GO },
 				[ToolType.HTTP]: { isEnabled: true, displayName: TOOL_TYPE_LABEL_HTTP },
 			}) as Record<ToolType, { isEnabled: boolean; displayName: string }>,
-		[]
+		[isEditMode]
 	);
 
 	// Validation
@@ -183,6 +183,11 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 			validateField(name as keyof typeof errors, String(newVal));
 		}
 	};
+	// Only allow adding HTTP tools (editing existing tools unaffected)
+	if (!isEditMode && formData.type !== ToolType.HTTP) {
+		setErrors(prev => ({ ...prev, type: 'Only HTTP tools can be added.' }));
+		return;
+	}
 
 	// Overall validity
 	const isAllValid = useMemo(() => {
@@ -267,10 +272,14 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 	};
 
 	const onToolTypeChange = (key: ToolType) => {
+		// Prevent selecting Go when adding a new tool
+		if (!isEditMode && key === ToolType.Go) {
+			return;
+		}
+
 		setFormData(prev => ({ ...prev, type: key }));
 		validateField('type', key);
 	};
-
 	if (!isOpen) return null;
 
 	return (
@@ -369,7 +378,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 								dropdownItems={toolTypeDropdownItems}
 								selectedKey={formData.type}
 								onChange={onToolTypeChange}
-								filterDisabled={false}
+								filterDisabled={true}
 								title="Select tool type"
 								getDisplayName={k => toolTypeDropdownItems[k].displayName}
 							/>

@@ -64,8 +64,8 @@ func TestScale_LotsOfToolBundles(t *testing.T) {
 						Body: &spec.PutToolRequestBody{
 							DisplayName:  "dummy",
 							IsEnabled:    true,
-							Type:         spec.ToolTypeGo,
-							GoImpl:       &spec.GoToolImpl{Func: "dummy.F"},
+							Type:         spec.ToolTypeHTTP,
+							HTTP:         dummyHTTPTool(),
 							ArgSchema:    `{}`,
 							OutputSchema: `{}`,
 						},
@@ -193,8 +193,8 @@ func TestScale_LotsOfTools(t *testing.T) {
 					Body: &spec.PutToolRequestBody{
 						DisplayName:  "T",
 						IsEnabled:    true,
-						Type:         spec.ToolTypeGo,
-						GoImpl:       &spec.GoToolImpl{Func: "dummy.F"},
+						Type:         spec.ToolTypeHTTP,
+						HTTP:         dummyHTTPTool(),
 						ArgSchema:    `{}`,
 						OutputSchema: `{}`,
 					},

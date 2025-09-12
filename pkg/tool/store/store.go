@@ -429,6 +429,9 @@ func (ts *ToolStore) PutTool(
 		req.BundleID == "" || req.ToolSlug == "" || req.Version == "" {
 		return nil, fmt.Errorf("%w: bundleID, toolSlug, version required", spec.ErrInvalidRequest)
 	}
+	if req.Body.Type != spec.ToolTypeHTTP {
+		return nil, fmt.Errorf("%w: only custom http tools can be added", spec.ErrInvalidRequest)
+	}
 	if err := bundleitemutils.ValidateItemSlug(req.ToolSlug); err != nil {
 		return nil, err
 	}
