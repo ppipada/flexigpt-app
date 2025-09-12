@@ -42,8 +42,9 @@ var (
 )
 
 type (
-	ToolType   string
-	JSONSchema = json.RawMessage
+	ToolType      string
+	JSONRawString = string
+	JSONSchema    = json.RawMessage
 )
 
 const (
@@ -77,8 +78,6 @@ type HTTPRequest struct {
 
 type HTTPResponse struct {
 	SuccessCodes []int  `json:"successCodes,omitempty"` // default: any 2xx
-	Encoding     string `json:"encoding,omitempty"`     // "json"(dflt) | "text"
-	Selector     string `json:"selector,omitempty"`     // JSONPath / JMESPath / regexp
 	ErrorMode    string `json:"errorMode,omitempty"`    // "fail"(dflt) | "empty"
 }
 

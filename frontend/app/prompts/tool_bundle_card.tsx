@@ -13,7 +13,7 @@ import { getAllTools } from '@/apis/list_helper';
 import ActionDeniedAlert from '@/components/action_denied';
 import DeleteConfirmationModal from '@/components/delete_confirmation';
 
-import ToolModifyModal from '@/prompts/tool_add_edit';
+import AddEditToolModal from '@/prompts/tool_add_edit';
 
 interface ToolBundleCardProps {
 	bundle: ToolBundle;
@@ -143,8 +143,8 @@ const ToolBundleCard: React.FC<ToolBundleCardProps> = ({ bundle, tools, onToolsC
 					'1',
 					display,
 					partial.isEnabled ?? true,
-					partial.argSchema ?? {},
-					partial.outputSchema ?? {},
+					partial.argSchema ?? '',
+					partial.outputSchema ?? '',
 					partial.type ?? ToolType.HTTP,
 					partial.goImpl,
 					partial.httpImpl,
@@ -159,7 +159,7 @@ const ToolBundleCard: React.FC<ToolBundleCardProps> = ({ bundle, tools, onToolsC
 			setLocalTools(fresh);
 			onToolsChange(bundle.id, fresh);
 		} catch (err) {
-			console.error('Toool save failed:', err);
+			console.error('Tool save failed:', err);
 			setAlertMsg('Failed to save tool.');
 			setShowAlert(true);
 		} finally {
@@ -312,7 +312,7 @@ const ToolBundleCard: React.FC<ToolBundleCardProps> = ({ bundle, tools, onToolsC
 				confirmButtonText="Delete"
 			/>
 
-			<ToolModifyModal
+			<AddEditToolModal
 				isOpen={isModifyModalOpen}
 				onClose={() => {
 					setIsModifyModalOpen(false);

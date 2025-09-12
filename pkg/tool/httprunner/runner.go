@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jmespath-community/go-jmespath"
+	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
@@ -89,11 +89,10 @@ func NewHTTPToolRunner(impl spec.HTTPToolImpl, opts ...HTTPOption) (*HTTPToolRun
 
 func (r *HTTPToolRunner) Run(
 	ctx context.Context,
-	args map[string]any,
-) (output any, metaData map[string]any, err error) {
+	inArgs json.RawMessage,
+) (output json.RawMessage, metaData map[string]any, err error) {
 	req := r.impl.Request
 	resp := r.impl.Response
-
 	timeoutMs := req.TimeoutMs
 	if timeoutMs <= 0 {
 		timeoutMs = spec.DefaultHTTPTimeoutMs
@@ -112,6 +111,9 @@ func (r *HTTPToolRunner) Run(
 	if r.secrets != nil {
 		secret = r.secrets["SECRET"]
 	}
+
+	// Decode args into map for templating. Non-object args will simply result in no substitutions.
+	args, _ := encdec.DecodeJSONRaw[map[string]any](inArgs)
 
 	// Build URL with templating.
 	uStr, err := expandTemplate(req.URLTemplate, args, secret)
@@ -155,15 +157,19 @@ func (r *HTTPToolRunner) Run(
 		}
 	}
 
-	// Body.
+	// Body (JSON only).
 	var body io.Reader
 	if strings.TrimSpace(req.Body) != "" && methodAllowsBody(method) {
 		expanded, err := expandTemplate(req.Body, args, secret)
 		if err != nil {
 			return nil, nil, fmt.Errorf("body expansion failed: %w", err)
 		}
-		body = bytes.NewBufferString(expanded)
-		// Default content-type if not set and body present.
+		expandedBytes := []byte(expanded)
+		if !json.Valid(expandedBytes) {
+			return nil, nil, errors.New("request body must be valid JSON after templating")
+		}
+		body = bytes.NewReader(expandedBytes)
+		// Force JSON content-type if not set.
 		if headers.Get("Content-Type") == "" {
 			headers.Set("Content-Type", "application/json; charset=utf-8")
 		}
@@ -174,20 +180,17 @@ func (r *HTTPToolRunner) Run(
 		headers.Set(k, v)
 	}
 
+	// Force JSON Accept header by default.
+	if headers.Get("Accept") == "" {
+		headers.Set("Accept", "application/json")
+	}
+
 	// Build request.
 	httpReq, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
 		return nil, nil, fmt.Errorf("http.NewRequest: %w", err)
 	}
 	httpReq.Header = headers
-	// Default Accept for JSON encoding.
-	encoding := resp.Encoding
-	if encoding == "" {
-		encoding = spec.DefaultHTTPEncoding
-	}
-	if encoding == spec.JSONEncoding && httpReq.Header.Get("Accept") == "" {
-		httpReq.Header.Set("Accept", "application/json")
-	}
 
 	start := time.Now()
 	httpResp, err := client.Do(httpReq)
@@ -217,55 +220,25 @@ func (r *HTTPToolRunner) Run(
 	}
 
 	if !isSuccess {
-		if errorMode == "empty" {
+		if strings.EqualFold(errorMode, "empty") {
 			return nil, metaData, nil
 		}
 		return nil, metaData, fmt.Errorf("http status %d not in success set", httpResp.StatusCode)
 	}
 
-	// Decode per encoding.
-	switch strings.ToLower(encoding) {
-	case spec.JSONEncoding:
-		var jd any
-		if len(data) > 0 {
-			if err := json.Unmarshal(data, &jd); err != nil {
-				return nil, metaData, fmt.Errorf("json decode failed: %w", err)
-			}
-		}
-		if strings.TrimSpace(resp.Selector) == "" {
-			output = jd
-			return output, metaData, nil
-		}
-		// If prefixed "re:", apply regexp to compact JSON string; else treat selector as JMESPath.
-		sel := strings.TrimSpace(resp.Selector)
-		if strings.HasPrefix(sel, "re:") {
-			compact := compactJSON(data)
-			output, err = applyRegexpSelector(strings.TrimPrefix(sel, "re:"), compact)
-			if err != nil {
-				return nil, metaData, err
-			}
-			return output, metaData, nil
-		}
-		output, err = jmespath.Search(sel, jd)
-		if err != nil {
-			return nil, metaData, fmt.Errorf("selector (JMESPath) failed: %w", err)
-		}
-		return output, metaData, nil
-
-	case "text":
-		txt := string(data)
-		if strings.TrimSpace(resp.Selector) == "" {
-			return txt, metaData, nil
-		}
-		output, err = applyRegexpSelector(resp.Selector, txt)
-		if err != nil {
-			return nil, metaData, err
-		}
-		return output, metaData, nil
-
-	default:
-		return nil, metaData, fmt.Errorf("unsupported encoding: %s", encoding)
+	// JSON-only response handling.
+	ct := httpResp.Header.Get("Content-Type")
+	if len(data) == 0 {
+		// No body -> return JSON null.
+		return json.RawMessage("null"), metaData, nil
 	}
+	if !isJSONContentType(ct) {
+		return nil, metaData, fmt.Errorf("non-JSON Content-Type: %q", ct)
+	}
+	if !json.Valid(data) {
+		return nil, metaData, errors.New("response body is not valid JSON")
+	}
+	return json.RawMessage(data), metaData, nil
 }
 
 func (r *HTTPToolRunner) client(timeoutMs int) *http.Client {
@@ -302,6 +275,20 @@ func isSuccessStatus(status int, successCodes []int) bool {
 		return status >= 200 && status < 300
 	}
 	return slices.Contains(successCodes, status)
+}
+
+// Only accept explicit JSON types: application/json or any +json subtype.
+func isJSONContentType(ct string) bool {
+	if ct == "" {
+		return false // when body is present and content-type missing, treat as non-JSON
+	}
+	ct = strings.ToLower(ct)
+	// Strip parameters like "; charset=utf-8".
+	if i := strings.Index(ct, ";"); i >= 0 {
+		ct = ct[:i]
+	}
+	ct = strings.TrimSpace(ct)
+	return ct == "application/json" || strings.HasSuffix(ct, "+json")
 }
 
 // applyAuth applies HTTP auth directives. For Type "apiKey", In must be "header" or "query".
@@ -387,8 +374,9 @@ func resolvePath(root any, path string) (any, bool) {
 			if !ok {
 				return nil, false
 			}
-			cur, ok = m[seg]
-			if !ok {
+			var ok2 bool
+			cur, ok2 = m[seg]
+			if !ok2 {
 				return nil, false
 			}
 		}
@@ -411,7 +399,6 @@ func resolvePath(root any, path string) (any, bool) {
 			remain = strings.TrimPrefix(remain, ".")
 		}
 		remain = strings.TrimPrefix(remain, ".")
-
 	}
 	return cur, true
 }
@@ -429,31 +416,6 @@ func toSlice(v any) ([]any, bool) {
 	default:
 		return nil, false
 	}
-}
-
-func applyRegexpSelector(pattern, input string) (any, error) {
-	pattern = strings.TrimSpace(pattern)
-	if pattern == "" {
-		return input, nil
-	}
-	// Accept raw pattern or /pattern/flags (flags ignored).
-	if strings.HasPrefix(pattern, "/") && strings.Count(pattern, "/") >= 2 {
-		last := strings.LastIndex(pattern, "/")
-		pattern = pattern[1:last]
-	}
-	re, err := regexp.Compile(pattern)
-	if err != nil {
-		return nil, fmt.Errorf("invalid regexp: %w", err)
-	}
-	m := re.FindStringSubmatch(input)
-	if m == nil {
-		// No match -> empty result.
-		return nil, errors.New("selector did not match output")
-	}
-	if len(m) > 1 {
-		return m[1], nil
-	}
-	return m[0], nil
 }
 
 func validateHTTPImpl(impl *spec.HTTPToolImpl) error {
@@ -479,12 +441,6 @@ func validateHTTPImpl(impl *spec.HTTPToolImpl) error {
 			return fmt.Errorf("unsupported http method: %s", m)
 		}
 	}
-	if impl.Response.Encoding != "" {
-		enc := strings.ToLower(impl.Response.Encoding)
-		if enc != spec.JSONEncoding && enc != spec.TextEncoding {
-			return fmt.Errorf("unsupported response encoding: %s", impl.Response.Encoding)
-		}
-	}
 	// SuccessCodes sanity.
 	for _, c := range impl.Response.SuccessCodes {
 		if c < 100 || c > 599 {
@@ -498,10 +454,4 @@ func validateHTTPImpl(impl *spec.HTTPToolImpl) error {
 		}
 	}
 	return nil
-}
-
-func compactJSON(b []byte) string {
-	var buf bytes.Buffer
-	_ = json.Compact(&buf, b)
-	return buf.String()
 }

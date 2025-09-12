@@ -1,9 +1,9 @@
 package fts
 
 import (
-	"encoding/json"
 	"strings"
 
+	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
@@ -12,8 +12,10 @@ func extractArgsFromRaw(raw spec.JSONSchema) string {
 	if len(raw) == 0 {
 		return ""
 	}
-	var m map[string]any
-	_ = json.Unmarshal(raw, &m) // ignore error - we just fall back to “”
+	m, err := encdec.DecodeJSONRaw[map[string]any](raw)
+	if err != nil {
+		return ""
+	}
 	return extractArgsFromSchema(m)
 }
 

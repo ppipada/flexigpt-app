@@ -65,8 +65,9 @@ type PutToolRequestBody struct {
 	Tags        []string `json:"tags,omitempty"`
 	IsEnabled   bool     `json:"isEnabled"             required:"true"`
 
-	ArgSchema    JSONSchema `json:"argSchema"    required:"true"`
-	OutputSchema JSONSchema `json:"outputSchema" required:"true"`
+	// Take inputs as strings that we can then validate as a json object and put a tool.
+	ArgSchema    JSONRawString `json:"argSchema"    required:"true"`
+	OutputSchema JSONRawString `json:"outputSchema" required:"true"`
 
 	Type   ToolType      `json:"type"               required:"true"`
 	GoImpl *GoToolImpl   `json:"goImpl,omitempty"`
@@ -181,7 +182,7 @@ type InvokeGoOptions struct {
 // InvokeToolRequestBody is the body for invoking a tool.
 type InvokeToolRequestBody struct {
 	// Arguments passed to the tool. Must be JSON-serializable.
-	Args map[string]any `json:"args"                  required:"true"`
+	Args JSONRawString `json:"args"                  required:"true"`
 	// Tool-type-specific options (only one of these is used depending on the tool type).
 	HTTPOptions *InvokeHTTPOptions `json:"httpOptions,omitempty"`
 	GoOptions   *InvokeGoOptions   `json:"goOptions,omitempty"`
@@ -198,8 +199,8 @@ type InvokeToolRequest struct {
 // InvokeToolResponseBody is the result of a tool invocation.
 type InvokeToolResponseBody struct {
 	// Output is the JSON-serializable result produced by the tool. Its shape depends on
-	// the tool definition and response encoding.
-	Output any `json:"output"`
+	// the tool definition.
+	Output JSONRawString `json:"output"`
 	// Meta contains implementation-specific metadata (e.g., HTTP status, duration, etc.).
 	Meta map[string]any `json:"meta,omitempty"`
 	// True if the tool was served from the built-in data overlay.

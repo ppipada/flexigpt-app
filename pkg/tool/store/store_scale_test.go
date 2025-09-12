@@ -66,8 +66,8 @@ func TestScale_LotsOfToolBundles(t *testing.T) {
 							IsEnabled:    true,
 							Type:         spec.ToolTypeGo,
 							GoImpl:       &spec.GoToolImpl{Func: "dummy.F"},
-							ArgSchema:    []byte(`{}`),
-							OutputSchema: []byte(`{}`),
+							ArgSchema:    `{}`,
+							OutputSchema: `{}`,
 						},
 					})
 					if err != nil && !errors.Is(err, spec.ErrBundleDisabled) {
@@ -195,8 +195,8 @@ func TestScale_LotsOfTools(t *testing.T) {
 						IsEnabled:    true,
 						Type:         spec.ToolTypeGo,
 						GoImpl:       &spec.GoToolImpl{Func: "dummy.F"},
-						ArgSchema:    []byte(`{}`),
-						OutputSchema: []byte(`{}`),
+						ArgSchema:    `{}`,
+						OutputSchema: `{}`,
 					},
 				})
 				if err != nil {

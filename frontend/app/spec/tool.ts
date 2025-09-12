@@ -6,10 +6,7 @@ export enum ToolType {
 	HTTP = 'http',
 }
 
-/**
- * @public
- */
-export type JSONSchema = any; // You may want to use a stricter type or a library
+export type JSONRawString = string;
 
 /**
  * @public
@@ -46,9 +43,7 @@ export interface HTTPRequest {
  * @public
  */
 export interface HTTPResponse {
-	successCodes?: number[]; // default: any 2xx
-	encoding?: string; // "json"(dflt) | "text"
-	selector?: string; // JSONPath / JMESPath / regexp
+	successCodes?: number[]; // default: 2xx
 	errorMode?: string; // "fail"(dflt) | "empty"
 }
 
@@ -67,8 +62,8 @@ export interface Tool {
 	displayName: string;
 	description?: string;
 	tags?: string[];
-	argSchema: JSONSchema;
-	outputSchema: JSONSchema;
+	argSchema: JSONRawString;
+	outputSchema: JSONRawString;
 	type: ToolType;
 	goImpl?: GoToolImpl;
 	httpImpl?: HTTPToolImpl;
@@ -111,13 +106,11 @@ export interface InvokeGoOptions {
 }
 
 export interface InvokeToolResponse {
-	output: any;
+	output: JSONRawString;
 	meta?: Record<string, any>;
 	isBuiltIn: boolean;
 }
 export interface IToolStoreAPI {
-	// --- Bundle Operations ---
-
 	/** List tool bundles, optionally filtered by IDs, disabled, and paginated. */
 	listToolBundles(
 		bundleIDs?: string[],
@@ -140,8 +133,6 @@ export interface IToolStoreAPI {
 
 	/** Delete a tool bundle. */
 	deleteToolBundle(bundleID: string): Promise<void>;
-
-	// --- Tool Operations ---
 
 	/** List tools, optionally filtered by bundleIDs, tags, etc. */
 	listTools(
@@ -167,8 +158,8 @@ export interface IToolStoreAPI {
 		version: string,
 		displayName: string,
 		isEnabled: boolean,
-		argSchema: JSONSchema,
-		outputSchema: JSONSchema,
+		argSchema: JSONRawString,
+		outputSchema: JSONRawString,
 		type: ToolType,
 		goImpl?: GoToolImpl,
 		httpImpl?: HTTPToolImpl,
@@ -187,7 +178,7 @@ export interface IToolStoreAPI {
 		bundleID: string,
 		toolSlug: string,
 		version: string,
-		args?: Record<string, any>,
+		args?: JSONRawString,
 		httpOptions?: InvokeHTTPOptions,
 		goOptions?: InvokeGoOptions
 	): Promise<InvokeToolResponse>;

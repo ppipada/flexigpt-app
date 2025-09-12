@@ -5,7 +5,7 @@ import type {
 	InvokeHTTPOptions,
 	InvokeToolResponse,
 	IToolStoreAPI,
-	JSONSchema,
+	JSONRawString,
 	Tool,
 	ToolBundle,
 	ToolListItem,
@@ -133,8 +133,8 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 		version: string,
 		displayName: string,
 		isEnabled: boolean,
-		argSchema: JSONSchema,
-		outputSchema: JSONSchema,
+		argSchema: JSONRawString,
+		outputSchema: JSONRawString,
 		type: ToolType,
 		goImpl?: GoToolImpl,
 		httpImpl?: HTTPToolImpl,
@@ -185,7 +185,7 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 		bundleID: string,
 		toolSlug: string,
 		version: string,
-		args?: Record<string, any>,
+		args?: JSONRawString,
 		httpOptions?: InvokeHTTPOptions,
 		goOptions?: InvokeGoOptions
 	): Promise<any> {

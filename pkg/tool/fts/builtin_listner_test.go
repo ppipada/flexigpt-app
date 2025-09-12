@@ -400,7 +400,6 @@ func makeTool(idx int, enabled bool) spec.Tool {
 				},
 				Response: spec.HTTPResponse{
 					SuccessCodes: []int{200},
-					Encoding:     "json",
 				},
 			},
 			Tags: tags,

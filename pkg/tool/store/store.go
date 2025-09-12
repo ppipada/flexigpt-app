@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -20,7 +21,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 	"github.com/ppipada/flexigpt-app/pkg/tool/fts"
 	"github.com/ppipada/flexigpt-app/pkg/tool/httprunner"
-	"github.com/ppipada/flexigpt-app/pkg/tool/localrunner"
+	"github.com/ppipada/flexigpt-app/pkg/tool/localregistry"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
 )
@@ -469,6 +470,16 @@ func (ts *ToolStore) PutTool(
 
 	now := time.Now().UTC()
 	uuid, _ := uuidv7filename.NewUUID()
+	argSchemaStr := req.Body.ArgSchema
+	if argSchemaStr == "" {
+		argSchemaStr = "{}"
+	}
+
+	outSchemaStr := req.Body.OutputSchema
+	if outSchemaStr == "" {
+		outSchemaStr = "{}"
+	}
+
 	t := spec.Tool{
 		SchemaVersion: spec.SchemaVersion,
 		ID:            bundleitemutils.ItemID(uuid),
@@ -477,8 +488,8 @@ func (ts *ToolStore) PutTool(
 		DisplayName:   req.Body.DisplayName,
 		Description:   req.Body.Description,
 		Tags:          req.Body.Tags,
-		ArgSchema:     req.Body.ArgSchema,
-		OutputSchema:  req.Body.OutputSchema,
+		ArgSchema:     json.RawMessage(argSchemaStr),
+		OutputSchema:  json.RawMessage(outSchemaStr),
 		Type:          req.Body.Type,
 		GoImpl:        req.Body.GoImpl,
 		HTTP:          req.Body.HTTP,
@@ -628,10 +639,7 @@ func (ts *ToolStore) InvokeTool(
 	if err := bundleitemutils.ValidateItemVersion(req.Version); err != nil {
 		return nil, err
 	}
-	args := req.Body.Args
-	if args == nil {
-		args = map[string]any{}
-	}
+	args := json.RawMessage(req.Body.Args)
 
 	// Load bundle and tool; re-use existing GetTool for a single source of truth.
 	bundle, isBI, err := ts.getAnyBundle(ctx, req.BundleID)
@@ -670,7 +678,7 @@ func (ts *ToolStore) InvokeTool(
 	}
 
 	var (
-		out any
+		out json.RawMessage
 		md  map[string]any
 	)
 
@@ -698,22 +706,15 @@ func (ts *ToolStore) InvokeTool(
 		out, md, err = r.Run(ctx, args)
 
 	case spec.ToolTypeGo:
-		reg := localrunner.DefaultGoRegistry()
-		var gopts []localrunner.GoOption
-		if req.Body.GoOptions != nil && req.Body.GoOptions.TimeoutMs > 0 {
-			gopts = append(
-				gopts,
-				localrunner.WithGoTimeout(
-					time.Duration(req.Body.GoOptions.TimeoutMs)*time.Millisecond,
-				),
-			)
+		out, err = localregistry.DefaultGoRegistry.Call(
+			ctx,
+			strings.TrimSpace(tool.GoImpl.Func),
+			args,
+		)
+		md = map[string]any{
+			"type":     "go",
+			"funcName": tool.GoImpl.Func,
 		}
-		r, err2 := localrunner.NewGoToolRunner(strings.TrimSpace(tool.GoImpl.Func), reg, gopts...)
-		if err2 != nil {
-			return nil, err2
-		}
-		out, md, err = r.Run(ctx, args)
-
 	default:
 		return nil, fmt.Errorf("unsupported tool type: %s", tool.Type)
 	}
@@ -723,7 +724,7 @@ func (ts *ToolStore) InvokeTool(
 
 	return &spec.InvokeToolResponse{
 		Body: &spec.InvokeToolResponseBody{
-			Output:    out,
+			Output:    string(out),
 			Meta:      md,
 			IsBuiltIn: isBI,
 		},

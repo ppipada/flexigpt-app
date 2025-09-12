@@ -25,7 +25,6 @@ require (
 	github.com/danielgtaylor/huma/v2 v2.34.1
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/google/uuid v1.6.0
-	github.com/jmespath-community/go-jmespath v1.1.2-0.20250228093220-ef5fae83c6c0
 	github.com/openai/openai-go/v2 v2.1.1
 	github.com/philippgille/chromem-go v0.7.0
 	github.com/wailsapp/wails/v2 v2.10.2

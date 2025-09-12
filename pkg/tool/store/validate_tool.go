@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -33,10 +34,10 @@ func validateTool(t *spec.Tool) error {
 	if strings.TrimSpace(string(t.ID)) == "" {
 		return errors.New("id is empty")
 	}
-	if t.ArgSchema == nil {
-		return errors.New("argSchema is missing")
+	if t.ArgSchema == nil || !json.Valid(t.ArgSchema) {
+		return errors.New("argSchema is missing or invalid")
 	}
-	if t.OutputSchema == nil {
+	if t.OutputSchema == nil || !json.Valid(t.OutputSchema) {
 		return errors.New("outputSchema is missing")
 	}
 	if t.CreatedAt.IsZero() {

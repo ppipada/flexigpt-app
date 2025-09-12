@@ -53,8 +53,6 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 		httpAuthName: '',
 		httpAuthValueTemplate: '',
 		httpResponseCodes: '',
-		httpResponseEncoding: '',
-		httpResponseSelector: '',
 		httpResponseErrorMode: '',
 		version: '1',
 	});
@@ -84,8 +82,8 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 				tags: (t.tags ?? []).join(', '),
 				isEnabled: t.isEnabled,
 				type: t.type,
-				argSchema: JSON.stringify(t.argSchema ?? {}, null, 2),
-				outputSchema: JSON.stringify(t.outputSchema ?? {}, null, 2),
+				argSchema: JSON.stringify(t.argSchema, null, 2),
+				outputSchema: JSON.stringify(t.outputSchema, null, 2),
 				goFunc: t.goImpl?.func ?? '',
 				httpUrl: t.httpImpl?.request.urlTemplate ?? '',
 				httpMethod: t.httpImpl?.request.method ?? 'GET',
@@ -96,8 +94,6 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 				httpAuthName: t.httpImpl?.request.auth?.name ?? '',
 				httpAuthValueTemplate: t.httpImpl?.request.auth?.valueTemplate ?? '',
 				httpResponseCodes: (t.httpImpl?.response.successCodes ?? []).join(','),
-				httpResponseEncoding: t.httpImpl?.response.encoding ?? '',
-				httpResponseSelector: t.httpImpl?.response.selector ?? '',
 				httpResponseErrorMode: t.httpImpl?.response.errorMode ?? '',
 				version: t.version,
 			});
@@ -121,8 +117,6 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 				httpAuthName: '',
 				httpAuthValueTemplate: '',
 				httpResponseCodes: '',
-				httpResponseEncoding: '',
-				httpResponseSelector: '',
 				httpResponseErrorMode: '',
 				version: '1',
 			});
@@ -251,8 +245,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 								.map(s => Number(s.trim()))
 								.filter(Boolean)
 						: undefined,
-					encoding: formData.httpResponseEncoding || undefined,
-					selector: formData.httpResponseSelector || undefined,
+
 					errorMode: formData.httpResponseErrorMode || undefined,
 				},
 			};
@@ -265,8 +258,8 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 			isEnabled: formData.isEnabled,
 			tags: tagsArr.length ? tagsArr : undefined,
 			type: formData.type,
-			argSchema: JSON.parse(formData.argSchema),
-			outputSchema: JSON.parse(formData.outputSchema),
+			argSchema: formData.argSchema,
+			outputSchema: formData.outputSchema,
 			goImpl,
 			httpImpl,
 			version: formData.version,
@@ -641,38 +634,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 									/>
 								</div>
 							</div>
-							<div className="grid grid-cols-12 items-center gap-2">
-								<label className="label col-span-3">
-									<span className="label-text text-sm">Encoding</span>
-								</label>
-								<div className="col-span-9">
-									<input
-										type="text"
-										name="httpResponseEncoding"
-										value={formData.httpResponseEncoding}
-										onChange={handleInput}
-										className="input input-bordered w-full rounded-2xl"
-										spellCheck="false"
-										autoComplete="off"
-									/>
-								</div>
-							</div>
-							<div className="grid grid-cols-12 items-center gap-2">
-								<label className="label col-span-3">
-									<span className="label-text text-sm">Selector</span>
-								</label>
-								<div className="col-span-9">
-									<input
-										type="text"
-										name="httpResponseSelector"
-										value={formData.httpResponseSelector}
-										onChange={handleInput}
-										className="input input-bordered w-full rounded-2xl"
-										spellCheck="false"
-										autoComplete="off"
-									/>
-								</div>
-							</div>
+
 							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">Error Mode</span>

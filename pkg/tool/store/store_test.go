@@ -132,8 +132,8 @@ func TestToolCRUD(t *testing.T) {
 				Body: &spec.PutToolRequestBody{
 					DisplayName:  tc.display,
 					IsEnabled:    true,
-					ArgSchema:    []byte(`{}`),
-					OutputSchema: []byte(`{}`),
+					ArgSchema:    `{}`,
+					OutputSchema: `{}`,
 					Type:         spec.ToolTypeGo,
 					GoImpl:       &spec.GoToolImpl{Func: "main.Foo"},
 				},
@@ -163,7 +163,7 @@ func TestToolVersionConflict(t *testing.T) {
 		BundleID: "b1", ToolSlug: "tool", Version: "v1",
 		Body: &spec.PutToolRequestBody{
 			DisplayName: "dup", IsEnabled: true,
-			ArgSchema: []byte(`{}`), OutputSchema: []byte(`{}`),
+			ArgSchema: `{}`, OutputSchema: `{}`,
 			Type: spec.ToolTypeGo, GoImpl: &spec.GoToolImpl{Func: "main.Foo"},
 		},
 	})
@@ -182,7 +182,7 @@ func TestToolDisabledBundleGuard(t *testing.T) {
 		BundleID: "b1", ToolSlug: "tool", Version: "v1",
 		Body: &spec.PutToolRequestBody{
 			DisplayName: "d", IsEnabled: true,
-			ArgSchema: []byte(`{}`), OutputSchema: []byte(`{}`),
+			ArgSchema: `{}`, OutputSchema: `{}`,
 			Type: spec.ToolTypeGo, GoImpl: &spec.GoToolImpl{Func: "main.Foo"},
 		},
 	})
@@ -238,7 +238,7 @@ func TestToolBuiltInGuards(t *testing.T) {
 		BundleID: bid, ToolSlug: slug, Version: "v-new",
 		Body: &spec.PutToolRequestBody{
 			DisplayName: "illegal", IsEnabled: true,
-			ArgSchema: []byte(`{}`), OutputSchema: []byte(`{}`),
+			ArgSchema: `{}`, OutputSchema: `{}`,
 			Type: spec.ToolTypeGo, GoImpl: &spec.GoToolImpl{Func: "main.Foo"},
 		},
 	})
@@ -583,7 +583,7 @@ func TestConcurrentToolPut(t *testing.T) {
 			BundleID: "b1", ToolSlug: "concurrent", Version: "v1",
 			Body: &spec.PutToolRequestBody{
 				DisplayName: "v1", IsEnabled: true,
-				ArgSchema: []byte(`{}`), OutputSchema: []byte(`{}`),
+				ArgSchema: `{}`, OutputSchema: `{}`,
 				Type: spec.ToolTypeGo, GoImpl: &spec.GoToolImpl{Func: "main.Foo"},
 			},
 		})
@@ -594,7 +594,7 @@ func TestConcurrentToolPut(t *testing.T) {
 			BundleID: "b1", ToolSlug: "concurrent", Version: "v2",
 			Body: &spec.PutToolRequestBody{
 				DisplayName: "v2", IsEnabled: true,
-				ArgSchema: []byte(`{}`), OutputSchema: []byte(`{}`),
+				ArgSchema: `{}`, OutputSchema: `{}`,
 				Type: spec.ToolTypeGo, GoImpl: &spec.GoToolImpl{Func: "main.Foo"},
 			},
 		})
@@ -683,8 +683,8 @@ func mustPutTool(
 			Description:  "test tool",
 			IsEnabled:    enabled,
 			Tags:         tags,
-			ArgSchema:    []byte(`{}`),
-			OutputSchema: []byte(`{}`),
+			ArgSchema:    `{}`,
+			OutputSchema: `{}`,
 			Type:         spec.ToolTypeGo,
 			GoImpl:       &spec.GoToolImpl{Func: "main.Foo"},
 		},

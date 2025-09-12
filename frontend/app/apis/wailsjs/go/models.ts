@@ -1329,8 +1329,6 @@ export namespace spec {
 	}
 	export class HTTPResponse {
 	    successCodes?: number[];
-	    encoding?: string;
-	    selector?: string;
 	    errorMode?: string;
 	
 	    static createFrom(source: any = {}) {
@@ -1340,8 +1338,6 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.successCodes = source["successCodes"];
-	        this.encoding = source["encoding"];
-	        this.selector = source["selector"];
 	        this.errorMode = source["errorMode"];
 	    }
 	}
@@ -1575,7 +1571,7 @@ export namespace spec {
 	    }
 	}
 	export class InvokeToolRequestBody {
-	    args: Record<string, any>;
+	    args: string;
 	    httpOptions?: InvokeHTTPOptions;
 	    goOptions?: InvokeGoOptions;
 	
@@ -1646,7 +1642,7 @@ export namespace spec {
 	}
 	
 	export class InvokeToolResponseBody {
-	    output: any;
+	    output: string;
 	    meta?: Record<string, any>;
 	    isBuiltIn: boolean;
 	
@@ -3410,8 +3406,8 @@ export namespace spec {
 	    description?: string;
 	    tags?: string[];
 	    isEnabled: boolean;
-	    argSchema: number[];
-	    outputSchema: number[];
+	    argSchema: string;
+	    outputSchema: string;
 	    type: string;
 	    goImpl?: GoToolImpl;
 	    httpImpl?: HTTPToolImpl;
