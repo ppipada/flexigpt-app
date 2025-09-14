@@ -19,6 +19,9 @@ import (
 
 	assets "github.com/ppipada/flexigpt-app/frontend"
 	"github.com/ppipada/flexigpt-app/pkg/logrotate"
+
+	// Run registry init.
+	_ "github.com/ppipada/flexigpt-app/pkg/tool/localregistry"
 )
 
 var Version string

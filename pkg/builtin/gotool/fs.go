@@ -12,6 +12,12 @@ import (
 	"strings"
 )
 
+const (
+	ReadFileFuncID      = "github.com/ppipada/flexigpt-app/pkg/builtin/gotool/fs.ReadFile"
+	ListDirectoryFuncID = "github.com/ppipada/flexigpt-app/pkg/builtin/gotool/fs.ListDirectory"
+	SearchFilesFuncID   = "github.com/ppipada/flexigpt-app/pkg/builtin/gotool/fs.SearchFiles"
+)
+
 type ReadFileArgs struct {
 	Path     string `json:"path"`               // required
 	Encoding string `json:"encoding,omitempty"` // "text" (default) | "binary"

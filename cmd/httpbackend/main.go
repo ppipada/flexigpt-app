@@ -20,6 +20,9 @@ import (
 	promptStore "github.com/ppipada/flexigpt-app/pkg/prompt/store"
 	settingStore "github.com/ppipada/flexigpt-app/pkg/setting/store"
 	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
+
+	// Run registry init.
+	_ "github.com/ppipada/flexigpt-app/pkg/tool/localregistry"
 )
 
 // Options for the server cli.

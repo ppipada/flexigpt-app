@@ -22,20 +22,6 @@ type GoRegistry struct {
 }
 type GoRegistryOption func(*GoRegistry) error
 
-// DefaultGoRegistry is a package-level global registry with a 5s timeout.
-// It is created during package initialization and panics on failure.
-var DefaultGoRegistry = mustNewGoRegistry(WithCallTimeout(5 * time.Second))
-
-// mustNewGoRegistry panics if NewGoRegistry fails.
-// This is useful for package-level initialization.
-func mustNewGoRegistry(opts ...GoRegistryOption) *GoRegistry {
-	r, err := NewGoRegistry(opts...)
-	if err != nil {
-		panic(fmt.Errorf("localregistry: failed to create registry: %w", err))
-	}
-	return r
-}
-
 func WithCallTimeout(d time.Duration) GoRegistryOption {
 	return func(gr *GoRegistry) error {
 		gr.timeout = d

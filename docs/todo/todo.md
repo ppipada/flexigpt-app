@@ -6,7 +6,7 @@
 - [ ] Tool invocation in backend
 
   - [x] base support
-  - [ ] dont add go tools at runtime i.e only compiled tools are there
+  - [x] dont add go tools at runtime i.e only compiled tools are there
   - [ ] invocation tests for go
   - [ ] invocation tests for http, inbuilt and externally added
 

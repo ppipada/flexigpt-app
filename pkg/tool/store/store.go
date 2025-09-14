@@ -650,7 +650,7 @@ func (ts *ToolStore) InvokeTool(
 		return nil, err
 	}
 	if !bundle.IsEnabled {
-		return nil, fmt.Errorf("%w: bundle %s", spec.ErrToolDisabled, req.BundleID)
+		return nil, fmt.Errorf("%w: bundle %s", spec.ErrBundleDisabled, req.BundleID)
 	}
 
 	gtResp, err := ts.GetTool(ctx, &spec.GetToolRequest{
