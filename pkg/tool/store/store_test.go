@@ -13,20 +13,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
-func dummyHTTPTool() *spec.HTTPToolImpl {
-	return &spec.HTTPToolImpl{
-		Request: spec.HTTPRequest{
-			Method:      "GET",
-			URLTemplate: "https://example.com",
-			TimeoutMs:   1000,
-		},
-		Response: spec.HTTPResponse{
-			SuccessCodes: []int{200},
-			ErrorMode:    "fail",
-		},
-	}
-}
-
 func TestToolBundleCRUD(t *testing.T) {
 	cases := []struct {
 		name      string
@@ -764,4 +750,18 @@ func newTestToolStore(t *testing.T) (s *ToolStore, cleanup func()) {
 		t.Fatalf("NewToolStore() failed: %v", err)
 	}
 	return s, func() { s.Close(); _ = os.RemoveAll(dir) }
+}
+
+func dummyHTTPTool() *spec.HTTPToolImpl {
+	return &spec.HTTPToolImpl{
+		Request: spec.HTTPRequest{
+			Method:      "GET",
+			URLTemplate: "https://example.com",
+			TimeoutMs:   1000,
+		},
+		Response: spec.HTTPResponse{
+			SuccessCodes: []int{200},
+			ErrorMode:    "fail",
+		},
+	}
 }
