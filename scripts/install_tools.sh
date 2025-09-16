@@ -56,7 +56,9 @@ go_install() {
   GOBIN="$INSTALL_BIN" go install "${mod}@${ver}"
 }
 
-
+# 0) Wails
+go_install "github.com/wailsapp/wails/v2/cmd/wails" "$WAILS_VERSION"
+command -v wails version >/dev/null 2>&1 || fail "wails not found after install"
 
 # 1) golangci-lint (via official installer)
 log "Installing golangci-lint ${GOLANGCI_LINT_VERSION} to ${INSTALL_BIN}"
