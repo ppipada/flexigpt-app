@@ -2,18 +2,17 @@ import js from '@eslint/js';
 import prettier from 'eslint-plugin-prettier';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import react from 'eslint-plugin-react';
+import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import path from 'path';
-import tseslint, { configs } from 'typescript-eslint';
+import { configs } from 'typescript-eslint';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export default tseslint.config(
-	{
-		ignores: ['**/dist/**', '**/app/apis/wailsjs/**', '**/.react-router/**'],
-	},
+export default defineConfig(
+	{ ignores: ['**/dist/**', '**/app/apis/wailsjs/**', '**/.react-router/**'] },
 	js.configs.recommended,
 	configs.strictTypeChecked,
 	eslintPluginPrettierRecommended,
