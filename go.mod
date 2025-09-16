@@ -2,25 +2,7 @@ module github.com/ppipada/flexigpt-app
 
 go 1.25.0
 
-// We use golangci-lint, gopls modernize, gopls cli and go-mod-upgrade as tools too,
-// but have not added here as dependency as noted in golangci-lint website.
-//
-// When updating go version, update tools too
-// Updating in linux
-// 	- go: asdf install golang 1.25.0 ; asdf global golang 1.25.0
-//  - golangci-lint: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.4.0
-//       - update lint.yml for version too
-//  - gopls: go install golang.org/x/tools/gopls@latest
-//  - modernize: go install golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest; modernize -V=full
-//       - update lint.yml for version increment too
-//  - helper to upgrade modules: go install github.com/oligot/go-mod-upgrade@latest
-//  - refdir: This has false positives, but can be useful sometiems to sort go functions in a file. see command line used in package.json.
-//			 - go install github.com/devnev/refdir@latest
-//  - golines: go install github.com/segmentio/golines@latest
-//  - gofumpt: go install mvdan.cc/gofumpt@latest
-
-// Dependency inspector. Install godepgraph and graphwiz and run
-// godepgraph -s -o github.com/ppipada/flexigpt-app,command-line-arguments  cmd/agentgo/main.go | dot -Tpng -o godepgraph.png
+// We use a few tools. Installation script for them can be found at: ./scripts/install_tools/sh.
 require (
 	github.com/adrg/xdg v0.5.3
 	github.com/anthropics/anthropic-sdk-go v1.9.1
