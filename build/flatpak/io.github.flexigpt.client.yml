@@ -72,8 +72,8 @@ modules:
       - mv $(pwd)/* $NODEROOT
     sources:
       - type: archive
-        url: https://nodejs.org/dist/v20.18.0/node-v20.18.0-linux-x64.tar.xz
-        sha256: 4543670b589593f8fa5f106111fd5139081da42bb165a9239f05195e405f240a
+        url: https://nodejs.org/dist/v22.19.0/node-v22.19.0-linux-x64.tar.xz
+        sha256: c0649af18e6a24f6fe5535a3e86b341dd49a8e71117c8b68bde973ef834f16f2
 
   - name: pnpm
     buildsystem: simple

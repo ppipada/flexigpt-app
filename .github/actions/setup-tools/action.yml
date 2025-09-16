@@ -15,9 +15,9 @@ runs:
         run_install: false
 
     - name: Install Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
-        node-version: ${{ env.COMMON_NODE_VERSION }}
+        node-version-file: "package.json"
         cache: "pnpm"
 
     - name: Install pnpm dependencies

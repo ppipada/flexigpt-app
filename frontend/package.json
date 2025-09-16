@@ -67,7 +67,7 @@
 		"@testing-library/react": "^16.3.0",
 		"@testing-library/user-event": "^14.6.1",
 		"@trivago/prettier-plugin-sort-imports": "^5.2.2",
-		"@types/node": "^20.17.6",
+		"@types/node": "^22.9.0",
 		"@types/react": "19.1.13",
 		"@types/react-dom": "19.1.9",
 		"@types/sprintf-js": "^1.1.4",

@@ -13,9 +13,11 @@ go 1.25.0
 //  - gopls: go install golang.org/x/tools/gopls@latest
 //  - modernize: go install golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest; modernize -V=full
 //       - update lint.yml for version increment too
-//  - helper to upgrade modules: go-mod-upgrade
+//  - helper to upgrade modules: go install github.com/oligot/go-mod-upgrade@latest
 //  - refdir: This has false positives, but can be useful sometiems to sort go functions in a file. see command line used in package.json.
 //			 - go install github.com/devnev/refdir@latest
+//  - golines: go install github.com/segmentio/golines@latest
+//  - gofumpt: go install mvdan.cc/gofumpt@latest
 
 // Dependency inspector. Install godepgraph and graphwiz and run
 // godepgraph -s -o github.com/ppipada/flexigpt-app,command-line-arguments  cmd/agentgo/main.go | dot -Tpng -o godepgraph.png
