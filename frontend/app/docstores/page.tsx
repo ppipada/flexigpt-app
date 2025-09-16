@@ -6,6 +6,7 @@ import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/spec/command';
 import type { Collection, DocStore } from '@/spec/docstore';
 
 import DeleteConfirmationModal from '@/components/delete_confirmation';
+import PageFrame from '@/components/page_frame';
 
 import ModifyCollection from '@/docstores/collection_modify';
 import ModifyDocStore from '@/docstores/docstore_modify';
@@ -215,176 +216,178 @@ const DocumentStores: React.FC = () => {
 	}
 
 	return (
-		<div className="container mx-auto p-4">
-			{/* Heading Row */}
-			<div className="mb-6 grid grid-cols-3 items-center">
-				<div></div>
-				<h1 className="text-center text-3xl font-bold">Document Stores</h1>
-				<div className="text-right">
-					<button className="btn btn-lg btn-ghost rounded-2xl" onClick={handleAddDocStore}>
-						<FiPlus size={20} />
-					</button>
-				</div>
-			</div>
-
-			{/* DocStore Cards */}
-			<div className="space-y-4">
-				{docStores.map(docStore => (
-					<div key={docStore.id} className="card bg-base-100 rounded-2xl shadow-xl">
-						<div className="card-body p-4">
-							{/* DocStore Info Row */}
-							<div className="flex items-center justify-between pr-2 pb-2">
-								<div className="flex items-center space-x-2">
-									<FiServer className="mr-2" />
-									<span className="font-bold">
-										{docStore.name} - {docStore.dbName}
-									</span>
-								</div>
-								<div
-									className={`badge-md ${docStore.status === 'online' ? 'badge-success' : 'badge-error'} rounded-2xl`}
-								>
-									{docStore.status}
-								</div>
-							</div>
-
-							{/* DocStore URL and Action Buttons */}
-							<div className="text-neutral-custom flex items-center justify-between text-sm">
-								<span>{docStore.url}</span>
-								<div>
-									<button
-										className="btn btn-sm btn-ghost rounded-2xl"
-										onClick={() => {
-											handleAddCollection(docStore.id);
-										}}
-									>
-										<FiPlus /> Add Collection
-									</button>
-									<button
-										className="btn btn-sm btn-ghost rounded-2xl"
-										onClick={() => {
-											handleEditDocStore(docStore);
-										}}
-									>
-										<FiEdit2 />
-									</button>
-									<button
-										className="btn btn-sm btn-ghost rounded-2xl"
-										onClick={() => {
-											openDeleteDocStoreModal(docStore);
-										}}
-									>
-										<FiTrash2 />
-									</button>
-								</div>
-							</div>
-
-							{/* Collections Table */}
-							<div className="overflow-x-auto">
-								<table className="table-zebra table w-full">
-									<thead>
-										<tr className="bg-base-300 m-0 px-4 py-0 text-sm font-semibold">
-											<th className="rounded-tl-2xl">Collection Name</th>
-											<th>Use Command</th>
-											<th>Documents</th>
-											<th>Chunks</th>
-											<th className="rounded-tr-2xl pr-8 text-right">Actions</th>
-										</tr>
-									</thead>
-									<tbody>
-										{docStore.collections.map((collection, index) => (
-											<tr key={collection.id} className="hover:bg-base-300 border-none shadow-none">
-												<td className={index === docStore.collections.length - 1 ? 'rounded-bl-2xl' : ''}>
-													<div className="flex items-center">
-														<FiFolder className="mr-2" />
-														{collection.name}
-													</div>
-												</td>
-												<td>
-													{DOCUMENT_COLLECTION_INVOKE_CHAR}
-													{collection.command}
-												</td>
-												<td>{collection.documentCount}</td>
-												<td>{collection.chunkCount}</td>
-												<td
-													className={
-														index === docStore.collections.length - 1 ? 'rounded-br-2xl text-right' : 'text-right'
-													}
-												>
-													<button
-														className="btn btn-sm btn-ghost rounded-2xl"
-														aria-label="Edit Collection"
-														title="Edit Collection"
-														onClick={() => {
-															handleEditCollection(docStore.id, collection);
-														}}
-													>
-														<FiEdit2 />
-													</button>
-													<button
-														className="btn btn-sm btn-ghost rounded-2xl"
-														aria-label="Delete Collection"
-														title="Delete Collection"
-														onClick={() => {
-															openDeleteCollectionModal(docStore.id, collection);
-														}}
-													>
-														<FiTrash2 />
-													</button>
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
-							{/* End of Collections */}
-						</div>
+		<PageFrame>
+			<div className="container mx-auto p-4">
+				{/* Heading Row */}
+				<div className="mb-6 grid grid-cols-3 items-center">
+					<div></div>
+					<h1 className="text-center text-3xl font-bold">Document Stores</h1>
+					<div className="text-right">
+						<button className="btn btn-lg btn-ghost rounded-2xl" onClick={handleAddDocStore}>
+							<FiPlus size={20} />
+						</button>
 					</div>
-				))}
+				</div>
+
+				{/* DocStore Cards */}
+				<div className="space-y-4">
+					{docStores.map(docStore => (
+						<div key={docStore.id} className="card bg-base-100 rounded-2xl shadow-xl">
+							<div className="card-body p-4">
+								{/* DocStore Info Row */}
+								<div className="flex items-center justify-between pr-2 pb-2">
+									<div className="flex items-center space-x-2">
+										<FiServer className="mr-2" />
+										<span className="font-bold">
+											{docStore.name} - {docStore.dbName}
+										</span>
+									</div>
+									<div
+										className={`badge-md ${docStore.status === 'online' ? 'badge-success' : 'badge-error'} rounded-2xl`}
+									>
+										{docStore.status}
+									</div>
+								</div>
+
+								{/* DocStore URL and Action Buttons */}
+								<div className="text-neutral-custom flex items-center justify-between text-sm">
+									<span>{docStore.url}</span>
+									<div>
+										<button
+											className="btn btn-sm btn-ghost rounded-2xl"
+											onClick={() => {
+												handleAddCollection(docStore.id);
+											}}
+										>
+											<FiPlus /> Add Collection
+										</button>
+										<button
+											className="btn btn-sm btn-ghost rounded-2xl"
+											onClick={() => {
+												handleEditDocStore(docStore);
+											}}
+										>
+											<FiEdit2 />
+										</button>
+										<button
+											className="btn btn-sm btn-ghost rounded-2xl"
+											onClick={() => {
+												openDeleteDocStoreModal(docStore);
+											}}
+										>
+											<FiTrash2 />
+										</button>
+									</div>
+								</div>
+
+								{/* Collections Table */}
+								<div className="overflow-x-auto">
+									<table className="table-zebra table w-full">
+										<thead>
+											<tr className="bg-base-300 m-0 px-4 py-0 text-sm font-semibold">
+												<th className="rounded-tl-2xl">Collection Name</th>
+												<th>Use Command</th>
+												<th>Documents</th>
+												<th>Chunks</th>
+												<th className="rounded-tr-2xl pr-8 text-right">Actions</th>
+											</tr>
+										</thead>
+										<tbody>
+											{docStore.collections.map((collection, index) => (
+												<tr key={collection.id} className="hover:bg-base-300 border-none shadow-none">
+													<td className={index === docStore.collections.length - 1 ? 'rounded-bl-2xl' : ''}>
+														<div className="flex items-center">
+															<FiFolder className="mr-2" />
+															{collection.name}
+														</div>
+													</td>
+													<td>
+														{DOCUMENT_COLLECTION_INVOKE_CHAR}
+														{collection.command}
+													</td>
+													<td>{collection.documentCount}</td>
+													<td>{collection.chunkCount}</td>
+													<td
+														className={
+															index === docStore.collections.length - 1 ? 'rounded-br-2xl text-right' : 'text-right'
+														}
+													>
+														<button
+															className="btn btn-sm btn-ghost rounded-2xl"
+															aria-label="Edit Collection"
+															title="Edit Collection"
+															onClick={() => {
+																handleEditCollection(docStore.id, collection);
+															}}
+														>
+															<FiEdit2 />
+														</button>
+														<button
+															className="btn btn-sm btn-ghost rounded-2xl"
+															aria-label="Delete Collection"
+															title="Delete Collection"
+															onClick={() => {
+																openDeleteCollectionModal(docStore.id, collection);
+															}}
+														>
+															<FiTrash2 />
+														</button>
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+								{/* End of Collections */}
+							</div>
+						</div>
+					))}
+				</div>
+
+				{/* DocStore Delete Confirmation Modal */}
+				<DeleteConfirmationModal
+					isOpen={isDeleteDocStoreModalOpen}
+					onClose={closeDeleteDocStoreModal}
+					onConfirm={handleDeleteDocStore}
+					title="Delete Document Store"
+					message={`Are you sure you want to delete the document store "${selectedDocStore?.name || ''}"? This action cannot be undone.`}
+					confirmButtonText="Delete"
+				/>
+
+				{/* Modify Store Modal */}
+				<ModifyDocStore
+					isOpen={isModifyDocStoreModalOpen}
+					onClose={() => {
+						setIsModifyDocStoreModalOpen(false);
+					}}
+					onSubmit={handleModifyDocStoreSubmit}
+					initialData={selectedDocStore || undefined}
+					existingDocStores={docStores}
+				/>
+
+				{/* Delete Collection Modal */}
+				<DeleteConfirmationModal
+					isOpen={isDeleteCollectionModalOpen}
+					onClose={closeDeleteCollectionModal}
+					onConfirm={handleDeleteCollection}
+					title="Delete Collection"
+					message={`Are you sure you want to delete the collection "${selectedCollection.collection?.name || ''}"? This action cannot be undone.`}
+					confirmButtonText="Delete"
+				/>
+
+				{/* Modify Collection Modal */}
+				<ModifyCollection
+					isOpen={isModifyCollectionModalOpen}
+					onClose={() => {
+						setIsModifyCollectionModalOpen(false);
+					}}
+					onSubmit={handleModifyCollectionSubmit}
+					initialData={selectedCollection.collection || undefined}
+					docStoreID={selectedCollection.docStoreID}
+					existingCollections={docStores.find(s => s.id === selectedCollection.docStoreID)?.collections || []}
+				/>
 			</div>
-
-			{/* DocStore Delete Confirmation Modal */}
-			<DeleteConfirmationModal
-				isOpen={isDeleteDocStoreModalOpen}
-				onClose={closeDeleteDocStoreModal}
-				onConfirm={handleDeleteDocStore}
-				title="Delete Document Store"
-				message={`Are you sure you want to delete the document store "${selectedDocStore?.name || ''}"? This action cannot be undone.`}
-				confirmButtonText="Delete"
-			/>
-
-			{/* Modify Store Modal */}
-			<ModifyDocStore
-				isOpen={isModifyDocStoreModalOpen}
-				onClose={() => {
-					setIsModifyDocStoreModalOpen(false);
-				}}
-				onSubmit={handleModifyDocStoreSubmit}
-				initialData={selectedDocStore || undefined}
-				existingDocStores={docStores}
-			/>
-
-			{/* Delete Collection Modal */}
-			<DeleteConfirmationModal
-				isOpen={isDeleteCollectionModalOpen}
-				onClose={closeDeleteCollectionModal}
-				onConfirm={handleDeleteCollection}
-				title="Delete Collection"
-				message={`Are you sure you want to delete the collection "${selectedCollection.collection?.name || ''}"? This action cannot be undone.`}
-				confirmButtonText="Delete"
-			/>
-
-			{/* Modify Collection Modal */}
-			<ModifyCollection
-				isOpen={isModifyCollectionModalOpen}
-				onClose={() => {
-					setIsModifyCollectionModalOpen(false);
-				}}
-				onSubmit={handleModifyCollectionSubmit}
-				initialData={selectedCollection.collection || undefined}
-				docStoreID={selectedCollection.docStoreID}
-				existingCollections={docStores.find(s => s.id === selectedCollection.docStoreID)?.collections || []}
-			/>
-		</div>
+		</PageFrame>
 	);
 };
 

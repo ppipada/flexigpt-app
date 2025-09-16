@@ -5,37 +5,33 @@ import { FiArrowDownCircle } from 'react-icons/fi';
 interface ButtonScrollToBottomProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	scrollContainerRef: RefObject<HTMLElement | null>;
 	iconSize: number;
-	isAtBottom: boolean;
-	isScrollable: boolean;
+	show: boolean; // new: control visibility via CSS, not mount/unmount
 }
 
 const ButtonScrollToBottom: FC<ButtonScrollToBottomProps> = ({
 	scrollContainerRef,
 	iconSize,
-	isAtBottom,
-	isScrollable,
+	show,
+	className = '',
 	...props
 }) => {
 	return (
-		isScrollable &&
-		!isAtBottom && (
-			<button
-				aria-label="Scroll To Bottom"
-				title="Scroll To Bottom"
-				disabled={isAtBottom}
-				onClick={() => {
-					if (scrollContainerRef.current) {
-						scrollContainerRef.current.scrollTo({
-							top: scrollContainerRef.current.scrollHeight,
-							behavior: 'smooth',
-						});
-					}
-				}}
-				{...props}
-			>
-				<FiArrowDownCircle size={iconSize} />
-			</button>
-		)
+		<button
+			aria-label="Scroll To Bottom"
+			title="Scroll To Bottom"
+			disabled={!show}
+			onClick={() => {
+				if (!show) return;
+				const el = scrollContainerRef.current;
+				if (el) {
+					el.scrollTo({ top: el.scrollHeight - el.clientHeight, behavior: 'smooth' });
+				}
+			}}
+			className={`${className} transition-opacity duration-150 ${show ? 'visible opacity-100' : 'pointer-events-none invisible opacity-0'}`}
+			{...props}
+		>
+			<FiArrowDownCircle size={iconSize} />
+		</button>
 	);
 };
 

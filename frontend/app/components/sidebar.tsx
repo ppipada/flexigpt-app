@@ -38,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 					<FiMenu className="h-6 w-6" aria-label="Open" title="Open" />
 				</label>
 				{/* Page content here */}
-				<div className="bg-base-200 m-2 flex-1 rounded-xl">{children}</div>
+				<div>{children}</div>
 			</div>
 			<div className="drawer-side z-10">
 				<label htmlFor="my-drawer" className="drawer-overlay"></label>

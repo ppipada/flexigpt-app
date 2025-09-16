@@ -54,9 +54,8 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 	const editDisabled = disabled || !renameEnabled;
 
 	return (
-		<div className="flex-1 flex-col items-center">
-			{/* search ------------------------------------------------ */}
-			<div className="ml-8 flex-1 items-center justify-between bg-transparent px-2 py-1 md:ml-0">
+		<div className="w-full justify-center p-2">
+			<div className="flex items-center justify-between bg-transparent">
 				<ChatSearch
 					onSelectConversation={onSelectConversation}
 					refreshKey={searchRefreshKey}

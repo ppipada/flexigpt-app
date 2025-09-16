@@ -49,10 +49,9 @@ const EDITOR_EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
 interface EditorAreaProps {
 	isBusy: boolean;
 	onSubmit: (text: string) => Promise<void>;
-	setInputHeight: React.Dispatch<React.SetStateAction<number>>;
 }
 
-const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSubmit, setInputHeight }, ref) => {
+const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSubmit }, ref) => {
 	const editor = usePlateEditor({
 		plugins: [
 			SingleBlockPlugin,
@@ -131,24 +130,6 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 			editor.tf.insertSoftBreak();
 		},
 	});
-
-	// Height sync using ResizeObserver on content editable container
-	useEffect(() => {
-		if (!contentRef.current) return;
-
-		const el = contentRef.current;
-		const ro = new ResizeObserver(entries => {
-			for (const entry of entries) {
-				const rect = entry.target.getBoundingClientRect();
-				setInputHeight(Math.ceil(rect.height));
-			}
-		});
-
-		ro.observe(el);
-		return () => {
-			ro.disconnect();
-		};
-	}, [setInputHeight]);
 
 	const isSendButtonEnabled = useMemo(() => {
 		if (isBusy) return false;

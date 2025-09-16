@@ -12,7 +12,6 @@ import CommandTipsBar from '@/chats/chat_input_tips_bar';
 
 interface InputBoxProps {
 	onSend: (message: string, options: ChatOption) => Promise<void>;
-	setInputHeight: React.Dispatch<React.SetStateAction<number>>;
 	isBusy: boolean;
 	abortRef: React.RefObject<AbortController | null>;
 }
@@ -22,7 +21,7 @@ export interface InputBoxHandle {
 	focus: () => void;
 }
 
-const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(({ onSend, setInputHeight, isBusy, abortRef }, ref) => {
+const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(({ onSend, isBusy, abortRef }, ref) => {
 	/* ------------------------------------------------------------------
 	 * Aggregated chat-options (provided by <AssistantContextBar />)
 	 * ------------------------------------------------------------------ */
@@ -107,7 +106,7 @@ const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(({ onSend, setInputHe
 					onSubmit={handleSubmitMessage}
 					setInputHeight={setInputHeight}
 				/> */}
-				<EditorArea ref={inputAreaRef} isBusy={isBusy} onSubmit={handleSubmitMessage} setInputHeight={setInputHeight} />
+				<EditorArea ref={inputAreaRef} isBusy={isBusy} onSubmit={handleSubmitMessage} />
 			</div>
 			{/* Neutral tips bar under the editor */}
 			<div className="mx-4 my-0">

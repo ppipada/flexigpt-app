@@ -217,7 +217,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 					{query ? 'Try refining your search' : 'Start a conversation to see it here'}
 				</div>
 			) : (
-				<div ref={scrollRef} className="max-h-[60vh] overflow-y-auto antialiased" onScroll={handleScroll}>
+				<div ref={scrollRef} className="max-h-[60dvh] overflow-y-auto antialiased" onScroll={handleScroll}>
 					{shouldGroup ? (
 						<GroupedDropdown<SearchResult>
 							items={results}
@@ -558,18 +558,22 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 		const onResize = () => {
 			updateDropdownPos();
 		};
-		// use capture to respond to scrolls in any scrollable ancestor
-		const onScroll = () => {
-			updateDropdownPos();
-		};
 		window.addEventListener('resize', onResize);
-		window.addEventListener('scroll', onScroll, true);
 		return () => {
 			window.removeEventListener('resize', onResize);
-			window.removeEventListener('scroll', onScroll, true);
 		};
 	}, [show, updateDropdownPos]);
-
+	// Keep dropdown aligned if the search input box resizes (fonts, responsive layout, title edit mode, etc.)
+	useEffect(() => {
+		if (!show || !searchDivRef.current) return;
+		const ro = new ResizeObserver(() => {
+			updateDropdownPos();
+		});
+		ro.observe(searchDivRef.current);
+		return () => {
+			ro.disconnect();
+		};
+	}, [show, updateDropdownPos]);
 	/* ------------------------- focus / blur ------------------------ */
 	const handleFocus = useCallback(async () => {
 		setShow(true);
@@ -716,7 +720,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 	);
 
 	return (
-		<div>
+		<div className="w-full">
 			{/* input --------------------------------------------------- */}
 			<div
 				ref={searchDivRef}

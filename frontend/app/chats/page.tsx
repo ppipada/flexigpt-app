@@ -16,6 +16,7 @@ import { conversationStoreAPI } from '@/apis/baseapi';
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
 import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
+import PageFrame from '@/components/page_frame';
 
 import InputBox, { type InputBoxHandle } from '@/chats/chat_input_box';
 import ChatNavBar from '@/chats/chat_navbar';
@@ -44,7 +45,6 @@ function initConversationMessage(role: ConversationRoleEnum, content: string): C
 const ChatScreen: FC = () => {
 	const [chat, setChat] = useState<Conversation>(initConversation());
 	const [searchRefreshKey, setSearchRefreshKey] = useState(0);
-	const [inputHeight, setInputHeight] = useState(0);
 
 	const [streamedMessage, setStreamedMessage] = useState('');
 	const [isBusy, setIsBusy] = useState(false);
@@ -444,56 +444,59 @@ const ChatScreen: FC = () => {
 	});
 
 	return (
-		<div className="flex h-full w-full flex-col items-center overflow-hidden">
-			{/* NAVBAR */}
-			<div className="fixed top-2 flex w-11/12 justify-center lg:w-5/6">
-				<ChatNavBar
-					onNewChat={handleNewChat}
-					onRenameTitle={handleRenameTitle}
-					getConversationForExport={getConversationForExport}
-					onSelectConversation={handleSelectConversation}
-					chatTitle={chat.title}
-					chatID={chat.id}
-					searchRefreshKey={searchRefreshKey}
-					disabled={isBusy}
-					renameEnabled={chat.messages.length > 0}
-				/>
-			</div>
-
-			{/* MESSAGES */}
-			<div className="mt-24 flex w-full grow flex-col items-center overflow-hidden">
-				<div
-					className="flex w-full grow justify-center overflow-y-auto"
-					ref={chatContainerRef}
-					style={{ maxHeight: `calc(100vh - 196px - ${inputHeight}px)` }}
-				>
-					<div className="w-11/12 lg:w-5/6">
-						<div className="mb-4 flex-1 space-y-4">{renderedMessages}</div>
-					</div>
-				</div>
-				{/* INPUT */}
-				<div className="fixed bottom-0 mb-2 flex w-11/12 justify-center lg:w-5/6">
-					<InputBox
-						ref={chatInputRef}
-						onSend={sendMessage}
-						setInputHeight={setInputHeight}
-						isBusy={isBusy}
-						abortRef={abortRef}
+		<PageFrame contentScrollable={false}>
+			<div className="grid h-full w-full grid-rows-[auto_1fr_auto] overflow-hidden">
+				{/* Row 1: NAVBAR */}
+				<div className="row-start-1 row-end-2 flex w-full justify-center">
+					<ChatNavBar
+						onNewChat={handleNewChat}
+						onRenameTitle={handleRenameTitle}
+						getConversationForExport={getConversationForExport}
+						onSelectConversation={handleSelectConversation}
+						chatTitle={chat.title}
+						chatID={chat.id}
+						searchRefreshKey={searchRefreshKey}
+						disabled={isBusy}
+						renameEnabled={chat.messages.length > 0}
 					/>
 				</div>
-			</div>
 
-			{/* SCROLL-TO-BOTTOM BUTTON */}
-			<div className="fixed right-0 bottom-0 mr-0 mb-36 lg:mr-16">
-				<ButtonScrollToBottom
-					scrollContainerRef={chatContainerRef}
-					iconSize={32}
-					isAtBottom={isAtBottom}
-					isScrollable={isScrollable}
-					className="btn btn-md flex items-center border-none bg-transparent shadow-none"
-				/>
+				{/* Row 2: MESSAGES (the only scrollable area) */}
+				{/* Row 2: MESSAGES (the only scrollable area) */}
+				<div className="relative row-start-2 row-end-3 min-h-0">
+					{/* Make the full row the scroll container so the scrollbar is at far right */}
+					<div
+						ref={chatContainerRef}
+						className="relative h-full w-full overflow-y-auto overscroll-contain"
+						style={{ scrollbarGutter: 'stable both-edges' }}
+					>
+						{/* Center the content inside the full-width scroll container */}
+						<div className="mx-auto w-11/12 xl:w-5/6">
+							<div className="space-y-4">{renderedMessages}</div>
+						</div>
+					</div>
+
+					{/* Overlay the button; not part of the scrollable content */}
+					<div className="pointer-events-none absolute right-4 bottom-4 z-10 xl:right-24">
+						<div className="pointer-events-auto">
+							<ButtonScrollToBottom
+								scrollContainerRef={chatContainerRef}
+								iconSize={32}
+								show={isScrollable && !isAtBottom}
+								className="btn btn-md border-none bg-transparent shadow-none"
+							/>
+						</div>
+					</div>
+				</div>
+
+				{/* Row 3: INPUT (auto; grows with content) */}
+				<div className="row-start-3 row-end-4 flex w-full justify-center pb-2">
+					<div className="w-11/12 xl:w-5/6">
+						<InputBox ref={chatInputRef} onSend={sendMessage} isBusy={isBusy} abortRef={abortRef} />
+					</div>
+				</div>
 			</div>
-		</div>
+		</PageFrame>
 	);
 };
 

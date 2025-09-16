@@ -13,6 +13,7 @@ import ActionDeniedAlert from '@/components/action_denied';
 import DownloadButton from '@/components/download_button';
 import Dropdown, { type DropdownItem } from '@/components/dropdown';
 import Loader from '@/components/loader';
+import PageFrame from '@/components/page_frame';
 
 import AddEditProviderPresetModal from '@/modelpresets/provider_add_edit';
 import ProviderPresetCard from '@/modelpresets/provider_presets_card';
@@ -265,107 +266,109 @@ const ModelPresetPage: FC = () => {
 	if (loading) return <Loader text="Loading model presets…" />;
 
 	return (
-		<div className="flex h-full w-full flex-col items-center">
-			{/* ------------------------------ header ----------------------------- */}
-			<div className="fixed mt-8 flex w-10/12 items-center p-2 lg:w-2/3">
-				<h1 className="flex grow items-center justify-center text-xl font-semibold">Model Presets</h1>
-				<DownloadButton
-					title="Download Model Presets"
-					language="json"
-					valueFetcher={fetchValue}
-					size={20}
-					fileprefix="modelpresets"
-					className="btn btn-sm btn-ghost"
-				/>
-			</div>
+		<PageFrame>
+			<div className="flex h-full w-full flex-col items-center">
+				{/* ------------------------------ header ----------------------------- */}
+				<div className="fixed mt-8 flex w-10/12 items-center p-2 lg:w-2/3">
+					<h1 className="flex grow items-center justify-center text-xl font-semibold">Model Presets</h1>
+					<DownloadButton
+						title="Download Model Presets"
+						language="json"
+						valueFetcher={fetchValue}
+						size={20}
+						fileprefix="modelpresets"
+						className="btn btn-sm btn-ghost"
+					/>
+				</div>
 
-			{/* ------------------------------ body ------------------------------ */}
-			<div
-				className="mt-24 flex w-full grow flex-col items-center overflow-y-auto"
-				style={{ maxHeight: 'calc(100vh - 128px)' }}
-			>
-				<div className="flex w-5/6 flex-col space-y-4 xl:w-2/3">
-					{/* --------------- default-provider selection row ---------------- */}
-					<div className="bg-base-100 mb-8 rounded-2xl px-4 py-2 shadow-lg">
-						<div className="grid grid-cols-12 items-center gap-4">
-							<label className="col-span-3 text-sm font-medium">Default Provider</label>
+				{/* ------------------------------ body ------------------------------ */}
+				<div
+					className="mt-24 flex w-full grow flex-col items-center overflow-y-auto"
+					style={{ maxHeight: 'calc(100vh - 128px)' }}
+				>
+					<div className="flex w-5/6 flex-col space-y-4 xl:w-2/3">
+						{/* --------------- default-provider selection row ---------------- */}
+						<div className="bg-base-100 mb-8 rounded-2xl px-4 py-2 shadow-lg">
+							<div className="grid grid-cols-12 items-center gap-4">
+								<label className="col-span-3 text-sm font-medium">Default Provider</label>
 
-							<div className="col-span-6">
-								{enabledProviderNames.length > 0 && safeDefaultKey ? (
-									<Dropdown<ProviderName>
-										dropdownItems={enabledProviderPresets as Record<string, DropdownItem>}
-										/* use the safe key */
-										selectedKey={safeDefaultKey}
-										onChange={handleDefaultProviderChange}
-										filterDisabled={false}
-										title="Select default provider"
-										/* fallback so it never crashes */
-										getDisplayName={k => enabledProviderPresets[k]?.displayName ?? ''}
-									/>
-								) : (
-									<span className="text-error text-sm">Enable at least one provider first.</span>
-								)}
-							</div>
+								<div className="col-span-6">
+									{enabledProviderNames.length > 0 && safeDefaultKey ? (
+										<Dropdown<ProviderName>
+											dropdownItems={enabledProviderPresets as Record<string, DropdownItem>}
+											/* use the safe key */
+											selectedKey={safeDefaultKey}
+											onChange={handleDefaultProviderChange}
+											filterDisabled={false}
+											title="Select default provider"
+											/* fallback so it never crashes */
+											getDisplayName={k => enabledProviderPresets[k]?.displayName ?? ''}
+										/>
+									) : (
+										<span className="text-error text-sm">Enable at least one provider first.</span>
+									)}
+								</div>
 
-							<div className="col-span-3 flex justify-end">
-								<button className="btn btn-ghost flex items-center rounded-2xl" onClick={openAddModal}>
-									<FiPlus /> <span className="ml-1">Add Provider</span>
-								</button>
+								<div className="col-span-3 flex justify-end">
+									<button className="btn btn-ghost flex items-center rounded-2xl" onClick={openAddModal}>
+										<FiPlus /> <span className="ml-1">Add Provider</span>
+									</button>
+								</div>
 							</div>
 						</div>
+
+						{/* -------------------- provider cards / errors ------------------ */}
+						{error && <p className="text-error mt-8 text-center">{error}</p>}
+
+						{!error &&
+							Object.entries(providerPresets)
+								.sort(sortByDisplayName)
+								.map(([name, p]) => (
+									<ProviderPresetCard
+										key={name}
+										provider={name}
+										preset={p}
+										defaultProvider={defaultProvider ?? ''}
+										authKeySet={providerKeySet[name]}
+										enabledProviders={enabledProviderNames}
+										onProviderPresetChange={handleProviderPresetChange}
+										onProviderDelete={handleProviderDelete}
+										onRequestEdit={openEditModal}
+										allProviderPresets={providerPresets}
+									/>
+								))}
 					</div>
-
-					{/* -------------------- provider cards / errors ------------------ */}
-					{error && <p className="text-error mt-8 text-center">{error}</p>}
-
-					{!error &&
-						Object.entries(providerPresets)
-							.sort(sortByDisplayName)
-							.map(([name, p]) => (
-								<ProviderPresetCard
-									key={name}
-									provider={name}
-									preset={p}
-									defaultProvider={defaultProvider ?? ''}
-									authKeySet={providerKeySet[name]}
-									enabledProviders={enabledProviderNames}
-									onProviderPresetChange={handleProviderPresetChange}
-									onProviderDelete={handleProviderDelete}
-									onRequestEdit={openEditModal}
-									allProviderPresets={providerPresets}
-								/>
-							))}
 				</div>
+
+				{/* ----------------------- Add / Edit modal ------------------------ */}
+				{modalOpen && (
+					<AddEditProviderPresetModal
+						isOpen={modalOpen}
+						mode={modalMode}
+						onClose={() => {
+							setModalOpen(false);
+						}}
+						onSubmit={(n, payload, key) => handleProviderModalSubmit(n, payload, key, modalMode === 'edit')}
+						existingProviderNames={Object.keys(providerPresets)}
+						allProviderPresets={providerPresets}
+						initialPreset={modalMode === 'edit' && editProvider ? providerPresets[editProvider] : undefined}
+						apiKeyAlreadySet={editProvider ? providerKeySet[editProvider] : false}
+					/>
+				)}
+
+				{/* ---------------------------- alerts ----------------------------- */}
+				{showDenied && (
+					<ActionDeniedAlert
+						isOpen={showDenied}
+						onClose={() => {
+							setShowDenied(false);
+							setDeniedMsg('');
+						}}
+						message={deniedMsg}
+					/>
+				)}
 			</div>
-
-			{/* ----------------------- Add / Edit modal ------------------------ */}
-			{modalOpen && (
-				<AddEditProviderPresetModal
-					isOpen={modalOpen}
-					mode={modalMode}
-					onClose={() => {
-						setModalOpen(false);
-					}}
-					onSubmit={(n, payload, key) => handleProviderModalSubmit(n, payload, key, modalMode === 'edit')}
-					existingProviderNames={Object.keys(providerPresets)}
-					allProviderPresets={providerPresets}
-					initialPreset={modalMode === 'edit' && editProvider ? providerPresets[editProvider] : undefined}
-					apiKeyAlreadySet={editProvider ? providerKeySet[editProvider] : false}
-				/>
-			)}
-
-			{/* ---------------------------- alerts ----------------------------- */}
-			{showDenied && (
-				<ActionDeniedAlert
-					isOpen={showDenied}
-					onClose={() => {
-						setShowDenied(false);
-						setDeniedMsg('');
-					}}
-					message={deniedMsg}
-				/>
-			)}
-		</div>
+		</PageFrame>
 	);
 };
 
