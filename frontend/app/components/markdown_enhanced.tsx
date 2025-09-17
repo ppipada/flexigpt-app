@@ -135,8 +135,8 @@ const EnhancedMarkdown = ({ text, align = 'left', isBusy = false }: EnhancedMark
 	return (
 		<MdErrorBoundary source={processedText}>
 			<Markdown
-				remarkPlugins={isBusy ? [supersub, remarkGemoji, remarkGfm] : [supersub, remarkGemoji, remarkMath, remarkGfm]}
-				rehypePlugins={isBusy ? [] : [rehypeRaw, [rehypeSanitize, { ...strictSchema }], rehypeKatex]}
+				remarkPlugins={[supersub, remarkGemoji, remarkMath, remarkGfm]}
+				rehypePlugins={[rehypeRaw, [rehypeSanitize, { ...strictSchema }], rehypeKatex]}
 				components={components}
 				skipHtml={false}
 			>
