@@ -451,7 +451,7 @@ function VariableEditorRow({
 						<input
 							id={id}
 							type="checkbox"
-							className="toggle toggle-accent rounded-full"
+							className="toggle toggle-accent"
 							checked={Boolean(value)}
 							disabled={isDisabled}
 							onChange={e => {

@@ -539,7 +539,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 								name="isEnabled"
 								checked={formData.isEnabled}
 								onChange={handleInput}
-								className="toggle toggle-accent rounded-full"
+								className="toggle toggle-accent"
 							/>
 						</div>
 					</div>

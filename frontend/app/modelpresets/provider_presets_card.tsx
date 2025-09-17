@@ -300,7 +300,7 @@ const ProviderPresetCard: FC<Props> = ({
 					<label className="text-sm">Enable</label>
 					<input
 						type="checkbox"
-						className="toggle toggle-accent rounded-full"
+						className="toggle toggle-accent"
 						checked={preset.isEnabled}
 						onChange={toggleProviderEnable}
 					/>
@@ -460,7 +460,7 @@ const ProviderPresetCard: FC<Props> = ({
 												<td className="text-center">
 													<input
 														type="checkbox"
-														className="toggle toggle-accent rounded-full"
+														className="toggle toggle-accent"
 														checked={m.isEnabled}
 														onChange={() => toggleModelEnable(id)}
 													/>

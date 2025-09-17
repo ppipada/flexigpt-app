@@ -29,4 +29,4 @@
   - [ ] Integrate stores with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
 
 - [ ] CPU is high when "thinking". Need to debug
-- [ ] After system restart if app is open it should start again, it is not happening in mac.
+- [x] After system restart if app is open it should start again, it is not happening in mac.

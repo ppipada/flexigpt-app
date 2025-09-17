@@ -184,7 +184,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 				<label className="flex items-center gap-1">
 					<input
 						type="checkbox"
-						className="toggle toggle-accent toggle-xs rounded-full"
+						className="toggle toggle-accent toggle-xs"
 						checked={Boolean(currentValue)}
 						aria-label={`Set ${el.name}`}
 						onChange={e => {

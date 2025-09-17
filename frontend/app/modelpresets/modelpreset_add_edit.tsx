@@ -536,7 +536,7 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 							<input
 								type="checkbox"
 								name="isEnabled"
-								className="toggle toggle-accent rounded-full"
+								className="toggle toggle-accent"
 								checked={formData.isEnabled}
 								onChange={handleChange}
 							/>
@@ -551,7 +551,7 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 							<input
 								type="checkbox"
 								name="stream"
-								className="toggle toggle-accent rounded-full"
+								className="toggle toggle-accent"
 								checked={formData.stream}
 								onChange={handleChange}
 							/>
@@ -569,7 +569,7 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 							<input
 								type="checkbox"
 								name="reasoningSupport"
-								className="toggle toggle-accent rounded-full"
+								className="toggle toggle-accent"
 								checked={formData.reasoningSupport}
 								onChange={handleChange}
 							/>

@@ -105,7 +105,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 								onChange={e => {
 									setStream(e.target.checked);
 								}}
-								className="toggle toggle-accent rounded-full"
+								className="toggle toggle-accent"
 							/>
 						</div>
 					</div>
