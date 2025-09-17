@@ -23,7 +23,8 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 	const [error, setError] = useState<string | null>(null);
 	const [svgNode, setSvgNode] = useState<SVGSVGElement | null>(null);
 	const [zoomOpen, setZoomOpen] = useState(false);
-
+	/* Initialise Mermaid only when the theme changes */
+	const lastTheme = useRef<'dark' | 'default' | null>(null);
 	const uniqueId = useRef(`mermaid-${getUUIDv7()}`);
 
 	const mermaidConfig = useMemo<MermaidConfig>(
@@ -36,11 +37,9 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 		[isDark]
 	);
 
-	/* Initialise Mermaid only when the theme changes */
-	const lastTheme = useRef<'dark' | 'default'>('default');
 	useEffect(() => {
 		const t = mermaidConfig.theme as 'dark' | 'default';
-		if (t !== lastTheme.current) {
+		if (lastTheme.current === null || t !== lastTheme.current) {
 			mermaid.initialize(mermaidConfig);
 			lastTheme.current = t;
 		}
