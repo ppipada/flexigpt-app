@@ -1,10 +1,10 @@
-import type { FC, JSX } from 'react';
+import type { FC } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { FiMonitor, FiMoon, FiSun } from 'react-icons/fi';
 
-import { type AppTheme, ThemeType, toProviderName, toThemeType } from '@/spec/setting';
-import { DAISYUI_BUILTIN_THEMES } from '@/spec/theme_consts';
+import { type AppTheme, ThemeType } from '@/spec/setting';
+import { CustomThemeDark, CustomThemeLight, CustomThemeSystem, DAISYUI_BUILTIN_THEMES } from '@/spec/theme_consts';
 
 import { updateStartupTheme, useStartupTheme } from '@/hooks/use_startup_theme';
 import { useTheme } from '@/hooks/use_theme_provider';
@@ -13,33 +13,13 @@ import { settingstoreAPI } from '@/apis/baseapi';
 
 import Dropdown, { type DropdownItem } from '@/components/dropdown';
 
-/* ———————————————————————————————————————— helpers ——————————————————————————————————————— */
-type OtherThemeName = (typeof DAISYUI_BUILTIN_THEMES)[number];
-const isOtherThemeName = (n: string): n is OtherThemeName => DAISYUI_BUILTIN_THEMES.includes(n);
-
-/* ———————————————————————————————————————— sub-component ——————————————————————————————————— */
-interface ThemeRadioProps {
-	label: string;
-	value: ThemeType;
-	icon: JSX.Element;
-	current: ThemeType;
-	onChange: (v: ThemeType) => void;
-}
-
-const ThemeRadio: FC<ThemeRadioProps> = ({ label, value, icon, current, onChange }) => (
-	<label className="flex cursor-pointer items-center gap-2">
-		<input
-			type="radio"
-			className="radio radio-accent"
-			checked={current === value}
-			onChange={() => {
-				onChange(value);
-			}}
-		/>
-		{icon}
-		<span className="text-sm">{label}</span>
-	</label>
-);
+const isOtherThemeName = (n: string): boolean => DAISYUI_BUILTIN_THEMES.includes(n);
+const toThemeType = (name: string): ThemeType => {
+	if (name === CustomThemeLight) return ThemeType.Light;
+	if (name === CustomThemeDark) return ThemeType.Dark;
+	if (name === 'system') return ThemeType.System;
+	return ThemeType.Other;
+};
 
 /* ———————————————————————————————————————— main selector —————————————————————————————————— */
 export const ThemeSelector: FC = () => {
@@ -51,15 +31,11 @@ export const ThemeSelector: FC = () => {
 
 	/* dropdown items never change -> memo once */
 	const dropdownItems = useMemo(
-		() =>
-			Object.fromEntries(DAISYUI_BUILTIN_THEMES.map(t => [t, { isEnabled: true }])) as Record<
-				OtherThemeName,
-				DropdownItem
-			>,
+		() => Object.fromEntries(DAISYUI_BUILTIN_THEMES.map(t => [t, { isEnabled: true }])) as Record<string, DropdownItem>,
 		[]
 	);
 
-	const [otherName, setOtherName] = useState<OtherThemeName>();
+	const [otherName, setOtherName] = useState<string>(DAISYUI_BUILTIN_THEMES[0]);
 
 	/* initialise “other” theme name once start-up theme is loaded */
 	useEffect(() => {
@@ -72,29 +48,29 @@ export const ThemeSelector: FC = () => {
 
 	/* ————————————————————————————— apply theme —————————————————————————————— */
 	const applyTheme = useCallback(
-		async (type: ThemeType, name?: OtherThemeName) => {
+		async (type: ThemeType, name: string) => {
 			if (!startupReady) return; // protect against very early calls
-
-			const providerKey = type === ThemeType.Other ? (name ?? otherName) : toProviderName(type);
-			if (!providerKey) return;
-
+			if (name === '') {
+				console.error('[Theme] empty name recieved');
+				return;
+			}
 			/* optimistic update */
-			setTheme(providerKey);
+			setTheme(name);
 
 			const newTheme: AppTheme = {
-				type,
-				name: type === ThemeType.Other ? providerKey : type,
+				type: type,
+				name: name,
 			};
 
 			try {
 				await settingstoreAPI.setAppTheme(newTheme);
 				updateStartupTheme(newTheme);
-				console.log('[Theme] changed to', newTheme.name);
+				console.log('[Theme] changed to', newTheme.type, newTheme.name);
 			} catch (err) {
 				console.error('[Theme] failed to persist, reverting', err);
 				// fallback to last known persistent value
 				if (startupTheme) {
-					setTheme(toProviderName(startupTheme));
+					setTheme(startupTheme.name);
 				}
 			}
 		},
@@ -108,15 +84,43 @@ export const ThemeSelector: FC = () => {
 
 	return (
 		<div className="flex items-center gap-6">
-			<ThemeRadio
-				label="System"
-				value={ThemeType.System}
-				icon={<FiMonitor />}
-				current={current}
-				onChange={applyTheme}
-			/>
-			<ThemeRadio label="Light" value={ThemeType.Light} icon={<FiSun />} current={current} onChange={applyTheme} />
-			<ThemeRadio label="Dark" value={ThemeType.Dark} icon={<FiMoon />} current={current} onChange={applyTheme} />
+			<label className="flex cursor-pointer items-center gap-2">
+				<input
+					type="radio"
+					className="radio radio-accent"
+					checked={current === ThemeType.System}
+					onChange={() => {
+						applyTheme(ThemeType.System, CustomThemeSystem);
+					}}
+				/>
+				<FiMonitor />
+				<span className="text-sm">System</span>
+			</label>
+			<label className="flex cursor-pointer items-center gap-2">
+				<input
+					type="radio"
+					className="radio radio-accent"
+					checked={current === ThemeType.Light}
+					onChange={() => {
+						applyTheme(ThemeType.Light, CustomThemeLight);
+					}}
+				/>
+				<FiSun />
+				<span className="text-sm">Light</span>
+			</label>
+
+			<label className="flex cursor-pointer items-center gap-2">
+				<input
+					type="radio"
+					className="radio radio-accent"
+					checked={current === ThemeType.Dark}
+					onChange={() => {
+						applyTheme(ThemeType.Dark, CustomThemeDark);
+					}}
+				/>
+				<FiMoon />
+				<span className="text-sm">Dark</span>
+			</label>
 
 			<label className="flex cursor-pointer items-center gap-2">
 				<input
@@ -126,9 +130,9 @@ export const ThemeSelector: FC = () => {
 					onChange={() => applyTheme(ThemeType.Other, otherName)}
 				/>
 				<div className="w-50">
-					<Dropdown<OtherThemeName>
+					<Dropdown<string>
 						dropdownItems={dropdownItems}
-						selectedKey={otherName ?? DAISYUI_BUILTIN_THEMES[0]}
+						selectedKey={otherName}
 						onChange={async key => {
 							setOtherName(key);
 							await applyTheme(ThemeType.Other, key);

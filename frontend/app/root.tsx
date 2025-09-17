@@ -2,7 +2,7 @@ import { type FC, useEffect } from 'react';
 
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 
-import { type AppTheme, ThemeType, toProviderName } from '@/spec/setting';
+import { type AppTheme, ThemeType } from '@/spec/setting';
 import { CustomThemeDark, CustomThemeLight } from '@/spec/theme_consts';
 
 import { IS_WAILS_PLATFORM } from '@/lib/features';
@@ -31,7 +31,7 @@ export const CustomThemeProvider: FC<{ children: React.ReactNode }> = ({ childre
 	return (
 		<GenericThemeProvider
 			storageKey="flexigpt-theme"
-			defaultTheme={toProviderName(startup)}
+			defaultTheme={startup.name}
 			lightTheme={CustomThemeLight}
 			darkTheme={CustomThemeDark}
 		>

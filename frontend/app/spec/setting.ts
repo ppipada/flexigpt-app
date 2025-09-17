@@ -1,5 +1,3 @@
-import { CustomThemeDark, CustomThemeLight } from '@/spec/theme_consts';
-
 export enum ThemeType {
 	System = 'system',
 	Light = 'light',
@@ -33,20 +31,6 @@ export interface SettingsSchema {
 	appTheme: AppTheme;
 	authKeys: AuthKeyMeta[];
 }
-
-export const toProviderName = (t: ThemeType | AppTheme): string => {
-	const type = typeof t === 'string' ? t : t.type;
-	if (type === ThemeType.System) return 'system';
-	if (type === ThemeType.Light) return CustomThemeLight;
-	if (type === ThemeType.Dark) return CustomThemeDark;
-	return typeof t === 'string' ? t : t.name; /* ThemeType.Other */
-};
-export const toThemeType = (name: string): ThemeType => {
-	if (name === CustomThemeLight || name === 'light') return ThemeType.Light;
-	if (name === CustomThemeDark || name === 'dark') return ThemeType.Dark;
-	if (name === 'system') return ThemeType.System;
-	return ThemeType.Other;
-};
 
 export interface ISettingStoreAPI {
 	setAppTheme: (theme: AppTheme) => Promise<void>;

@@ -1,3 +1,4 @@
+export const CustomThemeSystem = 'system';
 export const CustomThemeLight = 'nordsnowstorm';
 export const CustomThemeDark = 'nordpolarnight';
 

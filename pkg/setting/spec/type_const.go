@@ -24,6 +24,12 @@ const (
 	ThemeOther  ThemeType = "other"
 )
 
+const (
+	ThemeNameSystem = "system"
+	ThemeNameLight  = "nordsnowstorm"
+	ThemeNameDark   = "nordpolarnight"
+)
+
 type AppTheme struct {
 	Type ThemeType `json:"type"`
 	Name string    `json:"name"`

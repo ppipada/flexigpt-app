@@ -12,9 +12,34 @@ func validateTheme(th *spec.AppTheme) error {
 		return spec.ErrInvalidTheme
 	}
 	switch th.Type {
-	case spec.ThemeSystem, spec.ThemeLight, spec.ThemeDark:
-		if th.Name != getThemeString(th.Type) {
-			return fmt.Errorf("%w: name required", spec.ErrInvalidTheme)
+	case spec.ThemeSystem:
+		if th.Name != spec.ThemeNameSystem {
+			return fmt.Errorf(
+				"%w: type and name required. input - type %s, name %s",
+				spec.ErrInvalidTheme,
+				th.Type,
+				th.Name,
+			)
+		}
+		return nil
+	case spec.ThemeLight:
+		if th.Name != spec.ThemeNameLight {
+			return fmt.Errorf(
+				"%w: type and name required. input - type %s, name %s",
+				spec.ErrInvalidTheme,
+				th.Type,
+				th.Name,
+			)
+		}
+		return nil
+	case spec.ThemeDark:
+		if th.Name != spec.ThemeNameDark {
+			return fmt.Errorf(
+				"%w: type and name required. input - type %s, name %s",
+				spec.ErrInvalidTheme,
+				th.Type,
+				th.Name,
+			)
 		}
 		return nil
 	case spec.ThemeOther:
@@ -25,8 +50,4 @@ func validateTheme(th *spec.AppTheme) error {
 	default:
 		return spec.ErrInvalidTheme
 	}
-}
-
-func getThemeString(s spec.ThemeType) string {
-	return string(s)
 }

@@ -20,18 +20,18 @@ const ThemeContext = createContext<ThemeCtx>({
 
 interface GenericThemeProviderProps {
 	children: ReactNode;
-	storageKey?: string;
-	defaultTheme?: string;
-	lightTheme?: string;
-	darkTheme?: string;
+	storageKey: string;
+	defaultTheme: string;
+	lightTheme: string;
+	darkTheme: string;
 }
 
 export const GenericThemeProvider: FC<GenericThemeProviderProps> = ({
 	children,
-	storageKey = 'theme',
-	defaultTheme = 'system',
-	lightTheme = 'light',
-	darkTheme = 'dark',
+	storageKey,
+	defaultTheme,
+	lightTheme,
+	darkTheme,
 }) => {
 	const [theme, _setTheme] = useState<string>(() => {
 		const saved = localStorage.getItem(storageKey);
