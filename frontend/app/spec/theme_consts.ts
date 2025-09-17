@@ -1,6 +1,6 @@
 export const CustomThemeSystem = 'system';
-export const CustomThemeLight = 'nordsnowstorm';
-export const CustomThemeDark = 'nordpolarnight';
+export const CustomThemeLight = 'applight';
+export const CustomThemeDark = 'appdark';
 
 const DAISYUI_LIGHT_THEMES = [
 	'acid',

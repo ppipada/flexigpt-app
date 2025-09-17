@@ -176,14 +176,14 @@ export function TemplateEditModal({
 
 	return createPortal(
 		<dialog className="modal modal-open">
-			<div className="modal-box max-h-[85vh] max-w-3xl overflow-auto rounded-2xl">
+			<div className="modal-box bg-base-200 max-h-[85vh] max-w-3xl overflow-auto rounded-2xl">
 				{/* Header */}
 				<div className="mb-4 flex items-center justify-between gap-2">
 					<div className="flex items-center gap-2">
 						<h3 className="text-lg font-bold">Edit Template</h3>
 						<span className="badge badge-neutral">{displayName}</span>
 					</div>
-					<button type="button" className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close">
+					<button type="button" className="btn btn-sm btn-circle bg-base-300" onClick={onClose} aria-label="Close">
 						<FiX size={12} />
 					</button>
 				</div>
@@ -376,7 +376,7 @@ export function TemplateEditModal({
 
 					{/* Footer */}
 					<div className="modal-action">
-						<button type="button" className="btn rounded-xl" onClick={onClose}>
+						<button type="button" className="btn bg-base-300 rounded-xl" onClick={onClose}>
 							Cancel
 						</button>
 						<button type="submit" className="btn btn-primary rounded-xl" disabled={hasToolJsonErrors}>

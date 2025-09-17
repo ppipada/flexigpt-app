@@ -17,7 +17,7 @@ const ActionDeniedAlert: FC<ActionDeniedAlertProps> = ({ isOpen, onClose, messag
 
 	return createPortal(
 		<dialog className="modal modal-open">
-			<div className="modal-box w-11/12 max-w-md">
+			<div className="modal-box bg-base-200 w-11/12 max-w-md">
 				<div className="mb-4 flex items-center">
 					<FiAlertTriangle size={24} className="text-warning mr-3" />
 					<h3 className="text-lg font-bold">{title}</h3>

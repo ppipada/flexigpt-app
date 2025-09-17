@@ -6,7 +6,7 @@ import { ALL_DARK_THEMES } from '@/spec/theme_consts';
 import { useTheme } from '@/hooks/use_theme_provider';
 
 export function useIsDarkMermaid(): boolean {
-	const { theme: providerTheme } = useTheme(); // e.g. "nordpolarnight" | "acid" | "system" | …
+	const { theme: providerTheme } = useTheme();
 
 	return useMemo(() => {
 		/* “system” → fall back to prefers-color-scheme */

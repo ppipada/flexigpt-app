@@ -63,10 +63,10 @@ const AddToolBundleModal: React.FC<AddToolBundleModalProps> = ({ isOpen, onClose
 
 	return (
 		<dialog className="modal modal-open">
-			<div className="modal-box max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
+			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
 				<div className="mb-4 flex items-center justify-between">
 					<h3 className="text-lg font-bold">Add Tool Bundle</h3>
-					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close" title="Close">
+					<button className="btn btn-sm btn-circle bg-base-300" onClick={onClose} aria-label="Close" title="Close">
 						<FiX size={12} />
 					</button>
 				</div>
@@ -144,7 +144,7 @@ const AddToolBundleModal: React.FC<AddToolBundleModalProps> = ({ isOpen, onClose
 					</div>
 					{/* Actions */}
 					<div className="modal-action">
-						<button type="button" className="btn rounded-2xl" onClick={onClose}>
+						<button type="button" className="btn bg-base-300 rounded-2xl" onClick={onClose}>
 							Cancel
 						</button>
 						<button type="submit" className="btn btn-primary rounded-2xl" disabled={!isAllValid}>

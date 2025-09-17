@@ -80,7 +80,7 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 
 	return (
 		<dialog className="modal modal-open">
-			<div className="modal-box rounded-2xl">
+			<div className="modal-box bg-base-200 rounded-2xl">
 				<h3 className="text-lg font-bold">{initialData ? 'Edit Collection' : 'Add New Collection'}</h3>
 				<form onSubmit={handleSubmit} className="mt-4">
 					<fieldset className="fieldset">
@@ -119,7 +119,7 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 						{errors.command && <p className="text-error mt-1 text-sm">{errors.command}</p>}
 					</fieldset>
 					<div className="modal-action">
-						<button type="button" className="btn btn-ghost rounded-2xl" onClick={onClose}>
+						<button type="button" className="btn bg-base-300 rounded-2xl" onClick={onClose}>
 							Cancel
 						</button>
 						<button

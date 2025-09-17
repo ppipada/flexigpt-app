@@ -95,10 +95,10 @@ const PromptModal: React.FC<{
 	if (!isOpen) return null;
 	return createPortal(
 		<dialog className="modal modal-open">
-			<div className="modal-box max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
+			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
 				<div className="mb-4 flex items-center justify-between">
 					<h3 className="text-lg font-bold">{mode === 'add' ? 'Add System Prompt' : 'Edit System Prompt'}</h3>
-					<button className="btn btn-sm btn-circle" onClick={onClose} aria-label="Close">
+					<button className="btn btn-sm btn-circle bg-base-300" onClick={onClose} aria-label="Close">
 						<FiX size={12} />
 					</button>
 				</div>
@@ -147,7 +147,7 @@ const PromptModal: React.FC<{
 					</div>
 
 					<div className="modal-action">
-						<button type="button" className="btn rounded-xl" onClick={onClose}>
+						<button type="button" className="btn bg-base-300 rounded-xl" onClick={onClose}>
 							Cancel
 						</button>
 						<button type="submit" className="btn btn-primary rounded-xl" disabled={!value.trim()}>

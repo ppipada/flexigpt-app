@@ -96,7 +96,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 			}}
 		>
 			<summary
-				className="btn border-neutral/20 bg-base-100 flex w-full cursor-pointer items-center justify-between rounded-2xl px-4 py-2 text-left shadow-none"
+				className="btn border-neutral/20 bg-base-200 flex w-full cursor-pointer items-center justify-between rounded-2xl px-4 py-2 text-left shadow-none"
 				title={title}
 			>
 				<span className="truncate font-normal">
@@ -107,7 +107,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 
 			<ul
 				tabIndex={0}
-				className="dropdown-content menu border-neutral/20 bg-base-200 flex w-full flex-col flex-nowrap overflow-x-hidden overflow-y-auto rounded-2xl shadow-sm"
+				className="dropdown-content menu border-neutral/20 bg-base-300 flex w-full flex-col flex-nowrap overflow-x-hidden overflow-y-auto rounded-2xl shadow-sm"
 				style={{
 					maxHeight: typeof maxMenuHeight === 'number' ? `${maxMenuHeight}px` : maxMenuHeight,
 				}}
