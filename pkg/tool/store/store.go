@@ -26,7 +26,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
 )
 
-// Internal constants.
 const (
 	fetchBatchTools       = 512            // Directory-store batch size.
 	maxPageSizeTools      = 256            // Hard page limit.

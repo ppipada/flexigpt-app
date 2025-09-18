@@ -85,6 +85,16 @@
 	"go.addTags": {
 		"transform": "camelcase"
 	},
+	"gopls": {
+		"build.directoryFilters": [
+			"-**/node_modules",
+			"-frontend",
+			"-build",
+			"-docs",
+			"-scripts"
+		],
+		"build.buildFlags": ["-tags=integration"]
+	},
 
 	// --- ESLint ---
 	"eslint.format.enable": true,

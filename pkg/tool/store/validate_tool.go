@@ -23,10 +23,10 @@ func validateTool(t *spec.Tool) error {
 		)
 	}
 	if err := bundleitemutils.ValidateItemSlug(t.Slug); err != nil {
-		return fmt.Errorf("invalid slug: %w", err)
+		return fmt.Errorf("invalid slug %s: %w", t.Slug, err)
 	}
 	if err := bundleitemutils.ValidateItemVersion(t.Version); err != nil {
-		return fmt.Errorf("invalid version: %w", err)
+		return fmt.Errorf("invalid version %s: %w", t.Version, err)
 	}
 	if strings.TrimSpace(t.DisplayName) == "" {
 		return errors.New("displayName is empty")

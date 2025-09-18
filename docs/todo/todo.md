@@ -3,12 +3,12 @@
 ## Laundry list
 
 - [x] input area spacing and size when streaming back from assistant needs relook
-- [ ] Tool invocation in backend
+- [x] Tool invocation in backend
 
   - [x] base support
   - [x] dont add go tools at runtime i.e only compiled tools are there
-  - [ ] invocation tests for go
-  - [ ] invocation tests for http, inbuilt and externally added
+  - [x] invocation tests for go
+  - [x] invocation tests for http, inbuilt and externally added
 
 - [ ] Tool invoke when doing prompt template preprocess run
 - [ ] prompt tempaltes to fill in full text including preprocessors and then give back message blocks to caller for exec.
