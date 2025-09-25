@@ -26,11 +26,11 @@ const (
 	DefaultAnthropicChatCompletionPrefix   = "/v1/messages"
 	DefaultAnthropicAuthorizationHeaderKey = "x-api-key"
 
-	DefaultOpenAIOrigin               = "https://api.openai.com"
-	DefaultOpenAIChatCompletionPrefix = "/v1/chat/completions"
+	DefaultOpenAIOrigin                = "https://api.openai.com"
+	DefaultOpenAIChatCompletionsPrefix = "/v1/chat/completions"
 )
 
-var OpenAICompatibleDefaultHeaders = map[string]string{"content-type": "application/json"}
+var OpenAIChatCompletionsDefaultHeaders = map[string]string{"content-type": "application/json"}
 
 var (
 	ErrInvalidDir = errors.New("invalid directory")

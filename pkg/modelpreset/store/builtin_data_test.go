@@ -969,7 +969,7 @@ func buildSchemaScopedDuplicateIDs(
 		CreatedAt:                time.Now(),
 		ModifiedAt:               time.Now(),
 		Origin:                   "https://example.com/a",
-		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionPrefix,
+		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionsPrefix,
 		DefaultModelPresetID:     commonID,
 		ModelPresets: map[spec.ModelPresetID]spec.ModelPreset{
 			commonID: mCommon,
@@ -985,7 +985,7 @@ func buildSchemaScopedDuplicateIDs(
 		CreatedAt:                time.Now(),
 		ModifiedAt:               time.Now(),
 		Origin:                   "https://example.com/b",
-		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionPrefix,
+		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionsPrefix,
 		DefaultModelPresetID:     commonID,
 		ModelPresets:             map[spec.ModelPresetID]spec.ModelPreset{commonID: mCommon},
 	}
@@ -1035,7 +1035,7 @@ func buildSchemaDefaultMissing(pn spec.ProviderName, mpid spec.ModelPresetID) []
 		CreatedAt:                time.Now(),
 		ModifiedAt:               time.Now(),
 		Origin:                   "https://x",
-		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionPrefix,
+		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionsPrefix,
 		DefaultModelPresetID:     "ghost",
 		ModelPresets:             map[spec.ModelPresetID]spec.ModelPreset{mpid: model},
 	}
@@ -1059,7 +1059,7 @@ func buildHappySchema(pn spec.ProviderName, mpid spec.ModelPresetID) []byte {
 		CreatedAt:                time.Now(),
 		ModifiedAt:               time.Now(),
 		Origin:                   "https://example.com",
-		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionPrefix,
+		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionsPrefix,
 		DefaultModelPresetID:     mpid,
 		ModelPresets:             map[spec.ModelPresetID]spec.ModelPreset{mpid: model},
 	}

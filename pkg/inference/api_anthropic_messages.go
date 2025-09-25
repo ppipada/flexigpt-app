@@ -14,28 +14,28 @@ import (
 	"github.com/anthropics/anthropic-sdk-go/option"
 )
 
-// AnthropicCompatibleAPI implements CompletionProvider for Anthropics' Messages API.
-type AnthropicCompatibleAPI struct {
+// AnthropicMessagesAPI implements CompletionProvider for Anthropics' Messages API.
+type AnthropicMessagesAPI struct {
 	ProviderParams *spec.ProviderParams
 	Debug          bool
 	client         *anthropic.Client
 }
 
-// NewAnthropicCompatibleAPI creates a new instance of Anthropics provider.
-func NewAnthropicCompatibleAPI(
+// NewAnthropicMessagesAPI creates a new instance of Anthropics provider.
+func NewAnthropicMessagesAPI(
 	pi spec.ProviderParams,
 	debug bool,
-) (*AnthropicCompatibleAPI, error) {
+) (*AnthropicMessagesAPI, error) {
 	if pi.Name == "" || pi.Origin == "" {
-		return nil, errors.New("anthropic compatible LLM: invalid args")
+		return nil, errors.New("anthropic messages api LLM: invalid args")
 	}
-	return &AnthropicCompatibleAPI{
+	return &AnthropicMessagesAPI{
 		ProviderParams: &pi,
 		Debug:          debug,
 	}, nil
 }
 
-func (api *AnthropicCompatibleAPI) InitLLM(ctx context.Context) error {
+func (api *AnthropicMessagesAPI) InitLLM(ctx context.Context) error {
 	if !api.IsConfigured(ctx) {
 		slog.Debug(
 			string(
@@ -90,43 +90,43 @@ func (api *AnthropicCompatibleAPI) InitLLM(ctx context.Context) error {
 	c := anthropic.NewClient(opts...)
 	api.client = &c
 	slog.Info(
-		"anthropic compatible LLM provider initialized",
+		"anthropic messages api LLM provider initialized",
 		"name", string(api.ProviderParams.Name),
 		"URL", providerURL,
 	)
 	return nil
 }
 
-func (api *AnthropicCompatibleAPI) DeInitLLM(ctx context.Context) error {
+func (api *AnthropicMessagesAPI) DeInitLLM(ctx context.Context) error {
 	api.client = nil
 	slog.Info(
-		"anthropic compatible LLM: provider de initialized",
+		"anthropic messages api LLM: provider de initialized",
 		"name",
 		string(api.ProviderParams.Name),
 	)
 	return nil
 }
 
-func (api *AnthropicCompatibleAPI) GetProviderInfo(ctx context.Context) *spec.ProviderParams {
+func (api *AnthropicMessagesAPI) GetProviderInfo(ctx context.Context) *spec.ProviderParams {
 	return api.ProviderParams
 }
 
-func (api *AnthropicCompatibleAPI) IsConfigured(ctx context.Context) bool {
+func (api *AnthropicMessagesAPI) IsConfigured(ctx context.Context) bool {
 	return api.ProviderParams.APIKey != ""
 }
 
-func (api *AnthropicCompatibleAPI) SetProviderAPIKey(ctx context.Context, apiKey string) error {
+func (api *AnthropicMessagesAPI) SetProviderAPIKey(ctx context.Context, apiKey string) error {
 	if apiKey == "" {
-		return errors.New("anthropic compatible LLM: invalid apikey provided")
+		return errors.New("anthropic messages api LLM: invalid apikey provided")
 	}
 	if api.ProviderParams == nil {
-		return errors.New("anthropic compatible LLM: no ProviderParams found")
+		return errors.New("anthropic messages api LLM: no ProviderParams found")
 	}
 	api.ProviderParams.APIKey = apiKey
 	return nil
 }
 
-func (api *AnthropicCompatibleAPI) BuildCompletionData(
+func (api *AnthropicMessagesAPI) BuildCompletionData(
 	ctx context.Context,
 	prompt string,
 	modelParams spec.ModelParams,
@@ -135,17 +135,17 @@ func (api *AnthropicCompatibleAPI) BuildCompletionData(
 	return getCompletionData(prompt, modelParams, prevMessages), nil
 }
 
-func (api *AnthropicCompatibleAPI) FetchCompletion(
+func (api *AnthropicMessagesAPI) FetchCompletion(
 	ctx context.Context,
 
 	completionData *spec.CompletionData,
 	onStreamTextData, onStreamThinkingData func(string) error,
 ) (*spec.CompletionResponse, error) {
 	if api.client == nil {
-		return nil, errors.New("anthropic compatible LLM: client not initialized")
+		return nil, errors.New("anthropic messages api LLM: client not initialized")
 	}
 	if completionData == nil || len(completionData.Messages) == 0 {
-		return nil, errors.New("anthropic compatible LLM: empty completion data")
+		return nil, errors.New("anthropic messages api LLM: empty completion data")
 	}
 
 	msgs, sysParams, err := toAnthropicMessages(
@@ -185,7 +185,7 @@ func (api *AnthropicCompatibleAPI) FetchCompletion(
 	return api.doNonStreaming(ctx, params, timeout)
 }
 
-func (api *AnthropicCompatibleAPI) doNonStreaming(
+func (api *AnthropicMessagesAPI) doNonStreaming(
 	ctx context.Context,
 	params anthropic.MessageNewParams,
 	timeout time.Duration,
@@ -205,7 +205,7 @@ func (api *AnthropicCompatibleAPI) doNonStreaming(
 	return completionResp, nil
 }
 
-func (api *AnthropicCompatibleAPI) doStreaming(
+func (api *AnthropicMessagesAPI) doStreaming(
 	ctx context.Context,
 	params anthropic.MessageNewParams,
 	onStreamTextData, onStreamThinkingData func(string) error,

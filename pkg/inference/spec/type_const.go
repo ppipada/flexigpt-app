@@ -1,6 +1,10 @@
 package spec
 
-import "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+import (
+	"context"
+
+	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+)
 
 type ChatCompletionRoleEnum string
 
@@ -65,4 +69,29 @@ type ProviderParams struct {
 	ChatCompletionPathPrefix string               `json:"chatCompletionPathPrefix"`
 	APIKeyHeaderKey          string               `json:"apiKeyHeaderKey"`
 	DefaultHeaders           map[string]string    `json:"defaultHeaders"`
+}
+
+type CompletionProvider interface {
+	InitLLM(ctx context.Context) error
+	DeInitLLM(ctx context.Context) error
+	GetProviderInfo(
+		ctx context.Context,
+	) *ProviderParams
+	IsConfigured(ctx context.Context) bool
+	SetProviderAPIKey(
+		ctx context.Context,
+		apiKey string,
+	) error
+	BuildCompletionData(
+		ctx context.Context,
+		prompt string,
+		modelParams ModelParams,
+		prevMessages []ChatCompletionDataMessage,
+	) (*CompletionData, error)
+	FetchCompletion(
+		ctx context.Context,
+		completionData *CompletionData,
+		OnStreamTextData func(textData string) error,
+		OnStreamThinkingData func(thinkingData string) error,
+	) (*CompletionResponse, error)
 }

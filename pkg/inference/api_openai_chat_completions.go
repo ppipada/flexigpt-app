@@ -16,30 +16,32 @@ import (
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
-// OpenAICompatibleAPI struct that implements the CompletionProvider interface.
-type OpenAICompatibleAPI struct {
+// OpenAIChatCompletionsAPI struct that implements the CompletionProvider interface.
+type OpenAIChatCompletionsAPI struct {
 	ProviderParams *spec.ProviderParams
 	Debug          bool
 	client         *openai.Client
 }
 
-// NewOpenAICompatibleAPI creates a new instance of OpenAICompatibleProvider with the provided ProviderParams.
-func NewOpenAICompatibleAPI(pi spec.ProviderParams, debug bool) (*OpenAICompatibleAPI, error) {
+func NewOpenAIChatCompletionsAPI(
+	pi spec.ProviderParams,
+	debug bool,
+) (*OpenAIChatCompletionsAPI, error) {
 	if pi.Name == "" || pi.Origin == "" {
-		return nil, errors.New("openai compatible LLM: invalid args")
+		return nil, errors.New("openai chat completions api LLM: invalid args")
 	}
-	return &OpenAICompatibleAPI{
+	return &OpenAIChatCompletionsAPI{
 		ProviderParams: &pi,
 		Debug:          debug,
 	}, nil
 }
 
-func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {
+func (api *OpenAIChatCompletionsAPI) InitLLM(ctx context.Context) error {
 	if !api.IsConfigured(ctx) {
 		slog.Debug(
 			string(
 				api.ProviderParams.Name,
-			) + ": No API key given. Not initializing OpenAICompatibleAPI LLM object",
+			) + ": No API key given. Not initializing OpenAIChatCompletionsAPI LLM object",
 		)
 		return nil
 	}
@@ -86,7 +88,7 @@ func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {
 	c := openai.NewClient(opts...)
 	api.client = &c
 	slog.Info(
-		"openai compatible LLM provider initialized",
+		"openai chat completions api LLM provider initialized",
 		"name",
 		string(api.ProviderParams.Name),
 		"URL",
@@ -95,34 +97,34 @@ func (api *OpenAICompatibleAPI) InitLLM(ctx context.Context) error {
 	return nil
 }
 
-func (api *OpenAICompatibleAPI) DeInitLLM(ctx context.Context) error {
+func (api *OpenAIChatCompletionsAPI) DeInitLLM(ctx context.Context) error {
 	api.client = nil
 	slog.Info(
-		"openai compatible LLM: provider de initialized",
+		"openai chat completions api LLM: provider de initialized",
 		"name",
 		string(api.ProviderParams.Name),
 	)
 	return nil
 }
 
-func (api *OpenAICompatibleAPI) GetProviderInfo(ctx context.Context) *spec.ProviderParams {
+func (api *OpenAIChatCompletionsAPI) GetProviderInfo(ctx context.Context) *spec.ProviderParams {
 	return api.ProviderParams
 }
 
-func (api *OpenAICompatibleAPI) IsConfigured(ctx context.Context) bool {
+func (api *OpenAIChatCompletionsAPI) IsConfigured(ctx context.Context) bool {
 	return api.ProviderParams.APIKey != ""
 }
 
 // SetProviderAPIKey sets the key for a provider.
-func (api *OpenAICompatibleAPI) SetProviderAPIKey(
+func (api *OpenAIChatCompletionsAPI) SetProviderAPIKey(
 	ctx context.Context,
 	apiKey string,
 ) error {
 	if apiKey == "" {
-		return errors.New("openai compatible LLM: invalid apikey provided")
+		return errors.New("openai chat completions api LLM: invalid apikey provided")
 	}
 	if api.ProviderParams == nil {
-		return errors.New("openai compatible LLM: no ProviderParams found")
+		return errors.New("openai chat completions api LLM: no ProviderParams found")
 	}
 
 	api.ProviderParams.APIKey = apiKey
@@ -130,7 +132,7 @@ func (api *OpenAICompatibleAPI) SetProviderAPIKey(
 	return nil
 }
 
-func (api *OpenAICompatibleAPI) BuildCompletionData(
+func (api *OpenAIChatCompletionsAPI) BuildCompletionData(
 	ctx context.Context,
 	prompt string,
 	modelParams spec.ModelParams,
@@ -139,16 +141,16 @@ func (api *OpenAICompatibleAPI) BuildCompletionData(
 	return getCompletionData(prompt, modelParams, prevMessages), nil
 }
 
-func (api *OpenAICompatibleAPI) FetchCompletion(
+func (api *OpenAIChatCompletionsAPI) FetchCompletion(
 	ctx context.Context,
 	completionData *spec.CompletionData,
 	onStreamTextData, onStreamThinkingData func(string) error,
 ) (*spec.CompletionResponse, error) {
 	if api.client == nil {
-		return nil, errors.New("openai compatible LLM: client not initialized")
+		return nil, errors.New("openai chat completions api LLM: client not initialized")
 	}
 	if completionData == nil || len(completionData.Messages) == 0 {
-		return nil, errors.New("openai compatible LLM: empty completion data")
+		return nil, errors.New("openai chat completions api LLM: empty completion data")
 	}
 
 	// Build OpenAI chat messages.
@@ -195,7 +197,7 @@ func (api *OpenAICompatibleAPI) FetchCompletion(
 	return api.doNonStreaming(ctx, params, timeout)
 }
 
-func (api *OpenAICompatibleAPI) doNonStreaming(
+func (api *OpenAIChatCompletionsAPI) doNonStreaming(
 	ctx context.Context,
 	params openai.ChatCompletionNewParams,
 	timeout time.Duration,
@@ -215,7 +217,7 @@ func (api *OpenAICompatibleAPI) doNonStreaming(
 	return completionResp, nil
 }
 
-func (api *OpenAICompatibleAPI) doStreaming(
+func (api *OpenAIChatCompletionsAPI) doStreaming(
 	ctx context.Context,
 	params openai.ChatCompletionNewParams,
 	onStreamTextData, onStreamThinkingData func(string) error,

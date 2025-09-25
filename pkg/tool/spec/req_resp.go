@@ -161,7 +161,7 @@ type SearchToolsResponse struct {
 }
 
 // InvokeHTTPOptions contains options specific to HTTP tool invocations.
-// These are part of the HTTP request body (OpenAPI-compatible).
+// These are part of the HTTP request body.
 type InvokeHTTPOptions struct {
 	// Overrides the tool-level HTTP timeout (in milliseconds). Optional.
 	TimeoutMs int `json:"timeoutMs,omitempty"`
@@ -173,7 +173,6 @@ type InvokeHTTPOptions struct {
 }
 
 // InvokeGoOptions contains options specific to Go tool invocations.
-// These are part of the HTTP request body (OpenAPI-compatible).
 type InvokeGoOptions struct {
 	// Overrides the tool invocation timeout (in milliseconds). Optional.
 	TimeoutMs int `json:"timeoutMs,omitempty"`
@@ -188,7 +187,6 @@ type InvokeToolRequestBody struct {
 	GoOptions   *InvokeGoOptions   `json:"goOptions,omitempty"`
 }
 
-// InvokeToolRequest is the huma/OpenAPI-compatible request to invoke a tool version.
 type InvokeToolRequest struct {
 	BundleID bundleitemutils.BundleID    `path:"bundleID" required:"true"`
 	ToolSlug bundleitemutils.ItemSlug    `path:"toolSlug" required:"true"`
@@ -207,7 +205,6 @@ type InvokeToolResponseBody struct {
 	IsBuiltIn bool `json:"isBuiltIn"`
 }
 
-// InvokeToolResponse wraps the response body (huma/OpenAPI-compatible).
 type InvokeToolResponse struct {
 	Body *InvokeToolResponseBody
 }

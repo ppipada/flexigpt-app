@@ -11,7 +11,7 @@ import (
 
 // Define the ProviderSetAPI struct.
 type ProviderSetAPI struct {
-	providers map[modelpresetSpec.ProviderName]CompletionProvider
+	providers map[modelpresetSpec.ProviderName]spec.CompletionProvider
 	debug     bool
 }
 
@@ -20,7 +20,7 @@ func NewProviderSetAPI(
 	debug bool,
 ) (*ProviderSetAPI, error) {
 	return &ProviderSetAPI{
-		providers: map[modelpresetSpec.ProviderName]CompletionProvider{},
+		providers: map[modelpresetSpec.ProviderName]spec.CompletionProvider{},
 		debug:     debug,
 	}, nil
 }
@@ -170,13 +170,13 @@ func isProviderSDKTypeSupported(t modelpresetSpec.ProviderSDKType) bool {
 	return false
 }
 
-func getProviderAPI(p spec.ProviderParams, debug bool) (CompletionProvider, error) {
+func getProviderAPI(p spec.ProviderParams, debug bool) (spec.CompletionProvider, error) {
 	switch p.SDKType {
 	case modelpresetSpec.ProviderSDKTypeAnthropic:
-		return NewAnthropicCompatibleAPI(p, debug)
+		return NewAnthropicMessagesAPI(p, debug)
 
 	case modelpresetSpec.ProviderSDKTypeOpenAI:
-		return NewOpenAICompatibleAPI(p, debug)
+		return NewOpenAIChatCompletionsAPI(p, debug)
 	}
 
 	return nil, errors.New("invalid provider api type")
