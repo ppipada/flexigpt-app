@@ -736,7 +736,7 @@ func createModelPreset(t *testing.T, s *store.ModelPresetStore,
 func validProviderBody(name string) *spec.PutProviderPresetRequestBody {
 	return &spec.PutProviderPresetRequestBody{
 		DisplayName:              spec.ProviderDisplayName(strings.ToUpper(name)),
-		SDKType:                  spec.ProviderSDKTypeOpenAI,
+		SDKType:                  spec.ProviderSDKTypeOpenAIChatCompletions,
 		IsEnabled:                true,
 		Origin:                   "https://api." + name + ".example.com",
 		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionsPrefix,

@@ -32,7 +32,7 @@ type FormData = {
 const DEFAULT_FORM: FormData = {
 	providerName: '',
 	displayName: '',
-	sdkType: ProviderSDKType.ProviderSDKTypeOpenAI,
+	sdkType: ProviderSDKType.ProviderSDKTypeOpenAIChatCompletions,
 	isEnabled: true,
 	origin: '',
 	chatCompletionPathPrefix: '/v1/chat/completions',
@@ -86,9 +86,14 @@ const AddEditProviderPresetModal: FC<Props> = ({
 				displayName: SDK_DISPLAY_NAME[ProviderSDKType.ProviderSDKTypeAnthropic],
 			},
 
-			[ProviderSDKType.ProviderSDKTypeOpenAI]: {
+			[ProviderSDKType.ProviderSDKTypeOpenAIChatCompletions]: {
 				isEnabled: true,
-				displayName: SDK_DISPLAY_NAME[ProviderSDKType.ProviderSDKTypeOpenAI],
+				displayName: SDK_DISPLAY_NAME[ProviderSDKType.ProviderSDKTypeOpenAIChatCompletions],
+			},
+
+			[ProviderSDKType.ProviderSDKTypeOpenAIResponses]: {
+				isEnabled: true,
+				displayName: SDK_DISPLAY_NAME[ProviderSDKType.ProviderSDKTypeOpenAIResponses],
 			},
 		}),
 		[]

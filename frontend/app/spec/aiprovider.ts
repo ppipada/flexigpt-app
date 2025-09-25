@@ -89,6 +89,7 @@ export interface APIFetchResponse<T> {
 export enum ResponseContentType {
 	Text = 'text',
 	Thinking = 'thinking',
+	ThinkingSummary = 'thinkingSummary',
 }
 
 export interface ResponseContent {

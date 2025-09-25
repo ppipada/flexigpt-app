@@ -157,7 +157,7 @@ func (b *BuiltInPresets) GetBuiltInDefaultProviderName(
 	defaultProvider := b.defaultProvider
 
 	if defaultProvider == "" {
-		defaultProvider = builtin.ProviderNameOpenAI
+		defaultProvider = builtin.ProviderNameOpenAIChatCompletions
 	}
 	return defaultProvider, nil
 }

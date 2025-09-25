@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 
 interface ThinkingFenceProps {
+	detailsSummaryText: string;
 	text: string;
 	isBusy: boolean;
 	maxHeightClass?: string; // e.g. 'max-h-[50vh]' or 'max-h-60'
 }
 
-const ThinkingFence: React.FC<ThinkingFenceProps> = ({ text, isBusy, maxHeightClass = 'max-h-[50vh]' }) => {
+const ThinkingFence: React.FC<ThinkingFenceProps> = ({
+	detailsSummaryText,
+	text,
+	isBusy,
+	maxHeightClass = 'max-h-[50vh]',
+}) => {
 	const [open, setOpen] = useState(false);
 
 	return (
@@ -19,7 +25,7 @@ const ThinkingFence: React.FC<ThinkingFenceProps> = ({ text, isBusy, maxHeightCl
 			className="group bg-base-200/70 my-1 overflow-hidden rounded shadow-none"
 		>
 			<summary className="flex cursor-pointer items-center gap-2 px-3 py-2 text-xs transition-colors select-none">
-				<span className="text-xs">Thinking</span>
+				<span className="text-xs">{detailsSummaryText}</span>
 				{/* simple chevron */}
 				<svg
 					className="ml-1 h-3 w-3 transition-transform group-open:rotate-90"

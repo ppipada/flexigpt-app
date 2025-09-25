@@ -8,6 +8,7 @@
 	"frontend:dev:watcher": "pnpm run run:wailsdev",
 	"frontend:dev:serverUrl": "http://localhost:5173",
 	"wailsjsdir": "../../frontend/app/apis",
+	"reloaddirs": "../../pkg",
 	"author": {
 		"name": "ppipada",
 		"email": "ppipada@gmail.com"

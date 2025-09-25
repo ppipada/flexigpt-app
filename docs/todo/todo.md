@@ -30,3 +30,4 @@
 
 - [ ] CPU is high when "thinking". Need to debug
 - [x] After system restart if app is open it should start again, it is not happening in mac.
+- [x] Implement responses api for openai new models and integrate gpt 5 codex too.

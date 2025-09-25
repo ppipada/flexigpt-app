@@ -8,31 +8,40 @@ export type ProviderDisplayName = string;
 
 export enum ProviderSDKType {
 	ProviderSDKTypeAnthropic = 'providerSDKTypeAnthropic',
-	ProviderSDKTypeOpenAI = 'providerSDKTypeOpenAI',
+	ProviderSDKTypeOpenAIChatCompletions = 'providerSDKTypeOpenAI',
+	ProviderSDKTypeOpenAIResponses = 'providerSDKTypeOpenAIResponses',
 }
 
 export const SDK_DISPLAY_NAME: Record<ProviderSDKType, string> = {
-	[ProviderSDKType.ProviderSDKTypeOpenAI]: 'OpenAI',
-	[ProviderSDKType.ProviderSDKTypeAnthropic]: 'Anthropic',
+	[ProviderSDKType.ProviderSDKTypeAnthropic]: 'Anthropic Messages API',
+	[ProviderSDKType.ProviderSDKTypeOpenAIChatCompletions]: 'OpenAI ChatCompletions API',
+	[ProviderSDKType.ProviderSDKTypeOpenAIResponses]: 'OpenAI Responses API',
 };
 
 export const SDK_DEFAULTS: Record<
 	ProviderSDKType,
 	{ chatPath: string; apiKeyHeaderKey: string; defaultHeaders: Record<string, string> }
 > = {
-	[ProviderSDKType.ProviderSDKTypeOpenAI]: {
-		chatPath: '/v1/chat/completions',
-		apiKeyHeaderKey: 'Authorization',
-		defaultHeaders: {
-			'Content-Type': 'application/json',
-		},
-	},
 	[ProviderSDKType.ProviderSDKTypeAnthropic]: {
 		chatPath: '/v1/messages',
 		apiKeyHeaderKey: 'x-api-key',
 		defaultHeaders: {
 			'Content-Type': 'application/json',
 			'anthropic-version': '2023-06-01',
+		},
+	},
+	[ProviderSDKType.ProviderSDKTypeOpenAIChatCompletions]: {
+		chatPath: '/v1/chat/completions',
+		apiKeyHeaderKey: 'Authorization',
+		defaultHeaders: {
+			'Content-Type': 'application/json',
+		},
+	},
+	[ProviderSDKType.ProviderSDKTypeOpenAIResponses]: {
+		chatPath: '/v1/responses',
+		apiKeyHeaderKey: 'Authorization',
+		defaultHeaders: {
+			'Content-Type': 'application/json',
 		},
 	},
 };

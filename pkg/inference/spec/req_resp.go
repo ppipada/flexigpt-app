@@ -69,8 +69,9 @@ type APIFetchResponse[T any] struct {
 type ResponseContentType string
 
 const (
-	ResponseContentTypeText     = "text"
-	ResponseContentTypeThinking = "thinking"
+	ResponseContentTypeText            = "text"
+	ResponseContentTypeThinking        = "thinking"
+	ResponseContentTypeThinkingSummary = "thinkingSummary"
 )
 
 type ResponseContent struct {

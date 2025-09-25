@@ -10,6 +10,8 @@ import type { ConversationMessage } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 import type { ProviderName } from '@/spec/modelpreset';
 
+import { CustomMDLanguage } from '@/lib/text_utils';
+
 import { log, providerSetAPI } from '@/apis/baseapi';
 
 const roleMap: Record<ConversationRoleEnum, ChatCompletionRoleEnum> = {
@@ -63,8 +65,10 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Compl
 			// 2) Fence the Thinking blocks and 3) concat result
 			let respFullText = '';
 			for (const chunk of collapsed) {
-				if (chunk.type === ResponseContentType.Thinking) {
-					respFullText += `\n~~~thinking\n${chunk.content}\n~~~\n`;
+				if (chunk.type === ResponseContentType.ThinkingSummary) {
+					respFullText += `\n~~~${CustomMDLanguage.ThinkingSummary}\n${chunk.content}\n~~~\n`;
+				} else if (chunk.type === ResponseContentType.Thinking) {
+					respFullText += `\n~~~${CustomMDLanguage.Thinking}\n${chunk.content}\n~~~\n`;
 				} else {
 					respFullText += `\n${chunk.content}\n`;
 				}

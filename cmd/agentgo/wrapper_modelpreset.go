@@ -105,19 +105,22 @@ func (w *ModelPresetStoreWrapper) DeleteProviderPreset(
 	req *spec.DeleteProviderPresetRequest,
 ) (*spec.DeleteProviderPresetResponse, error) {
 	return middleware.WithRecoveryResp(func() (*spec.DeleteProviderPresetResponse, error) {
-		resp, err := w.store.DeleteProviderPreset(context.Background(), req)
+		_, err := w.settingStoreWrapper.DeleteAuthKey(
+			&settingSpec.DeleteAuthKeyRequest{
+				Type:    settingSpec.AuthKeyTypeProvider,
+				KeyName: settingSpec.AuthKeyName(req.ProviderName),
+			},
+		)
 		if err != nil {
 			return nil, err
 		}
 		_, _ = w.providerSetWrapper.DeleteProvider(
 			&inferenceSpec.DeleteProviderRequest{Provider: req.ProviderName},
 		)
-		_, _ = w.settingStoreWrapper.DeleteAuthKey(
-			&settingSpec.DeleteAuthKeyRequest{
-				Type:    settingSpec.AuthKeyTypeProvider,
-				KeyName: settingSpec.AuthKeyName(req.ProviderName),
-			},
-		)
+		resp, err := w.store.DeleteProviderPreset(context.Background(), req)
+		if err != nil {
+			return nil, err
+		}
 		return resp, nil
 	})
 }

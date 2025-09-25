@@ -25,14 +25,15 @@ const (
 )
 
 const (
-	ProviderNameAnthropic    = "anthropic"
-	ProviderNameDeepseek     = "deepseek"
-	ProviderNameGoogleGemini = "googlegemini"
-	ProviderNameHuggingFace  = "huggingface"
-	ProviderNameLlamaCPP     = "llamacpp"
-	ProviderNameOpenAI       = "openai"
-	ProviderNameOpenRouter   = "openrouter"
-	ProviderNameXAI          = "xai"
+	ProviderNameAnthropic             = "anthropic"
+	ProviderNameDeepseek              = "deepseek"
+	ProviderNameGoogleGemini          = "googlegemini"
+	ProviderNameHuggingFace           = "huggingface"
+	ProviderNameLlamaCPP              = "llamacpp"
+	ProviderNameOpenAIChatCompletions = "openai"
+	ProviderNameOpenAIResponses       = "openairesponses"
+	ProviderNameOpenRouter            = "openrouter"
+	ProviderNameXAI                   = "xai"
 )
 
 var BuiltInProviderNames = []string{
@@ -41,7 +42,8 @@ var BuiltInProviderNames = []string{
 	ProviderNameGoogleGemini,
 	ProviderNameHuggingFace,
 	ProviderNameLlamaCPP,
-	ProviderNameOpenAI,
+	ProviderNameOpenAIChatCompletions,
+	ProviderNameOpenAIResponses,
 	ProviderNameOpenRouter,
 	ProviderNameXAI,
 }

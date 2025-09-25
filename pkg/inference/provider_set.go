@@ -163,8 +163,9 @@ func (ps *ProviderSetAPI) FetchCompletion(
 }
 
 func isProviderSDKTypeSupported(t modelpresetSpec.ProviderSDKType) bool {
-	if t == modelpresetSpec.ProviderSDKTypeOpenAI ||
-		t == modelpresetSpec.ProviderSDKTypeAnthropic {
+	if t == modelpresetSpec.ProviderSDKTypeAnthropic ||
+		t == modelpresetSpec.ProviderSDKTypeOpenAIChatCompletions ||
+		t == modelpresetSpec.ProviderSDKTypeOpenAIResponses {
 		return true
 	}
 	return false
@@ -175,8 +176,11 @@ func getProviderAPI(p spec.ProviderParams, debug bool) (spec.CompletionProvider,
 	case modelpresetSpec.ProviderSDKTypeAnthropic:
 		return NewAnthropicMessagesAPI(p, debug)
 
-	case modelpresetSpec.ProviderSDKTypeOpenAI:
+	case modelpresetSpec.ProviderSDKTypeOpenAIChatCompletions:
 		return NewOpenAIChatCompletionsAPI(p, debug)
+
+	case modelpresetSpec.ProviderSDKTypeOpenAIResponses:
+		return NewOpenAIResponsesAPI(p, debug)
 	}
 
 	return nil, errors.New("invalid provider api type")

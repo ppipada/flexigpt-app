@@ -62,8 +62,9 @@ type (
 )
 
 const (
-	ProviderSDKTypeAnthropic ProviderSDKType = "providerSDKTypeAnthropic"
-	ProviderSDKTypeOpenAI    ProviderSDKType = "providerSDKTypeOpenAI"
+	ProviderSDKTypeAnthropic             ProviderSDKType = "providerSDKTypeAnthropic"
+	ProviderSDKTypeOpenAIChatCompletions ProviderSDKType = "providerSDKTypeOpenAI"
+	ProviderSDKTypeOpenAIResponses       ProviderSDKType = "providerSDKTypeOpenAIResponses"
 )
 
 const (
@@ -112,7 +113,7 @@ type ProviderPreset struct {
 	SchemaVersion string              `json:"schemaVersion" required:"true"`
 	Name          ProviderName        `json:"name"          required:"true"`
 	DisplayName   ProviderDisplayName `json:"displayName"   required:"true"`
-	SDKType       ProviderSDKType     `json:"sdkType"`
+	SDKType       ProviderSDKType     `json:"sdkType"       required:"true"`
 	IsEnabled     bool                `json:"isEnabled"     required:"true"`
 
 	CreatedAt  time.Time `json:"createdAt"`

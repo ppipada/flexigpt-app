@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { FiChevronDown, FiChevronUp, FiEdit2, FiRepeat } from 'react-icons/fi';
 
-import { stripThinkingFences } from '@/lib/text_utils';
+import { stripCustomMDFences } from '@/lib/text_utils';
 
 import CopyButton from '@/components/copy_button';
 
@@ -105,7 +105,7 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 					)}
 
 					<CopyButton
-						value={stripThinkingFences(cardCopyContent)}
+						value={stripCustomMDFences(cardCopyContent)}
 						className={`btn btn-sm flex items-center border-none !bg-transparent shadow-none ${isBusy ? 'btn-disabled' : ''}`}
 						size={16}
 						disabled={isBusy}

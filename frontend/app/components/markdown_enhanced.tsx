@@ -12,6 +12,7 @@ import remarkMath from 'remark-math';
 import supersub from 'remark-supersub';
 
 import { SanitizeLaTeX } from '@/lib/markdown_utils';
+import { CustomMDLanguage } from '@/lib/text_utils';
 
 import { backendAPI } from '@/apis/baseapi';
 
@@ -80,11 +81,13 @@ const EnhancedMarkdown = ({ text, align = 'left', isBusy = false }: EnhancedMark
 				const language = match && match[1] ? match[1] : 'text';
 				// eslint-disable-next-line @typescript-eslint/no-base-to-string
 				const value = String(children).replace(/\n$/, '');
-				if (language === 'thinking' || language === 'thought' || language === 'reasoning') {
-					return <ThinkingFence text={value} isBusy={isBusy} />;
+				if (language === (CustomMDLanguage.ThinkingSummary as string)) {
+					return <ThinkingFence detailsSummaryText="Thinking Summary" text={value} isBusy={isBusy} />;
+				} else if (language === (CustomMDLanguage.Thinking as string)) {
+					return <ThinkingFence detailsSummaryText="Thinking" text={value} isBusy={isBusy} />;
+				} else {
+					return <CodeBlock language={language} value={value} isBusy={isBusy} />;
 				}
-
-				return <CodeBlock language={language} value={value} isBusy={isBusy} />;
 			},
 
 			ul: ({ children }: PComponentProps) => (

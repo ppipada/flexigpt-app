@@ -10,7 +10,9 @@ import (
 
 	"github.com/openai/openai-go/v2"
 	"github.com/openai/openai-go/v2/option"
+	"github.com/openai/openai-go/v2/responses"
 	"github.com/openai/openai-go/v2/shared"
+	openaiSharedConstant "github.com/openai/openai-go/v2/shared/constant"
 
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
@@ -57,11 +59,11 @@ func (api *OpenAIResponsesAPI) InitLLM(ctx context.Context) error {
 		baseURL = strings.TrimSuffix(baseURL, "/")
 
 		pathPrefix := api.ProviderParams.ChatCompletionPathPrefix
-		// Remove 'chat/completions' from pathPrefix if present,
+		// Remove 'responses' from pathPrefix if present,
 		// This is because openai sdk adds 'chat/completions' internally.
 		pathPrefix = strings.TrimSuffix(
 			pathPrefix,
-			"chat/completions",
+			"responses",
 		)
 		providerURL = baseURL + pathPrefix
 		opts = append(opts, option.WithBaseURL(strings.TrimSuffix(providerURL, "/")))
@@ -155,7 +157,6 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 
 	// Build OpenAI chat messages.
 	msgs, err := toOpenAIResponsesMessages(
-		completionData.ModelParams.SystemPrompt,
 		completionData.Messages,
 		completionData.ModelParams.Name,
 		api.ProviderParams.Name,
@@ -164,10 +165,15 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 		return nil, err
 	}
 
-	params := openai.ChatCompletionNewParams{
-		Model:               shared.ChatModel(completionData.ModelParams.Name),
-		MaxCompletionTokens: openai.Int(int64(completionData.ModelParams.MaxOutputLength)),
-		Messages:            msgs,
+	params := responses.ResponseNewParams{
+		Model:           shared.ChatModel(completionData.ModelParams.Name),
+		MaxOutputTokens: openai.Int(int64(completionData.ModelParams.MaxOutputLength)),
+		Input:           responses.ResponseNewParamsInputUnion{OfInputItemList: msgs},
+		Store:           openai.Bool(false),
+	}
+	sysPrompt := strings.TrimSpace(completionData.ModelParams.SystemPrompt)
+	if sysPrompt != "" {
+		params.Instructions = openai.String(sysPrompt)
 	}
 	if completionData.ModelParams.Temperature != nil {
 		params.Temperature = openai.Float(*completionData.ModelParams.Temperature)
@@ -180,7 +186,11 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 			modelpresetSpec.ReasoningLevelMedium,
 			modelpresetSpec.ReasoningLevelHigh,
 			modelpresetSpec.ReasoningLevelMinimal:
-			params.ReasoningEffort = shared.ReasoningEffort(string(rp.Level))
+			params.Reasoning = shared.ReasoningParam{
+				Effort: shared.ReasoningEffort(string(rp.Level)),
+				// No option to tweak reasoning summary for now.
+				Summary: shared.ReasoningSummaryAuto,
+			}
 		default:
 			return nil, fmt.Errorf("invalid level %q for singleWithLevels", rp.Level)
 
@@ -199,97 +209,117 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 
 func (api *OpenAIResponsesAPI) doNonStreaming(
 	ctx context.Context,
-	params openai.ChatCompletionNewParams,
+	params responses.ResponseNewParams,
 	timeout time.Duration,
 ) (*spec.CompletionResponse, error) {
 	completionResp := &spec.CompletionResponse{}
 	ctx = AddDebugResponseToCtx(ctx)
-	resp, err := api.client.Chat.Completions.New(ctx, params, option.WithRequestTimeout(timeout))
-	isNilResp := resp == nil || len(resp.Choices) == 0
+	resp, err := api.client.Responses.New(ctx, params, option.WithRequestTimeout(timeout))
+	isNilResp := resp == nil || len(resp.Output) == 0
 	attachDebugResp(ctx, completionResp, err, isNilResp)
 	if isNilResp {
 		return completionResp, nil
 	}
-	full := resp.Choices[0].Message.Content
-	completionResp.ResponseContent = []spec.ResponseContent{
-		{Type: spec.ResponseContentTypeText, Content: full},
-	}
+
+	completionResp.ResponseContent = getResponseContentFromOpenAIOutput(resp)
 	return completionResp, nil
 }
 
 func (api *OpenAIResponsesAPI) doStreaming(
 	ctx context.Context,
-	params openai.ChatCompletionNewParams,
+	params responses.ResponseNewParams,
 	onStreamTextData, onStreamThinkingData func(string) error,
 	timeout time.Duration,
 ) (*spec.CompletionResponse, error) {
-	// No thinking data available in openai chat completions API, hence no thinking writer.
-	write, flush := NewBufferedStreamer(onStreamTextData, FlushInterval, FlushChunkSize)
+	writeTextData, flushTextData := NewBufferedStreamer(
+		onStreamTextData,
+		FlushInterval,
+		FlushChunkSize,
+	)
+	writeThinkingData, flushThinkingData := NewBufferedStreamer(
+		onStreamThinkingData,
+		FlushInterval,
+		FlushChunkSize,
+	)
+
+	var respFull responses.Response
 
 	completionResp := &spec.CompletionResponse{}
 	ctx = AddDebugResponseToCtx(ctx)
-	stream := api.client.Chat.Completions.NewStreaming(
+	stream := api.client.Responses.NewStreaming(
 		ctx,
 		params,
 		option.WithRequestTimeout(timeout),
 	)
-	acc := openai.ChatCompletionAccumulator{}
+
 	var streamWriteErr error
 	for stream.Next() {
 		chunk := stream.Current()
-		acc.AddChunk(chunk)
-
-		// When this fires, the current chunk value will not contain content data.
-		if _, ok := acc.JustFinishedContent(); ok {
-			continue
-		}
-
-		if _, ok := acc.JustFinishedRefusal(); ok {
-			continue
-		}
-
-		if _, ok := acc.JustFinishedToolCall(); ok {
-			continue
-		}
-
-		// It's best to use chunks after handling JustFinished events.
-		if len(chunk.Choices) > 0 && chunk.Choices[0].Delta.Content != "" {
-			streamWriteErr = write(chunk.Choices[0].Delta.Content)
+		if chunk.Type == "response.output_text.delta" {
+			streamWriteErr = writeTextData(chunk.Delta)
 			if streamWriteErr != nil {
 				break
 			}
 		}
+		if chunk.Type == "response.reasoning_summary_text.delta" {
+			streamWriteErr = writeThinkingData(chunk.Delta)
+			if streamWriteErr != nil {
+				break
+			}
+		}
+		if chunk.Type == "response.reasoning_text.delta" {
+			streamWriteErr = writeThinkingData(chunk.Delta)
+			if streamWriteErr != nil {
+				break
+			}
+		}
+
+		if chunk.Type == "response.completed" {
+			respFull = chunk.Response
+			break
+		}
+		if chunk.Type == "response.failed" {
+			respFull = chunk.Response
+			streamWriteErr = fmt.Errorf("API failed, %s", respFull.Error.RawJSON())
+			break
+		}
+		if chunk.Type == "response.incomplete" {
+			respFull = chunk.Response
+			streamWriteErr = fmt.Errorf(
+				"API finished as incomplete, %s",
+				respFull.IncompleteDetails.Reason,
+			)
+			break
+		}
 	}
-	if flush != nil {
-		flush()
+	if flushTextData != nil {
+		flushTextData()
+	}
+
+	if flushThinkingData != nil {
+		flushThinkingData()
 	}
 
 	streamErr := errors.Join(stream.Err(), streamWriteErr)
-	isNilResp := len(acc.Choices) == 0
+	isNilResp := len(respFull.Output) == 0
 	attachDebugResp(ctx, completionResp, streamErr, isNilResp)
 	if isNilResp {
 		return completionResp, nil
 	}
 
-	fullResp := acc.Choices[0].Message.Content
-	completionResp.ResponseContent = []spec.ResponseContent{
-		{Type: spec.ResponseContentTypeText, Content: fullResp},
-	}
+	slog.Info("resp json", "full", respFull.RawJSON())
+
+	respContent := getResponseContentFromOpenAIOutput(&respFull)
+	completionResp.ResponseContent = respContent
 	return completionResp, streamErr
 }
 
 func toOpenAIResponsesMessages(
-	systemPrompt string,
 	messages []spec.ChatCompletionDataMessage,
 	modelName modelpresetSpec.ModelName,
 	providerName modelpresetSpec.ProviderName,
-) ([]openai.ChatCompletionMessageParamUnion, error) {
-	var out []openai.ChatCompletionMessageParamUnion
-
-	// System/developer prompt.
-	if msg := getOpenAIInputromSystemPrompt(string(providerName), string(modelName), systemPrompt); msg != nil {
-		out = append(out, *msg)
-	}
+) (responses.ResponseInputParam, error) {
+	var out responses.ResponseInputParam
 
 	for _, m := range messages {
 		if m.Content == nil {
@@ -297,34 +327,116 @@ func toOpenAIResponsesMessages(
 		}
 		switch m.Role {
 		case spec.System:
-			out = append(out, openai.SystemMessage(*m.Content))
+			// This is in case additional dev or system message is present in the array itself.
+			inputParam := responses.ResponseInputItemUnionParam{
+				OfMessage: &responses.EasyInputMessageParam{
+					Content: responses.EasyInputMessageContentUnionParam{
+						OfString: openai.String(*m.Content),
+					},
+					Role: responses.EasyInputMessageRoleSystem,
+					Type: responses.EasyInputMessageTypeMessage,
+				},
+			}
+			out = append(out, inputParam)
 		case spec.Developer:
-			out = append(out, openai.DeveloperMessage(*m.Content))
+			// This is in case additional dev or system message is present in the array itself.
+			inputParam := responses.ResponseInputItemUnionParam{
+				OfMessage: &responses.EasyInputMessageParam{
+					Content: responses.EasyInputMessageContentUnionParam{
+						OfString: openai.String(*m.Content),
+					},
+					Role: responses.EasyInputMessageRoleDeveloper,
+					Type: responses.EasyInputMessageTypeMessage,
+				},
+			}
+			out = append(out, inputParam)
+
 		case spec.User:
-			out = append(out, openai.UserMessage(*m.Content))
+			// This is in case additional dev or system message is present in the array itself.
+			inputParam := responses.ResponseInputItemUnionParam{
+				OfMessage: &responses.EasyInputMessageParam{
+					Content: responses.EasyInputMessageContentUnionParam{
+						OfString: openai.String(*m.Content),
+					},
+					Role: responses.EasyInputMessageRoleUser,
+					Type: responses.EasyInputMessageTypeMessage,
+				},
+			}
+			out = append(out, inputParam)
+
 		case spec.Assistant:
-			out = append(out, openai.AssistantMessage(*m.Content))
+			// This is in case additional dev or system message is present in the array itself.
+			inputParam := responses.ResponseInputItemUnionParam{
+				OfMessage: &responses.EasyInputMessageParam{
+					Content: responses.EasyInputMessageContentUnionParam{
+						OfString: openai.String(*m.Content),
+					},
+					Role: responses.EasyInputMessageRoleAssistant,
+					Type: responses.EasyInputMessageTypeMessage,
+				},
+			}
+			out = append(out, inputParam)
+
 		case spec.Function, spec.Tool:
-			toolCallID := "1"
-			out = append(out, openai.ToolMessage(*m.Content, toolCallID))
 		}
 	}
 	return out, nil
 }
 
-func getOpenAIInputromSystemPrompt(
-	providerName, modelName, systemPrompt string,
-) *openai.ChatCompletionMessageParamUnion {
-	sp := strings.TrimSpace(systemPrompt)
-	if sp == "" {
-		return nil
+func getResponseContentFromOpenAIOutput(
+	inputResp *responses.Response,
+) []spec.ResponseContent {
+	if inputResp == nil || len(inputResp.Output) == 0 {
+		return []spec.ResponseContent{}
 	}
-	msg := openai.SystemMessage(sp)
-	// Convert a system message to a developer message for o series models.
-	if providerName == "openai" &&
-		(strings.HasPrefix(modelName, "o") || (strings.HasPrefix(modelName, "gpt-5"))) {
-		// If the SDK exposes an enum for this, use it; otherwise the raw string works.
-		msg = openai.DeveloperMessage(sp)
+	resp := make([]spec.ResponseContent, 0, 2)
+	var outputText strings.Builder
+	var thinkingSummaryText strings.Builder
+	var thinkingText strings.Builder
+
+	for _, item := range inputResp.Output {
+		if item.Type == string(openaiSharedConstant.Message("").Default()) {
+			for _, content := range item.Content {
+				if content.Type == string(openaiSharedConstant.OutputText("").Default()) {
+					outputText.WriteString(content.Text)
+				}
+			}
+		}
+		if item.Type == string(openaiSharedConstant.Reasoning("").Default()) {
+			ti := item.AsReasoning()
+			for _, content := range ti.Content {
+				thinkingText.WriteString(content.Text)
+			}
+			for _, content := range ti.Summary {
+				thinkingSummaryText.WriteString(content.Text)
+			}
+		}
 	}
-	return &msg
+
+	thinkingSummaryStr := thinkingSummaryText.String()
+	if thinkingSummaryStr != "" {
+		resp = append(
+			resp,
+			spec.ResponseContent{
+				Type:    spec.ResponseContentTypeThinkingSummary,
+				Content: thinkingSummaryStr,
+			},
+		)
+	}
+
+	thinkingStr := thinkingText.String()
+	if thinkingStr != "" {
+		resp = append(
+			resp,
+			spec.ResponseContent{Type: spec.ResponseContentTypeThinking, Content: thinkingStr},
+		)
+	}
+	outStr := outputText.String()
+
+	resp = append(
+		resp,
+		spec.ResponseContent{Type: spec.ResponseContentTypeText, Content: outStr},
+	)
+
+	return resp
 }
