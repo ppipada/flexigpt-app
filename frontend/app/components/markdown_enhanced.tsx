@@ -42,7 +42,13 @@ interface CodeComponentProps {
 	children?: ReactNode;
 }
 
-interface PComponentProps {
+interface CustomComponentProps {
+	className?: string;
+	children?: ReactNode;
+}
+
+interface RefComponentProps {
+	href?: string;
 	className?: string;
 	children?: ReactNode;
 }
@@ -55,35 +61,94 @@ const EnhancedMarkdown = ({ text, align = 'left', isBusy = false }: EnhancedMark
 
 	const components = useMemo(
 		() => ({
-			h1: ({ children }: PComponentProps) => <h1 className="my-2 text-xl font-bold">{children}</h1>,
-			h2: ({ children }: PComponentProps) => <h2 className="my-2 text-lg font-bold">{children}</h2>,
-			h3: ({ children }: PComponentProps) => <h3 className="my-2 text-base font-bold">{children}</h3>,
-			ul: ({ children }: PComponentProps) => <ul className="list-disc py-1 pl-2">{children}</ul>,
-			ol: ({ children }: PComponentProps) => <ol className="list-decimal py-1 pl-2">{children}</ol>,
-			li: ({ children }: PComponentProps) => <li className="py-1">{children}</li>,
-			table: ({ children }: PComponentProps) => <table className="w-full table-auto">{children}</table>,
-			thead: ({ children }: PComponentProps) => <thead className="bg-base-300">{children}</thead>,
-			tbody: ({ children }: PComponentProps) => <tbody>{children}</tbody>,
-			tr: ({ children }: PComponentProps) => <tr className="border-t">{children}</tr>,
-			th: ({ children }: PComponentProps) => <th className="px-4 py-2 text-left">{children}</th>,
-			td: ({ children }: PComponentProps) => <td className="px-4 py-2">{children}</td>,
+			h1: ({ children, className, ...rest }: CustomComponentProps) => (
+				<h1 {...rest} className={`my-2 text-xl font-bold ${className ?? ''}`}>
+					{children}
+				</h1>
+			),
+			h2: ({ children, className, ...rest }: CustomComponentProps) => (
+				<h2 {...rest} className={`my-2 text-lg font-bold ${className ?? ''}`}>
+					{children}
+				</h2>
+			),
+			h3: ({ children, className, ...rest }: CustomComponentProps) => (
+				<h3 {...rest} className={`my-2 text-base font-bold ${className ?? ''}`}>
+					{children}
+				</h3>
+			),
 
-			p: ({ className, children }: PComponentProps) => (
-				<p className={`${className ?? ''} my-2 ${align} break-words`} style={{ lineHeight: '1.5', fontSize: '14px' }}>
+			ul: ({ children, className, ...rest }: CustomComponentProps) => (
+				<ul {...rest} className={`list-disc py-1 pl-4 ${className ?? ''}`}>
+					{children}
+				</ul>
+			),
+			ol: ({ children, className, ...rest }: CustomComponentProps) => (
+				// Important: keep {...rest} so `start`, `reversed`, `type` are preserved
+				<ol {...rest} className={`list-decimal py-1 pl-4 ${className ?? ''}`}>
+					{children}
+				</ol>
+			),
+			li: ({ children, className, ...rest }: CustomComponentProps) => (
+				<li {...rest} className={`py-1 ${className ?? ''}`}>
+					{children}
+				</li>
+			),
+
+			table: ({ children, className, ...rest }: CustomComponentProps) => (
+				<table {...rest} className={`w-full table-auto ${className ?? ''}`}>
+					{children}
+				</table>
+			),
+			thead: ({ children, className, ...rest }: CustomComponentProps) => (
+				<thead {...rest} className={`bg-base-300 ${className ?? ''}`}>
+					{children}
+				</thead>
+			),
+			tbody: ({ children, className, ...rest }: CustomComponentProps) => (
+				<tbody {...rest} className={className ?? ''}>
+					{children}
+				</tbody>
+			),
+
+			tr: ({ children, className, ...rest }: CustomComponentProps) => (
+				<tr {...rest} className={`border-t ${className ?? ''}`}>
+					{children}
+				</tr>
+			),
+			th: ({ children, className, ...rest }: CustomComponentProps) => (
+				<th {...rest} className={`px-4 py-2 text-left ${className ?? ''}`}>
+					{children}
+				</th>
+			),
+			td: ({ children, className, ...rest }: CustomComponentProps) => (
+				<td {...rest} className={`px-4 py-2 ${className ?? ''}`}>
+					{children}
+				</td>
+			),
+
+			p: ({ className, children, ...rest }: CustomComponentProps) => (
+				<p
+					{...rest}
+					className={`${className ?? ''} my-2 ${align} break-words`}
+					style={{ lineHeight: '1.5', fontSize: '14px' }}
+				>
 					{children}
 				</p>
 			),
 
-			blockquote: ({ children }: PComponentProps) => (
-				<blockquote className="border-neutral/20 border-l-4 pl-4 italic">{children}</blockquote>
+			blockquote: ({ children, className, ...rest }: CustomComponentProps) => (
+				<blockquote {...rest} className={`border-neutral/20 border-l-4 pl-4 italic ${className ?? ''}`}>
+					{children}
+				</blockquote>
 			),
 
-			a: ({ href, children }: { href?: string; children?: ReactNode }) => (
+			a: ({ href, children, className, ...rest }: RefComponentProps) => (
 				<a
+					{...rest}
 					href={href}
 					target={href?.startsWith('http') ? '_blank' : undefined}
 					rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
-					className="cursor-pointer text-blue-600 underline hover:text-blue-800"
+					className={`cursor-pointer text-blue-600 underline hover:text-blue-800 ${className ?? ''}`}
 					onClick={e => {
 						e.preventDefault();
 						if (href) backendAPI.openurl(href);
