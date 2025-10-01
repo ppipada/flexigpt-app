@@ -43,8 +43,8 @@ importers:
         specifier: ^49.0.0
         version: 49.0.0(@emoji-mart/data@1.2.1)(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@platejs/floating':
-        specifier: ^49.0.0
-        version: 49.0.0(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        specifier: ^50.2.5
+        version: 50.2.5(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@platejs/indent':
         specifier: ^49.0.0
         version: 49.0.0(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -410,6 +410,10 @@ packages:
 
   '@babel/runtime@7.28.3':
     resolution: {integrity: sha512-9uIQ10o0WGdpP6GDhXcdOJPJuDgFtIDtN/9+ArJQ2NAfAmiuhTQdzkaTGR33v43GYS2UrSA0eX2pPPHoFVvpxA==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/runtime@7.28.4':
+    resolution: {integrity: sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ==}
     engines: {node: '>=6.9.0'}
 
   '@babel/template@7.27.2':
@@ -1040,10 +1044,10 @@ packages:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@platejs/floating@49.0.0':
-    resolution: {integrity: sha512-7DEp+GzhpW+lRJeAAIc3Hu6e8TawzaVG3ontlrUCTxPrtIm4J4RwCh1SnuLDC6jcXgTecb2xwsKWvQNKWd6REg==}
+  '@platejs/floating@50.2.5':
+    resolution: {integrity: sha512-9J/cT6R/4x54XCb3Sn1iF4iXPwPwM4im5kFiL+lQ+fTj+xf9ChjJ2oGtYiEoGeVAweEe/5j0/IUEXunqG6vCFQ==}
     peerDependencies:
-      platejs: '>=49.0.0'
+      platejs: '>=49.2.21'
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
@@ -3528,6 +3532,9 @@ packages:
   magic-string@0.30.18:
     resolution: {integrity: sha512-yi8swmWbO17qHhwIBNeeZxTceJMeBvWJaId6dyvTSOwTipqeHhMhOrz6513r1sOKnpvQ7zkhlG8tPrpilwTxHQ==}
 
+  magic-string@0.30.19:
+    resolution: {integrity: sha512-2N21sPY9Ws53PZvsEpVtNuSW+ScYbQdp4b9qUaL+9QkHUrGFKo56Lg9Emg5s9V/qrtNBmiR01sYhUOwu3H+VOw==}
+
   magicast@0.3.5:
     resolution: {integrity: sha512-L0WhttDl+2BOsybvEOLK7fW3UA0OQ0IQ2d6Zl2x/a6vVRs3bAY0ECOSHHeL5jD+SbOpOCUEi0y1DgHEn9Qn1AQ==}
 
@@ -5168,8 +5175,8 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  zimmerframe@1.1.2:
-    resolution: {integrity: sha512-rAbqEGa8ovJy4pyBxZM70hg4pE6gDgaQ0Sl9M3enG3I0d6H4XSAM3GeNGLKnsBpuijUow064sf7ww1nutC5/3w==}
+  zimmerframe@1.1.4:
+    resolution: {integrity: sha512-B58NGBEoc8Y9MWWCQGl/gq9xBCe4IiKM0a2x7GZdQKOW5Exr8S1W24J6OgM1njK8xCRGvAJIL/MxXHf6SkmQKQ==}
 
   zod-validation-error@3.5.3:
     resolution: {integrity: sha512-OT5Y8lbUadqVZCsnyFaTQ4/O2mys4tj7PqhdbBCp7McPwvIEKfPtdA6QfPeFQK2/Rz5LgwmAXRJTugBNBi0btw==}
@@ -5433,6 +5440,8 @@ snapshots:
   '@babel/runtime@7.28.2': {}
 
   '@babel/runtime@7.28.3': {}
+
+  '@babel/runtime@7.28.4': {}
 
   '@babel/template@7.27.2':
     dependencies:
@@ -6050,7 +6059,7 @@ snapshots:
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
 
-  '@platejs/floating@49.0.0(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+  '@platejs/floating@50.2.5(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@floating-ui/core': 1.7.3
       '@floating-ui/react': 0.27.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -6595,7 +6604,7 @@ snapshots:
   '@testing-library/dom@10.4.1':
     dependencies:
       '@babel/code-frame': 7.27.1
-      '@babel/runtime': 7.28.3
+      '@babel/runtime': 7.28.4
       '@types/aria-query': 5.0.4
       aria-query: 5.3.0
       dom-accessibility-api: 0.5.16
@@ -6952,7 +6961,7 @@ snapshots:
       '@mjackson/node-fetch-server': 0.7.0
       es-module-lexer: 1.7.0
       estree-walker: 3.0.3
-      magic-string: 0.30.18
+      magic-string: 0.30.19
       periscopic: 4.0.2
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
@@ -8789,6 +8798,11 @@ snapshots:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
 
+  magic-string@0.30.19:
+    dependencies:
+      '@jridgewell/sourcemap-codec': 1.5.5
+    optional: true
+
   magicast@0.3.5:
     dependencies:
       '@babel/parser': 7.28.3
@@ -9458,7 +9472,7 @@ snapshots:
     dependencies:
       '@types/estree': 1.0.8
       is-reference: 3.0.3
-      zimmerframe: 1.1.2
+      zimmerframe: 1.1.4
     optional: true
 
   picocolors@1.1.1: {}
@@ -10791,7 +10805,7 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zimmerframe@1.1.2:
+  zimmerframe@1.1.4:
     optional: true
 
   zod-validation-error@3.5.3(zod@3.25.76):
