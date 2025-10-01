@@ -49,8 +49,8 @@ importers:
         specifier: ^49.0.0
         version: 49.0.0(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@platejs/list':
-        specifier: ^49.2.17
-        version: 49.2.17(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        specifier: ^50.2.0
+        version: 50.2.0(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@platejs/tabbable':
         specifier: ^49.0.0
         version: 49.0.0(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -1058,10 +1058,10 @@ packages:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@platejs/list@49.2.17':
-    resolution: {integrity: sha512-NwIThOoKHTlELgUCpJZQzyjSfMbkFXZaLa+ksAYPqNg0KBzBRf1q+e4ypMuQq+XQjBhljz7Ju2k7//W6bOCQvQ==}
+  '@platejs/list@50.2.0':
+    resolution: {integrity: sha512-35kO7kTkeT4GFBoCUO2FRyLI5njxfv1LSZcnx+0CxSl6FwwdQkceDItiAnMLUDrO62e1afAu3+GIaS8AwJuDEw==}
     peerDependencies:
-      platejs: '>=49.2.12'
+      platejs: '>=49.2.21'
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
@@ -6092,7 +6092,7 @@ snapshots:
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
 
-  '@platejs/list@49.2.17(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+  '@platejs/list@50.2.0(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@platejs/indent': 49.0.0(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       clsx: 2.1.1

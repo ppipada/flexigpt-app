@@ -31,7 +31,7 @@
 		"@platejs/emoji": "^49.0.0",
 		"@platejs/floating": "^50.2.5",
 		"@platejs/indent": "^49.0.0",
-		"@platejs/list": "^49.2.17",
+		"@platejs/list": "^50.2.0",
 		"@platejs/tabbable": "^49.0.0",
 		"@react-router/node": "^7.9.3",
 		"@udecode/cn": "^49.0.15",
