@@ -19,7 +19,7 @@
 				"accept": "application/json",
 				"anthropic-version": "2023-06-01"
 			},
-			"defaultModelPresetID": "sonnet4",
+			"defaultModelPresetID": "sonnet45",
 			"modelPresets": {
 				"opus41": {
 					"schemaVersion": "2025-07-01",
@@ -65,6 +65,28 @@
 					"modifiedAt": "2025-07-30T00:00:00Z",
 					"isBuiltIn": true
 				},
+				"sonnet45": {
+					"schemaVersion": "2025-07-01",
+					"id": "sonnet45",
+					"name": "claude-sonnet-4-5-20250929",
+					"displayName": "Claude 4.5 Sonnet",
+					"slug": "sonnet45",
+					"isEnabled": true,
+					"stream": true,
+					"maxPromptLength": 65536,
+					"maxOutputLength": 32768,
+					"temperature": 0.1,
+					"reasoning": {
+						"type": "hybridWithTokens",
+						"level": "",
+						"tokens": 1024
+					},
+					"systemPrompt": "",
+					"timeout": 300,
+					"createdAt": "2025-07-30T00:00:00Z",
+					"modifiedAt": "2025-07-30T00:00:00Z",
+					"isBuiltIn": true
+				},
 				"sonnet4": {
 					"schemaVersion": "2025-07-01",
 					"id": "sonnet4",
@@ -74,7 +96,7 @@
 					"isEnabled": true,
 					"stream": true,
 					"maxPromptLength": 65536,
-					"maxOutputLength": 16384,
+					"maxOutputLength": 32768,
 					"temperature": 0.1,
 					"reasoning": {
 						"type": "hybridWithTokens",
@@ -96,7 +118,7 @@
 					"isEnabled": false,
 					"stream": true,
 					"maxPromptLength": 65536,
-					"maxOutputLength": 16384,
+					"maxOutputLength": 32768,
 					"temperature": 0.1,
 					"reasoning": {
 						"type": "hybridWithTokens",
