@@ -43,8 +43,8 @@ importers:
         specifier: ^49.0.0
         version: 49.0.0(@emoji-mart/data@1.2.1)(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@platejs/floating':
-        specifier: ^49.0.0
-        version: 49.0.0(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        specifier: ^50.2.5
+        version: 50.2.5(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@platejs/indent':
         specifier: ^49.0.0
         version: 49.0.0(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -1044,10 +1044,10 @@ packages:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@platejs/floating@49.0.0':
-    resolution: {integrity: sha512-7DEp+GzhpW+lRJeAAIc3Hu6e8TawzaVG3ontlrUCTxPrtIm4J4RwCh1SnuLDC6jcXgTecb2xwsKWvQNKWd6REg==}
+  '@platejs/floating@50.2.5':
+    resolution: {integrity: sha512-9J/cT6R/4x54XCb3Sn1iF4iXPwPwM4im5kFiL+lQ+fTj+xf9ChjJ2oGtYiEoGeVAweEe/5j0/IUEXunqG6vCFQ==}
     peerDependencies:
-      platejs: '>=49.0.0'
+      platejs: '>=49.2.21'
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
@@ -6078,7 +6078,7 @@ snapshots:
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
 
-  '@platejs/floating@49.0.0(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+  '@platejs/floating@50.2.5(platejs@49.2.21(@types/react@19.1.13)(immer@10.1.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(scheduler@0.26.0)(use-sync-external-store@1.4.0(react@19.1.1)))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@floating-ui/core': 1.7.3
       '@floating-ui/react': 0.27.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)

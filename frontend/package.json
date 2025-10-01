@@ -29,7 +29,7 @@
 		"@platejs/basic-styles": "^49.0.0",
 		"@platejs/combobox": "^49.0.0",
 		"@platejs/emoji": "^49.0.0",
-		"@platejs/floating": "^49.0.0",
+		"@platejs/floating": "^50.2.5",
 		"@platejs/indent": "^49.0.0",
 		"@platejs/list": "^49.2.17",
 		"@platejs/tabbable": "^49.0.0",
