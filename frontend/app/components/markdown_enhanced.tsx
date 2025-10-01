@@ -58,11 +58,39 @@ const EnhancedMarkdown = ({ text, align = 'left', isBusy = false }: EnhancedMark
 			h1: ({ children }: PComponentProps) => <h1 className="my-2 text-xl font-bold">{children}</h1>,
 			h2: ({ children }: PComponentProps) => <h2 className="my-2 text-lg font-bold">{children}</h2>,
 			h3: ({ children }: PComponentProps) => <h3 className="my-2 text-base font-bold">{children}</h3>,
+			ul: ({ children }: PComponentProps) => <ul className="list-disc py-1 pl-2">{children}</ul>,
+			ol: ({ children }: PComponentProps) => <ol className="list-decimal py-1 pl-2">{children}</ol>,
+			li: ({ children }: PComponentProps) => <li className="py-1">{children}</li>,
+			table: ({ children }: PComponentProps) => <table className="w-full table-auto">{children}</table>,
+			thead: ({ children }: PComponentProps) => <thead className="bg-base-300">{children}</thead>,
+			tbody: ({ children }: PComponentProps) => <tbody>{children}</tbody>,
+			tr: ({ children }: PComponentProps) => <tr className="border-t">{children}</tr>,
+			th: ({ children }: PComponentProps) => <th className="px-4 py-2 text-left">{children}</th>,
+			td: ({ children }: PComponentProps) => <td className="px-4 py-2">{children}</td>,
 
 			p: ({ className, children }: PComponentProps) => (
 				<p className={`${className ?? ''} my-2 ${align} break-words`} style={{ lineHeight: '1.5', fontSize: '14px' }}>
 					{children}
 				</p>
+			),
+
+			blockquote: ({ children }: PComponentProps) => (
+				<blockquote className="border-neutral/20 border-l-4 pl-4 italic">{children}</blockquote>
+			),
+
+			a: ({ href, children }: { href?: string; children?: ReactNode }) => (
+				<a
+					href={href}
+					target={href?.startsWith('http') ? '_blank' : undefined}
+					rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+					className="cursor-pointer text-blue-600 underline hover:text-blue-800"
+					onClick={e => {
+						e.preventDefault();
+						if (href) backendAPI.openurl(href);
+					}}
+				>
+					{children}
+				</a>
 			),
 
 			code: ({ inline, className, children, ...props }: CodeComponentProps) => {
@@ -89,48 +117,6 @@ const EnhancedMarkdown = ({ text, align = 'left', isBusy = false }: EnhancedMark
 					return <CodeBlock language={language} value={value} isBusy={isBusy} />;
 				}
 			},
-
-			ul: ({ children }: PComponentProps) => (
-				<span>
-					<ul className="list-disc py-1">{children}</ul>
-				</span>
-			),
-			ol: ({ children }: PComponentProps) => (
-				<span>
-					<ol className="list-decimal py-1">{children}</ol>
-				</span>
-			),
-			li: ({ children }: PComponentProps) => (
-				<span>
-					<li className="ml-4 py-1">{children}</li>
-				</span>
-			),
-
-			table: ({ children }: PComponentProps) => <table className="w-full table-auto">{children}</table>,
-			thead: ({ children }: PComponentProps) => <thead className="bg-base-300">{children}</thead>,
-			tbody: ({ children }: PComponentProps) => <tbody>{children}</tbody>,
-			tr: ({ children }: PComponentProps) => <tr className="border-t">{children}</tr>,
-			th: ({ children }: PComponentProps) => <th className="px-4 py-2 text-left">{children}</th>,
-			td: ({ children }: PComponentProps) => <td className="px-4 py-2">{children}</td>,
-
-			a: ({ href, children }: { href?: string; children?: ReactNode }) => (
-				<a
-					href={href}
-					target={href?.startsWith('http') ? '_blank' : undefined}
-					rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined}
-					className="cursor-pointer text-blue-600 underline hover:text-blue-800"
-					onClick={e => {
-						e.preventDefault();
-						if (href) backendAPI.openurl(href);
-					}}
-				>
-					{children}
-				</a>
-			),
-
-			blockquote: ({ children }: PComponentProps) => (
-				<blockquote className="border-neutral/20 border-l-4 pl-4 italic">{children}</blockquote>
-			),
 		}),
 		[align, isBusy]
 	);

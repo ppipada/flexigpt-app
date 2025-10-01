@@ -2,16 +2,16 @@
 
 ## Laundry list
 
-- [x] input area spacing and size when streaming back from assistant needs relook
+- [x] input area spacing and size when streaming back from assistant needs re-look
 - [x] Tool invocation in backend
 
   - [x] base support
-  - [x] dont add go tools at runtime i.e only compiled tools are there
+  - [x] Don't add go tools at runtime i.e only compiled tools are there
   - [x] invocation tests for go
   - [x] invocation tests for http, inbuilt and externally added
 
 - [ ] Tool invoke when doing prompt template preprocess run
-- [ ] prompt tempaltes to fill in full text including preprocessors and then give back message blocks to caller for exec.
+- [ ] prompt templates to fill in full text including preprocessors and then give back message blocks to caller for exec.
 - [ ] attached tools to be given back as schema to consumers for exec
 - [ ] prompt and tool processing for ai completion call
 
@@ -28,6 +28,6 @@
 
   - [ ] Integrate stores with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
 
-- [ ] CPU is high when "thinking". Need to debug
+- [x] CPU is high when "thinking". Need to debug
 - [x] After system restart if app is open it should start again, it is not happening in mac.
 - [x] Implement responses api for openai new models and integrate gpt 5 codex too.
