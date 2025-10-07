@@ -1,4 +1,3 @@
-// Package store contains helpers shared by all preset-handling logic.
 package store
 
 import (

@@ -40,14 +40,14 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         with:
           args: --verbose
-          version: v2.4
+          version: v2.5
 
       - name: Cache modernize binary
         id: cache-modernize
         uses: actions/cache@v4
         with:
           path: ~/go/bin/modernize
-          key: modernize-bin-${{ runner.os }}-v2 # bump vN to force a rebuild
+          key: modernize-bin-${{ runner.os }}-v3 # bump vN to force a rebuild
 
       - name: Install modernize (if cache missed)
         if: steps.cache-modernize.outputs.cache-hit != 'true'

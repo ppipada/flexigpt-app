@@ -1,3 +1,12 @@
+package builtin
+
+import (
+	"log/slog"
+	"runtime/debug"
+	"sync/atomic"
+	"time"
+)
+
 // This file provides a tiny utility that takes care of the run-exactly-once-in-the-background-when-stale pattern.
 //
 // Typical usage:
@@ -16,14 +25,6 @@
 //   - a rebuild is started only when the previous successful run is
 //     older than maxAge,
 //   - panics inside the rebuild function are caught and logged.
-package builtin
-
-import (
-	"log/slog"
-	"runtime/debug"
-	"sync/atomic"
-	"time"
-)
 
 const alwaysStale = time.Duration(1)
 

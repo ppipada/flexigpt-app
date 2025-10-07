@@ -16,7 +16,7 @@ type SettingStoreWrapper struct {
 	providerSetWrapper *ProviderSetWrapper
 }
 
-// Boot the underlying store and remember the pointer.
+// InitSettingStoreWrapper boots the underlying store and remembers the pointer.
 func InitSettingStoreWrapper(
 	w *SettingStoreWrapper,
 	providerSetWrapper *ProviderSetWrapper,

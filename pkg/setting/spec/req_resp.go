@@ -24,7 +24,6 @@ type GetAuthKeyRequest struct {
 	KeyName AuthKeyName `path:"keyName"`
 }
 
-// GetAuthKeyResponse returns the secret and its SHA.
 type GetAuthKeyResponseBody struct {
 	Secret   string `json:"secret"`
 	SHA256   string `json:"sha256"`

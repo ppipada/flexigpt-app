@@ -35,7 +35,7 @@ type HTTPToolRunner struct {
 	clients   map[int]*http.Client
 }
 
-// Functional options for HTTPToolRunner.
+// HTTPOption - Functional options for HTTPToolRunner.
 type HTTPOption func(*HTTPToolRunner)
 
 // WithHTTPTimeoutMs sets an invocation timeout override (milliseconds).

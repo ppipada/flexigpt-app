@@ -35,12 +35,10 @@ var OpenAIChatCompletionsDefaultHeaders = map[string]string{"content-type": "app
 var (
 	ErrInvalidDir = errors.New("invalid directory")
 
-	// Look-ups.
 	ErrProviderNotFound      = errors.New("provider not found")
 	ErrModelPresetNotFound   = errors.New("model preset not found")
 	ErrBuiltInProviderAbsent = errors.New("provider not found in built-in data")
 
-	// Validation.
 	ErrNilProvider      = errors.New("provider preset is nil")
 	ErrNilModelPreset   = errors.New("model preset is nil")
 	ErrNoModelPresets   = errors.New("provider has no model presets")

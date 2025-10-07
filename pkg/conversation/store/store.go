@@ -248,7 +248,7 @@ func (cc *ConversationCollection) GetConversation(
 	return &spec.GetConversationResponse{Body: &convo}, nil
 }
 
-// The titles returned here are not from the conversation itself, but sanitized names with alpha numeric chars only.
+// ListConversations - The titles returned here are not from the conversation itself, but sanitized names with alpha numeric chars only.
 func (cc *ConversationCollection) ListConversations(
 	ctx context.Context,
 	req *spec.ListConversationsRequest,

@@ -9,7 +9,6 @@ import (
 	"reflect"
 )
 
-// jsonEncoderDecoder uses JSON encoding/decoding.
 type JSONEncoderDecoder struct{}
 
 // Encode encodes the given value into JSON format and writes it to the writer.

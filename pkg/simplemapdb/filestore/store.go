@@ -54,14 +54,14 @@ func WithAutoFlush(autoFlush bool) Option {
 	}
 }
 
-// WithValueEncDecsGetter registers the user’s value encoding decoding handler callback.
+// WithValueEncDecGetter registers the user’s value encoding decoding handler callback.
 func WithValueEncDecGetter(valueEncDecGetter ValueEncDecGetter) Option {
 	return func(store *MapFileStore) {
 		store.getValueEncDec = valueEncDecGetter
 	}
 }
 
-// WithKeyEncDecsGetter registers the user’s key encoding decoding handler callback.
+// WithKeyEncDecGetter registers the user’s key encoding decoding handler callback.
 func WithKeyEncDecGetter(getter KeyEncDecGetter) Option {
 	return func(store *MapFileStore) {
 		store.getKeyEncDec = getter

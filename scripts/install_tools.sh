@@ -11,8 +11,8 @@ GOLINES_VERSION="latest"
 GOFUMPT_VERSION="latest"
 GOPLS_VERSION="latest"
 MODERNIZE_VERSION="latest" # Remember to bump build in .github/actions/lint.yml as well.
-GOLANGCI_LINT_VERSION="v2.4.0"  # Remember to update .github/actions/lint.yml as well.
-GO_MOD_UPGRADE_VERSION="v0.11.0"
+GOLANGCI_LINT_VERSION="v2.5.0"  # Remember to update .github/actions/lint.yml as well.
+GO_MOD_UPGRADE_VERSION="v0.12.0"
 WAILS_VERSION="v2.10.2"
 
 # refdir:

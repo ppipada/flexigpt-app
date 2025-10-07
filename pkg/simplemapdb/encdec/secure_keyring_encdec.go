@@ -13,7 +13,7 @@ import (
 	"github.com/zalando/go-keyring"
 )
 
-// encryptedStringValueEncoderDecoder uses your encryption for encoding/decoding.
+// EncryptedStringValueEncoderDecoder uses your encryption for encoding/decoding.
 type EncryptedStringValueEncoderDecoder struct{}
 
 func (e EncryptedStringValueEncoderDecoder) Encode(w io.Writer, value any) error {

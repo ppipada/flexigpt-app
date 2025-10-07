@@ -20,7 +20,7 @@ type ProviderSetWrapper struct {
 	completionCancels   map[string]context.CancelFunc
 }
 
-// NewProviderSetWrapper creates a new ProviderSet with the specified default provider.
+// InitProviderSetWrapper creates a new ProviderSet with the specified default provider.
 func InitProviderSetWrapper(
 	ps *ProviderSetWrapper,
 ) error {

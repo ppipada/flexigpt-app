@@ -1,4 +1,4 @@
-# All linters are checked and included either in enable or disable as of v2.3.0 of golangci-lint.
+# All linters are checked and included either in enable or disable as of v2.5.0 of golangci-lint.
 # gofumpt is used as formatter, other formatters are not added here.
 version: "2"
 run:
@@ -72,6 +72,9 @@ linters:
     # Forces to put `.` at the end of the comment. Code is poetry.
     - godot
 
+    # Documentation sanity.
+    - godoclint
+
     # Powerful security-oriented linter. But requires some time to
     # configure it properly, see https://github.com/securego/gosec#available-rules
     - gosec
@@ -87,6 +90,9 @@ linters:
 
     # Detects when assignments to existing variables are not used.
     - ineffassign
+
+    # Dont allow non iota constants mixed with iota.
+    - iotamixing
 
     # Reports wrong mirror patterns of bytes/strings usage.
     - mirror
@@ -331,6 +337,9 @@ linters:
 
     # Reports unused function parameters. Covered by revive.
     - unparam
+
+    # Avoid select * in SQL query.
+    - unqueryvet
 
     # I'm fine with long variable names with a small scope.
     - varnamelen

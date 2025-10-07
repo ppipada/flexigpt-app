@@ -75,7 +75,7 @@ func SyncDirToFTS(
 // Emit(dec)    must be invoked exactly once for every document that belongs to this dataset.
 type Iterate func(getPrev GetPrevCmp, emit func(SyncDecision) error) error
 
-// Belongs(id) must return true for all rows owned by this producer so that vanished rows can be deleted.
+// SyncIterToFTS - Belongs(id) must return true for all rows owned by this producer so that vanished rows can be deleted.
 func SyncIterToFTS(
 	ctx context.Context,
 	engine *Engine,

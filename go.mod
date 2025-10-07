@@ -1,6 +1,6 @@
 module github.com/ppipada/flexigpt-app
 
-go 1.25.0
+go 1.25.1
 
 // We use a few tools. Installation script for them can be found at: ./scripts/install_tools/sh.
 require (

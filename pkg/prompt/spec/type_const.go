@@ -12,7 +12,7 @@ const (
 	PromptDBFileName               = "prompts.fts.sqlite"
 	PromptBuiltInOverlayDBFileName = "promptsbuiltin.overlay.sqlite"
 
-	// Current on-disk schema version.
+	// SchemaVersion is the current on-disk schema version.
 	SchemaVersion = "2025-07-01"
 )
 
@@ -47,7 +47,6 @@ const (
 	Assistant PromptRoleEnum = "assistant"
 )
 
-// Primitive variable kinds.
 type VarType string
 
 const (
@@ -58,19 +57,18 @@ const (
 	VarDate    VarType = "date"
 )
 
-// Where a variable’s value comes from.
 type VarSource string
 
 const (
-	// Ask UI / CLI.
+	// SourceUser: Ask UI / CLI.
 	SourceUser VarSource = "user"
-	// Fixed literal.
+	// SourceStatic: Fixed literal.
 	SourceStatic VarSource = "static"
-	// Filled by a helper tool.
+	// SourceTool: Filled by a helper tool.
 	SourceTool VarSource = "tool"
 )
 
-// One role-tagged chunk of text.
+// MessageBlock - One role-tagged chunk of text.
 type MessageBlock struct {
 	ID      MessageBlockID `json:"id"`
 	Role    PromptRoleEnum `json:"role"`
@@ -102,7 +100,7 @@ const (
 	OnErrorFail  PreProcessorOnError = "fail"
 )
 
-// Runs a helper tool, optionally extracts a JSON sub-path and stores the value into a variable.
+// PreProcessorCall - Runs a helper tool, optionally extracts a JSON sub-path and stores the value into a variable.
 type PreProcessorCall struct {
 	ID        PreProcessorCallID `json:"id"`
 	ToolID    string             `json:"toolID"`
@@ -139,7 +137,7 @@ type PromptTemplate struct {
 	IsBuiltIn  bool                        `json:"isBuiltIn"`
 }
 
-// Hard grouping & distribution unit.
+// PromptBundle is a hard grouping & distribution unit.
 type PromptBundle struct {
 	SchemaVersion string                     `json:"schemaVersion"`
 	ID            bundleitemutils.BundleID   `json:"id"`

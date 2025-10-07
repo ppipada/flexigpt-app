@@ -231,7 +231,7 @@ func AddDebugResponseToCtx(ctx context.Context) context.Context {
 	return context.WithValue(ctx, debugHTTPResponseKey, debugResp)
 }
 
-// Helper function to retrieve DebugHTTPResponse from context.
+// GetDebugHTTPResponse is a function to retrieve DebugHTTPResponse from context.
 func GetDebugHTTPResponse(ctx context.Context) (*DebugHTTPResponse, bool) {
 	debugResp, ok := ctx.Value(debugHTTPResponseKey).(*DebugHTTPResponse)
 	return debugResp, ok

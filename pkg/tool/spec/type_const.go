@@ -13,13 +13,14 @@ const (
 	ToolDBFileName               = "tools.fts.sqlite"
 	ToolBuiltInOverlayDBFileName = "toolsbuiltin.overlay.sqlite"
 
-	// Current on-disk schema version.
-	SchemaVersion        = "2025-07-01"
 	DefaultHTTPTimeoutMs = 10_000
 	JSONEncoding         = "json"
 	TextEncoding         = "text"
 	DefaultHTTPEncoding  = JSONEncoding
 	DefaultHTTPErrorMode = "fail"
+
+	// SchemaVersion  - Current on-disk schema version.
+	SchemaVersion = "2025-07-01"
 )
 
 var (
@@ -52,14 +53,14 @@ const (
 	ToolTypeHTTP ToolType = "http"
 )
 
-// Register-by-name pattern for Go tools.
+// GoToolImpl - Register-by-name pattern for Go tools.
 type GoToolImpl struct {
 	// Fully-qualified registration key, e.g.
 	//   "github.com/acme/flexigpt/tools.Weather"
 	Func string `json:"func" validate:"required"`
 }
 
-// Simple auth descriptor (can be extended later).
+// HTTPAuth - Simple auth descriptor (can be extended later).
 type HTTPAuth struct {
 	Type          string `json:"type"`
 	In            string `json:"in,omitempty"`   // "header" | "query"  (apiKey only)

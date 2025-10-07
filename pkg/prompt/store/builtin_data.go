@@ -1,5 +1,3 @@
-// Package store manages the read-only built-in prompt assets together with a
-// writable overlay that enables or disables individual bundles or templates.
 package store
 
 import (

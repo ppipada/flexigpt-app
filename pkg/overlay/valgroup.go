@@ -34,7 +34,7 @@ func NewTypedGroup[K Key, ValT any](
 	}, nil
 }
 
-// Get retrieves a typed value from the group.
+// GetFlag retrieves a typed value from the group.
 func (g *TypedGroup[K, ValT]) GetFlag(ctx context.Context, k K) (TypedFlag[ValT], bool, error) {
 	var zero TypedFlag[ValT]
 
@@ -58,7 +58,7 @@ func (g *TypedGroup[K, ValT]) GetFlag(ctx context.Context, k K) (TypedFlag[ValT]
 	}, true, nil
 }
 
-// Set stores a typed value in the group.
+// SetFlag stores a typed value in the group.
 func (g *TypedGroup[K, ValT]) SetFlag(
 	ctx context.Context,
 	k K,
@@ -81,7 +81,7 @@ func (g *TypedGroup[K, ValT]) SetFlag(
 	}, nil
 }
 
-// Delete removes an entry from the group.
+// DeleteKey removes an entry from the group.
 func (g *TypedGroup[K, ValT]) DeleteKey(ctx context.Context, k K) error {
 	return g.store.DeleteKey(ctx, k)
 }

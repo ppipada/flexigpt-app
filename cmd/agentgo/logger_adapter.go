@@ -8,9 +8,7 @@ import (
 
 // Define custom log levels for Trace and Fatal.
 const (
-	// Trace level (more verbose than Debug).
 	LevelTrace slog.Level = slog.LevelDebug - 4
-	// Fatal level (more severe than Error).
 	LevelFatal slog.Level = slog.LevelError + 4
 )
 

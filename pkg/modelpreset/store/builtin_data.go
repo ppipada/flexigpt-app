@@ -1,5 +1,3 @@
-// Package store manages read-only built-in provider/model presets together with
-// a writable overlay that enables or disables individual entities.
 package store
 
 import (

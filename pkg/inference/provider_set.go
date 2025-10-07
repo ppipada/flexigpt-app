@@ -9,7 +9,6 @@ import (
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
-// Define the ProviderSetAPI struct.
 type ProviderSetAPI struct {
 	providers map[modelpresetSpec.ProviderName]spec.CompletionProvider
 	debug     bool
