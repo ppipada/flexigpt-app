@@ -7,8 +7,7 @@
 
 - Install base prerequisites:
 
-  - Node base: `node ^v22.19.0`
-  - Go base: `go ^1.25` and `golangci-lint ^2.5.0`
+  - `node ^v22.19.0`, `go ^1.25` and `golangci-lint ^2.5.0`
   - Pinned versions of these can be found in file at repo root named: `.tool-versions`.
     - Recommended: use `asdf` to manage go and node base prerequisites.
     - If you have asdf installed you can do `asdf install` to install all required versions of this project.
@@ -22,10 +21,9 @@
 - Install go tools prerequisites:
 
   - Run the script at `scripts/install_tools.sh`
-  - Wails
+  - Wails issues:
+    - Linux issue: If you are using latest Linux version (example: Ubuntu 24.04) and it is not supporting `libwebkit2gtk-4.0-dev`, then you might encounter an issue in wails doctor: `libwebkit not found`. To resolve this issue you can install `libwebkit2gtk-4.1-dev`. We do use the tag `-tags webkit2_41` during build.
     - If you have any issue in wails install, refer documentation page at [Wails Install Guide](https://wails.io/docs/gettingstarted/installation).
-    - If you are using latest Linux version (example: Ubuntu 24.04) and it is not supporting `libwebkit2gtk-4.0-dev`, then you might encounter an issue in wails doctor: `libwebkit not found`.
-    - To resolve this issue you can install `libwebkit2gtk-4.1-dev`. We do use the tag `-tags webkit2_41` during build.
 
 - Run a build: `pnpm build:withbindings`
 
