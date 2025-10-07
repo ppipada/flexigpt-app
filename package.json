@@ -31,7 +31,7 @@
 		"lint:gopls": "./scripts/lint_gopls_check.sh",
 		"lint:goci": "golangci-lint run ./... -v && ./scripts/lint_gopls_modernize.sh",
 		"lint": "pnpm -F frontend run lint && pnpm run lint:goci",
-		"test:go": "go test ./...",
+		"test:go": "pnpm run touch:tmp && go test ./...",
 		"test": "pnpm -F frontend run test && pnpm run test:go",
 		"lt": "pnpm run lint && pnpm run test",
 		"lint:gosort": "refdir --const-dir=up --var-dir=up --type-dir=up --recvtype-dir=up --func-dir=down ./..."
