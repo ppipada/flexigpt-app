@@ -5,31 +5,27 @@
 - Checkout code.
 - Init and checkout all submodules (currently only flatpak shared modules): `git submodule update --init --recursive`
 
-- Install `go > 1.25`.
+- Install base prerequisites:
 
-  - For Ubuntu you can do install via standard download and install OR via `asdf` or through the backports channel:
-    - `sudo add-apt-repository ppa:longsleep/golang-backports`
-    - `sudo apt update`
-    - `sudo apt install golang-1.25`
-    - You can see that go is installed in `/lib/go-1.25/bin/go`
-    - Additional reference can be found at [Go Ubuntu Wiki](https://go.dev/wiki/Ubuntu)
-  - Check Go is installed correctly: `go version`
+  - Node base: `node ^v22.19.0`
+  - Go base: `go ^1.25` and `golangci-lint ^2.5.0`
+  - Pinned versions of these can be found in file at repo root named: `.tool-versions`.
+    - Recommended: use `asdf` to manage go and node base prerequisites.
+    - If you have asdf installed you can do `asdf install` to install all required versions of this project.
 
-- Install go tool prerequisites:
+- Install pnpm packages
+
+  - Enable corepack and intall pnpm: `corepack enable; corepack install`
+    - If using asdf: `asdf reshim nodejs`
+  - Download all pnpm modules: `pnpm i`
+
+- Install go tools prerequisites:
 
   - Run the script at `scripts/install_tools.sh`
   - Wails
     - If you have any issue in wails install, refer documentation page at [Wails Install Guide](https://wails.io/docs/gettingstarted/installation).
     - If you are using latest Linux version (example: Ubuntu 24.04) and it is not supporting `libwebkit2gtk-4.0-dev`, then you might encounter an issue in wails doctor: `libwebkit not found`.
     - To resolve this issue you can install `libwebkit2gtk-4.1-dev`. We do use the tag `-tags webkit2_41` during build.
-
-- Install node and associated packages
-
-  - Node versions can be managed using nvm.
-  - Check the current required version in `package.json`. Verify using `node -v`.
-  - Make sure corepack is enabled: `corepack enable`
-  - Install pnpm: `corepack install`
-  - Download all pnpm modules: `pnpm i`
 
 - Run a build: `pnpm build:withbindings`
 
