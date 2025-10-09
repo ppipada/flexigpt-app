@@ -490,7 +490,7 @@ const ChatScreen: FC = () => {
 				</div>
 
 				{/* Row 3: INPUT (auto; grows with content) */}
-				<div className="row-start-3 row-end-4 flex w-full justify-center pb-2">
+				<div className="row-start-3 row-end-4 flex w-full justify-center">
 					<div className="w-11/12 xl:w-5/6">
 						<InputBox ref={chatInputRef} onSend={sendMessage} isBusy={isBusy} abortRef={abortRef} />
 					</div>

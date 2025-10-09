@@ -206,7 +206,7 @@ const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChan
 	});
 
 	return (
-		<div className="bg-base-200 mx-4 mb-1 flex items-center justify-between">
+		<div className="bg-base-200 mx-4 my-0 flex items-center justify-between space-x-1">
 			<ModelDropdown
 				ref={modelDetailsRef}
 				selectedModel={selectedModel}
@@ -280,6 +280,7 @@ const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChan
 			/>
 
 			{/* ---------------- Advanced params button ----------------------- */}
+
 			<button
 				type="button"
 				className="btn btn-sm btn-ghost text-neutral-custom"

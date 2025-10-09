@@ -63,7 +63,7 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 							onChange={e => {
 								onDisableMarkdownChange(e.target.checked);
 							}}
-							className="checkbox checkbox-xs rounded-full"
+							className="checkbox checkbox-xs ml-1 rounded-full"
 							spellCheck="false"
 							disabled={isBusy}
 						/>

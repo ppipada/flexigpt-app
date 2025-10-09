@@ -75,7 +75,7 @@
 
 @plugin "daisyui" {
 	prefix: '';
-	exclude: rootscrollgutter;
+	exclude: rootscrollgutter, properties;
 	themes:
 		'applight' --default,
 		'appdark' --prefersdark,
@@ -254,14 +254,4 @@ code .line::before {
 	color: var(--text-lineno, #e0e0e0);
 	pointer-events: none;
 	-webkit-user-select: none;
-}
-
-code .line::before::selection {
-	background: transparent !important;
-	color: inherit !important;
-}
-
-code .line::before::-webkit-selection {
-	background: transparent !important;
-	color: inherit !important;
 }
