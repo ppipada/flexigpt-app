@@ -95,8 +95,8 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 					) : (
 						<h1
 							className="cursor-pointer overflow-hidden text-center text-xl font-semibold text-nowrap"
-							title="Double-click or click the pencil to rename"
-							onDoubleClick={() => {
+							title="Click the title or the pencil to rename"
+							onClick={() => {
 								if (!editDisabled) {
 									setIsEditing(true);
 								}
