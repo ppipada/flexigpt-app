@@ -24,8 +24,12 @@ const config: Record<
 	},
 };
 
+/**
+ * @public
+ */
 export const BlockList: RenderNodeWrapper = props => {
 	if (!props.element.listStyleType) return;
+
 	return props => <List {...props} />;
 };
 
@@ -33,27 +37,21 @@ export const BlockList: RenderNodeWrapper = props => {
  * @public
  */
 export function List(props: PlateElementProps) {
-	const { attributes } = props;
 	const { listStart, listStyleType } = props.element as TListElement;
 	const { Li, Marker } = config[listStyleType] ?? {};
-	const ordered = isOrderedList(props.element);
-
-	const className = cx('relative m-0 p-0', attributes.className);
-
-	if (ordered) {
-		return (
-			<ol {...attributes} className={className} style={{ listStyleType }} start={listStart}>
-				{<Marker {...props} />}
-				{<Li {...props} />}
-			</ol>
-		);
-	}
+	const List = isOrderedList(props.element) ? 'ol' : 'ul';
 
 	return (
-		<ul {...attributes} className={className} style={{ listStyleType }}>
-			{<Marker {...props} />}
-			{<Li {...props} />}
-		</ul>
+		<List className="relative m-1 p-1 pl-2" style={{ listStyleType }} start={listStart}>
+			{
+				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+				Marker && <Marker {...props} />
+			}
+			{
+				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+				Li ? <Li {...props} /> : <li>{props.children}</li>
+			}
+		</List>
 	);
 }
 
