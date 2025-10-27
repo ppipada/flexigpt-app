@@ -10,10 +10,10 @@ import { type Tool, type ToolBundle, ToolType } from '@/spec/tool';
 import { toolStoreAPI } from '@/apis/baseapi';
 import { getAllTools } from '@/apis/list_helper';
 
-import ActionDeniedAlert from '@/components/action_denied';
-import DeleteConfirmationModal from '@/components/delete_confirmation';
+import { ActionDeniedAlert } from '@/components/action_denied';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation';
 
-import AddEditToolModal from '@/prompts/tool_add_edit';
+import { AddEditToolModal } from '@/prompts/tool_add_edit';
 
 interface ToolBundleCardProps {
 	bundle: ToolBundle;
@@ -22,7 +22,7 @@ interface ToolBundleCardProps {
 	onBundleDeleted: (bundle: ToolBundle) => void;
 }
 
-const ToolBundleCard: React.FC<ToolBundleCardProps> = ({ bundle, tools, onToolsChange, onBundleDeleted }) => {
+export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }: ToolBundleCardProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [localTools, setLocalTools] = useState<Tool[]>(tools);
 	const [isBundleEnabled, setIsBundleEnabled] = useState(bundle.isEnabled);
@@ -345,6 +345,4 @@ const ToolBundleCard: React.FC<ToolBundleCardProps> = ({ bundle, tools, onToolsC
 			/>
 		</div>
 	);
-};
-
-export default ToolBundleCard;
+}

@@ -1,4 +1,3 @@
-import type { FC } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { FiMonitor, FiMoon, FiSun } from 'react-icons/fi';
@@ -11,7 +10,7 @@ import { useTheme } from '@/hooks/use_theme_provider';
 
 import { settingstoreAPI } from '@/apis/baseapi';
 
-import Dropdown, { type DropdownItem } from '@/components/dropdown';
+import { Dropdown, type DropdownItem } from '@/components/dropdown';
 
 const isOtherThemeName = (n: string): boolean => DAISYUI_BUILTIN_THEMES.includes(n);
 const toThemeType = (name: string): ThemeType => {
@@ -22,7 +21,7 @@ const toThemeType = (name: string): ThemeType => {
 };
 
 /* ———————————————————————————————————————— main selector —————————————————————————————————— */
-export const ThemeSelector: FC = () => {
+export function ThemeSelector() {
 	const [startupTheme, startupReady] = useStartupTheme();
 	const { theme: providerTheme, setTheme } = useTheme();
 
@@ -145,4 +144,4 @@ export const ThemeSelector: FC = () => {
 			</label>
 		</div>
 	);
-};
+}

@@ -1,4 +1,4 @@
-import * as React from 'react';
+import type { ReactNode } from 'react';
 
 import type { TComboboxInputElement } from 'platejs';
 import type { PlateEditor, PlateElementProps } from 'platejs/react';
@@ -20,7 +20,7 @@ import {
 export interface ComboboxItem<T = unknown> {
 	slug: string; // used as `value`
 	displayName: string; // visible text
-	icon?: React.ReactNode;
+	icon?: ReactNode;
 	keywords?: string[];
 	focusEditor?: boolean;
 	data: T; // the raw template/tool/etc you passed in

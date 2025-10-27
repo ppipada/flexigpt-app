@@ -1,4 +1,4 @@
-import React, { type FC, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiUpload, FiX } from 'react-icons/fi';
 
@@ -10,7 +10,7 @@ import {
 	ReasoningType,
 } from '@/spec/modelpreset';
 
-import Dropdown from '@/components/dropdown';
+import { Dropdown } from '@/components/dropdown';
 
 const reasoningTypeItems: Record<ReasoningType, { isEnabled: boolean; displayName: string }> = {
 	[ReasoningType.SingleWithLevels]: {
@@ -73,11 +73,10 @@ interface AddEditModelPresetModalProps {
 	initialModelID?: ModelPresetID; // ⇒ edit mode when truthy
 	initialData?: ModelPreset;
 	existingModels: Record<ModelPresetID, ModelPreset>;
-
 	allModelPresets: Record<ProviderName, Record<ModelPresetID, ModelPreset>>;
 }
 
-const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
+export function AddEditModelPresetModal({
 	isOpen,
 	onClose,
 	onSubmit,
@@ -85,7 +84,7 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 	initialData,
 	existingModels,
 	allModelPresets,
-}) => {
+}: AddEditModelPresetModalProps) {
 	const isEditMode = Boolean(initialModelID);
 	const [defaultValues] = useState<ModelPreset>(AddModeDefaults);
 	const [modelPresetID, setModelPresetID] = useState<ModelPresetID>(initialModelID ?? ('' as ModelPresetID));
@@ -295,7 +294,7 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 		setFormData(prev => ({ ...prev, [field]: value }));
 	};
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+	const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
 		const { name, value, type, checked } = e.target as HTMLInputElement;
 
 		if (name === 'modelPresetID') {
@@ -315,7 +314,7 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 		return Object.keys(currentErrors).length === 0;
 	}, [formData, modelPresetID]);
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 
 		const newErrors = runValidation();
@@ -763,6 +762,4 @@ const AddEditModelPresetModal: FC<AddEditModelPresetModalProps> = ({
 			</div>
 		</dialog>
 	);
-};
-
-export default AddEditModelPresetModal;
+}

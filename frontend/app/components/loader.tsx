@@ -1,4 +1,4 @@
-import type { FC, PropsWithChildren } from 'react';
+import type { PropsWithChildren } from 'react';
 
 interface LoaderProps {
 	text?: string; // caption under the spinner
@@ -6,7 +6,7 @@ interface LoaderProps {
 	className?: string; // extra classes supplied by caller
 }
 
-const Loader: FC<PropsWithChildren<LoaderProps>> = ({ text = 'Loading…', full = true, className = '' }) => {
+export function Loader({ text = 'Loading…', full = true, className = '' }: PropsWithChildren<LoaderProps>) {
 	// build classes without clsx
 	const base = 'flex flex-col items-center justify-center gap-4 w-full';
 	const height = full ? 'h-screen' : 'h-full';
@@ -18,6 +18,4 @@ const Loader: FC<PropsWithChildren<LoaderProps>> = ({ text = 'Loading…', full 
 			{text && <span className="text-sm opacity-80">{text}</span>}
 		</div>
 	);
-};
-
-export default Loader;
+}

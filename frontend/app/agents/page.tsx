@@ -1,8 +1,7 @@
-import type { FC } from 'react';
+import { PageFrame } from '@/components/page_frame';
 
-import PageFrame from '@/components/page_frame';
-
-const AgentPage: FC = () => {
+// eslint-disable-next-line no-restricted-exports
+export default function AgentsPage() {
 	return (
 		<PageFrame>
 			<div className="flex h-full w-full flex-col items-center justify-center">
@@ -10,6 +9,4 @@ const AgentPage: FC = () => {
 			</div>
 		</PageFrame>
 	);
-};
-
-export default AgentPage;
+}

@@ -1,4 +1,4 @@
-import React, { type FC, useEffect, useState } from 'react';
+import { type Dispatch, type FormEvent, type SetStateAction, useEffect, useState } from 'react';
 
 import { createPortal } from 'react-dom';
 
@@ -13,7 +13,7 @@ type AdvancedParamsModalProps = {
 	onSave: (updatedModel: ChatOption) => void;
 };
 
-const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, currentModel, onSave }) => {
+export function AdvancedParamsModal({ isOpen, onClose, currentModel, onSave }: AdvancedParamsModalProps) {
 	/* local form state (strings for easy blank entry) */
 	const [stream, setStream] = useState(false);
 	const [maxPromptLength, setMaxPromptLength] = useState('');
@@ -44,7 +44,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 	const updateField = (
 		field: 'maxPromptLength' | 'maxOutputLength' | 'timeout',
 		value: string,
-		setter: React.Dispatch<React.SetStateAction<string>>
+		setter: Dispatch<SetStateAction<string>>
 	) => {
 		setter(value);
 		setErrors(prev => ({ ...prev, [field]: validateNumberField(field, value) }));
@@ -52,7 +52,7 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 
 	const formHasErrors = Object.values(errors).some(Boolean);
 
-	const handleSave = (e: React.FormEvent) => {
+	const handleSave = (e: FormEvent) => {
 		e.preventDefault();
 
 		/* final synchronous validation */
@@ -214,6 +214,4 @@ const AdvancedParamsModal: FC<AdvancedParamsModalProps> = ({ isOpen, onClose, cu
 		</dialog>,
 		document.body
 	);
-};
-
-export default AdvancedParamsModal;
+}

@@ -10,18 +10,18 @@ import { getUUIDv7 } from '@/lib/uuid_utils';
 import { toolStoreAPI } from '@/apis/baseapi';
 import { getAllToolBundles, getAllTools } from '@/apis/list_helper';
 
-import ActionDeniedAlert from '@/components/action_denied';
-import DeleteConfirmationModal from '@/components/delete_confirmation';
+import { ActionDeniedAlert } from '@/components/action_denied';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation';
 
-import AddToolBundleModal from '@/prompts/tool_bundle_add';
-import ToolBundleCard from '@/prompts/tool_bundle_card';
+import { AddToolBundleModal } from '@/prompts/tool_bundle_add';
+import { ToolBundleCard } from '@/prompts/tool_bundle_card';
 
 interface BundleData {
 	bundle: ToolBundle;
 	tools: Tool[];
 }
 
-const ToolsPage: React.FC = () => {
+export function ToolsPage() {
 	const [bundles, setBundles] = useState<BundleData[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -100,7 +100,7 @@ const ToolsPage: React.FC = () => {
 			{/* header */}
 			<div className="fixed top-12 flex w-full justify-center">
 				<div className="flex w-10/12 items-center justify-between p-0 lg:w-2/3">
-					<h1 className="flex-grow text-center text-xl font-semibold">Tool Bundles</h1>
+					<h1 className="grow text-center text-xl font-semibold">Tool Bundles</h1>
 					<button
 						className="btn btn-ghost flex items-center rounded-2xl"
 						onClick={() => {
@@ -170,6 +170,4 @@ const ToolsPage: React.FC = () => {
 			/>
 		</div>
 	);
-};
-
-export default ToolsPage;
+}

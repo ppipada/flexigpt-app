@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, FC } from 'react';
+import type { ButtonHTMLAttributes } from 'react';
 import { useState } from 'react';
 
 import { FiCheck, FiCopy } from 'react-icons/fi';
@@ -10,7 +10,7 @@ interface CopyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	size: number;
 }
 
-const CopyButton: FC<CopyButtonProps> = ({ value, size, ...buttonProps }) => {
+export function CopyButton({ value, size, ...buttonProps }: CopyButtonProps) {
 	const [copied, setCopied] = useState<boolean>(false);
 
 	const handleCopy = async () => {
@@ -33,6 +33,4 @@ const CopyButton: FC<CopyButtonProps> = ({ value, size, ...buttonProps }) => {
 			{copied ? <FiCheck size={size} /> : <FiCopy size={size} />}
 		</button>
 	);
-};
-
-export default CopyButton;
+}

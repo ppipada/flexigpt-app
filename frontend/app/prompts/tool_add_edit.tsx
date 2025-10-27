@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
@@ -8,7 +8,7 @@ import { type Tool, ToolType } from '@/spec/tool';
 import { omitManyKeys } from '@/lib/obj_utils';
 import { validateSlug, validateTags } from '@/lib/text_utils';
 
-import Dropdown from '@/components/dropdown';
+import { Dropdown } from '@/components/dropdown';
 
 interface ToolItem {
 	tool: Tool;
@@ -27,13 +27,7 @@ interface AddEditToolModalProps {
 const TOOL_TYPE_LABEL_GO = 'Go';
 const TOOL_TYPE_LABEL_HTTP = 'HTTP';
 
-const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
-	isOpen,
-	onClose,
-	onSubmit,
-	initialData,
-	existingTools,
-}) => {
+export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, existingTools }: AddEditToolModalProps) {
 	const [formData, setFormData] = useState({
 		displayName: '',
 		slug: '',
@@ -174,7 +168,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 		setErrors(newErrs);
 	};
 
-	const handleInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+	const handleInput = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
 		const { name, value, type, checked } = e.target as HTMLInputElement;
 		const newVal = type === 'checkbox' ? checked : value;
 		setFormData(prev => ({ ...prev, [name]: newVal }));
@@ -202,7 +196,7 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 	}, [errors, formData]);
 
 	// Submit
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 
 		validateField('displayName', formData.displayName);
@@ -701,6 +695,4 @@ const AddEditToolModal: React.FC<AddEditToolModalProps> = ({
 			</div>
 		</dialog>
 	);
-};
-
-export default AddEditToolModal;
+}

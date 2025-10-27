@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { type Dispatch, forwardRef, type SetStateAction, type SyntheticEvent } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
@@ -8,11 +8,11 @@ type SingleReasoningDropdownProps = {
 	reasoningLevel: ReasoningLevel;
 	setReasoningLevel: (level: ReasoningLevel) => void;
 	isOpen: boolean;
-	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	setIsOpen: Dispatch<SetStateAction<boolean>>;
 };
 
-const SingleReasoningDropdown = forwardRef<HTMLDetailsElement, SingleReasoningDropdownProps>(
-	({ reasoningLevel, setReasoningLevel, isOpen, setIsOpen }, detailsRef) => {
+export const SingleReasoningDropdown = forwardRef<HTMLDetailsElement, SingleReasoningDropdownProps>(
+	function SingleReasoningDropdown({ reasoningLevel, setReasoningLevel, isOpen, setIsOpen }, detailsRef) {
 		// Map reasoning levels to display names.
 		const levelDisplayNames = {
 			[ReasoningLevel.Low]: 'Low',
@@ -25,7 +25,7 @@ const SingleReasoningDropdown = forwardRef<HTMLDetailsElement, SingleReasoningDr
 				<details
 					ref={detailsRef}
 					className="dropdown dropdown-top dropdown-end w-full justify-center"
-					onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
+					onToggle={(event: SyntheticEvent<HTMLElement>) => {
 						setIsOpen((event.currentTarget as HTMLDetailsElement).open);
 					}}
 					open={isOpen}
@@ -70,6 +70,3 @@ const SingleReasoningDropdown = forwardRef<HTMLDetailsElement, SingleReasoningDr
 		);
 	}
 );
-
-SingleReasoningDropdown.displayName = 'SingleReasoningDropdown';
-export default SingleReasoningDropdown;

@@ -16,9 +16,9 @@ import { CustomMDLanguage } from '@/lib/text_utils';
 
 import { backendAPI } from '@/apis/baseapi';
 
-import CodeBlock from '@/components/markdown_code_block';
+import { CodeBlock } from '@/components/markdown_code_block';
 import { MdErrorBoundary } from '@/components/markdown_error_boundary';
-import ThinkingFence from '@/components/thinking_fence';
+import { ThinkingFence } from '@/components/thinking_fence';
 
 const strictSchema = {
 	...defaultSchema, // keep ancestors / clobber / prefix logic
@@ -53,7 +53,11 @@ interface RefComponentProps {
 	children?: ReactNode;
 }
 
-const EnhancedMarkdown = ({ text, align = 'left', isBusy = false }: EnhancedMarkdownProps) => {
+export const EnhancedMarkdown = memo(function EnhancedMarkdown({
+	text,
+	align = 'left',
+	isBusy = false,
+}: EnhancedMarkdownProps) {
 	const processedText = useMemo(() => {
 		// During a stream skip LaTeX sanitisation for speed.
 		return isBusy ? text : SanitizeLaTeX(text);
@@ -129,7 +133,7 @@ const EnhancedMarkdown = ({ text, align = 'left', isBusy = false }: EnhancedMark
 			p: ({ className, children, ...rest }: CustomComponentProps) => (
 				<p
 					{...rest}
-					className={`${className ?? ''} my-2 ${align} break-words`}
+					className={`${className ?? ''} my-2 ${align} wrap-break-word`}
 					style={{ lineHeight: '1.5', fontSize: '14px' }}
 				>
 					{children}
@@ -163,7 +167,7 @@ const EnhancedMarkdown = ({ text, align = 'left', isBusy = false }: EnhancedMark
 					return (
 						<code
 							{...props}
-							className={`bg-base-200 inline text-wrap break-words whitespace-pre-wrap ${className ?? ''}`}
+							className={`bg-base-200 inline text-wrap wrap-break-word whitespace-pre-wrap ${className ?? ''}`}
 						>
 							{children}
 						</code>
@@ -198,6 +202,4 @@ const EnhancedMarkdown = ({ text, align = 'left', isBusy = false }: EnhancedMark
 			</Markdown>
 		</MdErrorBoundary>
 	);
-};
-
-export default memo(EnhancedMarkdown);
+});

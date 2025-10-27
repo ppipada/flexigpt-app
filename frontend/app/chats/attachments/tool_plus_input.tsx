@@ -1,4 +1,4 @@
-import React from 'react';
+import { useMemo } from 'react';
 
 import { FiTool } from 'react-icons/fi';
 
@@ -19,7 +19,7 @@ import { getToolNodesWithPath, insertToolSelectionNode, toolIdentityKey } from '
 export function ToolPlusInputElement(props: Omit<Parameters<typeof SlashInputElement>[0], 'trigger' | 'groups'>) {
 	const { data, loading } = useTools();
 	const editor = useEditorRef() as PlateEditor;
-	const attachedKeys = React.useMemo(() => {
+	const attachedKeys = useMemo(() => {
 		const keys = new Set<string>();
 		for (const [node] of getToolNodesWithPath(editor, false)) {
 			const n = node;
@@ -27,7 +27,7 @@ export function ToolPlusInputElement(props: Omit<Parameters<typeof SlashInputEle
 		}
 		return keys;
 	}, [editor, editor.children]);
-	const groups = React.useMemo(() => {
+	const groups = useMemo(() => {
 		if (loading) return [];
 		// Filter out tools already attached in the current document.
 		const filtered = data.filter(it => {

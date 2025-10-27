@@ -2,9 +2,10 @@ import { Link } from 'react-router';
 
 import { FEATURE_FLAG_AGENTS } from '@/lib/features';
 
-import PageFrame from '@/components/page_frame';
+import { PageFrame } from '@/components/page_frame';
 
-export default function Home() {
+// eslint-disable-next-line no-restricted-exports
+export default function HomePage() {
 	return (
 		<PageFrame>
 			<div className="flex h-full flex-col items-center justify-start px-4 py-8 md:justify-center">

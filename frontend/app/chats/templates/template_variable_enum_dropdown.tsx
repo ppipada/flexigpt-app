@@ -1,5 +1,15 @@
 // components/EnumDropdownInline.tsx
-import React from 'react';
+import {
+	type CSSProperties,
+	type KeyboardEvent as ReactKeyBoardEvent,
+	type SyntheticEvent,
+	useCallback,
+	useEffect,
+	useId,
+	useLayoutEffect,
+	useRef,
+	useState,
+} from 'react';
 
 import { createPortal } from 'react-dom';
 
@@ -42,15 +52,15 @@ export function EnumDropdownInline({
 	minWidthPx = 176,
 	menuMaxHeightPx = 240,
 }: EnumDropdownInlineProps) {
-	const [open, setOpen] = React.useState(false);
-	const triggerRef = React.useRef<HTMLButtonElement | null>(null);
-	const menuRef = React.useRef<HTMLDivElement | null>(null);
-	const optionRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
-	const [activeIndex, setActiveIndex] = React.useState<number>(-1);
-	const listboxId = React.useId();
+	const [open, setOpen] = useState(false);
+	const triggerRef = useRef<HTMLButtonElement | null>(null);
+	const menuRef = useRef<HTMLDivElement | null>(null);
+	const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
+	const [activeIndex, setActiveIndex] = useState<number>(-1);
+	const listboxId = useId();
 
 	// Positioning: use absolute + scroll offsets (more robust with modals/backdrops/filters)
-	const [style, setStyle] = React.useState<React.CSSProperties>({
+	const [style, setStyle] = useState<CSSProperties>({
 		position: 'absolute',
 		top: -9999,
 		left: -9999,
@@ -63,7 +73,7 @@ export function EnumDropdownInline({
 
 	const display = value === undefined || value === '' ? placeholder : value;
 
-	const stopForSlate = (e: React.SyntheticEvent) => {
+	const stopForSlate = (e: SyntheticEvent) => {
 		if (withinSlate) {
 			// Important in Slate/Plate: prevent default and stop propagation
 			e.preventDefault();
@@ -71,7 +81,7 @@ export function EnumDropdownInline({
 		}
 	};
 
-	const updatePosition = React.useCallback(() => {
+	const updatePosition = useCallback(() => {
 		if (!open) return;
 		const anchor = triggerRef.current;
 		const menu = menuRef.current;
@@ -123,14 +133,14 @@ export function EnumDropdownInline({
 			visibility: 'visible',
 		});
 
-		// restore temp mutations (React owns styles via state)
+		// restore temp mutations (react owns styles via state)
 		menu.style.visibility = prevVis;
 		menu.style.position = prevPos;
 		menu.style.top = prevTop;
 		menu.style.left = prevLeft;
 	}, [open, placement, minWidthPx]);
 
-	const close = React.useCallback(
+	const close = useCallback(
 		(cancel = true) => {
 			setOpen(false);
 			// Return focus to trigger for accessibility
@@ -147,18 +157,18 @@ export function EnumDropdownInline({
 	);
 
 	// Ensure autoOpen opens on mount/update (not only as initial state)
-	React.useEffect(() => {
+	useEffect(() => {
 		if (autoOpen) setOpen(true);
 	}, [autoOpen]);
 
 	// Use layout effect for first position calc to avoid visible jump
-	React.useLayoutEffect(() => {
+	useLayoutEffect(() => {
 		if (!open) return;
 		updatePosition();
 	}, [open, updatePosition]);
 
 	// Set initial active item and focus when menu opens
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!open) return;
 		const selectedIdx = value ? options.findIndex(opt => opt === value) : -1;
 		const idx = selectedIdx >= 0 ? selectedIdx : 0;
@@ -179,7 +189,7 @@ export function EnumDropdownInline({
 	}, [open, options, value]);
 
 	// Keep active option in view as user navigates with keyboard
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!open) return;
 		const btn = optionRefs.current[activeIndex];
 		try {
@@ -190,7 +200,7 @@ export function EnumDropdownInline({
 	}, [activeIndex, open]);
 
 	// Reposition and outside click handling
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!open) return;
 
 		// Reposition on scroll/resize
@@ -231,12 +241,12 @@ export function EnumDropdownInline({
 	}, [open, updatePosition, close]);
 
 	// Focus trigger for keyboard users
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!autoOpen) return;
 		requestAnimationFrame(() => triggerRef.current?.focus());
 	}, [autoOpen]);
 
-	const onMenuKeyDown = (e: React.KeyboardEvent) => {
+	const onMenuKeyDown = (e: ReactKeyBoardEvent) => {
 		if (withinSlate) {
 			e.stopPropagation();
 		}

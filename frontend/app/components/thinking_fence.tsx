@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 interface ThinkingFenceProps {
 	detailsSummaryText: string;
@@ -7,12 +7,12 @@ interface ThinkingFenceProps {
 	maxHeightClass?: string; // e.g. 'max-h-[50vh]' or 'max-h-60'
 }
 
-const ThinkingFence: React.FC<ThinkingFenceProps> = ({
+export function ThinkingFence({
 	detailsSummaryText,
 	text,
 	isBusy,
 	maxHeightClass = 'max-h-[50vh]',
-}) => {
+}: ThinkingFenceProps) {
 	const [open, setOpen] = useState(false);
 
 	return (
@@ -40,11 +40,9 @@ const ThinkingFence: React.FC<ThinkingFenceProps> = ({
 			</summary>
 
 			{/* body */}
-			<div className={`px-3 pb-3 break-words whitespace-pre-wrap ${maxHeightClass} overflow-y-auto text-xs`}>
+			<div className={`px-3 pb-3 wrap-break-word whitespace-pre-wrap ${maxHeightClass} overflow-y-auto text-xs`}>
 				{text || '...'}
 			</div>
 		</details>
 	);
-};
-
-export default ThinkingFence;
+}

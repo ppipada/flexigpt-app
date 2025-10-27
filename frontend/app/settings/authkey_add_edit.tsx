@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
@@ -13,10 +13,10 @@ import { settingstoreAPI } from '@/apis/baseapi';
 import { getAllProviderPresetsMap } from '@/apis/list_helper';
 
 import type { DropdownItem } from '@/components/dropdown';
-import Dropdown from '@/components/dropdown';
+import { Dropdown } from '@/components/dropdown';
 
 /* ────────────────────────── props & helpers ────────────────────────── */
-interface Props {
+interface AddEditAuthKeyModalProps {
 	isOpen: boolean;
 	initial: AuthKeyMeta | null; // “edit” when NOT null
 	existing: AuthKeyMeta[]; // list of existing keys
@@ -37,7 +37,14 @@ interface FormData {
 	newType: string; // only when sentinelAddNew chosen
 }
 
-const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, onChanged, prefill = null }) => {
+export function AddEditAuthKeyModal({
+	isOpen,
+	initial,
+	existing,
+	onClose,
+	onChanged,
+	prefill = null,
+}: AddEditAuthKeyModalProps) {
 	/* -------------------------------- flags ------------------------------- */
 	const isEdit = Boolean(initial); // “edit” = we already have that record
 	const isPrefilled = !isEdit && !!prefill; // “add”, but (type,keyName) should be fixed
@@ -179,7 +186,7 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 	};
 
 	/* ------------------------------ handlers ------------------------------ */
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+	const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
 		const { name, value } = e.target;
 		setForm(prev => ({ ...prev, [name]: value }));
 		validate(name as keyof FormData, value);
@@ -213,7 +220,7 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 	}, [form, errors, noProviderAvailable]);
 
 	/* ------------------------------ submit ------------------------------- */
-	const submit = async (e: React.FormEvent) => {
+	const submit = async (e: FormEvent) => {
 		e.preventDefault();
 
 		// explicit validation trigger
@@ -363,16 +370,15 @@ const AddEditAuthKeyModal: FC<Props> = ({ isOpen, initial, existing, onClose, on
 			</div>
 		</dialog>
 	);
-};
+}
 
 /* ───────────────────────── field-error helper ───────────────────────── */
-const FieldError: FC<{ msg?: string }> = ({ msg }) =>
-	msg ? (
+function FieldError({ msg }: { msg?: string }) {
+	return msg ? (
 		<div className="label">
 			<span className="label-text-alt text-error flex items-center gap-1">
 				<FiAlertCircle size={12} /> {msg}
 			</span>
 		</div>
 	) : null;
-
-export default AddEditAuthKeyModal;
+}

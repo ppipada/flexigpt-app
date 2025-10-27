@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import { Fragment, type Key, type ReactNode } from 'react';
 
 import { groupByDateBuckets } from '@/lib/date_utils';
 
@@ -6,10 +6,10 @@ interface GroupedDropdownProps<T> {
 	items: T[];
 	focused: number;
 	getDate: (item: T) => Date;
-	getKey: (item: T) => React.Key;
-	getLabel: (item: T) => React.ReactNode;
+	getKey: (item: T) => Key;
+	getLabel: (item: T) => ReactNode;
 	onPick: (item: T) => void;
-	renderItemExtra?: (item: T) => React.ReactNode;
+	renderItemExtra?: (item: T) => ReactNode;
 }
 
 export function GroupedDropdown<T>({

@@ -1,4 +1,5 @@
-import { type FC, useEffect } from 'react';
+/* eslint-disable no-restricted-exports */
+import { type ReactNode, useEffect } from 'react';
 
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 
@@ -12,14 +13,14 @@ import { ensureWorker } from '@/hooks/use_highlight';
 import { getStartupThemeSync, initStartupTheme } from '@/hooks/use_startup_theme';
 import { GenericThemeProvider } from '@/hooks/use_theme_provider';
 
-import Sidebar from '@/components/sidebar';
+import { Sidebar } from '@/components/sidebar';
 
 import '@/globals.css';
 
 // eslint-disable-next-line no-restricted-imports
 import type { Route } from './+types/root';
 
-export const CustomThemeProvider: FC<{ children: React.ReactNode }> = ({ children }) => {
+export function CustomThemeProvider({ children }: { children: ReactNode }) {
 	const startup: AppTheme = (() => {
 		try {
 			return getStartupThemeSync();
@@ -38,14 +39,14 @@ export const CustomThemeProvider: FC<{ children: React.ReactNode }> = ({ childre
 			{children}
 		</GenericThemeProvider>
 	);
-};
+}
 
 export const meta: Route.MetaFunction = () => [
 	{ title: 'FlexiGPT' },
 	{ name: 'description', content: 'The FlexiGPT ecosystem agent' },
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>

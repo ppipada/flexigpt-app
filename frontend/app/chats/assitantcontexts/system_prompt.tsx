@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useMemo, useState } from 'react';
+import { type Dispatch, type FormEvent, forwardRef, type SetStateAction, useEffect, useMemo, useState } from 'react';
 
 import { createPortal } from 'react-dom';
 
@@ -6,7 +6,7 @@ import { FiCheck, FiChevronDown, FiChevronUp, FiCopy, FiEdit2, FiPlus, FiTrash, 
 
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
-import Dropdown from '@/components/dropdown';
+import { Dropdown } from '@/components/dropdown';
 
 export type SystemPromptItem = {
 	id: string;
@@ -39,19 +39,20 @@ type SystemPromptDropdownProps = {
 	onRemove: (id: string) => void;
 	onClear: () => void;
 	isOpen: boolean;
-	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	setIsOpen: Dispatch<SetStateAction<boolean>>;
 };
 
 /* -------------------------- Shared Prompt Modal -------------------------- */
 
-const PromptModal: React.FC<{
+type PromptModalProps = {
 	isOpen: boolean;
 	mode: 'add' | 'edit';
 	initialValue?: string;
 	promptsForCopy?: SystemPromptItem[];
 	onClose: () => void;
 	onSave: (value: string) => void;
-}> = ({ isOpen, mode, initialValue = '', promptsForCopy = [], onClose, onSave }) => {
+};
+function PromptModal({ isOpen, mode, initialValue = '', promptsForCopy = [], onClose, onSave }: PromptModalProps) {
 	const [value, setValue] = useState<string>(initialValue);
 	const [copyFromId, setCopyFromId] = useState<string>('');
 
@@ -62,7 +63,7 @@ const PromptModal: React.FC<{
 		}
 	}, [isOpen, initialValue]);
 
-	const save = (e: React.FormEvent) => {
+	const save = (e: FormEvent) => {
 		e.preventDefault();
 		const v = value.trim();
 		if (!v) return;
@@ -159,12 +160,15 @@ const PromptModal: React.FC<{
 		</dialog>,
 		document.body
 	);
-};
+}
 
 /* ------------------------ Main Dropdown Component ------------------------ */
 
-const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptDropdownProps>(
-	({ prompts, selectedPromptId, onSelect, onAdd, onEdit, onRemove, onClear, isOpen, setIsOpen }, detailsRef) => {
+export const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptDropdownProps>(
+	function SystemPromptDropdown(
+		{ prompts, selectedPromptId, onSelect, onAdd, onEdit, onRemove, onClear, isOpen, setIsOpen },
+		detailsRef
+	) {
 		const [isAddOpen, setIsAddOpen] = useState(false);
 		const [isEditOpen, setIsEditOpen] = useState(false);
 		const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -365,6 +369,3 @@ const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptDropdown
 		);
 	}
 );
-
-SystemPromptDropdown.displayName = 'SystemPromptDropdown';
-export default SystemPromptDropdown;

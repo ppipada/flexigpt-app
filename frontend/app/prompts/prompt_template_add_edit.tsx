@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
@@ -26,13 +26,13 @@ interface AddEditPromptTemplateProps {
 
 /* ---------- component ---------- */
 
-const AddEditPromptTemplate: React.FC<AddEditPromptTemplateProps> = ({
+export function AddEditPromptTemplate({
 	isOpen,
 	onClose,
 	onSubmit,
 	initialData,
 	existingTemplates,
-}) => {
+}: AddEditPromptTemplateProps) {
 	/* ---------- form state ---------- */
 	const [formData, setFormData] = useState({
 		displayName: '',
@@ -112,7 +112,7 @@ const AddEditPromptTemplate: React.FC<AddEditPromptTemplateProps> = ({
 	};
 
 	/* ---------- generic change handler ---------- */
-	const handleInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+	const handleInput = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 		const { name, value, type, checked } = e.target as HTMLInputElement;
 		const newVal = type === 'checkbox' ? checked : value;
 
@@ -131,7 +131,7 @@ const AddEditPromptTemplate: React.FC<AddEditPromptTemplateProps> = ({
 	}, [errors, formData]);
 
 	/* ---------- submit ---------- */
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 
 		validateField('displayName', formData.displayName);
@@ -342,6 +342,4 @@ const AddEditPromptTemplate: React.FC<AddEditPromptTemplateProps> = ({
 			</div>
 		</dialog>
 	);
-};
-
-export default AddEditPromptTemplate;
+}

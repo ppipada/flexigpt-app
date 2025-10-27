@@ -1,4 +1,4 @@
-import type { ChangeEvent, FC, KeyboardEvent } from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { createPortal } from 'react-dom';
@@ -13,7 +13,7 @@ import { cleanSearchQuery } from '@/lib/title_utils';
 import { conversationStoreAPI } from '@/apis/baseapi';
 
 import { GroupedDropdown } from '@/components/date_grouped_dropdown';
-import DeleteConfirmationModal from '@/components/delete_confirmation';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation';
 
 const CACHE_EXPIRY_TIME = 60_000; // 1 min
 
@@ -108,7 +108,7 @@ interface SearchDropdownProps {
 	currentConversationId: string;
 }
 
-const SearchDropdown: FC<SearchDropdownProps> = ({
+function SearchDropdown({
 	results,
 	loading,
 	error,
@@ -120,7 +120,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 	query,
 	showSearchAllHintShortQuery,
 	currentConversationId,
-}) => {
+}: SearchDropdownProps) {
 	const scrollRef = useRef<HTMLDivElement>(null);
 
 	const shouldGroup = query.length === 0 || showSearchAllHintShortQuery;
@@ -230,7 +230,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 							}}
 							renderItemExtra={r => (
 								<span className="inline-flex items-center gap-4">
-									{r.matchType === 'message' && <span className="max-w-[12rem] truncate">{r.snippet}</span>}
+									{r.matchType === 'message' && <span className="max-w-48 truncate">{r.snippet}</span>}
 									<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.modifiedAt)}</span>
 									{/* delete (not for active conv) */}
 									{r.searchConversation.id !== currentConversationId && (
@@ -265,7 +265,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 
 										<span className="text-neutral-custom hidden text-xs lg:block">
 											<span className="inline-flex items-center gap-4">
-												{r.matchType === 'message' && <span className="max-w-[12rem] truncate">{r.snippet}</span>}
+												{r.matchType === 'message' && <span className="max-w-48 truncate">{r.snippet}</span>}
 												<span className="whitespace-nowrap">{formatDateAsString(r.searchConversation.modifiedAt)}</span>
 												{/* delete (not for active conv) */}
 												{r.searchConversation.id !== currentConversationId && (
@@ -300,7 +300,7 @@ const SearchDropdown: FC<SearchDropdownProps> = ({
 			)}
 		</div>
 	);
-};
+}
 
 interface ChatSearchProps {
 	onSelectConversation: (item: ConversationSearchItem) => Promise<void>;
@@ -308,7 +308,7 @@ interface ChatSearchProps {
 	currentConversationId: string;
 }
 
-const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, currentConversationId }) => {
+export function ChatSearch({ onSelectConversation, refreshKey, currentConversationId }: ChatSearchProps) {
 	/* state ---------------------------------------------------------- */
 	const [searchState, setSearchState] = useState<SearchState>({
 		query: '',
@@ -726,7 +726,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 				ref={searchDivRef}
 				className="bg-base-100 border-base-300 focus-within:border-base-400 flex items-center rounded-2xl border p-2 transition-colors"
 			>
-				<FiSearch size={20} className="text-neutral-custom mx-3 flex-shrink-0" />
+				<FiSearch size={20} className="text-neutral-custom mx-3 shrink-0" />
 				<input
 					ref={inputRef}
 					type="text"
@@ -747,7 +747,7 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 				dropdownPos &&
 				createPortal(
 					<div
-						className="fixed z-[9999]" // effectively topmost
+						className="fixed z-9999" // effectively topmost
 						style={{
 							top: dropdownPos.top,
 							left: dropdownPos.left,
@@ -786,6 +786,4 @@ const ChatSearch: FC<ChatSearchProps> = ({ onSelectConversation, refreshKey, cur
 			)}
 		</div>
 	);
-};
-
-export default ChatSearch;
+}

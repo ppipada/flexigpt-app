@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, FC, RefObject } from 'react';
+import type { ButtonHTMLAttributes, RefObject } from 'react';
 
 import { FiArrowDownCircle } from 'react-icons/fi';
 
@@ -8,13 +8,13 @@ interface ButtonScrollToBottomProps extends ButtonHTMLAttributes<HTMLButtonEleme
 	show: boolean; // new: control visibility via CSS, not mount/unmount
 }
 
-const ButtonScrollToBottom: FC<ButtonScrollToBottomProps> = ({
+export function ButtonScrollToBottom({
 	scrollContainerRef,
 	iconSize,
 	show,
 	className = '',
 	...props
-}) => {
+}: ButtonScrollToBottomProps) {
 	return (
 		<button
 			aria-label="Scroll To Bottom"
@@ -33,6 +33,4 @@ const ButtonScrollToBottom: FC<ButtonScrollToBottomProps> = ({
 			<FiArrowDownCircle size={iconSize} />
 		</button>
 	);
-};
-
-export default ButtonScrollToBottom;
+}

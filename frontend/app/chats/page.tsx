@@ -1,4 +1,3 @@
-import type { FC } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ModelParams } from '@/spec/aiprovider';
@@ -15,12 +14,12 @@ import { BuildCompletionData, GetCompletionMessage, getQuotedJSON } from '@/apis
 import { conversationStoreAPI } from '@/apis/baseapi';
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
-import ButtonScrollToBottom from '@/components/button_scroll_to_bottom';
-import PageFrame from '@/components/page_frame';
+import { ButtonScrollToBottom } from '@/components/button_scroll_to_bottom';
+import { PageFrame } from '@/components/page_frame';
 
-import InputBox, { type InputBoxHandle } from '@/chats/chat_input_box';
-import ChatNavBar from '@/chats/chat_navbar';
-import ChatMessage from '@/chats/messages/message';
+import { InputBox, type InputBoxHandle } from '@/chats/chat_input_box';
+import { ChatNavBar } from '@/chats/chat_navbar';
+import { ChatMessage } from '@/chats/messages/message';
 
 function initConversation(title = 'New Conversation'): Conversation {
 	return {
@@ -42,7 +41,8 @@ function initConversationMessage(role: ConversationRoleEnum, content: string): C
 	};
 }
 
-const ChatScreen: FC = () => {
+// eslint-disable-next-line no-restricted-exports
+export default function ChatsPage() {
 	const [chat, setChat] = useState<Conversation>(initConversation());
 	const [searchRefreshKey, setSearchRefreshKey] = useState(0);
 
@@ -159,7 +159,7 @@ const ChatScreen: FC = () => {
 			conversationStoreAPI.putMessagesToConversation(updatedChat.id, updatedChat.title, updatedChat.messages);
 		}
 
-		// update local React state
+		// update local state
 		setChat({ ...updatedChat, messages: [...updatedChat.messages] });
 	};
 
@@ -321,7 +321,7 @@ const ChatScreen: FC = () => {
 
 				if (newMsg.responseMessage) {
 					const respMessage = { ...newMsg.responseMessage };
-					// Create FRESH objects so React sees the change even in non-streaming
+					// Create FRESH objects so react sees the change even in non-streaming
 					// mode, where `streamedMessage` never changes.
 					const finalChat: Conversation = {
 						...updatedChatWithConvoMessage,
@@ -498,6 +498,4 @@ const ChatScreen: FC = () => {
 			</div>
 		</PageFrame>
 	);
-};
-
-export default ChatScreen;
+}

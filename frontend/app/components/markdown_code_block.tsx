@@ -1,10 +1,8 @@
-import type { FC } from 'react';
-
 import { useHighlight } from '@/hooks/use_highlight';
 
-import CopyButton from '@/components/copy_button';
-import DownloadButton from '@/components/download_button';
-import MermaidDiagram from '@/components/markdown_mermaid_diagram';
+import { CopyButton } from '@/components/copy_button';
+import { DownloadButton } from '@/components/download_button';
+import { MermaidDiagram } from '@/components/markdown_mermaid_diagram';
 
 interface CodeProps {
 	language: string;
@@ -12,7 +10,7 @@ interface CodeProps {
 	isBusy: boolean;
 }
 
-const CodeBlock: FC<CodeProps> = ({ language, value, isBusy }) => {
+export function CodeBlock({ language, value, isBusy }: CodeProps) {
 	const html = useHighlight(value, language);
 	const showFallback = !value.trim() || html === null || html === '';
 	const isMermaid = language.toLowerCase() === 'mermaid';
@@ -53,6 +51,4 @@ const CodeBlock: FC<CodeProps> = ({ language, value, isBusy }) => {
 			{isMermaid && !isBusy && <MermaidDiagram code={value} />}
 		</>
 	);
-};
-
-export default CodeBlock;
+}

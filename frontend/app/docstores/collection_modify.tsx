@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
 
 import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/spec/command';
 import type { Collection } from '@/spec/docstore';
@@ -12,14 +12,14 @@ interface ModifyCollectionProps {
 	existingCollections: Collection[];
 }
 
-const ModifyCollection: React.FC<ModifyCollectionProps> = ({
+export function ModifyCollection({
 	isOpen,
 	onClose,
 	onSubmit,
 	initialData,
 	docStoreID,
 	existingCollections,
-}) => {
+}: ModifyCollectionProps) {
 	const [formData, setFormData] = useState<Partial<Collection>>({
 		name: '',
 		command: '',
@@ -59,13 +59,13 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 		setErrors(newErrors);
 	};
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target;
 		setFormData(prev => ({ ...prev, [name]: value }));
 		validateField(name, value);
 	};
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 
 		validateField('name', formData.name || '');
@@ -134,6 +134,4 @@ const ModifyCollection: React.FC<ModifyCollectionProps> = ({
 			</div>
 		</dialog>
 	);
-};
-
-export default ModifyCollection;
+}

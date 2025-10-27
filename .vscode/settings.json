@@ -100,5 +100,6 @@
 	"eslint.format.enable": true,
 	"eslint.useFlatConfig": true,
 	"eslint.workingDirectories": ["./frontend"],
-	"eslint.options": { "overrideConfigFile": "./eslint.config.mjs" }
+	"eslint.options": { "overrideConfigFile": "./eslint.config.mjs" },
+	"tailwindCSS.lint.suggestCanonicalClasses": "error"
 }

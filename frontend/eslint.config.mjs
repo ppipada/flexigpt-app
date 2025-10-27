@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// eslint-disable-next-line no-restricted-exports
 export default defineConfig(
 	{ ignores: ['**/dist/**', '**/app/apis/wailsjs/**', '**/.react-router/**'] },
 	js.configs.recommended,
@@ -43,7 +44,6 @@ export default defineConfig(
 					project: './tsconfig.json',
 				},
 			},
-			// Add React settings
 			react: {
 				version: 'detect',
 			},
@@ -55,12 +55,36 @@ export default defineConfig(
 			'no-restricted-imports': [
 				'error',
 				{
+					paths: [
+						{
+							name: 'react',
+							importNames: ['default', 'React'],
+							message: 'Avoid React import directly. Prefer explicitly importing.',
+						},
+						{
+							name: 'react',
+							importNames: ['FC', 'FunctionComponent'],
+							message: 'Avoid FC imports. Prefer explicitly importing or explicitly typing your component props.',
+						},
+					],
 					patterns: [
 						{
 							group: ['./', '../'],
 							message: 'Relative imports are not allowed.',
 						},
 					],
+				},
+			],
+			'no-restricted-exports': [
+				'error',
+				{
+					restrictDefaultExports: {
+						direct: true,
+						named: true,
+						defaultFrom: true,
+						namedFrom: true,
+						namespaceFrom: true,
+					},
 				},
 			],
 			'@typescript-eslint/consistent-type-imports': 'error',

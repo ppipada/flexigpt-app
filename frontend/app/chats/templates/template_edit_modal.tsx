@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import { createPortal } from 'react-dom';
 
@@ -34,19 +34,17 @@ export function TemplateEditModal({
 	const { template, blocks, variablesSchema, preProcessors } = computeEffectiveTemplate(tsenode);
 
 	// Local form state
-	const [displayName, setDisplayName] = React.useState<string>(
+	const [displayName, setDisplayName] = useState<string>(
 		tsenode.overrides?.displayName ?? template?.displayName ?? tsenode.templateSlug
 	);
-	const [description, setDescription] = React.useState<string>(
-		tsenode.overrides?.description ?? template?.description ?? ''
-	);
-	const [tags, setTags] = React.useState<string>((tsenode.overrides?.tags ?? template?.tags ?? []).join(', '));
+	const [description, setDescription] = useState<string>(tsenode.overrides?.description ?? template?.description ?? '');
+	const [tags, setTags] = useState<string>((tsenode.overrides?.tags ?? template?.tags ?? []).join(', '));
 
 	// Editable message blocks (content)
-	const [blockEdits, setBlockEdits] = React.useState(blocks);
+	const [blockEdits, setBlockEdits] = useState(blocks);
 
 	// Variable values
-	const [varValues, setVarValues] = React.useState<Record<string, unknown>>(() => {
+	const [varValues, setVarValues] = useState<Record<string, unknown>>(() => {
 		const vals: Record<string, unknown> = { ...tsenode.variables };
 		for (const v of variablesSchema) {
 			const val = effectiveVarValueLocal(v, tsenode.variables, tsenode.toolStates, preProcessors);
@@ -56,24 +54,24 @@ export function TemplateEditModal({
 	});
 
 	// Preprocessor args and statuses
-	const [toolArgs, setToolArgs] = React.useState<Record<string, Record<string, any>>>(() => {
+	const [toolArgs, setToolArgs] = useState<Record<string, Record<string, any>>>(() => {
 		const curr: Record<string, Record<string, any>> = {};
 		for (const p of preProcessors) {
 			curr[p.id] = tsenode.toolStates?.[p.id]?.args ?? p.args ?? {};
 		}
 		return curr;
 	});
-	const [toolStatuses, setToolStatuses] = React.useState<Record<string, ToolState>>(tsenode.toolStates ?? {});
+	const [toolStatuses, setToolStatuses] = useState<Record<string, ToolState>>(tsenode.toolStates ?? {});
 
 	// Track JSON validity of each tool args editor to safely enable/disable Save
-	const [toolArgsValidity, setToolArgsValidity] = React.useState<Record<string, boolean>>(() => {
+	const [toolArgsValidity, setToolArgsValidity] = useState<Record<string, boolean>>(() => {
 		const init: Record<string, boolean> = {};
 		for (const p of preProcessors) init[p.id] = true;
 		return init;
 	});
 
 	// Rehydrate form when opening or when the node reference changes
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!open) return;
 
 		// Recompute effective template inside the effect to avoid depending on changing references
@@ -413,7 +411,7 @@ function VariableEditorRow({
 	value: unknown;
 	onChange: (val: unknown) => void;
 }) {
-	const id = React.useId();
+	const id = useId();
 	const label = `${varDef.name}${varDef.required ? ' *' : ''}`;
 	const sourceText =
 		varDef.source === VarSource.Static
@@ -570,12 +568,12 @@ function PreProcessorRow({
 	onArgsChange: (next: Record<string, any>) => void;
 	onValidityChange?: (valid: boolean) => void;
 }) {
-	const [argsText, setArgsText] = React.useState<string>(JSON.stringify(args ?? {}, null, 2));
-	const [jsonError, setJsonError] = React.useState<string | undefined>();
-	const debounceRef = React.useRef<number | null>(null);
+	const [argsText, setArgsText] = useState<string>(JSON.stringify(args ?? {}, null, 2));
+	const [jsonError, setJsonError] = useState<string | undefined>();
+	const debounceRef = useRef<number | null>(null);
 
 	// Keep in sync when parent args change
-	React.useEffect(() => {
+	useEffect(() => {
 		if (debounceRef.current) window.clearTimeout(debounceRef.current);
 		debounceRef.current = window.setTimeout(() => {
 			try {
@@ -598,7 +596,7 @@ function PreProcessorRow({
 	}, [argsText, onValidityChange]);
 
 	// Validate as user types so parent can disable Save if invalid
-	React.useEffect(() => {
+	useEffect(() => {
 		try {
 			if (argsText.trim() === '') {
 				setJsonError(undefined);

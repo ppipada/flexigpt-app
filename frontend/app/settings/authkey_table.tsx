@@ -1,4 +1,4 @@
-import { type FC, useState } from 'react';
+import { useState } from 'react';
 
 import { FiCheckCircle, FiDelete, FiEdit2, FiTrash2, FiXCircle } from 'react-icons/fi';
 
@@ -8,8 +8,8 @@ import { isBuiltInProviderAuthKeyName, useBuiltInsReady } from '@/hooks/use_buil
 
 import { settingstoreAPI } from '@/apis/baseapi';
 
-import ActionDeniedAlert from '@/components/action_denied';
-import DeleteConfirmationModal from '@/components/delete_confirmation';
+import { ActionDeniedAlert } from '@/components/action_denied';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation';
 
 interface AuthKeyTableProps {
 	authKeys: AuthKeyMeta[];
@@ -17,7 +17,7 @@ interface AuthKeyTableProps {
 	onChanged: () => void; // parent refetch
 }
 
-const AuthKeyTable: FC<AuthKeyTableProps> = ({ authKeys, onEdit, onChanged }) => {
+export function AuthKeyTable({ authKeys, onEdit, onChanged }: AuthKeyTableProps) {
 	const builtInsReady = useBuiltInsReady();
 	const [deleteTarget, setDeleteTarget] = useState<AuthKeyMeta | null>(null);
 	const [alertMsg, setAlertMsg] = useState<string>('');
@@ -150,6 +150,4 @@ const AuthKeyTable: FC<AuthKeyTableProps> = ({ authKeys, onEdit, onChanged }) =>
 			)}
 		</>
 	);
-};
-
-export default AuthKeyTable;
+}

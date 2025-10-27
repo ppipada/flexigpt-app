@@ -1,5 +1,5 @@
-import type { ChangeEvent, KeyboardEvent } from 'react';
-import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import type { ChangeEvent, Dispatch, FormEvent, KeyboardEvent, RefObject, SetStateAction } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 
 import { FiSend } from 'react-icons/fi';
 
@@ -12,12 +12,12 @@ export interface TextAreaHandle {
 interface TextAreaProps {
 	isBusy: boolean;
 	onSubmit: (text: string) => void;
-	setInputHeight: React.Dispatch<React.SetStateAction<number>>;
+	setInputHeight: Dispatch<SetStateAction<number>>;
 }
 
 // Custom hook for handling form submission on Enter key press.
 function useEnterSubmit(): {
-	formRef: React.RefObject<HTMLFormElement | null>;
+	formRef: RefObject<HTMLFormElement | null>;
 	onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
 } {
 	const formRef = useRef<HTMLFormElement>(null);
@@ -34,7 +34,10 @@ function useEnterSubmit(): {
 	return { formRef, onKeyDown: handleKeyDown };
 }
 
-const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(({ isBusy, onSubmit, setInputHeight }, ref) => {
+export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextArea(
+	{ isBusy, onSubmit, setInputHeight },
+	ref
+) {
 	const [text, setText] = useState<string>('');
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const isSubmittingRef = useRef<boolean>(false);
@@ -50,7 +53,7 @@ const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(({ isBusy, onSubmit, 
 		setText(event.target.value);
 	};
 
-	const handleSubmit = (e?: React.FormEvent) => {
+	const handleSubmit = (e?: FormEvent) => {
 		if (e) e.preventDefault();
 		if (text.trim().length === 0 || isSubmittingRef.current) return;
 
@@ -89,7 +92,7 @@ const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(({ isBusy, onSubmit, 
 
 			<button
 				type="submit"
-				className={`btn btn-md border-none !bg-transparent px-1 shadow-none ${!isSendButtonEnabled || isBusy ? 'btn-disabled' : ''}`}
+				className={`btn btn-md border-none bg-transparent! px-1 shadow-none ${!isSendButtonEnabled || isBusy ? 'btn-disabled' : ''}`}
 				disabled={isBusy || !isSendButtonEnabled}
 				aria-label="Send Message"
 				title="Send Message"
@@ -99,7 +102,3 @@ const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(({ isBusy, onSubmit, 
 		</form>
 	);
 });
-
-TextArea.displayName = 'TextArea';
-
-export default TextArea;

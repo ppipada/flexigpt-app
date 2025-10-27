@@ -1,4 +1,4 @@
-import { type FC, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
@@ -12,7 +12,7 @@ interface AddBundleModalProps {
 	existingSlugs: string[];
 }
 
-const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, existingSlugs }) => {
+export function AddBundleModal({ isOpen, onClose, onSubmit, existingSlugs }: AddBundleModalProps) {
 	const [form, setForm] = useState({
 		slug: '',
 		displayName: '',
@@ -52,7 +52,7 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 		[form, errors]
 	);
 
-	const handleSubmit = (e?: React.FormEvent) => {
+	const handleSubmit = (e?: FormEvent) => {
 		if (e) e.preventDefault();
 
 		validate('slug', form.slug);
@@ -163,6 +163,4 @@ const AddBundleModal: FC<AddBundleModalProps> = ({ isOpen, onClose, onSubmit, ex
 			</div>
 		</dialog>
 	);
-};
-
-export default AddBundleModal;
+}

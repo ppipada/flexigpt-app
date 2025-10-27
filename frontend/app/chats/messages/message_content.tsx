@@ -2,7 +2,7 @@ import { memo, useMemo } from 'react';
 
 import { useDebounce } from '@/hooks/use_debounce';
 
-import EnhancedMarkdown from '@/components/markdown_enhanced';
+import { EnhancedMarkdown } from '@/components/markdown_enhanced';
 
 interface MessageContentProps {
 	messageID: string;
@@ -17,7 +17,19 @@ interface MessageContentProps {
 	renderAsMarkdown?: boolean;
 }
 
-const MessageContent = ({
+function areEqual(prev: MessageContentProps, next: MessageContentProps) {
+	return (
+		prev.content === next.content &&
+		prev.streamedText === next.streamedText &&
+		prev.isStreaming === next.isStreaming &&
+		prev.isBusy === next.isBusy &&
+		prev.isPending === next.isPending &&
+		prev.align === next.align &&
+		prev.renderAsMarkdown === next.renderAsMarkdown
+	);
+}
+
+export const MessageContent = memo(function MessageContent({
 	messageID,
 	content,
 	streamedText = '',
@@ -26,7 +38,7 @@ const MessageContent = ({
 	isPending = false,
 	align,
 	renderAsMarkdown = true,
-}: MessageContentProps) => {
+}: MessageContentProps) {
 	const liveText = isStreaming ? streamedText : content;
 	// Max ~4×/sec.
 	const textToRender = useDebounce(liveText, 128);
@@ -38,7 +50,7 @@ const MessageContent = ({
 		return textToRender.split('\n').map((line, idx) => (
 			<p
 				key={idx}
-				className={`${align} break-words`}
+				className={`${align} wrap-break-word`}
 				style={{ whiteSpace: 'pre-wrap', lineHeight: '1.5', fontSize: '14px' }}
 			>
 				{line || '\u00A0' /* Use non-breaking space for empty lines */}
@@ -69,18 +81,4 @@ const MessageContent = ({
 			/>
 		</div>
 	);
-};
-
-function areEqual(prev: MessageContentProps, next: MessageContentProps) {
-	return (
-		prev.content === next.content &&
-		prev.streamedText === next.streamedText &&
-		prev.isStreaming === next.isStreaming &&
-		prev.isBusy === next.isBusy &&
-		prev.isPending === next.isPending &&
-		prev.align === next.align &&
-		prev.renderAsMarkdown === next.renderAsMarkdown
-	);
-}
-
-export default memo(MessageContent, areEqual);
+}, areEqual);

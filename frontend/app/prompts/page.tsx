@@ -1,11 +1,12 @@
 import { useState } from 'react';
 
-import PageFrame from '@/components/page_frame';
+import { PageFrame } from '@/components/page_frame';
 
-import PromptTemplates from '@/prompts/prompt_bundles_page';
-import Tools from '@/prompts/tool_bundles_page';
+import { PromptBundlesPage } from '@/prompts/prompt_bundles_page';
+import { ToolsPage } from '@/prompts/tool_bundles_page';
 
-const Prompts: React.FC = () => {
+// eslint-disable-next-line no-restricted-exports
+export default function PromptsPage() {
 	const [activeTab, setActiveTab] = useState('prompts');
 
 	return (
@@ -33,12 +34,10 @@ const Prompts: React.FC = () => {
 				</div>
 
 				<div className="mt-16 flex-1 overflow-y-auto overscroll-y-contain">
-					{activeTab === 'prompts' && <PromptTemplates />}
-					{activeTab === 'tools' && <Tools />}
+					{activeTab === 'prompts' && <PromptBundlesPage />}
+					{activeTab === 'tools' && <ToolsPage />}Tools
 				</div>
 			</div>
 		</PageFrame>
 	);
-};
-
-export default Prompts;
+}

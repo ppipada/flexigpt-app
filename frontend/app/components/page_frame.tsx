@@ -1,7 +1,7 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 
 type PageFrameProps = {
-	children: React.ReactNode;
+	children: ReactNode;
 	// When true (default), wraps children in an overflow-auto area.
 	// Set to false for pages that manage their own scrolling (e.g., the Chat 3-row grid).
 	contentScrollable?: boolean;
@@ -12,7 +12,7 @@ type PageFrameProps = {
 	padClassName?: string; // default: "p-2 md:p-3"
 };
 
-export default function PageFrame({
+export function PageFrame({
 	children,
 	contentScrollable = true,
 	className = '',

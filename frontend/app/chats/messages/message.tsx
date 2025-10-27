@@ -1,4 +1,4 @@
-import type { ChangeEvent, FC } from 'react';
+import type { ChangeEvent } from 'react';
 import { memo, useState } from 'react';
 
 import { FiCompass, FiUser } from 'react-icons/fi';
@@ -6,9 +6,9 @@ import { FiCompass, FiUser } from 'react-icons/fi';
 import type { ConversationMessage } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 
-import MessageContent from '@/chats/messages/message_content';
-import MessageEditBox from '@/chats/messages/message_editbox';
-import MessageFooterArea from '@/chats/messages/message_footer';
+import { MessageContent } from '@/chats/messages/message_content';
+import { MessageEditBox } from '@/chats/messages/message_editbox';
+import { MessageFooterArea } from '@/chats/messages/message_footer';
 
 interface ChatMessageProps {
 	message: ConversationMessage;
@@ -19,7 +19,34 @@ interface ChatMessageProps {
 	isBusy: boolean;
 }
 
-const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, streamedMessage, isPending, isBusy }) => {
+function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
+	if (prev.message.details !== next.message.details) {
+		//
+		// We need to check details as parent is updating details in place for previous message
+		return false;
+	}
+	// We only care if THIS row’s streamed text changed.
+	if (prev.streamedMessage !== next.streamedMessage) return false;
+
+	if (prev.isPending !== next.isPending) return false;
+	if (prev.isBusy !== next.isBusy) return false;
+
+	// If the *object reference* for the ConversationMessage changes
+	// react must re-render (content edited, message appended).
+	if (prev.message !== next.message) return false;
+
+	// Everything else is the same: skip.
+	return true;
+}
+
+export const ChatMessage = memo(function ChatMessage({
+	message,
+	onEdit,
+	onResend,
+	streamedMessage,
+	isPending,
+	isBusy,
+}: ChatMessageProps) {
 	const isUser = message.role === ConversationRoleEnum.user;
 	const align = !isUser ? 'items-end text-left' : 'items-start text-left';
 	const leftColSpan = !isUser ? 'col-span-1 lg:col-span-2' : 'col-span-1';
@@ -110,26 +137,4 @@ const ChatMessageInner: FC<ChatMessageProps> = ({ message, onEdit, onResend, str
 			<div className={`${rightColSpan} row-start-2 row-end-2`} />
 		</div>
 	);
-};
-
-function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
-	if (prev.message.details !== next.message.details) {
-		//
-		// We need to check details as parent is updating details in place for previous message
-		return false;
-	}
-	// We only care if THIS row’s streamed text changed.
-	if (prev.streamedMessage !== next.streamedMessage) return false;
-
-	if (prev.isPending !== next.isPending) return false;
-	if (prev.isBusy !== next.isBusy) return false;
-
-	// If the *object reference* for the ConversationMessage changes
-	// React must re-render (content edited, message appended).
-	if (prev.message !== next.message) return false;
-
-	// Everything else is the same: skip.
-	return true;
-}
-
-export default memo(ChatMessageInner, propsAreEqual);
+}, propsAreEqual);

@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { FiAlertCircle, FiHelpCircle, FiUpload, FiX } from 'react-icons/fi';
@@ -15,7 +15,7 @@ import { GenerateRandomNumberString } from '@/lib/encode_decode';
 import { omitManyKeys } from '@/lib/obj_utils';
 import { isValidUrl } from '@/lib/text_utils';
 
-import Dropdown from '@/components/dropdown';
+import { Dropdown } from '@/components/dropdown';
 
 type FormData = {
 	providerName: string;
@@ -41,7 +41,7 @@ const DEFAULT_FORM: FormData = {
 	apiKey: '',
 };
 
-interface Props {
+interface AddEditProviderPresetModalProps {
 	isOpen: boolean;
 	mode: 'add' | 'edit';
 	onClose: () => void;
@@ -58,7 +58,7 @@ interface Props {
 	apiKeyAlreadySet?: boolean;
 }
 
-const AddEditProviderPresetModal: FC<Props> = ({
+export function AddEditProviderPresetModal({
 	isOpen,
 	mode,
 	onClose,
@@ -67,7 +67,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 	allProviderPresets,
 	initialPreset,
 	apiKeyAlreadySet = false,
-}) => {
+}: AddEditProviderPresetModalProps) {
 	const [formData, setFormData] = useState<FormData>(DEFAULT_FORM);
 	const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
@@ -189,7 +189,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 		setErrors(newErrs);
 	};
 
-	const handleInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+	const handleInput = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
 		const { name, value, type, checked } = e.target as HTMLInputElement;
 		const newVal = type === 'checkbox' ? checked : value;
 
@@ -227,7 +227,7 @@ const AddEditProviderPresetModal: FC<Props> = ({
 		return !hasErr && requiredFilled;
 	}, [errors, formData, mode]);
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 
 		/* final validation pass */
@@ -562,6 +562,4 @@ const AddEditProviderPresetModal: FC<Props> = ({
 			</div>
 		</dialog>
 	);
-};
-
-export default AddEditProviderPresetModal;
+}

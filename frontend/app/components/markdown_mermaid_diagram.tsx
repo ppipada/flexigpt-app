@@ -1,4 +1,3 @@
-import type { FC } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import mermaid, { type MermaidConfig } from 'mermaid';
@@ -8,13 +7,13 @@ import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { useIsDarkMermaid } from '@/hooks/use_is_dark_mermaid';
 
-import DownloadButton from '@/components/download_button';
+import { DownloadButton } from '@/components/download_button';
 
 interface MermaidDiagramProps {
 	code: string;
 }
 
-const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
+export function MermaidDiagram({ code }: MermaidDiagramProps) {
 	const isDark = useIsDarkMermaid();
 
 	const inlineDiagramRef = useRef<HTMLDivElement | null>(null);
@@ -225,6 +224,4 @@ const MermaidDiagram: FC<MermaidDiagramProps> = ({ code }) => {
 			</dialog>
 		</>
 	);
-};
-
-export default MermaidDiagram;
+}

@@ -1,4 +1,4 @@
-import type { FC, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useLayoutEffect, useState } from 'react';
 
 const noTransition = () => {
@@ -26,13 +26,13 @@ interface GenericThemeProviderProps {
 	darkTheme: string;
 }
 
-export const GenericThemeProvider: FC<GenericThemeProviderProps> = ({
+export function GenericThemeProvider({
 	children,
 	storageKey,
 	defaultTheme,
 	lightTheme,
 	darkTheme,
-}) => {
+}: GenericThemeProviderProps) {
 	const [theme, _setTheme] = useState<string>(() => {
 		const saved = localStorage.getItem(storageKey);
 		if (saved) return saved; // already persisted – just use it
@@ -76,6 +76,6 @@ export const GenericThemeProvider: FC<GenericThemeProviderProps> = ({
 	};
 
 	return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
-};
+}
 
 export const useTheme = (): ThemeCtx => useContext(ThemeContext);

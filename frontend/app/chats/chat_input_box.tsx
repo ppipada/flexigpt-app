@@ -1,19 +1,19 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, type RefObject, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 import { FiSquare } from 'react-icons/fi';
 
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
-import DeleteConfirmationModal from '@/components/delete_confirmation';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation';
 
-import AssistantContextBar from '@/chats/assitantcontexts/context_bar';
-import EditorArea, { type EditorAreaHandle } from '@/chats/chat_input_editor';
-import CommandTipsBar from '@/chats/chat_input_tips_bar';
+import { AssistantContextBar } from '@/chats/assitantcontexts/context_bar';
+import { EditorArea, type EditorAreaHandle } from '@/chats/chat_input_editor';
+import { CommandTipsBar } from '@/chats/chat_input_tips_bar';
 
 interface InputBoxProps {
 	onSend: (message: string, options: ChatOption) => Promise<void>;
 	isBusy: boolean;
-	abortRef: React.RefObject<AbortController | null>;
+	abortRef: RefObject<AbortController | null>;
 }
 
 export interface InputBoxHandle {
@@ -21,7 +21,7 @@ export interface InputBoxHandle {
 	focus: () => void;
 }
 
-const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(({ onSend, isBusy, abortRef }, ref) => {
+export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function InputBox({ onSend, isBusy, abortRef }, ref) {
 	/* ------------------------------------------------------------------
 	 * Aggregated chat-options (provided by <AssistantContextBar />)
 	 * ------------------------------------------------------------------ */
@@ -115,7 +115,3 @@ const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(({ onSend, isBusy, ab
 		</div>
 	);
 });
-
-InputBox.displayName = 'InputBox';
-
-export default InputBox;

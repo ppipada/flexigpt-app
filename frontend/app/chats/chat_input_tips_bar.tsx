@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { FiChevronDown, FiChevronUp, FiMoreHorizontal } from 'react-icons/fi';
 
@@ -11,7 +11,7 @@ const tipsText: Record<TipKey, string> = {
 		'Collapse to text decouples removes the system prompts, vars, tools. The current user block with placeholders for vars is inserted as plain text',
 };
 
-const CommandTipsBar: React.FC = () => {
+export function CommandTipsBar() {
 	const [isOpen, setIsOpen] = useState(false);
 	const detailsRef = useRef<HTMLDetailsElement>(null);
 
@@ -96,6 +96,4 @@ const CommandTipsBar: React.FC = () => {
 			</div>
 		</div>
 	);
-};
-
-export default CommandTipsBar;
+}

@@ -21,7 +21,7 @@ export function AttachmentBottomBar() {
 
 	return (
 		<div
-			className="border-base-300 bg-base-100/95 supports-[backdrop-filter]:bg-base-100/60 w-full border-t backdrop-blur"
+			className="border-base-300 bg-base-100/95 supports-backdrop-filter:bg-base-100/60 w-full border-t backdrop-blur"
 			data-attachments-bottom-bar
 			aria-label="Attachment"
 		>

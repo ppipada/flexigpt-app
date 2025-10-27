@@ -1,4 +1,4 @@
-import { type FC, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { FiEdit2, FiPlus } from 'react-icons/fi';
 
@@ -6,9 +6,9 @@ import type { ConversationSearchItem } from '@/spec/conversation';
 
 import { sanitizeConversationTitle } from '@/lib/text_utils';
 
-import DownloadButton from '@/components/download_button';
+import { DownloadButton } from '@/components/download_button';
 
-import ChatSearch from '@/chats/chat_search';
+import { ChatSearch } from '@/chats/chat_search';
 
 interface ChatNavBarProps {
 	onNewChat: () => void;
@@ -22,7 +22,7 @@ interface ChatNavBarProps {
 	renameEnabled: boolean;
 }
 
-const ChatNavBar: FC<ChatNavBarProps> = ({
+export function ChatNavBar({
 	onNewChat,
 	onRenameTitle,
 	getConversationForExport,
@@ -32,7 +32,7 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 	searchRefreshKey,
 	disabled,
 	renameEnabled,
-}) => {
+}: ChatNavBarProps) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [draftTitle, setDraftTitle] = useState(chatTitle);
 
@@ -133,6 +133,4 @@ const ChatNavBar: FC<ChatNavBarProps> = ({
 			</div>
 		</div>
 	);
-};
-
-export default ChatNavBar;
+}

@@ -1,5 +1,4 @@
-/* pages/prompt_bundles_page.tsx */
-import { type FC, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
 
@@ -10,19 +9,19 @@ import { getUUIDv7 } from '@/lib/uuid_utils';
 import { promptStoreAPI } from '@/apis/baseapi';
 import { getAllPromptBundles, getAllPromptTemplates } from '@/apis/list_helper';
 
-import ActionDeniedAlert from '@/components/action_denied';
-import DeleteConfirmationModal from '@/components/delete_confirmation';
-import Loader from '@/components/loader';
+import { ActionDeniedAlert } from '@/components/action_denied';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation';
+import { Loader } from '@/components/loader';
 
-import AddBundleModal from '@/prompts/prompt_bundle_add';
-import PromptBundleCard from '@/prompts/prompt_bundle_card';
+import { AddBundleModal } from '@/prompts/prompt_bundle_add';
+import { PromptBundleCard } from '@/prompts/prompt_bundle_card';
 
 interface BundleData {
 	bundle: PromptBundle;
 	templates: PromptTemplate[];
 }
 
-const PromptBundlesPage: FC = () => {
+export function PromptBundlesPage() {
 	const [bundles, setBundles] = useState<BundleData[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -112,7 +111,7 @@ const PromptBundlesPage: FC = () => {
 			{/* header */}
 			<div className="fixed top-12 flex w-full justify-center">
 				<div className="flex w-10/12 items-center justify-between p-0 lg:w-2/3">
-					<h1 className="flex-grow text-center text-xl font-semibold">Prompt Bundles</h1>
+					<h1 className="grow text-center text-xl font-semibold">Prompt Bundles</h1>
 
 					<button
 						className="btn btn-ghost flex items-center rounded-2xl"
@@ -180,6 +179,4 @@ const PromptBundlesPage: FC = () => {
 			/>
 		</div>
 	);
-};
-
-export default PromptBundlesPage;
+}

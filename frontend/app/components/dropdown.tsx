@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { type SyntheticEvent, useRef, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
@@ -36,7 +36,7 @@ export interface DropdownProps<K extends string> {
 }
 
 // A single reusable dropdown that can be used by passing the appropriate config.
-const Dropdown = <K extends string>(props: DropdownProps<K>) => {
+export const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 	const {
 		dropdownItems,
 		selectedKey,
@@ -91,7 +91,7 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 		<details
 			ref={detailsRef}
 			className="dropdown relative w-full"
-			onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
+			onToggle={(event: SyntheticEvent<HTMLElement>) => {
 				setIsOpen((event.currentTarget as HTMLDetailsElement).open);
 			}}
 		>
@@ -130,5 +130,3 @@ const Dropdown = <K extends string>(props: DropdownProps<K>) => {
 		</details>
 	);
 };
-
-export default Dropdown;

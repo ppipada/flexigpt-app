@@ -1,13 +1,12 @@
-import type { FC } from 'react';
 import { useState } from 'react';
 
 import { FiChevronDown, FiChevronUp, FiEdit2, FiRepeat } from 'react-icons/fi';
 
 import { stripCustomMDFences } from '@/lib/text_utils';
 
-import CopyButton from '@/components/copy_button';
+import { CopyButton } from '@/components/copy_button';
 
-import MessageContent from '@/chats/messages/message_content';
+import { MessageContent } from '@/chats/messages/message_content';
 
 interface MessageFooterAreaProps {
 	messageID: string;
@@ -22,7 +21,7 @@ interface MessageFooterAreaProps {
 	onDisableMarkdownChange: (checked: boolean) => void;
 }
 
-const MessageFooterArea: FC<MessageFooterAreaProps> = ({
+export function MessageFooterArea({
 	messageID,
 	isUser,
 	cardCopyContent,
@@ -33,7 +32,7 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 	isBusy,
 	disableMarkdown,
 	onDisableMarkdownChange,
-}) => {
+}: MessageFooterAreaProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
 
 	const toggleExpanded = () => {
@@ -45,7 +44,7 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 			<div className="flex h-8 items-center justify-between">
 				<div className="flex">
 					<button
-						className={`btn btn-sm flex items-center border-none !bg-transparent shadow-none ${isBusy ? 'btn-disabled' : ''}`}
+						className={`btn btn-sm flex items-center border-none bg-transparent! shadow-none ${isBusy ? 'btn-disabled' : ''}`}
 						onClick={toggleExpanded}
 						aria-label="Details"
 						title="Details"
@@ -83,7 +82,7 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 				<div className="flex items-center gap-1">
 					{isUser && (
 						<button
-							className={`btn btn-sm flex items-center border-none !bg-transparent shadow-none ${isBusy ? 'btn-disabled' : ''}`}
+							className={`btn btn-sm flex items-center border-none bg-transparent! shadow-none ${isBusy ? 'btn-disabled' : ''}`}
 							onClick={onResend}
 							aria-label="Resend Message"
 							title="Resend Message"
@@ -94,7 +93,7 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 					)}
 					{isUser && (
 						<button
-							className={`btn btn-sm flex items-center border-none !bg-transparent shadow-none ${isBusy ? 'btn-disabled' : ''}`}
+							className={`btn btn-sm flex items-center border-none bg-transparent! shadow-none ${isBusy ? 'btn-disabled' : ''}`}
 							onClick={onEdit}
 							aria-label="Edit Message"
 							title="Edit Message"
@@ -106,7 +105,7 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 
 					<CopyButton
 						value={stripCustomMDFences(cardCopyContent)}
-						className={`btn btn-sm flex items-center border-none !bg-transparent shadow-none ${isBusy ? 'btn-disabled' : ''}`}
+						className={`btn btn-sm flex items-center border-none bg-transparent! shadow-none ${isBusy ? 'btn-disabled' : ''}`}
 						size={16}
 						disabled={isBusy}
 					/>
@@ -128,6 +127,4 @@ const MessageFooterArea: FC<MessageFooterAreaProps> = ({
 			)}
 		</div>
 	);
-};
-
-export default MessageFooterArea;
+}

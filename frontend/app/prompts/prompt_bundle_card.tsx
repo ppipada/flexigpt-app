@@ -1,4 +1,4 @@
-import { type FC, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp, FiEdit2, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
@@ -8,10 +8,10 @@ import type { PromptBundle, PromptTemplate } from '@/spec/prompt';
 import { promptStoreAPI } from '@/apis/baseapi';
 import { getAllPromptTemplates } from '@/apis/list_helper';
 
-import ActionDeniedAlert from '@/components/action_denied';
-import DeleteConfirmationModal from '@/components/delete_confirmation';
+import { ActionDeniedAlert } from '@/components/action_denied';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation';
 
-import AddEditPromptTemplate from '@/prompts/prompt_template_add_edit';
+import { AddEditPromptTemplate } from '@/prompts/prompt_template_add_edit';
 
 /* ---------- props ---------- */
 
@@ -25,7 +25,7 @@ interface PromptBundleCardProps {
 
 /* ---------- component ---------- */
 
-const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemplatesChange, onBundleDeleted }) => {
+export function PromptBundleCard({ bundle, templates, onTemplatesChange, onBundleDeleted }: PromptBundleCardProps) {
 	/* local state */
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [localTemplates, setLocalTemplates] = useState<PromptTemplate[]>(templates);
@@ -365,6 +365,4 @@ const PromptBundleCard: FC<PromptBundleCardProps> = ({ bundle, templates, onTemp
 			/>
 		</div>
 	);
-};
-
-export default PromptBundleCard;
+}

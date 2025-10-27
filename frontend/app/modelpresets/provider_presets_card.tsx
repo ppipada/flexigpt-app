@@ -1,4 +1,3 @@
-import type { FC } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
 import {
@@ -26,14 +25,14 @@ import { AuthKeyTypeProvider } from '@/spec/setting';
 
 import { modelPresetStoreAPI, settingstoreAPI } from '@/apis/baseapi';
 
-import ActionDeniedAlert from '@/components/action_denied';
-import DeleteConfirmationModal from '@/components/delete_confirmation';
-import Dropdown from '@/components/dropdown';
+import { ActionDeniedAlert } from '@/components/action_denied';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation';
+import { Dropdown } from '@/components/dropdown';
 
-import AddEditModelPresetModal from '@/modelpresets/modelpreset_add_edit';
-import AddEditAuthKeyModal from '@/settings/authkey_add_edit';
+import { AddEditModelPresetModal } from '@/modelpresets/modelpreset_add_edit';
+import { AddEditAuthKeyModal } from '@/settings/authkey_add_edit';
 
-interface Props {
+interface ProviderPresetCardProps {
 	provider: ProviderName;
 	preset: ProviderPreset;
 	defaultProvider: ProviderName;
@@ -46,7 +45,7 @@ interface Props {
 	onRequestEdit: (provider: ProviderName) => void; // open edit-modal
 }
 
-const ProviderPresetCard: FC<Props> = ({
+export function ProviderPresetCard({
 	provider,
 	preset,
 	defaultProvider,
@@ -56,7 +55,7 @@ const ProviderPresetCard: FC<Props> = ({
 	onProviderPresetChange,
 	onProviderDelete,
 	onRequestEdit,
-}) => {
+}: ProviderPresetCardProps) {
 	/* ───────── local ui-state ───────── */
 	const [expanded, setExpanded] = useState(false);
 
@@ -580,6 +579,4 @@ const ProviderPresetCard: FC<Props> = ({
 			)}
 		</div>
 	);
-};
-
-export default ProviderPresetCard;
+}

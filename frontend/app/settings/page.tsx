@@ -1,4 +1,3 @@
-import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
@@ -7,14 +6,15 @@ import { type AuthKeyMeta } from '@/spec/setting';
 
 import { settingstoreAPI } from '@/apis/baseapi';
 
-import DownloadButton from '@/components/download_button';
-import PageFrame from '@/components/page_frame';
+import { DownloadButton } from '@/components/download_button';
+import { PageFrame } from '@/components/page_frame';
 
-import AddEditAuthKeyModal from '@/settings/authkey_add_edit';
-import AuthKeyTable from '@/settings/authkey_table';
+import { AddEditAuthKeyModal } from '@/settings/authkey_add_edit';
+import { AuthKeyTable } from '@/settings/authkey_table';
 import { ThemeSelector } from '@/settings/theme';
 
-const SettingsPage: FC = () => {
+// eslint-disable-next-line no-restricted-exports
+export default function SettingsPage() {
 	const [authKeys, setAuthKeys] = useState<AuthKeyMeta[]>([]);
 	const [refreshToggle, setRefresh] = useState(false); // helper to force list refresh
 
@@ -98,6 +98,4 @@ const SettingsPage: FC = () => {
 			</div>
 		</PageFrame>
 	);
-};
-
-export default SettingsPage;
+}

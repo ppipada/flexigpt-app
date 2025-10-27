@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
 
 import type { DocStore } from '@/spec/docstore';
 
@@ -10,7 +10,7 @@ interface ModifyStoreProps {
 	existingDocStores: DocStore[];
 }
 
-const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit, initialData, existingDocStores }) => {
+export function ModifyDocStore({ isOpen, onClose, onSubmit, initialData, existingDocStores }: ModifyStoreProps) {
 	const [formData, setFormData] = useState<Partial<DocStore>>({
 		name: '',
 		url: '',
@@ -73,13 +73,13 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 		setErrors(newErrors);
 	};
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+	const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 		const { name, value } = e.target;
 		setFormData(prev => ({ ...prev, [name]: value }));
 		validateFields(name, value);
 	};
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 
 		// Validate all fields before submission
@@ -178,6 +178,4 @@ const ModifyDocStore: React.FC<ModifyStoreProps> = ({ isOpen, onClose, onSubmit,
 			</div>
 		</dialog>
 	);
-};
-
-export default ModifyDocStore;
+}

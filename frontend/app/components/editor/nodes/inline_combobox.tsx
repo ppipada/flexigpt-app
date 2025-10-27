@@ -1,4 +1,18 @@
-import * as React from 'react';
+import {
+	type ComponentProps,
+	createContext,
+	forwardRef,
+	type HTMLAttributes,
+	type ReactNode,
+	type RefObject,
+	startTransition,
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from 'react';
 
 import {
 	Combobox,
@@ -29,16 +43,14 @@ type FilterFn = (
 interface InlineComboboxContextValue {
 	filter: FilterFn | false;
 	inputProps: UseComboboxInputResult['props'];
-	inputRef: React.RefObject<HTMLInputElement | null>;
+	inputRef: RefObject<HTMLInputElement | null>;
 	removeInput: UseComboboxInputResult['removeInput'];
 	showTrigger: boolean;
 	trigger: string;
 	setHasEmpty: (hasEmpty: boolean) => void;
 }
 
-const InlineComboboxContext = React.createContext<InlineComboboxContextValue>(
-	null as unknown as InlineComboboxContextValue
-);
+const InlineComboboxContext = createContext<InlineComboboxContextValue>(null as unknown as InlineComboboxContextValue);
 
 const defaultFilter: FilterFn = ({ group, keywords = [], label, value }, search) => {
 	const uniqueTerms = new Set([value, ...keywords, group, label].filter(Boolean));
@@ -47,7 +59,7 @@ const defaultFilter: FilterFn = ({ group, keywords = [], label, value }, search)
 };
 
 interface InlineComboboxProps {
-	children: React.ReactNode;
+	children: ReactNode;
 	element: TElement;
 	trigger: string;
 	filter?: FilterFn | false;
@@ -57,7 +69,7 @@ interface InlineComboboxProps {
 	setValue?: (value: string) => void;
 }
 
-const InlineCombobox = ({
+export const InlineCombobox = ({
 	children,
 	element,
 	filter = defaultFilter,
@@ -68,14 +80,14 @@ const InlineCombobox = ({
 	value: valueProp,
 }: InlineComboboxProps) => {
 	const editor = useEditorRef();
-	const inputRef = React.useRef<HTMLInputElement>(null);
+	const inputRef = useRef<HTMLInputElement>(null);
 	const cursorState = useHTMLInputCursorState(inputRef);
 
-	const [valueState, setValueState] = React.useState('');
+	const [valueState, setValueState] = useState('');
 	const hasValueProp = valueProp !== undefined;
 	const value = hasValueProp ? valueProp : valueState;
 
-	const setValue = React.useCallback(
+	const setValue = useCallback(
 		(newValue: string) => {
 			setValueProp?.(newValue);
 
@@ -90,9 +102,9 @@ const InlineCombobox = ({
 	 * Track the point just before the input element so we know where to
 	 * insertText if the combobox closes due to a selection change.
 	 */
-	const insertPoint = React.useRef<Point | null>(null);
+	const insertPoint = useRef<Point | null>(null);
 
-	React.useEffect(() => {
+	useEffect(() => {
 		const path = editor.api.findPath(element);
 
 		if (!path) return;
@@ -128,9 +140,9 @@ const InlineCombobox = ({
 		},
 	});
 
-	const [hasEmpty, setHasEmpty] = React.useState(false);
+	const [hasEmpty, setHasEmpty] = useState(false);
 
-	const contextValue: InlineComboboxContextValue = React.useMemo(
+	const contextValue: InlineComboboxContextValue = useMemo(
 		() => ({
 			filter,
 			inputProps,
@@ -146,7 +158,7 @@ const InlineCombobox = ({
 	const store = useComboboxStore({
 		// open: ,
 		setValue: newValue => {
-			React.startTransition(() => {
+			startTransition(() => {
 				setValue(newValue);
 			});
 		},
@@ -158,7 +170,7 @@ const InlineCombobox = ({
 	 * If there is no active ID and the list of items changes, select the first
 	 * item.
 	 */
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!store.getState().activeId) {
 			store.setActiveId(store.first());
 		}
@@ -173,9 +185,9 @@ const InlineCombobox = ({
 	);
 };
 
-const InlineComboboxInput = React.forwardRef<HTMLInputElement, React.HTMLAttributes<HTMLInputElement>>(
-	({ className, ...props }, propRef) => {
-		const { inputProps, inputRef: contextRef, showTrigger, trigger } = React.useContext(InlineComboboxContext);
+export const InlineComboboxInput = forwardRef<HTMLInputElement, HTMLAttributes<HTMLInputElement>>(
+	function InlineComboboxInput({ className, ...props }, propRef) {
+		const { inputProps, inputRef: contextRef, showTrigger, trigger } = useContext(InlineComboboxContext);
 
 		const store = useComboboxContext();
 		if (!store) {
@@ -215,9 +227,7 @@ const InlineComboboxInput = React.forwardRef<HTMLInputElement, React.HTMLAttribu
 	}
 );
 
-InlineComboboxInput.displayName = 'InlineComboboxInput';
-
-const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) => {
+export const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) => {
 	// Portal prevents CSS from leaking into popover
 	return (
 		<Portal>
@@ -255,7 +265,7 @@ const comboboxItemVariants = cva(
 	}
 );
 
-const InlineComboboxItem = ({
+export const InlineComboboxItem = ({
 	className,
 	focusEditor = true,
 	group,
@@ -272,7 +282,7 @@ const InlineComboboxItem = ({
 	Required<Pick<ComboboxItemProps, 'value'>>) => {
 	const { value } = props;
 
-	const { filter, removeInput } = React.useContext(InlineComboboxContext);
+	const { filter, removeInput } = useContext(InlineComboboxContext);
 
 	const store = useComboboxContext();
 
@@ -283,7 +293,7 @@ const InlineComboboxItem = ({
 	// Optimization: Do not subscribe to value if filter is false
 	const search = filter && useStoreState(store, 'value');
 
-	const visible = React.useMemo(
+	const visible = useMemo(
 		() => !filter || filter({ group, keywords, label, value }, search as string),
 		[filter, group, keywords, label, value, search]
 	);
@@ -302,15 +312,15 @@ const InlineComboboxItem = ({
 	);
 };
 
-const InlineComboboxEmpty = ({ children, className }: React.HTMLAttributes<HTMLDivElement>) => {
-	const { setHasEmpty } = React.useContext(InlineComboboxContext);
+export const InlineComboboxEmpty = ({ children, className }: HTMLAttributes<HTMLDivElement>) => {
+	const { setHasEmpty } = useContext(InlineComboboxContext);
 	const store = useComboboxContext();
 	if (!store) {
 		throw new Error('Combobox must be wrapped in ComboboxProvider');
 	}
 	const items = useStoreState(store, 'items');
 
-	React.useEffect(() => {
+	useEffect(() => {
 		setHasEmpty(true);
 
 		return () => {
@@ -327,9 +337,12 @@ const InlineComboboxEmpty = ({ children, className }: React.HTMLAttributes<HTMLD
 	);
 };
 
-const InlineComboboxRow = ComboboxRow;
+/**
+ * @public
+ */
+export const InlineComboboxRow = ComboboxRow;
 
-function InlineComboboxGroup({ className, ...props }: React.ComponentProps<typeof ComboboxGroup>) {
+export function InlineComboboxGroup({ className, ...props }: ComponentProps<typeof ComboboxGroup>) {
 	return (
 		<ComboboxGroup
 			{...props}
@@ -338,7 +351,10 @@ function InlineComboboxGroup({ className, ...props }: React.ComponentProps<typeo
 	);
 }
 
-function InlineComboboxGroupLabel({ className, ...props }: React.ComponentProps<typeof ComboboxGroupLabel>) {
+/**
+ * @public
+ */
+export function InlineComboboxGroupLabel({ className, ...props }: ComponentProps<typeof ComboboxGroupLabel>) {
 	return (
 		<ComboboxGroupLabel
 			{...props}
@@ -346,20 +362,3 @@ function InlineComboboxGroupLabel({ className, ...props }: React.ComponentProps<
 		/>
 	);
 }
-
-export {
-	InlineCombobox,
-	InlineComboboxContent,
-	InlineComboboxEmpty,
-	InlineComboboxGroup,
-	/**
-	 * @public
-	 */
-	InlineComboboxGroupLabel,
-	InlineComboboxInput,
-	InlineComboboxItem,
-	/**
-	 * @public
-	 */
-	InlineComboboxRow,
-};

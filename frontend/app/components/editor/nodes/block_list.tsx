@@ -1,4 +1,5 @@
-import React from 'react';
+// eslint-disable-next-line no-restricted-imports
+import type { FC } from 'react';
 
 import { isOrderedList } from '@platejs/list';
 import { useTodoListElement, useTodoListElementState } from '@platejs/list/react';
@@ -13,8 +14,8 @@ function cx(...classes: Array<string | undefined | null | false>) {
 const config: Record<
 	string,
 	{
-		Li: React.FC<PlateElementProps>;
-		Marker: React.FC<PlateElementProps>;
+		Li: FC<PlateElementProps>;
+		Marker: FC<PlateElementProps>;
 	}
 > = {
 	todo: {
@@ -28,7 +29,10 @@ export const BlockList: RenderNodeWrapper = props => {
 	return props => <List {...props} />;
 };
 
-function List(props: PlateElementProps) {
+/**
+ * @public
+ */
+export function List(props: PlateElementProps) {
 	const { attributes } = props;
 	const { listStart, listStyleType } = props.element as TListElement;
 	const { Li, Marker } = config[listStyleType] ?? {};
@@ -53,7 +57,10 @@ function List(props: PlateElementProps) {
 	);
 }
 
-function TodoMarker(props: PlateElementProps) {
+/**
+ * @public
+ */
+export function TodoMarker(props: PlateElementProps) {
 	const state = useTodoListElementState({ element: props.element });
 	const { checkboxProps } = useTodoListElement(state);
 	const readOnly = useReadOnly();
@@ -72,7 +79,10 @@ function TodoMarker(props: PlateElementProps) {
 	);
 }
 
-function TodoLi(props: PlateElementProps) {
+/**
+ * @public
+ */
+export function TodoLi(props: PlateElementProps) {
 	const isChecked =
 		typeof props.element === 'object' &&
 		'checked' in props.element &&

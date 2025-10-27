@@ -1,4 +1,4 @@
-import React from 'react';
+import { useMemo } from 'react';
 
 import { FiZap } from 'react-icons/fi';
 
@@ -15,7 +15,7 @@ import { insertTemplateSelectionNode } from '@/chats/templates/template_editor_u
 export function TemplateSlashInputElement(props: Omit<Parameters<typeof SlashInputElement>[0], 'trigger' | 'groups'>) {
 	const { data, loading } = usePromptTemplates();
 
-	const groups = React.useMemo(() => {
+	const groups = useMemo(() => {
 		if (loading) return [];
 		return [
 			{

@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-exports */
 import type { Config } from '@react-router/dev/config';
 
 export default {

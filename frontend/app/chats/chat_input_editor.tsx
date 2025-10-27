@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
 import { FiSend } from 'react-icons/fi';
 
@@ -51,7 +51,7 @@ interface EditorAreaProps {
 	onSubmit: (text: string) => Promise<void>;
 }
 
-const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSubmit }, ref) => {
+export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function EditorArea({ isBusy, onSubmit }, ref) {
 	const editor = usePlateEditor({
 		plugins: [
 			SingleBlockPlugin,
@@ -202,7 +202,7 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 		}
 	}, [editor, docVersion]);
 
-	const handleSubmit = (e?: React.FormEvent) => {
+	const handleSubmit = (e?: FormEvent) => {
 		if (e) e.preventDefault();
 		if (!isSendButtonEnabled || isSubmittingRef.current) {
 			// If invalid, flash and focus first pending pill
@@ -342,7 +342,3 @@ const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(({ isBusy, onSu
 		</form>
 	);
 });
-
-EditorArea.displayName = 'EditorArea';
-
-export default EditorArea;

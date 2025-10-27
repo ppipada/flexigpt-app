@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import * as React from 'react';
+import { type KeyboardEvent, type MouseEvent, useMemo, useState } from 'react';
 
 import { FiAlertTriangle, FiCheckCircle, FiEdit2, FiLoader, FiPlay, FiRefreshCcw } from 'react-icons/fi';
 
@@ -74,8 +74,8 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 	const isMissing = isRequired && req.requiredVariables.includes(el.name);
 
 	// Local inline edit state
-	const [isEditing, setIsEditing] = React.useState(false);
-	const [refreshTick, setRefreshTick] = React.useState(0);
+	const [isEditing, setIsEditing] = useState(false);
+	const [refreshTick, setRefreshTick] = useState(0);
 
 	// Ensure badges re-render when variables updated from modal or elsewhere
 	useTemplateVarsUpdatedForSelection(el.selectionID, () => {
@@ -83,7 +83,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 	});
 
 	// Current effective value for display and starting edit
-	const currentValue = React.useMemo(() => {
+	const currentValue = useMemo(() => {
 		if (!tsenode || !varDef) return undefined;
 		const v = effectiveVarValueLocal(varDef, tsenode.variables ?? {}, tsenode.toolStates, preProcessors);
 		return v;
@@ -128,13 +128,13 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 	}
 
 	// If this variable is produced by a preprocessor (saveAs === var name), track its tool status
-	const producingPreproc = React.useMemo(() => preProcessors.find(p => p.saveAs === el.name), [preProcessors, el.name]);
-	const toolStatus = React.useMemo(() => {
+	const producingPreproc = useMemo(() => preProcessors.find(p => p.saveAs === el.name), [preProcessors, el.name]);
+	const toolStatus = useMemo(() => {
 		if (!tsenode || !producingPreproc) return undefined;
 		const t = req.toolsToRun.find(tt => tt.id === producingPreproc.id);
 		return t?.status;
 	}, [req.toolsToRun, tsenode, producingPreproc?.id]);
-	const toolError = React.useMemo(() => {
+	const toolError = useMemo(() => {
 		if (!tsenode || !producingPreproc) return undefined;
 		return tsenode.toolStates?.[producingPreproc.id]?.error;
 	}, [tsenode?.toolStates, producingPreproc?.id, refreshTick]);
@@ -150,7 +150,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 		const type = varDef?.type ?? VarType.String;
 
 		const commonProps = {
-			onKeyDown: (e: React.KeyboardEvent) => {
+			onKeyDown: (e: KeyboardEvent) => {
 				e.stopPropagation();
 				if (e.key === 'Escape') {
 					e.preventDefault();
@@ -173,7 +173,7 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 					}
 				}
 			},
-			onMouseDown: (e: React.MouseEvent) => {
+			onMouseDown: (e: MouseEvent) => {
 				// keep focus inside input
 				e.stopPropagation();
 			},

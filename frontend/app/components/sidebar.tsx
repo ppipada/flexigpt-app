@@ -11,7 +11,7 @@ interface SidebarProps {
 	children: ReactNode;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ children }) => {
+export function Sidebar({ children }: SidebarProps) {
 	const [isDrawerOpen, setDrawerOpen] = useState(false);
 	const toggle = () => {
 		setDrawerOpen(!isDrawerOpen);
@@ -90,6 +90,4 @@ const Sidebar: React.FC<SidebarProps> = ({ children }) => {
 			</div>
 		</div>
 	);
-};
-
-export default Sidebar;
+}

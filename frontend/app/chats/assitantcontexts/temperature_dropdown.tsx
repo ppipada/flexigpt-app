@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useState } from 'react';
+import { type Dispatch, forwardRef, type SetStateAction, type SyntheticEvent, useEffect, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
@@ -11,11 +11,11 @@ type TemperatureDropdownProps = {
 	temperature: number;
 	setTemperature: (t: number) => void;
 	isOpen: boolean;
-	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	setIsOpen: Dispatch<SetStateAction<boolean>>;
 };
 
-const TemperatureDropdown = forwardRef<HTMLDetailsElement, TemperatureDropdownProps>(
-	({ temperature, setTemperature, isOpen, setIsOpen }, detailsRef) => {
+export const TemperatureDropdown = forwardRef<HTMLDetailsElement, TemperatureDropdownProps>(
+	function TemperatureDropdown({ temperature, setTemperature, isOpen, setIsOpen }, detailsRef) {
 		// Local state for the custom text input (string-based).
 		const [customTemp, setCustomTemp] = useState(temperature.toString());
 
@@ -46,7 +46,7 @@ const TemperatureDropdown = forwardRef<HTMLDetailsElement, TemperatureDropdownPr
 				<details
 					ref={detailsRef}
 					className="dropdown dropdown-top dropdown-end w-full justify-center"
-					onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
+					onToggle={(event: SyntheticEvent<HTMLElement>) => {
 						setIsOpen((event.currentTarget as HTMLDetailsElement).open);
 					}}
 					open={isOpen}
@@ -113,6 +113,3 @@ const TemperatureDropdown = forwardRef<HTMLDetailsElement, TemperatureDropdownPr
 		);
 	}
 );
-
-TemperatureDropdown.displayName = 'TemperatureDropdown';
-export default TemperatureDropdown;

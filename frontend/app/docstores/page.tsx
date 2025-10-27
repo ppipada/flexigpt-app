@@ -5,11 +5,11 @@ import { FiEdit2, FiFolder, FiPlus, FiServer, FiTrash2 } from 'react-icons/fi';
 import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/spec/command';
 import type { Collection, DocStore } from '@/spec/docstore';
 
-import DeleteConfirmationModal from '@/components/delete_confirmation';
-import PageFrame from '@/components/page_frame';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation';
+import { PageFrame } from '@/components/page_frame';
 
-import ModifyCollection from '@/docstores/collection_modify';
-import ModifyDocStore from '@/docstores/docstore_modify';
+import { ModifyCollection } from '@/docstores/collection_modify';
+import { ModifyDocStore } from '@/docstores/docstore_modify';
 
 // Mock function to fetch docStores
 const fetchDocStores = async (): Promise<DocStore[]> => {
@@ -40,7 +40,8 @@ const fetchDocStores = async (): Promise<DocStore[]> => {
 	];
 };
 
-const DocumentStores: React.FC = () => {
+// eslint-disable-next-line no-restricted-exports
+export default function DocumentStoresPage() {
 	// State declarations
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -389,6 +390,4 @@ const DocumentStores: React.FC = () => {
 			</div>
 		</PageFrame>
 	);
-};
-
-export default DocumentStores;
+}

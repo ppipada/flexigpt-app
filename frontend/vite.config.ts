@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-exports */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { reactRouter } from '@react-router/dev/vite';
 import tailwindcss from '@tailwindcss/vite';

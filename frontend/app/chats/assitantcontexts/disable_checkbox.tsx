@@ -1,14 +1,14 @@
-import type { FC } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 
 type DisablePreviousMessagesCheckboxProps = {
 	disablePreviousMessages: boolean;
-	setDisablePreviousMessages: React.Dispatch<React.SetStateAction<boolean>>;
+	setDisablePreviousMessages: Dispatch<SetStateAction<boolean>>;
 };
 
-const DisablePreviousMessagesCheckbox: FC<DisablePreviousMessagesCheckboxProps> = ({
+export function DisablePreviousMessagesCheckbox({
 	disablePreviousMessages,
 	setDisablePreviousMessages,
-}) => {
+}: DisablePreviousMessagesCheckboxProps) {
 	return (
 		<div className="flex w-full items-center justify-center">
 			<label className="ml-2 flex space-x-2 truncate" title="Send only the new message to AI">
@@ -25,6 +25,4 @@ const DisablePreviousMessagesCheckbox: FC<DisablePreviousMessagesCheckboxProps> 
 			</label>
 		</div>
 	);
-};
-
-export default DisablePreviousMessagesCheckbox;
+}

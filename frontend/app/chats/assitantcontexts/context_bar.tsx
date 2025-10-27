@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { FiSliders } from 'react-icons/fi';
 
@@ -8,23 +8,24 @@ import { useCloseDetails } from '@/hooks/use_close_details';
 
 import { type ChatOption, DefaultChatOptions, getChatInputOptions } from '@/apis/chatoption_helper';
 
-import AdvancedParamsModal from '@/chats/assitantcontexts/advanced_params_modal';
-import DisablePreviousMessagesCheckbox from '@/chats/assitantcontexts/disable_checkbox';
-import ModelDropdown from '@/chats/assitantcontexts/model_dropdown';
-import ReasoningTokensDropdown, { HybridReasoningCheckbox } from '@/chats/assitantcontexts/reasoning_hybrid';
-import SingleReasoningDropdown from '@/chats/assitantcontexts/reasoning_levels_dropdown';
-import SystemPromptDropdown, {
+import { AdvancedParamsModal } from '@/chats/assitantcontexts/advanced_params_modal';
+import { DisablePreviousMessagesCheckbox } from '@/chats/assitantcontexts/disable_checkbox';
+import { ModelDropdown } from '@/chats/assitantcontexts/model_dropdown';
+import { HybridReasoningCheckbox, ReasoningTokensDropdown } from '@/chats/assitantcontexts/reasoning_hybrid';
+import { SingleReasoningDropdown } from '@/chats/assitantcontexts/reasoning_levels_dropdown';
+import {
 	createSystemPromptItem,
+	SystemPromptDropdown,
 	type SystemPromptItem,
 } from '@/chats/assitantcontexts/system_prompt';
-import TemperatureDropdown from '@/chats/assitantcontexts/temperature_dropdown';
+import { TemperatureDropdown } from '@/chats/assitantcontexts/temperature_dropdown';
 import { useSetSystemPromptForChat } from '@/chats/events/set_system_prompt';
 
 type AssistantContextBarProps = {
 	onOptionsChange: (options: ChatOption) => void;
 };
 
-const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChange }) => {
+export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProps) {
 	const [selectedModel, setSelectedModel] = useState<ChatOption>(DefaultChatOptions);
 	const [allOptions, setAllOptions] = useState<ChatOption[]>([DefaultChatOptions]);
 
@@ -308,6 +309,4 @@ const AssistantContextBar: React.FC<AssistantContextBarProps> = ({ onOptionsChan
 			)}
 		</div>
 	);
-};
-
-export default AssistantContextBar;
+}

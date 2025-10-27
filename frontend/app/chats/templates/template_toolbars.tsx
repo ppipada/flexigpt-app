@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState } from 'react';
 
 import { NodeApi, type Path, type TElement, type TNode } from 'platejs';
 import { type PlateEditor, useEditorRef } from 'platejs/react';
@@ -200,12 +200,12 @@ export function TemplateToolbars() {
 	});
 
 	// Single-open modal keyed by selection path
-	const [openId, setOpenId] = React.useState<string | null>(null);
+	const [openId, setOpenId] = useState<string | null>(null);
 
 	if (items.length === 0) return null;
 
 	return (
-		<div className="border-base-300 bg-base-100/95 supports-[backdrop-filter]:bg-base-100/60 sticky top-0 left-0 w-full border-b backdrop-blur">
+		<div className="border-base-300 bg-base-100/95 supports-backdrop-filter:bg-base-100/60 sticky top-0 left-0 w-full border-b backdrop-blur">
 			{items.map(({ id, sel, nodeWithPath }) => {
 				const [tsNode, tsPath] = nodeWithPath ?? [];
 				const flashing = flashAll;

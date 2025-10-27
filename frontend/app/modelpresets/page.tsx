@@ -1,4 +1,3 @@
-import type { FC } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
@@ -9,21 +8,22 @@ import { AuthKeyTypeProvider } from '@/spec/setting';
 import { modelPresetStoreAPI, settingstoreAPI } from '@/apis/baseapi';
 import { getAllProviderPresetsMap } from '@/apis/list_helper';
 
-import ActionDeniedAlert from '@/components/action_denied';
-import DownloadButton from '@/components/download_button';
-import Dropdown, { type DropdownItem } from '@/components/dropdown';
-import Loader from '@/components/loader';
-import PageFrame from '@/components/page_frame';
+import { ActionDeniedAlert } from '@/components/action_denied';
+import { DownloadButton } from '@/components/download_button';
+import { Dropdown, type DropdownItem } from '@/components/dropdown';
+import { Loader } from '@/components/loader';
+import { PageFrame } from '@/components/page_frame';
 
-import AddEditProviderPresetModal from '@/modelpresets/provider_add_edit';
-import ProviderPresetCard from '@/modelpresets/provider_presets_card';
+import { AddEditProviderPresetModal } from '@/modelpresets/provider_add_edit';
+import { ProviderPresetCard } from '@/modelpresets/provider_presets_card';
 
 // put it somewhere near the top of the file
 const sortByDisplayName = ([, a]: [string, ProviderPreset], [, b]: [string, ProviderPreset]) =>
 	a.displayName.localeCompare(b.displayName);
 /* -------------------------------------------------------------------------- */
 
-const ModelPresetPage: FC = () => {
+// eslint-disable-next-line no-restricted-exports
+export default function ModelPresetsPage() {
 	/* ----------------------------- local states ---------------------------- */
 	const [defaultProvider, setDefaultProvider] = useState<ProviderName | undefined>(undefined);
 	const [providerPresets, setProviderPresets] = useState<Record<ProviderName, ProviderPreset>>({});
@@ -370,6 +370,4 @@ const ModelPresetPage: FC = () => {
 			</div>
 		</PageFrame>
 	);
-};
-
-export default ModelPresetPage;
+}

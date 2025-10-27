@@ -1,5 +1,5 @@
 // DownloadButton.tsx
-import { type ButtonHTMLAttributes, type FC, useState } from 'react';
+import { type ButtonHTMLAttributes, useState } from 'react';
 
 import { FiDownload } from 'react-icons/fi';
 
@@ -22,14 +22,14 @@ interface DownloadButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	isBinary?: boolean; // Indicates if content is binary (e.g., images)
 }
 
-const DownloadButton: FC<DownloadButtonProps> = ({
+export function DownloadButton({
 	language = '',
 	valueFetcher,
 	size,
 	fileprefix = 'file',
 	isBinary = false,
 	...buttonProps
-}) => {
+}: DownloadButtonProps) {
 	const [downloading, setDownloading] = useState(false);
 
 	const downloadAsFile = async () => {
@@ -94,6 +94,4 @@ const DownloadButton: FC<DownloadButtonProps> = ({
 			<FiDownload size={size} />
 		</button>
 	);
-};
-
-export default DownloadButton;
+}

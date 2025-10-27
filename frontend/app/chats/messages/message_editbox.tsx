@@ -1,4 +1,4 @@
-import type { ChangeEvent, FC, KeyboardEvent } from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { FiSend, FiX } from 'react-icons/fi';
@@ -12,7 +12,7 @@ interface MessageEditBoxProps {
 
 const MAX_HEIGHT = 420;
 
-const MessageEditBox: FC<MessageEditBoxProps> = ({ editText, onTextChange, onSubmit, onDiscard }) => {
+export function MessageEditBox({ editText, onTextChange, onSubmit, onDiscard }: MessageEditBoxProps) {
 	const [isSendButtonEnabled, setIsSendButtonEnabled] = useState<boolean>(editText.trim().length > 0);
 	const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -87,6 +87,4 @@ const MessageEditBox: FC<MessageEditBoxProps> = ({ editText, onTextChange, onSub
 			</div>
 		</div>
 	);
-};
-
-export default MessageEditBox;
+}

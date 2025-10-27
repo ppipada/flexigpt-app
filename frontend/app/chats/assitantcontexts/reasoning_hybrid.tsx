@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useState } from 'react';
+import { type Dispatch, forwardRef, type SetStateAction, type SyntheticEvent, useEffect, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
@@ -34,11 +34,11 @@ type ReasoningTokensDropdownProps = {
 	tokens: number;
 	setTokens: (tokens: number) => void;
 	isOpen: boolean;
-	setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	setIsOpen: Dispatch<SetStateAction<boolean>>;
 };
 
-const ReasoningTokensDropdown = forwardRef<HTMLDetailsElement, ReasoningTokensDropdownProps>(
-	({ tokens, setTokens, isOpen, setIsOpen }, detailsRef) => {
+export const ReasoningTokensDropdown = forwardRef<HTMLDetailsElement, ReasoningTokensDropdownProps>(
+	function ReasoningTokensDropdown({ tokens, setTokens, isOpen, setIsOpen }, detailsRef) {
 		const [customTokens, setCustomTokens] = useState<string>(String(tokens));
 
 		useEffect(() => {
@@ -66,7 +66,7 @@ const ReasoningTokensDropdown = forwardRef<HTMLDetailsElement, ReasoningTokensDr
 				<details
 					ref={detailsRef}
 					className="dropdown dropdown-top dropdown-end w-full justify-center"
-					onToggle={(event: React.SyntheticEvent<HTMLElement>) => {
+					onToggle={(event: SyntheticEvent<HTMLElement>) => {
 						setIsOpen((event.currentTarget as HTMLDetailsElement).open);
 					}}
 					open={isOpen}
@@ -129,6 +129,3 @@ const ReasoningTokensDropdown = forwardRef<HTMLDetailsElement, ReasoningTokensDr
 		);
 	}
 );
-
-ReasoningTokensDropdown.displayName = 'ReasoningTokensDropdown';
-export default ReasoningTokensDropdown;
