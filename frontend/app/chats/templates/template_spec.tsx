@@ -92,7 +92,9 @@ export interface SelectedTemplateForRun {
 	// Preprocessor runs needed
 	toolsToRun: Array<{
 		id: string;
-		toolID: string;
+		toolBundleID: string;
+		toolSlug: string;
+		toolVersion: string;
 		args?: Record<string, any>;
 		saveAs: string;
 		pathExpr?: string;

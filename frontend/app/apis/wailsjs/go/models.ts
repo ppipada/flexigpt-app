@@ -1084,7 +1084,9 @@ export namespace spec {
 	}
 	export class PreProcessorCall {
 	    id: string;
-	    toolID: string;
+	    toolBundleID: string;
+	    toolSlug: string;
+	    toolVersion: string;
 	    args?: Record<string, any>;
 	    saveAs: string;
 	    pathExpr?: string;
@@ -1097,7 +1099,9 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
-	        this.toolID = source["toolID"];
+	        this.toolBundleID = source["toolBundleID"];
+	        this.toolSlug = source["toolSlug"];
+	        this.toolVersion = source["toolVersion"];
 	        this.args = source["args"];
 	        this.saveAs = source["saveAs"];
 	        this.pathExpr = source["pathExpr"];
@@ -1111,7 +1115,9 @@ export namespace spec {
 	    source: string;
 	    description?: string;
 	    staticVal?: string;
-	    toolID?: string;
+	    toolBundleID?: string;
+	    toolSlug?: string;
+	    toolVersion?: string;
 	    enumValues?: string[];
 	    default?: string;
 	
@@ -1127,7 +1133,9 @@ export namespace spec {
 	        this.source = source["source"];
 	        this.description = source["description"];
 	        this.staticVal = source["staticVal"];
-	        this.toolID = source["toolID"];
+	        this.toolBundleID = source["toolBundleID"];
+	        this.toolSlug = source["toolSlug"];
+	        this.toolVersion = source["toolVersion"];
 	        this.enumValues = source["enumValues"];
 	        this.default = source["default"];
 	    }

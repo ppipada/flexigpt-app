@@ -119,8 +119,20 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 				return fmt.Errorf("variables[%d]: static variables cannot be required", i)
 			}
 		case spec.SourceTool:
-			if strings.TrimSpace(v.ToolID) == "" {
-				return fmt.Errorf("variables[%d]: source 'tool' requires toolID", i)
+
+			if strings.TrimSpace(string(v.ToolBundleID)) == "" {
+				return fmt.Errorf("variables[%d]: source 'tool' requires toolBundleID", i)
+			}
+			if err := bundleitemutils.ValidateItemSlug(v.ToolSlug); err != nil {
+				return fmt.Errorf("variables[%d]: invalid toolSlug %q err %w", i, v.ToolSlug, err)
+			}
+			if err := bundleitemutils.ValidateItemVersion(v.ToolVersion); err != nil {
+				return fmt.Errorf(
+					"variables[%d]: invalid toolVersion %q err %w",
+					i,
+					v.ToolVersion,
+					err,
+				)
 			}
 		case spec.SourceUser:
 			// No validations needed.
@@ -163,8 +175,21 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 	saveTargets := map[string]struct{}{}
 
 	for i, p := range tpl.PreProcessors {
-		if strings.TrimSpace(p.ToolID) == "" {
-			return fmt.Errorf("preProcessors[%d]: toolID is empty", i)
+
+		if strings.TrimSpace(string(p.ToolBundleID)) == "" {
+			return fmt.Errorf("preProcessors[%d]: toolBundleID is empty", i)
+		}
+
+		if err := bundleitemutils.ValidateItemSlug(p.ToolSlug); err != nil {
+			return fmt.Errorf("preProcessors[%d]: invalid toolSlug %q err %w", i, p.ToolSlug, err)
+		}
+		if err := bundleitemutils.ValidateItemVersion(p.ToolVersion); err != nil {
+			return fmt.Errorf(
+				"preProcessors[%d]: invalid toolVersion %q err %w",
+				i,
+				p.ToolVersion,
+				err,
+			)
 		}
 		if err := bundleitemutils.ValidateTag(p.SaveAs); err != nil {
 			return fmt.Errorf("preProcessors[%d]: invalid saveAs %q err %w", i, p.SaveAs, err)

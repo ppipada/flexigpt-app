@@ -85,7 +85,9 @@ type PromptVariable struct {
 	// SourceStatic.
 	StaticVal string `json:"staticVal,omitempty"`
 	// SourceTool.
-	ToolID string `json:"toolID,omitempty"`
+	ToolBundleID bundleitemutils.BundleID    `json:"toolBundleID,omitempty"`
+	ToolSlug     bundleitemutils.ItemSlug    `json:"toolSlug,omitempty"`
+	ToolVersion  bundleitemutils.ItemVersion `json:"toolVersion,omitempty"`
 	// VarEnum.
 	EnumValues []string `json:"enumValues,omitempty"`
 
@@ -102,9 +104,11 @@ const (
 
 // PreProcessorCall - Runs a helper tool, optionally extracts a JSON sub-path and stores the value into a variable.
 type PreProcessorCall struct {
-	ID        PreProcessorCallID `json:"id"`
-	ToolID    string             `json:"toolID"`
-	Arguments map[string]any     `json:"args,omitempty"`
+	ID           PreProcessorCallID          `json:"id"`
+	ToolBundleID bundleitemutils.BundleID    `json:"toolBundleID"`
+	ToolSlug     bundleitemutils.ItemSlug    `json:"toolSlug"`
+	ToolVersion  bundleitemutils.ItemVersion `json:"toolVersion"`
+	Arguments    map[string]any              `json:"args,omitempty"`
 
 	// Variable name.
 	SaveAs string `json:"saveAs"`

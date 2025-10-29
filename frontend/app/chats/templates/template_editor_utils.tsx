@@ -254,7 +254,14 @@ export async function runPreprocessorForSelection(
 	});
 
 	try {
-		const result = await runPreprocessor(preproc.toolID, args);
+		const result = await runPreprocessor(
+			{
+				toolBundleID: preproc.toolBundleID,
+				toolSlug: preproc.toolSlug,
+				toolVersion: preproc.toolVersion,
+			},
+			args
+		);
 		// Save result and mark done
 		patchToolState(editor, tsPath, preproc.id, {
 			status: ToolStatus.DONE,

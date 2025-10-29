@@ -52,14 +52,18 @@ export interface PromptVariable {
 	source: VarSource;
 	description?: string;
 	staticVal?: string;
-	toolID?: string;
+	toolBundleID?: string;
+	toolSlug?: string;
+	toolVersion?: string;
 	enumValues?: string[];
 	default?: string;
 }
 
 export interface PreProcessorCall {
 	id: string;
-	toolID: string;
+	toolBundleID: string;
+	toolSlug: string;
+	toolVersion: string;
 	args?: Record<string, any>;
 	saveAs: string;
 	pathExpr?: string;

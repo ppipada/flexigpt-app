@@ -571,6 +571,8 @@ function PreProcessorRow({
 	const [argsText, setArgsText] = useState<string>(JSON.stringify(args ?? {}, null, 2));
 	const [jsonError, setJsonError] = useState<string | undefined>();
 	const debounceRef = useRef<number | null>(null);
+	const bundleDisplay = call.toolBundleID;
+	const toolIdentity = `${bundleDisplay}/${call.toolSlug}@${call.toolVersion}`;
 
 	// Keep in sync when parent args change
 	useEffect(() => {
@@ -631,7 +633,7 @@ function PreProcessorRow({
 				<div className="text-sm">
 					<div className="flex items-center gap-2 font-medium">
 						<span className="badge badge-outline">Tool</span>
-						<span>{call.toolID}</span>
+						<span title={toolIdentity}>{toolIdentity}</span>
 					</div>
 					<div className="opacity-70">
 						Save as: <code>{call.saveAs}</code>

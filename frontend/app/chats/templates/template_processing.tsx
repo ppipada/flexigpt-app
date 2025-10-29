@@ -120,7 +120,9 @@ function effectiveVarValue(
 
 export interface ToolToRun {
 	id: string;
-	toolID: string;
+	toolBundleID: string;
+	toolSlug: string;
+	toolVersion: string;
 	args: Record<string, unknown>;
 	saveAs: string;
 	pathExpr: string | undefined;
@@ -183,7 +185,9 @@ export function computeRequirements(
 
 		return {
 			id: p.id,
-			toolID: p.toolID,
+			toolBundleID: p.toolBundleID,
+			toolSlug: p.toolSlug,
+			toolVersion: p.toolVersion,
 			args: resolved as Record<string, unknown>,
 			saveAs: p.saveAs,
 			pathExpr: p.pathExpr,
