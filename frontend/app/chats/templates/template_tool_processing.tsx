@@ -2,10 +2,6 @@ import type { PreProcessorCall } from '@/spec/prompt';
 
 import { toolStoreAPI } from '@/apis/baseapi';
 
-// Lightweight runner that calls your backend. Replace endpoint as needed.
-/**
- * @public
- * */
 type ToolRunDescriptor = Pick<PreProcessorCall, 'toolBundleID' | 'toolSlug' | 'toolVersion'>;
 
 export async function runPreprocessor(toolRef: ToolRunDescriptor, args: Record<string, unknown>): Promise<any> {
