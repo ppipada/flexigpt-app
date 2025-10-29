@@ -1,6 +1,6 @@
 import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
-import { FiSend } from 'react-icons/fi';
+import { FiAlertTriangle, FiSend } from 'react-icons/fi';
 
 import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
@@ -79,6 +79,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	// doc version tick to re-run selection computations on any editor change (even if text string doesn't change)
 	const [docVersion, setDocVersion] = useState(0);
+	const [submitError, setSubmitError] = useState<string | null>(null);
 
 	const lastPopulatedSelectionKeyRef = useRef<Set<string>>(new Set());
 
@@ -230,6 +231,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			return;
 		}
 
+		setSubmitError(null);
 		isSubmittingRef.current = true;
 
 		(async () => {
@@ -242,6 +244,10 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 					// Surface first error and abort send
 					dispatchTemplateFlashEvent();
 					const first = errors[0];
+					const errorSummary = errors.map(e => `${e.saveAs || e.preprocId}: ${e.error || 'failed'}`).join('; ');
+					setSubmitError(
+						errorSummary ? `Tool run failed - ${errorSummary}` : 'Tool run failed. Please review the tool inputs.'
+					);
 					if (first.saveAs && contentRef.current) {
 						const idSegment = first.selectionID ? `[data-selection-id="${cssEscape(first.selectionID)}"]` : '';
 						const sel = contentRef.current.querySelector(
@@ -258,21 +264,17 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				}
 			}
 
-			const promptsToSend = getTemplateSelections(editor);
 			const attachedTools = getAttachedTools(editor);
 			const hasTools = attachedTools.length > 0;
-
 			let textToSend = hasTpl ? toPlainTextReplacingVariables(editor) : editor.api.string([]);
 
-			if (hasTpl) {
-				textToSend += '\n\nprompts:\n' + JSON.stringify(promptsToSend, null, 2);
-			}
 			if (hasTools) {
 				textToSend += '\n\ntools:\n' + JSON.stringify(attachedTools, null, 2);
 			}
 
 			try {
 				await onSubmit(textToSend);
+				setSubmitError(null);
 			} finally {
 				// Clear editor and state after successful preprocessor runs and submit
 				editor.tf.setValue(EDITOR_EMPTY_VALUE);
@@ -297,10 +299,19 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			onSubmit={handleSubmit}
 			className="bg-base-100 border-base-300 focus-within:border-base-400 mx-2 flex flex-col overflow-hidden rounded-2xl border"
 		>
+			{submitError ? (
+				<div className="alert alert-error mx-4 mt-3 mb-1 flex items-start gap-2 text-sm" role="alert">
+					<FiAlertTriangle size={16} className="mt-0.5" />
+					<span>{submitError}</span>
+				</div>
+			) : null}
 			<Plate
 				editor={editor}
 				onChange={() => {
 					setDocVersion(v => v + 1);
+					if (submitError) {
+						setSubmitError(null);
+					}
 				}}
 			>
 				<TemplateToolbars />

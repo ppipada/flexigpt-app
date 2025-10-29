@@ -294,7 +294,7 @@ async function runReadyPreprocessorsForSelection(
 	const { preProcessors, variablesSchema } = computeEffectiveTemplate(tsenode);
 	const req = computeRequirements(variablesSchema, tsenode.variables, preProcessors, tsenode.toolStates);
 
-	const ready = req.toolsToRun.filter(t => t.status === ToolStatus.READY);
+	const ready = req.toolsToRun.filter(t => t.status === ToolStatus.READY || t.status === ToolStatus.ERROR);
 	const errors: Array<{ preprocId: string; saveAs: string; error: string }> = [];
 
 	for (const t of ready) {

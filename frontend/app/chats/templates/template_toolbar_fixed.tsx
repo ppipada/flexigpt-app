@@ -1,4 +1,4 @@
-import { FiCheck, FiEdit2, FiMaximize2, FiTool, FiUpload, FiX } from 'react-icons/fi';
+import { FiAlertTriangle, FiCheck, FiEdit2, FiMaximize2, FiTool, FiUpload, FiX } from 'react-icons/fi';
 
 import { PromptRoleEnum } from '@/spec/prompt';
 
@@ -20,6 +20,8 @@ export function TemplateFixedToolbar(props: {
 	const totalTools = selection.toolsToRun.length;
 	const pendingTools = selection.toolsToRun.filter(t => t.status === ToolStatus.PENDING).length;
 	const runningTools = selection.toolsToRun.filter(t => t.status === ToolStatus.RUNNING).length;
+	const errorTools = selection.toolsToRun.filter(t => t.status === ToolStatus.ERROR).length;
+	const hasErrorTools = errorTools > 0;
 
 	const hasSystemBlock = selection.blocks.some(
 		b => [PromptRoleEnum.Developer, PromptRoleEnum.System].includes(b.role) && b.content.trim() !== ''
@@ -57,11 +59,13 @@ export function TemplateFixedToolbar(props: {
 			<div
 				className={`flex items-center gap-1 rounded-2xl px-2 py-0 ${
 					totalTools > 0
-						? pendingTools > 0
-							? 'bg-warning text-warning-content'
-							: runningTools > 0
-								? 'bg-info text-info-content'
-								: 'bg-success text-success-content'
+						? hasErrorTools
+							? 'bg-error text-error-content'
+							: pendingTools > 0
+								? 'bg-warning text-warning-content'
+								: runningTools > 0
+									? 'bg-info text-info-content'
+									: 'bg-success text-success-content'
 						: 'bg-base-200'
 				}`}
 			>
@@ -70,14 +74,24 @@ export function TemplateFixedToolbar(props: {
 						<span
 							className="flex items-center gap-1 px-2 py-0"
 							title={
-								pendingTools > 0
-									? `${pendingTools} tools pending`
-									: runningTools > 0
-										? `${runningTools} tools running`
-										: 'All tools ready/done'
+								hasErrorTools
+									? `${errorTools} tool${errorTools === 1 ? '' : 's'} failed`
+									: pendingTools > 0
+										? `${pendingTools} tools pending`
+										: runningTools > 0
+											? `${runningTools} tools running`
+											: 'All tools ready/done'
 							}
 						>
-							{totalTools} tool{totalTools === 1 ? '' : 's'} <FiTool />
+							{totalTools} tool{totalTools === 1 ? '' : 's'}
+							{hasErrorTools ? (
+								<>
+									<span className="font-semibold">errors: {errorTools}</span>
+									<FiAlertTriangle />
+								</>
+							) : (
+								<FiTool />
+							)}
 						</span>
 					</>
 				) : (
