@@ -1,8 +1,6 @@
 package spec
 
 import (
-	"context"
-
 	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
@@ -17,34 +15,23 @@ const (
 	Tool      ChatCompletionRoleEnum = "tool"
 )
 
-type ChatCompletionFunctions struct {
-	Name        string         `json:"name"`
-	Description *string        `json:"description,omitempty"`
-	Parameters  map[string]any `json:"parameters,omitempty"`
-}
-
-type ChatCompletionDataMessageFunctionCall struct {
-	Name      *string `json:"name,omitempty"`
-	Arguments *string `json:"arguments,omitempty"`
+type ChatCompletionToolAttachment struct {
+	BundleID    string `json:"bundleID,omitempty"`
+	ToolSlug    string `json:"toolSlug"`
+	ToolVersion string `json:"toolVersion"`
+	ID          string `json:"id,omitempty"`
 }
 
 type ChatCompletionDataMessage struct {
-	Role         ChatCompletionRoleEnum                 `json:"role"`
-	Content      *string                                `json:"content,omitempty"`
-	Name         *string                                `json:"name,omitempty"`
-	FunctionCall *ChatCompletionDataMessageFunctionCall `json:"functionCall,omitempty"`
+	Role            ChatCompletionRoleEnum         `json:"role"`
+	Content         *string                        `json:"content,omitempty"`
+	Name            *string                        `json:"name,omitempty"`
+	ToolAttachments []ChatCompletionToolAttachment `json:"toolAttachments,omitempty"`
 }
 
 type ChatCompletionResponseMessage struct {
-	Role         ChatCompletionRoleEnum                 `json:"role"`
-	Content      *string                                `json:"content,omitempty"`
-	FunctionCall *ChatCompletionDataMessageFunctionCall `json:"functionCall,omitempty"`
-}
-
-type CreateChatCompletionDataFunctionCall any
-
-type CreateChatCompletionDataFunctionCallOneOf struct {
-	Name string `json:"name"`
+	Role    ChatCompletionRoleEnum `json:"role"`
+	Content *string                `json:"content,omitempty"`
 }
 
 // ModelParams represents input information about a model to a completion.
@@ -69,29 +56,4 @@ type ProviderParams struct {
 	ChatCompletionPathPrefix string               `json:"chatCompletionPathPrefix"`
 	APIKeyHeaderKey          string               `json:"apiKeyHeaderKey"`
 	DefaultHeaders           map[string]string    `json:"defaultHeaders"`
-}
-
-type CompletionProvider interface {
-	InitLLM(ctx context.Context) error
-	DeInitLLM(ctx context.Context) error
-	GetProviderInfo(
-		ctx context.Context,
-	) *ProviderParams
-	IsConfigured(ctx context.Context) bool
-	SetProviderAPIKey(
-		ctx context.Context,
-		apiKey string,
-	) error
-	BuildCompletionData(
-		ctx context.Context,
-		prompt string,
-		modelParams ModelParams,
-		prevMessages []ChatCompletionDataMessage,
-	) (*CompletionData, error)
-	FetchCompletion(
-		ctx context.Context,
-		completionData *CompletionData,
-		OnStreamTextData func(textData string) error,
-		OnStreamThinkingData func(thinkingData string) error,
-	) (*CompletionResponse, error)
 }

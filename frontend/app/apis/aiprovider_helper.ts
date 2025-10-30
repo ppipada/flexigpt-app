@@ -1,6 +1,7 @@
 import {
 	type ChatCompletionDataMessage,
 	ChatCompletionRoleEnum,
+	type ChatCompletionToolAttachment,
 	type CompletionData,
 	type CompletionResponse,
 	type ModelParams,
@@ -28,7 +29,22 @@ function convertConversationToChatMessages(conversationMessages?: ConversationMe
 	}
 	const chatMessages: ChatCompletionDataMessage[] = [];
 	conversationMessages.forEach(convoMsg => {
-		chatMessages.push({ role: roleMap[convoMsg.role], content: convoMsg.content });
+		const toolAttachments: ChatCompletionToolAttachment[] | undefined = convoMsg.toolAttachments?.map(att => ({
+			bundleID: att.bundleID,
+			toolSlug: att.toolSlug,
+			toolVersion: att.toolVersion,
+			displayName: att.displayName,
+			id: att.id,
+		}));
+
+		const message: ChatCompletionDataMessage = {
+			role: roleMap[convoMsg.role],
+			content: convoMsg.content,
+		};
+		if (toolAttachments && toolAttachments.length > 0) {
+			message.toolAttachments = toolAttachments;
+		}
+		chatMessages.push(message);
 	});
 	return chatMessages;
 }

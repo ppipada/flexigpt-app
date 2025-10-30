@@ -27,14 +27,9 @@ export type ToolSelectionElementNode = {
 	children: [{ text: '' }];
 };
 
-/**
- * @public
- * */
 export type AttachedTool = {
-	type: 'tool';
 	selectionID: string;
 	bundleID: string;
-	bundleSlug?: string;
 	toolSlug: string;
 	toolVersion: string;
 	displayName?: string; // from overrides or snapshot
@@ -169,10 +164,8 @@ export function getAttachedTools(editor: PlateEditor): AttachedTool[] {
 			if (seen.has(key)) continue;
 			seen.add(key);
 			items.push({
-				type: 'tool',
 				selectionID: n.selectionID,
 				bundleID: n.bundleID,
-				bundleSlug: n.bundleSlug,
 				toolSlug: n.toolSlug,
 				toolVersion: n.toolVersion,
 				displayName: n.overrides?.displayName ?? n.toolSnapshot?.displayName,

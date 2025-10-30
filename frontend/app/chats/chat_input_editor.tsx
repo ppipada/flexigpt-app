@@ -22,7 +22,7 @@ import { ListKit } from '@/components/editor/plugins/list_kit';
 import { TabbableKit } from '@/components/editor/plugins/tabbable_kit';
 
 import { AttachmentBottomBar } from '@/chats/attachments/attachment_bottom_bar';
-import { getAttachedTools } from '@/chats/attachments/tool_editor_utils';
+import { type AttachedTool, getAttachedTools } from '@/chats/attachments/tool_editor_utils';
 import { ToolPlusKit } from '@/chats/attachments/tool_plugin';
 import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
 import {
@@ -44,11 +44,16 @@ export interface EditorAreaHandle {
 	focus: () => void;
 }
 
+export interface EditorSubmitPayload {
+	text: string;
+	attachedTools: AttachedTool[];
+}
+
 const EDITOR_EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
 
 interface EditorAreaProps {
 	isBusy: boolean;
-	onSubmit: (text: string) => Promise<void>;
+	onSubmit: (payload: EditorSubmitPayload) => Promise<void>;
 }
 
 export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function EditorArea({ isBusy, onSubmit }, ref) {
@@ -264,16 +269,15 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				}
 			}
 
+			const textToSend = hasTpl ? toPlainTextReplacingVariables(editor) : editor.api.string([]);
 			const attachedTools = getAttachedTools(editor);
-			const hasTools = attachedTools.length > 0;
-			let textToSend = hasTpl ? toPlainTextReplacingVariables(editor) : editor.api.string([]);
-
-			if (hasTools) {
-				textToSend += '\n\ntools:\n' + JSON.stringify(attachedTools, null, 2);
-			}
+			const payload: EditorSubmitPayload = {
+				text: textToSend,
+				attachedTools,
+			};
 
 			try {
-				await onSubmit(textToSend);
+				await onSubmit(payload);
 				setSubmitError(null);
 			} finally {
 				// Clear editor and state after successful preprocessor runs and submit

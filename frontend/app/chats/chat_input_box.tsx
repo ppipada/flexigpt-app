@@ -7,11 +7,11 @@ import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 import { DeleteConfirmationModal } from '@/components/delete_confirmation';
 
 import { AssistantContextBar } from '@/chats/assitantcontexts/context_bar';
-import { EditorArea, type EditorAreaHandle } from '@/chats/chat_input_editor';
+import { EditorArea, type EditorAreaHandle, type EditorSubmitPayload } from '@/chats/chat_input_editor';
 import { CommandTipsBar } from '@/chats/chat_input_tips_bar';
 
 interface InputBoxProps {
-	onSend: (message: string, options: ChatOption) => Promise<void>;
+	onSend: (message: EditorSubmitPayload, options: ChatOption) => Promise<void>;
 	isBusy: boolean;
 	abortRef: RefObject<AbortController | null>;
 }
@@ -45,8 +45,8 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 	/* ------------------------------------------------------------------
 	 * Send-message
 	 * ------------------------------------------------------------------ */
-	const handleSubmitMessage = async (text: string) => {
-		onSend(text, chatOptions);
+	const handleSubmitMessage = async (payload: EditorSubmitPayload) => {
+		onSend(payload, chatOptions);
 	};
 
 	/* ------------------------------------------------------------------

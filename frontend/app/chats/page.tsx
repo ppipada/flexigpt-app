@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ModelParams } from '@/spec/aiprovider';
-import type { Conversation, ConversationMessage, ConversationSearchItem } from '@/spec/conversation';
+import type {
+	Conversation,
+	ConversationMessage,
+	ConversationSearchItem,
+	ConversationToolAttachment,
+} from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 
 import { getBlockQuotedLines, sanitizeConversationTitle } from '@/lib/text_utils';
@@ -17,7 +22,9 @@ import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 import { ButtonScrollToBottom } from '@/components/button_scroll_to_bottom';
 import { PageFrame } from '@/components/page_frame';
 
+import type { AttachedTool } from '@/chats/attachments/tool_editor_utils';
 import { InputBox, type InputBoxHandle } from '@/chats/chat_input_box';
+import type { EditorSubmitPayload } from '@/chats/chat_input_editor';
 import { ChatNavBar } from '@/chats/chat_navbar';
 import { ChatMessage } from '@/chats/messages/message';
 
@@ -38,6 +45,16 @@ function initConversationMessage(role: ConversationRoleEnum, content: string): C
 		createdAt: new Date(),
 		role,
 		content,
+	};
+}
+
+function attachedToolToConversationAttachment(tool: AttachedTool): ConversationToolAttachment {
+	return {
+		bundleID: tool.bundleID,
+		toolSlug: tool.toolSlug,
+		toolVersion: tool.toolVersion,
+		displayName: tool.displayName,
+		id: tool.id,
 	};
 }
 
@@ -363,15 +380,20 @@ export default function ChatsPage() {
 		}));
 	};
 
-	const sendMessage = async (text: string, options: ChatOption) => {
+	const sendMessage = async (payload: EditorSubmitPayload, options: ChatOption) => {
 		if (isBusy) return;
 
-		const trimmed = text.trim();
+		const trimmed = payload.text.trim();
 		if (!trimmed) {
 			return;
 		}
 
 		const newMsg = initConversationMessage(ConversationRoleEnum.user, trimmed);
+		const toolAttachments =
+			payload.attachedTools.length > 0 ? payload.attachedTools.map(attachedToolToConversationAttachment) : undefined;
+		if (toolAttachments && toolAttachments.length > 0) {
+			newMsg.toolAttachments = toolAttachments;
+		}
 		const updated = {
 			...chat,
 			messages: [...chat.messages, newMsg],

@@ -9,8 +9,33 @@ import (
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
+type CompletionProvider interface {
+	InitLLM(ctx context.Context) error
+	DeInitLLM(ctx context.Context) error
+	GetProviderInfo(
+		ctx context.Context,
+	) *spec.ProviderParams
+	IsConfigured(ctx context.Context) bool
+	SetProviderAPIKey(
+		ctx context.Context,
+		apiKey string,
+	) error
+	BuildCompletionData(
+		ctx context.Context,
+		prompt string,
+		modelParams spec.ModelParams,
+		prevMessages []spec.ChatCompletionDataMessage,
+	) (*spec.CompletionData, error)
+	FetchCompletion(
+		ctx context.Context,
+		completionData *spec.CompletionData,
+		OnStreamTextData func(textData string) error,
+		OnStreamThinkingData func(thinkingData string) error,
+	) (*spec.CompletionResponse, error)
+}
+
 type ProviderSetAPI struct {
-	providers map[modelpresetSpec.ProviderName]spec.CompletionProvider
+	providers map[modelpresetSpec.ProviderName]CompletionProvider
 	debug     bool
 }
 
@@ -19,7 +44,7 @@ func NewProviderSetAPI(
 	debug bool,
 ) (*ProviderSetAPI, error) {
 	return &ProviderSetAPI{
-		providers: map[modelpresetSpec.ProviderName]spec.CompletionProvider{},
+		providers: map[modelpresetSpec.ProviderName]CompletionProvider{},
 		debug:     debug,
 	}, nil
 }
@@ -170,7 +195,7 @@ func isProviderSDKTypeSupported(t modelpresetSpec.ProviderSDKType) bool {
 	return false
 }
 
-func getProviderAPI(p spec.ProviderParams, debug bool) (spec.CompletionProvider, error) {
+func getProviderAPI(p spec.ProviderParams, debug bool) (CompletionProvider, error) {
 	switch p.SDKType {
 	case modelpresetSpec.ProviderSDKTypeAnthropic:
 		return NewAnthropicMessagesAPI(p, debug)

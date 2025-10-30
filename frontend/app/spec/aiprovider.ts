@@ -7,34 +7,16 @@ export enum ChatCompletionRoleEnum {
 	function = 'function',
 }
 
-export interface ChatCompletionFunctions {
-	name: string;
-	description?: string;
-	parameters?: { [key: string]: any };
-}
-
-export interface ChatCompletionDataMessageFunctionCall {
-	name?: string;
-	arguments?: string;
-}
-
 export interface ChatCompletionDataMessage {
 	role: ChatCompletionRoleEnum;
 	content?: string;
 	name?: string;
-	functionCall?: ChatCompletionDataMessageFunctionCall;
+	toolAttachments?: ChatCompletionToolAttachment[];
 }
 
 export interface ChatCompletionResponseMessage {
 	role: ChatCompletionRoleEnum;
 	content?: string;
-	functionCall?: ChatCompletionDataMessageFunctionCall;
-}
-
-export type CreateChatCompletionDataFunctionCall = CreateChatCompletionDataFunctionCallOneOf | string;
-
-export interface CreateChatCompletionDataFunctionCallOneOf {
-	name: string;
 }
 
 export interface ModelParams {
@@ -49,11 +31,15 @@ export interface ModelParams {
 	additionalParametersRawJSON?: string;
 }
 
+export interface ChatCompletionToolAttachment {
+	bundleID: string;
+	toolSlug: string;
+	toolVersion: string;
+	id?: string;
+}
 export interface CompletionData {
 	modelParams: ModelParams;
 	messages?: ChatCompletionDataMessage[];
-	functions?: ChatCompletionFunctions[];
-	functionCall?: CreateChatCompletionDataFunctionCall;
 }
 
 export interface APIRequestDetails {

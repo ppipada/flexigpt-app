@@ -87,10 +87,8 @@ type CompletionResponse struct {
 }
 
 type CompletionData struct {
-	ModelParams  ModelParams                          `json:"modelParams"`
-	Messages     []ChatCompletionDataMessage          `json:"messages,omitempty"`
-	Functions    []ChatCompletionFunctions            `json:"functions,omitempty"`
-	FunctionCall CreateChatCompletionDataFunctionCall `json:"functionCall,omitempty"`
+	ModelParams ModelParams                 `json:"modelParams"`
+	Messages    []ChatCompletionDataMessage `json:"messages,omitempty"`
 }
 
 type BuildCompletionDataRequestBody struct {

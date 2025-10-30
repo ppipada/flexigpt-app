@@ -212,25 +212,29 @@ export namespace spec {
 	        this.nonEmpty = source["nonEmpty"];
 	    }
 	}
-	export class ChatCompletionDataMessageFunctionCall {
-	    name?: string;
-	    arguments?: string;
+	export class ChatCompletionToolAttachment {
+	    bundleID?: string;
+	    toolSlug: string;
+	    toolVersion: string;
+	    id?: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new ChatCompletionDataMessageFunctionCall(source);
+	        return new ChatCompletionToolAttachment(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.name = source["name"];
-	        this.arguments = source["arguments"];
+	        this.bundleID = source["bundleID"];
+	        this.toolSlug = source["toolSlug"];
+	        this.toolVersion = source["toolVersion"];
+	        this.id = source["id"];
 	    }
 	}
 	export class ChatCompletionDataMessage {
 	    role: string;
 	    content?: string;
 	    name?: string;
-	    functionCall?: ChatCompletionDataMessageFunctionCall;
+	    toolAttachments?: ChatCompletionToolAttachment[];
 	
 	    static createFrom(source: any = {}) {
 	        return new ChatCompletionDataMessage(source);
@@ -241,7 +245,7 @@ export namespace spec {
 	        this.role = source["role"];
 	        this.content = source["content"];
 	        this.name = source["name"];
-	        this.functionCall = this.convertValues(source["functionCall"], ChatCompletionDataMessageFunctionCall);
+	        this.toolAttachments = this.convertValues(source["toolAttachments"], ChatCompletionToolAttachment);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -391,27 +395,9 @@ export namespace spec {
 		}
 	}
 	
-	export class ChatCompletionFunctions {
-	    name: string;
-	    description?: string;
-	    parameters?: Record<string, any>;
-	
-	    static createFrom(source: any = {}) {
-	        return new ChatCompletionFunctions(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.name = source["name"];
-	        this.description = source["description"];
-	        this.parameters = source["parameters"];
-	    }
-	}
 	export class CompletionData {
 	    modelParams: ModelParams;
 	    messages?: ChatCompletionDataMessage[];
-	    functions?: ChatCompletionFunctions[];
-	    functionCall?: any;
 	
 	    static createFrom(source: any = {}) {
 	        return new CompletionData(source);
@@ -421,8 +407,6 @@ export namespace spec {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.modelParams = this.convertValues(source["modelParams"], ModelParams);
 	        this.messages = this.convertValues(source["messages"], ChatCompletionDataMessage);
-	        this.functions = this.convertValues(source["functions"], ChatCompletionFunctions);
-	        this.functionCall = source["functionCall"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -476,7 +460,6 @@ export namespace spec {
 	
 	
 	
-	
 	export class ResponseContent {
 	    type: string;
 	    content: string;
@@ -527,6 +510,26 @@ export namespace spec {
 		    return a;
 		}
 	}
+	export class ConversationToolAttachment {
+	    bundleID?: string;
+	    toolSlug?: string;
+	    toolVersion?: string;
+	    displayName?: string;
+	    id?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConversationToolAttachment(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.bundleID = source["bundleID"];
+	        this.toolSlug = source["toolSlug"];
+	        this.toolVersion = source["toolVersion"];
+	        this.displayName = source["displayName"];
+	        this.id = source["id"];
+	    }
+	}
 	export class ConversationMessage {
 	    id: string;
 	    // Go type: time
@@ -535,6 +538,7 @@ export namespace spec {
 	    content: string;
 	    name?: string;
 	    details?: string;
+	    toolAttachments?: ConversationToolAttachment[];
 	
 	    static createFrom(source: any = {}) {
 	        return new ConversationMessage(source);
@@ -548,6 +552,7 @@ export namespace spec {
 	        this.content = source["content"];
 	        this.name = source["name"];
 	        this.details = source["details"];
+	        this.toolAttachments = this.convertValues(source["toolAttachments"], ConversationToolAttachment);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -643,6 +648,7 @@ export namespace spec {
 		    return a;
 		}
 	}
+	
 	
 	export class DeleteAuthKeyRequest {
 	    Type: string;

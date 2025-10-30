@@ -21,14 +21,23 @@ const (
 	ConversationRoleFeedback  ConversationRoleEnum = "feedback"
 )
 
+type ConversationToolAttachment struct {
+	BundleID    string `json:"bundleID,omitempty"`
+	ToolSlug    string `json:"toolSlug,omitempty"`
+	ToolVersion string `json:"toolVersion,omitempty"`
+	DisplayName string `json:"displayName,omitempty"`
+	ID          string `json:"id,omitempty"`
+}
+
 // ConversationMessage represents a message in a conversation.
 type ConversationMessage struct {
-	ID        string               `json:"id"`
-	CreatedAt *time.Time           `json:"createdAt,omitempty"`
-	Role      ConversationRoleEnum `json:"role"`
-	Content   string               `json:"content"`
-	Name      *string              `json:"name,omitempty"`
-	Details   *string              `json:"details,omitempty"`
+	ID              string                       `json:"id"`
+	CreatedAt       *time.Time                   `json:"createdAt,omitempty"`
+	Role            ConversationRoleEnum         `json:"role"`
+	Content         string                       `json:"content"`
+	Name            *string                      `json:"name,omitempty"`
+	Details         *string                      `json:"details,omitempty"`
+	ToolAttachments []ConversationToolAttachment `json:"toolAttachments,omitempty"`
 }
 
 // Conversation represents a conversation with messages.

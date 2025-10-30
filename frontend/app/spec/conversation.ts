@@ -5,6 +5,15 @@ export enum ConversationRoleEnum {
 	function = 'function',
 	feedback = 'feedback',
 }
+
+export interface ConversationToolAttachment {
+	bundleID: string;
+	toolSlug: string;
+	toolVersion: string;
+	displayName?: string;
+	id?: string;
+}
+
 export interface ConversationMessage {
 	id: string;
 	createdAt?: Date;
@@ -12,6 +21,7 @@ export interface ConversationMessage {
 	content: string;
 	name?: string;
 	details?: string;
+	toolAttachments?: ConversationToolAttachment[];
 }
 
 export type ConversationSearchItem = {
