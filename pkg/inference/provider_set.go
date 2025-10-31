@@ -22,8 +22,8 @@ type CompletionProvider interface {
 	) error
 	BuildCompletionData(
 		ctx context.Context,
-		prompt string,
 		modelParams spec.ModelParams,
+		currentMessage spec.ChatCompletionDataMessage,
 		prevMessages []spec.ChatCompletionDataMessage,
 	) (*spec.CompletionData, error)
 	FetchCompletion(
@@ -138,8 +138,16 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 	ctx context.Context,
 	req *spec.BuildCompletionDataRequest,
 ) (*spec.BuildCompletionDataResponse, error) {
-	if req == nil || req.Body == nil || req.Body.Prompt == "" || req.Body.ModelParams.Name == "" {
-		return nil, errors.New("got empty provider/prompt/model input")
+	if req == nil || req.Body == nil || req.Body.ModelParams.Name == "" ||
+		req.Body.CurrentMessage.Content == nil ||
+		req.Body.CurrentMessage.Role != spec.User {
+		return nil, errors.New("got empty provider/model input")
+	}
+	if req.Body.CurrentMessage.Content == nil || req.Body.CurrentMessage.Role != spec.User {
+		return nil, errors.New("got invalid current message input")
+	}
+	if *req.Body.CurrentMessage.Content == "" {
+		return nil, errors.New("got empty current message input")
 	}
 	provider := req.Provider
 	p, exists := ps.providers[provider]
@@ -148,8 +156,8 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 	}
 	resp, err := p.BuildCompletionData(
 		ctx,
-		req.Body.Prompt,
 		req.Body.ModelParams,
+		req.Body.CurrentMessage,
 		req.Body.PrevMessages,
 	)
 	if err != nil {

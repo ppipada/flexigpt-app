@@ -63,8 +63,8 @@ func attachDebugResp(
 }
 
 func getCompletionData(
-	prompt string,
 	modelParams spec.ModelParams,
+	currentMessage spec.ChatCompletionDataMessage,
 	prevMessages []spec.ChatCompletionDataMessage,
 ) *spec.CompletionData {
 	completionData := spec.CompletionData{
@@ -83,13 +83,13 @@ func getCompletionData(
 
 	// Handle messages.
 	messages := slices.Clone(prevMessages)
-	if prompt != "" {
-		message := spec.ChatCompletionDataMessage{
-			Role:    "user",
-			Content: &prompt,
-		}
-		messages = append(messages, message)
+	for idx := range messages {
+		// Omit any tools or name in previous messages.
+		messages[idx].ToolAttachments = []spec.ChatCompletionToolAttachment{}
+		messages[idx].Name = nil
 	}
+
+	messages = append(messages, currentMessage)
 	completionData.Messages = messages
 
 	// Assuming filterMessagesByTokenCount is implemented elsewhere.

@@ -329,8 +329,8 @@ export namespace spec {
 		}
 	}
 	export class BuildCompletionDataRequestBody {
-	    prompt: string;
 	    modelParams: ModelParams;
+	    currentMessage: ChatCompletionDataMessage;
 	    prevMessages: ChatCompletionDataMessage[];
 	
 	    static createFrom(source: any = {}) {
@@ -339,8 +339,8 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.prompt = source["prompt"];
 	        this.modelParams = this.convertValues(source["modelParams"], ModelParams);
+	        this.currentMessage = this.convertValues(source["currentMessage"], ChatCompletionDataMessage);
 	        this.prevMessages = this.convertValues(source["prevMessages"], ChatCompletionDataMessage);
 	    }
 	

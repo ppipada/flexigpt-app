@@ -17,15 +17,15 @@ import { EventsOff, EventsOn } from '@/apis/wailsjs/runtime/runtime';
 export class WailsProviderSetAPI implements IProviderSetAPI {
 	async buildCompletionData(
 		provider: ProviderName,
-		prompt: string,
 		modelParams: ModelParams,
+		currentMessage: ChatCompletionDataMessage,
 		prevMessages?: Array<ChatCompletionDataMessage>
 	): Promise<CompletionData> {
 		const req = {
 			Provider: provider,
 			Body: {
-				prompt: prompt,
 				modelParams: modelParams as wailsSpec.ModelParams,
+				currentMessage: currentMessage,
 				prevMessages: prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionDataMessage[]) : [],
 			} as wailsSpec.BuildCompletionDataRequestBody,
 		};

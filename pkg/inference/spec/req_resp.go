@@ -92,9 +92,9 @@ type CompletionData struct {
 }
 
 type BuildCompletionDataRequestBody struct {
-	Prompt       string                      `json:"prompt"       required:"true"`
-	ModelParams  ModelParams                 `json:"modelParams"  required:"true"`
-	PrevMessages []ChatCompletionDataMessage `json:"prevMessages"`
+	ModelParams    ModelParams                 `json:"modelParams"    required:"true"`
+	CurrentMessage ChatCompletionDataMessage   `json:"currentMessage" required:"true"`
+	PrevMessages   []ChatCompletionDataMessage `json:"prevMessages"`
 }
 
 type BuildCompletionDataRequest struct {

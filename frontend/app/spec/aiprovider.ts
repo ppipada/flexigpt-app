@@ -93,8 +93,8 @@ export interface CompletionResponse {
 export interface IProviderSetAPI {
 	buildCompletionData(
 		provider: ProviderName,
-		prompt: string,
 		modelParams: ModelParams,
+		currentMessage: ChatCompletionDataMessage,
 		prevMessages?: Array<ChatCompletionDataMessage>
 	): Promise<CompletionData>;
 	completion(

@@ -128,11 +128,11 @@ func (api *AnthropicMessagesAPI) SetProviderAPIKey(ctx context.Context, apiKey s
 
 func (api *AnthropicMessagesAPI) BuildCompletionData(
 	ctx context.Context,
-	prompt string,
 	modelParams spec.ModelParams,
+	currentMessage spec.ChatCompletionDataMessage,
 	prevMessages []spec.ChatCompletionDataMessage,
 ) (*spec.CompletionData, error) {
-	return getCompletionData(prompt, modelParams, prevMessages), nil
+	return getCompletionData(modelParams, currentMessage, prevMessages), nil
 }
 
 func (api *AnthropicMessagesAPI) FetchCompletion(

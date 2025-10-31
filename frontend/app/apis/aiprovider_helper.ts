@@ -23,32 +23,6 @@ const roleMap: Record<ConversationRoleEnum, ChatCompletionRoleEnum> = {
 	[ConversationRoleEnum.feedback]: ChatCompletionRoleEnum.user,
 };
 
-function convertConversationToChatMessages(conversationMessages?: ConversationMessage[]): ChatCompletionDataMessage[] {
-	if (!conversationMessages) {
-		return [];
-	}
-	const chatMessages: ChatCompletionDataMessage[] = [];
-	conversationMessages.forEach(convoMsg => {
-		const toolAttachments: ChatCompletionToolAttachment[] | undefined = convoMsg.toolAttachments?.map(att => ({
-			bundleID: att.bundleID,
-			toolSlug: att.toolSlug,
-			toolVersion: att.toolVersion,
-			displayName: att.displayName,
-			id: att.id,
-		}));
-
-		const message: ChatCompletionDataMessage = {
-			role: roleMap[convoMsg.role],
-			content: convoMsg.content,
-		};
-		if (toolAttachments && toolAttachments.length > 0) {
-			message.toolAttachments = toolAttachments;
-		}
-		chatMessages.push(message);
-	});
-	return chatMessages;
-}
-
 export function getQuotedJSON(obj: any): string {
 	return '```json\n' + JSON.stringify(obj, null, 2) + '\n```';
 }
@@ -155,6 +129,32 @@ async function handleStreamedCompletion(
 	return parseAPIResponse(convoMessage, providerResp);
 }
 
+function convertConversationToChatMessages(conversationMessages?: ConversationMessage[]): ChatCompletionDataMessage[] {
+	if (!conversationMessages) {
+		return [];
+	}
+	const chatMessages: ChatCompletionDataMessage[] = [];
+	conversationMessages.forEach(convoMsg => {
+		const toolAttachments: ChatCompletionToolAttachment[] | undefined = convoMsg.toolAttachments?.map(att => ({
+			bundleID: att.bundleID,
+			toolSlug: att.toolSlug,
+			toolVersion: att.toolVersion,
+			displayName: att.displayName,
+			id: att.id,
+		}));
+
+		const message: ChatCompletionDataMessage = {
+			role: roleMap[convoMsg.role],
+			content: convoMsg.content,
+			name: convoMsg.name,
+			toolAttachments: toolAttachments,
+		};
+
+		chatMessages.push(message);
+	});
+	return chatMessages;
+}
+
 export async function BuildCompletionData(
 	provider: ProviderName,
 	modelParams: ModelParams,
@@ -163,12 +163,10 @@ export async function BuildCompletionData(
 	const allMessages = convertConversationToChatMessages(messages);
 	// console.log(JSON.stringify(allMessages, null, 2));
 	const promptMsg = allMessages.pop();
-	const completionData = providerSetAPI.buildCompletionData(
-		provider,
-		promptMsg?.content || '',
-		modelParams,
-		allMessages
-	);
+	if (!promptMsg || promptMsg.content === '') {
+		throw Error('Invalid prompt message input');
+	}
+	const completionData = providerSetAPI.buildCompletionData(provider, modelParams, promptMsg, allMessages);
 	return completionData;
 }
 
