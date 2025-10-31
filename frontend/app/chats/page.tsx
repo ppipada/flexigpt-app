@@ -15,7 +15,7 @@ import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { useAtBottom } from '@/hooks/use_at_bottom';
 
-import { BuildCompletionData, GetCompletionMessage, getQuotedJSON } from '@/apis/aiprovider_helper';
+import { BuildCompletionDataFromConversation, GetCompletionMessage, getQuotedJSON } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
@@ -294,7 +294,11 @@ export default function ChatsPage() {
 					timeout: options.timeout,
 					additionalParametersRawJSON: options.additionalParametersRawJSON,
 				};
-				const completionData = await BuildCompletionData(options.providerName, inputParams, prevMessages);
+				const completionData = await BuildCompletionDataFromConversation(
+					options.providerName,
+					inputParams,
+					prevMessages
+				);
 				if (updatedChatWithConvoMessage.messages.length > 1) {
 					const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
 					if (updatedChatWithConvoMessage.messages[prevIdx].role === ConversationRoleEnum.user) {

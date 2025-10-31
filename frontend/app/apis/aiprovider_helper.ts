@@ -155,7 +155,7 @@ function convertConversationToChatMessages(conversationMessages?: ConversationMe
 	return chatMessages;
 }
 
-export async function BuildCompletionData(
+export async function BuildCompletionDataFromConversation(
 	provider: ProviderName,
 	modelParams: ModelParams,
 	messages?: Array<ConversationMessage>
