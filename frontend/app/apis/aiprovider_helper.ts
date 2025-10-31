@@ -27,6 +27,47 @@ export function getQuotedJSON(obj: any): string {
 	return '```json\n' + JSON.stringify(obj, null, 2) + '\n```';
 }
 
+function convertConversationToChatMessages(conversationMessages?: ConversationMessage[]): ChatCompletionDataMessage[] {
+	if (!conversationMessages) {
+		return [];
+	}
+	const chatMessages: ChatCompletionDataMessage[] = [];
+	conversationMessages.forEach(convoMsg => {
+		const toolAttachments: ChatCompletionToolAttachment[] | undefined = convoMsg.toolAttachments?.map(att => ({
+			bundleID: att.bundleID,
+			toolSlug: att.toolSlug,
+			toolVersion: att.toolVersion,
+			displayName: att.displayName,
+			id: att.id,
+		}));
+
+		const message: ChatCompletionDataMessage = {
+			role: roleMap[convoMsg.role],
+			content: convoMsg.content,
+			name: convoMsg.name,
+			toolAttachments: toolAttachments,
+		};
+
+		chatMessages.push(message);
+	});
+	return chatMessages;
+}
+
+export async function BuildCompletionDataFromConversation(
+	provider: ProviderName,
+	modelParams: ModelParams,
+	messages?: Array<ConversationMessage>
+): Promise<CompletionData> {
+	const allMessages = convertConversationToChatMessages(messages);
+	// console.log(JSON.stringify(allMessages, null, 2));
+	const promptMsg = allMessages.pop();
+	if (!promptMsg || promptMsg.content === '') {
+		throw Error('Invalid prompt message input');
+	}
+	const completionData = providerSetAPI.buildCompletionData(provider, modelParams, promptMsg, allMessages);
+	return completionData;
+}
+
 // export const normalizeThinkingChunk = (s: string) => s.replace(/~~~+/g, '~~\u200b~'); // break accidental fences
 
 function parseAPIResponse(convoMessage: ConversationMessage, providerResp: CompletionResponse | undefined) {
@@ -127,47 +168,6 @@ async function handleStreamedCompletion(
 		onStreamThinkingData
 	);
 	return parseAPIResponse(convoMessage, providerResp);
-}
-
-function convertConversationToChatMessages(conversationMessages?: ConversationMessage[]): ChatCompletionDataMessage[] {
-	if (!conversationMessages) {
-		return [];
-	}
-	const chatMessages: ChatCompletionDataMessage[] = [];
-	conversationMessages.forEach(convoMsg => {
-		const toolAttachments: ChatCompletionToolAttachment[] | undefined = convoMsg.toolAttachments?.map(att => ({
-			bundleID: att.bundleID,
-			toolSlug: att.toolSlug,
-			toolVersion: att.toolVersion,
-			displayName: att.displayName,
-			id: att.id,
-		}));
-
-		const message: ChatCompletionDataMessage = {
-			role: roleMap[convoMsg.role],
-			content: convoMsg.content,
-			name: convoMsg.name,
-			toolAttachments: toolAttachments,
-		};
-
-		chatMessages.push(message);
-	});
-	return chatMessages;
-}
-
-export async function BuildCompletionDataFromConversation(
-	provider: ProviderName,
-	modelParams: ModelParams,
-	messages?: Array<ConversationMessage>
-): Promise<CompletionData> {
-	const allMessages = convertConversationToChatMessages(messages);
-	// console.log(JSON.stringify(allMessages, null, 2));
-	const promptMsg = allMessages.pop();
-	if (!promptMsg || promptMsg.content === '') {
-		throw Error('Invalid prompt message input');
-	}
-	const completionData = providerSetAPI.buildCompletionData(provider, modelParams, promptMsg, allMessages);
-	return completionData;
 }
 
 export async function HandleCompletion(
