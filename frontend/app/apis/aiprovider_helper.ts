@@ -170,7 +170,7 @@ export async function BuildCompletionDataFromConversation(
 	return completionData;
 }
 
-export async function GetCompletionMessage(
+export async function HandleCompletion(
 	provider: ProviderName,
 	completionData: CompletionData,
 	convoMessage: ConversationMessage,

@@ -15,7 +15,7 @@ import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { useAtBottom } from '@/hooks/use_at_bottom';
 
-import { BuildCompletionDataFromConversation, GetCompletionMessage, getQuotedJSON } from '@/apis/aiprovider_helper';
+import { BuildCompletionDataFromConversation, getQuotedJSON, HandleCompletion } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
@@ -311,7 +311,7 @@ export default function ChatsPage() {
 						saveUpdatedChat({ ...updatedChatWithConvoMessage });
 					}
 				}
-				const newMsg = await GetCompletionMessage(
+				const newMsg = await HandleCompletion(
 					options.providerName,
 					completionData,
 					convoMsg,
