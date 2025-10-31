@@ -9,7 +9,7 @@ go 1.25.1
 //   Installation script for the needed go tools by this module can be found at: ./scripts/install_tools.sh.
 require (
 	github.com/adrg/xdg v0.5.3
-	github.com/anthropics/anthropic-sdk-go v1.14.0
+	github.com/anthropics/anthropic-sdk-go v1.16.0
 	github.com/danielgtaylor/huma/v2 v2.34.1
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/google/uuid v1.6.0
