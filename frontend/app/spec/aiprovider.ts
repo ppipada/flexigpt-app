@@ -1,4 +1,5 @@
 import type { ModelName, ProviderName, ReasoningParams } from '@/spec/modelpreset';
+import type { Tool } from '@/spec/tool';
 
 export enum ChatCompletionRoleEnum {
 	system = 'system',
@@ -37,9 +38,32 @@ export interface ChatCompletionToolAttachment {
 	toolVersion: string;
 	id?: string;
 }
+
+export interface BuildCompletionToolAttachment {
+	bundleID?: string;
+	toolSlug: string;
+	toolVersion: string;
+	id?: string;
+	displayName?: string;
+}
+
+export interface BuildCompletionDataMessage {
+	role: ChatCompletionRoleEnum;
+	content?: string;
+	name?: string;
+	toolAttachments?: BuildCompletionToolAttachment[];
+}
+
+export interface CompletionTool {
+	bundleID: string;
+	tool: Tool;
+	attachmentIDs?: string[];
+}
+
 export interface CompletionData {
 	modelParams: ModelParams;
 	messages?: ChatCompletionDataMessage[];
+	tools?: CompletionTool[];
 }
 
 export interface APIRequestDetails {
@@ -94,8 +118,8 @@ export interface IProviderSetAPI {
 	buildCompletionData(
 		provider: ProviderName,
 		modelParams: ModelParams,
-		currentMessage: ChatCompletionDataMessage,
-		prevMessages?: Array<ChatCompletionDataMessage>
+		currentMessage: BuildCompletionDataMessage,
+		prevMessages?: Array<BuildCompletionDataMessage>
 	): Promise<CompletionData>;
 	completion(
 		provider: ProviderName,

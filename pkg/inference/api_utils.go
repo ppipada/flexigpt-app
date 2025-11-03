@@ -2,6 +2,7 @@ package inference
 
 import (
 	"context"
+	"encoding/json"
 	"slices"
 	"strings"
 
@@ -99,4 +100,78 @@ func getCompletionData(
 	)
 
 	return &completionData
+}
+
+func toolFunctionName(ct spec.CompletionTool) string {
+	slug := sanitizeToolNameComponent(string(ct.Tool.Slug))
+	version := sanitizeToolNameComponent(strings.ReplaceAll(string(ct.Tool.Version), ".", "_"))
+
+	idPart := sanitizeToolNameComponent(strings.ReplaceAll(string(ct.Tool.ID), "-", ""))
+	if len(idPart) > 8 {
+		idPart = idPart[:8]
+	}
+
+	parts := make([]string, 0, 3)
+	if slug != "" {
+		parts = append(parts, slug)
+	}
+	if version != "" {
+		parts = append(parts, version)
+	}
+	if idPart != "" {
+		parts = append(parts, idPart)
+	}
+	if len(parts) == 0 {
+		parts = append(parts, "tool")
+	}
+
+	name := strings.Join(parts, "_")
+	if len(name) > 64 {
+		name = name[:64]
+	}
+	name = strings.Trim(name, "_-")
+	if name == "" {
+		return "tool"
+	}
+	return name
+}
+
+func sanitizeToolNameComponent(s string) string {
+	s = strings.ToLower(s)
+	var b strings.Builder
+	for _, r := range s {
+		switch {
+		case r >= 'a' && r <= 'z':
+			b.WriteRune(r)
+		case r >= '0' && r <= '9':
+			b.WriteRune(r)
+		case r == '_' || r == '-':
+			b.WriteRune(r)
+		default:
+			b.WriteByte('_')
+		}
+	}
+	out := strings.Trim(b.String(), "_-")
+	return out
+}
+
+func decodeToolArgSchema(raw json.RawMessage) (map[string]any, error) {
+	if len(raw) == 0 {
+		return map[string]any{"type": "object"}, nil
+	}
+	var schema map[string]any
+	if err := json.Unmarshal(raw, &schema); err != nil {
+		return nil, err
+	}
+	return schema, nil
+}
+
+func toolDescription(ct spec.CompletionTool) string {
+	if desc := strings.TrimSpace(ct.Tool.Description); desc != "" {
+		return desc
+	}
+	if display := strings.TrimSpace(ct.Tool.DisplayName); display != "" {
+		return display
+	}
+	return ""
 }

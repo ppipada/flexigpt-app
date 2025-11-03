@@ -215,7 +215,7 @@ Launch FlexiGPT, open Settings -> Providers, paste your API key, start chatting.
 
 - Tooling:
 
-  - [Gopls](https://pkg.go.dev/golang.org/x/tools/gopls) and [Modernize](https://pkg.go.dev/golang.org/x/tools/gopls/internal/analysis/modernize)
+  - [Gopls](https://pkg.go.dev/golang.org/x/tools/gopls)
   - [Golangci-lint](https://golangci-lint.run/)
   - [Knip](https://knip.dev/)
   - [ESLint](https://eslint.org/)

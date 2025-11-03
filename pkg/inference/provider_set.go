@@ -3,49 +3,33 @@ package inference
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"sort"
+	"strings"
 
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
+	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
 )
-
-type CompletionProvider interface {
-	InitLLM(ctx context.Context) error
-	DeInitLLM(ctx context.Context) error
-	GetProviderInfo(
-		ctx context.Context,
-	) *spec.ProviderParams
-	IsConfigured(ctx context.Context) bool
-	SetProviderAPIKey(
-		ctx context.Context,
-		apiKey string,
-	) error
-	BuildCompletionData(
-		ctx context.Context,
-		modelParams spec.ModelParams,
-		currentMessage spec.ChatCompletionDataMessage,
-		prevMessages []spec.ChatCompletionDataMessage,
-	) (*spec.CompletionData, error)
-	FetchCompletion(
-		ctx context.Context,
-		completionData *spec.CompletionData,
-		OnStreamTextData func(textData string) error,
-		OnStreamThinkingData func(thinkingData string) error,
-	) (*spec.CompletionResponse, error)
-}
 
 type ProviderSetAPI struct {
 	providers map[modelpresetSpec.ProviderName]CompletionProvider
 	debug     bool
+	toolStore *toolStore.ToolStore
 }
 
 // NewProviderSetAPI creates a new ProviderSet with the specified default provider.
 func NewProviderSetAPI(
 	debug bool,
+	ts *toolStore.ToolStore,
 ) (*ProviderSetAPI, error) {
 	return &ProviderSetAPI{
 		providers: map[modelpresetSpec.ProviderName]CompletionProvider{},
 		debug:     debug,
+		toolStore: ts,
 	}, nil
 }
 
@@ -146,7 +130,7 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 	if req.Body.CurrentMessage.Content == nil || req.Body.CurrentMessage.Role != spec.User {
 		return nil, errors.New("got invalid current message input")
 	}
-	if *req.Body.CurrentMessage.Content == "" {
+	if strings.TrimSpace(*req.Body.CurrentMessage.Content) == "" {
 		return nil, errors.New("got empty current message input")
 	}
 	provider := req.Provider
@@ -154,14 +138,24 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 	if !exists {
 		return nil, errors.New("invalid provider")
 	}
+
+	prevMessages := make([]spec.ChatCompletionDataMessage, 0, len(req.Body.PrevMessages))
+	for _, m := range req.Body.PrevMessages {
+		prevMessages = append(prevMessages, convertBuildMessageToChatMessage(m))
+	}
+	currentMessage := convertBuildMessageToChatMessage(req.Body.CurrentMessage)
+
 	resp, err := p.BuildCompletionData(
 		ctx,
 		req.Body.ModelParams,
-		req.Body.CurrentMessage,
-		req.Body.PrevMessages,
+		currentMessage,
+		prevMessages,
 	)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("error in building completion data"))
+	}
+	if err := ps.attachToolsToCompletionData(ctx, resp); err != nil {
+		return nil, err
 	}
 
 	return &spec.BuildCompletionDataResponse{Body: resp}, nil
@@ -192,6 +186,156 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	}
 
 	return &spec.FetchCompletionResponse{Body: resp}, nil
+}
+
+func (ps *ProviderSetAPI) attachToolsToCompletionData(
+	ctx context.Context,
+	data *spec.CompletionData,
+) error {
+	if data == nil {
+		return errors.New("invalid completion data: nil")
+	}
+
+	type toolKey struct {
+		bundleID string
+		toolSlug string
+		version  string
+	}
+
+	attachmentIndex := map[toolKey]map[string]struct{}{}
+
+	for _, msg := range data.Messages {
+		for _, att := range msg.ToolAttachments {
+			bundleID := strings.TrimSpace(att.BundleID)
+			toolSlug := strings.TrimSpace(att.ToolSlug)
+			version := strings.TrimSpace(att.ToolVersion)
+
+			if bundleID == "" || toolSlug == "" || version == "" {
+				return errors.New(
+					"invalid tool attachment: bundleID, toolSlug and toolVersion are required",
+				)
+			}
+
+			k := toolKey{
+				bundleID: bundleID,
+				toolSlug: toolSlug,
+				version:  version,
+			}
+			if _, ok := attachmentIndex[k]; !ok {
+				attachmentIndex[k] = make(map[string]struct{})
+			}
+			if id := strings.TrimSpace(att.ID); id != "" {
+				attachmentIndex[k][id] = struct{}{}
+			}
+		}
+	}
+
+	if len(attachmentIndex) == 0 {
+		data.Tools = nil
+		return nil
+	}
+
+	if ps.toolStore == nil {
+		return errors.New("tool store not configured for provider set")
+	}
+
+	keys := make([]toolKey, 0, len(attachmentIndex))
+	for k := range attachmentIndex {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		if keys[i].bundleID != keys[j].bundleID {
+			return keys[i].bundleID < keys[j].bundleID
+		}
+		if keys[i].toolSlug != keys[j].toolSlug {
+			return keys[i].toolSlug < keys[j].toolSlug
+		}
+		return keys[i].version < keys[j].version
+	})
+
+	tools := make([]spec.CompletionTool, 0, len(keys))
+	for _, k := range keys {
+		req := &toolSpec.GetToolRequest{
+			BundleID: bundleitemutils.BundleID(k.bundleID),
+			ToolSlug: bundleitemutils.ItemSlug(k.toolSlug),
+			Version:  bundleitemutils.ItemVersion(k.version),
+		}
+		resp, err := ps.toolStore.GetTool(ctx, req)
+		if err != nil {
+			return fmt.Errorf(
+				"failed to load tool %s/%s@%s: %w",
+				k.bundleID,
+				k.toolSlug,
+				k.version,
+				err,
+			)
+		}
+		if resp == nil || resp.Body == nil {
+			return fmt.Errorf(
+				"tool %s/%s@%s not found",
+				k.bundleID,
+				k.toolSlug,
+				k.version,
+			)
+		}
+		tool := *resp.Body
+		if !tool.IsEnabled {
+			return fmt.Errorf(
+				"tool %s/%s@%s is disabled",
+				k.bundleID,
+				k.toolSlug,
+				k.version,
+			)
+		}
+
+		completionTool := spec.CompletionTool{
+			BundleID: k.bundleID,
+			Tool:     tool,
+		}
+		if ids := attachmentIndex[k]; len(ids) > 0 {
+			completionTool.AttachmentIDs = make([]string, 0, len(ids))
+			for id := range ids {
+				completionTool.AttachmentIDs = append(completionTool.AttachmentIDs, id)
+			}
+			sort.Strings(completionTool.AttachmentIDs)
+		}
+		tools = append(tools, completionTool)
+	}
+
+	data.Tools = tools
+	return nil
+}
+
+func convertBuildMessageToChatMessage(
+	msg spec.BuildCompletionDataMessage,
+) spec.ChatCompletionDataMessage {
+	out := spec.ChatCompletionDataMessage{
+		Role: msg.Role,
+	}
+	if msg.Content != nil {
+		c := *msg.Content
+		out.Content = &c
+	}
+	if msg.Name != nil {
+		n := *msg.Name
+		out.Name = &n
+	}
+	if len(msg.ToolAttachments) > 0 {
+		attachments := make([]spec.ChatCompletionToolAttachment, 0, len(msg.ToolAttachments))
+		for _, att := range msg.ToolAttachments {
+			attachment := spec.ChatCompletionToolAttachment{
+				BundleID:    strings.TrimSpace(att.BundleID),
+				ToolSlug:    strings.TrimSpace(att.ToolSlug),
+				ToolVersion: strings.TrimSpace(att.ToolVersion),
+			}
+			if id := strings.TrimSpace(att.ID); id != "" {
+				attachment.ID = id
+			}
+			attachments = append(attachments, attachment)
+		}
+		out.ToolAttachments = attachments
+	}
+	return out
 }
 
 func isProviderSDKTypeSupported(t modelpresetSpec.ProviderSDKType) bool {

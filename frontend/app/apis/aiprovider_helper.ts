@@ -1,7 +1,7 @@
 import {
-	type ChatCompletionDataMessage,
+	type BuildCompletionDataMessage,
+	type BuildCompletionToolAttachment,
 	ChatCompletionRoleEnum,
-	type ChatCompletionToolAttachment,
 	type CompletionData,
 	type CompletionResponse,
 	type ModelParams,
@@ -27,13 +27,15 @@ export function getQuotedJSON(obj: any): string {
 	return '```json\n' + JSON.stringify(obj, null, 2) + '\n```';
 }
 
-function convertConversationToChatMessages(conversationMessages?: ConversationMessage[]): ChatCompletionDataMessage[] {
+function convertConversationToBuildMessages(
+	conversationMessages?: ConversationMessage[]
+): BuildCompletionDataMessage[] {
 	if (!conversationMessages) {
 		return [];
 	}
-	const chatMessages: ChatCompletionDataMessage[] = [];
+	const chatMessages: BuildCompletionDataMessage[] = [];
 	conversationMessages.forEach(convoMsg => {
-		const toolAttachments: ChatCompletionToolAttachment[] | undefined = convoMsg.toolAttachments?.map(att => ({
+		const toolAttachments: BuildCompletionToolAttachment[] | undefined = convoMsg.toolAttachments?.map(att => ({
 			bundleID: att.bundleID,
 			toolSlug: att.toolSlug,
 			toolVersion: att.toolVersion,
@@ -41,7 +43,7 @@ function convertConversationToChatMessages(conversationMessages?: ConversationMe
 			id: att.id,
 		}));
 
-		const message: ChatCompletionDataMessage = {
+		const message: BuildCompletionDataMessage = {
 			role: roleMap[convoMsg.role],
 			content: convoMsg.content,
 			name: convoMsg.name,
@@ -58,7 +60,7 @@ export async function BuildCompletionDataFromConversation(
 	modelParams: ModelParams,
 	messages?: Array<ConversationMessage>
 ): Promise<CompletionData> {
-	const allMessages = convertConversationToChatMessages(messages);
+	const allMessages = convertConversationToBuildMessages(messages);
 	// console.log(JSON.stringify(allMessages, null, 2));
 	const promptMsg = allMessages.pop();
 	if (!promptMsg || promptMsg.content === '') {

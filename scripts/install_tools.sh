@@ -7,7 +7,8 @@
 # - Tool dependencies are maintained below as (module path, version) tuples.
 # - This script does NOT install the prerequisites: go, golangci-lint.
 #   They must be installed first (use the tool versions file at repo root).
-# - Remember to bump versions in .github/actions/lint.yml when upgrading lints like modernize and golangci-lint.
+#   Remember to bump version in .github/actions/lint.yml when upgrading golangci-lint.
+
 # - refdir:
 #   - Note: This tool can have false positives but can help sort Go functions in a file.
 #   - Actual command options used are in package.json.
@@ -20,21 +21,8 @@ IFS=$'\n\t'
 log()  { printf '[%s] %s\n' "$(date +'%H:%M:%S')" "$*"; }
 warn() { printf 'WARN: %s\n' "$*" >&2; }
 
-TOOLS=(
-"golang.org/x/tools/gopls@v0.20.0"
-"github.com/segmentio/golines@v0.13.0"
-"mvdan.cc/gofumpt@v0.9.1"
-"github.com/wailsapp/wails/v2/cmd/wails@v2.10.2"
-"github.com/oligot/go-mod-upgrade@v0.12.0"
-"github.com/kisielk/godepgraph@v1.0.0"
-# Bump version in lint.yml action if the version of this changes.
-"golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@v0.20.0"
-# refdir (disabled) We rely on a patched fork; keeping the context here but do not install automatically.
-# "github.com/devnev/refdir@latest"
-)
-
 # Check mandatory prerequisites explicitly requested:
-# - go, golangci-lint, gofumpt (expected to be managed externally via the tool versions file)
+# - go, golangci-lint (expected to be managed externally via the tool versions file)
 MISSING_PREREQS=()
 for t in go golangci-lint; do
   if ! command -v "$t" >/dev/null 2>&1; then
@@ -54,6 +42,18 @@ EOF
   exit 1
 fi
 
+TOOLS=(
+"golang.org/x/tools/gopls@v0.20.0"
+"github.com/segmentio/golines@v0.13.0"
+"mvdan.cc/gofumpt@v0.9.1"
+"github.com/wailsapp/wails/v2/cmd/wails@v2.10.2"
+"github.com/oligot/go-mod-upgrade@v0.12.0"
+"github.com/kisielk/godepgraph@v1.0.0"
+# refdir (disabled) We rely on a patched fork; keeping the context here but do not install automatically.
+# "github.com/devnev/refdir@latest"
+)
+
+
 # If we get here, prerequisites exist on PATH.
 GO_VERSION="$(go version)"
 log "Using $GO_VERSION"
@@ -71,7 +71,7 @@ for entry in "${TOOLS[@]}"; do
 done
 
 MISSING_TOOLS=()
-for t in gopls golines gofumpt wails go-mod-upgrade godepgraph modernize; do
+for t in gopls golines gofumpt wails go-mod-upgrade godepgraph; do
   if ! command -v "$t" >/dev/null 2>&1; then
     MISSING_TOOLS+=("$t")
   fi
@@ -83,7 +83,7 @@ if ((${#MISSING_TOOLS[@]})); then
 fi
 
 
-log "Reminder: Keep golangci-lint and modernize versions in sync with lint.yml"
+log "Reminder: Keep golangci-lint version in sync with lint.yml"
 # -------------- go mod maintenance --------------
 log "Running 'go mod download', 'go mod tidy', and 'go mod verify'"
 go mod download

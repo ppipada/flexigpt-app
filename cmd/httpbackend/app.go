@@ -54,10 +54,10 @@ func NewBackendApp(
 
 	app.initSettingsStore()
 	app.initConversationStore()
+	app.initToolStore()
 	app.initProviderSet()
 	app.initModelPresetStore()
 	app.initPromptTemplateStore()
-	app.initToolStore()
 	return app
 }
 
@@ -187,7 +187,7 @@ func (a *BackendApp) initToolStore() {
 }
 
 func (a *BackendApp) initProviderSet() {
-	p, err := inference.NewProviderSetAPI(false)
+	p, err := inference.NewProviderSetAPI(false, a.toolStoreAPI)
 	if err != nil {
 		slog.Error(
 			"failed to initialize provider set",

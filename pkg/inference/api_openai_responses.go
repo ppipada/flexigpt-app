@@ -196,6 +196,15 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 
 		}
 	}
+	if len(completionData.Tools) > 0 {
+		toolDefs, err := toOpenAIResponseTools(completionData.Tools)
+		if err != nil {
+			return nil, err
+		}
+		if len(toolDefs) > 0 {
+			params.Tools = toolDefs
+		}
+	}
 	timeout := modelpresetSpec.DefaultAPITimeout
 	if completionData.ModelParams.Timeout > 0 {
 		timeout = time.Duration(completionData.ModelParams.Timeout) * time.Second
@@ -439,4 +448,35 @@ func getResponseContentFromOpenAIOutput(
 	)
 
 	return resp
+}
+
+func toOpenAIResponseTools(
+	tools []spec.CompletionTool,
+) ([]responses.ToolUnionParam, error) {
+	if len(tools) == 0 {
+		return nil, nil
+	}
+	out := make([]responses.ToolUnionParam, 0, len(tools))
+	for _, ct := range tools {
+		schema, err := decodeToolArgSchema(ct.Tool.ArgSchema)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"invalid tool schema for %s/%s@%s: %w",
+				ct.BundleID,
+				ct.Tool.Slug,
+				ct.Tool.Version,
+				err,
+			)
+		}
+		tool := responses.FunctionToolParam{
+			Name:       toolFunctionName(ct),
+			Parameters: schema,
+			Type:       openaiSharedConstant.Function("function"),
+		}
+		if desc := toolDescription(ct); desc != "" {
+			tool.Description = openai.String(desc)
+		}
+		out = append(out, responses.ToolUnionParam{OfFunction: &tool})
+	}
+	return out, nil
 }

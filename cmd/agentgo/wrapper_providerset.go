@@ -9,6 +9,7 @@ import (
 	inferenceSpec "github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -23,8 +24,9 @@ type ProviderSetWrapper struct {
 // InitProviderSetWrapper creates a new ProviderSet with the specified default provider.
 func InitProviderSetWrapper(
 	ps *ProviderSetWrapper,
+	ts *toolStore.ToolStore,
 ) error {
-	p, err := inference.NewProviderSetAPI(false)
+	p, err := inference.NewProviderSetAPI(false, ts)
 	if err != nil {
 		return errors.Join(err, errors.New("invalid default provider"))
 	}

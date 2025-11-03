@@ -131,7 +131,17 @@ func NewApp() *App {
 }
 
 func (a *App) initManagers() {
-	err := InitProviderSetWrapper(a.providerSetAPI)
+	err := InitToolStoreWrapper(a.toolStoreAPI, a.toolsDirPath)
+	if err != nil {
+		slog.Error(
+			"Couldn't initialize tool store",
+			"Directory", a.toolsDirPath,
+			"Error", err,
+		)
+		panic("Failed to initialize managers: tool store initialization failed")
+	}
+
+	err = InitProviderSetWrapper(a.providerSetAPI, a.toolStoreAPI.store)
 	if err != nil {
 		slog.Error(
 			"Couldn't initialize provider set",
@@ -186,16 +196,6 @@ func (a *App) initManagers() {
 			"Error", err,
 		)
 		panic("Failed to initialize managers: prompt template store initialization failed")
-	}
-
-	err = InitToolStoreWrapper(a.toolStoreAPI, a.toolsDirPath)
-	if err != nil {
-		slog.Error(
-			"Couldn't initialize tool store",
-			"Directory", a.toolsDirPath,
-			"Error", err,
-		)
-		panic("Failed to initialize managers: tool store initialization failed")
 	}
 }
 

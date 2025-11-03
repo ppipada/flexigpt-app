@@ -4,13 +4,7 @@
 
 - Checkout code.
 - Init and checkout all submodules (currently only flatpak shared modules): `git submodule update --init --recursive`
-
-- Install base prerequisites:
-
-  - `node ^v22.19.0`, `go ^1.25` and `golangci-lint ^2.5.0`
-  - Pinned versions of these can be found in file at repo root named: `.tool-versions`.
-    - Recommended: use `asdf` to manage go and node base prerequisites.
-    - If you have asdf installed you can do `asdf install` to install all required versions of this project.
+- Install base prerequisites `node`, `go` and `golangci-lint`. Pinned versions of these can be found in file at repo root named: `.tool-versions`. Recommended: use `asdf` to manage the base prerequisites. If you have asdf installed you can do `asdf install` to install all required versions of this project.
 
 - Install pnpm packages
 

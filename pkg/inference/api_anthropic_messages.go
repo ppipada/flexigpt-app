@@ -3,6 +3,7 @@ package inference
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
+	anthropicSharedConstant "github.com/anthropics/anthropic-sdk-go/shared/constant"
 )
 
 // AnthropicMessagesAPI implements CompletionProvider for Anthropics' Messages API.
@@ -177,6 +179,16 @@ func (api *AnthropicMessagesAPI) FetchCompletion(
 	timeout := modelpresetSpec.DefaultAPITimeout
 	if completionData.ModelParams.Timeout > 0 {
 		timeout = time.Duration(completionData.ModelParams.Timeout) * time.Second
+	}
+
+	if len(completionData.Tools) > 0 {
+		toolDefs, err := toAnthropicTools(completionData.Tools)
+		if err != nil {
+			return nil, err
+		}
+		if len(toolDefs) > 0 {
+			params.Tools = toolDefs
+		}
 	}
 
 	if completionData.ModelParams.Stream && onStreamTextData != nil && onStreamThinkingData != nil {
@@ -389,4 +401,77 @@ func getResponseContentFromAnthropicMessage(msg *anthropic.Message) []spec.Respo
 		}
 	}
 	return resp
+}
+
+func toAnthropicTools(
+	tools []spec.CompletionTool,
+) ([]anthropic.ToolUnionParam, error) {
+	if len(tools) == 0 {
+		return nil, nil
+	}
+	out := make([]anthropic.ToolUnionParam, 0, len(tools))
+	for _, ct := range tools {
+		schema, err := decodeToolArgSchema(ct.Tool.ArgSchema)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"invalid tool schema for %s/%s@%s: %w",
+				ct.BundleID,
+				ct.Tool.Slug,
+				ct.Tool.Version,
+				err,
+			)
+		}
+
+		inputSchema := anthropic.ToolInputSchemaParam{
+			Type: anthropicSharedConstant.Object("object"),
+		}
+		if tVal, ok := schema["type"].(string); ok && strings.TrimSpace(tVal) != "" {
+			inputSchema.Type = anthropicSharedConstant.Object(
+				strings.ToLower(strings.TrimSpace(tVal)),
+			)
+			delete(schema, "type")
+		}
+		if props, ok := schema["properties"]; ok {
+			inputSchema.Properties = props
+			delete(schema, "properties")
+		}
+		if req, ok := schema["required"]; ok {
+			switch v := req.(type) {
+			case []any:
+				required := make([]string, 0, len(v))
+				for _, item := range v {
+					if s, ok := item.(string); ok && strings.TrimSpace(s) != "" {
+						required = append(required, strings.TrimSpace(s))
+					}
+				}
+				if len(required) > 0 {
+					inputSchema.Required = required
+				}
+			case []string:
+				required := make([]string, 0, len(v))
+				for _, item := range v {
+					if strings.TrimSpace(item) != "" {
+						required = append(required, strings.TrimSpace(item))
+					}
+				}
+				if len(required) > 0 {
+					inputSchema.Required = required
+				}
+			}
+			delete(schema, "required")
+		}
+		if len(schema) > 0 {
+			inputSchema.ExtraFields = schema
+		}
+
+		toolUnion := anthropic.ToolUnionParamOfTool(inputSchema, toolFunctionName(ct))
+		if variant := toolUnion.OfTool; variant != nil {
+			variant.Type = anthropic.ToolTypeCustom
+			if desc := toolDescription(ct); desc != "" {
+				variant.Description = anthropic.String(desc)
+			}
+		}
+		out = append(out, toolUnion)
+	}
+	return out, nil
 }

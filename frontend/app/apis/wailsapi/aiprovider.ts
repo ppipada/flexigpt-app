@@ -1,5 +1,5 @@
 import type {
-	ChatCompletionDataMessage,
+	BuildCompletionDataMessage,
 	CompletionData,
 	CompletionResponse,
 	IProviderSetAPI,
@@ -18,15 +18,15 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 	async buildCompletionData(
 		provider: ProviderName,
 		modelParams: ModelParams,
-		currentMessage: ChatCompletionDataMessage,
-		prevMessages?: Array<ChatCompletionDataMessage>
+		currentMessage: BuildCompletionDataMessage,
+		prevMessages?: Array<BuildCompletionDataMessage>
 	): Promise<CompletionData> {
 		const req = {
 			Provider: provider,
 			Body: {
 				modelParams: modelParams as wailsSpec.ModelParams,
-				currentMessage: currentMessage,
-				prevMessages: prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionDataMessage[]) : [],
+				currentMessage: currentMessage as wailsSpec.BuildCompletionDataMessage,
+				prevMessages: prevMessages ? ([...prevMessages] as wailsSpec.BuildCompletionDataMessage[]) : [],
 			} as wailsSpec.BuildCompletionDataRequestBody,
 		};
 

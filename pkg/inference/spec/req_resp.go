@@ -89,12 +89,13 @@ type CompletionResponse struct {
 type CompletionData struct {
 	ModelParams ModelParams                 `json:"modelParams"`
 	Messages    []ChatCompletionDataMessage `json:"messages,omitempty"`
+	Tools       []CompletionTool            `json:"tools,omitempty"`
 }
 
 type BuildCompletionDataRequestBody struct {
-	ModelParams    ModelParams                 `json:"modelParams"    required:"true"`
-	CurrentMessage ChatCompletionDataMessage   `json:"currentMessage" required:"true"`
-	PrevMessages   []ChatCompletionDataMessage `json:"prevMessages"`
+	ModelParams    ModelParams                  `json:"modelParams"    required:"true"`
+	CurrentMessage BuildCompletionDataMessage   `json:"currentMessage" required:"true"`
+	PrevMessages   []BuildCompletionDataMessage `json:"prevMessages"`
 }
 
 type BuildCompletionDataRequest struct {

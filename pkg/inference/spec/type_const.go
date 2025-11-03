@@ -1,7 +1,8 @@
 package spec
 
 import (
-	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
 type ChatCompletionRoleEnum string
@@ -22,6 +23,21 @@ type ChatCompletionToolAttachment struct {
 	ID          string `json:"id,omitempty"`
 }
 
+type BuildCompletionToolAttachment struct {
+	BundleID    string `json:"bundleID,omitempty"`
+	ToolSlug    string `json:"toolSlug"`
+	ToolVersion string `json:"toolVersion"`
+	ID          string `json:"id,omitempty"`
+	DisplayName string `json:"displayName,omitempty"`
+}
+
+type BuildCompletionDataMessage struct {
+	Role            ChatCompletionRoleEnum          `json:"role"`
+	Content         *string                         `json:"content,omitempty"`
+	Name            *string                         `json:"name,omitempty"`
+	ToolAttachments []BuildCompletionToolAttachment `json:"toolAttachments,omitempty"`
+}
+
 type ChatCompletionDataMessage struct {
 	Role            ChatCompletionRoleEnum         `json:"role"`
 	Content         *string                        `json:"content,omitempty"`
@@ -34,26 +50,32 @@ type ChatCompletionResponseMessage struct {
 	Content *string                `json:"content,omitempty"`
 }
 
+type CompletionTool struct {
+	BundleID      string        `json:"bundleID"`
+	AttachmentIDs []string      `json:"attachmentIDs,omitempty"`
+	Tool          toolSpec.Tool `json:"tool"`
+}
+
 // ModelParams represents input information about a model to a completion.
 type ModelParams struct {
-	Name                        spec.ModelName        `json:"name"`
-	Stream                      bool                  `json:"stream"`
-	MaxPromptLength             int                   `json:"maxPromptLength"`
-	MaxOutputLength             int                   `json:"maxOutputLength"`
-	Temperature                 *float64              `json:"temperature,omitempty"`
-	Reasoning                   *spec.ReasoningParams `json:"reasoning,omitempty"`
-	SystemPrompt                string                `json:"systemPrompt"`
-	Timeout                     int                   `json:"timeout"`
-	AdditionalParametersRawJSON *string               `json:"additionalParametersRawJSON"`
+	Name                        modelpresetSpec.ModelName        `json:"name"`
+	Stream                      bool                             `json:"stream"`
+	MaxPromptLength             int                              `json:"maxPromptLength"`
+	MaxOutputLength             int                              `json:"maxOutputLength"`
+	Temperature                 *float64                         `json:"temperature,omitempty"`
+	Reasoning                   *modelpresetSpec.ReasoningParams `json:"reasoning,omitempty"`
+	SystemPrompt                string                           `json:"systemPrompt"`
+	Timeout                     int                              `json:"timeout"`
+	AdditionalParametersRawJSON *string                          `json:"additionalParametersRawJSON"`
 }
 
 // ProviderParams represents information about a provider.
 type ProviderParams struct {
-	Name                     spec.ProviderName    `json:"name"`
-	SDKType                  spec.ProviderSDKType `json:"sdkType"`
-	APIKey                   string               `json:"apiKey"`
-	Origin                   string               `json:"origin"`
-	ChatCompletionPathPrefix string               `json:"chatCompletionPathPrefix"`
-	APIKeyHeaderKey          string               `json:"apiKeyHeaderKey"`
-	DefaultHeaders           map[string]string    `json:"defaultHeaders"`
+	Name                     modelpresetSpec.ProviderName    `json:"name"`
+	SDKType                  modelpresetSpec.ProviderSDKType `json:"sdkType"`
+	APIKey                   string                          `json:"apiKey"`
+	Origin                   string                          `json:"origin"`
+	ChatCompletionPathPrefix string                          `json:"chatCompletionPathPrefix"`
+	APIKeyHeaderKey          string                          `json:"apiKeyHeaderKey"`
+	DefaultHeaders           map[string]string               `json:"defaultHeaders"`
 }

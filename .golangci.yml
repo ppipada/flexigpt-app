@@ -1,4 +1,4 @@
-# All linters are checked and included either in enable or disable as of v2.5.0 of golangci-lint.
+# All linters are checked and included either in enable or disable as of v2.6.0 of golangci-lint.
 # gofumpt is used as formatter, other formatters are not added here.
 version: "2"
 run:
@@ -99,6 +99,9 @@ linters:
 
     # Fix all the misspells, amazing thing.
     - misspell
+
+    # gopls modernize analyzers
+    - modernize
 
     # Enforce tags in un/marshaled structs.
     - musttag
@@ -265,8 +268,7 @@ linters:
     # Forces tiny interfaces, very subjective.
     - interfacebloat
 
-    # Finds places where for-loops could use an integer range.
-    # I use modernize from gopls outside golangci-lint as it gives much more.
+    # Finds places where for-loops could use an integer range. modernize also does it.
     - intrange
 
     # Accept interfaces, return concrete types. Not always.
@@ -401,6 +403,8 @@ linters:
           alias: ${1}Store
         - pkg: github.com/openai/openai-go/v2/shared/constant
           alias: openaiSharedConstant
+        - pkg: github.com/anthropics/anthropic-sdk-go/shared/constant
+          alias: anthropicSharedConstant
 
     nakedret:
       # No naked returns, ever.
