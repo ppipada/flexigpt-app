@@ -79,18 +79,19 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Compl
 
 	if (providerResp) {
 		if (providerResp.responseContent && providerResp.responseContent.length) {
-			type ContentChunk = { type: ResponseContentType; content: string };
+			type ContentChunk = { rtype: ResponseContentType; content: string };
 
 			// 1) Collapse adjacent same-type blocks
 			const collapsed: ContentChunk[] = [];
 			let last: ContentChunk | undefined;
-			for (const chunk of providerResp.responseContent as ContentChunk[]) {
-				if (last && last.type === chunk.type) {
+			for (const c of providerResp.responseContent) {
+				const chunk: ContentChunk = { rtype: c.type, content: c.content };
+				if (last && last.rtype === chunk.rtype) {
 					// Merge with a newline separator if there's already content
 					last.content += (last.content ? '\n' : '') + chunk.content;
 				} else {
 					// Copy to avoid mutating original
-					collapsed.push({ type: chunk.type, content: chunk.content });
+					collapsed.push({ rtype: chunk.rtype, content: chunk.content });
 				}
 				last = chunk;
 			}
@@ -98,9 +99,9 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Compl
 			// 2) Fence the Thinking blocks and 3) concat result
 			let respFullText = '';
 			for (const chunk of collapsed) {
-				if (chunk.type === ResponseContentType.ThinkingSummary) {
+				if (chunk.rtype === ResponseContentType.ThinkingSummary) {
 					respFullText += `\n~~~${CustomMDLanguage.ThinkingSummary}\n${chunk.content}\n~~~\n`;
-				} else if (chunk.type === ResponseContentType.Thinking) {
+				} else if (chunk.rtype === ResponseContentType.Thinking) {
 					respFullText += `\n~~~${CustomMDLanguage.Thinking}\n${chunk.content}\n~~~\n`;
 				} else {
 					respFullText += `\n${chunk.content}\n`;
