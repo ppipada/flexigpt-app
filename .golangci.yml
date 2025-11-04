@@ -448,3 +448,7 @@ formatters:
     paths:
       - third_party$
       - builtin$
+  settings:
+    gofumpt:
+      # Choose whether to use the extra rules.
+      extra-rules: true

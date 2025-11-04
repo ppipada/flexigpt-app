@@ -39,7 +39,7 @@ func NewGoRegistry(opts ...GoRegistryOption) (*GoRegistry, error) {
 	return r, nil
 }
 
-func RegisterTyped[T any, R any](
+func RegisterTyped[T, R any](
 	r *GoRegistry,
 	name string,
 	fn func(context.Context, T) (R, error),
@@ -91,7 +91,7 @@ func (r *GoRegistry) Lookup(name string) (JSONToolFunc, bool) {
 
 // typedToJSON wraps a typed function (ctx, T) -> (R, error) into a JSONToolFunc
 // that strictly decodes input into T and encodes output R to JSON.
-func typedToJSON[T any, R any](fn func(context.Context, T) (R, error)) JSONToolFunc {
+func typedToJSON[T, R any](fn func(context.Context, T) (R, error)) JSONToolFunc {
 	return func(ctx context.Context, in json.RawMessage) (json.RawMessage, error) {
 		// Decode input strictly into T (rejects unknown fields and trailing data).
 		args, err := encdec.DecodeJSONRaw[T](in)

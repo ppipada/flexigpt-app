@@ -78,7 +78,7 @@
 	"go.alternateTools": {
 		"customFormatter": "golines"
 	},
-	"go.formatFlags": ["--base-formatter=gofumpt"],
+	"go.formatFlags": ["--base-formatter=gofumpt -extra"],
 	"go.lintOnSave": "package",
 	"go.testFlags": ["-timeout=30m", "-count=1", "-v"],
 	"go.toolsManagement.autoUpdate": true,
