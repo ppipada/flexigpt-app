@@ -7,7 +7,7 @@
 		'Noto Color Emoji';
 }
 
-@plugin "daisyui/theme" {
+@plugin 'daisyui/theme' {
 	name: 'applight';
 	color-scheme: 'light';
 	--color-base-100: oklch(92.951% 0.002 17.197);
@@ -40,7 +40,7 @@
 	--noise: 0;
 }
 
-@plugin "daisyui/theme" {
+@plugin 'daisyui/theme' {
 	name: 'appdark';
 	color-scheme: 'dark';
 	--color-base-100: oklch(0% 0 0);
@@ -73,7 +73,7 @@
 	--noise: 0;
 }
 
-@plugin "daisyui" {
+@plugin 'daisyui' {
 	prefix: '';
 	exclude: rootscrollgutter, properties;
 	themes:
