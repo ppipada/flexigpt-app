@@ -872,7 +872,8 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 		tok.BuiltInDone = true
 	}
 
-	//  Stream user templates until we reach pageHint - always consume whole directory pages so that no object can be skipped.
+	// Stream user templates until we reach pageHint.
+	// Always consume whole directory pages so that no object can be skipped.
 	for len(out) < pageHint {
 		fileEntries, nxt, err := s.templateStore.ListFiles(
 			dirstore.ListingConfig{

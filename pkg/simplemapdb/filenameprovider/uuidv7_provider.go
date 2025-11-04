@@ -39,7 +39,8 @@ func (p *UUIDv7Provider) CreatedAt(filename string) (time.Time, error) {
 	return info.CreatedAt, nil
 }
 
-// Parse does the opposite of build, but given that build is lossy i.e it looses non alpha numeric chars it is not a exact repro of title.
+// Parse does the opposite of build.
+// But, given that build is lossy i.e it looses non alpha numeric chars it is not a exact repro of title.
 func (p *UUIDv7Provider) Parse(filename string) (*FileInfo, error) {
 	base := filepath.Base(filename)
 	base = strings.TrimSuffix(base, filepath.Ext(base))

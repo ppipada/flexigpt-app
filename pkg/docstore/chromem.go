@@ -187,8 +187,9 @@ func getEmbeddingFunc(
 	funcID spec.EmbeddingFuncID,
 	apiKey string,
 ) (chromem.EmbeddingFunc, error) {
-	// These are from OpenAI platform
-	// If other providers like Azure or OLlama are to be used which provide OpenAI compatible API, declareNewIDs and use.
+	// These are from OpenAI platform.
+	// If other providers like Azure or OLlama are to be used which provide OpenAI
+	// compatible API, declareNewIDs and use.
 	omodel, exists := embeddingModelMapOpenAI[funcID]
 	if exists {
 		return chromem.NewEmbeddingFuncOpenAI(apiKey, omodel), nil

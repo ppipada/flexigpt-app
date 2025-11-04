@@ -24,8 +24,8 @@ type UUIDv7FileInfo struct {
 }
 
 // Build constructs a filename of the form "<uuid>_<sanitized-suffix>.<extension>".
-// Note: The Suffix is lossy- non-alphanumeric characters are replaced with underscores and the suffix is truncated to 64 characters.
-// The original suffix cannot be fully recovered from the filename.
+// Note: The Suffix is lossy- non-alphanumeric characters are replaced with underscores and the suffix is truncated to
+// 64 characters. The original suffix cannot be fully recovered from the filename.
 func Build(id, suffix, extension string) (UUIDv7FileInfo, error) {
 	if id == "" || suffix == "" || extension == "" {
 		return UUIDv7FileInfo{}, fmt.Errorf(
@@ -62,7 +62,8 @@ func Build(id, suffix, extension string) (UUIDv7FileInfo, error) {
 
 // Parse extracts the UUID, suffix, and extension from a filename produced by Build.
 // Note: The Suffix is only an approximation of the original input as build is lossy.
-// Underscores in the filename are converted to spaces, and any original non-alphanumeric characters or underscores cannot be exactly recovered.
+// Underscores in the filename are converted to spaces, and any original non-alphanumeric characters or underscores
+// cannot be exactly recovered.
 func Parse(filename string) (UUIDv7FileInfo, error) {
 	base := filepath.Base(filename)
 	extension := filepath.Ext(base)

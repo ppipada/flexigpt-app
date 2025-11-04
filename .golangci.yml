@@ -1,5 +1,5 @@
 # All linters are checked and included either in enable or disable as of v2.6.0 of golangci-lint.
-# gofumpt is used as formatter, other formatters are not added here.
+# gofumpt and golines are used as formatters.
 version: "2"
 run:
   build-tags:
@@ -347,7 +347,7 @@ linters:
     - varnamelen
 
     # Checks for unnecessary newlines at the start and end of functions.
-    # gofmt and gofumpt cover that.
+    # gofumpt covers that.
     - whitespace
 
     # Wrap all errors from external packages.
@@ -405,6 +405,8 @@ linters:
           alias: openaiSharedConstant
         - pkg: github.com/anthropics/anthropic-sdk-go/shared/constant
           alias: anthropicSharedConstant
+        - pkg: github.com/ppipada/flexigpt-app/frontend
+          alias: assets
 
     nakedret:
       # No naked returns, ever.
@@ -444,11 +446,14 @@ issues:
 formatters:
   enable:
     - gofumpt
+    - golines
   exclusions:
     paths:
       - third_party$
       - builtin$
   settings:
     gofumpt:
-      # Choose whether to use the extra rules.
       extra-rules: true
+    golines:
+      max-len: 120
+      shorten-comments: true

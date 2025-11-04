@@ -18,7 +18,8 @@ const (
 
 var src = rand.NewSource(time.Now().UnixNano())
 
-// RandomHash ref - https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go.
+// RandomHash ref -
+// https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go.
 func RandomHash(n int) string {
 	sb := strings.Builder{}
 	sb.Grow(n)

@@ -17,7 +17,8 @@ const (
 	upsertBatchSize = 256
 )
 
-// Every built-in document ID is prefixed with this constant so that existing path-parsing code can still split bundleDir / fileName.
+// Every built-in document ID is prefixed with this constant so that existing path-parsing code can still split
+// bundleDir / fileName.
 const (
 	BuiltInDocPrefix  = "bi/"
 	sqliteDBTableName = "prompttemplates"

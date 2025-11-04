@@ -76,12 +76,12 @@
 	"go.lintTool": "golangci-lint",
 	"go.formatTool": "custom",
 	"go.alternateTools": {
-		"customFormatter": "golines"
+		"customFormatter": "golangci-lint"
 	},
-	"go.formatFlags": ["--base-formatter=gofumpt -extra"],
+	"go.formatFlags": ["fmt", "--stdin"],
 	"go.lintOnSave": "package",
 	"go.testFlags": ["-timeout=30m", "-count=1", "-v"],
-	"go.toolsManagement.autoUpdate": true,
+	"go.toolsManagement.autoUpdate": false,
 	"go.addTags": {
 		"transform": "camelcase"
 	},

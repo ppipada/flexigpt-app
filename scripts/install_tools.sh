@@ -44,8 +44,6 @@ fi
 
 TOOLS=(
 "golang.org/x/tools/gopls@v0.20.0"
-"github.com/segmentio/golines@v0.13.0"
-"mvdan.cc/gofumpt@v0.9.1"
 "github.com/wailsapp/wails/v2/cmd/wails@v2.10.2"
 "github.com/oligot/go-mod-upgrade@v0.12.0"
 "github.com/kisielk/godepgraph@v1.0.0"
@@ -71,7 +69,7 @@ for entry in "${TOOLS[@]}"; do
 done
 
 MISSING_TOOLS=()
-for t in gopls golines gofumpt wails go-mod-upgrade godepgraph; do
+for t in gopls wails go-mod-upgrade godepgraph; do
   if ! command -v "$t" >/dev/null 2>&1; then
     MISSING_TOOLS+=("$t")
   fi

@@ -571,8 +571,8 @@ func (s *MapFileStore) fireEvent(e Event) {
 	}
 }
 
-// If "KeyEncDecGetter(pathSoFar)" returns a StringEncoderDecoder, it renames all immediate sub-keys using Encode() or Decode() depending on the mode.
-// Then it recurses into each sub-value with an updated path.
+// If "KeyEncDecGetter(pathSoFar)" returns a StringEncoderDecoder, it renames all immediate sub-keys using Encode() or
+// Decode() depending on the mode. Then it recurses into each sub-value with an updated path.
 // Here obj needs to be any as we may get non map objects in recursive traversal, dont do anything.
 func encodeDecodeAllKeysRecursively(
 	currentMap map[string]any,

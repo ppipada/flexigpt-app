@@ -32,7 +32,7 @@ func main() {
 	wailsLogLevel := logger.INFO
 	wailsProdLogLevel := logger.INFO
 
-	// Create an instance of the app structure
+	// Create an instance of the app structure.
 	app := NewApp()
 	slogOpts := &slog.HandlerOptions{
 		Level: slogLevel,
@@ -41,7 +41,7 @@ func main() {
 	var stdoutHandler slog.Handler = slog.NewTextHandler(os.Stdout, slogOpts)
 	stdoutLogger := slog.New(stdoutHandler)
 
-	// Init logger
+	// Init logger.
 	opts := logrotate.Options{
 		Directory:            filepath.Join(app.dataBasePath, "logs"),
 		MaximumFileSize:      10 * 1024 * 1024, // 10 MB
@@ -51,8 +51,8 @@ func main() {
 	}
 	writer, err := logrotate.New(stdoutLogger, opts)
 	if err != nil {
-		slog.Error("Failed to create log writer", "Error", err)
-		panic("Init failed")
+		slog.Error("failed to create log writer", "error", err)
+		panic("init failed")
 	}
 	defer writer.Close()
 
@@ -61,12 +61,12 @@ func main() {
 	slog.SetDefault(slogger)
 
 	app.initManagers()
-	// EmbeddedFSWalker(assets)
+	// EmbeddedFSWalker(assets).
 
 	wailsLogger := NewSlogLoggerAdapter(slogger)
-	slog.Info("Initialized", "App", appDisplayTitle)
+	slog.Info("initialized", "app", appDisplayTitle)
 
-	// Create application with options
+	// Create application with options.
 	err = wails.Run(&options.App{
 		Title:             appDisplayTitle,
 		MinWidth:          1024,
@@ -101,14 +101,13 @@ func main() {
 			app.promptTemplateStoreAPI,
 			app.toolStoreAPI,
 		},
-		// Windows platform specific options
+
 		Windows: &windows.Options{
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
 			DisableWindowIcon:    false,
-			// DisableFramelessWindowDecorations: false,
 		},
-		// Mac platform specific options
+
 		Mac: &mac.Options{
 			TitleBar: mac.TitleBarDefault(),
 			About: &mac.AboutInfo{

@@ -84,7 +84,7 @@ type ReasoningParams struct {
 }
 
 // ModelPreset is the entire "model + default knobs" bundle the user can save.
-// Anything not present in the preset is considered to be taken as default from any global defaults or inbuilt model defaults.
+// Anything not present in the preset is considered to be taken as default from any global or inbuilt model defaults.
 type ModelPreset struct {
 	SchemaVersion string           `json:"schemaVersion" required:"true"`
 	ID            ModelPresetID    `json:"id"            required:"true"`
