@@ -86,7 +86,6 @@
 		"knip": "^5.67.1",
 		"prettier": "^3.6.2",
 		"prettier-plugin-tailwindcss": "^0.7.1",
-		"react-router-devtools": "^5.1.3",
 		"rimraf": "^6.1.0",
 		"rollup-plugin-visualizer": "^6.0.5",
 		"tailwindcss": "^4.1.16",
@@ -98,6 +97,11 @@
 		"vitest": "^4.0.6"
 	},
 	"knip": {
+		"entry": [
+			"vite.config.{js,cjs,mjs,ts}",
+			"react-router.config.{js,cjs,mjs,ts}",
+			"app/hooks/highlight_worker.ts"
+		],
 		"ignore": [
 			"app/apis/wailsjs/runtime/runtime.js",
 			"app/apis/wailsjs/go/main/App.js",
@@ -107,18 +111,13 @@
 			"app/apis/wailsjs/go/main/ModelPresetStoreWrapper.js",
 			"app/apis/wailsjs/go/main/PromptTemplateStoreWrapper.js",
 			"app/apis/wailsjs/go/main/ToolStoreWrapper.js",
-			"app/spec/aiprovider.ts",
-			"app/hooks/highlight_worker.ts",
-			"app/chats/chat_input_textarea.tsx",
 			"app/hooks/use_mounted.tsx",
-			"app/components/editor/plugins/markdown_kit.tsx",
-			"app/components/editor/nodes/toolbar.tsx",
-			"app/components/editor/nodes/fixed_toolbar.tsx"
+			"app/chats/chat_input_textarea.tsx",
+			"app/components/editor/nodes/fixed_toolbar.tsx",
+			"app/components/editor/nodes/toolbar.tsx"
 		],
 		"ignoreBinaries": [],
 		"ignoreDependencies": [
-			"react-router-devtools",
-			"shiki",
 			"@testing-library/react",
 			"@testing-library/user-event",
 			"react-textarea-autosize",

@@ -8,16 +8,11 @@ export enum ChatCompletionRoleEnum {
 	function = 'function',
 }
 
-export interface ChatCompletionDataMessage {
+interface ChatCompletionDataMessage {
 	role: ChatCompletionRoleEnum;
 	content?: string;
 	name?: string;
 	toolAttachments?: ChatCompletionToolAttachment[];
-}
-
-export interface ChatCompletionResponseMessage {
-	role: ChatCompletionRoleEnum;
-	content?: string;
 }
 
 export interface ModelParams {
@@ -32,7 +27,7 @@ export interface ModelParams {
 	additionalParametersRawJSON?: string;
 }
 
-export interface ChatCompletionToolAttachment {
+interface ChatCompletionToolAttachment {
 	bundleID: string;
 	toolSlug: string;
 	toolVersion: string;
@@ -54,7 +49,7 @@ export interface BuildCompletionDataMessage {
 	toolAttachments?: BuildCompletionToolAttachment[];
 }
 
-export interface CompletionTool {
+interface CompletionTool {
 	bundleID: string;
 	tool: Tool;
 	attachmentIDs?: string[];
@@ -66,7 +61,7 @@ export interface CompletionData {
 	tools?: CompletionTool[];
 }
 
-export interface APIRequestDetails {
+interface APIRequestDetails {
 	url?: string;
 	method?: string;
 	headers?: any;
@@ -76,24 +71,17 @@ export interface APIRequestDetails {
 	curlCommand?: string;
 }
 
-export interface APIResponseDetails {
+interface APIResponseDetails {
 	data: any;
 	status: number;
 	headers: any;
 	requestDetails?: APIRequestDetails;
 }
 
-export interface APIErrorDetails {
+interface APIErrorDetails {
 	message: string;
 	requestDetails?: APIRequestDetails;
 	responseDetails?: APIResponseDetails;
-}
-
-export interface APIFetchResponse<T> {
-	data?: T;
-	responseDetails?: APIResponseDetails;
-	requestDetails?: APIRequestDetails;
-	errorDetails?: APIErrorDetails;
 }
 
 export enum ResponseContentType {
@@ -102,7 +90,7 @@ export enum ResponseContentType {
 	ThinkingSummary = 'thinkingSummary',
 }
 
-export interface ResponseContent {
+interface ResponseContent {
 	type: ResponseContentType;
 	content: string;
 }
