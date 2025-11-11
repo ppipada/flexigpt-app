@@ -44,7 +44,7 @@ fi
 
 TOOLS=(
 "golang.org/x/tools/gopls@v0.20.0"
-"github.com/wailsapp/wails/v2/cmd/wails@v2.10.2"
+"github.com/wailsapp/wails/v2/cmd/wails@v2.11.0"
 "github.com/oligot/go-mod-upgrade@v0.12.0"
 "github.com/kisielk/godepgraph@v1.0.0"
 # refdir (disabled) We rely on a patched fork; keeping the context here but do not install automatically.

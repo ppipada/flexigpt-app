@@ -210,8 +210,9 @@ Launch FlexiGPT, open Settings -> Providers, paste your API key, start chatting.
 
 - [Go](https://go.dev/) backend.
 - [Wails](https://wails.io/) as a desktop application building platform.
-- [Vite](https://vite.dev/) + [React Router v7](https://reactrouter.com/) frontend.
+- [Vite](https://vite.dev/) + [React Router v7](https://reactrouter.com/) frontend in [Typescript](https://www.typescriptlang.org/).
 - [DaisyUI](https://daisyui.com/) with [TailwindCSS](https://tailwindcss.com/) for styling.
+- Offical Go SDKs by [OpenAI](https://github.com/openai/openai-go) and [Anthropic](https://github.com/anthropics/anthropic-sdk-go).
 
 - Tooling:
 
