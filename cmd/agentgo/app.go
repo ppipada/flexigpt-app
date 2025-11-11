@@ -165,7 +165,29 @@ func (a *App) SaveFile(
 }
 
 func (a *App) initManagers() { //nolint:unused // Called from main.
-	err := InitToolStoreWrapper(a.toolStoreAPI, a.toolsDirPath)
+	err := InitConversationCollectionWrapper(a.conversationStoreAPI, a.conversationsDirPath)
+	if err != nil {
+		slog.Error(
+			"couldn't initialize conversation store",
+			"directory", a.conversationsDirPath,
+			"error", err,
+		)
+		panic("failed to initialize managers: conversation store initialization failed")
+	}
+	slog.Info("conversation store initialized", "directory", a.conversationsDirPath)
+
+	err = InitPromptTemplateStoreWrapper(a.promptTemplateStoreAPI, a.promptsDirPath)
+	if err != nil {
+		slog.Error(
+			"couldn't initialize prompt template store",
+			"directory", a.promptsDirPath,
+			"error", err,
+		)
+		panic("failed to initialize managers: prompt template store initialization failed")
+	}
+	slog.Info("prompt store initialized", "directory", a.promptsDirPath)
+
+	err = InitToolStoreWrapper(a.toolStoreAPI, a.toolsDirPath)
 	if err != nil {
 		slog.Error(
 			"couldn't initialize tool store",
@@ -210,27 +232,6 @@ func (a *App) initManagers() { //nolint:unused // Called from main.
 		panic("failed to initialize managers: model presets store initialization failed")
 	}
 	slog.Info("model presets store initialized", "dir", a.modelPresetsDirPath)
-
-	err = InitConversationCollectionWrapper(a.conversationStoreAPI, a.conversationsDirPath)
-	if err != nil {
-		slog.Error(
-			"couldn't initialize conversation store",
-			"directory", a.conversationsDirPath,
-			"error", err,
-		)
-		panic("failed to initialize managers: conversation store initialization failed")
-	}
-	slog.Info("conversation store initialized", "directory", a.conversationsDirPath)
-
-	err = InitPromptTemplateStoreWrapper(a.promptTemplateStoreAPI, a.promptsDirPath)
-	if err != nil {
-		slog.Error(
-			"couldn't initialize prompt template store",
-			"directory", a.promptsDirPath,
-			"error", err,
-		)
-		panic("failed to initialize managers: prompt template store initialization failed")
-	}
 }
 
 // startup is called at application startup.
