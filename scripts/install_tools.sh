@@ -12,8 +12,7 @@
 # - refdir:
 #   - Note: This tool can have false positives but can help sort Go functions in a file.
 #   - Actual command options used are in package.json.
-#   - To fix a bug, we use patched version from: https://github.com/ppipada/refdir.
-#   - checkout the repo, compile locally as `go build` and then do `go install .`
+#   - We use the patched version from: https://github.com/ppipada/refdir.
 
 set -euo pipefail
 IFS=$'\n\t'
@@ -47,8 +46,7 @@ TOOLS=(
 "github.com/wailsapp/wails/v2/cmd/wails@v2.11.0"
 "github.com/oligot/go-mod-upgrade@v0.12.0"
 "github.com/kisielk/godepgraph@v1.0.0"
-# refdir (disabled) We rely on a patched fork; keeping the context here but do not install automatically.
-# "github.com/devnev/refdir@latest"
+"github.com/ppipada/refdir@v0.7.0"
 )
 
 
@@ -69,7 +67,7 @@ for entry in "${TOOLS[@]}"; do
 done
 
 MISSING_TOOLS=()
-for t in gopls wails go-mod-upgrade godepgraph; do
+for t in gopls wails go-mod-upgrade godepgraph refdir; do
   if ! command -v "$t" >/dev/null 2>&1; then
     MISSING_TOOLS+=("$t")
   fi

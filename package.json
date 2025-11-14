@@ -34,7 +34,7 @@
 		"test:go": "pnpm run touch:tmp && go test ./...",
 		"test": "pnpm -F frontend run test && pnpm run test:go",
 		"lt": "pnpm run lint && pnpm run test",
-		"lint:gosort": "refdir --const-dir=up --var-dir=up --type-dir=up --recvtype-dir=up --func-dir=down ./..."
+		"lint:gosort": "refdir ./..."
 	},
 	"packageManager": "pnpm@10.21.0+sha512.da3337267e400fdd3d479a6c68079ac6db01d8ca4f67572083e722775a796788a7a9956613749e000fac20d424b594f7a791a5f4e2e13581c5ef947f26968a40",
 	"devDependencies": {
