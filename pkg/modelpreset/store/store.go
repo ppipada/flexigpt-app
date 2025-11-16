@@ -17,6 +17,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
+	"github.com/ppipada/mapstore-go/jsonencdec"
 )
 
 // ModelPresetStore is the main storage façade for provider / model-preset data.
@@ -63,7 +64,7 @@ func NewModelPresetStore(baseDir string) (*ModelPresetStore, error) {
 		def,
 		filestore.WithCreateIfNotExists(true),
 		filestore.WithAutoFlush(true),
-		filestore.WithEncoderDecoder(encdec.JSONEncoderDecoder{}),
+		filestore.WithEncoderDecoder(jsonencdec.JSONEncoderDecoder{}),
 	)
 	if err != nil {
 		return nil, err

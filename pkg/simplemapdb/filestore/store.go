@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
+	"github.com/ppipada/mapstore-go/jsonencdec"
 )
 
 const maxSetAllRetries = 3
@@ -92,7 +93,7 @@ func NewMapFileStore(
 		defaultData: defaultData,
 		filename:    filepath.Clean(filename),
 		autoFlush:   true,
-		encdec:      encdec.JSONEncoderDecoder{},
+		encdec:      jsonencdec.JSONEncoderDecoder{},
 	}
 
 	// Apply options.

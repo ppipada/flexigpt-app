@@ -10,6 +10,8 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/setting/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
+	"github.com/ppipada/mapstore-go/jsonencdec"
+	"github.com/ppipada/mapstore-go/keyringencdec"
 )
 
 type SettingStore struct {
@@ -17,9 +19,18 @@ type SettingStore struct {
 	encEncrypt encdec.EncoderDecoder
 }
 
+const (
+	keyringServiceName = "FlexiGPTKeyRingEncDec"
+	keyringUserName    = "user"
+)
+
 func NewSettingStore(baseDir string) (*SettingStore, error) {
+	encoderDecoder, err := keyringencdec.NewEncryptedStringValueEncoderDecoder(keyringServiceName, keyringUserName)
+	if err != nil {
+		return nil, fmt.Errorf("could not get keyring encoder/decoder: %w", err)
+	}
 	st := &SettingStore{
-		encEncrypt: encdec.EncryptedStringValueEncoderDecoder{},
+		encEncrypt: encoderDecoder,
 	}
 
 	defaultMap, err := encdec.StructWithJSONTagsToMap(DefaultSettingsData)
@@ -34,7 +45,7 @@ func NewSettingStore(baseDir string) (*SettingStore, error) {
 		filestore.WithCreateIfNotExists(true),
 		filestore.WithAutoFlush(true),
 		filestore.WithValueEncDecGetter(st.valueEncDecGetter),
-		filestore.WithEncoderDecoder(encdec.JSONEncoderDecoder{}),
+		filestore.WithEncoderDecoder(jsonencdec.JSONEncoderDecoder{}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("filestore init failed: %w", err)

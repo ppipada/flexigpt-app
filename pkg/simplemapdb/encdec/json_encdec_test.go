@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/ppipada/mapstore-go/jsonencdec"
 )
 
 func TestJSONEncoderDecoder_Encode(t *testing.T) {
@@ -59,7 +61,7 @@ func TestJSONEncoderDecoder_Encode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
-			encoder := JSONEncoderDecoder{}
+			encoder := jsonencdec.JSONEncoderDecoder{}
 			err := encoder.Encode(&buf, tt.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Encode() error = %v, wantErr %v", err, tt.wantErr)
@@ -140,7 +142,7 @@ func TestJSONEncoderDecoder_Decode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			decoder := JSONEncoderDecoder{}
+			decoder := jsonencdec.JSONEncoderDecoder{}
 			err := decoder.Decode(strings.NewReader(tt.input), tt.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Decode() error = %v, wantErr %v", err, tt.wantErr)

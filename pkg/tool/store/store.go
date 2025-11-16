@@ -23,6 +23,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/tool/httprunner"
 	"github.com/ppipada/flexigpt-app/pkg/tool/localregistry"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
+	"github.com/ppipada/mapstore-go/jsonencdec"
 	"github.com/ppipada/mapstore-go/uuidv7filename"
 )
 
@@ -104,7 +105,7 @@ func NewToolStore(baseDir string, opts ...Option) (*ToolStore, error) {
 		def,
 		filestore.WithCreateIfNotExists(true),
 		filestore.WithAutoFlush(true),
-		filestore.WithEncoderDecoder(encdec.JSONEncoderDecoder{}),
+		filestore.WithEncoderDecoder(jsonencdec.JSONEncoderDecoder{}),
 	)
 	if err != nil {
 		return nil, err

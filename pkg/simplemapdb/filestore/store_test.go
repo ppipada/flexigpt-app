@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
+	"github.com/ppipada/mapstore-go/keyringencdec"
 )
 
 func TestNewMapFileStore(t *testing.T) {
@@ -114,11 +115,18 @@ func TestMapFileStore_SetKey_GetKey(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := filepath.Join(tempDir, "teststore.json")
 	defaultData := map[string]any{"foo": "bar"}
-
+	encoderDecoder1, err := keyringencdec.NewEncryptedStringValueEncoderDecoder("FlexiGPTKeyRingEncDec", "user1")
+	if err != nil {
+		t.Fatalf("could not get keyring: %v", err)
+	}
+	encoderDecoder2, err := keyringencdec.NewEncryptedStringValueEncoderDecoder("FlexiGPTKeyRingEncDec", "user2")
+	if err != nil {
+		t.Fatalf("could not get keyring: %v", err)
+	}
 	// Example: We'll return an EncoderDecoder for the paths "foo" and "parent.child".
 	valueEncDecs := map[string]encdec.EncoderDecoder{
-		"foo":          encdec.EncryptedStringValueEncoderDecoder{},
-		"parent.child": encdec.EncryptedStringValueEncoderDecoder{},
+		"foo":          encoderDecoder1,
+		"parent.child": encoderDecoder2,
 	}
 
 	store, err := NewMapFileStore(

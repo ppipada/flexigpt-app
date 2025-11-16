@@ -23,6 +23,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
+	"github.com/ppipada/mapstore-go/jsonencdec"
 	"github.com/ppipada/mapstore-go/uuidv7filename"
 )
 
@@ -101,7 +102,7 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 		def,
 		filestore.WithCreateIfNotExists(true),
 		filestore.WithAutoFlush(true),
-		filestore.WithEncoderDecoder(encdec.JSONEncoderDecoder{}),
+		filestore.WithEncoderDecoder(jsonencdec.JSONEncoderDecoder{}),
 	)
 	if err != nil {
 		return nil, err
