@@ -6,7 +6,7 @@ import (
 
 	"github.com/philippgille/chromem-go"
 	"github.com/ppipada/flexigpt-app/pkg/docstore/spec"
-	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
+	"github.com/ppipada/mapstore-go/uuidv7filename"
 )
 
 var embeddingModelMapOpenAI = map[spec.EmbeddingFuncID]chromem.EmbeddingModelOpenAI{
@@ -90,7 +90,7 @@ func NewChromemDocumentDB(options ...Option) (*ChromemDocumentDB, error) {
 	db.chromemDB = chromemDB
 
 	// Generate a unique ID for the document DB.
-	u, err := uuidv7filename.NewUUID()
+	u, err := uuidv7filename.NewUUIDv7String()
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (db *ChromemDocumentDB) CreateCollection(
 	embeddingFuncID spec.EmbeddingFuncID,
 	apiKey string,
 ) (*spec.DocumentCollection, error) {
-	u, err := uuidv7filename.NewUUID()
+	u, err := uuidv7filename.NewUUIDv7String()
 	if err != nil {
 		return nil, err
 	}

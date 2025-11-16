@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/ppipada/flexigpt-app/pkg/conversation/spec"
-	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
+	"github.com/ppipada/mapstore-go/uuidv7filename"
 )
 
 func TestInitConversation(t *testing.T) {
@@ -390,7 +390,7 @@ func TestConversationCollection(t *testing.T) {
 		ctx := t.Context()
 		// Jan.
 		convo1 := &spec.Conversation{}
-		u, err := uuidv7filename.NewUUID()
+		u, err := uuidv7filename.NewUUIDv7String()
 		if err != nil {
 			t.Fatalf("Failed to get uuid: %v", err)
 		}
@@ -401,7 +401,7 @@ func TestConversationCollection(t *testing.T) {
 		convo1.Messages = []spec.ConversationMessage{}
 
 		// Feb.
-		u, err = uuidv7filename.NewUUID()
+		u, err = uuidv7filename.NewUUIDv7String()
 		if err != nil {
 			t.Fatalf("Failed to get uuid: %v", err)
 		}
@@ -503,7 +503,7 @@ func TestConversationCollectionListing(t *testing.T) {
 		ctx := t.Context()
 		// Add 15 conversations.
 		for range 15 {
-			u, err := uuidv7filename.NewUUID()
+			u, err := uuidv7filename.NewUUIDv7String()
 			if err != nil {
 				t.Fatalf("Failed to init conversation: %v", err)
 			}
@@ -564,7 +564,7 @@ func initConversation(title string) (*spec.Conversation, error) {
 	}
 
 	c := spec.Conversation{}
-	u, err := uuidv7filename.NewUUID()
+	u, err := uuidv7filename.NewUUIDv7String()
 	if err != nil {
 		return nil, err
 	}

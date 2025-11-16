@@ -23,7 +23,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/tool/httprunner"
 	"github.com/ppipada/flexigpt-app/pkg/tool/localregistry"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
-	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
+	"github.com/ppipada/mapstore-go/uuidv7filename"
 )
 
 const (
@@ -471,7 +471,7 @@ func (ts *ToolStore) PutTool(
 	}
 
 	now := time.Now().UTC()
-	uuid, _ := uuidv7filename.NewUUID()
+	uuid, _ := uuidv7filename.NewUUIDv7String()
 	argSchemaStr := req.Body.ArgSchema
 	if argSchemaStr == "" {
 		argSchemaStr = "{}"

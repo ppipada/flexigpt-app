@@ -16,7 +16,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/builtin"
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
-	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
+	"github.com/ppipada/mapstore-go/uuidv7filename"
 )
 
 const corrupted = "corrupted"
@@ -827,7 +827,7 @@ func newFromFS(t *testing.T, mem fs.FS) (*BuiltInData, error) {
 // newUUID returns a v7-UUID as string or fails the test.
 func newUUID(t *testing.T) string {
 	t.Helper()
-	u, err := uuidv7filename.NewUUID()
+	u, err := uuidv7filename.NewUUIDv7String()
 	if err != nil {
 		t.Fatalf("uuidv7: %v", err)
 	}

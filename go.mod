@@ -15,6 +15,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/openai/openai-go/v2 v2.7.1
 	github.com/philippgille/chromem-go v0.7.0
+	github.com/ppipada/mapstore-go v0.0.1
 	github.com/wailsapp/wails/v2 v2.11.0
 	github.com/zalando/go-keyring v0.2.6
 )

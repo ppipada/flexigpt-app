@@ -11,7 +11,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
-	"github.com/ppipada/flexigpt-app/pkg/uuidv7filename"
+	"github.com/ppipada/mapstore-go/uuidv7filename"
 )
 
 type ConversationCollection struct {
