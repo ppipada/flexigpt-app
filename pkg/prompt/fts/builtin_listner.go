@@ -116,7 +116,7 @@ func syncBuiltInsToFTS(
 	}
 
 	// Delegate to the generic helper.
-	return ftsengine.SyncIterToFTS(
+	stat, err := ftsengine.SyncIterToFTS(
 		ctx,
 		engine,
 		compareColumn,
@@ -124,6 +124,10 @@ func syncBuiltInsToFTS(
 		iter,
 		belongs,
 	)
+	if stat != nil {
+		slog.Info("prompt builtin fts sync", "stat", fmt.Sprintf("%v", stat))
+	}
+	return err
 }
 
 // buildDoc converts one template to (docID, columnMap).

@@ -103,6 +103,7 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 		jsonencdec.JSONEncoderDecoder{},
 		mapstore.WithCreateIfNotExists(true),
 		mapstore.WithFileAutoFlush(true),
+		mapstore.WithFileLogger(slog.Default()),
 	)
 	if err != nil {
 		return nil, err
@@ -125,7 +126,7 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 	}
 
 	// Initialize template directory store (per-bundle folder).
-	dirOpts := []mapstore.DirOption{}
+	dirOpts := []mapstore.DirOption{mapstore.WithDirLogger(slog.Default())}
 	if s.fts != nil {
 		dirOpts = append(dirOpts, mapstore.WithDirFileListeners(fts.NewUserPromptsFTSListener(s.fts)))
 	}

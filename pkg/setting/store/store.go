@@ -47,6 +47,7 @@ func NewSettingStore(baseDir string) (*SettingStore, error) {
 		mapstore.WithCreateIfNotExists(true),
 		mapstore.WithFileAutoFlush(true),
 		mapstore.WithValueEncDecGetter(st.valueEncDecGetter),
+		mapstore.WithFileLogger(slog.Default()),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("file store init failed: %w", err)

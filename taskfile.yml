@@ -70,7 +70,7 @@ tasks:
   build-withbindings:
     cmds:
       - pnpm run touch:tmp
-      - cd ./cmd/agentgo && wails build -devtools -m -clean -v 2 -ldflags="-X main.Version=v0.0.1" > ../../out/log.txt 2&>1
+      - cd ./cmd/agentgo && wails build -devtools -m -clean -v 2 -ldflags="-X main.Version=v0.0.1" > ../../out/log.txt 2>&1
 
   pack-flatpak:
     cmds:
@@ -87,7 +87,7 @@ tasks:
   run-watch:
     cmds:
       - pnpm -F frontend run build:wails
-      - cd ./cmd/agentgo && wails dev -s -v 2 -tags webkit2_41 -ldflags="-X main.Version=v0.0.1" > ../../out/log.txt 2&>1
+      - cd ./cmd/agentgo && wails dev -s -v 2 -tags webkit2_41 -ldflags="-X main.Version=v0.0.1" > ../../out/log.txt 2>&1
 
   run-gobackend:
     cmds:

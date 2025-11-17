@@ -107,9 +107,13 @@ func syncBuiltInsToFTS(
 
 	belongs := func(id string) bool { return strings.HasPrefix(id, BuiltInDocPrefix) }
 
-	return ftsengine.SyncIterToFTS(
+	stat, err := ftsengine.SyncIterToFTS(
 		ctx, engine, compareColumn, upsertBatchSize, iter, belongs,
 	)
+	if stat != nil {
+		slog.Info("tool builtin fts sync", "stat", fmt.Sprintf("%v", stat))
+	}
+	return err
 }
 
 // buildDoc converts one tool to (docID, columnMap).

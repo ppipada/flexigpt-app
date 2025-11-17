@@ -2,6 +2,7 @@ package fts
 
 import (
 	"encoding/json"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,9 +34,9 @@ func TestFTSListener_Integration(t *testing.T) {
 			{Name: "bundleID", Unindexed: true},
 			{Name: "mtime", Unindexed: true},
 		},
-	})
+	}, ftsengine.WithLogger(slog.Default()))
 	if err != nil {
-		t.Fatalf("ftsengine.NewEngine: %v", err)
+		t.Fatalf("new fts engine error: %v", err)
 	}
 
 	listener := NewUserPromptsFTSListener(engine)

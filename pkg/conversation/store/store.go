@@ -82,7 +82,7 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 				{Name: "feedback", Weight: 6},
 				{Name: "mtime", Unindexed: true},
 			},
-		})
+		}, ftsengine.WithLogger(slog.Default()))
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +93,7 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 		)
 	}
 
-	optsDir := []mapstore.DirOption{}
+	optsDir := []mapstore.DirOption{mapstore.WithDirLogger(slog.Default())}
 	if cc.fts != nil {
 		optsDir = append(optsDir, mapstore.WithDirFileListeners(NewFTSListner(cc.fts)))
 	}

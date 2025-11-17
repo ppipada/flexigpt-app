@@ -3,6 +3,7 @@ package fts
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -36,7 +37,7 @@ func StartUserToolsFTSRebuild(ctx context.Context, baseDir string, e *ftsengine.
 			}
 		}()
 		once.Do(func() {
-			_ = ftsengine.SyncDirToFTS(
+			stat, _ := ftsengine.SyncDirToFTS(
 				ctx,
 				e,
 				baseDir,
@@ -44,6 +45,9 @@ func StartUserToolsFTSRebuild(ctx context.Context, baseDir string, e *ftsengine.
 				ftsSyncBatchSize,
 				processFTSSync,
 			)
+			if stat != nil {
+				slog.Info("tool user fts sync", "stat", fmt.Sprintf("%v", stat))
+			}
 		})
 	}()
 }

@@ -65,6 +65,7 @@ func NewModelPresetStore(baseDir string) (*ModelPresetStore, error) {
 		jsonencdec.JSONEncoderDecoder{},
 		mapstore.WithCreateIfNotExists(true),
 		mapstore.WithFileAutoFlush(true),
+		mapstore.WithFileLogger(slog.Default()),
 	)
 	if err != nil {
 		return nil, err

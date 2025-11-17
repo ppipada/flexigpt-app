@@ -105,6 +105,7 @@ func NewToolStore(baseDir string, opts ...Option) (*ToolStore, error) {
 		jsonencdec.JSONEncoderDecoder{},
 		mapstore.WithCreateIfNotExists(true),
 		mapstore.WithFileAutoFlush(true),
+		mapstore.WithFileLogger(slog.Default()),
 	)
 	if err != nil {
 		return nil, err
@@ -123,7 +124,7 @@ func NewToolStore(baseDir string, opts ...Option) (*ToolStore, error) {
 	}
 
 	// Directory store.
-	dirOpts := []mapstore.DirOption{}
+	dirOpts := []mapstore.DirOption{mapstore.WithDirLogger(slog.Default())}
 	if ts.fts != nil {
 		dirOpts = append(dirOpts, mapstore.WithDirFileListeners(fts.NewUserToolsFTSListener(ts.fts)))
 	}

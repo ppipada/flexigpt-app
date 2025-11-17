@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"os"
 	"runtime/debug"
@@ -17,7 +18,7 @@ import (
 
 func StartRebuild(ctx context.Context, baseDir string, e *ftsengine.Engine) {
 	go func() {
-		_ = ftsengine.SyncDirToFTS(
+		stat, _ := ftsengine.SyncDirToFTS(
 			ctx,
 			e,
 			baseDir,
@@ -26,6 +27,9 @@ func StartRebuild(ctx context.Context, baseDir string, e *ftsengine.Engine) {
 			1000,
 			processFTSDataForFile,
 		)
+		if stat != nil {
+			slog.Info("conversation fts rebuild", "stat", fmt.Sprintf("%v", stat))
+		}
 	}()
 }
 

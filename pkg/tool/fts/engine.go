@@ -2,6 +2,7 @@ package fts
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 	"github.com/ppipada/mapstore-go/ftsengine"
@@ -18,7 +19,7 @@ func InitToolFTSListeners(
 		Table:      sqliteDBTableName,
 		Columns:    ftsColumns,
 	}
-	ftsE, err := ftsengine.NewEngine(cfg)
+	ftsE, err := ftsengine.NewEngine(cfg, ftsengine.WithLogger(slog.Default()))
 	if err != nil {
 		return nil, err
 	}

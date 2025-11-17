@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/openai/openai-go/v2 v2.7.1
 	github.com/philippgille/chromem-go v0.7.0
-	github.com/ppipada/mapstore-go v0.0.2
+	github.com/ppipada/mapstore-go v0.0.3
 	github.com/wailsapp/wails/v2 v2.11.0
 )
 

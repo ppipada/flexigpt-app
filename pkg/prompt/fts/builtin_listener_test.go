@@ -3,6 +3,7 @@ package fts
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -320,9 +321,9 @@ func newEngine(t *testing.T, dir string) *ftsengine.Engine {
 			{Name: "bundleID", Unindexed: true},
 			{Name: "mtime", Unindexed: true},
 		},
-	})
+	}, ftsengine.WithLogger(slog.Default()))
 	if err != nil {
-		t.Fatalf("ftsengine.NewEngine: %v", err)
+		t.Fatalf("new fts engine error: %v", err)
 	}
 	return e
 }
