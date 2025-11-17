@@ -17,9 +17,9 @@ import (
 
 	"github.com/ppipada/flexigpt-app/pkg/builtin/gotool"
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/tool/localregistry"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
+	"github.com/ppipada/mapstore-go/jsonencdec"
 )
 
 func TestInvokeTool(t *testing.T) {
@@ -941,7 +941,7 @@ func addGoToolFile(
 		return fmt.Errorf("validateTool: %w", err)
 	}
 
-	mp, _ := encdec.StructWithJSONTagsToMap(tool)
+	mp, _ := jsonencdec.StructWithJSONTagsToMap(tool)
 	return ts.toolStore.SetFileData(
 		bundleitemutils.GetBundlePartitionFileKey(finf.FileName, dirInfo.DirName),
 		mp,

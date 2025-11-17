@@ -15,13 +15,12 @@ import (
 	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
+	"github.com/ppipada/flexigpt-app/pkg/jsonutil"
 	"github.com/ppipada/flexigpt-app/pkg/tool/fts"
 	"github.com/ppipada/flexigpt-app/pkg/tool/httprunner"
 	"github.com/ppipada/flexigpt-app/pkg/tool/localregistry"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
+	"github.com/ppipada/mapstore-go"
 	"github.com/ppipada/mapstore-go/ftsengine"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 	"github.com/ppipada/mapstore-go/uuidv7filename"
@@ -41,8 +40,8 @@ type ToolStore struct {
 	baseDir string
 
 	// Meta-data and raw file stores.
-	bundleStore *filestore.MapFileStore
-	toolStore   *dirstore.MapDirectoryStore
+	bundleStore *mapstore.MapFileStore
+	toolStore   *mapstore.MapDirectoryStore
 
 	// Built-in overlay.
 	builtinData *BuiltInToolData
@@ -50,7 +49,7 @@ type ToolStore struct {
 	enableFTS bool
 	fts       *ftsengine.Engine
 
-	pp dirstore.PartitionProvider
+	pp mapstore.PartitionProvider
 
 	slugLock *slugLocks
 
@@ -97,15 +96,15 @@ func NewToolStore(baseDir string, opts ...Option) (*ToolStore, error) {
 	ts.builtinData = bi
 
 	// Bundle meta-file.
-	def, _ := encdec.StructWithJSONTagsToMap(
+	def, _ := jsonencdec.StructWithJSONTagsToMap(
 		spec.AllBundles{Bundles: map[bundleitemutils.BundleID]spec.ToolBundle{}},
 	)
-	ts.bundleStore, err = filestore.NewMapFileStore(
+	ts.bundleStore, err = mapstore.NewMapFileStore(
 		filepath.Join(ts.baseDir, spec.ToolBundlesMetaFileName),
 		def,
-		filestore.WithCreateIfNotExists(true),
-		filestore.WithAutoFlush(true),
-		filestore.WithEncoderDecoder(jsonencdec.JSONEncoderDecoder{}),
+		jsonencdec.JSONEncoderDecoder{},
+		mapstore.WithCreateIfNotExists(true),
+		mapstore.WithFileAutoFlush(true),
 	)
 	if err != nil {
 		return nil, err
@@ -124,11 +123,16 @@ func NewToolStore(baseDir string, opts ...Option) (*ToolStore, error) {
 	}
 
 	// Directory store.
-	dirOpts := []dirstore.Option{dirstore.WithPartitionProvider(ts.pp)}
+	dirOpts := []mapstore.DirOption{}
 	if ts.fts != nil {
-		dirOpts = append(dirOpts, dirstore.WithListeners(fts.NewUserToolsFTSListener(ts.fts)))
+		dirOpts = append(dirOpts, mapstore.WithDirFileListeners(fts.NewUserToolsFTSListener(ts.fts)))
 	}
-	ts.toolStore, err = dirstore.NewMapDirectoryStore(ts.baseDir, true, dirOpts...)
+	ts.toolStore, err = mapstore.NewMapDirectoryStore(
+		ts.baseDir,
+		true,
+		ts.pp,
+		jsonencdec.JSONEncoderDecoder{},
+		dirOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +287,7 @@ func (ts *ToolStore) DeleteToolBundle(
 		return nil, derr
 	}
 	files, _, err := ts.toolStore.ListFiles(
-		dirstore.ListingConfig{FilterPartitions: []string{dirInfo.DirName}, PageSize: 1}, "",
+		mapstore.ListingConfig{FilterPartitions: []string{dirInfo.DirName}, PageSize: 1}, "",
 	)
 	if err != nil {
 		return nil, err
@@ -319,7 +323,7 @@ func (ts *ToolStore) ListToolBundles(
 
 	// Token overrides parameters.
 	if req != nil && req.PageToken != "" {
-		if tok, err := encdec.Base64JSONDecode[spec.BundlePageToken](req.PageToken); err == nil {
+		if tok, err := jsonutil.Base64JSONDecode[spec.BundlePageToken](req.PageToken); err == nil {
 			pageSize = tok.PageSize
 			if pageSize <= 0 || pageSize > maxPageSizeTools {
 				pageSize = defPageSizeTools
@@ -403,7 +407,7 @@ func (ts *ToolStore) ListToolBundles(
 		}
 		slices.Sort(ids)
 
-		next := encdec.Base64JSONEncode(spec.BundlePageToken{
+		next := jsonutil.Base64JSONEncode(spec.BundlePageToken{
 			BundleIDs:       ids,
 			IncludeDisabled: includeDisabled,
 			PageSize:        pageSize,
@@ -459,7 +463,7 @@ func (ts *ToolStore) PutTool(
 
 	finf, _ := bundleitemutils.BuildItemFileInfo(req.ToolSlug, req.Version)
 	list, _, _ := ts.toolStore.ListFiles(
-		dirstore.ListingConfig{
+		mapstore.ListingConfig{
 			FilterPartitions: []string{dirInfo.DirName},
 			FilenamePrefix:   finf.FileName,
 			PageSize:         10,
@@ -506,7 +510,7 @@ func (ts *ToolStore) PutTool(
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	mp, _ := encdec.StructWithJSONTagsToMap(t)
+	mp, _ := jsonencdec.StructWithJSONTagsToMap(t)
 	if err := ts.toolStore.SetFileData(
 		bundleitemutils.GetBundlePartitionFileKey(finf.FileName, dirInfo.DirName),
 		mp,
@@ -570,13 +574,13 @@ func (ts *ToolStore) PatchTool(
 		return nil, err
 	}
 	var tool spec.Tool
-	if err := encdec.MapToStructWithJSONTags(raw, &tool); err != nil {
+	if err := jsonencdec.MapToStructWithJSONTags(raw, &tool); err != nil {
 		return nil, err
 	}
 	tool.IsEnabled = req.Body.IsEnabled
 	tool.ModifiedAt = time.Now().UTC()
 
-	mp, _ := encdec.StructWithJSONTagsToMap(tool)
+	mp, _ := jsonencdec.StructWithJSONTagsToMap(tool)
 	if err := ts.toolStore.SetFileData(key, mp); err != nil {
 		return nil, err
 	}
@@ -768,7 +772,7 @@ func (ts *ToolStore) GetTool(
 		return nil, err
 	}
 	var t spec.Tool
-	if err := encdec.MapToStructWithJSONTags(raw, &t); err != nil {
+	if err := jsonencdec.MapToStructWithJSONTags(raw, &t); err != nil {
 		return nil, err
 	}
 	return &spec.GetToolResponse{Body: &t}, nil
@@ -782,7 +786,7 @@ func (ts *ToolStore) ListTools(
 	tok := spec.ToolPageToken{}
 	if req != nil && req.PageToken != "" {
 		_ = func() error {
-			t, err := encdec.Base64JSONDecode[spec.ToolPageToken](req.PageToken)
+			t, err := jsonutil.Base64JSONDecode[spec.ToolPageToken](req.PageToken)
 			if err == nil {
 				tok = t
 			}
@@ -880,9 +884,9 @@ func (ts *ToolStore) ListTools(
 	// User tools until pageHint filled.
 	for len(out) < pageHint {
 		files, next, err := ts.toolStore.ListFiles(
-			dirstore.ListingConfig{
+			mapstore.ListingConfig{
 				PageSize:  fetchBatchTools,
-				SortOrder: dirstore.SortOrderDescending,
+				SortOrder: mapstore.SortOrderDescending,
 			}, tok.DirTok,
 		)
 		if err != nil {
@@ -906,7 +910,7 @@ func (ts *ToolStore) ListTools(
 				continue
 			}
 			var tool spec.Tool
-			if err := encdec.MapToStructWithJSONTags(raw, &tool); err != nil {
+			if err := jsonencdec.MapToStructWithJSONTags(raw, &tool); err != nil {
 				continue
 			}
 			if !include(bdi.ID, &tool) {
@@ -929,7 +933,7 @@ func (ts *ToolStore) ListTools(
 
 	var nextTok *string
 	if tok.DirTok != "" || !scannedUsers { // Need more pages.
-		s := encdec.Base64JSONEncode(tok)
+		s := jsonutil.Base64JSONEncode(tok)
 		nextTok = &s
 	}
 
@@ -1029,7 +1033,7 @@ func (ts *ToolStore) SearchTools(
 			continue
 		}
 		var t spec.Tool
-		if err := encdec.MapToStructWithJSONTags(raw, &t); err != nil {
+		if err := jsonencdec.MapToStructWithJSONTags(raw, &t); err != nil {
 			continue
 		}
 		if !req.IncludeDisabled && (!t.IsEnabled || !bundle.IsEnabled) {
@@ -1170,7 +1174,7 @@ func (ts *ToolStore) sweepSoftDeleted() {
 
 		dirInfo, _ := bundleitemutils.BuildBundleDir(b.ID, b.Slug)
 		files, _, err := ts.toolStore.ListFiles(
-			dirstore.ListingConfig{FilterPartitions: []string{dirInfo.DirName}, PageSize: 1}, "",
+			mapstore.ListingConfig{FilterPartitions: []string{dirInfo.DirName}, PageSize: 1}, "",
 		)
 		if err != nil || len(files) > 0 {
 			slog.Warn("sweepSoftDeleted: bundle not empty", "bundleID", id)
@@ -1204,14 +1208,14 @@ func (ts *ToolStore) readAllBundles(force bool) (spec.AllBundles, error) {
 		return spec.AllBundles{}, err
 	}
 	var ab spec.AllBundles
-	if err := encdec.MapToStructWithJSONTags(raw, &ab); err != nil {
+	if err := jsonencdec.MapToStructWithJSONTags(raw, &ab); err != nil {
 		return ab, err
 	}
 	return ab, nil
 }
 
 func (ts *ToolStore) writeAllBundles(ab spec.AllBundles) error {
-	mp, _ := encdec.StructWithJSONTagsToMap(ab)
+	mp, _ := jsonencdec.StructWithJSONTagsToMap(ab)
 	return ts.bundleStore.SetAll(mp)
 }
 

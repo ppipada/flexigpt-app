@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
+	"github.com/ppipada/flexigpt-app/pkg/jsonutil"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
@@ -113,7 +113,7 @@ func (r *HTTPToolRunner) Run(
 	}
 
 	// Decode args into map for templating. Non-object args will simply result in no substitutions.
-	args, _ := encdec.DecodeJSONRaw[map[string]any](inArgs)
+	args, _ := jsonutil.DecodeJSONRaw[map[string]any](inArgs)
 
 	// Build URL with templating.
 	uStr, err := expandTemplate(req.URLTemplate, args, secret)

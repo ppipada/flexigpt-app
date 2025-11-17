@@ -2,21 +2,22 @@ package store
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 	"path/filepath"
 	"sort"
 
 	"github.com/ppipada/flexigpt-app/pkg/setting/spec"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
+	"github.com/ppipada/mapstore-go"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 	"github.com/ppipada/mapstore-go/keyringencdec"
 )
 
 type SettingStore struct {
-	store      *filestore.MapFileStore
-	encEncrypt encdec.EncoderDecoder
+	store      *mapstore.MapFileStore
+	encEncrypt mapstore.IOEncoderDecoder
 }
 
 const (
@@ -33,22 +34,22 @@ func NewSettingStore(baseDir string) (*SettingStore, error) {
 		encEncrypt: encoderDecoder,
 	}
 
-	defaultMap, err := encdec.StructWithJSONTagsToMap(DefaultSettingsData)
+	defaultMap, err := jsonencdec.StructWithJSONTagsToMap(DefaultSettingsData)
 	if err != nil {
 		return nil, fmt.Errorf("cannot marshal default settings: %w", err)
 	}
 
 	file := filepath.Join(baseDir, spec.SettingsFile)
-	fs, err := filestore.NewMapFileStore(
+	fs, err := mapstore.NewMapFileStore(
 		file,
 		defaultMap,
-		filestore.WithCreateIfNotExists(true),
-		filestore.WithAutoFlush(true),
-		filestore.WithValueEncDecGetter(st.valueEncDecGetter),
-		filestore.WithEncoderDecoder(jsonencdec.JSONEncoderDecoder{}),
+		jsonencdec.JSONEncoderDecoder{},
+		mapstore.WithCreateIfNotExists(true),
+		mapstore.WithFileAutoFlush(true),
+		mapstore.WithValueEncDecGetter(st.valueEncDecGetter),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("filestore init failed: %w", err)
+		return nil, fmt.Errorf("file store init failed: %w", err)
 	}
 
 	st.store = fs
@@ -70,7 +71,7 @@ func (s *SettingStore) Migrate(ctx context.Context) error {
 	}
 
 	var schema spec.SettingsSchema
-	if err := encdec.MapToStructWithJSONTags(raw, &schema); err != nil {
+	if err := jsonencdec.MapToStructWithJSONTags(raw, &schema); err != nil {
 		return fmt.Errorf("migrate: decode: %w", err)
 	}
 
@@ -94,7 +95,7 @@ func (s *SettingStore) Migrate(ctx context.Context) error {
 
 			// Create an empty key: encrypted secret "", sha of "", nonEmpty false.
 			secret := ""
-			sha := encdec.ComputeSHA(secret)
+			sha := computeSHA(secret)
 
 			if err := s.store.SetKey([]string{
 				"authKeys", string(t), string(name), "secret",
@@ -148,7 +149,7 @@ func (s *SettingStore) SetAppTheme(
 		return nil, err
 	}
 
-	val, _ := encdec.StructWithJSONTagsToMap(theme)
+	val, _ := jsonencdec.StructWithJSONTagsToMap(theme)
 	if err := s.store.SetKey([]string{"appTheme"}, val); err != nil {
 		return nil, err
 	}
@@ -171,7 +172,7 @@ func (s *SettingStore) SetAuthKey(
 	// Build AuthKey record.
 	newAk := spec.AuthKey{
 		Secret:   req.Body.Secret,
-		SHA256:   encdec.ComputeSHA(req.Body.Secret),
+		SHA256:   computeSHA(req.Body.Secret),
 		NonEmpty: nonEmptySecret,
 	}
 
@@ -249,7 +250,7 @@ func (s *SettingStore) GetAuthKey(
 	}
 
 	var schema spec.SettingsSchema
-	if err := encdec.MapToStructWithJSONTags(raw, &schema); err != nil {
+	if err := jsonencdec.MapToStructWithJSONTags(raw, &schema); err != nil {
 		return nil, err
 	}
 
@@ -287,7 +288,7 @@ func (s *SettingStore) GetSettings(
 	}
 
 	var schema spec.SettingsSchema
-	if err := encdec.MapToStructWithJSONTags(raw, &schema); err != nil {
+	if err := jsonencdec.MapToStructWithJSONTags(raw, &schema); err != nil {
 		return nil, err
 	}
 
@@ -321,10 +322,16 @@ func (s *SettingStore) GetSettings(
 }
 
 // valueEncDecGetter returns the encoder/decoder to encrypt secrets.
-func (s *SettingStore) valueEncDecGetter(path []string) encdec.EncoderDecoder {
+func (s *SettingStore) valueEncDecGetter(path []string) mapstore.IOEncoderDecoder {
 	// AuthKeys / <type> / <keyName> / secret.
 	if len(path) == 4 && path[0] == "authKeys" && path[3] == "secret" {
 		return s.encEncrypt
 	}
 	return nil
+}
+
+// computeSHA returns the hex SHA-256 of the given string.
+func computeSHA(in string) string {
+	sum := sha256.Sum256([]byte(in))
+	return hex.EncodeToString(sum[:])
 }

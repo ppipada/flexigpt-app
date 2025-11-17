@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
+	"github.com/ppipada/mapstore-go"
 
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
 	"github.com/ppipada/mapstore-go/ftsengine"
 )
 
@@ -47,9 +47,9 @@ func StartUserPromptsFTSRebuild(ctx context.Context, baseDir string, e *ftsengin
 	}()
 }
 
-// NewUserPromptsFTSListener returns a filestore.Listener that updates the FTS engine on file changes.
-func NewUserPromptsFTSListener(e *ftsengine.Engine) filestore.Listener {
-	return func(ev filestore.Event) {
+// NewUserPromptsFTSListener returns a mapstore.FileListener that updates the FTS engine on file changes.
+func NewUserPromptsFTSListener(e *ftsengine.Engine) mapstore.FileListener {
+	return func(ev mapstore.FileEvent) {
 		defer func() {
 			if r := recover(); r != nil {
 				slog.Error("fts listener panic",
@@ -67,7 +67,7 @@ func NewUserPromptsFTSListener(e *ftsengine.Engine) filestore.Listener {
 		}
 		ctx := context.Background()
 		switch ev.Op {
-		case filestore.OpSetFile, filestore.OpResetFile:
+		case mapstore.OpSetFile, mapstore.OpResetFile:
 			vals := extractFTS(ev.File, ev.Data).ToMap()
 			if len(vals) == 0 {
 				slog.Warn("fts listener: nothing to index", "file", ev.File)
@@ -76,11 +76,11 @@ func NewUserPromptsFTSListener(e *ftsengine.Engine) filestore.Listener {
 			if err := e.Upsert(ctx, ev.File, vals); err != nil {
 				slog.Error("fts upsert failed", "file", ev.File, "err", err)
 			}
-		case filestore.OpDeleteFile:
+		case mapstore.OpDeleteFile:
 			if err := e.Delete(ctx, ev.File); err != nil {
 				slog.Error("fts delete failed", "file", ev.File, "err", err)
 			}
-		case filestore.OpSetKey, filestore.OpDeleteKey:
+		case mapstore.OpSetKey, mapstore.OpDeleteKey:
 			// Do nothing as we dont do key operations.
 		}
 	}

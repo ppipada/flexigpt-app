@@ -1,4 +1,4 @@
-package encdec
+package jsonutil
 
 import (
 	"bytes"
@@ -6,50 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"reflect"
 )
-
-func StructWithJSONTagsToMap(data any) (map[string]any, error) {
-	if data == nil {
-		return nil, errors.New("input data cannot be nil")
-	}
-	// Marshal the struct to JSON.
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal struct to JSON: %w", err)
-	}
-
-	// Unmarshal the JSON into a map.
-	var result map[string]any
-	if err := json.Unmarshal(jsonData, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal JSON to map: %w", err)
-	}
-
-	return result, nil
-}
-
-func MapToStructWithJSONTags(data map[string]any, out any) error {
-	if data == nil {
-		return errors.New("input data cannot be nil")
-	}
-
-	if _, err := requirePointerToStruct(out, "output parameter"); err != nil {
-		return err
-	}
-
-	// Marshal the map to JSON.
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return fmt.Errorf("failed to marshal map to JSON: %w", err)
-	}
-
-	// Disallow unknown fields, don't require trailing-data check (same behavior as before).
-	if err := decodeBytes(jsonData, out, true, false); err != nil {
-		return fmt.Errorf("failed to unmarshal JSON to struct: %w", err)
-	}
-
-	return nil
-}
 
 // EncodeToJSONRaw encodes any value to json.RawMessage.
 // No typed method here as value being of a type doesnt really affect its functionality.
@@ -74,28 +31,6 @@ func DecodeJSONRaw[T any](raw json.RawMessage) (T, error) {
 		return zero, err
 	}
 	return v, nil
-}
-
-func requirePointerToStruct(p any, name string) (reflect.Value, error) {
-	rv, err := requireNonNilPointer(p, name)
-	if err != nil {
-		return reflect.Value{}, err
-	}
-	if rv.Elem().Kind() != reflect.Struct {
-		return reflect.Value{}, fmt.Errorf("%s must be a pointer to a struct", name)
-	}
-	return rv, nil
-}
-
-func requireNonNilPointer(p any, name string) (reflect.Value, error) {
-	if p == nil {
-		return reflect.Value{}, fmt.Errorf("%s cannot be nil", name)
-	}
-	rv := reflect.ValueOf(p)
-	if rv.Kind() != reflect.Pointer || rv.IsNil() {
-		return reflect.Value{}, fmt.Errorf("%s must be a non-nil pointer", name)
-	}
-	return rv, nil
 }
 
 // decodeBytes decodes JSON bytes into out with options:

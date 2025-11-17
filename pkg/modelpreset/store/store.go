@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ppipada/flexigpt-app/pkg/jsonutil"
 	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
+	"github.com/ppipada/mapstore-go"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 )
 
@@ -25,7 +25,7 @@ type ModelPresetStore struct {
 	baseDir string
 
 	// User-modifiable provider / model presets.
-	userStore *filestore.MapFileStore
+	userStore *mapstore.MapFileStore
 
 	// Read-only built-ins with overlay enable/disable flags.
 	builtinData *BuiltInPresets
@@ -51,7 +51,7 @@ func NewModelPresetStore(baseDir string) (*ModelPresetStore, error) {
 		}
 	}
 
-	def, err := encdec.StructWithJSONTagsToMap(spec.PresetsSchema{
+	def, err := jsonencdec.StructWithJSONTagsToMap(spec.PresetsSchema{
 		SchemaVersion:   spec.SchemaVersion,
 		DefaultProvider: defaultProvider,
 		ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{},
@@ -59,12 +59,12 @@ func NewModelPresetStore(baseDir string) (*ModelPresetStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	s.userStore, err = filestore.NewMapFileStore(
+	s.userStore, err = mapstore.NewMapFileStore(
 		filepath.Join(baseDir, spec.ModelPresetsFile),
 		def,
-		filestore.WithCreateIfNotExists(true),
-		filestore.WithAutoFlush(true),
-		filestore.WithEncoderDecoder(jsonencdec.JSONEncoderDecoder{}),
+		jsonencdec.JSONEncoderDecoder{},
+		mapstore.WithCreateIfNotExists(true),
+		mapstore.WithFileAutoFlush(true),
 	)
 	if err != nil {
 		return nil, err
@@ -358,7 +358,7 @@ func (s *ModelPresetStore) ListProviderPresets(
 
 	// Token overrides everything.
 	if req != nil && req.PageToken != "" {
-		if tok, err := encdec.Base64JSONDecode[spec.ProviderPageToken](req.PageToken); err == nil {
+		if tok, err := jsonutil.Base64JSONDecode[spec.ProviderPageToken](req.PageToken); err == nil {
 			pageSize = tok.PageSize
 			if pageSize <= 0 || pageSize > spec.MaxPageSize {
 				pageSize = spec.DefaultPageSize
@@ -445,7 +445,7 @@ func (s *ModelPresetStore) ListProviderPresets(
 			PageSize:        pageSize,
 			CursorSlug:      filtered[end-1].Name,
 		}
-		ns := encdec.Base64JSONEncode(tok)
+		ns := jsonutil.Base64JSONEncode(tok)
 		nextToken = &ns
 	}
 
@@ -638,13 +638,13 @@ func (s *ModelPresetStore) readAllUserPresets(force bool) (spec.PresetsSchema, e
 		return spec.PresetsSchema{}, err
 	}
 	var ps spec.PresetsSchema
-	if err := encdec.MapToStructWithJSONTags(raw, &ps); err != nil {
+	if err := jsonencdec.MapToStructWithJSONTags(raw, &ps); err != nil {
 		return ps, err
 	}
 	return ps, nil
 }
 
 func (s *ModelPresetStore) writeAllUserPresets(ps spec.PresetsSchema) error {
-	mp, _ := encdec.StructWithJSONTagsToMap(ps)
+	mp, _ := jsonencdec.StructWithJSONTagsToMap(ps)
 	return s.userStore.SetAll(mp)
 }

@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
+	"github.com/ppipada/flexigpt-app/pkg/jsonutil"
 )
 
 // JSONToolFunc is the low-level function signature stored in the registry.
@@ -94,7 +94,7 @@ func (r *GoRegistry) Lookup(name string) (JSONToolFunc, bool) {
 func typedToJSON[T, R any](fn func(context.Context, T) (R, error)) JSONToolFunc {
 	return func(ctx context.Context, in json.RawMessage) (json.RawMessage, error) {
 		// Decode input strictly into T (rejects unknown fields and trailing data).
-		args, err := encdec.DecodeJSONRaw[T](in)
+		args, err := jsonutil.DecodeJSONRaw[T](in)
 		if err != nil {
 			return nil, fmt.Errorf("invalid input: %w", err)
 		}
@@ -103,6 +103,6 @@ func typedToJSON[T, R any](fn func(context.Context, T) (R, error)) JSONToolFunc 
 		if err != nil {
 			return nil, err
 		}
-		return encdec.EncodeToJSONRaw(out)
+		return jsonutil.EncodeToJSONRaw(out)
 	}
 }

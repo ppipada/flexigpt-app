@@ -17,11 +17,11 @@ import (
 	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
+	"github.com/ppipada/flexigpt-app/pkg/jsonutil"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/fts"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
+	"github.com/ppipada/mapstore-go"
+
 	"github.com/ppipada/mapstore-go/ftsengine"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 	"github.com/ppipada/mapstore-go/uuidv7filename"
@@ -41,9 +41,9 @@ const (
 type PromptTemplateStore struct {
 	baseDir       string
 	builtinData   *BuiltInData
-	bundleStore   *filestore.MapFileStore
-	templateStore *dirstore.MapDirectoryStore
-	pp            dirstore.PartitionProvider
+	bundleStore   *mapstore.MapFileStore
+	templateStore *mapstore.MapDirectoryStore
+	pp            mapstore.PartitionProvider
 
 	enableFTS bool
 	fts       *ftsengine.Engine
@@ -91,18 +91,18 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 	}
 	s.builtinData = builtIn
 	// Initialize bundle meta store (single JSON file).
-	def, err := encdec.StructWithJSONTagsToMap(
+	def, err := jsonencdec.StructWithJSONTagsToMap(
 		spec.AllBundles{Bundles: map[bundleitemutils.BundleID]spec.PromptBundle{}},
 	)
 	if err != nil {
 		return nil, err
 	}
-	s.bundleStore, err = filestore.NewMapFileStore(
+	s.bundleStore, err = mapstore.NewMapFileStore(
 		filepath.Join(s.baseDir, spec.PromptBundlesMetaFileName),
 		def,
-		filestore.WithCreateIfNotExists(true),
-		filestore.WithAutoFlush(true),
-		filestore.WithEncoderDecoder(jsonencdec.JSONEncoderDecoder{}),
+		jsonencdec.JSONEncoderDecoder{},
+		mapstore.WithCreateIfNotExists(true),
+		mapstore.WithFileAutoFlush(true),
 	)
 	if err != nil {
 		return nil, err
@@ -125,11 +125,16 @@ func NewPromptTemplateStore(baseDir string, opts ...Option) (*PromptTemplateStor
 	}
 
 	// Initialize template directory store (per-bundle folder).
-	dirOpts := []dirstore.Option{dirstore.WithPartitionProvider(s.pp)}
+	dirOpts := []mapstore.DirOption{}
 	if s.fts != nil {
-		dirOpts = append(dirOpts, dirstore.WithListeners(fts.NewUserPromptsFTSListener(s.fts)))
+		dirOpts = append(dirOpts, mapstore.WithDirFileListeners(fts.NewUserPromptsFTSListener(s.fts)))
 	}
-	s.templateStore, err = dirstore.NewMapDirectoryStore(s.baseDir, true, dirOpts...)
+	s.templateStore, err = mapstore.NewMapDirectoryStore(
+		s.baseDir,
+		true,
+		s.pp,
+		jsonencdec.JSONEncoderDecoder{},
+		dirOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +288,7 @@ func (s *PromptTemplateStore) DeletePromptBundle(
 	}
 
 	fileEntries, _, err := s.templateStore.ListFiles(
-		dirstore.ListingConfig{
+		mapstore.ListingConfig{
 			FilterPartitions: []string{dirInfo.DirName},
 			PageSize:         1,
 		}, "",
@@ -325,7 +330,7 @@ func (s *PromptTemplateStore) ListPromptBundles(
 
 	// Token present? -> authoritative.
 	if req != nil && req.PageToken != "" {
-		if tok, err := encdec.Base64JSONDecode[spec.BundlePageToken](req.PageToken); err == nil {
+		if tok, err := jsonutil.Base64JSONDecode[spec.BundlePageToken](req.PageToken); err == nil {
 			pageSize = tok.PageSize
 			if pageSize <= 0 || pageSize > maxPageSize {
 				pageSize = defaultPageSize
@@ -417,7 +422,7 @@ func (s *PromptTemplateStore) ListPromptBundles(
 		}
 		slices.Sort(ids)
 
-		nextToken = encdec.Base64JSONEncode(spec.BundlePageToken{
+		nextToken = jsonutil.Base64JSONEncode(spec.BundlePageToken{
 			CursorMod:       filtered[end-1].ModifiedAt.Format(time.RFC3339Nano),
 			CursorID:        filtered[end-1].ID,
 			BundleIDs:       ids,
@@ -483,7 +488,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 		return nil, ferr
 	}
 	existsList, _, _ := s.templateStore.ListFiles(
-		dirstore.ListingConfig{
+		mapstore.ListingConfig{
 			FilterPartitions: []string{dirInfo.DirName},
 			FilenamePrefix:   targetFN.FileName, PageSize: 10,
 		}, "")
@@ -524,7 +529,7 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 		return nil, fmt.Errorf("template validation failed: %w", err)
 	}
 
-	mp, _ := encdec.StructWithJSONTagsToMap(tpl)
+	mp, _ := jsonencdec.StructWithJSONTagsToMap(tpl)
 
 	if err := s.templateStore.SetFileData(bundleitemutils.GetBundlePartitionFileKey(targetFN.FileName, dirInfo.DirName), mp); err != nil {
 		return nil, err
@@ -678,13 +683,13 @@ func (s *PromptTemplateStore) PatchPromptTemplate(
 		return nil, err
 	}
 	var tpl spec.PromptTemplate
-	if err := encdec.MapToStructWithJSONTags(raw, &tpl); err != nil {
+	if err := jsonencdec.MapToStructWithJSONTags(raw, &tpl); err != nil {
 		return nil, err
 	}
 	tpl.IsEnabled = req.Body.IsEnabled
 	tpl.ModifiedAt = time.Now()
 
-	mp, _ := encdec.StructWithJSONTagsToMap(tpl)
+	mp, _ := jsonencdec.StructWithJSONTagsToMap(tpl)
 	if err := s.templateStore.SetFileData(key, mp); err != nil {
 		return nil, err
 	}
@@ -757,7 +762,7 @@ func (s *PromptTemplateStore) GetPromptTemplate(
 		return nil, err
 	}
 	var tpl spec.PromptTemplate
-	if err := encdec.MapToStructWithJSONTags(raw, &tpl); err != nil {
+	if err := jsonencdec.MapToStructWithJSONTags(raw, &tpl); err != nil {
 		return nil, err
 	}
 	return &spec.GetPromptTemplateResponse{Body: &tpl}, nil
@@ -774,7 +779,7 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 	if req != nil && req.PageToken != "" {
 		// Second and later calls.
 		_ = func() error {
-			t, err := encdec.Base64JSONDecode[spec.TemplatePageToken](req.PageToken)
+			t, err := jsonutil.Base64JSONDecode[spec.TemplatePageToken](req.PageToken)
 			if err == nil {
 				tok = t
 			}
@@ -877,9 +882,9 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 	// Always consume whole directory pages so that no object can be skipped.
 	for len(out) < pageHint {
 		fileEntries, nxt, err := s.templateStore.ListFiles(
-			dirstore.ListingConfig{
+			mapstore.ListingConfig{
 				PageSize:  fetchBatch,
-				SortOrder: dirstore.SortOrderDescending,
+				SortOrder: mapstore.SortOrderDescending,
 			}, tok.DirTok)
 		if err != nil {
 			return nil, err
@@ -904,7 +909,7 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 				continue
 			}
 			var pt spec.PromptTemplate
-			if err := encdec.MapToStructWithJSONTags(raw, &pt); err != nil {
+			if err := jsonencdec.MapToStructWithJSONTags(raw, &pt); err != nil {
 				continue
 			}
 			if !addAllowed(bdi.ID, &pt) {
@@ -930,7 +935,7 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 	//  Next-page token (or terminate stream).
 	var next *string
 	if needMorePages(tok.DirTok, scannedUsers) {
-		s := encdec.Base64JSONEncode(tok)
+		s := jsonutil.Base64JSONEncode(tok)
 		next = &s
 	}
 
@@ -1053,7 +1058,7 @@ func (s *PromptTemplateStore) SearchPromptTemplates(
 			continue
 		}
 		var pt spec.PromptTemplate
-		if err := encdec.MapToStructWithJSONTags(raw, &pt); err != nil {
+		if err := jsonencdec.MapToStructWithJSONTags(raw, &pt); err != nil {
 			continue
 		}
 
@@ -1239,7 +1244,7 @@ func (s *PromptTemplateStore) sweepSoftDeleted() {
 		}
 
 		fileEntries, _, err := s.templateStore.ListFiles(
-			dirstore.ListingConfig{
+			mapstore.ListingConfig{
 				FilterPartitions: []string{dirInfo.DirName},
 				PageSize:         1,
 			}, "",
@@ -1278,7 +1283,7 @@ func (s *PromptTemplateStore) readAllBundles(forceFetch bool) (spec.AllBundles, 
 		return spec.AllBundles{}, err
 	}
 	var ab spec.AllBundles
-	if err := encdec.MapToStructWithJSONTags(raw, &ab); err != nil {
+	if err := jsonencdec.MapToStructWithJSONTags(raw, &ab); err != nil {
 		return ab, err
 	}
 	return ab, nil
@@ -1286,7 +1291,7 @@ func (s *PromptTemplateStore) readAllBundles(forceFetch bool) (spec.AllBundles, 
 
 // writeAllBundles encodes and writes the strongly-typed value.
 func (s *PromptTemplateStore) writeAllBundles(ab spec.AllBundles) error {
-	mp, _ := encdec.StructWithJSONTagsToMap(ab)
+	mp, _ := jsonencdec.StructWithJSONTagsToMap(ab)
 	return s.bundleStore.SetAll(mp)
 }
 

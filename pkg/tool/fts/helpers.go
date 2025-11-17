@@ -3,7 +3,7 @@ package fts
 import (
 	"strings"
 
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
+	"github.com/ppipada/flexigpt-app/pkg/jsonutil"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
@@ -12,7 +12,7 @@ func extractArgsFromRaw(raw spec.JSONSchema) string {
 	if len(raw) == 0 {
 		return ""
 	}
-	m, err := encdec.DecodeJSONRaw[map[string]any](raw)
+	m, err := jsonutil.DecodeJSONRaw[map[string]any](raw)
 	if err != nil {
 		return ""
 	}

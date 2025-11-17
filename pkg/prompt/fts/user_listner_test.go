@@ -10,7 +10,7 @@ import (
 
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
+	"github.com/ppipada/mapstore-go"
 	"github.com/ppipada/mapstore-go/ftsengine"
 )
 
@@ -75,8 +75,8 @@ func TestFTSListener_Integration(t *testing.T) {
 	mustWriteJSON(t, tplFile, tpl)
 
 	// Simulate a SetFile event.
-	ev := filestore.Event{
-		Op:   filestore.OpSetFile,
+	ev := mapstore.FileEvent{
+		Op:   mapstore.OpSetFile,
 		File: tplFile,
 		Data: func() map[string]any {
 			var m map[string]any
@@ -106,8 +106,8 @@ func TestFTSListener_Integration(t *testing.T) {
 	}
 
 	// Simulate a DeleteFile event.
-	ev = filestore.Event{
-		Op:   filestore.OpDeleteFile,
+	ev = mapstore.FileEvent{
+		Op:   mapstore.OpDeleteFile,
 		File: tplFile,
 	}
 	listener(ev)

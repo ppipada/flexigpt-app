@@ -8,23 +8,24 @@ import (
 	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/conversation/spec"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
+	"github.com/ppipada/mapstore-go"
+	"github.com/ppipada/mapstore-go/dirpartition"
 	"github.com/ppipada/mapstore-go/ftsengine"
+	"github.com/ppipada/mapstore-go/jsonencdec"
 	"github.com/ppipada/mapstore-go/uuidv7filename"
 )
 
 type ConversationCollection struct {
 	baseDir   string
 	enableFTS bool
-	store     *dirstore.MapDirectoryStore
+	store     *mapstore.MapDirectoryStore
 	fts       *ftsengine.Engine
-	pp        dirstore.PartitionProvider
+	pp        mapstore.PartitionProvider
 }
 
 type Option func(*ConversationCollection) error
 
-func WithPartitionProvider(pp dirstore.PartitionProvider) Option {
+func WithPartitionProvider(pp mapstore.PartitionProvider) Option {
 	return func(cc *ConversationCollection) error {
 		cc.pp = pp
 		return nil
@@ -44,8 +45,8 @@ func WithFTS(enabled bool) Option {
 //
 //	baseDir is the root directory for the map-directory store.
 func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCollection, error) {
-	defPP := dirstore.MonthPartitionProvider{
-		TimeFn: func(fileKey dirstore.FileKey) (time.Time, error) {
+	defPP := dirpartition.MonthPartitionProvider{
+		TimeFn: func(fileKey mapstore.FileKey) (time.Time, error) {
 			u, err := uuidv7filename.Parse(fileKey.FileName)
 			if err != nil {
 				return time.Time{}, err
@@ -92,11 +93,11 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 		)
 	}
 
-	optsDir := []dirstore.Option{dirstore.WithPartitionProvider(cc.pp)}
+	optsDir := []mapstore.DirOption{}
 	if cc.fts != nil {
-		optsDir = append(optsDir, dirstore.WithListeners(NewFTSListner(cc.fts)))
+		optsDir = append(optsDir, mapstore.WithDirFileListeners(NewFTSListner(cc.fts)))
 	}
-	store, err := dirstore.NewMapDirectoryStore(baseDir, true, optsDir...)
+	store, err := mapstore.NewMapDirectoryStore(baseDir, true, cc.pp, jsonencdec.JSONEncoderDecoder{}, optsDir...)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +122,7 @@ func (cc *ConversationCollection) PutConversation(
 		return nil, err
 	}
 	filename := info.FileName
-	partitionDirName, err := cc.pp.GetPartitionDir(dirstore.FileKey{FileName: filename})
+	partitionDirName, err := cc.pp.GetPartitionDir(mapstore.FileKey{FileName: filename})
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +130,7 @@ func (cc *ConversationCollection) PutConversation(
 	// Check if there are files with same id as prefix
 	// We don't iterate as we expect only 1 file max with the id prefix of uuid.
 	fileEntries, _, err := cc.store.ListFiles(
-		dirstore.ListingConfig{
+		mapstore.ListingConfig{
 			FilenamePrefix:   req.ID,
 			PageSize:         10,
 			FilterPartitions: []string{partitionDirName},
@@ -144,7 +145,7 @@ func (cc *ConversationCollection) PutConversation(
 	// Remove the current file and add new.
 	for idx := range fileEntries {
 		err := cc.store.DeleteFile(
-			dirstore.FileKey{FileName: filepath.Base(fileEntries[idx].BaseRelativePath)},
+			mapstore.FileKey{FileName: filepath.Base(fileEntries[idx].BaseRelativePath)},
 		)
 		if err != nil {
 			slog.Warn("put conversation remove existing file", "error", err)
@@ -158,11 +159,11 @@ func (cc *ConversationCollection) PutConversation(
 	currentConversation.ModifiedAt = req.Body.ModifiedAt
 	currentConversation.Messages = req.Body.Messages
 
-	data, err := encdec.StructWithJSONTagsToMap(currentConversation)
+	data, err := jsonencdec.StructWithJSONTagsToMap(currentConversation)
 	if err != nil {
 		return nil, err
 	}
-	if err := cc.store.SetFileData(dirstore.FileKey{FileName: filename}, data); err != nil {
+	if err := cc.store.SetFileData(mapstore.FileKey{FileName: filename}, data); err != nil {
 		return nil, err
 	}
 	return &spec.PutConversationResponse{}, nil
@@ -191,11 +192,11 @@ func (cc *ConversationCollection) PutMessagesToConversation(
 		return nil, err
 	}
 
-	data, err := encdec.StructWithJSONTagsToMap(currentConversation)
+	data, err := jsonencdec.StructWithJSONTagsToMap(currentConversation)
 	if err != nil {
 		return nil, err
 	}
-	if err := cc.store.SetFileData(dirstore.FileKey{FileName: filename}, data); err != nil {
+	if err := cc.store.SetFileData(mapstore.FileKey{FileName: filename}, data); err != nil {
 		return nil, err
 	}
 
@@ -215,7 +216,7 @@ func (cc *ConversationCollection) DeleteConversation(
 	}
 	filename := info.FileName
 
-	if err := cc.store.DeleteFile(dirstore.FileKey{FileName: filename}); err != nil {
+	if err := cc.store.DeleteFile(mapstore.FileKey{FileName: filename}); err != nil {
 		return nil, err
 	}
 	slog.Info("delete conversation", "file", filename)
@@ -236,13 +237,13 @@ func (cc *ConversationCollection) GetConversation(
 	filename := info.FileName
 
 	// Force get the data for single get.
-	raw, err := cc.store.GetFileData(dirstore.FileKey{FileName: filename}, req.ForceFetch)
+	raw, err := cc.store.GetFileData(mapstore.FileKey{FileName: filename}, req.ForceFetch)
 	if err != nil {
 		return nil, err
 	}
 
 	var convo spec.Conversation
-	if err := encdec.MapToStructWithJSONTags(raw, &convo); err != nil {
+	if err := jsonencdec.MapToStructWithJSONTags(raw, &convo); err != nil {
 		return nil, err
 	}
 	return &spec.GetConversationResponse{Body: &convo}, nil
@@ -264,7 +265,7 @@ func (cc *ConversationCollection) ListConversations(
 		}
 	}
 	fileEntries, next, err := cc.store.ListFiles(
-		dirstore.ListingConfig{SortOrder: dirstore.SortOrderDescending, PageSize: pageSize},
+		mapstore.ListingConfig{SortOrder: mapstore.SortOrderDescending, PageSize: pageSize},
 		token,
 	)
 	if err != nil {

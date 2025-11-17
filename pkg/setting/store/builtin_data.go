@@ -5,7 +5,6 @@ import (
 
 	"github.com/ppipada/flexigpt-app/pkg/builtin"
 	"github.com/ppipada/flexigpt-app/pkg/setting/spec"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 )
 
 // BuiltInAuthKeys lists every key that must never be deleted.
@@ -30,7 +29,7 @@ var DefaultSettingsData = func() spec.SettingsSchema {
 	for _, p := range builtin.BuiltInProviderNames {
 		ak[spec.AuthKeyTypeProvider][spec.AuthKeyName(p)] = spec.AuthKey{
 			Secret:   "",
-			SHA256:   encdec.ComputeSHA(""),
+			SHA256:   computeSHA(""),
 			NonEmpty: false,
 		}
 	}
