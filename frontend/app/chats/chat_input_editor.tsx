@@ -1,6 +1,6 @@
 import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
-import { FiAlertTriangle, FiSend } from 'react-icons/fi';
+import { FiAlertTriangle, FiLoader, FiSend } from 'react-icons/fi';
 
 import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
@@ -85,6 +85,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	// doc version tick to re-run selection computations on any editor change (even if text string doesn't change)
 	const [docVersion, setDocVersion] = useState(0);
 	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [isPrefilling, setIsPrefilling] = useState(false);
 
 	const lastPopulatedSelectionKeyRef = useRef<Set<string>>(new Set());
 
@@ -125,6 +126,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const { formRef, onKeyDown } = useEnterSubmit({
 		isBusy,
 		canSubmit: () => {
+			if (isPrefilling) return false;
 			const hasTemplate = selectionInfo.hasTemplate;
 			if (hasTemplate) {
 				return selectionInfo.requiredCount === 0 && selectionInfo.pendingPreTools === 0;
@@ -138,12 +140,12 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	});
 
 	const isSendButtonEnabled = useMemo(() => {
-		if (isBusy) return false;
+		if (isBusy || isPrefilling) return false;
 		if (selectionInfo.hasTemplate) {
 			return selectionInfo.requiredCount === 0 && selectionInfo.pendingPreTools === 0;
 		}
 		return hasNonEmptyUserText(editorRef.current);
-	}, [isBusy, selectionInfo, docVersion]);
+	}, [isBusy, isPrefilling, selectionInfo, docVersion]);
 
 	// Populate editor with effective last-USER block for EACH template selection (once per selectionID)
 	useEffect(() => {
@@ -244,7 +246,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			const selections = getTemplateSelections(editor);
 			const hasTpl = selections.length > 0;
 			if (hasTpl) {
+				setIsPrefilling(true);
 				const { ok, errors } = await runAllReadyPreprocessors(editor);
+				setIsPrefilling(false);
 				if (!ok) {
 					// Surface first error and abort send
 					dispatchTemplateFlashEvent();
@@ -287,6 +291,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				isSubmittingRef.current = false;
 			}
 		})().catch(() => {
+			setIsPrefilling(false);
 			isSubmittingRef.current = false;
 		});
 	};
@@ -325,7 +330,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 						ref={contentRef}
 						placeholder="Type message..."
 						spellCheck={false}
-						readOnly={isBusy}
+						readOnly={isBusy || isPrefilling}
 						onKeyDown={onKeyDown}
 						onPaste={e => {
 							e.preventDefault();
@@ -344,12 +349,14 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 					/>
 					<button
 						type="submit"
-						className={`btn btn-circle btn-ghost shrink-0 ${!isSendButtonEnabled || isBusy ? 'btn-disabled' : ''}`}
-						disabled={isBusy || !isSendButtonEnabled}
-						aria-label="Send Message"
-						title="Send Message"
+						className={`btn btn-circle btn-ghost shrink-0 ${
+							!isSendButtonEnabled || isBusy || isPrefilling ? 'btn-disabled' : ''
+						}`}
+						disabled={isBusy || isPrefilling || !isSendButtonEnabled}
+						aria-label={isPrefilling ? 'Filling in prompts...' : 'Send Message'}
+						title={isPrefilling ? 'Filling in prompts...' : 'Send Message'}
 					>
-						<FiSend size={18} />
+						{isPrefilling ? <FiLoader size={18} className="animate-spin" /> : <FiSend size={18} />}
 					</button>
 				</div>
 				<AttachmentBottomBar />
