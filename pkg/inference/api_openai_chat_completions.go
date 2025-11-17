@@ -176,10 +176,12 @@ func (api *OpenAIChatCompletionsAPI) FetchCompletion(
 	if rp := completionData.ModelParams.Reasoning; rp != nil &&
 		rp.Type == modelpresetSpec.ReasoningTypeSingleWithLevels {
 		switch rp.Level {
-		case modelpresetSpec.ReasoningLevelLow,
+		case
+			modelpresetSpec.ReasoningLevelNone,
+			modelpresetSpec.ReasoningLevelMinimal,
+			modelpresetSpec.ReasoningLevelLow,
 			modelpresetSpec.ReasoningLevelMedium,
-			modelpresetSpec.ReasoningLevelHigh,
-			modelpresetSpec.ReasoningLevelMinimal:
+			modelpresetSpec.ReasoningLevelHigh:
 			params.ReasoningEffort = shared.ReasoningEffort(string(rp.Level))
 		default:
 			return nil, fmt.Errorf("invalid level %q for singleWithLevels", rp.Level)

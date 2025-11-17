@@ -71,6 +71,7 @@ const (
 )
 
 const (
+	ReasoningLevelNone    ReasoningLevel = "none"
 	ReasoningLevelMinimal ReasoningLevel = "minimal"
 	ReasoningLevelLow     ReasoningLevel = "low"
 	ReasoningLevelMedium  ReasoningLevel = "medium"

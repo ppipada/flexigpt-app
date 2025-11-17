@@ -15,6 +15,8 @@ export const SingleReasoningDropdown = forwardRef<HTMLDetailsElement, SingleReas
 	function SingleReasoningDropdown({ reasoningLevel, setReasoningLevel, isOpen, setIsOpen }, detailsRef) {
 		// Map reasoning levels to display names.
 		const levelDisplayNames = {
+			[ReasoningLevel.None]: 'None',
+			[ReasoningLevel.Minimal]: 'Minimal',
 			[ReasoningLevel.Low]: 'Low',
 			[ReasoningLevel.Medium]: 'Medium',
 			[ReasoningLevel.High]: 'High',

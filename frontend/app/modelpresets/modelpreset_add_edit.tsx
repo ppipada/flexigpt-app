@@ -24,6 +24,8 @@ const reasoningTypeItems: Record<ReasoningType, { isEnabled: boolean; displayNam
 };
 
 const reasoningLevelItems: Record<ReasoningLevel, { isEnabled: boolean; displayName: string }> = {
+	[ReasoningLevel.None]: { isEnabled: true, displayName: 'None' },
+	[ReasoningLevel.Minimal]: { isEnabled: true, displayName: 'Minimal' },
 	[ReasoningLevel.Low]: { isEnabled: true, displayName: 'Low' },
 	[ReasoningLevel.Medium]: { isEnabled: true, displayName: 'Medium' },
 	[ReasoningLevel.High]: { isEnabled: true, displayName: 'High' },

@@ -51,6 +51,8 @@ export enum ReasoningType {
 }
 
 export enum ReasoningLevel {
+	None = 'none',
+	Minimal = 'minimal',
 	Low = 'low',
 	Medium = 'medium',
 	High = 'high',

@@ -131,10 +131,12 @@ func validateReasoning(r *spec.ReasoningParams) error {
 		}
 	case spec.ReasoningTypeSingleWithLevels:
 		switch r.Level {
-		case spec.ReasoningLevelLow,
+		case
+			spec.ReasoningLevelNone,
+			spec.ReasoningLevelMinimal,
+			spec.ReasoningLevelLow,
 			spec.ReasoningLevelMedium,
-			spec.ReasoningLevelHigh,
-			spec.ReasoningLevelMinimal:
+			spec.ReasoningLevelHigh:
 			// Valid.
 		default:
 			return fmt.Errorf("invalid level %q for singleWithLevels", r.Level)

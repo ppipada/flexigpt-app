@@ -182,10 +182,12 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 	if rp := completionData.ModelParams.Reasoning; rp != nil &&
 		rp.Type == modelpresetSpec.ReasoningTypeSingleWithLevels {
 		switch rp.Level {
-		case modelpresetSpec.ReasoningLevelLow,
+		case
+			modelpresetSpec.ReasoningLevelNone,
+			modelpresetSpec.ReasoningLevelMinimal,
+			modelpresetSpec.ReasoningLevelLow,
 			modelpresetSpec.ReasoningLevelMedium,
-			modelpresetSpec.ReasoningLevelHigh,
-			modelpresetSpec.ReasoningLevelMinimal:
+			modelpresetSpec.ReasoningLevelHigh:
 			params.Reasoning = shared.ReasoningParam{
 				Effort: shared.ReasoningEffort(string(rp.Level)),
 				// No option to tweak reasoning summary for now.
