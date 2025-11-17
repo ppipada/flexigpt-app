@@ -11,7 +11,7 @@
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
 	"description": "FlexiGPT - An AI application platform",
 	"engines": {
-		"node": ">=22.19.0"
+		"node": "22.21.1"
 	},
 	"scripts": {
 		"touch:tmp": "node -e \"require('fs-extra').ensureFileSync('frontend/dist/client/a.tmp')\"",
