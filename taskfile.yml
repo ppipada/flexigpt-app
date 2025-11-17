@@ -1,0 +1,135 @@
+# https://taskfile.dev
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+vars:
+  GREETING: Hello, these are FlexiGPT tasks!
+
+tasks:
+  default:
+    cmds:
+      - echo "{{.GREETING}}"
+    silent: true
+
+  installtools:
+    cmds:
+      # Install task, go, golangci-lint, cloc externally. E.g via asdf. the needed versions are pinned in .tool-versions file.
+      # Tool version bumps should also happen in associated files:
+      #   - go: build/flatpak/io.github.flexigpt.client.yml
+      #   - golangci-lint: .github/actions/lint.yml.
+      #   - wails: build/buildvars.env and build/flatpak/io.github.flexigpt.client.yml
+      #   - node: package.json, .github/workflows/flatpak.yml, build/flatpak/io.github.flexigpt.client.yml, frontend/package.json (types)
+      - go install github.com/wailsapp/wails/v2/cmd/wails@v2.11.0
+      - go install golang.org/x/tools/gopls@v0.20.0
+      - go install github.com/oligot/go-mod-upgrade@v0.12.0
+      - go install github.com/ppipada/refdir@v0.7.0
+      - go install github.com/vladopajic/go-test-coverage/v2@v2.18.0
+      # Prerequisite graphviz dot: macOS: brew install graphviz ; Debian/Ubuntu: sudo apt-get update && sudo apt-get install -y graphviz
+      - go install github.com/kisielk/godepgraph@v1.0.0
+
+  gomod:
+    cmds:
+      - go mod download
+      - go mod tidy
+      - go mod verify
+      # wails doctor ## This can be used to see if system is ready for wails.
+
+  cloc:
+    cmds:
+      - |
+        cloc \
+          --vcs=git --ignored=ignored.txt --exclude_ext=yaml,sum,mod,md5 \
+          --force-lang=Mustache,tmpl --force-lang=INI,env --force-lang=INI,dev --force-lang=INI,prod \
+          --not-match-f='LICENSE$|\.npmrc$|\.prettierignore$|\.gitignore$|\.gitattributes$|\.gitmodules$' \
+          .
+
+  godepgraph:
+    cmds:
+      - godepgraph -s -o github.com/ppipada/mapstore-go,command-line-arguments store_directory.go | dot -Tpng -o godepgraph.png
+
+  tagstats:
+    cmds:
+      - ./scripts/git_tag_stats.sh
+
+  build-linux:
+    cmds:
+      # we dont setup task inside github action, so redirecting these prod builds to pnpm
+      - pnpm run build:linux
+
+  build-mac:
+    cmds:
+      # we dont setup task inside github action, so redirecting these prod builds to pnpm
+      - pnpm run build:mac
+
+  build-win:
+    cmds:
+      # we dont setup task inside github action, so redirecting these prod builds to pnpm
+      - pnpm run build:win
+
+  build-withbindings:
+    cmds:
+      - pnpm run touch:tmp
+      - cd ./cmd/agentgo && wails build -devtools -m -clean -v 2 -ldflags="-X main.Version=v0.0.1" > ../../out/log.txt 2&>1
+
+  pack-flatpak:
+    cmds:
+      - gh act workflow_dispatch -W "./.github/workflows/flatpak.yml" --artifact-server-path ./out --input tag=v0.0.1
+
+  pack-nsis:
+    cmds:
+      - gh act workflow_dispatch -W "./.github/workflows/nsispak.yml" --artifact-server-path ./out --input tag=v0.0.1
+
+  pack-macpkg:
+    cmds:
+      - gh act workflow_dispatch -W "./.github/workflows/macpkg.yml" --artifact-server-path ./out --input tag=v0.0.1
+
+  run-watch:
+    cmds:
+      - pnpm -F frontend run build:wails
+      - cd ./cmd/agentgo && wails dev -s -v 2 -tags webkit2_41 -ldflags="-X main.Version=v0.0.1" > ../../out/log.txt 2&>1
+
+  run-gobackend:
+    cmds:
+      - "./scripts/run_backend.sh"
+
+  lint-gopls:
+    cmds:
+      - ./scripts/lint_gopls_check.sh
+
+  lint-godotfix:
+    cmds:
+      - golangci-lint run --fix --enable-only=godot
+
+  lint-gosort:
+    cmds:
+      - refdir ./...
+
+  lint-go:
+    cmds:
+      - golangci-lint run ./... -v
+
+  lint:
+    cmds:
+      - task: lint-go
+      - pnpm -F frontend run lint
+
+  test-go:
+    cmds:
+      - pnpm run touch:tmp
+      # The count=1 is needed to disable test caching. this is so that coverage doesnt show stale data.
+      # Issue: https://github.com/golang/go/issues/74873
+      - go test -count=1 -covermode=atomic -coverpkg=./... -coverprofile=coverage.out ./...
+      - go tool cover -func=coverage.out
+      - go-test-coverage --config=./.testcoverage.yml
+
+  test:
+    cmds:
+      - task: test-go
+      - pnpm -F frontend run test
+
+  lt:
+    cmds:
+      - task: lint
+      - task: lint-gosort
+      - task: test

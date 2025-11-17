@@ -1,4 +1,3 @@
-#!/bin/bash
 
 cloc \
 		--vcs=git \
@@ -7,6 +6,7 @@ cloc \
 		--exclude_ext=yaml,sum,mod,md5 \
 		--not-match-f='LICENSE$|\.npmrc$|\.prettierignore$|\.gitignore$|\.gitattributes$|\.gitmodules$' \
 		.
+
 
 # -------------------------------------------------------------------------------
 # Date                     files          blank        comment           code

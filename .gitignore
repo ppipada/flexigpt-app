@@ -136,3 +136,4 @@ ignored.txt
 
 godepgraph.png
 .gocache
+coverage.out

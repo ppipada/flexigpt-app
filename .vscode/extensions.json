@@ -8,6 +8,7 @@
 		"redhat.vscode-yaml", // YAML
 		"redhat.vscode-xml", // XML
 		"foxundermoon.shell-format", // Shell
-		"bradlc.vscode-tailwindcss" // Tailwind css
+		"bradlc.vscode-tailwindcss", // Tailwind css
+		"task.vscode-task" // Taskfile.dev
 	]
 }

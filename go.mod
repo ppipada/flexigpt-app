@@ -2,11 +2,7 @@ module github.com/ppipada/flexigpt-app
 
 go 1.25.3
 
-// Tools:
-//   go and golangci-lint are a prerequisite.
-//   We do not use go get tool directive as it results in dependencies of tools getting into this modules mod graph.
-//   Behavior ref: https://go.dev/doc/modules/gomod-ref#tool
-//   Installation script for the needed go tools by this module can be found at: ./scripts/install_tools.sh.
+// Tools: These are installed via the taskfile. check the associated task.
 require (
 	github.com/adrg/xdg v0.5.3
 	github.com/anthropics/anthropic-sdk-go v1.17.0
