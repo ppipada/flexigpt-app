@@ -17,7 +17,6 @@ require (
 	github.com/philippgille/chromem-go v0.7.0
 	github.com/ppipada/mapstore-go v0.0.1
 	github.com/wailsapp/wails/v2 v2.11.0
-	github.com/zalando/go-keyring v0.2.6
 )
 
 require (
@@ -55,6 +54,7 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/wailsapp/go-webview2 v1.0.22 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
+	github.com/zalando/go-keyring v0.2.6 // indirect
 	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b // indirect
 	golang.org/x/net v0.43.0 // indirect
