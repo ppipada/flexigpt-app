@@ -22,7 +22,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/dirstore"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/encdec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
+	"github.com/ppipada/mapstore-go/ftsengine"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 	"github.com/ppipada/mapstore-go/uuidv7filename"
 )

@@ -12,7 +12,7 @@ import (
 
 	"github.com/ppipada/flexigpt-app/pkg/conversation/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
+	"github.com/ppipada/mapstore-go/ftsengine"
 )
 
 func StartRebuild(ctx context.Context, baseDir string, e *ftsengine.Engine) {

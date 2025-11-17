@@ -3,9 +3,8 @@ package fts
 import (
 	"context"
 
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
-
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
+	"github.com/ppipada/mapstore-go/ftsengine"
 )
 
 // InitToolFTSListeners initialises the tools FTS database and starts background rebuild jobs.

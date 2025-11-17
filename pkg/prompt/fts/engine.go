@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
+	"github.com/ppipada/mapstore-go/ftsengine"
 )
 
 func InitFTSListeners(

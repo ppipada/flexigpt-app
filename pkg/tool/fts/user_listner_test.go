@@ -10,8 +10,8 @@ import (
 
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
+	"github.com/ppipada/mapstore-go/ftsengine"
 )
 
 func TestToolsFTSListener_Integration(t *testing.T) {

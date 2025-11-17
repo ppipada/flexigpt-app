@@ -1,7 +1,7 @@
 package fts
 
 import (
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
+	"github.com/ppipada/mapstore-go/ftsengine"
 
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 )

@@ -15,7 +15,7 @@ import (
 
 	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
 	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/filestore"
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
+	"github.com/ppipada/mapstore-go/ftsengine"
 )
 
 // StartUserPromptsFTSRebuild launches a goroutine to rebuild the FTS index for all prompt templates under baseDir.

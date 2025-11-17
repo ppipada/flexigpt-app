@@ -9,11 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/pkg/simplemapdb/ftsengine"
-
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
-
 	"github.com/ppipada/flexigpt-app/pkg/tool/spec"
+	"github.com/ppipada/mapstore-go/ftsengine"
 )
 
 // ToolBuiltInLister returns the current snapshot of all built-in bundles and tools.
