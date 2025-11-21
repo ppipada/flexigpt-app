@@ -79,23 +79,12 @@ type ResponseContent struct {
 	Content string              `json:"content"`
 }
 
-type CompletionResponse struct {
-	RequestDetails  *APIRequestDetails  `json:"requestDetails,omitempty"`
-	ResponseDetails *APIResponseDetails `json:"responseDetails,omitempty"`
-	ErrorDetails    *APIErrorDetails    `json:"errorDetails,omitempty"`
-	ResponseContent []ResponseContent   `json:"responseContent,omitempty"`
-}
-
-type CompletionData struct {
-	ModelParams ModelParams                 `json:"modelParams"`
-	Messages    []ChatCompletionDataMessage `json:"messages,omitempty"`
-	Tools       []CompletionTool            `json:"tools,omitempty"`
-}
-
 type BuildCompletionDataRequestBody struct {
-	ModelParams    ModelParams                  `json:"modelParams"    required:"true"`
-	CurrentMessage BuildCompletionDataMessage   `json:"currentMessage" required:"true"`
-	PrevMessages   []BuildCompletionDataMessage `json:"prevMessages"`
+	ModelParams    ModelParams                 `json:"modelParams"            required:"true"`
+	CurrentMessage ChatCompletionDataMessage   `json:"currentMessage"         required:"true"`
+	PrevMessages   []ChatCompletionDataMessage `json:"prevMessages,omitempty"`
+	ToolChoices    []ChatCompletionToolChoice  `json:"toolChoices,omitempty"`
+	Attachments    []ChatCompletionAttachment  `json:"attachments,omitempty"`
 }
 
 type BuildCompletionDataRequest struct {
@@ -103,12 +92,19 @@ type BuildCompletionDataRequest struct {
 	Body     *BuildCompletionDataRequestBody
 }
 
+type FetchCompletionData struct {
+	ModelParams ModelParams                 `json:"modelParams"`
+	Messages    []ChatCompletionDataMessage `json:"messages,omitempty"`
+	ToolChoices []FetchCompletionToolChoice `json:"toolChoices,omitempty"`
+	Attachments []ChatCompletionAttachment  `json:"attachments,omitempty"`
+}
+
 type BuildCompletionDataResponse struct {
-	Body *CompletionData
+	Body *FetchCompletionData
 }
 
 type FetchCompletionRequestBody struct {
-	CompletionData       *CompletionData                 `json:"completionData" required:"true"`
+	FetchCompletionData  *FetchCompletionData            `json:"fetchCompletionData" required:"true"`
 	OnStreamTextData     func(textData string) error     `json:"-"`
 	OnStreamThinkingData func(thinkingData string) error `json:"-"`
 }
@@ -118,6 +114,13 @@ type FetchCompletionRequest struct {
 	Body     *FetchCompletionRequestBody
 }
 
+type FetchCompletionResponseBody struct {
+	RequestDetails  *APIRequestDetails  `json:"requestDetails,omitempty"`
+	ResponseDetails *APIResponseDetails `json:"responseDetails,omitempty"`
+	ErrorDetails    *APIErrorDetails    `json:"errorDetails,omitempty"`
+	ResponseContent []ResponseContent   `json:"responseContent,omitempty"`
+}
+
 type FetchCompletionResponse struct {
-	Body *CompletionResponse
+	Body *FetchCompletionResponseBody
 }

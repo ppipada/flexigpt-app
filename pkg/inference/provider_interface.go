@@ -22,11 +22,11 @@ type CompletionProvider interface {
 		modelParams spec.ModelParams,
 		currentMessage spec.ChatCompletionDataMessage,
 		prevMessages []spec.ChatCompletionDataMessage,
-	) (*spec.CompletionData, error)
+	) (*spec.FetchCompletionData, error)
 	FetchCompletion(
 		ctx context.Context,
-		completionData *spec.CompletionData,
+		completionData *spec.FetchCompletionData,
 		OnStreamTextData func(textData string) error,
 		OnStreamThinkingData func(thinkingData string) error,
-	) (*spec.CompletionResponse, error)
+	) (*spec.FetchCompletionResponse, error)
 }

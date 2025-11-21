@@ -1,26 +1,21 @@
 import { ElementApi, KEYS, NodeApi } from 'platejs';
 import type { PlateEditor, usePlateEditor } from 'platejs/react';
 
-import type { PreProcessorCall, PromptTemplate, PromptVariable } from '@/spec/prompt';
+import type { PromptTemplate, PromptVariable } from '@/spec/prompt';
 
 import { expandTabsToSpaces } from '@/lib/text_utils';
 
-import { dispatchTemplateVarsUpdated } from '@/chats/events/template_toolbar_vars_updated';
 import {
-	buildInitialToolStates,
 	computeEffectiveTemplate,
-	computeRequirements,
 	effectiveVarValueLocal,
 	makeSelectedTemplateForRun,
 } from '@/chats/templates/template_processing';
-import type { SelectedTemplateForRun, TemplateSelectionElementNode, ToolState } from '@/chats/templates/template_spec';
+import type { SelectedTemplateForRun, TemplateSelectionElementNode } from '@/chats/templates/template_spec';
 import {
 	KEY_TEMPLATE_SELECTION,
 	KEY_TEMPLATE_VARIABLE,
 	type TemplateVariableElementNode,
-	ToolStatus,
 } from '@/chats/templates/template_spec';
-import { runPreprocessor } from '@/chats/templates/template_tool_processing';
 
 export function insertTemplateSelectionNode(
 	editor: PlateEditor,
@@ -48,10 +43,8 @@ export function insertTemplateSelectionNode(
 			tags?: string[];
 			blocks?: PromptTemplate['blocks'];
 			variables?: PromptTemplate['variables'];
-			preProcessors?: PromptTemplate['preProcessors'];
 		},
-		// Each preprocessor call state
-		toolStates: buildInitialToolStates(template),
+
 		// void elements still need one empty text child in Slate
 		children: [{ text: '' }],
 	};
@@ -113,19 +106,15 @@ export function toPlainTextReplacingVariables(editor: PlateEditor): string {
 		{
 			defsByName: Map<string, PromptVariable>;
 			userValues: Record<string, unknown>;
-			preProcessors: PreProcessorCall[];
-			toolStates?: Record<string, ToolState>;
 		}
 	>();
 
 	for (const [node] of selections) {
 		if (!node.selectionID) continue;
-		const { variablesSchema, preProcessors } = computeEffectiveTemplate(node);
+		const { variablesSchema } = computeEffectiveTemplate(node);
 		ctxBySelection.set(node.selectionID, {
 			defsByName: new Map(variablesSchema.map(v => [v.name, v] as const)),
 			userValues: node.variables,
-			preProcessors,
-			toolStates: node.toolStates,
 		});
 	}
 	function toStringDeepWithVars(n: any): string {
@@ -144,7 +133,7 @@ export function toPlainTextReplacingVariables(editor: PlateEditor): string {
 			if (!def) return placeholder; // unknown var (shouldn't happen)
 
 			// Resolve the effective value like the inline pill does
-			const val = effectiveVarValueLocal(def, ctx.userValues, ctx.toolStates, ctx.preProcessors);
+			const val = effectiveVarValueLocal(def, ctx.userValues);
 			if (val !== undefined && val !== null) {
 				// eslint-disable-next-line @typescript-eslint/no-base-to-string
 				return String(val);
@@ -202,127 +191,4 @@ export function hasNonEmptyUserText(ed: PlateEditor | null | undefined): boolean
 		if (t.text.trim().length > 0) return true;
 	}
 	return false;
-}
-
-function patchToolState(editor: PlateEditor, tsPath: any, toolId: string, patch: Partial<ToolState>) {
-	const nnode = NodeApi.get(editor, tsPath);
-	if (!nnode) return;
-	const el = nnode as unknown as TemplateSelectionElementNode;
-	const prev = el.toolStates ?? {};
-	const nextTool = { ...(prev[toolId] ?? {}), ...patch };
-	const next = { ...prev, [toolId]: nextTool };
-	editor.tf.setNodes({ toolStates: next }, { at: tsPath });
-}
-
-function getResolvedToolEntryForSelection(
-	tsenode: TemplateSelectionElementNode,
-	toolId: string
-): {
-	args: Record<string, unknown>;
-	unresolved: string[];
-	status: ToolState['status'];
-} {
-	const { variablesSchema, preProcessors } = computeEffectiveTemplate(tsenode);
-	const req = computeRequirements(variablesSchema, tsenode.variables, preProcessors, tsenode.toolStates);
-	const t = req.toolsToRun.find(tt => tt.id === toolId);
-	return {
-		args: t?.args as Record<string, unknown>,
-		unresolved: t?.unresolved ?? [],
-		status: t?.status as ToolState['status'],
-	};
-}
-
-export async function runPreprocessorForSelection(
-	editor: PlateEditor,
-	tsenode: TemplateSelectionElementNode,
-	tsPath: any,
-	preproc: PreProcessorCall
-): Promise<{ ok: boolean; error?: string }> {
-	const { args, unresolved } = getResolvedToolEntryForSelection(tsenode, preproc.id);
-	if (unresolved.length > 0) {
-		return { ok: false, error: `Missing values: ${unresolved.join(', ')}` };
-	}
-
-	// Guard against duplicate clicks
-	const st = tsenode.toolStates?.[preproc.id];
-	if (st?.status === ToolStatus.RUNNING) return { ok: true };
-
-	patchToolState(editor, tsPath, preproc.id, {
-		status: ToolStatus.RUNNING,
-		error: undefined,
-		lastRunAt: new Date().toISOString(),
-	});
-
-	try {
-		const result = await runPreprocessor(
-			{
-				toolBundleID: preproc.toolBundleID,
-				toolSlug: preproc.toolSlug,
-				toolVersion: preproc.toolVersion,
-			},
-			args
-		);
-		// Save result and mark done
-		patchToolState(editor, tsPath, preproc.id, {
-			status: ToolStatus.DONE,
-			result,
-			error: undefined,
-		});
-		if (tsenode.selectionID) {
-			dispatchTemplateVarsUpdated(tsenode.selectionID);
-		}
-		return { ok: true };
-	} catch (e) {
-		const errMsg =
-			e && typeof e === 'object' && 'message' in e ? (e.message as string | undefined) : 'Tool execution failed';
-		patchToolState(editor, tsPath, preproc.id, {
-			status: ToolStatus.ERROR,
-			error: errMsg,
-		});
-		if (tsenode.selectionID) {
-			dispatchTemplateVarsUpdated(tsenode.selectionID);
-		}
-		return { ok: false, error: errMsg };
-	}
-}
-
-async function runReadyPreprocessorsForSelection(
-	editor: PlateEditor,
-	tsenode: TemplateSelectionElementNode,
-	tsPath: any
-): Promise<{ ok: boolean; errors: Array<{ preprocId: string; saveAs: string; error: string }> }> {
-	const { preProcessors, variablesSchema } = computeEffectiveTemplate(tsenode);
-	const req = computeRequirements(variablesSchema, tsenode.variables, preProcessors, tsenode.toolStates);
-
-	const ready = req.toolsToRun.filter(t => t.status === ToolStatus.READY || t.status === ToolStatus.ERROR);
-	const errors: Array<{ preprocId: string; saveAs: string; error: string }> = [];
-
-	for (const t of ready) {
-		const p = preProcessors.find(pp => pp.id === t.id);
-		if (!p) continue;
-		const r = await runPreprocessorForSelection(editor, tsenode, tsPath, p);
-		if (!r.ok) {
-			errors.push({ preprocId: p.id, saveAs: p.saveAs, error: r.error ?? 'Tool execution failed' });
-		}
-	}
-
-	return { ok: errors.length === 0, errors };
-}
-
-export async function runAllReadyPreprocessors(editor: PlateEditor): Promise<{
-	ok: boolean;
-	errors: Array<{ selectionID?: string; preprocId: string; saveAs: string; error: string }>;
-}> {
-	const items = getTemplateNodesWithPath(editor);
-	const allErrors: Array<{ selectionID?: string; preprocId: string; saveAs: string; error: string }> = [];
-
-	for (const [tsenode, tsPath] of items) {
-		const r = await runReadyPreprocessorsForSelection(editor, tsenode, tsPath);
-		if (!r.ok) {
-			for (const e of r.errors) {
-				allErrors.push({ selectionID: tsenode.selectionID, ...e });
-			}
-		}
-	}
-	return { ok: allErrors.length === 0, errors: allErrors };
 }

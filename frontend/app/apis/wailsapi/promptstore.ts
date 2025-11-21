@@ -1,7 +1,6 @@
 import type {
 	IPromptStoreAPI,
 	MessageBlock,
-	PreProcessorCall,
 	PromptBundle,
 	PromptTemplate,
 	PromptTemplateListItem,
@@ -131,8 +130,7 @@ export class WailsPromptStoreAPI implements IPromptStoreAPI {
 		version: string,
 		description?: string,
 		tags?: string[],
-		variables?: PromptVariable[],
-		preProcessors?: PreProcessorCall[]
+		variables?: PromptVariable[]
 	): Promise<void> {
 		const req = {
 			BundleID: bundleID,
@@ -145,7 +143,6 @@ export class WailsPromptStoreAPI implements IPromptStoreAPI {
 				tags: tags,
 				blocks: blocks,
 				variables: variables,
-				preProcessors: preProcessors,
 			},
 		};
 		await PutPromptTemplate(req as spec.PutPromptTemplateRequest);

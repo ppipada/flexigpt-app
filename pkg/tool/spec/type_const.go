@@ -53,6 +53,15 @@ const (
 	ToolTypeHTTP ToolType = "http"
 )
 
+// ToolOutputKind describes how a tool's result should be treated at the UX boundary.
+type ToolOutputKind string
+
+const (
+	ToolOutputText ToolOutputKind = "text" // result is text or text-like JSON
+	ToolOutputBlob ToolOutputKind = "blob" // bytes / file-like
+	ToolOutputNone ToolOutputKind = "none" // no visible payload, side-effect only
+)
+
 // GoToolImpl - Register-by-name pattern for Go tools.
 type GoToolImpl struct {
 	// Fully-qualified registration key, e.g.
@@ -96,6 +105,14 @@ type Tool struct {
 	DisplayName string   `json:"displayName"`
 	Description string   `json:"description,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
+
+	// UserCallable indicates whether the tool can be invoked directly by the user
+	// (e.g. from the composer UI before sending a message).
+	UserCallable bool `json:"userCallable"`
+	// LLMCallable indicates whether the model may call this tool as a function.
+	LLMCallable bool `json:"llmCallable"`
+	// OutputKind describes how the tool output should be surfaced in the UX.
+	OutputKind ToolOutputKind `json:"outputKind"`
 
 	ArgSchema    JSONSchema `json:"argSchema"`    // validated pre-invoke
 	OutputSchema JSONSchema `json:"outputSchema"` // validated post-invoke

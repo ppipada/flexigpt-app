@@ -8,11 +8,46 @@ export enum ChatCompletionRoleEnum {
 	function = 'function',
 }
 
-interface ChatCompletionDataMessage {
+// ChatCompletionAttachmentKind enumerates contextual attachment categories that can be
+// associated with messages sent to the inference layer.
+export enum ChatCompletionAttachmentKind {
+	file = 'file',
+	docIndex = 'docIndex',
+	pr = 'pr',
+	commit = 'commit',
+	snapshot = 'snapshot',
+}
+
+// ChatCompletionAttachment is a lightweight reference to external context (files, PRs, snapshots, etc.).
+export interface ChatCompletionAttachment {
+	kind: ChatCompletionAttachmentKind;
+	ref: string;
+	label: string;
+}
+
+export interface ChatCompletionToolChoice {
+	bundleID?: string;
+	toolSlug: string;
+	toolVersion: string;
+	id?: string;
+	description: string;
+	displayName: string;
+}
+
+export interface ChatCompletionDataMessage {
 	role: ChatCompletionRoleEnum;
-	content?: string;
-	name?: string;
-	toolAttachments?: ChatCompletionToolAttachment[];
+	content?: string | null;
+	name?: string | null;
+}
+
+// Assuming Tool is defined in something like `toolSpec`
+export interface FetchCompletionToolChoice {
+	bundleID?: string;
+	toolSlug: string;
+	toolVersion: string;
+	id?: string;
+	tool: Tool | null;
+	description: string;
 }
 
 export interface ModelParams {
@@ -25,40 +60,6 @@ export interface ModelParams {
 	systemPrompt: string;
 	timeout: number;
 	additionalParametersRawJSON?: string;
-}
-
-interface ChatCompletionToolAttachment {
-	bundleID: string;
-	toolSlug: string;
-	toolVersion: string;
-	id?: string;
-}
-
-export interface BuildCompletionToolAttachment {
-	bundleID?: string;
-	toolSlug: string;
-	toolVersion: string;
-	id?: string;
-	displayName?: string;
-}
-
-export interface BuildCompletionDataMessage {
-	role: ChatCompletionRoleEnum;
-	content?: string;
-	name?: string;
-	toolAttachments?: BuildCompletionToolAttachment[];
-}
-
-interface CompletionTool {
-	bundleID: string;
-	tool: Tool;
-	attachmentIDs?: string[];
-}
-
-export interface CompletionData {
-	modelParams: ModelParams;
-	messages?: ChatCompletionDataMessage[];
-	tools?: CompletionTool[];
 }
 
 interface APIRequestDetails {
@@ -95,7 +96,14 @@ interface ResponseContent {
 	content: string;
 }
 
-export interface CompletionResponse {
+export interface FetchCompletionData {
+	modelParams: ModelParams;
+	messages?: Array<ChatCompletionDataMessage>;
+	toolChoices?: Array<FetchCompletionToolChoice>;
+	attachments?: Array<ChatCompletionAttachment>;
+}
+
+export interface FetchCompletionResponseBody {
 	requestDetails?: APIRequestDetails;
 	responseDetails?: APIResponseDetails;
 	errorDetails?: APIErrorDetails;
@@ -106,16 +114,16 @@ export interface IProviderSetAPI {
 	buildCompletionData(
 		provider: ProviderName,
 		modelParams: ModelParams,
-		currentMessage: BuildCompletionDataMessage,
-		prevMessages?: Array<BuildCompletionDataMessage>
-	): Promise<CompletionData>;
+		currentMessage: ChatCompletionDataMessage,
+		prevMessages?: Array<ChatCompletionDataMessage>
+	): Promise<FetchCompletionData>;
 	completion(
 		provider: ProviderName,
-		completionData: CompletionData,
+		completionData: FetchCompletionData,
 		requestId?: string,
 		signal?: AbortSignal,
 		onStreamTextData?: (textData: string) => void,
 		onStreamThinkingData?: (thinkingData: string) => void
-	): Promise<CompletionResponse | undefined>;
+	): Promise<FetchCompletionResponseBody | undefined>;
 	cancelCompletion(requestId: string): Promise<void>;
 }

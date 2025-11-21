@@ -9,6 +9,7 @@ import type {
 	Tool,
 	ToolBundle,
 	ToolListItem,
+	ToolOutputKind,
 	ToolType,
 } from '@/spec/tool';
 
@@ -133,6 +134,9 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 		version: string,
 		displayName: string,
 		isEnabled: boolean,
+		userCallable: boolean,
+		llmCallable: boolean,
+		outputKind: ToolOutputKind,
 		argSchema: JSONRawString,
 		outputSchema: JSONRawString,
 		type: ToolType,
@@ -150,6 +154,9 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 				isEnabled: isEnabled,
 				description: description,
 				tags: tags,
+				userCallable: userCallable,
+				llmCallable: llmCallable,
+				outputKind: outputKind,
 				argSchema: argSchema,
 				outputSchema: outputSchema,
 				type: type,

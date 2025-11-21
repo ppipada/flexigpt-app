@@ -137,15 +137,15 @@ func (api *OpenAIChatCompletionsAPI) BuildCompletionData(
 	modelParams spec.ModelParams,
 	currentMessage spec.ChatCompletionDataMessage,
 	prevMessages []spec.ChatCompletionDataMessage,
-) (*spec.CompletionData, error) {
+) (*spec.FetchCompletionData, error) {
 	return getCompletionData(modelParams, currentMessage, prevMessages), nil
 }
 
 func (api *OpenAIChatCompletionsAPI) FetchCompletion(
 	ctx context.Context,
-	completionData *spec.CompletionData,
+	completionData *spec.FetchCompletionData,
 	onStreamTextData, onStreamThinkingData func(string) error,
-) (*spec.CompletionResponse, error) {
+) (*spec.FetchCompletionResponse, error) {
 	if api.client == nil {
 		return nil, errors.New("openai chat completions api LLM: client not initialized")
 	}
@@ -188,8 +188,8 @@ func (api *OpenAIChatCompletionsAPI) FetchCompletion(
 
 		}
 	}
-	if len(completionData.Tools) > 0 {
-		toolDefs, err := toOpenAIChatTools(completionData.Tools)
+	if len(completionData.ToolChoices) > 0 {
+		toolDefs, err := toOpenAIChatTools(completionData.ToolChoices)
 		if err != nil {
 			return nil, err
 		}
@@ -212,17 +212,17 @@ func (api *OpenAIChatCompletionsAPI) doNonStreaming(
 	ctx context.Context,
 	params openai.ChatCompletionNewParams,
 	timeout time.Duration,
-) (*spec.CompletionResponse, error) {
-	completionResp := &spec.CompletionResponse{}
+) (*spec.FetchCompletionResponse, error) {
+	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
 	ctx = AddDebugResponseToCtx(ctx)
 	resp, err := api.client.Chat.Completions.New(ctx, params, option.WithRequestTimeout(timeout))
 	isNilResp := resp == nil || len(resp.Choices) == 0
-	attachDebugResp(ctx, completionResp, err, isNilResp)
+	attachDebugResp(ctx, completionResp.Body, err, isNilResp)
 	if isNilResp {
 		return completionResp, nil
 	}
 	full := resp.Choices[0].Message.Content
-	completionResp.ResponseContent = []spec.ResponseContent{
+	completionResp.Body.ResponseContent = []spec.ResponseContent{
 		{Type: spec.ResponseContentTypeText, Content: full},
 	}
 	return completionResp, nil
@@ -233,11 +233,11 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 	params openai.ChatCompletionNewParams,
 	onStreamTextData, onStreamThinkingData func(string) error,
 	timeout time.Duration,
-) (*spec.CompletionResponse, error) {
+) (*spec.FetchCompletionResponse, error) {
 	// No thinking data available in openai chat completions API, hence no thinking writer.
 	write, flush := NewBufferedStreamer(onStreamTextData, FlushInterval, FlushChunkSize)
 
-	completionResp := &spec.CompletionResponse{}
+	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
 	ctx = AddDebugResponseToCtx(ctx)
 	stream := api.client.Chat.Completions.NewStreaming(
 		ctx,
@@ -277,13 +277,13 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 
 	streamErr := errors.Join(stream.Err(), streamWriteErr)
 	isNilResp := len(acc.Choices) == 0
-	attachDebugResp(ctx, completionResp, streamErr, isNilResp)
+	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp)
 	if isNilResp {
 		return completionResp, nil
 	}
 
 	fullResp := acc.Choices[0].Message.Content
-	completionResp.ResponseContent = []spec.ResponseContent{
+	completionResp.Body.ResponseContent = []spec.ResponseContent{
 		{Type: spec.ResponseContentTypeText, Content: fullResp},
 	}
 	return completionResp, streamErr
@@ -341,7 +341,7 @@ func getOpenAIMessageFromSystemPrompt(
 }
 
 func toOpenAIChatTools(
-	tools []spec.CompletionTool,
+	tools []spec.FetchCompletionToolChoice,
 ) ([]openai.ChatCompletionToolUnionParam, error) {
 	if len(tools) == 0 {
 		return nil, nil

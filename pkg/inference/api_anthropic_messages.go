@@ -133,16 +133,16 @@ func (api *AnthropicMessagesAPI) BuildCompletionData(
 	modelParams spec.ModelParams,
 	currentMessage spec.ChatCompletionDataMessage,
 	prevMessages []spec.ChatCompletionDataMessage,
-) (*spec.CompletionData, error) {
+) (*spec.FetchCompletionData, error) {
 	return getCompletionData(modelParams, currentMessage, prevMessages), nil
 }
 
 func (api *AnthropicMessagesAPI) FetchCompletion(
 	ctx context.Context,
 
-	completionData *spec.CompletionData,
+	completionData *spec.FetchCompletionData,
 	onStreamTextData, onStreamThinkingData func(string) error,
-) (*spec.CompletionResponse, error) {
+) (*spec.FetchCompletionResponse, error) {
 	if api.client == nil {
 		return nil, errors.New("anthropic messages api LLM: client not initialized")
 	}
@@ -181,8 +181,8 @@ func (api *AnthropicMessagesAPI) FetchCompletion(
 		timeout = time.Duration(completionData.ModelParams.Timeout) * time.Second
 	}
 
-	if len(completionData.Tools) > 0 {
-		toolDefs, err := toAnthropicTools(completionData.Tools)
+	if len(completionData.ToolChoices) > 0 {
+		toolDefs, err := toAnthropicTools(completionData.ToolChoices)
 		if err != nil {
 			return nil, err
 		}
@@ -201,19 +201,19 @@ func (api *AnthropicMessagesAPI) doNonStreaming(
 	ctx context.Context,
 	params anthropic.MessageNewParams,
 	timeout time.Duration,
-) (*spec.CompletionResponse, error) {
-	completionResp := &spec.CompletionResponse{}
+) (*spec.FetchCompletionResponse, error) {
+	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
 	ctx = AddDebugResponseToCtx(ctx)
 
 	resp, err := api.client.Messages.New(ctx, params, option.WithRequestTimeout(timeout))
 	isNilResp := resp == nil || len(resp.Content) == 0
-	attachDebugResp(ctx, completionResp, err, isNilResp)
+	attachDebugResp(ctx, completionResp.Body, err, isNilResp)
 	if isNilResp {
 		return completionResp, nil
 	}
 
 	respContent := getResponseContentFromAnthropicMessage(resp)
-	completionResp.ResponseContent = respContent
+	completionResp.Body.ResponseContent = respContent
 	return completionResp, nil
 }
 
@@ -222,7 +222,7 @@ func (api *AnthropicMessagesAPI) doStreaming(
 	params anthropic.MessageNewParams,
 	onStreamTextData, onStreamThinkingData func(string) error,
 	timeout time.Duration,
-) (*spec.CompletionResponse, error) {
+) (*spec.FetchCompletionResponse, error) {
 	writeTextData, flushTextData := NewBufferedStreamer(
 		onStreamTextData,
 		FlushInterval,
@@ -234,7 +234,7 @@ func (api *AnthropicMessagesAPI) doStreaming(
 		FlushChunkSize,
 	)
 
-	completionResp := &spec.CompletionResponse{}
+	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
 	ctx = AddDebugResponseToCtx(ctx)
 
 	stream := api.client.Messages.NewStreaming(
@@ -292,13 +292,13 @@ func (api *AnthropicMessagesAPI) doStreaming(
 
 	streamErr := errors.Join(stream.Err(), streamAccumulateErr, streamWriteErr)
 	isNilResp := len(respFull.Content) == 0
-	attachDebugResp(ctx, completionResp, streamErr, isNilResp)
+	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp)
 	if isNilResp {
 		return completionResp, nil
 	}
 
 	respContent := getResponseContentFromAnthropicMessage(&respFull)
-	completionResp.ResponseContent = respContent
+	completionResp.Body.ResponseContent = respContent
 	return completionResp, streamErr
 }
 
@@ -404,7 +404,7 @@ func getResponseContentFromAnthropicMessage(msg *anthropic.Message) []spec.Respo
 }
 
 func toAnthropicTools(
-	tools []spec.CompletionTool,
+	tools []spec.FetchCompletionToolChoice,
 ) ([]anthropic.ToolUnionParam, error) {
 	if len(tools) == 0 {
 		return nil, nil

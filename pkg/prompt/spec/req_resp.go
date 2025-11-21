@@ -62,10 +62,9 @@ type PutPromptTemplateRequestBody struct {
 	IsEnabled   bool   `json:"isEnabled"             required:"true"`
 	Description string `json:"description,omitempty"`
 
-	Blocks        []MessageBlock     `json:"blocks"                  required:"true"`
-	Tags          []string           `json:"tags,omitempty"`
-	Variables     []PromptVariable   `json:"variables,omitempty"`
-	PreProcessors []PreProcessorCall `json:"preProcessors,omitempty"`
+	Blocks    []MessageBlock   `json:"blocks"              required:"true"`
+	Tags      []string         `json:"tags,omitempty"`
+	Variables []PromptVariable `json:"variables,omitempty"`
 }
 
 type PutPromptTemplateRequest struct {

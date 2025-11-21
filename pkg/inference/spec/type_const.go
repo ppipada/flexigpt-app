@@ -16,44 +16,47 @@ const (
 	Tool      ChatCompletionRoleEnum = "tool"
 )
 
-type ChatCompletionToolAttachment struct {
+// ChatCompletionAttachmentKind enumerates contextual attachment categories that can be
+// associated with messages sent to the inference layer.
+type ChatCompletionAttachmentKind string
+
+const (
+	AttachmentFile     ChatCompletionAttachmentKind = "file"
+	AttachmentDocIndex ChatCompletionAttachmentKind = "docIndex"
+	AttachmentPR       ChatCompletionAttachmentKind = "pr"
+	AttachmentCommit   ChatCompletionAttachmentKind = "commit"
+	AttachmentSnapshot ChatCompletionAttachmentKind = "snapshot"
+)
+
+// ChatCompletionAttachment is a lightweight reference to external context (files, PRs, snapshots, etc.).
+type ChatCompletionAttachment struct {
+	Kind  ChatCompletionAttachmentKind `json:"kind"`
+	Ref   string                       `json:"ref"`
+	Label string                       `json:"label"`
+}
+
+type ChatCompletionToolChoice struct {
 	BundleID    string `json:"bundleID,omitempty"`
 	ToolSlug    string `json:"toolSlug"`
 	ToolVersion string `json:"toolVersion"`
 	ID          string `json:"id,omitempty"`
-}
-
-type BuildCompletionToolAttachment struct {
-	BundleID    string `json:"bundleID,omitempty"`
-	ToolSlug    string `json:"toolSlug"`
-	ToolVersion string `json:"toolVersion"`
-	ID          string `json:"id,omitempty"`
-	DisplayName string `json:"displayName,omitempty"`
-}
-
-type BuildCompletionDataMessage struct {
-	Role            ChatCompletionRoleEnum          `json:"role"`
-	Content         *string                         `json:"content,omitempty"`
-	Name            *string                         `json:"name,omitempty"`
-	ToolAttachments []BuildCompletionToolAttachment `json:"toolAttachments,omitempty"`
+	Description string `json:"description"`
+	DisplayName string `json:"displayName"`
 }
 
 type ChatCompletionDataMessage struct {
-	Role            ChatCompletionRoleEnum         `json:"role"`
-	Content         *string                        `json:"content,omitempty"`
-	Name            *string                        `json:"name,omitempty"`
-	ToolAttachments []ChatCompletionToolAttachment `json:"toolAttachments,omitempty"`
-}
-
-type ChatCompletionResponseMessage struct {
 	Role    ChatCompletionRoleEnum `json:"role"`
 	Content *string                `json:"content,omitempty"`
+	Name    *string                `json:"name,omitempty"`
 }
 
-type CompletionTool struct {
-	BundleID      string        `json:"bundleID"`
-	AttachmentIDs []string      `json:"attachmentIDs,omitempty"`
-	Tool          toolSpec.Tool `json:"tool"`
+type FetchCompletionToolChoice struct {
+	BundleID    string         `json:"bundleID,omitempty"`
+	ToolSlug    string         `json:"toolSlug"`
+	ToolVersion string         `json:"toolVersion"`
+	ID          string         `json:"id,omitempty"`
+	Tool        *toolSpec.Tool `json:"tool"`
+	Description string         `json:"description"`
 }
 
 // ModelParams represents input information about a model to a completion.

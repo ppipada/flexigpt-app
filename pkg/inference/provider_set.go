@@ -166,7 +166,7 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	ctx context.Context,
 	req *spec.FetchCompletionRequest,
 ) (*spec.FetchCompletionResponse, error) {
-	if req == nil || req.Body == nil || req.Body.CompletionData == nil {
+	if req == nil || req.Body == nil || req.Body.FetchCompletionData == nil {
 		return nil, errors.New("got empty fetch completion input")
 	}
 	provider := req.Provider
@@ -177,7 +177,7 @@ func (ps *ProviderSetAPI) FetchCompletion(
 
 	resp, err := p.FetchCompletion(
 		ctx,
-		req.Body.CompletionData,
+		req.Body.FetchCompletionData,
 		req.Body.OnStreamTextData,
 		req.Body.OnStreamThinkingData,
 	)
@@ -185,12 +185,12 @@ func (ps *ProviderSetAPI) FetchCompletion(
 		return nil, errors.Join(err, errors.New("error in fetch completion"))
 	}
 
-	return &spec.FetchCompletionResponse{Body: resp}, nil
+	return resp, nil
 }
 
 func (ps *ProviderSetAPI) attachToolsToCompletionData(
 	ctx context.Context,
-	data *spec.CompletionData,
+	data *spec.FetchCompletionData,
 ) error {
 	if data == nil {
 		return errors.New("invalid completion data: nil")
@@ -204,34 +204,32 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 
 	attachmentIndex := map[toolKey]map[string]struct{}{}
 
-	for _, msg := range data.Messages {
-		for _, att := range msg.ToolAttachments {
-			bundleID := strings.TrimSpace(att.BundleID)
-			toolSlug := strings.TrimSpace(att.ToolSlug)
-			version := strings.TrimSpace(att.ToolVersion)
+	for _, att := range data.ToolChoices {
+		bundleID := strings.TrimSpace(att.BundleID)
+		toolSlug := strings.TrimSpace(att.ToolSlug)
+		version := strings.TrimSpace(att.ToolVersion)
 
-			if bundleID == "" || toolSlug == "" || version == "" {
-				return errors.New(
-					"invalid tool attachment: bundleID, toolSlug and toolVersion are required",
-				)
-			}
+		if bundleID == "" || toolSlug == "" || version == "" {
+			return errors.New(
+				"invalid tool attachment: bundleID, toolSlug and toolVersion are required",
+			)
+		}
 
-			k := toolKey{
-				bundleID: bundleID,
-				toolSlug: toolSlug,
-				version:  version,
-			}
-			if _, ok := attachmentIndex[k]; !ok {
-				attachmentIndex[k] = make(map[string]struct{})
-			}
-			if id := strings.TrimSpace(att.ID); id != "" {
-				attachmentIndex[k][id] = struct{}{}
-			}
+		k := toolKey{
+			bundleID: bundleID,
+			toolSlug: toolSlug,
+			version:  version,
+		}
+		if _, ok := attachmentIndex[k]; !ok {
+			attachmentIndex[k] = make(map[string]struct{})
+		}
+		if id := strings.TrimSpace(att.ID); id != "" {
+			attachmentIndex[k][id] = struct{}{}
 		}
 	}
 
 	if len(attachmentIndex) == 0 {
-		data.Tools = nil
+		data.ToolChoices = nil
 		return nil
 	}
 
@@ -253,7 +251,7 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 		return keys[i].version < keys[j].version
 	})
 
-	tools := make([]spec.CompletionTool, 0, len(keys))
+	tools := make([]spec.FetchCompletionToolChoice, 0, len(keys))
 	for _, k := range keys {
 		req := &toolSpec.GetToolRequest{
 			BundleID: bundleitemutils.BundleID(k.bundleID),
@@ -288,26 +286,22 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 			)
 		}
 
-		completionTool := spec.CompletionTool{
-			BundleID: k.bundleID,
-			Tool:     tool,
-		}
-		if ids := attachmentIndex[k]; len(ids) > 0 {
-			completionTool.AttachmentIDs = make([]string, 0, len(ids))
-			for id := range ids {
-				completionTool.AttachmentIDs = append(completionTool.AttachmentIDs, id)
-			}
-			sort.Strings(completionTool.AttachmentIDs)
+		completionTool := spec.FetchCompletionToolChoice{
+			BundleID:    k.bundleID,
+			ToolSlug:    k.toolSlug,
+			ToolVersion: k.version,
+			// ID: k.id,.
+			Tool: &tool,
 		}
 		tools = append(tools, completionTool)
 	}
 
-	data.Tools = tools
+	data.ToolChoices = tools
 	return nil
 }
 
 func convertBuildMessageToChatMessage(
-	msg spec.BuildCompletionDataMessage,
+	msg spec.ChatCompletionDataMessage,
 ) spec.ChatCompletionDataMessage {
 	out := spec.ChatCompletionDataMessage{
 		Role: msg.Role,
@@ -319,21 +313,6 @@ func convertBuildMessageToChatMessage(
 	if msg.Name != nil {
 		n := *msg.Name
 		out.Name = &n
-	}
-	if len(msg.ToolAttachments) > 0 {
-		attachments := make([]spec.ChatCompletionToolAttachment, 0, len(msg.ToolAttachments))
-		for _, att := range msg.ToolAttachments {
-			attachment := spec.ChatCompletionToolAttachment{
-				BundleID:    strings.TrimSpace(att.BundleID),
-				ToolSlug:    strings.TrimSpace(att.ToolSlug),
-				ToolVersion: strings.TrimSpace(att.ToolVersion),
-			}
-			if id := strings.TrimSpace(att.ID); id != "" {
-				attachment.ID = id
-			}
-			attachments = append(attachments, attachment)
-		}
-		out.ToolAttachments = attachments
 	}
 	return out
 }

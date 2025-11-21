@@ -74,7 +74,7 @@ func (w *ProviderSetWrapper) BuildCompletionData(
 // FetchCompletion handles the completion request and streams data back to the frontend.
 func (w *ProviderSetWrapper) FetchCompletion(
 	provider string,
-	completionData *inferenceSpec.CompletionData,
+	completionData *inferenceSpec.FetchCompletionData,
 	textCallbackID string,
 	thinkingCallbackID string,
 	requestID string,
@@ -102,7 +102,7 @@ func (w *ProviderSetWrapper) FetchCompletion(
 		}()
 
 		reqBody := &inferenceSpec.FetchCompletionRequestBody{
-			CompletionData: completionData,
+			FetchCompletionData: completionData,
 		}
 		if textCallbackID != "" && thinkingCallbackID != "" {
 			reqBody.OnStreamTextData = func(textData string) error {

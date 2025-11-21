@@ -6,6 +6,9 @@
 	"displayName": "List directory",
 	"description": "Return the names of files/directories at the given path (optionally filtered by glob).",
 	"tags": ["fs", "list"],
+	"userCallable": true,
+	"llmCallable": true,
+	"outputKind": "text",
 	"argSchema": {
 		"$schema": "http://json-schema.org/draft-07/schema#",
 		"type": "object",

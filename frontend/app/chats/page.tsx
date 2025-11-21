@@ -5,7 +5,7 @@ import type {
 	Conversation,
 	ConversationMessage,
 	ConversationSearchItem,
-	ConversationToolAttachment,
+	ConversationToolChoice,
 } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 
@@ -48,7 +48,7 @@ function initConversationMessage(role: ConversationRoleEnum, content: string): C
 	};
 }
 
-function attachedToolToConversationAttachment(tool: AttachedTool): ConversationToolAttachment {
+function attachedToolToConversationAttachment(tool: AttachedTool): ConversationToolChoice {
 	return {
 		bundleID: tool.bundleID,
 		toolSlug: tool.toolSlug,
@@ -396,7 +396,7 @@ export default function ChatsPage() {
 		const toolAttachments =
 			payload.attachedTools.length > 0 ? payload.attachedTools.map(attachedToolToConversationAttachment) : undefined;
 		if (toolAttachments && toolAttachments.length > 0) {
-			newMsg.toolAttachments = toolAttachments;
+			newMsg.toolChoices = toolAttachments;
 		}
 		const updated = {
 			...chat,

@@ -437,6 +437,17 @@ func (ts *ToolStore) PutTool(
 	if req.Body.Type != spec.ToolTypeHTTP {
 		return nil, fmt.Errorf("%w: only custom http tools can be added", spec.ErrInvalidRequest)
 	}
+	if !req.Body.UserCallable && !req.Body.LLMCallable {
+		return nil, fmt.Errorf("%w: a tool needs to be callable", spec.ErrInvalidRequest)
+	}
+
+	switch req.Body.OutputKind {
+	case spec.ToolOutputText, spec.ToolOutputBlob, spec.ToolOutputNone:
+		// Ok.
+	default:
+		return nil, fmt.Errorf("%w: a tool needs to have a valid output kind", spec.ErrInvalidRequest)
+	}
+
 	if err := bundleitemutils.ValidateItemSlug(req.ToolSlug); err != nil {
 		return nil, err
 	}
@@ -496,15 +507,21 @@ func (ts *ToolStore) PutTool(
 		DisplayName:   req.Body.DisplayName,
 		Description:   req.Body.Description,
 		Tags:          req.Body.Tags,
-		ArgSchema:     json.RawMessage(argSchemaStr),
-		OutputSchema:  json.RawMessage(outSchemaStr),
-		Type:          req.Body.Type,
-		GoImpl:        req.Body.GoImpl,
-		HTTP:          req.Body.HTTP,
-		IsEnabled:     req.Body.IsEnabled,
-		IsBuiltIn:     false,
-		CreatedAt:     now,
-		ModifiedAt:    now,
+
+		UserCallable: req.Body.UserCallable,
+		LLMCallable:  req.Body.LLMCallable,
+		OutputKind:   req.Body.OutputKind,
+
+		ArgSchema:    json.RawMessage(argSchemaStr),
+		OutputSchema: json.RawMessage(outSchemaStr),
+
+		Type:       req.Body.Type,
+		GoImpl:     req.Body.GoImpl,
+		HTTP:       req.Body.HTTP,
+		IsEnabled:  req.Body.IsEnabled,
+		IsBuiltIn:  false,
+		CreatedAt:  now,
+		ModifiedAt: now,
 	}
 
 	if err := validateTool(&t); err != nil {

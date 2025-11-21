@@ -6,6 +6,12 @@ export enum ToolType {
 	HTTP = 'http',
 }
 
+export enum ToolOutputKind {
+	Text = 'text',
+	Blob = 'blob',
+	None = 'none',
+}
+
 export type JSONRawString = string;
 
 /**
@@ -62,6 +68,9 @@ export interface Tool {
 	displayName: string;
 	description?: string;
 	tags?: string[];
+	userCallable: boolean;
+	llmCallable: boolean;
+	outputKind: ToolOutputKind;
 	argSchema: JSONRawString;
 	outputSchema: JSONRawString;
 	type: ToolType;
@@ -158,6 +167,9 @@ export interface IToolStoreAPI {
 		version: string,
 		displayName: string,
 		isEnabled: boolean,
+		userCallable: boolean,
+		llmCallable: boolean,
+		outputKind: ToolOutputKind,
 		argSchema: JSONRawString,
 		outputSchema: JSONRawString,
 		type: ToolType,

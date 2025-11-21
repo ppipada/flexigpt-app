@@ -1,7 +1,7 @@
 import type {
-	BuildCompletionDataMessage,
-	CompletionData,
-	CompletionResponse,
+	ChatCompletionDataMessage,
+	FetchCompletionData,
+	FetchCompletionResponseBody,
 	IProviderSetAPI,
 	ModelParams,
 } from '@/spec/aiprovider';
@@ -18,22 +18,22 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 	async buildCompletionData(
 		provider: ProviderName,
 		modelParams: ModelParams,
-		currentMessage: BuildCompletionDataMessage,
-		prevMessages?: Array<BuildCompletionDataMessage>
-	): Promise<CompletionData> {
+		currentMessage: ChatCompletionDataMessage,
+		prevMessages?: Array<ChatCompletionDataMessage>
+	): Promise<FetchCompletionData> {
 		const req = {
 			Provider: provider,
 			Body: {
 				modelParams: modelParams as wailsSpec.ModelParams,
-				currentMessage: currentMessage as wailsSpec.BuildCompletionDataMessage,
-				prevMessages: prevMessages ? ([...prevMessages] as wailsSpec.BuildCompletionDataMessage[]) : [],
+				currentMessage: currentMessage as wailsSpec.ChatCompletionDataMessage,
+				prevMessages: prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionDataMessage[]) : [],
 			} as wailsSpec.BuildCompletionDataRequestBody,
 		};
 
 		const resp = await BuildCompletionData(req as wailsSpec.BuildCompletionDataRequest);
-		const respBody = resp.Body as wailsSpec.CompletionData;
+		const respBody = resp.Body as wailsSpec.FetchCompletionData;
 		// console.log(JSON.stringify(respBody, undefined, 2));
-		return respBody as CompletionData;
+		return respBody as FetchCompletionData;
 	}
 
 	// Need an eventflow for getting completion.
@@ -41,12 +41,12 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 	// Wrapper redirects to providerSet after doing event handling
 	async completion(
 		provider: ProviderName,
-		completionData: CompletionData,
+		completionData: FetchCompletionData,
 		requestId?: string,
 		signal?: AbortSignal,
 		onStreamTextData?: (text: string) => void,
 		onStreamThinkingData?: (text: string) => void
-	): Promise<CompletionResponse | undefined> {
+	): Promise<FetchCompletionResponseBody | undefined> {
 		let textCallbackId = '';
 		let thinkingCallbackId = '';
 
@@ -79,7 +79,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 
 		const responsePromise = FetchCompletion(
 			provider,
-			completionData as wailsSpec.CompletionData,
+			completionData as wailsSpec.FetchCompletionData,
 			textCallbackId,
 			thinkingCallbackId,
 			requestId ?? ''
@@ -106,9 +106,9 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 
 		try {
 			const resp = await Promise.race([responsePromise, abortPromise]);
-			const respBody = resp.Body as wailsSpec.CompletionResponse;
+			const respBody = resp.Body as wailsSpec.FetchCompletionResponseBody;
 			// console.log(JSON.stringify(respBody, undefined, 2));
-			return respBody as CompletionResponse;
+			return respBody as FetchCompletionResponseBody;
 		} finally {
 			/* Always clean up – even when the race rejected with AbortError */
 			if (textCallbackId) EventsOff(textCallbackId);

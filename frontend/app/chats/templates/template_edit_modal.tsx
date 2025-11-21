@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 import { createPortal } from 'react-dom';
 
@@ -6,7 +6,7 @@ import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
 import type { PlateEditor } from 'platejs/react';
 
-import { type PreProcessorCall, type PromptVariable, VarSource, VarType } from '@/spec/prompt';
+import { type PromptVariable, VarSource, VarType } from '@/spec/prompt';
 
 import { dispatchTemplateVarsUpdated } from '@/chats/events/template_toolbar_vars_updated';
 import {
@@ -14,7 +14,7 @@ import {
 	computeRequirements,
 	effectiveVarValueLocal,
 } from '@/chats/templates/template_processing';
-import { type TemplateSelectionElementNode, type ToolState, ToolStatus } from '@/chats/templates/template_spec';
+import { type TemplateSelectionElementNode } from '@/chats/templates/template_spec';
 import { EnumDropdownInline } from '@/chats/templates/template_variable_enum_dropdown';
 
 export function TemplateEditModal({
@@ -31,7 +31,7 @@ export function TemplateEditModal({
 	path: any;
 }) {
 	// Compute current effective template for rendering
-	const { template, blocks, variablesSchema, preProcessors } = computeEffectiveTemplate(tsenode);
+	const { template, blocks, variablesSchema } = computeEffectiveTemplate(tsenode);
 
 	// Local form state
 	const [displayName, setDisplayName] = useState<string>(
@@ -47,27 +47,10 @@ export function TemplateEditModal({
 	const [varValues, setVarValues] = useState<Record<string, unknown>>(() => {
 		const vals: Record<string, unknown> = { ...tsenode.variables };
 		for (const v of variablesSchema) {
-			const val = effectiveVarValueLocal(v, tsenode.variables, tsenode.toolStates, preProcessors);
+			const val = effectiveVarValueLocal(v, tsenode.variables);
 			if (val !== undefined) vals[v.name] = val;
 		}
 		return vals;
-	});
-
-	// Preprocessor args and statuses
-	const [toolArgs, setToolArgs] = useState<Record<string, Record<string, any>>>(() => {
-		const curr: Record<string, Record<string, any>> = {};
-		for (const p of preProcessors) {
-			curr[p.id] = tsenode.toolStates?.[p.id]?.args ?? p.args ?? {};
-		}
-		return curr;
-	});
-	const [toolStatuses, setToolStatuses] = useState<Record<string, ToolState>>(tsenode.toolStates ?? {});
-
-	// Track JSON validity of each tool args editor to safely enable/disable Save
-	const [toolArgsValidity, setToolArgsValidity] = useState<Record<string, boolean>>(() => {
-		const init: Record<string, boolean> = {};
-		for (const p of preProcessors) init[p.id] = true;
-		return init;
 	});
 
 	// Rehydrate form when opening or when the node reference changes
@@ -79,7 +62,6 @@ export function TemplateEditModal({
 		const t = eff.template;
 		const blks = eff.blocks;
 		const varsSchema = eff.variablesSchema;
-		const tools = eff.preProcessors;
 
 		setDisplayName(tsenode.overrides?.displayName ?? t?.displayName ?? tsenode.templateSlug);
 		setDescription(tsenode.overrides?.description ?? t?.description ?? '');
@@ -88,22 +70,10 @@ export function TemplateEditModal({
 
 		const vals: Record<string, unknown> = { ...tsenode.variables };
 		for (const v of varsSchema) {
-			const val = effectiveVarValueLocal(v, tsenode.variables, tsenode.toolStates, tools);
+			const val = effectiveVarValueLocal(v, tsenode.variables);
 			if (val !== undefined) vals[v.name] = val;
 		}
 		setVarValues(vals);
-
-		const targs: Record<string, Record<string, any>> = {};
-		for (const p of tools) {
-			targs[p.id] = tsenode.toolStates?.[p.id]?.args ?? p.args ?? {};
-		}
-		setToolArgs(targs);
-		setToolStatuses(tsenode.toolStates ?? {});
-
-		// Valid by default when hydrated from structured data
-		const validity: Record<string, boolean> = {};
-		for (const p of tools) validity[p.id] = true;
-		setToolArgsValidity(validity);
 	}, [open, tsenode]);
 
 	function saveAndClose() {
@@ -118,27 +88,10 @@ export function TemplateEditModal({
 			blocks: blockEdits,
 		};
 
-		// Merge tool states with edited args and current statuses
-		const nextToolStates: Record<string, ToolState> = { ...(tsenode.toolStates ?? {}) };
-		for (const p of preProcessors) {
-			const prev = nextToolStates[p.id] ?? ({ status: ToolStatus.PENDING } as ToolState);
-			const prevArgs = prev.args ?? p.args ?? {};
-			const newArgs = toolArgs[p.id] ?? {};
-			const changed = JSON.stringify(prevArgs) !== JSON.stringify(newArgs);
-			nextToolStates[p.id] = {
-				...prev,
-				args: newArgs,
-				status: changed ? ToolStatus.PENDING : toolStatuses[p.id].status,
-				result: changed ? undefined : prev.result,
-				error: changed ? undefined : prev.error,
-			};
-		}
-
 		editor.tf.setNodes(
 			{
 				overrides: nextOverrides,
 				variables: varValues,
-				toolStates: nextToolStates,
 			},
 			{ at: path }
 		);
@@ -149,26 +102,7 @@ export function TemplateEditModal({
 		onClose();
 	}
 
-	// No inline execution from modal; it only edits. When args change, mark status pending and clear previous result/error.
-	function handleToolArgsChange(id: string, nextArgs: Record<string, any>) {
-		setToolArgs(s => ({ ...s, [id]: nextArgs }));
-		setToolStatuses(prev => {
-			const prevOne = prev[id] ?? ({} as ToolState);
-			return {
-				...prev,
-				[id]: {
-					...prevOne,
-					args: nextArgs,
-					status: ToolStatus.PENDING,
-					error: undefined,
-					result: undefined,
-				},
-			};
-		});
-	}
-
-	const req = computeRequirements(variablesSchema, varValues, preProcessors, toolStatuses);
-	const hasToolJsonErrors = Object.values(toolArgsValidity).some(v => !v);
+	const req = computeRequirements(variablesSchema, varValues);
 
 	if (!open) return null;
 
@@ -189,7 +123,7 @@ export function TemplateEditModal({
 				<form
 					onSubmit={e => {
 						e.preventDefault();
-						if (!hasToolJsonErrors) saveAndClose();
+						saveAndClose();
 					}}
 					className="space-y-6"
 					onKeyDownCapture={e => {
@@ -304,46 +238,6 @@ export function TemplateEditModal({
 
 					<div className="divider before:bg-base-300 after:bg-base-300 my-0" />
 
-					{/* Pre-processors */}
-					<section>
-						<div className="mb-3 flex items-center justify-between">
-							<h4 className="text-base-content/70 text-sm font-semibold tracking-wide uppercase">Pre-processors</h4>
-							{hasToolJsonErrors ? (
-								<div className="text-error flex items-center gap-2 text-sm">
-									<FiAlertCircle size={14} />
-									<span>Fix invalid JSON args before saving</span>
-								</div>
-							) : null}
-						</div>
-
-						<div className="space-y-3">
-							{preProcessors.length === 0 && <div className="text-sm opacity-70">No pre-processors configured.</div>}
-							{preProcessors.map(p => {
-								const derived = req.toolsToRun.find(t => t.id === p.id);
-								const derivedStatus = derived?.status;
-								const unresolved = derived?.unresolved ?? [];
-								return (
-									<PreProcessorRow
-										key={p.id}
-										call={p}
-										args={toolArgs[p.id]}
-										// Prefer derived status from requirements (args + values)
-										status={derivedStatus ?? toolStatuses[p.id].status}
-										unresolved={unresolved}
-										onArgsChange={next => {
-											handleToolArgsChange(p.id, next);
-										}}
-										onValidityChange={valid => {
-											setToolArgsValidity(prev => ({ ...prev, [p.id]: valid }));
-										}}
-									/>
-								);
-							})}
-						</div>
-					</section>
-
-					<div className="divider before:bg-base-300 after:bg-base-300 my-0" />
-
 					{/* Blocks */}
 					<section>
 						<h4 className="text-base-content/70 mb-3 text-sm font-semibold tracking-wide uppercase">
@@ -377,7 +271,7 @@ export function TemplateEditModal({
 						<button type="button" className="btn bg-base-300 rounded-xl" onClick={onClose}>
 							Cancel
 						</button>
-						<button type="submit" className="btn btn-primary rounded-xl" disabled={hasToolJsonErrors}>
+						<button type="submit" className="btn btn-primary rounded-xl">
 							Save
 						</button>
 					</div>
@@ -416,9 +310,7 @@ function VariableEditorRow({
 	const sourceText =
 		varDef.source === VarSource.Static
 			? `Static${varDef.staticVal ? `: ${varDef.staticVal}` : ''}`
-			: varDef.source === VarSource.Tool
-				? `From tool${varDef.default ? `, default: ${varDef.default}` : ''}`
-				: `User${varDef.default ? `, default: ${varDef.default}` : ''}`;
+			: `User${varDef.default ? `, default: ${varDef.default}` : ''}`;
 	const help = varDef.description ? `${varDef.description} (${sourceText})` : sourceText;
 
 	const isDisabled = varDef.source === VarSource.Static;
@@ -551,151 +443,4 @@ function VariableEditorRow({
 				</div>
 			);
 	}
-}
-
-function PreProcessorRow({
-	call,
-	args,
-	status,
-	unresolved,
-	onArgsChange,
-	onValidityChange,
-}: {
-	call: PreProcessorCall;
-	args?: Record<string, any>;
-	status?: ToolState['status'];
-	unresolved?: string[];
-	onArgsChange: (next: Record<string, any>) => void;
-	onValidityChange?: (valid: boolean) => void;
-}) {
-	const [argsText, setArgsText] = useState<string>(JSON.stringify(args ?? {}, null, 2));
-	const [jsonError, setJsonError] = useState<string | undefined>();
-	const debounceRef = useRef<number | null>(null);
-	const bundleDisplay = call.toolBundleID;
-	const toolIdentity = `${bundleDisplay}/${call.toolSlug}@${call.toolVersion}`;
-
-	// Keep in sync when parent args change
-	useEffect(() => {
-		if (debounceRef.current) window.clearTimeout(debounceRef.current);
-		debounceRef.current = window.setTimeout(() => {
-			try {
-				if (argsText.trim() === '') {
-					setJsonError(undefined);
-					onValidityChange?.(true);
-				} else {
-					JSON.parse(argsText);
-					setJsonError(undefined);
-					onValidityChange?.(true);
-				}
-			} catch {
-				setJsonError('Invalid JSON');
-				onValidityChange?.(false);
-			}
-		}, 200);
-		return () => {
-			if (debounceRef.current) window.clearTimeout(debounceRef.current);
-		};
-	}, [argsText, onValidityChange]);
-
-	// Validate as user types so parent can disable Save if invalid
-	useEffect(() => {
-		try {
-			if (argsText.trim() === '') {
-				setJsonError(undefined);
-				onValidityChange?.(true);
-			} else {
-				JSON.parse(argsText);
-				setJsonError(undefined);
-				onValidityChange?.(true);
-			}
-		} catch {
-			setJsonError('Invalid JSON');
-			onValidityChange?.(false);
-		}
-	}, [argsText, onValidityChange]);
-
-	function handleBlur() {
-		// Commit only when valid or empty
-		try {
-			const parsed = argsText.trim() ? JSON.parse(argsText) : {};
-			setJsonError(undefined);
-			onValidityChange?.(true);
-			onArgsChange(parsed);
-		} catch {
-			setJsonError('Invalid JSON');
-			onValidityChange?.(false);
-		}
-	}
-
-	return (
-		<div className="space-y-2 rounded-xl border p-3">
-			<div className="flex items-center justify-between gap-2">
-				<div className="text-sm">
-					<div className="flex items-center gap-2 font-medium">
-						<span className="badge badge-outline">Tool</span>
-						<span title={toolIdentity}>{toolIdentity}</span>
-					</div>
-					<div className="opacity-70">
-						Save as: <code>{call.saveAs}</code>
-						{call.pathExpr ? (
-							<>
-								{' '}
-								| Path: <code>{call.pathExpr}</code>
-							</>
-						) : null}
-						{call.onError ? <> | onError: {call.onError}</> : null}
-					</div>
-				</div>
-				<div className="flex items-center gap-2">
-					<span
-						className={`badge badge-sm ${
-							(status ?? ToolStatus.PENDING) === ToolStatus.DONE
-								? 'badge-success'
-								: (status ?? ToolStatus.PENDING) === ToolStatus.READY
-									? 'badge-warning'
-									: (status ?? ToolStatus.PENDING) === ToolStatus.RUNNING
-										? 'badge-info'
-										: (status ?? ToolStatus.PENDING) === ToolStatus.ERROR
-											? 'badge-error'
-											: 'badge-neutral'
-						}`}
-						title="Status"
-					>
-						{(status ?? ToolStatus.PENDING).toLowerCase()}
-					</span>
-				</div>
-			</div>
-			{unresolved && unresolved.length > 0 && (
-				<div className="text-warning flex items-center gap-2 text-xs">
-					<FiAlertCircle size={12} />
-					<span>Missing values: {unresolved.join(', ')}</span>
-				</div>
-			)}
-
-			<div>
-				<div className="label">
-					<span className="label-text">Args (JSON)</span>
-					<span className="label-text-alt tooltip tooltip-left" data-tip="JSON arguments to pass to the tool">
-						<FiHelpCircle size={12} />
-					</span>
-				</div>
-				<textarea
-					className={`textarea textarea-bordered w-full rounded-xl font-mono ${jsonError ? 'textarea-error' : ''}`}
-					rows={6}
-					value={argsText}
-					onChange={e => {
-						setArgsText(e.target.value);
-					}}
-					onBlur={handleBlur}
-					aria-invalid={Boolean(jsonError)}
-					spellCheck={false}
-				/>
-				{jsonError && (
-					<div className="text-error mt-1 flex items-center gap-1 text-xs" aria-live="polite">
-						<FiAlertCircle size={12} /> {jsonError}
-					</div>
-				)}
-			</div>
-		</div>
-	);
 }

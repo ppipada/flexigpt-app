@@ -1,10 +1,4 @@
-import type {
-	MessageBlock,
-	PreProcessorCall,
-	PreProcessorOnError,
-	PromptTemplate,
-	PromptVariable,
-} from '@/spec/prompt';
+import type { MessageBlock, PromptTemplate, PromptVariable } from '@/spec/prompt';
 
 export const KEY_TEMPLATE_SELECTION = 'templateSelection';
 export const KEY_TEMPLATE_VARIABLE = 'templateVariable';
@@ -59,7 +53,6 @@ export type TemplateSelectionElementNode = {
 		tags?: string[];
 		blocks?: MessageBlock[];
 		variables?: PromptVariable[];
-		preProcessors?: PreProcessorCall[];
 	};
 
 	// Tool run states per preprocessor id
@@ -80,7 +73,6 @@ export interface SelectedTemplateForRun {
 	template: PromptTemplate;
 	blocks: MessageBlock[];
 	variablesSchema: PromptVariable[];
-	preProcessors: PreProcessorCall[];
 
 	// Effective variable values for execution
 	variableValues: Record<string, unknown>;
@@ -88,20 +80,6 @@ export interface SelectedTemplateForRun {
 	// Requirements state
 	requiredVariables: string[];
 	requiredCount: number;
-
-	// Preprocessor runs needed
-	toolsToRun: Array<{
-		id: string;
-		toolBundleID: string;
-		toolSlug: string;
-		toolVersion: string;
-		args?: Record<string, any>;
-		saveAs: string;
-		pathExpr?: string;
-		onError?: PreProcessorOnError;
-		status: ToolStatus;
-		unresolved?: string[]; // unresolved variable tokens after arg resolution (if any)
-	}>;
 
 	// Convenience
 	isReady: boolean;

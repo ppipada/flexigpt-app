@@ -1,6 +1,6 @@
 import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
-import { FiAlertTriangle, FiLoader, FiSend } from 'react-icons/fi';
+import { FiAlertTriangle, FiSend } from 'react-icons/fi';
 
 import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
@@ -31,12 +31,10 @@ import {
 	getTemplateSelections,
 	hasNonEmptyUserText,
 	insertPlainTextAsSingleBlock,
-	runAllReadyPreprocessors,
 	toPlainTextReplacingVariables,
 } from '@/chats/templates/template_editor_utils';
 import { TemplateSlashKit } from '@/chats/templates/template_plugin';
 import { getLastUserBlockContent } from '@/chats/templates/template_processing';
-import { ToolStatus } from '@/chats/templates/template_spec';
 import { TemplateToolbars } from '@/chats/templates/template_toolbars';
 import { buildUserInlineChildrenFromText } from '@/chats/templates/template_variables_inline';
 
@@ -85,7 +83,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	// doc version tick to re-run selection computations on any editor change (even if text string doesn't change)
 	const [docVersion, setDocVersion] = useState(0);
 	const [submitError, setSubmitError] = useState<string | null>(null);
-	const [isPrefilling, setIsPrefilling] = useState(false);
 
 	const lastPopulatedSelectionKeyRef = useRef<Set<string>>(new Set());
 
@@ -95,21 +92,15 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		const hasTemplate = selections.length > 0;
 
 		let requiredCount = 0;
-		let pendingPreTools = 0;
+
 		let firstPendingVar: { name: string; selectionID?: string } | undefined = undefined;
 
 		for (const s of selections) {
 			requiredCount += s.requiredCount;
-			const notReady = s.toolsToRun.filter(t => t.status === ToolStatus.PENDING);
-			pendingPreTools += notReady.length;
+
 			if (!firstPendingVar) {
 				if (s.requiredVariables.length > 0) {
 					firstPendingVar = { name: s.requiredVariables[0], selectionID: s.selectionID };
-				} else if (notReady.length > 0) {
-					const unresolvedName = notReady[0]?.unresolved?.[0];
-					if (unresolvedName) {
-						firstPendingVar = { name: unresolvedName, selectionID: s.selectionID };
-					}
 				}
 			}
 		}
@@ -118,7 +109,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			tplNodeWithPath,
 			hasTemplate,
 			requiredCount,
-			pendingPreTools,
 			firstPendingVar,
 		};
 	}, [editor, docVersion]);
@@ -126,10 +116,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const { formRef, onKeyDown } = useEnterSubmit({
 		isBusy,
 		canSubmit: () => {
-			if (isPrefilling) return false;
 			const hasTemplate = selectionInfo.hasTemplate;
 			if (hasTemplate) {
-				return selectionInfo.requiredCount === 0 && selectionInfo.pendingPreTools === 0;
+				return selectionInfo.requiredCount === 0;
 			}
 			return hasNonEmptyUserText(editorRef.current);
 		},
@@ -140,12 +129,12 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	});
 
 	const isSendButtonEnabled = useMemo(() => {
-		if (isBusy || isPrefilling) return false;
+		if (isBusy) return false;
 		if (selectionInfo.hasTemplate) {
-			return selectionInfo.requiredCount === 0 && selectionInfo.pendingPreTools === 0;
+			return selectionInfo.requiredCount === 0;
 		}
 		return hasNonEmptyUserText(editorRef.current);
-	}, [isBusy, isPrefilling, selectionInfo, docVersion]);
+	}, [isBusy, selectionInfo, docVersion]);
 
 	// Populate editor with effective last-USER block for EACH template selection (once per selectionID)
 	useEffect(() => {
@@ -214,7 +203,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		if (e) e.preventDefault();
 		if (!isSendButtonEnabled || isSubmittingRef.current) {
 			// If invalid, flash and focus first pending pill
-			if (selectionInfo.hasTemplate && (selectionInfo.requiredCount > 0 || selectionInfo.pendingPreTools > 0)) {
+			if (selectionInfo.hasTemplate && selectionInfo.requiredCount > 0) {
 				// ask the toolbar (rendered via plugin) to flash
 				dispatchTemplateFlashEvent();
 
@@ -245,33 +234,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			// If there are template selections, auto-run any ready tools before sending.
 			const selections = getTemplateSelections(editor);
 			const hasTpl = selections.length > 0;
-			if (hasTpl) {
-				setIsPrefilling(true);
-				const { ok, errors } = await runAllReadyPreprocessors(editor);
-				setIsPrefilling(false);
-				if (!ok) {
-					// Surface first error and abort send
-					dispatchTemplateFlashEvent();
-					const first = errors[0];
-					const errorSummary = errors.map(e => `${e.saveAs || e.preprocId}: ${e.error || 'failed'}`).join('; ');
-					setSubmitError(
-						errorSummary ? `Tool run failed - ${errorSummary}` : 'Tool run failed. Please review the tool inputs.'
-					);
-					if (first.saveAs && contentRef.current) {
-						const idSegment = first.selectionID ? `[data-selection-id="${cssEscape(first.selectionID)}"]` : '';
-						const sel = contentRef.current.querySelector(
-							`span[data-template-variable][data-var-name="${cssEscape(first.saveAs)}"]${idSegment}`
-						);
-						if (sel && 'focus' in sel && typeof sel.focus === 'function') {
-							sel.focus();
-						} else {
-							editor.tf.focus();
-						}
-					}
-					isSubmittingRef.current = false;
-					return;
-				}
-			}
 
 			const textToSend = hasTpl ? toPlainTextReplacingVariables(editor) : editor.api.string([]);
 			const attachedTools = getAttachedTools(editor);
@@ -291,7 +253,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				isSubmittingRef.current = false;
 			}
 		})().catch(() => {
-			setIsPrefilling(false);
 			isSubmittingRef.current = false;
 		});
 	};
@@ -330,7 +291,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 						ref={contentRef}
 						placeholder="Type message..."
 						spellCheck={false}
-						readOnly={isBusy || isPrefilling}
+						readOnly={isBusy}
 						onKeyDown={onKeyDown}
 						onPaste={e => {
 							e.preventDefault();
@@ -349,14 +310,12 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 					/>
 					<button
 						type="submit"
-						className={`btn btn-circle btn-ghost shrink-0 ${
-							!isSendButtonEnabled || isBusy || isPrefilling ? 'btn-disabled' : ''
-						}`}
-						disabled={isBusy || isPrefilling || !isSendButtonEnabled}
-						aria-label={isPrefilling ? 'Filling in prompts...' : 'Send Message'}
-						title={isPrefilling ? 'Filling in prompts...' : 'Send Message'}
+						className={`btn btn-circle btn-ghost shrink-0 ${!isSendButtonEnabled || isBusy ? 'btn-disabled' : ''}`}
+						disabled={isBusy || !isSendButtonEnabled}
+						aria-label={'Send Message'}
+						title={'Send Message'}
 					>
-						{isPrefilling ? <FiLoader size={18} className="animate-spin" /> : <FiSend size={18} />}
+						<FiSend size={18} />
 					</button>
 				</div>
 				<AttachmentBottomBar />

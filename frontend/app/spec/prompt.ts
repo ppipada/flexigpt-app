@@ -26,15 +26,6 @@ export enum VarType {
 export enum VarSource {
 	User = 'user',
 	Static = 'static',
-	Tool = 'tool',
-}
-
-/**
- * @public
- */
-export enum PreProcessorOnError {
-	OnErrorEmpty = 'empty',
-	OnErrorFail = 'fail',
 }
 
 // --- Core Types ---
@@ -52,22 +43,8 @@ export interface PromptVariable {
 	source: VarSource;
 	description?: string;
 	staticVal?: string;
-	toolBundleID?: string;
-	toolSlug?: string;
-	toolVersion?: string;
 	enumValues?: string[];
 	default?: string;
-}
-
-export interface PreProcessorCall {
-	id: string;
-	toolBundleID: string;
-	toolSlug: string;
-	toolVersion: string;
-	args?: Record<string, any>;
-	saveAs: string;
-	pathExpr?: string;
-	onError?: PreProcessorOnError;
 }
 
 export interface PromptTemplate {
@@ -79,7 +56,6 @@ export interface PromptTemplate {
 	tags?: string[];
 	blocks: MessageBlock[];
 	variables?: PromptVariable[];
-	preProcessors?: PreProcessorCall[];
 	version: string;
 	createdAt: string;
 	modifiedAt: string;
@@ -162,8 +138,7 @@ export interface IPromptStoreAPI {
 		version: string,
 		description?: string,
 		tags?: string[],
-		variables?: PromptVariable[],
-		preProcessors?: PreProcessorCall[]
+		variables?: PromptVariable[]
 	): Promise<void>;
 
 	/** Patch (enable/disable) a template version. */

@@ -6,6 +6,9 @@
 	"displayName": "Read file",
 	"description": "Read a local file from disk and return its contents (text or base64).",
 	"tags": ["fs", "read"],
+	"userCallable": true,
+	"llmCallable": true,
+	"outputKind": "text",
 	"argSchema": {
 		"$schema": "http://json-schema.org/draft-07/schema#",
 		"type": "object",

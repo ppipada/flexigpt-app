@@ -138,8 +138,7 @@ export function PromptBundleCard({ bundle, templates, onTemplatesChange, onBundl
 					templateToEdit.version, // overwrite same version for now
 					partial.description ?? templateToEdit.description,
 					partial.tags ?? templateToEdit.tags,
-					partial.variables ?? templateToEdit.variables,
-					partial.preProcessors ?? templateToEdit.preProcessors
+					partial.variables ?? templateToEdit.variables
 				);
 			} else {
 				/* create */
@@ -154,8 +153,7 @@ export function PromptBundleCard({ bundle, templates, onTemplatesChange, onBundl
 					'1',
 					partial.description,
 					partial.tags,
-					partial.variables,
-					partial.preProcessors
+					partial.variables
 				);
 			}
 			/* refresh local list */

@@ -16,7 +16,7 @@ import (
 // – isNilResp tells whether the model returned an empty/invalid response.
 func attachDebugResp(
 	ctx context.Context,
-	completionResp *spec.CompletionResponse,
+	completionResp *spec.FetchCompletionResponseBody,
 	respErr error,
 	isNilResp bool,
 ) {
@@ -67,8 +67,8 @@ func getCompletionData(
 	modelParams spec.ModelParams,
 	currentMessage spec.ChatCompletionDataMessage,
 	prevMessages []spec.ChatCompletionDataMessage,
-) *spec.CompletionData {
-	completionData := spec.CompletionData{
+) *spec.FetchCompletionData {
+	completionData := spec.FetchCompletionData{
 		ModelParams: spec.ModelParams{
 			Name:                        modelParams.Name,
 			Stream:                      modelParams.Stream,
@@ -85,8 +85,6 @@ func getCompletionData(
 	// Handle messages.
 	messages := slices.Clone(prevMessages)
 	for idx := range messages {
-		// Omit any tools or name in previous messages.
-		messages[idx].ToolAttachments = []spec.ChatCompletionToolAttachment{}
 		messages[idx].Name = nil
 	}
 
@@ -102,11 +100,11 @@ func getCompletionData(
 	return &completionData
 }
 
-func toolFunctionName(ct spec.CompletionTool) string {
-	slug := sanitizeToolNameComponent(string(ct.Tool.Slug))
-	version := sanitizeToolNameComponent(strings.ReplaceAll(string(ct.Tool.Version), ".", "_"))
+func toolFunctionName(ct spec.FetchCompletionToolChoice) string {
+	slug := sanitizeToolNameComponent(ct.ToolSlug)
+	version := sanitizeToolNameComponent(strings.ReplaceAll(ct.ToolVersion, ".", "_"))
 
-	idPart := sanitizeToolNameComponent(strings.ReplaceAll(string(ct.Tool.ID), "-", ""))
+	idPart := sanitizeToolNameComponent(strings.ReplaceAll(ct.ID, "-", ""))
 	if len(idPart) > 8 {
 		idPart = idPart[:8]
 	}
@@ -166,12 +164,9 @@ func decodeToolArgSchema(raw json.RawMessage) (map[string]any, error) {
 	return schema, nil
 }
 
-func toolDescription(ct spec.CompletionTool) string {
-	if desc := strings.TrimSpace(ct.Tool.Description); desc != "" {
+func toolDescription(ct spec.FetchCompletionToolChoice) string {
+	if desc := strings.TrimSpace(ct.Description); desc != "" {
 		return desc
-	}
-	if display := strings.TrimSpace(ct.Tool.DisplayName); display != "" {
-		return display
 	}
 	return ""
 }

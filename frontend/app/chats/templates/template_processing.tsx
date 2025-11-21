@@ -1,32 +1,6 @@
-import {
-	type MessageBlock,
-	type PreProcessorCall,
-	type PreProcessorOnError,
-	type PromptTemplate,
-	type PromptVariable,
-	VarSource,
-	VarType,
-} from '@/spec/prompt';
+import { type MessageBlock, type PromptTemplate, type PromptVariable, VarSource, VarType } from '@/spec/prompt';
 
-import {
-	type SelectedTemplateForRun,
-	type TemplateSelectionElementNode,
-	type ToolState,
-	ToolStatus,
-} from '@/chats/templates/template_spec';
-
-export function buildInitialToolStates(template?: PromptTemplate): Record<string, ToolState> {
-	const states: Record<string, ToolState> = {};
-	if (template?.preProcessors?.length) {
-		for (const p of template.preProcessors) {
-			states[p.id] = {
-				args: p.args ?? {},
-				status: ToolStatus.PENDING,
-			};
-		}
-	}
-	return states;
-}
+import { type SelectedTemplateForRun, type TemplateSelectionElementNode } from '@/chats/templates/template_spec';
 
 /**
  * Merge templateSnapshot with local overrides to produce effective template structures.
@@ -35,21 +9,15 @@ export function computeEffectiveTemplate(el: TemplateSelectionElementNode): {
 	template: PromptTemplate | undefined;
 	blocks: MessageBlock[];
 	variablesSchema: PromptVariable[];
-	preProcessors: PreProcessorCall[];
 } {
 	const base = el.templateSnapshot;
 	const blocks = el.overrides?.blocks ?? base?.blocks ?? [];
 	const variablesSchema = el.overrides?.variables ?? base?.variables ?? [];
-	const preProcessors = el.overrides?.preProcessors ?? base?.preProcessors ?? [];
-	return { template: base, blocks, variablesSchema, preProcessors };
+
+	return { template: base, blocks, variablesSchema };
 }
 
-export function effectiveVarValueLocal(
-	varDef: PromptVariable,
-	userValues: Record<string, unknown>,
-	toolStates?: Record<string, ToolState>,
-	preProcessors?: PreProcessorCall[]
-): unknown {
+export function effectiveVarValueLocal(varDef: PromptVariable, userValues: Record<string, unknown>): unknown {
 	if (userValues[varDef.name] !== undefined && userValues[varDef.name] !== null) {
 		return userValues[varDef.name];
 	}
@@ -63,31 +31,11 @@ export function effectiveVarValueLocal(
 	if (varDef.type === VarType.String && !varDef.required) {
 		return '';
 	}
-	if (varDef.source === VarSource.Tool && toolStates) {
-		const bySaveAs = new Map<string, any>();
-		(preProcessors ?? []).forEach(p => {
-			const st = toolStates[p.id];
-			if (st.result !== undefined) {
-				const val = pickByPathExpr(st.result, p.pathExpr);
-				bySaveAs.set(p.saveAs, val);
-			}
-		});
-		if (bySaveAs.has(varDef.name)) return bySaveAs.get(varDef.name);
-		// fallback to “first result” if mapping not found
-		const hit = Object.entries(toolStates).find(([_id, st]) => st.result !== undefined);
-		if (hit) {
-			const p = (preProcessors ?? []).find(pp => pp.id === hit[0]);
-			return pickByPathExpr(hit[1].result, p?.pathExpr);
-		}
-	}
+
 	return undefined;
 }
 
-function effectiveVarValue(
-	varDef: PromptVariable,
-	userValues: Record<string, unknown>,
-	toolStates?: Record<string, ToolState>
-): unknown {
+function effectiveVarValue(varDef: PromptVariable, userValues: Record<string, unknown>): unknown {
 	// Local override always wins if present
 	if (userValues[varDef.name] !== undefined && userValues[varDef.name] !== null) {
 		return userValues[varDef.name];
@@ -100,13 +48,7 @@ function effectiveVarValue(
 				return varDef.staticVal;
 			}
 			break;
-		case VarSource.Tool: {
-			if (toolStates) {
-				const hit = Object.values(toolStates).find(st => st.result !== undefined);
-				if (hit?.result !== undefined) return hit.result;
-			}
-			break;
-		}
+
 		case VarSource.User:
 		default:
 			break;
@@ -118,45 +60,15 @@ function effectiveVarValue(
 	return undefined;
 }
 
-export interface ToolToRun {
-	id: string;
-	toolBundleID: string;
-	toolSlug: string;
-	toolVersion: string;
-	args: Record<string, unknown>;
-	saveAs: string;
-	pathExpr: string | undefined;
-	onError: PreProcessorOnError | undefined;
-	status: ToolStatus;
-	unresolved: string[];
-}
-
-export function computeRequirements(
-	variablesSchema: PromptVariable[],
-	variableValues: Record<string, unknown>,
-	preProcessors: PreProcessorCall[] = [],
-	toolStates?: Record<string, ToolState>
-) {
+export function computeRequirements(variablesSchema: PromptVariable[], variableValues: Record<string, unknown>) {
 	const requiredNames: string[] = [];
 	const values: Record<string, unknown> = { ...variableValues };
-
-	const toolResultBySaveAs = new Map<string, unknown>();
-	for (const p of preProcessors) {
-		const st = toolStates?.[p.id];
-		if (st && st.result !== undefined) {
-			toolResultBySaveAs.set(p.saveAs, pickByPathExpr(st.result, p.pathExpr));
-		}
-	}
 
 	// Fill effective values
 	for (const v of variablesSchema) {
 		let val = values[v.name];
 		if (val === undefined) {
-			if (v.source === VarSource.Tool && toolResultBySaveAs.has(v.name)) {
-				val = toolResultBySaveAs.get(v.name);
-			} else {
-				val = effectiveVarValue(v, variableValues, toolStates);
-			}
+			val = effectiveVarValue(v, variableValues);
 		}
 		values[v.name] = val;
 	}
@@ -169,53 +81,15 @@ export function computeRequirements(
 		}
 	}
 
-	// Tools to run summary
-	const toolsToRun = preProcessors.map(p => {
-		const st = toolStates?.[p.id];
-		const baseArgs = st?.args ?? p.args ?? {};
-		const { resolved, unresolved } = resolveArgsPlaceholders(baseArgs, values);
-
-		let status: ToolState['status'];
-		if (st?.status === ToolStatus.ERROR) status = ToolStatus.ERROR;
-		else if (st?.status === ToolStatus.RUNNING) status = ToolStatus.RUNNING;
-		else if (st?.status === ToolStatus.DONE || st?.result !== undefined) status = ToolStatus.DONE;
-		else if (unresolved.size > 0)
-			status = ToolStatus.PENDING; // args missing
-		else status = ToolStatus.READY; // args resolved, not yet run
-
-		return {
-			id: p.id,
-			toolBundleID: p.toolBundleID,
-			toolSlug: p.toolSlug,
-			toolVersion: p.toolVersion,
-			args: resolved as Record<string, unknown>,
-			saveAs: p.saveAs,
-			pathExpr: p.pathExpr,
-			onError: p.onError,
-			status,
-			unresolved: Array.from(unresolved),
-		};
-	}) as ToolToRun[];
-
-	const notReadyToolsCount = toolsToRun.filter(t => t.status === ToolStatus.PENDING).length;
-	const runningToolsCount = toolsToRun.filter(t => t.status === ToolStatus.RUNNING).length;
-	const readyButNotDoneCount = toolsToRun.filter(t => t.status === ToolStatus.READY).length;
-	const pendingToolsCount = notReadyToolsCount + runningToolsCount + readyButNotDoneCount;
-
 	return {
 		variableValues: values,
 		requiredVariables: requiredNames,
 		requiredCount: requiredNames.length,
-		toolsToRun,
-		pendingToolsCount,
-		notReadyToolsCount,
-		runningToolsCount,
-		readyButNotDoneCount,
 	};
 }
 
 export function makeSelectedTemplateForRun(tsenode: TemplateSelectionElementNode): SelectedTemplateForRun {
-	const { template, blocks, variablesSchema, preProcessors } = computeEffectiveTemplate(tsenode);
+	const { template, blocks, variablesSchema } = computeEffectiveTemplate(tsenode);
 
 	const effTemplate: PromptTemplate =
 		template ??
@@ -228,14 +102,14 @@ export function makeSelectedTemplateForRun(tsenode: TemplateSelectionElementNode
 			tags: [],
 			blocks,
 			variables: variablesSchema,
-			preProcessors,
+
 			version: tsenode.templateVersion,
 			createdAt: new Date().toISOString(),
 			modifiedAt: new Date().toISOString(),
 			isBuiltIn: false,
 		} as PromptTemplate);
 
-	const req = computeRequirements(variablesSchema, tsenode.variables, preProcessors, tsenode.toolStates);
+	const req = computeRequirements(variablesSchema, tsenode.variables);
 
 	return {
 		type: 'templateSelection',
@@ -246,54 +120,13 @@ export function makeSelectedTemplateForRun(tsenode: TemplateSelectionElementNode
 		template: effTemplate,
 		blocks,
 		variablesSchema,
-		preProcessors,
+
 		variableValues: req.variableValues,
 		requiredVariables: req.requiredVariables,
 		requiredCount: req.requiredCount,
-		toolsToRun: req.toolsToRun,
 
-		isReady:
-			req.requiredCount === 0 &&
-			req.toolsToRun.every(
-				t => t.status === ToolStatus.DONE || t.status === ToolStatus.READY || t.status === ToolStatus.RUNNING
-			),
+		isReady: req.requiredCount === 0,
 	};
-}
-
-// Replace {{var}} tokens in strings using provided values.
-// Returns resolved args and a set of unresolved tokens.
-function resolveArgsPlaceholders(
-	input: unknown,
-	values: Record<string, unknown>
-): { resolved: unknown; unresolved: Set<string> } {
-	const unresolved = new Set<string>();
-
-	const replaceString = (s: string) =>
-		s.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_m, name: string) => {
-			const v = values[name];
-			if (v === undefined || v === null || v === '') {
-				unresolved.add(name);
-				return '';
-			}
-			// eslint-disable-next-line @typescript-eslint/no-base-to-string
-			return String(v);
-		});
-
-	const walk = (val: unknown): unknown => {
-		if (val == null) return val;
-		if (typeof val === 'string') return replaceString(val);
-		if (Array.isArray(val)) return val.map(walk);
-		if (typeof val === 'object') {
-			const out: Record<string, unknown> = {};
-			for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
-				out[k] = walk(v);
-			}
-			return out;
-		}
-		return val;
-	};
-
-	return { resolved: walk(input), unresolved };
 }
 
 // Returns the content of the last block as plain text if it is from role user.
@@ -313,101 +146,4 @@ export function getLastUserBlockContent(el: TemplateSelectionElementNode): strin
 type JSONValue = null | boolean | number | string | Array<JSONValue> | JSONObject;
 interface JSONObject {
 	[k: string]: JSONValue;
-}
-
-function tokenizePath(expr: string): Array<string | number> {
-	const tokens: Array<string | number> = [];
-	let i = 0;
-	let current = '';
-
-	const pushCurrent = () => {
-		if (current.length > 0) {
-			tokens.push(current);
-			current = '';
-		}
-	};
-
-	while (i < expr.length) {
-		const ch = expr[i];
-
-		if (ch === '.') {
-			pushCurrent();
-			i++;
-			continue;
-		}
-
-		if (ch === '[') {
-			pushCurrent();
-			i++; // consume '['
-
-			// skip whitespace
-			while (i < expr.length && /\s/.test(expr[i])) i++;
-
-			// quoted key ['...'] or ["..."]
-			if (expr[i] === "'" || expr[i] === '"') {
-				const quote = expr[i++];
-				let val = '';
-				while (i < expr.length) {
-					const c = expr[i++];
-					if (c === '\\') {
-						if (i < expr.length) val += expr[i++];
-						continue;
-					}
-					if (c === quote) break;
-					val += c;
-				}
-				// skip whitespace to closing bracket
-				while (i < expr.length && /\s/.test(expr[i])) i++;
-				if (expr[i] === ']') i++; // consume ']'
-				tokens.push(val);
-			} else {
-				// bare number or identifier until ']'
-				let raw = '';
-				while (i < expr.length && expr[i] !== ']') raw += expr[i++];
-				if (expr[i] === ']') i++; // consume ']'
-				const val = raw.trim();
-				if (/^\d+$/.test(val)) tokens.push(Number(val));
-				else if (val.length > 0) tokens.push(val);
-			}
-
-			continue;
-		}
-
-		// regular char as part of a dot segment
-		current += ch;
-		i++;
-	}
-
-	pushCurrent();
-
-	// remove accidental empty tokens
-	return tokens.filter(t => !(typeof t === 'string' && t.length === 0));
-}
-
-function pickByPathExpr(input: unknown, pathExpr?: string): unknown {
-	if (!pathExpr) return input;
-
-	const tokens = tokenizePath(pathExpr);
-	if (tokens.length === 0) return input;
-
-	let cur: unknown = input;
-
-	for (const tok of tokens) {
-		if (cur === null || cur === undefined) return undefined;
-
-		if (typeof tok === 'number') {
-			if (!Array.isArray(cur)) return undefined;
-			const arr = cur as Array<JSONValue>;
-			cur = arr[tok];
-			continue;
-		}
-
-		// string key
-		if (typeof cur !== 'object') return undefined;
-		const obj = cur as JSONObject;
-		if (!(tok in obj)) return undefined;
-		cur = obj[tok];
-	}
-
-	return cur;
 }

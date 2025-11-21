@@ -13,8 +13,8 @@ export function TemplateSelectionElement(props: PlateElementProps<any>) {
 	const el = element as TemplateSelectionElementNode;
 
 	// We still compute badges for accessibility/title, but hide it from visual flow.
-	const { template, variablesSchema, preProcessors } = computeEffectiveTemplate(el);
-	const req = computeRequirements(variablesSchema, el.variables, preProcessors, el.toolStates);
+	const { template, variablesSchema } = computeEffectiveTemplate(el);
+	const req = computeRequirements(variablesSchema, el.variables);
 
 	return (
 		<span
@@ -22,9 +22,7 @@ export function TemplateSelectionElement(props: PlateElementProps<any>) {
 			contentEditable={false}
 			className="pointer-events-none sr-only"
 			data-template-chip
-			title={`Template: ${el.overrides?.displayName ?? template?.displayName ?? el.templateSlug} • pending vars: ${req.requiredCount} • tools: ${
-				preProcessors.length
-			}`}
+			title={`Template: ${el.overrides?.displayName ?? template?.displayName ?? el.templateSlug} • pending vars: ${req.requiredCount}`}
 			aria-hidden="true"
 		>
 			{/* Invisible info holder */}

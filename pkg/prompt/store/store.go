@@ -518,7 +518,6 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 		Tags:          req.Body.Tags,
 		Blocks:        req.Body.Blocks,
 		Variables:     req.Body.Variables,
-		PreProcessors: req.Body.PreProcessors,
 		Version:       req.Version,
 		CreatedAt:     now,
 		ModifiedAt:    now,

@@ -1,9 +1,8 @@
 import {
-	type BuildCompletionDataMessage,
-	type BuildCompletionToolAttachment,
+	type ChatCompletionDataMessage,
 	ChatCompletionRoleEnum,
-	type CompletionData,
-	type CompletionResponse,
+	type FetchCompletionData,
+	type FetchCompletionResponseBody,
 	type ModelParams,
 	ResponseContentType,
 } from '@/spec/aiprovider';
@@ -27,27 +26,27 @@ export function getQuotedJSON(obj: any): string {
 	return '```json\n' + JSON.stringify(obj, null, 2) + '\n```';
 }
 
-function convertConversationToBuildMessages(
-	conversationMessages?: ConversationMessage[]
-): BuildCompletionDataMessage[] {
+function convertConversationToBuildMessages(conversationMessages?: ConversationMessage[]): ChatCompletionDataMessage[] {
 	if (!conversationMessages) {
 		return [];
 	}
-	const chatMessages: BuildCompletionDataMessage[] = [];
+	const chatMessages: ChatCompletionDataMessage[] = [];
 	conversationMessages.forEach(convoMsg => {
-		const toolAttachments: BuildCompletionToolAttachment[] | undefined = convoMsg.toolAttachments?.map(att => ({
-			bundleID: att.bundleID,
-			toolSlug: att.toolSlug,
-			toolVersion: att.toolVersion,
-			displayName: att.displayName,
-			id: att.id,
-		}));
+		// const toolAttachments: BuildCompletionToolAttachment[] | undefined = convoMsg.toolAttachments?.map(att => ({
+		// 	bundleID: att.bundleID,
+		// 	toolSlug: att.toolSlug,
+		// 	toolVersion: att.toolVersion,
+		// 	displayName: att.displayName,
+		// 	id: att.id,
+		// }));
 
-		const message: BuildCompletionDataMessage = {
+		// const attachments = convoMsg.attachments;
+		// const enabledTools = convoMsg.enabledTools;
+
+		const message: ChatCompletionDataMessage = {
 			role: roleMap[convoMsg.role],
 			content: convoMsg.content,
 			name: convoMsg.name,
-			toolAttachments: toolAttachments,
 		};
 
 		chatMessages.push(message);
@@ -59,7 +58,7 @@ export async function BuildCompletionDataFromConversation(
 	provider: ProviderName,
 	modelParams: ModelParams,
 	messages?: Array<ConversationMessage>
-): Promise<CompletionData> {
+): Promise<FetchCompletionData> {
 	const allMessages = convertConversationToBuildMessages(messages);
 	// console.log(JSON.stringify(allMessages, null, 2));
 	const promptMsg = allMessages.pop();
@@ -72,7 +71,7 @@ export async function BuildCompletionDataFromConversation(
 
 // export const normalizeThinkingChunk = (s: string) => s.replace(/~~~+/g, '~~\u200b~'); // break accidental fences
 
-function parseAPIResponse(convoMessage: ConversationMessage, providerResp: CompletionResponse | undefined) {
+function parseAPIResponse(convoMessage: ConversationMessage, providerResp: FetchCompletionResponseBody | undefined) {
 	let respContent = '';
 	let respDetails: string | undefined;
 	let requestDetails: string | undefined;
@@ -145,7 +144,7 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Compl
 async function handleDirectCompletion(
 	convoMessage: ConversationMessage,
 	provider: ProviderName,
-	completionData: CompletionData,
+	completionData: FetchCompletionData,
 	requestId?: string,
 	signal?: AbortSignal
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
@@ -156,7 +155,7 @@ async function handleDirectCompletion(
 async function handleStreamedCompletion(
 	convoMessage: ConversationMessage,
 	provider: ProviderName,
-	completionData: CompletionData,
+	completionData: FetchCompletionData,
 	requestId?: string,
 	signal?: AbortSignal,
 	onStreamTextData?: (textData: string) => void,
@@ -175,7 +174,7 @@ async function handleStreamedCompletion(
 
 export async function HandleCompletion(
 	provider: ProviderName,
-	completionData: CompletionData,
+	completionData: FetchCompletionData,
 	convoMessage: ConversationMessage,
 	requestId?: string,
 	signal?: AbortSignal,
@@ -184,7 +183,7 @@ export async function HandleCompletion(
 ): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
 	try {
 		const isStream = completionData.modelParams.stream || false;
-		// log.info('CompletionData', defaultProvider, JSON.stringify(fullCompletionData, null, 2));
+		// log.info('FetchCompletionData', defaultProvider, JSON.stringify(fullCompletionData, null, 2));
 		if (isStream && onStreamTextData && onStreamThinkingData) {
 			return await handleStreamedCompletion(
 				convoMessage,

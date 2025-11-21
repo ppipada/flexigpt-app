@@ -89,7 +89,6 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 	allowedVarSources := map[spec.VarSource]struct{}{
 		spec.SourceUser:   {},
 		spec.SourceStatic: {},
-		spec.SourceTool:   {},
 	}
 
 	varNames := map[string]spec.VarSource{}
@@ -117,22 +116,6 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 			}
 			if v.Required {
 				return fmt.Errorf("variables[%d]: static variables cannot be required", i)
-			}
-		case spec.SourceTool:
-
-			if strings.TrimSpace(string(v.ToolBundleID)) == "" {
-				return fmt.Errorf("variables[%d]: source 'tool' requires toolBundleID", i)
-			}
-			if err := bundleitemutils.ValidateItemSlug(v.ToolSlug); err != nil {
-				return fmt.Errorf("variables[%d]: invalid toolSlug %q err %w", i, v.ToolSlug, err)
-			}
-			if err := bundleitemutils.ValidateItemVersion(v.ToolVersion); err != nil {
-				return fmt.Errorf(
-					"variables[%d]: invalid toolVersion %q err %w",
-					i,
-					v.ToolVersion,
-					err,
-				)
 			}
 		case spec.SourceUser:
 			// No validations needed.
@@ -166,62 +149,9 @@ func validateTemplate(tpl *spec.PromptTemplate) error {
 		}
 	}
 
-	// Validate pre-processors.
-	allowedOnError := map[spec.PreProcessorOnError]struct{}{
-		"":                {},
-		spec.OnErrorEmpty: {},
-		spec.OnErrorFail:  {},
-	}
-	saveTargets := map[string]struct{}{}
-
-	for i, p := range tpl.PreProcessors {
-
-		if strings.TrimSpace(string(p.ToolBundleID)) == "" {
-			return fmt.Errorf("preProcessors[%d]: toolBundleID is empty", i)
-		}
-
-		if err := bundleitemutils.ValidateItemSlug(p.ToolSlug); err != nil {
-			return fmt.Errorf("preProcessors[%d]: invalid toolSlug %q err %w", i, p.ToolSlug, err)
-		}
-		if err := bundleitemutils.ValidateItemVersion(p.ToolVersion); err != nil {
-			return fmt.Errorf(
-				"preProcessors[%d]: invalid toolVersion %q err %w",
-				i,
-				p.ToolVersion,
-				err,
-			)
-		}
-		if err := bundleitemutils.ValidateTag(p.SaveAs); err != nil {
-			return fmt.Errorf("preProcessors[%d]: invalid saveAs %q err %w", i, p.SaveAs, err)
-		}
-
-		src, ok := varNames[p.SaveAs]
-		if !ok {
-			return fmt.Errorf(
-				"preProcessors[%d]: saveAs %q is not a declared variable",
-				i,
-				p.SaveAs,
-			)
-		}
-		if src != spec.SourceTool {
-			return fmt.Errorf("preProcessors[%d]: variable %q must have source 'tool'", i, p.SaveAs)
-		}
-		if _, dup := saveTargets[p.SaveAs]; dup {
-			return fmt.Errorf("multiple preProcessors write to %q", p.SaveAs)
-		}
-		saveTargets[p.SaveAs] = struct{}{}
-
-		if _, ok := allowedOnError[p.OnError]; !ok {
-			return fmt.Errorf("preProcessors[%d]: invalid onError %q", i, p.OnError)
-		}
-	}
-
 	// Detect unused variables.
 	for n, src := range varNames {
 		if _, used := placeholders[n]; used {
-			continue
-		}
-		if _, produced := saveTargets[n]; produced {
 			continue
 		}
 		if src == spec.SourceStatic {

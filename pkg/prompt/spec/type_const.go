@@ -33,10 +33,7 @@ var (
 	ErrFTSDisabled = errors.New("FTS is disabled")
 )
 
-type (
-	MessageBlockID     string
-	PreProcessorCallID string
-)
+type MessageBlockID string
 
 type PromptRoleEnum string
 
@@ -64,8 +61,6 @@ const (
 	SourceUser VarSource = "user"
 	// SourceStatic: Fixed literal.
 	SourceStatic VarSource = "static"
-	// SourceTool: Filled by a helper tool.
-	SourceTool VarSource = "tool"
 )
 
 // MessageBlock - One role-tagged chunk of text.
@@ -84,38 +79,11 @@ type PromptVariable struct {
 
 	// SourceStatic.
 	StaticVal string `json:"staticVal,omitempty"`
-	// SourceTool.
-	ToolBundleID bundleitemutils.BundleID    `json:"toolBundleID,omitempty"`
-	ToolSlug     bundleitemutils.ItemSlug    `json:"toolSlug,omitempty"`
-	ToolVersion  bundleitemutils.ItemVersion `json:"toolVersion,omitempty"`
 	// VarEnum.
 	EnumValues []string `json:"enumValues,omitempty"`
 
 	// Optional default for the var.
 	Default string `json:"default,omitempty"`
-}
-
-type PreProcessorOnError string
-
-const (
-	OnErrorEmpty PreProcessorOnError = "empty"
-	OnErrorFail  PreProcessorOnError = "fail"
-)
-
-// PreProcessorCall - Runs a helper tool, optionally extracts a JSON sub-path and stores the value into a variable.
-type PreProcessorCall struct {
-	ID           PreProcessorCallID          `json:"id"`
-	ToolBundleID bundleitemutils.BundleID    `json:"toolBundleID"`
-	ToolSlug     bundleitemutils.ItemSlug    `json:"toolSlug"`
-	ToolVersion  bundleitemutils.ItemVersion `json:"toolVersion"`
-	Arguments    map[string]any              `json:"args,omitempty"`
-
-	// Variable name.
-	SaveAs string `json:"saveAs"`
-	// E.g. "$.weather.tempC".
-	PathExpr string `json:"pathExpr,omitempty"`
-	// Default empty.
-	OnError PreProcessorOnError `json:"onError,omitempty"`
 }
 
 type PromptTemplate struct {
@@ -132,8 +100,6 @@ type PromptTemplate struct {
 	Blocks []MessageBlock `json:"blocks"`
 	// Declared placeholders.
 	Variables []PromptVariable `json:"variables,omitempty"`
-	// Helper steps executed before the prompt is sent.
-	PreProcessors []PreProcessorCall `json:"preProcessors,omitempty"`
 
 	Version    bundleitemutils.ItemVersion `json:"version"`
 	CreatedAt  time.Time                   `json:"createdAt"`
