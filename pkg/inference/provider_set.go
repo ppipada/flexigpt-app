@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -154,8 +156,24 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 	if err != nil {
 		return nil, errors.Join(err, errors.New("error in building completion data"))
 	}
-	if err := ps.attachToolsToCompletionData(ctx, resp); err != nil {
-		return nil, err
+
+	// Attach tool choices: convert the lightweight ChatCompletionToolChoice handles
+	// provided by the caller into FetchCompletionToolChoice entries, then hydrate
+	// them with full tool definitions from the tool store.
+	if len(req.Body.ToolChoices) > 0 {
+		resp.ToolChoices = convertChatToolChoicesToFetchChoices(req.Body.ToolChoices)
+		if err := ps.attachToolsToCompletionData(ctx, resp); err != nil {
+			return nil, err
+		}
+	}
+
+	// Attach contextual attachments (files, doc indexes, PRs, etc.) to the
+	// completion data. For files, this performs a lightweight os.Stat to verify
+	// existence and capture basic metadata; other kinds are passed through.
+	if len(req.Body.Attachments) > 0 {
+		if err := attachAttachmentsToCompletionData(resp, req.Body.Attachments); err != nil {
+			return nil, err
+		}
 	}
 
 	return &spec.BuildCompletionDataResponse{Body: resp}, nil
@@ -186,6 +204,27 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	}
 
 	return resp, nil
+}
+
+func convertChatToolChoicesToFetchChoices(
+	choices []spec.ChatCompletionToolChoice,
+) []spec.FetchCompletionToolChoice {
+	if len(choices) == 0 {
+		return nil
+	}
+
+	out := make([]spec.FetchCompletionToolChoice, 0, len(choices))
+	for _, c := range choices {
+		out = append(out, spec.FetchCompletionToolChoice{
+			BundleID:    strings.TrimSpace(c.BundleID),
+			ToolSlug:    strings.TrimSpace(c.ToolSlug),
+			ToolVersion: strings.TrimSpace(c.ToolVersion),
+			ID:          strings.TrimSpace(c.ID),
+			Description: c.Description,
+			Tool:        nil, // hydrated later in attachToolsToCompletionData
+		})
+	}
+	return out
 }
 
 func (ps *ProviderSetAPI) attachToolsToCompletionData(
@@ -297,6 +336,69 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 	}
 
 	data.ToolChoices = tools
+	return nil
+}
+
+func attachAttachmentsToCompletionData(
+	data *spec.FetchCompletionData,
+	attachments []spec.ChatCompletionAttachment,
+) error {
+	if data == nil {
+		return errors.New("invalid completion data: nil")
+	}
+	if len(attachments) == 0 {
+		return nil
+	}
+
+	out := make([]spec.ChatCompletionAttachment, 0, len(attachments))
+
+	for _, att := range attachments {
+		kind := att.Kind
+		ref := strings.TrimSpace(att.Ref)
+		label := strings.TrimSpace(att.Label)
+
+		c := spec.ChatCompletionAttachment{
+			Kind:  kind,
+			Ref:   ref,
+			Label: label,
+		}
+
+		switch kind {
+		case spec.AttachmentFile:
+			if ref == "" {
+				return errors.New("invalid file attachment: empty ref")
+			}
+
+			info, err := os.Stat(ref)
+			if err != nil {
+				// Mark as non-existent but do not hard-fail the build; callers can
+				// inspect the Exists flag and decide how to surface this.
+				c.Exists = false
+			} else {
+				size := info.Size()
+				modTime := info.ModTime().UTC()
+				c.Exists = true
+				c.SizeBytes = size
+				c.ModTime = &modTime
+				if label == "" {
+					c.Label = filepath.Base(ref)
+				}
+			}
+		case spec.AttachmentDocIndex, spec.AttachmentPR, spec.AttachmentCommit, spec.AttachmentSnapshot:
+			c.Exists = false
+		default:
+			// For non-file attachments, we just propagate the handle and ensure
+			// there is at least some label; existence is assumed.
+			if c.Label == "" {
+				c.Label = c.Ref
+			}
+			c.Exists = true
+		}
+
+		out = append(out, c)
+	}
+
+	data.Attachments = out
 	return nil
 }
 

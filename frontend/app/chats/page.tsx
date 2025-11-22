@@ -48,7 +48,7 @@ function initConversationMessage(role: ConversationRoleEnum, content: string): C
 	};
 }
 
-function attachedToolToConversationAttachment(tool: AttachedTool): ConversationToolChoice {
+function attachedToolToConversationToolChoice(tool: AttachedTool): ConversationToolChoice {
 	return {
 		bundleID: tool.bundleID,
 		toolSlug: tool.toolSlug,
@@ -393,10 +393,13 @@ export default function ChatsPage() {
 		}
 
 		const newMsg = initConversationMessage(ConversationRoleEnum.user, trimmed);
-		const toolAttachments =
-			payload.attachedTools.length > 0 ? payload.attachedTools.map(attachedToolToConversationAttachment) : undefined;
-		if (toolAttachments && toolAttachments.length > 0) {
-			newMsg.toolChoices = toolAttachments;
+		const toolChoices =
+			payload.attachedTools.length > 0 ? payload.attachedTools.map(attachedToolToConversationToolChoice) : undefined;
+		if (toolChoices && toolChoices.length > 0) {
+			newMsg.toolChoices = toolChoices;
+		}
+		if (payload.attachments.length > 0) {
+			newMsg.attachments = payload.attachments;
 		}
 		const updated = {
 			...chat,

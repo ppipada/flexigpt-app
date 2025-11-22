@@ -1,6 +1,8 @@
 package spec
 
 import (
+	"time"
+
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
@@ -30,9 +32,16 @@ const (
 
 // ChatCompletionAttachment is a lightweight reference to external context (files, PRs, snapshots, etc.).
 type ChatCompletionAttachment struct {
-	Kind  ChatCompletionAttachmentKind `json:"kind"`
-	Ref   string                       `json:"ref"`
-	Label string                       `json:"label"`
+	Kind      ChatCompletionAttachmentKind `json:"kind"`
+	Ref       string                       `json:"ref"`
+	Label     string                       `json:"label"`
+	SizeBytes int64                        `json:"sizeBytes,omitempty"`
+	ModTime   *time.Time                   `json:"modTime,omitempty"`
+	// Exists indicates whether the backend could successfully verify the attachment
+	// (for example, via an os.Stat call for file attachments). This is populated
+	// during BuildCompletionData and echoed back to the frontend as part of
+	// FetchCompletionData.
+	Exists bool `json:"exists,omitempty"`
 }
 
 type ChatCompletionToolChoice struct {

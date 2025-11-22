@@ -17,22 +17,6 @@ export type TemplateVariableElementNode = {
 	children: [{ text: '' }];
 };
 
-export enum ToolStatus {
-	PENDING = 'pending',
-	READY = 'ready',
-	RUNNING = 'running',
-	DONE = 'done',
-	ERROR = 'error',
-}
-
-export type ToolState = {
-	args?: Record<string, any>;
-	status: ToolStatus;
-	result?: any;
-	error?: string;
-	lastRunAt?: string;
-};
-
 export type TemplateSelectionElementNode = {
 	type: typeof KEY_TEMPLATE_SELECTION;
 	bundleID: string;
@@ -54,9 +38,6 @@ export type TemplateSelectionElementNode = {
 		blocks?: MessageBlock[];
 		variables?: PromptVariable[];
 	};
-
-	// Tool run states per preprocessor id
-	toolStates?: Record<string, ToolState>;
 
 	// Slate text children
 	children: [{ text: '' }];

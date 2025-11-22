@@ -216,6 +216,10 @@ export namespace spec {
 	    kind: string;
 	    ref: string;
 	    label: string;
+	    sizeBytes?: number;
+	    // Go type: time
+	    modTime?: any;
+	    exists?: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new ChatCompletionAttachment(source);
@@ -226,6 +230,9 @@ export namespace spec {
 	        this.kind = source["kind"];
 	        this.ref = source["ref"];
 	        this.label = source["label"];
+	        this.sizeBytes = source["sizeBytes"];
+	        this.modTime = source["modTime"];
+	        this.exists = source["exists"];
 	    }
 	}
 	export class ChatCompletionToolChoice {
@@ -3977,4 +3984,3 @@ export namespace spec {
 	
 
 }
-

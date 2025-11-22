@@ -5,3 +5,5 @@ import {frontend} from '../models';
 export function Ping():Promise<string>;
 
 export function SaveFile(arg1:string,arg2:string,arg3:Array<frontend.FileFilter>):Promise<void>;
+
+export function OpenFiles(arg1:boolean,arg2:Array<frontend.FileFilter>):Promise<Array<string>>;

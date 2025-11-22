@@ -1,13 +1,16 @@
 import {
+	type ChatCompletionAttachment,
+	ChatCompletionAttachmentKind,
 	type ChatCompletionDataMessage,
 	ChatCompletionRoleEnum,
+	type ChatCompletionToolChoice,
 	type FetchCompletionData,
 	type FetchCompletionResponseBody,
 	type ModelParams,
 	ResponseContentType,
 } from '@/spec/aiprovider';
-import type { ConversationMessage } from '@/spec/conversation';
-import { ConversationRoleEnum } from '@/spec/conversation';
+import type { ConversationAttachment, ConversationMessage, ConversationToolChoice } from '@/spec/conversation';
+import { ConversationAttachmentKind, ConversationRoleEnum } from '@/spec/conversation';
 import type { ProviderName } from '@/spec/modelpreset';
 
 import { CustomMDLanguage } from '@/lib/text_utils';
@@ -54,6 +57,54 @@ function convertConversationToBuildMessages(conversationMessages?: ConversationM
 	return chatMessages;
 }
 
+function convertConversationToolChoicesToChatChoices(
+	toolChoices?: ConversationToolChoice[]
+): ChatCompletionToolChoice[] | undefined {
+	if (!toolChoices || toolChoices.length === 0) {
+		return undefined;
+	}
+
+	return toolChoices.map(tc => ({
+		bundleID: tc.bundleID,
+		toolSlug: tc.toolSlug,
+		toolVersion: tc.toolVersion,
+		id: tc.id,
+		description: tc.description ?? '',
+		displayName: tc.displayName ?? tc.toolSlug,
+	}));
+}
+
+function convertConversationAttachmentKind(kind: ConversationAttachmentKind): ChatCompletionAttachmentKind {
+	switch (kind) {
+		case ConversationAttachmentKind.File:
+			return ChatCompletionAttachmentKind.file;
+		case ConversationAttachmentKind.DocIndex:
+			return ChatCompletionAttachmentKind.docIndex;
+		case ConversationAttachmentKind.PR:
+			return ChatCompletionAttachmentKind.pr;
+		case ConversationAttachmentKind.Commit:
+			return ChatCompletionAttachmentKind.commit;
+		case ConversationAttachmentKind.Snapshot:
+			return ChatCompletionAttachmentKind.snapshot;
+		default:
+			return ChatCompletionAttachmentKind.file;
+	}
+}
+
+function convertConversationAttachmentsToChatAttachments(
+	attachments?: ConversationAttachment[]
+): ChatCompletionAttachment[] | undefined {
+	if (!attachments || attachments.length === 0) {
+		return undefined;
+	}
+
+	return attachments.map(att => ({
+		kind: convertConversationAttachmentKind(att.kind),
+		ref: att.ref,
+		label: att.label,
+	}));
+}
+
 export async function BuildCompletionDataFromConversation(
 	provider: ProviderName,
 	modelParams: ModelParams,
@@ -65,7 +116,22 @@ export async function BuildCompletionDataFromConversation(
 	if (!promptMsg || promptMsg.content === '') {
 		throw Error('Invalid prompt message input');
 	}
-	const completionData = providerSetAPI.buildCompletionData(provider, modelParams, promptMsg, allMessages);
+	const promptConvoMsg = messages && messages.length > 0 ? messages[messages.length - 1] : undefined;
+	const toolChoices = promptConvoMsg
+		? convertConversationToolChoicesToChatChoices(promptConvoMsg.toolChoices)
+		: undefined;
+	const attachments = promptConvoMsg
+		? convertConversationAttachmentsToChatAttachments(promptConvoMsg.attachments)
+		: undefined;
+
+	const completionData = providerSetAPI.buildCompletionData(
+		provider,
+		modelParams,
+		promptMsg,
+		allMessages,
+		toolChoices,
+		attachments
+	);
 	return completionData;
 }
 

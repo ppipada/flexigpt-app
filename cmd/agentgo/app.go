@@ -164,6 +164,43 @@ func (a *App) SaveFile(
 	return os.WriteFile(savePath, contentBytes, 0o600)
 }
 
+// OpenFiles opens a native file dialog and returns selected file paths.
+// When allowMultiple is true, users can pick multiple files; otherwise at most one path is returned.
+func (a *App) OpenFiles(
+	allowMultiple bool,
+	filters []runtime.FileFilter,
+) ([]string, error) {
+	if a.ctx == nil {
+		return nil, errors.New("context is not initialized")
+	}
+
+	opts := runtime.OpenDialogOptions{
+		Filters:              filters,
+		ShowHiddenFiles:      false,
+		CanCreateDirectories: false,
+	}
+
+	if allowMultiple {
+		paths, err := runtime.OpenMultipleFilesDialog(a.ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		if paths == nil {
+			return []string{}, nil
+		}
+		return paths, nil
+	}
+
+	path, err := runtime.OpenFileDialog(a.ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	if path == "" {
+		return []string{}, nil
+	}
+	return []string{path}, nil
+}
+
 func (a *App) initManagers() { //nolint:unused // Called from main.
 	err := InitConversationCollectionWrapper(a.conversationStoreAPI, a.conversationsDirPath)
 	if err != nil {

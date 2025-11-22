@@ -3,7 +3,7 @@ import { sprintf } from 'sprintf-js';
 import type { FileFilter, IBackendAPI } from '@/spec/backend';
 import type { ILogger } from '@/spec/logger';
 
-import { Ping, SaveFile } from '@/apis/wailsjs/go/main/App';
+import { OpenFiles, Ping, SaveFile } from '@/apis/wailsjs/go/main/App';
 import { BrowserOpenURL, LogDebug, LogError, LogInfo, LogWarning } from '@/apis/wailsjs/runtime/runtime';
 
 function formatMessage(args: unknown[]): string {
@@ -130,5 +130,16 @@ export class WailsBackendAPI implements IBackendAPI {
 
 	openurl(url: string): void {
 		BrowserOpenURL(url);
+	}
+
+	async openfiles(allowMultiple: boolean, filters: Array<FileFilter>): Promise<string[]> {
+		try {
+			const paths = await OpenFiles(allowMultiple, filters);
+			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+			return paths ?? [];
+		} catch (err) {
+			console.error('Error opening file dialog:', err);
+			return [];
+		}
 	}
 }

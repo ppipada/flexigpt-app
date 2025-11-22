@@ -8,4 +8,5 @@ export interface IBackendAPI {
 	log: (level: string, ...args: unknown[]) => void;
 	savefile(defaultFilename: string, contentBase64: string, filters: Array<FileFilter>): Promise<void>;
 	openurl(url: string): void;
+	openfiles(allowMultiple: boolean, filters: Array<FileFilter>): Promise<string[]>;
 }

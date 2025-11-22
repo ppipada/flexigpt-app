@@ -23,6 +23,12 @@ export interface ChatCompletionAttachment {
 	kind: ChatCompletionAttachmentKind;
 	ref: string;
 	label: string;
+	/** Optional size in bytes for verified file attachments. */
+	sizeBytes?: number;
+	/** ISO timestamp of last modification for verified file attachments. */
+	modTime?: string;
+	/** Whether the backend could successfully verify this attachment (e.g. via stat). */
+	exists?: boolean;
 }
 
 export interface ChatCompletionToolChoice {
@@ -40,7 +46,9 @@ export interface ChatCompletionDataMessage {
 	name?: string | null;
 }
 
-// Assuming Tool is defined in something like `toolSpec`
+/**
+ * @public
+ */
 export interface FetchCompletionToolChoice {
 	bundleID?: string;
 	toolSlug: string;
@@ -115,7 +123,9 @@ export interface IProviderSetAPI {
 		provider: ProviderName,
 		modelParams: ModelParams,
 		currentMessage: ChatCompletionDataMessage,
-		prevMessages?: Array<ChatCompletionDataMessage>
+		prevMessages?: Array<ChatCompletionDataMessage>,
+		toolChoices?: Array<ChatCompletionToolChoice>,
+		attachments?: Array<ChatCompletionAttachment>
 	): Promise<FetchCompletionData>;
 	completion(
 		provider: ProviderName,

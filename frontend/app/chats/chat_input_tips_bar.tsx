@@ -58,7 +58,7 @@ export function CommandTipsBar() {
 		<div className="bg-base-200 text-neutral-custom flex items-center justify-between rounded-xl px-2 py-0 text-xs">
 			<span>
 				Input tips: &nbsp;&nbsp; '/' invoke templates or commands &nbsp;&nbsp;&nbsp;&nbsp; '+' add tools
-				&nbsp;&nbsp;&nbsp;&nbsp; '#' tag indexed docs
+				&nbsp;&nbsp;&nbsp;&nbsp; '#' attach context (docs/files/url/git-pr/etc.)
 			</span>
 
 			<div className="flex items-center">

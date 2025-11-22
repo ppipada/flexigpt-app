@@ -1,5 +1,7 @@
 import type {
+	ChatCompletionAttachment,
 	ChatCompletionDataMessage,
+	ChatCompletionToolChoice,
 	FetchCompletionData,
 	FetchCompletionResponseBody,
 	IProviderSetAPI,
@@ -19,7 +21,9 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		provider: ProviderName,
 		modelParams: ModelParams,
 		currentMessage: ChatCompletionDataMessage,
-		prevMessages?: Array<ChatCompletionDataMessage>
+		prevMessages?: Array<ChatCompletionDataMessage>,
+		toolChoices?: Array<ChatCompletionToolChoice>,
+		attachments?: Array<ChatCompletionAttachment>
 	): Promise<FetchCompletionData> {
 		const req = {
 			Provider: provider,
@@ -27,6 +31,8 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 				modelParams: modelParams as wailsSpec.ModelParams,
 				currentMessage: currentMessage as wailsSpec.ChatCompletionDataMessage,
 				prevMessages: prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionDataMessage[]) : [],
+				toolChoices: toolChoices ? ([...toolChoices] as wailsSpec.ChatCompletionToolChoice[]) : [],
+				attachments: attachments ? ([...attachments] as wailsSpec.ChatCompletionAttachment[]) : [],
 			} as wailsSpec.BuildCompletionDataRequestBody,
 		};
 

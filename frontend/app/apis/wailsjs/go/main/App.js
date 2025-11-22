@@ -9,3 +9,7 @@ export function Ping() {
 export function SaveFile(arg1, arg2, arg3) {
   return window['go']['main']['App']['SaveFile'](arg1, arg2, arg3);
 }
+
+export function OpenFiles(arg1, arg2) {
+  return window['go']['main']['App']['OpenFiles'](arg1, arg2);
+}

@@ -1,14 +1,21 @@
 import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
-import { FiAlertTriangle, FiSend } from 'react-icons/fi';
+import { FiAlertTriangle } from 'react-icons/fi';
 
 import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
+
+import type { FileFilter } from '@/spec/backend';
+import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/spec/command';
+import type { ConversationAttachment } from '@/spec/conversation';
+import { ConversationAttachmentKind } from '@/spec/conversation';
 
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
 import { cssEscape } from '@/lib/text_utils';
 
 import { useEnterSubmit } from '@/hooks/use_enter_submit';
+
+import { backendAPI } from '@/apis/baseapi';
 
 import { AlignKit } from '@/components/editor/plugins/align_kit';
 import { AutoformatKit } from '@/components/editor/plugins/auto_format_kit';
@@ -45,6 +52,7 @@ export interface EditorAreaHandle {
 export interface EditorSubmitPayload {
 	text: string;
 	attachedTools: AttachedTool[];
+	attachments: ConversationAttachment[];
 }
 
 const EDITOR_EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
@@ -83,6 +91,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	// doc version tick to re-run selection computations on any editor change (even if text string doesn't change)
 	const [docVersion, setDocVersion] = useState(0);
 	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [attachments, setAttachments] = useState<ConversationAttachment[]>([]);
 
 	const lastPopulatedSelectionKeyRef = useRef<Set<string>>(new Set());
 
@@ -240,6 +249,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			const payload: EditorSubmitPayload = {
 				text: textToSend,
 				attachedTools,
+				attachments,
 			};
 
 			try {
@@ -248,6 +258,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			} finally {
 				// Clear editor and state after successful preprocessor runs and submit
 				editor.tf.setValue(EDITOR_EMPTY_VALUE);
+				setAttachments([]);
 				lastPopulatedSelectionKeyRef.current.clear();
 				editor.tf.focus();
 				isSubmittingRef.current = false;
@@ -262,6 +273,50 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			editor.tf.focus();
 		},
 	}));
+
+	const handleAttachFiles = async () => {
+		const filters: FileFilter[] = [
+			{ DisplayName: 'All Files', Pattern: '*' },
+			{ DisplayName: 'Text/Markdown', Pattern: '*.txt;*.md;*.markdown' },
+			{ DisplayName: 'Documents', Pattern: '*.pdf;*.html;*.htm' },
+			{ DisplayName: 'Images', Pattern: '*.png;*.jpg;*.jpeg;*.gif;*.webp' },
+		];
+		const paths = await backendAPI.openfiles(true, filters);
+		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+		if (!paths || paths.length === 0) return;
+
+		setAttachments(prev => {
+			const existing = new Set(prev.map(a => `${a.kind}:${a.ref}`));
+			const next: ConversationAttachment[] = [...prev];
+			for (const p of paths) {
+				const trimmed = p.trim();
+				if (!trimmed) continue;
+				const key = `${ConversationAttachmentKind.File}:${trimmed}`;
+				if (existing.has(key)) continue;
+				existing.add(key);
+				const label = trimmed.split(/[\\/]/).pop() ?? trimmed;
+				next.push({
+					kind: ConversationAttachmentKind.File,
+					ref: trimmed,
+					label,
+				});
+			}
+			return next;
+		});
+		editor.tf.focus();
+	};
+
+	const handleRemoveAttachment = (att: ConversationAttachment) => {
+		setAttachments(prev => prev.filter(a => !(a.kind === att.kind && a.ref === att.ref && a.label === att.label)));
+		editor.tf.focus();
+	};
+
+	const handleOpenToolPicker = () => {
+		// Simulate typing " +" so that the ToolPlus combobox trigger fires.
+		editor.tf.insertText(' ');
+		editor.tf.insertText('+');
+		editor.tf.focus();
+	};
 
 	return (
 		<form
@@ -285,14 +340,21 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				}}
 			>
 				<TemplateToolbars />
-				{/* Row: send button (left) + editor (right, flex-1) */}
+				{/* Row: editor (send button now lives in the bottom attachment bar) */}
 				<div className="flex min-h-16 items-center gap-2 p-0">
 					<PlateContent
 						ref={contentRef}
 						placeholder="Type message..."
 						spellCheck={false}
 						readOnly={isBusy}
-						onKeyDown={onKeyDown}
+						onKeyDown={e => {
+							if (e.key === DOCUMENT_COLLECTION_INVOKE_CHAR && !e.altKey && !e.ctrlKey && !e.metaKey) {
+								e.preventDefault();
+								void handleAttachFiles();
+								return;
+							}
+							onKeyDown(e);
+						}}
 						onPaste={e => {
 							e.preventDefault();
 							e.stopPropagation();
@@ -308,17 +370,15 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 							minHeight: '4rem',
 						}}
 					/>
-					<button
-						type="submit"
-						className={`btn btn-circle btn-ghost shrink-0 ${!isSendButtonEnabled || isBusy ? 'btn-disabled' : ''}`}
-						disabled={isBusy || !isSendButtonEnabled}
-						aria-label={'Send Message'}
-						title={'Send Message'}
-					>
-						<FiSend size={18} />
-					</button>
 				</div>
-				<AttachmentBottomBar />
+				<AttachmentBottomBar
+					attachments={attachments}
+					onAttachFiles={handleAttachFiles}
+					onRemoveAttachment={handleRemoveAttachment}
+					onOpenToolPicker={handleOpenToolPicker}
+					isBusy={isBusy}
+					isSendButtonEnabled={isSendButtonEnabled}
+				/>
 			</Plate>
 		</form>
 	);
