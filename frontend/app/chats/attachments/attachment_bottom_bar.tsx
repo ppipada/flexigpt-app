@@ -43,7 +43,7 @@ export function AttachmentBottomBar({
 			data-attachments-bottom-bar
 			aria-label="Attachments and tools"
 		>
-			<div className="flex items-center gap-2 px-2 py-1 text-xs">
+			<div className="flex items-center gap-2 px-1 py-0 text-xs">
 				<div className="flex items-center gap-1">
 					<button
 						type="button"
@@ -135,12 +135,12 @@ export function AttachmentBottomBar({
 
 				<button
 					type="submit"
-					className={`btn btn-circle btn-ghost shrink-0 ${!isSendButtonEnabled || isBusy ? 'btn-disabled' : ''}`}
+					className={`btn btn-circle btn-sm btn-ghost shrink-0 ${!isSendButtonEnabled || isBusy ? 'btn-disabled' : ''} `}
 					disabled={isBusy || !isSendButtonEnabled}
 					aria-label="Send message"
 					title="Send message"
 				>
-					<FiSend size={16} />
+					<FiSend size={20} />
 				</button>
 			</div>
 		</div>

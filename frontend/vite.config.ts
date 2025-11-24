@@ -7,6 +7,29 @@ import { defineConfig } from 'vite';
 import checker from 'vite-plugin-checker';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
+// eslint-disable-next-line no-restricted-imports
+import pkg from './package.json';
+
+const baseDeps = Object.keys(pkg.dependencies ?? {});
+
+const extraDepsToOptimize = [
+	'react-icons/fi',
+	'platejs/react',
+	'@platejs/basic-styles/react',
+	'@platejs/basic-nodes/react',
+	'@platejs/indent/react',
+	'@platejs/emoji/react',
+	'@platejs/tabbable/react',
+	'@platejs/list/react',
+	'@platejs/combobox/react',
+];
+
+const excludedDepsToOptimize = new Set(['@emoji-mart/data', '@fontsource-variable/inter']);
+
+const depsToOptimize = [...new Set([...baseDeps, ...extraDepsToOptimize])].filter(
+	dep => !excludedDepsToOptimize.has(dep)
+);
+
 export default defineConfig(({ mode }) => {
 	const isProd = mode === 'production';
 	// const analyze = process.env.ANALYZE === 'true' || !isProd;
@@ -40,7 +63,10 @@ export default defineConfig(({ mode }) => {
 
 		// Add these configurations for better ESM support
 		optimizeDeps: {
-			include: ['shiki', 'sprintf-js', 'mermaid'],
+			// set optimizeDeps.noDiscovery to true and optimizeDeps.include as undefined or empty to disable.
+			// noDiscovery: true,
+			// include: undefined,
+			include: depsToOptimize,
 			esbuildOptions: {
 				target: 'esnext',
 				supported: {
@@ -48,6 +74,7 @@ export default defineConfig(({ mode }) => {
 				},
 			},
 		},
+
 		build: {
 			outDir: 'dist',
 			target: 'esnext',

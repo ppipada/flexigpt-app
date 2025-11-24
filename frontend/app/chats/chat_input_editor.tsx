@@ -324,7 +324,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		<form
 			ref={formRef}
 			onSubmit={handleSubmit}
-			className="bg-base-100 border-base-300 focus-within:border-base-400 mx-2 flex flex-col overflow-hidden rounded-2xl border"
+			className="bg-base-100 border-base-300 focus-within:border-base-400 mx-0 flex flex-col overflow-hidden rounded-2xl border"
 		>
 			{submitError ? (
 				<div className="alert alert-error mx-4 mt-3 mb-1 flex items-start gap-2 text-sm" role="alert">
@@ -364,9 +364,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 							if (!text) return;
 							insertPlainTextAsSingleBlock(editor, text);
 						}}
-						className="max-h-96 min-w-0 flex-1 resize-none overflow-auto bg-transparent px-4 py-2 whitespace-break-spaces outline-none [tab-size:2] focus:outline-none"
+						className="max-h-96 min-w-0 flex-1 resize-none overflow-auto bg-transparent p-2 whitespace-break-spaces outline-none [tab-size:2] focus:outline-none"
 						style={{
-							fontSize: '14px',
+							fontSize: '12px',
 							whiteSpace: 'break-spaces',
 							tabSize: 2,
 							minHeight: '4rem',

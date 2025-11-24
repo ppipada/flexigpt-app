@@ -84,10 +84,14 @@ tasks:
     cmds:
       - gh act workflow_dispatch -W "./.github/workflows/macpkg.yml" --artifact-server-path ./out --input tag=v0.0.1
 
+  run-dev:
+    cmds:
+      - cd ./cmd/agentgo && wails dev -s -v 2 -tags webkit2_41 -ldflags="-X main.Version=v0.0.1"
+
   run-watch:
     cmds:
       - pnpm -F frontend run build:wails
-      - cd ./cmd/agentgo && wails dev -s -v 2 -tags webkit2_41 -ldflags="-X main.Version=v0.0.1" > ../../out/log.txt 2>&1
+      - task: run-dev
 
   run-gobackend:
     cmds:
