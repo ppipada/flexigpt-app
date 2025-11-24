@@ -24,24 +24,46 @@ type ChatCompletionAttachmentKind string
 
 const (
 	AttachmentFile     ChatCompletionAttachmentKind = "file"
+	AttachmentImage    ChatCompletionAttachmentKind = "image"
 	AttachmentDocIndex ChatCompletionAttachmentKind = "docIndex"
 	AttachmentPR       ChatCompletionAttachmentKind = "pr"
 	AttachmentCommit   ChatCompletionAttachmentKind = "commit"
 	AttachmentSnapshot ChatCompletionAttachmentKind = "snapshot"
 )
 
-// ChatCompletionAttachment is a lightweight reference to external context (files, PRs, snapshots, etc.).
+// ChatCompletionFileRef carries metadata for file attachments.
+type ChatCompletionFileRef struct {
+	Path      string     `json:"path"`
+	Exists    bool       `json:"exists"`
+	SizeBytes int64      `json:"sizeBytes,omitempty"`
+	ModTime   *time.Time `json:"modTime,omitempty"`
+}
+
+// ChatCompletionImageRef carries metadata for image attachments.
+type ChatCompletionImageRef struct {
+	Path      string     `json:"path"`
+	Exists    bool       `json:"exists"`
+	Width     int        `json:"width,omitempty"`
+	Height    int        `json:"height,omitempty"`
+	Format    string     `json:"format,omitempty"`
+	SizeBytes int64      `json:"sizeBytes,omitempty"`
+	ModTime   *time.Time `json:"modTime,omitempty"`
+}
+
+// ChatCompletionHandleRef preserves legacy handle-style references (PRs, doc indexes, etc.).
+type ChatCompletionHandleRef struct {
+	Handle string `json:"handle"`
+}
+
+// ChatCompletionAttachment is a lightweight reference to external context (files, docs, images, etc.).
 type ChatCompletionAttachment struct {
-	Kind      ChatCompletionAttachmentKind `json:"kind"`
-	Ref       string                       `json:"ref"`
-	Label     string                       `json:"label"`
-	SizeBytes int64                        `json:"sizeBytes,omitempty"`
-	ModTime   *time.Time                   `json:"modTime,omitempty"`
-	// Exists indicates whether the backend could successfully verify the attachment
-	// (for example, via an os.Stat call for file attachments). This is populated
-	// during BuildCompletionData and echoed back to the frontend as part of
-	// FetchCompletionData.
-	Exists bool `json:"exists,omitempty"`
+	Kind  ChatCompletionAttachmentKind `json:"kind"`
+	Label string                       `json:"label"`
+
+	// Exactly one field below must be non-nil.
+	FileRef    *ChatCompletionFileRef   `json:"fileRef,omitempty"`
+	ImageRef   *ChatCompletionImageRef  `json:"imageRef,omitempty"`
+	GenericRef *ChatCompletionHandleRef `json:"genericRef,omitempty"`
 }
 
 type ChatCompletionToolChoice struct {

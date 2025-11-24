@@ -2,14 +2,17 @@ import { FiFileText, FiPaperclip, FiSend, FiTool, FiX } from 'react-icons/fi';
 
 import { type PlateEditor, useEditorRef } from 'platejs/react';
 
-import type { ConversationAttachment } from '@/spec/conversation';
-
+import {
+	type EditorAttachment,
+	editorAttachmentKey,
+	getEditorAttachmentPath,
+} from '@/chats/attachments/editor_attachment_utils';
 import { getToolNodesWithPath, removeToolByKey, toolIdentityKey } from '@/chats/attachments/tool_editor_utils';
 
 interface AttachmentBottomBarProps {
-	attachments: ConversationAttachment[];
+	attachments: EditorAttachment[];
 	onAttachFiles: () => void;
-	onRemoveAttachment: (att: ConversationAttachment) => void;
+	onRemoveAttachment: (att: EditorAttachment) => void;
 	onOpenToolPicker: () => void;
 	isBusy: boolean;
 	isSendButtonEnabled: boolean;
@@ -65,13 +68,14 @@ export function AttachmentBottomBar({
 				{/* Chips scroller */}
 				<div className="no-scrollbar flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-0">
 					{attachments.map(att => {
-						const key = `${att.kind}:${att.ref}`;
+						const key = editorAttachmentKey(att);
 						const label = att.label.length > 40 ? att.label.slice(0, 37) + '...' : att.label;
+						const path = getEditorAttachmentPath(att);
 						return (
 							<div
 								key={key}
 								className="bg-base-200 hover:bg-base-300/80 text-base-content flex shrink-0 items-center gap-2 rounded-2xl px-2 py-0 text-xs"
-								title={`${att.kind} attachment: ${att.label}`}
+								title={`${att.kind} attachment: ${att.label}${path ? ` (${path})` : ''}`}
 								data-attachment-chip="attachment"
 							>
 								<FiFileText />

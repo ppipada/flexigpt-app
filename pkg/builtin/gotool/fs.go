@@ -4,18 +4,25 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 const (
 	ReadFileFuncID      = "github.com/ppipada/flexigpt-app/pkg/builtin/gotool/fs.ReadFile"
 	ListDirectoryFuncID = "github.com/ppipada/flexigpt-app/pkg/builtin/gotool/fs.ListDirectory"
 	SearchFilesFuncID   = "github.com/ppipada/flexigpt-app/pkg/builtin/gotool/fs.SearchFiles"
+	StatPathFuncID      = "github.com/ppipada/flexigpt-app/pkg/builtin/gotool/fs.StatPath"
+	InspectImageFuncID  = "github.com/ppipada/flexigpt-app/pkg/builtin/gotool/fs.InspectImage"
 )
 
 type ReadFileArgs struct {
@@ -141,4 +148,85 @@ func SearchFiles(_ context.Context, args SearchFilesArgs) (*SearchFilesOut, erro
 		return nil, err
 	}
 	return &SearchFilesOut{Matches: matches}, nil
+}
+
+type StatPathArgs struct {
+	Path string `json:"path"`
+}
+
+type StatPathOut struct {
+	Exists    bool       `json:"exists"`
+	IsDir     bool       `json:"isDir"`
+	SizeBytes int64      `json:"sizeBytes,omitempty"`
+	ModTime   *time.Time `json:"modTime,omitempty"`
+}
+
+type InspectImageArgs struct {
+	Path string `json:"path"`
+}
+
+type InspectImageOut struct {
+	Exists    bool       `json:"exists"`
+	Width     int        `json:"width,omitempty"`
+	Height    int        `json:"height,omitempty"`
+	Format    string     `json:"format,omitempty"`
+	SizeBytes int64      `json:"sizeBytes,omitempty"`
+	ModTime   *time.Time `json:"modTime,omitempty"`
+}
+
+// InspectImage inspects an image file and returns its intrinsic metadata.
+func InspectImage(ctx context.Context, args InspectImageArgs) (*InspectImageOut, error) {
+	if args.Path == "" {
+		return nil, errors.New("path is required")
+	}
+	stat, err := StatPath(ctx, StatPathArgs(args))
+	if err != nil {
+		return nil, err
+	}
+	out := &InspectImageOut{Exists: stat.Exists}
+	if !stat.Exists {
+		return out, nil
+	}
+	if stat.IsDir {
+		return nil, errors.New("path points to a directory, expected file")
+	}
+	out.SizeBytes = stat.SizeBytes
+	out.ModTime = stat.ModTime
+	f, err := os.Open(args.Path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	cfg, format, err := image.DecodeConfig(f)
+	if err != nil {
+		if errors.Is(err, image.ErrFormat) {
+			return nil, err
+		}
+		return nil, err
+	}
+	out.Width = cfg.Width
+	out.Height = cfg.Height
+	out.Format = format
+	return out, nil
+}
+
+// StatPath returns basic metadata for the supplied path without mutating the file system.
+func StatPath(_ context.Context, args StatPathArgs) (*StatPathOut, error) {
+	if args.Path == "" {
+		return nil, errors.New("path is required")
+	}
+	info, err := os.Stat(args.Path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return &StatPathOut{Exists: false}, nil
+		}
+		return nil, err
+	}
+	mod := info.ModTime().UTC()
+	return &StatPathOut{
+		Exists:    true,
+		IsDir:     info.IsDir(),
+		SizeBytes: info.Size(),
+		ModTime:   &mod,
+	}, nil
 }

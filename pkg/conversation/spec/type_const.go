@@ -27,27 +27,43 @@ type ConversationAttachmentKind string
 
 const (
 	AttachmentFile     ConversationAttachmentKind = "file"
+	AttachmentImage    ConversationAttachmentKind = "image"
 	AttachmentDocIndex ConversationAttachmentKind = "docIndex"
 	AttachmentPR       ConversationAttachmentKind = "pr"
 	AttachmentCommit   ConversationAttachmentKind = "commit"
 	AttachmentSnapshot ConversationAttachmentKind = "snapshot"
 )
 
-// ConversationAttachment is a lightweight handle to external context (files, PRs, snapshots, etc.) that the model can
-// read.
+type ConversationFileRef struct {
+	Path string `json:"path"`
+}
+
+type ConversationImageRef struct {
+	Path string `json:"path"`
+}
+
+type ConversationHandleRef struct {
+	Handle string `json:"handle"`
+}
+
+// ConversationAttachment stores a lightweight reference to contextual data so that
+// the composer can rehydrate attachments when re-editing a prior turn.
 type ConversationAttachment struct {
 	Kind  ConversationAttachmentKind `json:"kind"`
-	Ref   string                     `json:"ref"`   // ID, slug, etc.
-	Label string                     `json:"label"` // human-friendly label for UI
+	Label string                     `json:"label"`
+
+	FileRef    *ConversationFileRef   `json:"fileRef,omitempty"`
+	ImageRef   *ConversationImageRef  `json:"imageRef,omitempty"`
+	GenericRef *ConversationHandleRef `json:"genericRef,omitempty"`
 }
 
 type ConversationToolChoice struct {
-	BundleID    string `json:"bundleID,omitempty"`
+	BundleID    string `json:"bundleID"`
 	ToolSlug    string `json:"toolSlug"`
 	ToolVersion string `json:"toolVersion"`
-	ID          string `json:"id,omitempty"`
 	Description string `json:"description"`
 	DisplayName string `json:"displayName"`
+	ID          string `json:"id,omitempty"`
 }
 
 // ConversationMessage represents a message in a conversation.

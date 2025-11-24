@@ -12,23 +12,41 @@ export enum ChatCompletionRoleEnum {
 // associated with messages sent to the inference layer.
 export enum ChatCompletionAttachmentKind {
 	file = 'file',
+	image = 'image',
 	docIndex = 'docIndex',
 	pr = 'pr',
 	commit = 'commit',
 	snapshot = 'snapshot',
 }
 
-// ChatCompletionAttachment is a lightweight reference to external context (files, PRs, snapshots, etc.).
+export interface ChatCompletionFileRef {
+	path: string;
+	exists: boolean;
+	sizeBytes?: number;
+	modTime?: string;
+}
+
+export interface ChatCompletionImageRef {
+	path: string;
+	exists: boolean;
+	width?: number;
+	height?: number;
+	format?: string;
+	sizeBytes?: number;
+	modTime?: string;
+}
+
+export interface ChatCompletionGenericRef {
+	handle: string;
+}
+
+// ChatCompletionAttachment references contextual artifacts (files, images, doc handles, etc.).
 export interface ChatCompletionAttachment {
 	kind: ChatCompletionAttachmentKind;
-	ref: string;
 	label: string;
-	/** Optional size in bytes for verified file attachments. */
-	sizeBytes?: number;
-	/** ISO timestamp of last modification for verified file attachments. */
-	modTime?: string;
-	/** Whether the backend could successfully verify this attachment (e.g. via stat). */
-	exists?: boolean;
+	fileRef?: ChatCompletionFileRef;
+	imageRef?: ChatCompletionImageRef;
+	genericRef?: ChatCompletionGenericRef;
 }
 
 export interface ChatCompletionToolChoice {

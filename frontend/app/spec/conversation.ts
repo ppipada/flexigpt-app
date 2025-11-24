@@ -7,25 +7,49 @@ export enum ConversationRoleEnum {
 }
 
 export enum ConversationAttachmentKind {
-	File = 'file',
-	DocIndex = 'docIndex',
-	PR = 'pr',
-	Commit = 'commit',
-	Snapshot = 'snapshot',
+	file = 'file',
+	image = 'image',
+	docIndex = 'docIndex',
+	pr = 'pr',
+	commit = 'commit',
+	snapshot = 'snapshot',
+}
+
+/**
+ * @public
+ */
+export interface ConversationFileAttachmentRef {
+	path: string;
+}
+
+/**
+ * @public
+ */
+export interface ConversationImageAttachmentRef {
+	path: string;
+}
+
+/**
+ * @public
+ */
+export interface ConversationGenericAttachmentRef {
+	handle: string;
 }
 
 export interface ConversationAttachment {
 	kind: ConversationAttachmentKind;
-	ref: string;
 	label: string;
+	fileRef?: ConversationFileAttachmentRef;
+	imageRef?: ConversationImageAttachmentRef;
+	genericRef?: ConversationGenericAttachmentRef;
 }
 
 export interface ConversationToolChoice {
 	bundleID: string;
 	toolSlug: string;
 	toolVersion: string;
-	displayName?: string;
-	description?: string;
+	displayName: string;
+	description: string;
 	id?: string;
 }
 

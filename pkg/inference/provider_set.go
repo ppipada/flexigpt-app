@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
+	"github.com/ppipada/flexigpt-app/pkg/builtin/gotool"
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
@@ -167,11 +167,10 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 		}
 	}
 
-	// Attach contextual attachments (files, doc indexes, PRs, etc.) to the
-	// completion data. For files, this performs a lightweight os.Stat to verify
-	// existence and capture basic metadata; other kinds are passed through.
+	// Attach contextual attachments (files, images, doc indexes, etc.) to the completion data.
+	// Resolution happens via the built-in fs helpers so that metadata stays consistent with user-callable tools.
 	if len(req.Body.Attachments) > 0 {
-		if err := attachAttachmentsToCompletionData(resp, req.Body.Attachments); err != nil {
+		if err := attachAttachmentsToCompletionData(ctx, resp, req.Body.Attachments); err != nil {
 			return nil, err
 		}
 	}
@@ -340,6 +339,7 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 }
 
 func attachAttachmentsToCompletionData(
+	ctx context.Context,
 	data *spec.FetchCompletionData,
 	attachments []spec.ChatCompletionAttachment,
 ) error {
@@ -351,55 +351,134 @@ func attachAttachmentsToCompletionData(
 	}
 
 	out := make([]spec.ChatCompletionAttachment, 0, len(attachments))
-
 	for _, att := range attachments {
-		kind := att.Kind
-		ref := strings.TrimSpace(att.Ref)
-		label := strings.TrimSpace(att.Label)
-
-		c := spec.ChatCompletionAttachment{
-			Kind:  kind,
-			Ref:   ref,
-			Label: label,
+		resolved, err := resolveAttachment(ctx, att)
+		if err != nil {
+			return err
 		}
-
-		switch kind {
-		case spec.AttachmentFile:
-			if ref == "" {
-				return errors.New("invalid file attachment: empty ref")
-			}
-
-			info, err := os.Stat(ref)
-			if err != nil {
-				// Mark as non-existent but do not hard-fail the build; callers can
-				// inspect the Exists flag and decide how to surface this.
-				c.Exists = false
-			} else {
-				size := info.Size()
-				modTime := info.ModTime().UTC()
-				c.Exists = true
-				c.SizeBytes = size
-				c.ModTime = &modTime
-				if label == "" {
-					c.Label = filepath.Base(ref)
-				}
-			}
-		case spec.AttachmentDocIndex, spec.AttachmentPR, spec.AttachmentCommit, spec.AttachmentSnapshot:
-			c.Exists = false
-		default:
-			// For non-file attachments, we just propagate the handle and ensure
-			// there is at least some label; existence is assumed.
-			if c.Label == "" {
-				c.Label = c.Ref
-			}
-			c.Exists = true
-		}
-
-		out = append(out, c)
+		out = append(out, resolved)
 	}
-
 	data.Attachments = out
 	return nil
+}
+
+func resolveAttachment(
+	ctx context.Context,
+	att spec.ChatCompletionAttachment,
+) (spec.ChatCompletionAttachment, error) {
+	label := strings.TrimSpace(att.Label)
+	res := spec.ChatCompletionAttachment{Kind: att.Kind, Label: label}
+	switch att.Kind {
+	case spec.AttachmentFile:
+		fileRef, err := resolveFileAttachment(ctx, att.FileRef)
+		if err != nil {
+			return spec.ChatCompletionAttachment{}, err
+		}
+		res.FileRef = fileRef
+		if res.Label == "" {
+			res.Label = filepath.Base(fileRef.Path)
+		}
+		return res, nil
+	case spec.AttachmentImage:
+		imgRef, err := resolveImageAttachment(ctx, att.ImageRef, att.FileRef)
+		if err != nil {
+			return spec.ChatCompletionAttachment{}, err
+		}
+		res.ImageRef = imgRef
+		if res.Label == "" {
+			res.Label = filepath.Base(imgRef.Path)
+		}
+		return res, nil
+	case spec.AttachmentCommit, spec.AttachmentDocIndex, spec.AttachmentPR, spec.AttachmentSnapshot:
+		return getGenericRef(att)
+	default:
+		return res, errors.New("unknown attachment kind")
+	}
+}
+
+func getGenericRef(att spec.ChatCompletionAttachment) (spec.ChatCompletionAttachment, error) {
+	res := spec.ChatCompletionAttachment{Kind: att.Kind, Label: strings.TrimSpace(att.Label)}
+	handle := ""
+	if att.GenericRef != nil {
+		handle = strings.TrimSpace(att.GenericRef.Handle)
+	}
+	if handle == "" && att.FileRef != nil {
+		handle = strings.TrimSpace(att.FileRef.Path)
+	}
+	if handle == "" {
+		return spec.ChatCompletionAttachment{}, fmt.Errorf("attachment %s missing ref handle", att.Kind)
+	}
+	res.GenericRef = &spec.ChatCompletionHandleRef{Handle: handle}
+	if res.Label == "" {
+		res.Label = handle
+	}
+	return res, nil
+}
+
+func resolveFileAttachment(
+	ctx context.Context,
+	ref *spec.ChatCompletionFileRef,
+) (*spec.ChatCompletionFileRef, error) {
+	if ref == nil {
+		return nil, errors.New("file attachment missing ref")
+	}
+	path := strings.TrimSpace(ref.Path)
+	if path == "" {
+		return nil, errors.New("file attachment missing path")
+	}
+	stat, err := gotool.StatPath(ctx, gotool.StatPathArgs{Path: path})
+	if err != nil {
+		return nil, err
+	}
+	out := *ref
+	out.Path = path
+	out.Exists = stat.Exists
+	if stat.Exists {
+		out.SizeBytes = stat.SizeBytes
+		out.ModTime = stat.ModTime
+	} else {
+		out.SizeBytes = 0
+		out.ModTime = nil
+	}
+	return &out, nil
+}
+
+func resolveImageAttachment(
+	ctx context.Context,
+	ref *spec.ChatCompletionImageRef,
+	fallbackFile *spec.ChatCompletionFileRef,
+) (*spec.ChatCompletionImageRef, error) {
+	if ref == nil {
+		if fallbackFile == nil {
+			return nil, errors.New("image attachment missing ref")
+		}
+		ref = &spec.ChatCompletionImageRef{Path: fallbackFile.Path}
+	}
+	path := strings.TrimSpace(ref.Path)
+	if path == "" {
+		return nil, errors.New("image attachment missing path")
+	}
+	info, err := gotool.InspectImage(ctx, gotool.InspectImageArgs{Path: path})
+	if err != nil {
+		return nil, err
+	}
+	out := *ref
+	out.Path = path
+	out.Exists = info.Exists
+	if info.Exists {
+		out.Width = info.Width
+		out.Height = info.Height
+		out.Format = info.Format
+		out.SizeBytes = info.SizeBytes
+		out.ModTime = info.ModTime
+	} else {
+		out.Width = 0
+		out.Height = 0
+		out.Format = ""
+		out.SizeBytes = 0
+		out.ModTime = nil
+	}
+	return &out, nil
 }
 
 func convertBuildMessageToChatMessage(

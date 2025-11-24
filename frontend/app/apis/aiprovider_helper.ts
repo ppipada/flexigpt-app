@@ -2,6 +2,9 @@ import {
 	type ChatCompletionAttachment,
 	ChatCompletionAttachmentKind,
 	type ChatCompletionDataMessage,
+	type ChatCompletionFileRef,
+	type ChatCompletionGenericRef,
+	type ChatCompletionImageRef,
 	ChatCompletionRoleEnum,
 	type ChatCompletionToolChoice,
 	type FetchCompletionData,
@@ -68,26 +71,63 @@ function convertConversationToolChoicesToChatChoices(
 		bundleID: tc.bundleID,
 		toolSlug: tc.toolSlug,
 		toolVersion: tc.toolVersion,
+		description: tc.description,
+		displayName: tc.displayName,
 		id: tc.id,
-		description: tc.description ?? '',
-		displayName: tc.displayName ?? tc.toolSlug,
 	}));
 }
 
 function convertConversationAttachmentKind(kind: ConversationAttachmentKind): ChatCompletionAttachmentKind {
 	switch (kind) {
-		case ConversationAttachmentKind.File:
+		case ConversationAttachmentKind.file:
 			return ChatCompletionAttachmentKind.file;
-		case ConversationAttachmentKind.DocIndex:
+		case ConversationAttachmentKind.image:
+			return ChatCompletionAttachmentKind.image;
+		case ConversationAttachmentKind.docIndex:
 			return ChatCompletionAttachmentKind.docIndex;
-		case ConversationAttachmentKind.PR:
+		case ConversationAttachmentKind.pr:
 			return ChatCompletionAttachmentKind.pr;
-		case ConversationAttachmentKind.Commit:
+		case ConversationAttachmentKind.commit:
 			return ChatCompletionAttachmentKind.commit;
-		case ConversationAttachmentKind.Snapshot:
+		case ConversationAttachmentKind.snapshot:
 			return ChatCompletionAttachmentKind.snapshot;
 		default:
 			return ChatCompletionAttachmentKind.file;
+	}
+}
+
+function convertConversationAttachment(att: ConversationAttachment): ChatCompletionAttachment | undefined {
+	const kind = convertConversationAttachmentKind(att.kind);
+	if (kind === ChatCompletionAttachmentKind.file) {
+		const path = att.fileRef?.path ?? att.imageRef?.path ?? '';
+		if (!path) return undefined;
+		return {
+			kind: kind,
+			label: att.label,
+			fileRef: {
+				path,
+				exists: false,
+			} as ChatCompletionFileRef,
+		} satisfies ChatCompletionAttachment;
+	} else if (kind === ChatCompletionAttachmentKind.image) {
+		const path = att.imageRef?.path ?? att.fileRef?.path ?? '';
+		if (!path) return undefined;
+		return {
+			kind: kind,
+			label: att.label,
+			imageRef: {
+				path,
+				exists: false,
+			} as ChatCompletionImageRef,
+		} satisfies ChatCompletionAttachment;
+	} else {
+		const handle = att.genericRef?.handle ?? att.fileRef?.path ?? '';
+		if (!handle) return undefined;
+		return {
+			kind: kind as ChatCompletionAttachmentKind,
+			label: att.label || handle,
+			genericRef: { handle: handle } as ChatCompletionGenericRef,
+		} satisfies ChatCompletionAttachment;
 	}
 }
 
@@ -98,11 +138,11 @@ function convertConversationAttachmentsToChatAttachments(
 		return undefined;
 	}
 
-	return attachments.map(att => ({
-		kind: convertConversationAttachmentKind(att.kind),
-		ref: att.ref,
-		label: att.label,
-	}));
+	const converted = attachments
+		.map(convertConversationAttachment)
+		.filter((item): item is ChatCompletionAttachment => item !== undefined);
+
+	return converted.length > 0 ? converted : undefined;
 }
 
 export async function BuildCompletionDataFromConversation(

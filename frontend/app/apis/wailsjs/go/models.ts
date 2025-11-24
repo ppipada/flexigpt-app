@@ -212,14 +212,104 @@ export namespace spec {
 	        this.nonEmpty = source["nonEmpty"];
 	    }
 	}
-	export class ChatCompletionAttachment {
-	    kind: string;
-	    ref: string;
-	    label: string;
+	export class ChatCompletionHandleRef {
+	    handle: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ChatCompletionHandleRef(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.handle = source["handle"];
+	    }
+	}
+	export class ChatCompletionImageRef {
+	    path: string;
+	    exists: boolean;
+	    width?: number;
+	    height?: number;
+	    format?: string;
 	    sizeBytes?: number;
 	    // Go type: time
 	    modTime?: any;
-	    exists?: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ChatCompletionImageRef(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.exists = source["exists"];
+	        this.width = source["width"];
+	        this.height = source["height"];
+	        this.format = source["format"];
+	        this.sizeBytes = source["sizeBytes"];
+	        this.modTime = this.convertValues(source["modTime"], null);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ChatCompletionFileRef {
+	    path: string;
+	    exists: boolean;
+	    sizeBytes?: number;
+	    // Go type: time
+	    modTime?: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new ChatCompletionFileRef(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.exists = source["exists"];
+	        this.sizeBytes = source["sizeBytes"];
+	        this.modTime = this.convertValues(source["modTime"], null);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ChatCompletionAttachment {
+	    kind: string;
+	    label: string;
+	    fileRef?: ChatCompletionFileRef;
+	    imageRef?: ChatCompletionImageRef;
+	    genericRef?: ChatCompletionHandleRef;
 	
 	    static createFrom(source: any = {}) {
 	        return new ChatCompletionAttachment(source);
@@ -228,12 +318,29 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.kind = source["kind"];
-	        this.ref = source["ref"];
 	        this.label = source["label"];
-	        this.sizeBytes = source["sizeBytes"];
-	        this.modTime = source["modTime"];
-	        this.exists = source["exists"];
+	        this.fileRef = this.convertValues(source["fileRef"], ChatCompletionFileRef);
+	        this.imageRef = this.convertValues(source["imageRef"], ChatCompletionImageRef);
+	        this.genericRef = this.convertValues(source["genericRef"], ChatCompletionHandleRef);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class ChatCompletionToolChoice {
 	    bundleID?: string;
@@ -701,10 +808,51 @@ export namespace spec {
 	
 	
 	
+	
+	
+	
+	export class ConversationHandleRef {
+	    handle: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConversationHandleRef(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.handle = source["handle"];
+	    }
+	}
+	export class ConversationImageRef {
+	    path: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConversationImageRef(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	    }
+	}
+	export class ConversationFileRef {
+	    path: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConversationFileRef(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	    }
+	}
 	export class ConversationAttachment {
 	    kind: string;
-	    ref: string;
 	    label: string;
+	    fileRef?: ConversationFileRef;
+	    imageRef?: ConversationImageRef;
+	    genericRef?: ConversationHandleRef;
 	
 	    static createFrom(source: any = {}) {
 	        return new ConversationAttachment(source);
@@ -713,17 +861,37 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.kind = source["kind"];
-	        this.ref = source["ref"];
 	        this.label = source["label"];
+	        this.fileRef = this.convertValues(source["fileRef"], ConversationFileRef);
+	        this.imageRef = this.convertValues(source["imageRef"], ConversationImageRef);
+	        this.genericRef = this.convertValues(source["genericRef"], ConversationHandleRef);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class ConversationToolChoice {
-	    bundleID?: string;
+	    bundleID: string;
 	    toolSlug: string;
 	    toolVersion: string;
-	    id?: string;
 	    description: string;
 	    displayName: string;
+	    id?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ConversationToolChoice(source);
@@ -734,9 +902,9 @@ export namespace spec {
 	        this.bundleID = source["bundleID"];
 	        this.toolSlug = source["toolSlug"];
 	        this.toolVersion = source["toolVersion"];
-	        this.id = source["id"];
 	        this.description = source["description"];
 	        this.displayName = source["displayName"];
+	        this.id = source["id"];
 	    }
 	}
 	export class ConversationMessage {
@@ -824,6 +992,9 @@ export namespace spec {
 		    return a;
 		}
 	}
+	
+	
+	
 	
 	export class ConversationListItem {
 	    id: string;
@@ -3984,3 +4155,4 @@ export namespace spec {
 	
 
 }
+

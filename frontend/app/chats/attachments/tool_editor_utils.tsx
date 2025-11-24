@@ -27,12 +27,13 @@ export type ToolSelectionElementNode = {
 	children: [{ text: '' }];
 };
 
-export type AttachedTool = {
+export type EditorAttachedToolChoice = {
 	selectionID: string;
 	bundleID: string;
 	toolSlug: string;
 	toolVersion: string;
-	displayName?: string; // from overrides or snapshot
+	displayName: string;
+	description: string;
 	id?: string; // toolSnapshot.id if present
 };
 
@@ -153,8 +154,8 @@ export function removeToolByKey(editor: PlateEditor, identityKey: string) {
 }
 
 // Build a serializable list of attached tools for submission
-export function getAttachedTools(editor: PlateEditor): AttachedTool[] {
-	const items: AttachedTool[] = [];
+export function getAttachedTools(editor: PlateEditor): EditorAttachedToolChoice[] {
+	const items: EditorAttachedToolChoice[] = [];
 	const seen = new Set<string>();
 
 	for (const [el] of NodeApi.elements(editor)) {
@@ -168,7 +169,16 @@ export function getAttachedTools(editor: PlateEditor): AttachedTool[] {
 				bundleID: n.bundleID,
 				toolSlug: n.toolSlug,
 				toolVersion: n.toolVersion,
-				displayName: n.overrides?.displayName ?? n.toolSnapshot?.displayName,
+				displayName: n.overrides?.displayName
+					? n.overrides.displayName
+					: n.toolSnapshot?.displayName
+						? n.toolSnapshot.displayName
+						: n.toolSlug,
+				description: n.overrides?.description
+					? n.overrides.description
+					: n.toolSnapshot?.description
+						? n.toolSnapshot.description
+						: n.toolSlug,
 				id: n.toolSnapshot?.id,
 			});
 		}

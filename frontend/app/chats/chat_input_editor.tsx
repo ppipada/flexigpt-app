@@ -7,7 +7,6 @@ import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
 import type { FileFilter } from '@/spec/backend';
 import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/spec/command';
-import type { ConversationAttachment } from '@/spec/conversation';
 import { ConversationAttachmentKind } from '@/spec/conversation';
 
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -29,7 +28,8 @@ import { ListKit } from '@/components/editor/plugins/list_kit';
 import { TabbableKit } from '@/components/editor/plugins/tabbable_kit';
 
 import { AttachmentBottomBar } from '@/chats/attachments/attachment_bottom_bar';
-import { type AttachedTool, getAttachedTools } from '@/chats/attachments/tool_editor_utils';
+import { type EditorAttachment, editorAttachmentKey } from '@/chats/attachments/editor_attachment_utils';
+import { type EditorAttachedToolChoice, getAttachedTools } from '@/chats/attachments/tool_editor_utils';
 import { ToolPlusKit } from '@/chats/attachments/tool_plugin';
 import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
 import {
@@ -51,8 +51,8 @@ export interface EditorAreaHandle {
 
 export interface EditorSubmitPayload {
 	text: string;
-	attachedTools: AttachedTool[];
-	attachments: ConversationAttachment[];
+	attachedTools: EditorAttachedToolChoice[];
+	attachments: EditorAttachment[];
 }
 
 const EDITOR_EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
@@ -91,7 +91,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	// doc version tick to re-run selection computations on any editor change (even if text string doesn't change)
 	const [docVersion, setDocVersion] = useState(0);
 	const [submitError, setSubmitError] = useState<string | null>(null);
-	const [attachments, setAttachments] = useState<ConversationAttachment[]>([]);
+	const [attachments, setAttachments] = useState<EditorAttachment[]>([]);
 
 	const lastPopulatedSelectionKeyRef = useRef<Set<string>>(new Set());
 
@@ -286,28 +286,30 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		if (!paths || paths.length === 0) return;
 
 		setAttachments(prev => {
-			const existing = new Set(prev.map(a => `${a.kind}:${a.ref}`));
-			const next: ConversationAttachment[] = [...prev];
+			const existing = new Set(prev.map(editorAttachmentKey));
+			const next: EditorAttachment[] = [...prev];
 			for (const p of paths) {
 				const trimmed = p.trim();
 				if (!trimmed) continue;
-				const key = `${ConversationAttachmentKind.File}:${trimmed}`;
+				const label = trimmed.split(/[\\/]/).pop() ?? trimmed;
+				const att: EditorAttachment = {
+					kind: ConversationAttachmentKind.file,
+					label,
+					fileRef: { path: trimmed },
+				};
+				const key = editorAttachmentKey(att);
 				if (existing.has(key)) continue;
 				existing.add(key);
-				const label = trimmed.split(/[\\/]/).pop() ?? trimmed;
-				next.push({
-					kind: ConversationAttachmentKind.File,
-					ref: trimmed,
-					label,
-				});
+				next.push(att);
 			}
 			return next;
 		});
 		editor.tf.focus();
 	};
 
-	const handleRemoveAttachment = (att: ConversationAttachment) => {
-		setAttachments(prev => prev.filter(a => !(a.kind === att.kind && a.ref === att.ref && a.label === att.label)));
+	const handleRemoveAttachment = (att: EditorAttachment) => {
+		const targetKey = editorAttachmentKey(att);
+		setAttachments(prev => prev.filter(a => editorAttachmentKey(a) !== targetKey));
 		editor.tf.focus();
 	};
 

@@ -22,7 +22,8 @@ import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 import { ButtonScrollToBottom } from '@/components/button_scroll_to_bottom';
 import { PageFrame } from '@/components/page_frame';
 
-import type { AttachedTool } from '@/chats/attachments/tool_editor_utils';
+import { editorAttachmentToConversation } from '@/chats/attachments/editor_attachment_utils';
+import type { EditorAttachedToolChoice } from '@/chats/attachments/tool_editor_utils';
 import { InputBox, type InputBoxHandle } from '@/chats/chat_input_box';
 import type { EditorSubmitPayload } from '@/chats/chat_input_editor';
 import { ChatNavBar } from '@/chats/chat_navbar';
@@ -48,12 +49,13 @@ function initConversationMessage(role: ConversationRoleEnum, content: string): C
 	};
 }
 
-function attachedToolToConversationToolChoice(tool: AttachedTool): ConversationToolChoice {
+function attachedToolToConversationToolChoice(tool: EditorAttachedToolChoice): ConversationToolChoice {
 	return {
 		bundleID: tool.bundleID,
 		toolSlug: tool.toolSlug,
 		toolVersion: tool.toolVersion,
 		displayName: tool.displayName,
+		description: tool.description,
 		id: tool.id,
 	};
 }
@@ -398,8 +400,10 @@ export default function ChatsPage() {
 		if (toolChoices && toolChoices.length > 0) {
 			newMsg.toolChoices = toolChoices;
 		}
-		if (payload.attachments.length > 0) {
-			newMsg.attachments = payload.attachments;
+		const attachments =
+			payload.attachments.length > 0 ? payload.attachments.map(editorAttachmentToConversation) : undefined;
+		if (attachments && attachments.length > 0) {
+			newMsg.attachments = attachments;
 		}
 		const updated = {
 			...chat,
