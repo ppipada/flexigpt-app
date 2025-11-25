@@ -45,10 +45,7 @@ export function ToolPlusInputElement(props: Omit<Parameters<typeof SlashInputEle
 						icon: <FiTool />,
 						data: it,
 						focusEditor: false,
-						onSelect: async (
-							editor: PlateEditor,
-							item: ToolListItem & { bundleID: string; bundleSlug: string; toolSlug: string; toolVersion: string }
-						) => {
+						onSelect: async (editor: PlateEditor, item: ToolListItem) => {
 							try {
 								const tool = await toolStoreAPI.getTool(item.bundleID, item.toolSlug, item.toolVersion);
 								insertToolSelectionNode(

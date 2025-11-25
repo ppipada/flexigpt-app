@@ -421,7 +421,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			>
 				<TemplateToolbars />
 				{/* Row: editor (send button now lives in the bottom attachment bar) */}
-				<div className="flex min-h-16 items-center gap-2 px-1 py-0">
+				<div className="flex min-h-20 items-center gap-2 px-1 py-0">
 					<PlateContent
 						ref={contentRef}
 						placeholder="Type message..."
