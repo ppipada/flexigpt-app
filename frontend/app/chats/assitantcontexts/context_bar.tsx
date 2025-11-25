@@ -281,18 +281,18 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 			/>
 
 			{/* ---------------- Advanced params button ----------------------- */}
-
-			<button
-				type="button"
-				className="btn btn-sm btn-ghost text-neutral-custom"
-				onClick={() => {
-					setIsAdvancedModalOpen(true);
-				}}
-				title="Set Advanced Params"
-			>
-				<FiSliders size={16} />
-			</button>
-
+			<div className="flex items-center justify-center">
+				<button
+					type="button"
+					className="btn btn-xs btn-ghost text-neutral-custom m-1"
+					onClick={() => {
+						setIsAdvancedModalOpen(true);
+					}}
+					title="Set Advanced Params"
+				>
+					<FiSliders size={14} />
+				</button>
+			</div>
 			{/* ---------------- Advanced params modal -------------------------- */}
 			{isAdvancedModalOpen && (
 				<AdvancedParamsModal

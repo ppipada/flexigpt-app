@@ -9,6 +9,7 @@ import type {
 } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 
+import { defaultShortcutConfig, type ShortcutConfig, useChatShortcuts } from '@/lib/keyboard_shortcuts';
 import { getBlockQuotedLines, sanitizeConversationTitle } from '@/lib/text_utils';
 import { generateTitle } from '@/lib/title_utils';
 import { getUUIDv7 } from '@/lib/uuid_utils';
@@ -26,7 +27,7 @@ import { editorAttachmentToConversation } from '@/chats/attachments/editor_attac
 import type { EditorAttachedToolChoice } from '@/chats/attachments/tool_editor_utils';
 import { InputBox, type InputBoxHandle } from '@/chats/chat_input_box';
 import type { EditorSubmitPayload } from '@/chats/chat_input_editor';
-import { ChatNavBar } from '@/chats/chat_navbar';
+import { ChatNavBar, type ChatNavBarHandle } from '@/chats/chat_navbar';
 import { ChatMessage } from '@/chats/messages/message';
 
 function initConversation(title = 'New Conversation'): Conversation {
@@ -74,6 +75,8 @@ export default function ChatsPage() {
 
 	const chatInputRef = useRef<InputBoxHandle>(null);
 	const chatContainerRef = useRef<HTMLDivElement>(null);
+	const navRef = useRef<ChatNavBarHandle | null>(null);
+
 	const tokensReceivedRef = useRef<boolean | null>(false);
 
 	// Has the current conversation already been persisted?
@@ -81,6 +84,7 @@ export default function ChatsPage() {
 	const { isAtBottom, isScrollable, checkScroll } = useAtBottom(chatContainerRef);
 	const manualTitleLockedRef = useRef(false);
 
+	const [shortcutConfig] = useState<ShortcutConfig>(defaultShortcutConfig);
 	// Focus on mount.
 	useEffect(() => {
 		chatInputRef.current?.focus();
@@ -476,12 +480,38 @@ export default function ChatsPage() {
 		);
 	});
 
+	useChatShortcuts({
+		config: shortcutConfig,
+		isBusy,
+		handlers: {
+			newChat: () => {
+				void handleNewChat();
+			},
+			focusSearch: () => {
+				navRef.current?.focusSearch();
+			},
+			focusInput: () => {
+				chatInputRef.current?.focus();
+			},
+			insertTemplate: () => {
+				chatInputRef.current?.openTemplateMenu();
+			},
+			insertTool: () => {
+				chatInputRef.current?.openToolMenu();
+			},
+			insertAttachment: () => {
+				chatInputRef.current?.openAttachmentMenu();
+			},
+		},
+	});
+
 	return (
 		<PageFrame contentScrollable={false}>
 			<div className="grid h-full w-full grid-rows-[auto_1fr_auto] overflow-hidden">
 				{/* Row 1: NAVBAR */}
 				<div className="row-start-1 row-end-2 flex w-full justify-center">
 					<ChatNavBar
+						ref={navRef}
 						onNewChat={handleNewChat}
 						onRenameTitle={handleRenameTitle}
 						getConversationForExport={getConversationForExport}
@@ -494,7 +524,6 @@ export default function ChatsPage() {
 					/>
 				</div>
 
-				{/* Row 2: MESSAGES (the only scrollable area) */}
 				{/* Row 2: MESSAGES (the only scrollable area) */}
 				<div className="relative row-start-2 row-end-3 min-h-0">
 					{/* Make the full row the scroll container so the scrollbar is at far right */}
@@ -525,7 +554,13 @@ export default function ChatsPage() {
 				{/* Row 3: INPUT (auto; grows with content) */}
 				<div className="row-start-3 row-end-4 flex w-full justify-center">
 					<div className="w-11/12 xl:w-5/6">
-						<InputBox ref={chatInputRef} onSend={sendMessage} isBusy={isBusy} abortRef={abortRef} />
+						<InputBox
+							ref={chatInputRef}
+							onSend={sendMessage}
+							isBusy={isBusy}
+							abortRef={abortRef}
+							shortcutConfig={shortcutConfig}
+						/>
 					</div>
 				</div>
 			</div>

@@ -2,8 +2,8 @@ import type { MessageBlock, PromptTemplate, PromptVariable } from '@/spec/prompt
 
 export const KEY_TEMPLATE_SELECTION = 'templateSelection';
 export const KEY_TEMPLATE_VARIABLE = 'templateVariable';
-export const KEY_TEMPLATE_SLASH_COMMAND = 'templateSlash';
-export const KEY_TEMPLATE_SLASH_INPUT = 'templateInput';
+// const KEY_TEMPLATE_SLASH_COMMAND = 'templateSlash';
+// export const KEY_TEMPLATE_SLASH_INPUT = 'templateInput';
 
 export type TemplateVariableElementNode = {
 	type: typeof KEY_TEMPLATE_VARIABLE;

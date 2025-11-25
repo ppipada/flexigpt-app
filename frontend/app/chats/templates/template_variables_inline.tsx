@@ -8,6 +8,8 @@ import type { PlateEditor, PlateElementProps } from 'platejs/react';
 
 import { VarType } from '@/spec/prompt';
 
+import { cssEscape } from '@/lib/text_utils';
+
 import {
 	dispatchTemplateVarsUpdated,
 	useTemplateVarsUpdatedForSelection,
@@ -113,16 +115,77 @@ export function TemplateVariableElement(props: PlateElementProps<any>) {
 		}
 
 		setIsEditing(false);
-		// focus back into editor for good UX
-		plEditor.tf.focus();
+		// After committing, move to the next variable pill instead of jumping
+		// the caret to the end of the template.
+		focusNextVariablePill();
 	}
 
-	// Cancel helper
 	function cancelEdit() {
 		setIsEditing(false);
-		plEditor.tf.focus();
+		// Return focus to this pill
+		requestAnimationFrame(() => {
+			try {
+				const selId = el.selectionID ? cssEscape(el.selectionID) : '';
+				const nameEsc = cssEscape(el.name);
+				const pill = document.querySelector<HTMLElement>(
+					`span[data-template-variable]` +
+						(selId ? `[data-selection-id="${selId}"]` : '') +
+						`[data-var-name="${nameEsc}"]`
+				);
+				if (pill) pill.focus();
+				else plEditor.tf.focus();
+			} catch {
+				plEditor.tf.focus();
+			}
+		});
 	}
 
+	// Move focus to the next variable pill in this selection.
+	// If no required vars remain missing in this selection, focus the editor.
+	function focusNextVariablePill() {
+		const selId = el.selectionID as string | undefined;
+		if (!selId) {
+			plEditor.tf.focus();
+			return;
+		}
+
+		requestAnimationFrame(() => {
+			try {
+				const escapedSel = cssEscape(selId);
+
+				// All variable pills for this selection, in DOM order
+				const chips = Array.from(
+					document.querySelectorAll<HTMLElement>(`span[data-template-variable][data-selection-id="${escapedSel}"]`)
+				);
+
+				if (!chips.length) {
+					plEditor.tf.focus();
+					return;
+				}
+
+				// Are there ANY required vars still missing in THIS selection?
+				const missingInSelection = chips.filter(chip => chip.dataset.state === 'required');
+
+				if (missingInSelection.length === 0) {
+					// Nothing left to fill here -> move back to editor
+					plEditor.tf.focus();
+					return;
+				}
+
+				// There is at least one missing var in this selection.
+				// Prefer the next missing var after the current one; wrap to first missing if needed.
+				const currentIndex = chips.findIndex(chip => chip.dataset.varName === el.name);
+				const later = currentIndex >= 0 ? chips.slice(currentIndex + 1) : chips;
+
+				const next = later.find(chip => chip.dataset.state === 'required') ?? missingInSelection[0]; // wrap to the first missing one
+
+				if (next) next.focus();
+				else plEditor.tf.focus();
+			} catch {
+				plEditor.tf.focus();
+			}
+		});
+	}
 	// Inline input renderer based on var type
 	function InlineEditor() {
 		const type = varDef?.type ?? VarType.String;

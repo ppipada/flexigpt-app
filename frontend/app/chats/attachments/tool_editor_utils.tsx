@@ -5,8 +5,8 @@ import type { Tool } from '@/spec/tool';
 
 // Keys for the tools combobox and inline elements
 export const KEY_TOOL_SELECTION = 'toolSelection';
-export const KEY_TOOL_PLUS_COMMAND = 'toolPlus';
-export const KEY_TOOL_PLUS_INPUT = 'toolPlusInput';
+// export const KEY_TOOL_PLUS_COMMAND = 'toolPlus';
+// const KEY_TOOL_PLUS_INPUT = 'toolPlusInput';
 
 export type ToolSelectionElementNode = {
 	type: typeof KEY_TOOL_SELECTION;

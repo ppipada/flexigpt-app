@@ -1,25 +1,34 @@
 import { forwardRef, type RefObject, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
+import type { ShortcutConfig } from '@/lib/keyboard_shortcuts';
+
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
 import { DeleteConfirmationModal } from '@/components/delete_confirmation';
 
 import { AssistantContextBar } from '@/chats/assitantcontexts/context_bar';
+import { CommandTipsBar } from '@/chats/chat_command_tips_bar';
 import { EditorArea, type EditorAreaHandle, type EditorSubmitPayload } from '@/chats/chat_input_editor';
-import { CommandTipsBar } from '@/chats/chat_input_tips_bar';
+
+export interface InputBoxHandle {
+	getChatOptions: () => ChatOption;
+	focus: () => void;
+	openTemplateMenu: () => void;
+	openToolMenu: () => void;
+	openAttachmentMenu: () => void;
+}
 
 interface InputBoxProps {
 	onSend: (message: EditorSubmitPayload, options: ChatOption) => Promise<void>;
 	isBusy: boolean;
 	abortRef: RefObject<AbortController | null>;
+	shortcutConfig: ShortcutConfig;
 }
 
-export interface InputBoxHandle {
-	getChatOptions: () => ChatOption;
-	focus: () => void;
-}
-
-export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function InputBox({ onSend, isBusy, abortRef }, ref) {
+export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function InputBox(
+	{ onSend, isBusy, abortRef, shortcutConfig },
+	ref
+) {
 	/* ------------------------------------------------------------------
 	 * Aggregated chat-options (provided by <AssistantContextBar />)
 	 * ------------------------------------------------------------------ */
@@ -47,13 +56,19 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 		onSend(payload, chatOptions);
 	};
 
-	/* ------------------------------------------------------------------
-	 * Expose imperative API
-	 * ------------------------------------------------------------------ */
 	useImperativeHandle(ref, () => ({
 		getChatOptions: () => chatOptions,
 		focus: () => {
 			inputAreaRef.current?.focus();
+		},
+		openTemplateMenu: () => {
+			inputAreaRef.current?.openTemplateMenu();
+		},
+		openToolMenu: () => {
+			inputAreaRef.current?.openToolMenu();
+		},
+		openAttachmentMenu: () => {
+			inputAreaRef.current?.openAttachmentMenu();
 		},
 	}));
 
@@ -96,11 +111,12 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 					onRequestStop={() => {
 						setShowAbortModal(true);
 					}}
+					shortcutConfig={shortcutConfig}
 				/>
 			</div>
 			{/* Neutral tips bar under the editor */}
-			<div className="mx-4 my-0">
-				<CommandTipsBar />
+			<div className="my-1 w-full">
+				<CommandTipsBar shortcutConfig={shortcutConfig} />
 			</div>
 		</div>
 	);

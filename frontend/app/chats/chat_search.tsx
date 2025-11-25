@@ -1,5 +1,14 @@
 import type { ChangeEvent, KeyboardEvent } from 'react';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+	forwardRef,
+	useCallback,
+	useEffect,
+	useImperativeHandle,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+} from 'react';
 
 import { createPortal } from 'react-dom';
 
@@ -302,13 +311,20 @@ function SearchDropdown({
 	);
 }
 
+export interface ChatSearchHandle {
+	focusInput: () => void;
+}
+
 interface ChatSearchProps {
 	onSelectConversation: (item: ConversationSearchItem) => Promise<void>;
 	refreshKey: number;
 	currentConversationId: string;
 }
 
-export function ChatSearch({ onSelectConversation, refreshKey, currentConversationId }: ChatSearchProps) {
+export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function ChatSearch(
+	{ onSelectConversation, refreshKey, currentConversationId }: ChatSearchProps,
+	ref
+) {
 	/* state ---------------------------------------------------------- */
 	const [searchState, setSearchState] = useState<SearchState>({
 		query: '',
@@ -714,6 +730,12 @@ export function ChatSearch({ onSelectConversation, refreshKey, currentConversati
 		[]
 	);
 
+	useImperativeHandle(ref, () => ({
+		focusInput: () => {
+			inputRef.current?.focus();
+		},
+	}));
+
 	const orderedResults = useMemo(
 		() => (isLocalMode ? [...searchState.results].sort(sortResults) : searchState.results),
 		[searchState.results, isLocalMode]
@@ -786,4 +808,4 @@ export function ChatSearch({ onSelectConversation, refreshKey, currentConversati
 			)}
 		</div>
 	);
-}
+});

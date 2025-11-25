@@ -63,7 +63,7 @@ function PickerButton({ label, icon, buttonRef, menuState, shortcut, disabled }:
 				ref={buttonRef}
 				store={menuState}
 				disabled={disabled}
-				className="btn btn-ghost btn-circle px-2"
+				className="btn btn-ghost btn-circle btn-sm"
 				aria-label={tooltip}
 			>
 				{icon}
@@ -76,7 +76,8 @@ const menuClasses =
 	'rounded-box bg-base-100 text-base-content z-50 max-h-72 min-w-[240px] overflow-y-auto border border-base-300 p-1 shadow-xl';
 
 const menuItemClasses =
-	'flex items-center gap-2 rounded-xl px-2 py-1 text-sm outline-none transition-colors hover:bg-base-200';
+	'flex items-center gap-2 rounded-xl px-2 py-1 text-sm outline-none transition-colors ' +
+	'hover:bg-base-200 data-[active-item]:bg-base-300';
 
 /**
   Bottom bar for rendering attached items (templates/tools/files) and housing
@@ -102,7 +103,7 @@ export function AttachmentBottomBar({
 	const { data: toolData, loading: toolsLoading } = useTools();
 
 	const toolEntries = getToolNodesWithPath(editor);
-	const hasAttachments = attachments.length > 0 || toolEntries.length > 0;
+	// const hasAttachments = attachments.length > 0 || toolEntries.length > 0;
 
 	const attachedToolKeys = new Set(
 		toolEntries.map(([node]) => toolIdentityKey(node.bundleID, node.bundleSlug, node.toolSlug, node.toolVersion))
@@ -174,7 +175,7 @@ export function AttachmentBottomBar({
 			data-attachments-bottom-bar
 			aria-label="Templates, tools, and attachments"
 		>
-			<div className="flex items-center gap-2 px-1 py-0 text-xs">
+			<div className="flex items-center gap-2 p-1 text-xs">
 				<div className="flex items-center gap-1">
 					<PickerButton
 						label="Insert template"
@@ -183,7 +184,7 @@ export function AttachmentBottomBar({
 						menuState={templateMenuState}
 						shortcut={shortcutLabels.templates}
 					/>
-					<Menu store={templateMenuState} gutter={8} className={menuClasses}>
+					<Menu store={templateMenuState} gutter={8} className={menuClasses} data-menu-kind="templates" autoFocusOnShow>
 						{templatesLoading ? (
 							<div className={`${menuItemClasses} text-base-content/60 cursor-default`}>Loading templates…</div>
 						) : templateData.length === 0 ? (
@@ -214,7 +215,7 @@ export function AttachmentBottomBar({
 						menuState={toolMenuState}
 						shortcut={shortcutLabels.tools}
 					/>
-					<Menu store={toolMenuState} gutter={8} className={menuClasses}>
+					<Menu store={toolMenuState} gutter={8} className={menuClasses} data-menu-kind="tools" autoFocusOnShow>
 						{toolsLoading ? (
 							<div className={`${menuItemClasses} text-base-content/60 cursor-default`}>Loading tools…</div>
 						) : availableTools.length === 0 ? (
@@ -231,7 +232,7 @@ export function AttachmentBottomBar({
 									<FiTool size={14} />
 									<span className="truncate">{item.toolSlug.replace(/[-_]/g, ' ')}</span>
 									<span className="text-base-content/50 ml-auto text-[10px] uppercase" aria-hidden="true">
-										v{item.toolVersion}
+										{item.toolVersion}
 									</span>
 								</MenuItem>
 							))
@@ -245,7 +246,13 @@ export function AttachmentBottomBar({
 						menuState={attachmentMenuState}
 						shortcut={shortcutLabels.attachments}
 					/>
-					<Menu store={attachmentMenuState} gutter={8} className={menuClasses}>
+					<Menu
+						store={attachmentMenuState}
+						gutter={8}
+						className={menuClasses}
+						data-menu-kind="attachments"
+						autoFocusOnShow
+					>
 						<MenuItem
 							onClick={() => {
 								void handleAttachmentPick('file');
@@ -328,32 +335,32 @@ export function AttachmentBottomBar({
 						);
 					})}
 
-					{!hasAttachments ? (
-						<span className="text-base-content/60 truncate text-[11px] whitespace-nowrap">
+					{/* {!hasAttachments ? (
+						<span className="text-base-content/60 truncate text-xs whitespace-nowrap">
 							Add templates, tools, or attachments for this turn
 						</span>
-					) : null}
+					) : null} */}
 				</div>
 
 				{isBusy ? (
 					<button
 						type="button"
-						className="btn btn-circle btn-ghost btn-neutral text-error-content shrink-0"
+						className="btn btn-circle btn-neutral btn-sm shrink-0"
 						onClick={onRequestStop}
 						title="Stop response"
 						aria-label="Stop response"
 					>
-						<FiSquare size={18} />
+						<FiSquare size={20} />
 					</button>
 				) : (
 					<button
 						type="submit"
-						className={`btn btn-circle btn-ghost btn-neutral shrink-0 ${!isSendButtonEnabled ? 'btn-disabled' : ''}`}
+						className={`btn btn-circle btn-neutral btn-sm shrink-0 ${!isSendButtonEnabled ? 'btn-disabled' : ''}`}
 						disabled={!isSendButtonEnabled}
 						aria-label="Send message"
 						title="Send message"
 					>
-						<FiSend size={18} />
+						<FiSend size={20} />
 					</button>
 				)}
 			</div>

@@ -1,7 +1,6 @@
 import {
 	type FormEvent,
 	forwardRef,
-	type RefObject,
 	useCallback,
 	useEffect,
 	useImperativeHandle,
@@ -12,13 +11,14 @@ import {
 
 import { FiAlertTriangle } from 'react-icons/fi';
 
-import { type MenuStore, useMenuStore } from '@ariakit/react';
+import { useMenuStore } from '@ariakit/react';
 import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
 import type { FileFilter } from '@/spec/backend';
 import { ConversationAttachmentKind } from '@/spec/conversation';
 
+import { formatShortcut, type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
 import { cssEscape } from '@/lib/text_utils';
 
@@ -41,7 +41,6 @@ import { AttachmentBottomBar } from '@/chats/attachments/attachment_bottom_bar';
 import { type EditorAttachment, editorAttachmentKey } from '@/chats/attachments/editor_attachment_utils';
 import { type EditorAttachedToolChoice, getAttachedTools } from '@/chats/attachments/tool_editor_utils';
 import { ToolPlusKit } from '@/chats/attachments/tool_plugin';
-import { EDITOR_SHORTCUTS, formatShortcut, matchShortcut } from '@/chats/chat_input_shortcuts';
 import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
 import {
 	getFirstTemplateNodeWithPath,
@@ -58,6 +57,9 @@ import { buildUserInlineChildrenFromText } from '@/chats/templates/template_vari
 
 export interface EditorAreaHandle {
 	focus: () => void;
+	openTemplateMenu: () => void;
+	openToolMenu: () => void;
+	openAttachmentMenu: () => void;
 }
 
 export interface EditorSubmitPayload {
@@ -72,10 +74,11 @@ interface EditorAreaProps {
 	isBusy: boolean;
 	onSubmit: (payload: EditorSubmitPayload) => Promise<void>;
 	onRequestStop: () => void;
+	shortcutConfig: ShortcutConfig;
 }
 
 export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function EditorArea(
-	{ isBusy, onSubmit, onRequestStop },
+	{ isBusy, onSubmit, onRequestStop, shortcutConfig },
 	ref
 ) {
 	const editor = usePlateEditor({
@@ -113,13 +116,14 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const [docVersion, setDocVersion] = useState(0);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [attachments, setAttachments] = useState<EditorAttachment[]>([]);
+
 	const shortcutLabels = useMemo(
 		() => ({
-			templates: formatShortcut(EDITOR_SHORTCUTS.templates),
-			tools: formatShortcut(EDITOR_SHORTCUTS.tools),
-			attachments: formatShortcut(EDITOR_SHORTCUTS.attachments),
+			templates: formatShortcut(shortcutConfig.insertTemplate),
+			tools: formatShortcut(shortcutConfig.insertTool),
+			attachments: formatShortcut(shortcutConfig.insertAttachment),
 		}),
-		[]
+		[shortcutConfig]
 	);
 
 	const closeAllMenus = useCallback(() => {
@@ -128,28 +132,33 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		attachmentMenu.hide();
 	}, [templateMenu, toolMenu, attachmentMenu]);
 
-	const openMenu = useCallback(
-		(menuState: MenuStore, buttonRef: RefObject<HTMLButtonElement | null>) => {
-			closeAllMenus();
-			menuState.show();
-			requestAnimationFrame(() => {
-				buttonRef.current?.focus();
-			});
-		},
-		[closeAllMenus]
-	);
+	const focusFirstMenuItem = (kind: 'templates' | 'tools' | 'attachments') => {
+		// Allow the menu to mount/portal before querying DOM
+		requestAnimationFrame(() => {
+			const menuRoot = document.querySelector<HTMLElement>(`[data-menu-kind="${kind}"]`);
+			if (!menuRoot) return;
+			const firstItem = menuRoot.querySelector<HTMLElement>('[role="menuitem"]');
+			firstItem?.focus();
+		});
+	};
 
 	const openTemplatePicker = useCallback(() => {
-		openMenu(templateMenu, templateButtonRef);
-	}, [openMenu, templateMenu]);
+		closeAllMenus();
+		templateMenu.show();
+		focusFirstMenuItem('templates');
+	}, [closeAllMenus, templateMenu]);
 
 	const openToolPicker = useCallback(() => {
-		openMenu(toolMenu, toolButtonRef);
-	}, [openMenu, toolMenu]);
+		closeAllMenus();
+		toolMenu.show();
+		focusFirstMenuItem('tools');
+	}, [closeAllMenus, toolMenu]);
 
 	const openAttachmentPicker = useCallback(() => {
-		openMenu(attachmentMenu, attachmentButtonRef);
-	}, [openMenu, attachmentMenu]);
+		closeAllMenus();
+		attachmentMenu.show();
+		focusFirstMenuItem('attachments');
+	}, [closeAllMenus, attachmentMenu]);
 
 	const lastPopulatedSelectionKeyRef = useRef<Set<string>>(new Set());
 
@@ -330,6 +339,15 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		focus: () => {
 			editor.tf.focus();
 		},
+		openTemplateMenu: () => {
+			openTemplatePicker();
+		},
+		openToolMenu: () => {
+			openToolPicker();
+		},
+		openAttachmentMenu: () => {
+			openAttachmentPicker();
+		},
 	}));
 
 	const handleAttachFiles = async (mode: 'file' | 'image' = 'file') => {
@@ -410,22 +428,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 						spellCheck={false}
 						readOnly={isBusy}
 						onKeyDown={e => {
-							if (matchShortcut(e, EDITOR_SHORTCUTS.templates)) {
-								e.preventDefault();
-								openTemplatePicker();
-								return;
-							}
-							if (matchShortcut(e, EDITOR_SHORTCUTS.tools)) {
-								e.preventDefault();
-								openToolPicker();
-								return;
-							}
-							if (matchShortcut(e, EDITOR_SHORTCUTS.attachments)) {
-								e.preventDefault();
-								openAttachmentPicker();
-								return;
-							}
-							onKeyDown(e);
+							onKeyDown(e); // from useEnterSubmit (handles Enter vs Shift+Enter, etc.)
 						}}
 						onPaste={e => {
 							e.preventDefault();
@@ -436,29 +439,29 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 						}}
 						className="max-h-96 min-w-0 flex-1 resize-none overflow-auto bg-transparent p-2 whitespace-break-spaces outline-none [tab-size:2] focus:outline-none"
 						style={{
-							fontSize: '12px',
+							fontSize: '14px',
 							whiteSpace: 'break-spaces',
 							tabSize: 2,
 							minHeight: '4rem',
 						}}
 					/>
 				</div>
+				<AttachmentBottomBar
+					attachments={attachments}
+					onAttachFiles={handleAttachFiles}
+					onRemoveAttachment={handleRemoveAttachment}
+					isBusy={isBusy}
+					isSendButtonEnabled={isSendButtonEnabled}
+					templateMenuState={templateMenu}
+					toolMenuState={toolMenu}
+					attachmentMenuState={attachmentMenu}
+					templateButtonRef={templateButtonRef}
+					toolButtonRef={toolButtonRef}
+					attachmentButtonRef={attachmentButtonRef}
+					shortcutLabels={shortcutLabels}
+					onRequestStop={onRequestStop}
+				/>
 			</Plate>
-			<AttachmentBottomBar
-				attachments={attachments}
-				onAttachFiles={handleAttachFiles}
-				onRemoveAttachment={handleRemoveAttachment}
-				isBusy={isBusy}
-				isSendButtonEnabled={isSendButtonEnabled}
-				templateMenuState={templateMenu}
-				toolMenuState={toolMenu}
-				attachmentMenuState={attachmentMenu}
-				templateButtonRef={templateButtonRef}
-				toolButtonRef={toolButtonRef}
-				attachmentButtonRef={attachmentButtonRef}
-				shortcutLabels={shortcutLabels}
-				onRequestStop={onRequestStop}
-			/>
 		</form>
 	);
 });

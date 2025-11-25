@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 import { FiEdit2, FiPlus } from 'react-icons/fi';
 
@@ -8,7 +8,7 @@ import { sanitizeConversationTitle } from '@/lib/text_utils';
 
 import { DownloadButton } from '@/components/download_button';
 
-import { ChatSearch } from '@/chats/chat_search';
+import { ChatSearch, type ChatSearchHandle } from '@/chats/chat_search';
 
 interface ChatNavBarProps {
 	onNewChat: () => void;
@@ -22,19 +22,27 @@ interface ChatNavBarProps {
 	renameEnabled: boolean;
 }
 
-export function ChatNavBar({
-	onNewChat,
-	onRenameTitle,
-	getConversationForExport,
-	onSelectConversation,
-	chatTitle,
-	chatID,
-	searchRefreshKey,
-	disabled,
-	renameEnabled,
-}: ChatNavBarProps) {
+export interface ChatNavBarHandle {
+	focusSearch: () => void;
+}
+
+export const ChatNavBar = forwardRef<ChatNavBarHandle, ChatNavBarProps>(function ChatNavBar(
+	{
+		onNewChat,
+		onRenameTitle,
+		getConversationForExport,
+		onSelectConversation,
+		chatTitle,
+		chatID,
+		searchRefreshKey,
+		disabled,
+		renameEnabled,
+	}: ChatNavBarProps,
+	ref
+) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [draftTitle, setDraftTitle] = useState(chatTitle);
+	const searchRef = useRef<ChatSearchHandle | null>(null);
 
 	/* keep draft in sync when conversation switches */
 	useEffect(() => {
@@ -51,12 +59,19 @@ export function ChatNavBar({
 		if (!renameEnabled && isEditing) setIsEditing(false);
 	}, [renameEnabled, isEditing]);
 
+	useImperativeHandle(ref, () => ({
+		focusSearch: () => {
+			searchRef.current?.focusInput();
+		},
+	}));
+
 	const editDisabled = disabled || !renameEnabled;
 
 	return (
 		<div className="w-full justify-center p-2">
 			<div className="flex items-center justify-between bg-transparent">
 				<ChatSearch
+					ref={searchRef}
 					onSelectConversation={onSelectConversation}
 					refreshKey={searchRefreshKey}
 					currentConversationId={chatID}
@@ -133,4 +148,4 @@ export function ChatNavBar({
 			</div>
 		</div>
 	);
-}
+});
