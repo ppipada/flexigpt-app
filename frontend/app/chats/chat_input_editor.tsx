@@ -1,12 +1,22 @@
-import { type FormEvent, forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import {
+	type FormEvent,
+	forwardRef,
+	type RefObject,
+	useCallback,
+	useEffect,
+	useImperativeHandle,
+	useMemo,
+	useRef,
+	useState,
+} from 'react';
 
 import { FiAlertTriangle } from 'react-icons/fi';
 
+import { type MenuStore, useMenuStore } from '@ariakit/react';
 import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
 import type { FileFilter } from '@/spec/backend';
-import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/spec/command';
 import { ConversationAttachmentKind } from '@/spec/conversation';
 
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -31,6 +41,7 @@ import { AttachmentBottomBar } from '@/chats/attachments/attachment_bottom_bar';
 import { type EditorAttachment, editorAttachmentKey } from '@/chats/attachments/editor_attachment_utils';
 import { type EditorAttachedToolChoice, getAttachedTools } from '@/chats/attachments/tool_editor_utils';
 import { ToolPlusKit } from '@/chats/attachments/tool_plugin';
+import { EDITOR_SHORTCUTS, formatShortcut, matchShortcut } from '@/chats/chat_input_shortcuts';
 import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
 import {
 	getFirstTemplateNodeWithPath,
@@ -60,9 +71,13 @@ const EDITOR_EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
 interface EditorAreaProps {
 	isBusy: boolean;
 	onSubmit: (payload: EditorSubmitPayload) => Promise<void>;
+	onRequestStop: () => void;
 }
 
-export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function EditorArea({ isBusy, onSubmit }, ref) {
+export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function EditorArea(
+	{ isBusy, onSubmit, onRequestStop },
+	ref
+) {
 	const editor = usePlateEditor({
 		plugins: [
 			SingleBlockPlugin,
@@ -87,11 +102,54 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const contentRef = useRef<HTMLDivElement | null>(null);
 	const editorRef = useRef(editor);
 	editorRef.current = editor; // keep a live ref for key handlers
+	const templateMenu = useMenuStore({ placement: 'top-start' });
+	const toolMenu = useMenuStore({ placement: 'top-start' });
+	const attachmentMenu = useMenuStore({ placement: 'top-start' });
+	const templateButtonRef = useRef<HTMLButtonElement | null>(null);
+	const toolButtonRef = useRef<HTMLButtonElement | null>(null);
+	const attachmentButtonRef = useRef<HTMLButtonElement | null>(null);
 
 	// doc version tick to re-run selection computations on any editor change (even if text string doesn't change)
 	const [docVersion, setDocVersion] = useState(0);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [attachments, setAttachments] = useState<EditorAttachment[]>([]);
+	const shortcutLabels = useMemo(
+		() => ({
+			templates: formatShortcut(EDITOR_SHORTCUTS.templates),
+			tools: formatShortcut(EDITOR_SHORTCUTS.tools),
+			attachments: formatShortcut(EDITOR_SHORTCUTS.attachments),
+		}),
+		[]
+	);
+
+	const closeAllMenus = useCallback(() => {
+		templateMenu.hide();
+		toolMenu.hide();
+		attachmentMenu.hide();
+	}, [templateMenu, toolMenu, attachmentMenu]);
+
+	const openMenu = useCallback(
+		(menuState: MenuStore, buttonRef: RefObject<HTMLButtonElement | null>) => {
+			closeAllMenus();
+			menuState.show();
+			requestAnimationFrame(() => {
+				buttonRef.current?.focus();
+			});
+		},
+		[closeAllMenus]
+	);
+
+	const openTemplatePicker = useCallback(() => {
+		openMenu(templateMenu, templateButtonRef);
+	}, [openMenu, templateMenu]);
+
+	const openToolPicker = useCallback(() => {
+		openMenu(toolMenu, toolButtonRef);
+	}, [openMenu, toolMenu]);
+
+	const openAttachmentPicker = useCallback(() => {
+		openMenu(attachmentMenu, attachmentButtonRef);
+	}, [openMenu, attachmentMenu]);
 
 	const lastPopulatedSelectionKeyRef = useRef<Set<string>>(new Set());
 
@@ -274,13 +332,15 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		},
 	}));
 
-	const handleAttachFiles = async () => {
-		const filters: FileFilter[] = [
+	const handleAttachFiles = async (mode: 'file' | 'image' = 'file') => {
+		const baseFilters: FileFilter[] = [
 			{ DisplayName: 'All Files', Pattern: '*' },
 			{ DisplayName: 'Text/Markdown', Pattern: '*.txt;*.md;*.markdown' },
 			{ DisplayName: 'Documents', Pattern: '*.pdf;*.html;*.htm' },
 			{ DisplayName: 'Images', Pattern: '*.png;*.jpg;*.jpeg;*.gif;*.webp' },
 		];
+		const imageFilters: FileFilter[] = [{ DisplayName: 'Images', Pattern: '*.png;*.jpg;*.jpeg;*.gif;*.webp' }];
+		const filters = mode === 'image' ? imageFilters : baseFilters;
 		const paths = await backendAPI.openfiles(true, filters);
 		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 		if (!paths || paths.length === 0) return;
@@ -292,11 +352,18 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				const trimmed = p.trim();
 				if (!trimmed) continue;
 				const label = trimmed.split(/[\\/]/).pop() ?? trimmed;
-				const att: EditorAttachment = {
-					kind: ConversationAttachmentKind.file,
-					label,
-					fileRef: { path: trimmed },
-				};
+				const att: EditorAttachment =
+					mode === 'image'
+						? {
+								kind: ConversationAttachmentKind.image,
+								label,
+								imageRef: { path: trimmed },
+							}
+						: {
+								kind: ConversationAttachmentKind.file,
+								label,
+								fileRef: { path: trimmed },
+							};
 				const key = editorAttachmentKey(att);
 				if (existing.has(key)) continue;
 				existing.add(key);
@@ -310,13 +377,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const handleRemoveAttachment = (att: EditorAttachment) => {
 		const targetKey = editorAttachmentKey(att);
 		setAttachments(prev => prev.filter(a => editorAttachmentKey(a) !== targetKey));
-		editor.tf.focus();
-	};
-
-	const handleOpenToolPicker = () => {
-		// Simulate typing " +" so that the ToolPlus combobox trigger fires.
-		editor.tf.insertText(' ');
-		editor.tf.insertText('+');
 		editor.tf.focus();
 	};
 
@@ -343,16 +403,26 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			>
 				<TemplateToolbars />
 				{/* Row: editor (send button now lives in the bottom attachment bar) */}
-				<div className="flex min-h-16 items-center gap-2 p-0">
+				<div className="flex min-h-16 items-center gap-2 px-1 py-0">
 					<PlateContent
 						ref={contentRef}
 						placeholder="Type message..."
 						spellCheck={false}
 						readOnly={isBusy}
 						onKeyDown={e => {
-							if (e.key === DOCUMENT_COLLECTION_INVOKE_CHAR && !e.altKey && !e.ctrlKey && !e.metaKey) {
+							if (matchShortcut(e, EDITOR_SHORTCUTS.templates)) {
 								e.preventDefault();
-								void handleAttachFiles();
+								openTemplatePicker();
+								return;
+							}
+							if (matchShortcut(e, EDITOR_SHORTCUTS.tools)) {
+								e.preventDefault();
+								openToolPicker();
+								return;
+							}
+							if (matchShortcut(e, EDITOR_SHORTCUTS.attachments)) {
+								e.preventDefault();
+								openAttachmentPicker();
 								return;
 							}
 							onKeyDown(e);
@@ -373,15 +443,22 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 						}}
 					/>
 				</div>
-				<AttachmentBottomBar
-					attachments={attachments}
-					onAttachFiles={handleAttachFiles}
-					onRemoveAttachment={handleRemoveAttachment}
-					onOpenToolPicker={handleOpenToolPicker}
-					isBusy={isBusy}
-					isSendButtonEnabled={isSendButtonEnabled}
-				/>
 			</Plate>
+			<AttachmentBottomBar
+				attachments={attachments}
+				onAttachFiles={handleAttachFiles}
+				onRemoveAttachment={handleRemoveAttachment}
+				isBusy={isBusy}
+				isSendButtonEnabled={isSendButtonEnabled}
+				templateMenuState={templateMenu}
+				toolMenuState={toolMenu}
+				attachmentMenuState={attachmentMenu}
+				templateButtonRef={templateButtonRef}
+				toolButtonRef={toolButtonRef}
+				attachmentButtonRef={attachmentButtonRef}
+				shortcutLabels={shortcutLabels}
+				onRequestStop={onRequestStop}
+			/>
 		</form>
 	);
 });

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { FiChevronDown, FiChevronUp, FiMoreHorizontal } from 'react-icons/fi';
 
+import { EDITOR_SHORTCUTS, formatShortcut } from '@/chats/chat_input_shortcuts';
+
 type TipKey = 'lastWins' | 'remove' | 'collapse';
 
 const tipsText: Record<TipKey, string> = {
@@ -12,6 +14,14 @@ const tipsText: Record<TipKey, string> = {
 };
 
 export function CommandTipsBar() {
+	const shortcutHints = useMemo(
+		() => ({
+			templates: formatShortcut(EDITOR_SHORTCUTS.templates),
+			tools: formatShortcut(EDITOR_SHORTCUTS.tools),
+			attachments: formatShortcut(EDITOR_SHORTCUTS.attachments),
+		}),
+		[]
+	);
 	const [isOpen, setIsOpen] = useState(false);
 	const detailsRef = useRef<HTMLDetailsElement>(null);
 
@@ -57,8 +67,9 @@ export function CommandTipsBar() {
 	return (
 		<div className="bg-base-200 text-neutral-custom flex items-center justify-between rounded-xl px-2 py-0 text-xs">
 			<span>
-				Input tips: &nbsp;&nbsp; '/' invoke templates or commands &nbsp;&nbsp;&nbsp;&nbsp; '+' add tools
-				&nbsp;&nbsp;&nbsp;&nbsp; '#' attach context (docs/files/url/git-pr/etc.)
+				Insert templates:&nbsp;{shortcutHints.templates}
+				&nbsp;&nbsp;&nbsp;&nbsp; Add tools:&nbsp;{shortcutHints.tools}
+				&nbsp;&nbsp;&nbsp;&nbsp; Attach context:&nbsp;{shortcutHints.attachments}
 			</span>
 
 			<div className="flex items-center">

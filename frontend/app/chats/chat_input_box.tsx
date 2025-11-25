@@ -1,7 +1,5 @@
 import { forwardRef, type RefObject, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
-import { FiSquare } from 'react-icons/fi';
-
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
 import { DeleteConfirmationModal } from '@/components/delete_confirmation';
@@ -64,21 +62,6 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 	 * ------------------------------------------------------------------ */
 	return (
 		<div className="bg-base-200 flex-1">
-			{/* Busy / abort banner ------------------------------------------------ */}
-			{isBusy && (
-				<div className="bg-base-200 mx-8 flex items-center justify-center">
-					<button
-						className="btn btn-sm bg-neutral text-neutral-content gap-1 rounded-xl border-none shadow-none"
-						onClick={() => {
-							setShowAbortModal(true);
-						}}
-					>
-						<FiSquare />
-						Stop
-					</button>
-				</div>
-			)}
-
 			{/* Model- / params-bar ---------------------------------------------- */}
 			<AssistantContextBar onOptionsChange={setChatOptions} /* hand the aggregated options up */ />
 
@@ -106,7 +89,14 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 					onSubmit={handleSubmitMessage}
 					setInputHeight={setInputHeight}
 				/> */}
-				<EditorArea ref={inputAreaRef} isBusy={isBusy} onSubmit={handleSubmitMessage} />
+				<EditorArea
+					ref={inputAreaRef}
+					isBusy={isBusy}
+					onSubmit={handleSubmitMessage}
+					onRequestStop={() => {
+						setShowAbortModal(true);
+					}}
+				/>
 			</div>
 			{/* Neutral tips bar under the editor */}
 			<div className="mx-4 my-0">

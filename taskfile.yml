@@ -86,6 +86,7 @@ tasks:
 
   run-dev:
     cmds:
+      - pnpm run touch:tmp
       - cd ./cmd/agentgo && wails dev -s -v 2 -tags webkit2_41 -ldflags="-X main.Version=v0.0.1"
 
   run-watch:
