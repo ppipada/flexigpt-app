@@ -21,13 +21,35 @@
 			},
 			"defaultModelPresetID": "sonnet45",
 			"modelPresets": {
+				"opus45": {
+					"schemaVersion": "2025-07-01",
+					"id": "opus45",
+					"name": "claude-sonnet-4-5-20250929",
+					"displayName": "Claude 4.5 Opus",
+					"slug": "opus45",
+					"isEnabled": true,
+					"stream": true,
+					"maxPromptLength": 65536,
+					"maxOutputLength": 16384,
+					"temperature": 0.1,
+					"reasoning": {
+						"type": "hybridWithTokens",
+						"level": "",
+						"tokens": 1024
+					},
+					"systemPrompt": "",
+					"timeout": 300,
+					"createdAt": "2025-11-26T00:00:00Z",
+					"modifiedAt": "2025-11-26T00:00:00Z",
+					"isBuiltIn": true
+				},
 				"opus41": {
 					"schemaVersion": "2025-07-01",
 					"id": "opus41",
 					"name": "claude-opus-4-1-20250805",
 					"displayName": "Claude 4.1 Opus",
 					"slug": "opus41",
-					"isEnabled": true,
+					"isEnabled": false,
 					"stream": true,
 					"maxPromptLength": 65536,
 					"maxOutputLength": 16384,
