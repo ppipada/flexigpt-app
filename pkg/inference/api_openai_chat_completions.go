@@ -393,8 +393,9 @@ func buildOpenAIChatAttachmentParts(
 			if err != nil {
 				return nil, err
 			}
+			fileData := "data:application/pdf;base64," + encoded
 			var fileParam openai.ChatCompletionContentPartFileFileParam
-			fileParam.FileData = param.NewOpt(encoded)
+			fileParam.FileData = param.NewOpt(fileData)
 			fileParam.Filename = param.NewOpt(filename)
 			out = append(out, openai.FileContentPart(fileParam))
 

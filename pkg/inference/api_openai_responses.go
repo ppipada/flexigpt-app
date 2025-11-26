@@ -469,13 +469,16 @@ func buildOpenAIResponsesAttachmentContent(
 			if att.FileRef == nil {
 				continue
 			}
+
 			encoded, filename, err := fileEncodingFromRef(att.FileRef)
 			if err != nil {
 				return nil, err
 			}
+			fileData := "data:application/pdf;base64," + encoded
 			fileParam := responses.ResponseInputFileParam{
-				FileData: param.NewOpt(encoded),
+				FileData: param.NewOpt(fileData),
 				Filename: param.NewOpt(filename),
+				Type:     openaiSharedConstant.InputFile("").Default(),
 			}
 			out = append(
 				out,

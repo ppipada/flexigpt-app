@@ -444,17 +444,28 @@ func buildAnthropicAttachmentBlocks(
 			out = append(out, anthropic.NewImageBlockBase64(mimeType, encoded))
 
 		case spec.AttachmentFile:
-			// Anthropics' Messages API doesn't support arbitrary files directly in
-			// the same way as OpenAI's multimodal inputs. Represent the file as a
-			// short textual handle instead so future resolvers (doc search, PDF
-			// extractors, etc.) can plug in without changing the provider wiring.
-			if text := formatAttachmentAsText(att); text != "" {
-				out = append(out, anthropic.NewTextBlock(text))
+			if att.FileRef == nil {
+				continue
+			}
+			encoded, _, err := fileEncodingFromRef(att.FileRef)
+			if err != nil {
+				return nil, err
+			}
+
+			if encoded != "" {
+				out = append(
+					out,
+					anthropic.NewDocumentBlock(
+						anthropic.Base64PDFSourceParam{Data: encoded},
+					),
+				)
 			}
 
 		case spec.AttachmentDocIndex, spec.AttachmentPR, spec.AttachmentCommit, spec.AttachmentSnapshot:
 			if text := formatAttachmentAsText(att); text != "" {
-				out = append(out, anthropic.NewTextBlock(text))
+				out = append(out, anthropic.NewDocumentBlock(
+					anthropic.PlainTextSourceParam{Data: text},
+				))
 			}
 		default:
 			continue
