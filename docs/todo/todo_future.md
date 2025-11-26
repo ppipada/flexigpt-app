@@ -16,6 +16,15 @@
   - [ ] Add AWS bedrock too. May be anthropic api as of now for claude on bedrock models?
   - [ ] Check vertex ai for google: needs google dedicated sdk
 
+- [ ] Think through and enhance tools create/edit and prompts create/edit modals
+
+  - [ ] Implement a schema area using CodeMirror for defining the tool's/prompts schema. (deferred)
+    - [ ] Configure CodeMirror to support JSON syntax highlighting and validation.
+    - [ ] Allow users to define input and output parameters using JSON schema.
+  - [ ] Implement a function area using CodeMirror for accepting/implementing the schema.
+    - [ ] Configure CodeMirror to support TypeScript syntax highlighting and validation.
+    - [ ] Allow users to write an asynchronous TypeScript function that utilizes the defined schema.
+
 ## Laundry list
 
 - [ ] Chat
