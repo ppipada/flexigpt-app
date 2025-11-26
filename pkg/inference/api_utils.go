@@ -2,7 +2,12 @@ package inference
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -169,4 +174,111 @@ func toolDescription(ct spec.FetchCompletionToolChoice) string {
 		return desc
 	}
 	return ""
+}
+
+// imageEncodingFromRef returns the base64-encoded contents of the image along
+// with a best-effort MIME type derived from the ref's Format field.
+func imageEncodingFromRef(
+	ref *spec.ChatCompletionImageRef,
+) (encoded, mimeType string, err error) {
+	if ref == nil {
+		return "", "", errors.New("nil image ref")
+	}
+	encoded, err = encodeFileToBase64(ref.Path)
+	if err != nil {
+		return "", "", err
+	}
+
+	format := strings.ToLower(strings.TrimSpace(ref.Format))
+	switch format {
+	case "jpg", "jpeg":
+		mimeType = "image/jpeg"
+	case "png":
+		mimeType = "image/png"
+	case "gif":
+		mimeType = "image/gif"
+	case "webp":
+		mimeType = "image/webp"
+	case "bmp":
+		mimeType = "image/bmp"
+	case "":
+		// Default to PNG if we don't know the format.
+		mimeType = "image/png"
+	default:
+		// Fallback for uncommon formats; most renderers can still display these.
+		mimeType = "application/octet-stream"
+	}
+	return encoded, mimeType, nil
+}
+
+// fileEncodingFromRef returns the base64-encoded contents of the file along
+// with a best-effort filename derived from the path.
+func fileEncodingFromRef(
+	ref *spec.ChatCompletionFileRef,
+) (encoded, filename string, err error) {
+	if ref == nil {
+		return "", "", errors.New("nil file ref")
+	}
+	encoded, err = encodeFileToBase64(ref.Path)
+	if err != nil {
+		return "", "", err
+	}
+	filename = strings.TrimSpace(filepath.Base(ref.Path))
+	if filename == "" {
+		filename = "attachment"
+	}
+	return encoded, filename, nil
+}
+
+// encodeFileToBase64 reads the file at the given path and returns its
+// base64-encoded contents. The caller is responsible for ensuring the path
+// points to a regular file.
+func encodeFileToBase64(path string) (string, error) {
+	p := strings.TrimSpace(path)
+	if p == "" {
+		return "", errors.New("empty attachment path")
+	}
+	data, err := os.ReadFile(p)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(data), nil
+}
+
+// formatAttachmentAsText normalizes an attachment into a short, human-readable
+// string that can be injected into text prompts when a richer modality is not
+// available (for example, for generic refs or providers without native file
+// support).
+func formatAttachmentAsText(att spec.ChatCompletionAttachment) string {
+	label := strings.TrimSpace(att.Label)
+	var detail string
+
+	switch att.Kind {
+	case spec.AttachmentFile:
+		if att.FileRef != nil {
+			detail = strings.TrimSpace(att.FileRef.Path)
+		}
+	case spec.AttachmentImage:
+		if att.ImageRef != nil {
+			detail = strings.TrimSpace(att.ImageRef.Path)
+		}
+	case spec.AttachmentDocIndex, spec.AttachmentPR, spec.AttachmentCommit, spec.AttachmentSnapshot:
+		if att.GenericRef != nil {
+			detail = strings.TrimSpace(att.GenericRef.Handle)
+		}
+	default:
+		detail = ""
+	}
+
+	if label == "" {
+		label = detail
+	}
+
+	if label == "" && detail == "" {
+		return ""
+	}
+	if detail == "" || label == detail {
+		return fmt.Sprintf("[Attachment: %s]", label)
+	}
+	return fmt.Sprintf("[Attachment: %s — %s]", label, detail)
 }

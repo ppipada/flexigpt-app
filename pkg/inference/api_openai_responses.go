@@ -10,6 +10,7 @@ import (
 
 	"github.com/openai/openai-go/v2"
 	"github.com/openai/openai-go/v2/option"
+	"github.com/openai/openai-go/v2/packages/param"
 	"github.com/openai/openai-go/v2/responses"
 	"github.com/openai/openai-go/v2/shared"
 	openaiSharedConstant "github.com/openai/openai-go/v2/shared/constant"
@@ -158,6 +159,7 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 	// Build OpenAI chat messages.
 	msgs, err := toOpenAIResponsesMessages(
 		completionData.Messages,
+		completionData.Attachments,
 		completionData.ModelParams.Name,
 		api.ProviderParams.Name,
 	)
@@ -233,6 +235,9 @@ func (api *OpenAIResponsesAPI) doNonStreaming(
 	}
 
 	completionResp.Body.ResponseContent = getResponseContentFromOpenAIOutput(resp)
+	if toolCalls := extractOpenAIResponseToolCalls(resp); len(toolCalls) > 0 {
+		completionResp.Body.ToolCalls = toolCalls
+	}
 	return completionResp, nil
 }
 
@@ -322,17 +327,34 @@ func (api *OpenAIResponsesAPI) doStreaming(
 
 	respContent := getResponseContentFromOpenAIOutput(&respFull)
 	completionResp.Body.ResponseContent = respContent
+	if toolCalls := extractOpenAIResponseToolCalls(&respFull); len(toolCalls) > 0 {
+		completionResp.Body.ToolCalls = toolCalls
+	}
 	return completionResp, streamErr
 }
 
 func toOpenAIResponsesMessages(
 	messages []spec.ChatCompletionDataMessage,
+	attachments []spec.ChatCompletionAttachment,
 	modelName modelpresetSpec.ModelName,
 	providerName modelpresetSpec.ProviderName,
 ) (responses.ResponseInputParam, error) {
 	var out responses.ResponseInputParam
 
-	for _, m := range messages {
+	// Identify last user message index; attachments belong to the current user turn.
+	lastUserIdx := -1
+	for i, m := range messages {
+		if m.Role == spec.User {
+			lastUserIdx = i
+		}
+	}
+
+	attachmentContent, err := buildOpenAIResponsesAttachmentContent(attachments)
+	if err != nil {
+		return nil, err
+	}
+
+	for idx, m := range messages {
 		if m.Content == nil {
 			continue
 		}
@@ -363,17 +385,35 @@ func toOpenAIResponsesMessages(
 			out = append(out, inputParam)
 
 		case spec.User:
-			// This is in case additional dev or system message is present in the array itself.
-			inputParam := responses.ResponseInputItemUnionParam{
-				OfMessage: &responses.EasyInputMessageParam{
-					Content: responses.EasyInputMessageContentUnionParam{
-						OfString: openai.String(*m.Content),
+			// For the last user message, translate attachments into multimodal input
+			// content if present; otherwise send a plain text message.
+			if idx == lastUserIdx && len(attachmentContent) > 0 {
+				var contentList responses.ResponseInputMessageContentListParam
+				if c := strings.TrimSpace(*m.Content); c != "" {
+					contentList = append(
+						contentList,
+						responses.ResponseInputContentParamOfInputText(c),
+					)
+				}
+				contentList = append(contentList, attachmentContent...)
+
+				inputParam := responses.ResponseInputItemParamOfMessage(
+					contentList,
+					responses.EasyInputMessageRoleUser,
+				)
+				out = append(out, inputParam)
+			} else {
+				inputParam := responses.ResponseInputItemUnionParam{
+					OfMessage: &responses.EasyInputMessageParam{
+						Content: responses.EasyInputMessageContentUnionParam{
+							OfString: openai.String(*m.Content),
+						},
+						Role: responses.EasyInputMessageRoleUser,
+						Type: responses.EasyInputMessageTypeMessage,
 					},
-					Role: responses.EasyInputMessageRoleUser,
-					Type: responses.EasyInputMessageTypeMessage,
-				},
+				}
+				out = append(out, inputParam)
 			}
-			out = append(out, inputParam)
 
 		case spec.Assistant:
 			// This is in case additional dev or system message is present in the array itself.
@@ -394,13 +434,74 @@ func toOpenAIResponsesMessages(
 	return out, nil
 }
 
+// buildOpenAIResponsesAttachmentContent converts generic chat attachments into
+// Response input content items for the Responses API (files, images, and
+// textual handles for generic refs).
+func buildOpenAIResponsesAttachmentContent(
+	attachments []spec.ChatCompletionAttachment,
+) ([]responses.ResponseInputContentUnionParam, error) {
+	if len(attachments) == 0 {
+		return nil, nil
+	}
+
+	out := make([]responses.ResponseInputContentUnionParam, 0, len(attachments))
+	for _, att := range attachments {
+		switch att.Kind {
+		case spec.AttachmentImage:
+			if att.ImageRef == nil {
+				continue
+			}
+			encoded, mimeType, err := imageEncodingFromRef(att.ImageRef)
+			if err != nil {
+				return nil, err
+			}
+			dataURL := fmt.Sprintf("data:%s;base64,%s", mimeType, encoded)
+			img := responses.ResponseInputImageParam{
+				Detail:   responses.ResponseInputImageDetailAuto,
+				ImageURL: param.NewOpt(dataURL),
+			}
+			out = append(
+				out,
+				responses.ResponseInputContentUnionParam{OfInputImage: &img},
+			)
+
+		case spec.AttachmentFile:
+			if att.FileRef == nil {
+				continue
+			}
+			encoded, filename, err := fileEncodingFromRef(att.FileRef)
+			if err != nil {
+				return nil, err
+			}
+			fileParam := responses.ResponseInputFileParam{
+				FileData: param.NewOpt(encoded),
+				Filename: param.NewOpt(filename),
+			}
+			out = append(
+				out,
+				responses.ResponseInputContentUnionParam{OfInputFile: &fileParam},
+			)
+		case spec.AttachmentDocIndex, spec.AttachmentPR, spec.AttachmentCommit, spec.AttachmentSnapshot:
+			if text := formatAttachmentAsText(att); text != "" {
+				out = append(
+					out,
+					responses.ResponseInputContentParamOfInputText(text),
+				)
+			}
+		default:
+			continue
+		}
+	}
+	return out, nil
+}
+
 func getResponseContentFromOpenAIOutput(
 	inputResp *responses.Response,
 ) []spec.ResponseContent {
 	if inputResp == nil || len(inputResp.Output) == 0 {
 		return []spec.ResponseContent{}
 	}
-	resp := make([]spec.ResponseContent, 0, 2)
+	resp := make([]spec.ResponseContent, 0, 4)
 	var outputText strings.Builder
 	var thinkingSummaryText strings.Builder
 	var thinkingText strings.Builder
@@ -420,6 +521,23 @@ func getResponseContentFromOpenAIOutput(
 			}
 			for _, content := range ti.Summary {
 				thinkingSummaryText.WriteString(content.Text)
+			}
+		}
+		if item.Type == string(openaiSharedConstant.ImageGenerationCall("").Default()) {
+			// Image generation outputs return a base64-encoded image. Wrap it in a
+			// data URL and expose it as an image content block. The frontend can
+			// either render it directly or treat it as markdown.
+			data := strings.TrimSpace(item.Result)
+			if data != "" {
+				dataURL := "data:image/png;base64," + data
+				md := fmt.Sprintf("![Generated image](%s)", dataURL)
+				resp = append(
+					resp,
+					spec.ResponseContent{
+						Type:    spec.ResponseContentTypeImage,
+						Content: md,
+					},
+				)
 			}
 		}
 	}
@@ -481,4 +599,44 @@ func toOpenAIResponseTools(
 		out = append(out, responses.ToolUnionParam{OfFunction: &tool})
 	}
 	return out, nil
+}
+
+func extractOpenAIResponseToolCalls(resp *responses.Response) []spec.ResponseToolCall {
+	if resp == nil {
+		return nil
+	}
+	out := make([]spec.ResponseToolCall, 0)
+	for _, item := range resp.Output {
+		switch item.Type {
+		case string(openaiSharedConstant.FunctionCall("").Default()):
+			fn := item.AsFunctionCall()
+			out = append(
+				out,
+				spec.ResponseToolCall{
+					ID:        fn.ID,
+					CallID:    fn.ID,
+					Name:      fn.Name,
+					Arguments: fn.Arguments,
+					Type:      item.Type,
+					Status:    string(fn.Status),
+				},
+			)
+		case string(openaiSharedConstant.CustomToolCall("").Default()):
+			fn := item.AsCustomToolCall()
+			out = append(
+				out,
+				spec.ResponseToolCall{
+					ID:        fn.ID,
+					CallID:    fn.ID,
+					Name:      fn.Name,
+					Arguments: fn.Input,
+					Type:      item.Type,
+				},
+			)
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }

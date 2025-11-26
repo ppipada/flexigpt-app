@@ -69,14 +69,30 @@ type APIFetchResponse[T any] struct {
 type ResponseContentType string
 
 const (
-	ResponseContentTypeText            = "text"
-	ResponseContentTypeThinking        = "thinking"
-	ResponseContentTypeThinkingSummary = "thinkingSummary"
+	ResponseContentTypeText            ResponseContentType = "text"
+	ResponseContentTypeThinking        ResponseContentType = "thinking"
+	ResponseContentTypeThinkingSummary ResponseContentType = "thinkingSummary"
+	// ResponseContentTypeImage represents image content (for example, a data URL or
+	// some other image identifier/handle). Callers are free to interpret the
+	// Content field appropriately for their UI.
+	ResponseContentTypeImage ResponseContentType = "image"
 )
 
 type ResponseContent struct {
 	Type    ResponseContentType `json:"type"`
 	Content string              `json:"content"`
+}
+
+// ResponseToolCall captures model-requested (or model-returned) tool invocations
+// so the frontend can decide how to proceed (execute locally, display results,
+// etc.).
+type ResponseToolCall struct {
+	ID        string `json:"id,omitempty"`
+	CallID    string `json:"callID,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Arguments string `json:"arguments,omitempty"`
+	Type      string `json:"type,omitempty"`
+	Status    string `json:"status,omitempty"`
 }
 
 type BuildCompletionDataRequestBody struct {
@@ -119,6 +135,7 @@ type FetchCompletionResponseBody struct {
 	ResponseDetails *APIResponseDetails `json:"responseDetails,omitempty"`
 	ErrorDetails    *APIErrorDetails    `json:"errorDetails,omitempty"`
 	ResponseContent []ResponseContent   `json:"responseContent,omitempty"`
+	ToolCalls       []ResponseToolCall  `json:"toolCalls,omitempty"`
 }
 
 type FetchCompletionResponse struct {

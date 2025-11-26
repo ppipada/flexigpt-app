@@ -115,11 +115,24 @@ export enum ResponseContentType {
 	Text = 'text',
 	Thinking = 'thinking',
 	ThinkingSummary = 'thinkingSummary',
+	Image = 'image',
 }
 
 interface ResponseContent {
 	type: ResponseContentType;
 	content: string;
+}
+
+/**
+ * @public
+ */
+export interface ResponseToolCall {
+	id: string;
+	callID: string;
+	name: string;
+	arguments: string;
+	type: string;
+	status?: string;
 }
 
 export interface FetchCompletionData {
@@ -134,6 +147,7 @@ export interface FetchCompletionResponseBody {
 	responseDetails?: APIResponseDetails;
 	errorDetails?: APIErrorDetails;
 	responseContent?: ResponseContent[];
+	toolCalls?: ResponseToolCall[];
 }
 
 export interface IProviderSetAPI {

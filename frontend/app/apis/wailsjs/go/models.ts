@@ -1264,6 +1264,28 @@ export namespace spec {
 	    }
 	}
 	
+	export class ResponseToolCall {
+	    id?: string;
+	    callID?: string;
+	    name?: string;
+	    arguments?: string;
+	    type?: string;
+	    status?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResponseToolCall(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.callID = source["callID"];
+	        this.name = source["name"];
+	        this.arguments = source["arguments"];
+	        this.type = source["type"];
+	        this.status = source["status"];
+	    }
+	}
 	export class ResponseContent {
 	    type: string;
 	    content: string;
@@ -1283,6 +1305,7 @@ export namespace spec {
 	    responseDetails?: APIResponseDetails;
 	    errorDetails?: APIErrorDetails;
 	    responseContent?: ResponseContent[];
+	    toolCalls?: ResponseToolCall[];
 	
 	    static createFrom(source: any = {}) {
 	        return new FetchCompletionResponseBody(source);
@@ -1294,6 +1317,7 @@ export namespace spec {
 	        this.responseDetails = this.convertValues(source["responseDetails"], APIResponseDetails);
 	        this.errorDetails = this.convertValues(source["errorDetails"], APIErrorDetails);
 	        this.responseContent = this.convertValues(source["responseContent"], ResponseContent);
+	        this.toolCalls = this.convertValues(source["toolCalls"], ResponseToolCall);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -3735,6 +3759,7 @@ export namespace spec {
 	
 	    }
 	}
+	
 	
 	
 	export class SearchConversationsRequest {

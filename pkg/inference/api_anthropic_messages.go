@@ -153,6 +153,7 @@ func (api *AnthropicMessagesAPI) FetchCompletion(
 	msgs, sysParams, err := toAnthropicMessages(
 		completionData.ModelParams.SystemPrompt,
 		completionData.Messages,
+		completionData.Attachments,
 	)
 	if err != nil {
 		return nil, err
@@ -214,6 +215,9 @@ func (api *AnthropicMessagesAPI) doNonStreaming(
 
 	respContent := getResponseContentFromAnthropicMessage(resp)
 	completionResp.Body.ResponseContent = respContent
+	if toolCalls := extractAnthropicToolCalls(resp); len(toolCalls) > 0 {
+		completionResp.Body.ToolCalls = toolCalls
+	}
 	return completionResp, nil
 }
 
@@ -299,6 +303,9 @@ func (api *AnthropicMessagesAPI) doStreaming(
 
 	respContent := getResponseContentFromAnthropicMessage(&respFull)
 	completionResp.Body.ResponseContent = respContent
+	if toolCalls := extractAnthropicToolCalls(&respFull); len(toolCalls) > 0 {
+		completionResp.Body.ToolCalls = toolCalls
+	}
 	return completionResp, streamErr
 }
 
@@ -346,6 +353,7 @@ func handleContentBlockDeltaEvent(
 func toAnthropicMessages(
 	systemPrompt string,
 	messages []spec.ChatCompletionDataMessage,
+	attachments []spec.ChatCompletionAttachment,
 ) (msgs []anthropic.MessageParam, sysPrompts []anthropic.TextBlockParam, err error) {
 	var out []anthropic.MessageParam
 	var sysParts []string
@@ -354,17 +362,48 @@ func toAnthropicMessages(
 		sysParts = append(sysParts, s)
 	}
 
-	for _, m := range messages {
+	// Identify the last user message; attachments are associated with the current
+	// user turn.
+	lastUserIdx := -1
+	for i, m := range messages {
+		if m.Role == spec.User {
+			lastUserIdx = i
+		}
+	}
+
+	attachmentBlocks, err := buildAnthropicAttachmentBlocks(attachments)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for idx, m := range messages {
 		if m.Content == nil {
 			continue
 		}
+		content := strings.TrimSpace(*m.Content)
+
 		switch m.Role {
 		case spec.System, spec.Developer:
-			sysParts = append(sysParts, strings.TrimSpace(*m.Content))
+			if content != "" {
+				sysParts = append(sysParts, content)
+			}
 		case spec.User:
-			out = append(out, anthropic.NewUserMessage(anthropic.NewTextBlock(*m.Content)))
+			// Attach any resolved image/file blocks to the final user message.
+			if idx == lastUserIdx && len(attachmentBlocks) > 0 {
+				blocks := make([]anthropic.ContentBlockParamUnion, 0, 1+len(attachmentBlocks))
+				if content != "" {
+					blocks = append(blocks, anthropic.NewTextBlock(content))
+				}
+				blocks = append(blocks, attachmentBlocks...)
+				out = append(out, anthropic.NewUserMessage(blocks...))
+			} else {
+				out = append(out, anthropic.NewUserMessage(anthropic.NewTextBlock(content)))
+			}
 		case spec.Assistant:
-			out = append(out, anthropic.NewAssistantMessage(anthropic.NewTextBlock(*m.Content)))
+			out = append(
+				out,
+				anthropic.NewAssistantMessage(anthropic.NewTextBlock(content)),
+			)
 		case spec.Function, spec.Tool:
 			// Anthropic tools need to be processed independently of messages, skip for now.
 		default:
@@ -379,6 +418,49 @@ func toAnthropicMessages(
 	}
 
 	return out, sysParams, nil
+}
+
+// buildAnthropicAttachmentBlocks converts generic attachments into Anthropic
+// content blocks. Images are sent as base64 image blocks; other attachment
+// kinds fall back to short text descriptions.
+func buildAnthropicAttachmentBlocks(
+	attachments []spec.ChatCompletionAttachment,
+) ([]anthropic.ContentBlockParamUnion, error) {
+	if len(attachments) == 0 {
+		return nil, nil
+	}
+
+	out := make([]anthropic.ContentBlockParamUnion, 0, len(attachments))
+	for _, att := range attachments {
+		switch att.Kind {
+		case spec.AttachmentImage:
+			if att.ImageRef == nil {
+				continue
+			}
+			encoded, mimeType, err := imageEncodingFromRef(att.ImageRef)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, anthropic.NewImageBlockBase64(mimeType, encoded))
+
+		case spec.AttachmentFile:
+			// Anthropics' Messages API doesn't support arbitrary files directly in
+			// the same way as OpenAI's multimodal inputs. Represent the file as a
+			// short textual handle instead so future resolvers (doc search, PDF
+			// extractors, etc.) can plug in without changing the provider wiring.
+			if text := formatAttachmentAsText(att); text != "" {
+				out = append(out, anthropic.NewTextBlock(text))
+			}
+
+		case spec.AttachmentDocIndex, spec.AttachmentPR, spec.AttachmentCommit, spec.AttachmentSnapshot:
+			if text := formatAttachmentAsText(att); text != "" {
+				out = append(out, anthropic.NewTextBlock(text))
+			}
+		default:
+			continue
+		}
+	}
+	return out, nil
 }
 
 func getResponseContentFromAnthropicMessage(msg *anthropic.Message) []spec.ResponseContent {
@@ -474,4 +556,30 @@ func toAnthropicTools(
 		out = append(out, toolUnion)
 	}
 	return out, nil
+}
+
+func extractAnthropicToolCalls(msg *anthropic.Message) []spec.ResponseToolCall {
+	if msg == nil {
+		return nil
+	}
+	out := make([]spec.ResponseToolCall, 0, len(msg.Content))
+	for _, content := range msg.Content {
+		variant, ok := content.AsAny().(anthropic.ToolUseBlock)
+		if !ok {
+			continue
+		}
+		call := spec.ResponseToolCall{
+			ID:        strings.TrimSpace(variant.ID),
+			CallID:    strings.TrimSpace(variant.ID),
+			Name:      strings.TrimSpace(variant.Name),
+			Arguments: strings.TrimSpace(string(variant.Input)),
+			Type:      string(variant.Type),
+		}
+		out = append(out, call)
+
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }

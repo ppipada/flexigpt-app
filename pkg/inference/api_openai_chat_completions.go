@@ -10,6 +10,7 @@ import (
 
 	"github.com/openai/openai-go/v2"
 	"github.com/openai/openai-go/v2/option"
+	"github.com/openai/openai-go/v2/packages/param"
 	"github.com/openai/openai-go/v2/shared"
 
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
@@ -157,6 +158,7 @@ func (api *OpenAIChatCompletionsAPI) FetchCompletion(
 	msgs, err := toOpenAIChatMessages(
 		completionData.ModelParams.SystemPrompt,
 		completionData.Messages,
+		completionData.Attachments,
 		completionData.ModelParams.Name,
 		api.ProviderParams.Name,
 	)
@@ -225,6 +227,9 @@ func (api *OpenAIChatCompletionsAPI) doNonStreaming(
 	completionResp.Body.ResponseContent = []spec.ResponseContent{
 		{Type: spec.ResponseContentTypeText, Content: full},
 	}
+	if toolCalls := extractOpenAIChatToolCalls(resp.Choices); len(toolCalls) > 0 {
+		completionResp.Body.ToolCalls = toolCalls
+	}
 	return completionResp, nil
 }
 
@@ -286,12 +291,16 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 	completionResp.Body.ResponseContent = []spec.ResponseContent{
 		{Type: spec.ResponseContentTypeText, Content: fullResp},
 	}
+	if toolCalls := extractOpenAIChatToolCalls(acc.Choices); len(toolCalls) > 0 {
+		completionResp.Body.ToolCalls = toolCalls
+	}
 	return completionResp, streamErr
 }
 
 func toOpenAIChatMessages(
 	systemPrompt string,
 	messages []spec.ChatCompletionDataMessage,
+	attachments []spec.ChatCompletionAttachment,
 	modelName modelpresetSpec.ModelName,
 	providerName modelpresetSpec.ProviderName,
 ) ([]openai.ChatCompletionMessageParamUnion, error) {
@@ -302,7 +311,21 @@ func toOpenAIChatMessages(
 		out = append(out, *msg)
 	}
 
-	for _, m := range messages {
+	// Identify the last user message; attachments are associated with the
+	// "current" user turn in the frontend, which is always the last user role.
+	lastUserIdx := -1
+	for i, m := range messages {
+		if m.Role == spec.User {
+			lastUserIdx = i
+		}
+	}
+
+	attachmentParts, err := buildOpenAIChatAttachmentParts(attachments)
+	if err != nil {
+		return nil, err
+	}
+
+	for idx, m := range messages {
 		if m.Content == nil {
 			continue
 		}
@@ -312,12 +335,78 @@ func toOpenAIChatMessages(
 		case spec.Developer:
 			out = append(out, openai.DeveloperMessage(*m.Content))
 		case spec.User:
-			out = append(out, openai.UserMessage(*m.Content))
+			// For the last user message, attach any file/image content parts so we
+			// can take advantage of OpenAI's multimodal chat support.
+			if idx == lastUserIdx && len(attachmentParts) > 0 {
+				var parts []openai.ChatCompletionContentPartUnionParam
+				if c := strings.TrimSpace(*m.Content); c != "" {
+					parts = append(parts, openai.TextContentPart(c))
+				}
+				parts = append(parts, attachmentParts...)
+				out = append(out, openai.UserMessage(parts))
+			} else {
+				out = append(out, openai.UserMessage(*m.Content))
+			}
 		case spec.Assistant:
 			out = append(out, openai.AssistantMessage(*m.Content))
 		case spec.Function, spec.Tool:
 			toolCallID := "1"
 			out = append(out, openai.ToolMessage(*m.Content, toolCallID))
+		}
+	}
+	return out, nil
+}
+
+// buildOpenAIChatAttachmentParts converts generic chat attachments into
+// ChatCompletion content parts so that files and images can be sent to OpenAI's
+// multimodal chat endpoint.
+func buildOpenAIChatAttachmentParts(
+	attachments []spec.ChatCompletionAttachment,
+) ([]openai.ChatCompletionContentPartUnionParam, error) {
+	if len(attachments) == 0 {
+		return nil, nil
+	}
+
+	out := make([]openai.ChatCompletionContentPartUnionParam, 0, len(attachments))
+	for _, att := range attachments {
+		switch att.Kind {
+		case spec.AttachmentImage:
+			if att.ImageRef == nil {
+				continue
+			}
+			encoded, mimeType, err := imageEncodingFromRef(att.ImageRef)
+			if err != nil {
+				return nil, err
+			}
+			dataURL := fmt.Sprintf("data:%s;base64,%s", mimeType, encoded)
+			img := openai.ChatCompletionContentPartImageImageURLParam{
+				URL:    dataURL,
+				Detail: "auto",
+			}
+			out = append(out, openai.ImageContentPart(img))
+
+		case spec.AttachmentFile:
+			if att.FileRef == nil {
+				continue
+			}
+			encoded, filename, err := fileEncodingFromRef(att.FileRef)
+			if err != nil {
+				return nil, err
+			}
+			var fileParam openai.ChatCompletionContentPartFileFileParam
+			fileParam.FileData = param.NewOpt(encoded)
+			fileParam.Filename = param.NewOpt(filename)
+			out = append(out, openai.FileContentPart(fileParam))
+
+		case spec.AttachmentDocIndex, spec.AttachmentPR, spec.AttachmentCommit, spec.AttachmentSnapshot:
+			// For generic attachments (doc indices, PRs, commits, etc.), fall back
+			// to a short textual reference so the model is at least aware of the
+			// handle even if the provider lacks a richer modality.
+			if text := formatAttachmentAsText(att); text != "" {
+				out = append(out, openai.TextContentPart(text))
+			}
+		default:
+			continue
 		}
 	}
 	return out, nil
@@ -368,4 +457,51 @@ func toOpenAIChatTools(
 		out = append(out, openai.ChatCompletionFunctionTool(fn))
 	}
 	return out, nil
+}
+
+func extractOpenAIChatToolCalls(choices []openai.ChatCompletionChoice) []spec.ResponseToolCall {
+	if len(choices) == 0 {
+		return nil
+	}
+	return convertOpenAIChatMessageToolCalls(&choices[0].Message)
+}
+
+func convertOpenAIChatMessageToolCalls(
+	msg *openai.ChatCompletionMessage,
+) []spec.ResponseToolCall {
+	if msg == nil || len(msg.ToolCalls) == 0 {
+		return nil
+	}
+
+	out := make([]spec.ResponseToolCall, 0, len(msg.ToolCalls))
+	for _, tc := range msg.ToolCalls {
+		switch variant := tc.AsAny().(type) {
+		case openai.ChatCompletionMessageFunctionToolCall:
+			out = append(
+				out,
+				spec.ResponseToolCall{
+					ID:        variant.ID,
+					CallID:    variant.ID,
+					Name:      variant.Function.Name,
+					Arguments: variant.Function.Arguments,
+					Type:      string(variant.Type),
+				},
+			)
+		case openai.ChatCompletionMessageCustomToolCall:
+			out = append(
+				out,
+				spec.ResponseToolCall{
+					ID:        variant.ID,
+					CallID:    variant.ID,
+					Name:      variant.Custom.Name,
+					Arguments: variant.Custom.Input,
+					Type:      string(variant.Type),
+				},
+			)
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
