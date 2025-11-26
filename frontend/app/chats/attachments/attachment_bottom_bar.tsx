@@ -63,7 +63,7 @@ function PickerButton({ label, icon, buttonRef, menuState, shortcut, disabled }:
 				ref={buttonRef}
 				store={menuState}
 				disabled={disabled}
-				className="btn btn-ghost btn-circle btn-sm"
+				className="btn btn-ghost btn-circle btn-sm text-neutral-custom hover:text-base-content"
 				aria-label={tooltip}
 			>
 				{icon}
