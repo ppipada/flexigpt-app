@@ -85,7 +85,7 @@ export function CommandTipsBar({ shortcutConfig }: CommandTipsBarProps) {
 	}, [isShortcutsOpen, isTipsOpen]);
 
 	return (
-		<div className="bg-base-200 text-neutral-custom flex items-center justify-between rounded-xl px-2 py-0 text-xs">
+		<div className="text-neutral-custom flex items-center justify-between px-2 py-0 text-xs">
 			{/* Additional shortcuts dropdown (left) */}
 			<details
 				ref={shortcutsDetailsRef}
@@ -96,7 +96,7 @@ export function CommandTipsBar({ shortcutConfig }: CommandTipsBarProps) {
 				}}
 			>
 				<summary
-					className="btn btn-xs text-neutral-custom flex items-center gap-2 overflow-hidden border-none text-left shadow-none"
+					className="btn btn-xs text-neutral-custom flex items-center gap-2 overflow-hidden border-none text-left"
 					title="Additional keyboard shortcuts"
 					aria-expanded={isShortcutsOpen}
 				>
@@ -108,7 +108,7 @@ export function CommandTipsBar({ shortcutConfig }: CommandTipsBarProps) {
 					)}
 				</summary>
 
-				<ul className="dropdown-content bg-base-100 max-w-[80vw] min-w-[24vw] list-none overflow-visible rounded-xl p-0 shadow-xl">
+				<ul className="dropdown-content max-w-[80vw] min-w-[24vw] list-none overflow-visible rounded-xl p-0 shadow-xl">
 					{/* Chat group */}
 					{chatShortcuts.length > 0 && (
 						<>
@@ -168,7 +168,7 @@ export function CommandTipsBar({ shortcutConfig }: CommandTipsBarProps) {
 					)}
 				</summary>
 
-				<ul className="dropdown-content bg-base-100 max-w-[80vw] min-w-[20vw] list-none overflow-visible rounded-xl p-0 shadow-xl">
+				<ul className="dropdown-content max-w-[80vw] min-w-[20vw] list-none overflow-visible rounded-xl p-0 shadow-xl">
 					{tips.map(tip => (
 						<li key={tip.key} className="m-0 p-0 text-xs">
 							<div className="tooltip tooltip-top w-full" data-tip={tip.description}>

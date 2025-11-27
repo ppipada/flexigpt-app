@@ -18,7 +18,7 @@ import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 import { AttachmentKind } from '@/spec/attachment';
 import type { FileFilter } from '@/spec/backend';
 
-import { formatShortcut, type ShortcutConfig } from '@/lib/keyboard_shortcuts';
+import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
 import { cssEscape } from '@/lib/text_utils';
 
@@ -116,15 +116,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const [docVersion, setDocVersion] = useState(0);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [attachments, setAttachments] = useState<EditorAttachment[]>([]);
-
-	const shortcutLabels = useMemo(
-		() => ({
-			templates: formatShortcut(shortcutConfig.insertTemplate),
-			tools: formatShortcut(shortcutConfig.insertTool),
-			attachments: formatShortcut(shortcutConfig.insertAttachment),
-		}),
-		[shortcutConfig]
-	);
 
 	const closeAllMenus = useCallback(() => {
 		templateMenu.hide();
@@ -399,11 +390,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	};
 
 	return (
-		<form
-			ref={formRef}
-			onSubmit={handleSubmit}
-			className="bg-base-100 border-base-300 focus-within:border-base-400 mx-0 flex flex-col overflow-hidden rounded-2xl border"
-		>
+		<form ref={formRef} onSubmit={handleSubmit} className="mx-0 flex flex-col overflow-hidden">
 			{submitError ? (
 				<div className="alert alert-error mx-4 mt-3 mb-1 flex items-start gap-2 text-sm" role="alert">
 					<FiAlertTriangle size={16} className="mt-0.5" />
@@ -421,7 +408,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			>
 				<TemplateToolbars />
 				{/* Row: editor (send button now lives in the bottom attachment bar) */}
-				<div className="flex min-h-20 items-center gap-2 px-1 py-0">
+				<div className="bg-base-100 border-base-200 flex min-h-20 items-center gap-2 rounded-2xl border px-1 py-0">
 					<PlateContent
 						ref={contentRef}
 						placeholder="Type message..."
@@ -458,7 +445,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 					templateButtonRef={templateButtonRef}
 					toolButtonRef={toolButtonRef}
 					attachmentButtonRef={attachmentButtonRef}
-					shortcutLabels={shortcutLabels}
+					shortcutConfig={shortcutConfig}
 					onRequestStop={onRequestStop}
 				/>
 			</Plate>

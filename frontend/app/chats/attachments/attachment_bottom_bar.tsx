@@ -1,4 +1,4 @@
-import { type ReactNode, type RefObject } from 'react';
+import { type ReactNode, type RefObject, useMemo } from 'react';
 
 import { FiFileText, FiImage, FiPaperclip, FiSend, FiSquare, FiTool, FiX, FiZap } from 'react-icons/fi';
 
@@ -7,6 +7,8 @@ import { type PlateEditor, useEditorRef } from 'platejs/react';
 
 import type { PromptTemplateListItem } from '@/spec/prompt';
 import type { ToolListItem } from '@/spec/tool';
+
+import { formatShortcut, type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 
 import { usePromptTemplates } from '@/hooks/use_template';
 import { useTools } from '@/hooks/use_tool';
@@ -24,6 +26,7 @@ import {
 	removeToolByKey,
 	toolIdentityKey,
 } from '@/chats/attachments/tool_editor_utils';
+import { CommandTipsBar } from '@/chats/chat_command_tips_bar';
 import { insertTemplateSelectionNode } from '@/chats/templates/template_editor_utils';
 
 interface AttachmentBottomBarProps {
@@ -38,11 +41,8 @@ interface AttachmentBottomBarProps {
 	templateButtonRef: RefObject<HTMLButtonElement | null>;
 	toolButtonRef: RefObject<HTMLButtonElement | null>;
 	attachmentButtonRef: RefObject<HTMLButtonElement | null>;
-	shortcutLabels: {
-		templates: string;
-		tools: string;
-		attachments: string;
-	};
+	shortcutConfig: ShortcutConfig;
+
 	onRequestStop: () => void;
 }
 
@@ -95,10 +95,18 @@ export function AttachmentBottomBar({
 	templateButtonRef,
 	toolButtonRef,
 	attachmentButtonRef,
-	shortcutLabels,
+	shortcutConfig,
 	onRequestStop,
 }: AttachmentBottomBarProps) {
 	const editor = useEditorRef() as PlateEditor;
+	const shortcutLabels = useMemo(
+		() => ({
+			templates: formatShortcut(shortcutConfig.insertTemplate),
+			tools: formatShortcut(shortcutConfig.insertTool),
+			attachments: formatShortcut(shortcutConfig.insertAttachment),
+		}),
+		[shortcutConfig]
+	);
 	const { data: templateData, loading: templatesLoading } = usePromptTemplates();
 	const { data: toolData, loading: toolsLoading } = useTools();
 
@@ -170,12 +178,8 @@ export function AttachmentBottomBar({
 	};
 
 	return (
-		<div
-			className="border-base-300 bg-base-100/95 supports-backdrop-filter:bg-base-100/60 w-full border-t backdrop-blur"
-			data-attachments-bottom-bar
-			aria-label="Templates, tools, and attachments"
-		>
-			<div className="flex items-center gap-2 p-1 text-xs">
+		<div className="bg-base-200 w-full" data-attachments-bottom-bar aria-label="Templates, tools, and attachments">
+			<div className="flex items-center gap-2 px-1 pt-1 pb-0 text-xs shadow-none">
 				<div className="flex items-center gap-1">
 					<PickerButton
 						label="Insert template"
@@ -273,6 +277,8 @@ export function AttachmentBottomBar({
 						</MenuItem>
 					</Menu>
 				</div>
+				{/* Neutral tips bar  */}
+				<CommandTipsBar shortcutConfig={shortcutConfig} />
 
 				{/* Chips scroller */}
 				<div className="no-scrollbar flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-0">
@@ -334,12 +340,6 @@ export function AttachmentBottomBar({
 							</div>
 						);
 					})}
-
-					{/* {!hasAttachments ? (
-						<span className="text-base-content/60 truncate text-xs whitespace-nowrap">
-							Add templates, tools, or attachments for this turn
-						</span>
-					) : null} */}
 				</div>
 
 				{isBusy ? (

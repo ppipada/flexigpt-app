@@ -7,7 +7,6 @@ import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 import { DeleteConfirmationModal } from '@/components/delete_confirmation';
 
 import { AssistantContextBar } from '@/chats/assitantcontexts/context_bar';
-import { CommandTipsBar } from '@/chats/chat_command_tips_bar';
 import { EditorArea, type EditorAreaHandle, type EditorSubmitPayload } from '@/chats/chat_input_editor';
 
 export interface InputBoxHandle {
@@ -113,10 +112,6 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 					}}
 					shortcutConfig={shortcutConfig}
 				/>
-			</div>
-			{/* Neutral tips bar under the editor */}
-			<div className="my-1 w-full">
-				<CommandTipsBar shortcutConfig={shortcutConfig} />
 			</div>
 		</div>
 	);
