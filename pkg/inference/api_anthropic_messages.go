@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 
@@ -437,17 +438,17 @@ func buildAnthropicAttachmentBlocks(
 			if att.ImageRef == nil {
 				continue
 			}
-			encoded, mimeType, err := imageEncodingFromRef(att.ImageRef)
+			imageInfo, err := fileutil.ReadImageInfo(att.ImageRef.Path, true)
 			if err != nil {
 				return nil, err
 			}
-			out = append(out, anthropic.NewImageBlockBase64(mimeType, encoded))
+			out = append(out, anthropic.NewImageBlockBase64(imageInfo.MIMEType, imageInfo.Base64Data))
 
 		case spec.AttachmentFile:
 			if att.FileRef == nil {
 				continue
 			}
-			encoded, _, err := fileEncodingFromRef(att.FileRef)
+			encoded, err := fileutil.ReadFile(att.FileRef.Path, fileutil.ReadEncodingBinary)
 			if err != nil {
 				return nil, err
 			}

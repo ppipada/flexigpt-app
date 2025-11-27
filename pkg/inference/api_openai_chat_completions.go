@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/openai/openai-go/v2/packages/param"
 	"github.com/openai/openai-go/v2/shared"
 
+	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
@@ -374,11 +376,13 @@ func buildOpenAIChatAttachmentParts(
 			if att.ImageRef == nil {
 				continue
 			}
-			encoded, mimeType, err := imageEncodingFromRef(att.ImageRef)
+
+			imageInfo, err := fileutil.ReadImageInfo(att.ImageRef.Path, true)
 			if err != nil {
 				return nil, err
 			}
-			dataURL := fmt.Sprintf("data:%s;base64,%s", mimeType, encoded)
+
+			dataURL := fmt.Sprintf("data:%s;base64,%s", imageInfo.MIMEType, imageInfo.Base64Data)
 			img := openai.ChatCompletionContentPartImageImageURLParam{
 				URL:    dataURL,
 				Detail: "auto",
@@ -389,10 +393,12 @@ func buildOpenAIChatAttachmentParts(
 			if att.FileRef == nil {
 				continue
 			}
-			encoded, filename, err := fileEncodingFromRef(att.FileRef)
+			encoded, err := fileutil.ReadFile(att.FileRef.Path, fileutil.ReadEncodingBinary)
 			if err != nil {
 				return nil, err
 			}
+			filename := filepath.Base(att.FileRef.Path)
+
 			fileData := "data:application/pdf;base64," + encoded
 			var fileParam openai.ChatCompletionContentPartFileFileParam
 			fileParam.FileData = param.NewOpt(fileData)

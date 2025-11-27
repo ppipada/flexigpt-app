@@ -2,19 +2,10 @@ package gotool
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
-	"image"
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
-	"io"
-	"io/fs"
-	"os"
-	"path/filepath"
-	"regexp"
-	"strings"
 	"time"
+
+	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 )
 
 const (
@@ -37,29 +28,18 @@ type ReadFileOut struct {
 // ReadFile reads a file from disk and returns its contents.
 // If Encoding == "binary" the output is base64-encoded.
 func ReadFile(_ context.Context, args ReadFileArgs) (*ReadFileOut, error) {
-	if args.Path == "" {
-		return nil, errors.New("path is required")
+	enc := fileutil.ReadEncoding(args.Encoding)
+	if enc == "" {
+		enc = fileutil.ReadEncodingText
 	}
-	// Open the file (no write permissions!)
-	f, err := os.Open(args.Path)
+	if enc != fileutil.ReadEncodingText && args.Encoding != fileutil.ReadEncodingBinary {
+		return nil, errors.New(`encoding must be "text" or "binary"`)
+	}
+	data, err := fileutil.ReadFile(args.Path, enc)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
-
-	data, err := io.ReadAll(f)
-	if err != nil {
-		return nil, err
-	}
-
-	enc := strings.ToLower(args.Encoding)
-	if enc == "" || enc == "text" {
-		return &ReadFileOut{Content: string(data)}, nil
-	}
-	if enc == "binary" {
-		return &ReadFileOut{Content: base64.StdEncoding.EncodeToString(data)}, nil
-	}
-	return nil, errors.New(`encoding must be "text" or "binary"`)
+	return &ReadFileOut{Content: data}, nil
 }
 
 type ListDirectoryArgs struct {
@@ -73,27 +53,11 @@ type ListDirectoryOut struct {
 // ListDirectory lists files / dirs in Path. If Pattern is supplied, the
 // results are filtered via filepath.Match.
 func ListDirectory(_ context.Context, args ListDirectoryArgs) (*ListDirectoryOut, error) {
-	dir := args.Path
-	if dir == "" {
-		dir = "."
-	}
-	entries, err := os.ReadDir(dir)
+	entries, err := fileutil.ListDirectory(args.Path, args.Pattern)
 	if err != nil {
 		return nil, err
 	}
-
-	out := make([]string, 0, len(entries))
-	for _, e := range entries {
-		name := e.Name()
-		if args.Pattern != "" {
-			matched, _ := filepath.Match(args.Pattern, name)
-			if !matched {
-				continue
-			}
-		}
-		out = append(out, name)
-	}
-	return &ListDirectoryOut{Entries: out}, nil
+	return &ListDirectoryOut{Entries: entries}, nil
 }
 
 type SearchFilesArgs struct {
@@ -108,43 +72,8 @@ type SearchFilesOut struct {
 // SearchFiles walks Root (recursively) and returns up to MaxResults files
 // whose *path* or *UTF-8 text content* match the supplied regexp.
 func SearchFiles(_ context.Context, args SearchFilesArgs) (*SearchFilesOut, error) {
-	if args.Pattern == "" {
-		return nil, errors.New("pattern is required")
-	}
-	root := args.Root
-	if root == "" {
-		root = "."
-	}
-	re, err := regexp.Compile(args.Pattern)
+	matches, err := fileutil.SearchFiles(args.Root, args.Pattern, args.MaxResults)
 	if err != nil {
-		return nil, err
-	}
-	limit := args.MaxResults
-	if limit <= 0 {
-		limit = int(^uint(0) >> 1) // “infinite”
-	}
-
-	var matches []string
-	walkFn := func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return err
-		}
-		if re.MatchString(path) {
-			matches = append(matches, path)
-		} else {
-			// Check file content only for (reasonably small) text files.
-			if info, _ := d.Info(); info != nil && info.Size() < 10*1024*1024 { // 10 MB guard
-				if data, rerr := os.ReadFile(path); rerr == nil && re.Match(data) {
-					matches = append(matches, path)
-				}
-			}
-		}
-		if len(matches) >= limit {
-			return fs.SkipDir // stop walking
-		}
-		return nil
-	}
-	if err := filepath.WalkDir(root, walkFn); err != nil {
 		return nil, err
 	}
 	return &SearchFilesOut{Matches: matches}, nil
@@ -159,6 +88,20 @@ type StatPathOut struct {
 	IsDir     bool       `json:"isDir"`
 	SizeBytes int64      `json:"sizeBytes,omitempty"`
 	ModTime   *time.Time `json:"modTime,omitempty"`
+}
+
+// StatPath returns basic metadata for the supplied path without mutating the file system.
+func StatPath(_ context.Context, args StatPathArgs) (*StatPathOut, error) {
+	pathInfo, err := fileutil.StatPath(args.Path)
+	if err != nil {
+		return nil, err
+	}
+	return &StatPathOut{
+		Exists:    pathInfo.Exists,
+		IsDir:     pathInfo.IsDir,
+		SizeBytes: pathInfo.SizeBytes,
+		ModTime:   pathInfo.ModTime,
+	}, nil
 }
 
 type InspectImageArgs struct {
@@ -176,57 +119,16 @@ type InspectImageOut struct {
 
 // InspectImage inspects an image file and returns its intrinsic metadata.
 func InspectImage(ctx context.Context, args InspectImageArgs) (*InspectImageOut, error) {
-	if args.Path == "" {
-		return nil, errors.New("path is required")
-	}
-	stat, err := StatPath(ctx, StatPathArgs(args))
+	info, err := fileutil.ReadImageInfo(args.Path, false)
 	if err != nil {
 		return nil, err
 	}
-	out := &InspectImageOut{Exists: stat.Exists}
-	if !stat.Exists {
-		return out, nil
-	}
-	if stat.IsDir {
-		return nil, errors.New("path points to a directory, expected file")
-	}
-	out.SizeBytes = stat.SizeBytes
-	out.ModTime = stat.ModTime
-	f, err := os.Open(args.Path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	cfg, format, err := image.DecodeConfig(f)
-	if err != nil {
-		if errors.Is(err, image.ErrFormat) {
-			return nil, err
-		}
-		return nil, err
-	}
-	out.Width = cfg.Width
-	out.Height = cfg.Height
-	out.Format = format
-	return out, nil
-}
-
-// StatPath returns basic metadata for the supplied path without mutating the file system.
-func StatPath(_ context.Context, args StatPathArgs) (*StatPathOut, error) {
-	if args.Path == "" {
-		return nil, errors.New("path is required")
-	}
-	info, err := os.Stat(args.Path)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return &StatPathOut{Exists: false}, nil
-		}
-		return nil, err
-	}
-	mod := info.ModTime().UTC()
-	return &StatPathOut{
-		Exists:    true,
-		IsDir:     info.IsDir(),
-		SizeBytes: info.Size(),
-		ModTime:   &mod,
+	return &InspectImageOut{
+		Exists:    info.Exists,
+		Width:     info.Width,
+		Height:    info.Height,
+		Format:    info.Format,
+		SizeBytes: info.SizeBytes,
+		ModTime:   info.ModTime,
 	}, nil
 }
