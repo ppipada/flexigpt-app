@@ -17,12 +17,22 @@ export function ToolSelectionElement(props: PlateElementProps<any>) {
 		<span
 			{...attributes}
 			contentEditable={false}
-			className="pointer-events-none sr-only"
 			data-tool-chip
-			title={`Tool: ${display} • ${slug}`}
 			aria-hidden="true"
+			title={`Tool: ${display} • ${slug}`}
+			// Absolutely position and zero-size so it contributes no line height.
+			style={{
+				position: 'absolute',
+				width: 0,
+				height: 0,
+				padding: 0,
+				margin: 0,
+				overflow: 'hidden',
+				border: 0,
+				clip: 'rect(0 0 0 0)',
+				whiteSpace: 'nowrap',
+			}}
 		>
-			<span className="sr-only">{display}</span>
 			{children}
 		</span>
 	);

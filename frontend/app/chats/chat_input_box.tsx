@@ -75,7 +75,7 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 	 * Render
 	 * ------------------------------------------------------------------ */
 	return (
-		<div className="bg-base-200 flex-1">
+		<div className="bg-base-200 w-full min-w-0">
 			{/* Model- / params-bar ---------------------------------------------- */}
 			<AssistantContextBar onOptionsChange={setChatOptions} /* hand the aggregated options up */ />
 
@@ -95,7 +95,7 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 					confirmButtonText="Abort"
 				/>
 			)}
-			<div className="flex-1 overflow-auto">
+			<div className="overflow-x-hidden overflow-y-auto">
 				{/* Chat text-input --------------------------------------------------- */}
 				{/* <TextArea
 					ref={inputAreaRef}

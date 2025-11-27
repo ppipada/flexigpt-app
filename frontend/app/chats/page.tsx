@@ -552,8 +552,8 @@ export default function ChatsPage() {
 				</div>
 
 				{/* Row 3: INPUT (auto; grows with content) */}
-				<div className="row-start-3 row-end-4 flex w-full justify-center">
-					<div className="w-11/12 xl:w-5/6">
+				<div className="row-start-3 row-end-4 flex w-full min-w-0 justify-center">
+					<div className="w-11/12 min-w-0 xl:w-5/6">
 						<InputBox
 							ref={chatInputRef}
 							onSend={sendMessage}

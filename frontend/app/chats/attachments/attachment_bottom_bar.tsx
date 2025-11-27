@@ -1,6 +1,6 @@
 import { type ReactNode, type RefObject, useMemo } from 'react';
 
-import { FiFileText, FiImage, FiPaperclip, FiSend, FiSquare, FiTool, FiX, FiZap } from 'react-icons/fi';
+import { FiFileText, FiImage, FiPaperclip, FiTool, FiZap } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, type MenuStore } from '@ariakit/react';
 import { type PlateEditor, useEditorRef } from 'platejs/react';
@@ -15,26 +15,12 @@ import { useTools } from '@/hooks/use_tool';
 
 import { promptStoreAPI, toolStoreAPI } from '@/apis/baseapi';
 
-import {
-	type EditorAttachment,
-	editorAttachmentKey,
-	getEditorAttachmentPath,
-} from '@/chats/attachments/editor_attachment_utils';
-import {
-	getToolNodesWithPath,
-	insertToolSelectionNode,
-	removeToolByKey,
-	toolIdentityKey,
-} from '@/chats/attachments/tool_editor_utils';
+import { getToolNodesWithPath, insertToolSelectionNode, toolIdentityKey } from '@/chats/attachments/tool_editor_utils';
 import { CommandTipsBar } from '@/chats/chat_command_tips_bar';
 import { insertTemplateSelectionNode } from '@/chats/templates/template_editor_utils';
 
 interface AttachmentBottomBarProps {
-	attachments: EditorAttachment[];
 	onAttachFiles: (mode: 'file' | 'image') => Promise<void> | void;
-	onRemoveAttachment: (att: EditorAttachment) => void;
-	isBusy: boolean;
-	isSendButtonEnabled: boolean;
 	templateMenuState: MenuStore;
 	toolMenuState: MenuStore;
 	attachmentMenuState: MenuStore;
@@ -42,8 +28,6 @@ interface AttachmentBottomBarProps {
 	toolButtonRef: RefObject<HTMLButtonElement | null>;
 	attachmentButtonRef: RefObject<HTMLButtonElement | null>;
 	shortcutConfig: ShortcutConfig;
-
-	onRequestStop: () => void;
 }
 
 interface PickerButtonProps {
@@ -80,15 +64,11 @@ const menuItemClasses =
 	'hover:bg-base-200 data-[active-item]:bg-base-300';
 
 /**
-  Bottom bar for rendering attached items (templates/tools/files) and housing
-  action buttons. Chips area is horizontally scrollable.
+  Bottom bar for template/tool/attachment buttons and tips menus.
+  The chips scroller now lives in a separate bar inside the editor.
 */
 export function AttachmentBottomBar({
-	attachments,
 	onAttachFiles,
-	onRemoveAttachment,
-	isBusy,
-	isSendButtonEnabled,
 	templateMenuState,
 	toolMenuState,
 	attachmentMenuState,
@@ -96,7 +76,6 @@ export function AttachmentBottomBar({
 	toolButtonRef,
 	attachmentButtonRef,
 	shortcutConfig,
-	onRequestStop,
 }: AttachmentBottomBarProps) {
 	const editor = useEditorRef() as PlateEditor;
 	const shortcutLabels = useMemo(
@@ -111,7 +90,6 @@ export function AttachmentBottomBar({
 	const { data: toolData, loading: toolsLoading } = useTools();
 
 	const toolEntries = getToolNodesWithPath(editor);
-	// const hasAttachments = attachments.length > 0 || toolEntries.length > 0;
 
 	const attachedToolKeys = new Set(
 		toolEntries.map(([node]) => toolIdentityKey(node.bundleID, node.bundleSlug, node.toolSlug, node.toolVersion))
@@ -178,8 +156,13 @@ export function AttachmentBottomBar({
 	};
 
 	return (
-		<div className="bg-base-200 w-full" data-attachments-bottom-bar aria-label="Templates, tools, and attachments">
-			<div className="flex items-center gap-2 px-1 pt-1 pb-0 text-xs shadow-none">
+		<div
+			className="bg-base-200 w-full overflow-hidden"
+			data-attachments-bottom-bar
+			aria-label="Templates, tools, and attachments"
+		>
+			<div className="flex items-center gap-2 px-1 py-0 text-xs shadow-none">
+				{/* Left: template / tool / attachment pickers */}
 				<div className="flex items-center gap-1">
 					<PickerButton
 						label="Insert template"
@@ -277,92 +260,11 @@ export function AttachmentBottomBar({
 						</MenuItem>
 					</Menu>
 				</div>
-				{/* Neutral tips bar  */}
-				<CommandTipsBar shortcutConfig={shortcutConfig} />
 
-				{/* Chips scroller */}
-				<div className="no-scrollbar flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-0">
-					{attachments.map(att => {
-						const key = editorAttachmentKey(att);
-						const label = att.label.length > 40 ? att.label.slice(0, 37) + '...' : att.label;
-						const path = getEditorAttachmentPath(att);
-						return (
-							<div
-								key={key}
-								className="bg-base-200 hover:bg-base-300/80 text-base-content flex shrink-0 items-center gap-2 rounded-2xl px-2 py-0 text-xs"
-								title={`${att.kind} attachment: ${att.label}${path ? ` (${path})` : ''}`}
-								data-attachment-chip="attachment"
-							>
-								<FiFileText />
-								<span className="truncate">{label}</span>
-								<button
-									type="button"
-									className="btn btn-ghost btn-xs text-error shrink-0 px-1 py-0 shadow-none"
-									onClick={() => {
-										onRemoveAttachment(att);
-									}}
-									title="Remove attachment"
-									aria-label="Remove attachment"
-								>
-									<FiX />
-								</button>
-							</div>
-						);
-					})}
-
-					{toolEntries.map(([node]) => {
-						const n = node;
-						const display = n.toolSnapshot?.displayName ?? n.toolSlug;
-						const slug = `${n.bundleSlug ?? n.bundleID}/${n.toolSlug}@${n.toolVersion}`;
-						const identityKey = toolIdentityKey(n.bundleID, n.bundleSlug, n.toolSlug, n.toolVersion);
-
-						return (
-							<div
-								key={n.selectionID}
-								className="bg-base-200 hover:bg-base-300/80 text-base-content flex shrink-0 items-center gap-2 rounded-2xl px-2 py-0 text-xs"
-								title={`Tool choice: ${display} (${slug})`}
-								data-attachment-chip="tool"
-								data-selection-id={n.selectionID}
-							>
-								<FiTool />
-								<span className="truncate">{display.length > 36 ? display.slice(0, 36) + '...' : display}</span>
-								<button
-									type="button"
-									className="btn btn-ghost btn-xs text-error shrink-0 px-1 py-0 shadow-none"
-									onClick={() => {
-										removeToolByKey(editor, identityKey);
-									}}
-									title="Remove tool choice"
-									aria-label="Remove tool choice"
-								>
-									<FiX />
-								</button>
-							</div>
-						);
-					})}
+				{/* Right: keyboard shortcuts & tips menus */}
+				<div className="ml-auto flex items-center gap-1">
+					<CommandTipsBar shortcutConfig={shortcutConfig} />
 				</div>
-
-				{isBusy ? (
-					<button
-						type="button"
-						className="btn btn-circle btn-neutral btn-sm shrink-0"
-						onClick={onRequestStop}
-						title="Stop response"
-						aria-label="Stop response"
-					>
-						<FiSquare size={20} />
-					</button>
-				) : (
-					<button
-						type="submit"
-						className={`btn btn-circle btn-neutral btn-sm shrink-0 ${!isSendButtonEnabled ? 'btn-disabled' : ''}`}
-						disabled={!isSendButtonEnabled}
-						aria-label="Send message"
-						title="Send message"
-					>
-						<FiSend size={20} />
-					</button>
-				)}
 			</div>
 		</div>
 	);

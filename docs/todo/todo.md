@@ -4,6 +4,7 @@
 
 - [ ] edit message should fall to the editor with attachments/tools so that resend is consistent
 - [ ] render images and attacments in msg ui
+- [x] attachment tools buttons and shortcuts etc dropdowns ui
 
 - [ ] attachments
 

@@ -9,7 +9,7 @@ import {
 	useState,
 } from 'react';
 
-import { FiAlertTriangle } from 'react-icons/fi';
+import { FiAlertTriangle, FiSend, FiSquare } from 'react-icons/fi';
 
 import { useMenuStore } from '@ariakit/react';
 import { SingleBlockPlugin, type Value } from 'platejs';
@@ -38,6 +38,7 @@ import { ListKit } from '@/components/editor/plugins/list_kit';
 import { TabbableKit } from '@/components/editor/plugins/tabbable_kit';
 
 import { AttachmentBottomBar } from '@/chats/attachments/attachment_bottom_bar';
+import { AttachmentChipsBar } from '@/chats/attachments/attachment_chips_bar';
 import { type EditorAttachment, editorAttachmentKey } from '@/chats/attachments/editor_attachment_utils';
 import { type EditorAttachedToolChoice, getAttachedTools } from '@/chats/attachments/tool_editor_utils';
 import { ToolPlusKit } from '@/chats/attachments/tool_plugin';
@@ -95,9 +96,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			...TabbableKit,
 			...TemplateSlashKit,
 			...ToolPlusKit,
-			...FloatingToolbarKit, // Keep floating formatting toolbar
+			...FloatingToolbarKit,
 		],
-
 		value: EDITOR_EMPTY_VALUE,
 	});
 
@@ -112,7 +112,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const toolButtonRef = useRef<HTMLButtonElement | null>(null);
 	const attachmentButtonRef = useRef<HTMLButtonElement | null>(null);
 
-	// doc version tick to re-run selection computations on any editor change (even if text string doesn't change)
+	// doc version tick to re-run selection computations on any editor change
 	const [docVersion, setDocVersion] = useState(0);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [attachments, setAttachments] = useState<EditorAttachment[]>([]);
@@ -159,7 +159,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		const hasTemplate = selections.length > 0;
 
 		let requiredCount = 0;
-
 		let firstPendingVar: { name: string; selectionID?: string } | undefined = undefined;
 
 		for (const s of selections) {
@@ -189,7 +188,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			}
 			return hasNonEmptyUserText(editorRef.current);
 		},
-
 		insertSoftBreak: () => {
 			editor.tf.insertSoftBreak();
 		},
@@ -390,7 +388,11 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	};
 
 	return (
-		<form ref={formRef} onSubmit={handleSubmit} className="mx-0 flex flex-col overflow-hidden">
+		<form
+			ref={formRef}
+			onSubmit={handleSubmit}
+			className="mx-0 flex w-full max-w-full min-w-0 flex-col overflow-x-hidden overflow-y-visible"
+		>
 			{submitError ? (
 				<div className="alert alert-error mx-4 mt-3 mb-1 flex items-start gap-2 text-sm" role="alert">
 					<FiAlertTriangle size={16} className="mt-0.5" />
@@ -406,39 +408,68 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 					}
 				}}
 			>
-				<TemplateToolbars />
-				{/* Row: editor (send button now lives in the bottom attachment bar) */}
-				<div className="bg-base-100 border-base-200 flex min-h-20 items-center gap-2 rounded-2xl border px-1 py-0">
-					<PlateContent
-						ref={contentRef}
-						placeholder="Type message..."
-						spellCheck={false}
-						readOnly={isBusy}
-						onKeyDown={e => {
-							onKeyDown(e); // from useEnterSubmit (handles Enter vs Shift+Enter, etc.)
-						}}
-						onPaste={e => {
-							e.preventDefault();
-							e.stopPropagation();
-							const text = e.clipboardData.getData('text/plain');
-							if (!text) return;
-							insertPlainTextAsSingleBlock(editor, text);
-						}}
-						className="max-h-96 min-w-0 flex-1 resize-none overflow-auto bg-transparent p-2 whitespace-break-spaces outline-none [tab-size:2] focus:outline-none"
-						style={{
-							fontSize: '14px',
-							whiteSpace: 'break-spaces',
-							tabSize: 2,
-							minHeight: '4rem',
-						}}
-					/>
+				<div className="bg-base-100 border-base-200 w-full max-w-full min-w-0 overflow-hidden rounded-2xl border">
+					<TemplateToolbars />
+					{/* Row: editor with send/stop button on the right */}
+					<div className="flex min-h-20 min-w-0 gap-2 px-1 py-0">
+						<PlateContent
+							ref={contentRef}
+							placeholder="Type message..."
+							spellCheck={false}
+							readOnly={isBusy}
+							onKeyDown={e => {
+								onKeyDown(e); // from useEnterSubmit
+							}}
+							onPaste={e => {
+								e.preventDefault();
+								e.stopPropagation();
+								const text = e.clipboardData.getData('text/plain');
+								if (!text) return;
+								insertPlainTextAsSingleBlock(editor, text);
+							}}
+							className="max-h-96 min-w-0 flex-1 resize-none overflow-auto bg-transparent p-2 wrap-break-word whitespace-break-spaces outline-none [tab-size:2] focus:outline-none"
+							style={{
+								fontSize: '14px',
+								whiteSpace: 'break-spaces',
+								tabSize: 2,
+								minHeight: '4rem',
+							}}
+						/>
+
+						{/* Send / Stop button anchored at bottom-right */}
+						<div className="flex items-end pr-1 pb-2">
+							{isBusy ? (
+								<button
+									type="button"
+									className="btn btn-circle btn-neutral btn-sm shrink-0"
+									onClick={onRequestStop}
+									title="Stop response"
+									aria-label="Stop response"
+								>
+									<FiSquare size={20} />
+								</button>
+							) : (
+								<button
+									type="submit"
+									className={`btn btn-circle btn-neutral btn-sm shrink-0 ${!isSendButtonEnabled ? 'btn-disabled' : ''}`}
+									disabled={!isSendButtonEnabled}
+									aria-label="Send message"
+									title="Send message"
+								>
+									<FiSend size={20} />
+								</button>
+							)}
+						</div>
+					</div>
+					{/* Chips bar for attachments & tools (scrollable, only when there are chips) */}
+					<div className="flex w-full min-w-0 overflow-x-hidden">
+						<AttachmentChipsBar attachments={attachments} onRemoveAttachment={handleRemoveAttachment} />
+					</div>
 				</div>
+
+				{/* Bottom bar for template/tool/attachment pickers + tips menus */}
 				<AttachmentBottomBar
-					attachments={attachments}
 					onAttachFiles={handleAttachFiles}
-					onRemoveAttachment={handleRemoveAttachment}
-					isBusy={isBusy}
-					isSendButtonEnabled={isSendButtonEnabled}
 					templateMenuState={templateMenu}
 					toolMenuState={toolMenu}
 					attachmentMenuState={attachmentMenu}
@@ -446,7 +477,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 					toolButtonRef={toolButtonRef}
 					attachmentButtonRef={attachmentButtonRef}
 					shortcutConfig={shortcutConfig}
-					onRequestStop={onRequestStop}
 				/>
 			</Plate>
 		</form>

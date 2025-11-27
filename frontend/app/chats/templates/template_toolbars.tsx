@@ -205,7 +205,7 @@ export function TemplateToolbars() {
 	if (items.length === 0) return null;
 
 	return (
-		<div className="border-base-300 bg-base-100/95 supports-backdrop-filter:bg-base-100/60 sticky top-0 left-0 w-full border-b backdrop-blur">
+		<div className="border-base-300 sticky top-0 left-0 w-full min-w-0 border-b">
 			{items.map(({ id, sel, nodeWithPath }) => {
 				const [tsNode, tsPath] = nodeWithPath ?? [];
 				const flashing = flashAll;
