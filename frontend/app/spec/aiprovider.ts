@@ -1,3 +1,4 @@
+import type { Attachment } from '@/spec/attachment';
 import type { ModelName, ProviderName, ReasoningParams } from '@/spec/modelpreset';
 import type { Tool } from '@/spec/tool';
 
@@ -6,47 +7,6 @@ export enum ChatCompletionRoleEnum {
 	user = 'user',
 	assistant = 'assistant',
 	function = 'function',
-}
-
-// ChatCompletionAttachmentKind enumerates contextual attachment categories that can be
-// associated with messages sent to the inference layer.
-export enum ChatCompletionAttachmentKind {
-	file = 'file',
-	image = 'image',
-	docIndex = 'docIndex',
-	pr = 'pr',
-	commit = 'commit',
-	snapshot = 'snapshot',
-}
-
-export interface ChatCompletionFileRef {
-	path: string;
-	exists: boolean;
-	sizeBytes?: number;
-	modTime?: string;
-}
-
-export interface ChatCompletionImageRef {
-	path: string;
-	exists: boolean;
-	width?: number;
-	height?: number;
-	format?: string;
-	sizeBytes?: number;
-	modTime?: string;
-}
-
-export interface ChatCompletionGenericRef {
-	handle: string;
-}
-
-// ChatCompletionAttachment references contextual artifacts (files, images, doc handles, etc.).
-export interface ChatCompletionAttachment {
-	kind: ChatCompletionAttachmentKind;
-	label: string;
-	fileRef?: ChatCompletionFileRef;
-	imageRef?: ChatCompletionImageRef;
-	genericRef?: ChatCompletionGenericRef;
 }
 
 export interface ChatCompletionToolChoice {
@@ -139,7 +99,7 @@ export interface FetchCompletionData {
 	modelParams: ModelParams;
 	messages?: Array<ChatCompletionDataMessage>;
 	toolChoices?: Array<FetchCompletionToolChoice>;
-	attachments?: Array<ChatCompletionAttachment>;
+	attachments?: Array<Attachment>;
 }
 
 export interface FetchCompletionResponseBody {
@@ -157,7 +117,7 @@ export interface IProviderSetAPI {
 		currentMessage: ChatCompletionDataMessage,
 		prevMessages?: Array<ChatCompletionDataMessage>,
 		toolChoices?: Array<ChatCompletionToolChoice>,
-		attachments?: Array<ChatCompletionAttachment>
+		attachments?: Array<Attachment>
 	): Promise<FetchCompletionData>;
 	completion(
 		provider: ProviderName,

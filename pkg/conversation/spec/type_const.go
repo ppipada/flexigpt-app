@@ -2,6 +2,8 @@ package spec
 
 import (
 	"time"
+
+	"github.com/ppipada/flexigpt-app/pkg/attachment"
 )
 
 const (
@@ -21,42 +23,6 @@ const (
 	ConversationRoleFeedback  ConversationRoleEnum = "feedback"
 )
 
-// ConversationAttachmentKind enumerates high-level categories of contextual attachments
-// that a message can reference.
-type ConversationAttachmentKind string
-
-const (
-	AttachmentFile     ConversationAttachmentKind = "file"
-	AttachmentImage    ConversationAttachmentKind = "image"
-	AttachmentDocIndex ConversationAttachmentKind = "docIndex"
-	AttachmentPR       ConversationAttachmentKind = "pr"
-	AttachmentCommit   ConversationAttachmentKind = "commit"
-	AttachmentSnapshot ConversationAttachmentKind = "snapshot"
-)
-
-type ConversationFileRef struct {
-	Path string `json:"path"`
-}
-
-type ConversationImageRef struct {
-	Path string `json:"path"`
-}
-
-type ConversationHandleRef struct {
-	Handle string `json:"handle"`
-}
-
-// ConversationAttachment stores a lightweight reference to contextual data so that
-// the composer can rehydrate attachments when re-editing a prior turn.
-type ConversationAttachment struct {
-	Kind  ConversationAttachmentKind `json:"kind"`
-	Label string                     `json:"label"`
-
-	FileRef    *ConversationFileRef   `json:"fileRef,omitempty"`
-	ImageRef   *ConversationImageRef  `json:"imageRef,omitempty"`
-	GenericRef *ConversationHandleRef `json:"genericRef,omitempty"`
-}
-
 type ConversationToolChoice struct {
 	BundleID    string `json:"bundleID"`
 	ToolSlug    string `json:"toolSlug"`
@@ -75,7 +41,7 @@ type ConversationMessage struct {
 	Name        *string                  `json:"name,omitempty"`
 	Details     *string                  `json:"details,omitempty"`
 	ToolChoices []ConversationToolChoice `json:"toolChoices,omitempty"`
-	Attachments []ConversationAttachment `json:"attachments,omitempty"`
+	Attachments []attachment.Attachment  `json:"attachments,omitempty"`
 }
 
 // Conversation represents a conversation with messages.

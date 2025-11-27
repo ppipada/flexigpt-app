@@ -1,10 +1,5 @@
 import {
-	type ChatCompletionAttachment,
-	ChatCompletionAttachmentKind,
 	type ChatCompletionDataMessage,
-	type ChatCompletionFileRef,
-	type ChatCompletionGenericRef,
-	type ChatCompletionImageRef,
 	ChatCompletionRoleEnum,
 	type ChatCompletionToolChoice,
 	type FetchCompletionData,
@@ -12,8 +7,8 @@ import {
 	type ModelParams,
 	ResponseContentType,
 } from '@/spec/aiprovider';
-import type { ConversationAttachment, ConversationMessage, ConversationToolChoice } from '@/spec/conversation';
-import { ConversationAttachmentKind, ConversationRoleEnum } from '@/spec/conversation';
+import type { ConversationMessage, ConversationToolChoice } from '@/spec/conversation';
+import { ConversationRoleEnum } from '@/spec/conversation';
 import type { ProviderName } from '@/spec/modelpreset';
 
 import { CustomMDLanguage } from '@/lib/text_utils';
@@ -77,74 +72,6 @@ function convertConversationToolChoicesToChatChoices(
 	}));
 }
 
-function convertConversationAttachmentKind(kind: ConversationAttachmentKind): ChatCompletionAttachmentKind {
-	switch (kind) {
-		case ConversationAttachmentKind.file:
-			return ChatCompletionAttachmentKind.file;
-		case ConversationAttachmentKind.image:
-			return ChatCompletionAttachmentKind.image;
-		case ConversationAttachmentKind.docIndex:
-			return ChatCompletionAttachmentKind.docIndex;
-		case ConversationAttachmentKind.pr:
-			return ChatCompletionAttachmentKind.pr;
-		case ConversationAttachmentKind.commit:
-			return ChatCompletionAttachmentKind.commit;
-		case ConversationAttachmentKind.snapshot:
-			return ChatCompletionAttachmentKind.snapshot;
-		default:
-			return ChatCompletionAttachmentKind.file;
-	}
-}
-
-function convertConversationAttachment(att: ConversationAttachment): ChatCompletionAttachment | undefined {
-	const kind = convertConversationAttachmentKind(att.kind);
-	if (kind === ChatCompletionAttachmentKind.file) {
-		const path = att.fileRef?.path ?? att.imageRef?.path ?? '';
-		if (!path) return undefined;
-		return {
-			kind: kind,
-			label: att.label,
-			fileRef: {
-				path,
-				exists: false,
-			} as ChatCompletionFileRef,
-		} satisfies ChatCompletionAttachment;
-	} else if (kind === ChatCompletionAttachmentKind.image) {
-		const path = att.imageRef?.path ?? att.fileRef?.path ?? '';
-		if (!path) return undefined;
-		return {
-			kind: kind,
-			label: att.label,
-			imageRef: {
-				path,
-				exists: false,
-			} as ChatCompletionImageRef,
-		} satisfies ChatCompletionAttachment;
-	} else {
-		const handle = att.genericRef?.handle ?? att.fileRef?.path ?? '';
-		if (!handle) return undefined;
-		return {
-			kind: kind as ChatCompletionAttachmentKind,
-			label: att.label || handle,
-			genericRef: { handle: handle } as ChatCompletionGenericRef,
-		} satisfies ChatCompletionAttachment;
-	}
-}
-
-function convertConversationAttachmentsToChatAttachments(
-	attachments?: ConversationAttachment[]
-): ChatCompletionAttachment[] | undefined {
-	if (!attachments || attachments.length === 0) {
-		return undefined;
-	}
-
-	const converted = attachments
-		.map(convertConversationAttachment)
-		.filter((item): item is ChatCompletionAttachment => item !== undefined);
-
-	return converted.length > 0 ? converted : undefined;
-}
-
 export async function BuildCompletionDataFromConversation(
 	provider: ProviderName,
 	modelParams: ModelParams,
@@ -160,9 +87,7 @@ export async function BuildCompletionDataFromConversation(
 	const toolChoices = promptConvoMsg
 		? convertConversationToolChoicesToChatChoices(promptConvoMsg.toolChoices)
 		: undefined;
-	const attachments = promptConvoMsg
-		? convertConversationAttachmentsToChatAttachments(promptConvoMsg.attachments)
-		: undefined;
+	const attachments = promptConvoMsg ? promptConvoMsg.attachments : undefined;
 
 	const completionData = providerSetAPI.buildCompletionData(
 		provider,

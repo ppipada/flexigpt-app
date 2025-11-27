@@ -1,47 +1,11 @@
+import type { Attachment } from '@/spec/attachment';
+
 export enum ConversationRoleEnum {
 	system = 'system',
 	user = 'user',
 	assistant = 'assistant',
 	function = 'function',
 	feedback = 'feedback',
-}
-
-export enum ConversationAttachmentKind {
-	file = 'file',
-	image = 'image',
-	docIndex = 'docIndex',
-	pr = 'pr',
-	commit = 'commit',
-	snapshot = 'snapshot',
-}
-
-/**
- * @public
- */
-export interface ConversationFileAttachmentRef {
-	path: string;
-}
-
-/**
- * @public
- */
-export interface ConversationImageAttachmentRef {
-	path: string;
-}
-
-/**
- * @public
- */
-export interface ConversationGenericAttachmentRef {
-	handle: string;
-}
-
-export interface ConversationAttachment {
-	kind: ConversationAttachmentKind;
-	label: string;
-	fileRef?: ConversationFileAttachmentRef;
-	imageRef?: ConversationImageAttachmentRef;
-	genericRef?: ConversationGenericAttachmentRef;
 }
 
 export interface ConversationToolChoice {
@@ -61,7 +25,7 @@ export interface ConversationMessage {
 	name?: string;
 	details?: string;
 	toolChoices?: ConversationToolChoice[];
-	attachments?: ConversationAttachment[];
+	attachments?: Attachment[];
 	enabledTools?: string[];
 }
 

@@ -3,12 +3,12 @@
 ## Laundry list
 
 - [ ] edit message should fall to the editor with attachments/tools so that resend is consistent
+- [ ] render images and attacments in msg ui
 
 - [ ] attachments
 
-  - [ ] attachments should be present in ui msg footer
-  - [ ] attachments separate package.
-  - [ ] Need image and associated processing in one place
+  - [x] attachments separate package.
+  - [x] Need image and associated processing in one place
   - [ ] pdf and associated processing in one place
   - [ ] doc formats can be in one place (no priority)
   - [ ] any extension that can be read as text in one place

@@ -15,8 +15,8 @@ import { useMenuStore } from '@ariakit/react';
 import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
+import { AttachmentKind } from '@/spec/attachment';
 import type { FileFilter } from '@/spec/backend';
-import { ConversationAttachmentKind } from '@/spec/conversation';
 
 import { formatShortcut, type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -373,12 +373,12 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				const att: EditorAttachment =
 					mode === 'image'
 						? {
-								kind: ConversationAttachmentKind.image,
+								kind: AttachmentKind.image,
 								label,
 								imageRef: { path: trimmed },
 							}
 						: {
-								kind: ConversationAttachmentKind.file,
+								kind: AttachmentKind.file,
 								label,
 								fileRef: { path: trimmed },
 							};

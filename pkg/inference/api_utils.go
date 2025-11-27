@@ -3,7 +3,6 @@ package inference
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"slices"
 	"strings"
 
@@ -170,42 +169,4 @@ func toolDescription(ct spec.FetchCompletionToolChoice) string {
 		return desc
 	}
 	return ""
-}
-
-// formatAttachmentAsText normalizes an attachment into a short, human-readable
-// string that can be injected into text prompts when a richer modality is not
-// available (for example, for generic refs or providers without native file
-// support).
-func formatAttachmentAsText(att spec.ChatCompletionAttachment) string {
-	label := strings.TrimSpace(att.Label)
-	var detail string
-
-	switch att.Kind {
-	case spec.AttachmentFile:
-		if att.FileRef != nil {
-			detail = strings.TrimSpace(att.FileRef.Path)
-		}
-	case spec.AttachmentImage:
-		if att.ImageRef != nil {
-			detail = strings.TrimSpace(att.ImageRef.Path)
-		}
-	case spec.AttachmentDocIndex, spec.AttachmentPR, spec.AttachmentCommit, spec.AttachmentSnapshot:
-		if att.GenericRef != nil {
-			detail = strings.TrimSpace(att.GenericRef.Handle)
-		}
-	default:
-		detail = ""
-	}
-
-	if label == "" {
-		label = detail
-	}
-
-	if label == "" && detail == "" {
-		return ""
-	}
-	if detail == "" || label == detail {
-		return fmt.Sprintf("[Attachment: %s]", label)
-	}
-	return fmt.Sprintf("[Attachment: %s — %s]", label, detail)
 }

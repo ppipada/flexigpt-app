@@ -16,6 +16,7 @@ import (
 	"github.com/openai/openai-go/v2/shared"
 	openaiSharedConstant "github.com/openai/openai-go/v2/shared/constant"
 
+	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
@@ -337,7 +338,7 @@ func (api *OpenAIResponsesAPI) doStreaming(
 
 func toOpenAIResponsesMessages(
 	messages []spec.ChatCompletionDataMessage,
-	attachments []spec.ChatCompletionAttachment,
+	attachments []attachment.Attachment,
 	modelName modelpresetSpec.ModelName,
 	providerName modelpresetSpec.ProviderName,
 ) (responses.ResponseInputParam, error) {
@@ -440,7 +441,7 @@ func toOpenAIResponsesMessages(
 // Response input content items for the Responses API (files, images, and
 // textual handles for generic refs).
 func buildOpenAIResponsesAttachmentContent(
-	attachments []spec.ChatCompletionAttachment,
+	attachments []attachment.Attachment,
 ) ([]responses.ResponseInputContentUnionParam, error) {
 	if len(attachments) == 0 {
 		return nil, nil
@@ -449,7 +450,7 @@ func buildOpenAIResponsesAttachmentContent(
 	out := make([]responses.ResponseInputContentUnionParam, 0, len(attachments))
 	for _, att := range attachments {
 		switch att.Kind {
-		case spec.AttachmentImage:
+		case attachment.AttachmentImage:
 			if att.ImageRef == nil {
 				continue
 			}
@@ -469,7 +470,7 @@ func buildOpenAIResponsesAttachmentContent(
 				responses.ResponseInputContentUnionParam{OfInputImage: &img},
 			)
 
-		case spec.AttachmentFile:
+		case attachment.AttachmentFile:
 			if att.FileRef == nil {
 				continue
 			}
@@ -490,8 +491,11 @@ func buildOpenAIResponsesAttachmentContent(
 				out,
 				responses.ResponseInputContentUnionParam{OfInputFile: &fileParam},
 			)
-		case spec.AttachmentDocIndex, spec.AttachmentPR, spec.AttachmentCommit, spec.AttachmentSnapshot:
-			if text := formatAttachmentAsText(att); text != "" {
+		case attachment.AttachmentDocIndex,
+			attachment.AttachmentPR,
+			attachment.AttachmentCommit,
+			attachment.AttachmentSnapshot:
+			if text := (&att).FormatAsDisplayName(); text != "" {
 				out = append(
 					out,
 					responses.ResponseInputContentParamOfInputText(text),

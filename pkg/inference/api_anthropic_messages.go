@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
@@ -354,7 +355,7 @@ func handleContentBlockDeltaEvent(
 func toAnthropicMessages(
 	systemPrompt string,
 	messages []spec.ChatCompletionDataMessage,
-	attachments []spec.ChatCompletionAttachment,
+	attachments []attachment.Attachment,
 ) (msgs []anthropic.MessageParam, sysPrompts []anthropic.TextBlockParam, err error) {
 	var out []anthropic.MessageParam
 	var sysParts []string
@@ -425,7 +426,7 @@ func toAnthropicMessages(
 // content blocks. Images are sent as base64 image blocks; other attachment
 // kinds fall back to short text descriptions.
 func buildAnthropicAttachmentBlocks(
-	attachments []spec.ChatCompletionAttachment,
+	attachments []attachment.Attachment,
 ) ([]anthropic.ContentBlockParamUnion, error) {
 	if len(attachments) == 0 {
 		return nil, nil
@@ -434,7 +435,7 @@ func buildAnthropicAttachmentBlocks(
 	out := make([]anthropic.ContentBlockParamUnion, 0, len(attachments))
 	for _, att := range attachments {
 		switch att.Kind {
-		case spec.AttachmentImage:
+		case attachment.AttachmentImage:
 			if att.ImageRef == nil {
 				continue
 			}
@@ -444,7 +445,7 @@ func buildAnthropicAttachmentBlocks(
 			}
 			out = append(out, anthropic.NewImageBlockBase64(imageInfo.MIMEType, imageInfo.Base64Data))
 
-		case spec.AttachmentFile:
+		case attachment.AttachmentFile:
 			if att.FileRef == nil {
 				continue
 			}
@@ -462,8 +463,11 @@ func buildAnthropicAttachmentBlocks(
 				)
 			}
 
-		case spec.AttachmentDocIndex, spec.AttachmentPR, spec.AttachmentCommit, spec.AttachmentSnapshot:
-			if text := formatAttachmentAsText(att); text != "" {
+		case attachment.AttachmentDocIndex,
+			attachment.AttachmentPR,
+			attachment.AttachmentCommit,
+			attachment.AttachmentSnapshot:
+			if text := (&att).FormatAsDisplayName(); text != "" {
 				out = append(out, anthropic.NewDocumentBlock(
 					anthropic.PlainTextSourceParam{Data: text},
 				))

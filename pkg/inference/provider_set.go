@@ -5,12 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"path/filepath"
 	"sort"
 	"strings"
 
+	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
-	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
@@ -170,7 +169,7 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 	// Attach contextual attachments (files, images, doc indexes, etc.) to the completion data.
 	// Resolution happens via the built-in fs helpers so that metadata stays consistent with user-callable tools.
 	if len(req.Body.Attachments) > 0 {
-		if err := attachAttachmentsToCompletionData(resp, req.Body.Attachments); err != nil {
+		if err := populateAttachmentRefs(resp, req.Body.Attachments); err != nil {
 			return nil, err
 		}
 	}
@@ -338,9 +337,9 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 	return nil
 }
 
-func attachAttachmentsToCompletionData(
+func populateAttachmentRefs(
 	data *spec.FetchCompletionData,
-	attachments []spec.ChatCompletionAttachment,
+	attachments []attachment.Attachment,
 ) error {
 	if data == nil {
 		return errors.New("invalid completion data: nil")
@@ -349,133 +348,16 @@ func attachAttachmentsToCompletionData(
 		return nil
 	}
 
-	out := make([]spec.ChatCompletionAttachment, 0, len(attachments))
+	out := make([]attachment.Attachment, 0, len(attachments))
 	for _, att := range attachments {
-		resolved, err := resolveAttachment(att)
+		err := (&att).PopulateRef()
 		if err != nil {
 			return err
 		}
-		out = append(out, resolved)
+		out = append(out, att)
 	}
 	data.Attachments = out
 	return nil
-}
-
-func resolveAttachment(
-	att spec.ChatCompletionAttachment,
-) (spec.ChatCompletionAttachment, error) {
-	label := strings.TrimSpace(att.Label)
-	res := spec.ChatCompletionAttachment{Kind: att.Kind, Label: label}
-	switch att.Kind {
-	case spec.AttachmentFile:
-		fileRef, err := resolveFileAttachment(att.FileRef)
-		if err != nil {
-			return spec.ChatCompletionAttachment{}, err
-		}
-		res.FileRef = fileRef
-		if res.Label == "" {
-			res.Label = filepath.Base(fileRef.Path)
-		}
-		return res, nil
-	case spec.AttachmentImage:
-		imgRef, err := resolveImageAttachment(att.ImageRef, att.FileRef)
-		if err != nil {
-			return spec.ChatCompletionAttachment{}, err
-		}
-		res.ImageRef = imgRef
-		if res.Label == "" {
-			res.Label = filepath.Base(imgRef.Path)
-		}
-		return res, nil
-	case spec.AttachmentCommit, spec.AttachmentDocIndex, spec.AttachmentPR, spec.AttachmentSnapshot:
-		return getGenericRef(att)
-	default:
-		return res, errors.New("unknown attachment kind")
-	}
-}
-
-func getGenericRef(att spec.ChatCompletionAttachment) (spec.ChatCompletionAttachment, error) {
-	res := spec.ChatCompletionAttachment{Kind: att.Kind, Label: strings.TrimSpace(att.Label)}
-	handle := ""
-	if att.GenericRef != nil {
-		handle = strings.TrimSpace(att.GenericRef.Handle)
-	}
-	if handle == "" && att.FileRef != nil {
-		handle = strings.TrimSpace(att.FileRef.Path)
-	}
-	if handle == "" {
-		return spec.ChatCompletionAttachment{}, fmt.Errorf("attachment %s missing ref handle", att.Kind)
-	}
-	res.GenericRef = &spec.ChatCompletionHandleRef{Handle: handle}
-	if res.Label == "" {
-		res.Label = handle
-	}
-	return res, nil
-}
-
-func resolveFileAttachment(
-	ref *spec.ChatCompletionFileRef,
-) (*spec.ChatCompletionFileRef, error) {
-	if ref == nil {
-		return nil, errors.New("file attachment missing ref")
-	}
-	path := strings.TrimSpace(ref.Path)
-	if path == "" {
-		return nil, errors.New("file attachment missing path")
-	}
-	pathInfo, err := fileutil.StatPath(path)
-	if err != nil {
-		return nil, err
-	}
-
-	out := *ref
-	out.Path = path
-	out.Exists = pathInfo.Exists
-	if pathInfo.Exists {
-		out.SizeBytes = pathInfo.SizeBytes
-		out.ModTime = pathInfo.ModTime
-	} else {
-		out.SizeBytes = 0
-		out.ModTime = nil
-	}
-	return &out, nil
-}
-
-func resolveImageAttachment(
-	ref *spec.ChatCompletionImageRef,
-	fallbackFile *spec.ChatCompletionFileRef,
-) (*spec.ChatCompletionImageRef, error) {
-	if ref == nil {
-		if fallbackFile == nil {
-			return nil, errors.New("image attachment missing ref")
-		}
-		ref = &spec.ChatCompletionImageRef{Path: fallbackFile.Path}
-	}
-	path := strings.TrimSpace(ref.Path)
-	if path == "" {
-		return nil, errors.New("image attachment missing path")
-	}
-	info, err := fileutil.ReadImageInfo(path, false)
-	if err != nil {
-		return nil, err
-	}
-	out := *ref
-	out.Path = path
-	out.Exists = info.Exists
-	if info.Exists {
-		out.Width = info.Width
-		out.Height = info.Height
-		out.Format = info.Format
-		out.SizeBytes = info.SizeBytes
-		out.ModTime = info.ModTime
-	} else {
-		out.Width = 0
-		out.Height = 0
-		out.Format = ""
-		out.SizeBytes = 0
-		out.ModTime = nil
-	}
-	return &out, nil
 }
 
 func convertBuildMessageToChatMessage(

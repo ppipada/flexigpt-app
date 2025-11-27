@@ -1,6 +1,7 @@
 package spec
 
 import (
+	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
@@ -100,7 +101,7 @@ type BuildCompletionDataRequestBody struct {
 	CurrentMessage ChatCompletionDataMessage   `json:"currentMessage"         required:"true"`
 	PrevMessages   []ChatCompletionDataMessage `json:"prevMessages,omitempty"`
 	ToolChoices    []ChatCompletionToolChoice  `json:"toolChoices,omitempty"`
-	Attachments    []ChatCompletionAttachment  `json:"attachments,omitempty"`
+	Attachments    []attachment.Attachment     `json:"attachments,omitempty"`
 }
 
 type BuildCompletionDataRequest struct {
@@ -112,7 +113,7 @@ type FetchCompletionData struct {
 	ModelParams ModelParams                 `json:"modelParams"`
 	Messages    []ChatCompletionDataMessage `json:"messages,omitempty"`
 	ToolChoices []FetchCompletionToolChoice `json:"toolChoices,omitempty"`
-	Attachments []ChatCompletionAttachment  `json:"attachments,omitempty"`
+	Attachments []attachment.Attachment     `json:"attachments,omitempty"`
 }
 
 type BuildCompletionDataResponse struct {

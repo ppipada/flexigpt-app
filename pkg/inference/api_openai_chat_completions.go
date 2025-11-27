@@ -14,6 +14,7 @@ import (
 	"github.com/openai/openai-go/v2/packages/param"
 	"github.com/openai/openai-go/v2/shared"
 
+	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
@@ -302,7 +303,7 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 func toOpenAIChatMessages(
 	systemPrompt string,
 	messages []spec.ChatCompletionDataMessage,
-	attachments []spec.ChatCompletionAttachment,
+	attachments []attachment.Attachment,
 	modelName modelpresetSpec.ModelName,
 	providerName modelpresetSpec.ProviderName,
 ) ([]openai.ChatCompletionMessageParamUnion, error) {
@@ -363,7 +364,7 @@ func toOpenAIChatMessages(
 // ChatCompletion content parts so that files and images can be sent to OpenAI's
 // multimodal chat endpoint.
 func buildOpenAIChatAttachmentParts(
-	attachments []spec.ChatCompletionAttachment,
+	attachments []attachment.Attachment,
 ) ([]openai.ChatCompletionContentPartUnionParam, error) {
 	if len(attachments) == 0 {
 		return nil, nil
@@ -372,7 +373,7 @@ func buildOpenAIChatAttachmentParts(
 	out := make([]openai.ChatCompletionContentPartUnionParam, 0, len(attachments))
 	for _, att := range attachments {
 		switch att.Kind {
-		case spec.AttachmentImage:
+		case attachment.AttachmentImage:
 			if att.ImageRef == nil {
 				continue
 			}
@@ -389,7 +390,7 @@ func buildOpenAIChatAttachmentParts(
 			}
 			out = append(out, openai.ImageContentPart(img))
 
-		case spec.AttachmentFile:
+		case attachment.AttachmentFile:
 			if att.FileRef == nil {
 				continue
 			}
@@ -405,11 +406,14 @@ func buildOpenAIChatAttachmentParts(
 			fileParam.Filename = param.NewOpt(filename)
 			out = append(out, openai.FileContentPart(fileParam))
 
-		case spec.AttachmentDocIndex, spec.AttachmentPR, spec.AttachmentCommit, spec.AttachmentSnapshot:
+		case attachment.AttachmentDocIndex,
+			attachment.AttachmentPR,
+			attachment.AttachmentCommit,
+			attachment.AttachmentSnapshot:
 			// For generic attachments (doc indices, PRs, commits, etc.), fall back
 			// to a short textual reference so the model is at least aware of the
 			// handle even if the provider lacks a richer modality.
-			if text := formatAttachmentAsText(att); text != "" {
+			if text := (&att).FormatAsDisplayName(); text != "" {
 				out = append(out, openai.TextContentPart(text))
 			}
 		default:
