@@ -55,10 +55,15 @@ func inferDefaultFileMode(path string) AttachmentMode {
 	case fileutil.ExtensionModeText:
 		return AttachmentModeText
 	case fileutil.ExtensionModeDocument:
-		// UX: default to text; extraction pipeline can convert PDF/DOCX into text.
+		// PDFs get a special default: send as a file attachment.
+		if ext == fileutil.ExtensionPDF {
+			return AttachmentModeFile
+		}
+		// Non‑PDF “documents” (e.g. DOCX) – default to text.
 		return AttachmentModeText
 	case fileutil.ExtensionModeImage, fileutil.ExtensionModeDefault:
-		// In Image type attachments, we treat them as binary files only.
+		// In File attachments, images default to binary file mode
+		// unless the user explicitly selects "image".
 		return AttachmentModeFile
 	default:
 		return AttachmentModeFile
@@ -67,15 +72,15 @@ func inferDefaultFileMode(path string) AttachmentMode {
 
 func buildBlocksForLocalFile(ctx context.Context, att *Attachment, mode AttachmentMode) (*ContentBlock, error) {
 	path := att.FileRef.Path
+	ext := strings.ToLower(filepath.Ext(path))
 
 	switch mode {
 	case AttachmentModeText:
-		// TODO: Replace this with a richer extraction pipeline:
-		//   - Detect MIME via fileutil.DetectFileMIME
-		//   - If PDF/DOCX/etc, call dedicated extractors (ledongthuc/pdf, gooxml, etc.).
-		//
-		// For now, we just read raw UTF-8. If the file is actually binary but the
-		// user forced "text" mode, we will still send the raw bytes as text.
+		// Special handling for PDFs: try text extraction with panic-safe fallback.
+		if ext == fileutil.ExtensionPDF {
+			return buildPDFTextOrFileBlock(path)
+		}
+		// Normal text file.
 		text, err := fileutil.ReadFile(path, fileutil.ReadEncodingText)
 		if err != nil {
 			return nil, err
@@ -101,7 +106,11 @@ func buildBlocksForLocalFile(ctx context.Context, att *Attachment, mode Attachme
 		}
 		return nil, errors.New("invalid attachment mode")
 
-	case AttachmentModeFile, AttachmentModePDFFile, AttachmentModeImage:
+	case AttachmentModeImage:
+		// Treat a file in "image" mode as an image attachment.
+		return buildImageBlockFromLocal(path)
+
+	case AttachmentModeFile:
 		base64Data, err := fileutil.ReadFile(path, fileutil.ReadEncodingBinary)
 		if err != nil {
 			return nil, err
@@ -113,6 +122,7 @@ func buildBlocksForLocalFile(ctx context.Context, att *Attachment, mode Attachme
 			MIMEType:   mime,
 			FileName:   filepath.Base(path),
 		}, nil
+
 	default:
 		return nil, errors.New("invalid attachment mode")
 	}

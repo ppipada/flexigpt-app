@@ -9,6 +9,7 @@ require (
 	github.com/danielgtaylor/huma/v2 v2.34.1
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/google/uuid v1.6.0
+	github.com/ledongthuc/pdf v0.0.0-20250511090121-5959a4027728
 	github.com/openai/openai-go/v2 v2.7.1
 	github.com/philippgille/chromem-go v0.7.0
 	github.com/ppipada/mapstore-go v0.0.3

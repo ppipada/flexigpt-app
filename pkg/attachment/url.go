@@ -49,9 +49,7 @@ func inferDefaultURLMode(rawURL string) AttachmentMode {
 			if mode == fileutil.ExtensionModeImage {
 				return AttachmentModeImage
 			}
-			if ext == ".pdf" {
-				return AttachmentModeText
-			}
+
 			return AttachmentModePageContent
 		}
 	}
@@ -67,30 +65,17 @@ func buildBlocksForURL(ctx context.Context, att *Attachment, mode AttachmentMode
 
 	switch mode {
 	case AttachmentModeLinkOnly:
-		txt := rawURL
-		if label := strings.TrimSpace(att.Label); label != "" && label != rawURL {
-			txt = fmt.Sprintf("%s (%s)", label, rawURL)
-		}
-		return &ContentBlock{
-			Kind: ContentBlockText,
-			Text: txt,
-		}, nil
+		return buildLinkOnlyContentBlock(att), nil
 
 	case AttachmentModeImage:
 		data, contentType, err := fetchURLBytes(ctx, rawURL, maxAttachmentFetchBytes)
 		if err != nil {
 			slog.Warn("failed to fetch image url attachment, falling back to link",
 				"url", rawURL, "err", err)
-			return &ContentBlock{
-				Kind: ContentBlockText,
-				Text: rawURL,
-			}, nil
+			return buildLinkOnlyContentBlock(att), nil
 		}
 		if !strings.HasPrefix(strings.ToLower(contentType), "image/") {
-			return &ContentBlock{
-				Kind: ContentBlockText,
-				Text: rawURL,
-			}, nil
+			return buildLinkOnlyContentBlock(att), nil
 		}
 		base64Data := base64.StdEncoding.EncodeToString(data)
 		return &ContentBlock{
@@ -101,31 +86,15 @@ func buildBlocksForURL(ctx context.Context, att *Attachment, mode AttachmentMode
 		}, nil
 
 	case AttachmentModePageContent, AttachmentModeText:
-		data, _, err := fetchURLBytes(ctx, rawURL, maxAttachmentFetchBytes)
-		if err != nil {
-			slog.Warn("failed to fetch url page content, falling back to link",
-				"url", rawURL, "err", err)
-			return &ContentBlock{
-				Kind: ContentBlockText,
-				Text: rawURL,
-			}, nil
-		}
-		text := string(data) // Let the model handle HTML/markup.
-		prefix := fmt.Sprintf("[Content from %s]\n\n", rawURL)
-		return &ContentBlock{
-			Kind: ContentBlockText,
-			Text: prefix + text,
-		}, nil
+		// New pipeline: image/pdf → html/text → link.
+		return buildBlocksForURLPage(ctx, att)
 
-	case AttachmentModeFile, AttachmentModePDFFile:
+	case AttachmentModeFile:
 		data, contentType, err := fetchURLBytes(ctx, rawURL, maxAttachmentFetchBytes)
 		if err != nil {
 			slog.Warn("failed to fetch url file, falling back to link",
 				"url", rawURL, "err", err)
-			return &ContentBlock{
-				Kind: ContentBlockText,
-				Text: rawURL,
-			}, nil
+			return buildLinkOnlyContentBlock(att), nil
 		}
 		if contentType == "" {
 			contentType = "application/octet-stream"
@@ -144,13 +113,78 @@ func buildBlocksForURL(ctx context.Context, att *Attachment, mode AttachmentMode
 		AttachmentModeCommitDiff,
 		AttachmentModeCommitPage:
 		// Unknown mode: safest fallback is link-only.
-		return &ContentBlock{
-			Kind: ContentBlockText,
-			Text: rawURL,
-		}, nil
+		return buildLinkOnlyContentBlock(att), nil
 
 	default:
 		return nil, errors.New("unknown attachment mode")
+	}
+}
+
+func buildBlocksForURLPage(ctx context.Context, att *Attachment) (*ContentBlock, error) {
+	rawURL := att.URLRef.URL
+	if rawURL == "" {
+		return nil, errors.New("got invalid url")
+	}
+
+	data, contentType, err := fetchURLBytes(ctx, rawURL, maxAttachmentFetchBytes)
+	if err != nil {
+		slog.Warn("failed to fetch url content, falling back to link",
+			"url", rawURL, "err", err)
+		return buildLinkOnlyContentBlock(att), nil
+	}
+
+	lowerCT := strings.ToLower(contentType)
+	lowerURL := strings.ToLower(rawURL)
+
+	// 1) Image?.
+	if strings.HasPrefix(lowerCT, "image/") {
+		base64Data := base64.StdEncoding.EncodeToString(data)
+		return &ContentBlock{
+			Kind:       ContentBlockImage,
+			Base64Data: base64Data,
+			MIMEType:   contentType,
+			FileName:   filenameFromURL(rawURL, contentType),
+		}, nil
+	}
+
+	// 2) PDF?.
+	if strings.HasPrefix(lowerCT, "application/pdf") || strings.HasSuffix(lowerURL, ".pdf") {
+		base64Data := base64.StdEncoding.EncodeToString(data)
+		mime := contentType
+		if mime == "" {
+			mime = "application/pdf"
+		}
+		return &ContentBlock{
+			Kind:       ContentBlockFile,
+			Base64Data: base64Data,
+			MIMEType:   mime,
+			FileName:   filenameFromURL(rawURL, mime),
+		}, nil
+	}
+
+	// 3) HTML / text?.
+	if strings.HasPrefix(lowerCT, "text/") || lowerCT == "" {
+		text := string(data)
+		prefix := fmt.Sprintf("[Content from %s]\n\n", rawURL)
+		return &ContentBlock{
+			Kind: ContentBlockText,
+			Text: prefix + text,
+		}, nil
+	}
+
+	// 4) Fallback: link only.
+	return buildLinkOnlyContentBlock(att), nil
+}
+
+func buildLinkOnlyContentBlock(att *Attachment) *ContentBlock {
+	rawURL := att.URLRef.URL
+	txt := rawURL
+	if label := strings.TrimSpace(att.Label); label != "" && label != rawURL {
+		txt = fmt.Sprintf("%s (%s)", label, rawURL)
+	}
+	return &ContentBlock{
+		Kind: ContentBlockText,
+		Text: txt,
 	}
 }
 

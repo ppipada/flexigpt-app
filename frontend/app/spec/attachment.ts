@@ -15,7 +15,6 @@ export enum AttachmentMode {
 	image = 'image',
 	page = 'page',
 	link = 'link',
-	pdfFile = 'pdf-file',
 	notReadable = 'not-readable',
 
 	prDiff = 'pr-diff',

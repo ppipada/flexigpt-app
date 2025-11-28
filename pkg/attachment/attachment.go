@@ -55,7 +55,6 @@ const (
 	AttachmentModeImage       AttachmentMode = "image"        // Image rendering
 	AttachmentModePageContent AttachmentMode = "page"         // "Page content" for HTML/URLs
 	AttachmentModeLinkOnly    AttachmentMode = "link"         // "Link only" – no fetch
-	AttachmentModePDFFile     AttachmentMode = "pdf-file"     // Explicit PDF file mode
 	AttachmentModeNotReadable AttachmentMode = "not-readable" // Binary/unknown – cannot process
 
 	AttachmentModePRDiff     AttachmentMode = "pr-diff"

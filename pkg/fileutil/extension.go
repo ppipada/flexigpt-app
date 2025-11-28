@@ -9,6 +9,8 @@ const (
 	ExtensionModeDefault  ExtensionMode = "default"
 )
 
+const ExtensionPDF = ".pdf"
+
 var ExtensionToMode = map[string]ExtensionMode{
 	".txt":      ExtensionModeText,
 	".md":       ExtensionModeText,
@@ -47,13 +49,13 @@ var ExtensionToMode = map[string]ExtensionMode{
 	".bmp":  ExtensionModeImage,
 	".svg":  ExtensionModeImage,
 
-	".pdf":  ExtensionModeDocument,
-	".doc":  ExtensionModeDocument,
-	".docx": ExtensionModeDocument,
-	".ppt":  ExtensionModeDocument,
-	".pptx": ExtensionModeDocument,
-	".xls":  ExtensionModeDocument,
-	".xlsx": ExtensionModeDocument,
-	".odt":  ExtensionModeDocument,
-	".ods":  ExtensionModeDocument,
+	ExtensionPDF: ExtensionModeDocument,
+	".doc":       ExtensionModeDocument,
+	".docx":      ExtensionModeDocument,
+	".ppt":       ExtensionModeDocument,
+	".pptx":      ExtensionModeDocument,
+	".xls":       ExtensionModeDocument,
+	".xlsx":      ExtensionModeDocument,
+	".odt":       ExtensionModeDocument,
+	".ods":       ExtensionModeDocument,
 }

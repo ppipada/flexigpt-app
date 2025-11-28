@@ -33,7 +33,6 @@ export const ATTACHMENT_MODE_LABELS: Record<AttachmentMode, string> = {
 	[AttachmentMode.image]: 'Image',
 	[AttachmentMode.page]: 'Page content',
 	[AttachmentMode.link]: 'Link only',
-	[AttachmentMode.pdfFile]: 'PDF file',
 	[AttachmentMode.notReadable]: 'Not readable',
 	[AttachmentMode.prDiff]: 'PR diff only',
 	[AttachmentMode.prPage]: 'PR page',
@@ -47,7 +46,6 @@ export const ATTACHMENT_MODE_DESC: Record<AttachmentMode, string> = {
 	[AttachmentMode.image]: 'base64 encoded image; needs API support',
 	[AttachmentMode.page]: 'text extracted from html',
 	[AttachmentMode.link]: 'link only, no processing',
-	[AttachmentMode.pdfFile]: 'base64 encoded pdf; needs API support',
 	[AttachmentMode.notReadable]: 'unreadable file',
 	[AttachmentMode.prDiff]: 'pr diff only',
 	[AttachmentMode.prPage]: 'pre page',
@@ -163,8 +161,8 @@ export function buildEditorAttachmentForLocalPath(path: string): EditorAttachmen
 		};
 	}
 
-	if (docExts.has(ext)) {
-		// UX: default to text content, but allow user to switch to file mode.
+	if (docExts.has(ext) && ext === 'pdf') {
+		// We dont support  extractors other than pdf as of now.
 		return {
 			kind: AttachmentKind.file,
 			label,
@@ -215,8 +213,8 @@ export function buildEditorAttachmentForURL(rawUrl: string): EditorAttachment {
 		return {
 			kind: AttachmentKind.url,
 			label,
-			mode: AttachmentMode.text,
-			availableModes: [AttachmentMode.text, AttachmentMode.pdfFile, AttachmentMode.link],
+			mode: AttachmentMode.file,
+			availableModes: [AttachmentMode.text, AttachmentMode.file, AttachmentMode.link],
 			urlRef: { url: trimmed },
 		};
 	}
