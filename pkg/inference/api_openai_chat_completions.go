@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -157,11 +156,17 @@ func (api *OpenAIChatCompletionsAPI) FetchCompletion(
 		return nil, errors.New("openai chat completions api LLM: empty completion data")
 	}
 
+	// Build generic content blocks (text / image / file) from attachments.
+	blocks, err := attachment.BuildContentBlocks(ctx, completionData.Attachments)
+	if err != nil {
+		return nil, err
+	}
+
 	// Build OpenAI chat messages.
 	msgs, err := toOpenAIChatMessages(
 		completionData.ModelParams.SystemPrompt,
 		completionData.Messages,
-		completionData.Attachments,
+		blocks,
 		completionData.ModelParams.Name,
 		api.ProviderParams.Name,
 	)
@@ -303,7 +308,7 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 func toOpenAIChatMessages(
 	systemPrompt string,
 	messages []spec.ChatCompletionDataMessage,
-	attachments []attachment.Attachment,
+	blocks []attachment.ContentBlock,
 	modelName modelpresetSpec.ModelName,
 	providerName modelpresetSpec.ProviderName,
 ) ([]openai.ChatCompletionMessageParamUnion, error) {
@@ -323,7 +328,7 @@ func toOpenAIChatMessages(
 		}
 	}
 
-	attachmentParts, err := buildOpenAIChatAttachmentParts(attachments)
+	attachmentParts, err := contentBlocksToOpenAIChat(blocks)
 	if err != nil {
 		return nil, err
 	}
@@ -338,8 +343,8 @@ func toOpenAIChatMessages(
 		case spec.Developer:
 			out = append(out, openai.DeveloperMessage(*m.Content))
 		case spec.User:
-			// For the last user message, attach any file/image content parts so we
-			// can take advantage of OpenAI's multimodal chat support.
+			// For the last user message, attach any file/image/text content parts
+			// derived from attachments so we can use OpenAI's multimodal chat support.
 			if idx == lastUserIdx && len(attachmentParts) > 0 {
 				var parts []openai.ChatCompletionContentPartUnionParam
 				if c := strings.TrimSpace(*m.Content); c != "" {
@@ -360,62 +365,56 @@ func toOpenAIChatMessages(
 	return out, nil
 }
 
-// buildOpenAIChatAttachmentParts converts generic chat attachments into
-// ChatCompletion content parts so that files and images can be sent to OpenAI's
-// multimodal chat endpoint.
-func buildOpenAIChatAttachmentParts(
-	attachments []attachment.Attachment,
+// contentBlocksToOpenAIChat converts generic content blocks into OpenAI
+// ChatCompletion content parts (text/image/file) so that attachments can be
+// sent to the multimodal chat endpoint.
+func contentBlocksToOpenAIChat(
+	blocks []attachment.ContentBlock,
 ) ([]openai.ChatCompletionContentPartUnionParam, error) {
-	if len(attachments) == 0 {
+	if len(blocks) == 0 {
 		return nil, nil
 	}
 
-	out := make([]openai.ChatCompletionContentPartUnionParam, 0, len(attachments))
-	for _, att := range attachments {
-		switch att.Kind {
-		case attachment.AttachmentImage:
-			if att.ImageRef == nil {
+	out := make([]openai.ChatCompletionContentPartUnionParam, 0, len(blocks))
+	for _, b := range blocks {
+		switch b.Kind {
+		case attachment.ContentBlockText:
+			if strings.TrimSpace(b.Text) == "" {
 				continue
 			}
+			out = append(out, openai.TextContentPart(b.Text))
 
-			imageInfo, err := fileutil.ReadImageInfo(att.ImageRef.Path, true)
-			if err != nil {
-				return nil, err
+		case attachment.ContentBlockImage:
+			if b.Base64Data == "" {
+				continue
 			}
-
-			dataURL := fmt.Sprintf("data:%s;base64,%s", imageInfo.MIMEType, imageInfo.Base64Data)
+			mime := b.MIMEType
+			if mime == "" {
+				mime = fileutil.DefaultImageMIME
+			}
+			dataURL := fmt.Sprintf("data:%s;base64,%s", mime, b.Base64Data)
 			img := openai.ChatCompletionContentPartImageImageURLParam{
 				URL:    dataURL,
 				Detail: "auto",
 			}
 			out = append(out, openai.ImageContentPart(img))
 
-		case attachment.AttachmentFile:
-			if att.FileRef == nil {
+		case attachment.ContentBlockFile:
+			if b.Base64Data == "" {
 				continue
 			}
-			encoded, err := fileutil.ReadFile(att.FileRef.Path, fileutil.ReadEncodingBinary)
-			if err != nil {
-				return nil, err
+			mime := b.MIMEType
+			if mime == "" {
+				mime = "application/octet-stream"
 			}
-			filename := filepath.Base(att.FileRef.Path)
-
-			fileData := "data:application/pdf;base64," + encoded
+			dataURL := fmt.Sprintf("data:%s;base64,%s", mime, b.Base64Data)
 			var fileParam openai.ChatCompletionContentPartFileFileParam
-			fileParam.FileData = param.NewOpt(fileData)
-			fileParam.Filename = param.NewOpt(filename)
+			fileParam.FileData = param.NewOpt(dataURL)
+			if b.FileName != "" {
+				fileParam.Filename = param.NewOpt(b.FileName)
+			}
 			out = append(out, openai.FileContentPart(fileParam))
 
-		case attachment.AttachmentDocIndex,
-			attachment.AttachmentPR,
-			attachment.AttachmentCommit,
-			attachment.AttachmentSnapshot:
-			// For generic attachments (doc indices, PRs, commits, etc.), fall back
-			// to a short textual reference so the model is at least aware of the
-			// handle even if the provider lacks a richer modality.
-			if text := (&att).FormatAsDisplayName(); text != "" {
-				out = append(out, openai.TextContentPart(text))
-			}
 		default:
 			continue
 		}

@@ -10,10 +10,11 @@
 
   - [x] attachments separate package.
   - [x] Need image and associated processing in one place
-  - [ ] pdf and associated processing in one place
-  - [ ] doc formats can be in one place (no priority)
-  - [ ] any extension that can be read as text in one place
-  - [ ] web url that is just html fetch
+  - [x] any extension that can be read as text in one place
+  - [x] web url that is just html fetch
+  - [ ] url modal needs styling
+  - [ ] get visible text from html needs to be implemented and a new mode raw vs visible text needs to be added.
+  - [ ] pdf and associated processing in one place, doc formats can be in one place (no priority). Integrate a pdf text extractor.
   - [ ] specialized urls like github/gitlab pr's
   - [ ] local git diff/commit history/etc attachments
 

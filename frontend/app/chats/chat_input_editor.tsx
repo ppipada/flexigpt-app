@@ -15,7 +15,7 @@ import { useMenuStore } from '@ariakit/react';
 import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
-import { AttachmentKind } from '@/spec/attachment';
+import type { AttachmentMode } from '@/spec/attachment';
 import type { FileFilter } from '@/spec/backend';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
@@ -39,7 +39,12 @@ import { TabbableKit } from '@/components/editor/plugins/tabbable_kit';
 
 import { AttachmentBottomBar } from '@/chats/attachments/attachment_bottom_bar';
 import { AttachmentChipsBar } from '@/chats/attachments/attachment_chips_bar';
-import { type EditorAttachment, editorAttachmentKey } from '@/chats/attachments/editor_attachment_utils';
+import {
+	buildEditorAttachmentForLocalPath,
+	buildEditorAttachmentForURL,
+	type EditorAttachment,
+	editorAttachmentKey,
+} from '@/chats/attachments/editor_attachment_utils';
 import { type EditorAttachedToolChoice, getAttachedTools } from '@/chats/attachments/tool_editor_utils';
 import { ToolPlusKit } from '@/chats/attachments/tool_plugin';
 import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
@@ -339,38 +344,25 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		},
 	}));
 
-	const handleAttachFiles = async (mode: 'file' | 'image' = 'file') => {
+	const handleAttachFiles = async () => {
 		const baseFilters: FileFilter[] = [
 			{ DisplayName: 'All Files', Pattern: '*' },
 			{ DisplayName: 'Text/Markdown', Pattern: '*.txt;*.md;*.markdown' },
-			{ DisplayName: 'Documents', Pattern: '*.pdf;*.html;*.htm' },
+			{ DisplayName: 'Documents', Pattern: '*.pdf;*.doc;*.docx;*.ppt;*.pptx;*.xls;*.xlsx;*.html;*.htm' },
 			{ DisplayName: 'Images', Pattern: '*.png;*.jpg;*.jpeg;*.gif;*.webp' },
 		];
-		const imageFilters: FileFilter[] = [{ DisplayName: 'Images', Pattern: '*.png;*.jpg;*.jpeg;*.gif;*.webp' }];
-		const filters = mode === 'image' ? imageFilters : baseFilters;
-		const paths = await backendAPI.openfiles(true, filters);
+		const paths = await backendAPI.openfiles(true, baseFilters);
 		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 		if (!paths || paths.length === 0) return;
 
 		setAttachments(prev => {
 			const existing = new Set(prev.map(editorAttachmentKey));
 			const next: EditorAttachment[] = [...prev];
+
 			for (const p of paths) {
 				const trimmed = p.trim();
 				if (!trimmed) continue;
-				const label = trimmed.split(/[\\/]/).pop() ?? trimmed;
-				const att: EditorAttachment =
-					mode === 'image'
-						? {
-								kind: AttachmentKind.image,
-								label,
-								imageRef: { path: trimmed },
-							}
-						: {
-								kind: AttachmentKind.file,
-								label,
-								fileRef: { path: trimmed },
-							};
+				const att = buildEditorAttachmentForLocalPath(trimmed);
 				const key = editorAttachmentKey(att);
 				if (existing.has(key)) continue;
 				existing.add(key);
@@ -378,6 +370,26 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			}
 			return next;
 		});
+		editor.tf.focus();
+	};
+
+	const handleAttachURL = async (rawUrl: string) => {
+		const trimmed = rawUrl.trim();
+		if (!trimmed) return;
+
+		setAttachments(prev => {
+			const existing = new Set(prev.map(editorAttachmentKey));
+			const att = buildEditorAttachmentForURL(trimmed);
+			const key = editorAttachmentKey(att);
+			if (existing.has(key)) return prev;
+			return [...prev, att];
+		});
+		editor.tf.focus();
+	};
+
+	const handleChangeAttachmentMode = (att: EditorAttachment, newMode: AttachmentMode) => {
+		const targetKey = editorAttachmentKey(att);
+		setAttachments(prev => prev.map(a => (editorAttachmentKey(a) === targetKey ? { ...a, mode: newMode } : a)));
 		editor.tf.focus();
 	};
 
@@ -463,13 +475,18 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 					</div>
 					{/* Chips bar for attachments & tools (scrollable, only when there are chips) */}
 					<div className="flex w-full min-w-0 overflow-x-hidden">
-						<AttachmentChipsBar attachments={attachments} onRemoveAttachment={handleRemoveAttachment} />
+						<AttachmentChipsBar
+							attachments={attachments}
+							onRemoveAttachment={handleRemoveAttachment}
+							onChangeAttachmentMode={handleChangeAttachmentMode}
+						/>
 					</div>
 				</div>
 
 				{/* Bottom bar for template/tool/attachment pickers + tips menus */}
 				<AttachmentBottomBar
 					onAttachFiles={handleAttachFiles}
+					onAttachURL={handleAttachURL}
 					templateMenuState={templateMenu}
 					toolMenuState={toolMenu}
 					attachmentMenuState={attachmentMenu}

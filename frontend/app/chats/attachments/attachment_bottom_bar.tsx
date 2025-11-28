@@ -1,6 +1,6 @@
 import { type ReactNode, type RefObject, useMemo } from 'react';
 
-import { FiFileText, FiImage, FiPaperclip, FiTool, FiZap } from 'react-icons/fi';
+import { FiFilePlus, FiLink, FiPaperclip, FiTool, FiUpload } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, type MenuStore } from '@ariakit/react';
 import { type PlateEditor, useEditorRef } from 'platejs/react';
@@ -20,7 +20,9 @@ import { CommandTipsBar } from '@/chats/chat_command_tips_bar';
 import { insertTemplateSelectionNode } from '@/chats/templates/template_editor_utils';
 
 interface AttachmentBottomBarProps {
-	onAttachFiles: (mode: 'file' | 'image') => Promise<void> | void;
+	onAttachFiles: () => Promise<void> | void;
+	onAttachURL: (url: string) => Promise<void> | void;
+
 	templateMenuState: MenuStore;
 	toolMenuState: MenuStore;
 	attachmentMenuState: MenuStore;
@@ -69,6 +71,8 @@ const menuItemClasses =
 */
 export function AttachmentBottomBar({
 	onAttachFiles,
+	onAttachURL,
+
 	templateMenuState,
 	toolMenuState,
 	attachmentMenuState,
@@ -149,8 +153,17 @@ export function AttachmentBottomBar({
 		}
 	};
 
-	const handleAttachmentPick = async (mode: 'file' | 'image') => {
-		await onAttachFiles(mode);
+	const handleAttachmentPick = async () => {
+		await onAttachFiles();
+		closeAttachmentMenu();
+		editor.tf.focus();
+	};
+
+	const handleAttachmentPickURL = async () => {
+		const raw = window.prompt('Paste a link or URL to attach');
+		const url = raw?.trim();
+		if (!url) return;
+		await onAttachURL(url);
 		closeAttachmentMenu();
 		editor.tf.focus();
 	};
@@ -165,8 +178,41 @@ export function AttachmentBottomBar({
 				{/* Left: template / tool / attachment pickers */}
 				<div className="flex items-center gap-1">
 					<PickerButton
+						label="Attach files or links"
+						icon={<FiPaperclip size={16} />}
+						buttonRef={attachmentButtonRef}
+						menuState={attachmentMenuState}
+						shortcut={shortcutLabels.attachments}
+					/>
+					<Menu
+						store={attachmentMenuState}
+						gutter={8}
+						className={menuClasses}
+						data-menu-kind="attachments"
+						autoFocusOnShow
+					>
+						<MenuItem
+							onClick={() => {
+								void handleAttachmentPick();
+							}}
+							className={menuItemClasses}
+						>
+							<FiUpload size={14} />
+							<span>From your computer...</span>
+						</MenuItem>
+						<MenuItem
+							onClick={() => {
+								void handleAttachmentPickURL();
+							}}
+							className={menuItemClasses}
+						>
+							<FiLink size={14} />
+							<span>From a link or URL...</span>
+						</MenuItem>
+					</Menu>
+					<PickerButton
 						label="Insert template"
-						icon={<FiZap size={16} />}
+						icon={<FiFilePlus size={16} />}
 						buttonRef={templateButtonRef}
 						menuState={templateMenuState}
 						shortcut={shortcutLabels.templates}
@@ -185,7 +231,7 @@ export function AttachmentBottomBar({
 									}}
 									className={menuItemClasses}
 								>
-									<FiZap size={14} className="text-warning" />
+									<FiFilePlus size={14} className="text-warning" />
 									<span className="truncate">{item.templateSlug.replace(/[-_]/g, ' ')}</span>
 									<span className="text-base-content/50 ml-auto text-[10px] uppercase" aria-hidden="true">
 										{item.templateVersion}
@@ -224,40 +270,6 @@ export function AttachmentBottomBar({
 								</MenuItem>
 							))
 						)}
-					</Menu>
-
-					<PickerButton
-						label="Attach files or images"
-						icon={<FiPaperclip size={16} />}
-						buttonRef={attachmentButtonRef}
-						menuState={attachmentMenuState}
-						shortcut={shortcutLabels.attachments}
-					/>
-					<Menu
-						store={attachmentMenuState}
-						gutter={8}
-						className={menuClasses}
-						data-menu-kind="attachments"
-						autoFocusOnShow
-					>
-						<MenuItem
-							onClick={() => {
-								void handleAttachmentPick('file');
-							}}
-							className={menuItemClasses}
-						>
-							<FiFileText size={14} />
-							<span>Attach file</span>
-						</MenuItem>
-						<MenuItem
-							onClick={() => {
-								void handleAttachmentPick('image');
-							}}
-							className={menuItemClasses}
-						>
-							<FiImage size={14} />
-							<span>Attach image</span>
-						</MenuItem>
 					</Menu>
 				</div>
 

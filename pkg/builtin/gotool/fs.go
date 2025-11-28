@@ -32,7 +32,7 @@ func ReadFile(_ context.Context, args ReadFileArgs) (*ReadFileOut, error) {
 	if enc == "" {
 		enc = fileutil.ReadEncodingText
 	}
-	if enc != fileutil.ReadEncodingText && args.Encoding != fileutil.ReadEncodingBinary {
+	if enc != fileutil.ReadEncodingText && enc != fileutil.ReadEncodingBinary {
 		return nil, errors.New(`encoding must be "text" or "binary"`)
 	}
 	data, err := fileutil.ReadFile(args.Path, enc)

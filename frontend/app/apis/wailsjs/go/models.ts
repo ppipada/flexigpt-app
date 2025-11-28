@@ -1,15 +1,29 @@
 export namespace attachment {
 	
-	export class HandleRef {
+	export class GenericRef {
 	    handle: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new HandleRef(source);
+	        return new GenericRef(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.handle = source["handle"];
+	    }
+	}
+	export class URLRef {
+	    url: string;
+	    normalized?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new URLRef(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	        this.normalized = source["normalized"];
 	    }
 	}
 	export class ImageRef {
@@ -95,9 +109,12 @@ export namespace attachment {
 	export class Attachment {
 	    kind: string;
 	    label: string;
+	    mode?: string;
+	    availableModes?: string[];
 	    fileRef?: FileRef;
 	    imageRef?: ImageRef;
-	    genericRef?: HandleRef;
+	    urlRef?: URLRef;
+	    genericRef?: GenericRef;
 	
 	    static createFrom(source: any = {}) {
 	        return new Attachment(source);
@@ -107,9 +124,12 @@ export namespace attachment {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.kind = source["kind"];
 	        this.label = source["label"];
+	        this.mode = source["mode"];
+	        this.availableModes = source["availableModes"];
 	        this.fileRef = this.convertValues(source["fileRef"], FileRef);
 	        this.imageRef = this.convertValues(source["imageRef"], ImageRef);
-	        this.genericRef = this.convertValues(source["genericRef"], HandleRef);
+	        this.urlRef = this.convertValues(source["urlRef"], URLRef);
+	        this.genericRef = this.convertValues(source["genericRef"], GenericRef);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -130,6 +150,7 @@ export namespace attachment {
 		    return a;
 		}
 	}
+	
 	
 	
 

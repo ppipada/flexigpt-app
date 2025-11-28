@@ -2,12 +2,12 @@ package attachment
 
 import "strings"
 
-// HandleRef preserves legacy handle-style references (PRs, doc indexes, etc.).
-type HandleRef struct {
+// GenericRef preserves legacy handle-style references (PRs, doc indexes, etc.).
+type GenericRef struct {
 	Handle string `json:"handle"`
 }
 
-func (ref *HandleRef) PopulateRef() error {
+func (ref *GenericRef) PopulateRef() error {
 	ref.Handle = strings.TrimSpace(ref.Handle)
 
 	return nil

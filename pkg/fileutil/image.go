@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+const DefaultImageMIME = "image/png"
+
 // ImageData holds metadata (and optionally content) for an image file.
 type ImageData struct {
 	Path      string     `json:"path"`
@@ -118,7 +120,7 @@ func imageFormatToMIME(format string) string {
 		return "image/bmp"
 	case "":
 		// Keep your previous behavior: default to PNG if unknown/empty.
-		return "image/png"
+		return DefaultImageMIME
 	default:
 		// Fallback; most renderers can still display many uncommon types.
 		return "application/octet-stream"

@@ -3,12 +3,26 @@
 export enum AttachmentKind {
 	file = 'file',
 	image = 'image',
+	url = 'url',
 	docIndex = 'docIndex',
 	pr = 'pr',
 	commit = 'commit',
-	snapshot = 'snapshot',
 }
 
+export enum AttachmentMode {
+	text = 'text',
+	file = 'file',
+	image = 'image',
+	page = 'page',
+	link = 'link',
+	pdfFile = 'pdf-file',
+	notReadable = 'not-readable',
+
+	prDiff = 'pr-diff',
+	prPage = 'pr-page',
+	commitDiff = 'commit-diff',
+	commitPage = 'commit-page',
+}
 export interface AttachmentFileRef {
 	path: string;
 	exists?: boolean;
@@ -26,6 +40,10 @@ export interface AttachmentImageRef {
 	modTime?: Date;
 }
 
+export interface AttachmentURLRef {
+	url: string;
+}
+
 export interface AttachmentGenericRef {
 	handle: string;
 }
@@ -34,7 +52,12 @@ export interface AttachmentGenericRef {
 export interface Attachment {
 	kind: AttachmentKind;
 	label: string;
+
+	mode?: AttachmentMode;
+	availableModes?: AttachmentMode[];
+
 	fileRef?: AttachmentFileRef;
 	imageRef?: AttachmentImageRef;
+	urlRef?: AttachmentURLRef;
 	genericRef?: AttachmentGenericRef;
 }

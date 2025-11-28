@@ -58,7 +58,7 @@ func (api *AnthropicMessagesAPI) InitLLM(ctx context.Context) error {
 	if api.ProviderParams.Origin != "" {
 		baseURL := strings.TrimSuffix(api.ProviderParams.Origin, "/")
 		// Remove 'v1/messages' from pathPrefix if present,
-		// This is because openai sdk adds 'v1/messages' internally.
+		// This is because anthropic sdk adds 'v1/messages' internally.
 		pathPrefix := strings.TrimSuffix(
 			api.ProviderParams.ChatCompletionPathPrefix,
 			"v1/messages",
@@ -141,7 +141,6 @@ func (api *AnthropicMessagesAPI) BuildCompletionData(
 
 func (api *AnthropicMessagesAPI) FetchCompletion(
 	ctx context.Context,
-
 	completionData *spec.FetchCompletionData,
 	onStreamTextData, onStreamThinkingData func(string) error,
 ) (*spec.FetchCompletionResponse, error) {
@@ -152,10 +151,16 @@ func (api *AnthropicMessagesAPI) FetchCompletion(
 		return nil, errors.New("anthropic messages api LLM: empty completion data")
 	}
 
+	// Build generic content blocks (text / image / file) from attachments.
+	blocks, err := attachment.BuildContentBlocks(ctx, completionData.Attachments)
+	if err != nil {
+		return nil, err
+	}
+
 	msgs, sysParams, err := toAnthropicMessages(
 		completionData.ModelParams.SystemPrompt,
 		completionData.Messages,
-		completionData.Attachments,
+		blocks,
 	)
 	if err != nil {
 		return nil, err
@@ -355,7 +360,7 @@ func handleContentBlockDeltaEvent(
 func toAnthropicMessages(
 	systemPrompt string,
 	messages []spec.ChatCompletionDataMessage,
-	attachments []attachment.Attachment,
+	blocks []attachment.ContentBlock,
 ) (msgs []anthropic.MessageParam, sysPrompts []anthropic.TextBlockParam, err error) {
 	var out []anthropic.MessageParam
 	var sysParts []string
@@ -373,7 +378,7 @@ func toAnthropicMessages(
 		}
 	}
 
-	attachmentBlocks, err := buildAnthropicAttachmentBlocks(attachments)
+	attachmentBlocks, err := contentBlocksToAnthropic(blocks)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -390,7 +395,7 @@ func toAnthropicMessages(
 				sysParts = append(sysParts, content)
 			}
 		case spec.User:
-			// Attach any resolved image/file blocks to the final user message.
+			// Attach any resolved image/file/text blocks to the final user message.
 			if idx == lastUserIdx && len(attachmentBlocks) > 0 {
 				blocks := make([]anthropic.ContentBlockParamUnion, 0, 1+len(attachmentBlocks))
 				if content != "" {
@@ -422,56 +427,47 @@ func toAnthropicMessages(
 	return out, sysParams, nil
 }
 
-// buildAnthropicAttachmentBlocks converts generic attachments into Anthropic
-// content blocks. Images are sent as base64 image blocks; other attachment
-// kinds fall back to short text descriptions.
-func buildAnthropicAttachmentBlocks(
-	attachments []attachment.Attachment,
+// contentBlocksToAnthropic converts generic content blocks into Anthropic
+// content blocks. Images are sent as base64 image blocks; files as document
+// blocks (currently assuming PDF base64); text as text blocks.
+func contentBlocksToAnthropic(
+	blocks []attachment.ContentBlock,
 ) ([]anthropic.ContentBlockParamUnion, error) {
-	if len(attachments) == 0 {
+	if len(blocks) == 0 {
 		return nil, nil
 	}
 
-	out := make([]anthropic.ContentBlockParamUnion, 0, len(attachments))
-	for _, att := range attachments {
-		switch att.Kind {
-		case attachment.AttachmentImage:
-			if att.ImageRef == nil {
+	out := make([]anthropic.ContentBlockParamUnion, 0, len(blocks))
+	for _, b := range blocks {
+		switch b.Kind {
+		case attachment.ContentBlockText:
+			if strings.TrimSpace(b.Text) == "" {
 				continue
 			}
-			imageInfo, err := fileutil.ReadImageInfo(att.ImageRef.Path, true)
-			if err != nil {
-				return nil, err
-			}
-			out = append(out, anthropic.NewImageBlockBase64(imageInfo.MIMEType, imageInfo.Base64Data))
+			out = append(out, anthropic.NewTextBlock(b.Text))
 
-		case attachment.AttachmentFile:
-			if att.FileRef == nil {
+		case attachment.ContentBlockImage:
+			if b.Base64Data == "" {
 				continue
 			}
-			encoded, err := fileutil.ReadFile(att.FileRef.Path, fileutil.ReadEncodingBinary)
-			if err != nil {
-				return nil, err
+			mime := b.MIMEType
+			if mime == "" {
+				mime = fileutil.DefaultImageMIME
 			}
+			out = append(out, anthropic.NewImageBlockBase64(mime, b.Base64Data))
 
-			if encoded != "" {
-				out = append(
-					out,
-					anthropic.NewDocumentBlock(
-						anthropic.Base64PDFSourceParam{Data: encoded},
-					),
-				)
+		case attachment.ContentBlockFile:
+			if b.Base64Data == "" {
+				continue
 			}
+			// For now, treat generic file blocks as base64 PDF sources.
+			out = append(
+				out,
+				anthropic.NewDocumentBlock(
+					anthropic.Base64PDFSourceParam{Data: b.Base64Data},
+				),
+			)
 
-		case attachment.AttachmentDocIndex,
-			attachment.AttachmentPR,
-			attachment.AttachmentCommit,
-			attachment.AttachmentSnapshot:
-			if text := (&att).FormatAsDisplayName(); text != "" {
-				out = append(out, anthropic.NewDocumentBlock(
-					anthropic.PlainTextSourceParam{Data: text},
-				))
-			}
 		default:
 			continue
 		}

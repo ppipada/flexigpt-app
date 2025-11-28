@@ -2,6 +2,7 @@ package attachment
 
 import (
 	"errors"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -48,4 +49,17 @@ func (ref *ImageRef) PopulateRef() error {
 		ref.ModTime = nil
 	}
 	return nil
+}
+
+func buildImageBlockFromLocal(path string) (*ContentBlock, error) {
+	info, err := fileutil.ReadImageInfo(path, true)
+	if err != nil {
+		return &ContentBlock{}, err
+	}
+	return &ContentBlock{
+		Kind:       ContentBlockImage,
+		Base64Data: info.Base64Data,
+		MIMEType:   info.MIMEType,
+		FileName:   filepath.Base(path),
+	}, nil
 }

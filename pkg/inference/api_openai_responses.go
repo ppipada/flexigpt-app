@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -159,10 +158,16 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 		return nil, errors.New("openai responses api LLM: empty completion data")
 	}
 
+	blocks, err := attachment.BuildContentBlocks(ctx, completionData.Attachments)
+	if err != nil {
+		return nil, err
+	}
+
 	// Build OpenAI chat messages.
 	msgs, err := toOpenAIResponsesMessages(
+		ctx,
 		completionData.Messages,
-		completionData.Attachments,
+		blocks,
 		completionData.ModelParams.Name,
 		api.ProviderParams.Name,
 	)
@@ -337,8 +342,9 @@ func (api *OpenAIResponsesAPI) doStreaming(
 }
 
 func toOpenAIResponsesMessages(
+	ctx context.Context,
 	messages []spec.ChatCompletionDataMessage,
-	attachments []attachment.Attachment,
+	blocks []attachment.ContentBlock,
 	modelName modelpresetSpec.ModelName,
 	providerName modelpresetSpec.ProviderName,
 ) (responses.ResponseInputParam, error) {
@@ -352,7 +358,7 @@ func toOpenAIResponsesMessages(
 		}
 	}
 
-	attachmentContent, err := buildOpenAIResponsesAttachmentContent(attachments)
+	attachmentContent, err := contentBlocksToOpenAI(blocks)
 	if err != nil {
 		return nil, err
 	}
@@ -363,8 +369,7 @@ func toOpenAIResponsesMessages(
 		}
 		switch m.Role {
 		case spec.System:
-			// This is in case additional dev or system message is present in the array itself.
-			inputParam := responses.ResponseInputItemUnionParam{
+			out = append(out, responses.ResponseInputItemUnionParam{
 				OfMessage: &responses.EasyInputMessageParam{
 					Content: responses.EasyInputMessageContentUnionParam{
 						OfString: openai.String(*m.Content),
@@ -372,11 +377,10 @@ func toOpenAIResponsesMessages(
 					Role: responses.EasyInputMessageRoleSystem,
 					Type: responses.EasyInputMessageTypeMessage,
 				},
-			}
-			out = append(out, inputParam)
+			})
+
 		case spec.Developer:
-			// This is in case additional dev or system message is present in the array itself.
-			inputParam := responses.ResponseInputItemUnionParam{
+			out = append(out, responses.ResponseInputItemUnionParam{
 				OfMessage: &responses.EasyInputMessageParam{
 					Content: responses.EasyInputMessageContentUnionParam{
 						OfString: openai.String(*m.Content),
@@ -384,12 +388,9 @@ func toOpenAIResponsesMessages(
 					Role: responses.EasyInputMessageRoleDeveloper,
 					Type: responses.EasyInputMessageTypeMessage,
 				},
-			}
-			out = append(out, inputParam)
+			})
 
 		case spec.User:
-			// For the last user message, translate attachments into multimodal input
-			// content if present; otherwise send a plain text message.
 			if idx == lastUserIdx && len(attachmentContent) > 0 {
 				var contentList responses.ResponseInputMessageContentListParam
 				if c := strings.TrimSpace(*m.Content); c != "" {
@@ -400,13 +401,12 @@ func toOpenAIResponsesMessages(
 				}
 				contentList = append(contentList, attachmentContent...)
 
-				inputParam := responses.ResponseInputItemParamOfMessage(
+				out = append(out, responses.ResponseInputItemParamOfMessage(
 					contentList,
 					responses.EasyInputMessageRoleUser,
-				)
-				out = append(out, inputParam)
+				))
 			} else {
-				inputParam := responses.ResponseInputItemUnionParam{
+				out = append(out, responses.ResponseInputItemUnionParam{
 					OfMessage: &responses.EasyInputMessageParam{
 						Content: responses.EasyInputMessageContentUnionParam{
 							OfString: openai.String(*m.Content),
@@ -414,13 +414,11 @@ func toOpenAIResponsesMessages(
 						Role: responses.EasyInputMessageRoleUser,
 						Type: responses.EasyInputMessageTypeMessage,
 					},
-				}
-				out = append(out, inputParam)
+				})
 			}
 
 		case spec.Assistant:
-			// This is in case additional dev or system message is present in the array itself.
-			inputParam := responses.ResponseInputItemUnionParam{
+			out = append(out, responses.ResponseInputItemUnionParam{
 				OfMessage: &responses.EasyInputMessageParam{
 					Content: responses.EasyInputMessageContentUnionParam{
 						OfString: openai.String(*m.Content),
@@ -428,39 +426,40 @@ func toOpenAIResponsesMessages(
 					Role: responses.EasyInputMessageRoleAssistant,
 					Type: responses.EasyInputMessageTypeMessage,
 				},
-			}
-			out = append(out, inputParam)
+			})
 
 		case spec.Function, spec.Tool:
+			// Not used here.
 		}
 	}
 	return out, nil
 }
 
-// buildOpenAIResponsesAttachmentContent converts generic chat attachments into
-// Response input content items for the Responses API (files, images, and
-// textual handles for generic refs).
-func buildOpenAIResponsesAttachmentContent(
-	attachments []attachment.Attachment,
+func contentBlocksToOpenAI(
+	blocks []attachment.ContentBlock,
 ) ([]responses.ResponseInputContentUnionParam, error) {
-	if len(attachments) == 0 {
+	if len(blocks) == 0 {
 		return nil, nil
 	}
+	out := make([]responses.ResponseInputContentUnionParam, 0, len(blocks))
 
-	out := make([]responses.ResponseInputContentUnionParam, 0, len(attachments))
-	for _, att := range attachments {
-		switch att.Kind {
-		case attachment.AttachmentImage:
-			if att.ImageRef == nil {
+	for _, b := range blocks {
+		switch b.Kind {
+		case attachment.ContentBlockText:
+			out = append(
+				out,
+				responses.ResponseInputContentParamOfInputText(b.Text),
+			)
+
+		case attachment.ContentBlockImage:
+			if b.Base64Data == "" {
 				continue
 			}
-			imageInfo, err := fileutil.ReadImageInfo(att.ImageRef.Path, true)
-			if err != nil {
-				return nil, err
+			mime := b.MIMEType
+			if mime == "" {
+				mime = fileutil.DefaultImageMIME
 			}
-
-			dataURL := fmt.Sprintf("data:%s;base64,%s", imageInfo.MIMEType, imageInfo.Base64Data)
-
+			dataURL := fmt.Sprintf("data:%s;base64,%s", mime, b.Base64Data)
 			img := responses.ResponseInputImageParam{
 				Detail:   responses.ResponseInputImageDetailAuto,
 				ImageURL: param.NewOpt(dataURL),
@@ -470,37 +469,25 @@ func buildOpenAIResponsesAttachmentContent(
 				responses.ResponseInputContentUnionParam{OfInputImage: &img},
 			)
 
-		case attachment.AttachmentFile:
-			if att.FileRef == nil {
+		case attachment.ContentBlockFile:
+			if b.Base64Data == "" {
 				continue
 			}
-
-			encoded, err := fileutil.ReadFile(att.FileRef.Path, fileutil.ReadEncodingBinary)
-			if err != nil {
-				return nil, err
+			mime := b.MIMEType
+			if mime == "" {
+				mime = "application/octet-stream"
 			}
-			filename := filepath.Base(att.FileRef.Path)
-
-			fileData := "data:application/pdf;base64," + encoded
+			dataURL := fmt.Sprintf("data:%s;base64,%s", mime, b.Base64Data)
 			fileParam := responses.ResponseInputFileParam{
-				FileData: param.NewOpt(fileData),
-				Filename: param.NewOpt(filename),
+				FileData: param.NewOpt(dataURL),
+				Filename: param.NewOpt(b.FileName),
 				Type:     openaiSharedConstant.InputFile("").Default(),
 			}
 			out = append(
 				out,
 				responses.ResponseInputContentUnionParam{OfInputFile: &fileParam},
 			)
-		case attachment.AttachmentDocIndex,
-			attachment.AttachmentPR,
-			attachment.AttachmentCommit,
-			attachment.AttachmentSnapshot:
-			if text := (&att).FormatAsDisplayName(); text != "" {
-				out = append(
-					out,
-					responses.ResponseInputContentParamOfInputText(text),
-				)
-			}
+
 		default:
 			continue
 		}
