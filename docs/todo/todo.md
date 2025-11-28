@@ -18,7 +18,10 @@
   - [ ] local git diff/commit history/etc attachments
 
 - [ ] tool enhancements
+
   - [ ] attached tools to be given back as schema to consumers for exec
   - [ ] need to list openai/anthropic etc given tools so that they can be invoked in api directly
   - [ ] some parallell tools cna be created locally
   - [ ] web search tools better integration needs to be done e2e
+
+- [ ] With attachments, token usage display seems more important.
