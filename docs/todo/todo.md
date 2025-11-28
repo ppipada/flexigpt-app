@@ -12,7 +12,10 @@
   - [x] Need image and associated processing in one place
   - [x] any extension that can be read as text in one place
   - [x] web url that is just html fetch
-  - [ ] url modal needs styling
+  - [x] url modal needs styling
+
+  - [ ] need info to user on how the url or any attachment for that matter was processed. like was it finally done as text or lik or bytes or what.
+  - [ ] request details are not very useful as of now in the ui. need what was actually sent rather than out version of completion data. may empty out some data things, but others can be given. Most probably need to check response too.
   - [ ] get visible text from html needs to be implemented and a new mode raw vs visible text needs to be added.
   - [ ] pdf and associated processing in one place, doc formats can be in one place (no priority). Integrate a pdf text extractor.
   - [ ] specialized urls like github/gitlab pr's

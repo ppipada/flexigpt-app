@@ -1,4 +1,4 @@
-import { type ReactNode, type RefObject, useMemo } from 'react';
+import { type ReactNode, type RefObject, useMemo, useState } from 'react';
 
 import { FiFilePlus, FiLink, FiPaperclip, FiTool, FiUpload } from 'react-icons/fi';
 
@@ -16,6 +16,7 @@ import { useTools } from '@/hooks/use_tool';
 import { promptStoreAPI, toolStoreAPI } from '@/apis/baseapi';
 
 import { getToolNodesWithPath, insertToolSelectionNode, toolIdentityKey } from '@/chats/attachments/tool_editor_utils';
+import { UrlAttachmentModal } from '@/chats/attachments/url_attachment_modal';
 import { CommandTipsBar } from '@/chats/chat_command_tips_bar';
 import { insertTemplateSelectionNode } from '@/chats/templates/template_editor_utils';
 
@@ -82,6 +83,8 @@ export function AttachmentBottomBar({
 	shortcutConfig,
 }: AttachmentBottomBarProps) {
 	const editor = useEditorRef() as PlateEditor;
+	const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
+
 	const shortcutLabels = useMemo(
 		() => ({
 			templates: formatShortcut(shortcutConfig.insertTemplate),
@@ -159,12 +162,13 @@ export function AttachmentBottomBar({
 		editor.tf.focus();
 	};
 
-	const handleAttachmentPickURL = async () => {
-		const raw = window.prompt('Paste a link or URL to attach');
-		const url = raw?.trim();
-		if (!url) return;
-		await onAttachURL(url);
+	const handleAttachmentPickURL = () => {
 		closeAttachmentMenu();
+		setIsUrlModalOpen(true);
+	};
+
+	const handleUrlAttachFromModal = async (url: string) => {
+		await onAttachURL(url);
 		editor.tf.focus();
 	};
 
@@ -200,12 +204,7 @@ export function AttachmentBottomBar({
 							<FiUpload size={14} />
 							<span>From your computer...</span>
 						</MenuItem>
-						<MenuItem
-							onClick={() => {
-								void handleAttachmentPickURL();
-							}}
-							className={menuItemClasses}
-						>
+						<MenuItem onClick={handleAttachmentPickURL} className={menuItemClasses}>
 							<FiLink size={14} />
 							<span>From a link or URL...</span>
 						</MenuItem>
@@ -278,6 +277,15 @@ export function AttachmentBottomBar({
 					<CommandTipsBar shortcutConfig={shortcutConfig} />
 				</div>
 			</div>
+			{/* URL attachment dialog */}
+			<UrlAttachmentModal
+				isOpen={isUrlModalOpen}
+				onClose={() => {
+					setIsUrlModalOpen(false);
+					editor.tf.focus();
+				}}
+				onAttachURL={handleUrlAttachFromModal}
+			/>
 		</div>
 	);
 }
