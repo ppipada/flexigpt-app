@@ -3,7 +3,7 @@
 ## Laundry list
 
 - [ ] edit message should fall to the editor with attachments/tools so that resend is consistent
-- [ ] render images and attacments in msg ui
+- [ ] render images and attachments in msg ui
 - [x] attachment tools buttons and shortcuts etc dropdowns ui
 
 - [ ] attachments
@@ -20,6 +20,7 @@
   - [ ] pdf and associated processing in one place, doc formats can be in one place (no priority). Integrate a pdf text extractor.
   - [ ] specialized urls like github/gitlab pr's
   - [ ] local git diff/commit history/etc attachments
+  - [ ] need to allow dirs too with some good boundaries.
 
 - [ ] tool enhancements
 

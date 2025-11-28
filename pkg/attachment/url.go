@@ -136,7 +136,7 @@ func buildBlocksForURLPage(ctx context.Context, att *Attachment) (*ContentBlock,
 	lowerCT := strings.ToLower(contentType)
 	lowerURL := strings.ToLower(rawURL)
 
-	// 1) Image?.
+	// 1) If the mode was chosen as page, then for images we need to encode the image as b64 and send it as "page".
 	if strings.HasPrefix(lowerCT, "image/") {
 		base64Data := base64.StdEncoding.EncodeToString(data)
 		return &ContentBlock{
@@ -147,7 +147,7 @@ func buildBlocksForURLPage(ctx context.Context, att *Attachment) (*ContentBlock,
 		}, nil
 	}
 
-	// 2) PDF?.
+	// 2) If the mode was chosen as page, then for pdf we need to encode the pdf as b64 and send it as "page".
 	if strings.HasPrefix(lowerCT, "application/pdf") || strings.HasSuffix(lowerURL, ".pdf") {
 		base64Data := base64.StdEncoding.EncodeToString(data)
 		mime := contentType

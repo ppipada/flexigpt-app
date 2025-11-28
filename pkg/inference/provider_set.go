@@ -350,9 +350,14 @@ func populateAttachmentRefs(
 
 	out := make([]attachment.Attachment, 0, len(attachments))
 	for _, att := range attachments {
-		err := (&att).PopulateRef()
-		if err != nil {
-			return err
+		if err := (&att).PopulateRef(); err != nil {
+			// Log and skip, so one bad attachment doesn't kill the whole turn.
+			slog.Warn("skipping invalid attachment",
+				"kind", att.Kind,
+				"label", att.Label,
+				"error", err,
+			)
+			continue
 		}
 		out = append(out, att)
 	}
