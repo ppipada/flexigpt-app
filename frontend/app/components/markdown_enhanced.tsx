@@ -155,7 +155,7 @@ export const EnhancedMarkdown = memo(function EnhancedMarkdown({
 					className={`cursor-pointer text-blue-600 underline hover:text-blue-800 ${className ?? ''}`}
 					onClick={e => {
 						e.preventDefault();
-						if (href) backendAPI.openurl(href);
+						if (href) backendAPI.openURL(href);
 					}}
 				>
 					{children}

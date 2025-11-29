@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/adrg/xdg"
@@ -164,41 +165,90 @@ func (a *App) SaveFile(
 	return os.WriteFile(savePath, contentBytes, 0o600)
 }
 
+type FileFilter struct {
+	DisplayName string // Filter information EG: "Image Files (*.jpg, *.png)".
+	Pattern     string // semicolon separated list of extensions, EG: "*.jpg;*.png".
+}
+
 // OpenFiles opens a native file dialog and returns selected file paths.
 // When allowMultiple is true, users can pick multiple files; otherwise at most one path is returned.
 func (a *App) OpenFiles(
 	allowMultiple bool,
-	filters []runtime.FileFilter,
-) ([]string, error) {
+	filters []FileFilter,
+) (pathInfos []fileutil.PathInfo, err error) {
 	if a.ctx == nil {
 		return nil, errors.New("context is not initialized")
 	}
 
+	runtimeFilters := make([]runtime.FileFilter, len(filters))
+	for idx := range filters {
+		runtimeFilters = append(
+			runtimeFilters,
+			runtime.FileFilter{DisplayName: filters[idx].DisplayName, Pattern: filters[idx].Pattern},
+		)
+	}
+
 	opts := runtime.OpenDialogOptions{
-		Filters:              filters,
+		Filters:              runtimeFilters,
 		ShowHiddenFiles:      false,
 		CanCreateDirectories: false,
 	}
 
+	paths := []string{}
 	if allowMultiple {
-		paths, err := runtime.OpenMultipleFilesDialog(a.ctx, opts)
-		if err != nil {
-			return nil, err
+		paths, err = runtime.OpenMultipleFilesDialog(a.ctx, opts)
+	} else {
+		p, e := runtime.OpenFileDialog(a.ctx, opts)
+		if e == nil && p != "" {
+			paths = append(paths, p)
 		}
-		if paths == nil {
-			return []string{}, nil
-		}
-		return paths, nil
+		err = e
 	}
-
-	path, err := runtime.OpenFileDialog(a.ctx, opts)
 	if err != nil {
 		return nil, err
 	}
-	if path == "" {
-		return []string{}, nil
+	if len(paths) == 0 {
+		return []fileutil.PathInfo{}, nil
 	}
-	return []string{path}, nil
+
+	pathInfos = make([]fileutil.PathInfo, 0, len(paths))
+	for _, p := range paths {
+		info, err := fileutil.StatPath(p)
+		if err != nil {
+			slog.Debug("stat error for file", "path", p, "error", err)
+			continue
+		}
+		if info.IsDir {
+			// Folder selection should go through OpenDirectoryWithFiles.
+			continue
+		}
+		pathInfos = append(pathInfos, *info)
+	}
+
+	return pathInfos, nil
+}
+
+// OpenDirectoryWithFiles implements:
+// - full recursive walk over subdirs
+// - if total files <= maxFiles: returns all
+// - if total files > maxFiles: drops "largest subdir first" until within limit
+// - skips dot-directories, dotfiles, and non-regular files (symlinks, devices, etc.)
+// - returns flattened included files + summary of dropped subdirs.
+func (a *App) OpenDirectoryWithFiles(maxFiles int) (*fileutil.WalkDirectoryWithFilesResult, error) {
+	if a.ctx == nil {
+		return nil, errors.New("context is not initialized")
+	}
+
+	dialogOpts := runtime.OpenDialogOptions{
+		ShowHiddenFiles:      false,
+		CanCreateDirectories: false,
+	}
+
+	dirPath, err := runtime.OpenDirectoryDialog(a.ctx, dialogOpts)
+	if err != nil {
+		return nil, err
+	}
+	return fileutil.WalkDirectoryWithFiles(a.ctx, dirPath, maxFiles)
 }
 
 func (a *App) initManagers() { //nolint:unused // Called from main.

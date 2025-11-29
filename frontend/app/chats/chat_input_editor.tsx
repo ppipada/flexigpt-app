@@ -351,7 +351,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			{ DisplayName: 'Documents', Pattern: '*.pdf;*.doc;*.docx;*.ppt;*.pptx;*.xls;*.xlsx;*.html;*.htm' },
 			{ DisplayName: 'Images', Pattern: '*.png;*.jpg;*.jpeg;*.gif;*.webp' },
 		];
-		const paths = await backendAPI.openfiles(true, baseFilters);
+		const paths = await backendAPI.openFiles(true, baseFilters);
 		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 		if (!paths || paths.length === 0) return;
 
@@ -360,7 +360,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			const next: EditorAttachment[] = [...prev];
 
 			for (const p of paths) {
-				const trimmed = p.trim();
+				const trimmed = p.path.trim();
 				if (!trimmed) continue;
 				const att = buildEditorAttachmentForLocalPath(trimmed);
 				const key = editorAttachmentKey(att);

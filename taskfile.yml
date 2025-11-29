@@ -108,10 +108,12 @@ tasks:
 
   lint-gosort:
     cmds:
+      - pnpm run touch:tmp
       - refdir ./...
 
   lint-go:
     cmds:
+      - pnpm run touch:tmp
       - golangci-lint run ./... -v
 
   lint:

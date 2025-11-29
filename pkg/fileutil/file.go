@@ -76,13 +76,20 @@ func StatPath(path string) (pathInfo *PathInfo, err error) {
 		return nil, e
 	}
 
-	pathInfo.Name = info.Name()
-	pathInfo.Exists = true
-	pathInfo.IsDir = info.IsDir()
-	pathInfo.Size = info.Size()
+	p := getPathInfoFromFileInfo(path, info)
+	return &p, nil
+}
+
+func getPathInfoFromFileInfo(path string, info fs.FileInfo) PathInfo {
 	m := info.ModTime().UTC()
-	pathInfo.ModTime = &m
-	return pathInfo, nil
+	return PathInfo{
+		Path:    path,
+		Name:    info.Name(),
+		Exists:  true,
+		IsDir:   info.IsDir(),
+		Size:    info.Size(),
+		ModTime: &m,
+	}
 }
 
 // SearchFiles walks root (default ".") recursively and returns up to maxResults

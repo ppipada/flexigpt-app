@@ -1,9 +1,9 @@
 import { sprintf } from 'sprintf-js';
 
-import type { FileFilter, IBackendAPI } from '@/spec/backend';
+import type { FileFilter, IBackendAPI, PathInfo, WalkDirectoryWithFilesResult } from '@/spec/backend';
 import type { ILogger } from '@/spec/logger';
 
-import { OpenFiles, Ping, SaveFile } from '@/apis/wailsjs/go/main/App';
+import { OpenDirectoryWithFiles, OpenFiles, Ping, SaveFile } from '@/apis/wailsjs/go/main/App';
 import { BrowserOpenURL, LogDebug, LogError, LogInfo, LogWarning } from '@/apis/wailsjs/runtime/runtime';
 
 function formatMessage(args: unknown[]): string {
@@ -118,7 +118,7 @@ export class WailsBackendAPI implements IBackendAPI {
 		}
 	}
 
-	async savefile(defaultFilename: string, contentBase64: string, filters: Array<FileFilter>): Promise<void> {
+	async saveFile(defaultFilename: string, contentBase64: string, filters: Array<FileFilter>): Promise<void> {
 		// Call the Go backend method to save the file
 		try {
 			await SaveFile(defaultFilename, contentBase64, filters);
@@ -128,11 +128,11 @@ export class WailsBackendAPI implements IBackendAPI {
 		return;
 	}
 
-	openurl(url: string): void {
+	openURL(url: string): void {
 		BrowserOpenURL(url);
 	}
 
-	async openfiles(allowMultiple: boolean, filters: Array<FileFilter>): Promise<string[]> {
+	async openFiles(allowMultiple: boolean, filters: Array<FileFilter>): Promise<PathInfo[]> {
 		try {
 			const paths = await OpenFiles(allowMultiple, filters);
 			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -140,6 +140,25 @@ export class WailsBackendAPI implements IBackendAPI {
 		} catch (err) {
 			console.error('Error opening file dialog:', err);
 			return [];
+		}
+	}
+
+	async openDirectoryWithFiles(maxFiles: number): Promise<WalkDirectoryWithFilesResult> {
+		try {
+			const dirResults = await OpenDirectoryWithFiles(maxFiles);
+			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+			return (dirResults as WalkDirectoryWithFilesResult) ?? [];
+		} catch (err) {
+			console.error('Error opening dir dialog:', err);
+			const res: WalkDirectoryWithFilesResult = {
+				dirPath: '',
+				files: [],
+				overflowDirs: [],
+				maxFiles: 0,
+				totalSize: 0,
+				hasMore: false,
+			};
+			return res;
 		}
 	}
 }

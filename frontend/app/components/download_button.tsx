@@ -11,7 +11,7 @@ import { MimeTypeMap, ProgrammingLanguages } from '@/lib/markdown_utils';
 import { backendAPI } from '@/apis/baseapi';
 
 async function saveFile(defaultFilename: string, contentBase64: string, filters: Array<FileFilter>): Promise<void> {
-	await backendAPI.savefile(defaultFilename, contentBase64, filters);
+	await backendAPI.saveFile(defaultFilename, contentBase64, filters);
 }
 
 interface DownloadButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
