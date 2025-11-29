@@ -228,12 +228,8 @@ func (a *App) OpenFiles(
 	return pathInfos, nil
 }
 
-// OpenDirectoryWithFiles implements:
-// - full recursive walk over subdirs
-// - if total files <= maxFiles: returns all
-// - if total files > maxFiles: drops "largest subdir first" until within limit
-// - skips dotfiles, and non-regular files (symlinks, devices, etc.)
-// - returns flattened included files + summary of dropped subdirs.
+// OpenDirectoryWithFiles opens a single directory pick dialog and then does WalkDirectoryWithFiles for fetching max no
+// of files.
 func (a *App) OpenDirectoryWithFiles(maxFiles int) (*fileutil.WalkDirectoryWithFilesResult, error) {
 	if a.ctx == nil {
 		return nil, errors.New("context is not initialized")

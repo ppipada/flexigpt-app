@@ -2,43 +2,63 @@ package fileutil
 
 import (
 	"context"
-	"errors"
-	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 )
 
-var errWalkLimitReached = errors.New("directory walk file limit reached")
+const MaxTotalWalkFiles = 256
 
-const MaxTotalWalkFiles = 128
-
-// DirectoryOverflowInfo represents a directory subtree whose files were not included.
+// DirectoryOverflowInfo represents a directory that was *not fully walked*
+// because we hit the max-files limit or had an error.
+//
+// Semantics:
+//
+//   - DirPath / RelativePath:
+//     Absolute / relative-to-root path of that directory.
+//   - FileCount:
+//     For completely unvisited dirs (left in the BFS queue):
+//   - number of direct entries (files + subdirs) from a single os.ReadDir,
+//     no recursion.
+//     For the single "partial" dir where we hit the limit mid-scan:
+//   - number of remaining entries in that directory (files + subdirs)
+//     that we did NOT process.
+//     This is *approximate UI sugar*, not a full subtree count.
+//   - Partial:
+//     true only for the directory where we stopped in the middle of its
+//     entries because maxFiles was reached. For all other overflow dirs it's
+//     false.
 type DirectoryOverflowInfo struct {
-	DirPath      string `json:"dirPath"`      // absolute path to that subdir
-	RelativePath string `json:"relativePath"` // relative to the chosen root dir
-	FileCount    int    `json:"fileCount"`    // number of files in that subtree
-	TotalSize    int64  `json:"totalSize"`    // sum of file sizes in that subtree
+	DirPath      string `json:"dirPath"`
+	RelativePath string `json:"relativePath"`
+	FileCount    int    `json:"fileCount"`
+	Partial      bool   `json:"partial"`
 }
 
 // WalkDirectoryWithFilesResult is returned when user selects a directory.
 type WalkDirectoryWithFilesResult struct {
 	DirPath      string                  `json:"dirPath"`
 	Files        []PathInfo              `json:"files"`        // included files (flattened)
-	OverflowDirs []DirectoryOverflowInfo `json:"overflowDirs"` // dropped subtrees
+	OverflowDirs []DirectoryOverflowInfo `json:"overflowDirs"` // directories not fully included
 	MaxFiles     int                     `json:"maxFiles"`     // max number of files returned (after clamping)
 	TotalSize    int64                   `json:"totalSize"`    // sum of Files[i].Size
-	HasMore      bool                    `json:"hasMore"`      // true if not all files included
+	HasMore      bool                    `json:"hasMore"`      // true if not all content included
 }
 
 // WalkDirectoryWithFiles implements:
-// - full recursive walk over subdirs
-// - if total files <= maxFiles: returns all
-// - if total files > maxFiles: drops "largest subdir first" until within limit
-// - skips dotfiles, and non-regular files (symlinks, devices, etc.)
-// - returns flattened included files + summary of dropped subdirs.
+//
+//   - Pure BFS over the directory tree starting at dirPath.
+//   - For each directory:
+//   - process all regular, non-dot files first (highest priority),
+//     adding them to Files until maxFiles is reached.
+//   - then enqueue its subdirectories for BFS.
+//   - As soon as Files reaches maxFiles, walking stops.
+//   - Remaining directories in the BFS queue are returned as OverflowDirs,
+//     with a shallow os.ReadDir() to get a one-level item count.
+//   - The directory where we actually hit the limit (if any) is also listed
+//     as an overflow entry with Partial = true and a count of remaining items
+//     (files + subdirs) in that directory.
 func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (*WalkDirectoryWithFilesResult, error) {
 	if maxFiles <= 0 || maxFiles > MaxTotalWalkFiles {
 		maxFiles = MaxTotalWalkFiles
@@ -60,248 +80,207 @@ func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (
 		dirPath = absRoot
 	}
 
-	type scannedFile struct {
-		PathInfo PathInfo
-		RelPath  string
-		DirKey   string
+	type dirNode struct {
+		absPath string // absolute path to this directory
+		relPath string // path relative to root dir; "" for root
 	}
 
-	type dirAgg struct {
-		FileCount int
-		TotalSize int64
+	files := make([]PathInfo, 0, maxFiles)
+	var totalSize int64
+
+	overflowDirs := make([]DirectoryOverflowInfo, 0)
+
+	queue := []dirNode{
+		{
+			absPath: dirPath,
+			relPath: "",
+		},
 	}
 
-	scanLimit := MaxTotalWalkFiles
-	files := make([]scannedFile, 0, scanLimit)
-	dirAggByKey := make(map[string]*dirAgg)
-	totalFilesScanned := 0
-	truncatedWalk := false
+	limitReached := false
+	var partialOverflow *DirectoryOverflowInfo
 
-	walkErr := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			// Log and continue.
-			slog.Debug("error while walking directory", "path", path, "error", walkErr)
-			if path == dirPath {
-				return walkErr
-			}
-			return nil
-		}
+	for len(queue) > 0 && !limitReached {
+		// BFS: pop front.
+		node := queue[0]
+		queue = queue[1:]
+
 		if err := ctx.Err(); err != nil {
-			return err // propagate context cancellation.
+			// Caller canceled or deadline exceeded.
+			return nil, err
 		}
 
-		if d.IsDir() {
-			// Don't need FileInfo for dir.
-			return nil
-		}
-
-		info, err := d.Info()
+		entries, err := os.ReadDir(node.absPath)
 		if err != nil {
-			slog.Debug("stat error while walking directory", "path", path, "error", err)
-			return nil
-		}
-		mode := info.Mode()
-		if !mode.IsRegular() {
-			// Skip symlinks, sockets, devices, fifos, etc.
-			return nil
-		}
-		pInfo := getPathInfoFromFileInfo(path, info)
-
-		if strings.HasPrefix(pInfo.Name, ".") {
-			// Skip dotfiles.
-			return nil
-		}
-
-		relPath, err := filepath.Rel(dirPath, path)
-		if err != nil {
-			relPath = path
-		}
-
-		dirKey := filepath.Dir(relPath)
-		if dirKey == "." {
-			dirKey = ""
-		}
-
-		files = append(files, scannedFile{
-			PathInfo: pInfo,
-			RelPath:  relPath,
-			DirKey:   dirKey,
-		})
-
-		// Update aggregates for dirKey and all its ancestors up to root ("").
-		curKey := dirKey
-		for {
-			agg := dirAggByKey[curKey]
-			if agg == nil {
-				agg = &dirAgg{}
-				dirAggByKey[curKey] = agg
+			// Log and continue; if it's the root directory, propagate the error.
+			slog.Debug("error while walking directory", "path", node.absPath, "error", err)
+			if node.absPath == dirPath {
+				return nil, err
 			}
-			agg.FileCount++
-			agg.TotalSize += pInfo.Size
+			// For non-root dirs we can't see inside; treat as an overflow dir
+			// with unknown contents (FileCount = 0).
+			overflowDirs = append(overflowDirs, DirectoryOverflowInfo{
+				DirPath:      node.absPath,
+				RelativePath: node.relPath,
+				FileCount:    0,
+				Partial:      false,
+			})
+			continue
+		}
 
-			if curKey == "" {
+		// Split into files and dirs; we always attach files from this directory
+		// before recursing into its subdirectories.
+		fileEntries := make([]os.DirEntry, 0, len(entries))
+		dirEntries := make([]os.DirEntry, 0, len(entries))
+		for _, e := range entries {
+			if e.IsDir() {
+				dirEntries = append(dirEntries, e)
+			} else {
+				fileEntries = append(fileEntries, e)
+			}
+		}
+
+		// Process files first.
+		filesAddedHere := 0
+
+		for i, e := range fileEntries {
+			if len(files) >= maxFiles {
+				// We already hit the limit before processing this file.
+				remainingFiles := len(fileEntries) - i
+				remainingSubdirs := len(dirEntries)
+				if remainingFiles > 0 || remainingSubdirs > 0 {
+					partialOverflow = &DirectoryOverflowInfo{
+						DirPath:      node.absPath,
+						RelativePath: node.relPath,
+						FileCount:    remainingFiles + remainingSubdirs,
+						Partial:      true,
+					}
+				}
+				limitReached = true
 				break
 			}
-			parent := filepath.Dir(curKey)
-			if parent == "." {
-				parent = ""
+
+			if err := ctx.Err(); err != nil {
+				return nil, err
 			}
-			if parent == curKey {
+
+			name := e.Name()
+			fullPath := filepath.Join(node.absPath, name)
+
+			info, err := e.Info()
+			if err != nil {
+				slog.Debug("stat error while walking directory", "path", fullPath, "error", err)
+				continue
+			}
+			if !info.Mode().IsRegular() {
+				// Skip symlinks, sockets, devices, fifos, etc.
+				continue
+			}
+
+			pInfo := getPathInfoFromFileInfo(fullPath, info)
+
+			if strings.HasPrefix(pInfo.Name, ".") {
+				// Skip dotfiles, but NOT dot-directories (they are in dirEntries).
+				continue
+			}
+
+			files = append(files, pInfo)
+			totalSize += pInfo.Size
+			filesAddedHere++
+
+			if len(files) >= maxFiles {
+				// We just consumed the last allowed slot from this directory.
+				remainingFiles := len(fileEntries) - (i + 1)
+				remainingSubdirs := len(dirEntries)
+				if remainingFiles > 0 || remainingSubdirs > 0 {
+					partialOverflow = &DirectoryOverflowInfo{
+						DirPath:      node.absPath,
+						RelativePath: node.relPath,
+						FileCount:    remainingFiles + remainingSubdirs,
+						Partial:      true,
+					}
+				}
+				limitReached = true
 				break
 			}
-			curKey = parent
-		}
-		totalFilesScanned++
-		if totalFilesScanned >= scanLimit {
-			truncatedWalk = true
-			return errWalkLimitReached
 		}
 
-		return nil
-	})
-
-	if walkErr != nil && !errors.Is(walkErr, errWalkLimitReached) {
-		return nil, walkErr
-	}
-
-	totalFiles := len(files)
-	if totalFiles == 0 {
-		return &WalkDirectoryWithFilesResult{
-			DirPath:      dirPath,
-			Files:        []PathInfo{},
-			OverflowDirs: nil,
-			MaxFiles:     maxFiles,
-			TotalSize:    0,
-			HasMore:      false,
-		}, nil
-	}
-
-	// If fully within limit and not truncated, just return all.
-	if totalFiles <= maxFiles && !truncatedWalk {
-		resFiles := make([]PathInfo, 0, totalFiles)
-		var totalSize int64
-		for _, f := range files {
-			totalSize += f.PathInfo.Size
-			resFiles = append(resFiles, f.PathInfo)
-		}
-		return &WalkDirectoryWithFilesResult{
-			DirPath:      dirPath,
-			Files:        resFiles,
-			OverflowDirs: nil,
-			MaxFiles:     maxFiles,
-			TotalSize:    totalSize,
-			HasMore:      false,
-		}, nil
-	}
-
-	// Need to drop subdirs: "largest subdir first" by file count, then total size.
-	type dirEntry struct {
-		Key       string
-		FileCount int
-		TotalSize int64
-	}
-
-	dirs := make([]dirEntry, 0, len(dirAggByKey))
-	for key, agg := range dirAggByKey {
-		if key == "" {
-			continue // skip root
-		}
-		dirs = append(dirs, dirEntry{
-			Key:       key,
-			FileCount: agg.FileCount,
-			TotalSize: agg.TotalSize,
-		})
-	}
-
-	// Sort by descending file count, then descending total size.
-	sort.Slice(dirs, func(i, j int) bool {
-		if dirs[i].FileCount == dirs[j].FileCount {
-			return dirs[i].TotalSize > dirs[j].TotalSize
-		}
-		return dirs[i].FileCount > dirs[j].FileCount
-	})
-
-	excludedKeys := make([]string, 0)
-	remaining := totalFiles
-
-	for _, de := range dirs {
-		if remaining <= maxFiles {
+		if limitReached {
 			break
 		}
-		if underExcludedDir(de.Key, excludedKeys) {
-			continue
-		}
-		excludedKeys = append(excludedKeys, de.Key)
-		remaining -= de.FileCount
-	}
 
-	// Included files: all except those in excluded subtrees.
-	included := make([]PathInfo, 0, maxFiles)
-	var includedTotalSize int64
-
-	for _, f := range files {
-		if underExcludedDir(f.DirKey, excludedKeys) {
-			continue
-		}
-		included = append(included, f.PathInfo)
-		includedTotalSize += f.PathInfo.Size
-	}
-
-	overflowDirs := make([]DirectoryOverflowInfo, 0, len(excludedKeys)+1)
-
-	// Root-level truncation if we *still* exceed maxFiles (lots of root files).
-	if len(included) > maxFiles {
-		sort.Slice(included, func(i, j int) bool {
-			return included[i].Size < included[j].Size
-		})
-		truncated := included[maxFiles:]
-		included = included[:maxFiles]
-
-		var droppedCount int
-		var droppedSize int64
-		for _, fs := range truncated {
-			droppedCount++
-			droppedSize += fs.Size
-			includedTotalSize -= fs.Size
-		}
-
-		if droppedCount > 0 {
-			overflowDirs = append(overflowDirs, DirectoryOverflowInfo{
-				DirPath:      dirPath,
-				RelativePath: ".",
-				FileCount:    droppedCount,
-				TotalSize:    droppedSize,
+		// Now enqueue subdirectories for BFS (next levels).
+		for _, e := range dirEntries {
+			name := e.Name()
+			abs := filepath.Join(node.absPath, name)
+			rel := name
+			if node.relPath != "" {
+				rel = filepath.Join(node.relPath, name)
+			}
+			queue = append(queue, dirNode{
+				absPath: abs,
+				relPath: rel,
 			})
 		}
 	}
 
-	// Overflow entries for excluded subdirs.
-	for _, key := range excludedKeys {
-		agg := dirAggByKey[key]
-		if agg == nil {
-			continue
+	// Any directories left in the BFS queue were *never* processed at all
+	// because we reached maxFiles or exhausted context. We do a shallow
+	// os.ReadDir on each to get a one-level "item count" for the UI.
+	for _, node := range queue {
+		if err := ctx.Err(); err != nil {
+			return nil, err
 		}
+
+		itemCount := 0
+		entries, err := os.ReadDir(node.absPath)
+		if err != nil {
+			slog.Debug("error while summarizing overflow directory", "path", node.absPath, "error", err)
+			// Leave itemCount = 0 as "unknown".
+		} else {
+			itemCount = len(entries)
+		}
+
 		overflowDirs = append(overflowDirs, DirectoryOverflowInfo{
-			DirPath:      filepath.Join(dirPath, key),
-			RelativePath: key,
-			FileCount:    agg.FileCount,
-			TotalSize:    agg.TotalSize,
+			DirPath:      node.absPath,
+			RelativePath: node.relPath,
+			FileCount:    itemCount,
+			Partial:      false,
 		})
 	}
 
-	hasMore := truncatedWalk || len(overflowDirs) > 0 || len(included) < totalFiles
+	// If we had a partial directory where we stopped mid-scan, include that
+	// as an overflow entry too (if it isn't already in overflowDirs).
+	if partialOverflow != nil {
+		overflowDirs = append(overflowDirs, *partialOverflow)
+	}
+
+	// No files at all (e.g. empty dir, only dotfiles, or everything unreadable).
+	if len(files) == 0 {
+		return &WalkDirectoryWithFilesResult{
+			DirPath:      dirPath,
+			Files:        []PathInfo{},
+			OverflowDirs: overflowDirs,
+			MaxFiles:     maxFiles,
+			TotalSize:    0,
+			HasMore:      len(overflowDirs) > 0,
+		}, nil
+	}
+
+	hasMore := len(overflowDirs) > 0
 
 	return &WalkDirectoryWithFilesResult{
 		DirPath:      dirPath,
-		Files:        included,
+		Files:        files,
 		OverflowDirs: overflowDirs,
 		MaxFiles:     maxFiles,
-		TotalSize:    includedTotalSize,
+		TotalSize:    totalSize,
 		HasMore:      hasMore,
 	}, nil
 }
 
-// ListDirectory lists files/dirs in path (default "."), pattern is an optional glob filter (filepath.Match).
+// ListDirectory lists files/dirs in path (default "."), pattern is an optional
+// glob filter (filepath.Match).
 func ListDirectory(path, pattern string) ([]string, error) {
 	dir := path
 	if dir == "" {
@@ -324,13 +303,4 @@ func ListDirectory(path, pattern string) ([]string, error) {
 		out = append(out, name)
 	}
 	return out, nil
-}
-
-func underExcludedDir(dirKey string, excluded []string) bool {
-	for _, ex := range excluded {
-		if dirKey == ex || strings.HasPrefix(dirKey, ex+string(os.PathSeparator)) {
-			return true
-		}
-	}
-	return false
 }

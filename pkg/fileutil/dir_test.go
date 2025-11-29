@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"sort"
 	"strings"
@@ -35,8 +36,6 @@ func TestWalkDirectoryWithFiles_CoreScenarios(t *testing.T) {
 				if err != nil {
 					t.Fatalf("expected nil error, got %v", err)
 				}
-				// These expectations reflect the documented behavior:
-				// empty dirPath -> nothing to walk.
 				if res == nil {
 					t.Fatalf("expected non-nil result")
 				}
@@ -52,6 +51,7 @@ func TestWalkDirectoryWithFiles_CoreScenarios(t *testing.T) {
 				if res.HasMore {
 					t.Errorf("expected HasMore=false, got true")
 				}
+				// MaxFiles is within bounds, so it should be preserved.
 				if res.MaxFiles != 10 {
 					t.Errorf("expected MaxFiles=10, got %d", res.MaxFiles)
 				}
@@ -124,7 +124,7 @@ func TestWalkDirectoryWithFiles_CoreScenarios(t *testing.T) {
 				if sum := sumSizes(res.Files); sum != res.TotalSize {
 					t.Errorf("TotalSize mismatch: result=%d, recomputed=%d", res.TotalSize, sum)
 				}
-				if res.TotalSize != 1+2+3 {
+				if res.TotalSize != int64(1+2+3) {
 					t.Errorf("expected TotalSize=6, got %d", res.TotalSize)
 				}
 				if len(res.OverflowDirs) != 0 {
@@ -133,21 +133,25 @@ func TestWalkDirectoryWithFiles_CoreScenarios(t *testing.T) {
 			},
 		},
 		{
-			name: "SkipDotFiles",
+			name: "SkipDotFiles_AndTraverseDotDirs",
 			setup: func(t *testing.T) string {
 				t.Helper()
 				root := t.TempDir()
-				// Dotfile at root.
+				// Dotfile at root (should be skipped).
 				mustWriteFile(t, root, ".hidden_root", 10)
 
+				// Dot directory; we should traverse it, but still skip its dotfiles.
 				dotGit := mustMkdir(t, root, ".git")
-				mustWriteFile(t, dotGit, "ignored.txt", 20)
+				mustWriteFile(t, dotGit, "ignored.txt", 20)    // included
+				mustWriteFile(t, dotGit, ".ignored_hidden", 5) // skipped
 
+				// Visible root file.
 				mustWriteFile(t, root, "visible1.txt", 30)
 
+				// Subdir with both visible and dotfile.
 				sub := mustMkdir(t, root, "sub")
-				mustWriteFile(t, sub, ".hidden_sub", 40)
-				mustWriteFile(t, sub, "visible2.txt", 50)
+				mustWriteFile(t, sub, ".hidden_sub", 40)  // skipped
+				mustWriteFile(t, sub, "visible2.txt", 50) // included
 				return root
 			},
 			maxFiles: 10,
@@ -172,32 +176,106 @@ func TestWalkDirectoryWithFiles_CoreScenarios(t *testing.T) {
 						t.Errorf("expected names[%d]=%q, got %q", i, w, names[i])
 					}
 				}
-				// Dotfiles and dot-dirs should not appear in results or overflow.
-				for _, of := range res.OverflowDirs {
-					if strings.Contains(of.RelativePath, ".git") ||
-						strings.Contains(of.RelativePath, ".hidden") {
-						t.Errorf("unexpected overflow dir for dot-entry: %+v", of)
+				// Ensure dotfiles are not present in Files.
+				for _, n := range names {
+					if strings.HasPrefix(n, ".") {
+						t.Errorf("unexpected dotfile in results: %q", n)
 					}
+				}
+				if len(res.OverflowDirs) != 0 {
+					t.Errorf("expected 0 overflow dirs, got %d", len(res.OverflowDirs))
+				}
+				// TotalSize should be sum of included files only.
+				if res.TotalSize != int64(20+30+50) {
+					t.Errorf("expected TotalSize=100, got %d", res.TotalSize)
 				}
 			},
 		},
 		{
-			name: "LargestSubdirDropped_First",
+			name: "RootPartialWithSubdirs",
 			setup: func(t *testing.T) string {
 				t.Helper()
 				root := t.TempDir()
-				mustWriteFile(t, root, "root.txt", 5)
 
-				a := mustMkdir(t, root, "a")
-				mustWriteFile(t, a, "a1.txt", 10)
-				mustWriteFile(t, a, "a2.txt", 20)
+				// Three root files.
+				mustWriteFile(t, root, "root1.txt", 10)
+				mustWriteFile(t, root, "root2.txt", 20)
+				mustWriteFile(t, root, "root3.txt", 30)
 
-				b := mustMkdir(t, root, "b")
-				mustWriteFile(t, b, "b1.txt", 30)
+				// Two subdirs (each with one file) to prove they exist but
+				// are never walked when we hit the limit in root.
+				sub1 := mustMkdir(t, root, "sub1")
+				mustWriteFile(t, sub1, "s1.txt", 5)
 
-				c := mustMkdir(t, root, "c")
-				mustWriteFile(t, c, "c1.txt", 40)
+				sub2 := mustMkdir(t, root, "sub2")
+				mustWriteFile(t, sub2, "s2.txt", 5)
 
+				return root
+			},
+			maxFiles: 2,
+			verify: func(t *testing.T, root string, res *WalkDirectoryWithFilesResult, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatalf("expected nil error, got %v", err)
+				}
+				if res == nil {
+					t.Fatalf("expected non-nil result")
+				}
+				if res.MaxFiles != 2 {
+					t.Errorf("expected MaxFiles=2, got %d", res.MaxFiles)
+				}
+				if len(res.Files) != 2 {
+					t.Fatalf("expected 2 files kept, got %d", len(res.Files))
+				}
+				names := namesFromPathInfos(res.Files)
+				for _, n := range names {
+					if !strings.HasPrefix(n, "root") {
+						t.Errorf("expected only root files, got %q", n)
+					}
+				}
+
+				if len(res.OverflowDirs) != 1 {
+					t.Fatalf(
+						"expected 1 overflow dir (root partial), got %d (%+v)",
+						len(res.OverflowDirs),
+						res.OverflowDirs,
+					)
+				}
+				ov := res.OverflowDirs[0]
+				if ov.DirPath != res.DirPath {
+					t.Errorf("expected overflow DirPath=%q, got %q", res.DirPath, ov.DirPath)
+				}
+				if ov.RelativePath != "" {
+					t.Errorf("expected overflow RelativePath=\"\" for root, got %q", ov.RelativePath)
+				}
+				if !ov.Partial {
+					t.Errorf("expected Partial=true for root overflow, got false")
+				}
+				// Remaining entries in root: 1 remaining file + 2 subdirs = 3.
+				if ov.FileCount != 3 {
+					t.Errorf("expected overflow FileCount=3, got %d", ov.FileCount)
+				}
+				if !res.HasMore {
+					t.Errorf("expected HasMore=true due to root-level truncation, got false")
+				}
+			},
+		},
+		{
+			name: "PartialSubdirAndOverflowQueue",
+			setup: func(t *testing.T) string {
+				t.Helper()
+				root := t.TempDir()
+
+				// One root file.
+				mustWriteFile(t, root, "root.txt", 1)
+
+				// Three subdirs, each with two files.
+				for _, d := range []string{"a", "b", "c"} {
+					dir := mustMkdir(t, root, d)
+					mustWriteFile(t, dir, d+"1.txt", 1)
+					mustWriteFile(t, dir, d+"2.txt", 1)
+					mustWriteFile(t, dir, d+"3.txt", 1)
+				}
 				return root
 			},
 			maxFiles: 3,
@@ -209,54 +287,97 @@ func TestWalkDirectoryWithFiles_CoreScenarios(t *testing.T) {
 				if res == nil {
 					t.Fatalf("expected non-nil result")
 				}
-				// We expect to drop subtree "a" (2 files), keeping root.txt, b1, c1.
-				names := namesFromPathInfos(res.Files)
-				sort.Strings(names)
-				wantNames := []string{"b1.txt", "c1.txt", "root.txt"}
-				if len(names) != len(wantNames) {
-					t.Fatalf("expected %d files, got %d (%v)", len(wantNames), len(names), names)
+				if !res.HasMore {
+					t.Errorf("expected HasMore=true due to overflow, got false")
 				}
-				for i, w := range wantNames {
-					if names[i] != w {
-						t.Errorf("expected names[%d]=%q, got %q", i, w, names[i])
+				if res.MaxFiles != 3 {
+					t.Errorf("expected MaxFiles=3, got %d", res.MaxFiles)
+				}
+				if len(res.Files) != 3 {
+					t.Fatalf("expected 3 files kept, got %d", len(res.Files))
+				}
+
+				names := namesFromPathInfos(res.Files)
+				if !slices.Contains(names, "root.txt") {
+					t.Fatalf("expected root.txt to be present in files, got %v", names)
+				}
+				var others []string
+				for _, n := range names {
+					if n != "root.txt" {
+						others = append(others, n)
 					}
 				}
-				// OverflowDirs should contain exactly one entry for "a".
-				if len(res.OverflowDirs) != 1 {
-					t.Fatalf("expected 1 overflow dir, got %d (%+v)", len(res.OverflowDirs), res.OverflowDirs)
+				if len(others) != 2 {
+					t.Fatalf("expected 2 non-root files, got %d (%v)", len(others), others)
 				}
-				ov := res.OverflowDirs[0]
-				if ov.RelativePath != "a" {
-					t.Errorf("expected overflow relativePath 'a', got %q", ov.RelativePath)
+				// Both non-root files should come from the same subdir (a, b, or c).
+				prefix := string(others[0][0])
+				if !slices.Contains([]string{"a", "b", "c"}, prefix) {
+					t.Errorf("expected other files to come from a/b/c, got prefix %q in %q", prefix, others[0])
 				}
-				if ov.FileCount != 2 {
-					t.Errorf("expected overflow fileCount=2 for 'a', got %d", ov.FileCount)
+				for _, n := range others[1:] {
+					if !strings.HasPrefix(n, prefix) {
+						t.Errorf("expected all non-root files from same dir, got %v", others)
+					}
 				}
-				if ov.TotalSize != 10+20 {
-					t.Errorf("expected overflow totalSize=30 for 'a', got %d", ov.TotalSize)
+
+				if len(res.OverflowDirs) != 3 {
+					t.Fatalf(
+						"expected 3 overflow dirs for a, b, c; got %d (%+v)",
+						len(res.OverflowDirs),
+						res.OverflowDirs,
+					)
 				}
-				// TotalSize should be sum of kept files: 5 + 30 + 40 = 75.
-				if res.TotalSize != 5+30+40 {
-					t.Errorf("expected TotalSize=75, got %d", res.TotalSize)
+
+				// Collect by relative path.
+				ovByRel := make(map[string]DirectoryOverflowInfo)
+				for _, ov := range res.OverflowDirs {
+					ovByRel[ov.RelativePath] = ov
+				}
+				for _, d := range []string{"a", "b", "c"} {
+					if _, ok := ovByRel[d]; !ok {
+						t.Errorf("missing overflow entry for %q", d)
+					}
+				}
+
+				partialCount := 0
+				for _, ov := range res.OverflowDirs {
+					if ov.Partial {
+						partialCount++
+						// The partially-walked dir has had 2 of its files consumed, no subdirs.
+						if ov.FileCount != 1 {
+							t.Errorf("expected partial overflow FileCount=0, got %d for %+v", ov.FileCount, ov)
+						}
+					} else if ov.FileCount != 3 {
+						t.Errorf("expected full overflow FileCount=2, got %d for %+v", ov.FileCount, ov)
+					}
+				}
+
+				if partialCount != 1 {
+					t.Errorf("expected exactly one partial overflow dir, got %d", partialCount)
 				}
 			},
 		},
 		{
-			name: "RootLevelTruncation_NoSubdirs",
+			name: "PartialSubdirWithRemainingFilesAndSubdirs",
 			setup: func(t *testing.T) string {
 				t.Helper()
 				root := t.TempDir()
-				// 10 root files with distinct sizes 1..10.
-				for i := 1; i <= 10; i++ {
-					name := "f" + fmt.Sprintf("0%d", i)
-					if i == 10 {
-						name = "f10"
-					}
-					mustWriteFile(t, root, name, i)
-				}
+
+				mustWriteFile(t, root, "root.txt", 1)
+
+				dir := mustMkdir(t, root, "dir")
+				mustWriteFile(t, dir, "f1.txt", 1)
+				mustWriteFile(t, dir, "f2.txt", 1)
+				mustWriteFile(t, dir, "f3.txt", 1)
+
+				// Two subdirectories inside dir.
+				mustMkdir(t, dir, "sub1")
+				mustMkdir(t, dir, "sub2")
+
 				return root
 			},
-			maxFiles: 5,
+			maxFiles: 2,
 			verify: func(t *testing.T, root string, res *WalkDirectoryWithFilesResult, err error) {
 				t.Helper()
 				if err != nil {
@@ -265,29 +386,43 @@ func TestWalkDirectoryWithFiles_CoreScenarios(t *testing.T) {
 				if res == nil {
 					t.Fatalf("expected non-nil result")
 				}
-				if len(res.OverflowDirs) != 1 {
-					t.Fatalf("expected 1 overflow dir (root overflow), got %d", len(res.OverflowDirs))
+
+				if len(res.Files) != 2 {
+					t.Fatalf("expected 2 files kept, got %d", len(res.Files))
 				}
-				ov := res.OverflowDirs[0]
-				if ov.RelativePath != "." {
-					t.Errorf("expected overflow relativePath '.', got %q", ov.RelativePath)
+				names := namesFromPathInfos(res.Files)
+				if !slices.Contains(names, "root.txt") {
+					t.Fatalf("expected root.txt to be present, got %v", names)
+				}
+				var others []string
+				for _, n := range names {
+					if n != "root.txt" {
+						others = append(others, n)
+					}
+				}
+				if len(others) != 1 {
+					t.Fatalf("expected 1 non-root file, got %d (%v)", len(others), others)
+				}
+				if !strings.HasPrefix(others[0], "f") {
+					t.Errorf("expected non-root file from dir to be f*.txt, got %q", others[0])
 				}
 
-				if ov.FileCount != 5 {
-					t.Errorf("expected overflow root dropped 5 files, got %d", ov.FileCount)
+				if len(res.OverflowDirs) != 1 {
+					t.Fatalf("expected 1 overflow dir for 'dir', got %d (%+v)", len(res.OverflowDirs), res.OverflowDirs)
 				}
-				// Total size of dropped files should be 6+7+8+9+10=40.
-				if ov.TotalSize != int64(6+7+8+9+10) {
-					t.Errorf("expected dropped size=40, got %d", ov.TotalSize)
+				ov := res.OverflowDirs[0]
+				if ov.RelativePath != "dir" {
+					t.Errorf("expected overflow.RelativePath='dir', got %q", ov.RelativePath)
 				}
-				if len(res.Files) != 5 {
-					t.Fatalf("expected 5 files kept, got %d", len(res.Files))
+				if !ov.Partial {
+					t.Errorf("expected Partial=true for dir overflow, got false")
 				}
-				if res.TotalSize != int64(1+2+3+4+5) {
-					t.Errorf("expected kept TotalSize=15, got %d", res.TotalSize)
+				// Remaining entries inside dir: two remaining files + two subdirs = 4.
+				if ov.FileCount != 4 {
+					t.Errorf("expected overflow FileCount=4, got %d", ov.FileCount)
 				}
 				if !res.HasMore {
-					t.Errorf("expected HasMore=true due to root-level truncation, got false")
+					t.Errorf("expected HasMore=true due to dir truncation, got false")
 				}
 			},
 		},
@@ -338,6 +473,117 @@ func TestWalkDirectoryWithFiles_ContextCanceled(t *testing.T) {
 	}
 }
 
+func TestWalkDirectoryWithFiles_MaxFilesClamped(t *testing.T) {
+	root := t.TempDir()
+
+	// Create more files than the global MaxTotalWalkFiles limit.
+	totalFiles := MaxTotalWalkFiles + 5
+	for i := range totalFiles {
+		name := fmt.Sprintf("f%03d.txt", i)
+		mustWriteFile(t, root, name, 1)
+	}
+
+	type testCase struct {
+		name     string
+		maxFiles int
+	}
+
+	tests := []testCase{
+		{name: "Zero", maxFiles: 0},
+		{name: "Negative", maxFiles: -5},
+		{name: "AboveGlobal", maxFiles: MaxTotalWalkFiles + 100},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			res, err := WalkDirectoryWithFiles(ctx, root, tc.maxFiles)
+			if err != nil {
+				t.Fatalf("expected nil error, got %v", err)
+			}
+			if res == nil {
+				t.Fatalf("expected non-nil result")
+			}
+			if res.MaxFiles != MaxTotalWalkFiles {
+				t.Errorf("expected MaxFiles=%d, got %d", MaxTotalWalkFiles, res.MaxFiles)
+			}
+			if len(res.Files) != MaxTotalWalkFiles {
+				t.Fatalf("expected %d files kept, got %d", MaxTotalWalkFiles, len(res.Files))
+			}
+			if len(res.OverflowDirs) != 1 {
+				t.Fatalf(
+					"expected 1 overflow dir (root partial), got %d (%+v)",
+					len(res.OverflowDirs),
+					res.OverflowDirs,
+				)
+			}
+			ov := res.OverflowDirs[0]
+			if !ov.Partial {
+				t.Errorf("expected Partial=true for root overflow, got false")
+			}
+			if ov.DirPath != res.DirPath {
+				t.Errorf("expected overflow DirPath=%q, got %q", res.DirPath, ov.DirPath)
+			}
+			if ov.RelativePath != "" {
+				t.Errorf("expected overflow RelativePath=\"\" for root, got %q", ov.RelativePath)
+			}
+			// Remaining files in root that were not included.
+			expectedRemaining := totalFiles - MaxTotalWalkFiles
+			if ov.FileCount != expectedRemaining {
+				t.Errorf("expected overflow FileCount=%d, got %d", expectedRemaining, ov.FileCount)
+			}
+			if !res.HasMore {
+				t.Errorf("expected HasMore=true when clamping occurs, got false")
+			}
+		})
+	}
+}
+
+func TestWalkDirectoryWithFiles_UnreadableSubdirOverflow_NoFiles(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("permission-based test skipped on Windows")
+	}
+
+	root := t.TempDir()
+	sub := mustMkdir(t, root, "sub")
+
+	// Make sub unreadable.
+	if err := os.Chmod(sub, 0o000); err != nil {
+		t.Skipf("chmod not supported: %v", err)
+	}
+	defer func() { _ = os.Chmod(sub, 0o755) }() // best-effort restore so cleanup works
+
+	ctx := context.Background()
+	res, err := WalkDirectoryWithFiles(ctx, root, 10)
+	if err != nil {
+		t.Fatalf("expected nil error walking root, got %v", err)
+	}
+	if res == nil {
+		t.Fatalf("expected non-nil result")
+	}
+
+	if len(res.Files) != 0 {
+		t.Fatalf("expected 0 files (no readable files), got %d", len(res.Files))
+	}
+	if len(res.OverflowDirs) != 1 {
+		t.Fatalf("expected 1 overflow dir for unreadable sub, got %d (%+v)", len(res.OverflowDirs), res.OverflowDirs)
+	}
+	ov := res.OverflowDirs[0]
+	if ov.RelativePath != "sub" {
+		t.Errorf("expected overflow.RelativePath='sub', got %q", ov.RelativePath)
+	}
+	if ov.Partial {
+		t.Errorf("expected Partial=false for unreadable dir overflow, got true")
+	}
+	// FileCount is 0 for "unknown" due to read error.
+	if ov.FileCount != 0 {
+		t.Errorf("expected overflow FileCount=0 for unreadable dir, got %d", ov.FileCount)
+	}
+	if !res.HasMore {
+		t.Errorf("expected HasMore=true when there is an unreadable subtree, got false")
+	}
+}
+
 func TestListDirectory_BasicAndPattern(t *testing.T) {
 	root := t.TempDir()
 	mustWriteFile(t, root, "a.txt", 1)
@@ -370,7 +616,7 @@ func TestListDirectory_BasicAndPattern(t *testing.T) {
 			name:    "Pattern_Invalid_NoError_EmptyResult",
 			dir:     root,
 			pattern: "[",        // invalid glob; implementation ignores Match error
-			want:    []string{}, // currently, invalid pattern yields no matches, no error
+			want:    []string{}, // invalid pattern yields no matches, no error
 		},
 	}
 

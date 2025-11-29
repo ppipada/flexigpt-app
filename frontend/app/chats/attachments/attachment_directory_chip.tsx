@@ -11,7 +11,6 @@ import {
 	type DirectoryAttachmentGroup,
 	type EditorAttachment,
 	editorAttachmentKey,
-	formatBytes,
 } from '@/chats/attachments/editor_attachment_utils';
 
 interface DirectoryChipProps {
@@ -135,9 +134,9 @@ export function DirectoryChip({
 											{rel}
 										</div>
 										<div className="text-base-content/70 truncate text-[11px]">
-											{od.fileCount} file
-											{od.fileCount === 1 ? '' : 's'} skipped in this subfolder
-											{typeof od.totalSize === 'number' ? ` (~${formatBytes(od.totalSize)})` : ''}.
+											{od.fileCount} item
+											{od.fileCount === 1 ? '' : 's'} not attached in this folder
+											{od.partial ? ' (folder only partially scanned)' : ''}
 										</div>
 									</div>
 									<span

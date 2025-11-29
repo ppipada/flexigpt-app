@@ -20,7 +20,7 @@ export interface DirectoryOverflowInfo {
 	dirPath: string;
 	relativePath: string;
 	fileCount: number;
-	totalSize: number;
+	partial: boolean;
 }
 
 export interface WalkDirectoryWithFilesResult {

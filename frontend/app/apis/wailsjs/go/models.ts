@@ -172,7 +172,7 @@ export namespace fileutil {
 	    dirPath: string;
 	    relativePath: string;
 	    fileCount: number;
-	    totalSize: number;
+	    partial: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new DirectoryOverflowInfo(source);
@@ -183,7 +183,7 @@ export namespace fileutil {
 	        this.dirPath = source["dirPath"];
 	        this.relativePath = source["relativePath"];
 	        this.fileCount = source["fileCount"];
-	        this.totalSize = source["totalSize"];
+	        this.partial = source["partial"];
 	    }
 	}
 	export class PathInfo {

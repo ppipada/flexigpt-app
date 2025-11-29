@@ -286,7 +286,7 @@ export function getAttachmentErrorMessage(att: EditorAttachment): string | null 
 	}
 }
 
-export function formatBytes(bytes: number): string {
+function formatBytes(bytes: number): string {
 	if (!Number.isFinite(bytes) || bytes < 0) return `${bytes} B`;
 	const units = ['B', 'KB', 'MB', 'GB', 'TB'];
 	let i = 0;
