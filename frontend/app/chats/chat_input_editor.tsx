@@ -16,7 +16,7 @@ import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
 import type { AttachmentMode } from '@/spec/attachment';
-import type { FileFilter } from '@/spec/backend';
+import type { FileFilter, PathInfo, WalkDirectoryWithFilesResult } from '@/spec/backend';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -42,8 +42,10 @@ import { AttachmentChipsBar } from '@/chats/attachments/attachment_chips_bar';
 import {
 	buildEditorAttachmentForLocalPath,
 	buildEditorAttachmentForURL,
+	type DirectoryAttachmentGroup,
 	type EditorAttachment,
 	editorAttachmentKey,
+	MAX_FILES_PER_DIRECTORY,
 } from '@/chats/attachments/editor_attachment_utils';
 import { type EditorAttachedToolChoice, getAttachedTools } from '@/chats/attachments/tool_editor_utils';
 import { ToolPlusKit } from '@/chats/attachments/tool_plugin';
@@ -121,6 +123,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const [docVersion, setDocVersion] = useState(0);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [attachments, setAttachments] = useState<EditorAttachment[]>([]);
+	const [directoryGroups, setDirectoryGroups] = useState<DirectoryAttachmentGroup[]>([]);
 
 	const closeAllMenus = useCallback(() => {
 		templateMenu.hide();
@@ -320,6 +323,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				// Clear editor and state after successful preprocessor runs and submit
 				editor.tf.setValue(EDITOR_EMPTY_VALUE);
 				setAttachments([]);
+				setDirectoryGroups([]);
+
 				lastPopulatedSelectionKeyRef.current.clear();
 				editor.tf.focus();
 				isSubmittingRef.current = false;
@@ -351,18 +356,24 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			{ DisplayName: 'Documents', Pattern: '*.pdf;*.doc;*.docx;*.ppt;*.pptx;*.xls;*.xlsx;*.html;*.htm' },
 			{ DisplayName: 'Images', Pattern: '*.png;*.jpg;*.jpeg;*.gif;*.webp' },
 		];
-		const paths = await backendAPI.openFiles(true, baseFilters);
+		let results: PathInfo[];
+		try {
+			results = await backendAPI.openFiles(true, baseFilters);
+		} catch {
+			return;
+		}
 		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-		if (!paths || paths.length === 0) return;
+		if (!results || results.length === 0) return;
 
 		setAttachments(prev => {
 			const existing = new Set(prev.map(editorAttachmentKey));
 			const next: EditorAttachment[] = [...prev];
 
-			for (const p of paths) {
-				const trimmed = p.path.trim();
-				if (!trimmed) continue;
-				const att = buildEditorAttachmentForLocalPath(trimmed);
+			for (const info of results) {
+				const trimmed = info.path.trim();
+				if (!trimmed || !info.exists || info.isDir) continue;
+
+				const att = buildEditorAttachmentForLocalPath(trimmed, info.size);
 				const key = editorAttachmentKey(att);
 				if (existing.has(key)) continue;
 				existing.add(key);
@@ -370,6 +381,86 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			}
 			return next;
 		});
+		editor.tf.focus();
+	};
+
+	const handleAttachDirectory = async () => {
+		let result: WalkDirectoryWithFilesResult;
+		try {
+			result = await backendAPI.openDirectoryWithFiles(MAX_FILES_PER_DIRECTORY);
+		} catch {
+			// Backend canceled or errored; nothing to do.
+			return;
+		}
+
+		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+		if (!result || !result.dirPath) return;
+
+		const { dirPath, files, overflowDirs } = result;
+		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+		if ((!files || files.length === 0) && (!overflowDirs || overflowDirs.length === 0)) {
+			// Nothing readable / allowed in this folder.
+			return;
+		}
+
+		const folderLabel = dirPath.trim().split(/[\\/]/).pop() || dirPath.trim();
+
+		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+		const groupId = crypto.randomUUID() ?? `dir-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+		// First, add or reuse attachments.
+		const attachmentKeysForGroup: string[] = [];
+		const ownedAttachmentKeysForGroup: string[] = [];
+
+		// Deduplicate paths/keys within this single directory attach
+		const seenKeysForGroup = new Set<string>();
+
+		setAttachments(prev => {
+			const existing = new Map<string, EditorAttachment>();
+			for (const att of prev) {
+				existing.set(editorAttachmentKey(att), att);
+			}
+
+			const added: EditorAttachment[] = [];
+
+			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+			for (const info of files ?? []) {
+				const trimmed = info.path.trim();
+				if (!trimmed || !info.exists || info.isDir) continue;
+
+				const att = buildEditorAttachmentForLocalPath(trimmed, info.size);
+				const key = editorAttachmentKey(att);
+
+				// Skip duplicates within this folder selection
+				if (seenKeysForGroup.has(key)) continue;
+				seenKeysForGroup.add(key);
+
+				attachmentKeysForGroup.push(key);
+
+				if (!existing.has(key)) {
+					existing.set(key, att);
+					added.push(att);
+					ownedAttachmentKeysForGroup.push(key);
+				}
+			}
+
+			return [...prev, ...added];
+		});
+
+		// Then, record the directory group that references those attachments.
+		setDirectoryGroups(prev => [
+			...prev,
+			{
+				id: groupId,
+				dirPath,
+				label: folderLabel,
+				attachmentKeys: attachmentKeysForGroup,
+				ownedAttachmentKeys: ownedAttachmentKeysForGroup,
+				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+				overflowDirs: overflowDirs ?? [],
+			},
+		]);
+
 		editor.tf.focus();
 	};
 
@@ -395,8 +486,66 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	const handleRemoveAttachment = (att: EditorAttachment) => {
 		const targetKey = editorAttachmentKey(att);
+
 		setAttachments(prev => prev.filter(a => editorAttachmentKey(a) !== targetKey));
+
+		// Also detach from any directory groups (and drop empty groups)
+		setDirectoryGroups(prevGroups => {
+			const updated = prevGroups.map(g => ({
+				...g,
+				attachmentKeys: g.attachmentKeys.filter(k => k !== targetKey),
+				ownedAttachmentKeys: g.ownedAttachmentKeys.filter(k => k !== targetKey),
+			}));
+			return updated.filter(g => g.attachmentKeys.length > 0 || g.overflowDirs.length > 0);
+		});
+
 		editor.tf.focus();
+	};
+
+	const handleRemoveDirectoryGroup = (groupId: string) => {
+		setDirectoryGroups(prevGroups => {
+			const groupToRemove = prevGroups.find(g => g.id === groupId);
+			if (!groupToRemove) return prevGroups;
+
+			const remainingGroups = prevGroups.filter(g => g.id !== groupId);
+
+			// Keys owned by other groups (so we don't delete shared attachments).
+			const keysOwnedByOtherGroups = new Set<string>();
+			for (const g of remainingGroups) {
+				for (const key of g.ownedAttachmentKeys) {
+					keysOwnedByOtherGroups.add(key);
+				}
+			}
+
+			if (groupToRemove.ownedAttachmentKeys.length > 0) {
+				setAttachments(prevAttachments =>
+					prevAttachments.filter(att => {
+						const key = editorAttachmentKey(att);
+						if (!groupToRemove.ownedAttachmentKeys.includes(key)) return true;
+						// If other groups still own this attachment, keep it.
+						if (keysOwnedByOtherGroups.has(key)) return true;
+						// Otherwise, drop it when this folder is removed.
+						return false;
+					})
+				);
+			}
+
+			return remainingGroups;
+		});
+	};
+
+	const handleRemoveOverflowDir = (groupId: string, dirPath: string) => {
+		setDirectoryGroups(prevGroups => {
+			const updated = prevGroups.map(g =>
+				g.id !== groupId
+					? g
+					: {
+							...g,
+							overflowDirs: g.overflowDirs.filter(od => od.dirPath !== dirPath),
+						}
+			);
+			return updated.filter(g => g.attachmentKeys.length > 0 || g.overflowDirs.length > 0);
+		});
 	};
 
 	return (
@@ -477,8 +626,11 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 					<div className="flex w-full min-w-0 overflow-x-hidden">
 						<AttachmentChipsBar
 							attachments={attachments}
+							directoryGroups={directoryGroups}
 							onRemoveAttachment={handleRemoveAttachment}
 							onChangeAttachmentMode={handleChangeAttachmentMode}
+							onRemoveDirectoryGroup={handleRemoveDirectoryGroup}
+							onRemoveOverflowDir={handleRemoveOverflowDir}
 						/>
 					</div>
 				</div>
@@ -486,6 +638,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				{/* Bottom bar for template/tool/attachment pickers + tips menus */}
 				<AttachmentBottomBar
 					onAttachFiles={handleAttachFiles}
+					onAttachDirectory={handleAttachDirectory}
 					onAttachURL={handleAttachURL}
 					templateMenuState={templateMenu}
 					toolMenuState={toolMenu}

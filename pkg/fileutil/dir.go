@@ -13,7 +13,7 @@ import (
 
 var errWalkLimitReached = errors.New("directory walk file limit reached")
 
-const MaxTotalWalkFiles = 1024
+const MaxTotalWalkFiles = 128
 
 // DirectoryOverflowInfo represents a directory subtree whose files were not included.
 type DirectoryOverflowInfo struct {
@@ -37,7 +37,7 @@ type WalkDirectoryWithFilesResult struct {
 // - full recursive walk over subdirs
 // - if total files <= maxFiles: returns all
 // - if total files > maxFiles: drops "largest subdir first" until within limit
-// - skips dot-directories, dotfiles, and non-regular files (symlinks, devices, etc.)
+// - skips dotfiles, and non-regular files (symlinks, devices, etc.)
 // - returns flattened included files + summary of dropped subdirs.
 func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (*WalkDirectoryWithFilesResult, error) {
 	if maxFiles <= 0 || maxFiles > MaxTotalWalkFiles {
@@ -91,10 +91,6 @@ func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (
 		}
 
 		if d.IsDir() {
-			if strings.HasPrefix(d.Name(), ".") {
-				// Skip a dot dir and its subtree.
-				return fs.SkipDir
-			}
 			// Don't need FileInfo for dir.
 			return nil
 		}

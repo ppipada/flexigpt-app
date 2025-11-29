@@ -133,7 +133,7 @@ func TestWalkDirectoryWithFiles_CoreScenarios(t *testing.T) {
 			},
 		},
 		{
-			name: "SkipDotDirsAndDotFiles",
+			name: "SkipDotFiles",
 			setup: func(t *testing.T) string {
 				t.Helper()
 				root := t.TempDir()
@@ -163,7 +163,7 @@ func TestWalkDirectoryWithFiles_CoreScenarios(t *testing.T) {
 					t.Errorf("expected HasMore=false, got true")
 				}
 				names := namesFromPathInfos(res.Files)
-				wantNames := []string{"visible1.txt", "visible2.txt"}
+				wantNames := []string{"ignored.txt", "visible1.txt", "visible2.txt"}
 				if len(names) != len(wantNames) {
 					t.Fatalf("expected %d visible files, got %d (%v)", len(wantNames), len(names), names)
 				}

@@ -180,7 +180,7 @@ func (a *App) OpenFiles(
 		return nil, errors.New("context is not initialized")
 	}
 
-	runtimeFilters := make([]runtime.FileFilter, len(filters))
+	runtimeFilters := make([]runtime.FileFilter, 0, len(filters))
 	for idx := range filters {
 		runtimeFilters = append(
 			runtimeFilters,
@@ -232,7 +232,7 @@ func (a *App) OpenFiles(
 // - full recursive walk over subdirs
 // - if total files <= maxFiles: returns all
 // - if total files > maxFiles: drops "largest subdir first" until within limit
-// - skips dot-directories, dotfiles, and non-regular files (symlinks, devices, etc.)
+// - skips dotfiles, and non-regular files (symlinks, devices, etc.)
 // - returns flattened included files + summary of dropped subdirs.
 func (a *App) OpenDirectoryWithFiles(maxFiles int) (*fileutil.WalkDirectoryWithFilesResult, error) {
 	if a.ctx == nil {

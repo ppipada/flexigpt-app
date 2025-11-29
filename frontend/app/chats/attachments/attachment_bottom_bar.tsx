@@ -1,6 +1,6 @@
 import { type ReactNode, type RefObject, useMemo, useState } from 'react';
 
-import { FiFilePlus, FiLink, FiPaperclip, FiTool, FiUpload } from 'react-icons/fi';
+import { FiFilePlus, FiFolder, FiLink, FiPaperclip, FiTool, FiUpload } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, type MenuStore } from '@ariakit/react';
 import { type PlateEditor, useEditorRef } from 'platejs/react';
@@ -22,14 +22,17 @@ import { insertTemplateSelectionNode } from '@/chats/templates/template_editor_u
 
 interface AttachmentBottomBarProps {
 	onAttachFiles: () => Promise<void> | void;
+	onAttachDirectory: () => Promise<void> | void;
 	onAttachURL: (url: string) => Promise<void> | void;
 
 	templateMenuState: MenuStore;
 	toolMenuState: MenuStore;
 	attachmentMenuState: MenuStore;
+
 	templateButtonRef: RefObject<HTMLButtonElement | null>;
 	toolButtonRef: RefObject<HTMLButtonElement | null>;
 	attachmentButtonRef: RefObject<HTMLButtonElement | null>;
+
 	shortcutConfig: ShortcutConfig;
 }
 
@@ -72,6 +75,7 @@ const menuItemClasses =
 */
 export function AttachmentBottomBar({
 	onAttachFiles,
+	onAttachDirectory,
 	onAttachURL,
 
 	templateMenuState,
@@ -156,8 +160,14 @@ export function AttachmentBottomBar({
 		}
 	};
 
-	const handleAttachmentPick = async () => {
+	const handleAttachmentPickFiles = async () => {
 		await onAttachFiles();
+		closeAttachmentMenu();
+		editor.tf.focus();
+	};
+
+	const handleAttachmentPickDirectory = async () => {
+		await onAttachDirectory();
 		closeAttachmentMenu();
 		editor.tf.focus();
 	};
@@ -197,16 +207,25 @@ export function AttachmentBottomBar({
 					>
 						<MenuItem
 							onClick={() => {
-								void handleAttachmentPick();
+								void handleAttachmentPickFiles();
 							}}
 							className={menuItemClasses}
 						>
 							<FiUpload size={14} />
-							<span>From your computer...</span>
+							<span>Multiple Files...</span>
+						</MenuItem>
+						<MenuItem
+							onClick={() => {
+								void handleAttachmentPickDirectory();
+							}}
+							className={menuItemClasses}
+						>
+							<FiFolder size={14} />
+							<span>Folder...</span>
 						</MenuItem>
 						<MenuItem onClick={handleAttachmentPickURL} className={menuItemClasses}>
 							<FiLink size={14} />
-							<span>From a link or URL...</span>
+							<span>Link or URL...</span>
 						</MenuItem>
 					</Menu>
 					<PickerButton
@@ -223,12 +242,15 @@ export function AttachmentBottomBar({
 							<div className={`${menuItemClasses} text-base-content/60 cursor-default`}>No templates available</div>
 						) : (
 							templateData.map(item => (
+								// For tooltip and display name we use a humanized slug.
+								// Note: we use title on the item so long names are fully visible when truncated.
 								<MenuItem
 									key={`${item.bundleID}-${item.templateSlug}-${item.templateVersion}`}
 									onClick={() => {
 										void handleTemplatePick(item);
 									}}
 									className={menuItemClasses}
+									title={`${item.templateSlug.replace(/[-_]/g, ' ')} • v${item.templateVersion}`}
 								>
 									<FiFilePlus size={14} className="text-warning" />
 									<span className="truncate">{item.templateSlug.replace(/[-_]/g, ' ')}</span>
@@ -254,12 +276,18 @@ export function AttachmentBottomBar({
 							<div className={`${menuItemClasses} text-base-content/60 cursor-default`}>No additional tools</div>
 						) : (
 							availableTools.map(item => (
+								// Show full identity in the tooltip; visible text stays compact.
+								// e.g. "my-tool (bundleSlug/toolSlug@version)".
 								<MenuItem
 									key={`${item.bundleID}-${item.toolSlug}-${item.toolVersion}`}
 									onClick={() => {
 										void handleToolPick(item);
 									}}
 									className={menuItemClasses}
+									title={`${item.toolSlug.replace(/[-_]/g, ' ')} • ${
+										// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+										item.bundleSlug ?? item.bundleID
+									}/${item.toolSlug}@${item.toolVersion}`}
 								>
 									<FiTool size={14} />
 									<span className="truncate">{item.toolSlug.replace(/[-_]/g, ' ')}</span>

@@ -5,6 +5,10 @@
 - [ ] edit message should fall to the editor with attachments/tools so that resend is consistent
 - [ ] render images and attachments in msg ui
 - [x] attachment tools buttons and shortcuts etc dropdowns ui
+- [ ] system prompt delete is via sys dialog. need it to be a modal
+- [ ] need info to user on how the url or any attachment for that matter was processed. like was it finally done as text or link or bytes or what.
+- [ ] request details are not very useful as of now in the ui. need what was actually sent rather than out version of completion data. may empty out some data things, but others can be given. Most probably need to check response too.
+- [ ] With attachments, token usage display seems more important.
 
 - [ ] attachments
 
@@ -14,8 +18,6 @@
   - [x] web url that is just html fetch
   - [x] url modal needs styling
 
-  - [ ] need info to user on how the url or any attachment for that matter was processed. like was it finally done as text or lik or bytes or what.
-  - [ ] request details are not very useful as of now in the ui. need what was actually sent rather than out version of completion data. may empty out some data things, but others can be given. Most probably need to check response too.
   - [ ] get visible text from html needs to be implemented and a new mode raw vs visible text needs to be added.
   - [ ] pdf and associated processing in one place, doc formats can be in one place (no priority). Integrate a pdf text extractor.
   - [ ] specialized urls like github/gitlab pr's
@@ -28,5 +30,3 @@
   - [ ] need to list openai/anthropic etc given tools so that they can be invoked in api directly
   - [ ] some parallell tools cna be created locally
   - [ ] web search tools better integration needs to be done e2e
-
-- [ ] With attachments, token usage display seems more important.
