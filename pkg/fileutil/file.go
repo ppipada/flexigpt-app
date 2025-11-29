@@ -19,6 +19,15 @@ const (
 	ReadEncodingBinary ReadEncoding = "binary"
 )
 
+type PathInfo struct {
+	Path    string     `json:"path"`
+	Name    string     `json:"name"`
+	Exists  bool       `json:"exists"`
+	IsDir   bool       `json:"isDir"`
+	Size    int64      `json:"size,omitempty"`
+	ModTime *time.Time `json:"modTime,omitempty"`
+}
+
 // ReadFile reads a file and returns its contents.
 // encoding: "text" (default) or "binary" (base64-encoded output).
 func ReadFile(path string, encoding ReadEncoding) (string, error) {
@@ -45,15 +54,6 @@ func ReadFile(path string, encoding ReadEncoding) (string, error) {
 		return base64.StdEncoding.EncodeToString(data), nil
 	}
 	return "", errors.New(`encoding must be "text" or "binary"`)
-}
-
-type PathInfo struct {
-	Path    string     `json:"path"`
-	Name    string     `json:"name"`
-	Exists  bool       `json:"exists"`
-	IsDir   bool       `json:"isDir"`
-	Size    int64      `json:"size,omitempty"`
-	ModTime *time.Time `json:"modTime,omitempty"`
 }
 
 // StatPath returns basic metadata for the supplied path without mutating the filesystem.

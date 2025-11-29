@@ -28,13 +28,16 @@ export namespace attachment {
 	}
 	export class ImageRef {
 	    path: string;
-	    exists?: boolean;
+	    name: string;
+	    exists: boolean;
+	    isDir: boolean;
+	    size?: number;
+	    // Go type: time
+	    modTime?: any;
 	    width?: number;
 	    height?: number;
 	    format?: string;
-	    sizeBytes?: number;
-	    // Go type: time
-	    modTime?: any;
+	    mimeType?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ImageRef(source);
@@ -43,12 +46,15 @@ export namespace attachment {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
+	        this.name = source["name"];
 	        this.exists = source["exists"];
+	        this.isDir = source["isDir"];
+	        this.size = source["size"];
+	        this.modTime = this.convertValues(source["modTime"], null);
 	        this.width = source["width"];
 	        this.height = source["height"];
 	        this.format = source["format"];
-	        this.sizeBytes = source["sizeBytes"];
-	        this.modTime = this.convertValues(source["modTime"], null);
+	        this.mimeType = source["mimeType"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -71,8 +77,10 @@ export namespace attachment {
 	}
 	export class FileRef {
 	    path: string;
-	    exists?: boolean;
-	    sizeBytes?: number;
+	    name: string;
+	    exists: boolean;
+	    isDir: boolean;
+	    size?: number;
 	    // Go type: time
 	    modTime?: any;
 	
@@ -83,8 +91,10 @@ export namespace attachment {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
+	        this.name = source["name"];
 	        this.exists = source["exists"];
-	        this.sizeBytes = source["sizeBytes"];
+	        this.isDir = source["isDir"];
+	        this.size = source["size"];
 	        this.modTime = this.convertValues(source["modTime"], null);
 	    }
 	
