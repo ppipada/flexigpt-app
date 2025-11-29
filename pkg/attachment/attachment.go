@@ -157,8 +157,7 @@ func (att *Attachment) PopulateRef() error {
 		if att.Label == "" {
 			att.Label = filepath.Base(att.FileRef.Path)
 		}
-		// In a later iteration you can infer att.Mode / att.AvailableModes
-		// here based on extension if not already set by the client.
+
 		return nil
 
 	case AttachmentImage:

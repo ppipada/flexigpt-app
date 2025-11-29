@@ -160,7 +160,18 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 	// provided by the caller into FetchCompletionToolChoice entries, then hydrate
 	// them with full tool definitions from the tool store.
 	if len(req.Body.ToolChoices) > 0 {
-		resp.ToolChoices = convertChatToolChoicesToFetchChoices(req.Body.ToolChoices)
+		out := make([]spec.FetchCompletionToolChoice, 0, len(req.Body.ToolChoices))
+		for _, c := range req.Body.ToolChoices {
+			out = append(out, spec.FetchCompletionToolChoice{
+				BundleID:    strings.TrimSpace(c.BundleID),
+				ToolSlug:    strings.TrimSpace(c.ToolSlug),
+				ToolVersion: strings.TrimSpace(c.ToolVersion),
+				ID:          strings.TrimSpace(c.ID),
+				Description: c.Description,
+				Tool:        nil, // hydrated later in attachToolsToCompletionData
+			})
+		}
+		resp.ToolChoices = out
 		if err := ps.attachToolsToCompletionData(ctx, resp); err != nil {
 			return nil, err
 		}
@@ -202,27 +213,6 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	}
 
 	return resp, nil
-}
-
-func convertChatToolChoicesToFetchChoices(
-	choices []spec.ChatCompletionToolChoice,
-) []spec.FetchCompletionToolChoice {
-	if len(choices) == 0 {
-		return nil
-	}
-
-	out := make([]spec.FetchCompletionToolChoice, 0, len(choices))
-	for _, c := range choices {
-		out = append(out, spec.FetchCompletionToolChoice{
-			BundleID:    strings.TrimSpace(c.BundleID),
-			ToolSlug:    strings.TrimSpace(c.ToolSlug),
-			ToolVersion: strings.TrimSpace(c.ToolVersion),
-			ID:          strings.TrimSpace(c.ID),
-			Description: c.Description,
-			Tool:        nil, // hydrated later in attachToolsToCompletionData
-		})
-	}
-	return out
 }
 
 func (ps *ProviderSetAPI) attachToolsToCompletionData(
