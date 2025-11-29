@@ -23,6 +23,7 @@
   - [ ] specialized urls like github/gitlab pr's
   - [ ] local git diff/commit history/etc attachments
   - [ ] need to allow dirs too with some good boundaries.
+  - [ ] for attachments, need to detect mime and type of file etc is backend and ui should use it rather than infering using extension.
 
 - [ ] tool enhancements
 
