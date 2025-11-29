@@ -10,30 +10,31 @@ import (
 	_ "image/png"
 	"os"
 	"strings"
-	"time"
 )
 
 const DefaultImageMIME = "image/png"
 
+type ImageInfo struct {
+	PathInfo
+
+	Width    int    `json:"width,omitempty"`
+	Height   int    `json:"height,omitempty"`
+	Format   string `json:"format,omitempty"`   // e.g. "jpeg", "png"
+	MIMEType string `json:"mimeType,omitempty"` // e.g. "image/jpeg"
+}
+
 // ImageData holds metadata (and optionally content) for an image file.
 type ImageData struct {
-	Path      string     `json:"path"`
-	Exists    bool       `json:"exists"`
-	Width     int        `json:"width,omitempty"`
-	Height    int        `json:"height,omitempty"`
-	Format    string     `json:"format,omitempty"`   // e.g. "jpeg", "png"
-	MIMEType  string     `json:"mimeType,omitempty"` // e.g. "image/jpeg"
-	SizeBytes int64      `json:"sizeBytes,omitempty"`
-	ModTime   *time.Time `json:"modTime,omitempty"` // UTC
+	ImageInfo
 
 	Base64Data string `json:"base64Data,omitempty"` // optional, if requested
 }
 
-// ReadImageInfo inspects an image file and returns its intrinsic metadata.
+// ReadImage inspects an image file and returns its intrinsic metadata.
 // If includeBase64 is true, Base64Data will contain the base64-encoded file
 // contents. If the file does not exist, Exists == false and err == nil.
 // Returns an error if the path is empty, a directory, or not a supported image.
-func ReadImageInfo(
+func ReadImage(
 	path string,
 	includeBase64Data bool,
 ) (*ImageData, error) {
@@ -46,18 +47,19 @@ func ReadImageInfo(
 		return nil, err
 	}
 
-	out := &ImageData{
-		Path:      path,
-		Exists:    pathInfo.Exists,
-		SizeBytes: pathInfo.Size,
-		ModTime:   pathInfo.ModTime,
-	}
+	out := &ImageData{}
+	out.Path = pathInfo.Path
+	out.Name = pathInfo.Name
+	out.Exists = pathInfo.Exists
+	out.IsDir = pathInfo.IsDir
+	out.Size = pathInfo.Size
+	out.ModTime = pathInfo.ModTime
 
-	if !pathInfo.Exists {
+	if !out.Exists {
 		// Not an error: just report non-existence.
 		return out, nil
 	}
-	if pathInfo.IsDir {
+	if out.IsDir {
 		return nil, errors.New("path points to a directory, expected file")
 	}
 

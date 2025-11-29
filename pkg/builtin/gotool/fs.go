@@ -119,7 +119,7 @@ type InspectImageOut struct {
 
 // InspectImage inspects an image file and returns its intrinsic metadata.
 func InspectImage(ctx context.Context, args InspectImageArgs) (*InspectImageOut, error) {
-	info, err := fileutil.ReadImageInfo(args.Path, false)
+	info, err := fileutil.ReadImage(args.Path, false)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func InspectImage(ctx context.Context, args InspectImageArgs) (*InspectImageOut,
 		Width:     info.Width,
 		Height:    info.Height,
 		Format:    info.Format,
-		SizeBytes: info.SizeBytes,
+		SizeBytes: info.Size,
 		ModTime:   info.ModTime,
 	}, nil
 }

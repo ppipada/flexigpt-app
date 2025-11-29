@@ -4,20 +4,13 @@ import (
 	"errors"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 )
 
 // ImageRef carries metadata for image attachments.
 type ImageRef struct {
-	Path      string     `json:"path"`
-	Exists    bool       `json:"exists,omitempty"`
-	Width     int        `json:"width,omitempty"`
-	Height    int        `json:"height,omitempty"`
-	Format    string     `json:"format,omitempty"`
-	SizeBytes int64      `json:"sizeBytes,omitempty"`
-	ModTime   *time.Time `json:"modTime,omitempty"`
+	fileutil.ImageInfo
 }
 
 func (ref *ImageRef) PopulateRef() error {
@@ -28,31 +21,26 @@ func (ref *ImageRef) PopulateRef() error {
 	if path == "" {
 		return errors.New("image attachment missing path")
 	}
-	info, err := fileutil.ReadImageInfo(path, false)
+	info, err := fileutil.ReadImage(path, false)
 	if err != nil {
 		return err
 	}
 
-	ref.Path = path
+	ref.Path = info.Path
+	ref.Name = info.Name
 	ref.Exists = info.Exists
-	if info.Exists {
-		ref.Width = info.Width
-		ref.Height = info.Height
-		ref.Format = info.Format
-		ref.SizeBytes = info.SizeBytes
-		ref.ModTime = info.ModTime
-	} else {
-		ref.Width = 0
-		ref.Height = 0
-		ref.Format = ""
-		ref.SizeBytes = 0
-		ref.ModTime = nil
-	}
+	ref.IsDir = info.IsDir
+	ref.Size = info.Size
+	ref.ModTime = info.ModTime
+	ref.Width = info.Width
+	ref.Height = info.Height
+	ref.Format = info.Format
+	ref.MIMEType = info.MIMEType
 	return nil
 }
 
 func buildImageBlockFromLocal(path string) (*ContentBlock, error) {
-	info, err := fileutil.ReadImageInfo(path, true)
+	info, err := fileutil.ReadImage(path, true)
 	if err != nil {
 		return &ContentBlock{}, err
 	}

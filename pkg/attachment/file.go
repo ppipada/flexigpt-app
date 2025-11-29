@@ -5,17 +5,13 @@ import (
 	"errors"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 )
 
 // FileRef carries metadata for file attachments.
 type FileRef struct {
-	Path      string     `json:"path"`
-	Exists    bool       `json:"exists,omitempty"`
-	SizeBytes int64      `json:"sizeBytes,omitempty"`
-	ModTime   *time.Time `json:"modTime,omitempty"`
+	fileutil.PathInfo
 }
 
 func (ref *FileRef) PopulateRef() error {
@@ -31,15 +27,13 @@ func (ref *FileRef) PopulateRef() error {
 		return err
 	}
 
-	ref.Path = path
+	ref.Path = pathInfo.Path
+	ref.Name = pathInfo.Name
 	ref.Exists = pathInfo.Exists
-	if pathInfo.Exists {
-		ref.SizeBytes = pathInfo.Size
-		ref.ModTime = pathInfo.ModTime
-	} else {
-		ref.SizeBytes = 0
-		ref.ModTime = nil
-	}
+	ref.IsDir = pathInfo.IsDir
+	ref.Size = pathInfo.Size
+	ref.ModTime = pathInfo.ModTime
+
 	return nil
 }
 
