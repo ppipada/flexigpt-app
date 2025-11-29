@@ -49,7 +49,7 @@ func ReadImageInfo(
 	out := &ImageData{
 		Path:      path,
 		Exists:    pathInfo.Exists,
-		SizeBytes: pathInfo.SizeBytes,
+		SizeBytes: pathInfo.Size,
 		ModTime:   pathInfo.ModTime,
 	}
 

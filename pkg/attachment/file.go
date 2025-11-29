@@ -34,7 +34,7 @@ func (ref *FileRef) PopulateRef() error {
 	ref.Path = path
 	ref.Exists = pathInfo.Exists
 	if pathInfo.Exists {
-		ref.SizeBytes = pathInfo.SizeBytes
+		ref.SizeBytes = pathInfo.Size
 		ref.ModTime = pathInfo.ModTime
 	} else {
 		ref.SizeBytes = 0

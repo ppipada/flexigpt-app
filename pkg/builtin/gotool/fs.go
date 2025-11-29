@@ -99,7 +99,7 @@ func StatPath(_ context.Context, args StatPathArgs) (*StatPathOut, error) {
 	return &StatPathOut{
 		Exists:    pathInfo.Exists,
 		IsDir:     pathInfo.IsDir,
-		SizeBytes: pathInfo.SizeBytes,
+		SizeBytes: pathInfo.Size,
 		ModTime:   pathInfo.ModTime,
 	}, nil
 }

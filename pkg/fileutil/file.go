@@ -48,10 +48,12 @@ func ReadFile(path string, encoding ReadEncoding) (string, error) {
 }
 
 type PathInfo struct {
-	Exists    bool       `json:"exists"`
-	IsDir     bool       `json:"isDir"`
-	SizeBytes int64      `json:"sizeBytes,omitempty"`
-	ModTime   *time.Time `json:"modTime,omitempty"`
+	Path    string     `json:"path"`
+	Name    string     `json:"name"`
+	Exists  bool       `json:"exists"`
+	IsDir   bool       `json:"isDir"`
+	Size    int64      `json:"size,omitempty"`
+	ModTime *time.Time `json:"modTime,omitempty"`
 }
 
 // StatPath returns basic metadata for the supplied path without mutating the filesystem.
@@ -61,47 +63,26 @@ func StatPath(path string) (pathInfo *PathInfo, err error) {
 		return nil, errors.New("path is required")
 	}
 
+	pathInfo = &PathInfo{
+		Path:   path,
+		Exists: false,
+	}
+
 	info, e := os.Stat(path)
 	if e != nil {
 		if errors.Is(e, os.ErrNotExist) {
-			pathInfo = &PathInfo{Exists: false}
 			return pathInfo, nil
 		}
 		return nil, e
 	}
 
-	mod := info.ModTime().UTC()
-	return &PathInfo{
-		Exists:    true,
-		IsDir:     info.IsDir(),
-		SizeBytes: info.Size(),
-		ModTime:   &mod,
-	}, nil
-}
-
-// ListDirectory lists files/dirs in path (default "."), pattern is an optional glob filter (filepath.Match).
-func ListDirectory(path, pattern string) ([]string, error) {
-	dir := path
-	if dir == "" {
-		dir = "."
-	}
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return nil, err
-	}
-
-	out := make([]string, 0, len(entries))
-	for _, e := range entries {
-		name := e.Name()
-		if pattern != "" {
-			matched, _ := filepath.Match(pattern, name)
-			if !matched {
-				continue
-			}
-		}
-		out = append(out, name)
-	}
-	return out, nil
+	pathInfo.Name = info.Name()
+	pathInfo.Exists = true
+	pathInfo.IsDir = info.IsDir()
+	pathInfo.Size = info.Size()
+	m := info.ModTime().UTC()
+	pathInfo.ModTime = &m
+	return pathInfo, nil
 }
 
 // SearchFiles walks root (default ".") recursively and returns up to maxResults
