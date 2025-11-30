@@ -8,19 +8,18 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"io"
 	"os"
 	"strings"
 )
 
-const DefaultImageMIME = "image/png"
-
 type ImageInfo struct {
 	PathInfo
 
-	Width    int    `json:"width,omitempty"`
-	Height   int    `json:"height,omitempty"`
-	Format   string `json:"format,omitempty"`   // e.g. "jpeg", "png"
-	MIMEType string `json:"mimeType,omitempty"` // e.g. "image/jpeg"
+	Width    int      `json:"width,omitempty"`
+	Height   int      `json:"height,omitempty"`
+	Format   string   `json:"format,omitempty"`   // e.g. "jpeg", "png"
+	MIMEType MIMEType `json:"mimeType,omitempty"` // e.g. "image/jpeg"
 }
 
 // ImageData holds metadata (and optionally content) for an image file.
@@ -71,18 +70,12 @@ func ReadImage(
 			return nil, err
 		}
 
-		cfg, fmtName, err := image.DecodeConfig(bytes.NewReader(data))
+		reader := bytes.NewReader(data)
+		err = decodeImageConfig(out, reader)
 		if err != nil {
 			return nil, err
 		}
-
-		out.Width = cfg.Width
-		out.Height = cfg.Height
-		out.Format = fmtName
-		out.MIMEType = imageFormatToMIME(fmtName)
-
 		out.Base64Data = base64.StdEncoding.EncodeToString(data)
-
 		return out, nil
 	}
 
@@ -92,39 +85,30 @@ func ReadImage(
 		return nil, err
 	}
 	defer f.Close()
-
-	cfg, fmtName, err := image.DecodeConfig(f)
+	err = decodeImageConfig(out, f)
 	if err != nil {
 		return nil, err
 	}
 
-	out.Width = cfg.Width
-	out.Height = cfg.Height
-	out.Format = fmtName
-	out.MIMEType = imageFormatToMIME(fmtName)
 	return out, nil
 }
 
-// ImageFormatToMIME converts an image "format" (e.g. "jpeg", "png")
-// into a best-effort MIME type.
-func imageFormatToMIME(format string) string {
-	f := strings.ToLower(strings.TrimSpace(format))
-	switch f {
-	case "jpg", "jpeg":
-		return "image/jpeg"
-	case "png":
-		return "image/png"
-	case "gif":
-		return "image/gif"
-	case "webp":
-		return "image/webp"
-	case "bmp":
-		return "image/bmp"
-	case "":
-		// Keep your previous behavior: default to PNG if unknown/empty.
-		return DefaultImageMIME
-	default:
-		// Fallback; most renderers can still display many uncommon types.
-		return "application/octet-stream"
+func decodeImageConfig(info *ImageData, reader io.Reader) error {
+	cfg, fmtName, err := image.DecodeConfig(reader)
+	if err != nil {
+		return err
 	}
+
+	info.Width = cfg.Width
+	info.Height = cfg.Height
+	info.Format = fmtName
+	m, err := MIMEFromExtensionString(fmtName)
+	if err != nil {
+		return errors.New("invalid image format")
+	}
+	if mode, ok := MIMETypeToExtensionMode[m]; !ok || mode != ExtensionModeImage {
+		return errors.New("invalid image format")
+	}
+	info.MIMEType = m
+	return nil
 }

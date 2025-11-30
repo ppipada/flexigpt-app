@@ -3,16 +3,12 @@ import { type ButtonHTMLAttributes, useState } from 'react';
 
 import { FiDownload } from 'react-icons/fi';
 
-import type { FileFilter } from '@/spec/backend';
+import type { FileFilter } from '@/spec/attachment';
 
 import { Base64EncodeUTF8, GenerateRandomString } from '@/lib/encode_decode';
 import { MimeTypeMap, ProgrammingLanguages } from '@/lib/markdown_utils';
 
 import { backendAPI } from '@/apis/baseapi';
-
-async function saveFile(defaultFilename: string, contentBase64: string, filters: Array<FileFilter>): Promise<void> {
-	await backendAPI.saveFile(defaultFilename, contentBase64, filters);
-}
 
 interface DownloadButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	language?: string;
@@ -70,18 +66,14 @@ export function DownloadButton({
 			}
 
 			const suggestedFileName = `${fileprefix}-${GenerateRandomString(3, true)}${fileExtension}`;
-			const filters = [
+			const additionalFilters: FileFilter[] = [
 				{
 					DisplayName: `Files (*${fileExtension})`,
-					Pattern: `*${fileExtension}`,
-				},
-				{
-					DisplayName: 'All Files (*.*)',
-					Pattern: '*.*',
+					Extensions: [`*${fileExtension}`],
 				},
 			];
 
-			await saveFile(suggestedFileName, contentBase64, filters);
+			await backendAPI.saveFile(suggestedFileName, contentBase64, additionalFilters);
 		} catch (err: any) {
 			console.error('Download failed:', err, JSON.stringify(err));
 		} finally {

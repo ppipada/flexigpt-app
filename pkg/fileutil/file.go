@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"io/fs"
-	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -138,65 +137,4 @@ func SearchFiles(root, pattern string, maxResults int) ([]string, error) {
 		return nil, err
 	}
 	return matches, nil
-}
-
-// DetectFileMIME inspects the first bytes of a file and returns a best-effort
-// MIME type plus a heuristic "isText" flag.
-//
-// It uses net/http.DetectContentType and a simple heuristic to decide whether
-// the content is probably text vs binary (NUL bytes, control chars, etc.).
-func DetectFileMIME(path string) (mime string, isText bool, err error) {
-	if path == "" {
-		return "", false, errors.New("path is required")
-	}
-
-	f, err := os.Open(path)
-	if err != nil {
-		return "", false, err
-	}
-	defer f.Close()
-
-	buf := make([]byte, 4096)
-	n, err := f.Read(buf)
-	if err != nil && !errors.Is(err, io.EOF) {
-		return "", false, err
-	}
-	sample := buf[:n]
-	if len(sample) == 0 {
-		// Empty file: treat as text/plain.
-		return "text/plain; charset=utf-8", true, nil
-	}
-
-	mime = http.DetectContentType(sample)
-	isText = isProbablyTextSample(sample)
-	return mime, isText, nil
-}
-
-// isProbablyTextSample returns true if the byte sample looks like text.
-// Very simple heuristic: disallow embedded NULs and too many
-// non-printable control characters.
-func isProbablyTextSample(p []byte) bool {
-	if len(p) == 0 {
-		return true
-	}
-	nulCount := 0
-	controlCount := 0
-	for _, b := range p {
-		if b == 0 {
-			nulCount++
-			continue
-		}
-		// Allow tab, newline, carriage return.
-		if b < 32 && b != 9 && b != 10 && b != 13 {
-			controlCount++
-		}
-	}
-	if nulCount > 0 {
-		return false
-	}
-	// If more than ~10% of bytes are weird control chars, assume binary.
-	if controlCount*10 > len(p) {
-		return false
-	}
-	return true
 }

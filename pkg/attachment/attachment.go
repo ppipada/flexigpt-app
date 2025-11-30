@@ -102,28 +102,40 @@ func BuildContentBlocks(ctx context.Context, atts []Attachment) ([]ContentBlock,
 
 func (att *Attachment) BuildContentBlock(ctx context.Context) (*ContentBlock, error) {
 	// Ensure refs are populated; caller may have done this earlier,
-	// but calling again on a populated ref is cheap.
+	// but calling again on a populated ref is cheap to do in actual read data path.
 	if err := (att).PopulateRef(); err != nil {
 		return nil, err
 	}
 
 	mode := att.Mode
-	if mode == "" {
-		mode = att.inferDefaultMode()
+	switch mode {
+	case AttachmentModeText, AttachmentModeFile,
+		AttachmentModeImage,
+		AttachmentModePageContent,
+		AttachmentModeLinkOnly:
+	// Ok.
+	case AttachmentModePRDiff,
+		AttachmentModePRPage,
+		AttachmentModeCommitDiff,
+		AttachmentModeCommitPage, AttachmentModeNotReadable, "":
+		return getUnreadableBlock(att)
+
+	default:
+		return nil, errors.New("invalid processing mode for attachment")
 	}
 
 	switch att.Kind {
-	case AttachmentImage:
-		if att.ImageRef == nil || !att.ImageRef.Exists {
-			return nil, errors.New("invalid image ref for attachment")
-		}
-		return buildImageBlockFromLocal(att.ImageRef.Path)
-
 	case AttachmentFile:
 		if att.FileRef == nil || !att.FileRef.Exists {
 			return nil, errors.New("invalid file ref for attachment")
 		}
 		return buildBlocksForLocalFile(ctx, att, mode)
+
+	case AttachmentImage:
+		if att.ImageRef == nil || !att.ImageRef.Exists {
+			return nil, errors.New("invalid image ref for attachment")
+		}
+		return buildImageBlockFromLocal(att.ImageRef.Path)
 
 	case AttachmentURL:
 		if att.URLRef == nil || att.URLRef.URL == "" {
@@ -132,14 +144,8 @@ func (att *Attachment) BuildContentBlock(ctx context.Context) (*ContentBlock, er
 		return buildBlocksForURL(ctx, att, mode)
 
 	case AttachmentDocIndex, AttachmentPR, AttachmentCommit:
-		// For now, treat as a simple text mention.
-		if txt := (att).FormatAsDisplayName(); txt != "" {
-			return &ContentBlock{
-				Kind: ContentBlockText,
-				Text: txt,
-			}, nil
-		}
-		return nil, errors.New("invalid attachment kind")
+		return getUnreadableBlock(att)
+
 	default:
 		return nil, errors.New("unknown attachment kind")
 	}
@@ -250,31 +256,4 @@ func (att *Attachment) FormatAsDisplayName() string {
 		return fmt.Sprintf("[Attachment: %s]", label)
 	}
 	return fmt.Sprintf("[Attachment: %s — %s]", label, detail)
-}
-
-// inferDefaultMode picks a reasonable default mode when client left it empty.
-// It respects Kind + file extension but does NOT override explicit user choices.
-func (att *Attachment) inferDefaultMode() AttachmentMode {
-	switch att.Kind {
-	case AttachmentImage:
-		return AttachmentModeImage
-
-	case AttachmentFile:
-		if att.FileRef == nil {
-			return AttachmentModeFile
-		}
-		return inferDefaultFileMode(att.FileRef.Path)
-
-	case AttachmentURL:
-		if att.URLRef == nil {
-			return AttachmentModeLinkOnly
-		}
-		return inferDefaultURLMode(att.URLRef.URL)
-
-	case AttachmentDocIndex, AttachmentPR, AttachmentCommit:
-		return AttachmentModeText
-
-	default:
-		return AttachmentModeText
-	}
 }

@@ -510,7 +510,7 @@ func TestSearchFilesConcurrency(t *testing.T) {
 	}
 }
 
-func TestDetectFileMIME(t *testing.T) {
+func TestSniffFileMIME(t *testing.T) {
 	dir := t.TempDir()
 
 	emptyPath := filepath.Join(dir, "empty.txt")
@@ -542,7 +542,7 @@ func TestDetectFileMIME(t *testing.T) {
 			name:            "empty path",
 			path:            "",
 			wantErr:         true,
-			wantErrContains: "path is required",
+			wantErrContains: "invalid path",
 		},
 		{
 			name:           "non-existent path",
@@ -578,7 +578,7 @@ func TestDetectFileMIME(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			mime, isText, err := DetectFileMIME(tc.path)
+			mime, mode, err := SniffFileMIME(tc.path)
 
 			if tc.wantErr {
 				if err == nil {
@@ -597,9 +597,10 @@ func TestDetectFileMIME(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
-			if tc.wantMIME != "" && mime != tc.wantMIME {
+			if tc.wantMIME != "" && mime != MIMEType(tc.wantMIME) {
 				t.Errorf("MIME = %q, want %q", mime, tc.wantMIME)
 			}
+			isText := mode == ExtensionModeText
 			if isText != tc.wantIsText {
 				t.Errorf("isText = %v, want %v", isText, tc.wantIsText)
 			}

@@ -16,7 +16,7 @@ import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
 import type { AttachmentMode } from '@/spec/attachment';
-import type { FileFilter, PathInfo, WalkDirectoryWithFilesResult } from '@/spec/backend';
+import type { PathInfo, WalkDirectoryWithFilesResult } from '@/spec/backend';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -350,15 +350,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	}));
 
 	const handleAttachFiles = async () => {
-		const baseFilters: FileFilter[] = [
-			{ DisplayName: 'All Files', Pattern: '*' },
-			{ DisplayName: 'Text/Markdown', Pattern: '*.txt;*.md;*.markdown' },
-			{ DisplayName: 'Documents', Pattern: '*.pdf;*.doc;*.docx;*.ppt;*.pptx;*.xls;*.xlsx;*.html;*.htm' },
-			{ DisplayName: 'Images', Pattern: '*.png;*.jpg;*.jpeg;*.gif;*.webp' },
-		];
 		let results: PathInfo[];
 		try {
-			results = await backendAPI.openFiles(true, baseFilters);
+			results = await backendAPI.openFiles(true);
 		} catch {
 			return;
 		}

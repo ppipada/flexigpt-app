@@ -452,7 +452,7 @@ func contentBlocksToAnthropic(
 			}
 			mime := b.MIMEType
 			if mime == "" {
-				mime = fileutil.DefaultImageMIME
+				mime = string(fileutil.DefaultImageMIME)
 			}
 			out = append(out, anthropic.NewImageBlockBase64(mime, b.Base64Data))
 

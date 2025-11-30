@@ -1,6 +1,7 @@
 import { sprintf } from 'sprintf-js';
 
-import type { FileFilter, IBackendAPI, PathInfo, WalkDirectoryWithFilesResult } from '@/spec/backend';
+import type { FileFilter } from '@/spec/attachment';
+import type { IBackendAPI, PathInfo, WalkDirectoryWithFilesResult } from '@/spec/backend';
 import type { ILogger } from '@/spec/logger';
 
 import { OpenDirectoryWithFiles, OpenFiles, Ping, SaveFile } from '@/apis/wailsjs/go/main/App';
@@ -118,10 +119,10 @@ export class WailsBackendAPI implements IBackendAPI {
 		}
 	}
 
-	async saveFile(defaultFilename: string, contentBase64: string, filters: Array<FileFilter>): Promise<void> {
+	async saveFile(defaultFilename: string, contentBase64: string, additionalFilters?: Array<FileFilter>): Promise<void> {
 		// Call the Go backend method to save the file
 		try {
-			await SaveFile(defaultFilename, contentBase64, filters);
+			await SaveFile(defaultFilename, contentBase64, additionalFilters ?? []);
 		} catch (err) {
 			console.error('Error saving file:', err);
 		}
@@ -132,9 +133,9 @@ export class WailsBackendAPI implements IBackendAPI {
 		BrowserOpenURL(url);
 	}
 
-	async openFiles(allowMultiple: boolean, filters: Array<FileFilter>): Promise<PathInfo[]> {
+	async openFiles(allowMultiple: boolean, additionalFilters?: Array<FileFilter>): Promise<PathInfo[]> {
 		try {
-			const paths = await OpenFiles(allowMultiple, filters);
+			const paths = await OpenFiles(allowMultiple, additionalFilters ?? []);
 			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 			return paths ?? [];
 		} catch (err) {

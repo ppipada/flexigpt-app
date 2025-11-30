@@ -136,15 +136,16 @@ func (a *App) Ping() string {
 func (a *App) SaveFile(
 	defaultFilename string,
 	contentBase64 string,
-	filters []runtime.FileFilter,
+	additionalFilters []fileutil.FileFilter,
 ) error {
 	if a.ctx == nil {
 		return errors.New("context is not initialized")
 	}
 
+	runtimeFilters := getRuntimeFilters(additionalFilters, true)
 	saveDialogOptions := runtime.SaveDialogOptions{
 		DefaultFilename: defaultFilename,
-		Filters:         filters,
+		Filters:         runtimeFilters,
 	}
 	savePath, err := runtime.SaveFileDialog(a.ctx, saveDialogOptions)
 	if err != nil {
@@ -165,32 +166,20 @@ func (a *App) SaveFile(
 	return os.WriteFile(savePath, contentBytes, 0o600)
 }
 
-type FileFilter struct {
-	DisplayName string // Filter information EG: "Image Files (*.jpg, *.png)".
-	Pattern     string // semicolon separated list of extensions, EG: "*.jpg;*.png".
-}
-
 // OpenFiles opens a native file dialog and returns selected file paths.
 // When allowMultiple is true, users can pick multiple files; otherwise at most one path is returned.
 func (a *App) OpenFiles(
 	allowMultiple bool,
-	filters []FileFilter,
+	additionalFilters []fileutil.FileFilter,
 ) (pathInfos []fileutil.PathInfo, err error) {
 	if a.ctx == nil {
 		return nil, errors.New("context is not initialized")
 	}
 
-	runtimeFilters := make([]runtime.FileFilter, 0, len(filters))
-	for idx := range filters {
-		runtimeFilters = append(
-			runtimeFilters,
-			runtime.FileFilter{DisplayName: filters[idx].DisplayName, Pattern: filters[idx].Pattern},
-		)
-	}
-
+	runtimeFilters := getRuntimeFilters(additionalFilters, true)
 	opts := runtime.OpenDialogOptions{
 		Filters:              runtimeFilters,
-		ShowHiddenFiles:      false,
+		ShowHiddenFiles:      true,
 		CanCreateDirectories: false,
 	}
 
@@ -340,4 +329,36 @@ func (a *App) beforeClose(ctx context.Context) (prevent bool) { //nolint:all
 // shutdown is called at application termination.
 func (a *App) shutdown(ctx context.Context) { //nolint:all
 	// Perform your teardown here.
+}
+
+var defaultRuntimeFilters = func() []runtime.FileFilter {
+	runtimeFilters := make([]runtime.FileFilter, 0, len(fileutil.DefaultFileFilters))
+	for idx := range fileutil.DefaultFileFilters {
+		runtimeFilters = append(
+			runtimeFilters,
+			runtime.FileFilter{
+				DisplayName: fileutil.DefaultFileFilters[idx].DisplayName,
+				Pattern:     fileutil.DefaultFileFilters[idx].Pattern(),
+			},
+		)
+	}
+	return runtimeFilters
+}()
+
+func getRuntimeFilters(additionalFilters []fileutil.FileFilter, includeDefault bool) []runtime.FileFilter {
+	runtimeFilters := make([]runtime.FileFilter, 0, len(additionalFilters)+len(fileutil.DefaultFileFilters))
+
+	for idx := range additionalFilters {
+		runtimeFilters = append(
+			runtimeFilters,
+			runtime.FileFilter{
+				DisplayName: additionalFilters[idx].DisplayName,
+				Pattern:     additionalFilters[idx].Pattern(),
+			},
+		)
+	}
+	if includeDefault {
+		runtimeFilters = append(runtimeFilters, defaultRuntimeFilters...)
+	}
+	return runtimeFilters
 }

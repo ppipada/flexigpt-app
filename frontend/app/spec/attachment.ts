@@ -88,3 +88,8 @@ export interface Attachment {
 	urlRef?: AttachmentURLRef;
 	genericRef?: AttachmentGenericRef;
 }
+
+export interface FileFilter {
+	DisplayName: string;
+	Extensions: string[];
+}

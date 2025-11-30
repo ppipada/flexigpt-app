@@ -186,6 +186,20 @@ export namespace fileutil {
 	        this.partial = source["partial"];
 	    }
 	}
+	export class FileFilter {
+	    DisplayName: string;
+	    Extensions: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new FileFilter(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.DisplayName = source["DisplayName"];
+	        this.Extensions = source["Extensions"];
+	    }
+	}
 	export class PathInfo {
 	    path: string;
 	    name: string;
@@ -266,44 +280,6 @@ export namespace fileutil {
 		    }
 		    return a;
 		}
-	}
-
-}
-
-export namespace frontend {
-	
-	export class FileFilter {
-	    DisplayName: string;
-	    Pattern: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new FileFilter(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.DisplayName = source["DisplayName"];
-	        this.Pattern = source["Pattern"];
-	    }
-	}
-
-}
-
-export namespace main {
-	
-	export class FileFilter {
-	    DisplayName: string;
-	    Pattern: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new FileFilter(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.DisplayName = source["DisplayName"];
-	        this.Pattern = source["Pattern"];
-	    }
 	}
 
 }

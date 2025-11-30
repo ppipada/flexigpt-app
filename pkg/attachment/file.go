@@ -37,52 +37,62 @@ func (ref *FileRef) PopulateRef() error {
 	return nil
 }
 
-func inferDefaultFileMode(path string) AttachmentMode {
-	ext := strings.ToLower(filepath.Ext(path))
-	m, ok := fileutil.ExtensionToMode[ext]
-	if !ok {
-		// Could be binary; leave as "file" by default.
-		return AttachmentModeFile
-	}
-
-	switch m {
-	case fileutil.ExtensionModeText:
-		return AttachmentModeText
-	case fileutil.ExtensionModeDocument:
-		// PDFs get a special default: send as a file attachment.
-		if ext == fileutil.ExtensionPDF {
-			return AttachmentModeFile
-		}
-		// Non‑PDF “documents” (e.g. DOCX) – default to text.
-		return AttachmentModeText
-	case fileutil.ExtensionModeImage, fileutil.ExtensionModeDefault:
-		// In File attachments, images default to binary file mode
-		// unless the user explicitly selects "image".
-		return AttachmentModeFile
-	default:
-		return AttachmentModeFile
-	}
-}
-
 func buildBlocksForLocalFile(ctx context.Context, att *Attachment, mode AttachmentMode) (*ContentBlock, error) {
 	path := att.FileRef.Path
-	ext := strings.ToLower(filepath.Ext(path))
 
 	switch mode {
 	case AttachmentModeText:
-		// Special handling for PDFs: try text extraction with panic-safe fallback.
-		if ext == fileutil.ExtensionPDF {
-			return buildPDFTextOrFileBlock(path)
+		mimeType, extensionMode, err := fileutil.MIMEForLocalFile(path)
+		if err == nil && (extensionMode == fileutil.ExtensionModeText || mimeType == fileutil.MIMEApplicationPDF) {
+			// Text mode mimes and pdf with text extraction is supported.
+			return getTextBlock(att)
 		}
-		// Normal text file.
-		text, err := fileutil.ReadFile(path, fileutil.ReadEncodingText)
+		// Could not detect mime or non pdf text attachment sent, render as unreadable file.
+		return getUnreadableBlock(att)
+
+	case AttachmentModeImage:
+		// Treat a file in "image" mode as an image attachment.
+		return buildImageBlockFromLocal(path)
+
+	case AttachmentModeFile:
+		// File mode needs to handle all kinds of supported files appropriately.
+		mimeType, extensionMode, err := fileutil.MIMEForLocalFile(path)
 		if err != nil {
-			return nil, err
+			// Could not detect mime, render as unreadable file.
+			return getUnreadableBlock(att)
 		}
-		return &ContentBlock{
-			Kind: ContentBlockText,
-			Text: text,
-		}, nil
+		switch extensionMode {
+		case fileutil.ExtensionModeText:
+			// If this is a text type file, we cannot attach it as b64 encoded currently.
+			// Right now we are making a safe fallback to send it as text block.
+			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentMode properly.
+			return getTextBlock(att)
+		case fileutil.ExtensionModeImage:
+			// Images have to be attached specially.
+			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentMode properly.
+			return buildImageBlockFromLocal(path)
+		case fileutil.ExtensionModeDocument:
+			// As of now non pdf files are not supported to be attached as b64 files in any APIs.
+			// But, as the call is reached here, we are still sending the content back as b64 content.
+			// As APIs start supporting other file types, and UI and fetch api handles things this will be seameless.
+
+			base64Data, err := fileutil.ReadFile(path, fileutil.ReadEncodingBinary)
+			if err != nil {
+				return nil, err
+			}
+
+			return &ContentBlock{
+				Kind:       ContentBlockFile,
+				Base64Data: base64Data,
+				MIMEType:   string(mimeType),
+				FileName:   filepath.Base(path),
+			}, nil
+
+		case fileutil.ExtensionModeDefault:
+			return getUnreadableBlock(att)
+		default:
+			return getUnreadableBlock(att)
+		}
 
 	case AttachmentModeNotReadable,
 		AttachmentModePageContent,
@@ -92,55 +102,36 @@ func buildBlocksForLocalFile(ctx context.Context, att *Attachment, mode Attachme
 		AttachmentModeCommitDiff,
 		AttachmentModeCommitPage:
 		// Provide a short note so the model knows the file exists but is not included.
-		if txt := att.FormatAsDisplayName(); txt != "" {
-			return &ContentBlock{
-				Kind: ContentBlockText,
-				Text: txt + " (binary file; not readable in this chat)",
-			}, nil
-		}
-		return nil, errors.New("invalid attachment mode")
-
-	case AttachmentModeImage:
-		// Treat a file in "image" mode as an image attachment.
-		return buildImageBlockFromLocal(path)
-
-	case AttachmentModeFile:
-		base64Data, err := fileutil.ReadFile(path, fileutil.ReadEncodingBinary)
-		if err != nil {
-			return nil, err
-		}
-		mime := mimeForLocalFile(path)
-		return &ContentBlock{
-			Kind:       ContentBlockFile,
-			Base64Data: base64Data,
-			MIMEType:   mime,
-			FileName:   filepath.Base(path),
-		}, nil
-
+		return getUnreadableBlock(att)
 	default:
 		return nil, errors.New("invalid attachment mode")
 	}
 }
 
-func mimeForLocalFile(path string) string {
-	// Prefer MIME sniffing via fileutil; fall back to extension-based if needed.
-	if mime, _, err := fileutil.DetectFileMIME(path); err == nil && mime != "" {
-		return mime
-	}
-
+func getTextBlock(att *Attachment) (*ContentBlock, error) {
+	path := att.FileRef.Path
 	ext := strings.ToLower(filepath.Ext(path))
-	switch ext {
-	case ".pdf":
-		return "application/pdf"
-	case ".png":
-		return "image/png"
-	case ".jpg", ".jpeg":
-		return "image/jpeg"
-	case ".gif":
-		return "image/gif"
-	case ".webp":
-		return "image/webp"
-	default:
-		return "application/octet-stream"
+	// Special handling for PDFs: try text extraction with panic-safe fallback.
+	if ext == string(fileutil.ExtPDF) {
+		return buildPDFTextOrFileBlock(path)
 	}
+	// Normal text file.
+	text, err := fileutil.ReadFile(path, fileutil.ReadEncodingText)
+	if err != nil {
+		return nil, err
+	}
+	return &ContentBlock{
+		Kind: ContentBlockText,
+		Text: text,
+	}, nil
+}
+
+func getUnreadableBlock(att *Attachment) (*ContentBlock, error) {
+	if txt := att.FormatAsDisplayName(); txt != "" {
+		return &ContentBlock{
+			Kind: ContentBlockText,
+			Text: txt + " (binary file; not readable in this chat)",
+		}, nil
+	}
+	return nil, errors.New("invalid attachment mode")
 }

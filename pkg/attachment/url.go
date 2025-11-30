@@ -11,8 +11,6 @@ import (
 	"net/url"
 	"path/filepath"
 	"strings"
-
-	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 )
 
 // URLRef carries metadata for URL-based attachments.
@@ -40,21 +38,6 @@ func (ref *URLRef) PopulateRef() error {
 	ref.URL = raw
 	ref.Normalized = parsed.String()
 	return nil
-}
-
-func inferDefaultURLMode(rawURL string) AttachmentMode {
-	u := strings.ToLower(rawURL)
-	for ext, mode := range fileutil.ExtensionToMode {
-		if strings.HasSuffix(u, ext) {
-			if mode == fileutil.ExtensionModeImage {
-				return AttachmentModeImage
-			}
-
-			return AttachmentModePageContent
-		}
-	}
-
-	return AttachmentModePageContent
 }
 
 func buildBlocksForURL(ctx context.Context, att *Attachment, mode AttachmentMode) (*ContentBlock, error) {

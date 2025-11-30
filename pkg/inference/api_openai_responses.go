@@ -457,7 +457,7 @@ func contentBlocksToOpenAI(
 			}
 			mime := b.MIMEType
 			if mime == "" {
-				mime = fileutil.DefaultImageMIME
+				mime = string(fileutil.DefaultImageMIME)
 			}
 			dataURL := fmt.Sprintf("data:%s;base64,%s", mime, b.Base64Data)
 			img := responses.ResponseInputImageParam{

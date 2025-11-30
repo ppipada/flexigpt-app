@@ -1,7 +1,4 @@
-export interface FileFilter {
-	DisplayName: string;
-	Pattern: string;
-}
+import type { FileFilter } from '@/spec/attachment';
 
 export interface PathInfo {
 	path: string;
@@ -35,8 +32,8 @@ export interface WalkDirectoryWithFilesResult {
 export interface IBackendAPI {
 	ping: () => Promise<string>;
 	log: (level: string, ...args: unknown[]) => void;
-	saveFile(defaultFilename: string, contentBase64: string, filters: Array<FileFilter>): Promise<void>;
+	saveFile(defaultFilename: string, contentBase64: string, additionalFilters?: Array<FileFilter>): Promise<void>;
 	openURL(url: string): void;
-	openFiles(allowMultiple: boolean, filters: Array<FileFilter>): Promise<PathInfo[]>;
+	openFiles(allowMultiple: boolean, additionalFilters?: Array<FileFilter>): Promise<PathInfo[]>;
 	openDirectoryWithFiles(maxFiles: number): Promise<WalkDirectoryWithFilesResult>;
 }
