@@ -75,10 +75,13 @@ func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (
 		}, nil
 	}
 
+	// Root dirPath may be relative and may start with "." (e.g. ".local/share").
+	// Resolve path using filepath.Abs relative to the current working directory.
 	absRoot, err := filepath.Abs(dirPath)
 	if err == nil {
 		dirPath = absRoot
 	}
+	dirPath = filepath.Clean(dirPath)
 
 	type dirNode struct {
 		absPath string // absolute path to this directory
@@ -128,18 +131,24 @@ func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (
 			continue
 		}
 
-		// Split into files and dirs; we always attach files from this directory
-		// before recursing into its subdirectories.
+		// Split into files and dirs, ignoring hidden entries (names starting with ".").
+		// We attach files from this directory before recursing into its subdirectories.
 		fileEntries := make([]os.DirEntry, 0, len(entries))
 		dirEntries := make([]os.DirEntry, 0, len(entries))
 		for _, e := range entries {
+			name := e.Name()
+
+			// Skip dot *files* and dot *dirs* entirely.
+			if strings.HasPrefix(name, ".") {
+				continue
+			}
+
 			if e.IsDir() {
 				dirEntries = append(dirEntries, e)
 			} else {
 				fileEntries = append(fileEntries, e)
 			}
 		}
-
 		// Process files first.
 		filesAddedHere := 0
 
@@ -178,11 +187,6 @@ func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (
 			}
 
 			pInfo := getPathInfoFromFileInfo(fullPath, info)
-
-			if strings.HasPrefix(pInfo.Name, ".") {
-				// Skip dotfiles, but NOT dot-directories (they are in dirEntries).
-				continue
-			}
 
 			files = append(files, pInfo)
 			totalSize += pInfo.Size
@@ -238,7 +242,14 @@ func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (
 			slog.Debug("error while summarizing overflow directory", "path", node.absPath, "error", err)
 			// Leave itemCount = 0 as "unknown".
 		} else {
-			itemCount = len(entries)
+			for _, e := range entries {
+				name := e.Name()
+				if strings.HasPrefix(name, ".") {
+					// Skip dot files and dot dirs from the overflow count as well.
+					continue
+				}
+				itemCount++
+			}
 		}
 
 		overflowDirs = append(overflowDirs, DirectoryOverflowInfo{

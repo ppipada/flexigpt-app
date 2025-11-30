@@ -18,12 +18,15 @@
   - [x] web url that is just html fetch
   - [x] url modal needs styling
 
+  - [x] pdf and associated processing in one place. Integrate a pdf text extractor.
+  - [x] need to allow dirs too with some good boundaries.
+  - [x] for attachments, need to detect mime and type of file etc is backend and ui should use it rather than infering using extension.
+  - [x] Skip dot dirs inside the selected dir
+
   - [ ] get visible text from html needs to be implemented and a new mode raw vs visible text needs to be added.
-  - [ ] pdf and associated processing in one place, doc formats can be in one place (no priority). Integrate a pdf text extractor.
+  - [ ] doc formats can be in one place (no priority)
   - [ ] specialized urls like github/gitlab pr's
   - [ ] local git diff/commit history/etc attachments
-  - [ ] need to allow dirs too with some good boundaries.
-  - [ ] for attachments, need to detect mime and type of file etc is backend and ui should use it rather than infering using extension.
 
 - [ ] tool enhancements
 

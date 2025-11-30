@@ -15,8 +15,8 @@ import { useMenuStore } from '@ariakit/react';
 import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
-import type { AttachmentMode } from '@/spec/attachment';
-import type { PathInfo, WalkDirectoryWithFilesResult } from '@/spec/backend';
+import type { Attachment, AttachmentMode } from '@/spec/attachment';
+import type { DirectoryAttachmentsResult } from '@/spec/backend';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -350,9 +350,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	}));
 
 	const handleAttachFiles = async () => {
-		let results: PathInfo[];
+		let results: Attachment[];
 		try {
-			results = await backendAPI.openFiles(true);
+			results = await backendAPI.openMultipleFilesAsAttachments(true);
 		} catch {
 			return;
 		}
@@ -363,11 +363,12 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			const existing = new Set(prev.map(editorAttachmentKey));
 			const next: EditorAttachment[] = [...prev];
 
-			for (const info of results) {
-				const trimmed = info.path.trim();
-				if (!trimmed || !info.exists || info.isDir) continue;
-
-				const att = buildEditorAttachmentForLocalPath(trimmed, info.size);
+			for (const r of results) {
+				const att = buildEditorAttachmentForLocalPath(r);
+				if (!att) {
+					console.error('invalid attachment result');
+					continue;
+				}
 				const key = editorAttachmentKey(att);
 				if (existing.has(key)) continue;
 				existing.add(key);
@@ -379,9 +380,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	};
 
 	const handleAttachDirectory = async () => {
-		let result: WalkDirectoryWithFilesResult;
+		let result: DirectoryAttachmentsResult;
 		try {
-			result = await backendAPI.openDirectoryWithFiles(MAX_FILES_PER_DIRECTORY);
+			result = await backendAPI.openDirectoryAsAttachments(MAX_FILES_PER_DIRECTORY);
 		} catch {
 			// Backend canceled or errored; nothing to do.
 			return;
@@ -390,9 +391,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 		if (!result || !result.dirPath) return;
 
-		const { dirPath, files, overflowDirs } = result;
+		const { dirPath, attachments, overflowDirs } = result;
 		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-		if ((!files || files.length === 0) && (!overflowDirs || overflowDirs.length === 0)) {
+		if ((!attachments || attachments.length === 0) && (!overflowDirs || overflowDirs.length === 0)) {
 			// Nothing readable / allowed in this folder.
 			return;
 		}
@@ -418,11 +419,12 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			const added: EditorAttachment[] = [];
 
 			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-			for (const info of files ?? []) {
-				const trimmed = info.path.trim();
-				if (!trimmed || !info.exists || info.isDir) continue;
-
-				const att = buildEditorAttachmentForLocalPath(trimmed, info.size);
+			for (const r of attachments ?? []) {
+				const att = buildEditorAttachmentForLocalPath(r);
+				if (!att) {
+					console.error('invalid attachment result');
+					continue;
+				}
 				const key = editorAttachmentKey(att);
 
 				// Skip duplicates within this folder selection

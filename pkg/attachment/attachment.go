@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 )
 
 type ContentBlockKind string
@@ -79,6 +81,110 @@ type Attachment struct {
 	ImageRef   *ImageRef   `json:"imageRef,omitempty"`
 	URLRef     *URLRef     `json:"urlRef,omitempty"`
 	GenericRef *GenericRef `json:"genericRef,omitempty"`
+}
+
+type DirectoryAttachmentsResult struct {
+	DirPath      string                           `json:"dirPath"`
+	Attachments  []Attachment                     `json:"attachments"`  // included attachments (flattened)
+	OverflowDirs []fileutil.DirectoryOverflowInfo `json:"overflowDirs"` // directories not fully included
+	MaxFiles     int                              `json:"maxFiles"`     // max number of files returned (after clamping)
+	TotalSize    int64                            `json:"totalSize"`    // sum of Files[i].Size
+	HasMore      bool                             `json:"hasMore"`      // true if not all content included
+}
+
+// BuildAttachmentForFile builds an Attachment for a local filesystem path.
+// It inspects the MIME type / extension and chooses an appropriate
+// AttachmentKind, default Mode, and AvailableModes.
+// The returned attachment is fully populated via PopulateRef().
+func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
+	if pathInfo == nil {
+		return nil, errors.New("invalid input pathinfo")
+	}
+
+	if !pathInfo.Exists {
+		return nil, fmt.Errorf("file does not exist: %s", pathInfo.Path)
+	}
+	if pathInfo.IsDir {
+		return nil, fmt.Errorf("path %q is a directory; expected file", pathInfo.Path)
+	}
+
+	mimeType, extMode, err := fileutil.MIMEForLocalFile(pathInfo.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	baseName := filepath.Base(pathInfo.Path)
+
+	switch extMode {
+	case fileutil.ExtensionModeImage:
+		// Treat images as dedicated image attachments.
+		att := &Attachment{
+			Kind:  AttachmentImage,
+			Label: baseName,
+			Mode:  AttachmentModeImage,
+			AvailableModes: []AttachmentMode{
+				AttachmentModeImage,
+			},
+			ImageRef: &ImageRef{
+				ImageInfo: fileutil.ImageInfo{
+					PathInfo: *pathInfo,
+				},
+			},
+		}
+		if err := att.PopulateRef(); err != nil {
+			return nil, err
+		}
+		return att, nil
+
+	case fileutil.ExtensionModeText:
+		// Source code / markdown / text files: send as text by default.
+		att := &Attachment{
+			Kind:  AttachmentFile,
+			Label: baseName,
+			Mode:  AttachmentModeText,
+			AvailableModes: []AttachmentMode{
+				AttachmentModeText,
+			},
+			FileRef: &FileRef{
+				PathInfo: *pathInfo,
+			},
+		}
+		// No need for Populate ref here as pathinfo is fully available from before.
+		return att, nil
+
+	case fileutil.ExtensionModeDocument:
+		// Documents (PDF, Office, etc.).
+		// As of now APIs and we internally only support PDF docs.
+		// PDFs can be treated as text (with extraction) or as original file.
+		if mimeType != fileutil.MIMEApplicationPDF {
+			return buildUnreadableFileAttachment(*pathInfo), nil
+		}
+
+		att := &Attachment{
+			Kind:  AttachmentFile,
+			Label: baseName,
+			Mode:  AttachmentModeText,
+			AvailableModes: []AttachmentMode{
+				AttachmentModeText,
+				AttachmentModeFile,
+			},
+			FileRef: &FileRef{
+				PathInfo: *pathInfo,
+			},
+		}
+		// No need for Populate ref here as pathinfo is fully available from before.
+		return att, nil
+
+	case fileutil.ExtensionModeDefault:
+		return buildUnreadableFileAttachment(*pathInfo), nil
+
+	default:
+		// Unknown / binary. We still keep it as a file attachment but mark
+		// it not-readable so BuildContentBlock produces a short placeholder
+		// instead of trying to read it.
+		return buildUnreadableFileAttachment(*pathInfo), nil
+
+	}
 }
 
 // BuildContentBlocks converts high-level attachments (file paths, URLs, etc.)
@@ -256,4 +362,18 @@ func (att *Attachment) FormatAsDisplayName() string {
 		return fmt.Sprintf("[Attachment: %s]", label)
 	}
 	return fmt.Sprintf("[Attachment: %s — %s]", label, detail)
+}
+
+func buildUnreadableFileAttachment(pathInfo fileutil.PathInfo) *Attachment {
+	return &Attachment{
+		Kind:  AttachmentFile,
+		Label: filepath.Base(pathInfo.Path),
+		Mode:  AttachmentModeNotReadable,
+		AvailableModes: []AttachmentMode{
+			AttachmentModeNotReadable,
+		},
+		FileRef: &FileRef{
+			PathInfo: pathInfo,
+		},
+	}
 }

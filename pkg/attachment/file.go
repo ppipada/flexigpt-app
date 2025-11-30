@@ -75,7 +75,6 @@ func buildBlocksForLocalFile(ctx context.Context, att *Attachment, mode Attachme
 			// As of now non pdf files are not supported to be attached as b64 files in any APIs.
 			// But, as the call is reached here, we are still sending the content back as b64 content.
 			// As APIs start supporting other file types, and UI and fetch api handles things this will be seameless.
-
 			base64Data, err := fileutil.ReadFile(path, fileutil.ReadEncodingBinary)
 			if err != nil {
 				return nil, err

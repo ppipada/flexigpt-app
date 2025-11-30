@@ -52,23 +52,32 @@ export const ATTACHMENT_MODE_DESC: Record<AttachmentMode, string> = {
 
 export interface AttachmentFileRef {
 	path: string;
-	exists?: boolean;
-	sizeBytes?: number;
+	name: string;
+	exists: boolean;
+	isDir: boolean;
+	size?: number;
+	// Go type: time
 	modTime?: Date;
 }
 
 export interface AttachmentImageRef {
 	path: string;
-	exists?: boolean;
+	name: string;
+	exists: boolean;
+	isDir: boolean;
+	size?: number;
+	// Go type: time
+	modTime?: Date;
+
 	width?: number;
 	height?: number;
 	format?: string;
-	sizeBytes?: number;
-	modTime?: Date;
+	mimeType?: string;
 }
 
 export interface AttachmentURLRef {
 	url: string;
+	normalized?: string;
 }
 
 export interface AttachmentGenericRef {

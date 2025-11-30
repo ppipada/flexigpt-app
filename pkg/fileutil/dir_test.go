@@ -167,7 +167,7 @@ func TestWalkDirectoryWithFiles_CoreScenarios(t *testing.T) {
 					t.Errorf("expected HasMore=false, got true")
 				}
 				names := namesFromPathInfos(res.Files)
-				wantNames := []string{"ignored.txt", "visible1.txt", "visible2.txt"}
+				wantNames := []string{"visible1.txt", "visible2.txt"}
 				if len(names) != len(wantNames) {
 					t.Fatalf("expected %d visible files, got %d (%v)", len(wantNames), len(names), names)
 				}
@@ -186,7 +186,7 @@ func TestWalkDirectoryWithFiles_CoreScenarios(t *testing.T) {
 					t.Errorf("expected 0 overflow dirs, got %d", len(res.OverflowDirs))
 				}
 				// TotalSize should be sum of included files only.
-				if res.TotalSize != int64(20+30+50) {
+				if res.TotalSize != int64(30+50) {
 					t.Errorf("expected TotalSize=100, got %d", res.TotalSize)
 				}
 			},

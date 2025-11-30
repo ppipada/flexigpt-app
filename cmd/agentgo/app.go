@@ -9,7 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
+	"github.com/ppipada/flexigpt-app/pkg/middleware"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/adrg/xdg"
@@ -138,6 +140,36 @@ func (a *App) SaveFile(
 	contentBase64 string,
 	additionalFilters []fileutil.FileFilter,
 ) error {
+	_, err := middleware.WithRecoveryResp(func() (struct{}, error) {
+		return struct{}{}, a.saveFile(defaultFilename, contentBase64, additionalFilters)
+	})
+	return err
+}
+
+// OpenMultipleFilesAsAttachments opens a native file dialog and returns selected file paths.
+// When allowMultiple is true, users can pick multiple files; otherwise at most one path is returned.
+func (a *App) OpenMultipleFilesAsAttachments(
+	allowMultiple bool,
+	additionalFilters []fileutil.FileFilter,
+) (attachments []attachment.Attachment, err error) {
+	return middleware.WithRecoveryResp(func() ([]attachment.Attachment, error) {
+		return a.openMultipleFilesAsAttachments(allowMultiple, additionalFilters)
+	})
+}
+
+// OpenDirectoryAsAttachments opens a single directory pick dialog and then does WalkDirectoryWithFiles for fetching max
+// no of files.
+func (a *App) OpenDirectoryAsAttachments(maxFiles int) (*attachment.DirectoryAttachmentsResult, error) {
+	return middleware.WithRecoveryResp(func() (*attachment.DirectoryAttachmentsResult, error) {
+		return a.openDirectoryAsAttachments(maxFiles)
+	})
+}
+
+func (a *App) saveFile(
+	defaultFilename string,
+	contentBase64 string,
+	additionalFilters []fileutil.FileFilter,
+) error {
 	if a.ctx == nil {
 		return errors.New("context is not initialized")
 	}
@@ -166,12 +198,10 @@ func (a *App) SaveFile(
 	return os.WriteFile(savePath, contentBytes, 0o600)
 }
 
-// OpenFiles opens a native file dialog and returns selected file paths.
-// When allowMultiple is true, users can pick multiple files; otherwise at most one path is returned.
-func (a *App) OpenFiles(
+func (a *App) openMultipleFilesAsAttachments(
 	allowMultiple bool,
 	additionalFilters []fileutil.FileFilter,
-) (pathInfos []fileutil.PathInfo, err error) {
+) (attachments []attachment.Attachment, err error) {
 	if a.ctx == nil {
 		return nil, errors.New("context is not initialized")
 	}
@@ -197,29 +227,35 @@ func (a *App) OpenFiles(
 		return nil, err
 	}
 	if len(paths) == 0 {
-		return []fileutil.PathInfo{}, nil
+		return []attachment.Attachment{}, nil
 	}
 
-	pathInfos = make([]fileutil.PathInfo, 0, len(paths))
+	attachments = make([]attachment.Attachment, 0, len(paths))
 	for _, p := range paths {
-		info, err := fileutil.StatPath(p)
-		if err != nil {
-			slog.Debug("stat error for file", "path", p, "error", err)
+		path := strings.TrimSpace(p)
+		if path == "" {
+			slog.Debug("got empty path")
 			continue
 		}
-		if info.IsDir {
-			// Folder selection should go through OpenDirectoryWithFiles.
+		// Basic sanity + existence checks.
+		info, err := fileutil.StatPath(path)
+		if err != nil || info == nil {
+			slog.Debug("failed to build attachment for file", "path", p, "error", "stat failed")
 			continue
 		}
-		pathInfos = append(pathInfos, *info)
+
+		att, attErr := attachment.BuildAttachmentForFile(info)
+		if attErr != nil || att == nil {
+			slog.Debug("failed to build attachment for file", "path", p, "error", attErr)
+			continue
+		}
+		attachments = append(attachments, *att)
 	}
 
-	return pathInfos, nil
+	return attachments, nil
 }
 
-// OpenDirectoryWithFiles opens a single directory pick dialog and then does WalkDirectoryWithFiles for fetching max no
-// of files.
-func (a *App) OpenDirectoryWithFiles(maxFiles int) (*fileutil.WalkDirectoryWithFilesResult, error) {
+func (a *App) openDirectoryAsAttachments(maxFiles int) (*attachment.DirectoryAttachmentsResult, error) {
 	if a.ctx == nil {
 		return nil, errors.New("context is not initialized")
 	}
@@ -233,7 +269,30 @@ func (a *App) OpenDirectoryWithFiles(maxFiles int) (*fileutil.WalkDirectoryWithF
 	if err != nil {
 		return nil, err
 	}
-	return fileutil.WalkDirectoryWithFiles(a.ctx, dirPath, maxFiles)
+	walkRes, err := fileutil.WalkDirectoryWithFiles(a.ctx, dirPath, maxFiles)
+	if err != nil {
+		return nil, err
+	}
+	out := &attachment.DirectoryAttachmentsResult{
+		DirPath:      walkRes.DirPath,
+		Attachments:  make([]attachment.Attachment, 0, len(walkRes.Files)),
+		OverflowDirs: walkRes.OverflowDirs,
+		MaxFiles:     walkRes.MaxFiles,
+		TotalSize:    walkRes.TotalSize,
+		HasMore:      walkRes.HasMore,
+	}
+	for _, pi := range walkRes.Files {
+		att, buildErr := attachment.BuildAttachmentForFile(&pi)
+		if buildErr != nil || att == nil {
+			slog.Debug("failed to build attachment for directory file",
+				"path", pi.Path,
+				"error", buildErr,
+			)
+			continue
+		}
+		out.Attachments = append(out.Attachments, *att)
+	}
+	return out, nil
 }
 
 func (a *App) initManagers() { //nolint:unused // Called from main.

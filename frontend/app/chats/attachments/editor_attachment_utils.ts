@@ -1,4 +1,12 @@
-import { type Attachment, AttachmentKind, AttachmentMode } from '@/spec/attachment';
+import {
+	type Attachment,
+	type AttachmentFileRef,
+	type AttachmentGenericRef,
+	type AttachmentImageRef,
+	AttachmentKind,
+	AttachmentMode,
+	type AttachmentURLRef,
+} from '@/spec/attachment';
 import type { DirectoryOverflowInfo } from '@/spec/backend';
 
 /**
@@ -37,37 +45,24 @@ export enum AttachmentErrorReason {
 	Unreadable = 'unreadable',
 }
 
-interface EditorFileAttachmentRef {
-	path: string;
-	sizeBytes?: number;
-}
-
-interface EditorImageAttachmentRef {
-	path: string;
-	sizeBytes?: number;
-}
-
-interface EditorURLAttachmentRef {
-	url: string;
-}
-
 // EditorAttachment is the composer-side shape; it mirrors the backend
 // Attachment but is limited to the fields we need in the UI.
-export interface EditorAttachment {
+export type EditorAttachment = {
 	kind: AttachmentKind;
 	label: string;
 
 	mode: AttachmentMode;
 	availableModes: AttachmentMode[];
 
-	fileRef?: EditorFileAttachmentRef;
-	imageRef?: EditorImageAttachmentRef;
-	urlRef?: EditorURLAttachmentRef;
+	fileRef?: AttachmentFileRef;
+	imageRef?: AttachmentImageRef;
+	urlRef?: AttachmentURLRef;
+	genericRef?: AttachmentGenericRef;
 
 	// Error-only fields (never sent to backend as real attachments)
 	isError?: boolean;
 	errorReason?: AttachmentErrorReason;
-}
+};
 
 // Convert editor attachment to API attachment payload.
 export function editorAttachmentToConversation(att: EditorAttachment): Attachment {
@@ -76,9 +71,10 @@ export function editorAttachmentToConversation(att: EditorAttachment): Attachmen
 		label: att.label,
 		mode: att.mode,
 		availableModes: att.availableModes,
-		fileRef: att.fileRef ? { path: att.fileRef.path } : undefined,
-		imageRef: att.imageRef ? { path: att.imageRef.path } : undefined,
-		urlRef: att.urlRef ? { url: att.urlRef.url } : undefined,
+		fileRef: att.fileRef,
+		imageRef: att.imageRef,
+		urlRef: att.urlRef,
+		genericRef: att.genericRef,
 	};
 }
 
@@ -111,21 +107,16 @@ export function getEditorAttachmentPath(att: EditorAttachment): string {
 	return '';
 }
 
-function buildErrorAttachmentForLocalPath(
-	path: string,
-	sizeBytes: number | undefined,
-	reason: AttachmentErrorReason
-): EditorAttachment {
-	const trimmed = path.trim();
-	const label = trimmed.split(/[\\/]/).pop() ?? trimmed;
-
-	// Unknown/binary: mark as not readable, no dropdown.
+function buildErrorAttachmentForLocalPath(att: Attachment, reason: AttachmentErrorReason): EditorAttachment {
 	return {
 		kind: AttachmentKind.file,
-		label,
+		label: att.label,
 		mode: AttachmentMode.notReadable,
 		availableModes: [AttachmentMode.notReadable],
-		fileRef: { path: trimmed, sizeBytes: sizeBytes },
+		fileRef: att.fileRef,
+		imageRef: att.imageRef,
+		urlRef: att.urlRef,
+		genericRef: att.genericRef,
 		isError: true,
 		errorReason: reason,
 	};
@@ -135,83 +126,35 @@ function buildErrorAttachmentForLocalPath(
  * Classify a local file into an EditorAttachment with smart default mode
  * and allowed modes based on extension.
  */
-export function buildEditorAttachmentForLocalPath(path: string, sizeBytes?: number): EditorAttachment {
-	const trimmed = path.trim();
+export function buildEditorAttachmentForLocalPath(att: Attachment): EditorAttachment | undefined {
+	if (!att.fileRef && !att.imageRef) {
+		return undefined;
+	}
+	let sizeBytes = 0;
+	if (att.fileRef && att.fileRef.size && att.fileRef.size > 0) {
+		sizeBytes = att.fileRef.size;
+	} else if (att.imageRef && att.imageRef.size && att.imageRef.size > 0) {
+		sizeBytes = att.imageRef.size;
+	}
 
 	if (typeof sizeBytes === 'number' && sizeBytes > MAX_SINGLE_ATTACHMENT_BYTES) {
-		return buildErrorAttachmentForLocalPath(trimmed, sizeBytes, AttachmentErrorReason.TooLargeSingle);
+		return buildErrorAttachmentForLocalPath(att, AttachmentErrorReason.TooLargeSingle);
 	}
 
-	const label = trimmed.split(/[\\/]/).pop() ?? trimmed;
-	const lower = trimmed.toLowerCase();
-	const ext = lower.split('.').pop() ?? '';
-
-	const imageExts = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg']);
-	const textLikeExts = new Set([
-		'txt',
-		'md',
-		'markdown',
-		'log',
-		'json',
-		'yaml',
-		'yml',
-		'toml',
-		'js',
-		'ts',
-		'tsx',
-		'jsx',
-		'py',
-		'go',
-		'rs',
-		'java',
-		'c',
-		'cpp',
-		'h',
-		'hpp',
-		'cs',
-		'rb',
-		'php',
-		'html',
-		'css',
-		'scss',
-		'less',
-		'sql',
-	]);
-	const docExts = new Set(['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'odt', 'ods']);
-
-	if (imageExts.has(ext)) {
-		return {
-			kind: AttachmentKind.image,
-			label,
-			mode: AttachmentMode.image,
-			availableModes: [AttachmentMode.image],
-			imageRef: { path: trimmed, sizeBytes: sizeBytes },
-		};
+	if (att.mode && att.mode == AttachmentMode.notReadable) {
+		return buildErrorAttachmentForLocalPath(att, AttachmentErrorReason.Unreadable);
 	}
-
-	if (textLikeExts.has(ext)) {
-		return {
-			kind: AttachmentKind.file,
-			label,
-			mode: AttachmentMode.text,
-			availableModes: [AttachmentMode.text],
-			fileRef: { path: trimmed, sizeBytes: sizeBytes },
-		};
-	}
-
-	if (docExts.has(ext) && ext === 'pdf') {
-		// We dont support  extractors other than pdf as of now.
-		return {
-			kind: AttachmentKind.file,
-			label,
-			mode: AttachmentMode.file,
-			availableModes: [AttachmentMode.text, AttachmentMode.file],
-			fileRef: { path: trimmed, sizeBytes: sizeBytes },
-		};
-	}
-
-	// Unknown/binary: mark as not readable, no dropdown.
-	return buildErrorAttachmentForLocalPath(path, sizeBytes, AttachmentErrorReason.Unreadable);
+	return {
+		kind: att.kind,
+		label: att.label,
+		mode: att.mode ?? AttachmentMode.notReadable,
+		availableModes: att.availableModes ?? [AttachmentMode.notReadable],
+		fileRef: att.fileRef,
+		imageRef: att.imageRef,
+		urlRef: att.urlRef,
+		genericRef: att.genericRef,
+		isError: false,
+	};
 }
 
 /**
@@ -266,10 +209,10 @@ export function getAttachmentErrorMessage(att: EditorAttachment): string | null 
 	if (!att.isError || !att.errorReason) return null;
 	const limit = formatBytes(MAX_SINGLE_ATTACHMENT_BYTES);
 	let size = 0;
-	if (att.fileRef && att.fileRef.sizeBytes && att.fileRef.sizeBytes > 0) {
-		size = att.fileRef.sizeBytes;
-	} else if (att.imageRef && att.imageRef.sizeBytes && att.imageRef.sizeBytes > 0) {
-		size = att.imageRef.sizeBytes;
+	if (att.fileRef && att.fileRef.size && att.fileRef.size > 0) {
+		size = att.fileRef.size;
+	} else if (att.imageRef && att.imageRef.size && att.imageRef.size > 0) {
+		size = att.imageRef.size;
 	}
 	if (size <= 0) {
 		return null;

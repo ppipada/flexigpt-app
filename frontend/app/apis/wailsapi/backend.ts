@@ -1,10 +1,10 @@
 import { sprintf } from 'sprintf-js';
 
-import type { FileFilter } from '@/spec/attachment';
-import type { IBackendAPI, PathInfo, WalkDirectoryWithFilesResult } from '@/spec/backend';
+import type { Attachment, FileFilter } from '@/spec/attachment';
+import type { DirectoryAttachmentsResult, IBackendAPI } from '@/spec/backend';
 import type { ILogger } from '@/spec/logger';
 
-import { OpenDirectoryWithFiles, OpenFiles, Ping, SaveFile } from '@/apis/wailsjs/go/main/App';
+import { OpenDirectoryAsAttachments, OpenMultipleFilesAsAttachments, Ping, SaveFile } from '@/apis/wailsjs/go/main/App';
 import { BrowserOpenURL, LogDebug, LogError, LogInfo, LogWarning } from '@/apis/wailsjs/runtime/runtime';
 
 function formatMessage(args: unknown[]): string {
@@ -133,27 +133,30 @@ export class WailsBackendAPI implements IBackendAPI {
 		BrowserOpenURL(url);
 	}
 
-	async openFiles(allowMultiple: boolean, additionalFilters?: Array<FileFilter>): Promise<PathInfo[]> {
+	async openMultipleFilesAsAttachments(
+		allowMultiple: boolean,
+		additionalFilters?: Array<FileFilter>
+	): Promise<Attachment[]> {
 		try {
-			const paths = await OpenFiles(allowMultiple, additionalFilters ?? []);
+			const attachments = await OpenMultipleFilesAsAttachments(allowMultiple, additionalFilters ?? []);
 			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-			return paths ?? [];
+			return (attachments as Attachment[]) ?? [];
 		} catch (err) {
 			console.error('Error opening file dialog:', err);
 			return [];
 		}
 	}
 
-	async openDirectoryWithFiles(maxFiles: number): Promise<WalkDirectoryWithFilesResult> {
+	async openDirectoryAsAttachments(maxFiles: number): Promise<DirectoryAttachmentsResult> {
 		try {
-			const dirResults = await OpenDirectoryWithFiles(maxFiles);
+			const dirResults = await OpenDirectoryAsAttachments(maxFiles);
 			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-			return (dirResults as WalkDirectoryWithFilesResult) ?? [];
+			return (dirResults as DirectoryAttachmentsResult) ?? [];
 		} catch (err) {
 			console.error('Error opening dir dialog:', err);
-			const res: WalkDirectoryWithFilesResult = {
+			const res: DirectoryAttachmentsResult = {
 				dirPath: '',
-				files: [],
+				attachments: [],
 				overflowDirs: [],
 				maxFiles: 0,
 				totalSize: 0,

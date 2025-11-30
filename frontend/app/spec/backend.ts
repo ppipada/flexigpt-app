@@ -1,14 +1,4 @@
-import type { FileFilter } from '@/spec/attachment';
-
-export interface PathInfo {
-	path: string;
-	name: string;
-	exists: boolean;
-	isDir: boolean;
-	size?: number;
-	// Go type: time
-	modTime?: Date;
-}
+import type { Attachment, FileFilter } from '@/spec/attachment';
 
 /**
  * @public
@@ -20,9 +10,9 @@ export interface DirectoryOverflowInfo {
 	partial: boolean;
 }
 
-export interface WalkDirectoryWithFilesResult {
+export interface DirectoryAttachmentsResult {
 	dirPath: string;
-	files: PathInfo[];
+	attachments: Attachment[];
 	overflowDirs: DirectoryOverflowInfo[];
 	maxFiles: number;
 	totalSize: number;
@@ -34,6 +24,6 @@ export interface IBackendAPI {
 	log: (level: string, ...args: unknown[]) => void;
 	saveFile(defaultFilename: string, contentBase64: string, additionalFilters?: Array<FileFilter>): Promise<void>;
 	openURL(url: string): void;
-	openFiles(allowMultiple: boolean, additionalFilters?: Array<FileFilter>): Promise<PathInfo[]>;
-	openDirectoryWithFiles(maxFiles: number): Promise<WalkDirectoryWithFilesResult>;
+	openMultipleFilesAsAttachments(allowMultiple: boolean, additionalFilters?: Array<FileFilter>): Promise<Attachment[]>;
+	openDirectoryAsAttachments(maxFiles: number): Promise<DirectoryAttachmentsResult>;
 }

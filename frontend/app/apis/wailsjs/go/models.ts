@@ -160,6 +160,46 @@ export namespace attachment {
 		    return a;
 		}
 	}
+	export class DirectoryAttachmentsResult {
+	    dirPath: string;
+	    attachments: Attachment[];
+	    overflowDirs: fileutil.DirectoryOverflowInfo[];
+	    maxFiles: number;
+	    totalSize: number;
+	    hasMore: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new DirectoryAttachmentsResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.dirPath = source["dirPath"];
+	        this.attachments = this.convertValues(source["attachments"], Attachment);
+	        this.overflowDirs = this.convertValues(source["overflowDirs"], fileutil.DirectoryOverflowInfo);
+	        this.maxFiles = source["maxFiles"];
+	        this.totalSize = source["totalSize"];
+	        this.hasMore = source["hasMore"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	
 	
 	
@@ -199,87 +239,6 @@ export namespace fileutil {
 	        this.DisplayName = source["DisplayName"];
 	        this.Extensions = source["Extensions"];
 	    }
-	}
-	export class PathInfo {
-	    path: string;
-	    name: string;
-	    exists: boolean;
-	    isDir: boolean;
-	    size?: number;
-	    // Go type: time
-	    modTime?: any;
-	
-	    static createFrom(source: any = {}) {
-	        return new PathInfo(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.path = source["path"];
-	        this.name = source["name"];
-	        this.exists = source["exists"];
-	        this.isDir = source["isDir"];
-	        this.size = source["size"];
-	        this.modTime = this.convertValues(source["modTime"], null);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class WalkDirectoryWithFilesResult {
-	    dirPath: string;
-	    files: PathInfo[];
-	    overflowDirs: DirectoryOverflowInfo[];
-	    maxFiles: number;
-	    totalSize: number;
-	    hasMore: boolean;
-	
-	    static createFrom(source: any = {}) {
-	        return new WalkDirectoryWithFilesResult(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.dirPath = source["dirPath"];
-	        this.files = this.convertValues(source["files"], PathInfo);
-	        this.overflowDirs = this.convertValues(source["overflowDirs"], DirectoryOverflowInfo);
-	        this.maxFiles = source["maxFiles"];
-	        this.totalSize = source["totalSize"];
-	        this.hasMore = source["hasMore"];
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 
 }
