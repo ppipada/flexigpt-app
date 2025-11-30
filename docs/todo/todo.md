@@ -23,6 +23,7 @@
   - [x] for attachments, need to detect mime and type of file etc is backend and ui should use it rather than infering using extension.
   - [x] Skip dot dirs inside the selected dir
 
+  - [ ] attachments from prev turns also need to be used. they may need to be freshly hydrated again, but need to be used.
   - [ ] get visible text from html needs to be implemented and a new mode raw vs visible text needs to be added.
   - [ ] doc formats can be in one place (no priority)
   - [ ] specialized urls like github/gitlab pr's
