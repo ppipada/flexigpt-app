@@ -66,6 +66,15 @@ const (
 	ExtMod      FileExt = ".mod"
 	ExtSum      FileExt = ".sum"
 	ExtJSONL    FileExt = ".jsonl"
+	ExtShell    FileExt = ".sh"
+	ExtSWIFT    FileExt = ".swift"
+	ExtM        FileExt = ".m"
+	ExtKT       FileExt = ".kt"
+	ExtPL       FileExt = ".pl"
+	ExtSCALA    FileExt = ".scala"
+	ExtHS       FileExt = ".hs"
+	ExtLUA      FileExt = ".lua"
+	ExtDART     FileExt = ".dart"
 
 	ExtJPG  FileExt = ".jpg"
 	ExtJPEG FileExt = ".jpeg"
@@ -187,6 +196,15 @@ var ExtensionToMIMEType = map[FileExt]MIMEType{
 	ExtMod:      MIMETextPlain,
 	ExtSum:      MIMETextPlain,
 	ExtJSONL:    MIMETextPlain,
+	ExtShell:    MIMETextPlain,
+	ExtSWIFT:    MIMETextPlain,
+	ExtM:        MIMETextPlain,
+	ExtKT:       MIMETextPlain,
+	ExtPL:       MIMETextPlain,
+	ExtSCALA:    MIMETextPlain,
+	ExtHS:       MIMETextPlain,
+	ExtLUA:      MIMETextPlain,
+	ExtDART:     MIMETextPlain,
 
 	ExtJPG:  MIMEImageJPEG,
 	ExtJPEG: MIMEImageJPEG,
