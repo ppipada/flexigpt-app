@@ -170,18 +170,22 @@ function isTemplateVarNode(n: unknown): n is TemplateVariableElementNode {
 }
 
 export function insertPlainTextAsSingleBlock(ed: ReturnType<typeof usePlateEditor>, text: string, tabSize = 2) {
-	if (!ed) {
-		return;
-	}
+	if (!ed) return;
 	const editor = ed as PlateEditor;
-	const normalized = text.replace(/\r\n?/g, '\n');
-	const lines = normalized.split('\n').map(l => expandTabsToSpaces(l, tabSize));
 
-	editor.tf.insertText(lines[0] ?? '');
-	for (let i = 1; i < lines.length; i++) {
-		editor.tf.insertSoftBreak();
-		editor.tf.insertText(lines[i]);
-	}
+	// Normalize line endings
+	const normalized = text.replace(/\r\n?/g, '\n');
+
+	// Expand tabs, but keep everything as one string
+	const expanded = normalized
+		.split('\n')
+		.map(line => expandTabsToSpaces(line, tabSize))
+		.join('\n');
+
+	// Single transform instead of O(number of lines)
+	editor.tf.withoutNormalizing(() => {
+		editor.tf.insertText(expanded);
+	});
 }
 
 export function hasNonEmptyUserText(ed: PlateEditor | null | undefined): boolean {

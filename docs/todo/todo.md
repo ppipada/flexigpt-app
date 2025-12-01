@@ -5,6 +5,7 @@
 - [x] edit message should fall to the editor with attachments/tools so that resend is consistent
 - [ ] render images and attachments in msg ui
 - [x] attachment tools buttons and shortcuts etc dropdowns ui
+- [x] slow paste handling
 - [ ] system prompt delete is via sys dialog. need it to be a modal
 - [ ] need info to user on how the url or any attachment for that matter was processed. like was it finally done as text or link or bytes or what.
 - [ ] request details are not very useful as of now in the ui. need what was actually sent rather than out version of completion data. may empty out some data things, but others can be given. Most probably need to check response too.
