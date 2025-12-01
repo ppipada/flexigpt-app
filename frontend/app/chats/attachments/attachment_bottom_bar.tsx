@@ -15,9 +15,9 @@ import { useTools } from '@/hooks/use_tool';
 
 import { promptStoreAPI, toolStoreAPI } from '@/apis/baseapi';
 
+import { CommandTipsMenu } from '@/chats/attachments/attachment_command_tips_menu';
 import { getToolNodesWithPath, insertToolSelectionNode, toolIdentityKey } from '@/chats/attachments/tool_editor_utils';
 import { UrlAttachmentModal } from '@/chats/attachments/url_attachment_modal';
-import { CommandTipsBar } from '@/chats/chat_command_tips_bar';
 import { insertTemplateSelectionNode } from '@/chats/templates/template_editor_utils';
 
 interface AttachmentBottomBarProps {
@@ -302,7 +302,7 @@ export function AttachmentBottomBar({
 
 				{/* Right: keyboard shortcuts & tips menus */}
 				<div className="ml-auto flex items-center gap-1">
-					<CommandTipsBar shortcutConfig={shortcutConfig} />
+					<CommandTipsMenu shortcutConfig={shortcutConfig} />
 				</div>
 			</div>
 			{/* URL attachment dialog */}

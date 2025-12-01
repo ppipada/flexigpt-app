@@ -15,7 +15,7 @@ const tipsText: Record<TipKey, string> = {
 		'Collapse to text decouples removes the system prompts, vars, tools. The current user block with placeholders for vars is inserted as plain text',
 };
 
-interface CommandTipsBarProps {
+interface CommandTipsMenuProps {
 	shortcutConfig: ShortcutConfig;
 }
 
@@ -26,7 +26,7 @@ const menuItemClasses =
 	'flex items-center gap-2 rounded-xl px-2 py-1 text-xs outline-none transition-colors ' +
 	'hover:bg-base-200 data-[active-item]:bg-base-300';
 
-export function CommandTipsBar({ shortcutConfig }: CommandTipsBarProps) {
+export function CommandTipsMenu({ shortcutConfig }: CommandTipsMenuProps) {
 	const shortcutsMenu = useMenuStore({ placement: 'top-end' });
 	const tipsMenu = useMenuStore({ placement: 'top-end' });
 	const shortcutsOpen = useStoreState(shortcutsMenu, 'open');
