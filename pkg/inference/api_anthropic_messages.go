@@ -91,7 +91,7 @@ func (api *AnthropicMessagesAPI) InitLLM(ctx context.Context) error {
 
 	dbgCfg := debugclient.DefaultDebugConfig
 	dbgCfg.LogToSlog = api.Debug
-	dbgCfg.StripContent = api.Debug
+
 	newClient := debugclient.NewDebugHTTPClient(dbgCfg)
 
 	opts = append(opts, option.WithHTTPClient(newClient))

@@ -16,6 +16,7 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 	const [submitting, setSubmitting] = useState(false);
 
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
+	const inputRef = useRef<HTMLInputElement | null>(null);
 
 	// Reset local state whenever the modal is opened
 	useEffect(() => {
@@ -44,8 +45,10 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 
 	/**
 	 * Normalize & validate URL.
-	 * - returns normalized URL string if valid
-	 * - throws Error with message if invalid
+	 * - Allows scheme-less like "example.com" by adding https://
+	 * - Rejects obvious garbage like "asdf" (no dot in hostname)
+	 * - Returns normalized URL string if valid
+	 * - Throws Error with message if invalid
 	 */
 	const normalizeUrl = (value: string): string | null => {
 		const raw = value.trim();
@@ -56,6 +59,7 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 			throw new Error('Only one URL is allowed at a time.');
 		}
 
+		// If user did not type a scheme, treat it as shorthand for https://
 		const candidate = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 
 		let parsed: URL;
@@ -69,9 +73,28 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 			throw new Error('Only HTTP and HTTPS URLs are supported.');
 		}
 
+		const hostname = parsed.hostname;
+
+		if (!hostname) {
+			throw new Error('Please enter a valid URL host (for example, example.com).');
+		}
+
+		// Extra hardening: require a "real" hostname:
+		// - must have a dot, OR be "localhost"
+		// This rejects things like "https://asdf" but allows "https://example.com".
+		if (!hostname.includes('.') && hostname !== 'localhost') {
+			throw new Error('Please enter a full domain (for example, example.com).');
+		}
+
 		return parsed.toString();
 	};
 
+	/**
+	 * Handle input change:
+	 * - Use browser validity for explicit http(s) URLs
+	 * - Use normalizeUrl (which also adds https:// for scheme-less)
+	 * - Set our own error state (red text) instead of native popup
+	 */
 	const handleChange = (value: string) => {
 		setUrlValue(value);
 
@@ -81,8 +104,18 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 			return;
 		}
 
+		const input = inputRef.current;
+
+		// If the user typed a full URL including scheme, let the browser
+		// validate the basic URL syntax (type="url") first.
+		if (/^https?:\/\//i.test(trimmed) && input && !input.validity.valid) {
+			setError('Please enter a valid URL, for example: https://example.com');
+			return;
+		}
+
+		// Then apply our own normalization + extra rules
 		try {
-			normalizeUrl(value);
+			normalizeUrl(trimmed);
 			setError(null);
 		} catch (err) {
 			setError((err as Error).message);
@@ -91,6 +124,16 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
+
+		const trimmed = urlValue.trim();
+		const input = inputRef.current;
+
+		// Re-check browser validity for explicit http(s) URLs on submit
+		if (/^https?:\/\//i.test(trimmed) && input && !input.checkValidity()) {
+			setError('Please enter a valid URL, for example: https://example.com');
+			input.focus();
+			return;
+		}
 
 		try {
 			const normalized = normalizeUrl(urlValue);
@@ -132,13 +175,16 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 					</button>
 				</div>
 
-				<form onSubmit={handleSubmit} className="space-y-4">
+				{/* NOTE: noValidate disables the browser's popup UI,
+            but we still read input.validity/checkValidity() in JS. */}
+				<form noValidate onSubmit={handleSubmit} className="space-y-4">
 					{/* URL input */}
 					<div>
 						<label className="label p-1">
 							<span className="label-text text-sm">URL</span>
 						</label>
 						<input
+							ref={inputRef}
 							autoFocus
 							type="url"
 							value={urlValue}
