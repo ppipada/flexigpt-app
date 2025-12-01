@@ -34,8 +34,8 @@ importers:
         specifier: ^51.1.2
         version: 51.1.2(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@platejs/basic-styles':
-        specifier: ^51.1.2
-        version: 51.1.2(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        specifier: ^52.0.1
+        version: 52.0.1(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@platejs/combobox':
         specifier: ^51.1.2
         version: 51.1.2(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -900,10 +900,10 @@ packages:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@platejs/basic-styles@51.1.2':
-    resolution: {integrity: sha512-gmtrFFGT4QRDyOZngneA28IpwMMTqiPofqspM8XZgucd429/Yb6G/TpNVJxiy3FxA8ZbCW1Ez3hctlXDNZVUiw==}
+  '@platejs/basic-styles@52.0.1':
+    resolution: {integrity: sha512-rq0Bm7ZmY5WMTX20LwD+TDz9ZkfnJdA9fxSvw9NkE50/laKozFDCK0Mx7TeWtAFHkYg2QWXC+blzo8UXERxxvQ==}
     peerDependencies:
-      platejs: '>=51.1.2'
+      platejs: '>=52.0.1'
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
@@ -5152,7 +5152,7 @@ snapshots:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
-  '@platejs/basic-styles@51.1.2(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@platejs/basic-styles@52.0.1(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
       platejs: 51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0))
       react: 19.2.0
