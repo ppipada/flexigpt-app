@@ -28,7 +28,7 @@
 		"@platejs/basic-nodes": "^52.0.1",
 		"@platejs/basic-styles": "^52.0.1",
 		"@platejs/combobox": "^52.0.1",
-		"@platejs/emoji": "^52.0.1",
+		"@platejs/emoji": "^52.0.2",
 		"@platejs/floating": "^52.0.1",
 		"@platejs/indent": "^52.0.1",
 		"@platejs/list": "^52.0.1",
