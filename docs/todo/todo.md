@@ -9,6 +9,7 @@
 - [ ] need info to user on how the url or any attachment for that matter was processed. like was it finally done as text or link or bytes or what.
 - [ ] request details are not very useful as of now in the ui. need what was actually sent rather than out version of completion data. may empty out some data things, but others can be given. Most probably need to check response too.
 - [ ] With attachments, token usage display seems more important.
+- [ ] If api errors due to token length issues etc, the reply is fully omitted. need to make same as partial response in api abort cases.
 
 - [ ] attachments
 
