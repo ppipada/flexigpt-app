@@ -25,7 +25,7 @@
 		"@emoji-mart/data": "^1.2.1",
 		"@fontsource-variable/inter": "^5.2.8",
 		"@platejs/autoformat": "^51.1.2",
-		"@platejs/basic-nodes": "^51.1.2",
+		"@platejs/basic-nodes": "^52.0.1",
 		"@platejs/basic-styles": "^51.1.2",
 		"@platejs/combobox": "^51.1.2",
 		"@platejs/emoji": "^51.1.2",
