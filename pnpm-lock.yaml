@@ -40,8 +40,8 @@ importers:
         specifier: ^51.1.2
         version: 51.1.2(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@platejs/emoji':
-        specifier: ^51.1.2
-        version: 51.1.2(@emoji-mart/data@1.2.1)(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        specifier: ^52.0.2
+        version: 52.0.2(@emoji-mart/data@1.2.1)(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@platejs/floating':
         specifier: ^51.1.2
         version: 51.1.2(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -914,17 +914,24 @@ packages:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
+  '@platejs/combobox@52.0.1':
+    resolution: {integrity: sha512-+LZ9/1CfSyaPJtPwDsuKPSGNlfeftt5iAwmpqF8VHxN/aWqgKP1WXSrmgdFzmKLvk9aiFGrD1tZJn785elBGHg==}
+    peerDependencies:
+      platejs: '>=52.0.1'
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
   '@platejs/core@51.1.3':
     resolution: {integrity: sha512-7c5+cBmJ85eYWrslTrYw5evJa7cPl2kTUFrEqVyet5Q6/Bla168BulWMMCJG2FzXAP9ZKSsA5BoirDSScG+iXw==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@platejs/emoji@51.1.2':
-    resolution: {integrity: sha512-hjuvmYWtBh2AFhomhBSy3PN+ujvrK6KY3croTy6bKrlTkkOcaG8DRxkikS3vqvP8EZqlCnliKZWYkKLBlIL1yA==}
+  '@platejs/emoji@52.0.2':
+    resolution: {integrity: sha512-bDH0jLa1ni0BnkArRUnqWfZRqZiLm1i9vkzQbD7VBaRVAXLakaJrnpAk/Q/RGWlTVeL8A8UOwWYPKWMe3Zat0w==}
     peerDependencies:
       '@emoji-mart/data': '>=1.2.0'
-      platejs: '>=51.1.2'
+      platejs: '>=52.0.1'
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
@@ -5164,6 +5171,12 @@ snapshots:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
+  '@platejs/combobox@52.0.1(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      platejs: 51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0))
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+
   '@platejs/core@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0))':
     dependencies:
       '@platejs/slate': 51.1.2
@@ -5195,10 +5208,10 @@ snapshots:
       - scheduler
       - use-sync-external-store
 
-  '@platejs/emoji@51.1.2(@emoji-mart/data@1.2.1)(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@platejs/emoji@52.0.2(@emoji-mart/data@1.2.1)(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
       '@emoji-mart/data': 1.2.1
-      '@platejs/combobox': 51.1.2(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@platejs/combobox': 52.0.1(platejs@51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0)))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       platejs: 51.1.3(@types/react@19.2.2)(immer@10.2.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(scheduler@0.27.0)(use-sync-external-store@1.6.0(react@19.2.0))
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
