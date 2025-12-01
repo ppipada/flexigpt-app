@@ -30,7 +30,7 @@
 		"@platejs/combobox": "^51.1.2",
 		"@platejs/emoji": "^51.1.2",
 		"@platejs/floating": "^51.1.2",
-		"@platejs/indent": "^51.1.2",
+		"@platejs/indent": "^52.0.1",
 		"@platejs/list": "^51.1.2",
 		"@platejs/tabbable": "^51.1.2",
 		"@react-router/node": "^7.9.6",
