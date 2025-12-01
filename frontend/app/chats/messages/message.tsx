@@ -5,6 +5,7 @@ import { FiCompass, FiUser } from 'react-icons/fi';
 import type { ConversationMessage } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 
+import { MessageAttachmentsBar } from '@/chats/messages/message_attachments_bar';
 import { MessageContent } from '@/chats/messages/message_content';
 import { MessageFooterArea } from '@/chats/messages/message_footer';
 
@@ -82,6 +83,9 @@ export const ChatMessage = memo(function ChatMessage({
 					align={align}
 					renderAsMarkdown={renderMarkdown}
 				/>
+				<div className="flex w-full min-w-0 overflow-x-hidden p-0">
+					<MessageAttachmentsBar attachments={message.attachments} toolChoices={message.toolChoices} />
+				</div>
 			</div>
 
 			<div className={`${rightColSpan} row-start-1 row-end-1 flex justify-start`}>
