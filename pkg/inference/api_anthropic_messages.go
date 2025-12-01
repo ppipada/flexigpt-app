@@ -10,6 +10,7 @@ import (
 
 	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
+	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 
@@ -88,7 +89,11 @@ func (api *AnthropicMessagesAPI) InitLLM(ctx context.Context) error {
 		)
 	}
 
-	newClient := NewDebugHTTPClient(api.Debug, false)
+	dbgCfg := debugclient.DefaultDebugConfig
+	dbgCfg.LogToSlog = api.Debug
+	dbgCfg.StripContent = api.Debug
+	newClient := debugclient.NewDebugHTTPClient(dbgCfg)
+
 	opts = append(opts, option.WithHTTPClient(newClient))
 
 	c := anthropic.NewClient(opts...)
@@ -211,11 +216,11 @@ func (api *AnthropicMessagesAPI) doNonStreaming(
 	timeout time.Duration,
 ) (*spec.FetchCompletionResponse, error) {
 	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
-	ctx = AddDebugResponseToCtx(ctx)
+	ctx = debugclient.AddDebugResponseToCtx(ctx)
 
 	resp, err := api.client.Messages.New(ctx, params, option.WithRequestTimeout(timeout))
 	isNilResp := resp == nil || len(resp.Content) == 0
-	attachDebugResp(ctx, completionResp.Body, err, isNilResp)
+	attachDebugResp(ctx, completionResp.Body, err, isNilResp, resp.RawJSON())
 	if isNilResp {
 		return completionResp, nil
 	}
@@ -246,7 +251,7 @@ func (api *AnthropicMessagesAPI) doStreaming(
 	)
 
 	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
-	ctx = AddDebugResponseToCtx(ctx)
+	ctx = debugclient.AddDebugResponseToCtx(ctx)
 
 	stream := api.client.Messages.NewStreaming(
 		ctx,
@@ -303,7 +308,7 @@ func (api *AnthropicMessagesAPI) doStreaming(
 
 	streamErr := errors.Join(stream.Err(), streamAccumulateErr, streamWriteErr)
 	isNilResp := len(respFull.Content) == 0
-	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp)
+	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp, respFull.RawJSON())
 	if isNilResp {
 		return completionResp, nil
 	}

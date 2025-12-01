@@ -16,7 +16,7 @@ import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { useAtBottom } from '@/hooks/use_at_bottom';
 
-import { BuildCompletionDataFromConversation, getQuotedJSON, HandleCompletion } from '@/apis/aiprovider_helper';
+import { BuildCompletionDataFromConversation, HandleCompletion } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
@@ -310,18 +310,18 @@ export default function ChatsPage() {
 					inputParams,
 					prevMessages
 				);
-				if (updatedChatWithConvoMessage.messages.length > 1) {
-					const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
-					if (updatedChatWithConvoMessage.messages[prevIdx].role === ConversationRoleEnum.user) {
-						const completionDataJSONString = 'Completion data:\n' + getQuotedJSON(completionData);
-						updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
-							i === prevIdx
-								? { ...m, details: completionDataJSONString } // overwrite details data in case of resend
-								: m
-						);
-						saveUpdatedChat({ ...updatedChatWithConvoMessage });
-					}
-				}
+				// if (updatedChatWithConvoMessage.messages.length > 1) {
+				// 	const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
+				// 	if (updatedChatWithConvoMessage.messages[prevIdx].role === ConversationRoleEnum.user) {
+				// 		const completionDataJSONString = '### Completion data:\n' + getQuotedJSON(completionData);
+				// 		updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
+				// 			i === prevIdx
+				// 				? { ...m, details: completionDataJSONString } // overwrite details data in case of resend
+				// 				: m
+				// 		);
+				// 		saveUpdatedChat({ ...updatedChatWithConvoMessage });
+				// 	}
+				// }
 				const newMsg = await HandleCompletion(
 					options.providerName,
 					completionData,
@@ -332,24 +332,35 @@ export default function ChatsPage() {
 					onStreamThinkingData
 				);
 
-				// This is heavier and mostly same as completion data as of now.
-				// We want completion data as in abort/fail cases req details are not available.
-				// May want to rethink how to dedup this info with completion data or remove completion data when api data is available.
-				// Also rethink on how to better manage curl as the "data" part is again very much a duplicate.
-				// if (newMsg.requestDetails) {
-				// 	if (updatedChatWithConvoMessage.messages.length > 1) {
-				// 		const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
-				// 		const reqData = 'API request data:\n' + newMsg.requestDetails;
-				// 		updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
-				// 			i === prevIdx
-				// 				? {
-				// 						...m,
-				// 						details: m.details ? m.details + '\n' + reqData : reqData,
-				// 					}
-				// 				: m
-				// 		);
-				// 	}
-				// }
+				// Attach debug details to the *previous* user message.
+				// Prefer the provider-supplied HTTP request details (already
+				// sanitized, includes curl). If those are not available (e.g.
+				// the Go side failed before making the HTTP call), fall back to
+				// the locally built completionData.
+				if (updatedChatWithConvoMessage.messages.length > 1) {
+					const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
+					const prevMessage = updatedChatWithConvoMessage.messages[prevIdx];
+
+					if (prevMessage.role === ConversationRoleEnum.user) {
+						let detailsMd: string | undefined;
+
+						if (newMsg.requestDetails) {
+							const reqData = 'API request data:\n' + newMsg.requestDetails;
+							detailsMd = reqData;
+						}
+
+						updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
+							i === prevIdx
+								? {
+										...m,
+										// Overwrite details on resend; keep the most relevant
+										// debug info visible.
+										details: detailsMd,
+									}
+								: m
+						);
+					}
+				}
 
 				if (newMsg.responseMessage) {
 					const respMessage = { ...newMsg.responseMessage };

@@ -6,30 +6,55 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 )
 
 // attachDebugResp adds HTTP-debug information and error context—without panics.
 //
-// – ctx may or may not contain debug information.
-// – respErr is the transport/SDK error (may be nil).
-// – isNilResp tells whether the model returned an empty/invalid response.
+// - ctx may or may not contain debug information.
+// - respErr is the transport/SDK error (may be nil).
+// - isNilResp tells whether the model returned an empty/invalid response.
+// - rawModelJSON is an optional, provider-level JSON representation of the *final* model response (e.g. OpenAI
+// responses `resp.RawJSON()` or `json.Marshal(fullResponse)` for other SDKs). If provided and the HTTP debug layer
+// did not already set ResponseDetails.Data, we will sanitize and store this JSON there.
 func attachDebugResp(
 	ctx context.Context,
 	completionResp *spec.FetchCompletionResponseBody,
 	respErr error,
 	isNilResp bool,
+	rawModelJSON string,
 ) {
 	if completionResp == nil {
 		return
 	}
 
-	debugResp, _ := GetDebugHTTPResponse(ctx)
+	debugResp, _ := debugclient.GetDebugHTTPResponse(ctx)
 
-	// Always attach request/response debug info if available.
+	// Always attach request/response debug info from the HTTP layer if available.
 	if debugResp != nil {
-		completionResp.RequestDetails = debugResp.RequestDetails
-		completionResp.ResponseDetails = debugResp.ResponseDetails
+		if debugResp.RequestDetails != nil && completionResp.RequestDetails == nil {
+			completionResp.RequestDetails = debugResp.RequestDetails
+		}
+		if debugResp.ResponseDetails != nil && completionResp.ResponseDetails == nil {
+			completionResp.ResponseDetails = debugResp.ResponseDetails
+		}
+	}
+
+	// If the HTTP layer didn't populate ResponseDetails.Data (most common in
+	// streaming/SSE cases), and we have a provider-level raw JSON for the final
+	// model response, sanitize that and use it as the debug body.
+	if rawModelJSON != "" {
+		if completionResp.ResponseDetails == nil {
+			completionResp.ResponseDetails = &spec.APIResponseDetails{
+				Status:  0,
+				Headers: nil,
+				Data:    nil,
+			}
+		}
+		if completionResp.ResponseDetails.Data == nil {
+			completionResp.ResponseDetails.Data = debugclient.SanitizeJSONForDebug([]byte(rawModelJSON), true)
+		}
 	}
 
 	// Gather error-message fragments.

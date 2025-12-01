@@ -15,6 +15,7 @@ import (
 
 	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
+	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
@@ -85,7 +86,11 @@ func (api *OpenAIChatCompletionsAPI) InitLLM(ctx context.Context) error {
 		)
 	}
 
-	newClient := NewDebugHTTPClient(api.Debug, false)
+	dbgCfg := debugclient.DefaultDebugConfig
+	dbgCfg.LogToSlog = api.Debug
+	dbgCfg.StripContent = api.Debug
+	newClient := debugclient.NewDebugHTTPClient(dbgCfg)
+
 	opts = append(opts, option.WithHTTPClient(newClient))
 
 	c := openai.NewClient(opts...)
@@ -224,10 +229,10 @@ func (api *OpenAIChatCompletionsAPI) doNonStreaming(
 	timeout time.Duration,
 ) (*spec.FetchCompletionResponse, error) {
 	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
-	ctx = AddDebugResponseToCtx(ctx)
+	ctx = debugclient.AddDebugResponseToCtx(ctx)
 	resp, err := api.client.Chat.Completions.New(ctx, params, option.WithRequestTimeout(timeout))
 	isNilResp := resp == nil || len(resp.Choices) == 0
-	attachDebugResp(ctx, completionResp.Body, err, isNilResp)
+	attachDebugResp(ctx, completionResp.Body, err, isNilResp, resp.RawJSON())
 	if isNilResp {
 		return completionResp, nil
 	}
@@ -251,7 +256,7 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 	write, flush := NewBufferedStreamer(onStreamTextData, FlushInterval, FlushChunkSize)
 
 	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
-	ctx = AddDebugResponseToCtx(ctx)
+	ctx = debugclient.AddDebugResponseToCtx(ctx)
 	stream := api.client.Chat.Completions.NewStreaming(
 		ctx,
 		params,
@@ -290,7 +295,7 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 
 	streamErr := errors.Join(stream.Err(), streamWriteErr)
 	isNilResp := len(acc.Choices) == 0
-	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp)
+	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp, acc.RawJSON())
 	if isNilResp {
 		return completionResp, nil
 	}

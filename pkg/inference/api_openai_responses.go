@@ -17,6 +17,7 @@ import (
 
 	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
+	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
@@ -87,7 +88,11 @@ func (api *OpenAIResponsesAPI) InitLLM(ctx context.Context) error {
 		)
 	}
 
-	newClient := NewDebugHTTPClient(api.Debug, false)
+	dbgCfg := debugclient.DefaultDebugConfig
+	dbgCfg.LogToSlog = api.Debug
+	dbgCfg.StripContent = api.Debug
+	newClient := debugclient.NewDebugHTTPClient(dbgCfg)
+
 	opts = append(opts, option.WithHTTPClient(newClient))
 
 	c := openai.NewClient(opts...)
@@ -234,10 +239,10 @@ func (api *OpenAIResponsesAPI) doNonStreaming(
 	timeout time.Duration,
 ) (*spec.FetchCompletionResponse, error) {
 	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
-	ctx = AddDebugResponseToCtx(ctx)
+	ctx = debugclient.AddDebugResponseToCtx(ctx)
 	resp, err := api.client.Responses.New(ctx, params, option.WithRequestTimeout(timeout))
 	isNilResp := resp == nil || len(resp.Output) == 0
-	attachDebugResp(ctx, completionResp.Body, err, isNilResp)
+	attachDebugResp(ctx, completionResp.Body, err, isNilResp, resp.RawJSON())
 	if isNilResp {
 		return completionResp, nil
 	}
@@ -269,7 +274,7 @@ func (api *OpenAIResponsesAPI) doStreaming(
 	var respFull responses.Response
 
 	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
-	ctx = AddDebugResponseToCtx(ctx)
+	ctx = debugclient.AddDebugResponseToCtx(ctx)
 	stream := api.client.Responses.NewStreaming(
 		ctx,
 		params,
@@ -326,12 +331,10 @@ func (api *OpenAIResponsesAPI) doStreaming(
 
 	streamErr := errors.Join(stream.Err(), streamWriteErr)
 	isNilResp := len(respFull.Output) == 0
-	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp)
+	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp, respFull.RawJSON())
 	if isNilResp {
 		return completionResp, nil
 	}
-
-	slog.Info("resp json", "full", respFull.RawJSON())
 
 	respContent := getResponseContentFromOpenAIOutput(&respFull)
 	completionResp.Body.ResponseContent = respContent

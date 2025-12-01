@@ -23,7 +23,7 @@ const roleMap: Record<ConversationRoleEnum, ChatCompletionRoleEnum> = {
 	[ConversationRoleEnum.feedback]: ChatCompletionRoleEnum.user,
 };
 
-export function getQuotedJSON(obj: any): string {
+function getQuotedJSON(obj: any): string {
 	return '```json\n' + JSON.stringify(obj, null, 2) + '\n```';
 }
 
@@ -142,7 +142,8 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Fetch
 		}
 
 		if (providerResp.responseDetails) {
-			respDetails = getQuotedJSON(providerResp.responseDetails);
+			// Make it clear in the UI what this JSON block represents.
+			respDetails = '### Response Details\n' + getQuotedJSON(providerResp.responseDetails);
 		}
 		if (providerResp.requestDetails) {
 			requestDetails = getQuotedJSON(providerResp.requestDetails);
@@ -150,7 +151,7 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Fetch
 		if (providerResp.errorDetails) {
 			respDetails = providerResp.errorDetails.message;
 			if (providerResp.errorDetails.responseDetails) {
-				respDetails += '\n### Response Details\n' + getQuotedJSON(providerResp.errorDetails.responseDetails);
+				respDetails += '\n\n### Response Details\n' + getQuotedJSON(providerResp.errorDetails.responseDetails);
 			}
 			if (providerResp.errorDetails.requestDetails) {
 				const r = providerResp.errorDetails.requestDetails;
@@ -159,7 +160,14 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Fetch
 			if (!respContent) {
 				respContent = convoMessage.content || '';
 			}
-			respContent += '\n\n>Got error in api processing. Check details...';
+			respContent += '\n\n>Got error in API processing. Check details below.';
+		}
+
+		// Tool calls are not directly rendered in the main message bubble, so
+		// surface them in the debug/details panel.
+		if (providerResp.toolCalls && providerResp.toolCalls.length > 0) {
+			const toolCallsBlock = '### Tool calls\n' + getQuotedJSON(providerResp.toolCalls);
+			respDetails = respDetails ? `${respDetails}\n\n${toolCallsBlock}` : toolCallsBlock;
 		}
 	}
 
