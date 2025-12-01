@@ -8,12 +8,10 @@ import type { PromptBundle, PromptTemplate } from '@/spec/prompt';
 import { promptStoreAPI } from '@/apis/baseapi';
 import { getAllPromptTemplates } from '@/apis/list_helper';
 
-import { ActionDeniedAlert } from '@/components/action_denied';
-import { DeleteConfirmationModal } from '@/components/delete_confirmation';
+import { ActionDeniedAlertModal } from '@/components/action_denied_modal';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
 
-import { AddEditPromptTemplate } from '@/prompts/prompt_template_add_edit';
-
-/* ---------- props ---------- */
+import { AddEditPromptTemplateModal } from '@/prompts/prompt_template_add_edit_modal';
 
 interface PromptBundleCardProps {
 	bundle: PromptBundle;
@@ -330,7 +328,7 @@ export function PromptBundleCard({ bundle, templates, onTemplatesChange, onBundl
 				confirmButtonText="Delete"
 			/>
 
-			<AddEditPromptTemplate
+			<AddEditPromptTemplateModal
 				isOpen={isModifyModalOpen}
 				onClose={() => {
 					setIsModifyModalOpen(false);
@@ -353,7 +351,7 @@ export function PromptBundleCard({ bundle, templates, onTemplatesChange, onBundl
 				}))}
 			/>
 
-			<ActionDeniedAlert
+			<ActionDeniedAlertModal
 				isOpen={showAlert}
 				onClose={() => {
 					setShowAlert(false);

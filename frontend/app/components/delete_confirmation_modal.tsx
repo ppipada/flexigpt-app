@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom';
 
 import { FiAlertTriangle } from 'react-icons/fi';
 
-interface ConfirmationModalProps {
+interface DeleteConfirmationModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onConfirm: () => void;
@@ -18,7 +18,7 @@ export function DeleteConfirmationModal({
 	title,
 	message,
 	confirmButtonText,
-}: ConfirmationModalProps) {
+}: DeleteConfirmationModalProps) {
 	if (!isOpen) return null;
 
 	return createPortal(

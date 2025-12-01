@@ -17,7 +17,7 @@ import {
 	createSystemPromptItem,
 	SystemPromptDropdown,
 	type SystemPromptItem,
-} from '@/chats/assitantcontexts/system_prompt';
+} from '@/chats/assitantcontexts/system_prompt_dropdown';
 import { TemperatureDropdown } from '@/chats/assitantcontexts/temperature_dropdown';
 import { useSetSystemPromptForChat } from '@/chats/events/set_system_prompt';
 

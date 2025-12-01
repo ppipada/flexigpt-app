@@ -25,12 +25,12 @@ import { AuthKeyTypeProvider } from '@/spec/setting';
 
 import { modelPresetStoreAPI, settingstoreAPI } from '@/apis/baseapi';
 
-import { ActionDeniedAlert } from '@/components/action_denied';
-import { DeleteConfirmationModal } from '@/components/delete_confirmation';
+import { ActionDeniedAlertModal } from '@/components/action_denied_modal';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
 import { Dropdown } from '@/components/dropdown';
 
-import { AddEditModelPresetModal } from '@/modelpresets/modelpreset_add_edit';
-import { AddEditAuthKeyModal } from '@/settings/authkey_add_edit';
+import { AddEditModelPresetModal } from '@/modelpresets/modelpreset_add_edit_modal';
+import { AddEditAuthKeyModal } from '@/settings/authkey_add_edit_modal';
 
 interface ProviderPresetCardProps {
 	provider: ProviderName;
@@ -568,7 +568,7 @@ export function ProviderPresetCard({
 			)}
 
 			{showDenied && (
-				<ActionDeniedAlert
+				<ActionDeniedAlertModal
 					isOpen={showDenied}
 					onClose={() => {
 						setShowDenied(false);

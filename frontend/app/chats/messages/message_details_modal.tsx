@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { createPortal } from 'react-dom';
 
-import { FiInfo, FiX } from 'react-icons/fi';
+import { FiCode, FiX } from 'react-icons/fi';
 
 import { MessageContent } from '@/chats/messages/message_content';
 
@@ -10,54 +10,52 @@ type MessageDetailsModalProps = {
 	isOpen: boolean;
 	onClose: () => void;
 	messageID: string;
-	title?: string;
+	title: string;
 	content: string;
 	isBusy: boolean;
 };
 
-export function MessageDetailsModal({
-	isOpen,
-	onClose,
-	messageID,
-	title = 'Message Details',
-	content,
-	isBusy,
-}: MessageDetailsModalProps) {
-	// Close on Escape
+export function MessageDetailsModal({ isOpen, onClose, messageID, title, content, isBusy }: MessageDetailsModalProps) {
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
+
+	// Open the dialog natively when isOpen becomes true
 	useEffect(() => {
 		if (!isOpen) return;
 
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.key === 'Escape') {
-				event.stopPropagation();
-				onClose();
-			}
-		};
+		const dialog = dialogRef.current;
+		if (!dialog) return;
 
-		window.addEventListener('keydown', handleKeyDown);
-		return () => {
-			window.removeEventListener('keydown', handleKeyDown);
-		};
-	}, [isOpen, onClose]);
+		// In StrictMode effects can run twice; guard against double showModal().
+		if (!dialog.open) {
+			dialog.showModal();
+		}
+	}, [isOpen]);
+
+	// Sync parent state whenever the dialog is closed (Esc, backdrop, or dialog.close()).
+	const handleDialogClose = () => {
+		onClose();
+	};
 
 	if (!isOpen) return null;
 
 	return createPortal(
-		<dialog className="modal modal-open">
+		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-[80vw] overflow-hidden rounded-2xl p-0">
 				<div className="max-h-[80vh] overflow-y-auto p-6">
 					{/* header */}
 					<div className="mb-4 flex items-center justify-between">
 						<h3 className="flex items-center gap-2 text-lg font-bold">
-							<FiInfo size={16} />
+							<FiCode size={16} />
 							<span>{title}</span>
 						</h3>
-						<button className="btn btn-sm btn-circle bg-base-300" onClick={onClose} aria-label="Close">
+						<button
+							className="btn btn-sm btn-circle bg-base-300"
+							onClick={() => dialogRef.current?.close()}
+							aria-label="Close"
+						>
 							<FiX size={12} />
 						</button>
 					</div>
-
-					{/* body */}
 
 					<div className="mt-2">
 						<MessageContent

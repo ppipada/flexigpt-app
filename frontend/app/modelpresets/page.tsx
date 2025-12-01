@@ -8,13 +8,13 @@ import { AuthKeyTypeProvider } from '@/spec/setting';
 import { modelPresetStoreAPI, settingstoreAPI } from '@/apis/baseapi';
 import { getAllProviderPresetsMap } from '@/apis/list_helper';
 
-import { ActionDeniedAlert } from '@/components/action_denied';
+import { ActionDeniedAlertModal } from '@/components/action_denied_modal';
 import { DownloadButton } from '@/components/download_button';
 import { Dropdown, type DropdownItem } from '@/components/dropdown';
 import { Loader } from '@/components/loader';
 import { PageFrame } from '@/components/page_frame';
 
-import { AddEditProviderPresetModal } from '@/modelpresets/provider_add_edit';
+import { AddEditProviderPresetModal } from '@/modelpresets/provider_add_edit_modal';
 import { ProviderPresetCard } from '@/modelpresets/provider_presets_card';
 
 // put it somewhere near the top of the file
@@ -358,7 +358,7 @@ export default function ModelPresetsPage() {
 
 				{/* ---------------------------- alerts ----------------------------- */}
 				{showDenied && (
-					<ActionDeniedAlert
+					<ActionDeniedAlertModal
 						isOpen={showDenied}
 						onClose={() => {
 							setShowDenied(false);

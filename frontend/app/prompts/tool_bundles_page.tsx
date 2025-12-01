@@ -10,10 +10,10 @@ import { getUUIDv7 } from '@/lib/uuid_utils';
 import { toolStoreAPI } from '@/apis/baseapi';
 import { getAllToolBundles, getAllTools } from '@/apis/list_helper';
 
-import { ActionDeniedAlert } from '@/components/action_denied';
-import { DeleteConfirmationModal } from '@/components/delete_confirmation';
+import { ActionDeniedAlertModal } from '@/components/action_denied_modal';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
 
-import { AddToolBundleModal } from '@/prompts/tool_bundle_add';
+import { AddToolBundleModal } from '@/prompts/tool_bundle_add_modal';
 import { ToolBundleCard } from '@/prompts/tool_bundle_card';
 
 interface BundleData {
@@ -160,7 +160,7 @@ export function ToolsPage() {
 			/>
 
 			{/* alert */}
-			<ActionDeniedAlert
+			<ActionDeniedAlertModal
 				isOpen={showAlert}
 				onClose={() => {
 					setShowAlert(false);

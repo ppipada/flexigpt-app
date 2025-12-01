@@ -46,7 +46,7 @@ export function MessageFooterArea({
 		<>
 			<div className="px-1 py-1 pt-0">
 				<div className="flex h-8 items-center justify-between">
-					<div className="flex">
+					<div className="flex gap-2">
 						<label
 							className={`ml-1 flex items-center space-x-2 truncate ${isBusy ? 'cursor-not-allowed opacity-50' : ''}`}
 							title="Disable Markdown"
@@ -64,7 +64,7 @@ export function MessageFooterArea({
 							<span className="text-base-content text-xs text-nowrap">Disable Markdown</span>
 						</label>
 						<button
-							className={`btn text-neutral-custom flex items-center gap-2 border-none bg-transparent! text-xs shadow-none ${
+							className={`btn btn-sm flex shrink-0 items-center border-none bg-transparent! shadow-none ${
 								isBusy || !hasDetails ? 'btn-disabled' : ''
 							}`}
 							onClick={toggleDetailsModal}

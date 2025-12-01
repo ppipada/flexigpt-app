@@ -16,7 +16,7 @@ interface TemplateItem {
 	templateSlug: string;
 }
 
-interface AddEditPromptTemplateProps {
+interface AddEditPromptTemplateModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (templateData: Partial<PromptTemplate>) => void;
@@ -26,13 +26,13 @@ interface AddEditPromptTemplateProps {
 
 /* ---------- component ---------- */
 
-export function AddEditPromptTemplate({
+export function AddEditPromptTemplateModal({
 	isOpen,
 	onClose,
 	onSubmit,
 	initialData,
 	existingTemplates,
-}: AddEditPromptTemplateProps) {
+}: AddEditPromptTemplateModalProps) {
 	/* ---------- form state ---------- */
 	const [formData, setFormData] = useState({
 		displayName: '',

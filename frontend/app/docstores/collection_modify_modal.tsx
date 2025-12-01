@@ -3,7 +3,7 @@ import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
 import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/spec/command';
 import type { Collection } from '@/spec/docstore';
 
-interface ModifyCollectionProps {
+interface ModifyCollectionModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (collectionData: Partial<Collection>, docStoreID: string) => void;
@@ -12,14 +12,14 @@ interface ModifyCollectionProps {
 	existingCollections: Collection[];
 }
 
-export function ModifyCollection({
+export function ModifyCollectionModal({
 	isOpen,
 	onClose,
 	onSubmit,
 	initialData,
 	docStoreID,
 	existingCollections,
-}: ModifyCollectionProps) {
+}: ModifyCollectionModalProps) {
 	const [formData, setFormData] = useState<Partial<Collection>>({
 		name: '',
 		command: '',

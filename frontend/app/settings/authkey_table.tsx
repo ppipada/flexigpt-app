@@ -8,8 +8,8 @@ import { isBuiltInProviderAuthKeyName, useBuiltInsReady } from '@/hooks/use_buil
 
 import { settingstoreAPI } from '@/apis/baseapi';
 
-import { ActionDeniedAlert } from '@/components/action_denied';
-import { DeleteConfirmationModal } from '@/components/delete_confirmation';
+import { ActionDeniedAlertModal } from '@/components/action_denied_modal';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
 
 interface AuthKeyTableProps {
 	authKeys: AuthKeyMeta[];
@@ -140,7 +140,7 @@ export function AuthKeyTable({ authKeys, onEdit, onChanged }: AuthKeyTableProps)
 			)}
 
 			{alertMsg && (
-				<ActionDeniedAlert
+				<ActionDeniedAlertModal
 					isOpen={!!alertMsg}
 					message={alertMsg}
 					onClose={() => {

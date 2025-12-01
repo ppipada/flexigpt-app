@@ -4,7 +4,7 @@ import type { ShortcutConfig } from '@/lib/keyboard_shortcuts';
 
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
-import { DeleteConfirmationModal } from '@/components/delete_confirmation';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
 
 import { AssistantContextBar } from '@/chats/assitantcontexts/context_bar';
 import {

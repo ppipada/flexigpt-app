@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 
 import { createPortal } from 'react-dom';
 
@@ -15,6 +15,8 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 	const [error, setError] = useState<string | null>(null);
 	const [submitting, setSubmitting] = useState(false);
 
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
+
 	// Reset local state whenever the modal is opened
 	useEffect(() => {
 		if (!isOpen) return;
@@ -22,6 +24,23 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 		setError(null);
 		setSubmitting(false);
 	}, [isOpen]);
+
+	// Open dialog natively with showModal()
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const dialog = dialogRef.current;
+		if (!dialog) return;
+
+		if (!dialog.open) {
+			dialog.showModal();
+		}
+	}, [isOpen]);
+
+	// Keep parent isOpen in sync with native dialog closing
+	const handleDialogClose = () => {
+		onClose();
+	};
 
 	/**
 	 * Normalize & validate URL.
@@ -56,9 +75,6 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 	const handleChange = (value: string) => {
 		setUrlValue(value);
 
-		// Inline validation:
-		// - allow blank without error
-		// - error only when non-blank but invalid
 		const trimmed = value.trim();
 		if (!trimmed) {
 			setError(null);
@@ -86,7 +102,9 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 
 			setSubmitting(true);
 			await onAttachURL(normalized);
-			onClose();
+
+			// Close the dialog; this will trigger handleDialogClose -> parent onClose().
+			dialogRef.current?.close();
 		} catch (err) {
 			setError((err as Error).message || 'Please enter a valid URL.');
 		} finally {
@@ -97,7 +115,7 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 	if (!isOpen) return null;
 
 	return createPortal(
-		<dialog className="modal modal-open">
+		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-md overflow-auto rounded-2xl">
 				{/* header */}
 				<div className="mb-4 flex items-center justify-between">
@@ -105,7 +123,11 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 						<FiLink size={16} />
 						<span>Attach Link</span>
 					</h3>
-					<button className="btn btn-sm btn-circle bg-base-300" onClick={onClose} aria-label="Close">
+					<button
+						className="btn btn-sm btn-circle bg-base-300"
+						onClick={() => dialogRef.current?.close()}
+						aria-label="Close"
+					>
 						<FiX size={12} />
 					</button>
 				</div>
@@ -141,7 +163,7 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 
 					{/* footer buttons */}
 					<div className="modal-action">
-						<button type="button" className="btn bg-base-300 rounded-xl" onClick={onClose}>
+						<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
 							Cancel
 						</button>
 						<button

@@ -22,7 +22,7 @@ import { cleanSearchQuery } from '@/lib/title_utils';
 import { conversationStoreAPI } from '@/apis/baseapi';
 
 import { GroupedDropdown } from '@/components/date_grouped_dropdown';
-import { DeleteConfirmationModal } from '@/components/delete_confirmation';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
 
 const CACHE_EXPIRY_TIME = 60_000; // 1 min
 

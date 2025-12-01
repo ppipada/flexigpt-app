@@ -10,10 +10,10 @@ import { type Tool, type ToolBundle, ToolOutputKind, ToolType } from '@/spec/too
 import { toolStoreAPI } from '@/apis/baseapi';
 import { getAllTools } from '@/apis/list_helper';
 
-import { ActionDeniedAlert } from '@/components/action_denied';
-import { DeleteConfirmationModal } from '@/components/delete_confirmation';
+import { ActionDeniedAlertModal } from '@/components/action_denied_modal';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
 
-import { AddEditToolModal } from '@/prompts/tool_add_edit';
+import { AddEditToolModal } from '@/prompts/tool_add_edit_modal';
 
 interface ToolBundleCardProps {
 	bundle: ToolBundle;
@@ -341,7 +341,7 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 				}))}
 			/>
 
-			<ActionDeniedAlert
+			<ActionDeniedAlertModal
 				isOpen={showAlert}
 				onClose={() => {
 					setShowAlert(false);

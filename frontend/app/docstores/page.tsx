@@ -5,11 +5,11 @@ import { FiEdit2, FiFolder, FiPlus, FiServer, FiTrash2 } from 'react-icons/fi';
 import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/spec/command';
 import type { Collection, DocStore } from '@/spec/docstore';
 
-import { DeleteConfirmationModal } from '@/components/delete_confirmation';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
 import { PageFrame } from '@/components/page_frame';
 
-import { ModifyCollection } from '@/docstores/collection_modify';
-import { ModifyDocStore } from '@/docstores/docstore_modify';
+import { ModifyCollectionModal } from '@/docstores/collection_modify_modal';
+import { ModifyDocStoreModal } from '@/docstores/docstore_modify_modal';
 
 // Mock function to fetch docStores
 const fetchDocStores = async (): Promise<DocStore[]> => {
@@ -48,7 +48,7 @@ export default function DocumentStoresPage() {
 
 	const [docStores, setDocStores] = useState<DocStore[]>([]);
 	const [isDeleteDocStoreModalOpen, setIsDeleteDocStoreModalOpen] = useState(false);
-	const [isModifyDocStoreModalOpen, setIsModifyDocStoreModalOpen] = useState(false);
+	const [isModifyDocStoreModalModalOpen, setIsModifyDocStoreModalModalOpen] = useState(false);
 	const [selectedDocStore, setSelectedDocStore] = useState<DocStore | null>(null);
 
 	const [isDeleteCollectionModalOpen, setIsDeleteCollectionModalOpen] = useState(false);
@@ -59,7 +59,7 @@ export default function DocumentStoresPage() {
 		docStoreID: '',
 		collection: null,
 	});
-	const [isModifyCollectionModalOpen, setIsModifyCollectionModalOpen] = useState(false);
+	const [isModifyCollectionModalModalOpen, setIsModifyCollectionModalModalOpen] = useState(false);
 
 	// Effect to load docStores on component mount
 	useEffect(() => {
@@ -98,17 +98,17 @@ export default function DocumentStoresPage() {
 	// Handler for editing a docStore
 	const handleEditDocStore = (docStore: DocStore) => {
 		setSelectedDocStore(docStore);
-		setIsModifyDocStoreModalOpen(true);
+		setIsModifyDocStoreModalModalOpen(true);
 	};
 
 	// Handler for adding a new docStore
 	const handleAddDocStore = () => {
 		setSelectedDocStore(null);
-		setIsModifyDocStoreModalOpen(true);
+		setIsModifyDocStoreModalModalOpen(true);
 	};
 
 	// Handler for modifying or adding a docStore
-	const handleModifyDocStoreSubmit = (storeData: Partial<DocStore>) => {
+	const handleModifyDocStoreModalSubmit = (storeData: Partial<DocStore>) => {
 		if (selectedDocStore) {
 			// Edit existing docStore
 			setDocStores(docStores.map(s => (s.id === selectedDocStore.id ? { ...s, ...storeData } : s)));
@@ -122,7 +122,7 @@ export default function DocumentStoresPage() {
 			} as DocStore;
 			setDocStores([...docStores, newDocStore]);
 		}
-		setIsModifyDocStoreModalOpen(false);
+		setIsModifyDocStoreModalModalOpen(false);
 		setSelectedDocStore(null);
 	};
 
@@ -153,17 +153,17 @@ export default function DocumentStoresPage() {
 	// Handler for adding a new collection
 	const handleAddCollection = (docStoreID: string) => {
 		setSelectedCollection({ docStoreID, collection: null });
-		setIsModifyCollectionModalOpen(true);
+		setIsModifyCollectionModalModalOpen(true);
 	};
 
 	// Handler for editing a collection
 	const handleEditCollection = (docStoreID: string, collection: Collection) => {
 		setSelectedCollection({ docStoreID, collection });
-		setIsModifyCollectionModalOpen(true);
+		setIsModifyCollectionModalModalOpen(true);
 	};
 
 	// Handler for modifying or adding a collection
-	const handleModifyCollectionSubmit = (collectionData: Partial<Collection>, docStoreID: string) => {
+	const handleModifyCollectionModalSubmit = (collectionData: Partial<Collection>, docStoreID: string) => {
 		setDocStores(
 			docStores.map(docStore => {
 				if (docStore.id === docStoreID) {
@@ -192,7 +192,7 @@ export default function DocumentStoresPage() {
 				return docStore;
 			})
 		);
-		setIsModifyCollectionModalOpen(false);
+		setIsModifyCollectionModalModalOpen(false);
 		setSelectedCollection({ docStoreID: '', collection: null });
 	};
 
@@ -356,12 +356,12 @@ export default function DocumentStoresPage() {
 				/>
 
 				{/* Modify Store Modal */}
-				<ModifyDocStore
-					isOpen={isModifyDocStoreModalOpen}
+				<ModifyDocStoreModal
+					isOpen={isModifyDocStoreModalModalOpen}
 					onClose={() => {
-						setIsModifyDocStoreModalOpen(false);
+						setIsModifyDocStoreModalModalOpen(false);
 					}}
-					onSubmit={handleModifyDocStoreSubmit}
+					onSubmit={handleModifyDocStoreModalSubmit}
 					initialData={selectedDocStore || undefined}
 					existingDocStores={docStores}
 				/>
@@ -377,12 +377,12 @@ export default function DocumentStoresPage() {
 				/>
 
 				{/* Modify Collection Modal */}
-				<ModifyCollection
-					isOpen={isModifyCollectionModalOpen}
+				<ModifyCollectionModal
+					isOpen={isModifyCollectionModalModalOpen}
 					onClose={() => {
-						setIsModifyCollectionModalOpen(false);
+						setIsModifyCollectionModalModalOpen(false);
 					}}
-					onSubmit={handleModifyCollectionSubmit}
+					onSubmit={handleModifyCollectionModalSubmit}
 					initialData={selectedCollection.collection || undefined}
 					docStoreID={selectedCollection.docStoreID}
 					existingCollections={docStores.find(s => s.id === selectedCollection.docStoreID)?.collections || []}

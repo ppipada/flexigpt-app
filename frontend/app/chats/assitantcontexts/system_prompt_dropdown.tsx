@@ -1,13 +1,12 @@
-import { type Dispatch, type FormEvent, forwardRef, type SetStateAction, useEffect, useMemo, useState } from 'react';
+import { type Dispatch, forwardRef, type SetStateAction, useMemo, useState } from 'react';
 
-import { createPortal } from 'react-dom';
-
-import { FiCheck, FiChevronDown, FiChevronUp, FiCopy, FiEdit2, FiPlus, FiTrash, FiX } from 'react-icons/fi';
+import { FiCheck, FiChevronDown, FiChevronUp, FiEdit2, FiPlus, FiTrash, FiX } from 'react-icons/fi';
 
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
-import { DeleteConfirmationModal } from '@/components/delete_confirmation';
-import { Dropdown } from '@/components/dropdown';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
+
+import { SystemPromptAddEditModal } from '@/chats/assitantcontexts/system_prompt_add_edit_modal';
 
 export type SystemPromptItem = {
 	id: string;
@@ -42,128 +41,6 @@ type SystemPromptDropdownProps = {
 	isOpen: boolean;
 	setIsOpen: Dispatch<SetStateAction<boolean>>;
 };
-
-/* -------------------------- Shared Prompt Modal -------------------------- */
-
-type PromptModalProps = {
-	isOpen: boolean;
-	mode: 'add' | 'edit';
-	initialValue?: string;
-	promptsForCopy?: SystemPromptItem[];
-	onClose: () => void;
-	onSave: (value: string) => void;
-};
-function PromptModal({ isOpen, mode, initialValue = '', promptsForCopy = [], onClose, onSave }: PromptModalProps) {
-	const [value, setValue] = useState<string>(initialValue);
-	const [copyFromId, setCopyFromId] = useState<string>('');
-
-	useEffect(() => {
-		if (isOpen) {
-			setValue(initialValue);
-			setCopyFromId('');
-		}
-	}, [isOpen, initialValue]);
-
-	const save = (e: FormEvent) => {
-		e.preventDefault();
-		const v = value.trim();
-		if (!v) return;
-		onSave(v);
-		onClose();
-	};
-
-	const handleCopyFrom = (id: string) => {
-		setCopyFromId(id);
-		const found = promptsForCopy.find(p => p.id === id);
-		if (found) {
-			setValue(found.prompt);
-		}
-	};
-
-	// Build dropdown items for "Copy Existing"
-	const copyDropdownItems = useMemo(() => {
-		const map: Record<string, { isEnabled: boolean }> = {};
-		for (const p of promptsForCopy) {
-			map[p.id] = { isEnabled: true };
-		}
-		return map;
-	}, [promptsForCopy]);
-
-	const getCopyDisplayName = (id: string) => {
-		const found = promptsForCopy.find(p => p.id === id);
-		return found?.title ?? id;
-	};
-
-	if (!isOpen) return null;
-	return createPortal(
-		<dialog className="modal modal-open">
-			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
-				<div className="mb-4 flex items-center justify-between">
-					<h3 className="text-lg font-bold">{mode === 'add' ? 'Add System Prompt' : 'Edit System Prompt'}</h3>
-					<button className="btn btn-sm btn-circle bg-base-300" onClick={onClose} aria-label="Close">
-						<FiX size={12} />
-					</button>
-				</div>
-
-				<form onSubmit={save} className="space-y-4">
-					{mode === 'add' && (
-						<div className="grid grid-cols-12 items-center gap-1">
-							<label className="col-span-2 text-sm opacity-70">Copy Existing:</label>
-							<div className="col-span-9">
-								<Dropdown<string>
-									dropdownItems={copyDropdownItems}
-									selectedKey={copyFromId}
-									onChange={key => {
-										handleCopyFrom(key);
-									}}
-									filterDisabled={false}
-									title="Select a saved prompt to copy"
-									getDisplayName={getCopyDisplayName}
-									maxMenuHeight={260}
-								/>
-							</div>
-							<button
-								type="button"
-								className="btn btn-ghost btn-xs col-span-1 p-4"
-								title="Copy again"
-								onClick={() => {
-									if (copyFromId) handleCopyFrom(copyFromId);
-								}}
-								disabled={!copyFromId}
-							>
-								<FiCopy size={14} />
-							</button>
-						</div>
-					)}
-
-					<div>
-						<textarea
-							className="textarea textarea-bordered h-40 w-full rounded-xl"
-							value={value}
-							onChange={e => {
-								setValue(e.target.value);
-							}}
-							placeholder="Enter system prompt instructions here..."
-							spellCheck="false"
-						/>
-					</div>
-
-					<div className="modal-action">
-						<button type="button" className="btn bg-base-300 rounded-xl" onClick={onClose}>
-							Cancel
-						</button>
-						<button type="submit" className="btn btn-primary rounded-xl" disabled={!value.trim()}>
-							Save
-						</button>
-					</div>
-				</form>
-			</div>
-		</dialog>,
-		document.body
-	);
-}
-
-/* ------------------------ Main Dropdown Component ------------------------ */
 
 export const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptDropdownProps>(
 	function SystemPromptDropdown(
@@ -351,7 +228,7 @@ export const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptD
 				</details>
 
 				{/* Add Modal */}
-				<PromptModal
+				<SystemPromptAddEditModal
 					isOpen={isAddOpen}
 					mode="add"
 					initialValue=""
@@ -366,7 +243,7 @@ export const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptD
 				/>
 
 				{/* Edit Modal */}
-				<PromptModal
+				<SystemPromptAddEditModal
 					isOpen={isEditOpen}
 					mode="edit"
 					initialValue={editingItem?.prompt ?? ''}

@@ -1,16 +1,20 @@
-// components/ActionDeniedAlert.tsx
 import { createPortal } from 'react-dom';
 
 import { FiAlertTriangle } from 'react-icons/fi';
 
-interface ActionDeniedAlertProps {
+interface ActionDeniedAlertModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	message: string;
 	title?: string;
 }
 
-export function ActionDeniedAlert({ isOpen, onClose, message, title = 'Action Not Allowed' }: ActionDeniedAlertProps) {
+export function ActionDeniedAlertModal({
+	isOpen,
+	onClose,
+	message,
+	title = 'Action Not Allowed',
+}: ActionDeniedAlertModalProps) {
 	if (!isOpen) return null;
 
 	return createPortal(

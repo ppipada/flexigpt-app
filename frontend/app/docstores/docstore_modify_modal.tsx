@@ -2,7 +2,7 @@ import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
 
 import type { DocStore } from '@/spec/docstore';
 
-interface ModifyStoreProps {
+interface ModifyDocStoreModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (storeData: Partial<DocStore>) => void;
@@ -10,7 +10,13 @@ interface ModifyStoreProps {
 	existingDocStores: DocStore[];
 }
 
-export function ModifyDocStore({ isOpen, onClose, onSubmit, initialData, existingDocStores }: ModifyStoreProps) {
+export function ModifyDocStoreModal({
+	isOpen,
+	onClose,
+	onSubmit,
+	initialData,
+	existingDocStores,
+}: ModifyDocStoreModalProps) {
 	const [formData, setFormData] = useState<Partial<DocStore>>({
 		name: '',
 		url: '',

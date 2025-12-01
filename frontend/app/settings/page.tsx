@@ -9,7 +9,7 @@ import { settingstoreAPI } from '@/apis/baseapi';
 import { DownloadButton } from '@/components/download_button';
 import { PageFrame } from '@/components/page_frame';
 
-import { AddEditAuthKeyModal } from '@/settings/authkey_add_edit';
+import { AddEditAuthKeyModal } from '@/settings/authkey_add_edit_modal';
 import { AuthKeyTable } from '@/settings/authkey_table';
 import { ThemeSelector } from '@/settings/theme';
 

@@ -9,11 +9,11 @@ import { getUUIDv7 } from '@/lib/uuid_utils';
 import { promptStoreAPI } from '@/apis/baseapi';
 import { getAllPromptBundles, getAllPromptTemplates } from '@/apis/list_helper';
 
-import { ActionDeniedAlert } from '@/components/action_denied';
-import { DeleteConfirmationModal } from '@/components/delete_confirmation';
+import { ActionDeniedAlertModal } from '@/components/action_denied_modal';
+import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
 import { Loader } from '@/components/loader';
 
-import { AddBundleModal } from '@/prompts/prompt_bundle_add';
+import { AddBundleModal } from '@/prompts/prompt_bundle_add_modal';
 import { PromptBundleCard } from '@/prompts/prompt_bundle_card';
 
 interface BundleData {
@@ -169,7 +169,7 @@ export function PromptBundlesPage() {
 			/>
 
 			{/* alert */}
-			<ActionDeniedAlert
+			<ActionDeniedAlertModal
 				isOpen={showAlert}
 				onClose={() => {
 					setShowAlert(false);
