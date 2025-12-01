@@ -11,11 +11,12 @@
 
 - [x] Details need to pop up as modal
 - [x] need info to user on how the url or any attachment for that matter was processed. like was it finally done as text or link or bytes or what.
-- [ ] With attachments, token usage display seems more important.
-- [ ] If api errors due to token length issues etc, the reply is fully omitted. need to make same as partial response in api abort cases.
-- [ ] Update ALL modals to use dialog showmodal with backdrop and escape handling.
+- [x] If api errors due to token length issues etc, the reply is fully omitted. need to make same as partial response in api abort cases.
 
-- [ ] attachments
+- [ ] Update ALL modals to use dialog showmodal with backdrop and escape handling.
+- [ ] With attachments, token usage display seems more important.
+
+- attachments
 
   - [x] attachments separate package.
   - [x] Need image and associated processing in one place
@@ -31,9 +32,11 @@
   - [ ] attachments from prev turns also need to be used. they may need to be freshly hydrated again, but need to be used.
   - [ ] input notes should talk about attachments, turns, etc.
   - [ ] get visible text from html needs to be implemented and a new mode raw vs visible text needs to be added.
-  - [ ] doc formats can be in one place (no priority)
-  - [ ] specialized urls like github/gitlab pr's
-  - [ ] local git diff/commit history/etc attachments
+
+  - [ ] No priority
+    - [ ] doc formats can be in one place
+    - [ ] specialized urls like github/gitlab pr's
+    - [ ] local git diff/commit history/etc attachments
 
 - [ ] tool enhancements
 

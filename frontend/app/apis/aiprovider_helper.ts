@@ -241,11 +241,18 @@ export async function HandleCompletion(
 		if ((error as DOMException).name === 'AbortError') {
 			throw error; // let the caller decide
 		}
-		const msg = '\n\n>Got error in api processing. Check details...';
+
+		// Log full error for debugging
 		const details = JSON.stringify(error, null, 2);
-		log.error(msg, details);
-		convoMessage.content = msg;
+		log.error('provider completion failed', details);
+
+		// Preserve any content that is already in the message (e.g. partial stream)
+		const existing = (convoMessage.content || '').trimEnd();
+		const suffix = '\n\n>Got error in API processing. Check details below.';
+
+		convoMessage.content = existing ? existing + suffix : suffix;
 		convoMessage.details = details;
+
 		return { responseMessage: convoMessage, requestDetails: undefined };
 	}
 }

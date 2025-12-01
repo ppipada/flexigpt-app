@@ -263,13 +263,15 @@ export default function ChatsPage() {
 				setStreamedMessage(prev => {
 					const next = prev + textData;
 
-					/* Always copy the current assistant text into the conversation message
-					       object so that we do not lose it when the stream aborts.                */
+					// Always copy the current assistant text into the conversation message object so that we do not lose it when the stream aborts.
 					const lastIdx = updatedChatWithConvoMessage.messages.length - 1;
 					updatedChatWithConvoMessage.messages[lastIdx].content = next;
 					updatedChatWithConvoMessage.modifiedAt = new Date();
 
-					/* A full re-render is only needed for the very first token.               */
+					// Also keep the local convoMsg (passed to HandleCompletion) in sync
+					convoMsg.content = next;
+
+					// A full re-render is only needed for the very first token.
 					if (prev === '') setChat({ ...updatedChatWithConvoMessage });
 
 					return next;
@@ -287,6 +289,9 @@ export default function ChatsPage() {
 					const last = updatedChatWithConvoMessage.messages.length - 1;
 					updatedChatWithConvoMessage.messages[last].content = next;
 					updatedChatWithConvoMessage.modifiedAt = new Date();
+					// Also keep the local convoMsg (passed to HandleCompletion) in sync
+					convoMsg.content = next;
+
 					if (prev === '') setChat({ ...updatedChatWithConvoMessage });
 
 					return next;
@@ -310,6 +315,7 @@ export default function ChatsPage() {
 					inputParams,
 					prevMessages
 				);
+				// Below commented code is used for when we want to see completion data in details.
 				// if (updatedChatWithConvoMessage.messages.length > 1) {
 				// 	const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
 				// 	if (updatedChatWithConvoMessage.messages[prevIdx].role === ConversationRoleEnum.user) {
