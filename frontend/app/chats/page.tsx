@@ -26,7 +26,7 @@ import { PageFrame } from '@/components/page_frame';
 import { editorAttachmentToConversation } from '@/chats/attachments/editor_attachment_utils';
 import type { EditorAttachedToolChoice } from '@/chats/attachments/tool_editor_utils';
 import { InputBox, type InputBoxHandle } from '@/chats/chat_input_box';
-import type { EditorSubmitPayload } from '@/chats/chat_input_editor';
+import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/chat_input_editor';
 import { ChatNavBar, type ChatNavBarHandle } from '@/chats/chat_navbar';
 import { ChatMessage } from '@/chats/messages/message';
 
@@ -85,6 +85,8 @@ export default function ChatsPage() {
 	const manualTitleLockedRef = useRef(false);
 
 	const [shortcutConfig] = useState<ShortcutConfig>(defaultShortcutConfig);
+	const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+
 	// Focus on mount.
 	useEffect(() => {
 		chatInputRef.current?.focus();
@@ -135,6 +137,8 @@ export default function ChatsPage() {
 		// New non-persisted conversation started.
 		isChatPersistedRef.current = false;
 		manualTitleLockedRef.current = false;
+
+		setEditingMessageId(null);
 
 		chatInputRef.current?.focus();
 	};
@@ -192,6 +196,7 @@ export default function ChatsPage() {
 			setChat(selectedChat);
 			isChatPersistedRef.current = true;
 			manualTitleLockedRef.current = false; // fresh load – don’t assume manual lock
+			setEditingMessageId(null);
 		}
 	}, []);
 
@@ -398,6 +403,47 @@ export default function ChatsPage() {
 			return;
 		}
 
+		// If we are editing an existing user message, replace it and drop later messages.
+		if (editingMessageId) {
+			const idx = chat.messages.findIndex(m => m.id === editingMessageId);
+			// If somehow the message vanished, fall back to "append new".
+			if (idx !== -1) {
+				const base = chat.messages[idx];
+
+				const toolChoices =
+					payload.attachedTools.length > 0
+						? payload.attachedTools.map(attachedToolToConversationToolChoice)
+						: undefined;
+
+				const attachments =
+					payload.attachments.length > 0 ? payload.attachments.map(editorAttachmentToConversation) : undefined;
+
+				const updatedUserMsg: ConversationMessage = {
+					...base,
+					content: trimmed,
+					toolChoices: toolChoices && toolChoices.length > 0 ? toolChoices : undefined,
+					attachments: attachments && attachments.length > 0 ? attachments : undefined,
+				};
+
+				const msgs = chat.messages.slice(0, idx + 1);
+				msgs[idx] = updatedUserMsg;
+
+				const updatedChat: Conversation = {
+					...chat,
+					messages: msgs,
+					modifiedAt: new Date(),
+				};
+
+				setEditingMessageId(null);
+				saveUpdatedChat(updatedChat);
+				await updateStreamingMessage(updatedChat, options);
+				return;
+			}
+
+			// If not found, clear edit state and proceed as a normal send.
+			setEditingMessageId(null);
+		}
+
 		const newMsg = initConversationMessage(ConversationRoleEnum.user, trimmed);
 		const toolChoices =
 			payload.attachedTools.length > 0 ? payload.attachedTools.map(attachedToolToConversationToolChoice) : undefined;
@@ -418,28 +464,53 @@ export default function ChatsPage() {
 		updateStreamingMessage(updated, options);
 	};
 
-	const handleEdit = useCallback(
-		async (edited: string, id: string) => {
+	const beginEditMessage = useCallback(
+		(id: string) => {
 			if (isBusy) return;
-			const idx = chat.messages.findIndex(m => m.id === id);
-			if (idx === -1) return;
 
-			const msgs = chat.messages.slice(0, idx + 1);
-			msgs[idx] = { ...msgs[idx], content: edited };
+			const msg = chat.messages.find(m => m.id === id);
+			if (!msg) return;
+			if (msg.role !== ConversationRoleEnum.user) return;
 
-			const updated: Conversation = {
-				...chat,
-				messages: msgs,
-				modifiedAt: new Date(),
+			const external: EditorExternalMessage = {
+				text: msg.content,
+				attachments: msg.attachments,
+				toolChoices: msg.toolChoices,
 			};
-			saveUpdatedChat(updated);
 
-			let opts = { ...DefaultChatOptions };
-			if (chatInputRef.current) opts = chatInputRef.current.getChatOptions();
-			await updateStreamingMessage(updated, opts);
+			chatInputRef.current?.loadExternalMessage(external);
+			chatInputRef.current?.focus();
+			setEditingMessageId(id);
 		},
-		[chat, saveUpdatedChat, updateStreamingMessage]
+		[chat.messages, isBusy]
 	);
+
+	const cancelEditing = useCallback(() => {
+		setEditingMessageId(null);
+	}, []);
+
+	// const handleEdit = useCallback(
+	// 	async (edited: string, id: string) => {
+	// 		if (isBusy) return;
+	// 		const idx = chat.messages.findIndex(m => m.id === id);
+	// 		if (idx === -1) return;
+
+	// 		const msgs = chat.messages.slice(0, idx + 1);
+	// 		msgs[idx] = { ...msgs[idx], content: edited };
+
+	// 		const updated: Conversation = {
+	// 			...chat,
+	// 			messages: msgs,
+	// 			modifiedAt: new Date(),
+	// 		};
+	// 		saveUpdatedChat(updated);
+
+	// 		let opts = { ...DefaultChatOptions };
+	// 		if (chatInputRef.current) opts = chatInputRef.current.getChatOptions();
+	// 		await updateStreamingMessage(updated, opts);
+	// 	},
+	// 	[chat, saveUpdatedChat, updateStreamingMessage]
+	// );
 
 	const handleResend = useCallback(
 		async (id: string) => {
@@ -471,11 +542,14 @@ export default function ChatsPage() {
 			<ChatMessage
 				key={msg.id}
 				message={msg}
-				onEdit={txt => handleEdit(txt, msg.id)}
+				onEdit={() => {
+					beginEditMessage(msg.id);
+				}}
 				onResend={() => handleResend(msg.id)}
 				streamedMessage={live}
 				isPending={isPending}
 				isBusy={isBusy}
+				isEditing={editingMessageId === msg.id}
 			/>
 		);
 	});
@@ -529,7 +603,7 @@ export default function ChatsPage() {
 					{/* Make the full row the scroll container so the scrollbar is at far right */}
 					<div
 						ref={chatContainerRef}
-						className="relative h-full w-full overflow-y-auto overscroll-contain"
+						className="relative h-full w-full overflow-y-auto overscroll-contain py-1"
 						style={{ scrollbarGutter: 'stable both-edges' }}
 					>
 						{/* Center the content inside the full-width scroll container */}
@@ -560,6 +634,8 @@ export default function ChatsPage() {
 							isBusy={isBusy}
 							abortRef={abortRef}
 							shortcutConfig={shortcutConfig}
+							editingMessageId={editingMessageId}
+							cancelEditing={cancelEditing}
 						/>
 					</div>
 				</div>

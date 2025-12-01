@@ -1,4 +1,3 @@
-import type { ChangeEvent } from 'react';
 import { memo, useState } from 'react';
 
 import { FiCompass, FiUser } from 'react-icons/fi';
@@ -7,16 +6,16 @@ import type { ConversationMessage } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 
 import { MessageContent } from '@/chats/messages/message_content';
-import { MessageEditBox } from '@/chats/messages/message_editbox';
 import { MessageFooterArea } from '@/chats/messages/message_footer';
 
 interface ChatMessageProps {
 	message: ConversationMessage;
-	onEdit: (editedText: string) => void;
+	onEdit: () => void;
 	onResend: () => void;
 	streamedMessage: string;
 	isPending: boolean;
 	isBusy: boolean;
+	isEditing: boolean;
 }
 
 function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
@@ -30,6 +29,7 @@ function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
 
 	if (prev.isPending !== next.isPending) return false;
 	if (prev.isBusy !== next.isBusy) return false;
+	if (prev.isEditing !== next.isEditing) return false;
 
 	// If the *object reference* for the ConversationMessage changes
 	// react must re-render (content edited, message appended).
@@ -46,30 +46,19 @@ export const ChatMessage = memo(function ChatMessage({
 	streamedMessage,
 	isPending,
 	isBusy,
+	isEditing,
 }: ChatMessageProps) {
 	const isUser = message.role === ConversationRoleEnum.user;
 	const align = !isUser ? 'items-end text-left' : 'items-start text-left';
 	const leftColSpan = !isUser ? 'col-span-1 lg:col-span-2' : 'col-span-1';
 	const rightColSpan = !isUser ? 'col-span-1' : 'col-span-1 lg:col-span-2';
 
-	const [isEditing, setIsEditing] = useState(false);
-	const [editText, setEditText] = useState(message.content);
 	const [renderMarkdown, setRenderMarkdown] = useState(!isUser);
 
-	const handleEditClick = () => {
-		setIsEditing(true);
-	};
-	const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-		setEditText(e.target.value);
-	};
-	const handleSubmit = (txt: string) => {
-		onEdit(txt);
-		setIsEditing(false);
-	};
-	const handleDiscard = () => {
-		setIsEditing(false);
-		setEditText(message.content);
-	};
+	const bubbleBase = 'bg-base-100 col-span-10 row-start-1 row-end-1 overflow-x-auto rounded-2xl lg:col-span-9';
+	const bubbleExtra = [streamedMessage ? '' : 'shadow-lg', isEditing ? 'ring-2 ring-primary/70' : '']
+		.filter(Boolean)
+		.join(' ');
 
 	return (
 		<div className="mb-4 grid grid-cols-12 grid-rows-[auto_auto] gap-2" style={{ fontSize: 14 }}>
@@ -82,28 +71,17 @@ export const ChatMessage = memo(function ChatMessage({
 				)}
 			</div>
 
-			<div
-				className={`bg-base-100 col-span-10 row-start-1 row-end-1 overflow-x-auto rounded-2xl lg:col-span-9 ${streamedMessage ? '' : 'shadow-lg'}`}
-			>
-				{isEditing ? (
-					<MessageEditBox
-						editText={editText}
-						onTextChange={handleTextChange}
-						onSubmit={handleSubmit}
-						onDiscard={handleDiscard}
-					/>
-				) : (
-					<MessageContent
-						messageID={message.id}
-						content={message.content}
-						streamedText={streamedMessage}
-						isStreaming={!!streamedMessage}
-						isBusy={isBusy}
-						isPending={isPending}
-						align={align}
-						renderAsMarkdown={renderMarkdown}
-					/>
-				)}
+			<div className={`${bubbleBase} ${bubbleExtra}`}>
+				<MessageContent
+					messageID={message.id}
+					content={message.content}
+					streamedText={streamedMessage}
+					isStreaming={!!streamedMessage}
+					isBusy={isBusy}
+					isPending={isPending}
+					align={align}
+					renderAsMarkdown={renderMarkdown}
+				/>
 			</div>
 
 			<div className={`${rightColSpan} row-start-1 row-end-1 flex justify-start`}>
@@ -117,22 +95,20 @@ export const ChatMessage = memo(function ChatMessage({
 			{/* Row 2 ── footer bar */}
 			<div className={`${leftColSpan} row-start-2 row-end-2`} />
 			<div className="col-span-10 row-start-2 row-end-2 lg:col-span-9">
-				{!isEditing && (
-					<MessageFooterArea
-						messageID={message.id}
-						isUser={isUser}
-						cardCopyContent={message.content}
-						onEdit={handleEditClick}
-						onResend={onResend}
-						messageDetails={message.details ?? ''}
-						isStreaming={!!streamedMessage}
-						isBusy={isBusy}
-						disableMarkdown={!renderMarkdown}
-						onDisableMarkdownChange={checked => {
-							setRenderMarkdown(!checked);
-						}}
-					/>
-				)}
+				<MessageFooterArea
+					messageID={message.id}
+					isUser={isUser}
+					cardCopyContent={message.content}
+					onEdit={onEdit}
+					onResend={onResend}
+					messageDetails={message.details ?? ''}
+					isStreaming={!!streamedMessage}
+					isBusy={isBusy}
+					disableMarkdown={!renderMarkdown}
+					onDisableMarkdownChange={checked => {
+						setRenderMarkdown(!checked);
+					}}
+				/>
 			</div>
 			<div className={`${rightColSpan} row-start-2 row-end-2`} />
 		</div>

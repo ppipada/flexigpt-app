@@ -7,7 +7,12 @@ import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 import { DeleteConfirmationModal } from '@/components/delete_confirmation';
 
 import { AssistantContextBar } from '@/chats/assitantcontexts/context_bar';
-import { EditorArea, type EditorAreaHandle, type EditorSubmitPayload } from '@/chats/chat_input_editor';
+import {
+	EditorArea,
+	type EditorAreaHandle,
+	type EditorExternalMessage,
+	type EditorSubmitPayload,
+} from '@/chats/chat_input_editor';
 
 export interface InputBoxHandle {
 	getChatOptions: () => ChatOption;
@@ -15,6 +20,7 @@ export interface InputBoxHandle {
 	openTemplateMenu: () => void;
 	openToolMenu: () => void;
 	openAttachmentMenu: () => void;
+	loadExternalMessage: (msg: EditorExternalMessage) => void;
 }
 
 interface InputBoxProps {
@@ -22,10 +28,12 @@ interface InputBoxProps {
 	isBusy: boolean;
 	abortRef: RefObject<AbortController | null>;
 	shortcutConfig: ShortcutConfig;
+	editingMessageId: string | null;
+	cancelEditing: () => void;
 }
 
 export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function InputBox(
-	{ onSend, isBusy, abortRef, shortcutConfig },
+	{ onSend, isBusy, abortRef, shortcutConfig, editingMessageId, cancelEditing },
 	ref
 ) {
 	/* ------------------------------------------------------------------
@@ -69,6 +77,9 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 		openAttachmentMenu: () => {
 			inputAreaRef.current?.openAttachmentMenu();
 		},
+		loadExternalMessage: msg => {
+			inputAreaRef.current?.loadExternalMessage(msg);
+		},
 	}));
 
 	/* ------------------------------------------------------------------
@@ -95,6 +106,7 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 					confirmButtonText="Abort"
 				/>
 			)}
+
 			<div className="overflow-x-hidden overflow-y-auto">
 				{/* Chat text-input --------------------------------------------------- */}
 				{/* <TextArea
@@ -106,11 +118,13 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 				<EditorArea
 					ref={inputAreaRef}
 					isBusy={isBusy}
+					shortcutConfig={shortcutConfig}
 					onSubmit={handleSubmitMessage}
 					onRequestStop={() => {
 						setShowAbortModal(true);
 					}}
-					shortcutConfig={shortcutConfig}
+					editingMessageId={editingMessageId}
+					cancelEditing={cancelEditing}
 				/>
 			</div>
 		</div>

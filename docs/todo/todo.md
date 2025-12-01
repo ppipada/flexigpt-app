@@ -2,7 +2,7 @@
 
 ## Laundry list
 
-- [ ] edit message should fall to the editor with attachments/tools so that resend is consistent
+- [x] edit message should fall to the editor with attachments/tools so that resend is consistent
 - [ ] render images and attachments in msg ui
 - [x] attachment tools buttons and shortcuts etc dropdowns ui
 - [ ] system prompt delete is via sys dialog. need it to be a modal

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import {
 	type FormEvent,
 	forwardRef,
@@ -9,14 +10,15 @@ import {
 	useState,
 } from 'react';
 
-import { FiAlertTriangle, FiSend, FiSquare } from 'react-icons/fi';
+import { FiAlertTriangle, FiEdit2, FiSend, FiSquare, FiX } from 'react-icons/fi';
 
 import { useMenuStore } from '@ariakit/react';
 import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
-import type { Attachment, AttachmentMode } from '@/spec/attachment';
+import { type Attachment, AttachmentKind, type AttachmentMode } from '@/spec/attachment';
 import type { DirectoryAttachmentsResult } from '@/spec/backend';
+import type { ConversationToolChoice } from '@/spec/conversation';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -47,7 +49,11 @@ import {
 	editorAttachmentKey,
 	MAX_FILES_PER_DIRECTORY,
 } from '@/chats/attachments/editor_attachment_utils';
-import { type EditorAttachedToolChoice, getAttachedTools } from '@/chats/attachments/tool_editor_utils';
+import {
+	type EditorAttachedToolChoice,
+	getAttachedTools,
+	insertToolSelectionNode,
+} from '@/chats/attachments/tool_editor_utils';
 import { ToolPlusKit } from '@/chats/attachments/tool_plugin';
 import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
 import {
@@ -68,6 +74,14 @@ export interface EditorAreaHandle {
 	openTemplateMenu: () => void;
 	openToolMenu: () => void;
 	openAttachmentMenu: () => void;
+	loadExternalMessage: (msg: EditorExternalMessage) => void;
+	resetEditor: () => void;
+}
+
+export interface EditorExternalMessage {
+	text: string;
+	attachments?: Attachment[];
+	toolChoices?: ConversationToolChoice[];
 }
 
 export interface EditorSubmitPayload {
@@ -80,13 +94,15 @@ const EDITOR_EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
 
 interface EditorAreaProps {
 	isBusy: boolean;
+	shortcutConfig: ShortcutConfig;
 	onSubmit: (payload: EditorSubmitPayload) => Promise<void>;
 	onRequestStop: () => void;
-	shortcutConfig: ShortcutConfig;
+	editingMessageId: string | null;
+	cancelEditing: () => void;
 }
 
 export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function EditorArea(
-	{ isBusy, onSubmit, onRequestStop, shortcutConfig },
+	{ isBusy, shortcutConfig, onSubmit, onRequestStop, editingMessageId, cancelEditing },
 	ref
 ) {
 	const editor = usePlateEditor({
@@ -219,7 +235,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		const nodesRev = [...nodes].sort(compareEntryByPathDeepestFirst);
 
 		for (const [tsenode, originalPath] of nodesRev) {
-			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 			if (!tsenode || !tsenode.selectionID) continue;
 			const selectionID: string = tsenode.selectionID;
 			if (populated.has(selectionID)) continue;
@@ -334,6 +349,88 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		});
 	};
 
+	const resetEditor = useCallback(() => {
+		closeAllMenus();
+		setSubmitError(null);
+		lastPopulatedSelectionKeyRef.current.clear();
+		isSubmittingRef.current = false;
+
+		editor.tf.setValue(EDITOR_EMPTY_VALUE);
+		setAttachments([]);
+		setDirectoryGroups([]);
+		// Let Plate onChange bump docVersion; no need to do it here.
+		editor.tf.focus();
+	}, [closeAllMenus, editor]);
+
+	const loadExternalMessage = useCallback(
+		(incoming: EditorExternalMessage) => {
+			closeAllMenus();
+			setSubmitError(null);
+			lastPopulatedSelectionKeyRef.current.clear();
+			isSubmittingRef.current = false;
+
+			// 1) Reset document to plain text paragraphs.
+			const plain = incoming.text ?? '';
+			const paragraphs = plain.split(/\r?\n/);
+			const value: Value =
+				paragraphs.length === 0
+					? EDITOR_EMPTY_VALUE
+					: paragraphs.map(line => ({
+							type: 'p',
+							children: [{ text: line }],
+						}));
+
+			editor.tf.setValue(value);
+
+			// 2) Rebuild attachments as EditorAttachment[]
+			setAttachments(() => {
+				if (!incoming.attachments || incoming.attachments.length === 0) return [];
+				const next: EditorAttachment[] = [];
+				const seen = new Set<string>();
+
+				for (const att of incoming.attachments) {
+					let ui: EditorAttachment | undefined = undefined;
+
+					if (att.kind === AttachmentKind.url) {
+						// URL attachment
+						if (att.urlRef && att.urlRef.url) {
+							ui = buildEditorAttachmentForURL(att.urlRef.url);
+						} else {
+							continue;
+						}
+					} else if (att.kind === AttachmentKind.file || att.kind === AttachmentKind.image) {
+						// File/image/etc. – same type we originally got from backend.
+						ui = buildEditorAttachmentForLocalPath(att);
+					}
+
+					if (!ui) continue;
+
+					const key = editorAttachmentKey(ui);
+					if (seen.has(key)) continue;
+					seen.add(key);
+					next.push(ui);
+				}
+				return next;
+			});
+
+			// We don’t attempt to reconstruct directoryGroups; show flat chips instead.
+			setDirectoryGroups([]);
+
+			// 3) Re-add tool choices as tool selection nodes.
+			//    The doc we just set has no tool nodes, so we can just insert new ones.
+
+			for (const choice of incoming.toolChoices ?? []) {
+				insertToolSelectionNode(editor, {
+					bundleID: choice.bundleID,
+					toolSlug: choice.toolSlug,
+					toolVersion: choice.toolVersion,
+				});
+			}
+
+			editor.tf.focus();
+		},
+		[closeAllMenus, editor]
+	);
 	useImperativeHandle(ref, () => ({
 		focus: () => {
 			editor.tf.focus();
@@ -347,6 +444,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		openAttachmentMenu: () => {
 			openAttachmentPicker();
 		},
+		loadExternalMessage,
+		resetEditor,
 	}));
 
 	const handleAttachFiles = async () => {
@@ -356,7 +455,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		} catch {
 			return;
 		}
-		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
 		if (!results || results.length === 0) return;
 
 		setAttachments(prev => {
@@ -388,11 +487,10 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			return;
 		}
 
-		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 		if (!result || !result.dirPath) return;
 
 		const { dirPath, attachments, overflowDirs } = result;
-		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
 		if ((!attachments || attachments.length === 0) && (!overflowDirs || overflowDirs.length === 0)) {
 			// Nothing readable / allowed in this folder.
 			return;
@@ -400,7 +498,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 		const folderLabel = dirPath.trim().split(/[\\/]/).pop() || dirPath.trim();
 
-		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 		const groupId = crypto.randomUUID() ?? `dir-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 		// First, add or reuse attachments.
@@ -418,7 +515,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 			const added: EditorAttachment[] = [];
 
-			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 			for (const r of attachments ?? []) {
 				const att = buildEditorAttachmentForLocalPath(r);
 				if (!att) {
@@ -452,7 +548,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				label: folderLabel,
 				attachmentKeys: attachmentKeysForGroup,
 				ownedAttachmentKeys: ownedAttachmentKeysForGroup,
-				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
 				overflowDirs: overflowDirs ?? [],
 			},
 		]);
@@ -544,6 +640,11 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		});
 	};
 
+	const handleCancelEditing = useCallback(() => {
+		resetEditor();
+		cancelEditing();
+	}, [cancelEditing]);
+
 	return (
 		<form
 			ref={formRef}
@@ -563,10 +664,39 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 					if (submitError) {
 						setSubmitError(null);
 					}
+
+					// Auto-cancel editing when there's no text and no tools.
+					const hasText = hasNonEmptyUserText(editorRef.current);
+					const hasTools = getAttachedTools(editorRef.current).length > 0;
+					const isEmpty = !hasText && !hasTools;
+
+					// Only do this while editing an older message.
+					if (isEmpty && editingMessageId) {
+						// IMPORTANT: do NOT call resetEditor here; we only exit edit mode.
+						cancelEditing();
+					}
 				}}
 			>
 				<div className="bg-base-100 border-base-200 w-full max-w-full min-w-0 overflow-hidden rounded-2xl border">
 					<TemplateToolbars />
+					{editingMessageId && (
+						<div className="flex items-center justify-end gap-2 pt-1 pr-3 pb-0 text-xs">
+							<div className="flex items-center gap-2">
+								<FiEdit2 size={14} />
+								<span>
+									Editing an earlier message. Sending will replace it and drop all later messages from the conversation.
+								</span>
+							</div>
+							<button
+								type="button"
+								className="btn btn-circle btn-neutral btn-xs shrink-0"
+								onClick={handleCancelEditing}
+								title="Cancel Edit"
+							>
+								<FiX size={14} />
+							</button>
+						</div>
+					)}
 					{/* Row: editor with send/stop button on the right */}
 					<div className="flex min-h-20 min-w-0 gap-2 px-1 py-0">
 						<PlateContent

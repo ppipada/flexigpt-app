@@ -6,6 +6,7 @@ import { FiCheck, FiChevronDown, FiChevronUp, FiCopy, FiEdit2, FiPlus, FiTrash, 
 
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
+import { DeleteConfirmationModal } from '@/components/delete_confirmation';
 import { Dropdown } from '@/components/dropdown';
 
 export type SystemPromptItem = {
@@ -172,6 +173,8 @@ export const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptD
 		const [isAddOpen, setIsAddOpen] = useState(false);
 		const [isEditOpen, setIsEditOpen] = useState(false);
 		const [editingItemId, setEditingItemId] = useState<string | null>(null);
+		const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+		const [itemPendingDelete, setItemPendingDelete] = useState<SystemPromptItem | null>(null);
 
 		const editingItem = useMemo(() => prompts.find(p => p.id === editingItemId) || null, [prompts, editingItemId]);
 
@@ -200,14 +203,26 @@ export const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptD
 
 		const handleRemoveItem = (item: SystemPromptItem) => {
 			if (item.locked) return;
-			const confirm = window.confirm('Remove this saved prompt?');
-			if (!confirm) return;
+			setItemPendingDelete(item);
+			setIsDeleteOpen(true);
+			closeDropdown();
+		};
 
-			// If removing the currently selected item, clear selection
-			if (selectedPromptId === item.id) {
+		const handleConfirmDelete = () => {
+			if (!itemPendingDelete) return;
+
+			if (selectedPromptId === itemPendingDelete.id) {
 				onClear();
 			}
-			onRemove(item.id);
+			onRemove(itemPendingDelete.id);
+
+			setItemPendingDelete(null);
+			setIsDeleteOpen(false);
+		};
+
+		const handleCancelDelete = () => {
+			setItemPendingDelete(null);
+			setIsDeleteOpen(false);
 		};
 
 		return (
@@ -364,6 +379,19 @@ export const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptD
 						if (!editingItem) return;
 						onEdit(editingItem.id, value);
 					}}
+				/>
+
+				<DeleteConfirmationModal
+					isOpen={isDeleteOpen}
+					onClose={handleCancelDelete}
+					onConfirm={handleConfirmDelete}
+					title="Remove saved prompt?"
+					message={
+						itemPendingDelete
+							? `This will remove "${itemPendingDelete.title}" from your saved system prompts. This action cannot be undone.`
+							: 'This will remove the saved system prompt. This action cannot be undone.'
+					}
+					confirmButtonText="Remove"
 				/>
 			</div>
 		);

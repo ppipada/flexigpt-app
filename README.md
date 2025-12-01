@@ -212,7 +212,7 @@ Launch FlexiGPT, open Settings -> Providers, paste your API key, start chatting.
 - [Wails](https://wails.io/) as a desktop application building platform.
 - [Vite](https://vite.dev/) + [React Router v7](https://reactrouter.com/) frontend in [Typescript](https://www.typescriptlang.org/).
 - [DaisyUI](https://daisyui.com/) with [TailwindCSS](https://tailwindcss.com/) for styling.
-- Offical Go SDKs by [OpenAI](https://github.com/openai/openai-go) and [Anthropic](https://github.com/anthropics/anthropic-sdk-go).
+- Official Go SDKs by [OpenAI](https://github.com/openai/openai-go) and [Anthropic](https://github.com/anthropics/anthropic-sdk-go).
 
 - Tooling:
 
@@ -221,7 +221,7 @@ Launch FlexiGPT, open Settings -> Providers, paste your API key, start chatting.
   - [Knip](https://knip.dev/)
   - [ESLint](https://eslint.org/)
   - [Prettier](https://prettier.io/)
-  - [Github actions](https://github.com/features/actions)
+  - [GitHub actions](https://github.com/features/actions)
 
 - Data storage: `JSON` and `SQLite` files in local filesystem.
 
