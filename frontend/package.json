@@ -34,7 +34,7 @@
 		"@platejs/list": "^51.1.2",
 		"@platejs/tabbable": "^51.1.2",
 		"@react-router/node": "^7.9.6",
-		"@udecode/cn": "^49.0.15",
+		"@udecode/cn": "^52.0.1",
 		"class-variance-authority": "^0.7.1",
 		"compromise": "^14.14.4",
 		"isbot": "^5.1.32",
