@@ -35,7 +35,7 @@ export default function PromptsPage() {
 
 				<div className="mt-16 flex-1 overflow-y-auto overscroll-y-contain">
 					{activeTab === 'prompts' && <PromptBundlesPage />}
-					{activeTab === 'tools' && <ToolsPage />}Tools
+					{activeTab === 'tools' && <ToolsPage />}
 				</div>
 			</div>
 		</PageFrame>
