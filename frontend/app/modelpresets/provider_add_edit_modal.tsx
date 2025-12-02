@@ -1,5 +1,7 @@
 import type { ChangeEvent, FormEvent } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiUpload, FiX } from 'react-icons/fi';
 
@@ -58,6 +60,8 @@ interface AddEditProviderPresetModalProps {
 	apiKeyAlreadySet?: boolean;
 }
 
+type ErrorState = Partial<Record<keyof FormData, string>>;
+
 export function AddEditProviderPresetModal({
 	isOpen,
 	mode,
@@ -69,7 +73,9 @@ export function AddEditProviderPresetModal({
 	apiKeyAlreadySet = false,
 }: AddEditProviderPresetModalProps) {
 	const [formData, setFormData] = useState<FormData>(DEFAULT_FORM);
-	const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+	const [errors, setErrors] = useState<ErrorState>({});
+
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
 
 	const prefillDropdownItems: Record<ProviderName, { isEnabled: boolean; displayName: string }> = useMemo(() => {
 		const o: Record<ProviderName, { isEnabled: boolean; displayName: string }> = {} as any;
@@ -144,14 +150,33 @@ export function AddEditProviderPresetModal({
 		setErrors({});
 	}, [isOpen, mode, initialPreset]);
 
-	const validateField = (field: keyof FormData, val: string) => {
-		let newErrs = { ...errors };
-		const v = val.trim();
+	// Open/close native dialog
+	useEffect(() => {
+		if (!isOpen) return;
+		const dialog = dialogRef.current;
+		if (!dialog) return;
+
+		if (!dialog.open) dialog.showModal();
+
+		return () => {
+			if (dialog.open) dialog.close();
+		};
+	}, [isOpen]);
+
+	const handleDialogClose = () => {
+		onClose();
+	};
+
+	const validateField = (field: keyof FormData, val: string, currentErrors: ErrorState): ErrorState => {
+		let newErrs: ErrorState = { ...currentErrors };
+		const v = typeof val === 'string' ? val.trim() : val;
 
 		if (field === 'providerName' && mode === 'add') {
 			if (!v) newErrs.providerName = 'Provider name required.';
-			else if (!/^[\w-]+$/.test(v)) newErrs.providerName = 'Letters, numbers, dash & underscore only.';
-			else if (existingProviderNames.includes(v)) newErrs.providerName = 'Provider already exists.';
+			else if (typeof v === 'string' && !/^[\w-]+$/.test(v))
+				newErrs.providerName = 'Letters, numbers, dash & underscore only.';
+			else if (typeof v === 'string' && existingProviderNames.includes(v))
+				newErrs.providerName = 'Provider already exists.';
 			else newErrs = omitManyKeys(newErrs, ['providerName']);
 		}
 
@@ -186,7 +211,20 @@ export function AddEditProviderPresetModal({
 			else newErrs = omitManyKeys(newErrs, ['sdkType']);
 		}
 
-		setErrors(newErrs);
+		return newErrs;
+	};
+
+	const validateForm = (state: FormData): ErrorState => {
+		let next: ErrorState = {};
+		next = validateField('providerName', state.providerName, next);
+		next = validateField('displayName', state.displayName, next);
+		next = validateField('origin', state.origin, next);
+		next = validateField('defaultHeadersRawJSON', state.defaultHeadersRawJSON, next);
+		if (mode === 'add' || state.apiKey.trim()) {
+			next = validateField('apiKey', state.apiKey, next);
+		}
+		next = validateField('sdkType', state.sdkType, next);
+		return next;
 	};
 
 	const handleInput = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -196,7 +234,7 @@ export function AddEditProviderPresetModal({
 		setFormData(prev => ({ ...prev, [name]: newVal }));
 
 		if (['providerName', 'displayName', 'origin', 'defaultHeadersRawJSON', 'apiKey'].includes(name)) {
-			validateField(name as keyof FormData, String(newVal));
+			setErrors(prev => validateField(name as keyof FormData, String(newVal), prev));
 		}
 	};
 
@@ -213,11 +251,12 @@ export function AddEditProviderPresetModal({
 
 			return next;
 		});
-		validateField('sdkType', key);
+		setErrors(prev => validateField('sdkType', key, prev));
 	};
 
 	const allValid = useMemo(() => {
-		const hasErr = Object.values(errors).some(Boolean);
+		const validationErrors = validateForm(formData);
+		const hasErr = Object.values(validationErrors).some(Boolean);
 		const requiredFilled =
 			formData.providerName.trim() &&
 			formData.displayName.trim() &&
@@ -225,23 +264,22 @@ export function AddEditProviderPresetModal({
 			(mode === 'add' ? formData.apiKey.trim() : true);
 
 		return !hasErr && requiredFilled;
-	}, [errors, formData, mode]);
+	}, [formData, mode]);
 
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 
-		/* final validation pass */
-		(Object.entries(formData) as [keyof FormData, string][]).forEach(([k, v]) => {
-			if (typeof v === 'string') validateField(k, v);
-		});
-		if (!allValid) return;
+		const finalErrors = validateForm(formData);
+		setErrors(finalErrors);
+		if (Object.values(finalErrors).some(Boolean)) return;
 
 		let defaultHeaders: Record<string, string> = {};
 		if (formData.defaultHeadersRawJSON.trim()) {
 			try {
 				defaultHeaders = JSON.parse(formData.defaultHeadersRawJSON.trim());
 			} catch {
-				/* already flagged */
+				// Should already be reflected in errors via validateForm
+				return;
 			}
 		}
 
@@ -257,309 +295,319 @@ export function AddEditProviderPresetModal({
 		};
 
 		onSubmit(formData.providerName.trim(), payload, formData.apiKey.trim() || null);
-		onClose();
+		dialogRef.current?.close();
 	};
 
 	if (!isOpen) return null;
 
-	return (
-		<dialog className="modal modal-open">
-			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
-				{/* Header */}
-				<div className="mb-4 flex items-center justify-between">
-					<h3 className="text-lg font-bold">{mode === 'add' ? 'Add Provider' : 'Edit Provider'}</h3>
-					<button className="btn btn-sm btn-circle bg-base-300" onClick={onClose} aria-label="Close" title="Close">
-						<FiX size={12} />
-					</button>
-				</div>
-
-				<form onSubmit={handleSubmit} className="space-y-4">
-					{/* PREFILL (ADD mode only) */}
-					{mode === 'add' && (
-						<div className="grid grid-cols-12 items-center gap-2">
-							<label className="label col-span-3">
-								<span className="label-text text-sm">Prefill from Existing</span>
-							</label>
-
-							<div className="col-span-9 flex items-center gap-2">
-								{!prefillMode && (
-									<button
-										type="button"
-										className="btn btn-sm btn-ghost flex items-center rounded-2xl"
-										onClick={() => {
-											setPrefillMode(true);
-										}}
-									>
-										<FiUpload size={14} />
-										<span className="ml-1">Copy Existing Provider</span>
-									</button>
-								)}
-
-								{prefillMode && (
-									<>
-										<Dropdown<ProviderName>
-											dropdownItems={prefillDropdownItems}
-											selectedKey={selectedPrefillKey ?? ('' as ProviderName)}
-											onChange={key => {
-												setSelectedPrefillKey(key);
-												applyPrefill(key);
-												setPrefillMode(false); // auto-close
-											}}
-											filterDisabled={false}
-											title="Select provider to copy"
-											getDisplayName={k => prefillDropdownItems[k].displayName}
-										/>
-										<button
-											type="button"
-											className="btn btn-sm btn-ghost rounded-2xl"
-											onClick={() => {
-												setPrefillMode(false);
-												setSelectedPrefillKey(null);
-											}}
-											title="Cancel prefill"
-										>
-											<FiX size={12} />
-										</button>
-									</>
-								)}
-							</div>
-						</div>
-					)}
-
-					{/* SDK Type */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">SDK Type*</span>
-							<span
-								className="label-text-alt tooltip tooltip-right"
-								data-tip="Select the backend SDK/API compatibility for this provider."
-							>
-								<FiHelpCircle size={12} />
-							</span>
-						</label>
-						<div className="col-span-9">
-							<Dropdown<ProviderSDKType>
-								dropdownItems={sdkDropdownItems}
-								selectedKey={formData.sdkType}
-								onChange={onSdkTypeChange}
-								filterDisabled={false}
-								title="Select SDK Type"
-								getDisplayName={k => sdkDropdownItems[k].displayName}
-							/>
-							{errors.sdkType && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.sdkType}
-									</span>
-								</div>
-							)}
-						</div>
+	return createPortal(
+		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
+			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
+				<div className="max-h-[80vh] overflow-y-auto p-6">
+					{/* Header */}
+					<div className="mb-4 flex items-center justify-between">
+						<h3 className="text-lg font-bold">{mode === 'add' ? 'Add Provider' : 'Edit Provider'}</h3>
+						<button
+							type="button"
+							className="btn btn-sm btn-circle bg-base-300"
+							onClick={() => dialogRef.current?.close()}
+							aria-label="Close"
+						>
+							<FiX size={12} />
+						</button>
 					</div>
 
-					{/* Provider ID */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Provider ID*</span>
-							{mode === 'add' && (
+					<form noValidate onSubmit={handleSubmit} className="space-y-4">
+						{/* PREFILL (ADD mode only) */}
+						{mode === 'add' && (
+							<div className="grid grid-cols-12 items-center gap-2">
+								<label className="label col-span-3">
+									<span className="label-text text-sm">Prefill from Existing</span>
+								</label>
+
+								<div className="col-span-9 flex items-center gap-2">
+									{!prefillMode && (
+										<button
+											type="button"
+											className="btn btn-sm btn-ghost flex items-center rounded-xl"
+											onClick={() => {
+												setPrefillMode(true);
+											}}
+										>
+											<FiUpload size={14} />
+											<span className="ml-1">Copy Existing Provider</span>
+										</button>
+									)}
+
+									{prefillMode && (
+										<>
+											<Dropdown<ProviderName>
+												dropdownItems={prefillDropdownItems}
+												selectedKey={selectedPrefillKey ?? ('' as ProviderName)}
+												onChange={key => {
+													setSelectedPrefillKey(key);
+													applyPrefill(key);
+													setPrefillMode(false); // auto-close
+												}}
+												filterDisabled={false}
+												title="Select provider to copy"
+												getDisplayName={k => prefillDropdownItems[k].displayName}
+											/>
+											<button
+												type="button"
+												className="btn btn-sm btn-ghost rounded-xl"
+												onClick={() => {
+													setPrefillMode(false);
+													setSelectedPrefillKey(null);
+												}}
+												title="Cancel prefill"
+											>
+												<FiX size={12} />
+											</button>
+										</>
+									)}
+								</div>
+							</div>
+						)}
+
+						{/* SDK Type */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">SDK Type*</span>
 								<span
 									className="label-text-alt tooltip tooltip-right"
-									data-tip="Unique identifier (letters, numbers, dash, underscore)."
+									data-tip="Select the backend SDK/API compatibility for this provider."
 								>
 									<FiHelpCircle size={12} />
 								</span>
-							)}
-						</label>
-						<div className="col-span-9">
-							<input
-								type="text"
-								name="providerName"
-								value={formData.providerName}
-								onChange={handleInput}
-								className={`input input-bordered w-full rounded-2xl ${errors.providerName ? 'input-error' : ''}`}
-								disabled={mode === 'edit'}
-								spellCheck="false"
-								autoComplete="off"
-							/>
-							{errors.providerName && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.providerName}
+							</label>
+							<div className="col-span-9">
+								<Dropdown<ProviderSDKType>
+									dropdownItems={sdkDropdownItems}
+									selectedKey={formData.sdkType}
+									onChange={onSdkTypeChange}
+									filterDisabled={false}
+									title="Select SDK Type"
+									getDisplayName={k => sdkDropdownItems[k].displayName}
+								/>
+								{errors.sdkType && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.sdkType}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Provider ID */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Provider ID*</span>
+								{mode === 'add' && (
+									<span
+										className="label-text-alt tooltip tooltip-right"
+										data-tip="Unique identifier (letters, numbers, dash, underscore)."
+									>
+										<FiHelpCircle size={12} />
 									</span>
-								</div>
-							)}
+								)}
+							</label>
+							<div className="col-span-9">
+								<input
+									type="text"
+									name="providerName"
+									value={formData.providerName}
+									onChange={handleInput}
+									className={`input input-bordered w-full rounded-xl ${errors.providerName ? 'input-error' : ''}`}
+									disabled={mode === 'edit'}
+									spellCheck="false"
+									autoComplete="off"
+									autoFocus
+								/>
+								{errors.providerName && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.providerName}
+										</span>
+									</div>
+								)}
+							</div>
 						</div>
-					</div>
 
-					{/* Display Name */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Display Name*</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								type="text"
-								name="displayName"
-								value={formData.displayName}
-								onChange={handleInput}
-								className={`input input-bordered w-full rounded-2xl ${errors.displayName ? 'input-error' : ''}`}
-								spellCheck="false"
-								autoComplete="off"
-							/>
-							{errors.displayName && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.displayName}
-									</span>
-								</div>
-							)}
+						{/* Display Name */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Display Name*</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="text"
+									name="displayName"
+									value={formData.displayName}
+									onChange={handleInput}
+									className={`input input-bordered w-full rounded-xl ${errors.displayName ? 'input-error' : ''}`}
+									spellCheck="false"
+									autoComplete="off"
+								/>
+								{errors.displayName && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.displayName}
+										</span>
+									</div>
+								)}
+							</div>
 						</div>
-					</div>
 
-					{/* Origin */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Origin*</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								type="text"
-								name="origin"
-								value={formData.origin}
-								onChange={handleInput}
-								className={`input input-bordered w-full rounded-2xl ${errors.origin ? 'input-error' : ''}`}
-								spellCheck="false"
-								autoComplete="off"
-							/>
-							{errors.origin && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.origin}
-									</span>
-								</div>
-							)}
+						{/* Origin */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Origin*</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="text"
+									name="origin"
+									value={formData.origin}
+									onChange={handleInput}
+									className={`input input-bordered w-full rounded-xl ${errors.origin ? 'input-error' : ''}`}
+									spellCheck="false"
+									autoComplete="off"
+								/>
+								{errors.origin && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.origin}
+										</span>
+									</div>
+								)}
+							</div>
 						</div>
-					</div>
 
-					{/* Chat-completion Path */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Chat Path*</span>
-							<span className="label-text-alt tooltip tooltip-right" data-tip="Endpoint path for chat completions.">
-								<FiHelpCircle size={12} />
-							</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								type="text"
-								name="chatCompletionPathPrefix"
-								value={formData.chatCompletionPathPrefix}
-								onChange={handleInput}
-								className="input input-bordered w-full rounded-2xl"
-								spellCheck="false"
-								autoComplete="off"
-							/>
+						{/* Chat-completion Path */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Chat Path*</span>
+								<span className="label-text-alt tooltip tooltip-right" data-tip="Endpoint path for chat completions.">
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="text"
+									name="chatCompletionPathPrefix"
+									value={formData.chatCompletionPathPrefix}
+									onChange={handleInput}
+									className="input input-bordered w-full rounded-xl"
+									spellCheck="false"
+									autoComplete="off"
+								/>
+							</div>
 						</div>
-					</div>
 
-					{/* API-key header key */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">API-Key Header Key</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								type="text"
-								name="apiKeyHeaderKey"
-								value={formData.apiKeyHeaderKey}
-								onChange={handleInput}
-								className="input input-bordered w-full rounded-2xl"
-								spellCheck="false"
-								autoComplete="off"
-							/>
+						{/* API-key header key */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">API-Key Header Key</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="text"
+									name="apiKeyHeaderKey"
+									value={formData.apiKeyHeaderKey}
+									onChange={handleInput}
+									className="input input-bordered w-full rounded-xl"
+									spellCheck="false"
+									autoComplete="off"
+								/>
+							</div>
 						</div>
-					</div>
 
-					{/* Default Headers */}
-					<div className="grid grid-cols-12 items-start gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Default Headers (JSON)</span>
-						</label>
-						<div className="col-span-9">
-							<textarea
-								name="defaultHeadersRawJSON"
-								value={formData.defaultHeadersRawJSON}
-								onChange={handleInput}
-								className={`textarea textarea-bordered h-24 w-full rounded-2xl ${
-									errors.defaultHeadersRawJSON ? 'textarea-error' : ''
-								}`}
-								spellCheck="false"
-							/>
-							{errors.defaultHeadersRawJSON && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.defaultHeadersRawJSON}
-									</span>
-								</div>
-							)}
+						{/* Default Headers */}
+						<div className="grid grid-cols-12 items-start gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Default Headers (JSON)</span>
+							</label>
+							<div className="col-span-9">
+								<textarea
+									name="defaultHeadersRawJSON"
+									value={formData.defaultHeadersRawJSON}
+									onChange={handleInput}
+									className={`textarea textarea-bordered h-24 w-full rounded-xl ${
+										errors.defaultHeadersRawJSON ? 'textarea-error' : ''
+									}`}
+									spellCheck="false"
+								/>
+								{errors.defaultHeadersRawJSON && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.defaultHeadersRawJSON}
+										</span>
+									</div>
+								)}
+							</div>
 						</div>
-					</div>
 
-					{/* API-Key */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3 flex flex-col items-start gap-0.5">
-							<span className="label-text text-sm">API-Key*</span>
-							{mode === 'edit' && apiKeyAlreadySet && (
-								<span className="label-text-alt text-xs">(leave blank to keep current)</span>
-							)}
-						</label>
-						<div className="col-span-9">
-							<input
-								type="password"
-								name="apiKey"
-								value={formData.apiKey}
-								onChange={handleInput}
-								className={`input input-bordered w-full rounded-2xl ${errors.apiKey ? 'input-error' : ''}`}
-								placeholder={mode === 'edit' && apiKeyAlreadySet ? '********' : ''}
-								spellCheck="false"
-								autoComplete="off"
-							/>
-							{errors.apiKey && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.apiKey}
-									</span>
-								</div>
-							)}
+						{/* API-Key */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3 flex flex-col items-start gap-0.5">
+								<span className="label-text text-sm">API-Key*</span>
+								{mode === 'edit' && apiKeyAlreadySet && (
+									<span className="label-text-alt text-xs">(leave blank to keep current)</span>
+								)}
+							</label>
+							<div className="col-span-9">
+								<input
+									type="password"
+									name="apiKey"
+									value={formData.apiKey}
+									onChange={handleInput}
+									className={`input input-bordered w-full rounded-xl ${errors.apiKey ? 'input-error' : ''}`}
+									placeholder={mode === 'edit' && apiKeyAlreadySet ? '********' : ''}
+									spellCheck="false"
+									autoComplete="off"
+								/>
+								{errors.apiKey && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.apiKey}
+										</span>
+									</div>
+								)}
+							</div>
 						</div>
-					</div>
 
-					{/* Enabled toggle */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3 cursor-pointer">
-							<span className="label-text text-sm">Enabled</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								type="checkbox"
-								name="isEnabled"
-								checked={formData.isEnabled}
-								onChange={handleInput}
-								className="toggle toggle-accent"
-							/>
+						{/* Enabled toggle */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3 cursor-pointer">
+								<span className="label-text text-sm">Enabled</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="checkbox"
+									name="isEnabled"
+									checked={formData.isEnabled}
+									onChange={handleInput}
+									className="toggle toggle-accent"
+								/>
+							</div>
 						</div>
-					</div>
 
-					{/* Actions */}
-					<div className="modal-action">
-						<button type="button" className="btn bg-base-300 rounded-2xl" onClick={onClose}>
-							Cancel
-						</button>
-						<button type="submit" className="btn btn-primary rounded-2xl" disabled={!allValid}>
-							{mode === 'add' ? 'Add Provider' : 'Save'}
-						</button>
-					</div>
-				</form>
+						{/* Actions */}
+						<div className="modal-action">
+							<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
+								Cancel
+							</button>
+							<button type="submit" className="btn btn-primary rounded-xl" disabled={!allValid}>
+								{mode === 'add' ? 'Add Provider' : 'Save'}
+							</button>
+						</div>
+					</form>
+				</div>
 			</div>
-		</dialog>
+			{/* NOTE: no modal-backdrop here: backdrop click should NOT close this modal */}
+		</dialog>,
+		document.body
 	);
 }

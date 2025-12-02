@@ -1,4 +1,6 @@
-import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+
+import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
@@ -27,6 +29,17 @@ interface AddEditToolModalProps {
 const TOOL_TYPE_LABEL_GO = 'Go';
 const TOOL_TYPE_LABEL_HTTP = 'HTTP';
 
+type ErrorState = {
+	displayName?: string;
+	slug?: string;
+	type?: string;
+	argSchema?: string;
+	outputSchema?: string;
+	goFunc?: string;
+	httpUrl?: string;
+	tags?: string;
+};
+
 export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, existingTools }: AddEditToolModalProps) {
 	const [formData, setFormData] = useState({
 		displayName: '',
@@ -51,22 +64,15 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		version: '1',
 	});
 
-	const [errors, setErrors] = useState<{
-		displayName?: string;
-		slug?: string;
-		type?: string;
-		argSchema?: string;
-		outputSchema?: string;
-		goFunc?: string;
-		httpUrl?: string;
-		tags?: string;
-	}>({});
-
+	const [errors, setErrors] = useState<ErrorState>({});
 	const isEditMode = Boolean(initialData);
+
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
 
 	// Sync prop -> state
 	useEffect(() => {
 		if (!isOpen) return;
+
 		if (initialData) {
 			const t = initialData.tool;
 			setFormData({
@@ -118,6 +124,25 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		setErrors({});
 	}, [isOpen, initialData]);
 
+	// Open/close native dialog
+	useEffect(() => {
+		if (!isOpen) return;
+		const dialog = dialogRef.current;
+		if (!dialog) return;
+
+		if (!dialog.open) {
+			dialog.showModal();
+		}
+
+		return () => {
+			if (dialog.open) dialog.close();
+		};
+	}, [isOpen]);
+
+	const handleDialogClose = () => {
+		onClose();
+	};
+
 	const toolTypeDropdownItems = useMemo(
 		() =>
 			({
@@ -128,13 +153,16 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 	);
 
 	// Validation
-	const validateField = (field: keyof typeof errors, val: string) => {
-		let newErrs = { ...errors };
+	const validateField = (field: keyof ErrorState, val: string, currentErrors: ErrorState): ErrorState => {
+		let newErrs: ErrorState = { ...currentErrors };
 		const v = val.trim();
 
 		if (!v && ['displayName', 'slug', 'type'].includes(field)) {
 			newErrs[field] = 'This field is required.';
-		} else if (field === 'slug') {
+			return newErrs;
+		}
+
+		if (field === 'slug') {
 			if (v.startsWith(TOOL_INVOKE_CHAR)) {
 				newErrs.slug = `Do not prefix with "${TOOL_INVOKE_CHAR}".`;
 			} else {
@@ -152,11 +180,16 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 			if (err) newErrs.tags = err;
 			else newErrs = omitManyKeys(newErrs, ['tags']);
 		} else if (field === 'argSchema' || field === 'outputSchema') {
-			try {
-				JSON.parse(val);
+			if (!val.trim()) {
+				// Allow blank here; "required" is enforced via isAllValid
 				newErrs = omitManyKeys(newErrs, [field]);
-			} catch {
-				newErrs[field] = 'Invalid JSON';
+			} else {
+				try {
+					JSON.parse(val);
+					newErrs = omitManyKeys(newErrs, [field]);
+				} catch {
+					newErrs[field] = 'Invalid JSON';
+				}
 			}
 		} else if (field === 'goFunc' && formData.type === ToolType.Go && !v) {
 			newErrs.goFunc = 'Go function is required.';
@@ -165,7 +198,25 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		} else {
 			newErrs = omitManyKeys(newErrs, [field]);
 		}
-		setErrors(newErrs);
+
+		return newErrs;
+	};
+
+	const validateForm = (state: typeof formData): ErrorState => {
+		let newErrs: ErrorState = {};
+		newErrs = validateField('displayName', state.displayName, newErrs);
+		newErrs = validateField('slug', state.slug, newErrs);
+		newErrs = validateField('type', state.type, newErrs);
+		newErrs = validateField('argSchema', state.argSchema, newErrs);
+		newErrs = validateField('outputSchema', state.outputSchema, newErrs);
+		newErrs = validateField('tags', state.tags, newErrs);
+		if (state.type === ToolType.Go) {
+			newErrs = validateField('goFunc', state.goFunc, newErrs);
+		}
+		if (state.type === ToolType.HTTP) {
+			newErrs = validateField('httpUrl', state.httpUrl, newErrs);
+		}
+		return newErrs;
 	};
 
 	const handleInput = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -174,14 +225,9 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		setFormData(prev => ({ ...prev, [name]: newVal }));
 
 		if (['displayName', 'slug', 'type', 'argSchema', 'outputSchema', 'goFunc', 'httpUrl', 'tags'].includes(name)) {
-			validateField(name as keyof typeof errors, String(newVal));
+			setErrors(prev => validateField(name as keyof ErrorState, String(newVal), prev));
 		}
 	};
-	// Only allow adding HTTP tools (editing existing tools unaffected)
-	if (!isEditMode && formData.type !== ToolType.HTTP) {
-		setErrors(prev => ({ ...prev, type: 'Only HTTP tools can be added.' }));
-		return;
-	}
 
 	// Overall validity
 	const isAllValid = useMemo(() => {
@@ -199,17 +245,9 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 
-		validateField('displayName', formData.displayName);
-		validateField('slug', formData.slug);
-		validateField('type', formData.type);
-		validateField('argSchema', formData.argSchema);
-		validateField('outputSchema', formData.outputSchema);
-		validateField('tags', formData.tags);
-
-		if (formData.type === ToolType.Go) validateField('goFunc', formData.goFunc);
-		if (formData.type === ToolType.HTTP) validateField('httpUrl', formData.httpUrl);
-
-		if (!isAllValid) return;
+		const nextErrors = validateForm(formData);
+		setErrors(nextErrors);
+		if (Object.values(nextErrors).some(Boolean)) return;
 
 		const tagsArr = formData.tags
 			.split(',')
@@ -222,12 +260,29 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		if (formData.type === ToolType.Go) {
 			goImpl = { func: formData.goFunc.trim() };
 		} else {
+			let headers: Record<string, string> | undefined;
+			let query: Record<string, string> | undefined;
+
+			try {
+				headers = formData.httpHeaders ? JSON.parse(formData.httpHeaders) : undefined;
+			} catch {
+				setErrors(prev => ({ ...prev, argSchema: prev.argSchema }));
+				return;
+			}
+
+			try {
+				query = formData.httpQuery ? JSON.parse(formData.httpQuery) : undefined;
+			} catch {
+				setErrors(prev => ({ ...prev, argSchema: prev.argSchema }));
+				return;
+			}
+
 			httpImpl = {
 				request: {
 					method: formData.httpMethod || 'GET',
 					urlTemplate: formData.httpUrl,
-					headers: formData.httpHeaders ? JSON.parse(formData.httpHeaders) : undefined,
-					query: formData.httpQuery ? JSON.parse(formData.httpQuery) : undefined,
+					headers,
+					query,
 					body: formData.httpBody || undefined,
 					auth: formData.httpAuthType
 						? {
@@ -244,7 +299,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 								.map(s => Number(s.trim()))
 								.filter(Boolean)
 						: undefined,
-
 					errorMode: formData.httpResponseErrorMode || undefined,
 				},
 			};
@@ -263,6 +317,8 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 			httpImpl,
 			version: formData.version,
 		});
+
+		dialogRef.current?.close();
 	};
 
 	const onToolTypeChange = (key: ToolType) => {
@@ -272,427 +328,451 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		}
 
 		setFormData(prev => ({ ...prev, type: key }));
-		validateField('type', key);
+		setErrors(prev => validateField('type', key, prev));
 	};
+
 	if (!isOpen) return null;
 
-	return (
-		<dialog className="modal modal-open">
-			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
-				{/* header */}
-				<div className="mb-4 flex items-center justify-between">
-					<h3 className="text-lg font-bold">{isEditMode ? 'Edit Tool' : 'Add Tool'}</h3>
-					<button className="btn btn-sm btn-circle bg-base-300" onClick={onClose} aria-label="Close" title="Close">
-						<FiX size={12} />
-					</button>
-				</div>
-
-				{/* form */}
-				<form onSubmit={handleSubmit} className="space-y-4">
-					{/* Display Name */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Display Name*</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								type="text"
-								name="displayName"
-								value={formData.displayName}
-								onChange={handleInput}
-								className={`input input-bordered w-full rounded-2xl ${errors.displayName ? 'input-error' : ''}`}
-								spellCheck="false"
-								autoComplete="off"
-							/>
-							{errors.displayName && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.displayName}
-									</span>
-								</div>
-							)}
-						</div>
+	return createPortal(
+		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
+			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
+				<div className="max-h-[80vh] overflow-y-auto p-6">
+					{/* header */}
+					<div className="mb-4 flex items-center justify-between">
+						<h3 className="text-lg font-bold">{isEditMode ? 'Edit Tool' : 'Add Tool'}</h3>
+						<button
+							type="button"
+							className="btn btn-sm btn-circle bg-base-300"
+							onClick={() => dialogRef.current?.close()}
+							aria-label="Close"
+						>
+							<FiX size={12} />
+						</button>
 					</div>
 
-					{/* Slug */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Slug*</span>
-							<span className="label-text-alt tooltip tooltip-right" data-tip="Lower-case, URL-friendly.">
-								<FiHelpCircle size={12} />
-							</span>
-						</label>
-						<div className="col-span-9">
-							<div className="relative">
-								<span className="text-neutral-custom absolute top-1/2 left-3 -translate-y-1/2">{TOOL_INVOKE_CHAR}</span>
-								<input
-									type="text"
-									name="slug"
-									value={formData.slug}
-									onChange={handleInput}
-									className={`input input-bordered w-full rounded-2xl pl-8 ${errors.slug ? 'input-error' : ''}`}
-									spellCheck="false"
-									autoComplete="off"
-									disabled={isEditMode && initialData?.tool.isBuiltIn}
-								/>
-							</div>
-							{errors.slug && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.slug}
-									</span>
-								</div>
-							)}
-						</div>
-					</div>
-
-					{/* Enabled toggle */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3 cursor-pointer">
-							<span className="label-text text-sm">Enabled</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								type="checkbox"
-								name="isEnabled"
-								checked={formData.isEnabled}
-								onChange={handleInput}
-								className="toggle toggle-accent"
-							/>
-						</div>
-					</div>
-
-					{/* Type */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Type*</span>
-						</label>
-						<div className={`col-span-9 ${isEditMode ? 'pointer-events-none opacity-60' : ''}`}>
-							<Dropdown<ToolType>
-								dropdownItems={toolTypeDropdownItems}
-								selectedKey={formData.type}
-								onChange={onToolTypeChange}
-								filterDisabled={true}
-								title="Select tool type"
-								getDisplayName={k => toolTypeDropdownItems[k].displayName}
-							/>
-							{errors.type && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.type}
-									</span>
-								</div>
-							)}
-						</div>
-					</div>
-
-					{/* Description */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Description</span>
-						</label>
-						<div className="col-span-9">
-							<textarea
-								name="description"
-								value={formData.description}
-								onChange={handleInput}
-								className="textarea textarea-bordered h-20 w-full rounded-2xl"
-								spellCheck="false"
-							/>
-						</div>
-					</div>
-
-					{/* Arg Schema */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Arg JSONSchema*</span>
-							<span className="label-text-alt tooltip tooltip-right" data-tip="JSON Schema for arguments">
-								<FiHelpCircle size={12} />
-							</span>
-						</label>
-						<div className="col-span-9">
-							<textarea
-								name="argSchema"
-								value={formData.argSchema}
-								onChange={handleInput}
-								className={`textarea textarea-bordered h-24 w-full rounded-2xl ${errors.argSchema ? 'textarea-error' : ''}`}
-								spellCheck="false"
-							/>
-							{errors.argSchema && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.argSchema}
-									</span>
-								</div>
-							)}
-						</div>
-					</div>
-
-					{/* Output Schema */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Output JSONSchema*</span>
-							<span className="label-text-alt tooltip tooltip-right" data-tip="JSON Schema for output">
-								<FiHelpCircle size={12} />
-							</span>
-						</label>
-						<div className="col-span-9">
-							<textarea
-								name="outputSchema"
-								value={formData.outputSchema}
-								onChange={handleInput}
-								className={`textarea textarea-bordered h-24 w-full rounded-2xl ${errors.outputSchema ? 'textarea-error' : ''}`}
-								spellCheck="false"
-							/>
-							{errors.outputSchema && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.outputSchema}
-									</span>
-								</div>
-							)}
-						</div>
-					</div>
-
-					{/* Go Impl */}
-					{formData.type === ToolType.Go && (
+					{/* form */}
+					<form noValidate onSubmit={handleSubmit} className="space-y-4">
+						{/* Display Name */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
-								<span className="label-text text-sm">Go Func*</span>
-								<span
-									className="label-text-alt tooltip tooltip-right"
-									data-tip="e.g. github.com/acme/flexigpt/tools.Weather"
-								>
-									<FiHelpCircle size={12} />
-								</span>
+								<span className="label-text text-sm">Display Name*</span>
 							</label>
 							<div className="col-span-9">
 								<input
 									type="text"
-									name="goFunc"
-									value={formData.goFunc}
+									name="displayName"
+									value={formData.displayName}
 									onChange={handleInput}
-									className={`input input-bordered w-full rounded-2xl ${errors.goFunc ? 'input-error' : ''}`}
+									className={`input input-bordered w-full rounded-xl ${errors.displayName ? 'input-error' : ''}`}
 									spellCheck="false"
 									autoComplete="off"
+									autoFocus
+									aria-invalid={Boolean(errors.displayName)}
 								/>
-								{errors.goFunc && (
+								{errors.displayName && (
 									<div className="label">
 										<span className="label-text-alt text-error flex items-center gap-1">
-											<FiAlertCircle size={12} /> {errors.goFunc}
+											<FiAlertCircle size={12} /> {errors.displayName}
 										</span>
 									</div>
 								)}
 							</div>
 						</div>
-					)}
 
-					{/* HTTP Impl */}
-					{formData.type === ToolType.HTTP && (
-						<>
+						{/* Slug */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Slug*</span>
+								<span className="label-text-alt tooltip tooltip-right" data-tip="Lower-case, URL-friendly.">
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<div className="relative">
+									<span className="text-neutral-custom absolute top-1/2 left-3 -translate-y-1/2">
+										{TOOL_INVOKE_CHAR}
+									</span>
+									<input
+										type="text"
+										name="slug"
+										value={formData.slug}
+										onChange={handleInput}
+										className={`input input-bordered w-full rounded-xl pl-8 ${errors.slug ? 'input-error' : ''}`}
+										spellCheck="false"
+										autoComplete="off"
+										disabled={isEditMode && initialData?.tool.isBuiltIn}
+										aria-invalid={Boolean(errors.slug)}
+									/>
+								</div>
+								{errors.slug && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.slug}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Enabled toggle */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3 cursor-pointer">
+								<span className="label-text text-sm">Enabled</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="checkbox"
+									name="isEnabled"
+									checked={formData.isEnabled}
+									onChange={handleInput}
+									className="toggle toggle-accent"
+								/>
+							</div>
+						</div>
+
+						{/* Type */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Type*</span>
+							</label>
+							<div className={`col-span-9 ${isEditMode ? 'pointer-events-none opacity-60' : ''}`}>
+								<Dropdown<ToolType>
+									dropdownItems={toolTypeDropdownItems}
+									selectedKey={formData.type}
+									onChange={onToolTypeChange}
+									filterDisabled={true}
+									title="Select tool type"
+									getDisplayName={k => toolTypeDropdownItems[k].displayName}
+								/>
+								{errors.type && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.type}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Description */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Description</span>
+							</label>
+							<div className="col-span-9">
+								<textarea
+									name="description"
+									value={formData.description}
+									onChange={handleInput}
+									className="textarea textarea-bordered h-20 w-full rounded-xl"
+									spellCheck="false"
+								/>
+							</div>
+						</div>
+
+						{/* Arg Schema */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Arg JSONSchema*</span>
+								<span className="label-text-alt tooltip tooltip-right" data-tip="JSON Schema for arguments">
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<textarea
+									name="argSchema"
+									value={formData.argSchema}
+									onChange={handleInput}
+									className={`textarea textarea-bordered h-24 w-full rounded-xl ${
+										errors.argSchema ? 'textarea-error' : ''
+									}`}
+									spellCheck="false"
+									aria-invalid={Boolean(errors.argSchema)}
+								/>
+								{errors.argSchema && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.argSchema}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Output Schema */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Output JSONSchema*</span>
+								<span className="label-text-alt tooltip tooltip-right" data-tip="JSON Schema for output">
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<textarea
+									name="outputSchema"
+									value={formData.outputSchema}
+									onChange={handleInput}
+									className={`textarea textarea-bordered h-24 w-full rounded-xl ${
+										errors.outputSchema ? 'textarea-error' : ''
+									}`}
+									spellCheck="false"
+									aria-invalid={Boolean(errors.outputSchema)}
+								/>
+								{errors.outputSchema && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.outputSchema}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Go Impl */}
+						{formData.type === ToolType.Go && (
 							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
-									<span className="label-text text-sm">HTTP URL*</span>
+									<span className="label-text text-sm">Go Func*</span>
+									<span
+										className="label-text-alt tooltip tooltip-right"
+										data-tip="e.g. github.com/acme/flexigpt/tools.Weather"
+									>
+										<FiHelpCircle size={12} />
+									</span>
 								</label>
 								<div className="col-span-9">
 									<input
 										type="text"
-										name="httpUrl"
-										value={formData.httpUrl}
+										name="goFunc"
+										value={formData.goFunc}
 										onChange={handleInput}
-										className={`input input-bordered w-full rounded-2xl ${errors.httpUrl ? 'input-error' : ''}`}
+										className={`input input-bordered w-full rounded-xl ${errors.goFunc ? 'input-error' : ''}`}
 										spellCheck="false"
 										autoComplete="off"
+										aria-invalid={Boolean(errors.goFunc)}
 									/>
-									{errors.httpUrl && (
+									{errors.goFunc && (
 										<div className="label">
 											<span className="label-text-alt text-error flex items-center gap-1">
-												<FiAlertCircle size={12} /> {errors.httpUrl}
+												<FiAlertCircle size={12} /> {errors.goFunc}
 											</span>
 										</div>
 									)}
 								</div>
 							</div>
-							<div className="grid grid-cols-12 items-center gap-2">
-								<label className="label col-span-3">
-									<span className="label-text text-sm">HTTP Method</span>
-								</label>
-								<div className="col-span-9">
-									<input
-										type="text"
-										name="httpMethod"
-										value={formData.httpMethod}
-										onChange={handleInput}
-										className="input input-bordered w-full rounded-2xl"
-										spellCheck="false"
-										autoComplete="off"
-									/>
-								</div>
-							</div>
-							<div className="grid grid-cols-12 items-center gap-2">
-								<label className="label col-span-3">
-									<span className="label-text text-sm">Headers (JSON)</span>
-								</label>
-								<div className="col-span-9">
-									<textarea
-										name="httpHeaders"
-										value={formData.httpHeaders}
-										onChange={handleInput}
-										className="textarea textarea-bordered h-16 w-full rounded-2xl"
-										spellCheck="false"
-									/>
-								</div>
-							</div>
-							<div className="grid grid-cols-12 items-center gap-2">
-								<label className="label col-span-3">
-									<span className="label-text text-sm">Query (JSON)</span>
-								</label>
-								<div className="col-span-9">
-									<textarea
-										name="httpQuery"
-										value={formData.httpQuery}
-										onChange={handleInput}
-										className="textarea textarea-bordered h-16 w-full rounded-2xl"
-										spellCheck="false"
-									/>
-								</div>
-							</div>
-							<div className="grid grid-cols-12 items-center gap-2">
-								<label className="label col-span-3">
-									<span className="label-text text-sm">Body</span>
-								</label>
-								<div className="col-span-9">
-									<textarea
-										name="httpBody"
-										value={formData.httpBody}
-										onChange={handleInput}
-										className="textarea textarea-bordered h-16 w-full rounded-2xl"
-										spellCheck="false"
-									/>
-								</div>
-							</div>
-							{/* Auth */}
-							<div className="grid grid-cols-12 items-center gap-2">
-								<label className="label col-span-3">
-									<span className="label-text text-sm">Auth Type</span>
-								</label>
-								<div className="col-span-9">
-									<input
-										type="text"
-										name="httpAuthType"
-										value={formData.httpAuthType}
-										onChange={handleInput}
-										className="input input-bordered w-full rounded-2xl"
-										spellCheck="false"
-										autoComplete="off"
-									/>
-								</div>
-							</div>
-							<div className="grid grid-cols-12 items-center gap-2">
-								<label className="label col-span-3">
-									<span className="label-text text-sm">Auth Name</span>
-								</label>
-								<div className="col-span-9">
-									<input
-										type="text"
-										name="httpAuthName"
-										value={formData.httpAuthName}
-										onChange={handleInput}
-										className="input input-bordered w-full rounded-2xl"
-										spellCheck="false"
-										autoComplete="off"
-									/>
-								</div>
-							</div>
-							<div className="grid grid-cols-12 items-center gap-2">
-								<label className="label col-span-3">
-									<span className="label-text text-sm">Auth Value Template</span>
-								</label>
-								<div className="col-span-9">
-									<input
-										type="text"
-										name="httpAuthValueTemplate"
-										value={formData.httpAuthValueTemplate}
-										onChange={handleInput}
-										className="input input-bordered w-full rounded-2xl"
-										spellCheck="false"
-										autoComplete="off"
-									/>
-								</div>
-							</div>
-							{/* Response */}
-							<div className="grid grid-cols-12 items-center gap-2">
-								<label className="label col-span-3">
-									<span className="label-text text-sm">Success Codes (comma)</span>
-								</label>
-								<div className="col-span-9">
-									<input
-										type="text"
-										name="httpResponseCodes"
-										value={formData.httpResponseCodes}
-										onChange={handleInput}
-										className="input input-bordered w-full rounded-2xl"
-										spellCheck="false"
-										autoComplete="off"
-									/>
-								</div>
-							</div>
+						)}
 
-							<div className="grid grid-cols-12 items-center gap-2">
-								<label className="label col-span-3">
-									<span className="label-text text-sm">Error Mode</span>
-								</label>
-								<div className="col-span-9">
-									<input
-										type="text"
-										name="httpResponseErrorMode"
-										value={formData.httpResponseErrorMode}
-										onChange={handleInput}
-										className="input input-bordered w-full rounded-2xl"
-										spellCheck="false"
-										autoComplete="off"
-									/>
+						{/* HTTP Impl */}
+						{formData.type === ToolType.HTTP && (
+							<>
+								<div className="grid grid-cols-12 items-center gap-2">
+									<label className="label col-span-3">
+										<span className="label-text text-sm">HTTP URL*</span>
+									</label>
+									<div className="col-span-9">
+										<input
+											type="text"
+											name="httpUrl"
+											value={formData.httpUrl}
+											onChange={handleInput}
+											className={`input input-bordered w-full rounded-xl ${errors.httpUrl ? 'input-error' : ''}`}
+											spellCheck="false"
+											autoComplete="off"
+											aria-invalid={Boolean(errors.httpUrl)}
+										/>
+										{errors.httpUrl && (
+											<div className="label">
+												<span className="label-text-alt text-error flex items-center gap-1">
+													<FiAlertCircle size={12} /> {errors.httpUrl}
+												</span>
+											</div>
+										)}
+									</div>
 								</div>
-							</div>
-						</>
-					)}
+								<div className="grid grid-cols-12 items-center gap-2">
+									<label className="label col-span-3">
+										<span className="label-text text-sm">HTTP Method</span>
+									</label>
+									<div className="col-span-9">
+										<input
+											type="text"
+											name="httpMethod"
+											value={formData.httpMethod}
+											onChange={handleInput}
+											className="input input-bordered w-full rounded-xl"
+											spellCheck="false"
+											autoComplete="off"
+										/>
+									</div>
+								</div>
+								<div className="grid grid-cols-12 items-center gap-2">
+									<label className="label col-span-3">
+										<span className="label-text text-sm">Headers (JSON)</span>
+									</label>
+									<div className="col-span-9">
+										<textarea
+											name="httpHeaders"
+											value={formData.httpHeaders}
+											onChange={handleInput}
+											className="textarea textarea-bordered h-16 w-full rounded-xl"
+											spellCheck="false"
+										/>
+									</div>
+								</div>
+								<div className="grid grid-cols-12 items-center gap-2">
+									<label className="label col-span-3">
+										<span className="label-text text-sm">Query (JSON)</span>
+									</label>
+									<div className="col-span-9">
+										<textarea
+											name="httpQuery"
+											value={formData.httpQuery}
+											onChange={handleInput}
+											className="textarea textarea-bordered h-16 w-full rounded-xl"
+											spellCheck="false"
+										/>
+									</div>
+								</div>
+								<div className="grid grid-cols-12 items-center gap-2">
+									<label className="label col-span-3">
+										<span className="label-text text-sm">Body</span>
+									</label>
+									<div className="col-span-9">
+										<textarea
+											name="httpBody"
+											value={formData.httpBody}
+											onChange={handleInput}
+											className="textarea textarea-bordered h-16 w-full rounded-xl"
+											spellCheck="false"
+										/>
+									</div>
+								</div>
+								{/* Auth */}
+								<div className="grid grid-cols-12 items-center gap-2">
+									<label className="label col-span-3">
+										<span className="label-text text-sm">Auth Type</span>
+									</label>
+									<div className="col-span-9">
+										<input
+											type="text"
+											name="httpAuthType"
+											value={formData.httpAuthType}
+											onChange={handleInput}
+											className="input input-bordered w-full rounded-xl"
+											spellCheck="false"
+											autoComplete="off"
+										/>
+									</div>
+								</div>
+								<div className="grid grid-cols-12 items-center gap-2">
+									<label className="label col-span-3">
+										<span className="label-text text-sm">Auth Name</span>
+									</label>
+									<div className="col-span-9">
+										<input
+											type="text"
+											name="httpAuthName"
+											value={formData.httpAuthName}
+											onChange={handleInput}
+											className="input input-bordered w-full rounded-xl"
+											spellCheck="false"
+											autoComplete="off"
+										/>
+									</div>
+								</div>
+								<div className="grid grid-cols-12 items-center gap-2">
+									<label className="label col-span-3">
+										<span className="label-text text-sm">Auth Value Template</span>
+									</label>
+									<div className="col-span-9">
+										<input
+											type="text"
+											name="httpAuthValueTemplate"
+											value={formData.httpAuthValueTemplate}
+											onChange={handleInput}
+											className="input input-bordered w-full rounded-xl"
+											spellCheck="false"
+											autoComplete="off"
+										/>
+									</div>
+								</div>
+								{/* Response */}
+								<div className="grid grid-cols-12 items-center gap-2">
+									<label className="label col-span-3">
+										<span className="label-text text-sm">Success Codes (comma)</span>
+									</label>
+									<div className="col-span-9">
+										<input
+											type="text"
+											name="httpResponseCodes"
+											value={formData.httpResponseCodes}
+											onChange={handleInput}
+											className="input input-bordered w-full rounded-xl"
+											spellCheck="false"
+											autoComplete="off"
+										/>
+									</div>
+								</div>
 
-					{/* Tags */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Tags</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								type="text"
-								name="tags"
-								value={formData.tags}
-								onChange={handleInput}
-								className={`input input-bordered w-full rounded-2xl ${errors.tags ? 'input-error' : ''}`}
-								placeholder="comma, separated, tags"
-								spellCheck="false"
-							/>
-							{errors.tags && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.tags}
-									</span>
+								<div className="grid grid-cols-12 items-center gap-2">
+									<label className="label col-span-3">
+										<span className="label-text text-sm">Error Mode</span>
+									</label>
+									<div className="col-span-9">
+										<input
+											type="text"
+											name="httpResponseErrorMode"
+											value={formData.httpResponseErrorMode}
+											onChange={handleInput}
+											className="input input-bordered w-full rounded-xl"
+											spellCheck="false"
+											autoComplete="off"
+										/>
+									</div>
 								</div>
-							)}
+							</>
+						)}
+
+						{/* Tags */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Tags</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="text"
+									name="tags"
+									value={formData.tags}
+									onChange={handleInput}
+									className={`input input-bordered w-full rounded-xl ${errors.tags ? 'input-error' : ''}`}
+									placeholder="comma, separated, tags"
+									spellCheck="false"
+									aria-invalid={Boolean(errors.tags)}
+								/>
+								{errors.tags && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.tags}
+										</span>
+									</div>
+								)}
+							</div>
 						</div>
-					</div>
 
-					{/* actions */}
-					<div className="modal-action">
-						<button type="button" className="btn bg-base-300 rounded-2xl" onClick={onClose}>
-							Cancel
-						</button>
-						<button type="submit" className="btn btn-primary rounded-2xl" disabled={!isAllValid}>
-							Save
-						</button>
-					</div>
-				</form>
+						{/* actions */}
+						<div className="modal-action">
+							<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
+								Cancel
+							</button>
+							<button type="submit" className="btn btn-primary rounded-xl" disabled={!isAllValid}>
+								Save
+							</button>
+						</div>
+					</form>
+				</div>
 			</div>
-		</dialog>
+			{/* NOTE: no modal-backdrop here: backdrop click should NOT close this modal */}
+		</dialog>,
+		document.body
 	);
 }

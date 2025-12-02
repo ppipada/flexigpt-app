@@ -1,4 +1,6 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+
+import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
@@ -12,155 +14,220 @@ interface AddBundleModalProps {
 	existingSlugs: string[];
 }
 
+type ErrorState = {
+	slug?: string;
+	displayName?: string;
+};
+
 export function AddBundleModal({ isOpen, onClose, onSubmit, existingSlugs }: AddBundleModalProps) {
 	const [form, setForm] = useState({
 		slug: '',
 		displayName: '',
 		description: '',
 	});
-	const [errors, setErrors] = useState<{ slug?: string; displayName?: string }>({});
+	const [errors, setErrors] = useState<ErrorState>({});
 
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
+
+	// Reset local state whenever the modal is opened
 	useEffect(() => {
 		if (!isOpen) return;
 		setForm({ slug: '', displayName: '', description: '' });
 		setErrors({});
 	}, [isOpen]);
 
-	const validate = (field: keyof typeof errors, val: string) => {
+	// Open/close the native <dialog> when isOpen changes
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const dialog = dialogRef.current;
+		if (!dialog) return;
+
+		if (!dialog.open) {
+			dialog.showModal();
+		}
+
+		return () => {
+			if (dialog.open) {
+				dialog.close();
+			}
+		};
+	}, [isOpen]);
+
+	// Sync parent state when the dialog closes (Esc or programmatic close)
+	const handleDialogClose = () => {
+		onClose();
+	};
+
+	const validateField = (field: keyof ErrorState, val: string, currentErrors: ErrorState): ErrorState => {
 		const v = val.trim();
-		let copy = { ...errors };
+		let nextErrors: ErrorState = { ...currentErrors };
 
 		if (!v) {
-			copy[field] = 'This field is required.';
+			nextErrors[field] = 'This field is required.';
 		} else if (field === 'slug') {
 			const err = validateSlug(v);
 			if (err) {
-				copy.slug = err;
+				nextErrors.slug = err;
 			} else if (existingSlugs.includes(v)) {
-				copy.slug = 'Slug already in use.';
+				nextErrors.slug = 'Slug already in use.';
 			} else {
-				copy = omitManyKeys(copy, ['slug']);
+				nextErrors = omitManyKeys(nextErrors, ['slug']);
 			}
 		} else {
-			copy = omitManyKeys(copy, [field]);
+			nextErrors = omitManyKeys(nextErrors, [field]);
 		}
-		setErrors(copy);
+
+		return nextErrors;
 	};
 
-	const isAllValid = useMemo(
-		() => form.slug.trim() && form.displayName.trim() && Object.keys(errors).length === 0,
-		[form, errors]
-	);
+	const validateForm = (state: typeof form): ErrorState => {
+		let nextErrors: ErrorState = {};
+		nextErrors = validateField('slug', state.slug, nextErrors);
+		nextErrors = validateField('displayName', state.displayName, nextErrors);
+		return nextErrors;
+	};
 
 	const handleSubmit = (e?: FormEvent) => {
 		if (e) e.preventDefault();
 
-		validate('slug', form.slug);
-		validate('displayName', form.displayName);
+		const trimmed = {
+			slug: form.slug.trim(),
+			displayName: form.displayName.trim(),
+			description: form.description.trim(),
+		};
 
-		if (!isAllValid) return;
+		const nextErrors = validateForm(trimmed);
+		setErrors(nextErrors);
 
-		onSubmit(form.slug.trim(), form.displayName.trim(), form.description.trim() || undefined);
+		if (Object.keys(nextErrors).length > 0) return;
+
+		onSubmit(trimmed.slug, trimmed.displayName, trimmed.description || undefined);
+		dialogRef.current?.close();
 	};
+
+	const isFormValid = useMemo(
+		() => Boolean(form.slug.trim()) && Boolean(form.displayName.trim()) && Object.keys(errors).length === 0,
+		[form.slug, form.displayName, errors]
+	);
 
 	if (!isOpen) return null;
 
-	return (
-		<dialog className="modal modal-open">
-			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
-				{/* header */}
-				<div className="mb-4 flex items-center justify-between">
-					<h3 className="text-lg font-bold">Add Prompt Bundle</h3>
-					<button className="btn btn-sm btn-circle bg-base-300" onClick={onClose} aria-label="Close" title="Close">
-						<FiX size={12} />
-					</button>
+	return createPortal(
+		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
+			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
+				<div className="max-h-[80vh] overflow-y-auto p-6">
+					{/* header */}
+					<div className="mb-4 flex items-center justify-between">
+						<h3 className="text-lg font-bold">Add Prompt Bundle</h3>
+						<button
+							type="button"
+							className="btn btn-sm btn-circle bg-base-300"
+							onClick={() => dialogRef.current?.close()}
+							aria-label="Close"
+						>
+							<FiX size={12} />
+						</button>
+					</div>
+
+					<form noValidate onSubmit={handleSubmit} className="space-y-4">
+						{/* Slug */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Bundle Slug*</span>
+								<span className="label-text-alt tooltip tooltip-right" data-tip="Lower-case, URL-friendly.">
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+
+							<div className="col-span-9">
+								<input
+									type="text"
+									className={`input input-bordered w-full rounded-xl ${errors.slug ? 'input-error' : ''}`}
+									value={form.slug}
+									onChange={e => {
+										const value = e.target.value;
+										setForm(p => ({ ...p, slug: value }));
+										setErrors(prev => validateField('slug', value, prev));
+									}}
+									spellCheck="false"
+									autoComplete="off"
+									autoFocus
+									aria-invalid={Boolean(errors.slug)}
+								/>
+								{errors.slug && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.slug}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Display Name */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Display Name*</span>
+							</label>
+
+							<div className="col-span-9">
+								<input
+									type="text"
+									className={`input input-bordered w-full rounded-xl ${errors.displayName ? 'input-error' : ''}`}
+									value={form.displayName}
+									onChange={e => {
+										const value = e.target.value;
+										setForm(p => ({ ...p, displayName: value }));
+										setErrors(prev => validateField('displayName', value, prev));
+									}}
+									spellCheck="false"
+									autoComplete="off"
+									aria-invalid={Boolean(errors.displayName)}
+								/>
+								{errors.displayName && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.displayName}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Description */}
+						<div className="grid grid-cols-12 items-start gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Description</span>
+							</label>
+
+							<div className="col-span-9">
+								<textarea
+									className="textarea textarea-bordered h-24 w-full rounded-xl"
+									value={form.description}
+									onChange={e => {
+										const value = e.target.value;
+										setForm(p => ({ ...p, description: value }));
+									}}
+									spellCheck="false"
+								/>
+							</div>
+						</div>
+
+						{/* Actions */}
+						<div className="modal-action">
+							<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
+								Cancel
+							</button>
+							<button type="submit" className="btn btn-primary rounded-xl" disabled={!isFormValid}>
+								Create
+							</button>
+						</div>
+					</form>
 				</div>
-
-				<form onSubmit={handleSubmit} className="space-y-4">
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Bundle Slug*</span>
-							<span className="label-text-alt tooltip tooltip-right" data-tip="Lower-case, URL-friendly.">
-								<FiHelpCircle size={12} />
-							</span>
-						</label>
-
-						<div className="col-span-9">
-							<input
-								type="text"
-								className={`input input-bordered w-full rounded-2xl ${errors.slug ? 'input-error' : ''}`}
-								value={form.slug}
-								onChange={e => {
-									setForm(p => ({ ...p, slug: e.target.value }));
-									validate('slug', e.target.value);
-								}}
-								spellCheck="false"
-								autoComplete="off"
-							/>
-							{errors.slug && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.slug}
-									</span>
-								</div>
-							)}
-						</div>
-					</div>
-
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Display Name*</span>
-						</label>
-
-						<div className="col-span-9">
-							<input
-								type="text"
-								className={`input input-bordered w-full rounded-2xl ${errors.displayName ? 'input-error' : ''}`}
-								value={form.displayName}
-								onChange={e => {
-									setForm(p => ({ ...p, displayName: e.target.value }));
-									validate('displayName', e.target.value);
-								}}
-								spellCheck="false"
-								autoComplete="off"
-							/>
-							{errors.displayName && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.displayName}
-									</span>
-								</div>
-							)}
-						</div>
-					</div>
-
-					<div className="grid grid-cols-12 items-start gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Description</span>
-						</label>
-
-						<div className="col-span-9">
-							<textarea
-								className="textarea textarea-bordered h-24 w-full rounded-2xl"
-								value={form.description}
-								onChange={e => {
-									setForm(p => ({ ...p, description: e.target.value }));
-								}}
-								spellCheck="false"
-							/>
-						</div>
-					</div>
-
-					<div className="modal-action">
-						<button type="button" className="btn bg-base-300 rounded-2xl" onClick={onClose}>
-							Cancel
-						</button>
-						<button type="submit" className="btn btn-primary rounded-2xl" disabled={!isAllValid}>
-							Create
-						</button>
-					</div>
-				</form>
 			</div>
-		</dialog>
+			{/* NOTE: no modal-backdrop here: backdrop click should NOT close this modal */}
+		</dialog>,
+		document.body
 	);
 }

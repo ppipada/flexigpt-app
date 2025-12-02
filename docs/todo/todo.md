@@ -12,8 +12,9 @@
 - [x] Details need to pop up as modal
 - [x] need info to user on how the url or any attachment for that matter was processed. like was it finally done as text or link or bytes or what.
 - [x] If api errors due to token length issues etc, the reply is fully omitted. need to make same as partial response in api abort cases.
+- [x] Update ALL modals to use dialog showmodal with backdrop and escape handling.
 
-- [ ] Update ALL modals to use dialog showmodal with backdrop and escape handling.
+- [ ] url validation check in all modals after novalidate
 - [ ] With attachments, token usage display seems more important.
 
 - attachments

@@ -1,7 +1,13 @@
-import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from 'react';
+
+import { createPortal } from 'react-dom';
+
+import { FiAlertCircle, FiX } from 'react-icons/fi';
 
 import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/spec/command';
 import type { Collection } from '@/spec/docstore';
+
+import { omitManyKeys } from '@/lib/obj_utils';
 
 interface ModifyCollectionModalProps {
 	isOpen: boolean;
@@ -11,6 +17,11 @@ interface ModifyCollectionModalProps {
 	docStoreID: string;
 	existingCollections: Collection[];
 }
+
+type ErrorState = {
+	name?: string;
+	command?: string;
+};
 
 export function ModifyCollectionModal({
 	isOpen,
@@ -24,114 +35,186 @@ export function ModifyCollectionModal({
 		name: '',
 		command: '',
 	});
-	const [errors, setErrors] = useState<{ name?: string; command?: string }>({});
+	const [errors, setErrors] = useState<ErrorState>({});
+
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
 
 	useEffect(() => {
-		if (isOpen) {
-			setFormData(initialData || { name: '', command: '' });
-			setErrors({});
-		}
+		if (!isOpen) return;
+		setFormData(initialData || { name: '', command: '' });
+		setErrors({});
 	}, [isOpen, initialData]);
 
-	const validateField = (name: string, value: string) => {
-		const newErrors: { [key: string]: string | undefined } = {};
+	// Open/close native dialog
+	useEffect(() => {
+		if (!isOpen) return;
+		const dialog = dialogRef.current;
+		if (!dialog) return;
 
-		if (!value.trim()) {
-			newErrors[name] = 'This field is required';
-		} else if (name === 'command' && value.startsWith(DOCUMENT_COLLECTION_INVOKE_CHAR)) {
-			newErrors[name] = `Command should not start with ${DOCUMENT_COLLECTION_INVOKE_CHAR}`;
+		if (!dialog.open) dialog.showModal();
+
+		return () => {
+			if (dialog.open) dialog.close();
+		};
+	}, [isOpen]);
+
+	const handleDialogClose = () => {
+		onClose();
+	};
+
+	const validateField = (field: keyof ErrorState, value: string, currentErrors: ErrorState): ErrorState => {
+		let nextErrors: ErrorState = { ...currentErrors };
+		const v = value.trim();
+
+		if (!v) {
+			nextErrors[field] = 'This field is required';
+			return nextErrors;
+		}
+
+		if (field === 'command' && v.startsWith(DOCUMENT_COLLECTION_INVOKE_CHAR)) {
+			nextErrors.command = `Command should not start with ${DOCUMENT_COLLECTION_INVOKE_CHAR}`;
+			return nextErrors;
+		}
+
+		const isUnique = !existingCollections.some(c => {
+			if (field === 'name') return c.name === v && c.id !== initialData?.id;
+			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+			if (field === 'command') return c.command === v && c.id !== initialData?.id;
+			return false;
+		});
+
+		if (!isUnique) {
+			nextErrors[field] = `This ${field} is already in use`;
 		} else {
-			const isUnique = !existingCollections.some(
-				c => c[name as keyof Collection] === value && c.id !== initialData?.id
-			);
-			if (!isUnique) {
-				newErrors[name] = `This ${name} is already in use`;
-			}
+			nextErrors = omitManyKeys(nextErrors, [field]);
 		}
 
-		// Populate newErrors with existing errors except for the current field if it's valid
-		for (const key in errors) {
-			if (Object.prototype.hasOwnProperty.call(errors, key) && key !== name) {
-				newErrors[key] = errors[key as keyof typeof errors];
-			}
-		}
+		return nextErrors;
+	};
 
-		setErrors(newErrors);
+	const validateForm = (state: Partial<Collection>): ErrorState => {
+		let nextErrors: ErrorState = {};
+		nextErrors = validateField('name', state.name || '', nextErrors);
+		nextErrors = validateField('command', state.command || '', nextErrors);
+		return nextErrors;
 	};
 
 	const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target;
-		setFormData(prev => ({ ...prev, [name]: value }));
-		validateField(name, value);
+		const updated = { ...formData, [name]: value };
+		setFormData(updated);
+		setErrors(prev => validateField(name as keyof ErrorState, value, prev));
 	};
 
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 
-		validateField('name', formData.name || '');
-		validateField('command', formData.command || '');
+		const nextErrors = validateForm(formData);
+		setErrors(nextErrors);
 
-		if (Object.keys(errors).length === 0 && formData.name && formData.command) {
-			onSubmit(formData, docStoreID);
-		}
+		if (Object.keys(nextErrors).length > 0) return;
+		if (!formData.name || !formData.command) return;
+
+		onSubmit(
+			{
+				...formData,
+				name: formData.name.trim(),
+				command: formData.command.trim(),
+			},
+			docStoreID
+		);
+
+		dialogRef.current?.close();
 	};
+
+	const isFormValid =
+		Boolean(formData.name?.trim()) && Boolean(formData.command?.trim()) && Object.keys(errors).length === 0;
 
 	if (!isOpen) return null;
 
-	return (
-		<dialog className="modal modal-open">
-			<div className="modal-box bg-base-200 rounded-2xl">
-				<h3 className="text-lg font-bold">{initialData ? 'Edit Collection' : 'Add New Collection'}</h3>
-				<form onSubmit={handleSubmit} className="mt-4">
-					<fieldset className="fieldset">
-						<label className="label" htmlFor="name">
-							Name*
-						</label>
-						<input
-							type="text"
-							name="name"
-							value={formData.name || ''}
-							onChange={handleChange}
-							className={`input rounded-2xl ${errors.name ? 'input-error' : ''}`}
-							required
-							spellCheck="false"
-						/>
-						{errors.name && <p className="text-error mt-1 text-sm">{errors.name}</p>}
-					</fieldset>
-					<fieldset className="fieldset">
-						<label className="label" htmlFor="name">
-							Command*
-						</label>
-						<div className="relative">
-							<span className="text-neutral-custom absolute top-1/2 left-3 -translate-y-1/2 transform">
-								{DOCUMENT_COLLECTION_INVOKE_CHAR}
-							</span>
-							<input
-								type="text"
-								name="command"
-								value={formData.command || ''}
-								onChange={handleChange}
-								className={`input rounded-2xl pl-8 ${errors.command ? 'input-error' : ''}`}
-								required
-								spellCheck="false"
-							/>
-						</div>
-						{errors.command && <p className="text-error mt-1 text-sm">{errors.command}</p>}
-					</fieldset>
-					<div className="modal-action">
-						<button type="button" className="btn bg-base-300 rounded-2xl" onClick={onClose}>
-							Cancel
-						</button>
+	return createPortal(
+		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
+			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
+				<div className="max-h-[80vh] overflow-y-auto p-6">
+					{/* Header */}
+					<div className="mb-4 flex items-center justify-between">
+						<h3 className="text-lg font-bold">{initialData ? 'Edit Collection' : 'Add New Collection'}</h3>
 						<button
-							type="submit"
-							className="btn btn-primary rounded-2xl"
-							disabled={!!errors.name || !!errors.command || !formData.name || !formData.command}
+							type="button"
+							className="btn btn-sm btn-circle bg-base-300"
+							onClick={() => dialogRef.current?.close()}
+							aria-label="Close"
 						>
-							Save
+							<FiX size={12} />
 						</button>
 					</div>
-				</form>
+
+					<form noValidate onSubmit={handleSubmit} className="space-y-4">
+						<fieldset className="fieldset">
+							<label className="label" htmlFor="name">
+								<span className="label-text text-sm">Name*</span>
+							</label>
+							<input
+								type="text"
+								name="name"
+								value={formData.name || ''}
+								onChange={handleChange}
+								className={`input input-bordered w-full rounded-xl ${errors.name ? 'input-error' : ''}`}
+								spellCheck="false"
+								autoComplete="off"
+								autoFocus
+								aria-invalid={Boolean(errors.name)}
+							/>
+							{errors.name && (
+								<div className="label">
+									<span className="label-text-alt text-error flex items-center gap-1">
+										<FiAlertCircle size={12} /> {errors.name}
+									</span>
+								</div>
+							)}
+						</fieldset>
+
+						<fieldset className="fieldset">
+							<label className="label" htmlFor="command">
+								<span className="label-text text-sm">Command*</span>
+							</label>
+							<div className="relative">
+								<span className="text-neutral-custom absolute top-1/2 left-3 -translate-y-1/2 transform">
+									{DOCUMENT_COLLECTION_INVOKE_CHAR}
+								</span>
+								<input
+									type="text"
+									name="command"
+									value={formData.command || ''}
+									onChange={handleChange}
+									className={`input input-bordered w-full rounded-xl pl-8 ${errors.command ? 'input-error' : ''}`}
+									spellCheck="false"
+									autoComplete="off"
+									aria-invalid={Boolean(errors.command)}
+								/>
+							</div>
+							{errors.command && (
+								<div className="label">
+									<span className="label-text-alt text-error flex items-center gap-1">
+										<FiAlertCircle size={12} /> {errors.command}
+									</span>
+								</div>
+							)}
+						</fieldset>
+
+						<div className="modal-action">
+							<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
+								Cancel
+							</button>
+							<button type="submit" className="btn btn-primary rounded-xl" disabled={!isFormValid}>
+								Save
+							</button>
+						</div>
+					</form>
+				</div>
 			</div>
-		</dialog>
+			{/* NOTE: no modal-backdrop here: backdrop click should NOT close this modal */}
+		</dialog>,
+		document.body
 	);
 }

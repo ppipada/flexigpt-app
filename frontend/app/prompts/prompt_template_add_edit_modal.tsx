@@ -1,4 +1,6 @@
-import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+
+import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
@@ -9,7 +11,6 @@ import { omitManyKeys } from '@/lib/obj_utils';
 import { validateSlug, validateTags } from '@/lib/text_utils';
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
-/* ---------- local helper types ---------- */
 interface TemplateItem {
 	template: PromptTemplate;
 	bundleID: string;
@@ -24,7 +25,12 @@ interface AddEditPromptTemplateModalProps {
 	existingTemplates: TemplateItem[];
 }
 
-/* ---------- component ---------- */
+type ErrorState = {
+	displayName?: string;
+	slug?: string;
+	content?: string;
+	tags?: string;
+};
 
 export function AddEditPromptTemplateModal({
 	isOpen,
@@ -43,14 +49,10 @@ export function AddEditPromptTemplateModal({
 		isEnabled: true,
 	});
 
-	const [errors, setErrors] = useState<{
-		displayName?: string;
-		slug?: string;
-		content?: string;
-		tags?: string;
-	}>({});
-
+	const [errors, setErrors] = useState<ErrorState>({});
 	const isEditMode = Boolean(initialData);
+
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
 
 	/* ---------- sync prop -> state ---------- */
 	useEffect(() => {
@@ -78,15 +80,41 @@ export function AddEditPromptTemplateModal({
 		setErrors({});
 	}, [isOpen, initialData]);
 
+	// Open/close the native <dialog> when isOpen changes
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const dialog = dialogRef.current;
+		if (!dialog) return;
+
+		if (!dialog.open) {
+			dialog.showModal();
+		}
+
+		return () => {
+			if (dialog.open) {
+				dialog.close();
+			}
+		};
+	}, [isOpen]);
+
+	// Sync parent when dialog closes
+	const handleDialogClose = () => {
+		onClose();
+	};
+
 	/* ---------- validation helpers ---------- */
-	const validateField = (field: keyof typeof errors, val: string) => {
-		let newErrs = { ...errors };
+	const validateField = (field: keyof ErrorState, val: string, currentErrors: ErrorState): ErrorState => {
+		let newErrs: ErrorState = { ...currentErrors };
 		const v = val.trim();
 
-		/* required */
+		// Required fields
 		if (!v) {
 			newErrs[field] = 'This field is required.';
-		} else if (field === 'slug') {
+			return newErrs;
+		}
+
+		if (field === 'slug') {
 			if (v.startsWith(PROMPT_TEMPLATE_INVOKE_CHAR)) {
 				newErrs.slug = `Do not prefix with "${PROMPT_TEMPLATE_INVOKE_CHAR}".`;
 			} else {
@@ -108,7 +136,19 @@ export function AddEditPromptTemplateModal({
 		} else {
 			newErrs = omitManyKeys(newErrs, [field]);
 		}
-		setErrors(newErrs);
+
+		return newErrs;
+	};
+
+	const validateForm = (state: typeof formData): ErrorState => {
+		let newErrs: ErrorState = {};
+		newErrs = validateField('displayName', state.displayName, newErrs);
+		newErrs = validateField('slug', state.slug, newErrs);
+		newErrs = validateField('content', state.content, newErrs);
+		if (state.tags || state.tags.trim() !== '') {
+			newErrs = validateField('tags', state.tags, newErrs);
+		}
+		return newErrs;
 	};
 
 	/* ---------- generic change handler ---------- */
@@ -119,227 +159,250 @@ export function AddEditPromptTemplateModal({
 		setFormData(prev => ({ ...prev, [name]: newVal }));
 
 		if (name === 'displayName' || name === 'slug' || name === 'content' || name === 'tags') {
-			validateField(name, String(newVal));
+			setErrors(prev => validateField(name as keyof ErrorState, String(newVal), prev));
 		}
 	};
 
 	/* ---------- overall validity ---------- */
 	const isAllValid = useMemo(() => {
-		const errs = Object.values(errors).some(Boolean);
-		const filled = formData.displayName.trim() && formData.slug.trim() && formData.content.trim();
-		return !errs && Boolean(filled);
-	}, [errors, formData]);
+		const requiredFilled = formData.displayName.trim() && formData.slug.trim() && formData.content.trim();
+		const hasErrors = Object.keys(errors).length > 0;
+		return Boolean(requiredFilled) && !hasErrors;
+	}, [formData, errors]);
 
 	/* ---------- submit ---------- */
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 
-		validateField('displayName', formData.displayName);
-		validateField('slug', formData.slug);
-		validateField('content', formData.content);
-		validateField('tags', formData.tags);
+		const trimmed = {
+			displayName: formData.displayName.trim(),
+			slug: formData.slug.trim(),
+			description: formData.description.trim(),
+			content: formData.content,
+			tags: formData.tags,
+			isEnabled: formData.isEnabled,
+		};
 
-		if (!isAllValid) return;
+		const newErrs = validateForm(trimmed);
+		setErrors(newErrs);
 
-		const tagsArr = formData.tags
+		if (Object.keys(newErrs).length > 0) return;
+
+		const tagsArr = trimmed.tags
 			.split(',')
 			.map(t => t.trim())
 			.filter(Boolean);
 
 		onSubmit({
-			displayName: formData.displayName.trim(),
-			slug: formData.slug.trim(),
-			description: formData.description.trim() || undefined,
-			isEnabled: formData.isEnabled,
+			displayName: trimmed.displayName,
+			slug: trimmed.slug,
+			description: trimmed.description || undefined,
+			isEnabled: trimmed.isEnabled,
 			tags: tagsArr.length ? tagsArr : undefined,
-			/* We keep the simple single-block approach for now. */
 			blocks: [
 				{
 					id: initialData?.template.blocks[0]?.id ?? getUUIDv7(),
 					role: PromptRoleEnum.User,
-					content: formData.content,
+					content: trimmed.content,
 				},
 			],
 		});
+
+		dialogRef.current?.close();
 	};
 
 	/* ---------- early-return ---------- */
 	if (!isOpen) return null;
 
 	/* ---------- render ---------- */
-	return (
-		<dialog className="modal modal-open">
-			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
-				{/* header */}
-				<div className="mb-4 flex items-center justify-between">
-					<h3 className="text-lg font-bold">{isEditMode ? 'Edit Prompt Template' : 'Add Prompt Template'}</h3>
-					<button className="btn btn-sm btn-circle bg-base-300" onClick={onClose} aria-label="Close" title="Close">
-						<FiX size={12} />
-					</button>
-				</div>
-
-				{/* form */}
-				<form onSubmit={handleSubmit} className="space-y-4">
-					{/* Display Name */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Display Name*</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								type="text"
-								name="displayName"
-								value={formData.displayName}
-								onChange={handleInput}
-								className={`input input-bordered w-full rounded-2xl ${errors.displayName ? 'input-error' : ''}`}
-								spellCheck="false"
-								autoComplete="off"
-							/>
-							{errors.displayName && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.displayName}
-									</span>
-								</div>
-							)}
-						</div>
+	return createPortal(
+		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
+			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
+				<div className="max-h-[80vh] overflow-y-auto p-6">
+					{/* header */}
+					<div className="mb-4 flex items-center justify-between">
+						<h3 className="text-lg font-bold">{isEditMode ? 'Edit Prompt Template' : 'Add Prompt Template'}</h3>
+						<button
+							type="button"
+							className="btn btn-sm btn-circle bg-base-300"
+							onClick={() => dialogRef.current?.close()}
+							aria-label="Close"
+						>
+							<FiX size={12} />
+						</button>
 					</div>
 
-					{/* Slug */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Slug*</span>
-							<span
-								className="label-text-alt tooltip tooltip-right"
-								data-tip={`Without "${PROMPT_TEMPLATE_INVOKE_CHAR}" prefix`}
-							>
-								<FiHelpCircle size={12} />
-							</span>
-						</label>
-						<div className="col-span-9">
-							<div className="relative">
-								<span className="text-neutral-custom absolute top-1/2 left-3 -translate-y-1/2">
-									{PROMPT_TEMPLATE_INVOKE_CHAR}
-								</span>
+					{/* form */}
+					<form noValidate onSubmit={handleSubmit} className="space-y-4">
+						{/* Display Name */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Display Name*</span>
+							</label>
+							<div className="col-span-9">
 								<input
 									type="text"
-									name="slug"
-									value={formData.slug}
+									name="displayName"
+									value={formData.displayName}
 									onChange={handleInput}
-									className={`input input-bordered w-full rounded-2xl pl-8 ${errors.slug ? 'input-error' : ''}`}
+									className={`input input-bordered w-full rounded-xl ${errors.displayName ? 'input-error' : ''}`}
 									spellCheck="false"
 									autoComplete="off"
-									disabled={isEditMode && initialData?.template.isBuiltIn}
+									autoFocus
+									aria-invalid={Boolean(errors.displayName)}
+								/>
+								{errors.displayName && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.displayName}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Slug */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Slug*</span>
+								<span
+									className="label-text-alt tooltip tooltip-right"
+									data-tip={`Without "${PROMPT_TEMPLATE_INVOKE_CHAR}" prefix`}
+								>
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<div className="relative">
+									<span className="text-neutral-custom absolute top-1/2 left-3 -translate-y-1/2">
+										{PROMPT_TEMPLATE_INVOKE_CHAR}
+									</span>
+									<input
+										type="text"
+										name="slug"
+										value={formData.slug}
+										onChange={handleInput}
+										className={`input input-bordered w-full rounded-xl pl-8 ${errors.slug ? 'input-error' : ''}`}
+										spellCheck="false"
+										autoComplete="off"
+										disabled={isEditMode && initialData?.template.isBuiltIn}
+										aria-invalid={Boolean(errors.slug)}
+									/>
+								</div>
+								{errors.slug && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.slug}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Enabled toggle */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3 cursor-pointer">
+								<span className="label-text text-sm">Enabled</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="checkbox"
+									name="isEnabled"
+									checked={formData.isEnabled}
+									onChange={handleInput}
+									className="toggle toggle-accent"
 								/>
 							</div>
-							{errors.slug && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.slug}
-									</span>
-								</div>
-							)}
 						</div>
-					</div>
 
-					{/* Enabled toggle */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3 cursor-pointer">
-							<span className="label-text text-sm">Enabled</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								type="checkbox"
-								name="isEnabled"
-								checked={formData.isEnabled}
-								onChange={handleInput}
-								className="toggle toggle-accent"
-							/>
+						{/* Description */}
+						<div className="grid grid-cols-12 items-start gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Description</span>
+							</label>
+							<div className="col-span-9">
+								<textarea
+									name="description"
+									value={formData.description}
+									onChange={handleInput}
+									className="textarea textarea-bordered h-20 w-full rounded-xl"
+									spellCheck="false"
+								/>
+							</div>
 						</div>
-					</div>
 
-					{/* Description */}
-					<div className="grid grid-cols-12 items-start gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Description</span>
-						</label>
-						<div className="col-span-9">
-							<textarea
-								name="description"
-								value={formData.description}
-								onChange={handleInput}
-								className="textarea textarea-bordered h-20 w-full rounded-2xl"
-								spellCheck="false"
-							/>
+						{/* Content */}
+						<div className="grid grid-cols-12 items-start gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Prompt Content*</span>
+								<span
+									className="label-text-alt tooltip tooltip-right"
+									data-tip="First (user) message - add advanced messages later"
+								>
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<textarea
+									name="content"
+									value={formData.content}
+									onChange={handleInput}
+									className={`textarea textarea-bordered h-32 w-full rounded-xl ${
+										errors.content ? 'textarea-error' : ''
+									}`}
+									spellCheck="false"
+									aria-invalid={Boolean(errors.content)}
+								/>
+								{errors.content && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.content}
+										</span>
+									</div>
+								)}
+							</div>
 						</div>
-					</div>
 
-					{/* Content */}
-					<div className="grid grid-cols-12 items-start gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Prompt Content*</span>
-							<span
-								className="label-text-alt tooltip tooltip-right"
-								data-tip="First (user) message - add advanced messages later"
-							>
-								<FiHelpCircle size={12} />
-							</span>
-						</label>
-						<div className="col-span-9">
-							<textarea
-								name="content"
-								value={formData.content}
-								onChange={handleInput}
-								className={`textarea textarea-bordered h-32 w-full rounded-2xl ${
-									errors.content ? 'textarea-error' : ''
-								}`}
-								spellCheck="false"
-							/>
-							{errors.content && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.content}
-									</span>
-								</div>
-							)}
+						{/* Tags */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Tags</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="text"
+									name="tags"
+									value={formData.tags}
+									onChange={handleInput}
+									className={`input input-bordered w-full rounded-xl ${errors.tags ? 'input-error' : ''}`}
+									placeholder="comma, separated, tags"
+									spellCheck="false"
+									aria-invalid={Boolean(errors.tags)}
+								/>
+								{errors.tags && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.tags}
+										</span>
+									</div>
+								)}
+							</div>
 						</div>
-					</div>
 
-					{/* Tags */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Tags</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								type="text"
-								name="tags"
-								value={formData.tags}
-								onChange={handleInput}
-								className={`input input-bordered w-full rounded-2xl ${errors.tags ? 'input-error' : ''}`}
-								placeholder="comma, separated, tags"
-								spellCheck="false"
-							/>
-							{errors.tags && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.tags}
-									</span>
-								</div>
-							)}
+						{/* actions */}
+						<div className="modal-action">
+							<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
+								Cancel
+							</button>
+							<button type="submit" className="btn btn-primary rounded-xl" disabled={!isAllValid}>
+								Save
+							</button>
 						</div>
-					</div>
-					{/* actions */}
-					<div className="modal-action">
-						<button type="button" className="btn bg-base-300 rounded-2xl" onClick={onClose}>
-							Cancel
-						</button>
-						<button type="submit" className="btn btn-primary rounded-2xl" disabled={!isAllValid}>
-							Save
-						</button>
-					</div>
-				</form>
+					</form>
+				</div>
 			</div>
-		</dialog>
+			{/* NOTE: no modal-backdrop here: backdrop click should NOT close this modal */}
+		</dialog>,
+		document.body
 	);
 }

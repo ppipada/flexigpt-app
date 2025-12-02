@@ -1,4 +1,6 @@
-import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+
+import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiUpload, FiX } from 'react-icons/fi';
 
@@ -90,6 +92,8 @@ export function AddEditModelPresetModal({
 	const isEditMode = Boolean(initialModelID);
 	const [defaultValues] = useState<ModelPreset>(AddModeDefaults);
 	const [modelPresetID, setModelPresetID] = useState<ModelPresetID>(initialModelID ?? ('' as ModelPresetID));
+
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
 
 	const blankForm: ModelPresetFormData = {
 		presetLabel: '',
@@ -212,6 +216,24 @@ export function AddEditModelPresetModal({
 
 		loadData();
 	}, [isOpen]);
+
+	// Open/close native dialog
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const dialog = dialogRef.current;
+		if (!dialog) return;
+
+		if (!dialog.open) dialog.showModal();
+
+		return () => {
+			if (dialog.open) dialog.close();
+		};
+	}, [isOpen]);
+
+	const handleDialogClose = () => {
+		onClose();
+	};
 
 	type ValidationField =
 		| 'modelPresetID'
@@ -356,6 +378,7 @@ export function AddEditModelPresetModal({
 		}
 
 		onSubmit(finalModelPresetID, finalData);
+		dialogRef.current?.close();
 	};
 
 	if (!isOpen) return null;
@@ -365,403 +388,413 @@ export function AddEditModelPresetModal({
 		return v === undefined || typeof v === 'object' ? 'Default: N/A' : `Default: ${String(v)}`;
 	};
 
-	return (
-		<dialog className="modal modal-open">
-			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
-				{/* Header -------------------------------------------------- */}
-				<div className="mb-4 flex items-center justify-between">
-					<h3 className="text-lg font-bold">{isEditMode ? 'Edit Model Preset' : 'Add Model Preset'}</h3>
-					<button className="btn btn-sm btn-circle bg-base-300" onClick={onClose} aria-label="Close" title="Close">
-						<FiX size={12} />
-					</button>
-				</div>
-
-				{/* FORM ---------------------------------------------------- */}
-				<form onSubmit={handleSubmit} className="space-y-4">
-					{/* ───── Prefill (ADD mode only) ───── */}
-					{!isEditMode && (
-						<div className="grid grid-cols-12 items-center gap-2">
-							<label className="label col-span-3">
-								<span className="label-text text-sm">Prefill from Existing</span>
-							</label>
-
-							<div className="col-span-9 flex items-center gap-2">
-								{!prefillMode && (
-									<button
-										type="button"
-										className="btn btn-sm btn-ghost flex items-center rounded-2xl"
-										onClick={() => {
-											setPrefillMode(true);
-										}}
-									>
-										<FiUpload size={14} />
-										<span className="ml-1">Copy Existing Preset</span>
-									</button>
-								)}
-
-								{prefillMode && (
-									<>
-										<Dropdown<PrefillKey>
-											dropdownItems={prefillDropdownItems}
-											selectedKey={selectedPrefillKey ?? ('' as PrefillKey)}
-											onChange={key => {
-												setSelectedPrefillKey(key);
-												applyPrefill(key);
-												/* automatically close dropdown afterwards */
-												setPrefillMode(false);
-											}}
-											filterDisabled={false}
-											title="Select model preset to copy"
-											getDisplayName={k => prefillDropdownItems[k].displayName}
-										/>
-										<button
-											type="button"
-											className="btn btn-sm btn-ghost rounded-2xl"
-											onClick={() => {
-												setPrefillMode(false);
-												setSelectedPrefillKey(null);
-											}}
-											title="Cancel prefill"
-										>
-											<FiX size={12} />
-										</button>
-									</>
-								)}
-							</div>
-						</div>
-					)}
-
-					{/* ModelPresetID ------------------------------------- */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Model Preset ID*</span>
-							<span
-								className="label-text-alt tooltip tooltip-right"
-								data-tip="Unique identifier. Letters, numbers, hyphen."
-							>
-								<FiHelpCircle size={12} />
-							</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								name="modelPresetID"
-								type="text"
-								className={`input input-bordered w-full rounded-2xl ${errors.modelPresetID ? 'input-error' : ''}`}
-								value={modelPresetID}
-								onChange={handleChange}
-								disabled={isEditMode}
-								placeholder="e.g. gpt4-preset"
-								autoComplete="off"
-								spellCheck="false"
-							/>
-							{errors.modelPresetID && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} />
-										{errors.modelPresetID}
-									</span>
-								</div>
-							)}
-						</div>
+	return createPortal(
+		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
+			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
+				<div className="max-h-[80vh] overflow-y-auto p-6">
+					{/* Header -------------------------------------------------- */}
+					<div className="mb-4 flex items-center justify-between">
+						<h3 className="text-lg font-bold">{isEditMode ? 'Edit Model Preset' : 'Add Model Preset'}</h3>
+						<button
+							type="button"
+							className="btn btn-sm btn-circle bg-base-300"
+							onClick={() => dialogRef.current?.close()}
+							aria-label="Close"
+						>
+							<FiX size={12} />
+						</button>
 					</div>
 
-					{/* Model Name ---------------------------------------- */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Model Name*</span>
-							<span
-								className="label-text-alt tooltip tooltip-right"
-								data-tip="The name you send to the completions API (e.g. gpt-4)"
-							>
-								<FiHelpCircle size={12} />
-							</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								name="name"
-								type="text"
-								className={`input input-bordered w-full rounded-2xl ${errors.name ? 'input-error' : ''}`}
-								value={formData.name}
-								onChange={handleChange}
-								placeholder="e.g. gpt-4, claude-3-opus-20240229"
-								autoComplete="off"
-								spellCheck="false"
-							/>
-							{errors.name && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} />
-										{errors.name}
-									</span>
-								</div>
-							)}
-						</div>
-					</div>
-
-					{/* Preset Label -------------------------------------- */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Preset Label*</span>
-							<span className="label-text-alt tooltip tooltip-right" data-tip="Friendly name shown in the UI">
-								<FiHelpCircle size={12} />
-							</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								name="presetLabel"
-								type="text"
-								className={`input input-bordered w-full rounded-2xl ${errors.presetLabel ? 'input-error' : ''}`}
-								value={formData.presetLabel}
-								onChange={handleChange}
-								placeholder="e.g. GPT-4 (Creative)"
-								autoComplete="off"
-								spellCheck="false"
-							/>
-							{errors.presetLabel && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} />
-										{errors.presetLabel}
-									</span>
-								</div>
-							)}
-						</div>
-					</div>
-
-					{/* Toggles: isEnabled / stream / reasoningSupport ---- */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3 cursor-pointer">
-							<span className="label-text text-sm">Enabled</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								type="checkbox"
-								name="isEnabled"
-								className="toggle toggle-accent"
-								checked={formData.isEnabled}
-								onChange={handleChange}
-							/>
-						</div>
-					</div>
-
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3 cursor-pointer">
-							<span className="label-text text-sm">Streaming</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								type="checkbox"
-								name="stream"
-								className="toggle toggle-accent"
-								checked={formData.stream}
-								onChange={handleChange}
-							/>
-						</div>
-					</div>
-
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3 cursor-pointer">
-							<span className="label-text text-sm">Supports Reasoning</span>
-							<span className="label-text-alt tooltip tooltip-right" data-tip="If enabled, configure below">
-								<FiHelpCircle size={12} />
-							</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								type="checkbox"
-								name="reasoningSupport"
-								className="toggle toggle-accent"
-								checked={formData.reasoningSupport}
-								onChange={handleChange}
-							/>
-						</div>
-					</div>
-
-					{/* Reasoning controls -------------------------------- */}
-					{formData.reasoningSupport && (
-						<>
-							{/* type */}
+					{/* FORM ---------------------------------------------------- */}
+					<form noValidate onSubmit={handleSubmit} className="space-y-4">
+						{/* ───── Prefill (ADD mode only) ───── */}
+						{!isEditMode && (
 							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
-									<span className="label-text text-sm">Reasoning Type</span>
+									<span className="label-text text-sm">Prefill from Existing</span>
 								</label>
-								<div className="col-span-9">
-									<Dropdown<ReasoningType>
-										dropdownItems={reasoningTypeItems}
-										selectedKey={formData.reasoningType ?? ReasoningType.SingleWithLevels}
-										onChange={t => {
-											setFormData(p => ({ ...p, reasoningType: t }));
-										}}
-										filterDisabled={false}
-										title="Select Reasoning Type"
-										getDisplayName={k => reasoningTypeItems[k].displayName}
-									/>
+
+								<div className="col-span-9 flex items-center gap-2">
+									{!prefillMode && (
+										<button
+											type="button"
+											className="btn btn-sm btn-ghost flex items-center rounded-xl"
+											onClick={() => {
+												setPrefillMode(true);
+											}}
+										>
+											<FiUpload size={14} />
+											<span className="ml-1">Copy Existing Preset</span>
+										</button>
+									)}
+
+									{prefillMode && (
+										<>
+											<Dropdown<PrefillKey>
+												dropdownItems={prefillDropdownItems}
+												selectedKey={selectedPrefillKey ?? ('' as PrefillKey)}
+												onChange={key => {
+													setSelectedPrefillKey(key);
+													applyPrefill(key);
+													/* automatically close dropdown afterwards */
+													setPrefillMode(false);
+												}}
+												filterDisabled={false}
+												title="Select model preset to copy"
+												getDisplayName={k => prefillDropdownItems[k].displayName}
+											/>
+											<button
+												type="button"
+												className="btn btn-sm btn-ghost rounded-xl"
+												onClick={() => {
+													setPrefillMode(false);
+													setSelectedPrefillKey(null);
+												}}
+												title="Cancel prefill"
+											>
+												<FiX size={12} />
+											</button>
+										</>
+									)}
 								</div>
 							</div>
+						)}
 
-							{/* level (for SingleWithLevels) */}
-							{formData.reasoningType === ReasoningType.SingleWithLevels && (
-								<div className="grid grid-cols-12 items-center gap-2">
-									<label className="label col-span-3">
-										<span className="label-text text-sm">Reasoning Level</span>
-									</label>
-									<div className="col-span-9">
-										<Dropdown<ReasoningLevel>
-											dropdownItems={reasoningLevelItems}
-											selectedKey={formData.reasoningLevel ?? ReasoningLevel.Medium}
-											onChange={lvl => {
-												setFormData(p => ({ ...p, reasoningLevel: lvl }));
-											}}
-											filterDisabled={false}
-											title="Select Reasoning Level"
-											getDisplayName={k => reasoningLevelItems[k].displayName}
-										/>
-									</div>
-								</div>
-							)}
-
-							{/* tokens (for HybridWithTokens) */}
-							{formData.reasoningType === ReasoningType.HybridWithTokens && (
-								<div className="grid grid-cols-12 items-center gap-2">
-									<label className="label col-span-3">
-										<span className="label-text text-sm">Reasoning Tokens</span>
-									</label>
-									<div className="col-span-9">
-										<input
-											name="reasoningTokens"
-											type="text"
-											className={`input input-bordered w-full rounded-2xl ${
-												errors.reasoningTokens ? 'input-error' : ''
-											}`}
-											value={formData.reasoningTokens}
-											onChange={handleChange}
-											placeholder="e.g. 1024"
-											spellCheck="false"
-										/>
-										{errors.reasoningTokens && (
-											<div className="label">
-												<span className="label-text-alt text-error flex items-center gap-1">
-													<FiAlertCircle size={12} />
-													{errors.reasoningTokens}
-												</span>
-											</div>
-										)}
-									</div>
-								</div>
-							)}
-						</>
-					)}
-
-					{/* Temperature -------------------------------------- */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Temperature (0-1)</span>
-							<span className="label-text-alt tooltip tooltip-right" data-tip="This or Reasoning is needed">
-								<FiHelpCircle size={12} />
-							</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								name="temperature"
-								type="text"
-								className={`input input-bordered w-full rounded-2xl ${errors.temperature ? 'input-error' : ''}`}
-								value={formData.temperature}
-								onChange={handleChange}
-								placeholder={numPlaceholder('temperature')}
-								spellCheck="false"
-							/>
-							{errors.temperature && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.temperature}
-									</span>
-								</div>
-							)}
-						</div>
-					</div>
-
-					{/* Timeout ------------------------------------------ */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">Timeout (seconds)</span>
-						</label>
-						<div className="col-span-9">
-							<input
-								name="timeout"
-								type="text"
-								className={`input input-bordered w-full rounded-2xl ${errors.timeout ? 'input-error' : ''}`}
-								value={formData.timeout}
-								onChange={handleChange}
-								placeholder={numPlaceholder('timeout')}
-								spellCheck="false"
-							/>
-							{errors.timeout && (
-								<div className="label">
-									<span className="label-text-alt text-error flex items-center gap-1">
-										<FiAlertCircle size={12} /> {errors.timeout}
-									</span>
-								</div>
-							)}
-						</div>
-					</div>
-
-					{/* Prompt / Output lengths -------------------------- */}
-					{(['maxPromptLength', 'maxOutputLength'] as const).map(f => (
-						<div className="grid grid-cols-12 items-center gap-2" key={f}>
+						{/* ModelPresetID ------------------------------------- */}
+						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
-								<span className="label-text text-sm">
-									{f === 'maxPromptLength' ? 'Max Prompt Tokens' : 'Max Output Tokens'}
+								<span className="label-text text-sm">Model Preset ID*</span>
+								<span
+									className="label-text-alt tooltip tooltip-right"
+									data-tip="Unique identifier. Letters, numbers, hyphen."
+								>
+									<FiHelpCircle size={12} />
 								</span>
 							</label>
 							<div className="col-span-9">
 								<input
-									name={f}
+									name="modelPresetID"
 									type="text"
-									className={`input input-bordered w-full rounded-2xl ${errors[f] ? 'input-error' : ''}`}
-									value={formData[f]}
+									className={`input input-bordered w-full rounded-xl ${errors.modelPresetID ? 'input-error' : ''}`}
+									value={modelPresetID}
 									onChange={handleChange}
-									placeholder={numPlaceholder(f)}
+									disabled={isEditMode}
+									placeholder="e.g. gpt4-preset"
+									autoComplete="off"
 									spellCheck="false"
 								/>
-								{errors[f] && (
+								{errors.modelPresetID && (
 									<div className="label">
 										<span className="label-text-alt text-error flex items-center gap-1">
-											<FiAlertCircle size={12} /> {errors[f]}
+											<FiAlertCircle size={12} />
+											{errors.modelPresetID}
 										</span>
 									</div>
 								)}
 							</div>
 						</div>
-					))}
 
-					{/* System Prompt ------------------------------------ */}
-					<div className="grid grid-cols-12 items-center gap-2">
-						<label className="label col-span-3">
-							<span className="label-text text-sm">System Prompt</span>
-						</label>
-						<div className="col-span-9">
-							<textarea
-								name="systemPrompt"
-								className="textarea textarea-bordered h-24 w-full rounded-2xl"
-								value={formData.systemPrompt}
-								onChange={handleChange}
-								placeholder="Enter instructions here…"
-								spellCheck="false"
-							/>
+						{/* Model Name ---------------------------------------- */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Model Name*</span>
+								<span
+									className="label-text-alt tooltip tooltip-right"
+									data-tip="The name you send to the completions API (e.g. gpt-4)"
+								>
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									name="name"
+									type="text"
+									className={`input input-bordered w-full rounded-xl ${errors.name ? 'input-error' : ''}`}
+									value={formData.name}
+									onChange={handleChange}
+									placeholder="e.g. gpt-4, claude-3-opus-20240229"
+									autoComplete="off"
+									spellCheck="false"
+									autoFocus
+								/>
+								{errors.name && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} />
+											{errors.name}
+										</span>
+									</div>
+								)}
+							</div>
 						</div>
-					</div>
 
-					{/* ACTIONS ------------------------------------------ */}
-					<div className="modal-action">
-						<button type="button" className="btn bg-base-300 rounded-2xl" onClick={onClose}>
-							Cancel
-						</button>
-						<button type="submit" className="btn btn-primary rounded-2xl" disabled={!isAllValid}>
-							{isEditMode ? 'Save Changes' : 'Add Preset'}
-						</button>
-					</div>
-				</form>
+						{/* Preset Label -------------------------------------- */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Preset Label*</span>
+								<span className="label-text-alt tooltip tooltip-right" data-tip="Friendly name shown in the UI">
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									name="presetLabel"
+									type="text"
+									className={`input input-bordered w-full rounded-xl ${errors.presetLabel ? 'input-error' : ''}`}
+									value={formData.presetLabel}
+									onChange={handleChange}
+									placeholder="e.g. GPT-4 (Creative)"
+									autoComplete="off"
+									spellCheck="false"
+								/>
+								{errors.presetLabel && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} />
+											{errors.presetLabel}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Toggles: isEnabled / stream / reasoningSupport ---- */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3 cursor-pointer">
+								<span className="label-text text-sm">Enabled</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="checkbox"
+									name="isEnabled"
+									className="toggle toggle-accent"
+									checked={formData.isEnabled}
+									onChange={handleChange}
+								/>
+							</div>
+						</div>
+
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3 cursor-pointer">
+								<span className="label-text text-sm">Streaming</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="checkbox"
+									name="stream"
+									className="toggle toggle-accent"
+									checked={formData.stream}
+									onChange={handleChange}
+								/>
+							</div>
+						</div>
+
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3 cursor-pointer">
+								<span className="label-text text-sm">Supports Reasoning</span>
+								<span className="label-text-alt tooltip tooltip-right" data-tip="If enabled, configure below">
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="checkbox"
+									name="reasoningSupport"
+									className="toggle toggle-accent"
+									checked={formData.reasoningSupport}
+									onChange={handleChange}
+								/>
+							</div>
+						</div>
+
+						{/* Reasoning controls -------------------------------- */}
+						{formData.reasoningSupport && (
+							<>
+								{/* type */}
+								<div className="grid grid-cols-12 items-center gap-2">
+									<label className="label col-span-3">
+										<span className="label-text text-sm">Reasoning Type</span>
+									</label>
+									<div className="col-span-9">
+										<Dropdown<ReasoningType>
+											dropdownItems={reasoningTypeItems}
+											selectedKey={formData.reasoningType ?? ReasoningType.SingleWithLevels}
+											onChange={t => {
+												setFormData(p => ({ ...p, reasoningType: t }));
+											}}
+											filterDisabled={false}
+											title="Select Reasoning Type"
+											getDisplayName={k => reasoningTypeItems[k].displayName}
+										/>
+									</div>
+								</div>
+
+								{/* level (for SingleWithLevels) */}
+								{formData.reasoningType === ReasoningType.SingleWithLevels && (
+									<div className="grid grid-cols-12 items-center gap-2">
+										<label className="label col-span-3">
+											<span className="label-text text-sm">Reasoning Level</span>
+										</label>
+										<div className="col-span-9">
+											<Dropdown<ReasoningLevel>
+												dropdownItems={reasoningLevelItems}
+												selectedKey={formData.reasoningLevel ?? ReasoningLevel.Medium}
+												onChange={lvl => {
+													setFormData(p => ({ ...p, reasoningLevel: lvl }));
+												}}
+												filterDisabled={false}
+												title="Select Reasoning Level"
+												getDisplayName={k => reasoningLevelItems[k].displayName}
+											/>
+										</div>
+									</div>
+								)}
+
+								{/* tokens (for HybridWithTokens) */}
+								{formData.reasoningType === ReasoningType.HybridWithTokens && (
+									<div className="grid grid-cols-12 items-center gap-2">
+										<label className="label col-span-3">
+											<span className="label-text text-sm">Reasoning Tokens</span>
+										</label>
+										<div className="col-span-9">
+											<input
+												name="reasoningTokens"
+												type="text"
+												className={`input input-bordered w-full rounded-xl ${
+													errors.reasoningTokens ? 'input-error' : ''
+												}`}
+												value={formData.reasoningTokens}
+												onChange={handleChange}
+												placeholder="e.g. 1024"
+												spellCheck="false"
+											/>
+											{errors.reasoningTokens && (
+												<div className="label">
+													<span className="label-text-alt text-error flex items-center gap-1">
+														<FiAlertCircle size={12} />
+														{errors.reasoningTokens}
+													</span>
+												</div>
+											)}
+										</div>
+									</div>
+								)}
+							</>
+						)}
+
+						{/* Temperature -------------------------------------- */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Temperature (0-1)</span>
+								<span className="label-text-alt tooltip tooltip-right" data-tip="This or Reasoning is needed">
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									name="temperature"
+									type="text"
+									className={`input input-bordered w-full rounded-xl ${errors.temperature ? 'input-error' : ''}`}
+									value={formData.temperature}
+									onChange={handleChange}
+									placeholder={numPlaceholder('temperature')}
+									spellCheck="false"
+								/>
+								{errors.temperature && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.temperature}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Timeout ------------------------------------------ */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Timeout (seconds)</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									name="timeout"
+									type="text"
+									className={`input input-bordered w-full rounded-xl ${errors.timeout ? 'input-error' : ''}`}
+									value={formData.timeout}
+									onChange={handleChange}
+									placeholder={numPlaceholder('timeout')}
+									spellCheck="false"
+								/>
+								{errors.timeout && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.timeout}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Prompt / Output lengths -------------------------- */}
+						{(['maxPromptLength', 'maxOutputLength'] as const).map(f => (
+							<div className="grid grid-cols-12 items-center gap-2" key={f}>
+								<label className="label col-span-3">
+									<span className="label-text text-sm">
+										{f === 'maxPromptLength' ? 'Max Prompt Tokens' : 'Max Output Tokens'}
+									</span>
+								</label>
+								<div className="col-span-9">
+									<input
+										name={f}
+										type="text"
+										className={`input input-bordered w-full rounded-xl ${errors[f] ? 'input-error' : ''}`}
+										value={formData[f]}
+										onChange={handleChange}
+										placeholder={numPlaceholder(f)}
+										spellCheck="false"
+									/>
+									{errors[f] && (
+										<div className="label">
+											<span className="label-text-alt text-error flex items-center gap-1">
+												<FiAlertCircle size={12} /> {errors[f]}
+											</span>
+										</div>
+									)}
+								</div>
+							</div>
+						))}
+
+						{/* System Prompt ------------------------------------ */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">System Prompt</span>
+							</label>
+							<div className="col-span-9">
+								<textarea
+									name="systemPrompt"
+									className="textarea textarea-bordered h-24 w-full rounded-xl"
+									value={formData.systemPrompt}
+									onChange={handleChange}
+									placeholder="Enter instructions here…"
+									spellCheck="false"
+								/>
+							</div>
+						</div>
+
+						{/* ACTIONS ------------------------------------------ */}
+						<div className="modal-action">
+							<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
+								Cancel
+							</button>
+							<button type="submit" className="btn btn-primary rounded-xl" disabled={!isAllValid}>
+								{isEditMode ? 'Save Changes' : 'Add Preset'}
+							</button>
+						</div>
+					</form>
+				</div>
 			</div>
-		</dialog>
+			{/* NOTE: no modal-backdrop here: backdrop click should NOT close this modal */}
+		</dialog>,
+		document.body
 	);
 }
