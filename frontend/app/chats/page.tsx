@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ModelParams } from '@/spec/aiprovider';
-import type {
-	Conversation,
-	ConversationMessage,
-	ConversationSearchItem,
-	ConversationToolChoice,
-} from '@/spec/conversation';
+import type { Conversation, ConversationMessage, ConversationSearchItem } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
+import type { ToolChoice } from '@/spec/tool';
 
 import { defaultShortcutConfig, type ShortcutConfig, useChatShortcuts } from '@/lib/keyboard_shortcuts';
 import { getBlockQuotedLines, sanitizeConversationTitle } from '@/lib/text_utils';
@@ -50,14 +46,14 @@ function initConversationMessage(role: ConversationRoleEnum, content: string): C
 	};
 }
 
-function attachedToolToConversationToolChoice(tool: EditorAttachedToolChoice): ConversationToolChoice {
+function attachedToolToConversationToolChoice(tool: EditorAttachedToolChoice): ToolChoice {
 	return {
 		bundleID: tool.bundleID,
 		toolSlug: tool.toolSlug,
 		toolVersion: tool.toolVersion,
 		displayName: tool.displayName,
 		description: tool.description,
-		id: tool.id,
+		toolID: tool.toolID,
 	};
 }
 

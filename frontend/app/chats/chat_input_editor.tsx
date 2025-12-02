@@ -18,7 +18,7 @@ import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
 import { type Attachment, AttachmentKind, type AttachmentMode } from '@/spec/attachment';
 import type { DirectoryAttachmentsResult } from '@/spec/backend';
-import type { ConversationToolChoice } from '@/spec/conversation';
+import type { ToolChoice } from '@/spec/tool';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -81,7 +81,7 @@ export interface EditorAreaHandle {
 export interface EditorExternalMessage {
 	text: string;
 	attachments?: Attachment[];
-	toolChoices?: ConversationToolChoice[];
+	toolChoices?: ToolChoice[];
 }
 
 export interface EditorSubmitPayload {

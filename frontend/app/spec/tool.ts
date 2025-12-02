@@ -61,6 +61,18 @@ export interface HTTPToolImpl {
 	response: HTTPResponse;
 }
 
+export interface ToolChoice {
+	bundleID: string;
+	bundleSlug?: string;
+
+	toolID?: string;
+	toolSlug: string;
+	toolVersion: string;
+
+	displayName?: string;
+	description?: string;
+}
+
 export interface Tool {
 	id: string;
 	slug: string;

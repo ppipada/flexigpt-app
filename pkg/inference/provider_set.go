@@ -156,19 +156,15 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 		return nil, errors.Join(err, errors.New("error in building completion data"))
 	}
 
-	// Attach tool choices: convert the lightweight ChatCompletionToolChoice handles
+	// Attach tool choices: convert the lightweight ToolChoice handles
 	// provided by the caller into FetchCompletionToolChoice entries, then hydrate
 	// them with full tool definitions from the tool store.
 	if len(req.Body.ToolChoices) > 0 {
 		out := make([]spec.FetchCompletionToolChoice, 0, len(req.Body.ToolChoices))
 		for _, c := range req.Body.ToolChoices {
 			out = append(out, spec.FetchCompletionToolChoice{
-				BundleID:    strings.TrimSpace(c.BundleID),
-				ToolSlug:    strings.TrimSpace(c.ToolSlug),
-				ToolVersion: strings.TrimSpace(c.ToolVersion),
-				ID:          strings.TrimSpace(c.ID),
-				Description: c.Description,
-				Tool:        nil, // hydrated later in attachToolsToCompletionData
+				ToolChoice: c,
+				Tool:       nil, // hydrated later in attachToolsToCompletionData
 			})
 		}
 		resp.ToolChoices = out
@@ -232,8 +228,8 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 	attachmentIndex := map[toolKey]map[string]struct{}{}
 
 	for _, att := range data.ToolChoices {
-		bundleID := strings.TrimSpace(att.BundleID)
-		toolSlug := strings.TrimSpace(att.ToolSlug)
+		bundleID := att.BundleID
+		toolSlug := att.ToolSlug
 		version := strings.TrimSpace(att.ToolVersion)
 
 		if bundleID == "" || toolSlug == "" || version == "" {
@@ -243,14 +239,14 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 		}
 
 		k := toolKey{
-			bundleID: bundleID,
-			toolSlug: toolSlug,
+			bundleID: string(bundleID),
+			toolSlug: string(toolSlug),
 			version:  version,
 		}
 		if _, ok := attachmentIndex[k]; !ok {
 			attachmentIndex[k] = make(map[string]struct{})
 		}
-		if id := strings.TrimSpace(att.ID); id != "" {
+		if id := strings.TrimSpace(string(att.ToolID)); id != "" {
 			attachmentIndex[k][id] = struct{}{}
 		}
 	}
@@ -314,12 +310,13 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 		}
 
 		completionTool := spec.FetchCompletionToolChoice{
-			BundleID:    k.bundleID,
-			ToolSlug:    k.toolSlug,
-			ToolVersion: k.version,
 			// ID: k.id,.
 			Tool: &tool,
 		}
+		completionTool.BundleID = bundleitemutils.BundleID(k.bundleID)
+		completionTool.ToolSlug = bundleitemutils.ItemSlug(k.toolSlug)
+		completionTool.ToolVersion = k.version
+
 		tools = append(tools, completionTool)
 	}
 

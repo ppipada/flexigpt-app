@@ -1,13 +1,12 @@
 import {
 	type ChatCompletionDataMessage,
 	ChatCompletionRoleEnum,
-	type ChatCompletionToolChoice,
 	type FetchCompletionData,
 	type FetchCompletionResponseBody,
 	type ModelParams,
 	ResponseContentType,
 } from '@/spec/aiprovider';
-import type { ConversationMessage, ConversationToolChoice } from '@/spec/conversation';
+import type { ConversationMessage } from '@/spec/conversation';
 import { ConversationRoleEnum } from '@/spec/conversation';
 import type { ProviderName } from '@/spec/modelpreset';
 
@@ -55,23 +54,6 @@ function convertConversationToBuildMessages(conversationMessages?: ConversationM
 	return chatMessages;
 }
 
-function convertConversationToolChoicesToChatChoices(
-	toolChoices?: ConversationToolChoice[]
-): ChatCompletionToolChoice[] | undefined {
-	if (!toolChoices || toolChoices.length === 0) {
-		return undefined;
-	}
-
-	return toolChoices.map(tc => ({
-		bundleID: tc.bundleID,
-		toolSlug: tc.toolSlug,
-		toolVersion: tc.toolVersion,
-		description: tc.description,
-		displayName: tc.displayName,
-		id: tc.id,
-	}));
-}
-
 export async function BuildCompletionDataFromConversation(
 	provider: ProviderName,
 	modelParams: ModelParams,
@@ -84,9 +66,7 @@ export async function BuildCompletionDataFromConversation(
 		throw Error('Invalid prompt message input');
 	}
 	const promptConvoMsg = messages && messages.length > 0 ? messages[messages.length - 1] : undefined;
-	const toolChoices = promptConvoMsg
-		? convertConversationToolChoicesToChatChoices(promptConvoMsg.toolChoices)
-		: undefined;
+	const toolChoices = promptConvoMsg?.toolChoices;
 	const attachments = promptConvoMsg ? promptConvoMsg.attachments : undefined;
 
 	const completionData = providerSetAPI.buildCompletionData(

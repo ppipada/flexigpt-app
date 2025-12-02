@@ -126,10 +126,10 @@ func getCompletionData(
 }
 
 func toolFunctionName(ct spec.FetchCompletionToolChoice) string {
-	slug := sanitizeToolNameComponent(ct.ToolSlug)
+	slug := sanitizeToolNameComponent(string(ct.ToolSlug))
 	version := sanitizeToolNameComponent(strings.ReplaceAll(ct.ToolVersion, ".", "_"))
 
-	idPart := sanitizeToolNameComponent(strings.ReplaceAll(ct.ID, "-", ""))
+	idPart := sanitizeToolNameComponent(strings.ReplaceAll(string(ct.ToolID), "-", ""))
 	if len(idPart) > 8 {
 		idPart = idPart[:8]
 	}

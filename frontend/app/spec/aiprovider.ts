@@ -1,21 +1,12 @@
 import type { Attachment } from '@/spec/attachment';
 import type { ModelName, ProviderName, ReasoningParams } from '@/spec/modelpreset';
-import type { Tool } from '@/spec/tool';
+import type { Tool, ToolChoice } from '@/spec/tool';
 
 export enum ChatCompletionRoleEnum {
 	system = 'system',
 	user = 'user',
 	assistant = 'assistant',
 	function = 'function',
-}
-
-export interface ChatCompletionToolChoice {
-	bundleID?: string;
-	toolSlug: string;
-	toolVersion: string;
-	id?: string;
-	description: string;
-	displayName: string;
 }
 
 export interface ChatCompletionDataMessage {
@@ -116,7 +107,7 @@ export interface IProviderSetAPI {
 		modelParams: ModelParams,
 		currentMessage: ChatCompletionDataMessage,
 		prevMessages?: Array<ChatCompletionDataMessage>,
-		toolChoices?: Array<ChatCompletionToolChoice>,
+		toolChoices?: Array<ToolChoice>,
 		attachments?: Array<Attachment>
 	): Promise<FetchCompletionData>;
 	completion(

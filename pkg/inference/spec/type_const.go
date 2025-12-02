@@ -2,7 +2,6 @@ package spec
 
 import (
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
-	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
 type ChatCompletionRoleEnum string
@@ -15,30 +14,6 @@ const (
 	Function  ChatCompletionRoleEnum = "function"
 	Tool      ChatCompletionRoleEnum = "tool"
 )
-
-type ChatCompletionToolChoice struct {
-	BundleID    string `json:"bundleID,omitempty"`
-	ToolSlug    string `json:"toolSlug"`
-	ToolVersion string `json:"toolVersion"`
-	ID          string `json:"id,omitempty"`
-	Description string `json:"description"`
-	DisplayName string `json:"displayName"`
-}
-
-type ChatCompletionDataMessage struct {
-	Role    ChatCompletionRoleEnum `json:"role"`
-	Content *string                `json:"content,omitempty"`
-	Name    *string                `json:"name,omitempty"`
-}
-
-type FetchCompletionToolChoice struct {
-	BundleID    string         `json:"bundleID,omitempty"`
-	ToolSlug    string         `json:"toolSlug"`
-	ToolVersion string         `json:"toolVersion"`
-	ID          string         `json:"id,omitempty"`
-	Tool        *toolSpec.Tool `json:"tool"`
-	Description string         `json:"description"`
-}
 
 // ModelParams represents input information about a model to a completion.
 type ModelParams struct {

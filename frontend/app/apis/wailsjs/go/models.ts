@@ -438,24 +438,26 @@ export namespace spec {
 	        this.nonEmpty = source["nonEmpty"];
 	    }
 	}
-	export class ChatCompletionToolChoice {
-	    bundleID?: string;
+	export class ToolChoice {
+	    bundleID: string;
+	    bundleSlug?: string;
+	    toolID?: string;
 	    toolSlug: string;
 	    toolVersion: string;
-	    id?: string;
-	    description: string;
-	    displayName: string;
+	    description?: string;
+	    displayName?: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new ChatCompletionToolChoice(source);
+	        return new ToolChoice(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.bundleID = source["bundleID"];
+	        this.bundleSlug = source["bundleSlug"];
+	        this.toolID = source["toolID"];
 	        this.toolSlug = source["toolSlug"];
 	        this.toolVersion = source["toolVersion"];
-	        this.id = source["id"];
 	        this.description = source["description"];
 	        this.displayName = source["displayName"];
 	    }
@@ -542,7 +544,7 @@ export namespace spec {
 	    modelParams: ModelParams;
 	    currentMessage: ChatCompletionDataMessage;
 	    prevMessages?: ChatCompletionDataMessage[];
-	    toolChoices?: ChatCompletionToolChoice[];
+	    toolChoices?: ToolChoice[];
 	    attachments?: attachment.Attachment[];
 	
 	    static createFrom(source: any = {}) {
@@ -554,7 +556,7 @@ export namespace spec {
 	        this.modelParams = this.convertValues(source["modelParams"], ModelParams);
 	        this.currentMessage = this.convertValues(source["currentMessage"], ChatCompletionDataMessage);
 	        this.prevMessages = this.convertValues(source["prevMessages"], ChatCompletionDataMessage);
-	        this.toolChoices = this.convertValues(source["toolChoices"], ChatCompletionToolChoice);
+	        this.toolChoices = this.convertValues(source["toolChoices"], ToolChoice);
 	        this.attachments = this.convertValues(source["attachments"], attachment.Attachment);
 	    }
 	
@@ -796,12 +798,14 @@ export namespace spec {
 		}
 	}
 	export class FetchCompletionToolChoice {
-	    bundleID?: string;
+	    bundleID: string;
+	    bundleSlug?: string;
+	    toolID?: string;
 	    toolSlug: string;
 	    toolVersion: string;
-	    id?: string;
+	    description?: string;
+	    displayName?: string;
 	    tool?: Tool;
-	    description: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new FetchCompletionToolChoice(source);
@@ -810,11 +814,13 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.bundleID = source["bundleID"];
+	        this.bundleSlug = source["bundleSlug"];
+	        this.toolID = source["toolID"];
 	        this.toolSlug = source["toolSlug"];
 	        this.toolVersion = source["toolVersion"];
-	        this.id = source["id"];
-	        this.tool = this.convertValues(source["tool"], Tool);
 	        this.description = source["description"];
+	        this.displayName = source["displayName"];
+	        this.tool = this.convertValues(source["tool"], Tool);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -902,29 +908,6 @@ export namespace spec {
 		}
 	}
 	
-	
-	export class ConversationToolChoice {
-	    bundleID: string;
-	    toolSlug: string;
-	    toolVersion: string;
-	    description: string;
-	    displayName: string;
-	    id?: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new ConversationToolChoice(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.bundleID = source["bundleID"];
-	        this.toolSlug = source["toolSlug"];
-	        this.toolVersion = source["toolVersion"];
-	        this.description = source["description"];
-	        this.displayName = source["displayName"];
-	        this.id = source["id"];
-	    }
-	}
 	export class ConversationMessage {
 	    id: string;
 	    // Go type: time
@@ -933,7 +916,7 @@ export namespace spec {
 	    content: string;
 	    name?: string;
 	    details?: string;
-	    toolChoices?: ConversationToolChoice[];
+	    toolChoices?: ToolChoice[];
 	    attachments?: attachment.Attachment[];
 	
 	    static createFrom(source: any = {}) {
@@ -948,7 +931,7 @@ export namespace spec {
 	        this.content = source["content"];
 	        this.name = source["name"];
 	        this.details = source["details"];
-	        this.toolChoices = this.convertValues(source["toolChoices"], ConversationToolChoice);
+	        this.toolChoices = this.convertValues(source["toolChoices"], ToolChoice);
 	        this.attachments = this.convertValues(source["attachments"], attachment.Attachment);
 	    }
 	
@@ -1045,7 +1028,6 @@ export namespace spec {
 		    return a;
 		}
 	}
-	
 	
 	export class DeleteAuthKeyRequest {
 	    Type: string;
@@ -4190,6 +4172,7 @@ export namespace spec {
 	
 	    }
 	}
+	
 	
 	
 

@@ -1,4 +1,5 @@
 import type { Attachment } from '@/spec/attachment';
+import type { ToolChoice } from '@/spec/tool';
 
 export enum ConversationRoleEnum {
 	system = 'system',
@@ -8,15 +9,6 @@ export enum ConversationRoleEnum {
 	feedback = 'feedback',
 }
 
-export interface ConversationToolChoice {
-	bundleID: string;
-	toolSlug: string;
-	toolVersion: string;
-	displayName: string;
-	description: string;
-	id?: string;
-}
-
 export interface ConversationMessage {
 	id: string;
 	createdAt?: Date;
@@ -24,7 +16,7 @@ export interface ConversationMessage {
 	content: string;
 	name?: string;
 	details?: string;
-	toolChoices?: ConversationToolChoice[];
+	toolChoices?: ToolChoice[];
 	attachments?: Attachment[];
 	enabledTools?: string[];
 }

@@ -28,13 +28,18 @@ export type ToolSelectionElementNode = {
 };
 
 export type EditorAttachedToolChoice = {
-	selectionID: string;
 	bundleID: string;
+	bundleSlug?: string;
+
+	toolID?: string;
 	toolSlug: string;
 	toolVersion: string;
-	displayName: string;
-	description: string;
-	id?: string; // toolSnapshot.id if present
+
+	displayName?: string;
+	description?: string;
+
+	// Non ToolChoice fields
+	selectionID: string;
 };
 
 // Build a stable identity key for a tool selection (bundle + slug + version).
@@ -179,7 +184,7 @@ export function getAttachedTools(editor: PlateEditor): EditorAttachedToolChoice[
 					: n.toolSnapshot?.description
 						? n.toolSnapshot.description
 						: n.toolSlug,
-				id: n.toolSnapshot?.id,
+				toolID: n.toolSnapshot?.id,
 			});
 		}
 	}

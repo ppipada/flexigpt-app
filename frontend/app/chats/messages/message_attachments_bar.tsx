@@ -2,7 +2,7 @@ import { FiFileText, FiImage, FiLink, FiTool } from 'react-icons/fi';
 
 import type { Attachment } from '@/spec/attachment';
 import { AttachmentKind, AttachmentMode } from '@/spec/attachment';
-import type { ConversationToolChoice } from '@/spec/conversation';
+import type { ToolChoice } from '@/spec/tool';
 
 import {
 	getAttachmentModeLabel,
@@ -12,7 +12,7 @@ import {
 
 interface MessageAttachmentsBarProps {
 	attachments?: Attachment[];
-	toolChoices?: ConversationToolChoice[];
+	toolChoices?: ToolChoice[];
 }
 
 /**
@@ -87,7 +87,7 @@ function AttachmentInfoChip({ attachment }: AttachmentInfoChipProps) {
 }
 
 interface ToolInfoChipProps {
-	tool: ConversationToolChoice;
+	tool: ToolChoice;
 }
 
 /**
@@ -134,7 +134,7 @@ export function MessageAttachmentsBar({ attachments, toolChoices }: MessageAttac
 				))}
 			{hasTools &&
 				toolChoices.map(tool => (
-					<ToolInfoChip key={tool.id ?? `${tool.bundleID}-${tool.toolSlug}-${tool.toolVersion}`} tool={tool} />
+					<ToolInfoChip key={tool.toolID ?? `${tool.bundleID}-${tool.toolSlug}-${tool.toolVersion}`} tool={tool} />
 				))}
 		</div>
 	);

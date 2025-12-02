@@ -3,6 +3,7 @@ package spec
 import (
 	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
 type AddProviderRequestBody struct {
@@ -96,11 +97,23 @@ type ResponseToolCall struct {
 	Status    string `json:"status,omitempty"`
 }
 
+type ChatCompletionDataMessage struct {
+	Role    ChatCompletionRoleEnum `json:"role"`
+	Content *string                `json:"content,omitempty"`
+	Name    *string                `json:"name,omitempty"`
+}
+
+type FetchCompletionToolChoice struct {
+	toolSpec.ToolChoice
+
+	Tool *toolSpec.Tool `json:"tool"`
+}
+
 type BuildCompletionDataRequestBody struct {
 	ModelParams    ModelParams                 `json:"modelParams"            required:"true"`
 	CurrentMessage ChatCompletionDataMessage   `json:"currentMessage"         required:"true"`
 	PrevMessages   []ChatCompletionDataMessage `json:"prevMessages,omitempty"`
-	ToolChoices    []ChatCompletionToolChoice  `json:"toolChoices,omitempty"`
+	ToolChoices    []toolSpec.ToolChoice       `json:"toolChoices,omitempty"`
 	Attachments    []attachment.Attachment     `json:"attachments,omitempty"`
 }
 
