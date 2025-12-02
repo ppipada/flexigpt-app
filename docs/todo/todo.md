@@ -19,6 +19,7 @@
 - [ ] Token count in build completion data may be wrong as it doesnt really account for attachments/tool calls etc. Need to rectify the FilterMessagesByTokenCount function.
 - [ ] Check for race between build and fetch for attachment content fetch and how to resolve.
 - [ ] Lots of testing needed for new attachments. Check debug details. Attachment follow through across conversations. cache token usage. url attachments.
+- [ ] May need to decide later that keeping conversation attachment shapshots is better than reattach etc.
 
 - attachments
 
