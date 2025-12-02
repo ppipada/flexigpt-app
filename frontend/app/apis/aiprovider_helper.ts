@@ -32,21 +32,12 @@ function convertConversationToBuildMessages(conversationMessages?: ConversationM
 	}
 	const chatMessages: ChatCompletionDataMessage[] = [];
 	conversationMessages.forEach(convoMsg => {
-		// const toolAttachments: BuildCompletionToolAttachment[] | undefined = convoMsg.toolAttachments?.map(att => ({
-		// 	bundleID: att.bundleID,
-		// 	toolSlug: att.toolSlug,
-		// 	toolVersion: att.toolVersion,
-		// 	displayName: att.displayName,
-		// 	id: att.id,
-		// }));
-
-		// const attachments = convoMsg.attachments;
-		// const enabledTools = convoMsg.enabledTools;
-
 		const message: ChatCompletionDataMessage = {
 			role: roleMap[convoMsg.role],
 			content: convoMsg.content,
 			name: convoMsg.name,
+			// Attachments are stored per conversation message; pass them through.
+			attachments: convoMsg.attachments,
 		};
 
 		chatMessages.push(message);
@@ -67,16 +58,8 @@ export async function BuildCompletionDataFromConversation(
 	}
 	const promptConvoMsg = messages && messages.length > 0 ? messages[messages.length - 1] : undefined;
 	const toolChoices = promptConvoMsg?.toolChoices;
-	const attachments = promptConvoMsg ? promptConvoMsg.attachments : undefined;
 
-	const completionData = providerSetAPI.buildCompletionData(
-		provider,
-		modelParams,
-		promptMsg,
-		allMessages,
-		toolChoices,
-		attachments
-	);
+	const completionData = providerSetAPI.buildCompletionData(provider, modelParams, promptMsg, allMessages, toolChoices);
 	return completionData;
 }
 

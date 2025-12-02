@@ -5,12 +5,11 @@ import type {
 	IProviderSetAPI,
 	ModelParams,
 } from '@/spec/aiprovider';
-import type { Attachment } from '@/spec/attachment';
 import type { ProviderName } from '@/spec/modelpreset';
 import type { ToolChoice } from '@/spec/tool';
 
 import { BuildCompletionData, CancelCompletion, FetchCompletion } from '@/apis/wailsjs/go/main/ProviderSetWrapper';
-import type { attachment as wailsAttachment, spec as wailsSpec } from '@/apis/wailsjs/go/models';
+import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
 import { EventsOff, EventsOn } from '@/apis/wailsjs/runtime/runtime';
 
 /**
@@ -22,8 +21,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		modelParams: ModelParams,
 		currentMessage: ChatCompletionDataMessage,
 		prevMessages?: Array<ChatCompletionDataMessage>,
-		toolChoices?: Array<ToolChoice>,
-		attachments?: Array<Attachment>
+		toolChoices?: Array<ToolChoice>
 	): Promise<FetchCompletionData> {
 		const req = {
 			Provider: provider,
@@ -32,7 +30,6 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 				currentMessage: currentMessage as wailsSpec.ChatCompletionDataMessage,
 				prevMessages: prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionDataMessage[]) : [],
 				toolChoices: toolChoices ? ([...toolChoices] as wailsSpec.ToolChoice[]) : [],
-				attachments: attachments ? ([...attachments] as wailsAttachment.Attachment[]) : [],
 			} as wailsSpec.BuildCompletionDataRequestBody,
 		};
 

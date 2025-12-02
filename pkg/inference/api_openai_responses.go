@@ -163,16 +163,11 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 		return nil, errors.New("openai responses api LLM: empty completion data")
 	}
 
-	blocks, err := attachment.BuildContentBlocks(ctx, completionData.Attachments)
-	if err != nil {
-		return nil, err
-	}
-
 	// Build OpenAI chat messages.
 	msgs, err := toOpenAIResponsesMessages(
 		ctx,
 		completionData.Messages,
-		blocks,
+
 		completionData.ModelParams.Name,
 		api.ProviderParams.Name,
 	)
@@ -242,7 +237,7 @@ func (api *OpenAIResponsesAPI) doNonStreaming(
 	ctx = debugclient.AddDebugResponseToCtx(ctx)
 	resp, err := api.client.Responses.New(ctx, params, option.WithRequestTimeout(timeout))
 	isNilResp := resp == nil || len(resp.Output) == 0
-	attachDebugResp(ctx, completionResp.Body, err, isNilResp, resp.RawJSON())
+	attachDebugResp(ctx, completionResp.Body, err, isNilResp, "", resp)
 	if isNilResp {
 		return completionResp, nil
 	}
@@ -331,7 +326,7 @@ func (api *OpenAIResponsesAPI) doStreaming(
 
 	streamErr := errors.Join(stream.Err(), streamWriteErr)
 	isNilResp := len(respFull.Output) == 0
-	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp, respFull.RawJSON())
+	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp, "", respFull)
 	if isNilResp {
 		return completionResp, nil
 	}
@@ -347,12 +342,10 @@ func (api *OpenAIResponsesAPI) doStreaming(
 func toOpenAIResponsesMessages(
 	ctx context.Context,
 	messages []spec.ChatCompletionDataMessage,
-	blocks []attachment.ContentBlock,
 	modelName modelpresetSpec.ModelName,
 	providerName modelpresetSpec.ProviderName,
 ) (responses.ResponseInputParam, error) {
 	var out responses.ResponseInputParam
-
 	// Identify last user message index; attachments belong to the current user turn.
 	lastUserIdx := -1
 	for i, m := range messages {
@@ -360,14 +353,8 @@ func toOpenAIResponsesMessages(
 			lastUserIdx = i
 		}
 	}
-
-	attachmentContent, err := contentBlocksToOpenAI(blocks)
-	if err != nil {
-		return nil, err
-	}
-
 	for idx, m := range messages {
-		if m.Content == nil {
+		if m.Content == nil && len(m.Attachments) == 0 {
 			continue
 		}
 		switch m.Role {
@@ -394,31 +381,65 @@ func toOpenAIResponsesMessages(
 			})
 
 		case spec.User:
-			if idx == lastUserIdx && len(attachmentContent) > 0 {
-				var contentList responses.ResponseInputMessageContentListParam
+			// Build attachments for this specific user turn (if any).
+			var attachmentContent []responses.ResponseInputContentUnionParam
+			if len(m.Attachments) > 0 {
+				// Dont override original attachments in rehydration.
+				overrideOriginalAttachment := false
+				if idx == lastUserIdx {
+					// For the current message, we may attach even if things changed between build and fetch.
+					// There is a race here: if we override here, how to propagate to the caller that blocks have
+					// changed now, so update the OrigRef fields in attachments or this message too.
+					overrideOriginalAttachment = true
+				}
+				blocks, err := attachment.BuildContentBlocks(ctx, m.Attachments, overrideOriginalAttachment)
+				if err != nil {
+					return nil, err
+				}
+				attachmentContent, err = contentBlocksToOpenAI(blocks)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			// No attachments: plain text user message.
+			if len(attachmentContent) == 0 {
+				text := ""
+				if m.Content != nil {
+					text = *m.Content
+				}
+				if strings.TrimSpace(text) == "" {
+					// Nothing to send for this turn.
+					continue
+				}
+				out = append(out, responses.ResponseInputItemUnionParam{
+					OfMessage: &responses.EasyInputMessageParam{
+						Content: responses.EasyInputMessageContentUnionParam{
+							OfString: openai.String(text),
+						},
+						Role: responses.EasyInputMessageRoleUser,
+						Type: responses.EasyInputMessageTypeMessage,
+					},
+				})
+				continue
+			}
+
+			// Text + attachments for this user turn.
+			var contentList responses.ResponseInputMessageContentListParam
+			if m.Content != nil {
 				if c := strings.TrimSpace(*m.Content); c != "" {
 					contentList = append(
 						contentList,
 						responses.ResponseInputContentParamOfInputText(c),
 					)
 				}
-				contentList = append(contentList, attachmentContent...)
-
-				out = append(out, responses.ResponseInputItemParamOfMessage(
-					contentList,
-					responses.EasyInputMessageRoleUser,
-				))
-			} else {
-				out = append(out, responses.ResponseInputItemUnionParam{
-					OfMessage: &responses.EasyInputMessageParam{
-						Content: responses.EasyInputMessageContentUnionParam{
-							OfString: openai.String(*m.Content),
-						},
-						Role: responses.EasyInputMessageRoleUser,
-						Type: responses.EasyInputMessageTypeMessage,
-					},
-				})
 			}
+			contentList = append(contentList, attachmentContent...)
+
+			out = append(out, responses.ResponseInputItemParamOfMessage(
+				contentList,
+				responses.EasyInputMessageRoleUser,
+			))
 
 		case spec.Assistant:
 			out = append(out, responses.ResponseInputItemUnionParam{

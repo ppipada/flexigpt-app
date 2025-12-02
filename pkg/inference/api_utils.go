@@ -3,11 +3,14 @@ package inference
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
+	"runtime/debug"
 	"slices"
 	"strings"
 
 	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
+	"github.com/ppipada/mapstore-go/jsonencdec"
 )
 
 // attachDebugResp adds HTTP-debug information and error context—without panics.
@@ -24,7 +27,16 @@ func attachDebugResp(
 	respErr error,
 	isNilResp bool,
 	rawModelJSON string,
+	fullObj any,
 ) {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("attach debug resp panic",
+				"recover", r,
+				"stack", string(debug.Stack()))
+		}
+	}()
+
 	if completionResp == nil {
 		return
 	}
@@ -44,17 +56,35 @@ func attachDebugResp(
 	// If the HTTP layer didn't populate ResponseDetails.Data (most common in
 	// streaming/SSE cases), and we have a provider-level raw JSON for the final
 	// model response, sanitize that and use it as the debug body.
+
 	if rawModelJSON != "" {
 		if completionResp.ResponseDetails == nil {
-			completionResp.ResponseDetails = &spec.APIResponseDetails{
-				Status:  0,
-				Headers: nil,
-				Data:    nil,
-			}
+			completionResp.ResponseDetails = &spec.APIResponseDetails{}
 		}
-		if completionResp.ResponseDetails.Data == nil {
+
+		replace := false
+		switch v := completionResp.ResponseDetails.Data.(type) {
+		case nil:
+			replace = true
+		case string:
+			// Likely raw stream (SSE / JSONL / etc), not structured JSON.
+			replace = true
+			_ = v // We could also inspect v for "data:" prefixes, etc.
+		}
+
+		if replace {
 			completionResp.ResponseDetails.Data = debugclient.SanitizeJSONForDebug([]byte(rawModelJSON), true)
 		}
+	} else if fullObj != nil {
+		if completionResp.ResponseDetails == nil {
+			completionResp.ResponseDetails = &spec.APIResponseDetails{}
+		}
+		// We got a object. Lets replace always.
+		m, err := jsonencdec.StructWithJSONTagsToMap(fullObj)
+		if err == nil {
+			completionResp.ResponseDetails.Data = debugclient.ScrubAnyForDebug(m, true)
+		}
+
 	}
 
 	// Gather error-message fragments.

@@ -58,6 +58,10 @@ export interface AttachmentFileRef {
 	size?: number;
 	// Go type: time
 	modTime?: Date;
+
+	origPath: string;
+	origSize: number;
+	origModTime: Date;
 }
 
 export interface AttachmentImageRef {
@@ -73,15 +77,21 @@ export interface AttachmentImageRef {
 	height?: number;
 	format?: string;
 	mimeType?: string;
+
+	origPath: string;
+	origSize: number;
+	origModTime: Date;
 }
 
 export interface AttachmentURLRef {
 	url: string;
 	normalized?: string;
+	origNormalized: string;
 }
 
 export interface AttachmentGenericRef {
 	handle: string;
+	origHandle: string;
 }
 
 // Attachment references contextual artifacts (files, images, doc handles, etc.).

@@ -13,19 +13,15 @@ export interface ChatCompletionDataMessage {
 	role: ChatCompletionRoleEnum;
 	content?: string | null;
 	name?: string | null;
+	attachments?: Array<Attachment>;
 }
 
 /**
  * @public
  */
-export interface FetchCompletionToolChoice {
-	bundleID?: string;
-	toolSlug: string;
-	toolVersion: string;
-	id?: string;
+export type FetchCompletionToolChoice = ToolChoice & {
 	tool: Tool | null;
-	description: string;
-}
+};
 
 export interface ModelParams {
 	name: ModelName;
@@ -90,7 +86,6 @@ export interface FetchCompletionData {
 	modelParams: ModelParams;
 	messages?: Array<ChatCompletionDataMessage>;
 	toolChoices?: Array<FetchCompletionToolChoice>;
-	attachments?: Array<Attachment>;
 }
 
 export interface FetchCompletionResponseBody {
@@ -107,8 +102,7 @@ export interface IProviderSetAPI {
 		modelParams: ModelParams,
 		currentMessage: ChatCompletionDataMessage,
 		prevMessages?: Array<ChatCompletionDataMessage>,
-		toolChoices?: Array<ToolChoice>,
-		attachments?: Array<Attachment>
+		toolChoices?: Array<ToolChoice>
 	): Promise<FetchCompletionData>;
 	completion(
 		provider: ProviderName,

@@ -98,9 +98,10 @@ type ResponseToolCall struct {
 }
 
 type ChatCompletionDataMessage struct {
-	Role    ChatCompletionRoleEnum `json:"role"`
-	Content *string                `json:"content,omitempty"`
-	Name    *string                `json:"name,omitempty"`
+	Role        ChatCompletionRoleEnum  `json:"role"`
+	Content     *string                 `json:"content,omitempty"`
+	Name        *string                 `json:"name,omitempty"`
+	Attachments []attachment.Attachment `json:"attachments,omitempty"`
 }
 
 type FetchCompletionToolChoice struct {
@@ -114,7 +115,6 @@ type BuildCompletionDataRequestBody struct {
 	CurrentMessage ChatCompletionDataMessage   `json:"currentMessage"         required:"true"`
 	PrevMessages   []ChatCompletionDataMessage `json:"prevMessages,omitempty"`
 	ToolChoices    []toolSpec.ToolChoice       `json:"toolChoices,omitempty"`
-	Attachments    []attachment.Attachment     `json:"attachments,omitempty"`
 }
 
 type BuildCompletionDataRequest struct {
@@ -126,7 +126,6 @@ type FetchCompletionData struct {
 	ModelParams ModelParams                 `json:"modelParams"`
 	Messages    []ChatCompletionDataMessage `json:"messages,omitempty"`
 	ToolChoices []FetchCompletionToolChoice `json:"toolChoices,omitempty"`
-	Attachments []attachment.Attachment     `json:"attachments,omitempty"`
 }
 
 type BuildCompletionDataResponse struct {

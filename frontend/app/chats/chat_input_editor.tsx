@@ -393,8 +393,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 					if (att.kind === AttachmentKind.url) {
 						// URL attachment
-						if (att.urlRef && att.urlRef.url) {
-							ui = buildEditorAttachmentForURL(att.urlRef.url);
+						if (att.urlRef) {
+							ui = buildEditorAttachmentForURL(att);
 						} else {
 							continue;
 						}
@@ -560,10 +560,13 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		const trimmed = rawUrl.trim();
 		if (!trimmed) return;
 
+		const bAtt = await backendAPI.openURLAsAttachment(trimmed);
+		if (!bAtt) return;
+		const att = buildEditorAttachmentForURL(bAtt);
+		const key = editorAttachmentKey(att);
+
 		setAttachments(prev => {
 			const existing = new Set(prev.map(editorAttachmentKey));
-			const att = buildEditorAttachmentForURL(trimmed);
-			const key = editorAttachmentKey(att);
 			if (existing.has(key)) return prev;
 			return [...prev, att];
 		});

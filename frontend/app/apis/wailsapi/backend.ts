@@ -4,7 +4,13 @@ import type { Attachment, FileFilter } from '@/spec/attachment';
 import type { DirectoryAttachmentsResult, IBackendAPI } from '@/spec/backend';
 import type { ILogger } from '@/spec/logger';
 
-import { OpenDirectoryAsAttachments, OpenMultipleFilesAsAttachments, Ping, SaveFile } from '@/apis/wailsjs/go/main/App';
+import {
+	OpenDirectoryAsAttachments,
+	OpenMultipleFilesAsAttachments,
+	OpenURLAsAttachment,
+	Ping,
+	SaveFile,
+} from '@/apis/wailsjs/go/main/App';
 import { BrowserOpenURL, LogDebug, LogError, LogInfo, LogWarning } from '@/apis/wailsjs/runtime/runtime';
 
 function formatMessage(args: unknown[]): string {
@@ -119,6 +125,20 @@ export class WailsBackendAPI implements IBackendAPI {
 		}
 	}
 
+	openURL(url: string): void {
+		BrowserOpenURL(url);
+	}
+
+	async openURLAsAttachment(rawURL: string): Promise<Attachment | undefined> {
+		try {
+			const att = await OpenURLAsAttachment(rawURL);
+			return att as Attachment;
+		} catch (err) {
+			console.error('Error saving file:', err);
+		}
+		return undefined;
+	}
+
 	async saveFile(defaultFilename: string, contentBase64: string, additionalFilters?: Array<FileFilter>): Promise<void> {
 		// Call the Go backend method to save the file
 		try {
@@ -127,10 +147,6 @@ export class WailsBackendAPI implements IBackendAPI {
 			console.error('Error saving file:', err);
 		}
 		return;
-	}
-
-	openURL(url: string): void {
-		BrowserOpenURL(url);
 	}
 
 	async openMultipleFilesAsAttachments(

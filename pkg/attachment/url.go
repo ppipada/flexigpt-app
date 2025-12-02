@@ -17,6 +17,8 @@ import (
 type URLRef struct {
 	URL        string `json:"url"`
 	Normalized string `json:"normalized,omitempty"`
+
+	OrigNormalized string `json:"origNormalized"`
 }
 
 func (ref *URLRef) PopulateRef() error {
@@ -35,9 +37,28 @@ func (ref *URLRef) PopulateRef() error {
 		return fmt.Errorf("url %q must be absolute", raw)
 	}
 
+	nURL := parsed.String()
 	ref.URL = raw
-	ref.Normalized = parsed.String()
+	ref.Normalized = nURL
+	if ref.OrigNormalized == "" {
+		ref.OrigNormalized = nURL
+	}
 	return nil
+}
+
+func (ref *URLRef) IsModified() bool {
+	if ref == nil {
+		return false
+	}
+	if strings.TrimSpace(ref.OrigNormalized) == "" {
+		return false
+	}
+
+	if ref.Normalized != ref.OrigNormalized {
+		return true
+	}
+
+	return false
 }
 
 func buildBlocksForURL(ctx context.Context, att *Attachment, mode AttachmentMode) (*ContentBlock, error) {

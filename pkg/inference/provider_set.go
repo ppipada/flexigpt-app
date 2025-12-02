@@ -173,14 +173,8 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 		}
 	}
 
-	// Attach contextual attachments (files, images, doc indexes, etc.) to the completion data.
-	// Resolution happens via the built-in fs helpers so that metadata stays consistent with user-callable tools.
-	if len(req.Body.Attachments) > 0 {
-		if err := populateAttachmentRefs(resp, req.Body.Attachments); err != nil {
-			return nil, err
-		}
-	}
-
+	// Assuming here that attachment ref slices were copied by build completion data.
+	// We do not do PopulateRef again here.
 	return &spec.BuildCompletionDataResponse{Body: resp}, nil
 }
 
@@ -225,7 +219,7 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 		version  string
 	}
 
-	attachmentIndex := map[toolKey]map[string]struct{}{}
+	toolChoiceIndex := map[toolKey]map[string]struct{}{}
 
 	for _, att := range data.ToolChoices {
 		bundleID := att.BundleID
@@ -243,15 +237,15 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 			toolSlug: string(toolSlug),
 			version:  version,
 		}
-		if _, ok := attachmentIndex[k]; !ok {
-			attachmentIndex[k] = make(map[string]struct{})
+		if _, ok := toolChoiceIndex[k]; !ok {
+			toolChoiceIndex[k] = make(map[string]struct{})
 		}
 		if id := strings.TrimSpace(string(att.ToolID)); id != "" {
-			attachmentIndex[k][id] = struct{}{}
+			toolChoiceIndex[k][id] = struct{}{}
 		}
 	}
 
-	if len(attachmentIndex) == 0 {
+	if len(toolChoiceIndex) == 0 {
 		data.ToolChoices = nil
 		return nil
 	}
@@ -260,8 +254,8 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 		return errors.New("tool store not configured for provider set")
 	}
 
-	keys := make([]toolKey, 0, len(attachmentIndex))
-	for k := range attachmentIndex {
+	keys := make([]toolKey, 0, len(toolChoiceIndex))
+	for k := range toolChoiceIndex {
 		keys = append(keys, k)
 	}
 	sort.Slice(keys, func(i, j int) bool {
@@ -310,45 +304,20 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 		}
 
 		completionTool := spec.FetchCompletionToolChoice{
-			// ID: k.id,.
 			Tool: &tool,
 		}
 		completionTool.BundleID = bundleitemutils.BundleID(k.bundleID)
 		completionTool.ToolSlug = bundleitemutils.ItemSlug(k.toolSlug)
 		completionTool.ToolVersion = k.version
+		// CompletionTool.BundleSlug = "asd", bundle slug not available here, any may not be available from input.
+		completionTool.ToolID = tool.ID
+		completionTool.Description = tool.Description
+		completionTool.DisplayName = tool.DisplayName
 
 		tools = append(tools, completionTool)
 	}
 
 	data.ToolChoices = tools
-	return nil
-}
-
-func populateAttachmentRefs(
-	data *spec.FetchCompletionData,
-	attachments []attachment.Attachment,
-) error {
-	if data == nil {
-		return errors.New("invalid completion data: nil")
-	}
-	if len(attachments) == 0 {
-		return nil
-	}
-
-	out := make([]attachment.Attachment, 0, len(attachments))
-	for _, att := range attachments {
-		if err := (&att).PopulateRef(); err != nil {
-			// Log and skip, so one bad attachment doesn't kill the whole turn.
-			slog.Warn("skipping invalid attachment",
-				"kind", att.Kind,
-				"label", att.Label,
-				"error", err,
-			)
-			continue
-		}
-		out = append(out, att)
-	}
-	data.Attachments = out
 	return nil
 }
 
@@ -365,6 +334,10 @@ func convertBuildMessageToChatMessage(
 	if msg.Name != nil {
 		n := *msg.Name
 		out.Name = &n
+	}
+	if len(msg.Attachments) > 0 {
+		out.Attachments = make([]attachment.Attachment, len(msg.Attachments))
+		copy(out.Attachments, msg.Attachments)
 	}
 	return out
 }

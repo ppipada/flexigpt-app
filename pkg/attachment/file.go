@@ -5,6 +5,7 @@ import (
 	"errors"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 )
@@ -12,6 +13,12 @@ import (
 // FileRef carries metadata for file attachments.
 type FileRef struct {
 	fileutil.PathInfo
+
+	// Snapshot of the original file state when it was first attached.
+	// This lets us detect if the underlying file changed between turns.
+	OrigPath    string    `json:"origPath"`
+	OrigSize    int64     `json:"origSize"`
+	OrigModTime time.Time `json:"origModTime"`
 }
 
 func (ref *FileRef) PopulateRef() error {
@@ -27,6 +34,13 @@ func (ref *FileRef) PopulateRef() error {
 		return err
 	}
 
+	// Capture original snapshot once.
+	if strings.TrimSpace(ref.OrigPath) == "" {
+		ref.OrigPath = pathInfo.Path
+		ref.OrigSize = pathInfo.Size
+		ref.OrigModTime = *pathInfo.ModTime
+	}
+
 	ref.Path = pathInfo.Path
 	ref.Name = pathInfo.Name
 	ref.Exists = pathInfo.Exists
@@ -35,6 +49,32 @@ func (ref *FileRef) PopulateRef() error {
 	ref.ModTime = pathInfo.ModTime
 
 	return nil
+}
+
+// IsModified reports whether the current file state differs from the original
+// snapshot captured when the attachment was first used.
+func (ref *FileRef) IsModified() bool {
+	if ref == nil {
+		return false
+	}
+	if strings.TrimSpace(ref.OrigPath) == "" {
+		// No baseline; treat as not modified.
+		return false
+	}
+	// If the file no longer exists or any key metadata changed, mark as modified.
+	if !ref.Exists {
+		return true
+	}
+	if ref.Path != ref.OrigPath {
+		return true
+	}
+	if ref.Size != ref.OrigSize {
+		return true
+	}
+	if !ref.ModTime.Equal(ref.OrigModTime) {
+		return true
+	}
+	return false
 }
 
 func buildBlocksForLocalFile(ctx context.Context, att *Attachment, mode AttachmentMode) (*ContentBlock, error) {

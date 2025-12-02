@@ -160,47 +160,17 @@ export function buildEditorAttachmentForLocalPath(att: Attachment): EditorAttach
 /**
  * Build a URL-based attachment with smart default modes.
  */
-export function buildEditorAttachmentForURL(rawUrl: string): EditorAttachment {
-	const trimmed = rawUrl.trim();
-	const label = trimmed;
-	let url: URL | null = null;
-	try {
-		url = new URL(trimmed);
-	} catch {
-		// Keep as raw string; backend will validate.
-	}
-
-	const pathname = url?.pathname.toLowerCase() ?? '';
-	const ext = pathname.split('.').pop() ?? '';
-
-	const imageExts = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg']);
-	if (imageExts.has(ext)) {
-		return {
-			kind: AttachmentKind.url,
-			label,
-			mode: AttachmentMode.image,
-			availableModes: [AttachmentMode.image, AttachmentMode.link],
-			urlRef: { url: trimmed },
-		};
-	}
-
-	if (ext === 'pdf') {
-		return {
-			kind: AttachmentKind.url,
-			label,
-			mode: AttachmentMode.file,
-			availableModes: [AttachmentMode.text, AttachmentMode.file, AttachmentMode.link],
-			urlRef: { url: trimmed },
-		};
-	}
-
-	// Default: treat as HTML web page.
+export function buildEditorAttachmentForURL(att: Attachment): EditorAttachment {
 	return {
-		kind: AttachmentKind.url,
-		label,
-		mode: AttachmentMode.page,
-		availableModes: [AttachmentMode.page, AttachmentMode.link],
-		urlRef: { url: trimmed },
+		kind: att.kind,
+		label: att.label,
+		mode: att.mode ?? AttachmentMode.notReadable,
+		availableModes: att.availableModes ?? [AttachmentMode.notReadable],
+		fileRef: att.fileRef,
+		imageRef: att.imageRef,
+		urlRef: att.urlRef,
+		genericRef: att.genericRef,
+		isError: false,
 	};
 }
 

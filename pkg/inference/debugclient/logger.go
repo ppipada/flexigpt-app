@@ -99,3 +99,9 @@ func sanitizeBodyForDebug(raw []byte, isRequest bool, cfg DebugConfig) any {
 	s := newScrubber(cfg, isRequest)
 	return s.scrub(decoded, 0, scrubContext{})
 }
+
+func ScrubAnyForDebug(v any, stripContent bool) any {
+	cfg := DebugConfig{StripContent: stripContent}
+	s := newScrubber(cfg, false)
+	return s.scrub(v, 0, scrubContext{})
+}

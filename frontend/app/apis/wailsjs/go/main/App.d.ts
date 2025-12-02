@@ -7,6 +7,8 @@ export function OpenDirectoryAsAttachments(arg1:number):Promise<attachment.Direc
 
 export function OpenMultipleFilesAsAttachments(arg1:boolean,arg2:Array<fileutil.FileFilter>):Promise<Array<attachment.Attachment>>;
 
+export function OpenURLAsAttachment(arg1:string):Promise<attachment.Attachment>;
+
 export function Ping():Promise<string>;
 
 export function SaveFile(arg1:string,arg2:string,arg3:Array<fileutil.FileFilter>):Promise<void>;

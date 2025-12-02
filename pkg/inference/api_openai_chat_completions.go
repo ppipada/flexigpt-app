@@ -161,17 +161,11 @@ func (api *OpenAIChatCompletionsAPI) FetchCompletion(
 		return nil, errors.New("openai chat completions api LLM: empty completion data")
 	}
 
-	// Build generic content blocks (text / image / file) from attachments.
-	blocks, err := attachment.BuildContentBlocks(ctx, completionData.Attachments)
-	if err != nil {
-		return nil, err
-	}
-
 	// Build OpenAI chat messages.
 	msgs, err := toOpenAIChatMessages(
+		ctx,
 		completionData.ModelParams.SystemPrompt,
 		completionData.Messages,
-		blocks,
 		completionData.ModelParams.Name,
 		api.ProviderParams.Name,
 	)
@@ -232,7 +226,7 @@ func (api *OpenAIChatCompletionsAPI) doNonStreaming(
 	ctx = debugclient.AddDebugResponseToCtx(ctx)
 	resp, err := api.client.Chat.Completions.New(ctx, params, option.WithRequestTimeout(timeout))
 	isNilResp := resp == nil || len(resp.Choices) == 0
-	attachDebugResp(ctx, completionResp.Body, err, isNilResp, resp.RawJSON())
+	attachDebugResp(ctx, completionResp.Body, err, isNilResp, "", resp)
 	if isNilResp {
 		return completionResp, nil
 	}
@@ -295,7 +289,9 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 
 	streamErr := errors.Join(stream.Err(), streamWriteErr)
 	isNilResp := len(acc.Choices) == 0
-	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp, acc.RawJSON())
+
+	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp, "", acc.ChatCompletion)
+
 	if isNilResp {
 		return completionResp, nil
 	}
@@ -311,9 +307,9 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 }
 
 func toOpenAIChatMessages(
+	ctx context.Context,
 	systemPrompt string,
 	messages []spec.ChatCompletionDataMessage,
-	blocks []attachment.ContentBlock,
 	modelName modelpresetSpec.ModelName,
 	providerName modelpresetSpec.ProviderName,
 ) ([]openai.ChatCompletionMessageParamUnion, error) {
@@ -333,13 +329,8 @@ func toOpenAIChatMessages(
 		}
 	}
 
-	attachmentParts, err := contentBlocksToOpenAIChat(blocks)
-	if err != nil {
-		return nil, err
-	}
-
 	for idx, m := range messages {
-		if m.Content == nil {
+		if m.Content == nil && len(m.Attachments) == 0 {
 			continue
 		}
 		switch m.Role {
@@ -348,18 +339,46 @@ func toOpenAIChatMessages(
 		case spec.Developer:
 			out = append(out, openai.DeveloperMessage(*m.Content))
 		case spec.User:
-			// For the last user message, attach any file/image/text content parts
-			// derived from attachments so we can use OpenAI's multimodal chat support.
-			if idx == lastUserIdx && len(attachmentParts) > 0 {
-				var parts []openai.ChatCompletionContentPartUnionParam
-				if c := strings.TrimSpace(*m.Content); c != "" {
-					parts = append(parts, openai.TextContentPart(c))
+			var attachmentContent []openai.ChatCompletionContentPartUnionParam
+			if len(m.Attachments) > 0 {
+				// Dont override original attachments in rehydration.
+				overrideOriginalAttachment := false
+				if idx == lastUserIdx {
+					// For the current message, we may attach even if things changed between build and fetch.
+					// There is a race here: if we override here, how to propagate to the caller that blocks have
+					// changed now, so update the OrigRef fields in attachments or this message too.
+					overrideOriginalAttachment = true
 				}
-				parts = append(parts, attachmentParts...)
-				out = append(out, openai.UserMessage(parts))
-			} else {
-				out = append(out, openai.UserMessage(*m.Content))
+				blocks, err := attachment.BuildContentBlocks(ctx, m.Attachments, overrideOriginalAttachment)
+				if err != nil {
+					return nil, err
+				}
+				attachmentContent, err = contentBlocksToOpenAIChat(blocks)
+				if err != nil {
+					return nil, err
+				}
 			}
+
+			if len(attachmentContent) == 0 {
+				text := ""
+				if m.Content != nil {
+					text = *m.Content
+				}
+				if strings.TrimSpace(text) == "" {
+					// Nothing to send for this turn.
+					continue
+				}
+				out = append(out, openai.UserMessage(*m.Content))
+				continue
+			}
+
+			var parts []openai.ChatCompletionContentPartUnionParam
+			if c := strings.TrimSpace(*m.Content); c != "" {
+				parts = append(parts, openai.TextContentPart(c))
+			}
+			parts = append(parts, attachmentContent...)
+			out = append(out, openai.UserMessage(parts))
+
 		case spec.Assistant:
 			out = append(out, openai.AssistantMessage(*m.Content))
 		case spec.Function, spec.Tool:

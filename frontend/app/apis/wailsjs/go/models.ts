@@ -2,6 +2,7 @@ export namespace attachment {
 	
 	export class GenericRef {
 	    handle: string;
+	    origHandle: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new GenericRef(source);
@@ -10,11 +11,13 @@ export namespace attachment {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.handle = source["handle"];
+	        this.origHandle = source["origHandle"];
 	    }
 	}
 	export class URLRef {
 	    url: string;
 	    normalized?: string;
+	    origNormalized: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new URLRef(source);
@@ -24,6 +27,7 @@ export namespace attachment {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.url = source["url"];
 	        this.normalized = source["normalized"];
+	        this.origNormalized = source["origNormalized"];
 	    }
 	}
 	export class ImageRef {
@@ -38,6 +42,10 @@ export namespace attachment {
 	    height?: number;
 	    format?: string;
 	    mimeType?: string;
+	    origPath: string;
+	    origSize: number;
+	    // Go type: time
+	    origModTime: any;
 	
 	    static createFrom(source: any = {}) {
 	        return new ImageRef(source);
@@ -55,6 +63,9 @@ export namespace attachment {
 	        this.height = source["height"];
 	        this.format = source["format"];
 	        this.mimeType = source["mimeType"];
+	        this.origPath = source["origPath"];
+	        this.origSize = source["origSize"];
+	        this.origModTime = this.convertValues(source["origModTime"], null);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -83,6 +94,10 @@ export namespace attachment {
 	    size?: number;
 	    // Go type: time
 	    modTime?: any;
+	    origPath: string;
+	    origSize: number;
+	    // Go type: time
+	    origModTime: any;
 	
 	    static createFrom(source: any = {}) {
 	        return new FileRef(source);
@@ -96,6 +111,9 @@ export namespace attachment {
 	        this.isDir = source["isDir"];
 	        this.size = source["size"];
 	        this.modTime = this.convertValues(source["modTime"], null);
+	        this.origPath = source["origPath"];
+	        this.origSize = source["origSize"];
+	        this.origModTime = this.convertValues(source["origModTime"], null);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -466,6 +484,7 @@ export namespace spec {
 	    role: string;
 	    content?: string;
 	    name?: string;
+	    attachments?: attachment.Attachment[];
 	
 	    static createFrom(source: any = {}) {
 	        return new ChatCompletionDataMessage(source);
@@ -476,7 +495,26 @@ export namespace spec {
 	        this.role = source["role"];
 	        this.content = source["content"];
 	        this.name = source["name"];
+	        this.attachments = this.convertValues(source["attachments"], attachment.Attachment);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class ReasoningParams {
 	    type: string;
@@ -545,7 +583,6 @@ export namespace spec {
 	    currentMessage: ChatCompletionDataMessage;
 	    prevMessages?: ChatCompletionDataMessage[];
 	    toolChoices?: ToolChoice[];
-	    attachments?: attachment.Attachment[];
 	
 	    static createFrom(source: any = {}) {
 	        return new BuildCompletionDataRequestBody(source);
@@ -557,7 +594,6 @@ export namespace spec {
 	        this.currentMessage = this.convertValues(source["currentMessage"], ChatCompletionDataMessage);
 	        this.prevMessages = this.convertValues(source["prevMessages"], ChatCompletionDataMessage);
 	        this.toolChoices = this.convertValues(source["toolChoices"], ToolChoice);
-	        this.attachments = this.convertValues(source["attachments"], attachment.Attachment);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -845,7 +881,6 @@ export namespace spec {
 	    modelParams: ModelParams;
 	    messages?: ChatCompletionDataMessage[];
 	    toolChoices?: FetchCompletionToolChoice[];
-	    attachments?: attachment.Attachment[];
 	
 	    static createFrom(source: any = {}) {
 	        return new FetchCompletionData(source);
@@ -856,7 +891,6 @@ export namespace spec {
 	        this.modelParams = this.convertValues(source["modelParams"], ModelParams);
 	        this.messages = this.convertValues(source["messages"], ChatCompletionDataMessage);
 	        this.toolChoices = this.convertValues(source["toolChoices"], FetchCompletionToolChoice);
-	        this.attachments = this.convertValues(source["attachments"], attachment.Attachment);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

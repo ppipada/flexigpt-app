@@ -4,6 +4,7 @@ import (
 	"errors"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 )
@@ -11,6 +12,11 @@ import (
 // ImageRef carries metadata for image attachments.
 type ImageRef struct {
 	fileutil.ImageInfo
+
+	// Original snapshot (for change detection across turns).
+	OrigPath    string    `json:"origPath"`
+	OrigSize    int64     `json:"origSize"`
+	OrigModTime time.Time `json:"origModTime"`
 }
 
 func (ref *ImageRef) PopulateRef() error {
@@ -26,6 +32,12 @@ func (ref *ImageRef) PopulateRef() error {
 		return err
 	}
 
+	if strings.TrimSpace(ref.OrigPath) == "" {
+		ref.OrigPath = info.Path
+		ref.OrigSize = info.Size
+		ref.OrigModTime = *info.ModTime
+	}
+
 	ref.Path = info.Path
 	ref.Name = info.Name
 	ref.Exists = info.Exists
@@ -37,6 +49,28 @@ func (ref *ImageRef) PopulateRef() error {
 	ref.Format = info.Format
 	ref.MIMEType = info.MIMEType
 	return nil
+}
+
+func (ref *ImageRef) IsModified() bool {
+	if ref == nil {
+		return false
+	}
+	if strings.TrimSpace(ref.OrigPath) == "" {
+		return false
+	}
+	if !ref.Exists {
+		return true
+	}
+	if ref.Path != ref.OrigPath {
+		return true
+	}
+	if ref.Size != ref.OrigSize {
+		return true
+	}
+	if !ref.ModTime.Equal(ref.OrigModTime) {
+		return true
+	}
+	return false
 }
 
 func buildImageBlockFromLocal(path string) (*ContentBlock, error) {

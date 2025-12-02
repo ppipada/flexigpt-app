@@ -10,6 +10,10 @@ export function OpenMultipleFilesAsAttachments(arg1, arg2) {
   return window['go']['main']['App']['OpenMultipleFilesAsAttachments'](arg1, arg2);
 }
 
+export function OpenURLAsAttachment(arg1) {
+  return window['go']['main']['App']['OpenURLAsAttachment'](arg1);
+}
+
 export function Ping() {
   return window['go']['main']['App']['Ping']();
 }

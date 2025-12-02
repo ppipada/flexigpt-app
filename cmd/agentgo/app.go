@@ -134,6 +134,14 @@ func (a *App) Ping() string {
 	return "pong"
 }
 
+func (a *App) OpenURLAsAttachment(
+	rawURL string,
+) (att *attachment.Attachment, err error) {
+	return middleware.WithRecoveryResp(func() (*attachment.Attachment, error) {
+		return attachment.BuildAttachmentForURL(rawURL)
+	})
+}
+
 // SaveFile handles saving any content to a file.
 func (a *App) SaveFile(
 	defaultFilename string,

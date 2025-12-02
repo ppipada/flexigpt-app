@@ -156,16 +156,10 @@ func (api *AnthropicMessagesAPI) FetchCompletion(
 		return nil, errors.New("anthropic messages api LLM: empty completion data")
 	}
 
-	// Build generic content blocks (text / image / file) from attachments.
-	blocks, err := attachment.BuildContentBlocks(ctx, completionData.Attachments)
-	if err != nil {
-		return nil, err
-	}
-
 	msgs, sysParams, err := toAnthropicMessages(
+		ctx,
 		completionData.ModelParams.SystemPrompt,
 		completionData.Messages,
-		blocks,
 	)
 	if err != nil {
 		return nil, err
@@ -220,7 +214,7 @@ func (api *AnthropicMessagesAPI) doNonStreaming(
 
 	resp, err := api.client.Messages.New(ctx, params, option.WithRequestTimeout(timeout))
 	isNilResp := resp == nil || len(resp.Content) == 0
-	attachDebugResp(ctx, completionResp.Body, err, isNilResp, resp.RawJSON())
+	attachDebugResp(ctx, completionResp.Body, err, isNilResp, "", resp)
 	if isNilResp {
 		return completionResp, nil
 	}
@@ -308,7 +302,7 @@ func (api *AnthropicMessagesAPI) doStreaming(
 
 	streamErr := errors.Join(stream.Err(), streamAccumulateErr, streamWriteErr)
 	isNilResp := len(respFull.Content) == 0
-	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp, respFull.RawJSON())
+	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp, "", respFull)
 	if isNilResp {
 		return completionResp, nil
 	}
@@ -363,9 +357,9 @@ func handleContentBlockDeltaEvent(
 }
 
 func toAnthropicMessages(
+	ctx context.Context,
 	systemPrompt string,
 	messages []spec.ChatCompletionDataMessage,
-	blocks []attachment.ContentBlock,
 ) (msgs []anthropic.MessageParam, sysPrompts []anthropic.TextBlockParam, err error) {
 	var out []anthropic.MessageParam
 	var sysParts []string
@@ -383,13 +377,8 @@ func toAnthropicMessages(
 		}
 	}
 
-	attachmentBlocks, err := contentBlocksToAnthropic(blocks)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	for idx, m := range messages {
-		if m.Content == nil {
+		if m.Content == nil && len(m.Attachments) == 0 {
 			continue
 		}
 		content := strings.TrimSpace(*m.Content)
@@ -400,17 +389,46 @@ func toAnthropicMessages(
 				sysParts = append(sysParts, content)
 			}
 		case spec.User:
-			// Attach any resolved image/file/text blocks to the final user message.
-			if idx == lastUserIdx && len(attachmentBlocks) > 0 {
-				blocks := make([]anthropic.ContentBlockParamUnion, 0, 1+len(attachmentBlocks))
-				if content != "" {
-					blocks = append(blocks, anthropic.NewTextBlock(content))
+			var attachmentContent []anthropic.ContentBlockParamUnion
+			if len(m.Attachments) > 0 {
+				// Dont override original attachments in rehydration.
+				overrideOriginalAttachment := false
+				if idx == lastUserIdx {
+					// For the current message, we may attach even if things changed between build and fetch.
+					// There is a race here: if we override here, how to propagate to the caller that blocks have
+					// changed now, so update the OrigRef fields in attachments or this message too.
+					overrideOriginalAttachment = true
 				}
-				blocks = append(blocks, attachmentBlocks...)
-				out = append(out, anthropic.NewUserMessage(blocks...))
-			} else {
-				out = append(out, anthropic.NewUserMessage(anthropic.NewTextBlock(content)))
+				blocks, err := attachment.BuildContentBlocks(ctx, m.Attachments, overrideOriginalAttachment)
+				if err != nil {
+					return nil, nil, err
+				}
+				attachmentContent, err = contentBlocksToAnthropic(blocks)
+				if err != nil {
+					return nil, nil, err
+				}
 			}
+
+			if len(attachmentContent) == 0 {
+				text := ""
+				if m.Content != nil {
+					text = *m.Content
+				}
+				if strings.TrimSpace(text) == "" {
+					// Nothing to send for this turn.
+					continue
+				}
+				out = append(out, anthropic.NewUserMessage(anthropic.NewTextBlock(content)))
+				continue
+			}
+
+			parts := make([]anthropic.ContentBlockParamUnion, 0, 1+len(attachmentContent))
+			if c := strings.TrimSpace(*m.Content); c != "" {
+				parts = append(parts, anthropic.NewTextBlock(content))
+			}
+			parts = append(parts, attachmentContent...)
+			out = append(out, anthropic.NewUserMessage(parts...))
+
 		case spec.Assistant:
 			out = append(
 				out,
