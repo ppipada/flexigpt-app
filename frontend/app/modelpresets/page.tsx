@@ -340,21 +340,18 @@ export default function ModelPresetsPage() {
 					</div>
 				</div>
 
-				{/* ----------------------- Add / Edit modal ------------------------ */}
-				{modalOpen && (
-					<AddEditProviderPresetModal
-						isOpen={modalOpen}
-						mode={modalMode}
-						onClose={() => {
-							setModalOpen(false);
-						}}
-						onSubmit={(n, payload, key) => handleProviderModalSubmit(n, payload, key, modalMode === 'edit')}
-						existingProviderNames={Object.keys(providerPresets)}
-						allProviderPresets={providerPresets}
-						initialPreset={modalMode === 'edit' && editProvider ? providerPresets[editProvider] : undefined}
-						apiKeyAlreadySet={editProvider ? providerKeySet[editProvider] : false}
-					/>
-				)}
+				<AddEditProviderPresetModal
+					isOpen={modalOpen}
+					mode={modalMode}
+					onClose={() => {
+						setModalOpen(false);
+					}}
+					onSubmit={(n, payload, key) => handleProviderModalSubmit(n, payload, key, modalMode === 'edit')}
+					existingProviderNames={Object.keys(providerPresets)}
+					allProviderPresets={providerPresets}
+					initialPreset={modalMode === 'edit' && editProvider ? providerPresets[editProvider] : undefined}
+					apiKeyAlreadySet={editProvider ? providerKeySet[editProvider] : false}
+				/>
 
 				<ActionDeniedAlertModal
 					isOpen={showDenied}
