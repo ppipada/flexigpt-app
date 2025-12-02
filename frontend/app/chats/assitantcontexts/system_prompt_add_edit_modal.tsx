@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 import { createPortal } from 'react-dom';
 
@@ -33,6 +33,9 @@ export function SystemPromptAddEditModal({
 	const [value, setValue] = useState<string>(initialValue);
 	const [copyFromId, setCopyFromId] = useState<string>('');
 
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
+
+	// Reset local state whenever the modal is opened
 	useEffect(() => {
 		if (isOpen) {
 			setValue(initialValue);
@@ -40,12 +43,37 @@ export function SystemPromptAddEditModal({
 		}
 	}, [isOpen, initialValue]);
 
+	// Open the dialog natively when isOpen becomes true
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const dialog = dialogRef.current;
+		if (!dialog) return;
+
+		if (!dialog.open) {
+			dialog.showModal();
+		}
+
+		return () => {
+			// If the component unmounts while the dialog is still open, close it.
+			if (dialog.open) {
+				dialog.close();
+			}
+		};
+	}, [isOpen]);
+
+	// Sync parent state whenever the dialog is closed (Esc or dialog.close()).
+	const handleDialogClose = () => {
+		onClose();
+	};
+
 	const save = (e: FormEvent) => {
 		e.preventDefault();
 		const v = value.trim();
 		if (!v) return;
 		onSave(v);
-		onClose();
+		// Close via native dialog API; this will trigger handleDialogClose -> parent onClose()
+		dialogRef.current?.close();
 	};
 
 	const handleCopyFrom = (id: string) => {
@@ -71,12 +99,18 @@ export function SystemPromptAddEditModal({
 	};
 
 	if (!isOpen) return null;
+
 	return createPortal(
-		<dialog className="modal modal-open">
+		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
 				<div className="mb-4 flex items-center justify-between">
 					<h3 className="text-lg font-bold">{mode === 'add' ? 'Add System Prompt' : 'Edit System Prompt'}</h3>
-					<button className="btn btn-sm btn-circle bg-base-300" onClick={onClose} aria-label="Close">
+					<button
+						type="button"
+						className="btn btn-sm btn-circle bg-base-300"
+						onClick={() => dialogRef.current?.close()}
+						aria-label="Close"
+					>
 						<FiX size={12} />
 					</button>
 				</div>
@@ -125,7 +159,7 @@ export function SystemPromptAddEditModal({
 					</div>
 
 					<div className="modal-action">
-						<button type="button" className="btn bg-base-300 rounded-xl" onClick={onClose}>
+						<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
 							Cancel
 						</button>
 						<button type="submit" className="btn btn-primary rounded-xl" disabled={!value.trim()}>

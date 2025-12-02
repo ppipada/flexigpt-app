@@ -25,10 +25,16 @@ export function MessageDetailsModal({ isOpen, onClose, messageID, title, content
 		const dialog = dialogRef.current;
 		if (!dialog) return;
 
-		// In StrictMode effects can run twice; guard against double showModal().
 		if (!dialog.open) {
 			dialog.showModal();
 		}
+
+		return () => {
+			// If the component unmounts while the dialog is still open, close it.
+			if (dialog.open) {
+				dialog.close();
+			}
+		};
 	}, [isOpen]);
 
 	// Sync parent state whenever the dialog is closed (Esc, backdrop, or dialog.close()).
@@ -49,6 +55,7 @@ export function MessageDetailsModal({ isOpen, onClose, messageID, title, content
 							<span>{title}</span>
 						</h3>
 						<button
+							type="button"
 							className="btn btn-sm btn-circle bg-base-300"
 							onClick={() => dialogRef.current?.close()}
 							aria-label="Close"
@@ -71,6 +78,11 @@ export function MessageDetailsModal({ isOpen, onClose, messageID, title, content
 					</div>
 				</div>
 			</div>
+
+			{/* DaisyUI backdrop: clicking it closes the dialog */}
+			<form method="dialog" className="modal-backdrop">
+				<button aria-label="Close" />
+			</form>
 		</dialog>,
 		document.body
 	);

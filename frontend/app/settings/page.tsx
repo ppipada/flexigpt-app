@@ -84,17 +84,15 @@ export default function SettingsPage() {
 					</div>
 				</main>
 
-				{isModalOpen && (
-					<AddEditAuthKeyModal
-						isOpen={isModalOpen}
-						initial={modalInitial}
-						existing={authKeys}
-						onClose={() => {
-							setIsModalOpen(false);
-						}}
-						onChanged={refresh}
-					/>
-				)}
+				<AddEditAuthKeyModal
+					isOpen={isModalOpen}
+					initial={modalInitial}
+					existing={authKeys}
+					onClose={() => {
+						setIsModalOpen(false);
+					}}
+					onChanged={refresh}
+				/>
 			</div>
 		</PageFrame>
 	);

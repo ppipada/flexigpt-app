@@ -329,7 +329,7 @@ export function ProviderPresetCard({
 								{/* actions row */}
 								<tr>
 									<td colSpan={2} className="py-0.5">
-										<div className="flex items-center justify-between">
+										<div className="flex items-center justify-between py-0.5">
 											{/* delete */}
 											<span
 												className="label-text-alt tooltip tooltip-right"
@@ -508,75 +508,67 @@ export function ProviderPresetCard({
 			)}
 
 			{/* ───────── dialogs & alerts ───────── */}
-			{showDelProv && (
-				<DeleteConfirmationModal
-					isOpen={showDelProv}
-					onClose={() => {
-						setShowDelProv(false);
-					}}
-					onConfirm={confirmDeleteProvider}
-					title="Delete Provider"
-					message={`Delete provider “${provider}”? This action cannot be undone.`}
-					confirmButtonText="Delete"
-				/>
-			)}
 
-			{showDelModel && (
-				<DeleteConfirmationModal
-					isOpen={showDelModel}
-					onClose={() => {
-						setShowDelModel(false);
-					}}
-					onConfirm={confirmDeleteModel}
-					title="Delete Model Preset"
-					message={`Delete model preset “${selectedID}”? This action cannot be undone.`}
-					confirmButtonText="Delete"
-				/>
-			)}
+			<DeleteConfirmationModal
+				isOpen={showDelProv}
+				onClose={() => {
+					setShowDelProv(false);
+				}}
+				onConfirm={confirmDeleteProvider}
+				title="Delete Provider"
+				message={`Delete provider “${provider}”? This action cannot be undone.`}
+				confirmButtonText="Delete"
+			/>
 
-			{showModModal && (
-				<AddEditModelPresetModal
-					isOpen={showModModal}
-					onClose={() => {
-						setShowModModal(false);
-					}}
-					onSubmit={handleModifyModelSubmit}
-					providerName={provider}
-					initialModelID={selectedID ?? undefined}
-					initialData={selectedID ? modelPresets[selectedID] : undefined}
-					existingModels={modelPresets}
-					allModelPresets={allModelPresets}
-				/>
-			)}
+			<DeleteConfirmationModal
+				isOpen={showDelModel}
+				onClose={() => {
+					setShowDelModel(false);
+				}}
+				onConfirm={confirmDeleteModel}
+				title="Delete Model Preset"
+				message={`Delete model preset “${selectedID}”? This action cannot be undone.`}
+				confirmButtonText="Delete"
+			/>
+
+			<AddEditModelPresetModal
+				isOpen={showModModal}
+				onClose={() => {
+					setShowModModal(false);
+				}}
+				onSubmit={handleModifyModelSubmit}
+				providerName={provider}
+				initialModelID={selectedID ?? undefined}
+				initialData={selectedID ? modelPresets[selectedID] : undefined}
+				existingModels={modelPresets}
+				allModelPresets={allModelPresets}
+			/>
 
 			{/* ───────── auth-key modal ───────── */}
-			{showKeyModal && (
-				<AddEditAuthKeyModal
-					isOpen={showKeyModal}
-					initial={keyModalInitial} // edit-mode when not null
-					existing={authKeys}
-					/* NEW – provide the (type,keyName) to pre-select when we are in pure “add” mode */
-					prefill={!keyModalInitial ? { type: AuthKeyTypeProvider, keyName: provider } : undefined}
-					onClose={() => {
-						setShowKeyModal(false);
-					}}
-					onChanged={() => {
-						setShowKeyModal(false);
-						setKeySet(true);
-					}}
-				/>
-			)}
 
-			{showDenied && (
-				<ActionDeniedAlertModal
-					isOpen={showDenied}
-					onClose={() => {
-						setShowDenied(false);
-						setDeniedMsg('');
-					}}
-					message={deniedMsg}
-				/>
-			)}
+			<AddEditAuthKeyModal
+				isOpen={showKeyModal}
+				initial={keyModalInitial} // edit-mode when not null
+				existing={authKeys}
+				/* NEW – provide the (type,keyName) to pre-select when we are in pure “add” mode */
+				prefill={!keyModalInitial ? { type: AuthKeyTypeProvider, keyName: provider } : undefined}
+				onClose={() => {
+					setShowKeyModal(false);
+				}}
+				onChanged={() => {
+					setShowKeyModal(false);
+					setKeySet(true);
+				}}
+			/>
+
+			<ActionDeniedAlertModal
+				isOpen={showDenied}
+				onClose={() => {
+					setShowDenied(false);
+					setDeniedMsg('');
+				}}
+				message={deniedMsg}
+			/>
 		</div>
 	);
 }

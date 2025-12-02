@@ -26,7 +26,6 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 		setSubmitting(false);
 	}, [isOpen]);
 
-	// Open dialog natively with showModal()
 	useEffect(() => {
 		if (!isOpen) return;
 
@@ -36,6 +35,13 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 		if (!dialog.open) {
 			dialog.showModal();
 		}
+
+		return () => {
+			// If the component unmounts while the dialog is still open, close it.
+			if (dialog.open) {
+				dialog.close();
+			}
+		};
 	}, [isOpen]);
 
 	// Keep parent isOpen in sync with native dialog closing
@@ -45,10 +51,6 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 
 	/**
 	 * Normalize & validate URL.
-	 * - Allows scheme-less like "example.com" by adding https://
-	 * - Rejects obvious garbage like "asdf" (no dot in hostname)
-	 * - Returns normalized URL string if valid
-	 * - Throws Error with message if invalid
 	 */
 	const normalizeUrl = (value: string): string | null => {
 		const raw = value.trim();
@@ -81,7 +83,6 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 
 		// Extra hardening: require a "real" hostname:
 		// - must have a dot, OR be "localhost"
-		// This rejects things like "https://asdf" but allows "https://example.com".
 		if (!hostname.includes('.') && hostname !== 'localhost') {
 			throw new Error('Please enter a full domain (for example, example.com).');
 		}
@@ -90,10 +91,7 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 	};
 
 	/**
-	 * Handle input change:
-	 * - Use browser validity for explicit http(s) URLs
-	 * - Use normalizeUrl (which also adds https:// for scheme-less)
-	 * - Set our own error state (red text) instead of native popup
+	 * Handle input change & validation.
 	 */
 	const handleChange = (value: string) => {
 		setUrlValue(value);
@@ -106,14 +104,12 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 
 		const input = inputRef.current;
 
-		// If the user typed a full URL including scheme, let the browser
-		// validate the basic URL syntax (type="url") first.
+		// For explicit http(s) URLs, let the browser validate first.
 		if (/^https?:\/\//i.test(trimmed) && input && !input.validity.valid) {
 			setError('Please enter a valid URL, for example: https://example.com');
 			return;
 		}
 
-		// Then apply our own normalization + extra rules
 		try {
 			normalizeUrl(trimmed);
 			setError(null);
@@ -167,6 +163,7 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 						<span>Attach Link</span>
 					</h3>
 					<button
+						type="button"
 						className="btn btn-sm btn-circle bg-base-300"
 						onClick={() => dialogRef.current?.close()}
 						aria-label="Close"
@@ -229,6 +226,7 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 					</div>
 				</form>
 			</div>
+			{/* NOTE: no modal-backdrop here: backdrop click should NOT close this modal */}
 		</dialog>,
 		document.body
 	);

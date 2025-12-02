@@ -1,4 +1,4 @@
-import { type Dispatch, type FormEvent, type SetStateAction, useEffect, useState } from 'react';
+import { type Dispatch, type FormEvent, type SetStateAction, useEffect, useRef, useState } from 'react';
 
 import { createPortal } from 'react-dom';
 
@@ -23,6 +23,8 @@ export function AdvancedParamsModal({ isOpen, onClose, currentModel, onSave }: A
 	/* validation errors */
 	const [errors, setErrors] = useState<Partial<Record<'maxPromptLength' | 'maxOutputLength' | 'timeout', string>>>({});
 
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
+
 	/* reset form every time the modal opens or the model changes */
 	useEffect(() => {
 		if (!isOpen) return;
@@ -34,6 +36,30 @@ export function AdvancedParamsModal({ isOpen, onClose, currentModel, onSave }: A
 
 		setErrors({});
 	}, [isOpen, currentModel]);
+
+	// Open the dialog natively when isOpen becomes true
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const dialog = dialogRef.current;
+		if (!dialog) return;
+
+		if (!dialog.open) {
+			dialog.showModal();
+		}
+
+		return () => {
+			// If the component unmounts while the dialog is still open, close it.
+			if (dialog.open) {
+				dialog.close();
+			}
+		};
+	}, [isOpen]);
+
+	// Sync parent state whenever the dialog is closed (Esc or dialog.close()).
+	const handleDialogClose = () => {
+		onClose();
+	};
 
 	const validateNumberField = (field: 'maxPromptLength' | 'maxOutputLength' | 'timeout', value: string) => {
 		const num = value.trim() === '' ? undefined : Number(value.trim());
@@ -61,7 +87,11 @@ export function AdvancedParamsModal({ isOpen, onClose, currentModel, onSave }: A
 		const timeoutErr = validateNumberField('timeout', timeout);
 
 		if (maxPromptErr || maxOutputErr || timeoutErr) {
-			setErrors({ maxPromptLength: maxPromptErr, maxOutputLength: maxOutputErr, timeout: timeoutErr });
+			setErrors({
+				maxPromptLength: maxPromptErr,
+				maxOutputLength: maxOutputErr,
+				timeout: timeoutErr,
+			});
 			return;
 		}
 
@@ -74,17 +104,24 @@ export function AdvancedParamsModal({ isOpen, onClose, currentModel, onSave }: A
 		};
 
 		onSave(updatedModel);
+
+		dialogRef.current?.close();
 	};
 
 	if (!isOpen) return null;
 
 	return createPortal(
-		<dialog className="modal modal-open">
+		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-xl overflow-auto rounded-2xl">
 				{/* header */}
 				<div className="mb-4 flex items-center justify-between">
 					<h3 className="text-lg font-bold">Advanced Model Parameters</h3>
-					<button className="btn btn-sm btn-circle bg-base-300" onClick={onClose} aria-label="Close">
+					<button
+						type="button"
+						className="btn btn-sm btn-circle bg-base-300"
+						onClick={() => dialogRef.current?.close()}
+						aria-label="Close"
+					>
 						<FiX size={12} />
 					</button>
 				</div>
@@ -202,7 +239,7 @@ export function AdvancedParamsModal({ isOpen, onClose, currentModel, onSave }: A
 
 					{/* footer buttons */}
 					<div className="modal-action">
-						<button type="button" className="btn bg-base-300 rounded-xl" onClick={onClose}>
+						<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
 							Cancel
 						</button>
 						<button type="submit" className="btn btn-primary rounded-xl" disabled={formHasErrors}>

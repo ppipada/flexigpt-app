@@ -126,28 +126,25 @@ export function AuthKeyTable({ authKeys, onEdit, onChanged }: AuthKeyTableProps)
 			</div>
 
 			{/* --------------------- PORTALS / MODALS --------------------- */}
-			{deleteTarget && (
-				<DeleteConfirmationModal
-					isOpen={!!deleteTarget}
-					title="Delete Auth Key"
-					message={`Delete key "${deleteTarget.keyName}" of type "${deleteTarget.type}"? This cannot be undone.`}
-					confirmButtonText="Delete"
-					onConfirm={confirmDelete}
-					onClose={() => {
-						setDeleteTarget(null);
-					}}
-				/>
-			)}
 
-			{alertMsg && (
-				<ActionDeniedAlertModal
-					isOpen={!!alertMsg}
-					message={alertMsg}
-					onClose={() => {
-						setAlertMsg('');
-					}}
-				/>
-			)}
+			<DeleteConfirmationModal
+				isOpen={!!deleteTarget}
+				title="Delete Auth Key"
+				message={`Delete key "${deleteTarget?.keyName}" of type "${deleteTarget?.type}"? This cannot be undone.`}
+				confirmButtonText="Delete"
+				onConfirm={confirmDelete}
+				onClose={() => {
+					setDeleteTarget(null);
+				}}
+			/>
+
+			<ActionDeniedAlertModal
+				isOpen={!!alertMsg}
+				message={alertMsg}
+				onClose={() => {
+					setAlertMsg('');
+				}}
+			/>
 		</>
 	);
 }

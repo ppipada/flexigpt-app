@@ -792,20 +792,19 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 					</div>,
 					document.body
 				)}
-			{deleteTarget && (
-				<DeleteConfirmationModal
-					isOpen={!!deleteTarget}
-					onClose={() => {
-						if (!deleteLoading) {
-							setDeleteTarget(null);
-						}
-					}}
-					onConfirm={handleDeleteConfirm}
-					title="Delete conversation?"
-					message={`Are you sure you want to delete "${deleteTarget.title}"? This action cannot be undone.`}
-					confirmButtonText={deleteLoading ? 'Deleting…' : 'Delete'}
-				/>
-			)}
+
+			<DeleteConfirmationModal
+				isOpen={!!deleteTarget}
+				onClose={() => {
+					if (!deleteLoading) {
+						setDeleteTarget(null);
+					}
+				}}
+				onConfirm={handleDeleteConfirm}
+				title="Delete conversation?"
+				message={`Are you sure you want to delete "${deleteTarget?.title}"? This action cannot be undone.`}
+				confirmButtonText={deleteLoading ? 'Deleting…' : 'Delete'}
+			/>
 		</div>
 	);
 });

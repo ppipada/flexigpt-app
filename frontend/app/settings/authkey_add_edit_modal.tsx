@@ -1,5 +1,7 @@
 import type { ChangeEvent, FormEvent } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
@@ -62,6 +64,8 @@ export function AddEditAuthKeyModal({
 	/* raw provider presets fetched from backend */
 	const [providerPresets, setProviderPresets] = useState<Record<ProviderName, ProviderPreset>>({});
 
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
+
 	/* ------------------------------ derived ------------------------------- */
 
 	/* list of *types* that already exist (for dropdown) */
@@ -97,12 +101,11 @@ export function AddEditAuthKeyModal({
 	/* dropdown items for provider-name selection (create-mode only) */
 	const providerDropdownItems = useMemo(() => {
 		const obj: Record<ProviderName, DropdownItem> = {};
-		Object.keys(availableProviderPresets).forEach(
-			name =>
-				(obj[name] = {
-					isEnabled: true,
-				})
-		);
+		Object.keys(availableProviderPresets).forEach(name => {
+			obj[name] = {
+				isEnabled: true,
+			};
+		});
 		return obj;
 	}, [availableProviderPresets]);
 
@@ -118,19 +121,17 @@ export function AddEditAuthKeyModal({
 		return obj;
 	}, [existingTypes]);
 
-	/* ------------------------------ effects ------------------------------- */
-
-	/* reset the form when the modal (re)opens */
+	/* reset the form every time the modal is opened for a given target */
 	useEffect(() => {
-		if (!isOpen) {
-			setForm({
-				type: initial?.type ?? prefill?.type ?? AuthKeyTypeProvider,
-				keyName: initial?.keyName ?? prefill?.keyName ?? '',
-				secret: '',
-				newType: '',
-			});
-			setErrors({});
-		}
+		if (!isOpen) return;
+
+		setForm({
+			type: initial?.type ?? prefill?.type ?? AuthKeyTypeProvider,
+			keyName: initial?.keyName ?? prefill?.keyName ?? '',
+			secret: '',
+			newType: '',
+		});
+		setErrors({});
 	}, [isOpen, initial, prefill]);
 
 	/* fetch provider presets once needed */
@@ -146,6 +147,30 @@ export function AddEditAuthKeyModal({
 			})();
 		}
 	}, [isOpen, form.type, providerPresets]);
+
+	// Open the dialog natively when isOpen becomes true
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const dialog = dialogRef.current;
+		if (!dialog) return;
+
+		if (!dialog.open) {
+			dialog.showModal();
+		}
+
+		return () => {
+			// If the component unmounts while the dialog is still open, close it.
+			if (dialog.open) {
+				dialog.close();
+			}
+		};
+	}, [isOpen]);
+
+	// Sync parent state whenever the dialog is closed (Esc or dialog.close()).
+	const handleDialogClose = () => {
+		onClose();
+	};
 
 	/* ------------------------------ helpers ------------------------------- */
 	const checkDuplicate = (t: string, n: string) =>
@@ -234,20 +259,25 @@ export function AddEditAuthKeyModal({
 		await settingstoreAPI.setAuthKey(finalType, form.keyName.trim(), form.secret.trim());
 
 		onChanged();
-		onClose();
+		// Close via native dialog API; this will trigger handleDialogClose -> parent onClose()
+		dialogRef.current?.close();
 	};
 
 	/* closed → nothing to render */
 	if (!isOpen) return null;
 
-	/* ------------------------------ render ------------------------------- */
-	return (
-		<dialog className="modal modal-open">
+	return createPortal(
+		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
 				{/* header */}
 				<div className="mb-4 flex items-center justify-between">
 					<h3 className="text-lg font-bold">{isEdit ? 'Edit Auth Key' : 'Add Auth Key'}</h3>
-					<button className="btn btn-sm btn-circle bg-base-300" onClick={onClose}>
+					<button
+						type="button"
+						className="btn btn-sm btn-circle bg-base-300"
+						onClick={() => dialogRef.current?.close()}
+						aria-label="Close"
+					>
 						<FiX size={12} />
 					</button>
 				</div>
@@ -359,16 +389,17 @@ export function AddEditAuthKeyModal({
 
 					{/* ACTIONS -------------------------------------------------------------- */}
 					<div className="modal-action mt-6">
-						<button type="button" className="btn bg-base-300 rounded-2xl" onClick={onClose}>
+						<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
 							Cancel
 						</button>
-						<button type="submit" disabled={!isAllValid} className="btn btn-primary rounded-2xl">
+						<button type="submit" disabled={!isAllValid} className="btn btn-primary rounded-xl">
 							{isEdit ? 'Update' : 'Add'}
 						</button>
 					</div>
 				</form>
 			</div>
-		</dialog>
+		</dialog>,
+		document.body
 	);
 }
 

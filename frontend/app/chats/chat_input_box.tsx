@@ -90,22 +90,19 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 			{/* Model- / params-bar ---------------------------------------------- */}
 			<AssistantContextBar onOptionsChange={setChatOptions} /* hand the aggregated options up */ />
 
-			{/* Abort confirmation dialog ---------------------------------------- */}
-			{showAbortModal && (
-				<DeleteConfirmationModal
-					isOpen={showAbortModal}
-					onClose={() => {
-						setShowAbortModal(false);
-					}}
-					onConfirm={() => {
-						setShowAbortModal(false);
-						abortRef.current?.abort();
-					}}
-					title="Abort generation?"
-					message="Partial answer that has already been received will stay in the chat. Do you want to stop the request?"
-					confirmButtonText="Abort"
-				/>
-			)}
+			<DeleteConfirmationModal
+				isOpen={showAbortModal}
+				onClose={() => {
+					setShowAbortModal(false);
+				}}
+				onConfirm={() => {
+					setShowAbortModal(false);
+					abortRef.current?.abort();
+				}}
+				title="Abort generation?"
+				message="Partial answer that has already been received will stay in the chat. Do you want to stop the request?"
+				confirmButtonText="Abort"
+			/>
 
 			<div className="overflow-x-hidden overflow-y-auto">
 				{/* Chat text-input --------------------------------------------------- */}

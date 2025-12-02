@@ -356,17 +356,14 @@ export default function ModelPresetsPage() {
 					/>
 				)}
 
-				{/* ---------------------------- alerts ----------------------------- */}
-				{showDenied && (
-					<ActionDeniedAlertModal
-						isOpen={showDenied}
-						onClose={() => {
-							setShowDenied(false);
-							setDeniedMsg('');
-						}}
-						message={deniedMsg}
-					/>
-				)}
+				<ActionDeniedAlertModal
+					isOpen={showDenied}
+					onClose={() => {
+						setShowDenied(false);
+						setDeniedMsg('');
+					}}
+					message={deniedMsg}
+				/>
 			</div>
 		</PageFrame>
 	);

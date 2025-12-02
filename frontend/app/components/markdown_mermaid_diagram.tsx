@@ -8,6 +8,7 @@ import { getUUIDv7 } from '@/lib/uuid_utils';
 import { useIsDarkMermaid } from '@/hooks/use_is_dark_mermaid';
 
 import { DownloadButton } from '@/components/download_button';
+import { MermaidZoomModal } from '@/components/mermaid_zoom_modal';
 
 interface MermaidDiagramProps {
 	code: string;
@@ -17,11 +18,10 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
 	const isDark = useIsDarkMermaid();
 
 	const inlineDiagramRef = useRef<HTMLDivElement | null>(null);
-	const dialogRef = useRef<HTMLDialogElement | null>(null);
-	const modalRef = useRef<HTMLDivElement | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [svgNode, setSvgNode] = useState<SVGSVGElement | null>(null);
 	const [zoomOpen, setZoomOpen] = useState(false);
+
 	/* Initialise Mermaid only when the theme changes */
 	const lastTheme = useRef<'dark' | 'default' | null>(null);
 	const uniqueId = useRef(`mermaid-${getUUIDv7()}`);
@@ -81,48 +81,6 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
 		};
 	}, [code, isDark]);
 
-	useEffect(() => {
-		const dlg = dialogRef.current;
-		if (!dlg) return;
-
-		if (zoomOpen && !dlg.open) {
-			dlg.showModal();
-		} else if (!zoomOpen && dlg.open) {
-			dlg.close();
-		}
-	}, [zoomOpen]);
-
-	/* When the dialog fires its native `close` event, update state */
-	useEffect(() => {
-		const dlg = dialogRef.current;
-		if (!dlg) return;
-
-		const handleClose = () => {
-			setZoomOpen(false);
-		};
-		dlg.addEventListener('close', handleClose);
-		return () => {
-			dlg.removeEventListener('close', handleClose);
-		};
-	}, []);
-
-	useEffect(() => {
-		if (!zoomOpen || !modalRef.current || !svgNode) return;
-
-		// Clean previous content
-		modalRef.current.innerHTML = '';
-
-		const newNode = svgNode.cloneNode(true) as SVGSVGElement;
-		newNode.style.display = 'block';
-		newNode.style.margin = 'auto';
-		newNode.style.width = 'auto';
-		newNode.style.height = 'auto';
-		newNode.style.maxWidth = '90vw';
-		newNode.style.maxHeight = '80vh';
-
-		modalRef.current.appendChild(newNode);
-	}, [zoomOpen, svgNode]);
-
 	const fetchDiagramAsBlob = async (): Promise<Blob> => {
 		if (!inlineDiagramRef.current) throw new Error('Container not found');
 		const svg = inlineDiagramRef.current.querySelector('svg');
@@ -165,6 +123,7 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
 			img.src = dataUrl;
 		});
 	};
+
 	return (
 		<>
 			{/* ---------- Inline card -------------------------------- */}
@@ -204,24 +163,14 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
 				</div>
 			</div>
 
-			{/* ---------- Zoom modal (daisyUI v5) -------------------- */}
-			<dialog ref={dialogRef} className="modal" aria-label="Enlarged Mermaid diagram">
-				{/* backdrop - clicking it closes the dialog */}
-				<form method="dialog" className="modal-backdrop">
-					<button aria-label="Close"></button>
-				</form>
-
-				{/* modal box */}
-				<div
-					className="modal-box bg-mermaid flex h-[90vh] max-w-[90vw] cursor-zoom-out items-center justify-center"
-					onClick={() => {
-						setZoomOpen(false);
-					}}
-				>
-					{/* enlarged diagram */}
-					<div ref={modalRef} className="w-full overflow-auto" style={{ pointerEvents: 'none' }} />
-				</div>
-			</dialog>
+			{/* ---------- Zoom modal --------------------------------- */}
+			<MermaidZoomModal
+				isOpen={zoomOpen}
+				onClose={() => {
+					setZoomOpen(false);
+				}}
+				svgNode={svgNode}
+			/>
 		</>
 	);
 }

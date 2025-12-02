@@ -294,19 +294,19 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 				</button>
 			</div>
 			{/* ---------------- Advanced params modal -------------------------- */}
-			{isAdvancedModalOpen && (
-				<AdvancedParamsModal
-					isOpen={isAdvancedModalOpen}
-					onClose={() => {
-						setIsAdvancedModalOpen(false);
-					}}
-					currentModel={selectedModel}
-					onSave={(updatedModel: ChatOption) => {
-						setSelectedModel(updatedModel);
-						setIsAdvancedModalOpen(false);
-					}}
-				/>
-			)}
+			{/* {isAdvancedModalOpen && ( */}
+			<AdvancedParamsModal
+				isOpen={isAdvancedModalOpen}
+				onClose={() => {
+					setIsAdvancedModalOpen(false);
+				}}
+				currentModel={selectedModel}
+				onSave={(updatedModel: ChatOption) => {
+					setSelectedModel(updatedModel);
+					// setIsAdvancedModalOpen(false);
+				}}
+			/>
+			{/* )} */}
 		</div>
 	);
 }
