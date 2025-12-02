@@ -1,4 +1,5 @@
-import { useEffect, useId, useState } from 'react';
+import type { FormEvent } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import { createPortal } from 'react-dom';
 
@@ -53,6 +54,8 @@ export function TemplateEditModal({
 		return vals;
 	});
 
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
+
 	// Rehydrate form when opening or when the node reference changes
 	useEffect(() => {
 		if (!open) return;
@@ -76,6 +79,30 @@ export function TemplateEditModal({
 		setVarValues(vals);
 	}, [open, tsenode]);
 
+	// Sync React `open` prop with the native <dialog> lifecycle, like UrlAttachmentModal
+	useEffect(() => {
+		if (!open) return;
+
+		const dialog = dialogRef.current;
+		if (!dialog) return;
+
+		if (!dialog.open) {
+			dialog.showModal();
+		}
+
+		return () => {
+			// If unmounted while still open, ensure we close the dialog
+			if (dialog.open) {
+				dialog.close();
+			}
+		};
+	}, [open]);
+
+	// Keep parent `open` in sync with native dialog closing (ESC, programmatic close, etc.)
+	const handleDialogClose = () => {
+		onClose();
+	};
+
 	function saveAndClose() {
 		const nextOverrides = {
 			...tsenode.overrides,
@@ -88,6 +115,7 @@ export function TemplateEditModal({
 			blocks: blockEdits,
 		};
 
+		// Persist changes into the editor node
 		editor.tf.setNodes(
 			{
 				overrides: nextOverrides,
@@ -99,198 +127,203 @@ export function TemplateEditModal({
 		if (tsenode.selectionID) {
 			dispatchTemplateVarsUpdated(tsenode.selectionID);
 		}
-		onClose();
+
+		// Close the dialog; this will trigger handleDialogClose -> parent onClose().
+		dialogRef.current?.close();
 	}
+
+	const handleSubmit = (e: FormEvent) => {
+		e.preventDefault();
+		saveAndClose();
+	};
 
 	const req = computeRequirements(variablesSchema, varValues);
 
 	if (!open) return null;
 
 	return createPortal(
-		<dialog className="modal modal-open">
-			<div className="modal-box bg-base-200 max-h-[85vh] max-w-3xl overflow-auto rounded-2xl">
-				{/* Header */}
-				<div className="mb-4 flex items-center justify-between gap-2">
-					<div className="flex items-center gap-2">
-						<h3 className="text-lg font-bold">Edit Template</h3>
-						<span className="badge badge-neutral">{displayName}</span>
+		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
+			<div className="modal-box bg-base-200 max-h-[80vh] max-w-[80vw] overflow-hidden rounded-2xl p-0">
+				<div className="max-h-[80vh] overflow-y-auto p-6">
+					{/* Header */}
+					<div className="mb-4 flex items-center justify-between gap-2">
+						<div className="flex items-center gap-2">
+							<h3 className="text-lg font-bold">Edit Template</h3>
+							<span className="badge badge-neutral">{displayName}</span>
+						</div>
+						<button
+							type="button"
+							className="btn btn-sm btn-circle bg-base-300"
+							onClick={() => dialogRef.current?.close()}
+							aria-label="Close"
+						>
+							<FiX size={12} />
+						</button>
 					</div>
-					<button type="button" className="btn btn-sm btn-circle bg-base-300" onClick={onClose} aria-label="Close">
-						<FiX size={12} />
-					</button>
-				</div>
 
-				<form
-					onSubmit={e => {
-						e.preventDefault();
-						saveAndClose();
-					}}
-					className="space-y-6"
-					onKeyDownCapture={e => {
-						// Prevent outer editor form shortcuts/submit
-						e.stopPropagation();
-					}}
-					onKeyUpCapture={e => {
-						e.stopPropagation();
-					}}
-				>
-					{/* Overview */}
-					<section>
-						<h4 className="text-base-content/70 mb-3 text-sm font-semibold tracking-wide uppercase">Overview</h4>
-						<div className="space-y-3">
-							<div className="grid grid-cols-12 items-center gap-3">
-								<label className="label col-span-12 md:col-span-4">
-									<span className="label-text text-sm">Display Name (local)</span>
-									<span className="label-text-alt tooltip tooltip-right" data-tip="Local override; visible only here.">
-										<FiHelpCircle size={12} />
-									</span>
-								</label>
-								<div className="col-span-12 md:col-span-8">
-									<input
-										className="input input-bordered input-sm w-full rounded-xl"
-										value={displayName}
-										onChange={e => {
-											setDisplayName(e.target.value);
-										}}
-										placeholder={template?.displayName ?? tsenode.templateSlug}
-									/>
-								</div>
-							</div>
-
-							<div className="grid grid-cols-12 items-center gap-3">
-								<label className="label col-span-12 md:col-span-4">
-									<span className="label-text text-sm">Tags</span>
-									<span
-										className="label-text-alt tooltip tooltip-right"
-										data-tip="Comma-separated tags used for filtering."
-									>
-										<FiHelpCircle size={12} />
-									</span>
-								</label>
-								<div className="col-span-12 md:col-span-8">
-									<input
-										className="input input-bordered input-sm w-full rounded-xl"
-										value={tags}
-										onChange={e => {
-											setTags(e.target.value);
-										}}
-										placeholder="e.g. brainstorm, draft, review"
-									/>
-								</div>
-							</div>
-
-							<div className="grid grid-cols-12 items-start gap-3">
-								<label className="label col-span-12 md:col-span-4">
-									<span className="label-text text-sm">Description (local)</span>
-									<span
-										className="label-text-alt tooltip tooltip-right"
-										data-tip="Local description for your reference."
-									>
-										<FiHelpCircle size={12} />
-									</span>
-								</label>
-								<div className="col-span-12 md:col-span-8">
-									<textarea
-										className="textarea textarea-bordered w-full rounded-xl"
-										value={description}
-										onChange={e => {
-											setDescription(e.target.value);
-										}}
-										placeholder={template?.description ?? 'Describe how this template should be used...'}
-									/>
-								</div>
-							</div>
-						</div>
-					</section>
-
-					<div className="divider before:bg-base-300 after:bg-base-300 my-0" />
-
-					{/* Variables */}
-					<section>
-						<div className="mb-3 flex items-center justify-between">
-							<h4 className="text-base-content/70 text-sm font-semibold tracking-wide uppercase">Variables</h4>
-							{req.requiredCount > 0 ? (
-								<div className="text-warning flex items-center gap-2 text-sm">
-									<FiAlertCircle size={14} />
-									<span>Required remaining: {req.requiredVariables.join(', ')}</span>
-								</div>
-							) : (
-								<div className="badge badge-success badge-outline">All required variables provided</div>
-							)}
-						</div>
-
-						<div className="space-y-3">
-							{variablesSchema.length === 0 && (
-								<div className="text-sm opacity-70">No variables defined for this template.</div>
-							)}
-							{variablesSchema.map(v => (
-								<VariableEditorRow
-									key={v.name}
-									varDef={v}
-									value={varValues[v.name]}
-									onChange={val => {
-										setVarValues(s => ({ ...s, [v.name]: val }));
-									}}
-								/>
-							))}
-						</div>
-					</section>
-
-					<div className="divider before:bg-base-300 after:bg-base-300 my-0" />
-
-					{/* Blocks */}
-					<section>
-						<h4 className="text-base-content/70 mb-3 text-sm font-semibold tracking-wide uppercase">
-							Blocks (local override)
-						</h4>
-						<div className="space-y-3">
-							{blockEdits.map((b, idx) => (
-								<div key={b.id} className="rounded-xl border p-3">
-									<div className="mb-2 flex items-center gap-2 text-sm opacity-70">
-										<span className="badge badge-outline">{b.role}</span>
-										<span className="opacity-60">#{idx + 1}</span>
+					<form
+						noValidate
+						onSubmit={handleSubmit}
+						className="space-y-6"
+						onKeyDownCapture={e => {
+							// Prevent outer editor form shortcuts/submit
+							e.stopPropagation();
+						}}
+						onKeyUpCapture={e => {
+							e.stopPropagation();
+						}}
+					>
+						{/* Overview */}
+						<section>
+							<h4 className="text-base-content/70 mb-3 text-sm font-semibold tracking-wide uppercase">Overview</h4>
+							<div className="space-y-3">
+								<div className="grid grid-cols-12 items-center gap-3">
+									<label className="label col-span-12 md:col-span-4">
+										<span className="label-text text-sm">Display Name (local)</span>
+										<span
+											className="label-text-alt tooltip tooltip-right"
+											data-tip="Local override; visible only here."
+										>
+											<FiHelpCircle size={12} />
+										</span>
+									</label>
+									<div className="col-span-12 md:col-span-8">
+										<input
+											className="input input-bordered input-sm w-full rounded-xl"
+											value={displayName}
+											onChange={e => {
+												setDisplayName(e.target.value);
+											}}
+											placeholder={template?.displayName ?? tsenode.templateSlug}
+											spellCheck="false"
+										/>
 									</div>
-									<textarea
-										className="textarea textarea-bordered min-h-32 w-full rounded-xl"
-										value={b.content}
-										onChange={e => {
-											setBlockEdits(arr => {
-												const next = [...arr];
-												next[idx] = { ...next[idx], content: e.target.value };
-												return next;
-											});
+								</div>
+
+								<div className="grid grid-cols-12 items-center gap-3">
+									<label className="label col-span-12 md:col-span-4">
+										<span className="label-text text-sm">Tags</span>
+										<span
+											className="label-text-alt tooltip tooltip-right"
+											data-tip="Comma-separated tags used for filtering."
+										>
+											<FiHelpCircle size={12} />
+										</span>
+									</label>
+									<div className="col-span-12 md:col-span-8">
+										<input
+											className="input input-bordered input-sm w-full rounded-xl"
+											value={tags}
+											onChange={e => {
+												setTags(e.target.value);
+											}}
+											placeholder="e.g. brainstorm, draft, review"
+											spellCheck="false"
+										/>
+									</div>
+								</div>
+
+								<div className="grid grid-cols-12 items-start gap-3">
+									<label className="label col-span-12 md:col-span-4">
+										<span className="label-text text-sm">Description (local)</span>
+										<span
+											className="label-text-alt tooltip tooltip-right"
+											data-tip="Local description for your reference."
+										>
+											<FiHelpCircle size={12} />
+										</span>
+									</label>
+									<div className="col-span-12 md:col-span-8">
+										<textarea
+											className="textarea textarea-bordered w-full rounded-xl"
+											value={description}
+											onChange={e => {
+												setDescription(e.target.value);
+											}}
+											placeholder={template?.description ?? 'Describe how this template should be used...'}
+										/>
+									</div>
+								</div>
+							</div>
+						</section>
+
+						<div className="divider before:bg-base-300 after:bg-base-300 my-0" />
+
+						{/* Variables */}
+						<section>
+							<div className="mb-3 flex items-center justify-between">
+								<h4 className="text-base-content/70 text-sm font-semibold tracking-wide uppercase">Variables</h4>
+								{req.requiredCount > 0 ? (
+									<div className="text-warning flex items-center gap-2 text-sm">
+										<FiAlertCircle size={14} />
+										<span>Required remaining: {req.requiredVariables.join(', ')}</span>
+									</div>
+								) : (
+									<div className="badge badge-success badge-outline">All required variables provided</div>
+								)}
+							</div>
+
+							<div className="space-y-3">
+								{variablesSchema.length === 0 && (
+									<div className="text-sm opacity-70">No variables defined for this template.</div>
+								)}
+								{variablesSchema.map(v => (
+									<VariableEditorRow
+										key={v.name}
+										varDef={v}
+										value={varValues[v.name]}
+										onChange={val => {
+											setVarValues(s => ({ ...s, [v.name]: val }));
 										}}
 									/>
-								</div>
-							))}
-						</div>
-					</section>
+								))}
+							</div>
+						</section>
 
-					{/* Footer */}
-					<div className="modal-action">
-						<button type="button" className="btn bg-base-300 rounded-xl" onClick={onClose}>
-							Cancel
-						</button>
-						<button type="submit" className="btn btn-primary rounded-xl">
-							Save
-						</button>
-					</div>
-				</form>
+						<div className="divider before:bg-base-300 after:bg-base-300 my-0" />
+
+						{/* Blocks */}
+						<section>
+							<h4 className="text-base-content/70 mb-3 text-sm font-semibold tracking-wide uppercase">
+								Blocks (local override)
+							</h4>
+							<div className="space-y-3">
+								{blockEdits.map((b, idx) => (
+									<div key={b.id} className="rounded-xl border p-3">
+										<div className="mb-2 flex items-center gap-2 text-sm opacity-70">
+											<span className="badge badge-outline">{b.role}</span>
+											<span className="opacity-60">#{idx + 1}</span>
+										</div>
+										<textarea
+											className="textarea textarea-bordered min-h-32 w-full rounded-xl"
+											value={b.content}
+											onChange={e => {
+												setBlockEdits(arr => {
+													const next = [...arr];
+													next[idx] = { ...next[idx], content: e.target.value };
+													return next;
+												});
+											}}
+										/>
+									</div>
+								))}
+							</div>
+						</section>
+
+						{/* Footer */}
+						<div className="modal-action">
+							<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
+								Cancel
+							</button>
+							<button type="submit" className="btn btn-primary rounded-xl">
+								Save
+							</button>
+						</div>
+					</form>
+				</div>
 			</div>
 
-			<form
-				method="dialog"
-				className="modal-backdrop"
-				onSubmit={e => {
-					e.preventDefault();
-					onClose();
-				}}
-				onClick={() => {
-					onClose();
-				}}
-			>
-				<button aria-label="Close">close</button>
-			</form>
+			{/* NOTE: no modal-backdrop here: backdrop click should NOT close this modal; ESC still works via native <dialog>. */}
 		</dialog>,
 		document.body
 	);
@@ -375,9 +408,6 @@ function VariableEditorRow({
 				</div>
 			);
 
-		// 1) Import at the top
-		// import { EnumDropdownInline } from '@/components/EnumDropdownInline';
-
 		case VarType.Enum:
 			return (
 				<div className="grid grid-cols-12 items-center gap-3">
@@ -395,7 +425,6 @@ function VariableEditorRow({
 							triggerClassName="btn btn-ghost btn-sm w-full justify-between overflow-hidden"
 							placeholder="-- select --"
 							clearLabel="Clear"
-							// autoOpen={false} // default
 						/>
 						{commonHelp}
 					</div>

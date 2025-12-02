@@ -188,7 +188,7 @@ export function AttachmentBottomBar({
 			data-attachments-bottom-bar
 			aria-label="Templates, tools, and attachments"
 		>
-			<div className="flex items-center gap-2 px-1 py-0 text-xs shadow-none">
+			<div className="flex items-center gap-2 px-1 py-1 text-xs shadow-none">
 				{/* Left: template / tool / attachment pickers */}
 				<div className="flex items-center gap-1">
 					<PickerButton

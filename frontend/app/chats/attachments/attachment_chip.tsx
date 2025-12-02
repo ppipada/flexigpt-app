@@ -45,7 +45,13 @@ export function AttachmentChip({
 	const path = getEditorAttachmentPath(att);
 
 	const icon =
-		att.kind === AttachmentKind.image ? <FiImage /> : att.kind === AttachmentKind.url ? <FiLink /> : <FiFileText />;
+		att.kind === AttachmentKind.image ? (
+			<FiImage size={14} />
+		) : att.kind === AttachmentKind.url ? (
+			<FiLink size={14} />
+		) : (
+			<FiFileText size={14} />
+		);
 
 	const errorMessage = getAttachmentErrorMessage(att);
 
@@ -100,7 +106,7 @@ export function AttachmentChip({
 					title="Remove attachment"
 					aria-label="Remove attachment"
 				>
-					<FiX />
+					<FiX size={14} />
 				</button>
 			</div>
 		</div>

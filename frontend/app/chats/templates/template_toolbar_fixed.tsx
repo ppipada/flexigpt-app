@@ -31,7 +31,7 @@ export function TemplateFixedToolbar(props: {
 			<span title={templateName}>{templateName.length > 32 ? templateName.slice(0, 32) + '...' : templateName}</span>
 
 			<div
-				className={`flex items-center gap-1 rounded-2xl px-2 py-0 ${selection.variablesSchema.length > 0 ? (selection.requiredCount > 0 ? 'bg-warning text-warning-content' : 'bg-success text-success-content') : 'bg-base-200'}`}
+				className={`flex items-center gap-1 rounded-2xl px-2 py-1 ${selection.variablesSchema.length > 0 ? (selection.requiredCount > 0 ? 'bg-warning text-warning-content' : 'bg-success text-success-content') : 'bg-base-200'}`}
 			>
 				{selection.variablesSchema.length > 0 ? (
 					<>
@@ -51,7 +51,7 @@ export function TemplateFixedToolbar(props: {
 			</div>
 
 			<div
-				className={`flex items-center gap-1 rounded-2xl px-2 py-0 ${hasSystemBlock ? 'bg-success text-success-content' : 'bg-base-200'}`}
+				className={`flex items-center gap-1 rounded-2xl px-2 py-1 ${hasSystemBlock ? 'bg-success text-success-content' : 'bg-base-200'}`}
 			>
 				{hasSystemBlock ? (
 					<span className="flex items-center gap-1 px-2 py-0" title="Template contains a system/dev prompt block">
@@ -64,14 +64,14 @@ export function TemplateFixedToolbar(props: {
 				)}
 			</div>
 			<div className="grow" />
-			<div className="flex items-center gap-2 px-2 py-0">
+			<div className="flex items-center gap-2 px-2 py-1">
 				<button
 					type="button"
 					className="btn btn-ghost btn-sm shrink-0 px-2 py-0 shadow-none"
 					onClick={onOpenModal}
 					title="Edit in template editor"
 				>
-					<FiEdit2 />
+					<FiEdit2 size={14} />
 				</button>
 				<button
 					className="btn btn-ghost btn-sm shrink-0 px-2 py-0 shadow-none"
@@ -80,7 +80,7 @@ export function TemplateFixedToolbar(props: {
 					aria-label="Set system prompt for chat"
 					disabled={!hasSystemBlock}
 				>
-					<FiUpload />
+					<FiUpload size={14} />
 				</button>
 				{/* Expand to plain text */}
 				<button
@@ -90,7 +90,7 @@ export function TemplateFixedToolbar(props: {
 					title="Convert chips into plain text"
 					aria-label="Convert template chips into plain text"
 				>
-					<FiMaximize2 />
+					<FiMaximize2 size={14} />
 				</button>
 
 				{/* Remove template */}
@@ -101,7 +101,7 @@ export function TemplateFixedToolbar(props: {
 					title="Remove template"
 					aria-label="Remove template"
 				>
-					<FiX />
+					<FiX size={14} />
 				</button>
 			</div>
 		</div>

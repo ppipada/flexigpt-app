@@ -65,7 +65,7 @@ export function DirectoryChip({
 			title={title}
 			data-attachment-chip="directory"
 		>
-			<FiFolder className="shrink-0" />
+			<FiFolder className="shrink-0" size={14} />
 			<span className="min-w-0 flex-1 truncate">{group.label}</span>
 			<span className="text-base-content/70 text-[11px] whitespace-nowrap">
 				{attachedCount} files
@@ -75,24 +75,24 @@ export function DirectoryChip({
 			{/* Menu trigger */}
 			<MenuButton
 				store={directoryMenu}
-				className="btn btn-ghost btn-xs px-1 py-0 shadow-none"
+				className="btn btn-ghost btn-xs px-0 py-0 shadow-none"
 				aria-label={`Show files in folder ${group.dirPath || group.label}`}
 				title={group.dirPath || group.label}
 			>
-				<FiChevronDown size={12} />
+				<FiChevronDown size={14} />
 			</MenuButton>
 
 			{/* Remove entire folder group */}
 			<button
 				type="button"
-				className="btn btn-ghost btn-xs text-error shrink-0 px-1 py-0 shadow-none"
+				className="btn btn-ghost btn-xs text-error shrink-0 px-0 py-0 shadow-none"
 				onClick={() => {
 					onRemoveDirectoryGroup(group.id);
 				}}
 				title="Remove this folder and its attached files"
 				aria-label="Remove folder attachment group"
 			>
-				<FiX />
+				<FiX size={14} />
 			</button>
 
 			<Menu
@@ -125,7 +125,7 @@ export function DirectoryChip({
 							const rel = od.relativePath || od.dirPath;
 							return (
 								<div key={od.dirPath} className="bg-base-200/60 flex items-start gap-2 rounded-xl px-2 py-1">
-									<FiAlertTriangle className="text-warning mt-0.5" />
+									<FiAlertTriangle size={14} className="text-warning mt-0.5" />
 									<div className="min-w-0 flex-1">
 										<div
 											className="truncate text-xs font-medium"
@@ -155,7 +155,7 @@ export function DirectoryChip({
 											title="Hide this skipped subfolder notice"
 											aria-label="Hide skipped subfolder notice"
 										>
-											<FiX />
+											<FiX size={14} />
 										</button>
 									)}
 								</div>

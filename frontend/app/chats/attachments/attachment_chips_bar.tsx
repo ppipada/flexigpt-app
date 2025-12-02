@@ -91,7 +91,7 @@ export function AttachmentChipsBar({
 						data-attachment-chip="tool"
 						data-selection-id={n.selectionID}
 					>
-						<FiTool />
+						<FiTool size={14} />
 						<span className="truncate">{display.length > 32 ? display.slice(0, 32) + '...' : display}</span>
 						<button
 							type="button"
@@ -102,7 +102,7 @@ export function AttachmentChipsBar({
 							title="Remove tool choice"
 							aria-label="Remove tool choice"
 						>
-							<FiX />
+							<FiX size={14} />
 						</button>
 					</div>
 				);

@@ -51,7 +51,7 @@ export function CommandTipsMenu({ shortcutConfig }: CommandTipsMenuProps) {
 			{/* Keyboard shortcuts menu */}
 			<MenuButton
 				store={shortcutsMenu}
-				className="btn btn-xs text-neutral-custom flex items-center gap-2 overflow-hidden border-none bg-transparent px-2 py-1 text-left shadow-none"
+				className="btn btn-xs text-neutral-custom flex items-center gap-2 overflow-hidden border-none bg-transparent px-2 py-0 text-left shadow-none"
 				title="Keyboard shortcuts"
 				aria-label="Keyboard shortcuts"
 			>
@@ -103,7 +103,7 @@ export function CommandTipsMenu({ shortcutConfig }: CommandTipsMenuProps) {
 			{/* Additional input tips menu (with hover tooltips for descriptions) */}
 			<MenuButton
 				store={tipsMenu}
-				className="btn btn-xs text-neutral-custom flex items-center gap-2 overflow-hidden border-none bg-transparent px-2 py-1 text-left shadow-none"
+				className="btn btn-xs text-neutral-custom flex items-center gap-2 overflow-hidden border-none bg-transparent px-2 py-0 text-left shadow-none"
 				title="Additional input tips"
 				aria-label="Additional input tips"
 			>
