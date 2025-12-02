@@ -22,10 +22,21 @@ export default function SettingsPage() {
 	const [modalInitial, setModalInitial] = useState<AuthKeyMeta | null>(null); // null = Add
 
 	useEffect(() => {
+		let cancelled = false;
+
 		(async () => {
-			const settings = await settingstoreAPI.getSettings();
-			setAuthKeys(settings.authKeys);
+			try {
+				const settings = await settingstoreAPI.getSettings();
+				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+				if (!cancelled) setAuthKeys(settings.authKeys);
+			} catch (err) {
+				console.error('Failed to load settings', err);
+			}
 		})();
+
+		return () => {
+			cancelled = true;
+		};
 	}, [refreshToggle]);
 
 	const refresh = () => {
