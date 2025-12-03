@@ -34,7 +34,7 @@ export function DirectoryChip({
 	onRemoveDirectoryGroup,
 	onRemoveOverflowDir,
 }: DirectoryChipProps) {
-	const directoryMenu = useMenuStore({ placement: 'bottom-start' });
+	const directoryMenu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
 	// Build a map for quick lookup of attachments by key
 	const attachmentByKey = new Map<string, EditorAttachment>();

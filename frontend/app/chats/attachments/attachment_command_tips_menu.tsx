@@ -27,8 +27,8 @@ const menuItemClasses =
 	'hover:bg-base-200 data-[active-item]:bg-base-300';
 
 export function CommandTipsMenu({ shortcutConfig }: CommandTipsMenuProps) {
-	const shortcutsMenu = useMenuStore({ placement: 'top-end' });
-	const tipsMenu = useMenuStore({ placement: 'top-end' });
+	const shortcutsMenu = useMenuStore({ placement: 'top-end', focusLoop: true });
+	const tipsMenu = useMenuStore({ placement: 'top-end', focusLoop: true });
 	const shortcutsOpen = useStoreState(shortcutsMenu, 'open');
 	const tipsOpen = useStoreState(tipsMenu, 'open');
 	const tips = useMemo(

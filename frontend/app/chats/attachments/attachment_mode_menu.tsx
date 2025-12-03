@@ -77,6 +77,7 @@ export function getAttachmentModePillClasses(mode: AttachmentMode, interactive: 
 export function AttachmentModeMenu({ attachment, onChangeAttachmentMode }: AttachmentModeMenuProps) {
 	const menu = useMenuStore({
 		placement: 'bottom-start',
+		focusLoop: true,
 	});
 
 	const open = useStoreState(menu, 'open');
