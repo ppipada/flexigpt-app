@@ -15,6 +15,8 @@
 - [x] Update ALL modals to use dialog showmodal with backdrop and escape handling.
 - [ ] ~~Check for race between build and fetch for attachment content fetch and how to resolve. For now this is ok to have as the time between these 2 is very small. If we introduce human feedback in between, we ned to look at this closely.~~
 - [x] url validation check in all modals after novalidate
+- [x] Ariakit select for some select items and menus so that we get proper keyboard navigation.
+- [x] Tooltips in checkboxes
 
 - [ ] With attachments, token usage display seems more important.
 - [ ] Token count in build completion data may be wrong as it doesnt really account for attachments/tool calls etc. Need to rectify the FilterMessagesByTokenCount function.
