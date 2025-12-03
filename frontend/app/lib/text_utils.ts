@@ -44,16 +44,6 @@ export function validateVersion(version: string): string | undefined {
 	return undefined;
 }
 
-export const isValidUrl = (url: string) => {
-	try {
-		if (!url) return false;
-		new URL(url);
-		return true;
-	} catch {
-		return false;
-	}
-};
-
 export function getBlockQuotedLines(content: string): string {
 	// Split the content into lines.
 	const lines = content.split('\n');

@@ -9,6 +9,7 @@ import { type Tool, ToolType } from '@/spec/tool';
 
 import { omitManyKeys } from '@/lib/obj_utils';
 import { validateSlug, validateTags } from '@/lib/text_utils';
+import { MessageEnterValidURL, validateUrlForInput } from '@/lib/url_utils';
 
 import { Dropdown } from '@/components/dropdown';
 
@@ -68,6 +69,8 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 	const isEditMode = Boolean(initialData);
 
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
+	const displayNameInputRef = useRef<HTMLInputElement | null>(null);
+	const httpUrlInputRef = useRef<HTMLInputElement | null>(null);
 
 	// Sync prop -> state
 	useEffect(() => {
@@ -124,7 +127,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		setErrors({});
 	}, [isOpen, initialData]);
 
-	// Open/close native dialog
+	// Open/close native dialog + focus first field
 	useEffect(() => {
 		if (!isOpen) return;
 		const dialog = dialogRef.current;
@@ -133,6 +136,10 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		if (!dialog.open) {
 			dialog.showModal();
 		}
+
+		window.setTimeout(() => {
+			displayNameInputRef.current?.focus();
+		}, 0);
 
 		return () => {
 			if (dialog.open) dialog.close();
@@ -191,10 +198,18 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 					newErrs[field] = 'Invalid JSON';
 				}
 			}
-		} else if (field === 'goFunc' && formData.type === ToolType.Go && !v) {
-			newErrs.goFunc = 'Go function is required.';
-		} else if (field === 'httpUrl' && formData.type === ToolType.HTTP && !v) {
-			newErrs.httpUrl = 'HTTP URL is required.';
+		} else if (field === 'goFunc' && formData.type === ToolType.Go) {
+			if (!v) newErrs.goFunc = 'Go function is required.';
+			else newErrs = omitManyKeys(newErrs, ['goFunc']);
+		} else if (field === 'httpUrl' && formData.type === ToolType.HTTP) {
+			// Use shared URL validator; HTTP URL is required when type=HTTP
+			const { error } = validateUrlForInput(v, httpUrlInputRef.current, {
+				required: true,
+				requiredMessage: 'HTTP URL is required.',
+			});
+
+			if (error) newErrs.httpUrl = error;
+			else newErrs = omitManyKeys(newErrs, ['httpUrl']);
 		} else {
 			newErrs = omitManyKeys(newErrs, [field]);
 		}
@@ -260,6 +275,26 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		if (formData.type === ToolType.Go) {
 			goImpl = { func: formData.goFunc.trim() };
 		} else {
+			// Normalize & validate HTTP URL again to get canonical form
+			const httpUrlInput = httpUrlInputRef.current;
+			const { normalized: normalizedHttpUrl, error: httpUrlError } = validateUrlForInput(
+				formData.httpUrl,
+				httpUrlInput,
+				{
+					required: true,
+					requiredMessage: 'HTTP URL is required.',
+				}
+			);
+
+			if (!normalizedHttpUrl || httpUrlError) {
+				setErrors(prev => ({
+					...prev,
+					httpUrl: httpUrlError ?? MessageEnterValidURL,
+				}));
+				httpUrlInput?.focus();
+				return;
+			}
+
 			let headers: Record<string, string> | undefined;
 			let query: Record<string, string> | undefined;
 
@@ -280,7 +315,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 			httpImpl = {
 				request: {
 					method: formData.httpMethod || 'GET',
-					urlTemplate: formData.httpUrl,
+					urlTemplate: normalizedHttpUrl,
 					headers,
 					query,
 					body: formData.httpBody || undefined,
@@ -359,6 +394,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 							</label>
 							<div className="col-span-9">
 								<input
+									ref={displayNameInputRef}
 									type="text"
 									name="displayName"
 									value={formData.displayName}
@@ -366,7 +402,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 									className={`input input-bordered w-full rounded-xl ${errors.displayName ? 'input-error' : ''}`}
 									spellCheck="false"
 									autoComplete="off"
-									autoFocus
 									aria-invalid={Boolean(errors.displayName)}
 								/>
 								{errors.displayName && (
@@ -571,7 +606,8 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 									</label>
 									<div className="col-span-9">
 										<input
-											type="text"
+											ref={httpUrlInputRef}
+											type="url"
 											name="httpUrl"
 											value={formData.httpUrl}
 											onChange={handleInput}
@@ -579,6 +615,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 											spellCheck="false"
 											autoComplete="off"
 											aria-invalid={Boolean(errors.httpUrl)}
+											placeholder="https://api.example.com/endpoint OR api.example.com/endpoint"
 										/>
 										{errors.httpUrl && (
 											<div className="label">
