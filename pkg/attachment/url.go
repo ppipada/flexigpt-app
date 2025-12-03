@@ -118,11 +118,12 @@ func buildBlocksForURL(ctx context.Context, att *Attachment, mode AttachmentMode
 		}
 
 		base64Data := base64.StdEncoding.EncodeToString(data)
+		fname := filenameFromURL(rawURL, contentType)
 		return &ContentBlock{
 			Kind:       ContentBlockImage,
-			Base64Data: base64Data,
-			MIMEType:   contentType,
-			FileName:   filenameFromURL(rawURL, contentType),
+			Base64Data: &base64Data,
+			MIMEType:   &contentType,
+			FileName:   &fname,
 		}, nil
 
 	case AttachmentModePageContent, AttachmentModeText:
@@ -142,11 +143,12 @@ func buildBlocksForURL(ctx context.Context, att *Attachment, mode AttachmentMode
 		}
 
 		base64Data := base64.StdEncoding.EncodeToString(data)
+		fname := filenameFromURL(rawURL, contentType)
 		return &ContentBlock{
 			Kind:       ContentBlockFile,
-			Base64Data: base64Data,
-			MIMEType:   contentType,
-			FileName:   filenameFromURL(rawURL, contentType),
+			Base64Data: &base64Data,
+			MIMEType:   &contentType,
+			FileName:   &fname,
 		}, nil
 
 	case AttachmentModeNotReadable,
@@ -217,11 +219,12 @@ func buildBlocksForURLPage(ctx context.Context, att *Attachment) (*ContentBlock,
 		}
 
 		base64Data := base64.StdEncoding.EncodeToString(data)
+		fname := filenameFromURL(rawURL, ct)
 		return &ContentBlock{
 			Kind:       ContentBlockImage,
-			Base64Data: base64Data,
-			MIMEType:   ct,
-			FileName:   filenameFromURL(rawURL, ct),
+			Base64Data: &base64Data,
+			MIMEType:   &ct,
+			FileName:   &fname,
 		}, nil
 	}
 
@@ -238,11 +241,12 @@ func buildBlocksForURLPage(ctx context.Context, att *Attachment) (*ContentBlock,
 		}
 
 		base64Data := base64.StdEncoding.EncodeToString(data)
+		fname := filenameFromURL(rawURL, ct)
 		return &ContentBlock{
 			Kind:       ContentBlockFile,
-			Base64Data: base64Data,
-			MIMEType:   ct,
-			FileName:   filenameFromURL(rawURL, ct),
+			Base64Data: &base64Data,
+			MIMEType:   &ct,
+			FileName:   &fname,
 		}, nil
 	}
 
@@ -256,9 +260,10 @@ func buildBlocksForURLPage(ctx context.Context, att *Attachment) (*ContentBlock,
 			return buildLinkOnlyContentBlock(att), nil
 		}
 		prefix := fmt.Sprintf("[Content from %s]\n\n", rawURL)
+		txt := prefix + string(data)
 		return &ContentBlock{
 			Kind: ContentBlockText,
-			Text: prefix + string(data),
+			Text: &txt,
 		}, nil
 	}
 
@@ -282,17 +287,17 @@ func buildBlocksForURLPage(ctx context.Context, att *Attachment) (*ContentBlock,
 				"url", rawURL, "err", err2)
 			return buildLinkOnlyContentBlock(att), nil
 		}
-		prefix := fmt.Sprintf("[Content from %s]\n\n", rawURL)
+		txt := fmt.Sprintf("[Content from %s]\n\n", rawURL) + string(data)
 		return &ContentBlock{
 			Kind: ContentBlockText,
-			Text: prefix + string(data),
+			Text: &txt,
 		}, nil
 	}
 
-	prefix := fmt.Sprintf("[Content from %s]\n\n", rawURL)
+	txt := fmt.Sprintf("[Content from %s]\n\n", rawURL) + markdown
 	return &ContentBlock{
 		Kind: ContentBlockText,
-		Text: prefix + markdown,
+		Text: &txt,
 	}, nil
 }
 
@@ -312,7 +317,7 @@ func buildLinkOnlyContentBlock(att *Attachment) *ContentBlock {
 
 	return &ContentBlock{
 		Kind: ContentBlockText,
-		Text: txt,
+		Text: &txt,
 	}
 }
 

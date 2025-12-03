@@ -401,22 +401,39 @@ func contentBlocksToOpenAIChat(
 
 	out := make([]openai.ChatCompletionContentPartUnionParam, 0, len(blocks))
 	for _, b := range blocks {
+		txt := ""
+		if b.Text != nil {
+			txt = strings.TrimSpace(*b.Text)
+		}
+		bData := ""
+		if b.Base64Data != nil {
+			bData = strings.TrimSpace(*b.Base64Data)
+		}
+		mime := ""
+		if b.MIMEType != nil {
+			mime = strings.TrimSpace(*b.MIMEType)
+		}
+		fname := ""
+		if b.FileName != nil {
+			fname = strings.TrimSpace(*b.FileName)
+		}
+
 		switch b.Kind {
 		case attachment.ContentBlockText:
-			if strings.TrimSpace(b.Text) == "" {
+			if txt == "" {
 				continue
 			}
-			out = append(out, openai.TextContentPart(b.Text))
+			out = append(out, openai.TextContentPart(txt))
 
 		case attachment.ContentBlockImage:
-			if b.Base64Data == "" {
+			if bData == "" {
 				continue
 			}
-			mime := b.MIMEType
+
 			if mime == "" {
 				mime = string(fileutil.DefaultImageMIME)
 			}
-			dataURL := fmt.Sprintf("data:%s;base64,%s", mime, b.Base64Data)
+			dataURL := fmt.Sprintf("data:%s;base64,%s", mime, bData)
 			img := openai.ChatCompletionContentPartImageImageURLParam{
 				URL:    dataURL,
 				Detail: "auto",
@@ -424,18 +441,17 @@ func contentBlocksToOpenAIChat(
 			out = append(out, openai.ImageContentPart(img))
 
 		case attachment.ContentBlockFile:
-			if b.Base64Data == "" {
+			if bData == "" {
 				continue
 			}
-			mime := b.MIMEType
 			if mime == "" {
-				mime = "application/octet-stream"
+				mime = string(fileutil.MIMEApplicationOctetStream)
 			}
-			dataURL := fmt.Sprintf("data:%s;base64,%s", mime, b.Base64Data)
+			dataURL := fmt.Sprintf("data:%s;base64,%s", mime, bData)
 			var fileParam openai.ChatCompletionContentPartFileFileParam
 			fileParam.FileData = param.NewOpt(dataURL)
-			if b.FileName != "" {
-				fileParam.Filename = param.NewOpt(b.FileName)
+			if fname != "" {
+				fileParam.Filename = param.NewOpt(fname)
 			}
 			out = append(out, openai.FileContentPart(fileParam))
 

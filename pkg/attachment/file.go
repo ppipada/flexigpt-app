@@ -120,11 +120,13 @@ func buildBlocksForLocalFile(ctx context.Context, att *Attachment, mode Attachme
 				return nil, err
 			}
 
+			mStr := string(mimeType)
+			fname := filepath.Base(path)
 			return &ContentBlock{
 				Kind:       ContentBlockFile,
-				Base64Data: base64Data,
-				MIMEType:   string(mimeType),
-				FileName:   filepath.Base(path),
+				Base64Data: &base64Data,
+				MIMEType:   &mStr,
+				FileName:   &fname,
 			}, nil
 
 		case fileutil.ExtensionModeDefault:
@@ -161,15 +163,16 @@ func getTextBlock(att *Attachment) (*ContentBlock, error) {
 	}
 	return &ContentBlock{
 		Kind: ContentBlockText,
-		Text: text,
+		Text: &text,
 	}, nil
 }
 
 func getUnreadableBlock(att *Attachment) (*ContentBlock, error) {
 	if txt := att.FormatAsDisplayName(); txt != "" {
+		txt += " (binary file; not readable in this chat)"
 		return &ContentBlock{
 			Kind: ContentBlockText,
-			Text: txt + " (binary file; not readable in this chat)",
+			Text: &txt,
 		}, nil
 	}
 	return nil, errors.New("invalid attachment mode")

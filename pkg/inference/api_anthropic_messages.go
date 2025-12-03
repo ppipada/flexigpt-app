@@ -462,32 +462,44 @@ func contentBlocksToAnthropic(
 
 	out := make([]anthropic.ContentBlockParamUnion, 0, len(blocks))
 	for _, b := range blocks {
+		txt := ""
+		if b.Text != nil {
+			txt = strings.TrimSpace(*b.Text)
+		}
+		bData := ""
+		if b.Base64Data != nil {
+			bData = strings.TrimSpace(*b.Base64Data)
+		}
+		mime := ""
+		if b.MIMEType != nil {
+			mime = strings.TrimSpace(*b.MIMEType)
+		}
+
 		switch b.Kind {
 		case attachment.ContentBlockText:
-			if strings.TrimSpace(b.Text) == "" {
+			if txt == "" {
 				continue
 			}
-			out = append(out, anthropic.NewTextBlock(b.Text))
+			out = append(out, anthropic.NewTextBlock(txt))
 
 		case attachment.ContentBlockImage:
-			if b.Base64Data == "" {
+			if bData == "" {
 				continue
 			}
-			mime := b.MIMEType
 			if mime == "" {
 				mime = string(fileutil.DefaultImageMIME)
 			}
-			out = append(out, anthropic.NewImageBlockBase64(mime, b.Base64Data))
+			out = append(out, anthropic.NewImageBlockBase64(mime, bData))
 
 		case attachment.ContentBlockFile:
-			if b.Base64Data == "" {
+			if bData == "" {
 				continue
 			}
 			// For now, treat generic file blocks as base64 PDF sources.
 			out = append(
 				out,
 				anthropic.NewDocumentBlock(
-					anthropic.Base64PDFSourceParam{Data: b.Base64Data},
+					anthropic.Base64PDFSourceParam{Data: bData},
 				),
 			)
 

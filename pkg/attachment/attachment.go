@@ -27,12 +27,12 @@ type ContentBlock struct {
 	Kind ContentBlockKind `json:"kind"`
 
 	// For Kind == text: Text is populated.
-	Text string `json:"text,omitempty"`
+	Text *string `json:"text,omitempty"`
 
 	// For Kind == image or file: Base64Data + MIMEType are populated.
-	Base64Data string `json:"base64Data,omitempty"`
-	MIMEType   string `json:"mimeType,omitempty"`
-	FileName   string `json:"fileName,omitempty"`
+	Base64Data *string `json:"base64Data,omitempty"`
+	MIMEType   *string `json:"mimeType,omitempty"`
+	FileName   *string `json:"fileName,omitempty"`
 }
 
 // AttachmentKind enumerates contextual attachment categories that can be
@@ -82,6 +82,8 @@ type Attachment struct {
 	ImageRef   *ImageRef   `json:"imageRef,omitempty"`
 	URLRef     *URLRef     `json:"urlRef,omitempty"`
 	GenericRef *GenericRef `json:"genericRef,omitempty"`
+
+	ContentBlock *ContentBlock `json:"contentBlock,omitempty"`
 }
 
 type DirectoryAttachmentsResult struct {
@@ -297,9 +299,10 @@ func (att *Attachment) BuildContentBlock(ctx context.Context, overrideOriginal b
 		if txt == "" {
 			txt = "[Attachment]"
 		}
+		txt += " (attachment modified since this message was sent)"
 		return &ContentBlock{
 			Kind: ContentBlockText,
-			Text: txt + " (attachment modified since this message was sent)",
+			Text: &txt,
 		}, nil
 	}
 

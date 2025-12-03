@@ -78,10 +78,12 @@ func buildImageBlockFromLocal(path string) (*ContentBlock, error) {
 	if err != nil {
 		return &ContentBlock{}, err
 	}
+	mStr := string(info.MIMEType)
+	fname := filepath.Base(path)
 	return &ContentBlock{
 		Kind:       ContentBlockImage,
-		Base64Data: info.Base64Data,
-		MIMEType:   string(info.MIMEType),
-		FileName:   filepath.Base(path),
+		Base64Data: &info.Base64Data,
+		MIMEType:   &mStr,
+		FileName:   &fname,
 	}, nil
 }

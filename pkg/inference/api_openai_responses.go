@@ -468,22 +468,40 @@ func contentBlocksToOpenAI(
 	out := make([]responses.ResponseInputContentUnionParam, 0, len(blocks))
 
 	for _, b := range blocks {
+		txt := ""
+		if b.Text != nil {
+			txt = strings.TrimSpace(*b.Text)
+		}
+		bData := ""
+		if b.Base64Data != nil {
+			bData = strings.TrimSpace(*b.Base64Data)
+		}
+		mime := ""
+		if b.MIMEType != nil {
+			mime = strings.TrimSpace(*b.MIMEType)
+		}
+		fname := ""
+		if b.FileName != nil {
+			fname = strings.TrimSpace(*b.FileName)
+		}
 		switch b.Kind {
 		case attachment.ContentBlockText:
+			if txt == "" {
+				continue
+			}
 			out = append(
 				out,
-				responses.ResponseInputContentParamOfInputText(b.Text),
+				responses.ResponseInputContentParamOfInputText(txt),
 			)
 
 		case attachment.ContentBlockImage:
-			if b.Base64Data == "" {
+			if bData == "" {
 				continue
 			}
-			mime := b.MIMEType
 			if mime == "" {
 				mime = string(fileutil.DefaultImageMIME)
 			}
-			dataURL := fmt.Sprintf("data:%s;base64,%s", mime, b.Base64Data)
+			dataURL := fmt.Sprintf("data:%s;base64,%s", mime, bData)
 			img := responses.ResponseInputImageParam{
 				Detail:   responses.ResponseInputImageDetailAuto,
 				ImageURL: param.NewOpt(dataURL),
@@ -494,17 +512,17 @@ func contentBlocksToOpenAI(
 			)
 
 		case attachment.ContentBlockFile:
-			if b.Base64Data == "" {
+			if bData == "" {
 				continue
 			}
-			mime := b.MIMEType
+
 			if mime == "" {
-				mime = "application/octet-stream"
+				mime = string(fileutil.MIMEApplicationOctetStream)
 			}
-			dataURL := fmt.Sprintf("data:%s;base64,%s", mime, b.Base64Data)
+			dataURL := fmt.Sprintf("data:%s;base64,%s", mime, bData)
 			fileParam := responses.ResponseInputFileParam{
 				FileData: param.NewOpt(dataURL),
-				Filename: param.NewOpt(b.FileName),
+				Filename: param.NewOpt(fname),
 				Type:     openaiSharedConstant.InputFile("").Default(),
 			}
 			out = append(
