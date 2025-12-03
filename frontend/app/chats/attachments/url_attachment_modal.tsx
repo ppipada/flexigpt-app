@@ -4,15 +4,28 @@ import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiLink, FiX } from 'react-icons/fi';
 
+import {
+	createUrlFieldChangeHandler,
+	type FieldErrorState,
+	MessageEnterValidURL,
+	validateUrlForInput,
+} from '@/lib/url_utils';
+
 type UrlAttachmentModalProps = {
 	isOpen: boolean;
 	onClose: () => void;
 	onAttachURL: (url: string) => Promise<void> | void;
 };
 
+type FormState = {
+	url: string;
+};
+
+const INITIAL_FORM_STATE: FormState = { url: '' };
+
 export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachmentModalProps) {
-	const [urlValue, setUrlValue] = useState('');
-	const [error, setError] = useState<string | null>(null);
+	const [formData, setFormData] = useState<FormState>(INITIAL_FORM_STATE);
+	const [errors, setErrors] = useState<FieldErrorState<FormState>>({});
 	const [submitting, setSubmitting] = useState(false);
 
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
@@ -21,8 +34,8 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 	// Reset local state whenever the modal is opened
 	useEffect(() => {
 		if (!isOpen) return;
-		setUrlValue('');
-		setError(null);
+		setFormData(INITIAL_FORM_STATE);
+		setErrors({});
 		setSubmitting(false);
 	}, [isOpen]);
 
@@ -36,122 +49,60 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 			dialog.showModal();
 		}
 
+		window.setTimeout(() => {
+			inputRef.current?.focus();
+		}, 0);
+
 		return () => {
-			// If the component unmounts while the dialog is still open, close it.
 			if (dialog.open) {
 				dialog.close();
 			}
 		};
 	}, [isOpen]);
 
-	// Keep parent isOpen in sync with native dialog closing
 	const handleDialogClose = () => {
 		onClose();
 	};
 
-	/**
-	 * Normalize & validate URL.
-	 */
-	const normalizeUrl = (value: string): string | null => {
-		const raw = value.trim();
-		if (!raw) return null; // caller decides if blank is allowed
-
-		// Only one URL at a time — reject any whitespace
-		if (/\s/.test(raw)) {
-			throw new Error('Only one URL is allowed at a time.');
-		}
-
-		// If user did not type a scheme, treat it as shorthand for https://
-		const candidate = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-
-		let parsed: URL;
-		try {
-			parsed = new URL(candidate);
-		} catch {
-			throw new Error('Please enter a valid URL (for example, https://example.com).');
-		}
-
-		if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-			throw new Error('Only HTTP and HTTPS URLs are supported.');
-		}
-
-		const hostname = parsed.hostname;
-
-		if (!hostname) {
-			throw new Error('Please enter a valid URL host (for example, example.com).');
-		}
-
-		// Extra hardening: require a "real" hostname:
-		// - must have a dot, OR be "localhost"
-		if (!hostname.includes('.') && hostname !== 'localhost') {
-			throw new Error('Please enter a full domain (for example, example.com).');
-		}
-
-		return parsed.toString();
-	};
-
-	/**
-	 * Handle input change & validation.
-	 */
-	const handleChange = (value: string) => {
-		setUrlValue(value);
-
-		const trimmed = value.trim();
-		if (!trimmed) {
-			setError(null);
-			return;
-		}
-
-		const input = inputRef.current;
-
-		// For explicit http(s) URLs, let the browser validate first.
-		if (/^https?:\/\//i.test(trimmed) && input && !input.validity.valid) {
-			setError('Please enter a valid URL, for example: https://example.com');
-			return;
-		}
-
-		try {
-			normalizeUrl(trimmed);
-			setError(null);
-		} catch (err) {
-			setError((err as Error).message);
-		}
-	};
+	// URL field change handler (field is required)
+	const handleUrlChange = createUrlFieldChangeHandler<FormState>('url', setFormData, setErrors, { required: true });
 
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
 
-		const trimmed = urlValue.trim();
 		const input = inputRef.current;
 
-		// Re-check browser validity for explicit http(s) URLs on submit
-		if (/^https?:\/\//i.test(trimmed) && input && !input.checkValidity()) {
-			setError('Please enter a valid URL, for example: https://example.com');
-			input.focus();
+		// Use shared validator with required semantics
+		const { normalized, error } = validateUrlForInput(formData.url, input, {
+			required: true,
+		});
+
+		if (!normalized || error) {
+			setErrors(prev => ({
+				...prev,
+				url: error ?? MessageEnterValidURL,
+			}));
+			input?.focus();
 			return;
 		}
 
+		setSubmitting(true);
 		try {
-			const normalized = normalizeUrl(urlValue);
-
-			if (!normalized) {
-				setError('Please enter a URL.');
-				return;
-			}
-
-			setSubmitting(true);
 			await onAttachURL(normalized);
-
-			// Close the dialog; this will trigger handleDialogClose -> parent onClose().
 			dialogRef.current?.close();
 		} catch (err) {
-			setError((err as Error).message || 'Please enter a valid URL.');
+			setErrors(prev => ({
+				...prev,
+				url: (err as Error).message || 'Something went wrong while attaching the URL.',
+			}));
 		} finally {
 			setSubmitting(false);
 		}
 	};
 
 	if (!isOpen) return null;
+
+	const urlError = errors.url ?? null;
 
 	return createPortal(
 		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
@@ -172,8 +123,7 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 					</button>
 				</div>
 
-				{/* NOTE: noValidate disables the browser's popup UI,
-            but we still read input.validity/checkValidity() in JS. */}
+				{/* NOTE: noValidate disables the browser's popup UI, but we still read input.validity/checkValidity() in JS. */}
 				<form noValidate onSubmit={handleSubmit} className="space-y-4">
 					{/* URL input */}
 					<div>
@@ -182,13 +132,10 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 						</label>
 						<input
 							ref={inputRef}
-							autoFocus
 							type="url"
-							value={urlValue}
-							onChange={e => {
-								handleChange(e.target.value);
-							}}
-							className={`input input-bordered w-full rounded-xl ${error ? 'input-error' : ''}`}
+							value={formData.url}
+							onChange={handleUrlChange}
+							className={`input input-bordered w-full rounded-xl ${urlError ? 'input-error' : ''}`}
 							placeholder="https://example.com/resource"
 							spellCheck="false"
 						/>
@@ -196,9 +143,9 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 
 						{/* Fixed-height error area to avoid layout shift */}
 						<div className="mt-1 h-5 text-xs">
-							{error && (
+							{urlError && (
 								<span className="text-error flex items-center gap-1">
-									<FiAlertCircle size={12} /> {error}
+									<FiAlertCircle size={12} /> {urlError}
 								</span>
 							)}
 						</div>
@@ -212,7 +159,8 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 						<button
 							type="submit"
 							className="btn btn-primary rounded-xl"
-							disabled={submitting || !urlValue.trim() || !!error}
+							// You can keep this simple: empty stays disabled even before first validation
+							disabled={submitting || !formData.url.trim() || !!urlError}
 						>
 							{submitting ? (
 								<>
