@@ -6,6 +6,8 @@ import { FiAlertCircle, FiX } from 'react-icons/fi';
 
 import type { DocStore } from '@/spec/docstore';
 
+import { MessageEnterValidURL, validateUrlForInput } from '@/lib/url_utils';
+
 interface ModifyDocStoreModalProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -37,6 +39,9 @@ export function ModifyDocStoreModal({
 	const [errors, setErrors] = useState<ErrorState>({});
 
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
+	const nameInputRef = useRef<HTMLInputElement | null>(null);
+	const urlInputRef = useRef<HTMLInputElement | null>(null);
+	const dbNameInputRef = useRef<HTMLInputElement | null>(null);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -52,13 +57,84 @@ export function ModifyDocStoreModal({
 		setErrors({});
 	}, [isOpen, initialData]);
 
-	// Open/close native dialog
+	// Per-field validator (uses shared URL validator for url)
+	const validateField = (field: keyof ErrorState, value: string, currentErrors: ErrorState): ErrorState => {
+		const next: ErrorState = { ...currentErrors };
+		const v = value.trim();
+
+		if (field === 'name') {
+			if (!v) next.name = 'This field is required';
+			else delete next.name;
+		}
+
+		if (field === 'dbName') {
+			if (!v) next.dbName = 'This field is required';
+			else delete next.dbName;
+		}
+
+		if (field === 'url') {
+			const { error } = validateUrlForInput(v, urlInputRef.current, {
+				required: true,
+				requiredMessage: 'This field is required',
+			});
+
+			if (error) next.url = error;
+			else delete next.url;
+		}
+
+		return next;
+	};
+
+	// Full-form validation (adds uniqueness check on top of field-level checks)
+	const validateAll = (state: Partial<DocStore>): ErrorState => {
+		let next: ErrorState = {};
+
+		const name = state.name ?? '';
+		const url = state.url ?? '';
+		const dbName = state.dbName ?? '';
+
+		next = validateField('name', name, next);
+		next = validateField('url', url, next);
+		next = validateField('dbName', dbName, next);
+
+		const trimmedUrl = url.trim();
+		const trimmedDbName = dbName.trim();
+
+		// Uniqueness only if url & dbName already pass their own validation
+		if (!next.url && !next.dbName && trimmedUrl && trimmedDbName) {
+			const isUnique = !existingDocStores.some(
+				s => s.url === trimmedUrl && s.dbName === trimmedDbName && s.id !== initialData?.id
+			);
+
+			if (!isUnique) {
+				const msg = 'This combination of URL and Database Name already exists';
+				next.url = msg;
+				next.dbName = msg;
+			}
+		}
+
+		return next;
+	};
+
+	const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+		const { name, value } = e.target;
+		const updated = { ...formData, [name]: value };
+		setFormData(updated);
+		setErrors(validateAll(updated));
+	};
+
+	// Open/close native dialog and focus first field
 	useEffect(() => {
 		if (!isOpen) return;
 		const dialog = dialogRef.current;
 		if (!dialog) return;
 
 		if (!dialog.open) dialog.showModal();
+
+		// Focus "Name" field when dialog opens
+		window.setTimeout(() => {
+			nameInputRef.current?.focus();
+		}, 0);
 
 		return () => {
 			if (dialog.open) dialog.close();
@@ -69,44 +145,6 @@ export function ModifyDocStoreModal({
 		onClose();
 	};
 
-	const validateAll = (state: Partial<DocStore>): ErrorState => {
-		const nextErrors: ErrorState = {};
-
-		const name = state.name?.trim() ?? '';
-		const url = state.url?.trim() ?? '';
-		const dbName = state.dbName?.trim() ?? '';
-
-		if (!name) {
-			nextErrors.name = 'This field is required';
-		}
-
-		if (!url) {
-			nextErrors.url = 'This field is required';
-		}
-
-		if (!dbName) {
-			nextErrors.dbName = 'This field is required';
-		}
-
-		if (url && dbName) {
-			const isUnique = !existingDocStores.some(s => s.url === url && s.dbName === dbName && s.id !== initialData?.id);
-
-			if (!isUnique) {
-				nextErrors.url = 'This combination of URL and Database Name already exists';
-				nextErrors.dbName = 'This combination of URL and Database Name already exists';
-			}
-		}
-
-		return nextErrors;
-	};
-
-	const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-		const { name, value } = e.target;
-		const updated = { ...formData, [name]: value };
-		setFormData(updated);
-		setErrors(validateAll(updated));
-	};
-
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 
@@ -115,10 +153,26 @@ export function ModifyDocStoreModal({
 
 		if (Object.keys(finalErrors).length > 0) return;
 
+		// Normalize URL using shared validator (required)
+		const urlInput = urlInputRef.current;
+		const { normalized: normalizedUrl, error: urlError } = validateUrlForInput(formData.url ?? '', urlInput, {
+			required: true,
+			requiredMessage: 'This field is required',
+		});
+
+		if (!normalizedUrl || urlError) {
+			setErrors(prev => ({
+				...prev,
+				url: urlError ?? MessageEnterValidURL,
+			}));
+			urlInput?.focus();
+			return;
+		}
+
 		onSubmit({
 			...formData,
 			name: formData.name?.trim(),
-			url: formData.url?.trim(),
+			url: normalizedUrl,
 			description: formData.description?.trim(),
 			dbName: formData.dbName?.trim(),
 		});
@@ -159,6 +213,7 @@ export function ModifyDocStoreModal({
 								<span className="label-text text-sm">Name*</span>
 							</label>
 							<input
+								ref={nameInputRef}
 								type="text"
 								name="name"
 								value={formData.name ?? ''}
@@ -166,7 +221,6 @@ export function ModifyDocStoreModal({
 								className={`input input-bordered w-full rounded-xl ${errors.name ? 'input-error' : ''}`}
 								spellCheck="false"
 								autoComplete="off"
-								autoFocus
 								aria-invalid={Boolean(errors.name)}
 							/>
 							{errors.name && (
@@ -183,6 +237,7 @@ export function ModifyDocStoreModal({
 								<span className="label-text text-sm">URL*</span>
 							</label>
 							<input
+								ref={urlInputRef}
 								type="url"
 								name="url"
 								value={formData.url ?? ''}
@@ -191,6 +246,7 @@ export function ModifyDocStoreModal({
 								spellCheck="false"
 								autoComplete="off"
 								aria-invalid={Boolean(errors.url)}
+								placeholder="https://example.com OR example.com"
 							/>
 							{errors.url && (
 								<div className="label">
@@ -219,6 +275,7 @@ export function ModifyDocStoreModal({
 								<span className="label-text text-sm">Database Name*</span>
 							</label>
 							<input
+								ref={dbNameInputRef}
 								type="text"
 								name="dbName"
 								value={formData.dbName ?? ''}

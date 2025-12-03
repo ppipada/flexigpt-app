@@ -136,7 +136,7 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 							value={formData.url}
 							onChange={handleUrlChange}
 							className={`input input-bordered w-full rounded-xl ${urlError ? 'input-error' : ''}`}
-							placeholder="https://example.com/resource"
+							placeholder="https://example.com/resource OR example.com/resource"
 							spellCheck="false"
 						/>
 						<p className="text-base-content/70 p-1 text-xs">Paste a single URL to attach to this message.</p>

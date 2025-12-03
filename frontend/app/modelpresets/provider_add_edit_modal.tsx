@@ -15,7 +15,7 @@ import {
 
 import { GenerateRandomNumberString } from '@/lib/encode_decode';
 import { omitManyKeys } from '@/lib/obj_utils';
-import { isValidUrl } from '@/lib/text_utils';
+import { MessageEnterValidURL, validateUrlForInput } from '@/lib/url_utils';
 
 import { Dropdown } from '@/components/dropdown';
 
@@ -76,6 +76,9 @@ export function AddEditProviderPresetModal({
 	const [errors, setErrors] = useState<ErrorState>({});
 
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
+	const providerNameInputRef = useRef<HTMLInputElement | null>(null);
+	const displayNameInputRef = useRef<HTMLInputElement | null>(null);
+	const originInputRef = useRef<HTMLInputElement | null>(null);
 
 	const prefillDropdownItems: Record<ProviderName, { isEnabled: boolean; displayName: string }> = useMemo(() => {
 		const o: Record<ProviderName, { isEnabled: boolean; displayName: string }> = {} as any;
@@ -126,6 +129,7 @@ export function AddEditProviderPresetModal({
 		}));
 	};
 
+	// Reset form state when modal opens
 	useEffect(() => {
 		if (!isOpen) return;
 
@@ -150,18 +154,29 @@ export function AddEditProviderPresetModal({
 		setErrors({});
 	}, [isOpen, mode, initialPreset]);
 
-	// Open/close native dialog
+	// Open/close native dialog and focus initial field
 	useEffect(() => {
 		if (!isOpen) return;
 		const dialog = dialogRef.current;
 		if (!dialog) return;
 
-		if (!dialog.open) dialog.showModal();
+		if (!dialog.open) {
+			dialog.showModal();
+		}
+
+		window.setTimeout(() => {
+			if (mode === 'add') {
+				providerNameInputRef.current?.focus();
+			} else {
+				// In edit mode the provider ID is disabled, so focus display name
+				displayNameInputRef.current?.focus();
+			}
+		}, 0);
 
 		return () => {
 			if (dialog.open) dialog.close();
 		};
-	}, [isOpen]);
+	}, [isOpen, mode]);
 
 	const handleDialogClose = () => {
 		onClose();
@@ -186,7 +201,12 @@ export function AddEditProviderPresetModal({
 		}
 
 		if (field === 'origin') {
-			if (!isValidUrl(v)) newErrs.origin = 'Must be a valid URL.';
+			// Use shared URL validator, and require a non-empty URL
+			const { error } = validateUrlForInput(v, originInputRef.current, {
+				required: true,
+			});
+
+			if (error) newErrs.origin = error;
 			else newErrs = omitManyKeys(newErrs, ['origin']);
 		}
 
@@ -269,9 +289,25 @@ export function AddEditProviderPresetModal({
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 
+		// Field-level validation first
 		const finalErrors = validateForm(formData);
 		setErrors(finalErrors);
 		if (Object.values(finalErrors).some(Boolean)) return;
+
+		// Normalize origin using shared URL validator; origin is required here
+		const originInput = originInputRef.current;
+		const { normalized: normalizedOrigin, error: originError } = validateUrlForInput(formData.origin, originInput, {
+			required: true,
+		});
+
+		if (!normalizedOrigin || originError) {
+			setErrors(prev => ({
+				...prev,
+				origin: originError ?? MessageEnterValidURL,
+			}));
+			originInput?.focus();
+			return;
+		}
 
 		let defaultHeaders: Record<string, string> = {};
 		if (formData.defaultHeadersRawJSON.trim()) {
@@ -288,7 +324,7 @@ export function AddEditProviderPresetModal({
 			displayName: formData.displayName.trim(),
 			sdkType: formData.sdkType,
 			isEnabled: formData.isEnabled,
-			origin: formData.origin.trim(),
+			origin: normalizedOrigin,
 			chatCompletionPathPrefix: formData.chatCompletionPathPrefix.trim(),
 			apiKeyHeaderKey: formData.apiKeyHeaderKey.trim(),
 			defaultHeaders,
@@ -415,6 +451,7 @@ export function AddEditProviderPresetModal({
 							</label>
 							<div className="col-span-9">
 								<input
+									ref={providerNameInputRef}
 									type="text"
 									name="providerName"
 									value={formData.providerName}
@@ -423,7 +460,6 @@ export function AddEditProviderPresetModal({
 									disabled={mode === 'edit'}
 									spellCheck="false"
 									autoComplete="off"
-									autoFocus
 								/>
 								{errors.providerName && (
 									<div className="label">
@@ -442,6 +478,7 @@ export function AddEditProviderPresetModal({
 							</label>
 							<div className="col-span-9">
 								<input
+									ref={displayNameInputRef}
 									type="text"
 									name="displayName"
 									value={formData.displayName}
@@ -467,13 +504,15 @@ export function AddEditProviderPresetModal({
 							</label>
 							<div className="col-span-9">
 								<input
-									type="text"
+									ref={originInputRef}
+									type="url"
 									name="origin"
 									value={formData.origin}
 									onChange={handleInput}
 									className={`input input-bordered w-full rounded-xl ${errors.origin ? 'input-error' : ''}`}
 									spellCheck="false"
 									autoComplete="off"
+									placeholder="https://api.example.com OR api.example.com"
 								/>
 								{errors.origin && (
 									<div className="label">
