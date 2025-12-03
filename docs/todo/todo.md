@@ -17,23 +17,12 @@
 - [x] Ariakit select for some select items and menus so that we get proper keyboard navigation.
 - [x] Tooltips in checkboxes
 
-- [ ] With attachments, token usage display seems more important.
-- [ ] Token count in build completion data may be wrong as it doesnt really account for attachments/tool calls etc. Need to rectify the FilterMessagesByTokenCount function.
-
 - [ ] Lots of testing needed for new attachments.
 
   - [ ] Check debug details.
   - [ ] Attachment follow through across conversations.
   - [ ] cache token usage.
   - [ ] url attachments.
-
-- [ ] Future: May need to decide later that keeping conversation attachment shapshots is better than reattach etc.
-- [ ] Future: Check for race between build and fetch for attachment content fetch and how to resolve. For now this is ok to have as the time between these 2 is very small. If we introduce human feedback in between, we ned to look at this closely.
-- [ ] Future: Attachments support
-
-  - [ ] doc formats can be in one place
-  - [ ] specialized urls like github/gitlab pr's
-  - [ ] local git diff/commit history/etc attachments
 
 - attachments
 
@@ -50,7 +39,12 @@
 
   - [x] attachments from prev turns also need to be used. they may need to be freshly hydrated again, but need to be used.
   - [x] input notes should talk about attachments, turns, etc.
-  - [ ] get visible text from html needs to be implemented and a new mode raw vs visible text needs to be added.
+  - [x] get visible text from html needs to be implemented and a new mode raw vs visible text needs to be added.
+  - [ ] ~~look at how we send attachment kind text as of now. if it is sent already as text block, we would have to skip them.~~
+    - [ ] ~~It is sent as a text block but never propagated back to conversation store. so ok.~~
+  - [ ] With attachments, token usage display seems more important.
+  - [ ] Token count in build completion data may be wrong as it doesnt really account for attachments/tool calls etc. Need to rectify the FilterMessagesByTokenCount function.
+  - [ ] Most probably we want atleast url content blocks, non image ones atleast to persist in conversation. May look at other text ones too.
 
 - [ ] tool enhancements
 

@@ -25,6 +25,17 @@
     - [ ] Configure CodeMirror to support TypeScript syntax highlighting and validation.
     - [ ] Allow users to write an asynchronous TypeScript function that utilizes the defined schema.
 
+- Chat attachments
+
+  - [ ] Future: May need to decide later that keeping conversation attachment shapshots is better than reattach etc.
+  - [ ] Future: Check for race between build and fetch for attachment content fetch and how to resolve. For now this is ok to have as the time between these 2 is very small. If we introduce human feedback in between, we ned to look at this closely.
+
+  - [ ] Future: Attachments support
+
+    - [ ] doc formats can be in one place
+    - [ ] specialized urls like github/gitlab pr's
+    - [ ] local git diff/commit history/etc attachments
+
 ## Laundry list
 
 - [ ] Chat

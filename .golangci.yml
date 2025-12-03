@@ -407,6 +407,8 @@ linters:
           alias: anthropicSharedConstant
         - pkg: github.com/ppipada/flexigpt-app/frontend
           alias: assets
+        - pkg: github.com/JohannesKaufmann/html-to-markdown
+          alias: html2md
 
     nakedret:
       # No naked returns, ever.
