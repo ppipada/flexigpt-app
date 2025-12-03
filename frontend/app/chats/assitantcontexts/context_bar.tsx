@@ -11,8 +11,9 @@ import { type ChatOption, DefaultChatOptions, getChatInputOptions } from '@/apis
 import { AdvancedParamsModal } from '@/chats/assitantcontexts/advanced_params_modal';
 import { DisablePreviousMessagesCheckbox } from '@/chats/assitantcontexts/disable_checkbox';
 import { ModelDropdown } from '@/chats/assitantcontexts/model_dropdown';
-import { HybridReasoningCheckbox, ReasoningTokensDropdown } from '@/chats/assitantcontexts/reasoning_hybrid';
+import { HybridReasoningCheckbox } from '@/chats/assitantcontexts/reasoning_hybrid';
 import { SingleReasoningDropdown } from '@/chats/assitantcontexts/reasoning_levels_dropdown';
+import { ReasoningTokensDropdown } from '@/chats/assitantcontexts/reasoning_tokens_dropdown';
 import {
 	createSystemPromptItem,
 	SystemPromptDropdown,
@@ -83,17 +84,8 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 	const [isSecondaryDropdownOpen, setIsSecondaryDropdownOpen] = useState(false);
 	const [isSystemDropdownOpen, setIsSystemDropdownOpen] = useState(false);
 
-	const modelDetailsRef = useRef<HTMLDetailsElement>(null);
 	const secondaryDetailsRef = useRef<HTMLDetailsElement>(null);
 	const systemDetailsRef = useRef<HTMLDetailsElement>(null);
-
-	useCloseDetails({
-		detailsRef: modelDetailsRef,
-		events: ['mousedown'],
-		onClose: () => {
-			setIsModelDropdownOpen(false);
-		},
-	});
 
 	useCloseDetails({
 		detailsRef: secondaryDetailsRef,
@@ -209,7 +201,6 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 	return (
 		<div className="bg-base-200 mx-4 my-0 flex items-center justify-between space-x-1">
 			<ModelDropdown
-				ref={modelDetailsRef}
 				selectedModel={selectedModel}
 				setSelectedModel={setSelectedModel}
 				allOptions={allOptions}

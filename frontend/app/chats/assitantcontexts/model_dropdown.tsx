@@ -1,8 +1,12 @@
-import { type Dispatch, forwardRef, type SetStateAction } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
+import { Select, SelectItem, SelectPopover, useSelectStore, useStoreState } from '@ariakit/react';
+
 import type { ChatOption } from '@/apis/chatoption_helper';
+
+const modelKey = (m: ChatOption) => `${m.providerName}::${m.modelPresetID}`;
 
 type ModelDropdownProps = {
 	selectedModel: ChatOption;
@@ -12,58 +16,71 @@ type ModelDropdownProps = {
 	setIsOpen: Dispatch<SetStateAction<boolean>>;
 };
 
-export const ModelDropdown = forwardRef<HTMLDetailsElement, ModelDropdownProps>(function ModelDropdown(
-	{ selectedModel, setSelectedModel, allOptions, isOpen, setIsOpen },
-	detailsRef
-) {
-	/* helper to decide which item shows the ✓ icon */
-	const isCurrent = (m: ChatOption) =>
-		m.providerName === selectedModel.providerName && m.modelPresetID === selectedModel.modelPresetID;
+export function ModelDropdown({ selectedModel, setSelectedModel, allOptions, isOpen, setIsOpen }: ModelDropdownProps) {
+	const currentKey = modelKey(selectedModel);
+
+	const select = useSelectStore({
+		// value is a string key, not the full ChatOption
+		value: currentKey,
+		setValue: key => {
+			if (typeof key !== 'string') return;
+			const model = allOptions.find(m => modelKey(m) === key);
+			if (model) setSelectedModel(model);
+		},
+
+		// external open state, so parent can still control it
+		open: isOpen,
+		setOpen: setIsOpen,
+
+		placement: 'top-start', // open above the trigger
+
+		focusLoop: true, // circular keyboard navigation
+	});
+
+	const open = useStoreState(select, 'open');
+
+	const isCurrent = (m: ChatOption) => modelKey(m) === currentKey;
 
 	return (
 		<div className="flex w-full justify-center">
-			<details
-				ref={detailsRef}
-				className="dropdown dropdown-top dropdown-end w-full justify-center"
-				open={isOpen}
-				onToggle={e => {
-					setIsOpen((e.currentTarget as HTMLDetailsElement).open);
-				}}
-			>
-				<summary
+			{/* This wrapper is just for layout; no Daisy dropdown widget here */}
+			<div className="relative w-full">
+				{/* Trigger button */}
+				<Select
+					store={select}
 					className="btn btn-xs text-neutral-custom w-full flex-1 items-center overflow-hidden border-none text-center text-nowrap shadow-none"
 					title="Select Model"
 				>
 					<span className="min-w-0 truncate text-center text-xs font-normal">{selectedModel.modelDisplayName}</span>
-					{isOpen ? (
+					{/* Chevron UP when closed, DOWN when open */}
+					{open ? (
 						<FiChevronDown size={16} className="ml-1 shrink-0 md:ml-2" />
 					) : (
 						<FiChevronUp size={16} className="ml-1 shrink-0 md:ml-2" />
 					)}
-				</summary>
+				</Select>
 
-				<ul className="dropdown-content menu bg-base-100 w-full rounded-xl">
+				{/* Popover with DaisyUI-like styling, managed by Ariakit */}
+				<SelectPopover
+					store={select}
+					portal={false}
+					gutter={4}
+					autoFocusOnShow
+					sameWidth
+					className="border-base-300 bg-base-100 z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border p-1 text-xs shadow-lg outline-none"
+				>
 					{allOptions.map(model => (
-						<li
-							key={`${model.providerName}-${model.modelPresetID}`}
-							className="cursor-pointer text-xs"
-							onClick={() => {
-								setSelectedModel(model);
-								/* close the <details> dropdown manually */
-								if (detailsRef && typeof detailsRef !== 'function' && detailsRef.current) {
-									detailsRef.current.open = false;
-								}
-								setIsOpen(false);
-							}}
+						<SelectItem
+							key={modelKey(model)}
+							value={modelKey(model)}
+							className="hover:bg-base-200 data-active-item:bg-base-300 m-0 flex cursor-pointer items-center justify-between rounded-md px-2 py-1 transition-colors outline-none"
 						>
-							<a className="m-0 flex items-center justify-between p-1">
-								<span>{model.modelDisplayName}</span>
-								{isCurrent(model) && <FiCheck />}
-							</a>
-						</li>
+							<span>{model.modelDisplayName}</span>
+							{isCurrent(model) && <FiCheck />}
+						</SelectItem>
 					))}
-				</ul>
-			</details>
+				</SelectPopover>
+			</div>
 		</div>
 	);
-});
+}
