@@ -14,8 +14,8 @@
 - [x] If api errors due to token length issues etc, the reply is fully omitted. need to make same as partial response in api abort cases.
 - [x] Update ALL modals to use dialog showmodal with backdrop and escape handling.
 - [ ] ~~Check for race between build and fetch for attachment content fetch and how to resolve. For now this is ok to have as the time between these 2 is very small. If we introduce human feedback in between, we ned to look at this closely.~~
+- [x] url validation check in all modals after novalidate
 
-- [ ] url validation check in all modals after novalidate
 - [ ] With attachments, token usage display seems more important.
 - [ ] Token count in build completion data may be wrong as it doesnt really account for attachments/tool calls etc. Need to rectify the FilterMessagesByTokenCount function.
 
