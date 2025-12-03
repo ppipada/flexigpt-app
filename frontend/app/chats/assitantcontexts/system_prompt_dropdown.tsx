@@ -3,7 +3,15 @@ import { useMemo, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp, FiEdit2, FiPlus, FiTrash, FiX } from 'react-icons/fi';
 
-import { Select, SelectItem, SelectPopover, useSelectStore, useStoreState } from '@ariakit/react';
+import {
+	Select,
+	SelectItem,
+	SelectPopover,
+	Tooltip,
+	useSelectStore,
+	useStoreState,
+	useTooltipStore,
+} from '@ariakit/react';
 
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
@@ -91,6 +99,13 @@ export function SystemPromptDropdown({
 
 	const open = useStoreState(select, 'open');
 
+	// Tooltip for full prompt text on each item.
+	// - placement: 'top-start' -> above the item, left-aligned.
+	// - portal: true on <Tooltip> so it escapes the popover box.
+	const promptTooltip = useTooltipStore({ placement: 'left-end' });
+	const tooltipAnchorEl = useStoreState(promptTooltip, 'anchorElement');
+	const currentPromptText = tooltipAnchorEl?.dataset.prompt ?? '';
+
 	const handleEditItem = (item: SystemPromptItem) => {
 		setEditingItemId(item.id);
 		setIsEditOpen(true);
@@ -158,8 +173,29 @@ export function SystemPromptDropdown({
 								key={item.id}
 								value={item.id}
 								className="hover:bg-base-200 data-active-item:bg-base-300 m-0 flex cursor-pointer flex-col gap-1 rounded-md px-2 py-1 text-xs transition-colors outline-none"
+								// Used by the tooltip store to get the full prompt text
+								data-prompt={item.prompt}
+								onFocus={e => {
+									// Keyboard focus -> show tooltip above this item
+									promptTooltip.setAnchorElement(e.currentTarget as HTMLElement);
+									promptTooltip.show();
+								}}
+								onBlur={() => {
+									// Leaving item -> hide tooltip
+									promptTooltip.hide();
+									promptTooltip.setAnchorElement(null);
+								}}
+								onMouseEnter={e => {
+									// Mouse hover -> show tooltip above this item
+									promptTooltip.setAnchorElement(e.currentTarget as HTMLElement);
+									promptTooltip.show();
+								}}
+								onMouseLeave={() => {
+									// Mouse leave -> hide tooltip
+									promptTooltip.hide();
+								}}
 							>
-								{/* Title */}
+								{/* Title (truncated in list) */}
 								<div className="truncate text-start text-xs font-normal">{item.title}</div>
 
 								{/* Action row */}
@@ -236,6 +272,15 @@ export function SystemPromptDropdown({
 						</div>
 					</div>
 				</SelectPopover>
+
+				{/* Tooltip showing full prompt text, above the currently hovered/focused item */}
+				<Tooltip
+					store={promptTooltip}
+					portal
+					className="rounded-box bg-base-100 text-base-content border-base-300 max-w-xl border p-2 text-xs whitespace-pre-wrap shadow-xl"
+				>
+					{currentPromptText}
+				</Tooltip>
 
 				{/* Add Modal */}
 				<SystemPromptAddEditModal

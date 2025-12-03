@@ -12,7 +12,7 @@ export function DisablePreviousMessagesCheckbox({
 	return (
 		<div className="flex w-full items-center justify-center">
 			<div className="tooltip tooltip-top" data-tip="Send only the new message to AI.">
-				<label className="ml-2 flex items-center space-x-2 truncate">
+				<label className="ml-2 flex items-center gap-2 space-x-2 truncate">
 					<input
 						type="checkbox"
 						checked={disablePreviousMessages}
