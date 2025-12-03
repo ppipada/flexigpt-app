@@ -1,6 +1,9 @@
-import { type Dispatch, forwardRef, type SetStateAction, type SyntheticEvent, useEffect, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
+import { useEffect, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+
+import { Select, SelectItem, SelectPopover, useSelectStore, useStoreState } from '@ariakit/react';
 
 const defaultTokenOptions = [1024, 8192, 32000];
 
@@ -11,95 +14,106 @@ type ReasoningTokensDropdownProps = {
 	setIsOpen: Dispatch<SetStateAction<boolean>>;
 };
 
-export const ReasoningTokensDropdown = forwardRef<HTMLDetailsElement, ReasoningTokensDropdownProps>(
-	function ReasoningTokensDropdown({ tokens, setTokens, isOpen, setIsOpen }, detailsRef) {
-		const [customTokens, setCustomTokens] = useState<string>(String(tokens));
+export function ReasoningTokensDropdown({ tokens, setTokens, isOpen, setIsOpen }: ReasoningTokensDropdownProps) {
+	const [customTokens, setCustomTokens] = useState<string>(String(tokens));
 
-		useEffect(() => {
-			setCustomTokens(String(tokens));
-		}, [tokens]);
+	useEffect(() => {
+		setCustomTokens(String(tokens));
+	}, [tokens]);
 
-		function clampTokensOnBlur() {
-			let val = parseInt(customTokens, 10);
-			if (isNaN(val)) {
-				val = 1024;
-			}
-			if (val < 1024) {
-				val = 1024;
-			}
-			setTokens(val);
+	const select = useSelectStore({
+		value: tokens.toString(),
+		setValue: value => {
+			if (typeof value !== 'string') return;
+			let v = parseInt(value, 10);
+			if (isNaN(v)) return;
+			if (v < 1024) v = 1024;
+			setTokens(v);
+		},
+		open: isOpen,
+		setOpen: setIsOpen,
+		placement: 'top-start',
+		focusLoop: true,
+	});
 
-			if (detailsRef && typeof detailsRef !== 'function' && detailsRef.current) {
-				detailsRef.current.open = false;
-			}
-			setIsOpen(false);
+	const open = useStoreState(select, 'open');
+
+	function clampTokensOnBlur() {
+		let val = parseInt(customTokens, 10);
+		if (isNaN(val)) {
+			val = 1024;
 		}
-
-		return (
-			<div className="flex w-full justify-center">
-				<details
-					ref={detailsRef}
-					className="dropdown dropdown-top dropdown-end w-full justify-center"
-					onToggle={(event: SyntheticEvent<HTMLElement>) => {
-						setIsOpen((event.currentTarget as HTMLDetailsElement).open);
-					}}
-					open={isOpen}
-				>
-					<summary
-						className="btn btn-xs text-neutral-custom w-full flex-1 items-center overflow-hidden border-none text-center text-nowrap shadow-none"
-						title="Set Tokens"
-					>
-						<span className="mr-2 text-xs font-normal sm:hidden">Tokens:</span>
-						<span className="mr-2 hidden text-xs font-normal sm:inline">Effort Tokens:</span>
-						<span className="text-xs font-normal">{tokens}</span>
-						{isOpen ? (
-							<FiChevronDown size={16} className="ml-1 shrink-0 md:ml-2" />
-						) : (
-							<FiChevronUp size={16} className="ml-1 shrink-0 md:ml-2" />
-						)}
-					</summary>
-
-					<ul className="dropdown-content menu bg-base-100 w-full rounded-xl p-4">
-						{defaultTokenOptions.map(tk => (
-							<li
-								key={tk}
-								className="cursor-pointer text-xs"
-								onClick={() => {
-									setTokens(tk);
-									if (detailsRef && typeof detailsRef !== 'function' && detailsRef.current) {
-										detailsRef.current.open = false;
-									}
-									setIsOpen(false);
-								}}
-							>
-								<a className="m-0 items-center justify-between p-1">
-									<span>{tk}</span>
-									{tokens === tk && <FiCheck />}
-								</a>
-							</li>
-						))}
-
-						<li className="text-xs">
-							<hr className="border-neutral/20 my-2 border-0 border-t p-0" />
-							<label className="tooltip tooltip-top border-none outline-none">
-								<div className="tooltip-content">
-									<div className="text-xs">Custom tokens (≥ 1024)</div>
-								</div>
-								<input
-									type="text"
-									className="input input-xs w-full"
-									placeholder="Enter a custom integer ≥ 1024"
-									value={customTokens}
-									onChange={e => {
-										setCustomTokens(e.target.value);
-									}}
-									onBlur={clampTokensOnBlur}
-								/>
-							</label>
-						</li>
-					</ul>
-				</details>
-			</div>
-		);
+		if (val < 1024) {
+			val = 1024;
+		}
+		setTokens(val);
+		setIsOpen(false);
 	}
-);
+
+	return (
+		<div className="flex w-full justify-center">
+			<div className="relative w-full">
+				<Select
+					store={select}
+					className="btn btn-xs text-neutral-custom w-full flex-1 items-center overflow-hidden border-none text-center text-nowrap shadow-none"
+					title="Set Tokens"
+				>
+					<span className="mr-2 text-xs font-normal sm:hidden">Tokens:</span>
+					<span className="mr-2 hidden text-xs font-normal sm:inline">Effort Tokens:</span>
+					<span className="text-xs font-normal">{tokens}</span>
+					{open ? (
+						<FiChevronDown size={16} className="ml-1 shrink-0 md:ml-2" />
+					) : (
+						<FiChevronUp size={16} className="ml-1 shrink-0 md:ml-2" />
+					)}
+				</Select>
+
+				<SelectPopover
+					store={select}
+					portal={false}
+					gutter={4}
+					autoFocusOnShow
+					sameWidth
+					className="border-base-300 bg-base-100 z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border p-4 text-xs shadow-lg outline-none"
+				>
+					{/* Preset token options */}
+					{defaultTokenOptions.map(tk => (
+						<SelectItem
+							key={tk}
+							value={tk.toString()}
+							className="hover:bg-base-200 data-active-item:bg-base-300 m-0 flex cursor-pointer items-center justify-between rounded-md px-2 py-1 text-xs transition-colors outline-none"
+						>
+							<span>{tk}</span>
+							{tokens === tk && <FiCheck />}
+						</SelectItem>
+					))}
+
+					{/* Custom token input */}
+					<div className="border-neutral/20 mt-2 border-t pt-2 text-xs">
+						<label className="tooltip tooltip-top w-full border-none outline-none">
+							<div className="tooltip-content">
+								<div className="text-xs">Custom tokens (≥ 1024)</div>
+							</div>
+							<input
+								type="text"
+								className="input input-xs w-full"
+								placeholder="Enter a custom integer ≥ 1024"
+								value={customTokens}
+								onChange={e => {
+									setCustomTokens(e.target.value);
+								}}
+								onBlur={clampTokensOnBlur}
+								onKeyDown={e => {
+									if (e.key === 'Enter') {
+										e.preventDefault();
+										clampTokensOnBlur();
+									}
+								}}
+							/>
+						</label>
+					</div>
+				</SelectPopover>
+			</div>
+		</div>
+	);
+}

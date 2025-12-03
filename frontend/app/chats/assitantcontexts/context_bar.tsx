@@ -1,17 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { FiSliders } from 'react-icons/fi';
 
 import { type ReasoningLevel, ReasoningType } from '@/spec/modelpreset';
-
-import { useCloseDetails } from '@/hooks/use_close_details';
 
 import { type ChatOption, DefaultChatOptions, getChatInputOptions } from '@/apis/chatoption_helper';
 
 import { AdvancedParamsModal } from '@/chats/assitantcontexts/advanced_params_modal';
 import { DisablePreviousMessagesCheckbox } from '@/chats/assitantcontexts/disable_checkbox';
 import { ModelDropdown } from '@/chats/assitantcontexts/model_dropdown';
-import { HybridReasoningCheckbox } from '@/chats/assitantcontexts/reasoning_hybrid';
+import { HybridReasoningCheckbox } from '@/chats/assitantcontexts/reasoning_hybrid_checkbox';
 import { SingleReasoningDropdown } from '@/chats/assitantcontexts/reasoning_levels_dropdown';
 import { ReasoningTokensDropdown } from '@/chats/assitantcontexts/reasoning_tokens_dropdown';
 import {
@@ -38,7 +36,6 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 		const r = await getChatInputOptions();
 		setSelectedModel(r.default);
 		setAllOptions(r.allOptions);
-		setIsHybridReasoningEnabled(r.default.reasoning?.type === ReasoningType.HybridWithTokens);
 		// Seed system prompts with current default if available
 		const initialSP = r.default.systemPrompt.trim();
 		if (initialSP) {
@@ -54,7 +51,7 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 
 	useEffect(() => {
 		setIsHybridReasoningEnabled(selectedModel.reasoning?.type === ReasoningType.HybridWithTokens);
-	}, [selectedModel]);
+	}, [selectedModel.reasoning?.type]);
 
 	useEffect(() => {
 		const sp = selectedModel.systemPrompt.trim();
@@ -83,25 +80,6 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 	const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
 	const [isSecondaryDropdownOpen, setIsSecondaryDropdownOpen] = useState(false);
 	const [isSystemDropdownOpen, setIsSystemDropdownOpen] = useState(false);
-
-	const secondaryDetailsRef = useRef<HTMLDetailsElement>(null);
-	const systemDetailsRef = useRef<HTMLDetailsElement>(null);
-
-	useCloseDetails({
-		detailsRef: secondaryDetailsRef,
-		events: ['mousedown'],
-		onClose: () => {
-			setIsSecondaryDropdownOpen(false);
-		},
-	});
-
-	useCloseDetails({
-		detailsRef: systemDetailsRef,
-		events: ['mousedown'],
-		onClose: () => {
-			setIsSystemDropdownOpen(false);
-		},
-	});
 
 	const [isAdvancedModalOpen, setIsAdvancedModalOpen] = useState(false);
 
@@ -220,7 +198,6 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 			{selectedModel.reasoning?.type === ReasoningType.HybridWithTokens ? (
 				isHybridReasoningEnabled ? (
 					<ReasoningTokensDropdown
-						ref={secondaryDetailsRef}
 						tokens={selectedModel.reasoning.tokens}
 						setTokens={setHybridTokens}
 						isOpen={isSecondaryDropdownOpen}
@@ -228,7 +205,6 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 					/>
 				) : (
 					<TemperatureDropdown
-						ref={secondaryDetailsRef}
 						temperature={selectedModel.temperature ?? 0.1}
 						setTemperature={setTemperature}
 						isOpen={isSecondaryDropdownOpen}
@@ -237,7 +213,6 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 				)
 			) : selectedModel.reasoning?.type === ReasoningType.SingleWithLevels ? (
 				<SingleReasoningDropdown
-					ref={secondaryDetailsRef}
 					reasoningLevel={selectedModel.reasoning.level}
 					setReasoningLevel={setReasoningLevel}
 					isOpen={isSecondaryDropdownOpen}
@@ -245,7 +220,6 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 				/>
 			) : (
 				<TemperatureDropdown
-					ref={secondaryDetailsRef}
 					temperature={selectedModel.temperature ?? 0.1}
 					setTemperature={setTemperature}
 					isOpen={isSecondaryDropdownOpen}
@@ -254,7 +228,6 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 			)}
 
 			<SystemPromptDropdown
-				ref={systemDetailsRef}
 				prompts={systemPrompts}
 				selectedPromptId={systemPrompts.find(i => i.prompt === (selectedModel.systemPrompt.trim() || ''))?.id}
 				onSelect={selectSystemPrompt}
@@ -273,19 +246,23 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 
 			{/* ---------------- Advanced params button ----------------------- */}
 			<div className="flex items-center justify-center">
-				<button
-					type="button"
-					className="btn btn-xs btn-ghost text-neutral-custom m-1"
-					onClick={() => {
-						setIsAdvancedModalOpen(true);
-					}}
-					title="Set Advanced Params"
+				<div
+					className="tooltip tooltip-left too"
+					data-tip="Set advanced parameters (streaming, prompt/output length, timeout, etc.)"
 				>
-					<FiSliders size={14} />
-				</button>
+					<button
+						type="button"
+						className="btn btn-xs btn-ghost text-neutral-custom m-1"
+						onClick={() => {
+							setIsAdvancedModalOpen(true);
+						}}
+					>
+						<FiSliders size={14} />
+					</button>
+				</div>
 			</div>
+
 			{/* ---------------- Advanced params modal -------------------------- */}
-			{/* {isAdvancedModalOpen && ( */}
 			<AdvancedParamsModal
 				isOpen={isAdvancedModalOpen}
 				onClose={() => {
@@ -294,10 +271,8 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 				currentModel={selectedModel}
 				onSave={(updatedModel: ChatOption) => {
 					setSelectedModel(updatedModel);
-					// setIsAdvancedModalOpen(false);
 				}}
 			/>
-			{/* )} */}
 		</div>
 	);
 }

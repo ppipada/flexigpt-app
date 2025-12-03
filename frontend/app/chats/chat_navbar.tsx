@@ -81,16 +81,17 @@ export const ChatNavBar = forwardRef<ChatNavBarHandle, ChatNavBarProps>(function
 			{/* controls / title ------------------------------------ */}
 			<div className="flex items-center justify-between bg-transparent p-2">
 				{/* new chat */}
-				<button
-					className="btn btn-sm btn-ghost mx-1"
-					onClick={onNewChat}
-					disabled={disabled}
-					aria-label="Create New Chat"
-					title="Create New Chat"
-				>
-					<FiPlus size={20} />
-				</button>
-
+				<div className="tooltip tooltip-right" data-tip="Create New Chat">
+					<button
+						className="btn btn-sm btn-ghost mx-1"
+						onClick={onNewChat}
+						disabled={disabled}
+						aria-label="Create New Chat"
+						title="Create New Chat"
+					>
+						<FiPlus size={20} />
+					</button>
+				</div>
 				{/* title or editor */}
 				<div className="flex flex-1 justify-center px-2">
 					{isEditing ? (
@@ -123,28 +124,32 @@ export const ChatNavBar = forwardRef<ChatNavBarHandle, ChatNavBarProps>(function
 				</div>
 
 				{/* edit title */}
-				<button
-					className="btn btn-sm btn-ghost mx-1"
-					onClick={() => {
-						if (!editDisabled) setIsEditing(true);
-					}}
-					disabled={editDisabled}
-					aria-label="Rename Conversation"
-					title="Rename Conversation"
-				>
-					<FiEdit2 size={20} />
-				</button>
+				<div className="tooltip tooltip-left" data-tip="Rename Conversation">
+					<button
+						className="btn btn-sm btn-ghost mx-1"
+						onClick={() => {
+							if (!editDisabled) setIsEditing(true);
+						}}
+						disabled={editDisabled}
+						aria-label="Rename Conversation"
+						title="Rename Conversation"
+					>
+						<FiEdit2 size={20} />
+					</button>
+				</div>
 
 				{/* download */}
-				<DownloadButton
-					language="json"
-					valueFetcher={getConversationForExport}
-					size={20}
-					fileprefix="conversation"
-					className="btn btn-sm btn-ghost mx-1"
-					aria-label="Export Chat"
-					title="Export Chat"
-				/>
+				<div className="tooltip tooltip-left" data-tip="Export Conversation As JSON">
+					<DownloadButton
+						language="json"
+						valueFetcher={getConversationForExport}
+						size={20}
+						fileprefix="conversation"
+						className="btn btn-sm btn-ghost mx-1"
+						aria-label="Export Chat"
+						title="Export Chat"
+					/>
+				</div>
 			</div>
 		</div>
 	);

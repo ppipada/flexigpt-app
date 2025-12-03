@@ -11,18 +11,20 @@ export function DisablePreviousMessagesCheckbox({
 }: DisablePreviousMessagesCheckboxProps) {
 	return (
 		<div className="flex w-full items-center justify-center">
-			<label className="ml-2 flex items-center space-x-2 truncate" title="Send only the new message to AI">
-				<input
-					type="checkbox"
-					checked={disablePreviousMessages}
-					onChange={e => {
-						setDisablePreviousMessages(e.target.checked);
-					}}
-					className="checkbox checkbox-xs m-1 rounded-full"
-					spellCheck="false"
-				/>
-				<span className="text-neutral-custom text-xs text-nowrap">Ignore chat</span>
-			</label>
+			<div className="tooltip tooltip-top" data-tip="Send only the new message to AI.">
+				<label className="ml-2 flex items-center space-x-2 truncate">
+					<input
+						type="checkbox"
+						checked={disablePreviousMessages}
+						onChange={e => {
+							setDisablePreviousMessages(e.target.checked);
+						}}
+						className="checkbox checkbox-xs m-1 rounded-full"
+						spellCheck="false"
+					/>
+					<span className="text-neutral-custom text-xs text-nowrap">Ignore chat</span>
+				</label>
+			</div>
 		</div>
 	);
 }

@@ -1,6 +1,9 @@
-import { type Dispatch, forwardRef, type SetStateAction, useMemo, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
+import { useMemo, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp, FiEdit2, FiPlus, FiTrash, FiX } from 'react-icons/fi';
+
+import { Select, SelectItem, SelectPopover, useSelectStore, useStoreState } from '@ariakit/react';
 
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
@@ -42,190 +45,197 @@ type SystemPromptDropdownProps = {
 	setIsOpen: Dispatch<SetStateAction<boolean>>;
 };
 
-export const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptDropdownProps>(
-	function SystemPromptDropdown(
-		{ prompts, selectedPromptId, onSelect, onAdd, onEdit, onRemove, onClear, isOpen, setIsOpen },
-		detailsRef
-	) {
-		const [isAddOpen, setIsAddOpen] = useState(false);
-		const [isEditOpen, setIsEditOpen] = useState(false);
-		const [editingItemId, setEditingItemId] = useState<string | null>(null);
-		const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-		const [itemPendingDelete, setItemPendingDelete] = useState<SystemPromptItem | null>(null);
+export function SystemPromptDropdown({
+	prompts,
+	selectedPromptId,
+	onSelect,
+	onAdd,
+	onEdit,
+	onRemove,
+	onClear,
+	isOpen,
+	setIsOpen,
+}: SystemPromptDropdownProps) {
+	const [isAddOpen, setIsAddOpen] = useState(false);
+	const [isEditOpen, setIsEditOpen] = useState(false);
+	const [editingItemId, setEditingItemId] = useState<string | null>(null);
+	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+	const [itemPendingDelete, setItemPendingDelete] = useState<SystemPromptItem | null>(null);
 
-		const editingItem = useMemo(() => prompts.find(p => p.id === editingItemId) || null, [prompts, editingItemId]);
+	const editingItem = useMemo(() => prompts.find(p => p.id === editingItemId) || null, [prompts, editingItemId]);
 
-		function closeDropdown() {
-			if (detailsRef && typeof detailsRef !== 'function' && detailsRef.current) {
-				detailsRef.current.open = false;
+	const select = useSelectStore({
+		value: selectedPromptId ?? '',
+		setValue: id => {
+			if (typeof id !== 'string') return;
+
+			if (!id) {
+				onClear();
+				return;
 			}
-			setIsOpen(false);
-		}
+			const item = prompts.find(p => p.id === id);
+			if (!item) return;
 
-		const handleSelectItem = (item: SystemPromptItem) => {
-			if (selectedPromptId === item.id) {
-				// Toggle off if clicking the selected one
+			// Clicking the same item again toggles off
+			if (selectedPromptId === id) {
 				onClear();
 			} else {
 				onSelect(item);
 			}
-			closeDropdown();
-		};
+		},
+		open: isOpen,
+		setOpen: setIsOpen,
+		placement: 'top-start',
+		focusLoop: true,
+	});
 
-		const handleEditItem = (item: SystemPromptItem) => {
-			setEditingItemId(item.id);
-			setIsEditOpen(true);
-			closeDropdown();
-		};
+	const open = useStoreState(select, 'open');
 
-		const handleRemoveItem = (item: SystemPromptItem) => {
-			if (item.locked) return;
-			setItemPendingDelete(item);
-			setIsDeleteOpen(true);
-			closeDropdown();
-		};
+	const handleEditItem = (item: SystemPromptItem) => {
+		setEditingItemId(item.id);
+		setIsEditOpen(true);
+		setIsOpen(false);
+	};
 
-		const handleConfirmDelete = () => {
-			if (!itemPendingDelete) return;
+	const handleRemoveItem = (item: SystemPromptItem) => {
+		if (item.locked) return;
+		setItemPendingDelete(item);
+		setIsDeleteOpen(true);
+		setIsOpen(false);
+	};
 
-			if (selectedPromptId === itemPendingDelete.id) {
-				onClear();
-			}
-			onRemove(itemPendingDelete.id);
+	const handleConfirmDelete = () => {
+		if (!itemPendingDelete) return;
 
-			setItemPendingDelete(null);
-			setIsDeleteOpen(false);
-		};
+		if (selectedPromptId === itemPendingDelete.id) {
+			onClear();
+		}
+		onRemove(itemPendingDelete.id);
 
-		const handleCancelDelete = () => {
-			setItemPendingDelete(null);
-			setIsDeleteOpen(false);
-		};
+		setItemPendingDelete(null);
+		setIsDeleteOpen(false);
+	};
 
-		return (
-			<div className="flex w-full justify-center">
-				<details
-					ref={detailsRef}
-					className="dropdown dropdown-top dropdown-end w-full justify-center"
-					open={isOpen}
-					onToggle={e => {
-						setIsOpen((e.currentTarget as HTMLDetailsElement).open);
-					}}
+	const handleCancelDelete = () => {
+		setItemPendingDelete(null);
+		setIsDeleteOpen(false);
+	};
+
+	const hasPrompts = prompts.length > 0;
+
+	return (
+		<div className="flex w-full justify-center">
+			<div className="relative w-full">
+				<Select
+					store={select}
+					className="btn btn-xs text-neutral-custom w-full flex-1 items-center overflow-hidden border-none text-center text-nowrap shadow-none"
+					title={selectedPromptId ? 'System Prompt (enabled)' : 'System Prompt (disabled)'}
 				>
-					<summary
-						className="btn btn-xs text-neutral-custom w-full flex-1 items-center overflow-hidden border-none text-center text-nowrap shadow-none"
-						title={selectedPromptId ? 'System Prompt (enabled)' : 'System Prompt (disabled)'}
-					>
-						<span className="min-w-0 truncate text-center text-xs font-normal">System Prompt?</span>
-						{selectedPromptId ? (
-							<FiCheck size={16} className="m-0 shrink-0 p-0" />
-						) : (
-							<FiX size={16} className="m-0 shrink-0 p-0" />
-						)}{' '}
-						<span className="text-xs font-normal"></span>
-						{isOpen ? (
-							<FiChevronDown size={16} className="ml-2 shrink-0" />
-						) : (
-							<FiChevronUp size={16} className="ml-2 shrink-0" />
-						)}
-					</summary>
+					<span className="min-w-0 truncate text-center text-xs font-normal">System Prompt?</span>
+					{selectedPromptId ? (
+						<FiCheck size={16} className="m-0 shrink-0 p-0" />
+					) : (
+						<FiX size={16} className="m-0 shrink-0 p-0" />
+					)}
+					{open ? (
+						<FiChevronDown size={16} className="ml-2 shrink-0" />
+					) : (
+						<FiChevronUp size={16} className="ml-2 shrink-0" />
+					)}
+				</Select>
 
-					<ul className="dropdown-content menu bg-base-100 w-full rounded-xl p-1">
-						{prompts.length > 0 ? (
-							prompts.map(item => (
-								<li key={item.id} className="w-full p-1">
-									{/* ---------- title (now really truncates) --------------------- */}
-									<div className="pointer-events-none w-full px-0 py-1 hover:bg-inherit hover:shadow-none">
-										<span className="truncate text-start text-xs font-normal">{item.title}</span>
-									</div>
-									{/* ---------- action row --------------------------------------- */}
-									<div className="flex items-center gap-1 p-0 hover:bg-inherit hover:shadow-none">
-										{/* chip / select button (left) */}
-										{selectedPromptId === item.id ? (
-											<span className="bg-success/10 text-success inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
-												<FiCheck className="h-3 w-3" />
-												Current
-											</span>
-										) : (
-											<button
-												type="button"
-												className="btn btn-ghost btn-xs px-2"
-												onClick={() => {
-													handleSelectItem(item);
-												}}
-												title="Use this prompt"
-											>
-												Use
-											</button>
-										)}
+				<SelectPopover
+					store={select}
+					portal={false}
+					gutter={4}
+					autoFocusOnShow
+					sameWidth
+					className="border-base-300 bg-base-100 z-50 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border p-1 text-xs shadow-lg outline-none"
+				>
+					{hasPrompts ? (
+						prompts.map(item => (
+							<SelectItem
+								key={item.id}
+								value={item.id}
+								className="hover:bg-base-200 data-active-item:bg-base-300 m-0 flex cursor-pointer flex-col gap-1 rounded-md px-2 py-1 text-xs transition-colors outline-none"
+							>
+								{/* Title */}
+								<div className="truncate text-start text-xs font-normal">{item.title}</div>
 
-										{/* edit + delete (right) */}
-										<div className="ml-auto flex gap-1">
-											<button
-												type="button"
-												className="btn btn-ghost btn-xs"
-												title="Edit"
-												onClick={e => {
-													e.stopPropagation();
-													handleEditItem(item);
-												}}
-											>
-												<FiEdit2 size={12} />
-											</button>
-											<button
-												type="button"
-												className="btn btn-ghost btn-xs"
-												title={item.locked ? 'Cannot delete default prompt' : 'Delete'}
-												disabled={item.locked}
-												onClick={e => {
-													e.stopPropagation();
-													handleRemoveItem(item);
-												}}
-											>
-												<FiTrash size={12} />
-											</button>
-										</div>
+								{/* Action row */}
+								<div className="flex items-center gap-1">
+									{selectedPromptId === item.id && (
+										<span className="bg-success/10 text-success inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
+											<FiCheck className="h-3 w-3" />
+											Current
+										</span>
+									)}
+
+									<div className="ml-auto flex gap-1">
+										<button
+											type="button"
+											className="btn btn-ghost btn-xs"
+											title="Edit"
+											onClick={e => {
+												e.stopPropagation();
+												e.preventDefault();
+												handleEditItem(item);
+											}}
+										>
+											<FiEdit2 size={12} />
+										</button>
+										<button
+											type="button"
+											className="btn btn-ghost btn-xs"
+											title={item.locked ? 'Cannot delete default prompt' : 'Delete'}
+											disabled={item.locked}
+											onClick={e => {
+												e.stopPropagation();
+												e.preventDefault();
+												handleRemoveItem(item);
+											}}
+										>
+											<FiTrash size={12} />
+										</button>
 									</div>
-								</li>
-							))
-						) : (
-							<li className="text-xs opacity-70">
-								<div className="m-0 flex cursor-default items-center justify-between p-1">
-									<span>No saved prompts</span>
 								</div>
-							</li>
-						)}
+							</SelectItem>
+						))
+					) : (
+						<div className="m-0 flex cursor-default items-center justify-between rounded-md px-2 py-1 text-xs opacity-70">
+							<span>No saved prompts</span>
+						</div>
+					)}
 
-						<li className="text-xs">
-							<hr className="border-neutral/20 my-1 border-0 border-t p-0" />
-							<div className="flex items-center justify-between p-1 hover:bg-inherit hover:shadow-none">
-								<button
-									type="button"
-									className="btn btn-ghost btn-xs rounded-lg"
-									onClick={() => {
-										closeDropdown();
-										setIsAddOpen(true);
-									}}
-								>
-									<FiPlus size={14} className="mr-1" /> Add
-								</button>
+					{/* Add / Clear row */}
+					<div className="border-neutral/20 mt-1 border-t pt-1 text-xs">
+						<div className="flex items-center justify-between p-1">
+							<button
+								type="button"
+								className="btn btn-ghost btn-xs rounded-lg"
+								onClick={() => {
+									setIsOpen(false);
+									setIsAddOpen(true);
+								}}
+							>
+								<FiPlus size={14} className="mr-1" /> Add
+							</button>
 
-								<button
-									type="button"
-									className="btn btn-ghost btn-xs rounded-lg"
-									onClick={() => {
-										onClear();
-										closeDropdown();
-									}}
-									title="Clear current system prompt"
-									disabled={!selectedPromptId}
-								>
-									<FiX size={14} className="mr-1" /> Clear
-								</button>
-							</div>
-						</li>
-					</ul>
-				</details>
+							<button
+								type="button"
+								className="btn btn-ghost btn-xs rounded-lg"
+								onClick={() => {
+									onClear();
+									setIsOpen(false);
+								}}
+								title="Clear current system prompt"
+								disabled={!selectedPromptId}
+							>
+								<FiX size={14} className="mr-1" /> Clear
+							</button>
+						</div>
+					</div>
+				</SelectPopover>
 
 				{/* Add Modal */}
 				<SystemPromptAddEditModal
@@ -258,6 +268,7 @@ export const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptD
 					}}
 				/>
 
+				{/* Delete confirmation */}
 				<DeleteConfirmationModal
 					isOpen={isDeleteOpen}
 					onClose={handleCancelDelete}
@@ -271,6 +282,6 @@ export const SystemPromptDropdown = forwardRef<HTMLDetailsElement, SystemPromptD
 					confirmButtonText="Remove"
 				/>
 			</div>
-		);
-	}
-);
+		</div>
+	);
+}

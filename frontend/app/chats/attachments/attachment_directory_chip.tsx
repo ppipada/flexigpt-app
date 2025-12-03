@@ -1,7 +1,7 @@
 // attachment_dir_chip.tsx
 import { FiAlertTriangle, FiChevronDown, FiFolder, FiX } from 'react-icons/fi';
 
-import { Menu, MenuButton, useMenuStore } from '@ariakit/react';
+import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
 import { AttachmentMode } from '@/spec/attachment';
 
@@ -98,7 +98,7 @@ export function DirectoryChip({
 			<Menu
 				store={directoryMenu}
 				gutter={6}
-				className="rounded-box bg-base-100 text-base-content border-base-300 z-50 max-h-72 min-w-[260px] overflow-y-auto border p-2 shadow-xl"
+				className="rounded-box bg-base-100 text-base-content border-base-300 z-50 max-h-72 min-w-[260px] overflow-y-auto border p-2 shadow-xl focus-visible:outline-none"
 				autoFocusOnShow
 			>
 				<div className="text-base-content/70 mb-1 text-[11px] font-semibold">Files in “{group.label}”</div>
@@ -108,14 +108,19 @@ export function DirectoryChip({
 					if (!att) return null;
 
 					return (
-						<div key={key} className="mb-1 last:mb-0">
+						<MenuItem
+							key={key}
+							store={directoryMenu}
+							hideOnClick={false} // keep menu open when interacting with chip
+							className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
+						>
 							<AttachmentChip
 								attachment={att}
 								onRemoveAttachment={onRemoveAttachment}
 								onChangeAttachmentMode={onChangeAttachmentMode}
 								fullWidth
 							/>
-						</div>
+						</MenuItem>
 					);
 				})}
 
@@ -124,7 +129,12 @@ export function DirectoryChip({
 						{group.overflowDirs.map(od => {
 							const rel = od.relativePath || od.dirPath;
 							return (
-								<div key={od.dirPath} className="bg-base-200/60 flex items-start gap-2 rounded-xl px-2 py-1">
+								<MenuItem
+									key={od.dirPath}
+									store={directoryMenu}
+									hideOnClick={false}
+									className="bg-base-200/60 data-active-item:bg-base-200 flex items-start gap-2 rounded-xl px-2 py-1"
+								>
 									<FiAlertTriangle size={14} className="text-warning mt-0.5" />
 									<div className="min-w-0 flex-1">
 										<div
@@ -158,7 +168,7 @@ export function DirectoryChip({
 											<FiX size={14} />
 										</button>
 									)}
-								</div>
+								</MenuItem>
 							);
 						})}
 					</div>
