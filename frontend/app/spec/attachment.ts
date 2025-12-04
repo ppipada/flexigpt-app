@@ -94,6 +94,25 @@ export interface AttachmentGenericRef {
 	origHandle: string;
 }
 
+/**
+ * @public
+ */
+export enum ContentBlockKind {
+	text = 'text',
+	image = 'image',
+	file = 'file',
+}
+
+/**
+ * @public
+ */
+export interface ContentBlock {
+	kind: ContentBlockKind;
+	text?: string;
+	base64Data?: string;
+	mimeType?: string;
+	fileName?: string;
+}
 // Attachment references contextual artifacts (files, images, doc handles, etc.).
 export interface Attachment {
 	kind: AttachmentKind;
@@ -106,6 +125,8 @@ export interface Attachment {
 	imageRef?: AttachmentImageRef;
 	urlRef?: AttachmentURLRef;
 	genericRef?: AttachmentGenericRef;
+
+	contentBlock?: ContentBlock;
 }
 
 export interface FileFilter {

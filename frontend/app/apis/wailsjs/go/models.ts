@@ -1,5 +1,25 @@
 export namespace attachment {
 	
+	export class ContentBlock {
+	    kind: string;
+	    text?: string;
+	    base64Data?: string;
+	    mimeType?: string;
+	    fileName?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ContentBlock(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.text = source["text"];
+	        this.base64Data = source["base64Data"];
+	        this.mimeType = source["mimeType"];
+	        this.fileName = source["fileName"];
+	    }
+	}
 	export class GenericRef {
 	    handle: string;
 	    origHandle: string;
@@ -143,6 +163,7 @@ export namespace attachment {
 	    imageRef?: ImageRef;
 	    urlRef?: URLRef;
 	    genericRef?: GenericRef;
+	    contentBlock?: ContentBlock;
 	
 	    static createFrom(source: any = {}) {
 	        return new Attachment(source);
@@ -158,6 +179,7 @@ export namespace attachment {
 	        this.imageRef = this.convertValues(source["imageRef"], ImageRef);
 	        this.urlRef = this.convertValues(source["urlRef"], URLRef);
 	        this.genericRef = this.convertValues(source["genericRef"], GenericRef);
+	        this.contentBlock = this.convertValues(source["contentBlock"], ContentBlock);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -178,6 +200,7 @@ export namespace attachment {
 		    return a;
 		}
 	}
+	
 	export class DirectoryAttachmentsResult {
 	    dirPath: string;
 	    attachments: Attachment[];

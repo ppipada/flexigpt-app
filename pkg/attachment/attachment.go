@@ -187,9 +187,8 @@ func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
 		return buildUnreadableFileAttachment(*pathInfo), nil
 
 	default:
-		// Unknown / binary. We still keep it as a file attachment but mark
-		// it not-readable so BuildContentBlock produces a short placeholder
-		// instead of trying to read it.
+		// Unknown / binary. We still keep it as a file attachment but mark it not-readable so BuildContentBlock
+		// produces a short placeholder instead of trying to read it.
 		return buildUnreadableFileAttachment(*pathInfo), nil
 
 	}
