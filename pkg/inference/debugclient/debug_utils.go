@@ -8,16 +8,6 @@ import (
 	"strings"
 )
 
-// PrintJSON logs a value as JSON at info level (unchanged helper).
-func PrintJSON(v any) {
-	p, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		slog.Info("json marshal error", "msg", err.Error())
-	} else {
-		slog.Info("request params", "json", string(p))
-	}
-}
-
 func DecodeAndPrintJSON(s string) {
 	var obj any
 	err := json.Unmarshal([]byte(s), &obj)
@@ -25,6 +15,16 @@ func DecodeAndPrintJSON(s string) {
 		slog.Info("json unmarshal error", "msg", err.Error())
 	} else {
 		PrintJSON(obj)
+	}
+}
+
+// PrintJSON logs a value as JSON at info level (unchanged helper).
+func PrintJSON(v any) {
+	p, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		slog.Info("json marshal error", "msg", err.Error())
+	} else {
+		slog.Info("request params", "json", string(p))
 	}
 }
 

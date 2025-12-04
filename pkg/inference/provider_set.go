@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
@@ -140,17 +139,11 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 		return nil, errors.New("invalid provider")
 	}
 
-	prevMessages := make([]spec.ChatCompletionDataMessage, 0, len(req.Body.PrevMessages))
-	for _, m := range req.Body.PrevMessages {
-		prevMessages = append(prevMessages, convertBuildMessageToChatMessage(m))
-	}
-	currentMessage := convertBuildMessageToChatMessage(req.Body.CurrentMessage)
-
 	resp, err := p.BuildCompletionData(
 		ctx,
 		req.Body.ModelParams,
-		currentMessage,
-		prevMessages,
+		req.Body.CurrentMessage,
+		req.Body.PrevMessages,
 	)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("error in building completion data"))
@@ -319,27 +312,6 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 
 	data.ToolChoices = tools
 	return nil
-}
-
-func convertBuildMessageToChatMessage(
-	msg spec.ChatCompletionDataMessage,
-) spec.ChatCompletionDataMessage {
-	out := spec.ChatCompletionDataMessage{
-		Role: msg.Role,
-	}
-	if msg.Content != nil {
-		c := *msg.Content
-		out.Content = &c
-	}
-	if msg.Name != nil {
-		n := *msg.Name
-		out.Name = &n
-	}
-	if len(msg.Attachments) > 0 {
-		out.Attachments = make([]attachment.Attachment, len(msg.Attachments))
-		copy(out.Attachments, msg.Attachments)
-	}
-	return out
 }
 
 func isProviderSDKTypeSupported(t modelpresetSpec.ProviderSDKType) bool {

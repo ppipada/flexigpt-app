@@ -77,20 +77,14 @@ func (ref *FileRef) IsModified() bool {
 	return false
 }
 
-func buildBlocksForLocalFile(ctx context.Context, att *Attachment, mode AttachmentMode) (*ContentBlock, error) {
+func buildBlocksForLocalFile(ctx context.Context, att *Attachment, onlyIfTextKind bool) (*ContentBlock, error) {
 	path := att.FileRef.Path
 
-	switch mode {
-	case AttachmentModeText:
-		mimeType, extensionMode, err := fileutil.MIMEForLocalFile(path)
-		if err == nil && (extensionMode == fileutil.ExtensionModeText || mimeType == fileutil.MIMEApplicationPDF) {
-			// Text mode mimes and pdf with text extraction is supported.
-			return getTextBlock(att)
-		}
-		// Could not detect mime or non pdf text attachment sent, render as unreadable file.
-		return getUnreadableBlock(att)
-
+	switch att.Mode {
 	case AttachmentModeImage:
+		if onlyIfTextKind {
+			return nil, ErrNonTextContentBlock
+		}
 		// Treat a file in "image" mode as an image attachment.
 		return buildImageBlockFromLocal(path)
 
@@ -108,10 +102,16 @@ func buildBlocksForLocalFile(ctx context.Context, att *Attachment, mode Attachme
 			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentMode properly.
 			return getTextBlock(att)
 		case fileutil.ExtensionModeImage:
+			if onlyIfTextKind {
+				return nil, ErrNonTextContentBlock
+			}
 			// Images have to be attached specially.
 			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentMode properly.
 			return buildImageBlockFromLocal(path)
 		case fileutil.ExtensionModeDocument:
+			if onlyIfTextKind {
+				return nil, ErrNonTextContentBlock
+			}
 			// As of now non pdf files are not supported to be attached as b64 files in any APIs.
 			// But, as the call is reached here, we are still sending the content back as b64 content.
 			// As APIs start supporting other file types, and UI and fetch api handles things this will be seameless.
@@ -134,6 +134,15 @@ func buildBlocksForLocalFile(ctx context.Context, att *Attachment, mode Attachme
 		default:
 			return getUnreadableBlock(att)
 		}
+
+	case AttachmentModeText:
+		mimeType, extensionMode, err := fileutil.MIMEForLocalFile(path)
+		if err == nil && (extensionMode == fileutil.ExtensionModeText || mimeType == fileutil.MIMEApplicationPDF) {
+			// Text mode mimes and pdf with text extraction is supported.
+			return getTextBlock(att)
+		}
+		// Could not detect mime or non pdf text attachment sent, render as unreadable file.
+		return getUnreadableBlock(att)
 
 	case AttachmentModeNotReadable,
 		AttachmentModePageContent,

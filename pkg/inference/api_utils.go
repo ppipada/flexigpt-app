@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"log/slog"
 	"runtime/debug"
-	"slices"
 	"strings"
 
+	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	"github.com/ppipada/mapstore-go/jsonencdec"
@@ -137,14 +137,13 @@ func getCompletionData(
 		},
 	}
 
-	// Handle messages.
-	messages := slices.Clone(prevMessages)
-	for idx := range messages {
-		messages[idx].Name = nil
+	msgs := make([]spec.ChatCompletionDataMessage, 0, len(prevMessages))
+	for _, m := range prevMessages {
+		msgs = append(msgs, convertBuildMessageToChatMessage(m))
 	}
+	msgs = append(msgs, convertBuildMessageToChatMessage(currentMessage))
 
-	messages = append(messages, currentMessage)
-	completionData.Messages = messages
+	completionData.Messages = msgs
 
 	// Assuming filterMessagesByTokenCount is implemented elsewhere.
 	completionData.Messages = FilterMessagesByTokenCount(
@@ -153,6 +152,27 @@ func getCompletionData(
 	)
 
 	return &completionData
+}
+
+func convertBuildMessageToChatMessage(
+	msg spec.ChatCompletionDataMessage,
+) spec.ChatCompletionDataMessage {
+	// Keep the role, erase the name.
+	out := spec.ChatCompletionDataMessage{
+		Role: msg.Role,
+		Name: nil,
+	}
+	if msg.Content != nil {
+		c := *msg.Content
+		out.Content = &c
+	}
+
+	// Copy attachments.
+	if len(msg.Attachments) > 0 {
+		out.Attachments = make([]attachment.Attachment, len(msg.Attachments))
+		copy(out.Attachments, msg.Attachments)
+	}
+	return out
 }
 
 func toolFunctionName(ct spec.FetchCompletionToolChoice) string {

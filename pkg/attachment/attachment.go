@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/url"
 	"path/filepath"
 	"strings"
 
@@ -12,8 +11,9 @@ import (
 )
 
 var (
-	ErrContentBlockSkipped = errors.New("content block skipped")
-	ErrAttachmentModified  = errors.New("attachment modified since snapshot")
+	ErrNonTextContentBlock  = errors.New("content block is not of kind - text")
+	ErrExistingContentBlock = errors.New("content block already exists")
+	ErrAttachmentModified   = errors.New("attachment modified since snapshot")
 )
 
 type ContentBlockKind string
@@ -100,258 +100,83 @@ type DirectoryAttachmentsResult struct {
 	HasMore      bool                             `json:"hasMore"`      // true if not all content included
 }
 
-// BuildAttachmentForFile builds an Attachment for a local filesystem path.
-// It inspects the MIME type / extension and chooses an appropriate
-// AttachmentKind, default Mode, and AvailableModes.
-// The returned attachment is fully populated via PopulateRef().
-// Note that this builds a fresh attachment, i.e both original ref and current are populated here.
-func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
-	if pathInfo == nil {
-		return nil, errors.New("invalid input pathinfo")
-	}
+type buildContentBlockOptions struct {
+	OverrideOriginal bool
+	OnlyIfTextKind   bool
+	ForceFetch       bool
+}
 
-	if !pathInfo.Exists {
-		return nil, fmt.Errorf("file does not exist: %s", pathInfo.Path)
-	}
-	if pathInfo.IsDir {
-		return nil, fmt.Errorf("path %q is a directory; expected file", pathInfo.Path)
-	}
+type ContentBlockOption func(*buildContentBlockOptions)
 
-	mimeType, extMode, err := fileutil.MIMEForLocalFile(pathInfo.Path)
-	if err != nil {
-		return nil, err
-	}
-
-	baseName := filepath.Base(pathInfo.Path)
-
-	switch extMode {
-	case fileutil.ExtensionModeImage:
-		// Treat images as dedicated image attachments.
-		att := &Attachment{
-			Kind:  AttachmentImage,
-			Label: baseName,
-			Mode:  AttachmentModeImage,
-			AvailableModes: []AttachmentMode{
-				AttachmentModeImage,
-			},
-			ImageRef: &ImageRef{
-				ImageInfo: fileutil.ImageInfo{
-					PathInfo: *pathInfo,
-				},
-			},
-		}
-		if err := att.PopulateRef(); err != nil {
-			return nil, err
-		}
-		return att, nil
-
-	case fileutil.ExtensionModeText:
-		// Source code / markdown / text files: send as text by default.
-		att := &Attachment{
-			Kind:  AttachmentFile,
-			Label: baseName,
-			Mode:  AttachmentModeText,
-			AvailableModes: []AttachmentMode{
-				AttachmentModeText,
-			},
-			FileRef: &FileRef{
-				PathInfo: *pathInfo,
-			},
-		}
-		if err := att.PopulateRef(); err != nil {
-			return nil, err
-		}
-		return att, nil
-
-	case fileutil.ExtensionModeDocument:
-		// Documents (PDF, Office, etc.).
-		// As of now APIs and we internally only support PDF docs.
-		// PDFs can be treated as text (with extraction) or as original file.
-		if mimeType != fileutil.MIMEApplicationPDF {
-			return buildUnreadableFileAttachment(*pathInfo), nil
-		}
-
-		att := &Attachment{
-			Kind:  AttachmentFile,
-			Label: baseName,
-			Mode:  AttachmentModeText,
-			AvailableModes: []AttachmentMode{
-				AttachmentModeText,
-				AttachmentModeFile,
-			},
-			FileRef: &FileRef{
-				PathInfo: *pathInfo,
-			},
-		}
-		if err := att.PopulateRef(); err != nil {
-			return nil, err
-		}
-		return att, nil
-
-	case fileutil.ExtensionModeDefault:
-		return buildUnreadableFileAttachment(*pathInfo), nil
-
-	default:
-		// Unknown / binary. We still keep it as a file attachment but mark it not-readable so BuildContentBlock
-		// produces a short placeholder instead of trying to read it.
-		return buildUnreadableFileAttachment(*pathInfo), nil
-
+// WithOverrideOriginalContentBlock. Default false.
+// False = If this is an attachment from a previous turn whose underlying ref (file path, size, mod time, etc.) has
+// changed, do not re-send the possibly mismatched content.
+func WithOverrideOriginalContentBlock(override bool) ContentBlockOption {
+	return func(o *buildContentBlockOptions) {
+		o.OverrideOriginal = override
 	}
 }
 
-// BuildAttachmentForURL builds an Attachment for a remote URL.
-// It does:
-//   - infer default mode based on URL path extension
-//   - set AvailableModes accordingly
-//   - populate URLRef (Normalized / OrigNormalized) via PopulateRef.
-func BuildAttachmentForURL(rawURL string) (*Attachment, error) {
-	trimmed := strings.TrimSpace(rawURL)
-	if trimmed == "" {
-		return nil, errors.New("empty url")
+// WithOnlyTextKindContentBlock. Default False.
+// False = Build content block of any kind.
+// True = Return content block only if it is of kind text, else error.
+func WithOnlyTextKindContentBlock(textOnly bool) ContentBlockOption {
+	return func(o *buildContentBlockOptions) {
+		o.OnlyIfTextKind = textOnly
 	}
-
-	label := trimmed
-
-	// Infer extension from URL pathname, like the TS helper does.
-	// If parsing fails, ext stays empty and we fall back to "page".
-	ext := ""
-	if parsed, err := url.Parse(trimmed); err != nil {
-		return nil, errors.New("invalid url")
-	} else {
-		pathname := strings.ToLower(parsed.Path)
-		if pathname != "" {
-			parts := strings.Split(pathname, ".")
-			ext = parts[len(parts)-1]
-		}
-	}
-
-	// Choose default mode + available modes based on extension.
-	mode := AttachmentModePageContent
-	available := []AttachmentMode{
-		AttachmentModePageContent,
-		AttachmentModeLinkOnly,
-	}
-
-	mimeType, err := fileutil.MIMEFromExtensionString(ext)
-	if err == nil {
-		extMode, ok := fileutil.MIMETypeToExtensionMode[mimeType]
-		if ok && extMode == fileutil.ExtensionModeImage {
-			mode = AttachmentModeImage
-			available = []AttachmentMode{
-				AttachmentModeImage,
-				AttachmentModeLinkOnly, // "link"
-			}
-		} else if mimeType == fileutil.MIMEApplicationPDF {
-			mode = AttachmentModeFile
-			available = []AttachmentMode{
-				AttachmentModeText,     // allow "text" view of PDF
-				AttachmentModeFile,     // original file
-				AttachmentModeLinkOnly, // link-only
-			}
-		}
-	}
-
-	att := &Attachment{
-		Kind:           AttachmentURL,
-		Label:          label,
-		Mode:           mode,
-		AvailableModes: available,
-		URLRef: &URLRef{
-			URL: trimmed,
-		},
-	}
-
-	// Like BuildAttachmentForFile, ensure the ref is fully populated here.
-	if err := att.PopulateRef(); err != nil {
-		return nil, err
-	}
-
-	return att, nil
 }
 
-// BuildContentBlocks converts high-level attachments (file paths, URLs, etc.)
-// into provider-agnostic content blocks that can then be adapted for each LLM.
-func BuildContentBlocks(ctx context.Context, atts []Attachment, overrideOriginal bool) ([]ContentBlock, error) {
-	if len(atts) == 0 {
-		return nil, nil
+// WithForceFetchContentBlock. Default False.
+// False = Dont fetch the content block if already present in attachment.
+// True = Override content block even if present.
+func WithForceFetchContentBlock(forceFetch bool) ContentBlockOption {
+	return func(o *buildContentBlockOptions) {
+		o.ForceFetch = forceFetch
 	}
-	blocks := make([]ContentBlock, 0, len(atts))
-
-	for _, att := range atts {
-		b, err := (&att).BuildContentBlock(ctx, overrideOriginal)
-		if err != nil {
-			if errors.Is(err, ErrAttachmentModified) && overrideOriginal {
-				txt := att.FormatAsDisplayName()
-				if txt == "" {
-					txt = "[Attachment]"
-				}
-				txt += " (attachment modified since this message was sent)"
-				b = &ContentBlock{
-					Kind: ContentBlockText,
-					Text: &txt,
-				}
-			} else {
-				continue
-			}
-		}
-
-		blocks = append(blocks, *b)
-	}
-
-	return blocks, nil
 }
 
-func (att *Attachment) BuildContentBlock(ctx context.Context, overrideOriginal bool) (*ContentBlock, error) {
+func (att *Attachment) BuildContentBlock(ctx context.Context, opts ...ContentBlockOption,
+) (*ContentBlock, error) {
+	buildContentOptions := getBuildContentBlockOptions(opts...)
+
 	// Ensure refs are populated; caller may have done this earlier,
 	// but calling again on a populated ref is cheap to do in actual read data path.
 	if err := (att).PopulateRef(); err != nil {
 		return nil, err
 	}
 
-	// If this is an attachment from a previous turn whose underlying ref (file path, size, mod time, etc.) has changed,
-	// do not re-send the possibly mismatched content.
-	if !overrideOriginal && att.isModifiedSinceSnapshot() {
+	if !buildContentOptions.ForceFetch && att.ContentBlock != nil {
+		return nil, ErrExistingContentBlock
+	}
+
+	if !buildContentOptions.OverrideOriginal && att.isModifiedSinceSnapshot() {
 		return nil, ErrAttachmentModified
 	}
 
-	mode := att.Mode
-	switch mode {
-	case AttachmentModeText, AttachmentModeFile,
-		AttachmentModeImage,
-		AttachmentModePageContent,
-		AttachmentModeLinkOnly:
-	// Ok.
-	case AttachmentModePRDiff,
-		AttachmentModePRPage,
-		AttachmentModeCommitDiff,
-		AttachmentModeCommitPage, AttachmentModeNotReadable, "":
-		return getUnreadableBlock(att)
-
-	default:
-		return nil, errors.New("invalid processing mode for attachment")
-	}
-
 	switch att.Kind {
-	case AttachmentFile:
-		if att.FileRef == nil || !att.FileRef.Exists {
-			return nil, errors.New("invalid file ref for attachment")
-		}
-		return buildBlocksForLocalFile(ctx, att, mode)
+	case AttachmentDocIndex, AttachmentPR, AttachmentCommit:
+		return getUnreadableBlock(att)
 
 	case AttachmentImage:
 		if att.ImageRef == nil || !att.ImageRef.Exists {
 			return nil, errors.New("invalid image ref for attachment")
 		}
+		if buildContentOptions.OnlyIfTextKind {
+			return nil, ErrNonTextContentBlock
+		}
 		return buildImageBlockFromLocal(att.ImageRef.Path)
+
+	case AttachmentFile:
+		if att.FileRef == nil || !att.FileRef.Exists {
+			return nil, errors.New("invalid file ref for attachment")
+		}
+		return buildBlocksForLocalFile(ctx, att, buildContentOptions.OnlyIfTextKind)
 
 	case AttachmentURL:
 		if att.URLRef == nil || att.URLRef.URL == "" {
 			return nil, errors.New("invalid url ref for attachment")
 		}
-		return buildBlocksForURL(ctx, att, mode)
-
-	case AttachmentDocIndex, AttachmentPR, AttachmentCommit:
-		return getUnreadableBlock(att)
+		return buildBlocksForURL(ctx, att, buildContentOptions.OnlyIfTextKind)
 
 	default:
 		return nil, errors.New("unknown attachment kind")
@@ -501,4 +326,18 @@ func buildUnreadableFileAttachment(pathInfo fileutil.PathInfo) *Attachment {
 			PathInfo: pathInfo,
 		},
 	}
+}
+
+func getBuildContentBlockOptions(opts ...ContentBlockOption) *buildContentBlockOptions {
+	options := &buildContentBlockOptions{
+		OverrideOriginal: false,
+		OnlyIfTextKind:   false,
+		ForceFetch:       false,
+	}
+
+	// Apply user-specified options.
+	for _, opt := range opts {
+		opt(options)
+	}
+	return options
 }

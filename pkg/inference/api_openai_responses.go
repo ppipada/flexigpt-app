@@ -392,7 +392,13 @@ func toOpenAIResponsesMessages(
 					// changed now, so update the OrigRef fields in attachments or this message too.
 					overrideOriginalAttachment = true
 				}
-				blocks, err := attachment.BuildContentBlocks(ctx, m.Attachments, overrideOriginalAttachment)
+				blocks, err := attachment.BuildContentBlocks(
+					ctx,
+					m.Attachments,
+					attachment.WithOverrideOriginalContentBlock(overrideOriginalAttachment),
+					attachment.WithOnlyTextKindContentBlock(false),
+					attachment.WithForceFetchContentBlock(false),
+				)
 				if err != nil {
 					return nil, err
 				}
