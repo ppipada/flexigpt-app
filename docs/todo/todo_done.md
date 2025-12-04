@@ -633,3 +633,10 @@
     - [ ] ~~It is sent as a text block but never propagated back to conversation store. so ok.~~
 
   - [x] Most probably we want atleast url content blocks, non image ones atleast to persist in conversation. May look at other text ones too.
+
+- [x] Lots of testing needed for new attachments.
+
+  - [x] Check debug details.
+  - [x] Attachment follow through across conversations.
+  - [x] cache token usage.
+  - [x] url attachments.

@@ -2,13 +2,6 @@
 
 ## Laundry list
 
-- [ ] Lots of testing needed for new attachments.
-
-  - [ ] Check debug details.
-  - [ ] Attachment follow through across conversations.
-  - [ ] cache token usage.
-  - [ ] url attachments.
-
 - Usage
 
   - [ ] With attachments, token usage display seems more important.
@@ -17,7 +10,7 @@
 
 - [ ] tool enhancements
 
-  - [ ] attached tools to be given back as schema to consumers for exec
   - [ ] need to list openai/anthropic etc given tools so that they can be invoked in api directly
-  - [ ] some parallell tools cna be created locally
   - [ ] web search tools better integration needs to be done e2e
+  - [ ] some parallel tools can be created locally
+  - [ ] attached tools to be given back as schema to consumers for exec
