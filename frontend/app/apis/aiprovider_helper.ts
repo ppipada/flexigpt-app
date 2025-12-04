@@ -22,7 +22,10 @@ const roleMap: Record<ConversationRoleEnum, ChatCompletionRoleEnum> = {
 	[ConversationRoleEnum.feedback]: ChatCompletionRoleEnum.user,
 };
 
-function getQuotedJSON(obj: any): string {
+/**
+ * @public
+ */
+export function getQuotedJSON(obj: any): string {
 	return '```json\n' + JSON.stringify(obj, null, 2) + '\n```';
 }
 

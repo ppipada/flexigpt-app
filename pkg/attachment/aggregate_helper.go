@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -51,7 +52,7 @@ func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
 				},
 			},
 		}
-		if err := att.PopulateRef(); err != nil {
+		if err := att.PopulateRef(false); err != nil {
 			return nil, err
 		}
 		return att, nil
@@ -69,7 +70,7 @@ func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
 				PathInfo: *pathInfo,
 			},
 		}
-		if err := att.PopulateRef(); err != nil {
+		if err := att.PopulateRef(false); err != nil {
 			return nil, err
 		}
 		return att, nil
@@ -94,7 +95,7 @@ func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
 				PathInfo: *pathInfo,
 			},
 		}
-		if err := att.PopulateRef(); err != nil {
+		if err := att.PopulateRef(false); err != nil {
 			return nil, err
 		}
 		return att, nil
@@ -173,7 +174,7 @@ func BuildAttachmentForURL(rawURL string) (*Attachment, error) {
 	}
 
 	// Like BuildAttachmentForFile, ensure the ref is fully populated here.
-	if err := att.PopulateRef(); err != nil {
+	if err := att.PopulateRef(false); err != nil {
 		return nil, err
 	}
 
@@ -195,8 +196,9 @@ func BuildContentBlocks(ctx context.Context, atts []Attachment, opts ...ContentB
 			case errors.Is(err, ErrExistingContentBlock):
 				// If content block already existed we should just reattach it.
 				b = att.ContentBlock
+				slog.Warn("got existing att", "a", att)
 
-			case errors.Is(err, ErrAttachmentModified) && buildContentOptions.OverrideOriginal:
+			case errors.Is(err, ErrAttachmentModifiedSinceSnapshot) && !buildContentOptions.OverrideOriginal:
 				txt := att.FormatAsDisplayName()
 				if txt == "" {
 					txt = "[Attachment]"
@@ -208,6 +210,7 @@ func BuildContentBlocks(ctx context.Context, atts []Attachment, opts ...ContentB
 				}
 
 			default:
+				slog.Warn("failed to build content block for attachment", "err", err, "attachment", att)
 				// Skip this content block. It is ok if the build block skipped this because OnlyIfTextKind was set or
 				// any other error.
 				continue
@@ -218,4 +221,69 @@ func BuildContentBlocks(ctx context.Context, atts []Attachment, opts ...ContentB
 	}
 
 	return blocks, nil
+}
+
+// CopyAttachments returns a new slice with cloned Attachment values.
+func CopyAttachments(src []Attachment) []Attachment {
+	if len(src) == 0 {
+		return nil
+	}
+
+	dst := make([]Attachment, len(src))
+	for i := range src {
+		dst[i] = copyAttachment(src[i])
+	}
+	return dst
+}
+
+func copyAttachment(in Attachment) Attachment {
+	// Start with a shallow copy.
+	out := in
+
+	// Deep-copy slice field so the new Attachment does not share the same backing array.
+	out.AvailableModes = append([]AttachmentMode(nil), in.AvailableModes...)
+
+	// Deep-copy ContentBlock and its pointer fields.
+	if in.ContentBlock != nil {
+		cbIn := in.ContentBlock
+		cbOut := *cbIn // shallow copy first
+
+		if cbIn.Text != nil {
+			s := *cbIn.Text
+			cbOut.Text = &s
+		}
+		if cbIn.Base64Data != nil {
+			s := *cbIn.Base64Data
+			cbOut.Base64Data = &s
+		}
+		if cbIn.MIMEType != nil {
+			s := *cbIn.MIMEType
+			cbOut.MIMEType = &s
+		}
+		if cbIn.FileName != nil {
+			s := *cbIn.FileName
+			cbOut.FileName = &s
+		}
+
+		out.ContentBlock = &cbOut
+	}
+
+	if in.FileRef != nil {
+		fr := *in.FileRef
+		out.FileRef = &fr
+	}
+	if in.ImageRef != nil {
+		ir := *in.ImageRef
+		out.ImageRef = &ir
+	}
+	if in.URLRef != nil {
+		ur := *in.URLRef
+		out.URLRef = &ur
+	}
+	if in.GenericRef != nil {
+		gr := *in.GenericRef
+		out.GenericRef = &gr
+	}
+
+	return out
 }

@@ -9,9 +9,9 @@ type GenericRef struct {
 	OrigHandle string `json:"origHandle"`
 }
 
-func (ref *GenericRef) PopulateRef() error {
+func (ref *GenericRef) PopulateRef(replaceOrig bool) error {
 	h := strings.TrimSpace(ref.Handle)
-	if ref.OrigHandle == "" {
+	if ref.OrigHandle == "" || replaceOrig {
 		ref.OrigHandle = h
 	}
 	ref.Handle = h

@@ -41,10 +41,16 @@
   - [x] input notes should talk about attachments, turns, etc.
   - [x] get visible text from html needs to be implemented and a new mode raw vs visible text needs to be added.
   - [ ] ~~look at how we send attachment kind text as of now. if it is sent already as text block, we would have to skip them.~~
+
     - [ ] ~~It is sent as a text block but never propagated back to conversation store. so ok.~~
+
+  - [x] Most probably we want atleast url content blocks, non image ones atleast to persist in conversation. May look at other text ones too.
+
+- Usage
+
   - [ ] With attachments, token usage display seems more important.
   - [ ] Token count in build completion data may be wrong as it doesnt really account for attachments/tool calls etc. Need to rectify the FilterMessagesByTokenCount function.
-  - [ ] Most probably we want atleast url content blocks, non image ones atleast to persist in conversation. May look at other text ones too.
+    - [ ] Look at using gpt5 bpe encoder now rather than regex compilation. https://github.com/tiktoken-go/tokenizer
 
 - [ ] tool enhancements
 

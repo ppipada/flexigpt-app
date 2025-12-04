@@ -25,7 +25,7 @@ const (
 	// for LLM consumption. If a page is larger than this, we will return
 	// ErrPageTooLarge and fall back to link-only at a higher layer.
 	maxPageContentBytes = 16 << 20 // 16 MiB
-
+	defaultHTTPTimeout  = 30 * time.Second
 )
 
 var (
@@ -42,6 +42,24 @@ var (
 	// readable content at all (e.g., empty body, or extraction failure).
 	ErrNoContentExtracted = errors.New("no readable content extracted")
 )
+
+var sharedHTTPClient = &http.Client{
+	Timeout: defaultHTTPTimeout,
+	Transport: func() *http.Transport {
+		// DefaultTransport is a *http.Transport; clone it so we can tweak it if needed.
+		if t, ok := http.DefaultTransport.(*http.Transport); ok {
+			return t.Clone()
+		}
+		// Fallback: new one with reasonable defaults.
+		return &http.Transport{
+			Proxy:                 http.ProxyFromEnvironment,
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 10 * time.Second,
+		}
+	}(),
+}
 
 // ExtractReadableMarkdownFromURL downloads a web page, runs it through
 // go-trafilatura to obtain the main readable content, converts that to
@@ -183,13 +201,7 @@ func fetchURLBytes(ctx context.Context, rawURL string, maxBytes int) (data []byt
 		return nil, "", err
 	}
 
-	// Shared HTTP client used by all helpers in this package. A timeout
-	// is essential so we don't hang forever on slow or unresponsive hosts.
-	httpClient := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	resp, err := httpClient.Do(req)
+	resp, err := sharedHTTPClient.Do(req)
 	if err != nil {
 		return nil, "", err
 	}
@@ -244,12 +256,7 @@ func peekURLContentType(ctx context.Context, rawURL string) (string, error) {
 		return "", err
 	}
 
-	// Shared HTTP client used by all helpers in this package. A timeout
-	// is essential so we don't hang forever on slow or unresponsive hosts.
-	httpClient := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-	resp, err := httpClient.Do(req)
+	resp, err := sharedHTTPClient.Do(req)
 	if err != nil {
 		return "", err
 	}

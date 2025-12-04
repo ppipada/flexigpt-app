@@ -19,7 +19,7 @@ type ImageRef struct {
 	OrigModTime time.Time `json:"origModTime"`
 }
 
-func (ref *ImageRef) PopulateRef() error {
+func (ref *ImageRef) PopulateRef(replaceOrig bool) error {
 	if ref == nil {
 		return errors.New("image attachment missing ref")
 	}
@@ -32,7 +32,7 @@ func (ref *ImageRef) PopulateRef() error {
 		return err
 	}
 
-	if strings.TrimSpace(ref.OrigPath) == "" {
+	if strings.TrimSpace(ref.OrigPath) == "" || replaceOrig {
 		ref.OrigPath = info.Path
 		ref.OrigSize = info.Size
 		ref.OrigModTime = *info.ModTime
@@ -76,7 +76,7 @@ func (ref *ImageRef) IsModified() bool {
 func buildImageBlockFromLocal(path string) (*ContentBlock, error) {
 	info, err := fileutil.ReadImage(path, true)
 	if err != nil {
-		return &ContentBlock{}, err
+		return nil, err
 	}
 	mStr := string(info.MIMEType)
 	fname := filepath.Base(path)

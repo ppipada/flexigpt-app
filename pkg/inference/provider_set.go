@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
@@ -127,12 +128,16 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 		req.Body.CurrentMessage.Role != spec.User {
 		return nil, errors.New("got empty provider/model input")
 	}
-	if req.Body.CurrentMessage.Content == nil || req.Body.CurrentMessage.Role != spec.User {
-		return nil, errors.New("got invalid current message input")
+	if req.Body.CurrentMessage.Role != spec.User {
+		return nil, errors.New("current message must be from user")
 	}
-	if strings.TrimSpace(*req.Body.CurrentMessage.Content) == "" {
-		return nil, errors.New("got empty current message input")
+	hasText := req.Body.CurrentMessage.Content != nil &&
+		strings.TrimSpace(*req.Body.CurrentMessage.Content) != ""
+	hasAttachments := len(req.Body.CurrentMessage.Attachments) > 0
+	if !hasText && !hasAttachments {
+		return nil, errors.New("current message must have text or attachments")
 	}
+
 	provider := req.Provider
 	p, exists := ps.providers[provider]
 	if !exists {
@@ -166,8 +171,29 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 		}
 	}
 
-	// Assuming here that attachment ref slices were copied by build completion data.
-	// We do not do PopulateRef again here.
+	// For the current message, try to attach the text blocks for attachments in a best effort basis.
+	if len(resp.Messages) > 0 && len(resp.Messages[len(resp.Messages)-1].Attachments) > 0 {
+		currentAtts := resp.Messages[len(resp.Messages)-1].Attachments
+		for idx := range currentAtts {
+			a, err := currentAtts[idx].BuildContentBlock(
+				ctx,
+				attachment.WithForceFetchContentBlock(true),
+				attachment.WithOnlyTextKindContentBlock(true),
+				attachment.WithOverrideOriginalContentBlock(true),
+			)
+			if err == nil && a != nil {
+				// This is the only place where we are actually setting content block to the attachment.
+				currentAtts[idx].ContentBlock = a
+			}
+		}
+	}
+
+	// Assuming filterMessagesByTokenCount is implemented elsewhere.
+	resp.Messages = FilterMessagesByTokenCount(
+		resp.Messages,
+		resp.ModelParams.MaxPromptLength,
+	)
+
 	return &spec.BuildCompletionDataResponse{Body: resp}, nil
 }
 

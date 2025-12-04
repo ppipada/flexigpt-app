@@ -21,7 +21,7 @@ type FileRef struct {
 	OrigModTime time.Time `json:"origModTime"`
 }
 
-func (ref *FileRef) PopulateRef() error {
+func (ref *FileRef) PopulateRef(replaceOrig bool) error {
 	if ref == nil {
 		return errors.New("file attachment missing ref")
 	}
@@ -35,7 +35,7 @@ func (ref *FileRef) PopulateRef() error {
 	}
 
 	// Capture original snapshot once.
-	if strings.TrimSpace(ref.OrigPath) == "" {
+	if strings.TrimSpace(ref.OrigPath) == "" || replaceOrig {
 		ref.OrigPath = pathInfo.Path
 		ref.OrigSize = pathInfo.Size
 		ref.OrigModTime = *pathInfo.ModTime

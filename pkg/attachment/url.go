@@ -34,7 +34,7 @@ type URLRef struct {
 //   - The URL parses successfully.
 //   - The URL is absolute (has a scheme/host).
 //   - Normalized and OrigNormalized are populated.
-func (ref *URLRef) PopulateRef() error {
+func (ref *URLRef) PopulateRef(replaceOrig bool) error {
 	if ref == nil {
 		return errors.New("url attachment missing ref")
 	}
@@ -54,7 +54,7 @@ func (ref *URLRef) PopulateRef() error {
 	nURL := parsed.String()
 	ref.URL = raw
 	ref.Normalized = nURL
-	if strings.TrimSpace(ref.OrigNormalized) == "" {
+	if strings.TrimSpace(ref.OrigNormalized) == "" || replaceOrig {
 		ref.OrigNormalized = nURL
 	}
 	return nil

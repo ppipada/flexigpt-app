@@ -145,12 +145,6 @@ func getCompletionData(
 
 	completionData.Messages = msgs
 
-	// Assuming filterMessagesByTokenCount is implemented elsewhere.
-	completionData.Messages = FilterMessagesByTokenCount(
-		completionData.Messages,
-		completionData.ModelParams.MaxPromptLength,
-	)
-
 	return &completionData
 }
 
@@ -167,10 +161,8 @@ func convertBuildMessageToChatMessage(
 		out.Content = &c
 	}
 
-	// Copy attachments.
 	if len(msg.Attachments) > 0 {
-		out.Attachments = make([]attachment.Attachment, len(msg.Attachments))
-		copy(out.Attachments, msg.Attachments)
+		out.Attachments = attachment.CopyAttachments(msg.Attachments)
 	}
 	return out
 }

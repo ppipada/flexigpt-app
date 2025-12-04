@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	ErrNonTextContentBlock  = errors.New("content block is not of kind - text")
-	ErrExistingContentBlock = errors.New("content block already exists")
-	ErrAttachmentModified   = errors.New("attachment modified since snapshot")
+	ErrNonTextContentBlock             = errors.New("content block is not of kind - text")
+	ErrExistingContentBlock            = errors.New("content block already exists")
+	ErrAttachmentModifiedSinceSnapshot = errors.New("attachment modified since snapshot")
 )
 
 type ContentBlockKind string
@@ -135,13 +135,15 @@ func WithForceFetchContentBlock(forceFetch bool) ContentBlockOption {
 	}
 }
 
+// BuildContentBlock function builds and returns a content block for an attachment.
+// It does NOT attach the content block to the attachment.
 func (att *Attachment) BuildContentBlock(ctx context.Context, opts ...ContentBlockOption,
 ) (*ContentBlock, error) {
 	buildContentOptions := getBuildContentBlockOptions(opts...)
 
 	// Ensure refs are populated; caller may have done this earlier,
 	// but calling again on a populated ref is cheap to do in actual read data path.
-	if err := (att).PopulateRef(); err != nil {
+	if err := (att).PopulateRef(buildContentOptions.OverrideOriginal); err != nil {
 		return nil, err
 	}
 
@@ -150,7 +152,7 @@ func (att *Attachment) BuildContentBlock(ctx context.Context, opts ...ContentBlo
 	}
 
 	if !buildContentOptions.OverrideOriginal && att.isModifiedSinceSnapshot() {
-		return nil, ErrAttachmentModified
+		return nil, ErrAttachmentModifiedSinceSnapshot
 	}
 
 	switch att.Kind {
@@ -183,13 +185,13 @@ func (att *Attachment) BuildContentBlock(ctx context.Context, opts ...ContentBlo
 	}
 }
 
-func (att *Attachment) PopulateRef() error {
+func (att *Attachment) PopulateRef(replaceOrig bool) error {
 	switch att.Kind {
 	case AttachmentFile:
 		if att.FileRef == nil {
 			return errors.New("no file ref for file attachment")
 		}
-		if err := att.FileRef.PopulateRef(); err != nil {
+		if err := att.FileRef.PopulateRef(replaceOrig); err != nil {
 			return err
 		}
 		if att.Label == "" {
@@ -202,7 +204,7 @@ func (att *Attachment) PopulateRef() error {
 		if att.ImageRef == nil {
 			return errors.New("no image ref for image attachment")
 		}
-		if err := att.ImageRef.PopulateRef(); err != nil {
+		if err := att.ImageRef.PopulateRef(replaceOrig); err != nil {
 			return err
 		}
 		if att.Label == "" {
@@ -218,7 +220,7 @@ func (att *Attachment) PopulateRef() error {
 		if att.URLRef == nil {
 			return errors.New("no url ref for url attachment")
 		}
-		if err := att.URLRef.PopulateRef(); err != nil {
+		if err := att.URLRef.PopulateRef(replaceOrig); err != nil {
 			return err
 		}
 		if att.Label == "" {
@@ -235,7 +237,7 @@ func (att *Attachment) PopulateRef() error {
 		if att.GenericRef == nil {
 			return errors.New("no generic ref for attachment")
 		}
-		if err := att.GenericRef.PopulateRef(); err != nil {
+		if err := att.GenericRef.PopulateRef(replaceOrig); err != nil {
 			return err
 		}
 		if att.Label == "" {

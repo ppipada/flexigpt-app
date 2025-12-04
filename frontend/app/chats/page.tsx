@@ -311,19 +311,22 @@ export default function ChatsPage() {
 					inputParams,
 					prevMessages
 				);
-				// Below commented code is used for when we want to see completion data in details.
-				// if (updatedChatWithConvoMessage.messages.length > 1) {
-				// 	const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
-				// 	if (updatedChatWithConvoMessage.messages[prevIdx].role === ConversationRoleEnum.user) {
-				// 		const completionDataJSONString = '### Completion data:\n' + getQuotedJSON(completionData);
-				// 		updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
-				// 			i === prevIdx
-				// 				? { ...m, details: completionDataJSONString } // overwrite details data in case of resend
-				// 				: m
-				// 		);
-				// 		saveUpdatedChat({ ...updatedChatWithConvoMessage });
-				// 	}
-				// }
+
+				if (updatedChatWithConvoMessage.messages.length > 1) {
+					const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
+					if (updatedChatWithConvoMessage.messages[prevIdx].role === ConversationRoleEnum.user) {
+						if (completionData.messages && completionData.messages.length > 0) {
+							const msg = completionData.messages[completionData.messages.length - 1];
+							const atts = msg.attachments ?? [];
+							if (atts.length > 0) {
+								updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
+									i === prevIdx ? { ...m, attachments: atts } : m
+								);
+								saveUpdatedChat({ ...updatedChatWithConvoMessage });
+							}
+						}
+					}
+				}
 				const newMsg = await HandleCompletion(
 					options.providerName,
 					completionData,
