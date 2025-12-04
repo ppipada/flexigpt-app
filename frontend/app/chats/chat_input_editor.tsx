@@ -593,8 +593,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			}));
 			return updated.filter(g => g.attachmentKeys.length > 0 || g.overflowDirs.length > 0);
 		});
-
-		editor.tf.focus();
 	};
 
 	const handleRemoveDirectoryGroup = (groupId: string) => {
