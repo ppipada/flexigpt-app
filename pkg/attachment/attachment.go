@@ -294,8 +294,7 @@ func BuildContentBlocks(ctx context.Context, atts []Attachment, overrideOriginal
 				continue
 			}
 		}
-		if err != nil {
-		}
+
 		blocks = append(blocks, *b)
 	}
 
