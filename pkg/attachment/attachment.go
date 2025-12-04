@@ -11,6 +11,11 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 )
 
+var (
+	ErrContentBlockSkipped = errors.New("content block skipped")
+	ErrAttachmentModified  = errors.New("attachment modified since snapshot")
+)
+
 type ContentBlockKind string
 
 const (
@@ -275,7 +280,21 @@ func BuildContentBlocks(ctx context.Context, atts []Attachment, overrideOriginal
 	for _, att := range atts {
 		b, err := (&att).BuildContentBlock(ctx, overrideOriginal)
 		if err != nil {
-			continue
+			if errors.Is(err, ErrAttachmentModified) && overrideOriginal {
+				txt := att.FormatAsDisplayName()
+				if txt == "" {
+					txt = "[Attachment]"
+				}
+				txt += " (attachment modified since this message was sent)"
+				b = &ContentBlock{
+					Kind: ContentBlockText,
+					Text: &txt,
+				}
+			} else {
+				continue
+			}
+		}
+		if err != nil {
 		}
 		blocks = append(blocks, *b)
 	}
@@ -292,17 +311,8 @@ func (att *Attachment) BuildContentBlock(ctx context.Context, overrideOriginal b
 
 	// If this is an attachment from a previous turn whose underlying ref (file path, size, mod time, etc.) has changed,
 	// do not re-send the possibly mismatched content.
-	// Instead, emit a small placeholder.
 	if !overrideOriginal && att.isModifiedSinceSnapshot() {
-		txt := att.FormatAsDisplayName()
-		if txt == "" {
-			txt = "[Attachment]"
-		}
-		txt += " (attachment modified since this message was sent)"
-		return &ContentBlock{
-			Kind: ContentBlockText,
-			Text: &txt,
-		}, nil
+		return nil, ErrAttachmentModified
 	}
 
 	mode := att.Mode
