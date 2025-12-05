@@ -1,9 +1,10 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
 import { FiEdit2, FiPlus } from 'react-icons/fi';
 
 import type { ConversationSearchItem } from '@/spec/conversation';
 
+import { formatShortcut, type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { sanitizeConversationTitle } from '@/lib/text_utils';
 
 import { DownloadButton } from '@/components/download_button';
@@ -20,6 +21,7 @@ interface ChatNavBarProps {
 	searchRefreshKey: number;
 	disabled: boolean;
 	renameEnabled: boolean;
+	shortcutConfig: ShortcutConfig;
 }
 
 export interface ChatNavBarHandle {
@@ -37,12 +39,19 @@ export const ChatNavBar = forwardRef<ChatNavBarHandle, ChatNavBarProps>(function
 		searchRefreshKey,
 		disabled,
 		renameEnabled,
+		shortcutConfig,
 	}: ChatNavBarProps,
 	ref
 ) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [draftTitle, setDraftTitle] = useState(chatTitle);
 	const searchRef = useRef<ChatSearchHandle | null>(null);
+	const shortcutLabels = useMemo(
+		() => ({
+			newChat: formatShortcut(shortcutConfig.newChat),
+		}),
+		[shortcutConfig]
+	);
 
 	/* keep draft in sync when conversation switches */
 	useEffect(() => {
@@ -81,7 +90,10 @@ export const ChatNavBar = forwardRef<ChatNavBarHandle, ChatNavBarProps>(function
 			{/* controls / title ------------------------------------ */}
 			<div className="flex items-center justify-between bg-transparent p-2">
 				{/* new chat */}
-				<div className="tooltip tooltip-right" data-tip="Create New Chat">
+				<div
+					className="tooltip tooltip-right"
+					data-tip={shortcutLabels.newChat ? `Create New Chat (${shortcutLabels.newChat})` : 'Create New Chat'}
+				>
 					<button
 						className="btn btn-sm btn-ghost mx-1"
 						onClick={onNewChat}

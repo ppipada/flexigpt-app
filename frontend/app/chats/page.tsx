@@ -611,6 +611,7 @@ export default function ChatsPage() {
 						searchRefreshKey={searchRefreshKey}
 						disabled={isBusy}
 						renameEnabled={chat.messages.length > 0}
+						shortcutConfig={shortcutConfig}
 					/>
 				</div>
 
