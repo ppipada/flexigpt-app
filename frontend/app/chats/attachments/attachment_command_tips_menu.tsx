@@ -16,10 +16,9 @@ const tipsText: Record<TipKey, string> = {
 		'Collapse to text removes system prompts, variables, and tools. The current user block with placeholders for variables is inserted as plain text.',
 
 	// New attachment/tool behavior tips
-	attachmentsScope:
-		'Attachments you add to a conversation are available to all subsequent turns in that conversation, unless you remove them.',
+	attachmentsScope: 'Attachments you add to a conversation are available to all subsequent turns in that conversation.',
 	attachmentsRead:
-		'On each send, the currently attached files are re-read for the messages in this turn. If a file is not attached for a given turn, it is not included in the context sent to the model.',
+		"On each send, the currently attached blob files (images, pdf's in file mode) are re-read for the messages in this turn. Anything attached as text is stored with the conversation and not reread again.",
 	toolsPersist:
 		'Once you attach tools to a conversation, those tool choices are preserved and sent with every turn until you change them.',
 };
