@@ -401,7 +401,7 @@ linters:
           alias: ${1}Spec
         - pkg: github.com/ppipada/flexigpt-app/pkg/(\w+)/store
           alias: ${1}Store
-        - pkg: github.com/openai/openai-go/v2/shared/constant
+        - pkg: github.com/openai/openai-go/v3/shared/constant
           alias: openaiSharedConstant
         - pkg: github.com/anthropics/anthropic-sdk-go/shared/constant
           alias: anthropicSharedConstant
