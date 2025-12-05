@@ -5,7 +5,7 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 > ⚠ Early Access Notice:
 >
 > The project is under active development; expect breaking changes and incomplete features between releases.
-> Using any packages in this project as a library is not supported. Most things are tightly coupled together to serve as an App.
+> This repository is intended as a standalone application, not a reusable library. Public Go package APIs are not stable and may change between releases.
 
 - [Quick Start](#quick-start)
 - [Key Features](#key-features)
@@ -14,7 +14,7 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
   - [Persistent Conversation History](#persistent-conversation-history)
   - [Attachments](#attachments)
   - [Prompt Templates](#prompt-templates)
-  - [GUI light/dark/inbuilt custom themes](#gui-lightdarkinbuilt-custom-themes)
+  - [Themes (Light / Dark / Custom)](#themes-light--dark--custom)
 - [Install](#install)
   - [MacOS](#macos)
   - [Windows](#windows)
@@ -25,18 +25,26 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 ## Quick Start
 
 - Install FlexiGPT [for your OS](#install).
-- Launch and Open **Settings**.
-- In **Auth Keys** -> Paste the API key for your provider.
+
+- Launch FlexiGPT, then open _Settings_.
+
+- In _Auth Keys_ -> Paste the API key for your provider. Example links to provider pages for getting API keys:
+
+  - [OpenAI](https://platform.openai.com/api-keys), [Anthropic](https://platform.claude.com/settings/keys), [Google Gemini](https://aistudio.google.com/api-keys).
+  - Atleast one provider needs to be configured with an API key before chatting.
+  - FlexiGPT doesn’t bill you; all usage is metered by each provider on your own account.
+
 - Start chatting!
 
 ## Key Features
 
 ### Multi-provider Connectivity with Model Presets
 
-- First-class connectors for OpenAI, Anthropic, Google, DeepSeek, xAI, Huggingface, Openrouter, Local LLamaCPP, **plus any local/remote OpenAI chat completions or OpenAI responses or Anthropic messages compatible endpoint**.
+- First-class connectors for OpenAI, Anthropic, Google, DeepSeek, xAI, Hugging Face, OpenRouter, Local LLama.cpp.
+- _Plus any local/remote OpenAI chat completions or OpenAI responses or Anthropic messages compatible endpoint_.
 - API keys are stored securely in your OS keyring - never in plain text.
 
-- _Model Presets_ bundle a model selection (e.g. `gpt-5.1`) together with recommended defaults such as temperature, token limits, system prompt and reasoning parameters. Inbuilt presets for all supported LLM providers, with one-click loading during chat. Tweak values per conversation without altering the saved preset.
+- _Model Presets_ bundle a model selection (e.g. `gpt-5.1`) together with recommended defaults such as temperature, token limits, system prompt and reasoning parameters. Built-in presets for all supported LLM providers, with one-click loading during chat. Tweak values per conversation without altering the saved preset.
 
 - <details>
   <summary>Feature details</summary>
@@ -64,7 +72,7 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 
     - Click the _Model Presets_ icon in the sidebar.
     - Select a provider or create a new one.
-    - The app provides inbuilt presets. These will be listed.
+    - The app provides built-in presets. These will be listed.
     - Create, edit, delete, enable/disable presets as required.
     - Mark one preset as _Default_ for the provider; it loads automatically when a model from that provider is first chosen.
 
@@ -78,10 +86,12 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 ### Unified Chat Workspace
 
 - Switch models mid-conversation, chain results from one model into the next, and fine-tune generation parameters on the fly.
-- Attach files/images/pdf's, use prompt templates, load and resume previous conversations, export full conversation or a full message or code/mermaid diagram or its image inside a single message seamlessly in the same interface.
+  - Previous messages and context is preserved as a full thread in the new models API calls too.
+- Attach files, images, and PDFs, use prompt templates, load and resume previous conversations, export full conversation or a full message or code/mermaid diagram or its image inside a single message seamlessly in the same interface.
 
 - Productivity tooling inside the chat
 
+  - Streaming responses.
   - Code snippets with copy/export
   - Mermaid diagrams with copy/export/zoom
   - Full Math/LaTeX rendering
@@ -89,14 +99,14 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 
 ### Persistent Conversation History
 
-- Auto-saved sessions with full-text search and resumable at any time, stored in local files.
+- Auto-saved sessions which are resumable at any time, with full-text local-only search and storage in local files.
 
 - <details>
   <summary>Feature details</summary>
 
   - Every chat session is persisted as a _Conversation_ containing its title, timestamps and full message sequence.
   - Conversations are stored locally; you can reload a conversation and continue from last point at any time.
-  - A full-text search bar provides instant retrieval across titles and message contents.
+  - A full-text search bar provides instant retrieval across titles and message contents. The search is fully local.
 
   - Key Concepts
 
@@ -122,20 +132,28 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 
 ### Attachments
 
-- Attach Local or web based files (text/code/images/pdf's) to a conversation.
+- Attach Local or web-based files (text/code/images/PDFs) to a conversation.
 - Attach a directory (auto crawl and attach of files within)
 
 - <details>
   <summary>Feature details</summary>
 
   - Multiple local files or a single directory can be selected at a time to attach to the message.
-  - Best fit auto-detection for file types and mode (text/blob/image) is builtin. User can change attachment mode at any time before send.
-  - Local pdf extraction and web page readable content extraction is builtin.
+
+    - Code and text files become in-context text.
+    - Images are sent as binary blobs.
+    - Local extraction and attachment as text is supported for PDFs by default. Users can toggle the mode to send PDFs as blobs if supported by the API.
+
+  - Web pages/URLs can be attached to the conversation.
+
+    - By default readable content will be extracted and attached as in-context text for any web page.
+    - Image URLs and PDF URLs are sent as binary blobs, with user switch available to convert them as links of extract PDF as text and send.
 
   - Attachments you add to a conversation are available to all subsequent turns in that conversation.
   - You can edit and send any message at any point in time. Attachments can be modified in edit mode too.
-  - On each send, the currently attached blob files (images, pdf's in file mode) are re-read for the messages in this turn.
+  - On each send, the currently attached blob files (images, PDFs in file mode) are re-read for the messages in this turn.
   - Anything attached as text is stored with the conversation and not reread again.
+  - Max 16MB attachments are supported as of now.
 
   </details>
 
@@ -147,7 +165,7 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 - <details>
   <summary>Feature details</summary>
 
-  - Prompt Templates allow you to store complex prompts (including variables and pre-processing tools) and reuse them with a single slash-command.
+  - Prompt Templates allow you to store complex prompts (with variables) and reuse them.
   - Templates can be organized into Bundles, which act as configurable packs that can be enabled or disabled.
   - Templates and Bundles can be disabled or removed at any time without affecting existing chat history.
 
@@ -155,7 +173,7 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 
     | Term            | Description                                                                                    |
     | --------------- | ---------------------------------------------------------------------------------------------- |
-    | Prompt Template | A reusable prompt that can contain variables and pre-processor tools.                          |
+    | Prompt Template | A reusable prompt that can contain variables.                                                  |
     | Prompt Bundle   | A collection of templates that can be toggled on or off as a unit and shared with other users. |
 
   - Invoking a Template
@@ -170,15 +188,15 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 
     - Click the _Prompts_ icon in the sidebar.
     - Select a current prompt bundle or create a new one.
-    - The app provides inbuilt bundles and templates. These will be listed.
+    - The app provides built-in bundles and templates. These will be listed.
     - Create, edit, delete, enable/disable bundles/templates as required.
 
   </details>
 
-### GUI light/dark/inbuilt custom themes
+### Themes (Light / Dark / Custom)
 
 - **System/Light/Dark Themes** supported with auto-detect & manual toggle.
-- An option to use any of the [**DaisyUI themes**](https://daisyui.com/docs/themes/?lang=en#list-of-themes).
+- An option to use any of the custom [**DaisyUI themes**](https://daisyui.com/docs/themes/?lang=en#list-of-themes).
 
 ## Install
 
@@ -220,8 +238,8 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 
   - Using launcher GUI: You can launch the app from your distributions's launcher. E.g: In Ubuntu: Press the window key, type flexigpt and click on icon.
   - Using terminal: `flatpak run io.github.flexigpt.client`
-  - If you use Nvidia and its proprietary drivers, you _may_ see that the run command open a blank screen and close, the workaround for it is to run the app as:
-    - `flatpak run --env=WEBKIT_DISABLE_COMPOSITING_MODE=1 io.github.flexigpt.client`
+  - Known issue with Nvidia drivers:
+    - If you use Nvidia and its proprietary drivers, you _may_ see that the run command open a blank screen and close, the workaround for it is to run the app as: `flatpak run --env=WEBKIT_DISABLE_COMPOSITING_MODE=1 io.github.flexigpt.client`
     - Open bugs in upstream projects that cause this: [Webkit issue 180739](https://bugs.webkit.org/show_bug.cgi?id=180739), [Webkit issue 262607](https://bugs.webkit.org/show_bug.cgi?id=262607), [Debian issue 1082139](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1082139), [Wails issue 2977](https://github.com/wailsapp/wails/issues/2977)
 
 - Your local data (settings, conversations, logs) will be at:
