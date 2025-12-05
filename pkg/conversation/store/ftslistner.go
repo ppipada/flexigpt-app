@@ -135,7 +135,6 @@ func extractFTS(fullPath string, m map[string]any) map[string]string {
 		user     bytes.Buffer
 		assist   bytes.Buffer
 		fn       bytes.Buffer
-		feedback bytes.Buffer
 	)
 
 	msgs, _ := m["messages"].([]any)
@@ -158,8 +157,7 @@ func extractFTS(fullPath string, m map[string]any) map[string]string {
 			assist.WriteString(txt + "\n")
 		case "function":
 			fn.WriteString(txt + "\n")
-		case "feedback":
-			feedback.WriteString(txt + "\n")
+
 		}
 	}
 
@@ -169,7 +167,6 @@ func extractFTS(fullPath string, m map[string]any) map[string]string {
 		"user":      user.String(),
 		"assistant": assist.String(),
 		"function":  fn.String(),
-		"feedback":  feedback.String(),
 		"mtime":     fileMTime(fullPath),
 	}
 }

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 
-import { FiCode, FiEdit2, FiRepeat } from 'react-icons/fi';
+import { FiArrowDown, FiArrowUp, FiCode, FiEdit2, FiRepeat } from 'react-icons/fi';
+
+import type { CompletionUsage } from '@/spec/modelpreset';
 
 import { stripCustomMDFences } from '@/lib/text_utils';
 
@@ -19,6 +21,7 @@ interface MessageFooterAreaProps {
 	isBusy: boolean;
 	disableMarkdown: boolean;
 	onDisableMarkdownChange: (checked: boolean) => void;
+	usage?: CompletionUsage;
 }
 
 export function MessageFooterArea({
@@ -32,6 +35,7 @@ export function MessageFooterArea({
 	isBusy,
 	disableMarkdown,
 	onDisableMarkdownChange,
+	usage,
 }: MessageFooterAreaProps) {
 	const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
@@ -81,6 +85,46 @@ export function MessageFooterArea({
 							<div className="flex items-center bg-transparent px-4 py-2">
 								Streaming
 								<span className="loading loading-dots loading-sm ml-4" />
+							</div>
+						</div>
+					)}
+					{usage && !isStreaming && (
+						<div
+							className="tooltip tooltip-top before:whitespace-pre-line"
+							data-tip={(() => {
+								const parts: string[] = [];
+
+								// Total input
+								if (usage.inputTokensTotal > 0) {
+									parts.push(`Total input tokens: ${usage.inputTokensTotal}`);
+								}
+
+								// Cached + Uncached: only show uncached if cached > 0
+								if (usage.inputTokensCached > 0) {
+									parts.push(`Input cached tokens: ${usage.inputTokensCached}`);
+
+									if (usage.inputTokensUncached > 0) {
+										parts.push(`Input uncached tokens: ${usage.inputTokensUncached}`);
+									}
+								}
+
+								// Output
+								if (usage.outputTokens > 0) {
+									parts.push(`Total output tokens: ${usage.outputTokens}`);
+								}
+
+								// Reasoning
+								if (usage.reasoningTokens > 0) {
+									parts.push(`Reasoning tokens: ${usage.reasoningTokens}`);
+								}
+
+								return parts.join('\n'); // each item on its own line
+							})()}
+						>
+							<div className="flex items-center bg-transparent px-4 py-2 text-xs">
+								<FiArrowUp size={14} /> {usage.inputTokensTotal}
+								&nbsp;&nbsp;-&nbsp;&nbsp;
+								<FiArrowDown size={14} /> {usage.outputTokens}
 							</div>
 						</div>
 					)}

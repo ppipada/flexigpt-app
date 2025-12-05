@@ -4,17 +4,6 @@ import (
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 )
 
-type ChatCompletionRoleEnum string
-
-const (
-	System    ChatCompletionRoleEnum = "system"
-	Developer ChatCompletionRoleEnum = "developer"
-	User      ChatCompletionRoleEnum = "user"
-	Assistant ChatCompletionRoleEnum = "assistant"
-	Function  ChatCompletionRoleEnum = "function"
-	Tool      ChatCompletionRoleEnum = "tool"
-)
-
 // ModelParams represents input information about a model to a completion.
 type ModelParams struct {
 	Name                        modelpresetSpec.ModelName        `json:"name"`

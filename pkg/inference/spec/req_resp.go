@@ -98,10 +98,10 @@ type ResponseToolCall struct {
 }
 
 type ChatCompletionDataMessage struct {
-	Role        ChatCompletionRoleEnum  `json:"role"`
-	Content     *string                 `json:"content,omitempty"`
-	Name        *string                 `json:"name,omitempty"`
-	Attachments []attachment.Attachment `json:"attachments,omitempty"`
+	Role        modelpresetSpec.RoleEnum `json:"role"`
+	Content     *string                  `json:"content,omitempty"`
+	Name        *string                  `json:"name,omitempty"`
+	Attachments []attachment.Attachment  `json:"attachments,omitempty"`
 }
 
 type FetchCompletionToolChoice struct {
@@ -144,11 +144,13 @@ type FetchCompletionRequest struct {
 }
 
 type FetchCompletionResponseBody struct {
-	RequestDetails  *APIRequestDetails  `json:"requestDetails,omitempty"`
-	ResponseDetails *APIResponseDetails `json:"responseDetails,omitempty"`
-	ErrorDetails    *APIErrorDetails    `json:"errorDetails,omitempty"`
-	ResponseContent []ResponseContent   `json:"responseContent,omitempty"`
-	ToolCalls       []ResponseToolCall  `json:"toolCalls,omitempty"`
+	RequestDetails  *APIRequestDetails     `json:"requestDetails,omitempty"`
+	ResponseDetails *APIResponseDetails    `json:"responseDetails,omitempty"`
+	ErrorDetails    *APIErrorDetails       `json:"errorDetails,omitempty"`
+	Usage           *modelpresetSpec.Usage `json:"usage,omitempty"`
+
+	ResponseContent []ResponseContent  `json:"responseContent,omitempty"`
+	ToolCalls       []ResponseToolCall `json:"toolCalls,omitempty"`
 }
 
 type FetchCompletionResponse struct {

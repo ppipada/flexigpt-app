@@ -1,16 +1,9 @@
 import type { Attachment } from '@/spec/attachment';
-import type { ModelName, ProviderName, ReasoningParams } from '@/spec/modelpreset';
+import type { CompletionUsage, ModelName, ProviderName, ReasoningParams, RoleEnum } from '@/spec/modelpreset';
 import type { Tool, ToolChoice } from '@/spec/tool';
 
-export enum ChatCompletionRoleEnum {
-	system = 'system',
-	user = 'user',
-	assistant = 'assistant',
-	function = 'function',
-}
-
 export interface ChatCompletionDataMessage {
-	role: ChatCompletionRoleEnum;
+	role: RoleEnum;
 	content?: string | null;
 	name?: string | null;
 	attachments?: Array<Attachment>;
@@ -92,6 +85,7 @@ export interface FetchCompletionResponseBody {
 	requestDetails?: APIRequestDetails;
 	responseDetails?: APIResponseDetails;
 	errorDetails?: APIErrorDetails;
+	usage?: CompletionUsage;
 	responseContent?: ResponseContent[];
 	toolCalls?: ResponseToolCall[];
 }

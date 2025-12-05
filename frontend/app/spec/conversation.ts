@@ -1,24 +1,17 @@
 import type { Attachment } from '@/spec/attachment';
+import type { CompletionUsage, RoleEnum } from '@/spec/modelpreset';
 import type { ToolChoice } from '@/spec/tool';
-
-export enum ConversationRoleEnum {
-	system = 'system',
-	user = 'user',
-	assistant = 'assistant',
-	function = 'function',
-	feedback = 'feedback',
-}
 
 export interface ConversationMessage {
 	id: string;
 	createdAt?: Date;
-	role: ConversationRoleEnum;
+	role: RoleEnum;
 	content: string;
 	name?: string;
 	details?: string;
 	toolChoices?: ToolChoice[];
 	attachments?: Attachment[];
-	enabledTools?: string[];
+	usage?: CompletionUsage;
 }
 
 export type ConversationSearchItem = {

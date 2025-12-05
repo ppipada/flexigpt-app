@@ -3,7 +3,7 @@ import { memo, useState } from 'react';
 import { FiCompass, FiUser } from 'react-icons/fi';
 
 import type { ConversationMessage } from '@/spec/conversation';
-import { ConversationRoleEnum } from '@/spec/conversation';
+import { RoleEnum } from '@/spec/modelpreset';
 
 import { MessageAttachmentsBar } from '@/chats/messages/message_attachments_bar';
 import { MessageContent } from '@/chats/messages/message_content';
@@ -23,6 +23,9 @@ function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
 	if (prev.message.details !== next.message.details) {
 		//
 		// We need to check details as parent is updating details in place for previous message
+		return false;
+	}
+	if (prev.message.usage !== next.message.usage) {
 		return false;
 	}
 	// We only care if THIS row’s streamed text changed.
@@ -49,7 +52,7 @@ export const ChatMessage = memo(function ChatMessage({
 	isBusy,
 	isEditing,
 }: ChatMessageProps) {
-	const isUser = message.role === ConversationRoleEnum.user;
+	const isUser = message.role === RoleEnum.User;
 	const align = !isUser ? 'items-end text-left' : 'items-start text-left';
 	const leftColSpan = !isUser ? 'col-span-1 lg:col-span-2' : 'col-span-1';
 	const rightColSpan = !isUser ? 'col-span-1' : 'col-span-1 lg:col-span-2';
@@ -112,6 +115,7 @@ export const ChatMessage = memo(function ChatMessage({
 					onDisableMarkdownChange={checked => {
 						setRenderMarkdown(!checked);
 					}}
+					usage={message.usage}
 				/>
 			</div>
 			<div className={`${rightColSpan} row-start-2 row-end-2`} />

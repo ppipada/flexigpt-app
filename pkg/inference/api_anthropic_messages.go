@@ -215,6 +215,8 @@ func (api *AnthropicMessagesAPI) doNonStreaming(
 	resp, err := api.client.Messages.New(ctx, params, option.WithRequestTimeout(timeout))
 	isNilResp := resp == nil || len(resp.Content) == 0
 	attachDebugResp(ctx, completionResp.Body, err, isNilResp, "", resp)
+	completionResp.Body.Usage = usageFromAnthropicMessage(resp)
+
 	if isNilResp {
 		return completionResp, nil
 	}
@@ -303,6 +305,8 @@ func (api *AnthropicMessagesAPI) doStreaming(
 	streamErr := errors.Join(stream.Err(), streamAccumulateErr, streamWriteErr)
 	isNilResp := len(respFull.Content) == 0
 	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp, "", respFull)
+	completionResp.Body.Usage = usageFromAnthropicMessage(&respFull)
+
 	if isNilResp {
 		return completionResp, nil
 	}
@@ -372,7 +376,7 @@ func toAnthropicMessages(
 	// user turn.
 	lastUserIdx := -1
 	for i, m := range messages {
-		if m.Role == spec.User {
+		if m.Role == modelpresetSpec.RoleUser {
 			lastUserIdx = i
 		}
 	}
@@ -384,11 +388,11 @@ func toAnthropicMessages(
 		content := strings.TrimSpace(*m.Content)
 
 		switch m.Role {
-		case spec.System, spec.Developer:
+		case modelpresetSpec.RoleSystem, modelpresetSpec.RoleDeveloper:
 			if content != "" {
 				sysParts = append(sysParts, content)
 			}
-		case spec.User:
+		case modelpresetSpec.RoleUser:
 			var attachmentContent []anthropic.ContentBlockParamUnion
 			if len(m.Attachments) > 0 {
 				// Dont override original attachments in rehydration.
@@ -435,12 +439,12 @@ func toAnthropicMessages(
 			parts = append(parts, attachmentContent...)
 			out = append(out, anthropic.NewUserMessage(parts...))
 
-		case spec.Assistant:
+		case modelpresetSpec.RoleAssistant:
 			out = append(
 				out,
 				anthropic.NewAssistantMessage(anthropic.NewTextBlock(content)),
 			)
-		case spec.Function, spec.Tool:
+		case modelpresetSpec.RoleFunction, modelpresetSpec.RoleTool:
 			// Anthropic tools need to be processed independently of messages, skip for now.
 		default:
 			// Ignore unknown roles.
@@ -635,4 +639,23 @@ func extractAnthropicToolCalls(msg *anthropic.Message) []spec.ResponseToolCall {
 		return nil
 	}
 	return out
+}
+
+// usageFromAnthropicMessage normalizes Anthropic usage into spec.Usage.
+func usageFromAnthropicMessage(msg *anthropic.Message) *modelpresetSpec.Usage {
+	uOut := &modelpresetSpec.Usage{}
+	if msg == nil {
+		return uOut
+	}
+
+	u := msg.Usage
+
+	uOut.InputTokensCached = u.CacheReadInputTokens
+	uOut.InputTokensUncached = u.InputTokens
+	uOut.InputTokensTotal = u.CacheReadInputTokens + u.InputTokens
+	uOut.OutputTokens = u.OutputTokens
+	// Anthropic does not currently expose explicit reasoning token counts.
+	uOut.ReasoningTokens = 0
+
+	return uOut
 }

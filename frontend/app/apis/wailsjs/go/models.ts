@@ -965,6 +965,26 @@ export namespace spec {
 		}
 	}
 	
+	export class Usage {
+	    inputTokensTotal: number;
+	    inputTokensCached: number;
+	    inputTokensUncached: number;
+	    outputTokens: number;
+	    reasoningTokens: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Usage(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.inputTokensTotal = source["inputTokensTotal"];
+	        this.inputTokensCached = source["inputTokensCached"];
+	        this.inputTokensUncached = source["inputTokensUncached"];
+	        this.outputTokens = source["outputTokens"];
+	        this.reasoningTokens = source["reasoningTokens"];
+	    }
+	}
 	export class ConversationMessage {
 	    id: string;
 	    // Go type: time
@@ -975,6 +995,7 @@ export namespace spec {
 	    details?: string;
 	    toolChoices?: ToolChoice[];
 	    attachments?: attachment.Attachment[];
+	    usage?: Usage;
 	
 	    static createFrom(source: any = {}) {
 	        return new ConversationMessage(source);
@@ -990,6 +1011,7 @@ export namespace spec {
 	        this.details = source["details"];
 	        this.toolChoices = this.convertValues(source["toolChoices"], ToolChoice);
 	        this.attachments = this.convertValues(source["attachments"], attachment.Attachment);
+	        this.usage = this.convertValues(source["usage"], Usage);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1357,6 +1379,7 @@ export namespace spec {
 	    requestDetails?: APIRequestDetails;
 	    responseDetails?: APIResponseDetails;
 	    errorDetails?: APIErrorDetails;
+	    usage?: Usage;
 	    responseContent?: ResponseContent[];
 	    toolCalls?: ResponseToolCall[];
 	
@@ -1369,6 +1392,7 @@ export namespace spec {
 	        this.requestDetails = this.convertValues(source["requestDetails"], APIRequestDetails);
 	        this.responseDetails = this.convertValues(source["responseDetails"], APIResponseDetails);
 	        this.errorDetails = this.convertValues(source["errorDetails"], APIErrorDetails);
+	        this.usage = this.convertValues(source["usage"], Usage);
 	        this.responseContent = this.convertValues(source["responseContent"], ResponseContent);
 	        this.toolCalls = this.convertValues(source["toolCalls"], ResponseToolCall);
 	    }
@@ -4229,6 +4253,7 @@ export namespace spec {
 	
 	    }
 	}
+	
 	
 	
 	

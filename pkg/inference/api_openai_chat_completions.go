@@ -227,6 +227,7 @@ func (api *OpenAIChatCompletionsAPI) doNonStreaming(
 	resp, err := api.client.Chat.Completions.New(ctx, params, option.WithRequestTimeout(timeout))
 	isNilResp := resp == nil || len(resp.Choices) == 0
 	attachDebugResp(ctx, completionResp.Body, err, isNilResp, "", resp)
+	completionResp.Body.Usage = usageFromOpenAIChatCompletion(resp)
 	if isNilResp {
 		return completionResp, nil
 	}
@@ -291,6 +292,7 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 	isNilResp := len(acc.Choices) == 0
 
 	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp, "", acc.ChatCompletion)
+	completionResp.Body.Usage = usageFromOpenAIChatCompletion(&acc.ChatCompletion)
 
 	if isNilResp {
 		return completionResp, nil
@@ -324,7 +326,7 @@ func toOpenAIChatMessages(
 	// "current" user turn in the frontend, which is always the last user role.
 	lastUserIdx := -1
 	for i, m := range messages {
-		if m.Role == spec.User {
+		if m.Role == modelpresetSpec.RoleUser {
 			lastUserIdx = i
 		}
 	}
@@ -334,11 +336,11 @@ func toOpenAIChatMessages(
 			continue
 		}
 		switch m.Role {
-		case spec.System:
+		case modelpresetSpec.RoleSystem:
 			out = append(out, openai.SystemMessage(*m.Content))
-		case spec.Developer:
+		case modelpresetSpec.RoleDeveloper:
 			out = append(out, openai.DeveloperMessage(*m.Content))
-		case spec.User:
+		case modelpresetSpec.RoleUser:
 			var attachmentContent []openai.ChatCompletionContentPartUnionParam
 			if len(m.Attachments) > 0 {
 				// Dont override original attachments in rehydration.
@@ -385,9 +387,9 @@ func toOpenAIChatMessages(
 			parts = append(parts, attachmentContent...)
 			out = append(out, openai.UserMessage(parts))
 
-		case spec.Assistant:
+		case modelpresetSpec.RoleAssistant:
 			out = append(out, openai.AssistantMessage(*m.Content))
-		case spec.Function, spec.Tool:
+		case modelpresetSpec.RoleFunction, modelpresetSpec.RoleTool:
 			toolCallID := "1"
 			out = append(out, openai.ToolMessage(*m.Content, toolCallID))
 		}
@@ -560,4 +562,22 @@ func convertOpenAIChatMessageToolCalls(
 		return nil
 	}
 	return out
+}
+
+// usageFromOpenAIChatCompletion normalizes OpenAI ChatCompletion usage into spec.Usage.
+func usageFromOpenAIChatCompletion(resp *openai.ChatCompletion) *modelpresetSpec.Usage {
+	uOut := &modelpresetSpec.Usage{}
+	if resp == nil {
+		return uOut
+	}
+
+	u := resp.Usage
+
+	uOut.InputTokensTotal = u.PromptTokens
+	uOut.InputTokensCached = u.PromptTokensDetails.CachedTokens
+	uOut.InputTokensUncached = max(u.PromptTokens-u.PromptTokensDetails.CachedTokens, 0)
+	uOut.OutputTokens = u.CompletionTokens
+	uOut.ReasoningTokens = u.CompletionTokensDetails.ReasoningTokens
+
+	return uOut
 }

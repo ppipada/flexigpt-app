@@ -79,7 +79,6 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 				{Name: "user", Weight: 3},
 				{Name: "assistant", Weight: 4},
 				{Name: "function", Weight: 5},
-				{Name: "feedback", Weight: 6},
 				{Name: "mtime", Unindexed: true},
 			},
 		}, ftsengine.WithLogger(slog.Default()))

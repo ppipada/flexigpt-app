@@ -58,6 +58,22 @@ export enum ReasoningLevel {
 	High = 'high',
 }
 
+export enum RoleEnum {
+	System = 'system',
+	Developer = 'developer',
+	User = 'user',
+	Assistant = 'assistant',
+	Function = 'function',
+	Tool = 'tool',
+}
+export interface CompletionUsage {
+	inputTokensTotal: number;
+	inputTokensCached: number;
+	inputTokensUncached: number;
+	outputTokens: number;
+	reasoningTokens: number;
+}
+
 export interface ReasoningParams {
 	type: ReasoningType;
 	level: ReasoningLevel;

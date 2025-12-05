@@ -238,6 +238,7 @@ func (api *OpenAIResponsesAPI) doNonStreaming(
 	resp, err := api.client.Responses.New(ctx, params, option.WithRequestTimeout(timeout))
 	isNilResp := resp == nil || len(resp.Output) == 0
 	attachDebugResp(ctx, completionResp.Body, err, isNilResp, "", resp)
+	completionResp.Body.Usage = usageFromOpenAIResponse(resp)
 	if isNilResp {
 		return completionResp, nil
 	}
@@ -327,6 +328,8 @@ func (api *OpenAIResponsesAPI) doStreaming(
 	streamErr := errors.Join(stream.Err(), streamWriteErr)
 	isNilResp := len(respFull.Output) == 0
 	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp, "", respFull)
+	completionResp.Body.Usage = usageFromOpenAIResponse(&respFull)
+
 	if isNilResp {
 		return completionResp, nil
 	}
@@ -349,7 +352,7 @@ func toOpenAIResponsesMessages(
 	// Identify last user message index; attachments belong to the current user turn.
 	lastUserIdx := -1
 	for i, m := range messages {
-		if m.Role == spec.User {
+		if m.Role == modelpresetSpec.RoleUser {
 			lastUserIdx = i
 		}
 	}
@@ -358,7 +361,7 @@ func toOpenAIResponsesMessages(
 			continue
 		}
 		switch m.Role {
-		case spec.System:
+		case modelpresetSpec.RoleSystem:
 			out = append(out, responses.ResponseInputItemUnionParam{
 				OfMessage: &responses.EasyInputMessageParam{
 					Content: responses.EasyInputMessageContentUnionParam{
@@ -369,7 +372,7 @@ func toOpenAIResponsesMessages(
 				},
 			})
 
-		case spec.Developer:
+		case modelpresetSpec.RoleDeveloper:
 			out = append(out, responses.ResponseInputItemUnionParam{
 				OfMessage: &responses.EasyInputMessageParam{
 					Content: responses.EasyInputMessageContentUnionParam{
@@ -380,7 +383,7 @@ func toOpenAIResponsesMessages(
 				},
 			})
 
-		case spec.User:
+		case modelpresetSpec.RoleUser:
 			// Build attachments for this specific user turn (if any).
 			var attachmentContent []responses.ResponseInputContentUnionParam
 			if len(m.Attachments) > 0 {
@@ -447,7 +450,7 @@ func toOpenAIResponsesMessages(
 				responses.EasyInputMessageRoleUser,
 			))
 
-		case spec.Assistant:
+		case modelpresetSpec.RoleAssistant:
 			out = append(out, responses.ResponseInputItemUnionParam{
 				OfMessage: &responses.EasyInputMessageParam{
 					Content: responses.EasyInputMessageContentUnionParam{
@@ -458,7 +461,7 @@ func toOpenAIResponsesMessages(
 				},
 			})
 
-		case spec.Function, spec.Tool:
+		case modelpresetSpec.RoleFunction, modelpresetSpec.RoleTool:
 			// Not used here.
 		}
 	}
@@ -687,4 +690,22 @@ func extractOpenAIResponseToolCalls(resp *responses.Response) []spec.ResponseToo
 		return nil
 	}
 	return out
+}
+
+// usageFromOpenAIResponse normalizes OpenAI Responses API usage into spec.Usage.
+func usageFromOpenAIResponse(resp *responses.Response) *modelpresetSpec.Usage {
+	uOut := &modelpresetSpec.Usage{}
+	if resp == nil {
+		return uOut
+	}
+
+	u := resp.Usage
+
+	uOut.InputTokensTotal = u.InputTokens
+	uOut.InputTokensCached = u.InputTokensDetails.CachedTokens
+	uOut.InputTokensUncached = max(u.InputTokens-u.InputTokensDetails.CachedTokens, 0)
+	uOut.OutputTokens = u.OutputTokens
+	uOut.ReasoningTokens = u.OutputTokensDetails.ReasoningTokens
+
+	return uOut
 }

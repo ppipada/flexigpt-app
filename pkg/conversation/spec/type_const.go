@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/ppipada/flexigpt-app/pkg/attachment"
+	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
@@ -13,27 +14,17 @@ const (
 	DefaultPageSize           = 12
 )
 
-// ConversationRoleEnum represents the role of a participant in a conversation.
-type ConversationRoleEnum string
-
-const (
-	ConversationRoleSystem    ConversationRoleEnum = "system"
-	ConversationRoleUser      ConversationRoleEnum = "user"
-	ConversationRoleAssistant ConversationRoleEnum = "assistant"
-	ConversationRoleFunction  ConversationRoleEnum = "function"
-	ConversationRoleFeedback  ConversationRoleEnum = "feedback"
-)
-
 // ConversationMessage represents a message in a conversation.
 type ConversationMessage struct {
-	ID          string                  `json:"id"`
-	CreatedAt   *time.Time              `json:"createdAt,omitempty"`
-	Role        ConversationRoleEnum    `json:"role"`
-	Content     string                  `json:"content"`
-	Name        *string                 `json:"name,omitempty"`
-	Details     *string                 `json:"details,omitempty"`
-	ToolChoices []toolSpec.ToolChoice   `json:"toolChoices,omitempty"`
-	Attachments []attachment.Attachment `json:"attachments,omitempty"`
+	ID          string                   `json:"id"`
+	CreatedAt   *time.Time               `json:"createdAt,omitempty"`
+	Role        modelpresetSpec.RoleEnum `json:"role"`
+	Content     string                   `json:"content"`
+	Name        *string                  `json:"name,omitempty"`
+	Details     *string                  `json:"details,omitempty"`
+	ToolChoices []toolSpec.ToolChoice    `json:"toolChoices,omitempty"`
+	Attachments []attachment.Attachment  `json:"attachments,omitempty"`
+	Usage       *modelpresetSpec.Usage   `json:"usage,omitempty"`
 }
 
 // Conversation represents a conversation with messages.

@@ -1,26 +1,16 @@
 import {
 	type ChatCompletionDataMessage,
-	ChatCompletionRoleEnum,
 	type FetchCompletionData,
 	type FetchCompletionResponseBody,
 	type ModelParams,
 	ResponseContentType,
 } from '@/spec/aiprovider';
 import type { ConversationMessage } from '@/spec/conversation';
-import { ConversationRoleEnum } from '@/spec/conversation';
-import type { ProviderName } from '@/spec/modelpreset';
+import type { CompletionUsage, ProviderName } from '@/spec/modelpreset';
 
 import { CustomMDLanguage } from '@/lib/text_utils';
 
 import { log, providerSetAPI } from '@/apis/baseapi';
-
-const roleMap: Record<ConversationRoleEnum, ChatCompletionRoleEnum> = {
-	[ConversationRoleEnum.system]: ChatCompletionRoleEnum.system,
-	[ConversationRoleEnum.user]: ChatCompletionRoleEnum.user,
-	[ConversationRoleEnum.assistant]: ChatCompletionRoleEnum.assistant,
-	[ConversationRoleEnum.function]: ChatCompletionRoleEnum.function,
-	[ConversationRoleEnum.feedback]: ChatCompletionRoleEnum.user,
-};
 
 /**
  * @public
@@ -36,7 +26,7 @@ function convertConversationToBuildMessages(conversationMessages?: ConversationM
 	const chatMessages: ChatCompletionDataMessage[] = [];
 	conversationMessages.forEach(convoMsg => {
 		const message: ChatCompletionDataMessage = {
-			role: roleMap[convoMsg.role],
+			role: convoMsg.role,
 			content: convoMsg.content,
 			name: convoMsg.name,
 			// Attachments are stored per conversation message; pass them through.
@@ -68,10 +58,18 @@ export async function BuildCompletionDataFromConversation(
 
 // export const normalizeThinkingChunk = (s: string) => s.replace(/~~~+/g, '~~\u200b~'); // break accidental fences
 
-function parseAPIResponse(convoMessage: ConversationMessage, providerResp: FetchCompletionResponseBody | undefined) {
+function parseAPIResponse(
+	convoMessage: ConversationMessage,
+	providerResp: FetchCompletionResponseBody | undefined
+): {
+	responseMessage: ConversationMessage;
+	requestDetails: string | undefined;
+	usage?: CompletionUsage;
+} {
 	let respContent = '';
 	let respDetails: string | undefined;
 	let requestDetails: string | undefined;
+	let usage: CompletionUsage | undefined;
 
 	if (providerResp) {
 		if (providerResp.responseContent && providerResp.responseContent.length) {
@@ -135,6 +133,10 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Fetch
 			const toolCallsBlock = '### Tool calls\n' + getQuotedJSON(providerResp.toolCalls);
 			respDetails = respDetails ? `${respDetails}\n\n${toolCallsBlock}` : toolCallsBlock;
 		}
+
+		if (providerResp.usage) {
+			usage = providerResp.usage;
+		}
 	}
 
 	if (!respContent) {
@@ -143,7 +145,7 @@ function parseAPIResponse(convoMessage: ConversationMessage, providerResp: Fetch
 
 	convoMessage.content = respContent;
 	convoMessage.details = respDetails;
-	return { responseMessage: convoMessage, requestDetails };
+	return { responseMessage: convoMessage, requestDetails: requestDetails, usage: usage };
 }
 
 async function handleDirectCompletion(
@@ -152,7 +154,11 @@ async function handleDirectCompletion(
 	completionData: FetchCompletionData,
 	requestId?: string,
 	signal?: AbortSignal
-): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
+): Promise<{
+	responseMessage: ConversationMessage | undefined;
+	requestDetails: string | undefined;
+	usage?: CompletionUsage;
+}> {
 	const providerResp = await providerSetAPI.completion(provider, completionData, requestId, signal);
 	return parseAPIResponse(convoMessage, providerResp);
 }
@@ -165,7 +171,11 @@ async function handleStreamedCompletion(
 	signal?: AbortSignal,
 	onStreamTextData?: (textData: string) => void,
 	onStreamThinkingData?: (thinkingData: string) => void
-): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
+): Promise<{
+	responseMessage: ConversationMessage | undefined;
+	requestDetails: string | undefined;
+	usage?: CompletionUsage;
+}> {
 	const providerResp = await providerSetAPI.completion(
 		provider,
 		completionData,
@@ -185,7 +195,11 @@ export async function HandleCompletion(
 	signal?: AbortSignal,
 	onStreamTextData?: (textData: string) => void,
 	onStreamThinkingData?: (thinkingData: string) => void
-): Promise<{ responseMessage: ConversationMessage | undefined; requestDetails: string | undefined }> {
+): Promise<{
+	responseMessage: ConversationMessage | undefined;
+	requestDetails: string | undefined;
+	usage?: CompletionUsage;
+}> {
 	try {
 		const isStream = completionData.modelParams.stream || false;
 		// log.info('FetchCompletionData', defaultProvider, JSON.stringify(fullCompletionData, null, 2));
@@ -219,6 +233,6 @@ export async function HandleCompletion(
 		convoMessage.content = existing ? existing + suffix : suffix;
 		convoMessage.details = details;
 
-		return { responseMessage: convoMessage, requestDetails: undefined };
+		return { responseMessage: convoMessage, requestDetails: undefined, usage: undefined };
 	}
 }

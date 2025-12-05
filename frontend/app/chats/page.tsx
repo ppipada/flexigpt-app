@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ModelParams } from '@/spec/aiprovider';
 import type { Conversation, ConversationMessage, ConversationSearchItem } from '@/spec/conversation';
-import { ConversationRoleEnum } from '@/spec/conversation';
+import { RoleEnum } from '@/spec/modelpreset';
 import type { ToolChoice } from '@/spec/tool';
 
 import { defaultShortcutConfig, type ShortcutConfig, useChatShortcuts } from '@/lib/keyboard_shortcuts';
@@ -36,7 +36,7 @@ function initConversation(title = 'New Conversation'): Conversation {
 	};
 }
 
-function initConversationMessage(role: ConversationRoleEnum, content: string): ConversationMessage {
+function initConversationMessage(role: RoleEnum, content: string): ConversationMessage {
 	const d = new Date();
 	return {
 		id: d.toISOString(),
@@ -147,7 +147,7 @@ export default function ChatsPage() {
 	const saveUpdatedChat = (updatedChat: Conversation, titleWasExternallyChanged = false) => {
 		let newTitle = updatedChat.title;
 		if (!manualTitleLockedRef.current && updatedChat.messages.length <= 4) {
-			const userMessages = updatedChat.messages.filter(m => m.role === ConversationRoleEnum.user);
+			const userMessages = updatedChat.messages.filter(m => m.role === RoleEnum.User);
 			if (userMessages.length === 1) {
 				// Always generate title from first user message
 				newTitle = generateTitle(userMessages[0].content).title;
@@ -243,7 +243,7 @@ export default function ChatsPage() {
 
 			await new Promise(res => setTimeout(res, 0));
 
-			const convoMsg = initConversationMessage(ConversationRoleEnum.assistant, '');
+			const convoMsg = initConversationMessage(RoleEnum.Assistant, '');
 			const updatedChatWithConvoMessage = {
 				...updatedChatWithUserMessage,
 				messages: [...updatedChatWithUserMessage.messages, convoMsg],
@@ -314,7 +314,7 @@ export default function ChatsPage() {
 
 				if (updatedChatWithConvoMessage.messages.length > 1) {
 					const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
-					if (updatedChatWithConvoMessage.messages[prevIdx].role === ConversationRoleEnum.user) {
+					if (updatedChatWithConvoMessage.messages[prevIdx].role === RoleEnum.User) {
 						if (completionData.messages && completionData.messages.length > 0) {
 							const msg = completionData.messages[completionData.messages.length - 1];
 							const atts = msg.attachments ?? [];
@@ -346,7 +346,7 @@ export default function ChatsPage() {
 					const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
 					const prevMessage = updatedChatWithConvoMessage.messages[prevIdx];
 
-					if (prevMessage.role === ConversationRoleEnum.user) {
+					if (prevMessage.role === RoleEnum.User) {
 						let detailsMd: string | undefined;
 
 						if (newMsg.requestDetails) {
@@ -369,6 +369,10 @@ export default function ChatsPage() {
 
 				if (newMsg.responseMessage) {
 					const respMessage = { ...newMsg.responseMessage };
+					if (newMsg.usage) {
+						respMessage.usage = newMsg.usage;
+					}
+
 					// Create FRESH objects so react sees the change even in non-streaming
 					// mode, where `streamedMessage` never changes.
 					const finalChat: Conversation = {
@@ -460,7 +464,7 @@ export default function ChatsPage() {
 			setEditingMessageId(null);
 		}
 
-		const newMsg = initConversationMessage(ConversationRoleEnum.user, trimmed);
+		const newMsg = initConversationMessage(RoleEnum.User, trimmed);
 		const toolChoices =
 			payload.attachedTools.length > 0 ? payload.attachedTools.map(attachedToolToConversationToolChoice) : undefined;
 		if (toolChoices && toolChoices.length > 0) {
@@ -486,7 +490,7 @@ export default function ChatsPage() {
 
 			const msg = chat.messages.find(m => m.id === id);
 			if (!msg) return;
-			if (msg.role !== ConversationRoleEnum.user) return;
+			if (msg.role !== RoleEnum.User) return;
 
 			const external: EditorExternalMessage = {
 				text: msg.content,
@@ -547,12 +551,8 @@ export default function ChatsPage() {
 
 	const renderedMessages = chat.messages.map((msg, idx) => {
 		const isPending =
-			isBusy &&
-			idx === chat.messages.length - 1 &&
-			msg.role === ConversationRoleEnum.assistant &&
-			msg.content.length === 0;
-		const live =
-			isBusy && idx === chat.messages.length - 1 && msg.role === ConversationRoleEnum.assistant ? streamedMessage : '';
+			isBusy && idx === chat.messages.length - 1 && msg.role === RoleEnum.Assistant && msg.content.length === 0;
+		const live = isBusy && idx === chat.messages.length - 1 && msg.role === RoleEnum.Assistant ? streamedMessage : '';
 
 		return (
 			<ChatMessage

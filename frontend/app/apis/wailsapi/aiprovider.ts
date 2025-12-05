@@ -5,7 +5,7 @@ import type {
 	IProviderSetAPI,
 	ModelParams,
 } from '@/spec/aiprovider';
-import type { ProviderName } from '@/spec/modelpreset';
+import type { CompletionUsage, ProviderName } from '@/spec/modelpreset';
 import type { ToolChoice } from '@/spec/tool';
 
 import { BuildCompletionData, CancelCompletion, FetchCompletion } from '@/apis/wailsjs/go/main/ProviderSetWrapper';
@@ -111,7 +111,14 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 			const resp = await Promise.race([responsePromise, abortPromise]);
 			const respBody = resp.Body as wailsSpec.FetchCompletionResponseBody;
 			// console.log(JSON.stringify(respBody, undefined, 2));
-			return respBody as FetchCompletionResponseBody;
+			return {
+				requestDetails: respBody.requestDetails,
+				responseDetails: respBody.responseDetails,
+				errorDetails: respBody.errorDetails,
+				usage: respBody.usage as CompletionUsage,
+				responseContent: respBody.responseContent,
+				toolCalls: respBody.toolCalls,
+			} as FetchCompletionResponseBody;
 		} finally {
 			/* Always clean up – even when the race rejected with AbortError */
 			if (textCallbackId) EventsOff(textCallbackId);

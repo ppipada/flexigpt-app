@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
@@ -17,6 +18,8 @@ import (
 )
 
 type ProviderSetAPI struct {
+	mu sync.RWMutex
+
 	providers map[modelpresetSpec.ProviderName]CompletionProvider
 	debug     bool
 	toolStore *toolStore.ToolStore
@@ -41,6 +44,10 @@ func (ps *ProviderSetAPI) AddProvider(
 	if req == nil || req.Provider == "" || req.Body == nil || req.Body.Origin == "" {
 		return nil, errors.New("invalid params")
 	}
+
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
+
 	_, exists := ps.providers[req.Provider]
 	if exists {
 		return nil, errors.New(
@@ -78,7 +85,10 @@ func (ps *ProviderSetAPI) DeleteProvider(
 	if req == nil || req.Provider == "" {
 		return nil, errors.New("got empty provider input")
 	}
+	ps.mu.Lock()
+	defer ps.mu.Unlock()
 	_, exists := ps.providers[req.Provider]
+
 	if !exists {
 		return nil, errors.New(
 			"invalid provider: provider does not exist",
@@ -123,12 +133,10 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 	ctx context.Context,
 	req *spec.BuildCompletionDataRequest,
 ) (*spec.BuildCompletionDataResponse, error) {
-	if req == nil || req.Body == nil || req.Body.ModelParams.Name == "" ||
-		req.Body.CurrentMessage.Content == nil ||
-		req.Body.CurrentMessage.Role != spec.User {
+	if req == nil || req.Body == nil || req.Body.ModelParams.Name == "" || req.Body.CurrentMessage.Content == nil {
 		return nil, errors.New("got empty provider/model input")
 	}
-	if req.Body.CurrentMessage.Role != spec.User {
+	if req.Body.CurrentMessage.Role != modelpresetSpec.RoleUser {
 		return nil, errors.New("current message must be from user")
 	}
 	hasText := req.Body.CurrentMessage.Content != nil &&
@@ -139,7 +147,10 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 	}
 
 	provider := req.Provider
+	ps.mu.RLock()
 	p, exists := ps.providers[provider]
+	ps.mu.RUnlock()
+
 	if !exists {
 		return nil, errors.New("invalid provider")
 	}
@@ -206,7 +217,10 @@ func (ps *ProviderSetAPI) FetchCompletion(
 		return nil, errors.New("got empty fetch completion input")
 	}
 	provider := req.Provider
+	ps.mu.RLock()
 	p, exists := ps.providers[provider]
+	ps.mu.RUnlock()
+
 	if !exists {
 		return nil, errors.New("invalid provider")
 	}
