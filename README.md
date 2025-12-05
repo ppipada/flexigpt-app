@@ -5,7 +5,7 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 > ⚠ Early Access Notice:
 >
 > The project is under active development; expect breaking changes and incomplete features between releases.
-> Using any packages in this project as a library is not supported. Most things are tightly coupled together to serve as a App.
+> Using any packages in this project as a library is not supported. Most things are tightly coupled together to serve as an App.
 
 - [Quick Start](#quick-start)
 - [Key Features](#key-features)
