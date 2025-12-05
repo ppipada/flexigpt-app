@@ -84,3 +84,44 @@ func extractPDFTextSafe(path string, maxBytes int) (text string, err error) {
 	}
 	return text, nil
 }
+
+// extractPDFTextFromBytesSafe extracts text from in-memory PDF bytes with a
+// byte limit and panic recovery. It mirrors extractPDFTextSafe but is backed
+// by an in-memory reader instead of a file on disk.
+func extractPDFTextFromBytesSafe(data []byte, maxBytes int) (text string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Warn("panic during PDF text extraction from bytes", "panic", r)
+			err = fmt.Errorf("panic during PDF text extraction: %v", r)
+		}
+	}()
+
+	if len(data) == 0 {
+		return "", errors.New("empty PDF data")
+	}
+
+	reader := bytes.NewReader(data)
+	r, err := pdf.NewReader(reader, int64(len(data)))
+	if err != nil {
+		return "", err
+	}
+
+	plain, err := r.GetPlainText()
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	limited := &io.LimitedReader{
+		R: plain,
+		N: int64(maxBytes),
+	}
+	if _, err := io.Copy(&buf, limited); err != nil {
+		return "", err
+	}
+	text = strings.TrimSpace(buf.String())
+	if text == "" {
+		return "", errors.New("empty PDF text after extraction")
+	}
+	return text, nil
+}

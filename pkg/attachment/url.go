@@ -141,7 +141,9 @@ func buildBlocksForURL(ctx context.Context, att *Attachment, onlyIfTextKind bool
 //
 //  1. If the URL is an image (by Content-Type), it is fetched as an image
 //     block (same behaviour as AttachmentModeImage).
-//  2. If the URL is a PDF, it is fetched as a file block.
+//  2. If the URL is a PDF, we try to extract text into a text block; on
+//     failure we fall back to a file block (or link-only when text-only
+//     was explicitly requested).
 //  3. If the URL is plain text (non-HTML), it is fetched as text and sent
 //     directly with a small prefix.
 //  4. Otherwise, we assume HTML/unknown and use the Trafilatura +
@@ -183,12 +185,24 @@ func buildBlocksForURLPage(ctx context.Context, att *Attachment, onlyIfTextKind 
 		return buildImageBlockFromURL(ctx, att)
 	}
 
-	// 2) PDF: encode as Base64 file block.
+	// 2) PDF: prefer text extraction; fall back to file/link.
 	if strings.HasPrefix(lowerCT, "application/pdf") || strings.HasSuffix(lowerURL, ".pdf") {
-		if onlyIfTextKind {
+		cb, err := buildPDFTextOrFileBlockFromURL(ctx, rawURL)
+		if err != nil {
+			slog.Warn("failed to process pdf url, falling back to link-only",
+				"url", rawURL, "err", err)
+
+			return buildLinkOnlyContentBlock(att), nil
+		}
+
+		if onlyIfTextKind && cb.Kind != ContentBlockText {
+			// We managed to download the PDF but could not extract text
+			// (so the helper fell back to a file block). Don't return
+			// non-text content when text-only was explicitly requested.
 			return nil, ErrNonTextContentBlock
 		}
-		return buildFileBlockFromURL(ctx, att)
+
+		return cb, nil
 	}
 
 	// 3) Plain text (non-HTML): fetch as text and send directly.
@@ -239,6 +253,46 @@ func buildBlocksForURLPage(ctx context.Context, att *Attachment, onlyIfTextKind 
 	return &ContentBlock{
 		Kind: ContentBlockText,
 		Text: &txt,
+	}, nil
+}
+
+// buildPDFTextOrFileBlockFromURL fetches a PDF from a URL and tries to extract
+// its text content. On success, it returns a text ContentBlock; on failure or
+// panic it falls back to a base64-encoded file ContentBlock.
+//
+// This mirrors buildPDFTextOrFileBlock (local file) but works with URL bytes.
+func buildPDFTextOrFileBlockFromURL(ctx context.Context, rawURL string) (*ContentBlock, error) {
+	// Reuse the same safety limit as other attachment fetches.
+	data, contentType, err := fetchURLBytes(ctx, rawURL, maxAttachmentFetchBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	text, err := extractPDFTextFromBytesSafe(data, maxAttachmentFetchBytes)
+	if err == nil && text != "" {
+		return &ContentBlock{
+			Kind: ContentBlockText,
+			Text: &text,
+		}, nil
+	}
+
+	// Fallback: send as file attachment.
+	if err != nil {
+		slog.Warn("pdf text extraction from url failed; falling back to base64 attachment",
+			"url", rawURL, "err", err)
+	}
+
+	if contentType == "" {
+		contentType = string(fileutil.MIMEApplicationPDF)
+	}
+
+	base64Data := base64.StdEncoding.EncodeToString(data)
+	fname := filenameFromURL(rawURL, contentType)
+	return &ContentBlock{
+		Kind:       ContentBlockFile,
+		Base64Data: &base64Data,
+		MIMEType:   &contentType,
+		FileName:   &fname,
 	}, nil
 }
 
