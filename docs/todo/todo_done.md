@@ -640,3 +640,6 @@
   - [x] Attachment follow through across conversations.
   - [x] cache token usage.
   - [x] url attachments.
+
+- Usage:
+  - [x] With attachments, token usage display seems more important.
