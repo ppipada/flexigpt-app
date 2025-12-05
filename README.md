@@ -38,7 +38,7 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 
 - _Model Presets_ bundle a model selection (e.g. `gpt-5.1`) together with recommended defaults such as temperature, token limits, system prompt and reasoning parameters. Inbuilt presets for all supported LLM providers, with one-click loading during chat. Tweak values per conversation without altering the saved preset.
 
-  <details>
+- <details>
   <summary>Feature details</summary>
 
   - Key Concepts
@@ -91,7 +91,7 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 
 - Auto-saved sessions with full-text search and resumable at any time, stored in local files.
 
-  <details>
+- <details>
   <summary>Feature details</summary>
 
   - Every chat session is persisted as a _Conversation_ containing its title, timestamps and full message sequence.
@@ -125,7 +125,7 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 - Attach Local or web based files (text/code/images/pdf's) to a conversation.
 - Attach a directory (auto crawl and attach of files within)
 
-  <details>
+- <details>
   <summary>Feature details</summary>
 
   - Multiple local files or a single directory can be selected at a time to attach to the message.
@@ -144,7 +144,7 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 - Turn complex prompts into reusable `templates` with variables.
 - If required, group into toggle-able bundles.
 
-  <details>
+- <details>
   <summary>Feature details</summary>
 
   - Prompt Templates allow you to store complex prompts (including variables and pre-processing tools) and reuse them with a single slash-command.
