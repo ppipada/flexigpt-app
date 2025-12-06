@@ -642,4 +642,7 @@
   - [x] url attachments.
 
 - Usage:
+
   - [x] With attachments, token usage display seems more important.
+
+- [x] check if extraction pipeline for PDF urls is handled properly.
