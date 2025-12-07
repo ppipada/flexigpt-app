@@ -10,3 +10,5 @@
   - [ ] web search tools better integration needs to be done e2e
   - [ ] some parallel tools can be created locally
   - [ ] attached tools to be given back as schema to consumers for exec
+
+- [x] 5.1 codex max, deepseek 3.2
