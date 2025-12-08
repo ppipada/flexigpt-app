@@ -193,7 +193,7 @@ export const EnhancedMarkdown = memo(function EnhancedMarkdown({
 	return (
 		<MdErrorBoundary source={processedText}>
 			<Markdown
-				remarkPlugins={[supersub, remarkGemoji, remarkMath, remarkGfm]}
+				remarkPlugins={[remarkGfm, remarkMath, supersub, remarkGemoji]}
 				rehypePlugins={[rehypeRaw, [rehypeSanitize, { ...strictSchema }], rehypeKatex]}
 				components={components}
 				skipHtml={false}

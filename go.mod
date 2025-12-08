@@ -19,7 +19,6 @@ require (
 	golang.org/x/net v0.47.0
 )
 
-
 require (
 	al.essio.dev/pkg/shellescape v1.6.0 // indirect
 	github.com/JohannesKaufmann/dom v0.2.0 // indirect
