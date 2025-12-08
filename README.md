@@ -247,21 +247,14 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 
 ## Built With
 
+- Data storage: `JSON` and `SQLite` files in local filesystem.
 - [Go](https://go.dev/) backend.
 - [Wails](https://wails.io/) as a desktop application building platform.
+- Official Go SDKs by [OpenAI](https://github.com/openai/openai-go) and [Anthropic](https://github.com/anthropics/anthropic-sdk-go).
 - [Vite](https://vite.dev/) + [React Router v7](https://reactrouter.com/) frontend in [Typescript](https://www.typescriptlang.org/).
 - [DaisyUI](https://daisyui.com/) with [TailwindCSS](https://tailwindcss.com/) for styling.
-- Official Go SDKs by [OpenAI](https://github.com/openai/openai-go) and [Anthropic](https://github.com/anthropics/anthropic-sdk-go).
 
-- Tooling:
-
-  - [Golangci-lint](https://golangci-lint.run/)
-  - [Knip](https://knip.dev/)
-  - [ESLint](https://eslint.org/)
-  - [Prettier](https://prettier.io/)
-  - [GitHub actions](https://github.com/features/actions)
-
-- Data storage: `JSON` and `SQLite` files in local filesystem.
+- Tooling: [Golangci-lint](https://golangci-lint.run/), [Knip](https://knip.dev/), [ESLint](https://eslint.org/), [Prettier](https://prettier.io/), [GitHub actions](https://github.com/features/actions)
 
 ## Contributing
 
