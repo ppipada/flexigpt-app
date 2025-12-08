@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	html2md "github.com/JohannesKaufmann/html-to-markdown"
-	"github.com/go-shiori/dom"
+	html2md "github.com/JohannesKaufmann/html-to-markdown/v2"
 	"github.com/markusmobius/go-trafilatura"
+	"golang.org/x/net/html"
 )
 
 // NOTE: These limits are safety rails to avoid pulling huge resources
@@ -110,9 +110,7 @@ func ExtractReadableMarkdownFromURL(ctx context.Context, rawURL string) (string,
 	}
 
 	// Convert cleaned HTML to Markdown for LLM-friendly structured text.
-	converter := html2md.NewConverter("", true, nil)
-
-	markdown, err := converter.ConvertString(cleanedHTML)
+	markdown, err := html2md.ConvertString(cleanedHTML)
 	if err != nil {
 		return "", fmt.Errorf("html-to-markdown conversion failed: %w", err)
 	}
@@ -170,12 +168,27 @@ func extractMainContentHTMLWithTrafilatura(_ context.Context, rawURL string, htm
 		return "", ErrNoContentExtracted
 	}
 
-	cleaned := strings.TrimSpace(dom.OuterHTML(doc))
+	cleaned := strings.TrimSpace(getHTMLString(doc))
 	if cleaned == "" {
 		return "", ErrNoContentExtracted
 	}
 
 	return cleaned, nil
+}
+
+// getHTMLString get an escaped HTML serialization of the element and its descendants.
+func getHTMLString(node *html.Node) string {
+	if node == nil {
+		return ""
+	}
+
+	var buffer bytes.Buffer
+	err := html.Render(&buffer, node)
+	if err != nil {
+		return ""
+	}
+
+	return buffer.String()
 }
 
 // fetchURLBytes downloads up to maxBytes bytes from rawURL.
