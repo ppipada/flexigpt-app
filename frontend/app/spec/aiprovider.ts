@@ -1,12 +1,14 @@
 import type { Attachment } from '@/spec/attachment';
 import type { CompletionUsage, ModelName, ProviderName, ReasoningParams, RoleEnum } from '@/spec/modelpreset';
-import type { Tool, ToolCall, ToolChoice } from '@/spec/tool';
+import type { Tool, ToolCall, ToolChoice, ToolOutput } from '@/spec/tool';
 
 export interface ChatCompletionDataMessage {
 	role: RoleEnum;
 	content?: string | null;
 	name?: string | null;
-	attachments?: Array<Attachment>;
+	attachments?: Attachment[];
+	toolCalls?: ToolCall[];
+	toolOutputs?: ToolOutput[];
 }
 
 /**

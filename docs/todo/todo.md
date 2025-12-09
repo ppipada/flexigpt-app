@@ -9,6 +9,9 @@
   - [ ] need to list openai/anthropic etc given tools so that they can be invoked in api directly
   - [ ] web search tools better integration needs to be done e2e
   - [ ] some parallel tools can be created locally
-  - [ ] attached tools to be given back as schema to consumers for exec
+  - [x] attached tools to be given back as schema to consumers for exec
+  - [ ] backend of tool calls and outputs from build to fetch to back
+  - [ ] testing of chip bars
+  - [ ] exec bars review
 
 - [x] 5.1 codex max, deepseek 3.2

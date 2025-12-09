@@ -10,7 +10,7 @@ import {
 	getAttachmentModePillClasses,
 	getAttachmentModeTooltip,
 } from '@/chats/attachments/attachment_mode_menu';
-import type { ToolCallChip } from '@/chats/tools/tool_chips';
+import type { ToolCallChip as ToolCallChipState } from '@/chats/tools/tool_chips';
 import { formatToolCallChipLabel, getPrettyToolName } from '@/chats/tools/tool_chips';
 
 /**
@@ -113,7 +113,7 @@ interface ToolCallChipProps {
  * Read‑only chip for an assistant-suggested tool call under the assistant bubble.
  */
 function ToolCallChip({ call }: ToolCallChipProps) {
-	const tmpChip: ToolCallChip = {
+	const tmpChip: ToolCallChipState = {
 		id: call.id || call.callID,
 		callID: call.callID,
 		name: call.name,

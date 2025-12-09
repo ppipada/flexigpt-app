@@ -90,6 +90,8 @@ type ChatCompletionDataMessage struct {
 	Content     *string                  `json:"content,omitempty"`
 	Name        *string                  `json:"name,omitempty"`
 	Attachments []attachment.Attachment  `json:"attachments,omitempty"`
+	ToolCalls   []toolSpec.ToolCall      `json:"toolCalls,omitempty"`
+	ToolOutputs []toolSpec.ToolOutput    `json:"toolOutputs,omitempty"`
 }
 
 type FetchCompletionToolChoice struct {

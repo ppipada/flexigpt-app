@@ -142,8 +142,9 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 	hasText := req.Body.CurrentMessage.Content != nil &&
 		strings.TrimSpace(*req.Body.CurrentMessage.Content) != ""
 	hasAttachments := len(req.Body.CurrentMessage.Attachments) > 0
-	if !hasText && !hasAttachments {
-		return nil, errors.New("current message must have text or attachments")
+	hasToolOutputs := len(req.Body.CurrentMessage.ToolOutputs) > 0
+	if !hasText && !hasAttachments && !hasToolOutputs {
+		return nil, errors.New("current message must have text or attachments or tooloutputs")
 	}
 
 	provider := req.Provider

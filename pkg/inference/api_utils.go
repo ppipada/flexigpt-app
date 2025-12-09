@@ -165,6 +165,12 @@ func convertBuildMessageToChatMessage(
 	if len(msg.Attachments) > 0 {
 		out.Attachments = attachment.CopyAttachments(msg.Attachments)
 	}
+	if len(msg.ToolCalls) > 0 {
+		out.ToolCalls = msg.ToolCalls
+	}
+	if len(msg.ToolOutputs) > 0 {
+		out.ToolOutputs = msg.ToolOutputs
+	}
 	return out
 }
 

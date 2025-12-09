@@ -32,6 +32,10 @@ function convertConversationToBuildMessages(conversationMessages?: ConversationM
 			name: convoMsg.name,
 			// Attachments are stored per conversation message; pass them through.
 			attachments: convoMsg.attachments,
+			// Plumb tool calls and tool outputs through to the provider layer so
+			// it can construct the appropriate messages (e.g. tool/tool_result).
+			toolCalls: convoMsg.toolCalls,
+			toolOutputs: convoMsg.toolOutputs,
 		};
 
 		chatMessages.push(message);

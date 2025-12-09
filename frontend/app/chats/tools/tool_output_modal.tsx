@@ -6,6 +6,8 @@ import { FiTool, FiX } from 'react-icons/fi';
 
 import type { ToolOutput } from '@/spec/tool';
 
+import { formatToolOutputSummary } from '@/chats/tools/tool_chips';
+
 interface ToolOutputModalProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -54,6 +56,8 @@ export function ToolOutputModal({ isOpen, onClose, output }: ToolOutputModalProp
 		}
 	}
 
+	const titleText = output.summary || formatToolOutputSummary(output.name);
+
 	return createPortal(
 		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-[80vw] overflow-hidden rounded-2xl p-0">
@@ -62,7 +66,7 @@ export function ToolOutputModal({ isOpen, onClose, output }: ToolOutputModalProp
 					<div className="mb-4 flex items-center justify-between">
 						<h3 className="flex items-center gap-2 text-lg font-bold">
 							<FiTool size={16} />
-							<span>{output.summary}</span>
+							<span>{titleText}</span>
 						</h3>
 						<button
 							type="button"

@@ -380,6 +380,14 @@ export default function ChatsPage() {
 					};
 
 					saveUpdatedChat(finalChat);
+					// After the assistant has finished responding, surface any suggested
+					// tool calls for this turn in the composer as interactive chips.
+					const lastMsg = finalChat.messages[finalChat.messages.length - 1];
+					if (lastMsg.role === RoleEnum.Assistant && chatInputRef.current?.loadToolCalls) {
+						if (lastMsg.toolCalls && lastMsg.toolCalls.length > 0) {
+							chatInputRef.current.loadToolCalls(lastMsg.toolCalls ?? []);
+						}
+					}
 				}
 			} catch (e) {
 				if ((e as DOMException).name === 'AbortError') {
@@ -420,10 +428,9 @@ export default function ChatsPage() {
 		// Allow "tool-only" turns (no text) as long as something is attached (tools / tool outputs / attachments)
 		const hasNonEmptyText = trimmed.length > 0;
 		const hasToolOutputs = payload.toolOutputs.length > 0;
-		const hasTools = payload.attachedTools.length > 0;
 		const hasAttachments = payload.attachments.length > 0;
 
-		if (!hasNonEmptyText && !hasToolOutputs && !hasTools && !hasAttachments) {
+		if (!hasNonEmptyText && !hasToolOutputs && !hasAttachments) {
 			return;
 		}
 
@@ -504,6 +511,7 @@ export default function ChatsPage() {
 				text: msg.content,
 				attachments: msg.attachments,
 				toolChoices: msg.toolChoices,
+				toolOutputs: msg.toolOutputs,
 			};
 
 			chatInputRef.current?.loadExternalMessage(external);

@@ -1,5 +1,7 @@
 import { forwardRef, type RefObject, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
+import type { ToolCall } from '@/spec/tool';
+
 import type { ShortcutConfig } from '@/lib/keyboard_shortcuts';
 
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
@@ -21,6 +23,7 @@ export interface InputBoxHandle {
 	openToolMenu: () => void;
 	openAttachmentMenu: () => void;
 	loadExternalMessage: (msg: EditorExternalMessage) => void;
+	loadToolCalls: (toolCalls: ToolCall[]) => void;
 }
 
 interface InputBoxProps {
@@ -51,9 +54,8 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 	}, [isBusy]);
 
 	/* ------------------------------------------------------------------
-	 * <TextArea /> ref utilities
+	 * <EditorArea /> ref utilities
 	 * ------------------------------------------------------------------ */
-	// const inputAreaRef = useRef<TextAreaHandle>(null);
 	const inputAreaRef = useRef<EditorAreaHandle>(null);
 
 	/* ------------------------------------------------------------------
@@ -79,6 +81,9 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 		},
 		loadExternalMessage: msg => {
 			inputAreaRef.current?.loadExternalMessage(msg);
+		},
+		loadToolCalls: toolCalls => {
+			inputAreaRef.current?.loadToolCalls(toolCalls);
 		},
 	}));
 

@@ -18,7 +18,7 @@ import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
 import { type Attachment, AttachmentKind, type AttachmentMode } from '@/spec/attachment';
 import type { DirectoryAttachmentsResult } from '@/spec/backend';
-import type { ToolChoice, ToolOutput } from '@/spec/tool';
+import type { ToolCall, ToolChoice, ToolOutput } from '@/spec/tool';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -26,7 +26,7 @@ import { cssEscape } from '@/lib/text_utils';
 
 import { useEnterSubmit } from '@/hooks/use_enter_submit';
 
-import { backendAPI } from '@/apis/baseapi';
+import { backendAPI, toolStoreAPI } from '@/apis/baseapi';
 
 import { AlignKit } from '@/components/editor/plugins/align_kit';
 import { AutoformatKit } from '@/components/editor/plugins/auto_format_kit';
@@ -63,10 +63,18 @@ import { getLastUserBlockContent } from '@/chats/templates/template_processing';
 import { TemplateToolbars } from '@/chats/templates/template_toolbars';
 import { buildUserInlineChildrenFromText } from '@/chats/templates/template_variables_inline';
 import {
+	buildToolCallChipsFromResponse,
+	formatToolOutputSummary,
+	parseToolCallName,
+	type ToolCallChip,
+} from '@/chats/tools/tool_chips';
+import { ToolChipsComposerRow } from '@/chats/tools/tool_chips_composer';
+import {
 	type EditorAttachedToolChoice,
 	getAttachedTools,
 	insertToolSelectionNode,
 } from '@/chats/tools/tool_editor_utils';
+import { ToolOutputModal } from '@/chats/tools/tool_output_modal';
 import { ToolPlusKit } from '@/chats/tools/tool_plugin';
 
 export interface EditorAreaHandle {
@@ -76,12 +84,14 @@ export interface EditorAreaHandle {
 	openAttachmentMenu: () => void;
 	loadExternalMessage: (msg: EditorExternalMessage) => void;
 	resetEditor: () => void;
+	loadToolCalls: (toolCalls: ToolCall[]) => void;
 }
 
 export interface EditorExternalMessage {
 	text: string;
 	attachments?: Attachment[];
 	toolChoices?: ToolChoice[];
+	toolOutputs?: ToolOutput[];
 }
 
 export interface EditorSubmitPayload {
@@ -141,6 +151,11 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [attachments, setAttachments] = useState<EditorAttachment[]>([]);
 	const [directoryGroups, setDirectoryGroups] = useState<DirectoryAttachmentGroup[]>([]);
+
+	// Tool-call chips (assistant-suggested) + tool outputs attached to the next user message.
+	const [toolCallChips, setToolCallChips] = useState<ToolCallChip[]>([]);
+	const [toolOutputs, setToolOutputs] = useState<ToolOutput[]>([]);
+	const [activeToolOutput, setActiveToolOutput] = useState<ToolOutput | null>(null);
 
 	const closeAllMenus = useCallback(() => {
 		templateMenu.hide();
@@ -204,14 +219,25 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		};
 	}, [editor, docVersion]);
 
+	const hasPendingToolCalls = useMemo(() => toolCallChips.some(c => c.status === 'pending'), [toolCallChips]);
+	const hasRunningToolCalls = useMemo(() => toolCallChips.some(c => c.status === 'running'), [toolCallChips]);
+
 	const { formRef, onKeyDown } = useEnterSubmit({
 		isBusy,
 		canSubmit: () => {
-			const hasTemplate = selectionInfo.hasTemplate;
-			if (hasTemplate) {
+			if (selectionInfo.hasTemplate) {
 				return selectionInfo.requiredCount === 0;
 			}
-			return hasNonEmptyUserText(editorRef.current);
+
+			const hasText = hasNonEmptyUserText(editorRef.current);
+			if (hasText) return true;
+
+			// Allow "tool-only" / "attachments-only" turns
+			const hasTools = getAttachedTools(editorRef.current).length > 0;
+			const hasAttachments = attachments.length > 0;
+			const hasOutputs = toolOutputs.length > 0;
+
+			return hasTools || hasAttachments || hasOutputs || hasPendingToolCalls;
 		},
 		insertSoftBreak: () => {
 			editor.tf.insertSoftBreak();
@@ -223,8 +249,15 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		if (selectionInfo.hasTemplate) {
 			return selectionInfo.requiredCount === 0;
 		}
-		return hasNonEmptyUserText(editorRef.current);
-	}, [isBusy, selectionInfo, docVersion]);
+		const hasText = hasNonEmptyUserText(editorRef.current);
+		if (hasText) return true;
+
+		const hasTools = getAttachedTools(editorRef.current).length > 0;
+		const hasAttachments = attachments.length > 0;
+		const hasOutputs = toolOutputs.length > 0;
+
+		return hasTools || hasAttachments || hasOutputs || hasPendingToolCalls;
+	}, [isBusy, selectionInfo, attachments, toolOutputs, hasPendingToolCalls, docVersion]);
 
 	// Populate editor with effective last-USER block for EACH template selection (once per selectionID)
 	useEffect(() => {
@@ -288,6 +321,118 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		}
 	}, [editor, docVersion]);
 
+	/**
+	 * Helper to generate a stable ID for tool outputs when crypto.randomUUID
+	 * isn't available (older browsers / environments).
+	 */
+	const makeToolOutputId = () => {
+		if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+			return crypto.randomUUID();
+		}
+		return `tool-output-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+	};
+
+	/**
+	 * Run a single tool call from its chip, updating chip status and appending
+	 * a ToolOutput on success. Returns the new ToolOutput (if successful) so
+	 * callers like "Run & send" can include it in the payload immediately.
+	 */
+	const runToolCallInternal = useCallback(async (chip: ToolCallChip): Promise<ToolOutput | null> => {
+		// Resolve identity using toolChoice when available; fall back to name parsing.
+		let bundleID: string | undefined;
+		let toolSlug: string | undefined;
+		let version: string | undefined;
+
+		if (chip.toolChoice) {
+			bundleID = chip.toolChoice.bundleID;
+			toolSlug = chip.toolChoice.toolSlug;
+			version = chip.toolChoice.toolVersion;
+		} else {
+			const parsed = parseToolCallName(chip.name);
+			if (parsed) {
+				bundleID = parsed.bundleIDOrSlug;
+				toolSlug = parsed.toolSlug;
+				version = parsed.version;
+			}
+		}
+
+		if (!bundleID || !toolSlug || !version) {
+			const errMsg = 'Cannot resolve tool identity for this call.';
+			setToolCallChips(prev =>
+				prev.map(c => (c.id === chip.id ? { ...c, status: 'failed', errorMessage: errMsg } : c))
+			);
+			return null;
+		}
+
+		// Mark as running
+		setToolCallChips(prev =>
+			prev.map(c =>
+				c.id === chip.id && c.status === 'pending' ? { ...c, status: 'running', errorMessage: undefined } : c
+			)
+		);
+
+		try {
+			const resp = await toolStoreAPI.invokeTool(bundleID, toolSlug, version, chip.arguments);
+
+			const output: ToolOutput = {
+				id: makeToolOutputId(),
+				callID: chip.callID,
+				name: chip.name,
+				summary: formatToolOutputSummary(chip.name),
+				rawOutput: resp.output,
+				toolChoice: chip.toolChoice,
+			};
+
+			// Remove the call chip & append the output.
+			setToolCallChips(prev => prev.filter(c => c.id !== chip.id));
+			setToolOutputs(prev => [...prev, output]);
+
+			return output;
+		} catch (err) {
+			const msg = (err as Error)?.message || 'Tool invocation failed.';
+			setToolCallChips(prev => prev.map(c => (c.id === chip.id ? { ...c, status: 'failed', errorMessage: msg } : c)));
+			return null;
+		}
+	}, []);
+
+	/**
+	 * Run all currently pending tool calls (in sequence) and return the
+	 * ToolOutput objects produced in this pass.
+	 */
+	const runAllPendingToolCalls = useCallback(async (): Promise<ToolOutput[]> => {
+		const pending = toolCallChips.filter(c => c.status === 'pending');
+		if (pending.length === 0) return [];
+
+		const produced: ToolOutput[] = [];
+		for (const chip of pending) {
+			const out = await runToolCallInternal(chip);
+			if (out) produced.push(out);
+		}
+		return produced;
+	}, [toolCallChips, runToolCallInternal]);
+
+	const handleRunSingleToolCall = useCallback(
+		async (id: string) => {
+			const chip = toolCallChips.find(c => c.id === id && c.status === 'pending');
+			if (!chip) return;
+			await runToolCallInternal(chip);
+		},
+		[toolCallChips, runToolCallInternal]
+	);
+
+	const handleDiscardToolCall = useCallback((id: string) => {
+		setToolCallChips(prev => prev.filter(c => c.id !== id));
+	}, []);
+
+	const handleRemoveToolOutput = useCallback((id: string) => {
+		setToolOutputs(prev => prev.filter(o => o.id !== id));
+		setActiveToolOutput(current => (current && current.id === id ? null : current));
+	}, []);
+
+	const handleOpenToolOutput = useCallback((output: ToolOutput) => {
+		setActiveToolOutput(output);
+	}, []);
+
 	const handleSubmit = (e?: FormEvent) => {
 		if (e) e.preventDefault();
 		if (!isSendButtonEnabled || isSubmittingRef.current) {
@@ -320,6 +465,13 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		isSubmittingRef.current = true;
 
 		(async () => {
+			// If there are pending tool calls, interpret submit as "Run & send".
+			const existingOutputs = toolOutputs;
+			let newlyProducedOutputs: ToolOutput[] = [];
+			if (hasPendingToolCalls) {
+				newlyProducedOutputs = await runAllPendingToolCalls();
+			}
+
 			// If there are template selections, auto-run any ready tools before sending.
 			const selections = getTemplateSelections(editor);
 			const hasTpl = selections.length > 0;
@@ -328,9 +480,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			const attachedTools = getAttachedTools(editor);
 			const payload: EditorSubmitPayload = {
 				text: textToSend,
-				attachedTools: attachedTools,
-				attachments: attachments,
-				toolOutputs: [],
+				attachedTools,
+				attachments,
+				toolOutputs: [...existingOutputs, ...newlyProducedOutputs],
 			};
 
 			try {
@@ -341,6 +493,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				editor.tf.setValue(EDITOR_EMPTY_VALUE);
 				setAttachments([]);
 				setDirectoryGroups([]);
+				setToolCallChips([]);
+				setToolOutputs([]);
+				setActiveToolOutput(null);
 
 				lastPopulatedSelectionKeyRef.current.clear();
 				editor.tf.focus();
@@ -360,6 +515,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		editor.tf.setValue(EDITOR_EMPTY_VALUE);
 		setAttachments([]);
 		setDirectoryGroups([]);
+		setToolCallChips([]);
+		setToolOutputs([]);
+		setActiveToolOutput(null);
 		// Let Plate onChange bump docVersion; no need to do it here.
 		editor.tf.focus();
 	}, [closeAllMenus, editor]);
@@ -429,10 +587,20 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				});
 			}
 
+			// 4) Restore any tool outputs that were previously attached to this message.
+			setToolOutputs(incoming.toolOutputs ?? []);
+			setToolCallChips([]);
+			setActiveToolOutput(null);
+
 			editor.tf.focus();
 		},
 		[closeAllMenus, editor]
 	);
+
+	const loadToolCalls = useCallback((toolCalls: ToolCall[]) => {
+		setToolCallChips(buildToolCallChipsFromResponse(toolCalls));
+	}, []);
+
 	useImperativeHandle(ref, () => ({
 		focus: () => {
 			editor.tf.focus();
@@ -448,6 +616,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		},
 		loadExternalMessage,
 		resetEditor,
+		loadToolCalls,
 	}));
 
 	const handleAttachFiles = async () => {
@@ -491,9 +660,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 		if (!result || !result.dirPath) return;
 
-		const { dirPath, attachments, overflowDirs } = result;
+		const { dirPath, attachments: dirAttachments, overflowDirs } = result;
 
-		if ((!attachments || attachments.length === 0) && (!overflowDirs || overflowDirs.length === 0)) {
+		if ((!dirAttachments || dirAttachments.length === 0) && (!overflowDirs || overflowDirs.length === 0)) {
 			// Nothing readable / allowed in this folder.
 			return;
 		}
@@ -517,7 +686,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 			const added: EditorAttachment[] = [];
 
-			for (const r of attachments ?? []) {
+			for (const r of dirAttachments ?? []) {
 				const att = buildEditorAttachmentForLocalPath(r);
 				if (!att) {
 					console.error('invalid attachment result');
@@ -646,138 +815,182 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const handleCancelEditing = useCallback(() => {
 		resetEditor();
 		cancelEditing();
-	}, [cancelEditing]);
+	}, [cancelEditing, resetEditor]);
+
+	const handleRunToolsOnlyClick = useCallback(async () => {
+		if (!hasPendingToolCalls || isBusy || hasRunningToolCalls) return;
+		await runAllPendingToolCalls();
+	}, [hasPendingToolCalls, hasRunningToolCalls, isBusy, runAllPendingToolCalls]);
+
+	const primaryButtonLabel = hasPendingToolCalls ? 'Run & send' : 'Send';
+	const isPrimaryDisabled = !isSendButtonEnabled || isBusy || hasRunningToolCalls;
 
 	return (
-		<form
-			ref={formRef}
-			onSubmit={handleSubmit}
-			className="mx-0 flex w-full max-w-full min-w-0 flex-col overflow-x-hidden overflow-y-visible"
-		>
-			{submitError ? (
-				<div className="alert alert-error mx-4 mt-3 mb-1 flex items-start gap-2 text-sm" role="alert">
-					<FiAlertTriangle size={16} className="mt-0.5" />
-					<span>{submitError}</span>
-				</div>
-			) : null}
-			<Plate
-				editor={editor}
-				onChange={() => {
-					setDocVersion(v => v + 1);
-					if (submitError) {
-						setSubmitError(null);
-					}
-
-					// Auto-cancel editing when there's no text and no tools.
-					const hasText = hasNonEmptyUserText(editorRef.current);
-					const hasTools = getAttachedTools(editorRef.current).length > 0;
-					const isEmpty = !hasText && !hasTools;
-
-					// Only do this while editing an older message.
-					if (isEmpty && editingMessageId) {
-						// IMPORTANT: do NOT call resetEditor here; we only exit edit mode.
-						cancelEditing();
-					}
-				}}
+		<>
+			<form
+				ref={formRef}
+				onSubmit={handleSubmit}
+				className="mx-0 flex w-full max-w-full min-w-0 flex-col overflow-x-hidden overflow-y-visible"
 			>
-				<div className="bg-base-100 border-base-200 w-full max-w-full min-w-0 overflow-hidden rounded-2xl border">
-					<TemplateToolbars />
-					{editingMessageId && (
-						<div className="flex items-center justify-end gap-2 pt-1 pr-3 pb-0 text-xs">
-							<div className="flex items-center gap-2">
-								<FiEdit2 size={14} />
-								<span>
-									Editing an earlier message. Sending will replace it and drop all later messages from the conversation.
-								</span>
-							</div>
-							<button
-								type="button"
-								className="btn btn-circle btn-neutral btn-xs shrink-0"
-								onClick={handleCancelEditing}
-								title="Cancel Edit"
-							>
-								<FiX size={14} />
-							</button>
-						</div>
-					)}
-					{/* Row: editor with send/stop button on the right */}
-					<div className="flex min-h-20 min-w-0 gap-2 px-1 py-0">
-						<PlateContent
-							ref={contentRef}
-							placeholder="Type message..."
-							spellCheck={false}
-							readOnly={isBusy}
-							onKeyDown={e => {
-								onKeyDown(e); // from useEnterSubmit
-							}}
-							onPaste={e => {
-								e.preventDefault();
-								e.stopPropagation();
-								const text = e.clipboardData.getData('text/plain');
-								if (!text) return;
-								insertPlainTextAsSingleBlock(editor, text);
-							}}
-							className="max-h-96 min-w-0 flex-1 resize-none overflow-auto bg-transparent p-2 wrap-break-word whitespace-break-spaces outline-none [tab-size:2] focus:outline-none"
-							style={{
-								fontSize: '14px',
-								whiteSpace: 'break-spaces',
-								tabSize: 2,
-								minHeight: '4rem',
-							}}
-						/>
+				{submitError ? (
+					<div className="alert alert-error mx-4 mt-3 mb-1 flex items-start gap-2 text-sm" role="alert">
+						<FiAlertTriangle size={16} className="mt-0.5" />
+						<span>{submitError}</span>
+					</div>
+				) : null}
+				<Plate
+					editor={editor}
+					onChange={() => {
+						setDocVersion(v => v + 1);
+						if (submitError) {
+							setSubmitError(null);
+						}
 
-						{/* Send / Stop button anchored at bottom-right */}
-						<div className="flex items-end pr-1 pb-2">
-							{isBusy ? (
+						// Auto-cancel editing when there's no text and no tools.
+						const hasText = hasNonEmptyUserText(editorRef.current);
+						const hasTools = getAttachedTools(editorRef.current).length > 0;
+						const isEmpty = !hasText && !hasTools;
+
+						// Only do this while editing an older message.
+						if (isEmpty && editingMessageId) {
+							// IMPORTANT: do NOT call resetEditor here; we only exit edit mode.
+							cancelEditing();
+						}
+					}}
+				>
+					<div className="bg-base-100 border-base-200 w-full max-w-full min-w-0 overflow-hidden rounded-2xl border">
+						<TemplateToolbars />
+						{editingMessageId && (
+							<div className="flex items-center justify-end gap-2 pt-1 pr-3 pb-0 text-xs">
+								<div className="flex items-center gap-2">
+									<FiEdit2 size={14} />
+									<span>
+										Editing an earlier message. Sending will replace it and drop all later messages from the
+										conversation.
+									</span>
+								</div>
 								<button
 									type="button"
-									className="btn btn-circle btn-neutral btn-sm shrink-0"
-									onClick={onRequestStop}
-									title="Stop response"
-									aria-label="Stop response"
+									className="btn btn-circle btn-neutral btn-xs shrink-0"
+									onClick={handleCancelEditing}
+									title="Cancel Edit"
 								>
-									<FiSquare size={20} />
+									<FiX size={14} />
 								</button>
-							) : (
-								<button
-									type="submit"
-									className={`btn btn-circle btn-neutral btn-sm shrink-0 ${!isSendButtonEnabled ? 'btn-disabled' : ''}`}
-									disabled={!isSendButtonEnabled}
-									aria-label="Send message"
-									title="Send message"
-								>
-									<FiSend size={20} />
-								</button>
-							)}
+							</div>
+						)}
+						{/* Row: editor with send/stop button on the right */}
+						<div className="flex min-h-20 min-w-0 gap-2 px-1 py-0">
+							<PlateContent
+								ref={contentRef}
+								placeholder="Type message..."
+								spellCheck={false}
+								readOnly={isBusy}
+								onKeyDown={e => {
+									onKeyDown(e); // from useEnterSubmit
+								}}
+								onPaste={e => {
+									e.preventDefault();
+									e.stopPropagation();
+									const text = e.clipboardData.getData('text/plain');
+									if (!text) return;
+									insertPlainTextAsSingleBlock(editor, text);
+								}}
+								className="max-h-96 min-w-0 flex-1 resize-none overflow-auto bg-transparent p-2 wrap-break-word whitespace-break-spaces outline-none [tab-size:2] focus:outline-none"
+								style={{
+									fontSize: '14px',
+									whiteSpace: 'break-spaces',
+									tabSize: 2,
+									minHeight: '4rem',
+								}}
+							/>
+
+							{/* Primary / secondary actions anchored at bottom-right */}
+							<div className="flex items-end gap-2 pr-1 pb-2">
+								{isBusy ? (
+									<button
+										type="button"
+										className="btn btn-circle btn-neutral btn-sm shrink-0"
+										onClick={onRequestStop}
+										title="Stop response"
+										aria-label="Stop response"
+									>
+										<FiSquare size={20} />
+									</button>
+								) : (
+									<>
+										{hasPendingToolCalls && (
+											<button
+												type="button"
+												className={`btn btn-outline btn-xs shrink-0 ${hasRunningToolCalls ? 'btn-disabled' : ''}`}
+												disabled={hasRunningToolCalls}
+												onClick={() => {
+													void handleRunToolsOnlyClick();
+												}}
+											>
+												Run tools only
+											</button>
+										)}
+										<button
+											type="submit"
+											className={`btn btn-neutral btn-sm shrink-0 ${isPrimaryDisabled ? 'btn-disabled' : ''}`}
+											disabled={isPrimaryDisabled}
+											aria-label={primaryButtonLabel}
+											title={primaryButtonLabel}
+										>
+											<FiSend size={20} className="mr-1" />
+											<span>{primaryButtonLabel}</span>
+										</button>
+									</>
+								)}
+							</div>
+						</div>
+						{/* Chips bar for tools (calls & outputs), attachments & tool choices (scrollable) */}
+						<div className="flex w-full min-w-0 items-center gap-1 overflow-x-auto px-1 py-0 text-xs">
+							<ToolChipsComposerRow
+								toolCallChips={toolCallChips}
+								toolOutputs={toolOutputs}
+								isBusy={isBusy || isSubmittingRef.current}
+								onRunToolCall={handleRunSingleToolCall}
+								onDiscardToolCall={handleDiscardToolCall}
+								onOpenOutput={handleOpenToolOutput}
+								onRemoveOutput={handleRemoveToolOutput}
+							/>
+							<AttachmentChipsBar
+								attachments={attachments}
+								directoryGroups={directoryGroups}
+								onRemoveAttachment={handleRemoveAttachment}
+								onChangeAttachmentMode={handleChangeAttachmentMode}
+								onRemoveDirectoryGroup={handleRemoveDirectoryGroup}
+								onRemoveOverflowDir={handleRemoveOverflowDir}
+							/>
 						</div>
 					</div>
-					{/* Chips bar for attachments & tools (scrollable, only when there are chips) */}
-					<div className="flex w-full min-w-0 overflow-x-hidden">
-						<AttachmentChipsBar
-							attachments={attachments}
-							directoryGroups={directoryGroups}
-							onRemoveAttachment={handleRemoveAttachment}
-							onChangeAttachmentMode={handleChangeAttachmentMode}
-							onRemoveDirectoryGroup={handleRemoveDirectoryGroup}
-							onRemoveOverflowDir={handleRemoveOverflowDir}
-						/>
-					</div>
-				</div>
 
-				{/* Bottom bar for template/tool/attachment pickers + tips menus */}
-				<AttachmentBottomBar
-					onAttachFiles={handleAttachFiles}
-					onAttachDirectory={handleAttachDirectory}
-					onAttachURL={handleAttachURL}
-					templateMenuState={templateMenu}
-					toolMenuState={toolMenu}
-					attachmentMenuState={attachmentMenu}
-					templateButtonRef={templateButtonRef}
-					toolButtonRef={toolButtonRef}
-					attachmentButtonRef={attachmentButtonRef}
-					shortcutConfig={shortcutConfig}
-				/>
-			</Plate>
-		</form>
+					{/* Bottom bar for template/tool/attachment pickers + tips menus */}
+					<AttachmentBottomBar
+						onAttachFiles={handleAttachFiles}
+						onAttachDirectory={handleAttachDirectory}
+						onAttachURL={handleAttachURL}
+						templateMenuState={templateMenu}
+						toolMenuState={toolMenu}
+						attachmentMenuState={attachmentMenu}
+						templateButtonRef={templateButtonRef}
+						toolButtonRef={toolButtonRef}
+						attachmentButtonRef={attachmentButtonRef}
+						shortcutConfig={shortcutConfig}
+					/>
+				</Plate>
+			</form>
+
+			{/* Tool output inspector modal */}
+			<ToolOutputModal
+				isOpen={!!activeToolOutput}
+				onClose={() => {
+					setActiveToolOutput(null);
+				}}
+				output={activeToolOutput}
+			/>
+		</>
 	);
 });
