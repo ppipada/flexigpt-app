@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { FiArrowDown, FiArrowUp, FiCode, FiEdit2, FiRepeat } from 'react-icons/fi';
+import { FiArrowDown, FiArrowUp, FiCode, FiEdit2, FiMoreHorizontal, FiRepeat } from 'react-icons/fi';
 
 import type { CompletionUsage } from '@/spec/modelpreset';
 
@@ -84,7 +84,7 @@ export function MessageFooterArea({
 						<div className="text-sm">
 							<div className="flex items-center bg-transparent px-4 py-2">
 								Streaming...
-								{/* <span className="loading loading-dots loading-sm ml-4" /> */}
+								<FiMoreHorizontal size={14} />
 							</div>
 						</div>
 					)}
