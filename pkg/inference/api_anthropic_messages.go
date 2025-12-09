@@ -642,6 +642,7 @@ func extractAnthropicToolCalls(
 		var toolChoice *toolSpec.ToolChoice
 		if toolNameMap != nil {
 			if ct, ok := toolNameMap[name]; ok {
+				name = toolIdentityFromChoice(ct)
 				// Add the actual choice to response.
 				toolChoice = &ct.ToolChoice
 			}

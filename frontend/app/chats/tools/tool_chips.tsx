@@ -1,4 +1,4 @@
-import type { ToolCall } from '@/spec/tool';
+import type { ToolCall, ToolChoice } from '@/spec/tool';
 
 /**
  * Status for a tool call chip in the composer.
@@ -13,6 +13,8 @@ export interface ToolCallChip {
 	type: string;
 	status: ToolCallStatus;
 	errorMessage?: string;
+	/** Optional original ToolChoice associated with this call, if the provider supplied it. */
+	toolChoice?: ToolChoice;
 }
 
 /**
@@ -27,6 +29,7 @@ export function buildToolCallChipsFromResponse(toolCalls: ToolCall[] | undefined
 		arguments: tc.arguments,
 		type: tc.type,
 		status: 'pending',
+		toolChoice: tc.toolChoice,
 	}));
 }
 

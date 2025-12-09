@@ -547,6 +547,7 @@ func extractOpenAIChatToolCalls(
 			var toolChoice *toolSpec.ToolChoice
 			if toolNameMap != nil {
 				if ct, ok := toolNameMap[name]; ok {
+					name = toolIdentityFromChoice(ct)
 					// Add the actual choice to response.
 					toolChoice = &ct.ToolChoice
 				}
@@ -557,7 +558,7 @@ func extractOpenAIChatToolCalls(
 				toolSpec.ToolCall{
 					ID:         variant.ID,
 					CallID:     variant.ID,
-					Name:       variant.Function.Name,
+					Name:       name,
 					Arguments:  variant.Function.Arguments,
 					Type:       string(variant.Type),
 					ToolChoice: toolChoice,
@@ -568,6 +569,7 @@ func extractOpenAIChatToolCalls(
 			var toolChoice *toolSpec.ToolChoice
 			if toolNameMap != nil {
 				if ct, ok := toolNameMap[name]; ok {
+					name = toolIdentityFromChoice(ct)
 					// Add the actual choice to response.
 					toolChoice = &ct.ToolChoice
 				}
@@ -577,7 +579,7 @@ func extractOpenAIChatToolCalls(
 				toolSpec.ToolCall{
 					ID:         variant.ID,
 					CallID:     variant.ID,
-					Name:       variant.Custom.Name,
+					Name:       name,
 					Arguments:  variant.Custom.Input,
 					Type:       string(variant.Type),
 					ToolChoice: toolChoice,
