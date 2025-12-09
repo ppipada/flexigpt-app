@@ -4,7 +4,7 @@ import { Menu, MenuButton, MenuItem, useMenuStore, useStoreState } from '@ariaki
 
 import { ATTACHMENT_MODE_DESC, ATTACHMENT_MODE_LABELS, AttachmentMode } from '@/spec/attachment';
 
-import { type EditorAttachment } from '@/chats/attachments/editor_attachment_utils';
+import { type EditorAttachment } from '@/chats/attachments/attachment_editor_utils';
 
 /**
  * Shared styles for the small "mode" menu on each attachment chip.

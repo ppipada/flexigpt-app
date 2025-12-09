@@ -1,6 +1,6 @@
 import type { PlateElementProps } from 'platejs/react';
 
-import { type ToolSelectionElementNode } from '@/chats/attachments/tool_editor_utils';
+import { type ToolSelectionElementNode } from '@/chats/tools/tool_editor_utils';
 
 /**
  * Hidden inline element; acts as a data carrier for one selected tool.

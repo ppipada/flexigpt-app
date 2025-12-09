@@ -12,8 +12,8 @@ import {
 	type DirectoryAttachmentGroup,
 	type EditorAttachment,
 	editorAttachmentKey,
-} from '@/chats/attachments/editor_attachment_utils';
-import { getToolNodesWithPath, removeToolByKey, toolIdentityKey } from '@/chats/attachments/tool_editor_utils';
+} from '@/chats/attachments/attachment_editor_utils';
+import { getToolNodesWithPath, removeToolByKey, toolIdentityKey } from '@/chats/tools/tool_editor_utils';
 
 interface AttachmentChipsBarProps {
 	attachments: EditorAttachment[];

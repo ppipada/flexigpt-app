@@ -48,13 +48,7 @@ import {
 	type EditorAttachment,
 	editorAttachmentKey,
 	MAX_FILES_PER_DIRECTORY,
-} from '@/chats/attachments/editor_attachment_utils';
-import {
-	type EditorAttachedToolChoice,
-	getAttachedTools,
-	insertToolSelectionNode,
-} from '@/chats/attachments/tool_editor_utils';
-import { ToolPlusKit } from '@/chats/attachments/tool_plugin';
+} from '@/chats/attachments/attachment_editor_utils';
 import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
 import {
 	getFirstTemplateNodeWithPath,
@@ -68,6 +62,12 @@ import { TemplateSlashKit } from '@/chats/templates/template_plugin';
 import { getLastUserBlockContent } from '@/chats/templates/template_processing';
 import { TemplateToolbars } from '@/chats/templates/template_toolbars';
 import { buildUserInlineChildrenFromText } from '@/chats/templates/template_variables_inline';
+import {
+	type EditorAttachedToolChoice,
+	getAttachedTools,
+	insertToolSelectionNode,
+} from '@/chats/tools/tool_editor_utils';
+import { ToolPlusKit } from '@/chats/tools/tool_plugin';
 
 export interface EditorAreaHandle {
 	focus: () => void;

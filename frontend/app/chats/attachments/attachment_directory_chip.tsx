@@ -6,12 +6,12 @@ import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 import { AttachmentMode } from '@/spec/attachment';
 
 import { AttachmentChip } from '@/chats/attachments/attachment_chip';
-import { getAttachmentModePillClasses } from '@/chats/attachments/attachment_mode_menu';
 import {
 	type DirectoryAttachmentGroup,
 	type EditorAttachment,
 	editorAttachmentKey,
-} from '@/chats/attachments/editor_attachment_utils';
+} from '@/chats/attachments/attachment_editor_utils';
+import { getAttachmentModePillClasses } from '@/chats/attachments/attachment_mode_menu';
 
 interface DirectoryChipProps {
 	group: DirectoryAttachmentGroup;

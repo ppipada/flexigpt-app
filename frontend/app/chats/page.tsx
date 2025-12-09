@@ -19,12 +19,12 @@ import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 import { ButtonScrollToBottom } from '@/components/button_scroll_to_bottom';
 import { PageFrame } from '@/components/page_frame';
 
-import { editorAttachmentToConversation } from '@/chats/attachments/editor_attachment_utils';
-import type { EditorAttachedToolChoice } from '@/chats/attachments/tool_editor_utils';
+import { editorAttachmentToConversation } from '@/chats/attachments/attachment_editor_utils';
 import { InputBox, type InputBoxHandle } from '@/chats/chat_input_box';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/chat_input_editor';
 import { ChatNavBar, type ChatNavBarHandle } from '@/chats/chat_navbar';
 import { ChatMessage } from '@/chats/messages/message';
+import type { EditorAttachedToolChoice } from '@/chats/tools/tool_editor_utils';
 
 function initConversation(title = 'New Conversation'): Conversation {
 	return {

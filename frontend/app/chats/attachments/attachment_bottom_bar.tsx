@@ -16,9 +16,9 @@ import { useTools } from '@/hooks/use_tool';
 import { promptStoreAPI, toolStoreAPI } from '@/apis/baseapi';
 
 import { CommandTipsMenu } from '@/chats/attachments/attachment_command_tips_menu';
-import { getToolNodesWithPath, insertToolSelectionNode, toolIdentityKey } from '@/chats/attachments/tool_editor_utils';
-import { UrlAttachmentModal } from '@/chats/attachments/url_attachment_modal';
+import { UrlAttachmentModal } from '@/chats/attachments/attachment_url_modal';
 import { insertTemplateSelectionNode } from '@/chats/templates/template_editor_utils';
+import { getToolNodesWithPath, insertToolSelectionNode, toolIdentityKey } from '@/chats/tools/tool_editor_utils';
 
 interface AttachmentBottomBarProps {
 	onAttachFiles: () => Promise<void> | void;

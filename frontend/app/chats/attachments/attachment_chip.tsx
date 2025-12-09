@@ -5,16 +5,16 @@ import type { AttachmentMode } from '@/spec/attachment';
 import { AttachmentKind } from '@/spec/attachment';
 
 import {
+	type EditorAttachment,
+	getAttachmentErrorMessage,
+	getEditorAttachmentPath,
+} from '@/chats/attachments/attachment_editor_utils';
+import {
 	AttachmentModeMenu,
 	getAttachmentModeLabel,
 	getAttachmentModePillClasses,
 	getAttachmentModeTooltip,
 } from '@/chats/attachments/attachment_mode_menu';
-import {
-	type EditorAttachment,
-	getAttachmentErrorMessage,
-	getEditorAttachmentPath,
-} from '@/chats/attachments/editor_attachment_utils';
 
 interface AttachmentChipProps {
 	attachment: EditorAttachment;

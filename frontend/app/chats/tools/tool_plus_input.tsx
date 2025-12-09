@@ -14,7 +14,7 @@ import { toolStoreAPI } from '@/apis/baseapi';
 
 import { SlashInputElement } from '@/components/editor/nodes/slash_node';
 
-import { getToolNodesWithPath, insertToolSelectionNode, toolIdentityKey } from '@/chats/attachments/tool_editor_utils';
+import { getToolNodesWithPath, insertToolSelectionNode, toolIdentityKey } from '@/chats/tools/tool_editor_utils';
 
 export function ToolPlusInputElement(props: Omit<Parameters<typeof SlashInputElement>[0], 'trigger' | 'groups'>) {
 	const { data, loading } = useTools();

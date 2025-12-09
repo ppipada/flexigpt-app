@@ -116,7 +116,7 @@
 			"app/chats/chat_input_textarea.tsx",
 			"app/components/editor/nodes/fixed_toolbar.tsx",
 			"app/components/editor/nodes/toolbar.tsx",
-			"app/chats/attachments/tool_plus_input.tsx",
+			"app/chats/tools/tool_plus_input.tsx",
 			"app/chats/templates/template_slash_input.tsx",
 			"app/components/editor/nodes/slash_node.tsx",
 			"app/spec/attachment.ts",

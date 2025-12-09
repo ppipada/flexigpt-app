@@ -1,7 +1,7 @@
 import { createSlatePlugin } from 'platejs';
 
-import { KEY_TOOL_SELECTION } from '@/chats/attachments/tool_editor_utils';
-import { ToolSelectionElement } from '@/chats/attachments/tool_plus_selection';
+import { KEY_TOOL_SELECTION } from '@/chats/tools/tool_editor_utils';
+import { ToolSelectionElement } from '@/chats/tools/tool_plus_selection';
 
 // type ToolPlusConfig = PluginConfig<typeof KEY_TOOL_PLUS_COMMAND, TriggerComboboxPluginOptions>;
 
