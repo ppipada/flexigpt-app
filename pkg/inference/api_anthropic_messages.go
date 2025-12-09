@@ -13,6 +13,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
@@ -188,26 +189,30 @@ func (api *AnthropicMessagesAPI) FetchCompletion(
 		timeout = time.Duration(completionData.ModelParams.Timeout) * time.Second
 	}
 
+	var toolNameMap map[string]spec.FetchCompletionToolChoice
+
 	if len(completionData.ToolChoices) > 0 {
-		toolDefs, err := toAnthropicTools(completionData.ToolChoices)
+		toolDefs, m, err := toAnthropicTools(completionData.ToolChoices)
 		if err != nil {
 			return nil, err
 		}
 		if len(toolDefs) > 0 {
 			params.Tools = toolDefs
+			toolNameMap = m
 		}
 	}
 
 	if completionData.ModelParams.Stream && onStreamTextData != nil && onStreamThinkingData != nil {
-		return api.doStreaming(ctx, params, onStreamTextData, onStreamThinkingData, timeout)
+		return api.doStreaming(ctx, params, onStreamTextData, onStreamThinkingData, timeout, toolNameMap)
 	}
-	return api.doNonStreaming(ctx, params, timeout)
+	return api.doNonStreaming(ctx, params, timeout, toolNameMap)
 }
 
 func (api *AnthropicMessagesAPI) doNonStreaming(
 	ctx context.Context,
 	params anthropic.MessageNewParams,
 	timeout time.Duration,
+	toolNameMap map[string]spec.FetchCompletionToolChoice,
 ) (*spec.FetchCompletionResponse, error) {
 	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
 	ctx = debugclient.AddDebugResponseToCtx(ctx)
@@ -223,7 +228,7 @@ func (api *AnthropicMessagesAPI) doNonStreaming(
 
 	respContent := getResponseContentFromAnthropicMessage(resp)
 	completionResp.Body.ResponseContent = respContent
-	if toolCalls := extractAnthropicToolCalls(resp); len(toolCalls) > 0 {
+	if toolCalls := extractAnthropicToolCalls(resp, toolNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
 	}
 	return completionResp, nil
@@ -234,6 +239,7 @@ func (api *AnthropicMessagesAPI) doStreaming(
 	params anthropic.MessageNewParams,
 	onStreamTextData, onStreamThinkingData func(string) error,
 	timeout time.Duration,
+	toolNameMap map[string]spec.FetchCompletionToolChoice,
 ) (*spec.FetchCompletionResponse, error) {
 	writeTextData, flushTextData := NewBufferedStreamer(
 		onStreamTextData,
@@ -313,7 +319,7 @@ func (api *AnthropicMessagesAPI) doStreaming(
 
 	respContent := getResponseContentFromAnthropicMessage(&respFull)
 	completionResp.Body.ResponseContent = respContent
-	if toolCalls := extractAnthropicToolCalls(&respFull); len(toolCalls) > 0 {
+	if toolCalls := extractAnthropicToolCalls(&respFull, toolNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
 	}
 	return completionResp, streamErr
@@ -544,15 +550,19 @@ func getResponseContentFromAnthropicMessage(msg *anthropic.Message) []spec.Respo
 
 func toAnthropicTools(
 	tools []spec.FetchCompletionToolChoice,
-) ([]anthropic.ToolUnionParam, error) {
+) ([]anthropic.ToolUnionParam, map[string]spec.FetchCompletionToolChoice, error) {
 	if len(tools) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
+
+	ordered, nameMap := buildToolNameMapping(tools)
+
 	out := make([]anthropic.ToolUnionParam, 0, len(tools))
-	for _, ct := range tools {
+	for _, tw := range ordered {
+		ct := tw.Choice
 		schema, err := decodeToolArgSchema(ct.Tool.ArgSchema)
 		if err != nil {
-			return nil, fmt.Errorf(
+			return nil, nil, fmt.Errorf(
 				"invalid tool schema for %s/%s@%s: %w",
 				ct.BundleID,
 				ct.Tool.Slug,
@@ -603,7 +613,7 @@ func toAnthropicTools(
 			inputSchema.ExtraFields = schema
 		}
 
-		toolUnion := anthropic.ToolUnionParamOfTool(inputSchema, toolFunctionName(ct))
+		toolUnion := anthropic.ToolUnionParamOfTool(inputSchema, tw.Name)
 		if variant := toolUnion.OfTool; variant != nil {
 			variant.Type = anthropic.ToolTypeCustom
 			if desc := toolDescription(ct); desc != "" {
@@ -612,25 +622,38 @@ func toAnthropicTools(
 		}
 		out = append(out, toolUnion)
 	}
-	return out, nil
+	return out, nameMap, nil
 }
 
-func extractAnthropicToolCalls(msg *anthropic.Message) []spec.ResponseToolCall {
+func extractAnthropicToolCalls(
+	msg *anthropic.Message,
+	toolNameMap map[string]spec.FetchCompletionToolChoice,
+) []toolSpec.ToolCall {
 	if msg == nil {
 		return nil
 	}
-	out := make([]spec.ResponseToolCall, 0, len(msg.Content))
+	out := make([]toolSpec.ToolCall, 0, len(msg.Content))
 	for _, content := range msg.Content {
 		variant, ok := content.AsAny().(anthropic.ToolUseBlock)
 		if !ok {
 			continue
 		}
-		call := spec.ResponseToolCall{
-			ID:        strings.TrimSpace(variant.ID),
-			CallID:    strings.TrimSpace(variant.ID),
-			Name:      strings.TrimSpace(variant.Name),
-			Arguments: strings.TrimSpace(string(variant.Input)),
-			Type:      string(variant.Type),
+		name := strings.TrimSpace(variant.Name)
+		var toolChoice *toolSpec.ToolChoice
+		if toolNameMap != nil {
+			if ct, ok := toolNameMap[name]; ok {
+				// Add the actual choice to response.
+				toolChoice = &ct.ToolChoice
+			}
+		}
+
+		call := toolSpec.ToolCall{
+			ID:         strings.TrimSpace(variant.ID),
+			CallID:     strings.TrimSpace(variant.ID),
+			Name:       name,
+			Arguments:  strings.TrimSpace(string(variant.Input)),
+			Type:       string(variant.Type),
+			ToolChoice: toolChoice,
 		}
 		out = append(out, call)
 

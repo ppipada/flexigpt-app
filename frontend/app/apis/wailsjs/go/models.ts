@@ -985,6 +985,48 @@ export namespace spec {
 	        this.reasoningTokens = source["reasoningTokens"];
 	    }
 	}
+	export class ToolCall {
+	    id?: string;
+	    callID?: string;
+	    name?: string;
+	    arguments?: string;
+	    type?: string;
+	    status?: string;
+	    toolChoice?: ToolChoice;
+	
+	    static createFrom(source: any = {}) {
+	        return new ToolCall(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.callID = source["callID"];
+	        this.name = source["name"];
+	        this.arguments = source["arguments"];
+	        this.type = source["type"];
+	        this.status = source["status"];
+	        this.toolChoice = this.convertValues(source["toolChoice"], ToolChoice);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ConversationMessage {
 	    id: string;
 	    // Go type: time
@@ -995,6 +1037,7 @@ export namespace spec {
 	    details?: string;
 	    toolChoices?: ToolChoice[];
 	    attachments?: attachment.Attachment[];
+	    toolCalls?: ToolCall[];
 	    usage?: Usage;
 	
 	    static createFrom(source: any = {}) {
@@ -1011,6 +1054,7 @@ export namespace spec {
 	        this.details = source["details"];
 	        this.toolChoices = this.convertValues(source["toolChoices"], ToolChoice);
 	        this.attachments = this.convertValues(source["attachments"], attachment.Attachment);
+	        this.toolCalls = this.convertValues(source["toolCalls"], ToolCall);
 	        this.usage = this.convertValues(source["usage"], Usage);
 	    }
 	
@@ -1339,28 +1383,6 @@ export namespace spec {
 	    }
 	}
 	
-	export class ResponseToolCall {
-	    id?: string;
-	    callID?: string;
-	    name?: string;
-	    arguments?: string;
-	    type?: string;
-	    status?: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new ResponseToolCall(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.callID = source["callID"];
-	        this.name = source["name"];
-	        this.arguments = source["arguments"];
-	        this.type = source["type"];
-	        this.status = source["status"];
-	    }
-	}
 	export class ResponseContent {
 	    type: string;
 	    content: string;
@@ -1381,7 +1403,7 @@ export namespace spec {
 	    errorDetails?: APIErrorDetails;
 	    usage?: Usage;
 	    responseContent?: ResponseContent[];
-	    toolCalls?: ResponseToolCall[];
+	    toolCalls?: ToolCall[];
 	
 	    static createFrom(source: any = {}) {
 	        return new FetchCompletionResponseBody(source);
@@ -1394,7 +1416,7 @@ export namespace spec {
 	        this.errorDetails = this.convertValues(source["errorDetails"], APIErrorDetails);
 	        this.usage = this.convertValues(source["usage"], Usage);
 	        this.responseContent = this.convertValues(source["responseContent"], ResponseContent);
-	        this.toolCalls = this.convertValues(source["toolCalls"], ResponseToolCall);
+	        this.toolCalls = this.convertValues(source["toolCalls"], ToolCall);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -3838,7 +3860,6 @@ export namespace spec {
 	}
 	
 	
-	
 	export class SearchConversationsRequest {
 	    Query: string;
 	    PageToken: string;
@@ -4253,6 +4274,7 @@ export namespace spec {
 	
 	    }
 	}
+	
 	
 	
 	

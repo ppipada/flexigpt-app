@@ -87,7 +87,12 @@ export const ChatMessage = memo(function ChatMessage({
 					renderAsMarkdown={renderMarkdown}
 				/>
 				<div className="flex w-full min-w-0 overflow-x-hidden p-0">
-					<MessageAttachmentsBar attachments={message.attachments} toolChoices={message.toolChoices} />
+					<MessageAttachmentsBar
+						attachments={message.attachments}
+						toolChoices={message.toolChoices}
+						toolCalls={message.toolCalls}
+						toolOutputs={message.toolOutputs}
+					/>
 				</div>
 			</div>
 

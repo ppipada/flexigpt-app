@@ -18,6 +18,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
 // OpenAIChatCompletionsAPI struct that implements the CompletionProvider interface.
@@ -197,30 +198,34 @@ func (api *OpenAIChatCompletionsAPI) FetchCompletion(
 
 		}
 	}
+	var toolNameMap map[string]spec.FetchCompletionToolChoice
 	if len(completionData.ToolChoices) > 0 {
-		toolDefs, err := toOpenAIChatTools(completionData.ToolChoices)
+		toolDefs, m, err := toOpenAIChatTools(completionData.ToolChoices)
 		if err != nil {
 			return nil, err
 		}
 		if len(toolDefs) > 0 {
 			params.Tools = toolDefs
+			toolNameMap = m
 		}
 	}
+
 	timeout := modelpresetSpec.DefaultAPITimeout
 	if completionData.ModelParams.Timeout > 0 {
 		timeout = time.Duration(completionData.ModelParams.Timeout) * time.Second
 	}
 
 	if completionData.ModelParams.Stream && onStreamTextData != nil && onStreamThinkingData != nil {
-		return api.doStreaming(ctx, params, onStreamTextData, onStreamThinkingData, timeout)
+		return api.doStreaming(ctx, params, onStreamTextData, onStreamThinkingData, timeout, toolNameMap)
 	}
-	return api.doNonStreaming(ctx, params, timeout)
+	return api.doNonStreaming(ctx, params, timeout, toolNameMap)
 }
 
 func (api *OpenAIChatCompletionsAPI) doNonStreaming(
 	ctx context.Context,
 	params openai.ChatCompletionNewParams,
 	timeout time.Duration,
+	toolNameMap map[string]spec.FetchCompletionToolChoice,
 ) (*spec.FetchCompletionResponse, error) {
 	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
 	ctx = debugclient.AddDebugResponseToCtx(ctx)
@@ -235,7 +240,7 @@ func (api *OpenAIChatCompletionsAPI) doNonStreaming(
 	completionResp.Body.ResponseContent = []spec.ResponseContent{
 		{Type: spec.ResponseContentTypeText, Content: full},
 	}
-	if toolCalls := extractOpenAIChatToolCalls(resp.Choices); len(toolCalls) > 0 {
+	if toolCalls := extractOpenAIChatToolCalls(resp.Choices, toolNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
 	}
 	return completionResp, nil
@@ -246,6 +251,7 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 	params openai.ChatCompletionNewParams,
 	onStreamTextData, onStreamThinkingData func(string) error,
 	timeout time.Duration,
+	toolNameMap map[string]spec.FetchCompletionToolChoice,
 ) (*spec.FetchCompletionResponse, error) {
 	// No thinking data available in openai chat completions API, hence no thinking writer.
 	write, flush := NewBufferedStreamer(onStreamTextData, FlushInterval, FlushChunkSize)
@@ -302,7 +308,7 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 	completionResp.Body.ResponseContent = []spec.ResponseContent{
 		{Type: spec.ResponseContentTypeText, Content: fullResp},
 	}
-	if toolCalls := extractOpenAIChatToolCalls(acc.Choices); len(toolCalls) > 0 {
+	if toolCalls := extractOpenAIChatToolCalls(acc.Choices, toolNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
 	}
 	return completionResp, streamErr
@@ -489,15 +495,18 @@ func getOpenAIMessageFromSystemPrompt(
 
 func toOpenAIChatTools(
 	tools []spec.FetchCompletionToolChoice,
-) ([]openai.ChatCompletionToolUnionParam, error) {
+) ([]openai.ChatCompletionToolUnionParam, map[string]spec.FetchCompletionToolChoice, error) {
 	if len(tools) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
+	ordered, nameMap := buildToolNameMapping(tools)
 	out := make([]openai.ChatCompletionToolUnionParam, 0, len(tools))
-	for _, ct := range tools {
+
+	for _, tw := range ordered {
+		ct := tw.Choice
 		schema, err := decodeToolArgSchema(ct.Tool.ArgSchema)
 		if err != nil {
-			return nil, fmt.Errorf(
+			return nil, nil, fmt.Errorf(
 				"invalid tool schema for %s/%s@%s: %w",
 				ct.BundleID,
 				ct.Tool.Slug,
@@ -506,7 +515,7 @@ func toOpenAIChatTools(
 			)
 		}
 		fn := shared.FunctionDefinitionParam{
-			Name:       toolFunctionName(ct),
+			Name:       tw.Name,
 			Parameters: schema,
 		}
 		if desc := toolDescription(ct); desc != "" {
@@ -514,46 +523,64 @@ func toOpenAIChatTools(
 		}
 		out = append(out, openai.ChatCompletionFunctionTool(fn))
 	}
-	return out, nil
+	return out, nameMap, nil
 }
 
-func extractOpenAIChatToolCalls(choices []openai.ChatCompletionChoice) []spec.ResponseToolCall {
+func extractOpenAIChatToolCalls(
+	choices []openai.ChatCompletionChoice,
+	toolNameMap map[string]spec.FetchCompletionToolChoice,
+) []toolSpec.ToolCall {
 	if len(choices) == 0 {
 		return nil
 	}
-	return convertOpenAIChatMessageToolCalls(&choices[0].Message)
-}
-
-func convertOpenAIChatMessageToolCalls(
-	msg *openai.ChatCompletionMessage,
-) []spec.ResponseToolCall {
-	if msg == nil || len(msg.ToolCalls) == 0 {
+	msg := &choices[0].Message
+	if len(msg.ToolCalls) == 0 {
 		return nil
 	}
 
-	out := make([]spec.ResponseToolCall, 0, len(msg.ToolCalls))
+	out := make([]toolSpec.ToolCall, 0, len(msg.ToolCalls))
 	for _, tc := range msg.ToolCalls {
 		switch variant := tc.AsAny().(type) {
 		case openai.ChatCompletionMessageFunctionToolCall:
+
+			name := variant.Function.Name
+			var toolChoice *toolSpec.ToolChoice
+			if toolNameMap != nil {
+				if ct, ok := toolNameMap[name]; ok {
+					// Add the actual choice to response.
+					toolChoice = &ct.ToolChoice
+				}
+			}
+
 			out = append(
 				out,
-				spec.ResponseToolCall{
-					ID:        variant.ID,
-					CallID:    variant.ID,
-					Name:      variant.Function.Name,
-					Arguments: variant.Function.Arguments,
-					Type:      string(variant.Type),
+				toolSpec.ToolCall{
+					ID:         variant.ID,
+					CallID:     variant.ID,
+					Name:       variant.Function.Name,
+					Arguments:  variant.Function.Arguments,
+					Type:       string(variant.Type),
+					ToolChoice: toolChoice,
 				},
 			)
 		case openai.ChatCompletionMessageCustomToolCall:
+			name := variant.Custom.Name
+			var toolChoice *toolSpec.ToolChoice
+			if toolNameMap != nil {
+				if ct, ok := toolNameMap[name]; ok {
+					// Add the actual choice to response.
+					toolChoice = &ct.ToolChoice
+				}
+			}
 			out = append(
 				out,
-				spec.ResponseToolCall{
-					ID:        variant.ID,
-					CallID:    variant.ID,
-					Name:      variant.Custom.Name,
-					Arguments: variant.Custom.Input,
-					Type:      string(variant.Type),
+				toolSpec.ToolCall{
+					ID:         variant.ID,
+					CallID:     variant.ID,
+					Name:       variant.Custom.Name,
+					Arguments:  variant.Custom.Input,
+					Type:       string(variant.Type),
+					ToolChoice: toolChoice,
 				},
 			)
 		}

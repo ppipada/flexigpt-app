@@ -18,7 +18,7 @@ import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
 import { type Attachment, AttachmentKind, type AttachmentMode } from '@/spec/attachment';
 import type { DirectoryAttachmentsResult } from '@/spec/backend';
-import type { ToolChoice } from '@/spec/tool';
+import type { ToolChoice, ToolOutput } from '@/spec/tool';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -88,6 +88,7 @@ export interface EditorSubmitPayload {
 	text: string;
 	attachedTools: EditorAttachedToolChoice[];
 	attachments: EditorAttachment[];
+	toolOutputs: ToolOutput[];
 }
 
 const EDITOR_EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
@@ -327,8 +328,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			const attachedTools = getAttachedTools(editor);
 			const payload: EditorSubmitPayload = {
 				text: textToSend,
-				attachedTools,
-				attachments,
+				attachedTools: attachedTools,
+				attachments: attachments,
+				toolOutputs: [],
 			};
 
 			try {

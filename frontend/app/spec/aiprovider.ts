@@ -1,6 +1,6 @@
 import type { Attachment } from '@/spec/attachment';
 import type { CompletionUsage, ModelName, ProviderName, ReasoningParams, RoleEnum } from '@/spec/modelpreset';
-import type { Tool, ToolChoice } from '@/spec/tool';
+import type { Tool, ToolCall, ToolChoice } from '@/spec/tool';
 
 export interface ChatCompletionDataMessage {
 	role: RoleEnum;
@@ -63,18 +63,6 @@ interface ResponseContent {
 	content: string;
 }
 
-/**
- * @public
- */
-export interface ResponseToolCall {
-	id: string;
-	callID: string;
-	name: string;
-	arguments: string;
-	type: string;
-	status?: string;
-}
-
 export interface FetchCompletionData {
 	modelParams: ModelParams;
 	messages?: Array<ChatCompletionDataMessage>;
@@ -87,7 +75,7 @@ export interface FetchCompletionResponseBody {
 	errorDetails?: APIErrorDetails;
 	usage?: CompletionUsage;
 	responseContent?: ResponseContent[];
-	toolCalls?: ResponseToolCall[];
+	toolCalls?: ToolCall[];
 }
 
 export interface IProviderSetAPI {

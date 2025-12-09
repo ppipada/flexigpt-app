@@ -20,6 +20,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 )
 
 // OpenAIResponsesAPI struct that implements the CompletionProvider interface.
@@ -167,7 +168,6 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 	msgs, err := toOpenAIResponsesMessages(
 		ctx,
 		completionData.Messages,
-
 		completionData.ModelParams.Name,
 		api.ProviderParams.Name,
 	)
@@ -181,6 +181,7 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 		Input:           responses.ResponseNewParamsInputUnion{OfInputItemList: msgs},
 		Store:           openai.Bool(false),
 	}
+
 	sysPrompt := strings.TrimSpace(completionData.ModelParams.SystemPrompt)
 	if sysPrompt != "" {
 		params.Instructions = openai.String(sysPrompt)
@@ -199,54 +200,63 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 			modelpresetSpec.ReasoningLevelMedium,
 			modelpresetSpec.ReasoningLevelHigh:
 			params.Reasoning = shared.ReasoningParam{
-				Effort: shared.ReasoningEffort(string(rp.Level)),
-				// No option to tweak reasoning summary for now.
+				Effort:  shared.ReasoningEffort(string(rp.Level)),
 				Summary: shared.ReasoningSummaryAuto,
 			}
 		default:
 			return nil, fmt.Errorf("invalid level %q for singleWithLevels", rp.Level)
-
 		}
 	}
+
+	// Build tools + tool name map.
+	var toolNameMap map[string]spec.FetchCompletionToolChoice
 	if len(completionData.ToolChoices) > 0 {
-		toolDefs, err := toOpenAIResponseTools(completionData.ToolChoices)
+		toolDefs, m, err := toOpenAIResponseTools(completionData.ToolChoices)
 		if err != nil {
 			return nil, err
 		}
 		if len(toolDefs) > 0 {
 			params.Tools = toolDefs
+			toolNameMap = m
 		}
 	}
+
 	timeout := modelpresetSpec.DefaultAPITimeout
 	if completionData.ModelParams.Timeout > 0 {
 		timeout = time.Duration(completionData.ModelParams.Timeout) * time.Second
 	}
 
 	if completionData.ModelParams.Stream && onStreamTextData != nil && onStreamThinkingData != nil {
-		return api.doStreaming(ctx, params, onStreamTextData, onStreamThinkingData, timeout)
+		return api.doStreaming(ctx, params, onStreamTextData, onStreamThinkingData, timeout, toolNameMap)
 	}
-	return api.doNonStreaming(ctx, params, timeout)
+	return api.doNonStreaming(ctx, params, timeout, toolNameMap)
 }
 
 func (api *OpenAIResponsesAPI) doNonStreaming(
 	ctx context.Context,
 	params responses.ResponseNewParams,
 	timeout time.Duration,
+	toolNameMap map[string]spec.FetchCompletionToolChoice,
 ) (*spec.FetchCompletionResponse, error) {
 	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
 	ctx = debugclient.AddDebugResponseToCtx(ctx)
+
 	resp, err := api.client.Responses.New(ctx, params, option.WithRequestTimeout(timeout))
 	isNilResp := resp == nil || len(resp.Output) == 0
+
 	attachDebugResp(ctx, completionResp.Body, err, isNilResp, "", resp)
 	completionResp.Body.Usage = usageFromOpenAIResponse(resp)
+
 	if isNilResp {
 		return completionResp, nil
 	}
 
 	completionResp.Body.ResponseContent = getResponseContentFromOpenAIOutput(resp)
-	if toolCalls := extractOpenAIResponseToolCalls(resp); len(toolCalls) > 0 {
+
+	if toolCalls := extractOpenAIResponseToolCalls(resp, toolNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
 	}
+
 	return completionResp, nil
 }
 
@@ -255,6 +265,7 @@ func (api *OpenAIResponsesAPI) doStreaming(
 	params responses.ResponseNewParams,
 	onStreamTextData, onStreamThinkingData func(string) error,
 	timeout time.Duration,
+	toolNameMap map[string]spec.FetchCompletionToolChoice,
 ) (*spec.FetchCompletionResponse, error) {
 	writeTextData, flushTextData := NewBufferedStreamer(
 		onStreamTextData,
@@ -320,13 +331,13 @@ func (api *OpenAIResponsesAPI) doStreaming(
 	if flushTextData != nil {
 		flushTextData()
 	}
-
 	if flushThinkingData != nil {
 		flushThinkingData()
 	}
 
 	streamErr := errors.Join(stream.Err(), streamWriteErr)
 	isNilResp := len(respFull.Output) == 0
+
 	attachDebugResp(ctx, completionResp.Body, streamErr, isNilResp, "", respFull)
 	completionResp.Body.Usage = usageFromOpenAIResponse(&respFull)
 
@@ -336,9 +347,11 @@ func (api *OpenAIResponsesAPI) doStreaming(
 
 	respContent := getResponseContentFromOpenAIOutput(&respFull)
 	completionResp.Body.ResponseContent = respContent
-	if toolCalls := extractOpenAIResponseToolCalls(&respFull); len(toolCalls) > 0 {
+
+	if toolCalls := extractOpenAIResponseToolCalls(&respFull, toolNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
 	}
+
 	return completionResp, streamErr
 }
 
@@ -623,15 +636,20 @@ func getResponseContentFromOpenAIOutput(
 
 func toOpenAIResponseTools(
 	tools []spec.FetchCompletionToolChoice,
-) ([]responses.ToolUnionParam, error) {
+) ([]responses.ToolUnionParam, map[string]spec.FetchCompletionToolChoice, error) {
 	if len(tools) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
-	out := make([]responses.ToolUnionParam, 0, len(tools))
-	for _, ct := range tools {
+
+	ordered, nameMap := buildToolNameMapping(tools)
+	out := make([]responses.ToolUnionParam, 0, len(ordered))
+
+	for _, tw := range ordered {
+		ct := tw.Choice
+
 		schema, err := decodeToolArgSchema(ct.Tool.ArgSchema)
 		if err != nil {
-			return nil, fmt.Errorf(
+			return nil, nil, fmt.Errorf(
 				"invalid tool schema for %s/%s@%s: %w",
 				ct.BundleID,
 				ct.Tool.Slug,
@@ -639,53 +657,85 @@ func toOpenAIResponseTools(
 				err,
 			)
 		}
+
 		tool := responses.FunctionToolParam{
-			Name:       toolFunctionName(ct),
+			// Use the derived name based only on slug + disambiguation.
+			Name:       tw.Name,
 			Parameters: schema,
 			Type:       openaiSharedConstant.Function("function"),
 		}
 		if desc := toolDescription(ct); desc != "" {
 			tool.Description = openai.String(desc)
 		}
+
 		out = append(out, responses.ToolUnionParam{OfFunction: &tool})
 	}
-	return out, nil
+
+	return out, nameMap, nil
 }
 
-func extractOpenAIResponseToolCalls(resp *responses.Response) []spec.ResponseToolCall {
+func extractOpenAIResponseToolCalls(
+	resp *responses.Response,
+	toolNameMap map[string]spec.FetchCompletionToolChoice,
+) []toolSpec.ToolCall {
 	if resp == nil {
 		return nil
 	}
-	out := make([]spec.ResponseToolCall, 0)
+
+	out := make([]toolSpec.ToolCall, 0)
+
 	for _, item := range resp.Output {
 		switch item.Type {
 		case string(openaiSharedConstant.FunctionCall("").Default()):
 			fn := item.AsFunctionCall()
+
+			name := fn.Name
+			var toolChoice *toolSpec.ToolChoice
+			if toolNameMap != nil {
+				if ct, ok := toolNameMap[name]; ok {
+					// Add the actual choice to response.
+					toolChoice = &ct.ToolChoice
+				}
+			}
+
 			out = append(
 				out,
-				spec.ResponseToolCall{
-					ID:        fn.ID,
-					CallID:    fn.ID,
-					Name:      fn.Name,
-					Arguments: fn.Arguments,
-					Type:      item.Type,
-					Status:    string(fn.Status),
+				toolSpec.ToolCall{
+					ID:         fn.ID,
+					CallID:     fn.CallID,
+					Name:       name,
+					Arguments:  fn.Arguments,
+					Type:       item.Type,
+					Status:     string(fn.Status),
+					ToolChoice: toolChoice,
 				},
 			)
+
 		case string(openaiSharedConstant.CustomToolCall("").Default()):
 			fn := item.AsCustomToolCall()
+
+			name := fn.Name
+			var toolChoice *toolSpec.ToolChoice
+			if toolNameMap != nil {
+				if ct, ok := toolNameMap[name]; ok {
+					toolChoice = &ct.ToolChoice
+				}
+			}
+
 			out = append(
 				out,
-				spec.ResponseToolCall{
-					ID:        fn.ID,
-					CallID:    fn.ID,
-					Name:      fn.Name,
-					Arguments: fn.Input,
-					Type:      item.Type,
+				toolSpec.ToolCall{
+					ID:         fn.ID,
+					CallID:     fn.CallID,
+					Name:       name,
+					Arguments:  fn.Input,
+					Type:       item.Type,
+					ToolChoice: toolChoice,
 				},
 			)
 		}
 	}
+
 	if len(out) == 0 {
 		return nil
 	}

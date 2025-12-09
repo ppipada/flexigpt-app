@@ -73,6 +73,25 @@ export interface ToolChoice {
 	description?: string;
 }
 
+export interface ToolCall {
+	id: string;
+	callID: string;
+	name: string;
+	arguments: string;
+	type: string;
+	status?: string;
+	toolChoice?: ToolChoice;
+}
+
+export interface ToolOutput {
+	id: string;
+	callID: string;
+	name: string;
+	summary?: string;
+	rawOutput?: string;
+	toolChoice?: ToolChoice;
+}
+
 export interface Tool {
 	id: string;
 	slug: string;

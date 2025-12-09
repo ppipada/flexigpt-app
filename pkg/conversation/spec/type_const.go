@@ -24,6 +24,8 @@ type ConversationMessage struct {
 	Details     *string                  `json:"details,omitempty"`
 	ToolChoices []toolSpec.ToolChoice    `json:"toolChoices,omitempty"`
 	Attachments []attachment.Attachment  `json:"attachments,omitempty"`
+	ToolCalls   []toolSpec.ToolCall      `json:"toolCalls,omitempty"`
+	ToolOutputs []toolSpec.ToolOutput    `json:"toolOutputs,omitempty"`
 	Usage       *modelpresetSpec.Usage   `json:"usage,omitempty"`
 }
 

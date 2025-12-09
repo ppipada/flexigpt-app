@@ -3,6 +3,7 @@ package inference
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"runtime/debug"
 	"strings"
@@ -167,38 +168,68 @@ func convertBuildMessageToChatMessage(
 	return out
 }
 
-func toolFunctionName(ct spec.FetchCompletionToolChoice) string {
-	slug := sanitizeToolNameComponent(string(ct.ToolSlug))
-	version := sanitizeToolNameComponent(strings.ReplaceAll(ct.ToolVersion, ".", "_"))
+// toolName is a pair of an internal tool choice and the function name
+// that will be sent to the API for that tool.
+type toolName struct {
+	Choice spec.FetchCompletionToolChoice
+	Name   string
+}
 
-	idPart := sanitizeToolNameComponent(strings.ReplaceAll(string(ct.ToolID), "-", ""))
-	if len(idPart) > 8 {
-		idPart = idPart[:8]
+// BuildToolNameMapping assigns short, human‑readable function names to tools.
+//
+// Rules:
+//   - base name is the sanitized tool slug (lower‑cased, [a‑z0‑9_-] only)
+//   - first tool with a given slug gets "<slug>"
+//   - subsequent tools with the same slug get "<slug>_2", "<slug>_3", ...
+//   - names are truncated to 64 characters (OpenAI function-tool limit)
+//
+// Returns:
+//   - ordered: same cardinality/order as input tools, but with the
+//     derived function name for each tool.
+//   - nameToTool: map[functionName] => FetchCompletionToolChoice; used
+//     to translate tool calls back to the original identity.
+func buildToolNameMapping(
+	tools []spec.FetchCompletionToolChoice,
+) (toolNames []toolName, toolNameMap map[string]spec.FetchCompletionToolChoice) {
+	if len(tools) == 0 {
+		return nil, nil
 	}
 
-	parts := make([]string, 0, 3)
-	if slug != "" {
-		parts = append(parts, slug)
-	}
-	if version != "" {
-		parts = append(parts, version)
-	}
-	if idPart != "" {
-		parts = append(parts, idPart)
-	}
-	if len(parts) == 0 {
-		parts = append(parts, "tool")
+	used := make(map[string]int, len(tools))
+	toolNameMap = make(map[string]spec.FetchCompletionToolChoice, len(tools))
+	toolNames = make([]toolName, 0, len(tools))
+
+	for _, ct := range tools {
+		// Base is the sanitized tool slug.
+		base := sanitizeToolNameComponent(string(ct.ToolSlug))
+		if base == "" {
+			base = "tool"
+		}
+
+		// Enforce 64‑char limit.
+		if len(base) > 64 {
+			base = base[:64]
+		}
+		// Deduplicate: slug, slug_2, slug_3, ...
+		count := used[base]
+		var name string
+		if count == 0 {
+			name = base
+			used[base] = 1
+		} else {
+			count++
+			used[base] = count
+			name = fmt.Sprintf("%s_%d", base, count)
+		}
+
+		toolNames = append(toolNames, toolName{
+			Choice: ct,
+			Name:   name,
+		})
+		toolNameMap[name] = ct
 	}
 
-	name := strings.Join(parts, "_")
-	if len(name) > 64 {
-		name = name[:64]
-	}
-	name = strings.Trim(name, "_-")
-	if name == "" {
-		return "tool"
-	}
-	return name
+	return toolNames, toolNameMap
 }
 
 func sanitizeToolNameComponent(s string) string {

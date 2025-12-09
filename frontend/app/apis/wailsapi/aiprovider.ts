@@ -5,7 +5,7 @@ import type {
 	IProviderSetAPI,
 	ModelParams,
 } from '@/spec/aiprovider';
-import type { CompletionUsage, ProviderName } from '@/spec/modelpreset';
+import type { ProviderName } from '@/spec/modelpreset';
 import type { ToolChoice } from '@/spec/tool';
 
 import { BuildCompletionData, CancelCompletion, FetchCompletion } from '@/apis/wailsjs/go/main/ProviderSetWrapper';
@@ -115,7 +115,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 				requestDetails: respBody.requestDetails,
 				responseDetails: respBody.responseDetails,
 				errorDetails: respBody.errorDetails,
-				usage: respBody.usage as CompletionUsage,
+				usage: respBody.usage,
 				responseContent: respBody.responseContent,
 				toolCalls: respBody.toolCalls,
 			} as FetchCompletionResponseBody;

@@ -150,7 +150,8 @@ export default function ChatsPage() {
 			const userMessages = updatedChat.messages.filter(m => m.role === RoleEnum.User);
 			if (userMessages.length === 1) {
 				// Always generate title from first user message
-				newTitle = generateTitle(userMessages[0].content).title;
+				const t = generateTitle(userMessages[0].content);
+				newTitle = t.title;
 			} else if (userMessages.length === 2) {
 				// Generate titles from both messages, pick the one with higher score
 				const titleCondidate1 = generateTitle(userMessages[0].content);
@@ -369,9 +370,6 @@ export default function ChatsPage() {
 
 				if (newMsg.responseMessage) {
 					const respMessage = { ...newMsg.responseMessage };
-					if (newMsg.usage) {
-						respMessage.usage = newMsg.usage;
-					}
 
 					// Create FRESH objects so react sees the change even in non-streaming
 					// mode, where `streamedMessage` never changes.
@@ -419,7 +417,13 @@ export default function ChatsPage() {
 		if (isBusy) return;
 
 		const trimmed = payload.text.trim();
-		if (!trimmed) {
+		// Allow "tool-only" turns (no text) as long as something is attached (tools / tool outputs / attachments)
+		const hasNonEmptyText = trimmed.length > 0;
+		const hasToolOutputs = payload.toolOutputs.length > 0;
+		const hasTools = payload.attachedTools.length > 0;
+		const hasAttachments = payload.attachments.length > 0;
+
+		if (!hasNonEmptyText && !hasToolOutputs && !hasTools && !hasAttachments) {
 			return;
 		}
 
@@ -438,11 +442,14 @@ export default function ChatsPage() {
 				const attachments =
 					payload.attachments.length > 0 ? payload.attachments.map(editorAttachmentToConversation) : undefined;
 
+				const toolOutputs = payload.toolOutputs.length > 0 ? payload.toolOutputs : undefined;
+
 				const updatedUserMsg: ConversationMessage = {
 					...base,
 					content: trimmed,
-					toolChoices: toolChoices && toolChoices.length > 0 ? toolChoices : undefined,
-					attachments: attachments && attachments.length > 0 ? attachments : undefined,
+					toolChoices: toolChoices,
+					attachments: attachments,
+					toolOutputs: toolOutputs,
 				};
 
 				const msgs = chat.messages.slice(0, idx + 1);
@@ -467,14 +474,15 @@ export default function ChatsPage() {
 		const newMsg = initConversationMessage(RoleEnum.User, trimmed);
 		const toolChoices =
 			payload.attachedTools.length > 0 ? payload.attachedTools.map(attachedToolToConversationToolChoice) : undefined;
-		if (toolChoices && toolChoices.length > 0) {
-			newMsg.toolChoices = toolChoices;
-		}
+		newMsg.toolChoices = toolChoices;
+
 		const attachments =
 			payload.attachments.length > 0 ? payload.attachments.map(editorAttachmentToConversation) : undefined;
-		if (attachments && attachments.length > 0) {
-			newMsg.attachments = attachments;
-		}
+		newMsg.attachments = attachments;
+
+		const toolOutputs = payload.toolOutputs.length > 0 ? payload.toolOutputs : undefined;
+		newMsg.toolOutputs = toolOutputs;
+
 		const updated = {
 			...chat,
 			messages: [...chat.messages, newMsg],

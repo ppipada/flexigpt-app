@@ -7,6 +7,7 @@ import {
 } from '@/spec/aiprovider';
 import type { ConversationMessage } from '@/spec/conversation';
 import type { CompletionUsage, ProviderName } from '@/spec/modelpreset';
+import type { ToolCall } from '@/spec/tool';
 
 import { CustomMDLanguage } from '@/lib/text_utils';
 
@@ -44,7 +45,6 @@ export async function BuildCompletionDataFromConversation(
 	messages?: Array<ConversationMessage>
 ): Promise<FetchCompletionData> {
 	const allMessages = convertConversationToBuildMessages(messages);
-	// console.log(JSON.stringify(allMessages, null, 2));
 	const promptMsg = allMessages.pop();
 	if (!promptMsg || promptMsg.content === '') {
 		throw Error('Invalid prompt message input');
@@ -56,20 +56,18 @@ export async function BuildCompletionDataFromConversation(
 	return completionData;
 }
 
-// export const normalizeThinkingChunk = (s: string) => s.replace(/~~~+/g, '~~\u200b~'); // break accidental fences
-
 function parseAPIResponse(
 	convoMessage: ConversationMessage,
 	providerResp: FetchCompletionResponseBody | undefined
 ): {
 	responseMessage: ConversationMessage;
 	requestDetails: string | undefined;
-	usage?: CompletionUsage;
 } {
 	let respContent = '';
 	let respDetails: string | undefined;
 	let requestDetails: string | undefined;
 	let usage: CompletionUsage | undefined;
+	let toolCalls: ToolCall[] | undefined;
 
 	if (providerResp) {
 		if (providerResp.responseContent && providerResp.responseContent.length) {
@@ -127,11 +125,9 @@ function parseAPIResponse(
 			respContent += '\n\n>Got error in API processing. Check details below.';
 		}
 
-		// Tool calls are not directly rendered in the main message bubble, so
-		// surface them in the debug/details panel.
+		// Capture tool calls both for debug-details and structured usage.
 		if (providerResp.toolCalls && providerResp.toolCalls.length > 0) {
-			const toolCallsBlock = '### Tool calls\n' + getQuotedJSON(providerResp.toolCalls);
-			respDetails = respDetails ? `${respDetails}\n\n${toolCallsBlock}` : toolCallsBlock;
+			toolCalls = providerResp.toolCalls;
 		}
 
 		if (providerResp.usage) {
@@ -145,7 +141,9 @@ function parseAPIResponse(
 
 	convoMessage.content = respContent;
 	convoMessage.details = respDetails;
-	return { responseMessage: convoMessage, requestDetails: requestDetails, usage: usage };
+	convoMessage.usage = usage;
+	convoMessage.toolCalls = toolCalls;
+	return { responseMessage: convoMessage, requestDetails: requestDetails };
 }
 
 async function handleDirectCompletion(
@@ -157,7 +155,6 @@ async function handleDirectCompletion(
 ): Promise<{
 	responseMessage: ConversationMessage | undefined;
 	requestDetails: string | undefined;
-	usage?: CompletionUsage;
 }> {
 	const providerResp = await providerSetAPI.completion(provider, completionData, requestId, signal);
 	return parseAPIResponse(convoMessage, providerResp);
@@ -174,7 +171,6 @@ async function handleStreamedCompletion(
 ): Promise<{
 	responseMessage: ConversationMessage | undefined;
 	requestDetails: string | undefined;
-	usage?: CompletionUsage;
 }> {
 	const providerResp = await providerSetAPI.completion(
 		provider,
@@ -198,11 +194,9 @@ export async function HandleCompletion(
 ): Promise<{
 	responseMessage: ConversationMessage | undefined;
 	requestDetails: string | undefined;
-	usage?: CompletionUsage;
 }> {
 	try {
 		const isStream = completionData.modelParams.stream || false;
-		// log.info('FetchCompletionData', defaultProvider, JSON.stringify(fullCompletionData, null, 2));
 		if (isStream && onStreamTextData && onStreamThinkingData) {
 			return await handleStreamedCompletion(
 				convoMessage,
@@ -233,6 +227,6 @@ export async function HandleCompletion(
 		convoMessage.content = existing ? existing + suffix : suffix;
 		convoMessage.details = details;
 
-		return { responseMessage: convoMessage, requestDetails: undefined, usage: undefined };
+		return { responseMessage: convoMessage, requestDetails: undefined };
 	}
 }
