@@ -135,7 +135,7 @@ importers:
         version: 9.39.1
       '@react-router/dev':
         specifier: ^7.10.1
-        version: 7.10.1(@types/node@22.19.1)(@vitejs/plugin-rsc@0.5.5(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2)))(babel-plugin-macros@3.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(react-router@7.10.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(typescript@5.9.3)(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2))
+        version: 7.10.1(@types/node@22.19.1)(@vitejs/plugin-rsc@0.5.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2)))(babel-plugin-macros@3.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(react-router@7.10.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(typescript@5.9.3)(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2))
       '@tailwindcss/vite':
         specifier: ^4.1.17
         version: 4.1.17(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2))
@@ -167,8 +167,8 @@ importers:
         specifier: ^2.0.3
         version: 2.0.3
       '@vitejs/plugin-rsc':
-        specifier: ^0.5.5
-        version: 0.5.5(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2))
+        specifier: ^0.5.6
+        version: 0.5.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2))
       '@vitest/coverage-v8':
         specifier: ^4.0.15
         version: 4.0.15(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(jsdom@27.2.0)(lightningcss@1.30.2))
@@ -1520,8 +1520,8 @@ packages:
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
 
-  '@vitejs/plugin-rsc@0.5.5':
-    resolution: {integrity: sha512-q1VMniSmeaVvlv5B1goGXVNkL0HyAc5kIaA0RwZBnPyuxorJTJBe2tpas9J3UWDBsYeMo4tMv7S2+S5x1/978w==}
+  '@vitejs/plugin-rsc@0.5.6':
+    resolution: {integrity: sha512-OwFkK97TaS1WqRZtd4dQRSvSPA8He6GIxRhyTCtvLeHkZq60Qsb/vKIILjQntVprxgSQOa/d4lSMWVKHw7X9/A==}
     peerDependencies:
       react: '*'
       react-dom: '*'
@@ -5063,7 +5063,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.7
 
-  '@react-router/dev@7.10.1(@types/node@22.19.1)(@vitejs/plugin-rsc@0.5.5(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2)))(babel-plugin-macros@3.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(react-router@7.10.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(typescript@5.9.3)(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2))':
+  '@react-router/dev@7.10.1(@types/node@22.19.1)(@vitejs/plugin-rsc@0.5.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2)))(babel-plugin-macros@3.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(react-router@7.10.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(typescript@5.9.3)(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2))':
     dependencies:
       '@babel/core': 7.28.5
       '@babel/generator': 7.28.5
@@ -5096,7 +5096,7 @@ snapshots:
       vite: 7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2)
       vite-node: 3.2.4(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2)
     optionalDependencies:
-      '@vitejs/plugin-rsc': 0.5.5(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2))
+      '@vitejs/plugin-rsc': 0.5.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2))
       typescript: 5.9.3
     transitivePeerDependencies:
       - '@types/node'
@@ -5645,7 +5645,7 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
-  '@vitejs/plugin-rsc@0.5.5(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2))':
+  '@vitejs/plugin-rsc@0.5.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vite@7.2.7(@types/node@22.19.1)(jiti@2.6.1)(lightningcss@1.30.2))':
     dependencies:
       '@remix-run/node-fetch-server': 0.12.0
       es-module-lexer: 1.7.0
