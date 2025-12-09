@@ -83,8 +83,8 @@ export function MessageFooterArea({
 					{isStreaming && (
 						<div className="text-sm">
 							<div className="flex items-center bg-transparent px-4 py-2">
-								Streaming
-								<span className="loading loading-dots loading-sm ml-4" />
+								Streaming...
+								{/* <span className="loading loading-dots loading-sm ml-4" /> */}
 							</div>
 						</div>
 					)}
