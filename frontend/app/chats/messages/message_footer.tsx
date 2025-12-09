@@ -83,7 +83,7 @@ export function MessageFooterArea({
 					{isStreaming && (
 						<div className="text-sm">
 							<div className="flex items-center bg-transparent px-4 py-2">
-								Streaming...
+								Streaming
 								<FiMoreHorizontal size={14} />
 							</div>
 						</div>
