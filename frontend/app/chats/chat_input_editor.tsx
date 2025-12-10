@@ -10,7 +10,7 @@ import {
 	useState,
 } from 'react';
 
-import { FiAlertTriangle, FiEdit2, FiSend, FiSquare, FiX } from 'react-icons/fi';
+import { FiAlertTriangle, FiEdit2, FiFastForward, FiPlay, FiSend, FiSquare, FiX } from 'react-icons/fi';
 
 import { useMenuStore } from '@ariakit/react';
 import { SingleBlockPlugin, type Value } from 'platejs';
@@ -433,8 +433,11 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		setActiveToolOutput(output);
 	}, []);
 
-	const handleSubmit = (e?: FormEvent) => {
-		if (e) e.preventDefault();
+	/**
+	 * Main submit logic, parameterized by whether to run pending tool calls
+	 * before sending.
+	 */
+	const doSubmit = async (options: { runPendingTools: boolean }) => {
 		if (!isSendButtonEnabled || isSubmittingRef.current) {
 			// If invalid, flash and focus first pending pill
 			if (selectionInfo.hasTemplate && selectionInfo.requiredCount > 0) {
@@ -464,11 +467,11 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		setSubmitError(null);
 		isSubmittingRef.current = true;
 
-		(async () => {
-			// If there are pending tool calls, interpret submit as "Run & send".
+		try {
 			const existingOutputs = toolOutputs;
 			let newlyProducedOutputs: ToolOutput[] = [];
-			if (hasPendingToolCalls) {
+
+			if (options.runPendingTools && hasPendingToolCalls) {
 				newlyProducedOutputs = await runAllPendingToolCalls();
 			}
 
@@ -485,25 +488,29 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				toolOutputs: [...existingOutputs, ...newlyProducedOutputs],
 			};
 
-			try {
-				await onSubmit(payload);
-				setSubmitError(null);
-			} finally {
-				// Clear editor and state after successful preprocessor runs and submit
-				editor.tf.setValue(EDITOR_EMPTY_VALUE);
-				setAttachments([]);
-				setDirectoryGroups([]);
-				setToolCallChips([]);
-				setToolOutputs([]);
-				setActiveToolOutput(null);
+			await onSubmit(payload);
+			setSubmitError(null);
+		} finally {
+			// Clear editor and state after successful preprocessor runs and submit
+			editor.tf.setValue(EDITOR_EMPTY_VALUE);
+			setAttachments([]);
+			setDirectoryGroups([]);
+			setToolCallChips([]);
+			setToolOutputs([]);
+			setActiveToolOutput(null);
 
-				lastPopulatedSelectionKeyRef.current.clear();
-				editor.tf.focus();
-				isSubmittingRef.current = false;
-			}
-		})().catch(() => {
+			lastPopulatedSelectionKeyRef.current.clear();
+			editor.tf.focus();
 			isSubmittingRef.current = false;
-		});
+		}
+	};
+
+	/**
+	 * Default form submit / Enter: "run pending tools, then send".
+	 */
+	const handleSubmit = (e?: FormEvent) => {
+		if (e) e.preventDefault();
+		void doSubmit({ runPendingTools: true });
 	};
 
 	const resetEditor = useCallback(() => {
@@ -822,8 +829,13 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		await runAllPendingToolCalls();
 	}, [hasPendingToolCalls, hasRunningToolCalls, isBusy, runAllPendingToolCalls]);
 
-	const primaryButtonLabel = hasPendingToolCalls ? 'Run & send' : 'Send';
-	const isPrimaryDisabled = !isSendButtonEnabled || isBusy || hasRunningToolCalls;
+	// Button-state helpers:
+	// - Play: run tools only (enabled when there are pending tools and none are running).
+	// - Fast-forward: run tools then send (enabled when send is allowed and tools are pending).
+	// - Send: send only (enabled when send is allowed and there are no pending tools).
+	const canRunToolsOnly = hasPendingToolCalls && !hasRunningToolCalls && !isBusy;
+	const canRunToolsAndSend = hasPendingToolCalls && isSendButtonEnabled && !hasRunningToolCalls;
+	const canSendOnly = !hasPendingToolCalls && isSendButtonEnabled && !hasRunningToolCalls;
 
 	return (
 		<>
@@ -864,10 +876,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 							<div className="flex items-center justify-end gap-2 pt-1 pr-3 pb-0 text-xs">
 								<div className="flex items-center gap-2">
 									<FiEdit2 size={14} />
-									<span>
-										Editing an earlier message. Sending will replace it and drop all later messages from the
-										conversation.
-									</span>
+									<span>Editing an earlier message. Sending will replace it and drop all later messages.</span>
 								</div>
 								<button
 									type="button"
@@ -919,34 +928,70 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 									</button>
 								) : (
 									<>
+										{/* Run tools only (Play) */}
 										{hasPendingToolCalls && (
+											<div className="tooltip tooltip-left" data-tip="Run tools only">
+												<button
+													type="button"
+													className={`btn btn-circle btn-neutral btn-sm shrink-0 ${
+														!canRunToolsOnly ? 'btn-disabled' : ''
+													}`}
+													disabled={!canRunToolsOnly}
+													onClick={() => {
+														if (!canRunToolsOnly) return;
+														void handleRunToolsOnlyClick();
+													}}
+													aria-label="Run tools only"
+												>
+													<FiPlay size={18} />
+												</button>
+											</div>
+										)}
+
+										{/* Run tools and send (Fast-forward) */}
+										{hasPendingToolCalls && (
+											<div className="tooltip tooltip-left" data-tip="Run tools and send">
+												<button
+													type="button"
+													className={`btn btn-circle btn-neutral btn-sm shrink-0 ${
+														!canRunToolsAndSend ? 'btn-disabled' : ''
+													}`}
+													disabled={!canRunToolsAndSend}
+													onClick={() => {
+														if (!canRunToolsAndSend) return;
+														void doSubmit({ runPendingTools: true });
+													}}
+													aria-label="Run tools and send"
+												>
+													<FiFastForward size={18} />
+												</button>
+											</div>
+										)}
+
+										{/* Send only (plane). Disabled while there are pending tools. */}
+										<div
+											className="tooltip tooltip-left"
+											data-tip={hasPendingToolCalls ? 'Send (enabled after tools finish)' : 'Send message'}
+										>
 											<button
 												type="button"
-												className={`btn btn-outline btn-xs shrink-0 ${hasRunningToolCalls ? 'btn-disabled' : ''}`}
-												disabled={hasRunningToolCalls}
+												className={`btn btn-circle btn-neutral btn-sm shrink-0 ${!canSendOnly ? 'btn-disabled' : ''}`}
+												disabled={!canSendOnly}
 												onClick={() => {
-													void handleRunToolsOnlyClick();
+													if (!canSendOnly) return;
+													void doSubmit({ runPendingTools: false });
 												}}
+												aria-label="Send message"
 											>
-												Run tools only
+												<FiSend size={18} />
 											</button>
-										)}
-										<button
-											type="submit"
-											className={`btn btn-neutral btn-sm shrink-0 ${isPrimaryDisabled ? 'btn-disabled' : ''}`}
-											disabled={isPrimaryDisabled}
-											aria-label={primaryButtonLabel}
-											title={primaryButtonLabel}
-										>
-											<FiSend size={20} className="mr-1" />
-											<span>{primaryButtonLabel}</span>
-										</button>
+										</div>
 									</>
 								)}
 							</div>
 						</div>
 						{/* Chips bar for tools (calls & outputs), attachments & tool choices (scrollable) */}
-						<div className="flex w-full min-w-0 items-center gap-1 overflow-x-auto px-1 py-0 text-xs">
+						<div className="flex w-full min-w-0 items-center gap-1 overflow-x-auto px-1 py-0.5 text-xs">
 							<ToolChipsComposerRow
 								toolCallChips={toolCallChips}
 								toolOutputs={toolOutputs}
