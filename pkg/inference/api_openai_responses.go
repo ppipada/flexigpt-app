@@ -675,11 +675,11 @@ func contentBlocksToOpenAI(
 
 func getResponseContentFromOpenAIOutput(
 	inputResp *responses.Response,
-) []spec.ResponseContent {
+) []modelpresetSpec.MessageContent {
 	if inputResp == nil || len(inputResp.Output) == 0 {
-		return []spec.ResponseContent{}
+		return []modelpresetSpec.MessageContent{}
 	}
-	resp := make([]spec.ResponseContent, 0, 4)
+	resp := make([]modelpresetSpec.MessageContent, 0, 4)
 	var outputText strings.Builder
 	var thinkingSummaryText strings.Builder
 	var thinkingText strings.Builder
@@ -707,8 +707,8 @@ func getResponseContentFromOpenAIOutput(
 	if thinkingSummaryStr != "" {
 		resp = append(
 			resp,
-			spec.ResponseContent{
-				Type:    spec.ResponseContentTypeThinkingSummary,
+			modelpresetSpec.MessageContent{
+				Type:    modelpresetSpec.MessageContentTypeThinkingSummary,
 				Content: thinkingSummaryStr,
 			},
 		)
@@ -718,14 +718,14 @@ func getResponseContentFromOpenAIOutput(
 	if thinkingStr != "" {
 		resp = append(
 			resp,
-			spec.ResponseContent{Type: spec.ResponseContentTypeThinking, Content: thinkingStr},
+			modelpresetSpec.MessageContent{Type: modelpresetSpec.MessageContentTypeThinking, Content: thinkingStr},
 		)
 	}
 	outStr := outputText.String()
 
 	resp = append(
 		resp,
-		spec.ResponseContent{Type: spec.ResponseContentTypeText, Content: outStr},
+		modelpresetSpec.MessageContent{Type: modelpresetSpec.MessageContentTypeText, Content: outStr},
 	)
 
 	return resp

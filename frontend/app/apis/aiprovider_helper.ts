@@ -3,10 +3,9 @@ import {
 	type FetchCompletionData,
 	type FetchCompletionResponseBody,
 	type ModelParams,
-	ResponseContentType,
 } from '@/spec/aiprovider';
 import type { ConversationMessage } from '@/spec/conversation';
-import type { CompletionUsage, ProviderName } from '@/spec/modelpreset';
+import { type CompletionUsage, MessageContentType, type ProviderName } from '@/spec/modelpreset';
 import type { ToolCall } from '@/spec/tool';
 
 import { CustomMDLanguage } from '@/lib/text_utils';
@@ -78,7 +77,7 @@ function parseAPIResponse(
 
 	if (providerResp) {
 		if (providerResp.responseContent && providerResp.responseContent.length) {
-			type ContentChunk = { rtype: ResponseContentType; content: string };
+			type ContentChunk = { rtype: MessageContentType; content: string };
 
 			// 1) Collapse adjacent same-type blocks
 			const collapsed: ContentChunk[] = [];
@@ -98,9 +97,9 @@ function parseAPIResponse(
 			// 2) Fence the Thinking blocks and 3) concat result
 			let respFullText = '';
 			for (const chunk of collapsed) {
-				if (chunk.rtype === ResponseContentType.ThinkingSummary) {
+				if (chunk.rtype === MessageContentType.ThinkingSummary) {
 					respFullText += `\n~~~${CustomMDLanguage.ThinkingSummary}\n${chunk.content}\n~~~\n`;
-				} else if (chunk.rtype === ResponseContentType.Thinking) {
+				} else if (chunk.rtype === MessageContentType.Thinking) {
 					respFullText += `\n~~~${CustomMDLanguage.Thinking}\n${chunk.content}\n~~~\n`;
 				} else {
 					respFullText += `\n${chunk.content}\n`;

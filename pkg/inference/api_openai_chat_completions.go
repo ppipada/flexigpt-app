@@ -238,8 +238,8 @@ func (api *OpenAIChatCompletionsAPI) doNonStreaming(
 		return completionResp, nil
 	}
 	full := resp.Choices[0].Message.Content
-	completionResp.Body.ResponseContent = []spec.ResponseContent{
-		{Type: spec.ResponseContentTypeText, Content: full},
+	completionResp.Body.ResponseContent = []modelpresetSpec.MessageContent{
+		{Type: modelpresetSpec.MessageContentTypeText, Content: full},
 	}
 	if toolCalls := extractOpenAIChatToolCalls(resp.Choices, toolChoiceNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
@@ -306,8 +306,8 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 	}
 
 	fullResp := acc.Choices[0].Message.Content
-	completionResp.Body.ResponseContent = []spec.ResponseContent{
-		{Type: spec.ResponseContentTypeText, Content: fullResp},
+	completionResp.Body.ResponseContent = []modelpresetSpec.MessageContent{
+		{Type: modelpresetSpec.MessageContentTypeText, Content: fullResp},
 	}
 	if toolCalls := extractOpenAIChatToolCalls(acc.Choices, toolChoiceNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls

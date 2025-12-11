@@ -1,5 +1,12 @@
 import type { Attachment } from '@/spec/attachment';
-import type { CompletionUsage, ModelName, ProviderName, ReasoningParams, RoleEnum } from '@/spec/modelpreset';
+import type {
+	CompletionUsage,
+	MessageContent,
+	ModelName,
+	ProviderName,
+	ReasoningParams,
+	RoleEnum,
+} from '@/spec/modelpreset';
 import type { Tool, ToolCall, ToolChoice, ToolOutput } from '@/spec/tool';
 
 export interface ChatCompletionDataMessage {
@@ -53,18 +60,6 @@ interface APIErrorDetails {
 	responseDetails?: APIResponseDetails;
 }
 
-export enum ResponseContentType {
-	Text = 'text',
-	Thinking = 'thinking',
-	ThinkingSummary = 'thinkingSummary',
-	RedactedThinking = 'redactedThinking',
-}
-
-interface ResponseContent {
-	type: ResponseContentType;
-	content: string;
-}
-
 export interface FetchCompletionData {
 	modelParams: ModelParams;
 	messages?: Array<ChatCompletionDataMessage>;
@@ -76,7 +71,7 @@ export interface FetchCompletionResponseBody {
 	responseDetails?: APIResponseDetails;
 	errorDetails?: APIErrorDetails;
 	usage?: CompletionUsage;
-	responseContent?: ResponseContent[];
+	responseContent?: MessageContent[];
 	toolCalls?: ToolCall[];
 }
 

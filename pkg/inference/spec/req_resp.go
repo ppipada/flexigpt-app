@@ -68,20 +68,6 @@ type APIFetchResponse[T any] struct {
 	ErrorDetails    *APIErrorDetails    `json:"errorDetails,omitempty"`
 }
 
-type ResponseContentType string
-
-const (
-	ResponseContentTypeText             ResponseContentType = "text"
-	ResponseContentTypeThinking         ResponseContentType = "thinking"
-	ResponseContentTypeThinkingSummary  ResponseContentType = "thinkingSummary"
-	ResponseContentTypeRedactedThinking ResponseContentType = "redactedThinking"
-)
-
-type ResponseContent struct {
-	Type    ResponseContentType `json:"type"`
-	Content string              `json:"content"`
-}
-
 type ChatCompletionDataMessage struct {
 	Role        modelpresetSpec.RoleEnum `json:"role"`
 	Content     *string                  `json:"content,omitempty"`
@@ -136,8 +122,8 @@ type FetchCompletionResponseBody struct {
 	ErrorDetails    *APIErrorDetails       `json:"errorDetails,omitempty"`
 	Usage           *modelpresetSpec.Usage `json:"usage,omitempty"`
 
-	ResponseContent []ResponseContent   `json:"responseContent,omitempty"`
-	ToolCalls       []toolSpec.ToolCall `json:"toolCalls,omitempty"`
+	ResponseContent []modelpresetSpec.MessageContent `json:"responseContent,omitempty"`
+	ToolCalls       []toolSpec.ToolCall              `json:"toolCalls,omitempty"`
 }
 
 type FetchCompletionResponse struct {

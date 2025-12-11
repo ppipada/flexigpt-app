@@ -74,6 +74,18 @@ export interface CompletionUsage {
 	reasoningTokens: number;
 }
 
+export enum MessageContentType {
+	Text = 'text',
+	Thinking = 'thinking',
+	ThinkingSummary = 'thinkingSummary',
+	RedactedThinking = 'redactedThinking',
+}
+
+export interface MessageContent {
+	type: MessageContentType;
+	content: string;
+}
+
 export interface ReasoningParams {
 	type: ReasoningType;
 	level: ReasoningLevel;

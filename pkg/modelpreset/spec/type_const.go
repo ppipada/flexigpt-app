@@ -114,6 +114,20 @@ type Usage struct {
 	ReasoningTokens int64 `json:"reasoningTokens"`
 }
 
+type MessageContentType string
+
+const (
+	MessageContentTypeText             MessageContentType = "text"
+	MessageContentTypeThinking         MessageContentType = "thinking"
+	MessageContentTypeThinkingSummary  MessageContentType = "thinkingSummary"
+	MessageContentTypeRedactedThinking MessageContentType = "redactedThinking"
+)
+
+type MessageContent struct {
+	Type    MessageContentType `json:"type"`
+	Content string             `json:"content"`
+}
+
 // ModelPreset is the entire "model + default knobs" bundle the user can save.
 // Anything not present in the preset is considered to be taken as default from any global or inbuilt model defaults.
 type ModelPreset struct {

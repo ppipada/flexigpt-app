@@ -643,19 +643,19 @@ func contentBlocksToAnthropic(
 	return out, nil
 }
 
-func getResponseContentFromAnthropicMessage(msg *anthropic.Message) []spec.ResponseContent {
+func getResponseContentFromAnthropicMessage(msg *anthropic.Message) []modelpresetSpec.MessageContent {
 	if msg == nil {
-		return []spec.ResponseContent{}
+		return []modelpresetSpec.MessageContent{}
 	}
-	resp := make([]spec.ResponseContent, 0, len(msg.Content))
+	resp := make([]modelpresetSpec.MessageContent, 0, len(msg.Content))
 	for _, content := range msg.Content {
 		switch variant := content.AsAny().(type) {
 		case anthropic.TextBlock:
-			resp = append(resp, spec.ResponseContent{Type: spec.ResponseContentTypeText, Content: variant.Text})
+			resp = append(resp, modelpresetSpec.MessageContent{Type: modelpresetSpec.MessageContentTypeText, Content: variant.Text})
 		case anthropic.ThinkingBlock:
-			resp = append(resp, spec.ResponseContent{Type: spec.ResponseContentTypeThinking, Content: variant.Thinking})
+			resp = append(resp, modelpresetSpec.MessageContent{Type: modelpresetSpec.MessageContentTypeThinking, Content: variant.Thinking})
 		case anthropic.RedactedThinkingBlock:
-			resp = append(resp, spec.ResponseContent{Type: spec.ResponseContentTypeRedactedThinking, Content: variant.Data})
+			resp = append(resp, modelpresetSpec.MessageContent{Type: modelpresetSpec.MessageContentTypeRedactedThinking, Content: variant.Data})
 		case anthropic.ToolUseBlock:
 		case anthropic.ServerToolUseBlock:
 		case anthropic.WebSearchToolResultBlock:

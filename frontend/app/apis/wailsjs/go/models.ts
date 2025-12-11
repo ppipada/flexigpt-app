@@ -1429,12 +1429,12 @@ export namespace spec {
 	    }
 	}
 	
-	export class ResponseContent {
+	export class MessageContent {
 	    type: string;
 	    content: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new ResponseContent(source);
+	        return new MessageContent(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -1448,7 +1448,7 @@ export namespace spec {
 	    responseDetails?: APIResponseDetails;
 	    errorDetails?: APIErrorDetails;
 	    usage?: Usage;
-	    responseContent?: ResponseContent[];
+	    responseContent?: MessageContent[];
 	    toolCalls?: ToolCall[];
 	
 	    static createFrom(source: any = {}) {
@@ -1461,7 +1461,7 @@ export namespace spec {
 	        this.responseDetails = this.convertValues(source["responseDetails"], APIResponseDetails);
 	        this.errorDetails = this.convertValues(source["errorDetails"], APIErrorDetails);
 	        this.usage = this.convertValues(source["usage"], Usage);
-	        this.responseContent = this.convertValues(source["responseContent"], ResponseContent);
+	        this.responseContent = this.convertValues(source["responseContent"], MessageContent);
 	        this.toolCalls = this.convertValues(source["toolCalls"], ToolCall);
 	    }
 	
@@ -2846,6 +2846,7 @@ export namespace spec {
 	
 	
 	
+	
 	export class PatchDefaultProviderRequestBody {
 	    defaultProvider: string;
 	
@@ -3904,7 +3905,6 @@ export namespace spec {
 	
 	    }
 	}
-	
 	
 	export class SearchConversationsRequest {
 	    Query: string;
