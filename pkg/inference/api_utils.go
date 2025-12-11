@@ -258,31 +258,6 @@ func sanitizeToolNameComponent(s string) string {
 	return out
 }
 
-// toolIdentityFromChoice builds a stable identity string for a tool,
-// e.g. "bundleSlug/toolSlug@version" (falling back sensibly when some
-// parts are empty).
-func toolIdentityFromChoice(ct spec.FetchCompletionToolChoice) string {
-	bundleID := strings.TrimSpace(string(ct.BundleID))
-	bundleSlug := strings.TrimSpace(string(ct.BundleSlug))
-	toolSlug := strings.TrimSpace(string(ct.ToolSlug))
-	version := strings.TrimSpace(ct.ToolVersion)
-
-	switch {
-	case bundleID != "" && toolSlug != "" && version != "":
-		return fmt.Sprintf("%s/%s@%s", bundleID, toolSlug, version)
-	case bundleSlug != "" && toolSlug != "" && version != "":
-		return fmt.Sprintf("%s/%s@%s", bundleSlug, toolSlug, version)
-	case bundleID != "" && toolSlug != "":
-		return fmt.Sprintf("%s/%s", bundleID, toolSlug)
-	case bundleSlug != "" && toolSlug != "":
-		return fmt.Sprintf("%s/%s", bundleSlug, toolSlug)
-	case toolSlug != "" && version != "":
-		return fmt.Sprintf("%s@%s", toolSlug, version)
-	default:
-		return toolSlug
-	}
-}
-
 // renderToolOutputsAsText renders a slice of tool outputs into a compact,
 // human-readable text block that can be sent back to models which do not
 // support structured tool result messages (or as a fallback when we are

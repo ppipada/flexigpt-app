@@ -793,7 +793,7 @@ func extractOpenAIResponseToolCalls(
 	toolChoiceNameMap map[string]spec.FetchCompletionToolChoice,
 ) []toolSpec.ToolCall {
 	if resp == nil {
-		return nil
+		return []toolSpec.ToolCall{}
 	}
 
 	out := make([]toolSpec.ToolCall, 0)
@@ -802,12 +802,13 @@ func extractOpenAIResponseToolCalls(
 		switch item.Type {
 		case string(openaiSharedConstant.FunctionCall("").Default()):
 			fn := item.AsFunctionCall()
-
+			if fn.CallID == "" || strings.TrimSpace(fn.Name) == "" {
+				continue
+			}
 			name := fn.Name
 			var toolChoice *toolSpec.ToolChoice
 			if toolChoiceNameMap != nil {
 				if ct, ok := toolChoiceNameMap[name]; ok {
-					name = toolIdentityFromChoice(ct)
 					// Add the actual choice to response.
 					toolChoice = &ct.ToolChoice
 				}
@@ -818,7 +819,7 @@ func extractOpenAIResponseToolCalls(
 				toolSpec.ToolCall{
 					ID:         fn.ID,
 					CallID:     fn.CallID,
-					Name:       name,
+					Name:       fn.Name,
 					Arguments:  fn.Arguments,
 					Type:       item.Type,
 					Status:     string(fn.Status),
@@ -828,12 +829,13 @@ func extractOpenAIResponseToolCalls(
 
 		case string(openaiSharedConstant.CustomToolCall("").Default()):
 			fn := item.AsCustomToolCall()
-
+			if fn.CallID == "" || strings.TrimSpace(fn.Name) == "" {
+				continue
+			}
 			name := fn.Name
 			var toolChoice *toolSpec.ToolChoice
 			if toolChoiceNameMap != nil {
 				if ct, ok := toolChoiceNameMap[name]; ok {
-					name = toolIdentityFromChoice(ct)
 					toolChoice = &ct.ToolChoice
 				}
 			}
@@ -843,7 +845,7 @@ func extractOpenAIResponseToolCalls(
 				toolSpec.ToolCall{
 					ID:         fn.ID,
 					CallID:     fn.CallID,
-					Name:       name,
+					Name:       fn.Name,
 					Arguments:  fn.Input,
 					Type:       item.Type,
 					ToolChoice: toolChoice,
@@ -853,7 +855,7 @@ func extractOpenAIResponseToolCalls(
 	}
 
 	if len(out) == 0 {
-		return nil
+		return []toolSpec.ToolCall{}
 	}
 	return out
 }

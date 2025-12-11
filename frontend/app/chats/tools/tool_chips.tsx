@@ -103,20 +103,3 @@ export function formatToolOutputSummary(name: string): string {
 	const pretty = getPrettyToolName(name);
 	return `Result: ${pretty}`;
 }
-
-/**
- * Parse a provider tool-call name into bundle/tool/version identity.
- * Expected pattern:
- *   "bundleIDOrSlug/toolSlug@version"
- *
- * Returns null if the pattern doesn't match.
- */
-export function parseToolCallName(name: string): { bundleIDOrSlug: string; toolSlug: string; version: string } | null {
-	const m = name.match(/^([^/]+)\/([^@]+)@(.+)$/);
-	if (!m) return null;
-	return {
-		bundleIDOrSlug: m[1],
-		toolSlug: m[2],
-		version: m[3],
-	};
-}

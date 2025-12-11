@@ -2,6 +2,7 @@ package inference
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -522,8 +523,9 @@ func toolCallsToAnthropicBlocks(
 		if args == "" {
 			args = "{}"
 		}
+		jArgs := json.RawMessage(args)
 
-		out = append(out, anthropic.NewToolUseBlock(tc.ID, args, tc.Name))
+		out = append(out, anthropic.NewToolUseBlock(tc.ID, jArgs, tc.Name))
 	}
 
 	if len(out) == 0 {
@@ -754,19 +756,22 @@ func extractAnthropicToolCalls(
 			continue
 		}
 		name := strings.TrimSpace(variant.Name)
+		vID := strings.TrimSpace(variant.ID)
+		if vID == "" || name == "" {
+			continue
+		}
 		var toolChoice *toolSpec.ToolChoice
 		if toolNameMap != nil {
 			if ct, ok := toolNameMap[name]; ok {
-				name = toolIdentityFromChoice(ct)
 				// Add the actual choice to response.
 				toolChoice = &ct.ToolChoice
 			}
 		}
 
 		call := toolSpec.ToolCall{
-			ID:         strings.TrimSpace(variant.ID),
-			CallID:     strings.TrimSpace(variant.ID),
-			Name:       name,
+			ID:         vID,
+			CallID:     vID,
+			Name:       variant.Name,
 			Arguments:  strings.TrimSpace(string(variant.Input)),
 			Type:       string(variant.Type),
 			ToolChoice: toolChoice,

@@ -50,8 +50,11 @@ export async function BuildCompletionDataFromConversation(
 ): Promise<FetchCompletionData> {
 	const allMessages = convertConversationToBuildMessages(messages);
 	const promptMsg = allMessages.pop();
-	if (!promptMsg || promptMsg.content === '') {
-		throw Error('Invalid prompt message input');
+	if (!promptMsg) {
+		throw Error('Invalid prompt message');
+	}
+	if (promptMsg.content === '' && !promptMsg.attachments && !promptMsg.toolOutputs) {
+		throw Error('Invalid prompt message input. No content or attachments or tool outputs');
 	}
 	const promptConvoMsg = messages && messages.length > 0 ? messages[messages.length - 1] : undefined;
 	const toolChoices = promptConvoMsg?.toolChoices;

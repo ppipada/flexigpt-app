@@ -10,8 +10,11 @@
   - [ ] web search tools better integration needs to be done e2e
   - [ ] some parallel tools can be created locally
   - [x] attached tools to be given back as schema to consumers for exec
-  - [ ] backend of tool calls and outputs from build to fetch to back
-  - [ ] testing of chip bars
+  - [x] backend of tool calls and outputs from build to fetch to back
+  - [x] testing of chip bars
   - [ ] exec bars review
+  - [ ] check for empty msg with only toolresult in fe
+  - [ ] anthropic needs thinking blocks too in response.
 
 - [x] 5.1 codex max, deepseek 3.2
+- [ ] Can now introduce a independent per message thinking block and manage it as separate input block in the api

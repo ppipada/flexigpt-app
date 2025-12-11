@@ -62,12 +62,7 @@ import { TemplateSlashKit } from '@/chats/templates/template_plugin';
 import { getLastUserBlockContent } from '@/chats/templates/template_processing';
 import { TemplateToolbars } from '@/chats/templates/template_toolbars';
 import { buildUserInlineChildrenFromText } from '@/chats/templates/template_variables_inline';
-import {
-	buildToolCallChipsFromResponse,
-	formatToolOutputSummary,
-	parseToolCallName,
-	type ToolCallChip,
-} from '@/chats/tools/tool_chips';
+import { buildToolCallChipsFromResponse, formatToolOutputSummary, type ToolCallChip } from '@/chats/tools/tool_chips';
 import { ToolChipsComposerRow } from '@/chats/tools/tool_chips_composer';
 import {
 	type EditorAttachedToolChoice,
@@ -322,17 +317,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	}, [editor, docVersion]);
 
 	/**
-	 * Helper to generate a stable ID for tool outputs when crypto.randomUUID
-	 * isn't available (older browsers / environments).
-	 */
-	const makeToolOutputId = () => {
-		if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-			return crypto.randomUUID();
-		}
-		return `tool-output-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-	};
-
-	/**
 	 * Run a single tool call from its chip, updating chip status and appending
 	 * a ToolOutput on success. Returns the new ToolOutput (if successful) so
 	 * callers like "Run & send" can include it in the payload immediately.
@@ -347,13 +331,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			bundleID = chip.toolChoice.bundleID;
 			toolSlug = chip.toolChoice.toolSlug;
 			version = chip.toolChoice.toolVersion;
-		} else {
-			const parsed = parseToolCallName(chip.name);
-			if (parsed) {
-				bundleID = parsed.bundleIDOrSlug;
-				toolSlug = parsed.toolSlug;
-				version = parsed.version;
-			}
 		}
 
 		if (!bundleID || !toolSlug || !version) {
@@ -375,7 +352,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			const resp = await toolStoreAPI.invokeTool(bundleID, toolSlug, version, chip.arguments);
 
 			const output: ToolOutput = {
-				id: makeToolOutputId(),
+				id: chip.id,
 				callID: chip.callID,
 				name: chip.name,
 				summary: formatToolOutputSummary(chip.name),
@@ -870,145 +847,146 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 						}
 					}}
 				>
-					<div className="bg-base-100 border-base-200 w-full max-w-full min-w-0 overflow-hidden rounded-2xl border">
-						<TemplateToolbars />
-						{editingMessageId && (
-							<div className="flex items-center justify-end gap-2 pt-1 pr-3 pb-0 text-xs">
-								<div className="flex items-center gap-2">
-									<FiEdit2 size={14} />
-									<span>Editing an earlier message. Sending will replace it and drop all later messages.</span>
-								</div>
-								<button
-									type="button"
-									className="btn btn-circle btn-neutral btn-xs shrink-0"
-									onClick={handleCancelEditing}
-									title="Cancel Edit"
-								>
-									<FiX size={14} />
-								</button>
-							</div>
-						)}
-						{/* Row: editor with send/stop button on the right */}
-						<div className="flex min-h-20 min-w-0 gap-2 px-1 py-0">
-							<PlateContent
-								ref={contentRef}
-								placeholder="Type message..."
-								spellCheck={false}
-								readOnly={isBusy}
-								onKeyDown={e => {
-									onKeyDown(e); // from useEnterSubmit
-								}}
-								onPaste={e => {
-									e.preventDefault();
-									e.stopPropagation();
-									const text = e.clipboardData.getData('text/plain');
-									if (!text) return;
-									insertPlainTextAsSingleBlock(editor, text);
-								}}
-								className="max-h-96 min-w-0 flex-1 resize-none overflow-auto bg-transparent p-2 wrap-break-word whitespace-break-spaces outline-none [tab-size:2] focus:outline-none"
-								style={{
-									fontSize: '14px',
-									whiteSpace: 'break-spaces',
-									tabSize: 2,
-									minHeight: '4rem',
-								}}
-							/>
-
-							{/* Primary / secondary actions anchored at bottom-right */}
-							<div className="flex items-end gap-2 pr-1 pb-2">
-								{isBusy ? (
+					<div className="bg-base-100 border-base-200 flex w-full max-w-full min-w-0 overflow-hidden rounded-2xl border">
+						<div className="flex grow flex-col p-0">
+							<TemplateToolbars />
+							{editingMessageId && (
+								<div className="flex items-center justify-end gap-2 pt-1 pr-3 pb-0 text-xs">
+									<div className="flex items-center gap-2">
+										<FiEdit2 size={14} />
+										<span>Editing an earlier message. Sending will replace it and drop all later messages.</span>
+									</div>
 									<button
 										type="button"
-										className="btn btn-circle btn-neutral btn-sm shrink-0"
-										onClick={onRequestStop}
-										title="Stop response"
-										aria-label="Stop response"
+										className="btn btn-circle btn-neutral btn-xs shrink-0"
+										onClick={handleCancelEditing}
+										title="Cancel Edit"
 									>
-										<FiSquare size={20} />
+										<FiX size={14} />
 									</button>
-								) : (
-									<>
-										{/* Run tools only (Play) */}
-										{hasPendingToolCalls && (
-											<div className="tooltip tooltip-left" data-tip="Run tools only">
-												<button
-													type="button"
-													className={`btn btn-circle btn-neutral btn-sm shrink-0 ${
-														!canRunToolsOnly ? 'btn-disabled' : ''
-													}`}
-													disabled={!canRunToolsOnly}
-													onClick={() => {
-														if (!canRunToolsOnly) return;
-														void handleRunToolsOnlyClick();
-													}}
-													aria-label="Run tools only"
-												>
-													<FiPlay size={18} />
-												</button>
-											</div>
-										)}
-
-										{/* Run tools and send (Fast-forward) */}
-										{hasPendingToolCalls && (
-											<div className="tooltip tooltip-left" data-tip="Run tools and send">
-												<button
-													type="button"
-													className={`btn btn-circle btn-neutral btn-sm shrink-0 ${
-														!canRunToolsAndSend ? 'btn-disabled' : ''
-													}`}
-													disabled={!canRunToolsAndSend}
-													onClick={() => {
-														if (!canRunToolsAndSend) return;
-														void doSubmit({ runPendingTools: true });
-													}}
-													aria-label="Run tools and send"
-												>
-													<FiFastForward size={18} />
-												</button>
-											</div>
-										)}
-
-										{/* Send only (plane). Disabled while there are pending tools. */}
-										<div
-											className="tooltip tooltip-left"
-											data-tip={hasPendingToolCalls ? 'Send (enabled after tools finish)' : 'Send message'}
-										>
-											<button
-												type="button"
-												className={`btn btn-circle btn-neutral btn-sm shrink-0 ${!canSendOnly ? 'btn-disabled' : ''}`}
-												disabled={!canSendOnly}
-												onClick={() => {
-													if (!canSendOnly) return;
-													void doSubmit({ runPendingTools: false });
-												}}
-												aria-label="Send message"
-											>
-												<FiSend size={18} />
-											</button>
-										</div>
-									</>
-								)}
+								</div>
+							)}
+							{/* Row: editor with send/stop button on the right */}
+							<div className="flex min-h-20 min-w-0 grow gap-2 px-1 py-0">
+								<PlateContent
+									ref={contentRef}
+									placeholder="Type message..."
+									spellCheck={false}
+									readOnly={isBusy}
+									onKeyDown={e => {
+										onKeyDown(e); // from useEnterSubmit
+									}}
+									onPaste={e => {
+										e.preventDefault();
+										e.stopPropagation();
+										const text = e.clipboardData.getData('text/plain');
+										if (!text) return;
+										insertPlainTextAsSingleBlock(editor, text);
+									}}
+									className="max-h-96 min-w-0 flex-1 resize-none overflow-auto bg-transparent p-1 wrap-break-word whitespace-break-spaces outline-none [tab-size:2] focus:outline-none"
+									style={{
+										fontSize: '14px',
+										whiteSpace: 'break-spaces',
+										tabSize: 2,
+										minHeight: '4rem',
+									}}
+								/>
+							</div>
+							{/* Chips bar for tools (calls & outputs), attachments & tool choices (scrollable) */}
+							<div className="flex w-full min-w-0 items-center gap-1 overflow-x-auto px-1 py-0.5 text-xs">
+								<ToolChipsComposerRow
+									toolCallChips={toolCallChips}
+									toolOutputs={toolOutputs}
+									isBusy={isBusy || isSubmittingRef.current}
+									onRunToolCall={handleRunSingleToolCall}
+									onDiscardToolCall={handleDiscardToolCall}
+									onOpenOutput={handleOpenToolOutput}
+									onRemoveOutput={handleRemoveToolOutput}
+								/>
+								<AttachmentChipsBar
+									attachments={attachments}
+									directoryGroups={directoryGroups}
+									onRemoveAttachment={handleRemoveAttachment}
+									onChangeAttachmentMode={handleChangeAttachmentMode}
+									onRemoveDirectoryGroup={handleRemoveDirectoryGroup}
+									onRemoveOverflowDir={handleRemoveOverflowDir}
+								/>
 							</div>
 						</div>
-						{/* Chips bar for tools (calls & outputs), attachments & tool choices (scrollable) */}
-						<div className="flex w-full min-w-0 items-center gap-1 overflow-x-auto px-1 py-0.5 text-xs">
-							<ToolChipsComposerRow
-								toolCallChips={toolCallChips}
-								toolOutputs={toolOutputs}
-								isBusy={isBusy || isSubmittingRef.current}
-								onRunToolCall={handleRunSingleToolCall}
-								onDiscardToolCall={handleDiscardToolCall}
-								onOpenOutput={handleOpenToolOutput}
-								onRemoveOutput={handleRemoveToolOutput}
-							/>
-							<AttachmentChipsBar
-								attachments={attachments}
-								directoryGroups={directoryGroups}
-								onRemoveAttachment={handleRemoveAttachment}
-								onChangeAttachmentMode={handleChangeAttachmentMode}
-								onRemoveDirectoryGroup={handleRemoveDirectoryGroup}
-								onRemoveOverflowDir={handleRemoveOverflowDir}
-							/>
+						{/* Primary / secondary actions anchored at bottom-right */}
+						<div className="flex flex-col items-end justify-end gap-2 p-1">
+							{isBusy ? (
+								<button
+									type="button"
+									className="btn btn-circle btn-neutral btn-sm shrink-0"
+									onClick={onRequestStop}
+									title="Stop response"
+									aria-label="Stop response"
+								>
+									<FiSquare size={20} />
+								</button>
+							) : (
+								<>
+									{/* Run tools only (Play) */}
+									{hasPendingToolCalls && (
+										<div className="tooltip tooltip-left" data-tip="Run tools only">
+											<button
+												type="button"
+												className={`btn btn-circle btn-neutral btn-sm shrink-0 ${
+													!canRunToolsOnly ? 'btn-disabled' : ''
+												}`}
+												disabled={!canRunToolsOnly}
+												onClick={() => {
+													if (!canRunToolsOnly) return;
+													void handleRunToolsOnlyClick();
+												}}
+												aria-label="Run tools only"
+											>
+												<FiPlay size={18} />
+											</button>
+										</div>
+									)}
+
+									{/* Run tools and send (Fast-forward) */}
+									{hasPendingToolCalls && (
+										<div className="tooltip tooltip-left" data-tip="Run tools and send">
+											<button
+												type="button"
+												className={`btn btn-circle btn-neutral btn-sm shrink-0 ${
+													!canRunToolsAndSend ? 'btn-disabled' : ''
+												}`}
+												disabled={!canRunToolsAndSend}
+												onClick={() => {
+													if (!canRunToolsAndSend) return;
+													void doSubmit({ runPendingTools: true });
+												}}
+												aria-label="Run tools and send"
+											>
+												<FiFastForward size={18} />
+											</button>
+										</div>
+									)}
+
+									{/* Send only (plane). Disabled while there are pending tools. */}
+									<div
+										className="tooltip tooltip-left"
+										data-tip={hasPendingToolCalls ? 'Send (enabled after tools finish)' : 'Send message'}
+									>
+										<button
+											type="button"
+											className={`btn btn-circle btn-neutral btn-sm shrink-0 ${!canSendOnly ? 'btn-disabled' : ''}`}
+											disabled={!canSendOnly}
+											onClick={() => {
+												if (!canSendOnly) return;
+												void doSubmit({ runPendingTools: false });
+											}}
+											aria-label="Send message"
+										>
+											<FiSend size={18} />
+										</button>
+									</div>
+								</>
+							)}
 						</div>
 					</div>
 

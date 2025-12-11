@@ -643,23 +643,24 @@ func extractOpenAIChatToolCalls(
 	toolChoiceNameMap map[string]spec.FetchCompletionToolChoice,
 ) []toolSpec.ToolCall {
 	if len(choices) == 0 {
-		return nil
+		return []toolSpec.ToolCall{}
 	}
 	msg := &choices[0].Message
 	if len(msg.ToolCalls) == 0 {
-		return nil
+		return []toolSpec.ToolCall{}
 	}
 
-	out := make([]toolSpec.ToolCall, 0, len(msg.ToolCalls))
+	out := make([]toolSpec.ToolCall, 0)
 	for _, tc := range msg.ToolCalls {
-		switch variant := tc.AsAny().(type) {
-		case openai.ChatCompletionMessageFunctionToolCall:
-
-			name := variant.Function.Name
+		switch tc.Type {
+		case string(openaiSharedConstant.Function("").Default()):
+			if tc.ID == "" || strings.TrimSpace(tc.Function.Name) == "" {
+				continue
+			}
+			name := tc.Function.Name
 			var toolChoice *toolSpec.ToolChoice
 			if toolChoiceNameMap != nil {
 				if ct, ok := toolChoiceNameMap[name]; ok {
-					name = toolIdentityFromChoice(ct)
 					// Add the actual choice to response.
 					toolChoice = &ct.ToolChoice
 				}
@@ -668,20 +669,22 @@ func extractOpenAIChatToolCalls(
 			out = append(
 				out,
 				toolSpec.ToolCall{
-					ID:         variant.ID,
-					CallID:     variant.ID,
-					Name:       name,
-					Arguments:  variant.Function.Arguments,
-					Type:       string(variant.Type),
+					ID:         tc.ID,
+					CallID:     tc.ID,
+					Name:       tc.Function.Name,
+					Arguments:  tc.Function.Arguments,
+					Type:       tc.Type,
 					ToolChoice: toolChoice,
 				},
 			)
-		case openai.ChatCompletionMessageCustomToolCall:
-			name := variant.Custom.Name
+		case string(openaiSharedConstant.Custom("").Default()):
+			if tc.ID == "" || strings.TrimSpace(tc.Custom.Name) == "" {
+				continue
+			}
+			name := tc.Custom.Name
 			var toolChoice *toolSpec.ToolChoice
 			if toolChoiceNameMap != nil {
 				if ct, ok := toolChoiceNameMap[name]; ok {
-					name = toolIdentityFromChoice(ct)
 					// Add the actual choice to response.
 					toolChoice = &ct.ToolChoice
 				}
@@ -689,19 +692,22 @@ func extractOpenAIChatToolCalls(
 			out = append(
 				out,
 				toolSpec.ToolCall{
-					ID:         variant.ID,
-					CallID:     variant.ID,
-					Name:       name,
-					Arguments:  variant.Custom.Input,
-					Type:       string(variant.Type),
+					ID:         tc.ID,
+					CallID:     tc.ID,
+					Name:       tc.Custom.Name,
+					Arguments:  tc.Custom.Input,
+					Type:       tc.Type,
 					ToolChoice: toolChoice,
 				},
 			)
+
 		}
 	}
+
 	if len(out) == 0 {
-		return nil
+		return []toolSpec.ToolCall{}
 	}
+
 	return out
 }
 
