@@ -388,10 +388,14 @@ func toAnthropicMessages(
 	}
 
 	for idx, m := range messages {
-		if m.Content == nil && len(m.Attachments) == 0 {
+		// Skip messages with no text, no attachments, and no tool outputs.
+		if m.Content == nil && len(m.Attachments) == 0 && len(m.ToolOutputs) == 0 {
 			continue
 		}
-		content := strings.TrimSpace(*m.Content)
+		content := ""
+		if m.Content != nil {
+			content = strings.TrimSpace(*m.Content)
+		}
 
 		switch m.Role {
 		case modelpresetSpec.RoleSystem, modelpresetSpec.RoleDeveloper:
@@ -425,25 +429,18 @@ func toAnthropicMessages(
 				}
 			}
 
-			if len(attachmentContent) == 0 {
-				text := ""
-				if m.Content != nil {
-					text = *m.Content
-				}
-				if strings.TrimSpace(text) == "" {
-					// Nothing to send for this turn.
-					continue
-				}
-				out = append(out, anthropic.NewUserMessage(anthropic.NewTextBlock(content)))
-				continue
-			}
-
 			parts := make([]anthropic.ContentBlockParamUnion, 0, 1+len(attachmentContent))
-			if c := strings.TrimSpace(*m.Content); c != "" {
+			if content != "" {
 				parts = append(parts, anthropic.NewTextBlock(content))
 			}
-			parts = append(parts, attachmentContent...)
-			out = append(out, anthropic.NewUserMessage(parts...))
+
+			if len(attachmentContent) != 0 {
+				parts = append(parts, attachmentContent...)
+			}
+
+			if len(parts) > 0 {
+				out = append(out, anthropic.NewUserMessage(parts...))
+			}
 
 		case modelpresetSpec.RoleAssistant:
 			out = append(
@@ -555,7 +552,7 @@ func toAnthropicTools(
 		return nil, nil, nil
 	}
 
-	ordered, nameMap := buildToolNameMapping(tools)
+	ordered, nameMap := buildToolChoiceNameMapping(tools)
 
 	out := make([]anthropic.ToolUnionParam, 0, len(tools))
 	for _, tw := range ordered {

@@ -65,7 +65,7 @@ func (api *OpenAIResponsesAPI) InitLLM(ctx context.Context) error {
 
 		pathPrefix := api.ProviderParams.ChatCompletionPathPrefix
 		// Remove 'responses' from pathPrefix if present,
-		// This is because openai sdk adds 'chat/completions' internally.
+		// This is because openai sdk adds 'responses' internally.
 		pathPrefix = strings.TrimSuffix(
 			pathPrefix,
 			"responses",
@@ -164,7 +164,7 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 		return nil, errors.New("openai responses api LLM: empty completion data")
 	}
 
-	// Build OpenAI chat messages.
+	// Build OpenAI Responses input messages.
 	msgs, err := toOpenAIResponsesMessages(
 		ctx,
 		completionData.Messages,
@@ -209,7 +209,7 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 	}
 
 	// Build tools + tool name map.
-	var toolNameMap map[string]spec.FetchCompletionToolChoice
+	var toolChoiceNameMap map[string]spec.FetchCompletionToolChoice
 	if len(completionData.ToolChoices) > 0 {
 		toolDefs, m, err := toOpenAIResponseTools(completionData.ToolChoices)
 		if err != nil {
@@ -217,7 +217,7 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 		}
 		if len(toolDefs) > 0 {
 			params.Tools = toolDefs
-			toolNameMap = m
+			toolChoiceNameMap = m
 		}
 	}
 
@@ -227,16 +227,16 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 	}
 
 	if completionData.ModelParams.Stream && onStreamTextData != nil && onStreamThinkingData != nil {
-		return api.doStreaming(ctx, params, onStreamTextData, onStreamThinkingData, timeout, toolNameMap)
+		return api.doStreaming(ctx, params, onStreamTextData, onStreamThinkingData, timeout, toolChoiceNameMap)
 	}
-	return api.doNonStreaming(ctx, params, timeout, toolNameMap)
+	return api.doNonStreaming(ctx, params, timeout, toolChoiceNameMap)
 }
 
 func (api *OpenAIResponsesAPI) doNonStreaming(
 	ctx context.Context,
 	params responses.ResponseNewParams,
 	timeout time.Duration,
-	toolNameMap map[string]spec.FetchCompletionToolChoice,
+	toolChoiceNameMap map[string]spec.FetchCompletionToolChoice,
 ) (*spec.FetchCompletionResponse, error) {
 	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
 	ctx = debugclient.AddDebugResponseToCtx(ctx)
@@ -253,7 +253,7 @@ func (api *OpenAIResponsesAPI) doNonStreaming(
 
 	completionResp.Body.ResponseContent = getResponseContentFromOpenAIOutput(resp)
 
-	if toolCalls := extractOpenAIResponseToolCalls(resp, toolNameMap); len(toolCalls) > 0 {
+	if toolCalls := extractOpenAIResponseToolCalls(resp, toolChoiceNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
 	}
 
@@ -265,7 +265,7 @@ func (api *OpenAIResponsesAPI) doStreaming(
 	params responses.ResponseNewParams,
 	onStreamTextData, onStreamThinkingData func(string) error,
 	timeout time.Duration,
-	toolNameMap map[string]spec.FetchCompletionToolChoice,
+	toolChoiceNameMap map[string]spec.FetchCompletionToolChoice,
 ) (*spec.FetchCompletionResponse, error) {
 	writeTextData, flushTextData := NewBufferedStreamer(
 		onStreamTextData,
@@ -348,7 +348,7 @@ func (api *OpenAIResponsesAPI) doStreaming(
 	respContent := getResponseContentFromOpenAIOutput(&respFull)
 	completionResp.Body.ResponseContent = respContent
 
-	if toolCalls := extractOpenAIResponseToolCalls(&respFull, toolNameMap); len(toolCalls) > 0 {
+	if toolCalls := extractOpenAIResponseToolCalls(&respFull, toolChoiceNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
 	}
 
@@ -362,6 +362,7 @@ func toOpenAIResponsesMessages(
 	providerName modelpresetSpec.ProviderName,
 ) (responses.ResponseInputParam, error) {
 	var out responses.ResponseInputParam
+
 	// Identify last user message index; attachments belong to the current user turn.
 	lastUserIdx := -1
 	for i, m := range messages {
@@ -369,16 +370,31 @@ func toOpenAIResponsesMessages(
 			lastUserIdx = i
 		}
 	}
+
 	for idx, m := range messages {
-		if m.Content == nil && len(m.Attachments) == 0 {
+		// Skip only if there is no text, no attachments, no tool outputs, and no tool calls.
+		if m.Content == nil &&
+			len(m.Attachments) == 0 &&
+			len(m.ToolOutputs) == 0 &&
+			len(m.ToolCalls) == 0 {
 			continue
 		}
+
+		// Normalized trimmed content string (may be empty).
+		content := ""
+		if m.Content != nil {
+			content = strings.TrimSpace(*m.Content)
+		}
+
 		switch m.Role {
 		case modelpresetSpec.RoleSystem:
+			if content == "" {
+				continue
+			}
 			out = append(out, responses.ResponseInputItemUnionParam{
 				OfMessage: &responses.EasyInputMessageParam{
 					Content: responses.EasyInputMessageContentUnionParam{
-						OfString: openai.String(*m.Content),
+						OfString: openai.String(content),
 					},
 					Role: responses.EasyInputMessageRoleSystem,
 					Type: responses.EasyInputMessageTypeMessage,
@@ -386,10 +402,13 @@ func toOpenAIResponsesMessages(
 			})
 
 		case modelpresetSpec.RoleDeveloper:
+			if content == "" {
+				continue
+			}
 			out = append(out, responses.ResponseInputItemUnionParam{
 				OfMessage: &responses.EasyInputMessageParam{
 					Content: responses.EasyInputMessageContentUnionParam{
-						OfString: openai.String(*m.Content),
+						OfString: openai.String(content),
 					},
 					Role: responses.EasyInputMessageRoleDeveloper,
 					Type: responses.EasyInputMessageTypeMessage,
@@ -397,6 +416,9 @@ func toOpenAIResponsesMessages(
 			})
 
 		case modelpresetSpec.RoleUser:
+			if m.Content == nil && len(m.Attachments) == 0 && len(m.ToolOutputs) == 0 {
+				continue
+			}
 			// Build attachments for this specific user turn (if any).
 			var attachmentContent []responses.ResponseInputContentUnionParam
 			if len(m.Attachments) > 0 {
@@ -424,61 +446,153 @@ func toOpenAIResponsesMessages(
 				}
 			}
 
+			var parts responses.ResponseInputMessageContentListParam
+			if content != "" {
+				parts = append(
+					parts,
+					responses.ResponseInputContentParamOfInputText(content),
+				)
+			}
+
 			// No attachments: plain text user message.
-			if len(attachmentContent) == 0 {
-				text := ""
-				if m.Content != nil {
-					text = *m.Content
-				}
-				if strings.TrimSpace(text) == "" {
-					// Nothing to send for this turn.
-					continue
-				}
+			if len(attachmentContent) != 0 {
+				parts = append(parts, attachmentContent...)
+			}
+
+			if len(parts) > 0 {
+				out = append(out, responses.ResponseInputItemParamOfMessage(
+					parts,
+					responses.EasyInputMessageRoleUser,
+				))
+			}
+			if len(m.ToolOutputs) > 0 {
+				o := toolOutputsToOpenAIResponses(m.ToolOutputs)
+				out = append(out, o...)
+			}
+
+		case modelpresetSpec.RoleAssistant:
+			// Integrate assistant text + tool calls into a single assistant message.
+			if content != "" {
 				out = append(out, responses.ResponseInputItemUnionParam{
 					OfMessage: &responses.EasyInputMessageParam{
 						Content: responses.EasyInputMessageContentUnionParam{
-							OfString: openai.String(text),
+							OfString: openai.String(content),
+						},
+						Role: responses.EasyInputMessageRoleAssistant,
+						Type: responses.EasyInputMessageTypeMessage,
+					},
+				})
+			}
+			if len(m.ToolCalls) == 0 {
+				continue
+			}
+
+			var parts []responses.ResponseInputItemUnionParam
+
+			for _, toolCall := range m.ToolCalls {
+				switch toolCall.Type {
+				case string(openaiSharedConstant.FunctionCall("").Default()):
+					fc := responses.ResponseFunctionToolCallParam{
+						ID:        param.NewOpt(toolCall.ID),
+						CallID:    toolCall.CallID,
+						Name:      toolCall.Name,
+						Arguments: toolCall.Arguments,
+						Type:      openaiSharedConstant.FunctionCall("").Default(),
+					}
+
+					parts = append(parts,
+						responses.ResponseInputItemUnionParam{
+							OfFunctionCall: &fc,
+						},
+					)
+
+				case string(openaiSharedConstant.CustomToolCall("").Default()):
+					cc := responses.ResponseCustomToolCallParam{
+						ID:     param.NewOpt(toolCall.ID),
+						CallID: toolCall.CallID,
+						Name:   toolCall.Name,
+						Input:  toolCall.Arguments,
+						Type:   openaiSharedConstant.CustomToolCall("").Default(),
+					}
+
+					parts = append(parts,
+						responses.ResponseInputItemUnionParam{
+							OfCustomToolCall: &cc,
+						},
+					)
+				}
+			}
+
+			if len(parts) != 0 {
+				out = append(out, parts...)
+			}
+
+		case modelpresetSpec.RoleFunction, modelpresetSpec.RoleTool:
+			if len(m.ToolOutputs) > 0 {
+				o := toolOutputsToOpenAIResponses(m.ToolOutputs)
+				out = append(out, o...)
+			}
+			if strings.TrimSpace(content) != "" {
+				out = append(out, responses.ResponseInputItemUnionParam{
+					OfMessage: &responses.EasyInputMessageParam{
+						Content: responses.EasyInputMessageContentUnionParam{
+							OfString: openai.String(content),
 						},
 						Role: responses.EasyInputMessageRoleUser,
 						Type: responses.EasyInputMessageTypeMessage,
 					},
 				})
-				continue
 			}
-
-			// Text + attachments for this user turn.
-			var contentList responses.ResponseInputMessageContentListParam
-			if m.Content != nil {
-				if c := strings.TrimSpace(*m.Content); c != "" {
-					contentList = append(
-						contentList,
-						responses.ResponseInputContentParamOfInputText(c),
-					)
-				}
-			}
-			contentList = append(contentList, attachmentContent...)
-
-			out = append(out, responses.ResponseInputItemParamOfMessage(
-				contentList,
-				responses.EasyInputMessageRoleUser,
-			))
-
-		case modelpresetSpec.RoleAssistant:
-			out = append(out, responses.ResponseInputItemUnionParam{
-				OfMessage: &responses.EasyInputMessageParam{
-					Content: responses.EasyInputMessageContentUnionParam{
-						OfString: openai.String(*m.Content),
-					},
-					Role: responses.EasyInputMessageRoleAssistant,
-					Type: responses.EasyInputMessageTypeMessage,
-				},
-			})
-
-		case modelpresetSpec.RoleFunction, modelpresetSpec.RoleTool:
-			// Not used here.
 		}
 	}
 	return out, nil
+}
+
+func toolOutputsToOpenAIResponses(
+	toolOutputs []toolSpec.ToolOutput,
+) []responses.ResponseInputItemUnionParam {
+	out := make([]responses.ResponseInputItemUnionParam, 0, len(toolOutputs))
+
+	// Tool outputs with a callID can be represented as proper tool messages.
+	for _, o := range toolOutputs {
+		callID := strings.TrimSpace(o.CallID)
+		if callID == "" {
+			continue
+		}
+		toolContent := strings.TrimSpace(o.RawOutput)
+		if toolContent == "" {
+			toolContent = strings.TrimSpace(o.Summary)
+		}
+		if toolContent == "" {
+			continue
+		}
+		out = append(out, responses.ResponseInputItemParamOfFunctionCallOutput(callID, toolContent))
+	}
+
+	// Any tool outputs without a callID are rendered as plain user text
+	// so the model still sees the information.
+	var orphanOutputs []toolSpec.ToolOutput
+	for _, o := range toolOutputs {
+		if strings.TrimSpace(o.CallID) == "" {
+			orphanOutputs = append(orphanOutputs, o)
+		}
+	}
+	if len(orphanOutputs) > 0 {
+		if text := renderToolOutputsAsText(orphanOutputs); text != "" {
+			o := responses.ResponseInputItemUnionParam{
+				OfMessage: &responses.EasyInputMessageParam{
+					Content: responses.EasyInputMessageContentUnionParam{
+						OfString: openai.String(text),
+					},
+					Role: responses.EasyInputMessageRoleUser,
+					Type: responses.EasyInputMessageTypeMessage,
+				},
+			}
+
+			out = append(out, o)
+		}
+	}
+	return out
 }
 
 func contentBlocksToOpenAI(
@@ -641,7 +755,7 @@ func toOpenAIResponseTools(
 		return nil, nil, nil
 	}
 
-	ordered, nameMap := buildToolNameMapping(tools)
+	ordered, nameMap := buildToolChoiceNameMapping(tools)
 	out := make([]responses.ToolUnionParam, 0, len(ordered))
 
 	for _, tw := range ordered {
@@ -676,7 +790,7 @@ func toOpenAIResponseTools(
 
 func extractOpenAIResponseToolCalls(
 	resp *responses.Response,
-	toolNameMap map[string]spec.FetchCompletionToolChoice,
+	toolChoiceNameMap map[string]spec.FetchCompletionToolChoice,
 ) []toolSpec.ToolCall {
 	if resp == nil {
 		return nil
@@ -691,8 +805,8 @@ func extractOpenAIResponseToolCalls(
 
 			name := fn.Name
 			var toolChoice *toolSpec.ToolChoice
-			if toolNameMap != nil {
-				if ct, ok := toolNameMap[name]; ok {
+			if toolChoiceNameMap != nil {
+				if ct, ok := toolChoiceNameMap[name]; ok {
 					name = toolIdentityFromChoice(ct)
 					// Add the actual choice to response.
 					toolChoice = &ct.ToolChoice
@@ -717,8 +831,8 @@ func extractOpenAIResponseToolCalls(
 
 			name := fn.Name
 			var toolChoice *toolSpec.ToolChoice
-			if toolNameMap != nil {
-				if ct, ok := toolNameMap[name]; ok {
+			if toolChoiceNameMap != nil {
+				if ct, ok := toolChoiceNameMap[name]; ok {
 					name = toolIdentityFromChoice(ct)
 					toolChoice = &ct.ToolChoice
 				}

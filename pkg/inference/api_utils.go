@@ -11,6 +11,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
+	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 )
 
@@ -181,7 +182,7 @@ type toolName struct {
 	Name   string
 }
 
-// BuildToolNameMapping assigns short, human‑readable function names to tools.
+// buildToolChoiceNameMapping assigns short, human‑readable function names to tools.
 //
 // Rules:
 //   - base name is the sanitized tool slug (lower‑cased, [a‑z0‑9_-] only)
@@ -194,7 +195,7 @@ type toolName struct {
 //     derived function name for each tool.
 //   - nameToTool: map[functionName] => FetchCompletionToolChoice; used
 //     to translate tool calls back to the original identity.
-func buildToolNameMapping(
+func buildToolChoiceNameMapping(
 	tools []spec.FetchCompletionToolChoice,
 ) (toolNames []toolName, toolNameMap map[string]spec.FetchCompletionToolChoice) {
 	if len(tools) == 0 {
@@ -261,13 +262,18 @@ func sanitizeToolNameComponent(s string) string {
 // e.g. "bundleSlug/toolSlug@version" (falling back sensibly when some
 // parts are empty).
 func toolIdentityFromChoice(ct spec.FetchCompletionToolChoice) string {
+	bundleID := strings.TrimSpace(string(ct.BundleID))
 	bundleSlug := strings.TrimSpace(string(ct.BundleSlug))
 	toolSlug := strings.TrimSpace(string(ct.ToolSlug))
 	version := strings.TrimSpace(ct.ToolVersion)
 
 	switch {
+	case bundleID != "" && toolSlug != "" && version != "":
+		return fmt.Sprintf("%s/%s@%s", bundleID, toolSlug, version)
 	case bundleSlug != "" && toolSlug != "" && version != "":
 		return fmt.Sprintf("%s/%s@%s", bundleSlug, toolSlug, version)
+	case bundleID != "" && toolSlug != "":
+		return fmt.Sprintf("%s/%s", bundleID, toolSlug)
 	case bundleSlug != "" && toolSlug != "":
 		return fmt.Sprintf("%s/%s", bundleSlug, toolSlug)
 	case toolSlug != "" && version != "":
@@ -275,6 +281,47 @@ func toolIdentityFromChoice(ct spec.FetchCompletionToolChoice) string {
 	default:
 		return toolSlug
 	}
+}
+
+// renderToolOutputsAsText renders a slice of tool outputs into a compact,
+// human-readable text block that can be sent back to models which do not
+// support structured tool result messages (or as a fallback when we are
+// missing tool_call IDs).
+func renderToolOutputsAsText(outputs []toolSpec.ToolOutput) string {
+	if len(outputs) == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	for _, o := range outputs {
+		summary := strings.TrimSpace(o.Summary)
+		raw := strings.TrimSpace(o.RawOutput)
+		if summary == "" && raw == "" {
+			continue
+		}
+
+		if b.Len() > 0 {
+			b.WriteString("\n\n")
+		}
+
+		name := strings.TrimSpace(o.Name)
+		if name == "" {
+			name = "tool"
+		}
+		callID := strings.TrimSpace(o.CallID)
+		if callID != "" {
+			fmt.Fprintf(&b, "[Tool %s (call %s) result]\n", name, callID)
+		} else {
+			fmt.Fprintf(&b, "[Tool %s result]\n", name)
+		}
+
+		if raw != "" {
+			b.WriteString(raw)
+		} else {
+			b.WriteString(summary)
+		}
+	}
+	return strings.TrimSpace(b.String())
 }
 
 func decodeToolArgSchema(raw json.RawMessage) (map[string]any, error) {

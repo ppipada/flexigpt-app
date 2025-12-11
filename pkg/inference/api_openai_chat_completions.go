@@ -12,6 +12,7 @@ import (
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/param"
 	"github.com/openai/openai-go/v3/shared"
+	openaiSharedConstant "github.com/openai/openai-go/v3/shared/constant"
 
 	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
@@ -198,7 +199,7 @@ func (api *OpenAIChatCompletionsAPI) FetchCompletion(
 
 		}
 	}
-	var toolNameMap map[string]spec.FetchCompletionToolChoice
+	var toolChoiceNameMap map[string]spec.FetchCompletionToolChoice
 	if len(completionData.ToolChoices) > 0 {
 		toolDefs, m, err := toOpenAIChatTools(completionData.ToolChoices)
 		if err != nil {
@@ -206,7 +207,7 @@ func (api *OpenAIChatCompletionsAPI) FetchCompletion(
 		}
 		if len(toolDefs) > 0 {
 			params.Tools = toolDefs
-			toolNameMap = m
+			toolChoiceNameMap = m
 		}
 	}
 
@@ -216,16 +217,16 @@ func (api *OpenAIChatCompletionsAPI) FetchCompletion(
 	}
 
 	if completionData.ModelParams.Stream && onStreamTextData != nil && onStreamThinkingData != nil {
-		return api.doStreaming(ctx, params, onStreamTextData, onStreamThinkingData, timeout, toolNameMap)
+		return api.doStreaming(ctx, params, onStreamTextData, onStreamThinkingData, timeout, toolChoiceNameMap)
 	}
-	return api.doNonStreaming(ctx, params, timeout, toolNameMap)
+	return api.doNonStreaming(ctx, params, timeout, toolChoiceNameMap)
 }
 
 func (api *OpenAIChatCompletionsAPI) doNonStreaming(
 	ctx context.Context,
 	params openai.ChatCompletionNewParams,
 	timeout time.Duration,
-	toolNameMap map[string]spec.FetchCompletionToolChoice,
+	toolChoiceNameMap map[string]spec.FetchCompletionToolChoice,
 ) (*spec.FetchCompletionResponse, error) {
 	completionResp := &spec.FetchCompletionResponse{Body: &spec.FetchCompletionResponseBody{}}
 	ctx = debugclient.AddDebugResponseToCtx(ctx)
@@ -240,7 +241,7 @@ func (api *OpenAIChatCompletionsAPI) doNonStreaming(
 	completionResp.Body.ResponseContent = []spec.ResponseContent{
 		{Type: spec.ResponseContentTypeText, Content: full},
 	}
-	if toolCalls := extractOpenAIChatToolCalls(resp.Choices, toolNameMap); len(toolCalls) > 0 {
+	if toolCalls := extractOpenAIChatToolCalls(resp.Choices, toolChoiceNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
 	}
 	return completionResp, nil
@@ -251,7 +252,7 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 	params openai.ChatCompletionNewParams,
 	onStreamTextData, onStreamThinkingData func(string) error,
 	timeout time.Duration,
-	toolNameMap map[string]spec.FetchCompletionToolChoice,
+	toolChoiceNameMap map[string]spec.FetchCompletionToolChoice,
 ) (*spec.FetchCompletionResponse, error) {
 	// No thinking data available in openai chat completions API, hence no thinking writer.
 	write, flush := NewBufferedStreamer(onStreamTextData, FlushInterval, FlushChunkSize)
@@ -308,7 +309,7 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 	completionResp.Body.ResponseContent = []spec.ResponseContent{
 		{Type: spec.ResponseContentTypeText, Content: fullResp},
 	}
-	if toolCalls := extractOpenAIChatToolCalls(acc.Choices, toolNameMap); len(toolCalls) > 0 {
+	if toolCalls := extractOpenAIChatToolCalls(acc.Choices, toolChoiceNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
 	}
 	return completionResp, streamErr
@@ -338,15 +339,30 @@ func toOpenAIChatMessages(
 	}
 
 	for idx, m := range messages {
-		if m.Content == nil && len(m.Attachments) == 0 {
+		if m.Content == nil && len(m.Attachments) == 0 && len(m.ToolOutputs) == 0 && len(m.ToolCalls) == 0 {
 			continue
 		}
+		// Normalized trimmed content string (may be empty).
+		content := ""
+		if m.Content != nil {
+			content = strings.TrimSpace(*m.Content)
+		}
+
 		switch m.Role {
+
 		case modelpresetSpec.RoleSystem:
-			out = append(out, openai.SystemMessage(*m.Content))
+			if content != "" {
+				out = append(out, openai.SystemMessage(content))
+			}
+
 		case modelpresetSpec.RoleDeveloper:
-			out = append(out, openai.DeveloperMessage(*m.Content))
+			if content != "" {
+				out = append(out, openai.DeveloperMessage(content))
+			}
 		case modelpresetSpec.RoleUser:
+			if m.Content == nil && len(m.Attachments) == 0 && len(m.ToolOutputs) == 0 {
+				continue
+			}
 			var attachmentContent []openai.ChatCompletionContentPartUnionParam
 			if len(m.Attachments) > 0 {
 				// Dont override original attachments in rehydration.
@@ -373,34 +389,131 @@ func toOpenAIChatMessages(
 				}
 			}
 
-			if len(attachmentContent) == 0 {
-				text := ""
-				if m.Content != nil {
-					text = *m.Content
-				}
-				if strings.TrimSpace(text) == "" {
-					// Nothing to send for this turn.
-					continue
-				}
-				out = append(out, openai.UserMessage(*m.Content))
+			var parts []openai.ChatCompletionContentPartUnionParam
+			if content != "" {
+				parts = append(parts, openai.TextContentPart(content))
+			}
+
+			if len(attachmentContent) != 0 {
+				parts = append(parts, attachmentContent...)
+			}
+
+			if len(parts) > 0 {
+				out = append(out, openai.UserMessage(parts))
+			}
+
+			// Map structured tool outputs, if present, to OpenAI tool messages.
+			// Input tools may be in user or tool role, so process both.
+			if len(m.ToolOutputs) > 0 {
+				o := toolOutputsToOpenAIChat(m.ToolOutputs)
+				out = append(out, o...)
+			}
+
+		case modelpresetSpec.RoleAssistant:
+			if content == "" && len(m.ToolCalls) == 0 {
+				// Nothing to send.
 				continue
 			}
 
-			var parts []openai.ChatCompletionContentPartUnionParam
-			if c := strings.TrimSpace(*m.Content); c != "" {
-				parts = append(parts, openai.TextContentPart(c))
-			}
-			parts = append(parts, attachmentContent...)
-			out = append(out, openai.UserMessage(parts))
+			var toolCalls []openai.ChatCompletionMessageToolCallUnionParam
+			for _, toolCall := range m.ToolCalls {
+				switch toolCall.Type {
+				case string(openaiSharedConstant.Function("").Default()):
+					f := openai.ChatCompletionMessageFunctionToolCallParam{
+						ID: toolCall.ID,
+						Function: openai.ChatCompletionMessageFunctionToolCallFunctionParam{
+							Arguments: toolCall.Arguments,
+							Name:      toolCall.Name,
+						},
+						Type: openaiSharedConstant.Function("").Default(),
+					}
+					toolCalls = append(toolCalls, openai.ChatCompletionMessageToolCallUnionParam{
+						OfFunction: &f,
+					})
 
-		case modelpresetSpec.RoleAssistant:
-			out = append(out, openai.AssistantMessage(*m.Content))
+				case string(openaiSharedConstant.Custom("").Default()):
+					f := openai.ChatCompletionMessageCustomToolCallParam{
+						ID: toolCall.ID,
+						Custom: openai.ChatCompletionMessageCustomToolCallCustomParam{
+							Input: toolCall.Arguments,
+							Name:  toolCall.Name,
+						},
+						Type: openaiSharedConstant.Custom("").Default(),
+					}
+					toolCalls = append(toolCalls, openai.ChatCompletionMessageToolCallUnionParam{
+						OfCustom: &f,
+					})
+				}
+			}
+
+			if len(toolCalls) == 0 {
+				// No tool calls: plain assistant message.
+				out = append(out, openai.AssistantMessage(content))
+				continue
+			}
+
+			assistant := openai.ChatCompletionAssistantMessageParam{
+				Role:      openaiSharedConstant.Assistant("").Default(),
+				ToolCalls: toolCalls,
+			}
+			if content != "" {
+				assistant.Content = openai.ChatCompletionAssistantMessageParamContentUnion{
+					OfString: param.NewOpt(content),
+				}
+			}
+			out = append(out, openai.ChatCompletionMessageParamUnion{OfAssistant: &assistant})
+
 		case modelpresetSpec.RoleFunction, modelpresetSpec.RoleTool:
-			toolCallID := "1"
-			out = append(out, openai.ToolMessage(*m.Content, toolCallID))
+			// Map structured tool outputs, if present, to OpenAI tool messages.
+			// Input tools may be in user or tool role, so process both.
+			if len(m.ToolOutputs) > 0 {
+				o := toolOutputsToOpenAIChat(m.ToolOutputs)
+				out = append(out, o...)
+			}
+			// If not tool output and we still have content in this role, attach it.
+			if content != "" {
+				out = append(out, openai.UserMessage(content))
+			}
 		}
 	}
 	return out, nil
+}
+
+func toolOutputsToOpenAIChat(
+	toolOutputs []toolSpec.ToolOutput,
+) []openai.ChatCompletionMessageParamUnion {
+	out := make([]openai.ChatCompletionMessageParamUnion, 0, len(toolOutputs))
+
+	// Tool outputs with a callID can be represented as proper tool messages.
+	for _, o := range toolOutputs {
+		callID := strings.TrimSpace(o.CallID)
+		if callID == "" {
+			continue
+		}
+		toolContent := strings.TrimSpace(o.RawOutput)
+		if toolContent == "" {
+			toolContent = strings.TrimSpace(o.Summary)
+		}
+		if toolContent == "" {
+			continue
+		}
+		out = append(out, openai.ToolMessage(toolContent, callID))
+	}
+
+	// Any tool outputs without a callID are rendered as plain user text
+	// so the model still sees the information.
+	var orphanOutputs []toolSpec.ToolOutput
+	for _, o := range toolOutputs {
+		if strings.TrimSpace(o.CallID) == "" {
+			orphanOutputs = append(orphanOutputs, o)
+		}
+	}
+	if len(orphanOutputs) > 0 {
+		if text := renderToolOutputsAsText(orphanOutputs); text != "" {
+			out = append(out, openai.UserMessage(text))
+		}
+	}
+	return out
 }
 
 // contentBlocksToOpenAIChat converts generic content blocks into OpenAI
@@ -499,7 +612,7 @@ func toOpenAIChatTools(
 	if len(tools) == 0 {
 		return nil, nil, nil
 	}
-	ordered, nameMap := buildToolNameMapping(tools)
+	ordered, nameMap := buildToolChoiceNameMapping(tools)
 	out := make([]openai.ChatCompletionToolUnionParam, 0, len(tools))
 
 	for _, tw := range ordered {
@@ -528,7 +641,7 @@ func toOpenAIChatTools(
 
 func extractOpenAIChatToolCalls(
 	choices []openai.ChatCompletionChoice,
-	toolNameMap map[string]spec.FetchCompletionToolChoice,
+	toolChoiceNameMap map[string]spec.FetchCompletionToolChoice,
 ) []toolSpec.ToolCall {
 	if len(choices) == 0 {
 		return nil
@@ -545,8 +658,8 @@ func extractOpenAIChatToolCalls(
 
 			name := variant.Function.Name
 			var toolChoice *toolSpec.ToolChoice
-			if toolNameMap != nil {
-				if ct, ok := toolNameMap[name]; ok {
+			if toolChoiceNameMap != nil {
+				if ct, ok := toolChoiceNameMap[name]; ok {
 					name = toolIdentityFromChoice(ct)
 					// Add the actual choice to response.
 					toolChoice = &ct.ToolChoice
@@ -567,8 +680,8 @@ func extractOpenAIChatToolCalls(
 		case openai.ChatCompletionMessageCustomToolCall:
 			name := variant.Custom.Name
 			var toolChoice *toolSpec.ToolChoice
-			if toolNameMap != nil {
-				if ct, ok := toolNameMap[name]; ok {
+			if toolChoiceNameMap != nil {
+				if ct, ok := toolChoiceNameMap[name]; ok {
 					name = toolIdentityFromChoice(ct)
 					// Add the actual choice to response.
 					toolChoice = &ct.ToolChoice
