@@ -486,8 +486,7 @@ func toolOutputsToOpenAIChat(
 
 	// Tool outputs with a callID can be represented as proper tool messages.
 	for _, o := range toolOutputs {
-		callID := strings.TrimSpace(o.CallID)
-		if callID == "" {
+		if o.ID == "" {
 			continue
 		}
 		toolContent := strings.TrimSpace(o.RawOutput)
@@ -497,14 +496,14 @@ func toolOutputsToOpenAIChat(
 		if toolContent == "" {
 			continue
 		}
-		out = append(out, openai.ToolMessage(toolContent, callID))
+		out = append(out, openai.ToolMessage(toolContent, o.ID))
 	}
 
 	// Any tool outputs without a callID are rendered as plain user text
 	// so the model still sees the information.
 	var orphanOutputs []toolSpec.ToolOutput
 	for _, o := range toolOutputs {
-		if strings.TrimSpace(o.CallID) == "" {
+		if strings.TrimSpace(o.ID) == "" {
 			orphanOutputs = append(orphanOutputs, o)
 		}
 	}

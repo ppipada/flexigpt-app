@@ -388,8 +388,11 @@ func toAnthropicMessages(
 	}
 
 	for idx, m := range messages {
-		// Skip messages with no text, no attachments, and no tool outputs.
-		if m.Content == nil && len(m.Attachments) == 0 && len(m.ToolOutputs) == 0 {
+		// Skip messages with no text, no attachments, no tool outputs, and no tool calls.
+		if m.Content == nil &&
+			len(m.Attachments) == 0 &&
+			len(m.ToolOutputs) == 0 &&
+			len(m.ToolCalls) == 0 {
 			continue
 		}
 		content := ""
@@ -402,7 +405,11 @@ func toAnthropicMessages(
 			if content != "" {
 				sysParts = append(sysParts, content)
 			}
+
 		case modelpresetSpec.RoleUser:
+			if m.Content == nil && len(m.Attachments) == 0 && len(m.ToolOutputs) == 0 {
+				continue
+			}
 			var attachmentContent []anthropic.ContentBlockParamUnion
 			if len(m.Attachments) > 0 {
 				// Dont override original attachments in rehydration.
@@ -429,13 +436,21 @@ func toAnthropicMessages(
 				}
 			}
 
-			parts := make([]anthropic.ContentBlockParamUnion, 0, 1+len(attachmentContent))
+			toolResultBlocks := toolOutputsToAnthropicBlocks(m.ToolOutputs)
+
+			parts := make(
+				[]anthropic.ContentBlockParamUnion,
+				0,
+				1+len(attachmentContent)+len(toolResultBlocks),
+			)
 			if content != "" {
 				parts = append(parts, anthropic.NewTextBlock(content))
 			}
-
 			if len(attachmentContent) != 0 {
 				parts = append(parts, attachmentContent...)
+			}
+			if len(toolResultBlocks) != 0 {
+				parts = append(parts, toolResultBlocks...)
 			}
 
 			if len(parts) > 0 {
@@ -443,16 +458,43 @@ func toAnthropicMessages(
 			}
 
 		case modelpresetSpec.RoleAssistant:
-			out = append(
-				out,
-				anthropic.NewAssistantMessage(anthropic.NewTextBlock(content)),
-			)
+			// Combine assistant text and tool calls into a single assistant message
+			// containing text and tool_use blocks.
+			var parts []anthropic.ContentBlockParamUnion
+			if content != "" {
+				parts = append(parts, anthropic.NewTextBlock(content))
+			}
+			if len(m.ToolCalls) > 0 {
+				toolUseBlocks := toolCallsToAnthropicBlocks(m.ToolCalls)
+				if len(toolUseBlocks) != 0 {
+					parts = append(parts, toolUseBlocks...)
+				}
+			}
+			if len(parts) > 0 {
+				out = append(out, anthropic.NewAssistantMessage(parts...))
+			}
+
 		case modelpresetSpec.RoleFunction, modelpresetSpec.RoleTool:
-			// Anthropic tools need to be processed independently of messages, skip for now.
+			// Tool results and any explanatory text are represented as a user message
+			// with tool_result blocks (and optional text).
+			var parts []anthropic.ContentBlockParamUnion
+			if content != "" {
+				parts = append(parts, anthropic.NewTextBlock(content))
+			}
+			toolResultBlocks := toolOutputsToAnthropicBlocks(m.ToolOutputs)
+			if len(toolResultBlocks) != 0 {
+				parts = append(parts, toolResultBlocks...)
+			}
+
+			if len(parts) > 0 {
+				out = append(out, anthropic.NewUserMessage(parts...))
+			}
+
 		default:
 			// Ignore unknown roles.
 		}
 	}
+
 	sysParams := []anthropic.TextBlockParam{}
 	if len(sysParts) > 0 {
 		// Anthropic seems to support array of prompts too, but lets keeps sys prompt as a single string for now.
@@ -461,6 +503,82 @@ func toAnthropicMessages(
 	}
 
 	return out, sysParams, nil
+}
+
+func toolCallsToAnthropicBlocks(
+	toolCalls []toolSpec.ToolCall,
+) []anthropic.ContentBlockParamUnion {
+	if len(toolCalls) == 0 {
+		return []anthropic.ContentBlockParamUnion{}
+	}
+
+	out := make([]anthropic.ContentBlockParamUnion, 0, len(toolCalls))
+	for _, tc := range toolCalls {
+		if tc.ID == "" || tc.Name == "" {
+			continue
+		}
+
+		args := strings.TrimSpace(tc.Arguments)
+		if args == "" {
+			args = "{}"
+		}
+
+		out = append(out, anthropic.NewToolUseBlock(tc.ID, args, tc.Name))
+	}
+
+	if len(out) == 0 {
+		return []anthropic.ContentBlockParamUnion{}
+	}
+	return out
+}
+
+func toolOutputsToAnthropicBlocks(
+	toolOutputs []toolSpec.ToolOutput,
+) []anthropic.ContentBlockParamUnion {
+	if len(toolOutputs) == 0 {
+		return []anthropic.ContentBlockParamUnion{}
+	}
+
+	out := make([]anthropic.ContentBlockParamUnion, 0, len(toolOutputs)+1)
+
+	// Tool outputs with a callID => proper tool_result blocks.
+	for _, o := range toolOutputs {
+		if o.ID == "" {
+			continue
+		}
+		toolContent := strings.TrimSpace(o.RawOutput)
+		if toolContent == "" {
+			toolContent = strings.TrimSpace(o.Summary)
+		}
+		if toolContent == "" {
+			continue
+		}
+
+		tr := anthropic.NewToolResultBlock(
+			o.ID,
+			toolContent,
+			false, // May want to see how to propagate tool errors to API.
+		)
+		out = append(out, tr)
+	}
+
+	// Orphan outputs (no callID) => rendered as a single text block.
+	var orphanOutputs []toolSpec.ToolOutput
+	for _, o := range toolOutputs {
+		if o.ID == "" {
+			orphanOutputs = append(orphanOutputs, o)
+		}
+	}
+	if len(orphanOutputs) > 0 {
+		if text := strings.TrimSpace(renderToolOutputsAsText(orphanOutputs)); text != "" {
+			out = append(out, anthropic.NewTextBlock(text))
+		}
+	}
+
+	if len(out) == 0 {
+		return []anthropic.ContentBlockParamUnion{}
+	}
+	return out
 }
 
 // contentBlocksToAnthropic converts generic content blocks into Anthropic
