@@ -701,23 +701,6 @@ func getResponseContentFromOpenAIOutput(
 				thinkingSummaryText.WriteString(content.Text)
 			}
 		}
-		if item.Type == string(openaiSharedConstant.ImageGenerationCall("").Default()) {
-			// Image generation outputs return a base64-encoded image. Wrap it in a
-			// data URL and expose it as an image content block. The frontend can
-			// either render it directly or treat it as markdown.
-			data := strings.TrimSpace(item.Result)
-			if data != "" {
-				dataURL := "data:image/png;base64," + data
-				md := fmt.Sprintf("![Generated image](%s)", dataURL)
-				resp = append(
-					resp,
-					spec.ResponseContent{
-						Type:    spec.ResponseContentTypeImage,
-						Content: md,
-					},
-				)
-			}
-		}
 	}
 
 	thinkingSummaryStr := thinkingSummaryText.String()

@@ -57,7 +57,7 @@ export enum ResponseContentType {
 	Text = 'text',
 	Thinking = 'thinking',
 	ThinkingSummary = 'thinkingSummary',
-	Image = 'image',
+	RedactedThinking = 'redactedThinking',
 }
 
 interface ResponseContent {

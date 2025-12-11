@@ -71,13 +71,10 @@ type APIFetchResponse[T any] struct {
 type ResponseContentType string
 
 const (
-	ResponseContentTypeText            ResponseContentType = "text"
-	ResponseContentTypeThinking        ResponseContentType = "thinking"
-	ResponseContentTypeThinkingSummary ResponseContentType = "thinkingSummary"
-	// ResponseContentTypeImage represents image content (for example, a data URL or
-	// some other image identifier/handle). Callers are free to interpret the
-	// Content field appropriately for their UI.
-	ResponseContentTypeImage ResponseContentType = "image"
+	ResponseContentTypeText             ResponseContentType = "text"
+	ResponseContentTypeThinking         ResponseContentType = "thinking"
+	ResponseContentTypeThinkingSummary  ResponseContentType = "thinkingSummary"
+	ResponseContentTypeRedactedThinking ResponseContentType = "redactedThinking"
 )
 
 type ResponseContent struct {

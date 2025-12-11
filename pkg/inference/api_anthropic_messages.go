@@ -655,6 +655,7 @@ func getResponseContentFromAnthropicMessage(msg *anthropic.Message) []spec.Respo
 		case anthropic.ThinkingBlock:
 			resp = append(resp, spec.ResponseContent{Type: spec.ResponseContentTypeThinking, Content: variant.Thinking})
 		case anthropic.RedactedThinkingBlock:
+			resp = append(resp, spec.ResponseContent{Type: spec.ResponseContentTypeRedactedThinking, Content: variant.Data})
 		case anthropic.ToolUseBlock:
 		case anthropic.ServerToolUseBlock:
 		case anthropic.WebSearchToolResultBlock:
