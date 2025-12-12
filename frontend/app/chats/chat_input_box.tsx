@@ -1,6 +1,6 @@
 import { forwardRef, type RefObject, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
-import type { ToolCall } from '@/spec/tool';
+import type { ToolCall, ToolChoice } from '@/spec/tool';
 
 import type { ShortcutConfig } from '@/lib/keyboard_shortcuts';
 
@@ -24,6 +24,7 @@ export interface InputBoxHandle {
 	openAttachmentMenu: () => void;
 	loadExternalMessage: (msg: EditorExternalMessage) => void;
 	loadToolCalls: (toolCalls: ToolCall[]) => void;
+	setConversationToolsFromChoices: (tools: ToolChoice[]) => void;
 }
 
 interface InputBoxProps {
@@ -84,6 +85,9 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 		},
 		loadToolCalls: toolCalls => {
 			inputAreaRef.current?.loadToolCalls(toolCalls);
+		},
+		setConversationToolsFromChoices: tools => {
+			inputAreaRef.current?.setConversationToolsFromChoices(tools);
 		},
 	}));
 

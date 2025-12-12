@@ -1,0 +1,226 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+import { FiChevronUp, FiTool, FiX } from 'react-icons/fi';
+
+import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
+
+import type { ToolChoice } from '@/spec/tool';
+
+import { toolIdentityKey } from '@/chats/tools/tool_editor_utils';
+
+export interface ConversationToolStateEntry {
+	key: string;
+	tool: ToolChoice;
+	enabled: boolean;
+}
+
+/**
+ * Initialize UI state from an array of ToolChoice coming from history
+ * (e.g. last user message's toolChoices).
+ */
+export function initConversationToolsStateFromChoices(choices: ToolChoice[]): ConversationToolStateEntry[] {
+	const out: ConversationToolStateEntry[] = [];
+	const seen = new Set<string>();
+
+	for (const t of choices ?? []) {
+		const key = toolIdentityKey(t.bundleID, undefined, t.toolSlug, t.toolVersion);
+		if (seen.has(key)) continue;
+		seen.add(key);
+		out.push({ key, tool: t, enabled: true });
+	}
+
+	return out;
+}
+
+/**
+ * Extract only the ENABLED tools, deduped by identity, for attachment to a message.
+ */
+export function conversationToolsToChoices(entries: ConversationToolStateEntry[]): ToolChoice[] {
+	if (!entries || entries.length === 0) return [];
+	const out: ToolChoice[] = [];
+	const seen = new Set<string>();
+
+	for (const e of entries) {
+		if (!e.enabled) continue;
+		const t = e.tool;
+		const key = toolIdentityKey(t.bundleID, undefined, t.toolSlug, t.toolVersion);
+		if (seen.has(key)) continue;
+		seen.add(key);
+		out.push(t);
+	}
+
+	return out;
+}
+
+/**
+ * After a send, merge any newly used tools into the UI state.
+ * - Preserves existing enabled/disabled flags.
+ * - Adds brand-new tools as enabled=true.
+ */
+export function mergeConversationToolsWithNewChoices(
+	prev: ConversationToolStateEntry[],
+	newTools: ToolChoice[]
+): ConversationToolStateEntry[] {
+	if (!newTools || newTools.length === 0) return prev;
+
+	const next = [...prev];
+	const indexByKey = new Map<string, number>();
+	for (let i = 0; i < next.length; i += 1) {
+		indexByKey.set(next[i].key, i);
+	}
+
+	for (const t of newTools) {
+		const key = toolIdentityKey(t.bundleID, undefined, t.toolSlug, t.toolVersion);
+		const existingIdx = indexByKey.get(key);
+		if (existingIdx != null) {
+			// Refresh metadata but keep enabled flag.
+			next[existingIdx] = {
+				...next[existingIdx],
+				tool: { ...next[existingIdx].tool, ...t },
+			};
+		} else {
+			next.push({ key, tool: t, enabled: true });
+		}
+	}
+
+	return next;
+}
+
+interface ConversationToolsChipProps {
+	tools: ConversationToolStateEntry[];
+	onChange?: (next: ConversationToolStateEntry[]) => void;
+}
+
+/**
+ * Conversation-level tools chip.
+ * - First chip in the composer chips row.
+ * - Tinted differently (primary-ish) vs per-message Tools chip.
+ * - Dropdown:
+ *   - per-tool enable/disable toggle
+ *   - per-tool remove
+ *   - "remove all" in the chip header
+ *
+ * All state here is UI-only; it controls what gets attached on the next send,
+ * but does not rewrite existing messages.
+ */
+export function ConversationToolsChip({ tools, onChange }: ConversationToolsChipProps) {
+	const count = tools.length;
+	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
+
+	if (count === 0) return null;
+
+	const title = `Conversation tools\n${count} tool${count === 1 ? '' : 's'} in this conversation`;
+
+	const handleToggleEnabled = (key: string) => {
+		if (!onChange) return;
+		const next = tools.map(entry => (entry.key === key ? { ...entry, enabled: !entry.enabled } : entry));
+		onChange(next);
+	};
+
+	const handleRemoveSingle = (key: string) => {
+		if (!onChange) return;
+		const next = tools.filter(entry => entry.key !== key);
+		onChange(next);
+	};
+
+	const handleRemoveAll = () => {
+		if (!onChange) return;
+		onChange([]);
+		menu.hide();
+	};
+
+	return (
+		<div
+			className="bg-primary/10 text-base-content border-primary/40 flex shrink-0 items-center gap-1 rounded-2xl border px-2 py-0"
+			title={title}
+			data-attachment-chip="conversation-tools-group"
+		>
+			<FiTool size={14} />
+			<span className="max-w-36 truncate">Conversation tools</span>
+			<span className="text-base-content/60 whitespace-nowrap">{count}</span>
+
+			<MenuButton
+				store={menu}
+				className="btn btn-ghost btn-xs px-0 py-0 shadow-none"
+				aria-label="Show conversation tools"
+				title="Show conversation tools"
+			>
+				<FiChevronUp size={14} />
+			</MenuButton>
+
+			{/* Remove all conversation tools */}
+			<button
+				type="button"
+				className="btn btn-ghost btn-xs text-error shrink-0 px-0 py-0 shadow-none"
+				onClick={handleRemoveAll}
+				title="Remove all conversation tools"
+				aria-label="Remove all conversation tools"
+			>
+				<FiX size={14} />
+			</button>
+
+			<Menu
+				store={menu}
+				gutter={6}
+				className="rounded-box bg-primary/5 text-base-content border-primary/40 z-50 max-h-72 min-w-[280px] overflow-y-auto border p-2 shadow-xl focus-visible:outline-none"
+				autoFocusOnShow
+			>
+				<div className="text-base-content/70 mb-2 text-[11px] font-semibold">Conversation tools</div>
+
+				{tools.map(entry => {
+					const { tool, key } = entry;
+					const display =
+						(tool.displayName && tool.displayName.length > 0 ? tool.displayName : tool.toolSlug) || 'Tool';
+					const slug = `${tool.bundleID ?? 'bundle'}/${tool.toolSlug}@${tool.toolVersion}`;
+					const truncatedDisplay = display.length > 40 ? `${display.slice(0, 37)}…` : display;
+
+					return (
+						<MenuItem
+							key={key}
+							store={menu}
+							hideOnClick={false}
+							className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
+						>
+							<div
+								className="flex items-center gap-2 px-2 py-1"
+								title={`Conversation tool: ${display} (${slug})`}
+								data-attachment-chip="conversation-tool"
+							>
+								<FiTool size={14} />
+								<div className="min-w-0 flex-1">
+									<div className="truncate text-xs font-medium">{truncatedDisplay}</div>
+									<div className="text-base-content/70 truncate text-[11px]">{slug}</div>
+								</div>
+
+								{/* Enable / disable toggle (UI-only) */}
+								<label className="flex items-center gap-1 text-[11px]">
+									<input
+										type="checkbox"
+										className="toggle toggle-xs"
+										checked={entry.enabled}
+										onChange={() => {
+											handleToggleEnabled(key);
+										}}
+									/>
+									<span className="whitespace-nowrap">{entry.enabled ? 'On' : 'Off'}</span>
+								</label>
+
+								{/* Remove from conversation tools */}
+								<button
+									type="button"
+									className="btn btn-ghost btn-xs text-error shrink-0 px-1 py-0 shadow-none"
+									onClick={() => {
+										handleRemoveSingle(key);
+									}}
+									title="Remove conversation tool"
+									aria-label="Remove conversation tool"
+								>
+									<FiX size={12} />
+								</button>
+							</div>
+						</MenuItem>
+					);
+				})}
+			</Menu>
+		</div>
+	);
+}

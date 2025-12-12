@@ -24,7 +24,6 @@ import { InputBox, type InputBoxHandle } from '@/chats/chat_input_box';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/chat_input_editor';
 import { ChatNavBar, type ChatNavBarHandle } from '@/chats/chat_navbar';
 import { ChatMessage } from '@/chats/messages/message';
-import type { EditorAttachedToolChoice } from '@/chats/tools/tool_editor_utils';
 
 function initConversation(title = 'New Conversation'): Conversation {
 	return {
@@ -46,15 +45,14 @@ function initConversationMessage(role: RoleEnum, content: string): ConversationM
 	};
 }
 
-function attachedToolToConversationToolChoice(tool: EditorAttachedToolChoice): ToolChoice {
-	return {
-		bundleID: tool.bundleID,
-		toolSlug: tool.toolSlug,
-		toolVersion: tool.toolVersion,
-		displayName: tool.displayName,
-		description: tool.description,
-		toolID: tool.toolID,
-	};
+function deriveConversationToolsFromMessages(messages: ConversationMessage[]): ToolChoice[] {
+	for (let i = messages.length - 1; i >= 0; i -= 1) {
+		const m = messages[i];
+		if (m.role === RoleEnum.User && m.toolChoices && m.toolChoices.length > 0) {
+			return m.toolChoices;
+		}
+	}
+	return [];
 }
 
 // eslint-disable-next-line no-restricted-exports
@@ -130,6 +128,8 @@ export default function ChatsPage() {
 		// or if there is some bug below that forgets to call saveUpdated chat
 		conversationStoreAPI.putConversation(chat);
 		setChat(initConversation());
+		chatInputRef.current?.setConversationToolsFromChoices([]);
+
 		// New non-persisted conversation started.
 		isChatPersistedRef.current = false;
 		manualTitleLockedRef.current = false;
@@ -194,6 +194,9 @@ export default function ChatsPage() {
 			isChatPersistedRef.current = true;
 			manualTitleLockedRef.current = false; // fresh load – don’t assume manual lock
 			setEditingMessageId(null);
+
+			const initialTools = deriveConversationToolsFromMessages(selectedChat.messages);
+			chatInputRef.current?.setConversationToolsFromChoices(initialTools);
 		}
 	}, []);
 
@@ -437,7 +440,8 @@ export default function ChatsPage() {
 		if (isBusy) return;
 
 		const trimmed = payload.text.trim();
-		// Allow "tool-only" turns (no text) as long as something is attached (tools / tool outputs / attachments)
+		// Allow "empty-text" turns ONLY when there is at least attachments or tool outputs.
+		// Tool choices alone (explicit or conversation-level) are NOT enough.
 		const hasNonEmptyText = trimmed.length > 0;
 		const hasToolOutputs = payload.toolOutputs.length > 0;
 		const hasAttachments = payload.attachments.length > 0;
@@ -445,6 +449,7 @@ export default function ChatsPage() {
 		if (!hasNonEmptyText && !hasToolOutputs && !hasAttachments) {
 			return;
 		}
+		const finalToolChoices = payload.finalToolChoices;
 
 		// If we are editing an existing user message, replace it and drop later messages.
 		if (editingMessageId) {
@@ -453,10 +458,7 @@ export default function ChatsPage() {
 			if (idx !== -1) {
 				const base = chat.messages[idx];
 
-				const toolChoices =
-					payload.attachedTools.length > 0
-						? payload.attachedTools.map(attachedToolToConversationToolChoice)
-						: undefined;
+				const toolChoices = finalToolChoices.length > 0 ? finalToolChoices : undefined;
 
 				const attachments =
 					payload.attachments.length > 0 ? payload.attachments.map(editorAttachmentToConversation) : undefined;
@@ -491,9 +493,7 @@ export default function ChatsPage() {
 		}
 
 		const newMsg = initConversationMessage(RoleEnum.User, trimmed);
-		const toolChoices =
-			payload.attachedTools.length > 0 ? payload.attachedTools.map(attachedToolToConversationToolChoice) : undefined;
-		newMsg.toolChoices = toolChoices;
+		newMsg.toolChoices = finalToolChoices.length > 0 ? finalToolChoices : undefined;
 
 		const attachments =
 			payload.attachments.length > 0 ? payload.attachments.map(editorAttachmentToConversation) : undefined;
@@ -542,7 +542,12 @@ export default function ChatsPage() {
 			if (isBusy) return;
 			const idx = chat.messages.findIndex(m => m.id === id);
 			if (idx === -1) return;
-
+			const msg = chat.messages[idx];
+			if (msg.role === RoleEnum.User && msg.toolChoices && msg.toolChoices.length > 0) {
+				chatInputRef.current?.setConversationToolsFromChoices(msg.toolChoices);
+			} else {
+				chatInputRef.current?.setConversationToolsFromChoices([]);
+			}
 			const msgs = chat.messages.slice(0, idx + 1);
 			const updated = { ...chat, messages: msgs, modifiedAt: new Date() };
 			saveUpdatedChat(updated);

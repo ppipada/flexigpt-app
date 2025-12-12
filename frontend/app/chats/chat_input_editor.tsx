@@ -63,8 +63,16 @@ import { getLastUserBlockContent } from '@/chats/templates/template_processing';
 import { TemplateToolbars } from '@/chats/templates/template_toolbars';
 import { buildUserInlineChildrenFromText } from '@/chats/templates/template_variables_inline';
 import {
+	type ConversationToolStateEntry,
+	conversationToolsToChoices,
+	initConversationToolsStateFromChoices,
+	mergeConversationToolsWithNewChoices,
+} from '@/chats/tools/conversation_tools_chip';
+import {
 	buildToolCallFromResponse,
+	dedupeToolChoices,
 	type EditorAttachedToolChoice,
+	editorAttachedToolToToolChoice,
 	type EditorToolCall,
 	formatToolOutputSummary,
 	getAttachedTools,
@@ -81,6 +89,7 @@ export interface EditorAreaHandle {
 	loadExternalMessage: (msg: EditorExternalMessage) => void;
 	resetEditor: () => void;
 	loadToolCalls: (toolCalls: ToolCall[]) => void;
+	setConversationToolsFromChoices: (tools: ToolChoice[]) => void;
 }
 
 export interface EditorExternalMessage {
@@ -95,6 +104,7 @@ export interface EditorSubmitPayload {
 	attachedTools: EditorAttachedToolChoice[];
 	attachments: EditorAttachment[];
 	toolOutputs: ToolOutput[];
+	finalToolChoices: ToolChoice[];
 }
 
 const EDITOR_EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
@@ -152,6 +162,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const [toolCalls, setToolCalls] = useState<EditorToolCall[]>([]);
 	const [toolOutputs, setToolOutputs] = useState<ToolOutput[]>([]);
 	const [activeToolOutput, setActiveToolOutput] = useState<ToolOutput | null>(null);
+	const [conversationToolsState, setConversationToolsState] = useState<ConversationToolStateEntry[]>([]);
 
 	const closeAllMenus = useCallback(() => {
 		templateMenu.hide();
@@ -228,12 +239,10 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			const hasText = hasNonEmptyUserText(editorRef.current);
 			if (hasText) return true;
 
-			// Allow "tool-only" / "attachments-only" turns
-			const hasTools = getAttachedTools(editorRef.current).length > 0;
 			const hasAttachments = attachments.length > 0;
 			const hasOutputs = toolOutputs.length > 0;
 
-			return hasTools || hasAttachments || hasOutputs || hasPendingToolCalls;
+			return hasAttachments || hasOutputs;
 		},
 		insertSoftBreak: () => {
 			editor.tf.insertSoftBreak();
@@ -248,12 +257,11 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		const hasText = hasNonEmptyUserText(editorRef.current);
 		if (hasText) return true;
 
-		const hasTools = getAttachedTools(editorRef.current).length > 0;
 		const hasAttachments = attachments.length > 0;
 		const hasOutputs = toolOutputs.length > 0;
 
-		return hasTools || hasAttachments || hasOutputs || hasPendingToolCalls;
-	}, [isBusy, selectionInfo, attachments, toolOutputs, hasPendingToolCalls, docVersion]);
+		return hasAttachments || hasOutputs;
+	}, [isBusy, selectionInfo, attachments, toolOutputs, docVersion]);
 
 	// Populate editor with effective last-USER block for EACH template selection (once per selectionID)
 	useEffect(() => {
@@ -457,15 +465,24 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 			const textToSend = hasTpl ? toPlainTextReplacingVariables(editor) : editor.api.string([]);
 			const attachedTools = getAttachedTools(editor);
+			const explicitChoices = attachedTools.map(editorAttachedToolToToolChoice);
+			// Enabled conversation-level tools (UI-only state)
+			const conversationChoices = conversationToolsToChoices(conversationToolsState);
+			// Final tool choices for this turn (explicit override conversation defaults)
+			const finalToolChoices = dedupeToolChoices([...explicitChoices, ...conversationChoices]);
+
 			const payload: EditorSubmitPayload = {
 				text: textToSend,
 				attachedTools,
 				attachments,
 				toolOutputs: [...existingOutputs, ...newlyProducedOutputs],
+				finalToolChoices,
 			};
 
 			await onSubmit(payload);
 			setSubmitError(null);
+			// Update conversation tools UI state with any newly used tools, preserving existing flags.
+			setConversationToolsState(prev => mergeConversationToolsWithNewChoices(prev, finalToolChoices));
 		} finally {
 			// Clear editor and state after successful preprocessor runs and submit
 			editor.tf.setValue(EDITOR_EMPTY_VALUE);
@@ -600,6 +617,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		loadExternalMessage,
 		resetEditor,
 		loadToolCalls,
+		setConversationToolsFromChoices: (tools: ToolChoice[]) => {
+			setConversationToolsState(initConversationToolsStateFromChoices(tools));
+		},
 	}));
 
 	const handleAttachFiles = async () => {
@@ -836,10 +856,10 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 						// Auto-cancel editing when the editor is completely empty
 						// (no text, no tools, no attachments, no tool outputs).
 						const hasText = hasNonEmptyUserText(editorRef.current);
-						const hasTools = getAttachedTools(editorRef.current).length > 0;
 						const hasAttachmentsLocal = attachments.length > 0;
 						const hasToolOutputsLocal = toolOutputs.length > 0;
-						const isEffectivelyEmpty = !hasText && !hasTools && !hasAttachmentsLocal && !hasToolOutputsLocal;
+						// Tools alone are not considered enough to keep edit mode alive.
+						const isEffectivelyEmpty = !hasText && !hasAttachmentsLocal && !hasToolOutputsLocal;
 
 						// Only do this while editing an older message.
 						if (editingMessageId && isEffectivelyEmpty) {
@@ -898,6 +918,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 								<EditorChipsBar
 									attachments={attachments}
 									directoryGroups={directoryGroups}
+									conversationTools={conversationToolsState}
 									toolCalls={toolCalls}
 									toolOutputs={toolOutputs}
 									isBusy={isBusy || isSubmittingRef.current}
@@ -909,6 +930,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 									onChangeAttachmentMode={handleChangeAttachmentMode}
 									onRemoveDirectoryGroup={handleRemoveDirectoryGroup}
 									onRemoveOverflowDir={handleRemoveOverflowDir}
+									onConversationToolsChange={setConversationToolsState}
 								/>
 							</div>
 						</div>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { ElementApi, KEYS, NodeApi, type Path } from 'platejs';
 import type { PlateEditor } from 'platejs/react';
 
@@ -145,6 +146,36 @@ export type EditorAttachedToolChoice = {
 	// Non ToolChoice fields
 	selectionID: string;
 };
+
+// Convert the editor's attached-tool shape into the persisted ToolChoice shape.
+export function editorAttachedToolToToolChoice(att: EditorAttachedToolChoice): ToolChoice {
+	return {
+		bundleID: att.bundleID,
+		toolSlug: att.toolSlug,
+		toolVersion: att.toolVersion,
+		displayName: att.displayName,
+		description: att.description,
+		toolID: att.toolID,
+	};
+}
+
+function toolChoiceIdentityKey(tool: ToolChoice): string {
+	return toolIdentityKey(tool.bundleID, undefined, tool.toolSlug, tool.toolVersion);
+}
+
+export function dedupeToolChoices(choices: ToolChoice[]): ToolChoice[] {
+	const out: ToolChoice[] = [];
+	const seen = new Set<string>();
+
+	for (const t of choices ?? []) {
+		const key = toolChoiceIdentityKey(t);
+		if (seen.has(key)) continue;
+		seen.add(key);
+		out.push(t);
+	}
+
+	return out;
+}
 
 // Build a stable identity key for a tool selection (bundle + slug + version).
 // Prefer bundleID when present, otherwise fall back to bundleSlug.

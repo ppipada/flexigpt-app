@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type { PlateEditor } from 'platejs/react';
 import { useEditorRef } from 'platejs/react';
 
@@ -11,6 +12,7 @@ import {
 	editorAttachmentKey,
 } from '@/chats/attachments/attachment_editor_utils';
 import { StandaloneAttachmentsChip } from '@/chats/attachments/attachment_standalone_chips';
+import { ConversationToolsChip, type ConversationToolStateEntry } from '@/chats/tools/conversation_tools_chip';
 import { ToolChipsComposerRow } from '@/chats/tools/tool_chips_composer';
 import { ToolChoicesChip } from '@/chats/tools/tool_choices_chip';
 import type { EditorToolCall } from '@/chats/tools/tool_editor_utils';
@@ -19,6 +21,7 @@ import { getToolNodesWithPath } from '@/chats/tools/tool_editor_utils';
 interface EditorChipsBarProps {
 	attachments: EditorAttachment[];
 	directoryGroups: DirectoryAttachmentGroup[];
+	conversationTools?: ConversationToolStateEntry[];
 
 	// Tool calls & outputs (tool runners / results)
 	toolCalls?: EditorToolCall[];
@@ -33,6 +36,7 @@ interface EditorChipsBarProps {
 	onChangeAttachmentMode: (att: EditorAttachment, mode: AttachmentMode) => void;
 	onRemoveDirectoryGroup: (groupId: string) => void;
 	onRemoveOverflowDir?: (groupId: string, dirPath: string) => void;
+	onConversationToolsChange?: (next: ConversationToolStateEntry[]) => void;
 }
 
 /**
@@ -48,6 +52,7 @@ interface EditorChipsBarProps {
 export function EditorChipsBar({
 	attachments,
 	directoryGroups,
+	conversationTools = [],
 	toolCalls = [],
 	toolOutputs = [],
 	isBusy = false,
@@ -59,6 +64,7 @@ export function EditorChipsBar({
 	onChangeAttachmentMode,
 	onRemoveDirectoryGroup,
 	onRemoveOverflowDir,
+	onConversationToolsChange,
 }: EditorChipsBarProps) {
 	const editor = useEditorRef() as PlateEditor;
 	const toolEntries = getToolNodesWithPath(editor);
@@ -68,6 +74,7 @@ export function EditorChipsBar({
 	);
 
 	const hasAnyChips =
+		(conversationTools?.length ?? 0) > 0 ||
 		attachments.length > 0 ||
 		directoryGroups.length > 0 ||
 		toolEntries.length > 0 ||
@@ -90,9 +97,11 @@ export function EditorChipsBar({
 	const discardToolCall = onDiscardToolCall ?? (() => {});
 	const openOutput = onOpenOutput ?? (() => {});
 	const removeOutput = onRemoveOutput ?? (() => {});
-
 	return (
 		<div className="flex shrink-0 items-center gap-1">
+			{/* Conversation tools (first, tinted) */}
+			<ConversationToolsChip tools={conversationTools} onChange={onConversationToolsChange} />
+
 			{/* Aggregated chip for standalone attachments */}
 			<StandaloneAttachmentsChip
 				attachments={standaloneAttachments}
@@ -113,7 +122,7 @@ export function EditorChipsBar({
 				/>
 			))}
 
-			{/* Tool choices (selected tools for this conversation), aggregated into a dropdown chip */}
+			{/* Per-message tool choices (inline-attached tools for this draft) */}
 			<ToolChoicesChip editor={editor} toolEntries={toolEntries} />
 
 			{/* Tool-call chips (pending/running/failed) and tool output chips */}
