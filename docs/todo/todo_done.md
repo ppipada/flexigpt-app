@@ -646,3 +646,22 @@
   - [x] With attachments, token usage display seems more important.
 
 - [x] check if extraction pipeline for PDF urls is handled properly.
+
+- [x] tool enhancements
+
+  - [x] attached tools to be given back as schema to consumers for exec
+  - [x] backend of tool calls and outputs from build to fetch to back
+  - [x] testing of chip bars
+  - [x] tool exec bars review
+  - [x] tool choices also need to be added as chips
+  - [x] anthropic needs thinking blocks too in response.
+  - [x] message attachments bar needs to have similar dropdown info chips rather than one long bar.
+  - [x] url attach is still leading to a submit.
+
+  - [x] check for empty msg with only toolresult in fe. seems some issue
+    - [x] abort and then edit again is also some issue.
+  - [x] the mode menu looks cutoff after pushed inside the composer.
+  - [x] tool choices need to be added as "previous tool choices" and an option to reattach needs to be given.
+
+- [x] 5.1 codex max, deepseek 3.2, 5.2
+- [x] Can now introduce a independent per message thinking block and manage it as separate input block in the api
