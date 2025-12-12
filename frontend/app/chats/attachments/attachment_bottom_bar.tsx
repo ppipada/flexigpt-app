@@ -177,11 +177,6 @@ export function AttachmentBottomBar({
 		setIsUrlModalOpen(true);
 	};
 
-	const handleUrlAttachFromModal = async (url: string) => {
-		await onAttachURL(url);
-		editor.tf.focus();
-	};
-
 	return (
 		<div
 			className="bg-base-200 w-full overflow-hidden"
@@ -312,7 +307,7 @@ export function AttachmentBottomBar({
 					setIsUrlModalOpen(false);
 					editor.tf.focus();
 				}}
-				onAttachURL={handleUrlAttachFromModal}
+				onAttachURL={onAttachURL}
 			/>
 		</div>
 	);

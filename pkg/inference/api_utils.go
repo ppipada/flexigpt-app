@@ -163,6 +163,10 @@ func convertBuildMessageToChatMessage(
 		out.Content = &c
 	}
 
+	if len(msg.ReasoningContents) > 0 {
+		out.ReasoningContents = msg.ReasoningContents
+	}
+
 	if len(msg.Attachments) > 0 {
 		out.Attachments = attachment.CopyAttachments(msg.Attachments)
 	}

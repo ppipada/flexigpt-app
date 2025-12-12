@@ -74,16 +74,41 @@ export interface CompletionUsage {
 	reasoningTokens: number;
 }
 
-export enum MessageContentType {
-	Text = 'text',
-	Thinking = 'thinking',
-	ThinkingSummary = 'thinkingSummary',
-	RedactedThinking = 'redactedThinking',
+/**
+ * @public
+ */
+export enum ReasoningContentType {
+	ReasoningOpenAIResponses = 'reasoningOpenAIResponses',
+	ReasoningAnthropicMessages = 'reasoningAnthropicMessages',
 }
 
-export interface MessageContent {
-	type: MessageContentType;
-	content: string;
+/**
+ * @public
+ */
+export interface ReasoningContentOpenAIResponses {
+	id: string;
+	summary?: string[];
+	content?: string[];
+	status?: string;
+	encryptedContent?: string;
+}
+
+/**
+ * @public
+ */
+export interface ReasoningContentAnthropicMessages {
+	signature?: string;
+	thinking?: string;
+	redactedThinking?: string;
+}
+
+/**
+ * @public
+ */
+export interface ReasoningContent {
+	type: ReasoningContentType;
+	contentOpenAIResponses?: ReasoningContentOpenAIResponses;
+	contentAnthropicMessages?: ReasoningContentAnthropicMessages;
 }
 
 export interface ReasoningParams {

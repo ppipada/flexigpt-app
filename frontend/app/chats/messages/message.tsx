@@ -5,8 +5,10 @@ import { FiCompass, FiUser } from 'react-icons/fi';
 import type { ConversationMessage } from '@/spec/conversation';
 import { RoleEnum } from '@/spec/modelpreset';
 
+import { buildEffectiveContentWithReasoning } from '@/lib/reasoning_utils';
+
 import { MessageAttachmentsBar } from '@/chats/messages/message_attachments_bar';
-import { MessageContent } from '@/chats/messages/message_content';
+import { MessageContentCard } from '@/chats/messages/message_content_card';
 import { MessageFooterArea } from '@/chats/messages/message_footer';
 
 interface ChatMessageProps {
@@ -28,6 +30,11 @@ function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
 	if (prev.message.usage !== next.message.usage) {
 		return false;
 	}
+
+	if (prev.message.reasoningContents !== next.message.reasoningContents) {
+		return false;
+	}
+
 	// We only care if THIS row’s streamed text changed.
 	if (prev.streamedMessage !== next.streamedMessage) return false;
 
@@ -64,6 +71,8 @@ export const ChatMessage = memo(function ChatMessage({
 		.filter(Boolean)
 		.join(' ');
 
+	const effectiveContent = buildEffectiveContentWithReasoning(message);
+
 	return (
 		<div className="mb-4 grid grid-cols-12 grid-rows-[auto_auto] gap-2" style={{ fontSize: 14 }}>
 			{/* Row 1 ── icon + message bubble */}
@@ -76,9 +85,9 @@ export const ChatMessage = memo(function ChatMessage({
 			</div>
 
 			<div className={`${bubbleBase} ${bubbleExtra}`}>
-				<MessageContent
+				<MessageContentCard
 					messageID={message.id}
-					content={message.content}
+					content={effectiveContent}
 					streamedText={streamedMessage}
 					isStreaming={!!streamedMessage}
 					isBusy={isBusy}

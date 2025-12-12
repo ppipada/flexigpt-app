@@ -111,14 +111,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 			const resp = await Promise.race([responsePromise, abortPromise]);
 			const respBody = resp.Body as wailsSpec.FetchCompletionResponseBody;
 			// console.log(JSON.stringify(respBody, undefined, 2));
-			return {
-				requestDetails: respBody.requestDetails,
-				responseDetails: respBody.responseDetails,
-				errorDetails: respBody.errorDetails,
-				usage: respBody.usage,
-				responseContent: respBody.responseContent,
-				toolCalls: respBody.toolCalls,
-			} as FetchCompletionResponseBody;
+			return respBody as FetchCompletionResponseBody;
 		} finally {
 			/* Always clean up – even when the race rejected with AbortError */
 			if (textCallbackId) EventsOff(textCallbackId);

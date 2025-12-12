@@ -343,17 +343,13 @@ export default function ChatsPage() {
 				// sanitized, includes curl). If those are not available (e.g.
 				// the Go side failed before making the HTTP call), fall back to
 				// the locally built completionData.
-				if (updatedChatWithConvoMessage.messages.length > 1) {
+				if (newMsg.requestDetails && updatedChatWithConvoMessage.messages.length > 1) {
 					const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
 					const prevMessage = updatedChatWithConvoMessage.messages[prevIdx];
 
 					if (prevMessage.role === RoleEnum.User) {
-						let detailsMd: string | undefined;
-
-						if (newMsg.requestDetails) {
-							const reqData = 'API request data:\n' + newMsg.requestDetails;
-							detailsMd = reqData;
-						}
+						const reqData = 'API request data:\n' + newMsg.requestDetails;
+						const detailsMd = reqData;
 
 						updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
 							i === prevIdx

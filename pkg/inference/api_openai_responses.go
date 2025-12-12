@@ -180,6 +180,7 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 		MaxOutputTokens: openai.Int(int64(completionData.ModelParams.MaxOutputLength)),
 		Input:           responses.ResponseNewParamsInputUnion{OfInputItemList: msgs},
 		Store:           openai.Bool(false),
+		Include:         []responses.ResponseIncludable{"reasoning.encrypted_content"},
 	}
 
 	sysPrompt := strings.TrimSpace(completionData.ModelParams.SystemPrompt)
@@ -198,7 +199,8 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 			modelpresetSpec.ReasoningLevelMinimal,
 			modelpresetSpec.ReasoningLevelLow,
 			modelpresetSpec.ReasoningLevelMedium,
-			modelpresetSpec.ReasoningLevelHigh:
+			modelpresetSpec.ReasoningLevelHigh,
+			modelpresetSpec.ReasoningLevelXHigh:
 			params.Reasoning = shared.ReasoningParam{
 				Effort:  shared.ReasoningEffort(string(rp.Level)),
 				Summary: shared.ReasoningSummaryAuto,
@@ -251,7 +253,7 @@ func (api *OpenAIResponsesAPI) doNonStreaming(
 		return completionResp, nil
 	}
 
-	completionResp.Body.ResponseContent = getResponseContentFromOpenAIOutput(resp)
+	attachContentFromResponses(resp, completionResp.Body)
 
 	if toolCalls := extractOpenAIResponseToolCalls(resp, toolChoiceNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
@@ -345,8 +347,7 @@ func (api *OpenAIResponsesAPI) doStreaming(
 		return completionResp, nil
 	}
 
-	respContent := getResponseContentFromOpenAIOutput(&respFull)
-	completionResp.Body.ResponseContent = respContent
+	attachContentFromResponses(&respFull, completionResp.Body)
 
 	if toolCalls := extractOpenAIResponseToolCalls(&respFull, toolChoiceNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
@@ -446,6 +447,12 @@ func toOpenAIResponsesMessages(
 				}
 			}
 
+			// First send tool outputs.
+			if len(m.ToolOutputs) > 0 {
+				o := toolOutputsToOpenAIResponses(m.ToolOutputs)
+				out = append(out, o...)
+			}
+
 			var parts responses.ResponseInputMessageContentListParam
 			if content != "" {
 				parts = append(
@@ -465,13 +472,59 @@ func toOpenAIResponsesMessages(
 					responses.EasyInputMessageRoleUser,
 				))
 			}
-			if len(m.ToolOutputs) > 0 {
-				o := toolOutputsToOpenAIResponses(m.ToolOutputs)
-				out = append(out, o...)
-			}
 
 		case modelpresetSpec.RoleAssistant:
-			// Integrate assistant text + tool calls into a single assistant message.
+			// Give thinking blocks first, then content then tools.
+
+			if len(m.ReasoningContents) > 0 {
+				parts := make([]responses.ResponseInputItemUnionParam, 0)
+				for _, reasoningContent := range m.ReasoningContents {
+					if reasoningContent.Type != modelpresetSpec.ReasoningContentTypeOpenAIResponses ||
+						reasoningContent.ContentOpenAIResponses == nil {
+						// We cannot attach non responses reasoning to reasoning call.
+						// This can happen in cross model threads.
+						continue
+					}
+
+					r := &responses.ResponseReasoningItemParam{
+						ID:               reasoningContent.ContentOpenAIResponses.ID,
+						EncryptedContent: param.NewOpt(reasoningContent.ContentOpenAIResponses.EncryptedContent),
+					}
+
+					if len(reasoningContent.ContentOpenAIResponses.Summary) > 0 {
+
+						r.Summary = make(
+							[]responses.ResponseReasoningItemSummaryParam,
+							len(reasoningContent.ContentOpenAIResponses.Summary),
+						)
+						for _, rs := range reasoningContent.ContentOpenAIResponses.Summary {
+							r.Summary = append(r.Summary, responses.ResponseReasoningItemSummaryParam{
+								Text: rs,
+							})
+						}
+					}
+
+					if len(reasoningContent.ContentOpenAIResponses.Content) > 0 {
+
+						r.Content = make(
+							[]responses.ResponseReasoningItemContentParam,
+							len(reasoningContent.ContentOpenAIResponses.Content),
+						)
+						for _, rc := range reasoningContent.ContentOpenAIResponses.Content {
+							r.Content = append(r.Content, responses.ResponseReasoningItemContentParam{
+								Text: rc,
+							})
+						}
+					}
+					parts = append(parts, responses.ResponseInputItemUnionParam{
+						OfReasoning: r,
+					})
+				}
+				if len(parts) > 0 {
+					out = append(out, parts...)
+				}
+			}
+
 			if content != "" {
 				out = append(out, responses.ResponseInputItemUnionParam{
 					OfMessage: &responses.EasyInputMessageParam{
@@ -483,48 +536,47 @@ func toOpenAIResponsesMessages(
 					},
 				})
 			}
-			if len(m.ToolCalls) == 0 {
-				continue
-			}
 
-			var parts []responses.ResponseInputItemUnionParam
+			if len(m.ToolCalls) != 0 {
+				parts := make([]responses.ResponseInputItemUnionParam, 0)
 
-			for _, toolCall := range m.ToolCalls {
-				switch toolCall.Type {
-				case string(openaiSharedConstant.FunctionCall("").Default()):
-					fc := responses.ResponseFunctionToolCallParam{
-						ID:        param.NewOpt(toolCall.ID),
-						CallID:    toolCall.CallID,
-						Name:      toolCall.Name,
-						Arguments: toolCall.Arguments,
-						Type:      openaiSharedConstant.FunctionCall("").Default(),
+				for _, toolCall := range m.ToolCalls {
+					switch toolCall.Type {
+					case string(openaiSharedConstant.FunctionCall("").Default()):
+						fc := responses.ResponseFunctionToolCallParam{
+							ID:        param.NewOpt(toolCall.ID),
+							CallID:    toolCall.CallID,
+							Name:      toolCall.Name,
+							Arguments: toolCall.Arguments,
+							Type:      openaiSharedConstant.FunctionCall("").Default(),
+						}
+
+						parts = append(parts,
+							responses.ResponseInputItemUnionParam{
+								OfFunctionCall: &fc,
+							},
+						)
+
+					case string(openaiSharedConstant.CustomToolCall("").Default()):
+						cc := responses.ResponseCustomToolCallParam{
+							ID:     param.NewOpt(toolCall.ID),
+							CallID: toolCall.CallID,
+							Name:   toolCall.Name,
+							Input:  toolCall.Arguments,
+							Type:   openaiSharedConstant.CustomToolCall("").Default(),
+						}
+
+						parts = append(parts,
+							responses.ResponseInputItemUnionParam{
+								OfCustomToolCall: &cc,
+							},
+						)
 					}
-
-					parts = append(parts,
-						responses.ResponseInputItemUnionParam{
-							OfFunctionCall: &fc,
-						},
-					)
-
-				case string(openaiSharedConstant.CustomToolCall("").Default()):
-					cc := responses.ResponseCustomToolCallParam{
-						ID:     param.NewOpt(toolCall.ID),
-						CallID: toolCall.CallID,
-						Name:   toolCall.Name,
-						Input:  toolCall.Arguments,
-						Type:   openaiSharedConstant.CustomToolCall("").Default(),
-					}
-
-					parts = append(parts,
-						responses.ResponseInputItemUnionParam{
-							OfCustomToolCall: &cc,
-						},
-					)
 				}
-			}
 
-			if len(parts) != 0 {
-				out = append(out, parts...)
+				if len(parts) != 0 {
+					out = append(out, parts...)
+				}
 			}
 
 		case modelpresetSpec.RoleFunction, modelpresetSpec.RoleTool:
@@ -673,62 +725,64 @@ func contentBlocksToOpenAI(
 	return out, nil
 }
 
-func getResponseContentFromOpenAIOutput(
+func attachContentFromResponses(
 	inputResp *responses.Response,
-) []modelpresetSpec.MessageContent {
+	fetchCompletionResponseBody *spec.FetchCompletionResponseBody,
+) {
 	if inputResp == nil || len(inputResp.Output) == 0 {
-		return []modelpresetSpec.MessageContent{}
+		c := ""
+		fetchCompletionResponseBody.Content = &c
+		return
 	}
-	resp := make([]modelpresetSpec.MessageContent, 0, 4)
-	var outputText strings.Builder
-	var thinkingSummaryText strings.Builder
-	var thinkingText strings.Builder
 
+	var outputText strings.Builder
+	reasoningItems := make([]modelpresetSpec.ReasoningContent, 0)
 	for _, item := range inputResp.Output {
 		if item.Type == string(openaiSharedConstant.Message("").Default()) {
 			for _, content := range item.Content {
 				if content.Type == string(openaiSharedConstant.OutputText("").Default()) {
 					outputText.WriteString(content.Text)
+					outputText.WriteString("\n")
 				}
 			}
 		}
 		if item.Type == string(openaiSharedConstant.Reasoning("").Default()) {
 			ti := item.AsReasoning()
-			for _, content := range ti.Content {
-				thinkingText.WriteString(content.Text)
+			reasoningItem := modelpresetSpec.ReasoningContent{
+				Type: modelpresetSpec.ReasoningContentTypeOpenAIResponses,
+				ContentOpenAIResponses: &modelpresetSpec.ReasoningContentOpenAIResponses{
+					ID:               ti.ID,
+					EncryptedContent: ti.EncryptedContent,
+				},
 			}
-			for _, content := range ti.Summary {
-				thinkingSummaryText.WriteString(content.Text)
+			if len(ti.Summary) > 0 {
+				reasoningItem.ContentOpenAIResponses.Summary = make([]string, len(ti.Summary))
+				for _, content := range ti.Summary {
+					reasoningItem.ContentOpenAIResponses.Summary = append(
+						reasoningItem.ContentOpenAIResponses.Summary,
+						content.Text,
+					)
+				}
 			}
+
+			if len(ti.Content) > 0 {
+				reasoningItem.ContentOpenAIResponses.Content = make([]string, len(ti.Content))
+				for _, content := range ti.Content {
+					reasoningItem.ContentOpenAIResponses.Content = append(
+						reasoningItem.ContentOpenAIResponses.Content,
+						content.Text,
+					)
+				}
+			}
+			reasoningItems = append(reasoningItems, reasoningItem)
 		}
 	}
 
-	thinkingSummaryStr := thinkingSummaryText.String()
-	if thinkingSummaryStr != "" {
-		resp = append(
-			resp,
-			modelpresetSpec.MessageContent{
-				Type:    modelpresetSpec.MessageContentTypeThinkingSummary,
-				Content: thinkingSummaryStr,
-			},
-		)
-	}
-
-	thinkingStr := thinkingText.String()
-	if thinkingStr != "" {
-		resp = append(
-			resp,
-			modelpresetSpec.MessageContent{Type: modelpresetSpec.MessageContentTypeThinking, Content: thinkingStr},
-		)
-	}
 	outStr := outputText.String()
-
-	resp = append(
-		resp,
-		modelpresetSpec.MessageContent{Type: modelpresetSpec.MessageContentTypeText, Content: outStr},
-	)
-
-	return resp
+	fetchCompletionResponseBody.Content = &outStr
+	if len(reasoningItems) > 0 {
+		fetchCompletionResponseBody.ReasoningContents = reasoningItems
+	}
 }
 
 func toOpenAIResponseTools(

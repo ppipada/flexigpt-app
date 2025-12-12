@@ -3,7 +3,7 @@ import { FiAlertTriangle, FiPlay, FiTool, FiX } from 'react-icons/fi';
 import type { ToolOutput } from '@/spec/tool';
 
 import type { ToolCallChip } from '@/chats/tools/tool_chips';
-import { formatToolCallChipLabel, formatToolOutputSummary } from '@/chats/tools/tool_chips';
+import { getPrettyToolName } from '@/chats/tools/tool_chips';
 
 interface ToolChipsComposerRowProps {
 	toolCallChips: ToolCallChip[];
@@ -80,7 +80,7 @@ interface ToolCallComposerChipViewProps {
  * - "×" discards the suggestion from the composer only.
  */
 function ToolCallComposerChipView({ chip, isBusy, onRun, onDiscard }: ToolCallComposerChipViewProps) {
-	const label = formatToolCallChipLabel(chip);
+	const label = getPrettyToolName(chip.name);
 	const truncatedLabel = label.length > 64 ? `${label.slice(0, 61)}…` : label;
 
 	const isRunning = chip.status === 'running';
@@ -104,15 +104,16 @@ function ToolCallComposerChipView({ chip, isBusy, onRun, onDiscard }: ToolCallCo
 	return (
 		<div className={`${baseClasses} ${errorClasses}`} title={title} data-attachment-chip="tool-call">
 			<FiTool size={14} className={isFailed ? 'text-error' : ''} />
+			<span className="text-base-content/60 text-[10px] uppercase">Suggested</span>
 			<span className="max-w-64 truncate">{truncatedLabel}</span>
 
-			<div className="ml-auto flex items-center gap-1">
+			<div className="ml-auto flex items-center gap-2 p-0">
 				{isRunning ? (
 					<span className="loading loading-spinner loading-xs" aria-label="Running tool call" />
 				) : (
 					<button
 						type="button"
-						className={`btn btn-ghost btn-xs px-2 py-0 shadow-none ${!canRun ? 'btn-disabled' : ''}`}
+						className={`btn btn-ghost btn-xs gap-0 p-0 shadow-none ${!canRun ? 'btn-disabled' : ''}`}
 						onClick={onRun}
 						disabled={!canRun}
 						title={isFailed ? 'Retry this tool call' : 'Run this tool call'}
@@ -129,7 +130,7 @@ function ToolCallComposerChipView({ chip, isBusy, onRun, onDiscard }: ToolCallCo
 
 				<button
 					type="button"
-					className="btn btn-ghost btn-xs text-error px-1 py-0 shadow-none"
+					className="btn btn-ghost btn-xs text-error p-0 shadow-none"
 					onClick={onDiscard}
 					title="Discard this tool call"
 					aria-label="Discard tool call"
@@ -153,7 +154,7 @@ interface ToolOutputComposerChipViewProps {
  * - "×" discards the output from the next turn.
  */
 function ToolOutputComposerChipView({ output, onOpen, onRemove }: ToolOutputComposerChipViewProps) {
-	const label = output.summary || formatToolOutputSummary(output.name);
+	const label = getPrettyToolName(output.name);
 	const truncatedLabel = label.length > 64 ? `${label.slice(0, 61)}…` : label;
 
 	const titleLines = [label, `Tool: ${output.name}`, `Call ID: ${output.callID}`];

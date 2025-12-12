@@ -725,7 +725,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			if (existing.has(key)) return prev;
 			return [...prev, att];
 		});
-		editor.tf.focus();
 	};
 
 	const handleChangeAttachmentMode = (att: EditorAttachment, newMode: AttachmentMode) => {
@@ -893,7 +892,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 								/>
 							</div>
 							{/* Chips bar for tools (calls & outputs), attachments & tool choices (scrollable) */}
-							<div className="flex w-full min-w-0 items-center gap-1 overflow-x-auto px-1 py-0.5 text-xs">
+							<div className="flex w-full min-w-0 items-center gap-1 overflow-x-auto p-1 text-xs">
 								<ToolChipsComposerRow
 									toolCallChips={toolCallChips}
 									toolOutputs={toolOutputs}

@@ -6,14 +6,15 @@ import (
 )
 
 const (
-	maxScrubDepth         = 4096
-	maskToken             = "***"
-	cycleToken            = "<cycle>"
-	depthToken            = "<max-depth>"
-	textStr               = "text"
-	contentStr            = "content"
-	deltaStr              = "delta"
-	ommitedTextContentStr = "[omitted: llm text content]"
+	maxScrubDepth              = 4096
+	maskToken                  = "***"
+	cycleToken                 = "<cycle>"
+	depthToken                 = "<max-depth>"
+	textStr                    = "text"
+	contentStr                 = "content"
+	deltaStr                   = "delta"
+	ommitedTextContentStr      = "[omitted: llm text content]"
+	ommitedEncryptedContentStr = "[omitted: encrypted content]"
 )
 
 // Sensitive keys to filter in headers and bodies.
@@ -132,6 +133,8 @@ func (s *scrubber) scrubString(str string, ctx scrubContext) any {
 		lk := strings.ToLower(ctx.parentKey)
 		if lk == textStr || lk == contentStr || lk == deltaStr {
 			return ommitedTextContentStr
+		} else if strings.Contains(lk, "encrypted") {
+			return ommitedEncryptedContentStr
 		}
 	}
 
@@ -193,10 +196,14 @@ func (s *scrubber) scrubContentSegment(seg map[string]any, depth int) any {
 
 		// Textual segments: drop text/content.
 		if s.cfg.StripContent && (segType == "input_text" || segType == "output_text" ||
-			segType == textStr || segType == "message") &&
-			(lk == textStr || lk == contentStr) {
-			out[k] = ommitedTextContentStr
-			continue
+			segType == textStr || segType == "message") {
+			if lk == textStr || lk == contentStr {
+				out[k] = ommitedTextContentStr
+				continue
+			} else if strings.Contains(lk, "encrypted") {
+				out[k] = ommitedEncryptedContentStr
+				continue
+			}
 		}
 
 		// For everything else, recurse normally. Base64 / binary values will be

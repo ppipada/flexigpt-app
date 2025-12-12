@@ -1,5 +1,5 @@
 import type { Attachment } from '@/spec/attachment';
-import type { CompletionUsage, RoleEnum } from '@/spec/modelpreset';
+import type { CompletionUsage, ReasoningContent, RoleEnum } from '@/spec/modelpreset';
 import type { ToolCall, ToolChoice, ToolOutput } from '@/spec/tool';
 
 export interface ConversationMessage {
@@ -9,6 +9,8 @@ export interface ConversationMessage {
 	content: string;
 	name?: string;
 	details?: string;
+
+	reasoningContents?: ReasoningContent[];
 	toolChoices?: ToolChoice[];
 	attachments?: Attachment[];
 	toolCalls?: ToolCall[];

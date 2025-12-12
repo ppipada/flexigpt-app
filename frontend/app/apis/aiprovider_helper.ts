@@ -5,10 +5,8 @@ import {
 	type ModelParams,
 } from '@/spec/aiprovider';
 import type { ConversationMessage } from '@/spec/conversation';
-import { type CompletionUsage, MessageContentType, type ProviderName } from '@/spec/modelpreset';
+import { type CompletionUsage, type ProviderName, type ReasoningContent } from '@/spec/modelpreset';
 import type { ToolCall } from '@/spec/tool';
-
-import { CustomMDLanguage } from '@/lib/text_utils';
 
 import { log, providerSetAPI } from '@/apis/baseapi';
 
@@ -27,8 +25,10 @@ function convertConversationToBuildMessages(conversationMessages?: ConversationM
 	conversationMessages.forEach(convoMsg => {
 		const message: ChatCompletionDataMessage = {
 			role: convoMsg.role,
-			content: convoMsg.content,
 			name: convoMsg.name,
+			content: convoMsg.content,
+
+			reasoningContents: convoMsg.reasoningContents,
 			// Attachments are stored per conversation message; pass them through.
 			attachments: convoMsg.attachments,
 			// Plumb tool calls and tool outputs through to the provider layer so
@@ -69,45 +69,15 @@ function parseAPIResponse(
 	responseMessage: ConversationMessage;
 	requestDetails: string | undefined;
 } {
-	let respContent = '';
+	let responseContent = '';
 	let respDetails: string | undefined;
 	let requestDetails: string | undefined;
 	let usage: CompletionUsage | undefined;
 	let toolCalls: ToolCall[] | undefined;
+	let reasoningContents: ReasoningContent[] | undefined;
 
 	if (providerResp) {
-		if (providerResp.responseContent && providerResp.responseContent.length) {
-			type ContentChunk = { rtype: MessageContentType; content: string };
-
-			// 1) Collapse adjacent same-type blocks
-			const collapsed: ContentChunk[] = [];
-			let last: ContentChunk | undefined;
-			for (const c of providerResp.responseContent) {
-				const chunk: ContentChunk = { rtype: c.type, content: c.content };
-				if (last && last.rtype === chunk.rtype) {
-					// Merge with a newline separator if there's already content
-					last.content += (last.content ? '\n' : '') + chunk.content;
-				} else {
-					// Copy to avoid mutating original
-					collapsed.push({ rtype: chunk.rtype, content: chunk.content });
-				}
-				last = chunk;
-			}
-
-			// 2) Fence the Thinking blocks and 3) concat result
-			let respFullText = '';
-			for (const chunk of collapsed) {
-				if (chunk.rtype === MessageContentType.ThinkingSummary) {
-					respFullText += `\n~~~${CustomMDLanguage.ThinkingSummary}\n${chunk.content}\n~~~\n`;
-				} else if (chunk.rtype === MessageContentType.Thinking) {
-					respFullText += `\n~~~${CustomMDLanguage.Thinking}\n${chunk.content}\n~~~\n`;
-				} else {
-					respFullText += `\n${chunk.content}\n`;
-				}
-			}
-
-			respContent += respFullText;
-		}
+		responseContent = providerResp.content ?? '';
 
 		if (providerResp.responseDetails) {
 			// Make it clear in the UI what this JSON block represents.
@@ -125,10 +95,14 @@ function parseAPIResponse(
 				const r = providerResp.errorDetails.requestDetails;
 				requestDetails = getQuotedJSON(r);
 			}
-			if (!respContent) {
-				respContent = convoMessage.content || '';
+			if (!responseContent) {
+				responseContent = convoMessage.content || '';
 			}
-			respContent += '\n\n>Got error in API processing. Check details below.';
+			responseContent += '\n\n>Got error in API processing. Check details below.';
+		}
+
+		if (providerResp.reasoningContents && providerResp.reasoningContents.length > 0) {
+			reasoningContents = providerResp.reasoningContents;
 		}
 
 		// Capture tool calls both for debug-details and structured usage.
@@ -141,14 +115,16 @@ function parseAPIResponse(
 		}
 	}
 
-	if (!respContent) {
-		respContent = convoMessage.content || '';
+	if (!responseContent) {
+		responseContent = convoMessage.content || '';
 	}
 
-	convoMessage.content = respContent;
+	convoMessage.content = responseContent;
 	convoMessage.details = respDetails;
+	convoMessage.reasoningContents = reasoningContents;
 	convoMessage.usage = usage;
 	convoMessage.toolCalls = toolCalls;
+
 	return { responseMessage: convoMessage, requestDetails: requestDetails };
 }
 

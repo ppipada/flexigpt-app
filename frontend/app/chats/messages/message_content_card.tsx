@@ -4,7 +4,7 @@ import { useDebounce } from '@/hooks/use_debounce';
 
 import { EnhancedMarkdown } from '@/components/markdown_enhanced';
 
-interface MessageContentProps {
+interface MessageContentCardProps {
 	messageID: string;
 	// Final text
 	content: string;
@@ -17,7 +17,7 @@ interface MessageContentProps {
 	renderAsMarkdown?: boolean;
 }
 
-function areEqual(prev: MessageContentProps, next: MessageContentProps) {
+function areEqual(prev: MessageContentCardProps, next: MessageContentCardProps) {
 	return (
 		prev.content === next.content &&
 		prev.streamedText === next.streamedText &&
@@ -29,7 +29,7 @@ function areEqual(prev: MessageContentProps, next: MessageContentProps) {
 	);
 }
 
-export const MessageContent = memo(function MessageContent({
+export const MessageContentCard = memo(function MessageContentCard({
 	messageID,
 	content,
 	streamedText = '',
@@ -38,7 +38,7 @@ export const MessageContent = memo(function MessageContent({
 	isPending = false,
 	align,
 	renderAsMarkdown = true,
-}: MessageContentProps) {
+}: MessageContentCardProps) {
 	const liveText = isStreaming ? streamedText : content;
 	// Max ~4×/sec.
 	const textToRender = useDebounce(liveText, 128);

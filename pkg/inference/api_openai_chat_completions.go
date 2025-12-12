@@ -192,7 +192,8 @@ func (api *OpenAIChatCompletionsAPI) FetchCompletion(
 			modelpresetSpec.ReasoningLevelMinimal,
 			modelpresetSpec.ReasoningLevelLow,
 			modelpresetSpec.ReasoningLevelMedium,
-			modelpresetSpec.ReasoningLevelHigh:
+			modelpresetSpec.ReasoningLevelHigh,
+			modelpresetSpec.ReasoningLevelXHigh:
 			params.ReasoningEffort = shared.ReasoningEffort(string(rp.Level))
 		default:
 			return nil, fmt.Errorf("invalid level %q for singleWithLevels", rp.Level)
@@ -238,9 +239,7 @@ func (api *OpenAIChatCompletionsAPI) doNonStreaming(
 		return completionResp, nil
 	}
 	full := resp.Choices[0].Message.Content
-	completionResp.Body.ResponseContent = []modelpresetSpec.MessageContent{
-		{Type: modelpresetSpec.MessageContentTypeText, Content: full},
-	}
+	completionResp.Body.Content = &full
 	if toolCalls := extractOpenAIChatToolCalls(resp.Choices, toolChoiceNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
 	}
@@ -306,9 +305,7 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 	}
 
 	fullResp := acc.Choices[0].Message.Content
-	completionResp.Body.ResponseContent = []modelpresetSpec.MessageContent{
-		{Type: modelpresetSpec.MessageContentTypeText, Content: fullResp},
-	}
+	completionResp.Body.Content = &fullResp
 	if toolCalls := extractOpenAIChatToolCalls(acc.Choices, toolChoiceNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
 	}
@@ -461,6 +458,7 @@ func toOpenAIChatMessages(
 					OfString: param.NewOpt(content),
 				}
 			}
+
 			out = append(out, openai.ChatCompletionMessageParamUnion{OfAssistant: &assistant})
 
 		case modelpresetSpec.RoleFunction, modelpresetSpec.RoleTool:

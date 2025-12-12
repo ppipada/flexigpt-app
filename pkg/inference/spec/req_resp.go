@@ -69,12 +69,14 @@ type APIFetchResponse[T any] struct {
 }
 
 type ChatCompletionDataMessage struct {
-	Role        modelpresetSpec.RoleEnum `json:"role"`
-	Content     *string                  `json:"content,omitempty"`
-	Name        *string                  `json:"name,omitempty"`
-	Attachments []attachment.Attachment  `json:"attachments,omitempty"`
-	ToolCalls   []toolSpec.ToolCall      `json:"toolCalls,omitempty"`
-	ToolOutputs []toolSpec.ToolOutput    `json:"toolOutputs,omitempty"`
+	Role    modelpresetSpec.RoleEnum `json:"role"`
+	Name    *string                  `json:"name,omitempty"`
+	Content *string                  `json:"content,omitempty"`
+
+	ReasoningContents []modelpresetSpec.ReasoningContent `json:"reasoningContents,omitempty"`
+	Attachments       []attachment.Attachment            `json:"attachments,omitempty"`
+	ToolCalls         []toolSpec.ToolCall                `json:"toolCalls,omitempty"`
+	ToolOutputs       []toolSpec.ToolOutput              `json:"toolOutputs,omitempty"`
 }
 
 type FetchCompletionToolChoice struct {
@@ -117,13 +119,14 @@ type FetchCompletionRequest struct {
 }
 
 type FetchCompletionResponseBody struct {
-	RequestDetails  *APIRequestDetails     `json:"requestDetails,omitempty"`
-	ResponseDetails *APIResponseDetails    `json:"responseDetails,omitempty"`
-	ErrorDetails    *APIErrorDetails       `json:"errorDetails,omitempty"`
-	Usage           *modelpresetSpec.Usage `json:"usage,omitempty"`
+	RequestDetails  *APIRequestDetails  `json:"requestDetails,omitempty"`
+	ResponseDetails *APIResponseDetails `json:"responseDetails,omitempty"`
+	ErrorDetails    *APIErrorDetails    `json:"errorDetails,omitempty"`
 
-	ResponseContent []modelpresetSpec.MessageContent `json:"responseContent,omitempty"`
-	ToolCalls       []toolSpec.ToolCall              `json:"toolCalls,omitempty"`
+	Content           *string                            `json:"content,omitempty"`
+	ReasoningContents []modelpresetSpec.ReasoningContent `json:"reasoningContents,omitempty"`
+	ToolCalls         []toolSpec.ToolCall                `json:"toolCalls,omitempty"`
+	Usage             *modelpresetSpec.Usage             `json:"usage,omitempty"`
 }
 
 type FetchCompletionResponse struct {

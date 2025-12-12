@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 
 import { FiCode, FiX } from 'react-icons/fi';
 
-import { MessageContent } from '@/chats/messages/message_content';
+import { MessageContentCard } from '@/chats/messages/message_content_card';
 
 type MessageDetailsModalProps = {
 	isOpen: boolean;
@@ -65,7 +65,7 @@ export function MessageDetailsModal({ isOpen, onClose, messageID, title, content
 					</div>
 
 					<div className="mt-2">
-						<MessageContent
+						<MessageContentCard
 							messageID={messageID}
 							content={content}
 							streamedText=""

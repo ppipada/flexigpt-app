@@ -1,9 +1,9 @@
 import type { Attachment } from '@/spec/attachment';
 import type {
 	CompletionUsage,
-	MessageContent,
 	ModelName,
 	ProviderName,
+	ReasoningContent,
 	ReasoningParams,
 	RoleEnum,
 } from '@/spec/modelpreset';
@@ -13,6 +13,8 @@ export interface ChatCompletionDataMessage {
 	role: RoleEnum;
 	content?: string | null;
 	name?: string | null;
+
+	reasoningContents?: ReasoningContent[];
 	attachments?: Attachment[];
 	toolCalls?: ToolCall[];
 	toolOutputs?: ToolOutput[];
@@ -70,9 +72,12 @@ export interface FetchCompletionResponseBody {
 	requestDetails?: APIRequestDetails;
 	responseDetails?: APIResponseDetails;
 	errorDetails?: APIErrorDetails;
-	usage?: CompletionUsage;
-	responseContent?: MessageContent[];
+
+	content?: string;
+
+	reasoningContents?: ReasoningContent[];
 	toolCalls?: ToolCall[];
+	usage?: CompletionUsage;
 }
 
 export interface IProviderSetAPI {

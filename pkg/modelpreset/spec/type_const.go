@@ -76,6 +76,7 @@ const (
 	ReasoningLevelLow     ReasoningLevel = "low"
 	ReasoningLevelMedium  ReasoningLevel = "medium"
 	ReasoningLevelHigh    ReasoningLevel = "high"
+	ReasoningLevelXHigh   ReasoningLevel = "xhigh"
 )
 
 type ReasoningParams struct {
@@ -114,18 +115,33 @@ type Usage struct {
 	ReasoningTokens int64 `json:"reasoningTokens"`
 }
 
-type MessageContentType string
+type ReasoningContentType string
 
 const (
-	MessageContentTypeText             MessageContentType = "text"
-	MessageContentTypeThinking         MessageContentType = "thinking"
-	MessageContentTypeThinkingSummary  MessageContentType = "thinkingSummary"
-	MessageContentTypeRedactedThinking MessageContentType = "redactedThinking"
+	ReasoningContentTypeOpenAIResponses   ReasoningContentType = "reasoningOpenAIResponses"
+	ReasoningContentTypeAnthropicMessages ReasoningContentType = "reasoningAnthropicMessages"
 )
 
-type MessageContent struct {
-	Type    MessageContentType `json:"type"`
-	Content string             `json:"content"`
+type ReasoningContentOpenAIResponses struct {
+	ID      string   `json:"id"`
+	Summary []string `json:"summary,omitzero"`
+	Content []string `json:"content,omitzero"`
+	Status  string   `json:"status,omitzero"`
+	// The encrypted content of the reasoning item - populated when a response is
+	// generated with `reasoning.encrypted_content` in the `include` parameter.
+	EncryptedContent string `json:"encryptedContent,omitzero"`
+}
+
+type ReasoningContentAnthropicMessages struct {
+	Signature        string `json:"signature"`
+	Thinking         string `json:"thinking"`
+	RedactedThinking string `json:"redactedThinking"`
+}
+
+type ReasoningContent struct {
+	Type                     ReasoningContentType               `json:"type"`
+	ContentOpenAIResponses   *ReasoningContentOpenAIResponses   `json:"contentOpenAIResponses,omitempty"`
+	ContentAnthropicMessages *ReasoningContentAnthropicMessages `json:"contentAnthropicMessages,omitempty"`
 }
 
 // ModelPreset is the entire "model + default knobs" bundle the user can save.

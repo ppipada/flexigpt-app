@@ -136,7 +136,8 @@ func validateReasoning(r *spec.ReasoningParams) error {
 			spec.ReasoningLevelMinimal,
 			spec.ReasoningLevelLow,
 			spec.ReasoningLevelMedium,
-			spec.ReasoningLevelHigh:
+			spec.ReasoningLevelHigh,
+			spec.ReasoningLevelXHigh:
 			// Valid.
 		default:
 			return fmt.Errorf("invalid level %q for singleWithLevels", r.Level)

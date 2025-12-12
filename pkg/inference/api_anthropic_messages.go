@@ -227,8 +227,7 @@ func (api *AnthropicMessagesAPI) doNonStreaming(
 		return completionResp, nil
 	}
 
-	respContent := getResponseContentFromAnthropicMessage(resp)
-	completionResp.Body.ResponseContent = respContent
+	attachContentFromAnthropicMessages(resp, completionResp.Body)
 	if toolCalls := extractAnthropicToolCalls(resp, toolNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
 	}
@@ -318,8 +317,7 @@ func (api *AnthropicMessagesAPI) doStreaming(
 		return completionResp, nil
 	}
 
-	respContent := getResponseContentFromAnthropicMessage(&respFull)
-	completionResp.Body.ResponseContent = respContent
+	attachContentFromAnthropicMessages(&respFull, completionResp.Body)
 	if toolCalls := extractAnthropicToolCalls(&respFull, toolNameMap); len(toolCalls) > 0 {
 		completionResp.Body.ToolCalls = toolCalls
 	}
@@ -444,14 +442,15 @@ func toAnthropicMessages(
 				0,
 				1+len(attachmentContent)+len(toolResultBlocks),
 			)
+			// Anthropic needs tool outputs first.
+			if len(toolResultBlocks) != 0 {
+				parts = append(parts, toolResultBlocks...)
+			}
 			if content != "" {
 				parts = append(parts, anthropic.NewTextBlock(content))
 			}
 			if len(attachmentContent) != 0 {
 				parts = append(parts, attachmentContent...)
-			}
-			if len(toolResultBlocks) != 0 {
-				parts = append(parts, toolResultBlocks...)
 			}
 
 			if len(parts) > 0 {
@@ -459,12 +458,40 @@ func toAnthropicMessages(
 			}
 
 		case modelpresetSpec.RoleAssistant:
-			// Combine assistant text and tool calls into a single assistant message
-			// containing text and tool_use blocks.
-			var parts []anthropic.ContentBlockParamUnion
+			// Combine assistant thinking, text and tool calls into a single assistant message.
+			// Anthropic needs first thinking, then content then toolcalls.
+			parts := make([]anthropic.ContentBlockParamUnion, 0)
+
+			if len(m.ReasoningContents) > 0 {
+				for _, reasoningContent := range m.ReasoningContents {
+					if reasoningContent.Type != modelpresetSpec.ReasoningContentTypeAnthropicMessages ||
+						reasoningContent.ContentAnthropicMessages == nil {
+						// We cannot attach non anthropic reasoning to reasoning call.
+						// This can happen in cross model threads.
+						// There may be a issue in cross model threads with antropic thinking + tool calls, if thinking
+						// is present, for toolcalls anthropic sdk needs thinking blocks attached.
+						continue
+					}
+
+					if reasoningContent.ContentAnthropicMessages.Signature != "" {
+						// We have a thinking block.
+						p := anthropic.NewThinkingBlock(
+							reasoningContent.ContentAnthropicMessages.Signature,
+							reasoningContent.ContentAnthropicMessages.Thinking,
+						)
+						parts = append(parts, p)
+					} else if reasoningContent.ContentAnthropicMessages.RedactedThinking != "" {
+						// We have a redacted thinking block.
+						p := anthropic.NewRedactedThinkingBlock(reasoningContent.ContentAnthropicMessages.RedactedThinking)
+						parts = append(parts, p)
+					}
+				}
+			}
+
 			if content != "" {
 				parts = append(parts, anthropic.NewTextBlock(content))
 			}
+
 			if len(m.ToolCalls) > 0 {
 				toolUseBlocks := toolCallsToAnthropicBlocks(m.ToolCalls)
 				if len(toolUseBlocks) != 0 {
@@ -643,19 +670,43 @@ func contentBlocksToAnthropic(
 	return out, nil
 }
 
-func getResponseContentFromAnthropicMessage(msg *anthropic.Message) []modelpresetSpec.MessageContent {
-	if msg == nil {
-		return []modelpresetSpec.MessageContent{}
+func attachContentFromAnthropicMessages(
+	msg *anthropic.Message,
+	fetchCompletionResponseBody *spec.FetchCompletionResponseBody,
+) {
+	if len(msg.Content) == 0 {
+		m := ""
+		fetchCompletionResponseBody.Content = &m
+		return
 	}
-	resp := make([]modelpresetSpec.MessageContent, 0, len(msg.Content))
+
+	var outputText strings.Builder
+	reasoningItems := make([]modelpresetSpec.ReasoningContent, 0)
+
 	for _, content := range msg.Content {
 		switch variant := content.AsAny().(type) {
 		case anthropic.TextBlock:
-			resp = append(resp, modelpresetSpec.MessageContent{Type: modelpresetSpec.MessageContentTypeText, Content: variant.Text})
+			outputText.WriteString(variant.Text)
+			outputText.WriteString("\n")
 		case anthropic.ThinkingBlock:
-			resp = append(resp, modelpresetSpec.MessageContent{Type: modelpresetSpec.MessageContentTypeThinking, Content: variant.Thinking})
+			reasoningItem := modelpresetSpec.ReasoningContent{
+				Type: modelpresetSpec.ReasoningContentTypeAnthropicMessages,
+				ContentAnthropicMessages: &modelpresetSpec.ReasoningContentAnthropicMessages{
+					Signature: variant.Signature,
+					Thinking:  variant.Thinking,
+				},
+			}
+			reasoningItems = append(reasoningItems, reasoningItem)
+
 		case anthropic.RedactedThinkingBlock:
-			resp = append(resp, modelpresetSpec.MessageContent{Type: modelpresetSpec.MessageContentTypeRedactedThinking, Content: variant.Data})
+			reasoningItem := modelpresetSpec.ReasoningContent{
+				Type: modelpresetSpec.ReasoningContentTypeAnthropicMessages,
+				ContentAnthropicMessages: &modelpresetSpec.ReasoningContentAnthropicMessages{
+					RedactedThinking: variant.Data,
+				},
+			}
+			reasoningItems = append(reasoningItems, reasoningItem)
+
 		case anthropic.ToolUseBlock:
 		case anthropic.ServerToolUseBlock:
 		case anthropic.WebSearchToolResultBlock:
@@ -663,7 +714,12 @@ func getResponseContentFromAnthropicMessage(msg *anthropic.Message) []modelprese
 			// Invalid variant, dont handle as of now.
 		}
 	}
-	return resp
+
+	outStr := outputText.String()
+	fetchCompletionResponseBody.Content = &outStr
+	if len(reasoningItems) > 0 {
+		fetchCompletionResponseBody.ReasoningContents = reasoningItems
+	}
 }
 
 func toAnthropicTools(

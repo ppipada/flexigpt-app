@@ -585,10 +585,81 @@ export namespace spec {
 		    return a;
 		}
 	}
+	export class ReasoningContentAnthropicMessages {
+	    signature: string;
+	    thinking: string;
+	    redactedThinking: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ReasoningContentAnthropicMessages(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.signature = source["signature"];
+	        this.thinking = source["thinking"];
+	        this.redactedThinking = source["redactedThinking"];
+	    }
+	}
+	export class ReasoningContentOpenAIResponses {
+	    id: string;
+	    summary: string[];
+	    content: string[];
+	    status: string;
+	    encryptedContent: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ReasoningContentOpenAIResponses(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.summary = source["summary"];
+	        this.content = source["content"];
+	        this.status = source["status"];
+	        this.encryptedContent = source["encryptedContent"];
+	    }
+	}
+	export class ReasoningContent {
+	    type: string;
+	    contentOpenAIResponses?: ReasoningContentOpenAIResponses;
+	    contentAnthropicMessages?: ReasoningContentAnthropicMessages;
+	
+	    static createFrom(source: any = {}) {
+	        return new ReasoningContent(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.contentOpenAIResponses = this.convertValues(source["contentOpenAIResponses"], ReasoningContentOpenAIResponses);
+	        this.contentAnthropicMessages = this.convertValues(source["contentAnthropicMessages"], ReasoningContentAnthropicMessages);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ChatCompletionDataMessage {
 	    role: string;
-	    content?: string;
 	    name?: string;
+	    content?: string;
+	    reasoningContents?: ReasoningContent[];
 	    attachments?: attachment.Attachment[];
 	    toolCalls?: ToolCall[];
 	    toolOutputs?: ToolOutput[];
@@ -600,8 +671,9 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.role = source["role"];
-	        this.content = source["content"];
 	        this.name = source["name"];
+	        this.content = source["content"];
+	        this.reasoningContents = this.convertValues(source["reasoningContents"], ReasoningContent);
 	        this.attachments = this.convertValues(source["attachments"], attachment.Attachment);
 	        this.toolCalls = this.convertValues(source["toolCalls"], ToolCall);
 	        this.toolOutputs = this.convertValues(source["toolOutputs"], ToolOutput);
@@ -1079,6 +1151,7 @@ export namespace spec {
 	    content: string;
 	    name?: string;
 	    details?: string;
+	    reasoningContents?: ReasoningContent[];
 	    toolChoices?: ToolChoice[];
 	    attachments?: attachment.Attachment[];
 	    toolCalls?: ToolCall[];
@@ -1097,6 +1170,7 @@ export namespace spec {
 	        this.content = source["content"];
 	        this.name = source["name"];
 	        this.details = source["details"];
+	        this.reasoningContents = this.convertValues(source["reasoningContents"], ReasoningContent);
 	        this.toolChoices = this.convertValues(source["toolChoices"], ToolChoice);
 	        this.attachments = this.convertValues(source["attachments"], attachment.Attachment);
 	        this.toolCalls = this.convertValues(source["toolCalls"], ToolCall);
@@ -1429,27 +1503,14 @@ export namespace spec {
 	    }
 	}
 	
-	export class MessageContent {
-	    type: string;
-	    content: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new MessageContent(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.type = source["type"];
-	        this.content = source["content"];
-	    }
-	}
 	export class FetchCompletionResponseBody {
 	    requestDetails?: APIRequestDetails;
 	    responseDetails?: APIResponseDetails;
 	    errorDetails?: APIErrorDetails;
-	    usage?: Usage;
-	    responseContent?: MessageContent[];
+	    content?: string;
+	    reasoningContents?: ReasoningContent[];
 	    toolCalls?: ToolCall[];
+	    usage?: Usage;
 	
 	    static createFrom(source: any = {}) {
 	        return new FetchCompletionResponseBody(source);
@@ -1460,9 +1521,10 @@ export namespace spec {
 	        this.requestDetails = this.convertValues(source["requestDetails"], APIRequestDetails);
 	        this.responseDetails = this.convertValues(source["responseDetails"], APIResponseDetails);
 	        this.errorDetails = this.convertValues(source["errorDetails"], APIErrorDetails);
-	        this.usage = this.convertValues(source["usage"], Usage);
-	        this.responseContent = this.convertValues(source["responseContent"], MessageContent);
+	        this.content = source["content"];
+	        this.reasoningContents = this.convertValues(source["reasoningContents"], ReasoningContent);
 	        this.toolCalls = this.convertValues(source["toolCalls"], ToolCall);
+	        this.usage = this.convertValues(source["usage"], Usage);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -2846,7 +2908,6 @@ export namespace spec {
 	
 	
 	
-	
 	export class PatchDefaultProviderRequestBody {
 	    defaultProvider: string;
 	
@@ -3905,6 +3966,9 @@ export namespace spec {
 	
 	    }
 	}
+	
+	
+	
 	
 	export class SearchConversationsRequest {
 	    Query: string;
