@@ -1,4 +1,4 @@
-import { FiChevronDown, FiPaperclip } from 'react-icons/fi';
+import { FiChevronDown, FiPaperclip, FiX } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
@@ -16,6 +16,7 @@ interface StandaloneAttachmentsChipProps {
 /**
  * Aggregated "Attachments" chip for standalone files/links.
  * Opens a dropdown listing each attachment as a full-width chip.
+ * Includes a "remove all" cross that clears all standalone attachments.
  */
 export function StandaloneAttachmentsChip({
 	attachments,
@@ -47,6 +48,22 @@ export function StandaloneAttachmentsChip({
 			>
 				<FiChevronDown size={14} />
 			</MenuButton>
+
+			{/* Remove all standalone attachments */}
+			<button
+				type="button"
+				className="btn btn-ghost btn-xs text-error shrink-0 px-0 py-0 shadow-none"
+				onClick={() => {
+					// Call the existing single-remove handler for each attachment.
+					for (const att of attachments) {
+						onRemoveAttachment(att);
+					}
+				}}
+				title="Remove all attachments"
+				aria-label="Remove all attachments"
+			>
+				<FiX size={14} />
+			</button>
 
 			<Menu
 				store={menu}

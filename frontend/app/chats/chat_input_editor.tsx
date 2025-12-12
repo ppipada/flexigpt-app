@@ -40,7 +40,6 @@ import { ListKit } from '@/components/editor/plugins/list_kit';
 import { TabbableKit } from '@/components/editor/plugins/tabbable_kit';
 
 import { AttachmentBottomBar } from '@/chats/attachments/attachment_bottom_bar';
-import { AttachmentChipsBar } from '@/chats/attachments/attachment_chips_bar';
 import {
 	buildEditorAttachmentForLocalPath,
 	buildEditorAttachmentForURL,
@@ -49,6 +48,7 @@ import {
 	editorAttachmentKey,
 	MAX_FILES_PER_DIRECTORY,
 } from '@/chats/attachments/attachment_editor_utils';
+import { EditorChipsBar } from '@/chats/chat_input_editor_chips_bar';
 import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
 import {
 	getFirstTemplateNodeWithPath,
@@ -62,10 +62,11 @@ import { TemplateSlashKit } from '@/chats/templates/template_plugin';
 import { getLastUserBlockContent } from '@/chats/templates/template_processing';
 import { TemplateToolbars } from '@/chats/templates/template_toolbars';
 import { buildUserInlineChildrenFromText } from '@/chats/templates/template_variables_inline';
-import { buildToolCallChipsFromResponse, formatToolOutputSummary, type ToolCallChip } from '@/chats/tools/tool_chips';
-import { ToolChipsComposerRow } from '@/chats/tools/tool_chips_composer';
 import {
+	buildToolCallFromResponse,
 	type EditorAttachedToolChoice,
+	type EditorToolCall,
+	formatToolOutputSummary,
 	getAttachedTools,
 	insertToolSelectionNode,
 } from '@/chats/tools/tool_editor_utils';
@@ -148,7 +149,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const [directoryGroups, setDirectoryGroups] = useState<DirectoryAttachmentGroup[]>([]);
 
 	// Tool-call chips (assistant-suggested) + tool outputs attached to the next user message.
-	const [toolCallChips, setToolCallChips] = useState<ToolCallChip[]>([]);
+	const [toolCalls, setToolCalls] = useState<EditorToolCall[]>([]);
 	const [toolOutputs, setToolOutputs] = useState<ToolOutput[]>([]);
 	const [activeToolOutput, setActiveToolOutput] = useState<ToolOutput | null>(null);
 
@@ -214,8 +215,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		};
 	}, [editor, docVersion]);
 
-	const hasPendingToolCalls = useMemo(() => toolCallChips.some(c => c.status === 'pending'), [toolCallChips]);
-	const hasRunningToolCalls = useMemo(() => toolCallChips.some(c => c.status === 'running'), [toolCallChips]);
+	const hasPendingToolCalls = useMemo(() => toolCalls.some(c => c.status === 'pending'), [toolCalls]);
+	const hasRunningToolCalls = useMemo(() => toolCalls.some(c => c.status === 'running'), [toolCalls]);
 
 	const { formRef, onKeyDown } = useEnterSubmit({
 		isBusy,
@@ -321,53 +322,53 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	 * a ToolOutput on success. Returns the new ToolOutput (if successful) so
 	 * callers like "Run & send" can include it in the payload immediately.
 	 */
-	const runToolCallInternal = useCallback(async (chip: ToolCallChip): Promise<ToolOutput | null> => {
+	const runToolCallInternal = useCallback(async (toolCall: EditorToolCall): Promise<ToolOutput | null> => {
 		// Resolve identity using toolChoice when available; fall back to name parsing.
 		let bundleID: string | undefined;
 		let toolSlug: string | undefined;
 		let version: string | undefined;
 
-		if (chip.toolChoice) {
-			bundleID = chip.toolChoice.bundleID;
-			toolSlug = chip.toolChoice.toolSlug;
-			version = chip.toolChoice.toolVersion;
+		if (toolCall.toolChoice) {
+			bundleID = toolCall.toolChoice.bundleID;
+			toolSlug = toolCall.toolChoice.toolSlug;
+			version = toolCall.toolChoice.toolVersion;
 		}
 
 		if (!bundleID || !toolSlug || !version) {
 			const errMsg = 'Cannot resolve tool identity for this call.';
-			setToolCallChips(prev =>
-				prev.map(c => (c.id === chip.id ? { ...c, status: 'failed', errorMessage: errMsg } : c))
+			setToolCalls(prev =>
+				prev.map(c => (c.id === toolCall.id ? { ...c, status: 'failed', errorMessage: errMsg } : c))
 			);
 			return null;
 		}
 
 		// Mark as running
-		setToolCallChips(prev =>
+		setToolCalls(prev =>
 			prev.map(c =>
-				c.id === chip.id && c.status === 'pending' ? { ...c, status: 'running', errorMessage: undefined } : c
+				c.id === toolCall.id && c.status === 'pending' ? { ...c, status: 'running', errorMessage: undefined } : c
 			)
 		);
 
 		try {
-			const resp = await toolStoreAPI.invokeTool(bundleID, toolSlug, version, chip.arguments);
+			const resp = await toolStoreAPI.invokeTool(bundleID, toolSlug, version, toolCall.arguments);
 
 			const output: ToolOutput = {
-				id: chip.id,
-				callID: chip.callID,
-				name: chip.name,
-				summary: formatToolOutputSummary(chip.name),
+				id: toolCall.id,
+				callID: toolCall.callID,
+				name: toolCall.name,
+				summary: formatToolOutputSummary(toolCall.name),
 				rawOutput: resp.output,
-				toolChoice: chip.toolChoice,
+				toolChoice: toolCall.toolChoice,
 			};
 
 			// Remove the call chip & append the output.
-			setToolCallChips(prev => prev.filter(c => c.id !== chip.id));
+			setToolCalls(prev => prev.filter(c => c.id !== toolCall.id));
 			setToolOutputs(prev => [...prev, output]);
 
 			return output;
 		} catch (err) {
 			const msg = (err as Error)?.message || 'Tool invocation failed.';
-			setToolCallChips(prev => prev.map(c => (c.id === chip.id ? { ...c, status: 'failed', errorMessage: msg } : c)));
+			setToolCalls(prev => prev.map(c => (c.id === toolCall.id ? { ...c, status: 'failed', errorMessage: msg } : c)));
 			return null;
 		}
 	}, []);
@@ -377,7 +378,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	 * ToolOutput objects produced in this pass.
 	 */
 	const runAllPendingToolCalls = useCallback(async (): Promise<ToolOutput[]> => {
-		const pending = toolCallChips.filter(c => c.status === 'pending');
+		const pending = toolCalls.filter(c => c.status === 'pending');
 		if (pending.length === 0) return [];
 
 		const produced: ToolOutput[] = [];
@@ -386,19 +387,19 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			if (out) produced.push(out);
 		}
 		return produced;
-	}, [toolCallChips, runToolCallInternal]);
+	}, [toolCalls, runToolCallInternal]);
 
 	const handleRunSingleToolCall = useCallback(
 		async (id: string) => {
-			const chip = toolCallChips.find(c => c.id === id && c.status === 'pending');
+			const chip = toolCalls.find(c => c.id === id && c.status === 'pending');
 			if (!chip) return;
 			await runToolCallInternal(chip);
 		},
-		[toolCallChips, runToolCallInternal]
+		[toolCalls, runToolCallInternal]
 	);
 
 	const handleDiscardToolCall = useCallback((id: string) => {
-		setToolCallChips(prev => prev.filter(c => c.id !== id));
+		setToolCalls(prev => prev.filter(c => c.id !== id));
 	}, []);
 
 	const handleRemoveToolOutput = useCallback((id: string) => {
@@ -472,7 +473,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			editor.tf.setValue(EDITOR_EMPTY_VALUE);
 			setAttachments([]);
 			setDirectoryGroups([]);
-			setToolCallChips([]);
+			setToolCalls([]);
 			setToolOutputs([]);
 			setActiveToolOutput(null);
 
@@ -499,7 +500,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		editor.tf.setValue(EDITOR_EMPTY_VALUE);
 		setAttachments([]);
 		setDirectoryGroups([]);
-		setToolCallChips([]);
+		setToolCalls([]);
 		setToolOutputs([]);
 		setActiveToolOutput(null);
 		// Let Plate onChange bump docVersion; no need to do it here.
@@ -573,7 +574,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 			// 4) Restore any tool outputs that were previously attached to this message.
 			setToolOutputs(incoming.toolOutputs ?? []);
-			setToolCallChips([]);
+			setToolCalls([]);
 			setActiveToolOutput(null);
 
 			editor.tf.focus();
@@ -582,7 +583,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	);
 
 	const loadToolCalls = useCallback((toolCalls: ToolCall[]) => {
-		setToolCallChips(buildToolCallChipsFromResponse(toolCalls));
+		setToolCalls(buildToolCallFromResponse(toolCalls));
 	}, []);
 
 	useImperativeHandle(ref, () => ({
@@ -891,20 +892,18 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 									}}
 								/>
 							</div>
-							{/* Chips bar for tools (calls & outputs), attachments & tool choices (scrollable) */}
+							{/* Unified chips bar: attachments, directories, tools, tool calls & outputs (scrollable) */}
 							<div className="flex w-full min-w-0 items-center gap-1 overflow-x-auto p-1 text-xs">
-								<ToolChipsComposerRow
-									toolCallChips={toolCallChips}
+								<EditorChipsBar
+									attachments={attachments}
+									directoryGroups={directoryGroups}
+									toolCalls={toolCalls}
 									toolOutputs={toolOutputs}
 									isBusy={isBusy || isSubmittingRef.current}
 									onRunToolCall={handleRunSingleToolCall}
 									onDiscardToolCall={handleDiscardToolCall}
 									onOpenOutput={handleOpenToolOutput}
 									onRemoveOutput={handleRemoveToolOutput}
-								/>
-								<AttachmentChipsBar
-									attachments={attachments}
-									directoryGroups={directoryGroups}
 									onRemoveAttachment={handleRemoveAttachment}
 									onChangeAttachmentMode={handleChangeAttachmentMode}
 									onRemoveDirectoryGroup={handleRemoveDirectoryGroup}

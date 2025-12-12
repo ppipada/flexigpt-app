@@ -521,29 +521,6 @@ export default function ChatsPage() {
 		setEditingMessageId(null);
 	}, []);
 
-	// const handleEdit = useCallback(
-	// 	async (edited: string, id: string) => {
-	// 		if (isBusy) return;
-	// 		const idx = chat.messages.findIndex(m => m.id === id);
-	// 		if (idx === -1) return;
-
-	// 		const msgs = chat.messages.slice(0, idx + 1);
-	// 		msgs[idx] = { ...msgs[idx], content: edited };
-
-	// 		const updated: Conversation = {
-	// 			...chat,
-	// 			messages: msgs,
-	// 			modifiedAt: new Date(),
-	// 		};
-	// 		saveUpdatedChat(updated);
-
-	// 		let opts = { ...DefaultChatOptions };
-	// 		if (chatInputRef.current) opts = chatInputRef.current.getChatOptions();
-	// 		await updateStreamingMessage(updated, opts);
-	// 	},
-	// 	[chat, saveUpdatedChat, updateStreamingMessage]
-	// );
-
 	const handleResend = useCallback(
 		async (id: string) => {
 			if (isBusy) return;

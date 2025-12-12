@@ -2,11 +2,11 @@ import { FiAlertTriangle, FiPlay, FiTool, FiX } from 'react-icons/fi';
 
 import type { ToolOutput } from '@/spec/tool';
 
-import type { ToolCallChip } from '@/chats/tools/tool_chips';
-import { getPrettyToolName } from '@/chats/tools/tool_chips';
+import type { EditorToolCall } from '@/chats/tools/tool_editor_utils';
+import { getPrettyToolName } from '@/chats/tools/tool_editor_utils';
 
 interface ToolChipsComposerRowProps {
-	toolCallChips: ToolCallChip[];
+	toolCalls: EditorToolCall[];
 	toolOutputs: ToolOutput[];
 	isBusy: boolean;
 	onRunToolCall: (id: string) => void | Promise<void>;
@@ -23,7 +23,7 @@ interface ToolChipsComposerRowProps {
  *   - Tool output chips
  */
 export function ToolChipsComposerRow({
-	toolCallChips,
+	toolCalls,
 	toolOutputs,
 	isBusy,
 	onRunToolCall,
@@ -31,22 +31,22 @@ export function ToolChipsComposerRow({
 	onOpenOutput,
 	onRemoveOutput,
 }: ToolChipsComposerRowProps) {
-	const visibleCalls = toolCallChips.filter(chip => chip.status !== 'discarded' && chip.status !== 'succeeded');
+	const visibleCalls = toolCalls.filter(toolCall => toolCall.status !== 'discarded' && toolCall.status !== 'succeeded');
 	const hasAny = visibleCalls.length > 0 || toolOutputs.length > 0;
 	if (!hasAny) return null;
 
 	return (
 		<div className="flex shrink-0 items-center gap-1">
-			{visibleCalls.map(chip => (
+			{visibleCalls.map(toolCall => (
 				<ToolCallComposerChipView
-					key={chip.id}
-					chip={chip}
+					key={toolCall.id}
+					toolCall={toolCall}
 					isBusy={isBusy}
 					onRun={() => {
-						void onRunToolCall(chip.id);
+						void onRunToolCall(toolCall.id);
 					}}
 					onDiscard={() => {
-						onDiscardToolCall(chip.id);
+						onDiscardToolCall(toolCall.id);
 					}}
 				/>
 			))}
@@ -68,7 +68,7 @@ export function ToolChipsComposerRow({
 }
 
 interface ToolCallComposerChipViewProps {
-	chip: ToolCallChip;
+	toolCall: EditorToolCall;
 	isBusy: boolean;
 	onRun: () => void;
 	onDiscard: () => void;
@@ -79,13 +79,13 @@ interface ToolCallComposerChipViewProps {
  * - "Run" button executes the tool once.
  * - "×" discards the suggestion from the composer only.
  */
-function ToolCallComposerChipView({ chip, isBusy, onRun, onDiscard }: ToolCallComposerChipViewProps) {
-	const label = getPrettyToolName(chip.name);
+function ToolCallComposerChipView({ toolCall, isBusy, onRun, onDiscard }: ToolCallComposerChipViewProps) {
+	const label = getPrettyToolName(toolCall.name);
 	const truncatedLabel = label.length > 64 ? `${label.slice(0, 61)}…` : label;
 
-	const isRunning = chip.status === 'running';
-	const isPending = chip.status === 'pending';
-	const isFailed = chip.status === 'failed';
+	const isRunning = toolCall.status === 'running';
+	const isPending = toolCall.status === 'pending';
+	const isFailed = toolCall.status === 'failed';
 
 	const canRun = isPending && !isBusy;
 
@@ -96,8 +96,8 @@ function ToolCallComposerChipView({ chip, isBusy, onRun, onDiscard }: ToolCallCo
 	const errorClasses = isFailed ? 'border-error/70 bg-error/5 text-error' : '';
 
 	const titleLines: string[] = [`Suggested: ${label}`];
-	if (chip.errorMessage && isFailed) {
-		titleLines.push(`Error: ${chip.errorMessage}`);
+	if (toolCall.errorMessage && isFailed) {
+		titleLines.push(`Error: ${toolCall.errorMessage}`);
 	}
 	const title = titleLines.join('\n');
 
@@ -125,7 +125,12 @@ function ToolCallComposerChipView({ chip, isBusy, onRun, onDiscard }: ToolCallCo
 				)}
 
 				{isFailed && (
-					<FiAlertTriangle size={12} className="text-error" title={chip.errorMessage} aria-label="Tool call failed" />
+					<FiAlertTriangle
+						size={12}
+						className="text-error"
+						title={toolCall.errorMessage}
+						aria-label="Tool call failed"
+					/>
 				)}
 
 				<button

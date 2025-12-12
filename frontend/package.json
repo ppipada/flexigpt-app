@@ -119,10 +119,7 @@
 			"app/chats/tools/tool_plus_input.tsx",
 			"app/chats/templates/template_slash_input.tsx",
 			"app/components/editor/nodes/slash_node.tsx",
-			"app/spec/attachment.ts",
-			"app/chats/messages/message_editbox.tsx",
-			"app/chats/tools/tool_chips.tsx",
-			"app/chats/tools/tool_output_modal.tsx"
+			"app/chats/messages/message_editbox.tsx"
 		],
 		"ignoreBinaries": [],
 		"ignoreDependencies": [
