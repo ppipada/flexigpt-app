@@ -288,6 +288,7 @@ export function AddEditProviderPresetModal({
 
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
+		e.stopPropagation();
 
 		// Field-level validation first
 		const finalErrors = validateForm(formData);

@@ -87,7 +87,7 @@ function ToolCallComposerChipView({ toolCall, isBusy, onRun, onDiscard }: ToolCa
 	const isPending = toolCall.status === 'pending';
 	const isFailed = toolCall.status === 'failed';
 
-	const canRun = isPending && !isBusy;
+	const canRun = (isPending || isFailed) && !isBusy;
 
 	const baseClasses =
 		'bg-base-200 text-base-content flex shrink-0 items-center gap-2 rounded-2xl px-2 py-0 border ' +

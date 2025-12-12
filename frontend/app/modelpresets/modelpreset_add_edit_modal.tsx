@@ -340,6 +340,7 @@ export function AddEditModelPresetModal({
 
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
+		e.stopPropagation();
 
 		const newErrors = runValidation();
 		setErrors(newErrors);

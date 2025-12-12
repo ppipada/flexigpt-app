@@ -147,6 +147,7 @@ export function ModifyDocStoreModal({
 
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
+		e.stopPropagation();
 
 		const finalErrors = validateAll(formData);
 		setErrors(finalErrors);

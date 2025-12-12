@@ -69,6 +69,7 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
+		e.stopPropagation();
 
 		const input = inputRef.current;
 

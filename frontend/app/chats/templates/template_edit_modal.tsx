@@ -134,6 +134,7 @@ export function TemplateEditModal({
 
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
+		e.stopPropagation();
 		saveAndClose();
 	};
 

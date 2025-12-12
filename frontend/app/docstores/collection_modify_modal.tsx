@@ -108,6 +108,7 @@ export function ModifyCollectionModal({
 
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
+		e.stopPropagation();
 
 		const nextErrors = validateForm(formData);
 		setErrors(nextErrors);

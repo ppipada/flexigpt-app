@@ -342,11 +342,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			return null;
 		}
 
-		// Mark as running
+		// Mark as running (allow retry after failure by overwriting previous status).
 		setToolCalls(prev =>
-			prev.map(c =>
-				c.id === toolCall.id && c.status === 'pending' ? { ...c, status: 'running', errorMessage: undefined } : c
-			)
+			prev.map(c => (c.id === toolCall.id ? { ...c, status: 'running', errorMessage: undefined } : c))
 		);
 
 		try {
@@ -391,7 +389,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	const handleRunSingleToolCall = useCallback(
 		async (id: string) => {
-			const chip = toolCalls.find(c => c.id === id && c.status === 'pending');
+			const chip = toolCalls.find(c => c.id === id && (c.status === 'pending' || c.status === 'failed'));
 			if (!chip) return;
 			await runToolCallInternal(chip);
 		},
@@ -835,13 +833,16 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 							setSubmitError(null);
 						}
 
-						// Auto-cancel editing when there's no text and no tools.
+						// Auto-cancel editing when the editor is completely empty
+						// (no text, no tools, no attachments, no tool outputs).
 						const hasText = hasNonEmptyUserText(editorRef.current);
 						const hasTools = getAttachedTools(editorRef.current).length > 0;
-						const isEmpty = !hasText && !hasTools;
+						const hasAttachmentsLocal = attachments.length > 0;
+						const hasToolOutputsLocal = toolOutputs.length > 0;
+						const isEffectivelyEmpty = !hasText && !hasTools && !hasAttachmentsLocal && !hasToolOutputsLocal;
 
 						// Only do this while editing an older message.
-						if (isEmpty && editingMessageId) {
+						if (editingMessageId && isEffectivelyEmpty) {
 							// IMPORTANT: do NOT call resetEditor here; we only exit edit mode.
 							cancelEditing();
 						}

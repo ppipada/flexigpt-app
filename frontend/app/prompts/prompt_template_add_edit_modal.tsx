@@ -173,6 +173,7 @@ export function AddEditPromptTemplateModal({
 	/* ---------- submit ---------- */
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
+		e.stopPropagation();
 
 		const trimmed = {
 			displayName: formData.displayName.trim(),

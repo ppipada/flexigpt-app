@@ -89,7 +89,10 @@ export function AddBundleModal({ isOpen, onClose, onSubmit, existingSlugs }: Add
 	};
 
 	const handleSubmit = (e?: FormEvent) => {
-		if (e) e.preventDefault();
+		if (e) {
+			e.preventDefault();
+			e.stopPropagation();
+		}
 
 		const trimmed = {
 			slug: form.slug.trim(),

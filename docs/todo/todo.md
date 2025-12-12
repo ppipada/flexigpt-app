@@ -16,7 +16,9 @@
   - [ ] the mode menu looks cutoff after pushed inside the composer.
   - [ ] message attachments bar needs to have similar dropdown info chips rather than one long bar.
   - [ ] tool choices need to be added as "previous tool choices" and an option to reattach needs to be given.
-  - [ ] url attach is still leading to a submit.
+  - [x] url attach is still leading to a submit.
+
+- [ ] edit and save tempalte doesnt work. says tempalte slug already exists.
 
 ## Features
 

@@ -259,6 +259,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 	// Submit
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
+		e.stopPropagation();
 
 		const nextErrors = validateForm(formData);
 		setErrors(nextErrors);
