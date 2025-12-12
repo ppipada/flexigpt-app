@@ -13,12 +13,13 @@
   - [x] message attachments bar needs to have similar dropdown info chips rather than one long bar.
   - [x] url attach is still leading to a submit.
 
-  - [ ] check for empty msg with only toolresult in fe. seems some issue
+  - [x] check for empty msg with only toolresult in fe. seems some issue
     - [x] abort and then edit again is also some issue.
-  - [ ] the mode menu looks cutoff after pushed inside the composer.
+  - [x] the mode menu looks cutoff after pushed inside the composer.
   - [ ] tool choices need to be added as "previous tool choices" and an option to reattach needs to be given.
 
-- [ ] edit and save tempalte doesnt work. says tempalte slug already exists.
+- [ ] edit and save template doesn't work. says template slug already exists.
+  - [ ] most probably a mismatch between backend and frontend.
 
 ## Features
 

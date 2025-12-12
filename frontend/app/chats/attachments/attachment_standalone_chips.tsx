@@ -1,4 +1,4 @@
-import { FiChevronDown, FiPaperclip, FiX } from 'react-icons/fi';
+import { FiChevronUp, FiPaperclip, FiX } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
@@ -38,7 +38,7 @@ export function StandaloneAttachmentsChip({
 		>
 			<FiPaperclip size={14} />
 			<span className="max-w-24 truncate">Attachments</span>
-			<span className="text-base-content/70 text-[11px] whitespace-nowrap">{count}</span>
+			<span className="text-base-content/60 whitespace-nowrap">{count}</span>
 
 			<MenuButton
 				store={menu}
@@ -46,7 +46,7 @@ export function StandaloneAttachmentsChip({
 				aria-label="Show attached files and links"
 				title="Show attached files and links"
 			>
-				<FiChevronDown size={14} />
+				<FiChevronUp size={14} />
 			</MenuButton>
 
 			{/* Remove all standalone attachments */}

@@ -269,7 +269,7 @@ function ToolChoicesGroupChip({ tools }: ToolChoicesGroupChipProps) {
 		>
 			<FiTool size={14} />
 			<span className="max-w-24 truncate">Tools</span>
-			<span className="text-base-content/70 text-[11px] whitespace-nowrap">{count}</span>
+			<span className="text-base-content/60 whitespace-nowrap"> {count}</span>
 
 			<MenuButton
 				store={menu}
@@ -313,7 +313,7 @@ function ToolOutputsGroupChip({ outputs }: ToolOutputsGroupChipProps) {
 
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
-	const titleLines = ['Tool results', `${count} result${count === 1 ? '' : 's'} used for this turn`];
+	const titleLines = ['Tool outputs', `${count} result${count === 1 ? '' : 's'} used for this turn`];
 	const title = titleLines.join('\n');
 
 	return (
@@ -324,7 +324,7 @@ function ToolOutputsGroupChip({ outputs }: ToolOutputsGroupChipProps) {
 		>
 			<FiTool size={14} />
 			<span className="max-w-24 truncate">Tool results</span>
-			<span className="text-base-content/70 text-[11px] whitespace-nowrap">{count}</span>
+			<span className="text-base-content/60 whitespace-nowrap">{count}</span>
 
 			<MenuButton
 				store={menu}
@@ -379,7 +379,7 @@ function ToolCallsGroupChip({ calls }: ToolCallsGroupChipProps) {
 		>
 			<FiTool size={14} />
 			<span className="max-w-24 truncate">Tool calls</span>
-			<span className="text-base-content/70 text-[11px] whitespace-nowrap">{count}</span>
+			<span className="text-base-content/60 whitespace-nowrap">{count}</span>
 
 			<MenuButton
 				store={menu}

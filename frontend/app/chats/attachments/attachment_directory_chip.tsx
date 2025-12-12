@@ -1,5 +1,5 @@
 // attachment_dir_chip.tsx
-import { FiAlertTriangle, FiChevronDown, FiFolder, FiX } from 'react-icons/fi';
+import { FiAlertTriangle, FiChevronUp, FiFolder, FiX } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
@@ -67,7 +67,7 @@ export function DirectoryChip({
 		>
 			<FiFolder className="shrink-0" size={14} />
 			<span className="min-w-0 flex-1 truncate">{group.label}</span>
-			<span className="text-base-content/70 text-[11px] whitespace-nowrap">
+			<span className="text-base-content/60 whitespace-nowrap">
 				{attachedCount} files
 				{overflowFileCount > 0 ? ` +${overflowFileCount} more` : ''}
 			</span>
@@ -79,7 +79,7 @@ export function DirectoryChip({
 				aria-label={`Show files in folder ${group.dirPath || group.label}`}
 				title={group.dirPath || group.label}
 			>
-				<FiChevronDown size={14} />
+				<FiChevronUp size={14} />
 			</MenuButton>
 
 			{/* Remove entire folder group */}

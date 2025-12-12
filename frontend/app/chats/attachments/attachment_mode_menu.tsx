@@ -76,7 +76,7 @@ export function getAttachmentModePillClasses(mode: AttachmentMode, interactive: 
  */
 export function AttachmentModeMenu({ attachment, onChangeAttachmentMode }: AttachmentModeMenuProps) {
 	const menu = useMenuStore({
-		placement: 'bottom-start',
+		placement: 'top-start',
 		focusLoop: true,
 	});
 
@@ -100,7 +100,7 @@ export function AttachmentModeMenu({ attachment, onChangeAttachmentMode }: Attac
 				<ChevronIcon className="shrink-0" size={10} aria-hidden="true" />
 			</MenuButton>
 
-			<Menu store={menu} gutter={4} className={modeMenuClasses} data-attachment-mode-menu autoFocusOnShow>
+			<Menu store={menu} gutter={4} className={modeMenuClasses} data-attachment-mode-menu autoFocusOnShow portal>
 				{attachment.availableModes.map(mode => {
 					const label = getAttachmentModeLabel(mode);
 					const modeTooltip = getAttachmentModeTooltip(mode);

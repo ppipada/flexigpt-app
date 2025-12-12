@@ -1,4 +1,4 @@
-import { FiChevronDown, FiTool, FiX } from 'react-icons/fi';
+import { FiChevronUp, FiTool, FiX } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 import type { Path } from 'platejs';
@@ -53,7 +53,7 @@ export function ToolChoicesChip({ editor, toolEntries }: ToolChoicesChipProps) {
 		>
 			<FiTool size={14} />
 			<span className="max-w-24 truncate">Tools</span>
-			<span className="text-base-content/70 text-[11px] whitespace-nowrap">{count}</span>
+			<span className="text-base-content/60 whitespace-nowrap">{count}</span>
 
 			<MenuButton
 				store={menu}
@@ -61,7 +61,7 @@ export function ToolChoicesChip({ editor, toolEntries }: ToolChoicesChipProps) {
 				aria-label="Show selected tools"
 				title="Show selected tools"
 			>
-				<FiChevronDown size={14} />
+				<FiChevronUp size={14} />
 			</MenuButton>
 
 			{/* Remove all tool choices */}
