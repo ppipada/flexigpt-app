@@ -14,7 +14,7 @@
   - [ ] check for empty msg with only toolresult in fe. seems some issue
     - [ ] abort and then edit again is also some issue.
   - [ ] the mode menu looks cutoff after pushed inside the composer.
-  - [ ] message attachments bar needs to have similar dropdown info chips
+  - [ ] message attachments bar needs to have similar dropdown info chips rather than one long bar.
   - [ ] tool choices need to be added as "previous tool choices" and an option to reattach needs to be given.
   - [ ] url attach is still leading to a submit.
 
