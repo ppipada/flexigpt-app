@@ -410,11 +410,27 @@ export default function ChatsPage() {
 	);
 
 	const removeAssistantPlaceholder = (msgId: string) => {
-		setChat(c => ({
-			...c,
-			messages: c.messages.filter(m => m.id !== msgId),
-			modifiedAt: new Date(),
-		}));
+		setChat(c => {
+			const idx = c.messages.findIndex(m => m.id === msgId);
+			if (idx === -1) return c;
+
+			const candidate = c.messages[idx];
+
+			// Only remove the ephemeral assistant placeholder:
+			// - must be an assistant message
+			// - must still be empty (no streamed content yet)
+			if (candidate.role !== RoleEnum.Assistant || candidate.content.length > 0) {
+				return c;
+			}
+
+			const nextMessages = c.messages.filter(m => m.id !== msgId);
+
+			return {
+				...c,
+				messages: nextMessages,
+				modifiedAt: new Date(),
+			};
+		});
 	};
 
 	const sendMessage = async (payload: EditorSubmitPayload, options: ChatOption) => {

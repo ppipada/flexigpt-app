@@ -10,13 +10,13 @@
   - [x] tool exec bars review
   - [x] tool choices also need to be added as chips
   - [x] anthropic needs thinking blocks too in response.
+  - [x] message attachments bar needs to have similar dropdown info chips rather than one long bar.
+  - [x] url attach is still leading to a submit.
 
   - [ ] check for empty msg with only toolresult in fe. seems some issue
-    - [ ] abort and then edit again is also some issue.
+    - [x] abort and then edit again is also some issue.
   - [ ] the mode menu looks cutoff after pushed inside the composer.
-  - [ ] message attachments bar needs to have similar dropdown info chips rather than one long bar.
   - [ ] tool choices need to be added as "previous tool choices" and an option to reattach needs to be given.
-  - [x] url attach is still leading to a submit.
 
 - [ ] edit and save tempalte doesnt work. says tempalte slug already exists.
 
