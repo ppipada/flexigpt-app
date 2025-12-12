@@ -1,18 +1,17 @@
-import { FiChevronDown, FiPaperclip, FiTool, FiX } from 'react-icons/fi';
+import { FiTool, FiX } from 'react-icons/fi';
 
-import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 import type { PlateEditor } from 'platejs/react';
 import { useEditorRef } from 'platejs/react';
 
 import type { AttachmentMode } from '@/spec/attachment';
 
-import { AttachmentChip } from '@/chats/attachments/attachment_chip';
 import { DirectoryChip } from '@/chats/attachments/attachment_directory_chip';
 import {
 	type DirectoryAttachmentGroup,
 	type EditorAttachment,
 	editorAttachmentKey,
 } from '@/chats/attachments/attachment_editor_utils';
+import { StandaloneAttachmentsChip } from '@/chats/attachments/attachment_standalone_chips';
 import { getToolNodesWithPath, removeToolByKey, toolIdentityKey } from '@/chats/tools/tool_editor_utils';
 
 interface AttachmentChipsBarProps {
@@ -22,75 +21,6 @@ interface AttachmentChipsBarProps {
 	onChangeAttachmentMode: (att: EditorAttachment, mode: AttachmentMode) => void;
 	onRemoveDirectoryGroup: (groupId: string) => void;
 	onRemoveOverflowDir?: (groupId: string, dirPath: string) => void;
-}
-
-interface StandaloneAttachmentsChipProps {
-	attachments: EditorAttachment[];
-	onRemoveAttachment: (att: EditorAttachment) => void;
-	onChangeAttachmentMode: (att: EditorAttachment, mode: AttachmentMode) => void;
-}
-
-/**
- * Aggregated "Attachments" chip for standalone files/links.
- * Opens a dropdown listing each attachment as a full-width chip.
- */
-function StandaloneAttachmentsChip({
-	attachments,
-	onRemoveAttachment,
-	onChangeAttachmentMode,
-}: StandaloneAttachmentsChipProps) {
-	const count = attachments.length;
-	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
-
-	if (count === 0) return null;
-
-	const title = `Attachments\n${count} item${count === 1 ? '' : 's'} attached`;
-
-	return (
-		<div
-			className="bg-base-200 text-base-content flex shrink-0 items-center gap-1 rounded-2xl px-2 py-0"
-			title={title}
-			data-attachment-chip="attachments-group"
-		>
-			<FiPaperclip size={14} />
-			<span className="max-w-24 truncate">Attachments</span>
-			<span className="text-base-content/70 text-[11px] whitespace-nowrap">{count}</span>
-
-			<MenuButton
-				store={menu}
-				className="btn btn-ghost btn-xs px-0 py-0 shadow-none"
-				aria-label="Show attached files and links"
-				title="Show attached files and links"
-			>
-				<FiChevronDown size={14} />
-			</MenuButton>
-
-			<Menu
-				store={menu}
-				gutter={6}
-				className="rounded-box bg-base-100 text-base-content border-base-300 z-50 max-h-72 min-w-[260px] overflow-y-auto border p-2 shadow-xl focus-visible:outline-none"
-				autoFocusOnShow
-			>
-				<div className="text-base-content/70 mb-1 text-[11px] font-semibold">Attachments</div>
-
-				{attachments.map(att => (
-					<MenuItem
-						key={editorAttachmentKey(att)}
-						store={menu}
-						hideOnClick={false}
-						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
-					>
-						<AttachmentChip
-							attachment={att}
-							onRemoveAttachment={onRemoveAttachment}
-							onChangeAttachmentMode={onChangeAttachmentMode}
-							fullWidth
-						/>
-					</MenuItem>
-				))}
-			</Menu>
-		</div>
-	);
 }
 
 /**
