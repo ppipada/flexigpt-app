@@ -10,7 +10,7 @@ import {
 	getAttachmentModePillClasses,
 	getAttachmentModeTooltip,
 } from '@/chats/attachments/attachment_mode_menu';
-import type { ToolCallChip as ToolCallChipState } from '@/chats/tools/tool_chips';
+import type { ToolCallChip } from '@/chats/tools/tool_chips';
 import { formatToolCallChipLabel, getPrettyToolName } from '@/chats/tools/tool_chips';
 
 /**
@@ -30,7 +30,7 @@ function getAttachmentPath(att: Attachment): string {
 	return '';
 }
 
-interface AttachmentInfoChipProps {
+interface MessageAttachmentInfoChipProps {
 	attachment: Attachment;
 }
 
@@ -38,7 +38,7 @@ interface AttachmentInfoChipProps {
  * Read‑only chip for a single attachment (file/image/url).
  * No remove, no mode menu — just info.
  */
-function AttachmentInfoChip({ attachment }: AttachmentInfoChipProps) {
+function MessageAttachmentInfoChip({ attachment }: MessageAttachmentInfoChipProps) {
 	const { kind, label } = attachment;
 
 	const icon =
@@ -80,14 +80,14 @@ function AttachmentInfoChip({ attachment }: AttachmentInfoChipProps) {
 	);
 }
 
-interface ToolChoiceChipProps {
+interface MessageToolChoiceChipProps {
 	tool: ToolChoice;
 }
 
 /**
  * Read‑only chip for a tool choice used for this message.
  */
-function ToolChoiceChip({ tool }: ToolChoiceChipProps) {
+function MessageToolChoiceChip({ tool }: MessageToolChoiceChipProps) {
 	const name = tool.displayName || tool.toolSlug;
 	const slug = `${tool.bundleID}/${tool.toolSlug}@${tool.toolVersion}`;
 	const tooltipLines: string[] = [name, slug];
@@ -105,15 +105,15 @@ function ToolChoiceChip({ tool }: ToolChoiceChipProps) {
 	);
 }
 
-interface ToolCallChipProps {
+interface MessageToolCallChipProps {
 	call: ToolCall;
 }
 
 /**
  * Read‑only chip for an assistant-suggested tool call under the assistant bubble.
  */
-function ToolCallChip({ call }: ToolCallChipProps) {
-	const tmpChip: ToolCallChipState = {
+function MessageToolCallChip({ call }: MessageToolCallChipProps) {
+	const tmpChip: ToolCallChip = {
 		id: call.id || call.callID,
 		callID: call.callID,
 		name: call.name,
@@ -139,7 +139,7 @@ function ToolCallChip({ call }: ToolCallChipProps) {
 	);
 }
 
-interface ToolOutputChipProps {
+interface MessageToolOutputChipProps {
 	output: ToolOutput;
 }
 
@@ -148,7 +148,7 @@ interface ToolOutputChipProps {
  * History chips are not interactive; the full output was already used
  * when the turn was sent.
  */
-function ToolOutputChip({ output }: ToolOutputChipProps) {
+function MessageToolOutputChip({ output }: MessageToolOutputChipProps) {
 	const prettyName = getPrettyToolName(output.name);
 	const label = output.summary || `Result: ${prettyName}`;
 	const titleLines = [label, `Tool: ${output.name}`, `Call ID: ${output.callID}`];
@@ -197,19 +197,22 @@ export function MessageAttachmentsBar({
 			{/* Attachments visible for both user & assistant */}
 			{hasAttachments &&
 				attachments?.map((att, index) => (
-					<AttachmentInfoChip key={`${att.kind}:${att.label}:${index}`} attachment={att} />
+					<MessageAttachmentInfoChip key={`${att.kind}:${att.label}:${index}`} attachment={att} />
 				))}
 
 			{hasTools &&
 				toolChoices?.map(tool => (
-					<ToolChoiceChip key={tool.toolID ?? `${tool.bundleID}-${tool.toolSlug}-${tool.toolVersion}`} tool={tool} />
+					<MessageToolChoiceChip
+						key={tool.toolID ?? `${tool.bundleID}-${tool.toolSlug}-${tool.toolVersion}`}
+						tool={tool}
+					/>
 				))}
 
 			{/* Tool outputs only on user messages */}
-			{hasToolOutputs && toolOutputs?.map(out => <ToolOutputChip key={out.id} output={out} />)}
+			{hasToolOutputs && toolOutputs?.map(out => <MessageToolOutputChip key={out.id} output={out} />)}
 
 			{/* Suggested tool calls only on assistant messages */}
-			{hasToolCalls && toolCalls?.map(call => <ToolCallChip key={call.id || call.callID} call={call} />)}
+			{hasToolCalls && toolCalls?.map(call => <MessageToolCallChip key={call.id || call.callID} call={call} />)}
 		</div>
 	);
 }
