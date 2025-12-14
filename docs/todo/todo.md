@@ -71,3 +71,42 @@
 - [ ] Token count in build completion data may be wrong as it doesn't really account for attachments/tool calls etc.
   - [ ] Need to rectify the FilterMessagesByTokenCount function. Look at using gpt5 bpe encoder now rather than regex compilation. [go-tokenizer](https://github.com/tiktoken-go/tokenizer)
   - [ ] Claude has a free token counting api with some rate limits. may need to check it out too.
+
+## Milestone thoughts
+
+- [ ] M1 - API coverage - Pending items:
+
+  - [ ] built-in tools from apis
+  - [ ] local replacements for some builtin tools that are very vendor specific
+
+  - [ ] Modalities coverage:
+
+    - [x] Text
+      - [x] content in/out
+      - [x] reasoning in/out
+      - [x] extracted web pages input
+      - [x] extracted pdf input
+      - [ ] extracted other docs input, sheets and docx mainly.
+    - [x] Image input
+    - [x] Document input
+    - [ ] Image url input
+    - [ ] Document url input
+    - [ ] Image output
+    - [ ] Deferred: audio in/out
+
+  - [ ] i18n
+  - [ ] Dont: New stateful APIs and its hooks from vendors
+    - [ ] stored responses, stored conversations, on server memory context, on server prompt templates etc.
+  - [ ] Some more additional params in presets and advanced params modal.
+    - [ ] tool choice tuning
+    - [ ] verbosity tuning
+    - [ ] top k
+    - [ ] Not sure: Safety parameter, that identifies a user if they violate safety policies.
+    - [ ] Not sure: stop strings
+
+- [ ] M2 - Better context
+
+  - [ ] MCP local connections and hooks
+  - [ ] MCP options in apis connections and hooks
+  - [ ] Doc stores/vector stores connections
+    - [ ] Only if MCP cannot serve this.
