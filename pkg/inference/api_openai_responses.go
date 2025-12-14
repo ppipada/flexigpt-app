@@ -490,13 +490,12 @@ func toOpenAIResponsesMessages(
 						ID:               reasoningContent.ContentOpenAIResponses.ID,
 						EncryptedContent: param.NewOpt(reasoningContent.ContentOpenAIResponses.EncryptedContent),
 					}
+					r.Summary = make(
+						[]responses.ResponseReasoningItemSummaryParam,
+						max(len(reasoningContent.ContentOpenAIResponses.Summary), 0),
+					)
 
 					if len(reasoningContent.ContentOpenAIResponses.Summary) > 0 {
-
-						r.Summary = make(
-							[]responses.ResponseReasoningItemSummaryParam,
-							len(reasoningContent.ContentOpenAIResponses.Summary),
-						)
 						for _, rs := range reasoningContent.ContentOpenAIResponses.Summary {
 							r.Summary = append(r.Summary, responses.ResponseReasoningItemSummaryParam{
 								Text: rs,
@@ -516,6 +515,7 @@ func toOpenAIResponsesMessages(
 							})
 						}
 					}
+
 					parts = append(parts, responses.ResponseInputItemUnionParam{
 						OfReasoning: r,
 					})
