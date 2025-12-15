@@ -253,11 +253,7 @@ func (api *OpenAIResponsesAPI) doNonStreaming(
 		return completionResp, nil
 	}
 
-	attachContentFromResponses(resp, completionResp.Body)
-
-	if toolCalls := extractOpenAIResponseToolCalls(resp, toolChoiceNameMap); len(toolCalls) > 0 {
-		completionResp.Body.ToolCalls = toolCalls
-	}
+	attachContentFromResponses(resp, toolChoiceNameMap, completionResp.Body)
 
 	return completionResp, nil
 }
@@ -347,11 +343,7 @@ func (api *OpenAIResponsesAPI) doStreaming(
 		return completionResp, nil
 	}
 
-	attachContentFromResponses(&respFull, completionResp.Body)
-
-	if toolCalls := extractOpenAIResponseToolCalls(&respFull, toolChoiceNameMap); len(toolCalls) > 0 {
-		completionResp.Body.ToolCalls = toolCalls
-	}
+	attachContentFromResponses(&respFull, toolChoiceNameMap, completionResp.Body)
 
 	return completionResp, streamErr
 }
@@ -526,15 +518,53 @@ func toOpenAIResponsesMessages(
 			}
 
 			if content != "" {
-				out = append(out, responses.ResponseInputItemUnionParam{
-					OfMessage: &responses.EasyInputMessageParam{
+				// Here annotation handling is a bit incomplete as of now.
+				// Need to collect outputs with IDs and then pass back as proper output blocks when completing
+				// citations.
+				r := &responses.ResponseInputItemUnionParam{}
+				annotations := make([]responses.ResponseOutputTextAnnotationUnionParam, 0)
+				if len(m.Citations) > 0 {
+					for _, c := range m.Citations {
+						if c.Kind == modelpresetSpec.CitationKindURLOpenAIResponses &&
+							c.URLCitationOpenAIResponses != nil {
+							ra := responses.ResponseOutputTextAnnotationUnionParam{
+								OfURLCitation: &responses.ResponseOutputTextAnnotationURLCitationParam{
+									EndIndex:   c.URLCitationOpenAIResponses.EndIndex,
+									StartIndex: c.URLCitationOpenAIResponses.StartIndex,
+									Title:      c.URLCitationOpenAIResponses.Title,
+									URL:        c.URLCitationOpenAIResponses.URL,
+								},
+							}
+							annotations = append(annotations, ra)
+						}
+					}
+				}
+				if len(annotations) > 0 {
+					r.OfOutputMessage = &responses.ResponseOutputMessageParam{
+						ID: "tmp", // Need to plug this.
+						Content: []responses.ResponseOutputMessageContentUnionParam{
+							{
+								OfOutputText: &responses.ResponseOutputTextParam{
+									Text:        content,
+									Annotations: annotations,
+								},
+							},
+						},
+						Status: "completed", // Need to plug this.
+					}
+					r.OfMessage.Content = responses.EasyInputMessageContentUnionParam{
+						OfString: openai.String(content),
+					}
+				} else {
+					r.OfMessage = &responses.EasyInputMessageParam{
+						Role: responses.EasyInputMessageRoleAssistant,
+						Type: responses.EasyInputMessageTypeMessage,
 						Content: responses.EasyInputMessageContentUnionParam{
 							OfString: openai.String(content),
 						},
-						Role: responses.EasyInputMessageRoleAssistant,
-						Type: responses.EasyInputMessageTypeMessage,
-					},
-				})
+					}
+				}
+				out = append(out, *r)
 			}
 
 			if len(m.ToolCalls) != 0 {
@@ -725,66 +755,6 @@ func contentBlocksToOpenAI(
 	return out, nil
 }
 
-func attachContentFromResponses(
-	inputResp *responses.Response,
-	fetchCompletionResponseBody *spec.FetchCompletionResponseBody,
-) {
-	if inputResp == nil || len(inputResp.Output) == 0 {
-		c := ""
-		fetchCompletionResponseBody.Content = &c
-		return
-	}
-
-	var outputText strings.Builder
-	reasoningItems := make([]modelpresetSpec.ReasoningContent, 0)
-	for _, item := range inputResp.Output {
-		if item.Type == string(openaiSharedConstant.Message("").Default()) {
-			for _, content := range item.Content {
-				if content.Type == string(openaiSharedConstant.OutputText("").Default()) {
-					outputText.WriteString(content.Text)
-					outputText.WriteString("\n")
-				}
-			}
-		}
-		if item.Type == string(openaiSharedConstant.Reasoning("").Default()) {
-			ti := item.AsReasoning()
-			reasoningItem := modelpresetSpec.ReasoningContent{
-				Type: modelpresetSpec.ReasoningContentTypeOpenAIResponses,
-				ContentOpenAIResponses: &modelpresetSpec.ReasoningContentOpenAIResponses{
-					ID:               ti.ID,
-					EncryptedContent: ti.EncryptedContent,
-				},
-			}
-			if len(ti.Summary) > 0 {
-				reasoningItem.ContentOpenAIResponses.Summary = make([]string, len(ti.Summary))
-				for _, content := range ti.Summary {
-					reasoningItem.ContentOpenAIResponses.Summary = append(
-						reasoningItem.ContentOpenAIResponses.Summary,
-						content.Text,
-					)
-				}
-			}
-
-			if len(ti.Content) > 0 {
-				reasoningItem.ContentOpenAIResponses.Content = make([]string, len(ti.Content))
-				for _, content := range ti.Content {
-					reasoningItem.ContentOpenAIResponses.Content = append(
-						reasoningItem.ContentOpenAIResponses.Content,
-						content.Text,
-					)
-				}
-			}
-			reasoningItems = append(reasoningItems, reasoningItem)
-		}
-	}
-
-	outStr := outputText.String()
-	fetchCompletionResponseBody.Content = &outStr
-	if len(reasoningItems) > 0 {
-		fetchCompletionResponseBody.ReasoningContents = reasoningItems
-	}
-}
-
 func toOpenAIResponseTools(
 	tools []spec.FetchCompletionToolChoice,
 ) ([]responses.ToolUnionParam, map[string]spec.FetchCompletionToolChoice, error) {
@@ -825,18 +795,77 @@ func toOpenAIResponseTools(
 	return out, nameMap, nil
 }
 
-func extractOpenAIResponseToolCalls(
-	resp *responses.Response,
+func attachContentFromResponses(
+	inputResp *responses.Response,
 	toolChoiceNameMap map[string]spec.FetchCompletionToolChoice,
-) []toolSpec.ToolCall {
-	if resp == nil {
-		return []toolSpec.ToolCall{}
+	fetchCompletionResponseBody *spec.FetchCompletionResponseBody,
+) {
+	if inputResp == nil || len(inputResp.Output) == 0 {
+		c := ""
+		fetchCompletionResponseBody.Content = &c
+		return
 	}
 
-	out := make([]toolSpec.ToolCall, 0)
-
-	for _, item := range resp.Output {
+	var outputText strings.Builder
+	reasoningItems := make([]modelpresetSpec.ReasoningContent, 0)
+	toolCalls := make([]toolSpec.ToolCall, 0)
+	citations := make([]modelpresetSpec.Citation, 0)
+	for _, item := range inputResp.Output {
 		switch item.Type {
+		case string(openaiSharedConstant.Message("").Default()):
+			for _, content := range item.Content {
+				if content.Type == string(openaiSharedConstant.OutputText("").Default()) {
+					outputText.WriteString(content.Text)
+					outputText.WriteString("\n")
+					if len(content.Annotations) > 0 {
+						for _, ca := range content.Annotations {
+							if ca.Type == string(openaiSharedConstant.URLCitation("").Default()) {
+								mc := modelpresetSpec.Citation{
+									Kind: modelpresetSpec.CitationKindURLOpenAIResponses,
+									URLCitationOpenAIResponses: &modelpresetSpec.URLCitationOpenAIResponses{
+										URL:        ca.URL,
+										Title:      ca.Title,
+										StartIndex: ca.StartIndex,
+										EndIndex:   ca.EndIndex,
+									},
+								}
+								citations = append(citations, mc)
+							}
+						}
+					}
+				}
+			}
+
+		case string(openaiSharedConstant.Reasoning("").Default()):
+			ti := item.AsReasoning()
+			reasoningItem := modelpresetSpec.ReasoningContent{
+				Type: modelpresetSpec.ReasoningContentTypeOpenAIResponses,
+				ContentOpenAIResponses: &modelpresetSpec.ReasoningContentOpenAIResponses{
+					ID:               ti.ID,
+					EncryptedContent: ti.EncryptedContent,
+				},
+			}
+			if len(ti.Summary) > 0 {
+				reasoningItem.ContentOpenAIResponses.Summary = make([]string, len(ti.Summary))
+				for _, content := range ti.Summary {
+					reasoningItem.ContentOpenAIResponses.Summary = append(
+						reasoningItem.ContentOpenAIResponses.Summary,
+						content.Text,
+					)
+				}
+			}
+
+			if len(ti.Content) > 0 {
+				reasoningItem.ContentOpenAIResponses.Content = make([]string, len(ti.Content))
+				for _, content := range ti.Content {
+					reasoningItem.ContentOpenAIResponses.Content = append(
+						reasoningItem.ContentOpenAIResponses.Content,
+						content.Text,
+					)
+				}
+			}
+			reasoningItems = append(reasoningItems, reasoningItem)
+
 		case string(openaiSharedConstant.FunctionCall("").Default()):
 			fn := item.AsFunctionCall()
 			if fn.CallID == "" || strings.TrimSpace(fn.Name) == "" {
@@ -851,8 +880,8 @@ func extractOpenAIResponseToolCalls(
 				}
 			}
 
-			out = append(
-				out,
+			toolCalls = append(
+				toolCalls,
 				toolSpec.ToolCall{
 					ID:         fn.ID,
 					CallID:     fn.CallID,
@@ -877,8 +906,8 @@ func extractOpenAIResponseToolCalls(
 				}
 			}
 
-			out = append(
-				out,
+			toolCalls = append(
+				toolCalls,
 				toolSpec.ToolCall{
 					ID:         fn.ID,
 					CallID:     fn.CallID,
@@ -891,10 +920,17 @@ func extractOpenAIResponseToolCalls(
 		}
 	}
 
-	if len(out) == 0 {
-		return []toolSpec.ToolCall{}
+	outStr := outputText.String()
+	fetchCompletionResponseBody.Content = &outStr
+	if len(reasoningItems) > 0 {
+		fetchCompletionResponseBody.ReasoningContents = reasoningItems
 	}
-	return out
+	if len(toolCalls) > 0 {
+		fetchCompletionResponseBody.ToolCalls = toolCalls
+	}
+	if len(citations) > 0 {
+		fetchCompletionResponseBody.Citations = citations
+	}
 }
 
 // usageFromOpenAIResponse normalizes OpenAI Responses API usage into spec.Usage.

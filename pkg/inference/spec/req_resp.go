@@ -74,6 +74,7 @@ type ChatCompletionDataMessage struct {
 	Content *string                  `json:"content,omitempty"`
 
 	ReasoningContents []modelpresetSpec.ReasoningContent `json:"reasoningContents,omitempty"`
+	Citations         []modelpresetSpec.Citation         `json:"citations,omitempty"`
 	Attachments       []attachment.Attachment            `json:"attachments,omitempty"`
 	ToolCalls         []toolSpec.ToolCall                `json:"toolCalls,omitempty"`
 	ToolOutputs       []toolSpec.ToolOutput              `json:"toolOutputs,omitempty"`
@@ -125,6 +126,7 @@ type FetchCompletionResponseBody struct {
 
 	Content           *string                            `json:"content,omitempty"`
 	ReasoningContents []modelpresetSpec.ReasoningContent `json:"reasoningContents,omitempty"`
+	Citations         []modelpresetSpec.Citation         `json:"citations,omitempty"`
 	ToolCalls         []toolSpec.ToolCall                `json:"toolCalls,omitempty"`
 	Usage             *modelpresetSpec.Usage             `json:"usage,omitempty"`
 }

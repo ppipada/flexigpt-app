@@ -24,6 +24,7 @@ type ConversationMessage struct {
 	Details   *string                  `json:"details,omitempty"`
 
 	ReasoningContents []modelpresetSpec.ReasoningContent `json:"reasoningContents,omitempty"`
+	Citations         []modelpresetSpec.Citation         `json:"citations,omitempty"`
 	ToolChoices       []toolSpec.ToolChoice              `json:"toolChoices,omitempty"`
 	Attachments       []attachment.Attachment            `json:"attachments,omitempty"`
 	ToolCalls         []toolSpec.ToolCall                `json:"toolCalls,omitempty"`

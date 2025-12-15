@@ -585,6 +585,76 @@ export namespace spec {
 		    return a;
 		}
 	}
+	export class URLCitationAnthropicMessages {
+	    url: string;
+	    title: string;
+	    encryptedIndex: string;
+	    citedText: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new URLCitationAnthropicMessages(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	        this.title = source["title"];
+	        this.encryptedIndex = source["encryptedIndex"];
+	        this.citedText = source["citedText"];
+	    }
+	}
+	export class URLCitationOpenAIResponses {
+	    url: string;
+	    title: string;
+	    startIndex: number;
+	    endIndex: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new URLCitationOpenAIResponses(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	        this.title = source["title"];
+	        this.startIndex = source["startIndex"];
+	        this.endIndex = source["endIndex"];
+	    }
+	}
+	export class Citation {
+	    kind: string;
+	    urlCitationOpenAIResponses?: URLCitationOpenAIResponses;
+	    urlCitationAnthropicMessages?: URLCitationAnthropicMessages;
+	
+	    static createFrom(source: any = {}) {
+	        return new Citation(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.urlCitationOpenAIResponses = this.convertValues(source["urlCitationOpenAIResponses"], URLCitationOpenAIResponses);
+	        this.urlCitationAnthropicMessages = this.convertValues(source["urlCitationAnthropicMessages"], URLCitationAnthropicMessages);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ReasoningContentAnthropicMessages {
 	    signature: string;
 	    thinking: string;
@@ -660,6 +730,7 @@ export namespace spec {
 	    name?: string;
 	    content?: string;
 	    reasoningContents?: ReasoningContent[];
+	    citations?: Citation[];
 	    attachments?: attachment.Attachment[];
 	    toolCalls?: ToolCall[];
 	    toolOutputs?: ToolOutput[];
@@ -674,6 +745,7 @@ export namespace spec {
 	        this.name = source["name"];
 	        this.content = source["content"];
 	        this.reasoningContents = this.convertValues(source["reasoningContents"], ReasoningContent);
+	        this.citations = this.convertValues(source["citations"], Citation);
 	        this.attachments = this.convertValues(source["attachments"], attachment.Attachment);
 	        this.toolCalls = this.convertValues(source["toolCalls"], ToolCall);
 	        this.toolOutputs = this.convertValues(source["toolOutputs"], ToolOutput);
@@ -1123,6 +1195,7 @@ export namespace spec {
 		}
 	}
 	
+	
 	export class Usage {
 	    inputTokensTotal: number;
 	    inputTokensCached: number;
@@ -1152,6 +1225,7 @@ export namespace spec {
 	    name?: string;
 	    details?: string;
 	    reasoningContents?: ReasoningContent[];
+	    citations?: Citation[];
 	    toolChoices?: ToolChoice[];
 	    attachments?: attachment.Attachment[];
 	    toolCalls?: ToolCall[];
@@ -1171,6 +1245,7 @@ export namespace spec {
 	        this.name = source["name"];
 	        this.details = source["details"];
 	        this.reasoningContents = this.convertValues(source["reasoningContents"], ReasoningContent);
+	        this.citations = this.convertValues(source["citations"], Citation);
 	        this.toolChoices = this.convertValues(source["toolChoices"], ToolChoice);
 	        this.attachments = this.convertValues(source["attachments"], attachment.Attachment);
 	        this.toolCalls = this.convertValues(source["toolCalls"], ToolCall);
@@ -1509,6 +1584,7 @@ export namespace spec {
 	    errorDetails?: APIErrorDetails;
 	    content?: string;
 	    reasoningContents?: ReasoningContent[];
+	    citations?: Citation[];
 	    toolCalls?: ToolCall[];
 	    usage?: Usage;
 	
@@ -1523,6 +1599,7 @@ export namespace spec {
 	        this.errorDetails = this.convertValues(source["errorDetails"], APIErrorDetails);
 	        this.content = source["content"];
 	        this.reasoningContents = this.convertValues(source["reasoningContents"], ReasoningContent);
+	        this.citations = this.convertValues(source["citations"], Citation);
 	        this.toolCalls = this.convertValues(source["toolCalls"], ToolCall);
 	        this.usage = this.convertValues(source["usage"], Usage);
 	    }
@@ -4384,6 +4461,8 @@ export namespace spec {
 	
 	    }
 	}
+	
+	
 	
 	
 	

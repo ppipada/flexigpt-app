@@ -227,10 +227,8 @@ func (api *AnthropicMessagesAPI) doNonStreaming(
 		return completionResp, nil
 	}
 
-	attachContentFromAnthropicMessages(resp, completionResp.Body)
-	if toolCalls := extractAnthropicToolCalls(resp, toolNameMap); len(toolCalls) > 0 {
-		completionResp.Body.ToolCalls = toolCalls
-	}
+	attachContentFromAnthropicMessages(resp, toolNameMap, completionResp.Body)
+
 	return completionResp, nil
 }
 
@@ -317,10 +315,8 @@ func (api *AnthropicMessagesAPI) doStreaming(
 		return completionResp, nil
 	}
 
-	attachContentFromAnthropicMessages(&respFull, completionResp.Body)
-	if toolCalls := extractAnthropicToolCalls(&respFull, toolNameMap); len(toolCalls) > 0 {
-		completionResp.Body.ToolCalls = toolCalls
-	}
+	attachContentFromAnthropicMessages(&respFull, toolNameMap, completionResp.Body)
+
 	return completionResp, streamErr
 }
 
@@ -489,7 +485,32 @@ func toAnthropicMessages(
 			}
 
 			if content != "" {
-				parts = append(parts, anthropic.NewTextBlock(content))
+				annotations := make([]anthropic.TextCitationParamUnion, 0)
+				if len(m.Citations) > 0 {
+					for _, c := range m.Citations {
+						if c.Kind == modelpresetSpec.CitationKindURLAnthropicMessages &&
+							c.URLCitationAnthropicMessages != nil {
+							ra := anthropic.TextCitationParamUnion{
+								OfWebSearchResultLocation: &anthropic.CitationWebSearchResultLocationParam{
+									Title:          anthropic.String(c.URLCitationAnthropicMessages.Title),
+									CitedText:      c.URLCitationAnthropicMessages.URL,
+									EncryptedIndex: c.URLCitationAnthropicMessages.EncryptedIndex,
+									URL:            c.URLCitationAnthropicMessages.URL,
+								},
+							}
+							annotations = append(annotations, ra)
+						}
+					}
+				}
+				p := &anthropic.ContentBlockParamUnion{
+					OfText: &anthropic.TextBlockParam{
+						Text: content,
+					},
+				}
+				if len(annotations) > 0 {
+					p.OfText.Citations = annotations
+				}
+				parts = append(parts, *p)
 			}
 
 			if len(m.ToolCalls) > 0 {
@@ -670,58 +691,6 @@ func contentBlocksToAnthropic(
 	return out, nil
 }
 
-func attachContentFromAnthropicMessages(
-	msg *anthropic.Message,
-	fetchCompletionResponseBody *spec.FetchCompletionResponseBody,
-) {
-	if len(msg.Content) == 0 {
-		m := ""
-		fetchCompletionResponseBody.Content = &m
-		return
-	}
-
-	var outputText strings.Builder
-	reasoningItems := make([]modelpresetSpec.ReasoningContent, 0)
-
-	for _, content := range msg.Content {
-		switch variant := content.AsAny().(type) {
-		case anthropic.TextBlock:
-			outputText.WriteString(variant.Text)
-			outputText.WriteString("\n")
-		case anthropic.ThinkingBlock:
-			reasoningItem := modelpresetSpec.ReasoningContent{
-				Type: modelpresetSpec.ReasoningContentTypeAnthropicMessages,
-				ContentAnthropicMessages: &modelpresetSpec.ReasoningContentAnthropicMessages{
-					Signature: variant.Signature,
-					Thinking:  variant.Thinking,
-				},
-			}
-			reasoningItems = append(reasoningItems, reasoningItem)
-
-		case anthropic.RedactedThinkingBlock:
-			reasoningItem := modelpresetSpec.ReasoningContent{
-				Type: modelpresetSpec.ReasoningContentTypeAnthropicMessages,
-				ContentAnthropicMessages: &modelpresetSpec.ReasoningContentAnthropicMessages{
-					RedactedThinking: variant.Data,
-				},
-			}
-			reasoningItems = append(reasoningItems, reasoningItem)
-
-		case anthropic.ToolUseBlock:
-		case anthropic.ServerToolUseBlock:
-		case anthropic.WebSearchToolResultBlock:
-		default:
-			// Invalid variant, dont handle as of now.
-		}
-	}
-
-	outStr := outputText.String()
-	fetchCompletionResponseBody.Content = &outStr
-	if len(reasoningItems) > 0 {
-		fetchCompletionResponseBody.ReasoningContents = reasoningItems
-	}
-}
-
 func toAnthropicTools(
 	tools []spec.FetchCompletionToolChoice,
 ) ([]anthropic.ToolUnionParam, map[string]spec.FetchCompletionToolChoice, error) {
@@ -799,47 +768,102 @@ func toAnthropicTools(
 	return out, nameMap, nil
 }
 
-func extractAnthropicToolCalls(
+func attachContentFromAnthropicMessages(
 	msg *anthropic.Message,
 	toolNameMap map[string]spec.FetchCompletionToolChoice,
-) []toolSpec.ToolCall {
-	if msg == nil {
-		return nil
+	fetchCompletionResponseBody *spec.FetchCompletionResponseBody,
+) {
+	if len(msg.Content) == 0 {
+		m := ""
+		fetchCompletionResponseBody.Content = &m
+		return
 	}
-	out := make([]toolSpec.ToolCall, 0, len(msg.Content))
+
+	var outputText strings.Builder
+	reasoningItems := make([]modelpresetSpec.ReasoningContent, 0)
+	toolCalls := make([]toolSpec.ToolCall, 0)
+	citations := make([]modelpresetSpec.Citation, 0)
 	for _, content := range msg.Content {
-		variant, ok := content.AsAny().(anthropic.ToolUseBlock)
-		if !ok {
-			continue
-		}
-		name := strings.TrimSpace(variant.Name)
-		vID := strings.TrimSpace(variant.ID)
-		if vID == "" || name == "" {
-			continue
-		}
-		var toolChoice *toolSpec.ToolChoice
-		if toolNameMap != nil {
-			if ct, ok := toolNameMap[name]; ok {
-				// Add the actual choice to response.
-				toolChoice = &ct.ToolChoice
+		switch variant := content.AsAny().(type) {
+		case anthropic.TextBlock:
+			outputText.WriteString(variant.Text)
+			outputText.WriteString("\n")
+			if len(content.Citations) > 0 {
+				for _, cc := range content.Citations {
+					if cc.Type == string(anthropicSharedConstant.WebSearchResultLocation("").Default()) {
+						mc := modelpresetSpec.Citation{
+							Kind: modelpresetSpec.CitationKindURLAnthropicMessages,
+							URLCitationAnthropicMessages: &modelpresetSpec.URLCitationAnthropicMessages{
+								URL:            cc.URL,
+								Title:          cc.Title,
+								CitedText:      cc.CitedText,
+								EncryptedIndex: cc.EncryptedIndex,
+							},
+						}
+						citations = append(citations, mc)
+					}
+				}
 			}
-		}
+		case anthropic.ThinkingBlock:
+			reasoningItem := modelpresetSpec.ReasoningContent{
+				Type: modelpresetSpec.ReasoningContentTypeAnthropicMessages,
+				ContentAnthropicMessages: &modelpresetSpec.ReasoningContentAnthropicMessages{
+					Signature: variant.Signature,
+					Thinking:  variant.Thinking,
+				},
+			}
+			reasoningItems = append(reasoningItems, reasoningItem)
 
-		call := toolSpec.ToolCall{
-			ID:         vID,
-			CallID:     vID,
-			Name:       variant.Name,
-			Arguments:  strings.TrimSpace(string(variant.Input)),
-			Type:       string(variant.Type),
-			ToolChoice: toolChoice,
-		}
-		out = append(out, call)
+		case anthropic.RedactedThinkingBlock:
+			reasoningItem := modelpresetSpec.ReasoningContent{
+				Type: modelpresetSpec.ReasoningContentTypeAnthropicMessages,
+				ContentAnthropicMessages: &modelpresetSpec.ReasoningContentAnthropicMessages{
+					RedactedThinking: variant.Data,
+				},
+			}
+			reasoningItems = append(reasoningItems, reasoningItem)
 
+		case anthropic.ToolUseBlock:
+			name := strings.TrimSpace(variant.Name)
+			vID := strings.TrimSpace(variant.ID)
+			if vID == "" || name == "" {
+				continue
+			}
+			var toolChoice *toolSpec.ToolChoice
+			if toolNameMap != nil {
+				if ct, ok := toolNameMap[name]; ok {
+					// Add the actual choice to response.
+					toolChoice = &ct.ToolChoice
+				}
+			}
+
+			call := toolSpec.ToolCall{
+				ID:         vID,
+				CallID:     vID,
+				Name:       variant.Name,
+				Arguments:  strings.TrimSpace(string(variant.Input)),
+				Type:       string(variant.Type),
+				ToolChoice: toolChoice,
+			}
+			toolCalls = append(toolCalls, call)
+		case anthropic.ServerToolUseBlock:
+		case anthropic.WebSearchToolResultBlock:
+		default:
+			// Invalid variant, dont handle as of now.
+		}
 	}
-	if len(out) == 0 {
-		return nil
+
+	outStr := outputText.String()
+	fetchCompletionResponseBody.Content = &outStr
+	if len(reasoningItems) > 0 {
+		fetchCompletionResponseBody.ReasoningContents = reasoningItems
 	}
-	return out
+	if len(toolCalls) > 0 {
+		fetchCompletionResponseBody.ToolCalls = toolCalls
+	}
+	if len(citations) > 0 {
+		fetchCompletionResponseBody.Citations = citations
+	}
 }
 
 // usageFromAnthropicMessage normalizes Anthropic usage into spec.Usage.

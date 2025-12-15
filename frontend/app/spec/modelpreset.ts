@@ -117,6 +117,43 @@ export interface ReasoningParams {
 	tokens: number;
 }
 
+/**
+ * @public
+ */
+export enum CitationKind {
+	CitationKindURLOpenAIResponses = 'openAIResponsesURLCitation',
+	CitationKindURLAnthropicMessages = 'anthropicMessagesURLCitation',
+}
+
+/**
+ * @public
+ */
+export interface URLCitationOpenAIResponses {
+	url: string;
+	title: string;
+	startIndex: number;
+	endIndex: number;
+}
+
+/**
+ * @public
+ */
+export interface URLCitationAnthropicMessages {
+	url: string;
+	title: string;
+	encryptedIndex: string;
+	citedText: string;
+}
+
+/**
+ * @public
+ */
+export interface Citation {
+	kind: CitationKind;
+	urlCitationOpenAIResponses?: URLCitationOpenAIResponses;
+	urlCitationAnthropicMessages?: URLCitationAnthropicMessages;
+}
+
 export interface PutModelPresetPayload {
 	name: ModelName;
 	slug: ModelSlug;

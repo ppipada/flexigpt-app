@@ -5,6 +5,7 @@
 - [ ] edit and save template doesn't work. says template slug already exists.
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
+- [ ] Need to migrate to content block array to support citations in conversation turns.
 
 ## Features
 
@@ -25,7 +26,7 @@
       - [x] Remote MCP: decide when to do mcp integrations.
       - [x] Remote Connectors: decide when to do mcp integrations. This is better as it would give concrete access to remote data sources.
 
-    - [ ] Openai - Deferred/Think through
+    - [x] Openai - Deferred/Think through
 
       - [x] Shell tool: this is a fixed schema for a host driven shell tool implementation. Better to have a much more controlled and safe and tunable in app shell calls and execute tool and flow. arbitrary shell commands in loop can be quite dangerous overall.
       - [x] Apply path tool: this is a fixed schema for a host driven patch generation and apply tool. it allows models to generate patches (mostly will be some internal schema conformance thing) and we have to apply them locally.
@@ -103,6 +104,7 @@
     - [ ] top k
     - [ ] Not sure: Safety parameter, that identifies a user if they violate safety policies.
     - [ ] Not sure: stop strings
+    - [ ] Not sure: cache control in claude
 
 - [ ] M2 - Better context
 
