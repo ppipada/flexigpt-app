@@ -484,7 +484,8 @@ func toOpenAIResponsesMessages(
 					}
 					r.Summary = make(
 						[]responses.ResponseReasoningItemSummaryParam,
-						max(len(reasoningContent.ContentOpenAIResponses.Summary), 0),
+						0,
+						max(len(reasoningContent.ContentOpenAIResponses.Summary)),
 					)
 
 					if len(reasoningContent.ContentOpenAIResponses.Summary) > 0 {
@@ -499,6 +500,7 @@ func toOpenAIResponsesMessages(
 
 						r.Content = make(
 							[]responses.ResponseReasoningItemContentParam,
+							0,
 							len(reasoningContent.ContentOpenAIResponses.Content),
 						)
 						for _, rc := range reasoningContent.ContentOpenAIResponses.Content {
@@ -846,7 +848,7 @@ func attachContentFromResponses(
 				},
 			}
 			if len(ti.Summary) > 0 {
-				reasoningItem.ContentOpenAIResponses.Summary = make([]string, len(ti.Summary))
+				reasoningItem.ContentOpenAIResponses.Summary = make([]string, 0, len(ti.Summary))
 				for _, content := range ti.Summary {
 					reasoningItem.ContentOpenAIResponses.Summary = append(
 						reasoningItem.ContentOpenAIResponses.Summary,
@@ -856,7 +858,7 @@ func attachContentFromResponses(
 			}
 
 			if len(ti.Content) > 0 {
-				reasoningItem.ContentOpenAIResponses.Content = make([]string, len(ti.Content))
+				reasoningItem.ContentOpenAIResponses.Content = make([]string, 0, len(ti.Content))
 				for _, content := range ti.Content {
 					reasoningItem.ContentOpenAIResponses.Content = append(
 						reasoningItem.ContentOpenAIResponses.Content,

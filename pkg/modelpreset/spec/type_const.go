@@ -173,6 +173,38 @@ type Citation struct {
 	URLCitationAnthropicMessages *URLCitationAnthropicMessages `json:"urlCitationAnthropicMessages,omitempty"`
 }
 
+type TextContentKind string
+
+const (
+	TextContentKindOpenAIResponses   TextContentKind = "textContentKindOpenAIResponses"
+	TextContentKindAnthropicMessages TextContentKind = "textContentKindAnthropicMessages"
+)
+
+type TextContentOpenAIResponsesContentParam struct {
+	Text      string     `json:"text"`
+	Citations []Citation `json:"citations"`
+}
+
+type TextContentOpenAIResponses struct {
+	ID      string                                   `json:"id"`
+	Role    RoleEnum                                 `json:"role"`
+	Status  string                                   `json:"status"`
+	Content []TextContentOpenAIResponsesContentParam `json:"content"`
+}
+
+type TextContentAnthropicMessages struct {
+	Text      string     `json:"text"`
+	Citations []Citation `json:"citations"`
+}
+
+type TextContent struct {
+	Kind TextContentKind `json:"kind"`
+
+	// Exactly one of the following should be non-nil, depending on Kind.
+	TextContentOpenAIResponses   *TextContentOpenAIResponses   `json:"textContentOpenAIResponses,omitempty"`
+	TextContentAnthropicMessages *TextContentAnthropicMessages `json:"textContentAnthropicMessages,omitempty"`
+}
+
 // ModelPreset is the entire "model + default knobs" bundle the user can save.
 // Anything not present in the preset is considered to be taken as default from any global or inbuilt model defaults.
 type ModelPreset struct {
