@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/ppipada/flexigpt-app/pkg/conversation/spec"
-	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 func TestFTSSearchHappyPath(t *testing.T) {
@@ -49,7 +49,7 @@ func TestFTSRankingTitleVsBody(t *testing.T) {
 	b := newConv(t, "No match in title")
 	b.Messages = []spec.ConversationMessage{{
 		ID:      "m1",
-		Role:    modelpresetSpec.RoleUser,
+		Role:    inferencegoSpec.RoleUser,
 		Content: "alpha appears in body",
 	}}
 	_, _ = cc.PutConversation(t.Context(), getNewPutRequestFromConversation(b))
@@ -70,7 +70,7 @@ func TestFTSPagination(t *testing.T) {
 		c := newConv(t, "Kiwi talk "+strconv.Itoa(i))
 		c.Messages = []spec.ConversationMessage{{
 			ID:      "m",
-			Role:    modelpresetSpec.RoleUser,
+			Role:    inferencegoSpec.RoleUser,
 			Content: "kiwi everywhere",
 		}}
 		_, _ = cc.PutConversation(t.Context(), getNewPutRequestFromConversation(c))
@@ -145,7 +145,7 @@ func TestFTSAddMessageUpdatesIndex(t *testing.T) {
 
 	msg := spec.ConversationMessage{
 		ID:      "m1",
-		Role:    modelpresetSpec.RoleAssistant,
+		Role:    inferencegoSpec.RoleAssistant,
 		Content: "let me whisper a secret",
 	}
 	_, _ = cc.PutMessagesToConversation(t.Context(),
@@ -190,9 +190,9 @@ func TestFTSScaleSearch(t *testing.T) {
 	for i := range nConvos {
 		c := newConv(t, fmt.Sprintf("Scale test fruit%d", i))
 		for m := range nMessages {
-			role := modelpresetSpec.RoleUser
+			role := inferencegoSpec.RoleUser
 			if m%2 == 1 {
-				role = modelpresetSpec.RoleAssistant
+				role = inferencegoSpec.RoleAssistant
 			}
 			c.Messages = append(c.Messages, spec.ConversationMessage{
 				ID:      fmt.Sprintf("m%02d", m),

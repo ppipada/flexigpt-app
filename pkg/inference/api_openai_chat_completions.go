@@ -332,7 +332,7 @@ func toOpenAIChatMessages(
 	// "current" user turn in the frontend, which is always the last user role.
 	lastUserIdx := -1
 	for i, m := range messages {
-		if m.Role == modelpresetSpec.RoleUser {
+		if m.Role == inferencegoSpec.RoleUser {
 			lastUserIdx = i
 		}
 	}
@@ -349,16 +349,16 @@ func toOpenAIChatMessages(
 
 		switch m.Role {
 
-		case modelpresetSpec.RoleSystem:
+		case inferencegoSpec.RoleSystem:
 			if content != "" {
 				out = append(out, openai.SystemMessage(content))
 			}
 
-		case modelpresetSpec.RoleDeveloper:
+		case inferencegoSpec.RoleDeveloper:
 			if content != "" {
 				out = append(out, openai.DeveloperMessage(content))
 			}
-		case modelpresetSpec.RoleUser:
+		case inferencegoSpec.RoleUser:
 			if m.Content == nil && len(m.Attachments) == 0 && len(m.ToolOutputs) == 0 {
 				continue
 			}
@@ -408,7 +408,7 @@ func toOpenAIChatMessages(
 				out = append(out, o...)
 			}
 
-		case modelpresetSpec.RoleAssistant:
+		case inferencegoSpec.RoleAssistant:
 			if content == "" && len(m.ToolCalls) == 0 {
 				// Nothing to send.
 				continue
@@ -463,7 +463,7 @@ func toOpenAIChatMessages(
 
 			out = append(out, openai.ChatCompletionMessageParamUnion{OfAssistant: &assistant})
 
-		case modelpresetSpec.RoleFunction, modelpresetSpec.RoleTool:
+		case inferencegoSpec.RoleFunction, inferencegoSpec.RoleTool:
 			// Map structured tool outputs, if present, to OpenAI tool messages.
 			// Input tools may be in user or tool role, so process both.
 			if len(m.ToolOutputs) > 0 {

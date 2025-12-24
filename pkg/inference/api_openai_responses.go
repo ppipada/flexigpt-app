@@ -361,7 +361,7 @@ func toOpenAIResponsesMessages(
 	// Identify last user message index; attachments belong to the current user turn.
 	lastUserIdx := -1
 	for i, m := range messages {
-		if m.Role == modelpresetSpec.RoleUser {
+		if m.Role == inferencegoSpec.RoleUser {
 			lastUserIdx = i
 		}
 	}
@@ -382,7 +382,7 @@ func toOpenAIResponsesMessages(
 		}
 
 		switch m.Role {
-		case modelpresetSpec.RoleSystem:
+		case inferencegoSpec.RoleSystem:
 			if content == "" {
 				continue
 			}
@@ -396,7 +396,7 @@ func toOpenAIResponsesMessages(
 				},
 			})
 
-		case modelpresetSpec.RoleDeveloper:
+		case inferencegoSpec.RoleDeveloper:
 			if content == "" {
 				continue
 			}
@@ -410,7 +410,7 @@ func toOpenAIResponsesMessages(
 				},
 			})
 
-		case modelpresetSpec.RoleUser:
+		case inferencegoSpec.RoleUser:
 			if m.Content == nil && len(m.Attachments) == 0 && len(m.ToolOutputs) == 0 {
 				continue
 			}
@@ -467,7 +467,7 @@ func toOpenAIResponsesMessages(
 				))
 			}
 
-		case modelpresetSpec.RoleAssistant:
+		case inferencegoSpec.RoleAssistant:
 			// Give thinking blocks first, then content then tools.
 
 			if len(m.ReasoningContents) > 0 {
@@ -613,7 +613,7 @@ func toOpenAIResponsesMessages(
 				}
 			}
 
-		case modelpresetSpec.RoleFunction, modelpresetSpec.RoleTool:
+		case inferencegoSpec.RoleFunction, inferencegoSpec.RoleTool:
 			if len(m.ToolOutputs) > 0 {
 				o := toolOutputsToOpenAIResponses(m.ToolOutputs)
 				out = append(out, o...)

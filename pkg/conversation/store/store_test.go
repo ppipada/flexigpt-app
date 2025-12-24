@@ -8,8 +8,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/ppipada/flexigpt-app/pkg/conversation/spec"
-	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	"github.com/ppipada/mapstore-go/uuidv7filename"
+
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 func TestInitConversation(t *testing.T) {
@@ -153,14 +154,14 @@ func TestConversationCollection(t *testing.T) {
 				"Valid message",
 				spec.ConversationMessage{
 					ID:      "msg1",
-					Role:    modelpresetSpec.RoleUser,
+					Role:    inferencegoSpec.RoleUser,
 					Content: "Hello",
 				},
 				false,
 			},
 			{
 				"Empty content",
-				spec.ConversationMessage{ID: "msg2", Role: modelpresetSpec.RoleUser, Content: ""},
+				spec.ConversationMessage{ID: "msg2", Role: inferencegoSpec.RoleUser, Content: ""},
 				false,
 			},
 		}
@@ -340,7 +341,7 @@ func TestConversationCollection(t *testing.T) {
 			Body: &spec.PutMessagesToConversationRequestBody{
 				Title: "nonexistent",
 				Messages: []spec.ConversationMessage{
-					{ID: "msg", Role: modelpresetSpec.RoleUser, Content: "hi"},
+					{ID: "msg", Role: inferencegoSpec.RoleUser, Content: "hi"},
 				},
 			},
 		})
@@ -361,8 +362,8 @@ func TestConversationCollection(t *testing.T) {
 			t.Fatalf("Failed to save conversation: %v", err)
 		}
 		msgs := []spec.ConversationMessage{
-			{ID: "m1", Role: modelpresetSpec.RoleUser, Content: "hi"},
-			{ID: "m2", Role: modelpresetSpec.RoleAssistant, Content: "hello"},
+			{ID: "m1", Role: inferencegoSpec.RoleUser, Content: "hi"},
+			{ID: "m2", Role: inferencegoSpec.RoleAssistant, Content: "hello"},
 		}
 		_, err = cc.PutMessagesToConversation(ctx, &spec.PutMessagesToConversationRequest{
 			ID: convo.ID,

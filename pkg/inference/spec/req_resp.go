@@ -64,7 +64,7 @@ type APIErrorDetails struct {
 }
 
 type ChatCompletionDataMessage struct {
-	Role    modelpresetSpec.RoleEnum `json:"role"`
+	Role    inferencegoSpec.RoleEnum `json:"role"`
 	Name    *string                  `json:"name,omitempty"`
 	Content *string                  `json:"content,omitempty"`
 

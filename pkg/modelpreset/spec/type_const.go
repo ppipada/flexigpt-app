@@ -85,17 +85,6 @@ type ReasoningParams struct {
 	Tokens int            `json:"tokens"`
 }
 
-type RoleEnum string
-
-const (
-	RoleSystem    RoleEnum = "system"
-	RoleDeveloper RoleEnum = "developer"
-	RoleUser      RoleEnum = "user"
-	RoleAssistant RoleEnum = "assistant"
-	RoleFunction  RoleEnum = "function"
-	RoleTool      RoleEnum = "tool"
-)
-
 // Usage captures normalized token accounting across providers.
 // If a provider does not expose a particular field, it will be 0.
 type Usage struct {
@@ -171,38 +160,6 @@ type Citation struct {
 	// Exactly one of the following should be non-nil, depending on Kind.
 	URLCitationOpenAIResponses   *URLCitationOpenAIResponses   `json:"urlCitationOpenAIResponses,omitempty"`
 	URLCitationAnthropicMessages *URLCitationAnthropicMessages `json:"urlCitationAnthropicMessages,omitempty"`
-}
-
-type TextContentKind string
-
-const (
-	TextContentKindOpenAIResponses   TextContentKind = "textContentKindOpenAIResponses"
-	TextContentKindAnthropicMessages TextContentKind = "textContentKindAnthropicMessages"
-)
-
-type TextContentOpenAIResponsesContentParam struct {
-	Text      string     `json:"text"`
-	Citations []Citation `json:"citations"`
-}
-
-type TextContentOpenAIResponses struct {
-	ID      string                                   `json:"id"`
-	Role    RoleEnum                                 `json:"role"`
-	Status  string                                   `json:"status"`
-	Content []TextContentOpenAIResponsesContentParam `json:"content"`
-}
-
-type TextContentAnthropicMessages struct {
-	Text      string     `json:"text"`
-	Citations []Citation `json:"citations"`
-}
-
-type TextContent struct {
-	Kind TextContentKind `json:"kind"`
-
-	// Exactly one of the following should be non-nil, depending on Kind.
-	TextContentOpenAIResponses   *TextContentOpenAIResponses   `json:"textContentOpenAIResponses,omitempty"`
-	TextContentAnthropicMessages *TextContentAnthropicMessages `json:"textContentAnthropicMessages,omitempty"`
 }
 
 // ModelPreset is the entire "model + default knobs" bundle the user can save.

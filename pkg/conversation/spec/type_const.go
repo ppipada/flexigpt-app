@@ -6,6 +6,8 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
+
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 const (
@@ -18,7 +20,7 @@ const (
 type ConversationMessage struct {
 	ID        string                   `json:"id"`
 	CreatedAt *time.Time               `json:"createdAt,omitempty"`
-	Role      modelpresetSpec.RoleEnum `json:"role"`
+	Role      inferencegoSpec.RoleEnum `json:"role"`
 	Content   string                   `json:"content"`
 	Name      *string                  `json:"name,omitempty"`
 	Details   *string                  `json:"details,omitempty"`

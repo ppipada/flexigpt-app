@@ -379,7 +379,7 @@ func toAnthropicMessages(
 	// user turn.
 	lastUserIdx := -1
 	for i, m := range messages {
-		if m.Role == modelpresetSpec.RoleUser {
+		if m.Role == inferencegoSpec.RoleUser {
 			lastUserIdx = i
 		}
 	}
@@ -398,12 +398,12 @@ func toAnthropicMessages(
 		}
 
 		switch m.Role {
-		case modelpresetSpec.RoleSystem, modelpresetSpec.RoleDeveloper:
+		case inferencegoSpec.RoleSystem, inferencegoSpec.RoleDeveloper:
 			if content != "" {
 				sysParts = append(sysParts, content)
 			}
 
-		case modelpresetSpec.RoleUser:
+		case inferencegoSpec.RoleUser:
 			if m.Content == nil && len(m.Attachments) == 0 && len(m.ToolOutputs) == 0 {
 				continue
 			}
@@ -455,7 +455,7 @@ func toAnthropicMessages(
 				out = append(out, anthropic.NewUserMessage(parts...))
 			}
 
-		case modelpresetSpec.RoleAssistant:
+		case inferencegoSpec.RoleAssistant:
 			// Combine assistant thinking, text and tool calls into a single assistant message.
 			// Anthropic needs first thinking, then content then toolcalls.
 			parts := make([]anthropic.ContentBlockParamUnion, 0)
@@ -525,7 +525,7 @@ func toAnthropicMessages(
 				out = append(out, anthropic.NewAssistantMessage(parts...))
 			}
 
-		case modelpresetSpec.RoleFunction, modelpresetSpec.RoleTool:
+		case inferencegoSpec.RoleFunction, inferencegoSpec.RoleTool:
 			// Tool results and any explanatory text are represented as a user message
 			// with tool_result blocks (and optional text).
 			var parts []anthropic.ContentBlockParamUnion

@@ -137,7 +137,7 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 	if req == nil || req.Body == nil || req.Body.ModelParams.Name == "" || req.Body.CurrentMessage.Content == nil {
 		return nil, errors.New("got empty provider/model input")
 	}
-	if req.Body.CurrentMessage.Role != modelpresetSpec.RoleUser {
+	if req.Body.CurrentMessage.Role != inferencegoSpec.RoleUser {
 		return nil, errors.New("current message must be from user")
 	}
 	hasText := req.Body.CurrentMessage.Content != nil &&
