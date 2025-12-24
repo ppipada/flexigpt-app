@@ -12,7 +12,7 @@ import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { useAtBottom } from '@/hooks/use_at_bottom';
 
-import { BuildCompletionDataFromConversation, HandleCompletion } from '@/apis/aiprovider_helper';
+import { getCompletionDataFromConversation, HandleCompletion } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
@@ -310,30 +310,13 @@ export default function ChatsPage() {
 					timeout: options.timeout,
 					additionalParametersRawJSON: options.additionalParametersRawJSON,
 				};
-				const completionData = await BuildCompletionDataFromConversation(
-					options.providerName,
-					inputParams,
-					prevMessages
-				);
-
-				if (updatedChatWithConvoMessage.messages.length > 1) {
-					const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
-					if (updatedChatWithConvoMessage.messages[prevIdx].role === RoleEnum.User) {
-						if (completionData.messages && completionData.messages.length > 0) {
-							const msg = completionData.messages[completionData.messages.length - 1];
-							const atts = msg.attachments ?? [];
-							if (atts.length > 0) {
-								updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
-									i === prevIdx ? { ...m, attachments: atts } : m
-								);
-								saveUpdatedChat({ ...updatedChatWithConvoMessage });
-							}
-						}
-					}
-				}
+				const completionData = getCompletionDataFromConversation(prevMessages);
 				const newMsg = await HandleCompletion(
 					options.providerName,
-					completionData,
+					inputParams,
+					completionData.promptMsg,
+					completionData.prevMessages,
+					completionData.toolChoices,
 					convoMsg,
 					requestIdRef.current,
 					abortRef.current.signal,
@@ -341,11 +324,6 @@ export default function ChatsPage() {
 					onStreamThinkingData
 				);
 
-				// Attach debug details to the *previous* user message.
-				// Prefer the provider-supplied HTTP request details (already
-				// sanitized, includes curl). If those are not available (e.g.
-				// the Go side failed before making the HTTP call), fall back to
-				// the locally built completionData.
 				if (newMsg.requestDetails && updatedChatWithConvoMessage.messages.length > 1) {
 					const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
 					const prevMessage = updatedChatWithConvoMessage.messages[prevIdx];

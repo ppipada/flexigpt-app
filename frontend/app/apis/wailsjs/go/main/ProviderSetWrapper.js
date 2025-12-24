@@ -6,10 +6,6 @@ export function AddProvider(arg1) {
   return window['go']['main']['ProviderSetWrapper']['AddProvider'](arg1);
 }
 
-export function BuildCompletionData(arg1) {
-  return window['go']['main']['ProviderSetWrapper']['BuildCompletionData'](arg1);
-}
-
 export function CancelCompletion(arg1) {
   return window['go']['main']['ProviderSetWrapper']['CancelCompletion'](arg1);
 }

@@ -1,12 +1,7 @@
-import {
-	type ChatCompletionDataMessage,
-	type FetchCompletionData,
-	type FetchCompletionResponseBody,
-	type ModelParam,
-} from '@/spec/aiprovider';
+import { type ChatCompletionDataMessage, type FetchCompletionResponseBody, type ModelParam } from '@/spec/aiprovider';
 import type { ConversationMessage } from '@/spec/conversation';
 import { type CompletionUsage, type ProviderName, type ReasoningContent } from '@/spec/modelpreset';
-import type { ToolCall } from '@/spec/tool';
+import type { ToolCall, ToolChoice } from '@/spec/tool';
 
 import { log, providerSetAPI } from '@/apis/baseapi';
 
@@ -42,13 +37,10 @@ function convertConversationToBuildMessages(conversationMessages?: ConversationM
 	return chatMessages;
 }
 
-export async function BuildCompletionDataFromConversation(
-	provider: ProviderName,
-	modelParams: ModelParam,
-	messages?: Array<ConversationMessage>
-): Promise<FetchCompletionData> {
+export function getCompletionDataFromConversation(messages?: Array<ConversationMessage>) {
 	const allMessages = convertConversationToBuildMessages(messages);
 	const promptMsg = allMessages.pop();
+	const prevMessages = allMessages;
 	if (!promptMsg) {
 		throw Error('Invalid prompt message');
 	}
@@ -57,9 +49,7 @@ export async function BuildCompletionDataFromConversation(
 	}
 	const promptConvoMsg = messages && messages.length > 0 ? messages[messages.length - 1] : undefined;
 	const toolChoices = promptConvoMsg?.toolChoices;
-
-	const completionData = providerSetAPI.buildCompletionData(provider, modelParams, promptMsg, allMessages, toolChoices);
-	return completionData;
+	return { promptMsg, prevMessages, toolChoices };
 }
 
 function parseAPIResponse(
@@ -131,21 +121,35 @@ function parseAPIResponse(
 async function handleDirectCompletion(
 	convoMessage: ConversationMessage,
 	provider: ProviderName,
-	completionData: FetchCompletionData,
+	modelParams: ModelParam,
+	promptMsg: ChatCompletionDataMessage,
+	prevMessages: ChatCompletionDataMessage[],
+	toolChoices: ToolChoice[] | undefined,
 	requestId?: string,
 	signal?: AbortSignal
 ): Promise<{
 	responseMessage: ConversationMessage | undefined;
 	requestDetails: string | undefined;
 }> {
-	const providerResp = await providerSetAPI.completion(provider, completionData, requestId, signal);
+	const providerResp = await providerSetAPI.completion(
+		provider,
+		modelParams,
+		promptMsg,
+		prevMessages,
+		toolChoices,
+		requestId,
+		signal
+	);
 	return parseAPIResponse(convoMessage, providerResp);
 }
 
 async function handleStreamedCompletion(
 	convoMessage: ConversationMessage,
 	provider: ProviderName,
-	completionData: FetchCompletionData,
+	modelParams: ModelParam,
+	promptMsg: ChatCompletionDataMessage,
+	prevMessages: ChatCompletionDataMessage[],
+	toolChoices: ToolChoice[] | undefined,
 	requestId?: string,
 	signal?: AbortSignal,
 	onStreamTextData?: (textData: string) => void,
@@ -156,7 +160,10 @@ async function handleStreamedCompletion(
 }> {
 	const providerResp = await providerSetAPI.completion(
 		provider,
-		completionData,
+		modelParams,
+		promptMsg,
+		prevMessages,
+		toolChoices,
 		requestId,
 		signal,
 		onStreamTextData,
@@ -167,7 +174,10 @@ async function handleStreamedCompletion(
 
 export async function HandleCompletion(
 	provider: ProviderName,
-	completionData: FetchCompletionData,
+	modelParams: ModelParam,
+	promptMsg: ChatCompletionDataMessage,
+	prevMessages: ChatCompletionDataMessage[],
+	toolChoices: ToolChoice[] | undefined,
 	convoMessage: ConversationMessage,
 	requestId?: string,
 	signal?: AbortSignal,
@@ -178,20 +188,32 @@ export async function HandleCompletion(
 	requestDetails: string | undefined;
 }> {
 	try {
-		const isStream = completionData.modelParams.stream || false;
+		const isStream = modelParams.stream || false;
 		if (isStream && onStreamTextData && onStreamThinkingData) {
 			return await handleStreamedCompletion(
 				convoMessage,
 				provider,
-				completionData,
+				modelParams,
+				promptMsg,
+				prevMessages,
+				toolChoices,
 				requestId,
 				signal,
 				onStreamTextData,
 				onStreamThinkingData
 			);
 		} else {
-			completionData.modelParams.stream = false;
-			return await handleDirectCompletion(convoMessage, provider, completionData, requestId, signal);
+			modelParams.stream = false;
+			return await handleDirectCompletion(
+				convoMessage,
+				provider,
+				modelParams,
+				promptMsg,
+				prevMessages,
+				toolChoices,
+				requestId,
+				signal
+			);
 		}
 	} catch (error) {
 		if ((error as DOMException).name === 'AbortError') {

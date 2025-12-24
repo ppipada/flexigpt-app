@@ -62,12 +62,6 @@ interface APIErrorDetails {
 	responseDetails?: APIResponseDetails;
 }
 
-export interface FetchCompletionData {
-	modelParams: ModelParam;
-	messages?: Array<ChatCompletionDataMessage>;
-	toolChoices?: Array<FetchCompletionToolChoice>;
-}
-
 export interface FetchCompletionResponseBody {
 	requestDetails?: APIRequestDetails;
 	responseDetails?: APIResponseDetails;
@@ -81,20 +75,18 @@ export interface FetchCompletionResponseBody {
 }
 
 export interface IProviderSetAPI {
-	buildCompletionData(
+	completion(
 		provider: ProviderName,
 		modelParams: ModelParam,
 		currentMessage: ChatCompletionDataMessage,
 		prevMessages?: Array<ChatCompletionDataMessage>,
-		toolChoices?: Array<ToolChoice>
-	): Promise<FetchCompletionData>;
-	completion(
-		provider: ProviderName,
-		completionData: FetchCompletionData,
+		toolChoices?: Array<ToolChoice>,
+
 		requestId?: string,
 		signal?: AbortSignal,
 		onStreamTextData?: (textData: string) => void,
 		onStreamThinkingData?: (thinkingData: string) => void
 	): Promise<FetchCompletionResponseBody | undefined>;
+
 	cancelCompletion(requestId: string): Promise<void>;
 }

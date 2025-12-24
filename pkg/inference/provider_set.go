@@ -130,57 +130,107 @@ func (ps *ProviderSetAPI) SetProviderAPIKey(
 	return &spec.SetProviderAPIKeyResponse{}, nil
 }
 
-func (ps *ProviderSetAPI) BuildCompletionData(
+// FetchCompletion processes a completion request for a given provider.
+//
+// It does prep work first:
+//   - message/model validation
+//   - construction of FetchCompletionData
+//   - tool-store hydration
+//   - attachment text-block population for current message
+//   - token-based message filtering
+//
+// and then invokes the provider-specific LLM API with the prepared FetchCompletionData.
+func (ps *ProviderSetAPI) FetchCompletion(
 	ctx context.Context,
-	req *spec.BuildCompletionDataRequest,
-) (*spec.BuildCompletionDataResponse, error) {
-	if req == nil || req.Body == nil || req.Body.ModelParams.Name == "" || req.Body.CurrentMessage.Content == nil {
-		return nil, errors.New("got empty provider/model input")
+	req *spec.FetchCompletionRequest,
+) (*spec.FetchCompletionResponse, error) {
+	if req == nil || req.Body == nil {
+		return nil, errors.New("got empty fetch completion input")
 	}
-	if req.Body.CurrentMessage.Role != inferencegoSpec.RoleUser {
-		return nil, errors.New("current message must be from user")
-	}
-	hasText := req.Body.CurrentMessage.Content != nil &&
-		strings.TrimSpace(*req.Body.CurrentMessage.Content) != ""
-	hasAttachments := len(req.Body.CurrentMessage.Attachments) > 0
-	hasToolOutputs := len(req.Body.CurrentMessage.ToolOutputs) > 0
-	if !hasText && !hasAttachments && !hasToolOutputs {
-		return nil, errors.New("current message must have text or attachments or tooloutputs")
-	}
-
 	provider := req.Provider
 	ps.mu.RLock()
-	_, exists := ps.providers[provider]
+	p, exists := ps.providers[provider]
 	ps.mu.RUnlock()
 
 	if !exists {
 		return nil, errors.New("invalid provider")
 	}
 
-	resp := getCompletionData(req.Body.ModelParams,
-		req.Body.CurrentMessage,
-		req.Body.PrevMessages)
+	// Consolidated prep step: build and hydrate FetchCompletionData from the raw request body.
+	completionData, err := ps.prepareFetchCompletionData(ctx, req.Body)
+	if err != nil {
+		return nil, err
+	}
 
-	// Attach tool choices: convert the lightweight ToolChoice handles
-	// provided by the caller into FetchCompletionToolChoice entries, then hydrate
-	// them with full tool definitions from the tool store.
-	if len(req.Body.ToolChoices) > 0 {
-		out := make([]spec.FetchCompletionToolChoice, 0, len(req.Body.ToolChoices))
-		for _, c := range req.Body.ToolChoices {
+	resp, err := p.FetchCompletion(
+		ctx,
+		completionData,
+		req.OnStreamTextData,
+		req.OnStreamThinkingData,
+	)
+	if err != nil {
+		return nil, errors.Join(err, errors.New("error in fetch completion"))
+	}
+
+	return resp, nil
+}
+
+// prepareFetchCompletionData consolidates all pre-processing.
+//   - Validates model + current message.
+//   - Ensures current message is from user and has text / attachments / tool outputs.
+//   - Copies model params and messages into a new FetchCompletionData (via getCompletionData),
+//     normalizing fields (e.g. zeroing Name, copying attachments).
+//   - Hydrates tools from the tool store into FetchCompletionData.ToolChoices.
+//   - For the current message, eagerly attaches text-only content blocks for attachments,
+//     used for token counting.
+//   - Applies token-based message filtering with FilterMessagesByTokenCount.
+func (ps *ProviderSetAPI) prepareFetchCompletionData(
+	ctx context.Context,
+	body *spec.FetchCompletionRequestBody,
+) (*spec.FetchCompletionData, error) {
+	if body == nil || body.ModelParams.Name == "" || body.CurrentMessage.Content == nil {
+		return nil, errors.New("got empty provider/model input")
+	}
+	if body.CurrentMessage.Role != inferencegoSpec.RoleUser {
+		return nil, errors.New("current message must be from user")
+	}
+
+	hasText := body.CurrentMessage.Content != nil &&
+		strings.TrimSpace(*body.CurrentMessage.Content) != ""
+	hasAttachments := len(body.CurrentMessage.Attachments) > 0
+	hasToolOutputs := len(body.CurrentMessage.ToolOutputs) > 0
+	if !hasText && !hasAttachments && !hasToolOutputs {
+		return nil, errors.New("current message must have text or attachments or tooloutputs")
+	}
+
+	// Build the initial FetchCompletionData: copy model params, prev messages, and current message.
+	completionData := getCompletionData(
+		body.ModelParams,
+		body.CurrentMessage,
+		body.PrevMessages,
+	)
+
+	// Attach tool choices: convert the lightweight ToolChoice handles provided
+	// by the caller into FetchCompletionToolChoice entries, then hydrate them
+	// with full tool definitions from the tool store.
+	if len(body.ToolChoices) > 0 {
+		out := make([]spec.FetchCompletionToolChoice, 0, len(body.ToolChoices))
+		for _, c := range body.ToolChoices {
 			out = append(out, spec.FetchCompletionToolChoice{
 				ToolChoice: c,
 				Tool:       nil, // hydrated later in attachToolsToCompletionData
 			})
 		}
-		resp.ToolChoices = out
-		if err := ps.attachToolsToCompletionData(ctx, resp); err != nil {
+		completionData.ToolChoices = out
+		if err := ps.attachToolsToCompletionData(ctx, completionData); err != nil {
 			return nil, err
 		}
 	}
 
-	// For the current message, try to attach the text blocks for attachments in a best effort basis.
-	if len(resp.Messages) > 0 && len(resp.Messages[len(resp.Messages)-1].Attachments) > 0 {
-		currentAtts := resp.Messages[len(resp.Messages)-1].Attachments
+	// For the current message, try to attach the text blocks for attachments in a best-effort basis.
+	if len(completionData.Messages) > 0 &&
+		len(completionData.Messages[len(completionData.Messages)-1].Attachments) > 0 {
+		currentAtts := completionData.Messages[len(completionData.Messages)-1].Attachments
 		for idx := range currentAtts {
 			a, err := currentAtts[idx].BuildContentBlock(
 				ctx,
@@ -189,19 +239,21 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 				attachment.WithOverrideOriginalContentBlock(true),
 			)
 			if err == nil && a != nil {
-				// This is the only place where we are actually setting content block to the attachment.
+				// This is the only place where we are actually setting content block to the attachment
+				// for the current message; providers will later reuse this for token counting and
+				// attachment expansion without re-hitting the store where possible.
 				currentAtts[idx].ContentBlock = a
 			}
 		}
 	}
 
-	// Assuming filterMessagesByTokenCount is implemented elsewhere.
-	resp.Messages = FilterMessagesByTokenCount(
-		resp.Messages,
-		resp.ModelParams.MaxPromptLength,
+	// Token-based message filtering remains identical: we limit the prompt to MaxPromptLength.
+	completionData.Messages = FilterMessagesByTokenCount(
+		completionData.Messages,
+		completionData.ModelParams.MaxPromptLength,
 	)
 
-	return &spec.BuildCompletionDataResponse{Body: resp}, nil
+	return completionData, nil
 }
 
 func getCompletionData(
@@ -261,36 +313,6 @@ func convertBuildMessageToChatMessage(
 		out.ToolOutputs = msg.ToolOutputs
 	}
 	return out
-}
-
-// FetchCompletion processes a completion request for a given provider.
-func (ps *ProviderSetAPI) FetchCompletion(
-	ctx context.Context,
-	req *spec.FetchCompletionRequest,
-) (*spec.FetchCompletionResponse, error) {
-	if req == nil || req.Body == nil || req.Body.FetchCompletionData == nil {
-		return nil, errors.New("got empty fetch completion input")
-	}
-	provider := req.Provider
-	ps.mu.RLock()
-	p, exists := ps.providers[provider]
-	ps.mu.RUnlock()
-
-	if !exists {
-		return nil, errors.New("invalid provider")
-	}
-
-	resp, err := p.FetchCompletion(
-		ctx,
-		req.Body.FetchCompletionData,
-		req.Body.OnStreamTextData,
-		req.Body.OnStreamThinkingData,
-	)
-	if err != nil {
-		return nil, errors.Join(err, errors.New("error in fetch completion"))
-	}
-
-	return resp, nil
 }
 
 func (ps *ProviderSetAPI) attachToolsToCompletionData(

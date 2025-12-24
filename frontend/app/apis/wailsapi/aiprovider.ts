@@ -1,6 +1,5 @@
 import type {
 	ChatCompletionDataMessage,
-	FetchCompletionData,
 	FetchCompletionResponseBody,
 	IProviderSetAPI,
 	ModelParam,
@@ -8,7 +7,7 @@ import type {
 import type { ProviderName } from '@/spec/modelpreset';
 import type { ToolChoice } from '@/spec/tool';
 
-import { BuildCompletionData, CancelCompletion, FetchCompletion } from '@/apis/wailsjs/go/main/ProviderSetWrapper';
+import { CancelCompletion, FetchCompletion } from '@/apis/wailsjs/go/main/ProviderSetWrapper';
 import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
 import { EventsOff, EventsOn } from '@/apis/wailsjs/runtime/runtime';
 
@@ -16,35 +15,15 @@ import { EventsOff, EventsOn } from '@/apis/wailsjs/runtime/runtime';
  * @public
  */
 export class WailsProviderSetAPI implements IProviderSetAPI {
-	async buildCompletionData(
-		provider: ProviderName,
-		modelParams: ModelParam,
-		currentMessage: ChatCompletionDataMessage,
-		prevMessages?: Array<ChatCompletionDataMessage>,
-		toolChoices?: Array<ToolChoice>
-	): Promise<FetchCompletionData> {
-		const req = {
-			Provider: provider,
-			Body: {
-				modelParams: modelParams as wailsSpec.ModelParam,
-				currentMessage: currentMessage as wailsSpec.ChatCompletionDataMessage,
-				prevMessages: prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionDataMessage[]) : [],
-				toolChoices: toolChoices ? ([...toolChoices] as wailsSpec.ToolChoice[]) : [],
-			} as wailsSpec.BuildCompletionDataRequestBody,
-		};
-
-		const resp = await BuildCompletionData(req as wailsSpec.BuildCompletionDataRequest);
-		const respBody = resp.Body as wailsSpec.FetchCompletionData;
-		// console.log(JSON.stringify(respBody, undefined, 2));
-		return respBody as FetchCompletionData;
-	}
-
 	// Need an eventflow for getting completion.
 	// Implemented that in main App Wrapper than aiprovider go package.
 	// Wrapper redirects to providerSet after doing event handling
 	async completion(
 		provider: ProviderName,
-		completionData: FetchCompletionData,
+		modelParams: ModelParam,
+		currentMessage: ChatCompletionDataMessage,
+		prevMessages?: Array<ChatCompletionDataMessage>,
+		toolChoices?: Array<ToolChoice>,
 		requestId?: string,
 		signal?: AbortSignal,
 		onStreamTextData?: (text: string) => void,
@@ -80,13 +59,14 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 			EventsOn(thinkingCallbackId, thinkingCb);
 		}
 
-		const responsePromise = FetchCompletion(
-			provider,
-			completionData as wailsSpec.FetchCompletionData,
-			textCallbackId,
-			thinkingCallbackId,
-			requestId ?? ''
-		);
+		const body = {
+			modelParams: modelParams as wailsSpec.ModelParam,
+			currentMessage: currentMessage as wailsSpec.ChatCompletionDataMessage,
+			prevMessages: prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionDataMessage[]) : [],
+			toolChoices: toolChoices ? ([...toolChoices] as wailsSpec.ToolChoice[]) : [],
+		} as wailsSpec.FetchCompletionRequestBody;
+
+		const responsePromise = FetchCompletion(provider, body, textCallbackId, thinkingCallbackId, requestId ?? '');
 
 		const abortPromise: Promise<never> = new Promise((_, reject) => {
 			// Already aborted before we even start?

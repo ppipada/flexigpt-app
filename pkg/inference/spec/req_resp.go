@@ -81,37 +81,25 @@ type FetchCompletionToolChoice struct {
 	Tool *toolSpec.Tool `json:"tool"`
 }
 
-type BuildCompletionDataRequestBody struct {
-	ModelParams    inferencegoSpec.ModelParam  `json:"modelParams"            required:"true"`
-	CurrentMessage ChatCompletionDataMessage   `json:"currentMessage"         required:"true"`
-	PrevMessages   []ChatCompletionDataMessage `json:"prevMessages,omitempty"`
-	ToolChoices    []toolSpec.ToolChoice       `json:"toolChoices,omitempty"`
-}
-
-type BuildCompletionDataRequest struct {
-	Provider inferencegoSpec.ProviderName `path:"provider" required:"true"`
-	Body     *BuildCompletionDataRequestBody
-}
-
 type FetchCompletionData struct {
 	ModelParams inferencegoSpec.ModelParam  `json:"modelParams"`
 	Messages    []ChatCompletionDataMessage `json:"messages,omitempty"`
 	ToolChoices []FetchCompletionToolChoice `json:"toolChoices,omitempty"`
 }
 
-type BuildCompletionDataResponse struct {
-	Body *FetchCompletionData
-}
-
 type FetchCompletionRequestBody struct {
-	FetchCompletionData  *FetchCompletionData            `json:"fetchCompletionData" required:"true"`
-	OnStreamTextData     func(textData string) error     `json:"-"`
-	OnStreamThinkingData func(thinkingData string) error `json:"-"`
+	ModelParams    inferencegoSpec.ModelParam  `json:"modelParams"            required:"true"`
+	CurrentMessage ChatCompletionDataMessage   `json:"currentMessage"         required:"true"`
+	PrevMessages   []ChatCompletionDataMessage `json:"prevMessages,omitempty"`
+	ToolChoices    []toolSpec.ToolChoice       `json:"toolChoices,omitempty"`
 }
 
 type FetchCompletionRequest struct {
 	Provider inferencegoSpec.ProviderName `path:"provider" required:"true"`
 	Body     *FetchCompletionRequestBody
+
+	OnStreamTextData     func(textData string) error     `json:"-"`
+	OnStreamThinkingData func(thinkingData string) error `json:"-"`
 }
 
 type FetchCompletionResponseBody struct {

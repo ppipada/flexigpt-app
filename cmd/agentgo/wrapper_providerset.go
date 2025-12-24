@@ -63,18 +63,10 @@ func (w *ProviderSetWrapper) SetProviderAPIKey(
 	})
 }
 
-func (w *ProviderSetWrapper) BuildCompletionData(
-	req *inferenceSpec.BuildCompletionDataRequest,
-) (*inferenceSpec.BuildCompletionDataResponse, error) {
-	return middleware.WithRecoveryResp(func() (*inferenceSpec.BuildCompletionDataResponse, error) {
-		return w.providersetAPI.BuildCompletionData(context.Background(), req)
-	})
-}
-
 // FetchCompletion handles the completion request and streams data back to the frontend.
 func (w *ProviderSetWrapper) FetchCompletion(
 	provider string,
-	completionData *inferenceSpec.FetchCompletionData,
+	completionData *inferenceSpec.FetchCompletionRequestBody,
 	textCallbackID string,
 	thinkingCallbackID string,
 	requestID string,
@@ -101,23 +93,20 @@ func (w *ProviderSetWrapper) FetchCompletion(
 			}
 		}()
 
-		reqBody := &inferenceSpec.FetchCompletionRequestBody{
-			FetchCompletionData: completionData,
+		req := &inferenceSpec.FetchCompletionRequest{
+			Provider: inferencegoSpec.ProviderName(provider),
+			Body:     completionData,
 		}
+
 		if textCallbackID != "" && thinkingCallbackID != "" {
-			reqBody.OnStreamTextData = func(textData string) error {
+			req.OnStreamTextData = func(textData string) error {
 				runtime.EventsEmit(w.appContext, textCallbackID, textData)
 				return nil
 			}
-			reqBody.OnStreamThinkingData = func(thinkingData string) error {
+			req.OnStreamThinkingData = func(thinkingData string) error {
 				runtime.EventsEmit(w.appContext, thinkingCallbackID, thinkingData)
 				return nil
 			}
-		}
-
-		req := &inferenceSpec.FetchCompletionRequest{
-			Provider: inferencegoSpec.ProviderName(provider),
-			Body:     reqBody,
 		}
 		resp, err := w.providersetAPI.FetchCompletion(
 			ctx,
