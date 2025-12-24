@@ -12,8 +12,9 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/ledongthuc/pdf v0.0.0-20250511090121-5959a4027728
 	github.com/markusmobius/go-trafilatura v1.12.2
-	github.com/openai/openai-go/v3 v3.10.0
+	github.com/openai/openai-go/v3 v3.15.0
 	github.com/philippgille/chromem-go v0.7.0
+	github.com/ppipada/inference-go v0.1.0
 	github.com/ppipada/mapstore-go v0.0.3
 	github.com/wailsapp/wails/v2 v2.11.0
 	golang.org/x/net v0.47.0

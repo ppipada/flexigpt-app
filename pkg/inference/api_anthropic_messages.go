@@ -16,6 +16,8 @@ import (
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
+
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
 	anthropicSharedConstant "github.com/anthropics/anthropic-sdk-go/shared/constant"
@@ -23,14 +25,14 @@ import (
 
 // AnthropicMessagesAPI implements CompletionProvider for Anthropics' Messages API.
 type AnthropicMessagesAPI struct {
-	ProviderParams *spec.ProviderParams
+	ProviderParams *inferencegoSpec.ProviderParam
 	Debug          bool
 	client         *anthropic.Client
 }
 
 // NewAnthropicMessagesAPI creates a new instance of Anthropics provider.
 func NewAnthropicMessagesAPI(
-	pi spec.ProviderParams,
+	pi inferencegoSpec.ProviderParam,
 	debug bool,
 ) (*AnthropicMessagesAPI, error) {
 	if pi.Name == "" || pi.Origin == "" {
@@ -118,7 +120,7 @@ func (api *AnthropicMessagesAPI) DeInitLLM(ctx context.Context) error {
 	return nil
 }
 
-func (api *AnthropicMessagesAPI) GetProviderInfo(ctx context.Context) *spec.ProviderParams {
+func (api *AnthropicMessagesAPI) GetProviderInfo(ctx context.Context) *inferencegoSpec.ProviderParam {
 	return api.ProviderParams
 }
 
@@ -139,7 +141,7 @@ func (api *AnthropicMessagesAPI) SetProviderAPIKey(ctx context.Context, apiKey s
 
 func (api *AnthropicMessagesAPI) BuildCompletionData(
 	ctx context.Context,
-	modelParams spec.ModelParams,
+	modelParams inferencegoSpec.ModelParam,
 	currentMessage spec.ChatCompletionDataMessage,
 	prevMessages []spec.ChatCompletionDataMessage,
 ) (*spec.FetchCompletionData, error) {
@@ -177,7 +179,7 @@ func (api *AnthropicMessagesAPI) FetchCompletion(
 	}
 
 	if rp := completionData.ModelParams.Reasoning; rp != nil &&
-		rp.Type == modelpresetSpec.ReasoningTypeHybridWithTokens &&
+		rp.Type == inferencegoSpec.ReasoningTypeHybridWithTokens &&
 		rp.Tokens > 0 {
 		tokens := max(rp.Tokens, 1024)
 		params.Thinking = anthropic.ThinkingConfigParamOfEnabled(int64(tokens))

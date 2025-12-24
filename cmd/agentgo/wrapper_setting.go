@@ -5,7 +5,7 @@ import (
 
 	inferenceSpec "github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
-	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 
 	settingSpec "github.com/ppipada/flexigpt-app/pkg/setting/spec"
 	settingStore "github.com/ppipada/flexigpt-app/pkg/setting/store"
@@ -65,7 +65,7 @@ func (w *SettingStoreWrapper) SetAuthKey(
 		if req.Type == settingSpec.AuthKeyTypeProvider {
 			_, err := w.providerSetWrapper.SetProviderAPIKey(
 				&inferenceSpec.SetProviderAPIKeyRequest{
-					Provider: spec.ProviderName(req.KeyName),
+					Provider: inferencegoSpec.ProviderName(req.KeyName),
 					Body:     &inferenceSpec.SetProviderAPIKeyRequestBody{APIKey: req.Body.Secret},
 				},
 			)
@@ -92,7 +92,7 @@ func (w *SettingStoreWrapper) DeleteAuthKey(
 		if req.Type == settingSpec.AuthKeyTypeProvider {
 			_, _ = w.providerSetWrapper.SetProviderAPIKey(
 				&inferenceSpec.SetProviderAPIKeyRequest{
-					Provider: spec.ProviderName(req.KeyName),
+					Provider: inferencegoSpec.ProviderName(req.KeyName),
 					Body:     &inferenceSpec.SetProviderAPIKeyRequestBody{APIKey: ""},
 				},
 			)

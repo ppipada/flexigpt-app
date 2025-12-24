@@ -27,13 +27,13 @@ export type FetchCompletionToolChoice = ToolChoice & {
 	tool: Tool | null;
 };
 
-export interface ModelParams {
+export interface ModelParam {
 	name: ModelName;
 	stream: boolean;
 	maxPromptLength: number;
 	maxOutputLength: number;
 	temperature?: number;
-	reasoning?: ReasoningParams;
+	reasoning?: ReasoningParams; // This is from modelpresetspec and not inferencego.
 	systemPrompt: string;
 	timeout: number;
 	additionalParametersRawJSON?: string;
@@ -63,7 +63,7 @@ interface APIErrorDetails {
 }
 
 export interface FetchCompletionData {
-	modelParams: ModelParams;
+	modelParams: ModelParam;
 	messages?: Array<ChatCompletionDataMessage>;
 	toolChoices?: Array<FetchCompletionToolChoice>;
 }
@@ -83,7 +83,7 @@ export interface FetchCompletionResponseBody {
 export interface IProviderSetAPI {
 	buildCompletionData(
 		provider: ProviderName,
-		modelParams: ModelParams,
+		modelParams: ModelParam,
 		currentMessage: ChatCompletionDataMessage,
 		prevMessages?: Array<ChatCompletionDataMessage>,
 		toolChoices?: Array<ToolChoice>

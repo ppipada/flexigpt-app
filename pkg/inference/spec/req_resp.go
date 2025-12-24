@@ -4,10 +4,12 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
+
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 type AddProviderRequestBody struct {
-	SDKType                  modelpresetSpec.ProviderSDKType `json:"sdkType"`
+	SDKType                  inferencegoSpec.ProviderSDKType `json:"sdkType"`
 	Origin                   string                          `json:"origin"`
 	ChatCompletionPathPrefix string                          `json:"chatCompletionPathPrefix"`
 	APIKeyHeaderKey          string                          `json:"apiKeyHeaderKey"`
@@ -15,14 +17,14 @@ type AddProviderRequestBody struct {
 }
 
 type AddProviderRequest struct {
-	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
+	Provider inferencegoSpec.ProviderName `path:"provider" required:"true"`
 	Body     *AddProviderRequestBody
 }
 
 type AddProviderResponse struct{}
 
 type DeleteProviderRequest struct {
-	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
+	Provider inferencegoSpec.ProviderName `path:"provider" required:"true"`
 }
 
 type DeleteProviderResponse struct{}
@@ -32,7 +34,7 @@ type SetProviderAPIKeyRequestBody struct {
 }
 
 type SetProviderAPIKeyRequest struct {
-	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
+	Provider inferencegoSpec.ProviderName `path:"provider" required:"true"`
 	Body     *SetProviderAPIKeyRequestBody
 }
 
@@ -61,13 +63,6 @@ type APIErrorDetails struct {
 	ResponseDetails *APIResponseDetails `json:"responseDetails,omitempty"`
 }
 
-type APIFetchResponse[T any] struct {
-	Data            *T                  `json:"data,omitempty"`
-	ResponseDetails *APIResponseDetails `json:"responseDetails,omitempty"`
-	RequestDetails  *APIRequestDetails  `json:"requestDetails,omitempty"`
-	ErrorDetails    *APIErrorDetails    `json:"errorDetails,omitempty"`
-}
-
 type ChatCompletionDataMessage struct {
 	Role    modelpresetSpec.RoleEnum `json:"role"`
 	Name    *string                  `json:"name,omitempty"`
@@ -87,19 +82,19 @@ type FetchCompletionToolChoice struct {
 }
 
 type BuildCompletionDataRequestBody struct {
-	ModelParams    ModelParams                 `json:"modelParams"            required:"true"`
+	ModelParams    inferencegoSpec.ModelParam  `json:"modelParams"            required:"true"`
 	CurrentMessage ChatCompletionDataMessage   `json:"currentMessage"         required:"true"`
 	PrevMessages   []ChatCompletionDataMessage `json:"prevMessages,omitempty"`
 	ToolChoices    []toolSpec.ToolChoice       `json:"toolChoices,omitempty"`
 }
 
 type BuildCompletionDataRequest struct {
-	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
+	Provider inferencegoSpec.ProviderName `path:"provider" required:"true"`
 	Body     *BuildCompletionDataRequestBody
 }
 
 type FetchCompletionData struct {
-	ModelParams ModelParams                 `json:"modelParams"`
+	ModelParams inferencegoSpec.ModelParam  `json:"modelParams"`
 	Messages    []ChatCompletionDataMessage `json:"messages,omitempty"`
 	ToolChoices []FetchCompletionToolChoice `json:"toolChoices,omitempty"`
 }
@@ -115,7 +110,7 @@ type FetchCompletionRequestBody struct {
 }
 
 type FetchCompletionRequest struct {
-	Provider modelpresetSpec.ProviderName `path:"provider" required:"true"`
+	Provider inferencegoSpec.ProviderName `path:"provider" required:"true"`
 	Body     *FetchCompletionRequestBody
 }
 

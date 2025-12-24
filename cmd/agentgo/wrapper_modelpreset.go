@@ -6,11 +6,14 @@ package main
 import (
 	"context"
 
+	"github.com/ppipada/flexigpt-app/pkg/inference"
 	inferenceSpec "github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
 	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	modelpresetStore "github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
 	settingSpec "github.com/ppipada/flexigpt-app/pkg/setting/spec"
+
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 type ModelPresetStoreWrapper struct {
@@ -69,14 +72,14 @@ func (w *ModelPresetStoreWrapper) PutProviderPreset(
 	return middleware.WithRecoveryResp(func() (*spec.PutProviderPresetResponse, error) {
 		// First try to delete from provider apis, it is ok if it is not present.
 		_, _ = w.providerSetWrapper.DeleteProvider(
-			&inferenceSpec.DeleteProviderRequest{Provider: req.ProviderName},
+			&inferenceSpec.DeleteProviderRequest{Provider: inferencegoSpec.ProviderName(string(req.ProviderName))},
 		)
 		// Then try to add in provider apis, need to skip adding to store if it cannot be added.
 		if _, err := w.providerSetWrapper.AddProvider(
 			&inferenceSpec.AddProviderRequest{
-				Provider: req.ProviderName,
+				Provider: inferencegoSpec.ProviderName(string(req.ProviderName)),
 				Body: &inferenceSpec.AddProviderRequestBody{
-					SDKType:                  req.Body.SDKType,
+					SDKType:                  inference.ConvertModelPresetToInferencegoSDKType(req.Body.SDKType),
 					Origin:                   req.Body.Origin,
 					ChatCompletionPathPrefix: req.Body.ChatCompletionPathPrefix,
 					APIKeyHeaderKey:          req.Body.APIKeyHeaderKey,
@@ -115,7 +118,7 @@ func (w *ModelPresetStoreWrapper) DeleteProviderPreset(
 			return nil, err
 		}
 		_, _ = w.providerSetWrapper.DeleteProvider(
-			&inferenceSpec.DeleteProviderRequest{Provider: req.ProviderName},
+			&inferenceSpec.DeleteProviderRequest{Provider: inferencegoSpec.ProviderName(string(req.ProviderName))},
 		)
 		resp, err := w.store.DeleteProviderPreset(context.Background(), req)
 		if err != nil {

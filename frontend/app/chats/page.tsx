@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { ModelParams } from '@/spec/aiprovider';
+import type { ModelParam } from '@/spec/aiprovider';
 import type { Conversation, ConversationMessage, ConversationSearchItem } from '@/spec/conversation';
 import { RoleEnum } from '@/spec/modelpreset';
 import type { ToolChoice } from '@/spec/tool';
@@ -299,7 +299,7 @@ export default function ChatsPage() {
 			};
 
 			try {
-				const inputParams: ModelParams = {
+				const inputParams: ModelParam = {
 					name: options.name,
 					temperature: options.temperature,
 					stream: options.stream,

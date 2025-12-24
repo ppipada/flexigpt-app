@@ -8,9 +8,9 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/inference"
 	inferenceSpec "github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
-	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
 
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -116,7 +116,7 @@ func (w *ProviderSetWrapper) FetchCompletion(
 		}
 
 		req := &inferenceSpec.FetchCompletionRequest{
-			Provider: modelpresetSpec.ProviderName(provider),
+			Provider: inferencegoSpec.ProviderName(provider),
 			Body:     reqBody,
 		}
 		resp, err := w.providersetAPI.FetchCompletion(

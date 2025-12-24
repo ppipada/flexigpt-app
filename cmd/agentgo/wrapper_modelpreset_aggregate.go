@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/ppipada/flexigpt-app/pkg/inference"
 	inferenceSpec "github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	settingSpec "github.com/ppipada/flexigpt-app/pkg/setting/spec"
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 func InitProviderSetUsingSettingsAndPresets(
@@ -119,14 +121,14 @@ func initProviders(
 		}
 
 		body := &inferenceSpec.AddProviderRequestBody{
-			SDKType:                  pp.SDKType,
+			SDKType:                  inference.ConvertModelPresetToInferencegoSDKType(pp.SDKType),
 			Origin:                   pp.Origin,
 			ChatCompletionPathPrefix: pp.ChatCompletionPathPrefix,
 			APIKeyHeaderKey:          pp.APIKeyHeaderKey,
 			DefaultHeaders:           pp.DefaultHeaders,
 		}
 		r := &inferenceSpec.AddProviderRequest{
-			Provider: pp.Name,
+			Provider: inferencegoSpec.ProviderName(string(pp.Name)),
 			Body:     body,
 		}
 		if _, err := providerAPI.AddProvider(r); err != nil {
@@ -135,7 +137,7 @@ func initProviders(
 		providersAdded++
 		if secret, ok := secrets[string(pp.Name)]; ok {
 			_, err := providerAPI.SetProviderAPIKey(&inferenceSpec.SetProviderAPIKeyRequest{
-				Provider: pp.Name,
+				Provider: inferencegoSpec.ProviderName(string(pp.Name)),
 				Body: &inferenceSpec.SetProviderAPIKeyRequestBody{
 					APIKey: secret,
 				},

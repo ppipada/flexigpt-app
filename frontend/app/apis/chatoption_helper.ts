@@ -1,4 +1,4 @@
-import type { ModelParams } from '@/spec/aiprovider';
+import type { ModelParam } from '@/spec/aiprovider';
 import {
 	type ModelDisplayName,
 	type ModelPreset,
@@ -13,7 +13,7 @@ import { AuthKeyTypeProvider, type SettingsSchema } from '@/spec/setting';
 import { modelPresetStoreAPI, settingstoreAPI } from '@/apis/baseapi';
 import { getAllProviderPresetsMap } from '@/apis/list_helper';
 
-export interface ChatOption extends ModelParams {
+export interface ChatOption extends ModelParam {
 	providerName: ProviderName;
 	modelPresetID: ModelPresetID;
 	providerDisplayName: ProviderDisplayName;
@@ -21,7 +21,7 @@ export interface ChatOption extends ModelParams {
 	disablePreviousMessages: boolean;
 }
 
-const DefaultModelParams: ModelParams = {
+const DefaultModelParams: ModelParam = {
 	name: '',
 	stream: false,
 	maxPromptLength: 2048,
@@ -50,10 +50,10 @@ function hasApiKey(settings: SettingsSchema, providerName: ProviderName): boolea
 	return settings.authKeys.some(k => k.type === AuthKeyTypeProvider && k.keyName === providerName && k.nonEmpty);
 }
 
-//  Ensure every optional field of `ModelParams` is filled.
+//  Ensure every optional field of `ModelParam` is filled.
 //  Falls back to hard-coded defaults when the model preset does not specify a value.
-function buildModelParams(modelPreset: ModelPreset): ModelParams {
-	const o: ModelParams = {
+function buildModelParams(modelPreset: ModelPreset): ModelParam {
+	const o: ModelParam = {
 		name: modelPreset.name,
 		stream: modelPreset.stream ?? DefaultModelParams.stream,
 		maxPromptLength: modelPreset.maxPromptLength ?? DefaultModelParams.maxPromptLength,

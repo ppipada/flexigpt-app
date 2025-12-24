@@ -12,6 +12,7 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 )
 
@@ -121,12 +122,12 @@ func attachDebugResp(
 }
 
 func getCompletionData(
-	modelParams spec.ModelParams,
+	modelParams inferencegoSpec.ModelParam,
 	currentMessage spec.ChatCompletionDataMessage,
 	prevMessages []spec.ChatCompletionDataMessage,
 ) *spec.FetchCompletionData {
 	completionData := spec.FetchCompletionData{
-		ModelParams: spec.ModelParams{
+		ModelParams: inferencegoSpec.ModelParam{
 			Name:                        modelParams.Name,
 			Stream:                      modelParams.Stream,
 			MaxPromptLength:             modelParams.MaxPromptLength,

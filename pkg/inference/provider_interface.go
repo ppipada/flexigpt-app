@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 type CompletionProvider interface {
@@ -11,7 +12,7 @@ type CompletionProvider interface {
 	DeInitLLM(ctx context.Context) error
 	GetProviderInfo(
 		ctx context.Context,
-	) *spec.ProviderParams
+	) *inferencegoSpec.ProviderParam
 	IsConfigured(ctx context.Context) bool
 	SetProviderAPIKey(
 		ctx context.Context,
@@ -19,7 +20,7 @@ type CompletionProvider interface {
 	) error
 	BuildCompletionData(
 		ctx context.Context,
-		modelParams spec.ModelParams,
+		modelParams inferencegoSpec.ModelParam,
 		currentMessage spec.ChatCompletionDataMessage,
 		prevMessages []spec.ChatCompletionDataMessage,
 	) (*spec.FetchCompletionData, error)

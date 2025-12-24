@@ -21,17 +21,19 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
+
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 // OpenAIResponsesAPI struct that implements the CompletionProvider interface.
 type OpenAIResponsesAPI struct {
-	ProviderParams *spec.ProviderParams
+	ProviderParams *inferencegoSpec.ProviderParam
 	Debug          bool
 	client         *openai.Client
 }
 
 func NewOpenAIResponsesAPI(
-	pi spec.ProviderParams,
+	pi inferencegoSpec.ProviderParam,
 	debug bool,
 ) (*OpenAIResponsesAPI, error) {
 	if pi.Name == "" || pi.Origin == "" {
@@ -118,7 +120,7 @@ func (api *OpenAIResponsesAPI) DeInitLLM(ctx context.Context) error {
 	return nil
 }
 
-func (api *OpenAIResponsesAPI) GetProviderInfo(ctx context.Context) *spec.ProviderParams {
+func (api *OpenAIResponsesAPI) GetProviderInfo(ctx context.Context) *inferencegoSpec.ProviderParam {
 	return api.ProviderParams
 }
 
@@ -145,7 +147,7 @@ func (api *OpenAIResponsesAPI) SetProviderAPIKey(
 
 func (api *OpenAIResponsesAPI) BuildCompletionData(
 	ctx context.Context,
-	modelParams spec.ModelParams,
+	modelParams inferencegoSpec.ModelParam,
 	currentMessage spec.ChatCompletionDataMessage,
 	prevMessages []spec.ChatCompletionDataMessage,
 ) (*spec.FetchCompletionData, error) {
@@ -192,15 +194,15 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 	}
 
 	if rp := completionData.ModelParams.Reasoning; rp != nil &&
-		rp.Type == modelpresetSpec.ReasoningTypeSingleWithLevels {
+		rp.Type == inferencegoSpec.ReasoningTypeSingleWithLevels {
 		switch rp.Level {
 		case
-			modelpresetSpec.ReasoningLevelNone,
-			modelpresetSpec.ReasoningLevelMinimal,
-			modelpresetSpec.ReasoningLevelLow,
-			modelpresetSpec.ReasoningLevelMedium,
-			modelpresetSpec.ReasoningLevelHigh,
-			modelpresetSpec.ReasoningLevelXHigh:
+			inferencegoSpec.ReasoningLevelNone,
+			inferencegoSpec.ReasoningLevelMinimal,
+			inferencegoSpec.ReasoningLevelLow,
+			inferencegoSpec.ReasoningLevelMedium,
+			inferencegoSpec.ReasoningLevelHigh,
+			inferencegoSpec.ReasoningLevelXHigh:
 			params.Reasoning = shared.ReasoningParam{
 				Effort:  shared.ReasoningEffort(string(rp.Level)),
 				Summary: shared.ReasoningSummaryAuto,
@@ -351,8 +353,8 @@ func (api *OpenAIResponsesAPI) doStreaming(
 func toOpenAIResponsesMessages(
 	ctx context.Context,
 	messages []spec.ChatCompletionDataMessage,
-	modelName modelpresetSpec.ModelName,
-	providerName modelpresetSpec.ProviderName,
+	modelName inferencegoSpec.ModelName,
+	providerName inferencegoSpec.ProviderName,
 ) (responses.ResponseInputParam, error) {
 	var out responses.ResponseInputParam
 

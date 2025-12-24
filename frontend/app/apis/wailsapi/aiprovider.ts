@@ -3,7 +3,7 @@ import type {
 	FetchCompletionData,
 	FetchCompletionResponseBody,
 	IProviderSetAPI,
-	ModelParams,
+	ModelParam,
 } from '@/spec/aiprovider';
 import type { ProviderName } from '@/spec/modelpreset';
 import type { ToolChoice } from '@/spec/tool';
@@ -18,7 +18,7 @@ import { EventsOff, EventsOn } from '@/apis/wailsjs/runtime/runtime';
 export class WailsProviderSetAPI implements IProviderSetAPI {
 	async buildCompletionData(
 		provider: ProviderName,
-		modelParams: ModelParams,
+		modelParams: ModelParam,
 		currentMessage: ChatCompletionDataMessage,
 		prevMessages?: Array<ChatCompletionDataMessage>,
 		toolChoices?: Array<ToolChoice>
@@ -26,7 +26,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		const req = {
 			Provider: provider,
 			Body: {
-				modelParams: modelParams as wailsSpec.ModelParams,
+				modelParams: modelParams as wailsSpec.ModelParam,
 				currentMessage: currentMessage as wailsSpec.ChatCompletionDataMessage,
 				prevMessages: prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionDataMessage[]) : [],
 				toolChoices: toolChoices ? ([...toolChoices] as wailsSpec.ToolChoice[]) : [],

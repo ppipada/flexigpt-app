@@ -769,13 +769,13 @@ export namespace spec {
 		    return a;
 		}
 	}
-	export class ReasoningParams {
+	export class ReasoningParam {
 	    type: string;
 	    level: string;
 	    tokens: number;
 	
 	    static createFrom(source: any = {}) {
-	        return new ReasoningParams(source);
+	        return new ReasoningParam(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -785,19 +785,19 @@ export namespace spec {
 	        this.tokens = source["tokens"];
 	    }
 	}
-	export class ModelParams {
+	export class ModelParam {
 	    name: string;
 	    stream: boolean;
 	    maxPromptLength: number;
 	    maxOutputLength: number;
 	    temperature?: number;
-	    reasoning?: ReasoningParams;
+	    reasoning?: ReasoningParam;
 	    systemPrompt: string;
 	    timeout: number;
 	    additionalParametersRawJSON?: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new ModelParams(source);
+	        return new ModelParam(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -807,7 +807,7 @@ export namespace spec {
 	        this.maxPromptLength = source["maxPromptLength"];
 	        this.maxOutputLength = source["maxOutputLength"];
 	        this.temperature = source["temperature"];
-	        this.reasoning = this.convertValues(source["reasoning"], ReasoningParams);
+	        this.reasoning = this.convertValues(source["reasoning"], ReasoningParam);
 	        this.systemPrompt = source["systemPrompt"];
 	        this.timeout = source["timeout"];
 	        this.additionalParametersRawJSON = source["additionalParametersRawJSON"];
@@ -832,7 +832,7 @@ export namespace spec {
 		}
 	}
 	export class BuildCompletionDataRequestBody {
-	    modelParams: ModelParams;
+	    modelParams: ModelParam;
 	    currentMessage: ChatCompletionDataMessage;
 	    prevMessages?: ChatCompletionDataMessage[];
 	    toolChoices?: ToolChoice[];
@@ -843,7 +843,7 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.modelParams = this.convertValues(source["modelParams"], ModelParams);
+	        this.modelParams = this.convertValues(source["modelParams"], ModelParam);
 	        this.currentMessage = this.convertValues(source["currentMessage"], ChatCompletionDataMessage);
 	        this.prevMessages = this.convertValues(source["prevMessages"], ChatCompletionDataMessage);
 	        this.toolChoices = this.convertValues(source["toolChoices"], ToolChoice);
@@ -1131,7 +1131,7 @@ export namespace spec {
 		}
 	}
 	export class FetchCompletionData {
-	    modelParams: ModelParams;
+	    modelParams: ModelParam;
 	    messages?: ChatCompletionDataMessage[];
 	    toolChoices?: FetchCompletionToolChoice[];
 	
@@ -1141,7 +1141,7 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.modelParams = this.convertValues(source["modelParams"], ModelParams);
+	        this.modelParams = this.convertValues(source["modelParams"], ModelParam);
 	        this.messages = this.convertValues(source["messages"], ChatCompletionDataMessage);
 	        this.toolChoices = this.convertValues(source["toolChoices"], FetchCompletionToolChoice);
 	    }
@@ -2560,6 +2560,22 @@ export namespace spec {
 	        this.IncludeDisabled = source["IncludeDisabled"];
 	        this.PageSize = source["PageSize"];
 	        this.PageToken = source["PageToken"];
+	    }
+	}
+	export class ReasoningParams {
+	    type: string;
+	    level: string;
+	    tokens: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ReasoningParams(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.level = source["level"];
+	        this.tokens = source["tokens"];
 	    }
 	}
 	export class ModelPreset {
@@ -4043,6 +4059,7 @@ export namespace spec {
 	
 	    }
 	}
+	
 	
 	
 	

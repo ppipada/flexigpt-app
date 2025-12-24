@@ -409,6 +409,8 @@ linters:
           alias: assets
         - pkg: github.com/JohannesKaufmann/html-to-markdown/v2
           alias: html2md
+        - pkg: "github.com/ppipada/inference-go/spec"
+          alias: inferencegoSpec
 
     nakedret:
       # No naked returns, ever.

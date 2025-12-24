@@ -2,7 +2,7 @@ import {
 	type ChatCompletionDataMessage,
 	type FetchCompletionData,
 	type FetchCompletionResponseBody,
-	type ModelParams,
+	type ModelParam,
 } from '@/spec/aiprovider';
 import type { ConversationMessage } from '@/spec/conversation';
 import { type CompletionUsage, type ProviderName, type ReasoningContent } from '@/spec/modelpreset';
@@ -44,7 +44,7 @@ function convertConversationToBuildMessages(conversationMessages?: ConversationM
 
 export async function BuildCompletionDataFromConversation(
 	provider: ProviderName,
-	modelParams: ModelParams,
+	modelParams: ModelParam,
 	messages?: Array<ConversationMessage>
 ): Promise<FetchCompletionData> {
 	const allMessages = convertConversationToBuildMessages(messages);

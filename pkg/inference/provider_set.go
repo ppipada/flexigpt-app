@@ -15,12 +15,13 @@ import (
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 type ProviderSetAPI struct {
 	mu sync.RWMutex
 
-	providers map[modelpresetSpec.ProviderName]CompletionProvider
+	providers map[inferencegoSpec.ProviderName]CompletionProvider
 	debug     bool
 	toolStore *toolStore.ToolStore
 }
@@ -31,7 +32,7 @@ func NewProviderSetAPI(
 	ts *toolStore.ToolStore,
 ) (*ProviderSetAPI, error) {
 	return &ProviderSetAPI{
-		providers: map[modelpresetSpec.ProviderName]CompletionProvider{},
+		providers: map[inferencegoSpec.ProviderName]CompletionProvider{},
 		debug:     debug,
 		toolStore: ts,
 	}, nil
@@ -58,7 +59,7 @@ func (ps *ProviderSetAPI) AddProvider(
 		return nil, errors.New("unsupported provider api type")
 	}
 
-	providerInfo := spec.ProviderParams{
+	providerInfo := inferencegoSpec.ProviderParam{
 		Name:                     req.Provider,
 		SDKType:                  req.Body.SDKType,
 		APIKey:                   "",
@@ -355,24 +356,37 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 	return nil
 }
 
-func isProviderSDKTypeSupported(t modelpresetSpec.ProviderSDKType) bool {
-	if t == modelpresetSpec.ProviderSDKTypeAnthropic ||
-		t == modelpresetSpec.ProviderSDKTypeOpenAIChatCompletions ||
-		t == modelpresetSpec.ProviderSDKTypeOpenAIResponses {
+func isProviderSDKTypeSupported(t inferencegoSpec.ProviderSDKType) bool {
+	if t == inferencegoSpec.ProviderSDKTypeAnthropic ||
+		t == inferencegoSpec.ProviderSDKTypeOpenAIChatCompletions ||
+		t == inferencegoSpec.ProviderSDKTypeOpenAIResponses {
 		return true
 	}
 	return false
 }
 
-func getProviderAPI(p spec.ProviderParams, debug bool) (CompletionProvider, error) {
-	switch p.SDKType {
+func ConvertModelPresetToInferencegoSDKType(inSDK modelpresetSpec.ProviderSDKType) inferencegoSpec.ProviderSDKType {
+	switch inSDK {
 	case modelpresetSpec.ProviderSDKTypeAnthropic:
+		return inferencegoSpec.ProviderSDKTypeAnthropic
+	case modelpresetSpec.ProviderSDKTypeOpenAIChatCompletions:
+		return inferencegoSpec.ProviderSDKTypeOpenAIChatCompletions
+	case modelpresetSpec.ProviderSDKTypeOpenAIResponses:
+		return inferencegoSpec.ProviderSDKTypeOpenAIResponses
+	default:
+		return ""
+	}
+}
+
+func getProviderAPI(p inferencegoSpec.ProviderParam, debug bool) (CompletionProvider, error) {
+	switch p.SDKType {
+	case inferencegoSpec.ProviderSDKTypeAnthropic:
 		return NewAnthropicMessagesAPI(p, debug)
 
-	case modelpresetSpec.ProviderSDKTypeOpenAIChatCompletions:
+	case inferencegoSpec.ProviderSDKTypeOpenAIChatCompletions:
 		return NewOpenAIChatCompletionsAPI(p, debug)
 
-	case modelpresetSpec.ProviderSDKTypeOpenAIResponses:
+	case inferencegoSpec.ProviderSDKTypeOpenAIResponses:
 		return NewOpenAIResponsesAPI(p, debug)
 	}
 
