@@ -938,8 +938,8 @@ func attachContentFromResponses(
 }
 
 // usageFromOpenAIResponse normalizes OpenAI Responses API usage into spec.Usage.
-func usageFromOpenAIResponse(resp *responses.Response) *modelpresetSpec.Usage {
-	uOut := &modelpresetSpec.Usage{}
+func usageFromOpenAIResponse(resp *responses.Response) *inferencegoSpec.Usage {
+	uOut := &inferencegoSpec.Usage{}
 	if resp == nil {
 		return uOut
 	}

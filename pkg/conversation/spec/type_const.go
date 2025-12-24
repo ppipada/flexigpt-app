@@ -31,7 +31,7 @@ type ConversationMessage struct {
 	Attachments       []attachment.Attachment            `json:"attachments,omitempty"`
 	ToolCalls         []toolSpec.ToolCall                `json:"toolCalls,omitempty"`
 	ToolOutputs       []toolSpec.ToolOutput              `json:"toolOutputs,omitempty"`
-	Usage             *modelpresetSpec.Usage             `json:"usage,omitempty"`
+	Usage             *inferencegoSpec.Usage             `json:"usage,omitempty"`
 }
 
 // Conversation represents a conversation with messages.

@@ -123,7 +123,7 @@ type FetchCompletionResponseBody struct {
 	ReasoningContents []modelpresetSpec.ReasoningContent `json:"reasoningContents,omitempty"`
 	Citations         []modelpresetSpec.Citation         `json:"citations,omitempty"`
 	ToolCalls         []toolSpec.ToolCall                `json:"toolCalls,omitempty"`
-	Usage             *modelpresetSpec.Usage             `json:"usage,omitempty"`
+	Usage             *inferencegoSpec.Usage             `json:"usage,omitempty"`
 }
 
 type FetchCompletionResponse struct {

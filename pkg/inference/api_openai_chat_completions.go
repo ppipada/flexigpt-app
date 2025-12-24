@@ -712,8 +712,8 @@ func extractOpenAIChatToolCalls(
 }
 
 // usageFromOpenAIChatCompletion normalizes OpenAI ChatCompletion usage into spec.Usage.
-func usageFromOpenAIChatCompletion(resp *openai.ChatCompletion) *modelpresetSpec.Usage {
-	uOut := &modelpresetSpec.Usage{}
+func usageFromOpenAIChatCompletion(resp *openai.ChatCompletion) *inferencegoSpec.Usage {
+	uOut := &inferencegoSpec.Usage{}
 	if resp == nil {
 		return uOut
 	}

@@ -869,8 +869,8 @@ func attachContentFromAnthropicMessages(
 }
 
 // usageFromAnthropicMessage normalizes Anthropic usage into spec.Usage.
-func usageFromAnthropicMessage(msg *anthropic.Message) *modelpresetSpec.Usage {
-	uOut := &modelpresetSpec.Usage{}
+func usageFromAnthropicMessage(msg *anthropic.Message) *inferencegoSpec.Usage {
+	uOut := &inferencegoSpec.Usage{}
 	if msg == nil {
 		return uOut
 	}
