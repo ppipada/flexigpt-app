@@ -8,11 +8,9 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
-	inferencegoSpec "github.com/ppipada/inference-go/spec"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 )
 
@@ -119,65 +117,6 @@ func attachDebugResp(
 			Message: strings.Join(msgParts, "; "),
 		}
 	}
-}
-
-func getCompletionData(
-	modelParams inferencegoSpec.ModelParam,
-	currentMessage spec.ChatCompletionDataMessage,
-	prevMessages []spec.ChatCompletionDataMessage,
-) *spec.FetchCompletionData {
-	completionData := spec.FetchCompletionData{
-		ModelParams: inferencegoSpec.ModelParam{
-			Name:                        modelParams.Name,
-			Stream:                      modelParams.Stream,
-			MaxPromptLength:             modelParams.MaxPromptLength,
-			MaxOutputLength:             modelParams.MaxOutputLength,
-			Temperature:                 modelParams.Temperature,
-			Reasoning:                   modelParams.Reasoning,
-			SystemPrompt:                modelParams.SystemPrompt,
-			Timeout:                     modelParams.Timeout,
-			AdditionalParametersRawJSON: modelParams.AdditionalParametersRawJSON,
-		},
-	}
-
-	msgs := make([]spec.ChatCompletionDataMessage, 0, len(prevMessages))
-	for _, m := range prevMessages {
-		msgs = append(msgs, convertBuildMessageToChatMessage(m))
-	}
-	msgs = append(msgs, convertBuildMessageToChatMessage(currentMessage))
-
-	completionData.Messages = msgs
-
-	return &completionData
-}
-
-func convertBuildMessageToChatMessage(
-	msg spec.ChatCompletionDataMessage,
-) spec.ChatCompletionDataMessage {
-	// Keep the role, erase the name.
-	out := spec.ChatCompletionDataMessage{
-		Role: msg.Role,
-		Name: nil,
-	}
-	if msg.Content != nil {
-		c := *msg.Content
-		out.Content = &c
-	}
-
-	if len(msg.ReasoningContents) > 0 {
-		out.ReasoningContents = msg.ReasoningContents
-	}
-
-	if len(msg.Attachments) > 0 {
-		out.Attachments = attachment.CopyAttachments(msg.Attachments)
-	}
-	if len(msg.ToolCalls) > 0 {
-		out.ToolCalls = msg.ToolCalls
-	}
-	if len(msg.ToolOutputs) > 0 {
-		out.ToolOutputs = msg.ToolOutputs
-	}
-	return out
 }
 
 // toolName is a pair of an internal tool choice and the function name

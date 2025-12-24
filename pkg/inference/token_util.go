@@ -21,7 +21,7 @@ func FilterMessagesByTokenCount(
 		c := message.Content
 		tokensInMessage := 0
 		if c != nil {
-			tokensInMessage = CountHeuristicTokensInString(*c)
+			tokensInMessage = countHeuristicTokensInString(*c)
 		}
 
 		// Check if adding this message will not exceed maxTokenCount
@@ -57,7 +57,7 @@ func FilterMessagesByTokenCount(
 	return filteredMessages
 }
 
-func CountHeuristicTokensInString(content string) int {
+func countHeuristicTokensInString(content string) int {
 	// Regular expression to split the content into tokens based on common delimiters.
 	// This includes whitespaces, brackets, arithmetic operators, and punctuation.
 	tokenRegex := regexp.MustCompile(`[\s{}\[\]()+\-=*/<>,;:.!&|\\]+`)
