@@ -150,22 +150,16 @@ func (ps *ProviderSetAPI) BuildCompletionData(
 
 	provider := req.Provider
 	ps.mu.RLock()
-	p, exists := ps.providers[provider]
+	_, exists := ps.providers[provider]
 	ps.mu.RUnlock()
 
 	if !exists {
 		return nil, errors.New("invalid provider")
 	}
 
-	resp, err := p.BuildCompletionData(
-		ctx,
-		req.Body.ModelParams,
+	resp := getCompletionData(req.Body.ModelParams,
 		req.Body.CurrentMessage,
-		req.Body.PrevMessages,
-	)
-	if err != nil {
-		return nil, errors.Join(err, errors.New("error in building completion data"))
-	}
+		req.Body.PrevMessages)
 
 	// Attach tool choices: convert the lightweight ToolChoice handles
 	// provided by the caller into FetchCompletionToolChoice entries, then hydrate

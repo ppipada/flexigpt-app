@@ -18,12 +18,6 @@ type CompletionProvider interface {
 		ctx context.Context,
 		apiKey string,
 	) error
-	BuildCompletionData(
-		ctx context.Context,
-		modelParams inferencegoSpec.ModelParam,
-		currentMessage spec.ChatCompletionDataMessage,
-		prevMessages []spec.ChatCompletionDataMessage,
-	) (*spec.FetchCompletionData, error)
 	FetchCompletion(
 		ctx context.Context,
 		completionData *spec.FetchCompletionData,

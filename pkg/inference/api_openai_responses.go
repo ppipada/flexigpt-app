@@ -145,15 +145,6 @@ func (api *OpenAIResponsesAPI) SetProviderAPIKey(
 	return nil
 }
 
-func (api *OpenAIResponsesAPI) BuildCompletionData(
-	ctx context.Context,
-	modelParams inferencegoSpec.ModelParam,
-	currentMessage spec.ChatCompletionDataMessage,
-	prevMessages []spec.ChatCompletionDataMessage,
-) (*spec.FetchCompletionData, error) {
-	return getCompletionData(modelParams, currentMessage, prevMessages), nil
-}
-
 func (api *OpenAIResponsesAPI) FetchCompletion(
 	ctx context.Context,
 	completionData *spec.FetchCompletionData,
