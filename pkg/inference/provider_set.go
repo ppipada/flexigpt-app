@@ -136,8 +136,8 @@ func (ps *ProviderSetAPI) SetProviderAPIKey(
 //   - message/model validation
 //   - construction of FetchCompletionData
 //   - tool-store hydration
-//   - attachment text-block population for current message
 //   - token-based message filtering
+//   - full attachment ContentBlock hydration for all messages
 //
 // and then invokes the provider-specific LLM API with the prepared FetchCompletionData.
 func (ps *ProviderSetAPI) FetchCompletion(
@@ -181,14 +181,14 @@ func (ps *ProviderSetAPI) FetchCompletion(
 //   - Copies model params and messages into a new FetchCompletionData (via getCompletionData),
 //     normalizing fields (e.g. zeroing Name, copying attachments).
 //   - Hydrates tools from the tool store into FetchCompletionData.ToolChoices.
-//   - For the current message, eagerly attaches text-only content blocks for attachments,
-//     used for token counting.
 //   - Applies token-based message filtering with FilterMessagesByTokenCount.
+//   - After filtering, fully hydrates attachment.ContentBlock for all messages so that SDK
+//     wrappers only need to translate common types to provider-specific ones.
 func (ps *ProviderSetAPI) prepareFetchCompletionData(
 	ctx context.Context,
 	body *spec.FetchCompletionRequestBody,
 ) (*spec.FetchCompletionData, error) {
-	if body == nil || body.ModelParams.Name == "" || body.CurrentMessage.Content == nil {
+	if body == nil || body.ModelParams.Name == "" {
 		return nil, errors.New("got empty provider/model input")
 	}
 	if body.CurrentMessage.Role != inferencegoSpec.RoleUser {
@@ -227,31 +227,16 @@ func (ps *ProviderSetAPI) prepareFetchCompletionData(
 		}
 	}
 
-	// For the current message, try to attach the text blocks for attachments in a best-effort basis.
-	if len(completionData.Messages) > 0 &&
-		len(completionData.Messages[len(completionData.Messages)-1].Attachments) > 0 {
-		currentAtts := completionData.Messages[len(completionData.Messages)-1].Attachments
-		for idx := range currentAtts {
-			a, err := currentAtts[idx].BuildContentBlock(
-				ctx,
-				attachment.WithForceFetchContentBlock(true),
-				attachment.WithOnlyTextKindContentBlock(true),
-				attachment.WithOverrideOriginalContentBlock(true),
-			)
-			if err == nil && a != nil {
-				// This is the only place where we are actually setting content block to the attachment
-				// for the current message; providers will later reuse this for token counting and
-				// attachment expansion without re-hitting the store where possible.
-				currentAtts[idx].ContentBlock = a
-			}
-		}
-	}
-
-	// Token-based message filtering remains identical: we limit the prompt to MaxPromptLength.
+	// Token-based message filtering: limit the prompt to MaxPromptLength.
 	completionData.Messages = FilterMessagesByTokenCount(
 		completionData.Messages,
 		completionData.ModelParams.MaxPromptLength,
 	)
+	// After filtering, fully hydrate attachments for all remaining messages so that
+	// provider-specific wrappers only translate already-hydrated ContentBlocks.
+	if err := hydrateAttachmentsInMessages(ctx, completionData.Messages); err != nil {
+		return nil, err
+	}
 
 	return completionData, nil
 }
@@ -428,6 +413,107 @@ func (ps *ProviderSetAPI) attachToolsToCompletionData(
 	}
 
 	data.ToolChoices = tools
+	return nil
+}
+
+// hydrateAttachmentsInMessages ensures that every attachment in the final
+// message list has its ContentBlock populated, using the same semantics that
+// were previously implemented inside each SDK wrapper.
+//
+// For the last user message (the current turn), we always rebuild attachment
+// content blocks (OverrideOriginal + ForceFetch) so that we see the latest
+// file/url state, even if a text-only block was created earlier for token
+// counting. For older messages, we respect any existing ContentBlock snapshot
+// and only build new ones when missing.
+func hydrateAttachmentsInMessages(
+	ctx context.Context,
+	messages []spec.ChatCompletionDataMessage,
+) error {
+	if len(messages) == 0 {
+		return nil
+	}
+
+	// Identify the last user message index; this corresponds to the current turn.
+	lastUserIdx := -1
+	for i, m := range messages {
+		if m.Role == inferencegoSpec.RoleUser {
+			lastUserIdx = i
+		}
+	}
+
+	for idx := range messages {
+		overrideOriginal := idx == lastUserIdx
+		if err := hydrateAttachmentsForMessage(ctx, &messages[idx], overrideOriginal); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func hydrateAttachmentsForMessage(
+	ctx context.Context,
+	m *spec.ChatCompletionDataMessage,
+	overrideOriginal bool,
+) error {
+	if m == nil || len(m.Attachments) == 0 {
+		return nil
+	}
+
+	for i := range m.Attachments {
+		att := &m.Attachments[i]
+
+		// For prior messages, keep any existing ContentBlock snapshot to avoid
+		// re-fetching files/URLs unnecessarily.
+		if att.ContentBlock != nil && !overrideOriginal {
+			continue
+		}
+
+		cb, err := att.BuildContentBlock(
+			ctx,
+			attachment.WithOverrideOriginalContentBlock(overrideOriginal),
+			attachment.WithOnlyTextKindContentBlock(false),
+			// For the current user turn we always force a fresh read, even if a
+			// text-only block was created earlier for token counting.
+			attachment.WithForceFetchContentBlock(overrideOriginal),
+		)
+		if err != nil {
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) || ctx.Err() != nil {
+				// Respect context cancellation/timeout for the whole request.
+				return ctx.Err()
+			}
+			switch {
+			case errors.Is(err, attachment.ErrExistingContentBlock):
+				// Attachment already had a content block and we chose not to override it.
+				continue
+
+			case errors.Is(err, attachment.ErrAttachmentModifiedSinceSnapshot) && !overrideOriginal:
+				// Underlying resource changed since it was originally attached; fall back
+				// to a small text placeholder so the model is aware something existed here.
+				txt := att.FormatAsDisplayName()
+				if txt == "" {
+					txt = "[Attachment]"
+				}
+				txt += " (attachment modified since this message was sent)"
+				cb = &attachment.ContentBlock{
+					Kind: attachment.ContentBlockText,
+					Text: &txt,
+				}
+
+			default:
+				// Non-fatal: log and skip this attachment.
+				slog.Warn("failed to hydrate attachment content block",
+					"err", err,
+					"attachment", *att,
+				)
+				continue
+			}
+		}
+
+		if cb != nil {
+			att.ContentBlock = cb
+		}
+	}
+
 	return nil
 }
 

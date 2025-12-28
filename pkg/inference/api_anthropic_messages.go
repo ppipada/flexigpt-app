@@ -152,7 +152,6 @@ func (api *AnthropicMessagesAPI) FetchCompletion(
 	}
 
 	msgs, sysParams, err := toAnthropicMessages(
-		ctx,
 		completionData.ModelParams.SystemPrompt,
 		completionData.Messages,
 	)
@@ -355,7 +354,6 @@ func handleContentBlockDeltaEvent(
 }
 
 func toAnthropicMessages(
-	ctx context.Context,
 	systemPrompt string,
 	messages []spec.ChatCompletionDataMessage,
 ) (msgs []anthropic.MessageParam, sysPrompts []anthropic.TextBlockParam, err error) {
@@ -366,16 +364,7 @@ func toAnthropicMessages(
 		sysParts = append(sysParts, s)
 	}
 
-	// Identify the last user message; attachments are associated with the current
-	// user turn.
-	lastUserIdx := -1
-	for i, m := range messages {
-		if m.Role == inferencegoSpec.RoleUser {
-			lastUserIdx = i
-		}
-	}
-
-	for idx, m := range messages {
+	for _, m := range messages {
 		// Skip messages with no text, no attachments, no tool outputs, and no tool calls.
 		if m.Content == nil &&
 			len(m.Attachments) == 0 &&
@@ -400,27 +389,10 @@ func toAnthropicMessages(
 			}
 			var attachmentContent []anthropic.ContentBlockParamUnion
 			if len(m.Attachments) > 0 {
-				// Dont override original attachments in rehydration.
-				overrideOriginalAttachment := false
-				if idx == lastUserIdx {
-					// For the current message, we may attach even if things changed between build and fetch.
-					// There is a race here: if we override here, how to propagate to the caller that blocks have
-					// changed now, so update the OrigRef fields in attachments or this message too.
-					overrideOriginalAttachment = true
-				}
-				blocks, err := attachment.BuildContentBlocks(
-					ctx,
-					m.Attachments,
-					attachment.WithOverrideOriginalContentBlock(overrideOriginalAttachment),
-					attachment.WithOnlyTextKindContentBlock(false),
-					attachment.WithForceFetchContentBlock(false),
-				)
-				if err != nil {
-					return nil, nil, err
-				}
-				attachmentContent, err = contentBlocksToAnthropic(blocks)
-				if err != nil {
-					return nil, nil, err
+				var convErr error
+				attachmentContent, convErr = attachmentsToAnthropic(m.Attachments)
+				if convErr != nil {
+					return nil, nil, convErr
 				}
 			}
 
@@ -624,18 +596,20 @@ func toolOutputsToAnthropicBlocks(
 	return out
 }
 
-// contentBlocksToAnthropic converts generic content blocks into Anthropic
-// content blocks. Images are sent as base64 image blocks; files as document
-// blocks (currently assuming PDF base64); text as text blocks.
-func contentBlocksToAnthropic(
-	blocks []attachment.ContentBlock,
+func attachmentsToAnthropic(
+	atts []attachment.Attachment,
 ) ([]anthropic.ContentBlockParamUnion, error) {
-	if len(blocks) == 0 {
+	if len(atts) == 0 {
 		return nil, nil
 	}
 
-	out := make([]anthropic.ContentBlockParamUnion, 0, len(blocks))
-	for _, b := range blocks {
+	out := make([]anthropic.ContentBlockParamUnion, 0, len(atts))
+	for _, att := range atts {
+		if att.ContentBlock == nil {
+			continue
+		}
+		b := att.ContentBlock
+
 		txt := ""
 		if b.Text != nil {
 			txt = strings.TrimSpace(*b.Text)

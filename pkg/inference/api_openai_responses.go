@@ -159,7 +159,6 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 
 	// Build OpenAI Responses input messages.
 	msgs, err := toOpenAIResponsesMessages(
-		ctx,
 		completionData.Messages,
 		completionData.ModelParams.Name,
 		api.ProviderParams.Name,
@@ -342,22 +341,13 @@ func (api *OpenAIResponsesAPI) doStreaming(
 }
 
 func toOpenAIResponsesMessages(
-	ctx context.Context,
 	messages []spec.ChatCompletionDataMessage,
 	modelName inferencegoSpec.ModelName,
 	providerName inferencegoSpec.ProviderName,
 ) (responses.ResponseInputParam, error) {
 	var out responses.ResponseInputParam
 
-	// Identify last user message index; attachments belong to the current user turn.
-	lastUserIdx := -1
-	for i, m := range messages {
-		if m.Role == inferencegoSpec.RoleUser {
-			lastUserIdx = i
-		}
-	}
-
-	for idx, m := range messages {
+	for _, m := range messages {
 		// Skip only if there is no text, no attachments, no tool outputs, and no tool calls.
 		if m.Content == nil &&
 			len(m.Attachments) == 0 &&
@@ -408,25 +398,8 @@ func toOpenAIResponsesMessages(
 			// Build attachments for this specific user turn (if any).
 			var attachmentContent []responses.ResponseInputContentUnionParam
 			if len(m.Attachments) > 0 {
-				// Dont override original attachments in rehydration.
-				overrideOriginalAttachment := false
-				if idx == lastUserIdx {
-					// For the current message, we may attach even if things changed between build and fetch.
-					// There is a race here: if we override here, how to propagate to the caller that blocks have
-					// changed now, so update the OrigRef fields in attachments or this message too.
-					overrideOriginalAttachment = true
-				}
-				blocks, err := attachment.BuildContentBlocks(
-					ctx,
-					m.Attachments,
-					attachment.WithOverrideOriginalContentBlock(overrideOriginalAttachment),
-					attachment.WithOnlyTextKindContentBlock(false),
-					attachment.WithForceFetchContentBlock(false),
-				)
-				if err != nil {
-					return nil, err
-				}
-				attachmentContent, err = contentBlocksToOpenAI(blocks)
+				var err error
+				attachmentContent, err = attachmentsToOpenAI(m.Attachments)
 				if err != nil {
 					return nil, err
 				}
@@ -672,15 +645,20 @@ func toolOutputsToOpenAIResponses(
 	return out
 }
 
-func contentBlocksToOpenAI(
-	blocks []attachment.ContentBlock,
+func attachmentsToOpenAI(
+	atts []attachment.Attachment,
 ) ([]responses.ResponseInputContentUnionParam, error) {
-	if len(blocks) == 0 {
+	if len(atts) == 0 {
 		return nil, nil
 	}
-	out := make([]responses.ResponseInputContentUnionParam, 0, len(blocks))
+	out := make([]responses.ResponseInputContentUnionParam, 0, len(atts))
 
-	for _, b := range blocks {
+	for _, att := range atts {
+		if att.ContentBlock == nil {
+			continue
+		}
+		b := att.ContentBlock
+
 		txt := ""
 		if b.Text != nil {
 			txt = strings.TrimSpace(*b.Text)

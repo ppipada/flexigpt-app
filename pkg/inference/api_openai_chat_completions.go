@@ -158,7 +158,6 @@ func (api *OpenAIChatCompletionsAPI) FetchCompletion(
 
 	// Build OpenAI chat messages.
 	msgs, err := toOpenAIChatMessages(
-		ctx,
 		completionData.ModelParams.SystemPrompt,
 		completionData.Messages,
 		completionData.ModelParams.Name,
@@ -306,7 +305,6 @@ func (api *OpenAIChatCompletionsAPI) doStreaming(
 }
 
 func toOpenAIChatMessages(
-	ctx context.Context,
 	systemPrompt string,
 	messages []spec.ChatCompletionDataMessage,
 	modelName inferencegoSpec.ModelName,
@@ -319,16 +317,7 @@ func toOpenAIChatMessages(
 		out = append(out, *msg)
 	}
 
-	// Identify the last user message; attachments are associated with the
-	// "current" user turn in the frontend, which is always the last user role.
-	lastUserIdx := -1
-	for i, m := range messages {
-		if m.Role == inferencegoSpec.RoleUser {
-			lastUserIdx = i
-		}
-	}
-
-	for idx, m := range messages {
+	for _, m := range messages {
 		if m.Content == nil && len(m.Attachments) == 0 && len(m.ToolOutputs) == 0 && len(m.ToolCalls) == 0 {
 			continue
 		}
@@ -355,25 +344,8 @@ func toOpenAIChatMessages(
 			}
 			var attachmentContent []openai.ChatCompletionContentPartUnionParam
 			if len(m.Attachments) > 0 {
-				// Dont override original attachments in rehydration.
-				overrideOriginalAttachment := false
-				if idx == lastUserIdx {
-					// For the current message, we may attach even if things changed between build and fetch.
-					// There is a race here: if we override here, how to propagate to the caller that blocks have
-					// changed now, so update the OrigRef fields in attachments or this message too.
-					overrideOriginalAttachment = true
-				}
-				blocks, err := attachment.BuildContentBlocks(
-					ctx,
-					m.Attachments,
-					attachment.WithOverrideOriginalContentBlock(overrideOriginalAttachment),
-					attachment.WithOnlyTextKindContentBlock(false),
-					attachment.WithForceFetchContentBlock(false),
-				)
-				if err != nil {
-					return nil, err
-				}
-				attachmentContent, err = contentBlocksToOpenAIChat(blocks)
+				var err error
+				attachmentContent, err = attachmentsToOpenAIChat(m.Attachments)
 				if err != nil {
 					return nil, err
 				}
@@ -506,18 +478,20 @@ func toolOutputsToOpenAIChat(
 	return out
 }
 
-// contentBlocksToOpenAIChat converts generic content blocks into OpenAI
-// ChatCompletion content parts (text/image/file) so that attachments can be
-// sent to the multimodal chat endpoint.
-func contentBlocksToOpenAIChat(
-	blocks []attachment.ContentBlock,
+func attachmentsToOpenAIChat(
+	atts []attachment.Attachment,
 ) ([]openai.ChatCompletionContentPartUnionParam, error) {
-	if len(blocks) == 0 {
+	if len(atts) == 0 {
 		return nil, nil
 	}
 
-	out := make([]openai.ChatCompletionContentPartUnionParam, 0, len(blocks))
-	for _, b := range blocks {
+	out := make([]openai.ChatCompletionContentPartUnionParam, 0, len(atts))
+	for _, att := range atts {
+		if att.ContentBlock == nil {
+			continue
+		}
+		b := att.ContentBlock
+
 		txt := ""
 		if b.Text != nil {
 			txt = strings.TrimSpace(*b.Text)

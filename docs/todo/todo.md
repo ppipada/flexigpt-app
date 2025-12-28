@@ -6,6 +6,12 @@
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
 - [ ] Need to migrate to content block array to support citations in conversation turns.
+- [ ] migrate to inference go
+  - [x] adopt any types that can be adopted
+  - [x] rewrite to remove build step in current code
+  - [x] move the attachments hydration in prep step in current code
+  - [ ] think through input type and conversation storage type
+    - [ ] this and new inference api adoption would need to be hand in hand
 
 ## Features
 
