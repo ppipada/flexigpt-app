@@ -14,10 +14,10 @@ require (
 	github.com/markusmobius/go-trafilatura v1.12.2
 	github.com/openai/openai-go/v3 v3.15.0
 	github.com/philippgille/chromem-go v0.7.0
-	github.com/ppipada/inference-go v0.1.0
+	github.com/ppipada/inference-go v0.2.0
 	github.com/ppipada/mapstore-go v0.0.3
 	github.com/wailsapp/wails/v2 v2.11.0
-	golang.org/x/net v0.47.0
+	golang.org/x/net v0.48.0
 )
 
 require (
@@ -76,10 +76,10 @@ require (
 	github.com/wasilibs/wazero-helpers v0.0.0-20240620070341-3dff1577cd52 // indirect
 	github.com/yosssi/gohtml v0.0.0-20201013000340-ee4748c638f4 // indirect
 	github.com/zalando/go-keyring v0.2.6 // indirect
-	golang.org/x/crypto v0.45.0 // indirect
+	golang.org/x/crypto v0.46.0 // indirect
 	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b // indirect
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
 	modernc.org/libc v1.66.8 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
