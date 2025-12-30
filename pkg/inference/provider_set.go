@@ -210,15 +210,15 @@ func (ps *ProviderSetAPI) prepareFetchCompletionData(
 		body.PrevMessages,
 	)
 
-	// Attach tool choices: convert the lightweight ToolChoice handles provided
+	// Attach tool choices: convert the lightweight ToolStoreChoice handles provided
 	// by the caller into FetchCompletionToolChoice entries, then hydrate them
 	// with full tool definitions from the tool store.
 	if len(body.ToolChoices) > 0 {
 		out := make([]spec.FetchCompletionToolChoice, 0, len(body.ToolChoices))
 		for _, c := range body.ToolChoices {
 			out = append(out, spec.FetchCompletionToolChoice{
-				ToolChoice: c,
-				Tool:       nil, // hydrated later in attachToolsToCompletionData
+				ToolStoreChoice: c,
+				Tool:            nil, // hydrated later in attachToolsToCompletionData
 			})
 		}
 		completionData.ToolChoices = out

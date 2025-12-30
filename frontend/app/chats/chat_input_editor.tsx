@@ -18,7 +18,7 @@ import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
 import { type Attachment, AttachmentKind, type AttachmentMode } from '@/spec/attachment';
 import type { DirectoryAttachmentsResult } from '@/spec/backend';
-import type { ToolCall, ToolChoice, ToolOutput } from '@/spec/tool';
+import type { ToolCall, ToolOutput, ToolStoreChoice } from '@/spec/tool';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -89,13 +89,13 @@ export interface EditorAreaHandle {
 	loadExternalMessage: (msg: EditorExternalMessage) => void;
 	resetEditor: () => void;
 	loadToolCalls: (toolCalls: ToolCall[]) => void;
-	setConversationToolsFromChoices: (tools: ToolChoice[]) => void;
+	setConversationToolsFromChoices: (tools: ToolStoreChoice[]) => void;
 }
 
 export interface EditorExternalMessage {
 	text: string;
 	attachments?: Attachment[];
-	toolChoices?: ToolChoice[];
+	toolChoices?: ToolStoreChoice[];
 	toolOutputs?: ToolOutput[];
 }
 
@@ -104,7 +104,7 @@ export interface EditorSubmitPayload {
 	attachedTools: EditorAttachedToolChoice[];
 	attachments: EditorAttachment[];
 	toolOutputs: ToolOutput[];
-	finalToolChoices: ToolChoice[];
+	finalToolChoices: ToolStoreChoice[];
 }
 
 const EDITOR_EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
@@ -331,15 +331,15 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	 * callers like "Run & send" can include it in the payload immediately.
 	 */
 	const runToolCallInternal = useCallback(async (toolCall: EditorToolCall): Promise<ToolOutput | null> => {
-		// Resolve identity using toolChoice when available; fall back to name parsing.
+		// Resolve identity using toolStoreChoice when available; fall back to name parsing.
 		let bundleID: string | undefined;
 		let toolSlug: string | undefined;
 		let version: string | undefined;
 
-		if (toolCall.toolChoice) {
-			bundleID = toolCall.toolChoice.bundleID;
-			toolSlug = toolCall.toolChoice.toolSlug;
-			version = toolCall.toolChoice.toolVersion;
+		if (toolCall.toolStoreChoice) {
+			bundleID = toolCall.toolStoreChoice.bundleID;
+			toolSlug = toolCall.toolStoreChoice.toolSlug;
+			version = toolCall.toolStoreChoice.toolVersion;
 		}
 
 		if (!bundleID || !toolSlug || !version) {
@@ -364,7 +364,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				name: toolCall.name,
 				summary: formatToolOutputSummary(toolCall.name),
 				rawOutput: resp.output,
-				toolChoice: toolCall.toolChoice,
+				toolStoreChoice: toolCall.toolStoreChoice,
 			};
 
 			// Remove the call chip & append the output.
@@ -617,7 +617,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		loadExternalMessage,
 		resetEditor,
 		loadToolCalls,
-		setConversationToolsFromChoices: (tools: ToolChoice[]) => {
+		setConversationToolsFromChoices: (tools: ToolStoreChoice[]) => {
 			setConversationToolsState(initConversationToolsStateFromChoices(tools));
 		},
 	}));

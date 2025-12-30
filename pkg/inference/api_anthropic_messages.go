@@ -13,7 +13,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
-	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
@@ -59,7 +58,7 @@ func (api *AnthropicMessagesAPI) InitLLM(ctx context.Context) error {
 		option.WithAPIKey(api.ProviderParams.APIKey),
 	}
 
-	providerURL := modelpresetSpec.DefaultAnthropicOrigin
+	providerURL := inferencegoSpec.DefaultAnthropicOrigin
 	if api.ProviderParams.Origin != "" {
 		baseURL := strings.TrimSuffix(api.ProviderParams.Origin, "/")
 		// Remove 'v1/messages' from pathPrefix if present,
@@ -81,11 +80,11 @@ func (api *AnthropicMessagesAPI) InitLLM(ctx context.Context) error {
 	if api.ProviderParams.APIKeyHeaderKey != "" &&
 		!strings.EqualFold(
 			api.ProviderParams.APIKeyHeaderKey,
-			modelpresetSpec.DefaultAnthropicAuthorizationHeaderKey,
+			inferencegoSpec.DefaultAnthropicAuthorizationHeaderKey,
 		) &&
 		!strings.EqualFold(
 			api.ProviderParams.APIKeyHeaderKey,
-			modelpresetSpec.DefaultAuthorizationHeaderKey,
+			inferencegoSpec.DefaultAuthorizationHeaderKey,
 		) {
 		opts = append(
 			opts,
@@ -177,7 +176,7 @@ func (api *AnthropicMessagesAPI) FetchCompletion(
 		params.Temperature = anthropic.Float(*t)
 	}
 
-	timeout := modelpresetSpec.DefaultAPITimeout
+	timeout := inferencegoSpec.DefaultAPITimeout
 	if completionData.ModelParams.Timeout > 0 {
 		timeout = time.Duration(completionData.ModelParams.Timeout) * time.Second
 	}
@@ -425,7 +424,7 @@ func toAnthropicMessages(
 
 			if len(m.ReasoningContents) > 0 {
 				for _, reasoningContent := range m.ReasoningContents {
-					if reasoningContent.Type != modelpresetSpec.ReasoningContentTypeAnthropicMessages ||
+					if reasoningContent.Type != spec.ReasoningContentTypeAnthropicMessages ||
 						reasoningContent.ContentAnthropicMessages == nil {
 						// We cannot attach non anthropic reasoning to reasoning call.
 						// This can happen in cross model threads.
@@ -453,7 +452,7 @@ func toAnthropicMessages(
 				annotations := make([]anthropic.TextCitationParamUnion, 0)
 				if len(m.Citations) > 0 {
 					for _, c := range m.Citations {
-						if c.Kind == modelpresetSpec.CitationKindURLAnthropicMessages &&
+						if c.Kind == spec.CitationKindURLAnthropicMessages &&
 							c.URLCitationAnthropicMessages != nil {
 							ra := anthropic.TextCitationParamUnion{
 								OfWebSearchResultLocation: &anthropic.CitationWebSearchResultLocationParam{
@@ -520,7 +519,7 @@ func toAnthropicMessages(
 }
 
 func toolCallsToAnthropicBlocks(
-	toolCalls []toolSpec.ToolCall,
+	toolCalls []spec.ToolCall,
 ) []anthropic.ContentBlockParamUnion {
 	if len(toolCalls) == 0 {
 		return []anthropic.ContentBlockParamUnion{}
@@ -548,7 +547,7 @@ func toolCallsToAnthropicBlocks(
 }
 
 func toolOutputsToAnthropicBlocks(
-	toolOutputs []toolSpec.ToolOutput,
+	toolOutputs []spec.ToolOutput,
 ) []anthropic.ContentBlockParamUnion {
 	if len(toolOutputs) == 0 {
 		return []anthropic.ContentBlockParamUnion{}
@@ -578,7 +577,7 @@ func toolOutputsToAnthropicBlocks(
 	}
 
 	// Orphan outputs (no callID) => rendered as a single text block.
-	var orphanOutputs []toolSpec.ToolOutput
+	var orphanOutputs []spec.ToolOutput
 	for _, o := range toolOutputs {
 		if o.ID == "" {
 			orphanOutputs = append(orphanOutputs, o)
@@ -747,9 +746,9 @@ func attachContentFromAnthropicMessages(
 	}
 
 	var outputText strings.Builder
-	reasoningItems := make([]modelpresetSpec.ReasoningContent, 0)
-	toolCalls := make([]toolSpec.ToolCall, 0)
-	citations := make([]modelpresetSpec.Citation, 0)
+	reasoningItems := make([]spec.ReasoningContent, 0)
+	toolCalls := make([]spec.ToolCall, 0)
+	citations := make([]spec.Citation, 0)
 	for _, content := range msg.Content {
 		switch variant := content.AsAny().(type) {
 		case anthropic.TextBlock:
@@ -758,9 +757,9 @@ func attachContentFromAnthropicMessages(
 			if len(content.Citations) > 0 {
 				for _, cc := range content.Citations {
 					if cc.Type == string(anthropicSharedConstant.WebSearchResultLocation("").Default()) {
-						mc := modelpresetSpec.Citation{
-							Kind: modelpresetSpec.CitationKindURLAnthropicMessages,
-							URLCitationAnthropicMessages: &modelpresetSpec.URLCitationAnthropicMessages{
+						mc := spec.Citation{
+							Kind: spec.CitationKindURLAnthropicMessages,
+							URLCitationAnthropicMessages: &spec.URLCitationAnthropicMessages{
 								URL:            cc.URL,
 								Title:          cc.Title,
 								CitedText:      cc.CitedText,
@@ -772,9 +771,9 @@ func attachContentFromAnthropicMessages(
 				}
 			}
 		case anthropic.ThinkingBlock:
-			reasoningItem := modelpresetSpec.ReasoningContent{
-				Type: modelpresetSpec.ReasoningContentTypeAnthropicMessages,
-				ContentAnthropicMessages: &modelpresetSpec.ReasoningContentAnthropicMessages{
+			reasoningItem := spec.ReasoningContent{
+				Type: spec.ReasoningContentTypeAnthropicMessages,
+				ContentAnthropicMessages: &spec.ReasoningContentAnthropicMessages{
 					Signature: variant.Signature,
 					Thinking:  variant.Thinking,
 				},
@@ -782,9 +781,9 @@ func attachContentFromAnthropicMessages(
 			reasoningItems = append(reasoningItems, reasoningItem)
 
 		case anthropic.RedactedThinkingBlock:
-			reasoningItem := modelpresetSpec.ReasoningContent{
-				Type: modelpresetSpec.ReasoningContentTypeAnthropicMessages,
-				ContentAnthropicMessages: &modelpresetSpec.ReasoningContentAnthropicMessages{
+			reasoningItem := spec.ReasoningContent{
+				Type: spec.ReasoningContentTypeAnthropicMessages,
+				ContentAnthropicMessages: &spec.ReasoningContentAnthropicMessages{
 					RedactedThinking: variant.Data,
 				},
 			}
@@ -796,21 +795,21 @@ func attachContentFromAnthropicMessages(
 			if vID == "" || name == "" {
 				continue
 			}
-			var toolChoice *toolSpec.ToolChoice
+			var toolStoreChoice *toolSpec.ToolStoreChoice
 			if toolNameMap != nil {
 				if ct, ok := toolNameMap[name]; ok {
 					// Add the actual choice to response.
-					toolChoice = &ct.ToolChoice
+					toolStoreChoice = &ct.ToolStoreChoice
 				}
 			}
 
-			call := toolSpec.ToolCall{
-				ID:         vID,
-				CallID:     vID,
-				Name:       variant.Name,
-				Arguments:  strings.TrimSpace(string(variant.Input)),
-				Type:       string(variant.Type),
-				ToolChoice: toolChoice,
+			call := spec.ToolCall{
+				ID:              vID,
+				CallID:          vID,
+				Name:            variant.Name,
+				Arguments:       strings.TrimSpace(string(variant.Input)),
+				Type:            string(variant.Type),
+				ToolStoreChoice: toolStoreChoice,
 			}
 			toolCalls = append(toolCalls, call)
 		case anthropic.ServerToolUseBlock:

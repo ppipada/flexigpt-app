@@ -1,6 +1,6 @@
 import type { InferenceError, InputOutputContent, ModelParam, Usage } from '@/spec/inference';
 import type { ReasoningContent } from '@/spec/modelpreset';
-import type { ToolCall, ToolChoice, ToolOutput } from '@/spec/tool';
+import type { ToolCall, ToolOutput, ToolStoreChoice } from '@/spec/tool';
 
 export interface ConversationMessage {
 	id: string;
@@ -12,7 +12,7 @@ export interface ConversationMessage {
 	reasoning?: ReasoningContent[];
 	toolCalls?: ToolCall[];
 	toolOutputs?: ToolOutput[];
-	toolChoices?: ToolChoice[];
+	toolChoices?: ToolStoreChoice[];
 	usage?: Usage;
 	error?: InferenceError;
 	meta?: Record<string, any>;

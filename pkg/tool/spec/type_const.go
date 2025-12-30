@@ -96,7 +96,7 @@ type HTTPToolImpl struct {
 	Response HTTPResponse `json:"response"`
 }
 
-type ToolChoice struct {
+type ToolStoreChoice struct {
 	BundleID   bundleitemutils.BundleID   `json:"bundleID"`
 	BundleSlug bundleitemutils.BundleSlug `json:"bundleSlug,omitempty"`
 
@@ -106,28 +106,6 @@ type ToolChoice struct {
 
 	Description string `json:"description,omitempty"`
 	DisplayName string `json:"displayName,omitempty"`
-}
-
-// ToolCall captures model-requested (or model-returned) tool invocations
-// so the frontend can decide how to proceed (execute locally, display results,
-// etc.).
-type ToolCall struct {
-	ID         string      `json:"id"`
-	CallID     string      `json:"callID"`
-	Name       string      `json:"name"`
-	Arguments  string      `json:"arguments"`
-	Type       string      `json:"type"`
-	Status     string      `json:"status,omitempty"`
-	ToolChoice *ToolChoice `json:"toolChoice,omitempty"`
-}
-
-type ToolOutput struct {
-	ID         string      `json:"id"`
-	CallID     string      `json:"callID"`
-	Name       string      `json:"name"`
-	Summary    string      `json:"summary,omitempty"`
-	RawOutput  string      `json:"rawOutput,omitempty"`
-	ToolChoice *ToolChoice `json:"toolChoice,omitempty"`
 }
 
 type Tool struct {

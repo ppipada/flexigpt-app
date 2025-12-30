@@ -2,7 +2,7 @@
 import { ElementApi, KEYS, NodeApi, type Path } from 'platejs';
 import type { PlateEditor } from 'platejs/react';
 
-import type { Tool, ToolCall, ToolChoice } from '@/spec/tool';
+import type { Tool, ToolCall, ToolStoreChoice } from '@/spec/tool';
 
 // Keys for the tools combobox and inline elements
 export const KEY_TOOL_SELECTION = 'toolSelection';
@@ -41,8 +41,8 @@ export interface EditorToolCall {
 	type: string;
 	status: EditorToolCallStatus;
 	errorMessage?: string;
-	/** Optional original ToolChoice associated with this call, if the provider supplied it. */
-	toolChoice?: ToolChoice;
+	/** Optional original ToolStoreChoice associated with this call, if the provider supplied it. */
+	toolStoreChoice?: ToolStoreChoice;
 }
 
 /**
@@ -57,7 +57,7 @@ export function buildToolCallFromResponse(toolCalls: ToolCall[] | undefined | nu
 		arguments: tc.arguments,
 		type: tc.type,
 		status: 'pending',
-		toolChoice: tc.toolChoice,
+		toolStoreChoice: tc.toolStoreChoice,
 	}));
 }
 
@@ -143,12 +143,12 @@ export type EditorAttachedToolChoice = {
 	displayName?: string;
 	description?: string;
 
-	// Non ToolChoice fields
+	// Non ToolStoreChoice fields
 	selectionID: string;
 };
 
-// Convert the editor's attached-tool shape into the persisted ToolChoice shape.
-export function editorAttachedToolToToolChoice(att: EditorAttachedToolChoice): ToolChoice {
+// Convert the editor's attached-tool shape into the persisted ToolStoreChoice shape.
+export function editorAttachedToolToToolChoice(att: EditorAttachedToolChoice): ToolStoreChoice {
 	return {
 		bundleID: att.bundleID,
 		toolSlug: att.toolSlug,
@@ -159,12 +159,12 @@ export function editorAttachedToolToToolChoice(att: EditorAttachedToolChoice): T
 	};
 }
 
-function toolChoiceIdentityKey(tool: ToolChoice): string {
+function toolChoiceIdentityKey(tool: ToolStoreChoice): string {
 	return toolIdentityKey(tool.bundleID, undefined, tool.toolSlug, tool.toolVersion);
 }
 
-export function dedupeToolChoices(choices: ToolChoice[]): ToolChoice[] {
-	const out: ToolChoice[] = [];
+export function dedupeToolChoices(choices: ToolStoreChoice[]): ToolStoreChoice[] {
+	const out: ToolStoreChoice[] = [];
 	const seen = new Set<string>();
 
 	for (const t of choices ?? []) {

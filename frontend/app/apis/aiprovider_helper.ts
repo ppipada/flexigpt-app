@@ -1,7 +1,7 @@
 import { type ChatCompletionDataMessage, type FetchCompletionResponseBody, type ModelParam } from '@/spec/aiprovider';
 import type { ConversationMessage } from '@/spec/conversation';
 import { type CompletionUsage, type ProviderName, type ReasoningContent } from '@/spec/modelpreset';
-import type { ToolCall, ToolChoice } from '@/spec/tool';
+import type { ToolCall, ToolStoreChoice } from '@/spec/tool';
 
 import { log, providerSetAPI } from '@/apis/baseapi';
 
@@ -124,7 +124,7 @@ async function handleDirectCompletion(
 	modelParams: ModelParam,
 	promptMsg: ChatCompletionDataMessage,
 	prevMessages: ChatCompletionDataMessage[],
-	toolChoices: ToolChoice[] | undefined,
+	toolChoices: ToolStoreChoice[] | undefined,
 	requestId?: string,
 	signal?: AbortSignal
 ): Promise<{
@@ -149,7 +149,7 @@ async function handleStreamedCompletion(
 	modelParams: ModelParam,
 	promptMsg: ChatCompletionDataMessage,
 	prevMessages: ChatCompletionDataMessage[],
-	toolChoices: ToolChoice[] | undefined,
+	toolChoices: ToolStoreChoice[] | undefined,
 	requestId?: string,
 	signal?: AbortSignal,
 	onStreamTextData?: (textData: string) => void,
@@ -177,7 +177,7 @@ export async function HandleCompletion(
 	modelParams: ModelParam,
 	promptMsg: ChatCompletionDataMessage,
 	prevMessages: ChatCompletionDataMessage[],
-	toolChoices: ToolChoice[] | undefined,
+	toolChoices: ToolStoreChoice[] | undefined,
 	convoMessage: ConversationMessage,
 	requestId?: string,
 	signal?: AbortSignal,

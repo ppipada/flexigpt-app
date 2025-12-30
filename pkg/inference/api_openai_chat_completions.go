@@ -18,7 +18,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
-	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
@@ -58,7 +57,7 @@ func (api *OpenAIChatCompletionsAPI) InitLLM(ctx context.Context) error {
 		option.WithAPIKey(api.ProviderParams.APIKey),
 	}
 
-	providerURL := modelpresetSpec.DefaultOpenAIOrigin
+	providerURL := inferencegoSpec.DefaultOpenAIOrigin
 	if api.ProviderParams.Origin != "" {
 		baseURL := api.ProviderParams.Origin
 		// Remove trailing slash from baseURL if present.
@@ -82,7 +81,7 @@ func (api *OpenAIChatCompletionsAPI) InitLLM(ctx context.Context) error {
 	if api.ProviderParams.APIKeyHeaderKey != "" &&
 		!strings.EqualFold(
 			api.ProviderParams.APIKeyHeaderKey,
-			modelpresetSpec.DefaultAuthorizationHeaderKey,
+			inferencegoSpec.DefaultAuthorizationHeaderKey,
 		) {
 		opts = append(
 			opts,
@@ -204,7 +203,7 @@ func (api *OpenAIChatCompletionsAPI) FetchCompletion(
 		}
 	}
 
-	timeout := modelpresetSpec.DefaultAPITimeout
+	timeout := inferencegoSpec.DefaultAPITimeout
 	if completionData.ModelParams.Timeout > 0 {
 		timeout = time.Duration(completionData.ModelParams.Timeout) * time.Second
 	}
@@ -443,7 +442,7 @@ func toOpenAIChatMessages(
 }
 
 func toolOutputsToOpenAIChat(
-	toolOutputs []toolSpec.ToolOutput,
+	toolOutputs []spec.ToolOutput,
 ) []openai.ChatCompletionMessageParamUnion {
 	out := make([]openai.ChatCompletionMessageParamUnion, 0, len(toolOutputs))
 
@@ -464,7 +463,7 @@ func toolOutputsToOpenAIChat(
 
 	// Any tool outputs without a callID are rendered as plain user text
 	// so the model still sees the information.
-	var orphanOutputs []toolSpec.ToolOutput
+	var orphanOutputs []spec.ToolOutput
 	for _, o := range toolOutputs {
 		if strings.TrimSpace(o.ID) == "" {
 			orphanOutputs = append(orphanOutputs, o)
@@ -606,16 +605,16 @@ func toOpenAIChatTools(
 func extractOpenAIChatToolCalls(
 	choices []openai.ChatCompletionChoice,
 	toolChoiceNameMap map[string]spec.FetchCompletionToolChoice,
-) []toolSpec.ToolCall {
+) []spec.ToolCall {
 	if len(choices) == 0 {
-		return []toolSpec.ToolCall{}
+		return []spec.ToolCall{}
 	}
 	msg := &choices[0].Message
 	if len(msg.ToolCalls) == 0 {
-		return []toolSpec.ToolCall{}
+		return []spec.ToolCall{}
 	}
 
-	out := make([]toolSpec.ToolCall, 0)
+	out := make([]spec.ToolCall, 0)
 	for _, tc := range msg.ToolCalls {
 		switch tc.Type {
 		case string(openaiSharedConstant.Function("").Default()):
@@ -623,23 +622,23 @@ func extractOpenAIChatToolCalls(
 				continue
 			}
 			name := tc.Function.Name
-			var toolChoice *toolSpec.ToolChoice
+			var toolStoreChoice *toolSpec.ToolStoreChoice
 			if toolChoiceNameMap != nil {
 				if ct, ok := toolChoiceNameMap[name]; ok {
 					// Add the actual choice to response.
-					toolChoice = &ct.ToolChoice
+					toolStoreChoice = &ct.ToolStoreChoice
 				}
 			}
 
 			out = append(
 				out,
-				toolSpec.ToolCall{
-					ID:         tc.ID,
-					CallID:     tc.ID,
-					Name:       tc.Function.Name,
-					Arguments:  tc.Function.Arguments,
-					Type:       tc.Type,
-					ToolChoice: toolChoice,
+				spec.ToolCall{
+					ID:              tc.ID,
+					CallID:          tc.ID,
+					Name:            tc.Function.Name,
+					Arguments:       tc.Function.Arguments,
+					Type:            tc.Type,
+					ToolStoreChoice: toolStoreChoice,
 				},
 			)
 		case string(openaiSharedConstant.Custom("").Default()):
@@ -647,22 +646,22 @@ func extractOpenAIChatToolCalls(
 				continue
 			}
 			name := tc.Custom.Name
-			var toolChoice *toolSpec.ToolChoice
+			var toolStoreChoice *toolSpec.ToolStoreChoice
 			if toolChoiceNameMap != nil {
 				if ct, ok := toolChoiceNameMap[name]; ok {
 					// Add the actual choice to response.
-					toolChoice = &ct.ToolChoice
+					toolStoreChoice = &ct.ToolStoreChoice
 				}
 			}
 			out = append(
 				out,
-				toolSpec.ToolCall{
-					ID:         tc.ID,
-					CallID:     tc.ID,
-					Name:       tc.Custom.Name,
-					Arguments:  tc.Custom.Input,
-					Type:       tc.Type,
-					ToolChoice: toolChoice,
+				spec.ToolCall{
+					ID:              tc.ID,
+					CallID:          tc.ID,
+					Name:            tc.Custom.Name,
+					Arguments:       tc.Custom.Input,
+					Type:            tc.Type,
+					ToolStoreChoice: toolStoreChoice,
 				},
 			)
 
@@ -670,7 +669,7 @@ func extractOpenAIChatToolCalls(
 	}
 
 	if len(out) == 0 {
-		return []toolSpec.ToolCall{}
+		return []spec.ToolCall{}
 	}
 
 	return out

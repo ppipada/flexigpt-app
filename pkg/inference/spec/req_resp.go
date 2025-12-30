@@ -2,7 +2,6 @@ package spec
 
 import (
 	"github.com/ppipada/flexigpt-app/pkg/attachment"
-	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
@@ -68,15 +67,15 @@ type ChatCompletionDataMessage struct {
 	Name    *string                  `json:"name,omitempty"`
 	Content *string                  `json:"content,omitempty"`
 
-	ReasoningContents []modelpresetSpec.ReasoningContent `json:"reasoningContents,omitempty"`
-	Citations         []modelpresetSpec.Citation         `json:"citations,omitempty"`
-	Attachments       []attachment.Attachment            `json:"attachments,omitempty"`
-	ToolCalls         []toolSpec.ToolCall                `json:"toolCalls,omitempty"`
-	ToolOutputs       []toolSpec.ToolOutput              `json:"toolOutputs,omitempty"`
+	ReasoningContents []ReasoningContent      `json:"reasoningContents,omitempty"`
+	Citations         []Citation              `json:"citations,omitempty"`
+	Attachments       []attachment.Attachment `json:"attachments,omitempty"`
+	ToolCalls         []ToolCall              `json:"toolCalls,omitempty"`
+	ToolOutputs       []ToolOutput            `json:"toolOutputs,omitempty"`
 }
 
 type FetchCompletionToolChoice struct {
-	toolSpec.ToolChoice
+	toolSpec.ToolStoreChoice
 
 	Tool *toolSpec.Tool `json:"tool"`
 }
@@ -91,7 +90,7 @@ type FetchCompletionRequestBody struct {
 	ModelParams    inferencegoSpec.ModelParam  `json:"modelParams"            required:"true"`
 	CurrentMessage ChatCompletionDataMessage   `json:"currentMessage"         required:"true"`
 	PrevMessages   []ChatCompletionDataMessage `json:"prevMessages,omitempty"`
-	ToolChoices    []toolSpec.ToolChoice       `json:"toolChoices,omitempty"`
+	ToolChoices    []toolSpec.ToolStoreChoice  `json:"toolChoices,omitempty"`
 }
 
 type FetchCompletionRequest struct {
@@ -107,11 +106,11 @@ type FetchCompletionResponseBody struct {
 	ResponseDetails *APIResponseDetails `json:"responseDetails,omitempty"`
 	ErrorDetails    *APIErrorDetails    `json:"errorDetails,omitempty"`
 
-	Content           *string                            `json:"content,omitempty"`
-	ReasoningContents []modelpresetSpec.ReasoningContent `json:"reasoningContents,omitempty"`
-	Citations         []modelpresetSpec.Citation         `json:"citations,omitempty"`
-	ToolCalls         []toolSpec.ToolCall                `json:"toolCalls,omitempty"`
-	Usage             *inferencegoSpec.Usage             `json:"usage,omitempty"`
+	Content           *string                `json:"content,omitempty"`
+	ReasoningContents []ReasoningContent     `json:"reasoningContents,omitempty"`
+	Citations         []Citation             `json:"citations,omitempty"`
+	ToolCalls         []ToolCall             `json:"toolCalls,omitempty"`
+	Usage             *inferencegoSpec.Usage `json:"usage,omitempty"`
 }
 
 type FetchCompletionResponse struct {

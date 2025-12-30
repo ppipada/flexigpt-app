@@ -5,7 +5,7 @@ import type {
 	ModelParam,
 } from '@/spec/aiprovider';
 import type { ProviderName } from '@/spec/modelpreset';
-import type { ToolChoice } from '@/spec/tool';
+import type { ToolStoreChoice } from '@/spec/tool';
 
 import { CancelCompletion, FetchCompletion } from '@/apis/wailsjs/go/main/ProviderSetWrapper';
 import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
@@ -23,7 +23,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		modelParams: ModelParam,
 		currentMessage: ChatCompletionDataMessage,
 		prevMessages?: Array<ChatCompletionDataMessage>,
-		toolChoices?: Array<ToolChoice>,
+		toolChoices?: Array<ToolStoreChoice>,
 		requestId?: string,
 		signal?: AbortSignal,
 		onStreamTextData?: (text: string) => void,

@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ModelParam } from '@/spec/aiprovider';
 import type { Conversation, ConversationMessage, ConversationSearchItem } from '@/spec/conversation';
 import { RoleEnum } from '@/spec/modelpreset';
-import type { ToolChoice } from '@/spec/tool';
 
 import { defaultShortcutConfig, type ShortcutConfig, useChatShortcuts } from '@/lib/keyboard_shortcuts';
 import { getBlockQuotedLines, sanitizeConversationTitle } from '@/lib/text_utils';
@@ -45,7 +44,7 @@ function initConversationMessage(role: RoleEnum, content: string): ConversationM
 	};
 }
 
-function deriveConversationToolsFromMessages(messages: ConversationMessage[]): ToolChoice[] {
+function deriveConversationToolsFromMessages(messages: ConversationMessage[]): ToolStoreChoice[] {
 	for (let i = messages.length - 1; i >= 0; i -= 1) {
 		const m = messages[i];
 		if (m.role === RoleEnum.User && m.toolChoices && m.toolChoices.length > 0) {

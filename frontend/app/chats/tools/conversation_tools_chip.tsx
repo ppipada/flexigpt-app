@@ -3,21 +3,21 @@ import { FiChevronUp, FiTool, FiX } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
-import type { ToolChoice } from '@/spec/tool';
+import type { ToolStoreChoice } from '@/spec/tool';
 
 import { toolIdentityKey } from '@/chats/tools/tool_editor_utils';
 
 export interface ConversationToolStateEntry {
 	key: string;
-	tool: ToolChoice;
+	tool: ToolStoreChoice;
 	enabled: boolean;
 }
 
 /**
- * Initialize UI state from an array of ToolChoice coming from history
+ * Initialize UI state from an array of ToolStoreChoice coming from history
  * (e.g. last user message's toolChoices).
  */
-export function initConversationToolsStateFromChoices(choices: ToolChoice[]): ConversationToolStateEntry[] {
+export function initConversationToolsStateFromChoices(choices: ToolStoreChoice[]): ConversationToolStateEntry[] {
 	const out: ConversationToolStateEntry[] = [];
 	const seen = new Set<string>();
 
@@ -34,9 +34,9 @@ export function initConversationToolsStateFromChoices(choices: ToolChoice[]): Co
 /**
  * Extract only the ENABLED tools, deduped by identity, for attachment to a message.
  */
-export function conversationToolsToChoices(entries: ConversationToolStateEntry[]): ToolChoice[] {
+export function conversationToolsToChoices(entries: ConversationToolStateEntry[]): ToolStoreChoice[] {
 	if (!entries || entries.length === 0) return [];
-	const out: ToolChoice[] = [];
+	const out: ToolStoreChoice[] = [];
 	const seen = new Set<string>();
 
 	for (const e of entries) {
@@ -58,7 +58,7 @@ export function conversationToolsToChoices(entries: ConversationToolStateEntry[]
  */
 export function mergeConversationToolsWithNewChoices(
 	prev: ConversationToolStateEntry[],
-	newTools: ToolChoice[]
+	newTools: ToolStoreChoice[]
 ): ConversationToolStateEntry[] {
 	if (!newTools || newTools.length === 0) return prev;
 

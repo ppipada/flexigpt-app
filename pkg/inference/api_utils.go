@@ -10,7 +10,6 @@ import (
 
 	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
-	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 )
 
@@ -206,7 +205,7 @@ func sanitizeToolNameComponent(s string) string {
 // human-readable text block that can be sent back to models which do not
 // support structured tool result messages (or as a fallback when we are
 // missing tool_call IDs).
-func renderToolOutputsAsText(outputs []toolSpec.ToolOutput) string {
+func renderToolOutputsAsText(outputs []spec.ToolOutput) string {
 	if len(outputs) == 0 {
 		return ""
 	}

@@ -61,7 +61,7 @@ export interface HTTPToolImpl {
 	response: HTTPResponse;
 }
 
-export interface ToolChoice {
+export interface ToolStoreChoice {
 	bundleID: string;
 	bundleSlug?: string;
 
@@ -80,7 +80,7 @@ export interface ToolCall {
 	arguments: string;
 	type: string;
 	status?: string;
-	toolChoice?: ToolChoice;
+	toolStoreChoice?: ToolStoreChoice;
 }
 
 export interface ToolOutput {
@@ -89,7 +89,7 @@ export interface ToolOutput {
 	name: string;
 	summary?: string;
 	rawOutput?: string;
-	toolChoice?: ToolChoice;
+	toolStoreChoice?: ToolStoreChoice;
 }
 
 export interface Tool {

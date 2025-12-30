@@ -7,7 +7,7 @@ import type {
 	ReasoningParams,
 	RoleEnum,
 } from '@/spec/modelpreset';
-import type { Tool, ToolCall, ToolChoice, ToolOutput } from '@/spec/tool';
+import type { Tool, ToolCall, ToolOutput, ToolStoreChoice } from '@/spec/tool';
 
 export interface ChatCompletionDataMessage {
 	role: RoleEnum;
@@ -23,7 +23,7 @@ export interface ChatCompletionDataMessage {
 /**
  * @public
  */
-export type FetchCompletionToolChoice = ToolChoice & {
+export type FetchCompletionToolChoice = ToolStoreChoice & {
 	tool: Tool | null;
 };
 
@@ -80,7 +80,7 @@ export interface IProviderSetAPI {
 		modelParams: ModelParam,
 		currentMessage: ChatCompletionDataMessage,
 		prevMessages?: Array<ChatCompletionDataMessage>,
-		toolChoices?: Array<ToolChoice>,
+		toolChoices?: Array<ToolStoreChoice>,
 
 		requestId?: string,
 		signal?: AbortSignal,

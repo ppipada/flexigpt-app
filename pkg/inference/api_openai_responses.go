@@ -19,7 +19,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
-	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
@@ -59,7 +58,7 @@ func (api *OpenAIResponsesAPI) InitLLM(ctx context.Context) error {
 		option.WithAPIKey(api.ProviderParams.APIKey),
 	}
 
-	providerURL := modelpresetSpec.DefaultOpenAIOrigin
+	providerURL := inferencegoSpec.DefaultOpenAIOrigin
 	if api.ProviderParams.Origin != "" {
 		baseURL := api.ProviderParams.Origin
 		// Remove trailing slash from baseURL if present.
@@ -83,7 +82,7 @@ func (api *OpenAIResponsesAPI) InitLLM(ctx context.Context) error {
 	if api.ProviderParams.APIKeyHeaderKey != "" &&
 		!strings.EqualFold(
 			api.ProviderParams.APIKeyHeaderKey,
-			modelpresetSpec.DefaultAuthorizationHeaderKey,
+			inferencegoSpec.DefaultAuthorizationHeaderKey,
 		) {
 		opts = append(
 			opts,
@@ -215,7 +214,7 @@ func (api *OpenAIResponsesAPI) FetchCompletion(
 		}
 	}
 
-	timeout := modelpresetSpec.DefaultAPITimeout
+	timeout := inferencegoSpec.DefaultAPITimeout
 	if completionData.ModelParams.Timeout > 0 {
 		timeout = time.Duration(completionData.ModelParams.Timeout) * time.Second
 	}
@@ -437,7 +436,7 @@ func toOpenAIResponsesMessages(
 			if len(m.ReasoningContents) > 0 {
 				parts := make([]responses.ResponseInputItemUnionParam, 0)
 				for _, reasoningContent := range m.ReasoningContents {
-					if reasoningContent.Type != modelpresetSpec.ReasoningContentTypeOpenAIResponses ||
+					if reasoningContent.Type != spec.ReasoningContentTypeOpenAIResponses ||
 						reasoningContent.ContentOpenAIResponses == nil {
 						// We cannot attach non responses reasoning to reasoning call.
 						// This can happen in cross model threads.
@@ -493,7 +492,7 @@ func toOpenAIResponsesMessages(
 				annotations := make([]responses.ResponseOutputTextAnnotationUnionParam, 0)
 				if len(m.Citations) > 0 {
 					for _, c := range m.Citations {
-						if c.Kind == modelpresetSpec.CitationKindURLOpenAIResponses &&
+						if c.Kind == spec.CitationKindURLOpenAIResponses &&
 							c.URLCitationOpenAIResponses != nil {
 							ra := responses.ResponseOutputTextAnnotationUnionParam{
 								OfURLCitation: &responses.ResponseOutputTextAnnotationURLCitationParam{
@@ -599,7 +598,7 @@ func toOpenAIResponsesMessages(
 }
 
 func toolOutputsToOpenAIResponses(
-	toolOutputs []toolSpec.ToolOutput,
+	toolOutputs []spec.ToolOutput,
 ) []responses.ResponseInputItemUnionParam {
 	out := make([]responses.ResponseInputItemUnionParam, 0, len(toolOutputs))
 
@@ -621,7 +620,7 @@ func toolOutputsToOpenAIResponses(
 
 	// Any tool outputs without a callID are rendered as plain user text
 	// so the model still sees the information.
-	var orphanOutputs []toolSpec.ToolOutput
+	var orphanOutputs []spec.ToolOutput
 	for _, o := range toolOutputs {
 		if strings.TrimSpace(o.CallID) == "" {
 			orphanOutputs = append(orphanOutputs, o)
@@ -780,9 +779,9 @@ func attachContentFromResponses(
 	}
 
 	var outputText strings.Builder
-	reasoningItems := make([]modelpresetSpec.ReasoningContent, 0)
-	toolCalls := make([]toolSpec.ToolCall, 0)
-	citations := make([]modelpresetSpec.Citation, 0)
+	reasoningItems := make([]spec.ReasoningContent, 0)
+	toolCalls := make([]spec.ToolCall, 0)
+	citations := make([]spec.Citation, 0)
 	for _, item := range inputResp.Output {
 		switch item.Type {
 		case string(openaiSharedConstant.Message("").Default()):
@@ -793,9 +792,9 @@ func attachContentFromResponses(
 					if len(content.Annotations) > 0 {
 						for _, ca := range content.Annotations {
 							if ca.Type == string(openaiSharedConstant.URLCitation("").Default()) {
-								mc := modelpresetSpec.Citation{
-									Kind: modelpresetSpec.CitationKindURLOpenAIResponses,
-									URLCitationOpenAIResponses: &modelpresetSpec.URLCitationOpenAIResponses{
+								mc := spec.Citation{
+									Kind: spec.CitationKindURLOpenAIResponses,
+									URLCitationOpenAIResponses: &spec.URLCitationOpenAIResponses{
 										URL:        ca.URL,
 										Title:      ca.Title,
 										StartIndex: ca.StartIndex,
@@ -811,9 +810,9 @@ func attachContentFromResponses(
 
 		case string(openaiSharedConstant.Reasoning("").Default()):
 			ti := item.AsReasoning()
-			reasoningItem := modelpresetSpec.ReasoningContent{
-				Type: modelpresetSpec.ReasoningContentTypeOpenAIResponses,
-				ContentOpenAIResponses: &modelpresetSpec.ReasoningContentOpenAIResponses{
+			reasoningItem := spec.ReasoningContent{
+				Type: spec.ReasoningContentTypeOpenAIResponses,
+				ContentOpenAIResponses: &spec.ReasoningContentOpenAIResponses{
 					ID:               ti.ID,
 					EncryptedContent: ti.EncryptedContent,
 				},
@@ -845,24 +844,24 @@ func attachContentFromResponses(
 				continue
 			}
 			name := fn.Name
-			var toolChoice *toolSpec.ToolChoice
+			var toolStoreChoice *toolSpec.ToolStoreChoice
 			if toolChoiceNameMap != nil {
 				if ct, ok := toolChoiceNameMap[name]; ok {
 					// Add the actual choice to response.
-					toolChoice = &ct.ToolChoice
+					toolStoreChoice = &ct.ToolStoreChoice
 				}
 			}
 
 			toolCalls = append(
 				toolCalls,
-				toolSpec.ToolCall{
-					ID:         fn.ID,
-					CallID:     fn.CallID,
-					Name:       fn.Name,
-					Arguments:  fn.Arguments,
-					Type:       item.Type,
-					Status:     string(fn.Status),
-					ToolChoice: toolChoice,
+				spec.ToolCall{
+					ID:              fn.ID,
+					CallID:          fn.CallID,
+					Name:            fn.Name,
+					Arguments:       fn.Arguments,
+					Type:            item.Type,
+					Status:          string(fn.Status),
+					ToolStoreChoice: toolStoreChoice,
 				},
 			)
 
@@ -872,22 +871,22 @@ func attachContentFromResponses(
 				continue
 			}
 			name := fn.Name
-			var toolChoice *toolSpec.ToolChoice
+			var toolStoreChoice *toolSpec.ToolStoreChoice
 			if toolChoiceNameMap != nil {
 				if ct, ok := toolChoiceNameMap[name]; ok {
-					toolChoice = &ct.ToolChoice
+					toolStoreChoice = &ct.ToolStoreChoice
 				}
 			}
 
 			toolCalls = append(
 				toolCalls,
-				toolSpec.ToolCall{
-					ID:         fn.ID,
-					CallID:     fn.CallID,
-					Name:       fn.Name,
-					Arguments:  fn.Input,
-					Type:       item.Type,
-					ToolChoice: toolChoice,
+				spec.ToolCall{
+					ID:              fn.ID,
+					CallID:          fn.CallID,
+					Name:            fn.Name,
+					Arguments:       fn.Input,
+					Type:            item.Type,
+					ToolStoreChoice: toolStoreChoice,
 				},
 			)
 		}

@@ -5,7 +5,7 @@ import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
 import type { Attachment } from '@/spec/attachment';
 import { AttachmentKind, AttachmentMode } from '@/spec/attachment';
-import type { ToolCall, ToolChoice, ToolOutput } from '@/spec/tool';
+import type { ToolCall, ToolOutput, ToolStoreChoice } from '@/spec/tool';
 
 import {
 	getAttachmentModeLabel,
@@ -89,7 +89,7 @@ function MessageAttachmentInfoChip({ attachment, fullWidth = false }: MessageAtt
 }
 
 interface MessageToolChoiceChipProps {
-	tool: ToolChoice;
+	tool: ToolStoreChoice;
 	fullWidth?: boolean;
 }
 
@@ -249,7 +249,7 @@ function AttachmentsGroupChip({ attachments }: AttachmentsGroupChipProps) {
 }
 
 interface ToolChoicesGroupChipProps {
-	tools: ToolChoice[];
+	tools: ToolStoreChoice[];
 }
 
 function ToolChoicesGroupChip({ tools }: ToolChoicesGroupChipProps) {
@@ -415,7 +415,7 @@ function ToolCallsGroupChip({ calls }: ToolCallsGroupChipProps) {
 
 interface MessageAttachmentsBarProps {
 	attachments?: Attachment[];
-	toolChoices?: ToolChoice[];
+	toolChoices?: ToolStoreChoice[];
 	toolCalls?: ToolCall[];
 	toolOutputs?: ToolOutput[];
 }
