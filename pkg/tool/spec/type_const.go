@@ -96,18 +96,6 @@ type HTTPToolImpl struct {
 	Response HTTPResponse `json:"response"`
 }
 
-type ToolStoreChoice struct {
-	BundleID   bundleitemutils.BundleID   `json:"bundleID"`
-	BundleSlug bundleitemutils.BundleSlug `json:"bundleSlug,omitempty"`
-
-	ToolID      bundleitemutils.ItemID   `json:"toolID,omitempty"`
-	ToolSlug    bundleitemutils.ItemSlug `json:"toolSlug"`
-	ToolVersion string                   `json:"toolVersion"`
-
-	Description string `json:"description,omitempty"`
-	DisplayName string `json:"displayName,omitempty"`
-}
-
 type Tool struct {
 	SchemaVersion string                      `json:"schemaVersion"`
 	ID            bundleitemutils.ItemID      `json:"id"` // UUID-v7

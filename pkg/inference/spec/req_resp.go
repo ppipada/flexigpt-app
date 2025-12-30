@@ -75,7 +75,7 @@ type ChatCompletionDataMessage struct {
 }
 
 type FetchCompletionToolChoice struct {
-	toolSpec.ToolStoreChoice
+	ToolStoreChoice
 
 	Tool *toolSpec.Tool `json:"tool"`
 }
@@ -90,7 +90,7 @@ type FetchCompletionRequestBody struct {
 	ModelParams    inferencegoSpec.ModelParam  `json:"modelParams"            required:"true"`
 	CurrentMessage ChatCompletionDataMessage   `json:"currentMessage"         required:"true"`
 	PrevMessages   []ChatCompletionDataMessage `json:"prevMessages,omitempty"`
-	ToolChoices    []toolSpec.ToolStoreChoice  `json:"toolChoices,omitempty"`
+	ToolChoices    []ToolStoreChoice           `json:"toolChoices,omitempty"`
 }
 
 type FetchCompletionRequest struct {

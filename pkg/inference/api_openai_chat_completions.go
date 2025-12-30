@@ -18,7 +18,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
-	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
@@ -622,7 +621,7 @@ func extractOpenAIChatToolCalls(
 				continue
 			}
 			name := tc.Function.Name
-			var toolStoreChoice *toolSpec.ToolStoreChoice
+			var toolStoreChoice *spec.ToolStoreChoice
 			if toolChoiceNameMap != nil {
 				if ct, ok := toolChoiceNameMap[name]; ok {
 					// Add the actual choice to response.
@@ -646,7 +645,7 @@ func extractOpenAIChatToolCalls(
 				continue
 			}
 			name := tc.Custom.Name
-			var toolStoreChoice *toolSpec.ToolStoreChoice
+			var toolStoreChoice *spec.ToolStoreChoice
 			if toolChoiceNameMap != nil {
 				if ct, ok := toolChoiceNameMap[name]; ok {
 					// Add the actual choice to response.

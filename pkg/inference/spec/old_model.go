@@ -1,6 +1,8 @@
 package spec
 
-import toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
+import (
+	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
+)
 
 type ReasoningContentType string
 
@@ -60,24 +62,37 @@ type Citation struct {
 	URLCitationAnthropicMessages *URLCitationAnthropicMessages `json:"urlCitationAnthropicMessages,omitempty"`
 }
 
+type ToolStoreChoice struct {
+	// BundleID, BundleSlug, ItemID, ItemSlug are string aliases.
+	BundleID   bundleitemutils.BundleID   `json:"bundleID"`
+	BundleSlug bundleitemutils.BundleSlug `json:"bundleSlug,omitempty"`
+
+	ToolID      bundleitemutils.ItemID   `json:"toolID,omitempty"`
+	ToolSlug    bundleitemutils.ItemSlug `json:"toolSlug"`
+	ToolVersion string                   `json:"toolVersion"`
+
+	Description string `json:"description,omitempty"`
+	DisplayName string `json:"displayName,omitempty"`
+}
+
 // ToolCall captures model-requested (or model-returned) tool invocations
 // so the frontend can decide how to proceed (execute locally, display results,
 // etc.).
 type ToolCall struct {
-	ID              string                    `json:"id"`
-	CallID          string                    `json:"callID"`
-	Name            string                    `json:"name"`
-	Arguments       string                    `json:"arguments"`
-	Type            string                    `json:"type"`
-	Status          string                    `json:"status,omitempty"`
-	ToolStoreChoice *toolSpec.ToolStoreChoice `json:"toolStoreChoice,omitempty"`
+	ID              string           `json:"id"`
+	CallID          string           `json:"callID"`
+	Name            string           `json:"name"`
+	Arguments       string           `json:"arguments"`
+	Type            string           `json:"type"`
+	Status          string           `json:"status,omitempty"`
+	ToolStoreChoice *ToolStoreChoice `json:"toolStoreChoice,omitempty"`
 }
 
 type ToolOutput struct {
-	ID              string                    `json:"id"`
-	CallID          string                    `json:"callID"`
-	Name            string                    `json:"name"`
-	Summary         string                    `json:"summary,omitempty"`
-	RawOutput       string                    `json:"rawOutput,omitempty"`
-	ToolStoreChoice *toolSpec.ToolStoreChoice `json:"toolStoreChoice,omitempty"`
+	ID              string           `json:"id"`
+	CallID          string           `json:"callID"`
+	Name            string           `json:"name"`
+	Summary         string           `json:"summary,omitempty"`
+	RawOutput       string           `json:"rawOutput,omitempty"`
+	ToolStoreChoice *ToolStoreChoice `json:"toolStoreChoice,omitempty"`
 }

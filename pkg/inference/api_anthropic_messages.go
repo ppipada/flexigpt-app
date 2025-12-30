@@ -13,7 +13,6 @@ import (
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
 	"github.com/ppipada/flexigpt-app/pkg/inference/debugclient"
 	"github.com/ppipada/flexigpt-app/pkg/inference/spec"
-	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
 
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
 
@@ -795,7 +794,7 @@ func attachContentFromAnthropicMessages(
 			if vID == "" || name == "" {
 				continue
 			}
-			var toolStoreChoice *toolSpec.ToolStoreChoice
+			var toolStoreChoice *spec.ToolStoreChoice
 			if toolNameMap != nil {
 				if ct, ok := toolNameMap[name]; ok {
 					// Add the actual choice to response.
