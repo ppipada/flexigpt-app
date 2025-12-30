@@ -152,16 +152,12 @@ func TestConversationCollection(t *testing.T) {
 		}{
 			{
 				"Valid message",
-				spec.ConversationMessage{
-					ID:      "msg1",
-					Role:    inferencegoSpec.RoleUser,
-					Content: "Hello",
-				},
+				newTextTurn("msg1", inferencegoSpec.RoleUser, "Hello"),
 				false,
 			},
 			{
 				"Empty content",
-				spec.ConversationMessage{ID: "msg2", Role: inferencegoSpec.RoleUser, Content: ""},
+				newTextTurn("msg2", inferencegoSpec.RoleUser, ""),
 				false,
 			},
 		}
@@ -192,7 +188,9 @@ func TestConversationCollection(t *testing.T) {
 				}
 
 				if len(retrievedConvo.Body.Messages) == 0 ||
-					retrievedConvo.Body.Messages[len(retrievedConvo.Body.Messages)-1].Content != tt.message.Content {
+					len(retrievedConvo.Body.Messages[len(retrievedConvo.Body.Messages)-1].Messages) == 0 ||
+					retrievedConvo.Body.Messages[len(retrievedConvo.Body.Messages)-1].Messages[0].Contents[0].TextItem.Text != tt.message.Messages[0].Contents[0].TextItem.Text {
+
 					t.Errorf("Message not added correctly to conversation")
 				}
 			})
@@ -341,7 +339,7 @@ func TestConversationCollection(t *testing.T) {
 			Body: &spec.PutMessagesToConversationRequestBody{
 				Title: "nonexistent",
 				Messages: []spec.ConversationMessage{
-					{ID: "msg", Role: inferencegoSpec.RoleUser, Content: "hi"},
+					newTextTurn("msg", inferencegoSpec.RoleUser, "hi"),
 				},
 			},
 		})
@@ -362,8 +360,8 @@ func TestConversationCollection(t *testing.T) {
 			t.Fatalf("Failed to save conversation: %v", err)
 		}
 		msgs := []spec.ConversationMessage{
-			{ID: "m1", Role: inferencegoSpec.RoleUser, Content: "hi"},
-			{ID: "m2", Role: inferencegoSpec.RoleAssistant, Content: "hello"},
+			newTextTurn("m1", inferencegoSpec.RoleUser, "hi"),
+			newTextTurn("m2", inferencegoSpec.RoleUser, "hello"),
 		}
 		_, err = cc.PutMessagesToConversation(ctx, &spec.PutMessagesToConversationRequest{
 			ID: convo.ID,
@@ -557,6 +555,27 @@ func getNewPutRequestFromConversation(c *spec.Conversation) *spec.PutConversatio
 	}
 }
 
+func newTextTurn(id string, role inferencegoSpec.RoleEnum, txt string) spec.ConversationMessage {
+	now := time.Now().UTC()
+	return spec.ConversationMessage{
+		ID:        id,
+		CreatedAt: now,
+		Role:      role,
+		Status:    inferencegoSpec.StatusCompleted,
+		Messages: []*inferencegoSpec.InputOutputContent{
+			{
+				ID:     id + ":0",
+				Role:   role,
+				Status: inferencegoSpec.StatusCompleted,
+				Contents: []inferencegoSpec.InputOutputContentItemUnion{{
+					Kind:     inferencegoSpec.ContentItemKindText,
+					TextItem: &inferencegoSpec.ContentItemText{Text: txt},
+				}},
+			},
+		},
+	}
+}
+
 func initConversation(title string) (*spec.Conversation, error) {
 	if title == "" {
 		title = "New Conversation"
@@ -565,7 +584,10 @@ func initConversation(title string) (*spec.Conversation, error) {
 		title = title[:64]
 	}
 
-	c := spec.Conversation{}
+	c := spec.Conversation{
+		SchemaVersion: spec.ConversationSchemaVersion,
+		Messages:      []spec.ConversationMessage{},
+	}
 	u, err := uuidv7filename.NewUUIDv7String()
 	if err != nil {
 		return nil, err
@@ -574,7 +596,6 @@ func initConversation(title string) (*spec.Conversation, error) {
 	c.Title = title
 	c.CreatedAt = time.Now()
 	c.ModifiedAt = time.Now()
-	c.Messages = []spec.ConversationMessage{}
 
 	return &c, nil
 }

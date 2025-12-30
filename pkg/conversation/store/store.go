@@ -78,7 +78,6 @@ func NewConversationCollection(baseDir string, opts ...Option) (*ConversationCol
 				{Name: "system", Weight: 2},
 				{Name: "user", Weight: 3},
 				{Name: "assistant", Weight: 4},
-				{Name: "function", Weight: 5},
 				{Name: "mtime", Unindexed: true},
 			},
 		}, ftsengine.WithLogger(slog.Default()))
@@ -152,11 +151,15 @@ func (cc *ConversationCollection) PutConversation(
 	}
 
 	currentConversation := &spec.Conversation{}
+	currentConversation.SchemaVersion = spec.ConversationSchemaVersion
 	currentConversation.ID = req.ID
 	currentConversation.Title = req.Body.Title
 	currentConversation.CreatedAt = req.Body.CreatedAt
 	currentConversation.ModifiedAt = req.Body.ModifiedAt
 	currentConversation.Messages = req.Body.Messages
+	if req.Body.Meta != nil {
+		currentConversation.Meta = req.Body.Meta
+	}
 
 	data, err := jsonencdec.StructWithJSONTagsToMap(currentConversation)
 	if err != nil {
@@ -235,22 +238,22 @@ func (cc *ConversationCollection) GetConversation(
 	}
 	filename := info.FileName
 
-	// Force get the data for single get.
 	raw, err := cc.store.GetFileData(mapstore.FileKey{FileName: filename}, req.ForceFetch)
 	if err != nil {
 		return nil, err
+	}
+	if schemaVersion, _ := stringField(raw, "schemaVersion"); schemaVersion == "" {
+		return nil, errors.New("unsupported schema version for conversation")
 	}
 
 	var convo spec.Conversation
 	if err := jsonencdec.MapToStructWithJSONTags(raw, &convo); err != nil {
 		return nil, err
 	}
+
 	return &spec.GetConversationResponse{Body: &convo}, nil
 }
 
-// ListConversations
-// The titles returned here are not from the conversation itself, but sanitized names with alpha
-// numeric chars only.
 func (cc *ConversationCollection) ListConversations(
 	ctx context.Context,
 	req *spec.ListConversationsRequest,
@@ -263,6 +266,7 @@ func (cc *ConversationCollection) ListConversations(
 			pageSize = req.PageSize
 		}
 	}
+
 	fileEntries, next, err := cc.store.ListFiles(
 		mapstore.ListingConfig{SortOrder: mapstore.SortOrderDescending, PageSize: pageSize},
 		token,
@@ -273,11 +277,28 @@ func (cc *ConversationCollection) ListConversations(
 
 	items := make([]spec.ConversationListItem, 0, len(fileEntries))
 	for _, f := range fileEntries {
-		info, err := uuidv7filename.Parse(filepath.Base(f.BaseRelativePath))
+		filename := filepath.Base(f.BaseRelativePath)
+		info, err := uuidv7filename.Parse(filename)
 		if err != nil {
 			// Corrupted/foreign file skip.
 			continue
 		}
+
+		// Load JSON to check schemaVersion.
+		raw, err := cc.store.GetFileData(mapstore.FileKey{FileName: filename}, false)
+		if err != nil {
+			// If we can't read it, treat as corrupted/legacy; skip.
+			continue
+		}
+		var convo spec.Conversation
+		if err := jsonencdec.MapToStructWithJSONTags(raw, &convo); err != nil {
+			continue
+		}
+		if convo.SchemaVersion == "" {
+			// Legacy/dead file; keep it invisible.
+			continue
+		}
+
 		fileModTime := f.FileInfo.ModTime()
 		items = append(items, spec.ConversationListItem{
 			ID:             info.ID,
@@ -285,6 +306,7 @@ func (cc *ConversationCollection) ListConversations(
 			ModifiedAt:     &fileModTime,
 		})
 	}
+
 	return &spec.ListConversationsResponse{
 		Body: &spec.ListConversationsResponseBody{
 			ConversationListItems: items,

@@ -1,21 +1,21 @@
-import type { Attachment } from '@/spec/attachment';
-import type { CompletionUsage, ReasoningContent, RoleEnum } from '@/spec/modelpreset';
+import type { InferenceError, InputOutputContent, ModelParam, Usage } from '@/spec/inference';
+import type { ReasoningContent } from '@/spec/modelpreset';
 import type { ToolCall, ToolChoice, ToolOutput } from '@/spec/tool';
 
 export interface ConversationMessage {
 	id: string;
-	createdAt?: Date;
-	role: RoleEnum;
-	content: string;
-	name?: string;
-	details?: string;
-
-	reasoningContents?: ReasoningContent[];
-	toolChoices?: ToolChoice[];
-	attachments?: Attachment[];
+	createdAt: Date;
+	role: string;
+	status: string;
+	modelParam?: ModelParam;
+	messages?: InputOutputContent[];
+	reasoning?: ReasoningContent[];
 	toolCalls?: ToolCall[];
 	toolOutputs?: ToolOutput[];
-	usage?: CompletionUsage;
+	toolChoices?: ToolChoice[];
+	usage?: Usage;
+	error?: InferenceError;
+	meta?: Record<string, any>;
 }
 
 export type ConversationSearchItem = {
@@ -26,11 +26,15 @@ export type ConversationSearchItem = {
 };
 
 export type Conversation = {
+	schemaVersion: string;
 	id: string;
-	title: string;
+	title?: string;
+	// Go type: time
 	createdAt: Date;
+	// Go type: time
 	modifiedAt: Date;
 	messages: ConversationMessage[];
+	meta?: Record<string, any>;
 };
 
 export interface IConversationStoreAPI {

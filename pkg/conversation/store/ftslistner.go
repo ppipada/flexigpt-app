@@ -103,19 +103,27 @@ func processFTSDataForFile(
 		return skipSyncDecision, nil
 	}
 
-	pt := spec.Conversation{}
-	if err := json.Unmarshal(raw, &pt); err != nil {
-		slog.Error("conversation sync fts", "file", fullPath, "non conversation file error", err)
-		return skipSyncDecision, nil
-	}
-
 	var m map[string]any
 	if err := json.Unmarshal(raw, &m); err != nil {
 		slog.Error("conversation sync fts", "file", fullPath, "json error", err)
 		return skipSyncDecision, nil
 	}
 
+	if schemaVersion, _ := stringField(m, "schemaVersion"); schemaVersion == "" {
+		return skipSyncDecision, nil
+	}
+
+	pt := spec.Conversation{}
+	if err := json.Unmarshal(raw, &pt); err != nil {
+		slog.Error("conversation sync fts", "file", fullPath, "non conversation file error", err)
+		return skipSyncDecision, nil
+	}
+
 	vals := extractFTS(fullPath, m)
+	if len(vals) == 0 {
+		// Legacy/dead or non-indexable; don't touch the index for this file.
+		return skipSyncDecision, nil
+	}
 
 	return ftsengine.SyncDecision{
 		ID:        fullPath,
@@ -126,27 +134,21 @@ func processFTSDataForFile(
 	}, nil
 }
 
-// extractFTS converts the in-memory JSON map (produced by MapFileStore)
-// into the column -> text map expected by ftsengine.
 func extractFTS(fullPath string, m map[string]any) map[string]string {
+	schemaVersion, _ := stringField(m, "schemaVersion")
+	if schemaVersion == "" {
+		return map[string]string{}
+	}
 	var (
 		title, _ = stringField(m, "title")
 		system   bytes.Buffer
 		user     bytes.Buffer
 		assist   bytes.Buffer
-		fn       bytes.Buffer
 	)
 
-	msgs, _ := m["messages"].([]any)
-	for _, raw := range msgs {
-		msg, ok := raw.(map[string]any)
-		if !ok {
-			continue
-		}
-		role, _ := msg["role"].(string)
-		txt, _ := msg["content"].(string)
+	appendByRole := func(role, txt string) {
 		if txt == "" {
-			continue
+			return
 		}
 		switch role {
 		case "system":
@@ -155,9 +157,48 @@ func extractFTS(fullPath string, m map[string]any) map[string]string {
 			user.WriteString(txt + "\n")
 		case "assistant":
 			assist.WriteString(txt + "\n")
-		case "function":
-			fn.WriteString(txt + "\n")
+		default:
+		}
+	}
 
+	msgs, _ := m["messages"].([]any)
+	for _, raw := range msgs {
+		msg, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		role, _ := msg["role"].(string)
+
+		// 1) Old shape: direct "content" field.
+		if txt, ok := msg["content"].(string); ok && txt != "" {
+			// We dont want to add old conversations.
+			continue
+		}
+
+		// 2) New shape: nested "messages" -> "contents".
+		ioList, _ := msg["messages"].([]any)
+		for _, ioRaw := range ioList {
+			ioMap, ok := ioRaw.(map[string]any)
+			if !ok {
+				continue
+			}
+			contents, _ := ioMap["contents"].([]any)
+			for _, cRaw := range contents {
+				item, ok := cRaw.(map[string]any)
+				if !ok {
+					continue
+				}
+				kind, _ := item["kind"].(string)
+				switch kind {
+				case "text":
+					if txtItem, ok := item["textItem"].(map[string]any); ok {
+						if txt, ok := txtItem["text"].(string); ok {
+							appendByRole(role, txt)
+						}
+					}
+				default:
+				}
+			}
 		}
 	}
 
@@ -166,7 +207,6 @@ func extractFTS(fullPath string, m map[string]any) map[string]string {
 		"system":    system.String(),
 		"user":      user.String(),
 		"assistant": assist.String(),
-		"function":  fn.String(),
 		"mtime":     fileMTime(fullPath),
 	}
 }

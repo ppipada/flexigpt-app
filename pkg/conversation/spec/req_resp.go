@@ -3,10 +3,11 @@ package spec
 import "time"
 
 type PutConversationRequestBody struct {
-	Title      string                `json:"title"      required:"true"`
-	CreatedAt  time.Time             `json:"createdAt"  required:"true"`
-	ModifiedAt time.Time             `json:"modifiedAt" required:"true"`
-	Messages   []ConversationMessage `json:"messages"   required:"true"`
+	Title      string                `json:"title"          required:"true"`
+	CreatedAt  time.Time             `json:"createdAt"      required:"true"`
+	ModifiedAt time.Time             `json:"modifiedAt"     required:"true"`
+	Messages   []ConversationMessage `json:"messages"       required:"true"`
+	Meta       map[string]any        `json:"meta,omitempty"`
 }
 
 type PutConversationRequest struct {

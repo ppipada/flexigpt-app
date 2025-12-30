@@ -47,11 +47,9 @@ func TestFTSRankingTitleVsBody(t *testing.T) {
 
 	// B: query term only inside a message.
 	b := newConv(t, "No match in title")
-	b.Messages = []spec.ConversationMessage{{
-		ID:      "m1",
-		Role:    inferencegoSpec.RoleUser,
-		Content: "alpha appears in body",
-	}}
+	b.Messages = []spec.ConversationMessage{
+		newTextTurn("m1", inferencegoSpec.RoleUser, "alpha appears in body"),
+	}
 	_, _ = cc.PutConversation(t.Context(), getNewPutRequestFromConversation(b))
 
 	resp, _ := cc.SearchConversations(t.Context(),
@@ -68,11 +66,9 @@ func TestFTSPagination(t *testing.T) {
 
 	for i := range 14 {
 		c := newConv(t, "Kiwi talk "+strconv.Itoa(i))
-		c.Messages = []spec.ConversationMessage{{
-			ID:      "m",
-			Role:    inferencegoSpec.RoleUser,
-			Content: "kiwi everywhere",
-		}}
+		c.Messages = []spec.ConversationMessage{
+			newTextTurn("m", inferencegoSpec.RoleUser, "kiwi everywhere"),
+		}
 		_, _ = cc.PutConversation(t.Context(), getNewPutRequestFromConversation(c))
 	}
 
@@ -143,11 +139,7 @@ func TestFTSAddMessageUpdatesIndex(t *testing.T) {
 		t.Fatal("should have no hits before message added")
 	}
 
-	msg := spec.ConversationMessage{
-		ID:      "m1",
-		Role:    inferencegoSpec.RoleAssistant,
-		Content: "let me whisper a secret",
-	}
+	msg := newTextTurn("m1", inferencegoSpec.RoleAssistant, "let me whisper a secret")
 	_, _ = cc.PutMessagesToConversation(t.Context(),
 		&spec.PutMessagesToConversationRequest{
 			ID: c.ID,
@@ -194,11 +186,10 @@ func TestFTSScaleSearch(t *testing.T) {
 			if m%2 == 1 {
 				role = inferencegoSpec.RoleAssistant
 			}
-			c.Messages = append(c.Messages, spec.ConversationMessage{
-				ID:      fmt.Sprintf("m%02d", m),
-				Role:    role,
-				Content: fmt.Sprintf("This is message %d with common keyword", m),
-			})
+			c.Messages = append(
+				c.Messages,
+				newTextTurn(fmt.Sprintf("m%02d", m), role, fmt.Sprintf("This is message %d with common keyword", m)),
+			)
 		}
 		if _, err := cc.PutConversation(t.Context(),
 			getNewPutRequestFromConversation(c)); err != nil {
