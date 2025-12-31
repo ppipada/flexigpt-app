@@ -324,11 +324,27 @@ export default function ChatsPage() {
 				);
 
 				if (responseMessage) {
-					const finalChat: Conversation = {
+					let finalChat: Conversation = {
 						...chatWithPlaceholder,
 						messages: [...chatWithPlaceholder.messages.slice(0, -1), responseMessage],
 						modifiedAt: new Date(),
 					};
+					// If the backend returned hydrated inputs for the current user turn
+					// (including attachment content), patch that turn before saving.
+					if (rawResponse?.hydratedCurrentInputs && currentUserMsg.id) {
+						const hydrated = rawResponse.hydratedCurrentInputs;
+						finalChat = {
+							...finalChat,
+							messages: finalChat.messages.map(m =>
+								m.id === currentUserMsg.id
+									? {
+											...m,
+											inputs: hydrated,
+										}
+									: m
+							),
+						};
+					}
 
 					saveUpdatedChat(finalChat);
 

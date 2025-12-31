@@ -338,5 +338,6 @@ export interface ToolCallBinding {
 
 export interface CompletionResponseBody {
 	inferenceResponse?: FetchCompletionResponse;
+	hydratedCurrentInputs?: InputUnion[];
 	toolCallBindings?: ToolCallBinding[];
 }

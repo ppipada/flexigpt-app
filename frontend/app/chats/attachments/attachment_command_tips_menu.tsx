@@ -6,7 +6,7 @@ import { Menu, MenuButton, MenuItem, Tooltip, useMenuStore, useStoreState, useTo
 
 import { buildShortcutDisplay, type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 
-type TipKey = 'lastWins' | 'remove' | 'collapse' | 'attachmentsScope' | 'attachmentsRead' | 'toolsPersist';
+type TipKey = 'lastWins' | 'remove' | 'collapse' | 'attachmentsScope' | 'toolsPersist';
 
 const tipsText: Record<TipKey, string> = {
 	// Original system‑prompt/template tips
@@ -17,8 +17,6 @@ const tipsText: Record<TipKey, string> = {
 
 	// New attachment/tool behavior tips
 	attachmentsScope: 'Attachments you add to a conversation are available to all subsequent turns in that conversation.',
-	attachmentsRead:
-		"On each send, the currently attached blob files (images, pdf's in file mode) are re-read for the messages in this turn. Anything attached as text is stored with the conversation and not reread again.",
 	toolsPersist:
 		'Once you attach tools to a conversation, those tool choices are preserved and sent with every turn until you change them.',
 };
@@ -69,11 +67,6 @@ export function CommandTipsMenu({ shortcutConfig }: CommandTipsMenuProps) {
 				key: 'attachmentsScope' as TipKey,
 				title: 'Attachments apply to all turns',
 				description: tipsText.attachmentsScope,
-			},
-			{
-				key: 'attachmentsRead' as TipKey,
-				title: 'Attachments are re-read on send',
-				description: tipsText.attachmentsRead,
 			},
 			{
 				key: 'toolsPersist' as TipKey,

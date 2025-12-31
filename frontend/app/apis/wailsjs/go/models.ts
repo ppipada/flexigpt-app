@@ -1505,6 +1505,7 @@ export namespace spec {
 	}
 	export class CompletionResponseBody {
 	    inferenceResponse?: FetchCompletionResponse;
+	    hydratedCurrentInputs?: InputUnion[];
 	    toolCallBindings?: ToolCallBinding[];
 	
 	    static createFrom(source: any = {}) {
@@ -1514,6 +1515,7 @@ export namespace spec {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.inferenceResponse = this.convertValues(source["inferenceResponse"], FetchCompletionResponse);
+	        this.hydratedCurrentInputs = this.convertValues(source["hydratedCurrentInputs"], InputUnion);
 	        this.toolCallBindings = this.convertValues(source["toolCallBindings"], ToolCallBinding);
 	    }
 	

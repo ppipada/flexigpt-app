@@ -140,7 +140,7 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	}
 
 	// Flatten full conversation (history + current) into InputUnion list.
-	inputs, err := ps.buildInputs(ctx, body)
+	inputs, currentInputs, err := ps.buildInputs(ctx, body)
 	if err != nil {
 		return nil, err
 	}
@@ -168,11 +168,10 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	}
 
 	b, err := ps.inner.FetchCompletion(ctx, req.Provider, infReq, opts)
-	if err != nil {
-		return nil, err
-	}
+
 	resp := &spec.CompletionResponse{Body: &spec.CompletionResponseBody{
-		InferenceResponse: b,
+		InferenceResponse:     b,
+		HydratedCurrentInputs: currentInputs,
 	}}
 
 	if len(choiceBindings) > 0 {
@@ -186,7 +185,7 @@ func (ps *ProviderSetAPI) FetchCompletion(
 		resp.Body.ToolCallBindings = bindings
 	}
 
-	return resp, nil
+	return resp, err
 }
 
 // resolveModelParam chooses the effective ModelParam for this call.
@@ -226,7 +225,7 @@ func (ps *ProviderSetAPI) resolveModelParam(
 func (ps *ProviderSetAPI) buildInputs(
 	ctx context.Context,
 	body *spec.CompletionRequestBody,
-) ([]inferencegoSpec.InputUnion, error) {
+) (all, current []inferencegoSpec.InputUnion, err error) {
 	out := make([]inferencegoSpec.InputUnion, 0)
 
 	// 1) History: replay stored unions exactly as they were.
@@ -244,7 +243,7 @@ func (ps *ProviderSetAPI) buildInputs(
 
 	cur := body.Current
 	if cur.Role != inferencegoSpec.RoleUser {
-		return nil, errors.New("current turn must have role=user")
+		return nil, nil, errors.New("current turn must have role=user")
 	}
 
 	// If the caller already provided normalized InputUnions, just reuse them.
@@ -256,7 +255,7 @@ func (ps *ProviderSetAPI) buildInputs(
 	// Always process attachments into content items.
 	msgContentItems, err := buildContentItemsFromAttachments(ctx, &cur)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if len(msgContentItems) > 0 {
@@ -291,10 +290,10 @@ func (ps *ProviderSetAPI) buildInputs(
 	}
 
 	if len(out) == 0 {
-		return nil, errors.New("no usable inputs to send to inference-go")
+		return nil, nil, errors.New("no usable inputs to send to inference-go")
 	}
 
-	return out, nil
+	return out, currentOut, nil
 }
 
 // outputToInput converts an OutputUnion from a previous completion into an
@@ -513,35 +512,49 @@ func (ps *ProviderSetAPI) hydrateToolChoice(
 			sc.ToolVersion,
 		)
 	}
-
-	argSchema, err := decodeToolArgSchema(string(tool.ArgSchema))
-	if err != nil {
+	if !tool.LLMCallable {
 		return nil, "", fmt.Errorf(
-			"invalid argSchema for %s/%s@%s: %w",
-			sc.BundleID,
-			sc.ToolSlug,
-			sc.ToolVersion,
-			err,
+			"tool %s/%s@%s is not LLM-callable",
+			sc.BundleID, sc.ToolSlug, sc.ToolVersion,
 		)
 	}
-
-	name := string(sc.ToolSlug)
 	desc := tool.Description
 	if desc == "" {
 		desc = sc.Description
 	}
-	choiceID, _ = uuidv7filename.NewUUIDv7String()
-	if choiceID == "" {
-		choiceID = name
-	}
-
-	return &inferencegoSpec.ToolChoice{
+	tc := &inferencegoSpec.ToolChoice{
 		Type:        inferencegoSpec.ToolType(sc.ToolType),
 		ID:          choiceID,
-		Name:        name,
+		Name:        string(sc.ToolSlug),
 		Description: desc,
-		Arguments:   argSchema,
-	}, choiceID, nil
+	}
+
+	choiceID, _ = uuidv7filename.NewUUIDv7String()
+	if choiceID == "" {
+		choiceID = tc.Name
+	}
+
+	// If this is a web-search tool, populate minimal WebSearchArguments so that
+	// toolChoicesToOpenAIResponseTools will actually emit a web_search tool.
+	if sc.ToolType == toolSpec.ToolTypeWebSearch {
+		tc.WebSearchArguments = &inferencegoSpec.WebSearchToolChoiceItem{
+			SearchContextSize: "medium", // "low" | "medium" | "high"
+		}
+	} else {
+		argSchema, err := decodeToolArgSchema(string(tool.ArgSchema))
+		if err != nil {
+			return nil, "", fmt.Errorf(
+				"invalid argSchema for %s/%s@%s: %w",
+				sc.BundleID,
+				sc.ToolSlug,
+				sc.ToolVersion,
+				err,
+			)
+		}
+		tc.Arguments = argSchema
+	}
+
+	return tc, choiceID, nil
 }
 
 func decodeToolArgSchema(raw toolSpec.JSONRawString) (map[string]any, error) {

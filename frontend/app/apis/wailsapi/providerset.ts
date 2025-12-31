@@ -28,6 +28,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 	): Promise<CompletionResponseBody | undefined> {
 		let textCallbackId = '';
 		let thinkingCallbackId = '';
+		let abortHandler: (() => void) | undefined;
 
 		if (onStreamTextData && onStreamThinkingData) {
 			const uid = requestId ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -66,31 +67,36 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		const responsePromise = FetchCompletion(provider, body, textCallbackId, thinkingCallbackId, requestId ?? '');
 
 		const abortPromise: Promise<never> = new Promise((_, reject) => {
+			if (!signal) return;
+
 			// Already aborted before we even start?
-			if (signal?.aborted) {
+			if (signal.aborted) {
 				reject(new DOMException('Aborted', 'AbortError'));
 				return;
 			}
 
-			const abortHandler = () => {
-				/* Detach server-side and local listeners */
+			abortHandler = () => {
+				// Detach server-side
 				this.cancelCompletion(requestId ?? '').catch(() => {});
-				EventsOff(textCallbackId);
-				EventsOff(thinkingCallbackId);
-
 				reject(new DOMException('Aborted', 'AbortError'));
 			};
 
-			signal?.addEventListener('abort', abortHandler, { once: true });
+			signal.addEventListener('abort', abortHandler, { once: true });
 		});
 
 		try {
 			const resp = await Promise.race([responsePromise, abortPromise]);
 			const respBody = resp.Body as wailsSpec.CompletionResponseBody;
-			// console.log(JSON.stringify(respBody, undefined, 2));
 			return respBody as CompletionResponseBody;
 		} finally {
-			/* Always clean up – even when the race rejected with AbortError */
+			// Always clean up
+
+			// Detach the abort handler if it was attached
+			if (signal && abortHandler) {
+				signal.removeEventListener('abort', abortHandler);
+			}
+
+			// Local event cleanup
 			if (textCallbackId) EventsOff(textCallbackId);
 			if (thinkingCallbackId) EventsOff(thinkingCallbackId);
 		}

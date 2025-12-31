@@ -77,8 +77,9 @@ type ToolCallBinding struct {
 }
 
 type CompletionResponseBody struct {
-	InferenceResponse *inferencegoSpec.FetchCompletionResponse `json:"inferenceResponse,omitempty"`
-	ToolCallBindings  []ToolCallBinding                        `json:"toolCallBindings,omitempty"`
+	InferenceResponse     *inferencegoSpec.FetchCompletionResponse `json:"inferenceResponse,omitempty"`
+	HydratedCurrentInputs []inferencegoSpec.InputUnion             `json:"hydratedCurrentInputs,omitempty"`
+	ToolCallBindings      []ToolCallBinding                        `json:"toolCallBindings,omitempty"`
 }
 
 type CompletionResponse struct {

@@ -109,15 +109,10 @@ func (w *ProviderSetWrapper) FetchCompletion(
 				return nil
 			}
 		}
-		resp, err := w.providersetAPI.FetchCompletion(
+		return w.providersetAPI.FetchCompletion(
 			ctx,
 			req,
 		)
-		if err != nil {
-			return nil, err
-		}
-
-		return resp, nil
 	})
 }
 
