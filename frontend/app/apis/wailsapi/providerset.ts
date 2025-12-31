@@ -1,12 +1,9 @@
-import type {
-	ChatCompletionDataMessage,
-	FetchCompletionResponseBody,
-	IProviderSetAPI,
-	ModelParam,
-} from '@/spec/aiprovider';
+import type { StoreConversationMessage } from '@/spec/conversation';
+import type { CompletionResponseBody, ModelParam } from '@/spec/inference';
 import type { ProviderName } from '@/spec/modelpreset';
 import type { ToolStoreChoice } from '@/spec/tool';
 
+import type { IProviderSetAPI } from '@/apis/interface';
 import { CancelCompletion, FetchCompletion } from '@/apis/wailsjs/go/main/ProviderSetWrapper';
 import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
 import { EventsOff, EventsOn } from '@/apis/wailsjs/runtime/runtime';
@@ -21,14 +18,14 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 	async completion(
 		provider: ProviderName,
 		modelParams: ModelParam,
-		currentMessage: ChatCompletionDataMessage,
-		prevMessages?: Array<ChatCompletionDataMessage>,
-		toolChoices?: Array<ToolStoreChoice>,
+		current: StoreConversationMessage,
+		history?: StoreConversationMessage[],
+		toolStoreChoices?: ToolStoreChoice[],
 		requestId?: string,
 		signal?: AbortSignal,
 		onStreamTextData?: (text: string) => void,
 		onStreamThinkingData?: (text: string) => void
-	): Promise<FetchCompletionResponseBody | undefined> {
+	): Promise<CompletionResponseBody | undefined> {
 		let textCallbackId = '';
 		let thinkingCallbackId = '';
 
@@ -60,11 +57,11 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		}
 
 		const body = {
-			modelParams: modelParams as wailsSpec.ModelParam,
-			currentMessage: currentMessage as wailsSpec.ChatCompletionDataMessage,
-			prevMessages: prevMessages ? ([...prevMessages] as wailsSpec.ChatCompletionDataMessage[]) : [],
-			toolChoices: toolChoices ? ([...toolChoices] as wailsSpec.ToolChoice[]) : [],
-		} as wailsSpec.FetchCompletionRequestBody;
+			modelParam: modelParams as wailsSpec.ModelParam,
+			current: current as wailsSpec.ConversationMessage,
+			history: history ? ([...history] as wailsSpec.ConversationMessage[]) : [],
+			toolStoreChoices: toolStoreChoices ? ([...toolStoreChoices] as wailsSpec.ToolStoreChoice[]) : [],
+		} as wailsSpec.CompletionRequestBody;
 
 		const responsePromise = FetchCompletion(provider, body, textCallbackId, thinkingCallbackId, requestId ?? '');
 
@@ -89,9 +86,9 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 
 		try {
 			const resp = await Promise.race([responsePromise, abortPromise]);
-			const respBody = resp.Body as wailsSpec.FetchCompletionResponseBody;
+			const respBody = resp.Body as wailsSpec.CompletionResponseBody;
 			// console.log(JSON.stringify(respBody, undefined, 2));
-			return respBody as FetchCompletionResponseBody;
+			return respBody as CompletionResponseBody;
 		} finally {
 			/* Always clean up – even when the race rejected with AbortError */
 			if (textCallbackId) EventsOff(textCallbackId);

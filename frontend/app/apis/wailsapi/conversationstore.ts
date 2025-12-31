@@ -1,13 +1,9 @@
-import type {
-	Conversation,
-	ConversationMessage,
-	ConversationSearchItem,
-	IConversationStoreAPI,
-} from '@/spec/conversation';
+import type { ConversationSearchItem, StoreConversation, StoreConversationMessage } from '@/spec/conversation';
 
 import { parseAnyToTime } from '@/lib/date_utils';
 import { extractTimeFromUUIDv7Str } from '@/lib/uuid_utils';
 
+import type { IConversationStoreAPI } from '@/apis/interface';
 import {
 	DeleteConversation,
 	GetConversation,
@@ -22,7 +18,7 @@ import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
  * @public
  */
 export class WailsConversationStoreAPI implements IConversationStoreAPI {
-	async putConversation(conversation: Conversation): Promise<void> {
+	async putConversation(conversation: StoreConversation): Promise<void> {
 		const req = {
 			ID: conversation.id,
 			Body: {
@@ -36,7 +32,7 @@ export class WailsConversationStoreAPI implements IConversationStoreAPI {
 		await PutConversation(req as wailsSpec.PutConversationRequest);
 	}
 
-	async putMessagesToConversation(id: string, title: string, messages: ConversationMessage[]): Promise<void> {
+	async putMessagesToConversation(id: string, title: string, messages: StoreConversationMessage[]): Promise<void> {
 		const req = {
 			ID: id,
 			Body: {
@@ -53,10 +49,10 @@ export class WailsConversationStoreAPI implements IConversationStoreAPI {
 		await DeleteConversation(req as wailsSpec.DeleteConversationRequest);
 	}
 
-	async getConversation(id: string, title: string, forceFetch?: boolean): Promise<Conversation | null> {
+	async getConversation(id: string, title: string, forceFetch?: boolean): Promise<StoreConversation | null> {
 		const req = { ID: id, Title: title, ForceFetch: forceFetch ?? false };
 		const c = await GetConversation(req as wailsSpec.GetConversationRequest);
-		return c.Body as Conversation;
+		return c.Body as StoreConversation;
 	}
 
 	async listConversations(

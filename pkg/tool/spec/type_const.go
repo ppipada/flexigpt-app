@@ -43,23 +43,23 @@ var (
 )
 
 type (
-	ToolType      string
+	ToolImplType  string
 	JSONRawString = string
 	JSONSchema    = json.RawMessage
 )
 
 const (
-	ToolTypeGo   ToolType = "go"
-	ToolTypeHTTP ToolType = "http"
+	ToolTypeGo   ToolImplType = "go"
+	ToolTypeHTTP ToolImplType = "http"
 )
 
-// ToolOutputKind describes how a tool's result should be treated at the UX boundary.
-type ToolOutputKind string
+// ToolImplOutputKind describes how a tool's result should be treated at the UX boundary.
+type ToolImplOutputKind string
 
 const (
-	ToolOutputText ToolOutputKind = "text" // result is text or text-like JSON
-	ToolOutputBlob ToolOutputKind = "blob" // bytes / file-like
-	ToolOutputNone ToolOutputKind = "none" // no visible payload, side-effect only
+	ToolOutputText ToolImplOutputKind = "text" // result is text or text-like JSON
+	ToolOutputBlob ToolImplOutputKind = "blob" // bytes / file-like
+	ToolOutputNone ToolImplOutputKind = "none" // no visible payload, side-effect only
 )
 
 // GoToolImpl - Register-by-name pattern for Go tools.
@@ -96,6 +96,28 @@ type HTTPToolImpl struct {
 	Response HTTPResponse `json:"response"`
 }
 
+type ToolStoreChoiceType string
+
+const (
+	ToolTypeFunction  ToolStoreChoiceType = "function"
+	ToolTypeCustom    ToolStoreChoiceType = "custom"
+	ToolTypeWebSearch ToolStoreChoiceType = "webSearch"
+)
+
+type ToolStoreChoice struct {
+	// BundleID, BundleSlug, ItemID, ItemSlug are string aliases.
+	BundleID   bundleitemutils.BundleID   `json:"bundleID"`
+	BundleSlug bundleitemutils.BundleSlug `json:"bundleSlug,omitempty"`
+
+	ToolID      bundleitemutils.ItemID   `json:"toolID,omitempty"`
+	ToolSlug    bundleitemutils.ItemSlug `json:"toolSlug"`
+	ToolVersion string                   `json:"toolVersion"`
+
+	ToolType    ToolStoreChoiceType `json:"toolType"`
+	Description string              `json:"description,omitempty"`
+	DisplayName string              `json:"displayName,omitempty"`
+}
+
 type Tool struct {
 	SchemaVersion string                      `json:"schemaVersion"`
 	ID            bundleitemutils.ItemID      `json:"id"` // UUID-v7
@@ -112,12 +134,12 @@ type Tool struct {
 	// LLMCallable indicates whether the model may call this tool as a function.
 	LLMCallable bool `json:"llmCallable"`
 	// OutputKind describes how the tool output should be surfaced in the UX.
-	OutputKind ToolOutputKind `json:"outputKind"`
+	OutputKind ToolImplOutputKind `json:"outputKind"`
 
 	ArgSchema    JSONSchema `json:"argSchema"`    // validated pre-invoke
 	OutputSchema JSONSchema `json:"outputSchema"` // validated post-invoke
 
-	Type   ToolType      `json:"type"`
+	Type   ToolImplType  `json:"type"`
 	GoImpl *GoToolImpl   `json:"goImpl,omitempty"`
 	HTTP   *HTTPToolImpl `json:"httpImpl,omitempty"`
 

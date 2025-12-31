@@ -4,14 +4,14 @@ import { createPortal } from 'react-dom';
 
 import { FiTool, FiX } from 'react-icons/fi';
 
-import type { ToolOutput } from '@/spec/tool';
+import type { UIToolOutput } from '@/spec/tool';
 
 import { formatToolOutputSummary } from '@/chats/tools/tool_editor_utils';
 
 interface ToolOutputModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	output: ToolOutput | null;
+	output: UIToolOutput | null;
 }
 
 /**

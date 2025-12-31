@@ -1,8 +1,16 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { ModelParam } from '@/spec/aiprovider';
-import type { Conversation, ConversationMessage, ConversationSearchItem } from '@/spec/conversation';
-import { RoleEnum } from '@/spec/modelpreset';
+import {
+	type Conversation,
+	CONVERSATION_SCHEMA_VERSION,
+	type ConversationMessage,
+	type ConversationSearchItem,
+	type StoreConversation,
+	type StoreConversationMessage,
+} from '@/spec/conversation';
+import { ContentItemKind, type ModelParam, OutputKind, type OutputUnion, RoleEnum, Status } from '@/spec/inference';
+import type { ToolStoreChoice } from '@/spec/tool';
 
 import { defaultShortcutConfig, type ShortcutConfig, useChatShortcuts } from '@/lib/keyboard_shortcuts';
 import { getBlockQuotedLines, sanitizeConversationTitle } from '@/lib/text_utils';
@@ -11,14 +19,13 @@ import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { useAtBottom } from '@/hooks/use_at_bottom';
 
-import { getCompletionDataFromConversation, HandleCompletion } from '@/apis/aiprovider_helper';
+import { buildUserConversationMessageFromEditor, HandleCompletion } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
 import { ButtonScrollToBottom } from '@/components/button_scroll_to_bottom';
 import { PageFrame } from '@/components/page_frame';
 
-import { editorAttachmentToConversation } from '@/chats/attachments/attachment_editor_utils';
 import { InputBox, type InputBoxHandle } from '@/chats/chat_input_box';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/chat_input_editor';
 import { ChatNavBar, type ChatNavBarHandle } from '@/chats/chat_navbar';
@@ -26,6 +33,7 @@ import { ChatMessage } from '@/chats/messages/message';
 
 function initConversation(title = 'New Conversation'): Conversation {
 	return {
+		schemaVersion: CONVERSATION_SCHEMA_VERSION,
 		id: getUUIDv7(),
 		title: generateTitle(title).title,
 		createdAt: new Date(),
@@ -34,21 +42,22 @@ function initConversation(title = 'New Conversation'): Conversation {
 	};
 }
 
-function initConversationMessage(role: RoleEnum, content: string): ConversationMessage {
+function initConversationMessage(role: RoleEnum): ConversationMessage {
 	const d = new Date();
 	return {
 		id: d.toISOString(),
 		createdAt: new Date(),
-		role,
-		content,
+		role: role,
+		status: Status.InProgress,
+		content: '',
 	};
 }
 
 function deriveConversationToolsFromMessages(messages: ConversationMessage[]): ToolStoreChoice[] {
 	for (let i = messages.length - 1; i >= 0; i -= 1) {
 		const m = messages[i];
-		if (m.role === RoleEnum.User && m.toolChoices && m.toolChoices.length > 0) {
-			return m.toolChoices;
+		if (m.role === RoleEnum.User && m.toolStoreChoices && m.toolStoreChoices.length > 0) {
+			return m.toolStoreChoices;
 		}
 	}
 	return [];
@@ -125,7 +134,7 @@ export default function ChatsPage() {
 		// Put the old conversation _fully_ before moving to new chat.
 		// Handles edge cases like someone calls newchat when streaming is ongoing,
 		// or if there is some bug below that forgets to call saveUpdated chat
-		conversationStoreAPI.putConversation(chat);
+		conversationStoreAPI.putConversation(chat as StoreConversation);
 		setChat(initConversation());
 		chatInputRef.current?.setConversationToolsFromChoices([]);
 
@@ -170,16 +179,20 @@ export default function ChatsPage() {
 		// Decide which API to call
 		if (!isChatPersistedRef.current) {
 			// 1st save -> create the record + metadata work
-			conversationStoreAPI.putConversation(updatedChat);
+			conversationStoreAPI.putConversation(updatedChat as StoreConversation);
 			isChatPersistedRef.current = true;
 			bumpSearchKey(); // now searchable
 		} else if (titleChanged) {
 			// metadata (title) changed -> need the heavy PUT
-			conversationStoreAPI.putConversation(updatedChat);
+			conversationStoreAPI.putConversation(updatedChat as StoreConversation);
 			bumpSearchKey();
 		} else {
 			// normal case -> only messages changed
-			conversationStoreAPI.putMessagesToConversation(updatedChat.id, updatedChat.title, updatedChat.messages);
+			conversationStoreAPI.putMessagesToConversation(
+				updatedChat.id,
+				updatedChat.title,
+				updatedChat.messages as StoreConversationMessage[]
+			);
 		}
 
 		// update local state
@@ -189,12 +202,13 @@ export default function ChatsPage() {
 	const handleSelectConversation = useCallback(async (item: ConversationSearchItem) => {
 		const selectedChat = await conversationStoreAPI.getConversation(item.id, item.title, true);
 		if (selectedChat) {
-			setChat(selectedChat);
+			const hydrated = selectedChat as Conversation;
+			setChat(hydrated);
 			isChatPersistedRef.current = true;
-			manualTitleLockedRef.current = false; // fresh load – don’t assume manual lock
+			manualTitleLockedRef.current = false;
 			setEditingMessageId(null);
 
-			const initialTools = deriveConversationToolsFromMessages(selectedChat.messages);
+			const initialTools = deriveConversationToolsFromMessages(hydrated.messages);
 			chatInputRef.current?.setConversationToolsFromChoices(initialTools);
 		}
 	}, []);
@@ -222,7 +236,7 @@ export default function ChatsPage() {
 
 	const getConversationForExport = useCallback(async (): Promise<string> => {
 		const selectedChat = await conversationStoreAPI.getConversation(chat.id, chat.title, true);
-		return JSON.stringify(selectedChat, null, 2);
+		return JSON.stringify(selectedChat ?? null, null, 2);
 	}, [chat.id, chat.title]);
 
 	const updateStreamingMessage = useCallback(
@@ -233,68 +247,44 @@ export default function ChatsPage() {
 			setIsBusy(true);
 
 			abortRef.current = new AbortController();
-
-			/* Generate a unique request-ID so that the Go side can cancel, too */
 			requestIdRef.current = crypto.randomUUID();
 
-			let prevMessages = updatedChatWithUserMessage.messages;
+			let allMessages = updatedChatWithUserMessage.messages;
 			if (options.disablePreviousMessages) {
-				prevMessages = [updatedChatWithUserMessage.messages[updatedChatWithUserMessage.messages.length - 1]];
+				// Only keep the last user turn as context.
+				allMessages = [updatedChatWithUserMessage.messages[updatedChatWithUserMessage.messages.length - 1]];
 			}
+
+			if (allMessages.length === 0) {
+				setIsBusy(false);
+				return;
+			}
+
+			const currentUserMsg = allMessages[allMessages.length - 1];
+			const history = allMessages.slice(0, allMessages.length - 1);
 
 			setStreamedMessage('');
 
-			await new Promise(res => setTimeout(res, 0));
-
-			const convoMsg = initConversationMessage(RoleEnum.Assistant, '');
-			const updatedChatWithConvoMessage = {
+			// Create assistant placeholder for streaming.
+			const assistantPlaceholder = initConversationMessage(RoleEnum.Assistant);
+			const chatWithPlaceholder: Conversation = {
 				...updatedChatWithUserMessage,
-				messages: [...updatedChatWithUserMessage.messages, convoMsg],
+				messages: [...updatedChatWithUserMessage.messages, assistantPlaceholder],
 				modifiedAt: new Date(),
 			};
 
-			// Make the empty assistant bubble appear immediately
-			setChat({ ...updatedChatWithConvoMessage, messages: [...updatedChatWithConvoMessage.messages] });
+			// Show empty assistant bubble immediately.
+			setChat({ ...chatWithPlaceholder, messages: [...chatWithPlaceholder.messages] });
 
 			const onStreamTextData = (textData: string) => {
 				if (textData) tokensReceivedRef.current = true;
-
-				setStreamedMessage(prev => {
-					const next = prev + textData;
-
-					// Always copy the current assistant text into the conversation message object so that we do not lose it when the stream aborts.
-					const lastIdx = updatedChatWithConvoMessage.messages.length - 1;
-					updatedChatWithConvoMessage.messages[lastIdx].content = next;
-					updatedChatWithConvoMessage.modifiedAt = new Date();
-
-					// Also keep the local convoMsg (passed to HandleCompletion) in sync
-					convoMsg.content = next;
-
-					// A full re-render is only needed for the very first token.
-					if (prev === '') setChat({ ...updatedChatWithConvoMessage });
-
-					return next;
-				});
+				setStreamedMessage(prev => prev + textData);
 			};
 
 			const onStreamThinkingData = (thinkingData: string) => {
-				if (!thinkingData) {
-					return;
-				}
+				if (!thinkingData) return;
 				tokensReceivedRef.current = true;
-				setStreamedMessage(prev => {
-					const data = thinkingData ? getBlockQuotedLines(thinkingData) + '\n' : '';
-					const next = prev + data;
-					const last = updatedChatWithConvoMessage.messages.length - 1;
-					updatedChatWithConvoMessage.messages[last].content = next;
-					updatedChatWithConvoMessage.modifiedAt = new Date();
-					// Also keep the local convoMsg (passed to HandleCompletion) in sync
-					convoMsg.content = next;
-
-					if (prev === '') setChat({ ...updatedChatWithConvoMessage });
-
-					return next;
-				});
+				setStreamedMessage(prev => prev + getBlockQuotedLines(thinkingData) + '\n');
 			};
 
 			try {
@@ -309,74 +299,88 @@ export default function ChatsPage() {
 					timeout: options.timeout,
 					additionalParametersRawJSON: options.additionalParametersRawJSON,
 				};
-				const completionData = getCompletionDataFromConversation(prevMessages);
-				const newMsg = await HandleCompletion(
+
+				// ToolStoreChoices for this call: either from the last user message meta or from UI state.
+				let toolStoreChoices: ToolStoreChoice[] | undefined = undefined;
+				const latestUser = updatedChatWithUserMessage.messages
+					.slice()
+					.reverse()
+					.find(m => m.role === RoleEnum.User);
+				if (latestUser?.toolStoreChoices && latestUser.toolStoreChoices.length > 0) {
+					toolStoreChoices = latestUser.toolStoreChoices;
+				}
+
+				const { responseMessage, rawResponse } = await HandleCompletion(
 					options.providerName,
 					inputParams,
-					completionData.promptMsg,
-					completionData.prevMessages,
-					completionData.toolChoices,
-					convoMsg,
-					requestIdRef.current,
+					currentUserMsg,
+					history,
+					toolStoreChoices,
+					assistantPlaceholder,
+					requestIdRef.current ?? undefined,
 					abortRef.current.signal,
 					onStreamTextData,
 					onStreamThinkingData
 				);
 
-				if (newMsg.requestDetails && updatedChatWithConvoMessage.messages.length > 1) {
-					const prevIdx = updatedChatWithConvoMessage.messages.length - 2;
-					const prevMessage = updatedChatWithConvoMessage.messages[prevIdx];
-
-					if (prevMessage.role === RoleEnum.User) {
-						const reqData = 'API request data:\n' + newMsg.requestDetails;
-						const detailsMd = reqData;
-
-						updatedChatWithConvoMessage.messages = updatedChatWithConvoMessage.messages.map((m, i) =>
-							i === prevIdx
-								? {
-										...m,
-										// Overwrite details on resend; keep the most relevant
-										// debug info visible.
-										details: detailsMd,
-									}
-								: m
-						);
-					}
-				}
-
-				if (newMsg.responseMessage) {
-					const respMessage = { ...newMsg.responseMessage };
-
-					// Create FRESH objects so react sees the change even in non-streaming
-					// mode, where `streamedMessage` never changes.
+				if (responseMessage) {
 					const finalChat: Conversation = {
-						...updatedChatWithConvoMessage,
-						messages: [...updatedChatWithConvoMessage.messages.slice(0, -1), respMessage],
+						...chatWithPlaceholder,
+						messages: [...chatWithPlaceholder.messages.slice(0, -1), responseMessage],
 						modifiedAt: new Date(),
 					};
 
 					saveUpdatedChat(finalChat);
-					// After the assistant has finished responding, surface any suggested
-					// tool calls for this turn in the composer as interactive chips.
-					const lastMsg = finalChat.messages[finalChat.messages.length - 1];
-					if (lastMsg.role === RoleEnum.Assistant && chatInputRef.current?.loadToolCalls) {
-						if (lastMsg.toolCalls && lastMsg.toolCalls.length > 0) {
-							chatInputRef.current.loadToolCalls(lastMsg.toolCalls ?? []);
-						}
+
+					// Expose assistant-suggested tool calls as chips in the composer.
+					if (responseMessage.toolCalls && responseMessage.toolCalls.length > 0) {
+						chatInputRef.current?.loadToolCalls(responseMessage.toolCalls, rawResponse?.toolCallBindings);
 					}
 				}
 			} catch (e) {
 				if ((e as DOMException).name === 'AbortError') {
-					// ESlint cannot see async updates in streaming, hence disable the lint warning.
-					// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+					// If no tokens were received, remove the assistant placeholder.
 					if (!tokensReceivedRef.current) {
-						removeAssistantPlaceholder(convoMsg.id);
+						setChat(c => {
+							const idx = c.messages.findIndex(m => m.id === assistantPlaceholder.id);
+							if (idx === -1) return c;
+							const msgs = c.messages.filter((_, i) => i !== idx);
+							return { ...c, messages: msgs, modifiedAt: new Date() };
+						});
 					} else {
-						const last = updatedChatWithConvoMessage.messages.length - 1;
+						// We have partial stream; persist as a partial assistant message.
+						const partialText = streamedMessage + '\n\n>API Aborted after partial response...';
 
-						updatedChatWithConvoMessage.messages[last].content += '\n\n>API Aborted after partial response...';
-						updatedChatWithConvoMessage.modifiedAt = new Date();
-						saveUpdatedChat({ ...updatedChatWithConvoMessage });
+						const partialOutputs: OutputUnion[] = [
+							{
+								kind: OutputKind.OutputMessage,
+								outputMessage: {
+									id: assistantPlaceholder.id,
+									role: RoleEnum.Assistant,
+									status: Status.Completed,
+									contents: [
+										{
+											kind: ContentItemKind.Text,
+											textItem: { text: partialText },
+										},
+									],
+								},
+							},
+						];
+
+						const partialMsg: ConversationMessage = {
+							...assistantPlaceholder,
+							status: Status.Completed,
+							outputs: partialOutputs,
+							content: partialText, // UI-only
+						};
+
+						const finalChat: Conversation = {
+							...chatWithPlaceholder,
+							messages: [...chatWithPlaceholder.messages.slice(0, -1), partialMsg],
+							modifiedAt: new Date(),
+						};
+						saveUpdatedChat(finalChat);
 					}
 				} else {
 					console.error(e);
@@ -386,32 +390,8 @@ export default function ChatsPage() {
 				setIsBusy(false);
 			}
 		},
-		[saveUpdatedChat]
+		[saveUpdatedChat, streamedMessage]
 	);
-
-	const removeAssistantPlaceholder = (msgId: string) => {
-		setChat(c => {
-			const idx = c.messages.findIndex(m => m.id === msgId);
-			if (idx === -1) return c;
-
-			const candidate = c.messages[idx];
-
-			// Only remove the ephemeral assistant placeholder:
-			// - must be an assistant message
-			// - must still be empty (no streamed content yet)
-			if (candidate.role !== RoleEnum.Assistant || candidate.content.length > 0) {
-				return c;
-			}
-
-			const nextMessages = c.messages.filter(m => m.id !== msgId);
-
-			return {
-				...c,
-				messages: nextMessages,
-				modifiedAt: new Date(),
-			};
-		});
-	};
 
 	const sendMessage = async (payload: EditorSubmitPayload, options: ChatOption) => {
 		if (isBusy) return;
@@ -426,32 +406,17 @@ export default function ChatsPage() {
 		if (!hasNonEmptyText && !hasToolOutputs && !hasAttachments) {
 			return;
 		}
-		const finalToolChoices = payload.finalToolChoices;
+
+		const editingId = editingMessageId ?? undefined;
+		const userMsg = buildUserConversationMessageFromEditor(payload, editingId);
 
 		// If we are editing an existing user message, replace it and drop later messages.
 		if (editingMessageId) {
 			const idx = chat.messages.findIndex(m => m.id === editingMessageId);
 			// If somehow the message vanished, fall back to "append new".
 			if (idx !== -1) {
-				const base = chat.messages[idx];
-
-				const toolChoices = finalToolChoices.length > 0 ? finalToolChoices : undefined;
-
-				const attachments =
-					payload.attachments.length > 0 ? payload.attachments.map(editorAttachmentToConversation) : undefined;
-
-				const toolOutputs = payload.toolOutputs.length > 0 ? payload.toolOutputs : undefined;
-
-				const updatedUserMsg: ConversationMessage = {
-					...base,
-					content: trimmed,
-					toolChoices: toolChoices,
-					attachments: attachments,
-					toolOutputs: toolOutputs,
-				};
-
 				const msgs = chat.messages.slice(0, idx + 1);
-				msgs[idx] = updatedUserMsg;
+				msgs[idx] = userMsg;
 
 				const updatedChat: Conversation = {
 					...chat,
@@ -469,23 +434,14 @@ export default function ChatsPage() {
 			setEditingMessageId(null);
 		}
 
-		const newMsg = initConversationMessage(RoleEnum.User, trimmed);
-		newMsg.toolChoices = finalToolChoices.length > 0 ? finalToolChoices : undefined;
-
-		const attachments =
-			payload.attachments.length > 0 ? payload.attachments.map(editorAttachmentToConversation) : undefined;
-		newMsg.attachments = attachments;
-
-		const toolOutputs = payload.toolOutputs.length > 0 ? payload.toolOutputs : undefined;
-		newMsg.toolOutputs = toolOutputs;
-
-		const updated = {
+		const updated: Conversation = {
 			...chat,
-			messages: [...chat.messages, newMsg],
+			messages: [...chat.messages, userMsg],
 			modifiedAt: new Date(),
 		};
+
 		saveUpdatedChat(updated);
-		updateStreamingMessage(updated, options);
+		await updateStreamingMessage(updated, options);
 	};
 
 	const beginEditMessage = useCallback(
@@ -497,10 +453,14 @@ export default function ChatsPage() {
 			if (msg.role !== RoleEnum.User) return;
 
 			const external: EditorExternalMessage = {
-				text: msg.content,
+				text: msg.content ?? '',
 				attachments: msg.attachments,
-				toolChoices: msg.toolChoices,
-				toolOutputs: msg.toolOutputs,
+				toolChoices: msg.toolStoreChoices,
+
+				// We currently don't persist per-turn tool-runner outputs, so none to restore.
+				// Need to see how to make sure that all things are reproducible end to end and fix this.
+				// Most probably UI state should be derived before this happens here.
+				// toolOutputs: msg.toolOutputs,
 			};
 
 			chatInputRef.current?.loadExternalMessage(external);
@@ -520,8 +480,8 @@ export default function ChatsPage() {
 			const idx = chat.messages.findIndex(m => m.id === id);
 			if (idx === -1) return;
 			const msg = chat.messages[idx];
-			if (msg.role === RoleEnum.User && msg.toolChoices && msg.toolChoices.length > 0) {
-				chatInputRef.current?.setConversationToolsFromChoices(msg.toolChoices);
+			if (msg.role === RoleEnum.User && msg.toolStoreChoices && msg.toolStoreChoices.length > 0) {
+				chatInputRef.current?.setConversationToolsFromChoices(msg.toolStoreChoices);
 			} else {
 				chatInputRef.current?.setConversationToolsFromChoices([]);
 			}

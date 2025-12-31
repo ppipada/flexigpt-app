@@ -1,17 +1,16 @@
 import { FiAlertTriangle, FiPlay, FiTool, FiX } from 'react-icons/fi';
 
-import type { ToolOutput } from '@/spec/tool';
+import type { UIToolCallChip, UIToolOutput } from '@/spec/tool';
 
-import type { EditorToolCall } from '@/chats/tools/tool_editor_utils';
 import { getPrettyToolName } from '@/chats/tools/tool_editor_utils';
 
 interface ToolChipsComposerRowProps {
-	toolCalls: EditorToolCall[];
-	toolOutputs: ToolOutput[];
+	toolCalls: UIToolCallChip[];
+	toolOutputs: UIToolOutput[];
 	isBusy: boolean;
 	onRunToolCall: (id: string) => void | Promise<void>;
 	onDiscardToolCall: (id: string) => void;
-	onOpenOutput: (output: ToolOutput) => void;
+	onOpenOutput: (output: UIToolOutput) => void;
 	onRemoveOutput: (id: string) => void;
 }
 
@@ -68,7 +67,7 @@ export function ToolChipsComposerRow({
 }
 
 interface ToolCallComposerChipViewProps {
-	toolCall: EditorToolCall;
+	toolCall: UIToolCallChip;
 	isBusy: boolean;
 	onRun: () => void;
 	onDiscard: () => void;
@@ -148,7 +147,7 @@ function ToolCallComposerChipView({ toolCall, isBusy, onRun, onDiscard }: ToolCa
 }
 
 interface ToolOutputComposerChipViewProps {
-	output: ToolOutput;
+	output: UIToolOutput;
 	onOpen: () => void;
 	onRemove: () => void;
 }

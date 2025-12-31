@@ -16,9 +16,10 @@ import { useMenuStore } from '@ariakit/react';
 import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
-import { type Attachment, AttachmentKind, type AttachmentMode } from '@/spec/attachment';
+import { type Attachment, AttachmentKind, type AttachmentMode, type UIAttachment } from '@/spec/attachment';
 import type { DirectoryAttachmentsResult } from '@/spec/backend';
-import type { ToolCall, ToolOutput, ToolStoreChoice } from '@/spec/tool';
+import type { ToolCallBinding } from '@/spec/inference';
+import type { ToolStoreChoice, UIToolAttachedChoice, UIToolCallChip, UIToolOutput } from '@/spec/tool';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -41,12 +42,11 @@ import { TabbableKit } from '@/components/editor/plugins/tabbable_kit';
 
 import { AttachmentBottomBar } from '@/chats/attachments/attachment_bottom_bar';
 import {
-	buildEditorAttachmentForLocalPath,
-	buildEditorAttachmentForURL,
+	buildUIAttachmentForLocalPath,
+	buildUIAttachmentForURL,
 	type DirectoryAttachmentGroup,
-	type EditorAttachment,
-	editorAttachmentKey,
 	MAX_FILES_PER_DIRECTORY,
+	uiAttachmentKey,
 } from '@/chats/attachments/attachment_editor_utils';
 import { EditorChipsBar } from '@/chats/chat_input_editor_chips_bar';
 import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
@@ -71,9 +71,7 @@ import {
 import {
 	buildToolCallFromResponse,
 	dedupeToolChoices,
-	type EditorAttachedToolChoice,
 	editorAttachedToolToToolChoice,
-	type EditorToolCall,
 	formatToolOutputSummary,
 	getAttachedTools,
 	insertToolSelectionNode,
@@ -88,7 +86,7 @@ export interface EditorAreaHandle {
 	openAttachmentMenu: () => void;
 	loadExternalMessage: (msg: EditorExternalMessage) => void;
 	resetEditor: () => void;
-	loadToolCalls: (toolCalls: ToolCall[]) => void;
+	loadToolCalls: (toolCalls: UIToolCallChip[], bindings?: ToolCallBinding[]) => void;
 	setConversationToolsFromChoices: (tools: ToolStoreChoice[]) => void;
 }
 
@@ -96,14 +94,14 @@ export interface EditorExternalMessage {
 	text: string;
 	attachments?: Attachment[];
 	toolChoices?: ToolStoreChoice[];
-	toolOutputs?: ToolOutput[];
+	toolOutputs?: UIToolOutput[];
 }
 
 export interface EditorSubmitPayload {
 	text: string;
-	attachedTools: EditorAttachedToolChoice[];
-	attachments: EditorAttachment[];
-	toolOutputs: ToolOutput[];
+	attachedTools: UIToolAttachedChoice[];
+	attachments: UIAttachment[];
+	toolOutputs: UIToolOutput[];
 	finalToolChoices: ToolStoreChoice[];
 }
 
@@ -155,13 +153,13 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	// doc version tick to re-run selection computations on any editor change
 	const [docVersion, setDocVersion] = useState(0);
 	const [submitError, setSubmitError] = useState<string | null>(null);
-	const [attachments, setAttachments] = useState<EditorAttachment[]>([]);
+	const [attachments, setAttachments] = useState<UIAttachment[]>([]);
 	const [directoryGroups, setDirectoryGroups] = useState<DirectoryAttachmentGroup[]>([]);
 
 	// Tool-call chips (assistant-suggested) + tool outputs attached to the next user message.
-	const [toolCalls, setToolCalls] = useState<EditorToolCall[]>([]);
-	const [toolOutputs, setToolOutputs] = useState<ToolOutput[]>([]);
-	const [activeToolOutput, setActiveToolOutput] = useState<ToolOutput | null>(null);
+	const [toolCalls, setToolCalls] = useState<UIToolCallChip[]>([]);
+	const [toolOutputs, setToolOutputs] = useState<UIToolOutput[]>([]);
+	const [activeToolOutput, setActiveToolOutput] = useState<UIToolOutput | null>(null);
 	const [conversationToolsState, setConversationToolsState] = useState<ConversationToolStateEntry[]>([]);
 
 	const closeAllMenus = useCallback(() => {
@@ -327,10 +325,10 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	/**
 	 * Run a single tool call from its chip, updating chip status and appending
-	 * a ToolOutput on success. Returns the new ToolOutput (if successful) so
+	 * a UIToolOutput on success. Returns the new UIToolOutput (if successful) so
 	 * callers like "Run & send" can include it in the payload immediately.
 	 */
-	const runToolCallInternal = useCallback(async (toolCall: EditorToolCall): Promise<ToolOutput | null> => {
+	const runToolCallInternal = useCallback(async (toolCall: UIToolCallChip): Promise<UIToolOutput | null> => {
 		// Resolve identity using toolStoreChoice when available; fall back to name parsing.
 		let bundleID: string | undefined;
 		let toolSlug: string | undefined;
@@ -358,10 +356,12 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		try {
 			const resp = await toolStoreAPI.invokeTool(bundleID, toolSlug, version, toolCall.arguments);
 
-			const output: ToolOutput = {
+			const output: UIToolOutput = {
 				id: toolCall.id,
 				callID: toolCall.callID,
 				name: toolCall.name,
+				choiceID: toolCall.choiceID,
+				type: toolCall.type,
 				summary: formatToolOutputSummary(toolCall.name),
 				rawOutput: resp.output,
 				toolStoreChoice: toolCall.toolStoreChoice,
@@ -381,13 +381,13 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	/**
 	 * Run all currently pending tool calls (in sequence) and return the
-	 * ToolOutput objects produced in this pass.
+	 * UIToolOutput objects produced in this pass.
 	 */
-	const runAllPendingToolCalls = useCallback(async (): Promise<ToolOutput[]> => {
+	const runAllPendingToolCalls = useCallback(async (): Promise<UIToolOutput[]> => {
 		const pending = toolCalls.filter(c => c.status === 'pending');
 		if (pending.length === 0) return [];
 
-		const produced: ToolOutput[] = [];
+		const produced: UIToolOutput[] = [];
 		for (const chip of pending) {
 			const out = await runToolCallInternal(chip);
 			if (out) produced.push(out);
@@ -413,7 +413,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		setActiveToolOutput(current => (current && current.id === id ? null : current));
 	}, []);
 
-	const handleOpenToolOutput = useCallback((output: ToolOutput) => {
+	const handleOpenToolOutput = useCallback((output: UIToolOutput) => {
 		setActiveToolOutput(output);
 	}, []);
 
@@ -453,7 +453,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 		try {
 			const existingOutputs = toolOutputs;
-			let newlyProducedOutputs: ToolOutput[] = [];
+			let newlyProducedOutputs: UIToolOutput[] = [];
 
 			if (options.runPendingTools && hasPendingToolCalls) {
 				newlyProducedOutputs = await runAllPendingToolCalls();
@@ -542,30 +542,30 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 			editor.tf.setValue(value);
 
-			// 2) Rebuild attachments as EditorAttachment[]
+			// 2) Rebuild attachments as UIAttachment[]
 			setAttachments(() => {
 				if (!incoming.attachments || incoming.attachments.length === 0) return [];
-				const next: EditorAttachment[] = [];
+				const next: UIAttachment[] = [];
 				const seen = new Set<string>();
 
 				for (const att of incoming.attachments) {
-					let ui: EditorAttachment | undefined = undefined;
+					let ui: UIAttachment | undefined = undefined;
 
 					if (att.kind === AttachmentKind.url) {
 						// URL attachment
 						if (att.urlRef) {
-							ui = buildEditorAttachmentForURL(att);
+							ui = buildUIAttachmentForURL(att);
 						} else {
 							continue;
 						}
 					} else if (att.kind === AttachmentKind.file || att.kind === AttachmentKind.image) {
 						// File/image/etc. – same type we originally got from backend.
-						ui = buildEditorAttachmentForLocalPath(att);
+						ui = buildUIAttachmentForLocalPath(att);
 					}
 
 					if (!ui) continue;
 
-					const key = editorAttachmentKey(ui);
+					const key = uiAttachmentKey(ui);
 					if (seen.has(key)) continue;
 					seen.add(key);
 					next.push(ui);
@@ -597,8 +597,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		[closeAllMenus, editor]
 	);
 
-	const loadToolCalls = useCallback((toolCalls: ToolCall[]) => {
-		setToolCalls(buildToolCallFromResponse(toolCalls));
+	const loadToolCalls = useCallback((toolCalls: UIToolCallChip[], bindings?: ToolCallBinding[]) => {
+		setToolCalls(buildToolCallFromResponse(toolCalls, bindings));
 	}, []);
 
 	useImperativeHandle(ref, () => ({
@@ -633,16 +633,16 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		if (!results || results.length === 0) return;
 
 		setAttachments(prev => {
-			const existing = new Set(prev.map(editorAttachmentKey));
-			const next: EditorAttachment[] = [...prev];
+			const existing = new Set(prev.map(uiAttachmentKey));
+			const next: UIAttachment[] = [...prev];
 
 			for (const r of results) {
-				const att = buildEditorAttachmentForLocalPath(r);
+				const att = buildUIAttachmentForLocalPath(r);
 				if (!att) {
 					console.error('invalid attachment result');
 					continue;
 				}
-				const key = editorAttachmentKey(att);
+				const key = uiAttachmentKey(att);
 				if (existing.has(key)) continue;
 				existing.add(key);
 				next.push(att);
@@ -682,20 +682,20 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		const seenKeysForGroup = new Set<string>();
 
 		setAttachments(prev => {
-			const existing = new Map<string, EditorAttachment>();
+			const existing = new Map<string, UIAttachment>();
 			for (const att of prev) {
-				existing.set(editorAttachmentKey(att), att);
+				existing.set(uiAttachmentKey(att), att);
 			}
 
-			const added: EditorAttachment[] = [];
+			const added: UIAttachment[] = [];
 
 			for (const r of dirAttachments ?? []) {
-				const att = buildEditorAttachmentForLocalPath(r);
+				const att = buildUIAttachmentForLocalPath(r);
 				if (!att) {
 					console.error('invalid attachment result');
 					continue;
 				}
-				const key = editorAttachmentKey(att);
+				const key = uiAttachmentKey(att);
 
 				// Skip duplicates within this folder selection
 				if (seenKeysForGroup.has(key)) continue;
@@ -736,26 +736,26 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 		const bAtt = await backendAPI.openURLAsAttachment(trimmed);
 		if (!bAtt) return;
-		const att = buildEditorAttachmentForURL(bAtt);
-		const key = editorAttachmentKey(att);
+		const att = buildUIAttachmentForURL(bAtt);
+		const key = uiAttachmentKey(att);
 
 		setAttachments(prev => {
-			const existing = new Set(prev.map(editorAttachmentKey));
+			const existing = new Set(prev.map(uiAttachmentKey));
 			if (existing.has(key)) return prev;
 			return [...prev, att];
 		});
 	};
 
-	const handleChangeAttachmentMode = (att: EditorAttachment, newMode: AttachmentMode) => {
-		const targetKey = editorAttachmentKey(att);
-		setAttachments(prev => prev.map(a => (editorAttachmentKey(a) === targetKey ? { ...a, mode: newMode } : a)));
+	const handleChangeAttachmentMode = (att: UIAttachment, newMode: AttachmentMode) => {
+		const targetKey = uiAttachmentKey(att);
+		setAttachments(prev => prev.map(a => (uiAttachmentKey(a) === targetKey ? { ...a, mode: newMode } : a)));
 		editor.tf.focus();
 	};
 
-	const handleRemoveAttachment = (att: EditorAttachment) => {
-		const targetKey = editorAttachmentKey(att);
+	const handleRemoveAttachment = (att: UIAttachment) => {
+		const targetKey = uiAttachmentKey(att);
 
-		setAttachments(prev => prev.filter(a => editorAttachmentKey(a) !== targetKey));
+		setAttachments(prev => prev.filter(a => uiAttachmentKey(a) !== targetKey));
 
 		// Also detach from any directory groups (and drop empty groups)
 		setDirectoryGroups(prevGroups => {
@@ -786,7 +786,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			if (groupToRemove.ownedAttachmentKeys.length > 0) {
 				setAttachments(prevAttachments =>
 					prevAttachments.filter(att => {
-						const key = editorAttachmentKey(att);
+						const key = uiAttachmentKey(att);
 						if (!groupToRemove.ownedAttachmentKeys.includes(key)) return true;
 						// If other groups still own this attachment, keep it.
 						if (keysOwnedByOtherGroups.has(key)) return true;

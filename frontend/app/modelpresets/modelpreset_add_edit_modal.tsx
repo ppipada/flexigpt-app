@@ -4,13 +4,8 @@ import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiUpload, FiX } from 'react-icons/fi';
 
-import {
-	type ModelPreset,
-	type ModelPresetID,
-	type ProviderName,
-	ReasoningLevel,
-	ReasoningType,
-} from '@/spec/modelpreset';
+import { ReasoningLevel, ReasoningType } from '@/spec/inference';
+import { type ModelPreset, type ModelPresetID, type ProviderName } from '@/spec/modelpreset';
 
 import { Dropdown } from '@/components/dropdown';
 
@@ -31,6 +26,7 @@ const reasoningLevelItems: Record<ReasoningLevel, { isEnabled: boolean; displayN
 	[ReasoningLevel.Low]: { isEnabled: true, displayName: 'Low' },
 	[ReasoningLevel.Medium]: { isEnabled: true, displayName: 'Medium' },
 	[ReasoningLevel.High]: { isEnabled: true, displayName: 'High' },
+	[ReasoningLevel.XHigh]: { isEnabled: true, displayName: 'XHigh' },
 };
 
 /** Defaults we *apply* while in **Add** mode (place-holders also use them). */

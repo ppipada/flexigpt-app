@@ -5,18 +5,17 @@ import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
 import type { Attachment } from '@/spec/attachment';
 import { AttachmentKind, AttachmentMode } from '@/spec/attachment';
-import type { ToolCall, ToolOutput, ToolStoreChoice } from '@/spec/tool';
+import type { ToolStoreChoice, UIToolCallChip, UIToolOutput } from '@/spec/tool';
 
 import {
 	getAttachmentModeLabel,
 	getAttachmentModePillClasses,
 	getAttachmentModeTooltip,
 } from '@/chats/attachments/attachment_mode_menu';
-import type { EditorToolCall } from '@/chats/tools/tool_editor_utils';
 import { formatToolCallLabel, getPrettyToolName } from '@/chats/tools/tool_editor_utils';
 
 /**
- * Get a path/URL for tooltip display, similar to getEditorAttachmentPath
+ * Get a path/URL for tooltip display, similar to getUIAttachmentPath
  * but for persisted Conversation attachments.
  */
 function getAttachmentPath(att: Attachment): string {
@@ -120,7 +119,7 @@ function MessageToolChoiceChip({ tool, fullWidth = false }: MessageToolChoiceChi
 }
 
 interface MessageToolCallChipProps {
-	call: ToolCall;
+	call: UIToolCallChip;
 	fullWidth?: boolean;
 }
 
@@ -128,11 +127,12 @@ interface MessageToolCallChipProps {
  * Read‑only chip for an assistant-suggested tool call under the assistant bubble.
  */
 function MessageToolCallChip({ call, fullWidth = false }: MessageToolCallChipProps) {
-	const tmpCall: EditorToolCall = {
+	const tmpCall: UIToolCallChip = {
 		id: call.id || call.callID,
 		callID: call.callID,
 		name: call.name,
 		arguments: call.arguments,
+		choiceID: call.choiceID,
 		type: call.type,
 		status: 'pending',
 	};
@@ -160,7 +160,7 @@ function MessageToolCallChip({ call, fullWidth = false }: MessageToolCallChipPro
 }
 
 interface MessageToolOutputChipProps {
-	output: ToolOutput;
+	output: UIToolOutput;
 	fullWidth?: boolean;
 }
 
@@ -304,7 +304,7 @@ function ToolChoicesGroupChip({ tools }: ToolChoicesGroupChipProps) {
 }
 
 interface ToolOutputsGroupChipProps {
-	outputs: ToolOutput[];
+	outputs: UIToolOutput[];
 }
 
 function ToolOutputsGroupChip({ outputs }: ToolOutputsGroupChipProps) {
@@ -359,7 +359,7 @@ function ToolOutputsGroupChip({ outputs }: ToolOutputsGroupChipProps) {
 }
 
 interface ToolCallsGroupChipProps {
-	calls: ToolCall[];
+	calls: UIToolCallChip[];
 }
 
 function ToolCallsGroupChip({ calls }: ToolCallsGroupChipProps) {
@@ -416,8 +416,8 @@ function ToolCallsGroupChip({ calls }: ToolCallsGroupChipProps) {
 interface MessageAttachmentsBarProps {
 	attachments?: Attachment[];
 	toolChoices?: ToolStoreChoice[];
-	toolCalls?: ToolCall[];
-	toolOutputs?: ToolOutput[];
+	toolCalls?: UIToolCallChip[];
+	toolOutputs?: UIToolOutput[];
 }
 
 /**

@@ -1,4 +1,4 @@
-package inference
+package inferencewrapper
 
 import (
 	"net/http"

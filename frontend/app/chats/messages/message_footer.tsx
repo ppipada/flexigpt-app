@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { FiArrowDown, FiArrowUp, FiCode, FiEdit2, FiMoreHorizontal, FiRepeat } from 'react-icons/fi';
 
-import type { CompletionUsage } from '@/spec/modelpreset';
+import type { InferenceUsage } from '@/spec/inference';
 
 import { stripCustomMDFences } from '@/lib/text_utils';
 
@@ -21,7 +21,7 @@ interface MessageFooterAreaProps {
 	isBusy: boolean;
 	disableMarkdown: boolean;
 	onDisableMarkdownChange: (checked: boolean) => void;
-	usage?: CompletionUsage;
+	usage?: InferenceUsage;
 }
 
 export function MessageFooterArea({

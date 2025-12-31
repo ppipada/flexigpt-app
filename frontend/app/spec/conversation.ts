@@ -1,22 +1,65 @@
-import type { InferenceError, InputOutputContent, ModelParam, Usage } from '@/spec/inference';
-import type { ReasoningContent } from '@/spec/modelpreset';
-import type { ToolCall, ToolOutput, ToolStoreChoice } from '@/spec/tool';
+import type { Attachment } from '@/spec/attachment';
+import type {
+	InferenceError,
+	InferenceUsage,
+	InputUnion,
+	ModelParam,
+	OutputUnion,
+	ReasoningContent,
+	RoleEnum,
+	Status,
+	ToolChoice,
+} from '@/spec/inference';
+import type { ToolStoreChoice, UIToolCallChip, UIToolOutput } from '@/spec/tool';
 
-export interface ConversationMessage {
+/** Keep in sync with Go's ConversationSchemaVersion. */
+export const CONVERSATION_SCHEMA_VERSION = 'v1.0.0';
+
+export interface StoreConversationMessage {
 	id: string;
+	// Go type: time
 	createdAt: Date;
-	role: string;
-	status: string;
+	role: RoleEnum;
+	status: Status;
+
 	modelParam?: ModelParam;
-	messages?: InputOutputContent[];
-	reasoning?: ReasoningContent[];
-	toolCalls?: ToolCall[];
-	toolOutputs?: ToolOutput[];
-	toolChoices?: ToolStoreChoice[];
-	usage?: Usage;
+	inputs?: InputUnion[];
+	outputs?: OutputUnion[];
+
+	toolChoices?: ToolChoice[];
+
+	toolStoreChoices?: ToolStoreChoice[];
+	attachments?: Attachment[];
+
+	usage?: InferenceUsage;
 	error?: InferenceError;
+
 	meta?: Record<string, any>;
 }
+
+interface UIConversationMessageDetails {
+	// UI-only, derived from outputs (we'll derive in helpers)
+	content: string;
+	details?: string;
+	reasoningContents?: ReasoningContent[];
+	toolCalls?: UIToolCallChip[];
+	toolOutputs?: UIToolOutput[];
+}
+
+export type ConversationMessage = StoreConversationMessage & UIConversationMessageDetails;
+
+interface BaseConversation<TMessage> {
+	schemaVersion: string;
+	id: string;
+	title: string;
+	createdAt: Date;
+	modifiedAt: Date;
+	messages: TMessage[];
+	meta?: Record<string, any>;
+}
+
+export type StoreConversation = BaseConversation<StoreConversationMessage>;
+export type Conversation = BaseConversation<ConversationMessage>;
 
 export type ConversationSearchItem = {
 	id: string;
@@ -24,31 +67,3 @@ export type ConversationSearchItem = {
 	idDate: Date;
 	modifiedAt: Date;
 };
-
-export type Conversation = {
-	schemaVersion: string;
-	id: string;
-	title?: string;
-	// Go type: time
-	createdAt: Date;
-	// Go type: time
-	modifiedAt: Date;
-	messages: ConversationMessage[];
-	meta?: Record<string, any>;
-};
-
-export interface IConversationStoreAPI {
-	putConversation: (conversation: Conversation) => Promise<void>;
-	putMessagesToConversation(id: string, title: string, messages: ConversationMessage[]): Promise<void>;
-	deleteConversation: (id: string, title: string) => Promise<void>;
-	getConversation: (id: string, title: string, forceFetch?: boolean) => Promise<Conversation | null>;
-	listConversations: (
-		token?: string,
-		pageSize?: number
-	) => Promise<{ conversations: ConversationSearchItem[]; nextToken?: string }>;
-	searchConversations: (
-		query: string,
-		token?: string,
-		pageSize?: number
-	) => Promise<{ conversations: ConversationSearchItem[]; nextToken?: string }>;
-}

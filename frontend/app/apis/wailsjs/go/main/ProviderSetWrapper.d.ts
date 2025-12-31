@@ -8,6 +8,6 @@ export function CancelCompletion(arg1:string):Promise<void>;
 
 export function DeleteProvider(arg1:spec.DeleteProviderRequest):Promise<spec.DeleteProviderResponse>;
 
-export function FetchCompletion(arg1:string,arg2:spec.FetchCompletionRequestBody,arg3:string,arg4:string,arg5:string):Promise<spec.FetchCompletionResponse>;
+export function FetchCompletion(arg1:string,arg2:spec.CompletionRequestBody,arg3:string,arg4:string,arg5:string):Promise<spec.CompletionResponse>;
 
 export function SetProviderAPIKey(arg1:spec.SetProviderAPIKeyRequest):Promise<spec.SetProviderAPIKeyResponse>;

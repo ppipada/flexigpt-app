@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/ppipada/flexigpt-app/pkg/inference"
+	"github.com/ppipada/flexigpt-app/pkg/inferencewrapper"
 
 	conversationStore "github.com/ppipada/flexigpt-app/pkg/conversation/store"
 	modelpresetStore "github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
@@ -16,7 +16,7 @@ import (
 type BackendApp struct {
 	settingStoreAPI        *settingStore.SettingStore
 	conversationStoreAPI   *conversationStore.ConversationCollection
-	providerSetAPI         *inference.ProviderSetAPI
+	providerSetAPI         *inferencewrapper.ProviderSetAPI
 	modelPresetStoreAPI    *modelpresetStore.ModelPresetStore
 	promptTemplateStoreAPI *promptStore.PromptTemplateStore
 	toolStoreAPI           *toolStore.ToolStore
@@ -187,7 +187,7 @@ func (a *BackendApp) initToolStore() {
 }
 
 func (a *BackendApp) initProviderSet() {
-	p, err := inference.NewProviderSetAPI(false, a.toolStoreAPI)
+	p, err := inferencewrapper.NewProviderSetAPI(slog.Default(), a.toolStoreAPI)
 	if err != nil {
 		slog.Error(
 			"failed to initialize provider set",

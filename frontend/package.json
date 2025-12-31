@@ -72,7 +72,7 @@
 		"@types/react-dom": "19.2.3",
 		"@types/sprintf-js": "^1.1.4",
 		"@types/stopword": "^2.0.3",
-		"@vitejs/plugin-rsc": "^0.5.7",
+		"@vitejs/plugin-rsc": "^0.5.9",
 		"@vitest/coverage-v8": "^4.0.15",
 		"cross-env": "^10.1.0",
 		"daisyui": "^5.5.8",
@@ -119,7 +119,8 @@
 			"app/chats/tools/tool_plus_input.tsx",
 			"app/chats/templates/template_slash_input.tsx",
 			"app/components/editor/nodes/slash_node.tsx",
-			"app/chats/messages/message_editbox.tsx"
+			"app/chats/messages/message_editbox.tsx",
+			"app/spec/inference.ts"
 		],
 		"ignoreBinaries": [],
 		"ignoreDependencies": [

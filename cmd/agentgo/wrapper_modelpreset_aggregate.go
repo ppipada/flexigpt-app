@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/ppipada/flexigpt-app/pkg/inference"
-	inferenceSpec "github.com/ppipada/flexigpt-app/pkg/inference/spec"
+	"github.com/ppipada/flexigpt-app/pkg/inferencewrapper"
+	inferencewrapperSpec "github.com/ppipada/flexigpt-app/pkg/inferencewrapper/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
 	settingSpec "github.com/ppipada/flexigpt-app/pkg/setting/spec"
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
@@ -120,14 +120,14 @@ func initProviders(
 			continue
 		}
 
-		body := &inferenceSpec.AddProviderRequestBody{
-			SDKType:                  inference.ConvertModelPresetToInferencegoSDKType(pp.SDKType),
+		body := &inferencewrapperSpec.AddProviderRequestBody{
+			SDKType:                  inferencewrapper.ConvertModelPresetToInferencegoSDKType(pp.SDKType),
 			Origin:                   pp.Origin,
 			ChatCompletionPathPrefix: pp.ChatCompletionPathPrefix,
 			APIKeyHeaderKey:          pp.APIKeyHeaderKey,
 			DefaultHeaders:           pp.DefaultHeaders,
 		}
-		r := &inferenceSpec.AddProviderRequest{
+		r := &inferencewrapperSpec.AddProviderRequest{
 			Provider: inferencegoSpec.ProviderName(string(pp.Name)),
 			Body:     body,
 		}
@@ -136,9 +136,9 @@ func initProviders(
 		}
 		providersAdded++
 		if secret, ok := secrets[string(pp.Name)]; ok {
-			_, err := providerAPI.SetProviderAPIKey(&inferenceSpec.SetProviderAPIKeyRequest{
+			_, err := providerAPI.SetProviderAPIKey(&inferencewrapperSpec.SetProviderAPIKeyRequest{
 				Provider: inferencegoSpec.ProviderName(string(pp.Name)),
-				Body: &inferenceSpec.SetProviderAPIKeyRequestBody{
+				Body: &inferencewrapperSpec.SetProviderAPIKeyRequestBody{
 					APIKey: secret,
 				},
 			})

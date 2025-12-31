@@ -1,14 +1,10 @@
 // attachment_chip.tsx
 import { FiFileText, FiImage, FiLink, FiX } from 'react-icons/fi';
 
-import type { AttachmentMode } from '@/spec/attachment';
+import type { AttachmentMode, UIAttachment } from '@/spec/attachment';
 import { AttachmentKind } from '@/spec/attachment';
 
-import {
-	type EditorAttachment,
-	getAttachmentErrorMessage,
-	getEditorAttachmentPath,
-} from '@/chats/attachments/attachment_editor_utils';
+import { getAttachmentErrorMessage, getUIAttachmentPath } from '@/chats/attachments/attachment_editor_utils';
 import {
 	AttachmentModeMenu,
 	getAttachmentModeLabel,
@@ -17,9 +13,9 @@ import {
 } from '@/chats/attachments/attachment_mode_menu';
 
 interface AttachmentChipProps {
-	attachment: EditorAttachment;
-	onRemoveAttachment: (att: EditorAttachment) => void;
-	onChangeAttachmentMode: (att: EditorAttachment, mode: AttachmentMode) => void;
+	attachment: UIAttachment;
+	onRemoveAttachment: (att: UIAttachment) => void;
+	onChangeAttachmentMode: (att: UIAttachment, mode: AttachmentMode) => void;
 
 	/**
 	 * When true, the chip stretches to fill its container width and keeps
@@ -42,7 +38,7 @@ export function AttachmentChip({
 	const isLabelTruncated = att.label.length > 40;
 	const label = isLabelTruncated ? att.label.slice(0, 37) + '...' : att.label;
 
-	const path = getEditorAttachmentPath(att);
+	const path = getUIAttachmentPath(att);
 
 	const icon =
 		att.kind === AttachmentKind.image ? (

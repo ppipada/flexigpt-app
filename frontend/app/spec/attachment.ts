@@ -1,5 +1,6 @@
 // AttachmentKind enumerates contextual attachment categories that can be
 // associated with messages sent to the inference layer.
+/** @lintignore */
 export enum AttachmentKind {
 	file = 'file',
 	image = 'image',
@@ -50,7 +51,7 @@ export const ATTACHMENT_MODE_DESC: Record<AttachmentMode, string> = {
 	[AttachmentMode.commitPage]: 'Send the commit page content.',
 };
 
-export interface AttachmentFileRef {
+interface AttachmentFileRef {
 	path: string;
 	name: string;
 	exists: boolean;
@@ -64,7 +65,7 @@ export interface AttachmentFileRef {
 	origModTime: Date;
 }
 
-export interface AttachmentImageRef {
+interface AttachmentImageRef {
 	path: string;
 	name: string;
 	exists: boolean;
@@ -83,36 +84,31 @@ export interface AttachmentImageRef {
 	origModTime: Date;
 }
 
-export interface AttachmentURLRef {
+interface AttachmentURLRef {
 	url: string;
 	normalized?: string;
 	origNormalized: string;
 }
 
-export interface AttachmentGenericRef {
+interface AttachmentGenericRef {
 	handle: string;
 	origHandle: string;
 }
 
-/**
- * @public
- */
-export enum ContentBlockKind {
+enum AttachmentContentBlockKind {
 	text = 'text',
 	image = 'image',
 	file = 'file',
 }
 
-/**
- * @public
- */
-export interface ContentBlock {
-	kind: ContentBlockKind;
+interface ContentBlock {
+	kind: AttachmentContentBlockKind;
 	text?: string;
 	base64Data?: string;
 	mimeType?: string;
 	fileName?: string;
 }
+
 // Attachment references contextual artifacts (files, images, doc handles, etc.).
 export interface Attachment {
 	kind: AttachmentKind;
@@ -132,4 +128,21 @@ export interface Attachment {
 export interface FileFilter {
 	DisplayName: string;
 	Extensions: string[];
+}
+
+export enum AttachmentErrorReason {
+	TooLargeSingle = 'too-large-single',
+	TooLargeTotal = 'too-large-total',
+	Unreadable = 'unreadable',
+}
+
+/**
+ * UIAttachment is the composer-side shape; it extends the backend
+ * Attachment with required mode/availableModes and error flags.
+ */
+export interface UIAttachment extends Attachment {
+	mode: AttachmentMode;
+	availableModes: AttachmentMode[];
+	isError?: boolean;
+	errorReason?: AttachmentErrorReason;
 }

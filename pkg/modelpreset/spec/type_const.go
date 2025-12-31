@@ -3,6 +3,8 @@ package spec
 import (
 	"errors"
 	"time"
+
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 const (
@@ -66,11 +68,6 @@ const (
 )
 
 const (
-	ReasoningTypeHybridWithTokens ReasoningType = "hybridWithTokens"
-	ReasoningTypeSingleWithLevels ReasoningType = "singleWithLevels"
-)
-
-const (
 	ReasoningLevelNone    ReasoningLevel = "none"
 	ReasoningLevelMinimal ReasoningLevel = "minimal"
 	ReasoningLevelLow     ReasoningLevel = "low"
@@ -78,12 +75,6 @@ const (
 	ReasoningLevelHigh    ReasoningLevel = "high"
 	ReasoningLevelXHigh   ReasoningLevel = "xhigh"
 )
-
-type ReasoningParams struct {
-	Type   ReasoningType  `json:"type"`
-	Level  ReasoningLevel `json:"level"`
-	Tokens int            `json:"tokens"`
-}
 
 // ModelPreset is the entire "model + default knobs" bundle the user can save.
 // Anything not present in the preset is considered to be taken as default from any global or inbuilt model defaults.
@@ -95,14 +86,14 @@ type ModelPreset struct {
 	Slug          ModelSlug        `json:"slug"          required:"true"`
 	IsEnabled     bool             `json:"isEnabled"     required:"true"`
 
-	Stream                      *bool            `json:"stream,omitempty"`
-	MaxPromptLength             *int             `json:"maxPromptLength,omitempty"`
-	MaxOutputLength             *int             `json:"maxOutputLength,omitempty"`
-	Temperature                 *float64         `json:"temperature,omitempty"`
-	Reasoning                   *ReasoningParams `json:"reasoning,omitempty"`
-	SystemPrompt                *string          `json:"systemPrompt,omitempty"`
-	Timeout                     *int             `json:"timeout,omitempty"`
-	AdditionalParametersRawJSON *string          `json:"additionalParametersRawJSON,omitempty"`
+	Stream                      *bool                           `json:"stream,omitempty"`
+	MaxPromptLength             *int                            `json:"maxPromptLength,omitempty"`
+	MaxOutputLength             *int                            `json:"maxOutputLength,omitempty"`
+	Temperature                 *float64                        `json:"temperature,omitempty"`
+	Reasoning                   *inferencegoSpec.ReasoningParam `json:"reasoning,omitempty"`
+	SystemPrompt                *string                         `json:"systemPrompt,omitempty"`
+	Timeout                     *int                            `json:"timeout,omitempty"`
+	AdditionalParametersRawJSON *string                         `json:"additionalParametersRawJSON,omitempty"`
 
 	CreatedAt  time.Time `json:"createdAt"`
 	ModifiedAt time.Time `json:"modifiedAt"`

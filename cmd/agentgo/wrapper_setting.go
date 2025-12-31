@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	inferenceSpec "github.com/ppipada/flexigpt-app/pkg/inference/spec"
+	inferencewrapperSpec "github.com/ppipada/flexigpt-app/pkg/inferencewrapper/spec"
 	"github.com/ppipada/flexigpt-app/pkg/middleware"
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
 
@@ -64,9 +64,9 @@ func (w *SettingStoreWrapper) SetAuthKey(
 	return middleware.WithRecoveryResp(func() (*settingSpec.SetAuthKeyResponse, error) {
 		if req.Type == settingSpec.AuthKeyTypeProvider {
 			_, err := w.providerSetWrapper.SetProviderAPIKey(
-				&inferenceSpec.SetProviderAPIKeyRequest{
+				&inferencewrapperSpec.SetProviderAPIKeyRequest{
 					Provider: inferencegoSpec.ProviderName(req.KeyName),
-					Body:     &inferenceSpec.SetProviderAPIKeyRequestBody{APIKey: req.Body.Secret},
+					Body:     &inferencewrapperSpec.SetProviderAPIKeyRequestBody{APIKey: req.Body.Secret},
 				},
 			)
 			if err != nil {
@@ -91,9 +91,9 @@ func (w *SettingStoreWrapper) DeleteAuthKey(
 		}
 		if req.Type == settingSpec.AuthKeyTypeProvider {
 			_, _ = w.providerSetWrapper.SetProviderAPIKey(
-				&inferenceSpec.SetProviderAPIKeyRequest{
+				&inferencewrapperSpec.SetProviderAPIKeyRequest{
 					Provider: inferencegoSpec.ProviderName(req.KeyName),
-					Body:     &inferenceSpec.SetProviderAPIKeyRequestBody{APIKey: ""},
+					Body:     &inferencewrapperSpec.SetProviderAPIKeyRequestBody{APIKey: ""},
 				},
 			)
 		}

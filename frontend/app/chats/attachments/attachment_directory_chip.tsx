@@ -3,21 +3,17 @@ import { FiAlertTriangle, FiChevronUp, FiFolder, FiX } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
-import { AttachmentMode } from '@/spec/attachment';
+import { AttachmentMode, type UIAttachment } from '@/spec/attachment';
 
 import { AttachmentChip } from '@/chats/attachments/attachment_chip';
-import {
-	type DirectoryAttachmentGroup,
-	type EditorAttachment,
-	editorAttachmentKey,
-} from '@/chats/attachments/attachment_editor_utils';
+import { type DirectoryAttachmentGroup, uiAttachmentKey } from '@/chats/attachments/attachment_editor_utils';
 import { getAttachmentModePillClasses } from '@/chats/attachments/attachment_mode_menu';
 
 interface DirectoryChipProps {
 	group: DirectoryAttachmentGroup;
-	attachments: EditorAttachment[];
-	onRemoveAttachment: (att: EditorAttachment) => void;
-	onChangeAttachmentMode: (att: EditorAttachment, mode: AttachmentMode) => void;
+	attachments: UIAttachment[];
+	onRemoveAttachment: (att: UIAttachment) => void;
+	onChangeAttachmentMode: (att: UIAttachment, mode: AttachmentMode) => void;
 	onRemoveDirectoryGroup: (groupId: string) => void;
 	onRemoveOverflowDir?: (groupId: string, dirPath: string) => void;
 }
@@ -37,9 +33,9 @@ export function DirectoryChip({
 	const directoryMenu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
 	// Build a map for quick lookup of attachments by key
-	const attachmentByKey = new Map<string, EditorAttachment>();
+	const attachmentByKey = new Map<string, UIAttachment>();
 	for (const att of attachments) {
-		attachmentByKey.set(editorAttachmentKey(att), att);
+		attachmentByKey.set(uiAttachmentKey(att), att);
 	}
 
 	const attachedCount = group.attachmentKeys.length;

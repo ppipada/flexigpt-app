@@ -3,6 +3,9 @@ package spec
 import (
 	"time"
 
+	"github.com/ppipada/flexigpt-app/pkg/attachment"
+	toolSpec "github.com/ppipada/flexigpt-app/pkg/tool/spec"
+
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
@@ -28,22 +31,24 @@ type ConversationMessage struct {
 	// over from previous messages.
 	ModelParam *inferencegoSpec.ModelParam `json:"modelParam,omitempty"`
 
-	// Primary content for this turn (text, images, files, etc.).
-	// Usually 1 element for user or assistant, but we allow multiple
-	// to preserve fidelity if the backend ever returns more.
-	Messages []*inferencegoSpec.InputOutputContent `json:"messages,omitempty"`
+	// Canonical, lossless events for this turn, in the order they occurred.
+	//
+	// For a user turn, you typically have exactly one InputKindInputMessage
+	// entry in Inputs, possibly preceded by earlier tool outputs, etc.
+	// For an assistant turn, you typically have:
+	//   - one or more OutputKindOutputMessage entries,
+	//   - zero or more OutputKindReasoningMessage entries,
+	//   - zero or more tool call / web-search events, etc.
+	Inputs  []inferencegoSpec.InputUnion  `json:"inputs,omitempty"`
+	Outputs []inferencegoSpec.OutputUnion `json:"outputs,omitempty"`
 
-	// Reasoning chunks associated with this turn (usually assistant).
-	Reasoning []*inferencegoSpec.ReasoningContent `json:"reasoning,omitempty"`
-
-	// Tool interactions that conceptually belong to this turn.
-	ToolCalls   []inferencegoSpec.ToolCall   `json:"toolCalls,omitempty"`
-	ToolOutputs []inferencegoSpec.ToolOutput `json:"toolOutputs,omitempty"`
-
-	// Per-turn tool choices. These are tools you want available for the
-	// *next* completion run that this turn initiates. You'll typically
-	// merge these with Conversation.ToolChoices when preparing a request.
-	ToolChoices []inferencegoSpec.ToolChoice `json:"toolChoices,omitempty"`
+	// Tool choices that were *available* when this turn ran.
+	// For the next completion, the app can choose to reuse or override these.
+	ToolChoices      []inferencegoSpec.ToolChoice `json:"toolChoices,omitempty"`
+	ToolStoreChoices []toolSpec.ToolStoreChoice   `json:"toolStoreChoices,omitempty"`
+	// Attachments that backed this turn's user input (files, URLs, etc).
+	// These are ref attachments; ContentBlock may or may not be hydrated.
+	Attachments []attachment.Attachment `json:"attachments,omitempty"`
 
 	// Usage / error info from the model/provider for this turn
 	// (usually attached to assistant turns).

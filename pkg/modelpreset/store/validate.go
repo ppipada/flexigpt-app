@@ -7,6 +7,7 @@ import (
 
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 // validateProviderPreset performs structural and referential checks for a
@@ -123,21 +124,21 @@ func validateModelPresetID(id spec.ModelPresetID) error {
 }
 
 // validateReasoning verifies the type/level/tokens combos.
-func validateReasoning(r *spec.ReasoningParams) error {
+func validateReasoning(r *inferencegoSpec.ReasoningParam) error {
 	switch r.Type {
-	case spec.ReasoningTypeHybridWithTokens:
+	case inferencegoSpec.ReasoningTypeHybridWithTokens:
 		if r.Tokens <= 0 {
 			return errors.New("tokens must be >0 for hybridWithTokens")
 		}
-	case spec.ReasoningTypeSingleWithLevels:
+	case inferencegoSpec.ReasoningTypeSingleWithLevels:
 		switch r.Level {
 		case
-			spec.ReasoningLevelNone,
-			spec.ReasoningLevelMinimal,
-			spec.ReasoningLevelLow,
-			spec.ReasoningLevelMedium,
-			spec.ReasoningLevelHigh,
-			spec.ReasoningLevelXHigh:
+			inferencegoSpec.ReasoningLevelNone,
+			inferencegoSpec.ReasoningLevelMinimal,
+			inferencegoSpec.ReasoningLevelLow,
+			inferencegoSpec.ReasoningLevelMedium,
+			inferencegoSpec.ReasoningLevelHigh,
+			inferencegoSpec.ReasoningLevelXHigh:
 			// Valid.
 		default:
 			return fmt.Errorf("invalid level %q for singleWithLevels", r.Level)

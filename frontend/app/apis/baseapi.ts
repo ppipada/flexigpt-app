@@ -1,14 +1,16 @@
-import type { IProviderSetAPI } from '@/spec/aiprovider';
-import type { IBackendAPI } from '@/spec/backend';
-import type { IConversationStoreAPI } from '@/spec/conversation';
 import type { ILogger } from '@/spec/logger';
-import type { IModelPresetStoreAPI } from '@/spec/modelpreset';
-import type { IPromptStoreAPI } from '@/spec/prompt';
-import type { ISettingStoreAPI } from '@/spec/setting';
-import type { IToolStoreAPI } from '@/spec/tool';
 
 import { IS_WAILS_PLATFORM } from '@/lib/features';
 
+import type {
+	IBackendAPI,
+	IConversationStoreAPI,
+	IModelPresetStoreAPI,
+	IPromptStoreAPI,
+	IProviderSetAPI,
+	ISettingStoreAPI,
+	IToolStoreAPI,
+} from '@/apis/interface';
 import * as wailsImpl from '@/apis/wailsapi';
 
 export let log: ILogger;

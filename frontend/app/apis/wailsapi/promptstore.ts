@@ -1,12 +1,6 @@
-import type {
-	IPromptStoreAPI,
-	MessageBlock,
-	PromptBundle,
-	PromptTemplate,
-	PromptTemplateListItem,
-	PromptVariable,
-} from '@/spec/prompt';
+import type { MessageBlock, PromptBundle, PromptTemplate, PromptTemplateListItem, PromptVariable } from '@/spec/prompt';
 
+import type { IPromptStoreAPI } from '@/apis/interface';
 import {
 	DeletePromptBundle,
 	DeletePromptTemplate,

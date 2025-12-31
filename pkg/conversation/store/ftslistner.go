@@ -169,20 +169,31 @@ func extractFTS(fullPath string, m map[string]any) map[string]string {
 		}
 		role, _ := msg["role"].(string)
 
-		// 1) Old shape: direct "content" field.
-		if txt, ok := msg["content"].(string); ok && txt != "" {
-			// We dont want to add old conversations.
+		// 2) New shape: nested "messages" -> "contents".
+		var ioList []any
+		if inList, ok := msg["inputs"].([]any); ok {
+			ioList = inList
+		} else if outList, ok := msg["inputs"].([]any); ok {
+			ioList = outList
+		}
+		if len(ioList) == 0 {
 			continue
 		}
-
-		// 2) New shape: nested "messages" -> "contents".
-		ioList, _ := msg["messages"].([]any)
 		for _, ioRaw := range ioList {
 			ioMap, ok := ioRaw.(map[string]any)
 			if !ok {
 				continue
 			}
-			contents, _ := ioMap["contents"].([]any)
+			var msgMap map[string]any
+			if inMsgMap, ok := ioMap["inputMessage"].(map[string]any); ok {
+				msgMap = inMsgMap
+			} else if outMsgMap, ok := ioMap["outputMessage"].(map[string]any); ok {
+				msgMap = outMsgMap
+			}
+			if len(msgMap) == 0 {
+				continue
+			}
+			contents, _ := msgMap["contents"].([]any)
 			for _, cRaw := range contents {
 				item, ok := cRaw.(map[string]any)
 				if !ok {

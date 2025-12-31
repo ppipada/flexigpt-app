@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
 import { TOOL_INVOKE_CHAR } from '@/spec/command';
-import { type Tool, ToolType } from '@/spec/tool';
+import { type Tool, ToolImplType } from '@/spec/tool';
 
 import { omitManyKeys } from '@/lib/obj_utils';
 import { validateSlug, validateTags } from '@/lib/text_utils';
@@ -48,7 +48,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		description: '',
 		tags: '',
 		isEnabled: true,
-		type: ToolType.HTTP as ToolType,
+		type: ToolImplType.HTTP as ToolImplType,
 		argSchema: '{}',
 		outputSchema: '{}',
 		goFunc: '',
@@ -107,7 +107,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 				description: '',
 				tags: '',
 				isEnabled: true,
-				type: ToolType.HTTP,
+				type: ToolImplType.HTTP,
 				argSchema: '{}',
 				outputSchema: '{}',
 				goFunc: '',
@@ -153,9 +153,9 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 	const toolTypeDropdownItems = useMemo(
 		() =>
 			({
-				[ToolType.Go]: { isEnabled: isEditMode, displayName: TOOL_TYPE_LABEL_GO },
-				[ToolType.HTTP]: { isEnabled: true, displayName: TOOL_TYPE_LABEL_HTTP },
-			}) as Record<ToolType, { isEnabled: boolean; displayName: string }>,
+				[ToolImplType.Go]: { isEnabled: isEditMode, displayName: TOOL_TYPE_LABEL_GO },
+				[ToolImplType.HTTP]: { isEnabled: true, displayName: TOOL_TYPE_LABEL_HTTP },
+			}) as Record<ToolImplType, { isEnabled: boolean; displayName: string }>,
 		[isEditMode]
 	);
 
@@ -198,10 +198,10 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 					newErrs[field] = 'Invalid JSON';
 				}
 			}
-		} else if (field === 'goFunc' && formData.type === ToolType.Go) {
+		} else if (field === 'goFunc' && formData.type === ToolImplType.Go) {
 			if (!v) newErrs.goFunc = 'Go function is required.';
 			else newErrs = omitManyKeys(newErrs, ['goFunc']);
-		} else if (field === 'httpUrl' && formData.type === ToolType.HTTP) {
+		} else if (field === 'httpUrl' && formData.type === ToolImplType.HTTP) {
 			// Use shared URL validator; HTTP URL is required when type=HTTP
 			const { error } = validateUrlForInput(v, httpUrlInputRef.current, {
 				required: true,
@@ -225,10 +225,10 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		newErrs = validateField('argSchema', state.argSchema, newErrs);
 		newErrs = validateField('outputSchema', state.outputSchema, newErrs);
 		newErrs = validateField('tags', state.tags, newErrs);
-		if (state.type === ToolType.Go) {
+		if (state.type === ToolImplType.Go) {
 			newErrs = validateField('goFunc', state.goFunc, newErrs);
 		}
-		if (state.type === ToolType.HTTP) {
+		if (state.type === ToolImplType.HTTP) {
 			newErrs = validateField('httpUrl', state.httpUrl, newErrs);
 		}
 		return newErrs;
@@ -252,7 +252,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 			formData.slug.trim() &&
 			formData.argSchema.trim() &&
 			formData.outputSchema.trim() &&
-			(formData.type === ToolType.Go ? formData.goFunc.trim() : formData.httpUrl.trim());
+			(formData.type === ToolImplType.Go ? formData.goFunc.trim() : formData.httpUrl.trim());
 		return !errs && Boolean(filled);
 	}, [errors, formData]);
 
@@ -273,7 +273,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		let goImpl = undefined;
 		let httpImpl = undefined;
 
-		if (formData.type === ToolType.Go) {
+		if (formData.type === ToolImplType.Go) {
 			goImpl = { func: formData.goFunc.trim() };
 		} else {
 			// Normalize & validate HTTP URL again to get canonical form
@@ -357,9 +357,9 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		dialogRef.current?.close();
 	};
 
-	const onToolTypeChange = (key: ToolType) => {
+	const onToolTypeChange = (key: ToolImplType) => {
 		// Prevent selecting Go when adding a new tool
-		if (!isEditMode && key === ToolType.Go) {
+		if (!isEditMode && key === ToolImplType.Go) {
 			return;
 		}
 
@@ -472,7 +472,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 								<span className="label-text text-sm">Type*</span>
 							</label>
 							<div className={`col-span-9 ${isEditMode ? 'pointer-events-none opacity-60' : ''}`}>
-								<Dropdown<ToolType>
+								<Dropdown<ToolImplType>
 									dropdownItems={toolTypeDropdownItems}
 									selectedKey={formData.type}
 									onChange={onToolTypeChange}
@@ -565,7 +565,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 						</div>
 
 						{/* Go Impl */}
-						{formData.type === ToolType.Go && (
+						{formData.type === ToolImplType.Go && (
 							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">Go Func*</span>
@@ -599,7 +599,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 						)}
 
 						{/* HTTP Impl */}
-						{formData.type === ToolType.HTTP && (
+						{formData.type === ToolImplType.HTTP && (
 							<>
 								<div className="grid grid-cols-12 items-center gap-2">
 									<label className="label col-span-3">

@@ -14,7 +14,7 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
 	conversationStore "github.com/ppipada/flexigpt-app/pkg/conversation/store"
-	"github.com/ppipada/flexigpt-app/pkg/inference"
+	"github.com/ppipada/flexigpt-app/pkg/inferencewrapper"
 	"github.com/ppipada/flexigpt-app/pkg/logrotate"
 	modelpresetStore "github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
 	promptStore "github.com/ppipada/flexigpt-app/pkg/prompt/store"
@@ -53,7 +53,7 @@ func main() {
 		)
 		settingStore.InitSettingStoreHandlers(api, app.settingStoreAPI)
 		conversationStore.InitConversationStoreHandlers(api, app.conversationStoreAPI)
-		inference.InitProviderSetHandlers(api, app.providerSetAPI)
+		inferencewrapper.InitProviderSetHandlers(api, app.providerSetAPI)
 		modelpresetStore.InitModelPresetStoreHandlers(api, app.modelPresetStoreAPI)
 		promptStore.InitPromptTemplateStoreHandlers(api, app.promptTemplateStoreAPI)
 		toolStore.InitToolStoreHandlers(api, app.toolStoreAPI)

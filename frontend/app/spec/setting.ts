@@ -31,11 +31,3 @@ export interface SettingsSchema {
 	appTheme: AppTheme;
 	authKeys: AuthKeyMeta[];
 }
-
-export interface ISettingStoreAPI {
-	setAppTheme: (theme: AppTheme) => Promise<void>;
-	getAuthKey: (type: AuthKeyType, keyName: AuthKeyName) => Promise<AuthKey>;
-	deleteAuthKey: (type: AuthKeyType, keyName: AuthKeyName) => Promise<void>;
-	setAuthKey: (type: AuthKeyType, keyName: AuthKeyName, secret: string) => Promise<void>;
-	getSettings: (forceFetch?: boolean) => Promise<SettingsSchema>;
-}

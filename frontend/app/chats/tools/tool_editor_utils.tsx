@@ -2,7 +2,14 @@
 import { ElementApi, KEYS, NodeApi, type Path } from 'platejs';
 import type { PlateEditor } from 'platejs/react';
 
-import type { Tool, ToolCall, ToolStoreChoice } from '@/spec/tool';
+import type { ToolCallBinding } from '@/spec/inference';
+import {
+	type Tool,
+	type ToolStoreChoice,
+	ToolStoreChoiceType,
+	type UIToolAttachedChoice,
+	type UIToolCallChip,
+} from '@/spec/tool';
 
 // Keys for the tools combobox and inline elements
 export const KEY_TOOL_SELECTION = 'toolSelection';
@@ -16,6 +23,7 @@ export type ToolSelectionElementNode = {
 	toolSlug: string;
 	toolVersion: string;
 	selectionID: string;
+	toolType: ToolStoreChoiceType;
 
 	toolSnapshot?: Tool;
 	overrides?: {
@@ -28,36 +36,26 @@ export type ToolSelectionElementNode = {
 	children: [{ text: '' }];
 };
 
-/**
- * Status for a tool call chip in the composer.
- */
-type EditorToolCallStatus = 'pending' | 'running' | 'succeeded' | 'failed' | 'discarded';
-
-export interface EditorToolCall {
-	id: string;
-	callID: string;
-	name: string;
-	arguments: string;
-	type: string;
-	status: EditorToolCallStatus;
-	errorMessage?: string;
-	/** Optional original ToolStoreChoice associated with this call, if the provider supplied it. */
-	toolStoreChoice?: ToolStoreChoice;
-}
-
-/**
- * Build initial tool-call chip state from the provider's toolCalls array.
- */
-export function buildToolCallFromResponse(toolCalls: ToolCall[] | undefined | null): EditorToolCall[] {
+export function buildToolCallFromResponse(
+	toolCalls: UIToolCallChip[] | undefined | null,
+	bindings?: ToolCallBinding[]
+): UIToolCallChip[] {
 	if (!toolCalls || toolCalls.length === 0) return [];
+
+	const bindingMap = new Map<string, ToolStoreChoice>();
+	for (const b of bindings ?? []) {
+		bindingMap.set(b.choiceID, b.toolStoreChoice);
+	}
+
 	return toolCalls.map(tc => ({
 		id: tc.id || tc.callID,
 		callID: tc.callID,
 		name: tc.name,
-		arguments: tc.arguments,
+		arguments: tc.arguments ?? '',
 		type: tc.type,
+		choiceID: tc.choiceID,
 		status: 'pending',
-		toolStoreChoice: tc.toolStoreChoice,
+		toolStoreChoice: bindingMap.get(tc.choiceID),
 	}));
 }
 
@@ -118,9 +116,9 @@ function summarizeToolCallArguments(args: string): string | undefined {
 /**
  * Label used for tool-call chips in composer / history.
  */
-export function formatToolCallLabel(call: EditorToolCall): string {
+export function formatToolCallLabel(call: UIToolCallChip): string {
 	const pretty = getPrettyToolName(call.name);
-	const argSummary = summarizeToolCallArguments(call.arguments);
+	const argSummary = summarizeToolCallArguments(call.arguments ?? '');
 	return argSummary ? `${pretty}: ${argSummary}` : pretty;
 }
 
@@ -132,23 +130,8 @@ export function formatToolOutputSummary(name: string): string {
 	return `Result: ${pretty}`;
 }
 
-export type EditorAttachedToolChoice = {
-	bundleID: string;
-	bundleSlug?: string;
-
-	toolID?: string;
-	toolSlug: string;
-	toolVersion: string;
-
-	displayName?: string;
-	description?: string;
-
-	// Non ToolStoreChoice fields
-	selectionID: string;
-};
-
 // Convert the editor's attached-tool shape into the persisted ToolStoreChoice shape.
-export function editorAttachedToolToToolChoice(att: EditorAttachedToolChoice): ToolStoreChoice {
+export function editorAttachedToolToToolChoice(att: UIToolAttachedChoice): ToolStoreChoice {
 	return {
 		bundleID: att.bundleID,
 		toolSlug: att.toolSlug,
@@ -156,6 +139,7 @@ export function editorAttachedToolToToolChoice(att: EditorAttachedToolChoice): T
 		displayName: att.displayName,
 		description: att.description,
 		toolID: att.toolID,
+		toolType: att.toolType,
 	};
 }
 
@@ -232,6 +216,7 @@ export function insertToolSelectionNode(
 		bundleSlug: item.bundleSlug,
 		toolSlug: item.toolSlug,
 		toolVersion: item.toolVersion,
+		toolType: ToolStoreChoiceType.Function,
 		selectionID,
 		toolSnapshot,
 		overrides: {},
@@ -294,8 +279,8 @@ export function removeToolByKey(editor: PlateEditor, identityKey: string) {
 }
 
 // Build a serializable list of attached tools for submission
-export function getAttachedTools(editor: PlateEditor): EditorAttachedToolChoice[] {
-	const items: EditorAttachedToolChoice[] = [];
+export function getAttachedTools(editor: PlateEditor): UIToolAttachedChoice[] {
+	const items: UIToolAttachedChoice[] = [];
 	const seen = new Set<string>();
 
 	for (const [el] of NodeApi.elements(editor)) {
@@ -320,6 +305,7 @@ export function getAttachedTools(editor: PlateEditor): EditorAttachedToolChoice[
 						? n.toolSnapshot.description
 						: n.toolSlug,
 				toolID: n.toolSnapshot?.id,
+				toolType: n.toolType,
 			});
 		}
 	}

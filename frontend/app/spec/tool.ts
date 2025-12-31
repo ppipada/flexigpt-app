@@ -1,16 +1,20 @@
-/**
- * @public
- */
-export enum ToolType {
+export enum ToolImplType {
 	Go = 'go',
 	HTTP = 'http',
 }
 
-export enum ToolOutputKind {
+export enum ToolImplOutputKind {
 	Text = 'text',
 	Blob = 'blob',
 	None = 'none',
 }
+
+/**
+ * @public
+ *
+ */
+export type JSONValue = string | number | boolean | null | JSONValue[] | { [key: string]: JSONValue };
+export type JSONSchema = JSONValue;
 
 export type JSONRawString = string;
 
@@ -61,6 +65,12 @@ export interface HTTPToolImpl {
 	response: HTTPResponse;
 }
 
+export enum ToolStoreChoiceType {
+	Function = 'function',
+	Custom = 'custom',
+	WebSearch = 'webSearch',
+}
+
 export interface ToolStoreChoice {
 	bundleID: string;
 	bundleSlug?: string;
@@ -68,55 +78,45 @@ export interface ToolStoreChoice {
 	toolID?: string;
 	toolSlug: string;
 	toolVersion: string;
-
+	toolType: ToolStoreChoiceType;
 	displayName?: string;
 	description?: string;
 }
 
-export interface ToolCall {
-	id: string;
-	callID: string;
-	name: string;
-	arguments: string;
-	type: string;
-	status?: string;
-	toolStoreChoice?: ToolStoreChoice;
-}
-
-export interface ToolOutput {
-	id: string;
-	callID: string;
-	name: string;
-	summary?: string;
-	rawOutput?: string;
-	toolStoreChoice?: ToolStoreChoice;
-}
-
 export interface Tool {
+	schemaVersion: string;
+
 	id: string;
 	slug: string;
 	version: string;
+
 	displayName: string;
 	description?: string;
 	tags?: string[];
+
 	userCallable: boolean;
 	llmCallable: boolean;
-	outputKind: ToolOutputKind;
-	argSchema: JSONRawString;
-	outputSchema: JSONRawString;
-	type: ToolType;
+	outputKind: ToolImplOutputKind;
+
+	argSchema: JSONSchema;
+	outputSchema: JSONSchema;
+
+	type: ToolImplType;
 	goImpl?: GoToolImpl;
 	httpImpl?: HTTPToolImpl;
+
 	isEnabled: boolean;
 	isBuiltIn: boolean;
 	createdAt: string;
 	modifiedAt: string;
-	schemaVersion: string;
 }
 
 export interface ToolBundle {
+	schemaVersion: string;
+
 	id: string;
 	slug: string;
+
 	displayName?: string;
 	description?: string;
 	isEnabled: boolean;
@@ -124,7 +124,6 @@ export interface ToolBundle {
 	createdAt: string;
 	modifiedAt: string;
 	softDeletedAt?: string;
-	schemaVersion: string;
 }
 
 export interface ToolListItem {
@@ -150,82 +149,49 @@ export interface InvokeToolResponse {
 	meta?: Record<string, any>;
 	isBuiltIn: boolean;
 }
-export interface IToolStoreAPI {
-	/** List tool bundles, optionally filtered by IDs, disabled, and paginated. */
-	listToolBundles(
-		bundleIDs?: string[],
-		includeDisabled?: boolean,
-		pageSize?: number,
-		pageToken?: string
-	): Promise<{ toolBundles: ToolBundle[]; nextPageToken?: string }>;
 
-	/** Create or update a tool bundle. */
-	putToolBundle(
-		bundleID: string,
-		slug: string,
-		displayName: string,
-		isEnabled: boolean,
-		description?: string
-	): Promise<void>;
+export interface UIToolAttachedChoice extends ToolStoreChoice {
+	selectionID: string;
+}
 
-	/** Patch (enable/disable) a tool bundle. */
-	patchToolBundle(bundleID: string, isEnabled: boolean): Promise<void>;
+/**
+ * @public
+ * Status for a tool-call chip in the composer/history.
+ */
+export type UIToolCallStatus = 'pending' | 'running' | 'succeeded' | 'failed' | 'discarded';
 
-	/** Delete a tool bundle. */
-	deleteToolBundle(bundleID: string): Promise<void>;
+/**
+ * UI representation of a tool call (for chips).
+ * `type` is the inference ToolType (`function` | `custom` | `webSearch`),
+ * but kept as string here to avoid a circular import.
+ */
+export interface UIToolCallChip {
+	id: string;
+	callID: string;
+	name: string;
+	arguments?: string;
+	type: ToolStoreChoiceType;
+	choiceID: string;
+	status: UIToolCallStatus;
+	errorMessage?: string;
+	/** Optional original ToolStoreChoice associated with this call. */
+	toolStoreChoice?: ToolStoreChoice;
+}
 
-	/** List tools, optionally filtered by bundleIDs, tags, etc. */
-	listTools(
-		bundleIDs?: string[],
-		tags?: string[],
-		includeDisabled?: boolean,
-		recommendedPageSize?: number,
-		pageToken?: string
-	): Promise<{ toolListItems: ToolListItem[]; nextPageToken?: string }>;
+export interface UIToolOutput {
+	id: string;
+	callID: string;
+	name: string;
 
-	/** Search tools by query. */
-	searchTools(
-		query: string,
-		pageToken?: string,
-		pageSize?: number,
-		includeDisabled?: boolean
-	): Promise<{ toolListItems: ToolListItem[]; nextPageToken?: string }>;
+	type: ToolStoreChoiceType;
+	choiceID: string;
 
-	/** Create or update a tool. */
-	putTool(
-		bundleID: string,
-		toolSlug: string,
-		version: string,
-		displayName: string,
-		isEnabled: boolean,
-		userCallable: boolean,
-		llmCallable: boolean,
-		outputKind: ToolOutputKind,
-		argSchema: JSONRawString,
-		outputSchema: JSONRawString,
-		type: ToolType,
-		goImpl?: GoToolImpl,
-		httpImpl?: HTTPToolImpl,
-		description?: string,
-		tags?: string[]
-	): Promise<void>;
+	/** Short human-readable label used in chips. */
+	summary: string;
 
-	/** Patch (enable/disable) a tool version. */
-	patchTool(bundleID: string, toolSlug: string, version: string, isEnabled: boolean): Promise<void>;
+	/** Raw JSON/text output as returned by the tool store. */
+	rawOutput: JSONRawString;
 
-	/** Delete a tool version. */
-	deleteTool(bundleID: string, toolSlug: string, version: string): Promise<void>;
-
-	/** Invoke a tool version. */
-	invokeTool(
-		bundleID: string,
-		toolSlug: string,
-		version: string,
-		args?: JSONRawString,
-		httpOptions?: InvokeHTTPOptions,
-		goOptions?: InvokeGoOptions
-	): Promise<InvokeToolResponse>;
-
-	/** Get a tool version. */
-	getTool(bundleID: string, toolSlug: string, version: string): Promise<Tool | undefined>;
+	/** Optional original ToolStoreChoice this output came from. */
+	toolStoreChoice?: ToolStoreChoice;
 }

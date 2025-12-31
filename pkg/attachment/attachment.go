@@ -16,12 +16,12 @@ var (
 	ErrAttachmentModifiedSinceSnapshot = errors.New("attachment modified since snapshot")
 )
 
-type ContentBlockKind string
+type AttachmentContentBlockKind string
 
 const (
-	ContentBlockText  ContentBlockKind = "text"
-	ContentBlockImage ContentBlockKind = "image"
-	ContentBlockFile  ContentBlockKind = "file"
+	ContentBlockText  AttachmentContentBlockKind = "text"
+	ContentBlockImage AttachmentContentBlockKind = "image"
+	ContentBlockFile  AttachmentContentBlockKind = "file"
 )
 const maxAttachmentFetchBytes = 16 * 1024 * 1024 // 16MB safety limit
 
@@ -29,7 +29,7 @@ const maxAttachmentFetchBytes = 16 * 1024 * 1024 // 16MB safety limit
 // from an Attachment. Providers (OpenAI, Anthropic, etc.) adapt this
 // into their own message/part formats.
 type ContentBlock struct {
-	Kind ContentBlockKind `json:"kind"`
+	Kind AttachmentContentBlockKind `json:"kind"`
 
 	// For Kind == text: Text is populated.
 	Text *string `json:"text,omitempty"`

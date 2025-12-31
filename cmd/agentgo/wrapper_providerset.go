@@ -3,19 +3,20 @@ package main
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"sync"
-
-	"github.com/ppipada/flexigpt-app/pkg/inference"
-	inferenceSpec "github.com/ppipada/flexigpt-app/pkg/inference/spec"
-	"github.com/ppipada/flexigpt-app/pkg/middleware"
-	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
 
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+
+	"github.com/ppipada/flexigpt-app/pkg/inferencewrapper"
+	inferencewrapperSpec "github.com/ppipada/flexigpt-app/pkg/inferencewrapper/spec"
+	"github.com/ppipada/flexigpt-app/pkg/middleware"
+	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
 )
 
 type ProviderSetWrapper struct {
-	providersetAPI      *inference.ProviderSetAPI
+	providersetAPI      *inferencewrapper.ProviderSetAPI
 	appContext          context.Context
 	completionCancelMux sync.Mutex
 	completionCancels   map[string]context.CancelFunc
@@ -26,7 +27,7 @@ func InitProviderSetWrapper(
 	ps *ProviderSetWrapper,
 	ts *toolStore.ToolStore,
 ) error {
-	p, err := inference.NewProviderSetAPI(false, ts)
+	p, err := inferencewrapper.NewProviderSetAPI(slog.Default(), ts)
 	if err != nil {
 		return errors.Join(err, errors.New("invalid default provider"))
 	}
@@ -40,25 +41,25 @@ func SetWrappedProviderAppContext(w *ProviderSetWrapper, ctx context.Context) {
 }
 
 func (w *ProviderSetWrapper) AddProvider(
-	req *inferenceSpec.AddProviderRequest,
-) (*inferenceSpec.AddProviderResponse, error) {
-	return middleware.WithRecoveryResp(func() (*inferenceSpec.AddProviderResponse, error) {
+	req *inferencewrapperSpec.AddProviderRequest,
+) (*inferencewrapperSpec.AddProviderResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inferencewrapperSpec.AddProviderResponse, error) {
 		return w.providersetAPI.AddProvider(context.Background(), req)
 	})
 }
 
 func (w *ProviderSetWrapper) DeleteProvider(
-	req *inferenceSpec.DeleteProviderRequest,
-) (*inferenceSpec.DeleteProviderResponse, error) {
-	return middleware.WithRecoveryResp(func() (*inferenceSpec.DeleteProviderResponse, error) {
+	req *inferencewrapperSpec.DeleteProviderRequest,
+) (*inferencewrapperSpec.DeleteProviderResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inferencewrapperSpec.DeleteProviderResponse, error) {
 		return w.providersetAPI.DeleteProvider(context.Background(), req)
 	})
 }
 
 func (w *ProviderSetWrapper) SetProviderAPIKey(
-	req *inferenceSpec.SetProviderAPIKeyRequest,
-) (*inferenceSpec.SetProviderAPIKeyResponse, error) {
-	return middleware.WithRecoveryResp(func() (*inferenceSpec.SetProviderAPIKeyResponse, error) {
+	req *inferencewrapperSpec.SetProviderAPIKeyRequest,
+) (*inferencewrapperSpec.SetProviderAPIKeyResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inferencewrapperSpec.SetProviderAPIKeyResponse, error) {
 		return w.providersetAPI.SetProviderAPIKey(context.Background(), req)
 	})
 }
@@ -66,12 +67,12 @@ func (w *ProviderSetWrapper) SetProviderAPIKey(
 // FetchCompletion handles the completion request and streams data back to the frontend.
 func (w *ProviderSetWrapper) FetchCompletion(
 	provider string,
-	completionData *inferenceSpec.FetchCompletionRequestBody,
+	completionData *inferencewrapperSpec.CompletionRequestBody,
 	textCallbackID string,
 	thinkingCallbackID string,
 	requestID string,
-) (*inferenceSpec.FetchCompletionResponse, error) {
-	return middleware.WithRecoveryResp(func() (*inferenceSpec.FetchCompletionResponse, error) {
+) (*inferencewrapperSpec.CompletionResponse, error) {
+	return middleware.WithRecoveryResp(func() (*inferencewrapperSpec.CompletionResponse, error) {
 		if requestID == "" {
 			return nil, errors.New("requestID is empty")
 		}
@@ -93,17 +94,17 @@ func (w *ProviderSetWrapper) FetchCompletion(
 			}
 		}()
 
-		req := &inferenceSpec.FetchCompletionRequest{
+		req := &inferencewrapperSpec.CompletionRequest{
 			Provider: inferencegoSpec.ProviderName(provider),
 			Body:     completionData,
 		}
 
 		if textCallbackID != "" && thinkingCallbackID != "" {
-			req.OnStreamTextData = func(textData string) error {
+			req.OnStreamText = func(textData string) error {
 				runtime.EventsEmit(w.appContext, textCallbackID, textData)
 				return nil
 			}
-			req.OnStreamThinkingData = func(thinkingData string) error {
+			req.OnStreamThinking = func(thinkingData string) error {
 				runtime.EventsEmit(w.appContext, thinkingCallbackID, thinkingData)
 				return nil
 			}

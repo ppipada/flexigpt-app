@@ -4,7 +4,7 @@ import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 import { Select, SelectItem, SelectPopover, useSelectStore, useStoreState } from '@ariakit/react';
 
-import { ReasoningLevel } from '@/spec/modelpreset';
+import { ReasoningLevel } from '@/spec/inference';
 
 type SingleReasoningDropdownProps = {
 	reasoningLevel: ReasoningLevel;
@@ -19,6 +19,7 @@ const levelDisplayNames: Record<ReasoningLevel, string> = {
 	[ReasoningLevel.Low]: 'Low',
 	[ReasoningLevel.Medium]: 'Medium',
 	[ReasoningLevel.High]: 'High',
+	[ReasoningLevel.XHigh]: 'XHigh',
 };
 
 const LEVEL_OPTIONS: ReasoningLevel[] = [

@@ -188,8 +188,12 @@ func TestConversationCollection(t *testing.T) {
 				}
 
 				if len(retrievedConvo.Body.Messages) == 0 ||
-					len(retrievedConvo.Body.Messages[len(retrievedConvo.Body.Messages)-1].Messages) == 0 ||
-					retrievedConvo.Body.Messages[len(retrievedConvo.Body.Messages)-1].Messages[0].Contents[0].TextItem.Text != tt.message.Messages[0].Contents[0].TextItem.Text {
+					len(retrievedConvo.Body.Messages[len(retrievedConvo.Body.Messages)-1].Inputs) == 0 ||
+					retrievedConvo.Body.Messages[len(retrievedConvo.Body.Messages)-1].Inputs[0].InputMessage == nil ||
+					len(
+						retrievedConvo.Body.Messages[len(retrievedConvo.Body.Messages)-1].Inputs[0].InputMessage.Contents,
+					) == 0 ||
+					retrievedConvo.Body.Messages[len(retrievedConvo.Body.Messages)-1].Inputs[0].InputMessage.Contents[0].TextItem.Text != tt.message.Inputs[0].InputMessage.Contents[0].TextItem.Text {
 
 					t.Errorf("Message not added correctly to conversation")
 				}
@@ -562,15 +566,18 @@ func newTextTurn(id string, role inferencegoSpec.RoleEnum, txt string) spec.Conv
 		CreatedAt: now,
 		Role:      role,
 		Status:    inferencegoSpec.StatusCompleted,
-		Messages: []*inferencegoSpec.InputOutputContent{
+		Inputs: []inferencegoSpec.InputUnion{
 			{
-				ID:     id + ":0",
-				Role:   role,
-				Status: inferencegoSpec.StatusCompleted,
-				Contents: []inferencegoSpec.InputOutputContentItemUnion{{
-					Kind:     inferencegoSpec.ContentItemKindText,
-					TextItem: &inferencegoSpec.ContentItemText{Text: txt},
-				}},
+				Kind: inferencegoSpec.InputKindInputMessage,
+				InputMessage: &inferencegoSpec.InputOutputContent{
+					ID:     id + ":0",
+					Role:   role,
+					Status: inferencegoSpec.StatusCompleted,
+					Contents: []inferencegoSpec.InputOutputContentItemUnion{{
+						Kind:     inferencegoSpec.ContentItemKindText,
+						TextItem: &inferencegoSpec.ContentItemText{Text: txt},
+					}},
+				},
 			},
 		},
 	}

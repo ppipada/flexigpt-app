@@ -1,4 +1,6 @@
-export type ModelName = string;
+import type { ReasoningParam } from '@/spec/inference';
+
+type ModelName = string;
 export type ModelDisplayName = string;
 type ModelSlug = string;
 export type ModelPresetID = string;
@@ -45,114 +47,6 @@ export const SDK_DEFAULTS: Record<
 		},
 	},
 };
-export enum ReasoningType {
-	HybridWithTokens = 'hybridWithTokens',
-	SingleWithLevels = 'singleWithLevels',
-}
-
-export enum ReasoningLevel {
-	None = 'none',
-	Minimal = 'minimal',
-	Low = 'low',
-	Medium = 'medium',
-	High = 'high',
-}
-
-export enum RoleEnum {
-	System = 'system',
-	Developer = 'developer',
-	User = 'user',
-	Assistant = 'assistant',
-	Function = 'function',
-	Tool = 'tool',
-}
-export interface CompletionUsage {
-	inputTokensTotal: number;
-	inputTokensCached: number;
-	inputTokensUncached: number;
-	outputTokens: number;
-	reasoningTokens: number;
-}
-
-/**
- * @public
- */
-export enum ReasoningContentType {
-	ReasoningOpenAIResponses = 'reasoningOpenAIResponses',
-	ReasoningAnthropicMessages = 'reasoningAnthropicMessages',
-}
-
-/**
- * @public
- */
-export interface ReasoningContentOpenAIResponses {
-	id: string;
-	summary?: string[];
-	content?: string[];
-	status?: string;
-	encryptedContent?: string;
-}
-
-/**
- * @public
- */
-export interface ReasoningContentAnthropicMessages {
-	signature?: string;
-	thinking?: string;
-	redactedThinking?: string;
-}
-
-/**
- * @public
- */
-export interface ReasoningContent {
-	type: ReasoningContentType;
-	contentOpenAIResponses?: ReasoningContentOpenAIResponses;
-	contentAnthropicMessages?: ReasoningContentAnthropicMessages;
-}
-
-export interface ReasoningParams {
-	type: ReasoningType;
-	level: ReasoningLevel;
-	tokens: number;
-}
-
-/**
- * @public
- */
-export enum CitationKind {
-	CitationKindURLOpenAIResponses = 'openAIResponsesURLCitation',
-	CitationKindURLAnthropicMessages = 'anthropicMessagesURLCitation',
-}
-
-/**
- * @public
- */
-export interface URLCitationOpenAIResponses {
-	url: string;
-	title: string;
-	startIndex: number;
-	endIndex: number;
-}
-
-/**
- * @public
- */
-export interface URLCitationAnthropicMessages {
-	url: string;
-	title: string;
-	encryptedIndex: string;
-	citedText: string;
-}
-
-/**
- * @public
- */
-export interface Citation {
-	kind: CitationKind;
-	urlCitationOpenAIResponses?: URLCitationOpenAIResponses;
-	urlCitationAnthropicMessages?: URLCitationAnthropicMessages;
-}
 
 export interface PutModelPresetPayload {
 	name: ModelName;
@@ -163,7 +57,7 @@ export interface PutModelPresetPayload {
 	maxPromptLength?: number;
 	maxOutputLength?: number;
 	temperature?: number;
-	reasoning?: ReasoningParams;
+	reasoning?: ReasoningParam;
 	systemPrompt?: string;
 	timeout?: number;
 	additionalParametersRawJSON?: string;
@@ -188,37 +82,4 @@ export interface ProviderPreset extends PutProviderPresetPayload {
 	isBuiltIn: boolean;
 	defaultModelPresetID: ModelPresetID;
 	modelPresets: Record<ModelPresetID, ModelPreset>;
-}
-
-export interface IModelPresetStoreAPI {
-	getDefaultProvider(): Promise<ProviderName>;
-
-	patchDefaultProvider(providerName: ProviderName): Promise<void>;
-
-	putProviderPreset(providerName: ProviderName, payload: PutProviderPresetPayload): Promise<void>;
-
-	patchProviderPreset(
-		providerName: ProviderName,
-		isEnabled?: boolean,
-		defaultModelPresetID?: ModelPresetID
-	): Promise<void>;
-
-	deleteProviderPreset(providerName: ProviderName): Promise<void>;
-
-	putModelPreset(
-		providerName: ProviderName,
-		modelPresetID: ModelPresetID,
-		payload: PutModelPresetPayload
-	): Promise<void>;
-
-	patchModelPreset(providerName: ProviderName, modelPresetID: ModelPresetID, isEnabled: boolean): Promise<void>;
-
-	deleteModelPreset(providerName: ProviderName, modelPresetID: ModelPresetID): Promise<void>;
-
-	listProviderPresets(
-		names?: ProviderName[],
-		includeDisabled?: boolean,
-		pageSize?: number,
-		pageToken?: string
-	): Promise<{ providers: ProviderPreset[]; nextPageToken?: string }>;
 }

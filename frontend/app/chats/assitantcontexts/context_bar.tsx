@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { FiSliders } from 'react-icons/fi';
 
-import { type ReasoningLevel, ReasoningType } from '@/spec/modelpreset';
+import { type ReasoningLevel, ReasoningType } from '@/spec/inference';
 
 import { type ChatOption, DefaultChatOptions, getChatInputOptions } from '@/apis/chatoption_helper';
 

@@ -286,102 +286,6 @@ export namespace fileutil {
 
 export namespace spec {
 	
-	export class APIResponseDetails {
-	    data: any;
-	    status: number;
-	    headers: Record<string, any>;
-	    requestDetails?: APIRequestDetails;
-	
-	    static createFrom(source: any = {}) {
-	        return new APIResponseDetails(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.data = source["data"];
-	        this.status = source["status"];
-	        this.headers = source["headers"];
-	        this.requestDetails = this.convertValues(source["requestDetails"], APIRequestDetails);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class APIRequestDetails {
-	    url?: string;
-	    method?: string;
-	    headers?: Record<string, any>;
-	    params?: Record<string, any>;
-	    data?: any;
-	    timeout?: number;
-	    curlCommand?: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new APIRequestDetails(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.url = source["url"];
-	        this.method = source["method"];
-	        this.headers = source["headers"];
-	        this.params = source["params"];
-	        this.data = source["data"];
-	        this.timeout = source["timeout"];
-	        this.curlCommand = source["curlCommand"];
-	    }
-	}
-	export class APIErrorDetails {
-	    message: string;
-	    requestDetails?: APIRequestDetails;
-	    responseDetails?: APIResponseDetails;
-	
-	    static createFrom(source: any = {}) {
-	        return new APIErrorDetails(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.message = source["message"];
-	        this.requestDetails = this.convertValues(source["requestDetails"], APIRequestDetails);
-	        this.responseDetails = this.convertValues(source["responseDetails"], APIResponseDetails);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	
-	
 	export class AddProviderRequestBody {
 	    sdkType: string;
 	    origin: string;
@@ -524,26 +428,168 @@ export namespace spec {
 		}
 	}
 	
-	export class ToolOutput {
-	    id: string;
-	    callID: string;
-	    name: string;
-	    summary?: string;
-	    rawOutput?: string;
-	    toolChoice?: ToolChoice;
+	export class URLCitation {
+	    url: string;
+	    title: string;
+	    citedText: string;
+	    startIndex: number;
+	    endIndex: number;
+	    encryptedIndex: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new ToolOutput(source);
+	        return new URLCitation(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.callID = source["callID"];
-	        this.name = source["name"];
-	        this.summary = source["summary"];
-	        this.rawOutput = source["rawOutput"];
-	        this.toolChoice = this.convertValues(source["toolChoice"], ToolChoice);
+	        this.url = source["url"];
+	        this.title = source["title"];
+	        this.citedText = source["citedText"];
+	        this.startIndex = source["startIndex"];
+	        this.endIndex = source["endIndex"];
+	        this.encryptedIndex = source["encryptedIndex"];
+	    }
+	}
+	export class Citation {
+	    kind: string;
+	    urlCitation?: URLCitation;
+	
+	    static createFrom(source: any = {}) {
+	        return new Citation(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.urlCitation = this.convertValues(source["urlCitation"], URLCitation);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class CitationConfig {
+	    enabled: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new CitationConfig(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.enabled = source["enabled"];
+	    }
+	}
+	export class Error {
+	    code: string;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Error(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.code = source["code"];
+	        this.message = source["message"];
+	    }
+	}
+	export class Usage {
+	    inputTokensTotal: number;
+	    inputTokensCached: number;
+	    inputTokensUncached: number;
+	    outputTokens: number;
+	    reasoningTokens: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Usage(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.inputTokensTotal = source["inputTokensTotal"];
+	        this.inputTokensCached = source["inputTokensCached"];
+	        this.inputTokensUncached = source["inputTokensUncached"];
+	        this.outputTokens = source["outputTokens"];
+	        this.reasoningTokens = source["reasoningTokens"];
+	    }
+	}
+	export class ToolStoreChoice {
+	    bundleID: string;
+	    bundleSlug?: string;
+	    toolID?: string;
+	    toolSlug: string;
+	    toolVersion: string;
+	    toolType: string;
+	    description?: string;
+	    displayName?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ToolStoreChoice(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.bundleID = source["bundleID"];
+	        this.bundleSlug = source["bundleSlug"];
+	        this.toolID = source["toolID"];
+	        this.toolSlug = source["toolSlug"];
+	        this.toolVersion = source["toolVersion"];
+	        this.toolType = source["toolType"];
+	        this.description = source["description"];
+	        this.displayName = source["displayName"];
+	    }
+	}
+	export class WebSearchToolChoiceItemUserLocation {
+	    city: string;
+	    country: string;
+	    region: string;
+	    timezone: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WebSearchToolChoiceItemUserLocation(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.city = source["city"];
+	        this.country = source["country"];
+	        this.region = source["region"];
+	        this.timezone = source["timezone"];
+	    }
+	}
+	export class WebSearchToolChoiceItem {
+	    max_uses: number;
+	    searchContextSize: string;
+	    allowed_domains: string[];
+	    blocked_domains: string[];
+	    user_location?: WebSearchToolChoiceItemUserLocation;
+	
+	    static createFrom(source: any = {}) {
+	        return new WebSearchToolChoiceItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.max_uses = source["max_uses"];
+	        this.searchContextSize = source["searchContextSize"];
+	        this.allowed_domains = source["allowed_domains"];
+	        this.blocked_domains = source["blocked_domains"];
+	        this.user_location = this.convertValues(source["user_location"], WebSearchToolChoiceItemUserLocation);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -565,13 +611,13 @@ export namespace spec {
 		}
 	}
 	export class ToolChoice {
-	    bundleID: string;
-	    bundleSlug?: string;
-	    toolID?: string;
-	    toolSlug: string;
-	    toolVersion: string;
-	    description?: string;
-	    displayName?: string;
+	    type: string;
+	    id: string;
+	    cacheControl?: CacheControl;
+	    name: string;
+	    description: string;
+	    arguments?: Record<string, any>;
+	    webSearchArguments?: WebSearchToolChoiceItem;
 	
 	    static createFrom(source: any = {}) {
 	        return new ToolChoice(source);
@@ -579,23 +625,348 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.bundleID = source["bundleID"];
-	        this.bundleSlug = source["bundleSlug"];
-	        this.toolID = source["toolID"];
-	        this.toolSlug = source["toolSlug"];
-	        this.toolVersion = source["toolVersion"];
+	        this.type = source["type"];
+	        this.id = source["id"];
+	        this.cacheControl = this.convertValues(source["cacheControl"], CacheControl);
+	        this.name = source["name"];
 	        this.description = source["description"];
-	        this.displayName = source["displayName"];
+	        this.arguments = source["arguments"];
+	        this.webSearchArguments = this.convertValues(source["webSearchArguments"], WebSearchToolChoiceItem);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class OutputUnion {
+	    kind: string;
+	    outputMessage?: InputOutputContent;
+	    reasoningMessage?: ReasoningContent;
+	    functionToolCall?: ToolCall;
+	    customToolCall?: ToolCall;
+	    webSearchToolCall?: ToolCall;
+	    webSearchToolOutput?: ToolOutput;
+	
+	    static createFrom(source: any = {}) {
+	        return new OutputUnion(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.outputMessage = this.convertValues(source["outputMessage"], InputOutputContent);
+	        this.reasoningMessage = this.convertValues(source["reasoningMessage"], ReasoningContent);
+	        this.functionToolCall = this.convertValues(source["functionToolCall"], ToolCall);
+	        this.customToolCall = this.convertValues(source["customToolCall"], ToolCall);
+	        this.webSearchToolCall = this.convertValues(source["webSearchToolCall"], ToolCall);
+	        this.webSearchToolOutput = this.convertValues(source["webSearchToolOutput"], ToolOutput);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class WebSearchToolOutputError {
+	    code: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WebSearchToolOutputError(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.code = source["code"];
 	    }
 	}
-	export class ToolCall {
+	export class WebSearchToolOutputSearch {
+	    url: string;
+	    title: string;
+	    encryptedContent: string;
+	    renderedContent: string;
+	    page_age: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WebSearchToolOutputSearch(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	        this.title = source["title"];
+	        this.encryptedContent = source["encryptedContent"];
+	        this.renderedContent = source["renderedContent"];
+	        this.page_age = source["page_age"];
+	    }
+	}
+	export class WebSearchToolOutputItemUnion {
+	    kind: string;
+	    searchItem?: WebSearchToolOutputSearch;
+	    errorItem?: WebSearchToolOutputError;
+	
+	    static createFrom(source: any = {}) {
+	        return new WebSearchToolOutputItemUnion(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.searchItem = this.convertValues(source["searchItem"], WebSearchToolOutputSearch);
+	        this.errorItem = this.convertValues(source["errorItem"], WebSearchToolOutputError);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ToolOutputItemUnion {
+	    kind: string;
+	    textItem?: ContentItemText;
+	    imageItem?: ContentItemImage;
+	    fileItem?: ContentItemFile;
+	
+	    static createFrom(source: any = {}) {
+	        return new ToolOutputItemUnion(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.textItem = this.convertValues(source["textItem"], ContentItemText);
+	        this.imageItem = this.convertValues(source["imageItem"], ContentItemImage);
+	        this.fileItem = this.convertValues(source["fileItem"], ContentItemFile);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ToolOutput {
+	    type: string;
+	    choiceID: string;
 	    id: string;
+	    role: string;
+	    status: string;
+	    cacheControl?: CacheControl;
 	    callID: string;
 	    name: string;
-	    arguments: string;
+	    isError: boolean;
+	    signature: string;
+	    contents?: ToolOutputItemUnion[];
+	    webSearchToolOutputItems?: WebSearchToolOutputItemUnion[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ToolOutput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.choiceID = source["choiceID"];
+	        this.id = source["id"];
+	        this.role = source["role"];
+	        this.status = source["status"];
+	        this.cacheControl = this.convertValues(source["cacheControl"], CacheControl);
+	        this.callID = source["callID"];
+	        this.name = source["name"];
+	        this.isError = source["isError"];
+	        this.signature = source["signature"];
+	        this.contents = this.convertValues(source["contents"], ToolOutputItemUnion);
+	        this.webSearchToolOutputItems = this.convertValues(source["webSearchToolOutputItems"], WebSearchToolOutputItemUnion);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class WebSearchToolCallFind {
+	    url: string;
+	    pattern: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WebSearchToolCallFind(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	        this.pattern = source["pattern"];
+	    }
+	}
+	export class WebSearchToolCallOpenPage {
+	    url: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WebSearchToolCallOpenPage(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	    }
+	}
+	export class WebSearchToolCallSearchSource {
+	    url: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WebSearchToolCallSearchSource(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	    }
+	}
+	export class WebSearchToolCallSearch {
+	    query: string;
+	    sources?: WebSearchToolCallSearchSource[];
+	    input?: Record<string, any>;
+	
+	    static createFrom(source: any = {}) {
+	        return new WebSearchToolCallSearch(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.query = source["query"];
+	        this.sources = this.convertValues(source["sources"], WebSearchToolCallSearchSource);
+	        this.input = source["input"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class WebSearchToolCallItemUnion {
+	    kind: string;
+	    searchItem?: WebSearchToolCallSearch;
+	    openPageItem?: WebSearchToolCallOpenPage;
+	    findItem?: WebSearchToolCallFind;
+	
+	    static createFrom(source: any = {}) {
+	        return new WebSearchToolCallItemUnion(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.searchItem = this.convertValues(source["searchItem"], WebSearchToolCallSearch);
+	        this.openPageItem = this.convertValues(source["openPageItem"], WebSearchToolCallOpenPage);
+	        this.findItem = this.convertValues(source["findItem"], WebSearchToolCallFind);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ToolCall {
 	    type: string;
-	    status?: string;
-	    toolChoice?: ToolChoice;
+	    choiceID: string;
+	    id: string;
+	    role: string;
+	    status: string;
+	    cacheControl?: CacheControl;
+	    callID: string;
+	    name: string;
+	    arguments?: string;
+	    webSearchToolCallItems?: WebSearchToolCallItemUnion[];
 	
 	    static createFrom(source: any = {}) {
 	        return new ToolCall(source);
@@ -603,13 +974,16 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.choiceID = source["choiceID"];
 	        this.id = source["id"];
+	        this.role = source["role"];
+	        this.status = source["status"];
+	        this.cacheControl = this.convertValues(source["cacheControl"], CacheControl);
 	        this.callID = source["callID"];
 	        this.name = source["name"];
 	        this.arguments = source["arguments"];
-	        this.type = source["type"];
-	        this.status = source["status"];
-	        this.toolChoice = this.convertValues(source["toolChoice"], ToolChoice);
+	        this.webSearchToolCallItems = this.convertValues(source["webSearchToolCallItems"], WebSearchToolCallItemUnion);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -629,121 +1003,17 @@ export namespace spec {
 		    }
 		    return a;
 		}
-	}
-	export class URLCitationAnthropicMessages {
-	    url: string;
-	    title: string;
-	    encryptedIndex: string;
-	    citedText: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new URLCitationAnthropicMessages(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.url = source["url"];
-	        this.title = source["title"];
-	        this.encryptedIndex = source["encryptedIndex"];
-	        this.citedText = source["citedText"];
-	    }
-	}
-	export class URLCitationOpenAIResponses {
-	    url: string;
-	    title: string;
-	    startIndex: number;
-	    endIndex: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new URLCitationOpenAIResponses(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.url = source["url"];
-	        this.title = source["title"];
-	        this.startIndex = source["startIndex"];
-	        this.endIndex = source["endIndex"];
-	    }
-	}
-	export class Citation {
-	    kind: string;
-	    // Go type: URLCitationOpenAIResponses
-	    urlCitationOpenAIResponses?: any;
-	    // Go type: URLCitationAnthropicMessages
-	    urlCitationAnthropicMessages?: any;
-	
-	    static createFrom(source: any = {}) {
-	        return new Citation(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.kind = source["kind"];
-	        this.urlCitationOpenAIResponses = this.convertValues(source["urlCitationOpenAIResponses"], null);
-	        this.urlCitationAnthropicMessages = this.convertValues(source["urlCitationAnthropicMessages"], null);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class ReasoningContentAnthropicMessages {
-	    signature: string;
-	    thinking: string;
-	    redactedThinking: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new ReasoningContentAnthropicMessages(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.signature = source["signature"];
-	        this.thinking = source["thinking"];
-	        this.redactedThinking = source["redactedThinking"];
-	    }
-	}
-	export class ReasoningContentOpenAIResponses {
-	    id: string;
-	    summary: string[];
-	    content: string[];
-	    status: string;
-	    encryptedContent: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new ReasoningContentOpenAIResponses(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.summary = source["summary"];
-	        this.content = source["content"];
-	        this.status = source["status"];
-	        this.encryptedContent = source["encryptedContent"];
-	    }
 	}
 	export class ReasoningContent {
-	    type: string;
-	    // Go type: ReasoningContentOpenAIResponses
-	    contentOpenAIResponses?: any;
-	    // Go type: ReasoningContentAnthropicMessages
-	    contentAnthropicMessages?: any;
+	    id: string;
+	    role: string;
+	    status: string;
+	    cacheControl?: CacheControl;
+	    signature: string;
+	    summary?: string[];
+	    thinking?: string[];
+	    redactedThinking?: string[];
+	    encryptedContent?: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new ReasoningContent(source);
@@ -751,53 +1021,15 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.type = source["type"];
-	        this.contentOpenAIResponses = this.convertValues(source["contentOpenAIResponses"], null);
-	        this.contentAnthropicMessages = this.convertValues(source["contentAnthropicMessages"], null);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class ChatCompletionDataMessage {
-	    role: string;
-	    name?: string;
-	    content?: string;
-	    reasoningContents?: ReasoningContent[];
-	    citations?: Citation[];
-	    attachments?: attachment.Attachment[];
-	    toolCalls?: ToolCall[];
-	    toolOutputs?: ToolOutput[];
-	
-	    static createFrom(source: any = {}) {
-	        return new ChatCompletionDataMessage(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
 	        this.role = source["role"];
-	        this.name = source["name"];
-	        this.content = source["content"];
-	        this.reasoningContents = this.convertValues(source["reasoningContents"], ReasoningContent);
-	        this.citations = this.convertValues(source["citations"], Citation);
-	        this.attachments = this.convertValues(source["attachments"], attachment.Attachment);
-	        this.toolCalls = this.convertValues(source["toolCalls"], ToolCall);
-	        this.toolOutputs = this.convertValues(source["toolOutputs"], ToolOutput);
+	        this.status = source["status"];
+	        this.cacheControl = this.convertValues(source["cacheControl"], CacheControl);
+	        this.signature = source["signature"];
+	        this.summary = source["summary"];
+	        this.thinking = source["thinking"];
+	        this.redactedThinking = source["redactedThinking"];
+	        this.encryptedContent = source["encryptedContent"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -817,19 +1049,6 @@ export namespace spec {
 		    }
 		    return a;
 		}
-	}
-	
-	export class CitationConfig {
-	    enabled: boolean;
-	
-	    static createFrom(source: any = {}) {
-	        return new CitationConfig(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.enabled = source["enabled"];
-	    }
 	}
 	export class ContentItemFile {
 	    id: string;
@@ -939,40 +1158,6 @@ export namespace spec {
 		    return a;
 		}
 	}
-	export class Error {
-	    code: string;
-	    message: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new Error(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.code = source["code"];
-	        this.message = source["message"];
-	    }
-	}
-	export class Usage {
-	    inputTokensTotal: number;
-	    inputTokensCached: number;
-	    inputTokensUncached: number;
-	    outputTokens: number;
-	    reasoningTokens: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new Usage(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.inputTokensTotal = source["inputTokensTotal"];
-	        this.inputTokensCached = source["inputTokensCached"];
-	        this.inputTokensUncached = source["inputTokensUncached"];
-	        this.outputTokens = source["outputTokens"];
-	        this.reasoningTokens = source["reasoningTokens"];
-	    }
-	}
 	export class InputOutputContentItemUnion {
 	    kind: string;
 	    textItem?: ContentItemText;
@@ -1029,6 +1214,109 @@ export namespace spec {
 	        this.status = source["status"];
 	        this.cacheControl = this.convertValues(source["cacheControl"], CacheControl);
 	        this.contents = this.convertValues(source["contents"], InputOutputContentItemUnion);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class InputUnion {
+	    kind: string;
+	    inputMessage?: InputOutputContent;
+	    outputMessage?: InputOutputContent;
+	    reasoningMessage?: ReasoningContent;
+	    functionToolCall?: ToolCall;
+	    functionToolOutput?: ToolOutput;
+	    customToolCall?: ToolCall;
+	    customToolOutput?: ToolOutput;
+	    webSearchToolCall?: ToolCall;
+	    webSearchToolOutput?: ToolOutput;
+	
+	    static createFrom(source: any = {}) {
+	        return new InputUnion(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.inputMessage = this.convertValues(source["inputMessage"], InputOutputContent);
+	        this.outputMessage = this.convertValues(source["outputMessage"], InputOutputContent);
+	        this.reasoningMessage = this.convertValues(source["reasoningMessage"], ReasoningContent);
+	        this.functionToolCall = this.convertValues(source["functionToolCall"], ToolCall);
+	        this.functionToolOutput = this.convertValues(source["functionToolOutput"], ToolOutput);
+	        this.customToolCall = this.convertValues(source["customToolCall"], ToolCall);
+	        this.customToolOutput = this.convertValues(source["customToolOutput"], ToolOutput);
+	        this.webSearchToolCall = this.convertValues(source["webSearchToolCall"], ToolCall);
+	        this.webSearchToolOutput = this.convertValues(source["webSearchToolOutput"], ToolOutput);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ConversationMessage {
+	    id: string;
+	    // Go type: time
+	    createdAt: any;
+	    role: string;
+	    status: string;
+	    modelParam?: ModelParam;
+	    inputs?: InputUnion[];
+	    outputs?: OutputUnion[];
+	    toolChoices?: ToolChoice[];
+	    toolStoreChoices?: ToolStoreChoice[];
+	    attachments?: attachment.Attachment[];
+	    usage?: Usage;
+	    error?: Error;
+	    meta?: Record<string, any>;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConversationMessage(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.createdAt = this.convertValues(source["createdAt"], null);
+	        this.role = source["role"];
+	        this.status = source["status"];
+	        this.modelParam = this.convertValues(source["modelParam"], ModelParam);
+	        this.inputs = this.convertValues(source["inputs"], InputUnion);
+	        this.outputs = this.convertValues(source["outputs"], OutputUnion);
+	        this.toolChoices = this.convertValues(source["toolChoices"], ToolChoice);
+	        this.toolStoreChoices = this.convertValues(source["toolStoreChoices"], ToolStoreChoice);
+	        this.attachments = this.convertValues(source["attachments"], attachment.Attachment);
+	        this.usage = this.convertValues(source["usage"], Usage);
+	        this.error = this.convertValues(source["error"], Error);
+	        this.meta = source["meta"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1111,41 +1399,22 @@ export namespace spec {
 		    return a;
 		}
 	}
-	export class ConversationMessage {
-	    id: string;
-	    // Go type: time
-	    createdAt: any;
-	    role: string;
-	    status: string;
+	export class CompletionRequestBody {
 	    modelParam?: ModelParam;
-	    messages?: InputOutputContent[];
-	    reasoning?: ReasoningContent[];
-	    toolCalls?: ToolCall[];
-	    toolOutputs?: ToolOutput[];
-	    toolChoices?: ToolChoice[];
-	    usage?: Usage;
-	    error?: Error;
-	    meta?: Record<string, any>;
+	    history: ConversationMessage[];
+	    current: ConversationMessage;
+	    toolStoreChoices?: ToolStoreChoice[];
 	
 	    static createFrom(source: any = {}) {
-	        return new ConversationMessage(source);
+	        return new CompletionRequestBody(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.createdAt = this.convertValues(source["createdAt"], null);
-	        this.role = source["role"];
-	        this.status = source["status"];
 	        this.modelParam = this.convertValues(source["modelParam"], ModelParam);
-	        this.messages = this.convertValues(source["messages"], InputOutputContent);
-	        this.reasoning = this.convertValues(source["reasoning"], ReasoningContent);
-	        this.toolCalls = this.convertValues(source["toolCalls"], ToolCall);
-	        this.toolOutputs = this.convertValues(source["toolOutputs"], ToolOutput);
-	        this.toolChoices = this.convertValues(source["toolChoices"], ToolChoice);
-	        this.usage = this.convertValues(source["usage"], Usage);
-	        this.error = this.convertValues(source["error"], Error);
-	        this.meta = source["meta"];
+	        this.history = this.convertValues(source["history"], ConversationMessage);
+	        this.current = this.convertValues(source["current"], ConversationMessage);
+	        this.toolStoreChoices = this.convertValues(source["toolStoreChoices"], ToolStoreChoice);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1166,6 +1435,141 @@ export namespace spec {
 		    return a;
 		}
 	}
+	export class ToolCallBinding {
+	    choiceID: string;
+	    toolStoreChoice: ToolStoreChoice;
+	
+	    static createFrom(source: any = {}) {
+	        return new ToolCallBinding(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.choiceID = source["choiceID"];
+	        this.toolStoreChoice = this.convertValues(source["toolStoreChoice"], ToolStoreChoice);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class FetchCompletionResponse {
+	    outputs?: OutputUnion[];
+	    usage?: Usage;
+	    error?: Error;
+	    debugDetails?: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new FetchCompletionResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.outputs = this.convertValues(source["outputs"], OutputUnion);
+	        this.usage = this.convertValues(source["usage"], Usage);
+	        this.error = this.convertValues(source["error"], Error);
+	        this.debugDetails = source["debugDetails"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class CompletionResponseBody {
+	    inferenceResponse?: FetchCompletionResponse;
+	    toolCallBindings?: ToolCallBinding[];
+	
+	    static createFrom(source: any = {}) {
+	        return new CompletionResponseBody(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.inferenceResponse = this.convertValues(source["inferenceResponse"], FetchCompletionResponse);
+	        this.toolCallBindings = this.convertValues(source["toolCallBindings"], ToolCallBinding);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class CompletionResponse {
+	    Body?: CompletionResponseBody;
+	
+	    static createFrom(source: any = {}) {
+	        return new CompletionResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Body = this.convertValues(source["Body"], CompletionResponseBody);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
+	
+	
+	
 	export class Conversation {
 	    schemaVersion: string;
 	    id: string;
@@ -1477,116 +1881,6 @@ export namespace spec {
 	    }
 	}
 	
-	export class FetchCompletionRequestBody {
-	    modelParams: ModelParam;
-	    currentMessage: ChatCompletionDataMessage;
-	    prevMessages?: ChatCompletionDataMessage[];
-	    toolChoices?: ToolChoice[];
-	
-	    static createFrom(source: any = {}) {
-	        return new FetchCompletionRequestBody(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.modelParams = this.convertValues(source["modelParams"], ModelParam);
-	        this.currentMessage = this.convertValues(source["currentMessage"], ChatCompletionDataMessage);
-	        this.prevMessages = this.convertValues(source["prevMessages"], ChatCompletionDataMessage);
-	        this.toolChoices = this.convertValues(source["toolChoices"], ToolChoice);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class FetchCompletionResponseBody {
-	    requestDetails?: APIRequestDetails;
-	    responseDetails?: APIResponseDetails;
-	    errorDetails?: APIErrorDetails;
-	    content?: string;
-	    reasoningContents?: ReasoningContent[];
-	    citations?: Citation[];
-	    toolCalls?: ToolCall[];
-	    usage?: Usage;
-	
-	    static createFrom(source: any = {}) {
-	        return new FetchCompletionResponseBody(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.requestDetails = this.convertValues(source["requestDetails"], APIRequestDetails);
-	        this.responseDetails = this.convertValues(source["responseDetails"], APIResponseDetails);
-	        this.errorDetails = this.convertValues(source["errorDetails"], APIErrorDetails);
-	        this.content = source["content"];
-	        this.reasoningContents = this.convertValues(source["reasoningContents"], ReasoningContent);
-	        this.citations = this.convertValues(source["citations"], Citation);
-	        this.toolCalls = this.convertValues(source["toolCalls"], ToolCall);
-	        this.usage = this.convertValues(source["usage"], Usage);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class FetchCompletionResponse {
-	    Body?: FetchCompletionResponseBody;
-	
-	    static createFrom(source: any = {}) {
-	        return new FetchCompletionResponse(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Body = this.convertValues(source["Body"], FetchCompletionResponseBody);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
 	
 	export class GetAuthKeyRequest {
 	    Type: string;
@@ -2208,6 +2502,7 @@ export namespace spec {
 	
 	
 	
+	
 	export class InvokeGoOptions {
 	    timeoutMs?: number;
 	
@@ -2684,22 +2979,6 @@ export namespace spec {
 	        this.PageToken = source["PageToken"];
 	    }
 	}
-	export class ReasoningParams {
-	    type: string;
-	    level: string;
-	    tokens: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new ReasoningParams(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.type = source["type"];
-	        this.level = source["level"];
-	        this.tokens = source["tokens"];
-	    }
-	}
 	export class ModelPreset {
 	    schemaVersion: string;
 	    id: string;
@@ -2711,7 +2990,7 @@ export namespace spec {
 	    maxPromptLength?: number;
 	    maxOutputLength?: number;
 	    temperature?: number;
-	    reasoning?: ReasoningParams;
+	    reasoning?: ReasoningParam;
 	    systemPrompt?: string;
 	    timeout?: number;
 	    additionalParametersRawJSON?: string;
@@ -2737,7 +3016,7 @@ export namespace spec {
 	        this.maxPromptLength = source["maxPromptLength"];
 	        this.maxOutputLength = source["maxOutputLength"];
 	        this.temperature = source["temperature"];
-	        this.reasoning = this.convertValues(source["reasoning"], ReasoningParams);
+	        this.reasoning = this.convertValues(source["reasoning"], ReasoningParam);
 	        this.systemPrompt = source["systemPrompt"];
 	        this.timeout = source["timeout"];
 	        this.additionalParametersRawJSON = source["additionalParametersRawJSON"];
@@ -3119,6 +3398,7 @@ export namespace spec {
 		    return a;
 		}
 	}
+	
 	
 	
 	
@@ -3708,7 +3988,7 @@ export namespace spec {
 	    maxPromptLength?: number;
 	    maxOutputLength?: number;
 	    temperature?: number;
-	    reasoning?: ReasoningParams;
+	    reasoning?: ReasoningParam;
 	    systemPrompt?: string;
 	    timeout?: number;
 	    additionalParametersRawJSON?: string;
@@ -3727,7 +4007,7 @@ export namespace spec {
 	        this.maxPromptLength = source["maxPromptLength"];
 	        this.maxOutputLength = source["maxOutputLength"];
 	        this.temperature = source["temperature"];
-	        this.reasoning = this.convertValues(source["reasoning"], ReasoningParams);
+	        this.reasoning = this.convertValues(source["reasoning"], ReasoningParam);
 	        this.systemPrompt = source["systemPrompt"];
 	        this.timeout = source["timeout"];
 	        this.additionalParametersRawJSON = source["additionalParametersRawJSON"];
@@ -4185,7 +4465,6 @@ export namespace spec {
 	}
 	
 	
-	
 	export class SearchConversationsRequest {
 	    Query: string;
 	    PageToken: string;
@@ -4606,299 +4885,20 @@ export namespace spec {
 	
 	
 	
-	export class ToolOutputItemUnion {
-	    kind: string;
-	    textItem?: ContentItemText;
-	    imageItem?: ContentItemImage;
-	    fileItem?: ContentItemFile;
-	
-	    static createFrom(source: any = {}) {
-	        return new ToolOutputItemUnion(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.kind = source["kind"];
-	        this.textItem = this.convertValues(source["textItem"], ContentItemText);
-	        this.imageItem = this.convertValues(source["imageItem"], ContentItemImage);
-	        this.fileItem = this.convertValues(source["fileItem"], ContentItemFile);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class URLCitation {
-	    url: string;
-	    title: string;
-	    citedText: string;
-	    startIndex: number;
-	    endIndex: number;
-	    encryptedIndex: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new URLCitation(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.url = source["url"];
-	        this.title = source["title"];
-	        this.citedText = source["citedText"];
-	        this.startIndex = source["startIndex"];
-	        this.endIndex = source["endIndex"];
-	        this.encryptedIndex = source["encryptedIndex"];
-	    }
-	}
-	
-	export class WebSearchToolCallFind {
-	    url: string;
-	    pattern: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new WebSearchToolCallFind(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.url = source["url"];
-	        this.pattern = source["pattern"];
-	    }
-	}
-	export class WebSearchToolCallOpenPage {
-	    url: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new WebSearchToolCallOpenPage(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.url = source["url"];
-	    }
-	}
-	export class WebSearchToolCallSearchSource {
-	    url: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new WebSearchToolCallSearchSource(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.url = source["url"];
-	    }
-	}
-	export class WebSearchToolCallSearch {
-	    query: string;
-	    sources?: WebSearchToolCallSearchSource[];
-	    input?: Record<string, any>;
-	
-	    static createFrom(source: any = {}) {
-	        return new WebSearchToolCallSearch(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.query = source["query"];
-	        this.sources = this.convertValues(source["sources"], WebSearchToolCallSearchSource);
-	        this.input = source["input"];
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class WebSearchToolCallItemUnion {
-	    kind: string;
-	    searchItem?: WebSearchToolCallSearch;
-	    openPageItem?: WebSearchToolCallOpenPage;
-	    findItem?: WebSearchToolCallFind;
-	
-	    static createFrom(source: any = {}) {
-	        return new WebSearchToolCallItemUnion(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.kind = source["kind"];
-	        this.searchItem = this.convertValues(source["searchItem"], WebSearchToolCallSearch);
-	        this.openPageItem = this.convertValues(source["openPageItem"], WebSearchToolCallOpenPage);
-	        this.findItem = this.convertValues(source["findItem"], WebSearchToolCallFind);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
 	
 	
 	
-	export class WebSearchToolChoiceItemUserLocation {
-	    city: string;
-	    country: string;
-	    region: string;
-	    timezone: string;
 	
-	    static createFrom(source: any = {}) {
-	        return new WebSearchToolChoiceItemUserLocation(source);
-	    }
 	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.city = source["city"];
-	        this.country = source["country"];
-	        this.region = source["region"];
-	        this.timezone = source["timezone"];
-	    }
-	}
-	export class WebSearchToolChoiceItem {
-	    max_uses: number;
-	    searchContextSize: string;
-	    allowed_domains: string[];
-	    blocked_domains: string[];
-	    user_location?: WebSearchToolChoiceItemUserLocation;
 	
-	    static createFrom(source: any = {}) {
-	        return new WebSearchToolChoiceItem(source);
-	    }
 	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.max_uses = source["max_uses"];
-	        this.searchContextSize = source["searchContextSize"];
-	        this.allowed_domains = source["allowed_domains"];
-	        this.blocked_domains = source["blocked_domains"];
-	        this.user_location = this.convertValues(source["user_location"], WebSearchToolChoiceItemUserLocation);
-	    }
 	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
 	
-	export class WebSearchToolOutputError {
-	    code: string;
 	
-	    static createFrom(source: any = {}) {
-	        return new WebSearchToolOutputError(source);
-	    }
 	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.code = source["code"];
-	    }
-	}
-	export class WebSearchToolOutputSearch {
-	    url: string;
-	    title: string;
-	    encryptedContent: string;
-	    renderedContent: string;
-	    page_age: string;
 	
-	    static createFrom(source: any = {}) {
-	        return new WebSearchToolOutputSearch(source);
-	    }
 	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.url = source["url"];
-	        this.title = source["title"];
-	        this.encryptedContent = source["encryptedContent"];
-	        this.renderedContent = source["renderedContent"];
-	        this.page_age = source["page_age"];
-	    }
-	}
-	export class WebSearchToolOutputItemUnion {
-	    kind: string;
-	    searchItem?: WebSearchToolOutputSearch;
-	    errorItem?: WebSearchToolOutputError;
 	
-	    static createFrom(source: any = {}) {
-	        return new WebSearchToolOutputItemUnion(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.kind = source["kind"];
-	        this.searchItem = this.convertValues(source["searchItem"], WebSearchToolOutputSearch);
-	        this.errorItem = this.convertValues(source["errorItem"], WebSearchToolOutputError);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
 
 }
 

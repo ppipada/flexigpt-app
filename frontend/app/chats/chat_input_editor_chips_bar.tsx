@@ -2,38 +2,33 @@
 import type { PlateEditor } from 'platejs/react';
 import { useEditorRef } from 'platejs/react';
 
-import type { AttachmentMode } from '@/spec/attachment';
-import type { ToolOutput } from '@/spec/tool';
+import type { AttachmentMode, UIAttachment } from '@/spec/attachment';
+import type { UIToolCallChip, UIToolOutput } from '@/spec/tool';
 
 import { DirectoryChip } from '@/chats/attachments/attachment_directory_chip';
-import {
-	type DirectoryAttachmentGroup,
-	type EditorAttachment,
-	editorAttachmentKey,
-} from '@/chats/attachments/attachment_editor_utils';
+import { type DirectoryAttachmentGroup, uiAttachmentKey } from '@/chats/attachments/attachment_editor_utils';
 import { StandaloneAttachmentsChip } from '@/chats/attachments/attachment_standalone_chips';
 import { ConversationToolsChip, type ConversationToolStateEntry } from '@/chats/tools/conversation_tools_chip';
 import { ToolChipsComposerRow } from '@/chats/tools/tool_chips_composer';
 import { ToolChoicesChip } from '@/chats/tools/tool_choices_chip';
-import type { EditorToolCall } from '@/chats/tools/tool_editor_utils';
 import { getToolNodesWithPath } from '@/chats/tools/tool_editor_utils';
 
 interface EditorChipsBarProps {
-	attachments: EditorAttachment[];
+	attachments: UIAttachment[];
 	directoryGroups: DirectoryAttachmentGroup[];
 	conversationTools?: ConversationToolStateEntry[];
 
 	// Tool calls & outputs (tool runners / results)
-	toolCalls?: EditorToolCall[];
-	toolOutputs?: ToolOutput[];
+	toolCalls?: UIToolCallChip[];
+	toolOutputs?: UIToolOutput[];
 	isBusy?: boolean;
 	onRunToolCall?: (id: string) => void | Promise<void>;
 	onDiscardToolCall?: (id: string) => void;
-	onOpenOutput?: (output: ToolOutput) => void;
+	onOpenOutput?: (output: UIToolOutput) => void;
 	onRemoveOutput?: (id: string) => void;
 
-	onRemoveAttachment: (att: EditorAttachment) => void;
-	onChangeAttachmentMode: (att: EditorAttachment, mode: AttachmentMode) => void;
+	onRemoveAttachment: (att: UIAttachment) => void;
+	onChangeAttachmentMode: (att: UIAttachment, mode: AttachmentMode) => void;
 	onRemoveDirectoryGroup: (groupId: string) => void;
 	onRemoveOverflowDir?: (groupId: string, dirPath: string) => void;
 	onConversationToolsChange?: (next: ConversationToolStateEntry[]) => void;
@@ -91,7 +86,7 @@ export function EditorChipsBar({
 		}
 	}
 
-	const standaloneAttachments = attachments.filter(att => !ownedKeys.has(editorAttachmentKey(att)));
+	const standaloneAttachments = attachments.filter(att => !ownedKeys.has(uiAttachmentKey(att)));
 
 	const runToolCall = onRunToolCall ?? (() => {});
 	const discardToolCall = onDiscardToolCall ?? (() => {});

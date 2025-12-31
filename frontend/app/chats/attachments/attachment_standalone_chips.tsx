@@ -2,15 +2,15 @@ import { FiChevronUp, FiPaperclip, FiX } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
-import type { AttachmentMode } from '@/spec/attachment';
+import type { AttachmentMode, UIAttachment } from '@/spec/attachment';
 
 import { AttachmentChip } from '@/chats/attachments/attachment_chip';
-import { type EditorAttachment, editorAttachmentKey } from '@/chats/attachments/attachment_editor_utils';
+import { uiAttachmentKey } from '@/chats/attachments/attachment_editor_utils';
 
 interface StandaloneAttachmentsChipProps {
-	attachments: EditorAttachment[];
-	onRemoveAttachment: (att: EditorAttachment) => void;
-	onChangeAttachmentMode: (att: EditorAttachment, mode: AttachmentMode) => void;
+	attachments: UIAttachment[];
+	onRemoveAttachment: (att: UIAttachment) => void;
+	onChangeAttachmentMode: (att: UIAttachment, mode: AttachmentMode) => void;
 }
 
 /**
@@ -75,7 +75,7 @@ export function StandaloneAttachmentsChip({
 
 				{attachments.map(att => (
 					<MenuItem
-						key={editorAttachmentKey(att)}
+						key={uiAttachmentKey(att)}
 						store={menu}
 						hideOnClick={false}
 						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"

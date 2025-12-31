@@ -4,15 +4,15 @@ import type {
 	InvokeGoOptions,
 	InvokeHTTPOptions,
 	InvokeToolResponse,
-	IToolStoreAPI,
 	JSONRawString,
 	Tool,
 	ToolBundle,
+	ToolImplOutputKind,
+	ToolImplType,
 	ToolListItem,
-	ToolOutputKind,
-	ToolType,
 } from '@/spec/tool';
 
+import type { IToolStoreAPI } from '@/apis/interface';
 import {
 	DeleteTool,
 	DeleteToolBundle,
@@ -136,10 +136,10 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 		isEnabled: boolean,
 		userCallable: boolean,
 		llmCallable: boolean,
-		outputKind: ToolOutputKind,
+		outputKind: ToolImplOutputKind,
 		argSchema: JSONRawString,
 		outputSchema: JSONRawString,
-		type: ToolType,
+		type: ToolImplType,
 		goImpl?: GoToolImpl,
 		httpImpl?: HTTPToolImpl,
 		description?: string,

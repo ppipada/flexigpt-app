@@ -1,5 +1,4 @@
 import type {
-	IModelPresetStoreAPI,
 	ModelPresetID,
 	ProviderName,
 	ProviderPreset,
@@ -7,6 +6,7 @@ import type {
 	PutProviderPresetPayload,
 } from '@/spec/modelpreset';
 
+import type { IModelPresetStoreAPI } from '@/apis/interface';
 import {
 	DeleteModelPreset,
 	DeleteProviderPreset,

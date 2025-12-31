@@ -4,11 +4,11 @@ import type {
 	AuthKeyMeta,
 	AuthKeyName,
 	AuthKeyType,
-	ISettingStoreAPI,
 	SettingsSchema,
 	ThemeType,
 } from '@/spec/setting';
 
+import type { ISettingStoreAPI } from '@/apis/interface';
 import {
 	DeleteAuthKey,
 	GetAuthKey,

@@ -3,7 +3,7 @@ import { memo, useState } from 'react';
 import { FiCompass, FiUser } from 'react-icons/fi';
 
 import type { ConversationMessage } from '@/spec/conversation';
-import { RoleEnum } from '@/spec/modelpreset';
+import { RoleEnum } from '@/spec/inference';
 
 import { buildEffectiveContentWithReasoning } from '@/lib/reasoning_utils';
 
@@ -98,7 +98,7 @@ export const ChatMessage = memo(function ChatMessage({
 				<div className="flex w-full min-w-0 overflow-x-hidden p-0">
 					<MessageAttachmentsBar
 						attachments={message.attachments}
-						toolChoices={message.toolChoices}
+						toolChoices={message.toolStoreChoices}
 						toolCalls={message.toolCalls}
 						toolOutputs={message.toolOutputs}
 					/>

@@ -2,9 +2,7 @@ import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore, useStoreState } from '@ariakit/react';
 
-import { ATTACHMENT_MODE_DESC, ATTACHMENT_MODE_LABELS, AttachmentMode } from '@/spec/attachment';
-
-import { type EditorAttachment } from '@/chats/attachments/attachment_editor_utils';
+import { ATTACHMENT_MODE_DESC, ATTACHMENT_MODE_LABELS, AttachmentMode, type UIAttachment } from '@/spec/attachment';
 
 /**
  * Shared styles for the small "mode" menu on each attachment chip.
@@ -21,8 +19,8 @@ const modeMenuItemClasses =
 	'hover:bg-base-200 data-[active-item]:bg-base-300 whitespace-nowrap';
 
 interface AttachmentModeMenuProps {
-	attachment: EditorAttachment;
-	onChangeAttachmentMode: (att: EditorAttachment, mode: AttachmentMode) => void;
+	attachment: UIAttachment;
+	onChangeAttachmentMode: (att: UIAttachment, mode: AttachmentMode) => void;
 }
 
 export function getAttachmentModeLabel(mode: AttachmentMode): string {

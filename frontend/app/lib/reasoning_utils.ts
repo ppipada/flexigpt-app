@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type { ConversationMessage } from '@/spec/conversation';
-import { ReasoningContentType } from '@/spec/modelpreset';
 
 import { CustomMDLanguage } from '@/lib/text_utils';
 
@@ -8,10 +6,10 @@ import { CustomMDLanguage } from '@/lib/text_utils';
 // - Uses `reasoningContents` if present.
 // - Ignores redactedThinking.
 export function buildEffectiveContentWithReasoning(message: ConversationMessage): string {
-	const baseContent = message.content ?? '';
-	const reasoningContents = message.reasoningContents;
+	const baseContent = message.content;
+	const reasoningContents = message.reasoningContents ?? [];
 
-	if (!reasoningContents || reasoningContents.length === 0) {
+	if (reasoningContents.length === 0) {
 		return baseContent;
 	}
 
@@ -19,26 +17,17 @@ export function buildEffectiveContentWithReasoning(message: ConversationMessage)
 	const thinkingParts: string[] = [];
 
 	for (const rc of reasoningContents) {
-		if (rc.type === ReasoningContentType.ReasoningOpenAIResponses && rc.contentOpenAIResponses) {
-			const { summary, content } = rc.contentOpenAIResponses;
-
-			if (Array.isArray(summary) && summary.length > 0) {
-				// summary is string[]
-				summaryParts.push(summary.join('\n'));
-			}
-
-			if (Array.isArray(content) && content.length > 0) {
-				// content is string[]
-				thinkingParts.push(content.join('\n'));
-			}
-		} else if (rc.type === ReasoningContentType.ReasoningAnthropicMessages && rc.contentAnthropicMessages) {
-			const { thinking } = rc.contentAnthropicMessages;
-
-			if (thinking) {
-				// Ignore redactedThinking on purpose.
-				thinkingParts.push(thinking);
-			}
+		if (Array.isArray(rc.summary) && rc.summary.length > 0) {
+			// rc.summary: string[]
+			summaryParts.push(rc.summary.join('\n'));
 		}
+
+		if (Array.isArray(rc.thinking) && rc.thinking.length > 0) {
+			// rc.thinking: string[]
+			thinkingParts.push(rc.thinking.join('\n'));
+		}
+
+		// We intentionally ignore rc.redactedThinking and rc.encryptedContent for display.
 	}
 
 	// If we still have nothing, just return the base content.

@@ -1,9 +1,25 @@
-import { type ChatCompletionDataMessage, type FetchCompletionResponseBody, type ModelParam } from '@/spec/aiprovider';
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type { ConversationMessage } from '@/spec/conversation';
-import { type CompletionUsage, type ProviderName, type ReasoningContent } from '@/spec/modelpreset';
-import type { ToolCall, ToolStoreChoice } from '@/spec/tool';
+import type {
+	CompletionResponseBody,
+	InferenceUsage,
+	InputOutputContent,
+	InputOutputContentItemUnion,
+	InputUnion,
+	ModelParam,
+	OutputUnion,
+	ReasoningContent,
+	ToolOutput,
+	ToolOutputItemUnion,
+} from '@/spec/inference';
+import { ContentItemKind, InputKind, OutputKind, RoleEnum, Status, ToolType } from '@/spec/inference';
+import { type ProviderName } from '@/spec/modelpreset';
+import { type ToolStoreChoice, ToolStoreChoiceType, type UIToolCallChip, type UIToolOutput } from '@/spec/tool';
 
 import { log, providerSetAPI } from '@/apis/baseapi';
+
+import { uiAttachmentToConversation } from '@/chats/attachments/attachment_editor_utils';
+import type { EditorSubmitPayload } from '@/chats/chat_input_editor';
 
 /**
  * @public
@@ -12,225 +28,247 @@ export function getQuotedJSON(obj: any): string {
 	return '```json\n' + JSON.stringify(obj, null, 2) + '\n```';
 }
 
-function convertConversationToBuildMessages(conversationMessages?: ConversationMessage[]): ChatCompletionDataMessage[] {
-	if (!conversationMessages) {
-		return [];
-	}
-	const chatMessages: ChatCompletionDataMessage[] = [];
-	conversationMessages.forEach(convoMsg => {
-		const message: ChatCompletionDataMessage = {
-			role: convoMsg.role,
-			name: convoMsg.name,
-			content: convoMsg.content,
+function uiToolOutputToInferenceToolOutput(ui: UIToolOutput): ToolOutput | undefined {
+	// Only function/custom; skip webSearch for now.
+	if (ui.type !== ToolStoreChoiceType.Function && ui.type !== ToolStoreChoiceType.Custom) return undefined;
 
-			reasoningContents: convoMsg.reasoningContents,
-			// Attachments are stored per conversation message; pass them through.
-			attachments: convoMsg.attachments,
-			// Plumb tool calls and tool outputs through to the provider layer so
-			// it can construct the appropriate messages (e.g. tool/tool_result).
-			toolCalls: convoMsg.toolCalls,
-			toolOutputs: convoMsg.toolOutputs,
-		};
+	const contents: ToolOutputItemUnion[] = [
+		{
+			kind: ContentItemKind.Text,
+			textItem: { text: ui.rawOutput },
+		},
+	];
 
-		chatMessages.push(message);
-	});
-	return chatMessages;
+	return {
+		type: ui.type as unknown as ToolType,
+		choiceID: ui.choiceID,
+		id: ui.id,
+		callID: ui.callID,
+		role: RoleEnum.Tool,
+		status: Status.Completed,
+		cacheControl: undefined,
+		name: ui.name,
+		isError: false,
+		signature: undefined,
+		contents,
+		webSearchToolOutputItems: undefined,
+	};
 }
 
-export function getCompletionDataFromConversation(messages?: Array<ConversationMessage>) {
-	const allMessages = convertConversationToBuildMessages(messages);
-	const promptMsg = allMessages.pop();
-	const prevMessages = allMessages;
-	if (!promptMsg) {
-		throw Error('Invalid prompt message');
+export function buildUserConversationMessageFromEditor(
+	payload: EditorSubmitPayload,
+	existingId?: string
+): ConversationMessage {
+	const now = new Date();
+	const id = existingId ?? now.toISOString();
+
+	const text = (payload.text ?? '').trim();
+	const hasText = text.length > 0;
+
+	const contents: InputOutputContentItemUnion[] = [];
+	if (hasText) {
+		contents.push({
+			kind: ContentItemKind.Text,
+			textItem: { text },
+		});
 	}
-	if (promptMsg.content === '' && !promptMsg.attachments && !promptMsg.toolOutputs) {
-		throw Error('Invalid prompt message input. No content or attachments or tool outputs');
+
+	const inputMessage: InputOutputContent = {
+		id,
+		role: RoleEnum.User,
+		status: Status.Completed,
+		contents,
+	};
+
+	const inputs: InputUnion[] = [
+		{
+			kind: InputKind.InputMessage,
+			inputMessage,
+		},
+	];
+
+	// Attach tool outputs as FunctionToolOutput / CustomToolOutput events.
+	for (const ui of payload.toolOutputs) {
+		const infOut = uiToolOutputToInferenceToolOutput(ui);
+		if (!infOut) continue;
+
+		if (infOut.type === ToolType.Function) {
+			inputs.push({
+				kind: InputKind.FunctionToolOutput,
+				functionToolOutput: infOut,
+			});
+		} else if (infOut.type === ToolType.Custom) {
+			inputs.push({
+				kind: InputKind.CustomToolOutput,
+				customToolOutput: infOut,
+			});
+		}
 	}
-	const promptConvoMsg = messages && messages.length > 0 ? messages[messages.length - 1] : undefined;
-	const toolChoices = promptConvoMsg?.toolChoices;
-	return { promptMsg, prevMessages, toolChoices };
+
+	const attachments = payload.attachments.length > 0 ? payload.attachments.map(uiAttachmentToConversation) : undefined;
+
+	const toolStoreChoices = payload.finalToolChoices.length > 0 ? payload.finalToolChoices : undefined;
+
+	const msg: ConversationMessage = {
+		id,
+		createdAt: now,
+		role: RoleEnum.User,
+		status: Status.Completed,
+		inputs,
+		attachments,
+		toolStoreChoices,
+		content: text,
+	};
+
+	return msg;
 }
 
-function parseAPIResponse(
-	convoMessage: ConversationMessage,
-	providerResp: FetchCompletionResponseBody | undefined
-): {
-	responseMessage: ConversationMessage;
-	requestDetails: string | undefined;
+function deriveUIFieldsFromOutputs(outputs: OutputUnion[] | undefined): {
+	content: string;
+	reasoningContents?: ReasoningContent[];
+	toolCalls?: UIToolCallChip[];
+	toolOutputs?: UIToolOutput[];
 } {
-	let responseContent = '';
-	let respDetails: string | undefined;
-	let requestDetails: string | undefined;
-	let usage: CompletionUsage | undefined;
-	let toolCalls: ToolCall[] | undefined;
-	let reasoningContents: ReasoningContent[] | undefined;
+	if (!outputs || outputs.length === 0) {
+		return { content: '' };
+	}
 
-	if (providerResp) {
-		responseContent = providerResp.content ?? '';
+	const textParts: string[] = [];
+	const reasoning: ReasoningContent[] = [];
+	const toolCalls: UIToolCallChip[] = [];
+	const toolOutputs: UIToolOutput[] = [];
 
-		if (providerResp.responseDetails) {
-			// Make it clear in the UI what this JSON block represents.
-			respDetails = '### Response Details\n' + getQuotedJSON(providerResp.responseDetails);
-		}
-		if (providerResp.requestDetails) {
-			requestDetails = getQuotedJSON(providerResp.requestDetails);
-		}
-		if (providerResp.errorDetails) {
-			respDetails = providerResp.errorDetails.message;
-			if (providerResp.errorDetails.responseDetails) {
-				respDetails += '\n\n### Response Details\n' + getQuotedJSON(providerResp.errorDetails.responseDetails);
+	for (const o of outputs) {
+		switch (o.kind) {
+			case OutputKind.OutputMessage: {
+				const msg = o.outputMessage;
+				if (!msg || !msg.contents) break;
+				for (const c of msg.contents) {
+					if (c.kind === ContentItemKind.Text && c.textItem) {
+						const t = (c.textItem.text ?? '').trim();
+						if (t) textParts.push(t);
+					}
+					if (c.kind === ContentItemKind.Refusal && c.refusalItem) {
+						const t = (c.refusalItem.refusal ?? '').trim();
+						if (t) textParts.push(t);
+					}
+					// image/file content items are not rendered inline in text bubble
+				}
+				break;
 			}
-			if (providerResp.errorDetails.requestDetails) {
-				const r = providerResp.errorDetails.requestDetails;
-				requestDetails = getQuotedJSON(r);
-			}
-			if (!responseContent) {
-				responseContent = convoMessage.content || '';
-			}
-			responseContent += '\n\n>Got error in API processing. Check details below.';
-		}
 
-		if (providerResp.reasoningContents && providerResp.reasoningContents.length > 0) {
-			reasoningContents = providerResp.reasoningContents;
-		}
+			case OutputKind.ReasoningMessage:
+				if (o.reasoningMessage) {
+					reasoning.push(o.reasoningMessage);
+				}
+				break;
 
-		// Capture tool calls both for debug-details and structured usage.
-		if (providerResp.toolCalls && providerResp.toolCalls.length > 0) {
-			toolCalls = providerResp.toolCalls;
-		}
+			case OutputKind.FunctionToolCall:
+			case OutputKind.CustomToolCall:
+			case OutputKind.WebSearchToolCall:
+				if (o.functionToolCall) toolCalls.push(o.functionToolCall as unknown as UIToolCallChip);
+				if (o.customToolCall) toolCalls.push(o.customToolCall as unknown as UIToolCallChip);
+				if (o.webSearchToolCall) toolCalls.push(o.webSearchToolCall as unknown as UIToolCallChip);
+				break;
 
-		if (providerResp.usage) {
-			usage = providerResp.usage;
+			case OutputKind.WebSearchToolOutput:
+				if (o.webSearchToolOutput) {
+					toolOutputs.push(o.webSearchToolOutput as unknown as UIToolOutput);
+				}
+				break;
 		}
 	}
 
-	if (!responseContent) {
-		responseContent = convoMessage.content || '';
+	const content = textParts.join('\n\n');
+
+	return {
+		content,
+		reasoningContents: reasoning.length > 0 ? reasoning : undefined,
+		toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+		toolOutputs: toolOutputs.length > 0 ? toolOutputs : undefined,
+	};
+}
+
+function buildAssistantMessageFromResponse(
+	baseId: string,
+	modelParams: ModelParam,
+	resp: CompletionResponseBody
+): ConversationMessage | undefined {
+	const now = new Date();
+	const id = baseId || now.toISOString();
+
+	if (!resp.inferenceResponse) {
+		return undefined;
 	}
 
-	convoMessage.content = responseContent;
-	convoMessage.details = respDetails;
-	convoMessage.reasoningContents = reasoningContents;
-	convoMessage.usage = usage;
-	convoMessage.toolCalls = toolCalls;
+	const outputs = resp.inferenceResponse.outputs ?? [];
+	const usage: InferenceUsage | undefined = resp.inferenceResponse.usage;
+	const error = resp.inferenceResponse.error;
 
-	return { responseMessage: convoMessage, requestDetails: requestDetails };
+	const { content, reasoningContents, toolCalls, toolOutputs } = deriveUIFieldsFromOutputs(outputs);
+
+	const msg: ConversationMessage = {
+		id,
+		createdAt: now,
+		role: RoleEnum.Assistant,
+		status: error ? Status.Failed : Status.Completed,
+		modelParam: modelParams,
+		outputs,
+		usage,
+		error,
+		// UI-only fields:
+		content,
+		reasoningContents,
+		toolCalls,
+		toolOutputs,
+	};
+
+	return msg;
 }
-
-async function handleDirectCompletion(
-	convoMessage: ConversationMessage,
-	provider: ProviderName,
-	modelParams: ModelParam,
-	promptMsg: ChatCompletionDataMessage,
-	prevMessages: ChatCompletionDataMessage[],
-	toolChoices: ToolStoreChoice[] | undefined,
-	requestId?: string,
-	signal?: AbortSignal
-): Promise<{
-	responseMessage: ConversationMessage | undefined;
-	requestDetails: string | undefined;
-}> {
-	const providerResp = await providerSetAPI.completion(
-		provider,
-		modelParams,
-		promptMsg,
-		prevMessages,
-		toolChoices,
-		requestId,
-		signal
-	);
-	return parseAPIResponse(convoMessage, providerResp);
-}
-
-async function handleStreamedCompletion(
-	convoMessage: ConversationMessage,
-	provider: ProviderName,
-	modelParams: ModelParam,
-	promptMsg: ChatCompletionDataMessage,
-	prevMessages: ChatCompletionDataMessage[],
-	toolChoices: ToolStoreChoice[] | undefined,
-	requestId?: string,
-	signal?: AbortSignal,
-	onStreamTextData?: (textData: string) => void,
-	onStreamThinkingData?: (thinkingData: string) => void
-): Promise<{
-	responseMessage: ConversationMessage | undefined;
-	requestDetails: string | undefined;
-}> {
-	const providerResp = await providerSetAPI.completion(
-		provider,
-		modelParams,
-		promptMsg,
-		prevMessages,
-		toolChoices,
-		requestId,
-		signal,
-		onStreamTextData,
-		onStreamThinkingData
-	);
-	return parseAPIResponse(convoMessage, providerResp);
-}
-
 export async function HandleCompletion(
 	provider: ProviderName,
 	modelParams: ModelParam,
-	promptMsg: ChatCompletionDataMessage,
-	prevMessages: ChatCompletionDataMessage[],
-	toolChoices: ToolStoreChoice[] | undefined,
-	convoMessage: ConversationMessage,
+	currentUserMsg: ConversationMessage,
+	history: ConversationMessage[],
+	toolStoreChoices: ToolStoreChoice[] | undefined,
+	assistantPlaceholder: ConversationMessage,
 	requestId?: string,
 	signal?: AbortSignal,
 	onStreamTextData?: (textData: string) => void,
 	onStreamThinkingData?: (thinkingData: string) => void
 ): Promise<{
 	responseMessage: ConversationMessage | undefined;
-	requestDetails: string | undefined;
+	rawResponse?: CompletionResponseBody;
 }> {
 	try {
-		const isStream = modelParams.stream || false;
-		if (isStream && onStreamTextData && onStreamThinkingData) {
-			return await handleStreamedCompletion(
-				convoMessage,
-				provider,
-				modelParams,
-				promptMsg,
-				prevMessages,
-				toolChoices,
-				requestId,
-				signal,
-				onStreamTextData,
-				onStreamThinkingData
-			);
-		} else {
-			modelParams.stream = false;
-			return await handleDirectCompletion(
-				convoMessage,
-				provider,
-				modelParams,
-				promptMsg,
-				prevMessages,
-				toolChoices,
-				requestId,
-				signal
-			);
-		}
-	} catch (error) {
-		if ((error as DOMException).name === 'AbortError') {
-			throw error; // let the caller decide
+		const resp = await providerSetAPI.completion(
+			provider,
+			modelParams,
+			currentUserMsg,
+			history,
+			toolStoreChoices,
+			requestId,
+			signal,
+			onStreamTextData,
+			onStreamThinkingData
+		);
+
+		if (!resp) {
+			return { responseMessage: undefined, rawResponse: undefined };
 		}
 
-		// Log full error for debugging
+		const assistantMsg = buildAssistantMessageFromResponse(assistantPlaceholder.id, modelParams, resp);
+		return { responseMessage: assistantMsg, rawResponse: resp };
+	} catch (error) {
+		if ((error as DOMException).name === 'AbortError') {
+			throw error;
+		}
 		const details = JSON.stringify(error, null, 2);
 		log.error('provider completion failed', details);
 
-		// Preserve any content that is already in the message (e.g. partial stream)
-		const existing = (convoMessage.content || '').trimEnd();
-		const suffix = '\n\n>Got error in API processing. Check details below.';
+		assistantPlaceholder.content = (assistantPlaceholder.content || '') + '\n\n>Got error in API processing.';
+		assistantPlaceholder.details = details;
 
-		convoMessage.content = existing ? existing + suffix : suffix;
-		convoMessage.details = details;
-
-		return { responseMessage: convoMessage, requestDetails: undefined };
+		return { responseMessage: assistantPlaceholder, rawResponse: undefined };
 	}
 }

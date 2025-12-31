@@ -1,11 +1,9 @@
 import {
 	type Attachment,
-	type AttachmentFileRef,
-	type AttachmentGenericRef,
-	type AttachmentImageRef,
+	AttachmentErrorReason,
 	AttachmentKind,
 	AttachmentMode,
-	type AttachmentURLRef,
+	type UIAttachment,
 } from '@/spec/attachment';
 import type { DirectoryOverflowInfo } from '@/spec/backend';
 
@@ -21,7 +19,7 @@ export interface DirectoryAttachmentGroup {
 	dirPath: string;
 	label: string;
 	/**
-	 * All attachment keys (editorAttachmentKey) that belong to this folder.
+	 * All attachment keys (uiAttachmentKey) that belong to this folder.
 	 * Includes both "owned" and "referenced" attachments.
 	 */
 	attachmentKeys: string[];
@@ -36,36 +34,8 @@ export interface DirectoryAttachmentGroup {
 	overflowDirs: DirectoryOverflowInfo[];
 }
 
-/**
- * @public
- */
-export enum AttachmentErrorReason {
-	TooLargeSingle = 'too-large-single',
-	TooLargeTotal = 'too-large-total',
-	Unreadable = 'unreadable',
-}
-
-// EditorAttachment is the composer-side shape; it mirrors the backend
-// Attachment but is limited to the fields we need in the UI.
-export type EditorAttachment = {
-	kind: AttachmentKind;
-	label: string;
-
-	mode: AttachmentMode;
-	availableModes: AttachmentMode[];
-
-	fileRef?: AttachmentFileRef;
-	imageRef?: AttachmentImageRef;
-	urlRef?: AttachmentURLRef;
-	genericRef?: AttachmentGenericRef;
-
-	// Error-only fields (never sent to backend as real attachments)
-	isError?: boolean;
-	errorReason?: AttachmentErrorReason;
-};
-
 // Convert editor attachment to API attachment payload.
-export function editorAttachmentToConversation(att: EditorAttachment): Attachment {
+export function uiAttachmentToConversation(att: UIAttachment): Attachment {
 	return {
 		kind: att.kind,
 		label: att.label,
@@ -79,7 +49,7 @@ export function editorAttachmentToConversation(att: EditorAttachment): Attachmen
 }
 
 // Identity key used for de-duplication in the composer.
-export function editorAttachmentKey(att: EditorAttachment): string {
+export function uiAttachmentKey(att: UIAttachment): string {
 	let label = att.label;
 	if (att.kind === AttachmentKind.file && att.fileRef) {
 		label = att.fileRef.path;
@@ -94,7 +64,7 @@ export function editorAttachmentKey(att: EditorAttachment): string {
 }
 
 // Used only for tooltip/debug display in the chips bar.
-export function getEditorAttachmentPath(att: EditorAttachment): string {
+export function getUIAttachmentPath(att: UIAttachment): string {
 	if (att.kind === AttachmentKind.file && att.fileRef) {
 		return att.fileRef.path;
 	}
@@ -107,7 +77,7 @@ export function getEditorAttachmentPath(att: EditorAttachment): string {
 	return '';
 }
 
-function buildErrorAttachmentForLocalPath(att: Attachment, reason: AttachmentErrorReason): EditorAttachment {
+function buildErrorAttachmentForLocalPath(att: Attachment, reason: AttachmentErrorReason): UIAttachment {
 	return {
 		kind: AttachmentKind.file,
 		label: att.label,
@@ -123,10 +93,10 @@ function buildErrorAttachmentForLocalPath(att: Attachment, reason: AttachmentErr
 }
 
 /**
- * Classify a local file into an EditorAttachment with smart default mode
+ * Classify a local file into an UIAttachment with smart default mode
  * and allowed modes based on extension.
  */
-export function buildEditorAttachmentForLocalPath(att: Attachment): EditorAttachment | undefined {
+export function buildUIAttachmentForLocalPath(att: Attachment): UIAttachment | undefined {
 	if (!att.fileRef && !att.imageRef) {
 		return undefined;
 	}
@@ -160,7 +130,7 @@ export function buildEditorAttachmentForLocalPath(att: Attachment): EditorAttach
 /**
  * Build a URL-based attachment with smart default modes.
  */
-export function buildEditorAttachmentForURL(att: Attachment): EditorAttachment {
+export function buildUIAttachmentForURL(att: Attachment): UIAttachment {
 	return {
 		kind: att.kind,
 		label: att.label,
@@ -175,7 +145,7 @@ export function buildEditorAttachmentForURL(att: Attachment): EditorAttachment {
 }
 
 // Human-readable explanation for an error attachment, for tooltips.
-export function getAttachmentErrorMessage(att: EditorAttachment): string | null {
+export function getAttachmentErrorMessage(att: UIAttachment): string | null {
 	if (!att.isError || !att.errorReason) return null;
 	const limit = formatBytes(MAX_SINGLE_ATTACHMENT_BYTES);
 	let size = 0;
