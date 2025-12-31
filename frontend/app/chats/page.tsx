@@ -19,13 +19,17 @@ import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { useAtBottom } from '@/hooks/use_at_bottom';
 
-import { buildUserConversationMessageFromEditor, HandleCompletion } from '@/apis/aiprovider_helper';
 import { conversationStoreAPI } from '@/apis/baseapi';
 import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
 import { ButtonScrollToBottom } from '@/components/button_scroll_to_bottom';
 import { PageFrame } from '@/components/page_frame';
 
+import {
+	buildUserConversationMessageFromEditor,
+	HandleCompletion,
+	hydrateConversation,
+} from '@/chats/chat_conversation_helper';
 import { InputBox, type InputBoxHandle } from '@/chats/chat_input_box';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/chat_input_editor';
 import { ChatNavBar, type ChatNavBarHandle } from '@/chats/chat_navbar';
@@ -202,8 +206,10 @@ export default function ChatsPage() {
 	const handleSelectConversation = useCallback(async (item: ConversationSearchItem) => {
 		const selectedChat = await conversationStoreAPI.getConversation(item.id, item.title, true);
 		if (selectedChat) {
-			const hydrated = selectedChat as Conversation;
+			// Hydrate store-level data into full UI Conversation
+			const hydrated = hydrateConversation(selectedChat);
 			setChat(hydrated);
+
 			isChatPersistedRef.current = true;
 			manualTitleLockedRef.current = false;
 			setEditingMessageId(null);
@@ -472,11 +478,7 @@ export default function ChatsPage() {
 				text: msg.content ?? '',
 				attachments: msg.attachments,
 				toolChoices: msg.toolStoreChoices,
-
-				// We currently don't persist per-turn tool-runner outputs, so none to restore.
-				// Need to see how to make sure that all things are reproducible end to end and fix this.
-				// Most probably UI state should be derived before this happens here.
-				// toolOutputs: msg.toolOutputs,
+				toolOutputs: msg.toolOutputs,
 			};
 
 			chatInputRef.current?.loadExternalMessage(external);

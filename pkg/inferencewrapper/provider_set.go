@@ -463,6 +463,10 @@ func (ps *ProviderSetAPI) buildToolChoices(
 		if err != nil {
 			return nil, nil, err
 		}
+		if choiceID == "" {
+			// Somehow we received a empty choice id. Skip this.
+			continue
+		}
 		out = append(out, *tc)
 		choiceBindings[choiceID] = sc
 	}
@@ -518,20 +522,21 @@ func (ps *ProviderSetAPI) hydrateToolChoice(
 			sc.BundleID, sc.ToolSlug, sc.ToolVersion,
 		)
 	}
+	name := string(sc.ToolSlug)
 	desc := tool.Description
 	if desc == "" {
 		desc = sc.Description
 	}
+	choiceID, _ = uuidv7filename.NewUUIDv7String()
+	if choiceID == "" {
+		choiceID = name
+	}
+
 	tc := &inferencegoSpec.ToolChoice{
 		Type:        inferencegoSpec.ToolType(sc.ToolType),
 		ID:          choiceID,
-		Name:        string(sc.ToolSlug),
+		Name:        name,
 		Description: desc,
-	}
-
-	choiceID, _ = uuidv7filename.NewUUIDv7String()
-	if choiceID == "" {
-		choiceID = tc.Name
 	}
 
 	// If this is a web-search tool, populate minimal WebSearchArguments so that

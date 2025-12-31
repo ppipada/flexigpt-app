@@ -109,10 +109,27 @@ func (w *ProviderSetWrapper) FetchCompletion(
 				return nil
 			}
 		}
-		return w.providersetAPI.FetchCompletion(
+		resp, err := w.providersetAPI.FetchCompletion(
 			ctx,
 			req,
 		)
+		if err != nil {
+			// If we have a partial response, attach error info there and return it.
+			if resp != nil && resp.Body != nil && resp.Body.InferenceResponse != nil {
+				if resp.Body.InferenceResponse.Error == nil {
+					resp.Body.InferenceResponse.Error = &inferencegoSpec.Error{
+						Message: err.Error(),
+					}
+				}
+				// Log, but do not propagate Go error so Wails resolves the Promise.
+				slog.Error("fetchCompletion failed", "provider", provider, "err", err)
+				return resp, nil
+			}
+			// No response at all => infrastructure error.
+			return nil, err
+		}
+
+		return resp, nil
 	})
 }
 

@@ -1,12 +1,15 @@
 // AttachmentKind enumerates contextual attachment categories that can be
 // associated with messages sent to the inference layer.
-/** @lintignore */
 export enum AttachmentKind {
 	file = 'file',
 	image = 'image',
 	url = 'url',
+
+	/** @lintignore */
 	docIndex = 'docIndex',
+	/** @lintignore */
 	pr = 'pr',
+	/** @lintignore */
 	commit = 'commit',
 }
 
