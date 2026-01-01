@@ -703,8 +703,10 @@ func (ts *ToolStore) InvokeTool(
 	}
 
 	var (
-		out json.RawMessage
-		md  map[string]any
+		out     json.RawMessage
+		md      map[string]any
+		isError bool
+		errMsg  string
 	)
 
 	switch tool.Type {
@@ -724,9 +726,9 @@ func (ts *ToolStore) InvokeTool(
 				hopts = append(hopts, httprunner.WithHTTPSecrets(req.Body.HTTPOptions.Secrets))
 			}
 		}
-		r, err2 := httprunner.NewHTTPToolRunner(*tool.HTTP, hopts...)
-		if err2 != nil {
-			return nil, err2
+		r, configErr := httprunner.NewHTTPToolRunner(*tool.HTTP, hopts...)
+		if configErr != nil {
+			return nil, configErr
 		}
 		out, md, err = r.Run(ctx, args)
 
@@ -744,14 +746,20 @@ func (ts *ToolStore) InvokeTool(
 		return nil, fmt.Errorf("unsupported tool type: %s", tool.Type)
 	}
 	if err != nil {
-		return nil, err
+		// Treat errors from the underlying tool runner as tool-level errors that are surfaced in the InvokeToolResponse
+		// instead of failing the entire call.
+		isError = true
+		errMsg = err.Error()
+
 	}
 
 	return &spec.InvokeToolResponse{
 		Body: &spec.InvokeToolResponseBody{
-			Output:    string(out),
-			Meta:      md,
-			IsBuiltIn: isBI,
+			Output:       string(out),
+			Meta:         md,
+			IsBuiltIn:    isBI,
+			IsError:      isError,
+			ErrorMessage: errMsg,
 		},
 	}, nil
 }

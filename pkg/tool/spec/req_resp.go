@@ -206,6 +206,13 @@ type InvokeToolResponseBody struct {
 	Meta map[string]any `json:"meta,omitempty"`
 	// True if the tool was served from the built-in data overlay.
 	IsBuiltIn bool `json:"isBuiltIn"`
+
+	// True if the tool itself reported an error during execution.
+	// When true, Output may be empty or contain a tool-specific error payload.
+	IsError bool `json:"isError,omitzero"`
+	// ErrorMessage contains the error message returned by the tool, if any.
+	// This is set when IsError is true.
+	ErrorMessage string `json:"errorMessage,omitzero"`
 }
 
 type InvokeToolResponse struct {

@@ -2608,6 +2608,8 @@ export namespace spec {
 	    output: string;
 	    meta?: Record<string, any>;
 	    isBuiltIn: boolean;
+	    isError: boolean;
+	    errorMessage: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new InvokeToolResponseBody(source);
@@ -2618,6 +2620,8 @@ export namespace spec {
 	        this.output = source["output"];
 	        this.meta = source["meta"];
 	        this.isBuiltIn = source["isBuiltIn"];
+	        this.isError = source["isError"];
+	        this.errorMessage = source["errorMessage"];
 	    }
 	}
 	export class InvokeToolResponse {

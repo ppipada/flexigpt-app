@@ -26,6 +26,7 @@ interface EditorChipsBarProps {
 	onDiscardToolCall?: (id: string) => void;
 	onOpenOutput?: (output: UIToolOutput) => void;
 	onRemoveOutput?: (id: string) => void;
+	onRetryErroredOutput?: (output: UIToolOutput) => void;
 
 	onRemoveAttachment: (att: UIAttachment) => void;
 	onChangeAttachmentMode: (att: UIAttachment, mode: AttachmentMode) => void;
@@ -55,6 +56,7 @@ export function EditorChipsBar({
 	onDiscardToolCall,
 	onOpenOutput,
 	onRemoveOutput,
+	onRetryErroredOutput,
 	onRemoveAttachment,
 	onChangeAttachmentMode,
 	onRemoveDirectoryGroup,
@@ -92,6 +94,8 @@ export function EditorChipsBar({
 	const discardToolCall = onDiscardToolCall ?? (() => {});
 	const openOutput = onOpenOutput ?? (() => {});
 	const removeOutput = onRemoveOutput ?? (() => {});
+	const retryErroredOutput = onRetryErroredOutput ?? (() => {});
+
 	return (
 		<div className="flex shrink-0 items-center gap-1">
 			{/* Conversation tools (first, tinted) */}
@@ -129,6 +133,7 @@ export function EditorChipsBar({
 				onDiscardToolCall={discardToolCall}
 				onOpenOutput={openOutput}
 				onRemoveOutput={removeOutput}
+				onRetryErroredOutput={retryErroredOutput}
 			/>
 		</div>
 	);

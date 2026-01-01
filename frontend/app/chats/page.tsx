@@ -269,6 +269,8 @@ export default function ChatsPage() {
 			const currentUserMsg = allMessages[allMessages.length - 1];
 			const history = allMessages.slice(0, allMessages.length - 1);
 
+			// Local accumulator for this request
+			let aggregatedStreamText = '';
 			setStreamedMessage('');
 
 			// Create assistant placeholder for streaming.
@@ -283,14 +285,18 @@ export default function ChatsPage() {
 			setChat({ ...chatWithPlaceholder, messages: [...chatWithPlaceholder.messages] });
 
 			const onStreamTextData = (textData: string) => {
-				if (textData) tokensReceivedRef.current = true;
+				if (!textData) return;
+				tokensReceivedRef.current = true;
+				aggregatedStreamText += textData;
 				setStreamedMessage(prev => prev + textData);
 			};
 
 			const onStreamThinkingData = (thinkingData: string) => {
 				if (!thinkingData) return;
 				tokensReceivedRef.current = true;
-				setStreamedMessage(prev => prev + getBlockQuotedLines(thinkingData) + '\n');
+				const block = getBlockQuotedLines(thinkingData) + '\n';
+				aggregatedStreamText += block;
+				setStreamedMessage(prev => prev + block);
 			};
 
 			try {
@@ -306,8 +312,7 @@ export default function ChatsPage() {
 					additionalParametersRawJSON: options.additionalParametersRawJSON,
 				};
 
-				// ToolStoreChoices for this call: either from the last user message meta or from UI state.
-				let toolStoreChoices: ToolStoreChoice[] | undefined = undefined;
+				let toolStoreChoices: ToolStoreChoice[] | undefined;
 				const latestUser = updatedChatWithUserMessage.messages
 					.slice()
 					.reverse()
@@ -335,8 +340,7 @@ export default function ChatsPage() {
 						messages: [...chatWithPlaceholder.messages.slice(0, -1), responseMessage],
 						modifiedAt: new Date(),
 					};
-					// If the backend returned hydrated inputs for the current user turn
-					// (including attachment content), patch that turn before saving.
+
 					if (rawResponse?.hydratedCurrentInputs && currentUserMsg.id) {
 						const hydrated = rawResponse.hydratedCurrentInputs;
 						finalChat = {
@@ -361,7 +365,6 @@ export default function ChatsPage() {
 				}
 			} catch (e) {
 				if ((e as DOMException).name === 'AbortError') {
-					// If no tokens were received, remove the assistant placeholder.
 					if (!tokensReceivedRef.current) {
 						setChat(c => {
 							const idx = c.messages.findIndex(m => m.id === assistantPlaceholder.id);
@@ -370,8 +373,7 @@ export default function ChatsPage() {
 							return { ...c, messages: msgs, modifiedAt: new Date() };
 						});
 					} else {
-						// We have partial stream; persist as a partial assistant message.
-						const partialText = streamedMessage + '\n\n>API Aborted after partial response...';
+						const partialText = aggregatedStreamText + '\n\n>API Aborted after partial response...';
 
 						const partialOutputs: OutputUnion[] = [
 							{
@@ -394,7 +396,7 @@ export default function ChatsPage() {
 							...assistantPlaceholder,
 							status: Status.Completed,
 							outputs: partialOutputs,
-							content: partialText, // UI-only
+							content: partialText,
 						};
 
 						const finalChat: Conversation = {
@@ -412,7 +414,7 @@ export default function ChatsPage() {
 				setIsBusy(false);
 			}
 		},
-		[saveUpdatedChat, streamedMessage]
+		[saveUpdatedChat]
 	);
 
 	const sendMessage = async (payload: EditorSubmitPayload, options: ChatOption) => {

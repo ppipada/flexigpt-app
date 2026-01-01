@@ -3,6 +3,7 @@ import {
 	type FormEvent,
 	forwardRef,
 	useCallback,
+	useDeferredValue,
 	useEffect,
 	useImperativeHandle,
 	useMemo,
@@ -13,7 +14,7 @@ import {
 import { FiAlertTriangle, FiEdit2, FiFastForward, FiPlay, FiSend, FiSquare, FiX } from 'react-icons/fi';
 
 import { useMenuStore } from '@ariakit/react';
-import { SingleBlockPlugin, type Value } from 'platejs';
+import { NodeApi, SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
 import type { Attachment, AttachmentMode, DirectoryAttachmentsResult, UIAttachment } from '@/spec/attachment';
@@ -60,6 +61,7 @@ import {
 } from '@/chats/templates/template_editor_utils';
 import { TemplateSlashKit } from '@/chats/templates/template_plugin';
 import { getLastUserBlockContent } from '@/chats/templates/template_processing';
+import { KEY_TEMPLATE_SELECTION } from '@/chats/templates/template_spec';
 import { TemplateToolbars } from '@/chats/templates/template_toolbars';
 import { buildUserInlineChildrenFromText } from '@/chats/templates/template_variables_inline';
 import {
@@ -152,6 +154,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	// doc version tick to re-run selection computations on any editor change
 	const [docVersion, setDocVersion] = useState(0);
+	const deferredDocVersion = useDeferredValue(docVersion);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [attachments, setAttachments] = useState<UIAttachment[]>([]);
 	const [directoryGroups, setDirectoryGroups] = useState<DirectoryAttachmentGroup[]>([]);
@@ -198,7 +201,21 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	const lastPopulatedSelectionKeyRef = useRef<Set<string>>(new Set());
 
+	// chats/chat_input_editor.tsx, inside selectionInfo useMemo:
+
 	const selectionInfo = useMemo(() => {
+		// Fast path: if the document contains no template-selection elements at all,
+		// short-circuit instead of running the heavier helpers.
+		const hasAnyTemplate = NodeApi.elements(editor).some(([el]) => el.type === KEY_TEMPLATE_SELECTION);
+		if (!hasAnyTemplate) {
+			return {
+				tplNodeWithPath: undefined,
+				hasTemplate: false,
+				requiredCount: 0,
+				firstPendingVar: undefined,
+			};
+		}
+
 		const tplNodeWithPath = getFirstTemplateNodeWithPath(editor);
 		const selections = getTemplateSelections(editor);
 		const hasTemplate = selections.length > 0;
@@ -222,7 +239,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			requiredCount,
 			firstPendingVar,
 		};
-	}, [editor, docVersion]);
+	}, [editor, deferredDocVersion]);
 
 	const hasPendingToolCalls = useMemo(() => toolCalls.some(c => c.status === 'pending'), [toolCalls]);
 	const hasRunningToolCalls = useMemo(() => toolCalls.some(c => c.status === 'running'), [toolCalls]);
@@ -321,13 +338,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				}
 			});
 		}
-	}, [editor, docVersion]);
+	}, [editor, deferredDocVersion]);
 
-	/**
-	 * Run a single tool call from its chip, updating chip status and appending
-	 * a UIToolOutput on success. Returns the new UIToolOutput (if successful) so
-	 * callers like "Run & send" can include it in the payload immediately.
-	 */
 	const runToolCallInternal = useCallback(async (toolCall: UIToolCallChip): Promise<UIToolOutput | null> => {
 		// Resolve identity using toolStoreChoice when available; fall back to name parsing.
 		let bundleID: string | undefined;
@@ -356,14 +368,22 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		try {
 			const resp = await toolStoreAPI.invokeTool(bundleID, toolSlug, version, toolCall.arguments);
 
+			const isError = !!resp.isError;
+			const errorMessage =
+				resp.errorMessage || (isError ? 'Tool reported an error. Inspect the output for details.' : undefined);
+
 			const output: UIToolOutput = {
 				id: toolCall.id,
 				callID: toolCall.callID,
 				name: toolCall.name,
 				choiceID: toolCall.choiceID,
 				type: toolCall.type,
-				summary: formatToolOutputSummary(toolCall.name),
+				summary: isError ? `Error: ${formatToolOutputSummary(toolCall.name)}` : formatToolOutputSummary(toolCall.name),
 				rawOutput: resp.output,
+				isError,
+				errorMessage,
+				arguments: toolCall.arguments,
+				webSearchToolCallItems: toolCall.webSearchToolCallItems,
 				toolStoreChoice: toolCall.toolStoreChoice,
 			};
 
@@ -411,6 +431,36 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const handleRemoveToolOutput = useCallback((id: string) => {
 		setToolOutputs(prev => prev.filter(o => o.id !== id));
 		setActiveToolOutput(current => (current && current.id === id ? null : current));
+	}, []);
+
+	const handleRetryErroredOutput = useCallback((output: UIToolOutput) => {
+		// Only support retry when this output came from a local chip run and we still
+		// know which tool and arguments were used.
+		if (!output.isError || !output.toolStoreChoice || !output.arguments) {
+			return;
+		}
+
+		const { bundleID, toolSlug, toolVersion } = output.toolStoreChoice;
+		if (!bundleID || !toolSlug || !toolVersion) {
+			return;
+		}
+
+		const newId = crypto.randomUUID();
+
+		const chip: UIToolCallChip = {
+			id: newId,
+			callID: output.callID || newId,
+			name: output.name,
+			arguments: output.arguments,
+			webSearchToolCallItems: output.webSearchToolCallItems,
+			choiceID: output.choiceID,
+			type: output.type,
+			status: 'pending',
+			toolStoreChoice: output.toolStoreChoice,
+		};
+
+		setToolOutputs(prev => prev.filter(o => o.id !== output.id));
+		setToolCalls(prev => [...prev, chip]);
 	}, []);
 
 	const handleOpenToolOutput = useCallback((output: UIToolOutput) => {
@@ -926,6 +976,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 									onDiscardToolCall={handleDiscardToolCall}
 									onOpenOutput={handleOpenToolOutput}
 									onRemoveOutput={handleRemoveToolOutput}
+									onRetryErroredOutput={handleRetryErroredOutput}
 									onRemoveAttachment={handleRemoveAttachment}
 									onChangeAttachmentMode={handleChangeAttachmentMode}
 									onRemoveDirectoryGroup={handleRemoveDirectoryGroup}

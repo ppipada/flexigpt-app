@@ -12,11 +12,11 @@
   - [x] move the attachments hydration in prep step in current code
   - [x] think through input type and conversation storage type
     - [x] this and new inference api adoption would need to be hand in hand
-  - [ ] UIToolOutput and invoke tool needs to handle error response and bool
+  - [x] UIToolOutput and invoke tool needs to handle error response and bool
   - [x] Check if tool output is set properly in chat history.
   - [x] also may want to have a hydrate chat function that creates a proper chat from stored chat and then set.
   - [x] we return err from fetch completion which results in wails throwing error. what we should be doing is setting error object and then sending back with err nil.
-- [ ] typing ":" opens something in platejs.
+- [x] typing ":" opens something in platejs.
 
 ## Features
 

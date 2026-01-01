@@ -12,6 +12,7 @@ interface ToolChipsComposerRowProps {
 	onDiscardToolCall: (id: string) => void;
 	onOpenOutput: (output: UIToolOutput) => void;
 	onRemoveOutput: (id: string) => void;
+	onRetryErroredOutput: (output: UIToolOutput) => void;
 }
 
 /**
@@ -29,6 +30,7 @@ export function ToolChipsComposerRow({
 	onDiscardToolCall,
 	onOpenOutput,
 	onRemoveOutput,
+	onRetryErroredOutput,
 }: ToolChipsComposerRowProps) {
 	const visibleCalls = toolCalls.filter(toolCall => toolCall.status !== 'discarded' && toolCall.status !== 'succeeded');
 	const hasAny = visibleCalls.length > 0 || toolOutputs.length > 0;
@@ -59,6 +61,9 @@ export function ToolChipsComposerRow({
 					}}
 					onRemove={() => {
 						onRemoveOutput(output.id);
+					}}
+					onRetry={() => {
+						onRetryErroredOutput(output);
 					}}
 				/>
 			))}
@@ -150,23 +155,39 @@ interface ToolOutputComposerChipViewProps {
 	output: UIToolOutput;
 	onOpen: () => void;
 	onRemove: () => void;
+	onRetry: () => void;
 }
 
 /**
  * Interactive chip for a single tool output in the composer.
  * - Click opens the full JSON/text in a modal.
  * - "×" discards the output from the next turn.
+ * - If `isError` is true and we have enough info, show a "Retry" button.
  */
-function ToolOutputComposerChipView({ output, onOpen, onRemove }: ToolOutputComposerChipViewProps) {
+function ToolOutputComposerChipView({ output, onOpen, onRemove, onRetry }: ToolOutputComposerChipViewProps) {
 	const label = getPrettyToolName(output.name);
 	const truncatedLabel = label.length > 64 ? `${label.slice(0, 61)}…` : label;
 
-	const titleLines = [label, `Tool: ${output.name}`, `Call ID: ${output.callID}`];
+	const isError = !!output.isError;
+	const canRetry = isError && !!output.arguments && !!output.toolStoreChoice;
+
+	const titleLines = [
+		isError ? `Errored result from: ${label}` : label,
+		`Tool: ${output.name}`,
+		`Call ID: ${output.callID}`,
+	];
+	if (isError && output.errorMessage) {
+		titleLines.push(`Error: ${output.errorMessage}`);
+	}
 	const title = titleLines.join('\n');
+
+	const baseClasses = 'flex shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 py-0 transition-colors';
+	const normalClasses = 'bg-base-200 text-base-content hover:bg-base-300/80';
+	const errorClasses = 'border-error/70 bg-error/5 text-error border';
 
 	return (
 		<div
-			className="bg-base-200 text-base-content hover:bg-base-300/80 flex shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 py-0"
+			className={`${baseClasses} ${isError ? errorClasses : normalClasses}`}
 			title={title}
 			role="button"
 			tabIndex={0}
@@ -179,22 +200,40 @@ function ToolOutputComposerChipView({ output, onOpen, onRemove }: ToolOutputComp
 			}}
 			data-attachment-chip="tool-output"
 		>
-			<FiTool size={14} />
-			<span className="text-base-content/60 text-[10px] uppercase">Result</span>
+			<FiTool size={14} className={isError ? 'text-error' : ''} />
+			<span className="text-base-content/60 text-[10px] uppercase">{isError ? 'Error' : 'Result'}</span>
 			<span className="max-w-64 truncate">{truncatedLabel}</span>
 
-			<button
-				type="button"
-				className="btn btn-ghost btn-xs text-error ml-1 px-1 py-0 shadow-none"
-				onClick={e => {
-					e.stopPropagation();
-					onRemove();
-				}}
-				title="Discard this tool output"
-				aria-label="Discard tool output"
-			>
-				<FiX size={12} />
-			</button>
+			<div className="ml-auto flex items-center gap-1">
+				{canRetry && (
+					<button
+						type="button"
+						className="btn btn-ghost btn-xs gap-0 px-1 py-0 shadow-none"
+						onClick={e => {
+							e.stopPropagation();
+							onRetry();
+						}}
+						title="Retry this tool"
+						aria-label="Retry this tool"
+					>
+						<FiPlay size={12} />
+						<span className="ml-1 text-[11px]">Retry</span>
+					</button>
+				)}
+
+				<button
+					type="button"
+					className="btn btn-ghost btn-xs text-error px-1 py-0 shadow-none"
+					onClick={e => {
+						e.stopPropagation();
+						onRemove();
+					}}
+					title="Discard this tool output"
+					aria-label="Discard tool output"
+				>
+					<FiX size={12} />
+				</button>
+			</div>
 		</div>
 	);
 }

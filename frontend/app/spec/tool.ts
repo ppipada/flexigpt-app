@@ -148,6 +148,8 @@ export interface InvokeToolResponse {
 	output: JSONRawString;
 	meta?: Record<string, any>;
 	isBuiltIn: boolean;
+	isError?: boolean;
+	errorMessage?: string;
 }
 
 export interface UIToolAttachedChoice extends ToolStoreChoice {
@@ -170,6 +172,7 @@ export interface UIToolCallChip {
 	callID: string;
 	name: string;
 	arguments?: string;
+	webSearchToolCallItems?: any;
 	type: ToolStoreChoiceType;
 	choiceID: string;
 	status: UIToolCallStatus;
@@ -194,4 +197,10 @@ export interface UIToolOutput {
 
 	/** Optional original ToolStoreChoice this output came from. */
 	toolStoreChoice?: ToolStoreChoice;
+
+	isError?: boolean;
+	errorMessage?: string;
+
+	arguments?: string;
+	webSearchToolCallItems?: any;
 }

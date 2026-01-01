@@ -6,8 +6,7 @@ import { Menu, MenuButton, MenuItem, Tooltip, useMenuStore, useStoreState, useTo
 
 import { buildShortcutDisplay, type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 
-type TipKey = 'lastWins' | 'remove' | 'collapse' | 'attachmentsScope' | 'toolsPersist';
-
+type TipKey = 'lastWins' | 'remove' | 'collapse' | 'attachmentsScope' | 'toolsPersist' | 'toolErrors';
 const tipsText: Record<TipKey, string> = {
 	// Original system‑prompt/template tips
 	lastWins: 'Last system prompt wins: when multiple templates add system prompts, the last one added becomes active.',
@@ -19,6 +18,8 @@ const tipsText: Record<TipKey, string> = {
 	attachmentsScope: 'Attachments you add to a conversation are available to all subsequent turns in that conversation.',
 	toolsPersist:
 		'Once you attach tools to a conversation, those tool choices are preserved and sent with every turn until you change them.',
+	toolErrors:
+		'When a tool run returns an application error, its chip turns red. You can retry it or send the error output to the model explicitly.',
 };
 
 interface CommandTipsMenuProps {
@@ -72,6 +73,11 @@ export function CommandTipsMenu({ shortcutConfig }: CommandTipsMenuProps) {
 				key: 'toolsPersist' as TipKey,
 				title: 'Tool choices persist per conversation',
 				description: tipsText.toolsPersist,
+			},
+			{
+				key: 'toolErrors' as TipKey,
+				title: 'Errored tool results',
+				description: tipsText.toolErrors,
 			},
 		],
 		[]

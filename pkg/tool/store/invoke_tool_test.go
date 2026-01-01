@@ -50,16 +50,15 @@ func TestInvokeTool(t *testing.T) {
 	}
 
 	tests := []struct {
-		name            string
-		handler         handlerFn
-		mkTool          mkToolFn
-		args            string
-		httpOptions     *spec.InvokeHTTPOptions
-		disableBundle   bool
-		disableTool     bool
-		wantErrIs       error
-		wantErrContains string
-		verify          verifyFn
+		name          string
+		handler       handlerFn
+		mkTool        mkToolFn
+		args          string
+		httpOptions   *spec.InvokeHTTPOptions
+		disableBundle bool
+		disableTool   bool
+		wantErrIs     error
+		verify        verifyFn
 	}{
 		{
 			name: "http_get_success_with_templating_and_meta",
@@ -96,6 +95,12 @@ func TestInvokeTool(t *testing.T) {
 				}
 				if resp.Body.IsBuiltIn {
 					t.Fatalf("expected IsBuiltIn=false for user tool")
+				}
+				if resp.Body.IsError {
+					t.Fatalf("expected IsError=false, got true (ErrorMessage=%q)", resp.Body.ErrorMessage)
+				}
+				if resp.Body.ErrorMessage != "" {
+					t.Fatalf("expected empty ErrorMessage for success, got %q", resp.Body.ErrorMessage)
 				}
 				if resp.Body.Meta == nil {
 					t.Fatalf("expected meta, got nil")
@@ -146,14 +151,28 @@ func TestInvokeTool(t *testing.T) {
 			wantErrIs:   spec.ErrToolDisabled,
 		},
 		{
-			name: "non_json_response_errors",
+			name: "non_json_response_sets_is_error",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "text/plain")
 				_, _ = w.Write([]byte("ok"))
 			},
-			mkTool:          func(baseURL string) spec.HTTPToolImpl { return defaultTool(baseURL, "/plain") },
-			args:            `{}`,
-			wantErrContains: "non-JSON Content-Type",
+			mkTool: func(baseURL string) spec.HTTPToolImpl { return defaultTool(baseURL, "/plain") },
+			args:   `{}`,
+			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatalf("InvokeTool error: %v", err)
+				}
+				if resp == nil || resp.Body == nil {
+					t.Fatalf("nil response/body")
+				}
+				if !resp.Body.IsError {
+					t.Fatalf("expected IsError=true for non-JSON response")
+				}
+				if !strings.Contains(resp.Body.ErrorMessage, "non-JSON Content-Type") {
+					t.Fatalf("ErrorMessage = %q, want contains %q", resp.Body.ErrorMessage, "non-JSON Content-Type")
+				}
+			},
 		},
 		{
 			name: "no_content_204_returns_null",
@@ -170,13 +189,19 @@ func TestInvokeTool(t *testing.T) {
 				if resp == nil || resp.Body == nil {
 					t.Fatalf("nil response/body")
 				}
+				if resp.Body.IsError {
+					t.Fatalf(
+						"expected IsError=false for 204 success, got true (ErrorMessage=%q)",
+						resp.Body.ErrorMessage,
+					)
+				}
 				if resp.Body.Output != "null" {
 					t.Fatalf("Output = %q, want %q", resp.Body.Output, "null")
 				}
 			},
 		},
 		{
-			name: "custom_success_codes_mismatch_errors",
+			name: "custom_success_codes_mismatch_sets_is_error",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				// Return 200 while the tool requires 201.
 				w.WriteHeader(http.StatusOK)
@@ -187,8 +212,22 @@ func TestInvokeTool(t *testing.T) {
 				impl.Response.SuccessCodes = []int{http.StatusCreated}
 				return impl
 			},
-			args:            `{}`,
-			wantErrContains: "not in success set",
+			args: `{}`,
+			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatalf("InvokeTool error: %v", err)
+				}
+				if resp == nil || resp.Body == nil {
+					t.Fatalf("nil response/body")
+				}
+				if !resp.Body.IsError {
+					t.Fatalf("expected IsError=true for success-code mismatch")
+				}
+				if !strings.Contains(resp.Body.ErrorMessage, "not in success set") {
+					t.Fatalf("ErrorMessage = %q, want contains %q", resp.Body.ErrorMessage, "not in success set")
+				}
+			},
 		},
 		{
 			name: "error_mode_empty_suppresses_error_and_returns_empty_output",
@@ -211,6 +250,12 @@ func TestInvokeTool(t *testing.T) {
 				if resp == nil || resp.Body == nil {
 					t.Fatalf("nil response/body")
 				}
+				if resp.Body.IsError {
+					t.Fatalf(
+						"expected IsError=false when errorMode=empty, got true (ErrorMessage=%q)",
+						resp.Body.ErrorMessage,
+					)
+				}
 				if resp.Body.Output != "" {
 					t.Fatalf("Output = %q, want empty", resp.Body.Output)
 				}
@@ -227,7 +272,7 @@ func TestInvokeTool(t *testing.T) {
 			},
 		},
 		{
-			name: "timeout_override_errors",
+			name: "timeout_override_sets_is_error",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				// Sleep long enough to exceed override timeout.
 				time.Sleep(150 * time.Millisecond)
@@ -240,7 +285,22 @@ func TestInvokeTool(t *testing.T) {
 			httpOptions: &spec.InvokeHTTPOptions{
 				TimeoutMs: 20,
 			},
-			wantErrContains: "http.Do", // generic marker; actual error may vary
+			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatalf("InvokeTool error: %v", err)
+				}
+				if resp == nil || resp.Body == nil {
+					t.Fatalf("nil response/body")
+				}
+				if !resp.Body.IsError {
+					t.Fatalf("expected IsError=true for timeout")
+				}
+				// Generic marker; actual error text may vary but should mention the underlying http.Do.
+				if !strings.Contains(resp.Body.ErrorMessage, "http.Do") {
+					t.Fatalf("ErrorMessage = %q, want contains %q", resp.Body.ErrorMessage, "http.Do")
+				}
+			},
 		},
 	}
 
@@ -338,12 +398,6 @@ func TestInvokeTool(t *testing.T) {
 				}
 				return
 			}
-			if tc.wantErrContains != "" {
-				if err == nil || !strings.Contains(err.Error(), tc.wantErrContains) {
-					t.Fatalf("InvokeTool err = %v, want contains %q", err, tc.wantErrContains)
-				}
-				return
-			}
 
 			if tc.verify != nil {
 				tc.verify(t, resp, err)
@@ -355,6 +409,9 @@ func TestInvokeTool(t *testing.T) {
 			}
 			if resp == nil || resp.Body == nil {
 				t.Fatalf("nil response/body")
+			}
+			if resp.Body.IsError {
+				t.Fatalf("expected IsError=false, got true (ErrorMessage=%q)", resp.Body.ErrorMessage)
 			}
 			if resp.Body.Meta == nil {
 				t.Fatalf("meta is nil")
@@ -489,6 +546,12 @@ func TestInvokeTool_RequestBodyTemplating_PathQueryHeaderAuth(t *testing.T) {
 	if err != nil {
 		t.Fatalf("InvokeTool: %v", err)
 	}
+	if resp == nil || resp.Body == nil {
+		t.Fatalf("nil response/body")
+	}
+	if resp.Body.IsError {
+		t.Fatalf("expected IsError=false, got true (ErrorMessage=%q)", resp.Body.ErrorMessage)
+	}
 
 	var got map[string]any
 	if err := json.Unmarshal([]byte(resp.Body.Output), &got); err != nil {
@@ -511,15 +574,14 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 	type verifyFn func(t *testing.T, resp *spec.InvokeToolResponse, err error)
 
 	tests := []struct {
-		name            string
-		register        func(t *testing.T) string // returns funcName registered in the default registry
-		funcName        string                    // if register is nil, allows unknown func-name case
-		args            string
-		disableBundle   bool
-		disableTool     bool
-		wantErrIs       error
-		wantErrContains string
-		verify          verifyFn
+		name          string
+		register      func(t *testing.T) string // returns funcName registered in the default registry
+		funcName      string                    // if register is nil, allows unknown func-name case
+		args          string
+		disableBundle bool
+		disableTool   bool
+		wantErrIs     error
+		verify        verifyFn
 	}{
 		{
 			name: "echo_success",
@@ -557,6 +619,9 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 				if resp == nil || resp.Body == nil {
 					t.Fatalf("nil response/body")
 				}
+				if resp.Body.IsError {
+					t.Fatalf("expected IsError=false, got true (ErrorMessage=%q)", resp.Body.ErrorMessage)
+				}
 				if resp.Body.Meta == nil || resp.Body.Meta["type"] != "go" {
 					t.Fatalf("expected go meta")
 				}
@@ -573,7 +638,7 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid_input_type_rejected",
+			name: "invalid_input_type_sets_is_error",
 			register: func(t *testing.T) string {
 				t.Helper()
 				funcName := "github.com/ppipada/flexigpt-app/tests/" + sanitizeID(t.Name())
@@ -591,11 +656,28 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 				}
 				return funcName
 			},
-			args:            `{"times":"oops"}`, // wrong type for int -> strict decode should fail
-			wantErrContains: "invalid input",
+			args: `{"times":"oops"}`, // wrong type for int -> strict decode should fail
+			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatalf("InvokeTool error: %v", err)
+				}
+				if resp == nil || resp.Body == nil {
+					t.Fatalf("nil response/body")
+				}
+				if !resp.Body.IsError {
+					t.Fatalf("expected IsError=true for invalid input")
+				}
+				if !strings.Contains(resp.Body.ErrorMessage, "invalid input") {
+					t.Fatalf("ErrorMessage = %q, want contains %q", resp.Body.ErrorMessage, "invalid input")
+				}
+				if resp.Body.Meta == nil || resp.Body.Meta["type"] != "go" {
+					t.Fatalf("expected go meta")
+				}
+			},
 		},
 		{
-			name: "function_returns_error",
+			name: "function_returns_error_sets_is_error",
 			register: func(t *testing.T) string {
 				t.Helper()
 				funcName := "github.com/ppipada/flexigpt-app/tests/" + sanitizeID(t.Name())
@@ -614,15 +696,49 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 				}
 				return funcName
 			},
-			args:            `{"fail":true}`,
-			wantErrContains: "boom",
+			args: `{"fail":true}`,
+			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatalf("InvokeTool error: %v", err)
+				}
+				if resp == nil || resp.Body == nil {
+					t.Fatalf("nil response/body")
+				}
+				if !resp.Body.IsError {
+					t.Fatalf("expected IsError=true when function returns error")
+				}
+				if !strings.Contains(resp.Body.ErrorMessage, "boom") {
+					t.Fatalf("ErrorMessage = %q, want contains %q", resp.Body.ErrorMessage, "boom")
+				}
+				if resp.Body.Meta == nil || resp.Body.Meta["type"] != "go" {
+					t.Fatalf("expected go meta")
+				}
+			},
 		},
 		{
-			name:            "unknown_function",
-			register:        nil,
-			funcName:        "github.com/ppipada/flexigpt-app/tests/unknownFunc",
-			args:            `{}`,
-			wantErrContains: "unknown tool",
+			name:     "sets_is_error",
+			register: nil,
+			funcName: "github.com/ppipada/flexigpt-app/tests/unknownFunc",
+			args:     `{}`,
+			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatalf("InvokeTool error: %v", err)
+				}
+				if resp == nil || resp.Body == nil {
+					t.Fatalf("nil response/body")
+				}
+				if !resp.Body.IsError {
+					t.Fatalf("expected IsError=true for unknown function")
+				}
+				if !strings.Contains(resp.Body.ErrorMessage, "unknown tool") {
+					t.Fatalf("ErrorMessage = %q, want contains %q", resp.Body.ErrorMessage, "unknown tool")
+				}
+				if resp.Body.Meta == nil || resp.Body.Meta["type"] != "go" {
+					t.Fatalf("expected go meta")
+				}
+			},
 		},
 		{
 			name: "respects_context_timeout",
@@ -648,8 +764,25 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 				}
 				return funcName
 			},
-			args:            `{"sleepMs":200}`,
-			wantErrContains: "context deadline exceeded",
+			args: `{"sleepMs":200}`,
+			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatalf("InvokeTool error: %v", err)
+				}
+				if resp == nil || resp.Body == nil {
+					t.Fatalf("nil response/body")
+				}
+				if !resp.Body.IsError {
+					t.Fatalf("expected IsError=true for context timeout")
+				}
+				if !strings.Contains(resp.Body.ErrorMessage, "context deadline exceeded") {
+					t.Fatalf("ErrorMessage = %q, want contains %q", resp.Body.ErrorMessage, "context deadline exceeded")
+				}
+				if resp.Body.Meta == nil || resp.Body.Meta["type"] != "go" {
+					t.Fatalf("expected go meta")
+				}
+			},
 		},
 		{
 			name: "bundle_disabled",
@@ -761,12 +894,6 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 				}
 				return
 			}
-			if tc.wantErrContains != "" {
-				if err == nil || !strings.Contains(err.Error(), tc.wantErrContains) {
-					t.Fatalf("err = %v, want contains %q", err, tc.wantErrContains)
-				}
-				return
-			}
 			if tc.verify != nil {
 				tc.verify(t, resp, err)
 				return
@@ -774,7 +901,13 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 			if err != nil {
 				t.Fatalf("InvokeTool error: %v", err)
 			}
-			if resp == nil || resp.Body == nil || resp.Body.Meta["type"] != "go" {
+			if resp == nil || resp.Body == nil {
+				t.Fatalf("nil response/body")
+			}
+			if resp.Body.IsError {
+				t.Fatalf("expected IsError=false, got true (ErrorMessage=%q)", resp.Body.ErrorMessage)
+			}
+			if resp.Body.Meta == nil || resp.Body.Meta["type"] != "go" {
 				t.Fatalf("unexpected response/meta: %+v", resp)
 			}
 		})
@@ -896,6 +1029,9 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 			if resp == nil || resp.Body == nil {
 				t.Fatalf("nil response/body")
 			}
+			if resp.Body.IsError {
+				t.Fatalf("unexpected IsError=true for built-in tool: %q", resp.Body.ErrorMessage)
+			}
 			tc.verify(t, json.RawMessage(resp.Body.Output))
 		})
 	}
@@ -980,6 +1116,9 @@ func putBundle(
 // sanitizeID produces a slug-ish identifier from a test name for use in IDs, slugs and func names.
 func sanitizeID(s string) string {
 	s = strings.ToLower(s)
+	if len(s) > 48 {
+		s = s[:48]
+	}
 	var b strings.Builder
 	for _, r := range s {
 		switch {

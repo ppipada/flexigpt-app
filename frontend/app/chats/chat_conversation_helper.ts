@@ -114,6 +114,8 @@ function deriveToolOutputsFromInputs(inputs: InputUnion[] | undefined): UIToolOu
 			continue;
 		}
 
+		const isError = out.isError;
+
 		// Aggregate text from contents into a single rawOutput string.
 		let raw = '';
 		if (out.contents && out.contents.length > 0) {
@@ -126,6 +128,9 @@ function deriveToolOutputsFromInputs(inputs: InputUnion[] | undefined): UIToolOu
 			raw = parts.join('\n\n');
 		}
 
+		const summaryBase = formatToolOutputSummary(out.name);
+		const summary = isError && raw ? `Error: ${raw.split('\n')[0].slice(0, 80)}` : summaryBase;
+
 		const ui: UIToolOutput = {
 			id: out.id,
 			callID: out.callID,
@@ -133,10 +138,14 @@ function deriveToolOutputsFromInputs(inputs: InputUnion[] | undefined): UIToolOu
 			choiceID: out.choiceID,
 			// ToolType and ToolStoreChoiceType share the same string enum values.
 			type: out.type as unknown as ToolStoreChoiceType,
-			summary: formatToolOutputSummary(out.name),
+			summary,
 			rawOutput: raw,
-			// We cannot reliably reconstruct the original ToolStoreChoice from here.
+			isError,
+			errorMessage: isError && raw ? raw : undefined,
 			toolStoreChoice: undefined,
+			// We cannot reliably reconstruct the original ToolStoreChoice or arguments from here.
+			arguments: undefined,
+			webSearchToolCallItems: undefined,
 		};
 
 		uiOutputs.push(ui);
@@ -220,13 +229,6 @@ export function hydrateConversation(store: StoreConversation): Conversation {
 	} as Conversation;
 }
 
-/**
- * @public
- */
-export function getQuotedJSON(obj: any): string {
-	return '```json\n' + JSON.stringify(obj, null, 2) + '\n```';
-}
-
 function uiToolOutputToInferenceToolOutput(ui: UIToolOutput): ToolOutput | undefined {
 	// Only function/custom; skip webSearch for now.
 	if (ui.type !== ToolStoreChoiceType.Function && ui.type !== ToolStoreChoiceType.Custom) return undefined;
@@ -247,7 +249,7 @@ function uiToolOutputToInferenceToolOutput(ui: UIToolOutput): ToolOutput | undef
 		status: Status.Completed,
 		cacheControl: undefined,
 		name: ui.name,
-		isError: false,
+		isError: !!ui.isError,
 		signature: undefined,
 		contents,
 		webSearchToolOutputItems: undefined,
@@ -322,6 +324,10 @@ export function buildUserConversationMessageFromEditor(
 	return msg;
 }
 
+function getQuotedJSON(obj: any): string {
+	return '```json\n' + JSON.stringify(obj, null, 2) + '\n```';
+}
+
 function buildAssistantMessageFromResponse(
 	baseId: string,
 	modelParams: ModelParam,
@@ -334,11 +340,21 @@ function buildAssistantMessageFromResponse(
 		return undefined;
 	}
 
-	const outputs = resp.inferenceResponse.outputs ?? [];
-	const usage: InferenceUsage | undefined = resp.inferenceResponse.usage;
-	const error = resp.inferenceResponse.error;
+	const inf = resp.inferenceResponse;
+	const outputs = inf.outputs ?? [];
+	const usage: InferenceUsage | undefined = inf.usage;
+	const error = inf.error;
 
 	const { content, reasoningContents, toolCalls, toolOutputs } = deriveUIFieldsFromOutputs(outputs);
+
+	let details: string | undefined;
+	if (inf.debugDetails !== undefined && inf.debugDetails !== null) {
+		try {
+			details = getQuotedJSON(inf.debugDetails);
+		} catch {
+			// ok.
+		}
+	}
 
 	const msg: ConversationMessage = {
 		id,
@@ -349,16 +365,15 @@ function buildAssistantMessageFromResponse(
 		outputs,
 		usage,
 		error,
-		// UI-only fields:
 		content,
 		reasoningContents,
 		toolCalls,
 		toolOutputs,
+		details,
 	};
 
 	return msg;
 }
-
 export async function HandleCompletion(
 	provider: ProviderName,
 	modelParams: ModelParam,
@@ -404,9 +419,12 @@ export async function HandleCompletion(
 		// If we still have outputs, show them but annotate details with the error.
 		if (hasOutputs) {
 			const assistantMsg = buildAssistantMessageFromResponse(assistantPlaceholder.id, modelParams, resp);
-			if (assistantMsg) {
-				const details = JSON.stringify(inf.error, null, 2);
-				assistantMsg.details = ((assistantMsg.details ?? '') + '\n\n[Provider error]\n' + details).trim();
+			if (assistantMsg && inf.error) {
+				const errorBlock = getQuotedJSON(inf.error);
+
+				assistantMsg.details = assistantMsg.details
+					? `${assistantMsg.details}\n\n### Provider error\n${errorBlock}`
+					: `### Provider error\n${errorBlock}`;
 			}
 			return { responseMessage: assistantMsg, rawResponse: resp };
 		}
@@ -421,12 +439,34 @@ export async function HandleCompletion(
 	}
 }
 
-function getErrorStub(assistantPlaceholder: ConversationMessage, rawResponse: any, errorObj: any) {
-	const details = JSON.stringify(errorObj, null, 2);
-	log.error('provider completion failed', details);
+// chats/chat_conversation_helper.ts
+
+function getErrorStub(
+	assistantPlaceholder: ConversationMessage,
+	rawResponse: CompletionResponseBody | undefined,
+	errorObj: any
+) {
+	// Prefer backend debugDetails if present
+	const debug = rawResponse?.inferenceResponse?.debugDetails;
+	const parts: string[] = [];
+
+	if (debug !== undefined && debug !== null) {
+		parts.push('### Debug details', getQuotedJSON(debug));
+	}
+
+	if (errorObj !== undefined && errorObj !== null) {
+		parts.push('### Error', getQuotedJSON(errorObj));
+	}
+
+	const detailsMarkdown = parts.join('\n\n');
+
+	log.error('provider completion failed', detailsMarkdown);
 
 	assistantPlaceholder.content = (assistantPlaceholder.content || '') + '\n\n>Got error in API processing.';
-	assistantPlaceholder.details = details;
+	assistantPlaceholder.details = detailsMarkdown;
+	assistantPlaceholder.status = Status.Failed;
+	// Optionally keep the raw error on the message
+	assistantPlaceholder.error = errorObj;
 
-	return { responseMessage: assistantPlaceholder, rawResponse: rawResponse };
+	return { responseMessage: assistantPlaceholder, rawResponse };
 }

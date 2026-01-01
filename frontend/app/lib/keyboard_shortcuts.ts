@@ -9,13 +9,32 @@ interface ShortcutChord {
 	shift?: boolean;
 }
 
-enum ShortcutAction {
+export enum ShortcutAction {
+	// App / chat-level
 	newChat = 'newChat',
 	focusSearch = 'focusSearch',
 	focusInput = 'focusInput',
 	insertTemplate = 'insertTemplate',
 	insertTool = 'insertTool',
 	insertAttachment = 'insertAttachment',
+
+	// Editor – marks
+	editorBold = 'editorBold',
+	editorItalic = 'editorItalic',
+	editorUnderline = 'editorUnderline',
+	editorStrikethrough = 'editorStrikethrough',
+	editorHighlight = 'editorHighlight',
+	editorCode = 'editorCode',
+
+	// Editor – blocks
+	editorHeading = 'editorHeading',
+	editorBlockquote = 'editorBlockquote',
+
+	// Editor – other
+	editorEmoji = 'editorEmoji',
+	editorFloatingToolbar = 'editorFloatingToolbar',
+	editorUndo = 'editorUndo',
+	editorRedo = 'editorRedo',
 }
 
 interface ShortcutKeyEvent {
@@ -28,61 +47,201 @@ interface ShortcutKeyEvent {
 
 export type ShortcutConfig = Partial<Record<ShortcutAction, ShortcutChord>>;
 
-interface ShortcutDisplayItem {
+type ShortcutGroup = 'Chat' | 'Insert' | 'Editor';
+
+export interface ShortcutDisplayItem {
 	action: ShortcutAction;
 	/** Short, human-friendly action name */
 	label: string;
-	/** Formatted key combo, e.g. "⌘ + Shift + 'P'" */
+	/**
+	 * Formatted key combo or trigger description,
+	 * e.g. "⌘ + Shift + 'P'" or `Type ":" in the editor`
+	 */
 	keys: string;
-	/** Optional grouping if you ever want to separate them in the UI */
-	group: 'Chat' | 'Insert';
+	/** Optional grouping for the UI */
+	group: ShortcutGroup;
 	/** For stable ordering */
 	order: number;
 }
 
-// Default mappings; you can later load these from settings
+// Default mappings; you can later load these from settings.
+// NOTE: This contains only *app-level* shortcuts that we handle ourselves.
+// Plate editor shortcuts are displayed, but handled internally by Plate.
 export const defaultShortcutConfig: ShortcutConfig = {
 	// Global-chat actions
-	newChat: { key: 'n', ctrlOrMeta: true, shift: true }, // Mod+Shift+N
-	focusSearch: { key: 'f', ctrlOrMeta: true, shift: true }, // Mod+Shift+F
-	focusInput: { key: 'i', ctrlOrMeta: true, shift: true }, // Mod+Shift+I
+	[ShortcutAction.newChat]: { key: 'n', ctrlOrMeta: true, shift: true }, // Mod+Shift+N
+	[ShortcutAction.focusSearch]: { key: 'f', ctrlOrMeta: true, shift: true }, // Mod+Shift+F
+	[ShortcutAction.focusInput]: { key: 'i', ctrlOrMeta: true, shift: true }, // Mod+Shift+I
 
 	// Editor/insert actions
-	insertTemplate: { key: 'p', ctrlOrMeta: true, shift: true }, // Mod+Shift+P
-	insertTool: { key: 't', ctrlOrMeta: true, shift: true }, // Mod+Shift+T
-	insertAttachment: { key: 'a', ctrlOrMeta: true, shift: true }, // Mod+Shift+A
+	[ShortcutAction.insertTemplate]: { key: 'p', ctrlOrMeta: true, shift: true }, // Mod+Shift+P
+	[ShortcutAction.insertTool]: { key: 't', ctrlOrMeta: true, shift: true }, // Mod+Shift+T
+	[ShortcutAction.insertAttachment]: { key: 'a', ctrlOrMeta: true, shift: true }, // Mod+Shift+A
 };
 
-const ACTION_META: Record<ShortcutAction, Omit<ShortcutDisplayItem, 'action' | 'keys'>> = {
+type ConfigShortcutMeta = {
+	label: string;
+	group: ShortcutGroup;
+	order: number;
+	/** Backed by ShortcutConfig; key combo is configurable */
+	source: 'config';
+};
+
+type StaticShortcutMeta = {
+	label: string;
+	group: ShortcutGroup;
+	order: number;
+	/** Fixed key combo / trigger, handled internally by Plate */
+	source: 'static';
+	keys: string;
+};
+
+type ShortcutMeta = ConfigShortcutMeta | StaticShortcutMeta;
+
+/**
+ * Metadata for all shortcuts we want to show in the UI.
+ *
+ * - `source: 'config'`  → app-level shortcuts, driven by `ShortcutConfig` and `useChatShortcuts`
+ * - `source: 'static'` → Plate editor shortcuts (display only; Plate handles them)
+ */
+const ACTION_META: Record<ShortcutAction, ShortcutMeta> = {
+	// CHAT / APP-LEVEL SHORTCUTS (config-backed)
 	[ShortcutAction.newChat]: {
 		label: 'New chat',
 		group: 'Chat',
 		order: 10,
+		source: 'config',
 	},
 	[ShortcutAction.focusSearch]: {
 		label: 'Focus search',
 		group: 'Chat',
 		order: 20,
+		source: 'config',
 	},
 	[ShortcutAction.focusInput]: {
 		label: 'Focus input',
 		group: 'Chat',
 		order: 30,
+		source: 'config',
 	},
 	[ShortcutAction.insertTemplate]: {
 		label: 'Insert template',
 		group: 'Insert',
 		order: 40,
+		source: 'config',
 	},
 	[ShortcutAction.insertTool]: {
 		label: 'Add tool',
 		group: 'Insert',
 		order: 50,
+		source: 'config',
 	},
 	[ShortcutAction.insertAttachment]: {
 		label: 'Attach context',
 		group: 'Insert',
 		order: 60,
+		source: 'config',
+	},
+
+	// EDITOR – MARKS (Plate basic marks kit)
+	// BoldPlugin (default: mod+b)
+	[ShortcutAction.editorBold]: {
+		label: 'Bold',
+		group: 'Editor',
+		order: 100,
+		source: 'static',
+		keys: `${MOD_LABEL} + 'B'`,
+	},
+	// ItalicPlugin (default: mod+i)
+	[ShortcutAction.editorItalic]: {
+		label: 'Italic',
+		group: 'Editor',
+		order: 110,
+		source: 'static',
+		keys: `${MOD_LABEL} + 'I'`,
+	},
+	// UnderlinePlugin (default: mod+u)
+	[ShortcutAction.editorUnderline]: {
+		label: 'Underline',
+		group: 'Editor',
+		order: 120,
+		source: 'static',
+		keys: `${MOD_LABEL} + 'U'`,
+	},
+	// StrikethroughPlugin.configure({ shortcuts: { toggle: { keys: 'mod+shift+x' } } })
+	[ShortcutAction.editorStrikethrough]: {
+		label: 'Strikethrough',
+		group: 'Editor',
+		order: 130,
+		source: 'static',
+		keys: `${MOD_LABEL} + Shift + 'X'`,
+	},
+	// HighlightPlugin.configure({ shortcuts: { toggle: { keys: 'mod+shift+h' } } })
+	[ShortcutAction.editorHighlight]: {
+		label: 'Highlight',
+		group: 'Editor',
+		order: 140,
+		source: 'static',
+		keys: `${MOD_LABEL} + Shift + 'H'`,
+	},
+	// CodePlugin.configure({ shortcuts: { toggle: { keys: 'mod+e' } } })
+	[ShortcutAction.editorCode]: {
+		label: 'Inline code',
+		group: 'Editor',
+		order: 150,
+		source: 'static',
+		keys: `${MOD_LABEL} + 'E'`,
+	},
+
+	// EDITOR – BLOCKS (Plate basic blocks kit)
+	// H1Plugin.configure({ shortcuts: { toggle: { keys: 'mod+alt+1' } } })
+	[ShortcutAction.editorHeading]: {
+		label: 'Heading 1 to 6',
+		group: 'Editor',
+		order: 200,
+		source: 'static',
+		keys: `${MOD_LABEL} + Alt + '1 to 6'`,
+	},
+	// BlockquotePlugin.configure({ shortcuts: { toggle: { keys: 'mod+shift+period' } } })
+	[ShortcutAction.editorBlockquote]: {
+		label: 'Blockquote',
+		group: 'Editor',
+		order: 260,
+		source: 'static',
+		keys: `${MOD_LABEL} + Shift + '.'`,
+	},
+
+	// EDITOR – OTHER (Emoji, floating toolbar, undo/redo, etc.)
+	// EmojiKit – type ":" to open emoji suggestions
+	[ShortcutAction.editorEmoji]: {
+		label: 'Emoji picker',
+		group: 'Editor',
+		order: 300,
+		source: 'static',
+		keys: `Type ":" in the editor`,
+	},
+	// FloatingToolbarKit – appears when you select text
+	[ShortcutAction.editorFloatingToolbar]: {
+		label: 'Floating toolbar',
+		group: 'Editor',
+		order: 310,
+		source: 'static',
+		keys: 'Select text',
+	},
+	// Undo / Redo (Plate/Slate defaults, plus your note: Ctrl/Cmd+Z/Y)
+	[ShortcutAction.editorUndo]: {
+		label: 'Undo',
+		group: 'Editor',
+		order: 320,
+		source: 'static',
+		keys: `${MOD_LABEL} + 'Z'`,
+	},
+	[ShortcutAction.editorRedo]: {
+		label: 'Redo',
+		group: 'Editor',
+		order: 330,
+		source: 'static',
+		keys: `${MOD_LABEL} + 'Y'`,
 	},
 };
 
@@ -114,6 +273,10 @@ export function formatShortcut(shortcut?: ShortcutChord): string {
 /**
  * Single global shortcuts hook. Attach once at the chat page level.
  * It uses the config map so you can swap mappings in the future.
+ *
+ * NOTE: This only handles actions that are actually present in `config`
+ * (i.e. the app-level shortcuts). Plate editor shortcuts are **not**
+ * wired through this hook; they are handled by Plate internally.
  */
 export function useChatShortcuts({ config, isBusy, handlers }: UseShortcutsOptions) {
 	const ref = useRef({ config, isBusy, handlers });
@@ -134,7 +297,7 @@ export function useChatShortcuts({ config, isBusy, handlers }: UseShortcutsOptio
 				const handler = handlers[action];
 				if (!handler) continue;
 
-				if (!matchShortcut(event, chord)) continue;
+				if (!matchShortcut(event as ShortcutKeyEvent, chord)) continue;
 
 				// Example of busy-sensitive behavior: no new chat while busy
 				if (isBusy && action === ShortcutAction.newChat) return;
@@ -155,14 +318,18 @@ export function useChatShortcuts({ config, isBusy, handlers }: UseShortcutsOptio
 }
 
 /**
- * Build a flat list of display items for all shortcuts that are configured.
- * This is what UI components should consume.
+ * Build a flat list of display items for all shortcuts.
+ *
+ * - Includes configurable app-level shortcuts (from `config`).
+ * - Also includes static Plate editor shortcuts (marks, blocks, emoji, etc.).
+ *
+ * This is what UI components should consume for a "Keyboard shortcuts" dialog.
  */
 export function buildShortcutDisplay(config: ShortcutConfig): ShortcutDisplayItem[] {
 	const items: ShortcutDisplayItem[] = [];
 
-	(Object.entries(ACTION_META) as [ShortcutAction, (typeof ACTION_META)[ShortcutAction]][]).forEach(
-		([action, meta]) => {
+	(Object.entries(ACTION_META) as [ShortcutAction, ShortcutMeta][]).forEach(([action, meta]) => {
+		if (meta.source === 'config') {
 			const chord = config[action];
 			if (!chord) return;
 			const keys = formatShortcut(chord);
@@ -175,8 +342,17 @@ export function buildShortcutDisplay(config: ShortcutConfig): ShortcutDisplayIte
 				order: meta.order,
 				keys,
 			});
+		} else {
+			// Static Plate/inline shortcuts – always shown
+			items.push({
+				action,
+				label: meta.label,
+				group: meta.group,
+				order: meta.order,
+				keys: meta.keys,
+			});
 		}
-	);
+	});
 
 	// Stable order
 	items.sort((a, b) => a.order - b.order);
