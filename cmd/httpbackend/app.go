@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/ppipada/flexigpt-app/pkg/inferencewrapper"
+	"github.com/ppipada/inference-go/debugclient"
 
 	conversationStore "github.com/ppipada/flexigpt-app/pkg/conversation/store"
 	modelpresetStore "github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
@@ -187,7 +188,17 @@ func (a *BackendApp) initToolStore() {
 }
 
 func (a *BackendApp) initProviderSet() {
-	p, err := inferencewrapper.NewProviderSetAPI(slog.Default(), a.toolStoreAPI)
+	p, err := inferencewrapper.NewProviderSetAPI(
+		a.toolStoreAPI,
+		inferencewrapper.WithLogger(slog.Default()),
+		inferencewrapper.WithDebugConfig(&debugclient.DebugConfig{
+			Disable:                 false,
+			DisableRequestBody:      false,
+			DisableResponseBody:     false,
+			DisableContentStripping: false,
+			LogToSlog:               false,
+		}),
+	)
 	if err != nil {
 		slog.Error(
 			"failed to initialize provider set",

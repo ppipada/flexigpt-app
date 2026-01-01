@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"sync"
 
+	"github.com/ppipada/inference-go/debugclient"
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
@@ -27,7 +28,17 @@ func InitProviderSetWrapper(
 	ps *ProviderSetWrapper,
 	ts *toolStore.ToolStore,
 ) error {
-	p, err := inferencewrapper.NewProviderSetAPI(slog.Default(), ts)
+	p, err := inferencewrapper.NewProviderSetAPI(
+		ts,
+		inferencewrapper.WithLogger(slog.Default()),
+		inferencewrapper.WithDebugConfig(&debugclient.DebugConfig{
+			Disable:                 false,
+			DisableRequestBody:      false,
+			DisableResponseBody:     false,
+			DisableContentStripping: false,
+			LogToSlog:               false,
+		}),
+	)
 	if err != nil {
 		return errors.Join(err, errors.New("invalid default provider"))
 	}

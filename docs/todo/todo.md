@@ -5,7 +5,7 @@
 - [ ] edit and save template doesn't work. says template slug already exists.
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
-- [ ] Need to migrate to content block array to support citations in conversation turns.
+- [x] Need to migrate to content block array to support citations in conversation turns.
 - [x] migrate to inference go
   - [x] adopt any types that can be adopted
   - [x] rewrite to remove build step in current code
@@ -16,6 +16,7 @@
   - [x] Check if tool output is set properly in chat history.
   - [x] also may want to have a hydrate chat function that creates a proper chat from stored chat and then set.
   - [x] we return err from fetch completion which results in wails throwing error. what we should be doing is setting error object and then sending back with err nil.
+- [ ] typing ":" opens something in platejs.
 
 ## Features
 

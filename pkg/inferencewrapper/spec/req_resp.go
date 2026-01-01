@@ -54,10 +54,12 @@ type CompletionRequestBody struct {
 	//         the InputUnion for this turn.
 	Current conversationSpec.ConversationMessage `json:"current"`
 
-	// Additional tool-store handles the UI wants to enable for this call.
-	// The aggregator will hydrate any missing ToolChoice definitions from
-	// tool-store, but if you already provide ToolChoices on History or
-	// Current, those will be reused without re-hydration.
+	// ToolStoreChoices is the set of tool-store handles that should be enabled
+	// for *this call*.
+	//
+	// The aggregator always hydrates ToolChoices from tool-store based on this
+	// slice; it does NOT infer tools from History[i].ToolChoices or Current.ToolChoices.
+	// (Those are persisted for UI/analytics only.)
 	ToolStoreChoices []toolSpec.ToolStoreChoice `json:"toolStoreChoices,omitempty"`
 }
 

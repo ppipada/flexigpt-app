@@ -173,7 +173,7 @@ func extractFTS(fullPath string, m map[string]any) map[string]string {
 		var ioList []any
 		if inList, ok := msg["inputs"].([]any); ok {
 			ioList = inList
-		} else if outList, ok := msg["inputs"].([]any); ok {
+		} else if outList, ok := msg["outputs"].([]any); ok {
 			ioList = outList
 		}
 		if len(ioList) == 0 {

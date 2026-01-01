@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/ppipada/inference-go"
+	"github.com/ppipada/inference-go/debugclient"
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
 	"github.com/ppipada/mapstore-go/uuidv7filename"
 
@@ -27,35 +28,66 @@ import (
 //   - attachment/tool hydration,
 //   - mapping Conversation+CurrentTurn -> inference-go FetchCompletionRequest.
 type ProviderSetAPI struct {
-	inner     *inference.ProviderSetAPI
-	toolStore *toolStore.ToolStore
+	inner       *inference.ProviderSetAPI
+	toolStore   *toolStore.ToolStore
+	logger      *slog.Logger
+	debugConfig *debugclient.DebugConfig
 }
 
-// NewProviderSetAPI creates a new aggregator.
-//
-// logger: optional slog logger used by inference-go (may be nil).
-// ts:     tool store used to hydrate ToolChoices when needed.
-// opts:   additional inference-go ProviderSetOptions (e.g. WithDebugClientBuilder).
-func NewProviderSetAPI(
-	logger *slog.Logger,
-	ts *toolStore.ToolStore,
-	opts ...inference.ProviderSetOption,
-) (*ProviderSetAPI, error) {
-	allOpts := make([]inference.ProviderSetOption, 0, len(opts)+1)
-	if logger != nil {
-		allOpts = append(allOpts, inference.WithLogger(logger))
+type ProviderSetOption func(*ProviderSetAPI)
+
+func WithLogger(logger *slog.Logger) ProviderSetOption {
+	return func(ps *ProviderSetAPI) {
+		ps.logger = logger
 	}
-	allOpts = append(allOpts, opts...)
+}
+
+func WithDebugConfig(debugConfig *debugclient.DebugConfig) ProviderSetOption {
+	return func(ps *ProviderSetAPI) {
+		ps.debugConfig = debugConfig
+	}
+}
+
+// NewProviderSetAPI creates a new ProviderSetAPI wrapper.
+//
+//   - ts:   tool store used to hydrate ToolChoices when needed.
+//   - opts: functional options for configuring the wrapper (e.g. WithLogger, WithDebugConfig).
+func NewProviderSetAPI(
+	ts *toolStore.ToolStore,
+	opts ...ProviderSetOption,
+) (*ProviderSetAPI, error) {
+	if ts == nil {
+		return nil, errors.New("no tool store provided to inference wrapper provider set")
+	}
+	ps := &ProviderSetAPI{
+		toolStore: ts,
+	}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(ps)
+		}
+	}
+	allOpts := make([]inference.ProviderSetOption, 0)
+	if ps.logger == nil {
+		ps.logger = slog.Default()
+	}
+	allOpts = append(allOpts, inference.WithLogger(ps.logger))
+	if ps.debugConfig != nil {
+		allOpts = append(allOpts,
+			inference.WithDebugClientBuilder(func(p inferencegoSpec.ProviderParam) inferencegoSpec.CompletionDebugger {
+				// Here we enable for all providers. Possible to give provider specific options later.
+				return debugclient.NewHTTPCompletionDebugger(ps.debugConfig)
+			}),
+		)
+	}
 
 	inner, err := inference.NewProviderSetAPI(allOpts...)
 	if err != nil {
 		return nil, err
 	}
+	ps.inner = inner
 
-	return &ProviderSetAPI{
-		inner:     inner,
-		toolStore: ts,
-	}, nil
+	return ps, nil
 }
 
 // AddProvider forwards to inference-go ProviderSetAPI.AddProvider.
@@ -77,7 +109,7 @@ func (ps *ProviderSetAPI) AddProvider(
 	if _, err := ps.inner.AddProvider(ctx, req.Provider, cfg); err != nil {
 		return nil, err
 	}
-	slog.Info("add provider", "name", req.Provider)
+	ps.logger.Info("add provider", "name", req.Provider)
 	return &spec.AddProviderResponse{}, nil
 }
 
@@ -92,7 +124,7 @@ func (ps *ProviderSetAPI) DeleteProvider(
 	if err := ps.inner.DeleteProvider(ctx, req.Provider); err != nil {
 		return nil, err
 	}
-	slog.Info("deleteProvider", "name", req.Provider)
+	ps.logger.Info("deleteProvider", "name", req.Provider)
 	return &spec.DeleteProviderResponse{}, nil
 }
 
@@ -198,30 +230,32 @@ func (ps *ProviderSetAPI) FetchCompletion(
 func (ps *ProviderSetAPI) resolveModelParam(
 	body *spec.CompletionRequestBody,
 ) (*inferencegoSpec.ModelParam, error) {
+	var mp *inferencegoSpec.ModelParam
+	defaultMaxPromptTokens := 8000
 	if body.ModelParam != nil {
-		cp := *body.ModelParam
-		return &cp, nil
-	}
-	// Look backwards through history for the last non-nil ModelParam.
-	for i := len(body.History) - 1; i >= 0; i-- {
-		if body.History[i].ModelParam != nil {
-			cp := *body.History[i].ModelParam
-			return &cp, nil
+		mp = body.ModelParam
+	} else {
+		for i := len(body.History) - 1; i >= 0; i-- {
+			if body.History[i].ModelParam != nil {
+				mp = body.History[i].ModelParam
+				break
+			}
 		}
 	}
-	return &inferencegoSpec.ModelParam{}, nil
+	if mp == nil {
+		return nil, errors.New("no valid modelparam found")
+	}
+
+	if mp.MaxPromptLength == 0 {
+		mp.MaxPromptLength = defaultMaxPromptTokens
+	}
+
+	return mp, nil
 }
 
 // buildInputs flattens History + Current into a single InputUnion slice.
-//
-// For History:
-//   - If msg.Inputs/Outputs are non-empty, we just replay them in order.
-//
-// For Current:
-//   - If Current.Inputs is non-empty, we replay them as-is.
-//   - Otherwise, we build one InputKindInputMessage from:
-//   - Current.Messages (user text),
-//   - Current.Attachments (hydrated to text/image/file blocks).
+// Attachments are always built from top level param and added to the union.
+// If the caller hydrates it then there is a possibility of duplicates.
 func (ps *ProviderSetAPI) buildInputs(
 	ctx context.Context,
 	body *spec.CompletionRequestBody,
@@ -336,13 +370,6 @@ func outputToInput(o inferencegoSpec.OutputUnion) inferencegoSpec.InputUnion {
 	}
 }
 
-// buildContentItemsFromTurn builds InputOutputContentItemUnion list for the
-// current user turn from its Messages (text only) and Attachments.
-//
-// Attachment rules:
-//   - If Attachment.ContentBlock is already present, we reuse it.
-//   - Otherwise we call BuildContentBlocks WITHOUT ForceFetch, so any
-//     existing ContentBlock is kept and only missing ones are hydrated.
 func buildContentItemsFromAttachments(
 	ctx context.Context,
 	turn *conversationSpec.ConversationMessage,
