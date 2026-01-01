@@ -63,7 +63,7 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 	 * Send-message
 	 * ------------------------------------------------------------------ */
 	const handleSubmitMessage = async (payload: EditorSubmitPayload) => {
-		return onSend(payload, chatOptions);
+		onSend(payload, chatOptions);
 	};
 
 	useImperativeHandle(ref, () => ({

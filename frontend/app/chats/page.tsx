@@ -52,7 +52,7 @@ function initConversationMessage(role: RoleEnum): ConversationMessage {
 		id: d.toISOString(),
 		createdAt: new Date(),
 		role: role,
-		status: Status.InProgress,
+		status: Status.None,
 		content: '',
 	};
 }

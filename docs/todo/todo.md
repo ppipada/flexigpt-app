@@ -5,6 +5,7 @@
 - [ ] edit and save template doesn't work. says template slug already exists.
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
+- [ ] reasoning content has status attached in input even though output did not have one
 
 ## Features
 

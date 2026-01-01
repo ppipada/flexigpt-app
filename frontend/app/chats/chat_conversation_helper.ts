@@ -277,7 +277,7 @@ export function buildUserConversationMessageFromEditor(
 	const inputMessage: InputOutputContent = {
 		id,
 		role: RoleEnum.User,
-		status: Status.Completed,
+		status: Status.None,
 		contents,
 	};
 
@@ -316,7 +316,7 @@ export function buildUserConversationMessageFromEditor(
 		id,
 		createdAt: now,
 		role: RoleEnum.User,
-		status: Status.Completed,
+		status: Status.None,
 		inputs,
 		attachments,
 		toolStoreChoices,
@@ -359,11 +359,12 @@ function buildAssistantMessageFromResponse(
 		}
 	}
 
+	const s = error ? Status.Failed : Status.Completed;
 	const msg: ConversationMessage = {
 		id,
 		createdAt: now,
 		role: RoleEnum.Assistant,
-		status: error ? Status.Failed : Status.Completed,
+		status: s,
 		modelParam: modelParams,
 		outputs,
 		usage,

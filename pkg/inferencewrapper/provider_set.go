@@ -310,7 +310,7 @@ func (ps *ProviderSetAPI) buildInputs(
 			inputMsg := inferencegoSpec.InputOutputContent{
 				ID:       "",
 				Role:     inferencegoSpec.RoleUser,
-				Status:   inferencegoSpec.StatusCompleted,
+				Status:   inferencegoSpec.StatusNone,
 				Contents: msgContentItems,
 			}
 			currentOut = append(currentOut, inferencegoSpec.InputUnion{

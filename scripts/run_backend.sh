@@ -3,7 +3,7 @@
 export SERVICE_HOST="localhost"
 export SERVICE_PORT=8080
 export SERVICE_SETTINGS_DIR_PATH="./out/settings"
-export SERVICE_CONVERSATIONS_DIR_PATH="./out/conversations"
+export SERVICE_CONVERSATIONS_DIR_PATH="./out/conversationsv1"
 export SERVICE_MODEL_PRESETS_DIR_PATH="./out/modelpresets"
 export SERVICE_PROMPT_TEMPLATES_DIR_PATH="./out/prompttemplates"
 export SERVICE_TOOLS_DIR_PATH="./out/tools"

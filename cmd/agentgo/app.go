@@ -50,7 +50,7 @@ func NewApp() *App {
 	app.dataBasePath = filepath.Join(xdg.DataHome, strings.ToLower(AppTitle))
 
 	app.settingsDirPath = filepath.Join(app.dataBasePath, "settings")
-	app.conversationsDirPath = filepath.Join(app.dataBasePath, "conversations")
+	app.conversationsDirPath = filepath.Join(app.dataBasePath, "conversationsv1")
 	app.modelPresetsDirPath = filepath.Join(app.dataBasePath, "modelpresets")
 	app.promptsDirPath = filepath.Join(app.dataBasePath, "prompttemplates")
 	app.toolsDirPath = filepath.Join(app.dataBasePath, "tools")

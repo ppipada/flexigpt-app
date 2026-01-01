@@ -24,6 +24,7 @@ export enum ReasoningLevel {
 }
 
 export enum Status {
+	None = '',
 	InProgress = 'inProgress',
 	Completed = 'completed',
 	Incomplete = 'incomplete',
