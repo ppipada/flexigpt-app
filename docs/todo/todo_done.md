@@ -665,3 +665,16 @@
 
 - [x] 5.1 codex max, deepseek 3.2, 5.2
 - [x] Can now introduce a independent per message thinking block and manage it as separate input block in the api
+
+- [x] Need to migrate to content block array to support citations in conversation turns.
+- [x] migrate to inference go
+  - [x] adopt any types that can be adopted
+  - [x] rewrite to remove build step in current code
+  - [x] move the attachments hydration in prep step in current code
+  - [x] think through input type and conversation storage type
+    - [x] this and new inference api adoption would need to be hand in hand
+  - [x] UIToolOutput and invoke tool needs to handle error response and bool
+  - [x] Check if tool output is set properly in chat history.
+  - [x] also may want to have a hydrate chat function that creates a proper chat from stored chat and then set.
+  - [x] we return err from fetch completion which results in wails throwing error. what we should be doing is setting error object and then sending back with err nil.
+- [x] typing ":" opens something in platejs.
