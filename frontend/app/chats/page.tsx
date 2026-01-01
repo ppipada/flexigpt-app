@@ -20,7 +20,6 @@ import { getUUIDv7 } from '@/lib/uuid_utils';
 import { useAtBottom } from '@/hooks/use_at_bottom';
 
 import { conversationStoreAPI } from '@/apis/baseapi';
-import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
 
 import { ButtonScrollToBottom } from '@/components/button_scroll_to_bottom';
 import { PageFrame } from '@/components/page_frame';
@@ -33,6 +32,7 @@ import {
 import { InputBox, type InputBoxHandle } from '@/chats/chat_input_box';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/chat_input_editor';
 import { ChatNavBar, type ChatNavBarHandle } from '@/chats/chat_navbar';
+import { type ChatOption, DefaultChatOptions } from '@/chats/chat_option_helper';
 import { ChatMessage } from '@/chats/messages/message';
 
 function initConversation(title = 'New Conversation'): Conversation {

@@ -1,10 +1,9 @@
-import type { ILogger } from '@/spec/logger';
-
 import { IS_WAILS_PLATFORM } from '@/lib/features';
 
 import type {
 	IBackendAPI,
 	IConversationStoreAPI,
+	ILogger,
 	IModelPresetStoreAPI,
 	IPromptStoreAPI,
 	IProviderSetAPI,

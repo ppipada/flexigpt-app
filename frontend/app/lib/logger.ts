@@ -1,14 +1,5 @@
-export interface ILogger {
-	log(...args: unknown[]): void;
-	error(...args: unknown[]): void;
-	info(...args: unknown[]): void;
-	debug(...args: unknown[]): void;
-	warn(...args: unknown[]): void;
-}
+import type { ILogger } from '@/apis/interface';
 
-/**
- * @public
- */
 export const noopLogger: ILogger = {
 	log: (..._args: unknown[]) => {},
 	error: (..._args: unknown[]) => {},
@@ -17,9 +8,6 @@ export const noopLogger: ILogger = {
 	warn: (..._args: unknown[]) => {},
 };
 
-/**
- * @public
- */
 export const consoleLogger: ILogger = {
 	log: (...args: unknown[]) => {
 		console.log(...args);

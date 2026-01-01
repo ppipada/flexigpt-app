@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import prettier from 'eslint-plugin-prettier';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import react from 'eslint-plugin-react';
+import tailwindCanonicalClasses from 'eslint-plugin-tailwind-canonical-classes';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import path from 'path';
@@ -24,6 +25,7 @@ export default defineConfig(
 		plugins: {
 			prettier,
 			react,
+			'tailwind-canonical-classes': tailwindCanonicalClasses,
 		},
 		languageOptions: {
 			parserOptions: {
@@ -116,6 +118,12 @@ export default defineConfig(
 						// Use path.resolve to get the absolute path to the .prettierignore file
 						ignorePath: path.resolve(__dirname, '../.prettierignore'),
 					},
+				},
+			],
+			'tailwind-canonical-classes/tailwind-canonical-classes': [
+				'error',
+				{
+					cssPath: './app/globals.css',
 				},
 			],
 			// // There is some issue with daisyui classname detection with eslint tailwind 4 beta

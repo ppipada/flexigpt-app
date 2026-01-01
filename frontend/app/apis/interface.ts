@@ -1,5 +1,4 @@
-import type { Attachment, FileFilter } from '@/spec/attachment';
-import type { DirectoryAttachmentsResult } from '@/spec/backend';
+import type { Attachment, DirectoryAttachmentsResult, FileFilter } from '@/spec/attachment';
 import type { ConversationSearchItem, StoreConversation, StoreConversationMessage } from '@/spec/conversation';
 import type { CompletionResponseBody, ModelParam } from '@/spec/inference';
 import type {
@@ -26,6 +25,14 @@ import type {
 	ToolListItem,
 	ToolStoreChoice,
 } from '@/spec/tool';
+
+export interface ILogger {
+	log(...args: unknown[]): void;
+	error(...args: unknown[]): void;
+	info(...args: unknown[]): void;
+	debug(...args: unknown[]): void;
+	warn(...args: unknown[]): void;
+}
 
 export interface IBackendAPI {
 	ping: () => Promise<string>;

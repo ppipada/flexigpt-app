@@ -16,8 +16,8 @@ import { useMenuStore } from '@ariakit/react';
 import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
-import { type Attachment, AttachmentKind, type AttachmentMode, type UIAttachment } from '@/spec/attachment';
-import type { DirectoryAttachmentsResult } from '@/spec/backend';
+import type { Attachment, AttachmentMode, DirectoryAttachmentsResult, UIAttachment } from '@/spec/attachment';
+import { AttachmentKind } from '@/spec/attachment';
 import type { ToolCallBinding } from '@/spec/inference';
 import type { ToolStoreChoice, UIToolAttachedChoice, UIToolCallChip, UIToolOutput } from '@/spec/tool';
 

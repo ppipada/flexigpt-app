@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
-import type { ChatOption } from '@/apis/chatoption_helper';
+import type { ChatOption } from '@/chats/chat_option_helper';
 
 type AdvancedParamsModalProps = {
 	isOpen: boolean;

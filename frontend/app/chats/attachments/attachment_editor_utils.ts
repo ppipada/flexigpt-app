@@ -1,11 +1,5 @@
-import {
-	type Attachment,
-	AttachmentErrorReason,
-	AttachmentKind,
-	AttachmentMode,
-	type UIAttachment,
-} from '@/spec/attachment';
-import type { DirectoryOverflowInfo } from '@/spec/backend';
+import type { Attachment, DirectoryOverflowInfo, UIAttachment } from '@/spec/attachment';
+import { AttachmentErrorReason, AttachmentKind, AttachmentMode } from '@/spec/attachment';
 
 /**
  * @public

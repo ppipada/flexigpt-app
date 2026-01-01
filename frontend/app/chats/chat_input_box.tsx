@@ -5,8 +5,6 @@ import type { ToolStoreChoice, UIToolCallChip } from '@/spec/tool';
 
 import type { ShortcutConfig } from '@/lib/keyboard_shortcuts';
 
-import { type ChatOption, DefaultChatOptions } from '@/apis/chatoption_helper';
-
 import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
 
 import { AssistantContextBar } from '@/chats/assitantcontexts/context_bar';
@@ -16,6 +14,7 @@ import {
 	type EditorExternalMessage,
 	type EditorSubmitPayload,
 } from '@/chats/chat_input_editor';
+import { type ChatOption, DefaultChatOptions } from '@/chats/chat_option_helper';
 
 export interface InputBoxHandle {
 	getChatOptions: () => ChatOption;

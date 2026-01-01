@@ -143,7 +143,7 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
 				</div>
 
 				<div
-					className="flex min-h-[250px] w-full cursor-zoom-in items-center justify-center overflow-auto p-1 text-center"
+					className="flex min-h-65 w-full cursor-zoom-in items-center justify-center overflow-auto p-1 text-center"
 					onClick={() => {
 						if (!error) {
 							setZoomOpen(true);

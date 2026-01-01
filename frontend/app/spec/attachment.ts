@@ -133,6 +133,22 @@ export interface FileFilter {
 	Extensions: string[];
 }
 
+export interface DirectoryOverflowInfo {
+	dirPath: string;
+	relativePath: string;
+	fileCount: number;
+	partial: boolean;
+}
+
+export interface DirectoryAttachmentsResult {
+	dirPath: string;
+	attachments: Attachment[];
+	overflowDirs: DirectoryOverflowInfo[];
+	maxFiles: number;
+	totalSize: number;
+	hasMore: boolean;
+}
+
 export enum AttachmentErrorReason {
 	TooLargeSingle = 'too-large-single',
 	TooLargeTotal = 'too-large-total',

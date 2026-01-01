@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp, FiEdit2, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
-import { TOOL_INVOKE_CHAR } from '@/spec/command';
 // You need to implement this
 
 import { type Tool, type ToolBundle, ToolImplOutputKind, ToolImplType } from '@/spec/tool';
@@ -231,10 +230,7 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 								{localTools.map(tool => (
 									<tr key={tool.id} className="hover:bg-base-300">
 										<td>{tool.displayName}</td>
-										<td>
-											{TOOL_INVOKE_CHAR}
-											{tool.slug}
-										</td>
+										<td>{tool.slug}</td>
 										<td className="text-center align-middle">
 											<input
 												type="checkbox"

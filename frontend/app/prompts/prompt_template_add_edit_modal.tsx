@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
-import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/spec/command';
 import { PromptRoleEnum, type PromptTemplate } from '@/spec/prompt';
 
 import { omitManyKeys } from '@/lib/obj_utils';
@@ -115,19 +114,13 @@ export function AddEditPromptTemplateModal({
 		}
 
 		if (field === 'slug') {
-			if (v.startsWith(PROMPT_TEMPLATE_INVOKE_CHAR)) {
-				newErrs.slug = `Do not prefix with "${PROMPT_TEMPLATE_INVOKE_CHAR}".`;
+			const err = validateSlug(v);
+			if (err) {
+				newErrs.slug = err;
 			} else {
-				const err = validateSlug(v);
-				if (err) {
-					newErrs.slug = err;
-				} else {
-					const clash = existingTemplates.some(
-						t => t.template.slug === v && t.template.id !== initialData?.template.id
-					);
-					if (clash) newErrs.slug = 'Slug already in use.';
-					else newErrs = omitManyKeys(newErrs, ['slug']);
-				}
+				const clash = existingTemplates.some(t => t.template.slug === v && t.template.id !== initialData?.template.id);
+				if (clash) newErrs.slug = 'Slug already in use.';
+				else newErrs = omitManyKeys(newErrs, ['slug']);
 			}
 		} else if (field === 'tags') {
 			const err = validateTags(val);
@@ -266,18 +259,12 @@ export function AddEditPromptTemplateModal({
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Slug*</span>
-								<span
-									className="label-text-alt tooltip tooltip-right"
-									data-tip={`Without "${PROMPT_TEMPLATE_INVOKE_CHAR}" prefix`}
-								>
+								<span className="label-text-alt tooltip tooltip-right" data-tip={`Short user friendly command`}>
 									<FiHelpCircle size={12} />
 								</span>
 							</label>
 							<div className="col-span-9">
 								<div className="relative">
-									<span className="text-neutral-custom absolute top-1/2 left-3 -translate-y-1/2">
-										{PROMPT_TEMPLATE_INVOKE_CHAR}
-									</span>
 									<input
 										type="text"
 										name="slug"

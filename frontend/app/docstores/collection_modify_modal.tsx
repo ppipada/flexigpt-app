@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiX } from 'react-icons/fi';
 
-import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/spec/command';
 import type { Collection } from '@/spec/docstore';
 
 import { omitManyKeys } from '@/lib/obj_utils';
@@ -68,11 +67,6 @@ export function ModifyCollectionModal({
 
 		if (!v) {
 			nextErrors[field] = 'This field is required';
-			return nextErrors;
-		}
-
-		if (field === 'command' && v.startsWith(DOCUMENT_COLLECTION_INVOKE_CHAR)) {
-			nextErrors.command = `Command should not start with ${DOCUMENT_COLLECTION_INVOKE_CHAR}`;
 			return nextErrors;
 		}
 
@@ -180,9 +174,6 @@ export function ModifyCollectionModal({
 								<span className="label-text text-sm">Command*</span>
 							</label>
 							<div className="relative">
-								<span className="text-neutral-custom absolute top-1/2 left-3 -translate-y-1/2 transform">
-									{DOCUMENT_COLLECTION_INVOKE_CHAR}
-								</span>
 								<input
 									type="text"
 									name="command"

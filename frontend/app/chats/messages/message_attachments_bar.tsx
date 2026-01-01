@@ -228,7 +228,7 @@ function AttachmentsGroupChip({ attachments }: AttachmentsGroupChipProps) {
 			<Menu
 				store={menu}
 				gutter={6}
-				className="rounded-box bg-base-100 text-base-content border-base-300 z-50 max-h-72 min-w-[260px] overflow-y-auto border p-2 shadow-xl focus-visible:outline-none"
+				className="rounded-box bg-base-100 text-base-content border-base-300 z-50 max-h-72 min-w-65 overflow-y-auto border p-2 shadow-xl focus-visible:outline-none"
 				autoFocusOnShow
 			>
 				<div className="text-base-content/70 mb-1 text-[11px] font-semibold">Attachments</div>
@@ -283,7 +283,7 @@ function ToolChoicesGroupChip({ tools }: ToolChoicesGroupChipProps) {
 			<Menu
 				store={menu}
 				gutter={6}
-				className="rounded-box bg-base-100 text-base-content border-base-300 z-50 max-h-72 min-w-[260px] overflow-y-auto border p-2 shadow-xl focus-visible:outline-none"
+				className="rounded-box bg-base-100 text-base-content border-base-300 z-50 max-h-72 min-w-65 overflow-y-auto border p-2 shadow-xl focus-visible:outline-none"
 				autoFocusOnShow
 			>
 				<div className="text-base-content/70 mb-1 text-[11px] font-semibold">Tools</div>
@@ -338,7 +338,7 @@ function ToolOutputsGroupChip({ outputs }: ToolOutputsGroupChipProps) {
 			<Menu
 				store={menu}
 				gutter={6}
-				className="rounded-box bg-base-100 text-base-content border-base-300 z-50 max-h-72 min-w-[260px] overflow-y-auto border p-2 shadow-xl focus-visible:outline-none"
+				className="rounded-box bg-base-100 text-base-content border-base-300 z-50 max-h-72 min-w-65 overflow-y-auto border p-2 shadow-xl focus-visible:outline-none"
 				autoFocusOnShow
 			>
 				<div className="text-base-content/70 mb-1 text-[11px] font-semibold">Tool results</div>
@@ -393,7 +393,7 @@ function ToolCallsGroupChip({ calls }: ToolCallsGroupChipProps) {
 			<Menu
 				store={menu}
 				gutter={6}
-				className="rounded-box bg-base-100 text-base-content border-base-300 z-50 max-h-72 min-w-[260px] overflow-y-auto border p-2 shadow-xl focus-visible:outline-none"
+				className="rounded-box bg-base-100 text-base-content border-base-300 z-50 max-h-72 min-w-65 overflow-y-auto border p-2 shadow-xl focus-visible:outline-none"
 				autoFocusOnShow
 			>
 				<div className="text-base-content/70 mb-1 text-[11px] font-semibold">Suggested tool calls</div>

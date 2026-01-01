@@ -44,6 +44,5 @@ const DAISYUI_DARK_THEMES = [
 ];
 
 export const ALL_DARK_THEMES = [CustomThemeDark, ...DAISYUI_DARK_THEMES];
-// export const ALL_LIGHT_THEMES = [CustomThemeLight, ...DAISYUI_LIGHT_THEMES];
 
 export const DAISYUI_BUILTIN_THEMES = [...DAISYUI_LIGHT_THEMES, ...DAISYUI_DARK_THEMES] as const;

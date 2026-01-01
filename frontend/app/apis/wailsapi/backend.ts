@@ -1,10 +1,8 @@
 import { sprintf } from 'sprintf-js';
 
-import type { Attachment, FileFilter } from '@/spec/attachment';
-import type { DirectoryAttachmentsResult } from '@/spec/backend';
-import type { ILogger } from '@/spec/logger';
+import type { Attachment, DirectoryAttachmentsResult, FileFilter } from '@/spec/attachment';
 
-import type { IBackendAPI } from '@/apis/interface';
+import type { IBackendAPI, ILogger } from '@/apis/interface';
 import {
 	OpenDirectoryAsAttachments,
 	OpenMultipleFilesAsAttachments,

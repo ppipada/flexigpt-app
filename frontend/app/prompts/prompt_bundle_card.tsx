@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 
 import { FiCheck, FiChevronDown, FiChevronUp, FiEdit2, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
-import { PROMPT_TEMPLATE_INVOKE_CHAR } from '@/spec/command';
 import type { PromptBundle, PromptTemplate } from '@/spec/prompt';
 
 import { promptStoreAPI } from '@/apis/baseapi';
@@ -237,10 +236,7 @@ export function PromptBundleCard({ bundle, templates, onTemplatesChange, onBundl
 								{localTemplates.map(tpl => (
 									<tr key={tpl.id} className="hover:bg-base-300">
 										<td>{tpl.displayName}</td>
-										<td>
-											{PROMPT_TEMPLATE_INVOKE_CHAR}
-											{tpl.slug}
-										</td>
+										<td>{tpl.slug}</td>
 										<td className="text-center align-middle">
 											<input
 												type="checkbox"

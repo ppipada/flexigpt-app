@@ -4,8 +4,6 @@ import { FiSliders } from 'react-icons/fi';
 
 import { type ReasoningLevel, ReasoningType } from '@/spec/inference';
 
-import { type ChatOption, DefaultChatOptions, getChatInputOptions } from '@/apis/chatoption_helper';
-
 import { AdvancedParamsModal } from '@/chats/assitantcontexts/advanced_params_modal';
 import { DisablePreviousMessagesCheckbox } from '@/chats/assitantcontexts/disable_checkbox';
 import { ModelDropdown } from '@/chats/assitantcontexts/model_dropdown';
@@ -18,6 +16,7 @@ import {
 	type SystemPromptItem,
 } from '@/chats/assitantcontexts/system_prompt_dropdown';
 import { TemperatureDropdown } from '@/chats/assitantcontexts/temperature_dropdown';
+import { type ChatOption, DefaultChatOptions, getChatInputOptions } from '@/chats/chat_option_helper';
 import { useSetSystemPromptForChat } from '@/chats/events/set_system_prompt';
 
 type AssistantContextBarProps = {

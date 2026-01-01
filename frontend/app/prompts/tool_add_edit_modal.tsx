@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
-import { TOOL_INVOKE_CHAR } from '@/spec/command';
 import { type Tool, ToolImplType } from '@/spec/tool';
 
 import { omitManyKeys } from '@/lib/obj_utils';
@@ -170,17 +169,13 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		}
 
 		if (field === 'slug') {
-			if (v.startsWith(TOOL_INVOKE_CHAR)) {
-				newErrs.slug = `Do not prefix with "${TOOL_INVOKE_CHAR}".`;
+			const err = validateSlug(v);
+			if (err) {
+				newErrs.slug = err;
 			} else {
-				const err = validateSlug(v);
-				if (err) {
-					newErrs.slug = err;
-				} else {
-					const clash = existingTools.some(t => t.tool.slug === v && t.tool.id !== initialData?.tool.id);
-					if (clash) newErrs.slug = 'Slug already in use.';
-					else newErrs = omitManyKeys(newErrs, ['slug']);
-				}
+				const clash = existingTools.some(t => t.tool.slug === v && t.tool.id !== initialData?.tool.id);
+				if (clash) newErrs.slug = 'Slug already in use.';
+				else newErrs = omitManyKeys(newErrs, ['slug']);
 			}
 		} else if (field === 'tags') {
 			const err = validateTags(val);
@@ -425,9 +420,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 							</label>
 							<div className="col-span-9">
 								<div className="relative">
-									<span className="text-neutral-custom absolute top-1/2 left-3 -translate-y-1/2">
-										{TOOL_INVOKE_CHAR}
-									</span>
 									<input
 										type="text"
 										name="slug"

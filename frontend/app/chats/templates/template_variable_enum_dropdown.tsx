@@ -1,4 +1,3 @@
-// components/EnumDropdownInline.tsx
 import {
 	type CSSProperties,
 	type KeyboardEvent as ReactKeyBoardEvent,

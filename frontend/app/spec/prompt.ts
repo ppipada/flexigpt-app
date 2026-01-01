@@ -1,4 +1,3 @@
-// --- Enums ---
 /**
  * @public
  */
@@ -27,8 +26,6 @@ export enum VarSource {
 	User = 'user',
 	Static = 'static',
 }
-
-// --- Core Types ---
 
 export interface MessageBlock {
 	id: string;

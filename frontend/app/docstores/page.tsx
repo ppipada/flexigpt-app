@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 
 import { FiEdit2, FiFolder, FiPlus, FiServer, FiTrash2 } from 'react-icons/fi';
 
-import { DOCUMENT_COLLECTION_INVOKE_CHAR } from '@/spec/command';
 import type { Collection, DocStore } from '@/spec/docstore';
 
 import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
@@ -302,10 +301,7 @@ export default function DocumentStoresPage() {
 															{collection.name}
 														</div>
 													</td>
-													<td>
-														{DOCUMENT_COLLECTION_INVOKE_CHAR}
-														{collection.command}
-													</td>
+													<td>{collection.command}</td>
 													<td>{collection.documentCount}</td>
 													<td>{collection.chunkCount}</td>
 													<td
