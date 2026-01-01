@@ -310,6 +310,8 @@ export function buildUserConversationMessageFromEditor(
 
 	const toolStoreChoices = payload.finalToolChoices.length > 0 ? payload.finalToolChoices : undefined;
 
+	const toolOutputs = payload.toolOutputs.length > 0 ? payload.toolOutputs : undefined;
+
 	const msg: ConversationMessage = {
 		id,
 		createdAt: now,
@@ -319,6 +321,7 @@ export function buildUserConversationMessageFromEditor(
 		attachments,
 		toolStoreChoices,
 		content: text,
+		toolOutputs,
 	};
 
 	return msg;

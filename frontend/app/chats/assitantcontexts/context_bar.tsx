@@ -66,6 +66,9 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 		if (selectedModel.reasoning?.type === ReasoningType.HybridWithTokens && !isHybridReasoningEnabled) {
 			const modifiedOptions = { ...base };
 			delete modifiedOptions.reasoning;
+			if (modifiedOptions.temperature === undefined) {
+				modifiedOptions.temperature = DefaultChatOptions.temperature;
+			}
 			return modifiedOptions;
 		}
 
