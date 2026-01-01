@@ -99,6 +99,9 @@ export interface Citation {
 	urlCitation?: URLCitation;
 }
 
+/**
+ * @public
+ */
 export enum ContentItemKind {
 	Text = 'text',
 	Image = 'image',
@@ -280,6 +283,9 @@ export interface ToolChoice {
 	webSearchArguments?: WebSearchToolChoiceItem;
 }
 
+/**
+ * @public
+ */
 export enum InputKind {
 	InputMessage = 'inputMessage',
 	OutputMessage = 'outputMessage',

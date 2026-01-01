@@ -115,13 +115,6 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 			/>
 
 			<div className="overflow-x-hidden overflow-y-auto">
-				{/* Chat text-input --------------------------------------------------- */}
-				{/* <TextArea
-					ref={inputAreaRef}
-					isBusy={isBusy}
-					onSubmit={handleSubmitMessage}
-					setInputHeight={setInputHeight}
-				/> */}
 				<EditorArea
 					ref={inputAreaRef}
 					isBusy={isBusy}

@@ -22,12 +22,18 @@ export const Toolbar = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>
 });
 
 /* Grouping container (use with join for button groups) */
+/**
+ * @public
+ */
 export const ToolbarToggleGroup = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
 	function ToolbarToggleGroup({ className, ...props }, ref) {
 		return <div ref={ref} className={cn('join flex items-center', className)} {...props} />;
 	}
 );
 
+/**
+ * @public
+ */
 export const ToolbarLink = forwardRef<HTMLAnchorElement, AnchorHTMLAttributes<HTMLAnchorElement>>(function ToolbarLink(
 	{ className, ...props },
 	ref
@@ -36,6 +42,9 @@ export const ToolbarLink = forwardRef<HTMLAnchorElement, AnchorHTMLAttributes<HT
 });
 
 /* Vertical separator */
+/**
+ * @public
+ */
 export function ToolbarSeparator({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
 	return <span className={cn('bg-base-300 mx-2 my-1 w-px self-stretch', className)} {...props} />;
 }
@@ -113,6 +122,9 @@ type ToolbarToggleItemProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onC
 		onPressedChange?: (pressed: boolean) => void;
 	};
 
+/**
+ * @public
+ */
 export const ToolbarToggleItem = forwardRef<HTMLButtonElement, ToolbarToggleItemProps>(function ToolbarToggleItem(
 	{ className, size = 'sm', variant, pressed, defaultPressed, onPressedChange, onClick, disabled, ...props },
 	ref
@@ -195,8 +207,14 @@ const RawToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(funct
 export const ToolbarButton = withTooltip(RawToolbarButton);
 
 /* Split button: primary + secondary in a join group */
+/**
+ * @public
+ */
 export type ToolbarSplitButtonProps = Omit<ToolbarButtonProps, 'isDropdown'>;
 
+/**
+ * @public
+ */
 export const ToolbarSplitButton = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
 	function ToolbarSplitButton({ className, ...props }, ref) {
 		return <div ref={ref} className={cn('join', className)} {...props} />;
@@ -205,6 +223,9 @@ export const ToolbarSplitButton = forwardRef<HTMLDivElement, HTMLAttributes<HTML
 
 type ToolbarSplitButtonPrimaryProps = Omit<ToolbarToggleItemProps, 'defaultPressed' | 'onPressedChange'> & Tooltipable;
 
+/**
+ * @public
+ */
 const RawToolbarSplitButtonPrimary = forwardRef<HTMLButtonElement, ToolbarSplitButtonPrimaryProps>(
 	function RawToolbarSplitButtonPrimary({ className, size = 'sm', variant, children, ...props }, ref) {
 		return (
@@ -215,6 +236,9 @@ const RawToolbarSplitButtonPrimary = forwardRef<HTMLButtonElement, ToolbarSplitB
 	}
 );
 
+/**
+ * @public
+ */
 export const ToolbarSplitButtonPrimary = withTooltip(RawToolbarSplitButtonPrimary);
 
 type ToolbarSplitButtonSecondaryProps = ButtonHTMLAttributes<HTMLButtonElement> &
@@ -241,6 +265,9 @@ const RawToolbarSplitButtonSecondary = forwardRef<HTMLButtonElement, ToolbarSpli
 	}
 );
 
+/**
+ * @public
+ */
 export const ToolbarSplitButtonSecondary = withTooltip(RawToolbarSplitButtonSecondary);
 
 /* Simple grouping wrapper, use ToolbarSeparator between groups */
@@ -253,6 +280,9 @@ export function ToolbarGroup({ className, children, ...props }: HTMLAttributes<H
 }
 
 /* DaisyUI menu group (use inside a <ul className="menu">) */
+/**
+ * @public
+ */
 export function ToolbarMenuGroup({
 	className,
 	label,

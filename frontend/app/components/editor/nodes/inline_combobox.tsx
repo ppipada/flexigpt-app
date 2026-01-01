@@ -233,7 +233,7 @@ export const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...pr
 		<Portal>
 			<ComboboxPopover
 				className={cn(
-					'rounded-box bg-base-100 text-base-content z-50 max-h-72 w-[300px] overflow-y-auto',
+					'rounded-box bg-base-100 text-base-content z-50 max-h-72 w-75 overflow-y-auto',
 					'border-base-300 border p-1 shadow-xl',
 					className
 				)}
