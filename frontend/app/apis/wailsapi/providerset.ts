@@ -15,7 +15,7 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 	// Need an eventflow for getting completion.
 	// Implemented that in main App Wrapper than aiprovider go package.
 	// Wrapper redirects to providerSet after doing event handling
-	async completion(
+	async fetchCompletion(
 		provider: ProviderName,
 		modelParams: ModelParam,
 		current: StoreConversationMessage,

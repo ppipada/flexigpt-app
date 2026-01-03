@@ -167,7 +167,7 @@ export type UIToolCallStatus = 'pending' | 'running' | 'succeeded' | 'failed' | 
  * `type` is the inference ToolType (`function` | `custom` | `webSearch`),
  * but kept as string here to avoid a circular import.
  */
-export interface UIToolCallChip {
+export interface UIToolCall {
 	id: string;
 	callID: string;
 	name: string;

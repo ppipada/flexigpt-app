@@ -6,8 +6,8 @@ import { CustomMDLanguage } from '@/lib/text_utils';
 // - Uses `reasoningContents` if present.
 // - Ignores redactedThinking.
 export function buildEffectiveContentWithReasoning(message: ConversationMessage): string {
-	const baseContent = message.content;
-	const reasoningContents = message.reasoningContents ?? [];
+	const baseContent = message.uiContent;
+	const reasoningContents = message.uiReasoningContents ?? [];
 
 	if (reasoningContents.length === 0) {
 		return baseContent;

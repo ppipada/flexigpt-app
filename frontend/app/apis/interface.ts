@@ -250,7 +250,7 @@ export interface IConversationStoreAPI {
 }
 
 export interface IProviderSetAPI {
-	completion(
+	fetchCompletion(
 		provider: ProviderName,
 		modelParams: ModelParam,
 		current: StoreConversationMessage,

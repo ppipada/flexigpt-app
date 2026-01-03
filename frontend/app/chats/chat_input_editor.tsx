@@ -20,7 +20,7 @@ import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 import type { Attachment, AttachmentMode, DirectoryAttachmentsResult, UIAttachment } from '@/spec/attachment';
 import { AttachmentKind } from '@/spec/attachment';
 import type { ToolCallBinding } from '@/spec/inference';
-import type { ToolStoreChoice, UIToolAttachedChoice, UIToolCallChip, UIToolOutput } from '@/spec/tool';
+import type { ToolStoreChoice, UIToolAttachedChoice, UIToolCall, UIToolOutput } from '@/spec/tool';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -88,7 +88,7 @@ export interface EditorAreaHandle {
 	openAttachmentMenu: () => void;
 	loadExternalMessage: (msg: EditorExternalMessage) => void;
 	resetEditor: () => void;
-	loadToolCalls: (toolCalls: UIToolCallChip[], bindings?: ToolCallBinding[]) => void;
+	loadToolCalls: (toolCalls: UIToolCall[], bindings?: ToolCallBinding[]) => void;
 	setConversationToolsFromChoices: (tools: ToolStoreChoice[]) => void;
 }
 
@@ -160,7 +160,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const [directoryGroups, setDirectoryGroups] = useState<DirectoryAttachmentGroup[]>([]);
 
 	// Tool-call chips (assistant-suggested) + tool outputs attached to the next user message.
-	const [toolCalls, setToolCalls] = useState<UIToolCallChip[]>([]);
+	const [toolCalls, setToolCalls] = useState<UIToolCall[]>([]);
 	const [toolOutputs, setToolOutputs] = useState<UIToolOutput[]>([]);
 	const [activeToolOutput, setActiveToolOutput] = useState<UIToolOutput | null>(null);
 	const [conversationToolsState, setConversationToolsState] = useState<ConversationToolStateEntry[]>([]);
@@ -340,7 +340,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		}
 	}, [editor, deferredDocVersion]);
 
-	const runToolCallInternal = useCallback(async (toolCall: UIToolCallChip): Promise<UIToolOutput | null> => {
+	const runToolCallInternal = useCallback(async (toolCall: UIToolCall): Promise<UIToolOutput | null> => {
 		// Resolve identity using toolStoreChoice when available; fall back to name parsing.
 		let bundleID: string | undefined;
 		let toolSlug: string | undefined;
@@ -447,7 +447,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 		const newId = crypto.randomUUID();
 
-		const chip: UIToolCallChip = {
+		const chip: UIToolCall = {
 			id: newId,
 			callID: output.callID || newId,
 			name: output.name,
@@ -647,7 +647,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		[closeAllMenus, editor]
 	);
 
-	const loadToolCalls = useCallback((toolCalls: UIToolCallChip[], bindings?: ToolCallBinding[]) => {
+	const loadToolCalls = useCallback((toolCalls: UIToolCall[], bindings?: ToolCallBinding[]) => {
 		setToolCalls(buildToolCallFromResponse(toolCalls, bindings));
 	}, []);
 

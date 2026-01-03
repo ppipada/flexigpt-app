@@ -1,11 +1,11 @@
 import { FiAlertTriangle, FiPlay, FiTool, FiX } from 'react-icons/fi';
 
-import type { UIToolCallChip, UIToolOutput } from '@/spec/tool';
+import type { UIToolCall, UIToolOutput } from '@/spec/tool';
 
 import { getPrettyToolName } from '@/chats/tools/tool_editor_utils';
 
 interface ToolChipsComposerRowProps {
-	toolCalls: UIToolCallChip[];
+	toolCalls: UIToolCall[];
 	toolOutputs: UIToolOutput[];
 	isBusy: boolean;
 	onRunToolCall: (id: string) => void | Promise<void>;
@@ -72,7 +72,7 @@ export function ToolChipsComposerRow({
 }
 
 interface ToolCallComposerChipViewProps {
-	toolCall: UIToolCallChip;
+	toolCall: UIToolCall;
 	isBusy: boolean;
 	onRun: () => void;
 	onDiscard: () => void;

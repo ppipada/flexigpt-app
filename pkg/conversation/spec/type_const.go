@@ -52,8 +52,9 @@ type ConversationMessage struct {
 
 	// Usage / error info from the model/provider for this turn
 	// (usually attached to assistant turns).
-	Usage *inferencegoSpec.Usage `json:"usage,omitempty"`
-	Error *inferencegoSpec.Error `json:"error,omitempty"`
+	Usage        *inferencegoSpec.Usage `json:"usage,omitempty"`
+	Error        *inferencegoSpec.Error `json:"error,omitempty"`
+	DebugDetails any                    `json:"debugDetails,omitempty"`
 
 	// Arbitrary UI/app metadata (tags, pinned, read state, etc.).
 	Meta map[string]any `json:"meta,omitempty"`

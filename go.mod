@@ -12,7 +12,7 @@ require (
 	github.com/ledongthuc/pdf v0.0.0-20250511090121-5959a4027728
 	github.com/markusmobius/go-trafilatura v1.12.2
 	github.com/philippgille/chromem-go v0.7.0
-	github.com/ppipada/inference-go v0.3.1
+	github.com/ppipada/inference-go v0.3.3
 	github.com/ppipada/mapstore-go v0.0.3
 	github.com/wailsapp/wails/v2 v2.11.0
 	golang.org/x/net v0.48.0

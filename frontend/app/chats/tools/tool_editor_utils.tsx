@@ -8,7 +8,7 @@ import {
 	type ToolStoreChoice,
 	ToolStoreChoiceType,
 	type UIToolAttachedChoice,
-	type UIToolCallChip,
+	type UIToolCall,
 } from '@/spec/tool';
 
 // Keys for the tools combobox and inline elements
@@ -37,9 +37,9 @@ export type ToolSelectionElementNode = {
 };
 
 export function buildToolCallFromResponse(
-	toolCalls: UIToolCallChip[] | undefined | null,
+	toolCalls: UIToolCall[] | undefined | null,
 	bindings?: ToolCallBinding[]
-): UIToolCallChip[] {
+): UIToolCall[] {
 	if (!toolCalls || toolCalls.length === 0) return [];
 
 	const bindingMap = new Map<string, ToolStoreChoice>();
@@ -116,7 +116,7 @@ function summarizeToolCallArguments(args: string): string | undefined {
 /**
  * Label used for tool-call chips in composer / history.
  */
-export function formatToolCallLabel(call: UIToolCallChip): string {
+export function formatToolCallLabel(call: UIToolCall): string {
 	const pretty = getPrettyToolName(call.name);
 	const argSummary = summarizeToolCallArguments(call.arguments ?? '');
 	return argSummary ? `${pretty}: ${argSummary}` : pretty;

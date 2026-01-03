@@ -10,7 +10,7 @@ import type {
 	Status,
 	ToolChoice,
 } from '@/spec/inference';
-import type { ToolStoreChoice, UIToolCallChip, UIToolOutput } from '@/spec/tool';
+import type { ToolStoreChoice, UIToolCall, UIToolOutput } from '@/spec/tool';
 
 /** Keep in sync with Go's ConversationSchemaVersion. */
 export const CONVERSATION_SCHEMA_VERSION = 'v1.0.0';
@@ -35,15 +35,16 @@ export interface StoreConversationMessage {
 	error?: InferenceError;
 
 	meta?: Record<string, any>;
+	debugDetails?: any;
 }
 
 interface UIConversationMessageDetails {
 	// UI-only, derived from outputs (we'll derive in helpers)
-	content: string;
-	details?: string;
-	reasoningContents?: ReasoningContent[];
-	toolCalls?: UIToolCallChip[];
-	toolOutputs?: UIToolOutput[];
+	uiContent: string;
+	uiDebugDetails?: string;
+	uiReasoningContents?: ReasoningContent[];
+	uiToolCalls?: UIToolCall[];
+	uiToolOutputs?: UIToolOutput[];
 }
 
 export type ConversationMessage = StoreConversationMessage & UIConversationMessageDetails;

@@ -1,7 +1,7 @@
 import { forwardRef, type RefObject, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 import type { ToolCallBinding } from '@/spec/inference';
-import type { ToolStoreChoice, UIToolCallChip } from '@/spec/tool';
+import type { ToolStoreChoice, UIToolCall } from '@/spec/tool';
 
 import type { ShortcutConfig } from '@/lib/keyboard_shortcuts';
 
@@ -23,7 +23,7 @@ export interface InputBoxHandle {
 	openToolMenu: () => void;
 	openAttachmentMenu: () => void;
 	loadExternalMessage: (msg: EditorExternalMessage) => void;
-	loadToolCalls: (toolCalls: UIToolCallChip[], bindings?: ToolCallBinding[]) => void;
+	loadToolCalls: (toolCalls: UIToolCall[], bindings?: ToolCallBinding[]) => void;
 	setConversationToolsFromChoices: (tools: ToolStoreChoice[]) => void;
 }
 

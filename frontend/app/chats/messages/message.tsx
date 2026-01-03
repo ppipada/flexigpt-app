@@ -22,7 +22,7 @@ interface ChatMessageProps {
 }
 
 function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
-	if (prev.message.details !== next.message.details) {
+	if (prev.message.uiDebugDetails !== next.message.uiDebugDetails) {
 		//
 		// We need to check details as parent is updating details in place for previous message
 		return false;
@@ -31,7 +31,7 @@ function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
 		return false;
 	}
 
-	if (prev.message.reasoningContents !== next.message.reasoningContents) {
+	if (prev.message.uiReasoningContents !== next.message.uiReasoningContents) {
 		return false;
 	}
 
@@ -99,8 +99,8 @@ export const ChatMessage = memo(function ChatMessage({
 					<MessageAttachmentsBar
 						attachments={message.attachments}
 						toolChoices={message.toolStoreChoices}
-						toolCalls={message.toolCalls}
-						toolOutputs={message.toolOutputs}
+						toolCalls={message.uiToolCalls}
+						toolOutputs={message.uiToolOutputs}
 					/>
 				</div>
 			</div>
@@ -119,10 +119,10 @@ export const ChatMessage = memo(function ChatMessage({
 				<MessageFooterArea
 					messageID={message.id}
 					isUser={isUser}
-					cardCopyContent={message.content}
+					cardCopyContent={message.uiContent}
 					onEdit={onEdit}
 					onResend={onResend}
-					messageDetails={message.details ?? ''}
+					messageDetails={message.uiDebugDetails ?? ''}
 					isStreaming={!!streamedMessage}
 					isBusy={isBusy}
 					disableMarkdown={!renderMarkdown}

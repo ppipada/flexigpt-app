@@ -1296,6 +1296,7 @@ export namespace spec {
 	    attachments?: attachment.Attachment[];
 	    usage?: Usage;
 	    error?: Error;
+	    debugDetails?: any;
 	    meta?: Record<string, any>;
 	
 	    static createFrom(source: any = {}) {
@@ -1316,6 +1317,7 @@ export namespace spec {
 	        this.attachments = this.convertValues(source["attachments"], attachment.Attachment);
 	        this.usage = this.convertValues(source["usage"], Usage);
 	        this.error = this.convertValues(source["error"], Error);
+	        this.debugDetails = source["debugDetails"];
 	        this.meta = source["meta"];
 	    }
 	

@@ -5,7 +5,7 @@ import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
 import type { Attachment } from '@/spec/attachment';
 import { AttachmentKind, AttachmentMode } from '@/spec/attachment';
-import type { ToolStoreChoice, UIToolCallChip, UIToolOutput } from '@/spec/tool';
+import type { ToolStoreChoice, UIToolCall, UIToolOutput } from '@/spec/tool';
 
 import {
 	getAttachmentModeLabel,
@@ -119,7 +119,7 @@ function MessageToolChoiceChip({ tool, fullWidth = false }: MessageToolChoiceChi
 }
 
 interface MessageToolCallChipProps {
-	call: UIToolCallChip;
+	call: UIToolCall;
 	fullWidth?: boolean;
 }
 
@@ -127,7 +127,7 @@ interface MessageToolCallChipProps {
  * Read‑only chip for an assistant-suggested tool call under the assistant bubble.
  */
 function MessageToolCallChip({ call, fullWidth = false }: MessageToolCallChipProps) {
-	const tmpCall: UIToolCallChip = {
+	const tmpCall: UIToolCall = {
 		id: call.id || call.callID,
 		callID: call.callID,
 		name: call.name,
@@ -359,7 +359,7 @@ function ToolOutputsGroupChip({ outputs }: ToolOutputsGroupChipProps) {
 }
 
 interface ToolCallsGroupChipProps {
-	calls: UIToolCallChip[];
+	calls: UIToolCall[];
 }
 
 function ToolCallsGroupChip({ calls }: ToolCallsGroupChipProps) {
@@ -416,7 +416,7 @@ function ToolCallsGroupChip({ calls }: ToolCallsGroupChipProps) {
 interface MessageAttachmentsBarProps {
 	attachments?: Attachment[];
 	toolChoices?: ToolStoreChoice[];
-	toolCalls?: UIToolCallChip[];
+	toolCalls?: UIToolCall[];
 	toolOutputs?: UIToolOutput[];
 }
 

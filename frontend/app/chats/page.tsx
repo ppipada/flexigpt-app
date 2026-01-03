@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
 	type Conversation,
-	CONVERSATION_SCHEMA_VERSION,
 	type ConversationMessage,
 	type ConversationSearchItem,
 	type StoreConversation,
@@ -15,7 +14,6 @@ import type { ToolStoreChoice } from '@/spec/tool';
 import { defaultShortcutConfig, type ShortcutConfig, useChatShortcuts } from '@/lib/keyboard_shortcuts';
 import { getBlockQuotedLines, sanitizeConversationTitle } from '@/lib/text_utils';
 import { generateTitle } from '@/lib/title_utils';
-import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { useAtBottom } from '@/hooks/use_at_bottom';
 
@@ -26,46 +24,17 @@ import { PageFrame } from '@/components/page_frame';
 
 import {
 	buildUserConversationMessageFromEditor,
+	deriveConversationToolsFromMessages,
 	HandleCompletion,
 	hydrateConversation,
-} from '@/chats/chat_conversation_helper';
+	initConversation,
+	initConversationMessage,
+} from '@/chats/chat_completion_helper';
 import { InputBox, type InputBoxHandle } from '@/chats/chat_input_box';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/chat_input_editor';
 import { ChatNavBar, type ChatNavBarHandle } from '@/chats/chat_navbar';
 import { type ChatOption, DefaultChatOptions } from '@/chats/chat_option_helper';
 import { ChatMessage } from '@/chats/messages/message';
-
-function initConversation(title = 'New Conversation'): Conversation {
-	return {
-		schemaVersion: CONVERSATION_SCHEMA_VERSION,
-		id: getUUIDv7(),
-		title: generateTitle(title).title,
-		createdAt: new Date(),
-		modifiedAt: new Date(),
-		messages: [],
-	};
-}
-
-function initConversationMessage(role: RoleEnum): ConversationMessage {
-	const d = new Date();
-	return {
-		id: d.toISOString(),
-		createdAt: new Date(),
-		role: role,
-		status: Status.None,
-		content: '',
-	};
-}
-
-function deriveConversationToolsFromMessages(messages: ConversationMessage[]): ToolStoreChoice[] {
-	for (let i = messages.length - 1; i >= 0; i -= 1) {
-		const m = messages[i];
-		if (m.role === RoleEnum.User && m.toolStoreChoices && m.toolStoreChoices.length > 0) {
-			return m.toolStoreChoices;
-		}
-	}
-	return [];
-}
 
 // eslint-disable-next-line no-restricted-exports
 export default function ChatsPage() {
@@ -162,12 +131,12 @@ export default function ChatsPage() {
 			const userMessages = updatedChat.messages.filter(m => m.role === RoleEnum.User);
 			if (userMessages.length === 1) {
 				// Always generate title from first user message
-				const t = generateTitle(userMessages[0].content);
+				const t = generateTitle(userMessages[0].uiContent);
 				newTitle = t.title;
 			} else if (userMessages.length === 2) {
 				// Generate titles from both messages, pick the one with higher score
-				const titleCondidate1 = generateTitle(userMessages[0].content);
-				const titleCondidate2 = generateTitle(userMessages[1].content);
+				const titleCondidate1 = generateTitle(userMessages[0].uiContent);
+				const titleCondidate2 = generateTitle(userMessages[1].uiContent);
 				newTitle = titleCondidate2.score > titleCondidate1.score ? titleCondidate2.title : titleCondidate1.title;
 			}
 			newTitle = sanitizeConversationTitle(newTitle);
@@ -359,8 +328,8 @@ export default function ChatsPage() {
 					saveUpdatedChat(finalChat);
 
 					// Expose assistant-suggested tool calls as chips in the composer.
-					if (responseMessage.toolCalls && responseMessage.toolCalls.length > 0) {
-						chatInputRef.current?.loadToolCalls(responseMessage.toolCalls, rawResponse?.toolCallBindings);
+					if (responseMessage.uiToolCalls && responseMessage.uiToolCalls.length > 0) {
+						chatInputRef.current?.loadToolCalls(responseMessage.uiToolCalls, rawResponse?.toolCallBindings);
 					}
 				}
 			} catch (e) {
@@ -396,7 +365,7 @@ export default function ChatsPage() {
 							...assistantPlaceholder,
 							status: Status.Completed,
 							outputs: partialOutputs,
-							content: partialText,
+							uiContent: partialText,
 						};
 
 						const finalChat: Conversation = {
@@ -450,6 +419,7 @@ export default function ChatsPage() {
 
 				setEditingMessageId(null);
 				saveUpdatedChat(updatedChat);
+				// console.log('updated chat before send', JSON.stringify(updatedChat, null, 2));
 				await updateStreamingMessage(updatedChat, options);
 				return;
 			}
@@ -477,10 +447,10 @@ export default function ChatsPage() {
 			if (msg.role !== RoleEnum.User) return;
 
 			const external: EditorExternalMessage = {
-				text: msg.content ?? '',
+				text: msg.uiContent ?? '',
 				attachments: msg.attachments,
 				toolChoices: msg.toolStoreChoices,
-				toolOutputs: msg.toolOutputs,
+				toolOutputs: msg.uiToolOutputs,
 			};
 
 			chatInputRef.current?.loadExternalMessage(external);
@@ -518,7 +488,7 @@ export default function ChatsPage() {
 
 	const renderedMessages = chat.messages.map((msg, idx) => {
 		const isPending =
-			isBusy && idx === chat.messages.length - 1 && msg.role === RoleEnum.Assistant && msg.content.length === 0;
+			isBusy && idx === chat.messages.length - 1 && msg.role === RoleEnum.Assistant && msg.uiContent.length === 0;
 		const live = isBusy && idx === chat.messages.length - 1 && msg.role === RoleEnum.Assistant ? streamedMessage : '';
 
 		return (

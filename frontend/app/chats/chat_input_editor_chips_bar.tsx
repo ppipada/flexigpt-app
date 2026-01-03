@@ -3,7 +3,7 @@ import type { PlateEditor } from 'platejs/react';
 import { useEditorRef } from 'platejs/react';
 
 import type { AttachmentMode, UIAttachment } from '@/spec/attachment';
-import type { UIToolCallChip, UIToolOutput } from '@/spec/tool';
+import type { UIToolCall, UIToolOutput } from '@/spec/tool';
 
 import { DirectoryChip } from '@/chats/attachments/attachment_directory_chip';
 import { type DirectoryAttachmentGroup, uiAttachmentKey } from '@/chats/attachments/attachment_editor_utils';
@@ -19,7 +19,7 @@ interface EditorChipsBarProps {
 	conversationTools?: ConversationToolStateEntry[];
 
 	// Tool calls & outputs (tool runners / results)
-	toolCalls?: UIToolCallChip[];
+	toolCalls?: UIToolCall[];
 	toolOutputs?: UIToolOutput[];
 	isBusy?: boolean;
 	onRunToolCall?: (id: string) => void | Promise<void>;
