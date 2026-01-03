@@ -439,10 +439,12 @@ function deriveUIFieldsFromOutputUnion(outputs: OutputUnion[] | undefined): {
 				break;
 
 			case OutputKind.FunctionToolCall:
-			case OutputKind.CustomToolCall:
-			case OutputKind.WebSearchToolCall:
 				if (o.functionToolCall) toolCalls.push(o.functionToolCall as unknown as UIToolCall);
+				break;
+			case OutputKind.CustomToolCall:
 				if (o.customToolCall) toolCalls.push(o.customToolCall as unknown as UIToolCall);
+				break;
+			case OutputKind.WebSearchToolCall:
 				if (o.webSearchToolCall) toolCalls.push(o.webSearchToolCall as unknown as UIToolCall);
 				break;
 

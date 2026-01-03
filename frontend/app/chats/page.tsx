@@ -120,6 +120,27 @@ export default function ChatsPage() {
 		chatInputRef.current?.focus();
 	};
 
+	const handleSelectConversation = useCallback(async (item: ConversationSearchItem) => {
+		const selectedChat = await conversationStoreAPI.getConversation(item.id, item.title, true);
+		if (selectedChat) {
+			// Hydrate store-level data into full UI Conversation
+			const hydrated = hydrateConversation(selectedChat);
+			setChat(hydrated);
+
+			isChatPersistedRef.current = true;
+			manualTitleLockedRef.current = false;
+			setEditingMessageId(null);
+
+			const initialTools = deriveConversationToolsFromMessages(hydrated.messages);
+			chatInputRef.current?.setConversationToolsFromChoices(initialTools);
+		}
+	}, []);
+
+	const getConversationForExport = useCallback(async (): Promise<string> => {
+		const selectedChat = await conversationStoreAPI.getConversation(chat.id, chat.title, true);
+		return JSON.stringify(selectedChat ?? null, null, 2);
+	}, [chat.id, chat.title]);
+
 	// Persist `updatedChat` using the cheapest API that is still correct.
 	// •  First time we ever write this conversation              -> putConversation
 	// •  Title has changed (search index must be updated)        -> putConversation
@@ -172,25 +193,6 @@ export default function ChatsPage() {
 		setChat({ ...updatedChat, messages: [...updatedChat.messages] });
 	};
 
-	const handleSelectConversation = useCallback(async (item: ConversationSearchItem) => {
-		const selectedChat = await conversationStoreAPI.getConversation(item.id, item.title, true);
-		if (selectedChat) {
-			// Hydrate store-level data into full UI Conversation
-			const hydrated = hydrateConversation(selectedChat);
-			setChat(hydrated);
-
-			isChatPersistedRef.current = true;
-			manualTitleLockedRef.current = false;
-			setEditingMessageId(null);
-
-			const initialTools = deriveConversationToolsFromMessages(hydrated.messages);
-			chatInputRef.current?.setConversationToolsFromChoices(initialTools);
-		}
-	}, []);
-
-	/* ----------------------------------------------------------------
-	 * manual rename handler
-	 * ----------------------------------------------------------------*/
 	const handleRenameTitle = useCallback(
 		(newTitle: string) => {
 			const sanitized = sanitizeConversationTitle(newTitle.trim());
@@ -208,11 +210,6 @@ export default function ChatsPage() {
 		},
 		[chat, saveUpdatedChat]
 	);
-
-	const getConversationForExport = useCallback(async (): Promise<string> => {
-		const selectedChat = await conversationStoreAPI.getConversation(chat.id, chat.title, true);
-		return JSON.stringify(selectedChat ?? null, null, 2);
-	}, [chat.id, chat.title]);
 
 	const updateStreamingMessage = useCallback(
 		async (updatedChatWithUserMessage: Conversation, options: ChatOption) => {
