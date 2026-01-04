@@ -11,7 +11,6 @@ import (
 	"github.com/ppipada/inference-go"
 	"github.com/ppipada/inference-go/debugclient"
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
-	"github.com/ppipada/mapstore-go/uuidv7filename"
 
 	"github.com/ppipada/flexigpt-app/pkg/attachment"
 	"github.com/ppipada/flexigpt-app/pkg/bundleitemutils"
@@ -181,7 +180,7 @@ func (ps *ProviderSetAPI) FetchCompletion(
 	}
 
 	// Build tool choices for this call.
-	toolChoices, choiceBindings, err := ps.buildToolChoices(ctx, body.ToolStoreChoices)
+	toolChoices, err := ps.buildToolChoices(ctx, body.ToolStoreChoices)
 	if err != nil {
 		return nil, err
 	}
@@ -205,17 +204,6 @@ func (ps *ProviderSetAPI) FetchCompletion(
 		InferenceResponse:     b,
 		HydratedCurrentInputs: currentInputs,
 	}}
-
-	if len(choiceBindings) > 0 {
-		bindings := make([]spec.ToolCallBinding, 0, len(choiceBindings))
-		for choiceID, sc := range choiceBindings {
-			bindings = append(bindings, spec.ToolCallBinding{
-				ChoiceID:        choiceID,
-				ToolStoreChoice: sc,
-			})
-		}
-		resp.Body.ToolCallBindings = bindings
-	}
 
 	return resp, err
 }
@@ -467,41 +455,34 @@ func buildContentItemsFromAttachments(
 func (ps *ProviderSetAPI) buildToolChoices(
 	ctx context.Context,
 	toolStoreChoices []toolSpec.ToolStoreChoice,
-) ([]inferencegoSpec.ToolChoice, map[string]toolSpec.ToolStoreChoice, error) {
+) ([]inferencegoSpec.ToolChoice, error) {
 	out := make([]inferencegoSpec.ToolChoice, 0)
-	choiceBindings := make(map[string]toolSpec.ToolStoreChoice)
 	if len(toolStoreChoices) == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	if ps.toolStore == nil {
-		return nil, nil, errors.New("tool store not configured for provider set")
+		return nil, errors.New("tool store not configured for provider set")
 	}
 
 	for _, sc := range toolStoreChoices {
-		if sc.BundleID == "" || sc.ToolSlug == "" || strings.TrimSpace(sc.ToolVersion) == "" {
-			return nil, nil, fmt.Errorf(
-				"invalid tool store choice: bundleID/toolSlug/toolVersion required: %+v",
+		if sc.ChoiceID == "" || sc.BundleID == "" || sc.ToolSlug == "" || strings.TrimSpace(sc.ToolVersion) == "" {
+			return nil, fmt.Errorf(
+				"invalid tool store choice: choiceID/bundleID/toolSlug/toolVersion required: %+v",
 				sc,
 			)
 		}
-
-		tc, choiceID, err := ps.hydrateToolChoice(ctx, sc)
+		tc, err := ps.hydrateToolChoice(ctx, sc)
 		if err != nil {
-			return nil, nil, err
-		}
-		if choiceID == "" {
-			// Somehow we received a empty choice id. Skip this.
-			continue
+			return nil, err
 		}
 		out = append(out, *tc)
-		choiceBindings[choiceID] = sc
 	}
 
 	if len(out) == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
-	return out, choiceBindings, nil
+	return out, nil
 }
 
 // hydrateToolChoice loads the Tool definition from tool-store and converts it
@@ -510,7 +491,10 @@ func (ps *ProviderSetAPI) buildToolChoices(
 func (ps *ProviderSetAPI) hydrateToolChoice(
 	ctx context.Context,
 	sc toolSpec.ToolStoreChoice,
-) (toolChoice *inferencegoSpec.ToolChoice, choiceID string, err error) {
+) (toolChoice *inferencegoSpec.ToolChoice, err error) {
+	if sc.ChoiceID == "" {
+		return nil, errors.New("invalid choiceID for tool store choice")
+	}
 	req := &toolSpec.GetToolRequest{
 		BundleID: sc.BundleID,
 		ToolSlug: sc.ToolSlug,
@@ -518,7 +502,7 @@ func (ps *ProviderSetAPI) hydrateToolChoice(
 	}
 	resp, err := ps.toolStore.GetTool(ctx, req)
 	if err != nil {
-		return nil, "", fmt.Errorf(
+		return nil, fmt.Errorf(
 			"failed to load tool %s/%s@%s: %w",
 			sc.BundleID,
 			sc.ToolSlug,
@@ -527,7 +511,7 @@ func (ps *ProviderSetAPI) hydrateToolChoice(
 		)
 	}
 	if resp == nil || resp.Body == nil {
-		return nil, "", fmt.Errorf(
+		return nil, fmt.Errorf(
 			"tool %s/%s@%s not found",
 			sc.BundleID,
 			sc.ToolSlug,
@@ -536,7 +520,7 @@ func (ps *ProviderSetAPI) hydrateToolChoice(
 	}
 	tool := resp.Body
 	if !tool.IsEnabled {
-		return nil, "", fmt.Errorf(
+		return nil, fmt.Errorf(
 			"tool %s/%s@%s is disabled",
 			sc.BundleID,
 			sc.ToolSlug,
@@ -544,7 +528,7 @@ func (ps *ProviderSetAPI) hydrateToolChoice(
 		)
 	}
 	if !tool.LLMCallable {
-		return nil, "", fmt.Errorf(
+		return nil, fmt.Errorf(
 			"tool %s/%s@%s is not LLM-callable",
 			sc.BundleID, sc.ToolSlug, sc.ToolVersion,
 		)
@@ -554,14 +538,10 @@ func (ps *ProviderSetAPI) hydrateToolChoice(
 	if desc == "" {
 		desc = sc.Description
 	}
-	choiceID, _ = uuidv7filename.NewUUIDv7String()
-	if choiceID == "" {
-		choiceID = name
-	}
 
 	tc := &inferencegoSpec.ToolChoice{
 		Type:        inferencegoSpec.ToolType(sc.ToolType),
-		ID:          choiceID,
+		ID:          sc.ChoiceID,
 		Name:        name,
 		Description: desc,
 	}
@@ -575,7 +555,7 @@ func (ps *ProviderSetAPI) hydrateToolChoice(
 	} else {
 		argSchema, err := decodeToolArgSchema(string(tool.ArgSchema))
 		if err != nil {
-			return nil, "", fmt.Errorf(
+			return nil, fmt.Errorf(
 				"invalid argSchema for %s/%s@%s: %w",
 				sc.BundleID,
 				sc.ToolSlug,
@@ -586,7 +566,7 @@ func (ps *ProviderSetAPI) hydrateToolChoice(
 		tc.Arguments = argSchema
 	}
 
-	return tc, choiceID, nil
+	return tc, nil
 }
 
 func decodeToolArgSchema(raw toolSpec.JSONRawString) (map[string]any, error) {

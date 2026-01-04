@@ -71,17 +71,9 @@ type CompletionRequest struct {
 	OnStreamThinking func(thinking string) error `json:"-"`
 }
 
-type ToolCallBinding struct {
-	// ChoiceID is the inference-go ToolChoice.ID that this tool call refers to.
-	ChoiceID string `json:"choiceID"`
-	// ToolStoreChoice is the original tool-store handle the UI supplied.
-	ToolStoreChoice toolSpec.ToolStoreChoice `json:"toolStoreChoice"`
-}
-
 type CompletionResponseBody struct {
 	InferenceResponse     *inferencegoSpec.FetchCompletionResponse `json:"inferenceResponse,omitempty"`
 	HydratedCurrentInputs []inferencegoSpec.InputUnion             `json:"hydratedCurrentInputs,omitempty"`
-	ToolCallBindings      []ToolCallBinding                        `json:"toolCallBindings,omitempty"`
 }
 
 type CompletionResponse struct {

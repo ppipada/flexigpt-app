@@ -529,6 +529,7 @@ export namespace spec {
 	    }
 	}
 	export class ToolStoreChoice {
+	    choiceID: string;
 	    bundleID: string;
 	    bundleSlug?: string;
 	    toolID?: string;
@@ -544,6 +545,7 @@ export namespace spec {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.choiceID = source["choiceID"];
 	        this.bundleID = source["bundleID"];
 	        this.bundleSlug = source["bundleSlug"];
 	        this.toolID = source["toolID"];
@@ -1437,38 +1439,6 @@ export namespace spec {
 		    return a;
 		}
 	}
-	export class ToolCallBinding {
-	    choiceID: string;
-	    toolStoreChoice: ToolStoreChoice;
-	
-	    static createFrom(source: any = {}) {
-	        return new ToolCallBinding(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.choiceID = source["choiceID"];
-	        this.toolStoreChoice = this.convertValues(source["toolStoreChoice"], ToolStoreChoice);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
 	export class FetchCompletionResponse {
 	    outputs?: OutputUnion[];
 	    usage?: Usage;
@@ -1508,7 +1478,6 @@ export namespace spec {
 	export class CompletionResponseBody {
 	    inferenceResponse?: FetchCompletionResponse;
 	    hydratedCurrentInputs?: InputUnion[];
-	    toolCallBindings?: ToolCallBinding[];
 	
 	    static createFrom(source: any = {}) {
 	        return new CompletionResponseBody(source);
@@ -1518,7 +1487,6 @@ export namespace spec {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.inferenceResponse = this.convertValues(source["inferenceResponse"], FetchCompletionResponse);
 	        this.hydratedCurrentInputs = this.convertValues(source["hydratedCurrentInputs"], InputUnion);
-	        this.toolCallBindings = this.convertValues(source["toolCallBindings"], ToolCallBinding);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -4887,7 +4855,6 @@ export namespace spec {
 	
 	    }
 	}
-	
 	
 	
 	

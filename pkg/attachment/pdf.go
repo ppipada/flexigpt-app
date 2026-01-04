@@ -24,6 +24,11 @@ func buildPDFTextOrFileBlock(path string) (*ContentBlock, error) {
 		}, nil
 	}
 
+	if err != nil {
+		slog.Warn("pdf text extraction failed; falling back to base64 attachment",
+			"path", path, "err", err)
+	}
+
 	// Fallback: send as file attachment.
 	base64Data, err2 := fileutil.ReadFile(path, fileutil.ReadEncodingBinary)
 	if err2 != nil {
@@ -36,10 +41,6 @@ func buildPDFTextOrFileBlock(path string) (*ContentBlock, error) {
 		return nil, err2
 	}
 
-	if err != nil {
-		slog.Warn("pdf text extraction failed; falling back to base64 attachment",
-			"path", path, "err", err)
-	}
 	mimetype := string(fileutil.MIMEApplicationPDF)
 	fname := filepath.Base(path)
 	return &ContentBlock{

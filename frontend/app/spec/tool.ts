@@ -72,6 +72,7 @@ export enum ToolStoreChoiceType {
 }
 
 export interface ToolStoreChoice {
+	choiceID: string;
 	bundleID: string;
 	bundleSlug?: string;
 
@@ -152,7 +153,7 @@ export interface InvokeToolResponse {
 	errorMessage?: string;
 }
 
-export interface UIToolAttachedChoice extends ToolStoreChoice {
+export interface UIToolStoreChoice extends ToolStoreChoice {
 	selectionID: string;
 }
 
@@ -176,9 +177,8 @@ export interface UIToolCall {
 	type: ToolStoreChoiceType;
 	choiceID: string;
 	status: UIToolCallStatus;
+	toolStoreChoice: ToolStoreChoice;
 	errorMessage?: string;
-	/** Optional original ToolStoreChoice associated with this call. */
-	toolStoreChoice?: ToolStoreChoice;
 }
 
 export interface UIToolOutput {
@@ -195,8 +195,7 @@ export interface UIToolOutput {
 	/** Raw JSON/text output as returned by the tool store. */
 	rawOutput: JSONRawString;
 
-	/** Optional original ToolStoreChoice this output came from. */
-	toolStoreChoice?: ToolStoreChoice;
+	toolStoreChoice: ToolStoreChoice;
 
 	isError?: boolean;
 	errorMessage?: string;

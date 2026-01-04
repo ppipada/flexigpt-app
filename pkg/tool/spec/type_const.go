@@ -105,6 +105,8 @@ const (
 )
 
 type ToolStoreChoice struct {
+	ChoiceID string `json:"choiceID"`
+
 	// BundleID, BundleSlug, ItemID, ItemSlug are string aliases.
 	BundleID   bundleitemutils.BundleID   `json:"bundleID"`
 	BundleSlug bundleitemutils.BundleSlug `json:"bundleSlug,omitempty"`

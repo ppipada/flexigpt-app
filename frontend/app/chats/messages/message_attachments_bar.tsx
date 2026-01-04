@@ -132,10 +132,14 @@ function MessageToolCallChip({ call, fullWidth = false }: MessageToolCallChipPro
 		callID: call.callID,
 		name: call.name,
 		arguments: call.arguments,
-		choiceID: call.choiceID,
+		webSearchToolCallItems: call.webSearchToolCallItems,
 		type: call.type,
+		choiceID: call.choiceID,
 		status: 'pending',
+		toolStoreChoice: call.toolStoreChoice,
+		errorMessage: call.errorMessage,
 	};
+
 	const label = formatToolCallLabel(tmpCall);
 
 	const statusLabel = call.status ? ` (${call.status})` : '';

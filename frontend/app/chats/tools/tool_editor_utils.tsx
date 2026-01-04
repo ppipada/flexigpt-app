@@ -2,14 +2,15 @@
 import { ElementApi, KEYS, NodeApi, type Path } from 'platejs';
 import type { PlateEditor } from 'platejs/react';
 
-import type { ToolCallBinding } from '@/spec/inference';
 import {
 	type Tool,
 	type ToolStoreChoice,
 	ToolStoreChoiceType,
-	type UIToolAttachedChoice,
 	type UIToolCall,
+	type UIToolStoreChoice,
 } from '@/spec/tool';
+
+import { getUUIDv7 } from '@/lib/uuid_utils';
 
 // Keys for the tools combobox and inline elements
 export const KEY_TOOL_SELECTION = 'toolSelection';
@@ -18,6 +19,7 @@ export const KEY_TOOL_SELECTION = 'toolSelection';
 
 export type ToolSelectionElementNode = {
 	type: typeof KEY_TOOL_SELECTION;
+	choiceID: string;
 	bundleID: string;
 	bundleSlug?: string;
 	toolSlug: string;
@@ -35,29 +37,6 @@ export type ToolSelectionElementNode = {
 	// inline+void node needs a text child
 	children: [{ text: '' }];
 };
-
-export function buildToolCallFromResponse(
-	toolCalls: UIToolCall[] | undefined | null,
-	bindings?: ToolCallBinding[]
-): UIToolCall[] {
-	if (!toolCalls || toolCalls.length === 0) return [];
-
-	const bindingMap = new Map<string, ToolStoreChoice>();
-	for (const b of bindings ?? []) {
-		bindingMap.set(b.choiceID, b.toolStoreChoice);
-	}
-
-	return toolCalls.map(tc => ({
-		id: tc.id || tc.callID,
-		callID: tc.callID,
-		name: tc.name,
-		arguments: tc.arguments ?? '',
-		type: tc.type,
-		choiceID: tc.choiceID,
-		status: 'pending',
-		toolStoreChoice: bindingMap.get(tc.choiceID),
-	}));
-}
 
 /**
  * Human-friendly tool name for display.
@@ -131,8 +110,9 @@ export function formatToolOutputSummary(name: string): string {
 }
 
 // Convert the editor's attached-tool shape into the persisted ToolStoreChoice shape.
-export function editorAttachedToolToToolChoice(att: UIToolAttachedChoice): ToolStoreChoice {
+export function editorAttachedToolToToolChoice(att: UIToolStoreChoice): ToolStoreChoice {
 	return {
+		choiceID: att.choiceID,
 		bundleID: att.bundleID,
 		toolSlug: att.toolSlug,
 		toolVersion: att.toolVersion,
@@ -212,6 +192,7 @@ export function insertToolSelectionNode(
 
 	const node: ToolSelectionElementNode = {
 		type: KEY_TOOL_SELECTION,
+		choiceID: getUUIDv7(),
 		bundleID: item.bundleID,
 		bundleSlug: item.bundleSlug,
 		toolSlug: item.toolSlug,
@@ -279,8 +260,8 @@ export function removeToolByKey(editor: PlateEditor, identityKey: string) {
 }
 
 // Build a serializable list of attached tools for submission
-export function getAttachedTools(editor: PlateEditor): UIToolAttachedChoice[] {
-	const items: UIToolAttachedChoice[] = [];
+export function getAttachedTools(editor: PlateEditor): UIToolStoreChoice[] {
+	const items: UIToolStoreChoice[] = [];
 	const seen = new Set<string>();
 
 	for (const [el] of NodeApi.elements(editor)) {
@@ -290,6 +271,7 @@ export function getAttachedTools(editor: PlateEditor): UIToolAttachedChoice[] {
 			if (seen.has(key)) continue;
 			seen.add(key);
 			items.push({
+				choiceID: n.choiceID,
 				selectionID: n.selectionID,
 				bundleID: n.bundleID,
 				toolSlug: n.toolSlug,

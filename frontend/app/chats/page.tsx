@@ -22,14 +22,14 @@ import { conversationStoreAPI } from '@/apis/baseapi';
 import { ButtonScrollToBottom } from '@/components/button_scroll_to_bottom';
 import { PageFrame } from '@/components/page_frame';
 
+import { HandleCompletion } from '@/chats/chat_completion_helper';
 import {
 	buildUserConversationMessageFromEditor,
 	deriveConversationToolsFromMessages,
-	HandleCompletion,
 	hydrateConversation,
 	initConversation,
 	initConversationMessage,
-} from '@/chats/chat_completion_helper';
+} from '@/chats/chat_hydration_helper';
 import { InputBox, type InputBoxHandle } from '@/chats/chat_input_box';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/chat_input_editor';
 import { ChatNavBar, type ChatNavBarHandle } from '@/chats/chat_navbar';
@@ -326,7 +326,7 @@ export default function ChatsPage() {
 
 					// Expose assistant-suggested tool calls as chips in the composer.
 					if (responseMessage.uiToolCalls && responseMessage.uiToolCalls.length > 0) {
-						chatInputRef.current?.loadToolCalls(responseMessage.uiToolCalls, rawResponse?.toolCallBindings);
+						chatInputRef.current?.loadToolCalls(responseMessage.uiToolCalls);
 					}
 				}
 			} catch (e) {

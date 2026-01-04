@@ -1,5 +1,3 @@
-import type { ToolStoreChoice } from '@/spec/tool';
-
 export enum RoleEnum {
 	System = 'system',
 	Developer = 'developer',
@@ -337,14 +335,7 @@ export interface FetchCompletionResponse {
 	debugDetails?: any;
 }
 
-export interface ToolCallBinding {
-	choiceID: string;
-	// ToolStoreChoice is the original tool-store handle the UI supplied.
-	toolStoreChoice: ToolStoreChoice;
-}
-
 export interface CompletionResponseBody {
 	inferenceResponse?: FetchCompletionResponse;
 	hydratedCurrentInputs?: InputUnion[];
-	toolCallBindings?: ToolCallBinding[];
 }

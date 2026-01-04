@@ -19,8 +19,7 @@ import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
 import type { Attachment, AttachmentMode, DirectoryAttachmentsResult, UIAttachment } from '@/spec/attachment';
 import { AttachmentKind } from '@/spec/attachment';
-import type { ToolCallBinding } from '@/spec/inference';
-import type { ToolStoreChoice, UIToolAttachedChoice, UIToolCall, UIToolOutput } from '@/spec/tool';
+import type { ToolStoreChoice, UIToolCall, UIToolOutput, UIToolStoreChoice } from '@/spec/tool';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -71,7 +70,6 @@ import {
 	mergeConversationToolsWithNewChoices,
 } from '@/chats/tools/conversation_tools_chip';
 import {
-	buildToolCallFromResponse,
 	dedupeToolChoices,
 	editorAttachedToolToToolChoice,
 	formatToolOutputSummary,
@@ -88,7 +86,7 @@ export interface EditorAreaHandle {
 	openAttachmentMenu: () => void;
 	loadExternalMessage: (msg: EditorExternalMessage) => void;
 	resetEditor: () => void;
-	loadToolCalls: (toolCalls: UIToolCall[], bindings?: ToolCallBinding[]) => void;
+	loadToolCalls: (toolCalls: UIToolCall[]) => void;
 	setConversationToolsFromChoices: (tools: ToolStoreChoice[]) => void;
 }
 
@@ -101,7 +99,7 @@ export interface EditorExternalMessage {
 
 export interface EditorSubmitPayload {
 	text: string;
-	attachedTools: UIToolAttachedChoice[];
+	attachedTools: UIToolStoreChoice[];
 	attachments: UIAttachment[];
 	toolOutputs: UIToolOutput[];
 	finalToolChoices: ToolStoreChoice[];
@@ -647,8 +645,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		[closeAllMenus, editor]
 	);
 
-	const loadToolCalls = useCallback((toolCalls: UIToolCall[], bindings?: ToolCallBinding[]) => {
-		setToolCalls(buildToolCallFromResponse(toolCalls, bindings));
+	const loadToolCalls = useCallback((toolCalls: UIToolCall[]) => {
+		setToolCalls(toolCalls);
 	}, []);
 
 	useImperativeHandle(ref, () => ({
