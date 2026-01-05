@@ -46,7 +46,7 @@ tasks:
 
   godepgraph:
     cmds:
-      - godepgraph -s -o github.com/ppipada/flexigpt-app,command-line-arguments agentgo/main.go | dot -Tpng -o godepgraph.png
+      - godepgraph -s -o github.com/ppipada/flexigpt-app,command-line-arguments cmd/agentgo/main.go | dot -Tpng -o godepgraph.png
 
   tagstats:
     cmds:
