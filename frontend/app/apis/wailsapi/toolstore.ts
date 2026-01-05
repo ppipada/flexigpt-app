@@ -7,9 +7,9 @@ import type {
 	JSONRawString,
 	Tool,
 	ToolBundle,
-	ToolImplOutputKind,
 	ToolImplType,
 	ToolListItem,
+	ToolStoreOutputKind,
 } from '@/spec/tool';
 
 import type { IToolStoreAPI } from '@/apis/interface';
@@ -136,7 +136,7 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 		isEnabled: boolean,
 		userCallable: boolean,
 		llmCallable: boolean,
-		outputKind: ToolImplOutputKind,
+		outputKind: ToolStoreOutputKind,
 		argSchema: JSONRawString,
 		type: ToolImplType,
 		goImpl?: GoToolImpl,

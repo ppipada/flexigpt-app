@@ -47,7 +47,10 @@ func validateTool(t *spec.Tool) error {
 
 	// Exposure sanity: if set, outputKind must be one of the known values.
 	switch t.OutputKind {
-	case spec.ToolOutputText, spec.ToolOutputBlob, spec.ToolOutputNone:
+	case spec.ToolStoreOutputKindNone,
+		spec.ToolStoreOutputKindText,
+		spec.ToolStoreOutputKindImage,
+		spec.ToolStoreOutputKindFile:
 		// Ok.
 	default:
 		return fmt.Errorf("invalid exposure.outputKind %q", t.OutputKind)

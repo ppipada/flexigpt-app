@@ -60,13 +60,13 @@ type ListToolBundlesResponse struct {
 }
 
 type PutToolRequestBody struct {
-	DisplayName  string             `json:"displayName"           required:"true"`
-	Description  string             `json:"description,omitempty"`
-	Tags         []string           `json:"tags,omitempty"`
-	IsEnabled    bool               `json:"isEnabled"             required:"true"`
-	UserCallable bool               `json:"userCallable"          required:"true"`
-	LLMCallable  bool               `json:"llmCallable"           required:"true"`
-	OutputKind   ToolImplOutputKind `json:"outputKind"            required:"true"`
+	DisplayName  string              `json:"displayName"           required:"true"`
+	Description  string              `json:"description,omitempty"`
+	Tags         []string            `json:"tags,omitempty"`
+	IsEnabled    bool                `json:"isEnabled"             required:"true"`
+	UserCallable bool                `json:"userCallable"          required:"true"`
+	LLMCallable  bool                `json:"llmCallable"           required:"true"`
+	OutputKind   ToolStoreOutputKind `json:"outputKind"            required:"true"`
 
 	// Take inputs as strings that we can then validate as a json object and put a tool.
 	ArgSchema JSONRawString `json:"argSchema" required:"true"`

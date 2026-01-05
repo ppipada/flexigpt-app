@@ -134,7 +134,7 @@ func TestToolCRUD(t *testing.T) {
 					IsEnabled:    true,
 					UserCallable: true,
 					LLMCallable:  true,
-					OutputKind:   spec.ToolOutputText,
+					OutputKind:   spec.ToolStoreOutputKindText,
 					ArgSchema:    `{}`,
 
 					Type: spec.ToolTypeHTTP,
@@ -169,7 +169,7 @@ func TestToolVersionConflict(t *testing.T) {
 			IsEnabled:    true,
 			UserCallable: true,
 			LLMCallable:  true,
-			OutputKind:   spec.ToolOutputText,
+			OutputKind:   spec.ToolStoreOutputKindText,
 			ArgSchema:    `{}`,
 
 			Type: spec.ToolTypeHTTP,
@@ -194,7 +194,7 @@ func TestToolDisabledBundleGuard(t *testing.T) {
 			IsEnabled:    true,
 			UserCallable: true,
 			LLMCallable:  true,
-			OutputKind:   spec.ToolOutputText,
+			OutputKind:   spec.ToolStoreOutputKindText,
 			ArgSchema:    `{}`,
 
 			Type: spec.ToolTypeHTTP,
@@ -256,7 +256,7 @@ func TestToolBuiltInGuards(t *testing.T) {
 			IsEnabled:    true,
 			UserCallable: true,
 			LLMCallable:  true,
-			OutputKind:   spec.ToolOutputText,
+			OutputKind:   spec.ToolStoreOutputKindText,
 			ArgSchema:    `{}`,
 
 			Type: spec.ToolTypeHTTP,
@@ -607,7 +607,7 @@ func TestConcurrentToolPut(t *testing.T) {
 				IsEnabled:    true,
 				UserCallable: true,
 				LLMCallable:  true,
-				OutputKind:   spec.ToolOutputText,
+				OutputKind:   spec.ToolStoreOutputKindText,
 				ArgSchema:    `{}`,
 
 				Type: spec.ToolTypeHTTP,
@@ -624,7 +624,7 @@ func TestConcurrentToolPut(t *testing.T) {
 				IsEnabled:    true,
 				UserCallable: true,
 				LLMCallable:  true,
-				OutputKind:   spec.ToolOutputText,
+				OutputKind:   spec.ToolStoreOutputKindText,
 				ArgSchema:    `{}`,
 
 				Type: spec.ToolTypeHTTP,
@@ -718,7 +718,7 @@ func mustPutTool(
 			Tags:         tags,
 			UserCallable: true,
 			LLMCallable:  true,
-			OutputKind:   spec.ToolOutputText,
+			OutputKind:   spec.ToolStoreOutputKindText,
 			ArgSchema:    `{}`,
 
 			Type: spec.ToolTypeHTTP,

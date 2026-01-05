@@ -53,15 +53,6 @@ const (
 	ToolTypeHTTP ToolImplType = "http"
 )
 
-// ToolImplOutputKind describes how a tool's result should be treated at the UX boundary.
-type ToolImplOutputKind string
-
-const (
-	ToolOutputText ToolImplOutputKind = "text" // result is text or text-like JSON
-	ToolOutputBlob ToolImplOutputKind = "blob" // bytes / file-like
-	ToolOutputNone ToolImplOutputKind = "none" // no visible payload, side-effect only
-)
-
 // GoToolImpl - Register-by-name pattern for Go tools.
 type GoToolImpl struct {
 	// Fully-qualified registration key, e.g.
@@ -120,6 +111,48 @@ type ToolStoreChoice struct {
 	DisplayName string              `json:"displayName,omitempty"`
 }
 
+type ToolStoreOutputKind string
+
+const (
+	ToolStoreOutputKindNone  ToolStoreOutputKind = "none"
+	ToolStoreOutputKindText  ToolStoreOutputKind = "text"
+	ToolStoreOutputKindImage ToolStoreOutputKind = "image"
+	ToolStoreOutputKindFile  ToolStoreOutputKind = "file"
+)
+
+type ToolStoreOutputText struct {
+	Text string `json:"text"`
+}
+
+type ImageDetail string
+
+const (
+	ImageDetailHigh ImageDetail = "high"
+	ImageDetailLow  ImageDetail = "low"
+	ImageDetailAuto ImageDetail = "auto"
+)
+
+type ToolStoreOutputImage struct {
+	Detail    ImageDetail `json:"detail"`
+	ImageName string      `json:"imageName"`
+	ImageMIME string      `json:"imageMIME"`
+	ImageData string      `json:"imageData"`
+}
+
+type ToolStoreOutputFile struct {
+	FileName string `json:"fileName"`
+	FileMIME string `json:"fileMIME"`
+	FileData string `json:"fileData"`
+}
+
+type ToolOutputUnion struct {
+	Kind ToolStoreOutputKind `json:"kind"`
+
+	TextItem  *ToolStoreOutputText  `json:"textItem,omitempty"`
+	ImageItem *ToolStoreOutputImage `json:"imageItem,omitempty"`
+	FileItem  *ToolStoreOutputFile  `json:"fileItem,omitempty"`
+}
+
 type Tool struct {
 	SchemaVersion string                      `json:"schemaVersion"`
 	ID            bundleitemutils.ItemID      `json:"id"` // UUID-v7
@@ -136,7 +169,7 @@ type Tool struct {
 	// LLMCallable indicates whether the model may call this tool as a function.
 	LLMCallable bool `json:"llmCallable"`
 	// OutputKind describes how the tool output should be surfaced in the UX.
-	OutputKind ToolImplOutputKind `json:"outputKind"`
+	OutputKind ToolStoreOutputKind `json:"outputKind"`
 
 	ArgSchema JSONSchema `json:"argSchema"` // validated pre-invoke
 

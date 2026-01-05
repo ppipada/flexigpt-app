@@ -442,7 +442,10 @@ func (ts *ToolStore) PutTool(
 	}
 
 	switch req.Body.OutputKind {
-	case spec.ToolOutputText, spec.ToolOutputBlob, spec.ToolOutputNone:
+	case spec.ToolStoreOutputKindNone,
+		spec.ToolStoreOutputKindText,
+		spec.ToolStoreOutputKindImage,
+		spec.ToolStoreOutputKindFile:
 		// Ok.
 	default:
 		return nil, fmt.Errorf("%w: a tool needs to have a valid output kind", spec.ErrInvalidRequest)

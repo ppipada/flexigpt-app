@@ -3,10 +3,11 @@ export enum ToolImplType {
 	HTTP = 'http',
 }
 
-export enum ToolImplOutputKind {
-	Text = 'text',
-	Blob = 'blob',
+export enum ToolStoreOutputKind {
 	None = 'none',
+	Text = 'text',
+	Image = 'image',
+	File = 'file',
 }
 
 /**
@@ -97,7 +98,7 @@ export interface Tool {
 
 	userCallable: boolean;
 	llmCallable: boolean;
-	outputKind: ToolImplOutputKind;
+	outputKind: ToolStoreOutputKind;
 
 	argSchema: JSONSchema;
 

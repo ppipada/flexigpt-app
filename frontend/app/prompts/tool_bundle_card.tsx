@@ -4,7 +4,7 @@ import { FiCheck, FiChevronDown, FiChevronUp, FiEdit2, FiPlus, FiTrash2, FiX } f
 
 // You need to implement this
 
-import { type Tool, type ToolBundle, ToolImplOutputKind, ToolImplType } from '@/spec/tool';
+import { type Tool, type ToolBundle, ToolImplType, ToolStoreOutputKind } from '@/spec/tool';
 
 import { toolStoreAPI } from '@/apis/baseapi';
 import { getAllTools } from '@/apis/list_helper';
@@ -146,7 +146,7 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 					partial.isEnabled ?? true,
 					partial.userCallable ?? true,
 					partial.llmCallable ?? true,
-					partial.outputKind ?? ToolImplOutputKind.Text,
+					partial.outputKind ?? ToolStoreOutputKind.Text,
 					partial.argSchema ?? '',
 					partial.type ?? ToolImplType.HTTP,
 					partial.goImpl,
