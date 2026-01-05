@@ -5,7 +5,8 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 > ⚠ Early Access Notice:
 >
 > The project is under active development; expect breaking changes and incomplete features between releases.
-> This repository is intended as a standalone application, not a reusable library. Public Go package APIs are not stable and may change between releases.
+> This repository is intended as a standalone application, not a reusable library.
+> Public Go package APIs are not stable and may change between releases.
 
 - [Quick Start](#quick-start)
 - [Key Features](#key-features)

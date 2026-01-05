@@ -395,11 +395,11 @@ linters:
 
       # List of aliases
       alias:
-        - pkg: github.com/ppipada/flexigpt-app/pkg/(\w+)/consts
+        - pkg: github.com/ppipada/flexigpt-app/internal/(\w+)/consts
           alias: ${1}Consts
-        - pkg: github.com/ppipada/flexigpt-app/pkg/(\w+)/spec
+        - pkg: github.com/ppipada/flexigpt-app/internal/(\w+)/spec
           alias: ${1}Spec
-        - pkg: github.com/ppipada/flexigpt-app/pkg/(\w+)/store
+        - pkg: github.com/ppipada/flexigpt-app/internal/(\w+)/store
           alias: ${1}Store
         - pkg: github.com/openai/openai-go/v3/shared/constant
           alias: openaiSharedConstant

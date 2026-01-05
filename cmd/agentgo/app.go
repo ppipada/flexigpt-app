@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ppipada/flexigpt-app/pkg/attachment"
-	"github.com/ppipada/flexigpt-app/pkg/fileutil"
-	"github.com/ppipada/flexigpt-app/pkg/middleware"
+	"github.com/ppipada/flexigpt-app/internal/attachment"
+	"github.com/ppipada/flexigpt-app/internal/fileutil"
+	"github.com/ppipada/flexigpt-app/internal/middleware"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/adrg/xdg"

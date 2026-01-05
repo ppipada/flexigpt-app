@@ -6,12 +6,12 @@ package main
 import (
 	"context"
 
-	"github.com/ppipada/flexigpt-app/pkg/inferencewrapper"
-	inferencewrapperSpec "github.com/ppipada/flexigpt-app/pkg/inferencewrapper/spec"
-	"github.com/ppipada/flexigpt-app/pkg/middleware"
-	"github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
-	modelpresetStore "github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
-	settingSpec "github.com/ppipada/flexigpt-app/pkg/setting/spec"
+	"github.com/ppipada/flexigpt-app/internal/inferencewrapper"
+	inferencewrapperSpec "github.com/ppipada/flexigpt-app/internal/inferencewrapper/spec"
+	"github.com/ppipada/flexigpt-app/internal/middleware"
+	"github.com/ppipada/flexigpt-app/internal/modelpreset/spec"
+	modelpresetStore "github.com/ppipada/flexigpt-app/internal/modelpreset/store"
+	settingSpec "github.com/ppipada/flexigpt-app/internal/setting/spec"
 
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )

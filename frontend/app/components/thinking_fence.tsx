@@ -3,16 +3,10 @@ import { useState } from 'react';
 interface ThinkingFenceProps {
 	detailsSummaryText: string;
 	text: string;
-	isBusy: boolean;
 	maxHeightClass?: string; // e.g. 'max-h-[50vh]' or 'max-h-60'
 }
 
-export function ThinkingFence({
-	detailsSummaryText,
-	text,
-	isBusy,
-	maxHeightClass = 'max-h-[50vh]',
-}: ThinkingFenceProps) {
+export function ThinkingFence({ detailsSummaryText, text, maxHeightClass = 'max-h-[50vh]' }: ThinkingFenceProps) {
 	const [open, setOpen] = useState(false);
 
 	return (
@@ -35,8 +29,6 @@ export function ThinkingFence({
 				>
 					<path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
 				</svg>
-
-				{isBusy && <span className="loading loading-dots loading-xs ml-auto" />}
 			</summary>
 
 			{/* body */}

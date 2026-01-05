@@ -18,10 +18,10 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 
 	assets "github.com/ppipada/flexigpt-app/frontend"
-	"github.com/ppipada/flexigpt-app/pkg/logrotate"
+	"github.com/ppipada/flexigpt-app/internal/logrotate"
 
 	// Run registry init.
-	_ "github.com/ppipada/flexigpt-app/pkg/tool/localregistry"
+	_ "github.com/ppipada/flexigpt-app/internal/tool/localregistry"
 )
 
 var Version string

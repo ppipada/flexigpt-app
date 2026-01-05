@@ -1,0 +1,46 @@
+{
+	"schemaVersion": "2025-07-01",
+	"id": "018fe0f4-b8cd-7e55-82d5-9df0bd70e4be",
+	"slug": "inspectimage",
+	"version": "v1.0.0",
+	"displayName": "Inspect image",
+	"description": "Return intrinsic metadata (dimensions, format, timestamps) for a local image file.",
+	"tags": ["fs", "image"],
+	"userCallable": true,
+	"llmCallable": true,
+	"outputKind": "text",
+	"argSchema": {
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"type": "object",
+		"properties": {
+			"path": {
+				"type": "string",
+				"description": "Absolute or relative path of the image to inspect."
+			}
+		},
+		"required": ["path"],
+		"additionalProperties": false
+	},
+	"outputSchema": {
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"type": "object",
+		"properties": {
+			"exists": { "type": "boolean" },
+			"width": { "type": "integer" },
+			"height": { "type": "integer" },
+			"format": { "type": "string" },
+			"sizeBytes": { "type": "integer" },
+			"modTime": { "type": "string" }
+		},
+		"required": ["exists"],
+		"additionalProperties": false
+	},
+	"type": "go",
+	"goImpl": {
+		"func": "github.com/ppipada/flexigpt-app/internal/builtin/gotool/fs.InspectImage"
+	},
+	"isEnabled": true,
+	"isBuiltIn": true,
+	"createdAt": "2025-07-02T12:00:00Z",
+	"modifiedAt": "2025-07-02T12:00:00Z"
+}

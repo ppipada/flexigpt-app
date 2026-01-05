@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/ppipada/flexigpt-app/pkg/inferencewrapper"
-	inferencewrapperSpec "github.com/ppipada/flexigpt-app/pkg/inferencewrapper/spec"
-	modelpresetSpec "github.com/ppipada/flexigpt-app/pkg/modelpreset/spec"
-	settingSpec "github.com/ppipada/flexigpt-app/pkg/setting/spec"
+	"github.com/ppipada/flexigpt-app/internal/inferencewrapper"
+	inferencewrapperSpec "github.com/ppipada/flexigpt-app/internal/inferencewrapper/spec"
+	modelpresetSpec "github.com/ppipada/flexigpt-app/internal/modelpreset/spec"
+	settingSpec "github.com/ppipada/flexigpt-app/internal/setting/spec"
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 

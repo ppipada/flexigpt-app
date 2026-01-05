@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 
-	inferencewrapperSpec "github.com/ppipada/flexigpt-app/pkg/inferencewrapper/spec"
-	"github.com/ppipada/flexigpt-app/pkg/middleware"
+	inferencewrapperSpec "github.com/ppipada/flexigpt-app/internal/inferencewrapper/spec"
+	"github.com/ppipada/flexigpt-app/internal/middleware"
 	inferencegoSpec "github.com/ppipada/inference-go/spec"
 
-	settingSpec "github.com/ppipada/flexigpt-app/pkg/setting/spec"
-	settingStore "github.com/ppipada/flexigpt-app/pkg/setting/store"
+	settingSpec "github.com/ppipada/flexigpt-app/internal/setting/spec"
+	settingStore "github.com/ppipada/flexigpt-app/internal/setting/store"
 )
 
 type SettingStoreWrapper struct {

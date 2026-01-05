@@ -14,7 +14,7 @@ import {
 import { FiAlertTriangle, FiEdit2, FiFastForward, FiPlay, FiSend, FiSquare, FiX } from 'react-icons/fi';
 
 import { useMenuStore } from '@ariakit/react';
-import { NodeApi, SingleBlockPlugin, type Value } from 'platejs';
+import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
 import type {
@@ -65,7 +65,6 @@ import {
 } from '@/chats/templates/template_editor_utils';
 import { TemplateSlashKit } from '@/chats/templates/template_plugin';
 import { getLastUserBlockContent } from '@/chats/templates/template_processing';
-import { KEY_TEMPLATE_SELECTION } from '@/chats/templates/template_spec';
 import { TemplateToolbars } from '@/chats/templates/template_toolbars';
 import { buildUserInlineChildrenFromText } from '@/chats/templates/template_variables_inline';
 import {
@@ -204,13 +203,11 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	const lastPopulatedSelectionKeyRef = useRef<Set<string>>(new Set());
 
-	// chats/chat_input_editor.tsx, inside selectionInfo useMemo:
-
 	const selectionInfo = useMemo(() => {
 		// Fast path: if the document contains no template-selection elements at all,
 		// short-circuit instead of running the heavier helpers.
-		const hasAnyTemplate = NodeApi.elements(editor).some(([el]) => el.type === KEY_TEMPLATE_SELECTION);
-		if (!hasAnyTemplate) {
+		const tplNodeWithPath = getFirstTemplateNodeWithPath(editor);
+		if (!tplNodeWithPath) {
 			return {
 				tplNodeWithPath: undefined,
 				hasTemplate: false,
@@ -219,7 +216,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			};
 		}
 
-		const tplNodeWithPath = getFirstTemplateNodeWithPath(editor);
 		const selections = getTemplateSelections(editor);
 		const hasTemplate = selections.length > 0;
 

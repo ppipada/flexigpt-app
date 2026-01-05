@@ -179,9 +179,9 @@ export const EnhancedMarkdown = memo(function EnhancedMarkdown({
 				// eslint-disable-next-line @typescript-eslint/no-base-to-string
 				const value = String(children).replace(/\n$/, '');
 				if (language === (CustomMDLanguage.ThinkingSummary as string)) {
-					return <ThinkingFence detailsSummaryText="Thinking Summary" text={value} isBusy={isBusy} />;
+					return <ThinkingFence detailsSummaryText="Thinking Summary" text={value} />;
 				} else if (language === (CustomMDLanguage.Thinking as string)) {
-					return <ThinkingFence detailsSummaryText="Thinking" text={value} isBusy={isBusy} />;
+					return <ThinkingFence detailsSummaryText="Thinking" text={value} />;
 				} else {
 					return <CodeBlock language={language} value={value} isBusy={isBusy} />;
 				}

@@ -8,6 +8,7 @@
 - [x] reasoning content has status attached in input even though output did not have one
 - [ ] in readfile toolcall, if we say read pdf, llm calls text encoding. now readfile tries to read as stringed text even if no extraction or anything is done and we end up passing gibberish. need to rectify the toolcall.
 - [ ] in tooloutput, once we get the output, we are attaching it as text always, we want tools to return some content types and then create appropriate content blocks in output.
+- [ ] if there is a toolcall, and we dont input anything, it doesnt activate run and send button.
 
 ## Features
 

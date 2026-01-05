@@ -13,16 +13,16 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/danielgtaylor/huma/v2/humacli"
-	conversationStore "github.com/ppipada/flexigpt-app/pkg/conversation/store"
-	"github.com/ppipada/flexigpt-app/pkg/inferencewrapper"
-	"github.com/ppipada/flexigpt-app/pkg/logrotate"
-	modelpresetStore "github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
-	promptStore "github.com/ppipada/flexigpt-app/pkg/prompt/store"
-	settingStore "github.com/ppipada/flexigpt-app/pkg/setting/store"
-	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
+	conversationStore "github.com/ppipada/flexigpt-app/internal/conversation/store"
+	"github.com/ppipada/flexigpt-app/internal/inferencewrapper"
+	"github.com/ppipada/flexigpt-app/internal/logrotate"
+	modelpresetStore "github.com/ppipada/flexigpt-app/internal/modelpreset/store"
+	promptStore "github.com/ppipada/flexigpt-app/internal/prompt/store"
+	settingStore "github.com/ppipada/flexigpt-app/internal/setting/store"
+	toolStore "github.com/ppipada/flexigpt-app/internal/tool/store"
 
 	// Run registry init.
-	_ "github.com/ppipada/flexigpt-app/pkg/tool/localregistry"
+	_ "github.com/ppipada/flexigpt-app/internal/tool/localregistry"
 )
 
 // Options for the server cli.

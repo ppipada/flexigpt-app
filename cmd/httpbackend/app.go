@@ -4,14 +4,14 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/ppipada/flexigpt-app/pkg/inferencewrapper"
+	"github.com/ppipada/flexigpt-app/internal/inferencewrapper"
 	"github.com/ppipada/inference-go/debugclient"
 
-	conversationStore "github.com/ppipada/flexigpt-app/pkg/conversation/store"
-	modelpresetStore "github.com/ppipada/flexigpt-app/pkg/modelpreset/store"
-	promptStore "github.com/ppipada/flexigpt-app/pkg/prompt/store"
-	settingStore "github.com/ppipada/flexigpt-app/pkg/setting/store"
-	toolStore "github.com/ppipada/flexigpt-app/pkg/tool/store"
+	conversationStore "github.com/ppipada/flexigpt-app/internal/conversation/store"
+	modelpresetStore "github.com/ppipada/flexigpt-app/internal/modelpreset/store"
+	promptStore "github.com/ppipada/flexigpt-app/internal/prompt/store"
+	settingStore "github.com/ppipada/flexigpt-app/internal/setting/store"
+	toolStore "github.com/ppipada/flexigpt-app/internal/tool/store"
 )
 
 type BackendApp struct {

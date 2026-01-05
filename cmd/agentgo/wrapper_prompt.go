@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/ppipada/flexigpt-app/pkg/middleware"
-	"github.com/ppipada/flexigpt-app/pkg/prompt/spec"
-	promptStore "github.com/ppipada/flexigpt-app/pkg/prompt/store"
+	"github.com/ppipada/flexigpt-app/internal/middleware"
+	"github.com/ppipada/flexigpt-app/internal/prompt/spec"
+	promptStore "github.com/ppipada/flexigpt-app/internal/prompt/store"
 )
 
 type PromptTemplateStoreWrapper struct {
