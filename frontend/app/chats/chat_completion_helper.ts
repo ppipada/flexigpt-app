@@ -3,6 +3,7 @@ import {
 	type CompletionResponseBody,
 	ContentItemKind,
 	ImageDetail,
+	type InferenceError,
 	type InferenceUsage,
 	type ModelParam,
 	OutputKind,
@@ -95,7 +96,15 @@ function getErrorStub(
 	assistantPlaceholder.modelParam = modelParams;
 	assistantPlaceholder.status = Status.Failed;
 	// Optionally keep the raw error on the message
-	assistantPlaceholder.error = errorObj;
+	if (rawResponse?.inferenceResponse && rawResponse.inferenceResponse.error) {
+		assistantPlaceholder.error = rawResponse.inferenceResponse.error;
+	} else {
+		assistantPlaceholder.error = {
+			code: 'unknown',
+			message: JSON.stringify(errorObj, null, 2),
+		} as InferenceError;
+	}
+
 	const outText = (assistantPlaceholder.uiContent || '') + '\n\n>Got error in API processing.';
 	assistantPlaceholder.uiContent = outText;
 	assistantPlaceholder.outputs = [

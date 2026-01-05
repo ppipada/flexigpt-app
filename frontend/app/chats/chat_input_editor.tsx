@@ -242,6 +242,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	const hasPendingToolCalls = useMemo(() => toolCalls.some(c => c.status === 'pending'), [toolCalls]);
 	const hasRunningToolCalls = useMemo(() => toolCalls.some(c => c.status === 'running'), [toolCalls]);
+	const templateBlocked = selectionInfo.hasTemplate && selectionInfo.requiredCount > 0;
 
 	const { formRef, onKeyDown } = useEnterSubmit({
 		isBusy,
@@ -265,9 +266,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	const isSendButtonEnabled = useMemo(() => {
 		if (isBusy) return false;
-		if (selectionInfo.hasTemplate) {
-			return selectionInfo.requiredCount === 0;
-		}
+		if (templateBlocked) return false;
+
 		const hasText = hasNonEmptyUserText(editorRef.current);
 		if (hasText) return true;
 
@@ -471,82 +471,110 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	 * before sending.
 	 */
 	const doSubmit = async (options: { runPendingTools: boolean }) => {
-		if (!isSendButtonEnabled || isSubmittingRef.current) {
-			// If invalid, flash and focus first pending pill
-			if (selectionInfo.hasTemplate && selectionInfo.requiredCount > 0) {
-				// ask the toolbar (rendered via plugin) to flash
-				dispatchTemplateFlashEvent();
+		const { runPendingTools } = options;
 
-				// Focus first pending variable pill (if any)
-				const fpv = selectionInfo.firstPendingVar;
-				if (fpv?.name && contentRef.current) {
-					const idSegment = fpv.selectionID ? `[data-selection-id="${cssEscape(fpv.selectionID)}"]` : '';
-					const sel = contentRef.current.querySelector(
-						`span[data-template-variable][data-var-name="${cssEscape(fpv.name)}"]${idSegment}`
-					);
-					if (sel && 'focus' in sel && typeof sel.focus === 'function') {
-						sel.focus();
-					} else {
-						// fallback focus
-						editor.tf.focus();
-					}
+		if (isSubmittingRef.current) return;
+		if (isBusy) return;
+
+		// 1) Templates: never allow send when required vars are missing.
+		if (templateBlocked) {
+			// Ask the toolbar (rendered via plugin) to flash.
+			dispatchTemplateFlashEvent();
+
+			// Focus first pending variable pill (if any).
+			const fpv = selectionInfo.firstPendingVar;
+			if (fpv?.name && contentRef.current) {
+				const idSegment = fpv.selectionID ? `[data-selection-id="${cssEscape(fpv.selectionID)}"]` : '';
+				const sel = contentRef.current.querySelector(
+					`span[data-template-variable][data-var-name="${cssEscape(fpv.name)}"]${idSegment}`
+				);
+				if (sel && 'focus' in sel && typeof sel.focus === 'function') {
+					sel.focus();
 				} else {
 					editor.tf.focus();
 				}
+			} else {
+				editor.tf.focus();
 			}
+			return;
+		}
+
+		// 2) Pure send path: if we're *not* running tools, bail out when we
+		//    don't already have something to send.
+		if (!runPendingTools && !isSendButtonEnabled) {
 			return;
 		}
 
 		setSubmitError(null);
 		isSubmittingRef.current = true;
+		const hadPendingTools = runPendingTools && hasPendingToolCalls;
+		let didSend = false;
 
 		try {
 			const existingOutputs = toolOutputs;
 			let newlyProducedOutputs: UIToolOutput[] = [];
 
-			if (options.runPendingTools && hasPendingToolCalls) {
+			// 3) Optional tool run (fast-forward path).
+			if (runPendingTools && hasPendingToolCalls) {
 				newlyProducedOutputs = await runAllPendingToolCalls();
 			}
 
-			// If there are template selections, auto-run any ready tools before sending.
+			// 4) Build final message content after tools have run.
 			const selections = getTemplateSelections(editor);
 			const hasTpl = selections.length > 0;
 
 			const textToSend = hasTpl ? toPlainTextReplacingVariables(editor) : editor.api.string([]);
+			const finalToolOutputs = [...existingOutputs, ...newlyProducedOutputs];
+
+			const hasNonEmptyText = textToSend.trim().length > 0;
+			const hasAttachmentsToSend = attachments.length > 0;
+			const hasToolOutputsToSend = finalToolOutputs.length > 0;
+
+			// Enforce the "non-empty message" invariant *after* tools have run.
+			if (!hasNonEmptyText && !hasAttachmentsToSend && !hasToolOutputsToSend) {
+				setSubmitError(
+					hadPendingTools
+						? 'Tool calls did not produce any outputs, so there is nothing to send yet.'
+						: 'Nothing to send. Add text, attachments, or tool outputs first.'
+				);
+				return;
+			}
+
+			// 5) Tool choices (editor-attached + conversation-level).
 			const attachedTools = getAttachedTools(editor);
 			const explicitChoices = attachedTools.map(editorAttachedToolToToolChoice);
-			// Enabled conversation-level tools (UI-only state)
 			const conversationChoices = conversationToolsToChoices(conversationToolsState);
-			// Final tool choices for this turn (explicit override conversation defaults)
 			const finalToolChoices = dedupeToolChoices([...explicitChoices, ...conversationChoices]);
 
 			const payload: EditorSubmitPayload = {
 				text: textToSend,
 				attachedTools,
 				attachments,
-				toolOutputs: [...existingOutputs, ...newlyProducedOutputs],
+				toolOutputs: finalToolOutputs,
 				finalToolChoices,
 			};
 
 			await onSubmit(payload);
 			setSubmitError(null);
-			// Update conversation tools UI state with any newly used tools, preserving existing flags.
 			setConversationToolsState(prev => mergeConversationToolsWithNewChoices(prev, finalToolChoices));
+			didSend = true;
 		} finally {
-			// Clear editor and state after successful preprocessor runs and submit
-			editor.tf.setValue(EDITOR_EMPTY_VALUE);
-			setAttachments([]);
-			setDirectoryGroups([]);
-			setToolCalls([]);
-			setToolOutputs([]);
-			setActiveToolOutput(null);
-
-			lastPopulatedSelectionKeyRef.current.clear();
-			editor.tf.focus();
 			isSubmittingRef.current = false;
+
+			// Only clear the editor if we actually sent something.
+			if (didSend) {
+				editor.tf.setValue(EDITOR_EMPTY_VALUE);
+				setAttachments([]);
+				setDirectoryGroups([]);
+				setToolCalls([]);
+				setToolOutputs([]);
+				setActiveToolOutput(null);
+
+				lastPopulatedSelectionKeyRef.current.clear();
+				editor.tf.focus();
+			}
 		}
 	};
-
 	/**
 	 * Default form submit / Enter: "run pending tools, then send".
 	 */
@@ -875,12 +903,12 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	// Button-state helpers:
 	// - Play: run tools only (enabled when there are pending tools and none are running).
-	// - Fast-forward: run tools then send (enabled when send is allowed and tools are pending).
+	// - Fast-forward: run tools then send (enabled when there are pending tools and
+	//   templates are satisfied; "sendability" will be re-checked after tools run).
 	// - Send: send only (enabled when send is allowed and there are no pending tools).
 	const canRunToolsOnly = hasPendingToolCalls && !hasRunningToolCalls && !isBusy;
-	const canRunToolsAndSend = hasPendingToolCalls && isSendButtonEnabled && !hasRunningToolCalls;
+	const canRunToolsAndSend = hasPendingToolCalls && !hasRunningToolCalls && !isBusy && !templateBlocked;
 	const canSendOnly = !hasPendingToolCalls && isSendButtonEnabled && !hasRunningToolCalls;
-
 	return (
 		<>
 			<form
