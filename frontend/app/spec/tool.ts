@@ -3,6 +3,9 @@ export enum ToolImplType {
 	HTTP = 'http',
 }
 
+/**
+ * @public
+ */
 export enum ToolStoreOutputKind {
 	None = 'none',
 	Text = 'text',
@@ -12,7 +15,6 @@ export enum ToolStoreOutputKind {
 
 /**
  * @public
- *
  */
 export type JSONValue = string | number | boolean | null | JSONValue[] | { [key: string]: JSONValue };
 export type JSONSchema = JSONValue;
@@ -98,7 +100,6 @@ export interface Tool {
 
 	userCallable: boolean;
 	llmCallable: boolean;
-	outputKind: ToolStoreOutputKind;
 
 	argSchema: JSONSchema;
 

@@ -441,16 +441,6 @@ func (ts *ToolStore) PutTool(
 		return nil, fmt.Errorf("%w: a tool needs to be callable", spec.ErrInvalidRequest)
 	}
 
-	switch req.Body.OutputKind {
-	case spec.ToolStoreOutputKindNone,
-		spec.ToolStoreOutputKindText,
-		spec.ToolStoreOutputKindImage,
-		spec.ToolStoreOutputKindFile:
-		// Ok.
-	default:
-		return nil, fmt.Errorf("%w: a tool needs to have a valid output kind", spec.ErrInvalidRequest)
-	}
-
 	if err := bundleitemutils.ValidateItemSlug(req.ToolSlug); err != nil {
 		return nil, err
 	}
@@ -508,7 +498,6 @@ func (ts *ToolStore) PutTool(
 
 		UserCallable: req.Body.UserCallable,
 		LLMCallable:  req.Body.LLMCallable,
-		OutputKind:   req.Body.OutputKind,
 
 		ArgSchema: json.RawMessage(argSchemaStr),
 

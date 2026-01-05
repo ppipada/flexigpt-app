@@ -67,9 +67,9 @@ func TestScale_LotsOfToolBundles(t *testing.T) {
 							Type:         spec.ToolTypeHTTP,
 							UserCallable: true,
 							LLMCallable:  true,
-							OutputKind:   spec.ToolStoreOutputKindText,
-							HTTP:         dummyHTTPTool(),
-							ArgSchema:    `{}`,
+
+							HTTP:      dummyHTTPTool(),
+							ArgSchema: `{}`,
 						},
 					})
 					if err != nil && !errors.Is(err, spec.ErrBundleDisabled) {
@@ -198,9 +198,9 @@ func TestScale_LotsOfTools(t *testing.T) {
 						Type:         spec.ToolTypeHTTP,
 						UserCallable: true,
 						LLMCallable:  true,
-						OutputKind:   spec.ToolStoreOutputKindText,
-						HTTP:         dummyHTTPTool(),
-						ArgSchema:    `{}`,
+
+						HTTP:      dummyHTTPTool(),
+						ArgSchema: `{}`,
 					},
 				})
 				if err != nil {

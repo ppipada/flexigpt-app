@@ -134,8 +134,8 @@ func TestToolCRUD(t *testing.T) {
 					IsEnabled:    true,
 					UserCallable: true,
 					LLMCallable:  true,
-					OutputKind:   spec.ToolStoreOutputKindText,
-					ArgSchema:    `{}`,
+
+					ArgSchema: `{}`,
 
 					Type: spec.ToolTypeHTTP,
 					HTTP: dummyHTTPTool(),
@@ -169,8 +169,8 @@ func TestToolVersionConflict(t *testing.T) {
 			IsEnabled:    true,
 			UserCallable: true,
 			LLMCallable:  true,
-			OutputKind:   spec.ToolStoreOutputKindText,
-			ArgSchema:    `{}`,
+
+			ArgSchema: `{}`,
 
 			Type: spec.ToolTypeHTTP,
 			HTTP: dummyHTTPTool(),
@@ -194,8 +194,8 @@ func TestToolDisabledBundleGuard(t *testing.T) {
 			IsEnabled:    true,
 			UserCallable: true,
 			LLMCallable:  true,
-			OutputKind:   spec.ToolStoreOutputKindText,
-			ArgSchema:    `{}`,
+
+			ArgSchema: `{}`,
 
 			Type: spec.ToolTypeHTTP,
 			HTTP: dummyHTTPTool(),
@@ -256,8 +256,8 @@ func TestToolBuiltInGuards(t *testing.T) {
 			IsEnabled:    true,
 			UserCallable: true,
 			LLMCallable:  true,
-			OutputKind:   spec.ToolStoreOutputKindText,
-			ArgSchema:    `{}`,
+
+			ArgSchema: `{}`,
 
 			Type: spec.ToolTypeHTTP,
 			HTTP: dummyHTTPTool(),
@@ -607,8 +607,8 @@ func TestConcurrentToolPut(t *testing.T) {
 				IsEnabled:    true,
 				UserCallable: true,
 				LLMCallable:  true,
-				OutputKind:   spec.ToolStoreOutputKindText,
-				ArgSchema:    `{}`,
+
+				ArgSchema: `{}`,
 
 				Type: spec.ToolTypeHTTP,
 				HTTP: dummyHTTPTool(),
@@ -624,8 +624,8 @@ func TestConcurrentToolPut(t *testing.T) {
 				IsEnabled:    true,
 				UserCallable: true,
 				LLMCallable:  true,
-				OutputKind:   spec.ToolStoreOutputKindText,
-				ArgSchema:    `{}`,
+
+				ArgSchema: `{}`,
 
 				Type: spec.ToolTypeHTTP,
 				HTTP: dummyHTTPTool(),
@@ -718,8 +718,8 @@ func mustPutTool(
 			Tags:         tags,
 			UserCallable: true,
 			LLMCallable:  true,
-			OutputKind:   spec.ToolStoreOutputKindText,
-			ArgSchema:    `{}`,
+
+			ArgSchema: `{}`,
 
 			Type: spec.ToolTypeHTTP,
 			HTTP: dummyHTTPTool(),

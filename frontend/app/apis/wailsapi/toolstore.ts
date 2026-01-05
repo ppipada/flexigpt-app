@@ -9,7 +9,6 @@ import type {
 	ToolBundle,
 	ToolImplType,
 	ToolListItem,
-	ToolStoreOutputKind,
 } from '@/spec/tool';
 
 import type { IToolStoreAPI } from '@/apis/interface';
@@ -136,7 +135,6 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 		isEnabled: boolean,
 		userCallable: boolean,
 		llmCallable: boolean,
-		outputKind: ToolStoreOutputKind,
 		argSchema: JSONRawString,
 		type: ToolImplType,
 		goImpl?: GoToolImpl,
@@ -155,7 +153,6 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 				tags: tags,
 				userCallable: userCallable,
 				llmCallable: llmCallable,
-				outputKind: outputKind,
 				argSchema: argSchema,
 				type: type,
 				goImpl: goImpl,

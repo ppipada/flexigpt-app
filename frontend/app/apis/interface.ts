@@ -23,7 +23,6 @@ import type {
 	ToolImplType,
 	ToolListItem,
 	ToolStoreChoice,
-	ToolStoreOutputKind,
 } from '@/spec/tool';
 
 export interface ILogger {
@@ -203,7 +202,6 @@ export interface IToolStoreAPI {
 		isEnabled: boolean,
 		userCallable: boolean,
 		llmCallable: boolean,
-		outputKind: ToolStoreOutputKind,
 		argSchema: JSONSchema,
 		type: ToolImplType,
 		goImpl?: GoToolImpl,

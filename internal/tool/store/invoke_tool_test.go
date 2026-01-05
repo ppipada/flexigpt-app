@@ -350,12 +350,12 @@ func TestInvokeTool(t *testing.T) {
 					Description:  "test tool",
 					UserCallable: true,
 					LLMCallable:  true,
-					OutputKind:   spec.ToolStoreOutputKindText,
-					Tags:         []string{"t"},
-					IsEnabled:    true,
-					ArgSchema:    "{}",
-					Type:         spec.ToolTypeHTTP,
-					HTTP:         &impl,
+
+					Tags:      []string{"t"},
+					IsEnabled: true,
+					ArgSchema: "{}",
+					Type:      spec.ToolTypeHTTP,
+					HTTP:      &impl,
 				},
 			}); err != nil {
 				t.Fatalf("PutTool: %v", err)
@@ -522,10 +522,10 @@ func TestInvokeTool_RequestBodyTemplating_PathQueryHeaderAuth(t *testing.T) {
 			IsEnabled:    true,
 			UserCallable: true,
 			LLMCallable:  true,
-			OutputKind:   spec.ToolStoreOutputKindText,
-			ArgSchema:    "{}",
-			Type:         spec.ToolTypeHTTP,
-			HTTP:         &impl,
+
+			ArgSchema: "{}",
+			Type:      spec.ToolTypeHTTP,
+			HTTP:      &impl,
 		},
 	})
 	if err != nil {
@@ -1069,7 +1069,6 @@ func addGoToolFile(
 		Tags:          []string{"go"},
 		UserCallable:  true,
 		LLMCallable:   true,
-		OutputKind:    spec.ToolStoreOutputKindText,
 		ArgSchema:     json.RawMessage(`{}`),
 		Type:          spec.ToolTypeGo,
 		GoImpl:        &spec.GoToolImpl{Func: funcName},

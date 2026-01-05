@@ -45,17 +45,6 @@ func validateTool(t *spec.Tool) error {
 		return errors.New("modifiedAt is zero")
 	}
 
-	// Exposure sanity: if set, outputKind must be one of the known values.
-	switch t.OutputKind {
-	case spec.ToolStoreOutputKindNone,
-		spec.ToolStoreOutputKindText,
-		spec.ToolStoreOutputKindImage,
-		spec.ToolStoreOutputKindFile:
-		// Ok.
-	default:
-		return fmt.Errorf("invalid exposure.outputKind %q", t.OutputKind)
-	}
-
 	// Type / implementation sanity.
 	switch t.Type {
 	case spec.ToolTypeGo:

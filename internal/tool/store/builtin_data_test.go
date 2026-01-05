@@ -815,7 +815,6 @@ func buildValidTool(t *testing.T, slug, ver, id string) spec.Tool {
 		Description:   "desc",
 		UserCallable:  true,
 		LLMCallable:   true,
-		OutputKind:    spec.ToolStoreOutputKindText,
 		Tags:          []string{"tag1", "tag2"},
 		ArgSchema:     json.RawMessage(`{"type":"object"}`),
 		Type:          spec.ToolTypeGo,

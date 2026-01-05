@@ -168,8 +168,6 @@ type Tool struct {
 	UserCallable bool `json:"userCallable"`
 	// LLMCallable indicates whether the model may call this tool as a function.
 	LLMCallable bool `json:"llmCallable"`
-	// OutputKind describes how the tool output should be surfaced in the UX.
-	OutputKind ToolStoreOutputKind `json:"outputKind"`
 
 	ArgSchema JSONSchema `json:"argSchema"` // validated pre-invoke
 
