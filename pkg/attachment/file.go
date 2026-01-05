@@ -1,7 +1,6 @@
 package attachment
 
 import (
-	"context"
 	"errors"
 	"path/filepath"
 	"strings"
@@ -77,7 +76,7 @@ func (ref *FileRef) IsModified() bool {
 	return false
 }
 
-func buildBlocksForLocalFile(ctx context.Context, att *Attachment, onlyIfTextKind bool) (*ContentBlock, error) {
+func buildBlocksForLocalFile(att *Attachment, onlyIfTextKind bool) (*ContentBlock, error) {
 	path := att.FileRef.Path
 
 	switch att.Mode {

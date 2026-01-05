@@ -16,29 +16,7 @@ var (
 	ErrAttachmentModifiedSinceSnapshot = errors.New("attachment modified since snapshot")
 )
 
-type AttachmentContentBlockKind string
-
-const (
-	ContentBlockText  AttachmentContentBlockKind = "text"
-	ContentBlockImage AttachmentContentBlockKind = "image"
-	ContentBlockFile  AttachmentContentBlockKind = "file"
-)
 const maxAttachmentFetchBytes = 16 * 1024 * 1024 // 16MB safety limit
-
-// ContentBlock represents a provider-agnostic chunk of content derived
-// from an Attachment. Providers (OpenAI, Anthropic, etc.) adapt this
-// into their own message/part formats.
-type ContentBlock struct {
-	Kind AttachmentContentBlockKind `json:"kind"`
-
-	// For Kind == text: Text is populated.
-	Text *string `json:"text,omitempty"`
-
-	// For Kind == image or file: Base64Data + MIMEType are populated.
-	Base64Data *string `json:"base64Data,omitempty"`
-	MIMEType   *string `json:"mimeType,omitempty"`
-	FileName   *string `json:"fileName,omitempty"`
-}
 
 // AttachmentKind enumerates contextual attachment categories that can be
 // associated with messages sent to the inference layer.
@@ -172,7 +150,7 @@ func (att *Attachment) BuildContentBlock(ctx context.Context, opts ...ContentBlo
 		if att.FileRef == nil || !att.FileRef.Exists {
 			return nil, errors.New("invalid file ref for attachment")
 		}
-		return buildBlocksForLocalFile(ctx, att, buildContentOptions.OnlyIfTextKind)
+		return buildBlocksForLocalFile(att, buildContentOptions.OnlyIfTextKind)
 
 	case AttachmentURL:
 		if att.URLRef == nil || att.URLRef.URL == "" {
