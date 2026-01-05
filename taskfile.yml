@@ -21,7 +21,7 @@ tasks:
       #   - wails: build/buildvars.env and build/flatpak/io.github.flexigpt.client.yml
       #   - node: package.json, .github/workflows/flatpak.yml, build/flatpak/io.github.flexigpt.client.yml, frontend/package.json (types)
       - go install github.com/wailsapp/wails/v2/cmd/wails@v2.11.0
-      - go install golang.org/x/tools/gopls@v0.20.0
+      - go install golang.org/x/tools/gopls@v0.21.0
       - go install github.com/oligot/go-mod-upgrade@v0.12.0
       - go install github.com/ppipada/refdir@v0.7.0
       - go install github.com/vladopajic/go-test-coverage/v2@v2.18.0
