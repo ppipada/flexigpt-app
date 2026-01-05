@@ -1,5 +1,5 @@
 import type { Attachment, DirectoryOverflowInfo, UIAttachment } from '@/spec/attachment';
-import { AttachmentErrorReason, AttachmentKind, AttachmentMode } from '@/spec/attachment';
+import { AttachmentContentBlockMode, AttachmentErrorReason, AttachmentKind } from '@/spec/attachment';
 
 /**
  * @public
@@ -34,7 +34,7 @@ export function uiAttachmentToConversation(att: UIAttachment): Attachment {
 		kind: att.kind,
 		label: att.label,
 		mode: att.mode,
-		availableModes: att.availableModes,
+		availableContentBlockModes: att.availableContentBlockModes,
 		fileRef: att.fileRef,
 		imageRef: att.imageRef,
 		urlRef: att.urlRef,
@@ -75,8 +75,8 @@ function buildErrorAttachmentForLocalPath(att: Attachment, reason: AttachmentErr
 	return {
 		kind: AttachmentKind.file,
 		label: att.label,
-		mode: AttachmentMode.notReadable,
-		availableModes: [AttachmentMode.notReadable],
+		mode: AttachmentContentBlockMode.notReadable,
+		availableContentBlockModes: [AttachmentContentBlockMode.notReadable],
 		fileRef: att.fileRef,
 		imageRef: att.imageRef,
 		urlRef: att.urlRef,
@@ -105,14 +105,14 @@ export function buildUIAttachmentForLocalPath(att: Attachment): UIAttachment | u
 		return buildErrorAttachmentForLocalPath(att, AttachmentErrorReason.TooLargeSingle);
 	}
 
-	if (att.mode && att.mode == AttachmentMode.notReadable) {
+	if (att.mode && att.mode == AttachmentContentBlockMode.notReadable) {
 		return buildErrorAttachmentForLocalPath(att, AttachmentErrorReason.Unreadable);
 	}
 	return {
 		kind: att.kind,
 		label: att.label,
-		mode: att.mode ?? AttachmentMode.notReadable,
-		availableModes: att.availableModes ?? [AttachmentMode.notReadable],
+		mode: att.mode ?? AttachmentContentBlockMode.notReadable,
+		availableContentBlockModes: att.availableContentBlockModes ?? [AttachmentContentBlockMode.notReadable],
 		fileRef: att.fileRef,
 		imageRef: att.imageRef,
 		urlRef: att.urlRef,
@@ -128,8 +128,8 @@ export function buildUIAttachmentForURL(att: Attachment): UIAttachment {
 	return {
 		kind: att.kind,
 		label: att.label,
-		mode: att.mode ?? AttachmentMode.notReadable,
-		availableModes: att.availableModes ?? [AttachmentMode.notReadable],
+		mode: att.mode ?? AttachmentContentBlockMode.notReadable,
+		availableContentBlockModes: att.availableContentBlockModes ?? [AttachmentContentBlockMode.notReadable],
 		fileRef: att.fileRef,
 		imageRef: att.imageRef,
 		urlRef: att.urlRef,

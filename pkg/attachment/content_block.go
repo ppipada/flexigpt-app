@@ -1,5 +1,23 @@
 package attachment
 
+// AttachmentContentBlockMode describes how a given attachment should be used
+// for the current turn.
+type AttachmentContentBlockMode string
+
+const (
+	AttachmentContentBlockModeText        AttachmentContentBlockMode = "text"         // "Text content"
+	AttachmentContentBlockModeFile        AttachmentContentBlockMode = "file"         // "File (original format)"
+	AttachmentContentBlockModeImage       AttachmentContentBlockMode = "image"        // Image rendering
+	AttachmentContentBlockModePageContent AttachmentContentBlockMode = "page"         // "Page content" for HTML/URLs
+	AttachmentContentBlockModeLinkOnly    AttachmentContentBlockMode = "link"         // "Link only" – no fetch
+	AttachmentContentBlockModeNotReadable AttachmentContentBlockMode = "not-readable" // Binary/unknown – cannot process
+
+	AttachmentContentBlockModePRDiff     AttachmentContentBlockMode = "pr-diff"
+	AttachmentContentBlockModePRPage     AttachmentContentBlockMode = "pr-page"
+	AttachmentContentBlockModeCommitDiff AttachmentContentBlockMode = "commit-diff"
+	AttachmentContentBlockModeCommitPage AttachmentContentBlockMode = "commit-page"
+)
+
 type AttachmentContentBlockKind string
 
 const (

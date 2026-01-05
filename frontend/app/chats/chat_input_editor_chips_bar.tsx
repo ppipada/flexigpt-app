@@ -2,7 +2,7 @@
 import type { PlateEditor } from 'platejs/react';
 import { useEditorRef } from 'platejs/react';
 
-import type { AttachmentMode, UIAttachment } from '@/spec/attachment';
+import type { AttachmentContentBlockMode, UIAttachment } from '@/spec/attachment';
 import type { UIToolCall, UIToolOutput } from '@/spec/tool';
 
 import { DirectoryChip } from '@/chats/attachments/attachment_directory_chip';
@@ -29,7 +29,7 @@ interface EditorChipsBarProps {
 	onRetryErroredOutput?: (output: UIToolOutput) => void;
 
 	onRemoveAttachment: (att: UIAttachment) => void;
-	onChangeAttachmentMode: (att: UIAttachment, mode: AttachmentMode) => void;
+	onChangeAttachmentContentBlockMode: (att: UIAttachment, mode: AttachmentContentBlockMode) => void;
 	onRemoveDirectoryGroup: (groupId: string) => void;
 	onRemoveOverflowDir?: (groupId: string, dirPath: string) => void;
 	onConversationToolsChange?: (next: ConversationToolStateEntry[]) => void;
@@ -58,7 +58,7 @@ export function EditorChipsBar({
 	onRemoveOutput,
 	onRetryErroredOutput,
 	onRemoveAttachment,
-	onChangeAttachmentMode,
+	onChangeAttachmentContentBlockMode,
 	onRemoveDirectoryGroup,
 	onRemoveOverflowDir,
 	onConversationToolsChange,
@@ -105,7 +105,7 @@ export function EditorChipsBar({
 			<StandaloneAttachmentsChip
 				attachments={standaloneAttachments}
 				onRemoveAttachment={onRemoveAttachment}
-				onChangeAttachmentMode={onChangeAttachmentMode}
+				onChangeAttachmentContentBlockMode={onChangeAttachmentContentBlockMode}
 			/>
 
 			{/* Folder groups */}
@@ -115,7 +115,7 @@ export function EditorChipsBar({
 					group={group}
 					attachments={attachments}
 					onRemoveAttachment={onRemoveAttachment}
-					onChangeAttachmentMode={onChangeAttachmentMode}
+					onChangeAttachmentContentBlockMode={onChangeAttachmentContentBlockMode}
 					onRemoveDirectoryGroup={onRemoveDirectoryGroup}
 					onRemoveOverflowDir={onRemoveOverflowDir}
 				/>

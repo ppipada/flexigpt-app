@@ -73,6 +73,10 @@ func (ref *ImageRef) IsModified() bool {
 	return false
 }
 
+func (ref *ImageRef) BuildContentBlock() (*ContentBlock, error) {
+	return buildImageBlockFromLocal(ref.Path)
+}
+
 func buildImageBlockFromLocal(path string) (*ContentBlock, error) {
 	info, err := fileutil.ReadImage(path, true)
 	if err != nil {

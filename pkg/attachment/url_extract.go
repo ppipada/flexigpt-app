@@ -61,6 +61,28 @@ var sharedHTTPClient = &http.Client{
 	}(),
 }
 
+// filenameFromURL attempts to derive a reasonable file name from the URL path.
+// If it cannot, it falls back to a generic name based on the MIME type.
+func filenameFromURL(rawURL, contentType string) string {
+	u, err := url.Parse(rawURL)
+	if err == nil {
+		name := filepath.Base(u.Path)
+		if name != "" && name != "/" && name != "." {
+			return name
+		}
+	}
+
+	contentType = strings.ToLower(strings.TrimSpace(contentType))
+	switch {
+	case strings.HasPrefix(contentType, "application/pdf"):
+		return "document.pdf"
+	case strings.HasPrefix(contentType, "image/"):
+		return "image"
+	default:
+		return "download"
+	}
+}
+
 // ExtractReadableMarkdownFromURL downloads a web page, runs it through
 // go-trafilatura to obtain the main readable content, converts that to
 // Markdown, and returns the Markdown text.

@@ -1,21 +1,21 @@
 // attachment_chip.tsx
 import { FiFileText, FiImage, FiLink, FiX } from 'react-icons/fi';
 
-import type { AttachmentMode, UIAttachment } from '@/spec/attachment';
+import type { AttachmentContentBlockMode, UIAttachment } from '@/spec/attachment';
 import { AttachmentKind } from '@/spec/attachment';
 
 import { getAttachmentErrorMessage, getUIAttachmentPath } from '@/chats/attachments/attachment_editor_utils';
 import {
-	AttachmentModeMenu,
-	getAttachmentModeLabel,
-	getAttachmentModePillClasses,
-	getAttachmentModeTooltip,
+	AttachmentContentBlockModeMenu,
+	getAttachmentContentBlockModeLabel,
+	getAttachmentContentBlockModePillClasses,
+	getAttachmentContentBlockModeTooltip,
 } from '@/chats/attachments/attachment_mode_menu';
 
 interface AttachmentChipProps {
 	attachment: UIAttachment;
 	onRemoveAttachment: (att: UIAttachment) => void;
-	onChangeAttachmentMode: (att: UIAttachment, mode: AttachmentMode) => void;
+	onChangeAttachmentContentBlockMode: (att: UIAttachment, mode: AttachmentContentBlockMode) => void;
 
 	/**
 	 * When true, the chip stretches to fill its container width and keeps
@@ -31,7 +31,7 @@ interface AttachmentChipProps {
 export function AttachmentChip({
 	attachment,
 	onRemoveAttachment,
-	onChangeAttachmentMode,
+	onChangeAttachmentContentBlockMode,
 	fullWidth = false,
 }: AttachmentChipProps) {
 	const att = attachment;
@@ -81,15 +81,18 @@ export function AttachmentChip({
 
 			{/* Right: mode pill / menu + remove button, right-justified within the chip */}
 			<div className="ml-auto flex shrink-0 items-center gap-1">
-				{att.availableModes.length > 1 ? (
-					<AttachmentModeMenu attachment={att} onChangeAttachmentMode={onChangeAttachmentMode} />
-				) : att.availableModes.length === 1 ? (
+				{att.availableContentBlockModes.length > 1 ? (
+					<AttachmentContentBlockModeMenu
+						attachment={att}
+						onChangeAttachmentContentBlockMode={onChangeAttachmentContentBlockMode}
+					/>
+				) : att.availableContentBlockModes.length === 1 ? (
 					<span
-						className={getAttachmentModePillClasses(att.mode, false)}
-						title={getAttachmentModeTooltip(att.mode)}
+						className={getAttachmentContentBlockModePillClasses(att.mode, false)}
+						title={getAttachmentContentBlockModeTooltip(att.mode)}
 						data-attachment-mode-pill
 					>
-						{getAttachmentModeLabel(att.mode)}
+						{getAttachmentContentBlockModeLabel(att.mode)}
 					</span>
 				) : null}
 

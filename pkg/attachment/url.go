@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/url"
-	"path/filepath"
 	"strings"
 
 	"github.com/ppipada/flexigpt-app/pkg/fileutil"
@@ -72,64 +71,64 @@ func (ref *URLRef) IsModified() bool {
 	return ref.Normalized != ref.OrigNormalized
 }
 
-// buildBlocksForURL builds a ContentBlock representation for a URL-based
-// attachment, depending on the desired AttachmentMode.
+// BuildContentBlock builds a ContentBlock representation for a URL-based
+// attachment, depending on the desired AttachmentContentBlockMode.
 //
 // The behaviour is:
-//   - AttachmentModeLinkOnly:      always returns a simple text link.
-//   - AttachmentModeImage:         tries to fetch the URL as an image and
+//   - AttachmentContentBlockModeLinkOnly:      always returns a simple text link.
+//   - AttachmentContentBlockModeImage:         tries to fetch the URL as an image and
 //     return a ContentBlockImage, else falls
 //     back to a simple link.
-//   - AttachmentModePageContent / AttachmentModeText:
+//   - AttachmentContentBlockModePageContent / AttachmentContentBlockModeText:
 //     runs the URL through the "page pipeline"
 //     (HTML/text/PDF/image handling) and returns
 //     a text or file/image block as appropriate.
-//   - AttachmentModeFile:          fetches the raw bytes and returns a
+//   - AttachmentContentBlockModeFile:          fetches the raw bytes and returns a
 //     ContentBlockFile, else falls back to a link.
 //   - Any other modes (PR diff/page, commit diff/page, not readable, etc.):
 //     safest fallback is a link-only block.
 //
-// This function assumes that Attachment, AttachmentMode, ContentBlock and
+// This function assumes that Attachment, AttachmentContentBlockMode, ContentBlock and
 // ContentBlock* constants are defined elsewhere in this package.
-func buildBlocksForURL(ctx context.Context, att *Attachment, onlyIfTextKind bool) (*ContentBlock, error) {
-	if att == nil || att.URLRef == nil {
-		return nil, errors.New("nil attachment or nil URLRef")
-	}
-
-	rawURL := strings.TrimSpace(att.URLRef.URL)
+func (ref *URLRef) BuildContentBlock(
+	ctx context.Context,
+	attachmentContentBlockMode AttachmentContentBlockMode,
+	onlyIfTextKind bool,
+) (*ContentBlock, error) {
+	rawURL := strings.TrimSpace(ref.URL)
 	if rawURL == "" {
 		return nil, errors.New("got invalid url")
 	}
 
-	switch att.Mode {
+	switch attachmentContentBlockMode {
 
-	case AttachmentModeImage:
+	case AttachmentContentBlockModeImage:
 		if onlyIfTextKind {
 			return nil, ErrNonTextContentBlock
 		}
-		return buildImageBlockFromURL(ctx, att)
+		return ref.buildImageBlockFromURL(ctx)
 
-	case AttachmentModeFile:
+	case AttachmentContentBlockModeFile:
 		if onlyIfTextKind {
 			return nil, ErrNonTextContentBlock
 		}
-		return buildFileBlockFromURL(ctx, att)
+		return ref.buildFileBlockFromURL(ctx)
 
-	case AttachmentModeLinkOnly:
+	case AttachmentContentBlockModeLinkOnly:
 		// Minimal representation: just the URL (optionally with a label).
-		return buildLinkOnlyContentBlock(att), nil
+		return ref.buildLinkOnlyContentBlock(), nil
 
-	case AttachmentModePageContent, AttachmentModeText:
+	case AttachmentContentBlockModePageContent, AttachmentContentBlockModeText:
 		// New pipeline: image/pdf → html/text → link.
-		return buildBlocksForURLPage(ctx, att, onlyIfTextKind)
+		return ref.buildBlocksForURLPage(ctx, onlyIfTextKind)
 
-	case AttachmentModeNotReadable,
-		AttachmentModePRDiff,
-		AttachmentModePRPage,
-		AttachmentModeCommitDiff,
-		AttachmentModeCommitPage:
+	case AttachmentContentBlockModeNotReadable,
+		AttachmentContentBlockModePRDiff,
+		AttachmentContentBlockModePRPage,
+		AttachmentContentBlockModeCommitDiff,
+		AttachmentContentBlockModeCommitPage:
 		// Unknown or special mode: safest fallback is link-only.
-		return buildLinkOnlyContentBlock(att), nil
+		return ref.buildLinkOnlyContentBlock(), nil
 
 	default:
 		return nil, errors.New("unknown attachment mode")
@@ -140,7 +139,7 @@ func buildBlocksForURL(ctx context.Context, att *Attachment, onlyIfTextKind bool
 // multi-step pipeline:
 //
 //  1. If the URL is an image (by Content-Type), it is fetched as an image
-//     block (same behaviour as AttachmentModeImage).
+//     block (same behaviour as AttachmentContentBlockModeImage).
 //  2. If the URL is a PDF, we try to extract text into a text block; on
 //     failure we fall back to a file block (or link-only when text-only
 //     was explicitly requested).
@@ -155,12 +154,8 @@ func buildBlocksForURL(ctx context.Context, att *Attachment, onlyIfTextKind bool
 //     also, we fall back to link-only.
 //
 // The result is always a single ContentBlock.
-func buildBlocksForURLPage(ctx context.Context, att *Attachment, onlyIfTextKind bool) (*ContentBlock, error) {
-	if att == nil || att.URLRef == nil {
-		return nil, errors.New("nil attachment or nil URLRef")
-	}
-
-	rawURL := strings.TrimSpace(att.URLRef.URL)
+func (ref *URLRef) buildBlocksForURLPage(ctx context.Context, onlyIfTextKind bool) (*ContentBlock, error) {
+	rawURL := strings.TrimSpace(ref.URL)
 	if rawURL == "" {
 		return nil, errors.New("got invalid url")
 	}
@@ -182,17 +177,17 @@ func buildBlocksForURLPage(ctx context.Context, att *Attachment, onlyIfTextKind 
 		if onlyIfTextKind {
 			return nil, ErrNonTextContentBlock
 		}
-		return buildImageBlockFromURL(ctx, att)
+		return ref.buildImageBlockFromURL(ctx)
 	}
 
 	// 2) PDF: prefer text extraction; fall back to file/link.
 	if strings.HasPrefix(lowerCT, "application/pdf") || strings.HasSuffix(lowerURL, ".pdf") {
-		cb, err := buildPDFTextOrFileBlockFromURL(ctx, rawURL)
+		cb, err := ref.buildPDFTextOrFileBlockFromURL(ctx)
 		if err != nil {
 			slog.Warn("failed to process pdf url, falling back to link-only",
 				"url", rawURL, "err", err)
 
-			return buildLinkOnlyContentBlock(att), nil
+			return ref.buildLinkOnlyContentBlock(), nil
 		}
 
 		if onlyIfTextKind && cb.Kind != ContentBlockText {
@@ -212,7 +207,7 @@ func buildBlocksForURLPage(ctx context.Context, att *Attachment, onlyIfTextKind 
 		if err != nil {
 			slog.Warn("failed to fetch text url attachment, falling back to link",
 				"url", rawURL, "err", err)
-			return buildLinkOnlyContentBlock(att), nil
+			return ref.buildLinkOnlyContentBlock(), nil
 		}
 		prefix := fmt.Sprintf("[Content from %s]\n\n", rawURL)
 		txt := prefix + string(data)
@@ -229,7 +224,7 @@ func buildBlocksForURLPage(ctx context.Context, att *Attachment, onlyIfTextKind 
 			// For very large pages, do NOT pull content into the LLM context.
 			slog.Warn("url page too large, falling back to link-only mode",
 				"url", rawURL, "err", err)
-			return buildLinkOnlyContentBlock(att), nil
+			return ref.buildLinkOnlyContentBlock(), nil
 		}
 
 		slog.Warn("failed to extract readable content from url, falling back to raw fetch",
@@ -240,7 +235,7 @@ func buildBlocksForURLPage(ctx context.Context, att *Attachment, onlyIfTextKind 
 		if err2 != nil {
 			slog.Warn("failed to fetch url content for fallback, using link-only",
 				"url", rawURL, "err", err2)
-			return buildLinkOnlyContentBlock(att), nil
+			return ref.buildLinkOnlyContentBlock(), nil
 		}
 		txt := fmt.Sprintf("[Content from %s]\n\n", rawURL) + string(data)
 		return &ContentBlock{
@@ -261,7 +256,11 @@ func buildBlocksForURLPage(ctx context.Context, att *Attachment, onlyIfTextKind 
 // panic it falls back to a base64-encoded file ContentBlock.
 //
 // This mirrors buildPDFTextOrFileBlock (local file) but works with URL bytes.
-func buildPDFTextOrFileBlockFromURL(ctx context.Context, rawURL string) (*ContentBlock, error) {
+func (ref *URLRef) buildPDFTextOrFileBlockFromURL(ctx context.Context) (*ContentBlock, error) {
+	rawURL := strings.TrimSpace(ref.URL)
+	if rawURL == "" {
+		return nil, errors.New("got invalid url")
+	}
 	// Reuse the same safety limit as other attachment fetches.
 	data, contentType, err := fetchURLBytes(ctx, rawURL, maxAttachmentFetchBytes)
 	if err != nil {
@@ -296,8 +295,8 @@ func buildPDFTextOrFileBlockFromURL(ctx context.Context, rawURL string) (*Conten
 	}, nil
 }
 
-func buildImageBlockFromURL(ctx context.Context, att *Attachment) (*ContentBlock, error) {
-	rawURL := strings.TrimSpace(att.URLRef.URL)
+func (ref *URLRef) buildImageBlockFromURL(ctx context.Context) (*ContentBlock, error) {
+	rawURL := strings.TrimSpace(ref.URL)
 	if rawURL == "" {
 		return nil, errors.New("got invalid url")
 	}
@@ -306,11 +305,11 @@ func buildImageBlockFromURL(ctx context.Context, att *Attachment) (*ContentBlock
 	if err != nil {
 		slog.Warn("failed to fetch image url attachment, falling back to link",
 			"url", rawURL, "err", err)
-		return buildLinkOnlyContentBlock(att), nil
+		return ref.buildLinkOnlyContentBlock(), nil
 	}
 	if !strings.HasPrefix(strings.ToLower(contentType), "image/") {
 		// Not actually an image, fall back to a link.
-		return buildLinkOnlyContentBlock(att), nil
+		return ref.buildLinkOnlyContentBlock(), nil
 	}
 
 	base64Data := base64.StdEncoding.EncodeToString(data)
@@ -324,8 +323,8 @@ func buildImageBlockFromURL(ctx context.Context, att *Attachment) (*ContentBlock
 }
 
 // Fetch raw bytes and expose them as a downloadable file.
-func buildFileBlockFromURL(ctx context.Context, att *Attachment) (*ContentBlock, error) {
-	rawURL := strings.TrimSpace(att.URLRef.URL)
+func (ref *URLRef) buildFileBlockFromURL(ctx context.Context) (*ContentBlock, error) {
+	rawURL := strings.TrimSpace(ref.URL)
 	if rawURL == "" {
 		return nil, errors.New("got invalid url")
 	}
@@ -333,7 +332,7 @@ func buildFileBlockFromURL(ctx context.Context, att *Attachment) (*ContentBlock,
 	if err != nil {
 		slog.Warn("failed to fetch url file, falling back to link",
 			"url", rawURL, "err", err)
-		return buildLinkOnlyContentBlock(att), nil
+		return ref.buildLinkOnlyContentBlock(), nil
 	}
 	if contentType == "" {
 		if strings.HasSuffix(strings.ToLower(rawURL), ".pdf") {
@@ -356,41 +355,9 @@ func buildFileBlockFromURL(ctx context.Context, att *Attachment) (*ContentBlock,
 // buildLinkOnlyContentBlock returns a simple text block that represents the
 // URL as a human-readable link. If the attachment has a label distinct from
 // the URL, it is included as "label (url)".
-func buildLinkOnlyContentBlock(att *Attachment) *ContentBlock {
-	rawURL := ""
-	if att != nil && att.URLRef != nil {
-		rawURL = strings.TrimSpace(att.URLRef.URL)
-	}
-
-	txt := rawURL
-	if label := strings.TrimSpace(att.Label); label != "" && label != rawURL {
-		txt = fmt.Sprintf("%s (%s)", label, rawURL)
-	}
-
+func (ref *URLRef) buildLinkOnlyContentBlock() *ContentBlock {
 	return &ContentBlock{
 		Kind: ContentBlockText,
-		Text: &txt,
-	}
-}
-
-// filenameFromURL attempts to derive a reasonable file name from the URL path.
-// If it cannot, it falls back to a generic name based on the MIME type.
-func filenameFromURL(rawURL, contentType string) string {
-	u, err := url.Parse(rawURL)
-	if err == nil {
-		name := filepath.Base(u.Path)
-		if name != "" && name != "/" && name != "." {
-			return name
-		}
-	}
-
-	contentType = strings.ToLower(strings.TrimSpace(contentType))
-	switch {
-	case strings.HasPrefix(contentType, "application/pdf"):
-		return "document.pdf"
-	case strings.HasPrefix(contentType, "image/"):
-		return "image"
-	default:
-		return "download"
+		Text: &ref.URL,
 	}
 }

@@ -76,36 +76,43 @@ func (ref *FileRef) IsModified() bool {
 	return false
 }
 
-func buildBlocksForLocalFile(att *Attachment, onlyIfTextKind bool) (*ContentBlock, error) {
-	path := att.FileRef.Path
-
-	switch att.Mode {
-	case AttachmentModeImage:
+func (ref *FileRef) BuildContentBlock(
+	attachmentContentBlockMode AttachmentContentBlockMode,
+	onlyIfTextKind bool,
+) (*ContentBlock, error) {
+	path := strings.TrimSpace(ref.Path)
+	if path == "" {
+		return nil, errors.New("got invalid path")
+	}
+	switch attachmentContentBlockMode {
+	case AttachmentContentBlockModeImage:
 		if onlyIfTextKind {
 			return nil, ErrNonTextContentBlock
 		}
 		// Treat a file in "image" mode as an image attachment.
 		return buildImageBlockFromLocal(path)
 
-	case AttachmentModeFile:
+	case AttachmentContentBlockModeFile:
 		// File mode needs to handle all kinds of supported files appropriately.
 		mimeType, extensionMode, err := fileutil.MIMEForLocalFile(path)
 		if err != nil {
 			// Could not detect mime, render as unreadable file.
-			return getUnreadableBlock(att)
+			return nil, errors.Join(ErrUnreadableFile, err)
 		}
 		switch extensionMode {
 		case fileutil.ExtensionModeText:
 			// If this is a text type file, we cannot attach it as b64 encoded currently.
 			// Right now we are making a safe fallback to send it as text block.
-			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentMode properly.
-			return getTextBlock(att)
+			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentContentBlockMode
+			// properly.
+			return ref.getTextBlock()
 		case fileutil.ExtensionModeImage:
 			if onlyIfTextKind {
 				return nil, ErrNonTextContentBlock
 			}
 			// Images have to be attached specially.
-			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentMode properly.
+			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentContentBlockMode
+			// properly.
 			return buildImageBlockFromLocal(path)
 		case fileutil.ExtensionModeDocument:
 			if onlyIfTextKind {
@@ -129,36 +136,39 @@ func buildBlocksForLocalFile(att *Attachment, onlyIfTextKind bool) (*ContentBloc
 			}, nil
 
 		case fileutil.ExtensionModeDefault:
-			return getUnreadableBlock(att)
+			return nil, ErrUnreadableFile
 		default:
-			return getUnreadableBlock(att)
+			return nil, ErrUnreadableFile
 		}
 
-	case AttachmentModeText:
+	case AttachmentContentBlockModeText:
 		mimeType, extensionMode, err := fileutil.MIMEForLocalFile(path)
 		if err == nil && (extensionMode == fileutil.ExtensionModeText || mimeType == fileutil.MIMEApplicationPDF) {
 			// Text mode mimes and pdf with text extraction is supported.
-			return getTextBlock(att)
+			return ref.getTextBlock()
 		}
 		// Could not detect mime or non pdf text attachment sent, render as unreadable file.
-		return getUnreadableBlock(att)
+		return nil, ErrUnreadableFile
 
-	case AttachmentModeNotReadable,
-		AttachmentModePageContent,
-		AttachmentModeLinkOnly,
-		AttachmentModePRDiff,
-		AttachmentModePRPage,
-		AttachmentModeCommitDiff,
-		AttachmentModeCommitPage:
+	case AttachmentContentBlockModeNotReadable,
+		AttachmentContentBlockModePageContent,
+		AttachmentContentBlockModeLinkOnly,
+		AttachmentContentBlockModePRDiff,
+		AttachmentContentBlockModePRPage,
+		AttachmentContentBlockModeCommitDiff,
+		AttachmentContentBlockModeCommitPage:
 		// Provide a short note so the model knows the file exists but is not included.
-		return getUnreadableBlock(att)
+		return nil, ErrUnreadableFile
 	default:
 		return nil, errors.New("invalid attachment mode")
 	}
 }
 
-func getTextBlock(att *Attachment) (*ContentBlock, error) {
-	path := att.FileRef.Path
+func (ref *FileRef) getTextBlock() (*ContentBlock, error) {
+	path := strings.TrimSpace(ref.Path)
+	if path == "" {
+		return nil, errors.New("got invalid path")
+	}
 	ext := strings.ToLower(filepath.Ext(path))
 	// Special handling for PDFs: try text extraction with panic-safe fallback.
 	if ext == string(fileutil.ExtPDF) {
@@ -173,15 +183,4 @@ func getTextBlock(att *Attachment) (*ContentBlock, error) {
 		Kind: ContentBlockText,
 		Text: &text,
 	}, nil
-}
-
-func getUnreadableBlock(att *Attachment) (*ContentBlock, error) {
-	if txt := att.FormatAsDisplayName(); txt != "" {
-		txt += " (binary file; not readable in this chat)"
-		return &ContentBlock{
-			Kind: ContentBlockText,
-			Text: &txt,
-		}, nil
-	}
-	return nil, errors.New("invalid attachment mode")
 }

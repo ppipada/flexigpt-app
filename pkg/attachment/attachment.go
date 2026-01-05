@@ -12,6 +12,7 @@ import (
 
 var (
 	ErrNonTextContentBlock             = errors.New("content block is not of kind - text")
+	ErrUnreadableFile                  = errors.New("unreadable file")
 	ErrExistingContentBlock            = errors.New("content block already exists")
 	ErrAttachmentModifiedSinceSnapshot = errors.New("attachment modified since snapshot")
 )
@@ -31,24 +32,6 @@ const (
 	AttachmentCommit   AttachmentKind = "commit"
 )
 
-// AttachmentMode describes how a given attachment should be used
-// for the current turn.
-type AttachmentMode string
-
-const (
-	AttachmentModeText        AttachmentMode = "text"         // "Text content"
-	AttachmentModeFile        AttachmentMode = "file"         // "File (original format)"
-	AttachmentModeImage       AttachmentMode = "image"        // Image rendering
-	AttachmentModePageContent AttachmentMode = "page"         // "Page content" for HTML/URLs
-	AttachmentModeLinkOnly    AttachmentMode = "link"         // "Link only" – no fetch
-	AttachmentModeNotReadable AttachmentMode = "not-readable" // Binary/unknown – cannot process
-
-	AttachmentModePRDiff     AttachmentMode = "pr-diff"
-	AttachmentModePRPage     AttachmentMode = "pr-page"
-	AttachmentModeCommitDiff AttachmentMode = "commit-diff"
-	AttachmentModeCommitPage AttachmentMode = "commit-page"
-)
-
 // Attachment is a lightweight reference to external context (files, docs, images, etc.).
 type Attachment struct {
 	Kind  AttachmentKind `json:"kind"`
@@ -56,9 +39,9 @@ type Attachment struct {
 
 	// Mode selected for this attachment for the current turn.
 	// Frontend picks smart defaults; backend can override missing values.
-	Mode AttachmentMode `json:"mode,omitempty"`
+	Mode AttachmentContentBlockMode `json:"mode,omitempty"`
 	// Optional: allowed modes for this attachment (primarily for UI).
-	AvailableModes []AttachmentMode `json:"availableModes,omitempty"`
+	AvailableContentBlockModes []AttachmentContentBlockMode `json:"availableContentBlockModes,omitempty"`
 
 	// Exactly one field below should be non-nil.
 	FileRef    *FileRef    `json:"fileRef,omitempty"`
@@ -135,7 +118,7 @@ func (att *Attachment) BuildContentBlock(ctx context.Context, opts ...ContentBlo
 
 	switch att.Kind {
 	case AttachmentDocIndex, AttachmentPR, AttachmentCommit:
-		return getUnreadableBlock(att)
+		return att.GetTextBlockWithDisplayNameOnly("attachment kind not supported")
 
 	case AttachmentImage:
 		if att.ImageRef == nil || !att.ImageRef.Exists {
@@ -144,19 +127,26 @@ func (att *Attachment) BuildContentBlock(ctx context.Context, opts ...ContentBlo
 		if buildContentOptions.OnlyIfTextKind {
 			return nil, ErrNonTextContentBlock
 		}
-		return buildImageBlockFromLocal(att.ImageRef.Path)
+		return att.ImageRef.BuildContentBlock()
 
 	case AttachmentFile:
 		if att.FileRef == nil || !att.FileRef.Exists {
 			return nil, errors.New("invalid file ref for attachment")
 		}
-		return buildBlocksForLocalFile(att, buildContentOptions.OnlyIfTextKind)
+		cb, err := att.FileRef.BuildContentBlock(att.Mode, buildContentOptions.OnlyIfTextKind)
+		if err != nil {
+			if !errors.Is(err, ErrUnreadableFile) {
+				return nil, err
+			}
+			return att.GetTextBlockWithDisplayNameOnly("(binary file; not readable in this chat)")
+		}
+		return cb, nil
 
 	case AttachmentURL:
-		if att.URLRef == nil || att.URLRef.URL == "" {
+		if att.URLRef == nil || strings.TrimSpace(att.URLRef.URL) == "" {
 			return nil, errors.New("invalid url ref for attachment")
 		}
-		return buildBlocksForURL(ctx, att, buildContentOptions.OnlyIfTextKind)
+		return att.URLRef.BuildContentBlock(ctx, att.Mode, buildContentOptions.OnlyIfTextKind)
 
 	default:
 		return nil, errors.New("unknown attachment kind")
@@ -189,8 +179,8 @@ func (att *Attachment) PopulateRef(replaceOrig bool) error {
 			att.Label = filepath.Base(att.ImageRef.Path)
 		}
 		if att.Mode == "" {
-			att.Mode = AttachmentModeImage
-			att.AvailableModes = []AttachmentMode{AttachmentModeImage}
+			att.Mode = AttachmentContentBlockModeImage
+			att.AvailableContentBlockModes = []AttachmentContentBlockMode{AttachmentContentBlockModeImage}
 		}
 		return nil
 
@@ -204,7 +194,7 @@ func (att *Attachment) PopulateRef(replaceOrig bool) error {
 		if att.Label == "" {
 			att.Label = att.URLRef.URL
 		}
-		// Mode/AvailableModes are usually set by frontend; you could
+		// Mode/AvailableContentBlockModes are usually set by frontend; you could
 		// add backend inference here (by extension or content-type)
 		// if att.Mode == "".
 		return nil
@@ -228,10 +218,21 @@ func (att *Attachment) PopulateRef(replaceOrig bool) error {
 	}
 }
 
-// FormatAsDisplayName normalizes an attachment into a short, human-readable
+func (att *Attachment) GetTextBlockWithDisplayNameOnly(suffix string) (*ContentBlock, error) {
+	if txt := att.formatAsDisplayName(); txt != "" {
+		txt += " " + strings.TrimSpace(suffix)
+		return &ContentBlock{
+			Kind: ContentBlockText,
+			Text: &txt,
+		}, nil
+	}
+	return nil, errors.New("invalid attachment mode")
+}
+
+// formatAsDisplayName normalizes an attachment into a short, human-readable
 // string that can be injected into text prompts when a richer modality is not
 // available.
-func (att *Attachment) FormatAsDisplayName() string {
+func (att *Attachment) formatAsDisplayName() string {
 	label := strings.TrimSpace(att.Label)
 	var detail string
 
@@ -292,20 +293,6 @@ func (att *Attachment) isModifiedSinceSnapshot() bool {
 		return false
 	}
 	return false
-}
-
-func buildUnreadableFileAttachment(pathInfo fileutil.PathInfo) *Attachment {
-	return &Attachment{
-		Kind:  AttachmentFile,
-		Label: filepath.Base(pathInfo.Path),
-		Mode:  AttachmentModeNotReadable,
-		AvailableModes: []AttachmentMode{
-			AttachmentModeNotReadable,
-		},
-		FileRef: &FileRef{
-			PathInfo: pathInfo,
-		},
-	}
 }
 
 func getBuildContentBlockOptions(opts ...ContentBlockOption) *buildContentBlockOptions {

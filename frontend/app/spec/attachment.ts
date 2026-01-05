@@ -13,7 +13,7 @@ export enum AttachmentKind {
 	commit = 'commit',
 }
 
-export enum AttachmentMode {
+export enum AttachmentContentBlockMode {
 	text = 'text',
 	file = 'file',
 	image = 'image',
@@ -28,30 +28,30 @@ export enum AttachmentMode {
 }
 
 // Mapping from mode value → user-facing label (for the mode dropdown/badge).
-export const ATTACHMENT_MODE_LABELS: Record<AttachmentMode, string> = {
-	[AttachmentMode.text]: 'Text',
-	[AttachmentMode.file]: 'File',
-	[AttachmentMode.image]: 'Image',
-	[AttachmentMode.page]: 'Page content',
-	[AttachmentMode.link]: 'Link only',
-	[AttachmentMode.notReadable]: 'Not readable',
-	[AttachmentMode.prDiff]: 'PR diff only',
-	[AttachmentMode.prPage]: 'PR page',
-	[AttachmentMode.commitDiff]: 'Diff only',
-	[AttachmentMode.commitPage]: 'Commit page',
+export const ATTACHMENT_MODE_LABELS: Record<AttachmentContentBlockMode, string> = {
+	[AttachmentContentBlockMode.text]: 'Text',
+	[AttachmentContentBlockMode.file]: 'File',
+	[AttachmentContentBlockMode.image]: 'Image',
+	[AttachmentContentBlockMode.page]: 'Page content',
+	[AttachmentContentBlockMode.link]: 'Link only',
+	[AttachmentContentBlockMode.notReadable]: 'Not readable',
+	[AttachmentContentBlockMode.prDiff]: 'PR diff only',
+	[AttachmentContentBlockMode.prPage]: 'PR page',
+	[AttachmentContentBlockMode.commitDiff]: 'Diff only',
+	[AttachmentContentBlockMode.commitPage]: 'Commit page',
 };
 
-export const ATTACHMENT_MODE_DESC: Record<AttachmentMode, string> = {
-	[AttachmentMode.text]: 'Inline text extracted into the message.',
-	[AttachmentMode.file]: 'Send the file as a binary attachment (requires API support).',
-	[AttachmentMode.image]: 'Send the image as a binary attachment (requires API support).',
-	[AttachmentMode.page]: 'Text content extracted from the HTML page.',
-	[AttachmentMode.link]: 'Only send the link; do not fetch or parse content.',
-	[AttachmentMode.notReadable]: 'This file could not be read.',
-	[AttachmentMode.prDiff]: 'Only the pull request diff is sent.',
-	[AttachmentMode.prPage]: 'Send the pull request page content.',
-	[AttachmentMode.commitDiff]: 'Only the commit diff is sent.',
-	[AttachmentMode.commitPage]: 'Send the commit page content.',
+export const ATTACHMENT_MODE_DESC: Record<AttachmentContentBlockMode, string> = {
+	[AttachmentContentBlockMode.text]: 'Inline text extracted into the message.',
+	[AttachmentContentBlockMode.file]: 'Send the file as a binary attachment (requires API support).',
+	[AttachmentContentBlockMode.image]: 'Send the image as a binary attachment (requires API support).',
+	[AttachmentContentBlockMode.page]: 'Text content extracted from the HTML page.',
+	[AttachmentContentBlockMode.link]: 'Only send the link; do not fetch or parse content.',
+	[AttachmentContentBlockMode.notReadable]: 'This file could not be read.',
+	[AttachmentContentBlockMode.prDiff]: 'Only the pull request diff is sent.',
+	[AttachmentContentBlockMode.prPage]: 'Send the pull request page content.',
+	[AttachmentContentBlockMode.commitDiff]: 'Only the commit diff is sent.',
+	[AttachmentContentBlockMode.commitPage]: 'Send the commit page content.',
 };
 
 interface AttachmentFileRef {
@@ -117,8 +117,8 @@ export interface Attachment {
 	kind: AttachmentKind;
 	label: string;
 
-	mode?: AttachmentMode;
-	availableModes?: AttachmentMode[];
+	mode?: AttachmentContentBlockMode;
+	availableContentBlockModes?: AttachmentContentBlockMode[];
 
 	fileRef?: AttachmentFileRef;
 	imageRef?: AttachmentImageRef;
@@ -157,11 +157,11 @@ export enum AttachmentErrorReason {
 
 /**
  * UIAttachment is the composer-side shape; it extends the backend
- * Attachment with required mode/availableModes and error flags.
+ * Attachment with required mode/availableContentBlockModes and error flags.
  */
 export interface UIAttachment extends Attachment {
-	mode: AttachmentMode;
-	availableModes: AttachmentMode[];
+	mode: AttachmentContentBlockMode;
+	availableContentBlockModes: AttachmentContentBlockMode[];
 	isError?: boolean;
 	errorReason?: AttachmentErrorReason;
 }

@@ -17,7 +17,12 @@ import { useMenuStore } from '@ariakit/react';
 import { NodeApi, SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
-import type { Attachment, AttachmentMode, DirectoryAttachmentsResult, UIAttachment } from '@/spec/attachment';
+import type {
+	Attachment,
+	AttachmentContentBlockMode,
+	DirectoryAttachmentsResult,
+	UIAttachment,
+} from '@/spec/attachment';
 import { AttachmentKind } from '@/spec/attachment';
 import type { ToolStoreChoice, UIToolCall, UIToolOutput, UIToolStoreChoice } from '@/spec/tool';
 
@@ -794,7 +799,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		});
 	};
 
-	const handleChangeAttachmentMode = (att: UIAttachment, newMode: AttachmentMode) => {
+	const handleChangeAttachmentContentBlockMode = (att: UIAttachment, newMode: AttachmentContentBlockMode) => {
 		const targetKey = uiAttachmentKey(att);
 		setAttachments(prev => prev.map(a => (uiAttachmentKey(a) === targetKey ? { ...a, mode: newMode } : a)));
 		editor.tf.focus();
@@ -976,7 +981,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 									onRemoveOutput={handleRemoveToolOutput}
 									onRetryErroredOutput={handleRetryErroredOutput}
 									onRemoveAttachment={handleRemoveAttachment}
-									onChangeAttachmentMode={handleChangeAttachmentMode}
+									onChangeAttachmentContentBlockMode={handleChangeAttachmentContentBlockMode}
 									onRemoveDirectoryGroup={handleRemoveDirectoryGroup}
 									onRemoveOverflowDir={handleRemoveOverflowDir}
 									onConversationToolsChange={setConversationToolsState}

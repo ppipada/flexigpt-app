@@ -158,7 +158,7 @@ export namespace attachment {
 	    kind: string;
 	    label: string;
 	    mode?: string;
-	    availableModes?: string[];
+	    availableContentBlockModes?: string[];
 	    fileRef?: FileRef;
 	    imageRef?: ImageRef;
 	    urlRef?: URLRef;
@@ -174,7 +174,7 @@ export namespace attachment {
 	        this.kind = source["kind"];
 	        this.label = source["label"];
 	        this.mode = source["mode"];
-	        this.availableModes = source["availableModes"];
+	        this.availableContentBlockModes = source["availableContentBlockModes"];
 	        this.fileRef = this.convertValues(source["fileRef"], FileRef);
 	        this.imageRef = this.convertValues(source["imageRef"], ImageRef);
 	        this.urlRef = this.convertValues(source["urlRef"], URLRef);

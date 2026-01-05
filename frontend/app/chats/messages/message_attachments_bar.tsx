@@ -4,13 +4,13 @@ import { FiChevronDown, FiFileText, FiImage, FiLink, FiPaperclip, FiTool } from 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
 import type { Attachment } from '@/spec/attachment';
-import { AttachmentKind, AttachmentMode } from '@/spec/attachment';
+import { AttachmentContentBlockMode, AttachmentKind } from '@/spec/attachment';
 import type { ToolStoreChoice, UIToolCall, UIToolOutput } from '@/spec/tool';
 
 import {
-	getAttachmentModeLabel,
-	getAttachmentModePillClasses,
-	getAttachmentModeTooltip,
+	getAttachmentContentBlockModeLabel,
+	getAttachmentContentBlockModePillClasses,
+	getAttachmentContentBlockModeTooltip,
 } from '@/chats/attachments/attachment_mode_menu';
 import { formatToolCallLabel, getPrettyToolName } from '@/chats/tools/tool_editor_utils';
 
@@ -63,9 +63,9 @@ function MessageAttachmentInfoChip({ attachment, fullWidth = false }: MessageAtt
 
 	const title = tooltipLines.length > 0 ? tooltipLines.join('\n') : undefined;
 
-	const mode = attachment.mode ?? AttachmentMode.notReadable;
-	const modeLabel = getAttachmentModeLabel(mode);
-	const modeTooltip = getAttachmentModeTooltip(mode);
+	const mode = attachment.mode ?? AttachmentContentBlockMode.notReadable;
+	const modeLabel = getAttachmentContentBlockModeLabel(mode);
+	const modeTooltip = getAttachmentContentBlockModeTooltip(mode);
 
 	const containerClasses = [
 		'bg-base-200 text-base-content flex items-center gap-2 rounded-2xl px-2 py-0',
@@ -80,7 +80,11 @@ function MessageAttachmentInfoChip({ attachment, fullWidth = false }: MessageAtt
 		<div className={containerClasses} title={title} data-message-chip="attachment">
 			<span className="shrink-0">{icon}</span>
 			<span className={labelClasses}>{truncated}</span>
-			<span className={getAttachmentModePillClasses(mode, false)} title={modeTooltip} data-attachment-mode-pill>
+			<span
+				className={getAttachmentContentBlockModePillClasses(mode, false)}
+				title={modeTooltip}
+				data-attachment-mode-pill
+			>
 				{modeLabel}
 			</span>
 		</div>

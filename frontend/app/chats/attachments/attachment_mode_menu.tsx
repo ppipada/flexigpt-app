@@ -2,7 +2,12 @@ import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore, useStoreState } from '@ariakit/react';
 
-import { ATTACHMENT_MODE_DESC, ATTACHMENT_MODE_LABELS, AttachmentMode, type UIAttachment } from '@/spec/attachment';
+import {
+	ATTACHMENT_MODE_DESC,
+	ATTACHMENT_MODE_LABELS,
+	AttachmentContentBlockMode,
+	type UIAttachment,
+} from '@/spec/attachment';
 
 /**
  * Shared styles for the small "mode" menu on each attachment chip.
@@ -18,18 +23,18 @@ const modeMenuItemClasses =
 	'flex items-center gap-2 rounded-xl px-2 py-1 text-xs outline-none transition-colors ' +
 	'hover:bg-base-200 data-[active-item]:bg-base-300 whitespace-nowrap';
 
-interface AttachmentModeMenuProps {
+interface AttachmentContentBlockModeMenuProps {
 	attachment: UIAttachment;
-	onChangeAttachmentMode: (att: UIAttachment, mode: AttachmentMode) => void;
+	onChangeAttachmentContentBlockMode: (att: UIAttachment, mode: AttachmentContentBlockMode) => void;
 }
 
-export function getAttachmentModeLabel(mode: AttachmentMode): string {
+export function getAttachmentContentBlockModeLabel(mode: AttachmentContentBlockMode): string {
 	// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 	return ATTACHMENT_MODE_LABELS[mode] ?? mode;
 }
 
-export function getAttachmentModeTooltip(mode: AttachmentMode): string {
-	if (mode === AttachmentMode.notReadable) {
+export function getAttachmentContentBlockModeTooltip(mode: AttachmentContentBlockMode): string {
+	if (mode === AttachmentContentBlockMode.notReadable) {
 		return 'This attachment could not be read (unsupported type, too large, or inaccessible).';
 	}
 
@@ -38,10 +43,13 @@ export function getAttachmentModeTooltip(mode: AttachmentMode): string {
 		// Tooltip focuses on *extra* explanation; the pill text already shows the label.
 		return desc;
 	}
-	return getAttachmentModeLabel(mode);
+	return getAttachmentContentBlockModeLabel(mode);
 }
 
-export function getAttachmentModePillClasses(mode: AttachmentMode, interactive: boolean): string {
+export function getAttachmentContentBlockModePillClasses(
+	mode: AttachmentContentBlockMode,
+	interactive: boolean
+): string {
 	const base =
 		'inline-flex items-center gap-1 rounded-full border px-2 py-[1px] text-xs leading-tight ' + 'transition-colors';
 
@@ -49,7 +57,7 @@ export function getAttachmentModePillClasses(mode: AttachmentMode, interactive: 
 		? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-300'
 		: '';
 
-	const isError = mode === AttachmentMode.notReadable;
+	const isError = mode === AttachmentContentBlockMode.notReadable;
 
 	if (isError) {
 		return [base, interactive ? 'hover:bg-error/20' : '', 'border-error/40 bg-error/10 text-error', interactiveClasses]
@@ -72,7 +80,10 @@ export function getAttachmentModePillClasses(mode: AttachmentMode, interactive: 
  * Replaces the native <select>, while keeping a small pill-like trigger
  * and a shrink-wrapped dropdown.
  */
-export function AttachmentModeMenu({ attachment, onChangeAttachmentMode }: AttachmentModeMenuProps) {
+export function AttachmentContentBlockModeMenu({
+	attachment,
+	onChangeAttachmentContentBlockMode,
+}: AttachmentContentBlockModeMenuProps) {
 	const menu = useMenuStore({
 		placement: 'top-start',
 		focusLoop: true,
@@ -80,8 +91,8 @@ export function AttachmentModeMenu({ attachment, onChangeAttachmentMode }: Attac
 
 	const open = useStoreState(menu, 'open');
 
-	const currentLabel = getAttachmentModeLabel(attachment.mode);
-	const tooltip = getAttachmentModeTooltip(attachment.mode);
+	const currentLabel = getAttachmentContentBlockModeLabel(attachment.mode);
+	const tooltip = getAttachmentContentBlockModeTooltip(attachment.mode);
 
 	const ChevronIcon = open ? FiChevronDown : FiChevronUp;
 
@@ -89,7 +100,7 @@ export function AttachmentModeMenu({ attachment, onChangeAttachmentMode }: Attac
 		<>
 			<MenuButton
 				store={menu}
-				className={getAttachmentModePillClasses(attachment.mode, true)}
+				className={getAttachmentContentBlockModePillClasses(attachment.mode, true)}
 				aria-label="Change attachment mode"
 				title={tooltip}
 				data-attachment-mode-button
@@ -99,18 +110,18 @@ export function AttachmentModeMenu({ attachment, onChangeAttachmentMode }: Attac
 			</MenuButton>
 
 			<Menu store={menu} gutter={4} className={modeMenuClasses} data-attachment-mode-menu autoFocusOnShow portal>
-				{attachment.availableModes.map(mode => {
-					const label = getAttachmentModeLabel(mode);
-					const modeTooltip = getAttachmentModeTooltip(mode);
+				{attachment.availableContentBlockModes.map(mode => {
+					const label = getAttachmentContentBlockModeLabel(mode);
+					const modeTooltip = getAttachmentContentBlockModeTooltip(mode);
 					const isActive = mode === attachment.mode;
-					const isError = mode === AttachmentMode.notReadable;
+					const isError = mode === AttachmentContentBlockMode.notReadable;
 
 					return (
 						<MenuItem
 							key={mode}
 							className={modeMenuItemClasses}
 							onClick={() => {
-								onChangeAttachmentMode(attachment, mode);
+								onChangeAttachmentContentBlockMode(attachment, mode);
 								menu.hide();
 							}}
 							aria-pressed={isActive}

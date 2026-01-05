@@ -14,7 +14,7 @@ import (
 
 // BuildAttachmentForFile builds an Attachment for a local filesystem path.
 // It inspects the MIME type / extension and chooses an appropriate
-// AttachmentKind, default Mode, and AvailableModes.
+// AttachmentKind, default Mode, and AvailableContentBlockModes.
 // The returned attachment is fully populated via PopulateRef().
 // Note that this builds a fresh attachment, i.e both original ref and current are populated here.
 func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
@@ -42,9 +42,9 @@ func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
 		att := &Attachment{
 			Kind:  AttachmentImage,
 			Label: baseName,
-			Mode:  AttachmentModeImage,
-			AvailableModes: []AttachmentMode{
-				AttachmentModeImage,
+			Mode:  AttachmentContentBlockModeImage,
+			AvailableContentBlockModes: []AttachmentContentBlockMode{
+				AttachmentContentBlockModeImage,
 			},
 			ImageRef: &ImageRef{
 				ImageInfo: fileutil.ImageInfo{
@@ -62,9 +62,9 @@ func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
 		att := &Attachment{
 			Kind:  AttachmentFile,
 			Label: baseName,
-			Mode:  AttachmentModeText,
-			AvailableModes: []AttachmentMode{
-				AttachmentModeText,
+			Mode:  AttachmentContentBlockModeText,
+			AvailableContentBlockModes: []AttachmentContentBlockMode{
+				AttachmentContentBlockModeText,
 			},
 			FileRef: &FileRef{
 				PathInfo: *pathInfo,
@@ -86,10 +86,10 @@ func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
 		att := &Attachment{
 			Kind:  AttachmentFile,
 			Label: baseName,
-			Mode:  AttachmentModeText,
-			AvailableModes: []AttachmentMode{
-				AttachmentModeText,
-				AttachmentModeFile,
+			Mode:  AttachmentContentBlockModeText,
+			AvailableContentBlockModes: []AttachmentContentBlockMode{
+				AttachmentContentBlockModeText,
+				AttachmentContentBlockModeFile,
 			},
 			FileRef: &FileRef{
 				PathInfo: *pathInfo,
@@ -111,10 +111,24 @@ func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
 	}
 }
 
+func buildUnreadableFileAttachment(pathInfo fileutil.PathInfo) *Attachment {
+	return &Attachment{
+		Kind:  AttachmentFile,
+		Label: filepath.Base(pathInfo.Path),
+		Mode:  AttachmentContentBlockModeNotReadable,
+		AvailableContentBlockModes: []AttachmentContentBlockMode{
+			AttachmentContentBlockModeNotReadable,
+		},
+		FileRef: &FileRef{
+			PathInfo: pathInfo,
+		},
+	}
+}
+
 // BuildAttachmentForURL builds an Attachment for a remote URL.
 // It does:
 //   - infer default mode based on URL path extension
-//   - set AvailableModes accordingly
+//   - set AvailableContentBlockModes accordingly
 //   - populate URLRef (Normalized / OrigNormalized) via PopulateRef.
 func BuildAttachmentForURL(rawURL string) (*Attachment, error) {
 	trimmed := strings.TrimSpace(rawURL)
@@ -138,36 +152,36 @@ func BuildAttachmentForURL(rawURL string) (*Attachment, error) {
 	}
 
 	// Choose default mode + available modes based on extension.
-	mode := AttachmentModePageContent
-	available := []AttachmentMode{
-		AttachmentModePageContent,
-		AttachmentModeLinkOnly,
+	mode := AttachmentContentBlockModePageContent
+	available := []AttachmentContentBlockMode{
+		AttachmentContentBlockModePageContent,
+		AttachmentContentBlockModeLinkOnly,
 	}
 
 	mimeType, err := fileutil.MIMEFromExtensionString(ext)
 	if err == nil {
 		extMode, ok := fileutil.MIMETypeToExtensionMode[mimeType]
 		if ok && extMode == fileutil.ExtensionModeImage {
-			mode = AttachmentModeImage
-			available = []AttachmentMode{
-				AttachmentModeImage,
-				AttachmentModeLinkOnly, // "link"
+			mode = AttachmentContentBlockModeImage
+			available = []AttachmentContentBlockMode{
+				AttachmentContentBlockModeImage,
+				AttachmentContentBlockModeLinkOnly, // "link"
 			}
 		} else if mimeType == fileutil.MIMEApplicationPDF {
-			mode = AttachmentModeFile
-			available = []AttachmentMode{
-				AttachmentModeText,     // allow "text" view of PDF
-				AttachmentModeFile,     // original file
-				AttachmentModeLinkOnly, // link-only
+			mode = AttachmentContentBlockModeFile
+			available = []AttachmentContentBlockMode{
+				AttachmentContentBlockModeText,     // allow "text" view of PDF
+				AttachmentContentBlockModeFile,     // original file
+				AttachmentContentBlockModeLinkOnly, // link-only
 			}
 		}
 	}
 
 	att := &Attachment{
-		Kind:           AttachmentURL,
-		Label:          label,
-		Mode:           mode,
-		AvailableModes: available,
+		Kind:                       AttachmentURL,
+		Label:                      label,
+		Mode:                       mode,
+		AvailableContentBlockModes: available,
 		URLRef: &URLRef{
 			URL: trimmed,
 		},
@@ -199,16 +213,13 @@ func BuildContentBlocks(ctx context.Context, atts []Attachment, opts ...ContentB
 				slog.Warn("got existing att", "a", att)
 
 			case errors.Is(err, ErrAttachmentModifiedSinceSnapshot) && !buildContentOptions.OverrideOriginal:
-				txt := att.FormatAsDisplayName()
-				if txt == "" {
-					txt = "[Attachment]"
+				displayBlock, err := att.GetTextBlockWithDisplayNameOnly(
+					"attachment modified since this message was sent",
+				)
+				if err != nil {
+					continue
 				}
-				txt += " (attachment modified since this message was sent)"
-				b = &ContentBlock{
-					Kind: ContentBlockText,
-					Text: &txt,
-				}
-
+				b = displayBlock
 			default:
 				slog.Warn("failed to build content block for attachment", "err", err, "attachment", att)
 				// Skip this content block. It is ok if the build block skipped this because OnlyIfTextKind was set or

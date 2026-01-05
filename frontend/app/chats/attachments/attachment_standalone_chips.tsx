@@ -2,7 +2,7 @@ import { FiChevronUp, FiPaperclip, FiX } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
-import type { AttachmentMode, UIAttachment } from '@/spec/attachment';
+import type { AttachmentContentBlockMode, UIAttachment } from '@/spec/attachment';
 
 import { AttachmentChip } from '@/chats/attachments/attachment_chip';
 import { uiAttachmentKey } from '@/chats/attachments/attachment_editor_utils';
@@ -10,7 +10,7 @@ import { uiAttachmentKey } from '@/chats/attachments/attachment_editor_utils';
 interface StandaloneAttachmentsChipProps {
 	attachments: UIAttachment[];
 	onRemoveAttachment: (att: UIAttachment) => void;
-	onChangeAttachmentMode: (att: UIAttachment, mode: AttachmentMode) => void;
+	onChangeAttachmentContentBlockMode: (att: UIAttachment, mode: AttachmentContentBlockMode) => void;
 }
 
 /**
@@ -21,7 +21,7 @@ interface StandaloneAttachmentsChipProps {
 export function StandaloneAttachmentsChip({
 	attachments,
 	onRemoveAttachment,
-	onChangeAttachmentMode,
+	onChangeAttachmentContentBlockMode,
 }: StandaloneAttachmentsChipProps) {
 	const count = attachments.length;
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
@@ -83,7 +83,7 @@ export function StandaloneAttachmentsChip({
 						<AttachmentChip
 							attachment={att}
 							onRemoveAttachment={onRemoveAttachment}
-							onChangeAttachmentMode={onChangeAttachmentMode}
+							onChangeAttachmentContentBlockMode={onChangeAttachmentContentBlockMode}
 							fullWidth
 						/>
 					</MenuItem>

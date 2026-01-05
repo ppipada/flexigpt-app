@@ -3,17 +3,17 @@ import { FiAlertTriangle, FiChevronUp, FiFolder, FiX } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
-import { AttachmentMode, type UIAttachment } from '@/spec/attachment';
+import { AttachmentContentBlockMode, type UIAttachment } from '@/spec/attachment';
 
 import { AttachmentChip } from '@/chats/attachments/attachment_chip';
 import { type DirectoryAttachmentGroup, uiAttachmentKey } from '@/chats/attachments/attachment_editor_utils';
-import { getAttachmentModePillClasses } from '@/chats/attachments/attachment_mode_menu';
+import { getAttachmentContentBlockModePillClasses } from '@/chats/attachments/attachment_mode_menu';
 
 interface DirectoryChipProps {
 	group: DirectoryAttachmentGroup;
 	attachments: UIAttachment[];
 	onRemoveAttachment: (att: UIAttachment) => void;
-	onChangeAttachmentMode: (att: UIAttachment, mode: AttachmentMode) => void;
+	onChangeAttachmentContentBlockMode: (att: UIAttachment, mode: AttachmentContentBlockMode) => void;
 	onRemoveDirectoryGroup: (groupId: string) => void;
 	onRemoveOverflowDir?: (groupId: string, dirPath: string) => void;
 }
@@ -26,7 +26,7 @@ export function DirectoryChip({
 	group,
 	attachments,
 	onRemoveAttachment,
-	onChangeAttachmentMode,
+	onChangeAttachmentContentBlockMode,
 	onRemoveDirectoryGroup,
 	onRemoveOverflowDir,
 }: DirectoryChipProps) {
@@ -113,7 +113,7 @@ export function DirectoryChip({
 							<AttachmentChip
 								attachment={att}
 								onRemoveAttachment={onRemoveAttachment}
-								onChangeAttachmentMode={onChangeAttachmentMode}
+								onChangeAttachmentContentBlockMode={onChangeAttachmentContentBlockMode}
 								fullWidth
 							/>
 						</MenuItem>
@@ -146,7 +146,7 @@ export function DirectoryChip({
 										</div>
 									</div>
 									<span
-										className={getAttachmentModePillClasses(AttachmentMode.notReadable, false)}
+										className={getAttachmentContentBlockModePillClasses(AttachmentContentBlockMode.notReadable, false)}
 										title="Too many files in this subfolder; they were not attached."
 									>
 										Not readable
