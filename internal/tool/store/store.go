@@ -494,11 +494,6 @@ func (ts *ToolStore) PutTool(
 		argSchemaStr = "{}"
 	}
 
-	outSchemaStr := req.Body.OutputSchema
-	if outSchemaStr == "" {
-		outSchemaStr = "{}"
-	}
-
 	t := spec.Tool{
 		SchemaVersion: spec.SchemaVersion,
 		ID:            bundleitemutils.ItemID(uuid),
@@ -512,8 +507,7 @@ func (ts *ToolStore) PutTool(
 		LLMCallable:  req.Body.LLMCallable,
 		OutputKind:   req.Body.OutputKind,
 
-		ArgSchema:    json.RawMessage(argSchemaStr),
-		OutputSchema: json.RawMessage(outSchemaStr),
+		ArgSchema: json.RawMessage(argSchemaStr),
 
 		Type:       req.Body.Type,
 		GoImpl:     req.Body.GoImpl,

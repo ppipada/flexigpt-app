@@ -365,17 +365,16 @@ func makeTool(idx int, enabled bool) spec.Tool {
 	// Alternate between Go and HTTP tools for variety.
 	if idx%2 == 0 {
 		return spec.Tool{
-			ID:           bundleitemutils.ItemID("tool-" + strconv.Itoa(idx)),
-			DisplayName:  "Go Tool " + strconv.Itoa(idx),
-			Slug:         bundleitemutils.ItemSlug("slug-" + strconv.Itoa(idx)),
-			Description:  "desc go",
-			Version:      bundleitemutils.ItemVersion("v1"),
-			IsEnabled:    enabled,
-			CreatedAt:    time.Now().UTC(),
-			ModifiedAt:   time.Now().UTC(),
-			ArgSchema:    argSchema,
-			OutputSchema: json.RawMessage(`{"type":"object"}`),
-			Type:         spec.ToolTypeGo,
+			ID:          bundleitemutils.ItemID("tool-" + strconv.Itoa(idx)),
+			DisplayName: "Go Tool " + strconv.Itoa(idx),
+			Slug:        bundleitemutils.ItemSlug("slug-" + strconv.Itoa(idx)),
+			Description: "desc go",
+			Version:     bundleitemutils.ItemVersion("v1"),
+			IsEnabled:   enabled,
+			CreatedAt:   time.Now().UTC(),
+			ModifiedAt:  time.Now().UTC(),
+			ArgSchema:   argSchema,
+			Type:        spec.ToolTypeGo,
 			GoImpl: &spec.GoToolImpl{
 				Func: "github.com/acme/flexigpt/tools.ToolFunc" + strconv.Itoa(idx),
 			},
@@ -383,17 +382,16 @@ func makeTool(idx int, enabled bool) spec.Tool {
 		}
 	} else {
 		return spec.Tool{
-			ID:           bundleitemutils.ItemID("tool-" + strconv.Itoa(idx)),
-			DisplayName:  "HTTP Tool " + strconv.Itoa(idx),
-			Slug:         bundleitemutils.ItemSlug("slug-" + strconv.Itoa(idx)),
-			Description:  "desc http",
-			Version:      bundleitemutils.ItemVersion("v1"),
-			IsEnabled:    enabled,
-			CreatedAt:    time.Now().UTC(),
-			ModifiedAt:   time.Now().UTC(),
-			ArgSchema:    argSchema,
-			OutputSchema: json.RawMessage(`{"type":"object"}`),
-			Type:         spec.ToolTypeHTTP,
+			ID:          bundleitemutils.ItemID("tool-" + strconv.Itoa(idx)),
+			DisplayName: "HTTP Tool " + strconv.Itoa(idx),
+			Slug:        bundleitemutils.ItemSlug("slug-" + strconv.Itoa(idx)),
+			Description: "desc http",
+			Version:     bundleitemutils.ItemVersion("v1"),
+			IsEnabled:   enabled,
+			CreatedAt:   time.Now().UTC(),
+			ModifiedAt:  time.Now().UTC(),
+			ArgSchema:   argSchema,
+			Type:        spec.ToolTypeHTTP,
 			HTTP: &spec.HTTPToolImpl{
 				Request: spec.HTTPRequest{
 					Method:      "POST",

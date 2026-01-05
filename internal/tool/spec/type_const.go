@@ -138,8 +138,7 @@ type Tool struct {
 	// OutputKind describes how the tool output should be surfaced in the UX.
 	OutputKind ToolImplOutputKind `json:"outputKind"`
 
-	ArgSchema    JSONSchema `json:"argSchema"`    // validated pre-invoke
-	OutputSchema JSONSchema `json:"outputSchema"` // validated post-invoke
+	ArgSchema JSONSchema `json:"argSchema"` // validated pre-invoke
 
 	Type   ToolImplType  `json:"type"`
 	GoImpl *GoToolImpl   `json:"goImpl,omitempty"`

@@ -100,7 +100,6 @@ export interface Tool {
 	outputKind: ToolImplOutputKind;
 
 	argSchema: JSONSchema;
-	outputSchema: JSONSchema;
 
 	type: ToolImplType;
 	goImpl?: GoToolImpl;

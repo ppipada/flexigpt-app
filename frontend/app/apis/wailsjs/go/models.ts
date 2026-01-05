@@ -2381,7 +2381,6 @@ export namespace spec {
 	    llmCallable: boolean;
 	    outputKind: string;
 	    argSchema: number[];
-	    outputSchema: number[];
 	    type: string;
 	    goImpl?: GoToolImpl;
 	    httpImpl?: HTTPToolImpl;
@@ -2409,7 +2408,6 @@ export namespace spec {
 	        this.llmCallable = source["llmCallable"];
 	        this.outputKind = source["outputKind"];
 	        this.argSchema = source["argSchema"];
-	        this.outputSchema = source["outputSchema"];
 	        this.type = source["type"];
 	        this.goImpl = this.convertValues(source["goImpl"], GoToolImpl);
 	        this.httpImpl = this.convertValues(source["httpImpl"], HTTPToolImpl);
@@ -4347,7 +4345,6 @@ export namespace spec {
 	    llmCallable: boolean;
 	    outputKind: string;
 	    argSchema: string;
-	    outputSchema: string;
 	    type: string;
 	    goImpl?: GoToolImpl;
 	    httpImpl?: HTTPToolImpl;
@@ -4366,7 +4363,6 @@ export namespace spec {
 	        this.llmCallable = source["llmCallable"];
 	        this.outputKind = source["outputKind"];
 	        this.argSchema = source["argSchema"];
-	        this.outputSchema = source["outputSchema"];
 	        this.type = source["type"];
 	        this.goImpl = this.convertValues(source["goImpl"], GoToolImpl);
 	        this.httpImpl = this.convertValues(source["httpImpl"], HTTPToolImpl);

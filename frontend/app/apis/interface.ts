@@ -205,7 +205,6 @@ export interface IToolStoreAPI {
 		llmCallable: boolean,
 		outputKind: ToolImplOutputKind,
 		argSchema: JSONSchema,
-		outputSchema: JSONSchema,
 		type: ToolImplType,
 		goImpl?: GoToolImpl,
 		httpImpl?: HTTPToolImpl,

@@ -136,9 +136,9 @@ func TestToolCRUD(t *testing.T) {
 					LLMCallable:  true,
 					OutputKind:   spec.ToolOutputText,
 					ArgSchema:    `{}`,
-					OutputSchema: `{}`,
-					Type:         spec.ToolTypeHTTP,
-					HTTP:         dummyHTTPTool(),
+
+					Type: spec.ToolTypeHTTP,
+					HTTP: dummyHTTPTool(),
 				},
 			})
 
@@ -171,9 +171,9 @@ func TestToolVersionConflict(t *testing.T) {
 			LLMCallable:  true,
 			OutputKind:   spec.ToolOutputText,
 			ArgSchema:    `{}`,
-			OutputSchema: `{}`,
-			Type:         spec.ToolTypeHTTP,
-			HTTP:         dummyHTTPTool(),
+
+			Type: spec.ToolTypeHTTP,
+			HTTP: dummyHTTPTool(),
 		},
 	})
 	if !errors.Is(err, spec.ErrConflict) {
@@ -196,9 +196,9 @@ func TestToolDisabledBundleGuard(t *testing.T) {
 			LLMCallable:  true,
 			OutputKind:   spec.ToolOutputText,
 			ArgSchema:    `{}`,
-			OutputSchema: `{}`,
-			Type:         spec.ToolTypeHTTP,
-			HTTP:         dummyHTTPTool(),
+
+			Type: spec.ToolTypeHTTP,
+			HTTP: dummyHTTPTool(),
 		},
 	})
 	if !errors.Is(err, spec.ErrBundleDisabled) {
@@ -258,9 +258,9 @@ func TestToolBuiltInGuards(t *testing.T) {
 			LLMCallable:  true,
 			OutputKind:   spec.ToolOutputText,
 			ArgSchema:    `{}`,
-			OutputSchema: `{}`,
-			Type:         spec.ToolTypeHTTP,
-			HTTP:         dummyHTTPTool(),
+
+			Type: spec.ToolTypeHTTP,
+			HTTP: dummyHTTPTool(),
 		},
 	})
 	if !errors.Is(err, spec.ErrBuiltInReadOnly) {
@@ -609,9 +609,9 @@ func TestConcurrentToolPut(t *testing.T) {
 				LLMCallable:  true,
 				OutputKind:   spec.ToolOutputText,
 				ArgSchema:    `{}`,
-				OutputSchema: `{}`,
-				Type:         spec.ToolTypeHTTP,
-				HTTP:         dummyHTTPTool(),
+
+				Type: spec.ToolTypeHTTP,
+				HTTP: dummyHTTPTool(),
 			},
 		})
 		errCh <- err
@@ -626,9 +626,9 @@ func TestConcurrentToolPut(t *testing.T) {
 				LLMCallable:  true,
 				OutputKind:   spec.ToolOutputText,
 				ArgSchema:    `{}`,
-				OutputSchema: `{}`,
-				Type:         spec.ToolTypeHTTP,
-				HTTP:         dummyHTTPTool(),
+
+				Type: spec.ToolTypeHTTP,
+				HTTP: dummyHTTPTool(),
 			},
 		})
 		errCh <- err
@@ -720,9 +720,9 @@ func mustPutTool(
 			LLMCallable:  true,
 			OutputKind:   spec.ToolOutputText,
 			ArgSchema:    `{}`,
-			OutputSchema: `{}`,
-			Type:         spec.ToolTypeHTTP,
-			HTTP:         dummyHTTPTool(),
+
+			Type: spec.ToolTypeHTTP,
+			HTTP: dummyHTTPTool(),
 		},
 	})
 	if err != nil {

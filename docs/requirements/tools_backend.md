@@ -98,7 +98,7 @@ All routes are relative to `/tools`.
   - Dispatch:
     - Go - `ctx, argsJSON` passed to registered func.
     - HTTP - build request from templates, run with retry/back-off.
-  - Parse and validate response against `outputSchema`.
+  - ~~Parse and validate response against `outputSchema`.~~
   - Return `{ok:true, value}` or `{ok:false, error}`.
   - Usage metrics (`lastCalledAt`, `callCount`) updated asynchronously.
 

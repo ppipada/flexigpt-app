@@ -818,7 +818,6 @@ func buildValidTool(t *testing.T, slug, ver, id string) spec.Tool {
 		OutputKind:    spec.ToolOutputText,
 		Tags:          []string{"tag1", "tag2"},
 		ArgSchema:     json.RawMessage(`{"type":"object"}`),
-		OutputSchema:  json.RawMessage(`{"type":"object"}`),
 		Type:          spec.ToolTypeGo,
 		GoImpl:        &spec.GoToolImpl{Func: "github.com/acme/flexigpt/tools.Demo"},
 		HTTP:          nil,

@@ -27,18 +27,6 @@
 		"required": ["path"],
 		"additionalProperties": false
 	},
-	"outputSchema": {
-		"$schema": "http://json-schema.org/draft-07/schema#",
-		"type": "object",
-		"properties": {
-			"content": {
-				"type": "string",
-				"description": "File content; when \"binary\" encoding is used this is base64-encoded."
-			}
-		},
-		"required": ["content"],
-		"additionalProperties": false
-	},
 	"type": "go",
 	"goImpl": {
 		"func": "github.com/ppipada/flexigpt-app/internal/builtin/gotool/fs.ReadFile"

@@ -21,30 +21,6 @@
 		"required": ["path"],
 		"additionalProperties": false
 	},
-	"outputSchema": {
-		"$schema": "http://json-schema.org/draft-07/schema#",
-		"type": "object",
-		"properties": {
-			"exists": {
-				"type": "boolean",
-				"description": "Whether the path exists."
-			},
-			"isDir": {
-				"type": "boolean",
-				"description": "True if the path is a directory."
-			},
-			"sizeBytes": {
-				"type": "integer",
-				"description": "Size of the file in bytes (if applicable)."
-			},
-			"modTime": {
-				"type": "string",
-				"description": "Last modification time in RFC3339 format."
-			}
-		},
-		"required": ["exists", "isDir"],
-		"additionalProperties": false
-	},
 	"type": "go",
 	"goImpl": {
 		"func": "github.com/ppipada/flexigpt-app/internal/builtin/gotool/fs.StatPath"

@@ -37,9 +37,7 @@ func validateTool(t *spec.Tool) error {
 	if t.ArgSchema == nil || !json.Valid(t.ArgSchema) {
 		return errors.New("argSchema is missing or invalid")
 	}
-	if t.OutputSchema == nil || !json.Valid(t.OutputSchema) {
-		return errors.New("outputSchema is missing")
-	}
+
 	if t.CreatedAt.IsZero() {
 		return errors.New("createdAt is zero")
 	}

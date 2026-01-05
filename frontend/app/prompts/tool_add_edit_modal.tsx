@@ -34,7 +34,6 @@ type ErrorState = {
 	slug?: string;
 	type?: string;
 	argSchema?: string;
-	outputSchema?: string;
 	goFunc?: string;
 	httpUrl?: string;
 	tags?: string;
@@ -49,7 +48,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		isEnabled: true,
 		type: ToolImplType.HTTP as ToolImplType,
 		argSchema: '{}',
-		outputSchema: '{}',
 		goFunc: '',
 		httpUrl: '',
 		httpMethod: 'GET',
@@ -85,7 +83,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 				isEnabled: t.isEnabled,
 				type: t.type,
 				argSchema: JSON.stringify(t.argSchema, null, 2),
-				outputSchema: JSON.stringify(t.outputSchema, null, 2),
 				goFunc: t.goImpl?.func ?? '',
 				httpUrl: t.httpImpl?.request.urlTemplate ?? '',
 				httpMethod: t.httpImpl?.request.method ?? 'GET',
@@ -108,7 +105,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 				isEnabled: true,
 				type: ToolImplType.HTTP,
 				argSchema: '{}',
-				outputSchema: '{}',
 				goFunc: '',
 				httpUrl: '',
 				httpMethod: 'GET',
@@ -181,7 +177,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 			const err = validateTags(val);
 			if (err) newErrs.tags = err;
 			else newErrs = omitManyKeys(newErrs, ['tags']);
-		} else if (field === 'argSchema' || field === 'outputSchema') {
+		} else if (field === 'argSchema') {
 			if (!val.trim()) {
 				// Allow blank here; "required" is enforced via isAllValid
 				newErrs = omitManyKeys(newErrs, [field]);
@@ -218,7 +214,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		newErrs = validateField('slug', state.slug, newErrs);
 		newErrs = validateField('type', state.type, newErrs);
 		newErrs = validateField('argSchema', state.argSchema, newErrs);
-		newErrs = validateField('outputSchema', state.outputSchema, newErrs);
 		newErrs = validateField('tags', state.tags, newErrs);
 		if (state.type === ToolImplType.Go) {
 			newErrs = validateField('goFunc', state.goFunc, newErrs);
@@ -234,7 +229,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		const newVal = type === 'checkbox' ? checked : value;
 		setFormData(prev => ({ ...prev, [name]: newVal }));
 
-		if (['displayName', 'slug', 'type', 'argSchema', 'outputSchema', 'goFunc', 'httpUrl', 'tags'].includes(name)) {
+		if (['displayName', 'slug', 'type', 'argSchema', 'goFunc', 'httpUrl', 'tags'].includes(name)) {
 			setErrors(prev => validateField(name as keyof ErrorState, String(newVal), prev));
 		}
 	};
@@ -246,7 +241,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 			formData.displayName.trim() &&
 			formData.slug.trim() &&
 			formData.argSchema.trim() &&
-			formData.outputSchema.trim() &&
 			(formData.type === ToolImplType.Go ? formData.goFunc.trim() : formData.httpUrl.trim());
 		return !errs && Boolean(filled);
 	}, [errors, formData]);
@@ -343,7 +337,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 			tags: tagsArr.length ? tagsArr : undefined,
 			type: formData.type,
 			argSchema: formData.argSchema,
-			outputSchema: formData.outputSchema,
 			goImpl,
 			httpImpl,
 			version: formData.version,
@@ -521,35 +514,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 									<div className="label">
 										<span className="label-text-alt text-error flex items-center gap-1">
 											<FiAlertCircle size={12} /> {errors.argSchema}
-										</span>
-									</div>
-								)}
-							</div>
-						</div>
-
-						{/* Output Schema */}
-						<div className="grid grid-cols-12 items-center gap-2">
-							<label className="label col-span-3">
-								<span className="label-text text-sm">Output JSONSchema*</span>
-								<span className="label-text-alt tooltip tooltip-right" data-tip="JSON Schema for output">
-									<FiHelpCircle size={12} />
-								</span>
-							</label>
-							<div className="col-span-9">
-								<textarea
-									name="outputSchema"
-									value={formData.outputSchema}
-									onChange={handleInput}
-									className={`textarea textarea-bordered h-24 w-full rounded-xl ${
-										errors.outputSchema ? 'textarea-error' : ''
-									}`}
-									spellCheck="false"
-									aria-invalid={Boolean(errors.outputSchema)}
-								/>
-								{errors.outputSchema && (
-									<div className="label">
-										<span className="label-text-alt text-error flex items-center gap-1">
-											<FiAlertCircle size={12} /> {errors.outputSchema}
 										</span>
 									</div>
 								)}

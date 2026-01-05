@@ -31,19 +31,6 @@
 		"required": ["pattern"],
 		"additionalProperties": false
 	},
-	"outputSchema": {
-		"$schema": "http://json-schema.org/draft-07/schema#",
-		"type": "object",
-		"properties": {
-			"matches": {
-				"type": "array",
-				"items": { "type": "string" },
-				"description": "Paths of files that matched."
-			}
-		},
-		"required": ["matches"],
-		"additionalProperties": false
-	},
 	"type": "go",
 	"goImpl": {
 		"func": "github.com/ppipada/flexigpt-app/internal/builtin/gotool/fs.SearchFiles"

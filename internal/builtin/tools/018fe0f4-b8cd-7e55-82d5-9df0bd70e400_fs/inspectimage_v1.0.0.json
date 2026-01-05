@@ -21,20 +21,6 @@
 		"required": ["path"],
 		"additionalProperties": false
 	},
-	"outputSchema": {
-		"$schema": "http://json-schema.org/draft-07/schema#",
-		"type": "object",
-		"properties": {
-			"exists": { "type": "boolean" },
-			"width": { "type": "integer" },
-			"height": { "type": "integer" },
-			"format": { "type": "string" },
-			"sizeBytes": { "type": "integer" },
-			"modTime": { "type": "string" }
-		},
-		"required": ["exists"],
-		"additionalProperties": false
-	},
 	"type": "go",
 	"goImpl": {
 		"func": "github.com/ppipada/flexigpt-app/internal/builtin/gotool/fs.InspectImage"
