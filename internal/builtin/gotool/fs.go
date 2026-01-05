@@ -3,10 +3,12 @@ package gotool
 import (
 	"context"
 	"errors"
+	"fmt"
 	"mime"
 	"path/filepath"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/ppipada/flexigpt-app/internal/fileutil"
 	"github.com/ppipada/flexigpt-app/internal/tool/spec"
@@ -25,21 +27,92 @@ type ReadFileArgs struct {
 	Encoding string `json:"encoding,omitempty"` // "text" (default) | "binary"
 }
 
+const maxReadBytes = 16 * 1024 * 1024 // 16MB safety limit
+
 // ReadFile reads a file from disk and returns its contents.
 // If Encoding == "binary" the output is base64-encoded.
 func ReadFile(_ context.Context, args ReadFileArgs) ([]spec.ToolStoreOutputUnion, error) {
-	enc := fileutil.ReadEncoding(args.Encoding)
+	// Normalize and validate encoding.
+	enc := fileutil.ReadEncoding(strings.TrimSpace(args.Encoding))
 	if enc == "" {
 		enc = fileutil.ReadEncodingText
 	}
 	if enc != fileutil.ReadEncodingText && enc != fileutil.ReadEncodingBinary {
 		return nil, errors.New(`encoding must be "text" or "binary"`)
 	}
-	data, err := fileutil.ReadFile(args.Path, enc)
+
+	path := strings.TrimSpace(args.Path)
+	if path == "" {
+		return nil, errors.New("path is required")
+	}
+
+	// Basic filesystem sanity checks.
+	pi, err := fileutil.StatPath(path)
 	if err != nil {
 		return nil, err
 	}
+	if !pi.Exists {
+		return nil, fmt.Errorf("path does not exist: %s", path)
+	}
+	if pi.IsDir {
+		return nil, fmt.Errorf("path is a directory, not a file: %s", path)
+	}
+
+	// Detect MIME / extension where possible.
+	mimeType, extMode, mimeErr := fileutil.MIMEForLocalFile(path)
+	ext := strings.ToLower(filepath.Ext(path))
+
 	if enc == fileutil.ReadEncodingText {
+		// If we can't even detect the MIME, be conservative and refuse.
+		if mimeErr != nil {
+			return nil, fmt.Errorf("cannot read %q as text (MIME detection failed: %w)", path, mimeErr)
+		}
+
+		isPDF := ext == string(fileutil.ExtPDF) || mimeType == fileutil.MIMEApplicationPDF
+
+		if isPDF {
+			// PDF: use the same extraction logic as attachments.
+			//
+			// Implement this helper in fileutil, using the same underlying PDF
+			// extraction code that getTextBlock/buildPDFTextOrFileBlock use.
+			text, err := fileutil.ExtractPDFTextSafe(path, maxReadBytes)
+			if err != nil {
+				return nil, err
+			}
+			if strings.TrimSpace(text) == "" {
+				return nil, fmt.Errorf("no extractable text found in PDF %q", path)
+			}
+
+			return []spec.ToolStoreOutputUnion{
+				{
+					Kind: spec.ToolStoreOutputKindText,
+					TextItem: &spec.ToolStoreOutputText{
+						Text: text,
+					},
+				},
+			}, nil
+		}
+
+		// Non‑PDF: only allow clearly text-like files.
+		if extMode != fileutil.ExtensionModeText {
+			return nil, fmt.Errorf(
+				"cannot read non-text file %q as text; use encoding \"binary\" instead",
+				path,
+			)
+		}
+
+		// Normal text file: read and validate UTF‑8.
+		data, err := fileutil.ReadFile(path, fileutil.ReadEncodingText)
+		if err != nil {
+			return nil, err
+		}
+		if !utf8.ValidString(data) {
+			return nil, fmt.Errorf(
+				"file %q is not valid UTF-8 text; use encoding \"binary\" instead",
+				path,
+			)
+		}
+
 		return []spec.ToolStoreOutputUnion{
 			{
 				Kind: spec.ToolStoreOutputKindText,
@@ -50,26 +123,40 @@ func ReadFile(_ context.Context, args ReadFileArgs) ([]spec.ToolStoreOutputUnion
 		}, nil
 	}
 
-	// Binary: data is base64-encoded.
-	baseName := filepath.Base(args.Path)
+	// Binary mode: base64-encode and return, like before.
+	data, err := fileutil.ReadFile(path, fileutil.ReadEncodingBinary)
+	if err != nil {
+		return nil, err
+	}
+
+	baseName := filepath.Base(path)
 	if baseName == "" {
 		baseName = "file"
 	}
-	ext := strings.ToLower(filepath.Ext(baseName))
-	mimeType := mime.TypeByExtension(ext)
-	if mimeType == "" {
-		mimeType = "application/octet-stream"
+
+	// Prefer MIMEForLocalFile result if available; otherwise fall back to extension mapping.
+	var mt string
+	if mimeErr == nil && mimeType != "" {
+		mt = string(mimeType)
+	} else {
+		if ext == "" {
+			ext = strings.ToLower(filepath.Ext(baseName))
+		}
+		mt = mime.TypeByExtension(ext)
+	}
+	if mt == "" {
+		mt = "application/octet-stream"
 	}
 
-	if strings.HasPrefix(mimeType, "image/") {
+	if strings.HasPrefix(mt, "image/") {
 		return []spec.ToolStoreOutputUnion{
 			{
 				Kind: spec.ToolStoreOutputKindImage,
 				ImageItem: &spec.ToolStoreOutputImage{
 					Detail:    spec.ImageDetailAuto,
 					ImageName: baseName,
-					ImageMIME: mimeType,
-					ImageData: data,
+					ImageMIME: mt,
+					ImageData: data, // base64-encoded
 				},
 			},
 		}, nil
@@ -80,8 +167,8 @@ func ReadFile(_ context.Context, args ReadFileArgs) ([]spec.ToolStoreOutputUnion
 			Kind: spec.ToolStoreOutputKindFile,
 			FileItem: &spec.ToolStoreOutputFile{
 				FileName: baseName,
-				FileMIME: mimeType,
-				FileData: data,
+				FileMIME: mt,
+				FileData: data, // base64-encoded
 			},
 		},
 	}, nil

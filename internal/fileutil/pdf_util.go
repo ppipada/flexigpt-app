@@ -1,4 +1,4 @@
-package attachment
+package fileutil
 
 import (
 	"bytes"
@@ -6,53 +6,13 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"path/filepath"
 	"strings"
 
 	"github.com/ledongthuc/pdf"
-
-	"github.com/ppipada/flexigpt-app/internal/fileutil"
 )
 
-// buildPDFTextOrFileBlock tries to extract PDF text; on failure/panic, falls back to base64 file.
-func buildPDFTextOrFileBlock(path string) (*ContentBlock, error) {
-	text, err := extractPDFTextSafe(path, maxAttachmentFetchBytes)
-	if err == nil && text != "" {
-		return &ContentBlock{
-			Kind: ContentBlockText,
-			Text: &text,
-		}, nil
-	}
-
-	if err != nil {
-		slog.Warn("pdf text extraction failed; falling back to base64 attachment",
-			"path", path, "err", err)
-	}
-
-	// Fallback: send as file attachment.
-	base64Data, err2 := fileutil.ReadFile(path, fileutil.ReadEncodingBinary)
-	if err2 != nil {
-		if err != nil {
-			return nil, fmt.Errorf(
-				"pdf text extraction failed (%w); fallback to base64 also failed: %w",
-				err, err2,
-			)
-		}
-		return nil, err2
-	}
-
-	mimetype := string(fileutil.MIMEApplicationPDF)
-	fname := filepath.Base(path)
-	return &ContentBlock{
-		Kind:       ContentBlockFile,
-		Base64Data: &base64Data,
-		MIMEType:   &mimetype,
-		FileName:   &fname,
-	}, nil
-}
-
-// extractPDFTextSafe extracts text from a local PDF with a byte limit and panic recovery.
-func extractPDFTextSafe(path string, maxBytes int) (text string, err error) {
+// ExtractPDFTextSafe extracts text from a local PDF with a byte limit and panic recovery.
+func ExtractPDFTextSafe(path string, maxBytes int) (text string, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			slog.Warn("panic during PDF text extraction", "path", path, "panic", r)
@@ -86,10 +46,10 @@ func extractPDFTextSafe(path string, maxBytes int) (text string, err error) {
 	return text, nil
 }
 
-// extractPDFTextFromBytesSafe extracts text from in-memory PDF bytes with a
+// ExtractPDFTextFromBytesSafe extracts text from in-memory PDF bytes with a
 // byte limit and panic recovery. It mirrors extractPDFTextSafe but is backed
 // by an in-memory reader instead of a file on disk.
-func extractPDFTextFromBytesSafe(data []byte, maxBytes int) (text string, err error) {
+func ExtractPDFTextFromBytesSafe(data []byte, maxBytes int) (text string, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			slog.Warn("panic during PDF text extraction from bytes", "panic", r)

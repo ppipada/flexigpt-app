@@ -267,7 +267,7 @@ func (ref *URLRef) buildPDFTextOrFileBlockFromURL(ctx context.Context) (*Content
 		return nil, err
 	}
 
-	text, err := extractPDFTextFromBytesSafe(data, maxAttachmentFetchBytes)
+	text, err := fileutil.ExtractPDFTextFromBytesSafe(data, maxAttachmentFetchBytes)
 	if err == nil && text != "" {
 		return &ContentBlock{
 			Kind: ContentBlockText,

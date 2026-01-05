@@ -2,6 +2,8 @@ package attachment
 
 import (
 	"errors"
+	"fmt"
+	"log/slog"
 	"path/filepath"
 	"strings"
 	"time"
@@ -172,7 +174,7 @@ func (ref *FileRef) getTextBlock() (*ContentBlock, error) {
 	ext := strings.ToLower(filepath.Ext(path))
 	// Special handling for PDFs: try text extraction with panic-safe fallback.
 	if ext == string(fileutil.ExtPDF) {
-		return buildPDFTextOrFileBlock(path)
+		return ref.buildPDFTextOrFileBlock()
 	}
 	// Normal text file.
 	text, err := fileutil.ReadFile(path, fileutil.ReadEncodingText)
@@ -182,5 +184,46 @@ func (ref *FileRef) getTextBlock() (*ContentBlock, error) {
 	return &ContentBlock{
 		Kind: ContentBlockText,
 		Text: &text,
+	}, nil
+}
+
+// buildPDFTextOrFileBlock tries to extract PDF text; on failure/panic, falls back to base64 file.
+func (ref *FileRef) buildPDFTextOrFileBlock() (*ContentBlock, error) {
+	path := strings.TrimSpace(ref.Path)
+	if path == "" {
+		return nil, errors.New("got invalid path")
+	}
+	text, err := fileutil.ExtractPDFTextSafe(path, maxAttachmentFetchBytes)
+	if err == nil && text != "" {
+		return &ContentBlock{
+			Kind: ContentBlockText,
+			Text: &text,
+		}, nil
+	}
+
+	if err != nil {
+		slog.Warn("pdf text extraction failed; falling back to base64 attachment",
+			"path", path, "err", err)
+	}
+
+	// Fallback: send as file attachment.
+	base64Data, err2 := fileutil.ReadFile(path, fileutil.ReadEncodingBinary)
+	if err2 != nil {
+		if err != nil {
+			return nil, fmt.Errorf(
+				"pdf text extraction failed (%w); fallback to base64 also failed: %w",
+				err, err2,
+			)
+		}
+		return nil, err2
+	}
+
+	mimetype := string(fileutil.MIMEApplicationPDF)
+	fname := filepath.Base(path)
+	return &ContentBlock{
+		Kind:       ContentBlockFile,
+		Base64Data: &base64Data,
+		MIMEType:   &mimetype,
+		FileName:   &fname,
 	}, nil
 }
