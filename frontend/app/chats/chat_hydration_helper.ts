@@ -7,6 +7,7 @@ import {
 } from '@/spec/conversation';
 import {
 	ContentItemKind,
+	ImageDetail,
 	InputKind,
 	type InputOutputContent,
 	type InputOutputContentItemUnion,
@@ -21,7 +22,14 @@ import {
 	type ToolOutputItemUnion,
 	ToolType,
 } from '@/spec/inference';
-import { type ToolStoreChoice, ToolStoreChoiceType, type UIToolCall, type UIToolOutput } from '@/spec/tool';
+import {
+	type ToolStoreChoice,
+	ToolStoreChoiceType,
+	ToolStoreOutputKind,
+	type ToolStoreOutputUnion,
+	type UIToolCall,
+	type UIToolOutput,
+} from '@/spec/tool';
 
 import { generateTitle } from '@/lib/title_utils';
 import { getUUIDv7 } from '@/lib/uuid_utils';
@@ -139,16 +147,87 @@ export function buildUserConversationMessageFromEditor(
 	return msg;
 }
 
+function mapToolStoreOutputsToToolOutputItems(outputs?: ToolStoreOutputUnion[]): ToolOutputItemUnion[] | undefined {
+	if (!outputs?.length) return undefined;
+
+	const contents: ToolOutputItemUnion[] = [];
+
+	for (const out of outputs) {
+		switch (out.kind) {
+			case ToolStoreOutputKind.Text: {
+				const text = out.textItem?.text;
+				if (text != null) {
+					contents.push({
+						kind: ContentItemKind.Text,
+						textItem: { text },
+					});
+				}
+				break;
+			}
+
+			case ToolStoreOutputKind.Image: {
+				const img = out.imageItem;
+				if (img) {
+					contents.push({
+						kind: ContentItemKind.Image,
+						imageItem: {
+							// best-effort mapping from string detail to enum
+							detail: mapImageDetail(img.detail),
+							imageName: img.imageName,
+							imageMIME: img.imageMIME,
+							imageData: img.imageData,
+						},
+					});
+				}
+				break;
+			}
+
+			case ToolStoreOutputKind.File: {
+				const file = out.fileItem;
+				if (file) {
+					contents.push({
+						kind: ContentItemKind.File,
+						fileItem: {
+							fileName: file.fileName,
+							fileMIME: file.fileMIME,
+							fileData: file.fileData,
+						},
+					});
+				}
+				break;
+			}
+
+			case ToolStoreOutputKind.None:
+			default:
+				// ignore
+				break;
+		}
+	}
+
+	return contents.length ? contents : undefined;
+}
+
+function mapImageDetail(detail?: string): ImageDetail | undefined {
+	if (!detail) return undefined;
+	switch (detail.toLowerCase()) {
+		case 'high':
+			return ImageDetail.High;
+		case 'low':
+			return ImageDetail.Low;
+		case 'auto':
+			return ImageDetail.Auto;
+		default:
+			return undefined;
+	}
+}
+
 function buildToolOutputFromEditor(ui: UIToolOutput): ToolOutput | undefined {
 	// Only function/custom; skip webSearch for now.
-	if (ui.type !== ToolStoreChoiceType.Function && ui.type !== ToolStoreChoiceType.Custom) return undefined;
+	if (ui.type !== ToolStoreChoiceType.Function && ui.type !== ToolStoreChoiceType.Custom) {
+		return undefined;
+	}
 
-	const contents: ToolOutputItemUnion[] = [
-		{
-			kind: ContentItemKind.Text,
-			textItem: { text: ui.rawOutput },
-		},
-	];
+	const contents = mapToolStoreOutputsToToolOutputItems(ui.toolStoreOutputs);
 
 	return {
 		type: ui.type as unknown as ToolType,
@@ -162,6 +241,7 @@ function buildToolOutputFromEditor(ui: UIToolOutput): ToolOutput | undefined {
 		isError: !!ui.isError,
 		signature: undefined,
 		contents,
+		// Web-search outputs are handled separately when that path is wired up.
 		webSearchToolOutputItems: undefined,
 	};
 }

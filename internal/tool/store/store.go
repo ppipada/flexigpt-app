@@ -689,7 +689,7 @@ func (ts *ToolStore) InvokeTool(
 	}
 
 	var (
-		out     json.RawMessage
+		outputs []spec.ToolStoreOutputUnion
 		md      map[string]any
 		isError bool
 		errMsg  string
@@ -716,10 +716,11 @@ func (ts *ToolStore) InvokeTool(
 		if configErr != nil {
 			return nil, configErr
 		}
-		out, md, err = r.Run(ctx, args)
+
+		outputs, md, err = r.Run(ctx, args)
 
 	case spec.ToolTypeGo:
-		out, err = localregistry.DefaultGoRegistry.Call(
+		outputs, err = localregistry.DefaultGoRegistry.Call(
 			ctx,
 			strings.TrimSpace(tool.GoImpl.Func),
 			args,
@@ -739,15 +740,9 @@ func (ts *ToolStore) InvokeTool(
 
 	}
 
-	outItem := spec.ToolStoreOutputUnion{
-		Kind: spec.ToolStoreOutputKindText,
-		TextItem: &spec.ToolStoreOutputText{
-			Text: string(out),
-		},
-	}
 	return &spec.InvokeToolResponse{
 		Body: &spec.InvokeToolResponseBody{
-			Outputs:      []spec.ToolStoreOutputUnion{outItem},
+			Outputs:      outputs,
 			Meta:         md,
 			IsBuiltIn:    isBI,
 			IsError:      isError,

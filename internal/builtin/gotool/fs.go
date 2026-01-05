@@ -3,9 +3,13 @@ package gotool
 import (
 	"context"
 	"errors"
+	"mime"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/ppipada/flexigpt-app/internal/fileutil"
+	"github.com/ppipada/flexigpt-app/internal/tool/spec"
 )
 
 const (
@@ -21,13 +25,9 @@ type ReadFileArgs struct {
 	Encoding string `json:"encoding,omitempty"` // "text" (default) | "binary"
 }
 
-type ReadFileOut struct {
-	Content string `json:"content"`
-}
-
 // ReadFile reads a file from disk and returns its contents.
 // If Encoding == "binary" the output is base64-encoded.
-func ReadFile(_ context.Context, args ReadFileArgs) (*ReadFileOut, error) {
+func ReadFile(_ context.Context, args ReadFileArgs) ([]spec.ToolStoreOutputUnion, error) {
 	enc := fileutil.ReadEncoding(args.Encoding)
 	if enc == "" {
 		enc = fileutil.ReadEncodingText
@@ -39,7 +39,52 @@ func ReadFile(_ context.Context, args ReadFileArgs) (*ReadFileOut, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ReadFileOut{Content: data}, nil
+	if enc == fileutil.ReadEncodingText {
+		return []spec.ToolStoreOutputUnion{
+			{
+				Kind: spec.ToolStoreOutputKindText,
+				TextItem: &spec.ToolStoreOutputText{
+					Text: data,
+				},
+			},
+		}, nil
+	}
+
+	// Binary: data is base64-encoded.
+	baseName := filepath.Base(args.Path)
+	if baseName == "" {
+		baseName = "file"
+	}
+	ext := strings.ToLower(filepath.Ext(baseName))
+	mimeType := mime.TypeByExtension(ext)
+	if mimeType == "" {
+		mimeType = "application/octet-stream"
+	}
+
+	if strings.HasPrefix(mimeType, "image/") {
+		return []spec.ToolStoreOutputUnion{
+			{
+				Kind: spec.ToolStoreOutputKindImage,
+				ImageItem: &spec.ToolStoreOutputImage{
+					Detail:    spec.ImageDetailAuto,
+					ImageName: baseName,
+					ImageMIME: mimeType,
+					ImageData: data,
+				},
+			},
+		}, nil
+	}
+
+	return []spec.ToolStoreOutputUnion{
+		{
+			Kind: spec.ToolStoreOutputKindFile,
+			FileItem: &spec.ToolStoreOutputFile{
+				FileName: baseName,
+				FileMIME: mimeType,
+				FileData: data,
+			},
+		},
+	}, nil
 }
 
 type ListDirectoryArgs struct {

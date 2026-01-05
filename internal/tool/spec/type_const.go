@@ -77,9 +77,24 @@ type HTTPRequest struct {
 	TimeoutMs   int               `json:"timeoutMs,omitempty"` // default 10 000
 }
 
+// HTTPBodyOutputMode - how to map HTTP response body into tool outputs.
+// "" / "auto" (default): infer from Content-Type.
+// "text": always a single text block.
+// "file": always a single file block.
+// "image": always a single image block.
+type HTTPBodyOutputMode string
+
+const (
+	HTTPBodyOutputModeAuto  HTTPBodyOutputMode = "auto"
+	HTTPBodyOutputModeText  HTTPBodyOutputMode = "text"
+	HTTPBodyOutputModeFile  HTTPBodyOutputMode = "file"
+	HTTPBodyOutputModeImage HTTPBodyOutputMode = "image"
+)
+
 type HTTPResponse struct {
-	SuccessCodes []int  `json:"successCodes,omitempty"` // default: any 2xx
-	ErrorMode    string `json:"errorMode,omitempty"`    // "fail"(dflt) | "empty"
+	SuccessCodes   []int              `json:"successCodes,omitempty"` // default: any 2xx
+	ErrorMode      string             `json:"errorMode,omitempty"`    // "fail"(dflt) | "empty"
+	BodyOutputMode HTTPBodyOutputMode `json:"bodyOutputMode,omitempty"`
 }
 
 type HTTPToolImpl struct {

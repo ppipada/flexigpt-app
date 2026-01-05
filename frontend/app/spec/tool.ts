@@ -1,16 +1,25 @@
+export enum ToolStoreChoiceType {
+	Function = 'function',
+	Custom = 'custom',
+	WebSearch = 'webSearch',
+}
+
+export interface ToolStoreChoice {
+	choiceID: string;
+	bundleID: string;
+	bundleSlug?: string;
+
+	toolID?: string;
+	toolSlug: string;
+	toolVersion: string;
+	toolType: ToolStoreChoiceType;
+	displayName?: string;
+	description?: string;
+}
+
 export enum ToolImplType {
 	Go = 'go',
 	HTTP = 'http',
-}
-
-/**
- * @public
- */
-export enum ToolStoreOutputKind {
-	None = 'none',
-	Text = 'text',
-	Image = 'image',
-	File = 'file',
 }
 
 /**
@@ -55,9 +64,20 @@ export interface HTTPRequest {
 /**
  * @public
  */
+export enum HTTPBodyOutputMode {
+	Auto = 'auto',
+	Text = 'text',
+	File = 'file',
+	Image = 'image',
+}
+
+/**
+ * @public
+ */
 export interface HTTPResponse {
 	successCodes?: number[]; // default: 2xx
 	errorMode?: string; // "fail"(dflt) | "empty"
+	bodyOutputMode?: HTTPBodyOutputMode;
 }
 
 /**
@@ -68,23 +88,50 @@ export interface HTTPToolImpl {
 	response: HTTPResponse;
 }
 
-export enum ToolStoreChoiceType {
-	Function = 'function',
-	Custom = 'custom',
-	WebSearch = 'webSearch',
+/**
+ * @public
+ */
+export enum ToolStoreOutputKind {
+	None = 'none',
+	Text = 'text',
+	Image = 'image',
+	File = 'file',
 }
 
-export interface ToolStoreChoice {
-	choiceID: string;
-	bundleID: string;
-	bundleSlug?: string;
+/**
+ * @public
+ */
+export interface ToolStoreOutputFile {
+	fileName: string;
+	fileMIME: string;
+	fileData: string;
+}
 
-	toolID?: string;
-	toolSlug: string;
-	toolVersion: string;
-	toolType: ToolStoreChoiceType;
-	displayName?: string;
-	description?: string;
+/**
+ * @public
+ */
+export interface ToolStoreOutputImage {
+	detail: string;
+	imageName: string;
+	imageMIME: string;
+	imageData: string;
+}
+
+/**
+ * @public
+ */
+export interface ToolStoreOutputText {
+	text: string;
+}
+
+/**
+ * @public
+ */
+export interface ToolStoreOutputUnion {
+	kind: ToolStoreOutputKind;
+	textItem?: ToolStoreOutputText;
+	imageItem?: ToolStoreOutputImage;
+	fileItem?: ToolStoreOutputFile;
 }
 
 export interface Tool {
@@ -147,7 +194,7 @@ export interface InvokeGoOptions {
 }
 
 export interface InvokeToolResponse {
-	output: JSONRawString;
+	outputs?: ToolStoreOutputUnion[];
 	meta?: Record<string, any>;
 	isBuiltIn: boolean;
 	isError?: boolean;
@@ -189,14 +236,11 @@ export interface UIToolOutput {
 
 	type: ToolStoreChoiceType;
 	choiceID: string;
+	toolStoreChoice: ToolStoreChoice;
 
 	/** Short human-readable label used in chips. */
 	summary: string;
-
-	/** Raw JSON/text output as returned by the tool store. */
-	rawOutput: JSONRawString;
-
-	toolStoreChoice: ToolStoreChoice;
+	toolStoreOutputs?: ToolStoreOutputUnion[];
 
 	isError?: boolean;
 	errorMessage?: string;

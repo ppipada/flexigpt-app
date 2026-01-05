@@ -13,13 +13,14 @@ var DefaultGoRegistry *GoRegistry
 
 func init() {
 	DefaultGoRegistry = mustNewGoRegistry(WithCallTimeout(5 * time.Second))
-	if err := RegisterTyped(DefaultGoRegistry, gotool.ReadFileFuncID, gotool.ReadFile); err != nil {
+	if err := RegisterOutputs(DefaultGoRegistry, gotool.ReadFileFuncID, gotool.ReadFile); err != nil {
 		panic(err)
 	}
-	if err := RegisterTyped(DefaultGoRegistry, gotool.ListDirectoryFuncID, gotool.ListDirectory); err != nil {
+
+	if err := RegisterTypedAsText(DefaultGoRegistry, gotool.ListDirectoryFuncID, gotool.ListDirectory); err != nil {
 		panic(err)
 	}
-	if err := RegisterTyped(DefaultGoRegistry, gotool.SearchFilesFuncID, gotool.SearchFiles); err != nil {
+	if err := RegisterTypedAsText(DefaultGoRegistry, gotool.SearchFilesFuncID, gotool.SearchFiles); err != nil {
 		panic(err)
 	}
 }

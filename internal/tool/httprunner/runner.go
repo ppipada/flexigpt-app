@@ -11,6 +11,7 @@ import (
 	"maps"
 	"net/http"
 	"net/url"
+	"path"
 	"regexp"
 	"slices"
 	"strconv"
@@ -90,7 +91,7 @@ func NewHTTPToolRunner(impl spec.HTTPToolImpl, opts ...HTTPOption) (*HTTPToolRun
 func (r *HTTPToolRunner) Run(
 	ctx context.Context,
 	inArgs json.RawMessage,
-) (output json.RawMessage, metaData map[string]any, err error) {
+) (outputs []spec.ToolStoreOutputUnion, metaData map[string]any, err error) {
 	req := r.impl.Request
 	resp := r.impl.Response
 	timeoutMs := req.TimeoutMs
@@ -180,9 +181,9 @@ func (r *HTTPToolRunner) Run(
 		headers.Set(k, v)
 	}
 
-	// Force JSON Accept header by default.
+	// Allow arbitrary content-types by default.
 	if headers.Get("Accept") == "" {
-		headers.Set("Accept", "application/json")
+		headers.Set("Accept", "*/*")
 	}
 
 	// Build request.
@@ -226,19 +227,66 @@ func (r *HTTPToolRunner) Run(
 		return nil, metaData, fmt.Errorf("http status %d not in success set", httpResp.StatusCode)
 	}
 
-	// JSON-only response handling.
-	ct := httpResp.Header.Get("Content-Type")
 	if len(data) == 0 {
-		// No body -> return JSON null.
-		return json.RawMessage("null"), metaData, nil
+		// No body -> no outputs, just metadata.
+		return nil, metaData, nil
 	}
-	if !isJSONContentType(ct) {
-		return nil, metaData, fmt.Errorf("non-JSON Content-Type: %q", ct)
+
+	ctHeader := httpResp.Header.Get("Content-Type")
+	ctNorm := normalizeContentType(ctHeader)
+
+	mode := resp.BodyOutputMode
+	if mode == "" {
+		mode = spec.HTTPBodyOutputModeAuto
 	}
-	if !json.Valid(data) {
+
+	// If the server claims JSON, ensure the body is valid JSON.
+	if isJSONContentType(ctNorm) && !json.Valid(data) {
 		return nil, metaData, errors.New("response body is not valid JSON")
 	}
-	return json.RawMessage(data), metaData, nil
+
+	switch mode {
+	case spec.HTTPBodyOutputModeText:
+		return []spec.ToolStoreOutputUnion{
+			{
+				Kind: spec.ToolStoreOutputKindText,
+				TextItem: &spec.ToolStoreOutputText{
+					Text: string(data),
+				},
+			},
+		}, metaData, nil
+
+	case spec.HTTPBodyOutputModeFile:
+		return []spec.ToolStoreOutputUnion{
+			makeFileOutput(u, ctNorm, data),
+		}, metaData, nil
+
+	case spec.HTTPBodyOutputModeImage:
+		return []spec.ToolStoreOutputUnion{
+			makeImageOutput(u, ctNorm, data),
+		}, metaData, nil
+
+	default:
+		switch {
+		case isImageContentType(ctNorm):
+			return []spec.ToolStoreOutputUnion{
+				makeImageOutput(u, ctNorm, data),
+			}, metaData, nil
+		case isTextContentType(ctNorm) || ctNorm == "":
+			return []spec.ToolStoreOutputUnion{
+				{
+					Kind: spec.ToolStoreOutputKindText,
+					TextItem: &spec.ToolStoreOutputText{
+						Text: string(data),
+					},
+				},
+			}, metaData, nil
+		default:
+			return []spec.ToolStoreOutputUnion{
+				makeFileOutput(u, ctNorm, data),
+			}, metaData, nil
+		}
+	}
 }
 
 func (r *HTTPToolRunner) client(timeoutMs int) *http.Client {
@@ -275,20 +323,6 @@ func isSuccessStatus(status int, successCodes []int) bool {
 		return status >= 200 && status < 300
 	}
 	return slices.Contains(successCodes, status)
-}
-
-// Only accept explicit JSON types: application/json or any +json subtype.
-func isJSONContentType(ct string) bool {
-	if ct == "" {
-		return false // when body is present and content-type missing, treat as non-JSON
-	}
-	ct = strings.ToLower(ct)
-	// Strip parameters like "; charset=utf-8".
-	if i := strings.Index(ct, ";"); i >= 0 {
-		ct = ct[:i]
-	}
-	ct = strings.TrimSpace(ct)
-	return ct == "application/json" || strings.HasSuffix(ct, "+json")
 }
 
 // applyAuth applies HTTP auth directives. For Type "apiKey", In must be "header" or "query".
@@ -357,9 +391,9 @@ func expandTemplate(s string, args map[string]any, secret string) (string, error
 }
 
 // resolvePath resolves dot/array-index path into args (e.g. user.name, items[0].id).
-func resolvePath(root any, path string) (any, bool) {
+func resolvePath(root any, inPath string) (any, bool) {
 	cur := root
-	remain := path
+	remain := inPath
 	for remain != "" {
 		var seg string
 		if i := strings.IndexAny(remain, ".["); i >= 0 {
@@ -453,5 +487,92 @@ func validateHTTPImpl(impl *spec.HTTPToolImpl) error {
 			return fmt.Errorf("invalid errorMode: %s", impl.Response.ErrorMode)
 		}
 	}
+	switch impl.Response.BodyOutputMode {
+	case "", spec.HTTPBodyOutputModeAuto,
+		spec.HTTPBodyOutputModeText,
+		spec.HTTPBodyOutputModeFile,
+		spec.HTTPBodyOutputModeImage:
+		// Ok.
+	default:
+		return fmt.Errorf("invalid bodyOutputMode: %s", impl.Response.BodyOutputMode)
+	}
 	return nil
+}
+
+// normalizeContentType lower-cases and strips parameters, returning only the media type.
+func normalizeContentType(ct string) string {
+	if ct == "" {
+		return ""
+	}
+	ct = strings.ToLower(ct)
+	if i := strings.Index(ct, ";"); i >= 0 {
+		ct = ct[:i]
+	}
+	return strings.TrimSpace(ct)
+}
+
+// Only accept explicit JSON types: application/json or any +json subtype.
+func isJSONContentType(ct string) bool {
+	ct = normalizeContentType(ct)
+	if ct == "" {
+		return false
+	}
+	return ct == "application/json" || strings.HasSuffix(ct, "+json")
+}
+
+func isTextContentType(ct string) bool {
+	ct = normalizeContentType(ct)
+	if ct == "" {
+		return false
+	}
+	return strings.HasPrefix(ct, "text/") || isJSONContentType(ct)
+}
+
+func isImageContentType(ct string) bool {
+	ct = normalizeContentType(ct)
+	if ct == "" {
+		return false
+	}
+	return strings.HasPrefix(ct, "image/")
+}
+
+func makeFileOutput(u *url.URL, contentType string, data []byte) spec.ToolStoreOutputUnion {
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+	name := "response"
+	if u != nil {
+		if base := path.Base(u.Path); base != "" && base != "/" && base != "." {
+			name = base
+		}
+	}
+	return spec.ToolStoreOutputUnion{
+		Kind: spec.ToolStoreOutputKindFile,
+		FileItem: &spec.ToolStoreOutputFile{
+			FileName: name,
+			FileMIME: contentType,
+			FileData: base64.StdEncoding.EncodeToString(data),
+		},
+	}
+}
+
+func makeImageOutput(u *url.URL, contentType string, data []byte) spec.ToolStoreOutputUnion {
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+	name := "image"
+	if u != nil {
+		if base := path.Base(u.Path); base != "" && base != "/" && base != "." {
+			name = base
+		}
+	}
+	return spec.ToolStoreOutputUnion{
+		Kind: spec.ToolStoreOutputKindImage,
+		ImageItem: &spec.ToolStoreOutputImage{
+			Detail:    spec.ImageDetailAuto,
+			ImageName: name,
+			ImageMIME: contentType,
+			ImageData: base64.StdEncoding.EncodeToString(data),
+		},
+	}
 }

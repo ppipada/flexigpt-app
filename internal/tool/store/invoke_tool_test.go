@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -152,7 +153,7 @@ func TestInvokeTool(t *testing.T) {
 			wantErrIs:   spec.ErrToolDisabled,
 		},
 		{
-			name: "non_json_response_sets_is_error",
+			name: "non_json_text_response_treated_as_text",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "text/plain")
 				_, _ = w.Write([]byte("ok"))
@@ -167,16 +168,45 @@ func TestInvokeTool(t *testing.T) {
 				if resp == nil || resp.Body == nil {
 					t.Fatalf("nil response/body")
 				}
-				if !resp.Body.IsError {
-					t.Fatalf("expected IsError=true for non-JSON response")
+				if resp.Body.IsError {
+					t.Fatalf("expected IsError=false for text/plain response, got true: %q", resp.Body.ErrorMessage)
 				}
-				if !strings.Contains(resp.Body.ErrorMessage, "non-JSON Content-Type") {
-					t.Fatalf("ErrorMessage = %q, want contains %q", resp.Body.ErrorMessage, "non-JSON Content-Type")
+				textOut := getOneTextOutput(t, resp.Body)
+				if textOut != "ok" {
+					t.Fatalf("text output = %q, want %q", textOut, "ok")
 				}
 			},
 		},
 		{
-			name: "no_content_204_returns_null",
+			name: "invalid_json_body_sets_is_error",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte("{invalid"))
+			},
+			mkTool: func(baseURL string) spec.HTTPToolImpl { return defaultTool(baseURL, "/badjson") },
+			args:   `{}`,
+			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatalf("InvokeTool error: %v", err)
+				}
+				if resp == nil || resp.Body == nil {
+					t.Fatalf("nil response/body")
+				}
+				if !resp.Body.IsError {
+					t.Fatalf("expected IsError=true for invalid JSON body")
+				}
+				if !strings.Contains(resp.Body.ErrorMessage, "response body is not valid JSON") {
+					t.Fatalf(
+						"ErrorMessage = %q, want contains %q",
+						resp.Body.ErrorMessage,
+						"response body is not valid JSON",
+					)
+				}
+			},
+		},
+		{
+			name: "no_content_204_returns_no_outputs",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNoContent)
 			},
@@ -196,9 +226,8 @@ func TestInvokeTool(t *testing.T) {
 						resp.Body.ErrorMessage,
 					)
 				}
-				textOut := getOneTextOutput(t, resp.Body)
-				if textOut != "null" {
-					t.Fatalf("Output = %q, want %q", textOut, "null")
+				if len(resp.Body.Outputs) != 0 {
+					t.Fatalf("expected no outputs for 204, got %#v", resp.Body.Outputs)
 				}
 			},
 		},
@@ -232,9 +261,9 @@ func TestInvokeTool(t *testing.T) {
 			},
 		},
 		{
-			name: "error_mode_empty_suppresses_error_and_returns_empty_output",
+			name: "error_mode_empty_suppresses_error_and_returns_empty_outputs",
 			handler: func(w http.ResponseWriter, r *http.Request) {
-				// Return 404; errorMode: empty should suppress errors and yield empty output.
+				// Return 404; errorMode: empty should suppress errors and yield empty outputs.
 				w.WriteHeader(http.StatusNotFound)
 				_ = json.NewEncoder(w).Encode(map[string]any{"err": "nope"})
 			},
@@ -258,9 +287,8 @@ func TestInvokeTool(t *testing.T) {
 						resp.Body.ErrorMessage,
 					)
 				}
-				textOut := getOneTextOutput(t, resp.Body)
-				if textOut != "" {
-					t.Fatalf("Output = %q, want empty", textOut)
+				if len(resp.Body.Outputs) != 0 {
+					t.Fatalf("expected no outputs when errorMode=empty, got %#v", resp.Body.Outputs)
 				}
 				if resp.Body.Meta == nil {
 					t.Fatalf("meta should be present")
@@ -302,6 +330,125 @@ func TestInvokeTool(t *testing.T) {
 				// Generic marker; actual error text may vary but should mention the underlying http.Do.
 				if !strings.Contains(resp.Body.ErrorMessage, "http.Do") {
 					t.Fatalf("ErrorMessage = %q, want contains %q", resp.Body.ErrorMessage, "http.Do")
+				}
+			},
+		},
+		{
+			name: "body_output_mode_text_on_binary",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/octet-stream")
+				_, _ = w.Write([]byte("BINARY"))
+			},
+			mkTool: func(baseURL string) spec.HTTPToolImpl {
+				impl := defaultTool(baseURL, "/bintext")
+				impl.Response.BodyOutputMode = spec.HTTPBodyOutputModeText
+				return impl
+			},
+			args: `{}`,
+			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatalf("InvokeTool error: %v", err)
+				}
+				if resp == nil || resp.Body == nil {
+					t.Fatalf("nil resp/body")
+				}
+				if resp.Body.IsError {
+					t.Fatalf("unexpected IsError=true: %q", resp.Body.ErrorMessage)
+				}
+				textOut := getOneTextOutput(t, resp.Body)
+				if textOut != "BINARY" {
+					t.Fatalf("text output = %q, want %q", textOut, "BINARY")
+				}
+			},
+		},
+		{
+			name: "body_output_mode_file_on_binary",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/octet-stream")
+				_, _ = w.Write([]byte{0x01, 0x02, 0x03, 0x04})
+			},
+			mkTool: func(baseURL string) spec.HTTPToolImpl {
+				impl := defaultTool(baseURL, "/bin.dat")
+				impl.Response.BodyOutputMode = spec.HTTPBodyOutputModeFile
+				return impl
+			},
+			args: `{}`,
+			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatalf("InvokeTool error: %v", err)
+				}
+				if resp == nil || resp.Body == nil {
+					t.Fatalf("nil resp/body")
+				}
+				if resp.Body.IsError {
+					t.Fatalf("unexpected IsError=true: %q", resp.Body.ErrorMessage)
+				}
+				f := getOneFileOutput(t, resp.Body)
+				if f.FileName != "bin.dat" {
+					t.Fatalf("FileName = %q, want %q", f.FileName, "bin.dat")
+				}
+				if f.FileMIME != "application/octet-stream" {
+					t.Fatalf("FileMIME = %q, want %q", f.FileMIME, "application/octet-stream")
+				}
+				data, err := base64.StdEncoding.DecodeString(f.FileData)
+				if err != nil {
+					t.Fatalf("DecodeString: %v", err)
+				}
+				want := []byte{0x01, 0x02, 0x03, 0x04}
+				if len(data) != len(want) {
+					t.Fatalf("decoded length = %d, want %d", len(data), len(want))
+				}
+				for i := range want {
+					if data[i] != want[i] {
+						t.Fatalf("decoded[%d] = %d, want %d", i, data[i], want[i])
+					}
+				}
+			},
+		},
+		{
+			name: "body_output_mode_auto_image",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "image/png")
+				_, _ = w.Write([]byte{0x89, 'P', 'N', 'G'})
+			},
+			mkTool: func(baseURL string) spec.HTTPToolImpl {
+				impl := defaultTool(baseURL, "/img.png")
+				// BodyOutputMode default (auto).
+				return impl
+			},
+			args: `{}`,
+			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatalf("InvokeTool error: %v", err)
+				}
+				if resp == nil || resp.Body == nil {
+					t.Fatalf("nil resp/body")
+				}
+				if resp.Body.IsError {
+					t.Fatalf("unexpected IsError=true: %q", resp.Body.ErrorMessage)
+				}
+				img := getOneImageOutput(t, resp.Body)
+				if img.ImageName != "img.png" {
+					t.Fatalf("ImageName = %q, want %q", img.ImageName, "img.png")
+				}
+				if img.ImageMIME != "image/png" {
+					t.Fatalf("ImageMIME = %q, want %q", img.ImageMIME, "image/png")
+				}
+				data, err := base64.StdEncoding.DecodeString(img.ImageData)
+				if err != nil {
+					t.Fatalf("DecodeString: %v", err)
+				}
+				want := []byte{0x89, 'P', 'N', 'G'}
+				if len(data) != len(want) {
+					t.Fatalf("decoded length = %d, want %d", len(data), len(want))
+				}
+				for i := range want {
+					if data[i] != want[i] {
+						t.Fatalf("decoded[%d] = %d, want %d", i, data[i], want[i])
+					}
 				}
 			},
 		},
@@ -607,8 +754,8 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 					}
 					return Out{Msg: b.String()}, nil
 				}
-				if err := localregistry.RegisterTyped(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
-					t.Fatalf("RegisterTyped: %v", err)
+				if err := localregistry.RegisterTypedAsText(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
+					t.Fatalf("RegisterTypedAsText: %v", err)
 				}
 				return funcName
 			},
@@ -641,6 +788,60 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 			},
 		},
 		{
+			name: "multi_output_success",
+			register: func(t *testing.T) string {
+				t.Helper()
+				funcName := "github.com/ppipada/flexigpt-app/tests/" + sanitizeID(t.Name())
+				type Args struct {
+					N int `json:"n"`
+				}
+				fn := func(ctx context.Context, a Args) ([]spec.ToolStoreOutputUnion, error) {
+					if a.N <= 0 {
+						a.N = 1
+					}
+					var outs []spec.ToolStoreOutputUnion
+					for i := 0; i < a.N; i++ {
+						outs = append(outs, spec.ToolStoreOutputUnion{
+							Kind: spec.ToolStoreOutputKindText,
+							TextItem: &spec.ToolStoreOutputText{
+								Text: fmt.Sprintf("item-%d", i),
+							},
+						})
+					}
+					return outs, nil
+				}
+				if err := localregistry.RegisterOutputs(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
+					t.Fatalf("RegisterOutputs: %v", err)
+				}
+				return funcName
+			},
+			args: `{"n":2}`,
+			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
+				t.Helper()
+				if err != nil {
+					t.Fatalf("InvokeTool error: %v", err)
+				}
+				if resp == nil || resp.Body == nil {
+					t.Fatalf("nil resp/body")
+				}
+				if resp.Body.IsError {
+					t.Fatalf("IsError=true: %q", resp.Body.ErrorMessage)
+				}
+				if resp.Body.Meta == nil || resp.Body.Meta["type"] != "go" {
+					t.Fatalf("expected go meta")
+				}
+				if len(resp.Body.Outputs) != 2 {
+					t.Fatalf("len(outputs)=%d, want 2", len(resp.Body.Outputs))
+				}
+				if resp.Body.Outputs[0].TextItem == nil || resp.Body.Outputs[0].TextItem.Text != "item-0" {
+					t.Fatalf("first output = %#v, want text 'item-0'", resp.Body.Outputs[0])
+				}
+				if resp.Body.Outputs[1].TextItem == nil || resp.Body.Outputs[1].TextItem.Text != "item-1" {
+					t.Fatalf("second output = %#v, want text 'item-1'", resp.Body.Outputs[1])
+				}
+			},
+		},
+		{
 			name: "invalid_input_type_sets_is_error",
 			register: func(t *testing.T) string {
 				t.Helper()
@@ -654,8 +855,8 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 				fn := func(ctx context.Context, a Args) (Out, error) {
 					return Out{Ok: a.Times > 0}, nil
 				}
-				if err := localregistry.RegisterTyped(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
-					t.Fatalf("RegisterTyped: %v", err)
+				if err := localregistry.RegisterTypedAsText(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
+					t.Fatalf("RegisterTypedAsText: %v", err)
 				}
 				return funcName
 			},
@@ -694,8 +895,8 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 					}
 					return Out{}, nil
 				}
-				if err := localregistry.RegisterTyped(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
-					t.Fatalf("RegisterTyped: %v", err)
+				if err := localregistry.RegisterTypedAsText(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
+					t.Fatalf("RegisterTypedAsText: %v", err)
 				}
 				return funcName
 			},
@@ -762,8 +963,8 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 						return Out{Ok: true}, nil
 					}
 				}
-				if err := localregistry.RegisterTyped(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
-					t.Fatalf("RegisterTyped: %v", err)
+				if err := localregistry.RegisterTypedAsText(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
+					t.Fatalf("RegisterTypedAsText: %v", err)
 				}
 				return funcName
 			},
@@ -795,8 +996,8 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 				type Args struct{}
 				type Out struct{}
 				fn := func(ctx context.Context, a Args) (Out, error) { return Out{}, nil }
-				if err := localregistry.RegisterTyped(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
-					t.Fatalf("RegisterTyped: %v", err)
+				if err := localregistry.RegisterTypedAsText(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
+					t.Fatalf("RegisterTypedAsText: %v", err)
 				}
 				return funcName
 			},
@@ -812,8 +1013,8 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 				type Args struct{}
 				type Out struct{}
 				fn := func(ctx context.Context, a Args) (Out, error) { return Out{}, nil }
-				if err := localregistry.RegisterTyped(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
-					t.Fatalf("RegisterTyped: %v", err)
+				if err := localregistry.RegisterTypedAsText(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
+					t.Fatalf("RegisterTypedAsText: %v", err)
 				}
 				return funcName
 			},
@@ -930,31 +1131,82 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 	// Create some files for read/list/search.
 	fileA := filepath.Join(tmp, "a.txt")
 	fileB := filepath.Join(tmp, "b.md")
+	fileImg := filepath.Join(tmp, "img.png")
 	if err := os.WriteFile(fileA, []byte("hello world"), 0o600); err != nil {
 		t.Fatalf("write a.txt: %v", err)
 	}
 	if err := os.WriteFile(fileB, []byte("lorem ipsum"), 0o600); err != nil {
 		t.Fatalf("write b.md: %v", err)
 	}
+	if err := os.WriteFile(fileImg, []byte{0x01, 0x02, 0x03}, 0o600); err != nil {
+		t.Fatalf("write img.png: %v", err)
+	}
 
 	tests := []struct {
 		name     string
 		funcName string
 		args     string
-		verify   func(t *testing.T, out json.RawMessage)
+		verify   func(t *testing.T, body *spec.InvokeToolResponseBody)
 	}{
 		{
 			name:     "ReadFile_text_success",
 			funcName: gotool.ReadFileFuncID,
 			args:     fmt.Sprintf(`{"path":%q,"encoding":"text"}`, fileA),
-			verify: func(t *testing.T, out json.RawMessage) {
+			verify: func(t *testing.T, body *spec.InvokeToolResponseBody) {
 				t.Helper()
-				var o gotool.ReadFileOut
-				if err := json.Unmarshal(out, &o); err != nil {
-					t.Fatalf("unmarshal: %v", err)
+				text := getOneTextOutput(t, body)
+				if text != "hello world" {
+					t.Fatalf("content=%q, want %q", text, "hello world")
 				}
-				if o.Content != "hello world" {
-					t.Fatalf("content=%q, want %q", o.Content, "hello world")
+			},
+		},
+		{
+			name:     "ReadFile_binary_file_output",
+			funcName: gotool.ReadFileFuncID,
+			args:     fmt.Sprintf(`{"path":%q,"encoding":"binary"}`, fileB),
+			verify: func(t *testing.T, body *spec.InvokeToolResponseBody) {
+				t.Helper()
+				f := getOneFileOutput(t, body)
+				if f.FileName != "b.md" {
+					t.Fatalf("FileName=%q, want %q", f.FileName, "b.md")
+				}
+				if f.FileMIME == "" {
+					t.Fatalf("FileMIME should not be empty")
+				}
+				data, err := base64.StdEncoding.DecodeString(f.FileData)
+				if err != nil {
+					t.Fatalf("DecodeString: %v", err)
+				}
+				if string(data) != "lorem ipsum" {
+					t.Fatalf("decoded content=%q, want %q", string(data), "lorem ipsum")
+				}
+			},
+		},
+		{
+			name:     "ReadFile_binary_image_output",
+			funcName: gotool.ReadFileFuncID,
+			args:     fmt.Sprintf(`{"path":%q,"encoding":"binary"}`, fileImg),
+			verify: func(t *testing.T, body *spec.InvokeToolResponseBody) {
+				t.Helper()
+				img := getOneImageOutput(t, body)
+				if img.ImageName != "img.png" {
+					t.Fatalf("ImageName=%q, want %q", img.ImageName, "img.png")
+				}
+				if !strings.HasPrefix(img.ImageMIME, "image/") {
+					t.Fatalf("ImageMIME=%q, want prefix %q", img.ImageMIME, "image/")
+				}
+				data, err := base64.StdEncoding.DecodeString(img.ImageData)
+				if err != nil {
+					t.Fatalf("DecodeString: %v", err)
+				}
+				want := []byte{0x01, 0x02, 0x03}
+				if len(data) != len(want) {
+					t.Fatalf("decoded length = %d, want %d", len(data), len(want))
+				}
+				for i := range want {
+					if data[i] != want[i] {
+						t.Fatalf("decoded[%d]=%d, want %d", i, data[i], want[i])
+					}
 				}
 			},
 		},
@@ -962,10 +1214,11 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 			name:     "ListDirectory_glob",
 			funcName: gotool.ListDirectoryFuncID,
 			args:     fmt.Sprintf(`{"path":%q,"pattern":"*.txt"}`, tmp),
-			verify: func(t *testing.T, out json.RawMessage) {
+			verify: func(t *testing.T, body *spec.InvokeToolResponseBody) {
 				t.Helper()
+				text := getOneTextOutput(t, body)
 				var o gotool.ListDirectoryOut
-				if err := json.Unmarshal(out, &o); err != nil {
+				if err := json.Unmarshal([]byte(text), &o); err != nil {
 					t.Fatalf("unmarshal: %v", err)
 				}
 				has := func(name string) bool {
@@ -980,10 +1233,11 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 			name:     "SearchFiles_regex",
 			funcName: gotool.SearchFilesFuncID,
 			args:     fmt.Sprintf(`{"root":%q,"pattern":"hello"}`, tmp),
-			verify: func(t *testing.T, out json.RawMessage) {
+			verify: func(t *testing.T, body *spec.InvokeToolResponseBody) {
 				t.Helper()
+				text := getOneTextOutput(t, body)
 				var o gotool.SearchFilesOut
-				if err := json.Unmarshal(out, &o); err != nil {
+				if err := json.Unmarshal([]byte(text), &o); err != nil {
 					t.Fatalf("unmarshal: %v", err)
 				}
 				found := slices.Contains(o.Matches, fileA)
@@ -1008,7 +1262,6 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 			// Bundle per case.
 			bundleID := bundleitemutils.BundleID("b-" + sanitizeID(t.Name()))
 			bundleSlug := bundleitemutils.BundleSlug("bundle-" + sanitizeID(t.Name()))
-			t.Logf("slug: %s", bundleSlug)
 			putBundle(t, ts, bundleID, bundleSlug, true)
 
 			// Write the Go tool referencing the built-in function name.
@@ -1035,8 +1288,7 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 			if resp.Body.IsError {
 				t.Fatalf("unexpected IsError=true for built-in tool: %q", resp.Body.ErrorMessage)
 			}
-			textOut := getOneTextOutput(t, resp.Body)
-			tc.verify(t, json.RawMessage(textOut))
+			tc.verify(t, resp.Body)
 		})
 	}
 }
@@ -1119,9 +1371,27 @@ func getOneTextOutput(t *testing.T, respBody *spec.InvokeToolResponseBody) strin
 	t.Helper()
 	outputs := respBody.Outputs
 	if len(outputs) != 1 || outputs[0].TextItem == nil {
-		t.Fatalf("did not get one proper output")
+		t.Fatalf("expected exactly one text output, got %#v", outputs)
 	}
 	return outputs[0].TextItem.Text
+}
+
+func getOneFileOutput(t *testing.T, respBody *spec.InvokeToolResponseBody) *spec.ToolStoreOutputFile {
+	t.Helper()
+	outputs := respBody.Outputs
+	if len(outputs) != 1 || outputs[0].FileItem == nil {
+		t.Fatalf("expected exactly one file output, got %#v", outputs)
+	}
+	return outputs[0].FileItem
+}
+
+func getOneImageOutput(t *testing.T, respBody *spec.InvokeToolResponseBody) *spec.ToolStoreOutputImage {
+	t.Helper()
+	outputs := respBody.Outputs
+	if len(outputs) != 1 || outputs[0].ImageItem == nil {
+		t.Fatalf("expected exactly one image output, got %#v", outputs)
+	}
+	return outputs[0].ImageItem
 }
 
 // sanitizeID produces a slug-ish identifier from a test name for use in IDs, slugs and func names.

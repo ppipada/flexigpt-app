@@ -368,6 +368,9 @@ linters:
       # Report `a := b.(MyStruct)` when `a, ok := ...` should be.
       check-type-assertions: true # Default: false
 
+    exhaustive:
+      default-signifies-exhaustive: true
+
     gocritic:
       # As of golangci-lint v2.0.2 this enabled 102 checks and disables below 4.
       enable-all: true

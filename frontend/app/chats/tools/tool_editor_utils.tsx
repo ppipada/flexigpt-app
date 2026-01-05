@@ -6,6 +6,8 @@ import {
 	type Tool,
 	type ToolStoreChoice,
 	ToolStoreChoiceType,
+	ToolStoreOutputKind,
+	type ToolStoreOutputUnion,
 	type UIToolCall,
 	type UIToolStoreChoice,
 } from '@/spec/tool';
@@ -107,6 +109,20 @@ export function formatToolCallLabel(call: UIToolCall): string {
 export function formatToolOutputSummary(name: string): string {
 	const pretty = getPrettyToolName(name);
 	return `Result: ${pretty}`;
+}
+
+// Helper: used for summaries / error messages
+export function extractPrimaryTextFromToolStoreOutputs(outputs?: ToolStoreOutputUnion[]): string | undefined {
+	if (!outputs?.length) return undefined;
+
+	const texts = outputs
+		.filter(o => o.kind === ToolStoreOutputKind.Text && o.textItem?.text)
+		.map(o => o.textItem?.text.trim())
+		.filter(Boolean);
+
+	if (!texts.length) return undefined;
+
+	return texts.join('\n\n');
 }
 
 // Convert the editor's attached-tool shape into the persisted ToolStoreChoice shape.

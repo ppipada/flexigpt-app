@@ -2,6 +2,7 @@ import { type ConversationMessage } from '@/spec/conversation';
 import {
 	type CompletionResponseBody,
 	ContentItemKind,
+	ImageDetail,
 	type InferenceUsage,
 	type ModelParam,
 	OutputKind,
@@ -11,15 +12,23 @@ import {
 	Status,
 	type ToolCall,
 	type ToolOutput,
+	type ToolOutputItemUnion,
 } from '@/spec/inference';
 import type { ProviderName } from '@/spec/modelpreset';
-import type { ToolStoreChoice, ToolStoreChoiceType, UIToolCall, UIToolOutput } from '@/spec/tool';
+import {
+	type ToolStoreChoice,
+	type ToolStoreChoiceType,
+	ToolStoreOutputKind,
+	type ToolStoreOutputUnion,
+	type UIToolCall,
+	type UIToolOutput,
+} from '@/spec/tool';
 
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { providerSetAPI } from '@/apis/baseapi';
 
-import { formatToolOutputSummary } from '@/chats/tools/tool_editor_utils';
+import { extractPrimaryTextFromToolStoreOutputs, formatToolOutputSummary } from '@/chats/tools/tool_editor_utils';
 
 export async function HandleCompletion(
 	provider: ProviderName,
@@ -363,20 +372,11 @@ export function buildUIToolOutputFromToolOutput(
 ): UIToolOutput {
 	const isError = out.isError;
 
-	// Aggregate text from contents into a single rawOutput string.
-	let raw = '';
-	if (out.contents && out.contents.length > 0) {
-		const parts: string[] = [];
-		for (const item of out.contents) {
-			if (item.kind === ContentItemKind.Text && item.textItem?.text) {
-				parts.push(item.textItem.text);
-			}
-		}
-		raw = parts.join('\n\n');
-	}
+	const toolStoreOutputs = mapToolOutputItemsToToolStoreOutputs(out.contents);
+	const primaryText = extractPrimaryTextFromToolStoreOutputs(toolStoreOutputs);
 
 	const summaryBase = formatToolOutputSummary(out.name);
-	const summary = isError && raw ? `Error: ${raw.split('\n')[0].slice(0, 80)}` : summaryBase;
+	const summary = isError && primaryText ? `Error: ${primaryText.split('\n')[0].slice(0, 80)}` : summaryBase;
 
 	const toolStoreChoice = choiceMap.get(out.choiceID);
 	const call = toolCallMap?.get(out.callID);
@@ -386,11 +386,12 @@ export function buildUIToolOutputFromToolOutput(
 		callID: out.callID,
 		name: out.name,
 		choiceID: out.choiceID,
+
 		// ToolType and ToolStoreChoiceType share the same string enum values.
 		type: out.type as unknown as ToolStoreChoiceType,
 
 		summary,
-		rawOutput: raw,
+		toolStoreOutputs,
 
 		toolStoreChoice:
 			toolStoreChoice ??
@@ -404,12 +405,72 @@ export function buildUIToolOutputFromToolOutput(
 			} as ToolStoreChoice),
 
 		isError,
-		errorMessage: isError && raw ? raw : undefined,
+		errorMessage: isError ? primaryText : undefined,
 
 		// Hydrate from the original call, if present.
 		arguments: call?.arguments,
 		webSearchToolCallItems: call?.webSearchToolCallItems,
 	};
+}
+
+// Helper: map inference ToolOutput.contents -> UIToolOutput.toolStoreOutputs
+function mapToolOutputItemsToToolStoreOutputs(contents?: ToolOutputItemUnion[]): ToolStoreOutputUnion[] | undefined {
+	if (!contents?.length) return undefined;
+
+	const outputs: ToolStoreOutputUnion[] = [];
+
+	for (const item of contents) {
+		switch (item.kind) {
+			case ContentItemKind.Text: {
+				const text = item.textItem?.text;
+				if (text != null) {
+					outputs.push({
+						kind: ToolStoreOutputKind.Text,
+						textItem: { text },
+					});
+				}
+				break;
+			}
+
+			case ContentItemKind.Image: {
+				const img = item.imageItem;
+				if (img) {
+					outputs.push({
+						kind: ToolStoreOutputKind.Image,
+						imageItem: {
+							// ToolStoreOutputImage.detail is a string; keep enum value or default to "auto"
+							detail: (img.detail ?? ImageDetail.Auto) as unknown as string,
+							imageName: img.imageName ?? '',
+							imageMIME: img.imageMIME ?? '',
+							imageData: img.imageData ?? '',
+						},
+					});
+				}
+				break;
+			}
+
+			case ContentItemKind.File: {
+				const file = item.fileItem;
+				if (file) {
+					outputs.push({
+						kind: ToolStoreOutputKind.File,
+						fileItem: {
+							fileName: file.fileName ?? '',
+							fileMIME: file.fileMIME ?? '',
+							fileData: file.fileData ?? '',
+						},
+					});
+				}
+				break;
+			}
+
+			default:
+				// Refusal / other kinds are ignored for tool-store outputs
+				break;
+		}
+	}
+
+	return outputs.length ? outputs : undefined;
 }
 
 function buildToolCallMapFromOutputs(outputs: OutputUnion[]): Map<string, ToolCall> {

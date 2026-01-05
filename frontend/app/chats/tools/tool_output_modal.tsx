@@ -6,7 +6,7 @@ import { FiTool, FiX } from 'react-icons/fi';
 
 import type { UIToolOutput } from '@/spec/tool';
 
-import { formatToolOutputSummary } from '@/chats/tools/tool_editor_utils';
+import { extractPrimaryTextFromToolStoreOutputs, formatToolOutputSummary } from '@/chats/tools/tool_editor_utils';
 
 interface ToolOutputModalProps {
 	isOpen: boolean;
@@ -46,13 +46,27 @@ export function ToolOutputModal({ isOpen, onClose, output }: ToolOutputModalProp
 	if (!isOpen || !output) return null;
 
 	let renderedBody = 'Tool returned no output.';
-	if (output.rawOutput && output.rawOutput.trim() !== '') {
-		const raw = output.rawOutput.trim();
-		try {
-			const parsed = JSON.parse(raw);
-			renderedBody = JSON.stringify(parsed, null, 2);
-		} catch {
-			renderedBody = raw;
+
+	const outputs = output.toolStoreOutputs;
+
+	if (outputs && outputs.length > 0) {
+		const primaryText = extractPrimaryTextFromToolStoreOutputs(outputs);
+
+		if (primaryText) {
+			const raw = primaryText.trim();
+			try {
+				const parsed = JSON.parse(raw);
+				renderedBody = JSON.stringify(parsed, null, 2);
+			} catch {
+				renderedBody = raw;
+			}
+		} else {
+			// No textual payload – show the structured outputs as JSON
+			try {
+				renderedBody = JSON.stringify(outputs, null, 2);
+			} catch {
+				renderedBody = 'Unable to render tool output.';
+			}
 		}
 	}
 
