@@ -145,7 +145,7 @@ type ToolStoreOutputFile struct {
 	FileData string `json:"fileData"`
 }
 
-type ToolOutputUnion struct {
+type ToolStoreOutputUnion struct {
 	Kind ToolStoreOutputKind `json:"kind"`
 
 	TextItem  *ToolStoreOutputText  `json:"textItem,omitempty"`

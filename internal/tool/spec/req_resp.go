@@ -199,7 +199,7 @@ type InvokeToolRequest struct {
 type InvokeToolResponseBody struct {
 	// Output is the JSON-serializable result produced by the tool. Its shape depends on
 	// the tool definition.
-	Output JSONRawString `json:"output"`
+	Outputs []ToolStoreOutputUnion `json:"outputs,omitempty"`
 	// Meta contains implementation-specific metadata (e.g., HTTP status, duration, etc.).
 	Meta map[string]any `json:"meta,omitempty"`
 	// True if the tool was served from the built-in data overlay.

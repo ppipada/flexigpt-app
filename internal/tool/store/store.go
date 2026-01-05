@@ -739,9 +739,15 @@ func (ts *ToolStore) InvokeTool(
 
 	}
 
+	outItem := spec.ToolStoreOutputUnion{
+		Kind: spec.ToolStoreOutputKindText,
+		TextItem: &spec.ToolStoreOutputText{
+			Text: string(out),
+		},
+	}
 	return &spec.InvokeToolResponse{
 		Body: &spec.InvokeToolResponseBody{
-			Output:       string(out),
+			Outputs:      []spec.ToolStoreOutputUnion{outItem},
 			Meta:         md,
 			IsBuiltIn:    isBI,
 			IsError:      isError,

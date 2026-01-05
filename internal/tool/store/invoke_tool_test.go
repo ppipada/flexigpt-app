@@ -113,8 +113,9 @@ func TestInvokeTool(t *testing.T) {
 				}
 
 				var got map[string]any
-				if err := json.Unmarshal([]byte(resp.Body.Output), &got); err != nil {
-					t.Fatalf("unmarshal output: %v; raw: %q", err, resp.Body.Output)
+				textOut := getOneTextOutput(t, resp.Body)
+				if err := json.Unmarshal([]byte(textOut), &got); err != nil {
+					t.Fatalf("unmarshal output: %v; raw: %q", err, textOut)
 				}
 				if got["q"] != "hello" {
 					t.Fatalf("q = %v, want hello", got["q"])
@@ -195,8 +196,9 @@ func TestInvokeTool(t *testing.T) {
 						resp.Body.ErrorMessage,
 					)
 				}
-				if resp.Body.Output != "null" {
-					t.Fatalf("Output = %q, want %q", resp.Body.Output, "null")
+				textOut := getOneTextOutput(t, resp.Body)
+				if textOut != "null" {
+					t.Fatalf("Output = %q, want %q", textOut, "null")
 				}
 			},
 		},
@@ -256,8 +258,9 @@ func TestInvokeTool(t *testing.T) {
 						resp.Body.ErrorMessage,
 					)
 				}
-				if resp.Body.Output != "" {
-					t.Fatalf("Output = %q, want empty", resp.Body.Output)
+				textOut := getOneTextOutput(t, resp.Body)
+				if textOut != "" {
+					t.Fatalf("Output = %q, want empty", textOut)
 				}
 				if resp.Body.Meta == nil {
 					t.Fatalf("meta should be present")
@@ -552,8 +555,9 @@ func TestInvokeTool_RequestBodyTemplating_PathQueryHeaderAuth(t *testing.T) {
 	}
 
 	var got map[string]any
-	if err := json.Unmarshal([]byte(resp.Body.Output), &got); err != nil {
-		t.Fatalf("unmarshal output: %v; raw: %q", err, resp.Body.Output)
+	textOut := getOneTextOutput(t, resp.Body)
+	if err := json.Unmarshal([]byte(textOut), &got); err != nil {
+		t.Fatalf("unmarshal output: %v; raw: %q", err, textOut)
 	}
 	if got["pathID"] != "42" || got["queryID"] != "42" {
 		t.Fatalf("templating mismatch: got=%v", got)
@@ -627,7 +631,8 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 					Msg string `json:"msg"`
 				}
 				var out Out
-				if err := json.Unmarshal([]byte(resp.Body.Output), &out); err != nil {
+				textOut := getOneTextOutput(t, resp.Body)
+				if err := json.Unmarshal([]byte(textOut), &out); err != nil {
 					t.Fatalf("unmarshal: %v", err)
 				}
 				if out.Msg != "ababab" {
@@ -1030,7 +1035,8 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 			if resp.Body.IsError {
 				t.Fatalf("unexpected IsError=true for built-in tool: %q", resp.Body.ErrorMessage)
 			}
-			tc.verify(t, json.RawMessage(resp.Body.Output))
+			textOut := getOneTextOutput(t, resp.Body)
+			tc.verify(t, json.RawMessage(textOut))
 		})
 	}
 }
@@ -1107,6 +1113,15 @@ func putBundle(
 	}); err != nil {
 		t.Fatalf("PutToolBundle: %v", err)
 	}
+}
+
+func getOneTextOutput(t *testing.T, respBody *spec.InvokeToolResponseBody) string {
+	t.Helper()
+	outputs := respBody.Outputs
+	if len(outputs) != 1 || outputs[0].TextItem == nil {
+		t.Fatalf("did not get one proper output")
+	}
+	return outputs[0].TextItem.Text
 }
 
 // sanitizeID produces a slug-ish identifier from a test name for use in IDs, slugs and func names.
