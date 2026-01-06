@@ -18,6 +18,8 @@ const (
 	ReadEncodingBinary ReadEncoding = "binary"
 )
 
+var errSearchLimitReached = errors.New("search limit reached")
+
 type PathInfo struct {
 	Path    string     `json:"path"`
 	Name    string     `json:"name"`
@@ -91,8 +93,8 @@ func getPathInfoFromFileInfo(path string, info fs.FileInfo) PathInfo {
 	}
 }
 
-// SearchFiles walks root (default ".") recursively and returns up to maxResults
-// files whose *path* or UTF-8 text content matches the regexp pattern.
+// SearchFiles walks root (default ".") recursively and returns up to maxResults files
+// whose *path* or UTF-8 text content* match the regexp pattern.
 // If maxResults <= 0, it is treated as "no limit".
 func SearchFiles(root, pattern string, maxResults int) ([]string, error) {
 	if pattern == "" {
@@ -113,28 +115,51 @@ func SearchFiles(root, pattern string, maxResults int) ([]string, error) {
 	}
 
 	var matches []string
+
 	walkFn := func(path string, d fs.DirEntry, walkErr error) error {
-		if walkErr != nil || d.IsDir() {
+		if walkErr != nil {
 			return walkErr
 		}
+
+		// If we've already hit the limit, abort the walk entirely.
+		if len(matches) >= limit {
+			return errSearchLimitReached
+		}
+
+		// Skip directories; just continue walking.
+		if d.IsDir() {
+			return nil
+		}
+
+		// Path match first.
 		if re.MatchString(path) {
 			matches = append(matches, path)
 		} else {
-			// Check file content only for (reasonably small) text files.
-			if info, _ := d.Info(); info != nil && info.Size() < 10*1024*1024 { // 10 MB guard
+			// Check file content only for reasonably small files.
+			if info, _ := d.Info(); info != nil && info.Size() < 1*1024*1024 { // 1 MB guard
 				if data, rerr := os.ReadFile(path); rerr == nil && re.Match(data) {
 					matches = append(matches, path)
 				}
 			}
 		}
+
+		// If we just reached or exceeded the limit, abort the walk.
 		if len(matches) >= limit {
-			return fs.SkipDir // stop walking
+			return errSearchLimitReached
 		}
+
 		return nil
 	}
 
-	if err := filepath.WalkDir(root, walkFn); err != nil {
+	err = filepath.WalkDir(root, walkFn)
+	if err != nil && !errors.Is(err, errSearchLimitReached) {
 		return nil, err
 	}
+
+	// Safety clamp: should not be needed, but guarantees we never return more than limit.
+	if len(matches) > limit {
+		matches = matches[:limit]
+	}
+
 	return matches, nil
 }

@@ -57,30 +57,35 @@ func ReadFile(_ context.Context, args ReadFileArgs) ([]spec.ToolStoreOutputUnion
 	if pi.IsDir {
 		return nil, fmt.Errorf("path is a directory, not a file: %s", path)
 	}
+	if pi.Size > maxReadBytes {
+		return nil, fmt.Errorf(
+			"file %q is too large to read (%d bytes; max %d)",
+			path, pi.Size, maxReadBytes,
+		)
+	}
 
 	// Detect MIME / extension where possible.
 	mimeType, extMode, mimeErr := fileutil.MIMEForLocalFile(path)
 	ext := strings.ToLower(filepath.Ext(path))
 
+	isPDFByExt := ext == string(fileutil.ExtPDF)
+	isPDFByMime := mimeErr == nil && mimeType == fileutil.MIMEApplicationPDF
+	isPDF := isPDFByExt || isPDFByMime
+
 	if enc == fileutil.ReadEncodingText {
-		// If we can't even detect the MIME, be conservative and refuse.
-		if mimeErr != nil {
+		// For non-PDFs, fail if MIME detection fails (conservative).
+		// For PDFs, allow text extraction even if MIME sniffing fails,
+		// as long as the extension is .pdf.
+		if !isPDF && mimeErr != nil {
 			return nil, fmt.Errorf("cannot read %q as text (MIME detection failed: %w)", path, mimeErr)
 		}
 
-		isPDF := ext == string(fileutil.ExtPDF) || mimeType == fileutil.MIMEApplicationPDF
-
 		if isPDF {
 			// PDF: use the same extraction logic as attachments.
-			//
-			// Implement this helper in fileutil, using the same underlying PDF
-			// extraction code that getTextBlock/buildPDFTextOrFileBlock use.
+			// Extraction itself is limited to maxReadBytes via LimitedReader.
 			text, err := fileutil.ExtractPDFTextSafe(path, maxReadBytes)
 			if err != nil {
 				return nil, err
-			}
-			if strings.TrimSpace(text) == "" {
-				return nil, fmt.Errorf("no extractable text found in PDF %q", path)
 			}
 
 			return []spec.ToolStoreOutputUnion{
