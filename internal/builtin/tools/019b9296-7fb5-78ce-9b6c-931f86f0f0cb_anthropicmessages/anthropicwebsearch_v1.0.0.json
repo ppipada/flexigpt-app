@@ -1,0 +1,67 @@
+{
+	"schemaVersion": "2025-07-01",
+	"id": "019b92a7-31b9-7008-be74-6b2a7ef2a58e",
+	"slug": "anthropicwebsearch",
+	"version": "v1.0.0",
+	"displayName": "Anthropic Messages SDK Websearch",
+	"description": "Search the web for relevant content and use in llm output.",
+	"tags": ["sdk", "search"],
+	"userCallable": false,
+	"llmCallable": true,
+	"llmToolType": "webSearch",
+	"argSchema": {
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"type": "object",
+		"additionalProperties": false,
+		"properties": {}
+	},
+	"userArgSchema": {
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"type": "object",
+		"additionalProperties": false,
+		"properties": {
+			"max_uses": {
+				"type": "integer",
+				"format": "int64"
+			},
+			"allowed_domains": {
+				"type": "array",
+				"items": {
+					"type": "string"
+				}
+			},
+			"blocked_domains": {
+				"type": "array",
+				"items": {
+					"type": "string"
+				}
+			},
+			"user_location": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"city": {
+						"type": "string"
+					},
+					"country": {
+						"type": "string"
+					},
+					"region": {
+						"type": "string"
+					},
+					"timezone": {
+						"type": "string"
+					}
+				}
+			}
+		}
+	},
+	"type": "sdk",
+	"sdkImpl": {
+		"sdkType": "providerSDKTypeAnthropicMessages"
+	},
+	"isEnabled": true,
+	"isBuiltIn": true,
+	"createdAt": "2025-07-02T12:00:00Z",
+	"modifiedAt": "2025-07-02T12:00:00Z"
+}

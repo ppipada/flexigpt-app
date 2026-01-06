@@ -10,6 +10,39 @@
 			"isBuiltIn": true,
 			"createdAt": "2025-07-02T12:00:00Z",
 			"modifiedAt": "2025-07-02T12:00:00Z"
+		},
+		"019b9293-6f00-70d7-8c91-4a7f28156479": {
+			"schemaVersion": "2025-07-01",
+			"id": "019b9293-6f00-70d7-8c91-4a7f28156479",
+			"slug": "openairesponses",
+			"displayName": "OpenAI Responses Tools",
+			"description": "Server tools from OpenAI Responses SDK.",
+			"isEnabled": true,
+			"isBuiltIn": true,
+			"createdAt": "2026-01-06T12:00:00Z",
+			"modifiedAt": "2026-01-06T12:00:00Z"
+		},
+		"019b9293-c851-7524-b08b-10a817d3b516": {
+			"schemaVersion": "2025-07-01",
+			"id": "019b9293-c851-7524-b08b-10a817d3b516",
+			"slug": "openaichat",
+			"displayName": "OpenAI Chat Completion Tools",
+			"description": "Server tools from OpenAI Chat Completion SDK.",
+			"isEnabled": true,
+			"isBuiltIn": true,
+			"createdAt": "2026-01-06T12:00:00Z",
+			"modifiedAt": "2026-01-06T12:00:00Z"
+		},
+		"019b9296-7fb5-78ce-9b6c-931f86f0f0cb": {
+			"schemaVersion": "2025-07-01",
+			"id": "019b9296-7fb5-78ce-9b6c-931f86f0f0cb",
+			"slug": "anthropicmessages",
+			"displayName": "Anthropic Messages Tools",
+			"description": "Server tools from Anthropic Messages SDK.",
+			"isEnabled": true,
+			"isBuiltIn": true,
+			"createdAt": "2026-01-06T12:00:00Z",
+			"modifiedAt": "2026-01-06T12:00:00Z"
 		}
 	}
 }
