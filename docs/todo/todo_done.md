@@ -678,3 +678,11 @@
   - [x] also may want to have a hydrate chat function that creates a proper chat from stored chat and then set.
   - [x] we return err from fetch completion which results in wails throwing error. what we should be doing is setting error object and then sending back with err nil.
 - [x] typing ":" opens something in platejs.
+
+- [x] reasoning content has status attached in input even though output did not have one
+- [x] in readfile toolcall, if we say read pdf, llm calls text encoding. now readfile tries to read as stringed text even if no extraction or anything is done and we end up passing gibberish. need to rectify the toolcall.
+  - [x] there is some tool error when doing this for openai 5.1
+  - [x] haiku image worked.
+- [x] in tooloutput, once we get the output, we are attaching it as text always, we want tools to return some content types and then create appropriate content blocks in output.
+- [x] if there is a toolcall, and we dont input anything, it doesnt activate run and send button.
+  - [x] in fast forward we seem to get some error. check if it is due to above or actual issue
