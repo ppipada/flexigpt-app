@@ -51,6 +51,7 @@ type (
 const (
 	ToolTypeGo   ToolImplType = "go"
 	ToolTypeHTTP ToolImplType = "http"
+	ToolTypeSDK  ToolImplType = "sdk"
 )
 
 // GoToolImpl - Register-by-name pattern for Go tools.
@@ -58,6 +59,13 @@ type GoToolImpl struct {
 	// Fully-qualified registration key, e.g.
 	//   "github.com/acme/flexigpt/tools.Weather"
 	Func string `json:"func" validate:"required"`
+}
+
+// SDKToolImpl describes how this tool is implemented using a provider SDK (e.g., OpenAI Responses, Anthropic Messages).
+// It does not encode semantic kind (function/webSearch/etc.); that lives in Tool.LLMToolType.
+type SDKToolImpl struct {
+	// SDKType can be ProviderSDKType.
+	SDKType string `json:"sdkType"`
 }
 
 // HTTPAuth - Simple auth descriptor (can be extended later).
@@ -105,9 +113,9 @@ type HTTPToolImpl struct {
 type ToolStoreChoiceType string
 
 const (
-	ToolTypeFunction  ToolStoreChoiceType = "function"
-	ToolTypeCustom    ToolStoreChoiceType = "custom"
-	ToolTypeWebSearch ToolStoreChoiceType = "webSearch"
+	ToolStoreChoiceTypeFunction  ToolStoreChoiceType = "function"
+	ToolStoreChoiceTypeCustom    ToolStoreChoiceType = "custom"
+	ToolStoreChoiceTypeWebSearch ToolStoreChoiceType = "webSearch"
 )
 
 type ToolStoreChoice struct {
@@ -124,6 +132,13 @@ type ToolStoreChoice struct {
 	ToolType    ToolStoreChoiceType `json:"toolType"`
 	Description string              `json:"description,omitempty"`
 	DisplayName string              `json:"displayName,omitempty"`
+
+	// UserArgSchemaInstance is an optional per-choice configuration object.
+	//
+	// For SDK-backed tools (Tool.Type == "sdk"), this typically contains provider-specific options validated against
+	// Tool.UserArgSchema. The inferencewrapper interprets this JSON and maps it into the appropriate inference-go
+	// ToolChoice fields (e.g. WebSearchToolChoiceItem).
+	UserArgSchemaInstance JSONRawString `json:"userArgSchemaInstance,omitempty"`
 }
 
 type ToolStoreOutputKind string
@@ -184,11 +199,24 @@ type Tool struct {
 	// LLMCallable indicates whether the model may call this tool as a function.
 	LLMCallable bool `json:"llmCallable"`
 
-	ArgSchema JSONSchema `json:"argSchema"` // validated pre-invoke
+	// ArgSchema describes the JSON arguments that are passed when the tool is invoked (by the LLM or via InvokeTool).
+	// This is primarily used for Go/HTTP tools.
+	ArgSchema JSONSchema `json:"argSchema"`
 
-	Type   ToolImplType  `json:"type"`
-	GoImpl *GoToolImpl   `json:"goImpl,omitempty"`
-	HTTP   *HTTPToolImpl `json:"httpImpl,omitempty"`
+	// UserArgSchema, if present, describes an additional per-choice configuration object that the UI may collect when
+	// enabling the tool for a model.
+	// For SDK-backed server tools this typically encodes provider-specific options (e.g., web-search settings).
+	UserArgSchema JSONSchema `json:"userArgSchema,omitempty"`
+
+	// LLMToolType captures the semantic kind of this tool from the model's point of view, e.g. "function", "custom",
+	// "webSearch".
+	// This value should always be one of ToolStoreChoiceType values.
+	LLMToolType ToolStoreChoiceType `json:"llmToolType"`
+
+	Type     ToolImplType  `json:"type"`
+	GoImpl   *GoToolImpl   `json:"goImpl,omitempty"`
+	HTTPImpl *HTTPToolImpl `json:"httpImpl,omitempty"`
+	SDKImpl  *SDKToolImpl  `json:"sdkImpl,omitempty"`
 
 	IsEnabled  bool      `json:"isEnabled"`
 	IsBuiltIn  bool      `json:"isBuiltIn"`

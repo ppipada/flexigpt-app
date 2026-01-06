@@ -374,6 +374,7 @@ func makeTool(idx int, enabled bool) spec.Tool {
 			CreatedAt:   time.Now().UTC(),
 			ModifiedAt:  time.Now().UTC(),
 			ArgSchema:   argSchema,
+			LLMToolType: spec.ToolStoreChoiceTypeFunction,
 			Type:        spec.ToolTypeGo,
 			GoImpl: &spec.GoToolImpl{
 				Func: "github.com/acme/flexigpt/tools.ToolFunc" + strconv.Itoa(idx),
@@ -391,8 +392,9 @@ func makeTool(idx int, enabled bool) spec.Tool {
 			CreatedAt:   time.Now().UTC(),
 			ModifiedAt:  time.Now().UTC(),
 			ArgSchema:   argSchema,
+			LLMToolType: spec.ToolStoreChoiceTypeFunction,
 			Type:        spec.ToolTypeHTTP,
-			HTTP: &spec.HTTPToolImpl{
+			HTTPImpl: &spec.HTTPToolImpl{
 				Request: spec.HTTPRequest{
 					Method:      "POST",
 					URLTemplate: "https://api.example.com/do",
@@ -413,7 +415,7 @@ func listAllRows(t *testing.T, e *ftsengine.Engine) map[string]map[string]string
 	token := ""
 	for {
 		part, next, err := e.BatchList(ctx, compareColumn, []string{
-			"slug", "displayName", "desc", "args", "tags", "impl", "implMeta", "enabled", "bundleID", "mtime",
+			"slug", "displayName", "desc", "llmToolType", "args", "tags", "impl", "implMeta", "enabled", "bundleID", "mtime",
 		}, token, 200)
 		if err != nil {
 			t.Fatalf("BatchList: %v", err)
@@ -439,10 +441,11 @@ func newEngine(t *testing.T, dir string) *ftsengine.Engine {
 			{Name: "slug", Weight: 1},
 			{Name: "displayName", Weight: 2},
 			{Name: "desc", Weight: 3},
-			{Name: "args", Weight: 4},
-			{Name: "tags", Weight: 5},
-			{Name: "impl", Weight: 6},
-			{Name: "implMeta", Weight: 7},
+			{Name: "llmToolType", Weight: 4},
+			{Name: "args", Weight: 5},
+			{Name: "tags", Weight: 6},
+			{Name: "impl", Weight: 7},
+			{Name: "implMeta", Weight: 8},
 			{Name: "enabled", Unindexed: true},
 			{Name: "bundleID", Unindexed: true},
 			{Name: "mtime", Unindexed: true},

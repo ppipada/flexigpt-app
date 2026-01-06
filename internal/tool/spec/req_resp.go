@@ -70,9 +70,8 @@ type PutToolRequestBody struct {
 	// Take inputs as strings that we can then validate as a json object and put a tool.
 	ArgSchema JSONRawString `json:"argSchema" required:"true"`
 
-	Type   ToolImplType  `json:"type"               required:"true"`
-	GoImpl *GoToolImpl   `json:"goImpl,omitempty"`
-	HTTP   *HTTPToolImpl `json:"httpImpl,omitempty"`
+	Type     ToolImplType  `json:"type"               required:"true"`
+	HTTPImpl *HTTPToolImpl `json:"httpImpl,omitempty" required:"true"`
 }
 
 type PutToolRequest struct {
@@ -81,6 +80,7 @@ type PutToolRequest struct {
 	Version  bundleitemutils.ItemVersion `path:"version"  required:"true"`
 	Body     *PutToolRequestBody
 }
+
 type PutToolResponse struct{}
 
 type DeleteToolRequest struct {

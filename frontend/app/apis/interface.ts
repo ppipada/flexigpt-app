@@ -11,7 +11,6 @@ import type {
 import type { MessageBlock, PromptBundle, PromptTemplate, PromptTemplateListItem, PromptVariable } from '@/spec/prompt';
 import type { AppTheme, AuthKey, AuthKeyName, AuthKeyType, SettingsSchema } from '@/spec/setting';
 import type {
-	GoToolImpl,
 	HTTPToolImpl,
 	InvokeGoOptions,
 	InvokeHTTPOptions,
@@ -204,7 +203,6 @@ export interface IToolStoreAPI {
 		llmCallable: boolean,
 		argSchema: JSONSchema,
 		type: ToolImplType,
-		goImpl?: GoToolImpl,
 		httpImpl?: HTTPToolImpl,
 		description?: string,
 		tags?: string[]

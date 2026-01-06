@@ -68,7 +68,7 @@ func TestScale_LotsOfToolBundles(t *testing.T) {
 							UserCallable: true,
 							LLMCallable:  true,
 
-							HTTP:      dummyHTTPTool(),
+							HTTPImpl:  dummyHTTPTool(),
 							ArgSchema: `{}`,
 						},
 					})
@@ -199,7 +199,7 @@ func TestScale_LotsOfTools(t *testing.T) {
 						UserCallable: true,
 						LLMCallable:  true,
 
-						HTTP:      dummyHTTPTool(),
+						HTTPImpl:  dummyHTTPTool(),
 						ArgSchema: `{}`,
 					},
 				})

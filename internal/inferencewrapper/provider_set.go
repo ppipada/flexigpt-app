@@ -546,13 +546,8 @@ func (ps *ProviderSetAPI) hydrateToolChoice(
 		Description: desc,
 	}
 
-	// If this is a web-search tool, populate minimal WebSearchArguments so that
-	// toolChoicesToOpenAIResponseTools will actually emit a web_search tool.
-	if sc.ToolType == toolSpec.ToolTypeWebSearch {
-		tc.WebSearchArguments = &inferencegoSpec.WebSearchToolChoiceItem{
-			SearchContextSize: "medium", // "low" | "medium" | "high"
-		}
-	} else {
+	switch tool.Type {
+	case toolSpec.ToolTypeGo, toolSpec.ToolTypeHTTP:
 		argSchema, err := decodeToolArgSchema(string(tool.ArgSchema))
 		if err != nil {
 			return nil, fmt.Errorf(
@@ -564,6 +559,40 @@ func (ps *ProviderSetAPI) hydrateToolChoice(
 			)
 		}
 		tc.Arguments = argSchema
+
+	case toolSpec.ToolTypeSDK:
+		// SDK-backed server tools. Semantics come from sc.ToolType
+		// (e.g., "webSearch"), while implementation is described by
+		// tool.SDK and user configuration by tool.UserArgSchema plus
+		// sc.Config.
+		switch sc.ToolType {
+		case toolSpec.ToolStoreChoiceTypeWebSearch:
+			// Decode per-choice config (if any) and map to the
+			// inference-go WebSearchToolChoiceItem.
+			var cfg inferencegoSpec.WebSearchToolChoiceItem
+			rawCfg := strings.TrimSpace(sc.UserArgSchemaInstance)
+			if rawCfg != "" {
+				if err := json.Unmarshal([]byte(rawCfg), &cfg); err != nil {
+					return nil, fmt.Errorf(
+						"invalid config for webSearch tool %s/%s@%s: %w",
+						sc.BundleID, sc.ToolSlug, sc.ToolVersion, err,
+					)
+				}
+			}
+			tc.Type = inferencegoSpec.ToolTypeWebSearch
+			tc.WebSearchArguments = &cfg
+
+		default:
+			// Future SDK-backed tool kinds (function/custom) could be added here.
+			// For now, we treat anything other than webSearch as unsupported.
+			return nil, fmt.Errorf(
+				"unsupported ToolType %q for sdk tool %s/%s@%s",
+				sc.ToolType, sc.BundleID, sc.ToolSlug, sc.ToolVersion,
+			)
+		}
+
+	default:
+		return nil, fmt.Errorf("unsupported tool impl type %q", tool.Type)
 	}
 
 	return tc, nil

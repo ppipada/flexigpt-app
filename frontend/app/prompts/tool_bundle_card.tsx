@@ -128,7 +128,6 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 					partial.llmCallable ?? toolToEdit.llmCallable,
 					partial.argSchema ?? toolToEdit.argSchema,
 					partial.type ?? toolToEdit.type,
-					partial.goImpl ?? toolToEdit.goImpl,
 					partial.httpImpl ?? toolToEdit.httpImpl,
 					partial.description ?? toolToEdit.description,
 					partial.tags ?? toolToEdit.tags
@@ -147,7 +146,6 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 					partial.llmCallable ?? true,
 					partial.argSchema ?? '',
 					partial.type ?? ToolImplType.HTTP,
-					partial.goImpl,
 					partial.httpImpl,
 					partial.description,
 					partial.tags

@@ -1,3 +1,11 @@
+/**
+ * @public
+ */
+export type JSONValue = string | number | boolean | null | JSONValue[] | { [key: string]: JSONValue };
+export type JSONSchema = JSONValue;
+
+export type JSONRawString = string;
+
 export enum ToolStoreChoiceType {
 	Function = 'function',
 	Custom = 'custom',
@@ -15,20 +23,15 @@ export interface ToolStoreChoice {
 	toolType: ToolStoreChoiceType;
 	displayName?: string;
 	description?: string;
+
+	userArgSchemaInstance?: JSONRawString;
 }
 
 export enum ToolImplType {
 	Go = 'go',
 	HTTP = 'http',
+	SDK = 'sdk',
 }
-
-/**
- * @public
- */
-export type JSONValue = string | number | boolean | null | JSONValue[] | { [key: string]: JSONValue };
-export type JSONSchema = JSONValue;
-
-export type JSONRawString = string;
 
 /**
  * @public
@@ -36,6 +39,11 @@ export type JSONRawString = string;
 export interface GoToolImpl {
 	/** Fully-qualified registration key, e.g. "github.com/acme/flexigpt/tools.Weather" */
 	func: string;
+}
+
+export interface SDKToolImpl {
+	// SDKType can be ProviderSDKType.
+	sdkType: string;
 }
 
 /**
@@ -149,10 +157,13 @@ export interface Tool {
 	llmCallable: boolean;
 
 	argSchema: JSONSchema;
+	userArgSchema?: JSONSchema;
 
+	llmToolType: ToolStoreChoiceType;
 	type: ToolImplType;
 	goImpl?: GoToolImpl;
 	httpImpl?: HTTPToolImpl;
+	sdkImpl?: SDKToolImpl;
 
 	isEnabled: boolean;
 	isBuiltIn: boolean;

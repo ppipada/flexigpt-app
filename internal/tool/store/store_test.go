@@ -137,8 +137,8 @@ func TestToolCRUD(t *testing.T) {
 
 					ArgSchema: `{}`,
 
-					Type: spec.ToolTypeHTTP,
-					HTTP: dummyHTTPTool(),
+					Type:     spec.ToolTypeHTTP,
+					HTTPImpl: dummyHTTPTool(),
 				},
 			})
 
@@ -172,8 +172,8 @@ func TestToolVersionConflict(t *testing.T) {
 
 			ArgSchema: `{}`,
 
-			Type: spec.ToolTypeHTTP,
-			HTTP: dummyHTTPTool(),
+			Type:     spec.ToolTypeHTTP,
+			HTTPImpl: dummyHTTPTool(),
 		},
 	})
 	if !errors.Is(err, spec.ErrConflict) {
@@ -197,8 +197,8 @@ func TestToolDisabledBundleGuard(t *testing.T) {
 
 			ArgSchema: `{}`,
 
-			Type: spec.ToolTypeHTTP,
-			HTTP: dummyHTTPTool(),
+			Type:     spec.ToolTypeHTTP,
+			HTTPImpl: dummyHTTPTool(),
 		},
 	})
 	if !errors.Is(err, spec.ErrBundleDisabled) {
@@ -259,8 +259,8 @@ func TestToolBuiltInGuards(t *testing.T) {
 
 			ArgSchema: `{}`,
 
-			Type: spec.ToolTypeHTTP,
-			HTTP: dummyHTTPTool(),
+			Type:     spec.ToolTypeHTTP,
+			HTTPImpl: dummyHTTPTool(),
 		},
 	})
 	if !errors.Is(err, spec.ErrBuiltInReadOnly) {
@@ -610,8 +610,8 @@ func TestConcurrentToolPut(t *testing.T) {
 
 				ArgSchema: `{}`,
 
-				Type: spec.ToolTypeHTTP,
-				HTTP: dummyHTTPTool(),
+				Type:     spec.ToolTypeHTTP,
+				HTTPImpl: dummyHTTPTool(),
 			},
 		})
 		errCh <- err
@@ -627,8 +627,8 @@ func TestConcurrentToolPut(t *testing.T) {
 
 				ArgSchema: `{}`,
 
-				Type: spec.ToolTypeHTTP,
-				HTTP: dummyHTTPTool(),
+				Type:     spec.ToolTypeHTTP,
+				HTTPImpl: dummyHTTPTool(),
 			},
 		})
 		errCh <- err
@@ -721,8 +721,8 @@ func mustPutTool(
 
 			ArgSchema: `{}`,
 
-			Type: spec.ToolTypeHTTP,
-			HTTP: dummyHTTPTool(),
+			Type:     spec.ToolTypeHTTP,
+			HTTPImpl: dummyHTTPTool(),
 		},
 	})
 	if err != nil {

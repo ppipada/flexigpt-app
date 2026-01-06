@@ -27,10 +27,11 @@ func TestToolsFTSListener_Integration(t *testing.T) {
 			{Name: "slug", Weight: 1},
 			{Name: "displayName", Weight: 2},
 			{Name: "desc", Weight: 3},
-			{Name: "args", Weight: 4},
-			{Name: "tags", Weight: 5},
-			{Name: "impl", Weight: 6},
-			{Name: "implMeta", Weight: 7},
+			{Name: "llmToolType", Weight: 4},
+			{Name: "args", Weight: 5},
+			{Name: "tags", Weight: 6},
+			{Name: "impl", Weight: 7},
+			{Name: "implMeta", Weight: 8},
 			{Name: "enabled", Unindexed: true},
 			{Name: "bundleID", Unindexed: true},
 			{Name: "mtime", Unindexed: true},
@@ -71,11 +72,12 @@ func TestToolsFTSListener_Integration(t *testing.T) {
 				"beta": { "type": "integer", "description": "Beta Desc" }
 			}
 		}`),
-		Type:       spec.ToolTypeGo,
-		GoImpl:     &spec.GoToolImpl{Func: "github.com/acme/flexigpt/tools.MyFunc"},
-		Version:    bundleitemutils.ItemVersion(toolVersion),
-		CreatedAt:  time.Now().UTC(),
-		ModifiedAt: time.Now().UTC(),
+		LLMToolType: spec.ToolStoreChoiceTypeFunction,
+		Type:        spec.ToolTypeGo,
+		GoImpl:      &spec.GoToolImpl{Func: "github.com/acme/flexigpt/tools.MyFunc"},
+		Version:     bundleitemutils.ItemVersion(toolVersion),
+		CreatedAt:   time.Now().UTC(),
+		ModifiedAt:  time.Now().UTC(),
 	}
 
 	mustWriteJSON(t, toolFile, tool)
@@ -132,6 +134,7 @@ func TestToolsExtractFTS_AllFields(t *testing.T) {
 		"slug":        "sluggy",
 		"displayName": "disp",
 		"description": "desc",
+		"llmToolType": "function",
 		"tags":        []any{"a", "b"},
 		"argSchema": map[string]any{
 			"type": "object",
@@ -165,6 +168,9 @@ func TestToolsExtractFTS_AllFields(t *testing.T) {
 	}
 	if vals["desc"] != "desc" {
 		t.Errorf("desc: %q", vals["desc"])
+	}
+	if vals["llmToolType"] != "function" {
+		t.Errorf("llmToolType: %q", vals["llmToolType"])
 	}
 	if !strings.Contains(vals["args"], "foo") || !strings.Contains(vals["args"], "Foo Title") ||
 		!strings.Contains(vals["args"], "Foo Desc") {
@@ -250,6 +256,7 @@ func TestToolsProcessFTSSync_Unchanged(t *testing.T) {
 		Version:     "v1",
 		CreatedAt:   time.Now().UTC(),
 		ModifiedAt:  time.Now().UTC(),
+		LLMToolType: spec.ToolStoreChoiceTypeFunction,
 		Type:        spec.ToolTypeGo,
 		GoImpl:      &spec.GoToolImpl{Func: "github.com/acme/flexigpt/tools.MyFunc"},
 		ArgSchema:   json.RawMessage(`{"type":"object","properties":{"x":{"type":"string"}}}`),

@@ -505,7 +505,7 @@ func TestInvokeTool(t *testing.T) {
 					IsEnabled: true,
 					ArgSchema: "{}",
 					Type:      spec.ToolTypeHTTP,
-					HTTP:      &impl,
+					HTTPImpl:  &impl,
 				},
 			}); err != nil {
 				t.Fatalf("PutTool: %v", err)
@@ -675,7 +675,7 @@ func TestInvokeTool_RequestBodyTemplating_PathQueryHeaderAuth(t *testing.T) {
 
 			ArgSchema: "{}",
 			Type:      spec.ToolTypeHTTP,
-			HTTP:      &impl,
+			HTTPImpl:  &impl,
 		},
 	})
 	if err != nil {
@@ -1328,9 +1328,10 @@ func addGoToolFile(
 		UserCallable:  true,
 		LLMCallable:   true,
 		ArgSchema:     json.RawMessage(`{}`),
+		LLMToolType:   spec.ToolStoreChoiceTypeFunction,
 		Type:          spec.ToolTypeGo,
 		GoImpl:        &spec.GoToolImpl{Func: funcName},
-		HTTP:          nil,
+		HTTPImpl:      nil,
 		IsEnabled:     enabled,
 		IsBuiltIn:     false,
 		CreatedAt:     now,

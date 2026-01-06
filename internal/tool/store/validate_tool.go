@@ -38,6 +38,18 @@ func validateTool(t *spec.Tool) error {
 		return errors.New("argSchema is missing or invalid")
 	}
 
+	if t.UserArgSchema != nil && !json.Valid(t.UserArgSchema) {
+		return errors.New("userArgSchema is invalid JSON")
+	}
+
+	// LLMToolType sanity.
+	switch t.LLMToolType {
+	case spec.ToolStoreChoiceTypeFunction, spec.ToolStoreChoiceTypeCustom, spec.ToolStoreChoiceTypeWebSearch:
+		// Ok.
+	default:
+		return fmt.Errorf("invalid llmToolType %q", t.LLMToolType)
+	}
+
 	if t.CreatedAt.IsZero() {
 		return errors.New("createdAt is zero")
 	}
@@ -51,18 +63,39 @@ func validateTool(t *spec.Tool) error {
 		if t.GoImpl == nil || strings.TrimSpace(t.GoImpl.Func) == "" {
 			return errors.New("goImpl.func is required for type 'go'")
 		}
-		if t.HTTP != nil {
+		if t.HTTPImpl != nil {
 			return errors.New("httpImpl must be unset for type 'go'")
 		}
+		if t.SDKImpl != nil {
+			return errors.New("sdkImpl must be unset for type 'go'")
+		}
 	case spec.ToolTypeHTTP:
-		if t.HTTP == nil {
+		if t.HTTPImpl == nil {
 			return errors.New("httpImpl is required for type 'http'")
 		}
-		if strings.TrimSpace(t.HTTP.Request.URLTemplate) == "" {
+		if strings.TrimSpace(t.HTTPImpl.Request.URLTemplate) == "" {
 			return errors.New("httpImpl.request.urlTemplate is empty")
 		}
 		if t.GoImpl != nil {
 			return errors.New("goImpl must be unset for type 'http'")
+		}
+		if t.SDKImpl != nil {
+			return errors.New("sdkImpl must be unset for type 'http'")
+		}
+	case spec.ToolTypeSDK:
+		// SDK-backed tools are surfaced to the provider SDK as
+		// server tools; they are not invoked via ToolStore.
+		if t.GoImpl != nil {
+			return errors.New("goImpl must be unset for type 'sdk'")
+		}
+		if t.HTTPImpl != nil {
+			return errors.New("httpImpl must be unset for type 'sdk'")
+		}
+		if t.SDKImpl == nil {
+			return errors.New("sdk metadata is required for type 'sdk'")
+		}
+		if strings.TrimSpace(t.SDKImpl.SDKType) == "" {
+			return errors.New("sdk.sdkType is required for type 'sdk'")
 		}
 	default:
 		return fmt.Errorf("invalid type %q", t.Type)

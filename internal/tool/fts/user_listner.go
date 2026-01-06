@@ -150,6 +150,7 @@ func extractFTS(fullPath string, m map[string]any) ftsDoc {
 	doc.Slug = bundleitemutils.ItemSlug(s)
 	doc.DisplayName, _ = stringField(m, "displayName")
 	doc.Desc, _ = stringField(m, "description")
+	doc.LLMToolType, _ = stringField(m, "llmToolType")
 	doc.Enabled = enabledFalse
 	doc.MTime = fileMTime(fullPath)
 	if v, ok := m["isEnabled"].(bool); ok && v {
@@ -183,6 +184,12 @@ func extractFTS(fullPath string, m map[string]any) ftsDoc {
 					if urlT, ok := req["urlTemplate"].(string); ok {
 						doc.ImplMeta += urlT
 					}
+				}
+			}
+		case string(spec.ToolTypeSDK):
+			if gi, ok := m["sdkImpl"].(map[string]any); ok {
+				if fn, ok := gi["sdkType"].(string); ok {
+					doc.ImplMeta = fn
 				}
 			}
 		}

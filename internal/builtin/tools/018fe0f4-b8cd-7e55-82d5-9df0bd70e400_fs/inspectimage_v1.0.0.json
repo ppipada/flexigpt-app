@@ -8,6 +8,7 @@
 	"tags": ["fs", "image"],
 	"userCallable": true,
 	"llmCallable": true,
+	"llmToolType": "function",
 	"argSchema": {
 		"$schema": "http://json-schema.org/draft-07/schema#",
 		"type": "object",

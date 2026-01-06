@@ -31,9 +31,10 @@ type ftsDoc struct {
 	DisplayName string                   `fts:"displayName"`
 	Desc        string                   `fts:"desc"`
 
-	Args     string `fts:"args"`
-	Impl     string `fts:"impl"`
-	ImplMeta string `fts:"implMeta"`
+	LLMToolType string `fts:"llmToolType"`
+	Args        string `fts:"args"`
+	Impl        string `fts:"impl"`
+	ImplMeta    string `fts:"implMeta"`
 
 	Tags     string                   `fts:"tags"`
 	Enabled  string                   `fts:"enabled"`
@@ -47,6 +48,7 @@ func (d ftsDoc) ToMap() map[string]string {
 		"slug":        string(d.Slug),
 		"displayName": d.DisplayName,
 		"desc":        d.Desc,
+		"llmToolType": d.LLMToolType,
 		"args":        d.Args,
 		"impl":        d.Impl,
 		"implMeta":    d.ImplMeta,
@@ -62,10 +64,11 @@ var ftsColumns = []ftsengine.Column{
 	{Name: "slug", Weight: 1},
 	{Name: "displayName", Weight: 2},
 	{Name: "desc", Weight: 3},
-	{Name: "args", Weight: 4},
-	{Name: "tags", Weight: 5},
-	{Name: "impl", Weight: 6},
-	{Name: "implMeta", Weight: 7},
+	{Name: "llmToolType", Weight: 4},
+	{Name: "args", Weight: 5},
+	{Name: "tags", Weight: 6},
+	{Name: "impl", Weight: 7},
+	{Name: "implMeta", Weight: 8},
 
 	{Name: "enabled", Unindexed: true},
 	{Name: "bundleID", Unindexed: true},

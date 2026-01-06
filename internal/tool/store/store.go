@@ -426,7 +426,7 @@ func (ts *ToolStore) ListToolBundles(
 	}, nil
 }
 
-// PutTool creates a new tool version (immutable).
+// PutTool creates a new tool version (immutable). Only HTTPImpl function tools are allowed to be added as of now.
 func (ts *ToolStore) PutTool(
 	ctx context.Context, req *spec.PutToolRequest,
 ) (*spec.PutToolResponse, error) {
@@ -501,13 +501,13 @@ func (ts *ToolStore) PutTool(
 
 		ArgSchema: json.RawMessage(argSchemaStr),
 
-		Type:       req.Body.Type,
-		GoImpl:     req.Body.GoImpl,
-		HTTP:       req.Body.HTTP,
-		IsEnabled:  req.Body.IsEnabled,
-		IsBuiltIn:  false,
-		CreatedAt:  now,
-		ModifiedAt: now,
+		LLMToolType: spec.ToolStoreChoiceTypeFunction,
+		Type:        req.Body.Type,
+		HTTPImpl:    req.Body.HTTPImpl,
+		IsEnabled:   req.Body.IsEnabled,
+		IsBuiltIn:   false,
+		CreatedAt:   now,
+		ModifiedAt:  now,
 	}
 
 	if err := validateTool(&t); err != nil {
@@ -712,7 +712,7 @@ func (ts *ToolStore) InvokeTool(
 				hopts = append(hopts, httprunner.WithHTTPSecrets(req.Body.HTTPOptions.Secrets))
 			}
 		}
-		r, configErr := httprunner.NewHTTPToolRunner(*tool.HTTP, hopts...)
+		r, configErr := httprunner.NewHTTPToolRunner(*tool.HTTPImpl, hopts...)
 		if configErr != nil {
 			return nil, configErr
 		}
@@ -729,6 +729,10 @@ func (ts *ToolStore) InvokeTool(
 			"type":     "go",
 			"funcName": tool.GoImpl.Func,
 		}
+	case spec.ToolTypeSDK:
+		// SDK-backed tools are not invoked through ToolStore; they are surfaced to the model as provider server tools.
+		// Invoking them directly is a misuse.
+		return nil, fmt.Errorf("unsupported tool type for InvokeTool: %s", tool.Type)
 	default:
 		return nil, fmt.Errorf("unsupported tool type: %s", tool.Type)
 	}

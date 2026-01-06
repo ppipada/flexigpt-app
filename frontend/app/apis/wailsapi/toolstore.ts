@@ -1,5 +1,4 @@
 import type {
-	GoToolImpl,
 	HTTPToolImpl,
 	InvokeGoOptions,
 	InvokeHTTPOptions,
@@ -137,7 +136,6 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 		llmCallable: boolean,
 		argSchema: JSONRawString,
 		type: ToolImplType,
-		goImpl?: GoToolImpl,
 		httpImpl?: HTTPToolImpl,
 		description?: string,
 		tags?: string[]
@@ -155,7 +153,6 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 				llmCallable: llmCallable,
 				argSchema: argSchema,
 				type: type,
-				goImpl: goImpl,
 				httpImpl: httpImpl,
 			} as spec.PutToolRequestBody,
 		};

@@ -146,8 +146,9 @@ func toolToFTSDoc(bid bundleitemutils.BundleID, tl spec.Tool) ftsDoc {
 		Slug:        tl.Slug,
 		DisplayName: tl.DisplayName,
 		Desc:        tl.Description,
-		Tags:        strings.Join(tl.Tags, newline) + newline,
+		LLMToolType: string(tl.LLMToolType),
 		Args:        extractArgsFromRaw(tl.ArgSchema),
+		Tags:        strings.Join(tl.Tags, newline) + newline,
 		Impl:        string(tl.Type),
 		MTime:       tl.ModifiedAt.UTC().Format(time.RFC3339Nano),
 		BundleID:    bid,
@@ -164,8 +165,12 @@ func toolToFTSDoc(bid bundleitemutils.BundleID, tl spec.Tool) ftsDoc {
 			doc.ImplMeta = tl.GoImpl.Func
 		}
 	case spec.ToolTypeHTTP:
-		if tl.HTTP != nil {
-			doc.ImplMeta = tl.HTTP.Request.Method + " " + tl.HTTP.Request.URLTemplate
+		if tl.HTTPImpl != nil {
+			doc.ImplMeta = tl.HTTPImpl.Request.Method + " " + tl.HTTPImpl.Request.URLTemplate
+		}
+	case spec.ToolTypeSDK:
+		if tl.SDKImpl != nil {
+			doc.ImplMeta = tl.SDKImpl.SDKType
 		}
 	}
 	return doc
