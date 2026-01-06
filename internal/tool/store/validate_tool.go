@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
+	"github.com/ppipada/flexigpt-app/internal/tool/httprunner"
 	"github.com/ppipada/flexigpt-app/internal/tool/spec"
 )
 
@@ -73,14 +74,14 @@ func validateTool(t *spec.Tool) error {
 		if t.HTTPImpl == nil {
 			return errors.New("httpImpl is required for type 'http'")
 		}
-		if strings.TrimSpace(t.HTTPImpl.Request.URLTemplate) == "" {
-			return errors.New("httpImpl.request.urlTemplate is empty")
-		}
 		if t.GoImpl != nil {
 			return errors.New("goImpl must be unset for type 'http'")
 		}
 		if t.SDKImpl != nil {
 			return errors.New("sdkImpl must be unset for type 'http'")
+		}
+		if err := httprunner.ValidateHTTPImpl(t.HTTPImpl); err != nil {
+			return errors.New("invalid implementation for type 'http'")
 		}
 	case spec.ToolTypeSDK:
 		// SDK-backed tools are surfaced to the provider SDK as

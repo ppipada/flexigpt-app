@@ -117,7 +117,7 @@ func NewToolStore(baseDir string, opts ...Option) (*ToolStore, error) {
 		if ts.builtinData != nil {
 			lister = ts.builtinData.ListBuiltInToolData
 		}
-		ts.fts, err = fts.InitToolFTSListeners(baseDir, lister)
+		ts.fts, err = fts.InitToolFTSListeners(ts.baseDir, lister)
 		if err != nil {
 			return nil, err
 		}
@@ -833,6 +833,7 @@ func (ts *ToolStore) ListTools(
 	for _, t := range tok.Tags {
 		tagFilter[t] = struct{}{}
 	}
+
 	include := func(bid bundleitemutils.BundleID, tool *spec.Tool) bool {
 		if len(bFilter) > 0 {
 			if _, ok := bFilter[bid]; !ok {
@@ -873,7 +874,19 @@ func (ts *ToolStore) ListTools(
 		slices.Sort(bidList)
 
 		for _, bid := range bidList {
-			bslug := biBundles[bid].Slug
+			bundle := biBundles[bid]
+
+			// Enforce bundle filter and enabled-state.
+			if len(bFilter) > 0 {
+				if _, ok := bFilter[bid]; !ok {
+					continue
+				}
+			}
+			if !tok.IncludeDisabled && !bundle.IsEnabled {
+				continue
+			}
+
+			bslug := bundle.Slug
 
 			var ids []bundleitemutils.ItemID
 			for tid := range biTools[bid] {
@@ -898,6 +911,12 @@ func (ts *ToolStore) ListTools(
 		tok.BuiltInDone = true
 	}
 
+	allUserBundles, err := ts.readAllBundles(false)
+	if err != nil {
+		return nil, err
+	}
+	userBundles := allUserBundles.Bundles
+
 	// User tools until pageHint filled.
 	for len(out) < pageHint {
 		files, next, err := ts.toolStore.ListFiles(
@@ -920,6 +939,20 @@ func (ts *ToolStore) ListTools(
 			if err != nil {
 				continue
 			}
+			bundle, ok := userBundles[bdi.ID]
+			if !ok || isSoftDeletedTool(bundle) {
+				// Unknown or soft-deleted bundle; skip its tools.
+				continue
+			}
+			if len(bFilter) > 0 {
+				if _, ok := bFilter[bdi.ID]; !ok {
+					continue
+				}
+			}
+			if !tok.IncludeDisabled && !bundle.IsEnabled {
+				continue
+			}
+
 			raw, err := ts.toolStore.GetFileData(
 				bundleitemutils.GetBundlePartitionFileKey(fn, dir), false,
 			)

@@ -75,7 +75,7 @@ func WithHTTPSecrets(s map[string]string) HTTPOption {
 }
 
 func NewHTTPToolRunner(impl spec.HTTPToolImpl, opts ...HTTPOption) (*HTTPToolRunner, error) {
-	if err := validateHTTPImpl(&impl); err != nil {
+	if err := ValidateHTTPImpl(&impl); err != nil {
 		return nil, err
 	}
 	r := &HTTPToolRunner{
@@ -452,7 +452,7 @@ func toSlice(v any) ([]any, bool) {
 	}
 }
 
-func validateHTTPImpl(impl *spec.HTTPToolImpl) error {
+func ValidateHTTPImpl(impl *spec.HTTPToolImpl) error {
 	if impl == nil {
 		return errors.New("httpImpl is nil")
 	}

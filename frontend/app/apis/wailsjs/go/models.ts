@@ -538,6 +538,7 @@ export namespace spec {
 	    toolType: string;
 	    description?: string;
 	    displayName?: string;
+	    userArgSchemaInstance?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ToolStoreChoice(source);
@@ -554,6 +555,7 @@ export namespace spec {
 	        this.toolType = source["toolType"];
 	        this.description = source["description"];
 	        this.displayName = source["displayName"];
+	        this.userArgSchemaInstance = source["userArgSchemaInstance"];
 	    }
 	}
 	export class WebSearchToolChoiceItemUserLocation {
@@ -2251,6 +2253,18 @@ export namespace spec {
 	        this.Version = source["Version"];
 	    }
 	}
+	export class SDKToolImpl {
+	    sdkType: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SDKToolImpl(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sdkType = source["sdkType"];
+	    }
+	}
 	export class HTTPResponse {
 	    successCodes?: number[];
 	    errorMode?: string;
@@ -2382,9 +2396,12 @@ export namespace spec {
 	    userCallable: boolean;
 	    llmCallable: boolean;
 	    argSchema: number[];
+	    userArgSchema?: number[];
+	    llmToolType: string;
 	    type: string;
 	    goImpl?: GoToolImpl;
 	    httpImpl?: HTTPToolImpl;
+	    sdkImpl?: SDKToolImpl;
 	    isEnabled: boolean;
 	    isBuiltIn: boolean;
 	    // Go type: time
@@ -2408,9 +2425,12 @@ export namespace spec {
 	        this.userCallable = source["userCallable"];
 	        this.llmCallable = source["llmCallable"];
 	        this.argSchema = source["argSchema"];
+	        this.userArgSchema = source["userArgSchema"];
+	        this.llmToolType = source["llmToolType"];
 	        this.type = source["type"];
 	        this.goImpl = this.convertValues(source["goImpl"], GoToolImpl);
 	        this.httpImpl = this.convertValues(source["httpImpl"], HTTPToolImpl);
+	        this.sdkImpl = this.convertValues(source["sdkImpl"], SDKToolImpl);
 	        this.isEnabled = source["isEnabled"];
 	        this.isBuiltIn = source["isBuiltIn"];
 	        this.createdAt = this.convertValues(source["createdAt"], null);
@@ -4445,7 +4465,6 @@ export namespace spec {
 	    llmCallable: boolean;
 	    argSchema: string;
 	    type: string;
-	    goImpl?: GoToolImpl;
 	    httpImpl?: HTTPToolImpl;
 	
 	    static createFrom(source: any = {}) {
@@ -4462,7 +4481,6 @@ export namespace spec {
 	        this.llmCallable = source["llmCallable"];
 	        this.argSchema = source["argSchema"];
 	        this.type = source["type"];
-	        this.goImpl = this.convertValues(source["goImpl"], GoToolImpl);
 	        this.httpImpl = this.convertValues(source["httpImpl"], HTTPToolImpl);
 	    }
 	
@@ -4533,6 +4551,7 @@ export namespace spec {
 	
 	    }
 	}
+	
 	
 	
 	export class SearchConversationsRequest {
