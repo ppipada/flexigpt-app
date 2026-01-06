@@ -16,6 +16,7 @@ import (
 
 	"github.com/ppipada/flexigpt-app/internal/jsonutil"
 	"github.com/ppipada/flexigpt-app/internal/modelpreset/spec"
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 	"github.com/ppipada/mapstore-go"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 )
@@ -43,7 +44,7 @@ func NewModelPresetStore(baseDir string) (*ModelPresetStore, error) {
 		return nil, err
 	}
 	s.builtinData = bi
-	var defaultProvider spec.ProviderName = ""
+	var defaultProvider inferencegoSpec.ProviderName = ""
 	if s.builtinData != nil {
 		defaultProvider, err = s.builtinData.GetBuiltInDefaultProviderName(ctx)
 		if err != nil {
@@ -54,7 +55,7 @@ func NewModelPresetStore(baseDir string) (*ModelPresetStore, error) {
 	def, err := jsonencdec.StructWithJSONTagsToMap(spec.PresetsSchema{
 		SchemaVersion:   spec.SchemaVersion,
 		DefaultProvider: defaultProvider,
-		ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{},
+		ProviderPresets: map[inferencegoSpec.ProviderName]spec.ProviderPreset{},
 	})
 	if err != nil {
 		return nil, err
@@ -354,8 +355,8 @@ func (s *ModelPresetStore) ListProviderPresets(
 	// Resolve parameters - defaults first.
 	pageSize := spec.DefaultPageSize
 	includeDisabled := false
-	want := map[spec.ProviderName]struct{}{}
-	cursor := spec.ProviderName("")
+	want := map[inferencegoSpec.ProviderName]struct{}{}
+	cursor := inferencegoSpec.ProviderName("")
 
 	// Token overrides everything.
 	if req != nil && req.PageToken != "" {
@@ -434,7 +435,7 @@ func (s *ModelPresetStore) ListProviderPresets(
 	var nextToken *string
 	if end < len(filtered) {
 		// Preserve filter parameters in token.
-		names := make([]spec.ProviderName, 0, len(want))
+		names := make([]inferencegoSpec.ProviderName, 0, len(want))
 		for n := range want {
 			names = append(names, n)
 		}

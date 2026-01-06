@@ -1,3 +1,44 @@
+export type ProviderName = string;
+export enum ProviderSDKType {
+	ProviderSDKTypeAnthropic = 'providerSDKTypeAnthropicMessages',
+	ProviderSDKTypeOpenAIChatCompletions = 'providerSDKTypeOpenAIChatCompletions',
+	ProviderSDKTypeOpenAIResponses = 'providerSDKTypeOpenAIResponses',
+}
+
+export const SDK_DISPLAY_NAME: Record<ProviderSDKType, string> = {
+	[ProviderSDKType.ProviderSDKTypeAnthropic]: 'Anthropic Messages API',
+	[ProviderSDKType.ProviderSDKTypeOpenAIChatCompletions]: 'OpenAI ChatCompletions API',
+	[ProviderSDKType.ProviderSDKTypeOpenAIResponses]: 'OpenAI Responses API',
+};
+
+export const SDK_DEFAULTS: Record<
+	ProviderSDKType,
+	{ chatPath: string; apiKeyHeaderKey: string; defaultHeaders: Record<string, string> }
+> = {
+	[ProviderSDKType.ProviderSDKTypeAnthropic]: {
+		chatPath: '/v1/messages',
+		apiKeyHeaderKey: 'x-api-key',
+		defaultHeaders: {
+			'Content-Type': 'application/json',
+			'anthropic-version': '2023-06-01',
+		},
+	},
+	[ProviderSDKType.ProviderSDKTypeOpenAIChatCompletions]: {
+		chatPath: '/v1/chat/completions',
+		apiKeyHeaderKey: 'Authorization',
+		defaultHeaders: {
+			'Content-Type': 'application/json',
+		},
+	},
+	[ProviderSDKType.ProviderSDKTypeOpenAIResponses]: {
+		chatPath: '/v1/responses',
+		apiKeyHeaderKey: 'Authorization',
+		defaultHeaders: {
+			'Content-Type': 'application/json',
+		},
+	},
+};
+
 export enum RoleEnum {
 	System = 'system',
 	Developer = 'developer',

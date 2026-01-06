@@ -499,16 +499,12 @@ func ValidateHTTPImpl(impl *spec.HTTPToolImpl) error {
 	return nil
 }
 
-// normalizeContentType lower-cases and strips parameters, returning only the media type.
-func normalizeContentType(ct string) string {
+func isTextContentType(ct string) bool {
+	ct = normalizeContentType(ct)
 	if ct == "" {
-		return ""
+		return false
 	}
-	ct = strings.ToLower(ct)
-	if i := strings.Index(ct, ";"); i >= 0 {
-		ct = ct[:i]
-	}
-	return strings.TrimSpace(ct)
+	return strings.HasPrefix(ct, "text/") || isJSONContentType(ct)
 }
 
 // Only accept explicit JSON types: application/json or any +json subtype.
@@ -520,20 +516,24 @@ func isJSONContentType(ct string) bool {
 	return ct == "application/json" || strings.HasSuffix(ct, "+json")
 }
 
-func isTextContentType(ct string) bool {
-	ct = normalizeContentType(ct)
-	if ct == "" {
-		return false
-	}
-	return strings.HasPrefix(ct, "text/") || isJSONContentType(ct)
-}
-
 func isImageContentType(ct string) bool {
 	ct = normalizeContentType(ct)
 	if ct == "" {
 		return false
 	}
 	return strings.HasPrefix(ct, "image/")
+}
+
+// normalizeContentType lower-cases and strips parameters, returning only the media type.
+func normalizeContentType(ct string) string {
+	if ct == "" {
+		return ""
+	}
+	ct = strings.ToLower(ct)
+	if i := strings.Index(ct, ";"); i >= 0 {
+		ct = ct[:i]
+	}
+	return strings.TrimSpace(ct)
 }
 
 func makeFileOutput(u *url.URL, contentType string, data []byte) spec.ToolStoreOutputUnion {

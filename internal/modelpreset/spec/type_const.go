@@ -53,27 +53,8 @@ type (
 	ModelDisplayName string
 	ModelSlug        string
 	ModelPresetID    string
-	ReasoningLevel   string
-	ReasoningType    string
 
-	ProviderName        string
-	ProviderSDKType     string
 	ProviderDisplayName string
-)
-
-const (
-	ProviderSDKTypeAnthropic             ProviderSDKType = "providerSDKTypeAnthropic"
-	ProviderSDKTypeOpenAIChatCompletions ProviderSDKType = "providerSDKTypeOpenAI"
-	ProviderSDKTypeOpenAIResponses       ProviderSDKType = "providerSDKTypeOpenAIResponses"
-)
-
-const (
-	ReasoningLevelNone    ReasoningLevel = "none"
-	ReasoningLevelMinimal ReasoningLevel = "minimal"
-	ReasoningLevelLow     ReasoningLevel = "low"
-	ReasoningLevelMedium  ReasoningLevel = "medium"
-	ReasoningLevelHigh    ReasoningLevel = "high"
-	ReasoningLevelXHigh   ReasoningLevel = "xhigh"
 )
 
 // ModelPreset is the entire "model + default knobs" bundle the user can save.
@@ -101,11 +82,11 @@ type ModelPreset struct {
 }
 
 type ProviderPreset struct {
-	SchemaVersion string              `json:"schemaVersion" required:"true"`
-	Name          ProviderName        `json:"name"          required:"true"`
-	DisplayName   ProviderDisplayName `json:"displayName"   required:"true"`
-	SDKType       ProviderSDKType     `json:"sdkType"       required:"true"`
-	IsEnabled     bool                `json:"isEnabled"     required:"true"`
+	SchemaVersion string                          `json:"schemaVersion" required:"true"`
+	Name          inferencegoSpec.ProviderName    `json:"name"          required:"true"`
+	DisplayName   ProviderDisplayName             `json:"displayName"   required:"true"`
+	SDKType       inferencegoSpec.ProviderSDKType `json:"sdkType"       required:"true"`
+	IsEnabled     bool                            `json:"isEnabled"     required:"true"`
 
 	CreatedAt  time.Time `json:"createdAt"`
 	ModifiedAt time.Time `json:"modifiedAt"`
@@ -121,7 +102,7 @@ type ProviderPreset struct {
 }
 
 type PresetsSchema struct {
-	SchemaVersion   string                          `json:"schemaVersion"`
-	DefaultProvider ProviderName                    `json:"defaultProvider"`
-	ProviderPresets map[ProviderName]ProviderPreset `json:"providerPresets"`
+	SchemaVersion   string                                          `json:"schemaVersion"`
+	DefaultProvider inferencegoSpec.ProviderName                    `json:"defaultProvider"`
+	ProviderPresets map[inferencegoSpec.ProviderName]ProviderPreset `json:"providerPresets"`
 }

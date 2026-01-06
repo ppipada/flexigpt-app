@@ -5,7 +5,8 @@ import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
-import type { ProviderName, ProviderPreset } from '@/spec/modelpreset';
+import type { ProviderName } from '@/spec/inference';
+import type { ProviderPreset } from '@/spec/modelpreset';
 import type { AuthKeyMeta } from '@/spec/setting';
 import { AuthKeyTypeProvider } from '@/spec/setting';
 

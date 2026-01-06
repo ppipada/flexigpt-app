@@ -1,4 +1,5 @@
 import { type ConversationMessage } from '@/spec/conversation';
+import type { ProviderName } from '@/spec/inference';
 import {
 	type CompletionResponseBody,
 	ContentItemKind,
@@ -15,7 +16,6 @@ import {
 	type ToolOutput,
 	type ToolOutputItemUnion,
 } from '@/spec/inference';
-import type { ProviderName } from '@/spec/modelpreset';
 import {
 	type ToolStoreChoice,
 	type ToolStoreChoiceType,

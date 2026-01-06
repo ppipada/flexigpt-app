@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/ppipada/flexigpt-app/internal/inferencewrapper"
 	inferencewrapperSpec "github.com/ppipada/flexigpt-app/internal/inferencewrapper/spec"
 	modelpresetSpec "github.com/ppipada/flexigpt-app/internal/modelpreset/spec"
 	settingSpec "github.com/ppipada/flexigpt-app/internal/setting/spec"
@@ -121,7 +120,7 @@ func initProviders(
 		}
 
 		body := &inferencewrapperSpec.AddProviderRequestBody{
-			SDKType:                  inferencewrapper.ConvertModelPresetToInferencegoSDKType(pp.SDKType),
+			SDKType:                  pp.SDKType,
 			Origin:                   pp.Origin,
 			ChatCompletionPathPrefix: pp.ChatCompletionPathPrefix,
 			APIKeyHeaderKey:          pp.APIKeyHeaderKey,

@@ -1,4 +1,5 @@
-import type { ProviderName, ProviderPreset } from '@/spec/modelpreset';
+import type { ProviderName } from '@/spec/inference';
+import type { ProviderPreset } from '@/spec/modelpreset';
 import type { PromptBundle, PromptTemplateListItem } from '@/spec/prompt';
 import type { ToolBundle, ToolListItem } from '@/spec/tool';
 

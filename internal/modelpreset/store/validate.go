@@ -98,7 +98,7 @@ func validateModelPreset(mp *spec.ModelPreset) error {
 }
 
 // validateProviderName currently only trims blanks; extend as required.
-func validateProviderName(n spec.ProviderName) error {
+func validateProviderName(n inferencegoSpec.ProviderName) error {
 	if strings.TrimSpace(string(n)) == "" {
 		return errors.New("name is empty")
 	}

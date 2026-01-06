@@ -4,8 +4,8 @@ import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiUpload, FiX } from 'react-icons/fi';
 
-import { ReasoningLevel, ReasoningType } from '@/spec/inference';
-import { type ModelPreset, type ModelPresetID, type ProviderName } from '@/spec/modelpreset';
+import { type ProviderName, ReasoningLevel, ReasoningType } from '@/spec/inference';
+import { type ModelPreset, type ModelPresetID } from '@/spec/modelpreset';
 
 import { Dropdown } from '@/components/dropdown';
 

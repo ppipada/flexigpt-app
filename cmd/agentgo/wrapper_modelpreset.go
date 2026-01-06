@@ -6,7 +6,6 @@ package main
 import (
 	"context"
 
-	"github.com/ppipada/flexigpt-app/internal/inferencewrapper"
 	inferencewrapperSpec "github.com/ppipada/flexigpt-app/internal/inferencewrapper/spec"
 	"github.com/ppipada/flexigpt-app/internal/middleware"
 	"github.com/ppipada/flexigpt-app/internal/modelpreset/spec"
@@ -81,7 +80,7 @@ func (w *ModelPresetStoreWrapper) PutProviderPreset(
 			&inferencewrapperSpec.AddProviderRequest{
 				Provider: inferencegoSpec.ProviderName(string(req.ProviderName)),
 				Body: &inferencewrapperSpec.AddProviderRequestBody{
-					SDKType:                  inferencewrapper.ConvertModelPresetToInferencegoSDKType(req.Body.SDKType),
+					SDKType:                  req.Body.SDKType,
 					Origin:                   req.Body.Origin,
 					ChatCompletionPathPrefix: req.Body.ChatCompletionPathPrefix,
 					APIKeyHeaderKey:          req.Body.APIKeyHeaderKey,

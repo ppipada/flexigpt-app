@@ -1,6 +1,5 @@
 import type { StoreConversationMessage } from '@/spec/conversation';
-import type { CompletionResponseBody, ModelParam } from '@/spec/inference';
-import type { ProviderName } from '@/spec/modelpreset';
+import type { CompletionResponseBody, ModelParam, ProviderName } from '@/spec/inference';
 import type { ToolStoreChoice } from '@/spec/tool';
 
 import type { IProviderSetAPI } from '@/apis/interface';

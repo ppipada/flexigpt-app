@@ -5,13 +5,8 @@ import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiUpload, FiX } from 'react-icons/fi';
 
-import {
-	type ProviderName,
-	type ProviderPreset,
-	ProviderSDKType,
-	SDK_DEFAULTS,
-	SDK_DISPLAY_NAME,
-} from '@/spec/modelpreset';
+import { type ProviderName, ProviderSDKType, SDK_DEFAULTS, SDK_DISPLAY_NAME } from '@/spec/inference';
+import type { ProviderPreset } from '@/spec/modelpreset';
 
 import { GenerateRandomNumberString } from '@/lib/encode_decode';
 import { omitManyKeys } from '@/lib/obj_utils';

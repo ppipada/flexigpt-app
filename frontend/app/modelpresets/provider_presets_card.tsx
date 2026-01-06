@@ -13,13 +13,8 @@ import {
 	FiXCircle,
 } from 'react-icons/fi';
 
-import {
-	type ModelPreset,
-	type ModelPresetID,
-	type ProviderName,
-	type ProviderPreset,
-	SDK_DISPLAY_NAME,
-} from '@/spec/modelpreset';
+import { type ProviderName, SDK_DISPLAY_NAME } from '@/spec/inference';
+import { type ModelPreset, type ModelPresetID, type ProviderPreset } from '@/spec/modelpreset';
 import type { AuthKeyMeta } from '@/spec/setting';
 import { AuthKeyTypeProvider } from '@/spec/setting';
 

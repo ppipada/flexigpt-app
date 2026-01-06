@@ -1,6 +1,6 @@
+import type { ProviderName } from '@/spec/inference';
 import type {
 	ModelPresetID,
-	ProviderName,
 	ProviderPreset,
 	PutModelPresetPayload,
 	PutProviderPresetPayload,

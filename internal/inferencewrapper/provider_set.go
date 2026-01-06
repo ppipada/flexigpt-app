@@ -16,7 +16,6 @@ import (
 	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
 	conversationSpec "github.com/ppipada/flexigpt-app/internal/conversation/spec"
 	"github.com/ppipada/flexigpt-app/internal/inferencewrapper/spec"
-	modelpresetSpec "github.com/ppipada/flexigpt-app/internal/modelpreset/spec"
 	toolSpec "github.com/ppipada/flexigpt-app/internal/tool/spec"
 	toolStore "github.com/ppipada/flexigpt-app/internal/tool/store"
 )
@@ -634,20 +633,5 @@ func makeStreamHandler(
 			}
 		}
 		return nil
-	}
-}
-
-// ConvertModelPresetToInferencegoSDKType maps the app's provider SDK enum to
-// inference-go's ProviderSDKType.
-func ConvertModelPresetToInferencegoSDKType(inSDK modelpresetSpec.ProviderSDKType) inferencegoSpec.ProviderSDKType {
-	switch inSDK {
-	case modelpresetSpec.ProviderSDKTypeAnthropic:
-		return inferencegoSpec.ProviderSDKTypeAnthropic
-	case modelpresetSpec.ProviderSDKTypeOpenAIChatCompletions:
-		return inferencegoSpec.ProviderSDKTypeOpenAIChatCompletions
-	case modelpresetSpec.ProviderSDKTypeOpenAIResponses:
-		return inferencegoSpec.ProviderSDKTypeOpenAIResponses
-	default:
-		return ""
 	}
 }

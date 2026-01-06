@@ -10,6 +10,7 @@ import (
 
 	"github.com/ppipada/flexigpt-app/internal/modelpreset/spec"
 	"github.com/ppipada/flexigpt-app/internal/modelpreset/store"
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 func TestPutProviderPreset(t *testing.T) {
@@ -59,7 +60,7 @@ func TestPutProviderPreset(t *testing.T) {
 			verify: func(t *testing.T) {
 				t.Helper()
 				resp, err := s.ListProviderPresets(ctx, &spec.ListProviderPresetsRequest{
-					Names: []spec.ProviderName{"openai2"},
+					Names: []inferencegoSpec.ProviderName{"openai2"},
 				})
 				if err != nil {
 					t.Fatalf("list failed: %v", err)
@@ -523,7 +524,7 @@ func TestListProviderPresetsPagingAndFiltering(t *testing.T) {
 
 	// Names filter.
 	resp, err = s.ListProviderPresets(ctx, &spec.ListProviderPresetsRequest{
-		Names: []spec.ProviderName{"p2"},
+		Names: []inferencegoSpec.ProviderName{"p2"},
 	})
 	if err != nil {
 		t.Fatalf("list failed: %v", err)
@@ -534,7 +535,7 @@ func TestListProviderPresetsPagingAndFiltering(t *testing.T) {
 
 	// Names + includeDisabled.
 	resp, _ = s.ListProviderPresets(ctx, &spec.ListProviderPresetsRequest{
-		Names:           []spec.ProviderName{"p2"},
+		Names:           []inferencegoSpec.ProviderName{"p2"},
 		IncludeDisabled: true,
 	})
 	if len(resp.Body.Providers) != 1 || resp.Body.Providers[0].Name != "p2" {
@@ -581,8 +582,8 @@ func TestBuiltInProviderReadOnlyAndToggle(t *testing.T) {
 	s := newTestStore(t) // Loads built-ins automatically.
 
 	const (
-		builtinProvider = spec.ProviderName("openai") // shipped built-in.
-		builtinModelID  = spec.ModelPresetID("gpt4o") // ditto model-preset.
+		builtinProvider = inferencegoSpec.ProviderName("openai") // shipped built-in.
+		builtinModelID  = spec.ModelPresetID("gpt4o")            // ditto model-preset.
 	)
 
 	// Sanity: the built-in provider must be present right after store creation.
@@ -670,11 +671,11 @@ func TestBuiltInProviderReadOnlyAndToggle(t *testing.T) {
 
 // providerExists is a lightweight presence check.
 func providerExists(t *testing.T, s *store.ModelPresetStore, ctx context.Context,
-	name spec.ProviderName,
+	name inferencegoSpec.ProviderName,
 ) bool {
 	t.Helper()
 	resp, err := s.ListProviderPresets(ctx, &spec.ListProviderPresetsRequest{
-		Names:           []spec.ProviderName{name},
+		Names:           []inferencegoSpec.ProviderName{name},
 		IncludeDisabled: true,
 	})
 	if err != nil {
@@ -699,7 +700,7 @@ func createProvider(t *testing.T, s *store.ModelPresetStore, name string, enable
 	body := validProviderBody(name)
 	body.IsEnabled = enabled
 	_, err := s.PutProviderPreset(t.Context(), &spec.PutProviderPresetRequest{
-		ProviderName: spec.ProviderName(name),
+		ProviderName: inferencegoSpec.ProviderName(name),
 		Body:         body,
 	})
 	if err != nil {
@@ -717,7 +718,7 @@ func createModelPreset(t *testing.T, s *store.ModelPresetStore,
 	}
 	temp := 0.1
 	_, err := s.PutModelPreset(t.Context(), &spec.PutModelPresetRequest{
-		ProviderName:  spec.ProviderName(prov),
+		ProviderName:  inferencegoSpec.ProviderName(prov),
 		ModelPresetID: spec.ModelPresetID(id),
 		Body: &spec.PutModelPresetRequestBody{
 			Name:        spec.ModelName(id),
@@ -736,7 +737,7 @@ func createModelPreset(t *testing.T, s *store.ModelPresetStore,
 func validProviderBody(name string) *spec.PutProviderPresetRequestBody {
 	return &spec.PutProviderPresetRequestBody{
 		DisplayName:              spec.ProviderDisplayName(strings.ToUpper(name)),
-		SDKType:                  spec.ProviderSDKTypeOpenAIChatCompletions,
+		SDKType:                  inferencegoSpec.ProviderSDKTypeOpenAIChatCompletions,
 		IsEnabled:                true,
 		Origin:                   "https://api." + name + ".example.com",
 		ChatCompletionPathPrefix: spec.DefaultOpenAIChatCompletionsPrefix,
@@ -751,7 +752,7 @@ func fetchProvider(t *testing.T, s *store.ModelPresetStore, ctx context.Context,
 ) spec.ProviderPreset {
 	t.Helper()
 	resp, err := s.ListProviderPresets(ctx, &spec.ListProviderPresetsRequest{
-		Names:           []spec.ProviderName{spec.ProviderName(name)},
+		Names:           []inferencegoSpec.ProviderName{inferencegoSpec.ProviderName(name)},
 		IncludeDisabled: true,
 	})
 	if err != nil {

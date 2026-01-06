@@ -15,6 +15,7 @@ import (
 
 	"github.com/ppipada/flexigpt-app/internal/builtin"
 	"github.com/ppipada/flexigpt-app/internal/modelpreset/spec"
+	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 const corrupted = "corrupted"
@@ -119,12 +120,12 @@ func TestNewBuiltInPresets(t *testing.T) {
 func TestSetProviderEnabled(t *testing.T) {
 	tests := []struct {
 		name    string
-		setup   func(*testing.T, *BuiltInPresets) (spec.ProviderName, bool)
+		setup   func(*testing.T, *BuiltInPresets) (inferencegoSpec.ProviderName, bool)
 		wantErr bool
 	}{
 		{
 			name: "toggle_existing_provider",
-			setup: func(t *testing.T, bi *BuiltInPresets) (spec.ProviderName, bool) {
+			setup: func(t *testing.T, bi *BuiltInPresets) (inferencegoSpec.ProviderName, bool) {
 				t.Helper()
 				prov, _, _ := bi.ListBuiltInPresets(t.Context())
 				id, p := anyProvider(prov)
@@ -133,9 +134,9 @@ func TestSetProviderEnabled(t *testing.T) {
 		},
 		{
 			name: "nonexistent_provider",
-			setup: func(t *testing.T, _ *BuiltInPresets) (spec.ProviderName, bool) {
+			setup: func(t *testing.T, _ *BuiltInPresets) (inferencegoSpec.ProviderName, bool) {
 				t.Helper()
-				return spec.ProviderName("ghost"), true
+				return inferencegoSpec.ProviderName("ghost"), true
 			},
 			wantErr: true,
 		},
@@ -182,12 +183,12 @@ func TestSetProviderEnabled(t *testing.T) {
 func TestSetModelPresetEnabled(t *testing.T) {
 	tests := []struct {
 		name    string
-		setup   func(*testing.T, *BuiltInPresets) (spec.ProviderName, spec.ModelPreset, bool)
+		setup   func(*testing.T, *BuiltInPresets) (inferencegoSpec.ProviderName, spec.ModelPreset, bool)
 		wantErr bool
 	}{
 		{
 			name: "toggle_existing_model",
-			setup: func(t *testing.T, bi *BuiltInPresets) (spec.ProviderName, spec.ModelPreset, bool) {
+			setup: func(t *testing.T, bi *BuiltInPresets) (inferencegoSpec.ProviderName, spec.ModelPreset, bool) {
 				t.Helper()
 				_, models, _ := bi.ListBuiltInPresets(t.Context())
 				pn, _, mp := anyModel(models)
@@ -196,14 +197,14 @@ func TestSetModelPresetEnabled(t *testing.T) {
 		},
 		{
 			name: "nonexistent_provider",
-			setup: func(*testing.T, *BuiltInPresets) (spec.ProviderName, spec.ModelPreset, bool) {
-				return spec.ProviderName("ghost"), spec.ModelPreset{ID: "m"}, true
+			setup: func(*testing.T, *BuiltInPresets) (inferencegoSpec.ProviderName, spec.ModelPreset, bool) {
+				return inferencegoSpec.ProviderName("ghost"), spec.ModelPreset{ID: "m"}, true
 			},
 			wantErr: true,
 		},
 		{
 			name: "nonexistent_model",
-			setup: func(t *testing.T, bi *BuiltInPresets) (spec.ProviderName, spec.ModelPreset, bool) {
+			setup: func(t *testing.T, bi *BuiltInPresets) (inferencegoSpec.ProviderName, spec.ModelPreset, bool) {
 				t.Helper()
 				prov, _, _ := bi.ListBuiltInPresets(t.Context())
 				pn, _ := anyProvider(prov)
@@ -385,7 +386,7 @@ func TestAsyncRebuildPresets(t *testing.T) {
 }
 
 func Test_NewBuiltInPresets_SyntheticFS_Errors(t *testing.T) {
-	provName := spec.ProviderName("demoProv")
+	provName := inferencegoSpec.ProviderName("demoProv")
 	modelID := spec.ModelPresetID("model1")
 
 	t.Run("missing_json", func(t *testing.T) {
@@ -406,7 +407,7 @@ func Test_NewBuiltInPresets_SyntheticFS_Errors(t *testing.T) {
 	t.Run("no_providers", func(t *testing.T) {
 		empty, _ := json.Marshal(spec.PresetsSchema{
 			SchemaVersion:   spec.SchemaVersion,
-			ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{},
+			ProviderPresets: map[inferencegoSpec.ProviderName]spec.ProviderPreset{},
 		})
 		fsys := fstest.MapFS{builtin.BuiltInModelPresetsJSON: {Data: empty}}
 		_, err := newPresetsFromFS(t, fsys)
@@ -428,7 +429,7 @@ func Test_NewBuiltInPresets_SyntheticFS_Errors(t *testing.T) {
 
 func Test_NewBuiltInPresets_SyntheticFS_HappyAndCRUD(t *testing.T) {
 	ctx := t.Context()
-	pn := spec.ProviderName("demo")
+	pn := inferencegoSpec.ProviderName("demo")
 	mpid := spec.ModelPresetID("m1")
 
 	schema := buildHappySchema(pn, mpid)
@@ -471,12 +472,12 @@ func Test_NewBuiltInPresets_SyntheticFS_HappyAndCRUD(t *testing.T) {
 func TestSetDefaultModelPreset(t *testing.T) {
 	tests := []struct {
 		name    string
-		setup   func(*testing.T, *BuiltInPresets) (spec.ProviderName, spec.ModelPresetID)
+		setup   func(*testing.T, *BuiltInPresets) (inferencegoSpec.ProviderName, spec.ModelPresetID)
 		wantErr bool
 	}{
 		{
 			name: "change_existing_provider",
-			setup: func(t *testing.T, bi *BuiltInPresets) (spec.ProviderName, spec.ModelPresetID) {
+			setup: func(t *testing.T, bi *BuiltInPresets) (inferencegoSpec.ProviderName, spec.ModelPresetID) {
 				t.Helper()
 				_, models, _ := bi.ListBuiltInPresets(t.Context())
 				for pn, mm := range models {
@@ -495,14 +496,14 @@ func TestSetDefaultModelPreset(t *testing.T) {
 		},
 		{
 			name: "nonexistent_provider",
-			setup: func(*testing.T, *BuiltInPresets) (spec.ProviderName, spec.ModelPresetID) {
-				return spec.ProviderName("ghost"), spec.ModelPresetID("m1")
+			setup: func(*testing.T, *BuiltInPresets) (inferencegoSpec.ProviderName, spec.ModelPresetID) {
+				return inferencegoSpec.ProviderName("ghost"), spec.ModelPresetID("m1")
 			},
 			wantErr: true,
 		},
 		{
 			name: "nonexistent_model",
-			setup: func(t *testing.T, bi *BuiltInPresets) (spec.ProviderName, spec.ModelPresetID) {
+			setup: func(t *testing.T, bi *BuiltInPresets) (inferencegoSpec.ProviderName, spec.ModelPresetID) {
 				t.Helper()
 				prov, _, _ := bi.ListBuiltInPresets(t.Context())
 				pn, _ := anyProvider(prov)
@@ -633,7 +634,7 @@ func TestProviderModelSync_Scenarios(t *testing.T) {
 	pname, p := anyProvider(prov)
 
 	// Try to find a provider with ≥2 models to test default-model flip.
-	var pn2 spec.ProviderName
+	var pn2 inferencegoSpec.ProviderName
 	var secondModelID spec.ModelPresetID
 	for provName, mm := range models {
 		if len(mm) >= 2 {
@@ -823,8 +824,8 @@ func TestProviderModelSync_Scenarios(t *testing.T) {
 func TestScopedModelIDs_AcrossProviders_OverlayIsolation(t *testing.T) {
 	ctx := t.Context()
 
-	p1 := spec.ProviderName("provA")
-	p2 := spec.ProviderName("provB")
+	p1 := inferencegoSpec.ProviderName("provA")
+	p2 := inferencegoSpec.ProviderName("provB")
 	commonID := spec.ModelPresetID("m1")
 	otherID := spec.ModelPresetID("m2")
 
@@ -853,10 +854,10 @@ func TestScopedModelIDs_AcrossProviders_OverlayIsolation(t *testing.T) {
 	// Table-driven: toggle in p1, verify no effect on p2; then toggle in p2 and verify independence again.
 	tests := []struct {
 		name       string
-		targetProv spec.ProviderName
+		targetProv inferencegoSpec.ProviderName
 		targetID   spec.ModelPresetID
 		newEnabled bool
-		otherProv  spec.ProviderName
+		otherProv  inferencegoSpec.ProviderName
 	}{
 		{
 			name:       "toggle_common_model_in_first_provider_only",
@@ -953,7 +954,7 @@ func TestScopedModelIDs_AcrossProviders_OverlayIsolation(t *testing.T) {
 
 // Helper: schema with same model ID present in two different providers (scoped uniqueness).
 func buildSchemaScopedDuplicateIDs(
-	p1, p2 spec.ProviderName,
+	p1, p2 inferencegoSpec.ProviderName,
 	commonID spec.ModelPresetID,
 	extraID spec.ModelPresetID,
 ) []byte {
@@ -964,7 +965,7 @@ func buildSchemaScopedDuplicateIDs(
 		SchemaVersion:            spec.SchemaVersion,
 		Name:                     p1,
 		DisplayName:              "Provider A",
-		SDKType:                  spec.ProviderSDKTypeOpenAIChatCompletions,
+		SDKType:                  inferencegoSpec.ProviderSDKTypeOpenAIChatCompletions,
 		IsEnabled:                true,
 		CreatedAt:                time.Now(),
 		ModifiedAt:               time.Now(),
@@ -980,7 +981,7 @@ func buildSchemaScopedDuplicateIDs(
 		SchemaVersion:            spec.SchemaVersion,
 		Name:                     p2,
 		DisplayName:              "Provider B",
-		SDKType:                  spec.ProviderSDKTypeOpenAIChatCompletions,
+		SDKType:                  inferencegoSpec.ProviderSDKTypeOpenAIChatCompletions,
 		IsEnabled:                true,
 		CreatedAt:                time.Now(),
 		ModifiedAt:               time.Now(),
@@ -993,23 +994,23 @@ func buildSchemaScopedDuplicateIDs(
 	s := spec.PresetsSchema{
 		SchemaVersion:   spec.SchemaVersion,
 		DefaultProvider: p1,
-		ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{p1: pp1, p2: pp2},
+		ProviderPresets: map[inferencegoSpec.ProviderName]spec.ProviderPreset{p1: pp1, p2: pp2},
 	}
 	b, _ := json.Marshal(s)
 	return b
 }
 
 func anyProvider(
-	m map[spec.ProviderName]spec.ProviderPreset,
-) (spec.ProviderName, spec.ProviderPreset) {
+	m map[inferencegoSpec.ProviderName]spec.ProviderPreset,
+) (inferencegoSpec.ProviderName, spec.ProviderPreset) {
 	for n, p := range m {
 		return n, p
 	}
 	return "", spec.ProviderPreset{}
 }
 
-func anyModel(m map[spec.ProviderName]map[spec.ModelPresetID]spec.ModelPreset,
-) (spec.ProviderName, spec.ModelPresetID, spec.ModelPreset) {
+func anyModel(m map[inferencegoSpec.ProviderName]map[spec.ModelPresetID]spec.ModelPreset,
+) (inferencegoSpec.ProviderName, spec.ModelPresetID, spec.ModelPreset) {
 	for pn, mm := range m {
 		for mid, mp := range mm {
 			return pn, mid, mp
@@ -1024,13 +1025,13 @@ func newPresetsFromFS(t *testing.T, mem fs.FS) (*BuiltInPresets, error) {
 	return NewBuiltInPresets(ctx, t.TempDir(), time.Hour, WithModelPresetsFS(mem, "."))
 }
 
-func buildSchemaDefaultMissing(pn spec.ProviderName, mpid spec.ModelPresetID) []byte {
+func buildSchemaDefaultMissing(pn inferencegoSpec.ProviderName, mpid spec.ModelPresetID) []byte {
 	model := makeModelPreset(mpid)
 	pp := spec.ProviderPreset{
 		SchemaVersion:            spec.SchemaVersion,
 		Name:                     pn,
 		DisplayName:              "Demo",
-		SDKType:                  spec.ProviderSDKTypeOpenAIChatCompletions,
+		SDKType:                  inferencegoSpec.ProviderSDKTypeOpenAIChatCompletions,
 		IsEnabled:                true,
 		CreatedAt:                time.Now(),
 		ModifiedAt:               time.Now(),
@@ -1042,19 +1043,19 @@ func buildSchemaDefaultMissing(pn spec.ProviderName, mpid spec.ModelPresetID) []
 	s := spec.PresetsSchema{
 		SchemaVersion:   spec.SchemaVersion,
 		DefaultProvider: pn,
-		ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{pn: pp},
+		ProviderPresets: map[inferencegoSpec.ProviderName]spec.ProviderPreset{pn: pp},
 	}
 	b, _ := json.Marshal(s)
 	return b
 }
 
-func buildHappySchema(pn spec.ProviderName, mpid spec.ModelPresetID) []byte {
+func buildHappySchema(pn inferencegoSpec.ProviderName, mpid spec.ModelPresetID) []byte {
 	model := makeModelPreset(mpid)
 	pp := spec.ProviderPreset{
 		SchemaVersion:            spec.SchemaVersion,
 		Name:                     pn,
 		DisplayName:              "Demo",
-		SDKType:                  spec.ProviderSDKTypeOpenAIChatCompletions,
+		SDKType:                  inferencegoSpec.ProviderSDKTypeOpenAIChatCompletions,
 		IsEnabled:                true,
 		CreatedAt:                time.Now(),
 		ModifiedAt:               time.Now(),
@@ -1066,7 +1067,7 @@ func buildHappySchema(pn spec.ProviderName, mpid spec.ModelPresetID) []byte {
 	s := spec.PresetsSchema{
 		SchemaVersion:   spec.SchemaVersion,
 		DefaultProvider: pp.Name,
-		ProviderPresets: map[spec.ProviderName]spec.ProviderPreset{pn: pp},
+		ProviderPresets: map[inferencegoSpec.ProviderName]spec.ProviderPreset{pn: pp},
 	}
 	b, _ := json.Marshal(s)
 	return b

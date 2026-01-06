@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
 
-import { type ProviderName, type ProviderPreset } from '@/spec/modelpreset';
+import type { ProviderName } from '@/spec/inference';
+import { type ProviderPreset } from '@/spec/modelpreset';
 import { AuthKeyTypeProvider } from '@/spec/setting';
 
 import { modelPresetStoreAPI, settingstoreAPI } from '@/apis/baseapi';

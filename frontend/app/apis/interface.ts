@@ -1,9 +1,8 @@
 import type { Attachment, DirectoryAttachmentsResult, FileFilter } from '@/spec/attachment';
 import type { ConversationSearchItem, StoreConversation, StoreConversationMessage } from '@/spec/conversation';
-import type { CompletionResponseBody, ModelParam } from '@/spec/inference';
+import type { CompletionResponseBody, ModelParam, ProviderName } from '@/spec/inference';
 import type {
 	ModelPresetID,
-	ProviderName,
 	ProviderPreset,
 	PutModelPresetPayload,
 	PutProviderPresetPayload,

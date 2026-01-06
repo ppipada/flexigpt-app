@@ -1,11 +1,10 @@
-import type { ModelParam } from '@/spec/inference';
+import type { ModelParam, ProviderName } from '@/spec/inference';
 import { ReasoningLevel, ReasoningType } from '@/spec/inference';
 import {
 	type ModelDisplayName,
 	type ModelPreset,
 	type ModelPresetID,
 	type ProviderDisplayName,
-	type ProviderName,
 } from '@/spec/modelpreset';
 import { AuthKeyTypeProvider, type SettingsSchema } from '@/spec/setting';
 
