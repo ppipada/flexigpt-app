@@ -20,8 +20,6 @@ interface PromptBundleCardProps {
 	onBundleDeleted: (bundle: PromptBundle) => void;
 }
 
-/* ---------- component ---------- */
-
 export function PromptBundleCard({ bundle, templates, onTemplatesChange, onBundleDeleted }: PromptBundleCardProps) {
 	/* local state */
 	const [isExpanded, setIsExpanded] = useState(false);
@@ -32,7 +30,6 @@ export function PromptBundleCard({ bundle, templates, onTemplatesChange, onBundl
 	useEffect(() => {
 		setIsBundleEnabled(bundle.isEnabled);
 	}, [bundle.isEnabled]);
-	/* --------------------------------------------- */
 
 	/* modals */
 	const [isDeleteTemplateModalOpen, setIsDeleteTemplateModalOpen] = useState(false);
@@ -49,7 +46,6 @@ export function PromptBundleCard({ bundle, templates, onTemplatesChange, onBundl
 		setLocalTemplates(templates);
 	}, [templates]);
 
-	/* ---------- bundle enable toggle ---------- */
 	const toggleBundleEnable = async () => {
 		try {
 			const newVal = !isBundleEnabled;
@@ -63,7 +59,6 @@ export function PromptBundleCard({ bundle, templates, onTemplatesChange, onBundl
 		}
 	};
 
-	/* ---------- template helpers ---------- */
 	const patchTemplateEnable = async (tpl: PromptTemplate) => {
 		try {
 			await promptStoreAPI.patchPromptTemplate(bundle.id, tpl.slug, tpl.version, !tpl.isEnabled);
@@ -78,7 +73,6 @@ export function PromptBundleCard({ bundle, templates, onTemplatesChange, onBundl
 		}
 	};
 
-	/* ----- delete template ----- */
 	const requestDeleteTemplate = (tpl: PromptTemplate) => {
 		if (tpl.isBuiltIn) {
 			setAlertMsg('Cannot delete built-in template.');
@@ -106,7 +100,6 @@ export function PromptBundleCard({ bundle, templates, onTemplatesChange, onBundl
 		}
 	};
 
-	/* ----- add / edit template ----- */
 	const openModifyModal = (tpl?: PromptTemplate) => {
 		if (tpl?.isBuiltIn) {
 			setAlertMsg('Built-in templates cannot be edited.');
@@ -171,7 +164,6 @@ export function PromptBundleCard({ bundle, templates, onTemplatesChange, onBundl
 		}
 	};
 
-	/* ---------- render ---------- */
 	return (
 		<div className="bg-base-100 mb-8 rounded-2xl p-4 shadow-lg">
 			{/* header */}

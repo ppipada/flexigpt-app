@@ -50,8 +50,6 @@ export interface ISettingStoreAPI {
 }
 
 export interface IPromptStoreAPI {
-	// --- Bundle Operations ---
-
 	/** List bundles, optionally filtered by IDs, disabled, and paginated. */
 	listPromptBundles(
 		bundleIDs?: string[],
@@ -74,8 +72,6 @@ export interface IPromptStoreAPI {
 
 	/** Delete a bundle. */
 	deletePromptBundle(bundleID: string): Promise<void>;
-
-	// --- Template Operations ---
 
 	/** List templates, optionally filtered by bundleIDs, tags, etc. */
 	listPromptTemplates(

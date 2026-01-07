@@ -40,30 +40,20 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 	{ onSend, isBusy, abortRef, shortcutConfig, editingMessageId, cancelEditing },
 	ref
 ) {
-	/* ------------------------------------------------------------------
-	 * Aggregated chat-options (provided by <AssistantContextBar />)
-	 * ------------------------------------------------------------------ */
 	const [chatOptions, setChatOptions] = useState<ChatOption>(DefaultChatOptions);
 
-	/* ------------------------------------------------------------------
-	 * Abort-handling helpers
-	 * ------------------------------------------------------------------ */
 	const [showAbortModal, setShowAbortModal] = useState(false);
 
 	useEffect(() => {
 		if (!isBusy) setShowAbortModal(false);
 	}, [isBusy]);
 
-	/* ------------------------------------------------------------------
-	 * <EditorArea /> ref utilities
-	 * ------------------------------------------------------------------ */
 	const inputAreaRef = useRef<EditorAreaHandle>(null);
 
-	/* ------------------------------------------------------------------
-	 * Send-message
-	 * ------------------------------------------------------------------ */
-	const handleSubmitMessage = async (payload: EditorSubmitPayload) => {
-		onSend(payload, chatOptions);
+	const handleSubmitMessage = (payload: EditorSubmitPayload) => {
+		// Return the promise so <EditorArea /> can await it and surface
+		// any synchronous errors from sendMessage (e.g. validation).
+		return onSend(payload, chatOptions);
 	};
 
 	useImperativeHandle(ref, () => ({
@@ -91,12 +81,8 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 		},
 	}));
 
-	/* ------------------------------------------------------------------
-	 * Render
-	 * ------------------------------------------------------------------ */
 	return (
 		<div className="bg-base-200 w-full min-w-0">
-			{/* Model- / params-bar ---------------------------------------------- */}
 			<AssistantContextBar onOptionsChange={setChatOptions} /* hand the aggregated options up */ />
 
 			<DeleteConfirmationModal

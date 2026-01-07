@@ -87,9 +87,7 @@ export const ChatNavBar = forwardRef<ChatNavBarHandle, ChatNavBarProps>(function
 				/>
 			</div>
 
-			{/* controls / title ------------------------------------ */}
 			<div className="flex items-center justify-between bg-transparent p-2">
-				{/* new chat */}
 				<div
 					className="tooltip tooltip-right"
 					data-tip={shortcutLabels.newChat ? `Create New Chat (${shortcutLabels.newChat})` : 'Create New Chat'}
@@ -104,7 +102,7 @@ export const ChatNavBar = forwardRef<ChatNavBarHandle, ChatNavBarProps>(function
 						<FiPlus size={20} />
 					</button>
 				</div>
-				{/* title or editor */}
+
 				<div className="flex flex-1 justify-center px-2">
 					{isEditing ? (
 						<input
@@ -135,7 +133,6 @@ export const ChatNavBar = forwardRef<ChatNavBarHandle, ChatNavBarProps>(function
 					)}
 				</div>
 
-				{/* edit title */}
 				<div className="tooltip tooltip-left" data-tip="Rename Conversation">
 					<button
 						className="btn btn-sm btn-ghost mx-1"
@@ -150,7 +147,6 @@ export const ChatNavBar = forwardRef<ChatNavBarHandle, ChatNavBarProps>(function
 					</button>
 				</div>
 
-				{/* download */}
 				<div className="tooltip tooltip-left" data-tip="Export Conversation As JSON">
 					<DownloadButton
 						language="json"

@@ -21,11 +21,9 @@ import { ProviderPresetCard } from '@/modelpresets/provider_presets_card';
 // put it somewhere near the top of the file
 const sortByDisplayName = ([, a]: [string, ProviderPreset], [, b]: [string, ProviderPreset]) =>
 	a.displayName.localeCompare(b.displayName);
-/* -------------------------------------------------------------------------- */
 
 // eslint-disable-next-line no-restricted-exports
 export default function ModelPresetsPage() {
-	/* ----------------------------- local states ---------------------------- */
 	const [defaultProvider, setDefaultProvider] = useState<ProviderName | undefined>(undefined);
 	const [providerPresets, setProviderPresets] = useState<Record<ProviderName, ProviderPreset>>({});
 	const [providerKeySet, setProviderKeySet] = useState<Record<ProviderName, boolean>>({});
@@ -39,9 +37,6 @@ export default function ModelPresetsPage() {
 	const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
 	const [editProvider, setEditProvider] = useState<ProviderName | null>(null);
 
-	/* ---------------------------------------------------------------------- */
-	/*                             initial loading                            */
-	/* ---------------------------------------------------------------------- */
 	useEffect(() => {
 		(async () => {
 			try {
@@ -68,9 +63,6 @@ export default function ModelPresetsPage() {
 		})();
 	}, []);
 
-	/* ---------------------------------------------------------------------- */
-	/*                            derived helpers                             */
-	/* ---------------------------------------------------------------------- */
 	const enabledProviderNames = useMemo(
 		() =>
 			Object.values(providerPresets)
@@ -79,9 +71,6 @@ export default function ModelPresetsPage() {
 		[providerPresets]
 	);
 
-	/* ------------------------------------------------------------------ */
-	/* enabledProviderPresets – contains ONLY the enabled providers       */
-	/* ------------------------------------------------------------------ */
 	const enabledProviderPresets = useMemo<Partial<Record<ProviderName, ProviderPreset>>>(() => {
 		const obj: Partial<Record<ProviderName, ProviderPreset>> = {};
 		for (const [name, preset] of Object.entries(providerPresets)) {
@@ -90,14 +79,9 @@ export default function ModelPresetsPage() {
 		return obj;
 	}, [providerPresets]);
 
-	/* ------------------------------------------------------------------ */
-	/* safeDefaultKey – use it only if it exists inside the partial map   */
-	/* ------------------------------------------------------------------ */
 	const safeDefaultKey: ProviderName | undefined =
 		defaultProvider && defaultProvider in enabledProviderPresets ? defaultProvider : undefined;
-	/* ---------------------------------------------------------------------- */
-	/*                          automatic default fix                         */
-	/* ---------------------------------------------------------------------- */
+
 	/* If no default is set OR the current default somehow became disabled,
 	   automatically pick the first enabled provider (if any).                */
 	useEffect(() => {
@@ -118,9 +102,6 @@ export default function ModelPresetsPage() {
 		}
 	}, [enabledProviderNames, defaultProvider, providerPresets]);
 
-	/* ---------------------------------------------------------------------- */
-	/*                              event handlers                            */
-	/* ---------------------------------------------------------------------- */
 	const handleDefaultProviderChange = async (prov: ProviderName) => {
 		try {
 			setDefaultProvider(prov);
@@ -227,7 +208,6 @@ export default function ModelPresetsPage() {
 		}
 	};
 
-	/* ---------------------------- misc helpers ---------------------------- */
 	const fetchValue = async () => {
 		try {
 			const [providerPresetMap, defProv] = await Promise.all([
@@ -260,16 +240,11 @@ export default function ModelPresetsPage() {
 		setModalOpen(true);
 	};
 
-	/* ---------------------------------------------------------------------- */
-	/*                                  UI                                    */
-	/* ---------------------------------------------------------------------- */
-
 	if (loading) return <Loader text="Loading model presets…" />;
 
 	return (
 		<PageFrame>
 			<div className="flex h-full w-full flex-col items-center">
-				{/* ------------------------------ header ----------------------------- */}
 				<div className="fixed mt-8 flex w-10/12 items-center p-2 lg:w-2/3">
 					<h1 className="flex grow items-center justify-center text-xl font-semibold">Model Presets</h1>
 					<DownloadButton
@@ -282,13 +257,11 @@ export default function ModelPresetsPage() {
 					/>
 				</div>
 
-				{/* ------------------------------ body ------------------------------ */}
 				<div
 					className="mt-24 flex w-full grow flex-col items-center overflow-y-auto"
 					style={{ maxHeight: 'calc(100vh - 128px)' }}
 				>
 					<div className="flex w-5/6 flex-col space-y-4 xl:w-2/3">
-						{/* --------------- default-provider selection row ---------------- */}
 						<div className="bg-base-100 mb-8 rounded-2xl px-4 py-2 shadow-lg">
 							<div className="grid grid-cols-12 items-center gap-4">
 								<label className="col-span-3 text-sm font-medium">Default Provider</label>
@@ -318,7 +291,6 @@ export default function ModelPresetsPage() {
 							</div>
 						</div>
 
-						{/* -------------------- provider cards / errors ------------------ */}
 						{error && <p className="text-error mt-8 text-center">{error}</p>}
 
 						{!error &&

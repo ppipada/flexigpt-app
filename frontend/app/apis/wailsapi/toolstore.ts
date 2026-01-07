@@ -28,8 +28,6 @@ import {
 import type { spec } from '@/apis/wailsjs/go/models';
 
 export class WailsToolStoreAPI implements IToolStoreAPI {
-	// --- Bundle Operations ---
-
 	async listToolBundles(
 		bundleIDs?: string[],
 		includeDisabled?: boolean,
@@ -84,8 +82,6 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 		};
 		await DeleteToolBundle(req);
 	}
-
-	// --- Tool Operations ---
 
 	async listTools(
 		bundleIDs?: string[],

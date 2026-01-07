@@ -9,7 +9,7 @@ import {
 	type StoreConversationMessage,
 } from '@/spec/conversation';
 import { ContentItemKind, type ModelParam, OutputKind, type OutputUnion, RoleEnum, Status } from '@/spec/inference';
-import type { ToolStoreChoice } from '@/spec/tool';
+import { type ToolStoreChoice, ToolStoreChoiceType } from '@/spec/tool';
 
 import { defaultShortcutConfig, type ShortcutConfig, useChatShortcuts } from '@/lib/keyboard_shortcuts';
 import { getBlockQuotedLines, sanitizeConversationTitle } from '@/lib/text_utils';
@@ -324,9 +324,16 @@ export default function ChatsPage() {
 
 					saveUpdatedChat(finalChat);
 
-					// Expose assistant-suggested tool calls as chips in the composer.
+					// Expose *runnable* assistant-suggested tool calls (function/custom)
+					// as chips in the composer. Web-search tool calls are provider-managed
+					// and remain informational in the message history only.
 					if (responseMessage.uiToolCalls && responseMessage.uiToolCalls.length > 0) {
-						chatInputRef.current?.loadToolCalls(responseMessage.uiToolCalls);
+						const runnableCalls = responseMessage.uiToolCalls.filter(
+							c => c.type === ToolStoreChoiceType.Function || c.type === ToolStoreChoiceType.Custom
+						);
+						if (runnableCalls.length > 0) {
+							chatInputRef.current?.loadToolCalls(runnableCalls);
+						}
 					}
 				}
 			} catch (e) {
@@ -416,8 +423,16 @@ export default function ChatsPage() {
 
 				setEditingMessageId(null);
 				saveUpdatedChat(updatedChat);
-				// console.log('updated chat before send', JSON.stringify(updatedChat, null, 2));
-				await updateStreamingMessage(updatedChat, options);
+
+				// Fire-and-forget streaming; this will set isBusy and manage
+				// aborts, but we do not block the composer on it.
+				void (async () => {
+					try {
+						await updateStreamingMessage(updatedChat, options);
+					} catch (err) {
+						console.error(err);
+					}
+				})();
 				return;
 			}
 
@@ -432,7 +447,15 @@ export default function ChatsPage() {
 		};
 
 		saveUpdatedChat(updated);
-		await updateStreamingMessage(updated, options);
+
+		// Same fire-and-forget behavior for normal sends.
+		void (async () => {
+			try {
+				await updateStreamingMessage(updated, options);
+			} catch (err) {
+				console.error(err);
+			}
+		})();
 	};
 
 	const beginEditMessage = useCallback(

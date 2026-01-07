@@ -21,7 +21,7 @@ function looksLikeCodeLine(line: string): boolean {
 	const t = line.trim();
 	if (!t) return false; // blank line
 
-	/* ---------- 1.  Quick "certain" matches -------------------- */
+	/* 1.  Quick "certain" matches  */
 
 	// single brace / bracket / semicolon lines:  }, );, ]
 	if (/^[{}[\]()];?$/.test(t)) return true;
@@ -32,7 +32,7 @@ function looksLikeCodeLine(line: string): boolean {
 	// import / class / def at beginning of line
 	if (/^\s*(import|export|package|namespace|using|class|interface|def|func|lambda|const|async)\b/.test(t)) return true;
 
-	/* ---------- 2.  Count weaker indicators -------------------- */
+	/* 2.  Count weaker indicators  */
 
 	let score = 0;
 
@@ -41,8 +41,6 @@ function looksLikeCodeLine(line: string): boolean {
 	if (/[=+\-*/%]=?\s*\w/.test(t)) score++; // assignments / operators
 	if (/\w+\s*$[^)]*$/.test(t)) score++; // foo(...)  or  bar()
 	if (/(['"`]).*\1/.test(t)) score++; // string literal
-
-	/* ---------- 3.  Decision ----------------------------------- */
 
 	// At least two weak indicators -> probably code
 	return score >= 2;

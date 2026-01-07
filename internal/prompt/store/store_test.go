@@ -108,10 +108,6 @@ func TestBuiltInBundleGuards(t *testing.T) {
 	}
 }
 
-/* --------------------------------------------------------------------- */
-/*  B.  Template operations                                              */
-/* ---------------------------------------------------------------------. */
-
 func TestTemplateCRUD(t *testing.T) {
 	s, clean := newTestStore(t)
 	defer clean()
@@ -511,9 +507,7 @@ func TestSearchWithoutEngine(t *testing.T) {
 	}
 }
 
-/* --------------------------------------------------------------------- */
 /*  E.  Misc                                                             */
-/* ---------------------------------------------------------------------. */
 
 func TestSoftDeleteBehaviour(t *testing.T) {
 	s, clean := newTestStore(t)

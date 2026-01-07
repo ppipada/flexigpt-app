@@ -38,7 +38,6 @@ export function AddEditPromptTemplateModal({
 	initialData,
 	existingTemplates,
 }: AddEditPromptTemplateModalProps) {
-	/* ---------- form state ---------- */
 	const [formData, setFormData] = useState({
 		displayName: '',
 		slug: '',
@@ -53,7 +52,6 @@ export function AddEditPromptTemplateModal({
 
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
 
-	/* ---------- sync prop -> state ---------- */
 	useEffect(() => {
 		if (!isOpen) return;
 
@@ -102,7 +100,6 @@ export function AddEditPromptTemplateModal({
 		onClose();
 	};
 
-	/* ---------- validation helpers ---------- */
 	const validateField = (field: keyof ErrorState, val: string, currentErrors: ErrorState): ErrorState => {
 		let newErrs: ErrorState = { ...currentErrors };
 		const v = val.trim();
@@ -144,7 +141,6 @@ export function AddEditPromptTemplateModal({
 		return newErrs;
 	};
 
-	/* ---------- generic change handler ---------- */
 	const handleInput = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 		const { name, value, type, checked } = e.target as HTMLInputElement;
 		const newVal = type === 'checkbox' ? checked : value;
@@ -156,14 +152,12 @@ export function AddEditPromptTemplateModal({
 		}
 	};
 
-	/* ---------- overall validity ---------- */
 	const isAllValid = useMemo(() => {
 		const requiredFilled = formData.displayName.trim() && formData.slug.trim() && formData.content.trim();
 		const hasErrors = Object.keys(errors).length > 0;
 		return Boolean(requiredFilled) && !hasErrors;
 	}, [formData, errors]);
 
-	/* ---------- submit ---------- */
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -205,10 +199,8 @@ export function AddEditPromptTemplateModal({
 		dialogRef.current?.close();
 	};
 
-	/* ---------- early-return ---------- */
 	if (!isOpen) return null;
 
-	/* ---------- render ---------- */
 	return createPortal(
 		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">

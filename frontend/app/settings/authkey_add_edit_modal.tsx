@@ -48,12 +48,10 @@ export function AddEditAuthKeyModal({
 	onChanged,
 	prefill = null,
 }: AddEditAuthKeyModalProps) {
-	/* -------------------------------- flags ------------------------------- */
 	const isEdit = Boolean(initial); // “edit” = we already have that record
 	const isPrefilled = !isEdit && !!prefill; // “add”, but (type,keyName) should be fixed
 	const isReadOnly = isEdit || isPrefilled; // helper for rendering
 
-	/* ------------------------------- state -------------------------------- */
 	const [form, setForm] = useState<FormData>({
 		type: initial?.type ?? prefill?.type ?? AuthKeyTypeProvider,
 		keyName: initial?.keyName ?? prefill?.keyName ?? '',
@@ -66,8 +64,6 @@ export function AddEditAuthKeyModal({
 	const [providerPresets, setProviderPresets] = useState<Record<ProviderName, ProviderPreset>>({});
 
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
-
-	/* ------------------------------ derived ------------------------------- */
 
 	/* list of *types* that already exist (for dropdown) */
 	const existingTypes = useMemo(() => [...new Set(existing.map(k => k.type))], [existing]);
@@ -173,7 +169,6 @@ export function AddEditAuthKeyModal({
 		onClose();
 	};
 
-	/* ------------------------------ helpers ------------------------------- */
 	const checkDuplicate = (t: string, n: string) =>
 		existing.some(k => {
 			if (k.type !== t || k.keyName !== n) return false; // different pair
@@ -211,7 +206,6 @@ export function AddEditAuthKeyModal({
 		setErrors(next);
 	};
 
-	/* ------------------------------ handlers ------------------------------ */
 	const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
 		const { name, value } = e.target;
 		setForm(prev => ({ ...prev, [name]: value }));
@@ -245,7 +239,6 @@ export function AddEditAuthKeyModal({
 		return Object.values(errors).every(v => !v);
 	}, [form, errors, noProviderAvailable]);
 
-	/* ------------------------------ submit ------------------------------- */
 	const submit = async (e: FormEvent) => {
 		e.preventDefault();
 
@@ -284,7 +277,6 @@ export function AddEditAuthKeyModal({
 				</div>
 
 				<form onSubmit={submit} className="space-y-4">
-					{/* TYPE ----------------------------------------------------------------- */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Type*</span>
@@ -309,7 +301,7 @@ export function AddEditAuthKeyModal({
 						</div>
 					</div>
 
-					{/* NEW TYPE (only when sentinel) -------------------------------------- */}
+					{/* NEW TYPE (only when sentinel)  */}
 					{!isReadOnly && form.type === sentinelAddNew && (
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
@@ -329,7 +321,7 @@ export function AddEditAuthKeyModal({
 						</div>
 					)}
 
-					{/* KEY NAME ------------------------------------------------------------- */}
+					{/* KEY NAME  */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Key Name*</span>
@@ -370,7 +362,7 @@ export function AddEditAuthKeyModal({
 						</div>
 					</div>
 
-					{/* SECRET --------------------------------------------------------------- */}
+					{/* SECRET -- */}
 					<div className="grid grid-cols-12 items-center gap-2">
 						<label className="label col-span-3">
 							<span className="label-text text-sm">Secret*</span>
@@ -388,7 +380,7 @@ export function AddEditAuthKeyModal({
 						</div>
 					</div>
 
-					{/* ACTIONS -------------------------------------------------------------- */}
+					{/* ACTIONS - */}
 					<div className="modal-action mt-6">
 						<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
 							Cancel

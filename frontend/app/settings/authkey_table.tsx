@@ -46,14 +46,10 @@ export function AuthKeyTable({ authKeys, onEdit, onChanged }: AuthKeyTableProps)
 		onChanged();
 	};
 
-	/* ------------------------------------------------------------------ */
-	/* render                                                             */
-	/* ------------------------------------------------------------------ */
 	if (!authKeys.length) return <p className="text-neutral-custom my-6 text-center text-sm">No keys defined.</p>;
 
 	return (
 		<>
-			{/* --------------------------- TABLE --------------------------- */}
 			<div className="overflow-x-auto rounded-2xl">
 				<table className="table-zebra table w-full">
 					<thead className="bg-base-300 text-sm font-semibold">
@@ -124,8 +120,6 @@ export function AuthKeyTable({ authKeys, onEdit, onChanged }: AuthKeyTableProps)
 					</tbody>
 				</table>
 			</div>
-
-			{/* --------------------- PORTALS / MODALS --------------------- */}
 
 			<DeleteConfirmationModal
 				isOpen={!!deleteTarget}

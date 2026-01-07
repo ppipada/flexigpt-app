@@ -134,21 +134,18 @@ function SearchDropdown({
 
 	const shouldGroup = query.length === 0 || showSearchAllHintShortQuery;
 
-	/* infinite scroll ------------------------------------------------ */
 	const handleScroll = useCallback(() => {
 		const c = scrollRef.current;
 		if (!c || !hasMore || loading) return;
 		if ((c.scrollTop + c.clientHeight) / c.scrollHeight >= 0.8) onLoadMore();
 	}, [hasMore, loading, onLoadMore]);
 
-	/* keep focused row in view -------------------------------------- */
 	useEffect(() => {
 		if (focusedIndex < 0) return;
 		const el = scrollRef.current?.querySelector(`[data-index="${focusedIndex}"]`);
 		el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 	}, [focusedIndex]);
 
-	/* error ---------------------------------------------------------- */
 	if (error) {
 		return (
 			<div className="bg-base-200 absolute right-0 left-0 mt-1 rounded-2xl p-4 text-center shadow-lg">
@@ -165,7 +162,6 @@ function SearchDropdown({
 		);
 	}
 
-	/* status / hint bar --------------------------------------------- */
 	const SEARCHED_ALL = 'Searched all titles & messages';
 	const PRESS_ENTER_TO_SEARCH = 'Press Enter to search messages';
 	const NO_CONVO = 'No conversations yet';
@@ -211,16 +207,13 @@ function SearchDropdown({
 
 	const { left: barLeft, right: barRight } = getTopBarContent();
 
-	/* render --------------------------------------------------------- */
 	return (
 		<div className="bg-base-200 overflow-hidden rounded-2xl shadow-lg">
-			{/* sticky status / hint bar -------------------------------- */}
 			<div className="text-neutral-custom border-base-300 sticky top-0 flex items-center justify-between border-b px-8 py-1 text-xs">
 				<span className="truncate">{barLeft}</span>
 				{barRight && <span className="shrink-0 pl-4">{barRight}</span>}
 			</div>
 
-			{/* results -------------------------------------------------- */}
 			{!results.length && !loading ? (
 				<div className="text-neutral-custom py-8 text-center text-sm">
 					{query ? 'Try refining your search' : 'Start a conversation to see it here'}
@@ -295,7 +288,6 @@ function SearchDropdown({
 						</ul>
 					)}
 
-					{/* footer / loader ------------------------------------ */}
 					{loading && (
 						<div className="flex items-center justify-center py-4">
 							<span className="text-neutral-custom text-sm">{results.length ? 'Loading more...' : 'Searching...'}</span>
@@ -325,7 +317,6 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 	{ onSelectConversation, refreshKey, currentConversationId }: ChatSearchProps,
 	ref
 ) {
-	/* state ---------------------------------------------------------- */
 	const [searchState, setSearchState] = useState<SearchState>({
 		query: '',
 		results: [],
@@ -341,7 +332,6 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 	/** all conversations fetched so far (used for local filtering) */
 	const [recentConversations, setRecentConversations] = useState<ConversationSearchItem[]>([]);
 
-	/* refs ----------------------------------------------------------- */
 	const abortControllerRef = useRef<AbortController | null>(null);
 	const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -482,7 +472,7 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 		}
 	}, []);
 
-	/* Local filter for 1-2 char queries -------------- */
+	/* Local filter for 1-2 char queries  */
 	const filterLocalResults = useCallback(
 		(q: string) => {
 			const filtered = recentConversations.filter(c => c.title.toLowerCase().includes(q.toLowerCase()));
@@ -530,7 +520,7 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 				return;
 			}
 
-			/* cache --------------------------------------------------- */
+			/* cache  */
 			const cleaned = cleanSearchQuery(q);
 			const cached = searchCache.get(cleaned);
 			if (cached && Date.now() - cached.timestamp < CACHE_EXPIRY_TIME) {
@@ -546,7 +536,7 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 				return;
 			}
 
-			/* remote search (debounced) ------------------------------- */
+			/* remote search (debounced) */
 			debounceTimeoutRef.current = setTimeout(() => performSearch(q), 300);
 		},
 		[show, recentConversations, filterLocalResults, performSearch]
@@ -590,7 +580,7 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 			ro.disconnect();
 		};
 	}, [show, updateDropdownPos]);
-	/* ------------------------- focus / blur ------------------------ */
+
 	const handleFocus = useCallback(async () => {
 		setShow(true);
 		updateDropdownPos();
@@ -621,7 +611,7 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 		[onSelectConversation]
 	);
 
-	/* ------------ delete flow -------------------------------------- */
+	/* delete flow  */
 	const handleAskDelete = useCallback((conv: ConversationSearchItem) => {
 		setDeleteTarget(conv);
 	}, []);
@@ -633,14 +623,14 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 		try {
 			await conversationStoreAPI.deleteConversation(deleteTarget.id, deleteTarget.title);
 
-			/* prune from local caches --------------------------------*/
+			/* prune from local caches */
 			setRecentConversations(prev => prev.filter(c => c.id !== deleteTarget.id));
 			setSearchState(prev => ({
 				...prev,
 				results: prev.results.filter(r => r.searchConversation.id !== deleteTarget.id),
 			}));
 
-			/* ---- prune *ALL* cached search pages --------------------- */
+			/* prune *ALL* cached search pages  */
 			searchCache.forEach((entry, key) => {
 				const filtered = entry.results.filter(r => r.searchConversation.id !== deleteTarget.id);
 				if (filtered.length === 0) {
@@ -649,7 +639,7 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 					searchCache.set(key, { ...entry, results: filtered });
 				}
 			});
-			/* ---- (optional) refresh the first page of recents -------- */
+			/* (optional) refresh the first page of recents  */
 			// Only if the dropdown is currently showing recents.
 			if (searchState.query.trim() === '') {
 				loadRecentConversations(); // pull a fresh page
@@ -743,7 +733,6 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 
 	return (
 		<div className="w-full">
-			{/* input --------------------------------------------------- */}
 			<div
 				ref={searchDivRef}
 				className="bg-base-100 border-base-300 focus-within:border-base-400 flex items-center rounded-2xl border p-2 transition-colors"
@@ -764,7 +753,6 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 				{searchState.loading && <span className="loading loading-dots loading-sm" />}
 			</div>
 
-			{/* dropdown ------------------------------------------------ */}
 			{show &&
 				dropdownPos &&
 				createPortal(

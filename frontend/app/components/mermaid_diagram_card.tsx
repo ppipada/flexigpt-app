@@ -126,7 +126,6 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
 
 	return (
 		<>
-			{/* ---------- Inline card -------------------------------- */}
 			<div className="bg-mermaid my-4 overflow-hidden rounded-lg">
 				{/* header bar */}
 				<div className="bg-code-header flex items-center justify-between px-4">
@@ -163,7 +162,6 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
 				</div>
 			</div>
 
-			{/* ---------- Zoom modal --------------------------------- */}
 			<MermaidZoomModal
 				isOpen={zoomOpen}
 				onClose={() => {

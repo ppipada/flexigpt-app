@@ -16,8 +16,6 @@ import {
 import type { spec } from '@/apis/wailsjs/go/models';
 
 export class WailsPromptStoreAPI implements IPromptStoreAPI {
-	// --- Bundle Operations ---
-
 	async listPromptBundles(
 		bundleIDs?: string[],
 		includeDisabled?: boolean,
@@ -72,8 +70,6 @@ export class WailsPromptStoreAPI implements IPromptStoreAPI {
 		};
 		await DeletePromptBundle(req);
 	}
-
-	// --- Template Operations ---
 
 	async listPromptTemplates(
 		bundleIDs?: string[],

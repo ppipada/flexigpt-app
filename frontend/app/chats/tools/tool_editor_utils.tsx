@@ -563,8 +563,6 @@ export function mapToolStoreOutputsToToolOutputItems(
 	return contents.length ? contents : undefined;
 }
 
-// ---------- Shared collection of ToolCall objects from inputs/outputs ----------
-
 export function collectToolCallsFromInputs(
 	inputs: InputUnion[] | undefined,
 	existing?: Map<string, ToolCall>

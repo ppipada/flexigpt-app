@@ -261,7 +261,7 @@ export function AddEditModelPresetModal({
 	const runValidation = (): ValidationErrors => {
 		const v: ValidationErrors = {};
 
-		/* id ----------------------------------------------------------- */
+		/* id */
 		if (!isEditMode) {
 			const idTrim = modelPresetID.trim();
 			if (!idTrim) v.modelPresetID = 'Model Preset ID is required.';
@@ -270,11 +270,11 @@ export function AddEditModelPresetModal({
 				v.modelPresetID = 'Model Preset ID must be unique.';
 		}
 
-		/* required strings -------------------------------------------- */
+		/* required strings -- */
 		if (!formData.name.trim()) v.name = 'Model Name is required.';
 		if (!formData.presetLabel.trim()) v.presetLabel = 'Preset Label is required.';
 
-		/* numeric fields ---------------------------------------------- */
+		/* numeric fields  */
 		const maybe = (f: ValidationField, rng?: { min?: number; max?: number }) => {
 			let value: string;
 			if (f === 'modelPresetID') {
@@ -304,7 +304,7 @@ export function AddEditModelPresetModal({
 		return newV;
 	};
 
-	/* helper - string ⇒ number (keep default if blank / NaN) ----------- */
+	/* helper - string ⇒ number (keep default if blank / NaN)  */
 	const parseOrDefault = (val: string, def: number) => {
 		const n = Number(val);
 		return val.trim() === '' || Number.isNaN(n) ? def : n;
@@ -389,7 +389,6 @@ export function AddEditModelPresetModal({
 		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
 				<div className="max-h-[80vh] overflow-y-auto p-6">
-					{/* Header -------------------------------------------------- */}
 					<div className="mb-4 flex items-center justify-between">
 						<h3 className="text-lg font-bold">{isEditMode ? 'Edit Model Preset' : 'Add Model Preset'}</h3>
 						<button
@@ -402,7 +401,6 @@ export function AddEditModelPresetModal({
 						</button>
 					</div>
 
-					{/* FORM ---------------------------------------------------- */}
 					<form noValidate onSubmit={handleSubmit} className="space-y-4">
 						{/* ───── Prefill (ADD mode only) ───── */}
 						{!isEditMode && (
@@ -457,7 +455,7 @@ export function AddEditModelPresetModal({
 							</div>
 						)}
 
-						{/* ModelPresetID ------------------------------------- */}
+						{/* ModelPresetID - */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Model Preset ID*</span>
@@ -491,7 +489,7 @@ export function AddEditModelPresetModal({
 							</div>
 						</div>
 
-						{/* Model Name ---------------------------------------- */}
+						{/* Model Name  */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Model Name*</span>
@@ -525,7 +523,7 @@ export function AddEditModelPresetModal({
 							</div>
 						</div>
 
-						{/* Preset Label -------------------------------------- */}
+						{/* Preset Label -- */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Preset Label*</span>
@@ -555,7 +553,7 @@ export function AddEditModelPresetModal({
 							</div>
 						</div>
 
-						{/* Toggles: isEnabled / stream / reasoningSupport ---- */}
+						{/* Toggles: isEnabled / stream / reasoningSupport */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3 cursor-pointer">
 								<span className="label-text text-sm">Enabled</span>
@@ -604,7 +602,7 @@ export function AddEditModelPresetModal({
 							</div>
 						</div>
 
-						{/* Reasoning controls -------------------------------- */}
+						{/* Reasoning controls */}
 						{formData.reasoningSupport && (
 							<>
 								{/* type */}
@@ -679,7 +677,7 @@ export function AddEditModelPresetModal({
 							</>
 						)}
 
-						{/* Temperature -------------------------------------- */}
+						{/* Temperature -- */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Temperature (0-1)</span>
@@ -707,7 +705,7 @@ export function AddEditModelPresetModal({
 							</div>
 						</div>
 
-						{/* Timeout ------------------------------------------ */}
+						{/* Timeout  */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Timeout (seconds)</span>
@@ -732,7 +730,7 @@ export function AddEditModelPresetModal({
 							</div>
 						</div>
 
-						{/* Prompt / Output lengths -------------------------- */}
+						{/* Prompt / Output lengths  */}
 						{(['maxPromptLength', 'maxOutputLength'] as const).map(f => (
 							<div className="grid grid-cols-12 items-center gap-2" key={f}>
 								<label className="label col-span-3">
@@ -761,7 +759,7 @@ export function AddEditModelPresetModal({
 							</div>
 						))}
 
-						{/* System Prompt ------------------------------------ */}
+						{/* System Prompt  */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">System Prompt</span>
@@ -778,7 +776,7 @@ export function AddEditModelPresetModal({
 							</div>
 						</div>
 
-						{/* ACTIONS ------------------------------------------ */}
+						{/* ACTIONS  */}
 						<div className="modal-action">
 							<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
 								Cancel

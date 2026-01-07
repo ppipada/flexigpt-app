@@ -188,7 +188,7 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 				setIsOpen={setIsModelDropdownOpen}
 			/>
 
-			{/* ---------------- Reasoning / temperature / checkboxes ------------ */}
+			{/* Reasoning / temperature / checkboxes */}
 
 			{selectedModel.reasoning?.type === ReasoningType.HybridWithTokens && (
 				<HybridReasoningCheckbox
@@ -246,7 +246,7 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 				setDisablePreviousMessages={setDisablePreviousMessages}
 			/>
 
-			{/* ---------------- Advanced params button ----------------------- */}
+			{/* Advanced params button */}
 			<div className="flex items-center justify-center">
 				<div
 					className="tooltip tooltip-left too"
@@ -264,7 +264,7 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 				</div>
 			</div>
 
-			{/* ---------------- Advanced params modal -------------------------- */}
+			{/* Advanced params modal */}
 			<AdvancedParamsModal
 				isOpen={isAdvancedModalOpen}
 				onClose={() => {

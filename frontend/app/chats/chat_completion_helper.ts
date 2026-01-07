@@ -16,7 +16,7 @@ import {
 	type UIToolCall,
 	type UIToolOutput,
 } from '@/spec/inference';
-import { type ToolStoreChoice, type ToolStoreChoiceType } from '@/spec/tool';
+import { type ToolStoreChoice, ToolStoreChoiceType } from '@/spec/tool';
 
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
@@ -356,6 +356,13 @@ function deriveUIToolCallFromToolCall(
 
 	const toolStoreChoice = choiceMap.get(choiceID); // ToolStoreChoice | undefined
 	if (!toolStoreChoice) return undefined;
+	const type = toolCall.type as unknown as ToolStoreChoiceType;
+
+	// For provider-managed web-search, the "call" appearing in outputs
+	// means "search was (or will be) handled by the provider", not a
+	// pending client-side action. Mark it as 'succeeded' so it is never
+	// treated as a pending/runnable chip.
+	const status: UIToolCall['status'] = type === ToolStoreChoiceType.WebSearch ? 'succeeded' : 'pending';
 
 	return {
 		id: toolCall.id || toolCall.callID,
@@ -363,11 +370,11 @@ function deriveUIToolCallFromToolCall(
 		name: toolCall.name,
 		arguments: toolCall.arguments ?? '',
 		webSearchToolCallItems: toolCall.webSearchToolCallItems,
-		type: toolCall.type as unknown as ToolStoreChoiceType,
+		type: type,
 		choiceID: toolCall.choiceID,
 		// The LLM would consider the status of tool call as done as soon as it is in output,
 		// for us the call is pending here and then it will run and move to final status.
-		status: 'pending',
+		status: status,
 		toolStoreChoice,
 	};
 }

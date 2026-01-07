@@ -1,7 +1,5 @@
 export const MessageEnterValidURL = 'Please enter a valid URL, for example: https://example.com';
 
-// ---- Hostname / IP validation helpers ----
-
 const isValidIPv4 = (hostname: string): boolean => {
 	// Basic IPv4: 4 dot-separated decimal octets, each 0–255
 	if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) return false;
@@ -101,8 +99,6 @@ export const normalizeUrl = (value: string): string | null => {
 	return parsed.href;
 };
 
-// ---- Validation wrapper for inputs ----
-
 interface UrlValidationResult {
 	normalized: string | null;
 	error: string | null;
@@ -158,8 +154,6 @@ export const validateUrlForInput = (
 		};
 	}
 };
-
-// ---- React change handler helper ----
 
 export type FieldErrorState<FormState> = {
 	[K in keyof FormState]?: string;

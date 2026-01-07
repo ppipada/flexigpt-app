@@ -31,7 +31,6 @@ export function useAtBottom(ref: RefObject<HTMLElement | null>, offset = 0): Use
 		// Save the latest checkScroll in the ref for ResizeObserver
 		handleScrollRef.current = checkScroll;
 
-		// --- scroll listener (throttled) ---------------------------------
 		let throttleTimeout: NodeJS.Timeout | null = null;
 		const throttledScroll = () => {
 			if (throttleTimeout == null) {
@@ -44,7 +43,6 @@ export function useAtBottom(ref: RefObject<HTMLElement | null>, offset = 0): Use
 
 		current.addEventListener('scroll', throttledScroll, { passive: true });
 
-		// --- resize observer --------------------------------------------
 		const resizeObserver = new ResizeObserver(() => {
 			// no throttling here – this already fires at a sane rate
 			handleScrollRef.current();
