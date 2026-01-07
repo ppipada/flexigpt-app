@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 
 import { FiTool, FiX } from 'react-icons/fi';
 
-import type { UIToolOutput } from '@/spec/tool';
+import type { UIToolOutput } from '@/spec/inference';
 
 import { extractPrimaryTextFromToolStoreOutputs, formatToolOutputSummary } from '@/chats/tools/tool_editor_utils';
 

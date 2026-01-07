@@ -141,9 +141,3 @@ export function getLastUserBlockContent(el: TemplateSelectionElementNode): strin
 	}
 	return '';
 }
-
-// JSON-like types for safe indexing
-type JSONValue = null | boolean | number | string | Array<JSONValue> | JSONObject;
-interface JSONObject {
-	[k: string]: JSONValue;
-}

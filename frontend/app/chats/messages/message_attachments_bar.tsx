@@ -5,7 +5,8 @@ import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
 import type { Attachment } from '@/spec/attachment';
 import { AttachmentContentBlockMode, AttachmentKind } from '@/spec/attachment';
-import type { ToolStoreChoice, UIToolCall, UIToolOutput } from '@/spec/tool';
+import type { UIToolCall, UIToolOutput } from '@/spec/inference';
+import type { ToolStoreChoice } from '@/spec/tool';
 
 import {
 	getAttachmentContentBlockModeLabel,

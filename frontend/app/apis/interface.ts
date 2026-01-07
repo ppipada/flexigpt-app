@@ -14,14 +14,14 @@ import type {
 	InvokeGoOptions,
 	InvokeHTTPOptions,
 	InvokeToolResponse,
-	JSONRawString,
-	JSONSchema,
 	Tool,
 	ToolBundle,
 	ToolImplType,
 	ToolListItem,
 	ToolStoreChoice,
 } from '@/spec/tool';
+
+import type { JSONRawString, JSONSchema } from '@/lib/jsonschema_utils';
 
 export interface ILogger {
 	log(...args: unknown[]): void;

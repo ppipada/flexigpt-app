@@ -3,7 +3,6 @@ import type { ProviderName } from '@/spec/inference';
 import {
 	type CompletionResponseBody,
 	ContentItemKind,
-	ImageDetail,
 	type InferenceError,
 	type InferenceUsage,
 	type ModelParam,
@@ -14,22 +13,21 @@ import {
 	Status,
 	type ToolCall,
 	type ToolOutput,
-	type ToolOutputItemUnion,
-} from '@/spec/inference';
-import {
-	type ToolStoreChoice,
-	type ToolStoreChoiceType,
-	ToolStoreOutputKind,
-	type ToolStoreOutputUnion,
 	type UIToolCall,
 	type UIToolOutput,
-} from '@/spec/tool';
+} from '@/spec/inference';
+import { type ToolStoreChoice, type ToolStoreChoiceType } from '@/spec/tool';
 
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
 import { providerSetAPI } from '@/apis/baseapi';
 
-import { extractPrimaryTextFromToolStoreOutputs, formatToolOutputSummary } from '@/chats/tools/tool_editor_utils';
+import {
+	collectToolCallsFromOutputs,
+	extractPrimaryTextFromToolStoreOutputs,
+	formatToolOutputSummary,
+	mapToolOutputItemsToToolStoreOutputs,
+} from '@/chats/tools/tool_editor_utils';
 
 export async function HandleCompletion(
 	provider: ProviderName,
@@ -327,7 +325,7 @@ export function deriveUIFieldsFromOutputUnion(
 				if (out) {
 					if (!toolCallMap) {
 						// outputs is definitely defined here because of the early return
-						toolCallMap = buildToolCallMapFromOutputs(outputs);
+						toolCallMap = collectToolCallsFromOutputs(outputs);
 					}
 					// Only called when a real ToolOutput exists.
 					toolOutputs.push(buildUIToolOutputFromToolOutput(out, choiceMap, toolCallMap));
@@ -420,90 +418,6 @@ export function buildUIToolOutputFromToolOutput(
 		arguments: call?.arguments,
 		webSearchToolCallItems: call?.webSearchToolCallItems,
 	};
-}
-
-// Helper: map inference ToolOutput.contents -> UIToolOutput.toolStoreOutputs
-function mapToolOutputItemsToToolStoreOutputs(contents?: ToolOutputItemUnion[]): ToolStoreOutputUnion[] | undefined {
-	if (!contents?.length) return undefined;
-
-	const outputs: ToolStoreOutputUnion[] = [];
-
-	for (const item of contents) {
-		switch (item.kind) {
-			case ContentItemKind.Text: {
-				const text = item.textItem?.text;
-				if (text != null) {
-					outputs.push({
-						kind: ToolStoreOutputKind.Text,
-						textItem: { text },
-					});
-				}
-				break;
-			}
-
-			case ContentItemKind.Image: {
-				const img = item.imageItem;
-				if (img) {
-					outputs.push({
-						kind: ToolStoreOutputKind.Image,
-						imageItem: {
-							// ToolStoreOutputImage.detail is a string; keep enum value or default to "auto"
-							detail: (img.detail ?? ImageDetail.Auto) as unknown as string,
-							imageName: img.imageName ?? '',
-							imageMIME: img.imageMIME ?? '',
-							imageData: img.imageData ?? '',
-						},
-					});
-				}
-				break;
-			}
-
-			case ContentItemKind.File: {
-				const file = item.fileItem;
-				if (file) {
-					outputs.push({
-						kind: ToolStoreOutputKind.File,
-						fileItem: {
-							fileName: file.fileName ?? '',
-							fileMIME: file.fileMIME ?? '',
-							fileData: file.fileData ?? '',
-						},
-					});
-				}
-				break;
-			}
-
-			default:
-				// Refusal / other kinds are ignored for tool-store outputs
-				break;
-		}
-	}
-
-	return outputs.length ? outputs : undefined;
-}
-
-function buildToolCallMapFromOutputs(outputs: OutputUnion[]): Map<string, ToolCall> {
-	const map = new Map<string, ToolCall>();
-
-	const addCall = (call?: ToolCall) => {
-		if (call?.callID) map.set(call.callID, call);
-	};
-
-	for (const o of outputs) {
-		switch (o.kind) {
-			case OutputKind.FunctionToolCall:
-				addCall(o.functionToolCall);
-				break;
-			case OutputKind.CustomToolCall:
-				addCall(o.customToolCall);
-				break;
-			case OutputKind.WebSearchToolCall:
-				addCall(o.webSearchToolCall);
-				break;
-		}
-	}
-
-	return map;
 }
 
 function getQuotedJSON(obj: any): string {

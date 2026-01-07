@@ -131,11 +131,12 @@ type ListToolsRequest struct {
 }
 
 type ToolListItem struct {
-	BundleID    bundleitemutils.BundleID    `json:"bundleID"`
-	BundleSlug  bundleitemutils.BundleSlug  `json:"bundleSlug"`
-	ToolSlug    bundleitemutils.ItemSlug    `json:"toolSlug"`
-	ToolVersion bundleitemutils.ItemVersion `json:"toolVersion"`
-	IsBuiltIn   bool                        `json:"isBuiltIn"`
+	BundleID       bundleitemutils.BundleID    `json:"bundleID"`
+	BundleSlug     bundleitemutils.BundleSlug  `json:"bundleSlug"`
+	ToolSlug       bundleitemutils.ItemSlug    `json:"toolSlug"`
+	ToolVersion    bundleitemutils.ItemVersion `json:"toolVersion"`
+	IsBuiltIn      bool                        `json:"isBuiltIn"`
+	ToolDefinition Tool                        `json:"toolDefinition"`
 }
 
 type ListToolsResponseBody struct {

@@ -5,6 +5,10 @@
 - [ ] edit and save template doesn't work. says template slug already exists.
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
+- [ ] UI for web search.
+  - [ ] citations to show.
+  - [ ] tool calls to show in some way and not in composer chip.
+  - [ ] no callable tool call jsut chips end to end.
 
 ## Features
 

@@ -24,7 +24,14 @@ import type {
 	UIAttachment,
 } from '@/spec/attachment';
 import { AttachmentKind } from '@/spec/attachment';
-import type { ToolStoreChoice, UIToolCall, UIToolOutput, UIToolStoreChoice } from '@/spec/tool';
+import type { ProviderSDKType, UIToolCall, UIToolOutput } from '@/spec/inference';
+import {
+	type Tool,
+	type ToolStoreChoice,
+	ToolStoreChoiceType,
+	type UIToolStoreChoice,
+	type UIToolUserArgsStatus,
+} from '@/spec/tool';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -45,6 +52,7 @@ import { LineHeightKit } from '@/components/editor/plugins/line_height_kit';
 import { ListKit } from '@/components/editor/plugins/list_kit';
 import { TabbableKit } from '@/components/editor/plugins/tabbable_kit';
 
+import { ToolUserArgsModal } from '@/chats//tools/tool_user_args_modal';
 import { AttachmentBottomBar } from '@/chats/attachments/attachment_bottom_bar';
 import {
 	buildUIAttachmentForLocalPath,
@@ -74,11 +82,14 @@ import {
 	mergeConversationToolsWithNewChoices,
 } from '@/chats/tools/conversation_tools_chip';
 import {
+	computeToolUserArgsStatus,
 	dedupeToolChoices,
 	editorAttachedToolToToolChoice,
 	formatToolOutputSummary,
 	getAttachedTools,
+	getToolNodesWithPath,
 	insertToolSelectionNode,
+	type ToolSelectionElementNode,
 } from '@/chats/tools/tool_editor_utils';
 import { ToolOutputModal } from '@/chats/tools/tool_output_modal';
 import { ToolPlusKit } from '@/chats/tools/tool_plugin';
@@ -113,6 +124,7 @@ const EDITOR_EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];
 
 interface EditorAreaProps {
 	isBusy: boolean;
+	currentProviderSDKType: ProviderSDKType;
 	shortcutConfig: ShortcutConfig;
 	onSubmit: (payload: EditorSubmitPayload) => Promise<void>;
 	onRequestStop: () => void;
@@ -121,7 +133,7 @@ interface EditorAreaProps {
 }
 
 export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function EditorArea(
-	{ isBusy, shortcutConfig, onSubmit, onRequestStop, editingMessageId, cancelEditing },
+	{ isBusy, currentProviderSDKType, shortcutConfig, onSubmit, onRequestStop, editingMessageId, cancelEditing },
 	ref
 ) {
 	const editor = usePlateEditor({
@@ -166,6 +178,16 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const [toolOutputs, setToolOutputs] = useState<UIToolOutput[]>([]);
 	const [activeToolOutput, setActiveToolOutput] = useState<UIToolOutput | null>(null);
 	const [conversationToolsState, setConversationToolsState] = useState<ConversationToolStateEntry[]>([]);
+	const [needsAttachedToolHydration, setNeedsAttachedToolHydration] = useState(false);
+
+	// Count of in‑flight tool‑definition hydration tasks (conversation‑level + attached).
+	// Used to gate sending while schemas are still loading.
+	const [toolsHydratingCount, setToolsHydratingCount] = useState(0);
+	const toolsDefLoading = toolsHydratingCount > 0;
+
+	// Single “active tool args editor” target (conversation-level or attached).
+	type ToolArgsTarget = { kind: 'attached'; selectionID: string } | { kind: 'conversation'; key: string };
+	const [toolArgsTarget, setToolArgsTarget] = useState<ToolArgsTarget | null>(null);
 
 	const closeAllMenus = useCallback(() => {
 		templateMenu.hide();
@@ -244,39 +266,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const hasRunningToolCalls = useMemo(() => toolCalls.some(c => c.status === 'running'), [toolCalls]);
 	const templateBlocked = selectionInfo.hasTemplate && selectionInfo.requiredCount > 0;
 
-	const { formRef, onKeyDown } = useEnterSubmit({
-		isBusy,
-		canSubmit: () => {
-			if (selectionInfo.hasTemplate) {
-				return selectionInfo.requiredCount === 0;
-			}
-
-			const hasText = hasNonEmptyUserText(editorRef.current);
-			if (hasText) return true;
-
-			const hasAttachments = attachments.length > 0;
-			const hasOutputs = toolOutputs.length > 0;
-
-			return hasAttachments || hasOutputs;
-		},
-		insertSoftBreak: () => {
-			editor.tf.insertSoftBreak();
-		},
-	});
-
-	const isSendButtonEnabled = useMemo(() => {
-		if (isBusy) return false;
-		if (templateBlocked) return false;
-
-		const hasText = hasNonEmptyUserText(editorRef.current);
-		if (hasText) return true;
-
-		const hasAttachments = attachments.length > 0;
-		const hasOutputs = toolOutputs.length > 0;
-
-		return hasAttachments || hasOutputs;
-	}, [isBusy, selectionInfo, attachments, toolOutputs, docVersion]);
-
 	// Populate editor with effective last-USER block for EACH template selection (once per selectionID)
 	useEffect(() => {
 		const populated = lastPopulatedSelectionKeyRef.current;
@@ -339,7 +328,217 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		}
 	}, [editor, deferredDocVersion]);
 
+	// Ensure we have full Tool definitions (and argStatus) for conversation-level tools.
+	useEffect(() => {
+		const missing = conversationToolsState.filter(e => !e.toolDefinition);
+		if (!missing.length) return;
+
+		let cancelled = false;
+		setToolsHydratingCount(c => c + 1);
+
+		(async () => {
+			const results = await Promise.all(
+				missing.map(async entry => {
+					try {
+						const def = await toolStoreAPI.getTool(
+							entry.toolStoreChoice.bundleID,
+							entry.toolStoreChoice.toolSlug,
+							entry.toolStoreChoice.toolVersion
+						);
+						return def ? { key: entry.key, def } : null;
+					} catch {
+						return null;
+					}
+				})
+			);
+
+			if (cancelled) return;
+
+			const loaded = results.filter((r): r is { key: string; def: Tool } => r !== null);
+			if (!loaded.length) return;
+
+			setConversationToolsState(prev =>
+				prev.map(e => {
+					const hit = loaded.find(l => l.key === e.key);
+					if (!hit) return e;
+					const argStatus = computeToolUserArgsStatus(hit.def.userArgSchema, e.toolStoreChoice.userArgSchemaInstance);
+					return { ...e, toolDefinition: hit.def, argStatus };
+				})
+			);
+		})().finally(() => {
+			if (!cancelled) {
+				setToolsHydratingCount(c => Math.max(0, c - 1));
+			}
+		});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [conversationToolsState]);
+
+	// Ensure we have full Tool definitions for any *attached* tools that were
+	// reconstructed from history (selection nodes with no toolSnapshot).
+	// Only runs when loadExternalMessage() tells us it is needed.
+	useEffect(() => {
+		if (!needsAttachedToolHydration) return;
+
+		const entries = getToolNodesWithPath(editor, false);
+		const missing = entries
+			.filter(([node]) => !node.toolSnapshot)
+			.map(([node]) => ({
+				selectionID: node.selectionID,
+				bundleID: node.bundleID,
+				toolSlug: node.toolSlug,
+				toolVersion: node.toolVersion,
+			}));
+
+		// Nothing to do → clear the flag and exit.
+		if (!missing.length) {
+			setNeedsAttachedToolHydration(false);
+			return;
+		}
+
+		let cancelled = false;
+		setToolsHydratingCount(c => c + 1);
+
+		(async () => {
+			const results = await Promise.all(
+				missing.map(async m => {
+					try {
+						const def = await toolStoreAPI.getTool(m.bundleID, m.toolSlug, m.toolVersion);
+						return def ? { ...m, def } : null;
+					} catch {
+						return null;
+					}
+				})
+			);
+
+			if (cancelled) return;
+
+			const loaded = results.filter(
+				(
+					r
+				): r is {
+					selectionID: string;
+					bundleID: string;
+					toolSlug: string;
+					toolVersion: string;
+					def: Tool;
+				} => r !== null
+			);
+			if (!loaded.length) {
+				setNeedsAttachedToolHydration(false);
+				return;
+			}
+
+			editor.tf.withoutNormalizing(() => {
+				// Re-locate nodes by selectionID to be robust against concurrent edits.
+				const currentEntries = getToolNodesWithPath(editor, false);
+				for (const item of loaded) {
+					const match = currentEntries.find(([n]) => n.selectionID === item.selectionID);
+					if (!match) continue;
+					const [, path] = match;
+					editor.tf.setNodes(
+						{
+							toolType: item.def.llmToolType,
+							toolSnapshot: item.def,
+						},
+						{ at: path as any }
+					);
+				}
+			});
+
+			// After successful hydration, we no longer need to repeat this until
+			// another loadExternalMessage() call.
+			setNeedsAttachedToolHydration(false);
+		})().finally(() => {
+			if (!cancelled) {
+				setToolsHydratingCount(c => Math.max(0, c - 1));
+			}
+		});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [needsAttachedToolHydration, editor]);
+
+	// Gating: block send when any attached or conversation-level tool has
+	// a userArgSchema with missing required fields.
+	const toolArgsBlocked = useMemo(() => {
+		// Inline (attached) tools in this editor
+		const toolEntries = getToolNodesWithPath(editor, false);
+		for (const [node] of toolEntries) {
+			const schema = node.toolSnapshot?.userArgSchema;
+			const status = computeToolUserArgsStatus(schema, node.userArgSchemaInstance);
+			if (status.hasSchema && !status.isSatisfied) {
+				return true;
+			}
+		}
+
+		// Conversation-level tools
+		for (const entry of conversationToolsState) {
+			if (!entry.enabled) continue;
+			const schema = entry.toolDefinition?.userArgSchema;
+			if (!schema) continue;
+			const status: UIToolUserArgsStatus = computeToolUserArgsStatus(
+				schema,
+				entry.toolStoreChoice.userArgSchemaInstance
+			);
+			if (status.hasSchema && !status.isSatisfied) {
+				return true;
+			}
+		}
+
+		return false;
+	}, [editor, conversationToolsState, deferredDocVersion]);
+
+	const isSendButtonEnabled = useMemo(() => {
+		if (isBusy) return false;
+		if (templateBlocked) return false;
+		if (toolArgsBlocked) return false;
+		if (toolsDefLoading) return false;
+
+		const hasText = hasNonEmptyUserText(editorRef.current);
+		if (hasText) return true;
+
+		const hasAttachments = attachments.length > 0;
+		const hasOutputs = toolOutputs.length > 0;
+
+		return hasAttachments || hasOutputs;
+	}, [isBusy, selectionInfo, attachments, toolOutputs, docVersion, toolArgsBlocked, toolsDefLoading]);
+
+	const { formRef, onKeyDown } = useEnterSubmit({
+		isBusy,
+		canSubmit: () => {
+			if (toolArgsBlocked) return false;
+			if (toolsDefLoading) return false;
+
+			if (selectionInfo.hasTemplate) {
+				return selectionInfo.requiredCount === 0;
+			}
+
+			const hasText = hasNonEmptyUserText(editorRef.current);
+			if (hasText) return true;
+
+			const hasAttachments = attachments.length > 0;
+			const hasOutputs = toolOutputs.length > 0;
+
+			return hasAttachments || hasOutputs;
+		},
+		insertSoftBreak: () => {
+			editor.tf.insertSoftBreak();
+		},
+	});
+
 	const runToolCallInternal = useCallback(async (toolCall: UIToolCall): Promise<UIToolOutput | null> => {
+		if (toolCall.type !== ToolStoreChoiceType.Function && toolCall.type !== ToolStoreChoiceType.Custom) {
+			const errMsg = 'This tool call type cannot be executed from the composer.';
+			setToolCalls(prev =>
+				prev.map(c => (c.id === toolCall.id ? { ...c, status: 'failed', errorMessage: errMsg } : c))
+			);
+			return null;
+		}
+
 		// Resolve identity using toolStoreChoice when available; fall back to name parsing.
 		let bundleID: string | undefined;
 		let toolSlug: string | undefined;
@@ -408,8 +607,10 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 		const produced: UIToolOutput[] = [];
 		for (const chip of pending) {
-			const out = await runToolCallInternal(chip);
-			if (out) produced.push(out);
+			if (chip.type === ToolStoreChoiceType.Function || chip.type === ToolStoreChoiceType.Custom) {
+				const out = await runToolCallInternal(chip);
+				if (out) produced.push(out);
+			}
 		}
 		return produced;
 	}, [toolCalls, runToolCallInternal]);
@@ -433,9 +634,13 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	}, []);
 
 	const handleRetryErroredOutput = useCallback((output: UIToolOutput) => {
-		// Only support retry when this output came from a local chip run and we still
+		// Only support retry for function/custom tools where we still
 		// know which tool and arguments were used.
 		if (!output.isError || !output.toolStoreChoice || !output.arguments) {
+			return;
+		}
+
+		if (output.type !== ToolStoreChoiceType.Function && output.type !== ToolStoreChoiceType.Custom) {
 			return;
 		}
 
@@ -464,6 +669,15 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	const handleOpenToolOutput = useCallback((output: UIToolOutput) => {
 		setActiveToolOutput(output);
+	}, []);
+
+	const handleEditConversationToolArgs = useCallback((entry: ConversationToolStateEntry) => {
+		setToolArgsTarget({ kind: 'conversation', key: entry.key });
+	}, []);
+
+	const handleEditAttachedToolArgs = useCallback((node: ToolSelectionElementNode) => {
+		if (!node?.selectionID) return;
+		setToolArgsTarget({ kind: 'attached', selectionID: node.selectionID });
 	}, []);
 
 	/**
@@ -502,6 +716,12 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		// 2) Pure send path: if we're *not* running tools, bail out when we
 		//    don't already have something to send.
 		if (!runPendingTools && !isSendButtonEnabled) {
+			return;
+		}
+
+		// Guard explicitly here as well, so even programmatic calls respect it.
+		if (toolArgsBlocked) {
+			setSubmitError('Some attached tools require options. Fill the required tool options before sending.');
 			return;
 		}
 
@@ -656,12 +876,17 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			// 3) Re-add tool choices as tool selection nodes.
 			//    The doc we just set has no tool nodes, so we can just insert new ones.
 
-			for (const choice of incoming.toolChoices ?? []) {
+			const incomingToolChoices = incoming.toolChoices ?? [];
+			for (const choice of incomingToolChoices) {
 				insertToolSelectionNode(editor, {
 					bundleID: choice.bundleID,
 					toolSlug: choice.toolSlug,
 					toolVersion: choice.toolVersion,
 				});
+			}
+			// We inserted tool chips with no toolSnapshot → hydrate their definitions lazily.
+			if (incomingToolChoices.length > 0) {
+				setNeedsAttachedToolHydration(true);
 			}
 
 			// 4) Restore any tool outputs that were previously attached to this message.
@@ -906,9 +1131,10 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	// - Fast-forward: run tools then send (enabled when there are pending tools and
 	//   templates are satisfied; "sendability" will be re-checked after tools run).
 	// - Send: send only (enabled when send is allowed and there are no pending tools).
-	const canRunToolsOnly = hasPendingToolCalls && !hasRunningToolCalls && !isBusy;
-	const canRunToolsAndSend = hasPendingToolCalls && !hasRunningToolCalls && !isBusy && !templateBlocked;
 	const canSendOnly = !hasPendingToolCalls && isSendButtonEnabled && !hasRunningToolCalls;
+	const canRunToolsOnly = hasPendingToolCalls && !hasRunningToolCalls && !isBusy;
+	const canRunToolsAndSend =
+		hasPendingToolCalls && !hasRunningToolCalls && !isBusy && !templateBlocked && !toolsDefLoading;
 	return (
 		<>
 			<form
@@ -1009,6 +1235,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 									onRemoveDirectoryGroup={handleRemoveDirectoryGroup}
 									onRemoveOverflowDir={handleRemoveOverflowDir}
 									onConversationToolsChange={setConversationToolsState}
+									onEditConversationToolArgs={handleEditConversationToolArgs}
+									onEditAttachedToolArgs={handleEditAttachedToolArgs}
 								/>
 							</div>
 						</div>
@@ -1101,6 +1329,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 						toolButtonRef={toolButtonRef}
 						attachmentButtonRef={attachmentButtonRef}
 						shortcutConfig={shortcutConfig}
+						currentProviderSDKType={currentProviderSDKType}
 					/>
 				</Plate>
 			</form>
@@ -1113,6 +1342,95 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				}}
 				output={activeToolOutput}
 			/>
+
+			{/* Tool user-args editor modal */}
+			{(() => {
+				if (!toolArgsTarget) return null;
+
+				if (toolArgsTarget.kind === 'attached') {
+					const all = getToolNodesWithPath(editor, false);
+					const hit = all.find(([n]) => n.selectionID === toolArgsTarget.selectionID);
+					if (!hit) return null;
+					const [node] = hit;
+					const schema = node.toolSnapshot?.userArgSchema;
+					const label =
+						node.toolSnapshot?.displayName && node.toolSnapshot.displayName.length > 0
+							? node.toolSnapshot.displayName
+							: node.toolSlug;
+
+					return (
+						<ToolUserArgsModal
+							isOpen={true}
+							onClose={() => {
+								setToolArgsTarget(null);
+							}}
+							toolLabel={label}
+							schema={schema}
+							existingInstance={node.userArgSchemaInstance}
+							onSave={newInstance => {
+								const allNow = getToolNodesWithPath(editor, false);
+								const again = allNow.find(([n]) => n.selectionID === toolArgsTarget.selectionID);
+								if (again) {
+									const [, path] = again;
+									editor.tf.setNodes(
+										{
+											userArgSchemaInstance: newInstance,
+										},
+										{ at: path as any }
+									);
+								}
+								setToolArgsTarget(null);
+							}}
+						/>
+					);
+				}
+
+				// conversation-level
+				const entry = conversationToolsState.find(e => e.key === toolArgsTarget.key);
+				if (!entry) return null;
+				const def = entry.toolDefinition;
+				const schema = def?.userArgSchema;
+				const label =
+					entry.toolStoreChoice.displayName && entry.toolStoreChoice.displayName.length > 0
+						? entry.toolStoreChoice.displayName
+						: entry.toolStoreChoice.toolSlug;
+
+				return (
+					<ToolUserArgsModal
+						isOpen={true}
+						onClose={() => {
+							setToolArgsTarget(null);
+						}}
+						toolLabel={label}
+						schema={schema}
+						existingInstance={entry.toolStoreChoice.userArgSchemaInstance}
+						onSave={newInstance => {
+							setConversationToolsState(prev =>
+								prev.map(e => {
+									if (e.key !== toolArgsTarget.key) return e;
+
+									const nextToolStoreChoice = {
+										...e.toolStoreChoice,
+										userArgSchemaInstance: newInstance,
+									};
+
+									const nextStatus =
+										e.toolDefinition && e.toolDefinition.userArgSchema
+											? computeToolUserArgsStatus(e.toolDefinition.userArgSchema, newInstance)
+											: e.argStatus;
+
+									return {
+										...e,
+										toolStoreChoice: nextToolStoreChoice,
+										argStatus: nextStatus,
+									};
+								})
+							);
+							setToolArgsTarget(null);
+						}}
+					/>
+				);
+			})()}
 		</>
 	);
 });

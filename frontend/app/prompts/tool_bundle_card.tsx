@@ -153,8 +153,7 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 			}
 			// refresh local list
 			const toolListItems = await getAllTools([bundle.id], undefined, true);
-			const toolPromises = toolListItems.map(li => toolStoreAPI.getTool(li.bundleID, li.toolSlug, li.toolVersion));
-			const fresh = (await Promise.all(toolPromises)).filter((t): t is Tool => t !== undefined);
+			const fresh = toolListItems.map(li => li.toolDefinition);
 			setLocalTools(fresh);
 			onToolsChange(bundle.id, fresh);
 		} catch (err) {

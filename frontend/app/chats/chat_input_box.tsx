@@ -1,6 +1,7 @@
 import { forwardRef, type RefObject, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
-import type { ToolStoreChoice, UIToolCall } from '@/spec/tool';
+import type { UIToolCall } from '@/spec/inference';
+import type { ToolStoreChoice } from '@/spec/tool';
 
 import type { ShortcutConfig } from '@/lib/keyboard_shortcuts';
 
@@ -116,6 +117,7 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 				<EditorArea
 					ref={inputAreaRef}
 					isBusy={isBusy}
+					currentProviderSDKType={chatOptions.providerSDKType}
 					shortcutConfig={shortcutConfig}
 					onSubmit={handleSubmitMessage}
 					onRequestStop={() => {

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { NodeApi, type Path, type TElement, type TNode } from 'platejs';
 import { type PlateEditor, useEditorRef } from 'platejs/react';
 
-import { PromptRoleEnum } from '@/spec/prompt';
+import { PromptRoleEnum, type PromptVariable } from '@/spec/prompt';
 
 import { comparePathDeepestFirst } from '@/lib/path_utils';
 import { replaceDoubleBraces } from '@/lib/text_utils';
@@ -13,6 +13,7 @@ import { useTemplateFlashEvent } from '@/chats/events/template_flash';
 import { dispatchTemplateVarsUpdated } from '@/chats/events/template_toolbar_vars_updated';
 import { TemplateEditModal } from '@/chats/templates/template_edit_modal';
 import { getTemplateNodesWithPath, getTemplateSelections } from '@/chats/templates/template_editor_utils';
+import { computeEffectiveTemplate, effectiveVarValueLocal } from '@/chats/templates/template_processing';
 import type { TemplateSelectionElementNode } from '@/chats/templates/template_spec';
 import { KEY_TEMPLATE_SELECTION, KEY_TEMPLATE_VARIABLE } from '@/chats/templates/template_spec';
 import { TemplateFixedToolbar } from '@/chats/templates/template_toolbar_fixed';
@@ -59,6 +60,13 @@ function replaceVariablesForSelectionWithText(
 	const EMPTY_VARS: Record<string, unknown> = Object.freeze({}) as Record<string, unknown>;
 	const vars: Record<string, unknown> = tsNode?.variables ?? EMPTY_VARS;
 
+	// Precompute variable definitions so collapse‑to‑text uses the same
+	// precedence as sending (local override → static → default).
+	let varDefByName: Map<string, PromptVariable> | undefined;
+	if (tsNode) {
+		const { variablesSchema } = computeEffectiveTemplate(tsNode);
+		varDefByName = new Map(variablesSchema.map(v => [v.name, v] as const));
+	}
 	const selectionID: string | undefined = tsNode?.selectionID;
 
 	// Collect variable chips for this specific selection instance (prefer selectionId)
@@ -79,11 +87,19 @@ function replaceVariablesForSelectionWithText(
 		.forEach(([, path]) => {
 			const nentry = NodeApi.get(editor, path);
 			if (!nentry) return;
+
 			const name: string = (nentry as TElement).name as string;
-			const value = vars[name];
+
+			let value: unknown = vars[name];
+			const def = varDefByName?.get(name);
+			// Reuse the same "effective value" logic used when sending so the
+			// collapsed text matches model input.
+			if (def) {
+				value = effectiveVarValueLocal(def, vars);
+			}
+
 			// eslint-disable-next-line @typescript-eslint/no-base-to-string
 			const text = value !== undefined && value !== null && value !== '' ? String(value) : `{{${name}}}`;
-
 			editor.tf.removeNodes({ at: path });
 			editor.tf.insertNodes({ text }, { at: path });
 		});

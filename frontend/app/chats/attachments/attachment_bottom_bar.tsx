@@ -5,15 +5,16 @@ import { FiFilePlus, FiFolder, FiLink, FiPaperclip, FiTool, FiUpload } from 'rea
 import { Menu, MenuButton, MenuItem, type MenuStore } from '@ariakit/react';
 import { type PlateEditor, useEditorRef } from 'platejs/react';
 
+import type { ProviderSDKType } from '@/spec/inference';
 import type { PromptTemplateListItem } from '@/spec/prompt';
-import type { ToolListItem } from '@/spec/tool';
+import { ToolImplType, type ToolListItem } from '@/spec/tool';
 
 import { formatShortcut, type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 
 import { usePromptTemplates } from '@/hooks/use_template';
 import { useTools } from '@/hooks/use_tool';
 
-import { promptStoreAPI, toolStoreAPI } from '@/apis/baseapi';
+import { promptStoreAPI } from '@/apis/baseapi';
 
 import { CommandTipsMenu } from '@/chats/attachments/attachment_command_tips_menu';
 import { UrlAttachmentModal } from '@/chats/attachments/attachment_url_modal';
@@ -34,6 +35,7 @@ interface AttachmentBottomBarProps {
 	attachmentButtonRef: RefObject<HTMLButtonElement | null>;
 
 	shortcutConfig: ShortcutConfig;
+	currentProviderSDKType: ProviderSDKType;
 }
 
 interface PickerButtonProps {
@@ -85,6 +87,7 @@ export function AttachmentBottomBar({
 	toolButtonRef,
 	attachmentButtonRef,
 	shortcutConfig,
+	currentProviderSDKType,
 }: AttachmentBottomBarProps) {
 	const editor = useEditorRef() as PlateEditor;
 	const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
@@ -106,11 +109,24 @@ export function AttachmentBottomBar({
 		toolEntries.map(([node]) => toolIdentityKey(node.bundleID, node.bundleSlug, node.toolSlug, node.toolVersion))
 	);
 
-	const availableTools = toolsLoading
+	const availableTools: ToolListItem[] = toolsLoading
 		? []
-		: toolData.filter(
-				it => !attachedToolKeys.has(toolIdentityKey(it.bundleID, it.bundleSlug, it.toolSlug, it.toolVersion))
-			);
+		: toolData.filter(it => {
+				// Hide tools that are already attached in this draft.
+				if (attachedToolKeys.has(toolIdentityKey(it.bundleID, it.bundleSlug, it.toolSlug, it.toolVersion))) {
+					return false;
+				}
+
+				// If we know the provider's SDK type, restrict SDK tools to matching ones.
+				if (it.toolDefinition.type === ToolImplType.SDK && it.toolDefinition.sdkImpl) {
+					const sdkType = it.toolDefinition.sdkImpl.sdkType;
+					if (!sdkType) return false;
+					return sdkType === currentProviderSDKType.toString();
+				}
+
+				// Non-SDK tools (Go/HTTP/etc.) are always shown.
+				return true;
+			});
 
 	const closeTemplateMenu = () => {
 		templateMenuState.hide();
@@ -135,29 +151,19 @@ export function AttachmentBottomBar({
 	};
 
 	const handleToolPick = async (item: ToolListItem) => {
-		try {
-			const tool = await toolStoreAPI.getTool(item.bundleID, item.toolSlug, item.toolVersion);
-			insertToolSelectionNode(
-				editor,
-				{
-					bundleID: item.bundleID,
-					bundleSlug: item.bundleSlug,
-					toolSlug: item.toolSlug,
-					toolVersion: item.toolVersion,
-				},
-				tool
-			);
-		} catch {
-			insertToolSelectionNode(editor, {
+		insertToolSelectionNode(
+			editor,
+			{
 				bundleID: item.bundleID,
 				bundleSlug: item.bundleSlug,
 				toolSlug: item.toolSlug,
 				toolVersion: item.toolVersion,
-			});
-		} finally {
-			closeToolMenu();
-			editor.tf.focus();
-		}
+			},
+			item.toolDefinition
+		);
+
+		closeToolMenu();
+		editor.tf.focus();
 	};
 
 	const handleAttachmentPickFiles = async () => {

@@ -9,8 +9,10 @@ import type {
 	RoleEnum,
 	Status,
 	ToolChoice,
+	UIToolCall,
+	UIToolOutput,
 } from '@/spec/inference';
-import type { ToolStoreChoice, UIToolCall, UIToolOutput } from '@/spec/tool';
+import type { ToolStoreChoice } from '@/spec/tool';
 
 /** Keep in sync with Go's ConversationSchemaVersion. */
 export const CONVERSATION_SCHEMA_VERSION = 'v1.0.0';

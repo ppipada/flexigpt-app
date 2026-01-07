@@ -15,7 +15,8 @@ const tipsText: Record<TipKey, string> = {
 		'Collapse to text removes system prompts, variables, and tools. The current user block with placeholders for variables is inserted as plain text.',
 
 	// New attachment/tool behavior tips
-	attachmentsScope: 'Attachments you add to a conversation are available to all subsequent turns in that conversation.',
+	attachmentsScope:
+		'Attachments you add to a message are available to the model when that message is sent (and persist in history like any other message).',
 	toolsPersist:
 		'Once you attach tools to a conversation, those tool choices are preserved and sent with every turn until you change them.',
 	toolErrors:

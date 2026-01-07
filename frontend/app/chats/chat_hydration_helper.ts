@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import {
 	type Conversation,
 	CONVERSATION_SCHEMA_VERSION,
@@ -7,29 +8,21 @@ import {
 } from '@/spec/conversation';
 import {
 	ContentItemKind,
-	ImageDetail,
 	InputKind,
 	type InputOutputContent,
 	type InputOutputContentItemUnion,
 	type InputUnion,
-	OutputKind,
 	type OutputUnion,
 	type ReasoningContent,
 	RoleEnum,
 	Status,
 	type ToolCall,
 	type ToolOutput,
-	type ToolOutputItemUnion,
 	ToolType,
-} from '@/spec/inference';
-import {
-	type ToolStoreChoice,
-	ToolStoreChoiceType,
-	ToolStoreOutputKind,
-	type ToolStoreOutputUnion,
 	type UIToolCall,
 	type UIToolOutput,
-} from '@/spec/tool';
+} from '@/spec/inference';
+import { type ToolStoreChoice, ToolStoreChoiceType } from '@/spec/tool';
 
 import { generateTitle } from '@/lib/title_utils';
 import { getUUIDv7 } from '@/lib/uuid_utils';
@@ -41,6 +34,11 @@ import {
 	getDebugDetailsMarkdown,
 } from '@/chats/chat_completion_helper';
 import type { EditorSubmitPayload } from '@/chats/chat_input_editor';
+import {
+	collectToolCallsFromInputs,
+	collectToolCallsFromOutputs,
+	mapToolStoreOutputsToToolOutputItems,
+} from '@/chats/tools/tool_editor_utils';
 
 export function initConversation(title = 'New Conversation'): Conversation {
 	return {
@@ -122,6 +120,11 @@ export function buildUserConversationMessageFromEditor(
 				kind: InputKind.CustomToolOutput,
 				customToolOutput: infOut,
 			});
+		} else if (infOut.type === ToolType.WebSearch) {
+			inputs.push({
+				kind: InputKind.WebSearchToolOutput,
+				webSearchToolOutput: infOut,
+			});
 		}
 	}
 
@@ -147,83 +150,15 @@ export function buildUserConversationMessageFromEditor(
 	return msg;
 }
 
-function mapToolStoreOutputsToToolOutputItems(outputs?: ToolStoreOutputUnion[]): ToolOutputItemUnion[] | undefined {
-	if (!outputs?.length) return undefined;
-
-	const contents: ToolOutputItemUnion[] = [];
-
-	for (const out of outputs) {
-		switch (out.kind) {
-			case ToolStoreOutputKind.Text: {
-				const text = out.textItem?.text;
-				if (text != null) {
-					contents.push({
-						kind: ContentItemKind.Text,
-						textItem: { text },
-					});
-				}
-				break;
-			}
-
-			case ToolStoreOutputKind.Image: {
-				const img = out.imageItem;
-				if (img) {
-					contents.push({
-						kind: ContentItemKind.Image,
-						imageItem: {
-							// best-effort mapping from string detail to enum
-							detail: mapImageDetail(img.detail),
-							imageName: img.imageName,
-							imageMIME: img.imageMIME,
-							imageData: img.imageData,
-						},
-					});
-				}
-				break;
-			}
-
-			case ToolStoreOutputKind.File: {
-				const file = out.fileItem;
-				if (file) {
-					contents.push({
-						kind: ContentItemKind.File,
-						fileItem: {
-							fileName: file.fileName,
-							fileMIME: file.fileMIME,
-							fileData: file.fileData,
-						},
-					});
-				}
-				break;
-			}
-
-			case ToolStoreOutputKind.None:
-			default:
-				// ignore
-				break;
-		}
-	}
-
-	return contents.length ? contents : undefined;
-}
-
-function mapImageDetail(detail?: string): ImageDetail | undefined {
-	if (!detail) return undefined;
-	switch (detail.toLowerCase()) {
-		case 'high':
-			return ImageDetail.High;
-		case 'low':
-			return ImageDetail.Low;
-		case 'auto':
-			return ImageDetail.Auto;
-		default:
-			return undefined;
-	}
-}
-
 function buildToolOutputFromEditor(ui: UIToolOutput): ToolOutput | undefined {
-	// Only function/custom; skip webSearch for now.
-	if (ui.type !== ToolStoreChoiceType.Function && ui.type !== ToolStoreChoiceType.Custom) {
+	// Support function, custom and web-search tool outputs.
+	// For web-search outputs we only round‑trip the textual/toolStoreOutputs
+	// representation and do not attempt to reconstruct provider‑specific metadata.
+	if (
+		ui.type !== ToolStoreChoiceType.Function &&
+		ui.type !== ToolStoreChoiceType.Custom &&
+		ui.type !== ToolStoreChoiceType.WebSearch
+	) {
 		return undefined;
 	}
 
@@ -241,7 +176,7 @@ function buildToolOutputFromEditor(ui: UIToolOutput): ToolOutput | undefined {
 		isError: !!ui.isError,
 		signature: undefined,
 		contents,
-		// Web-search outputs are handled separately when that path is wired up.
+		// Web-search specific structured items are not reconstructed on resend.
 		webSearchToolOutputItems: undefined,
 	};
 }
@@ -324,55 +259,13 @@ function buildToolStoreChoiceMap(messages: StoreConversationMessage[]): Map<stri
 }
 
 function buildToolCallMap(messages: StoreConversationMessage[]): Map<string, ToolCall> {
-	const map = new Map<string, ToolCall>();
-
-	const addCall = (call: ToolCall | undefined) => {
-		if (!call) return;
-		if (!call.callID) return;
-		map.set(call.callID, call);
-	};
-
+	let map = new Map<string, ToolCall>();
 	for (const m of messages) {
-		if (m.inputs) {
-			for (const iu of m.inputs) {
-				switch (iu.kind) {
-					case InputKind.FunctionToolCall:
-						addCall(iu.functionToolCall);
-						break;
-					case InputKind.CustomToolCall:
-						addCall(iu.customToolCall);
-						break;
-					case InputKind.WebSearchToolCall:
-						addCall(iu.webSearchToolCall);
-						break;
-					default:
-						break;
-				}
-			}
-		}
-
-		if (m.outputs) {
-			for (const ou of m.outputs) {
-				switch (ou.kind) {
-					case OutputKind.FunctionToolCall:
-						addCall(ou.functionToolCall);
-						break;
-					case OutputKind.CustomToolCall:
-						addCall(ou.customToolCall);
-						break;
-					case OutputKind.WebSearchToolCall:
-						addCall(ou.webSearchToolCall);
-						break;
-					default:
-						break;
-				}
-			}
-		}
+		map = collectToolCallsFromInputs(m.inputs, map);
+		map = collectToolCallsFromOutputs(m.outputs, map);
 	}
-
 	return map;
 }
-
 /**
  * Rebuild user-visible content from InputUnion(s) for a message.
  * Used primarily for user turns, since `content` is not persisted.

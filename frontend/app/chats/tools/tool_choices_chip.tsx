@@ -4,12 +4,18 @@ import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 import type { Path } from 'platejs';
 import type { PlateEditor } from 'platejs/react';
 
-import { removeToolByKey, toolIdentityKey, type ToolSelectionElementNode } from '@/chats/tools/tool_editor_utils';
+import {
+	computeToolUserArgsStatus,
+	removeToolByKey,
+	toolIdentityKey,
+	type ToolSelectionElementNode,
+} from '@/chats/tools/tool_editor_utils';
 
 interface ToolChoicesChipProps {
 	editor: PlateEditor;
 	// Entries from getToolNodesWithPath(editor); typed loosely here.
 	toolEntries: Array<[ToolSelectionElementNode, Path]>;
+	onEditToolArgs?: (node: ToolSelectionElementNode) => void;
 }
 
 /**
@@ -18,7 +24,7 @@ interface ToolChoicesChipProps {
  * - Opens a dropdown listing each tool with an individual remove button.
  * - Has a "remove all" cross that clears all attached tools.
  */
-export function ToolChoicesChip({ editor, toolEntries }: ToolChoicesChipProps) {
+export function ToolChoicesChip({ editor, toolEntries, onEditToolArgs }: ToolChoicesChipProps) {
 	const count = toolEntries.length;
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
@@ -88,7 +94,20 @@ export function ToolChoicesChip({ editor, toolEntries }: ToolChoicesChipProps) {
 					const display = rawDisplay && rawDisplay.length > 0 ? rawDisplay : 'Tool';
 					const slug = `${node.bundleSlug ?? node.bundleID}/${node.toolSlug}@${node.toolVersion}`;
 					const truncatedDisplay = display.length > 40 ? `${display.slice(0, 37)}…` : display;
-
+					const schema = node.toolSnapshot?.userArgSchema;
+					const status = computeToolUserArgsStatus(schema, node.userArgSchemaInstance);
+					const hasArgs = status.hasSchema;
+					const argsLabel = !hasArgs
+						? 'No options'
+						: status.isSatisfied
+							? 'Args: OK'
+							: `Args: ${status.missingRequired.length} missing`;
+					const argsClass =
+						!hasArgs || status.requiredKeys.length === 0
+							? 'badge badge-ghost badge-xs'
+							: status.isSatisfied
+								? 'badge badge-success badge-xs'
+								: 'badge badge-warning badge-xs';
 					return (
 						<MenuItem
 							key={node.selectionID}
@@ -106,6 +125,22 @@ export function ToolChoicesChip({ editor, toolEntries }: ToolChoicesChipProps) {
 								<div className="min-w-0 flex-1">
 									<div className="truncate text-xs font-medium">{truncatedDisplay}</div>
 									<div className="text-base-content/70 truncate text-[11px]">{slug}</div>
+								</div>{' '}
+								<div className="flex items-center gap-1">
+									<span className={argsClass}>{argsLabel}</span>
+									{hasArgs && onEditToolArgs && (
+										<button
+											type="button"
+											className="btn btn-ghost btn-xs shrink-0 px-1 py-0 shadow-none"
+											onClick={() => {
+												onEditToolArgs(node);
+											}}
+											title="Edit tool options"
+											aria-label="Edit tool options"
+										>
+											<FiChevronUp size={12} />
+										</button>
+									)}
 								</div>
 								<button
 									type="button"

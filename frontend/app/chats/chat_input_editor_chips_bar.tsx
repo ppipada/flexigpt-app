@@ -3,7 +3,7 @@ import type { PlateEditor } from 'platejs/react';
 import { useEditorRef } from 'platejs/react';
 
 import type { AttachmentContentBlockMode, UIAttachment } from '@/spec/attachment';
-import type { UIToolCall, UIToolOutput } from '@/spec/tool';
+import type { UIToolCall, UIToolOutput } from '@/spec/inference';
 
 import { DirectoryChip } from '@/chats/attachments/attachment_directory_chip';
 import { type DirectoryAttachmentGroup, uiAttachmentKey } from '@/chats/attachments/attachment_editor_utils';
@@ -11,7 +11,7 @@ import { StandaloneAttachmentsChip } from '@/chats/attachments/attachment_standa
 import { ConversationToolsChip, type ConversationToolStateEntry } from '@/chats/tools/conversation_tools_chip';
 import { ToolChipsComposerRow } from '@/chats/tools/tool_chips_composer';
 import { ToolChoicesChip } from '@/chats/tools/tool_choices_chip';
-import { getToolNodesWithPath } from '@/chats/tools/tool_editor_utils';
+import { getToolNodesWithPath, type ToolSelectionElementNode } from '@/chats/tools/tool_editor_utils';
 
 interface EditorChipsBarProps {
 	attachments: UIAttachment[];
@@ -33,6 +33,9 @@ interface EditorChipsBarProps {
 	onRemoveDirectoryGroup: (groupId: string) => void;
 	onRemoveOverflowDir?: (groupId: string, dirPath: string) => void;
 	onConversationToolsChange?: (next: ConversationToolStateEntry[]) => void;
+
+	onEditConversationToolArgs?: (entry: ConversationToolStateEntry) => void;
+	onEditAttachedToolArgs?: (node: ToolSelectionElementNode) => void;
 }
 
 /**
@@ -62,6 +65,8 @@ export function EditorChipsBar({
 	onRemoveDirectoryGroup,
 	onRemoveOverflowDir,
 	onConversationToolsChange,
+	onEditConversationToolArgs,
+	onEditAttachedToolArgs,
 }: EditorChipsBarProps) {
 	const editor = useEditorRef() as PlateEditor;
 	const toolEntries = getToolNodesWithPath(editor);
@@ -99,7 +104,11 @@ export function EditorChipsBar({
 	return (
 		<div className="flex shrink-0 items-center gap-1">
 			{/* Conversation tools (first, tinted) */}
-			<ConversationToolsChip tools={conversationTools} onChange={onConversationToolsChange} />
+			<ConversationToolsChip
+				tools={conversationTools}
+				onChange={onConversationToolsChange}
+				onEditToolArgs={onEditConversationToolArgs}
+			/>
 
 			{/* Aggregated chip for standalone attachments */}
 			<StandaloneAttachmentsChip
@@ -122,7 +131,7 @@ export function EditorChipsBar({
 			))}
 
 			{/* Per-message tool choices (inline-attached tools for this draft) */}
-			<ToolChoicesChip editor={editor} toolEntries={toolEntries} />
+			<ToolChoicesChip editor={editor} toolEntries={toolEntries} onEditToolArgs={onEditAttachedToolArgs} />
 
 			{/* Tool-call chips (pending/running/failed) and tool output chips */}
 			<ToolChipsComposerRow

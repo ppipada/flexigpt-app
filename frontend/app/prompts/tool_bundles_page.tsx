@@ -40,10 +40,7 @@ export function ToolsPage() {
 				toolBundles.map(async b => {
 					try {
 						const toolListItems = await getAllTools([b.id], undefined, true);
-						const toolPromises = toolListItems.map(itm =>
-							toolStoreAPI.getTool(itm.bundleID, itm.toolSlug, itm.toolVersion)
-						);
-						const tools = (await Promise.all(toolPromises)).filter((t): t is Tool => t !== undefined);
+						const tools = toolListItems.map(itm => itm.toolDefinition);
 						return { bundle: b, tools };
 					} catch {
 						return { bundle: b, tools: [] };

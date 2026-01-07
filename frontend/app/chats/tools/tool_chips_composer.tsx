@@ -1,6 +1,7 @@
 import { FiAlertTriangle, FiPlay, FiTool, FiX } from 'react-icons/fi';
 
-import type { UIToolCall, UIToolOutput } from '@/spec/tool';
+import { type UIToolCall, type UIToolOutput } from '@/spec/inference';
+import { ToolStoreChoiceType } from '@/spec/tool';
 
 import { getPrettyToolName } from '@/chats/tools/tool_editor_utils';
 
@@ -91,7 +92,9 @@ function ToolCallComposerChipView({ toolCall, isBusy, onRun, onDiscard }: ToolCa
 	const isPending = toolCall.status === 'pending';
 	const isFailed = toolCall.status === 'failed';
 
-	const canRun = (isPending || isFailed) && !isBusy;
+	const isRunnableType = toolCall.type === ToolStoreChoiceType.Function || toolCall.type === ToolStoreChoiceType.Custom;
+
+	const canRun = isRunnableType && (isPending || isFailed) && !isBusy;
 
 	const baseClasses =
 		'bg-base-200 text-base-content flex shrink-0 items-center gap-2 rounded-2xl px-2 py-0 border ' +
@@ -112,21 +115,22 @@ function ToolCallComposerChipView({ toolCall, isBusy, onRun, onDiscard }: ToolCa
 			<span className="max-w-64 truncate">{truncatedLabel}</span>
 
 			<div className="ml-auto flex items-center gap-2 p-0">
-				{isRunning ? (
-					<span className="loading loading-spinner loading-xs" aria-label="Running tool call" />
-				) : (
-					<button
-						type="button"
-						className={`btn btn-ghost btn-xs gap-0 p-0 shadow-none ${!canRun ? 'btn-disabled' : ''}`}
-						onClick={onRun}
-						disabled={!canRun}
-						title={isFailed ? 'Retry this tool call' : 'Run this tool call'}
-						aria-label={isFailed ? 'Retry tool call' : 'Run tool call'}
-					>
-						<FiPlay size={12} />
-						<span className="ml-1 text-[11px]">Run</span>
-					</button>
-				)}
+				{isRunnableType &&
+					(isRunning ? (
+						<span className="loading loading-spinner loading-xs" aria-label="Running tool call" />
+					) : (
+						<button
+							type="button"
+							className={`btn btn-ghost btn-xs gap-0 p-0 shadow-none ${!canRun ? 'btn-disabled' : ''}`}
+							onClick={onRun}
+							disabled={!canRun}
+							title={isFailed ? 'Retry this tool call' : 'Run this tool call'}
+							aria-label={isFailed ? 'Retry tool call' : 'Run tool call'}
+						>
+							<FiPlay size={12} />
+							<span className="ml-1 text-[11px]">Run</span>
+						</button>
+					))}
 
 				{isFailed && (
 					<FiAlertTriangle

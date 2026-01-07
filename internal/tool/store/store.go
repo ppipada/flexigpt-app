@@ -899,11 +899,12 @@ func (ts *ToolStore) ListTools(
 				tool := biTools[bid][tid]
 				if include(bid, &tool) {
 					out = append(out, spec.ToolListItem{
-						BundleID:    bid,
-						BundleSlug:  bslug,
-						ToolSlug:    tool.Slug,
-						ToolVersion: tool.Version,
-						IsBuiltIn:   true,
+						BundleID:       bid,
+						BundleSlug:     bslug,
+						ToolSlug:       tool.Slug,
+						ToolVersion:    tool.Version,
+						IsBuiltIn:      true,
+						ToolDefinition: tool,
 					})
 				}
 			}
@@ -967,11 +968,12 @@ func (ts *ToolStore) ListTools(
 				continue
 			}
 			out = append(out, spec.ToolListItem{
-				BundleID:    bdi.ID,
-				BundleSlug:  bdi.Slug,
-				ToolSlug:    tool.Slug,
-				ToolVersion: tool.Version,
-				IsBuiltIn:   false,
+				BundleID:       bdi.ID,
+				BundleSlug:     bdi.Slug,
+				ToolSlug:       tool.Slug,
+				ToolVersion:    tool.Version,
+				IsBuiltIn:      false,
+				ToolDefinition: tool,
 			})
 		}
 		tok.DirTok = next
@@ -1048,11 +1050,12 @@ func (ts *ToolStore) SearchTools(
 				continue
 			}
 			items = append(items, spec.ToolListItem{
-				BundleID:    bdi.ID,
-				BundleSlug:  bdi.Slug,
-				ToolSlug:    t.Slug,
-				ToolVersion: t.Version,
-				IsBuiltIn:   true,
+				BundleID:       bdi.ID,
+				BundleSlug:     bdi.Slug,
+				ToolSlug:       t.Slug,
+				ToolVersion:    t.Version,
+				IsBuiltIn:      true,
+				ToolDefinition: t,
 			})
 			if len(items) >= pageSize {
 				break
@@ -1090,11 +1093,12 @@ func (ts *ToolStore) SearchTools(
 			continue
 		}
 		items = append(items, spec.ToolListItem{
-			BundleID:    bdi.ID,
-			BundleSlug:  bdi.Slug,
-			ToolSlug:    t.Slug,
-			ToolVersion: t.Version,
-			IsBuiltIn:   false,
+			BundleID:       bdi.ID,
+			BundleSlug:     bdi.Slug,
+			ToolSlug:       t.Slug,
+			ToolVersion:    t.Version,
+			IsBuiltIn:      false,
+			ToolDefinition: t,
 		})
 		if len(items) >= pageSize {
 			break

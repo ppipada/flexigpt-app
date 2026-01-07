@@ -1,5 +1,4 @@
-import type { ModelParam, ProviderName } from '@/spec/inference';
-import { ReasoningLevel, ReasoningType } from '@/spec/inference';
+import { type ModelParam, type ProviderName, ProviderSDKType, ReasoningLevel, ReasoningType } from '@/spec/inference';
 import {
 	type ModelDisplayName,
 	type ModelPreset,
@@ -13,6 +12,7 @@ import { getAllProviderPresetsMap } from '@/apis/list_helper';
 
 export interface ChatOption extends ModelParam {
 	providerName: ProviderName;
+	providerSDKType: ProviderSDKType;
 	modelPresetID: ModelPresetID;
 	providerDisplayName: ProviderDisplayName;
 	modelDisplayName: ModelDisplayName;
@@ -38,6 +38,7 @@ const DefaultModelParams: ModelParam = {
 export const DefaultChatOptions: ChatOption = {
 	...DefaultModelParams,
 	providerName: 'no-provider',
+	providerSDKType: ProviderSDKType.ProviderSDKTypeOpenAIChatCompletions,
 	modelPresetID: 'no-model',
 	providerDisplayName: 'No Provider',
 	modelDisplayName: 'No Model configured',
@@ -99,6 +100,7 @@ export async function getChatInputOptions(): Promise<{
 				const option: ChatOption = {
 					...modelParams,
 					providerName: providerName,
+					providerSDKType: providerPreset.sdkType,
 					modelPresetID: modelPresetID,
 					providerDisplayName: providerPreset.displayName,
 					modelDisplayName: modelPreset.displayName,

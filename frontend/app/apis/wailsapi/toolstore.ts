@@ -3,12 +3,13 @@ import type {
 	InvokeGoOptions,
 	InvokeHTTPOptions,
 	InvokeToolResponse,
-	JSONRawString,
 	Tool,
 	ToolBundle,
 	ToolImplType,
 	ToolListItem,
 } from '@/spec/tool';
+
+import type { JSONRawString } from '@/lib/jsonschema_utils';
 
 import type { IToolStoreAPI } from '@/apis/interface';
 import {

@@ -1,3 +1,5 @@
+import type { ToolStoreChoice, ToolStoreChoiceType, ToolStoreOutputUnion } from '@/spec/tool';
+
 export type ProviderName = string;
 export enum ProviderSDKType {
 	ProviderSDKTypeAnthropic = 'providerSDKTypeAnthropicMessages',
@@ -379,4 +381,49 @@ export interface FetchCompletionResponse {
 export interface CompletionResponseBody {
 	inferenceResponse?: FetchCompletionResponse;
 	hydratedCurrentInputs?: InputUnion[];
+}
+
+/**
+ * @public
+ * Status for a tool-call chip in the composer/history.
+ */
+export type UIToolCallStatus = 'pending' | 'running' | 'succeeded' | 'failed' | 'discarded';
+
+/**
+ * UI representation of a tool call (for chips).
+ * `type` is the inference ToolType (`function` | `custom` | `webSearch`),
+ * but kept as string here to avoid a circular import.
+ */
+export interface UIToolCall {
+	id: string;
+	callID: string;
+	name: string;
+	arguments?: string;
+	webSearchToolCallItems?: any;
+	type: ToolStoreChoiceType;
+	choiceID: string;
+	status: UIToolCallStatus;
+	toolStoreChoice: ToolStoreChoice;
+	errorMessage?: string;
+}
+
+export interface UIToolOutput {
+	id: string;
+	callID: string;
+	name: string;
+
+	type: ToolStoreChoiceType;
+	choiceID: string;
+	toolStoreChoice: ToolStoreChoice;
+
+	/** Short human-readable label used in chips. */
+	summary: string;
+	toolStoreOutputs?: ToolStoreOutputUnion[];
+	webSearchToolOutputItems?: WebSearchToolOutputItemUnion[];
+
+	isError?: boolean;
+	errorMessage?: string;
+
+	arguments?: string;
+	webSearchToolCallItems?: any;
 }

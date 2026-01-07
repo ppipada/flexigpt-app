@@ -1,10 +1,4 @@
-/**
- * @public
- */
-export type JSONValue = string | number | boolean | null | JSONValue[] | { [key: string]: JSONValue };
-export type JSONSchema = JSONValue;
-
-export type JSONRawString = string;
+import type { JSONRawString, JSONSchema } from '@/lib/jsonschema_utils';
 
 export enum ToolStoreChoiceType {
 	Function = 'function',
@@ -192,6 +186,7 @@ export interface ToolListItem {
 	toolSlug: string;
 	toolVersion: string;
 	isBuiltIn: boolean;
+	toolDefinition: Tool;
 }
 
 export interface InvokeHTTPOptions {
@@ -216,46 +211,27 @@ export interface UIToolStoreChoice extends ToolStoreChoice {
 	selectionID: string;
 }
 
-/**
- * @public
- * Status for a tool-call chip in the composer/history.
- */
-export type UIToolCallStatus = 'pending' | 'running' | 'succeeded' | 'failed' | 'discarded';
+//  UI-only status of a tool's user-arguments instance vs its JSON schema.
+// Used to:
+//  - show "Args: OK / N missing" badges on chips
+//  - block send when required args are missing
+//
+export interface UIToolUserArgsStatus {
+	/** Tool defines a userArgSchema at all */
+	hasSchema: boolean;
 
-/**
- * UI representation of a tool call (for chips).
- * `type` is the inference ToolType (`function` | `custom` | `webSearch`),
- * but kept as string here to avoid a circular import.
- */
-export interface UIToolCall {
-	id: string;
-	callID: string;
-	name: string;
-	arguments?: string;
-	webSearchToolCallItems?: any;
-	type: ToolStoreChoiceType;
-	choiceID: string;
-	status: UIToolCallStatus;
-	toolStoreChoice: ToolStoreChoice;
-	errorMessage?: string;
-}
+	/** All required keys from the schema (if any) */
+	requiredKeys: string[];
 
-export interface UIToolOutput {
-	id: string;
-	callID: string;
-	name: string;
+	/** Subset of requiredKeys that are missing/empty in the instance */
+	missingRequired: string[];
 
-	type: ToolStoreChoiceType;
-	choiceID: string;
-	toolStoreChoice: ToolStoreChoice;
+	/** Instance string is present (non-empty) */
+	isInstancePresent: boolean;
 
-	/** Short human-readable label used in chips. */
-	summary: string;
-	toolStoreOutputs?: ToolStoreOutputUnion[];
+	/** Instance parses as JSON and is an object */
+	isInstanceJSONValid: boolean;
 
-	isError?: boolean;
-	errorMessage?: string;
-
-	arguments?: string;
-	webSearchToolCallItems?: any;
+	/** True when there is a schema and all required keys are satisfied */
+	isSatisfied: boolean;
 }

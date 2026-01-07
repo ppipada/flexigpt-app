@@ -1,16 +1,20 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { FiChevronUp, FiTool, FiX } from 'react-icons/fi';
+import { FiChevronUp, FiEdit2, FiTool, FiX } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
-import type { ToolStoreChoice } from '@/spec/tool';
+import type { Tool, ToolStoreChoice, UIToolUserArgsStatus } from '@/spec/tool';
 
-import { toolIdentityKey } from '@/chats/tools/tool_editor_utils';
+import { computeToolUserArgsStatus, toolIdentityKey } from '@/chats/tools/tool_editor_utils';
 
 export interface ConversationToolStateEntry {
 	key: string;
-	tool: ToolStoreChoice;
+	toolStoreChoice: ToolStoreChoice;
 	enabled: boolean;
+	/** Optional full tool definition, used for arg schema etc. */
+	toolDefinition?: Tool;
+	/** Cached status of userArgSchemaInstance vs schema. */
+	argStatus?: UIToolUserArgsStatus;
 }
 
 /**
@@ -25,7 +29,7 @@ export function initConversationToolsStateFromChoices(choices: ToolStoreChoice[]
 		const key = toolIdentityKey(t.bundleID, undefined, t.toolSlug, t.toolVersion);
 		if (seen.has(key)) continue;
 		seen.add(key);
-		out.push({ key, tool: t, enabled: true });
+		out.push({ key, toolStoreChoice: t, enabled: true });
 	}
 
 	return out;
@@ -41,7 +45,7 @@ export function conversationToolsToChoices(entries: ConversationToolStateEntry[]
 
 	for (const e of entries) {
 		if (!e.enabled) continue;
-		const t = e.tool;
+		const t = e.toolStoreChoice;
 		const key = toolIdentityKey(t.bundleID, undefined, t.toolSlug, t.toolVersion);
 		if (seen.has(key)) continue;
 		seen.add(key);
@@ -75,10 +79,10 @@ export function mergeConversationToolsWithNewChoices(
 			// Refresh metadata but keep enabled flag.
 			next[existingIdx] = {
 				...next[existingIdx],
-				tool: { ...next[existingIdx].tool, ...t },
+				toolStoreChoice: { ...next[existingIdx].toolStoreChoice, ...t },
 			};
 		} else {
-			next.push({ key, tool: t, enabled: true });
+			next.push({ key, toolStoreChoice: t, enabled: true });
 		}
 	}
 
@@ -88,6 +92,7 @@ export function mergeConversationToolsWithNewChoices(
 interface ConversationToolsChipProps {
 	tools: ConversationToolStateEntry[];
 	onChange?: (next: ConversationToolStateEntry[]) => void;
+	onEditToolArgs?: (entry: ConversationToolStateEntry) => void;
 }
 
 /**
@@ -102,7 +107,7 @@ interface ConversationToolsChipProps {
  * All state here is UI-only; it controls what gets attached on the next send,
  * but does not rewrite existing messages.
  */
-export function ConversationToolsChip({ tools, onChange }: ConversationToolsChipProps) {
+export function ConversationToolsChip({ tools, onChange, onEditToolArgs }: ConversationToolsChipProps) {
 	const count = tools.length;
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
@@ -167,11 +172,38 @@ export function ConversationToolsChip({ tools, onChange }: ConversationToolsChip
 				<div className="text-base-content/70 mb-2 text-[11px] font-semibold">Conversation tools</div>
 
 				{tools.map(entry => {
-					const { tool, key } = entry;
+					const { key, toolStoreChoice } = entry;
 					const display =
-						(tool.displayName && tool.displayName.length > 0 ? tool.displayName : tool.toolSlug) || 'Tool';
-					const slug = `${tool.bundleID ?? 'bundle'}/${tool.toolSlug}@${tool.toolVersion}`;
+						(toolStoreChoice.displayName && toolStoreChoice.displayName.length > 0
+							? toolStoreChoice.displayName
+							: toolStoreChoice.toolSlug) || 'Tool';
+					const slug = `${toolStoreChoice.bundleID ?? 'bundle'}/${toolStoreChoice.toolSlug}@${toolStoreChoice.toolVersion}`;
 					const truncatedDisplay = display.length > 40 ? `${display.slice(0, 37)}…` : display;
+					// If argStatus is precomputed, use it; otherwise compute on the fly if we have definition.
+					const status =
+						entry.toolDefinition && entry.toolDefinition.userArgSchema
+							? computeToolUserArgsStatus(
+									entry.toolDefinition.userArgSchema,
+									entry.toolStoreChoice.userArgSchemaInstance
+								)
+							: undefined;
+					const hasArgs = status?.hasSchema ?? false;
+					const argsLabel =
+						!status || !status.hasSchema
+							? 'No options'
+							: status.requiredKeys.length === 0
+								? 'Args: optional'
+								: status.isSatisfied
+									? 'Args: OK'
+									: `Args: ${status.missingRequired.length} missing`;
+					const argsClass =
+						!status || !status.hasSchema
+							? 'badge badge-ghost badge-xs'
+							: status.requiredKeys.length === 0
+								? 'badge badge-ghost badge-xs'
+								: status.isSatisfied
+									? 'badge badge-success badge-xs'
+									: 'badge badge-warning badge-xs';
 
 					return (
 						<MenuItem
@@ -203,6 +235,24 @@ export function ConversationToolsChip({ tools, onChange }: ConversationToolsChip
 									/>
 									<span className="whitespace-nowrap">{entry.enabled ? 'On' : 'Off'}</span>
 								</label>
+
+								{/* Args status + edit */}
+								<div className="flex items-center gap-1">
+									<span className={argsClass}>{argsLabel}</span>
+									{hasArgs && onEditToolArgs && (
+										<button
+											type="button"
+											className="btn btn-ghost btn-xs px-1 py-0 shadow-none"
+											onClick={() => {
+												onEditToolArgs(entry);
+											}}
+											title="Edit tool options"
+											aria-label="Edit tool options"
+										>
+											<FiEdit2 size={12} />
+										</button>
+									)}
+								</div>
 
 								{/* Remove from conversation tools */}
 								<button
