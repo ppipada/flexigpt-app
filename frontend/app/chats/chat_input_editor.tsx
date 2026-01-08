@@ -46,7 +46,6 @@ import { LineHeightKit } from '@/components/editor/plugins/line_height_kit';
 import { ListKit } from '@/components/editor/plugins/list_kit';
 import { TabbableKit } from '@/components/editor/plugins/tabbable_kit';
 
-import { ToolUserArgsModal } from '@/chats//tools/tool_user_args_modal';
 import { AttachmentBottomBar } from '@/chats/attachments/attachment_bottom_bar';
 import {
 	buildUIAttachmentForLocalPath,
@@ -87,6 +86,7 @@ import {
 	type ToolSelectionElementNode,
 } from '@/chats/tools/tool_editor_utils';
 import { ToolPlusKit } from '@/chats/tools/tool_plugin';
+import { ToolUserArgsModal } from '@/chats/tools/tool_user_args_modal';
 
 export interface EditorAreaHandle {
 	focus: () => void;

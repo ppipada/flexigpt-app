@@ -399,7 +399,7 @@ export interface UIToolCall {
 	callID: string;
 	name: string;
 	arguments?: string;
-	webSearchToolCallItems?: any;
+	webSearchToolCallItems?: WebSearchToolCallItemUnion[];
 	type: ToolStoreChoiceType;
 	choiceID: string;
 	status: UIToolCallStatus;
@@ -425,5 +425,5 @@ export interface UIToolOutput {
 	errorMessage?: string;
 
 	arguments?: string;
-	webSearchToolCallItems?: any;
+	webSearchToolCallItems?: WebSearchToolCallItemUnion[];
 }

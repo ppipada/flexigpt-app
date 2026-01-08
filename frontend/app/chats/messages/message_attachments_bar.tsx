@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { FiChevronDown, FiFileText, FiImage, FiLink, FiPaperclip, FiTool } from 'react-icons/fi';
+import { FiChevronDown, FiFileText, FiGlobe, FiImage, FiLink, FiPaperclip, FiTool } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
 import type { Attachment } from '@/spec/attachment';
 import { AttachmentContentBlockMode, AttachmentKind } from '@/spec/attachment';
 import type { UIToolCall, UIToolOutput } from '@/spec/inference';
-import type { ToolStoreChoice } from '@/spec/tool';
+import { type ToolStoreChoice, ToolStoreChoiceType } from '@/spec/tool';
 
 import {
 	getAttachmentContentBlockModeLabel,
@@ -458,6 +458,265 @@ function ToolCallsGroupChip({ calls, onToolCallDetails }: ToolCallsGroupChipProp
 	);
 }
 
+interface WebSearchOutputsGroupChipProps {
+	outputs: UIToolOutput[];
+	onOutputDetails?: (output: UIToolOutput) => void;
+}
+
+function WebSearchOutputsGroupChip({ outputs, onOutputDetails }: WebSearchOutputsGroupChipProps) {
+	const count = outputs.length;
+	if (count === 0) return null;
+
+	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
+
+	const title = ['Web search results', `${count} result set${count === 1 ? '' : 's'} for this turn`].join('\n');
+
+	return (
+		<div
+			className="bg-info/10 text-info-content border-info/50 flex shrink-0 items-center gap-1 rounded-2xl border px-2 py-0"
+			title={title}
+			data-message-chip="websearch-outputs-group"
+		>
+			<FiGlobe size={14} />
+			<span className="max-w-32 truncate">Web results</span>
+			<span className="text-xs whitespace-nowrap opacity-80">{count}</span>
+
+			<MenuButton
+				store={menu}
+				className="btn btn-ghost btn-xs px-0 py-0 shadow-none"
+				aria-label="Show web‑search results for this turn"
+				title="Show web‑search results for this turn"
+			>
+				<FiChevronDown size={14} />
+			</MenuButton>
+
+			<Menu
+				store={menu}
+				gutter={6}
+				className="rounded-box bg-base-100 text-base-content border-base-300 z-50 max-h-72 min-w-65 overflow-y-auto border p-2 shadow-xl focus-visible:outline-none"
+				autoFocusOnShow
+			>
+				<div className="text-base-content/70 mb-1 text-[11px] font-semibold">Web search results</div>
+
+				{outputs.map(out => (
+					<MenuItem
+						key={out.id}
+						store={menu}
+						hideOnClick={false}
+						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
+					>
+						<MessageWebSearchOutputChip
+							output={out}
+							fullWidth
+							onClick={
+								onOutputDetails
+									? () => {
+											onOutputDetails(out);
+										}
+									: undefined
+							}
+						/>
+					</MenuItem>
+				))}
+			</Menu>
+		</div>
+	);
+}
+
+interface MessageWebSearchOutputChipProps {
+	output: UIToolOutput;
+	fullWidth?: boolean;
+	onClick?: () => void;
+}
+
+function MessageWebSearchOutputChip({ output, fullWidth = false, onClick }: MessageWebSearchOutputChipProps) {
+	const containerClasses = [
+		'bg-base-200 text-base-content flex items-center gap-2 rounded-2xl px-2 py-0',
+		fullWidth ? 'w-full' : 'shrink-0',
+	].join(' ');
+
+	const labelClasses = fullWidth ? 'min-w-0 flex-1 truncate' : 'max-w-64 truncate';
+
+	const resultCount = output.webSearchToolOutputItems?.length ?? 0;
+	const label = resultCount > 0 ? `${resultCount} result${resultCount === 1 ? '' : 's'}` : 'Web search results';
+
+	const title = [`Web search results`, `Tool: ${output.name}`, `Call ID: ${output.callID}`].join('\n');
+
+	return (
+		<div className={containerClasses} title={title} data-message-chip="websearch-output" onClick={onClick}>
+			<FiGlobe size={14} />
+			<span className="text-base-content/60 text-[10px] uppercase">Web results</span>
+			<span className={labelClasses}>{label}</span>
+		</div>
+	);
+}
+
+interface WebSearchCallsGroupChipProps {
+	calls: UIToolCall[];
+	onCallDetails?: (call: UIToolCall) => void;
+}
+
+function WebSearchCallsGroupChip({ calls, onCallDetails }: WebSearchCallsGroupChipProps) {
+	const count = calls.length;
+	if (count === 0) return null;
+
+	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
+
+	const title = ['Web search activity', `${count} web‑search quer${count === 1 ? 'y' : 'ies'} this turn`].join('\n');
+
+	return (
+		<div
+			className="bg-info/10 text-info-content border-info/50 flex shrink-0 items-center gap-1 rounded-2xl border px-2 py-0"
+			title={title}
+			data-message-chip="websearch-calls-group"
+		>
+			<FiGlobe size={14} />
+			<span className="max-w-24 truncate">Web search</span>
+			<span className="text-xs whitespace-nowrap opacity-80">{count}</span>
+
+			<MenuButton
+				store={menu}
+				className="btn btn-ghost btn-xs px-0 py-0 shadow-none"
+				aria-label="Show web‑search queries for this turn"
+				title="Show web‑search queries for this turn"
+			>
+				<FiChevronDown size={14} />
+			</MenuButton>
+
+			<Menu
+				store={menu}
+				gutter={6}
+				className="rounded-box bg-base-100 text-base-content border-base-300 z-50 max-h-72 min-w-65 overflow-y-auto border p-2 shadow-xl focus-visible:outline-none"
+				autoFocusOnShow
+			>
+				<div className="text-base-content/70 mb-1 text-[11px] font-semibold">Web search queries</div>
+
+				{calls.map(call => (
+					<MenuItem
+						key={call.id || call.callID}
+						store={menu}
+						hideOnClick={false}
+						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
+					>
+						<MessageWebSearchCallChip
+							call={call}
+							fullWidth
+							onClick={
+								onCallDetails
+									? () => {
+											onCallDetails(call);
+										}
+									: undefined
+							}
+						/>
+					</MenuItem>
+				))}
+			</Menu>
+		</div>
+	);
+}
+
+interface MessageWebSearchCallChipProps {
+	call: UIToolCall;
+	fullWidth?: boolean;
+	onClick?: () => void;
+}
+
+function MessageWebSearchCallChip({ call, fullWidth = false, onClick }: MessageWebSearchCallChipProps) {
+	const containerClasses = [
+		'bg-base-200 text-base-content flex items-center gap-2 rounded-2xl px-2 py-0',
+		fullWidth ? 'w-full' : 'shrink-0',
+	].join(' ');
+
+	const labelClasses = fullWidth ? 'min-w-0 flex-1 truncate' : 'max-w-64 truncate';
+
+	// Prefer web-search query if present; fall back to generic label
+	const items = call.webSearchToolCallItems ?? [];
+	const firstQuery =
+		items.find(it => it?.searchItem?.query)?.searchItem?.query ??
+		items.find(it => it?.findItem?.pattern)?.findItem?.pattern;
+
+	const fallback = formatToolCallLabel(call);
+	const label = firstQuery || fallback;
+
+	const title = `Web search query: ${label}`;
+
+	return (
+		<div className={containerClasses} title={title} data-message-chip="websearch-call" onClick={onClick}>
+			<FiGlobe size={14} />
+			<span className="text-base-content/60 text-[10px] uppercase">Web search</span>
+			<span className={labelClasses}>{label}</span>
+		</div>
+	);
+}
+
+interface WebSearchChoicesGroupChipProps {
+	choices: ToolStoreChoice[];
+	onChoiceDetails?: (choice: ToolStoreChoice) => void;
+}
+
+function WebSearchChoicesGroupChip({ choices, onChoiceDetails }: WebSearchChoicesGroupChipProps) {
+	const count = choices.length;
+	if (count === 0) return null;
+
+	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
+
+	const title = ['Web search configuration', `${count} web‑search tool${count === 1 ? '' : 's'} in this turn`].join(
+		'\n'
+	);
+
+	return (
+		<div
+			className="bg-info/10 text-info-content border-info/50 flex shrink-0 items-center gap-1 rounded-2xl border px-2 py-0"
+			title={title}
+			data-message-chip="websearch-tools-group"
+		>
+			<FiGlobe size={14} />
+			<span className="max-w-24 truncate">Web search</span>
+			<span className="text-xs whitespace-nowrap opacity-80">{count}</span>
+
+			<MenuButton
+				store={menu}
+				className="btn btn-ghost btn-xs px-0 py-0 shadow-none"
+				aria-label="Show web‑search configuration for this turn"
+				title="Show web‑search configuration for this turn"
+			>
+				<FiChevronDown size={14} />
+			</MenuButton>
+
+			<Menu
+				store={menu}
+				gutter={6}
+				className="rounded-box bg-base-100 text-base-content border-base-300 z-50 max-h-72 min-w-65 overflow-y-auto border p-2 shadow-xl focus-visible:outline-none"
+				autoFocusOnShow
+			>
+				<div className="text-base-content/70 mb-1 text-[11px] font-semibold">Web search configuration</div>
+
+				{choices.map(choice => (
+					<MenuItem
+						key={choice.toolID ?? `${choice.bundleID}-${choice.toolSlug}-${choice.toolVersion}`}
+						store={menu}
+						hideOnClick={false}
+						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
+					>
+						<MessageToolChoiceChip
+							tool={choice}
+							fullWidth
+							onClick={
+								onChoiceDetails
+									? () => {
+											onChoiceDetails(choice);
+										}
+									: undefined
+							}
+						/>
+					</MenuItem>
+				))}
+			</Menu>
+		</div>
+	);
+}
+
 interface MessageAttachmentsBarProps {
 	attachments?: Attachment[];
 	toolChoices?: ToolStoreChoice[];
@@ -485,12 +744,36 @@ export function MessageAttachmentsBar({
 	onToolCallDetails,
 	onToolOutputDetails,
 }: MessageAttachmentsBarProps) {
-	const hasAttachments = !!attachments && attachments.length > 0;
-	const hasTools = !!toolChoices && toolChoices.length > 0;
-	const hasToolCalls = !!toolCalls && toolCalls.length > 0;
-	const hasToolOutputs = !!toolOutputs && toolOutputs.length > 0;
+	const choices = toolChoices ?? [];
+	const calls = toolCalls ?? [];
+	const outputs = toolOutputs ?? [];
 
-	if (!hasAttachments && !hasTools && !hasToolCalls && !hasToolOutputs) {
+	const normalToolChoices = choices.filter(c => c.toolType !== ToolStoreChoiceType.WebSearch);
+	const webSearchChoices = choices.filter(c => c.toolType === ToolStoreChoiceType.WebSearch);
+
+	const normalToolCalls = calls.filter(c => c.type !== ToolStoreChoiceType.WebSearch);
+	const webSearchCalls = calls.filter(c => c.type === ToolStoreChoiceType.WebSearch);
+
+	const normalToolOutputs = outputs.filter(o => o.type !== ToolStoreChoiceType.WebSearch);
+	const webSearchOutputs = outputs.filter(o => o.type === ToolStoreChoiceType.WebSearch);
+
+	const hasAttachments = !!attachments && attachments.length > 0;
+	const hasTools = normalToolChoices.length > 0;
+	const hasWebSearchTools = webSearchChoices.length > 0;
+	const hasToolCalls = normalToolCalls.length > 0;
+	const hasWebSearchCalls = webSearchCalls.length > 0;
+	const hasToolOutputs = normalToolOutputs.length > 0;
+	const hasWebSearchOutputs = webSearchOutputs.length > 0;
+
+	if (
+		!hasAttachments &&
+		!hasTools &&
+		!hasWebSearchTools &&
+		!hasToolCalls &&
+		!hasWebSearchCalls &&
+		!hasToolOutputs &&
+		!hasWebSearchOutputs
+	) {
 		return null;
 	}
 
@@ -498,11 +781,27 @@ export function MessageAttachmentsBar({
 		<div className="border-base-300 flex min-h-8 max-w-full min-w-0 flex-1 items-center gap-1 overflow-x-auto border-t px-2 py-1 text-xs">
 			{hasAttachments && <AttachmentsGroupChip attachments={attachments ?? []} />}
 
-			{hasTools && <ToolChoicesGroupChip tools={toolChoices ?? []} onToolChoiceDetails={onToolChoiceDetails} />}
+			{/* Regular tools for this turn */}
+			{hasTools && <ToolChoicesGroupChip tools={normalToolChoices} onToolChoiceDetails={onToolChoiceDetails} />}
 
-			{hasToolOutputs && <ToolOutputsGroupChip outputs={toolOutputs ?? []} onToolOutputDetails={onToolOutputDetails} />}
+			{/* Web‑search config for this turn */}
+			{hasWebSearchTools && (
+				<WebSearchChoicesGroupChip choices={webSearchChoices} onChoiceDetails={onToolChoiceDetails} />
+			)}
 
-			{hasToolCalls && <ToolCallsGroupChip calls={toolCalls ?? []} onToolCallDetails={onToolCallDetails} />}
+			{/* Tool outputs (non‑web) */}
+			{hasToolOutputs && <ToolOutputsGroupChip outputs={normalToolOutputs} onToolOutputDetails={onToolOutputDetails} />}
+
+			{/* Web‑search outputs */}
+			{hasWebSearchOutputs && (
+				<WebSearchOutputsGroupChip outputs={webSearchOutputs} onOutputDetails={onToolOutputDetails} />
+			)}
+
+			{/* Suggested function/custom tool calls */}
+			{hasToolCalls && <ToolCallsGroupChip calls={normalToolCalls} onToolCallDetails={onToolCallDetails} />}
+
+			{/* Web‑search calls (already executed by provider) */}
+			{hasWebSearchCalls && <WebSearchCallsGroupChip calls={webSearchCalls} onCallDetails={onToolCallDetails} />}
 		</div>
 	);
 }
