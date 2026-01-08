@@ -685,4 +685,13 @@
   - [x] haiku image worked.
 - [x] in tooloutput, once we get the output, we are attaching it as text always, we want tools to return some content types and then create appropriate content blocks in output.
 - [x] if there is a toolcall, and we dont input anything, it doesnt activate run and send button.
+
   - [x] in fast forward we seem to get some error. check if it is due to above or actual issue
+
+- [x] UI for web search.
+
+  - [x] citations to show.
+    - [x] message citations bar needs proper tooltip
+    - [x] tool details modal need to use message content card.
+  - [x] tool calls to show in some way and not in composer chip.
+  - [x] no callable tool call jsut chips end to end.

@@ -5,16 +5,11 @@
 - [ ] edit and save template doesn't work. says template slug already exists.
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
-- [ ] UI for web search.
-  - [ ] citations to show.
-    - [ ] message citations bar needs proper tooltip
-    - [x] tool details modal need to use message content card.
-  - [x] tool calls to show in some way and not in composer chip.
-  - [x] no callable tool call jsut chips end to end.
-  - [ ] web search: we may want a vanity chip, if space is there, in bottom actions bar, that has quick attach web search button, which will insert web search tool. this is just quick shortcut and should be synced with in composer behavior. if tool is already present it should show tick else cross. no other action other than add/remove.
+
+- [ ] web search: we may want a vanity chip, if space is there, in bottom actions bar, that has quick attach web search button, which will insert web search tool. this is just quick shortcut and should be synced with in composer behavior. if tool is already present it should show tick else cross. no other action other than add/remove.
 - [ ] scroll to top button needed
 - [ ] Adding a small visual distinction between provider‑managed web search calls vs. “suggested” function/custom calls in message history.
-- [ ] edit user args modal opens and closes immediatly.
+- [ ] edit user args modal opens and closes immediately.
 
 ## Features
 

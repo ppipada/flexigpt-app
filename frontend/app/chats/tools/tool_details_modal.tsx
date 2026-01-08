@@ -138,7 +138,7 @@ function buildCallPrimaryContent(call: UIToolCall): string {
 	return lines.join('\n');
 }
 
-// Human-oriented "primary" view for a tool output (like ToolOutputModal, but Markdown-friendly).
+// Human-oriented "primary" view for a tool output.
 function buildOutputPrimaryContent(output: UIToolOutput): string {
 	const lines: string[] = [];
 

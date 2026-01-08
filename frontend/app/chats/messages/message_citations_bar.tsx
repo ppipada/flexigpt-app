@@ -34,26 +34,38 @@ export function MessageCitationsBar({ citations }: MessageCitationsBarProps) {
 									}
 								})();
 
+					// Build a concise but info-dense tooltip:
+					// Title (or display) • "cited text snippet" • Range • URL
 					const tooltipParts: string[] = [];
+
+					// Title / display always first
+					tooltipParts.push('• ' + display);
+
 					if (u.citedText && u.citedText.trim()) {
-						const raw = u.citedText.trim();
+						const raw = u.citedText.trim().replace(/\s+/g, ' ');
 						const snippet = raw.length > maxTooltipLen ? `${raw.slice(0, maxTooltipLen - 1)}…` : raw;
-						tooltipParts.push(snippet);
+						tooltipParts.push(`“${snippet}”`);
 					}
+
 					if (u.startIndex != null || u.endIndex != null) {
 						tooltipParts.push(`Range: ${u.startIndex ?? '?'}–${u.endIndex ?? '?'}`);
 					}
-					const title = tooltipParts.join('\n\n') || u.url;
+
+					// Always include URL last so full target is inspectable
+					tooltipParts.push(u.url);
+
+					const tooltipText = tooltipParts.join('\n• ');
 
 					return (
 						<button
 							key={`${u.url}-${u.startIndex ?? ''}-${u.endIndex ?? ''}-${idx}`}
 							type="button"
 							className="btn btn-xs btn-ghost border-base-300 bg-base-200 inline-flex max-w-36 items-center gap-2 rounded-2xl border px-2 py-0 text-left font-normal"
-							title={title}
 							onClick={() => {
 								backendAPI.openURL(u.url);
 							}}
+							aria-label={display}
+							title={tooltipText}
 						>
 							<span className="truncate">{display}</span>
 							<FiExternalLink size={12} className="shrink-0 opacity-80" />

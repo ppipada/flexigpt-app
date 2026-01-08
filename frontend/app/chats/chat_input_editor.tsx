@@ -86,7 +86,6 @@ import {
 	insertToolSelectionNode,
 	type ToolSelectionElementNode,
 } from '@/chats/tools/tool_editor_utils';
-import { ToolOutputModal } from '@/chats/tools/tool_output_modal';
 import { ToolPlusKit } from '@/chats/tools/tool_plugin';
 
 export interface EditorAreaHandle {
@@ -171,7 +170,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	// Tool-call chips (assistant-suggested) + tool outputs attached to the next user message.
 	const [toolCalls, setToolCalls] = useState<UIToolCall[]>([]);
 	const [toolOutputs, setToolOutputs] = useState<UIToolOutput[]>([]);
-	const [activeToolOutput, setActiveToolOutput] = useState<UIToolOutput | null>(null);
+
 	const [toolDetailsState, setToolDetailsState] = useState<ToolDetailsState>(null);
 
 	const [conversationToolsState, setConversationToolsState] = useState<ConversationToolStateEntry[]>([]);
@@ -630,7 +629,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	const handleRemoveToolOutput = useCallback((id: string) => {
 		setToolOutputs(prev => prev.filter(o => o.id !== id));
-		setActiveToolOutput(current => (current && current.id === id ? null : current));
+		setToolDetailsState(current => (current && current.kind === 'output' && current.output.id === id ? null : current));
 	}, []);
 
 	const handleRetryErroredOutput = useCallback((output: UIToolOutput) => {
@@ -668,7 +667,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	}, []);
 
 	const handleOpenToolOutput = useCallback((output: UIToolOutput) => {
-		setActiveToolOutput(output);
+		setToolDetailsState({ kind: 'output', output });
 	}, []);
 
 	const handleOpenToolCallDetails = useCallback((call: UIToolCall) => {
@@ -812,7 +811,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				setDirectoryGroups([]);
 				setToolCalls([]);
 				setToolOutputs([]);
-				setActiveToolOutput(null);
 				setToolDetailsState(null);
 
 				lastPopulatedSelectionKeyRef.current.clear();
@@ -839,7 +837,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		setDirectoryGroups([]);
 		setToolCalls([]);
 		setToolOutputs([]);
-		setActiveToolOutput(null);
 		setToolDetailsState(null);
 		// Let Plate onChange bump docVersion; no need to do it here.
 		editor.tf.focus();
@@ -918,7 +915,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			// 4) Restore any tool outputs that were previously attached to this message.
 			setToolOutputs(incoming.toolOutputs ?? []);
 			setToolCalls([]);
-			setActiveToolOutput(null);
 			setToolDetailsState(null);
 
 			editor.tf.focus();
@@ -1365,15 +1361,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 					/>
 				</Plate>
 			</form>
-
-			{/* Tool output inspector modal */}
-			<ToolOutputModal
-				isOpen={!!activeToolOutput}
-				onClose={() => {
-					setActiveToolOutput(null);
-				}}
-				output={activeToolOutput}
-			/>
 
 			{/* Tool choice / call  inspector modal */}
 			<ToolDetailsModal
