@@ -15,11 +15,11 @@ import { defaultShortcutConfig, type ShortcutConfig, useChatShortcuts } from '@/
 import { getBlockQuotedLines, sanitizeConversationTitle } from '@/lib/text_utils';
 import { generateTitle } from '@/lib/title_utils';
 
-import { useAtBottom } from '@/hooks/use_at_bottom';
+import { useAtTopBottom } from '@/hooks/use_at_top_bottom';
 
 import { conversationStoreAPI } from '@/apis/baseapi';
 
-import { ButtonScrollTopBottom } from '@/components/button_scroll_top_bottom';
+import { ButtonScrollToBottom, ButtonScrollToTop } from '@/components/button_scroll_top_bottom';
 import { PageFrame } from '@/components/page_frame';
 
 import { HandleCompletion } from '@/chats/chat_completion_helper';
@@ -56,46 +56,16 @@ export default function ChatsPage() {
 
 	// Has the current conversation already been persisted?
 	const isChatPersistedRef = useRef(false);
-	const { isAtBottom, isScrollable, checkScroll } = useAtBottom(chatContainerRef);
+	const { isAtBottom, isAtTop, isScrollable } = useAtTopBottom(chatContainerRef);
 	const manualTitleLockedRef = useRef(false);
 
 	const [shortcutConfig] = useState<ShortcutConfig>(defaultShortcutConfig);
 	const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
 
-	const [isAtTop, setIsAtTop] = useState(true);
-
 	// Focus on mount.
 	useEffect(() => {
 		chatInputRef.current?.focus();
 	}, []);
-
-	useEffect(() => {
-		const el = chatContainerRef.current;
-		if (!el) return;
-
-		const handleScroll = () => {
-			setIsAtTop(el.scrollTop <= 0);
-		};
-
-		handleScroll();
-		el.addEventListener('scroll', handleScroll);
-		return () => {
-			el.removeEventListener('scroll', handleScroll);
-		};
-	}, [chatContainerRef]);
-
-	// Get the scroll down button active via regular check.
-	useEffect(() => {
-		if (!isBusy) return;
-
-		const interval = setInterval(() => {
-			checkScroll();
-		}, 100);
-
-		return () => {
-			clearInterval(interval);
-		};
-	}, [isBusy, checkScroll]);
 
 	// Scroll helper used only when the user explicitly starts a new turn
 	// (send / resend / edited send). We *do not* auto-scroll on every
@@ -606,21 +576,28 @@ export default function ChatsPage() {
 					</div>
 
 					{/* Overlay the buttons; not part of the scrollable content */}
+					<div className="pointer-events-none absolute right-4 bottom-16 z-10 xl:right-24">
+						<div className="pointer-events-auto">
+							{isScrollable && !isAtTop && (
+								<ButtonScrollToTop
+									scrollContainerRef={chatContainerRef}
+									iconSize={32}
+									show={isScrollable && !isAtTop}
+									className="btn btn-md border-none bg-transparent shadow-none"
+								/>
+							)}
+						</div>
+					</div>
 					<div className="pointer-events-none absolute right-4 bottom-4 z-10 xl:right-24">
 						<div className="pointer-events-auto">
-							<ButtonScrollTopBottom
-								scrollContainerRef={chatContainerRef}
-								iconSize={32}
-								showTop={isScrollable && !isAtTop}
-								showBottom={isScrollable && !isAtBottom}
-								className="flex flex-col gap-2"
-								topButtonProps={{
-									className: 'btn btn-md border-none bg-transparent shadow-none',
-								}}
-								bottomButtonProps={{
-									className: 'btn btn-md border-none bg-transparent shadow-none',
-								}}
-							/>
+							{isScrollable && !isAtBottom && (
+								<ButtonScrollToBottom
+									scrollContainerRef={chatContainerRef}
+									iconSize={32}
+									show={isScrollable && !isAtBottom}
+									className="btn btn-md border-none bg-transparent shadow-none"
+								/>
+							)}
 						</div>
 					</div>
 				</div>

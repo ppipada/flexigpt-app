@@ -1,14 +1,16 @@
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-interface UseAtBottomResult {
+interface UseAtTopBottomResult {
 	isAtBottom: boolean;
+	isAtTop: boolean;
 	isScrollable: boolean;
 	checkScroll: () => void;
 }
 
-export function useAtBottom(ref: RefObject<HTMLElement | null>, offset = 0): UseAtBottomResult {
+export function useAtTopBottom(ref: RefObject<HTMLElement | null>, offset = 0): UseAtTopBottomResult {
 	const [isAtBottom, setIsAtBottom] = useState(false);
+	const [isAtTop, setIsAtTop] = useState(false);
 	const [isScrollable, setIsScrollable] = useState(false);
 
 	// keep the handler in a ref so both the scroll listener and the
@@ -22,6 +24,7 @@ export function useAtBottom(ref: RefObject<HTMLElement | null>, offset = 0): Use
 		const { scrollTop, scrollHeight, clientHeight } = current;
 		setIsScrollable(scrollHeight > clientHeight);
 		setIsAtBottom(scrollTop + clientHeight >= scrollHeight - offset - 10);
+		setIsAtTop(scrollTop <= 10);
 	}, [ref, offset]);
 
 	useEffect(() => {
@@ -59,5 +62,5 @@ export function useAtBottom(ref: RefObject<HTMLElement | null>, offset = 0): Use
 		};
 	}, [ref, offset, checkScroll]);
 
-	return { isAtBottom, isScrollable, checkScroll };
+	return { isAtBottom, isAtTop, isScrollable, checkScroll };
 }
