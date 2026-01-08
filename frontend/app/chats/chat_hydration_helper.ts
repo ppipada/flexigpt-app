@@ -21,6 +21,7 @@ import {
 	ToolType,
 	type UIToolCall,
 	type UIToolOutput,
+	type URLCitation,
 } from '@/spec/inference';
 import { type ToolStoreChoice, ToolStoreChoiceType } from '@/spec/tool';
 
@@ -196,6 +197,7 @@ export function hydrateConversation(store: StoreConversation): Conversation {
 			let uiReasoningContents: ReasoningContent[] | undefined = undefined;
 			let uiToolCalls: UIToolCall[] | undefined = undefined;
 			let uiToolOutputs: UIToolOutput[] | undefined = undefined;
+			let uiCitations: URLCitation[] | undefined = undefined;
 
 			const outputs: OutputUnion[] | undefined = m.outputs;
 			const inputs: InputUnion[] | undefined = m.inputs;
@@ -207,6 +209,7 @@ export function hydrateConversation(store: StoreConversation): Conversation {
 				uiContent = derived.uiContent;
 				uiReasoningContents = derived.uiReasoningContents;
 				uiToolCalls = derived.uiToolCalls;
+				uiCitations = derived.uiCitations;
 
 				// Prefer outputs from model response; fall back to any tool outputs in inputs.
 				uiToolOutputs =
@@ -229,6 +232,7 @@ export function hydrateConversation(store: StoreConversation): Conversation {
 				uiReasoningContents,
 				uiToolCalls,
 				uiToolOutputs,
+				uiCitations,
 				uiDebugDetails,
 			} as ConversationMessage;
 		}

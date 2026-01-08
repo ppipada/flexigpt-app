@@ -80,18 +80,19 @@ export default function ChatsPage() {
 		};
 	}, [isBusy, checkScroll]);
 
-	// Scroll to bottom. Tell the browser to bring the sentinel into view.
-	const scrollToBottom = () => {
-		if (chatContainerRef.current) {
-			chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
-		}
-	};
-	useEffect(() => {
-		const t = setTimeout(scrollToBottom, 100);
-		return () => {
-			clearTimeout(t);
-		};
-	}, [chat.messages]);
+	// Scroll helper used only when the user explicitly starts a new turn
+	// (send / resend / edited send). We *do not* auto-scroll on every
+	// message list change any more.
+	const scrollToBottom = useCallback(() => {
+		const el = chatContainerRef.current;
+		if (!el) return;
+		el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+	}, []);
+
+	const scrollToBottomSoon = useCallback(() => {
+		// Give React a short window to commit DOM changes
+		window.setTimeout(scrollToBottom, 80);
+	}, [scrollToBottom]);
 
 	const bumpSearchKey = async () => {
 		await new Promise(resolve => setTimeout(resolve, 50));
@@ -249,6 +250,7 @@ export default function ChatsPage() {
 
 			// Show empty assistant bubble immediately.
 			setChat({ ...chatWithPlaceholder, messages: [...chatWithPlaceholder.messages] });
+			scrollToBottomSoon();
 
 			const onStreamTextData = (textData: string) => {
 				if (!textData) return;
@@ -387,7 +389,7 @@ export default function ChatsPage() {
 				setIsBusy(false);
 			}
 		},
-		[saveUpdatedChat]
+		[saveUpdatedChat, scrollToBottomSoon]
 	);
 
 	const sendMessage = async (payload: EditorSubmitPayload, options: ChatOption) => {

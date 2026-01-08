@@ -8,8 +8,10 @@ import { RoleEnum } from '@/spec/inference';
 import { buildEffectiveContentWithReasoning } from '@/lib/reasoning_utils';
 
 import { MessageAttachmentsBar } from '@/chats/messages/message_attachments_bar';
+import { MessageCitationsBar } from '@/chats/messages/message_citations_bar';
 import { MessageContentCard } from '@/chats/messages/message_content_card';
 import { MessageFooterArea } from '@/chats/messages/message_footer';
+import { ToolDetailsModal, type ToolDetailsState } from '@/chats/tools/tool_details_modal';
 
 interface ChatMessageProps {
 	message: ConversationMessage;
@@ -65,6 +67,7 @@ export const ChatMessage = memo(function ChatMessage({
 	const rightColSpan = !isUser ? 'col-span-1' : 'col-span-1 lg:col-span-2';
 
 	const [renderMarkdown, setRenderMarkdown] = useState(!isUser);
+	const [toolDetailsState, setToolDetailsState] = useState<ToolDetailsState>(null);
 
 	const bubbleBase = 'bg-base-100 col-span-10 row-start-1 row-end-1 overflow-x-auto rounded-2xl lg:col-span-9';
 	const bubbleExtra = [streamedMessage ? '' : 'shadow-lg', isEditing ? 'ring-2 ring-primary/70' : '']
@@ -95,12 +98,23 @@ export const ChatMessage = memo(function ChatMessage({
 					align={align}
 					renderAsMarkdown={renderMarkdown}
 				/>
+
+				{!isUser && <MessageCitationsBar citations={message.uiCitations} />}
 				<div className="flex w-full min-w-0 overflow-x-hidden p-0">
 					<MessageAttachmentsBar
 						attachments={message.attachments}
 						toolChoices={message.toolStoreChoices}
 						toolCalls={message.uiToolCalls}
 						toolOutputs={message.uiToolOutputs}
+						onToolChoiceDetails={choice => {
+							setToolDetailsState({ kind: 'choice', choice });
+						}}
+						onToolCallDetails={call => {
+							setToolDetailsState({ kind: 'call', call });
+						}}
+						onToolOutputDetails={output => {
+							setToolDetailsState({ kind: 'output', output });
+						}}
 					/>
 				</div>
 			</div>
@@ -133,6 +147,14 @@ export const ChatMessage = memo(function ChatMessage({
 				/>
 			</div>
 			<div className={`${rightColSpan} row-start-2 row-end-2`} />
+
+			{/* Tool choice/call/output details (JSON) */}
+			<ToolDetailsModal
+				state={toolDetailsState}
+				onClose={() => {
+					setToolDetailsState(null);
+				}}
+			/>
 		</div>
 	);
 }, propsAreEqual);

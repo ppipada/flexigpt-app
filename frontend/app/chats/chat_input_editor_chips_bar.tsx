@@ -37,6 +37,11 @@ interface EditorChipsBarProps {
 	onEditConversationToolArgs?: (entry: ConversationToolStateEntry) => void;
 	onEditAttachedToolArgs?: (node: ToolSelectionElementNode) => void;
 	onAttachedToolsChanged?: () => void;
+
+	// Details inspectors
+	onOpenToolCallDetails?: (call: UIToolCall) => void;
+	onOpenConversationToolDetails?: (entry: ConversationToolStateEntry) => void;
+	onOpenAttachedToolDetails?: (node: ToolSelectionElementNode) => void;
 }
 
 /**
@@ -69,6 +74,9 @@ export function EditorChipsBar({
 	onEditConversationToolArgs,
 	onEditAttachedToolArgs,
 	onAttachedToolsChanged,
+	onOpenToolCallDetails,
+	onOpenConversationToolDetails,
+	onOpenAttachedToolDetails,
 }: EditorChipsBarProps) {
 	const editor = useEditorRef() as PlateEditor;
 	const toolEntries = getToolNodesWithPath(editor);
@@ -102,6 +110,9 @@ export function EditorChipsBar({
 	const openOutput = onOpenOutput ?? (() => {});
 	const removeOutput = onRemoveOutput ?? (() => {});
 	const retryErroredOutput = onRetryErroredOutput ?? (() => {});
+	const openToolCallDetails = onOpenToolCallDetails ?? (() => {});
+	const openConversationToolDetails = onOpenConversationToolDetails ?? (() => {});
+	const openAttachedToolDetails = onOpenAttachedToolDetails ?? (() => {});
 
 	return (
 		<div className="flex shrink-0 items-center gap-1">
@@ -110,6 +121,7 @@ export function EditorChipsBar({
 				tools={conversationTools}
 				onChange={onConversationToolsChange}
 				onEditToolArgs={onEditConversationToolArgs}
+				onShowToolDetails={openConversationToolDetails}
 			/>
 
 			{/* Aggregated chip for standalone attachments */}
@@ -138,6 +150,7 @@ export function EditorChipsBar({
 				toolEntries={toolEntries}
 				onEditToolArgs={onEditAttachedToolArgs}
 				onToolsChanged={onAttachedToolsChanged}
+				onShowToolDetails={openAttachedToolDetails}
 			/>
 
 			{/* Tool-call chips (pending/running/failed) and tool output chips */}
@@ -150,6 +163,7 @@ export function EditorChipsBar({
 				onOpenOutput={openOutput}
 				onRemoveOutput={removeOutput}
 				onRetryErroredOutput={retryErroredOutput}
+				onOpenCallDetails={openToolCallDetails}
 			/>
 		</div>
 	);

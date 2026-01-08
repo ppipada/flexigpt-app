@@ -11,6 +11,7 @@ import type {
 	ToolChoice,
 	UIToolCall,
 	UIToolOutput,
+	URLCitation,
 } from '@/spec/inference';
 import type { ToolStoreChoice } from '@/spec/tool';
 
@@ -47,6 +48,7 @@ interface UIConversationMessageDetails {
 	uiReasoningContents?: ReasoningContent[];
 	uiToolCalls?: UIToolCall[];
 	uiToolOutputs?: UIToolOutput[];
+	uiCitations?: URLCitation[];
 }
 
 export type ConversationMessage = StoreConversationMessage & UIConversationMessageDetails;

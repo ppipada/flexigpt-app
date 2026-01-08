@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { FiChevronUp, FiEdit2, FiTool, FiX } from 'react-icons/fi';
+import { FiChevronUp, FiCode, FiEdit2, FiTool, FiX } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
@@ -93,6 +93,7 @@ interface ConversationToolsChipProps {
 	tools: ConversationToolStateEntry[];
 	onChange?: (next: ConversationToolStateEntry[]) => void;
 	onEditToolArgs?: (entry: ConversationToolStateEntry) => void;
+	onShowToolDetails?: (entry: ConversationToolStateEntry) => void;
 }
 
 /**
@@ -107,7 +108,12 @@ interface ConversationToolsChipProps {
  * All state here is UI-only; it controls what gets attached on the next send,
  * but does not rewrite existing messages.
  */
-export function ConversationToolsChip({ tools, onChange, onEditToolArgs }: ConversationToolsChipProps) {
+export function ConversationToolsChip({
+	tools,
+	onChange,
+	onEditToolArgs,
+	onShowToolDetails,
+}: ConversationToolsChipProps) {
 	const count = tools.length;
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
@@ -190,20 +196,20 @@ export function ConversationToolsChip({ tools, onChange, onEditToolArgs }: Conve
 					const hasArgs = status?.hasSchema ?? false;
 					const argsLabel =
 						!status || !status.hasSchema
-							? 'No options'
+							? ''
 							: status.requiredKeys.length === 0
-								? 'Args: optional'
+								? 'Args: Optional'
 								: status.isSatisfied
-									? 'Args: OK'
-									: `Args: ${status.missingRequired.length} missing`;
+									? 'Args: Ok'
+									: `Args: ${status.missingRequired.length} Missing`;
 					const argsClass =
 						!status || !status.hasSchema
-							? 'badge badge-ghost badge-xs'
+							? 'text-xs p-0'
 							: status.requiredKeys.length === 0
-								? 'badge badge-ghost badge-xs'
+								? 'badge badge-ghost badge-xs text-xs p-0'
 								: status.isSatisfied
-									? 'badge badge-success badge-xs'
-									: 'badge badge-warning badge-xs';
+									? 'badge badge-success badge-xs text-xs p-0'
+									: 'badge badge-warning badge-xs text-xs p-0';
 
 					return (
 						<MenuItem
@@ -237,12 +243,12 @@ export function ConversationToolsChip({ tools, onChange, onEditToolArgs }: Conve
 								</label>
 
 								{/* Args status + edit */}
-								<div className="flex items-center gap-1">
-									<span className={argsClass}>{argsLabel}</span>
+								<div className="flex items-center gap-1 px-1">
+									{hasArgs && <span className={argsClass}>{argsLabel}</span>}
 									{hasArgs && onEditToolArgs && (
 										<button
 											type="button"
-											className="btn btn-ghost btn-xs px-1 py-0 shadow-none"
+											className="btn btn-ghost btn-xs p-0 shadow-none"
 											onClick={() => {
 												onEditToolArgs(entry);
 											}}
@@ -253,6 +259,21 @@ export function ConversationToolsChip({ tools, onChange, onEditToolArgs }: Conve
 										</button>
 									)}
 								</div>
+
+								{/* JSON details */}
+								{onShowToolDetails && (
+									<button
+										type="button"
+										className="btn btn-ghost btn-xs shrink-0 px-1 py-0 shadow-none"
+										onClick={() => {
+											onShowToolDetails(entry);
+										}}
+										title="Show tool details"
+										aria-label="Show tool details"
+									>
+										<FiCode size={12} />
+									</button>
+								)}
 
 								{/* Remove from conversation tools */}
 								<button

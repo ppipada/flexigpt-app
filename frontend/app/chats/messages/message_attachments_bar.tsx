@@ -95,12 +95,13 @@ function MessageAttachmentInfoChip({ attachment, fullWidth = false }: MessageAtt
 interface MessageToolChoiceChipProps {
 	tool: ToolStoreChoice;
 	fullWidth?: boolean;
+	onClick?: () => void;
 }
 
 /**
  * Read‑only chip for a tool choice used for this message.
  */
-function MessageToolChoiceChip({ tool, fullWidth = false }: MessageToolChoiceChipProps) {
+function MessageToolChoiceChip({ tool, fullWidth = false, onClick }: MessageToolChoiceChipProps) {
 	const name = tool.displayName || tool.toolSlug;
 	const slug = `${tool.bundleID}/${tool.toolSlug}@${tool.toolVersion}`;
 	const tooltipLines: string[] = [name, slug];
@@ -116,7 +117,7 @@ function MessageToolChoiceChip({ tool, fullWidth = false }: MessageToolChoiceChi
 	const labelClasses = fullWidth ? 'min-w-0 flex-1 truncate' : 'max-w-64 truncate';
 
 	return (
-		<div className={containerClasses} title={tooltipLines.join('\n')} data-message-chip="tool-choice">
+		<div className={containerClasses} title={tooltipLines.join('\n')} data-message-chip="tool-choice" onClick={onClick}>
 			<FiTool size={14} />
 			<span className={labelClasses}>{name}</span>
 		</div>
@@ -126,12 +127,13 @@ function MessageToolChoiceChip({ tool, fullWidth = false }: MessageToolChoiceChi
 interface MessageToolCallChipProps {
 	call: UIToolCall;
 	fullWidth?: boolean;
+	onClick?: () => void;
 }
 
 /**
  * Read‑only chip for an assistant-suggested tool call under the assistant bubble.
  */
-function MessageToolCallChip({ call, fullWidth = false }: MessageToolCallChipProps) {
+function MessageToolCallChip({ call, fullWidth = false, onClick }: MessageToolCallChipProps) {
 	const tmpCall: UIToolCall = {
 		id: call.id || call.callID,
 		callID: call.callID,
@@ -160,7 +162,7 @@ function MessageToolCallChip({ call, fullWidth = false }: MessageToolCallChipPro
 	const labelClasses = fullWidth ? 'min-w-0 flex-1 truncate' : 'max-w-64 truncate';
 
 	return (
-		<div className={containerClasses} title={title} data-message-chip="tool-suggested">
+		<div className={containerClasses} title={title} data-message-chip="tool-suggested" onClick={onClick}>
 			<FiTool size={14} />
 			<span className="text-base-content/60 text-[10px] uppercase">Suggested</span>
 			<span className={labelClasses}>{label}</span>
@@ -171,6 +173,7 @@ function MessageToolCallChip({ call, fullWidth = false }: MessageToolCallChipPro
 interface MessageToolOutputChipProps {
 	output: UIToolOutput;
 	fullWidth?: boolean;
+	onClick?: () => void;
 }
 
 /**
@@ -178,7 +181,7 @@ interface MessageToolOutputChipProps {
  * History chips are not interactive; the full output was already used
  * when the turn was sent.
  */
-function MessageToolOutputChip({ output, fullWidth = false }: MessageToolOutputChipProps) {
+function MessageToolOutputChip({ output, fullWidth = false, onClick }: MessageToolOutputChipProps) {
 	const prettyName = getPrettyToolName(output.name);
 	const label = output.summary || `Result: ${prettyName}`;
 	const titleLines = [label, `Tool: ${output.name}`, `Call ID: ${output.callID}`];
@@ -194,7 +197,7 @@ function MessageToolOutputChip({ output, fullWidth = false }: MessageToolOutputC
 	const labelClasses = fullWidth ? 'min-w-0 flex-1 truncate' : 'max-w-64 truncate';
 
 	return (
-		<div className={containerClasses} title={title} data-message-chip="tool-output">
+		<div className={containerClasses} title={title} data-message-chip="tool-output" onClick={onClick}>
 			<FiTool size={14} />
 			<span className="text-base-content/60 text-[10px] uppercase">Output</span>
 			<span className={labelClasses}>{label}</span>
@@ -259,9 +262,10 @@ function AttachmentsGroupChip({ attachments }: AttachmentsGroupChipProps) {
 
 interface ToolChoicesGroupChipProps {
 	tools: ToolStoreChoice[];
+	onToolChoiceDetails?: (choice: ToolStoreChoice) => void;
 }
 
-function ToolChoicesGroupChip({ tools }: ToolChoicesGroupChipProps) {
+function ToolChoicesGroupChip({ tools, onToolChoiceDetails }: ToolChoicesGroupChipProps) {
 	const count = tools.length;
 	if (count === 0) return null;
 
@@ -304,7 +308,17 @@ function ToolChoicesGroupChip({ tools }: ToolChoicesGroupChipProps) {
 						hideOnClick={false}
 						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
 					>
-						<MessageToolChoiceChip tool={tool} fullWidth />
+						<MessageToolChoiceChip
+							tool={tool}
+							fullWidth
+							onClick={
+								onToolChoiceDetails
+									? () => {
+											onToolChoiceDetails(tool);
+										}
+									: undefined
+							}
+						/>
 					</MenuItem>
 				))}
 			</Menu>
@@ -314,9 +328,10 @@ function ToolChoicesGroupChip({ tools }: ToolChoicesGroupChipProps) {
 
 interface ToolOutputsGroupChipProps {
 	outputs: UIToolOutput[];
+	onToolOutputDetails?: (output: UIToolOutput) => void;
 }
 
-function ToolOutputsGroupChip({ outputs }: ToolOutputsGroupChipProps) {
+function ToolOutputsGroupChip({ outputs, onToolOutputDetails }: ToolOutputsGroupChipProps) {
 	const count = outputs.length;
 	if (count === 0) return null;
 
@@ -359,7 +374,17 @@ function ToolOutputsGroupChip({ outputs }: ToolOutputsGroupChipProps) {
 						hideOnClick={false}
 						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
 					>
-						<MessageToolOutputChip output={out} fullWidth />
+						<MessageToolOutputChip
+							output={out}
+							fullWidth
+							onClick={
+								onToolOutputDetails
+									? () => {
+											onToolOutputDetails(out);
+										}
+									: undefined
+							}
+						/>
 					</MenuItem>
 				))}
 			</Menu>
@@ -369,9 +394,10 @@ function ToolOutputsGroupChip({ outputs }: ToolOutputsGroupChipProps) {
 
 interface ToolCallsGroupChipProps {
 	calls: UIToolCall[];
+	onToolCallDetails?: (call: UIToolCall) => void;
 }
 
-function ToolCallsGroupChip({ calls }: ToolCallsGroupChipProps) {
+function ToolCallsGroupChip({ calls, onToolCallDetails }: ToolCallsGroupChipProps) {
 	const count = calls.length;
 	if (count === 0) return null;
 
@@ -414,7 +440,17 @@ function ToolCallsGroupChip({ calls }: ToolCallsGroupChipProps) {
 						hideOnClick={false}
 						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
 					>
-						<MessageToolCallChip call={call} fullWidth />
+						<MessageToolCallChip
+							call={call}
+							fullWidth
+							onClick={
+								onToolCallDetails
+									? () => {
+											onToolCallDetails(call);
+										}
+									: undefined
+							}
+						/>
 					</MenuItem>
 				))}
 			</Menu>
@@ -427,6 +463,9 @@ interface MessageAttachmentsBarProps {
 	toolChoices?: ToolStoreChoice[];
 	toolCalls?: UIToolCall[];
 	toolOutputs?: UIToolOutput[];
+	onToolChoiceDetails?: (choice: ToolStoreChoice) => void;
+	onToolCallDetails?: (call: UIToolCall) => void;
+	onToolOutputDetails?: (output: UIToolOutput) => void;
 }
 
 /**
@@ -442,6 +481,9 @@ export function MessageAttachmentsBar({
 	toolChoices,
 	toolCalls,
 	toolOutputs,
+	onToolChoiceDetails,
+	onToolCallDetails,
+	onToolOutputDetails,
 }: MessageAttachmentsBarProps) {
 	const hasAttachments = !!attachments && attachments.length > 0;
 	const hasTools = !!toolChoices && toolChoices.length > 0;
@@ -453,14 +495,14 @@ export function MessageAttachmentsBar({
 	}
 
 	return (
-		<div className="border-base-200 flex min-h-8 max-w-full min-w-0 flex-1 items-center gap-1 overflow-x-auto border-t px-2 py-1 text-xs">
+		<div className="border-base-300 flex min-h-8 max-w-full min-w-0 flex-1 items-center gap-1 overflow-x-auto border-t px-2 py-1 text-xs">
 			{hasAttachments && <AttachmentsGroupChip attachments={attachments ?? []} />}
 
-			{hasTools && <ToolChoicesGroupChip tools={toolChoices ?? []} />}
+			{hasTools && <ToolChoicesGroupChip tools={toolChoices ?? []} onToolChoiceDetails={onToolChoiceDetails} />}
 
-			{hasToolOutputs && <ToolOutputsGroupChip outputs={toolOutputs ?? []} />}
+			{hasToolOutputs && <ToolOutputsGroupChip outputs={toolOutputs ?? []} onToolOutputDetails={onToolOutputDetails} />}
 
-			{hasToolCalls && <ToolCallsGroupChip calls={toolCalls ?? []} />}
+			{hasToolCalls && <ToolCallsGroupChip calls={toolCalls ?? []} onToolCallDetails={onToolCallDetails} />}
 		</div>
 	);
 }

@@ -1,0 +1,66 @@
+// src/chats/messages/message_citations_bar.tsx
+import { FiExternalLink } from 'react-icons/fi';
+
+import type { URLCitation } from '@/spec/inference';
+
+import { backendAPI } from '@/apis/baseapi';
+
+interface MessageCitationsBarProps {
+	citations?: URLCitation[];
+}
+
+/**
+ * Row of URL citation pills shown under assistant messages, above the
+ * attachments/tool bar. No horizontal scroll; pills wrap to multiple rows.
+ */
+export function MessageCitationsBar({ citations }: MessageCitationsBarProps) {
+	if (!citations || citations.length === 0) return null;
+
+	const maxTooltipLen = 240;
+
+	return (
+		<div className="border-base-300 border-t px-4 py-2 text-xs">
+			<div className="flex flex-wrap items-center gap-2">
+				{citations.map((u, idx) => {
+					const display =
+						u.title && u.title.trim().length > 0
+							? u.title.trim()
+							: (() => {
+									try {
+										const url = new URL(u.url);
+										return url.hostname || u.url;
+									} catch {
+										return u.url;
+									}
+								})();
+
+					const tooltipParts: string[] = [];
+					if (u.citedText && u.citedText.trim()) {
+						const raw = u.citedText.trim();
+						const snippet = raw.length > maxTooltipLen ? `${raw.slice(0, maxTooltipLen - 1)}…` : raw;
+						tooltipParts.push(snippet);
+					}
+					if (u.startIndex != null || u.endIndex != null) {
+						tooltipParts.push(`Range: ${u.startIndex ?? '?'}–${u.endIndex ?? '?'}`);
+					}
+					const title = tooltipParts.join('\n\n') || u.url;
+
+					return (
+						<button
+							key={`${u.url}-${u.startIndex ?? ''}-${u.endIndex ?? ''}-${idx}`}
+							type="button"
+							className="btn btn-xs btn-ghost border-base-300 bg-base-200 inline-flex max-w-36 items-center gap-2 rounded-2xl border px-2 py-0 text-left font-normal"
+							title={title}
+							onClick={() => {
+								backendAPI.openURL(u.url);
+							}}
+						>
+							<span className="truncate">{display}</span>
+							<FiExternalLink size={12} className="shrink-0 opacity-80" />
+						</button>
+					);
+				})}
+			</div>
+		</div>
+	);
+}

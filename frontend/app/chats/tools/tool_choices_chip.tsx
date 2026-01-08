@@ -1,4 +1,4 @@
-import { FiChevronUp, FiTool, FiX } from 'react-icons/fi';
+import { FiChevronUp, FiCode, FiTool, FiX } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 import type { Path } from 'platejs';
@@ -17,6 +17,7 @@ interface ToolChoicesChipProps {
 	toolEntries: Array<[ToolSelectionElementNode, Path]>;
 	onEditToolArgs?: (node: ToolSelectionElementNode) => void;
 	onToolsChanged?: () => void;
+	onShowToolDetails?: (node: ToolSelectionElementNode) => void;
 }
 
 /**
@@ -25,7 +26,13 @@ interface ToolChoicesChipProps {
  * - Opens a dropdown listing each tool with an individual remove button.
  * - Has a "remove all" cross that clears all attached tools.
  */
-export function ToolChoicesChip({ editor, toolEntries, onEditToolArgs, onToolsChanged }: ToolChoicesChipProps) {
+export function ToolChoicesChip({
+	editor,
+	toolEntries,
+	onEditToolArgs,
+	onToolsChanged,
+	onShowToolDetails,
+}: ToolChoicesChipProps) {
 	const count = toolEntries.length;
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
@@ -101,7 +108,7 @@ export function ToolChoicesChip({ editor, toolEntries, onEditToolArgs, onToolsCh
 					const status = computeToolUserArgsStatus(schema, node.userArgSchemaInstance);
 					const hasArgs = status.hasSchema;
 					const argsLabel = !hasArgs
-						? 'No options'
+						? ''
 						: status.isSatisfied
 							? 'Args: OK'
 							: `Args: ${status.missingRequired.length} missing`;
@@ -130,7 +137,7 @@ export function ToolChoicesChip({ editor, toolEntries, onEditToolArgs, onToolsCh
 									<div className="text-base-content/70 truncate text-[11px]">{slug}</div>
 								</div>{' '}
 								<div className="flex items-center gap-1">
-									<span className={argsClass}>{argsLabel}</span>
+									{hasArgs && <span className={argsClass}>{argsLabel}</span>}
 									{hasArgs && onEditToolArgs && (
 										<button
 											type="button"
@@ -145,6 +152,19 @@ export function ToolChoicesChip({ editor, toolEntries, onEditToolArgs, onToolsCh
 										</button>
 									)}
 								</div>
+								{onShowToolDetails && (
+									<button
+										type="button"
+										className="btn btn-ghost btn-xs shrink-0 px-1 py-0 shadow-none"
+										onClick={() => {
+											onShowToolDetails(node);
+										}}
+										title="Show tool details"
+										aria-label="Show tool details"
+									>
+										<FiCode size={12} />
+									</button>
+								)}
 								<button
 									type="button"
 									className="btn btn-ghost btn-xs text-error shrink-0 px-1 py-0 shadow-none"

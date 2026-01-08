@@ -75,6 +75,7 @@ import {
 	initConversationToolsStateFromChoices,
 	mergeConversationToolsWithNewChoices,
 } from '@/chats/tools/conversation_tools_chip';
+import { ToolDetailsModal, type ToolDetailsState } from '@/chats/tools/tool_details_modal';
 import {
 	computeToolUserArgsStatus,
 	dedupeToolChoices,
@@ -171,6 +172,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const [toolCalls, setToolCalls] = useState<UIToolCall[]>([]);
 	const [toolOutputs, setToolOutputs] = useState<UIToolOutput[]>([]);
 	const [activeToolOutput, setActiveToolOutput] = useState<UIToolOutput | null>(null);
+	const [toolDetailsState, setToolDetailsState] = useState<ToolDetailsState>(null);
+
 	const [conversationToolsState, setConversationToolsState] = useState<ConversationToolStateEntry[]>([]);
 	const [needsAttachedToolHydration, setNeedsAttachedToolHydration] = useState(false);
 
@@ -668,6 +671,30 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		setActiveToolOutput(output);
 	}, []);
 
+	const handleOpenToolCallDetails = useCallback((call: UIToolCall) => {
+		setToolDetailsState({ kind: 'call', call });
+	}, []);
+
+	const handleOpenConversationToolDetails = useCallback((entry: ConversationToolStateEntry) => {
+		setToolDetailsState({ kind: 'choice', choice: entry.toolStoreChoice });
+	}, []);
+
+	const handleOpenAttachedToolDetails = useCallback((node: ToolSelectionElementNode) => {
+		const choice: ToolStoreChoice = {
+			choiceID: node.choiceID,
+			bundleID: node.bundleID,
+			bundleSlug: node.bundleSlug,
+			toolSlug: node.toolSlug,
+			toolVersion: node.toolVersion,
+			displayName: node.overrides?.displayName ?? node.toolSnapshot?.displayName ?? node.toolSlug,
+			description: node.overrides?.description ?? node.toolSnapshot?.description ?? node.toolSlug,
+			toolID: node.toolSnapshot?.id,
+			toolType: node.toolType,
+			userArgSchemaInstance: node.userArgSchemaInstance,
+		};
+		setToolDetailsState({ kind: 'choice', choice });
+	}, []);
+
 	const handleEditConversationToolArgs = useCallback((entry: ConversationToolStateEntry) => {
 		setToolArgsTarget({ kind: 'conversation', key: entry.key });
 	}, []);
@@ -786,6 +813,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				setToolCalls([]);
 				setToolOutputs([]);
 				setActiveToolOutput(null);
+				setToolDetailsState(null);
 
 				lastPopulatedSelectionKeyRef.current.clear();
 				editor.tf.focus();
@@ -812,6 +840,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		setToolCalls([]);
 		setToolOutputs([]);
 		setActiveToolOutput(null);
+		setToolDetailsState(null);
 		// Let Plate onChange bump docVersion; no need to do it here.
 		editor.tf.focus();
 	}, [closeAllMenus, editor]);
@@ -890,6 +919,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			setToolOutputs(incoming.toolOutputs ?? []);
 			setToolCalls([]);
 			setActiveToolOutput(null);
+			setToolDetailsState(null);
 
 			editor.tf.focus();
 		},
@@ -1235,6 +1265,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 									onEditConversationToolArgs={handleEditConversationToolArgs}
 									onEditAttachedToolArgs={handleEditAttachedToolArgs}
 									onAttachedToolsChanged={recomputeAttachedToolArgsBlocked}
+									onOpenToolCallDetails={handleOpenToolCallDetails}
+									onOpenConversationToolDetails={handleOpenConversationToolDetails}
+									onOpenAttachedToolDetails={handleOpenAttachedToolDetails}
 								/>
 							</div>
 						</div>
@@ -1340,6 +1373,14 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 					setActiveToolOutput(null);
 				}}
 				output={activeToolOutput}
+			/>
+
+			{/* Tool choice / call  inspector modal */}
+			<ToolDetailsModal
+				state={toolDetailsState}
+				onClose={() => {
+					setToolDetailsState(null);
+				}}
 			/>
 
 			{/* Tool user-args editor modal */}

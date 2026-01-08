@@ -1,6 +1,7 @@
 import { type ConversationMessage } from '@/spec/conversation';
-import type { ProviderName, WebSearchToolOutputItemUnion } from '@/spec/inference';
+import type { ProviderName, URLCitation, WebSearchToolOutputItemUnion } from '@/spec/inference';
 import {
+	CitationKind,
 	type CompletionResponseBody,
 	ContentItemKind,
 	type InferenceError,
@@ -236,7 +237,7 @@ function buildAssistantMessageFromResponse(
 	const usage: InferenceUsage | undefined = inf.usage;
 	const error = inf.error;
 
-	const { uiContent, uiReasoningContents, uiToolCalls, uiToolOutputs } = deriveUIFieldsFromOutputUnion(
+	const { uiContent, uiReasoningContents, uiToolCalls, uiToolOutputs, uiCitations } = deriveUIFieldsFromOutputUnion(
 		outputs,
 		choiceMap
 	);
@@ -258,6 +259,7 @@ function buildAssistantMessageFromResponse(
 		uiReasoningContents,
 		uiToolCalls,
 		uiToolOutputs,
+		uiCitations,
 		uiDebugDetails,
 	};
 	// console.log('assistant from message out', JSON.stringify(msg, null, 2));
@@ -272,6 +274,7 @@ export function deriveUIFieldsFromOutputUnion(
 	uiReasoningContents?: ReasoningContent[];
 	uiToolCalls?: UIToolCall[];
 	uiToolOutputs?: UIToolOutput[];
+	uiCitations?: URLCitation[];
 } {
 	if (!outputs || outputs.length === 0) {
 		return { uiContent: '' };
@@ -281,6 +284,8 @@ export function deriveUIFieldsFromOutputUnion(
 	const reasoning: ReasoningContent[] = [];
 	const toolCalls: UIToolCall[] = [];
 	const toolOutputs: UIToolOutput[] = [];
+	const citations: URLCitation[] = [];
+	const seenCitationKeys = new Set<string>();
 
 	let toolCallMap: Map<string, ToolCall> | undefined;
 
@@ -293,6 +298,19 @@ export function deriveUIFieldsFromOutputUnion(
 					if (c.kind === ContentItemKind.Text && c.textItem) {
 						const t = c.textItem.text.trim();
 						if (t) textParts.push(t);
+
+						const itemCitations = c.textItem.citations;
+						if (itemCitations && itemCitations.length > 0) {
+							for (const cit of itemCitations) {
+								// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+								if (cit.kind !== CitationKind.URL || !cit.urlCitation?.url) continue;
+								const u = cit.urlCitation;
+								const key = `${u.url}|${u.startIndex ?? ''}|${u.endIndex ?? ''}|${u.title ?? ''}`;
+								if (seenCitationKeys.has(key)) continue;
+								seenCitationKeys.add(key);
+								citations.push(u);
+							}
+						}
 					}
 				}
 				break;
@@ -342,6 +360,7 @@ export function deriveUIFieldsFromOutputUnion(
 		uiReasoningContents: reasoning.length > 0 ? reasoning : undefined,
 		uiToolCalls: toolCalls.length > 0 ? toolCalls : undefined,
 		uiToolOutputs: toolOutputs.length > 0 ? toolOutputs : undefined,
+		uiCitations: citations.length > 0 ? citations : undefined,
 	};
 }
 
