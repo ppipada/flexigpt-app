@@ -695,3 +695,5 @@
     - [x] tool details modal need to use message content card.
   - [x] tool calls to show in some way and not in composer chip.
   - [x] no callable tool call jsut chips end to end.
+
+- [x] scroll to top button needed
