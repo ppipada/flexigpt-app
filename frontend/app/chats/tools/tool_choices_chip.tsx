@@ -142,7 +142,9 @@ export function ToolChoicesChip({
 										<button
 											type="button"
 											className="btn btn-ghost btn-xs shrink-0 px-1 py-0 shadow-none"
-											onClick={() => {
+											onClick={e => {
+												e.preventDefault(); // don’t submit the composer form
+												e.stopPropagation(); // don’t trigger any parent click handlers
 												onEditToolArgs(node);
 											}}
 											title="Edit tool options"

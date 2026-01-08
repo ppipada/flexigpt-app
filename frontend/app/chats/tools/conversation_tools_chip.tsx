@@ -249,7 +249,9 @@ export function ConversationToolsChip({
 										<button
 											type="button"
 											className="btn btn-ghost btn-xs p-0 shadow-none"
-											onClick={() => {
+											onClick={e => {
+												e.preventDefault(); // don’t submit the composer form
+												e.stopPropagation(); // don’t trigger any parent click handlers
 												onEditToolArgs(entry);
 											}}
 											title="Edit tool options"

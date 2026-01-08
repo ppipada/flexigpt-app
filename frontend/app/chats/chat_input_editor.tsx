@@ -86,7 +86,8 @@ import {
 	type ToolSelectionElementNode,
 } from '@/chats/tools/tool_editor_utils';
 import { ToolPlusKit } from '@/chats/tools/tool_plugin';
-import { ToolUserArgsModal } from '@/chats/tools/tool_user_args_modal';
+import { ToolArgsModalHost } from '@/chats/tools/tool_user_args_host';
+import { type ToolArgsTarget } from '@/chats/tools/tool_user_args_modal';
 
 export interface EditorAreaHandle {
 	focus: () => void;
@@ -186,7 +187,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const toolArgsBlocked = attachedToolArgsBlocked || conversationToolArgsBlocked;
 
 	// Single “active tool args editor” target (conversation-level or attached).
-	type ToolArgsTarget = { kind: 'attached'; selectionID: string } | { kind: 'conversation'; key: string };
 	const [toolArgsTarget, setToolArgsTarget] = useState<ToolArgsTarget | null>(null);
 
 	const closeAllMenus = useCallback(() => {
@@ -1362,7 +1362,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				</Plate>
 			</form>
 
-			{/* Tool choice / call  inspector modal */}
+			{/* Tool choice / call inspector modal */}
+
 			<ToolDetailsModal
 				state={toolDetailsState}
 				onClose={() => {
@@ -1370,96 +1371,16 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				}}
 			/>
 
-			{/* Tool user-args editor modal */}
-			{(() => {
-				if (!toolArgsTarget) return null;
+			{/* Tool user-args editor modal host */}
 
-				if (toolArgsTarget.kind === 'attached') {
-					const all = getToolNodesWithPath(editor, false);
-					const hit = all.find(([n]) => n.selectionID === toolArgsTarget.selectionID);
-					if (!hit) return null;
-					const [node] = hit;
-					const schema = node.toolSnapshot?.userArgSchema;
-					const label =
-						node.toolSnapshot?.displayName && node.toolSnapshot.displayName.length > 0
-							? node.toolSnapshot.displayName
-							: node.toolSlug;
-
-					return (
-						<ToolUserArgsModal
-							isOpen={true}
-							onClose={() => {
-								setToolArgsTarget(null);
-							}}
-							toolLabel={label}
-							schema={schema}
-							existingInstance={node.userArgSchemaInstance}
-							onSave={newInstance => {
-								const allNow = getToolNodesWithPath(editor, false);
-								const again = allNow.find(([n]) => n.selectionID === toolArgsTarget.selectionID);
-								if (again) {
-									const [, path] = again;
-									editor.tf.setNodes(
-										{
-											userArgSchemaInstance: newInstance,
-										},
-										{ at: path as any }
-									);
-								}
-								setToolArgsTarget(null);
-								recomputeAttachedToolArgsBlocked();
-							}}
-						/>
-					);
-				}
-
-				// conversation-level
-				const entry = conversationToolsState.find(e => e.key === toolArgsTarget.key);
-				if (!entry) return null;
-				const def = entry.toolDefinition;
-				const schema = def?.userArgSchema;
-				const label =
-					entry.toolStoreChoice.displayName && entry.toolStoreChoice.displayName.length > 0
-						? entry.toolStoreChoice.displayName
-						: entry.toolStoreChoice.toolSlug;
-
-				return (
-					<ToolUserArgsModal
-						isOpen={true}
-						onClose={() => {
-							setToolArgsTarget(null);
-						}}
-						toolLabel={label}
-						schema={schema}
-						existingInstance={entry.toolStoreChoice.userArgSchemaInstance}
-						onSave={newInstance => {
-							setConversationToolsState(prev =>
-								prev.map(e => {
-									if (e.key !== toolArgsTarget.key) return e;
-
-									const nextToolStoreChoice = {
-										...e.toolStoreChoice,
-										userArgSchemaInstance: newInstance,
-									};
-
-									const nextStatus =
-										e.toolDefinition && e.toolDefinition.userArgSchema
-											? computeToolUserArgsStatus(e.toolDefinition.userArgSchema, newInstance)
-											: e.argStatus;
-
-									return {
-										...e,
-										toolStoreChoice: nextToolStoreChoice,
-										argStatus: nextStatus,
-									};
-								})
-							);
-							setToolArgsTarget(null);
-							recomputeAttachedToolArgsBlocked();
-						}}
-					/>
-				);
-			})()}
+			<ToolArgsModalHost
+				editor={editor}
+				conversationToolsState={conversationToolsState}
+				setConversationToolsState={setConversationToolsState}
+				toolArgsTarget={toolArgsTarget}
+				setToolArgsTarget={setToolArgsTarget}
+				recomputeAttachedToolArgsBlocked={recomputeAttachedToolArgsBlocked}
+			/>
 		</>
 	);
 });

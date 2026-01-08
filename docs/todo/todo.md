@@ -7,8 +7,7 @@
 - [ ] View mode needed for builtins
 
 - [ ] web search: we may want a vanity chip, if space is there, in bottom actions bar, that has quick attach web search button, which will insert web search tool. this is just quick shortcut and should be synced with in composer behavior. if tool is already present it should show tick else cross. no other action other than add/remove.
-- [ ] Adding a small visual distinction between provider‑managed web search calls vs. “suggested” function/custom calls in message history.
-- [ ] edit user args modal opens and closes immediately.
+- [ ] for args edit, right now it is json with no indication of shape etc. we may want to actually render a json schema with empty and then let user edit. if he submits empty again, we may need way to see that it is default value or actual new value.
 
 ## Features
 

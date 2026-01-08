@@ -28,6 +28,9 @@ type FormState = {
 	rawJson: string;
 };
 
+// Shared type for "what args editor is currently open?"
+export type ToolArgsTarget = { kind: 'attached'; selectionID: string } | { kind: 'conversation'; key: string };
+
 export function ToolUserArgsModal({
 	isOpen,
 	onClose,
@@ -96,7 +99,10 @@ export function ToolUserArgsModal({
 		}
 
 		return () => {
-			if (dialog.open) dialog.close();
+			// If unmounted while still open, ensure we close the dialog
+			if (dialog.open) {
+				dialog.close();
+			}
 		};
 	}, [isOpen]);
 

@@ -697,3 +697,5 @@
   - [x] no callable tool call jsut chips end to end.
 
 - [x] scroll to top button needed
+- [x] Adding a small visual distinction between provider‑managed web search calls vs. “suggested” function/custom calls in message history.
+- [x] edit user args modal opens and closes immediately.
