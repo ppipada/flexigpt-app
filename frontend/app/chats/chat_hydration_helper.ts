@@ -176,8 +176,7 @@ function buildToolOutputFromEditor(ui: UIToolOutput): ToolOutput | undefined {
 		isError: !!ui.isError,
 		signature: undefined,
 		contents,
-		// Web-search specific structured items are not reconstructed on resend.
-		webSearchToolOutputItems: undefined,
+		webSearchToolOutputItems: ui.webSearchToolOutputItems,
 	};
 }
 

@@ -36,6 +36,7 @@ interface EditorChipsBarProps {
 
 	onEditConversationToolArgs?: (entry: ConversationToolStateEntry) => void;
 	onEditAttachedToolArgs?: (node: ToolSelectionElementNode) => void;
+	onAttachedToolsChanged?: () => void;
 }
 
 /**
@@ -67,6 +68,7 @@ export function EditorChipsBar({
 	onConversationToolsChange,
 	onEditConversationToolArgs,
 	onEditAttachedToolArgs,
+	onAttachedToolsChanged,
 }: EditorChipsBarProps) {
 	const editor = useEditorRef() as PlateEditor;
 	const toolEntries = getToolNodesWithPath(editor);
@@ -131,7 +133,12 @@ export function EditorChipsBar({
 			))}
 
 			{/* Per-message tool choices (inline-attached tools for this draft) */}
-			<ToolChoicesChip editor={editor} toolEntries={toolEntries} onEditToolArgs={onEditAttachedToolArgs} />
+			<ToolChoicesChip
+				editor={editor}
+				toolEntries={toolEntries}
+				onEditToolArgs={onEditAttachedToolArgs}
+				onToolsChanged={onAttachedToolsChanged}
+			/>
 
 			{/* Tool-call chips (pending/running/failed) and tool output chips */}
 			<ToolChipsComposerRow

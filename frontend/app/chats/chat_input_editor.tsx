@@ -25,13 +25,7 @@ import type {
 } from '@/spec/attachment';
 import { AttachmentKind } from '@/spec/attachment';
 import type { ProviderSDKType, UIToolCall, UIToolOutput } from '@/spec/inference';
-import {
-	type Tool,
-	type ToolStoreChoice,
-	ToolStoreChoiceType,
-	type UIToolStoreChoice,
-	type UIToolUserArgsStatus,
-} from '@/spec/tool';
+import { type Tool, type ToolStoreChoice, ToolStoreChoiceType, type UIToolStoreChoice } from '@/spec/tool';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -184,6 +178,10 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	// Used to gate sending while schemas are still loading.
 	const [toolsHydratingCount, setToolsHydratingCount] = useState(0);
 	const toolsDefLoading = toolsHydratingCount > 0;
+	// Arg-blocking state, split by attached-vs-conversation tools.
+	const [attachedToolArgsBlocked, setAttachedToolArgsBlocked] = useState(false);
+	const [conversationToolArgsBlocked, setConversationToolArgsBlocked] = useState(false);
+	const toolArgsBlocked = attachedToolArgsBlocked || conversationToolArgsBlocked;
 
 	// Single “active tool args editor” target (conversation-level or attached).
 	type ToolArgsTarget = { kind: 'attached'; selectionID: string } | { kind: 'conversation'; key: string };
@@ -328,6 +326,20 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		}
 	}, [editor, deferredDocVersion]);
 
+	// Helper to recompute attached-tool arg blocking on demand (not tied to docVersion).
+	const recomputeAttachedToolArgsBlocked = useCallback(() => {
+		const toolEntries = getToolNodesWithPath(editor, false);
+		for (const [node] of toolEntries) {
+			const schema = node.toolSnapshot?.userArgSchema;
+			const status = computeToolUserArgsStatus(schema, node.userArgSchemaInstance);
+			if (status.hasSchema && !status.isSatisfied) {
+				setAttachedToolArgsBlocked(true);
+				return;
+			}
+		}
+		setAttachedToolArgsBlocked(false);
+	}, [editor]);
+
 	// Ensure we have full Tool definitions (and argStatus) for conversation-level tools.
 	useEffect(() => {
 		const missing = conversationToolsState.filter(e => !e.toolDefinition);
@@ -448,8 +460,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				}
 			});
 
-			// After successful hydration, we no longer need to repeat this until
-			// another loadExternalMessage() call.
+			// Now that we have schemas for attached tools, recompute arg blocking.
+			recomputeAttachedToolArgsBlocked();
+			// After successful hydration, we no longer need to repeat this until another loadExternalMessage() call.
 			setNeedsAttachedToolHydration(false);
 		})().finally(() => {
 			if (!cancelled) {
@@ -460,37 +473,21 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		return () => {
 			cancelled = true;
 		};
-	}, [needsAttachedToolHydration, editor]);
+	}, [needsAttachedToolHydration, editor, recomputeAttachedToolArgsBlocked]);
 
-	// Gating: block send when any attached or conversation-level tool has
-	// a userArgSchema with missing required fields.
-	const toolArgsBlocked = useMemo(() => {
-		// Inline (attached) tools in this editor
-		const toolEntries = getToolNodesWithPath(editor, false);
-		for (const [node] of toolEntries) {
-			const schema = node.toolSnapshot?.userArgSchema;
-			const status = computeToolUserArgsStatus(schema, node.userArgSchemaInstance);
-			if (status.hasSchema && !status.isSatisfied) {
-				return true;
-			}
-		}
-
-		// Conversation-level tools
+	// Recompute conversation-level arg blocking whenever that state changes.
+	useEffect(() => {
+		let blocked = false;
 		for (const entry of conversationToolsState) {
 			if (!entry.enabled) continue;
-			const schema = entry.toolDefinition?.userArgSchema;
-			if (!schema) continue;
-			const status: UIToolUserArgsStatus = computeToolUserArgsStatus(
-				schema,
-				entry.toolStoreChoice.userArgSchemaInstance
-			);
-			if (status.hasSchema && !status.isSatisfied) {
-				return true;
+			const status = entry.argStatus;
+			if (status?.hasSchema && !status.isSatisfied) {
+				blocked = true;
+				break;
 			}
 		}
-
-		return false;
-	}, [editor, conversationToolsState, deferredDocVersion]);
+		setConversationToolArgsBlocked(blocked);
+	}, [conversationToolsState]);
 
 	const isSendButtonEnabled = useMemo(() => {
 		if (isBusy) return false;
@@ -1237,6 +1234,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 									onConversationToolsChange={setConversationToolsState}
 									onEditConversationToolArgs={handleEditConversationToolArgs}
 									onEditAttachedToolArgs={handleEditAttachedToolArgs}
+									onAttachedToolsChanged={recomputeAttachedToolArgsBlocked}
 								/>
 							</div>
 						</div>
@@ -1330,6 +1328,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 						attachmentButtonRef={attachmentButtonRef}
 						shortcutConfig={shortcutConfig}
 						currentProviderSDKType={currentProviderSDKType}
+						onToolsChanged={recomputeAttachedToolArgsBlocked}
 					/>
 				</Plate>
 			</form>
@@ -1380,6 +1379,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 									);
 								}
 								setToolArgsTarget(null);
+								recomputeAttachedToolArgsBlocked();
 							}}
 						/>
 					);
@@ -1427,6 +1427,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 								})
 							);
 							setToolArgsTarget(null);
+							recomputeAttachedToolArgsBlocked();
 						}}
 					/>
 				);

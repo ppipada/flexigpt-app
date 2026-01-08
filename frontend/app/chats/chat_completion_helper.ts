@@ -1,5 +1,5 @@
 import { type ConversationMessage } from '@/spec/conversation';
-import type { ProviderName } from '@/spec/inference';
+import type { ProviderName, WebSearchToolOutputItemUnion } from '@/spec/inference';
 import {
 	type CompletionResponseBody,
 	ContentItemKind,
@@ -385,16 +385,19 @@ export function buildUIToolOutputFromToolOutput(
 	toolCallMap?: Map<string, ToolCall>
 ): UIToolOutput {
 	const isError = out.isError;
-
-	const toolStoreOutputs = mapToolOutputItemsToToolStoreOutputs(out.contents);
-	const primaryText = extractPrimaryTextFromToolStoreOutputs(toolStoreOutputs);
-
-	const summaryBase = formatToolOutputSummary(out.name);
-	const summary = isError && primaryText ? `Error: ${primaryText.split('\n')[0].slice(0, 80)}` : summaryBase;
-
 	const toolStoreChoice = choiceMap.get(out.choiceID);
 	const call = toolCallMap?.get(out.callID);
+	const summaryBase = formatToolOutputSummary(out.name);
 
+	const toolStoreOutputs = mapToolOutputItemsToToolStoreOutputs(out.contents);
+
+	const primaryText = extractPrimaryTextFromToolStoreOutputs(toolStoreOutputs);
+	const summary = isError && primaryText ? `Error: ${primaryText.split('\n')[0].slice(0, 80)}` : summaryBase;
+
+	let webSearchOutputs: WebSearchToolOutputItemUnion[] | undefined;
+	if (out.webSearchToolOutputItems && out.webSearchToolOutputItems.length > 0) {
+		webSearchOutputs = out.webSearchToolOutputItems;
+	}
 	return {
 		id: out.id,
 		callID: out.callID,
@@ -404,8 +407,9 @@ export function buildUIToolOutputFromToolOutput(
 		// ToolType and ToolStoreChoiceType share the same string enum values.
 		type: out.type as unknown as ToolStoreChoiceType,
 
-		summary,
-		toolStoreOutputs,
+		summary: summary,
+		toolStoreOutputs: toolStoreOutputs,
+		webSearchToolOutputItems: webSearchOutputs,
 
 		toolStoreChoice:
 			toolStoreChoice ??
@@ -418,7 +422,7 @@ export function buildUIToolOutputFromToolOutput(
 				toolType: out.type as unknown as ToolStoreChoiceType,
 			} as ToolStoreChoice),
 
-		isError,
+		isError: isError,
 		errorMessage: isError ? primaryText : undefined,
 
 		// Hydrate from the original call, if present.

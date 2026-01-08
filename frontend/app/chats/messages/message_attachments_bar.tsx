@@ -140,7 +140,7 @@ function MessageToolCallChip({ call, fullWidth = false }: MessageToolCallChipPro
 		webSearchToolCallItems: call.webSearchToolCallItems,
 		type: call.type,
 		choiceID: call.choiceID,
-		status: 'pending',
+		status: call.status,
 		toolStoreChoice: call.toolStoreChoice,
 		errorMessage: call.errorMessage,
 	};

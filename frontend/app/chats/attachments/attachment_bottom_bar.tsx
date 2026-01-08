@@ -36,6 +36,8 @@ interface AttachmentBottomBarProps {
 
 	shortcutConfig: ShortcutConfig;
 	currentProviderSDKType: ProviderSDKType;
+
+	onToolsChanged?: () => void;
 }
 
 interface PickerButtonProps {
@@ -88,6 +90,7 @@ export function AttachmentBottomBar({
 	attachmentButtonRef,
 	shortcutConfig,
 	currentProviderSDKType,
+	onToolsChanged,
 }: AttachmentBottomBarProps) {
 	const editor = useEditorRef() as PlateEditor;
 	const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
@@ -161,6 +164,8 @@ export function AttachmentBottomBar({
 			},
 			item.toolDefinition
 		);
+
+		onToolsChanged?.();
 
 		closeToolMenu();
 		editor.tf.focus();

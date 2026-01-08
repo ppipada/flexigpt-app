@@ -16,6 +16,7 @@ interface ToolChoicesChipProps {
 	// Entries from getToolNodesWithPath(editor); typed loosely here.
 	toolEntries: Array<[ToolSelectionElementNode, Path]>;
 	onEditToolArgs?: (node: ToolSelectionElementNode) => void;
+	onToolsChanged?: () => void;
 }
 
 /**
@@ -24,7 +25,7 @@ interface ToolChoicesChipProps {
  * - Opens a dropdown listing each tool with an individual remove button.
  * - Has a "remove all" cross that clears all attached tools.
  */
-export function ToolChoicesChip({ editor, toolEntries, onEditToolArgs }: ToolChoicesChipProps) {
+export function ToolChoicesChip({ editor, toolEntries, onEditToolArgs, onToolsChanged }: ToolChoicesChipProps) {
 	const count = toolEntries.length;
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
@@ -36,6 +37,7 @@ export function ToolChoicesChip({ editor, toolEntries, onEditToolArgs }: ToolCho
 		const key = toolIdentityKey(node.bundleID, node.bundleSlug, node.toolSlug, node.toolVersion);
 		if (!key) return;
 		removeToolByKey(editor, key);
+		onToolsChanged?.();
 	};
 
 	const handleRemoveAll = () => {
@@ -49,6 +51,7 @@ export function ToolChoicesChip({ editor, toolEntries, onEditToolArgs }: ToolCho
 		}
 
 		menu.hide();
+		onToolsChanged?.();
 	};
 
 	return (
