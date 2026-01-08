@@ -19,7 +19,7 @@ import { useAtBottom } from '@/hooks/use_at_bottom';
 
 import { conversationStoreAPI } from '@/apis/baseapi';
 
-import { ButtonScrollToBottom } from '@/components/button_scroll_to_bottom';
+import { ButtonScrollTopBottom } from '@/components/button_scroll_top_bottom';
 import { PageFrame } from '@/components/page_frame';
 
 import { HandleCompletion } from '@/chats/chat_completion_helper';
@@ -62,10 +62,27 @@ export default function ChatsPage() {
 	const [shortcutConfig] = useState<ShortcutConfig>(defaultShortcutConfig);
 	const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
 
+	const [isAtTop, setIsAtTop] = useState(true);
+
 	// Focus on mount.
 	useEffect(() => {
 		chatInputRef.current?.focus();
 	}, []);
+
+	useEffect(() => {
+		const el = chatContainerRef.current;
+		if (!el) return;
+
+		const handleScroll = () => {
+			setIsAtTop(el.scrollTop <= 0);
+		};
+
+		handleScroll();
+		el.addEventListener('scroll', handleScroll);
+		return () => {
+			el.removeEventListener('scroll', handleScroll);
+		};
+	}, [chatContainerRef]);
 
 	// Get the scroll down button active via regular check.
 	useEffect(() => {
@@ -588,14 +605,21 @@ export default function ChatsPage() {
 						</div>
 					</div>
 
-					{/* Overlay the button; not part of the scrollable content */}
+					{/* Overlay the buttons; not part of the scrollable content */}
 					<div className="pointer-events-none absolute right-4 bottom-4 z-10 xl:right-24">
 						<div className="pointer-events-auto">
-							<ButtonScrollToBottom
+							<ButtonScrollTopBottom
 								scrollContainerRef={chatContainerRef}
 								iconSize={32}
-								show={isScrollable && !isAtBottom}
-								className="btn btn-md border-none bg-transparent shadow-none"
+								showTop={isScrollable && !isAtTop}
+								showBottom={isScrollable && !isAtBottom}
+								className="flex flex-col gap-2"
+								topButtonProps={{
+									className: 'btn btn-md border-none bg-transparent shadow-none',
+								}}
+								bottomButtonProps={{
+									className: 'btn btn-md border-none bg-transparent shadow-none',
+								}}
 							/>
 						</div>
 					</div>
