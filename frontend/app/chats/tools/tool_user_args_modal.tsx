@@ -49,13 +49,11 @@ export function ToolUserArgsModal({
 
 	const allKeys = useMemo(() => Object.keys(properties), [properties]);
 	const optionalKeys = useMemo(() => allKeys.filter(k => !requiredKeys.includes(k)), [allKeys, requiredKeys]);
+
+	// Initialize textarea content whenever the modal is opened.
 	useEffect(() => {
 		if (!isOpen) return;
 
-		const dialog = dialogRef.current;
-		if (!dialog) return;
-
-		// Initialize textarea content
 		let initial = '';
 		if (existingInstance && existingInstance.trim() !== '') {
 			try {
@@ -67,7 +65,6 @@ export function ToolUserArgsModal({
 		} else {
 			const keys = Object.keys(properties);
 			if (keys.length > 0) {
-				// Build a skeleton object from schema properties & defaults
 				const skeleton: Record<string, unknown> = {};
 				for (const [key, prop] of Object.entries(properties)) {
 					const propObj = getJSONObject(prop);
@@ -85,6 +82,14 @@ export function ToolUserArgsModal({
 
 		setForm({ rawJson: initial });
 		setError(null);
+	}, [isOpen, existingInstance, properties, requiredKeys]);
+
+	// Manage the native <dialog> lifecycle (open/close) based only on isOpen.
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const dialog = dialogRef.current;
+		if (!dialog) return;
 
 		if (!dialog.open) {
 			dialog.showModal();
@@ -93,7 +98,7 @@ export function ToolUserArgsModal({
 		return () => {
 			if (dialog.open) dialog.close();
 		};
-	}, [isOpen, existingInstance, properties, requiredKeys]);
+	}, [isOpen]);
 
 	const handleDialogClose = () => {
 		onClose();
