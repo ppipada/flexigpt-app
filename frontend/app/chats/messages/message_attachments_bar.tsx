@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { FiChevronDown, FiFileText, FiGlobe, FiImage, FiLink, FiPaperclip, FiTool } from 'react-icons/fi';
+import { FiChevronDown, FiCode, FiFileText, FiGlobe, FiImage, FiLink, FiPaperclip, FiTool } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
@@ -108,7 +108,7 @@ function MessageToolChoiceChip({ tool, fullWidth = false, onClick }: MessageTool
 	if (tool.description) tooltipLines.push(tool.description);
 
 	const containerClasses = [
-		'bg-base-200 text-base-content flex items-center gap-2 rounded-2xl px-2 py-0',
+		'bg-base-200 text-base-content flex items-center justify-between gap-2 rounded-2xl px-2 py-0',
 		fullWidth ? 'w-full' : 'shrink-0',
 	]
 		.filter(Boolean)
@@ -120,6 +120,9 @@ function MessageToolChoiceChip({ tool, fullWidth = false, onClick }: MessageTool
 		<div className={containerClasses} title={tooltipLines.join('\n')} data-message-chip="tool-choice" onClick={onClick}>
 			<FiTool size={14} />
 			<span className={labelClasses}>{name}</span>
+			<span className="text-base-content/60 flex gap-1 text-[10px] uppercase">
+				Details <FiCode size={12} />
+			</span>
 		</div>
 	);
 }
@@ -153,7 +156,7 @@ function MessageToolCallChip({ call, fullWidth = false, onClick }: MessageToolCa
 	const title = `Suggested tool call: ${label}${statusLabel}`;
 
 	const containerClasses = [
-		'bg-base-200 text-base-content flex items-center gap-2 rounded-2xl px-2 py-0',
+		'bg-base-200 text-base-content flex items-center justify-between gap-2 rounded-2xl px-2 py-0',
 		fullWidth ? 'w-full' : 'shrink-0',
 	]
 		.filter(Boolean)
@@ -164,8 +167,10 @@ function MessageToolCallChip({ call, fullWidth = false, onClick }: MessageToolCa
 	return (
 		<div className={containerClasses} title={title} data-message-chip="tool-suggested" onClick={onClick}>
 			<FiTool size={14} />
-			<span className="text-base-content/60 text-[10px] uppercase">Suggested</span>
 			<span className={labelClasses}>{label}</span>
+			<span className="text-base-content/60 flex gap-1 text-[10px] uppercase">
+				Details <FiCode size={12} />
+			</span>
 		</div>
 	);
 }
@@ -188,7 +193,7 @@ function MessageToolOutputChip({ output, fullWidth = false, onClick }: MessageTo
 	const title = titleLines.join('\n');
 
 	const containerClasses = [
-		'bg-base-200 text-base-content flex items-center gap-2 rounded-2xl px-2 py-0',
+		'bg-base-200 text-base-content flex items-center justify-between gap-2 rounded-2xl px-2 py-0',
 		fullWidth ? 'w-full' : 'shrink-0',
 	]
 		.filter(Boolean)
@@ -199,8 +204,10 @@ function MessageToolOutputChip({ output, fullWidth = false, onClick }: MessageTo
 	return (
 		<div className={containerClasses} title={title} data-message-chip="tool-output" onClick={onClick}>
 			<FiTool size={14} />
-			<span className="text-base-content/60 text-[10px] uppercase">Output</span>
 			<span className={labelClasses}>{label}</span>
+			<span className="text-base-content/60 flex gap-1 text-[10px] uppercase">
+				Details <FiCode size={12} />
+			</span>
 		</div>
 	);
 }
@@ -531,7 +538,7 @@ interface MessageWebSearchOutputChipProps {
 
 function MessageWebSearchOutputChip({ output, fullWidth = false, onClick }: MessageWebSearchOutputChipProps) {
 	const containerClasses = [
-		'bg-base-200 text-base-content flex items-center gap-2 rounded-2xl px-2 py-0',
+		'bg-base-200 text-base-content flex items-center justify-between gap-2 rounded-2xl px-2 py-0',
 		fullWidth ? 'w-full' : 'shrink-0',
 	].join(' ');
 
@@ -545,8 +552,10 @@ function MessageWebSearchOutputChip({ output, fullWidth = false, onClick }: Mess
 	return (
 		<div className={containerClasses} title={title} data-message-chip="websearch-output" onClick={onClick}>
 			<FiGlobe size={14} />
-			<span className="text-base-content/60 text-[10px] uppercase">Web results</span>
 			<span className={labelClasses}>{label}</span>
+			<span className="text-base-content/60 flex gap-1 text-[10px] uppercase">
+				Details <FiCode size={12} />
+			</span>
 		</div>
 	);
 }
@@ -624,7 +633,7 @@ interface MessageWebSearchCallChipProps {
 
 function MessageWebSearchCallChip({ call, fullWidth = false, onClick }: MessageWebSearchCallChipProps) {
 	const containerClasses = [
-		'bg-base-200 text-base-content flex items-center gap-2 rounded-2xl px-2 py-0',
+		'bg-base-200 text-base-content flex items-center justify-between gap-2 rounded-2xl px-2 py-0',
 		fullWidth ? 'w-full' : 'shrink-0',
 	].join(' ');
 
@@ -644,8 +653,10 @@ function MessageWebSearchCallChip({ call, fullWidth = false, onClick }: MessageW
 	return (
 		<div className={containerClasses} title={title} data-message-chip="websearch-call" onClick={onClick}>
 			<FiGlobe size={14} />
-			<span className="text-base-content/60 text-[10px] uppercase">Web search</span>
 			<span className={labelClasses}>{label}</span>
+			<span className="text-base-content/60 flex gap-1 text-[10px] uppercase">
+				Details <FiCode size={12} />
+			</span>
 		</div>
 	);
 }
