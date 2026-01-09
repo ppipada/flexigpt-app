@@ -699,3 +699,4 @@
 - [x] scroll to top button needed
 - [x] Adding a small visual distinction between provider‑managed web search calls vs. “suggested” function/custom calls in message history.
 - [x] edit user args modal opens and closes immediately.
+- [x] web search: we may want a vanity chip, if space is there, in bottom actions bar, that has quick attach web search button, which will insert web search tool. this is just quick shortcut and should be synced with in composer behavior. if tool is already present it should show tick else cross. no other action other than add/remove.
