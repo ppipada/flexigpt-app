@@ -2,9 +2,10 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 import { createPortal } from 'react-dom';
 
-import { FiAlertCircle, FiTool, FiX } from 'react-icons/fi';
+import { FiAlertCircle, FiRefreshCcw, FiTool, FiX } from 'react-icons/fi';
 
 import {
+	buildExampleFromDraft7Schema,
 	getJSONObject,
 	getPropertiesFromJSONSchema,
 	getRequiredFromJSONSchema,
@@ -12,6 +13,7 @@ import {
 	type JSONSchema,
 } from '@/lib/jsonschema_utils';
 
+import { MessageContentCard } from '@/chats/messages/message_content_card';
 import { computeToolUserArgsStatus } from '@/chats/tools/tool_editor_utils';
 
 interface ToolUserArgsModalProps {
@@ -33,6 +35,19 @@ export type ToolArgsTarget =
 	| { kind: 'attached'; selectionID: string }
 	| { kind: 'conversation'; key: string }
 	| { kind: 'webSearch' };
+
+function toPrettyJSON(value: unknown): string {
+	try {
+		return JSON.stringify(value, null, 2);
+	} catch {
+		return String(value);
+	}
+}
+
+function asJsonMarkdownBlock(json: string): string {
+	return `\`\`\`json\n${json}\n\`\`\``;
+}
+
 export function ToolUserArgsModal({
 	isOpen,
 	onClose,
@@ -45,21 +60,27 @@ export function ToolUserArgsModal({
 	const [form, setForm] = useState<FormState>({ rawJson: '' });
 	const [error, setError] = useState<string | null>(null);
 
-	// Derive simple hints from schema (memoized so deps are stable)
 	const schemaObj = useMemo(() => getJSONObject(schema), [schema]);
-
 	const properties = useMemo(() => getPropertiesFromJSONSchema(schema) ?? ({} as JSONObject), [schema]);
-
 	const requiredKeys = useMemo(() => getRequiredFromJSONSchema(schema) ?? [], [schema]);
 
 	const allKeys = useMemo(() => Object.keys(properties), [properties]);
 	const optionalKeys = useMemo(() => allKeys.filter(k => !requiredKeys.includes(k)), [allKeys, requiredKeys]);
 
-	// Initialize textarea content whenever the modal is opened.
+	const exampleInstanceObj = useMemo(() => (schemaObj ? buildExampleFromDraft7Schema(schemaObj) : {}), [schemaObj]);
+
+	const schemaPretty = useMemo(() => (schemaObj ? toPrettyJSON(schemaObj) : null), [schemaObj]);
+	const examplePretty = useMemo(() => toPrettyJSON(exampleInstanceObj), [exampleInstanceObj]);
+
+	const schemaMarkdown = useMemo(() => (schemaPretty ? asJsonMarkdownBlock(schemaPretty) : null), [schemaPretty]);
+	const exampleMarkdown = useMemo(() => asJsonMarkdownBlock(examplePretty), [examplePretty]);
+
+	// Initialize editor content whenever modal opens
 	useEffect(() => {
 		if (!isOpen) return;
 
 		let initial = '';
+
 		if (existingInstance && existingInstance.trim() !== '') {
 			try {
 				const parsed = JSON.parse(existingInstance);
@@ -68,48 +89,51 @@ export function ToolUserArgsModal({
 				initial = existingInstance;
 			}
 		} else {
-			const keys = Object.keys(properties);
-			if (keys.length > 0) {
-				const skeleton: Record<string, unknown> = {};
-				for (const [key, prop] of Object.entries(properties)) {
-					const propObj = getJSONObject(prop);
-					if (propObj && Object.prototype.hasOwnProperty.call(propObj, 'default')) {
-						skeleton[key] = propObj['default'];
-					} else if (requiredKeys.includes(key)) {
-						skeleton[key] = '';
-					}
-				}
-				initial = JSON.stringify(skeleton, null, 2);
-			} else {
-				initial = existingInstance ?? '';
-			}
+			initial = '{}';
 		}
 
 		setForm({ rawJson: initial });
 		setError(null);
-	}, [isOpen, existingInstance, properties, requiredKeys]);
+	}, [isOpen, existingInstance, schemaObj, examplePretty]);
 
-	// Manage the native <dialog> lifecycle (open/close) based only on isOpen.
+	// Manage native <dialog> lifecycle
 	useEffect(() => {
 		if (!isOpen) return;
 
 		const dialog = dialogRef.current;
 		if (!dialog) return;
 
-		if (!dialog.open) {
-			dialog.showModal();
-		}
+		if (!dialog.open) dialog.showModal();
 
 		return () => {
-			// If unmounted while still open, ensure we close the dialog
-			if (dialog.open) {
-				dialog.close();
-			}
+			if (dialog.open) dialog.close();
 		};
 	}, [isOpen]);
 
 	const handleDialogClose = () => {
 		onClose();
+	};
+
+	const handleFormat = () => {
+		const raw = form.rawJson.trim();
+		if (!raw) {
+			setForm({ rawJson: '{}' });
+			setError(null);
+			return;
+		}
+
+		try {
+			const parsed = JSON.parse(raw);
+			setForm({ rawJson: JSON.stringify(parsed, null, 2) });
+			setError(null);
+		} catch (err) {
+			setError((err as Error).message || 'Invalid JSON. Please fix it and try again.');
+		}
+	};
+
+	const handleUseExample = () => {
+		setForm({ rawJson: examplePretty });
+		setError(null);
 	};
 
 	const handleSubmit = (e: FormEvent) => {
@@ -118,12 +142,11 @@ export function ToolUserArgsModal({
 
 		let raw = form.rawJson.trim();
 		if (!raw) {
-			// For now, require *something* when schema has required fields.
 			if (requiredKeys.length > 0) {
 				setError('This tool requires options. Provide a JSON object with the required keys.');
 				return;
 			}
-			raw = '{}'; // treat empty as an empty object
+			raw = '{}';
 		}
 
 		let parsed: unknown;
@@ -134,21 +157,18 @@ export function ToolUserArgsModal({
 			return;
 		}
 
-		if (!parsed || typeof parsed !== 'object') {
-			setError('Expected a JSON object.');
+		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+			setError('Expected a JSON object (e.g. `{ "key": "value" }`).');
 			return;
 		}
 
-		// Reuse the same status helper we use elsewhere for required validation.
 		const status = computeToolUserArgsStatus(schema, JSON.stringify(parsed));
 		if (status.hasSchema && !status.isSatisfied) {
 			setError(`Missing required keys: ${status.missingRequired.join(', ')}. Populate them (non-empty) before saving.`);
 			return;
 		}
 
-		// Pretty-print for storage; backend only cares that it's valid JSON.
-		const pretty = JSON.stringify(parsed, null, 2);
-		onSave(pretty);
+		onSave(JSON.stringify(parsed, null, 2));
 		dialogRef.current?.close();
 	};
 
@@ -156,7 +176,7 @@ export function ToolUserArgsModal({
 
 	return createPortal(
 		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
-			<div className="modal-box bg-base-200 max-h-[80vh] max-w-2xl overflow-hidden rounded-2xl p-0">
+			<div className="modal-box bg-base-200 max-h-[80vh] max-w-[80vw] min-w-0 overflow-hidden rounded-2xl p-0">
 				<div className="max-h-[80vh] overflow-y-auto p-6">
 					{/* header */}
 					<div className="mb-4 flex items-center justify-between gap-2">
@@ -165,6 +185,7 @@ export function ToolUserArgsModal({
 							<span>Tool options</span>
 							<span className="badge badge-neutral">{toolLabel}</span>
 						</h3>
+
 						<button
 							type="button"
 							className="btn btn-sm btn-circle bg-base-300"
@@ -175,10 +196,11 @@ export function ToolUserArgsModal({
 						</button>
 					</div>
 
+					{/* stacked content */}
 					<form
 						noValidate
 						onSubmit={handleSubmit}
-						className="space-y-4"
+						className="flex flex-col gap-4"
 						onKeyDownCapture={e => {
 							e.stopPropagation();
 						}}
@@ -186,11 +208,10 @@ export function ToolUserArgsModal({
 							e.stopPropagation();
 						}}
 					>
-						{/* Schema hints */}
+						{/* small summary (optional but useful) */}
 						<div className="space-y-1 text-xs">
 							{schemaObj ? (
 								<>
-									<div className="font-semibold">JSON schema</div>
 									{requiredKeys.length > 0 ? (
 										<div>
 											<span className="font-semibold">Required keys:</span> {requiredKeys.join(', ')}
@@ -209,11 +230,37 @@ export function ToolUserArgsModal({
 							)}
 						</div>
 
-						{/* JSON textarea */}
-						<div>
-							<label className="label p-1">
-								<span className="label-text text-sm">Options (JSON)</span>
-							</label>
+						{/* Editor */}
+						<div className="space-y-2">
+							<div className="flex items-center justify-between">
+								<label className="label p-1">
+									<span className="label-text text-sm">Options (JSON)</span>
+								</label>
+
+								<div className="flex items-center gap-2">
+									<button
+										type="button"
+										className="btn btn-xs bg-base-300 rounded-lg"
+										onClick={handleFormat}
+										title="Format JSON"
+									>
+										<FiRefreshCcw size={12} />
+										<span className="ml-1">Format</span>
+									</button>
+
+									{schemaObj && (
+										<button
+											type="button"
+											className="btn btn-xs bg-base-300 rounded-lg"
+											onClick={handleUseExample}
+											title="Replace editor contents with the full schema-derived example"
+										>
+											Use example
+										</button>
+									)}
+								</div>
+							</div>
+
 							<textarea
 								className={`textarea textarea-bordered w-full rounded-xl font-mono text-xs ${
 									error ? 'textarea-error' : ''
@@ -227,13 +274,51 @@ export function ToolUserArgsModal({
 								spellCheck={false}
 								placeholder={schemaObj ? '{\n  "key": "value"\n}' : 'JSON object; structure depends on this tool.'}
 							/>
-							<div className="mt-1 h-5 text-xs">
+
+							<div className="min-h-6 text-xs">
 								{error && (
 									<span className="text-error flex items-center gap-1">
 										<FiAlertCircle size={12} /> {error}
 									</span>
 								)}
 							</div>
+						</div>
+
+						{/* Example block (full) */}
+						<div className="bg-base-300 rounded-xl p-3">
+							<div className="mb-2 text-sm font-semibold">Example options (all keys)</div>
+							<MessageContentCard
+								messageID={`tool-args:example:${toolLabel}`}
+								content={exampleMarkdown}
+								streamedText=""
+								isStreaming={false}
+								isBusy={false}
+								isPending={false}
+								align="items-start text-left"
+								renderAsMarkdown={true}
+							/>
+							<div className="mt-2 text-xs opacity-80">
+								Full example includes all schema properties. Defaults/enums are respected when present.
+							</div>
+						</div>
+
+						{/* JSON Schema block */}
+						<div className="bg-base-300 rounded-xl p-3">
+							<div className="mb-2 text-sm font-semibold">JSON Schema</div>
+							{schemaMarkdown ? (
+								<MessageContentCard
+									messageID={`tool-args:schema:${toolLabel}`}
+									content={schemaMarkdown}
+									streamedText=""
+									isStreaming={false}
+									isBusy={false}
+									isPending={false}
+									align="items-start text-left"
+									renderAsMarkdown={true}
+								/>
+							) : (
+								<div className="text-xs opacity-80">No schema provided for this tool.</div>
+							)}
 						</div>
 
 						{/* footer */}
@@ -248,6 +333,8 @@ export function ToolUserArgsModal({
 					</form>
 				</div>
 			</div>
+
+			{/* DaisyUI backdrop */}
 			<form method="dialog" className="modal-backdrop">
 				<button aria-label="Close" />
 			</form>

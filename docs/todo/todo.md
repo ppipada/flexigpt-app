@@ -6,8 +6,6 @@
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
 
-- [ ] for args edit, right now it is json with no indication of shape etc. we may want to actually render a json schema with empty and then let user edit. if he submits empty again, we may need way to see that it is default value or actual new value.
-
 ## Features
 
 - [ ] tool features
