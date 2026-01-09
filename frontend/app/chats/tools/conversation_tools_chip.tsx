@@ -3,8 +3,9 @@ import { FiChevronUp, FiCode, FiEdit2, FiTool, FiX } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 
-import type { Tool, ToolStoreChoice, UIToolUserArgsStatus } from '@/spec/tool';
+import { type Tool, type ToolStoreChoice, ToolStoreChoiceType, type UIToolUserArgsStatus } from '@/spec/tool';
 
+import { dispatchOpenToolArgs } from '@/chats/events/open_attached_toolargs';
 import { computeToolUserArgsStatus, toolIdentityKey } from '@/chats/tools/tool_editor_utils';
 
 export interface ConversationToolStateEntry {
@@ -26,10 +27,12 @@ export function initConversationToolsStateFromChoices(choices: ToolStoreChoice[]
 	const seen = new Set<string>();
 
 	for (const t of choices ?? []) {
-		const key = toolIdentityKey(t.bundleID, undefined, t.toolSlug, t.toolVersion);
-		if (seen.has(key)) continue;
-		seen.add(key);
-		out.push({ key, toolStoreChoice: t, enabled: true });
+		if (t.toolType !== ToolStoreChoiceType.WebSearch) {
+			const key = toolIdentityKey(t.bundleID, undefined, t.toolSlug, t.toolVersion);
+			if (seen.has(key)) continue;
+			seen.add(key);
+			out.push({ key, toolStoreChoice: t, enabled: true });
+		}
 	}
 
 	return out;
@@ -46,10 +49,12 @@ export function conversationToolsToChoices(entries: ConversationToolStateEntry[]
 	for (const e of entries) {
 		if (!e.enabled) continue;
 		const t = e.toolStoreChoice;
-		const key = toolIdentityKey(t.bundleID, undefined, t.toolSlug, t.toolVersion);
-		if (seen.has(key)) continue;
-		seen.add(key);
-		out.push(t);
+		if (t.toolType !== ToolStoreChoiceType.WebSearch) {
+			const key = toolIdentityKey(t.bundleID, undefined, t.toolSlug, t.toolVersion);
+			if (seen.has(key)) continue;
+			seen.add(key);
+			out.push(t);
+		}
 	}
 
 	return out;
@@ -73,16 +78,18 @@ export function mergeConversationToolsWithNewChoices(
 	}
 
 	for (const t of newTools) {
-		const key = toolIdentityKey(t.bundleID, undefined, t.toolSlug, t.toolVersion);
-		const existingIdx = indexByKey.get(key);
-		if (existingIdx != null) {
-			// Refresh metadata but keep enabled flag.
-			next[existingIdx] = {
-				...next[existingIdx],
-				toolStoreChoice: { ...next[existingIdx].toolStoreChoice, ...t },
-			};
-		} else {
-			next.push({ key, toolStoreChoice: t, enabled: true });
+		if (t.toolType !== ToolStoreChoiceType.WebSearch) {
+			const key = toolIdentityKey(t.bundleID, undefined, t.toolSlug, t.toolVersion);
+			const existingIdx = indexByKey.get(key);
+			if (existingIdx != null) {
+				// Refresh metadata but keep enabled flag.
+				next[existingIdx] = {
+					...next[existingIdx],
+					toolStoreChoice: { ...next[existingIdx].toolStoreChoice, ...t },
+				};
+			} else {
+				next.push({ key, toolStoreChoice: t, enabled: true });
+			}
 		}
 	}
 
@@ -92,7 +99,6 @@ export function mergeConversationToolsWithNewChoices(
 interface ConversationToolsChipProps {
 	tools: ConversationToolStateEntry[];
 	onChange?: (next: ConversationToolStateEntry[]) => void;
-	onEditToolArgs?: (entry: ConversationToolStateEntry) => void;
 	onShowToolDetails?: (entry: ConversationToolStateEntry) => void;
 }
 
@@ -108,12 +114,7 @@ interface ConversationToolsChipProps {
  * All state here is UI-only; it controls what gets attached on the next send,
  * but does not rewrite existing messages.
  */
-export function ConversationToolsChip({
-	tools,
-	onChange,
-	onEditToolArgs,
-	onShowToolDetails,
-}: ConversationToolsChipProps) {
+export function ConversationToolsChip({ tools, onChange, onShowToolDetails }: ConversationToolsChipProps) {
 	const count = tools.length;
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
@@ -245,14 +246,14 @@ export function ConversationToolsChip({
 								{/* Args status + edit */}
 								<div className="flex items-center gap-1 px-1">
 									{hasArgs && <span className={argsClass}>{argsLabel}</span>}
-									{hasArgs && onEditToolArgs && (
+									{hasArgs && (
 										<button
 											type="button"
 											className="btn btn-ghost btn-xs p-0 shadow-none"
 											onClick={e => {
 												e.preventDefault(); // don’t submit the composer form
 												e.stopPropagation(); // don’t trigger any parent click handlers
-												onEditToolArgs(entry);
+												dispatchOpenToolArgs({ kind: 'conversation', key: entry.key });
 											}}
 											title="Edit tool options"
 											aria-label="Edit tool options"

@@ -305,7 +305,12 @@ export function insertToolSelectionNode(
 		toolSlug: string;
 		toolVersion: string;
 	},
-	toolSnapshot?: Tool
+	toolSnapshot?: Tool,
+	opts?: {
+		toolType?: ToolStoreChoiceType;
+		choiceID?: string;
+		userArgSchemaInstance?: string;
+	}
 ) {
 	const identity = toolIdentityKey(item.bundleID, item.bundleSlug, item.toolSlug, item.toolVersion);
 	if (getAttachedToolKeySet(editor).has(identity)) {
@@ -319,12 +324,16 @@ export function insertToolSelectionNode(
 
 	const node: ToolSelectionElementNode = {
 		type: KEY_TOOL_SELECTION,
-		choiceID: getUUIDv7(),
+		choiceID: opts?.choiceID ?? getUUIDv7(),
+
 		bundleID: item.bundleID,
 		bundleSlug: item.bundleSlug,
 		toolSlug: item.toolSlug,
 		toolVersion: item.toolVersion,
-		toolType: toolSnapshot?.llmToolType ?? ToolStoreChoiceType.Function,
+
+		toolType: opts?.toolType ?? toolSnapshot?.llmToolType ?? ToolStoreChoiceType.Function,
+		userArgSchemaInstance: opts?.userArgSchemaInstance,
+
 		selectionID,
 		toolSnapshot,
 		overrides: {},

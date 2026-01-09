@@ -1,4 +1,4 @@
-import { type ReactNode, type RefObject, useMemo, useState } from 'react';
+import { type Dispatch, type ReactNode, type RefObject, type SetStateAction, useMemo, useState } from 'react';
 
 import { FiFilePlus, FiFolder, FiLink, FiPaperclip, FiTool, FiUpload } from 'react-icons/fi';
 
@@ -7,7 +7,7 @@ import { type PlateEditor, useEditorRef } from 'platejs/react';
 
 import type { ProviderSDKType } from '@/spec/inference';
 import type { PromptTemplateListItem } from '@/spec/prompt';
-import { ToolImplType, type ToolListItem } from '@/spec/tool';
+import { ToolImplType, type ToolListItem, ToolStoreChoiceType } from '@/spec/tool';
 
 import { formatShortcut, type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 
@@ -18,8 +18,21 @@ import { promptStoreAPI } from '@/apis/baseapi';
 
 import { CommandTipsMenu } from '@/chats/attachments/attachment_command_tips_menu';
 import { UrlAttachmentModal } from '@/chats/attachments/attachment_url_modal';
+import { dispatchOpenToolArgs } from '@/chats/events/open_attached_toolargs';
 import { insertTemplateSelectionNode } from '@/chats/templates/template_editor_utils';
-import { getToolNodesWithPath, insertToolSelectionNode, toolIdentityKey } from '@/chats/tools/tool_editor_utils';
+import {
+	computeToolUserArgsStatus,
+	getToolNodesWithPath,
+	insertToolSelectionNode,
+	toolIdentityKey,
+} from '@/chats/tools/tool_editor_utils';
+import { WebSearchBottomBarChip } from '@/chats/tools/web_search_bottom_bar_chip';
+import {
+	getEligibleWebSearchTools,
+	type WebSearchChoiceTemplate,
+	webSearchIdentityKey,
+	webSearchTemplateFromToolListItem,
+} from '@/chats/tools/websearch_utils';
 
 interface AttachmentBottomBarProps {
 	onAttachFiles: () => Promise<void> | void;
@@ -38,6 +51,9 @@ interface AttachmentBottomBarProps {
 	currentProviderSDKType: ProviderSDKType;
 
 	onToolsChanged?: () => void;
+	// Web-search state comes from EditorArea (separate UX/state)
+	webSearchTemplates: WebSearchChoiceTemplate[];
+	setWebSearchTemplates: Dispatch<SetStateAction<WebSearchChoiceTemplate[]>>;
 }
 
 interface PickerButtonProps {
@@ -91,6 +107,8 @@ export function AttachmentBottomBar({
 	shortcutConfig,
 	currentProviderSDKType,
 	onToolsChanged,
+	webSearchTemplates,
+	setWebSearchTemplates,
 }: AttachmentBottomBarProps) {
 	const editor = useEditorRef() as PlateEditor;
 	const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
@@ -107,6 +125,32 @@ export function AttachmentBottomBar({
 	const { data: toolData, loading: toolsLoading } = useTools();
 
 	const toolEntries = getToolNodesWithPath(editor);
+	const webSearchEnabled = webSearchTemplates.length > 0;
+
+	const eligibleWebSearchTools = useMemo(() => {
+		if (toolsLoading) return [];
+		return getEligibleWebSearchTools(toolData, currentProviderSDKType);
+	}, [toolData, toolsLoading, currentProviderSDKType]);
+
+	// "Active" web-search tool for the bottom-bar UX (first one wins).
+	const activeWebSearch = webSearchTemplates.length > 0 ? webSearchTemplates[0] : undefined;
+
+	// Try to find the active tool definition from eligible tools (so we can show args status).
+	const activeWebSearchDef = useMemo(() => {
+		if (!activeWebSearch) return undefined;
+		return eligibleWebSearchTools.find(
+			t =>
+				t.bundleID === activeWebSearch.bundleID &&
+				t.toolSlug === activeWebSearch.toolSlug &&
+				t.toolVersion === activeWebSearch.toolVersion
+		);
+	}, [eligibleWebSearchTools, activeWebSearch]);
+
+	const activeWebSearchArgsStatus = useMemo(() => {
+		const schema = activeWebSearchDef?.toolDefinition.userArgSchema;
+		if (!schema || !activeWebSearch) return undefined;
+		return computeToolUserArgsStatus(schema, activeWebSearch.userArgSchemaInstance);
+	}, [activeWebSearchDef, activeWebSearch]);
 
 	const attachedToolKeys = new Set(
 		toolEntries.map(([node]) => toolIdentityKey(node.bundleID, node.bundleSlug, node.toolSlug, node.toolVersion))
@@ -115,6 +159,9 @@ export function AttachmentBottomBar({
 	const availableTools: ToolListItem[] = toolsLoading
 		? []
 		: toolData.filter(it => {
+				// Web search is a specially handled tool
+				if (it.toolDefinition.llmToolType === ToolStoreChoiceType.WebSearch) return false;
+
 				// Hide tools that are already attached in this draft.
 				if (attachedToolKeys.has(toolIdentityKey(it.bundleID, it.bundleSlug, it.toolSlug, it.toolVersion))) {
 					return false;
@@ -186,6 +233,31 @@ export function AttachmentBottomBar({
 	const handleAttachmentPickURL = () => {
 		closeAttachmentMenu();
 		setIsUrlModalOpen(true);
+	};
+
+	const handleWebSearchEnabled = (enabled: boolean) => {
+		if (!enabled) {
+			setWebSearchTemplates([]);
+			return;
+		}
+		// default enable: add the first eligible tool if none selected
+		if (webSearchTemplates.length > 0 || eligibleWebSearchTools.length === 0) return;
+
+		const first = eligibleWebSearchTools[0];
+		setWebSearchTemplates([webSearchTemplateFromToolListItem(first)]);
+	};
+
+	const handleWebSearchToolSelected = (tool: ToolListItem) => {
+		// Treat selection as "make this tool active", but preserve any other
+		// configured web-search tools (if present) by moving it to the front.
+		setWebSearchTemplates((prev: WebSearchChoiceTemplate[]) => {
+			const tmpl = webSearchTemplateFromToolListItem(tool);
+			const key = webSearchIdentityKey(tmpl);
+			const rest = prev.filter(
+				(p: { bundleID: string; toolSlug: string; toolVersion: string }) => webSearchIdentityKey(p) !== key
+			);
+			return [tmpl, ...rest];
+		});
 	};
 
 	return (
@@ -304,6 +376,30 @@ export function AttachmentBottomBar({
 							))
 						)}
 					</Menu>
+
+					<WebSearchBottomBarChip
+						eligibleTools={eligibleWebSearchTools}
+						enabled={webSearchEnabled}
+						selected={
+							activeWebSearch
+								? {
+										bundleID: activeWebSearch.bundleID,
+										toolSlug: activeWebSearch.toolSlug,
+										toolVersion: activeWebSearch.toolVersion,
+									}
+								: undefined
+						}
+						canEdit={!!activeWebSearchDef?.toolDefinition.userArgSchema}
+						argsStatus={activeWebSearchArgsStatus}
+						onEnabledChange={handleWebSearchEnabled}
+						onSelectTool={handleWebSearchToolSelected}
+						onEditOptions={() => {
+							// Open the unified tool-args modal targeting "web search".
+							// (ToolArgsModalHost should apply this to the active web-search tool.)
+							if (!activeWebSearch) return;
+							dispatchOpenToolArgs({ kind: 'webSearch' });
+						}}
+					/>
 				</div>
 
 				{/* Right: keyboard shortcuts & tips menus */}

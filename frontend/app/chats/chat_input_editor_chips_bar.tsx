@@ -33,12 +33,7 @@ interface EditorChipsBarProps {
 	onRemoveDirectoryGroup: (groupId: string) => void;
 	onRemoveOverflowDir?: (groupId: string, dirPath: string) => void;
 	onConversationToolsChange?: (next: ConversationToolStateEntry[]) => void;
-
-	onEditConversationToolArgs?: (entry: ConversationToolStateEntry) => void;
-	onEditAttachedToolArgs?: (node: ToolSelectionElementNode) => void;
 	onAttachedToolsChanged?: () => void;
-
-	// Details inspectors
 	onOpenToolCallDetails?: (call: UIToolCall) => void;
 	onOpenConversationToolDetails?: (entry: ConversationToolStateEntry) => void;
 	onOpenAttachedToolDetails?: (node: ToolSelectionElementNode) => void;
@@ -71,8 +66,6 @@ export function EditorChipsBar({
 	onRemoveDirectoryGroup,
 	onRemoveOverflowDir,
 	onConversationToolsChange,
-	onEditConversationToolArgs,
-	onEditAttachedToolArgs,
 	onAttachedToolsChanged,
 	onOpenToolCallDetails,
 	onOpenConversationToolDetails,
@@ -120,7 +113,6 @@ export function EditorChipsBar({
 			<ConversationToolsChip
 				tools={conversationTools}
 				onChange={onConversationToolsChange}
-				onEditToolArgs={onEditConversationToolArgs}
 				onShowToolDetails={openConversationToolDetails}
 			/>
 
@@ -148,7 +140,6 @@ export function EditorChipsBar({
 			<ToolChoicesChip
 				editor={editor}
 				toolEntries={toolEntries}
-				onEditToolArgs={onEditAttachedToolArgs}
 				onToolsChanged={onAttachedToolsChanged}
 				onShowToolDetails={openAttachedToolDetails}
 			/>

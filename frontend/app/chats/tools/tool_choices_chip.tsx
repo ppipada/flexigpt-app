@@ -4,6 +4,9 @@ import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 import type { Path } from 'platejs';
 import type { PlateEditor } from 'platejs/react';
 
+import { ToolStoreChoiceType } from '@/spec/tool';
+
+import { dispatchOpenToolArgs } from '@/chats/events/open_attached_toolargs';
 import {
 	computeToolUserArgsStatus,
 	removeToolByKey,
@@ -15,7 +18,6 @@ interface ToolChoicesChipProps {
 	editor: PlateEditor;
 	// Entries from getToolNodesWithPath(editor); typed loosely here.
 	toolEntries: Array<[ToolSelectionElementNode, Path]>;
-	onEditToolArgs?: (node: ToolSelectionElementNode) => void;
 	onToolsChanged?: () => void;
 	onShowToolDetails?: (node: ToolSelectionElementNode) => void;
 }
@@ -26,16 +28,13 @@ interface ToolChoicesChipProps {
  * - Opens a dropdown listing each tool with an individual remove button.
  * - Has a "remove all" cross that clears all attached tools.
  */
-export function ToolChoicesChip({
-	editor,
-	toolEntries,
-	onEditToolArgs,
-	onToolsChanged,
-	onShowToolDetails,
-}: ToolChoicesChipProps) {
-	const count = toolEntries.length;
-	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
+export function ToolChoicesChip({ editor, toolEntries, onToolsChanged, onShowToolDetails }: ToolChoicesChipProps) {
+	// Only show "attached tools" that behave like normal tools in this UI.
+	// Web search is controlled separately in the bottom bar.
+	const visibleEntries = toolEntries.filter(([node]) => node.toolType !== ToolStoreChoiceType.WebSearch);
+	const count = visibleEntries.length;
 
+	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 	if (count === 0) return null;
 
 	const title = `Tools\n${count} tool${count === 1 ? '' : 's'} attached`;
@@ -50,7 +49,7 @@ export function ToolChoicesChip({
 	const handleRemoveAll = () => {
 		const seen = new Set<string>();
 
-		for (const [node] of toolEntries) {
+		for (const [node] of visibleEntries) {
 			const key = toolIdentityKey(node.bundleID, node.bundleSlug, node.toolSlug, node.toolVersion);
 			if (!key || seen.has(key)) continue;
 			seen.add(key);
@@ -99,7 +98,7 @@ export function ToolChoicesChip({
 			>
 				<div className="text-base-content/70 mb-1 text-[11px] font-semibold">Tools</div>
 
-				{toolEntries.map(([node]) => {
+				{visibleEntries.map(([node]) => {
 					const rawDisplay: string | undefined = node.toolSnapshot?.displayName ?? node.toolSlug;
 					const display = rawDisplay && rawDisplay.length > 0 ? rawDisplay : 'Tool';
 					const slug = `${node.bundleSlug ?? node.bundleID}/${node.toolSlug}@${node.toolVersion}`;
@@ -138,14 +137,14 @@ export function ToolChoicesChip({
 								</div>{' '}
 								<div className="flex items-center gap-1">
 									{hasArgs && <span className={argsClass}>{argsLabel}</span>}
-									{hasArgs && onEditToolArgs && (
+									{hasArgs && (
 										<button
 											type="button"
 											className="btn btn-ghost btn-xs shrink-0 px-1 py-0 shadow-none"
 											onClick={e => {
 												e.preventDefault(); // don’t submit the composer form
 												e.stopPropagation(); // don’t trigger any parent click handlers
-												onEditToolArgs(node);
+												dispatchOpenToolArgs({ kind: 'attached', selectionID: node.selectionID });
 											}}
 											title="Edit tool options"
 											aria-label="Edit tool options"

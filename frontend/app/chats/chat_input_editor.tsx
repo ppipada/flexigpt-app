@@ -55,6 +55,7 @@ import {
 	uiAttachmentKey,
 } from '@/chats/attachments/attachment_editor_utils';
 import { EditorChipsBar } from '@/chats/chat_input_editor_chips_bar';
+import { useOpenToolArgs } from '@/chats/events/open_attached_toolargs';
 import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
 import {
 	getFirstTemplateNodeWithPath,
@@ -82,12 +83,16 @@ import {
 	formatToolOutputSummary,
 	getAttachedTools,
 	getToolNodesWithPath,
-	insertToolSelectionNode,
 	type ToolSelectionElementNode,
 } from '@/chats/tools/tool_editor_utils';
 import { ToolPlusKit } from '@/chats/tools/tool_plugin';
 import { ToolArgsModalHost } from '@/chats/tools/tool_user_args_host';
 import { type ToolArgsTarget } from '@/chats/tools/tool_user_args_modal';
+import {
+	buildWebSearchChoicesForSubmit,
+	type WebSearchChoiceTemplate,
+	webSearchTemplateFromChoice,
+} from '@/chats/tools/websearch_utils';
 
 export interface EditorAreaHandle {
 	focus: () => void;
@@ -98,6 +103,7 @@ export interface EditorAreaHandle {
 	resetEditor: () => void;
 	loadToolCalls: (toolCalls: UIToolCall[]) => void;
 	setConversationToolsFromChoices: (tools: ToolStoreChoice[]) => void;
+	setWebSearchFromChoices: (tools: ToolStoreChoice[]) => void;
 }
 
 export interface EditorExternalMessage {
@@ -175,7 +181,10 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const [toolDetailsState, setToolDetailsState] = useState<ToolDetailsState>(null);
 
 	const [conversationToolsState, setConversationToolsState] = useState<ConversationToolStateEntry[]>([]);
-	const [needsAttachedToolHydration, setNeedsAttachedToolHydration] = useState(false);
+	// When editing an earlier message we temporarily override the current
+	// conversation-tool + web-search config. Keep a snapshot so Cancel restores it.
+	const preEditConversationToolsRef = useRef<ConversationToolStateEntry[] | null>(null);
+	const preEditWebSearchTemplatesRef = useRef<WebSearchChoiceTemplate[] | null>(null);
 
 	// Count of in‑flight tool‑definition hydration tasks (conversation‑level + attached).
 	// Used to gate sending while schemas are still loading.
@@ -188,6 +197,11 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	// Single “active tool args editor” target (conversation-level or attached).
 	const [toolArgsTarget, setToolArgsTarget] = useState<ToolArgsTarget | null>(null);
+	const [webSearchTemplates, setWebSearchTemplates] = useState<WebSearchChoiceTemplate[]>([]);
+
+	useOpenToolArgs(target => {
+		setToolArgsTarget(target);
+	});
 
 	const closeAllMenus = useCallback(() => {
 		templateMenu.hide();
@@ -390,92 +404,16 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		};
 	}, [conversationToolsState]);
 
-	// Ensure we have full Tool definitions for any *attached* tools that were
-	// reconstructed from history (selection nodes with no toolSnapshot).
-	// Only runs when loadExternalMessage() tells us it is needed.
-	useEffect(() => {
-		if (!needsAttachedToolHydration) return;
+	const restorePreEditContext = useCallback(() => {
+		const prevConv = preEditConversationToolsRef.current;
+		const prevWs = preEditWebSearchTemplatesRef.current;
 
-		const entries = getToolNodesWithPath(editor, false);
-		const missing = entries
-			.filter(([node]) => !node.toolSnapshot)
-			.map(([node]) => ({
-				selectionID: node.selectionID,
-				bundleID: node.bundleID,
-				toolSlug: node.toolSlug,
-				toolVersion: node.toolVersion,
-			}));
+		if (prevConv) setConversationToolsState(prevConv);
+		if (prevWs) setWebSearchTemplates(prevWs);
 
-		// Nothing to do → clear the flag and exit.
-		if (!missing.length) {
-			setNeedsAttachedToolHydration(false);
-			return;
-		}
-
-		let cancelled = false;
-		setToolsHydratingCount(c => c + 1);
-
-		(async () => {
-			const results = await Promise.all(
-				missing.map(async m => {
-					try {
-						const def = await toolStoreAPI.getTool(m.bundleID, m.toolSlug, m.toolVersion);
-						return def ? { ...m, def } : null;
-					} catch {
-						return null;
-					}
-				})
-			);
-
-			if (cancelled) return;
-
-			const loaded = results.filter(
-				(
-					r
-				): r is {
-					selectionID: string;
-					bundleID: string;
-					toolSlug: string;
-					toolVersion: string;
-					def: Tool;
-				} => r !== null
-			);
-			if (!loaded.length) {
-				setNeedsAttachedToolHydration(false);
-				return;
-			}
-
-			editor.tf.withoutNormalizing(() => {
-				// Re-locate nodes by selectionID to be robust against concurrent edits.
-				const currentEntries = getToolNodesWithPath(editor, false);
-				for (const item of loaded) {
-					const match = currentEntries.find(([n]) => n.selectionID === item.selectionID);
-					if (!match) continue;
-					const [, path] = match;
-					editor.tf.setNodes(
-						{
-							toolType: item.def.llmToolType,
-							toolSnapshot: item.def,
-						},
-						{ at: path as any }
-					);
-				}
-			});
-
-			// Now that we have schemas for attached tools, recompute arg blocking.
-			recomputeAttachedToolArgsBlocked();
-			// After successful hydration, we no longer need to repeat this until another loadExternalMessage() call.
-			setNeedsAttachedToolHydration(false);
-		})().finally(() => {
-			if (!cancelled) {
-				setToolsHydratingCount(c => Math.max(0, c - 1));
-			}
-		});
-
-		return () => {
-			cancelled = true;
-		};
-	}, [needsAttachedToolHydration, editor, recomputeAttachedToolArgsBlocked]);
+		preEditConversationToolsRef.current = null;
+		preEditWebSearchTemplatesRef.current = null;
+	}, []);
 
 	// Recompute conversation-level arg blocking whenever that state changes.
 	useEffect(() => {
@@ -694,15 +632,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		setToolDetailsState({ kind: 'choice', choice });
 	}, []);
 
-	const handleEditConversationToolArgs = useCallback((entry: ConversationToolStateEntry) => {
-		setToolArgsTarget({ kind: 'conversation', key: entry.key });
-	}, []);
-
-	const handleEditAttachedToolArgs = useCallback((node: ToolSelectionElementNode) => {
-		if (!node?.selectionID) return;
-		setToolArgsTarget({ kind: 'attached', selectionID: node.selectionID });
-	}, []);
-
 	/**
 	 * Main submit logic, parameterized by whether to run pending tool calls
 	 * before sending.
@@ -787,7 +716,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			const attachedTools = getAttachedTools(editor);
 			const explicitChoices = attachedTools.map(editorAttachedToolToToolChoice);
 			const conversationChoices = conversationToolsToChoices(conversationToolsState);
-			const finalToolChoices = dedupeToolChoices([...explicitChoices, ...conversationChoices]);
+			const webSearchChoices = buildWebSearchChoicesForSubmit(webSearchTemplates);
+
+			const finalToolChoices = dedupeToolChoices([...explicitChoices, ...conversationChoices, ...webSearchChoices]);
 
 			const payload: EditorSubmitPayload = {
 				text: textToSend,
@@ -812,6 +743,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				setToolCalls([]);
 				setToolOutputs([]);
 				setToolDetailsState(null);
+				// If we were editing, the old snapshot is no longer relevant.
+				preEditConversationToolsRef.current = null;
+				preEditWebSearchTemplatesRef.current = null;
 
 				lastPopulatedSelectionKeyRef.current.clear();
 				editor.tf.focus();
@@ -848,6 +782,14 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			setSubmitError(null);
 			lastPopulatedSelectionKeyRef.current.clear();
 			isSubmittingRef.current = false;
+
+			// Snapshot current context so Cancel Editing can restore it.
+			if (!preEditConversationToolsRef.current) {
+				preEditConversationToolsRef.current = conversationToolsState;
+			}
+			if (!preEditWebSearchTemplatesRef.current) {
+				preEditWebSearchTemplatesRef.current = webSearchTemplates;
+			}
 
 			// 1) Reset document to plain text paragraphs.
 			const plain = incoming.text ?? '';
@@ -897,20 +839,18 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			setDirectoryGroups([]);
 
 			// 3) Re-add tool choices as tool selection nodes.
-			//    The doc we just set has no tool nodes, so we can just insert new ones.
-
+			// Restore tools into conversation-level state (persistent semantics).
 			const incomingToolChoices = incoming.toolChoices ?? [];
-			for (const choice of incomingToolChoices) {
-				insertToolSelectionNode(editor, {
-					bundleID: choice.bundleID,
-					toolSlug: choice.toolSlug,
-					toolVersion: choice.toolVersion,
-				});
-			}
-			// We inserted tool chips with no toolSnapshot → hydrate their definitions lazily.
-			if (incomingToolChoices.length > 0) {
-				setNeedsAttachedToolHydration(true);
-			}
+
+			setConversationToolsState(initConversationToolsStateFromChoices(incomingToolChoices));
+
+			// Restore web-search separately (NOT as tool nodes; separate UX).
+			const wsChoices = incomingToolChoices.filter(c => c.toolType === ToolStoreChoiceType.WebSearch);
+			setWebSearchTemplates(wsChoices.map(webSearchTemplateFromChoice));
+
+			// Since we no longer reconstruct attached-tool nodes from history,
+			// ensure attached-tool arg blocking resets.
+			setAttachedToolArgsBlocked(false);
 
 			// 4) Restore any tool outputs that were previously attached to this message.
 			setToolOutputs(incoming.toolOutputs ?? []);
@@ -919,7 +859,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 			editor.tf.focus();
 		},
-		[closeAllMenus, editor]
+		[closeAllMenus, editor, conversationToolsState, webSearchTemplates]
 	);
 
 	const loadToolCalls = useCallback((toolCalls: UIToolCall[]) => {
@@ -944,6 +884,11 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		loadToolCalls,
 		setConversationToolsFromChoices: (tools: ToolStoreChoice[]) => {
 			setConversationToolsState(initConversationToolsStateFromChoices(tools));
+		},
+
+		setWebSearchFromChoices: (tools: ToolStoreChoice[]) => {
+			const ws = (tools ?? []).filter(t => t.toolType === ToolStoreChoiceType.WebSearch);
+			setWebSearchTemplates(ws.map(webSearchTemplateFromChoice));
 		},
 	}));
 
@@ -1141,8 +1086,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 	const handleCancelEditing = useCallback(() => {
 		resetEditor();
+		restorePreEditContext();
 		cancelEditing();
-	}, [cancelEditing, resetEditor]);
+	}, [cancelEditing, resetEditor, restorePreEditContext]);
 
 	const handleRunToolsOnlyClick = useCallback(async () => {
 		if (!hasPendingToolCalls || isBusy || hasRunningToolCalls) return;
@@ -1190,6 +1136,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 						// Only do this while editing an older message.
 						if (editingMessageId && isEffectivelyEmpty) {
 							// IMPORTANT: do NOT call resetEditor here; we only exit edit mode.
+							restorePreEditContext();
 							cancelEditing();
 						}
 					}}
@@ -1258,8 +1205,6 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 									onRemoveDirectoryGroup={handleRemoveDirectoryGroup}
 									onRemoveOverflowDir={handleRemoveOverflowDir}
 									onConversationToolsChange={setConversationToolsState}
-									onEditConversationToolArgs={handleEditConversationToolArgs}
-									onEditAttachedToolArgs={handleEditAttachedToolArgs}
 									onAttachedToolsChanged={recomputeAttachedToolArgsBlocked}
 									onOpenToolCallDetails={handleOpenToolCallDetails}
 									onOpenConversationToolDetails={handleOpenConversationToolDetails}
@@ -1358,6 +1303,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 						shortcutConfig={shortcutConfig}
 						currentProviderSDKType={currentProviderSDKType}
 						onToolsChanged={recomputeAttachedToolArgsBlocked}
+						webSearchTemplates={webSearchTemplates}
+						setWebSearchTemplates={setWebSearchTemplates}
 					/>
 				</Plate>
 			</form>
@@ -1380,6 +1327,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				toolArgsTarget={toolArgsTarget}
 				setToolArgsTarget={setToolArgsTarget}
 				recomputeAttachedToolArgsBlocked={recomputeAttachedToolArgsBlocked}
+				webSearchTemplates={webSearchTemplates}
+				setWebSearchTemplates={setWebSearchTemplates}
 			/>
 		</>
 	);

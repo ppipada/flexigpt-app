@@ -67,7 +67,17 @@ export function deriveConversationToolsFromMessages(messages: ConversationMessag
 	for (let i = messages.length - 1; i >= 0; i -= 1) {
 		const m = messages[i];
 		if (m.role === RoleEnum.User && m.toolStoreChoices && m.toolStoreChoices.length > 0) {
-			return m.toolStoreChoices;
+			return m.toolStoreChoices.filter(c => c.toolType !== ToolStoreChoiceType.WebSearch);
+		}
+	}
+	return [];
+}
+
+export function deriveWebSearchChoiceFromMessages(messages: ConversationMessage[]): ToolStoreChoice[] {
+	for (let i = messages.length - 1; i >= 0; i -= 1) {
+		const m = messages[i];
+		if (m.role === RoleEnum.User && m.toolStoreChoices && m.toolStoreChoices.length > 0) {
+			return m.toolStoreChoices.filter(c => c.toolType === ToolStoreChoiceType.WebSearch);
 		}
 	}
 	return [];

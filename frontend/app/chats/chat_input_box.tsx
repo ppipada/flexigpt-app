@@ -25,6 +25,7 @@ export interface InputBoxHandle {
 	loadExternalMessage: (msg: EditorExternalMessage) => void;
 	loadToolCalls: (toolCalls: UIToolCall[]) => void;
 	setConversationToolsFromChoices: (tools: ToolStoreChoice[]) => void;
+	setWebSearchFromChoices: (tools: ToolStoreChoice[]) => void;
 }
 
 interface InputBoxProps {
@@ -78,6 +79,9 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 		},
 		setConversationToolsFromChoices: tools => {
 			inputAreaRef.current?.setConversationToolsFromChoices(tools);
+		},
+		setWebSearchFromChoices: choices => {
+			inputAreaRef.current?.setWebSearchFromChoices(choices);
 		},
 	}));
 

@@ -1,12 +1,18 @@
-import type { Dispatch, SetStateAction } from 'react';
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from 'react';
 
 import type { PlateEditor } from 'platejs/react';
 
+import type { Tool } from '@/spec/tool';
+
 import type { JSONSchema } from '@/lib/jsonschema_utils';
+
+import { toolStoreAPI } from '@/apis/baseapi';
 
 import type { ConversationToolStateEntry } from '@/chats/tools/conversation_tools_chip';
 import { computeToolUserArgsStatus, getToolNodesWithPath } from '@/chats/tools/tool_editor_utils';
 import { type ToolArgsTarget, ToolUserArgsModal } from '@/chats/tools/tool_user_args_modal';
+import { type WebSearchChoiceTemplate, webSearchIdentityKey } from '@/chats/tools/websearch_utils';
 
 interface ToolArgsModalHostProps {
 	editor: PlateEditor;
@@ -15,6 +21,9 @@ interface ToolArgsModalHostProps {
 	toolArgsTarget: ToolArgsTarget | null;
 	setToolArgsTarget: Dispatch<SetStateAction<ToolArgsTarget | null>>;
 	recomputeAttachedToolArgsBlocked: () => void;
+
+	webSearchTemplates: WebSearchChoiceTemplate[];
+	setWebSearchTemplates: Dispatch<SetStateAction<WebSearchChoiceTemplate[]>>;
 }
 
 export function ToolArgsModalHost({
@@ -24,12 +33,46 @@ export function ToolArgsModalHost({
 	toolArgsTarget,
 	setToolArgsTarget,
 	recomputeAttachedToolArgsBlocked,
+	webSearchTemplates,
+	setWebSearchTemplates,
 }: ToolArgsModalHostProps) {
 	let isOpen = false;
 	let toolLabel = '';
 	let schema: JSONSchema | undefined;
 	let existingInstance: string | undefined;
 	let onSave: (newInstance: string) => void = () => {};
+
+	const activeWebSearch = useMemo(
+		() => (webSearchTemplates.length > 0 ? webSearchTemplates[0] : undefined),
+		[webSearchTemplates]
+	);
+	const activeWebSearchKey = useMemo(
+		() => (activeWebSearch ? webSearchIdentityKey(activeWebSearch) : undefined),
+		[activeWebSearch]
+	);
+	const [webSearchToolDef, setWebSearchToolDef] = useState<Tool | null>(null);
+
+	useEffect(() => {
+		let cancelled = false;
+		if (toolArgsTarget?.kind !== 'webSearch' || !activeWebSearch) return;
+
+		(async () => {
+			try {
+				const def = await toolStoreAPI.getTool(
+					activeWebSearch.bundleID,
+					activeWebSearch.toolSlug,
+					activeWebSearch.toolVersion
+				);
+				if (!cancelled) setWebSearchToolDef(def ?? null);
+			} catch {
+				if (!cancelled) setWebSearchToolDef(null);
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [toolArgsTarget?.kind, activeWebSearchKey]);
 
 	if (toolArgsTarget?.kind === 'attached') {
 		const all = getToolNodesWithPath(editor, false);
@@ -96,6 +139,30 @@ export function ToolArgsModalHost({
 				// This only recomputes attached-tool blocking; conversation-level
 				// blocking is already handled by the useEffect in EditorArea.
 				recomputeAttachedToolArgsBlocked();
+			};
+		}
+	} else if (toolArgsTarget?.kind === 'webSearch') {
+		const active = activeWebSearch;
+
+		if (active) {
+			isOpen = true;
+			toolLabel =
+				(webSearchToolDef?.displayName && webSearchToolDef.displayName.length > 0
+					? webSearchToolDef.displayName
+					: active.displayName && active.displayName.length > 0
+						? active.displayName
+						: active.toolSlug) ?? active.toolSlug;
+
+			schema = webSearchToolDef?.userArgSchema;
+			existingInstance = active.userArgSchemaInstance;
+
+			onSave = newInstance => {
+				setWebSearchTemplates(prev => {
+					if (!prev.length) return prev;
+					const next = [...prev];
+					next[0] = { ...next[0], userArgSchemaInstance: newInstance };
+					return next;
+				});
 			};
 		}
 	}

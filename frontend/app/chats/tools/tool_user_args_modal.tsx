@@ -29,8 +29,10 @@ type FormState = {
 };
 
 // Shared type for "what args editor is currently open?"
-export type ToolArgsTarget = { kind: 'attached'; selectionID: string } | { kind: 'conversation'; key: string };
-
+export type ToolArgsTarget =
+	| { kind: 'attached'; selectionID: string }
+	| { kind: 'conversation'; key: string }
+	| { kind: 'webSearch' };
 export function ToolUserArgsModal({
 	isOpen,
 	onClose,

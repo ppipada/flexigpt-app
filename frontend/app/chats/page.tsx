@@ -26,6 +26,7 @@ import { HandleCompletion } from '@/chats/chat_completion_helper';
 import {
 	buildUserConversationMessageFromEditor,
 	deriveConversationToolsFromMessages,
+	deriveWebSearchChoiceFromMessages,
 	hydrateConversation,
 	initConversation,
 	initConversationMessage,
@@ -98,6 +99,7 @@ export default function ChatsPage() {
 		conversationStoreAPI.putConversation(chat as StoreConversation);
 		setChat(initConversation());
 		chatInputRef.current?.setConversationToolsFromChoices([]);
+		chatInputRef.current?.setWebSearchFromChoices([]);
 
 		// New non-persisted conversation started.
 		isChatPersistedRef.current = false;
@@ -121,6 +123,9 @@ export default function ChatsPage() {
 
 			const initialTools = deriveConversationToolsFromMessages(hydrated.messages);
 			chatInputRef.current?.setConversationToolsFromChoices(initialTools);
+
+			const initialWebSearch = deriveWebSearchChoiceFromMessages(hydrated.messages);
+			chatInputRef.current?.setWebSearchFromChoices(initialWebSearch);
 		}
 	}, []);
 
@@ -481,8 +486,10 @@ export default function ChatsPage() {
 			const msg = chat.messages[idx];
 			if (msg.role === RoleEnum.User && msg.toolStoreChoices && msg.toolStoreChoices.length > 0) {
 				chatInputRef.current?.setConversationToolsFromChoices(msg.toolStoreChoices);
+				chatInputRef.current?.setWebSearchFromChoices(msg.toolStoreChoices);
 			} else {
 				chatInputRef.current?.setConversationToolsFromChoices([]);
+				chatInputRef.current?.setWebSearchFromChoices([]);
 			}
 			const msgs = chat.messages.slice(0, idx + 1);
 			const updated = { ...chat, messages: msgs, modifiedAt: new Date() };

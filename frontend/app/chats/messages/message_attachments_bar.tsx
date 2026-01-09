@@ -710,7 +710,7 @@ function WebSearchChoicesGroupChip({ choices, onChoiceDetails }: WebSearchChoice
 						hideOnClick={false}
 						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
 					>
-						<MessageToolChoiceChip
+						<MessageWebSearchToolChoiceChip
 							tool={choice}
 							fullWidth
 							onClick={
@@ -724,6 +724,26 @@ function WebSearchChoicesGroupChip({ choices, onChoiceDetails }: WebSearchChoice
 					</MenuItem>
 				))}
 			</Menu>
+		</div>
+	);
+}
+
+function MessageWebSearchToolChoiceChip({ tool, fullWidth = false, onClick }: MessageToolChoiceChipProps) {
+	const name = tool.displayName || tool.toolSlug;
+	const slug = `${tool.bundleID}/${tool.toolSlug}@${tool.toolVersion}`;
+	const title = [name, slug, tool.description].filter(Boolean).join('\n');
+	const containerClasses = [
+		'bg-base-200 text-base-content flex items-center justify-between gap-2 rounded-2xl px-2 py-0',
+		fullWidth ? 'w-full' : 'shrink-0',
+	].join(' ');
+	const labelClasses = fullWidth ? 'min-w-0 flex-1 truncate' : 'max-w-64 truncate';
+	return (
+		<div className={containerClasses} title={title} data-message-chip="websearch-tool-choice" onClick={onClick}>
+			<FiGlobe size={14} />
+			<span className={labelClasses}>{name}</span>
+			<span className="text-base-content/60 flex gap-1 text-[10px] uppercase">
+				Details <FiCode size={12} />
+			</span>
 		</div>
 	);
 }
