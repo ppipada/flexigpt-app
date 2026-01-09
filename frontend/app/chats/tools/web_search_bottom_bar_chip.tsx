@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { FiChevronUp, FiEdit2, FiGlobe, FiX } from 'react-icons/fi';
 
@@ -7,6 +7,14 @@ import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
 import type { ToolListItem, UIToolUserArgsStatus } from '@/spec/tool';
 
 type SelectedIdentity = { bundleID: string; toolSlug: string; toolVersion: string };
+
+function isSameTool(a: SelectedIdentity, b: ToolListItem) {
+	return a.bundleID === b.bundleID && a.toolSlug === b.toolSlug && a.toolVersion === b.toolVersion;
+}
+
+function toolKey(t: ToolListItem) {
+	return `${t.bundleID}-${t.toolSlug}-${t.toolVersion}`;
+}
 
 export function WebSearchBottomBarChip({
 	eligibleTools,
@@ -30,48 +38,94 @@ export function WebSearchBottomBarChip({
 	if (eligibleTools.length === 0) return null;
 
 	const hasDropdown = eligibleTools.length > 1;
+
+	// Hooks must not be conditional; safe to always create the store.
 	const menu = useMenuStore({ placement: 'top-end', focusLoop: true });
 
-	const selectedLabel = useMemo(() => {
-		if (!selected) return '';
-		const hit = eligibleTools.find(
-			t =>
-				t.bundleID === selected.bundleID && t.toolSlug === selected.toolSlug && t.toolVersion === selected.toolVersion
-		);
-		return hit?.toolDefinition.displayName ?? hit?.toolSlug ?? '';
+	const selectedTool = useMemo(() => {
+		if (!selected) return undefined;
+		return eligibleTools.find(t => isSameTool(selected, t));
 	}, [eligibleTools, selected]);
 
-	const isArgsBad = !!(enabled && argsStatus?.hasSchema && !argsStatus.isSatisfied);
+	const selectedLabel = useMemo(() => {
+		if (!selectedTool) return '';
+		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+		return selectedTool.toolDefinition.displayName ?? selectedTool.toolSlug ?? '';
+	}, [selectedTool]);
 
-	const container =
+	const isArgsBad = Boolean(enabled && argsStatus?.hasSchema && !argsStatus.isSatisfied);
+
+	const containerClassName =
 		(enabled
 			? 'bg-info/10 text-neutral-custom border-info/50 hover:bg-info/15'
-			: 'bg-base-200 text-neutral-custom border-base-300/40 hover:bg-base-300/80') +
+			: 'bg-base-200 text-neutral-custom border-0 hover:bg-base-300/80') +
 		' flex items-center gap-1 rounded-2xl border px-2 py-0';
 
-	const titleLines: string[] = [];
-	titleLines.push('Web search');
-	if (selectedLabel) titleLines.push(`Tool: ${selectedLabel}`);
-	titleLines.push(enabled ? 'Status: Enabled' : 'Status: Disabled');
-	if (isArgsBad) titleLines.push('Options: Missing required fields');
+	const title = useMemo(() => {
+		const lines: string[] = [];
+		lines.push('Web search');
+		if (selectedLabel) lines.push(`Tool: ${selectedLabel}`);
+		lines.push(enabled ? 'Status: Enabled' : 'Status: Disabled');
+		if (isArgsBad) lines.push('Options: Missing required fields');
+		return lines.join('\n');
+	}, [enabled, isArgsBad, selectedLabel]);
+
+	const enable = useCallback(() => {
+		onEnabledChange(true);
+	}, [onEnabledChange]);
+	const disable = useCallback(() => {
+		onEnabledChange(false);
+	}, [onEnabledChange]);
+
+	const onClickEnableWhenDisabled = useCallback(() => {
+		// Requested behavior: clicking the chip enables only when currently disabled.
+		if (!enabled) enable();
+	}, [enabled, enable]);
+
+	const onClickDisableButton = useCallback(
+		(e: React.MouseEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			disable();
+		},
+		[disable]
+	);
+
+	const onClickEditButton = useCallback(
+		(e: React.MouseEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			onEditOptions();
+		},
+		[onEditOptions]
+	);
 
 	return (
-		<div className={container} title={titleLines.join('\n')} data-bottom-bar-websearch>
-			{/* Main toggle */}
-			<button
-				type="button"
-				className="flex items-center gap-2"
-				onClick={() => {
-					onEnabledChange(!enabled);
-				}}
-				aria-label={enabled ? 'Web search' : 'Enable web search'}
-			>
-				<FiGlobe size={14} />
-				<span className="max-w-28 truncate">{enabled ? 'Web search' : 'Enable web search'}</span>
-				{selectedLabel ? <span className="max-w-36 truncate text-xs opacity-70">{selectedLabel}</span> : null}
-			</button>
+		<div className={containerClassName} title={title} data-bottom-bar-websearch>
+			{/* Main chip/label area
+          - When disabled: it's a button that enables
+          - When enabled: it's non-clickable (disabling only via the X button)
+      */}
+			{enabled ? (
+				<div className="flex items-center gap-2">
+					<FiGlobe size={14} />
+					<span className="max-w-28 truncate">Web search</span>
+					{selectedLabel ? <span className="max-w-36 truncate text-xs opacity-70">{selectedLabel}</span> : null}
+				</div>
+			) : (
+				<button
+					type="button"
+					className="flex items-center gap-2"
+					onClick={onClickEnableWhenDisabled}
+					aria-label="Enable web search"
+				>
+					<FiGlobe size={14} />
+					<span className="max-w-28 truncate">Enable web search</span>
+					{selectedLabel ? <span className="max-w-36 truncate text-xs opacity-70">{selectedLabel}</span> : null}
+				</button>
+			)}
 
-			{/* Args warning badge (lightweight) */}
+			{/* Args warning badge (only meaningful when enabled) */}
 			{isArgsBad ? <span className="badge badge-warning badge-xs ml-1">Options</span> : null}
 
 			{/* Edit options (only when enabled) */}
@@ -79,11 +133,7 @@ export function WebSearchBottomBarChip({
 				<button
 					type="button"
 					className="btn btn-ghost btn-xs p-0 shadow-none"
-					onClick={e => {
-						e.preventDefault();
-						e.stopPropagation();
-						onEditOptions();
-					}}
+					onClick={onClickEditButton}
 					title="Edit web-search options"
 					aria-label="Edit web-search options"
 				>
@@ -91,17 +141,14 @@ export function WebSearchBottomBarChip({
 				</button>
 			) : null}
 
+			{/* Disable (only when enabled). This is now the only way to disable. */}
 			{enabled ? (
 				<button
 					type="button"
 					className="btn btn-ghost btn-xs p-0 shadow-none"
-					onClick={e => {
-						e.preventDefault();
-						e.stopPropagation();
-						onEnabledChange(!enabled);
-					}}
-					title="Disable Web Search"
-					aria-label="Disable Web Search"
+					onClick={onClickDisableButton}
+					title="Disable web search"
+					aria-label="Disable web search"
 				>
 					<FiX size={12} />
 				</button>
@@ -127,15 +174,13 @@ export function WebSearchBottomBarChip({
 						portal
 					>
 						<div className="text-base-content/70 mb-2 text-[11px] font-semibold">Web search tools</div>
+
 						{eligibleTools.map(t => {
-							const isSelected =
-								!!selected &&
-								selected.bundleID === t.bundleID &&
-								selected.toolSlug === t.toolSlug &&
-								selected.toolVersion === t.toolVersion;
+							const isSelected = !!selected && isSameTool(selected, t);
+
 							return (
 								<MenuItem
-									key={`${t.bundleID}-${t.toolSlug}-${t.toolVersion}`}
+									key={toolKey(t)}
 									className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
 									onClick={() => {
 										onSelectTool(t);
