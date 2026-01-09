@@ -106,10 +106,16 @@ export interface InferenceUsage {
 	reasoningTokens: number;
 }
 
+/**
+ * @public
+ */
 export enum CacheControlKind {
 	Ephemeral = 'ephemeral',
 }
 
+/**
+ * @public
+ */
 export interface CacheControlEphemeral {
 	ttl?: string;
 }
@@ -123,6 +129,9 @@ export enum CitationKind {
 	URL = 'urlCitation',
 }
 
+/**
+ * @public
+ */
 export interface CitationConfig {
 	enabled: boolean;
 }
@@ -136,6 +145,9 @@ export interface URLCitation {
 	encryptedIndex?: string;
 }
 
+/**
+ * @public
+ */
 export interface Citation {
 	kind: CitationKind;
 	urlCitation?: URLCitation;
@@ -220,22 +232,37 @@ export interface ToolOutputItemUnion {
 	fileItem?: ContentItemFile;
 }
 
+/**
+ * @public
+ */
 export enum WebSearchToolCallKind {
 	Search = 'search',
 	OpenPage = 'openPage',
 	Find = 'find',
 }
 
+/**
+ * @public
+ */
 export interface WebSearchToolCallFind {
 	url: string;
 	pattern: string;
 }
+/**
+ * @public
+ */
 export interface WebSearchToolCallOpenPage {
 	url: string;
 }
+/**
+ * @public
+ */
 export interface WebSearchToolCallSearchSource {
 	url: string;
 }
+/**
+ * @public
+ */
 export interface WebSearchToolCallSearch {
 	query: string;
 	sources?: WebSearchToolCallSearchSource[];
@@ -247,6 +274,9 @@ export interface WebSearchToolCallItemUnion {
 	openPageItem?: WebSearchToolCallOpenPage;
 	findItem?: WebSearchToolCallFind;
 }
+/**
+ * @public
+ */
 export interface WebSearchToolChoiceItemUserLocation {
 	city?: string;
 	country?: string;
