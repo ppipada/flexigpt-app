@@ -370,8 +370,6 @@ func buildContentItemsFromAttachments(
 		ctx,
 		turn.Attachments,
 		attachment.WithOverrideOriginalContentBlock(true),
-		// IMPORTANT: do NOT ForceFetch; this ensures that if a ContentBlock
-		// is already present (e.g., from a stored conversation), we reuse it.
 		attachment.WithOnlyTextKindContentBlock(false),
 	)
 	if err != nil {

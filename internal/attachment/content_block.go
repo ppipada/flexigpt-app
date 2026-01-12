@@ -9,7 +9,7 @@ const (
 	AttachmentContentBlockModeFile        AttachmentContentBlockMode = "file"         // "File (original format)"
 	AttachmentContentBlockModeImage       AttachmentContentBlockMode = "image"        // Image rendering
 	AttachmentContentBlockModePageContent AttachmentContentBlockMode = "page"         // "Page content" for HTML/URLs
-	AttachmentContentBlockModeLinkOnly    AttachmentContentBlockMode = "link"         // "Link only" – no fetch
+	AttachmentContentBlockModeTextLink    AttachmentContentBlockMode = "textlink"     // "Link as text block" – no fetch
 	AttachmentContentBlockModeNotReadable AttachmentContentBlockMode = "not-readable" // Binary/unknown – cannot process
 
 	AttachmentContentBlockModePRDiff     AttachmentContentBlockMode = "pr-diff"
@@ -32,11 +32,12 @@ const (
 type ContentBlock struct {
 	Kind AttachmentContentBlockKind `json:"kind"`
 
-	// For Kind == text: Text is populated.
-	Text *string `json:"text,omitempty"`
+	// For Kind == text: Text, MIMEType and FileName are populated.
+	Text     *string `json:"text,omitempty"`
+	MIMEType *string `json:"mimeType,omitempty"`
+	FileName *string `json:"fileName,omitempty"`
 
-	// For Kind == image or file: Base64Data + MIMEType are populated.
+	// For Kind == image or file: Base64Data, MIMEType and FileName are populated.
 	Base64Data *string `json:"base64Data,omitempty"`
-	MIMEType   *string `json:"mimeType,omitempty"`
-	FileName   *string `json:"fileName,omitempty"`
+	URL        *string `json:"url,omitempty"`
 }

@@ -75,7 +75,7 @@ func (ref *URLRef) IsModified() bool {
 // attachment, depending on the desired AttachmentContentBlockMode.
 //
 // The behaviour is:
-//   - AttachmentContentBlockModeLinkOnly:      always returns a simple text link.
+//   - AttachmentContentBlockModeTextLink:      always returns a simple text link.
 //   - AttachmentContentBlockModeImage:         tries to fetch the URL as an image and
 //     return a ContentBlockImage, else falls
 //     back to a simple link.
@@ -114,9 +114,9 @@ func (ref *URLRef) BuildContentBlock(
 		}
 		return ref.buildFileBlockFromURL(ctx)
 
-	case AttachmentContentBlockModeLinkOnly:
+	case AttachmentContentBlockModeTextLink:
 		// Minimal representation: just the URL (optionally with a label).
-		return ref.buildLinkOnlyContentBlock(), nil
+		return ref.buildTextLinkContentBlock(), nil
 
 	case AttachmentContentBlockModePageContent, AttachmentContentBlockModeText:
 		// New pipeline: image/pdf → html/text → link.
@@ -128,7 +128,7 @@ func (ref *URLRef) BuildContentBlock(
 		AttachmentContentBlockModeCommitDiff,
 		AttachmentContentBlockModeCommitPage:
 		// Unknown or special mode: safest fallback is link-only.
-		return ref.buildLinkOnlyContentBlock(), nil
+		return ref.buildTextLinkContentBlock(), nil
 
 	default:
 		return nil, errors.New("unknown attachment mode")
@@ -169,7 +169,7 @@ func (ref *URLRef) buildBlocksForURLPage(ctx context.Context, onlyIfTextKind boo
 		// We'll treat it as HTML/unknown below and let the extractor deal with it.
 	}
 
-	lowerCT := strings.ToLower(contentType)
+	lowerCT := normalizeContentType(contentType)
 	lowerURL := strings.ToLower(rawURL)
 
 	// 1) Images: encode as Base64 image block (same behavior as in image mode).
@@ -187,7 +187,7 @@ func (ref *URLRef) buildBlocksForURLPage(ctx context.Context, onlyIfTextKind boo
 			slog.Warn("failed to process pdf url, falling back to link-only",
 				"url", rawURL, "err", err)
 
-			return ref.buildLinkOnlyContentBlock(), nil
+			return ref.buildTextLinkContentBlock(), nil
 		}
 
 		if onlyIfTextKind && cb.Kind != ContentBlockText {
@@ -203,17 +203,20 @@ func (ref *URLRef) buildBlocksForURLPage(ctx context.Context, onlyIfTextKind boo
 	// 3) Plain text (non-HTML): fetch as text and send directly.
 	//    This preserves the previous behaviour for text/plain, etc.
 	if isPlainTextContentType(lowerCT) {
-		data, _, err := fetchURLBytes(ctx, rawURL, maxPageContentBytes)
+		data, fetchedCT, err := fetchURLBytes(ctx, rawURL, maxPageContentBytes)
 		if err != nil {
 			slog.Warn("failed to fetch text url attachment, falling back to link",
 				"url", rawURL, "err", err)
-			return ref.buildLinkOnlyContentBlock(), nil
+			return ref.buildTextLinkContentBlock(), nil
 		}
-		prefix := fmt.Sprintf("[Content from %s]\n\n", rawURL)
-		txt := prefix + string(data)
+		txt := string(data)
+		mt := inferContentType(fetchedCT, rawURL, data)
+
 		return &ContentBlock{
-			Kind: ContentBlockText,
-			Text: &txt,
+			Kind:     ContentBlockText,
+			Text:     &txt,
+			URL:      &rawURL,
+			MIMEType: &mt,
 		}, nil
 	}
 
@@ -224,30 +227,37 @@ func (ref *URLRef) buildBlocksForURLPage(ctx context.Context, onlyIfTextKind boo
 			// For very large pages, do NOT pull content into the LLM context.
 			slog.Warn("url page too large, falling back to link-only mode",
 				"url", rawURL, "err", err)
-			return ref.buildLinkOnlyContentBlock(), nil
+			return ref.buildTextLinkContentBlock(), nil
 		}
 
 		slog.Warn("failed to extract readable content from url, falling back to raw fetch",
 			"url", rawURL, "err", err)
 
 		// As a last resort, fetch up to maxPageContentBytes and include raw text.
-		data, _, err2 := fetchURLBytes(ctx, rawURL, maxPageContentBytes)
+		data, fetchedCT, err2 := fetchURLBytes(ctx, rawURL, maxPageContentBytes)
 		if err2 != nil {
 			slog.Warn("failed to fetch url content for fallback, using link-only",
 				"url", rawURL, "err", err2)
-			return ref.buildLinkOnlyContentBlock(), nil
+			return ref.buildTextLinkContentBlock(), nil
 		}
-		txt := fmt.Sprintf("[Content from %s]\n\n", rawURL) + string(data)
+		txt := string(data)
+		mt := inferContentType(fetchedCT, rawURL, data)
+
 		return &ContentBlock{
-			Kind: ContentBlockText,
-			Text: &txt,
+			Kind:     ContentBlockText,
+			Text:     &txt,
+			URL:      &rawURL,
+			MIMEType: &mt,
 		}, nil
 	}
 
-	txt := fmt.Sprintf("[Content from %s]\n\n", rawURL) + markdown
+	// The bytes we are sending are Markdown, so label the block accordingly.
+	mt := "text/markdown"
 	return &ContentBlock{
-		Kind: ContentBlockText,
-		Text: &txt,
+		Kind:     ContentBlockText,
+		Text:     &markdown,
+		URL:      &rawURL,
+		MIMEType: &mt,
 	}, nil
 }
 
@@ -266,12 +276,17 @@ func (ref *URLRef) buildPDFTextOrFileBlockFromURL(ctx context.Context) (*Content
 	if err != nil {
 		return nil, err
 	}
-
+	// Infer/normalize so file blocks and filenameFromURL get a stable type.
+	contentType = inferContentType(contentType, rawURL, data)
 	text, err := fileutil.ExtractPDFTextFromBytesSafe(data, maxAttachmentFetchBytes)
+
 	if err == nil && text != "" {
+		mt := "text/plain"
 		return &ContentBlock{
-			Kind: ContentBlockText,
-			Text: &text,
+			Kind:     ContentBlockText,
+			Text:     &text,
+			URL:      &rawURL,
+			MIMEType: &mt,
 		}, nil
 	}
 
@@ -281,10 +296,6 @@ func (ref *URLRef) buildPDFTextOrFileBlockFromURL(ctx context.Context) (*Content
 			"url", rawURL, "err", err)
 	}
 
-	if contentType == "" {
-		contentType = string(fileutil.MIMEApplicationPDF)
-	}
-
 	base64Data := base64.StdEncoding.EncodeToString(data)
 	fname := filenameFromURL(rawURL, contentType)
 	return &ContentBlock{
@@ -292,6 +303,7 @@ func (ref *URLRef) buildPDFTextOrFileBlockFromURL(ctx context.Context) (*Content
 		Base64Data: &base64Data,
 		MIMEType:   &contentType,
 		FileName:   &fname,
+		URL:        &rawURL,
 	}, nil
 }
 
@@ -305,11 +317,12 @@ func (ref *URLRef) buildImageBlockFromURL(ctx context.Context) (*ContentBlock, e
 	if err != nil {
 		slog.Warn("failed to fetch image url attachment, falling back to link",
 			"url", rawURL, "err", err)
-		return ref.buildLinkOnlyContentBlock(), nil
+		return ref.buildTextLinkContentBlock(), nil
 	}
-	if !strings.HasPrefix(strings.ToLower(contentType), "image/") {
+	contentType = inferContentType(contentType, rawURL, data)
+	if !strings.HasPrefix(contentType, "image/") {
 		// Not actually an image, fall back to a link.
-		return ref.buildLinkOnlyContentBlock(), nil
+		return ref.buildTextLinkContentBlock(), nil
 	}
 
 	base64Data := base64.StdEncoding.EncodeToString(data)
@@ -319,6 +332,7 @@ func (ref *URLRef) buildImageBlockFromURL(ctx context.Context) (*ContentBlock, e
 		Base64Data: &base64Data,
 		MIMEType:   &contentType,
 		FileName:   &fname,
+		URL:        &rawURL,
 	}, nil
 }
 
@@ -332,16 +346,9 @@ func (ref *URLRef) buildFileBlockFromURL(ctx context.Context) (*ContentBlock, er
 	if err != nil {
 		slog.Warn("failed to fetch url file, falling back to link",
 			"url", rawURL, "err", err)
-		return ref.buildLinkOnlyContentBlock(), nil
+		return ref.buildTextLinkContentBlock(), nil
 	}
-	if contentType == "" {
-		if strings.HasSuffix(strings.ToLower(rawURL), ".pdf") {
-			contentType = string(fileutil.MIMEApplicationPDF)
-		} else {
-			contentType = string(fileutil.MIMEApplicationOctetStream)
-		}
-	}
-
+	contentType = inferContentType(contentType, rawURL, data)
 	base64Data := base64.StdEncoding.EncodeToString(data)
 	fname := filenameFromURL(rawURL, contentType)
 	return &ContentBlock{
@@ -349,15 +356,17 @@ func (ref *URLRef) buildFileBlockFromURL(ctx context.Context) (*ContentBlock, er
 		Base64Data: &base64Data,
 		MIMEType:   &contentType,
 		FileName:   &fname,
+		URL:        &rawURL,
 	}, nil
 }
 
-// buildLinkOnlyContentBlock returns a simple text block that represents the
+// buildTextLinkContentBlock returns a simple text block that represents the
 // URL as a human-readable link. If the attachment has a label distinct from
 // the URL, it is included as "label (url)".
-func (ref *URLRef) buildLinkOnlyContentBlock() *ContentBlock {
+func (ref *URLRef) buildTextLinkContentBlock() *ContentBlock {
+	rawURL := strings.TrimSpace(ref.URL)
 	return &ContentBlock{
 		Kind: ContentBlockText,
-		Text: &ref.URL,
+		Text: &rawURL,
 	}
 }

@@ -107,7 +107,7 @@ func (ref *FileRef) BuildContentBlock(
 			// Right now we are making a safe fallback to send it as text block.
 			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentContentBlockMode
 			// properly.
-			return ref.getTextBlock()
+			return ref.getTextBlock(mimeType)
 		case fileutil.ExtensionModeImage:
 			if onlyIfTextKind {
 				return nil, ErrNonTextContentBlock
@@ -147,14 +147,14 @@ func (ref *FileRef) BuildContentBlock(
 		mimeType, extensionMode, err := fileutil.MIMEForLocalFile(path)
 		if err == nil && (extensionMode == fileutil.ExtensionModeText || mimeType == fileutil.MIMEApplicationPDF) {
 			// Text mode mimes and pdf with text extraction is supported.
-			return ref.getTextBlock()
+			return ref.getTextBlock(mimeType)
 		}
 		// Could not detect mime or non pdf text attachment sent, render as unreadable file.
 		return nil, ErrUnreadableFile
 
 	case AttachmentContentBlockModeNotReadable,
 		AttachmentContentBlockModePageContent,
-		AttachmentContentBlockModeLinkOnly,
+		AttachmentContentBlockModeTextLink,
 		AttachmentContentBlockModePRDiff,
 		AttachmentContentBlockModePRPage,
 		AttachmentContentBlockModeCommitDiff,
@@ -166,11 +166,12 @@ func (ref *FileRef) BuildContentBlock(
 	}
 }
 
-func (ref *FileRef) getTextBlock() (*ContentBlock, error) {
+func (ref *FileRef) getTextBlock(mimetype fileutil.MIMEType) (*ContentBlock, error) {
 	path := strings.TrimSpace(ref.Path)
 	if path == "" {
 		return nil, errors.New("got invalid path")
 	}
+	fname := filepath.Base(path)
 	ext := strings.ToLower(filepath.Ext(path))
 	// Special handling for PDFs: try text extraction with panic-safe fallback.
 	if ext == string(fileutil.ExtPDF) {
@@ -181,23 +182,31 @@ func (ref *FileRef) getTextBlock() (*ContentBlock, error) {
 	if err != nil {
 		return nil, err
 	}
+	mme := string(mimetype)
 	return &ContentBlock{
-		Kind: ContentBlockText,
-		Text: &text,
+		Kind:     ContentBlockText,
+		Text:     &text,
+		MIMEType: &mme,
+		FileName: &fname,
 	}, nil
 }
 
 // buildPDFTextOrFileBlock tries to extract PDF text; on failure/panic, falls back to base64 file.
 func (ref *FileRef) buildPDFTextOrFileBlock() (*ContentBlock, error) {
+	mimetype := string(fileutil.MIMEApplicationPDF)
+
 	path := strings.TrimSpace(ref.Path)
 	if path == "" {
 		return nil, errors.New("got invalid path")
 	}
+	fname := filepath.Base(path)
 	text, err := fileutil.ExtractPDFTextSafe(path, maxAttachmentFetchBytes)
 	if err == nil && text != "" {
 		return &ContentBlock{
-			Kind: ContentBlockText,
-			Text: &text,
+			Kind:     ContentBlockText,
+			Text:     &text,
+			MIMEType: &mimetype,
+			FileName: &fname,
 		}, nil
 	}
 
@@ -218,8 +227,6 @@ func (ref *FileRef) buildPDFTextOrFileBlock() (*ContentBlock, error) {
 		return nil, err2
 	}
 
-	mimetype := string(fileutil.MIMEApplicationPDF)
-	fname := filepath.Base(path)
 	return &ContentBlock{
 		Kind:       ContentBlockFile,
 		Base64Data: &base64Data,

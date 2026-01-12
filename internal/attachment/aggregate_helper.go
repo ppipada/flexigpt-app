@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/ppipada/flexigpt-app/internal/fileutil"
 )
@@ -126,11 +127,23 @@ func buildUnreadableFileAttachment(pathInfo fileutil.PathInfo) *Attachment {
 }
 
 // BuildAttachmentForURL builds an Attachment for a remote URL.
-// It does:
-//   - infer default mode based on URL path extension
-//   - set AvailableContentBlockModes accordingly
-//   - populate URLRef (Normalized / OrigNormalized) via PopulateRef.
+// It uses a timeout context to peek and infer type and then give proper options.
 func BuildAttachmentForURL(rawURL string) (*Attachment, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	return BuildAttachmentForURLWithContext(ctx, rawURL)
+}
+
+// BuildAttachmentForURLWithContext builds an Attachment for a remote URL.
+//
+// Mode detection strategy:
+//  1. Best effort Content-Type detection via HEAD -> Range GET sniff.
+//  2. Fallback to extension-based detection.
+//  3. Ultimate fallback: LinkOnly (do not error out due to detection failures).
+//
+// Note: It can still return an error for invalid/empty/non-absolute URLs because
+// PopulateRef enforces validity.
+func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Attachment, error) {
 	trimmed := strings.TrimSpace(rawURL)
 	if trimmed == "" {
 		return nil, errors.New("empty url")
@@ -138,41 +151,111 @@ func BuildAttachmentForURL(rawURL string) (*Attachment, error) {
 
 	label := trimmed
 
-	// Infer extension from URL pathname, like the TS helper does.
-	// If parsing fails, ext stays empty and we fall back to "page".
-	ext := ""
-	if parsed, err := url.Parse(trimmed); err != nil {
+	// Parse early mainly to infer extension; PopulateRef will validate absolute URL later.
+	parsed, err := url.Parse(trimmed)
+	if err != nil {
 		return nil, errors.New("invalid url")
-	} else {
-		pathname := strings.ToLower(parsed.Path)
-		if pathname != "" {
-			parts := strings.Split(pathname, ".")
-			ext = parts[len(parts)-1]
-		}
 	}
 
-	// Choose default mode + available modes based on extension.
-	mode := AttachmentContentBlockModePageContent
+	// Extension fallback inference.
+	ext := ""
+	pathname := strings.ToLower(parsed.Path)
+	if pathname != "" {
+		parts := strings.Split(pathname, ".")
+		ext = parts[len(parts)-1]
+	}
+
+	// Start from ultimate fallback: link-only.
+	mode := AttachmentContentBlockModeTextLink
 	available := []AttachmentContentBlockMode{
-		AttachmentContentBlockModePageContent,
-		AttachmentContentBlockModeLinkOnly,
+		AttachmentContentBlockModeTextLink,
 	}
 
-	mimeType, err := fileutil.MIMEFromExtensionString(ext)
-	if err == nil {
-		extMode, ok := fileutil.MIMETypeToExtensionMode[mimeType]
-		if ok && extMode == fileutil.ExtensionModeImage {
+	// 1) Best-effort probe Content-Type (no full body download).
+	// If this fails, we do NOT error out: we just log and move to extension fallback.
+	if ct, err := peekURLContentType(ctx, trimmed); err == nil {
+		ct = normalizeContentType(ct)
+
+		switch {
+		case strings.HasPrefix(ct, "image/"):
 			mode = AttachmentContentBlockModeImage
 			available = []AttachmentContentBlockMode{
 				AttachmentContentBlockModeImage,
-				AttachmentContentBlockModeLinkOnly, // "link"
+				AttachmentContentBlockModeTextLink,
 			}
-		} else if mimeType == fileutil.MIMEApplicationPDF {
+
+		case ct == string(fileutil.MIMEApplicationPDF):
 			mode = AttachmentContentBlockModeFile
 			available = []AttachmentContentBlockMode{
-				AttachmentContentBlockModeText,     // allow "text" view of PDF
-				AttachmentContentBlockModeFile,     // original file
-				AttachmentContentBlockModeLinkOnly, // link-only
+				AttachmentContentBlockModeText, // allow PDF -> extracted text view
+				AttachmentContentBlockModeFile, // raw file
+				AttachmentContentBlockModeTextLink,
+			}
+
+		case isPlainTextContentType(ct):
+			mode = AttachmentContentBlockModeText
+			available = []AttachmentContentBlockMode{
+				AttachmentContentBlockModeText,
+				AttachmentContentBlockModeTextLink,
+			}
+
+		case strings.HasPrefix(ct, "text/html"):
+			mode = AttachmentContentBlockModePageContent
+			available = []AttachmentContentBlockMode{
+				AttachmentContentBlockModePageContent,
+				AttachmentContentBlockModeTextLink,
+			}
+
+		case ct != "":
+			// Some other known binary type.
+			mode = AttachmentContentBlockModeFile
+			available = []AttachmentContentBlockMode{
+				AttachmentContentBlockModeFile,
+				AttachmentContentBlockModeTextLink,
+			}
+		}
+	} else {
+		slog.Debug("content-type probe failed; falling back to extension/link-only",
+			"url", trimmed, "err", err)
+	}
+
+	// 2) Extension-based fallback ONLY if we still are in LinkOnly mode.
+	// (i.e., content-type probe didn't identify anything).
+	if mode == AttachmentContentBlockModeTextLink && ext != "" {
+		if mimeType, err := fileutil.MIMEFromExtensionString(ext); err == nil {
+			switch {
+			case func() bool {
+				extMode, ok := fileutil.MIMETypeToExtensionMode[mimeType]
+				return ok && extMode == fileutil.ExtensionModeImage
+			}():
+				mode = AttachmentContentBlockModeImage
+				available = []AttachmentContentBlockMode{
+					AttachmentContentBlockModeImage,
+					AttachmentContentBlockModeTextLink,
+				}
+
+			case mimeType == fileutil.MIMEApplicationPDF:
+				mode = AttachmentContentBlockModeFile
+				available = []AttachmentContentBlockMode{
+					AttachmentContentBlockModeText,
+					AttachmentContentBlockModeFile,
+					AttachmentContentBlockModeTextLink,
+				}
+
+			case strings.HasPrefix(string(mimeType), "text/"):
+				mode = AttachmentContentBlockModeText
+				available = []AttachmentContentBlockMode{
+					AttachmentContentBlockModeText,
+					AttachmentContentBlockModeTextLink,
+				}
+
+			default:
+				// Unknown-but-present extension -> safest treat as file.
+				mode = AttachmentContentBlockModeFile
+				available = []AttachmentContentBlockMode{
+					AttachmentContentBlockModeFile,
+					AttachmentContentBlockModeTextLink,
+				}
 			}
 		}
 	}
@@ -187,7 +270,7 @@ func BuildAttachmentForURL(rawURL string) (*Attachment, error) {
 		},
 	}
 
-	// Like BuildAttachmentForFile, ensure the ref is fully populated here.
+	// Ensure ref is populated/validated (absolute URL requirement, normalized fields, etc.)
 	if err := att.PopulateRef(false); err != nil {
 		return nil, err
 	}

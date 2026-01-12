@@ -15,6 +15,7 @@ import (
 
 	html2md "github.com/JohannesKaufmann/html-to-markdown/v2"
 	"github.com/markusmobius/go-trafilatura"
+	"github.com/ppipada/flexigpt-app/internal/fileutil"
 	"golang.org/x/net/html"
 )
 
@@ -273,35 +274,107 @@ func fetchURLBytes(ctx context.Context, rawURL string, maxBytes int) (data []byt
 	return data, contentType, nil
 }
 
-// peekURLContentType sends a HEAD request and returns the Content-Type header.
-// Returns an error on network / HTTP failure and an empty string if the header
-// is missing. This is used to quickly determine how to treat a URL without
-// downloading the entire body.
+// peekURLContentType tries to determine the URL's content type without downloading the full body.
+//
+// Strategy:
+//  1. HEAD: use Content-Type header if present and status < 400
+//  2. If HEAD fails, is blocked (405/403), or returns no Content-Type:
+//     GET with Range: bytes=0-511
+//     - prefer Content-Type header if present
+//     - else sniff the first bytes via http.DetectContentType.
+//
+// It returns a *normalized* mime type (lowercased, params stripped), e.g. "text/html", "image/png", "application/pdf".
 func peekURLContentType(ctx context.Context, rawURL string) (string, error) {
+	const maxPeekBytes = 512
+
 	rawURL = strings.TrimSpace(rawURL)
 	if rawURL == "" {
 		return "", errors.New("empty url")
 	}
-	if _, err := url.ParseRequestURI(rawURL); err != nil {
+
+	// Validate URL. ParseRequestURI is OK for basic validation, but for URL attachments
+	// you typically want absolute URLs; enforce that here.
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
 		return "", fmt.Errorf("invalid url %q: %w", rawURL, err)
 	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodHead, rawURL, http.NoBody)
-	if err != nil {
-		return "", err
+	if !parsed.IsAbs() {
+		return "", fmt.Errorf("url %q must be absolute", rawURL)
 	}
 
-	resp, err := sharedHTTPClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
+	var headErr error
 
-	if resp.StatusCode >= 400 {
-		return "", fmt.Errorf("http %d when fetching headers for %s", resp.StatusCode, rawURL)
+	// 1) HEAD attempt.
+	{
+		req, err := http.NewRequestWithContext(ctx, http.MethodHead, rawURL, http.NoBody)
+		if err != nil {
+			return "", err
+		}
+
+		resp, err := sharedHTTPClient.Do(req)
+		if err != nil {
+			headErr = err
+		} else {
+			_ = resp.Body.Close()
+
+			// Some servers return useful headers even on errors, but generally treat >= 400 as failure.
+			if resp.StatusCode < 400 {
+				if ct := normalizeContentType(resp.Header.Get("Content-Type")); ct != "" {
+					return ct, nil
+				}
+			} else {
+				headErr = fmt.Errorf("http %d when fetching headers for %s", resp.StatusCode, rawURL)
+			}
+		}
 	}
 
-	return resp.Header.Get("Content-Type"), nil
+	// 2) GET Range fallback + sniff (reads at most maxPeekBytes).
+	{
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, http.NoBody)
+		if err != nil {
+			if headErr != nil {
+				return "", fmt.Errorf("head failed: %w; range-get build failed: %w", headErr, err)
+			}
+			return "", err
+		}
+
+		req.Header.Set("Range", fmt.Sprintf("bytes=0-%d", maxPeekBytes-1))
+		// Encourage uncompressed for more consistent sniffing with Range.
+		req.Header.Set("Accept-Encoding", "identity")
+
+		resp, err := sharedHTTPClient.Do(req)
+		if err != nil {
+			if headErr != nil {
+				return "", fmt.Errorf("head failed: %w; range-get failed: %w", headErr, err)
+			}
+			return "", err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode >= 400 {
+			if headErr != nil {
+				return "", fmt.Errorf("head failed: %w; range-get status %d for %s", headErr, resp.StatusCode, rawURL)
+			}
+			return "", fmt.Errorf("http %d when range-fetching %s", resp.StatusCode, rawURL)
+		}
+
+		// Prefer server-declared Content-Type if present.
+		if ct := normalizeContentType(resp.Header.Get("Content-Type")); ct != "" {
+			return ct, nil
+		}
+
+		// Otherwise sniff from the first bytes.
+		buf, _ := io.ReadAll(io.LimitReader(resp.Body, maxPeekBytes))
+		if len(buf) > 0 {
+			return normalizeContentType(http.DetectContentType(buf)), nil
+		}
+	}
+
+	// Could not determine, but caller can still proceed with extension heuristics / link-only.
+	if headErr != nil {
+		return "", fmt.Errorf("unable to determine content-type for %s (head err: %w)", rawURL, headErr)
+	}
+	return "", fmt.Errorf("unable to determine content-type for %s", rawURL)
 }
 
 // isProbablyHTMLOrText checks whether the given Content-Type / URL combination
@@ -358,4 +431,43 @@ func isPlainTextContentType(lowerCT string) bool {
 	// Add more variants as needed, e.g. text/csv if you want to treat it
 	// as raw text rather than run it through Trafilatura.
 	return false
+}
+
+// inferContentType tries, in order:
+//  1. normalized header content-type
+//  2. extension-based hints for common types (pdf)
+//  3. sniff bytes via http.DetectContentType (first 512 bytes)
+//  4. default octet-stream
+func inferContentType(headerCT, rawURL string, data []byte) string {
+	if mt := normalizeContentType(headerCT); mt != "" {
+		return mt
+	}
+	lowerURL := strings.ToLower(strings.TrimSpace(rawURL))
+	if strings.HasSuffix(lowerURL, ".pdf") {
+		return string(fileutil.MIMEApplicationPDF)
+	}
+	if len(data) > 0 {
+		return normalizeContentType(http.DetectContentType(data))
+	}
+	return string(fileutil.MIMEApplicationOctetStream)
+}
+
+// normalizeContentType returns a stable, comparable mime type:
+// - strips parameters (e.g. "; charset=utf-8")
+// - lowercases the media type
+// - returns "" if input is empty/whitespace.
+func normalizeContentType(ct string) string {
+	ct = strings.TrimSpace(ct)
+	if ct == "" {
+		return ""
+	}
+	mt, _, err := mime.ParseMediaType(ct)
+	if err == nil && strings.TrimSpace(mt) != "" {
+		return strings.ToLower(strings.TrimSpace(mt))
+	}
+	// Fallback: best-effort strip params.
+	if i := strings.Index(ct, ";"); i >= 0 {
+		ct = ct[:i]
+	}
+	return strings.ToLower(strings.TrimSpace(ct))
 }
