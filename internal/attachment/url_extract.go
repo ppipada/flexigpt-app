@@ -105,7 +105,7 @@ func ExtractReadableMarkdownFromURL(ctx context.Context, rawURL string) (string,
 	}
 
 	// Fetch the page HTML with a strict byte limit.
-	data, contentType, err := fetchURLBytes(ctx, rawURL, maxPageContentBytes)
+	data, headerCT, err := fetchURLBytes(ctx, rawURL, maxPageContentBytes)
 	if err != nil {
 		if errors.Is(err, ErrResponseTooLarge) {
 			// Promote to a page-specific sentinel that callers can treat specially.
@@ -113,6 +113,8 @@ func ExtractReadableMarkdownFromURL(ctx context.Context, rawURL string) (string,
 		}
 		return "", fmt.Errorf("fetching url: %w", err)
 	}
+
+	contentType := inferContentType(headerCT, rawURL, data)
 
 	if !isProbablyHTMLOrText(contentType, rawURL) {
 		return "", fmt.Errorf("unsupported content type %q for page extraction", contentType)
@@ -292,8 +294,6 @@ func peekURLContentType(ctx context.Context, rawURL string) (string, error) {
 		return "", errors.New("empty url")
 	}
 
-	// Validate URL. ParseRequestURI is OK for basic validation, but for URL attachments
-	// you typically want absolute URLs; enforce that here.
 	parsed, err := url.Parse(rawURL)
 	if err != nil {
 		return "", fmt.Errorf("invalid url %q: %w", rawURL, err)
@@ -317,9 +317,11 @@ func peekURLContentType(ctx context.Context, rawURL string) (string, error) {
 		} else {
 			_ = resp.Body.Close()
 
-			// Some servers return useful headers even on errors, but generally treat >= 400 as failure.
 			if resp.StatusCode < 400 {
-				if ct := normalizeContentType(resp.Header.Get("Content-Type")); ct != "" {
+				ct := inferContentType(resp.Header.Get("Content-Type"), rawURL, nil)
+				// If HEAD gives us something non-generic (image/png, text/html, application/pdf, ...),
+				// we're done; otherwise, fall through to Range GET.
+				if ct != "" && !isGenericBinaryContentType(ct) {
 					return ct, nil
 				}
 			} else {
@@ -328,7 +330,7 @@ func peekURLContentType(ctx context.Context, rawURL string) (string, error) {
 		}
 	}
 
-	// 2) GET Range fallback + sniff (reads at most maxPeekBytes).
+	// 2) GET Range fallback + sniff.
 	{
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, http.NoBody)
 		if err != nil {
@@ -339,7 +341,6 @@ func peekURLContentType(ctx context.Context, rawURL string) (string, error) {
 		}
 
 		req.Header.Set("Range", fmt.Sprintf("bytes=0-%d", maxPeekBytes-1))
-		// Encourage uncompressed for more consistent sniffing with Range.
 		req.Header.Set("Accept-Encoding", "identity")
 
 		resp, err := sharedHTTPClient.Do(req)
@@ -358,23 +359,16 @@ func peekURLContentType(ctx context.Context, rawURL string) (string, error) {
 			return "", fmt.Errorf("http %d when range-fetching %s", resp.StatusCode, rawURL)
 		}
 
-		// Prefer server-declared Content-Type if present.
-		if ct := normalizeContentType(resp.Header.Get("Content-Type")); ct != "" {
-			return ct, nil
-		}
-
-		// Otherwise sniff from the first bytes.
 		buf, _ := io.ReadAll(io.LimitReader(resp.Body, maxPeekBytes))
-		if len(buf) > 0 {
-			return normalizeContentType(http.DetectContentType(buf)), nil
+		ct := inferContentType(resp.Header.Get("Content-Type"), rawURL, buf)
+		if ct == "" {
+			if headErr != nil {
+				return "", fmt.Errorf("unable to determine content-type for %s (head err: %w)", rawURL, headErr)
+			}
+			return "", fmt.Errorf("unable to determine content-type for %s", rawURL)
 		}
+		return ct, nil
 	}
-
-	// Could not determine, but caller can still proceed with extension heuristics / link-only.
-	if headErr != nil {
-		return "", fmt.Errorf("unable to determine content-type for %s (head err: %w)", rawURL, headErr)
-	}
-	return "", fmt.Errorf("unable to determine content-type for %s", rawURL)
 }
 
 // isProbablyHTMLOrText checks whether the given Content-Type / URL combination
@@ -414,42 +408,68 @@ func isProbablyHTMLOrText(contentType, rawURL string) bool {
 // isPlainTextContentType reports whether a content type is "plain text-ish"
 // but not HTML. This is used to preserve previous behaviour for text/plain
 // and similar, bypassing the HTML extractor and feeding the text directly.
-func isPlainTextContentType(lowerCT string) bool {
-	if lowerCT == "" {
+func isPlainTextContentType(ct string) bool {
+	ct = strings.ToLower(strings.TrimSpace(ct))
+	if ct == "" {
 		return false
 	}
 
-	if strings.HasPrefix(lowerCT, "text/plain") {
+	// Explicitly do NOT treat HTML as plain text.
+	if strings.HasPrefix(ct, "text/html") {
+		return false
+	}
+
+	// All other text/* can be treated as plain text-ish (markdown, csv, etc.).
+	if strings.HasPrefix(ct, "text/") {
 		return true
 	}
-	if strings.HasPrefix(lowerCT, "text/markdown") {
-		return true
-	}
-	if strings.HasPrefix(lowerCT, "text/x-markdown") {
-		return true
-	}
-	// Add more variants as needed, e.g. text/csv if you want to treat it
-	// as raw text rather than run it through Trafilatura.
+
 	return false
 }
 
-// inferContentType tries, in order:
-//  1. normalized header content-type
-//  2. extension-based hints for common types (pdf)
-//  3. sniff bytes via http.DetectContentType (first 512 bytes)
-//  4. default octet-stream
 func inferContentType(headerCT, rawURL string, data []byte) string {
-	if mt := normalizeContentType(headerCT); mt != "" {
-		return mt
+	headerCT = normalizeContentType(headerCT)
+
+	// 1) Trust non-generic header types.
+	if headerCT != "" && !isGenericBinaryContentType(headerCT) {
+		return headerCT
 	}
+
+	// 2) Extension-based hint from URL path.
 	lowerURL := strings.ToLower(strings.TrimSpace(rawURL))
-	if strings.HasSuffix(lowerURL, ".pdf") {
-		return string(fileutil.MIMEApplicationPDF)
+	if ext := strings.TrimSpace(filepath.Ext(lowerURL)); ext != "" {
+		if mt, err := fileutil.MIMEFromExtensionString(ext); err == nil {
+			m := normalizeContentType(string(mt))
+			if m != "" && !isGenericBinaryContentType(m) {
+				return m
+			}
+		}
 	}
+
+	// 3) Sniff bytes if we have any.
 	if len(data) > 0 {
-		return normalizeContentType(http.DetectContentType(data))
+		sniff := normalizeContentType(http.DetectContentType(data))
+		if sniff != "" && !isGenericBinaryContentType(sniff) {
+			return sniff
+		}
+	}
+
+	// 4) Fallback to whatever header said (even if generic) or octet-stream.
+	if headerCT != "" {
+		return headerCT
 	}
 	return string(fileutil.MIMEApplicationOctetStream)
+}
+
+// isGenericBinaryContentType reports whether ct looks like a "fallback"
+// binary type where the server didn't know the real mime (e.g. octet-stream).
+func isGenericBinaryContentType(ct string) bool {
+	ct = normalizeContentType(ct)
+	if ct == "" || strings.Contains(ct, "octet") || strings.Contains(ct, "binary") {
+		return true
+	}
+
+	return false
 }
 
 // normalizeContentType returns a stable, comparable mime type:

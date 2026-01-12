@@ -150,8 +150,6 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 		return nil, errors.New("empty url")
 	}
 
-	label := trimmed
-
 	// Parse early mainly to infer extension; PopulateRef will validate absolute URL later.
 	parsed, err := url.Parse(trimmed)
 	if err != nil {
@@ -159,58 +157,105 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 	}
 
 	// Extension fallback inference.
-	ext := ""
-	pathname := strings.ToLower(parsed.Path)
-	if pathname != "" {
-		parts := strings.Split(pathname, ".")
-		ext = parts[len(parts)-1]
+	ext := strings.ToLower(filepath.Ext(parsed.Path)) // includes leading "."
+	if len(ext) <= 1 {
+		ext = ""
+	}
+
+	// Canonical mode sets we reuse.
+	textLinkModes := []AttachmentContentBlockMode{
+		AttachmentContentBlockModeTextLink,
+	}
+	imageModes := []AttachmentContentBlockMode{
+		AttachmentContentBlockModeImage,
+		AttachmentContentBlockModeImageURL,
+		AttachmentContentBlockModeTextLink,
+	}
+	pdfModes := []AttachmentContentBlockMode{
+		AttachmentContentBlockModeText, // allow PDF -> extracted text view
+		AttachmentContentBlockModeFile, // raw file (download+inline)
+		AttachmentContentBlockModeFileURL,
+		AttachmentContentBlockModeTextLink,
+	}
+	fileModes := []AttachmentContentBlockMode{
+		AttachmentContentBlockModeFile,
+		AttachmentContentBlockModeTextLink,
+	}
+	textModes := []AttachmentContentBlockMode{
+		AttachmentContentBlockModeText,
+		AttachmentContentBlockModeTextLink,
+	}
+	pageModes := []AttachmentContentBlockMode{
+		AttachmentContentBlockModePageContent,
+		AttachmentContentBlockModeTextLink,
 	}
 
 	// Start from ultimate fallback: link-only.
 	mode := AttachmentContentBlockModeTextLink
-	available := []AttachmentContentBlockMode{
-		AttachmentContentBlockModeTextLink,
+	available := textLinkModes
+
+	// Helper to convert an extension-mode classification into attachment modes.
+	applyExtensionMode := func(extMode fileutil.ExtensionMode, mimeType fileutil.MIMEType, fromExtension bool) {
+		switch extMode {
+		case fileutil.ExtensionModeImage:
+			mode = AttachmentContentBlockModeImage
+			available = imageModes
+
+		case fileutil.ExtensionModeDocument:
+			if mimeType == fileutil.MIMEApplicationPDF {
+				mode = AttachmentContentBlockModeFile
+				available = pdfModes
+			} else {
+				mode = AttachmentContentBlockModeFile
+				available = fileModes
+			}
+
+		case fileutil.ExtensionModeText:
+			mode = AttachmentContentBlockModeText
+			available = textModes
+
+		default:
+			if fromExtension {
+				// For unknown binary extensions, treat as a generic file.
+				mode = AttachmentContentBlockModeFile
+				available = fileModes
+			}
+			// For content-type based classification we leave it as link-only
+			// so that extension-based fallback can still run later.
+		}
 	}
 
 	// 1) Best-effort probe Content-Type (no full body download).
 	// If this fails, we do NOT error out: we just log and move to extension fallback.
 	if ct, err := peekURLContentType(ctx, trimmed); err == nil {
 		ct = normalizeContentType(ct)
+
 		switch {
 		case strings.HasPrefix(ct, "image/"):
 			mode = AttachmentContentBlockModeImage
-			available = []AttachmentContentBlockMode{
-				AttachmentContentBlockModeImage,
-				AttachmentContentBlockModeImageURL,
-				AttachmentContentBlockModeTextLink,
-			}
+			available = imageModes
 
 		case ct == string(fileutil.MIMEApplicationPDF):
 			mode = AttachmentContentBlockModeFile
-			available = []AttachmentContentBlockMode{
-				AttachmentContentBlockModeText, // allow PDF -> extracted text view
-				AttachmentContentBlockModeFile, // raw file (download+inline)
-				AttachmentContentBlockModeFileURL,
-				AttachmentContentBlockModeTextLink,
-			}
-
-		case isPlainTextContentType(ct):
-			mode = AttachmentContentBlockModeText
-			available = []AttachmentContentBlockMode{
-				AttachmentContentBlockModeText,
-				AttachmentContentBlockModeTextLink,
-			}
+			available = pdfModes
 
 		case strings.HasPrefix(ct, "text/html"):
 			mode = AttachmentContentBlockModePageContent
-			available = []AttachmentContentBlockMode{
-				AttachmentContentBlockModePageContent,
-				AttachmentContentBlockModeTextLink,
+			available = pageModes
+		}
+
+		// If we still haven't decided, look at MIMETypeToExtensionMode.
+		if mode == AttachmentContentBlockModeTextLink && ct != "" {
+			mimeType := fileutil.MIMEType(ct)
+
+			if extMode, ok := fileutil.MIMETypeToExtensionMode[mimeType]; ok {
+				applyExtensionMode(extMode, mimeType, false)
+			} else if isPlainTextContentType(ct) {
+				// Fallback for plain text-ish types not in MIMETypeToExtensionMode.
+				mode = AttachmentContentBlockModeText
+				available = textModes
 			}
-
-		case ct == string(fileutil.MIMEApplicationOctetStream):
-			// We need to probe further.
-
+			// Leave octet mode as TextLink so extension fallback has a chance.
 		}
 	} else {
 		slog.Debug("content-type probe failed; falling back to extension/link-only",
@@ -221,48 +266,19 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 	// (i.e., content-type probe didn't identify anything).
 	if mode == AttachmentContentBlockModeTextLink && ext != "" {
 		if mimeType, err := fileutil.MIMEFromExtensionString(ext); err == nil {
-			switch {
-			case func() bool {
-				extMode, ok := fileutil.MIMETypeToExtensionMode[mimeType]
-				return ok && extMode == fileutil.ExtensionModeImage
-			}():
-				mode = AttachmentContentBlockModeImage
-				available = []AttachmentContentBlockMode{
-					AttachmentContentBlockModeImage,
-					AttachmentContentBlockModeImageURL,
-					AttachmentContentBlockModeTextLink,
-				}
-
-			case mimeType == fileutil.MIMEApplicationPDF:
-				mode = AttachmentContentBlockModeFile
-				available = []AttachmentContentBlockMode{
-					AttachmentContentBlockModeText,
-					AttachmentContentBlockModeFile,
-					AttachmentContentBlockModeFileURL,
-					AttachmentContentBlockModeTextLink,
-				}
-
-			case strings.HasPrefix(string(mimeType), "text/"):
+			if extMode, ok := fileutil.MIMETypeToExtensionMode[mimeType]; ok {
+				applyExtensionMode(extMode, mimeType, true)
+			} else if isPlainTextContentType(string(mimeType)) {
+				// Fallback for any text/* mimes that weren't in MIMETypeToExtensionMode.
 				mode = AttachmentContentBlockModeText
-				available = []AttachmentContentBlockMode{
-					AttachmentContentBlockModeText,
-					AttachmentContentBlockModeTextLink,
-				}
-
-			default:
-				// Unknown-but-present extension -> safest treat as file.
-				mode = AttachmentContentBlockModeFile
-				available = []AttachmentContentBlockMode{
-					AttachmentContentBlockModeFile,
-					AttachmentContentBlockModeTextLink,
-				}
+				available = textModes
 			}
 		}
 	}
 
 	att := &Attachment{
 		Kind:                       AttachmentURL,
-		Label:                      label,
+		Label:                      trimmed,
 		Mode:                       mode,
 		AvailableContentBlockModes: available,
 		URLRef: &URLRef{

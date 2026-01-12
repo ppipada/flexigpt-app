@@ -174,9 +174,10 @@ func (ref *FileRef) getTextBlock(mimetype fileutil.MIMEType) (*ContentBlock, err
 	fname := filepath.Base(path)
 	ext := strings.ToLower(filepath.Ext(path))
 	// Special handling for PDFs: try text extraction with panic-safe fallback.
-	if ext == string(fileutil.ExtPDF) {
+	if mimetype == fileutil.MIMEApplicationPDF || ext == string(fileutil.ExtPDF) {
 		return ref.buildPDFTextOrFileBlock()
 	}
+
 	// Normal text file.
 	text, err := fileutil.ReadFile(path, fileutil.ReadEncodingText)
 	if err != nil {
