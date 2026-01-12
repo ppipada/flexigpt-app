@@ -5,6 +5,7 @@
 - [ ] edit and save template doesn't work. says template slug already exists.
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
+- [x] we should also trigger a scroll after adding thinking blob
 
 ## Features
 
@@ -111,3 +112,5 @@
   - [ ] MCP options in apis connections and hooks
   - [ ] Doc stores/vector stores connections
     - [ ] Only if MCP cannot serve this.
+
+- [ ] Agent Skills but via local "explorer" or "skills" flow???
