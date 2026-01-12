@@ -3,9 +3,10 @@ export namespace attachment {
 	export class ContentBlock {
 	    kind: string;
 	    text?: string;
-	    base64Data?: string;
 	    mimeType?: string;
 	    fileName?: string;
+	    base64Data?: string;
+	    url?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ContentBlock(source);
@@ -15,9 +16,10 @@ export namespace attachment {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.kind = source["kind"];
 	        this.text = source["text"];
-	        this.base64Data = source["base64Data"];
 	        this.mimeType = source["mimeType"];
 	        this.fileName = source["fileName"];
+	        this.base64Data = source["base64Data"];
+	        this.url = source["url"];
 	    }
 	}
 	export class GenericRef {

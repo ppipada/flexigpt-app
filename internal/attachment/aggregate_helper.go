@@ -131,7 +131,8 @@ func buildUnreadableFileAttachment(pathInfo fileutil.PathInfo) *Attachment {
 func BuildAttachmentForURL(rawURL string) (*Attachment, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	return BuildAttachmentForURLWithContext(ctx, rawURL)
+	a, err := BuildAttachmentForURLWithContext(ctx, rawURL)
+	return a, err
 }
 
 // BuildAttachmentForURLWithContext builds an Attachment for a remote URL.
@@ -175,12 +176,12 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 	// If this fails, we do NOT error out: we just log and move to extension fallback.
 	if ct, err := peekURLContentType(ctx, trimmed); err == nil {
 		ct = normalizeContentType(ct)
-
 		switch {
 		case strings.HasPrefix(ct, "image/"):
 			mode = AttachmentContentBlockModeImage
 			available = []AttachmentContentBlockMode{
 				AttachmentContentBlockModeImage,
+				AttachmentContentBlockModeImageURL,
 				AttachmentContentBlockModeTextLink,
 			}
 
@@ -188,7 +189,8 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 			mode = AttachmentContentBlockModeFile
 			available = []AttachmentContentBlockMode{
 				AttachmentContentBlockModeText, // allow PDF -> extracted text view
-				AttachmentContentBlockModeFile, // raw file
+				AttachmentContentBlockModeFile, // raw file (download+inline)
+				AttachmentContentBlockModeFileURL,
 				AttachmentContentBlockModeTextLink,
 			}
 
@@ -206,13 +208,9 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 				AttachmentContentBlockModeTextLink,
 			}
 
-		case ct != "":
-			// Some other known binary type.
-			mode = AttachmentContentBlockModeFile
-			available = []AttachmentContentBlockMode{
-				AttachmentContentBlockModeFile,
-				AttachmentContentBlockModeTextLink,
-			}
+		case ct == string(fileutil.MIMEApplicationOctetStream):
+			// We need to probe further.
+
 		}
 	} else {
 		slog.Debug("content-type probe failed; falling back to extension/link-only",
@@ -231,6 +229,7 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 				mode = AttachmentContentBlockModeImage
 				available = []AttachmentContentBlockMode{
 					AttachmentContentBlockModeImage,
+					AttachmentContentBlockModeImageURL,
 					AttachmentContentBlockModeTextLink,
 				}
 
@@ -239,6 +238,7 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 				available = []AttachmentContentBlockMode{
 					AttachmentContentBlockModeText,
 					AttachmentContentBlockModeFile,
+					AttachmentContentBlockModeFileURL,
 					AttachmentContentBlockModeTextLink,
 				}
 

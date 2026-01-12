@@ -17,8 +17,12 @@ export enum AttachmentContentBlockMode {
 	text = 'text',
 	file = 'file',
 	image = 'image',
+
 	page = 'page',
-	link = 'link',
+	textlink = 'textlink',
+	imageurl = 'imageurl',
+	fileurl = 'fileurl',
+
 	notReadable = 'not-readable',
 
 	prDiff = 'pr-diff',
@@ -33,7 +37,9 @@ export const ATTACHMENT_MODE_LABELS: Record<AttachmentContentBlockMode, string> 
 	[AttachmentContentBlockMode.file]: 'File',
 	[AttachmentContentBlockMode.image]: 'Image',
 	[AttachmentContentBlockMode.page]: 'Page content',
-	[AttachmentContentBlockMode.link]: 'Link only',
+	[AttachmentContentBlockMode.textlink]: 'Link as text',
+	[AttachmentContentBlockMode.imageurl]: 'Image as URL',
+	[AttachmentContentBlockMode.fileurl]: 'File as URL',
 	[AttachmentContentBlockMode.notReadable]: 'Not readable',
 	[AttachmentContentBlockMode.prDiff]: 'PR diff only',
 	[AttachmentContentBlockMode.prPage]: 'PR page',
@@ -46,7 +52,9 @@ export const ATTACHMENT_MODE_DESC: Record<AttachmentContentBlockMode, string> = 
 	[AttachmentContentBlockMode.file]: 'Send the file as a binary attachment (requires API support).',
 	[AttachmentContentBlockMode.image]: 'Send the image as a binary attachment (requires API support).',
 	[AttachmentContentBlockMode.page]: 'Text content extracted from the HTML page.',
-	[AttachmentContentBlockMode.link]: 'Only send the link; do not fetch or parse content.',
+	[AttachmentContentBlockMode.textlink]: 'Only send the link as text; do not fetch or parse content.',
+	[AttachmentContentBlockMode.imageurl]: 'Send the link as Image URL attachment; do not fetch or parse content.',
+	[AttachmentContentBlockMode.fileurl]: 'Send the link as File URL attachment; do not fetch or parse content.',
 	[AttachmentContentBlockMode.notReadable]: 'This file could not be read.',
 	[AttachmentContentBlockMode.prDiff]: 'Only the pull request diff is sent.',
 	[AttachmentContentBlockMode.prPage]: 'Send the pull request page content.',
@@ -107,9 +115,11 @@ enum AttachmentContentBlockKind {
 interface ContentBlock {
 	kind: AttachmentContentBlockKind;
 	text?: string;
-	base64Data?: string;
+
 	mimeType?: string;
 	fileName?: string;
+	base64Data?: string;
+	url?: string;
 }
 
 // Attachment references contextual artifacts (files, images, doc handles, etc.).

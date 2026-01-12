@@ -5,11 +5,15 @@ package attachment
 type AttachmentContentBlockMode string
 
 const (
-	AttachmentContentBlockModeText        AttachmentContentBlockMode = "text"         // "Text content"
-	AttachmentContentBlockModeFile        AttachmentContentBlockMode = "file"         // "File (original format)"
-	AttachmentContentBlockModeImage       AttachmentContentBlockMode = "image"        // Image rendering
-	AttachmentContentBlockModePageContent AttachmentContentBlockMode = "page"         // "Page content" for HTML/URLs
-	AttachmentContentBlockModeTextLink    AttachmentContentBlockMode = "textlink"     // "Link as text block" – no fetch
+	AttachmentContentBlockModeText  AttachmentContentBlockMode = "text"  // "Text content"
+	AttachmentContentBlockModeFile  AttachmentContentBlockMode = "file"  // "File (original format)"
+	AttachmentContentBlockModeImage AttachmentContentBlockMode = "image" // Image rendering
+
+	AttachmentContentBlockModePageContent AttachmentContentBlockMode = "page"     // "Page content" for HTML/URLs
+	AttachmentContentBlockModeTextLink    AttachmentContentBlockMode = "textlink" // "Link as text block" – no fetch
+	AttachmentContentBlockModeImageURL    AttachmentContentBlockMode = "imageurl"
+	AttachmentContentBlockModeFileURL     AttachmentContentBlockMode = "fileurl"
+
 	AttachmentContentBlockModeNotReadable AttachmentContentBlockMode = "not-readable" // Binary/unknown – cannot process
 
 	AttachmentContentBlockModePRDiff     AttachmentContentBlockMode = "pr-diff"
@@ -37,7 +41,9 @@ type ContentBlock struct {
 	MIMEType *string `json:"mimeType,omitempty"`
 	FileName *string `json:"fileName,omitempty"`
 
-	// For Kind == image or file: Base64Data, MIMEType and FileName are populated.
+	// For Kind == image or file:
+	//   - either Base64Data, MIMEType and FileName are populated (local/file-url fetched),
+	//   - or URL (+optional MIMEType/FileName) is populated for URL-based attachments.
 	Base64Data *string `json:"base64Data,omitempty"`
 	URL        *string `json:"url,omitempty"`
 }

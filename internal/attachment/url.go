@@ -102,6 +102,18 @@ func (ref *URLRef) BuildContentBlock(
 
 	switch attachmentContentBlockMode {
 
+	case AttachmentContentBlockModeImageURL:
+		if onlyIfTextKind {
+			return nil, ErrNonTextContentBlock
+		}
+		return ref.buildImageURLContentBlock(ctx)
+
+	case AttachmentContentBlockModeFileURL:
+		if onlyIfTextKind {
+			return nil, ErrNonTextContentBlock
+		}
+		return ref.buildFileURLContentBlock(ctx)
+
 	case AttachmentContentBlockModeImage:
 		if onlyIfTextKind {
 			return nil, ErrNonTextContentBlock
@@ -133,6 +145,69 @@ func (ref *URLRef) BuildContentBlock(
 	default:
 		return nil, errors.New("unknown attachment mode")
 	}
+}
+
+// buildImageURLContentBlock builds a ContentBlockImage that carries only the
+// remote URL (no base64). This is used with AttachmentContentBlockModeImageURL
+// so that the LLM provider can fetch the image directly (e.g. Anthropic,
+// OpenAI Chat/Responses).
+//
+// If the URL cannot be probed or does not look like an image, we fall back to
+// the current behaviour: a simple text link block.
+func (ref *URLRef) buildImageURLContentBlock(ctx context.Context) (*ContentBlock, error) {
+	rawURL := strings.TrimSpace(ref.URL)
+	if rawURL == "" {
+		return nil, errors.New("got invalid url")
+	}
+
+	ct, err := peekURLContentType(ctx, rawURL)
+	if err != nil {
+		slog.Warn("image-url: failed to peek content-type, falling back to text link",
+			"url", rawURL, "err", err)
+		return ref.buildTextLinkContentBlock(), nil
+	}
+	ct = normalizeContentType(ct)
+	if !strings.HasPrefix(ct, "image/") {
+		slog.Warn("image-url: non-image content-type, falling back to text link",
+			"url", rawURL, "contentType", ct)
+		return ref.buildTextLinkContentBlock(), nil
+	}
+
+	mt := ct
+	return &ContentBlock{
+		Kind:     ContentBlockImage,
+		URL:      &rawURL,
+		MIMEType: &mt,
+	}, nil
+}
+
+// buildFileURLContentBlock builds a ContentBlockFile that carries only the
+// remote URL (no base64). This is used with AttachmentContentBlockModeFileURL
+// so that the LLM provider can fetch the file directly (e.g. PDFs via URL for
+// Anthropic/OpenAI Responses).
+//
+// If we cannot probe the URL, we fall back to a text-link block.
+func (ref *URLRef) buildFileURLContentBlock(ctx context.Context) (*ContentBlock, error) {
+	rawURL := strings.TrimSpace(ref.URL)
+	if rawURL == "" {
+		return nil, errors.New("got invalid url")
+	}
+
+	ct, err := peekURLContentType(ctx, rawURL)
+	if err != nil {
+		slog.Warn("file-url: failed to peek content-type, falling back to text link",
+			"url", rawURL, "err", err)
+		return ref.buildTextLinkContentBlock(), nil
+	}
+	ct = normalizeContentType(ct)
+	fname := filenameFromURL(rawURL, ct)
+
+	return &ContentBlock{
+		Kind:     ContentBlockFile,
+		URL:      &rawURL,
+		MIMEType: &ct,
+		FileName: &fname,
+	}, nil
 }
 
 // buildBlocksForURLPage handles web pages or unknown content-types using a

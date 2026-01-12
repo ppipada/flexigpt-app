@@ -90,8 +90,8 @@
       - [ ] extracted other docs input, sheets and docx mainly.
     - [x] Image input
     - [x] Document input
-    - [ ] Image url input
-    - [ ] Document url input
+    - [x] Image url input
+    - [x] Document url input
     - [ ] Image output
     - [ ] Deferred: audio in/out
 
@@ -105,6 +105,7 @@
     - [ ] Not sure: Safety parameter, that identifies a user if they violate safety policies.
     - [ ] Not sure: stop strings
     - [ ] Not sure: cache control in claude
+  - [ ] provider and model level allow disallow list of model params/capabilities etc.
 
 - [ ] M2 - Better context
 

@@ -394,11 +394,15 @@ func buildContentItemsFromAttachments(
 			})
 
 		case attachment.ContentBlockImage:
-			if b.Base64Data == nil {
-				continue
+			var data, urlStr string
+			if b.Base64Data != nil {
+				data = strings.TrimSpace(*b.Base64Data)
 			}
-			data := strings.TrimSpace(*b.Base64Data)
-			if data == "" {
+			if b.URL != nil {
+				urlStr = strings.TrimSpace(*b.URL)
+			}
+			// Require at least one of base64 or URL to be present.
+			if data == "" && urlStr == "" {
 				continue
 			}
 			mime := inferencegoSpec.DefaultImageDataMIME
@@ -409,22 +413,31 @@ func buildContentItemsFromAttachments(
 			if b.FileName != nil {
 				name = strings.TrimSpace(*b.FileName)
 			}
+			img := &inferencegoSpec.ContentItemImage{
+				ImageName: name,
+				ImageMIME: mime,
+			}
+			if data != "" {
+				img.ImageData = data
+			}
+			if urlStr != "" {
+				img.ImageURL = urlStr
+			}
 			items = append(items, inferencegoSpec.InputOutputContentItemUnion{
-				Kind: inferencegoSpec.ContentItemKindImage,
-				ImageItem: &inferencegoSpec.ContentItemImage{
-					ImageName: name,
-					ImageMIME: mime,
-					ImageData: data,
-					Detail:    inferencegoSpec.ImageDetailAuto,
-				},
+				Kind:      inferencegoSpec.ContentItemKindImage,
+				ImageItem: img,
 			})
 
 		case attachment.ContentBlockFile:
-			if b.Base64Data == nil {
-				continue
+			var data, urlStr string
+			if b.Base64Data != nil {
+				data = strings.TrimSpace(*b.Base64Data)
 			}
-			data := strings.TrimSpace(*b.Base64Data)
-			if data == "" {
+			if b.URL != nil {
+				urlStr = strings.TrimSpace(*b.URL)
+			}
+			// Require at least one of base64 or URL to be present.
+			if data == "" && urlStr == "" {
 				continue
 			}
 			mime := inferencegoSpec.DefaultFileDataMIME
@@ -435,13 +448,21 @@ func buildContentItemsFromAttachments(
 			if b.FileName != nil {
 				name = strings.TrimSpace(*b.FileName)
 			}
+
+			file := &inferencegoSpec.ContentItemFile{
+				FileName: name,
+				FileMIME: mime,
+			}
+			if data != "" {
+				file.FileData = data
+			}
+			if urlStr != "" {
+				file.FileURL = urlStr
+			}
+
 			items = append(items, inferencegoSpec.InputOutputContentItemUnion{
-				Kind: inferencegoSpec.ContentItemKindFile,
-				FileItem: &inferencegoSpec.ContentItemFile{
-					FileName: name,
-					FileMIME: mime,
-					FileData: data,
-				},
+				Kind:     inferencegoSpec.ContentItemKindFile,
+				FileItem: file,
 			})
 		}
 	}
