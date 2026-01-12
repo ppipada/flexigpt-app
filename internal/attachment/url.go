@@ -12,6 +12,8 @@ import (
 	"github.com/ppipada/flexigpt-app/internal/fileutil"
 )
 
+const maxContentTypeProbeBytes = 2048
+
 // URLRef carries metadata for URL-based attachments.
 //
 // URL:          the raw user-provided URL (after trimming whitespace).
@@ -162,9 +164,18 @@ func (ref *URLRef) buildImageURLContentBlock(ctx context.Context) (*ContentBlock
 
 	ct, err := peekURLContentType(ctx, rawURL)
 	if err != nil {
-		slog.Warn("image-url: failed to peek content-type, falling back to text link",
+		// Some servers reject HEAD/Range but accept a normal GET. Fall back to a
+		// small GET+sniff before giving up entirely.
+		slog.Warn("image-url: failed to peek content-type, trying direct fetch",
 			"url", rawURL, "err", err)
-		return ref.buildTextLinkContentBlock(), nil
+
+		data, fetchedCT, fetchErr := fetchURLBytes(ctx, rawURL, maxContentTypeProbeBytes)
+		if fetchErr != nil {
+			slog.Warn("image-url: fallback fetch failed, falling back to text link",
+				"url", rawURL, "err", fetchErr)
+			return ref.buildTextLinkContentBlock(), nil
+		}
+		ct = inferContentType(fetchedCT, rawURL, data)
 	}
 	ct = normalizeContentType(ct)
 	if !strings.HasPrefix(ct, "image/") {
@@ -195,9 +206,18 @@ func (ref *URLRef) buildFileURLContentBlock(ctx context.Context) (*ContentBlock,
 
 	ct, err := peekURLContentType(ctx, rawURL)
 	if err != nil {
-		slog.Warn("file-url: failed to peek content-type, falling back to text link",
+		// Some servers reject HEAD/Range but accept a normal GET. Fall back to a
+		// small GET+sniff before giving up entirely.
+		slog.Warn("file-url: failed to peek content-type, trying direct fetch",
 			"url", rawURL, "err", err)
-		return ref.buildTextLinkContentBlock(), nil
+
+		data, fetchedCT, fetchErr := fetchURLBytes(ctx, rawURL, maxContentTypeProbeBytes)
+		if fetchErr != nil {
+			slog.Warn("file-url: fallback fetch failed, falling back to text link",
+				"url", rawURL, "err", fetchErr)
+			return ref.buildTextLinkContentBlock(), nil
+		}
+		ct = inferContentType(fetchedCT, rawURL, data)
 	}
 	ct = normalizeContentType(ct)
 	fname := filenameFromURL(rawURL, ct)
@@ -275,8 +295,8 @@ func (ref *URLRef) buildBlocksForURLPage(ctx context.Context, onlyIfTextKind boo
 		return cb, nil
 	}
 
-	// 3) Plain text (non-HTML): fetch as text and send directly.
-	//    This preserves the previous behaviour for text/plain, etc.
+	// 3) Plain text (non-HTML): fetch and then decide text vs file based on
+	//    actual bytes + sniffed content type.
 	if isPlainTextContentType(lowerCT) {
 		data, fetchedCT, err := fetchURLBytes(ctx, rawURL, maxPageContentBytes)
 		if err != nil {
@@ -284,15 +304,12 @@ func (ref *URLRef) buildBlocksForURLPage(ctx context.Context, onlyIfTextKind boo
 				"url", rawURL, "err", err)
 			return ref.buildTextLinkContentBlock(), nil
 		}
-		txt := string(data)
-		mt := inferContentType(fetchedCT, rawURL, data)
 
-		return &ContentBlock{
-			Kind:     ContentBlockText,
-			Text:     &txt,
-			URL:      &rawURL,
-			MIMEType: &mt,
-		}, nil
+		cb := buildTextOrFileBlockFromBytes(rawURL, data, fetchedCT)
+		if onlyIfTextKind && cb.Kind != ContentBlockText {
+			return nil, ErrNonTextContentBlock
+		}
+		return cb, nil
 	}
 
 	// 4) HTML / unknown: use the Trafilatura + HTML→Markdown pipeline.
@@ -308,22 +325,20 @@ func (ref *URLRef) buildBlocksForURLPage(ctx context.Context, onlyIfTextKind boo
 		slog.Warn("failed to extract readable content from url, falling back to raw fetch",
 			"url", rawURL, "err", err)
 
-		// As a last resort, fetch up to maxPageContentBytes and include raw text.
+		// As a last resort, fetch up to maxPageContentBytes and include raw
+		// content as either text or a binary file, based on MIME sniffing.
 		data, fetchedCT, err2 := fetchURLBytes(ctx, rawURL, maxPageContentBytes)
 		if err2 != nil {
 			slog.Warn("failed to fetch url content for fallback, using link-only",
 				"url", rawURL, "err", err2)
 			return ref.buildTextLinkContentBlock(), nil
 		}
-		txt := string(data)
-		mt := inferContentType(fetchedCT, rawURL, data)
 
-		return &ContentBlock{
-			Kind:     ContentBlockText,
-			Text:     &txt,
-			URL:      &rawURL,
-			MIMEType: &mt,
-		}, nil
+		cb := buildTextOrFileBlockFromBytes(rawURL, data, fetchedCT)
+		if onlyIfTextKind && cb.Kind != ContentBlockText {
+			return nil, ErrNonTextContentBlock
+		}
+		return cb, nil
 	}
 
 	// The bytes we are sending are Markdown, so label the block accordingly.
@@ -334,6 +349,37 @@ func (ref *URLRef) buildBlocksForURLPage(ctx context.Context, onlyIfTextKind boo
 		URL:      &rawURL,
 		MIMEType: &mt,
 	}, nil
+}
+
+// buildTextOrFileBlockFromBytes inspects the fetched bytes and decides whether
+// they are text-like (HTML or plain text) or binary. Text-like content is
+// returned as a text block; everything else becomes a file block with base64
+// data. The MIME type is inferred using the same heuristics as the rest of
+// the URL pipeline (headers, extension, and content sniffing).
+func buildTextOrFileBlockFromBytes(rawURL string, data []byte, headerCT string) *ContentBlock {
+	mt := inferContentType(headerCT, rawURL, data)
+
+	// Treat anything that looks like text or HTML as a text block.
+	if isPlainTextContentType(mt) || isProbablyHTMLOrText(mt, rawURL) {
+		txt := string(data)
+		return &ContentBlock{
+			Kind:     ContentBlockText,
+			Text:     &txt,
+			URL:      &rawURL,
+			MIMEType: &mt,
+		}
+	}
+
+	// Everything else: treat as binary file.
+	base64Data := base64.StdEncoding.EncodeToString(data)
+	fname := filenameFromURL(rawURL, mt)
+	return &ContentBlock{
+		Kind:       ContentBlockFile,
+		Base64Data: &base64Data,
+		MIMEType:   &mt,
+		FileName:   &fname,
+		URL:        &rawURL,
+	}
 }
 
 // buildPDFTextOrFileBlockFromURL fetches a PDF from a URL and tries to extract
