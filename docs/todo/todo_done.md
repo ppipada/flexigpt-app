@@ -701,3 +701,4 @@
 - [x] edit user args modal opens and closes immediately.
 - [x] web search: we may want a vanity chip, if space is there, in bottom actions bar, that has quick attach web search button, which will insert web search tool. this is just quick shortcut and should be synced with in composer behavior. if tool is already present it should show tick else cross. no other action other than add/remove.
 - [x] for args edit, right now it is json with no indication of shape etc. we may want to actually render a json schema with empty and then let user edit. if he submits empty again, we may need way to see that it is default value or actual new value.
+- [x] we should also trigger a scroll after adding thinking blob
