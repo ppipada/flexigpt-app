@@ -17,9 +17,10 @@ import (
 	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/internal/jsonutil"
 	"github.com/ppipada/flexigpt-app/internal/tool/fts"
+	"github.com/ppipada/flexigpt-app/internal/tool/goregistry"
 	"github.com/ppipada/flexigpt-app/internal/tool/httprunner"
-	"github.com/ppipada/flexigpt-app/internal/tool/localregistry"
 	"github.com/ppipada/flexigpt-app/internal/tool/spec"
+	"github.com/ppipada/llmtools-go"
 	"github.com/ppipada/mapstore-go"
 	"github.com/ppipada/mapstore-go/ftsengine"
 	"github.com/ppipada/mapstore-go/jsonencdec"
@@ -89,7 +90,7 @@ func NewToolStore(baseDir string, opts ...Option) (*ToolStore, error) {
 	ctx := context.Background()
 
 	// Built-in overlay.
-	bi, err := NewBuiltInToolData(ctx, ts.baseDir, builtInSnapshotMaxAge)
+	bi, err := NewBuiltInToolData(ctx, ts.baseDir, builtInSnapshotMaxAge, WithLLMToolsGoBuiltins(true))
 	if err != nil {
 		return nil, err
 	}
@@ -720,11 +721,20 @@ func (ts *ToolStore) InvokeTool(
 		outputs, md, err = r.Run(ctx, args)
 
 	case spec.ToolTypeGo:
-		outputs, err = localregistry.DefaultGoRegistry.Call(
+		var gopts []llmtools.CallOption
+		if req.Body.GoOptions != nil && req.Body.GoOptions.TimeoutMs != 0 {
+			gopts = append(
+				gopts,
+				llmtools.WithCallTimeout(time.Duration(req.Body.GoOptions.TimeoutMs)*time.Millisecond),
+			)
+		}
+		outputs, err = goregistry.CallUsingDefaultGoRegistry(
 			ctx,
 			strings.TrimSpace(tool.GoImpl.Func),
 			args,
+			gopts...,
 		)
+
 		md = map[string]any{
 			"type":     "go",
 			"funcName": tool.GoImpl.Func,

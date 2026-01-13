@@ -91,7 +91,7 @@ func TestNewBuiltInToolData(t *testing.T) {
 			ctx := t.Context()
 			dir := tt.setupDir(t)
 
-			bi, err := NewBuiltInToolData(ctx, dir, tt.snapshotMaxAge)
+			bi, err := NewBuiltInToolData(ctx, dir, tt.snapshotMaxAge, WithLLMToolsGoBuiltins(true))
 
 			if tt.wantErr {
 				if err == nil {
@@ -188,7 +188,7 @@ func TestSetToolBundleEnabled(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := t.Context()
 			dir := t.TempDir()
-			bi, err := NewBuiltInToolData(ctx, dir, 0)
+			bi, err := NewBuiltInToolData(ctx, dir, 0, WithLLMToolsGoBuiltins(true))
 			if err != nil {
 				t.Fatalf("setup failed: %v", err)
 			}
@@ -293,7 +293,7 @@ func TestSetToolEnabled(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := t.Context()
 			dir := t.TempDir()
-			bi, err := NewBuiltInToolData(ctx, dir, 0)
+			bi, err := NewBuiltInToolData(ctx, dir, 0, WithLLMToolsGoBuiltins(true))
 			if err != nil {
 				t.Fatalf("setup failed: %v", err)
 			}
@@ -339,7 +339,7 @@ func TestSetToolEnabled(t *testing.T) {
 func TestListBuiltInToolData(t *testing.T) {
 	ctx := t.Context()
 	dir := t.TempDir()
-	bi, err := NewBuiltInToolData(ctx, dir, 0)
+	bi, err := NewBuiltInToolData(ctx, dir, 0, WithLLMToolsGoBuiltins(true))
 	if err != nil {
 		t.Fatalf("setup failed: %v", err)
 	}
@@ -420,7 +420,7 @@ func TestListBuiltInToolData(t *testing.T) {
 func TestToolConcurrency(t *testing.T) {
 	ctx := t.Context()
 	dir := t.TempDir()
-	bi, err := NewBuiltInToolData(ctx, dir, time.Millisecond*10)
+	bi, err := NewBuiltInToolData(ctx, dir, time.Millisecond*10, WithLLMToolsGoBuiltins(true))
 	if err != nil {
 		t.Fatalf("setup failed: %v", err)
 	}
@@ -522,7 +522,7 @@ func TestToolConcurrency(t *testing.T) {
 func TestRebuildToolSnapshot(t *testing.T) {
 	ctx := t.Context()
 	dir := t.TempDir()
-	bi, err := NewBuiltInToolData(ctx, dir, time.Hour)
+	bi, err := NewBuiltInToolData(ctx, dir, time.Hour, WithLLMToolsGoBuiltins(true))
 	if err != nil {
 		t.Fatalf("setup failed: %v", err)
 	}
@@ -551,7 +551,7 @@ func TestRebuildToolSnapshot(t *testing.T) {
 func TestAsyncToolRebuild(t *testing.T) {
 	ctx := t.Context()
 	dir := t.TempDir()
-	bi, err := NewBuiltInToolData(ctx, dir, time.Millisecond)
+	bi, err := NewBuiltInToolData(ctx, dir, time.Millisecond, WithLLMToolsGoBuiltins(true))
 	if err != nil {
 		t.Fatalf("setup failed: %v", err)
 	}

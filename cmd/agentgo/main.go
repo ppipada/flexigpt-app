@@ -21,7 +21,7 @@ import (
 	"github.com/ppipada/flexigpt-app/internal/logrotate"
 
 	// Run registry init.
-	_ "github.com/ppipada/flexigpt-app/internal/tool/localregistry"
+	_ "github.com/ppipada/flexigpt-app/internal/tool/goregistry"
 )
 
 var Version string

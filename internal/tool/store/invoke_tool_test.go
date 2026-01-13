@@ -18,8 +18,10 @@ import (
 
 	"github.com/ppipada/flexigpt-app/internal/builtin/gotool"
 	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
-	"github.com/ppipada/flexigpt-app/internal/tool/localregistry"
+	"github.com/ppipada/flexigpt-app/internal/tool/goregistry"
 	"github.com/ppipada/flexigpt-app/internal/tool/spec"
+	"github.com/ppipada/llmtools-go/fstool"
+	llmtoolsgoSpec "github.com/ppipada/llmtools-go/spec"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 )
 
@@ -736,7 +738,6 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 			name: "echo_success",
 			register: func(t *testing.T) string {
 				t.Helper()
-				funcName := "github.com/ppipada/flexigpt-app/tests/" + sanitizeID(t.Name())
 				type Args struct {
 					Name  string `json:"name"`
 					Times int    `json:"times"`
@@ -754,10 +755,25 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 					}
 					return Out{Msg: b.String()}, nil
 				}
-				if err := localregistry.RegisterTypedAsText(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
-					t.Fatalf("RegisterTypedAsText: %v", err)
-				}
-				return funcName
+				argSchema := llmtoolsgoSpec.JSONSchema(`{
+					"$schema": "http://json-schema.org/draft-07/schema#",
+					"type": "object",
+					"properties": {
+						"name": {
+								"type": "string",
+								"description": "name"
+						},
+						"times": {
+							"type": "integer",
+							"description": "times",
+							"default": 100
+						}
+					},
+					"required": ["name"],
+					"additionalProperties": false
+				}`)
+
+				return registerTypedAsTextInDefault(t, t.Name(), argSchema, fn)
 			},
 			args: `{"name":"ab","times":3}`,
 			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
@@ -791,29 +807,37 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 			name: "multi_output_success",
 			register: func(t *testing.T) string {
 				t.Helper()
-				funcName := "github.com/ppipada/flexigpt-app/tests/" + sanitizeID(t.Name())
 				type Args struct {
 					N int `json:"n"`
 				}
-				fn := func(ctx context.Context, a Args) ([]spec.ToolStoreOutputUnion, error) {
+				fn := func(ctx context.Context, a Args) ([]llmtoolsgoSpec.ToolStoreOutputUnion, error) {
 					if a.N <= 0 {
 						a.N = 1
 					}
-					var outs []spec.ToolStoreOutputUnion
+					var outs []llmtoolsgoSpec.ToolStoreOutputUnion
 					for i := 0; i < a.N; i++ {
-						outs = append(outs, spec.ToolStoreOutputUnion{
-							Kind: spec.ToolStoreOutputKindText,
-							TextItem: &spec.ToolStoreOutputText{
+						outs = append(outs, llmtoolsgoSpec.ToolStoreOutputUnion{
+							Kind: llmtoolsgoSpec.ToolStoreOutputKindText,
+							TextItem: &llmtoolsgoSpec.ToolStoreOutputText{
 								Text: fmt.Sprintf("item-%d", i),
 							},
 						})
 					}
 					return outs, nil
 				}
-				if err := localregistry.RegisterOutputs(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
-					t.Fatalf("RegisterOutputs: %v", err)
-				}
-				return funcName
+				argSchema := llmtoolsgoSpec.JSONSchema(`{
+					"$schema": "http://json-schema.org/draft-07/schema#",
+					"type": "object",
+					"properties": {
+						"n": {
+								"type": "integer",
+								"description": "no"
+						}
+					},
+					"required": ["n"],
+					"additionalProperties": false
+				}`)
+				return registerOutputsToolInDefault(t, t.Name(), argSchema, fn)
 			},
 			args: `{"n":2}`,
 			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
@@ -845,7 +869,6 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 			name: "invalid_input_type_sets_is_error",
 			register: func(t *testing.T) string {
 				t.Helper()
-				funcName := "github.com/ppipada/flexigpt-app/tests/" + sanitizeID(t.Name())
 				type Args struct {
 					Times int `json:"times"`
 				}
@@ -855,10 +878,19 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 				fn := func(ctx context.Context, a Args) (Out, error) {
 					return Out{Ok: a.Times > 0}, nil
 				}
-				if err := localregistry.RegisterTypedAsText(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
-					t.Fatalf("RegisterTypedAsText: %v", err)
-				}
-				return funcName
+				argSchema := llmtoolsgoSpec.JSONSchema(`{
+					"$schema": "http://json-schema.org/draft-07/schema#",
+					"type": "object",
+					"properties": {
+						"times": {
+							"type": "integer",
+							"description": "times."
+						}
+					},
+					"required": ["times"],
+					"additionalProperties": false
+				}`)
+				return registerTypedAsTextInDefault(t, t.Name(), argSchema, fn)
 			},
 			args: `{"times":"oops"}`, // wrong type for int -> strict decode should fail
 			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
@@ -884,7 +916,7 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 			name: "function_returns_error_sets_is_error",
 			register: func(t *testing.T) string {
 				t.Helper()
-				funcName := "github.com/ppipada/flexigpt-app/tests/" + sanitizeID(t.Name())
+
 				type Args struct {
 					Fail bool `json:"fail"`
 				}
@@ -895,10 +927,20 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 					}
 					return Out{}, nil
 				}
-				if err := localregistry.RegisterTypedAsText(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
-					t.Fatalf("RegisterTypedAsText: %v", err)
-				}
-				return funcName
+				argSchema := llmtoolsgoSpec.JSONSchema(`{
+					"$schema": "http://json-schema.org/draft-07/schema#",
+					"type": "object",
+					"properties": {
+						"fail": {
+							"type": "boolean",
+							"description": "fail."
+						}
+					},
+					"required": ["fail"],
+					"additionalProperties": false
+				}`)
+
+				return registerTypedAsTextInDefault(t, t.Name(), argSchema, fn)
 			},
 			args: `{"fail":true}`,
 			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
@@ -948,7 +990,6 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 			name: "respects_context_timeout",
 			register: func(t *testing.T) string {
 				t.Helper()
-				funcName := "github.com/ppipada/flexigpt-app/tests/" + sanitizeID(t.Name())
 				type Args struct {
 					SleepMs int `json:"sleepMs"`
 				}
@@ -963,10 +1004,20 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 						return Out{Ok: true}, nil
 					}
 				}
-				if err := localregistry.RegisterTypedAsText(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
-					t.Fatalf("RegisterTypedAsText: %v", err)
-				}
-				return funcName
+				argSchema := llmtoolsgoSpec.JSONSchema(`{
+					"$schema": "http://json-schema.org/draft-07/schema#",
+					"type": "object",
+					"properties": {
+						"sleepMs": {
+							"type": "integer",
+							"description": "Sleep."
+						}
+					},
+					"required": ["sleepMs"],
+					"additionalProperties": false
+				}`)
+
+				return registerTypedAsTextInDefault(t, t.Name(), argSchema, fn)
 			},
 			args: `{"sleepMs":200}`,
 			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
@@ -992,14 +1043,17 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 			name: "bundle_disabled",
 			register: func(t *testing.T) string {
 				t.Helper()
-				funcName := "github.com/ppipada/flexigpt-app/tests/" + sanitizeID(t.Name())
 				type Args struct{}
 				type Out struct{}
 				fn := func(ctx context.Context, a Args) (Out, error) { return Out{}, nil }
-				if err := localregistry.RegisterTypedAsText(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
-					t.Fatalf("RegisterTypedAsText: %v", err)
-				}
-				return funcName
+				argSchema := llmtoolsgoSpec.JSONSchema(`{
+						"$schema": "http://json-schema.org/draft-07/schema#",
+						"type": "object",
+						"properties": {},
+						"required": [],
+						"additionalProperties": false
+				}`)
+				return registerTypedAsTextInDefault(t, t.Name(), argSchema, fn)
 			},
 			args:          `{}`,
 			disableBundle: true,
@@ -1009,14 +1063,17 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 			name: "tool_disabled",
 			register: func(t *testing.T) string {
 				t.Helper()
-				funcName := "github.com/ppipada/flexigpt-app/tests/" + sanitizeID(t.Name())
 				type Args struct{}
 				type Out struct{}
 				fn := func(ctx context.Context, a Args) (Out, error) { return Out{}, nil }
-				if err := localregistry.RegisterTypedAsText(localregistry.DefaultGoRegistry, funcName, fn); err != nil {
-					t.Fatalf("RegisterTypedAsText: %v", err)
-				}
-				return funcName
+				argSchema := llmtoolsgoSpec.JSONSchema(`{
+						"$schema": "http://json-schema.org/draft-07/schema#",
+						"type": "object",
+						"properties": {},
+						"required": [],
+						"additionalProperties": false
+				}`)
+				return registerTypedAsTextInDefault(t, t.Name(), argSchema, fn)
 			},
 			args:        `{}`,
 			disableTool: true,
@@ -1027,7 +1084,6 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-
 			baseDir := t.TempDir()
 			ts, err := NewToolStore(baseDir, WithFTS(false))
 			if err != nil {
@@ -1150,7 +1206,7 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 	}{
 		{
 			name:     "ReadFile_text_success",
-			funcName: gotool.ReadFileFuncID,
+			funcName: string(fstool.ReadFileTool().GoImpl.FuncID),
 			args:     fmt.Sprintf(`{"path":%q,"encoding":"text"}`, fileA),
 			verify: func(t *testing.T, body *spec.InvokeToolResponseBody) {
 				t.Helper()
@@ -1162,7 +1218,7 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 		},
 		{
 			name:     "ReadFile_binary_file_output",
-			funcName: gotool.ReadFileFuncID,
+			funcName: string(fstool.ReadFileTool().GoImpl.FuncID),
 			args:     fmt.Sprintf(`{"path":%q,"encoding":"binary"}`, fileB),
 			verify: func(t *testing.T, body *spec.InvokeToolResponseBody) {
 				t.Helper()
@@ -1184,7 +1240,7 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 		},
 		{
 			name:     "ReadFile_binary_image_output",
-			funcName: gotool.ReadFileFuncID,
+			funcName: string(fstool.ReadFileTool().GoImpl.FuncID),
 			args:     fmt.Sprintf(`{"path":%q,"encoding":"binary"}`, fileImg),
 			verify: func(t *testing.T, body *spec.InvokeToolResponseBody) {
 				t.Helper()
@@ -1212,7 +1268,7 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 		},
 		{
 			name:     "ListDirectory_glob",
-			funcName: gotool.ListDirectoryFuncID,
+			funcName: string(fstool.ListDirectoryTool().GoImpl.FuncID),
 			args:     fmt.Sprintf(`{"path":%q,"pattern":"*.txt"}`, tmp),
 			verify: func(t *testing.T, body *spec.InvokeToolResponseBody) {
 				t.Helper()
@@ -1231,7 +1287,7 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 		},
 		{
 			name:     "SearchFiles_regex",
-			funcName: gotool.SearchFilesFuncID,
+			funcName: string(fstool.SearchFilesTool().GoImpl.FuncID),
 			args:     fmt.Sprintf(`{"root":%q,"pattern":"hello"}`, tmp),
 			verify: func(t *testing.T, body *spec.InvokeToolResponseBody) {
 				t.Helper()
@@ -1393,6 +1449,64 @@ func getOneImageOutput(t *testing.T, respBody *spec.InvokeToolResponseBody) *spe
 		t.Fatalf("expected exactly one image output, got %#v", outputs)
 	}
 	return outputs[0].ImageItem
+}
+
+func registerTypedAsTextInDefault[T, R any](
+	t *testing.T, nameSuffix string, argSchema llmtoolsgoSpec.JSONSchema,
+	fn func(context.Context, T) (R, error),
+) string {
+	t.Helper()
+	slug := sanitizeID(nameSuffix)
+	funcName := "github.com/ppipada/flexigpt-app/tests/" + slug
+
+	llmTool := llmtoolsgoSpec.Tool{
+		SchemaVersion: llmtoolsgoSpec.SchemaVersion,
+		ID:            "018fe0f4-b8cd-7e55-82d5-9df0bd70e4ba",
+		Slug:          nameSuffix,
+		Version:       "v1.0.0",
+		DisplayName:   "Read file",
+		Description:   "Read a local file from disk and return its contents (text or base64).",
+		Tags:          []string{"fs", "read"},
+
+		ArgSchema: argSchema,
+		GoImpl:    llmtoolsgoSpec.GoToolImpl{FuncID: llmtoolsgoSpec.FuncID(funcName)},
+
+		CreatedAt:  llmtoolsgoSpec.SchemaStartTime,
+		ModifiedAt: llmtoolsgoSpec.SchemaStartTime,
+	}
+	if err := goregistry.RegisterTypedAsTextToolUsingDefaultGoRegistry(llmTool, fn); err != nil {
+		t.Fatalf("RegisterTypedAsText: %v", err)
+	}
+	return funcName
+}
+
+func registerOutputsToolInDefault[T any](
+	t *testing.T, nameSuffix string, argSchema llmtoolsgoSpec.JSONSchema,
+	fn func(context.Context, T) ([]llmtoolsgoSpec.ToolStoreOutputUnion, error),
+) string {
+	t.Helper()
+	slug := sanitizeID(nameSuffix)
+	funcName := "github.com/ppipada/flexigpt-app/tests/" + slug
+
+	llmTool := llmtoolsgoSpec.Tool{
+		SchemaVersion: llmtoolsgoSpec.SchemaVersion,
+		ID:            "018fe0f4-b8cd-7e55-82d5-9df0bd70e4ba",
+		Slug:          nameSuffix,
+		Version:       "v1.0.0",
+		DisplayName:   "Read file",
+		Description:   "Read a local file from disk and return its contents (text or base64).",
+		Tags:          []string{"fs", "read"},
+
+		ArgSchema: argSchema,
+		GoImpl:    llmtoolsgoSpec.GoToolImpl{FuncID: llmtoolsgoSpec.FuncID(funcName)},
+
+		CreatedAt:  llmtoolsgoSpec.SchemaStartTime,
+		ModifiedAt: llmtoolsgoSpec.SchemaStartTime,
+	}
+	if err := goregistry.RegisterOutputsToolUsingDefaultGoRegistry(llmTool, fn); err != nil {
+		t.Fatalf("RegisterTypedAsText: %v", err)
+	}
+	return funcName
 }
 
 // sanitizeID produces a slug-ish identifier from a test name for use in IDs, slugs and func names.

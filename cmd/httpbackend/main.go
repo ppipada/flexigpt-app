@@ -22,7 +22,7 @@ import (
 	toolStore "github.com/ppipada/flexigpt-app/internal/tool/store"
 
 	// Run registry init.
-	_ "github.com/ppipada/flexigpt-app/internal/tool/localregistry"
+	_ "github.com/ppipada/flexigpt-app/internal/tool/goregistry"
 )
 
 // Options for the server cli.

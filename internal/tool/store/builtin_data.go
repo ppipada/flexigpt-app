@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"maps"
 	"os"
 	"path"          // POSIX paths for embed.FS
@@ -32,9 +33,10 @@ func (builtInToolID) Group() overlay.GroupID { return "tools" }
 func (t builtInToolID) ID() overlay.KeyID    { return overlay.KeyID(t) }
 
 type BuiltInToolData struct {
-	toolsFS        fs.FS
-	toolsDir       string
-	overlayBaseDir string
+	toolsFS                   fs.FS
+	toolsDir                  string
+	overlayBaseDir            string
+	includeLLMToolsGoBuiltins bool
 
 	bundles map[bundleitemutils.BundleID]spec.ToolBundle
 	tools   map[bundleitemutils.BundleID]map[bundleitemutils.ItemID]spec.Tool
@@ -56,6 +58,13 @@ func WithToolBundlesFS(fsys fs.FS, rootDir string) BuiltInToolDataOption {
 	return func(d *BuiltInToolData) {
 		d.toolsFS = fsys
 		d.toolsDir = rootDir
+	}
+}
+
+// WithLLMToolsGoBuiltins enables importing Go builtin tool manifests from llmtools-go at runtime.
+func WithLLMToolsGoBuiltins(enabled bool) BuiltInToolDataOption {
+	return func(d *BuiltInToolData) {
+		d.includeLLMToolsGoBuiltins = enabled
 	}
 }
 
@@ -95,12 +104,13 @@ func NewBuiltInToolData(
 	}
 
 	d := &BuiltInToolData{
-		toolsFS:            builtin.BuiltInToolBundlesFS,
-		toolsDir:           builtin.BuiltInToolBundlesRootDir,
-		overlayBaseDir:     overlayBaseDir,
-		store:              store,
-		bundleOverlayFlags: bundleOverlayFlags,
-		toolOverlayFlags:   toolOverlayFlags,
+		toolsFS:                   builtin.BuiltInToolBundlesFS,
+		toolsDir:                  builtin.BuiltInToolBundlesRootDir,
+		overlayBaseDir:            overlayBaseDir,
+		store:                     store,
+		bundleOverlayFlags:        bundleOverlayFlags,
+		toolOverlayFlags:          toolOverlayFlags,
+		includeLLMToolsGoBuiltins: false,
 	}
 	for _, o := range opts {
 		o(d)
@@ -340,6 +350,14 @@ func (d *BuiltInToolData) populateDataFromFS(ctx context.Context) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	// Inject Go builtins from llmtools-go (after reading embedded JSON tools).
+	if d.includeLLMToolsGoBuiltins {
+		if err := injectLLMToolsGoBuiltins(ctx, bundleMap, toolMap); err != nil {
+			return err
+		}
+		slog.Info("built-in go tools injected from llmtools-go")
 	}
 
 	for id, tm := range toolMap {

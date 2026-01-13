@@ -24,6 +24,12 @@ const (
 	BuiltInPromptBundlesJSON    = "prompts.bundles.json"
 )
 
+// IMPORTANT: keep these stable (match tools.bundles.json).
+const (
+	BuiltinBundleIDLLMToolsFS    = "018fe0f4-b8cd-7e55-82d5-9df0bd70e400"
+	BuiltinBundleIDLLMToolsImage = "018fe0f4-b8cd-7e55-82d5-9df0bd70e401"
+)
+
 const (
 	ProviderNameAnthropic             = "anthropic"
 	ProviderNameDeepseek              = "deepseek"
