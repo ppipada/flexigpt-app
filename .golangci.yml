@@ -398,24 +398,24 @@ linters:
 
       # List of aliases
       alias:
-        - pkg: github.com/ppipada/flexigpt-app/internal/(\w+)/consts
-          alias: ${1}Consts
-        - pkg: github.com/ppipada/flexigpt-app/internal/(\w+)/spec
-          alias: ${1}Spec
-        - pkg: github.com/ppipada/flexigpt-app/internal/(\w+)/store
-          alias: ${1}Store
         - pkg: github.com/openai/openai-go/v3/shared/constant
           alias: openaiSharedConstant
         - pkg: github.com/anthropics/anthropic-sdk-go/shared/constant
           alias: anthropicSharedConstant
-        - pkg: github.com/ppipada/flexigpt-app/frontend
-          alias: assets
         - pkg: github.com/JohannesKaufmann/html-to-markdown/v2
           alias: html2md
         - pkg: "github.com/flexigpt/inference-go/spec"
           alias: inferencegoSpec
         - pkg: "github.com/flexigpt/llmtools-go/spec"
           alias: llmtoolsgoSpec
+        - pkg: github.com/ppipada/flexigpt-app/frontend
+          alias: assets
+        - pkg: github.com/ppipada/flexigpt-app/internal/(\w+)/consts
+          alias: ${1}Consts
+        - pkg: github.com/ppipada/flexigpt-app/internal/(\w+)/spec
+          alias: ${1}Spec
+        - pkg: github.com/ppipada/flexigpt-app/internal/(\w+)/store
+          alias: ${1}Store
 
     nakedret:
       # No naked returns, ever.
