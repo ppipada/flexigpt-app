@@ -16,12 +16,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/flexigpt/llmtools-go/fstool"
+	llmtoolsgoSpec "github.com/flexigpt/llmtools-go/spec"
 	"github.com/ppipada/flexigpt-app/internal/builtin/gotool"
 	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/internal/tool/goregistry"
 	"github.com/ppipada/flexigpt-app/internal/tool/spec"
-	"github.com/ppipada/llmtools-go/fstool"
-	llmtoolsgoSpec "github.com/ppipada/llmtools-go/spec"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 )
 

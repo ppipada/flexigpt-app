@@ -13,8 +13,8 @@ import (
 	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/internal/tool/spec"
 
-	"github.com/ppipada/llmtools-go"
-	llmtoolsgoSpec "github.com/ppipada/llmtools-go/spec"
+	"github.com/flexigpt/llmtools-go"
+	llmtoolsgoSpec "github.com/flexigpt/llmtools-go/spec"
 )
 
 func injectLLMToolsGoBuiltins(

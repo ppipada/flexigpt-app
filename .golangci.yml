@@ -414,7 +414,7 @@ linters:
           alias: html2md
         - pkg: "github.com/ppipada/inference-go/spec"
           alias: inferencegoSpec
-        - pkg: "github.com/ppipada/llmtools-go/spec"
+        - pkg: "github.com/flexigpt/llmtools-go/spec"
           alias: llmtoolsgoSpec
 
     nakedret:
