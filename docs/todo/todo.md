@@ -12,7 +12,7 @@
 
   - [ ] Implementation of openai/anthropic etc built-in tools that have been analyzed and filtered.
   - [ ] Analysis of openai/anthropic etc given tools so that they can be invoked in api directly.
-  - [ ] parallel tools can be created locally
+  - [ ] ~~parallel tools can be created locally~~
   - [ ] there is a reference calculator tool in claude docs
   - [ ] When url cannot fetch content, there is no way of knowing what happened as of now. may want to see hwo to expose this or disable link only mode in this flow?
 
@@ -25,15 +25,6 @@
 ## Milestone thoughts
 
 - [ ] M1 - API coverage - Pending items:
-
-  - [x] built-in tools from apis
-
-    - [x] web search
-
-  - [ ] local replacements for some builtin tools that are very vendor specific
-
-    - [ ] bash
-    - [ ] apply patch/text editor
 
   - [ ] Modalities coverage:
 
@@ -48,9 +39,23 @@
     - [x] Image url input
     - [x] Document url input
 
+  - [ ] Tools
+
+    - [x] built-in tools from apis
+
+      - [x] web search
+
+    - [ ] local replacements for some builtin tools that are very vendor specific
+
+      - [ ] bash
+      - [ ] apply patch
+      - [ ] text editor
+
+    - [x] Dont: New stateful APIs and its hooks from vendors
+      - [x] stored responses, stored conversations, on server memory context, on server prompt templates etc.
+
   - [ ] i18n
-  - [ ] Dont: New stateful APIs and its hooks from vendors
-    - [ ] stored responses, stored conversations, on server memory context, on server prompt templates etc.
+  - [ ] provider and model level allow disallow list of model params/capabilities etc.
   - [ ] Some more additional params in presets and advanced params modal.
     - [ ] tool choice tuning
     - [ ] verbosity tuning
@@ -58,7 +63,6 @@
     - [ ] Not sure: Safety parameter, that identifies a user if they violate safety policies.
     - [ ] Not sure: stop strings
     - [ ] Not sure: cache control in claude
-  - [ ] provider and model level allow disallow list of model params/capabilities etc.
 
 - [ ] M2 - Better context
 
@@ -68,6 +72,7 @@
     - [ ] Only if MCP cannot serve this.
 
 - [ ] Agent Skills but via local "explorer" or "skills" flow???
+
 - [ ] Deferred.
   - [ ] Image output: See inference-go notes.
   - [ ] audio in/out
