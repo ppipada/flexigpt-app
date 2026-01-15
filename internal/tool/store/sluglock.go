@@ -3,7 +3,7 @@ package store
 import (
 	"sync"
 
-	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
+	"github.com/flexigpt/flexigpt-app/internal/bundleitemutils"
 )
 
 // slugLocks keeps a RW-mutex per bundle|slug pair so that concurrent access to

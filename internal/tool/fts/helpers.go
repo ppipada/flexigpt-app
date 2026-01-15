@@ -3,8 +3,8 @@ package fts
 import (
 	"strings"
 
-	"github.com/ppipada/flexigpt-app/internal/jsonutil"
-	"github.com/ppipada/flexigpt-app/internal/tool/spec"
+	"github.com/flexigpt/flexigpt-app/internal/jsonutil"
+	"github.com/flexigpt/flexigpt-app/internal/tool/spec"
 )
 
 // Convenience when we already have spec.JSONSchema.

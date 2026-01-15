@@ -3,8 +3,8 @@ package store
 import (
 	"slices"
 
-	"github.com/ppipada/flexigpt-app/internal/builtin"
-	"github.com/ppipada/flexigpt-app/internal/setting/spec"
+	"github.com/flexigpt/flexigpt-app/internal/builtin"
+	"github.com/flexigpt/flexigpt-app/internal/setting/spec"
 )
 
 // BuiltInAuthKeys lists every key that must never be deleted.

@@ -16,10 +16,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/internal/builtin"
-	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
-	"github.com/ppipada/flexigpt-app/internal/overlay"
-	"github.com/ppipada/flexigpt-app/internal/tool/spec"
+	"github.com/flexigpt/flexigpt-app/internal/builtin"
+	"github.com/flexigpt/flexigpt-app/internal/bundleitemutils"
+	"github.com/flexigpt/flexigpt-app/internal/overlay"
+	"github.com/flexigpt/flexigpt-app/internal/tool/spec"
 )
 
 type builtInToolBundleID bundleitemutils.BundleID

@@ -16,12 +16,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/flexigpt/flexigpt-app/internal/builtin/gotool"
+	"github.com/flexigpt/flexigpt-app/internal/bundleitemutils"
+	"github.com/flexigpt/flexigpt-app/internal/tool/goregistry"
+	"github.com/flexigpt/flexigpt-app/internal/tool/spec"
 	"github.com/flexigpt/llmtools-go/fstool"
 	llmtoolsgoSpec "github.com/flexigpt/llmtools-go/spec"
-	"github.com/ppipada/flexigpt-app/internal/builtin/gotool"
-	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
-	"github.com/ppipada/flexigpt-app/internal/tool/goregistry"
-	"github.com/ppipada/flexigpt-app/internal/tool/spec"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 )
 
@@ -965,7 +965,7 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 		{
 			name:     "sets_is_error",
 			register: nil,
-			funcName: "github.com/ppipada/flexigpt-app/tests/unknownFunc",
+			funcName: "github.com/flexigpt/flexigpt-app/tests/unknownFunc",
 			args:     `{}`,
 			verify: func(t *testing.T, resp *spec.InvokeToolResponse, err error) {
 				t.Helper()
@@ -1457,7 +1457,7 @@ func registerTypedAsTextInDefault[T, R any](
 ) string {
 	t.Helper()
 	slug := sanitizeID(nameSuffix)
-	funcName := "github.com/ppipada/flexigpt-app/tests/" + slug
+	funcName := "github.com/flexigpt/flexigpt-app/tests/" + slug
 
 	llmTool := llmtoolsgoSpec.Tool{
 		SchemaVersion: llmtoolsgoSpec.SchemaVersion,
@@ -1486,7 +1486,7 @@ func registerOutputsToolInDefault[T any](
 ) string {
 	t.Helper()
 	slug := sanitizeID(nameSuffix)
-	funcName := "github.com/ppipada/flexigpt-app/tests/" + slug
+	funcName := "github.com/flexigpt/flexigpt-app/tests/" + slug
 
 	llmTool := llmtoolsgoSpec.Tool{
 		SchemaVersion: llmtoolsgoSpec.SchemaVersion,

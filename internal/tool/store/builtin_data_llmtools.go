@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/internal/builtin"
-	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
-	"github.com/ppipada/flexigpt-app/internal/tool/spec"
+	"github.com/flexigpt/flexigpt-app/internal/builtin"
+	"github.com/flexigpt/flexigpt-app/internal/bundleitemutils"
+	"github.com/flexigpt/flexigpt-app/internal/tool/spec"
 
 	"github.com/flexigpt/llmtools-go"
 	llmtoolsgoSpec "github.com/flexigpt/llmtools-go/spec"

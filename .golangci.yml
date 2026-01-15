@@ -408,13 +408,13 @@ linters:
           alias: inferencegoSpec
         - pkg: "github.com/flexigpt/llmtools-go/spec"
           alias: llmtoolsgoSpec
-        - pkg: github.com/ppipada/flexigpt-app/frontend
+        - pkg: github.com/flexigpt/flexigpt-app/frontend
           alias: assets
-        - pkg: github.com/ppipada/flexigpt-app/internal/(\w+)/consts
+        - pkg: github.com/flexigpt/flexigpt-app/internal/(\w+)/consts
           alias: ${1}Consts
-        - pkg: github.com/ppipada/flexigpt-app/internal/(\w+)/spec
+        - pkg: github.com/flexigpt/flexigpt-app/internal/(\w+)/spec
           alias: ${1}Spec
-        - pkg: github.com/ppipada/flexigpt-app/internal/(\w+)/store
+        - pkg: github.com/flexigpt/flexigpt-app/internal/(\w+)/store
           alias: ${1}Store
 
     nakedret:

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
-	"github.com/ppipada/flexigpt-app/internal/tool/spec"
+	"github.com/flexigpt/flexigpt-app/internal/bundleitemutils"
+	"github.com/flexigpt/flexigpt-app/internal/tool/spec"
 	"github.com/ppipada/mapstore-go/ftsengine"
 )
 

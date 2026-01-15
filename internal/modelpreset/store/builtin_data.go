@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/flexigpt/flexigpt-app/internal/builtin"
+	"github.com/flexigpt/flexigpt-app/internal/modelpreset/spec"
+	"github.com/flexigpt/flexigpt-app/internal/overlay"
 	inferencegoSpec "github.com/flexigpt/inference-go/spec"
-	"github.com/ppipada/flexigpt-app/internal/builtin"
-	"github.com/ppipada/flexigpt-app/internal/modelpreset/spec"
-	"github.com/ppipada/flexigpt-app/internal/overlay"
 )
 
 type builtInProviderKey inferencegoSpec.ProviderName

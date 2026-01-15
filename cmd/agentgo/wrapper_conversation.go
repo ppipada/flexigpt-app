@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 
-	conversationStore "github.com/ppipada/flexigpt-app/internal/conversation/store"
+	conversationStore "github.com/flexigpt/flexigpt-app/internal/conversation/store"
 
-	"github.com/ppipada/flexigpt-app/internal/conversation/spec"
-	"github.com/ppipada/flexigpt-app/internal/middleware"
+	"github.com/flexigpt/flexigpt-app/internal/conversation/spec"
+	"github.com/flexigpt/flexigpt-app/internal/middleware"
 )
 
 type ConversationCollectionWrapper struct {

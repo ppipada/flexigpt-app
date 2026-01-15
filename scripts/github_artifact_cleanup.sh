@@ -3,7 +3,7 @@
 # Install the GitHub CLI tool by following the instructions in the official documentation: https://cli.github.com/manual/installation
 # Make sure you auth first to github with 'gh auth login'
 
-REPO_OWNER="ppipada"
+REPO_OWNER="flexigpt"
 REPO_NAME="flexigpt-app"
 CUTOFF_DATE=$(date --date='10 days ago' +'%Y-%m-%dT%H:%M:%SZ')
 # CUTOFF_DATE=$(date -u -v-10d +'%Y-%m-%dT%H:%M:%SZ')

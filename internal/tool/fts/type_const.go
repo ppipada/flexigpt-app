@@ -3,7 +3,7 @@ package fts
 import (
 	"github.com/ppipada/mapstore-go/ftsengine"
 
-	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
+	"github.com/flexigpt/flexigpt-app/internal/bundleitemutils"
 )
 
 const (

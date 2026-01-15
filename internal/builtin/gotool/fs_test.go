@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ppipada/flexigpt-app/internal/tool/spec"
+	"github.com/flexigpt/flexigpt-app/internal/tool/spec"
 )
 
 // TestReadFile covers happy, error, and boundary cases for ReadFile.

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ppipada/flexigpt-app/internal/fileutil"
+	"github.com/flexigpt/flexigpt-app/internal/fileutil"
 )
 
 var (

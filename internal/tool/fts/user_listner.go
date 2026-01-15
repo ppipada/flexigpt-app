@@ -15,9 +15,9 @@ import (
 	"github.com/ppipada/mapstore-go"
 	"github.com/ppipada/mapstore-go/ftsengine"
 
-	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
+	"github.com/flexigpt/flexigpt-app/internal/bundleitemutils"
 
-	"github.com/ppipada/flexigpt-app/internal/tool/spec"
+	"github.com/flexigpt/flexigpt-app/internal/tool/spec"
 )
 
 // StartUserToolsFTSRebuild launches a goroutine to rebuild the FTS index

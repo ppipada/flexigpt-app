@@ -1,9 +1,9 @@
 package spec
 
 import (
+	conversationSpec "github.com/flexigpt/flexigpt-app/internal/conversation/spec"
+	toolSpec "github.com/flexigpt/flexigpt-app/internal/tool/spec"
 	inferencegoSpec "github.com/flexigpt/inference-go/spec"
-	conversationSpec "github.com/ppipada/flexigpt-app/internal/conversation/spec"
-	toolSpec "github.com/ppipada/flexigpt-app/internal/tool/spec"
 )
 
 type AddProviderRequestBody struct {

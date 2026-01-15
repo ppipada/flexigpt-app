@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/flexigpt/flexigpt-app/internal/docstore/spec"
 	"github.com/philippgille/chromem-go"
-	"github.com/ppipada/flexigpt-app/internal/docstore/spec"
 	"github.com/ppipada/mapstore-go/uuidv7filename"
 )
 

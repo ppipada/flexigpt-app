@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
-	"github.com/ppipada/flexigpt-app/internal/tool/spec"
+	"github.com/flexigpt/flexigpt-app/internal/bundleitemutils"
+	"github.com/flexigpt/flexigpt-app/internal/tool/spec"
 )
 
 // Scale-test: create, patch, and delete lots of tool bundles.

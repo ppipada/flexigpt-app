@@ -10,16 +10,16 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/ppipada/flexigpt-app/internal/fileutil"
-	"github.com/ppipada/flexigpt-app/internal/tool/spec"
+	"github.com/flexigpt/flexigpt-app/internal/fileutil"
+	"github.com/flexigpt/flexigpt-app/internal/tool/spec"
 )
 
 const (
-	ReadFileFuncID      = "github.com/ppipada/flexigpt-app/internal/builtin/gotool/fs.ReadFile"
-	ListDirectoryFuncID = "github.com/ppipada/flexigpt-app/internal/builtin/gotool/fs.ListDirectory"
-	SearchFilesFuncID   = "github.com/ppipada/flexigpt-app/internal/builtin/gotool/fs.SearchFiles"
-	StatPathFuncID      = "github.com/ppipada/flexigpt-app/internal/builtin/gotool/fs.StatPath"
-	InspectImageFuncID  = "github.com/ppipada/flexigpt-app/internal/builtin/gotool/fs.InspectImage"
+	ReadFileFuncID      = "github.com/flexigpt/flexigpt-app/internal/builtin/gotool/fs.ReadFile"
+	ListDirectoryFuncID = "github.com/flexigpt/flexigpt-app/internal/builtin/gotool/fs.ListDirectory"
+	SearchFilesFuncID   = "github.com/flexigpt/flexigpt-app/internal/builtin/gotool/fs.SearchFiles"
+	StatPathFuncID      = "github.com/flexigpt/flexigpt-app/internal/builtin/gotool/fs.StatPath"
+	InspectImageFuncID  = "github.com/flexigpt/flexigpt-app/internal/builtin/gotool/fs.InspectImage"
 )
 
 type ReadFileArgs struct {

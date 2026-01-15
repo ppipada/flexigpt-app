@@ -10,10 +10,10 @@ import (
 	inferencegoSpec "github.com/flexigpt/inference-go/spec"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"github.com/ppipada/flexigpt-app/internal/inferencewrapper"
-	inferencewrapperSpec "github.com/ppipada/flexigpt-app/internal/inferencewrapper/spec"
-	"github.com/ppipada/flexigpt-app/internal/middleware"
-	toolStore "github.com/ppipada/flexigpt-app/internal/tool/store"
+	"github.com/flexigpt/flexigpt-app/internal/inferencewrapper"
+	inferencewrapperSpec "github.com/flexigpt/flexigpt-app/internal/inferencewrapper/spec"
+	"github.com/flexigpt/flexigpt-app/internal/middleware"
+	toolStore "github.com/flexigpt/flexigpt-app/internal/tool/store"
 )
 
 type ProviderSetWrapper struct {

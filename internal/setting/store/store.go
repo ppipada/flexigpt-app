@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/ppipada/flexigpt-app/internal/setting/spec"
+	"github.com/flexigpt/flexigpt-app/internal/setting/spec"
 	"github.com/ppipada/mapstore-go"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 	"github.com/ppipada/mapstore-go/keyringencdec"

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/internal/conversation/spec"
+	"github.com/flexigpt/flexigpt-app/internal/conversation/spec"
 	"github.com/ppipada/mapstore-go"
 	"github.com/ppipada/mapstore-go/ftsengine"
 )

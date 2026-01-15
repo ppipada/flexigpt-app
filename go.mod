@@ -1,4 +1,4 @@
-module github.com/ppipada/flexigpt-app
+module github.com/flexigpt/flexigpt-app
 
 go 1.25.3
 

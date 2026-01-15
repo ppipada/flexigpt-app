@@ -894,7 +894,7 @@
 			"apiKeyHeaderKey": "Authorization",
 			"defaultHeaders": {
 				"content-type": "application/json",
-				"HTTP-Referer": "https://github.com/ppipada/flexigpt-app",
+				"HTTP-Referer": "https://github.com/flexigpt/flexigpt-app",
 				"X-Title": "FlexiGPT"
 			},
 			"defaultModelPresetID": "qwen3CoderFree",

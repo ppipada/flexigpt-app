@@ -3,7 +3,7 @@ package docstore
 import (
 	"errors"
 
-	"github.com/ppipada/flexigpt-app/internal/docstore/spec"
+	"github.com/flexigpt/flexigpt-app/internal/docstore/spec"
 )
 
 // DocumentDBSet manages multiple DocStore instances.

@@ -3,7 +3,7 @@ package docstore
 // Import (
 // 	"errors"
 
-// 	"github.com/ppipada/flexigpt-app/internal/docstore/spec"
+// 	"github.com/flexigpt/flexigpt-app/internal/docstore/spec"
 // ).
 
 // // HTTPDocStore implements the DocStoreAdapter interface for HTTP-based storage

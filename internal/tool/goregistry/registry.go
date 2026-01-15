@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/flexigpt/flexigpt-app/internal/tool/spec"
 	"github.com/flexigpt/llmtools-go"
 	llmtoolsgoSpec "github.com/flexigpt/llmtools-go/spec"
-	"github.com/ppipada/flexigpt-app/internal/tool/spec"
 )
 
 // defaultGoRegistry is a package-level global registry with a 5s timeout.

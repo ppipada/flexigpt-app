@@ -6,7 +6,7 @@
 	"main": "build/main.js",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/ppipada/flexigpt-app.git"
+		"url": "https://github.com/flexigpt/flexigpt-app.git"
 	},
 	"author": "Pankaj Pipada <ppipada@gmail.com>",
 	"description": "FlexiGPT - An AI application platform",

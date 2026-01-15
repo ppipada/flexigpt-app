@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/internal/fileutil"
+	"github.com/flexigpt/flexigpt-app/internal/fileutil"
 )
 
 // FileRef carries metadata for file attachments.

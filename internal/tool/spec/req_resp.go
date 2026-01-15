@@ -1,7 +1,7 @@
 package spec
 
 import (
-	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
+	"github.com/flexigpt/flexigpt-app/internal/bundleitemutils"
 )
 
 type PutToolBundleRequestBody struct {

@@ -19,8 +19,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
-	"github.com/ppipada/flexigpt-app/internal/prompt/spec"
+	"github.com/flexigpt/flexigpt-app/internal/bundleitemutils"
+	"github.com/flexigpt/flexigpt-app/internal/prompt/spec"
 )
 
 func TestScale_LotsOfBundles(t *testing.T) {

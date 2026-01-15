@@ -12,12 +12,12 @@ import (
 	"github.com/flexigpt/inference-go/debugclient"
 	inferencegoSpec "github.com/flexigpt/inference-go/spec"
 
-	"github.com/ppipada/flexigpt-app/internal/attachment"
-	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
-	conversationSpec "github.com/ppipada/flexigpt-app/internal/conversation/spec"
-	"github.com/ppipada/flexigpt-app/internal/inferencewrapper/spec"
-	toolSpec "github.com/ppipada/flexigpt-app/internal/tool/spec"
-	toolStore "github.com/ppipada/flexigpt-app/internal/tool/store"
+	"github.com/flexigpt/flexigpt-app/internal/attachment"
+	"github.com/flexigpt/flexigpt-app/internal/bundleitemutils"
+	conversationSpec "github.com/flexigpt/flexigpt-app/internal/conversation/spec"
+	"github.com/flexigpt/flexigpt-app/internal/inferencewrapper/spec"
+	toolSpec "github.com/flexigpt/flexigpt-app/internal/tool/spec"
+	toolStore "github.com/flexigpt/flexigpt-app/internal/tool/store"
 )
 
 // ProviderSetAPI is a thin aggregator on top of inference-go's ProviderSetAPI.

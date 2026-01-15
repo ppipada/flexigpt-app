@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OWNER="ppipada"
+OWNER="flexigpt"
 REPO="flexigpt-app"
 
 gh api -X GET "repos/$OWNER/$REPO/actions/artifacts" --paginate \

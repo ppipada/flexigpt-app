@@ -3,7 +3,7 @@ package store
 import (
 	"fmt"
 
-	"github.com/ppipada/flexigpt-app/internal/setting/spec"
+	"github.com/flexigpt/flexigpt-app/internal/setting/spec"
 )
 
 // validateTheme checks a theme for correctness.

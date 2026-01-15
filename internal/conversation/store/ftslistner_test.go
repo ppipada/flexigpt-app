@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/flexigpt/flexigpt-app/internal/conversation/spec"
 	inferencegoSpec "github.com/flexigpt/inference-go/spec"
-	"github.com/ppipada/flexigpt-app/internal/conversation/spec"
 )
 
 func TestFTSSearchHappyPath(t *testing.T) {

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 
+	inferencewrapperSpec "github.com/flexigpt/flexigpt-app/internal/inferencewrapper/spec"
+	modelpresetSpec "github.com/flexigpt/flexigpt-app/internal/modelpreset/spec"
+	settingSpec "github.com/flexigpt/flexigpt-app/internal/setting/spec"
 	inferencegoSpec "github.com/flexigpt/inference-go/spec"
-	inferencewrapperSpec "github.com/ppipada/flexigpt-app/internal/inferencewrapper/spec"
-	modelpresetSpec "github.com/ppipada/flexigpt-app/internal/modelpreset/spec"
-	settingSpec "github.com/ppipada/flexigpt-app/internal/setting/spec"
 )
 
 func InitProviderSetUsingSettingsAndPresets(

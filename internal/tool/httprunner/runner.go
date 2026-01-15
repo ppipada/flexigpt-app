@@ -19,8 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/internal/jsonutil"
-	"github.com/ppipada/flexigpt-app/internal/tool/spec"
+	"github.com/flexigpt/flexigpt-app/internal/jsonutil"
+	"github.com/flexigpt/flexigpt-app/internal/tool/spec"
 )
 
 // HTTPToolRunner executes an HTTPToolImpl. Safe for concurrent use.

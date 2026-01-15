@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/ppipada/flexigpt-app/internal/middleware"
-	"github.com/ppipada/flexigpt-app/internal/tool/spec"
-	toolStore "github.com/ppipada/flexigpt-app/internal/tool/store"
+	"github.com/flexigpt/flexigpt-app/internal/middleware"
+	"github.com/flexigpt/flexigpt-app/internal/tool/spec"
+	toolStore "github.com/flexigpt/flexigpt-app/internal/tool/store"
 )
 
 type ToolStoreWrapper struct {

@@ -14,8 +14,8 @@ import (
 	"time"
 
 	html2md "github.com/JohannesKaufmann/html-to-markdown/v2"
+	"github.com/flexigpt/flexigpt-app/internal/fileutil"
 	"github.com/markusmobius/go-trafilatura"
-	"github.com/ppipada/flexigpt-app/internal/fileutil"
 	"golang.org/x/net/html"
 )
 

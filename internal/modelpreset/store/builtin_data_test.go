@@ -13,9 +13,9 @@ import (
 	"testing/fstest"
 	"time"
 
+	"github.com/flexigpt/flexigpt-app/internal/builtin"
+	"github.com/flexigpt/flexigpt-app/internal/modelpreset/spec"
 	inferencegoSpec "github.com/flexigpt/inference-go/spec"
-	"github.com/ppipada/flexigpt-app/internal/builtin"
-	"github.com/ppipada/flexigpt-app/internal/modelpreset/spec"
 )
 
 const corrupted = "corrupted"

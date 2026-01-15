@@ -16,10 +16,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
-	"github.com/ppipada/flexigpt-app/internal/jsonutil"
-	"github.com/ppipada/flexigpt-app/internal/prompt/fts"
-	"github.com/ppipada/flexigpt-app/internal/prompt/spec"
+	"github.com/flexigpt/flexigpt-app/internal/bundleitemutils"
+	"github.com/flexigpt/flexigpt-app/internal/jsonutil"
+	"github.com/flexigpt/flexigpt-app/internal/prompt/fts"
+	"github.com/flexigpt/flexigpt-app/internal/prompt/spec"
 	"github.com/ppipada/mapstore-go"
 
 	"github.com/ppipada/mapstore-go/ftsengine"

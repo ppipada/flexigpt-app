@@ -1,6 +1,6 @@
 package spec
 
-import "github.com/ppipada/flexigpt-app/internal/bundleitemutils"
+import "github.com/flexigpt/flexigpt-app/internal/bundleitemutils"
 
 type PutPromptBundleRequestBody struct {
 	Slug        bundleitemutils.BundleSlug `json:"slug"                  required:"true"`

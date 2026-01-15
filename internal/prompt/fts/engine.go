@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/ppipada/flexigpt-app/internal/prompt/spec"
+	"github.com/flexigpt/flexigpt-app/internal/prompt/spec"
 	"github.com/ppipada/mapstore-go/ftsengine"
 )
 

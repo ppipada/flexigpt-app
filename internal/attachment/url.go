@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/ppipada/flexigpt-app/internal/fileutil"
+	"github.com/flexigpt/flexigpt-app/internal/fileutil"
 )
 
 const maxContentTypeProbeBytes = 2048
