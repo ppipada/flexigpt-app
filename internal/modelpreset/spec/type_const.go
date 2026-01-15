@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	inferencegoSpec "github.com/ppipada/inference-go/spec"
+	inferencegoSpec "github.com/flexigpt/inference-go/spec"
 )
 
 const (

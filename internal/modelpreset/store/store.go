@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
+	inferencegoSpec "github.com/flexigpt/inference-go/spec"
 	"github.com/ppipada/flexigpt-app/internal/jsonutil"
 	"github.com/ppipada/flexigpt-app/internal/modelpreset/spec"
-	inferencegoSpec "github.com/ppipada/inference-go/spec"
 	"github.com/ppipada/mapstore-go"
 	"github.com/ppipada/mapstore-go/jsonencdec"
 )

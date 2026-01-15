@@ -8,9 +8,9 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/ppipada/inference-go"
-	"github.com/ppipada/inference-go/debugclient"
-	inferencegoSpec "github.com/ppipada/inference-go/spec"
+	"github.com/flexigpt/inference-go"
+	"github.com/flexigpt/inference-go/debugclient"
+	inferencegoSpec "github.com/flexigpt/inference-go/spec"
 
 	"github.com/ppipada/flexigpt-app/internal/attachment"
 	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"

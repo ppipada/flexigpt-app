@@ -1,6 +1,6 @@
 package spec
 
-import inferencegoSpec "github.com/ppipada/inference-go/spec"
+import inferencegoSpec "github.com/flexigpt/inference-go/spec"
 
 type PatchDefaultProviderRequestBody struct {
 	DefaultProvider inferencegoSpec.ProviderName `json:"defaultProvider" required:"true"`

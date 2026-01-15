@@ -6,7 +6,7 @@ import (
 	"github.com/ppipada/flexigpt-app/internal/attachment"
 	toolSpec "github.com/ppipada/flexigpt-app/internal/tool/spec"
 
-	inferencegoSpec "github.com/ppipada/inference-go/spec"
+	inferencegoSpec "github.com/flexigpt/inference-go/spec"
 )
 
 const (

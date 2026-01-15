@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
+	inferencegoSpec "github.com/flexigpt/inference-go/spec"
 	"github.com/ppipada/flexigpt-app/internal/modelpreset/spec"
 	"github.com/ppipada/flexigpt-app/internal/modelpreset/store"
-	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 func TestPutProviderPreset(t *testing.T) {

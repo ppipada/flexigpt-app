@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	inferencegoSpec "github.com/flexigpt/inference-go/spec"
 	"github.com/ppipada/flexigpt-app/internal/bundleitemutils"
 	"github.com/ppipada/flexigpt-app/internal/modelpreset/spec"
-	inferencegoSpec "github.com/ppipada/inference-go/spec"
 )
 
 // validateProviderPreset performs structural and referential checks for a

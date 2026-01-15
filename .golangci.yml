@@ -412,7 +412,7 @@ linters:
           alias: assets
         - pkg: github.com/JohannesKaufmann/html-to-markdown/v2
           alias: html2md
-        - pkg: "github.com/ppipada/inference-go/spec"
+        - pkg: "github.com/flexigpt/inference-go/spec"
           alias: inferencegoSpec
         - pkg: "github.com/flexigpt/llmtools-go/spec"
           alias: llmtoolsgoSpec

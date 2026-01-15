@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/flexigpt/inference-go/debugclient"
 	"github.com/ppipada/flexigpt-app/internal/inferencewrapper"
-	"github.com/ppipada/inference-go/debugclient"
 
 	conversationStore "github.com/ppipada/flexigpt-app/internal/conversation/store"
 	modelpresetStore "github.com/ppipada/flexigpt-app/internal/modelpreset/store"

@@ -10,7 +10,7 @@ import (
 	"github.com/ppipada/flexigpt-app/internal/conversation/spec"
 	"github.com/ppipada/mapstore-go/uuidv7filename"
 
-	inferencegoSpec "github.com/ppipada/inference-go/spec"
+	inferencegoSpec "github.com/flexigpt/inference-go/spec"
 )
 
 func TestInitConversation(t *testing.T) {

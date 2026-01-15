@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/ppipada/inference-go/debugclient"
-	inferencegoSpec "github.com/ppipada/inference-go/spec"
+	"github.com/flexigpt/inference-go/debugclient"
+	inferencegoSpec "github.com/flexigpt/inference-go/spec"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/ppipada/flexigpt-app/internal/inferencewrapper"

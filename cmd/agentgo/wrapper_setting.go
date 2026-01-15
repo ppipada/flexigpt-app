@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
+	inferencegoSpec "github.com/flexigpt/inference-go/spec"
 	inferencewrapperSpec "github.com/ppipada/flexigpt-app/internal/inferencewrapper/spec"
 	"github.com/ppipada/flexigpt-app/internal/middleware"
-	inferencegoSpec "github.com/ppipada/inference-go/spec"
 
 	settingSpec "github.com/ppipada/flexigpt-app/internal/setting/spec"
 	settingStore "github.com/ppipada/flexigpt-app/internal/setting/store"

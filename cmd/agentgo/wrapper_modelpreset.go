@@ -12,7 +12,7 @@ import (
 	modelpresetStore "github.com/ppipada/flexigpt-app/internal/modelpreset/store"
 	settingSpec "github.com/ppipada/flexigpt-app/internal/setting/spec"
 
-	inferencegoSpec "github.com/ppipada/inference-go/spec"
+	inferencegoSpec "github.com/flexigpt/inference-go/spec"
 )
 
 type ModelPresetStoreWrapper struct {
