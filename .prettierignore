@@ -7,3 +7,4 @@ frontend/.react-router/
 frontend/dist/
 frontend/app/apis/wailsjs
 build/flatpak/shared-modules
+LICENSE

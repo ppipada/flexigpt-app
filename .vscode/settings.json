@@ -73,6 +73,7 @@
 			"allowed_elements": ["table", "td", "tr", "strong", "details", "summary"]
 		}
 	},
+	"markdownlint.lintWorkspaceGlobs": ["!LICENSE"],
 
 	// --- Go ---
 	"go.lintTool": "golangci-lint",

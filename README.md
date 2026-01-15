@@ -1,5 +1,9 @@
 # FlexiGPT
 
+[![License: MPL 2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://opensource.org/license/mpl-2-0)
+[![Go Report Card](https://goreportcard.com/badge/github.com/flexigpt/flexigpt-app)](https://goreportcard.com/report/github.com/flexigpt/flexigpt-app)
+[![lint](https://github.com/flexigpt/flexigpt-app/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/flexigpt/flexigpt-app/actions/workflows/lint.yml)
+
 FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple Large Language Models (LLMs) from a single, streamlined interface.
 
 > ⚠ Early Access Notice:
@@ -22,6 +26,7 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
   - [Linux](#linux)
 - [Built With](#built-with)
 - [Contributing](#contributing)
+- [License](#license)
 
 ## Quick Start
 
@@ -258,3 +263,10 @@ FlexiGPT is a _cross-platform desktop client_ that lets you chat with multiple L
 ## Contributing
 
 - The dev setup docs are located at [devsetup.md](./docs/contributing/devsetup.md)
+
+## License
+
+Copyright (c) 2024 - Present - Pankaj Pipada
+
+All source code in this repository, unless otherwise noted, is licensed under the Mozilla Public License, v. 2.0.
+See [LICENSE](./LICENSE) for details.
