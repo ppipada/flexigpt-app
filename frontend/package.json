@@ -22,7 +22,7 @@
 	"keywords": [],
 	"author": "ppipada",
 	"dependencies": {
-		"@ariakit/react": "^0.4.20",
+		"@ariakit/react": "^0.4.21",
 		"@emoji-mart/data": "^1.2.1",
 		"@fontsource-variable/inter": "^5.2.8",
 		"@platejs/autoformat": "^52.0.11",
