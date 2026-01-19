@@ -13,7 +13,7 @@
 - [x] single tilda causes subscript ideally it should be double? No.
 - [ ] reasoning text and switch between openai and anthropic is not working properly. better on switch would be to drop anything excess and then work with options.
   - [ ] reverse anyways may not be possible as anthropic uses encrupted ocntent, so would be better to add the message as use message to the chat.
-- [ ] in input editor if i give something between tilda it doesnt work. may be i have disabled subscript super script plugins and not really skipped them somehow.
+- [x] in input editor if i give something between tilda it doesnt work. may be i have disabled subscript super script plugins and not really skipped them somehow.
 
 ## Features
 
