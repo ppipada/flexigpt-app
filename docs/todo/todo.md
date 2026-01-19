@@ -6,13 +6,14 @@
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
 - [ ] with more and more usage, atleast some tabs seem to be worthwhile to do. basically start a command in one and then switch to another. we would need to ensure that we dont really mix anything anywhere and streaming is proper but req wise it seems worthwhile to do.
-- [ ] frameless app
+  - [ ] with tabs, we should put title and edit/export in proper palces so that we get better spacve vertically.
+- [x] frameless app
 - [ ] editor becomes heavy when lots of input content is there. verify and rectify.
+  - [ ] when edit chat is called for a message, it takes a LOT of time to get to input area
 
 ## Features
 
 - [ ] tool features
-
   - [ ] Implementation of openai/anthropic etc built-in tools that have been analyzed and filtered.
   - [ ] Analysis of openai/anthropic etc given tools so that they can be invoked in api directly.
   - [ ] ~~parallel tools can be created locally~~
@@ -28,9 +29,7 @@
 ## Milestone thoughts
 
 - [ ] M1 - API coverage - Pending items:
-
   - [ ] Modalities coverage:
-
     - [x] Text
       - [x] content in/out
       - [x] reasoning in/out
@@ -43,13 +42,10 @@
     - [x] Document url input
 
   - [ ] Tools
-
     - [x] built-in tools from apis
-
       - [x] web search
 
     - [ ] local replacements for some builtin tools that are very vendor specific
-
       - [ ] bash
       - [ ] apply patch
       - [ ] text editor
@@ -68,7 +64,6 @@
     - [ ] Not sure: cache control in claude
 
 - [ ] M2 - Better context
-
   - [ ] MCP local connections and hooks
   - [ ] MCP options in apis connections and hooks
   - [ ] Doc stores/vector stores connections

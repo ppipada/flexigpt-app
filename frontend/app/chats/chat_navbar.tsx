@@ -1,51 +1,34 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { FiEdit2, FiPlus } from 'react-icons/fi';
-
-import type { ConversationSearchItem } from '@/spec/conversation';
 
 import { formatShortcut, type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { sanitizeConversationTitle } from '@/lib/text_utils';
 
 import { DownloadButton } from '@/components/download_button';
 
-import { ChatSearch, type ChatSearchHandle } from '@/chats/chat_search';
-
 interface ChatNavBarProps {
 	onNewChat: () => void;
 	onRenameTitle: (newTitle: string) => void;
 	getConversationForExport: () => Promise<string>;
-	onSelectConversation: (item: ConversationSearchItem) => Promise<void>;
 	chatTitle: string;
-	chatID: string;
-	searchRefreshKey: number;
 	disabled: boolean;
 	renameEnabled: boolean;
 	shortcutConfig: ShortcutConfig;
 }
 
-export interface ChatNavBarHandle {
-	focusSearch: () => void;
-}
-
-export const ChatNavBar = forwardRef<ChatNavBarHandle, ChatNavBarProps>(function ChatNavBar(
-	{
-		onNewChat,
-		onRenameTitle,
-		getConversationForExport,
-		onSelectConversation,
-		chatTitle,
-		chatID,
-		searchRefreshKey,
-		disabled,
-		renameEnabled,
-		shortcutConfig,
-	}: ChatNavBarProps,
-	ref
-) {
+export function ChatNavBar({
+	onNewChat,
+	onRenameTitle,
+	getConversationForExport,
+	chatTitle,
+	disabled,
+	renameEnabled,
+	shortcutConfig,
+}: ChatNavBarProps) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [draftTitle, setDraftTitle] = useState(chatTitle);
-	const searchRef = useRef<ChatSearchHandle | null>(null);
+
 	const shortcutLabels = useMemo(
 		() => ({
 			newChat: formatShortcut(shortcutConfig.newChat),
@@ -68,26 +51,11 @@ export const ChatNavBar = forwardRef<ChatNavBarHandle, ChatNavBarProps>(function
 		if (!renameEnabled && isEditing) setIsEditing(false);
 	}, [renameEnabled, isEditing]);
 
-	useImperativeHandle(ref, () => ({
-		focusSearch: () => {
-			searchRef.current?.focusInput();
-		},
-	}));
-
 	const editDisabled = disabled || !renameEnabled;
 
 	return (
-		<div className="w-full justify-center p-2">
-			<div className="flex items-center justify-between bg-transparent">
-				<ChatSearch
-					ref={searchRef}
-					onSelectConversation={onSelectConversation}
-					refreshKey={searchRefreshKey}
-					currentConversationId={chatID}
-				/>
-			</div>
-
-			<div className="flex items-center justify-between bg-transparent p-2">
+		<div className="w-full justify-center p-0">
+			<div className="flex items-center justify-between bg-transparent p-1">
 				<div
 					className="tooltip tooltip-right"
 					data-tip={shortcutLabels.newChat ? `Create New Chat (${shortcutLabels.newChat})` : 'Create New Chat'}
@@ -161,4 +129,4 @@ export const ChatNavBar = forwardRef<ChatNavBarHandle, ChatNavBarProps>(function
 			</div>
 		</div>
 	);
-});
+}

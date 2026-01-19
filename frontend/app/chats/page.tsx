@@ -16,6 +16,7 @@ import { getBlockQuotedLines, sanitizeConversationTitle } from '@/lib/text_utils
 import { generateTitle } from '@/lib/title_utils';
 
 import { useAtTopBottom } from '@/hooks/use_at_top_bottom';
+import { useTitleBarContent } from '@/hooks/use_title_bar';
 
 import { conversationStoreAPI } from '@/apis/baseapi';
 
@@ -33,8 +34,9 @@ import {
 } from '@/chats/chat_hydration_helper';
 import { InputBox, type InputBoxHandle } from '@/chats/chat_input_box';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/chat_input_editor';
-import { ChatNavBar, type ChatNavBarHandle } from '@/chats/chat_navbar';
+import { ChatNavBar } from '@/chats/chat_navbar';
 import { type ChatOption, DefaultChatOptions } from '@/chats/chat_option_helper';
+import { ChatSearch, type ChatSearchHandle } from '@/chats/chat_search';
 import { ChatMessage } from '@/chats/messages/message';
 
 // eslint-disable-next-line no-restricted-exports
@@ -51,7 +53,7 @@ export default function ChatsPage() {
 
 	const chatInputRef = useRef<InputBoxHandle>(null);
 	const chatContainerRef = useRef<HTMLDivElement>(null);
-	const navRef = useRef<ChatNavBarHandle | null>(null);
+	const searchRef = useRef<ChatSearchHandle | null>(null);
 
 	const tokensReceivedRef = useRef<boolean | null>(false);
 
@@ -531,7 +533,7 @@ export default function ChatsPage() {
 				void handleNewChat();
 			},
 			focusSearch: () => {
-				navRef.current?.focusSearch();
+				searchRef.current?.focusInput();
 			},
 			focusInput: () => {
 				chatInputRef.current?.focus();
@@ -548,20 +550,34 @@ export default function ChatsPage() {
 		},
 	});
 
+	// Put search into the global titlebar center for the chats route.
+	useTitleBarContent(
+		{
+			center: (
+				<div className="w-[min(720px,60vw)]">
+					<ChatSearch
+						ref={searchRef}
+						compact={true}
+						onSelectConversation={handleSelectConversation}
+						refreshKey={searchRefreshKey}
+						currentConversationId={chat.id}
+					/>
+				</div>
+			),
+		},
+		[chat.id, searchRefreshKey, handleSelectConversation]
+	);
+
 	return (
 		<PageFrame contentScrollable={false}>
 			<div className="grid h-full w-full grid-rows-[auto_1fr_auto] overflow-hidden">
 				{/* Row 1: NAVBAR */}
 				<div className="row-start-1 row-end-2 flex w-full justify-center">
 					<ChatNavBar
-						ref={navRef}
 						onNewChat={handleNewChat}
 						onRenameTitle={handleRenameTitle}
 						getConversationForExport={getConversationForExport}
-						onSelectConversation={handleSelectConversation}
 						chatTitle={chat.title}
-						chatID={chat.id}
-						searchRefreshKey={searchRefreshKey}
 						disabled={isBusy}
 						renameEnabled={chat.messages.length > 0}
 						shortcutConfig={shortcutConfig}

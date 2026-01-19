@@ -17,7 +17,7 @@ export function PageFrame({
 	contentScrollable = true,
 	className = '',
 	contentClassName = '',
-	padClassName = 'p-2',
+	padClassName = 'p-1',
 }: PageFrameProps) {
 	return (
 		<div className={`box-border h-full w-full overflow-hidden ${padClassName}`}>

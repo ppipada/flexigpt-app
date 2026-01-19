@@ -311,10 +311,11 @@ interface ChatSearchProps {
 	onSelectConversation: (item: ConversationSearchItem) => Promise<void>;
 	refreshKey: number;
 	currentConversationId: string;
+	compact: boolean;
 }
 
 export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function ChatSearch(
-	{ onSelectConversation, refreshKey, currentConversationId }: ChatSearchProps,
+	{ onSelectConversation, refreshKey, currentConversationId, compact }: ChatSearchProps,
 	ref
 ) {
 	const [searchState, setSearchState] = useState<SearchState>({
@@ -550,8 +551,8 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 			return;
 		}
 		const r = el.getBoundingClientRect();
-		// 4px gap under the input; adjust if you want
-		setDropdownPos({ top: r.bottom + 12, left: r.left, width: r.width });
+		const gap = compact ? 8 : 12;
+		setDropdownPos({ top: r.bottom + gap, left: r.left, width: r.width });
 	}, []);
 
 	useLayoutEffect(() => {
@@ -735,9 +736,9 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 		<div className="w-full">
 			<div
 				ref={searchDivRef}
-				className="bg-base-100 border-base-300 focus-within:border-base-400 flex items-center rounded-2xl border p-2 transition-colors"
+				className="bg-base-100 border-base-200 focus-within:border-base-300 m-0 flex h-7 items-center rounded-xl border px-2 py-0 shadow-none transition-colors"
 			>
-				<FiSearch size={20} className="text-neutral-custom mx-3 shrink-0" />
+				<FiSearch size={14} className="text-neutral-custom mx-2 shrink-0" />
 				<input
 					ref={inputRef}
 					type="text"
@@ -757,7 +758,7 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 				dropdownPos &&
 				createPortal(
 					<div
-						className="fixed z-9999" // effectively topmost
+						className="app-no-drag fixed z-9999"
 						style={{
 							top: dropdownPos.top,
 							left: dropdownPos.left,
