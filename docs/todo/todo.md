@@ -5,6 +5,9 @@
 - [ ] edit and save template doesn't work. says template slug already exists.
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
+- [ ] with more and more usage, atleast some tabs seem to be worthwhile to do. basically start a command in one and then switch to another. we would need to ensure that we dont really mix anything anywhere and streaming is proper but req wise it seems worthwhile to do.
+- [ ] frameless app
+- [ ] editor becomes heavy when lots of input content is there. verify and rectify.
 
 ## Features
 

@@ -378,12 +378,11 @@ export function AddEditModelPresetModal({
 		dialogRef.current?.close();
 	};
 
-	if (!isOpen) return null;
-
 	const numPlaceholder = (field: keyof ModelPreset) => {
 		const v = defaultValues[field];
 		return v === undefined || typeof v === 'object' ? 'Default: N/A' : `Default: ${String(v)}`;
 	};
+	if (!isOpen) return null;
 
 	return createPortal(
 		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>

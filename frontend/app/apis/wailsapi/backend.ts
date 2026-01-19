@@ -4,13 +4,24 @@ import type { Attachment, DirectoryAttachmentsResult, FileFilter } from '@/spec/
 
 import type { IBackendAPI, ILogger } from '@/apis/interface';
 import {
+	GetAppVersion,
 	OpenDirectoryAsAttachments,
 	OpenMultipleFilesAsAttachments,
 	OpenURLAsAttachment,
 	Ping,
 	SaveFile,
 } from '@/apis/wailsjs/go/main/App';
-import { BrowserOpenURL, LogDebug, LogError, LogInfo, LogWarning } from '@/apis/wailsjs/runtime/runtime';
+import {
+	BrowserOpenURL,
+	LogDebug,
+	LogError,
+	LogInfo,
+	LogWarning,
+	Quit,
+	WindowIsMaximised,
+	WindowMinimise,
+	WindowToggleMaximise,
+} from '@/apis/wailsjs/runtime/runtime';
 
 function formatMessage(args: unknown[]): string {
 	if (args.length > 0 && typeof args[0] === 'string') {
@@ -94,7 +105,26 @@ export class WailsLogger implements ILogger {
  * @public
  */
 export class WailsBackendAPI implements IBackendAPI {
-	// Implement the ping method
+	appQuit(): void {
+		Quit();
+	}
+
+	appWindowMinimise(): void {
+		WindowMinimise();
+	}
+
+	appWindowToggleMaximise(): void {
+		WindowToggleMaximise();
+	}
+
+	async isAppWindowMaximised(): Promise<boolean> {
+		return WindowIsMaximised();
+	}
+
+	async getAppVersion(): Promise<string> {
+		return GetAppVersion();
+	}
+
 	ping(): Promise<string> {
 		return Ping();
 	}

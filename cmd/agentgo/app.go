@@ -134,6 +134,10 @@ func (a *App) Ping() string {
 	return "pong"
 }
 
+func (a *App) GetAppVersion() string {
+	return Version
+}
+
 func (a *App) OpenURLAsAttachment(
 	rawURL string,
 ) (att *attachment.Attachment, err error) {
@@ -303,7 +307,7 @@ func (a *App) openDirectoryAsAttachments(maxFiles int) (*attachment.DirectoryAtt
 	return out, nil
 }
 
-func (a *App) initManagers() { //nolint:unused // Called from main.
+func (a *App) initManagers() {
 	err := InitConversationCollectionWrapper(a.conversationStoreAPI, a.conversationsDirPath)
 	if err != nil {
 		slog.Error(

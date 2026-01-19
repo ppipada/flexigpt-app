@@ -118,8 +118,6 @@ export function ConversationToolsChip({ tools, onChange, onShowToolDetails }: Co
 	const count = tools.length;
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
-	if (count === 0) return null;
-
 	const title = `Conversation tools\n${count} tool${count === 1 ? '' : 's'} in this conversation`;
 
 	const handleToggleEnabled = (key: string) => {
@@ -139,6 +137,8 @@ export function ConversationToolsChip({ tools, onChange, onShowToolDetails }: Co
 		onChange([]);
 		menu.hide();
 	};
+
+	if (count === 0) return null;
 
 	return (
 		<div

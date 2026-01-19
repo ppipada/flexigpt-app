@@ -32,8 +32,15 @@ export interface ILogger {
 }
 
 export interface IBackendAPI {
+	appQuit: () => void;
+	appWindowMinimise: () => void;
+	appWindowToggleMaximise: () => void;
+	isAppWindowMaximised: () => Promise<boolean>;
+
+	getAppVersion: () => Promise<string>;
 	ping: () => Promise<string>;
 	log: (level: string, ...args: unknown[]) => void;
+
 	openURL(url: string): void;
 	openURLAsAttachment(rawURL: string): Promise<Attachment | undefined>;
 	saveFile(defaultFilename: string, contentBase64: string, additionalFilters?: Array<FileFilter>): Promise<void>;

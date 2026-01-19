@@ -1,11 +1,27 @@
+import { FiHome } from 'react-icons/fi';
+
 import { Link } from 'react-router';
 
 import { FEATURE_FLAG_AGENTS } from '@/lib/features';
+
+import { useTitleBarContent } from '@/hooks/use_title_bar';
 
 import { PageFrame } from '@/components/page_frame';
 
 // eslint-disable-next-line no-restricted-exports
 export default function HomePage() {
+	useTitleBarContent(
+		{
+			center: (
+				<div className="flex items-center gap-1 truncate text-sm font-semibold">
+					{' '}
+					<FiHome size={14} />
+					Home
+				</div>
+			),
+		},
+		[]
+	);
 	return (
 		<PageFrame>
 			<div className="flex h-full flex-col items-center justify-start px-4 py-8 md:justify-center">

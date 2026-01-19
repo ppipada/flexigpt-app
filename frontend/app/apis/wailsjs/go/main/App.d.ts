@@ -3,6 +3,8 @@
 import {attachment} from '../models';
 import {fileutil} from '../models';
 
+export function GetAppVersion():Promise<string>;
+
 export function OpenDirectoryAsAttachments(arg1:number):Promise<attachment.DirectoryAttachmentsResult>;
 
 export function OpenMultipleFilesAsAttachments(arg1:boolean,arg2:Array<fileutil.FileFilter>):Promise<Array<attachment.Attachment>>;

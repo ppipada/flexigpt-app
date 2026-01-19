@@ -14,9 +14,9 @@ interface MessageCitationsBarProps {
  * attachments/tool bar. No horizontal scroll; pills wrap to multiple rows.
  */
 export function MessageCitationsBar({ citations }: MessageCitationsBarProps) {
-	if (!citations || citations.length === 0) return null;
-
 	const maxTooltipLen = 240;
+
+	if (!citations || citations.length === 0) return null;
 
 	return (
 		<div className="border-base-300 border-t px-4 py-2 text-xs">

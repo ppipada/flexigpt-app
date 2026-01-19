@@ -1,11 +1,12 @@
-import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
-import { FiCpu, FiDatabase, FiFilePlus, FiHome, FiMenu, FiMessageSquare, FiSettings, FiSliders } from 'react-icons/fi';
+import { FiCpu, FiDatabase, FiFilePlus, FiHome, FiMessageSquare, FiSettings, FiSliders } from 'react-icons/fi';
 
 import { Link } from 'react-router';
 
 import { FEATURE_FLAG_AGENTS, FEATURE_FLAG_DOCUMENT_STORES } from '@/lib/features';
+
+import { TitleBar } from '@/components/title_bar';
 
 interface SidebarProps {
 	children: ReactNode;
@@ -20,25 +21,22 @@ export function Sidebar({ children }: SidebarProps) {
 	// console.log(`${FEATURE_FLAG_AGENTS}`);
 	// const setOpen = () => setDrawerOpen(true);
 	return (
-		<div className="drawer md:drawer-open h-screen">
+		<div className="drawer lg:drawer-open h-screen">
 			<input
 				id="my-drawer"
 				type="checkbox"
-				className="drawer-toggle md:hidden"
+				className="drawer-toggle lg:hidden"
 				checked={isDrawerOpen}
 				onChange={toggle}
 				spellCheck="false"
 			/>
-			<div className="drawer-content flex flex-col overflow-auto">
-				{/* Hamburger menu button */}
-				<label
-					htmlFor="my-drawer"
-					className="btn drawer-button fixed top-4 left-4 z-10 bg-transparent py-2 pr-0 pl-1 shadow-none md:hidden"
-				>
-					<FiMenu className="h-6 w-6" aria-label="Open" title="Open" />
-				</label>
-				{/* Page content here */}
-				<div>{children}</div>
+			<div className="drawer-content flex min-h-0 flex-col overflow-hidden">
+				<TitleBar
+					onToggleDrawer={() => {
+						setDrawerOpen(o => !o);
+					}}
+				/>
+				<div className="min-h-0 flex-1 overflow-hidden">{children}</div>
 			</div>
 			<div className="drawer-side z-10">
 				<label htmlFor="my-drawer" className="drawer-overlay"></label>

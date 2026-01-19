@@ -280,3 +280,13 @@ code .line::before {
 	pointer-events: none;
 	-webkit-user-select: none;
 }
+
+/* app draggable regions */
+.app-drag {
+	--app-draggable: drag;
+	user-select: none;
+}
+
+.app-no-drag {
+	--app-draggable: no-drag;
+}

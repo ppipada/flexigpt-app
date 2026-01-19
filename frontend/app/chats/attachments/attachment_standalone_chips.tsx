@@ -26,9 +26,8 @@ export function StandaloneAttachmentsChip({
 	const count = attachments.length;
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
-	if (count === 0) return null;
-
 	const title = `Attachments\n${count} item${count === 1 ? '' : 's'} attached`;
+	if (count === 0) return null;
 
 	return (
 		<div

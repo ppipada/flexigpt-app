@@ -35,7 +35,6 @@ export function ToolChoicesChip({ editor, toolEntries, onToolsChanged, onShowToo
 	const count = visibleEntries.length;
 
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
-	if (count === 0) return null;
 
 	const title = `Tools\n${count} tool${count === 1 ? '' : 's'} attached`;
 
@@ -59,6 +58,8 @@ export function ToolChoicesChip({ editor, toolEntries, onToolsChanged, onShowToo
 		menu.hide();
 		onToolsChanged?.();
 	};
+
+	if (count === 0) return null;
 
 	return (
 		<div

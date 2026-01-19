@@ -218,13 +218,12 @@ interface AttachmentsGroupChipProps {
 
 function AttachmentsGroupChip({ attachments }: AttachmentsGroupChipProps) {
 	const count = attachments.length;
-	if (count === 0) return null;
 
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
 	const titleLines = ['Attachments', `${count} item${count === 1 ? '' : 's'} attached`];
 	const title = titleLines.join('\n');
-
+	if (count === 0) return null;
 	return (
 		<div
 			className="bg-base-200 text-base-content flex shrink-0 items-center gap-1 rounded-2xl px-2 py-0"
@@ -274,12 +273,12 @@ interface ToolChoicesGroupChipProps {
 
 function ToolChoicesGroupChip({ tools, onToolChoiceDetails }: ToolChoicesGroupChipProps) {
 	const count = tools.length;
-	if (count === 0) return null;
 
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
 	const titleLines = ['Tools', `${count} tool${count === 1 ? '' : 's'} used for this turn`];
 	const title = titleLines.join('\n');
+	if (count === 0) return null;
 
 	return (
 		<div
@@ -340,12 +339,12 @@ interface ToolOutputsGroupChipProps {
 
 function ToolOutputsGroupChip({ outputs, onToolOutputDetails }: ToolOutputsGroupChipProps) {
 	const count = outputs.length;
-	if (count === 0) return null;
 
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
 	const titleLines = ['Tool outputs', `${count} result${count === 1 ? '' : 's'} used for this turn`];
 	const title = titleLines.join('\n');
+	if (count === 0) return null;
 
 	return (
 		<div
@@ -406,12 +405,12 @@ interface ToolCallsGroupChipProps {
 
 function ToolCallsGroupChip({ calls, onToolCallDetails }: ToolCallsGroupChipProps) {
 	const count = calls.length;
-	if (count === 0) return null;
 
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
 	const titleLines = ['Suggested tool calls', `${count} suggestion${count === 1 ? '' : 's'} from assistant`];
 	const title = titleLines.join('\n');
+	if (count === 0) return null;
 
 	return (
 		<div
@@ -472,11 +471,11 @@ interface WebSearchOutputsGroupChipProps {
 
 function WebSearchOutputsGroupChip({ outputs, onOutputDetails }: WebSearchOutputsGroupChipProps) {
 	const count = outputs.length;
-	if (count === 0) return null;
 
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
 	const title = ['Web search results', `${count} result set${count === 1 ? '' : 's'} for this turn`].join('\n');
+	if (count === 0) return null;
 
 	return (
 		<div
@@ -567,11 +566,11 @@ interface WebSearchCallsGroupChipProps {
 
 function WebSearchCallsGroupChip({ calls, onCallDetails }: WebSearchCallsGroupChipProps) {
 	const count = calls.length;
-	if (count === 0) return null;
 
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
 	const title = ['Web search activity', `${count} web‑search quer${count === 1 ? 'y' : 'ies'} this turn`].join('\n');
+	if (count === 0) return null;
 
 	return (
 		<div
@@ -668,13 +667,13 @@ interface WebSearchChoicesGroupChipProps {
 
 function WebSearchChoicesGroupChip({ choices, onChoiceDetails }: WebSearchChoicesGroupChipProps) {
 	const count = choices.length;
-	if (count === 0) return null;
 
 	const menu = useMenuStore({ placement: 'bottom-start', focusLoop: true });
 
 	const title = ['Web search configuration', `${count} web‑search tool${count === 1 ? '' : 's'} in this turn`].join(
 		'\n'
 	);
+	if (count === 0) return null;
 
 	return (
 		<div

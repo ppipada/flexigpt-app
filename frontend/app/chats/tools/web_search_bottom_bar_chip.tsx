@@ -35,8 +35,6 @@ export function WebSearchBottomBarChip({
 	onSelectTool: (tool: ToolListItem) => void;
 	onEditOptions: () => void;
 }) {
-	if (eligibleTools.length === 0) return null;
-
 	const hasDropdown = eligibleTools.length > 1;
 
 	// Hooks must not be conditional; safe to always create the store.
@@ -99,6 +97,8 @@ export function WebSearchBottomBarChip({
 		},
 		[onEditOptions]
 	);
+
+	if (eligibleTools.length === 0) return null;
 
 	return (
 		<div className={containerClassName} title={title} data-bottom-bar-websearch>

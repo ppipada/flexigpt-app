@@ -101,9 +101,8 @@ export function UrlAttachmentModal({ isOpen, onClose, onAttachURL }: UrlAttachme
 		}
 	};
 
-	if (!isOpen) return null;
-
 	const urlError = errors.url ?? null;
+	if (!isOpen) return null;
 
 	return createPortal(
 		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>

@@ -86,8 +86,6 @@ export function EditorChipsBar({
 		hasVisibleToolCalls ||
 		toolOutputs.length > 0;
 
-	if (!hasAnyChips) return null;
-
 	// Attachments that are "owned" by a directory group should not show as top-level attachments.
 	const ownedKeys = new Set<string>();
 	for (const group of directoryGroups) {
@@ -106,6 +104,7 @@ export function EditorChipsBar({
 	const openToolCallDetails = onOpenToolCallDetails ?? (() => {});
 	const openConversationToolDetails = onOpenConversationToolDetails ?? (() => {});
 	const openAttachedToolDetails = onOpenAttachedToolDetails ?? (() => {});
+	if (!hasAnyChips) return null;
 
 	return (
 		<div className="flex shrink-0 items-center gap-1">

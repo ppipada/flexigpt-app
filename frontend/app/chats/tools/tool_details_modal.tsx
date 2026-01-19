@@ -213,7 +213,6 @@ export function ToolDetailsModal({ state, onClose }: ToolDetailsModalProps) {
 	};
 
 	if (!state) return null;
-
 	const { title, payload } = buildPayload(state);
 
 	// Raw JSON payload, rendered as a fenced code block for syntax highlighting.

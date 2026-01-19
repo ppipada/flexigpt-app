@@ -1,5 +1,3 @@
-//go:build !codeanalysis
-
 package main
 
 import (
@@ -69,6 +67,7 @@ func main() {
 	// Create application with options.
 	err = wails.Run(&options.App{
 		Title:             appDisplayTitle,
+		Frameless:         true,
 		MinWidth:          1024,
 		MinHeight:         768,
 		StartHidden:       false,
@@ -90,6 +89,8 @@ func main() {
 
 		OnDomReady:       app.domReady,
 		OnBeforeClose:    app.beforeClose,
+		CSSDragProperty:  "--app-draggable",
+		CSSDragValue:     "drag",
 		OnShutdown:       app.shutdown,
 		WindowStartState: options.Normal,
 		Bind: []any{
@@ -103,13 +104,21 @@ func main() {
 		},
 
 		Windows: &windows.Options{
-			WebviewIsTransparent: false,
-			WindowIsTranslucent:  false,
-			DisableWindowIcon:    false,
+			WebviewIsTransparent:              false,
+			WindowIsTranslucent:               false,
+			DisableWindowIcon:                 false,
+			DisableFramelessWindowDecorations: false,
 		},
 
 		Mac: &mac.Options{
-			TitleBar: mac.TitleBarDefault(),
+			TitleBar: &mac.TitleBar{
+				TitlebarAppearsTransparent: true,
+				HideTitle:                  false,
+				HideTitleBar:               true,
+				FullSizeContent:            false,
+				UseToolbar:                 false,
+				HideToolbarSeparator:       false,
+			},
 			About: &mac.AboutInfo{
 				Title:   appDisplayTitle,
 				Message: "An AI app platform.\n\nCopyright © 2023 - Present",
