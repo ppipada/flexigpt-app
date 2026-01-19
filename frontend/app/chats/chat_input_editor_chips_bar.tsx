@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+import { memo } from 'react';
+
+import type { Path } from 'platejs';
 import type { PlateEditor } from 'platejs/react';
 import { useEditorRef } from 'platejs/react';
 
@@ -21,6 +24,8 @@ interface EditorChipsBarProps {
 	// Tool calls & outputs (tool runners / results)
 	toolCalls?: UIToolCall[];
 	toolOutputs?: UIToolOutput[];
+	// PERF: allow parent to pass cached tool entries so we don't rescan the editor on each keystroke.
+	toolEntries?: Array<[ToolSelectionElementNode, Path]>;
 	isBusy?: boolean;
 	onRunToolCall?: (id: string) => void | Promise<void>;
 	onDiscardToolCall?: (id: string) => void;
@@ -49,12 +54,13 @@ interface EditorChipsBarProps {
  * Order (left → right):
  *   attachments → directories → tools → tool runners / outputs
  */
-export function EditorChipsBar({
+export const EditorChipsBar = memo(function EditorChipsBar({
 	attachments,
 	directoryGroups,
 	conversationTools = [],
 	toolCalls = [],
 	toolOutputs = [],
+	toolEntries: toolEntriesProp,
 	isBusy = false,
 	onRunToolCall,
 	onDiscardToolCall,
@@ -72,7 +78,7 @@ export function EditorChipsBar({
 	onOpenAttachedToolDetails,
 }: EditorChipsBarProps) {
 	const editor = useEditorRef() as PlateEditor;
-	const toolEntries = getToolNodesWithPath(editor);
+	const toolEntries = toolEntriesProp ?? getToolNodesWithPath(editor);
 
 	const hasVisibleToolCalls = toolCalls.some(
 		toolCall => toolCall.status !== 'discarded' && toolCall.status !== 'succeeded'
@@ -157,4 +163,4 @@ export function EditorChipsBar({
 			/>
 		</div>
 	);
-}
+});

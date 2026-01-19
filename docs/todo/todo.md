@@ -8,8 +8,9 @@
 - [ ] with more and more usage, atleast some tabs seem to be worthwhile to do. basically start a command in one and then switch to another. we would need to ensure that we dont really mix anything anywhere and streaming is proper but req wise it seems worthwhile to do.
   - [ ] with tabs, we should put title and edit/export in proper places so that we get better space vertically.
 - [x] frameless app
-- [ ] editor becomes heavy when lots of input content is there. verify and rectify.
-  - [ ] when edit chat is called for a message, it takes a LOT of time to get to input area
+- [x] editor becomes heavy when lots of input content is there. verify and rectify.
+  - [x] when edit chat is called for a message, it takes a LOT of time to get to input area
+- [ ] single tilda causes subscript ideally it should be double?
 
 ## Features
 

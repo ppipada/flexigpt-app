@@ -54,6 +54,14 @@ import {
 	MAX_FILES_PER_DIRECTORY,
 	uiAttachmentKey,
 } from '@/chats/attachments/attachment_editor_utils';
+import {
+	buildSingleParagraphValue,
+	buildSingleParagraphValueChunked,
+	isCursorAtDocumentEnd,
+	LARGE_TEXT_AUTOCHUNK_THRESHOLD_CHARS,
+	LARGE_TEXT_AUTODECHUNK_THRESHOLD_CHARS,
+	LARGE_TEXT_CHUNK_SIZE,
+} from '@/chats/chat_editor_utils';
 import { EditorChipsBar } from '@/chats/chat_input_editor_chips_bar';
 import { useOpenToolArgs } from '@/chats/events/open_attached_toolargs';
 import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
@@ -170,6 +178,120 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	// doc version tick to re-run selection computations on any editor change
 	const [docVersion, setDocVersion] = useState(0);
 	const deferredDocVersion = useDeferredValue(docVersion);
+
+	// Cache "has text" so we don't re-scan the editor tree multiple times per render.
+	const [hasText, setHasText] = useState(false);
+	const hasTextRef = useRef(false);
+	const isAutoChunkingRef = useRef(false);
+
+	// Throttle docVersion bumps to at most 1/frame to avoid re-render storms on big documents.
+	const docRafRef = useRef<number | null>(null);
+	const scheduleDocRecompute = useCallback(() => {
+		if (docRafRef.current != null) return;
+		docRafRef.current = window.requestAnimationFrame(() => {
+			docRafRef.current = null;
+			setDocVersion(v => v + 1);
+			const nextHasText = hasNonEmptyUserText(editorRef.current);
+			hasTextRef.current = nextHasText;
+			setHasText(nextHasText);
+		});
+	}, []);
+
+	useEffect(() => {
+		return () => {
+			if (docRafRef.current != null) window.cancelAnimationFrame(docRafRef.current);
+		};
+	}, []);
+
+	// Auto-chunking job (runs outside the keystroke critical path).
+	const idleChunkJobRef = useRef<number | null>(null);
+
+	const autoChunkIfNeeded = useCallback(() => {
+		if (isAutoChunkingRef.current) return;
+		if (!contentRef.current) return;
+
+		const domLen = (contentRef.current.textContent ?? '').length;
+		const ed = editorRef.current;
+
+		// Only operate on the simplest safe shape:
+		// - single paragraph
+		// - only text children
+		const rootChildren = ed.children ?? [];
+		if (rootChildren.length !== 1) return;
+		const p = rootChildren[0];
+		if (!p || p.type !== 'p' || !Array.isArray(p.children)) return;
+		const pChildren = p.children;
+		if (pChildren.some(c => typeof c?.text !== 'string')) return; // any inline element => skip
+
+		// Avoid cursor jumps: only chunk/dechunk when user is typing at the end.
+		if (!isCursorAtDocumentEnd(ed)) return;
+
+		// Chunk: 1 huge leaf -> many leaves
+		if (domLen >= LARGE_TEXT_AUTOCHUNK_THRESHOLD_CHARS && pChildren.length === 1) {
+			const text = ed.api.string([]);
+			if (text.length < LARGE_TEXT_AUTOCHUNK_THRESHOLD_CHARS) return;
+
+			isAutoChunkingRef.current = true;
+			try {
+				ed.tf.withoutNormalizing(() => {
+					ed.tf.setValue(buildSingleParagraphValueChunked(text, LARGE_TEXT_CHUNK_SIZE));
+				});
+				ed.tf.select(undefined, { edge: 'end' });
+			} finally {
+				isAutoChunkingRef.current = false;
+			}
+			return;
+		}
+
+		// Dechunk: many leaves -> 1 leaf (when user deletes a lot)
+		if (domLen <= LARGE_TEXT_AUTODECHUNK_THRESHOLD_CHARS && pChildren.length > 1) {
+			const text = ed.api.string([]);
+			if (text.length > LARGE_TEXT_AUTODECHUNK_THRESHOLD_CHARS) return;
+
+			isAutoChunkingRef.current = true;
+			try {
+				ed.tf.withoutNormalizing(() => {
+					ed.tf.setValue(buildSingleParagraphValue(text));
+				});
+				ed.tf.select(undefined, { edge: 'end' });
+			} finally {
+				isAutoChunkingRef.current = false;
+			}
+		}
+	}, []);
+
+	const scheduleAutoChunk = useCallback(() => {
+		if (idleChunkJobRef.current != null) return;
+
+		// requestIdleCallback is ideal; fall back to a short timeout.
+		const w = window;
+		if (typeof w.requestIdleCallback === 'function') {
+			idleChunkJobRef.current = w.requestIdleCallback(
+				() => {
+					idleChunkJobRef.current = null;
+					autoChunkIfNeeded();
+				},
+				{ timeout: 250 }
+			);
+		} else {
+			idleChunkJobRef.current = window.setTimeout(() => {
+				idleChunkJobRef.current = null;
+				autoChunkIfNeeded();
+			}, 120);
+		}
+	}, [autoChunkIfNeeded]);
+
+	useEffect(() => {
+		return () => {
+			const w = window;
+			if (idleChunkJobRef.current != null && typeof w.cancelIdleCallback === 'function') {
+				w.cancelIdleCallback(idleChunkJobRef.current);
+			} else if (idleChunkJobRef.current != null) {
+				window.clearTimeout(idleChunkJobRef.current);
+			}
+		};
+	}, []);
+
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [attachments, setAttachments] = useState<UIAttachment[]>([]);
 	const [directoryGroups, setDirectoryGroups] = useState<DirectoryAttachmentGroup[]>([]);
@@ -177,6 +299,10 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	// Tool-call chips (assistant-suggested) + tool outputs attached to the next user message.
 	const [toolCalls, setToolCalls] = useState<UIToolCall[]>([]);
 	const [toolOutputs, setToolOutputs] = useState<UIToolOutput[]>([]);
+
+	// Only recompute attached-tool entries when tools change (not on every keystroke).
+	const [toolNodesVersion, setToolNodesVersion] = useState(0);
+	const attachedToolEntries = useMemo(() => getToolNodesWithPath(editor), [editor, toolNodesVersion]);
 
 	const [toolDetailsState, setToolDetailsState] = useState<ToolDetailsState>(null);
 
@@ -356,6 +482,13 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		setAttachedToolArgsBlocked(false);
 	}, [editor]);
 
+	// Single callback to call whenever attached tools change (add/remove/options),
+	// so we update both arg-blocking + cached tool entries without scanning on every keystroke.
+	const handleAttachedToolsChanged = useCallback(() => {
+		setToolNodesVersion(v => v + 1);
+		recomputeAttachedToolArgsBlocked();
+	}, [recomputeAttachedToolArgsBlocked]);
+
 	// Ensure we have full Tool definitions (and argStatus) for conversation-level tools.
 	useEffect(() => {
 		const missing = conversationToolsState.filter(e => !e.toolDefinition);
@@ -435,14 +568,13 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		if (toolArgsBlocked) return false;
 		if (toolsDefLoading) return false;
 
-		const hasText = hasNonEmptyUserText(editorRef.current);
 		if (hasText) return true;
 
 		const hasAttachments = attachments.length > 0;
 		const hasOutputs = toolOutputs.length > 0;
 
 		return hasAttachments || hasOutputs;
-	}, [isBusy, selectionInfo, attachments, toolOutputs, docVersion, toolArgsBlocked, toolsDefLoading]);
+	}, [isBusy, templateBlocked, attachments, toolOutputs, hasText, toolArgsBlocked, toolsDefLoading]);
 
 	const { formRef, onKeyDown } = useEnterSubmit({
 		isBusy,
@@ -454,8 +586,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				return selectionInfo.requiredCount === 0;
 			}
 
-			const hasText = hasNonEmptyUserText(editorRef.current);
-			if (hasText) return true;
+			if (hasTextRef.current) return true;
 
 			const hasAttachments = attachments.length > 0;
 			const hasOutputs = toolOutputs.length > 0;
@@ -738,6 +869,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			// Only clear the editor if we actually sent something.
 			if (didSend) {
 				editor.tf.setValue(EDITOR_EMPTY_VALUE);
+				hasTextRef.current = false;
+				setHasText(false);
 				setAttachments([]);
 				setDirectoryGroups([]);
 				setToolCalls([]);
@@ -772,6 +905,9 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		setToolCalls([]);
 		setToolOutputs([]);
 		setToolDetailsState(null);
+		setToolNodesVersion(v => v + 1);
+		hasTextRef.current = false;
+		setHasText(false);
 		// Let Plate onChange bump docVersion; no need to do it here.
 		editor.tf.focus();
 	}, [closeAllMenus, editor]);
@@ -793,16 +929,18 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 
 			// 1) Reset document to plain text paragraphs.
 			const plain = incoming.text ?? '';
-			const paragraphs = plain.split(/\r?\n/);
+			// PERF: Keep a single block and preserve newlines within the text node.
+			// Splitting into many paragraphs makes Slate normalization + plugin passes very expensive.
+			// PERF: One paragraph, but chunk large text into many leaves.
 			const value: Value =
-				paragraphs.length === 0
-					? EDITOR_EMPTY_VALUE
-					: paragraphs.map(line => ({
-							type: 'p',
-							children: [{ text: line }],
-						}));
-
-			editor.tf.setValue(value);
+				plain.length >= LARGE_TEXT_AUTOCHUNK_THRESHOLD_CHARS
+					? buildSingleParagraphValueChunked(plain, LARGE_TEXT_CHUNK_SIZE)
+					: buildSingleParagraphValue(plain);
+			editor.tf.withoutNormalizing(() => {
+				editor.tf.setValue(value);
+			});
+			hasTextRef.current = plain.trim().length > 0;
+			setHasText(hasTextRef.current);
 
 			// 2) Rebuild attachments as UIAttachment[]
 			setAttachments(() => {
@@ -856,6 +994,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			setToolOutputs(incoming.toolOutputs ?? []);
 			setToolCalls([]);
 			setToolDetailsState(null);
+			setToolNodesVersion(v => v + 1);
 
 			editor.tf.focus();
 		},
@@ -1120,18 +1259,25 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 				<Plate
 					editor={editor}
 					onChange={() => {
-						setDocVersion(v => v + 1);
+						if (isAutoChunkingRef.current) {
+							// Avoid feedback loops.
+							return;
+						}
+						scheduleDocRecompute();
+						scheduleAutoChunk();
+
 						if (submitError) {
 							setSubmitError(null);
 						}
 
 						// Auto-cancel editing when the editor is completely empty
 						// (no text, no tools, no attachments, no tool outputs).
-						const hasText = hasNonEmptyUserText(editorRef.current);
+						const hasTextNow = editingMessageId ? hasNonEmptyUserText(editorRef.current) : hasTextRef.current;
+
 						const hasAttachmentsLocal = attachments.length > 0;
 						const hasToolOutputsLocal = toolOutputs.length > 0;
 						// Tools alone are not considered enough to keep edit mode alive.
-						const isEffectivelyEmpty = !hasText && !hasAttachmentsLocal && !hasToolOutputsLocal;
+						const isEffectivelyEmpty = !hasTextNow && !hasAttachmentsLocal && !hasToolOutputsLocal;
 
 						// Only do this while editing an older message.
 						if (editingMessageId && isEffectivelyEmpty) {
@@ -1175,6 +1321,16 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 										e.stopPropagation();
 										const text = e.clipboardData.getData('text/plain');
 										if (!text) return;
+										// PERF: if paste is huge AND editor is empty, set chunked value directly.
+										if (!hasTextRef.current && text.length >= LARGE_TEXT_AUTOCHUNK_THRESHOLD_CHARS) {
+											editor.tf.withoutNormalizing(() => {
+												editor.tf.setValue(buildSingleParagraphValueChunked(text, LARGE_TEXT_CHUNK_SIZE));
+											});
+											editor.tf.select(undefined, { edge: 'end' });
+											hasTextRef.current = true;
+											setHasText(true);
+											return;
+										}
 										insertPlainTextAsSingleBlock(editor, text);
 									}}
 									className="max-h-96 min-w-0 flex-1 resize-none overflow-auto bg-transparent p-1 wrap-break-word whitespace-break-spaces outline-none [tab-size:2] focus:outline-none"
@@ -1194,6 +1350,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 									conversationTools={conversationToolsState}
 									toolCalls={toolCalls}
 									toolOutputs={toolOutputs}
+									toolEntries={attachedToolEntries}
 									isBusy={isBusy || isSubmittingRef.current}
 									onRunToolCall={handleRunSingleToolCall}
 									onDiscardToolCall={handleDiscardToolCall}
@@ -1205,7 +1362,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 									onRemoveDirectoryGroup={handleRemoveDirectoryGroup}
 									onRemoveOverflowDir={handleRemoveOverflowDir}
 									onConversationToolsChange={setConversationToolsState}
-									onAttachedToolsChanged={recomputeAttachedToolArgsBlocked}
+									onAttachedToolsChanged={handleAttachedToolsChanged}
 									onOpenToolCallDetails={handleOpenToolCallDetails}
 									onOpenConversationToolDetails={handleOpenConversationToolDetails}
 									onOpenAttachedToolDetails={handleOpenAttachedToolDetails}
@@ -1302,7 +1459,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 						attachmentButtonRef={attachmentButtonRef}
 						shortcutConfig={shortcutConfig}
 						currentProviderSDKType={currentProviderSDKType}
-						onToolsChanged={recomputeAttachedToolArgsBlocked}
+						onToolsChanged={handleAttachedToolsChanged}
 						webSearchTemplates={webSearchTemplates}
 						setWebSearchTemplates={setWebSearchTemplates}
 					/>

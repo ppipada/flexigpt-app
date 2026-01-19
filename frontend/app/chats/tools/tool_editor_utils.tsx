@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { ElementApi, KEYS, NodeApi, type Path } from 'platejs';
+import { ElementApi, NodeApi, type Path } from 'platejs';
 import type { PlateEditor } from 'platejs/react';
 
 import {
@@ -341,8 +341,9 @@ export function insertToolSelectionNode(
 	};
 
 	editor.tf.withoutNormalizing(() => {
-		// Insert the tool chip (invisible inline) followed by a paragraph separator for smoother typing.
-		editor.tf.insertNodes([node, { type: KEYS.p, text: '\n' }], { select: true });
+		// Insert the tool chip (invisible inline) and an empty text leaf after it
+		// so the caret has a cheap place to land without forcing block normalization.
+		editor.tf.insertNodes([node, { text: '' }], { select: true });
 		editor.tf.collapse({ edge: 'end' });
 		editor.tf.select(undefined, { edge: 'end' });
 	});
