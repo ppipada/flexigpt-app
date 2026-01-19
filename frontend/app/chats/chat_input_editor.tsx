@@ -36,7 +36,6 @@ import { useEnterSubmit } from '@/hooks/use_enter_submit';
 import { backendAPI, toolStoreAPI } from '@/apis/baseapi';
 
 import { AlignKit } from '@/components/editor/plugins/align_kit';
-import { AutoformatKit } from '@/components/editor/plugins/auto_format_kit';
 import { BasicBlocksKit } from '@/components/editor/plugins/basic_blocks_kit';
 import { BasicMarksKit } from '@/components/editor/plugins/basic_marks_kit';
 import { EmojiKit } from '@/components/editor/plugins/emoji_kit';
@@ -57,6 +56,7 @@ import {
 import {
 	buildSingleParagraphValue,
 	buildSingleParagraphValueChunked,
+	clearAllMarks,
 	isCursorAtDocumentEnd,
 	LARGE_TEXT_AUTOCHUNK_THRESHOLD_CHARS,
 	LARGE_TEXT_AUTODECHUNK_THRESHOLD_CHARS,
@@ -155,7 +155,7 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 			...EmojiKit,
 			...IndentKit,
 			...ListKit,
-			...AutoformatKit,
+			// ...AutoformatKit, // Don't want any formatting on typing
 			...TabbableKit,
 			...TemplateSlashKit,
 			...ToolPlusKit,
@@ -1321,6 +1321,8 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 										e.stopPropagation();
 										const text = e.clipboardData.getData('text/plain');
 										if (!text) return;
+										clearAllMarks(editor);
+
 										// PERF: if paste is huge AND editor is empty, set chunked value directly.
 										if (!hasTextRef.current && text.length >= LARGE_TEXT_AUTOCHUNK_THRESHOLD_CHARS) {
 											editor.tf.withoutNormalizing(() => {

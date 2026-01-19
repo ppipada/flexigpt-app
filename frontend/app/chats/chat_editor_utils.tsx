@@ -41,3 +41,16 @@ export function isCursorAtDocumentEnd(editor: PlateEditor): boolean {
 		return false;
 	}
 }
+
+export const clearAllMarks = (ed: PlateEditor) => {
+	const marks = ['bold', 'italic', 'underline', 'strikethrough', 'code', 'sub', 'sup', 'highlight'];
+	ed.tf.withoutNormalizing(() => {
+		for (const m of marks) {
+			try {
+				ed.tf.removeMark(m);
+			} catch {
+				// Ok.
+			}
+		}
+	});
+};
