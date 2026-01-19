@@ -379,6 +379,7 @@ export default function ChatsPage() {
 					console.error(e);
 				}
 			} finally {
+				scrollToBottomSoon();
 				setStreamedMessage('');
 				setIsBusy(false);
 			}
@@ -443,6 +444,7 @@ export default function ChatsPage() {
 		};
 
 		saveUpdatedChat(updated);
+		scrollToBottomSoon();
 
 		// Same fire-and-forget behavior for normal sends.
 		void (async () => {

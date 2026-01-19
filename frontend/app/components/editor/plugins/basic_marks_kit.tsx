@@ -5,6 +5,8 @@ import {
 	ItalicPlugin,
 	KbdPlugin,
 	StrikethroughPlugin,
+	SubscriptPlugin,
+	SuperscriptPlugin,
 	UnderlinePlugin,
 } from '@platejs/basic-nodes/react';
 
@@ -23,7 +25,8 @@ export const BasicMarksKit = [
 	StrikethroughPlugin.configure({
 		shortcuts: { toggle: { keys: 'mod+shift+x' } },
 	}),
-
+	SubscriptPlugin,
+	SuperscriptPlugin,
 	HighlightPlugin.configure({
 		node: { component: HighlightLeaf },
 		shortcuts: { toggle: { keys: 'mod+shift+h' } },

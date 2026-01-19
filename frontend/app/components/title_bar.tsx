@@ -75,7 +75,7 @@ export function TitleBar({ onToggleDrawer }: TitleBarProps) {
 
 	return (
 		<div
-			className="app-drag bg-base-200 flex h-8 w-full items-center gap-2 px-2 py-0"
+			className="app-drag bg-base-300 flex h-8 w-full items-center gap-2 px-2 py-0"
 			onDoubleClick={e => {
 				// Don’t toggle when double-clicking on interactive elements
 				const t = e.target as HTMLElement;
