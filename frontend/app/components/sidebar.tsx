@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 
-import { FiCpu, FiDatabase, FiFilePlus, FiHome, FiMessageSquare, FiSettings, FiSliders } from 'react-icons/fi';
+import { FiCpu, FiDatabase, FiFilePlus, FiMessageSquare, FiSettings, FiSliders } from 'react-icons/fi';
 
 import { Link } from 'react-router';
 
@@ -18,8 +18,6 @@ export function Sidebar({ children }: SidebarProps) {
 		setDrawerOpen(!isDrawerOpen);
 	};
 
-	// console.log(`${FEATURE_FLAG_AGENTS}`);
-	// const setOpen = () => setDrawerOpen(true);
 	return (
 		<div className="drawer lg:drawer-open h-screen">
 			<input
@@ -41,12 +39,7 @@ export function Sidebar({ children }: SidebarProps) {
 			<div className="drawer-side z-10">
 				<label htmlFor="my-drawer" className="drawer-overlay"></label>
 				<ul className="menu bg-base-300 text-base-content ms-0 h-full w-12 justify-between ps-0">
-					<div className="flex-col p-0">
-						<li className="mt-16" title="Home" aria-label="Home" onClick={toggle}>
-							<Link to="/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
-								<FiHome size={24} />
-							</Link>
-						</li>
+					<div className="mt-8 flex-col p-0">
 						<li className="mt-4" title="Chats" onClick={toggle} aria-label="Chats">
 							<Link to="/chats/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
 								<FiMessageSquare size={24} />
