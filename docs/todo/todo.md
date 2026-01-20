@@ -7,13 +7,8 @@
 - [ ] View mode needed for builtins
 - [ ] with more and more usage, atleast some tabs seem to be worthwhile to do. basically start a command in one and then switch to another. we would need to ensure that we dont really mix anything anywhere and streaming is proper but req wise it seems worthwhile to do.
   - [ ] with tabs, we should put title and edit/export in proper places so that we get better space vertically.
-- [x] frameless app
-- [x] editor becomes heavy when lots of input content is there. verify and rectify.
-  - [x] when edit chat is called for a message, it takes a LOT of time to get to input area
-- [x] single tilda causes subscript ideally it should be double? No.
 - [ ] reasoning text and switch between openai and anthropic is not working properly. better on switch would be to drop anything excess and then work with options.
-  - [ ] reverse anyways may not be possible as anthropic uses encrupted ocntent, so would be better to add the message as use message to the chat.
-- [x] in input editor if i give something between tilda it doesnt work. may be i have disabled subscript super script plugins and not really skipped them somehow.
+  - [ ] reverse anyways may not be possible as anthropic uses encrypted content, so would be better to add the message as user message to the chat.
 
 ## Features
 

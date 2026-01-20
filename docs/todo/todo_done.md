@@ -1,29 +1,23 @@
 # Project Done Items
 
 - Design and implement AppLayout
-
   - [x] Manages overall layout structure
 
   - [x] Sidebar on the left
-
     - [x] Handles click events
     - [x] Settings icons at the bottom
     - [x] Should be hidden behind a hamburger on small screen. Always visible on large.
     - [x] Clicking icons should redirect to corresponding pages
 
 - Theming
-
   - [x] Define and apply dark and light themes
   - [x] Applies consistent theming across all components
 
 - Chat page
-
   - [x] a navbar with new chat button on left, export button on right, search in center
-
     - [x] Search should list conversations that match the search input. Also should behave like a autocomplete
 
   - [x] send message input field with a "send" button
-
     - [x] It should have "type message..." as hint
     - [x] send button should be enabled only when something is typed
     - [x] styled as a box with top as circular
@@ -31,12 +25,10 @@
     - [ ] Input box styling issues. should be centered on medium screens and small screens too.
 
   - [x] chat message list
-
     - [x] These are in the body, below navbar and above input
     - [x] is a card layout scrollable vertically and can have user and then assistant
 
   - [x] Each chat bubble should be a card
-
     - [x] It should have avatar/icon on left/right depending on the user
     - [x] Card body should support code with highlighting.
       - [x] Code block should have a header that has language on right, copy button on left.
@@ -53,14 +45,12 @@
     - [ ] ~~Support streaming response~~
 
 - Electron support
-
   - [x] Support electron based bundling for desktop
   - [x] Test with prod build and run appimage.
   - [ ] ~~Add icon in title bar and ass appIcon for tray~~
   - [x] Add a desktop entry so that appimage can be registered with the system
 
 - Settings screen
-
   - [x] A settings page is a multi card page.
   - [x] The settings page has a multiple cards and a "export settings" functionality
   - [x] Support all settings from vscode extension
@@ -75,19 +65,16 @@
     - [ ] ~~There should be a explicit "save settings" button too. That can have a dummy implementation for now. Ideally this should be in card footer.~~
 
 - Settings State DB
-
   - [x] Create a state db that can store and retrieve settings
   - [x] Connect all above widgets to a background settings state lib (ideally json file based)
   - [ ] ~~The lib should provide CRUD functionality with some keys being immutable (for above "predefined keys")~~
   - [ ] ~~It should also provide and import export functionality. The export should be as a json file, same with import.~~
 
 - LLM Provider
-
   - [x] Implement llm providers
   - [x] connect this with chat page
 
 - Conversation State DB:
-
   - [x] Add a "conversations state db".
   - [x] It should provide a functionality of add a conversation, remove a conversation, list conversation titles, remove all conversations
   - [x] A conversation has a title, id (uuidv7), created time, modified time, list of messages
@@ -96,7 +83,6 @@
   - [x] Connect UI to this state db
 
 - Conversation list
-
   - [x] Fetch conversation titles and add it to the drawer
   - [x] provide a new chat, delete one conversation, delete all conversations actions
 
@@ -148,13 +134,11 @@
 - [x] there is some jerkiness in chat load for today
 
 - Wails migrate
-
   - [x] Translate securejsondb to go
   - [x] Translate settings store and conversation store to go
   - [x] Move next frontend to appropriate folder and change config and build system as seen in wails template
 
   - [x] Transform next app to work with multiple backend provider like electron or wails.
-
     - [x] Involves segregating models and creating a facade to redirect to window apis that are injected by backend
     - [x] Ideally interface declaration should be present in frontend and all calls should be made to interface by components, the exact implementation should decide which backend is present and redirect there.
     - [x] wails main.go app integrations
@@ -185,7 +169,6 @@
 - [x] Wails save file dialog opens and saves but file not seen on system
 - [x] Remove electron
 - [x] Remove nextjs and use react router v7
-
   - [x] migrate to react 19
   - [x] use vite
   - [x] migrate to eslint 9
@@ -203,7 +186,6 @@
 - [x] Support developer message for openai. Add Formatting re-enabled on first line of developer message in >o1 models for md output.
 
 - [x] Add models as a configuration in providers where each model can be enabled disabled as required. Add a custom model entry support too.
-
   - [x] UI with card table and actions
   - [x] Modal for edit/add
   - [x] Backend integration
@@ -233,11 +215,9 @@
 
 - [x] allow dot and spaces in providername and model name
 - [x] reasoning models should have a "reasoning" effort param too.
-
   - [x] Add reasoning support in modelparams
   - [x] reasoning effort comes in multiple flavors: medium high less etc. number from x to y. find a way to represent them.
   - [x] See if temperature is almost always optional. Anthropic supports reasoning + normal mode too. Need to see how to represent that too without real overwhelming of the user. Represent appropriately in UI
-
     - [x] For anthropic: temp and thinking are not compatible. streaming is present. thinking is controlled as "budget tokens "
     - [x] For openai: temp and thinking are not compatible. can pass temp as 1 to some models after dec 24. streaming is present in newer api. thinking is controlled as effort, low medium high
     - [x] google doesnt mention any control on thinking model
@@ -258,12 +238,10 @@
 - [ ] ~~Ideally should detect any code or math blocks even in input, annotate them and then display. i.e format a normal text into proper md.~~
 - [x] Math support broke in between, do math rendering before gfm
 - [x] see how to set version increment seamlessly at one place only
-
   - [x] Version string to be passed via ldconfig to code and use from there
   - [x] render templates for flatpak and mac
 
 - [x] JSONRPC
-
   - [x] jsonrpc message protocol implementation
   - [x] Supprot batch for jsonrpc
   - [x] stdio conn
@@ -280,7 +258,6 @@
 - [x] Settings should be overrides and new/custom models/providers
 
 - [x] Performance: There is large cpu consumption sometime, debug
-
   - [x] It is mainly seen if both wails dev and current app is open and being used wails://wails consumes 100%
   - [x] Also check when one request was fired but not allowed to complete for some reason
   - [x] Also, if the message thread gets very very big there seems to be a issue.
@@ -295,7 +272,6 @@
 - [x] Move syntax highlighting to a worker
 
 - [x] Better title deduce
-
   - [x] Use compromise and stopword for heuristic based titles for now
 
 - [x] support events in simplemapdb
@@ -304,25 +280,21 @@
 - [x] mtime should be added to cols in conversations and it should be used to do a incremental walk along with path used as externalID
 - [x] the engine somehow has path etc as inbuilt. It looks very tightly coupled to files or something called as path. Ideally it should have opaque and its own semantics that the consumer will adapt to
 - [x] Title change in chat causes new file to be created. ideally we want to only one file.
-
   - [x] separate out put conversation and add messages to conversation so that things are idempotent and id based comparisons can be made in put
   - [x] need listfiles with filtering in dirstore
 
 - Entry Point (Focus / Empty Query)
-
   - [x] On focus, call `listConversations(pageSize=20)`
     - [x] Render a "Recent conversations" list inside the dropdown.
   - [x] Each row: title + last-modified date.
   - [x] Up/Down / mouse-hover highlight; ⏎ or click navigates to the convo.
 
 - Local Autocomplete (Query Length 1-2)
-
   - [x] Filter the already-loaded titles in memory; update instantly.
   - [x] Footer item: "Press Enter to search all messages" (inactive until length ≥ 3).
   - [x] No backend round-trip.
 
 - Debounced Full-Text Search (Query Length ≥ 3)
-
   - [x] After 300 ms of inactivity fire `searchConversations(q, undefined, 20)`.
   - [x] If another keystroke occurs, cancel the in-flight promise.
   - [x] Present results in two sub-groups
@@ -331,14 +303,12 @@
   - [x] Show spinner overlay while waiting; keep previous list dimmed for stability.
 
 - Scroll-to-Load "More Results"
-
   - [x] Dropdown body has its own scroll container (max-height ~60 vh).
   - [x] When the user scrolls to 80 % of the container and `nextToken` exists
     - [x] -> automatically call `searchConversations(q, nextToken, 20)` and append rows.
   - [x] Optional footer: "End of results" or "Loading more".
 
 - Interaction Rules
-
   - [x] up/down moves through visible items; focus wraps at top/bottom.
   - [x] enter or click on an item -> open convo.
   - [ ] ~~If item originated from a message match, auto-scroll & briefly highlight that message. (not sure how?)~~
@@ -346,20 +316,17 @@
   - [ ] ~~If the user presses enter with no item highlighted, do nothing (they must choose).~~
 
 - Performance & Networking
-
   - [x] Debounce: 300 ms; per-query request count rarely > 4.
   - [x] Cache last 5 queries (query string -> result set) for instant recall.
   - [x] Re-use a single `AbortController` per search bar instance to cancel stale fetches.
 
 - Edge & Empty States
-
   - [x] No recent conversations -> "No conversations yet" illustration.
   - [x] No matches -> "No results for ‘XYZ’".
   - [x] Network / SQLite error -> inline error row + toast "Retry".
   - [x] Very long titles are ellipsized; full title appears in tooltip.
 
 - [x] Search extras
-
   - [x] after load of prev conversation the cursor is still in box so for next time no one clicks or i can type again, but nothing happens there. ideally focus should move out so that user can come there again either via keyboard or click OR type should result in query
   - [x] right now after one query I have to explicitly click to get things to show again, i.e click out and then click in again.
   - [x] Search fully when only few chars is broken
@@ -369,7 +336,6 @@
 - [x] When scroll kicks in the font appears to be bolder. This is due to gpu composting issue with webkit. Put antialiasing on body to make experience consistent.
 
 - [x] Refactor provider in prep for presets and skills flow
-
   - [x] Types in aiprovider
   - [x] We should store all these preset files in settings or their own domain folders?
   - [x] Remove confusion of ModelParams vs ModelSettings vs ModelPreset. What is stored is a ModelPreset. What comes in is a ModelParam.
@@ -415,7 +381,6 @@
 - [x] Scroll button needs to become visible as soon as some streamed message arrives
 
 - Settings/Presets/Prompt/tool UI
-
   - [x] Add Auth keys for provider should be allowed for current providers, else point to add provider page
   - [x] In Add mode, it should be allowed to copy data from one of current things for all, with some mods in conflict avoiding fields
   - [x] If we try to set a inbuilt preset as default for first time there is a error as of now.
@@ -425,26 +390,21 @@
   - [x] backend should check if atleast one of reasoning or temp is set
 
 - [x] For new month of conversations etc, if we set default provider preset it says read partition error
-
   - [x] This is ok as it is read error at start and then next dr is created
 
 - [x] Settings
-
   - [x] Need a settings data version and migration func
   - [x] API key should never reach frontend after save: Need to verify if some place this is remaining
   - [x] theme setting persistance and usage across installs
 
 - [x] langchaingo seem to be moving very slow with no thinking support. better use official sdks from openai and anthropic
-
   - [x] Openai
-
     - [x] Add openai compatible provider presets: hf, deepseek, xai groq, openrouter, llamacpp as presets.
     - [x] Add Google also as openai compatible provider for now. gemini dev ai additions.
 
   - [x] Anthropic
 
   - [x] UI:
-
     - [x] Create provider should allow to choose the api sdk type
     - [ ] ~~Need to allow adding models to inbuilt providers, may need to list compatible ones in existing copy flow~~
     - [ ] ~~Need to check provider compatibility during "copy existing" flow for models i.e sdk should match. Add current providers models first, then add such models and then incompatable ones after that.~~
@@ -456,7 +416,6 @@
 - [x] Should not throw stack trace in fetch completion in case of abort
 
 - [x] Conversations
-
   - [x] load all pages via infinite scroll for titles too.
   - [x] Support delete conversation. ~~Maybe, have soft delete then hard delete workflow.~~
   - [x] Support edit convo title too
@@ -467,21 +426,17 @@
 ## Tasks: Tools
 
 - Tools Page
-
   - Header
-
     - [x] Design the header with the title "Tools."
     - [ ] ~~Implement a search bar for tool searching.~~
 
   - Main Content Area:
-
     - [ ] ~~Design the tool list in a card format.~~
     - [ ] ~~Display tool name, short description, and last modified date on each card.~~
     - [x] Add quick action icons/buttons for edit, delete, ~~and duplicate~~.
     - [x] Implement a "Create New Tool" button using a floating action button (FAB) or a clearly marked button.
 
 - Create/Edit Tool Modal:
-
   - [x] Design the modal layout for creating/editing tools.
   - [x] Add a tool name field (required).
   - [ ] ~~Add a description field (optional).~~
@@ -496,7 +451,6 @@
     - [x] Add a "Discard" button to exit without saving changes.
 
 - Backend
-
   - [x] Integrate with json store for tool storage.
   - [x] Implement API endpoints for creating, retrieving, updating, and deleting tools.
   - [x] Ensure schema validation and function execution are supported on the backend.
@@ -504,21 +458,17 @@
 ## Tasks: Prompt templates
 
 - Prompt list page
-
   - Header
-
     - [x] Design the header with the title "Prompt Templates."
     - [ ] ~~Implement a search bar for prompt searching.~~
 
   - Main Content Area:
-
     - [ ] ~~Design the prompt list in a card format.~~
     - [ ] ~~Display prompt name, short description, short prompt start string and last modified date on each card.~~
     - [x] Add quick action icons/buttons for edit, delete, and ~~duplicate~~.
     - [x] Implement a "Create New Prompt" button using a floating action button (FAB) or a clearly marked button.
 
 - Create/Edit Prompt Modal:
-
   - [x] Design the modal layout for creating/editing prompts.
   - [x] Add a prompt name field (required).
   - [ ] ~~Add a description field (optional).~~
@@ -541,12 +491,10 @@
     - [x] Add a "Discard" button to exit without saving changes.
 
 - Backend
-
   - [x] Integrate with JSON file store per prompt
   - [x] get list of prompts using the partitioned file store
 
 - Integration of prompts in chat
-
   - [ ] ~~Once defined all prompts should be available to use in chat via some keystroke (??).~~
   - [ ] ~~Would also need some way to indicate if someone wants to add a prompt as a system prompt or just prompt~~
   - [ ] ~~Ideally if it is just prompt it should just expand the prompt in the input box~~
@@ -554,17 +502,14 @@
   - [ ] ~~Can vars be few system functions like open file (??)~~
 
 - [x] Chat input UI
-
   - [x] Add system prompt array to main bar.
   - [x] Move input to editor from text field
 
   - [x] prompt/tool inline elements:
-
     - [x] slash command plumbing
     - [x] prompt templates via slash command
 
     - [x] prompt visual filling via toolbar
-
       - [x] prompt toolbar/editing implementation
       - [x] system prompt updates from prompts
       - [x] may be allow expand/decompose for prompts user message
@@ -575,7 +520,6 @@
     - [x] tools slash command hooking, tools should be added to bottom of the editor rather than inline
 
 - Completions API backend
-
   - [x] Integrate stores with llm. decide on if you want to populate the prompt in input so that var expansion etc can be done properly.
 
 - [x] CPU is high when "thinking". Need to debug
@@ -584,7 +528,6 @@
 
 - [x] input area spacing and size when streaming back from assistant needs re-look
 - [x] Tool invocation in backend
-
   - [x] base support
   - [x] Don't add go tools at runtime i.e only compiled tools are there
   - [x] invocation tests for go
@@ -613,7 +556,6 @@
 - [x] Tooltips in checkboxes
 
 - attachments
-
   - [x] attachments separate package.
   - [x] Need image and associated processing in one place
   - [x] any extension that can be read as text in one place
@@ -629,26 +571,22 @@
   - [x] input notes should talk about attachments, turns, etc.
   - [x] get visible text from html needs to be implemented and a new mode raw vs visible text needs to be added.
   - [ ] ~~look at how we send attachment kind text as of now. if it is sent already as text block, we would have to skip them.~~
-
     - [ ] ~~It is sent as a text block but never propagated back to conversation store. so ok.~~
 
   - [x] Most probably we want atleast url content blocks, non image ones atleast to persist in conversation. May look at other text ones too.
 
 - [x] Lots of testing needed for new attachments.
-
   - [x] Check debug details.
   - [x] Attachment follow through across conversations.
   - [x] cache token usage.
   - [x] url attachments.
 
 - Usage:
-
   - [x] With attachments, token usage display seems more important.
 
 - [x] check if extraction pipeline for PDF urls is handled properly.
 
 - [x] tool enhancements
-
   - [x] attached tools to be given back as schema to consumers for exec
   - [x] backend of tool calls and outputs from build to fetch to back
   - [x] testing of chip bars
@@ -685,11 +623,9 @@
   - [x] haiku image worked.
 - [x] in tooloutput, once we get the output, we are attaching it as text always, we want tools to return some content types and then create appropriate content blocks in output.
 - [x] if there is a toolcall, and we dont input anything, it doesnt activate run and send button.
-
   - [x] in fast forward we seem to get some error. check if it is due to above or actual issue
 
 - [x] UI for web search.
-
   - [x] citations to show.
     - [x] message citations bar needs proper tooltip
     - [x] tool details modal need to use message content card.
@@ -702,3 +638,9 @@
 - [x] web search: we may want a vanity chip, if space is there, in bottom actions bar, that has quick attach web search button, which will insert web search tool. this is just quick shortcut and should be synced with in composer behavior. if tool is already present it should show tick else cross. no other action other than add/remove.
 - [x] for args edit, right now it is json with no indication of shape etc. we may want to actually render a json schema with empty and then let user edit. if he submits empty again, we may need way to see that it is default value or actual new value.
 - [x] we should also trigger a scroll after adding thinking blob
+
+- [x] frameless app
+- [x] editor becomes heavy when lots of input content is there. verify and rectify.
+  - [x] when edit chat is called for a message, it takes a LOT of time to get to input area
+- [x] single tilda causes subscript ideally it should be double? No.
+- [x] in input editor if i give something between tilda it doesnt work. may be i have disabled subscript super script plugins and not really skipped them somehow.
