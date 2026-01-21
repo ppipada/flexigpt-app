@@ -1,49 +1,9 @@
-import { type ModelParam, type ProviderName, ProviderSDKType, ReasoningLevel, ReasoningType } from '@/spec/inference';
-import {
-	type ModelDisplayName,
-	type ModelPreset,
-	type ModelPresetID,
-	type ProviderDisplayName,
-} from '@/spec/modelpreset';
+import { DefaultModelParams, type ModelParam, type ProviderName } from '@/spec/inference';
+import { DefaultUIChatOptions, type ModelPreset, type UIChatOption } from '@/spec/modelpreset';
 import { AuthKeyTypeProvider, type SettingsSchema } from '@/spec/setting';
 
 import { modelPresetStoreAPI, settingstoreAPI } from '@/apis/baseapi';
 import { getAllProviderPresetsMap } from '@/apis/list_helper';
-
-export interface UIChatOption extends ModelParam {
-	providerName: ProviderName;
-	providerSDKType: ProviderSDKType;
-	modelPresetID: ModelPresetID;
-	providerDisplayName: ProviderDisplayName;
-	modelDisplayName: ModelDisplayName;
-	disablePreviousMessages: boolean;
-}
-
-const DefaultModelParams: ModelParam = {
-	name: '',
-	stream: false,
-	maxPromptLength: 2048,
-	maxOutputLength: 1024,
-	temperature: 0.1,
-	reasoning: {
-		type: ReasoningType.SingleWithLevels,
-		level: ReasoningLevel.Medium,
-		tokens: 1024,
-	},
-	systemPrompt: '',
-	timeout: 300,
-	additionalParametersRawJSON: undefined,
-};
-
-export const DefaultUIChatOptions: UIChatOption = {
-	...DefaultModelParams,
-	providerName: 'no-provider',
-	providerSDKType: ProviderSDKType.ProviderSDKTypeOpenAIChatCompletions,
-	modelPresetID: 'no-model',
-	providerDisplayName: 'No Provider',
-	modelDisplayName: 'No Model configured',
-	disablePreviousMessages: false,
-};
 
 function hasApiKey(settings: SettingsSchema, providerName: ProviderName): boolean {
 	return settings.authKeys.some(k => k.type === AuthKeyTypeProvider && k.keyName === providerName && k.nonEmpty);

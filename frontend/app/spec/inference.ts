@@ -93,6 +93,22 @@ export interface ModelParam {
 	additionalParametersRawJSON?: string;
 }
 
+export const DefaultModelParams: ModelParam = {
+	name: '',
+	stream: false,
+	maxPromptLength: 2048,
+	maxOutputLength: 1024,
+	temperature: 0.1,
+	reasoning: {
+		type: ReasoningType.SingleWithLevels,
+		level: ReasoningLevel.Medium,
+		tokens: 1024,
+	},
+	systemPrompt: '',
+	timeout: 300,
+	additionalParametersRawJSON: undefined,
+};
+
 export interface InferenceError {
 	code: string;
 	message: string;

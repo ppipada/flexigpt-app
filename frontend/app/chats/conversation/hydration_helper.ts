@@ -55,8 +55,8 @@ export function initConversation(title = 'New Conversation'): Conversation {
 export function initConversationMessage(role: RoleEnum): ConversationMessage {
 	const d = new Date();
 	return {
-		id: d.toISOString(),
-		createdAt: new Date(),
+		id: getUUIDv7(),
+		createdAt: d,
 		role: role,
 		status: Status.None,
 		uiContent: '',
@@ -88,7 +88,7 @@ export function buildUserConversationMessageFromEditor(
 	existingId?: string
 ): ConversationMessage {
 	const now = new Date();
-	const id = existingId ?? now.toISOString();
+	const id = existingId ?? getUUIDv7();
 
 	const text = payload.text.trim();
 	const hasText = text.length > 0;

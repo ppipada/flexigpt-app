@@ -226,7 +226,7 @@ function buildAssistantMessageFromResponse(
 	choiceMap: Map<string, ToolStoreChoice>
 ): ConversationMessage | undefined {
 	const now = new Date();
-	const id = baseId || now.toISOString();
+	const id = baseId || getUUIDv7();
 
 	if (!resp.inferenceResponse) {
 		return undefined;

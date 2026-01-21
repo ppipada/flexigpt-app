@@ -3,13 +3,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { FiSliders } from 'react-icons/fi';
 
 import { type ReasoningLevel, ReasoningType } from '@/spec/inference';
+import { DefaultUIChatOptions, type UIChatOption } from '@/spec/modelpreset';
 
 import { AdvancedParamsModal } from '@/chats/assitantcontexts/advanced_params_modal';
-import {
-	DefaultUIChatOptions,
-	getChatInputOptions,
-	type UIChatOption,
-} from '@/chats/assitantcontexts/chat_option_helper';
+import { getChatInputOptions } from '@/chats/assitantcontexts/context_uichatoption_helper';
 import { DisablePreviousMessagesCheckbox } from '@/chats/assitantcontexts/disable_checkbox';
 import { ModelDropdown } from '@/chats/assitantcontexts/model_dropdown';
 import { HybridReasoningCheckbox } from '@/chats/assitantcontexts/reasoning_hybrid_checkbox';

@@ -1,13 +1,13 @@
 import { forwardRef, type RefObject, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 import type { UIToolCall } from '@/spec/inference';
+import { DefaultUIChatOptions, type UIChatOption } from '@/spec/modelpreset';
 import type { ToolStoreChoice } from '@/spec/tool';
 
 import type { ShortcutConfig } from '@/lib/keyboard_shortcuts';
 
 import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
 
-import { DefaultUIChatOptions, type UIChatOption } from '@/chats/assitantcontexts/chat_option_helper';
 import { AssistantContextBar } from '@/chats/assitantcontexts/context_bar';
 import { EditorArea, type EditorAreaHandle } from '@/chats/inputarea/input_editor';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/inputarea/input_editor_utils';

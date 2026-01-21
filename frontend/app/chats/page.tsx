@@ -9,6 +9,7 @@ import {
 	type StoreConversationMessage,
 } from '@/spec/conversation';
 import { ContentItemKind, type ModelParam, OutputKind, type OutputUnion, RoleEnum, Status } from '@/spec/inference';
+import { DefaultUIChatOptions, type UIChatOption } from '@/spec/modelpreset';
 import { type ToolStoreChoice, ToolStoreChoiceType } from '@/spec/tool';
 
 import { defaultShortcutConfig, type ShortcutConfig, useChatShortcuts } from '@/lib/keyboard_shortcuts';
@@ -23,7 +24,6 @@ import { conversationStoreAPI } from '@/apis/baseapi';
 import { ButtonScrollToBottom, ButtonScrollToTop } from '@/components/button_scroll_top_bottom';
 import { PageFrame } from '@/components/page_frame';
 
-import { DefaultUIChatOptions, type UIChatOption } from '@/chats/assitantcontexts/chat_option_helper';
 import { ChatNavBar } from '@/chats/chat_navbar';
 import { ChatSearch, type ChatSearchHandle } from '@/chats/chat_search';
 import { HandleCompletion } from '@/chats/conversation/completion_helper';
