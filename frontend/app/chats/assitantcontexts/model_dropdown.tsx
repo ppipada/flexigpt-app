@@ -4,7 +4,7 @@ import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 import { Select, SelectItem, SelectPopover, useSelectStore, useStoreState } from '@ariakit/react';
 
-import type { ChatOption } from '@/chats/chat_option_helper';
+import type { ChatOption } from '@/chats/assitantcontexts/chat_option_helper';
 
 const modelKey = (m: ChatOption) => `${m.providerName}::${m.modelPresetID}`;
 

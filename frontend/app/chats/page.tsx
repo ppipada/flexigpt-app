@@ -23,6 +23,7 @@ import { conversationStoreAPI } from '@/apis/baseapi';
 import { ButtonScrollToBottom, ButtonScrollToTop } from '@/components/button_scroll_top_bottom';
 import { PageFrame } from '@/components/page_frame';
 
+import { type ChatOption, DefaultChatOptions } from '@/chats/assitantcontexts/chat_option_helper';
 import { HandleCompletion } from '@/chats/chat_completion_helper';
 import {
 	buildUserConversationMessageFromEditor,
@@ -32,11 +33,10 @@ import {
 	initConversation,
 	initConversationMessage,
 } from '@/chats/chat_hydration_helper';
-import { InputBox, type InputBoxHandle } from '@/chats/chat_input_box';
-import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/chat_input_editor';
 import { ChatNavBar } from '@/chats/chat_navbar';
-import { type ChatOption, DefaultChatOptions } from '@/chats/chat_option_helper';
 import { ChatSearch, type ChatSearchHandle } from '@/chats/chat_search';
+import { InputBox, type InputBoxHandle } from '@/chats/inputbox/input_box';
+import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/inputbox/input_editor_utils';
 import { ChatMessage } from '@/chats/messages/message';
 
 // eslint-disable-next-line no-restricted-exports

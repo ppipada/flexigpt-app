@@ -7,14 +7,10 @@ import type { ShortcutConfig } from '@/lib/keyboard_shortcuts';
 
 import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
 
+import { type ChatOption, DefaultChatOptions } from '@/chats/assitantcontexts/chat_option_helper';
 import { AssistantContextBar } from '@/chats/assitantcontexts/context_bar';
-import {
-	EditorArea,
-	type EditorAreaHandle,
-	type EditorExternalMessage,
-	type EditorSubmitPayload,
-} from '@/chats/chat_input_editor';
-import { type ChatOption, DefaultChatOptions } from '@/chats/chat_option_helper';
+import { EditorArea, type EditorAreaHandle } from '@/chats/inputbox/input_editor';
+import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/inputbox/input_editor_utils';
 
 export interface InputBoxHandle {
 	getChatOptions: () => ChatOption;

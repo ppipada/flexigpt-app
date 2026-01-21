@@ -25,7 +25,7 @@ import type {
 } from '@/spec/attachment';
 import { AttachmentKind } from '@/spec/attachment';
 import type { ProviderSDKType, UIToolCall, UIToolOutput } from '@/spec/inference';
-import { type Tool, type ToolStoreChoice, ToolStoreChoiceType, type UIToolStoreChoice } from '@/spec/tool';
+import { type Tool, type ToolStoreChoice, ToolStoreChoiceType } from '@/spec/tool';
 
 import { type ShortcutConfig } from '@/lib/keyboard_shortcuts';
 import { compareEntryByPathDeepestFirst } from '@/lib/path_utils';
@@ -53,20 +53,22 @@ import {
 	MAX_FILES_PER_DIRECTORY,
 	uiAttachmentKey,
 } from '@/chats/attachments/attachment_editor_utils';
+import { useOpenToolArgs } from '@/chats/events/open_attached_toolargs';
+import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
+import { EditorChipsBar } from '@/chats/inputbox/input_editor_chips_bar';
 import {
 	buildSingleParagraphValue,
 	buildSingleParagraphValueChunked,
 	clearAllMarks,
+	type EditorExternalMessage,
+	type EditorSubmitPayload,
 	hasNonEmptyUserText,
 	insertPlainTextAsSingleBlock,
 	isCursorAtDocumentEnd,
 	LARGE_TEXT_AUTOCHUNK_THRESHOLD_CHARS,
 	LARGE_TEXT_AUTODECHUNK_THRESHOLD_CHARS,
 	LARGE_TEXT_CHUNK_SIZE,
-} from '@/chats/chat_editor_utils';
-import { EditorChipsBar } from '@/chats/chat_input_editor_chips_bar';
-import { useOpenToolArgs } from '@/chats/events/open_attached_toolargs';
-import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
+} from '@/chats/inputbox/input_editor_utils';
 import {
 	getFirstTemplateNodeWithPath,
 	getTemplateNodesWithPath,
@@ -112,21 +114,6 @@ export interface EditorAreaHandle {
 	loadToolCalls: (toolCalls: UIToolCall[]) => void;
 	setConversationToolsFromChoices: (tools: ToolStoreChoice[]) => void;
 	setWebSearchFromChoices: (tools: ToolStoreChoice[]) => void;
-}
-
-export interface EditorExternalMessage {
-	text: string;
-	attachments?: Attachment[];
-	toolChoices?: ToolStoreChoice[];
-	toolOutputs?: UIToolOutput[];
-}
-
-export interface EditorSubmitPayload {
-	text: string;
-	attachedTools: UIToolStoreChoice[];
-	attachments: UIAttachment[];
-	toolOutputs: UIToolOutput[];
-	finalToolChoices: ToolStoreChoice[];
 }
 
 const EDITOR_EMPTY_VALUE: Value = [{ type: 'p', children: [{ text: '' }] }];

@@ -4,12 +4,31 @@
 import { NodeApi, type Value } from 'platejs';
 import type { PlateEditor, usePlateEditor } from 'platejs/react';
 
+import type { Attachment, UIAttachment } from '@/spec/attachment';
+import type { UIToolOutput } from '@/spec/inference';
+import type { ToolStoreChoice, UIToolStoreChoice } from '@/spec/tool';
+
 import { expandTabsToSpaces } from '@/lib/text_utils';
 
 // We add a per-chunk prop so Slate doesn't merge them back together.
 export const LARGE_TEXT_AUTOCHUNK_THRESHOLD_CHARS = 10000; // start chunking once draft grows beyond this
 export const LARGE_TEXT_AUTODECHUNK_THRESHOLD_CHARS = 5000; // merge back once it shrinks below this
 export const LARGE_TEXT_CHUNK_SIZE = 1600; // each leaf ~1.2k chars; adjust 800–2000 based on taste
+
+export interface EditorExternalMessage {
+	text: string;
+	attachments?: Attachment[];
+	toolChoices?: ToolStoreChoice[];
+	toolOutputs?: UIToolOutput[];
+}
+
+export interface EditorSubmitPayload {
+	text: string;
+	attachedTools: UIToolStoreChoice[];
+	attachments: UIAttachment[];
+	toolOutputs: UIToolOutput[];
+	finalToolChoices: ToolStoreChoice[];
+}
 
 type ChunkedTextNode = { text: string; __chunk: number };
 
