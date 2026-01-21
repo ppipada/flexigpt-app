@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { FiEdit2, FiPlus, FiX } from 'react-icons/fi';
 
@@ -30,7 +30,7 @@ interface ChatTabsBarProps {
 	getConversationForExport: () => Promise<string>;
 }
 
-export function ChatTabsBar({
+export const ChatTabsBar = memo(function ChatTabsBar({
 	store,
 	selectedTabId,
 	tabs,
@@ -69,6 +69,7 @@ export function ChatTabsBar({
 
 	for (const t of tabs) {
 		const isActive = t.tabId === selectedTabId;
+		const canRename = isActive && t.renameEnabled && !t.isBusy;
 
 		elements.push(
 			<Tab
@@ -78,7 +79,7 @@ export function ChatTabsBar({
 				// render as <div> so we can safely place an <input> inside the tab (no <input> inside <button>)
 				render={<div />}
 				className={[
-					'relative flex h-full w-44 items-center gap-1 overflow-hidden p-0',
+					'relative flex h-full w-44 items-center p-0',
 					'select-none',
 					'focus-visible:outline-primary focus-visible:outline focus-visible:outline-offset-2',
 					// Firefox-ish feel: rounded top + active lifted
@@ -87,13 +88,8 @@ export function ChatTabsBar({
 						: 'bg-base-200/80 text-base-content/80 hover:bg-base-200 border-0',
 				].join(' ')}
 			>
-				{/* Busy indicator */}
-				<div className="w-4 shrink-0">
-					{t.isBusy ? <span className="loading loading-spinner loading-xs" aria-label="Busy" /> : null}
-				</div>
-
 				{/* Title / Rename */}
-				<div className="min-w-0 flex-1 overflow-hidden p-0 text-sm">
+				<div className="min-w-0 flex-1 px-2 text-sm">
 					{isActive && editingTabId === t.tabId ? (
 						<input
 							autoFocus
@@ -113,34 +109,38 @@ export function ChatTabsBar({
 							className="input input-sm bg-base-100 w-full p-0"
 						/>
 					) : (
-						<div
-							className={[
-								'flex min-w-0 items-center gap-2 overflow-hidden p-0',
-								isActive && t.renameEnabled ? 'cursor-text' : 'cursor-pointer',
-							].join(' ')}
-							title={t.renameEnabled ? t.title + ' (Click to rename)' : t.title}
-							onClick={() => {
-								// Only clicking the ACTIVE tab title opens rename
-								if (!isActive) return;
-								if (!t.renameEnabled) return;
-								setEditingTabId(t.tabId);
-								setDraftTitle(t.title);
-							}}
-						>
+						<div className="flex min-w-0" title={t.title}>
 							<span className="truncate">{t.title}</span>
-
-							{/* Pencil is indicator only (no separate click action) */}
-							{isActive && t.renameEnabled ? (
-								<span className="shrink-0 opacity-70">
-									<FiEdit2 size={12} />
-								</span>
-							) : null}
 						</div>
 					)}
 				</div>
 
-				{/* Close button (available on ALL tabs) */}
-				<div className="py-0 pr-1 pl-0">
+				{/* Right end: spinner OR rename icon in same slot, then close */}
+				<div className="flex items-center gap-1 pr-1">
+					{(t.isBusy || canRename) && (
+						<div className="flex w-6 shrink-0 items-center justify-center">
+							{t.isBusy ? (
+								<span className="loading loading-spinner loading-xs" aria-label="Busy" />
+							) : canRename ? (
+								<button
+									type="button"
+									className="btn btn-ghost btn-xs btn-circle p-0 opacity-70 hover:opacity-100"
+									aria-label="Rename tab"
+									title="Rename"
+									onMouseDown={e => {
+										e.stopPropagation();
+									}}
+									onClick={e => {
+										e.stopPropagation();
+										setEditingTabId(t.tabId);
+										setDraftTitle(t.title);
+									}}
+								>
+									<FiEdit2 size={14} />
+								</button>
+							) : null}
+						</div>
+					)}
 					<button
 						type="button"
 						className="btn btn-ghost btn-xs btn-circle shrink-0 p-0 opacity-80 hover:opacity-100"
@@ -161,38 +161,22 @@ export function ChatTabsBar({
 		);
 	}
 
-	// New tab button immediately beside the ACTIVE tab.
-
-	const disableNewTab = active?.isEmpty; // no multiple empty new tabs
-	elements.push();
-
 	return (
-		<div className="w-full min-w-0 overflow-hidden">
-			{/* Tab strip with bottom border line (no scrollbars) */}
+		<div className="w-full min-w-0">
+			{/* Tab strip with bottom border line */}
 			<div className="border-base-300 flex w-full items-center gap-2 overflow-hidden border-b bg-inherit">
-				<div className="flex flex-1">
-					<TabList
-						store={store}
-						aria-label="Chat tabs"
-						className="flex min-w-0 flex-nowrap items-end gap-0 overflow-hidden py-0 pr-1"
-					>
+				<div className="flex min-w-0 flex-1 flex-nowrap overflow-auto">
+					<TabList store={store} aria-label="Chat tabs" className="flex min-w-0 items-end gap-0 py-0 pr-1">
 						{elements}
 					</TabList>
 
 					<div
 						className="tooltip tooltip-left px-1 py-0"
-						data-tip={
-							disableNewTab
-								? 'Already on a new/empty tab'
-								: tabs.length >= maxTabs
-									? 'New tab (LRU tab will close)'
-									: 'New tab'
-						}
+						data-tip={tabs.length >= maxTabs ? `New chat (max ${maxTabs} tabs)` : 'New chat'}
 					>
 						<button
 							type="button"
 							className="btn btn-ghost btn-circle btn-xs shrink-0 p-0 opacity-80 hover:opacity-100"
-							disabled={disableNewTab}
 							onClick={onNewTab}
 							aria-label="New tab"
 							title="New tab"
@@ -215,4 +199,4 @@ export function ChatTabsBar({
 			</div>
 		</div>
 	);
-}
+});

@@ -74,6 +74,11 @@ function createEmptyTab(): ChatTabState {
 	};
 }
 
+function isScratchTab(t: ChatTabState) {
+	// "New conversation" = local scratch, not a stored convo
+	return !t.isPersisted && t.conversation.messages.length === 0;
+}
+
 // eslint-disable-next-line no-restricted-exports
 export default function ChatsPage() {
 	// ---------------- Tabs state ----------------
@@ -93,11 +98,6 @@ export default function ChatsPage() {
 	}, [selectedTabId]);
 
 	const activeTab = useMemo(() => tabs.find(t => t.tabId === selectedTabId) ?? tabs[0], [tabs, selectedTabId]);
-
-	// Update LRU timestamp on activation
-	useEffect(() => {
-		setTabs(prev => prev.map(t => (t.tabId === selectedTabId ? { ...t, lastActivatedAt: Date.now() } : t)));
-	}, [selectedTabId]);
 
 	// ---------------- Per-tab runtime refs ----------------
 	// Abort controllers per tab
@@ -194,6 +194,11 @@ export default function ChatsPage() {
 			return next;
 		});
 	}, []);
+
+	// Update LRU timestamp on activation (update only the selected tab)
+	useEffect(() => {
+		updateTab(selectedTabId, t => ({ ...t, lastActivatedAt: Date.now() }));
+	}, [selectedTabId, updateTab]);
 
 	const tabExists = useCallback((tabId: string) => tabsRef.current.some(t => t.tabId === tabId), []);
 
@@ -307,47 +312,71 @@ export default function ChatsPage() {
 	// ---------------- LRU eviction ----------------
 	const pickLRUEvictionCandidate = useCallback((current: ChatTabState[], activeId: string) => {
 		if (current.length < MAX_TABS) return null;
-		const candidates = current.filter(t => t.tabId !== activeId);
+		// Never evict scratch; prefer not to evict busy, but allow if needed.
+		const base = current.filter(t => t.tabId !== activeId && !isScratchTab(t));
+		const nonBusy = base.filter(t => !t.isBusy);
+		const candidates = nonBusy.length > 0 ? nonBusy : base;
+
 		if (candidates.length === 0) return null;
 		return candidates.reduce((lru, t) => (t.lastActivatedAt < lru.lastActivatedAt ? t : lru), candidates[0]);
 	}, []);
 
-	// ---------------- Tab actions ----------------
-	const openNewTab = useCallback(() => {
-		const activeId = selectedTabIdRef.current;
-		const currentTabs = tabsRef.current;
-		const active = currentTabs.find(t => t.tabId === activeId);
+	const ensureScratchRightmost = useCallback(() => {
+		const current = tabsRef.current;
+		const scratchTabs = current.filter(isScratchTab);
 
-		// don't allow multiple empty new tabs (only blocks when currently on an empty tab)
-		if (active && active.conversation.messages.length === 0) {
-			inputRefs.current.get(activeId)?.focus();
-			return;
+		// Pick which scratch to keep (prefer selected if it's scratch, else keep the rightmost)
+		const selected = current.find(t => t.tabId === selectedTabIdRef.current);
+		const keep = (selected && isScratchTab(selected) ? selected : scratchTabs[scratchTabs.length - 1]) ?? null;
+
+		const removeIds = new Set(scratchTabs.filter(t => !keep || t.tabId !== keep.tabId).map(t => t.tabId));
+		if (removeIds.size > 0) {
+			for (const id of removeIds) disposeTabRuntime(id);
 		}
 
-		if (currentTabs.length >= MAX_TABS) {
-			const victim = pickLRUEvictionCandidate(currentTabs, activeId);
-			if (victim) {
-				disposeTabRuntime(victim.tabId);
-				setTabs(prev => prev.filter(t => t.tabId !== victim.tabId));
+		let next = current.filter(t => !removeIds.has(t.tabId));
+
+		if (!keep) {
+			// Need to create a new scratch tab
+			if (next.length >= MAX_TABS) {
+				const victim = pickLRUEvictionCandidate(next, selectedTabIdRef.current);
+				if (victim) {
+					disposeTabRuntime(victim.tabId);
+					next = next.filter(t => t.tabId !== victim.tabId);
+				}
+			}
+			const scratch = createEmptyTab();
+			getAbortRef(scratch.tabId);
+			getStreamTextRef(scratch.tabId);
+			scrollTopByTab.current.set(scratch.tabId, 0);
+			next = [...next, scratch];
+		} else {
+			// Ensure it's rightmost
+			const idx = next.findIndex(t => t.tabId === keep.tabId);
+			if (idx !== -1 && idx !== next.length - 1) {
+				next = [...next.slice(0, idx), ...next.slice(idx + 1), keep];
 			}
 		}
 
-		const newTab = createEmptyTab();
-		getAbortRef(newTab.tabId);
-		getStreamTextRef(newTab.tabId);
+		// Commit only if changed (cheap shallow check)
+		if (next.length !== current.length || next.some((t, i) => t.tabId !== current[i]?.tabId)) {
+			setTabs(next);
+		}
+	}, [disposeTabRuntime, getAbortRef, getStreamTextRef, pickLRUEvictionCandidate]);
 
-		setTabs(prev => [...prev, newTab]);
-		tabStore.setSelectedId(newTab.tabId);
+	// Enforce scratch invariants after any tabs mutation (search load, send, close, etc.)
+	useEffect(() => {
+		ensureScratchRightmost();
+	}, [tabs, ensureScratchRightmost]);
 
-		// Reset scroll position for the new tab
-		scrollTopByTab.current.set(newTab.tabId, 0);
-
-		requestAnimationFrame(() => {
-			inputRefs.current.get(newTab.tabId)?.setConversationToolsFromChoices([]);
-			inputRefs.current.get(newTab.tabId)?.setWebSearchFromChoices([]);
-			inputRefs.current.get(newTab.tabId)?.focus();
-		});
-	}, [disposeTabRuntime, getAbortRef, getStreamTextRef, pickLRUEvictionCandidate, tabStore]);
+	// ---------------- Tab actions ----------------
+	const openNewTab = useCallback(() => {
+		// Always go to the (single) scratch tab; invariant effect keeps it rightmost.
+		const scratch = tabsRef.current.find(isScratchTab) ?? null;
+		const targetId = scratch?.tabId ?? selectedTabIdRef.current;
+		tabStore.setSelectedId(targetId);
+		requestAnimationFrame(() => inputRefs.current.get(targetId)?.focus());
+	}, [tabStore]);
 
 	const closeTab = useCallback(
 		(tabId: string) => {
@@ -451,40 +480,15 @@ export default function ChatsPage() {
 				tabStore.setSelectedId(already.tabId);
 				return;
 			}
-
-			const activeId = selectedTabIdRef.current;
-			const active = tabsRef.current.find(t => t.tabId === activeId);
-
-			// If current tab is empty -> reuse it
-			if (active && active.conversation.messages.length === 0) {
-				await loadConversationIntoTab(active.tabId, item);
-				tabStore.setSelectedId(active.tabId);
-				return;
-			}
-
-			// Otherwise open a new tab (LRU eviction if needed)
-			if (tabsRef.current.length >= MAX_TABS) {
-				const victim = pickLRUEvictionCandidate(tabsRef.current, activeId);
-				if (victim) {
-					disposeTabRuntime(victim.tabId);
-					setTabs(prev => prev.filter(t => t.tabId !== victim.tabId));
-				}
-			}
-
-			const newTab = createEmptyTab();
-			getAbortRef(newTab.tabId);
-			getStreamTextRef(newTab.tabId);
-
-			setTabs(prev => [...prev, newTab]);
-			tabStore.setSelectedId(newTab.tabId);
-
-			scrollTopByTab.current.set(newTab.tabId, 0);
-
-			await loadConversationIntoTab(newTab.tabId, item);
-
-			requestAnimationFrame(() => inputRefs.current.get(newTab.tabId)?.focus());
+			// Always load into scratch tab; after load it becomes a normal tab and
+			// the invariant effect will create a new scratch on the right.
+			const scratch = tabsRef.current.find(isScratchTab);
+			const targetId = scratch?.tabId ?? selectedTabIdRef.current;
+			tabStore.setSelectedId(targetId);
+			await loadConversationIntoTab(targetId, item);
+			requestAnimationFrame(() => inputRefs.current.get(targetId)?.focus());
 		},
-		[disposeTabRuntime, getAbortRef, getStreamTextRef, loadConversationIntoTab, pickLRUEvictionCandidate, tabStore]
+		[loadConversationIntoTab, tabStore]
 	);
 
 	// ---------------- Streaming completion (per tab) ----------------
