@@ -73,10 +73,11 @@ export interface ShortcutDisplayItem {
 // Plate editor shortcuts are displayed, but handled internally by Plate.
 export const defaultShortcutConfig: ShortcutConfig = {
 	// Global-chat actions
-	[ShortcutAction.newChat]: { key: 't', ctrlOrMeta: true, shift: false }, // Mod+Shift+t
-	[ShortcutAction.closeChat]: { key: 'w', ctrlOrMeta: true, shift: false }, // Mod+Shift+w
-	[ShortcutAction.nextChat]: { key: '[', ctrlOrMeta: true, shift: true }, // Mod+Shift+[
-	[ShortcutAction.previousChat]: { key: ']', ctrlOrMeta: true, shift: true }, // Mod+Shift+]
+	[ShortcutAction.newChat]: { key: 't', ctrlOrMeta: true, shift: false }, // Mod+T
+	[ShortcutAction.closeChat]: { key: 'w', ctrlOrMeta: true, shift: false }, // Mod+W
+
+	[ShortcutAction.previousChat]: { key: 'PageUp', ctrlOrMeta: true, shift: false },
+	[ShortcutAction.nextChat]: { key: 'PageDown', ctrlOrMeta: true, shift: false },
 
 	[ShortcutAction.focusSearch]: { key: 'f', ctrlOrMeta: true, shift: true }, // Mod+Shift+F
 	[ShortcutAction.focusInput]: { key: 'i', ctrlOrMeta: true, shift: true }, // Mod+Shift+I
@@ -315,8 +316,16 @@ export function useChatShortcuts({ config, isBusy, handlers }: UseShortcutsOptio
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (event.defaultPrevented) return;
 
-			const { config, isBusy, handlers } = ref.current;
+			// IME composition safety
+			if (event.isComposing) return;
 
+			// Allow specific widgets (rename inputs, etc.) to opt out of global shortcuts.
+			// Important since we listen in capture phase.
+			const target = event.target as HTMLElement | null;
+			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+			if (target?.closest?.('[data-disable-chat-shortcuts="true"]')) return;
+
+			const { config, isBusy, handlers } = ref.current;
 			const entries = Object.entries(config) as [ShortcutAction, ShortcutChord][];
 
 			for (const [action, chord] of entries) {

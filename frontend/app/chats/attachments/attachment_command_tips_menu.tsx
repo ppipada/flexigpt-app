@@ -117,7 +117,7 @@ export function CommandTipsMenu({ shortcutConfig }: CommandTipsMenuProps) {
 						{chatShortcuts.map(item => (
 							<MenuItem key={item.action} className={menuItemClasses}>
 								<span className="flex-1 text-left">{item.label}</span>
-								<span className="text-neutral-custom ml-auto w-20 text-left text-[11px] whitespace-nowrap">
+								<span className="text-neutral-custom ml-auto w-22 text-left text-[11px] whitespace-nowrap">
 									{item.keys}
 								</span>
 							</MenuItem>
@@ -135,7 +135,7 @@ export function CommandTipsMenu({ shortcutConfig }: CommandTipsMenuProps) {
 						{insertShortcuts.map(item => (
 							<MenuItem key={item.action} className={menuItemClasses}>
 								<span className="flex-1 text-left">{item.label}</span>
-								<span className="text-neutral-custom ml-auto w-20 text-left text-[11px] whitespace-nowrap">
+								<span className="text-neutral-custom ml-auto w-22 text-left text-[11px] whitespace-nowrap">
 									{item.keys}
 								</span>
 							</MenuItem>

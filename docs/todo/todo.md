@@ -5,9 +5,7 @@
 - [ ] edit and save template doesn't work. says template slug already exists.
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
-
-- [x] may be restore tabs should be present for cross page/restart navigation
-- [ ] shortcuts for tabs
+- [ ] chat page cleanup/refactor
 
 ## Features
 

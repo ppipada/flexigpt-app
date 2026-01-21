@@ -557,6 +557,31 @@ export default function ChatsPage() {
 		[disposeTabRuntime, getAbortRef, getStreamTextRef, tabStore]
 	);
 
+	const cycleTabBy = useCallback(
+		(delta: number) => {
+			const current = tabsRef.current;
+			if (current.length < 2) return;
+
+			const activeId = selectedTabIdRef.current;
+			const idx = current.findIndex(t => t.tabId === activeId);
+			const from = idx >= 0 ? idx : 0;
+			const nextIndex = (from + delta + current.length) % current.length;
+			const nextId = current[nextIndex]?.tabId;
+			if (!nextId) return;
+
+			tabStore.setSelectedId(nextId);
+			requestAnimationFrame(() => inputRefs.current.get(nextId)?.focus());
+		},
+		[tabStore]
+	);
+
+	const selectNextTab = useCallback(() => {
+		cycleTabBy(1);
+	}, [cycleTabBy]);
+	const selectPrevTab = useCallback(() => {
+		cycleTabBy(-1);
+	}, [cycleTabBy]);
+
 	// ---------------- Rename ----------------
 	const renameTabTitle = useCallback(
 		(tabId: string, newTitle: string) => {
@@ -979,7 +1004,13 @@ export default function ChatsPage() {
 				openNewTab();
 			},
 			closeChat: () => {
-				closeTab(selectedTabId);
+				closeTab(selectedTabIdRef.current);
+			},
+			nextChat: () => {
+				selectNextTab();
+			},
+			previousChat: () => {
+				selectPrevTab();
 			},
 			focusSearch: () => searchRef.current?.focusInput(),
 			focusInput: () => inputRefs.current.get(selectedTabIdRef.current)?.focus(),

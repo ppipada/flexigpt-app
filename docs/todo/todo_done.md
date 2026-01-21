@@ -655,3 +655,5 @@
 
 - [x] after edit in editor, the cursor is going to end of the text and not immediately after. check.
 - [x] do we need buttons/icon buttons as circle?
+- [x] may be restore tabs should be present for cross page/restart navigation
+- [x] shortcuts for tabs

@@ -109,6 +109,7 @@ export const ChatTabsBar = memo(function ChatTabsBar({
 				<div className="min-w-0 flex-1 px-2 text-sm">
 					{isActive && editingTabId === t.tabId ? (
 						<input
+							data-disable-chat-shortcuts="true"
 							autoFocus
 							value={draftTitle}
 							onChange={e => {
