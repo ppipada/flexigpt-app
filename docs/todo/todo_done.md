@@ -644,3 +644,7 @@
   - [x] when edit chat is called for a message, it takes a LOT of time to get to input area
 - [x] single tilda causes subscript ideally it should be double? No.
 - [x] in input editor if i give something between tilda it doesnt work. may be i have disabled subscript super script plugins and not really skipped them somehow.
+
+- [x] interleaved reasoning and tools
+  - [x] reasoning text and switch between openai and anthropic is not working properly. better on switch would be to drop anything excess and then work with options.
+  - [x] reverse anyways may not be possible as anthropic uses encrypted content, so would be better to add the message as user message to the chat.
