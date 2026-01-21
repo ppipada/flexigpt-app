@@ -531,7 +531,10 @@ func (s *PromptTemplateStore) PutPromptTemplate(
 
 	mp, _ := jsonencdec.StructWithJSONTagsToMap(tpl)
 
-	if err := s.templateStore.SetFileData(bundleitemutils.GetBundlePartitionFileKey(targetFN.FileName, dirInfo.DirName), mp); err != nil {
+	if err := s.templateStore.SetFileData(
+		bundleitemutils.GetBundlePartitionFileKey(targetFN.FileName, dirInfo.DirName),
+		mp,
+	); err != nil {
 		return nil, err
 	}
 	slog.Debug(
@@ -584,7 +587,9 @@ func (s *PromptTemplateStore) DeletePromptTemplate(
 	if ferr != nil {
 		return nil, ferr
 	}
-	if err := s.templateStore.DeleteFile(bundleitemutils.GetBundlePartitionFileKey(targetFN.FileName, dirInfo.DirName)); err != nil {
+	if err := s.templateStore.DeleteFile(
+		bundleitemutils.GetBundlePartitionFileKey(targetFN.FileName, dirInfo.DirName),
+	); err != nil {
 		return nil, err
 	}
 	slog.Info(
@@ -845,7 +850,7 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 		biBundles, biTpls, _ := s.builtinData.ListBuiltInData(ctx)
 
 		// Deterministic ordering.
-		var bidList []bundleitemutils.BundleID
+		bidList := make([]bundleitemutils.BundleID, 0, len(biBundles))
 		for bid := range biBundles {
 			bidList = append(bidList, bid)
 		}
@@ -854,7 +859,7 @@ func (s *PromptTemplateStore) ListPromptTemplates(
 		for _, bid := range bidList {
 			bslug := biBundles[bid].Slug
 
-			var tidList []bundleitemutils.ItemID
+			tidList := make([]bundleitemutils.ItemID, 0, len(biTpls[bid]))
 			for tid := range biTpls[bid] {
 				tidList = append(tidList, tid)
 			}

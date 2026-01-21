@@ -183,7 +183,7 @@ type InvokeGoOptions struct {
 // InvokeToolRequestBody is the body for invoking a tool.
 type InvokeToolRequestBody struct {
 	// Arguments passed to the tool. Must be JSON-serializable.
-	Args JSONRawString `json:"args"                  required:"true"`
+	Args JSONRawString `json:"args" required:"true"`
 	// Tool-type-specific options (only one of these is used depending on the tool type).
 	HTTPOptions *InvokeHTTPOptions `json:"httpOptions,omitempty"`
 	GoOptions   *InvokeGoOptions   `json:"goOptions,omitempty"`

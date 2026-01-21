@@ -37,10 +37,11 @@ jobs:
           touch "$PLACEHOLDER"
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
           args: --verbose
-          version: v2.6.2
+          version-file: .tool-versions
+          install-mode: "binary"
 
       - name: Remove embed placeholder
         if: ${{ always() }}

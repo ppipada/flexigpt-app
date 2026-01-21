@@ -877,7 +877,7 @@ func (ts *ToolStore) ListTools(
 	} else if !tok.BuiltInDone {
 		biBundles, biTools, _ := ts.builtinData.ListBuiltInToolData(ctx)
 
-		var bidList []bundleitemutils.BundleID
+		bidList := make([]bundleitemutils.BundleID, 0, len(biBundles))
 		for bid := range biBundles {
 			bidList = append(bidList, bid)
 		}
@@ -898,7 +898,7 @@ func (ts *ToolStore) ListTools(
 
 			bslug := bundle.Slug
 
-			var ids []bundleitemutils.ItemID
+			ids := make([]bundleitemutils.ItemID, 0, len(biTools[bid]))
 			for tid := range biTools[bid] {
 				ids = append(ids, tid)
 			}

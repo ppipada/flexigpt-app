@@ -156,6 +156,13 @@ func (w *ProviderSetWrapper) FetchCompletion(
 			req,
 		)
 		if err != nil {
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				// Expected lifecycle event; return partial resp if present without noisy error logging.
+				if resp != nil {
+					return resp, nil
+				}
+				return nil, err
+			}
 			// If we have a partial response, attach error info there and return it.
 			if resp != nil && resp.Body != nil && resp.Body.InferenceResponse != nil {
 				if resp.Body.InferenceResponse.Error == nil {

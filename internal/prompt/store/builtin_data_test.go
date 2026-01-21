@@ -485,7 +485,13 @@ func TestConcurrency(t *testing.T) {
 			go func(i int) {
 				defer wg.Done()
 				enabled := i%2 == 0
-				if _, err := bi.SetTemplateEnabled(ctx, templateBundleID, template.Slug, template.Version, enabled); err != nil {
+				if _, err := bi.SetTemplateEnabled(
+					ctx,
+					templateBundleID,
+					template.Slug,
+					template.Version,
+					enabled,
+				); err != nil {
 					t.Errorf("SetTemplateEnabled failed: %v", err)
 				}
 			}(i)
@@ -522,7 +528,13 @@ func TestConcurrency(t *testing.T) {
 					if _, e := bi.SetBundleEnabled(ctx, bundleID, enabled); e != nil {
 						t.Errorf("SetBundleEnabled failed: %v", e)
 					}
-					if _, e := bi.SetTemplateEnabled(ctx, templateBundleID, template.Slug, template.Version, enabled); e != nil {
+					if _, e := bi.SetTemplateEnabled(
+						ctx,
+						templateBundleID,
+						template.Slug,
+						template.Version,
+						enabled,
+					); e != nil {
 						t.Errorf("SetTemplateEnabled failed: %v", e)
 					}
 				}
