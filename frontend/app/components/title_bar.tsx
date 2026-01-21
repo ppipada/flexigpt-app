@@ -75,7 +75,7 @@ export function TitleBar({ onToggleDrawer }: TitleBarProps) {
 
 	return (
 		<div
-			className="app-drag bg-base-300 flex h-8 w-full items-center gap-2 px-2 py-0"
+			className="app-drag bg-base-200 border-base-300 flex h-8 w-full items-center gap-2 border-b px-2 py-0"
 			onDoubleClick={e => {
 				// Don’t toggle when double-clicking on interactive elements
 				const t = e.target as HTMLElement;
@@ -99,8 +99,8 @@ export function TitleBar({ onToggleDrawer }: TitleBarProps) {
 
 				<Link to="/" className="app-no-drag flex min-w-0 items-center gap-2">
 					<img src="/icon.png" alt="FlexiGPT" className="h-5 w-5" />
-					<div className="min-w-0 truncate text-sm">
-						<span className="font-semibold">FlexiGPT</span>
+					<div className="min-w-0 truncate text-xs">
+						<span className="opacity-70">FlexiGPT</span>
 						{version ? <span className="ml-2 opacity-70">{version}</span> : null}
 					</div>
 				</Link>
@@ -109,7 +109,7 @@ export function TitleBar({ onToggleDrawer }: TitleBarProps) {
 			</div>
 
 			{/* CENTER */}
-			<div className="flex min-w-0 flex-1 items-center justify-center px-2 py-0">
+			<div className="m-0 flex min-w-0 flex-1 items-center justify-center px-2 py-0">
 				{slots.center ? <div className="app-no-drag min-w-0">{slots.center}</div> : null}
 			</div>
 
@@ -117,10 +117,10 @@ export function TitleBar({ onToggleDrawer }: TitleBarProps) {
 			<div className="flex items-center gap-2">
 				{slots.right ? <div className="app-no-drag">{slots.right}</div> : null}
 
-				<div className="app-no-drag flex items-center">
+				<div className="app-no-drag flex items-center gap-1">
 					<button
 						type="button"
-						className="btn btn-ghost btn-xs"
+						className="btn btn-ghost btn-xs btn-circle shrink-0 p-0 opacity-80 hover:opacity-100"
 						onClick={() => {
 							backendAPI.appWindowMinimise();
 						}}
@@ -132,7 +132,7 @@ export function TitleBar({ onToggleDrawer }: TitleBarProps) {
 
 					<button
 						type="button"
-						className="btn btn-ghost btn-xs"
+						className="btn btn-ghost btn-xs btn-circle shrink-0 p-0 opacity-80 hover:opacity-100"
 						disabled={isTogglingMax}
 						onClick={() => void toggleMaximise()}
 						aria-label={isMax ? 'Restore' : 'Maximise'}
@@ -143,7 +143,7 @@ export function TitleBar({ onToggleDrawer }: TitleBarProps) {
 
 					<button
 						type="button"
-						className="btn btn-ghost btn-xs hover:btn-error"
+						className="btn btn-ghost btn-xs btn-circle hover:btn-error shrink-0 p-0 opacity-80 hover:opacity-100"
 						onClick={() => {
 							backendAPI.appQuit();
 						}}

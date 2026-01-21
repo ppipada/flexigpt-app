@@ -1,12 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
-import {
-	type Conversation,
-	type ConversationMessage,
-	type ConversationSearchItem,
-	type StoreConversation,
-	type StoreConversationMessage,
+import { useStoreState } from '@ariakit/react';
+import { useTabStore } from '@ariakit/react/tab';
+
+import type {
+	Conversation,
+	ConversationMessage,
+	ConversationSearchItem,
+	StoreConversation,
+	StoreConversationMessage,
 } from '@/spec/conversation';
 import { ContentItemKind, type ModelParam, OutputKind, type OutputUnion, RoleEnum, Status } from '@/spec/inference';
 import { DefaultUIChatOptions, type UIChatOption } from '@/spec/modelpreset';
@@ -24,8 +27,8 @@ import { conversationStoreAPI } from '@/apis/baseapi';
 import { ButtonScrollToBottom, ButtonScrollToTop } from '@/components/button_scroll_top_bottom';
 import { PageFrame } from '@/components/page_frame';
 
-import { ChatNavBar } from '@/chats/chat_navbar';
 import { ChatSearch, type ChatSearchHandle } from '@/chats/chat_search';
+import { ChatTabsBar } from '@/chats/chat_tabs_bar';
 import { HandleCompletion } from '@/chats/conversation/completion_helper';
 import {
 	buildUserConversationMessageFromEditor,
@@ -39,202 +42,485 @@ import { InputBox, type InputBoxHandle } from '@/chats/inputarea/input_box';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/inputarea/input_editor_utils';
 import { ChatMessage } from '@/chats/messages/message';
 
+const MAX_TABS = 8;
+
+type ChatTabState = {
+	tabId: string;
+	conversation: Conversation;
+
+	// streaming (state only for coarse UI like spinner)
+	isBusy: boolean;
+
+	// persistence/title behavior
+	isPersisted: boolean;
+	manualTitleLocked: boolean;
+
+	// edit state
+	editingMessageId: string | null;
+
+	// LRU
+	lastActivatedAt: number;
+};
+
+function createEmptyTab(): ChatTabState {
+	return {
+		tabId: crypto.randomUUID(),
+		conversation: initConversation(),
+		isBusy: false,
+		isPersisted: false,
+		manualTitleLocked: false,
+		editingMessageId: null,
+		lastActivatedAt: Date.now(),
+	};
+}
+
 // eslint-disable-next-line no-restricted-exports
 export default function ChatsPage() {
-	const [chat, setChat] = useState<Conversation>(initConversation());
-	const [searchRefreshKey, setSearchRefreshKey] = useState(0);
+	// ---------------- Tabs state ----------------
+	const initialTab = useMemo(() => createEmptyTab(), []);
+	const [tabs, setTabs] = useState<ChatTabState[]>([initialTab]);
+	const tabsRef = useRef(tabs);
+	useEffect(() => {
+		tabsRef.current = tabs;
+	}, [tabs]);
 
-	const [streamedMessage, setStreamedMessage] = useState('');
-	const [isBusy, setIsBusy] = useState(false);
+	const tabStore = useTabStore({ defaultSelectedId: initialTab.tabId });
+	const selectedTabId = useStoreState(tabStore, 'selectedId') ?? initialTab.tabId;
 
-	/* Currently running request */
-	const abortRef = useRef<AbortController | null>(null);
-	const requestIdRef = useRef<string | null>(null); // will go to backend for cancellation
+	const selectedTabIdRef = useRef(selectedTabId);
+	useEffect(() => {
+		selectedTabIdRef.current = selectedTabId;
+	}, [selectedTabId]);
 
-	const chatInputRef = useRef<InputBoxHandle>(null);
+	const activeTab = useMemo(() => tabs.find(t => t.tabId === selectedTabId) ?? tabs[0], [tabs, selectedTabId]);
+
+	// Update LRU timestamp on activation
+	useEffect(() => {
+		setTabs(prev => prev.map(t => (t.tabId === selectedTabId ? { ...t, lastActivatedAt: Date.now() } : t)));
+	}, [selectedTabId]);
+
+	// ---------------- Per-tab runtime refs ----------------
+	// Abort controllers per tab
+	const abortRefs = useRef(new Map<string, { current: AbortController | null }>());
+	const requestIdByTab = useRef(new Map<string, string | null>());
+	const tokensReceivedByTab = useRef(new Map<string, boolean | null>());
+
+	const getAbortRef = useCallback((tabId: string) => {
+		let refObj = abortRefs.current.get(tabId);
+		if (!refObj) {
+			refObj = { current: null };
+			abortRefs.current.set(tabId, refObj);
+		}
+		return refObj;
+	}, []);
+
+	// Stream text stored in refs (NO state updates for background tabs)
+	const streamTextRefs = useRef(new Map<string, { current: string }>());
+	const getStreamTextRef = useCallback((tabId: string) => {
+		let refObj = streamTextRefs.current.get(tabId);
+		if (!refObj) {
+			refObj = { current: '' };
+			streamTextRefs.current.set(tabId, refObj);
+		}
+		return refObj;
+	}, []);
+
+	// Input refs per tab (per-tab composer instance)
+	const inputRefs = useRef(new Map<string, InputBoxHandle | null>());
+	const setInputRef = useCallback((tabId: string) => {
+		return (inst: InputBoxHandle | null) => {
+			inputRefs.current.set(tabId, inst);
+		};
+	}, []);
+
+	// Scroll position restore per tab
+	const scrollTopByTab = useRef(new Map<string, number>());
+
+	const disposeTabRuntime = useCallback(
+		(tabId: string) => {
+			const a = getAbortRef(tabId);
+			a.current?.abort();
+			a.current = null;
+
+			abortRefs.current.delete(tabId);
+			requestIdByTab.current.delete(tabId);
+			tokensReceivedByTab.current.delete(tabId);
+
+			streamTextRefs.current.delete(tabId);
+			inputRefs.current.delete(tabId);
+			scrollTopByTab.current.delete(tabId);
+		},
+		[getAbortRef]
+	);
+
+	// ---------------- UI refs ----------------
 	const chatContainerRef = useRef<HTMLDivElement>(null);
 	const searchRef = useRef<ChatSearchHandle | null>(null);
 
-	const tokensReceivedRef = useRef<boolean | null>(false);
-
-	// Has the current conversation already been persisted?
-	const isChatPersistedRef = useRef(false);
 	const { isAtBottom, isAtTop, isScrollable } = useAtTopBottom(chatContainerRef);
-	const manualTitleLockedRef = useRef(false);
 
-	const [shortcutConfig] = useState<ShortcutConfig>(defaultShortcutConfig);
-	const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+	// Active stream text state (ONLY for active tab, throttled)
+	const [activeStreamText, setActiveStreamText] = useState<string>('');
+	const pendingActiveStreamSync = useRef<number | null>(null);
 
-	// Focus on mount.
-	useEffect(() => {
-		chatInputRef.current?.focus();
+	const syncActiveStreamTextNow = useCallback(() => {
+		pendingActiveStreamSync.current = null;
+		const tabId = selectedTabIdRef.current;
+		const refObj = streamTextRefs.current.get(tabId);
+		setActiveStreamText(refObj?.current ?? '');
 	}, []);
 
-	// Scroll helper used only when the user explicitly starts a new turn
-	// (send / resend / edited send). We *do not* auto-scroll on every
-	// message list change any more.
-	const scrollToBottom = useCallback(() => {
+	const scheduleActiveStreamSync = useCallback(
+		(tabId: string) => {
+			if (selectedTabIdRef.current !== tabId) return;
+			if (pendingActiveStreamSync.current !== null) return;
+			pendingActiveStreamSync.current = window.setTimeout(syncActiveStreamTextNow, 80);
+		},
+		[syncActiveStreamTextNow]
+	);
+
+	// When user switches tabs, show whatever stream text exists for that tab.
+	useEffect(() => {
+		setActiveStreamText(getStreamTextRef(selectedTabId).current);
+	}, [getStreamTextRef, selectedTabId]);
+
+	// ---------------- Helpers ----------------
+	const updateTab = useCallback((tabId: string, updater: (t: ChatTabState) => ChatTabState) => {
+		setTabs(prev => {
+			const idx = prev.findIndex(t => t.tabId === tabId);
+			if (idx === -1) return prev; // closed while async
+			const next = prev.slice();
+			next[idx] = updater(next[idx]);
+			return next;
+		});
+	}, []);
+
+	const tabExists = useCallback((tabId: string) => tabsRef.current.some(t => t.tabId === tabId), []);
+
+	const syncComposerFromConversation = useCallback((tabId: string, conv: Conversation) => {
+		const input = inputRefs.current.get(tabId);
+		if (!input) return;
+
+		const tools = deriveConversationToolsFromMessages(conv.messages);
+		const web = deriveWebSearchChoiceFromMessages(conv.messages);
+		input.setConversationToolsFromChoices(tools);
+		input.setWebSearchFromChoices(web);
+	}, []);
+
+	const scrollToBottom = useCallback((tabId: string) => {
+		// There is only one visible scroll container; it corresponds to the active tab.
+		if (selectedTabIdRef.current !== tabId) return;
 		const el = chatContainerRef.current;
 		if (!el) return;
 		el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
 	}, []);
 
-	const scrollToBottomSoon = useCallback(() => {
-		// Give React a short window to commit DOM changes
-		window.setTimeout(scrollToBottom, 80);
-	}, [scrollToBottom]);
+	const scrollToBottomSoon = useCallback(
+		(tabId: string) => {
+			window.setTimeout(() => {
+				scrollToBottom(tabId);
+			}, 80);
+		},
+		[scrollToBottom]
+	);
 
-	const bumpSearchKey = async () => {
-		await new Promise(resolve => setTimeout(resolve, 50));
-		setSearchRefreshKey(k => k + 1);
-	};
-
-	const handleNewChat = async () => {
-		if (isBusy) return;
-		if (chat.messages.length === 0) {
-			chatInputRef.current?.focus();
-			return;
-		}
-		// Put the old conversation _fully_ before moving to new chat.
-		// Handles edge cases like someone calls newchat when streaming is ongoing,
-		// or if there is some bug below that forgets to call saveUpdated chat
-		conversationStoreAPI.putConversation(chat as StoreConversation);
-		setChat(initConversation());
-		chatInputRef.current?.setConversationToolsFromChoices([]);
-		chatInputRef.current?.setWebSearchFromChoices([]);
-
-		// New non-persisted conversation started.
-		isChatPersistedRef.current = false;
-		manualTitleLockedRef.current = false;
-
-		setEditingMessageId(null);
-
-		chatInputRef.current?.focus();
-	};
-
-	const handleSelectConversation = useCallback(async (item: ConversationSearchItem) => {
-		const selectedChat = await conversationStoreAPI.getConversation(item.id, item.title, true);
-		if (selectedChat) {
-			// Hydrate store-level data into full UI Conversation
-			const hydrated = hydrateConversation(selectedChat);
-			setChat(hydrated);
-
-			isChatPersistedRef.current = true;
-			manualTitleLockedRef.current = false;
-			setEditingMessageId(null);
-
-			const initialTools = deriveConversationToolsFromMessages(hydrated.messages);
-			chatInputRef.current?.setConversationToolsFromChoices(initialTools);
-
-			const initialWebSearch = deriveWebSearchChoiceFromMessages(hydrated.messages);
-			chatInputRef.current?.setWebSearchFromChoices(initialWebSearch);
-		}
+	// Save scroll position for active tab on scroll
+	const onScrollActive = useCallback(() => {
+		const tabId = selectedTabIdRef.current;
+		const el = chatContainerRef.current;
+		if (!el) return;
+		scrollTopByTab.current.set(tabId, el.scrollTop);
 	}, []);
 
-	const getConversationForExport = useCallback(async (): Promise<string> => {
-		const selectedChat = await conversationStoreAPI.getConversation(chat.id, chat.title, true);
-		return JSON.stringify(selectedChat ?? null, null, 2);
-	}, [chat.id, chat.title]);
+	// Restore scroll position when changing tabs (LRU + scroll restore requirement)
+	useLayoutEffect(() => {
+		const el = chatContainerRef.current;
+		if (!el) return;
 
-	// Persist `updatedChat` using the cheapest API that is still correct.
-	// •  First time we ever write this conversation              -> putConversation
-	// •  Title has changed (search index must be updated)        -> putConversation
-	// •  Otherwise                                               -> putMessagesToConversation
-	// putMessagesToConversation REQUIRES the *full* message list, so we just pass `updatedChat.messages` every time.
-	const saveUpdatedChat = (updatedChat: Conversation, titleWasExternallyChanged = false) => {
-		let newTitle = updatedChat.title;
-		if (!manualTitleLockedRef.current && updatedChat.messages.length <= 4) {
-			const userMessages = updatedChat.messages.filter(m => m.role === RoleEnum.User);
-			if (userMessages.length === 1) {
-				// Always generate title from first user message
-				const t = generateTitle(userMessages[0].uiContent);
-				newTitle = t.title;
-			} else if (userMessages.length === 2) {
-				// Generate titles from both messages, pick the one with higher score
-				const titleCondidate1 = generateTitle(userMessages[0].uiContent);
-				const titleCondidate2 = generateTitle(userMessages[1].uiContent);
-				newTitle = titleCondidate2.score > titleCondidate1.score ? titleCondidate2.title : titleCondidate1.title;
+		const top = scrollTopByTab.current.get(selectedTabId) ?? 0;
+
+		// Use rAF to ensure DOM layout is committed for the new tab content
+		requestAnimationFrame(() => {
+			const el2 = chatContainerRef.current;
+			if (!el2) return;
+			el2.scrollTop = top;
+		});
+	}, [selectedTabId]);
+
+	// ---------------- Search refresh key ----------------
+	const [searchRefreshKey, setSearchRefreshKey] = useState(0);
+	const bumpSearchKey = useCallback(async () => {
+		await new Promise(resolve => setTimeout(resolve, 50));
+		setSearchRefreshKey(k => k + 1);
+	}, []);
+
+	// ---------------- Persistence ----------------
+	const saveUpdatedConversation = useCallback(
+		(tabId: string, updatedConv: Conversation, titleWasExternallyChanged = false) => {
+			const tab = tabsRef.current.find(t => t.tabId === tabId);
+			if (!tab) return;
+
+			let newTitle = updatedConv.title;
+
+			const allowAutoTitle = !titleWasExternallyChanged && !tab.manualTitleLocked;
+			if (allowAutoTitle && updatedConv.messages.length <= 4) {
+				const userMessages = updatedConv.messages.filter(m => m.role === RoleEnum.User);
+				if (userMessages.length === 1) {
+					newTitle = generateTitle(userMessages[0].uiContent).title;
+				} else if (userMessages.length === 2) {
+					const c1 = generateTitle(userMessages[0].uiContent);
+					const c2 = generateTitle(userMessages[1].uiContent);
+					newTitle = c2.score > c1.score ? c2.title : c1.title;
+				}
+				newTitle = sanitizeConversationTitle(newTitle);
 			}
-			newTitle = sanitizeConversationTitle(newTitle);
+
+			const titleChangedByFunction = newTitle !== updatedConv.title;
+			if (titleChangedByFunction) updatedConv.title = newTitle;
+
+			const titleChanged = titleWasExternallyChanged || titleChangedByFunction;
+
+			if (!tab.isPersisted) {
+				conversationStoreAPI.putConversation(updatedConv as StoreConversation);
+				void bumpSearchKey();
+			} else if (titleChanged) {
+				conversationStoreAPI.putConversation(updatedConv as StoreConversation);
+				void bumpSearchKey();
+			} else {
+				conversationStoreAPI.putMessagesToConversation(
+					updatedConv.id,
+					updatedConv.title,
+					updatedConv.messages as StoreConversationMessage[]
+				);
+			}
+
+			updateTab(tabId, t => ({
+				...t,
+				conversation: { ...updatedConv, messages: [...updatedConv.messages] },
+				isPersisted: true,
+				manualTitleLocked: titleWasExternallyChanged ? true : t.manualTitleLocked,
+			}));
+		},
+		[bumpSearchKey, updateTab]
+	);
+
+	// ---------------- LRU eviction ----------------
+	const pickLRUEvictionCandidate = useCallback((current: ChatTabState[], activeId: string) => {
+		if (current.length < MAX_TABS) return null;
+		const candidates = current.filter(t => t.tabId !== activeId);
+		if (candidates.length === 0) return null;
+		return candidates.reduce((lru, t) => (t.lastActivatedAt < lru.lastActivatedAt ? t : lru), candidates[0]);
+	}, []);
+
+	// ---------------- Tab actions ----------------
+	const openNewTab = useCallback(() => {
+		const activeId = selectedTabIdRef.current;
+		const currentTabs = tabsRef.current;
+		const active = currentTabs.find(t => t.tabId === activeId);
+
+		// don't allow multiple empty new tabs (only blocks when currently on an empty tab)
+		if (active && active.conversation.messages.length === 0) {
+			inputRefs.current.get(activeId)?.focus();
+			return;
 		}
 
-		const titleChangedByFunction = newTitle !== updatedChat.title;
-		if (titleChangedByFunction) {
-			updatedChat.title = newTitle;
+		if (currentTabs.length >= MAX_TABS) {
+			const victim = pickLRUEvictionCandidate(currentTabs, activeId);
+			if (victim) {
+				disposeTabRuntime(victim.tabId);
+				setTabs(prev => prev.filter(t => t.tabId !== victim.tabId));
+			}
 		}
 
-		const titleChanged = titleWasExternallyChanged || titleChangedByFunction;
+		const newTab = createEmptyTab();
+		getAbortRef(newTab.tabId);
+		getStreamTextRef(newTab.tabId);
 
-		// Decide which API to call
-		if (!isChatPersistedRef.current) {
-			// 1st save -> create the record + metadata work
-			conversationStoreAPI.putConversation(updatedChat as StoreConversation);
-			isChatPersistedRef.current = true;
-			bumpSearchKey(); // now searchable
-		} else if (titleChanged) {
-			// metadata (title) changed -> need the heavy PUT
-			conversationStoreAPI.putConversation(updatedChat as StoreConversation);
-			bumpSearchKey();
-		} else {
-			// normal case -> only messages changed
-			conversationStoreAPI.putMessagesToConversation(
-				updatedChat.id,
-				updatedChat.title,
-				updatedChat.messages as StoreConversationMessage[]
-			);
-		}
+		setTabs(prev => [...prev, newTab]);
+		tabStore.setSelectedId(newTab.tabId);
 
-		// update local state
-		setChat({ ...updatedChat, messages: [...updatedChat.messages] });
-	};
+		// Reset scroll position for the new tab
+		scrollTopByTab.current.set(newTab.tabId, 0);
 
-	const handleRenameTitle = useCallback(
-		(newTitle: string) => {
+		requestAnimationFrame(() => {
+			inputRefs.current.get(newTab.tabId)?.setConversationToolsFromChoices([]);
+			inputRefs.current.get(newTab.tabId)?.setWebSearchFromChoices([]);
+			inputRefs.current.get(newTab.tabId)?.focus();
+		});
+	}, [disposeTabRuntime, getAbortRef, getStreamTextRef, pickLRUEvictionCandidate, tabStore]);
+
+	const closeTab = useCallback(
+		(tabId: string) => {
+			const current = tabsRef.current;
+			const isActive = tabId === selectedTabIdRef.current;
+
+			disposeTabRuntime(tabId);
+
+			let nextSelected = selectedTabIdRef.current;
+
+			if (isActive) {
+				const idx = current.findIndex(t => t.tabId === tabId);
+				const right = idx >= 0 ? current[idx + 1] : undefined;
+				const left = idx > 0 ? current[idx - 1] : undefined;
+				nextSelected = (right ?? left)?.tabId ?? '';
+			}
+
+			setTabs(prev => {
+				const filtered = prev.filter(t => t.tabId !== tabId);
+				if (filtered.length === 0) {
+					const fresh = createEmptyTab();
+					getAbortRef(fresh.tabId);
+					getStreamTextRef(fresh.tabId);
+					nextSelected = fresh.tabId;
+					scrollTopByTab.current.set(fresh.tabId, 0);
+					return [fresh];
+				}
+				return filtered;
+			});
+
+			if (isActive) {
+				const fallback = tabsRef.current.filter(t => t.tabId !== tabId)[0]?.tabId ?? initialTab.tabId;
+				tabStore.setSelectedId(nextSelected || fallback);
+			}
+		},
+		[disposeTabRuntime, getAbortRef, getStreamTextRef, initialTab.tabId, tabStore]
+	);
+
+	// ---------------- Rename ----------------
+	const renameTabTitle = useCallback(
+		(tabId: string, newTitle: string) => {
+			const tab = tabsRef.current.find(t => t.tabId === tabId);
+			if (!tab) return;
+
 			const sanitized = sanitizeConversationTitle(newTitle.trim());
-			if (!sanitized || sanitized === chat.title) return;
+			if (!sanitized || sanitized === tab.conversation.title) return;
 
-			manualTitleLockedRef.current = true;
-
-			const updatedChat: Conversation = {
-				...chat,
+			const updatedConv: Conversation = {
+				...tab.conversation,
 				title: sanitized,
 				modifiedAt: new Date(),
 			};
 
-			saveUpdatedChat(updatedChat, true);
+			saveUpdatedConversation(tabId, updatedConv, true);
 		},
-		[chat, saveUpdatedChat]
+		[saveUpdatedConversation]
 	);
 
+	// ---------------- Search select behavior ----------------
+	const loadConversationIntoTab = useCallback(
+		async (tabId: string, item: ConversationSearchItem) => {
+			const selectedChat = await conversationStoreAPI.getConversation(item.id, item.title, true);
+			if (!selectedChat) return;
+
+			const hydrated = hydrateConversation(selectedChat);
+
+			// Reset stream buffer for that tab
+			getStreamTextRef(tabId).current = '';
+			if (selectedTabIdRef.current === tabId) setActiveStreamText('');
+
+			updateTab(tabId, t => ({
+				...t,
+				conversation: hydrated,
+				isPersisted: true,
+				manualTitleLocked: false,
+				editingMessageId: null,
+				isBusy: false,
+			}));
+
+			// Reset scroll position for that tab
+			scrollTopByTab.current.set(tabId, 0);
+			if (selectedTabIdRef.current === tabId) {
+				requestAnimationFrame(() => {
+					const el = chatContainerRef.current;
+					if (el) el.scrollTop = 0;
+				});
+			}
+
+			requestAnimationFrame(() => {
+				syncComposerFromConversation(tabId, hydrated);
+			});
+		},
+		[getStreamTextRef, syncComposerFromConversation, updateTab]
+	);
+
+	const handleSelectConversation = useCallback(
+		async (item: ConversationSearchItem) => {
+			// If already open, just activate it
+			const already = tabsRef.current.find(t => t.conversation.id === item.id);
+			if (already) {
+				tabStore.setSelectedId(already.tabId);
+				return;
+			}
+
+			const activeId = selectedTabIdRef.current;
+			const active = tabsRef.current.find(t => t.tabId === activeId);
+
+			// If current tab is empty -> reuse it
+			if (active && active.conversation.messages.length === 0) {
+				await loadConversationIntoTab(active.tabId, item);
+				tabStore.setSelectedId(active.tabId);
+				return;
+			}
+
+			// Otherwise open a new tab (LRU eviction if needed)
+			if (tabsRef.current.length >= MAX_TABS) {
+				const victim = pickLRUEvictionCandidate(tabsRef.current, activeId);
+				if (victim) {
+					disposeTabRuntime(victim.tabId);
+					setTabs(prev => prev.filter(t => t.tabId !== victim.tabId));
+				}
+			}
+
+			const newTab = createEmptyTab();
+			getAbortRef(newTab.tabId);
+			getStreamTextRef(newTab.tabId);
+
+			setTabs(prev => [...prev, newTab]);
+			tabStore.setSelectedId(newTab.tabId);
+
+			scrollTopByTab.current.set(newTab.tabId, 0);
+
+			await loadConversationIntoTab(newTab.tabId, item);
+
+			requestAnimationFrame(() => inputRefs.current.get(newTab.tabId)?.focus());
+		},
+		[disposeTabRuntime, getAbortRef, getStreamTextRef, loadConversationIntoTab, pickLRUEvictionCandidate, tabStore]
+	);
+
+	// ---------------- Streaming completion (per tab) ----------------
 	const updateStreamingMessage = useCallback(
-		async (updatedChatWithUserMessage: Conversation, options: UIChatOption) => {
-			// Abort older request (if any) and reset UI
+		async (tabId: string, updatedChatWithUserMessage: Conversation, options: UIChatOption) => {
+			if (!tabExists(tabId)) return;
+
+			const abortRef = getAbortRef(tabId);
+
 			abortRef.current?.abort();
-			tokensReceivedRef.current = false;
-			setIsBusy(true);
+			tokensReceivedByTab.current.set(tabId, false);
+
+			// mark busy (coarse UI only)
+			updateTab(tabId, t => ({ ...t, isBusy: true }));
 
 			abortRef.current = new AbortController();
-			requestIdRef.current = crypto.randomUUID();
+			requestIdByTab.current.set(tabId, crypto.randomUUID());
 
 			let allMessages = updatedChatWithUserMessage.messages;
 			if (options.disablePreviousMessages) {
-				// Only keep the last user turn as context.
 				allMessages = [updatedChatWithUserMessage.messages[updatedChatWithUserMessage.messages.length - 1]];
 			}
-
 			if (allMessages.length === 0) {
-				setIsBusy(false);
+				updateTab(tabId, t => ({ ...t, isBusy: false }));
 				return;
 			}
 
 			const currentUserMsg = allMessages[allMessages.length - 1];
 			const history = allMessages.slice(0, allMessages.length - 1);
 
-			// Local accumulator for this request
-			let aggregatedStreamText = '';
-			setStreamedMessage('');
+			// reset stream buffer (ref only)
+			const streamRef = getStreamTextRef(tabId);
+			streamRef.current = '';
+			if (selectedTabIdRef.current === tabId) setActiveStreamText('');
 
-			// Create assistant placeholder for streaming.
+			// assistant placeholder for streaming
 			const assistantPlaceholder = initConversationMessage(RoleEnum.Assistant);
 			const chatWithPlaceholder: Conversation = {
 				...updatedChatWithUserMessage,
@@ -242,23 +528,32 @@ export default function ChatsPage() {
 				modifiedAt: new Date(),
 			};
 
-			// Show empty assistant bubble immediately.
-			setChat({ ...chatWithPlaceholder, messages: [...chatWithPlaceholder.messages] });
-			scrollToBottomSoon();
+			// Show placeholder immediately (single state update)
+			updateTab(tabId, t => ({
+				...t,
+				conversation: { ...chatWithPlaceholder, messages: [...chatWithPlaceholder.messages] },
+			}));
+
+			if (selectedTabIdRef.current === tabId) scrollToBottomSoon(tabId);
 
 			const onStreamTextData = (textData: string) => {
 				if (!textData) return;
-				tokensReceivedRef.current = true;
-				aggregatedStreamText += textData;
-				setStreamedMessage(prev => prev + textData);
+				tokensReceivedByTab.current.set(tabId, true);
+
+				// Append to ref only
+				streamRef.current += textData;
+
+				// Only active tab triggers throttled state updates for display
+				scheduleActiveStreamSync(tabId);
 			};
 
 			const onStreamThinkingData = (thinkingData: string) => {
 				if (!thinkingData) return;
-				tokensReceivedRef.current = true;
+				tokensReceivedByTab.current.set(tabId, true);
+
 				const block = getBlockQuotedLines(thinkingData) + '\n';
-				aggregatedStreamText += block;
-				setStreamedMessage(prev => prev + block);
+				streamRef.current += block;
+				scheduleActiveStreamSync(tabId);
 			};
 
 			try {
@@ -290,11 +585,13 @@ export default function ChatsPage() {
 					history,
 					toolStoreChoices,
 					assistantPlaceholder,
-					requestIdRef.current ?? undefined,
+					requestIdByTab.current.get(tabId) ?? undefined,
 					abortRef.current.signal,
 					onStreamTextData,
 					onStreamThinkingData
 				);
+
+				if (!tabExists(tabId)) return;
 
 				if (responseMessage) {
 					let finalChat: Conversation = {
@@ -318,31 +615,37 @@ export default function ChatsPage() {
 						};
 					}
 
-					saveUpdatedChat(finalChat);
+					saveUpdatedConversation(tabId, finalChat);
 
-					// Expose *runnable* assistant-suggested tool calls (function/custom)
-					// as chips in the composer. Web-search tool calls are provider-managed
-					// and remain informational in the message history only.
+					// Tool calls -> load into THIS tab's composer (even if hidden)
 					if (responseMessage.uiToolCalls && responseMessage.uiToolCalls.length > 0) {
 						const runnableCalls = responseMessage.uiToolCalls.filter(
 							c => c.type === ToolStoreChoiceType.Function || c.type === ToolStoreChoiceType.Custom
 						);
 						if (runnableCalls.length > 0) {
-							chatInputRef.current?.loadToolCalls(runnableCalls);
+							inputRefs.current.get(tabId)?.loadToolCalls(runnableCalls);
 						}
 					}
 				}
 			} catch (e) {
+				if (!tabExists(tabId)) return;
+
 				if ((e as DOMException).name === 'AbortError') {
-					if (!tokensReceivedRef.current) {
-						setChat(c => {
-							const idx = c.messages.findIndex(m => m.id === assistantPlaceholder.id);
-							if (idx === -1) return c;
-							const msgs = c.messages.filter((_, i) => i !== idx);
-							return { ...c, messages: msgs, modifiedAt: new Date() };
+					const tokensReceived = tokensReceivedByTab.current.get(tabId);
+
+					if (!tokensReceived) {
+						// remove placeholder
+						updateTab(tabId, t => {
+							const idx = t.conversation.messages.findIndex(m => m.id === assistantPlaceholder.id);
+							if (idx === -1) return t;
+							const msgs = t.conversation.messages.filter((_, i) => i !== idx);
+							return {
+								...t,
+								conversation: { ...t.conversation, messages: msgs, modifiedAt: new Date() },
+							};
 						});
 					} else {
-						const partialText = aggregatedStreamText + '\n\n>API Aborted after partial response...';
+						const partialText = streamRef.current + '\n\n>API Aborted after partial response...';
 
 						const partialOutputs: OutputUnion[] = [
 							{
@@ -351,12 +654,7 @@ export default function ChatsPage() {
 									id: assistantPlaceholder.id,
 									role: RoleEnum.Assistant,
 									status: Status.Completed,
-									contents: [
-										{
-											kind: ContentItemKind.Text,
-											textItem: { text: partialText },
-										},
-									],
+									contents: [{ kind: ContentItemKind.Text, textItem: { text: partialText } }],
 								},
 							},
 						];
@@ -373,94 +671,99 @@ export default function ChatsPage() {
 							messages: [...chatWithPlaceholder.messages.slice(0, -1), partialMsg],
 							modifiedAt: new Date(),
 						};
-						saveUpdatedChat(finalChat);
+
+						saveUpdatedConversation(tabId, finalChat);
 					}
 				} else {
 					console.error(e);
 				}
 			} finally {
-				scrollToBottomSoon();
-				setStreamedMessage('');
-				setIsBusy(false);
+				if (tabExists(tabId)) {
+					// clear stream buffer
+					streamRef.current = '';
+					if (selectedTabIdRef.current === tabId) {
+						setActiveStreamText('');
+					}
+
+					updateTab(tabId, t => ({ ...t, isBusy: false }));
+
+					if (selectedTabIdRef.current === tabId) scrollToBottomSoon(tabId);
+				}
 			}
 		},
-		[saveUpdatedChat, scrollToBottomSoon]
+		[
+			getAbortRef,
+			getStreamTextRef,
+			scheduleActiveStreamSync,
+			saveUpdatedConversation,
+			scrollToBottomSoon,
+			tabExists,
+			updateTab,
+		]
 	);
 
-	const sendMessage = async (payload: EditorSubmitPayload, options: UIChatOption) => {
-		if (isBusy) return;
+	// ---------------- Per-tab send/edit/resend ----------------
+	const sendMessageForTab = useCallback(
+		async (tabId: string, payload: EditorSubmitPayload, options: UIChatOption) => {
+			const tab = tabsRef.current.find(t => t.tabId === tabId);
+			if (!tab) return;
+			if (tab.isBusy) return;
 
-		const trimmed = payload.text.trim();
-		// Allow "empty-text" turns ONLY when there is at least attachments or tool outputs.
-		// Tool choices alone (explicit or conversation-level) are NOT enough.
-		const hasNonEmptyText = trimmed.length > 0;
-		const hasToolOutputs = payload.toolOutputs.length > 0;
-		const hasAttachments = payload.attachments.length > 0;
+			const trimmed = payload.text.trim();
+			const hasNonEmptyText = trimmed.length > 0;
+			const hasToolOutputs = payload.toolOutputs.length > 0;
+			const hasAttachments = payload.attachments.length > 0;
+			if (!hasNonEmptyText && !hasToolOutputs && !hasAttachments) return;
 
-		if (!hasNonEmptyText && !hasToolOutputs && !hasAttachments) {
-			return;
-		}
+			const editingId = tab.editingMessageId ?? undefined;
+			const userMsg = buildUserConversationMessageFromEditor(payload, editingId);
 
-		const editingId = editingMessageId ?? undefined;
-		const userMsg = buildUserConversationMessageFromEditor(payload, editingId);
+			if (tab.editingMessageId) {
+				const idx = tab.conversation.messages.findIndex(m => m.id === tab.editingMessageId);
+				if (idx !== -1) {
+					const msgs = tab.conversation.messages.slice(0, idx + 1);
+					msgs[idx] = userMsg;
 
-		// If we are editing an existing user message, replace it and drop later messages.
-		if (editingMessageId) {
-			const idx = chat.messages.findIndex(m => m.id === editingMessageId);
-			// If somehow the message vanished, fall back to "append new".
-			if (idx !== -1) {
-				const msgs = chat.messages.slice(0, idx + 1);
-				msgs[idx] = userMsg;
+					const updatedChat: Conversation = {
+						...tab.conversation,
+						messages: msgs,
+						modifiedAt: new Date(),
+					};
 
-				const updatedChat: Conversation = {
-					...chat,
-					messages: msgs,
-					modifiedAt: new Date(),
-				};
+					updateTab(tabId, t => ({ ...t, editingMessageId: null }));
+					saveUpdatedConversation(tabId, updatedChat);
 
-				setEditingMessageId(null);
-				saveUpdatedChat(updatedChat);
+					if (selectedTabIdRef.current === tabId) scrollToBottomSoon(tabId);
 
-				// Fire-and-forget streaming; this will set isBusy and manage
-				// aborts, but we do not block the composer on it.
-				void (async () => {
-					try {
-						await updateStreamingMessage(updatedChat, options);
-					} catch (err) {
-						console.error(err);
-					}
-				})();
-				return;
+					void updateStreamingMessage(tabId, updatedChat, options).catch(console.error);
+					return;
+				}
+
+				// message vanished -> clear edit state and append normally
+				updateTab(tabId, t => ({ ...t, editingMessageId: null }));
 			}
 
-			// If not found, clear edit state and proceed as a normal send.
-			setEditingMessageId(null);
-		}
+			const updated: Conversation = {
+				...tab.conversation,
+				messages: [...tab.conversation.messages, userMsg],
+				modifiedAt: new Date(),
+			};
 
-		const updated: Conversation = {
-			...chat,
-			messages: [...chat.messages, userMsg],
-			modifiedAt: new Date(),
-		};
+			saveUpdatedConversation(tabId, updated);
+			if (selectedTabIdRef.current === tabId) scrollToBottomSoon(tabId);
 
-		saveUpdatedChat(updated);
-		scrollToBottomSoon();
+			void updateStreamingMessage(tabId, updated, options).catch(console.error);
+		},
+		[saveUpdatedConversation, scrollToBottomSoon, updateStreamingMessage, updateTab]
+	);
 
-		// Same fire-and-forget behavior for normal sends.
-		void (async () => {
-			try {
-				await updateStreamingMessage(updated, options);
-			} catch (err) {
-				console.error(err);
-			}
-		})();
-	};
+	const beginEditMessageForTab = useCallback(
+		(tabId: string, id: string) => {
+			const tab = tabsRef.current.find(t => t.tabId === tabId);
+			if (!tab) return;
+			if (tab.isBusy) return;
 
-	const beginEditMessage = useCallback(
-		(id: string) => {
-			if (isBusy) return;
-
-			const msg = chat.messages.find(m => m.id === id);
+			const msg = tab.conversation.messages.find(m => m.id === id);
 			if (!msg) return;
 			if (msg.role !== RoleEnum.User) return;
 
@@ -471,88 +774,73 @@ export default function ChatsPage() {
 				toolOutputs: msg.uiToolOutputs,
 			};
 
-			chatInputRef.current?.loadExternalMessage(external);
-			chatInputRef.current?.focus();
-			setEditingMessageId(id);
+			const input = inputRefs.current.get(tabId);
+			input?.loadExternalMessage(external);
+			input?.focus();
+
+			updateTab(tabId, t => ({ ...t, editingMessageId: id }));
 		},
-		[chat.messages, isBusy]
+		[updateTab]
 	);
 
-	const cancelEditing = useCallback(() => {
-		setEditingMessageId(null);
-	}, []);
+	const cancelEditingForTab = useCallback(
+		(tabId: string) => {
+			updateTab(tabId, t => ({ ...t, editingMessageId: null }));
+		},
+		[updateTab]
+	);
 
-	const handleResend = useCallback(
-		async (id: string) => {
-			if (isBusy) return;
-			const idx = chat.messages.findIndex(m => m.id === id);
+	const handleResendForTab = useCallback(
+		async (tabId: string, id: string) => {
+			const tab = tabsRef.current.find(t => t.tabId === tabId);
+			if (!tab) return;
+			if (tab.isBusy) return;
+
+			const idx = tab.conversation.messages.findIndex(m => m.id === id);
 			if (idx === -1) return;
-			const msg = chat.messages[idx];
+
+			const msg = tab.conversation.messages[idx];
+			const input = inputRefs.current.get(tabId);
+
 			if (msg.role === RoleEnum.User && msg.toolStoreChoices && msg.toolStoreChoices.length > 0) {
-				chatInputRef.current?.setConversationToolsFromChoices(msg.toolStoreChoices);
-				chatInputRef.current?.setWebSearchFromChoices(msg.toolStoreChoices);
+				input?.setConversationToolsFromChoices(msg.toolStoreChoices);
+				input?.setWebSearchFromChoices(msg.toolStoreChoices);
 			} else {
-				chatInputRef.current?.setConversationToolsFromChoices([]);
-				chatInputRef.current?.setWebSearchFromChoices([]);
+				input?.setConversationToolsFromChoices([]);
+				input?.setWebSearchFromChoices([]);
 			}
-			const msgs = chat.messages.slice(0, idx + 1);
-			const updated = { ...chat, messages: msgs, modifiedAt: new Date() };
-			saveUpdatedChat(updated);
+
+			const msgs = tab.conversation.messages.slice(0, idx + 1);
+			const updated = { ...tab.conversation, messages: msgs, modifiedAt: new Date() };
+			saveUpdatedConversation(tabId, updated);
 
 			let opts = { ...DefaultUIChatOptions };
-			if (chatInputRef.current) opts = chatInputRef.current.getUIChatOptions();
-			await updateStreamingMessage(updated, opts);
+			if (input) opts = input.getUIChatOptions();
+
+			await updateStreamingMessage(tabId, updated, opts);
 		},
-		[chat, saveUpdatedChat, updateStreamingMessage]
+		[saveUpdatedConversation, updateStreamingMessage]
 	);
 
-	const renderedMessages = chat.messages.map((msg, idx) => {
-		const isPending =
-			isBusy && idx === chat.messages.length - 1 && msg.role === RoleEnum.Assistant && msg.uiContent.length === 0;
-		const live = isBusy && idx === chat.messages.length - 1 && msg.role === RoleEnum.Assistant ? streamedMessage : '';
-
-		return (
-			<ChatMessage
-				key={msg.id}
-				message={msg}
-				onEdit={() => {
-					beginEditMessage(msg.id);
-				}}
-				onResend={() => handleResend(msg.id)}
-				streamedMessage={live}
-				isPending={isPending}
-				isBusy={isBusy}
-				isEditing={editingMessageId === msg.id}
-			/>
-		);
-	});
+	// ---------------- Shortcuts ----------------
+	const [shortcutConfig] = useState<ShortcutConfig>(defaultShortcutConfig);
 
 	useChatShortcuts({
 		config: shortcutConfig,
-		isBusy,
+		isBusy: false, // new tabs allowed even if another tab is busy
 		handlers: {
 			newChat: () => {
-				void handleNewChat();
+				openNewTab();
 			},
-			focusSearch: () => {
-				searchRef.current?.focusInput();
-			},
-			focusInput: () => {
-				chatInputRef.current?.focus();
-			},
-			insertTemplate: () => {
-				chatInputRef.current?.openTemplateMenu();
-			},
-			insertTool: () => {
-				chatInputRef.current?.openToolMenu();
-			},
-			insertAttachment: () => {
-				chatInputRef.current?.openAttachmentMenu();
-			},
+			focusSearch: () => searchRef.current?.focusInput(),
+			focusInput: () => inputRefs.current.get(selectedTabIdRef.current)?.focus(),
+			insertTemplate: () => inputRefs.current.get(selectedTabIdRef.current)?.openTemplateMenu(),
+			insertTool: () => inputRefs.current.get(selectedTabIdRef.current)?.openToolMenu(),
+			insertAttachment: () => inputRefs.current.get(selectedTabIdRef.current)?.openAttachmentMenu(),
 		},
 	});
 
-	// Put search into the global titlebar center for the chats route.
+	// ---------------- Titlebar: search only (like before) ----------------
 	useTitleBarContent(
 		{
 			center: (
@@ -562,83 +850,141 @@ export default function ChatsPage() {
 						compact={true}
 						onSelectConversation={handleSelectConversation}
 						refreshKey={searchRefreshKey}
-						currentConversationId={chat.id}
+						currentConversationId={activeTab?.conversation.id ?? ''}
 					/>
 				</div>
 			),
 		},
-		[chat.id, searchRefreshKey, handleSelectConversation]
+		[activeTab?.conversation.id, handleSelectConversation, searchRefreshKey]
 	);
+
+	// ---------------- Export (active tab) ----------------
+	const getConversationForExport = useCallback(async (): Promise<string> => {
+		const t = tabsRef.current.find(x => x.tabId === selectedTabIdRef.current);
+		if (!t) return JSON.stringify(null, null, 2);
+
+		const selectedChat = await conversationStoreAPI.getConversation(t.conversation.id, t.conversation.title, true);
+		return JSON.stringify(selectedChat ?? null, null, 2);
+	}, []);
+
+	// ---------------- Render helpers ----------------
+	const tabBarItems = useMemo(
+		() =>
+			tabs.map(t => ({
+				tabId: t.tabId,
+				title: t.conversation.title,
+				isBusy: t.isBusy,
+				isEmpty: t.conversation.messages.length === 0,
+				renameEnabled: t.conversation.messages.length > 0,
+			})),
+		[tabs]
+	);
+
+	const activeRenderedMessages = useMemo(() => {
+		if (!activeTab) return null;
+
+		return activeTab.conversation.messages.map((msg, idx) => {
+			const isLast = idx === activeTab.conversation.messages.length - 1;
+
+			const isPending =
+				activeTab.isBusy && isLast && msg.role === RoleEnum.Assistant && (msg.uiContent?.length ?? 0) === 0;
+
+			const live = activeTab.isBusy && isLast && msg.role === RoleEnum.Assistant ? activeStreamText : '';
+
+			return (
+				<ChatMessage
+					key={msg.id}
+					message={msg}
+					onEdit={() => {
+						beginEditMessageForTab(activeTab.tabId, msg.id);
+					}}
+					onResend={() => void handleResendForTab(activeTab.tabId, msg.id)}
+					streamedMessage={live}
+					isPending={isPending}
+					isBusy={activeTab.isBusy}
+					isEditing={activeTab.editingMessageId === msg.id}
+				/>
+			);
+		});
+	}, [activeStreamText, activeTab, beginEditMessageForTab, handleResendForTab]);
 
 	return (
 		<PageFrame contentScrollable={false}>
 			<div className="grid h-full w-full grid-rows-[auto_1fr_auto] overflow-hidden">
-				{/* Row 1: NAVBAR */}
-				<div className="row-start-1 row-end-2 flex w-full justify-center">
-					<ChatNavBar
-						onNewChat={handleNewChat}
-						onRenameTitle={handleRenameTitle}
+				{/* Row 1: TAB STRIP (where navbar used to be) + Download floater */}
+				<div className="relative row-start-1 row-end-2 flex w-full justify-center p-0">
+					<ChatTabsBar
+						store={tabStore}
+						selectedTabId={selectedTabId}
+						tabs={tabBarItems}
+						maxTabs={MAX_TABS}
+						onNewTab={openNewTab}
+						onCloseTab={closeTab}
+						onRenameTab={renameTabTitle}
 						getConversationForExport={getConversationForExport}
-						chatTitle={chat.title}
-						disabled={isBusy}
-						renameEnabled={chat.messages.length > 0}
-						shortcutConfig={shortcutConfig}
 					/>
 				</div>
 
-				{/* Row 2: MESSAGES (the only scrollable area) */}
-				<div className="relative row-start-2 row-end-3 min-h-0">
-					{/* Make the full row the scroll container so the scrollbar is at far right */}
+				{/* Row 2: MESSAGES (single scroll container; scroll position restored per tab) */}
+				<div className="relative row-start-2 row-end-3 mt-2 min-h-0">
 					<div
 						ref={chatContainerRef}
+						onScroll={onScrollActive}
 						className="relative h-full w-full overflow-y-auto overscroll-contain py-1"
 						style={{ scrollbarGutter: 'stable both-edges' }}
 					>
-						{/* Center the content inside the full-width scroll container */}
 						<div className="mx-auto w-11/12 xl:w-5/6">
-							<div className="space-y-4">{renderedMessages}</div>
+							<div className="space-y-4">{activeRenderedMessages}</div>
 						</div>
 					</div>
 
-					{/* Overlay the buttons; not part of the scrollable content */}
+					{/* Overlay scroll buttons (active tab only, since container is shared) */}
 					<div className="pointer-events-none absolute right-4 bottom-16 z-10 xl:right-24">
 						<div className="pointer-events-auto">
-							{isScrollable && !isAtTop && (
+							{isScrollable && !isAtTop ? (
 								<ButtonScrollToTop
 									scrollContainerRef={chatContainerRef}
 									iconSize={32}
 									show={isScrollable && !isAtTop}
 									className="btn btn-md border-none bg-transparent shadow-none"
 								/>
-							)}
+							) : null}
 						</div>
 					</div>
 					<div className="pointer-events-none absolute right-4 bottom-4 z-10 xl:right-24">
 						<div className="pointer-events-auto">
-							{isScrollable && !isAtBottom && (
+							{isScrollable && !isAtBottom ? (
 								<ButtonScrollToBottom
 									scrollContainerRef={chatContainerRef}
 									iconSize={32}
 									show={isScrollable && !isAtBottom}
 									className="btn btn-md border-none bg-transparent shadow-none"
 								/>
-							)}
+							) : null}
 						</div>
 					</div>
 				</div>
 
-				{/* Row 3: INPUT (auto; grows with content) */}
+				{/* Row 3: INPUT (per tab; all mounted, only active visible) */}
 				<div className="row-start-3 row-end-4 flex w-full min-w-0 justify-center">
 					<div className="w-11/12 min-w-0 xl:w-5/6">
-						<InputBox
-							ref={chatInputRef}
-							onSend={sendMessage}
-							isBusy={isBusy}
-							abortRef={abortRef}
-							shortcutConfig={shortcutConfig}
-							editingMessageId={editingMessageId}
-							cancelEditing={cancelEditing}
-						/>
+						{tabs.map(t => (
+							<div key={t.tabId} className={t.tabId === selectedTabId ? 'block' : 'hidden'}>
+								<InputBox
+									ref={setInputRef(t.tabId)}
+									onSend={(payload, options) => {
+										return sendMessageForTab(t.tabId, payload, options);
+									}}
+									isBusy={t.isBusy}
+									abortRef={getAbortRef(t.tabId)}
+									shortcutConfig={shortcutConfig}
+									editingMessageId={t.editingMessageId}
+									cancelEditing={() => {
+										cancelEditingForTab(t.tabId);
+									}}
+								/>
+							</div>
+						))}
 					</div>
 				</div>
 			</div>

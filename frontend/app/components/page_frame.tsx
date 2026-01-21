@@ -17,11 +17,11 @@ export function PageFrame({
 	contentScrollable = true,
 	className = '',
 	contentClassName = '',
-	padClassName = 'p-1',
+	padClassName = 'p-0',
 }: PageFrameProps) {
 	return (
 		<div className={`box-border h-full w-full overflow-hidden ${padClassName}`}>
-			<div className={`bg-base-200 h-full w-full overflow-hidden rounded-xl ${className}`}>
+			<div className={`bg-base-200 h-full w-full overflow-hidden ${className}`}>
 				{contentScrollable ? (
 					<div className={`h-full w-full overflow-auto ${contentClassName}`}>{children}</div>
 				) : (

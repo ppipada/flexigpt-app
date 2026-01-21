@@ -733,10 +733,10 @@ export const ChatSearch = forwardRef<ChatSearchHandle, ChatSearchProps>(function
 	);
 
 	return (
-		<div className="w-full">
+		<div className="h-full w-full p-0">
 			<div
 				ref={searchDivRef}
-				className="bg-base-100 border-base-200 focus-within:border-base-300 m-0 flex h-7 items-center rounded-xl border px-2 py-0 shadow-none transition-colors"
+				className="bg-base-100 border-base-300 focus-within:border-base-300 m-0 flex h-8 items-center rounded-xl border px-2 py-0 shadow-none transition-colors"
 			>
 				<FiSearch size={14} className="text-neutral-custom mx-2 shrink-0" />
 				<input
