@@ -6,12 +6,7 @@
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
 
-- [ ] tabs
-  - [ ] with more and more usage, atleast some tabs seem to be worthwhile to do. basically start a command in one and then switch to another. we would need to ensure that we dont really mix anything anywhere and streaming is proper but req wise it seems worthwhile to do.
-  - [ ] with tabs, we should put title and edit/export in proper places so that we get better space vertically.
-
-- [ ] after edit in editor, the cursor is going to end of the text and not immediatly after. check.
-- [ ] do we need buttons/icon buttons as circle?
+- [ ] may be restore tabs should be present for cross page/restart navigation
 
 ## Features
 

@@ -92,10 +92,9 @@ export function insertPlainTextAsSingleBlock(ed: ReturnType<typeof usePlateEdito
 	// Single transform instead of O(number of lines)
 	editor.tf.withoutNormalizing(() => {
 		editor.tf.insertText(expanded);
+		// optional: only useful if you might be replacing a range selection
+		editor.tf.collapse({ edge: 'end' });
 	});
-
-	editor.tf.collapse({ edge: 'end' });
-	editor.tf.select(undefined, { edge: 'end' });
 }
 
 export function hasNonEmptyUserText(ed: PlateEditor | null | undefined): boolean {

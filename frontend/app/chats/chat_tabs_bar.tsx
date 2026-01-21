@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { FiEdit2, FiPlus, FiX } from 'react-icons/fi';
 
@@ -44,6 +44,22 @@ export const ChatTabsBar = memo(function ChatTabsBar({
 
 	const [editingTabId, setEditingTabId] = useState<string | null>(null);
 	const [draftTitle, setDraftTitle] = useState('');
+	const tabElById = useRef(new Map<string, HTMLElement | null>());
+	const setTabEl = useCallback(
+		(id: string) => (el: HTMLElement | null) => {
+			if (!el) tabElById.current.delete(id);
+			else tabElById.current.set(id, el);
+		},
+		[]
+	);
+
+	useEffect(() => {
+		tabElById.current.get(selectedTabId)?.scrollIntoView({
+			behavior: 'smooth',
+			block: 'nearest',
+			inline: 'nearest',
+		});
+	}, [selectedTabId]);
 
 	useEffect(() => {
 		if (editingTabId) return;
@@ -74,17 +90,18 @@ export const ChatTabsBar = memo(function ChatTabsBar({
 		elements.push(
 			<Tab
 				key={t.tabId}
+				ref={setTabEl(t.tabId)}
 				store={store}
 				id={t.tabId}
 				// render as <div> so we can safely place an <input> inside the tab (no <input> inside <button>)
 				render={<div />}
 				className={[
-					'relative flex h-full w-44 items-center p-0',
+					'relative flex h-8 w-44 items-center p-0',
 					'select-none',
 					'focus-visible:outline-primary focus-visible:outline focus-visible:outline-offset-2',
 					// Firefox-ish feel: rounded top + active lifted
 					isActive
-						? 'bg-base-100 text-base-content border-base-300 rounded-t-xl border shadow-sm'
+						? 'bg-base-100 text-base-content border-base-300 rounded-xl border shadow-xs'
 						: 'bg-base-200/80 text-base-content/80 hover:bg-base-200 border-0',
 				].join(' ')}
 			>
@@ -162,40 +179,42 @@ export const ChatTabsBar = memo(function ChatTabsBar({
 	}
 
 	return (
-		<div className="w-full min-w-0">
-			{/* Tab strip with bottom border line */}
-			<div className="border-base-300 flex w-full items-center gap-2 overflow-hidden border-b bg-inherit">
-				<div className="flex min-w-0 flex-1 flex-nowrap overflow-auto">
-					<TabList store={store} aria-label="Chat tabs" className="flex min-w-0 items-end gap-0 py-0 pr-1">
+		<div className="border-base-300 flex h-9 w-full items-center gap-2 border-b bg-inherit">
+			<div className="flex min-w-0 flex-1 flex-nowrap items-center overflow-hidden">
+				{/* Scroll ONLY the tabs. Reserve bottom space so scrollbar doesn't clip tab content. */}
+				<div
+					className="scrollbar-custom-thin min-w-0 overflow-x-auto overflow-y-hidden overscroll-contain pb-1"
+					style={{ scrollbarGutter: 'stable' }}
+				>
+					<TabList store={store} aria-label="Chat tabs" className="flex h-9 w-max items-end gap-0 pr-1">
 						{elements}
 					</TabList>
-
-					<div
-						className="tooltip tooltip-left px-1 py-0"
-						data-tip={tabs.length >= maxTabs ? `New chat (max ${maxTabs} tabs)` : 'New chat'}
-					>
-						<button
-							type="button"
-							className="btn btn-ghost btn-circle btn-xs shrink-0 p-0 opacity-80 hover:opacity-100"
-							onClick={onNewTab}
-							aria-label="New tab"
-							title="New tab"
-						>
-							<FiPlus size={18} />
-						</button>
-					</div>
 				</div>
-				<div className="tooltip tooltip-left mx-2 p-0" data-tip="Export Conversation As JSON">
-					<DownloadButton
-						language="json"
-						valueFetcher={getConversationForExport}
-						size={18}
-						fileprefix="conversation"
+				<div
+					className="tooltip tooltip-left px-1 py-0"
+					data-tip={tabs.length >= maxTabs ? `New chat (max ${maxTabs} tabs)` : 'New chat'}
+				>
+					<button
+						type="button"
 						className="btn btn-ghost btn-circle btn-xs shrink-0 p-0 opacity-80 hover:opacity-100"
-						aria-label="Export Chat"
-						title="Export Chat"
-					/>
+						onClick={onNewTab}
+						aria-label="New Chat"
+						title="New Chat"
+					>
+						<FiPlus size={18} />
+					</button>
 				</div>
+			</div>
+			<div className="tooltip tooltip-left mx-2 p-0" data-tip="Export Conversation As JSON">
+				<DownloadButton
+					language="json"
+					valueFetcher={getConversationForExport}
+					size={18}
+					fileprefix="conversation"
+					className="btn btn-ghost btn-circle btn-xs shrink-0 p-0 opacity-80 hover:opacity-100"
+					aria-label="Export Chat"
+					title="Export Chat"
+				/>
 			</div>
 		</div>
 	);

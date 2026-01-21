@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useStoreState } from '@ariakit/react';
 import { useTabStore } from '@ariakit/react/tab';
@@ -57,9 +57,6 @@ type ChatTabState = {
 
 	// edit state
 	editingMessageId: string | null;
-
-	// LRU
-	lastActivatedAt: number;
 };
 
 function createEmptyTab(): ChatTabState {
@@ -70,7 +67,6 @@ function createEmptyTab(): ChatTabState {
 		isPersisted: false,
 		manualTitleLocked: false,
 		editingMessageId: null,
-		lastActivatedAt: Date.now(),
 	};
 }
 
@@ -82,6 +78,10 @@ function isScratchTab(t: ChatTabState) {
 // eslint-disable-next-line no-restricted-exports
 export default function ChatsPage() {
 	// ---------------- Tabs state ----------------
+	const lastActivatedAtRef = useRef(new Map<string, number>());
+	const touchTab = useCallback((tabId: string) => {
+		lastActivatedAtRef.current.set(tabId, Date.now());
+	}, []);
 	const initialTab = useMemo(() => createEmptyTab(), []);
 	const [tabs, setTabs] = useState<ChatTabState[]>([initialTab]);
 	const tabsRef = useRef(tabs);
@@ -149,6 +149,7 @@ export default function ChatsPage() {
 			streamTextRefs.current.delete(tabId);
 			inputRefs.current.delete(tabId);
 			scrollTopByTab.current.delete(tabId);
+			lastActivatedAtRef.current.delete(tabId);
 		},
 		[getAbortRef]
 	);
@@ -195,10 +196,9 @@ export default function ChatsPage() {
 		});
 	}, []);
 
-	// Update LRU timestamp on activation (update only the selected tab)
 	useEffect(() => {
-		updateTab(selectedTabId, t => ({ ...t, lastActivatedAt: Date.now() }));
-	}, [selectedTabId, updateTab]);
+		touchTab(selectedTabId);
+	}, [selectedTabId, touchTab]);
 
 	const tabExists = useCallback((tabId: string) => tabsRef.current.some(t => t.tabId === tabId), []);
 
@@ -318,7 +318,8 @@ export default function ChatsPage() {
 		const candidates = nonBusy.length > 0 ? nonBusy : base;
 
 		if (candidates.length === 0) return null;
-		return candidates.reduce((lru, t) => (t.lastActivatedAt < lru.lastActivatedAt ? t : lru), candidates[0]);
+		const ts = (id: string) => lastActivatedAtRef.current.get(id) ?? 0;
+		return candidates.reduce((lru, t) => (ts(t.tabId) < ts(lru.tabId) ? t : lru), candidates[0]);
 	}, []);
 
 	const ensureScratchRightmost = useCallback(() => {
@@ -346,6 +347,8 @@ export default function ChatsPage() {
 				}
 			}
 			const scratch = createEmptyTab();
+			touchTab(scratch.tabId);
+
 			getAbortRef(scratch.tabId);
 			getStreamTextRef(scratch.tabId);
 			scrollTopByTab.current.set(scratch.tabId, 0);
@@ -362,12 +365,21 @@ export default function ChatsPage() {
 		if (next.length !== current.length || next.some((t, i) => t.tabId !== current[i]?.tabId)) {
 			setTabs(next);
 		}
-	}, [disposeTabRuntime, getAbortRef, getStreamTextRef, pickLRUEvictionCandidate]);
+	}, [disposeTabRuntime, getAbortRef, getStreamTextRef, pickLRUEvictionCandidate, touchTab]);
+
+	const scratchKey = useMemo(() => {
+		// changes when scratch tabs count/identity changes OR when tab count changes
+		const scratchIds = tabs
+			.filter(isScratchTab)
+			.map(t => t.tabId)
+			.join('|');
+		return `${tabs.length}:${scratchIds}`;
+	}, [tabs]);
 
 	// Enforce scratch invariants after any tabs mutation (search load, send, close, etc.)
 	useEffect(() => {
 		ensureScratchRightmost();
-	}, [tabs, ensureScratchRightmost]);
+	}, [scratchKey, ensureScratchRightmost]);
 
 	// ---------------- Tab actions ----------------
 	const openNewTab = useCallback(() => {
@@ -381,38 +393,46 @@ export default function ChatsPage() {
 	const closeTab = useCallback(
 		(tabId: string) => {
 			const current = tabsRef.current;
-			const isActive = tabId === selectedTabIdRef.current;
+			const wasActive = tabId === selectedTabIdRef.current;
 
+			// 1) Stop any async work / cleanup runtime refs immediately
 			disposeTabRuntime(tabId);
 
-			let nextSelected = selectedTabIdRef.current;
+			// 2) Compute next tabs synchronously from a single snapshot (no mutation inside setState)
+			const idx = current.findIndex(t => t.tabId === tabId);
+			let nextTabs = current.filter(t => t.tabId !== tabId);
 
-			if (isActive) {
-				const idx = current.findIndex(t => t.tabId === tabId);
+			// 3) Ensure we never end up with 0 tabs
+			if (nextTabs.length === 0) {
+				const fresh = createEmptyTab();
+				getAbortRef(fresh.tabId);
+				getStreamTextRef(fresh.tabId);
+				scrollTopByTab.current.set(fresh.tabId, 0);
+				nextTabs = [fresh];
+			}
+
+			// 4) If the closed tab was active, select nearest neighbor (prefer right, else left)
+			let nextSelectedId = selectedTabIdRef.current;
+			if (wasActive) {
 				const right = idx >= 0 ? current[idx + 1] : undefined;
 				const left = idx > 0 ? current[idx - 1] : undefined;
-				nextSelected = (right ?? left)?.tabId ?? '';
+				nextSelectedId =
+					(right && right.tabId !== tabId ? right.tabId : left && left.tabId !== tabId ? left.tabId : '') ||
+					nextTabs[0].tabId;
 			}
 
-			setTabs(prev => {
-				const filtered = prev.filter(t => t.tabId !== tabId);
-				if (filtered.length === 0) {
-					const fresh = createEmptyTab();
-					getAbortRef(fresh.tabId);
-					getStreamTextRef(fresh.tabId);
-					nextSelected = fresh.tabId;
-					scrollTopByTab.current.set(fresh.tabId, 0);
-					return [fresh];
-				}
-				return filtered;
-			});
-
-			if (isActive) {
-				const fallback = tabsRef.current.filter(t => t.tabId !== tabId)[0]?.tabId ?? initialTab.tabId;
-				tabStore.setSelectedId(nextSelected || fallback);
+			// 5) Commit state + selection (selection set after tabs update to avoid invalid ids)
+			setTabs(nextTabs);
+			if (wasActive) {
+				requestAnimationFrame(() => {
+					// still valid? (paranoid guard)
+					const ok =
+						tabsRef.current.some(t => t.tabId === nextSelectedId) || nextTabs.some(t => t.tabId === nextSelectedId);
+					tabStore.setSelectedId(ok ? nextSelectedId : nextTabs[0].tabId);
+				});
 			}
 		},
-		[disposeTabRuntime, getAbortRef, getStreamTextRef, initialTab.tabId, tabStore]
+		[disposeTabRuntime, getAbortRef, getStreamTextRef, tabStore]
 	);
 
 	// ---------------- Rename ----------------
@@ -916,7 +936,7 @@ export default function ChatsPage() {
 		<PageFrame contentScrollable={false}>
 			<div className="grid h-full w-full grid-rows-[auto_1fr_auto] overflow-hidden">
 				{/* Row 1: TAB STRIP (where navbar used to be) + Download floater */}
-				<div className="relative row-start-1 row-end-2 flex w-full justify-center p-0">
+				<div className="relative row-start-1 row-end-2 min-h-0 min-w-0 p-0">
 					<ChatTabsBar
 						store={tabStore}
 						selectedTabId={selectedTabId}
@@ -973,21 +993,18 @@ export default function ChatsPage() {
 				<div className="row-start-3 row-end-4 flex w-full min-w-0 justify-center">
 					<div className="w-11/12 min-w-0 xl:w-5/6">
 						{tabs.map(t => (
-							<div key={t.tabId} className={t.tabId === selectedTabId ? 'block' : 'hidden'}>
-								<InputBox
-									ref={setInputRef(t.tabId)}
-									onSend={(payload, options) => {
-										return sendMessageForTab(t.tabId, payload, options);
-									}}
-									isBusy={t.isBusy}
-									abortRef={getAbortRef(t.tabId)}
-									shortcutConfig={shortcutConfig}
-									editingMessageId={t.editingMessageId}
-									cancelEditing={() => {
-										cancelEditingForTab(t.tabId);
-									}}
-								/>
-							</div>
+							<TabInputPane
+								key={t.tabId}
+								tabId={t.tabId}
+								active={t.tabId === selectedTabId}
+								isBusy={t.isBusy}
+								editingMessageId={t.editingMessageId}
+								setInputRef={setInputRef}
+								getAbortRef={getAbortRef}
+								shortcutConfig={shortcutConfig}
+								sendMessageForTab={sendMessageForTab}
+								cancelEditingForTab={cancelEditingForTab}
+							/>
 						))}
 					</div>
 				</div>
@@ -995,3 +1012,49 @@ export default function ChatsPage() {
 		</PageFrame>
 	);
 }
+
+const TabInputPane = memo(function TabInputPane(props: {
+	tabId: string;
+	active: boolean;
+	isBusy: boolean;
+	editingMessageId: string | null;
+	setInputRef: (tabId: string) => (inst: InputBoxHandle | null) => void;
+	getAbortRef: (tabId: string) => { current: AbortController | null };
+	shortcutConfig: ShortcutConfig;
+	sendMessageForTab: (tabId: string, payload: EditorSubmitPayload, options: UIChatOption) => Promise<void>;
+	cancelEditingForTab: (tabId: string) => void;
+}) {
+	const {
+		tabId,
+		active,
+		isBusy,
+		editingMessageId,
+		setInputRef,
+		getAbortRef,
+		shortcutConfig,
+		sendMessageForTab,
+		cancelEditingForTab,
+	} = props;
+
+	const onSend = useCallback(
+		(payload: EditorSubmitPayload, options: UIChatOption) => sendMessageForTab(tabId, payload, options),
+		[sendMessageForTab, tabId]
+	);
+	const cancelEditing = useCallback(() => {
+		cancelEditingForTab(tabId);
+	}, [cancelEditingForTab, tabId]);
+
+	return (
+		<div className={active ? 'block' : 'hidden'}>
+			<InputBox
+				ref={setInputRef(tabId)}
+				onSend={onSend}
+				isBusy={isBusy}
+				abortRef={getAbortRef(tabId)}
+				shortcutConfig={shortcutConfig}
+				editingMessageId={editingMessageId}
+				cancelEditing={cancelEditing}
+			/>
+		</div>
+	);
+});
