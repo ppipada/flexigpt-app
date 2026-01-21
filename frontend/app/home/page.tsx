@@ -13,10 +13,8 @@ export default function HomePage() {
 	useTitleBarContent(
 		{
 			center: (
-				<div className="flex items-center gap-1 truncate text-sm font-semibold">
-					{' '}
-					<FiHome size={14} />
-					Home
+				<div className="flex items-center gap-1 truncate opacity-60">
+					<FiHome size={16} />
 				</div>
 			),
 		},

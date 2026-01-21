@@ -41,13 +41,13 @@ export function Sidebar({ children }: SidebarProps) {
 				<ul className="menu bg-base-300 text-base-content ms-0 h-full w-12 justify-between ps-0">
 					<div className="mt-8 flex-col p-0">
 						<li className="mt-4" title="Chats" onClick={toggle} aria-label="Chats">
-							<Link to="/chats/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
+							<Link to="/chats/" className="flex h-12 w-12 items-center justify-center rounded-full p-0">
 								<FiMessageSquare size={24} />
 							</Link>
 						</li>
 						{FEATURE_FLAG_AGENTS && (
 							<li className="mt-4" title="Agents" onClick={toggle} aria-label="Agents">
-								<Link to="/agents/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
+								<Link to="/agents/" className="flex h-12 w-12 items-center justify-center rounded-full p-0">
 									<FiCpu size={24} />
 								</Link>
 							</li>
@@ -56,23 +56,23 @@ export function Sidebar({ children }: SidebarProps) {
 					<div className="mb-8 flex-col p-0">
 						{FEATURE_FLAG_DOCUMENT_STORES && (
 							<li className="mt-4" title="Document Stores" onClick={toggle} aria-label="Document Stores">
-								<Link to="/docstores/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
+								<Link to="/docstores/" className="flex h-12 w-12 items-center justify-center rounded-full p-0">
 									<FiDatabase size={24} />
 								</Link>
 							</li>
 						)}
 						<li className="mt-4" title="Prompts" onClick={toggle} aria-label="Prompts">
-							<Link to="/prompts/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
+							<Link to="/prompts/" className="flex h-12 w-12 items-center justify-center rounded-full p-0">
 								<FiFilePlus size={24} />
 							</Link>
 						</li>
 						<li className="mt-4" title="Model Presets" onClick={toggle} aria-label="Model Presets">
-							<Link to="/modelpresets/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
+							<Link to="/modelpresets/" className="flex h-12 w-12 items-center justify-center rounded-full p-0">
 								<FiSliders size={24} />
 							</Link>
 						</li>
 						<li className="mt-4" title="Settings" onClick={toggle} aria-label="Settings">
-							<Link to="/settings/" className="flex h-12 w-12 items-center justify-center rounded-lg p-0">
+							<Link to="/settings/" className="flex h-12 w-12 items-center justify-center rounded-full p-0">
 								<FiSettings size={24} />
 							</Link>
 						</li>
