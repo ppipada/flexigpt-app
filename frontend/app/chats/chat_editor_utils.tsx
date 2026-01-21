@@ -1,8 +1,10 @@
 // ---- Large-text perf tuning ----
 // If you type huge prompts (10k+ words), a single giant text leaf becomes slow.
 // We keep ONE paragraph, but chunk its text into multiple text nodes ("leaves").
-import type { Value } from 'platejs';
-import type { PlateEditor } from 'platejs/react';
+import { NodeApi, type Value } from 'platejs';
+import type { PlateEditor, usePlateEditor } from 'platejs/react';
+
+import { expandTabsToSpaces } from '@/lib/text_utils';
 
 // We add a per-chunk prop so Slate doesn't merge them back together.
 export const LARGE_TEXT_AUTOCHUNK_THRESHOLD_CHARS = 10000; // start chunking once draft grows beyond this
@@ -54,3 +56,34 @@ export const clearAllMarks = (ed: PlateEditor) => {
 		}
 	});
 };
+
+export function insertPlainTextAsSingleBlock(ed: ReturnType<typeof usePlateEditor>, text: string, tabSize = 2) {
+	if (!ed) return;
+	const editor = ed as PlateEditor;
+
+	// Normalize line endings
+	const normalized = text.replace(/\r\n?/g, '\n');
+
+	// Expand tabs, but keep everything as one string
+	const expanded = normalized
+		.split('\n')
+		.map(line => expandTabsToSpaces(line, tabSize))
+		.join('\n');
+
+	// Single transform instead of O(number of lines)
+	editor.tf.withoutNormalizing(() => {
+		editor.tf.insertText(expanded);
+	});
+
+	editor.tf.collapse({ edge: 'end' });
+	editor.tf.select(undefined, { edge: 'end' });
+}
+
+export function hasNonEmptyUserText(ed: PlateEditor | null | undefined): boolean {
+	if (!ed) return false;
+	// If NodeApi.texts exists:
+	for (const [t] of NodeApi.texts(ed)) {
+		if (t.text.trim().length > 0) return true;
+	}
+	return false;
+}

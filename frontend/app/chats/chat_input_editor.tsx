@@ -57,6 +57,8 @@ import {
 	buildSingleParagraphValue,
 	buildSingleParagraphValueChunked,
 	clearAllMarks,
+	hasNonEmptyUserText,
+	insertPlainTextAsSingleBlock,
 	isCursorAtDocumentEnd,
 	LARGE_TEXT_AUTOCHUNK_THRESHOLD_CHARS,
 	LARGE_TEXT_AUTODECHUNK_THRESHOLD_CHARS,
@@ -69,8 +71,6 @@ import {
 	getFirstTemplateNodeWithPath,
 	getTemplateNodesWithPath,
 	getTemplateSelections,
-	hasNonEmptyUserText,
-	insertPlainTextAsSingleBlock,
 	toPlainTextReplacingVariables,
 } from '@/chats/templates/template_editor_utils';
 import { TemplateSlashKit } from '@/chats/templates/template_plugin';

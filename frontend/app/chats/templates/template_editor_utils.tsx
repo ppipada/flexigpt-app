@@ -1,9 +1,7 @@
 import { ElementApi, KEYS, NodeApi } from 'platejs';
-import type { PlateEditor, usePlateEditor } from 'platejs/react';
+import type { PlateEditor } from 'platejs/react';
 
 import type { PromptTemplate, PromptVariable } from '@/spec/prompt';
-
-import { expandTabsToSpaces } from '@/lib/text_utils';
 
 import {
 	computeEffectiveTemplate,
@@ -167,32 +165,4 @@ function isTemplateVarNode(n: unknown): n is TemplateVariableElementNode {
 	if (!n || typeof n !== 'object') return false;
 	const obj = n as Record<PropertyKey, unknown>;
 	return 'type' in obj && obj.type === KEY_TEMPLATE_VARIABLE && 'name' in obj && typeof obj.name === 'string';
-}
-
-export function insertPlainTextAsSingleBlock(ed: ReturnType<typeof usePlateEditor>, text: string, tabSize = 2) {
-	if (!ed) return;
-	const editor = ed as PlateEditor;
-
-	// Normalize line endings
-	const normalized = text.replace(/\r\n?/g, '\n');
-
-	// Expand tabs, but keep everything as one string
-	const expanded = normalized
-		.split('\n')
-		.map(line => expandTabsToSpaces(line, tabSize))
-		.join('\n');
-
-	// Single transform instead of O(number of lines)
-	editor.tf.withoutNormalizing(() => {
-		editor.tf.insertText(expanded);
-	});
-}
-
-export function hasNonEmptyUserText(ed: PlateEditor | null | undefined): boolean {
-	if (!ed) return false;
-	// If NodeApi.texts exists:
-	for (const [t] of NodeApi.texts(ed)) {
-		if (t.text.trim().length > 0) return true;
-	}
-	return false;
 }
