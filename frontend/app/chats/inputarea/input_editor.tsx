@@ -55,7 +55,7 @@ import {
 } from '@/chats/attachments/attachment_editor_utils';
 import { useOpenToolArgs } from '@/chats/events/open_attached_toolargs';
 import { dispatchTemplateFlashEvent } from '@/chats/events/template_flash';
-import { EditorChipsBar } from '@/chats/inputbox/input_editor_chips_bar';
+import { EditorChipsBar } from '@/chats/inputarea/input_editor_chips_bar';
 import {
 	buildSingleParagraphValue,
 	buildSingleParagraphValueChunked,
@@ -68,7 +68,7 @@ import {
 	LARGE_TEXT_AUTOCHUNK_THRESHOLD_CHARS,
 	LARGE_TEXT_AUTODECHUNK_THRESHOLD_CHARS,
 	LARGE_TEXT_CHUNK_SIZE,
-} from '@/chats/inputbox/input_editor_utils';
+} from '@/chats/inputarea/input_editor_utils';
 import {
 	getFirstTemplateNodeWithPath,
 	getTemplateNodesWithPath,

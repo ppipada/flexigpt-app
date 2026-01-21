@@ -35,8 +35,8 @@ import {
 } from '@/chats/chat_hydration_helper';
 import { ChatNavBar } from '@/chats/chat_navbar';
 import { ChatSearch, type ChatSearchHandle } from '@/chats/chat_search';
-import { InputBox, type InputBoxHandle } from '@/chats/inputbox/input_box';
-import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/inputbox/input_editor_utils';
+import { InputBox, type InputBoxHandle } from '@/chats/inputarea/input_box';
+import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/inputarea/input_editor_utils';
 import { ChatMessage } from '@/chats/messages/message';
 
 // eslint-disable-next-line no-restricted-exports

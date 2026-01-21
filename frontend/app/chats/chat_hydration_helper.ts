@@ -34,7 +34,7 @@ import {
 	deriveUIFieldsFromOutputUnion,
 	getDebugDetailsMarkdown,
 } from '@/chats/chat_completion_helper';
-import type { EditorSubmitPayload } from '@/chats/inputbox/input_editor_utils';
+import type { EditorSubmitPayload } from '@/chats/inputarea/input_editor_utils';
 import {
 	collectToolCallsFromInputs,
 	collectToolCallsFromOutputs,

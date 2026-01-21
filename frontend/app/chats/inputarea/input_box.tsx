@@ -9,8 +9,8 @@ import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal'
 
 import { type ChatOption, DefaultChatOptions } from '@/chats/assitantcontexts/chat_option_helper';
 import { AssistantContextBar } from '@/chats/assitantcontexts/context_bar';
-import { EditorArea, type EditorAreaHandle } from '@/chats/inputbox/input_editor';
-import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/inputbox/input_editor_utils';
+import { EditorArea, type EditorAreaHandle } from '@/chats/inputarea/input_editor';
+import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/inputarea/input_editor_utils';
 
 export interface InputBoxHandle {
 	getChatOptions: () => ChatOption;
