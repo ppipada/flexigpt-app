@@ -4,13 +4,13 @@ import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
-import type { ChatOption } from '@/chats/assitantcontexts/chat_option_helper';
+import type { UIChatOption } from '@/chats/assitantcontexts/chat_option_helper';
 
 type AdvancedParamsModalProps = {
 	isOpen: boolean;
 	onClose: () => void;
-	currentModel: ChatOption;
-	onSave: (updatedModel: ChatOption) => void;
+	currentModel: UIChatOption;
+	onSave: (updatedModel: UIChatOption) => void;
 };
 
 export function AdvancedParamsModal({ isOpen, onClose, currentModel, onSave }: AdvancedParamsModalProps) {
@@ -95,7 +95,7 @@ export function AdvancedParamsModal({ isOpen, onClose, currentModel, onSave }: A
 			return;
 		}
 
-		const updatedModel: ChatOption = {
+		const updatedModel: UIChatOption = {
 			...currentModel,
 			stream,
 			maxPromptLength: maxPromptLength.trim() === '' ? currentModel.maxPromptLength : Number(maxPromptLength.trim()),

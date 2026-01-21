@@ -23,8 +23,10 @@ import { conversationStoreAPI } from '@/apis/baseapi';
 import { ButtonScrollToBottom, ButtonScrollToTop } from '@/components/button_scroll_top_bottom';
 import { PageFrame } from '@/components/page_frame';
 
-import { type ChatOption, DefaultChatOptions } from '@/chats/assitantcontexts/chat_option_helper';
-import { HandleCompletion } from '@/chats/chat_completion_helper';
+import { DefaultUIChatOptions, type UIChatOption } from '@/chats/assitantcontexts/chat_option_helper';
+import { ChatNavBar } from '@/chats/chat_navbar';
+import { ChatSearch, type ChatSearchHandle } from '@/chats/chat_search';
+import { HandleCompletion } from '@/chats/conversation/completion_helper';
 import {
 	buildUserConversationMessageFromEditor,
 	deriveConversationToolsFromMessages,
@@ -32,9 +34,7 @@ import {
 	hydrateConversation,
 	initConversation,
 	initConversationMessage,
-} from '@/chats/chat_hydration_helper';
-import { ChatNavBar } from '@/chats/chat_navbar';
-import { ChatSearch, type ChatSearchHandle } from '@/chats/chat_search';
+} from '@/chats/conversation/hydration_helper';
 import { InputBox, type InputBoxHandle } from '@/chats/inputarea/input_box';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/inputarea/input_editor_utils';
 import { ChatMessage } from '@/chats/messages/message';
@@ -207,7 +207,7 @@ export default function ChatsPage() {
 	);
 
 	const updateStreamingMessage = useCallback(
-		async (updatedChatWithUserMessage: Conversation, options: ChatOption) => {
+		async (updatedChatWithUserMessage: Conversation, options: UIChatOption) => {
 			// Abort older request (if any) and reset UI
 			abortRef.current?.abort();
 			tokensReceivedRef.current = false;
@@ -387,7 +387,7 @@ export default function ChatsPage() {
 		[saveUpdatedChat, scrollToBottomSoon]
 	);
 
-	const sendMessage = async (payload: EditorSubmitPayload, options: ChatOption) => {
+	const sendMessage = async (payload: EditorSubmitPayload, options: UIChatOption) => {
 		if (isBusy) return;
 
 		const trimmed = payload.text.trim();
@@ -499,8 +499,8 @@ export default function ChatsPage() {
 			const updated = { ...chat, messages: msgs, modifiedAt: new Date() };
 			saveUpdatedChat(updated);
 
-			let opts = { ...DefaultChatOptions };
-			if (chatInputRef.current) opts = chatInputRef.current.getChatOptions();
+			let opts = { ...DefaultUIChatOptions };
+			if (chatInputRef.current) opts = chatInputRef.current.getUIChatOptions();
 			await updateStreamingMessage(updated, opts);
 		},
 		[chat, saveUpdatedChat, updateStreamingMessage]

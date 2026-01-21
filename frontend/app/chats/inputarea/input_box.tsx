@@ -7,13 +7,13 @@ import type { ShortcutConfig } from '@/lib/keyboard_shortcuts';
 
 import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
 
-import { type ChatOption, DefaultChatOptions } from '@/chats/assitantcontexts/chat_option_helper';
+import { DefaultUIChatOptions, type UIChatOption } from '@/chats/assitantcontexts/chat_option_helper';
 import { AssistantContextBar } from '@/chats/assitantcontexts/context_bar';
 import { EditorArea, type EditorAreaHandle } from '@/chats/inputarea/input_editor';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/inputarea/input_editor_utils';
 
 export interface InputBoxHandle {
-	getChatOptions: () => ChatOption;
+	getUIChatOptions: () => UIChatOption;
 	focus: () => void;
 	openTemplateMenu: () => void;
 	openToolMenu: () => void;
@@ -25,7 +25,7 @@ export interface InputBoxHandle {
 }
 
 interface InputBoxProps {
-	onSend: (message: EditorSubmitPayload, options: ChatOption) => Promise<void>;
+	onSend: (message: EditorSubmitPayload, options: UIChatOption) => Promise<void>;
 	isBusy: boolean;
 	abortRef: RefObject<AbortController | null>;
 	shortcutConfig: ShortcutConfig;
@@ -37,7 +37,7 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 	{ onSend, isBusy, abortRef, shortcutConfig, editingMessageId, cancelEditing },
 	ref
 ) {
-	const [chatOptions, setChatOptions] = useState<ChatOption>(DefaultChatOptions);
+	const [chatOptions, setUIChatOptions] = useState<UIChatOption>(DefaultUIChatOptions);
 
 	const [showAbortModal, setShowAbortModal] = useState(false);
 
@@ -54,7 +54,7 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 	};
 
 	useImperativeHandle(ref, () => ({
-		getChatOptions: () => chatOptions,
+		getUIChatOptions: () => chatOptions,
 		focus: () => {
 			inputAreaRef.current?.focus();
 		},
@@ -83,7 +83,7 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 
 	return (
 		<div className="bg-base-200 w-full min-w-0">
-			<AssistantContextBar onOptionsChange={setChatOptions} /* hand the aggregated options up */ />
+			<AssistantContextBar onOptionsChange={setUIChatOptions} /* hand the aggregated options up */ />
 
 			<DeleteConfirmationModal
 				isOpen={showAbortModal}

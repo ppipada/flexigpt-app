@@ -4,14 +4,14 @@ import { FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 
 import { Select, SelectItem, SelectPopover, useSelectStore, useStoreState } from '@ariakit/react';
 
-import type { ChatOption } from '@/chats/assitantcontexts/chat_option_helper';
+import type { UIChatOption } from '@/chats/assitantcontexts/chat_option_helper';
 
-const modelKey = (m: ChatOption) => `${m.providerName}::${m.modelPresetID}`;
+const modelKey = (m: UIChatOption) => `${m.providerName}::${m.modelPresetID}`;
 
 type ModelDropdownProps = {
-	selectedModel: ChatOption;
-	setSelectedModel: Dispatch<SetStateAction<ChatOption>>;
-	allOptions: ChatOption[];
+	selectedModel: UIChatOption;
+	setSelectedModel: Dispatch<SetStateAction<UIChatOption>>;
+	allOptions: UIChatOption[];
 	isOpen: boolean;
 	setIsOpen: Dispatch<SetStateAction<boolean>>;
 };
@@ -20,7 +20,7 @@ export function ModelDropdown({ selectedModel, setSelectedModel, allOptions, isO
 	const currentKey = modelKey(selectedModel);
 
 	const select = useSelectStore({
-		// value is a string key, not the full ChatOption
+		// value is a string key, not the full UIChatOption
 		value: currentKey,
 		setValue: key => {
 			if (typeof key !== 'string') return;
@@ -39,7 +39,7 @@ export function ModelDropdown({ selectedModel, setSelectedModel, allOptions, isO
 
 	const open = useStoreState(select, 'open');
 
-	const isCurrent = (m: ChatOption) => modelKey(m) === currentKey;
+	const isCurrent = (m: UIChatOption) => modelKey(m) === currentKey;
 
 	return (
 		<div className="flex w-full justify-center">

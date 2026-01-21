@@ -33,7 +33,7 @@ import {
 	buildUIToolOutputFromToolOutput,
 	deriveUIFieldsFromOutputUnion,
 	getDebugDetailsMarkdown,
-} from '@/chats/chat_completion_helper';
+} from '@/chats/conversation/completion_helper';
 import type { EditorSubmitPayload } from '@/chats/inputarea/input_editor_utils';
 import {
 	collectToolCallsFromInputs,

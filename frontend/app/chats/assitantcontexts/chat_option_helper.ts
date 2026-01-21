@@ -10,7 +10,7 @@ import { AuthKeyTypeProvider, type SettingsSchema } from '@/spec/setting';
 import { modelPresetStoreAPI, settingstoreAPI } from '@/apis/baseapi';
 import { getAllProviderPresetsMap } from '@/apis/list_helper';
 
-export interface ChatOption extends ModelParam {
+export interface UIChatOption extends ModelParam {
 	providerName: ProviderName;
 	providerSDKType: ProviderSDKType;
 	modelPresetID: ModelPresetID;
@@ -35,7 +35,7 @@ const DefaultModelParams: ModelParam = {
 	additionalParametersRawJSON: undefined,
 };
 
-export const DefaultChatOptions: ChatOption = {
+export const DefaultUIChatOptions: UIChatOption = {
 	...DefaultModelParams,
 	providerName: 'no-provider',
 	providerSDKType: ProviderSDKType.ProviderSDKTypeOpenAIChatCompletions,
@@ -72,8 +72,8 @@ function buildModelParams(modelPreset: ModelPreset): ModelParam {
 }
 
 export async function getChatInputOptions(): Promise<{
-	allOptions: ChatOption[];
-	default: ChatOption;
+	allOptions: UIChatOption[];
+	default: UIChatOption;
 }> {
 	try {
 		/* fetch everything in parallel */
@@ -83,8 +83,8 @@ export async function getChatInputOptions(): Promise<{
 			modelPresetStoreAPI.getDefaultProvider(),
 		]);
 
-		const allOptions: ChatOption[] = [];
-		let defaultOption: ChatOption | undefined;
+		const allOptions: UIChatOption[] = [];
+		let defaultOption: UIChatOption | undefined;
 
 		for (const [providerName, providerPreset] of Object.entries(allProviderPresets)) {
 			/* provider disabled or no key → skip */
@@ -97,7 +97,7 @@ export async function getChatInputOptions(): Promise<{
 
 				const modelParams = buildModelParams(modelPreset);
 
-				const option: ChatOption = {
+				const option: UIChatOption = {
 					...modelParams,
 					providerName: providerName,
 					providerSDKType: providerPreset.sdkType,
@@ -119,14 +119,14 @@ export async function getChatInputOptions(): Promise<{
 			if (allOptions.length > 0) {
 				defaultOption = allOptions[0];
 			} else {
-				defaultOption = DefaultChatOptions;
-				allOptions.push(DefaultChatOptions);
+				defaultOption = DefaultUIChatOptions;
+				allOptions.push(DefaultUIChatOptions);
 			}
 		}
 
 		return { allOptions, default: defaultOption };
 	} catch (error) {
 		console.error('Error while building chat input options:', error);
-		return { allOptions: [DefaultChatOptions], default: DefaultChatOptions };
+		return { allOptions: [DefaultUIChatOptions], default: DefaultUIChatOptions };
 	}
 }

@@ -5,7 +5,11 @@ import { FiSliders } from 'react-icons/fi';
 import { type ReasoningLevel, ReasoningType } from '@/spec/inference';
 
 import { AdvancedParamsModal } from '@/chats/assitantcontexts/advanced_params_modal';
-import { type ChatOption, DefaultChatOptions, getChatInputOptions } from '@/chats/assitantcontexts/chat_option_helper';
+import {
+	DefaultUIChatOptions,
+	getChatInputOptions,
+	type UIChatOption,
+} from '@/chats/assitantcontexts/chat_option_helper';
 import { DisablePreviousMessagesCheckbox } from '@/chats/assitantcontexts/disable_checkbox';
 import { ModelDropdown } from '@/chats/assitantcontexts/model_dropdown';
 import { HybridReasoningCheckbox } from '@/chats/assitantcontexts/reasoning_hybrid_checkbox';
@@ -20,12 +24,12 @@ import { TemperatureDropdown } from '@/chats/assitantcontexts/temperature_dropdo
 import { useSetSystemPromptForChat } from '@/chats/events/set_system_prompt';
 
 type AssistantContextBarProps = {
-	onOptionsChange: (options: ChatOption) => void;
+	onOptionsChange: (options: UIChatOption) => void;
 };
 
 export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProps) {
-	const [selectedModel, setSelectedModel] = useState<ChatOption>(DefaultChatOptions);
-	const [allOptions, setAllOptions] = useState<ChatOption[]>([DefaultChatOptions]);
+	const [selectedModel, setSelectedModel] = useState<UIChatOption>(DefaultUIChatOptions);
+	const [allOptions, setAllOptions] = useState<UIChatOption[]>([DefaultUIChatOptions]);
 
 	const [isHybridReasoningEnabled, setIsHybridReasoningEnabled] = useState(true);
 	const [disablePreviousMessages, setDisablePreviousMessages] = useState(false);
@@ -59,7 +63,7 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 		}
 	}, [selectedModel.systemPrompt]);
 
-	const buildFinalOptions = useCallback((): ChatOption => {
+	const buildFinalOptions = useCallback((): UIChatOption => {
 		const base = { ...selectedModel, disablePreviousMessages };
 
 		// remove reasoning when hybrid reasoning is toggled off
@@ -67,7 +71,7 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 			const modifiedOptions = { ...base };
 			delete modifiedOptions.reasoning;
 			if (modifiedOptions.temperature === undefined) {
-				modifiedOptions.temperature = DefaultChatOptions.temperature;
+				modifiedOptions.temperature = DefaultUIChatOptions.temperature;
 			}
 			return modifiedOptions;
 		}
@@ -271,7 +275,7 @@ export function AssistantContextBar({ onOptionsChange }: AssistantContextBarProp
 					setIsAdvancedModalOpen(false);
 				}}
 				currentModel={selectedModel}
-				onSave={(updatedModel: ChatOption) => {
+				onSave={(updatedModel: UIChatOption) => {
 					setSelectedModel(updatedModel);
 				}}
 			/>
