@@ -38,3 +38,13 @@ export function extractTimeFromUUIDv7Str(id: string): Date {
 export function getUUIDv7(): string {
 	return uuidv7();
 }
+
+export function ensureMakeID(explicit?: string): string {
+	const trimmed = explicit?.trim();
+	if (trimmed) return trimmed;
+	// Strong uniqueness across tabs/windows.
+	if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+		return crypto.randomUUID();
+	}
+	return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}

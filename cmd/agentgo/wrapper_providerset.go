@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"sync"
+	"time"
 
 	"github.com/flexigpt/inference-go/debugclient"
 	inferencegoSpec "github.com/flexigpt/inference-go/spec"
@@ -21,6 +22,7 @@ type ProviderSetWrapper struct {
 	appContext          context.Context
 	completionCancelMux sync.Mutex
 	completionCancels   map[string]context.CancelFunc
+	preCanceled         map[string]time.Time
 }
 
 // InitProviderSetWrapper creates a new ProviderSet with the specified default provider.
@@ -44,6 +46,8 @@ func InitProviderSetWrapper(
 	}
 	ps.providersetAPI = p
 	ps.completionCancels = map[string]context.CancelFunc{}
+	ps.preCanceled = map[string]time.Time{}
+
 	return nil
 }
 
@@ -87,22 +91,39 @@ func (w *ProviderSetWrapper) FetchCompletion(
 		if requestID == "" {
 			return nil, errors.New("requestID is empty")
 		}
+		if w.appContext == nil {
+			return nil, errors.New("appContext is not set (call SetWrappedProviderAppContext during startup)")
+		}
+		if w.completionCancels == nil {
+			w.completionCancels = map[string]context.CancelFunc{}
+		}
+		if w.preCanceled == nil {
+			w.preCanceled = map[string]time.Time{}
+		}
 
 		ctx, cancel := context.WithCancel(w.appContext)
+		defer cancel()
 
 		w.completionCancelMux.Lock()
+		// If a cancel arrived before the fetch registered, honor it.
+		if _, ok := w.preCanceled[requestID]; ok {
+			delete(w.preCanceled, requestID)
+			w.completionCancelMux.Unlock()
+			return nil, context.Canceled
+		}
+		// Protect against requestID reuse while in-flight.
+		if _, exists := w.completionCancels[requestID]; exists {
+			w.completionCancelMux.Unlock()
+			return nil, errors.New("duplicate requestID: a completion with this id is already in flight")
+		}
+
 		w.completionCancels[requestID] = cancel
 		w.completionCancelMux.Unlock()
+
 		defer func() {
 			w.completionCancelMux.Lock()
 			delete(w.completionCancels, requestID)
 			w.completionCancelMux.Unlock()
-			if textCallbackID != "" {
-				runtime.EventsOff(w.appContext, textCallbackID)
-			}
-			if thinkingCallbackID != "" {
-				runtime.EventsOff(w.appContext, thinkingCallbackID)
-			}
 		}()
 
 		req := &inferencewrapperSpec.CompletionRequest{
@@ -110,12 +131,22 @@ func (w *ProviderSetWrapper) FetchCompletion(
 			Body:     completionData,
 		}
 
-		if textCallbackID != "" && thinkingCallbackID != "" {
+		if textCallbackID != "" {
 			req.OnStreamText = func(textData string) error {
+				if err := ctx.Err(); err != nil {
+					return err
+				}
+				//nolint:contextcheck // Need to pass app context here and not new context.
 				runtime.EventsEmit(w.appContext, textCallbackID, textData)
 				return nil
 			}
+		}
+		if thinkingCallbackID != "" {
 			req.OnStreamThinking = func(thinkingData string) error {
+				if err := ctx.Err(); err != nil {
+					return err
+				}
+				//nolint:contextcheck // Need to pass app context here and not new context.
 				runtime.EventsEmit(w.appContext, thinkingCallbackID, thinkingData)
 				return nil
 			}
@@ -145,10 +176,25 @@ func (w *ProviderSetWrapper) FetchCompletion(
 }
 
 func (w *ProviderSetWrapper) CancelCompletion(id string) {
+	if id == "" {
+		return
+	}
 	w.completionCancelMux.Lock()
 	defer w.completionCancelMux.Unlock()
 	if c, ok := w.completionCancels[id]; ok {
 		c()
 		delete(w.completionCancels, id)
+		return
+	}
+
+	// Cancel arrived before FetchCompletion registered the cancel func.
+	w.preCanceled[id] = time.Now()
+
+	// Best-effort pruning to avoid unbounded growth.
+	cutoff := time.Now().Add(-2 * time.Minute)
+	for k, t := range w.preCanceled {
+		if t.Before(cutoff) {
+			delete(w.preCanceled, k)
+		}
 	}
 }

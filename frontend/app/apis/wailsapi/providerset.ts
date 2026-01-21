@@ -2,6 +2,8 @@ import type { StoreConversationMessage } from '@/spec/conversation';
 import type { CompletionResponseBody, ModelParam, ProviderName } from '@/spec/inference';
 import type { ToolStoreChoice } from '@/spec/tool';
 
+import { ensureMakeID } from '@/lib/uuid_utils';
+
 import type { IProviderSetAPI } from '@/apis/interface';
 import { CancelCompletion, FetchCompletion } from '@/apis/wailsjs/go/main/ProviderSetWrapper';
 import type { spec as wailsSpec } from '@/apis/wailsjs/go/models';
@@ -25,15 +27,14 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 		onStreamTextData?: (text: string) => void,
 		onStreamThinkingData?: (text: string) => void
 	): Promise<CompletionResponseBody | undefined> {
+		const rid = ensureMakeID(requestId);
+
 		let textCallbackId = '';
 		let thinkingCallbackId = '';
 		let abortHandler: (() => void) | undefined;
 
-		if (onStreamTextData && onStreamThinkingData) {
-			const uid = requestId ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-
-			textCallbackId = `text-${uid}`;
-			thinkingCallbackId = `thinking-${uid}`;
+		if (onStreamTextData) {
+			textCallbackId = `text-${rid}`;
 
 			let lastText = '';
 			const textCb = (t: string) => {
@@ -44,7 +45,10 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 				}
 			};
 			EventsOn(textCallbackId, textCb);
+		}
 
+		if (onStreamThinkingData) {
+			thinkingCallbackId = `thinking-${rid}`;
 			let lastThinking = '';
 			const thinkingCb = (t: string) => {
 				const d = t.trim();
@@ -63,12 +67,11 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 			toolStoreChoices: toolStoreChoices ? ([...toolStoreChoices] as wailsSpec.ToolStoreChoice[]) : [],
 		} as wailsSpec.CompletionRequestBody;
 
-		const responsePromise = FetchCompletion(provider, body, textCallbackId, thinkingCallbackId, requestId ?? '');
-
 		const abortPromise: Promise<never> = new Promise((_, reject) => {
 			if (!signal) return;
 
-			// Already aborted before we even start?
+			// Already aborted before we even start => do NOT start backend call.
+
 			if (signal.aborted) {
 				reject(new DOMException('Aborted', 'AbortError'));
 				return;
@@ -76,12 +79,15 @@ export class WailsProviderSetAPI implements IProviderSetAPI {
 
 			abortHandler = () => {
 				// Detach server-side
-				this.cancelCompletion(requestId ?? '').catch(() => {});
+				this.cancelCompletion(rid).catch(() => {});
 				reject(new DOMException('Aborted', 'AbortError'));
 			};
 
 			signal.addEventListener('abort', abortHandler, { once: true });
 		});
+
+		// Start backend call only after abort handling is attached / checked.
+		const responsePromise = FetchCompletion(provider, body, textCallbackId, thinkingCallbackId, rid);
 
 		try {
 			const resp = await Promise.race([responsePromise, abortPromise]);
