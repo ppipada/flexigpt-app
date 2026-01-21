@@ -6,7 +6,8 @@
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
 
-- [ ] may be restore tabs should be present for cross page/restart navigation
+- [x] may be restore tabs should be present for cross page/restart navigation
+- [ ] shortcuts for tabs
 
 ## Features
 

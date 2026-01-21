@@ -29,6 +29,15 @@ import { PageFrame } from '@/components/page_frame';
 
 import { ChatSearch, type ChatSearchHandle } from '@/chats/chat_search';
 import { ChatTabsBar } from '@/chats/chat_tabs_bar';
+import {
+	buildInitialChatsModel,
+	type ChatTabState,
+	createEmptyTab,
+	type InitialChatsModel,
+	isScratchTab,
+	MAX_TABS,
+	writePersistedChatsPageState,
+} from '@/chats/chat_tabs_persist';
 import { HandleCompletion } from '@/chats/conversation/completion_helper';
 import {
 	buildUserConversationMessageFromEditor,
@@ -42,55 +51,27 @@ import { InputBox, type InputBoxHandle } from '@/chats/inputarea/input_box';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/inputarea/input_editor_utils';
 import { ChatMessage } from '@/chats/messages/message';
 
-const MAX_TABS = 8;
-
-type ChatTabState = {
-	tabId: string;
-	conversation: Conversation;
-
-	// streaming (state only for coarse UI like spinner)
-	isBusy: boolean;
-
-	// persistence/title behavior
-	isPersisted: boolean;
-	manualTitleLocked: boolean;
-
-	// edit state
-	editingMessageId: string | null;
-};
-
-function createEmptyTab(): ChatTabState {
-	return {
-		tabId: crypto.randomUUID(),
-		conversation: initConversation(),
-		isBusy: false,
-		isPersisted: false,
-		manualTitleLocked: false,
-		editingMessageId: null,
-	};
-}
-
-function isScratchTab(t: ChatTabState) {
-	// "New conversation" = local scratch, not a stored convo
-	return !t.isPersisted && t.conversation.messages.length === 0;
-}
-
 // eslint-disable-next-line no-restricted-exports
 export default function ChatsPage() {
+	// Compute initial model once (important: stable IDs; no double-randomUUID)
+	const initialModelRef = useRef<InitialChatsModel | null>(null);
+	if (!initialModelRef.current) initialModelRef.current = buildInitialChatsModel();
+	const initialModel = initialModelRef.current;
+
 	// ---------------- Tabs state ----------------
 	const lastActivatedAtRef = useRef(new Map<string, number>());
 	const touchTab = useCallback((tabId: string) => {
 		lastActivatedAtRef.current.set(tabId, Date.now());
 	}, []);
-	const initialTab = useMemo(() => createEmptyTab(), []);
-	const [tabs, setTabs] = useState<ChatTabState[]>([initialTab]);
+	const [tabs, setTabs] = useState<ChatTabState[]>(initialModel.tabs);
+
 	const tabsRef = useRef(tabs);
 	useEffect(() => {
 		tabsRef.current = tabs;
 	}, [tabs]);
 
-	const tabStore = useTabStore({ defaultSelectedId: initialTab.tabId });
-	const selectedTabId = useStoreState(tabStore, 'selectedId') ?? initialTab.tabId;
+	const tabStore = useTabStore({ defaultSelectedId: initialModel.selectedTabId });
+	const selectedTabId = useStoreState(tabStore, 'selectedId') ?? initialModel.selectedTabId;
 
 	const selectedTabIdRef = useRef(selectedTabId);
 	useEffect(() => {
@@ -135,6 +116,18 @@ export default function ChatsPage() {
 
 	// Scroll position restore per tab
 	const scrollTopByTab = useRef(new Map<string, number>());
+
+	// Seed runtime maps from persisted state (once)
+	const seededRuntimeFromStorageRef = useRef(false);
+	if (!seededRuntimeFromStorageRef.current) {
+		seededRuntimeFromStorageRef.current = true;
+		for (const [id, ts] of Object.entries(initialModel.lastActivatedAtByTab)) {
+			if (typeof ts === 'number') lastActivatedAtRef.current.set(id, ts);
+		}
+		for (const [id, top] of Object.entries(initialModel.scrollTopByTab)) {
+			if (typeof top === 'number') scrollTopByTab.current.set(id, top);
+		}
+	}
 
 	const disposeTabRuntime = useCallback(
 		(tabId: string) => {
@@ -200,6 +193,13 @@ export default function ChatsPage() {
 		touchTab(selectedTabId);
 	}, [selectedTabId, touchTab]);
 
+	// If the selected tab id becomes invalid (e.g. restored state had stale ids), correct it.
+	useEffect(() => {
+		if (tabs.length === 0) return;
+		if (tabs.some(t => t.tabId === selectedTabId)) return;
+		tabStore.setSelectedId(tabs[0].tabId);
+	}, [selectedTabId, tabStore, tabs]);
+
 	const tabExists = useCallback((tabId: string) => tabsRef.current.some(t => t.tabId === tabId), []);
 
 	const syncComposerFromConversation = useCallback((tabId: string, conv: Conversation) => {
@@ -251,6 +251,63 @@ export default function ChatsPage() {
 			el2.scrollTop = top;
 		});
 	}, [selectedTabId]);
+	// ---------------- Rehydrate tabs on mount (from Go-backed store) ----------------
+	useEffect(() => {
+		if (!initialModelRef.current?.restoredFromStorage) return;
+
+		let cancelled = false;
+
+		(async () => {
+			const snapshot = tabsRef.current.slice(0, MAX_TABS);
+			for (const t of snapshot) {
+				if (cancelled) return;
+				if (!t.isPersisted) continue;
+				if (!t.conversation.id) continue;
+
+				try {
+					const stored = await conversationStoreAPI.getConversation(t.conversation.id, t.conversation.title, true);
+					if (cancelled) return;
+
+					if (!stored) {
+						// Conversation missing -> degrade to scratch; scratch invariant will clean up.
+						updateTab(t.tabId, prev => ({
+							...prev,
+							isBusy: false,
+							isPersisted: false,
+							manualTitleLocked: false,
+							editingMessageId: null,
+							conversation: initConversation(),
+						}));
+						continue;
+					}
+
+					const hydrated = hydrateConversation(stored);
+
+					// Clear transient streaming buffer for restored tabs
+					getStreamTextRef(t.tabId).current = '';
+					if (selectedTabIdRef.current === t.tabId) setActiveStreamText('');
+
+					updateTab(t.tabId, prev => ({
+						...prev,
+						isBusy: false,
+						editingMessageId: null,
+						isPersisted: true,
+						conversation: hydrated,
+					}));
+
+					requestAnimationFrame(() => {
+						syncComposerFromConversation(t.tabId, hydrated);
+					});
+				} catch (e) {
+					console.error(e);
+				}
+			}
+		})().catch(console.error);
+
+		return () => {
+			cancelled = true;
+		};
+	}, []);
 
 	// ---------------- Search refresh key ----------------
 	const [searchRefreshKey, setSearchRefreshKey] = useState(0);
@@ -380,6 +437,71 @@ export default function ChatsPage() {
 	useEffect(() => {
 		ensureScratchRightmost();
 	}, [scratchKey, ensureScratchRightmost]);
+
+	// ---------------- Persist open tabs + selected + scroll/LRU ----------------
+	const persistNow = useCallback(() => {
+		const tabsSnapshot = tabsRef.current.slice(0, MAX_TABS);
+		const scrollObj: Record<string, number> = {};
+		for (const [k, v] of scrollTopByTab.current.entries()) scrollObj[k] = v;
+		const lruObj: Record<string, number> = {};
+		for (const [k, v] of lastActivatedAtRef.current.entries()) lruObj[k] = v;
+
+		writePersistedChatsPageState({
+			v: 1,
+			selectedTabId: selectedTabIdRef.current,
+			tabs: tabsSnapshot.map(t => ({
+				tabId: t.tabId,
+				conversationId: t.conversation.id,
+				title: t.conversation.title,
+				isPersisted: t.isPersisted,
+				manualTitleLocked: t.manualTitleLocked,
+			})),
+			scrollTopByTab: scrollObj,
+			lastActivatedAtByTab: lruObj,
+		});
+	}, []);
+
+	const persistTimerRef = useRef<number | null>(null);
+	const schedulePersist = useCallback(() => {
+		if (persistTimerRef.current) window.clearTimeout(persistTimerRef.current);
+		persistTimerRef.current = window.setTimeout(() => {
+			persistTimerRef.current = null;
+			persistNow();
+		}, 250);
+	}, [persistNow]);
+
+	useEffect(() => {
+		schedulePersist();
+	}, [schedulePersist, tabs, selectedTabId]);
+
+	useEffect(() => {
+		const onPageHide = () => {
+			persistNow();
+		};
+		const onVis = () => {
+			if (document.visibilityState === 'hidden') persistNow();
+		};
+		window.addEventListener('pagehide', onPageHide);
+		document.addEventListener('visibilitychange', onVis);
+		return () => {
+			window.removeEventListener('pagehide', onPageHide);
+			document.removeEventListener('visibilitychange', onVis);
+		};
+	}, [persistNow]);
+
+	// On unmount: abort in-flight streams + flush persistence (route navigation safety)
+	useEffect(() => {
+		return () => {
+			try {
+				for (const refObj of abortRefs.current.values()) {
+					refObj.current?.abort();
+				}
+			} catch {
+				// ignore
+			}
+			persistNow();
+		};
+	}, [persistNow]);
 
 	// ---------------- Tab actions ----------------
 	const openNewTab = useCallback(() => {
@@ -855,6 +977,9 @@ export default function ChatsPage() {
 		handlers: {
 			newChat: () => {
 				openNewTab();
+			},
+			closeChat: () => {
+				closeTab(selectedTabId);
 			},
 			focusSearch: () => searchRef.current?.focusInput(),
 			focusInput: () => inputRefs.current.get(selectedTabIdRef.current)?.focus(),

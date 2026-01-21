@@ -12,6 +12,10 @@ interface ShortcutChord {
 export enum ShortcutAction {
 	// App / chat-level
 	newChat = 'newChat',
+	closeChat = 'closeChat',
+	nextChat = 'nextChat',
+	previousChat = 'previousChat',
+
 	focusSearch = 'focusSearch',
 	focusInput = 'focusInput',
 	insertTemplate = 'insertTemplate',
@@ -69,14 +73,18 @@ export interface ShortcutDisplayItem {
 // Plate editor shortcuts are displayed, but handled internally by Plate.
 export const defaultShortcutConfig: ShortcutConfig = {
 	// Global-chat actions
-	[ShortcutAction.newChat]: { key: 'n', ctrlOrMeta: true, shift: true }, // Mod+Shift+N
+	[ShortcutAction.newChat]: { key: 't', ctrlOrMeta: true, shift: false }, // Mod+Shift+t
+	[ShortcutAction.closeChat]: { key: 'w', ctrlOrMeta: true, shift: false }, // Mod+Shift+w
+	[ShortcutAction.nextChat]: { key: '[', ctrlOrMeta: true, shift: true }, // Mod+Shift+[
+	[ShortcutAction.previousChat]: { key: ']', ctrlOrMeta: true, shift: true }, // Mod+Shift+]
+
 	[ShortcutAction.focusSearch]: { key: 'f', ctrlOrMeta: true, shift: true }, // Mod+Shift+F
 	[ShortcutAction.focusInput]: { key: 'i', ctrlOrMeta: true, shift: true }, // Mod+Shift+I
 
 	// Editor/insert actions
 	[ShortcutAction.insertTemplate]: { key: 'p', ctrlOrMeta: true, shift: true }, // Mod+Shift+P
-	[ShortcutAction.insertTool]: { key: 't', ctrlOrMeta: true, shift: true }, // Mod+Shift+T
 	[ShortcutAction.insertAttachment]: { key: 'a', ctrlOrMeta: true, shift: true }, // Mod+Shift+A
+	[ShortcutAction.insertTool]: { key: 'k', ctrlOrMeta: true, shift: true }, // Mod+Shift+k
 };
 
 type ConfigShortcutMeta = {
@@ -112,34 +120,52 @@ const ACTION_META: Record<ShortcutAction, ShortcutMeta> = {
 		order: 10,
 		source: 'config',
 	},
+	[ShortcutAction.closeChat]: {
+		label: 'Close chat',
+		group: 'Chat',
+		order: 20,
+		source: 'config',
+	},
+	[ShortcutAction.nextChat]: {
+		label: 'Next chat',
+		group: 'Chat',
+		order: 30,
+		source: 'config',
+	},
+	[ShortcutAction.previousChat]: {
+		label: 'Previous chat',
+		group: 'Chat',
+		order: 40,
+		source: 'config',
+	},
 	[ShortcutAction.focusSearch]: {
 		label: 'Focus search',
 		group: 'Chat',
-		order: 20,
+		order: 50,
 		source: 'config',
 	},
 	[ShortcutAction.focusInput]: {
 		label: 'Focus input',
 		group: 'Chat',
-		order: 30,
+		order: 60,
 		source: 'config',
 	},
 	[ShortcutAction.insertTemplate]: {
 		label: 'Insert template',
 		group: 'Insert',
-		order: 40,
+		order: 100,
 		source: 'config',
 	},
 	[ShortcutAction.insertTool]: {
 		label: 'Add tool',
 		group: 'Insert',
-		order: 50,
+		order: 110,
 		source: 'config',
 	},
 	[ShortcutAction.insertAttachment]: {
 		label: 'Attach context',
 		group: 'Insert',
-		order: 60,
+		order: 120,
 		source: 'config',
 	},
 
@@ -148,7 +174,7 @@ const ACTION_META: Record<ShortcutAction, ShortcutMeta> = {
 	[ShortcutAction.editorBold]: {
 		label: 'Bold',
 		group: 'Editor',
-		order: 100,
+		order: 200,
 		source: 'static',
 		keys: `${MOD_LABEL} + 'B'`,
 	},
@@ -156,7 +182,7 @@ const ACTION_META: Record<ShortcutAction, ShortcutMeta> = {
 	[ShortcutAction.editorItalic]: {
 		label: 'Italic',
 		group: 'Editor',
-		order: 110,
+		order: 210,
 		source: 'static',
 		keys: `${MOD_LABEL} + 'I'`,
 	},
@@ -164,7 +190,7 @@ const ACTION_META: Record<ShortcutAction, ShortcutMeta> = {
 	[ShortcutAction.editorUnderline]: {
 		label: 'Underline',
 		group: 'Editor',
-		order: 120,
+		order: 220,
 		source: 'static',
 		keys: `${MOD_LABEL} + 'U'`,
 	},
@@ -172,7 +198,7 @@ const ACTION_META: Record<ShortcutAction, ShortcutMeta> = {
 	[ShortcutAction.editorStrikethrough]: {
 		label: 'Strikethrough',
 		group: 'Editor',
-		order: 130,
+		order: 230,
 		source: 'static',
 		keys: `${MOD_LABEL} + Shift + 'X'`,
 	},
@@ -180,7 +206,7 @@ const ACTION_META: Record<ShortcutAction, ShortcutMeta> = {
 	[ShortcutAction.editorHighlight]: {
 		label: 'Highlight',
 		group: 'Editor',
-		order: 140,
+		order: 240,
 		source: 'static',
 		keys: `${MOD_LABEL} + Shift + 'H'`,
 	},
@@ -188,7 +214,7 @@ const ACTION_META: Record<ShortcutAction, ShortcutMeta> = {
 	[ShortcutAction.editorCode]: {
 		label: 'Inline code',
 		group: 'Editor',
-		order: 150,
+		order: 250,
 		source: 'static',
 		keys: `${MOD_LABEL} + 'E'`,
 	},
@@ -198,7 +224,7 @@ const ACTION_META: Record<ShortcutAction, ShortcutMeta> = {
 	[ShortcutAction.editorHeading]: {
 		label: 'Heading 1 to 6',
 		group: 'Editor',
-		order: 200,
+		order: 300,
 		source: 'static',
 		keys: `${MOD_LABEL} + Alt + '1 to 6'`,
 	},
@@ -206,7 +232,7 @@ const ACTION_META: Record<ShortcutAction, ShortcutMeta> = {
 	[ShortcutAction.editorBlockquote]: {
 		label: 'Blockquote',
 		group: 'Editor',
-		order: 260,
+		order: 310,
 		source: 'static',
 		keys: `${MOD_LABEL} + Shift + '.'`,
 	},
@@ -216,7 +242,7 @@ const ACTION_META: Record<ShortcutAction, ShortcutMeta> = {
 	[ShortcutAction.editorEmoji]: {
 		label: 'Emoji picker',
 		group: 'Editor',
-		order: 300,
+		order: 320,
 		source: 'static',
 		keys: `Type ":" in the editor`,
 	},
@@ -224,7 +250,7 @@ const ACTION_META: Record<ShortcutAction, ShortcutMeta> = {
 	[ShortcutAction.editorFloatingToolbar]: {
 		label: 'Floating toolbar',
 		group: 'Editor',
-		order: 310,
+		order: 330,
 		source: 'static',
 		keys: 'Select text',
 	},
@@ -232,14 +258,14 @@ const ACTION_META: Record<ShortcutAction, ShortcutMeta> = {
 	[ShortcutAction.editorUndo]: {
 		label: 'Undo',
 		group: 'Editor',
-		order: 320,
+		order: 340,
 		source: 'static',
 		keys: `${MOD_LABEL} + 'Z'`,
 	},
 	[ShortcutAction.editorRedo]: {
 		label: 'Redo',
 		group: 'Editor',
-		order: 330,
+		order: 350,
 		source: 'static',
 		keys: `${MOD_LABEL} + 'Y'`,
 	},
