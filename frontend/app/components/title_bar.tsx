@@ -110,7 +110,7 @@ export function TitleBar({ onToggleDrawer }: TitleBarProps) {
 
 			{/* CENTER */}
 			<div className="m-0 flex min-w-0 flex-1 items-center justify-center px-2 py-0">
-				{slots.center ? <div className="app-no-drag min-w-0">{slots.center}</div> : null}
+				{slots.center ? <div className="app-no-drag w-full min-w-0">{slots.center}</div> : null}
 			</div>
 
 			{/* RIGHT */}

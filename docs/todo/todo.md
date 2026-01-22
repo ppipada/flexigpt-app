@@ -10,7 +10,7 @@
 
 - [ ] tool features
   - [ ] Implementation of openai/anthropic etc built-in tools that have been analyzed and filtered.
-  - [ ] Analysis of openai/anthropic etc given tools so that they can be invoked in api directly.
+  - [x] Analysis of openai/anthropic etc given tools so that they can be invoked in api directly.
   - [ ] ~~parallel tools can be created locally~~
   - [ ] there is a reference calculator tool in claude docs
   - [ ] When url cannot fetch content, there is no way of knowing what happened as of now. may want to see hwo to expose this or disable link only mode in this flow?

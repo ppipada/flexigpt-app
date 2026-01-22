@@ -104,7 +104,7 @@ export const ChatTabsBar = memo(function ChatTabsBar({
 					isActive
 						? 'bg-base-100 text-base-content border-base-300 rounded-xl border shadow-xs'
 						: 'bg-base-200/80 text-base-content/80 hover:bg-base-200 border-0',
-					t.isBusy ? 'cursor-progress opacity-80' : '',
+					t.isBusy ? 'cursor-progress' : '',
 				].join(' ')}
 			>
 				{/* Title / Rename */}

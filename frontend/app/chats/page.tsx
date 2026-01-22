@@ -533,7 +533,7 @@ export default function ChatsPage() {
 	useTitleBarContent(
 		{
 			center: (
-				<div className="w-[min(720px,60vw)]">
+				<div className="mx-auto flex w-4/5 items-center justify-center">
 					<ChatSearch
 						ref={searchRef}
 						compact={true}
