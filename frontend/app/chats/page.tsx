@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useStoreState } from '@ariakit/react';
 import { useTabStore } from '@ariakit/react/tab';
@@ -47,8 +47,9 @@ import {
 	initConversation,
 	initConversationMessage,
 } from '@/chats/conversation/hydration_helper';
-import { InputBox, type InputBoxHandle } from '@/chats/inputarea/input_box';
+import { type InputBoxHandle } from '@/chats/inputarea/input_box';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/inputarea/input_editor_utils';
+import { InputPane } from '@/chats/inputarea/input_pane';
 import { ChatMessage } from '@/chats/messages/message';
 
 // eslint-disable-next-line no-restricted-exports
@@ -1149,7 +1150,7 @@ export default function ChatsPage() {
 				<div className="row-start-3 row-end-4 flex w-full min-w-0 justify-center">
 					<div className="w-11/12 min-w-0 xl:w-5/6">
 						{tabs.map(t => (
-							<TabInputPane
+							<InputPane
 								key={t.tabId}
 								tabId={t.tabId}
 								active={t.tabId === selectedTabId}
@@ -1158,8 +1159,8 @@ export default function ChatsPage() {
 								setInputRef={setInputRef}
 								getAbortRef={getAbortRef}
 								shortcutConfig={shortcutConfig}
-								sendMessageForTab={sendMessageForTab}
-								cancelEditingForTab={cancelEditingForTab}
+								sendMessage={sendMessageForTab}
+								cancelEditing={cancelEditingForTab}
 							/>
 						))}
 					</div>
@@ -1168,49 +1169,3 @@ export default function ChatsPage() {
 		</PageFrame>
 	);
 }
-
-const TabInputPane = memo(function TabInputPane(props: {
-	tabId: string;
-	active: boolean;
-	isBusy: boolean;
-	editingMessageId: string | null;
-	setInputRef: (tabId: string) => (inst: InputBoxHandle | null) => void;
-	getAbortRef: (tabId: string) => { current: AbortController | null };
-	shortcutConfig: ShortcutConfig;
-	sendMessageForTab: (tabId: string, payload: EditorSubmitPayload, options: UIChatOption) => Promise<void>;
-	cancelEditingForTab: (tabId: string) => void;
-}) {
-	const {
-		tabId,
-		active,
-		isBusy,
-		editingMessageId,
-		setInputRef,
-		getAbortRef,
-		shortcutConfig,
-		sendMessageForTab,
-		cancelEditingForTab,
-	} = props;
-
-	const onSend = useCallback(
-		(payload: EditorSubmitPayload, options: UIChatOption) => sendMessageForTab(tabId, payload, options),
-		[sendMessageForTab, tabId]
-	);
-	const cancelEditing = useCallback(() => {
-		cancelEditingForTab(tabId);
-	}, [cancelEditingForTab, tabId]);
-
-	return (
-		<div className={active ? 'block' : 'hidden'}>
-			<InputBox
-				ref={setInputRef(tabId)}
-				onSend={onSend}
-				isBusy={isBusy}
-				abortRef={getAbortRef(tabId)}
-				shortcutConfig={shortcutConfig}
-				editingMessageId={editingMessageId}
-				cancelEditing={cancelEditing}
-			/>
-		</div>
-	);
-});

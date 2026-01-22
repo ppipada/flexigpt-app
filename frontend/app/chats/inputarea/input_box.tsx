@@ -30,11 +30,11 @@ interface InputBoxProps {
 	abortRef: RefObject<AbortController | null>;
 	shortcutConfig: ShortcutConfig;
 	editingMessageId: string | null;
-	cancelEditing: () => void;
+	onCancelEditing: () => void;
 }
 
 export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function InputBox(
-	{ onSend, isBusy, abortRef, shortcutConfig, editingMessageId, cancelEditing },
+	{ onSend, isBusy, abortRef, shortcutConfig, editingMessageId, onCancelEditing },
 	ref
 ) {
 	const [chatOptions, setUIChatOptions] = useState<UIChatOption>(DefaultUIChatOptions);
@@ -110,7 +110,7 @@ export const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(function Input
 						setShowAbortModal(true);
 					}}
 					editingMessageId={editingMessageId}
-					cancelEditing={cancelEditing}
+					cancelEditing={onCancelEditing}
 				/>
 			</div>
 		</div>
