@@ -8,6 +8,7 @@ import { Tab, TabList } from '@ariakit/react/tab';
 
 import { sanitizeConversationTitle } from '@/lib/text_utils';
 
+import { BusyDot } from '@/components/busy_dot';
 import { DownloadButton } from '@/components/download_button';
 
 interface ChatTabBarItem {
@@ -103,6 +104,7 @@ export const ChatTabsBar = memo(function ChatTabsBar({
 					isActive
 						? 'bg-base-100 text-base-content border-base-300 rounded-xl border shadow-xs'
 						: 'bg-base-200/80 text-base-content/80 hover:bg-base-200 border-0',
+					t.isBusy ? 'cursor-progress opacity-80' : '',
 				].join(' ')}
 			>
 				{/* Title / Rename */}
@@ -138,7 +140,7 @@ export const ChatTabsBar = memo(function ChatTabsBar({
 					{(t.isBusy || canRename) && (
 						<div className="flex w-6 shrink-0 items-center justify-center">
 							{t.isBusy ? (
-								<span className="loading loading-spinner loading-xs" aria-label="Busy" />
+								<BusyDot />
 							) : canRename ? (
 								<button
 									type="button"

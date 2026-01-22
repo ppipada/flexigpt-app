@@ -7,7 +7,7 @@ import {
 	useLayoutEffect,
 	useMemo,
 	useRef,
-	useState,
+	useSyncExternalStore,
 } from 'react';
 
 import type { Conversation, ConversationMessage } from '@/spec/conversation';
@@ -34,6 +34,34 @@ import type { InputBoxHandle } from '@/chats/inputarea/input_box';
 import type { EditorExternalMessage, EditorSubmitPayload } from '@/chats/inputarea/input_editor_utils';
 import { InputPane } from '@/chats/inputarea/input_pane';
 import { ChatMessage } from '@/chats/messages/message';
+
+type StreamBuffer = { chunks: string[]; flushedIdx: number; display: string };
+
+function StreamingLastMessage(props: {
+	message: ConversationMessage;
+	rowIsBusy: boolean;
+	isPending: boolean;
+	isEditing: boolean;
+	onEdit: () => void;
+	onResend: () => void;
+	subscribe: (cb: () => void) => () => void;
+	getSnapshot: () => string;
+}) {
+	// Only this component re-renders on stream updates (not the whole ConversationArea).
+	const streamedMessage = useSyncExternalStore(props.subscribe, props.getSnapshot, () => '');
+	return (
+		<ChatMessage
+			message={props.message}
+			onEdit={props.onEdit}
+			onResend={props.onResend}
+			streamedMessage={streamedMessage}
+			isPending={props.isPending}
+			// IMPORTANT: only the streaming row sees busy=true (prevents EnhancedMarkdown remounts for all other rows)
+			isBusy={props.rowIsBusy}
+			isEditing={props.isEditing}
+		/>
+	);
+}
 
 export type ConversationAreaHandle = {
 	disposeTabRuntime: (tabId: string) => void;
@@ -83,10 +111,14 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 
 	const activeTab = useMemo(() => tabs.find(t => t.tabId === selectedTabId) ?? tabs[0], [tabs, selectedTabId]);
 
-	const tabExists = useCallback((tabId: string) => tabsRef.current.some(t => t.tabId === tabId), []);
+	// PERF: O(1) existence checks (used in async paths)
+	const tabIdSetRef = useRef<Set<string>>(new Set());
+	useEffect(() => {
+		tabIdSetRef.current = new Set(tabs.map(t => t.tabId));
+	}, [tabs]);
+	const tabExists = useCallback((tabId: string) => tabIdSetRef.current.has(tabId), []);
 
 	// ---------------- Per-tab runtime refs ----------------
-	// Abort controllers per tab
 	const abortRefs = useRef(new Map<string, { current: AbortController | null }>());
 	const requestIdByTab = useRef(new Map<string, string | null>());
 	const tokensReceivedByTab = useRef(new Map<string, boolean | null>());
@@ -100,16 +132,88 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 		return refObj;
 	}, []);
 
-	// Stream text stored in refs (NO state updates for background tabs)
-	const streamTextRefs = useRef(new Map<string, { current: string }>());
-	const getStreamTextRef = useCallback((tabId: string) => {
-		let refObj = streamTextRefs.current.get(tabId);
-		if (!refObj) {
-			refObj = { current: '' };
-			streamTextRefs.current.set(tabId, refObj);
+	// Stream buffers (chunked to avoid expensive repeated string concatenation)
+	const streamBuffersRef = useRef(new Map<string, StreamBuffer>());
+	const getStreamBuffer = useCallback((tabId: string) => {
+		let buf = streamBuffersRef.current.get(tabId);
+		if (!buf) {
+			buf = { chunks: [], flushedIdx: 0, display: '' };
+			streamBuffersRef.current.set(tabId, buf);
 		}
-		return refObj;
+		return buf;
 	}, []);
+
+	const clearStreamBuffer = useCallback(
+		(tabId: string) => {
+			const buf = getStreamBuffer(tabId);
+			buf.chunks = [];
+			buf.flushedIdx = 0;
+			buf.display = '';
+		},
+		[getStreamBuffer]
+	);
+
+	const flushStreamForTab = useCallback(
+		(tabId: string) => {
+			const buf = getStreamBuffer(tabId);
+			if (buf.flushedIdx < buf.chunks.length) {
+				buf.display += buf.chunks.slice(buf.flushedIdx).join('');
+				buf.flushedIdx = buf.chunks.length;
+			}
+			return buf.display;
+		},
+		[getStreamBuffer]
+	);
+
+	const getFullStreamTextForTab = useCallback((tabId: string) => {
+		const buf = streamBuffersRef.current.get(tabId);
+		if (!buf) return '';
+		if (buf.flushedIdx >= buf.chunks.length) return buf.display;
+		return buf.display + buf.chunks.slice(buf.flushedIdx).join('');
+	}, []);
+
+	// External-store style streaming subscriptions (only last message subscribes)
+	const streamListenersRef = useRef(new Map<string, Set<() => void>>());
+	const notifyTimersRef = useRef(new Map<string, number | null>());
+
+	const subscribeToStream = useCallback((tabId: string, cb: () => void) => {
+		let set = streamListenersRef.current.get(tabId);
+		if (!set) {
+			set = new Set();
+			streamListenersRef.current.set(tabId, set);
+		}
+		set.add(cb);
+
+		return () => {
+			const s = streamListenersRef.current.get(tabId);
+			s?.delete(cb);
+			if (s && s.size === 0) streamListenersRef.current.delete(tabId);
+		};
+	}, []);
+
+	const notifyStreamNow = useCallback((tabId: string) => {
+		const set = streamListenersRef.current.get(tabId);
+		if (!set) return;
+		for (const cb of set) cb();
+	}, []);
+
+	// Match MessageContentCard debounce (~128ms). Notifying faster just causes wasted work.
+	const notifyStreamSoon = useCallback(
+		(tabId: string) => {
+			if (selectedTabIdRef.current !== tabId) return;
+
+			const existing = notifyTimersRef.current.get(tabId) ?? null;
+			if (existing !== null) return;
+
+			const timer = window.setTimeout(() => {
+				notifyTimersRef.current.set(tabId, null);
+				notifyStreamNow(tabId);
+			}, 140);
+
+			notifyTimersRef.current.set(tabId, timer);
+		},
+		[notifyStreamNow]
+	);
 
 	// Input refs per tab (per-tab composer instance)
 	const inputRefs = useRef(new Map<string, InputBoxHandle | null>());
@@ -143,21 +247,24 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 			requestIdByTab.current.delete(tabId);
 			tokensReceivedByTab.current.delete(tabId);
 
-			streamTextRefs.current.delete(tabId);
+			streamBuffersRef.current.delete(tabId);
 			inputRefs.current.delete(tabId);
 			scrollTopByTab.current.delete(tabId);
 
-			if (selectedTabIdRef.current === tabId) setActiveStreamText('');
+			const timer = notifyTimersRef.current.get(tabId);
+			if (timer) window.clearTimeout(timer);
+			notifyTimersRef.current.delete(tabId);
+			streamListenersRef.current.delete(tabId);
 		},
 		[getAbortRef]
 	);
 
 	const clearStreamForTab = useCallback(
 		(tabId: string) => {
-			getStreamTextRef(tabId).current = '';
-			if (selectedTabIdRef.current === tabId) setActiveStreamText('');
+			clearStreamBuffer(tabId);
+			notifyStreamNow(tabId);
 		},
-		[getStreamTextRef]
+		[clearStreamBuffer, notifyStreamNow]
 	);
 
 	const syncComposerFromConversation = useCallback((tabId: string, conv: Conversation) => {
@@ -179,43 +286,25 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 		scrollTopByTab.current.set(tabId, top);
 	}, []);
 
-	// ---------------- UI refs ----------------
-	const chatContainerRef = useRef<HTMLDivElement>(null);
-	const { isAtBottom, isAtTop, isScrollable } = useAtTopBottom(chatContainerRef);
-
-	// Active stream text state (ONLY for active tab, throttled)
-	const [activeStreamText, setActiveStreamText] = useState<string>('');
-	const pendingActiveStreamSync = useRef<number | null>(null);
-
-	const syncActiveStreamTextNow = useCallback(() => {
-		pendingActiveStreamSync.current = null;
-		const tabId = selectedTabIdRef.current;
-		const refObj = streamTextRefs.current.get(tabId);
-		setActiveStreamText(refObj?.current ?? '');
-	}, []);
-
-	const scheduleActiveStreamSync = useCallback(
-		(tabId: string) => {
-			if (selectedTabIdRef.current !== tabId) return;
-			if (pendingActiveStreamSync.current !== null) return;
-			pendingActiveStreamSync.current = window.setTimeout(syncActiveStreamTextNow, 80);
-		},
-		[syncActiveStreamTextNow]
-	);
-
-	// When user switches tabs, show whatever stream text exists for that tab.
-	useEffect(() => {
-		setActiveStreamText(getStreamTextRef(selectedTabId).current);
-	}, [getStreamTextRef, selectedTabId]);
-
+	// Abort in-flight streams on unmount (matches original page behavior)
 	useEffect(() => {
 		return () => {
-			if (pendingActiveStreamSync.current !== null) {
-				window.clearTimeout(pendingActiveStreamSync.current);
-				pendingActiveStreamSync.current = null;
+			try {
+				for (const refObj of abortRefs.current.values()) {
+					refObj.current?.abort();
+				}
+			} catch {
+				// ignore
+			}
+			for (const timer of notifyTimersRef.current.values()) {
+				if (timer) window.clearTimeout(timer);
 			}
 		};
 	}, []);
+
+	// ---------------- UI refs ----------------
+	const chatContainerRef = useRef<HTMLDivElement>(null);
+	const { isAtBottom, isAtTop, isScrollable } = useAtTopBottom(chatContainerRef);
 
 	const scrollToBottom = useCallback((tabId: string) => {
 		// There is only one visible scroll container; it corresponds to the active tab.
@@ -288,8 +377,11 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 			// mark busy (coarse UI only)
 			updateTab(tabId, t => ({ ...t, isBusy: true }));
 
-			abortRef.current = new AbortController();
-			requestIdByTab.current.set(tabId, crypto.randomUUID());
+			const reqId = crypto.randomUUID();
+			requestIdByTab.current.set(tabId, reqId);
+
+			const controller = new AbortController();
+			abortRef.current = controller;
 
 			let allMessages = updatedChatWithUserMessage.messages;
 			if (options.disablePreviousMessages) {
@@ -304,9 +396,8 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 			const history = allMessages.slice(0, allMessages.length - 1);
 
 			// reset stream buffer (ref only)
-			const streamRef = getStreamTextRef(tabId);
-			streamRef.current = '';
-			if (selectedTabIdRef.current === tabId) setActiveStreamText('');
+			clearStreamBuffer(tabId);
+			notifyStreamNow(tabId);
 
 			// assistant placeholder for streaming
 			const assistantPlaceholder = initConversationMessage(RoleEnum.Assistant);
@@ -326,22 +417,24 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 
 			const onStreamTextData = (textData: string) => {
 				if (!textData) return;
+				if (requestIdByTab.current.get(tabId) !== reqId) return; // stale stream
 				tokensReceivedByTab.current.set(tabId, true);
 
-				// Append to ref only
-				streamRef.current += textData;
+				getStreamBuffer(tabId).chunks.push(textData);
 
-				// Only active tab triggers throttled state updates for display
-				scheduleActiveStreamSync(tabId);
+				// Only active tab notifies, and throttled.
+				notifyStreamSoon(tabId);
 			};
 
 			const onStreamThinkingData = (thinkingData: string) => {
 				if (!thinkingData) return;
+				if (requestIdByTab.current.get(tabId) !== reqId) return; // stale stream
 				tokensReceivedByTab.current.set(tabId, true);
 
 				const block = getBlockQuotedLines(thinkingData) + '\n';
-				streamRef.current += block;
-				scheduleActiveStreamSync(tabId);
+				getStreamBuffer(tabId).chunks.push(block);
+
+				notifyStreamSoon(tabId);
 			};
 
 			try {
@@ -373,13 +466,14 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 					history,
 					toolStoreChoices,
 					assistantPlaceholder,
-					requestIdByTab.current.get(tabId) ?? undefined,
-					abortRef.current.signal,
+					reqId,
+					controller.signal,
 					onStreamTextData,
 					onStreamThinkingData
 				);
 
 				if (!tabExists(tabId)) return;
+				if (requestIdByTab.current.get(tabId) !== reqId) return; // stale completion
 
 				if (responseMessage) {
 					let finalChat: Conversation = {
@@ -417,6 +511,7 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 				}
 			} catch (e) {
 				if (!tabExists(tabId)) return;
+				if (requestIdByTab.current.get(tabId) !== reqId) return; // stale completion path
 
 				if ((e as DOMException).name === 'AbortError') {
 					const tokensReceived = tokensReceivedByTab.current.get(tabId);
@@ -433,7 +528,7 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 							};
 						});
 					} else {
-						const partialText = streamRef.current + '\n\n>API Aborted after partial response...';
+						const partialText = getFullStreamTextForTab(tabId) + '\n\n>API Aborted after partial response...';
 
 						const partialOutputs: OutputUnion[] = [
 							{
@@ -467,23 +562,27 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 				}
 			} finally {
 				if (tabExists(tabId)) {
-					// clear stream buffer
-					streamRef.current = '';
-					if (selectedTabIdRef.current === tabId) {
-						setActiveStreamText('');
+					if (requestIdByTab.current.get(tabId) === reqId) {
+						// don't clobber a newer request
+
+						clearStreamBuffer(tabId);
+						notifyStreamNow(tabId);
+
+						updateTab(tabId, t => ({ ...t, isBusy: false }));
+
+						if (selectedTabIdRef.current === tabId) scrollToBottomSoon(tabId);
 					}
-
-					updateTab(tabId, t => ({ ...t, isBusy: false }));
-
-					if (selectedTabIdRef.current === tabId) scrollToBottomSoon(tabId);
 				}
 			}
 		},
 		[
+			clearStreamBuffer,
 			getAbortRef,
-			getStreamTextRef,
+			getFullStreamTextForTab,
+			getStreamBuffer,
+			notifyStreamNow,
+			notifyStreamSoon,
 			saveUpdatedConversation,
-			scheduleActiveStreamSync,
 			scrollToBottomSoon,
 			tabExists,
 			updateTab,
@@ -590,9 +689,10 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 			const msg = tab.conversation.messages[idx];
 			const input = inputRefs.current.get(tabId);
 
-			if (msg.role === RoleEnum.User && msg.toolStoreChoices && msg.toolStoreChoices.length > 0) {
-				input?.setConversationToolsFromChoices(msg.toolStoreChoices);
-				input?.setWebSearchFromChoices(msg.toolStoreChoices);
+			// Fix: derive tool + web-search choices consistently (don’t pass mixed tool choices to web-search)
+			if (msg.role === RoleEnum.User) {
+				input?.setConversationToolsFromChoices(deriveConversationToolsFromMessages([msg]));
+				input?.setWebSearchFromChoices(deriveWebSearchChoiceFromMessages([msg]));
 			} else {
 				input?.setConversationToolsFromChoices([]);
 				input?.setWebSearchFromChoices([]);
@@ -640,33 +740,56 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 	);
 
 	// ---------------- Render helpers ----------------
-	const activeRenderedMessages = useMemo(() => {
+	const renderedMessagesExceptLast = useMemo(() => {
 		if (!activeTab) return null;
+		const msgs = activeTab.conversation.messages;
+		if (msgs.length <= 1) return null;
 
-		return activeTab.conversation.messages.map((msg, idx) => {
-			const isLast = idx === activeTab.conversation.messages.length - 1;
+		// IMPORTANT: previous rows are not "busy" just because the tab is generating.
+		// This avoids re-mounting heavy Markdown for all prior messages.
+		return msgs.slice(0, -1).map(msg => (
+			<ChatMessage
+				key={msg.id}
+				message={msg}
+				onEdit={() => {
+					beginEditMessageForTab(activeTab.tabId, msg.id);
+				}}
+				onResend={() => void handleResendForTab(activeTab.tabId, msg.id)}
+				streamedMessage={''}
+				isPending={false}
+				isBusy={false}
+				isEditing={activeTab.editingMessageId === msg.id}
+			/>
+		));
+	}, [activeTab, beginEditMessageForTab, handleResendForTab]);
 
-			const isPending =
-				activeTab.isBusy && isLast && msg.role === RoleEnum.Assistant && (msg.uiContent?.length ?? 0) === 0;
+	const renderedLastMessage = useMemo(() => {
+		if (!activeTab) return null;
+		const msgs = activeTab.conversation.messages;
+		if (msgs.length === 0) return null;
 
-			const live = activeTab.isBusy && isLast && msg.role === RoleEnum.Assistant ? activeStreamText : '';
+		const msg = msgs[msgs.length - 1];
+		const isAssistant = msg.role === RoleEnum.Assistant;
 
-			return (
-				<ChatMessage
-					key={msg.id}
-					message={msg}
-					onEdit={() => {
-						beginEditMessageForTab(activeTab.tabId, msg.id);
-					}}
-					onResend={() => void handleResendForTab(activeTab.tabId, msg.id)}
-					streamedMessage={live}
-					isPending={isPending}
-					isBusy={activeTab.isBusy}
-					isEditing={activeTab.editingMessageId === msg.id}
-				/>
-			);
-		});
-	}, [activeStreamText, activeTab, beginEditMessageForTab, handleResendForTab]);
+		const rowIsBusy = activeTab.isBusy && isAssistant;
+		const isPending = rowIsBusy && (msg.uiContent?.length ?? 0) === 0;
+
+		return (
+			<StreamingLastMessage
+				key={msg.id}
+				message={msg}
+				rowIsBusy={rowIsBusy}
+				isPending={isPending}
+				isEditing={activeTab.editingMessageId === msg.id}
+				onEdit={() => {
+					beginEditMessageForTab(activeTab.tabId, msg.id);
+				}}
+				onResend={() => void handleResendForTab(activeTab.tabId, msg.id)}
+				subscribe={cb => subscribeToStream(activeTab.tabId, cb)}
+				getSnapshot={() => (rowIsBusy ? flushStreamForTab(activeTab.tabId) : '')}
+			/>
+		);
+	}, [activeTab, beginEditMessageForTab, flushStreamForTab, handleResendForTab, subscribeToStream]);
 
 	return (
 		<>
@@ -679,7 +802,10 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 					style={{ scrollbarGutter: 'stable both-edges' }}
 				>
 					<div className="mx-auto w-11/12 xl:w-5/6">
-						<div className="space-y-4">{activeRenderedMessages}</div>
+						<div className="space-y-4">
+							{renderedMessagesExceptLast}
+							{renderedLastMessage}
+						</div>
 					</div>
 				</div>
 

@@ -5,7 +5,6 @@
 - [ ] edit and save template doesn't work. says template slug already exists.
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
-- [ ] chat page cleanup/refactor
 
 ## Features
 
