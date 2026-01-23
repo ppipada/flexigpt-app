@@ -73,7 +73,7 @@ fi
 
 echo "Using makensis: ${MAKENSIS}"
 
-MSYS2_ARG_CONV_EXCL="${MSYS2_ARG_CONV_EXCL:-};/V*" "${MAKENSIS}" /V2 "${PATCHED}"
+"${MAKENSIS}" "${PATCHED}"
 
 [[ -f "${WIN_INSTALLER_PATH}" ]] || {
   echo "ERROR: Installer not found at expected path after rebuild: ${WIN_INSTALLER_PATH}"
