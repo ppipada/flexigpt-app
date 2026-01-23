@@ -139,3 +139,6 @@ godepgraph.png
 coverage.out
 go.work
 go.work.sum
+
+build/licenses/go-dependency-licenses.txt
+build/licenses/js-dependency-licenses.txt

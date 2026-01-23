@@ -5,7 +5,7 @@ runs:
   using: "composite"
   steps:
     - name: Setup GoLang
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version-file: "go.mod"
 
@@ -15,7 +15,7 @@ runs:
         run_install: false
 
     - name: Install Node.js
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@v6
       with:
         node-version-file: "package.json"
         cache: "pnpm"
@@ -25,5 +25,5 @@ runs:
       shell: bash
 
     - name: Install Wails
-      run: ${{ env.COMMON_WAILS_INSTALL }}
+      run: ${{ env.INSTALL_TOOL_WAILS }}
       shell: bash

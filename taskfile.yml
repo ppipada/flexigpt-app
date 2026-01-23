@@ -3,6 +3,8 @@
 
 version: "3"
 
+dotenv: ["build/buildvars.env"]
+
 vars:
   GREETING: Hello, these are FlexiGPT tasks!
 
@@ -14,18 +16,13 @@ tasks:
 
   installtools:
     cmds:
-      # Install task, go, golangci-lint, cloc externally. E.g via asdf. the needed versions are pinned in .tool-versions file.
-      # Tool version bumps should also happen in associated files:
-      #   - go: build/flatpak/io.github.flexigpt.client.yml
-      #   - wails: build/buildvars.env and build/flatpak/io.github.flexigpt.client.yml
-      #   - node: package.json, .github/workflows/flatpak.yml, build/flatpak/io.github.flexigpt.client.yml, frontend/package.json (types)
-      - go install github.com/wailsapp/wails/v2/cmd/wails@v2.11.0
-      - go install golang.org/x/tools/gopls@v0.21.0
-      - go install github.com/oligot/go-mod-upgrade@v0.12.0
-      - go install github.com/ppipada/refdir@v0.7.0
-      - go install github.com/vladopajic/go-test-coverage/v2@v2.18.0
-      # Prerequisite graphviz dot: macOS: brew install graphviz ; Debian/Ubuntu: sudo apt-get update && sudo apt-get install -y graphviz
-      - go install github.com/kisielk/godepgraph@v1.0.0
+      - "{{.INSTALL_TOOL_WAILS}}"
+      - "{{.INSTALL_TOOL_GO_LICENSES}}"
+      - "{{.INSTALL_TOOL_GOPLS}}"
+      - "{{.INSTALL_TOOL_GO_MOD_UPGRADE}}"
+      - "{{.INSTALL_TOOL_REFDIR}}"
+      - "{{.INSTALL_TOOL_GO_TEST_COVERAGE}}"
+      - "{{.INSTALL_TOOL_GODEPGRAPH}}"
 
   gomod:
     cmds:
@@ -33,6 +30,10 @@ tasks:
       - go mod tidy
       - go mod verify
       # wails doctor ## This can be used to see if system is ready for wails.
+
+  licensesgo:
+    cmds:
+      - go-licenses report ./... --template "{{.LICENSE_TEMPLATE_PATH}}" --ignore "{{.COMMON_PRODUCT_GITPATH}}" > "{{.LICENSE_GO_FILENAME}}"
 
   cloc:
     cmds:
@@ -45,7 +46,7 @@ tasks:
 
   godepgraph:
     cmds:
-      - godepgraph -s -o github.com/flexigpt/flexigpt-app,command-line-arguments cmd/agentgo/main.go | dot -Tpng -o godepgraph.png
+      - godepgraph -s -o "{{.COMMON_PRODUCT_GITPATH}}",command-line-arguments "{{.GO_MAIN_ENTRYPOINT}}" | dot -Tpng -o godepgraph.png
 
   tagstats:
     cmds:
@@ -54,39 +55,39 @@ tasks:
   build-linux:
     cmds:
       # we dont setup task inside github action, so redirecting these prod builds to pnpm
-      - pnpm run build:linux
+      - "{{.LINUX_BUILD_COMMAND}}"
 
   build-mac:
     cmds:
       # we dont setup task inside github action, so redirecting these prod builds to pnpm
-      - pnpm run build:mac
+      - "{{.MACOS_BUILD_COMMAND}}"
 
   build-win:
     cmds:
       # we dont setup task inside github action, so redirecting these prod builds to pnpm
-      - pnpm run build:win
+      - "{{.WIN_BUILD_COMMAND}}"
 
   build-withbindings:
     cmds:
       - pnpm run touch:tmp
-      - cd ./cmd/agentgo && wails build -devtools -m -clean -v 2 -ldflags="-X main.Version=v0.0.1" > ../../out/log.txt 2>&1
+      - cd "{{.GO_BACKEND_DIR}}" && wails build -devtools -m -clean -v 2 -ldflags="-X main.Version={{.COMMON_APP_DEV_VERSION}}" > "{{.ROOT_DIR}}/{{.COMMON_APP_DEV_ARTIFACT_DIR}}/log.txt" 2>&1
 
   pack-flatpak:
     cmds:
-      - gh act workflow_dispatch -W "./.github/workflows/flatpak.yml" --artifact-server-path ./out --input tag=v0.0.1
+      - gh act workflow_dispatch -W "./.github/workflows/flatpak.yml" --artifact-server-path "{{.ROOT_DIR}}/{{.COMMON_APP_DEV_ARTIFACT_DIR}}" --input tag="{{.COMMON_APP_DEV_VERSION}}"
 
   pack-nsis:
     cmds:
-      - gh act workflow_dispatch -W "./.github/workflows/nsispak.yml" --artifact-server-path ./out --input tag=v0.0.1
+      - gh act workflow_dispatch -W "./.github/workflows/nsispak.yml" --artifact-server-path "{{.ROOT_DIR}}/{{.COMMON_APP_DEV_ARTIFACT_DIR}}" --input tag="{{.COMMON_APP_DEV_VERSION}}"
 
   pack-macpkg:
     cmds:
-      - gh act workflow_dispatch -W "./.github/workflows/macpkg.yml" --artifact-server-path ./out --input tag=v0.0.1
+      - gh act workflow_dispatch -W "./.github/workflows/macpkg.yml" --artifact-server-path "{{.ROOT_DIR}}/{{.COMMON_APP_DEV_ARTIFACT_DIR}}" --input tag="{{.COMMON_APP_DEV_VERSION}}"
 
   run-dev:
     cmds:
       - pnpm run touch:tmp
-      - cd ./cmd/agentgo && wails dev -s -v 2 -tags webkit2_41 -ldflags="-X main.Version=v0.0.1"
+      - cd "{{.GO_BACKEND_DIR}}" && wails dev -s -v 2 -tags webkit2_41 -ldflags="-X main.Version={{.COMMON_APP_DEV_VERSION}}"
 
   run-watch:
     cmds:

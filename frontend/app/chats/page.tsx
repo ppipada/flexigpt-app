@@ -327,13 +327,13 @@ export default function ChatsPage() {
 				nextTabs = [fresh];
 			}
 
-			// 4) If the closed tab was active, select nearest neighbor (prefer right, else left)
+			// 4) If the closed tab was active, select nearest neighbor (prefer left, else right)
 			let nextSelectedId = selectedTabIdRef.current;
 			if (wasActive) {
 				const right = idx >= 0 ? current[idx + 1] : undefined;
 				const left = idx > 0 ? current[idx - 1] : undefined;
 				nextSelectedId =
-					(right && right.tabId !== tabId ? right.tabId : left && left.tabId !== tabId ? left.tabId : '') ||
+					(left && left.tabId !== tabId ? left.tabId : right && right.tabId !== tabId ? right.tabId : '') ||
 					nextTabs[0].tabId;
 			}
 

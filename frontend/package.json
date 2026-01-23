@@ -17,7 +17,8 @@
 		"build:wails": "rimraf ./dist && cp .env.prod .env && pnpm run typecheck && cross-env VITE_PLATFORM=wails react-router build",
 		"typecheck": "react-router typegen && tsc",
 		"test": "vitest run",
-		"coverage": "vitest run --coverage"
+		"coverage": "vitest run --coverage",
+		"licenses:gen": "cross-env GEN_LICENSES=true vite build --mode production"
 	},
 	"keywords": [],
 	"author": "ppipada",
@@ -90,6 +91,7 @@
 		"prettier": "^3.8.0",
 		"prettier-plugin-tailwindcss": "^0.7.2",
 		"rimraf": "^6.1.2",
+		"rollup-plugin-license": "^3.6.0",
 		"rollup-plugin-visualizer": "^6.0.5",
 		"tailwindcss": "^4.1.18",
 		"typescript": "^5.9.3",

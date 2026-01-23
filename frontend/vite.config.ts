@@ -2,6 +2,8 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { reactRouter } from '@react-router/dev/vite';
 import tailwindcss from '@tailwindcss/vite';
+import path from 'node:path';
+import license from 'rollup-plugin-license';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 import checker from 'vite-plugin-checker';
@@ -32,6 +34,8 @@ const depsToOptimize = [...new Set([...baseDeps, ...extraDepsToOptimize])].filte
 
 export default defineConfig(({ mode }) => {
 	const isProd = mode === 'production';
+	const genLicenses = process.env.GEN_LICENSES === 'true';
+
 	// const analyze = process.env.ANALYZE === 'true' || !isProd;
 	const analyze = false;
 	const analyzerPlugin = visualizer({
@@ -43,6 +47,18 @@ export default defineConfig(({ mode }) => {
 	const rollupPlugins = [];
 	if (analyze) {
 		rollupPlugins.push(analyzerPlugin);
+	}
+	if (genLicenses) {
+		rollupPlugins.push(
+			license({
+				thirdParty: {
+					includePrivate: false,
+					output: {
+						file: path.resolve(process.cwd(), '../build/licenses/js-dependency-licenses.txt'),
+					},
+				},
+			})
+		);
 	}
 	return {
 		plugins: [
@@ -78,6 +94,9 @@ export default defineConfig(({ mode }) => {
 		build: {
 			outDir: 'dist',
 			target: 'esnext',
+			write: !genLicenses,
+			// Avoid clearing dist/ if it's a normal dev machine and you run this often
+			emptyOutDir: !genLicenses,
 			rollupOptions: {
 				plugins: rollupPlugins,
 				output: {
