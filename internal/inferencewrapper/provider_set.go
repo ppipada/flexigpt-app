@@ -258,7 +258,10 @@ func (ps *ProviderSetAPI) buildInputs(
 			// Outputs are not directly part of InputUnion; but for replay
 			// we want them to be visible as prior context. We embed them
 			// as InputUnion using the matching InputKind* variants.
-			out = append(out, outputToInput(outEv))
+			o := outputToInput(outEv)
+			if o != nil {
+				out = append(out, *o)
+			}
 		}
 	}
 
@@ -319,41 +322,41 @@ func (ps *ProviderSetAPI) buildInputs(
 
 // outputToInput converts an OutputUnion from a previous completion into an
 // InputUnion so it can be replayed as prior context in the next call.
-func outputToInput(o inferencegoSpec.OutputUnion) inferencegoSpec.InputUnion {
+func outputToInput(o inferencegoSpec.OutputUnion) *inferencegoSpec.InputUnion {
 	switch o.Kind {
 	case inferencegoSpec.OutputKindOutputMessage:
-		return inferencegoSpec.InputUnion{
+		return &inferencegoSpec.InputUnion{
 			Kind:          inferencegoSpec.InputKindOutputMessage,
 			OutputMessage: o.OutputMessage,
 		}
 	case inferencegoSpec.OutputKindReasoningMessage:
-		return inferencegoSpec.InputUnion{
+		return &inferencegoSpec.InputUnion{
 			Kind:             inferencegoSpec.InputKindReasoningMessage,
 			ReasoningMessage: o.ReasoningMessage,
 		}
 	case inferencegoSpec.OutputKindFunctionToolCall:
-		return inferencegoSpec.InputUnion{
+		return &inferencegoSpec.InputUnion{
 			Kind:             inferencegoSpec.InputKindFunctionToolCall,
 			FunctionToolCall: o.FunctionToolCall,
 		}
 	case inferencegoSpec.OutputKindCustomToolCall:
-		return inferencegoSpec.InputUnion{
+		return &inferencegoSpec.InputUnion{
 			Kind:           inferencegoSpec.InputKindCustomToolCall,
 			CustomToolCall: o.CustomToolCall,
 		}
 	case inferencegoSpec.OutputKindWebSearchToolCall:
-		return inferencegoSpec.InputUnion{
+		return &inferencegoSpec.InputUnion{
 			Kind:              inferencegoSpec.InputKindWebSearchToolCall,
 			WebSearchToolCall: o.WebSearchToolCall,
 		}
 	case inferencegoSpec.OutputKindWebSearchToolOutput:
-		return inferencegoSpec.InputUnion{
+		return &inferencegoSpec.InputUnion{
 			Kind:                inferencegoSpec.InputKindWebSearchToolOutput,
 			WebSearchToolOutput: o.WebSearchToolOutput,
 		}
 	default:
 		// Unknown kinds are dropped.
-		return inferencegoSpec.InputUnion{}
+		return nil
 	}
 }
 

@@ -16,7 +16,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/flexigpt/flexigpt-app/internal/builtin/gotool"
 	"github.com/flexigpt/flexigpt-app/internal/bundleitemutils"
 	"github.com/flexigpt/flexigpt-app/internal/tool/goregistry"
 	"github.com/flexigpt/flexigpt-app/internal/tool/spec"
@@ -1273,7 +1272,7 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 			verify: func(t *testing.T, body *spec.InvokeToolResponseBody) {
 				t.Helper()
 				text := getOneTextOutput(t, body)
-				var o gotool.ListDirectoryOut
+				var o fstool.ListDirectoryOut
 				if err := json.Unmarshal([]byte(text), &o); err != nil {
 					t.Fatalf("unmarshal: %v", err)
 				}
@@ -1292,7 +1291,7 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 			verify: func(t *testing.T, body *spec.InvokeToolResponseBody) {
 				t.Helper()
 				text := getOneTextOutput(t, body)
-				var o gotool.SearchFilesOut
+				var o fstool.SearchFilesOut
 				if err := json.Unmarshal([]byte(text), &o); err != nil {
 					t.Fatalf("unmarshal: %v", err)
 				}

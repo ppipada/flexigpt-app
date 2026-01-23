@@ -302,8 +302,9 @@ func BuildContentBlocks(ctx context.Context, atts []Attachment, opts ...ContentB
 	}
 	blocks := make([]ContentBlock, 0, len(atts))
 	buildContentOptions := getBuildContentBlockOptions(opts...)
-	for _, att := range atts {
-		b, err := (&att).BuildContentBlock(ctx, opts...)
+	for i := range atts {
+		att := &atts[i]
+		b, err := att.BuildContentBlock(ctx, opts...)
 		if err != nil {
 			switch {
 			case errors.Is(err, ErrExistingContentBlock):
