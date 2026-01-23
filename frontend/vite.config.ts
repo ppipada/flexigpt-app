@@ -24,6 +24,7 @@ const extraDepsToOptimize = [
 	'@platejs/tabbable/react',
 	'@platejs/list/react',
 	'@platejs/combobox/react',
+	'@ariakit/react/tab',
 ];
 
 const excludedDepsToOptimize = new Set(['@emoji-mart/data', '@fontsource-variable/inter']);
