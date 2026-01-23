@@ -13,7 +13,7 @@ import {
 
 import { FiAlertTriangle, FiEdit2, FiFastForward, FiPlay, FiSend, FiSquare, FiX } from 'react-icons/fi';
 
-import { useMenuStore } from '@ariakit/react';
+import { useMenuStore, useStoreState } from '@ariakit/react';
 import { SingleBlockPlugin, type Value } from 'platejs';
 import { Plate, PlateContent, usePlateEditor } from 'platejs/react';
 
@@ -161,6 +161,10 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 	const templateButtonRef = useRef<HTMLButtonElement | null>(null);
 	const toolButtonRef = useRef<HTMLButtonElement | null>(null);
 	const attachmentButtonRef = useRef<HTMLButtonElement | null>(null);
+	// Track whether a menu was opened via shortcut so we can:
+	// - force focus into the menu (arrow-key nav)
+	// - optionally restore focus to editor on close (Esc)
+	const menuOpenedByShortcutRef = useRef({ templates: false, tools: false, attachments: false });
 
 	// doc version tick to re-run selection computations on any editor change
 	const [docVersion, setDocVersion] = useState(0);
@@ -322,32 +326,83 @@ export const EditorArea = forwardRef<EditorAreaHandle, EditorAreaProps>(function
 		attachmentMenu.hide();
 	}, [templateMenu, toolMenu, attachmentMenu]);
 
-	const focusFirstMenuItem = (kind: 'templates' | 'tools' | 'attachments') => {
-		// Allow the menu to mount/portal before querying DOM
+	// --- Fix: focus management for menus opened by shortcuts ---
+	const templateMenuOpen = useStoreState(templateMenu, 'open');
+	const toolMenuOpen = useStoreState(toolMenu, 'open');
+	const attachmentMenuOpen = useStoreState(attachmentMenu, 'open');
+
+	const templateMenuEl = useStoreState(templateMenu, 'contentElement');
+	const toolMenuEl = useStoreState(toolMenu, 'contentElement');
+	const attachmentMenuEl = useStoreState(attachmentMenu, 'contentElement');
+
+	useEffect(() => {
+		if (!templateMenuOpen) {
+			if (menuOpenedByShortcutRef.current.templates) {
+				menuOpenedByShortcutRef.current.templates = false;
+				editor.tf.focus();
+			}
+			return;
+		}
+		if (!menuOpenedByShortcutRef.current.templates) return;
+
 		requestAnimationFrame(() => {
-			const menuRoot = document.querySelector<HTMLElement>(`[data-menu-kind="${kind}"]`);
-			if (!menuRoot) return;
-			const firstItem = menuRoot.querySelector<HTMLElement>('[role="menuitem"]');
-			firstItem?.focus();
+			templateMenuEl?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
 		});
-	};
+	}, [templateMenuOpen, templateMenuEl, editor]);
+
+	useEffect(() => {
+		if (!toolMenuOpen) {
+			if (menuOpenedByShortcutRef.current.tools) {
+				menuOpenedByShortcutRef.current.tools = false;
+				editor.tf.focus();
+			}
+			return;
+		}
+		if (!menuOpenedByShortcutRef.current.tools) return;
+
+		requestAnimationFrame(() => {
+			toolMenuEl?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+		});
+	}, [toolMenuOpen, toolMenuEl, editor]);
+
+	useEffect(() => {
+		if (!attachmentMenuOpen) {
+			if (menuOpenedByShortcutRef.current.attachments) {
+				menuOpenedByShortcutRef.current.attachments = false;
+				editor.tf.focus();
+			}
+			return;
+		}
+		if (!menuOpenedByShortcutRef.current.attachments) return;
+
+		requestAnimationFrame(() => {
+			attachmentMenuEl?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+		});
+	}, [attachmentMenuOpen, attachmentMenuEl, editor]);
 
 	const openTemplatePicker = useCallback(() => {
+		menuOpenedByShortcutRef.current.templates = true;
+
 		closeAllMenus();
 		templateMenu.show();
-		focusFirstMenuItem('templates');
+		// Make Ariakit's "return focus" behavior deterministic on close.
+		templateButtonRef.current?.focus({ preventScroll: true });
 	}, [closeAllMenus, templateMenu]);
 
 	const openToolPicker = useCallback(() => {
+		menuOpenedByShortcutRef.current.tools = true;
+
 		closeAllMenus();
 		toolMenu.show();
-		focusFirstMenuItem('tools');
+		toolButtonRef.current?.focus({ preventScroll: true });
 	}, [closeAllMenus, toolMenu]);
 
 	const openAttachmentPicker = useCallback(() => {
+		menuOpenedByShortcutRef.current.attachments = true;
+
 		closeAllMenus();
 		attachmentMenu.show();
-		focusFirstMenuItem('attachments');
+		attachmentButtonRef.current?.focus({ preventScroll: true });
 	}, [closeAllMenus, attachmentMenu]);
 
 	const lastPopulatedSelectionKeyRef = useRef<Set<string>>(new Set());

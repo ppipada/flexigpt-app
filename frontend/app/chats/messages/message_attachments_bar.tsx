@@ -313,18 +313,15 @@ function ToolChoicesGroupChip({ tools, onToolChoiceDetails }: ToolChoicesGroupCh
 						store={menu}
 						hideOnClick={false}
 						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
+						onClick={
+							onToolChoiceDetails
+								? () => {
+										onToolChoiceDetails(tool);
+									}
+								: undefined
+						}
 					>
-						<MessageToolChoiceChip
-							tool={tool}
-							fullWidth
-							onClick={
-								onToolChoiceDetails
-									? () => {
-											onToolChoiceDetails(tool);
-										}
-									: undefined
-							}
-						/>
+						<MessageToolChoiceChip tool={tool} fullWidth />
 					</MenuItem>
 				))}
 			</Menu>
@@ -379,18 +376,15 @@ function ToolOutputsGroupChip({ outputs, onToolOutputDetails }: ToolOutputsGroup
 						store={menu}
 						hideOnClick={false}
 						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
+						onClick={
+							onToolOutputDetails
+								? () => {
+										onToolOutputDetails(out);
+									}
+								: undefined
+						}
 					>
-						<MessageToolOutputChip
-							output={out}
-							fullWidth
-							onClick={
-								onToolOutputDetails
-									? () => {
-											onToolOutputDetails(out);
-										}
-									: undefined
-							}
-						/>
+						<MessageToolOutputChip output={out} fullWidth />
 					</MenuItem>
 				))}
 			</Menu>
@@ -445,18 +439,15 @@ function ToolCallsGroupChip({ calls, onToolCallDetails }: ToolCallsGroupChipProp
 						store={menu}
 						hideOnClick={false}
 						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
+						onClick={
+							onToolCallDetails
+								? () => {
+										onToolCallDetails(call);
+									}
+								: undefined
+						}
 					>
-						<MessageToolCallChip
-							call={call}
-							fullWidth
-							onClick={
-								onToolCallDetails
-									? () => {
-											onToolCallDetails(call);
-										}
-									: undefined
-							}
-						/>
+						<MessageToolCallChip call={call} fullWidth />
 					</MenuItem>
 				))}
 			</Menu>
@@ -510,18 +501,15 @@ function WebSearchOutputsGroupChip({ outputs, onOutputDetails }: WebSearchOutput
 						store={menu}
 						hideOnClick={false}
 						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
+						onClick={
+							onOutputDetails
+								? () => {
+										onOutputDetails(out);
+									}
+								: undefined
+						}
 					>
-						<MessageWebSearchOutputChip
-							output={out}
-							fullWidth
-							onClick={
-								onOutputDetails
-									? () => {
-											onOutputDetails(out);
-										}
-									: undefined
-							}
-						/>
+						<MessageWebSearchOutputChip output={out} fullWidth />
 					</MenuItem>
 				))}
 			</Menu>
@@ -605,18 +593,15 @@ function WebSearchCallsGroupChip({ calls, onCallDetails }: WebSearchCallsGroupCh
 						store={menu}
 						hideOnClick={false}
 						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
+						onClick={
+							onCallDetails
+								? () => {
+										onCallDetails(call);
+									}
+								: undefined
+						}
 					>
-						<MessageWebSearchCallChip
-							call={call}
-							fullWidth
-							onClick={
-								onCallDetails
-									? () => {
-											onCallDetails(call);
-										}
-									: undefined
-							}
-						/>
+						<MessageWebSearchCallChip call={call} fullWidth />
 					</MenuItem>
 				))}
 			</Menu>
@@ -708,18 +693,15 @@ function WebSearchChoicesGroupChip({ choices, onChoiceDetails }: WebSearchChoice
 						store={menu}
 						hideOnClick={false}
 						className="data-active-item:bg-base-200 mb-1 rounded-xl last:mb-0"
+						onClick={
+							onChoiceDetails
+								? () => {
+										onChoiceDetails(choice);
+									}
+								: undefined
+						}
 					>
-						<MessageWebSearchToolChoiceChip
-							tool={choice}
-							fullWidth
-							onClick={
-								onChoiceDetails
-									? () => {
-											onChoiceDetails(choice);
-										}
-									: undefined
-							}
-						/>
+						<MessageWebSearchToolChoiceChip tool={choice} fullWidth />
 					</MenuItem>
 				))}
 			</Menu>
