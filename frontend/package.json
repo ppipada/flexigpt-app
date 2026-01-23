@@ -5,6 +5,7 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
+		"typecheck": "react-router typegen && tsc",
 		"lint:knip": "knip --tags=-lintignore",
 		"lint:eslint": "eslint . -c ./eslint.config.mjs",
 		"lint:eslintinfo": "eslint --env-info",
@@ -14,11 +15,11 @@
 		"fmt:fix": "prettier -w . --ignore-path ../.prettierignore",
 		"clean": "rimraf ./dist",
 		"run:wailsdev": "cp .env.dev .env && cross-env VITE_PLATFORM=wails react-router dev",
-		"build:wails": "rimraf ./dist && cp .env.prod .env && pnpm run typecheck && cross-env VITE_PLATFORM=wails react-router build",
-		"typecheck": "react-router typegen && tsc",
+		"build:pre": "node -e \"const fs=require('fs'); if(fs.existsSync('.env.prod')) fs.copyFileSync('.env.prod','.env');\" && pnpm run typecheck",
+		"build:wails": "rimraf ./dist && pnpm run build:pre && pnpm run typecheck && cross-env VITE_PLATFORM=wails react-router build",
 		"test": "vitest run",
 		"coverage": "vitest run --coverage",
-		"licenses:gen": "node -e \"const fs=require('fs'); if(fs.existsSync('.env.prod')) fs.copyFileSync('.env.prod','.env');\" && cross-env GEN_LICENSES=true VITE_PLATFORM=wails vite build --mode production"
+		"licenses:gen": "pnpm run build:pre && cross-env GEN_LICENSES=true VITE_PLATFORM=wails vite build --mode production"
 	},
 	"keywords": [],
 	"author": "ppipada",
