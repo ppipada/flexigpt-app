@@ -186,10 +186,9 @@ func (a *App) saveFile(
 		return errors.New("context is not initialized")
 	}
 
-	runtimeFilters := getRuntimeFilters(additionalFilters, true)
 	saveDialogOptions := runtime.SaveDialogOptions{
 		DefaultFilename: defaultFilename,
-		Filters:         runtimeFilters,
+		Filters:         dialogFilters(additionalFilters),
 	}
 	savePath, err := runtime.SaveFileDialog(a.ctx, saveDialogOptions)
 	if err != nil {
@@ -218,9 +217,8 @@ func (a *App) openMultipleFilesAsAttachments(
 		return nil, errors.New("context is not initialized")
 	}
 
-	runtimeFilters := getRuntimeFilters(additionalFilters, true)
 	opts := runtime.OpenDialogOptions{
-		Filters:              runtimeFilters,
+		Filters:              dialogFilters(additionalFilters),
 		ShowHiddenFiles:      true,
 		CanCreateDirectories: false,
 	}
@@ -415,6 +413,18 @@ var defaultRuntimeFilters = func() []runtime.FileFilter {
 	}
 	return runtimeFilters
 }()
+
+// dialogFilters returns nil when no explicit filters are provided.
+// This is important for macOS: providing filters makes NSOpenPanel/NSSavePanel
+// restrict selectable/savable file types, which can hide/disable "unknown"
+// extensions (e.g. .bazel/.cmake) and dotfiles depending on type mapping.
+func dialogFilters(additionalFilters []fileutil.FileFilter) []runtime.FileFilter {
+	if len(additionalFilters) == 0 {
+		return nil
+	}
+	// Only use the explicit filters requested by the caller.
+	return getRuntimeFilters(additionalFilters, false)
+}
 
 func getRuntimeFilters(additionalFilters []fileutil.FileFilter, includeDefault bool) []runtime.FileFilter {
 	runtimeFilters := make([]runtime.FileFilter, 0, len(additionalFilters)+len(fileutil.DefaultFileFilters))

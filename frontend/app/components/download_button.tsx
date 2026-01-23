@@ -69,7 +69,7 @@ export function DownloadButton({
 			const additionalFilters: FileFilter[] = [
 				{
 					DisplayName: `Files (*${fileExtension})`,
-					Extensions: [`*${fileExtension}`],
+					Extensions: [fileExtension],
 				},
 			];
 
