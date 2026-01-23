@@ -15,6 +15,11 @@ on:
         required: false
         default: false
         type: boolean
+      sign:
+        description: "Enable Windows signing?"
+        required: false
+        default: false
+        type: boolean
   workflow_call:
     inputs:
       tag:
@@ -53,7 +58,7 @@ jobs:
     env:
       SIGN_WINDOWS_CERT: ${{ secrets.SIGN_WINDOWS_CERT || '' }}
       SIGN_WINDOWS_CERT_PASSWORD: ${{ secrets.SIGN_WINDOWS_CERT_PASSWORD || '' }}
-      SIGN_INPUT: ${{ github.event.inputs.sign || '' }}
+      SIGN_INPUT: ${{ inputs.sign || github.event.inputs.sign || '' }}
 
     steps:
       - name: Checkout code

@@ -117,6 +117,8 @@ if [[ -d "${LICENSE_OUTPUT_DIR}" ]]; then
     rm -rf "${LICENSES_DST_DIR}"
     mkdir -p "${LICENSES_DST_DIR}"
     cp -R "${LICENSE_OUTPUT_DIR}/." "${LICENSES_DST_DIR}/"
+		rm -f "${LICENSES_DST_DIR}/gen_licenses.sh"
+		rm -f "${LICENSES_DST_DIR}/licenses.tpl"
   fi
   echo "Licenses copied to: ${LICENSES_DST_DIR}"
 else
