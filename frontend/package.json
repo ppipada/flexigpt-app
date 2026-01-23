@@ -74,8 +74,8 @@
 		"@types/react-dom": "19.2.3",
 		"@types/sprintf-js": "^1.1.4",
 		"@types/stopword": "^2.0.3",
-		"@vitejs/plugin-rsc": "^0.5.15",
-		"@vitest/coverage-v8": "^4.0.17",
+		"@vitejs/plugin-rsc": "^0.5.16",
+		"@vitest/coverage-v8": "^4.0.18",
 		"cross-env": "^10.1.0",
 		"daisyui": "^5.5.14",
 		"eslint": "^9.39.2",
@@ -84,11 +84,11 @@
 		"eslint-plugin-react": "^7.37.5",
 		"eslint-plugin-tailwind-canonical-classes": "^1.1.0",
 		"eslint-plugin-tailwindcss": "4.0.0-beta.0",
-		"globals": "^17.0.0",
+		"globals": "^17.1.0",
 		"jiti": "^2.6.1",
 		"jsdom": "^27.4.0",
 		"knip": "^5.82.1",
-		"prettier": "^3.8.0",
+		"prettier": "^3.8.1",
 		"prettier-plugin-tailwindcss": "^0.7.2",
 		"rimraf": "^6.1.2",
 		"rollup-plugin-license": "^3.6.0",
@@ -99,7 +99,7 @@
 		"vite": "^7.3.1",
 		"vite-plugin-checker": "^0.12.0",
 		"vite-tsconfig-paths": "^6.0.4",
-		"vitest": "^4.0.17"
+		"vitest": "^4.0.18"
 	},
 	"knip": {
 		"entry": [

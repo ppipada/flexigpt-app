@@ -14,11 +14,11 @@ VERSION_TAG=""
 DO_SIGN="false"
 
 while [[ $# -gt 0 ]]; do
-  case "\$1" in
+  case "$1" in
     --version) VERSION_TAG="${2:-}"; shift 2 ;;
     --sign) DO_SIGN="true"; shift ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "Unknown arg: \$1"; usage; exit 1 ;;
+    *) echo "Unknown arg: $1"; usage; exit 1 ;;
   esac
 done
 
