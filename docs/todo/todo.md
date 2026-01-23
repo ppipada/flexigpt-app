@@ -5,7 +5,7 @@
 - [ ] edit and save template doesn't work. says template slug already exists.
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
-- [ ] ps1 file is causing crash.
+
 - [ ] mime sniffing can be enriched in llmtools and then dropped from flexigpt
 
 ## Features

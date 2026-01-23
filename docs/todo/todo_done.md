@@ -658,3 +658,5 @@
 - [x] may be restore tabs should be present for cross page/restart navigation
 - [x] shortcuts for tabs
 - [x] chat page cleanup/refactor
+- [x] ps1 file is causing crash.
+  - [x] treat as unreadable
