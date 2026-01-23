@@ -1,5 +1,5 @@
-#!/bin/sh
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Export all variables from buildvars.env
 set -a
@@ -17,7 +17,15 @@ mkdir -p "$XDG_CONFIG_HOME"
 mkdir -p "$XDG_DATA_HOME"
 
 PATH="$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin" pnpm install
+
 PATH="$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin" "$GOROOT/bin/go" mod download
+
+###############################################################################
+# Licenses (Go + JS) - generated at build time, packaged into Flatpak
+###############################################################################
+chmod +x build/licenses/gen_licenses.sh
+PATH="$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin" build/licenses/gen_licenses.sh --version "$VERSION_TAG"
+
 PATH="$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin" pnpm run build:linux
 
 # Cleanup unneeded files
@@ -31,3 +39,11 @@ install -Dm00755 build/bin/FlexiGPT "$FLATPAK_DEST/bin/FlexiGPT"
 install -Dm00644 frontend/public/icon_256x256.png "$FLATPAK_DEST/share/icons/hicolor/256x256/apps/$FLATPAK_ID.png"
 install -Dm00644 build/flatpak/"$FLATPAK_ID".desktop "$FLATPAK_DEST/share/applications/$FLATPAK_ID.desktop"
 install -Dm00644 build/flatpak/"$FLATPAK_ID".appdata.xml "$FLATPAK_DEST/share/appdata/$FLATPAK_ID.appdata.xml"
+
+# Standard Flatpak license location
+LICENSES_DEST_DIR="$FLATPAK_DEST/share/licenses/$FLATPAK_ID"
+mkdir -p "$LICENSES_DEST_DIR"
+install -Dm00644 build/licenses/PROJECT_LICENSE.txt "$LICENSES_DEST_DIR/PROJECT_LICENSE.txt"
+install -Dm00644 build/licenses/THIRD_PARTY_NOTICES.txt "$LICENSES_DEST_DIR/THIRD_PARTY_NOTICES.txt"
+install -Dm00644 build/licenses/go-dependency-licenses.txt "$LICENSES_DEST_DIR/go-dependency-licenses.txt"
+install -Dm00644 build/licenses/js-dependency-licenses.txt "$LICENSES_DEST_DIR/js-dependency-licenses.txt"

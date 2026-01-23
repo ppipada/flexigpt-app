@@ -325,6 +325,30 @@ export function useChatShortcuts({ config, isBusy, handlers }: UseShortcutsOptio
 			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 			if (target?.closest?.('[data-disable-chat-shortcuts="true"]')) return;
 
+			/**
+			 * Prevent global app shortcuts from firing while the user is interacting
+			 * with menus, listboxes, or dialogs. This avoids breaking keyboard navigation
+			 * (e.g. Mod+W closing a tab while a menu is open, shortcuts firing inside modals).
+			 *
+			 * Note: We intentionally DO NOT block shortcuts inside the main Plate editor
+			 * (contenteditable) because insert shortcuts are expected to work there.
+			 */
+			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+			const inMenuOrDialog = !!target?.closest?.(
+				[
+					// Native dialogs (your modals)
+					'dialog',
+					'[role="dialog"]',
+					// Ariakit menus
+					'[role="menu"]',
+					'[role="menuitem"]',
+					// Other common popup widgets you use (EnumDropdownInline uses listbox/option)
+					'[role="listbox"]',
+					'[role="option"]',
+				].join(', ')
+			);
+			if (inMenuOrDialog) return;
+
 			const { config, isBusy, handlers } = ref.current;
 			const entries = Object.entries(config) as [ShortcutAction, ShortcutChord][];
 

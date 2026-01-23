@@ -20,6 +20,12 @@ SIGN_APP=false
 NOTARIZE_APP=false
 VERSION_TAG=""
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "${ROOT_DIR}"
+
+# Load buildvars for local runs (CI may have already exported env vars).
+if [[ -f "build/buildvars.env" ]]; then set -a; source build/buildvars.env; set +a; fi
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
   --version)
@@ -80,6 +86,13 @@ chmod +x build/darwin/render_templates.sh
 build/darwin/render_templates.sh $RENDER_FLAGS
 
 ################################################################################
+# Step 1.5: Generate licenses (Go + JS) into build/licenses
+################################################################################
+echo "Generating licenses..."
+chmod +x build/licenses/gen_licenses.sh
+build/licenses/gen_licenses.sh --version "${VERSION_TAG}"
+
+################################################################################
 # Step 2: Build .app
 ################################################################################
 
@@ -88,6 +101,28 @@ build/darwin/render_templates.sh $RENDER_FLAGS
 
 echo "Building .app with command: ${MACOS_BUILD_COMMAND}"
 eval "${MACOS_BUILD_COMMAND}"
+
+################################################################################
+# Step 2.5: Include licenses into .app bundle (MUST happen before signing)
+################################################################################
+: "${LICENSE_OUTPUT_DIR:=./build/licenses}"
+LICENSES_DST_DIR="${MACOS_APP_BUNDLE_PATH}/Contents/Resources/licenses"
+
+echo "Including licenses into app bundle..."
+if [[ -d "${LICENSE_OUTPUT_DIR}" ]]; then
+  mkdir -p "${LICENSES_DST_DIR}"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --delete "${LICENSE_OUTPUT_DIR}/" "${LICENSES_DST_DIR}/"
+  else
+    rm -rf "${LICENSES_DST_DIR}"
+    mkdir -p "${LICENSES_DST_DIR}"
+    cp -R "${LICENSE_OUTPUT_DIR}/." "${LICENSES_DST_DIR}/"
+  fi
+  echo "Licenses copied to: ${LICENSES_DST_DIR}"
+else
+  echo "ERROR: ${LICENSE_OUTPUT_DIR} not found; licenses will NOT be bundled."
+  exit 1
+fi
 
 ################################################################################
 # Step 3: Sign .app (if requested)

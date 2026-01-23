@@ -35,6 +35,12 @@ const depsToOptimize = [...new Set([...baseDeps, ...extraDepsToOptimize])].filte
 export default defineConfig(({ mode }) => {
 	const isProd = mode === 'production';
 	const genLicenses = process.env.GEN_LICENSES === 'true';
+	const genLicensesForceWrite = process.env.GEN_LICENSES_FORCE_WRITE === 'true';
+	// Allow CI/scripts to override output location deterministically.
+	// If not set, keep the existing default (repoRoot/build/licenses/...).
+	const jsLicensesOutFile = process.env.LICENSE_JS_OUT
+		? path.resolve(process.env.LICENSE_JS_OUT)
+		: path.resolve(process.cwd(), '../build/licenses/js-dependency-licenses.txt');
 
 	// const analyze = process.env.ANALYZE === 'true' || !isProd;
 	const analyze = false;
@@ -54,7 +60,7 @@ export default defineConfig(({ mode }) => {
 				thirdParty: {
 					includePrivate: false,
 					output: {
-						file: path.resolve(process.cwd(), '../build/licenses/js-dependency-licenses.txt'),
+						file: jsLicensesOutFile,
 					},
 				},
 			})
@@ -94,9 +100,14 @@ export default defineConfig(({ mode }) => {
 		build: {
 			outDir: 'dist',
 			target: 'esnext',
-			write: !genLicenses,
-			// Avoid clearing dist/ if it's a normal dev machine and you run this often
-			emptyOutDir: !genLicenses,
+			/**
+			 * License generation runs a Vite build.
+			 * By default we do NOT write dist/ (faster + avoids disturbing local builds),
+			 * but allow forcing output if some environment/tooling prevents the license plugin from writing.
+			 */
+			write: !(genLicenses && !genLicensesForceWrite),
+			emptyOutDir: !(genLicenses && !genLicensesForceWrite),
+
 			rollupOptions: {
 				plugins: rollupPlugins,
 				output: {

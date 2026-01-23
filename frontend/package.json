@@ -18,7 +18,7 @@
 		"typecheck": "react-router typegen && tsc",
 		"test": "vitest run",
 		"coverage": "vitest run --coverage",
-		"licenses:gen": "cross-env GEN_LICENSES=true vite build --mode production"
+		"licenses:gen": "node -e \"const fs=require('fs'); if(fs.existsSync('.env.prod')) fs.copyFileSync('.env.prod','.env');\" && cross-env GEN_LICENSES=true VITE_PLATFORM=wails vite build --mode production"
 	},
 	"keywords": [],
 	"author": "ppipada",

@@ -75,6 +75,8 @@ const (
 	ExtHS       FileExt = ".hs"
 	ExtLUA      FileExt = ".lua"
 	ExtDART     FileExt = ".dart"
+	ExtCmake    FileExt = ".cmake"
+	ExtBazel    FileExt = ".bazel"
 
 	ExtJPG  FileExt = ".jpg"
 	ExtJPEG FileExt = ".jpeg"
@@ -205,6 +207,8 @@ var ExtensionToMIMEType = map[FileExt]MIMEType{
 	ExtHS:       MIMETextPlain,
 	ExtLUA:      MIMETextPlain,
 	ExtDART:     MIMETextPlain,
+	ExtCmake:    MIMETextPlain,
+	ExtBazel:    MIMETextPlain,
 
 	ExtJPG:  MIMEImageJPEG,
 	ExtJPEG: MIMEImageJPEG,

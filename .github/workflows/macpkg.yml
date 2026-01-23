@@ -94,18 +94,23 @@ jobs:
           # Compute SIGNING_ENABLED
           SIGNING_ENABLED=false
           if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/* ]]; then
+            # Tag push: auto-sign if secrets are present, but never notarize.
             if [[ -n "${MACOS_SIGN_APPLE_USERNAME}" && -n "${MACOS_SIGN_APPLE_APP_PASSWORD}" && -n "${MACOS_SIGN_APP_CERT}" && -n "${MACOS_SIGN_INSTALLER_ID}" ]]; then
               SIGNING_ENABLED=true
             fi
-          elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && "${SIGN_INPUT}" == "true" ]]; then
-            if [[ -n "${MACOS_SIGN_APPLE_USERNAME}" && -n "${MACOS_SIGN_APPLE_APP_PASSWORD}" && -n "${MACOS_SIGN_APP_CERT}" && -n "${MACOS_SIGN_INSTALLER_ID}" ]]; then
-              SIGNING_ENABLED=true
+          else
+            # workflow_dispatch and workflow_call: honor explicit UI input
+            if [[ "${SIGN_INPUT}" == "true" ]]; then
+              if [[ -n "${MACOS_SIGN_APPLE_USERNAME}" && -n "${MACOS_SIGN_APPLE_APP_PASSWORD}" && -n "${MACOS_SIGN_APP_CERT}" && -n "${MACOS_SIGN_INSTALLER_ID}" ]]; then
+                SIGNING_ENABLED=true
+              fi
             fi
           fi
 
           # Compute NOTARIZE_ENABLED (only if SIGNING_ENABLED is true)
           NOTARIZE_ENABLED=false
-          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && "${NOTARIZE_INPUT}" == "true" && "${SIGN_INPUT}" == "true" ]]; then
+          # For both workflow_dispatch and workflow_call, require explicit sign+notarize from UI
+          if [[ "${SIGN_INPUT}" == "true" && "${NOTARIZE_INPUT}" == "true" ]]; then
             if [[ -n "${MACOS_SIGN_APPLE_USERNAME}" && -n "${MACOS_SIGN_APPLE_APP_PASSWORD}" && -n "${MACOS_SIGN_APP_CERT}" && -n "${MACOS_SIGN_INSTALLER_ID}" ]]; then
               NOTARIZE_ENABLED=true
             fi

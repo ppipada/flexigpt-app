@@ -11,9 +11,11 @@ runs:
     - name: Set Version Tag
       shell: bash
       run: |
-        # Set VERSION_TAG based on event type
-        if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-          VERSION_TAG="${{ github.event.inputs.tag }}"
+        # Prefer explicit tag input (workflow_dispatch / workflow_call),
+        # otherwise fall back to the ref name (e.g. for push tag events).
+        TAG_INPUT="${{ github.event.inputs.tag }}"
+        if [[ -n "${TAG_INPUT}" ]]; then
+          VERSION_TAG="${TAG_INPUT}"
         else
           VERSION_TAG="${GITHUB_REF_NAME}"
         fi
@@ -22,14 +24,16 @@ runs:
     - name: Check tag exists and set RELEASE_MODE
       shell: bash
       run: |
-        # Set RELEASE_MODE based on event type
-        if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && "${{ github.event.inputs.release }}" == "true" ]]; then
-          TAG="${{ github.event.inputs.tag }}"
-          git fetch --tags
-          if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
+        # RELEASE_MODE is driven by the "release" input on both workflow_dispatch
+        # and workflow_call. For plain push events this stays "false".
+        RELEASE_INPUT="${{ github.event.inputs.release }}"
+        TAG_INPUT="${{ github.event.inputs.tag }}"
+        if [[ "${RELEASE_INPUT}" == "true" && -n "${TAG_INPUT}" ]]; then
+          git fetch --tags --quiet
+          if git rev-parse "refs/tags/${TAG_INPUT}" >/dev/null 2>&1; then
             echo "RELEASE_MODE=true" >> "$GITHUB_ENV"
           else
-            echo "Tag $TAG does not exist. Not releasing."
+            echo "Tag ${TAG_INPUT} does not exist. Not releasing."
             echo "RELEASE_MODE=false" >> "$GITHUB_ENV"
           fi
         else
@@ -40,10 +44,9 @@ runs:
       if: env.RELEASE_MODE == 'true'
       shell: bash
       run: |
-        # Checkout tag
-        TAG="${{ github.event.inputs.tag }}"
+        TAG_INPUT="${{ github.event.inputs.tag }}"
         git fetch --tags
-        git checkout "tags/$TAG"
+        git checkout "refs/tags/${TAG_INPUT}"
 
     - name: Load environment from buildvars.env
       shell: bash

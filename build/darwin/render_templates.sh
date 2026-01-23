@@ -68,6 +68,8 @@ fi
 render_template() {
     local template_file="$1"
     local dest_file="$2"
+    # For plist and appdata we want a plain numeric version without leading "v".
+    local VERSION_NO_V="${VERSION_TAG#v}"
 
     sed -e "s|{{COMMON_PRODUCT_NAME}}|${COMMON_PRODUCT_NAME}|g" \
         -e "s|{{COMMON_BUILD_NAME}}|${COMMON_BUILD_NAME}|g" \
@@ -76,7 +78,7 @@ render_template() {
         -e "s|{{MACOS_BUNDLE_ID}}|${MACOS_BUNDLE_ID}|g" \
         -e "s|{{MACOS_APP_BUNDLE_PATH}}|${MACOS_APP_BUNDLE_PATH}|g" \
         -e "s|{{MACOS_PKG_BUNDLE_PATH}}|${MACOS_PKG_BUNDLE_PATH}|g" \
-        -e "s|{{VERSION_TAG}}|${VERSION_TAG}|g" \
+        -e "s|{{VERSION_TAG}}|${VERSION_NO_V}|g" \
         -e "s|{{MACOS_SIGN_APPLE_USERNAME}}|${MACOS_SIGN_APPLE_USERNAME:-}|g" \
         -e "s|{{MACOS_SIGN_APPLE_APP_PASSWORD}}|${MACOS_SIGN_APPLE_APP_PASSWORD:-}|g" \
         -e "s|{{MACOS_SIGN_APPLE_TEAM_ID}}|${MACOS_SIGN_APPLE_TEAM_ID:-}|g" \

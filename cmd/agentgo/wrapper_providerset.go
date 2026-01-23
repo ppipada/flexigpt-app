@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -182,16 +184,30 @@ func (w *ProviderSetWrapper) FetchCompletion(
 	})
 }
 
-func (w *ProviderSetWrapper) CancelCompletion(id string) {
+func (w *ProviderSetWrapper) CancelCompletion(id string) error {
+	var err error
+	defer func() {
+		if r := recover(); r != nil {
+			// Log the panic plus stack trace.
+			slog.Error("panic recovered",
+				slog.Any("panic", r),
+				slog.String("stacktrace", string(debug.Stack())),
+			)
+
+			// Overwrite err so the caller sees we failed.
+			err = fmt.Errorf("panic recovered: %v", r)
+		}
+	}()
+
 	if id == "" {
-		return
+		return err
 	}
 	w.completionCancelMux.Lock()
 	defer w.completionCancelMux.Unlock()
 	if c, ok := w.completionCancels[id]; ok {
 		c()
 		delete(w.completionCancels, id)
-		return
+		return err
 	}
 
 	// Cancel arrived before FetchCompletion registered the cancel func.
@@ -204,4 +220,5 @@ func (w *ProviderSetWrapper) CancelCompletion(id string) {
 			delete(w.preCanceled, k)
 		}
 	}
+	return err
 }
