@@ -634,7 +634,7 @@
 			"defaultHeaders": {
 				"content-type": "application/json"
 			},
-			"defaultModelPresetID": "gpt51",
+			"defaultModelPresetID": "gpt52",
 			"modelPresets": {
 				"o4Mini": {
 					"schemaVersion": "2025-07-01",
