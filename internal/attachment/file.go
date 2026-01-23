@@ -1,14 +1,15 @@
 package attachment
 
 import (
+	"context"
 	"errors"
-	"fmt"
-	"log/slog"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/flexigpt/flexigpt-app/internal/fileutil"
+	"github.com/flexigpt/llmtools-go/fstool"
+	llmtoolsgoSpec "github.com/flexigpt/llmtools-go/spec"
 )
 
 // FileRef carries metadata for file attachments.
@@ -79,6 +80,7 @@ func (ref *FileRef) IsModified() bool {
 }
 
 func (ref *FileRef) BuildContentBlock(
+	ctx context.Context,
 	attachmentContentBlockMode AttachmentContentBlockMode,
 	onlyIfTextKind bool,
 ) (*ContentBlock, error) {
@@ -107,7 +109,7 @@ func (ref *FileRef) BuildContentBlock(
 			// Right now we are making a safe fallback to send it as text block.
 			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentContentBlockMode
 			// properly.
-			return ref.getTextBlock(mimeType)
+			return ref.getTextBlock(ctx, mimeType)
 		case fileutil.ExtensionModeImage:
 			if onlyIfTextKind {
 				return nil, ErrNonTextContentBlock
@@ -122,20 +124,12 @@ func (ref *FileRef) BuildContentBlock(
 			}
 			// As of now non pdf files are not supported to be attached as b64 files in any APIs.
 			// But, as the call is reached here, we are still sending the content back as b64 content.
-			// As APIs start supporting other file types, and UI and fetch api handles things this will be seameless.
-			base64Data, err := fileutil.ReadFile(path, fileutil.ReadEncodingBinary)
+			// As APIs start supporting other file types, and UI and fetch api handles things this will be seamless.
+			c, err := ref.getBinaryFileContent(ctx, path, mimeType)
 			if err != nil {
 				return nil, err
 			}
-
-			mStr := string(mimeType)
-			fname := filepath.Base(path)
-			return &ContentBlock{
-				Kind:       ContentBlockFile,
-				Base64Data: &base64Data,
-				MIMEType:   &mStr,
-				FileName:   &fname,
-			}, nil
+			return c, nil
 
 		case fileutil.ExtensionModeDefault:
 			return nil, ErrUnreadableFile
@@ -147,7 +141,7 @@ func (ref *FileRef) BuildContentBlock(
 		mimeType, extensionMode, err := fileutil.MIMEForLocalFile(path)
 		if err == nil && (extensionMode == fileutil.ExtensionModeText || mimeType == fileutil.MIMEApplicationPDF) {
 			// Text mode mimes and pdf with text extraction is supported.
-			return ref.getTextBlock(mimeType)
+			return ref.getTextBlock(ctx, mimeType)
 		}
 		// Could not detect mime or non pdf text attachment sent, render as unreadable file.
 		return nil, ErrUnreadableFile
@@ -166,72 +160,77 @@ func (ref *FileRef) BuildContentBlock(
 	}
 }
 
-func (ref *FileRef) getTextBlock(mimetype fileutil.MIMEType) (*ContentBlock, error) {
+func (ref *FileRef) getTextBlock(ctx context.Context, mimetype fileutil.MIMEType) (*ContentBlock, error) {
 	path := strings.TrimSpace(ref.Path)
 	if path == "" {
 		return nil, errors.New("got invalid path")
 	}
-	fname := filepath.Base(path)
-	ext := strings.ToLower(filepath.Ext(path))
-	// Special handling for PDFs: try text extraction with panic-safe fallback.
-	if mimetype == fileutil.MIMEApplicationPDF || ext == string(fileutil.ExtPDF) {
-		return ref.buildPDFTextOrFileBlock()
-	}
 
-	// Normal text file.
-	text, err := fileutil.ReadFile(path, fileutil.ReadEncodingText)
+	c, err := ref.getTextFileContent(ctx, path, mimetype)
+	if err != nil {
+		ext := strings.ToLower(filepath.Ext(path))
+		// Special handling for PDFs as fallback: attach as binary content.
+		if mimetype == fileutil.MIMEApplicationPDF || ext == string(fileutil.ExtPDF) {
+			return ref.getBinaryFileContent(ctx, path, mimetype)
+		}
+		return nil, err
+	}
+	return c, nil
+}
+
+func (ref *FileRef) getTextFileContent(
+	ctx context.Context,
+	path string,
+	mimeType fileutil.MIMEType,
+) (*ContentBlock, error) {
+	// Fstool supports Text extraction of pdf too.
+	toolOut, err := fstool.ReadFile(ctx, fstool.ReadFileArgs{
+		Path:     path,
+		Encoding: "text",
+	})
 	if err != nil {
 		return nil, err
 	}
-	mme := string(mimetype)
+	if len(toolOut) == 0 || toolOut[0].Kind != llmtoolsgoSpec.ToolStoreOutputKindText ||
+		toolOut[0].TextItem == nil {
+		return nil, ErrUnreadableFile
+	}
+	tItem := toolOut[0].TextItem
+
+	mStr := string(mimeType)
+	fname := filepath.Base(path)
 	return &ContentBlock{
 		Kind:     ContentBlockText,
-		Text:     &text,
-		MIMEType: &mme,
+		Text:     &tItem.Text,
+		MIMEType: &mStr,
 		FileName: &fname,
 	}, nil
 }
 
-// buildPDFTextOrFileBlock tries to extract PDF text; on failure/panic, falls back to base64 file.
-func (ref *FileRef) buildPDFTextOrFileBlock() (*ContentBlock, error) {
-	mimetype := string(fileutil.MIMEApplicationPDF)
-
-	path := strings.TrimSpace(ref.Path)
-	if path == "" {
-		return nil, errors.New("got invalid path")
-	}
-	fname := filepath.Base(path)
-	text, err := fileutil.ExtractPDFTextSafe(path, maxAttachmentFetchBytes)
-	if err == nil && text != "" {
-		return &ContentBlock{
-			Kind:     ContentBlockText,
-			Text:     &text,
-			MIMEType: &mimetype,
-			FileName: &fname,
-		}, nil
-	}
-
+func (ref *FileRef) getBinaryFileContent(
+	ctx context.Context,
+	path string,
+	mimeType fileutil.MIMEType,
+) (*ContentBlock, error) {
+	toolOut, err := fstool.ReadFile(ctx, fstool.ReadFileArgs{
+		Path:     path,
+		Encoding: "binary",
+	})
 	if err != nil {
-		slog.Warn("pdf text extraction failed; falling back to base64 attachment",
-			"path", path, "err", err)
+		return nil, err
 	}
+	if len(toolOut) == 0 || toolOut[0].Kind != llmtoolsgoSpec.ToolStoreOutputKindFile ||
+		toolOut[0].FileItem == nil {
+		return nil, ErrUnreadableFile
+	}
+	fItem := toolOut[0].FileItem
 
-	// Fallback: send as file attachment.
-	base64Data, err2 := fileutil.ReadFile(path, fileutil.ReadEncodingBinary)
-	if err2 != nil {
-		if err != nil {
-			return nil, fmt.Errorf(
-				"pdf text extraction failed (%w); fallback to base64 also failed: %w",
-				err, err2,
-			)
-		}
-		return nil, err2
-	}
+	mStr := string(mimeType)
 
 	return &ContentBlock{
 		Kind:       ContentBlockFile,
-		Base64Data: &base64Data,
-		MIMEType:   &mimetype,
-		FileName:   &fname,
+		Base64Data: &fItem.FileData,
+		MIMEType:   &mStr,
+		FileName:   &fItem.FileName,
 	}, nil
 }

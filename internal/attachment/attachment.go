@@ -133,7 +133,7 @@ func (att *Attachment) BuildContentBlock(ctx context.Context, opts ...ContentBlo
 		if att.FileRef == nil || !att.FileRef.Exists {
 			return nil, errors.New("invalid file ref for attachment")
 		}
-		cb, err := att.FileRef.BuildContentBlock(att.Mode, buildContentOptions.OnlyIfTextKind)
+		cb, err := att.FileRef.BuildContentBlock(ctx, att.Mode, buildContentOptions.OnlyIfTextKind)
 		if err != nil {
 			if !errors.Is(err, ErrUnreadableFile) {
 				return nil, err

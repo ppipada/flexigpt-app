@@ -54,7 +54,7 @@ else
 
 ; --- ${SENTINEL} ---
 Section "-Licenses"
-  SetOutPath "$INSTDIR\\licenses"
+  SetOutPath "\$INSTDIR\\licenses"
   File /r "${LICENSE_DIR_WIN}/*"
 SectionEnd
 EOF

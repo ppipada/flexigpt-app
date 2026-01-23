@@ -1,100 +1,11 @@
 package fileutil
 
 import (
-	"encoding/base64"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
-
-func TestReadFile(t *testing.T) {
-	dir := t.TempDir()
-
-	textPath := filepath.Join(dir, "sample.txt")
-	textContent := "Hello, world!\n"
-	writeFile(t, textPath, textContent)
-
-	nonExistentPath := filepath.Join(dir, "does_not_exist.txt")
-	binaryContent := base64.StdEncoding.EncodeToString([]byte(textContent))
-
-	tests := []struct {
-		name            string
-		path            string
-		encoding        ReadEncoding
-		want            string
-		wantErr         bool
-		wantErrContains string
-		wantIsNotExist  bool
-	}{
-		{
-			name:     "text encoding returns raw content",
-			path:     textPath,
-			encoding: ReadEncodingText,
-			want:     textContent,
-		},
-		{
-			name:     "binary encoding returns base64",
-			path:     textPath,
-			encoding: ReadEncodingBinary,
-			want:     binaryContent,
-		},
-		{
-			name:            "invalid encoding",
-			path:            textPath,
-			encoding:        ReadEncoding("invalid"),
-			wantErr:         true,
-			wantErrContains: `encoding must be "text" or "binary"`,
-		},
-		{
-			name:            "empty encoding (zero value) is invalid",
-			path:            textPath,
-			encoding:        ReadEncoding(""),
-			wantErr:         true,
-			wantErrContains: `encoding must be "text" or "binary"`,
-		},
-		{
-			name:            "empty path",
-			path:            "",
-			encoding:        ReadEncodingText,
-			wantErr:         true,
-			wantErrContains: "path is required",
-		},
-		{
-			name:           "non-existent path",
-			path:           nonExistentPath,
-			encoding:       ReadEncodingText,
-			wantErr:        true,
-			wantIsNotExist: true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := ReadFile(tc.path, tc.encoding)
-
-			if tc.wantErr {
-				if err == nil {
-					t.Fatalf("expected error, got nil")
-				}
-				if tc.wantErrContains != "" && !strings.Contains(err.Error(), tc.wantErrContains) {
-					t.Fatalf("error %q does not contain %q", err.Error(), tc.wantErrContains)
-				}
-				if tc.wantIsNotExist && !os.IsNotExist(err) {
-					t.Fatalf("expected a not-exist error, got: %v", err)
-				}
-				return
-			}
-
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if got != tc.want {
-				t.Errorf("ReadFile(%q) = %q, want %q", tc.path, got, tc.want)
-			}
-		})
-	}
-}
 
 func TestStatPath(t *testing.T) {
 	dir := t.TempDir()
