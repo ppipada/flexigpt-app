@@ -11,6 +11,7 @@ if [[ -f "build/buildvars.env" ]]; then
   set +a
 fi
 
+: "${COMMON_BUILD_NAME:?Must set COMMON_BUILD_NAME}"
 : "${WIN_INSTALLER_PATH:?Must set WIN_INSTALLER_PATH}"
 
 LICENSE_DIR="${ROOT_DIR}/build/licenses"
@@ -73,7 +74,32 @@ fi
 
 echo "Using makensis: ${MAKENSIS}"
 
-"${MAKENSIS}" "${PATCHED}"
+# Path to the built app binary that NSIS should bundle.
+# This must be relative to the NSIS script directory:
+#   script dir: build/windows/installer
+#   binary:     build/bin/<COMMON_BUILD_NAME>.exe
+#   relative:   ..\..\bin\<COMMON_BUILD_NAME>.exe
+WAILS_AMD64_BINARY_REL="..\\..\\bin\\${COMMON_BUILD_NAME}.exe"
+
+# Convert the patched NSI script path to a Windows-style path
+PATCHED_WIN="${PATCHED}"
+if command -v cygpath >/dev/null 2>&1; then
+  PATCHED_WIN="$(cygpath -w "${PATCHED}")"
+elif [[ "${PATCHED_WIN}" =~ ^/([a-zA-Z])/(.*)$ ]]; then
+  # Fallback: /d/a/... -> d:\a\...
+  drive="${BASH_REMATCH[1]}"
+  rest="${BASH_REMATCH[2]}"
+  PATCHED_WIN="${drive}:\\${rest//\//\\}"
+fi
+
+# IMPORTANT: We are running under Git Bash/MSYS on GitHub Actions.
+# MSYS normally rewrites args starting with "/" as paths (e.g. /D... or /V2).
+# That would corrupt our /DARG_WAILS_AMD64_BINARY flag.
+# MSYS_NO_PATHCONV disables that conversion for *arguments* only.
+MSYS_NO_PATHCONV=1 \
+  "${MAKENSIS}" \
+    "/DARG_WAILS_AMD64_BINARY=${WAILS_AMD64_BINARY_REL}" \
+    "${PATCHED_WIN}"
 
 [[ -f "${WIN_INSTALLER_PATH}" ]] || {
   echo "ERROR: Installer not found at expected path after rebuild: ${WIN_INSTALLER_PATH}"
