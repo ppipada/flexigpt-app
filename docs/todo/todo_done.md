@@ -660,3 +660,5 @@
 - [x] chat page cleanup/refactor
 - [x] ps1 file is causing crash.
   - [x] treat as unreadable
+
+- [x] License additions in published binaries.

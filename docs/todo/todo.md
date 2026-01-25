@@ -7,7 +7,6 @@
 - [ ] View mode needed for builtins
 
 - [ ] mime sniffing can be enriched in llmtools and then dropped from flexigpt
-- [x] License additions in published binaries.
 
 ## Features
 
