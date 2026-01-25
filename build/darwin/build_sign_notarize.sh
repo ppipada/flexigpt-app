@@ -91,6 +91,12 @@ build/darwin/render_templates.sh $RENDER_FLAGS
 echo "Generating licenses..."
 chmod +x build/licenses/gen_licenses.sh
 build/licenses/gen_licenses.sh --version "${VERSION_TAG}"
+LIC_GO="./build/licenses/go-dependency-licenses.txt"
+LIC_JS="./build/licenses/js-dependency-licenses.txt"
+for f in "${LIC_GO}" "${LIC_JS}"; do
+  [[ -f "$f" ]] || { echo "ERROR: Missing generated license file: $f"; exit 1; }
+  [[ -s "$f" ]] || { echo "ERROR: Empty generated license file: $f"; exit 1; }
+done
 
 ################################################################################
 # Step 2: Build .app
@@ -109,22 +115,11 @@ eval "${MACOS_BUILD_COMMAND}"
 LICENSES_DST_DIR="${MACOS_APP_BUNDLE_PATH}/Contents/Resources/licenses"
 
 echo "Including licenses into app bundle..."
-if [[ -d "${LICENSE_OUTPUT_DIR}" ]]; then
-  mkdir -p "${LICENSES_DST_DIR}"
-  if command -v rsync >/dev/null 2>&1; then
-    rsync -a --delete "${LICENSE_OUTPUT_DIR}/" "${LICENSES_DST_DIR}/"
-  else
-    rm -rf "${LICENSES_DST_DIR}"
-    mkdir -p "${LICENSES_DST_DIR}"
-    cp -R "${LICENSE_OUTPUT_DIR}/." "${LICENSES_DST_DIR}/"
-		rm -f "${LICENSES_DST_DIR}/gen_licenses.sh"
-		rm -f "${LICENSES_DST_DIR}/licenses.tpl"
-  fi
-  echo "Licenses copied to: ${LICENSES_DST_DIR}"
-else
-  echo "ERROR: ${LICENSE_OUTPUT_DIR} not found; licenses will NOT be bundled."
-  exit 1
-fi
+rm -rf "${LICENSES_DST_DIR}"
+mkdir -p "${LICENSES_DST_DIR}"
+cp -f "${LIC_GO}" "${LICENSES_DST_DIR}/$(basename "${LIC_GO}")"
+cp -f "${LIC_JS}" "${LICENSES_DST_DIR}/$(basename "${LIC_JS}")"
+echo "Licenses copied to: ${LICENSES_DST_DIR}"
 
 ################################################################################
 # Step 3: Sign .app (if requested)

@@ -74,8 +74,8 @@ jobs:
     permissions:
       contents: write
     env:
-      SIGN_INPUT: ${{ github.event.inputs.sign }}
-      NOTARIZE_INPUT: ${{ github.event.inputs.notarize }}
+      SIGN_INPUT: ${{ inputs.sign || github.event.inputs.sign || '' }}
+      NOTARIZE_INPUT: ${{ inputs.notarize || github.event.inputs.notarize || '' }}
       MACOS_SIGN_APPLE_USERNAME: ${{ secrets.MACOS_SIGN_APPLE_USERNAME }}
       MACOS_SIGN_APPLE_TEAM_ID: ${{ secrets.MACOS_SIGN_APPLE_TEAM_ID || '' }}
       MACOS_SIGN_APPLE_DEVELOPER_IDENTITY: ${{ secrets.MACOS_SIGN_APPLE_DEVELOPER_IDENTITY || '' }}

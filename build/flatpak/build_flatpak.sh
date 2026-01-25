@@ -25,6 +25,19 @@ PATH="$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin" "$GOROOT/bin/go" mod download
 ###############################################################################
 chmod +x build/licenses/gen_licenses.sh
 PATH="$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin" build/licenses/gen_licenses.sh --version "$VERSION_TAG"
+# Verify expected outputs exist (canonical names)
+LIC_GO="build/licenses/go-dependency-licenses.txt"
+LIC_JS="build/licenses/js-dependency-licenses.txt"
+for f in "${LIC_GO}" "${LIC_JS}"; do
+  if [[ ! -f "$f" ]]; then
+    echo "ERROR: Missing generated license file: $f"
+    exit 1
+  fi
+  if [[ ! -s "$f" ]]; then
+    echo "ERROR: Generated license file is empty: $f"
+    exit 1
+  fi
+done
 
 PATH="$PATH:$GOROOT/bin:$GOBIN:$NODEROOT/bin" pnpm run build:linux
 
