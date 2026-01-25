@@ -1,17 +1,7 @@
 #storybook
 stories
 
-# Build
-dist
-frontend/dist
-out
-build/bin
-build/darwin/Info.plist
-build/darwin/entitlements.plist
-build/darwin/gon-sign.json
-build/darwin/gon-notarize.json
-build/flatpak/io.github.flexigpt.client.desktop
-build/flatpak/io.github.flexigpt.client.appdata.xml
+
 
 # Logs
 logs
@@ -140,5 +130,16 @@ coverage.out
 go.work
 go.work.sum
 
+# Build
+dist
+frontend/dist
+out
+build/bin
+build/darwin/Info.plist
+build/darwin/entitlements.plist
+build/darwin/gon-sign.json
+build/darwin/gon-notarize.json
+build/flatpak/io.github.flexigpt.client.desktop
+build/flatpak/io.github.flexigpt.client.appdata.xml
 build/licenses/go-dependency-licenses.txt
 build/licenses/js-dependency-licenses.txt

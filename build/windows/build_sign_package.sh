@@ -5,7 +5,7 @@ usage() {
   cat <<'EOF'
 Usage: build/windows/build_sign_package.sh --version vX.Y.Z [--sign]
 
-Builds the Windows Wails app + NSIS installer, injects licenses into installer.
+Builds the Windows Wails app + NSIS installer (installer bundles build/licenses).
 Optionally signs binaries if SIGN_WINDOWS_CERT/SIGN_WINDOWS_CERT_PASSWORD are set.
 EOF
 }
@@ -46,9 +46,6 @@ echo "==> Building Windows app with: ${WIN_BUILD_COMMAND}"
 export VERSION_TAG="${VERSION_TAG}"
 eval "${WIN_BUILD_COMMAND}"
 
-echo "==> Injecting licenses into NSIS installer..."
-chmod +x build/windows/inject_licenses_nsis.sh
-build/windows/inject_licenses_nsis.sh
 
 if [[ "${DO_SIGN}" == "true" ]]; then
   echo "==> Signing requested..."
