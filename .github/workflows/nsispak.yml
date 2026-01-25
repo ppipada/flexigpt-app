@@ -120,9 +120,16 @@ jobs:
         working-directory: ${{ env.COMMON_APP_WORKING_DIRECTORY }}
         run: |
           $ErrorActionPreference = "Stop"
-          if (!(Test-Path "build\licenses")) { throw "build\licenses missing (license generation failed)" }
+          $files = @(
+            "build\licenses\go-dependency-licenses.txt",
+            "build\licenses\js-dependency-licenses.txt"
+          )
+          foreach ($f in $files) {
+            if (!(Test-Path $f)) { throw "Missing generated license file: $f" }
+          }
           if (Test-Path "${env:FINAL_LICENSES_ZIP_PATH}") { Remove-Item -Force "${env:FINAL_LICENSES_ZIP_PATH}" }
-          Compress-Archive -Path "build\licenses\*" -DestinationPath "${env:FINAL_LICENSES_ZIP_PATH}" -Force
+          Compress-Archive -Path $files -DestinationPath "${env:FINAL_LICENSES_ZIP_PATH}" -Force
+
       - name: Copy file
         shell: bash
         run: cp "${WIN_INSTALLER_PATH}" "${FINAL_PKG_PATH}"

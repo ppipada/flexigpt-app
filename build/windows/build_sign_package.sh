@@ -37,10 +37,27 @@ fi
 
 : "${WIN_BUILD_COMMAND:?Must set WIN_BUILD_COMMAND}"
 : "${WIN_INSTALLER_PATH:?Must set WIN_INSTALLER_PATH}"
+: "${COMMON_BUILD_NAME:?Must set COMMON_BUILD_NAME}"
+
 
 echo "==> Generating licenses..."
 chmod +x build/licenses/gen_licenses.sh
 build/licenses/gen_licenses.sh --version "${VERSION_TAG}"
+
+echo "==> Verifying generated license files..."
+LICENSE_GO="build/licenses/go-dependency-licenses.txt"
+LICENSE_JS="build/licenses/js-dependency-licenses.txt"
+
+for f in "${LICENSE_GO}" "${LICENSE_JS}"; do
+  if [[ ! -f "$f" ]]; then
+    echo "ERROR: Missing generated license file: $f"
+    exit 1
+  fi
+  if [[ ! -s "$f" ]]; then
+    echo "ERROR: Generated license file is empty: $f"
+    exit 1
+  fi
+done
 
 echo "==> Building Windows app with: ${WIN_BUILD_COMMAND}"
 export VERSION_TAG="${VERSION_TAG}"
