@@ -36,11 +36,11 @@ func StatPath(path string) (pathInfo *PathInfo, err error) {
 		return nil, e
 	}
 
-	p := GetPathInfoFromFileInfo(path, info)
+	p := getPathInfoFromFileInfo(path, info)
 	return &p, nil
 }
 
-func GetPathInfoFromFileInfo(path string, info fs.FileInfo) PathInfo {
+func getPathInfoFromFileInfo(path string, info fs.FileInfo) PathInfo {
 	m := info.ModTime().UTC()
 	return PathInfo{
 		Path:    path,

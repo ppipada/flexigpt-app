@@ -1,17 +1,28 @@
 package attachment
 
 import (
+	"context"
 	"errors"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/flexigpt/flexigpt-app/internal/fileutil"
+	"github.com/flexigpt/llmtools-go/imagetool"
 )
 
 // ImageRef carries metadata for image attachments.
 type ImageRef struct {
-	fileutil.ImageInfo
+	Path    string     `json:"path"`
+	Name    string     `json:"name"`
+	Exists  bool       `json:"exists"`
+	IsDir   bool       `json:"isDir"`
+	Size    int64      `json:"size,omitempty"`
+	ModTime *time.Time `json:"modTime,omitempty"`
+
+	Width    int               `json:"width,omitempty"`
+	Height   int               `json:"height,omitempty"`
+	Format   string            `json:"format,omitempty"`   // e.g. "jpeg", "png"
+	MIMEType fileutil.MIMEType `json:"mimeType,omitempty"` // e.g. "image/jpeg"
 
 	// Original snapshot (for change detection across turns).
 	OrigPath    string    `json:"origPath"`
@@ -19,7 +30,7 @@ type ImageRef struct {
 	OrigModTime time.Time `json:"origModTime"`
 }
 
-func (ref *ImageRef) PopulateRef(replaceOrig bool) error {
+func (ref *ImageRef) PopulateRef(ctx context.Context, replaceOrig bool) error {
 	if ref == nil {
 		return errors.New("image attachment missing ref")
 	}
@@ -27,27 +38,35 @@ func (ref *ImageRef) PopulateRef(replaceOrig bool) error {
 	if path == "" {
 		return errors.New("image attachment missing path")
 	}
-	info, err := fileutil.ReadImage(path, false)
+
+	toolOut, err := imagetool.ReadImage(ctx, imagetool.ReadImageArgs{
+		Path:              path,
+		IncludeBase64Data: false,
+	})
 	if err != nil {
 		return err
 	}
-
-	if strings.TrimSpace(ref.OrigPath) == "" || replaceOrig {
-		ref.OrigPath = info.Path
-		ref.OrigSize = info.Size
-		ref.OrigModTime = *info.ModTime
+	if toolOut == nil {
+		return ErrUnreadableFile
 	}
 
-	ref.Path = info.Path
-	ref.Name = info.Name
-	ref.Exists = info.Exists
-	ref.IsDir = info.IsDir
-	ref.Size = info.Size
-	ref.ModTime = info.ModTime
-	ref.Width = info.Width
-	ref.Height = info.Height
-	ref.Format = info.Format
-	ref.MIMEType = info.MIMEType
+	if strings.TrimSpace(ref.OrigPath) == "" || replaceOrig {
+		ref.OrigPath = toolOut.Path
+		ref.OrigSize = toolOut.SizeBytes
+		ref.OrigModTime = *toolOut.ModTime
+	}
+
+	ref.Path = toolOut.Path
+	ref.Exists = toolOut.Exists
+	ref.IsDir = false
+	ref.Size = toolOut.SizeBytes
+	ref.ModTime = toolOut.ModTime
+	ref.Width = toolOut.Width
+	ref.Height = toolOut.Height
+	ref.Format = toolOut.Format
+
+	ref.Name = toolOut.Name
+	ref.MIMEType = fileutil.MIMEType(toolOut.MIMEType)
 	return nil
 }
 
@@ -73,21 +92,26 @@ func (ref *ImageRef) IsModified() bool {
 	return false
 }
 
-func (ref *ImageRef) BuildContentBlock() (*ContentBlock, error) {
-	return buildImageBlockFromLocal(ref.Path)
+func (ref *ImageRef) BuildContentBlock(ctx context.Context) (*ContentBlock, error) {
+	return buildImageBlockFromLocal(ctx, ref.Path)
 }
 
-func buildImageBlockFromLocal(path string) (*ContentBlock, error) {
-	info, err := fileutil.ReadImage(path, true)
+func buildImageBlockFromLocal(ctx context.Context, path string) (*ContentBlock, error) {
+	toolOut, err := imagetool.ReadImage(ctx, imagetool.ReadImageArgs{
+		Path:              path,
+		IncludeBase64Data: true,
+	})
 	if err != nil {
 		return nil, err
 	}
-	mStr := string(info.MIMEType)
-	fname := filepath.Base(path)
+	if toolOut == nil {
+		return nil, ErrUnreadableFile
+	}
+
 	return &ContentBlock{
 		Kind:       ContentBlockImage,
-		Base64Data: &info.Base64Data,
-		MIMEType:   &mStr,
-		FileName:   &fname,
+		Base64Data: &toolOut.Base64Data,
+		MIMEType:   &toolOut.MIMEType,
+		FileName:   &toolOut.Name,
 	}, nil
 }

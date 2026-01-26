@@ -18,7 +18,7 @@ import (
 // AttachmentKind, default Mode, and AvailableContentBlockModes.
 // The returned attachment is fully populated via PopulateRef().
 // Note that this builds a fresh attachment, i.e both original ref and current are populated here.
-func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
+func BuildAttachmentForFile(ctx context.Context, pathInfo *fileutil.PathInfo) (*Attachment, error) {
 	if pathInfo == nil {
 		return nil, errors.New("invalid input pathinfo")
 	}
@@ -48,12 +48,15 @@ func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
 				AttachmentContentBlockModeImage,
 			},
 			ImageRef: &ImageRef{
-				ImageInfo: fileutil.ImageInfo{
-					PathInfo: *pathInfo,
-				},
+				Path:    pathInfo.Path,
+				Name:    pathInfo.Name,
+				Exists:  pathInfo.Exists,
+				IsDir:   pathInfo.IsDir,
+				Size:    pathInfo.Size,
+				ModTime: pathInfo.ModTime,
 			},
 		}
-		if err := att.PopulateRef(false); err != nil {
+		if err := att.PopulateRef(ctx, false); err != nil {
 			return nil, err
 		}
 		return att, nil
@@ -71,7 +74,7 @@ func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
 				PathInfo: *pathInfo,
 			},
 		}
-		if err := att.PopulateRef(false); err != nil {
+		if err := att.PopulateRef(ctx, false); err != nil {
 			return nil, err
 		}
 		return att, nil
@@ -96,7 +99,7 @@ func BuildAttachmentForFile(pathInfo *fileutil.PathInfo) (*Attachment, error) {
 				PathInfo: *pathInfo,
 			},
 		}
-		if err := att.PopulateRef(false); err != nil {
+		if err := att.PopulateRef(ctx, false); err != nil {
 			return nil, err
 		}
 		return att, nil
@@ -287,7 +290,7 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 	}
 
 	// Ensure ref is populated/validated (absolute URL requirement, normalized fields, etc.)
-	if err := att.PopulateRef(false); err != nil {
+	if err := att.PopulateRef(ctx, false); err != nil {
 		return nil, err
 	}
 

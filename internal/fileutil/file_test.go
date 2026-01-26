@@ -148,7 +148,7 @@ func TestGetPathInfoFromFileInfo(t *testing.T) {
 				t.Fatalf("stat failed: %v", err)
 			}
 
-			got := GetPathInfoFromFileInfo(tc.path, info)
+			got := getPathInfoFromFileInfo(tc.path, info)
 
 			if got.Path != tc.path {
 				t.Errorf("Path = %q, want %q", got.Path, tc.path)

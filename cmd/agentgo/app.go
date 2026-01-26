@@ -254,7 +254,7 @@ func (a *App) openMultipleFilesAsAttachments(
 			continue
 		}
 
-		att, attErr := attachment.BuildAttachmentForFile(info)
+		att, attErr := attachment.BuildAttachmentForFile(context.Background(), info)
 		if attErr != nil || att == nil {
 			slog.Debug("failed to build attachment for file", "path", p, "error", attErr)
 			continue
@@ -292,7 +292,7 @@ func (a *App) openDirectoryAsAttachments(maxFiles int) (*attachment.DirectoryAtt
 		HasMore:      walkRes.HasMore,
 	}
 	for _, pi := range walkRes.Files {
-		att, buildErr := attachment.BuildAttachmentForFile(&pi)
+		att, buildErr := attachment.BuildAttachmentForFile(context.Background(), &pi)
 		if buildErr != nil || att == nil {
 			slog.Debug("failed to build attachment for directory file",
 				"path", pi.Path,

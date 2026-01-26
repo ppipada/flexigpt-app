@@ -203,10 +203,28 @@ export namespace attachment {
 		}
 	}
 	
+	export class DirectoryOverflowInfo {
+	    dirPath: string;
+	    relativePath: string;
+	    fileCount: number;
+	    partial: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new DirectoryOverflowInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.dirPath = source["dirPath"];
+	        this.relativePath = source["relativePath"];
+	        this.fileCount = source["fileCount"];
+	        this.partial = source["partial"];
+	    }
+	}
 	export class DirectoryAttachmentsResult {
 	    dirPath: string;
 	    attachments: Attachment[];
-	    overflowDirs: fileutil.DirectoryOverflowInfo[];
+	    overflowDirs: DirectoryOverflowInfo[];
 	    maxFiles: number;
 	    totalSize: number;
 	    hasMore: boolean;
@@ -219,7 +237,7 @@ export namespace attachment {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.dirPath = source["dirPath"];
 	        this.attachments = this.convertValues(source["attachments"], Attachment);
-	        this.overflowDirs = this.convertValues(source["overflowDirs"], fileutil.DirectoryOverflowInfo);
+	        this.overflowDirs = this.convertValues(source["overflowDirs"], DirectoryOverflowInfo);
 	        this.maxFiles = source["maxFiles"];
 	        this.totalSize = source["totalSize"];
 	        this.hasMore = source["hasMore"];
@@ -246,29 +264,12 @@ export namespace attachment {
 	
 	
 	
+	
 
 }
 
 export namespace fileutil {
 	
-	export class DirectoryOverflowInfo {
-	    dirPath: string;
-	    relativePath: string;
-	    fileCount: number;
-	    partial: boolean;
-	
-	    static createFrom(source: any = {}) {
-	        return new DirectoryOverflowInfo(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.dirPath = source["dirPath"];
-	        this.relativePath = source["relativePath"];
-	        this.fileCount = source["fileCount"];
-	        this.partial = source["partial"];
-	    }
-	}
 	export class FileFilter {
 	    DisplayName: string;
 	    Extensions: string[];

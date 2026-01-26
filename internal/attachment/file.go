@@ -94,7 +94,7 @@ func (ref *FileRef) BuildContentBlock(
 			return nil, ErrNonTextContentBlock
 		}
 		// Treat a file in "image" mode as an image attachment.
-		return buildImageBlockFromLocal(path)
+		return buildImageBlockFromLocal(ctx, path)
 
 	case AttachmentContentBlockModeFile:
 		// File mode needs to handle all kinds of supported files appropriately.
@@ -117,7 +117,7 @@ func (ref *FileRef) BuildContentBlock(
 			// Images have to be attached specially.
 			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentContentBlockMode
 			// properly.
-			return buildImageBlockFromLocal(path)
+			return buildImageBlockFromLocal(ctx, path)
 		case fileutil.ExtensionModeDocument:
 			if onlyIfTextKind {
 				return nil, ErrNonTextContentBlock

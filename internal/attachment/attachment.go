@@ -102,7 +102,7 @@ func (att *Attachment) BuildContentBlock(ctx context.Context, opts ...ContentBlo
 
 	// Ensure refs are populated; caller may have done this earlier,
 	// but calling again on a populated ref is cheap to do in actual read data path.
-	if err := (att).PopulateRef(buildContentOptions.OverrideOriginal); err != nil {
+	if err := (att).PopulateRef(ctx, buildContentOptions.OverrideOriginal); err != nil {
 		return nil, err
 	}
 
@@ -125,7 +125,7 @@ func (att *Attachment) BuildContentBlock(ctx context.Context, opts ...ContentBlo
 		if buildContentOptions.OnlyIfTextKind {
 			return nil, ErrNonTextContentBlock
 		}
-		return att.ImageRef.BuildContentBlock()
+		return att.ImageRef.BuildContentBlock(ctx)
 
 	case AttachmentFile:
 		if att.FileRef == nil || !att.FileRef.Exists {
@@ -151,7 +151,7 @@ func (att *Attachment) BuildContentBlock(ctx context.Context, opts ...ContentBlo
 	}
 }
 
-func (att *Attachment) PopulateRef(replaceOrig bool) error {
+func (att *Attachment) PopulateRef(ctx context.Context, replaceOrig bool) error {
 	switch att.Kind {
 	case AttachmentFile:
 		if att.FileRef == nil {
@@ -170,7 +170,7 @@ func (att *Attachment) PopulateRef(replaceOrig bool) error {
 		if att.ImageRef == nil {
 			return errors.New("no image ref for image attachment")
 		}
-		if err := att.ImageRef.PopulateRef(replaceOrig); err != nil {
+		if err := att.ImageRef.PopulateRef(ctx, replaceOrig); err != nil {
 			return err
 		}
 		if att.Label == "" {

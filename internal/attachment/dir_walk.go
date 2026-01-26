@@ -188,7 +188,15 @@ func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (
 				continue
 			}
 
-			pInfo := fileutil.GetPathInfoFromFileInfo(fullPath, info)
+			modTime := info.ModTime().UTC()
+			pInfo := fileutil.PathInfo{
+				Path:    fullPath,
+				Name:    info.Name(),
+				Exists:  true,
+				IsDir:   info.IsDir(),
+				Size:    info.Size(),
+				ModTime: &modTime,
+			}
 
 			files = append(files, pInfo)
 			totalSize += pInfo.Size
