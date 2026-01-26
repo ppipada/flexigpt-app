@@ -176,8 +176,21 @@ export const EnhancedMarkdown = memo(function EnhancedMarkdown({
 
 				const match = /lang-(\w+)/.exec(className || '') || /language-(\w+)/.exec(className || '');
 				const language = match && match[1] ? match[1] : 'text';
-				// eslint-disable-next-line @typescript-eslint/no-base-to-string
-				const value = String(children).replace(/\n$/, '');
+
+				// react-markdown may pass children as string[]; String(array) inserts commas -> breaks Mermaid.
+				const raw =
+					typeof children === 'string'
+						? children
+						: Array.isArray(children)
+							? children.join('')
+							: children == null
+								? ''
+								: // eslint-disable-next-line @typescript-eslint/no-base-to-string
+									String(children);
+
+				// Normalize newlines and trim ONE trailing newline from fenced blocks
+				const value = raw.replace(/\r\n/g, '\n').replace(/\n$/, '');
+
 				if (language === (CustomMDLanguage.ThinkingSummary as string)) {
 					return <ThinkingFence detailsSummaryText="Thinking Summary" text={value} />;
 				} else if (language === (CustomMDLanguage.Thinking as string)) {

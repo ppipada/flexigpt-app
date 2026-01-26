@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { type CSSProperties, useEffect, useRef } from 'react';
 
 import { createPortal } from 'react-dom';
 
@@ -6,9 +6,10 @@ type MermaidZoomModalProps = {
 	isOpen: boolean;
 	onClose: () => void;
 	svgNode: SVGSVGElement | null;
+	surfaceStyle?: CSSProperties;
 };
 
-export function MermaidZoomModal({ isOpen, onClose, svgNode }: MermaidZoomModalProps) {
+export function MermaidZoomModal({ isOpen, onClose, svgNode, surfaceStyle }: MermaidZoomModalProps) {
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
 	const modalRef = useRef<HTMLDivElement | null>(null);
 
@@ -52,7 +53,9 @@ export function MermaidZoomModal({ isOpen, onClose, svgNode }: MermaidZoomModalP
 		newNode.style.height = 'auto';
 		newNode.style.maxWidth = '90vw';
 		newNode.style.maxHeight = '80vh';
-
+		newNode.style.backgroundColor = 'transparent';
+		const bg = newNode.querySelector('rect.background');
+		if (bg) bg.setAttribute('fill', 'transparent');
 		container.appendChild(newNode);
 	}, [isOpen, svgNode]);
 
@@ -62,6 +65,7 @@ export function MermaidZoomModal({ isOpen, onClose, svgNode }: MermaidZoomModalP
 		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose} aria-label="Enlarged Mermaid diagram">
 			<div
 				className="modal-box bg-mermaid flex h-[90vh] max-w-[90vw] cursor-zoom-out items-center justify-center"
+				style={surfaceStyle}
 				onClick={() => {
 					// Close via native dialog API; this will trigger handleDialogClose -> parent onClose()
 					dialogRef.current?.close();

@@ -24,6 +24,10 @@ interface ChatMessageProps {
 }
 
 function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
+	if (prev.isPending !== next.isPending) return false;
+	if (prev.isBusy !== next.isBusy) return false;
+	if (prev.isEditing !== next.isEditing) return false;
+
 	if (prev.message.uiDebugDetails !== next.message.uiDebugDetails) {
 		//
 		// We need to check details as parent is updating details in place for previous message
@@ -37,12 +41,20 @@ function propsAreEqual(prev: ChatMessageProps, next: ChatMessageProps) {
 		return false;
 	}
 
+	// IMPORTANT: the markdown (and Mermaid) is driven by uiContent.
+	// If message objects are mutated in place, message reference may not change,
+	// so we must compare the actual content.
+	if (prev.message.uiContent !== next.message.uiContent) {
+		return false;
+	}
+
+	// Optional but recommended: these can affect effective rendered markdown too.
+	if (prev.message.status !== next.message.status) return false;
+	if (prev.message.outputs !== next.message.outputs) return false;
+	if (prev.message.uiCitations !== next.message.uiCitations) return false;
+
 	// We only care if THIS row’s streamed text changed.
 	if (prev.streamedMessage !== next.streamedMessage) return false;
-
-	if (prev.isPending !== next.isPending) return false;
-	if (prev.isBusy !== next.isBusy) return false;
-	if (prev.isEditing !== next.isEditing) return false;
 
 	// If the *object reference* for the ConversationMessage changes
 	// react must re-render (content edited, message appended).

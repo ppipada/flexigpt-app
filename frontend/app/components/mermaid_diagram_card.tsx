@@ -1,57 +1,90 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 
-import mermaid, { type MermaidConfig } from 'mermaid';
+import { FiMoon, FiSun } from 'react-icons/fi';
+
+import { type MermaidConfig } from 'mermaid';
 
 import { Base64EncodeUTF8 } from '@/lib/encode_decode';
 import { getUUIDv7 } from '@/lib/uuid_utils';
 
-import { useIsDarkMermaid } from '@/hooks/use_is_dark_mermaid';
+import { useDebounce } from '@/hooks/use_debounce';
+import { renderMermaidQueued, useIsDarkMermaid } from '@/hooks/use_mermaid';
 
 import { DownloadButton } from '@/components/download_button';
 import { MermaidZoomModal } from '@/components/mermaid_zoom_modal';
 
 interface MermaidDiagramProps {
 	code: string;
+	/**
+	 * auto = follow app theme.
+	 * light/dark = force Mermaid theme for this diagram only
+	 */
+	defaultThemeMode?: 'auto' | 'light' | 'dark';
+	showThemeToggle?: boolean;
 }
 
-export function MermaidDiagram({ code }: MermaidDiagramProps) {
+export function MermaidDiagram({ code, defaultThemeMode = 'auto', showThemeToggle = true }: MermaidDiagramProps) {
 	const isDark = useIsDarkMermaid();
+
+	const wrapperRef = useRef<HTMLDivElement | null>(null);
 
 	const inlineDiagramRef = useRef<HTMLDivElement | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [svgNode, setSvgNode] = useState<SVGSVGElement | null>(null);
 	const [zoomOpen, setZoomOpen] = useState(false);
 
-	/* Initialise Mermaid only when the theme changes */
-	const lastTheme = useRef<'dark' | 'default' | null>(null);
+	const [themeMode, setThemeMode] = useState<'auto' | 'light' | 'dark'>(defaultThemeMode);
 	const uniqueId = useRef(`mermaid-${getUUIDv7()}`);
+	const renderSeq = useRef(0);
+	const latestToken = useRef(0);
 
-	const mermaidConfig = useMemo<MermaidConfig>(
-		() => ({
+	// Prevent rendering while code is still settling after streaming/markdown rebuild.
+	const stableCode = useDebounce(code, 150);
+
+	const effectiveMermaidTheme = useMemo<'dark' | 'default'>(() => {
+		if (themeMode === 'auto') return isDark ? 'dark' : 'default';
+		return themeMode === 'dark' ? 'dark' : 'default';
+	}, [themeMode, isDark]);
+
+	// Per-diagram surface override: only when user explicitly selects light/dark.
+	// In auto mode, it stays consistent with the app’s DaisyUI theme.
+	const surfaceStyle = useMemo<CSSProperties | undefined>(() => {
+		if (themeMode === 'auto') return undefined;
+		const forcedDark = themeMode === 'dark';
+		return {
+			// override the variables your utility classes use
+			['--bg-mermaid' as any]: forcedDark ? 'var(--mermaid-surface-dark)' : 'var(--mermaid-surface-light)',
+			['--bg-code-header' as any]: forcedDark ? 'var(--mermaid-header-bg-dark)' : 'var(--mermaid-header-bg-light)',
+			['--text-code' as any]: forcedDark ? 'var(--mermaid-header-text-dark)' : 'var(--mermaid-header-text-light)',
+			// helps native form controls / scrollbars look correct inside the block
+			colorScheme: forcedDark ? 'dark' : 'light',
+		};
+	}, [themeMode]);
+
+	const mermaidConfig = useMemo<MermaidConfig>(() => {
+		return {
 			startOnLoad: false,
-			theme: isDark ? 'dark' : 'default',
+			theme: effectiveMermaidTheme,
 			suppressErrorRendering: true,
 			securityLevel: 'loose',
-		}),
-		[isDark]
-	);
-
-	useEffect(() => {
-		const t = mermaidConfig.theme as 'dark' | 'default';
-		if (lastTheme.current === null || t !== lastTheme.current) {
-			mermaid.initialize(mermaidConfig);
-			lastTheme.current = t;
-		}
-	}, [mermaidConfig]);
+			// Important: keep outer background controlled by the container, not SVG.
+			// (Mermaid themes sometimes embed a background; transparency avoids mismatches.)
+			themeVariables: {
+				background: 'transparent',
+			} as any,
+		};
+	}, [effectiveMermaidTheme]);
 
 	useEffect(() => {
 		let isMounted = true;
+		const token = ++latestToken.current;
+
 		if (inlineDiagramRef.current) {
-			inlineDiagramRef.current.innerHTML = '';
-			mermaid
-				.render(uniqueId.current, code)
+			const renderId = `${uniqueId.current}-${renderSeq.current++}`;
+			renderMermaidQueued(renderId, stableCode, mermaidConfig)
 				.then(renderResult => {
-					if (isMounted && inlineDiagramRef.current) {
+					if (!isMounted || token !== latestToken.current || !inlineDiagramRef.current) return;
+					{
 						inlineDiagramRef.current.innerHTML = renderResult.svg;
 						// Center the SVG with inline styles
 						const svg = inlineDiagramRef.current.querySelector('svg');
@@ -62,24 +95,35 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
 							svg.style.height = 'auto';
 							svg.style.maxWidth = '80%';
 							svg.style.maxHeight = '60vh';
+							// Ensure wrapper background is what you see (not SVG background)
+							svg.style.backgroundColor = 'transparent';
+							// Some Mermaid outputs use a background rect; harmless if not present
+							const bg = svg.querySelector('rect.background');
+							if (bg) bg.setAttribute('fill', 'transparent');
 							setSvgNode(svg.cloneNode(true) as SVGSVGElement);
 						}
 						setError(null);
 					}
 				})
 				.catch((e: unknown) => {
-					if (isMounted) {
-						setError('Failed to render diagram. Please check the syntax.');
-						console.error('syntax error:', e);
-					} else {
-						console.error('mermaid render error:', e);
-					}
+					if (!isMounted || token !== latestToken.current) return;
+					setError('Failed to render diagram. Please check the syntax.');
+					console.error('syntax error:', e);
 				});
 		}
 		return () => {
 			isMounted = false;
 		};
-	}, [code, isDark]);
+	}, [stableCode, mermaidConfig]);
+
+	const getDiagramBackgroundColor = (): string => {
+		const el = wrapperRef.current;
+		if (!el) return '#ffffff';
+		const bg = window.getComputedStyle(el).backgroundColor;
+		// If transparent, default to white so PNG is not transparent-black-ish
+		if (!bg || bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') return '#ffffff';
+		return bg;
+	};
 
 	const fetchDiagramAsBlob = async (): Promise<Blob> => {
 		if (!inlineDiagramRef.current) throw new Error('Container not found');
@@ -105,8 +149,10 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
 					return;
 				}
 				ctx.scale(scaleFactor, scaleFactor);
-				ctx.fillStyle = 'white';
-				ctx.fillRect(0, 0, canvas.width, canvas.height);
+				ctx.fillStyle = getDiagramBackgroundColor();
+				// ctx.fillRect(0, 0, canvas.width, canvas.height);
+				// After scaling, draw in CSS pixels
+				ctx.fillRect(0, 0, img.width, img.height);
 				ctx.drawImage(img, 0, 0);
 				canvas.toBlob(
 					blob => {
@@ -126,19 +172,59 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
 
 	return (
 		<>
-			<div className="bg-mermaid my-4 overflow-hidden rounded-lg">
+			<div ref={wrapperRef} className="bg-mermaid my-4 overflow-hidden rounded-lg" style={surfaceStyle}>
 				{/* header bar */}
 				<div className="bg-code-header flex items-center justify-between px-4">
 					<span className="text-code">Mermaid diagram</span>
 
-					<DownloadButton
-						valueFetcher={fetchDiagramAsBlob}
-						size={16}
-						fileprefix="diagram"
-						isBinary={true}
-						language="mermaid"
-						className="btn btn-sm text-code flex items-center border-none bg-transparent shadow-none"
-					/>
+					<div className="flex items-center gap-2">
+						{showThemeToggle && (
+							<div className="join">
+								<button
+									type="button"
+									className={`btn btn-xs text-code join-item border-none bg-transparent shadow-none hover:opacity-60 ${themeMode === 'auto' ? 'btn-active' : ''}`}
+									onClick={() => {
+										setThemeMode('auto');
+									}}
+									aria-pressed={themeMode === 'auto'}
+									title="Follow app theme"
+								>
+									Auto
+								</button>
+								<button
+									type="button"
+									className={`btn btn-xs text-code join-item border-none bg-transparent shadow-none hover:opacity-60 ${themeMode === 'light' ? 'btn-active' : ''}`}
+									onClick={() => {
+										setThemeMode('light');
+									}}
+									aria-pressed={themeMode === 'light'}
+									title="Force light Mermaid theme"
+								>
+									<FiSun />
+								</button>
+								<button
+									type="button"
+									className={`btn btn-xs text-code join-item border-none bg-transparent shadow-none hover:opacity-60 ${themeMode === 'dark' ? 'btn-active' : ''}`}
+									onClick={() => {
+										setThemeMode('dark');
+									}}
+									aria-pressed={themeMode === 'dark'}
+									title="Force dark Mermaid theme"
+								>
+									<FiMoon />
+								</button>
+							</div>
+						)}
+
+						<DownloadButton
+							valueFetcher={fetchDiagramAsBlob}
+							size={16}
+							fileprefix="diagram"
+							isBinary={true}
+							language="mermaid"
+							className="btn btn-sm text-code flex items-center border-none bg-transparent shadow-none hover:opacity-60"
+						/>
+					</div>
 				</div>
 
 				<div
@@ -168,6 +254,7 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
 					setZoomOpen(false);
 				}}
 				svgNode={svgNode}
+				surfaceStyle={surfaceStyle}
 			/>
 		</>
 	);

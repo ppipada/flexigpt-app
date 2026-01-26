@@ -6,8 +6,6 @@
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
 
-- [ ] we can give option to change mermaids rendering theme inline.
-
 ## Features
 
 - [ ] tool features

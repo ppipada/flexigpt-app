@@ -663,3 +663,4 @@
 
 - [x] License additions in published binaries.
 - [x] mime sniffing can be enriched in llmtools and then dropped from flexigpt
+- [x] we can give option to change mermaids rendering theme inline.

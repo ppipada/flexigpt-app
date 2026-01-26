@@ -33,11 +33,11 @@ export function CodeBlock({ language, value, isBusy }: CodeProps) {
 							language={language}
 							valueFetcher={fetchValue}
 							size={16}
-							className="btn btn-sm text-code flex items-center border-none bg-transparent shadow-none"
+							className="btn btn-sm text-code flex items-center border-none bg-transparent shadow-none hover:opacity-60"
 						/>
 						<CopyButton
 							value={value}
-							className="btn btn-sm text-code flex items-center border-none bg-transparent shadow-none"
+							className="btn btn-sm text-code flex items-center border-none bg-transparent shadow-none hover:opacity-60"
 							size={16}
 						/>
 					</div>
