@@ -279,7 +279,7 @@ func (a *App) openDirectoryAsAttachments(maxFiles int) (*attachment.DirectoryAtt
 	if err != nil {
 		return nil, err
 	}
-	walkRes, err := fileutil.WalkDirectoryWithFiles(a.ctx, dirPath, maxFiles)
+	walkRes, err := attachment.WalkDirectoryWithFiles(a.ctx, dirPath, maxFiles)
 	if err != nil {
 		return nil, err
 	}

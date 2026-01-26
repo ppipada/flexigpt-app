@@ -1,4 +1,4 @@
-package fileutil
+package attachment
 
 import (
 	"bytes"
@@ -12,6 +12,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/flexigpt/flexigpt-app/internal/fileutil"
 )
 
 func TestWalkDirectoryWithFiles_CoreScenarios(t *testing.T) {
@@ -603,7 +605,7 @@ func mustMkdir(t *testing.T, dir, name string) string {
 	return full
 }
 
-func namesFromPathInfos(files []PathInfo) []string {
+func namesFromPathInfos(files []fileutil.PathInfo) []string {
 	names := make([]string, 0, len(files))
 	for _, f := range files {
 		names = append(names, f.Name)
@@ -612,7 +614,7 @@ func namesFromPathInfos(files []PathInfo) []string {
 	return names
 }
 
-func sumSizes(files []PathInfo) int64 {
+func sumSizes(files []fileutil.PathInfo) int64 {
 	var total int64
 	for _, f := range files {
 		total += f.Size

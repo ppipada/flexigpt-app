@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-
-	"github.com/flexigpt/flexigpt-app/internal/fileutil"
 )
 
 var (
@@ -53,12 +51,12 @@ type Attachment struct {
 }
 
 type DirectoryAttachmentsResult struct {
-	DirPath      string                           `json:"dirPath"`
-	Attachments  []Attachment                     `json:"attachments"`  // included attachments (flattened)
-	OverflowDirs []fileutil.DirectoryOverflowInfo `json:"overflowDirs"` // directories not fully included
-	MaxFiles     int                              `json:"maxFiles"`     // max number of files returned (after clamping)
-	TotalSize    int64                            `json:"totalSize"`    // sum of Files[i].Size
-	HasMore      bool                             `json:"hasMore"`      // true if not all content included
+	DirPath      string                  `json:"dirPath"`
+	Attachments  []Attachment            `json:"attachments"`  // included attachments (flattened)
+	OverflowDirs []DirectoryOverflowInfo `json:"overflowDirs"` // directories not fully included
+	MaxFiles     int                     `json:"maxFiles"`     // max number of files returned (after clamping)
+	TotalSize    int64                   `json:"totalSize"`    // sum of Files[i].Size
+	HasMore      bool                    `json:"hasMore"`      // true if not all content included
 }
 
 type buildContentBlockOptions struct {

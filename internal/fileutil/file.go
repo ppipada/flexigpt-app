@@ -7,13 +7,6 @@ import (
 	"time"
 )
 
-type ReadEncoding string
-
-const (
-	ReadEncodingText   ReadEncoding = "text"
-	ReadEncodingBinary ReadEncoding = "binary"
-)
-
 type PathInfo struct {
 	Path    string     `json:"path"`
 	Name    string     `json:"name"`
@@ -43,11 +36,11 @@ func StatPath(path string) (pathInfo *PathInfo, err error) {
 		return nil, e
 	}
 
-	p := getPathInfoFromFileInfo(path, info)
+	p := GetPathInfoFromFileInfo(path, info)
 	return &p, nil
 }
 
-func getPathInfoFromFileInfo(path string, info fs.FileInfo) PathInfo {
+func GetPathInfoFromFileInfo(path string, info fs.FileInfo) PathInfo {
 	m := info.ModTime().UTC()
 	return PathInfo{
 		Path:    path,

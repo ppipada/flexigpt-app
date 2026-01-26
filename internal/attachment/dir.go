@@ -1,4 +1,4 @@
-package fileutil
+package attachment
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/flexigpt/flexigpt-app/internal/fileutil"
 )
 
 const MaxTotalWalkFiles = 256
@@ -39,7 +41,7 @@ type DirectoryOverflowInfo struct {
 // WalkDirectoryWithFilesResult is returned when user selects a directory.
 type WalkDirectoryWithFilesResult struct {
 	DirPath      string                  `json:"dirPath"`
-	Files        []PathInfo              `json:"files"`        // included files (flattened)
+	Files        []fileutil.PathInfo     `json:"files"`        // included files (flattened)
 	OverflowDirs []DirectoryOverflowInfo `json:"overflowDirs"` // directories not fully included
 	MaxFiles     int                     `json:"maxFiles"`     // max number of files returned (after clamping)
 	TotalSize    int64                   `json:"totalSize"`    // sum of Files[i].Size
@@ -67,7 +69,7 @@ func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (
 		// Empty path. Nothing to walk.
 		return &WalkDirectoryWithFilesResult{
 			DirPath:      "",
-			Files:        []PathInfo{},
+			Files:        []fileutil.PathInfo{},
 			OverflowDirs: nil,
 			MaxFiles:     maxFiles,
 			TotalSize:    0,
@@ -88,7 +90,7 @@ func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (
 		relPath string // path relative to root dir; "" for root
 	}
 
-	files := make([]PathInfo, 0, maxFiles)
+	files := make([]fileutil.PathInfo, 0, maxFiles)
 	var totalSize int64
 
 	overflowDirs := make([]DirectoryOverflowInfo, 0)
@@ -186,7 +188,7 @@ func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (
 				continue
 			}
 
-			pInfo := getPathInfoFromFileInfo(fullPath, info)
+			pInfo := fileutil.GetPathInfoFromFileInfo(fullPath, info)
 
 			files = append(files, pInfo)
 			totalSize += pInfo.Size
@@ -270,7 +272,7 @@ func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (
 	if len(files) == 0 {
 		return &WalkDirectoryWithFilesResult{
 			DirPath:      dirPath,
-			Files:        []PathInfo{},
+			Files:        []fileutil.PathInfo{},
 			OverflowDirs: overflowDirs,
 			MaxFiles:     maxFiles,
 			TotalSize:    0,

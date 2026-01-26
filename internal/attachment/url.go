@@ -8,8 +8,6 @@ import (
 	"log/slog"
 	"net/url"
 	"strings"
-
-	"github.com/flexigpt/flexigpt-app/internal/fileutil"
 )
 
 const maxContentTypeProbeBytes = 2048
@@ -399,7 +397,7 @@ func (ref *URLRef) buildPDFTextOrFileBlockFromURL(ctx context.Context) (*Content
 	}
 	// Infer/normalize so file blocks and filenameFromURL get a stable type.
 	contentType = inferContentType(contentType, rawURL, data)
-	text, err := fileutil.ExtractPDFTextFromBytesSafe(data, maxAttachmentFetchBytes)
+	text, err := ExtractPDFTextFromBytesSafe(data, maxAttachmentFetchBytes)
 
 	if err == nil && text != "" {
 		mt := "text/plain"
