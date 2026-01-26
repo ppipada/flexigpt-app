@@ -11,33 +11,12 @@
 		{
 			"id": "dev",
 			"role": "developer",
-			"content": "## 🧪 Task\nWrite a *_test.go* file that covers normal, edge, error and (if relevant) concurrency cases.\n\n## ✅ Checklist\n- Use `testing` from stdlib only.\n- Table struct: `{name string, input <T>, want <T>, wantErr bool}`.\n- Loop `t.Run(tc.name, ...)` over the table.\n\n## 🔖 Example Skeleton\n```go\nfunc TestAdd(t *testing.T) {\n  tests := []struct {\n    name    string\n    a, b    int\n    want    int\n  }{\n    {\"simple\", 1, 2, 3},\n  }\n  for _, tc := range tests {\n    t.Run(tc.name, func(t *testing.T) {\n      if got := Add(tc.a, tc.b); got != tc.want {\n        t.Errorf(\"got %d, want %d\", got, tc.want)\n      }\n    })\n  }\n}\n```\n---"
+			"content": "## Task\nWrite a *_test.go* file that covers normal, edge, error and (if relevant) concurrency cases.\n\n## Checklist\n- Use stdlib only, no external libraries.\n- Cover as many paths as possible."
 		},
 		{
 			"id": "usr",
 			"role": "user",
-			"content": "<function signature=\"{{FuncSignature}}\" focus=\"{{Focus}}\">{{ExtraNotes}}</function>"
-		}
-	],
-	"variables": [
-		{
-			"name": "FuncSignature",
-			"type": "string",
-			"required": true,
-			"source": "user"
-		},
-		{
-			"name": "Focus",
-			"type": "enum",
-			"required": true,
-			"source": "user",
-			"enumValues": ["normal", "edge", "error", "concurrency"]
-		},
-		{
-			"name": "ExtraNotes",
-			"type": "string",
-			"required": false,
-			"source": "user"
+			"content": "Code is below:\n"
 		}
 	],
 	"version": "v1.0.0",

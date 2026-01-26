@@ -102,19 +102,24 @@ func (ref *FileRef) BuildContentBlock(
 
 	case AttachmentContentBlockModeFile:
 		// File mode needs to handle all kinds of supported files appropriately.
-		mimeType, extensionMode, err := mimeForLocalFile(path)
-		if err != nil {
-			// Could not detect mime, render as unreadable file.
+		toolOut, err := fstool.MIMEForPath(ctx, fstool.MIMEForPathArgs{
+			Path: path,
+		})
+		if err != nil || toolOut == nil {
 			return nil, errors.Join(ErrUnreadableFile, err)
 		}
+
+		mimeType := MIMEType(toolOut.BaseMIMEType)
+		extensionMode := toolOut.Mode
+
 		switch extensionMode {
-		case ExtensionModeText:
+		case fstool.MIMEModeText:
 			// If this is a text type file, we cannot attach it as b64 encoded currently.
 			// Right now we are making a safe fallback to send it as text block.
 			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentContentBlockMode
 			// properly.
 			return ref.getTextBlock(ctx, mimeType)
-		case ExtensionModeImage:
+		case fstool.MIMEModeImage:
 			if onlyIfTextKind {
 				return nil, ErrNonTextContentBlock
 			}
@@ -122,7 +127,7 @@ func (ref *FileRef) BuildContentBlock(
 			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentContentBlockMode
 			// properly.
 			return buildImageBlockFromLocal(ctx, path)
-		case ExtensionModeDocument:
+		case fstool.MIMEModeDocument:
 			if onlyIfTextKind {
 				return nil, ErrNonTextContentBlock
 			}
@@ -135,20 +140,29 @@ func (ref *FileRef) BuildContentBlock(
 			}
 			return c, nil
 
-		case ExtensionModeDefault:
+		case fstool.MIMEModeDefault:
 			return nil, ErrUnreadableFile
 		default:
 			return nil, ErrUnreadableFile
 		}
 
 	case AttachmentContentBlockModeText:
-		mimeType, extensionMode, err := mimeForLocalFile(path)
-		if err == nil && (extensionMode == ExtensionModeText || mimeType == MIMEApplicationPDF) {
-			// Text mode mimes and pdf with text extraction is supported.
-			return ref.getTextBlock(ctx, mimeType)
+		toolOut, err := fstool.MIMEForPath(ctx, fstool.MIMEForPathArgs{
+			Path: path,
+		})
+		if err != nil || toolOut == nil {
+			return nil, errors.Join(ErrUnreadableFile, err)
 		}
-		// Could not detect mime or non pdf text attachment sent, render as unreadable file.
-		return nil, ErrUnreadableFile
+
+		mimeType := MIMEType(toolOut.BaseMIMEType)
+		extensionMode := toolOut.Mode
+
+		if extensionMode != fstool.MIMEModeText && mimeType != MIMEApplicationPDF {
+			// Could not detect mime or non pdf text attachment sent, render as unreadable file.
+			return nil, ErrUnreadableFile
+		}
+		// Text mode mimes and pdf with text extraction is supported.
+		return ref.getTextBlock(ctx, mimeType)
 
 	case AttachmentContentBlockModeNotReadable,
 		AttachmentContentBlockModePageContent,

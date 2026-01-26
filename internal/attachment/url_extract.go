@@ -15,6 +15,7 @@ import (
 	"time"
 
 	html2md "github.com/JohannesKaufmann/html-to-markdown/v2"
+	"github.com/flexigpt/llmtools-go/fstool"
 	"github.com/ledongthuc/pdf"
 	"github.com/markusmobius/go-trafilatura"
 	"golang.org/x/net/html"
@@ -68,7 +69,7 @@ func ExtractReadableMarkdownFromURL(ctx context.Context, rawURL string) (string,
 		return "", fmt.Errorf("fetching url: %w", err)
 	}
 
-	contentType := inferContentType(headerCT, rawURL, data)
+	contentType := inferContentType(ctx, headerCT, rawURL, data)
 
 	if !isProbablyHTMLOrText(contentType, rawURL) {
 		return "", fmt.Errorf("unsupported content type %q for page extraction", contentType)
@@ -313,7 +314,7 @@ func peekURLContentType(ctx context.Context, rawURL string) (string, error) {
 			_ = resp.Body.Close()
 
 			if resp.StatusCode < 400 {
-				ct := inferContentType(resp.Header.Get("Content-Type"), rawURL, nil)
+				ct := inferContentType(ctx, resp.Header.Get("Content-Type"), rawURL, nil)
 				// If HEAD gives us something non-generic (image/png, text/html, application/pdf, ...),
 				// we're done; otherwise, fall through to Range GET.
 				if ct != "" && !isGenericBinaryContentType(ct) {
@@ -355,7 +356,7 @@ func peekURLContentType(ctx context.Context, rawURL string) (string, error) {
 		}
 
 		buf, _ := io.ReadAll(io.LimitReader(resp.Body, maxPeekBytes))
-		ct := inferContentType(resp.Header.Get("Content-Type"), rawURL, buf)
+		ct := inferContentType(ctx, resp.Header.Get("Content-Type"), rawURL, buf)
 		if ct == "" {
 			if headErr != nil {
 				return "", fmt.Errorf("unable to determine content-type for %s (head err: %w)", rawURL, headErr)
@@ -422,7 +423,7 @@ func isPlainTextContentType(ct string) bool {
 	return false
 }
 
-func inferContentType(headerCT, rawURL string, data []byte) string {
+func inferContentType(ctx context.Context, headerCT, rawURL string, data []byte) string {
 	headerCT = normalizeContentType(headerCT)
 
 	// 1) Trust non-generic header types.
@@ -433,7 +434,11 @@ func inferContentType(headerCT, rawURL string, data []byte) string {
 	// 2) Extension-based hint from URL path.
 	lowerURL := strings.ToLower(strings.TrimSpace(rawURL))
 	if ext := strings.TrimSpace(filepath.Ext(lowerURL)); ext != "" {
-		if mt, err := mimeFromExtensionString(ext); err == nil {
+		toolOut, err := fstool.MIMEForExtension(ctx, fstool.MIMEForExtensionArgs{
+			Extension: ext,
+		})
+		if err == nil && toolOut != nil {
+			mt := MIMEType(toolOut.BaseMIMEType)
 			m := normalizeContentType(string(mt))
 			if m != "" && !isGenericBinaryContentType(m) {
 				return m

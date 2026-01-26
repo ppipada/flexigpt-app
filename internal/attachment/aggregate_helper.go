@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/flexigpt/llmtools-go/fstool"
 )
 
 // BuildAttachmentForFile builds an Attachment for a local filesystem path.
@@ -28,15 +30,19 @@ func BuildAttachmentForFile(ctx context.Context, pathInfo *PathInfo) (*Attachmen
 		return nil, fmt.Errorf("path %q is a directory; expected file", pathInfo.Path)
 	}
 
-	mimeType, extMode, err := mimeForLocalFile(pathInfo.Path)
-	if err != nil {
-		return nil, err
+	toolOut, err := fstool.MIMEForPath(ctx, fstool.MIMEForPathArgs{
+		Path: pathInfo.Path,
+	})
+	if err != nil || toolOut == nil {
+		return nil, errors.Join(ErrUnreadableFile, err)
 	}
 
+	baseMIMEType := toolOut.BaseMIMEType
+	extMode := toolOut.Mode
 	baseName := filepath.Base(pathInfo.Path)
 
 	switch extMode {
-	case ExtensionModeImage:
+	case fstool.MIMEModeImage:
 		// Treat images as dedicated image attachments.
 		att := &Attachment{
 			Kind:  AttachmentImage,
@@ -59,7 +65,7 @@ func BuildAttachmentForFile(ctx context.Context, pathInfo *PathInfo) (*Attachmen
 		}
 		return att, nil
 
-	case ExtensionModeText:
+	case fstool.MIMEModeText:
 		// Source code / markdown / text files: send as text by default.
 		att := &Attachment{
 			Kind:  AttachmentFile,
@@ -77,11 +83,11 @@ func BuildAttachmentForFile(ctx context.Context, pathInfo *PathInfo) (*Attachmen
 		}
 		return att, nil
 
-	case ExtensionModeDocument:
+	case fstool.MIMEModeDocument:
 		// Documents (PDF, Office, etc.).
 		// As of now APIs and we internally only support PDF docs.
 		// PDFs can be treated as text (with extraction) or as original file.
-		if mimeType != MIMEApplicationPDF {
+		if MIMEType(baseMIMEType) != MIMEApplicationPDF {
 			return buildUnreadableFileAttachment(*pathInfo), nil
 		}
 
@@ -102,7 +108,7 @@ func BuildAttachmentForFile(ctx context.Context, pathInfo *PathInfo) (*Attachmen
 		}
 		return att, nil
 
-	case ExtensionModeDefault:
+	case fstool.MIMEModeDefault:
 		return buildUnreadableFileAttachment(*pathInfo), nil
 
 	default:
@@ -266,7 +272,11 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 	// 2) Extension-based fallback ONLY if we still are in LinkOnly mode.
 	// (i.e., content-type probe didn't identify anything).
 	if mode == AttachmentContentBlockModeTextLink && ext != "" {
-		if mimeType, err := mimeFromExtensionString(ext); err == nil {
+		toolOut, err := fstool.MIMEForExtension(ctx, fstool.MIMEForExtensionArgs{
+			Extension: ext,
+		})
+		if err == nil && toolOut != nil {
+			mimeType := MIMEType(toolOut.BaseMIMEType)
 			if extMode, ok := MIMETypeToExtensionMode[mimeType]; ok {
 				applyExtensionMode(extMode, mimeType, true)
 			} else if isPlainTextContentType(string(mimeType)) {

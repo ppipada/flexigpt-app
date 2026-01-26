@@ -6,7 +6,7 @@
   - [ ] most probably a mismatch between backend and frontend.
 - [ ] View mode needed for builtins
 
-- [ ] mime sniffing can be enriched in llmtools and then dropped from flexigpt
+- [ ] we can give option to change mermaids rendering theme inline.
 
 ## Features
 

@@ -173,7 +173,7 @@ func (ref *URLRef) buildImageURLContentBlock(ctx context.Context) (*ContentBlock
 				"url", rawURL, "err", fetchErr)
 			return ref.buildTextLinkContentBlock(), nil
 		}
-		ct = inferContentType(fetchedCT, rawURL, data)
+		ct = inferContentType(ctx, fetchedCT, rawURL, data)
 	}
 	ct = normalizeContentType(ct)
 	if !strings.HasPrefix(ct, "image/") {
@@ -215,7 +215,7 @@ func (ref *URLRef) buildFileURLContentBlock(ctx context.Context) (*ContentBlock,
 				"url", rawURL, "err", fetchErr)
 			return ref.buildTextLinkContentBlock(), nil
 		}
-		ct = inferContentType(fetchedCT, rawURL, data)
+		ct = inferContentType(ctx, fetchedCT, rawURL, data)
 	}
 	ct = normalizeContentType(ct)
 	fname := filenameFromURL(rawURL, ct)
@@ -303,7 +303,7 @@ func (ref *URLRef) buildBlocksForURLPage(ctx context.Context, onlyIfTextKind boo
 			return ref.buildTextLinkContentBlock(), nil
 		}
 
-		cb := buildTextOrFileBlockFromBytes(rawURL, data, fetchedCT)
+		cb := buildTextOrFileBlockFromBytes(ctx, rawURL, data, fetchedCT)
 		if onlyIfTextKind && cb.Kind != ContentBlockText {
 			return nil, ErrNonTextContentBlock
 		}
@@ -332,7 +332,7 @@ func (ref *URLRef) buildBlocksForURLPage(ctx context.Context, onlyIfTextKind boo
 			return ref.buildTextLinkContentBlock(), nil
 		}
 
-		cb := buildTextOrFileBlockFromBytes(rawURL, data, fetchedCT)
+		cb := buildTextOrFileBlockFromBytes(ctx, rawURL, data, fetchedCT)
 		if onlyIfTextKind && cb.Kind != ContentBlockText {
 			return nil, ErrNonTextContentBlock
 		}
@@ -354,8 +354,8 @@ func (ref *URLRef) buildBlocksForURLPage(ctx context.Context, onlyIfTextKind boo
 // returned as a text block; everything else becomes a file block with base64
 // data. The MIME type is inferred using the same heuristics as the rest of
 // the URL pipeline (headers, extension, and content sniffing).
-func buildTextOrFileBlockFromBytes(rawURL string, data []byte, headerCT string) *ContentBlock {
-	mt := inferContentType(headerCT, rawURL, data)
+func buildTextOrFileBlockFromBytes(ctx context.Context, rawURL string, data []byte, headerCT string) *ContentBlock {
+	mt := inferContentType(ctx, headerCT, rawURL, data)
 
 	// Treat anything that looks like text or HTML as a text block.
 	if isPlainTextContentType(mt) || isProbablyHTMLOrText(mt, rawURL) {
@@ -396,7 +396,7 @@ func (ref *URLRef) buildPDFTextOrFileBlockFromURL(ctx context.Context) (*Content
 		return nil, err
 	}
 	// Infer/normalize so file blocks and filenameFromURL get a stable type.
-	contentType = inferContentType(contentType, rawURL, data)
+	contentType = inferContentType(ctx, contentType, rawURL, data)
 	text, err := extractPDFTextFromBytesSafe(data, maxAttachmentFetchBytes)
 
 	if err == nil && text != "" {
@@ -438,7 +438,7 @@ func (ref *URLRef) buildImageBlockFromURL(ctx context.Context) (*ContentBlock, e
 			"url", rawURL, "err", err)
 		return ref.buildTextLinkContentBlock(), nil
 	}
-	contentType = inferContentType(contentType, rawURL, data)
+	contentType = inferContentType(ctx, contentType, rawURL, data)
 	if !strings.HasPrefix(contentType, "image/") {
 		// Not actually an image, fall back to a link.
 		return ref.buildTextLinkContentBlock(), nil
@@ -467,7 +467,7 @@ func (ref *URLRef) buildFileBlockFromURL(ctx context.Context) (*ContentBlock, er
 			"url", rawURL, "err", err)
 		return ref.buildTextLinkContentBlock(), nil
 	}
-	contentType = inferContentType(contentType, rawURL, data)
+	contentType = inferContentType(ctx, contentType, rawURL, data)
 	base64Data := base64.StdEncoding.EncodeToString(data)
 	fname := filenameFromURL(rawURL, contentType)
 	return &ContentBlock{

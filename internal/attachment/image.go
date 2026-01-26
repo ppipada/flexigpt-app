@@ -42,11 +42,8 @@ func (ref *ImageRef) PopulateRef(ctx context.Context, replaceOrig bool) error {
 		Path:              path,
 		IncludeBase64Data: false,
 	})
-	if err != nil {
-		return err
-	}
-	if toolOut == nil {
-		return ErrUnreadableFile
+	if err != nil || toolOut == nil {
+		return errors.Join(ErrUnreadableFile, err)
 	}
 
 	if strings.TrimSpace(ref.OrigPath) == "" || replaceOrig {
@@ -100,11 +97,8 @@ func buildImageBlockFromLocal(ctx context.Context, path string) (*ContentBlock, 
 		Path:              path,
 		IncludeBase64Data: true,
 	})
-	if err != nil {
-		return nil, err
-	}
-	if toolOut == nil {
-		return nil, ErrUnreadableFile
+	if err != nil || toolOut == nil {
+		return nil, errors.Join(ErrUnreadableFile, err)
 	}
 
 	return &ContentBlock{
