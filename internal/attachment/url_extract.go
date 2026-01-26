@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime"
 	"net/http"
 	"net/url"
@@ -14,34 +15,9 @@ import (
 	"time"
 
 	html2md "github.com/JohannesKaufmann/html-to-markdown/v2"
-	"github.com/flexigpt/flexigpt-app/internal/fileutil"
+	"github.com/ledongthuc/pdf"
 	"github.com/markusmobius/go-trafilatura"
 	"golang.org/x/net/html"
-)
-
-// NOTE: These limits are safety rails to avoid pulling huge resources
-// into memory or into the LLM context. Tune them to your environment.
-const (
-	// Max number of bytes we will download and process as "page content"
-	// for LLM consumption. If a page is larger than this, we will return
-	// ErrPageTooLarge and fall back to link-only at a higher layer.
-	maxPageContentBytes = 16 << 20 // 16 MiB
-	defaultHTTPTimeout  = 30 * time.Second
-)
-
-var (
-
-	// ErrResponseTooLarge is used internally by fetchURLBytes to signal
-	// that the remote resource exceeded the configured maxBytes limit.
-	ErrResponseTooLarge = errors.New("remote resource larger than the configured limit")
-
-	// ErrPageTooLarge is returned by ExtractReadableMarkdownFromURL when
-	// the HTML page exceeds maxPageContentBytes.
-	ErrPageTooLarge = errors.New("page content too large")
-
-	// ErrNoContentExtracted is returned when the extractor produces no
-	// readable content at all (e.g., empty body, or extraction failure).
-	ErrNoContentExtracted = errors.New("no readable content extracted")
 )
 
 var sharedHTTPClient = &http.Client{
@@ -62,33 +38,11 @@ var sharedHTTPClient = &http.Client{
 	}(),
 }
 
-// filenameFromURL attempts to derive a reasonable file name from the URL path.
-// If it cannot, it falls back to a generic name based on the MIME type.
-func filenameFromURL(rawURL, contentType string) string {
-	u, err := url.Parse(rawURL)
-	if err == nil {
-		name := filepath.Base(u.Path)
-		if name != "" && name != "/" && name != "." {
-			return name
-		}
-	}
-
-	contentType = strings.ToLower(strings.TrimSpace(contentType))
-	switch {
-	case strings.HasPrefix(contentType, "application/pdf"):
-		return "document.pdf"
-	case strings.HasPrefix(contentType, "image/"):
-		return "image"
-	default:
-		return "download"
-	}
-}
-
 // ExtractReadableMarkdownFromURL downloads a web page, runs it through
 // go-trafilatura to obtain the main readable content, converts that to
 // Markdown, and returns the Markdown text.
 //
-// It enforces a hard size limit (maxPageContentBytes). If the remote server
+// It enforces a hard size limit (maxURLPageContentBytes). If the remote server
 // is larger than that, ErrPageTooLarge is returned. Only the HTML of the
 // page itself is downloaded; sub-resources (images, scripts, etc.) are
 // not fetched.
@@ -105,7 +59,7 @@ func ExtractReadableMarkdownFromURL(ctx context.Context, rawURL string) (string,
 	}
 
 	// Fetch the page HTML with a strict byte limit.
-	data, headerCT, err := fetchURLBytes(ctx, rawURL, maxPageContentBytes)
+	data, headerCT, err := fetchURLBytes(ctx, rawURL, maxURLPageContentBytes)
 	if err != nil {
 		if errors.Is(err, ErrResponseTooLarge) {
 			// Promote to a page-specific sentinel that callers can treat specially.
@@ -199,6 +153,47 @@ func extractMainContentHTMLWithTrafilatura(_ context.Context, rawURL string, htm
 	}
 
 	return cleaned, nil
+}
+
+// extractPDFTextFromBytesSafe extracts text from in-memory PDF bytes with a
+// byte limit and panic recovery. It mirrors extractPDFTextSafe in llm tools but is backed
+// by an in-memory reader instead of a file on disk.
+func extractPDFTextFromBytesSafe(data []byte, maxBytes int) (text string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Warn("panic during PDF text extraction from bytes", "panic", r)
+			err = fmt.Errorf("panic during PDF text extraction: %v", r)
+		}
+	}()
+
+	if len(data) == 0 {
+		return "", errors.New("empty PDF data")
+	}
+
+	reader := bytes.NewReader(data)
+	r, err := pdf.NewReader(reader, int64(len(data)))
+	if err != nil {
+		return "", err
+	}
+
+	plain, err := r.GetPlainText()
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	limited := &io.LimitedReader{
+		R: plain,
+		N: int64(maxBytes),
+	}
+	if _, err := io.Copy(&buf, limited); err != nil {
+		return "", err
+	}
+	text = strings.TrimSpace(buf.String())
+	if text == "" {
+		return "", errors.New("empty PDF text after extraction")
+	}
+	return text, nil
 }
 
 // getHTMLString get an escaped HTML serialization of the element and its descendants.
@@ -438,7 +433,7 @@ func inferContentType(headerCT, rawURL string, data []byte) string {
 	// 2) Extension-based hint from URL path.
 	lowerURL := strings.ToLower(strings.TrimSpace(rawURL))
 	if ext := strings.TrimSpace(filepath.Ext(lowerURL)); ext != "" {
-		if mt, err := fileutil.MIMEFromExtensionString(ext); err == nil {
+		if mt, err := mimeFromExtensionString(ext); err == nil {
 			m := normalizeContentType(string(mt))
 			if m != "" && !isGenericBinaryContentType(m) {
 				return m
@@ -458,7 +453,7 @@ func inferContentType(headerCT, rawURL string, data []byte) string {
 	if headerCT != "" {
 		return headerCT
 	}
-	return string(fileutil.MIMEApplicationOctetStream)
+	return string(MIMEApplicationOctetStream)
 }
 
 // isGenericBinaryContentType reports whether ct looks like a "fallback"
@@ -490,4 +485,26 @@ func normalizeContentType(ct string) string {
 		ct = ct[:i]
 	}
 	return strings.ToLower(strings.TrimSpace(ct))
+}
+
+// filenameFromURL attempts to derive a reasonable file name from the URL path.
+// If it cannot, it falls back to a generic name based on the MIME type.
+func filenameFromURL(rawURL, contentType string) string {
+	u, err := url.Parse(rawURL)
+	if err == nil {
+		name := filepath.Base(u.Path)
+		if name != "" && name != "/" && name != "." {
+			return name
+		}
+	}
+
+	contentType = strings.ToLower(strings.TrimSpace(contentType))
+	switch {
+	case strings.HasPrefix(contentType, "application/pdf"):
+		return "document.pdf"
+	case strings.HasPrefix(contentType, "image/"):
+		return "image"
+	default:
+		return "download"
+	}
 }

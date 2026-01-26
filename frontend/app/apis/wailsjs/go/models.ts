@@ -262,14 +262,6 @@ export namespace attachment {
 		}
 	}
 	
-	
-	
-	
-
-}
-
-export namespace fileutil {
-	
 	export class FileFilter {
 	    DisplayName: string;
 	    Extensions: string[];
@@ -284,6 +276,9 @@ export namespace fileutil {
 	        this.Extensions = source["Extensions"];
 	    }
 	}
+	
+	
+	
 
 }
 

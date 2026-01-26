@@ -25,7 +25,7 @@ func TestScale_LotsOfToolBundles(t *testing.T) {
 
 	s, clean := newTestToolStore(t)
 	defer clean()
-	ctx := context.Background()
+
 	errCh := make(chan error, 8_000)
 
 	createJobs := make(chan int, nBundles)
@@ -42,7 +42,7 @@ func TestScale_LotsOfToolBundles(t *testing.T) {
 			for i := range createJobs {
 				bID := bundleitemutils.BundleID("bundle-" + strconv.Itoa(i))
 
-				_, err := s.PutToolBundle(ctx, &spec.PutToolBundleRequest{
+				_, err := s.PutToolBundle(t.Context(), &spec.PutToolBundleRequest{
 					BundleID: bID,
 					Body: &spec.PutToolBundleRequestBody{
 						Slug:        bundleitemutils.BundleSlug("slug-" + strconv.Itoa(i)),
@@ -57,7 +57,7 @@ func TestScale_LotsOfToolBundles(t *testing.T) {
 
 				// One tool?
 				if i%nonEmptyEvery == 0 {
-					_, err = s.PutTool(ctx, &spec.PutToolRequest{
+					_, err = s.PutTool(t.Context(), &spec.PutToolRequest{
 						BundleID: bID,
 						ToolSlug: "t",
 						Version:  "v1",
@@ -95,7 +95,7 @@ func TestScale_LotsOfToolBundles(t *testing.T) {
 				bID := bundleitemutils.BundleID("bundle-" + strconv.Itoa(i))
 
 				if i%patchEvery == 0 {
-					_, err := s.PatchToolBundle(ctx, &spec.PatchToolBundleRequest{
+					_, err := s.PatchToolBundle(t.Context(), &spec.PatchToolBundleRequest{
 						BundleID: bID,
 						Body: &spec.PatchToolBundleRequestBody{
 							IsEnabled: i%3 != 0, // Invert initial state.
@@ -107,7 +107,7 @@ func TestScale_LotsOfToolBundles(t *testing.T) {
 				}
 
 				if i%deleteEvery == 0 {
-					_, err := s.DeleteToolBundle(ctx, &spec.DeleteToolBundleRequest{
+					_, err := s.DeleteToolBundle(t.Context(), &spec.DeleteToolBundleRequest{
 						BundleID: bID,
 					})
 
@@ -124,7 +124,7 @@ func TestScale_LotsOfToolBundles(t *testing.T) {
 	}
 	wg.Wait()
 
-	resp, err := s.ListToolBundles(ctx, &spec.ListToolBundlesRequest{})
+	resp, err := s.ListToolBundles(t.Context(), &spec.ListToolBundlesRequest{})
 	if err != nil {
 		errCh <- err
 	} else {
@@ -150,7 +150,7 @@ func TestScale_LotsOfTools(t *testing.T) {
 
 	s, clean := newTestToolStore(t)
 	defer clean()
-	ctx := context.Background()
+
 	errCh := make(chan error, 20_000)
 
 	userBundles := make([]bundleitemutils.BundleID, 0, nBundles)
@@ -158,7 +158,7 @@ func TestScale_LotsOfTools(t *testing.T) {
 		bID := bundleitemutils.BundleID(fmt.Sprintf("b%d", i))
 		userBundles = append(userBundles, bID)
 
-		_, err := s.PutToolBundle(ctx, &spec.PutToolBundleRequest{
+		_, err := s.PutToolBundle(t.Context(), &spec.PutToolBundleRequest{
 			BundleID: bID,
 			Body: &spec.PutToolBundleRequestBody{
 				Slug:        bundleitemutils.BundleSlug(fmt.Sprintf("slug-%s", bID)),
@@ -188,7 +188,7 @@ func TestScale_LotsOfTools(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := range insertJobs {
-				_, err := s.PutTool(ctx, &spec.PutToolRequest{
+				_, err := s.PutTool(t.Context(), &spec.PutToolRequest{
 					BundleID: bundleitemutils.BundleID(fmt.Sprintf("b%d", j.b)),
 					ToolSlug: bundleitemutils.ItemSlug(fmt.Sprintf("tool-%d", j.s)),
 					Version:  bundleitemutils.ItemVersion(fmt.Sprintf("v%d", j.v)),
@@ -215,7 +215,7 @@ func TestScale_LotsOfTools(t *testing.T) {
 	base := spec.ListToolsRequest{
 		BundleIDs: userBundles,
 	}
-	all, err := collectTools(ctx, s, base, 100)
+	all, err := collectTools(t.Context(), s, base, 100)
 	if err != nil {
 		errCh <- err
 	} else if got, want := uniqCntToolSlug(all), nBundles*nSlugs; got != want {
@@ -244,7 +244,7 @@ func TestScale_LotsOfTools(t *testing.T) {
 				slug := bundleitemutils.ItemSlug(fmt.Sprintf("tool-%d", j.s))
 
 				if j.v == 4 { // Patch disable.
-					_, err := s.PatchTool(ctx, &spec.PatchToolRequest{
+					_, err := s.PatchTool(t.Context(), &spec.PatchToolRequest{
 						BundleID: bID,
 						ToolSlug: slug,
 						Version:  "v4",
@@ -256,7 +256,7 @@ func TestScale_LotsOfTools(t *testing.T) {
 						errCh <- err
 					}
 				} else { // Delete v1.
-					_, err := s.DeleteTool(ctx, &spec.DeleteToolRequest{
+					_, err := s.DeleteTool(t.Context(), &spec.DeleteToolRequest{
 						BundleID: bID,
 						ToolSlug: slug,
 						Version:  "v1",
@@ -274,7 +274,7 @@ func TestScale_LotsOfTools(t *testing.T) {
 		IncludeDisabled: true,
 		BundleIDs:       userBundles,
 	}
-	all, err = collectTools(ctx, s, base, 150)
+	all, err = collectTools(t.Context(), s, base, 150)
 	if err != nil {
 		errCh <- err
 	} else {
@@ -290,7 +290,7 @@ func TestScale_LotsOfTools(t *testing.T) {
 		BundleIDs:           userBundles,
 		RecommendedPageSize: 70,
 	}
-	all, err = collectTools(ctx, s, base, 70)
+	all, err = collectTools(t.Context(), s, base, 70)
 	if err != nil {
 		errCh <- err
 	} else if got, want := uniqCntToolSlug(all), nBundles*nSlugs; got != want {

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/flexigpt/flexigpt-app/internal/fileutil"
 	"github.com/flexigpt/llmtools-go/imagetool"
 )
 
@@ -19,10 +18,10 @@ type ImageRef struct {
 	Size    int64      `json:"size,omitempty"`
 	ModTime *time.Time `json:"modTime,omitempty"`
 
-	Width    int               `json:"width,omitempty"`
-	Height   int               `json:"height,omitempty"`
-	Format   string            `json:"format,omitempty"`   // e.g. "jpeg", "png"
-	MIMEType fileutil.MIMEType `json:"mimeType,omitempty"` // e.g. "image/jpeg"
+	Width    int      `json:"width,omitempty"`
+	Height   int      `json:"height,omitempty"`
+	Format   string   `json:"format,omitempty"`   // e.g. "jpeg", "png"
+	MIMEType MIMEType `json:"mimeType,omitempty"` // e.g. "image/jpeg"
 
 	// Original snapshot (for change detection across turns).
 	OrigPath    string    `json:"origPath"`
@@ -66,7 +65,7 @@ func (ref *ImageRef) PopulateRef(ctx context.Context, replaceOrig bool) error {
 	ref.Format = toolOut.Format
 
 	ref.Name = toolOut.Name
-	ref.MIMEType = fileutil.MIMEType(toolOut.MIMEType)
+	ref.MIMEType = MIMEType(toolOut.MIMEType)
 	return nil
 }
 

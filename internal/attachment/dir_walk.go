@@ -6,47 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/flexigpt/flexigpt-app/internal/fileutil"
 )
-
-const MaxTotalWalkFiles = 256
-
-// DirectoryOverflowInfo represents a directory that was *not fully walked*
-// because we hit the max-files limit or had an error.
-//
-// Semantics:
-//
-//   - DirPath / RelativePath:
-//     Absolute / relative-to-root path of that directory.
-//   - FileCount:
-//     For completely unvisited dirs (left in the BFS queue):
-//   - number of direct entries (files + subdirs) from a single os.ReadDir,
-//     no recursion.
-//     For the single "partial" dir where we hit the limit mid-scan:
-//   - number of remaining entries in that directory (files + subdirs)
-//     that we did NOT process.
-//     This is *approximate UI sugar*, not a full subtree count.
-//   - Partial:
-//     true only for the directory where we stopped in the middle of its
-//     entries because maxFiles was reached. For all other overflow dirs it's
-//     false.
-type DirectoryOverflowInfo struct {
-	DirPath      string `json:"dirPath"`
-	RelativePath string `json:"relativePath"`
-	FileCount    int    `json:"fileCount"`
-	Partial      bool   `json:"partial"`
-}
-
-// WalkDirectoryWithFilesResult is returned when user selects a directory.
-type WalkDirectoryWithFilesResult struct {
-	DirPath      string                  `json:"dirPath"`
-	Files        []fileutil.PathInfo     `json:"files"`        // included files (flattened)
-	OverflowDirs []DirectoryOverflowInfo `json:"overflowDirs"` // directories not fully included
-	MaxFiles     int                     `json:"maxFiles"`     // max number of files returned (after clamping)
-	TotalSize    int64                   `json:"totalSize"`    // sum of Files[i].Size
-	HasMore      bool                    `json:"hasMore"`      // true if not all content included
-}
 
 // WalkDirectoryWithFiles implements:
 //
@@ -62,14 +22,14 @@ type WalkDirectoryWithFilesResult struct {
 //     as an overflow entry with Partial = true and a count of remaining items
 //     (files + subdirs) in that directory.
 func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (*WalkDirectoryWithFilesResult, error) {
-	if maxFiles <= 0 || maxFiles > MaxTotalWalkFiles {
-		maxFiles = MaxTotalWalkFiles
+	if maxFiles <= 0 || maxFiles > maxTotalDirWalkFiles {
+		maxFiles = maxTotalDirWalkFiles
 	}
 	if dirPath == "" {
 		// Empty path. Nothing to walk.
 		return &WalkDirectoryWithFilesResult{
 			DirPath:      "",
-			Files:        []fileutil.PathInfo{},
+			Files:        []PathInfo{},
 			OverflowDirs: nil,
 			MaxFiles:     maxFiles,
 			TotalSize:    0,
@@ -90,7 +50,7 @@ func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (
 		relPath string // path relative to root dir; "" for root
 	}
 
-	files := make([]fileutil.PathInfo, 0, maxFiles)
+	files := make([]PathInfo, 0, maxFiles)
 	var totalSize int64
 
 	overflowDirs := make([]DirectoryOverflowInfo, 0)
@@ -189,7 +149,7 @@ func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (
 			}
 
 			modTime := info.ModTime().UTC()
-			pInfo := fileutil.PathInfo{
+			pInfo := PathInfo{
 				Path:    fullPath,
 				Name:    info.Name(),
 				Exists:  true,
@@ -280,7 +240,7 @@ func WalkDirectoryWithFiles(ctx context.Context, dirPath string, maxFiles int) (
 	if len(files) == 0 {
 		return &WalkDirectoryWithFilesResult{
 			DirPath:      dirPath,
-			Files:        []fileutil.PathInfo{},
+			Files:        []PathInfo{},
 			OverflowDirs: overflowDirs,
 			MaxFiles:     maxFiles,
 			TotalSize:    0,

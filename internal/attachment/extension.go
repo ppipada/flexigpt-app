@@ -1,4 +1,4 @@
-package fileutil
+package attachment
 
 import (
 	"errors"
@@ -304,20 +304,20 @@ var (
 	}
 )
 
-// MIMEForLocalFile returns a best-effort MIME type, it tries to see if extension based mime can be detected.
+// mimeForLocalFile returns a best-effort MIME type, it tries to see if extension based mime can be detected.
 // If not, it tries to sniff mime using magic bits from file.
-func MIMEForLocalFile(path string) (mimeType MIMEType, mode ExtensionMode, err error) {
+func mimeForLocalFile(path string) (mimeType MIMEType, mode ExtensionMode, err error) {
 	if path == "" {
 		return MIMEEmpty, ExtensionModeDefault, ErrInvalidPath
 	}
 	ext := filepath.Ext(path)
 	if ext == "" {
 		// No extension: fall back to sniffing.
-		return SniffFileMIME(path)
+		return sniffFileMIME(path)
 	}
 
 	// First try extension-based detection.
-	mimeType, err = MIMEFromExtensionString(ext)
+	mimeType, err = mimeFromExtensionString(ext)
 	if err == nil && mimeType != MIMEApplicationOctetStream && mimeType != MIMEEmpty {
 		if m, ok := MIMETypeToExtensionMode[mimeType]; ok {
 			return mimeType, m, nil
@@ -332,13 +332,13 @@ func MIMEForLocalFile(path string) (mimeType MIMEType, mode ExtensionMode, err e
 	}
 
 	// Unknown / generic : fall back to sniffing.
-	return SniffFileMIME(path)
+	return sniffFileMIME(path)
 }
 
-// MIMEFromExtensionString returns the best-known MIME for a given extension string.
+// mimeFromExtensionString returns the best-known MIME for a given extension string.
 // Lookup order is: internal registry -> mime.TypeByExtension.
 // If the extension cannot be resolved, it returns MIMEApplicationOctetStream and ErrUnknownExtension.
-func MIMEFromExtensionString(ext string) (mimeType MIMEType, err error) {
+func mimeFromExtensionString(ext string) (mimeType MIMEType, err error) {
 	if ext == "" {
 		return MIMEEmpty, ErrInvalidPath
 	}
@@ -355,12 +355,12 @@ func MIMEFromExtensionString(ext string) (mimeType MIMEType, err error) {
 	return MIMEApplicationOctetStream, ErrUnknownExtension
 }
 
-// SniffFileMIME inspects the first bytes of a file and returns a best-effort
+// sniffFileMIME inspects the first bytes of a file and returns a best-effort
 // MIME type plus a coarse-grained mode (text, image, document, or default).
 //
 // It uses net/http.DetectContentType and a simple heuristic to decide whether
 // the content is probably text vs binary (NUL bytes, control chars, etc.).
-func SniffFileMIME(path string) (mimeType MIMEType, mode ExtensionMode, err error) {
+func sniffFileMIME(path string) (mimeType MIMEType, mode ExtensionMode, err error) {
 	if path == "" {
 		return MIMEEmpty, ExtensionModeDefault, ErrInvalidPath
 	}

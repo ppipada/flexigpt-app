@@ -430,6 +430,15 @@ linters:
       # Doesnt support things like bundleID, can enable and just check for discovery, once in a while.
       # key-naming-case: "camel"
 
+    usetesting:
+      os-create-temp: true
+      os-mkdir-temp: true
+      os-setenv: true
+      os-temp-dir: true
+      os-chdir: true
+      context-background: true
+      context-todo: true
+
   exclusions:
     presets:
       - comments

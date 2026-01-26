@@ -8,28 +8,6 @@ import (
 	"strings"
 )
 
-var (
-	ErrNonTextContentBlock             = errors.New("content block is not of kind - text")
-	ErrUnreadableFile                  = errors.New("unreadable file")
-	ErrExistingContentBlock            = errors.New("content block already exists")
-	ErrAttachmentModifiedSinceSnapshot = errors.New("attachment modified since snapshot")
-)
-
-const maxAttachmentFetchBytes = 16 * 1024 * 1024 // 16MB safety limit
-
-// AttachmentKind enumerates contextual attachment categories that can be
-// associated with messages sent to the inference layer.
-type AttachmentKind string
-
-const (
-	AttachmentFile     AttachmentKind = "file"
-	AttachmentImage    AttachmentKind = "image"
-	AttachmentURL      AttachmentKind = "url"
-	AttachmentDocIndex AttachmentKind = "docIndex"
-	AttachmentPR       AttachmentKind = "pr"
-	AttachmentCommit   AttachmentKind = "commit"
-)
-
 // Attachment is a lightweight reference to external context (files, docs, images, etc.).
 type Attachment struct {
 	Kind  AttachmentKind `json:"kind"`
@@ -48,15 +26,6 @@ type Attachment struct {
 	GenericRef *GenericRef `json:"genericRef,omitempty"`
 
 	ContentBlock *ContentBlock `json:"contentBlock,omitempty"`
-}
-
-type DirectoryAttachmentsResult struct {
-	DirPath      string                  `json:"dirPath"`
-	Attachments  []Attachment            `json:"attachments"`  // included attachments (flattened)
-	OverflowDirs []DirectoryOverflowInfo `json:"overflowDirs"` // directories not fully included
-	MaxFiles     int                     `json:"maxFiles"`     // max number of files returned (after clamping)
-	TotalSize    int64                   `json:"totalSize"`    // sum of Files[i].Size
-	HasMore      bool                    `json:"hasMore"`      // true if not all content included
 }
 
 type buildContentBlockOptions struct {
@@ -157,7 +126,7 @@ func (att *Attachment) PopulateRef(ctx context.Context, replaceOrig bool) error 
 		if att.FileRef == nil {
 			return errors.New("no file ref for file attachment")
 		}
-		if err := att.FileRef.PopulateRef(replaceOrig); err != nil {
+		if err := att.FileRef.PopulateRef(ctx, replaceOrig); err != nil {
 			return err
 		}
 		if att.Label == "" {
@@ -186,7 +155,7 @@ func (att *Attachment) PopulateRef(ctx context.Context, replaceOrig bool) error 
 		if att.URLRef == nil {
 			return errors.New("no url ref for url attachment")
 		}
-		if err := att.URLRef.PopulateRef(replaceOrig); err != nil {
+		if err := att.URLRef.PopulateRef(ctx, replaceOrig); err != nil {
 			return err
 		}
 		if att.Label == "" {
@@ -203,7 +172,7 @@ func (att *Attachment) PopulateRef(ctx context.Context, replaceOrig bool) error 
 		if att.GenericRef == nil {
 			return errors.New("no generic ref for attachment")
 		}
-		if err := att.GenericRef.PopulateRef(replaceOrig); err != nil {
+		if err := att.GenericRef.PopulateRef(ctx, replaceOrig); err != nil {
 			return err
 		}
 		if att.Label == "" {

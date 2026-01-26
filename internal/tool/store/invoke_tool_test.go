@@ -478,7 +478,7 @@ func TestInvokeTool(t *testing.T) {
 				version    = bundleitemutils.ItemVersion("v1")
 			)
 
-			if _, err := ts.PutToolBundle(context.Background(), &spec.PutToolBundleRequest{
+			if _, err := ts.PutToolBundle(t.Context(), &spec.PutToolBundleRequest{
 				BundleID: bundleID,
 				Body: &spec.PutToolBundleRequestBody{
 					Slug:        bundleSlug,
@@ -492,7 +492,7 @@ func TestInvokeTool(t *testing.T) {
 
 			// Tool (HTTP-only custom tools).
 			impl := tc.mkTool(srv.URL)
-			if _, err := ts.PutTool(context.Background(), &spec.PutToolRequest{
+			if _, err := ts.PutTool(t.Context(), &spec.PutToolRequest{
 				BundleID: bundleID,
 				ToolSlug: toolSlug,
 				Version:  version,
@@ -514,7 +514,7 @@ func TestInvokeTool(t *testing.T) {
 
 			// Optional: disable bundle or tool prior to invocation.
 			if tc.disableBundle {
-				if _, err := ts.PatchToolBundle(context.Background(), &spec.PatchToolBundleRequest{
+				if _, err := ts.PatchToolBundle(t.Context(), &spec.PatchToolBundleRequest{
 					BundleID: bundleID,
 					Body:     &spec.PatchToolBundleRequestBody{IsEnabled: false},
 				}); err != nil {
@@ -522,7 +522,7 @@ func TestInvokeTool(t *testing.T) {
 				}
 			}
 			if tc.disableTool {
-				if _, err := ts.PatchTool(context.Background(), &spec.PatchToolRequest{
+				if _, err := ts.PatchTool(t.Context(), &spec.PatchToolRequest{
 					BundleID: bundleID,
 					ToolSlug: toolSlug,
 					Version:  version,
@@ -532,7 +532,7 @@ func TestInvokeTool(t *testing.T) {
 				}
 			}
 
-			resp, err := ts.InvokeTool(context.Background(), &spec.InvokeToolRequest{
+			resp, err := ts.InvokeTool(t.Context(), &spec.InvokeToolRequest{
 				BundleID: bundleID,
 				ToolSlug: toolSlug,
 				Version:  version,
@@ -584,7 +584,7 @@ func TestInvokeTool_InvalidRequest(t *testing.T) {
 	defer ts.Close()
 
 	// Missing required fields.
-	_, err = ts.InvokeTool(context.Background(), &spec.InvokeToolRequest{
+	_, err = ts.InvokeTool(t.Context(), &spec.InvokeToolRequest{
 		BundleID: "",
 		ToolSlug: "",
 		Version:  "",
@@ -638,7 +638,7 @@ func TestInvokeTool_RequestBodyTemplating_PathQueryHeaderAuth(t *testing.T) {
 		version    = bundleitemutils.ItemVersion("v1")
 	)
 
-	_, err = ts.PutToolBundle(context.Background(), &spec.PutToolBundleRequest{
+	_, err = ts.PutToolBundle(t.Context(), &spec.PutToolBundleRequest{
 		BundleID: bundleID,
 		Body: &spec.PutToolBundleRequestBody{
 			Slug:        bundleSlug,
@@ -664,7 +664,7 @@ func TestInvokeTool_RequestBodyTemplating_PathQueryHeaderAuth(t *testing.T) {
 		Response: spec.HTTPResponse{},
 	}
 
-	_, err = ts.PutTool(context.Background(), &spec.PutToolRequest{
+	_, err = ts.PutTool(t.Context(), &spec.PutToolRequest{
 		BundleID: bundleID,
 		ToolSlug: toolSlug,
 		Version:  version,
@@ -683,7 +683,7 @@ func TestInvokeTool_RequestBodyTemplating_PathQueryHeaderAuth(t *testing.T) {
 		t.Fatalf("PutTool: %v", err)
 	}
 
-	resp, err := ts.InvokeTool(context.Background(), &spec.InvokeToolRequest{
+	resp, err := ts.InvokeTool(t.Context(), &spec.InvokeToolRequest{
 		BundleID: bundleID,
 		ToolSlug: toolSlug,
 		Version:  version,
@@ -1111,7 +1111,7 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 
 			// Optional disable bundle/tool.
 			if tc.disableBundle {
-				if _, err := ts.PatchToolBundle(context.Background(), &spec.PatchToolBundleRequest{
+				if _, err := ts.PatchToolBundle(t.Context(), &spec.PatchToolBundleRequest{
 					BundleID: bundleID,
 					Body:     &spec.PatchToolBundleRequestBody{IsEnabled: false},
 				}); err != nil {
@@ -1119,7 +1119,7 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 				}
 			}
 			if tc.disableTool {
-				if _, err := ts.PatchTool(context.Background(), &spec.PatchToolRequest{
+				if _, err := ts.PatchTool(t.Context(), &spec.PatchToolRequest{
 					BundleID: bundleID,
 					ToolSlug: toolSlug,
 					Version:  version,
@@ -1130,7 +1130,7 @@ func TestInvokeGoCustomRegistered(t *testing.T) {
 			}
 
 			// Build invocation context (custom timeout for the timeout scenario).
-			ctx := context.Background()
+			ctx := t.Context()
 			if strings.Contains(tc.name, "timeout") {
 				var cancel context.CancelFunc
 				ctx, cancel = context.WithTimeout(ctx, 50*time.Millisecond)
@@ -1326,7 +1326,7 @@ func TestInvokeTool_Go_BuiltIns(t *testing.T) {
 				t.Fatalf("addGoToolFile: %v", err)
 			}
 
-			resp, err := ts.InvokeTool(context.Background(), &spec.InvokeToolRequest{
+			resp, err := ts.InvokeTool(t.Context(), &spec.InvokeToolRequest{
 				BundleID: bundleID,
 				ToolSlug: toolSlug,
 				Version:  version,
@@ -1411,7 +1411,7 @@ func putBundle(
 	enabled bool,
 ) {
 	t.Helper()
-	if _, err := ts.PutToolBundle(context.Background(), &spec.PutToolBundleRequest{
+	if _, err := ts.PutToolBundle(t.Context(), &spec.PutToolBundleRequest{
 		BundleID: id,
 		Body: &spec.PutToolBundleRequestBody{
 			Slug:        slug,

@@ -12,8 +12,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-
-	"github.com/flexigpt/flexigpt-app/internal/fileutil"
 )
 
 func TestWalkDirectoryWithFiles_CoreScenarios(t *testing.T) {
@@ -436,8 +434,7 @@ func TestWalkDirectoryWithFiles_CoreScenarios(t *testing.T) {
 			if tc.setup != nil {
 				root = tc.setup(t)
 			}
-			ctx := context.Background()
-			res, err := WalkDirectoryWithFiles(ctx, root, tc.maxFiles)
+			res, err := WalkDirectoryWithFiles(t.Context(), root, tc.maxFiles)
 			tc.verify(t, root, res, err)
 		})
 	}
@@ -447,8 +444,7 @@ func TestWalkDirectoryWithFiles_NonExistentDir(t *testing.T) {
 	t.Parallel()
 
 	root := filepath.Join(t.TempDir(), "does_not_exist")
-	ctx := context.Background()
-	res, err := WalkDirectoryWithFiles(ctx, root, 10)
+	res, err := WalkDirectoryWithFiles(t.Context(), root, 10)
 	if err == nil {
 		t.Fatalf("expected non-nil error for non-existent dir, got nil")
 	}
@@ -463,7 +459,7 @@ func TestWalkDirectoryWithFiles_ContextCanceled(t *testing.T) {
 	root := t.TempDir()
 	mustWriteFile(t, root, "file.txt", 10)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel() // cancel before walking
 
 	res, err := WalkDirectoryWithFiles(ctx, root, 10)
@@ -478,8 +474,8 @@ func TestWalkDirectoryWithFiles_ContextCanceled(t *testing.T) {
 func TestWalkDirectoryWithFiles_MaxFilesClamped(t *testing.T) {
 	root := t.TempDir()
 
-	// Create more files than the global MaxTotalWalkFiles limit.
-	totalFiles := MaxTotalWalkFiles + 5
+	// Create more files than the global maxTotalDirWalkFiles limit.
+	totalFiles := maxTotalDirWalkFiles + 5
 	for i := range totalFiles {
 		name := fmt.Sprintf("f%03d.txt", i)
 		mustWriteFile(t, root, name, 1)
@@ -493,24 +489,23 @@ func TestWalkDirectoryWithFiles_MaxFilesClamped(t *testing.T) {
 	tests := []testCase{
 		{name: "Zero", maxFiles: 0},
 		{name: "Negative", maxFiles: -5},
-		{name: "AboveGlobal", maxFiles: MaxTotalWalkFiles + 100},
+		{name: "AboveGlobal", maxFiles: maxTotalDirWalkFiles + 100},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			res, err := WalkDirectoryWithFiles(ctx, root, tc.maxFiles)
+			res, err := WalkDirectoryWithFiles(t.Context(), root, tc.maxFiles)
 			if err != nil {
 				t.Fatalf("expected nil error, got %v", err)
 			}
 			if res == nil {
 				t.Fatalf("expected non-nil result")
 			}
-			if res.MaxFiles != MaxTotalWalkFiles {
-				t.Errorf("expected MaxFiles=%d, got %d", MaxTotalWalkFiles, res.MaxFiles)
+			if res.MaxFiles != maxTotalDirWalkFiles {
+				t.Errorf("expected MaxFiles=%d, got %d", maxTotalDirWalkFiles, res.MaxFiles)
 			}
-			if len(res.Files) != MaxTotalWalkFiles {
-				t.Fatalf("expected %d files kept, got %d", MaxTotalWalkFiles, len(res.Files))
+			if len(res.Files) != maxTotalDirWalkFiles {
+				t.Fatalf("expected %d files kept, got %d", maxTotalDirWalkFiles, len(res.Files))
 			}
 			if len(res.OverflowDirs) != 1 {
 				t.Fatalf(
@@ -530,7 +525,7 @@ func TestWalkDirectoryWithFiles_MaxFilesClamped(t *testing.T) {
 				t.Errorf("expected overflow RelativePath=\"\" for root, got %q", ov.RelativePath)
 			}
 			// Remaining files in root that were not included.
-			expectedRemaining := totalFiles - MaxTotalWalkFiles
+			expectedRemaining := totalFiles - maxTotalDirWalkFiles
 			if ov.FileCount != expectedRemaining {
 				t.Errorf("expected overflow FileCount=%d, got %d", expectedRemaining, ov.FileCount)
 			}
@@ -555,8 +550,7 @@ func TestWalkDirectoryWithFiles_UnreadableSubdirOverflow_NoFiles(t *testing.T) {
 	}
 	defer func() { _ = os.Chmod(sub, 0o755) }() // best-effort restore so cleanup works
 
-	ctx := context.Background()
-	res, err := WalkDirectoryWithFiles(ctx, root, 10)
+	res, err := WalkDirectoryWithFiles(t.Context(), root, 10)
 	if err != nil {
 		t.Fatalf("expected nil error walking root, got %v", err)
 	}
@@ -605,7 +599,7 @@ func mustMkdir(t *testing.T, dir, name string) string {
 	return full
 }
 
-func namesFromPathInfos(files []fileutil.PathInfo) []string {
+func namesFromPathInfos(files []PathInfo) []string {
 	names := make([]string, 0, len(files))
 	for _, f := range files {
 		names = append(names, f.Name)
@@ -614,7 +608,7 @@ func namesFromPathInfos(files []fileutil.PathInfo) []string {
 	return names
 }
 
-func sumSizes(files []fileutil.PathInfo) int64 {
+func sumSizes(files []PathInfo) int64 {
 	var total int64
 	for _, f := range files {
 		total += f.Size

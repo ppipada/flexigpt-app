@@ -1,6 +1,9 @@
 package attachment
 
-import "strings"
+import (
+	"context"
+	"strings"
+)
 
 // GenericRef preserves legacy handle-style references (PRs, doc indexes, etc.).
 type GenericRef struct {
@@ -9,7 +12,7 @@ type GenericRef struct {
 	OrigHandle string `json:"origHandle"`
 }
 
-func (ref *GenericRef) PopulateRef(replaceOrig bool) error {
+func (ref *GenericRef) PopulateRef(ctx context.Context, replaceOrig bool) error {
 	h := strings.TrimSpace(ref.Handle)
 	if ref.OrigHandle == "" || replaceOrig {
 		ref.OrigHandle = h

@@ -33,7 +33,7 @@ type URLRef struct {
 //   - The URL parses successfully.
 //   - The URL is absolute (has a scheme/host).
 //   - Normalized and OrigNormalized are populated.
-func (ref *URLRef) PopulateRef(replaceOrig bool) error {
+func (ref *URLRef) PopulateRef(ctx context.Context, replaceOrig bool) error {
 	if ref == nil {
 		return errors.New("url attachment missing ref")
 	}
@@ -243,7 +243,7 @@ func (ref *URLRef) buildFileURLContentBlock(ctx context.Context) (*ContentBlock,
 //     - If the page is too large (ErrPageTooLarge), we fall back to
 //     a link-only representation to avoid blowing up context size.
 //     - If extraction fails for any other reason, we fall back to
-//     fetching raw text (up to maxPageContentBytes); if that fails
+//     fetching raw text (up to maxURLPageContentBytes); if that fails
 //     also, we fall back to link-only.
 //
 // The result is always a single ContentBlock.
@@ -296,7 +296,7 @@ func (ref *URLRef) buildBlocksForURLPage(ctx context.Context, onlyIfTextKind boo
 	// 3) Plain text (non-HTML): fetch and then decide text vs file based on
 	//    actual bytes + sniffed content type.
 	if isPlainTextContentType(lowerCT) {
-		data, fetchedCT, err := fetchURLBytes(ctx, rawURL, maxPageContentBytes)
+		data, fetchedCT, err := fetchURLBytes(ctx, rawURL, maxURLPageContentBytes)
 		if err != nil {
 			slog.Warn("failed to fetch text url attachment, falling back to link",
 				"url", rawURL, "err", err)
@@ -323,9 +323,9 @@ func (ref *URLRef) buildBlocksForURLPage(ctx context.Context, onlyIfTextKind boo
 		slog.Warn("failed to extract readable content from url, falling back to raw fetch",
 			"url", rawURL, "err", err)
 
-		// As a last resort, fetch up to maxPageContentBytes and include raw
+		// As a last resort, fetch up to maxURLPageContentBytes and include raw
 		// content as either text or a binary file, based on MIME sniffing.
-		data, fetchedCT, err2 := fetchURLBytes(ctx, rawURL, maxPageContentBytes)
+		data, fetchedCT, err2 := fetchURLBytes(ctx, rawURL, maxURLPageContentBytes)
 		if err2 != nil {
 			slog.Warn("failed to fetch url content for fallback, using link-only",
 				"url", rawURL, "err", err2)
@@ -397,7 +397,7 @@ func (ref *URLRef) buildPDFTextOrFileBlockFromURL(ctx context.Context) (*Content
 	}
 	// Infer/normalize so file blocks and filenameFromURL get a stable type.
 	contentType = inferContentType(contentType, rawURL, data)
-	text, err := ExtractPDFTextFromBytesSafe(data, maxAttachmentFetchBytes)
+	text, err := extractPDFTextFromBytesSafe(data, maxAttachmentFetchBytes)
 
 	if err == nil && text != "" {
 		mt := "text/plain"

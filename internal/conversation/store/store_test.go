@@ -466,7 +466,7 @@ func TestConversationCollection(t *testing.T) {
 }
 
 func TestConversationCollectionListing(t *testing.T) {
-	baseDir := filepath.Join(os.TempDir(), "conversationstore_test_list")
+	baseDir := filepath.Join(t.TempDir(), "conversationstore_test_list")
 	defer os.RemoveAll(baseDir)
 
 	cc, err := NewConversationCollection(baseDir)

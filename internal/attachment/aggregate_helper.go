@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/flexigpt/flexigpt-app/internal/fileutil"
 )
 
 // BuildAttachmentForFile builds an Attachment for a local filesystem path.
@@ -18,7 +16,7 @@ import (
 // AttachmentKind, default Mode, and AvailableContentBlockModes.
 // The returned attachment is fully populated via PopulateRef().
 // Note that this builds a fresh attachment, i.e both original ref and current are populated here.
-func BuildAttachmentForFile(ctx context.Context, pathInfo *fileutil.PathInfo) (*Attachment, error) {
+func BuildAttachmentForFile(ctx context.Context, pathInfo *PathInfo) (*Attachment, error) {
 	if pathInfo == nil {
 		return nil, errors.New("invalid input pathinfo")
 	}
@@ -30,7 +28,7 @@ func BuildAttachmentForFile(ctx context.Context, pathInfo *fileutil.PathInfo) (*
 		return nil, fmt.Errorf("path %q is a directory; expected file", pathInfo.Path)
 	}
 
-	mimeType, extMode, err := fileutil.MIMEForLocalFile(pathInfo.Path)
+	mimeType, extMode, err := mimeForLocalFile(pathInfo.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +36,7 @@ func BuildAttachmentForFile(ctx context.Context, pathInfo *fileutil.PathInfo) (*
 	baseName := filepath.Base(pathInfo.Path)
 
 	switch extMode {
-	case fileutil.ExtensionModeImage:
+	case ExtensionModeImage:
 		// Treat images as dedicated image attachments.
 		att := &Attachment{
 			Kind:  AttachmentImage,
@@ -61,7 +59,7 @@ func BuildAttachmentForFile(ctx context.Context, pathInfo *fileutil.PathInfo) (*
 		}
 		return att, nil
 
-	case fileutil.ExtensionModeText:
+	case ExtensionModeText:
 		// Source code / markdown / text files: send as text by default.
 		att := &Attachment{
 			Kind:  AttachmentFile,
@@ -79,11 +77,11 @@ func BuildAttachmentForFile(ctx context.Context, pathInfo *fileutil.PathInfo) (*
 		}
 		return att, nil
 
-	case fileutil.ExtensionModeDocument:
+	case ExtensionModeDocument:
 		// Documents (PDF, Office, etc.).
 		// As of now APIs and we internally only support PDF docs.
 		// PDFs can be treated as text (with extraction) or as original file.
-		if mimeType != fileutil.MIMEApplicationPDF {
+		if mimeType != MIMEApplicationPDF {
 			return buildUnreadableFileAttachment(*pathInfo), nil
 		}
 
@@ -104,7 +102,7 @@ func BuildAttachmentForFile(ctx context.Context, pathInfo *fileutil.PathInfo) (*
 		}
 		return att, nil
 
-	case fileutil.ExtensionModeDefault:
+	case ExtensionModeDefault:
 		return buildUnreadableFileAttachment(*pathInfo), nil
 
 	default:
@@ -115,7 +113,7 @@ func BuildAttachmentForFile(ctx context.Context, pathInfo *fileutil.PathInfo) (*
 	}
 }
 
-func buildUnreadableFileAttachment(pathInfo fileutil.PathInfo) *Attachment {
+func buildUnreadableFileAttachment(pathInfo PathInfo) *Attachment {
 	return &Attachment{
 		Kind:  AttachmentFile,
 		Label: filepath.Base(pathInfo.Path),
@@ -198,14 +196,14 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 	available := textLinkModes
 
 	// Helper to convert an extension-mode classification into attachment modes.
-	applyExtensionMode := func(extMode fileutil.ExtensionMode, mimeType fileutil.MIMEType, fromExtension bool) {
+	applyExtensionMode := func(extMode ExtensionMode, mimeType MIMEType, fromExtension bool) {
 		switch extMode {
-		case fileutil.ExtensionModeImage:
+		case ExtensionModeImage:
 			mode = AttachmentContentBlockModeImage
 			available = imageModes
 
-		case fileutil.ExtensionModeDocument:
-			if mimeType == fileutil.MIMEApplicationPDF {
+		case ExtensionModeDocument:
+			if mimeType == MIMEApplicationPDF {
 				mode = AttachmentContentBlockModeFile
 				available = pdfModes
 			} else {
@@ -213,7 +211,7 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 				available = fileModes
 			}
 
-		case fileutil.ExtensionModeText:
+		case ExtensionModeText:
 			mode = AttachmentContentBlockModeText
 			available = textModes
 
@@ -238,7 +236,7 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 			mode = AttachmentContentBlockModeImage
 			available = imageModes
 
-		case ct == string(fileutil.MIMEApplicationPDF):
+		case ct == string(MIMEApplicationPDF):
 			mode = AttachmentContentBlockModeFile
 			available = pdfModes
 
@@ -249,9 +247,9 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 
 		// If we still haven't decided, look at MIMETypeToExtensionMode.
 		if mode == AttachmentContentBlockModeTextLink && ct != "" {
-			mimeType := fileutil.MIMEType(ct)
+			mimeType := MIMEType(ct)
 
-			if extMode, ok := fileutil.MIMETypeToExtensionMode[mimeType]; ok {
+			if extMode, ok := MIMETypeToExtensionMode[mimeType]; ok {
 				applyExtensionMode(extMode, mimeType, false)
 			} else if isPlainTextContentType(ct) {
 				// Fallback for plain text-ish types not in MIMETypeToExtensionMode.
@@ -268,8 +266,8 @@ func BuildAttachmentForURLWithContext(ctx context.Context, rawURL string) (*Atta
 	// 2) Extension-based fallback ONLY if we still are in LinkOnly mode.
 	// (i.e., content-type probe didn't identify anything).
 	if mode == AttachmentContentBlockModeTextLink && ext != "" {
-		if mimeType, err := fileutil.MIMEFromExtensionString(ext); err == nil {
-			if extMode, ok := fileutil.MIMETypeToExtensionMode[mimeType]; ok {
+		if mimeType, err := mimeFromExtensionString(ext); err == nil {
+			if extMode, ok := MIMETypeToExtensionMode[mimeType]; ok {
 				applyExtensionMode(extMode, mimeType, true)
 			} else if isPlainTextContentType(string(mimeType)) {
 				// Fallback for any text/* mimes that weren't in MIMETypeToExtensionMode.

@@ -7,14 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/flexigpt/flexigpt-app/internal/fileutil"
 	"github.com/flexigpt/llmtools-go/fstool"
 	llmtoolsgoSpec "github.com/flexigpt/llmtools-go/spec"
 )
 
 // FileRef carries metadata for file attachments.
 type FileRef struct {
-	fileutil.PathInfo
+	PathInfo
 
 	// Snapshot of the original file state when it was first attached.
 	// This lets us detect if the underlying file changed between turns.
@@ -23,7 +22,7 @@ type FileRef struct {
 	OrigModTime time.Time `json:"origModTime"`
 }
 
-func (ref *FileRef) PopulateRef(replaceOrig bool) error {
+func (ref *FileRef) PopulateRef(ctx context.Context, replaceOrig bool) error {
 	if ref == nil {
 		return errors.New("file attachment missing ref")
 	}
@@ -31,15 +30,20 @@ func (ref *FileRef) PopulateRef(replaceOrig bool) error {
 	if path == "" {
 		return errors.New("file attachment missing path")
 	}
-	pathInfo, err := fileutil.StatPath(path)
+	pathInfo, err := fstool.StatPath(ctx, fstool.StatPathArgs{
+		Path: path,
+	})
 	if err != nil {
 		return err
+	}
+	if pathInfo == nil {
+		return ErrUnreadableFile
 	}
 
 	// Capture original snapshot once.
 	if strings.TrimSpace(ref.OrigPath) == "" || replaceOrig {
 		ref.OrigPath = pathInfo.Path
-		ref.OrigSize = pathInfo.Size
+		ref.OrigSize = pathInfo.SizeBytes
 		ref.OrigModTime = *pathInfo.ModTime
 	}
 
@@ -47,7 +51,7 @@ func (ref *FileRef) PopulateRef(replaceOrig bool) error {
 	ref.Name = pathInfo.Name
 	ref.Exists = pathInfo.Exists
 	ref.IsDir = pathInfo.IsDir
-	ref.Size = pathInfo.Size
+	ref.Size = pathInfo.SizeBytes
 	ref.ModTime = pathInfo.ModTime
 
 	return nil
@@ -98,19 +102,19 @@ func (ref *FileRef) BuildContentBlock(
 
 	case AttachmentContentBlockModeFile:
 		// File mode needs to handle all kinds of supported files appropriately.
-		mimeType, extensionMode, err := fileutil.MIMEForLocalFile(path)
+		mimeType, extensionMode, err := mimeForLocalFile(path)
 		if err != nil {
 			// Could not detect mime, render as unreadable file.
 			return nil, errors.Join(ErrUnreadableFile, err)
 		}
 		switch extensionMode {
-		case fileutil.ExtensionModeText:
+		case ExtensionModeText:
 			// If this is a text type file, we cannot attach it as b64 encoded currently.
 			// Right now we are making a safe fallback to send it as text block.
 			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentContentBlockMode
 			// properly.
 			return ref.getTextBlock(ctx, mimeType)
-		case fileutil.ExtensionModeImage:
+		case ExtensionModeImage:
 			if onlyIfTextKind {
 				return nil, ErrNonTextContentBlock
 			}
@@ -118,7 +122,7 @@ func (ref *FileRef) BuildContentBlock(
 			// Ideally we should not reach here if UI takes care of AttachmentKind and AttachmentContentBlockMode
 			// properly.
 			return buildImageBlockFromLocal(ctx, path)
-		case fileutil.ExtensionModeDocument:
+		case ExtensionModeDocument:
 			if onlyIfTextKind {
 				return nil, ErrNonTextContentBlock
 			}
@@ -131,15 +135,15 @@ func (ref *FileRef) BuildContentBlock(
 			}
 			return c, nil
 
-		case fileutil.ExtensionModeDefault:
+		case ExtensionModeDefault:
 			return nil, ErrUnreadableFile
 		default:
 			return nil, ErrUnreadableFile
 		}
 
 	case AttachmentContentBlockModeText:
-		mimeType, extensionMode, err := fileutil.MIMEForLocalFile(path)
-		if err == nil && (extensionMode == fileutil.ExtensionModeText || mimeType == fileutil.MIMEApplicationPDF) {
+		mimeType, extensionMode, err := mimeForLocalFile(path)
+		if err == nil && (extensionMode == ExtensionModeText || mimeType == MIMEApplicationPDF) {
 			// Text mode mimes and pdf with text extraction is supported.
 			return ref.getTextBlock(ctx, mimeType)
 		}
@@ -160,7 +164,7 @@ func (ref *FileRef) BuildContentBlock(
 	}
 }
 
-func (ref *FileRef) getTextBlock(ctx context.Context, mimetype fileutil.MIMEType) (*ContentBlock, error) {
+func (ref *FileRef) getTextBlock(ctx context.Context, mimetype MIMEType) (*ContentBlock, error) {
 	path := strings.TrimSpace(ref.Path)
 	if path == "" {
 		return nil, errors.New("got invalid path")
@@ -170,7 +174,7 @@ func (ref *FileRef) getTextBlock(ctx context.Context, mimetype fileutil.MIMEType
 	if err != nil {
 		ext := strings.ToLower(filepath.Ext(path))
 		// Special handling for PDFs as fallback: attach as binary content.
-		if mimetype == fileutil.MIMEApplicationPDF || ext == string(fileutil.ExtPDF) {
+		if mimetype == MIMEApplicationPDF || ext == string(ExtPDF) {
 			return ref.getBinaryFileContent(ctx, path, mimetype)
 		}
 		return nil, err
@@ -181,7 +185,7 @@ func (ref *FileRef) getTextBlock(ctx context.Context, mimetype fileutil.MIMEType
 func (ref *FileRef) getTextFileContent(
 	ctx context.Context,
 	path string,
-	mimeType fileutil.MIMEType,
+	mimeType MIMEType,
 ) (*ContentBlock, error) {
 	// Fstool supports Text extraction of pdf too.
 	toolOut, err := fstool.ReadFile(ctx, fstool.ReadFileArgs{
@@ -210,7 +214,7 @@ func (ref *FileRef) getTextFileContent(
 func (ref *FileRef) getBinaryFileContent(
 	ctx context.Context,
 	path string,
-	mimeType fileutil.MIMEType,
+	mimeType MIMEType,
 ) (*ContentBlock, error) {
 	toolOut, err := fstool.ReadFile(ctx, fstool.ReadFileArgs{
 		Path:     path,

@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/flexigpt/flexigpt-app/internal/attachment"
-	"github.com/flexigpt/flexigpt-app/internal/fileutil"
 	"github.com/flexigpt/flexigpt-app/internal/middleware"
+	"github.com/flexigpt/llmtools-go/fstool"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/adrg/xdg"
@@ -150,7 +150,7 @@ func (a *App) OpenURLAsAttachment(
 func (a *App) SaveFile(
 	defaultFilename string,
 	contentBase64 string,
-	additionalFilters []fileutil.FileFilter,
+	additionalFilters []attachment.FileFilter,
 ) error {
 	_, err := middleware.WithRecoveryResp(func() (struct{}, error) {
 		return struct{}{}, a.saveFile(defaultFilename, contentBase64, additionalFilters)
@@ -162,7 +162,7 @@ func (a *App) SaveFile(
 // When allowMultiple is true, users can pick multiple files; otherwise at most one path is returned.
 func (a *App) OpenMultipleFilesAsAttachments(
 	allowMultiple bool,
-	additionalFilters []fileutil.FileFilter,
+	additionalFilters []attachment.FileFilter,
 ) (attachments []attachment.Attachment, err error) {
 	return middleware.WithRecoveryResp(func() ([]attachment.Attachment, error) {
 		return a.openMultipleFilesAsAttachments(allowMultiple, additionalFilters)
@@ -180,7 +180,7 @@ func (a *App) OpenDirectoryAsAttachments(maxFiles int) (*attachment.DirectoryAtt
 func (a *App) saveFile(
 	defaultFilename string,
 	contentBase64 string,
-	additionalFilters []fileutil.FileFilter,
+	additionalFilters []attachment.FileFilter,
 ) error {
 	if a.ctx == nil {
 		return errors.New("context is not initialized")
@@ -211,7 +211,7 @@ func (a *App) saveFile(
 
 func (a *App) openMultipleFilesAsAttachments(
 	allowMultiple bool,
-	additionalFilters []fileutil.FileFilter,
+	additionalFilters []attachment.FileFilter,
 ) (attachments []attachment.Attachment, err error) {
 	if a.ctx == nil {
 		return nil, errors.New("context is not initialized")
@@ -248,13 +248,23 @@ func (a *App) openMultipleFilesAsAttachments(
 			continue
 		}
 		// Basic sanity + existence checks.
-		info, err := fileutil.StatPath(path)
-		if err != nil || info == nil {
+		pathInfo, err := fstool.StatPath(context.Background(), fstool.StatPathArgs{
+			Path: path,
+		})
+
+		if err != nil || pathInfo == nil {
 			slog.Debug("failed to build attachment for file", "path", p, "error", "stat failed")
 			continue
 		}
 
-		att, attErr := attachment.BuildAttachmentForFile(context.Background(), info)
+		att, attErr := attachment.BuildAttachmentForFile(context.Background(), &attachment.PathInfo{
+			Path:    pathInfo.Path,
+			Name:    pathInfo.Name,
+			Exists:  pathInfo.Exists,
+			IsDir:   pathInfo.IsDir,
+			Size:    pathInfo.SizeBytes,
+			ModTime: pathInfo.ModTime,
+		})
 		if attErr != nil || att == nil {
 			slog.Debug("failed to build attachment for file", "path", p, "error", attErr)
 			continue
@@ -401,13 +411,13 @@ func (a *App) shutdown(ctx context.Context) { //nolint:all
 }
 
 var defaultRuntimeFilters = func() []runtime.FileFilter {
-	runtimeFilters := make([]runtime.FileFilter, 0, len(fileutil.DefaultFileFilters))
-	for idx := range fileutil.DefaultFileFilters {
+	runtimeFilters := make([]runtime.FileFilter, 0, len(attachment.DefaultFileFilters))
+	for idx := range attachment.DefaultFileFilters {
 		runtimeFilters = append(
 			runtimeFilters,
 			runtime.FileFilter{
-				DisplayName: fileutil.DefaultFileFilters[idx].DisplayName,
-				Pattern:     fileutil.DefaultFileFilters[idx].Pattern(),
+				DisplayName: attachment.DefaultFileFilters[idx].DisplayName,
+				Pattern:     attachment.DefaultFileFilters[idx].Pattern(),
 			},
 		)
 	}
@@ -418,7 +428,7 @@ var defaultRuntimeFilters = func() []runtime.FileFilter {
 // This is important for macOS: providing filters makes NSOpenPanel/NSSavePanel
 // restrict selectable/savable file types, which can hide/disable "unknown"
 // extensions (e.g. .bazel/.cmake) and dotfiles depending on type mapping.
-func dialogFilters(additionalFilters []fileutil.FileFilter) []runtime.FileFilter {
+func dialogFilters(additionalFilters []attachment.FileFilter) []runtime.FileFilter {
 	if len(additionalFilters) == 0 {
 		return nil
 	}
@@ -426,8 +436,8 @@ func dialogFilters(additionalFilters []fileutil.FileFilter) []runtime.FileFilter
 	return getRuntimeFilters(additionalFilters, false)
 }
 
-func getRuntimeFilters(additionalFilters []fileutil.FileFilter, includeDefault bool) []runtime.FileFilter {
-	runtimeFilters := make([]runtime.FileFilter, 0, len(additionalFilters)+len(fileutil.DefaultFileFilters))
+func getRuntimeFilters(additionalFilters []attachment.FileFilter, includeDefault bool) []runtime.FileFilter {
+	runtimeFilters := make([]runtime.FileFilter, 0, len(additionalFilters)+len(attachment.DefaultFileFilters))
 
 	for idx := range additionalFilters {
 		runtimeFilters = append(
