@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 
-import { FiCpu, FiDatabase, FiFilePlus, FiMessageSquare, FiSettings, FiSliders } from 'react-icons/fi';
+import { FiCpu, FiDatabase, FiFilePlus, FiMessageSquare, FiSettings, FiSliders, FiTool } from 'react-icons/fi';
 
 import { Link } from 'react-router';
 
@@ -61,11 +61,19 @@ export function Sidebar({ children }: SidebarProps) {
 								</Link>
 							</li>
 						)}
+
 						<li className="mt-4" title="Prompts" onClick={toggle} aria-label="Prompts">
 							<Link to="/prompts/" className="flex h-12 w-12 items-center justify-center rounded-full p-0">
 								<FiFilePlus size={24} />
 							</Link>
 						</li>
+
+						<li className="mt-4" title="Tools" onClick={toggle} aria-label="Tools">
+							<Link to="/tools/" className="flex h-12 w-12 items-center justify-center rounded-full p-0">
+								<FiTool size={24} />
+							</Link>
+						</li>
+
 						<li className="mt-4" title="Model Presets" onClick={toggle} aria-label="Model Presets">
 							<Link to="/modelpresets/" className="flex h-12 w-12 items-center justify-center rounded-full p-0">
 								<FiSliders size={24} />

@@ -9,7 +9,7 @@ import type {
 	ToolListItem,
 } from '@/spec/tool';
 
-import type { JSONRawString } from '@/lib/jsonschema_utils';
+import type { JSONRawString, JSONSchema } from '@/lib/jsonschema_utils';
 
 import type { IToolStoreAPI } from '@/apis/interface';
 import {
@@ -131,7 +131,7 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 		isEnabled: boolean,
 		userCallable: boolean,
 		llmCallable: boolean,
-		argSchema: JSONRawString,
+		argSchema: JSONSchema,
 		type: ToolImplType,
 		httpImpl?: HTTPToolImpl,
 		description?: string,
@@ -148,7 +148,7 @@ export class WailsToolStoreAPI implements IToolStoreAPI {
 				tags: tags,
 				userCallable: userCallable,
 				llmCallable: llmCallable,
-				argSchema: argSchema,
+				argSchema: JSON.stringify(argSchema, null, 2),
 				type: type,
 				httpImpl: httpImpl,
 			} as spec.PutToolRequestBody,

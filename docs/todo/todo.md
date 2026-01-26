@@ -4,7 +4,11 @@
 
 - [ ] edit and save template doesn't work. says template slug already exists.
   - [ ] most probably a mismatch between backend and frontend.
-- [ ] View mode needed for builtins
+  - [ ] behavior is that for tool and prompts we need versions to be different. once a version is created we dont allow anything except enable disable.
+
+- [x] View mode needed for builtins
+- [ ] prompt template add/edit needs enrichment. same to check for tools.
+- [ ] prompt modal doesnt close on outside click. all form modals in prompt and tool.
 
 ## Features
 

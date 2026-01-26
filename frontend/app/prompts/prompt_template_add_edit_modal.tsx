@@ -16,12 +16,15 @@ interface TemplateItem {
 	templateSlug: string;
 }
 
+type ModalMode = 'add' | 'edit' | 'view';
+
 interface AddEditPromptTemplateModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (templateData: Partial<PromptTemplate>) => void;
-	initialData?: TemplateItem; // when editing
+	initialData?: TemplateItem; // when editing/viewing
 	existingTemplates: TemplateItem[];
+	mode?: ModalMode;
 }
 
 type ErrorState = {
@@ -37,7 +40,13 @@ export function AddEditPromptTemplateModal({
 	onSubmit,
 	initialData,
 	existingTemplates,
+	mode,
 }: AddEditPromptTemplateModalProps) {
+	const effectiveMode: ModalMode = mode ?? (initialData ? 'edit' : 'add');
+	const isViewMode = effectiveMode === 'view';
+	const isEditMode = effectiveMode === 'edit';
+	// const isAddMode = effectiveMode === 'add';
+
 	const [formData, setFormData] = useState({
 		displayName: '',
 		slug: '',
@@ -48,7 +57,6 @@ export function AddEditPromptTemplateModal({
 	});
 
 	const [errors, setErrors] = useState<ErrorState>({});
-	const isEditMode = Boolean(initialData);
 
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
 
@@ -77,7 +85,6 @@ export function AddEditPromptTemplateModal({
 		setErrors({});
 	}, [isOpen, initialData]);
 
-	// Open/close the native <dialog> when isOpen changes
 	useEffect(() => {
 		if (!isOpen) return;
 
@@ -95,7 +102,6 @@ export function AddEditPromptTemplateModal({
 		};
 	}, [isOpen]);
 
-	// Sync parent when dialog closes
 	const handleDialogClose = () => {
 		onClose();
 	};
@@ -104,7 +110,6 @@ export function AddEditPromptTemplateModal({
 		let newErrs: ErrorState = { ...currentErrors };
 		const v = val.trim();
 
-		// Required fields
 		if (!v) {
 			newErrs[field] = 'This field is required.';
 			return newErrs;
@@ -135,9 +140,12 @@ export function AddEditPromptTemplateModal({
 		newErrs = validateField('displayName', state.displayName, newErrs);
 		newErrs = validateField('slug', state.slug, newErrs);
 		newErrs = validateField('content', state.content, newErrs);
-		if (state.tags || state.tags.trim() !== '') {
+
+		// Fix: validate tags ONLY when non-empty
+		if (state.tags.trim() !== '') {
 			newErrs = validateField('tags', state.tags, newErrs);
 		}
+
 		return newErrs;
 	};
 
@@ -153,14 +161,16 @@ export function AddEditPromptTemplateModal({
 	};
 
 	const isAllValid = useMemo(() => {
+		if (isViewMode) return true;
 		const requiredFilled = formData.displayName.trim() && formData.slug.trim() && formData.content.trim();
 		const hasErrors = Object.keys(errors).length > 0;
 		return Boolean(requiredFilled) && !hasErrors;
-	}, [formData, errors]);
+	}, [formData, errors, isViewMode]);
 
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
+		if (isViewMode) return;
 
 		const trimmed = {
 			displayName: formData.displayName.trim(),
@@ -181,19 +191,26 @@ export function AddEditPromptTemplateModal({
 			.map(t => t.trim())
 			.filter(Boolean);
 
+		// Important: preserve existing blocks when editing, only update first block content
+		const existingBlocks = initialData?.template.blocks ?? [];
+		const blocks =
+			isEditMode && existingBlocks.length > 0
+				? existingBlocks.map((b, idx) => (idx === 0 ? { ...b, content: trimmed.content } : b))
+				: [
+						{
+							id: getUUIDv7(),
+							role: PromptRoleEnum.User,
+							content: trimmed.content,
+						},
+					];
+
 		onSubmit({
 			displayName: trimmed.displayName,
 			slug: trimmed.slug,
 			description: trimmed.description || undefined,
 			isEnabled: trimmed.isEnabled,
 			tags: tagsArr.length ? tagsArr : undefined,
-			blocks: [
-				{
-					id: initialData?.template.blocks[0]?.id ?? getUUIDv7(),
-					role: PromptRoleEnum.User,
-					content: trimmed.content,
-				},
-			],
+			blocks,
 		});
 
 		dialogRef.current?.close();
@@ -201,13 +218,19 @@ export function AddEditPromptTemplateModal({
 
 	if (!isOpen) return null;
 
+	const headerTitle =
+		effectiveMode === 'view'
+			? 'View Prompt Template'
+			: effectiveMode === 'edit'
+				? 'Edit Prompt Template'
+				: 'Add Prompt Template';
+
 	return createPortal(
 		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
 				<div className="max-h-[80vh] overflow-y-auto p-6">
-					{/* header */}
 					<div className="mb-4 flex items-center justify-between">
-						<h3 className="text-lg font-bold">{isEditMode ? 'Edit Prompt Template' : 'Add Prompt Template'}</h3>
+						<h3 className="text-lg font-bold">{headerTitle}</h3>
 						<button
 							type="button"
 							className="btn btn-sm btn-circle bg-base-300"
@@ -218,9 +241,7 @@ export function AddEditPromptTemplateModal({
 						</button>
 					</div>
 
-					{/* form */}
 					<form noValidate onSubmit={handleSubmit} className="space-y-4">
-						{/* Display Name */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Display Name*</span>
@@ -231,10 +252,11 @@ export function AddEditPromptTemplateModal({
 									name="displayName"
 									value={formData.displayName}
 									onChange={handleInput}
+									readOnly={isViewMode}
 									className={`input input-bordered w-full rounded-xl ${errors.displayName ? 'input-error' : ''}`}
 									spellCheck="false"
 									autoComplete="off"
-									autoFocus
+									autoFocus={!isViewMode}
 									aria-invalid={Boolean(errors.displayName)}
 								/>
 								{errors.displayName && (
@@ -247,28 +269,25 @@ export function AddEditPromptTemplateModal({
 							</div>
 						</div>
 
-						{/* Slug */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Slug*</span>
-								<span className="label-text-alt tooltip tooltip-right" data-tip={`Short user friendly command`}>
+								<span className="label-text-alt tooltip tooltip-right" data-tip="Short user friendly command">
 									<FiHelpCircle size={12} />
 								</span>
 							</label>
 							<div className="col-span-9">
-								<div className="relative">
-									<input
-										type="text"
-										name="slug"
-										value={formData.slug}
-										onChange={handleInput}
-										className={`input input-bordered w-full rounded-xl pl-8 ${errors.slug ? 'input-error' : ''}`}
-										spellCheck="false"
-										autoComplete="off"
-										disabled={isEditMode && initialData?.template.isBuiltIn}
-										aria-invalid={Boolean(errors.slug)}
-									/>
-								</div>
+								<input
+									type="text"
+									name="slug"
+									value={formData.slug}
+									onChange={handleInput}
+									className={`input input-bordered w-full rounded-xl ${errors.slug ? 'input-error' : ''}`}
+									spellCheck="false"
+									autoComplete="off"
+									disabled={isViewMode || isEditMode}
+									aria-invalid={Boolean(errors.slug)}
+								/>
 								{errors.slug && (
 									<div className="label">
 										<span className="label-text-alt text-error flex items-center gap-1">
@@ -279,7 +298,6 @@ export function AddEditPromptTemplateModal({
 							</div>
 						</div>
 
-						{/* Enabled toggle */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3 cursor-pointer">
 								<span className="label-text text-sm">Enabled</span>
@@ -291,11 +309,11 @@ export function AddEditPromptTemplateModal({
 									checked={formData.isEnabled}
 									onChange={handleInput}
 									className="toggle toggle-accent"
+									disabled={isViewMode}
 								/>
 							</div>
 						</div>
 
-						{/* Description */}
 						<div className="grid grid-cols-12 items-start gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Description</span>
@@ -305,45 +323,45 @@ export function AddEditPromptTemplateModal({
 									name="description"
 									value={formData.description}
 									onChange={handleInput}
+									readOnly={isViewMode}
 									className="textarea textarea-bordered h-20 w-full rounded-xl"
 									spellCheck="false"
 								/>
 							</div>
 						</div>
 
-						{/* Content */}
-						<div className="grid grid-cols-12 items-start gap-2">
-							<label className="label col-span-3">
-								<span className="label-text text-sm">Prompt Content*</span>
-								<span
-									className="label-text-alt tooltip tooltip-right"
-									data-tip="First (user) message - add advanced messages later"
-								>
-									<FiHelpCircle size={12} />
-								</span>
-							</label>
-							<div className="col-span-9">
-								<textarea
-									name="content"
-									value={formData.content}
-									onChange={handleInput}
-									className={`textarea textarea-bordered h-32 w-full rounded-xl ${
-										errors.content ? 'textarea-error' : ''
-									}`}
-									spellCheck="false"
-									aria-invalid={Boolean(errors.content)}
-								/>
-								{errors.content && (
-									<div className="label">
-										<span className="label-text-alt text-error flex items-center gap-1">
-											<FiAlertCircle size={12} /> {errors.content}
-										</span>
-									</div>
-								)}
+						{/* Edit/Add content: still edits first block only */}
+						{!isViewMode && (
+							<div className="grid grid-cols-12 items-start gap-2">
+								<label className="label col-span-3">
+									<span className="label-text text-sm">Prompt Content*</span>
+									<span
+										className="label-text-alt tooltip tooltip-right"
+										data-tip="First message content (advanced: view shows all blocks)"
+									>
+										<FiHelpCircle size={12} />
+									</span>
+								</label>
+								<div className="col-span-9">
+									<textarea
+										name="content"
+										value={formData.content}
+										onChange={handleInput}
+										className={`textarea textarea-bordered h-32 w-full rounded-xl ${errors.content ? 'textarea-error' : ''}`}
+										spellCheck="false"
+										aria-invalid={Boolean(errors.content)}
+									/>
+									{errors.content && (
+										<div className="label">
+											<span className="label-text-alt text-error flex items-center gap-1">
+												<FiAlertCircle size={12} /> {errors.content}
+											</span>
+										</div>
+									)}
+								</div>
 							</div>
-						</div>
+						)}
 
-						{/* Tags */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Tags</span>
@@ -354,6 +372,7 @@ export function AddEditPromptTemplateModal({
 									name="tags"
 									value={formData.tags}
 									onChange={handleInput}
+									readOnly={isViewMode}
 									className={`input input-bordered w-full rounded-xl ${errors.tags ? 'input-error' : ''}`}
 									placeholder="comma, separated, tags"
 									spellCheck="false"
@@ -369,19 +388,62 @@ export function AddEditPromptTemplateModal({
 							</div>
 						</div>
 
-						{/* actions */}
+						{/* View mode: show full blocks + variables + meta */}
+						{isViewMode && initialData?.template && (
+							<>
+								<div className="divider">Blocks</div>
+								<div className="space-y-3">
+									{initialData.template.blocks.map(b => (
+										<div key={b.id} className="border-base-content/10 rounded-2xl border p-3">
+											<div className="text-base-content/60 mb-2 text-xs font-semibold uppercase">Role: {b.role}</div>
+											<textarea
+												className="textarea textarea-bordered w-full rounded-xl"
+												readOnly
+												spellCheck="false"
+												value={b.content}
+											/>
+										</div>
+									))}
+									{initialData.template.blocks.length === 0 && (
+										<div className="text-base-content/70 text-sm">No blocks.</div>
+									)}
+								</div>
+
+								<div className="divider">Variables</div>
+								<pre className="bg-base-300 overflow-auto rounded-2xl p-3 text-xs">
+									{JSON.stringify(initialData.template.variables ?? [], null, 2)}
+								</pre>
+
+								<div className="divider">Metadata</div>
+								<div className="grid grid-cols-12 gap-2 text-sm">
+									<div className="col-span-3 font-semibold">Version</div>
+									<div className="col-span-9">{initialData.template.version}</div>
+
+									<div className="col-span-3 font-semibold">Built-in</div>
+									<div className="col-span-9">{initialData.template.isBuiltIn ? 'Yes' : 'No'}</div>
+
+									<div className="col-span-3 font-semibold">Created</div>
+									<div className="col-span-9">{initialData.template.createdAt}</div>
+
+									<div className="col-span-3 font-semibold">Modified</div>
+									<div className="col-span-9">{initialData.template.modifiedAt}</div>
+								</div>
+							</>
+						)}
+
 						<div className="modal-action">
 							<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
-								Cancel
+								{isViewMode ? 'Close' : 'Cancel'}
 							</button>
-							<button type="submit" className="btn btn-primary rounded-xl" disabled={!isAllValid}>
-								Save
-							</button>
+							{!isViewMode && (
+								<button type="submit" className="btn btn-primary rounded-xl" disabled={!isAllValid}>
+									Save
+								</button>
+							)}
 						</div>
 					</form>
 				</div>
 			</div>
-			{/* NOTE: no modal-backdrop here: backdrop click should NOT close this modal */}
 		</dialog>,
 		document.body
 	);

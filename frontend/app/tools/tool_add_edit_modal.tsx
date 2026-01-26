@@ -6,6 +6,7 @@ import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
 import { type Tool, ToolImplType } from '@/spec/tool';
 
+import type { JSONSchema } from '@/lib/jsonschema_utils';
 import { omitManyKeys } from '@/lib/obj_utils';
 import { validateSlug, validateTags } from '@/lib/text_utils';
 import { MessageEnterValidURL, validateUrlForInput } from '@/lib/url_utils';
@@ -18,12 +19,15 @@ interface ToolItem {
 	toolSlug: string;
 }
 
+type ModalMode = 'add' | 'edit' | 'view';
+
 interface AddEditToolModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (toolData: Partial<Tool>) => void;
-	initialData?: ToolItem; // when editing
+	initialData?: ToolItem; // when editing/viewing
 	existingTools: ToolItem[];
+	mode?: ModalMode;
 }
 
 const TOOL_TYPE_LABEL_GO = 'Go';
@@ -36,19 +40,39 @@ type ErrorState = {
 	argSchema?: string;
 	goFunc?: string;
 	httpUrl?: string;
+	httpHeaders?: string;
+	httpQuery?: string;
+	httpResponseCodes?: string;
 	tags?: string;
 };
 
-export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, existingTools }: AddEditToolModalProps) {
+export function AddEditToolModal({
+	isOpen,
+	onClose,
+	onSubmit,
+	initialData,
+	existingTools,
+	mode,
+}: AddEditToolModalProps) {
+	const effectiveMode: ModalMode = mode ?? (initialData ? 'edit' : 'add');
+	const isViewMode = effectiveMode === 'view';
+	const isEditMode = effectiveMode === 'edit';
+
 	const [formData, setFormData] = useState({
 		displayName: '',
 		slug: '',
 		description: '',
 		tags: '',
 		isEnabled: true,
+
+		userCallable: true,
+		llmCallable: true,
+
 		type: ToolImplType.HTTP as ToolImplType,
 		argSchema: '{}',
+
 		goFunc: '',
+
 		httpUrl: '',
 		httpMethod: 'GET',
 		httpHeaders: '{}',
@@ -59,17 +83,16 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		httpAuthValueTemplate: '',
 		httpResponseCodes: '',
 		httpResponseErrorMode: '',
+
 		version: '1',
 	});
 
 	const [errors, setErrors] = useState<ErrorState>({});
-	const isEditMode = Boolean(initialData);
 
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
 	const displayNameInputRef = useRef<HTMLInputElement | null>(null);
 	const httpUrlInputRef = useRef<HTMLInputElement | null>(null);
 
-	// Sync prop -> state
 	useEffect(() => {
 		if (!isOpen) return;
 
@@ -81,9 +104,15 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 				description: t.description ?? '',
 				tags: (t.tags ?? []).join(', '),
 				isEnabled: t.isEnabled,
+
+				userCallable: t.userCallable,
+				llmCallable: t.llmCallable,
+
 				type: t.type,
-				argSchema: JSON.stringify(t.argSchema, null, 2),
+				argSchema: JSON.stringify(t.argSchema ?? {}, null, 2),
+
 				goFunc: t.goImpl?.func ?? '',
+
 				httpUrl: t.httpImpl?.request.urlTemplate ?? '',
 				httpMethod: t.httpImpl?.request.method ?? 'GET',
 				httpHeaders: JSON.stringify(t.httpImpl?.request.headers ?? {}, null, 2),
@@ -94,6 +123,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 				httpAuthValueTemplate: t.httpImpl?.request.auth?.valueTemplate ?? '',
 				httpResponseCodes: (t.httpImpl?.response.successCodes ?? []).join(','),
 				httpResponseErrorMode: t.httpImpl?.response.errorMode ?? '',
+
 				version: t.version,
 			});
 		} else {
@@ -103,9 +133,15 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 				description: '',
 				tags: '',
 				isEnabled: true,
+
+				userCallable: true,
+				llmCallable: true,
+
 				type: ToolImplType.HTTP,
 				argSchema: '{}',
+
 				goFunc: '',
+
 				httpUrl: '',
 				httpMethod: 'GET',
 				httpHeaders: '{}',
@@ -116,13 +152,13 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 				httpAuthValueTemplate: '',
 				httpResponseCodes: '',
 				httpResponseErrorMode: '',
+
 				version: '1',
 			});
 		}
 		setErrors({});
 	}, [isOpen, initialData]);
 
-	// Open/close native dialog + focus first field
 	useEffect(() => {
 		if (!isOpen) return;
 		const dialog = dialogRef.current;
@@ -133,13 +169,13 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		}
 
 		window.setTimeout(() => {
-			displayNameInputRef.current?.focus();
+			if (!isViewMode) displayNameInputRef.current?.focus();
 		}, 0);
 
 		return () => {
 			if (dialog.open) dialog.close();
 		};
-	}, [isOpen]);
+	}, [isOpen, isViewMode]);
 
 	const handleDialogClose = () => {
 		onClose();
@@ -148,18 +184,17 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 	const toolTypeDropdownItems = useMemo(
 		() =>
 			({
-				[ToolImplType.Go]: { isEnabled: isEditMode, displayName: TOOL_TYPE_LABEL_GO },
+				[ToolImplType.Go]: { isEnabled: false, displayName: TOOL_TYPE_LABEL_GO },
 				[ToolImplType.HTTP]: { isEnabled: true, displayName: TOOL_TYPE_LABEL_HTTP },
 			}) as Record<ToolImplType, { isEnabled: boolean; displayName: string }>,
-		[isEditMode]
+		[]
 	);
 
-	// Validation
 	const validateField = (field: keyof ErrorState, val: string, currentErrors: ErrorState): ErrorState => {
 		let newErrs: ErrorState = { ...currentErrors };
 		const v = val.trim();
 
-		if (!v && ['displayName', 'slug', 'type'].includes(field)) {
+		if (!v && ['displayName', 'slug', 'type', 'argSchema'].includes(field)) {
 			newErrs[field] = 'This field is required.';
 			return newErrs;
 		}
@@ -174,26 +209,25 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 				else newErrs = omitManyKeys(newErrs, ['slug']);
 			}
 		} else if (field === 'tags') {
-			const err = validateTags(val);
-			if (err) newErrs.tags = err;
-			else newErrs = omitManyKeys(newErrs, ['tags']);
-		} else if (field === 'argSchema') {
-			if (!val.trim()) {
-				// Allow blank here; "required" is enforced via isAllValid
-				newErrs = omitManyKeys(newErrs, [field]);
+			if (v === '') {
+				newErrs = omitManyKeys(newErrs, ['tags']);
 			} else {
-				try {
-					JSON.parse(val);
-					newErrs = omitManyKeys(newErrs, [field]);
-				} catch {
-					newErrs[field] = 'Invalid JSON';
-				}
+				const err = validateTags(val);
+				if (err) newErrs.tags = err;
+				else newErrs = omitManyKeys(newErrs, ['tags']);
 			}
-		} else if (field === 'goFunc' && formData.type === ToolImplType.Go) {
-			if (!v) newErrs.goFunc = 'Go function is required.';
-			else newErrs = omitManyKeys(newErrs, ['goFunc']);
+		} else if (field === 'argSchema') {
+			try {
+				const parsed = JSON.parse(val);
+				if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+					newErrs.argSchema = 'Arg schema must be a JSON object';
+				} else {
+					newErrs = omitManyKeys(newErrs, ['argSchema']);
+				}
+			} catch {
+				newErrs.argSchema = 'Invalid JSON';
+			}
 		} else if (field === 'httpUrl' && formData.type === ToolImplType.HTTP) {
-			// Use shared URL validator; HTTP URL is required when type=HTTP
 			const { error } = validateUrlForInput(v, httpUrlInputRef.current, {
 				required: true,
 				requiredMessage: 'HTTP URL is required.',
@@ -201,6 +235,49 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 
 			if (error) newErrs.httpUrl = error;
 			else newErrs = omitManyKeys(newErrs, ['httpUrl']);
+		} else if (field === 'httpHeaders') {
+			if (v === '') {
+				newErrs = omitManyKeys(newErrs, ['httpHeaders']);
+			} else {
+				try {
+					const parsed = JSON.parse(val);
+					if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+						newErrs.httpHeaders = 'Headers must be a JSON object';
+					} else {
+						newErrs = omitManyKeys(newErrs, ['httpHeaders']);
+					}
+				} catch {
+					newErrs.httpHeaders = 'Invalid JSON';
+				}
+			}
+		} else if (field === 'httpQuery') {
+			if (v === '') {
+				newErrs = omitManyKeys(newErrs, ['httpQuery']);
+			} else {
+				try {
+					const parsed = JSON.parse(val);
+					if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+						newErrs.httpQuery = 'Query must be a JSON object';
+					} else {
+						newErrs = omitManyKeys(newErrs, ['httpQuery']);
+					}
+				} catch {
+					newErrs.httpQuery = 'Invalid JSON';
+				}
+			}
+		} else if (field === 'httpResponseCodes') {
+			if (v === '') {
+				newErrs = omitManyKeys(newErrs, ['httpResponseCodes']);
+			} else {
+				const parts = v
+					.split(',')
+					.map(s => s.trim())
+					.filter(Boolean);
+				const nums = parts.map(p => Number(p));
+				const bad = nums.some(n => !Number.isFinite(n) || n <= 0);
+				if (bad) newErrs.httpResponseCodes = 'Success codes must be comma-separated numbers (e.g. 200,201)';
+				else newErrs = omitManyKeys(newErrs, ['httpResponseCodes']);
+			}
 		} else {
 			newErrs = omitManyKeys(newErrs, [field]);
 		}
@@ -214,41 +291,59 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 		newErrs = validateField('slug', state.slug, newErrs);
 		newErrs = validateField('type', state.type, newErrs);
 		newErrs = validateField('argSchema', state.argSchema, newErrs);
-		newErrs = validateField('tags', state.tags, newErrs);
-		if (state.type === ToolImplType.Go) {
-			newErrs = validateField('goFunc', state.goFunc, newErrs);
+
+		if (state.tags.trim() !== '') {
+			newErrs = validateField('tags', state.tags, newErrs);
 		}
+
 		if (state.type === ToolImplType.HTTP) {
 			newErrs = validateField('httpUrl', state.httpUrl, newErrs);
+			newErrs = validateField('httpHeaders', state.httpHeaders, newErrs);
+			newErrs = validateField('httpQuery', state.httpQuery, newErrs);
+			newErrs = validateField('httpResponseCodes', state.httpResponseCodes, newErrs);
 		}
+
 		return newErrs;
 	};
 
 	const handleInput = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
 		const { name, value, type, checked } = e.target as HTMLInputElement;
 		const newVal = type === 'checkbox' ? checked : value;
+
 		setFormData(prev => ({ ...prev, [name]: newVal }));
 
-		if (['displayName', 'slug', 'type', 'argSchema', 'goFunc', 'httpUrl', 'tags'].includes(name)) {
+		if (
+			[
+				'displayName',
+				'slug',
+				'type',
+				'argSchema',
+				'httpUrl',
+				'httpHeaders',
+				'httpQuery',
+				'httpResponseCodes',
+				'tags',
+			].includes(name)
+		) {
 			setErrors(prev => validateField(name as keyof ErrorState, String(newVal), prev));
 		}
 	};
 
-	// Overall validity
 	const isAllValid = useMemo(() => {
-		const errs = Object.values(errors).some(Boolean);
-		const filled =
+		if (isViewMode) return true;
+		const hasErrs = Object.values(errors).some(Boolean);
+		const required =
 			formData.displayName.trim() &&
 			formData.slug.trim() &&
 			formData.argSchema.trim() &&
-			(formData.type === ToolImplType.Go ? formData.goFunc.trim() : formData.httpUrl.trim());
-		return !errs && Boolean(filled);
-	}, [errors, formData]);
+			(formData.type === ToolImplType.HTTP ? formData.httpUrl.trim() : true);
+		return Boolean(required) && !hasErrs;
+	}, [errors, formData, isViewMode]);
 
-	// Submit
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
+		if (isViewMode) return;
 
 		const nextErrors = validateForm(formData);
 		setErrors(nextErrors);
@@ -259,13 +354,17 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 			.map(t => t.trim())
 			.filter(Boolean);
 
-		let goImpl = undefined;
-		let httpImpl = undefined;
+		let parsedArgSchema: JSONSchema;
+		try {
+			parsedArgSchema = JSON.parse(formData.argSchema) as JSONSchema;
+		} catch {
+			setErrors(prev => ({ ...prev, argSchema: 'Invalid JSON' }));
+			return;
+		}
 
-		if (formData.type === ToolImplType.Go) {
-			goImpl = { func: formData.goFunc.trim() };
-		} else {
-			// Normalize & validate HTTP URL again to get canonical form
+		let httpImpl: Tool['httpImpl'] | undefined = undefined;
+
+		if (formData.type === ToolImplType.HTTP) {
 			const httpUrlInput = httpUrlInputRef.current;
 			const { normalized: normalizedHttpUrl, error: httpUrlError } = validateUrlForInput(
 				formData.httpUrl,
@@ -277,10 +376,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 			);
 
 			if (!normalizedHttpUrl || httpUrlError) {
-				setErrors(prev => ({
-					...prev,
-					httpUrl: httpUrlError ?? MessageEnterValidURL,
-				}));
+				setErrors(prev => ({ ...prev, httpUrl: httpUrlError ?? MessageEnterValidURL }));
 				httpUrlInput?.focus();
 				return;
 			}
@@ -289,18 +385,27 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 			let query: Record<string, string> | undefined;
 
 			try {
-				headers = formData.httpHeaders ? JSON.parse(formData.httpHeaders) : undefined;
+				headers = formData.httpHeaders.trim()
+					? (JSON.parse(formData.httpHeaders) as Record<string, string>)
+					: undefined;
 			} catch {
-				setErrors(prev => ({ ...prev, argSchema: prev.argSchema }));
+				setErrors(prev => ({ ...prev, httpHeaders: 'Invalid JSON' }));
 				return;
 			}
 
 			try {
-				query = formData.httpQuery ? JSON.parse(formData.httpQuery) : undefined;
+				query = formData.httpQuery.trim() ? (JSON.parse(formData.httpQuery) as Record<string, string>) : undefined;
 			} catch {
-				setErrors(prev => ({ ...prev, argSchema: prev.argSchema }));
+				setErrors(prev => ({ ...prev, httpQuery: 'Invalid JSON' }));
 				return;
 			}
+
+			const successCodes = formData.httpResponseCodes.trim()
+				? formData.httpResponseCodes
+						.split(',')
+						.map(s => Number(s.trim()))
+						.filter(n => Number.isFinite(n) && n > 0)
+				: undefined;
 
 			httpImpl = {
 				request: {
@@ -318,12 +423,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 						: undefined,
 				},
 				response: {
-					successCodes: formData.httpResponseCodes
-						? formData.httpResponseCodes
-								.split(',')
-								.map(s => Number(s.trim()))
-								.filter(Boolean)
-						: undefined,
+					successCodes,
 					errorMode: formData.httpResponseErrorMode || undefined,
 				},
 			};
@@ -334,10 +434,11 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 			slug: formData.slug.trim(),
 			description: formData.description.trim() || undefined,
 			isEnabled: formData.isEnabled,
+			userCallable: formData.userCallable,
+			llmCallable: formData.llmCallable,
 			tags: tagsArr.length ? tagsArr : undefined,
 			type: formData.type,
-			argSchema: formData.argSchema,
-			goImpl,
+			argSchema: parsedArgSchema,
 			httpImpl,
 			version: formData.version,
 		});
@@ -346,24 +447,22 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 	};
 
 	const onToolTypeChange = (key: ToolImplType) => {
-		// Prevent selecting Go when adding a new tool
-		if (!isEditMode && key === ToolImplType.Go) {
-			return;
-		}
-
+		// UI restriction: only HTTP tools can be created/edited in current implementation
+		if (key !== ToolImplType.HTTP) return;
 		setFormData(prev => ({ ...prev, type: key }));
 		setErrors(prev => validateField('type', key, prev));
 	};
 
 	if (!isOpen) return null;
 
+	const headerTitle = effectiveMode === 'view' ? 'View Tool' : effectiveMode === 'edit' ? 'Edit Tool' : 'Add Tool';
+
 	return createPortal(
 		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
 				<div className="max-h-[80vh] overflow-y-auto p-6">
-					{/* header */}
 					<div className="mb-4 flex items-center justify-between">
-						<h3 className="text-lg font-bold">{isEditMode ? 'Edit Tool' : 'Add Tool'}</h3>
+						<h3 className="text-lg font-bold">{headerTitle}</h3>
 						<button
 							type="button"
 							className="btn btn-sm btn-circle bg-base-300"
@@ -374,9 +473,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 						</button>
 					</div>
 
-					{/* form */}
 					<form noValidate onSubmit={handleSubmit} className="space-y-4">
-						{/* Display Name */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Display Name*</span>
@@ -388,6 +485,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 									name="displayName"
 									value={formData.displayName}
 									onChange={handleInput}
+									readOnly={isViewMode}
 									className={`input input-bordered w-full rounded-xl ${errors.displayName ? 'input-error' : ''}`}
 									spellCheck="false"
 									autoComplete="off"
@@ -403,7 +501,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 							</div>
 						</div>
 
-						{/* Slug */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Slug*</span>
@@ -412,19 +509,17 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 								</span>
 							</label>
 							<div className="col-span-9">
-								<div className="relative">
-									<input
-										type="text"
-										name="slug"
-										value={formData.slug}
-										onChange={handleInput}
-										className={`input input-bordered w-full rounded-xl pl-8 ${errors.slug ? 'input-error' : ''}`}
-										spellCheck="false"
-										autoComplete="off"
-										disabled={isEditMode && initialData?.tool.isBuiltIn}
-										aria-invalid={Boolean(errors.slug)}
-									/>
-								</div>
+								<input
+									type="text"
+									name="slug"
+									value={formData.slug}
+									onChange={handleInput}
+									className={`input input-bordered w-full rounded-xl ${errors.slug ? 'input-error' : ''}`}
+									spellCheck="false"
+									autoComplete="off"
+									disabled={isViewMode || isEditMode}
+									aria-invalid={Boolean(errors.slug)}
+								/>
 								{errors.slug && (
 									<div className="label">
 										<span className="label-text-alt text-error flex items-center gap-1">
@@ -435,7 +530,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 							</div>
 						</div>
 
-						{/* Enabled toggle */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3 cursor-pointer">
 								<span className="label-text text-sm">Enabled</span>
@@ -447,16 +541,48 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 									checked={formData.isEnabled}
 									onChange={handleInput}
 									className="toggle toggle-accent"
+									disabled={isViewMode}
 								/>
 							</div>
 						</div>
 
-						{/* Type */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3 cursor-pointer">
+								<span className="label-text text-sm">User Callable</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="checkbox"
+									name="userCallable"
+									checked={formData.userCallable}
+									onChange={handleInput}
+									className="toggle toggle-accent"
+									disabled={isViewMode}
+								/>
+							</div>
+						</div>
+
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3 cursor-pointer">
+								<span className="label-text text-sm">LLM Callable</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="checkbox"
+									name="llmCallable"
+									checked={formData.llmCallable}
+									onChange={handleInput}
+									className="toggle toggle-accent"
+									disabled={isViewMode}
+								/>
+							</div>
+						</div>
+
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Type*</span>
 							</label>
-							<div className={`col-span-9 ${isEditMode ? 'pointer-events-none opacity-60' : ''}`}>
+							<div className={`col-span-9 ${isEditMode || isViewMode ? 'pointer-events-none opacity-60' : ''}`}>
 								<Dropdown<ToolImplType>
 									dropdownItems={toolTypeDropdownItems}
 									selectedKey={formData.type}
@@ -475,7 +601,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 							</div>
 						</div>
 
-						{/* Description */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Description</span>
@@ -485,14 +610,14 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 									name="description"
 									value={formData.description}
 									onChange={handleInput}
+									readOnly={isViewMode}
 									className="textarea textarea-bordered h-20 w-full rounded-xl"
 									spellCheck="false"
 								/>
 							</div>
 						</div>
 
-						{/* Arg Schema */}
-						<div className="grid grid-cols-12 items-center gap-2">
+						<div className="grid grid-cols-12 items-start gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Arg JSONSchema*</span>
 								<span className="label-text-alt tooltip tooltip-right" data-tip="JSON Schema for arguments">
@@ -504,9 +629,8 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 									name="argSchema"
 									value={formData.argSchema}
 									onChange={handleInput}
-									className={`textarea textarea-bordered h-24 w-full rounded-xl ${
-										errors.argSchema ? 'textarea-error' : ''
-									}`}
+									readOnly={isViewMode}
+									className={`textarea textarea-bordered h-24 w-full rounded-xl ${errors.argSchema ? 'textarea-error' : ''}`}
 									spellCheck="false"
 									aria-invalid={Boolean(errors.argSchema)}
 								/>
@@ -520,41 +644,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 							</div>
 						</div>
 
-						{/* Go Impl */}
-						{formData.type === ToolImplType.Go && (
-							<div className="grid grid-cols-12 items-center gap-2">
-								<label className="label col-span-3">
-									<span className="label-text text-sm">Go Func*</span>
-									<span
-										className="label-text-alt tooltip tooltip-right"
-										data-tip="e.g. github.com/acme/flexigpt/tools.Weather"
-									>
-										<FiHelpCircle size={12} />
-									</span>
-								</label>
-								<div className="col-span-9">
-									<input
-										type="text"
-										name="goFunc"
-										value={formData.goFunc}
-										onChange={handleInput}
-										className={`input input-bordered w-full rounded-xl ${errors.goFunc ? 'input-error' : ''}`}
-										spellCheck="false"
-										autoComplete="off"
-										aria-invalid={Boolean(errors.goFunc)}
-									/>
-									{errors.goFunc && (
-										<div className="label">
-											<span className="label-text-alt text-error flex items-center gap-1">
-												<FiAlertCircle size={12} /> {errors.goFunc}
-											</span>
-										</div>
-									)}
-								</div>
-							</div>
-						)}
-
-						{/* HTTP Impl */}
 						{formData.type === ToolImplType.HTTP && (
 							<>
 								<div className="grid grid-cols-12 items-center gap-2">
@@ -568,6 +657,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 											name="httpUrl"
 											value={formData.httpUrl}
 											onChange={handleInput}
+											readOnly={isViewMode}
 											className={`input input-bordered w-full rounded-xl ${errors.httpUrl ? 'input-error' : ''}`}
 											spellCheck="false"
 											autoComplete="off"
@@ -583,6 +673,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 										)}
 									</div>
 								</div>
+
 								<div className="grid grid-cols-12 items-center gap-2">
 									<label className="label col-span-3">
 										<span className="label-text text-sm">HTTP Method</span>
@@ -593,13 +684,15 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 											name="httpMethod"
 											value={formData.httpMethod}
 											onChange={handleInput}
+											readOnly={isViewMode}
 											className="input input-bordered w-full rounded-xl"
 											spellCheck="false"
 											autoComplete="off"
 										/>
 									</div>
 								</div>
-								<div className="grid grid-cols-12 items-center gap-2">
+
+								<div className="grid grid-cols-12 items-start gap-2">
 									<label className="label col-span-3">
 										<span className="label-text text-sm">Headers (JSON)</span>
 									</label>
@@ -608,12 +701,21 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 											name="httpHeaders"
 											value={formData.httpHeaders}
 											onChange={handleInput}
-											className="textarea textarea-bordered h-16 w-full rounded-xl"
+											readOnly={isViewMode}
+											className={`textarea textarea-bordered h-16 w-full rounded-xl ${errors.httpHeaders ? 'textarea-error' : ''}`}
 											spellCheck="false"
 										/>
+										{errors.httpHeaders && (
+											<div className="label">
+												<span className="label-text-alt text-error flex items-center gap-1">
+													<FiAlertCircle size={12} /> {errors.httpHeaders}
+												</span>
+											</div>
+										)}
 									</div>
 								</div>
-								<div className="grid grid-cols-12 items-center gap-2">
+
+								<div className="grid grid-cols-12 items-start gap-2">
 									<label className="label col-span-3">
 										<span className="label-text text-sm">Query (JSON)</span>
 									</label>
@@ -622,12 +724,21 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 											name="httpQuery"
 											value={formData.httpQuery}
 											onChange={handleInput}
-											className="textarea textarea-bordered h-16 w-full rounded-xl"
+											readOnly={isViewMode}
+											className={`textarea textarea-bordered h-16 w-full rounded-xl ${errors.httpQuery ? 'textarea-error' : ''}`}
 											spellCheck="false"
 										/>
+										{errors.httpQuery && (
+											<div className="label">
+												<span className="label-text-alt text-error flex items-center gap-1">
+													<FiAlertCircle size={12} /> {errors.httpQuery}
+												</span>
+											</div>
+										)}
 									</div>
 								</div>
-								<div className="grid grid-cols-12 items-center gap-2">
+
+								<div className="grid grid-cols-12 items-start gap-2">
 									<label className="label col-span-3">
 										<span className="label-text text-sm">Body</span>
 									</label>
@@ -636,12 +747,13 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 											name="httpBody"
 											value={formData.httpBody}
 											onChange={handleInput}
+											readOnly={isViewMode}
 											className="textarea textarea-bordered h-16 w-full rounded-xl"
 											spellCheck="false"
 										/>
 									</div>
 								</div>
-								{/* Auth */}
+
 								<div className="grid grid-cols-12 items-center gap-2">
 									<label className="label col-span-3">
 										<span className="label-text text-sm">Auth Type</span>
@@ -652,12 +764,14 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 											name="httpAuthType"
 											value={formData.httpAuthType}
 											onChange={handleInput}
+											readOnly={isViewMode}
 											className="input input-bordered w-full rounded-xl"
 											spellCheck="false"
 											autoComplete="off"
 										/>
 									</div>
 								</div>
+
 								<div className="grid grid-cols-12 items-center gap-2">
 									<label className="label col-span-3">
 										<span className="label-text text-sm">Auth Name</span>
@@ -668,12 +782,14 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 											name="httpAuthName"
 											value={formData.httpAuthName}
 											onChange={handleInput}
+											readOnly={isViewMode}
 											className="input input-bordered w-full rounded-xl"
 											spellCheck="false"
 											autoComplete="off"
 										/>
 									</div>
 								</div>
+
 								<div className="grid grid-cols-12 items-center gap-2">
 									<label className="label col-span-3">
 										<span className="label-text text-sm">Auth Value Template</span>
@@ -684,13 +800,14 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 											name="httpAuthValueTemplate"
 											value={formData.httpAuthValueTemplate}
 											onChange={handleInput}
+											readOnly={isViewMode}
 											className="input input-bordered w-full rounded-xl"
 											spellCheck="false"
 											autoComplete="off"
 										/>
 									</div>
 								</div>
-								{/* Response */}
+
 								<div className="grid grid-cols-12 items-center gap-2">
 									<label className="label col-span-3">
 										<span className="label-text text-sm">Success Codes (comma)</span>
@@ -701,10 +818,18 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 											name="httpResponseCodes"
 											value={formData.httpResponseCodes}
 											onChange={handleInput}
-											className="input input-bordered w-full rounded-xl"
+											readOnly={isViewMode}
+											className={`input input-bordered w-full rounded-xl ${errors.httpResponseCodes ? 'input-error' : ''}`}
 											spellCheck="false"
 											autoComplete="off"
 										/>
+										{errors.httpResponseCodes && (
+											<div className="label">
+												<span className="label-text-alt text-error flex items-center gap-1">
+													<FiAlertCircle size={12} /> {errors.httpResponseCodes}
+												</span>
+											</div>
+										)}
 									</div>
 								</div>
 
@@ -718,6 +843,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 											name="httpResponseErrorMode"
 											value={formData.httpResponseErrorMode}
 											onChange={handleInput}
+											readOnly={isViewMode}
 											className="input input-bordered w-full rounded-xl"
 											spellCheck="false"
 											autoComplete="off"
@@ -727,7 +853,6 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 							</>
 						)}
 
-						{/* Tags */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Tags</span>
@@ -738,6 +863,7 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 									name="tags"
 									value={formData.tags}
 									onChange={handleInput}
+									readOnly={isViewMode}
 									className={`input input-bordered w-full rounded-xl ${errors.tags ? 'input-error' : ''}`}
 									placeholder="comma, separated, tags"
 									spellCheck="false"
@@ -753,19 +879,36 @@ export function AddEditToolModal({ isOpen, onClose, onSubmit, initialData, exist
 							</div>
 						</div>
 
-						{/* actions */}
+						{initialData?.tool && (
+							<div className="grid grid-cols-12 items-center gap-2">
+								<label className="label col-span-3">
+									<span className="label-text text-sm">Version</span>
+								</label>
+								<div className="col-span-9">
+									<input
+										type="text"
+										value={formData.version}
+										readOnly
+										className="input input-bordered w-full rounded-xl opacity-80"
+										spellCheck="false"
+									/>
+								</div>
+							</div>
+						)}
+
 						<div className="modal-action">
 							<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
-								Cancel
+								{isViewMode ? 'Close' : 'Cancel'}
 							</button>
-							<button type="submit" className="btn btn-primary rounded-xl" disabled={!isAllValid}>
-								Save
-							</button>
+							{!isViewMode && (
+								<button type="submit" className="btn btn-primary rounded-xl" disabled={!isAllValid}>
+									Save
+								</button>
+							)}
 						</div>
 					</form>
 				</div>
 			</div>
-			{/* NOTE: no modal-backdrop here: backdrop click should NOT close this modal */}
 		</dialog>,
 		document.body
 	);

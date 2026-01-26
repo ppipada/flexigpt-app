@@ -7,6 +7,7 @@ export default [
 	route('chats', './chats/page.tsx'),
 	route('docstores', './docstores/page.tsx'),
 	route('prompts', './prompts/page.tsx'),
+	route('tools', './tools/page.tsx'),
 	route('settings', './settings/page.tsx'),
 	route('modelpresets', './modelpresets/page.tsx'),
 ] satisfies RouteConfig;

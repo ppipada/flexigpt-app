@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { FiCheck, FiChevronDown, FiChevronUp, FiEdit2, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
-
-// You need to implement this
+import { FiCheck, FiChevronDown, FiChevronUp, FiEdit2, FiEye, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
 import { type Tool, type ToolBundle, ToolImplType } from '@/spec/tool';
 
@@ -12,16 +10,26 @@ import { getAllTools } from '@/apis/list_helper';
 import { ActionDeniedAlertModal } from '@/components/action_denied_modal';
 import { DeleteConfirmationModal } from '@/components/delete_confirmation_modal';
 
-import { AddEditToolModal } from '@/prompts/tool_add_edit_modal';
+import { AddEditToolModal } from '@/tools/tool_add_edit_modal';
+import { ToolBundleDetailsModal } from '@/tools/tool_bundle_details_modal';
+
+type ToolModalMode = 'add' | 'edit' | 'view';
 
 interface ToolBundleCardProps {
 	bundle: ToolBundle;
 	tools: Tool[];
 	onToolsChange: (bundleID: string, newTools: Tool[]) => void;
+	onBundleEnableChange: (bundleID: string, enabled: boolean) => void;
 	onBundleDeleted: (bundle: ToolBundle) => void;
 }
 
-export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }: ToolBundleCardProps) {
+export function ToolBundleCard({
+	bundle,
+	tools,
+	onToolsChange,
+	onBundleEnableChange,
+	onBundleDeleted,
+}: ToolBundleCardProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [localTools, setLocalTools] = useState<Tool[]>(tools);
 	const [isBundleEnabled, setIsBundleEnabled] = useState(bundle.isEnabled);
@@ -36,18 +44,21 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 	const [isDeleteToolModalOpen, setIsDeleteToolModalOpen] = useState(false);
 	const [toolToDelete, setToolToDelete] = useState<Tool | null>(null);
 
-	const [isModifyModalOpen, setIsModifyModalOpen] = useState(false);
+	const [isToolModalOpen, setIsToolModalOpen] = useState(false);
+	const [toolModalMode, setToolModalMode] = useState<ToolModalMode>('add');
 	const [toolToEdit, setToolToEdit] = useState<Tool | undefined>(undefined);
+
+	const [isBundleDetailsOpen, setIsBundleDetailsOpen] = useState(false);
 
 	const [showAlert, setShowAlert] = useState(false);
 	const [alertMsg, setAlertMsg] = useState('');
 
-	// Enable/disable bundle
 	const toggleBundleEnable = async () => {
 		try {
 			const newVal = !isBundleEnabled;
 			await toolStoreAPI.patchToolBundle(bundle.id, newVal);
 			setIsBundleEnabled(newVal);
+			onBundleEnableChange(bundle.id, newVal);
 		} catch (err) {
 			console.error('Toggle bundle enable failed:', err);
 			setAlertMsg('Failed to toggle bundle enable state.');
@@ -55,7 +66,6 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 		}
 	};
 
-	// Enable/disable tool
 	const patchToolEnable = async (tool: Tool) => {
 		try {
 			await toolStoreAPI.patchTool(bundle.id, tool.slug, tool.version, !tool.isEnabled);
@@ -70,7 +80,6 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 		}
 	};
 
-	// Delete tool
 	const requestDeleteTool = (tool: Tool) => {
 		if (tool.isBuiltIn) {
 			setAlertMsg('Cannot delete built-in tool.');
@@ -98,26 +107,25 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 		}
 	};
 
-	// Add/edit tool
-	const openModifyModal = (tool?: Tool) => {
-		if (tool?.isBuiltIn) {
-			setAlertMsg('Built-in tools cannot be edited.');
-			setShowAlert(true);
-			return;
-		}
-		if (bundle.isBuiltIn) {
+	const openToolModal = (mode: ToolModalMode, tool?: Tool) => {
+		if ((mode === 'add' || mode === 'edit') && bundle.isBuiltIn) {
 			setAlertMsg('Cannot add or edit tools in a built-in bundle.');
 			setShowAlert(true);
 			return;
 		}
+		if (mode === 'edit' && tool?.isBuiltIn) {
+			setAlertMsg('Built-in tools cannot be edited.');
+			setShowAlert(true);
+			return;
+		}
+		setToolModalMode(mode);
 		setToolToEdit(tool);
-		setIsModifyModalOpen(true);
+		setIsToolModalOpen(true);
 	};
 
 	const handleModifySubmit = async (partial: Partial<Tool>) => {
 		try {
 			if (toolToEdit) {
-				// update existing
 				await toolStoreAPI.putTool(
 					bundle.id,
 					toolToEdit.slug,
@@ -133,25 +141,24 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 					partial.tags ?? toolToEdit.tags
 				);
 			} else {
-				// create
 				const slug = partial.slug?.trim() ?? '';
 				const display = partial.displayName?.trim() ?? '';
 				await toolStoreAPI.putTool(
 					bundle.id,
 					slug,
-					'1',
+					'v1.0.0',
 					display,
 					partial.isEnabled ?? true,
 					partial.userCallable ?? true,
 					partial.llmCallable ?? true,
-					partial.argSchema ?? '',
+					partial.argSchema ?? {},
 					partial.type ?? ToolImplType.HTTP,
 					partial.httpImpl,
 					partial.description,
 					partial.tags
 				);
 			}
-			// refresh local list
+
 			const toolListItems = await getAllTools([bundle.id], undefined, true);
 			const fresh = toolListItems.map(li => li.toolDefinition);
 			setLocalTools(fresh);
@@ -161,14 +168,13 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 			setAlertMsg('Failed to save tool.');
 			setShowAlert(true);
 		} finally {
-			setIsModifyModalOpen(false);
+			setIsToolModalOpen(false);
 			setToolToEdit(undefined);
 		}
 	};
 
 	return (
 		<div className="bg-base-100 mb-8 rounded-2xl p-4 shadow-lg">
-			{/* header */}
 			<div className="grid grid-cols-12 items-center gap-2">
 				<div className="col-span-4 flex items-center gap-2">
 					<h3 className="text-sm font-semibold">
@@ -176,11 +182,13 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 						<span className="text-base-content/60 ml-1">({bundle.slug})</span>
 					</h3>
 				</div>
+
 				<div className="col-span-1 flex items-center gap-2">
 					<span className="text-base-content/60 text-xs tracking-wide uppercase">
 						{bundle.isBuiltIn ? 'Built-in' : 'Custom'}
 					</span>
 				</div>
+
 				<div className="col-span-3 flex items-center gap-2">
 					<label className="text-sm">Enabled</label>
 					<input
@@ -190,21 +198,35 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 						onChange={toggleBundleEnable}
 					/>
 				</div>
+
 				<div className="col-span-2 flex items-center text-sm">
 					<span>Tools:&nbsp;{localTools.length}</span>
 				</div>
-				<div
-					className="col-span-2 flex cursor-pointer items-center justify-end gap-1"
-					onClick={() => {
-						setIsExpanded(p => !p);
-					}}
-				>
-					<label className="text-sm whitespace-nowrap">Tools</label>
-					{isExpanded ? <FiChevronUp /> : <FiChevronDown />}
+
+				<div className="col-span-2 flex items-center justify-end gap-2">
+					<button
+						className="btn btn-sm btn-ghost rounded-2xl"
+						title="View bundle details"
+						onClick={e => {
+							e.stopPropagation();
+							setIsBundleDetailsOpen(true);
+						}}
+					>
+						<FiEye size={16} />
+					</button>
+
+					<div
+						className="flex cursor-pointer items-center gap-1"
+						onClick={() => {
+							setIsExpanded(p => !p);
+						}}
+					>
+						<label className="text-sm whitespace-nowrap">Tools</label>
+						{isExpanded ? <FiChevronUp /> : <FiChevronDown />}
+					</div>
 				</div>
 			</div>
 
-			{/* body - tools table */}
 			{isExpanded && (
 				<div className="mt-8 space-y-4">
 					<div className="border-base-content/10 overflow-x-auto rounded-2xl border">
@@ -241,13 +263,24 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 												<button
 													className="btn btn-sm btn-ghost rounded-2xl"
 													onClick={() => {
-														openModifyModal(tool);
+														openToolModal('view', tool);
+													}}
+													title="View"
+												>
+													<FiEye size={16} />
+												</button>
+
+												<button
+													className="btn btn-sm btn-ghost rounded-2xl"
+													onClick={() => {
+														openToolModal('edit', tool);
 													}}
 													disabled={tool.isBuiltIn || bundle.isBuiltIn}
 													title={tool.isBuiltIn || bundle.isBuiltIn ? 'Editing disabled for built-in items' : 'Edit'}
 												>
 													<FiEdit2 size={16} />
 												</button>
+
 												<button
 													className="btn btn-sm btn-ghost rounded-2xl"
 													onClick={() => {
@@ -272,6 +305,7 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 							</tbody>
 						</table>
 					</div>
+
 					{!bundle.isBuiltIn && (
 						<div className="flex items-center justify-between">
 							<button
@@ -285,7 +319,7 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 							<button
 								className="btn btn-md btn-ghost flex items-center rounded-2xl"
 								onClick={() => {
-									openModifyModal(undefined);
+									openToolModal('add', undefined);
 								}}
 							>
 								<FiPlus /> <span className="ml-1">Add Tool</span>
@@ -295,7 +329,6 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 				</div>
 			)}
 
-			{/* dialogs / alerts */}
 			<DeleteConfirmationModal
 				isOpen={isDeleteToolModalOpen}
 				onClose={() => {
@@ -308,12 +341,13 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 			/>
 
 			<AddEditToolModal
-				isOpen={isModifyModalOpen}
+				isOpen={isToolModalOpen}
 				onClose={() => {
-					setIsModifyModalOpen(false);
+					setIsToolModalOpen(false);
 					setToolToEdit(undefined);
 				}}
 				onSubmit={handleModifySubmit}
+				mode={toolModalMode}
 				initialData={
 					toolToEdit
 						? {
@@ -328,6 +362,14 @@ export function ToolBundleCard({ bundle, tools, onToolsChange, onBundleDeleted }
 					bundleID: bundle.id,
 					toolSlug: t.slug,
 				}))}
+			/>
+
+			<ToolBundleDetailsModal
+				isOpen={isBundleDetailsOpen}
+				onClose={() => {
+					setIsBundleDetailsOpen(false);
+				}}
+				bundle={bundle}
 			/>
 
 			<ActionDeniedAlertModal

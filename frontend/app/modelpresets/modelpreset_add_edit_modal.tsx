@@ -47,6 +47,8 @@ const AddModeDefaults: ModelPreset = {
 	additionalParametersRawJSON: undefined,
 };
 
+const DEFAULT_REASONING_TOKENS = 1024;
+
 interface ModelPresetFormData {
 	presetLabel: string;
 	name: string;
@@ -65,27 +67,50 @@ interface ModelPresetFormData {
 	timeout: string;
 }
 
+type ModalMode = 'add' | 'edit' | 'view';
+
 interface AddEditModelPresetModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSubmit: (modelPresetID: ModelPresetID, modelData: ModelPreset) => void;
 	providerName: ProviderName;
-	initialModelID?: ModelPresetID; // ⇒ edit mode when truthy
+
+	/** If not provided, mode is inferred: add when no initialModelID, else edit. */
+	mode?: ModalMode;
+
+	initialModelID?: ModelPresetID; // ⇒ edit/view mode when truthy
 	initialData?: ModelPreset;
+
 	existingModels: Record<ModelPresetID, ModelPreset>;
 	allModelPresets: Record<ProviderName, Record<ModelPresetID, ModelPreset>>;
+}
+
+function ReadOnlyValue({ value }: { value: string }) {
+	return (
+		<div className="input input-bordered bg-base-300/40 flex w-full items-center rounded-xl">
+			<span className="text-sm wrap-break-word whitespace-pre-wrap opacity-90">{value || '—'}</span>
+		</div>
+	);
 }
 
 export function AddEditModelPresetModal({
 	isOpen,
 	onClose,
 	onSubmit,
+	providerName,
+	mode,
 	initialModelID,
 	initialData,
 	existingModels,
 	allModelPresets,
 }: AddEditModelPresetModalProps) {
-	const isEditMode = Boolean(initialModelID);
+	const inferredMode: ModalMode = initialModelID ? 'edit' : 'add';
+	const effectiveMode: ModalMode = mode ?? inferredMode;
+
+	const isEditMode = effectiveMode === 'edit';
+	const isViewMode = effectiveMode === 'view';
+	const isReadOnly = isViewMode;
+
 	const [defaultValues] = useState<ModelPreset>(AddModeDefaults);
 	const [modelPresetID, setModelPresetID] = useState<ModelPresetID>(initialModelID ?? ('' as ModelPresetID));
 
@@ -167,8 +192,7 @@ export function AddEditModelPresetModal({
 		if (!isOpen) return;
 
 		const loadData = () => {
-			if (isEditMode && initialData) {
-				/* ───── EDIT mode: copy ONLY what exists ───── */
+			if ((isEditMode || isViewMode) && initialData) {
 				setFormData({
 					presetLabel: initialData.displayName,
 					name: initialData.name,
@@ -193,7 +217,7 @@ export function AddEditModelPresetModal({
 					stream: AddModeDefaults.stream ?? false,
 					maxPromptLength: String(AddModeDefaults.maxPromptLength ?? ''),
 					maxOutputLength: String(AddModeDefaults.maxOutputLength ?? ''),
-					temperature: String(AddModeDefaults.temperature ?? ''),
+					temperature: '',
 					reasoningSupport: false,
 					reasoningType: ReasoningType.SingleWithLevels,
 					reasoningLevel: ReasoningLevel.Medium,
@@ -202,7 +226,6 @@ export function AddEditModelPresetModal({
 					timeout: String(AddModeDefaults.timeout ?? ''),
 				});
 				setModelPresetID('' as ModelPresetID);
-				/* reset prefill helpers */
 				setPrefillMode(false);
 				setSelectedPrefillKey(null);
 			}
@@ -211,7 +234,7 @@ export function AddEditModelPresetModal({
 		};
 
 		loadData();
-	}, [isOpen]);
+	}, [isOpen, isEditMode, isViewMode, initialData]);
 
 	// Open/close native dialog
 	useEffect(() => {
@@ -259,6 +282,8 @@ export function AddEditModelPresetModal({
 	};
 
 	const runValidation = (): ValidationErrors => {
+		if (isReadOnly) return {};
+
 		const v: ValidationErrors = {};
 
 		/* id */
@@ -270,41 +295,45 @@ export function AddEditModelPresetModal({
 				v.modelPresetID = 'Model Preset ID must be unique.';
 		}
 
-		/* required strings -- */
+		/* required strings */
 		if (!formData.name.trim()) v.name = 'Model Name is required.';
 		if (!formData.presetLabel.trim()) v.presetLabel = 'Preset Label is required.';
 
-		/* numeric fields  */
+		/* numeric fields */
 		const maybe = (f: ValidationField, rng?: { min?: number; max?: number }) => {
 			let value: string;
-			if (f === 'modelPresetID') {
-				value = modelPresetID;
-			} else {
-				value = formData[f as keyof ModelPresetFormData] as string;
-			}
+			if (f === 'modelPresetID') value = modelPresetID;
+			else value = formData[f as keyof ModelPresetFormData] as string;
+
 			v[f] = calcNumericError(f, value, rng);
 		};
+
 		maybe('temperature', { min: 0, max: 1 });
 		maybe('maxPromptLength', { min: 1 });
 		maybe('maxOutputLength', { min: 1 });
 		maybe('timeout', { min: 1 });
 
+		// Reasoning tokens required ONLY for HybridWithTokens
 		if (formData.reasoningSupport && formData.reasoningType === ReasoningType.HybridWithTokens) {
-			maybe('reasoningTokens', { min: 1024 });
+			if ((formData.reasoningTokens ?? '').trim() === '') {
+				v.reasoningTokens = 'Reasoning Tokens is required for Hybrid mode.';
+			} else {
+				maybe('reasoningTokens', { min: 1024 });
+			}
 		}
-		/* at least one of "reasoning" or "temperature" should be present*/
+
+		/* at least one of "reasoning" or "temperature" should be present */
 		const hasTemp = formData.temperature.trim() !== '';
 		if (!formData.reasoningSupport && !hasTemp) {
 			v.temperature = 'Provide either Temperature or enable Reasoning.';
 		}
-		const newV: ValidationErrors = Object.fromEntries(
-			Object.entries(v).filter(([key]) => v[key as ValidationField] !== undefined)
-		);
 
-		return newV;
+		return Object.fromEntries(
+			Object.entries(v).filter(([key]) => v[key as ValidationField] !== undefined)
+		) as ValidationErrors;
 	};
 
-	/* helper - string ⇒ number (keep default if blank / NaN)  */
+	/* helper - string ⇒ number (keep default if blank / NaN) */
 	const parseOrDefault = (val: string, def: number) => {
 		const n = Number(val);
 		return val.trim() === '' || Number.isNaN(n) ? def : n;
@@ -322,21 +351,24 @@ export function AddEditModelPresetModal({
 			return;
 		}
 
-		if (type === 'checkbox') {
-			handleFieldChange(name as any, checked);
-		} else {
-			handleFieldChange(name as any, value);
-		}
+		if (type === 'checkbox') handleFieldChange(name as any, checked);
+		else handleFieldChange(name as any, value);
 	};
 
 	const isAllValid = useMemo(() => {
+		if (isReadOnly) return true;
 		const currentErrors = runValidation();
 		return Object.keys(currentErrors).length === 0;
-	}, [formData, modelPresetID]);
+	}, [formData, modelPresetID, isReadOnly]);
 
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
+
+		if (isReadOnly) {
+			dialogRef.current?.close();
+			return;
+		}
 
 		const newErrors = runValidation();
 		setErrors(newErrors);
@@ -360,17 +392,21 @@ export function AddEditModelPresetModal({
 			timeout: parseOrDefault(formData.timeout, defaultValues.timeout ?? 300),
 			systemPrompt: formData.systemPrompt,
 
-			/* only include temperature when user actually entered a value */
 			...(formData.temperature.trim() !== '' && {
-				temperature: parseOrDefault(formData.temperature, defaultValues.temperature ?? 0.1),
+				temperature: parseOrDefault(formData.temperature, 0.1),
 			}),
 		};
 
 		if (formData.reasoningSupport) {
+			const type = formData.reasoningType ?? ReasoningType.SingleWithLevels;
+
 			finalData.reasoning = {
-				type: formData.reasoningType ?? ReasoningType.SingleWithLevels,
+				type,
 				level: formData.reasoningLevel ?? ReasoningLevel.Medium,
-				tokens: parseOrDefault(formData.reasoningTokens ?? '', defaultValues.reasoning?.tokens ?? 0),
+				tokens:
+					type === ReasoningType.HybridWithTokens
+						? parseOrDefault(formData.reasoningTokens ?? '', DEFAULT_REASONING_TOKENS)
+						: DEFAULT_REASONING_TOKENS,
 			};
 		}
 
@@ -382,14 +418,27 @@ export function AddEditModelPresetModal({
 		const v = defaultValues[field];
 		return v === undefined || typeof v === 'object' ? 'Default: N/A' : `Default: ${String(v)}`;
 	};
+
 	if (!isOpen) return null;
+
+	const title =
+		effectiveMode === 'add' ? 'Add Model Preset' : effectiveMode === 'edit' ? 'Edit Model Preset' : 'View Model Preset';
 
 	return createPortal(
 		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
 				<div className="max-h-[80vh] overflow-y-auto p-6">
 					<div className="mb-4 flex items-center justify-between">
-						<h3 className="text-lg font-bold">{isEditMode ? 'Edit Model Preset' : 'Add Model Preset'}</h3>
+						<div className="flex flex-col">
+							<h3 className="text-lg font-bold">{title}</h3>
+							<div className="text-xs opacity-70">Provider: {providerName}</div>
+							{initialData?.isBuiltIn && (
+								<div className="mt-1 text-xs">
+									<span className="badge badge-ghost">Built-in</span>
+								</div>
+							)}
+						</div>
+
 						<button
 							type="button"
 							className="btn btn-sm btn-circle bg-base-300"
@@ -402,7 +451,7 @@ export function AddEditModelPresetModal({
 
 					<form noValidate onSubmit={handleSubmit} className="space-y-4">
 						{/* ───── Prefill (ADD mode only) ───── */}
-						{!isEditMode && (
+						{effectiveMode === 'add' && (
 							<div className="grid grid-cols-12 items-center gap-2">
 								<label className="label col-span-3">
 									<span className="label-text text-sm">Prefill from Existing</span>
@@ -430,7 +479,6 @@ export function AddEditModelPresetModal({
 												onChange={key => {
 													setSelectedPrefillKey(key);
 													applyPrefill(key);
-													/* automatically close dropdown afterwards */
 													setPrefillMode(false);
 												}}
 												filterDisabled={false}
@@ -454,7 +502,7 @@ export function AddEditModelPresetModal({
 							</div>
 						)}
 
-						{/* ModelPresetID - */}
+						{/* ModelPresetID */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Model Preset ID*</span>
@@ -472,7 +520,7 @@ export function AddEditModelPresetModal({
 									className={`input input-bordered w-full rounded-xl ${errors.modelPresetID ? 'input-error' : ''}`}
 									value={modelPresetID}
 									onChange={handleChange}
-									disabled={isEditMode}
+									disabled={effectiveMode !== 'add'}
 									placeholder="e.g. gpt4-preset"
 									autoComplete="off"
 									spellCheck="false"
@@ -488,7 +536,7 @@ export function AddEditModelPresetModal({
 							</div>
 						</div>
 
-						{/* Model Name  */}
+						{/* Model Name */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Model Name*</span>
@@ -509,7 +557,8 @@ export function AddEditModelPresetModal({
 									placeholder="e.g. gpt-4, claude-3-opus-20240229"
 									autoComplete="off"
 									spellCheck="false"
-									autoFocus
+									autoFocus={!isReadOnly}
+									disabled={isReadOnly}
 								/>
 								{errors.name && (
 									<div className="label">
@@ -522,7 +571,7 @@ export function AddEditModelPresetModal({
 							</div>
 						</div>
 
-						{/* Preset Label -- */}
+						{/* Preset Label */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Preset Label*</span>
@@ -540,6 +589,7 @@ export function AddEditModelPresetModal({
 									placeholder="e.g. GPT-4 (Creative)"
 									autoComplete="off"
 									spellCheck="false"
+									disabled={isReadOnly}
 								/>
 								{errors.presetLabel && (
 									<div className="label">
@@ -552,7 +602,7 @@ export function AddEditModelPresetModal({
 							</div>
 						</div>
 
-						{/* Toggles: isEnabled / stream / reasoningSupport */}
+						{/* Toggles */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3 cursor-pointer">
 								<span className="label-text text-sm">Enabled</span>
@@ -564,6 +614,7 @@ export function AddEditModelPresetModal({
 									className="toggle toggle-accent"
 									checked={formData.isEnabled}
 									onChange={handleChange}
+									disabled={isReadOnly}
 								/>
 							</div>
 						</div>
@@ -579,6 +630,7 @@ export function AddEditModelPresetModal({
 									className="toggle toggle-accent"
 									checked={formData.stream}
 									onChange={handleChange}
+									disabled={isReadOnly}
 								/>
 							</div>
 						</div>
@@ -597,6 +649,7 @@ export function AddEditModelPresetModal({
 									className="toggle toggle-accent"
 									checked={formData.reasoningSupport}
 									onChange={handleChange}
+									disabled={isReadOnly}
 								/>
 							</div>
 						</div>
@@ -604,47 +657,56 @@ export function AddEditModelPresetModal({
 						{/* Reasoning controls */}
 						{formData.reasoningSupport && (
 							<>
-								{/* type */}
 								<div className="grid grid-cols-12 items-center gap-2">
 									<label className="label col-span-3">
 										<span className="label-text text-sm">Reasoning Type</span>
 									</label>
 									<div className="col-span-9">
-										<Dropdown<ReasoningType>
-											dropdownItems={reasoningTypeItems}
-											selectedKey={formData.reasoningType ?? ReasoningType.SingleWithLevels}
-											onChange={t => {
-												setFormData(p => ({ ...p, reasoningType: t }));
-											}}
-											filterDisabled={false}
-											title="Select Reasoning Type"
-											getDisplayName={k => reasoningTypeItems[k].displayName}
-										/>
+										{isReadOnly ? (
+											<ReadOnlyValue
+												value={reasoningTypeItems[formData.reasoningType ?? ReasoningType.SingleWithLevels].displayName}
+											/>
+										) : (
+											<Dropdown<ReasoningType>
+												dropdownItems={reasoningTypeItems}
+												selectedKey={formData.reasoningType ?? ReasoningType.SingleWithLevels}
+												onChange={t => {
+													setFormData(p => ({ ...p, reasoningType: t }));
+												}}
+												filterDisabled={false}
+												title="Select Reasoning Type"
+												getDisplayName={k => reasoningTypeItems[k].displayName}
+											/>
+										)}
 									</div>
 								</div>
 
-								{/* level (for SingleWithLevels) */}
 								{formData.reasoningType === ReasoningType.SingleWithLevels && (
 									<div className="grid grid-cols-12 items-center gap-2">
 										<label className="label col-span-3">
 											<span className="label-text text-sm">Reasoning Level</span>
 										</label>
 										<div className="col-span-9">
-											<Dropdown<ReasoningLevel>
-												dropdownItems={reasoningLevelItems}
-												selectedKey={formData.reasoningLevel ?? ReasoningLevel.Medium}
-												onChange={lvl => {
-													setFormData(p => ({ ...p, reasoningLevel: lvl }));
-												}}
-												filterDisabled={false}
-												title="Select Reasoning Level"
-												getDisplayName={k => reasoningLevelItems[k].displayName}
-											/>
+											{isReadOnly ? (
+												<ReadOnlyValue
+													value={reasoningLevelItems[formData.reasoningLevel ?? ReasoningLevel.Medium].displayName}
+												/>
+											) : (
+												<Dropdown<ReasoningLevel>
+													dropdownItems={reasoningLevelItems}
+													selectedKey={formData.reasoningLevel ?? ReasoningLevel.Medium}
+													onChange={lvl => {
+														setFormData(p => ({ ...p, reasoningLevel: lvl }));
+													}}
+													filterDisabled={false}
+													title="Select Reasoning Level"
+													getDisplayName={k => reasoningLevelItems[k].displayName}
+												/>
+											)}
 										</div>
 									</div>
 								)}
 
-								{/* tokens (for HybridWithTokens) */}
 								{formData.reasoningType === ReasoningType.HybridWithTokens && (
 									<div className="grid grid-cols-12 items-center gap-2">
 										<label className="label col-span-3">
@@ -654,13 +716,12 @@ export function AddEditModelPresetModal({
 											<input
 												name="reasoningTokens"
 												type="text"
-												className={`input input-bordered w-full rounded-xl ${
-													errors.reasoningTokens ? 'input-error' : ''
-												}`}
+												className={`input input-bordered w-full rounded-xl ${errors.reasoningTokens ? 'input-error' : ''}`}
 												value={formData.reasoningTokens}
 												onChange={handleChange}
 												placeholder="e.g. 1024"
 												spellCheck="false"
+												disabled={isReadOnly}
 											/>
 											{errors.reasoningTokens && (
 												<div className="label">
@@ -676,7 +737,7 @@ export function AddEditModelPresetModal({
 							</>
 						)}
 
-						{/* Temperature -- */}
+						{/* Temperature */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Temperature (0-1)</span>
@@ -693,6 +754,7 @@ export function AddEditModelPresetModal({
 									onChange={handleChange}
 									placeholder={numPlaceholder('temperature')}
 									spellCheck="false"
+									disabled={isReadOnly}
 								/>
 								{errors.temperature && (
 									<div className="label">
@@ -704,7 +766,7 @@ export function AddEditModelPresetModal({
 							</div>
 						</div>
 
-						{/* Timeout  */}
+						{/* Timeout */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Timeout (seconds)</span>
@@ -718,6 +780,7 @@ export function AddEditModelPresetModal({
 									onChange={handleChange}
 									placeholder={numPlaceholder('timeout')}
 									spellCheck="false"
+									disabled={isReadOnly}
 								/>
 								{errors.timeout && (
 									<div className="label">
@@ -729,7 +792,7 @@ export function AddEditModelPresetModal({
 							</div>
 						</div>
 
-						{/* Prompt / Output lengths  */}
+						{/* Prompt / Output lengths */}
 						{(['maxPromptLength', 'maxOutputLength'] as const).map(f => (
 							<div className="grid grid-cols-12 items-center gap-2" key={f}>
 								<label className="label col-span-3">
@@ -746,6 +809,7 @@ export function AddEditModelPresetModal({
 										onChange={handleChange}
 										placeholder={numPlaceholder(f)}
 										spellCheck="false"
+										disabled={isReadOnly}
 									/>
 									{errors[f] && (
 										<div className="label">
@@ -758,7 +822,7 @@ export function AddEditModelPresetModal({
 							</div>
 						))}
 
-						{/* System Prompt  */}
+						{/* System Prompt */}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">System Prompt</span>
@@ -771,18 +835,22 @@ export function AddEditModelPresetModal({
 									onChange={handleChange}
 									placeholder="Enter instructions here…"
 									spellCheck="false"
+									disabled={isReadOnly}
 								/>
 							</div>
 						</div>
 
-						{/* ACTIONS  */}
+						{/* ACTIONS */}
 						<div className="modal-action">
 							<button type="button" className="btn bg-base-300 rounded-xl" onClick={() => dialogRef.current?.close()}>
-								Cancel
+								{isReadOnly ? 'Close' : 'Cancel'}
 							</button>
-							<button type="submit" className="btn btn-primary rounded-xl" disabled={!isAllValid}>
-								{isEditMode ? 'Save Changes' : 'Add Preset'}
-							</button>
+
+							{!isReadOnly && (
+								<button type="submit" className="btn btn-primary rounded-xl" disabled={!isAllValid}>
+									{isEditMode ? 'Save Changes' : 'Add Preset'}
+								</button>
+							)}
 						</div>
 					</form>
 				</div>

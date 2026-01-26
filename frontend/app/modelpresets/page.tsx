@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { useEffect, useMemo, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';
@@ -18,7 +19,6 @@ import { PageFrame } from '@/components/page_frame';
 import { AddEditProviderPresetModal } from '@/modelpresets/provider_add_edit_modal';
 import { ProviderPresetCard } from '@/modelpresets/provider_presets_card';
 
-// put it somewhere near the top of the file
 const sortByDisplayName = ([, a]: [string, ProviderPreset], [, b]: [string, ProviderPreset]) =>
 	a.displayName.localeCompare(b.displayName);
 
@@ -34,7 +34,7 @@ export default function ModelPresetsPage() {
 	const [deniedMsg, setDeniedMsg] = useState('');
 
 	const [modalOpen, setModalOpen] = useState(false);
-	const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
+	const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('add');
 	const [editProvider, setEditProvider] = useState<ProviderName | null>(null);
 
 	useEffect(() => {
@@ -82,10 +82,8 @@ export default function ModelPresetsPage() {
 	const safeDefaultKey: ProviderName | undefined =
 		defaultProvider && defaultProvider in enabledProviderPresets ? defaultProvider : undefined;
 
-	/* If no default is set OR the current default somehow became disabled,
-	   automatically pick the first enabled provider (if any).                */
 	useEffect(() => {
-		if (enabledProviderNames.length === 0) return; // nothing enabled ⇒ nothing to do
+		if (enabledProviderNames.length === 0) return;
 
 		if (!defaultProvider || !providerPresets[defaultProvider].isEnabled) {
 			const first = enabledProviderNames[0];
@@ -113,7 +111,6 @@ export default function ModelPresetsPage() {
 		}
 	};
 
-	/* Prevent disabling the current default provider */
 	const handleProviderPresetChange = (name: ProviderName, newPreset: ProviderPreset) => {
 		if (name === defaultProvider && !newPreset.isEnabled) {
 			setDeniedMsg('Cannot disable the current default provider. Pick another default first.');
@@ -123,8 +120,6 @@ export default function ModelPresetsPage() {
 
 		setProviderPresets(prev => ({ ...prev, [name]: newPreset }));
 
-		/* If there is no default yet and this preset has just been enabled,
-		   make it the default automatically. */
 		if (!defaultProvider && newPreset.isEnabled) {
 			handleDefaultProviderChange(name);
 		}
@@ -145,7 +140,7 @@ export default function ModelPresetsPage() {
 
 		try {
 			await modelPresetStoreAPI.deleteProviderPreset(name);
-			await settingstoreAPI.deleteAuthKey(AuthKeyTypeProvider, name).catch(() => void 0); // ignore missing key
+			await settingstoreAPI.deleteAuthKey(AuthKeyTypeProvider, name).catch(() => void 0);
 
 			setProviderPresets(prev => {
 				const { [name]: _removed, ...rest } = prev;
@@ -168,7 +163,6 @@ export default function ModelPresetsPage() {
 		apiKey: string | null,
 		isEdit: boolean
 	) => {
-		/* Cannot disable current default */
 		if (isEdit && name === defaultProvider && !payload.isEnabled) {
 			setDeniedMsg('Cannot disable the current default provider. Pick another default first.');
 			setShowDenied(true);
@@ -181,22 +175,26 @@ export default function ModelPresetsPage() {
 				await settingstoreAPI.setAuthKey(AuthKeyTypeProvider, name, apiKey.trim());
 			}
 
-			setProviderPresets(prev => ({
-				...prev,
-				[name]: {
-					...(prev[name] ?? {}),
-					...payload,
-					defaultModelPresetID: '',
-					isBuiltIn: false,
-					modelPresets: {},
-				} as ProviderPreset,
-			}));
+			setProviderPresets(prev => {
+				const existing = prev[name];
+				return {
+					...prev,
+					[name]: {
+						...(existing ?? {}),
+						...payload,
 
-			if (apiKey && apiKey.trim()) {
-				setProviderKeySet(prev => ({ ...prev, [name]: true }));
-			}
+						// Editing should NEVER wipe these:
+						defaultModelPresetID: existing?.defaultModelPresetID ?? '',
+						modelPresets: existing?.modelPresets ?? {},
 
-			/* Auto-set default if none exists & this one is enabled */
+						// Only custom providers go through this modal in edit/add
+						isBuiltIn: false,
+					} as ProviderPreset,
+				};
+			});
+
+			if (apiKey && apiKey.trim()) setProviderKeySet(prev => ({ ...prev, [name]: true }));
+
 			if (!defaultProvider && payload.isEnabled) {
 				await modelPresetStoreAPI.patchDefaultProvider(name);
 				setDefaultProvider(name);
@@ -230,12 +228,8 @@ export default function ModelPresetsPage() {
 	};
 
 	const openEditModal = (name: ProviderName) => {
-		if (providerPresets[name].isBuiltIn) {
-			setDeniedMsg('Built-in providers cannot be edited.');
-			setShowDenied(true);
-			return;
-		}
-		setModalMode('edit');
+		const isBuiltIn = providerPresets[name].isBuiltIn;
+		setModalMode(isBuiltIn ? 'view' : 'edit');
 		setEditProvider(name);
 		setModalOpen(true);
 	};
@@ -270,12 +264,10 @@ export default function ModelPresetsPage() {
 									{enabledProviderNames.length > 0 && safeDefaultKey ? (
 										<Dropdown<ProviderName>
 											dropdownItems={enabledProviderPresets as Record<string, DropdownItem>}
-											/* use the safe key */
 											selectedKey={safeDefaultKey}
 											onChange={handleDefaultProviderChange}
 											filterDisabled={false}
 											title="Select default provider"
-											/* fallback so it never crashes */
 											getDisplayName={k => enabledProviderPresets[k]?.displayName ?? ''}
 										/>
 									) : (
@@ -319,10 +311,13 @@ export default function ModelPresetsPage() {
 					onClose={() => {
 						setModalOpen(false);
 					}}
-					onSubmit={(n, payload, key) => handleProviderModalSubmit(n, payload, key, modalMode === 'edit')}
+					onSubmit={(n, payload, key) => {
+						if (modalMode === 'view') return;
+						return handleProviderModalSubmit(n, payload, key, modalMode === 'edit');
+					}}
 					existingProviderNames={Object.keys(providerPresets)}
 					allProviderPresets={providerPresets}
-					initialPreset={modalMode === 'edit' && editProvider ? providerPresets[editProvider] : undefined}
+					initialPreset={editProvider ? providerPresets[editProvider] : undefined}
 					apiKeyAlreadySet={editProvider ? providerKeySet[editProvider] : false}
 				/>
 
