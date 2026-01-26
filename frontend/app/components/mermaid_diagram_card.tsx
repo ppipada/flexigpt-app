@@ -170,6 +170,11 @@ export function MermaidDiagram({ code, defaultThemeMode = 'auto', showThemeToggl
 		});
 	};
 
+	if (!stableCode.trim()) {
+		setError(null);
+		return;
+	}
+
 	return (
 		<>
 			<div ref={wrapperRef} className="bg-mermaid my-4 overflow-hidden rounded-lg" style={surfaceStyle}>

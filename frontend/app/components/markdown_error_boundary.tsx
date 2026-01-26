@@ -17,6 +17,14 @@ export class MdErrorBoundary extends Component<MdErrProps, MdErrState> {
 		this.setState({ hasError: true });
 	}
 
+	public componentDidUpdate(prevProps: MdErrProps) {
+		// Streaming often produces transient invalid intermediate markdown.
+		// If the text changes, allow a fresh render attempt.
+		if (this.state.hasError && prevProps.source !== this.props.source) {
+			this.setState({ hasError: false });
+		}
+	}
+
 	public render() {
 		if (this.state.hasError) {
 			/* You see the warning + the untouched markdown */

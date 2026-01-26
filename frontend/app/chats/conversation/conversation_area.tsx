@@ -191,11 +191,15 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 		};
 	}, []);
 
-	const notifyStreamNow = useCallback((tabId: string) => {
-		const set = streamListenersRef.current.get(tabId);
-		if (!set) return;
-		for (const cb of set) cb();
-	}, []);
+	const notifyStreamNow = useCallback(
+		(tabId: string) => {
+			flushStreamForTab(tabId);
+			const set = streamListenersRef.current.get(tabId);
+			if (!set) return;
+			for (const cb of set) cb();
+		},
+		[flushStreamForTab]
+	);
 
 	// Match MessageContentCard debounce (~128ms). Notifying faster just causes wasted work.
 	const notifyStreamSoon = useCallback(
@@ -565,8 +569,9 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 					if (requestIdByTab.current.get(tabId) === reqId) {
 						// don't clobber a newer request
 
+						// Clear the buffer, but don't notify: the isBusy=false state update
+						// will re-render the row and stop using streamed text anyway.
 						clearStreamBuffer(tabId);
-						notifyStreamNow(tabId);
 
 						updateTab(tabId, t => ({ ...t, isBusy: false }));
 
@@ -786,10 +791,10 @@ export const ConversationArea = forwardRef<ConversationAreaHandle, ConversationA
 				}}
 				onResend={() => void handleResendForTab(activeTab.tabId, msg.id)}
 				subscribe={cb => subscribeToStream(activeTab.tabId, cb)}
-				getSnapshot={() => (rowIsBusy ? flushStreamForTab(activeTab.tabId) : '')}
+				getSnapshot={() => (rowIsBusy ? getFullStreamTextForTab(activeTab.tabId) : '')}
 			/>
 		);
-	}, [activeTab, beginEditMessageForTab, flushStreamForTab, handleResendForTab, subscribeToStream]);
+	}, [activeTab, beginEditMessageForTab, getFullStreamTextForTab, handleResendForTab, subscribeToStream]);
 
 	return (
 		<>

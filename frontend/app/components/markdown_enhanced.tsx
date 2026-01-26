@@ -11,7 +11,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import supersub from 'remark-supersub';
 
-import { SanitizeLaTeX } from '@/lib/markdown_utils';
+import { SanitizeLaTeXOutsideFences } from '@/lib/markdown_utils';
 import { CustomMDLanguage } from '@/lib/text_utils';
 
 import { backendAPI } from '@/apis/baseapi';
@@ -60,7 +60,7 @@ export const EnhancedMarkdown = memo(function EnhancedMarkdown({
 }: EnhancedMarkdownProps) {
 	const processedText = useMemo(() => {
 		// During a stream skip LaTeX sanitisation for speed.
-		return isBusy ? text : SanitizeLaTeX(text);
+		return isBusy ? text : SanitizeLaTeXOutsideFences(text);
 	}, [text, isBusy]);
 
 	const components = useMemo(

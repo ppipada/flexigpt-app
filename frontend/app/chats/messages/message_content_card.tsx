@@ -42,6 +42,8 @@ export const MessageContentCard = memo(function MessageContentCard({
 	const liveText = isStreaming ? streamedText : content;
 	// Max ~4×/sec.
 	const textToRender = useDebounce(liveText, 128);
+	const isSettling = liveText !== textToRender;
+	const renderBusy = isBusy || isSettling;
 
 	// Compute plain-text nodes unconditionally to keep hook order stable.
 	// Work is gated by renderAsMarkdown so we avoid heavy work when Markdown is on.
@@ -74,10 +76,10 @@ export const MessageContentCard = memo(function MessageContentCard({
 	return (
 		<div className="px-4 py-2">
 			<EnhancedMarkdown
-				key={`${messageID}:${isBusy ? 'live' : 'done'}`}
+				key={`${messageID}:${renderBusy ? 'live' : 'done'}`}
 				text={textToRender}
 				align={align}
-				isBusy={isBusy}
+				isBusy={renderBusy}
 			/>
 		</div>
 	);
