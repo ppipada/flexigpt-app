@@ -8,6 +8,7 @@ import { type ProviderName, ReasoningLevel, ReasoningType } from '@/spec/inferen
 import { type ModelPreset, type ModelPresetID } from '@/spec/modelpreset';
 
 import { Dropdown } from '@/components/dropdown';
+import { ModalBackdrop } from '@/components/modal_backdrop';
 
 const reasoningTypeItems: Record<ReasoningType, { isEnabled: boolean; displayName: string }> = {
 	[ReasoningType.SingleWithLevels]: {
@@ -87,8 +88,8 @@ interface AddEditModelPresetModalProps {
 
 function ReadOnlyValue({ value }: { value: string }) {
 	return (
-		<div className="input input-bordered bg-base-300/40 flex w-full items-center rounded-xl">
-			<span className="text-sm wrap-break-word whitespace-pre-wrap opacity-90">{value || '—'}</span>
+		<div className="input input-bordered bg-base-100 flex w-full items-center rounded-xl">
+			<span className="text-sm wrap-break-word whitespace-pre-wrap opacity-80">{value || '—'}</span>
 		</div>
 	);
 }
@@ -425,18 +426,25 @@ export function AddEditModelPresetModal({
 		effectiveMode === 'add' ? 'Add Model Preset' : effectiveMode === 'edit' ? 'Edit Model Preset' : 'View Model Preset';
 
 	return createPortal(
-		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
+		<dialog
+			ref={dialogRef}
+			className="modal"
+			onClose={handleDialogClose}
+			onCancel={e => {
+				// Form mode (add/edit): block Esc close. View mode: allow.
+				if (!isReadOnly) e.preventDefault();
+			}}
+		>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
 				<div className="max-h-[80vh] overflow-y-auto p-6">
 					<div className="mb-4 flex items-center justify-between">
 						<div className="flex flex-col">
 							<h3 className="text-lg font-bold">{title}</h3>
-							<div className="text-xs opacity-70">Provider: {providerName}</div>
-							{initialData?.isBuiltIn && (
-								<div className="mt-1 text-xs">
-									<span className="badge badge-ghost">Built-in</span>
-								</div>
-							)}
+							<div className="flex items-center text-xs opacity-60">
+								<span>Provider: {providerName}</span>
+								{initialData?.isBuiltIn && <span>,built-in</span>}
+								{!initialData?.isBuiltIn && <span>,custom</span>}
+							</div>
 						</div>
 
 						<button
@@ -514,17 +522,20 @@ export function AddEditModelPresetModal({
 								</span>
 							</label>
 							<div className="col-span-9">
-								<input
-									name="modelPresetID"
-									type="text"
-									className={`input input-bordered w-full rounded-xl ${errors.modelPresetID ? 'input-error' : ''}`}
-									value={modelPresetID}
-									onChange={handleChange}
-									disabled={effectiveMode !== 'add'}
-									placeholder="e.g. gpt4-preset"
-									autoComplete="off"
-									spellCheck="false"
-								/>
+								{effectiveMode === 'add' ? (
+									<input
+										name="modelPresetID"
+										type="text"
+										className={`input input-bordered w-full rounded-xl ${errors.modelPresetID ? 'input-error' : ''}`}
+										value={modelPresetID}
+										onChange={handleChange}
+										placeholder="e.g. gpt4-preset"
+										autoComplete="off"
+										spellCheck="false"
+									/>
+								) : (
+									<ReadOnlyValue value={modelPresetID} />
+								)}
 								{errors.modelPresetID && (
 									<div className="label">
 										<span className="label-text-alt text-error flex items-center gap-1">
@@ -558,7 +569,7 @@ export function AddEditModelPresetModal({
 									autoComplete="off"
 									spellCheck="false"
 									autoFocus={!isReadOnly}
-									disabled={isReadOnly}
+									readOnly={isReadOnly}
 								/>
 								{errors.name && (
 									<div className="label">
@@ -589,7 +600,7 @@ export function AddEditModelPresetModal({
 									placeholder="e.g. GPT-4 (Creative)"
 									autoComplete="off"
 									spellCheck="false"
-									disabled={isReadOnly}
+									readOnly={isReadOnly}
 								/>
 								{errors.presetLabel && (
 									<div className="label">
@@ -611,7 +622,7 @@ export function AddEditModelPresetModal({
 								<input
 									type="checkbox"
 									name="isEnabled"
-									className="toggle toggle-accent"
+									className="toggle toggle-accent disabled:opacity-80"
 									checked={formData.isEnabled}
 									onChange={handleChange}
 									disabled={isReadOnly}
@@ -627,7 +638,7 @@ export function AddEditModelPresetModal({
 								<input
 									type="checkbox"
 									name="stream"
-									className="toggle toggle-accent"
+									className="toggle toggle-accent disabled:opacity-80"
 									checked={formData.stream}
 									onChange={handleChange}
 									disabled={isReadOnly}
@@ -646,7 +657,7 @@ export function AddEditModelPresetModal({
 								<input
 									type="checkbox"
 									name="reasoningSupport"
-									className="toggle toggle-accent"
+									className="toggle toggle-accent disabled:opacity-80"
 									checked={formData.reasoningSupport}
 									onChange={handleChange}
 									disabled={isReadOnly}
@@ -754,7 +765,7 @@ export function AddEditModelPresetModal({
 									onChange={handleChange}
 									placeholder={numPlaceholder('temperature')}
 									spellCheck="false"
-									disabled={isReadOnly}
+									readOnly={isReadOnly}
 								/>
 								{errors.temperature && (
 									<div className="label">
@@ -780,7 +791,7 @@ export function AddEditModelPresetModal({
 									onChange={handleChange}
 									placeholder={numPlaceholder('timeout')}
 									spellCheck="false"
-									disabled={isReadOnly}
+									readOnly={isReadOnly}
 								/>
 								{errors.timeout && (
 									<div className="label">
@@ -809,7 +820,7 @@ export function AddEditModelPresetModal({
 										onChange={handleChange}
 										placeholder={numPlaceholder(f)}
 										spellCheck="false"
-										disabled={isReadOnly}
+										readOnly={isReadOnly}
 									/>
 									{errors[f] && (
 										<div className="label">
@@ -855,7 +866,7 @@ export function AddEditModelPresetModal({
 					</form>
 				</div>
 			</div>
-			{/* NOTE: no modal-backdrop here: backdrop click should NOT close this modal */}
+			<ModalBackdrop enabled={isReadOnly} />
 		</dialog>,
 		document.body
 	);

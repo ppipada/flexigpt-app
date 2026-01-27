@@ -43,14 +43,8 @@ export function List(props: PlateElementProps) {
 
 	return (
 		<List className="relative m-1 p-1 pl-2" style={{ listStyleType }} start={listStart}>
-			{
-				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-				Marker && <Marker {...props} />
-			}
-			{
-				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-				Li ? <Li {...props} /> : <li>{props.children}</li>
-			}
+			{Marker && <Marker {...props} />}
+			{Li ? <Li {...props} /> : <li>{props.children}</li>}
 		</List>
 	);
 }

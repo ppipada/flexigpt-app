@@ -6,6 +6,8 @@ import { FiX } from 'react-icons/fi';
 
 import type { ToolBundle } from '@/spec/tool';
 
+import { ModalBackdrop } from '@/components/modal_backdrop';
+
 interface ToolBundleDetailsModalProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -92,6 +94,7 @@ export function ToolBundleDetailsModal({ isOpen, onClose, bundle }: ToolBundleDe
 					</div>
 				</div>
 			</div>
+			<ModalBackdrop enabled={true} />
 		</dialog>,
 		document.body
 	);

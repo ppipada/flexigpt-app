@@ -4,6 +4,8 @@ import { createPortal } from 'react-dom';
 
 import { FiCode, FiX } from 'react-icons/fi';
 
+import { ModalBackdrop } from '@/components/modal_backdrop';
+
 import { MessageContentCard } from '@/chats/messages/message_content_card';
 
 type MessageDetailsModalProps = {
@@ -79,10 +81,7 @@ export function MessageDetailsModal({ isOpen, onClose, messageID, title, content
 				</div>
 			</div>
 
-			{/* DaisyUI backdrop: clicking it closes the dialog */}
-			<form method="dialog" className="modal-backdrop">
-				<button aria-label="Close" />
-			</form>
+			<ModalBackdrop enabled={true} />
 		</dialog>,
 		document.body
 	);

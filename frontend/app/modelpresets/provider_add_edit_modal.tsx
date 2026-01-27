@@ -13,6 +13,7 @@ import { omitManyKeys } from '@/lib/obj_utils';
 import { MessageEnterValidURL, validateUrlForInput } from '@/lib/url_utils';
 
 import { Dropdown } from '@/components/dropdown';
+import { ModalBackdrop } from '@/components/modal_backdrop';
 
 type ModalMode = 'add' | 'edit' | 'view';
 
@@ -61,8 +62,8 @@ type ErrorState = Partial<Record<keyof FormData, string>>;
 
 function ReadOnlyValue({ value }: { value: string }) {
 	return (
-		<div className="input input-bordered bg-base-300/40 flex w-full items-center rounded-xl">
-			<span className="text-sm wrap-break-word whitespace-pre-wrap opacity-90">{value || '—'}</span>
+		<div className="input input-bordered bg-base-100 flex w-full items-center rounded-xl">
+			<span className="text-sm wrap-break-word whitespace-pre-wrap opacity-80">{value || '—'}</span>
 		</div>
 	);
 }
@@ -336,7 +337,15 @@ export function AddEditProviderPresetModal({
 	const title = mode === 'add' ? 'Add Provider' : mode === 'edit' ? 'Edit Provider' : 'View Provider';
 
 	return createPortal(
-		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
+		<dialog
+			ref={dialogRef}
+			className="modal"
+			onClose={handleDialogClose}
+			onCancel={e => {
+				// Form mode (add/edit): block Esc close. View mode: allow.
+				if (!isReadOnly) e.preventDefault();
+			}}
+		>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
 				<div className="max-h-[80vh] overflow-y-auto p-6">
 					<div className="mb-4 flex items-center justify-between">
@@ -459,7 +468,7 @@ export function AddEditProviderPresetModal({
 									value={formData.providerName}
 									onChange={handleInput}
 									className={`input input-bordered w-full rounded-xl ${errors.providerName ? 'input-error' : ''}`}
-									disabled={mode !== 'add'}
+									readOnly={mode !== 'add'}
 									spellCheck="false"
 									autoComplete="off"
 								/>
@@ -488,7 +497,7 @@ export function AddEditProviderPresetModal({
 									className={`input input-bordered w-full rounded-xl ${errors.displayName ? 'input-error' : ''}`}
 									spellCheck="false"
 									autoComplete="off"
-									disabled={isReadOnly}
+									readOnly={isReadOnly}
 								/>
 								{errors.displayName && (
 									<div className="label">
@@ -516,7 +525,7 @@ export function AddEditProviderPresetModal({
 									spellCheck="false"
 									autoComplete="off"
 									placeholder="https://api.example.com OR api.example.com"
-									disabled={isReadOnly}
+									readOnly={isReadOnly}
 								/>
 								{errors.origin && (
 									<div className="label">
@@ -545,7 +554,7 @@ export function AddEditProviderPresetModal({
 									className="input input-bordered w-full rounded-xl"
 									spellCheck="false"
 									autoComplete="off"
-									disabled={isReadOnly}
+									readOnly={isReadOnly}
 								/>
 							</div>
 						</div>
@@ -564,7 +573,7 @@ export function AddEditProviderPresetModal({
 									className="input input-bordered w-full rounded-xl"
 									spellCheck="false"
 									autoComplete="off"
-									disabled={isReadOnly}
+									readOnly={isReadOnly}
 								/>
 							</div>
 						</div>
@@ -583,7 +592,7 @@ export function AddEditProviderPresetModal({
 										errors.defaultHeadersRawJSON ? 'textarea-error' : ''
 									}`}
 									spellCheck="false"
-									disabled={isReadOnly}
+									readOnly={isReadOnly}
 								/>
 								{errors.defaultHeadersRawJSON && (
 									<div className="label">
@@ -615,7 +624,7 @@ export function AddEditProviderPresetModal({
 									placeholder={(mode === 'edit' || mode === 'view') && apiKeyAlreadySet ? '********' : ''}
 									spellCheck="false"
 									autoComplete="off"
-									disabled={isReadOnly}
+									readOnly={isReadOnly}
 								/>
 								{errors.apiKey && (
 									<div className="label">
@@ -639,7 +648,7 @@ export function AddEditProviderPresetModal({
 									checked={formData.isEnabled}
 									onChange={handleInput}
 									className="toggle toggle-accent"
-									disabled={isReadOnly}
+									readOnly={isReadOnly}
 								/>
 							</div>
 						</div>
@@ -659,7 +668,7 @@ export function AddEditProviderPresetModal({
 					</form>
 				</div>
 			</div>
-			{/* NOTE: no modal-backdrop here: backdrop click should NOT close this modal */}
+			<ModalBackdrop enabled={isReadOnly} />
 		</dialog>,
 		document.body
 	);

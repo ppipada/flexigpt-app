@@ -6,9 +6,7 @@
   - [ ] most probably a mismatch between backend and frontend.
   - [ ] behavior is that for tool and prompts we need versions to be different. once a version is created we dont allow anything except enable disable.
 
-- [x] View mode needed for builtins
-- [ ] prompt template add/edit needs enrichment. same to check for tools.
-- [ ] prompt modal doesnt close on outside click. all form modals in prompt and tool.
+- [ ] prompt template, role/vartype/varsource dropdown uses select
 
 ## Features
 

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { useEffect, useMemo, useState } from 'react';
 
 import { FiPlus } from 'react-icons/fi';

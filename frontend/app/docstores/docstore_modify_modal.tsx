@@ -193,7 +193,15 @@ export function ModifyDocStoreModal({
 	if (!isOpen) return null;
 
 	return createPortal(
-		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
+		<dialog
+			ref={dialogRef}
+			className="modal"
+			onClose={handleDialogClose}
+			onCancel={e => {
+				// Form mode: do NOT allow Esc to close.
+				e.preventDefault();
+			}}
+		>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
 				<div className="max-h-[80vh] overflow-y-auto p-6">
 					<div className="mb-4 flex items-center justify-between">

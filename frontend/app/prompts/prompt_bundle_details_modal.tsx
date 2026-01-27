@@ -6,6 +6,8 @@ import { FiX } from 'react-icons/fi';
 
 import type { PromptBundle } from '@/spec/prompt';
 
+import { ModalBackdrop } from '@/components/modal_backdrop';
+
 interface PromptBundleDetailsModalProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -92,6 +94,7 @@ export function PromptBundleDetailsModal({ isOpen, onClose, bundle }: PromptBund
 					</div>
 				</div>
 			</div>
+			<ModalBackdrop enabled={true} />
 		</dialog>,
 		document.body
 	);

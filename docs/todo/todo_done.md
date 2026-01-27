@@ -664,3 +664,6 @@
 - [x] License additions in published binaries.
 - [x] mime sniffing can be enriched in llmtools and then dropped from flexigpt
 - [x] we can give option to change mermaids rendering theme inline.
+- [x] View mode needed for builtins
+- [x] prompt template add/edit needs enrichment. same to check for tools.
+- [x] prompt modal doesn't close on outside click. all form modals in prompt and tool.

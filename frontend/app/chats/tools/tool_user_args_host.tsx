@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from 'react';
 
 import type { PlateEditor } from 'platejs/react';

@@ -302,7 +302,6 @@ export function deriveUIFieldsFromOutputUnion(
 						const itemCitations = c.textItem.citations;
 						if (itemCitations && itemCitations.length > 0) {
 							for (const cit of itemCitations) {
-								// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 								if (cit.kind !== CitationKind.URL || !cit.urlCitation?.url) continue;
 								const u = cit.urlCitation;
 								const key = `${u.url}|${u.startIndex ?? ''}|${u.endIndex ?? ''}|${u.title ?? ''}`;

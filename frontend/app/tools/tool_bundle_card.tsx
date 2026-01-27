@@ -126,10 +126,12 @@ export function ToolBundleCard({
 	const handleModifySubmit = async (partial: Partial<Tool>) => {
 		try {
 			if (toolToEdit) {
+				const nextVersion = (partial.version ?? '').trim();
+
 				await toolStoreAPI.putTool(
 					bundle.id,
 					toolToEdit.slug,
-					toolToEdit.version,
+					nextVersion,
 					partial.displayName ?? toolToEdit.displayName,
 					partial.isEnabled ?? toolToEdit.isEnabled,
 					partial.userCallable ?? toolToEdit.userCallable,
@@ -143,10 +145,12 @@ export function ToolBundleCard({
 			} else {
 				const slug = partial.slug?.trim() ?? '';
 				const display = partial.displayName?.trim() ?? '';
+				const version = partial.version?.trim() ?? 'v1.0.0';
+
 				await toolStoreAPI.putTool(
 					bundle.id,
 					slug,
-					'v1.0.0',
+					version,
 					display,
 					partial.isEnabled ?? true,
 					partial.userCallable ?? true,
@@ -276,7 +280,11 @@ export function ToolBundleCard({
 														openToolModal('edit', tool);
 													}}
 													disabled={tool.isBuiltIn || bundle.isBuiltIn}
-													title={tool.isBuiltIn || bundle.isBuiltIn ? 'Editing disabled for built-in items' : 'Edit'}
+													title={
+														tool.isBuiltIn || bundle.isBuiltIn
+															? 'Editing disabled for built-in items'
+															: 'Create new version'
+													}
 												>
 													<FiEdit2 size={16} />
 												</button>

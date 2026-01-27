@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import {
 	type Conversation,
 	CONVERSATION_SCHEMA_VERSION,

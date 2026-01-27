@@ -363,7 +363,6 @@ export function AttachmentBottomBar({
 									}}
 									className={menuItemClasses}
 									title={`${item.toolSlug.replace(/[-_]/g, ' ')} • ${
-										// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 										item.bundleSlug ?? item.bundleID
 									}/${item.toolSlug}@${item.toolVersion}`}
 								>

@@ -2,13 +2,23 @@ import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState 
 
 import { createPortal } from 'react-dom';
 
-import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
+import { FiAlertCircle, FiHelpCircle, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
-import { PromptRoleEnum, type PromptTemplate } from '@/spec/prompt';
+import {
+	type MessageBlock,
+	PromptRoleEnum,
+	type PromptTemplate,
+	type PromptVariable,
+	VarSource,
+	VarType,
+} from '@/spec/prompt';
 
 import { omitManyKeys } from '@/lib/obj_utils';
 import { validateSlug, validateTags } from '@/lib/text_utils';
 import { getUUIDv7 } from '@/lib/uuid_utils';
+import { DEFAULT_SEMVER, isSemverVersion, suggestNextMinorVersion } from '@/lib/version_utils';
+
+import { ModalBackdrop } from '@/components/modal_backdrop';
 
 interface TemplateItem {
 	template: PromptTemplate;
@@ -32,6 +42,9 @@ type ErrorState = {
 	slug?: string;
 	content?: string;
 	tags?: string;
+	version?: string;
+	blocks?: string;
+	variables?: string;
 };
 
 export function AddEditPromptTemplateModal({
@@ -45,15 +58,16 @@ export function AddEditPromptTemplateModal({
 	const effectiveMode: ModalMode = mode ?? (initialData ? 'edit' : 'add');
 	const isViewMode = effectiveMode === 'view';
 	const isEditMode = effectiveMode === 'edit';
-	// const isAddMode = effectiveMode === 'add';
 
 	const [formData, setFormData] = useState({
 		displayName: '',
 		slug: '',
 		description: '',
-		content: '',
 		tags: '',
 		isEnabled: true,
+		version: DEFAULT_SEMVER,
+		blocks: [] as MessageBlock[],
+		variables: [] as PromptVariable[],
 	});
 
 	const [errors, setErrors] = useState<ErrorState>({});
@@ -64,26 +78,32 @@ export function AddEditPromptTemplateModal({
 		if (!isOpen) return;
 
 		if (initialData) {
+			const src = initialData.template;
+			const nextV = isEditMode ? suggestNextMinorVersion(src.version).suggested : src.version;
 			setFormData({
-				displayName: initialData.template.displayName,
-				slug: initialData.template.slug,
-				description: initialData.template.description ?? '',
-				content: initialData.template.blocks[0]?.content ?? '',
-				tags: (initialData.template.tags ?? []).join(', '),
-				isEnabled: initialData.template.isEnabled,
+				displayName: src.displayName,
+				slug: src.slug,
+				description: src.description ?? '',
+				tags: (src.tags ?? []).join(', '),
+				isEnabled: src.isEnabled,
+				version: nextV,
+				blocks: src.blocks?.length ? src.blocks : [{ id: getUUIDv7(), role: PromptRoleEnum.User, content: '' }],
+				variables: src.variables ?? [],
 			});
 		} else {
 			setFormData({
 				displayName: '',
 				slug: '',
 				description: '',
-				content: '',
 				tags: '',
 				isEnabled: true,
+				version: DEFAULT_SEMVER,
+				blocks: [{ id: getUUIDv7(), role: PromptRoleEnum.User, content: '' }],
+				variables: [],
 			});
 		}
 		setErrors({});
-	}, [isOpen, initialData]);
+	}, [isOpen, initialData, isEditMode]);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -110,12 +130,11 @@ export function AddEditPromptTemplateModal({
 		let newErrs: ErrorState = { ...currentErrors };
 		const v = val.trim();
 
-		if (!v) {
-			newErrs[field] = 'This field is required.';
-			return newErrs;
-		}
-
 		if (field === 'slug') {
+			if (!v) {
+				newErrs.slug = 'This field is required.';
+				return newErrs;
+			}
 			const err = validateSlug(v);
 			if (err) {
 				newErrs.slug = err;
@@ -124,10 +143,46 @@ export function AddEditPromptTemplateModal({
 				if (clash) newErrs.slug = 'Slug already in use.';
 				else newErrs = omitManyKeys(newErrs, ['slug']);
 			}
+		} else if (field === 'displayName') {
+			if (!v) newErrs.displayName = 'This field is required.';
+			else newErrs = omitManyKeys(newErrs, ['displayName']);
+		} else if (field === 'version') {
+			if (!v) {
+				newErrs.version = 'Version is required.';
+			} else if (isEditMode && initialData?.template && v === initialData.template.version) {
+				newErrs.version = 'New version must be different from the current version.';
+			} else {
+				const slugToCheck = initialData?.template.slug ?? formData.slug.trim();
+				const versionClash = existingTemplates.some(t => t.template.slug === slugToCheck && t.template.version === v);
+				if (versionClash) newErrs.version = 'That version already exists for this slug.';
+				else newErrs = omitManyKeys(newErrs, ['version']);
+			}
 		} else if (field === 'tags') {
 			const err = validateTags(val);
 			if (err) newErrs.tags = err;
 			else newErrs = omitManyKeys(newErrs, ['tags']);
+		} else if (field === 'blocks') {
+			if (!formData.blocks.length) {
+				newErrs.blocks = 'At least one block is required.';
+			} else if (formData.blocks.some(b => !b.content.trim())) {
+				newErrs.blocks = 'All blocks must have non-empty content.';
+			} else {
+				newErrs = omitManyKeys(newErrs, ['blocks']);
+			}
+		} else if (field === 'variables') {
+			const vars = formData.variables ?? [];
+			const names = vars.map(x => x.name.trim()).filter(Boolean);
+			const unique = new Set(names);
+			const hasDupes = unique.size !== names.length;
+			const hasMissing = vars.some(vr => !vr.name.trim());
+			const badEnum = vars.some(vr => vr.type === VarType.Enum && (vr.enumValues ?? []).length === 0);
+			const badStatic = vars.some(vr => vr.source === VarSource.Static && !(vr.staticVal ?? '').trim());
+
+			if (hasMissing) newErrs.variables = 'All variables must have a name.';
+			else if (hasDupes) newErrs.variables = 'Variable names must be unique.';
+			else if (badEnum) newErrs.variables = 'Enum variables must include at least one enum value.';
+			else if (badStatic) newErrs.variables = 'Static variables must include a static value.';
+			else newErrs = omitManyKeys(newErrs, ['variables']);
 		} else {
 			newErrs = omitManyKeys(newErrs, [field]);
 		}
@@ -138,8 +193,10 @@ export function AddEditPromptTemplateModal({
 	const validateForm = (state: typeof formData): ErrorState => {
 		let newErrs: ErrorState = {};
 		newErrs = validateField('displayName', state.displayName, newErrs);
-		newErrs = validateField('slug', state.slug, newErrs);
-		newErrs = validateField('content', state.content, newErrs);
+		if (!isEditMode) newErrs = validateField('slug', state.slug, newErrs);
+		newErrs = validateField('version', state.version, newErrs);
+		newErrs = validateField('blocks', 'x', newErrs);
+		newErrs = validateField('variables', 'x', newErrs);
 
 		// Fix: validate tags ONLY when non-empty
 		if (state.tags.trim() !== '') {
@@ -153,64 +210,106 @@ export function AddEditPromptTemplateModal({
 		const { name, value, type, checked } = e.target as HTMLInputElement;
 		const newVal = type === 'checkbox' ? checked : value;
 
-		setFormData(prev => ({ ...prev, [name]: newVal }));
+		setFormData(prev => {
+			const next = { ...prev, [name]: newVal };
+			if (!isViewMode) setErrors(validateForm(next));
+			return next;
+		});
 
-		if (name === 'displayName' || name === 'slug' || name === 'content' || name === 'tags') {
+		if (name === 'displayName' || name === 'slug' || name === 'tags' || name === 'version') {
 			setErrors(prev => validateField(name as keyof ErrorState, String(newVal), prev));
 		}
+	};
+	const updateBlock = (idx: number, patch: Partial<MessageBlock>) => {
+		setFormData(prev => {
+			const blocks = prev.blocks.map((b, i) => (i === idx ? { ...b, ...patch } : b));
+			const next = { ...prev, blocks };
+			if (!isViewMode) setErrors(validateForm(next));
+			return next;
+		});
+	};
+
+	const addBlock = () => {
+		setFormData(prev => {
+			const next = {
+				...prev,
+				blocks: [...prev.blocks, { id: getUUIDv7(), role: PromptRoleEnum.User, content: '' }],
+			};
+			if (!isViewMode) setErrors(validateForm(next));
+			return next;
+		});
+	};
+
+	const removeBlock = (idx: number) => {
+		setFormData(prev => {
+			const next = { ...prev, blocks: prev.blocks.filter((_, i) => i !== idx) };
+			if (!isViewMode) setErrors(validateForm(next));
+			return next;
+		});
+	};
+
+	const updateVariable = (idx: number, patch: Partial<PromptVariable>) => {
+		setFormData(prev => {
+			const variables = prev.variables.map((v, i) => (i === idx ? { ...v, ...patch } : v));
+			const next = { ...prev, variables };
+			if (!isViewMode) setErrors(validateForm(next));
+			return next;
+		});
+	};
+
+	const addVariable = () => {
+		setFormData(prev => {
+			const nextVar: PromptVariable = {
+				name: '',
+				type: VarType.String,
+				required: false,
+				source: VarSource.User,
+			};
+			const next = { ...prev, variables: [...prev.variables, nextVar] };
+			if (!isViewMode) setErrors(validateForm(next));
+			return next;
+		});
+	};
+
+	const removeVariable = (idx: number) => {
+		setFormData(prev => {
+			const next = { ...prev, variables: prev.variables.filter((_, i) => i !== idx) };
+			if (!isViewMode) setErrors(validateForm(next));
+			return next;
+		});
 	};
 
 	const isAllValid = useMemo(() => {
 		if (isViewMode) return true;
-		const requiredFilled = formData.displayName.trim() && formData.slug.trim() && formData.content.trim();
-		const hasErrors = Object.keys(errors).length > 0;
-		return Boolean(requiredFilled) && !hasErrors;
-	}, [formData, errors, isViewMode]);
+		const v = validateForm(formData);
+		return Object.keys(v).length === 0;
+	}, [formData, isViewMode, isEditMode]);
 
 	const handleSubmit = (e: FormEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
 		if (isViewMode) return;
 
-		const trimmed = {
-			displayName: formData.displayName.trim(),
-			slug: formData.slug.trim(),
-			description: formData.description.trim(),
-			content: formData.content,
-			tags: formData.tags,
-			isEnabled: formData.isEnabled,
-		};
+		const newErrs = validateForm(formData);
 
-		const newErrs = validateForm(trimmed);
 		setErrors(newErrs);
 
 		if (Object.keys(newErrs).length > 0) return;
 
-		const tagsArr = trimmed.tags
+		const tagsArr = formData.tags
 			.split(',')
 			.map(t => t.trim())
 			.filter(Boolean);
 
-		// Important: preserve existing blocks when editing, only update first block content
-		const existingBlocks = initialData?.template.blocks ?? [];
-		const blocks =
-			isEditMode && existingBlocks.length > 0
-				? existingBlocks.map((b, idx) => (idx === 0 ? { ...b, content: trimmed.content } : b))
-				: [
-						{
-							id: getUUIDv7(),
-							role: PromptRoleEnum.User,
-							content: trimmed.content,
-						},
-					];
-
 		onSubmit({
-			displayName: trimmed.displayName,
-			slug: trimmed.slug,
-			description: trimmed.description || undefined,
-			isEnabled: trimmed.isEnabled,
+			displayName: formData.displayName.trim(),
+			slug: formData.slug.trim(),
+			description: formData.description.trim() || undefined,
+			isEnabled: formData.isEnabled,
 			tags: tagsArr.length ? tagsArr : undefined,
-			blocks,
+			version: formData.version.trim(),
+			blocks: formData.blocks.map(b => ({ ...b, content: b.content })),
+			variables: formData.variables.length ? formData.variables : undefined,
 		});
 
 		dialogRef.current?.close();
@@ -222,11 +321,19 @@ export function AddEditPromptTemplateModal({
 		effectiveMode === 'view'
 			? 'View Prompt Template'
 			: effectiveMode === 'edit'
-				? 'Edit Prompt Template'
+				? 'Create New Prompt Template Version'
 				: 'Add Prompt Template';
 
 	return createPortal(
-		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
+		<dialog
+			ref={dialogRef}
+			className="modal"
+			onClose={handleDialogClose}
+			onCancel={e => {
+				// Form mode (add/edit): block Esc close. View mode: allow.
+				if (!isViewMode) e.preventDefault();
+			}}
+		>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
 				<div className="max-h-[80vh] overflow-y-auto p-6">
 					<div className="mb-4 flex items-center justify-between">
@@ -285,13 +392,57 @@ export function AddEditPromptTemplateModal({
 									className={`input input-bordered w-full rounded-xl ${errors.slug ? 'input-error' : ''}`}
 									spellCheck="false"
 									autoComplete="off"
-									disabled={isViewMode || isEditMode}
+									disabled={isEditMode}
+									readOnly={isViewMode}
 									aria-invalid={Boolean(errors.slug)}
 								/>
 								{errors.slug && (
 									<div className="label">
 										<span className="label-text-alt text-error flex items-center gap-1">
 											<FiAlertCircle size={12} /> {errors.slug}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Version */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Version*</span>
+								<span
+									className="label-text-alt tooltip tooltip-right"
+									data-tip="Once created, existing versions are not edited. Edit creates a new version."
+								>
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="text"
+									name="version"
+									value={formData.version}
+									onChange={handleInput}
+									readOnly={isViewMode}
+									className={`input input-bordered w-full rounded-xl ${errors.version ? 'input-error' : ''}`}
+									spellCheck="false"
+									autoComplete="off"
+									aria-invalid={Boolean(errors.version)}
+									placeholder={DEFAULT_SEMVER}
+								/>
+								{isEditMode && initialData?.template && (
+									<div className="label">
+										<span className="label-text-alt text-base-content/70 text-xs">
+											Current: {initialData.template.version} · Suggested next:{' '}
+											{suggestNextMinorVersion(initialData.template.version).suggested}
+											{!isSemverVersion(initialData.template.version) ? ' (current is not semver)' : ''}
+										</span>
+									</div>
+								)}
+								{errors.version && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.version}
 										</span>
 									</div>
 								)}
@@ -329,38 +480,70 @@ export function AddEditPromptTemplateModal({
 								/>
 							</div>
 						</div>
-
-						{/* Edit/Add content: still edits first block only */}
-						{!isViewMode && (
-							<div className="grid grid-cols-12 items-start gap-2">
-								<label className="label col-span-3">
-									<span className="label-text text-sm">Prompt Content*</span>
-									<span
-										className="label-text-alt tooltip tooltip-right"
-										data-tip="First message content (advanced: view shows all blocks)"
-									>
-										<FiHelpCircle size={12} />
-									</span>
-								</label>
-								<div className="col-span-9">
-									<textarea
-										name="content"
-										value={formData.content}
-										onChange={handleInput}
-										className={`textarea textarea-bordered h-32 w-full rounded-xl ${errors.content ? 'textarea-error' : ''}`}
-										spellCheck="false"
-										aria-invalid={Boolean(errors.content)}
-									/>
-									{errors.content && (
-										<div className="label">
-											<span className="label-text-alt text-error flex items-center gap-1">
-												<FiAlertCircle size={12} /> {errors.content}
-											</span>
-										</div>
-									)}
-								</div>
+						{/* Blocks */}
+						<div className="divider">Blocks</div>
+						{errors.blocks && (
+							<div className="text-error flex items-center gap-1 text-sm">
+								<FiAlertCircle size={12} /> {errors.blocks}
 							</div>
 						)}
+
+						<div className="space-y-3">
+							{formData.blocks.map((b, idx) => (
+								<div key={b.id} className="border-base-content/10 rounded-2xl border p-3">
+									<div className="mb-2 flex items-center justify-between gap-2">
+										<div className="flex items-center gap-2">
+											<span className="text-base-content/70 text-xs font-semibold uppercase">Role</span>
+											<select
+												className="select select-bordered select-sm rounded-xl"
+												value={b.role}
+												disabled={isViewMode}
+												onChange={e => {
+													updateBlock(idx, { role: e.target.value as PromptRoleEnum });
+												}}
+											>
+												{Object.values(PromptRoleEnum).map(r => (
+													<option key={r} value={r}>
+														{r}
+													</option>
+												))}
+											</select>
+										</div>
+
+										{!isViewMode && (
+											<button
+												type="button"
+												className="btn btn-ghost btn-sm rounded-xl"
+												onClick={() => {
+													removeBlock(idx);
+												}}
+												disabled={formData.blocks.length <= 1}
+												title="Remove block"
+											>
+												<FiTrash2 size={14} />
+											</button>
+										)}
+									</div>
+
+									<textarea
+										className="textarea textarea-bordered bg-base-100 w-full rounded-xl"
+										readOnly={isViewMode}
+										spellCheck="false"
+										value={b.content}
+										onChange={e => {
+											updateBlock(idx, { content: e.target.value });
+										}}
+									/>
+								</div>
+							))}
+
+							{!isViewMode && (
+								<button type="button" className="btn btn-ghost rounded-xl" onClick={addBlock}>
+									<FiPlus size={14} />
+									<span className="ml-1">Add Block</span>
+								</button>
+							)}
+						</div>
 
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
@@ -388,32 +571,183 @@ export function AddEditPromptTemplateModal({
 							</div>
 						</div>
 
-						{/* View mode: show full blocks + variables + meta */}
-						{isViewMode && initialData?.template && (
-							<>
-								<div className="divider">Blocks</div>
-								<div className="space-y-3">
-									{initialData.template.blocks.map(b => (
-										<div key={b.id} className="border-base-content/10 rounded-2xl border p-3">
-											<div className="text-base-content/60 mb-2 text-xs font-semibold uppercase">Role: {b.role}</div>
-											<textarea
-												className="textarea textarea-bordered w-full rounded-xl"
-												readOnly
-												spellCheck="false"
-												value={b.content}
+						{/* Variables */}
+						<div className="divider">Variables</div>
+						{errors.variables && (
+							<div className="text-error flex items-center gap-1 text-sm">
+								<FiAlertCircle size={12} /> {errors.variables}
+							</div>
+						)}
+
+						<div className="space-y-3">
+							{formData.variables.map((v, idx) => (
+								<div key={`${idx}-${v.name}`} className="border-base-content/10 rounded-2xl border p-3">
+									<div className="mb-2 flex items-center justify-between">
+										<div className="text-base-content/70 text-xs font-semibold uppercase">Variable</div>
+										<div>
+											<div className="flex gap-1">
+												<label className="label">
+													<span className="label-text text-sm">Required</span>
+												</label>
+												<input
+													type="checkbox"
+													className="toggle toggle-accent disabled:opacity-80"
+													checked={v.required}
+													disabled={isViewMode}
+													onChange={e => {
+														updateVariable(idx, { required: e.target.checked });
+													}}
+												/>
+												{!isViewMode && (
+													<button
+														type="button"
+														className="btn btn-ghost btn-sm rounded-xl"
+														onClick={() => {
+															removeVariable(idx);
+														}}
+														title="Remove variable"
+													>
+														<FiTrash2 size={14} />
+													</button>
+												)}
+											</div>
+										</div>
+									</div>
+
+									<div className="grid grid-cols-12 gap-2">
+										<div className="col-span-12 md:col-span-4">
+											<label className="label py-1">
+												<span className="label-text text-sm">Name</span>
+											</label>
+											<input
+												className="input input-bordered bg-base-100 w-full rounded-xl"
+												readOnly={isViewMode}
+												value={v.name}
+												onChange={e => {
+													updateVariable(idx, { name: e.target.value });
+												}}
 											/>
 										</div>
-									))}
-									{initialData.template.blocks.length === 0 && (
-										<div className="text-base-content/70 text-sm">No blocks.</div>
-									)}
+
+										<div className="col-span-6 md:col-span-4">
+											<label className="label py-1">
+												<span className="label-text text-sm">Type</span>
+											</label>
+											<select
+												className="select select-bordered bg-base-100 w-full rounded-xl"
+												disabled={isViewMode}
+												value={v.type}
+												onChange={e => {
+													updateVariable(idx, { type: e.target.value as VarType });
+												}}
+											>
+												{Object.values(VarType).map(t => (
+													<option key={t} value={t}>
+														{t}
+													</option>
+												))}
+											</select>
+										</div>
+
+										<div className="col-span-6 md:col-span-4">
+											<label className="label py-1">
+												<span className="label-text text-sm">Source</span>
+											</label>
+											<select
+												className="select select-bordered bg-base-100 w-full rounded-xl"
+												disabled={isViewMode}
+												value={v.source}
+												onChange={e => {
+													updateVariable(idx, { source: e.target.value as VarSource });
+												}}
+											>
+												{Object.values(VarSource).map(s => (
+													<option key={s} value={s}>
+														{s}
+													</option>
+												))}
+											</select>
+										</div>
+
+										<div className="col-span-12">
+											<label className="label py-1">
+												<span className="label-text text-sm">Description</span>
+											</label>
+											<input
+												className="input input-bordered bg-base-100 w-full rounded-xl"
+												readOnly={isViewMode}
+												value={v.description ?? ''}
+												onChange={e => {
+													updateVariable(idx, { description: e.target.value });
+												}}
+											/>
+										</div>
+
+										<div className="col-span-6 md:col-span-4">
+											<label className="label py-1">
+												<span className="label-text text-sm">Default</span>
+											</label>
+											<input
+												className="input input-bordered bg-base-100 w-full rounded-xl"
+												readOnly={isViewMode}
+												value={v.default ?? ''}
+												onChange={e => {
+													updateVariable(idx, { default: e.target.value });
+												}}
+											/>
+										</div>
+
+										{v.source === VarSource.Static && (
+											<div className="col-span-12 md:col-span-6">
+												<label className="label py-1">
+													<span className="label-text text-sm">Static Value</span>
+												</label>
+												<input
+													className="input input-bordered bg-base-100 w-full rounded-xl"
+													readOnly={isViewMode}
+													value={v.staticVal ?? ''}
+													onChange={e => {
+														updateVariable(idx, { staticVal: e.target.value });
+													}}
+												/>
+											</div>
+										)}
+
+										{v.type === VarType.Enum && (
+											<div className="col-span-12 md:col-span-6">
+												<label className="label py-1">
+													<span className="label-text text-sm">Enum Values (comma)</span>
+												</label>
+												<input
+													className="input input-bordered bg-base-100 w-full rounded-xl"
+													readOnly={isViewMode}
+													value={(v.enumValues ?? []).join(', ')}
+													onChange={e => {
+														updateVariable(idx, {
+															enumValues: e.target.value
+																.split(',')
+																.map(s => s.trim())
+																.filter(Boolean),
+														});
+													}}
+												/>
+											</div>
+										)}
+									</div>
 								</div>
+							))}
 
-								<div className="divider">Variables</div>
-								<pre className="bg-base-300 overflow-auto rounded-2xl p-3 text-xs">
-									{JSON.stringify(initialData.template.variables ?? [], null, 2)}
-								</pre>
+							{!isViewMode && (
+								<button type="button" className="btn btn-ghost rounded-xl" onClick={addVariable}>
+									<FiPlus size={14} />
+									<span className="ml-1">Add Variable</span>
+								</button>
+							)}
+						</div>
 
+						{/* View mode: show meta */}
+						{isViewMode && initialData?.template && (
+							<>
 								<div className="divider">Metadata</div>
 								<div className="grid grid-cols-12 gap-2 text-sm">
 									<div className="col-span-3 font-semibold">Version</div>
@@ -444,6 +778,7 @@ export function AddEditPromptTemplateModal({
 					</form>
 				</div>
 			</div>
+			<ModalBackdrop enabled={isViewMode} />
 		</dialog>,
 		document.body
 	);

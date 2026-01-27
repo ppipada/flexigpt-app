@@ -29,7 +29,6 @@ interface AttachmentContentBlockModeMenuProps {
 }
 
 export function getAttachmentContentBlockModeLabel(mode: AttachmentContentBlockMode): string {
-	// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 	return ATTACHMENT_MODE_LABELS[mode] ?? mode;
 }
 
@@ -75,11 +74,6 @@ export function getAttachmentContentBlockModePillClasses(
 		.join(' ');
 }
 
-/**
- * Per-attachment mode selector using Ariakit Menu.
- * Replaces the native <select>, while keeping a small pill-like trigger
- * and a shrink-wrapped dropdown.
- */
 export function AttachmentContentBlockModeMenu({
 	attachment,
 	onChangeAttachmentContentBlockMode,

@@ -4,6 +4,8 @@ import { createPortal } from 'react-dom';
 
 import { FiAlertTriangle } from 'react-icons/fi';
 
+import { ModalBackdrop } from '@/components/modal_backdrop';
+
 interface ActionDeniedAlertModalProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -64,10 +66,7 @@ export function ActionDeniedAlertModal({
 				</div>
 			</div>
 
-			{/* DaisyUI backdrop: clicking it closes the dialog */}
-			<form method="dialog" className="modal-backdrop">
-				<button aria-label="Close" />
-			</form>
+			<ModalBackdrop enabled={true} />
 		</dialog>,
 		document.body
 	);

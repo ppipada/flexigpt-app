@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { memo } from 'react';
 
 import type { Path } from 'platejs';

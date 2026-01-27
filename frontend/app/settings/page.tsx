@@ -27,7 +27,7 @@ export default function SettingsPage() {
 		(async () => {
 			try {
 				const settings = await settingstoreAPI.getSettings();
-				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
 				if (!cancelled) setAuthKeys(settings.authKeys);
 			} catch (err) {
 				console.error('Failed to load settings', err);

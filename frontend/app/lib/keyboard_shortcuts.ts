@@ -322,7 +322,7 @@ export function useChatShortcuts({ config, isBusy, handlers }: UseShortcutsOptio
 			// Allow specific widgets (rename inputs, etc.) to opt out of global shortcuts.
 			// Important since we listen in capture phase.
 			const target = event.target as HTMLElement | null;
-			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
 			if (target?.closest?.('[data-disable-chat-shortcuts="true"]')) return;
 
 			/**
@@ -333,7 +333,7 @@ export function useChatShortcuts({ config, isBusy, handlers }: UseShortcutsOptio
 			 * Note: We intentionally DO NOT block shortcuts inside the main Plate editor
 			 * (contenteditable) because insert shortcuts are expected to work there.
 			 */
-			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
 			const inMenuOrDialog = !!target?.closest?.(
 				[
 					// Native dialogs (your modals)

@@ -2,6 +2,8 @@ import { type CSSProperties, useEffect, useRef } from 'react';
 
 import { createPortal } from 'react-dom';
 
+import { ModalBackdrop } from '@/components/modal_backdrop';
+
 type MermaidZoomModalProps = {
 	isOpen: boolean;
 	onClose: () => void;
@@ -75,10 +77,7 @@ export function MermaidZoomModal({ isOpen, onClose, svgNode, surfaceStyle }: Mer
 				<div ref={modalRef} className="w-full overflow-auto" style={{ pointerEvents: 'none' }} />
 			</div>
 
-			{/* DaisyUI backdrop: clicking it closes the dialog */}
-			<form method="dialog" className="modal-backdrop">
-				<button aria-label="Close" />
-			</form>
+			<ModalBackdrop enabled={true} />
 		</dialog>,
 		document.body
 	);

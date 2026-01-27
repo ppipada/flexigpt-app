@@ -7,6 +7,8 @@ import { FiTool, FiX } from 'react-icons/fi';
 import type { UIToolCall, UIToolOutput } from '@/spec/inference';
 import type { ToolStoreChoice } from '@/spec/tool';
 
+import { ModalBackdrop } from '@/components/modal_backdrop';
+
 import { MessageContentCard } from '@/chats/messages/message_content_card';
 import {
 	extractPrimaryTextFromToolStoreOutputs,
@@ -223,7 +225,6 @@ export function ToolDetailsModal({ state, onClose }: ToolDetailsModalProps) {
 	} catch (err) {
 		rawPayloadMarkdown +=
 			'Error serializing payload:\n\n' +
-			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 			((err as Error).message ?? 'Unknown serialization error ' + JSON.stringify(err));
 	}
 
@@ -302,9 +303,7 @@ export function ToolDetailsModal({ state, onClose }: ToolDetailsModalProps) {
 				</div>
 			</div>
 
-			<form method="dialog" className="modal-backdrop">
-				<button aria-label="Close" />
-			</form>
+			<ModalBackdrop enabled={true} />
 		</dialog>,
 		document.body
 	);

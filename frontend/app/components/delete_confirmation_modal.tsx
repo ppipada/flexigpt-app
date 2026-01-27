@@ -4,6 +4,8 @@ import { createPortal } from 'react-dom';
 
 import { FiAlertTriangle, FiX } from 'react-icons/fi';
 
+import { ModalBackdrop } from '@/components/modal_backdrop';
+
 interface DeleteConfirmationModalProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -90,10 +92,7 @@ export function DeleteConfirmationModal({
 				</div>
 			</div>
 
-			{/* DaisyUI backdrop: clicking it closes the dialog */}
-			<form method="dialog" className="modal-backdrop">
-				<button aria-label="Close" />
-			</form>
+			<ModalBackdrop enabled={true} />
 		</dialog>,
 		document.body
 	);

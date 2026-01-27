@@ -13,6 +13,8 @@ import {
 	type JSONSchema,
 } from '@/lib/jsonschema_utils';
 
+import { ModalBackdrop } from '@/components/modal_backdrop';
+
 import { MessageContentCard } from '@/chats/messages/message_content_card';
 import { computeToolUserArgsStatus } from '@/chats/tools/tool_editor_utils';
 
@@ -334,10 +336,7 @@ export function ToolUserArgsModal({
 				</div>
 			</div>
 
-			{/* DaisyUI backdrop */}
-			<form method="dialog" className="modal-backdrop">
-				<button aria-label="Close" />
-			</form>
+			<ModalBackdrop enabled={true} />
 		</dialog>,
 		document.body
 	);

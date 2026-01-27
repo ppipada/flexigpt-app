@@ -39,7 +39,7 @@ export function DirectoryChip({
 	}
 
 	const attachedCount = group.attachmentKeys.length;
-	// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
 	const overflowFileCount = group.overflowDirs.reduce((sum, o) => sum + (o.fileCount ?? 0), 0);
 
 	// Tooltip: show full folder path + any extra info that isn't obvious from the chip text

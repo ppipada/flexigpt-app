@@ -129,13 +129,15 @@ export function PromptBundleCard({
 	const handleModifySubmit = async (partial: Partial<PromptTemplate>) => {
 		try {
 			if (templateToEdit) {
+				const nextVersion = (partial.version ?? '').trim();
+
 				await promptStoreAPI.putPromptTemplate(
 					bundle.id,
 					templateToEdit.slug,
 					partial.displayName ?? templateToEdit.displayName,
 					partial.isEnabled ?? templateToEdit.isEnabled,
 					partial.blocks ?? templateToEdit.blocks,
-					templateToEdit.version,
+					nextVersion,
 					partial.description ?? templateToEdit.description,
 					partial.tags ?? templateToEdit.tags,
 					partial.variables ?? templateToEdit.variables
@@ -143,13 +145,14 @@ export function PromptBundleCard({
 			} else {
 				const slug = partial.slug?.trim() ?? '';
 				const display = partial.displayName?.trim() ?? '';
+				const version = partial.version?.trim() ?? 'v1.0.0';
 				await promptStoreAPI.putPromptTemplate(
 					bundle.id,
 					slug,
 					display,
 					partial.isEnabled ?? true,
 					partial.blocks ?? [],
-					'1',
+					version,
 					partial.description,
 					partial.tags,
 					partial.variables
@@ -276,7 +279,11 @@ export function PromptBundleCard({
 														openTemplateModal('edit', tpl);
 													}}
 													disabled={tpl.isBuiltIn || bundle.isBuiltIn}
-													title={tpl.isBuiltIn || bundle.isBuiltIn ? 'Editing disabled for built-in items' : 'Edit'}
+													title={
+														tpl.isBuiltIn || bundle.isBuiltIn
+															? 'Editing disabled for built-in items'
+															: 'Create new version'
+													}
 												>
 													<FiEdit2 size={16} />
 												</button>

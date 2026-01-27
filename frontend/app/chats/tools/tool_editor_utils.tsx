@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { ElementApi, NodeApi, type Path } from 'platejs';
 import type { PlateEditor } from 'platejs/react';
 

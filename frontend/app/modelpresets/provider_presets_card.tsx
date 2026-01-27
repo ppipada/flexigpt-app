@@ -82,7 +82,6 @@ export function ProviderPresetCard({
 	const canDeleteProvider = !providerIsBuiltIn && !hasModels;
 
 	const safeDefaultModelID: ModelPresetID =
-		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 		defaultModelPresetID && modelPresets[defaultModelPresetID]
 			? defaultModelPresetID
 			: (Object.keys(modelPresets)[0] ?? '');
@@ -276,7 +275,9 @@ export function ProviderPresetCard({
 				</div>
 
 				<div className="col-span-2">
-					{preset.isBuiltIn && <span className="badge badge-ghost badge-md ml-2">Built-in</span>}
+					<span className="text-base-content/60 text-xs tracking-wide uppercase">
+						{preset.isBuiltIn ? 'Built-in' : 'Custom'}
+					</span>
 				</div>
 
 				<div className="col-span-2 flex items-center gap-2">
@@ -385,10 +386,7 @@ export function ProviderPresetCard({
 									<td className="w-1/3 text-sm">Default Headers</td>
 									<td className="text-sm">
 										<pre className="m-0 p-0 text-xs wrap-break-word whitespace-pre-wrap">
-											{
-												// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-												JSON.stringify(preset.defaultHeaders ?? {}, null, 2)
-											}
+											{JSON.stringify(preset.defaultHeaders ?? {}, null, 2)}
 										</pre>
 									</td>
 								</tr>

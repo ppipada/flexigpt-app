@@ -4,19 +4,29 @@ import { createPortal } from 'react-dom';
 
 import { FiAlertCircle, FiHelpCircle, FiX } from 'react-icons/fi';
 
-import { type Tool, ToolImplType } from '@/spec/tool';
+import { HTTPBodyOutputMode, type Tool, ToolImplType } from '@/spec/tool';
 
 import type { JSONSchema } from '@/lib/jsonschema_utils';
 import { omitManyKeys } from '@/lib/obj_utils';
 import { validateSlug, validateTags } from '@/lib/text_utils';
 import { MessageEnterValidURL, validateUrlForInput } from '@/lib/url_utils';
+import { DEFAULT_SEMVER, suggestNextMinorVersion } from '@/lib/version_utils';
 
 import { Dropdown } from '@/components/dropdown';
+import { ModalBackdrop } from '@/components/modal_backdrop';
 
 interface ToolItem {
 	tool: Tool;
 	bundleID: string;
 	toolSlug: string;
+}
+
+function ReadOnlyValue({ value }: { value: string }) {
+	return (
+		<div className="input input-bordered bg-base-100 flex w-full items-center rounded-xl">
+			<span className="text-sm wrap-break-word whitespace-pre-wrap opacity-80">{value || '—'}</span>
+		</div>
+	);
 }
 
 type ModalMode = 'add' | 'edit' | 'view';
@@ -32,10 +42,12 @@ interface AddEditToolModalProps {
 
 const TOOL_TYPE_LABEL_GO = 'Go';
 const TOOL_TYPE_LABEL_HTTP = 'HTTP';
+const TOOL_TYPE_LABEL_SDK = 'SDK';
 
 type ErrorState = {
 	displayName?: string;
 	slug?: string;
+	version?: string;
 	type?: string;
 	argSchema?: string;
 	goFunc?: string;
@@ -43,7 +55,21 @@ type ErrorState = {
 	httpHeaders?: string;
 	httpQuery?: string;
 	httpResponseCodes?: string;
+	httpTimeoutMs?: string;
 	tags?: string;
+};
+
+const bodyOutputModeItems: Record<HTTPBodyOutputMode, { isEnabled: boolean; displayName: string }> = {
+	[HTTPBodyOutputMode.Auto]: { isEnabled: true, displayName: 'Auto' },
+	[HTTPBodyOutputMode.Text]: { isEnabled: true, displayName: 'Text' },
+	[HTTPBodyOutputMode.File]: { isEnabled: true, displayName: 'File' },
+	[HTTPBodyOutputMode.Image]: { isEnabled: true, displayName: 'Image' },
+};
+
+const toolTypeDropdownItems: Record<ToolImplType, { isEnabled: boolean; displayName: string }> = {
+	[ToolImplType.Go]: { isEnabled: false, displayName: TOOL_TYPE_LABEL_GO },
+	[ToolImplType.HTTP]: { isEnabled: true, displayName: TOOL_TYPE_LABEL_HTTP },
+	[ToolImplType.SDK]: { isEnabled: false, displayName: TOOL_TYPE_LABEL_SDK },
 };
 
 export function AddEditToolModal({
@@ -61,6 +87,7 @@ export function AddEditToolModal({
 	const [formData, setFormData] = useState({
 		displayName: '',
 		slug: '',
+		version: DEFAULT_SEMVER,
 		description: '',
 		tags: '',
 		isEnabled: true,
@@ -79,12 +106,13 @@ export function AddEditToolModal({
 		httpQuery: '{}',
 		httpBody: '',
 		httpAuthType: '',
+		httpAuthIn: '',
 		httpAuthName: '',
 		httpAuthValueTemplate: '',
 		httpResponseCodes: '',
 		httpResponseErrorMode: '',
-
-		version: '1',
+		httpResponseBodyOutputMode: HTTPBodyOutputMode.Auto,
+		httpTimeoutMs: '',
 	});
 
 	const [errors, setErrors] = useState<ErrorState>({});
@@ -98,9 +126,13 @@ export function AddEditToolModal({
 
 		if (initialData) {
 			const t = initialData.tool;
+			const nextV = isEditMode ? suggestNextMinorVersion(t.version).suggested : t.version;
+
 			setFormData({
 				displayName: t.displayName,
 				slug: t.slug,
+				version: nextV,
+
 				description: t.description ?? '',
 				tags: (t.tags ?? []).join(', '),
 				isEnabled: t.isEnabled,
@@ -119,17 +151,21 @@ export function AddEditToolModal({
 				httpQuery: JSON.stringify(t.httpImpl?.request.query ?? {}, null, 2),
 				httpBody: t.httpImpl?.request.body ?? '',
 				httpAuthType: t.httpImpl?.request.auth?.type ?? '',
+				httpAuthIn: t.httpImpl?.request.auth?.in ?? '',
+
 				httpAuthName: t.httpImpl?.request.auth?.name ?? '',
 				httpAuthValueTemplate: t.httpImpl?.request.auth?.valueTemplate ?? '',
 				httpResponseCodes: (t.httpImpl?.response.successCodes ?? []).join(','),
 				httpResponseErrorMode: t.httpImpl?.response.errorMode ?? '',
-
-				version: t.version,
+				httpResponseBodyOutputMode: t.httpImpl?.response.bodyOutputMode ?? HTTPBodyOutputMode.Auto,
+				httpTimeoutMs: t.httpImpl?.request.timeoutMs !== undefined ? String(t.httpImpl.request.timeoutMs) : '',
 			});
 		} else {
 			setFormData({
 				displayName: '',
 				slug: '',
+				version: DEFAULT_SEMVER,
+
 				description: '',
 				tags: '',
 				isEnabled: true,
@@ -148,16 +184,18 @@ export function AddEditToolModal({
 				httpQuery: '{}',
 				httpBody: '',
 				httpAuthType: '',
+				httpAuthIn: '',
+
 				httpAuthName: '',
 				httpAuthValueTemplate: '',
 				httpResponseCodes: '',
 				httpResponseErrorMode: '',
-
-				version: '1',
+				httpResponseBodyOutputMode: HTTPBodyOutputMode.Auto,
+				httpTimeoutMs: '',
 			});
 		}
 		setErrors({});
-	}, [isOpen, initialData]);
+	}, [isOpen, initialData, isEditMode]);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -181,20 +219,11 @@ export function AddEditToolModal({
 		onClose();
 	};
 
-	const toolTypeDropdownItems = useMemo(
-		() =>
-			({
-				[ToolImplType.Go]: { isEnabled: false, displayName: TOOL_TYPE_LABEL_GO },
-				[ToolImplType.HTTP]: { isEnabled: true, displayName: TOOL_TYPE_LABEL_HTTP },
-			}) as Record<ToolImplType, { isEnabled: boolean; displayName: string }>,
-		[]
-	);
-
 	const validateField = (field: keyof ErrorState, val: string, currentErrors: ErrorState): ErrorState => {
 		let newErrs: ErrorState = { ...currentErrors };
 		const v = val.trim();
 
-		if (!v && ['displayName', 'slug', 'type', 'argSchema'].includes(field)) {
+		if (!v && ['displayName', 'slug', 'version', 'type', 'argSchema'].includes(field)) {
 			newErrs[field] = 'This field is required.';
 			return newErrs;
 		}
@@ -207,6 +236,16 @@ export function AddEditToolModal({
 				const clash = existingTools.some(t => t.tool.slug === v && t.tool.id !== initialData?.tool.id);
 				if (clash) newErrs.slug = 'Slug already in use.';
 				else newErrs = omitManyKeys(newErrs, ['slug']);
+			}
+		} else if (field === 'version') {
+			if (!v) newErrs.version = 'Version is required.';
+			else if (isEditMode && initialData?.tool && v === initialData.tool.version)
+				newErrs.version = 'New version must be different from the current version.';
+			else {
+				const slugToCheck = initialData?.tool.slug ?? formData.slug.trim();
+				const versionClash = existingTools.some(t => t.tool.slug === slugToCheck && t.tool.version === v);
+				if (versionClash) newErrs.version = 'That version already exists for this slug.';
+				else newErrs = omitManyKeys(newErrs, ['version']);
 			}
 		} else if (field === 'tags') {
 			if (v === '') {
@@ -278,6 +317,13 @@ export function AddEditToolModal({
 				if (bad) newErrs.httpResponseCodes = 'Success codes must be comma-separated numbers (e.g. 200,201)';
 				else newErrs = omitManyKeys(newErrs, ['httpResponseCodes']);
 			}
+		} else if (field === 'httpTimeoutMs') {
+			if (v === '') newErrs = omitManyKeys(newErrs, ['httpTimeoutMs']);
+			else {
+				const n = Number(v);
+				if (!Number.isFinite(n) || n < 1) newErrs.httpTimeoutMs = 'Timeout must be a positive number (ms).';
+				else newErrs = omitManyKeys(newErrs, ['httpTimeoutMs']);
+			}
 		} else {
 			newErrs = omitManyKeys(newErrs, [field]);
 		}
@@ -289,6 +335,8 @@ export function AddEditToolModal({
 		let newErrs: ErrorState = {};
 		newErrs = validateField('displayName', state.displayName, newErrs);
 		newErrs = validateField('slug', state.slug, newErrs);
+		newErrs = validateField('version', state.version, newErrs);
+
 		newErrs = validateField('type', state.type, newErrs);
 		newErrs = validateField('argSchema', state.argSchema, newErrs);
 
@@ -301,6 +349,7 @@ export function AddEditToolModal({
 			newErrs = validateField('httpHeaders', state.httpHeaders, newErrs);
 			newErrs = validateField('httpQuery', state.httpQuery, newErrs);
 			newErrs = validateField('httpResponseCodes', state.httpResponseCodes, newErrs);
+			newErrs = validateField('httpTimeoutMs', state.httpTimeoutMs, newErrs);
 		}
 
 		return newErrs;
@@ -316,12 +365,14 @@ export function AddEditToolModal({
 			[
 				'displayName',
 				'slug',
+				'version',
 				'type',
 				'argSchema',
 				'httpUrl',
 				'httpHeaders',
 				'httpQuery',
 				'httpResponseCodes',
+				'httpTimeoutMs',
 				'tags',
 			].includes(name)
 		) {
@@ -335,6 +386,7 @@ export function AddEditToolModal({
 		const required =
 			formData.displayName.trim() &&
 			formData.slug.trim() &&
+			formData.version.trim() &&
 			formData.argSchema.trim() &&
 			(formData.type === ToolImplType.HTTP ? formData.httpUrl.trim() : true);
 		return Boolean(required) && !hasErrs;
@@ -414,9 +466,11 @@ export function AddEditToolModal({
 					headers,
 					query,
 					body: formData.httpBody || undefined,
+					timeoutMs: formData.httpTimeoutMs.trim() ? Number(formData.httpTimeoutMs.trim()) : undefined,
 					auth: formData.httpAuthType
 						? {
 								type: formData.httpAuthType,
+								in: formData.httpAuthIn || undefined,
 								name: formData.httpAuthName || undefined,
 								valueTemplate: formData.httpAuthValueTemplate,
 							}
@@ -425,6 +479,7 @@ export function AddEditToolModal({
 				response: {
 					successCodes,
 					errorMode: formData.httpResponseErrorMode || undefined,
+					bodyOutputMode: formData.httpResponseBodyOutputMode || undefined,
 				},
 			};
 		}
@@ -458,7 +513,15 @@ export function AddEditToolModal({
 	const headerTitle = effectiveMode === 'view' ? 'View Tool' : effectiveMode === 'edit' ? 'Edit Tool' : 'Add Tool';
 
 	return createPortal(
-		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
+		<dialog
+			ref={dialogRef}
+			className="modal"
+			onClose={handleDialogClose}
+			onCancel={e => {
+				// Form mode (add/edit): block Esc close. View mode: allow.
+				if (!isViewMode) e.preventDefault();
+			}}
+		>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-hidden rounded-2xl p-0">
 				<div className="max-h-[80vh] overflow-y-auto p-6">
 					<div className="mb-4 flex items-center justify-between">
@@ -517,13 +580,54 @@ export function AddEditToolModal({
 									className={`input input-bordered w-full rounded-xl ${errors.slug ? 'input-error' : ''}`}
 									spellCheck="false"
 									autoComplete="off"
-									disabled={isViewMode || isEditMode}
+									disabled={isEditMode}
+									readOnly={isViewMode}
 									aria-invalid={Boolean(errors.slug)}
 								/>
 								{errors.slug && (
 									<div className="label">
 										<span className="label-text-alt text-error flex items-center gap-1">
 											<FiAlertCircle size={12} /> {errors.slug}
+										</span>
+									</div>
+								)}
+							</div>
+						</div>
+						{/* Version */}
+						<div className="grid grid-cols-12 items-center gap-2">
+							<label className="label col-span-3">
+								<span className="label-text text-sm">Version*</span>
+								<span
+									className="label-text-alt tooltip tooltip-right"
+									data-tip="Once created, existing versions are not edited. Edit creates a new version."
+								>
+									<FiHelpCircle size={12} />
+								</span>
+							</label>
+							<div className="col-span-9">
+								<input
+									type="text"
+									name="version"
+									value={formData.version}
+									onChange={handleInput}
+									readOnly={isViewMode}
+									className={`input input-bordered w-full rounded-xl ${errors.version ? 'input-error' : ''}`}
+									spellCheck="false"
+									autoComplete="off"
+									aria-invalid={Boolean(errors.version)}
+								/>
+								{isEditMode && initialData?.tool && (
+									<div className="label">
+										<span className="label-text-alt text-base-content/70 text-xs">
+											Current: {initialData.tool.version} · Suggested next:{' '}
+											{suggestNextMinorVersion(initialData.tool.version).suggested}
+										</span>
+									</div>
+								)}
+								{errors.version && (
+									<div className="label">
+										<span className="label-text-alt text-error flex items-center gap-1">
+											<FiAlertCircle size={12} /> {errors.version}
 										</span>
 									</div>
 								)}
@@ -540,7 +644,7 @@ export function AddEditToolModal({
 									name="isEnabled"
 									checked={formData.isEnabled}
 									onChange={handleInput}
-									className="toggle toggle-accent"
+									className="toggle toggle-accent disabled:opacity-80"
 									disabled={isViewMode}
 								/>
 							</div>
@@ -556,7 +660,7 @@ export function AddEditToolModal({
 									name="userCallable"
 									checked={formData.userCallable}
 									onChange={handleInput}
-									className="toggle toggle-accent"
+									className="toggle toggle-accent disabled:opacity-80"
 									disabled={isViewMode}
 								/>
 							</div>
@@ -572,7 +676,7 @@ export function AddEditToolModal({
 									name="llmCallable"
 									checked={formData.llmCallable}
 									onChange={handleInput}
-									className="toggle toggle-accent"
+									className="toggle toggle-accent disabled:opacity-80"
 									disabled={isViewMode}
 								/>
 							</div>
@@ -582,15 +686,19 @@ export function AddEditToolModal({
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Type*</span>
 							</label>
-							<div className={`col-span-9 ${isEditMode || isViewMode ? 'pointer-events-none opacity-60' : ''}`}>
-								<Dropdown<ToolImplType>
-									dropdownItems={toolTypeDropdownItems}
-									selectedKey={formData.type}
-									onChange={onToolTypeChange}
-									filterDisabled={true}
-									title="Select tool type"
-									getDisplayName={k => toolTypeDropdownItems[k].displayName}
-								/>
+							<div className="col-span-9">
+								{isEditMode || isViewMode ? (
+									<ReadOnlyValue value={toolTypeDropdownItems[formData.type].displayName} />
+								) : (
+									<Dropdown<ToolImplType>
+										dropdownItems={toolTypeDropdownItems}
+										selectedKey={formData.type}
+										onChange={onToolTypeChange}
+										filterDisabled={true}
+										title="Select tool type"
+										getDisplayName={k => toolTypeDropdownItems[k].displayName}
+									/>
+								)}
 								{errors.type && (
 									<div className="label">
 										<span className="label-text-alt text-error flex items-center gap-1">
@@ -756,6 +864,31 @@ export function AddEditToolModal({
 
 								<div className="grid grid-cols-12 items-center gap-2">
 									<label className="label col-span-3">
+										<span className="label-text text-sm">Timeout (ms)</span>
+									</label>
+									<div className="col-span-9">
+										<input
+											type="text"
+											name="httpTimeoutMs"
+											value={formData.httpTimeoutMs}
+											onChange={handleInput}
+											readOnly={isViewMode}
+											className={`input input-bordered w-full rounded-xl ${errors.httpTimeoutMs ? 'input-error' : ''}`}
+											spellCheck="false"
+											autoComplete="off"
+										/>
+										{errors.httpTimeoutMs && (
+											<div className="label">
+												<span className="label-text-alt text-error flex items-center gap-1">
+													<FiAlertCircle size={12} /> {errors.httpTimeoutMs}
+												</span>
+											</div>
+										)}
+									</div>
+								</div>
+
+								<div className="grid grid-cols-12 items-center gap-2">
+									<label className="label col-span-3">
 										<span className="label-text text-sm">Auth Type</span>
 									</label>
 									<div className="col-span-9">
@@ -763,6 +896,24 @@ export function AddEditToolModal({
 											type="text"
 											name="httpAuthType"
 											value={formData.httpAuthType}
+											onChange={handleInput}
+											readOnly={isViewMode}
+											className="input input-bordered w-full rounded-xl"
+											spellCheck="false"
+											autoComplete="off"
+										/>
+									</div>
+								</div>
+
+								<div className="grid grid-cols-12 items-center gap-2">
+									<label className="label col-span-3">
+										<span className="label-text text-sm">Auth In</span>
+									</label>
+									<div className="col-span-9">
+										<input
+											type="text"
+											name="httpAuthIn"
+											value={formData.httpAuthIn}
 											onChange={handleInput}
 											readOnly={isViewMode}
 											className="input input-bordered w-full rounded-xl"
@@ -850,6 +1001,28 @@ export function AddEditToolModal({
 										/>
 									</div>
 								</div>
+
+								<div className="grid grid-cols-12 items-center gap-2">
+									<label className="label col-span-3">
+										<span className="label-text text-sm">Body Output Mode</span>
+									</label>
+									<div className="col-span-9">
+										{isViewMode ? (
+											<ReadOnlyValue value={bodyOutputModeItems[formData.httpResponseBodyOutputMode].displayName} />
+										) : (
+											<Dropdown<HTTPBodyOutputMode>
+												dropdownItems={bodyOutputModeItems}
+												selectedKey={formData.httpResponseBodyOutputMode}
+												onChange={m => {
+													setFormData(p => ({ ...p, httpResponseBodyOutputMode: m }));
+												}}
+												filterDisabled={false}
+												title="Select output mode"
+												getDisplayName={k => bodyOutputModeItems[k].displayName}
+											/>
+										)}
+									</div>
+								</div>
 							</>
 						)}
 
@@ -879,21 +1052,24 @@ export function AddEditToolModal({
 							</div>
 						</div>
 
-						{initialData?.tool && (
-							<div className="grid grid-cols-12 items-center gap-2">
-								<label className="label col-span-3">
-									<span className="label-text text-sm">Version</span>
-								</label>
-								<div className="col-span-9">
-									<input
-										type="text"
-										value={formData.version}
-										readOnly
-										className="input input-bordered w-full rounded-xl opacity-80"
-										spellCheck="false"
-									/>
+						{isViewMode && initialData?.tool && (
+							<>
+								<div className="divider">Metadata</div>
+								<div className="grid grid-cols-12 gap-2 text-sm">
+									<div className="col-span-3 font-semibold">ID</div>
+									<div className="col-span-9">{initialData.tool.id}</div>
+									<div className="col-span-3 font-semibold">Schema</div>
+									<div className="col-span-9">{initialData.tool.schemaVersion}</div>
+									<div className="col-span-3 font-semibold">LLM Tool Type</div>
+									<div className="col-span-9">{initialData.tool.llmToolType}</div>
+									<div className="col-span-3 font-semibold">Built-in</div>
+									<div className="col-span-9">{initialData.tool.isBuiltIn ? 'Yes' : 'No'}</div>
+									<div className="col-span-3 font-semibold">Created</div>
+									<div className="col-span-9">{initialData.tool.createdAt}</div>
+									<div className="col-span-3 font-semibold">Modified</div>
+									<div className="col-span-9">{initialData.tool.modifiedAt}</div>
 								</div>
-							</div>
+							</>
 						)}
 
 						<div className="modal-action">
@@ -909,6 +1085,7 @@ export function AddEditToolModal({
 					</form>
 				</div>
 			</div>
+			<ModalBackdrop enabled={isViewMode} />
 		</dialog>,
 		document.body
 	);

@@ -31,19 +31,6 @@ export function validateTags(tags: string): string | undefined {
 	return undefined;
 }
 
-/**
- * @public
- */
-export function validateVersion(version: string): string | undefined {
-	const trimmed = version.trim();
-	if (!trimmed) return 'Version is required.';
-	if (trimmed.length > 64) return 'Version must be at most 64 characters.';
-	if (!/^[a-zA-Z0-9.-]+$/.test(trimmed)) {
-		return 'Version may only contain letters, numbers, "-", and ".".';
-	}
-	return undefined;
-}
-
 export function getBlockQuotedLines(content: string): string {
 	// Split the content into lines.
 	const lines = content.split('\n');

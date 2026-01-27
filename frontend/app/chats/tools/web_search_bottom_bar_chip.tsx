@@ -47,7 +47,7 @@ export function WebSearchBottomBarChip({
 
 	const selectedLabel = useMemo(() => {
 		if (!selectedTool) return '';
-		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
 		return selectedTool.toolDefinition.displayName ?? selectedTool.toolSlug ?? '';
 	}, [selectedTool]);
 
@@ -195,11 +195,7 @@ export function WebSearchBottomBarChip({
 												{isSelected ? ' (selected)' : ''}
 											</div>
 											<div className="text-base-content/70 truncate text-[11px]">
-												{
-													// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-													t.bundleSlug ?? t.bundleID
-												}
-												/{t.toolSlug}@{t.toolVersion}
+												{t.bundleSlug ?? t.bundleID}/{t.toolSlug}@{t.toolVersion}
 											</div>
 										</div>
 									</div>

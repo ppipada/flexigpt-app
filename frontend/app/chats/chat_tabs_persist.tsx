@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type { Conversation } from '@/spec/conversation';
 
 import { initConversation } from '@/chats/conversation/hydration_helper';

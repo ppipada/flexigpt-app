@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { useCallback, useEffect, useState } from 'react';
 
 import { FiCopy, FiMaximize2, FiMenu, FiMinus, FiX } from 'react-icons/fi';

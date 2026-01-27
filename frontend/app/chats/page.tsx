@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useStoreState } from '@ariakit/react';

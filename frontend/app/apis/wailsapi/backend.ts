@@ -184,7 +184,7 @@ export class WailsBackendAPI implements IBackendAPI {
 	): Promise<Attachment[]> {
 		try {
 			const attachments = await OpenMultipleFilesAsAttachments(allowMultiple, additionalFilters ?? []);
-			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
 			return (attachments as Attachment[]) ?? [];
 		} catch (err) {
 			console.error('Error opening file dialog:', err);
@@ -195,7 +195,7 @@ export class WailsBackendAPI implements IBackendAPI {
 	async openDirectoryAsAttachments(maxFiles: number): Promise<DirectoryAttachmentsResult> {
 		try {
 			const dirResults = await OpenDirectoryAsAttachments(maxFiles);
-			// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
 			return (dirResults as DirectoryAttachmentsResult) ?? [];
 		} catch (err) {
 			console.error('Error opening dir dialog:', err);

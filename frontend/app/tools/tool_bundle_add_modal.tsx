@@ -119,7 +119,15 @@ export function AddToolBundleModal({ isOpen, onClose, onSubmit, existingSlugs }:
 	if (!isOpen) return null;
 
 	return createPortal(
-		<dialog ref={dialogRef} className="modal" onClose={handleDialogClose}>
+		<dialog
+			ref={dialogRef}
+			className="modal"
+			onClose={handleDialogClose}
+			onCancel={e => {
+				// Form mode: do NOT allow Esc to close.
+				e.preventDefault();
+			}}
+		>
 			<div className="modal-box bg-base-200 max-h-[80vh] max-w-3xl overflow-auto rounded-2xl">
 				{/* header */}
 				<div className="mb-4 flex items-center justify-between">

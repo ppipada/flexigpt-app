@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { FiChevronUp, FiCode, FiEdit2, FiTool, FiX } from 'react-icons/fi';
 
 import { Menu, MenuButton, MenuItem, useMenuStore } from '@ariakit/react';
