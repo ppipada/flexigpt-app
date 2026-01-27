@@ -1,6 +1,6 @@
 import { memo, useState } from 'react';
 
-import { FiCompass, FiUser } from 'react-icons/fi';
+import { FiUser, FiZap } from 'react-icons/fi';
 
 import type { ConversationMessage } from '@/spec/conversation';
 import { RoleEnum } from '@/spec/inference';
@@ -134,7 +134,7 @@ export const ChatMessage = memo(function ChatMessage({
 			<div className={`${rightColSpan} row-start-1 row-end-1 flex justify-start`}>
 				{!isUser && (
 					<div className="flex h-10 w-10 items-center justify-center self-end rounded-full">
-						<FiCompass size={24} />
+						<FiZap size={24} />
 					</div>
 				)}
 			</div>

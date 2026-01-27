@@ -667,3 +667,9 @@
 - [x] View mode needed for builtins
 - [x] prompt template add/edit needs enrichment. same to check for tools.
 - [x] prompt modal doesn't close on outside click. all form modals in prompt and tool.
+
+- [x] edit and save template doesn't work. says template slug already exists.
+  - [x] most probably a mismatch between backend and frontend.
+  - [x] behavior is that for tool and prompts we need versions to be different. once a version is created we dont allow anything except enable disable.
+
+- [x] prompt template, role/vartype/varsource dropdown uses select

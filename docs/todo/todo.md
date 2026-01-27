@@ -2,12 +2,6 @@
 
 ## Laundry list
 
-- [ ] edit and save template doesn't work. says template slug already exists.
-  - [ ] most probably a mismatch between backend and frontend.
-  - [ ] behavior is that for tool and prompts we need versions to be different. once a version is created we dont allow anything except enable disable.
-
-- [ ] prompt template, role/vartype/varsource dropdown uses select
-
 ## Features
 
 - [ ] tool features

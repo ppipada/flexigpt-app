@@ -18,7 +18,9 @@ import { validateSlug, validateTags } from '@/lib/text_utils';
 import { getUUIDv7 } from '@/lib/uuid_utils';
 import { DEFAULT_SEMVER, isSemverVersion, suggestNextMinorVersion } from '@/lib/version_utils';
 
+import { Dropdown, type DropdownItem } from '@/components/dropdown';
 import { ModalBackdrop } from '@/components/modal_backdrop';
+import { ReadOnlyValue } from '@/components/read_only_value';
 
 interface TemplateItem {
 	template: PromptTemplate;
@@ -31,7 +33,7 @@ type ModalMode = 'add' | 'edit' | 'view';
 interface AddEditPromptTemplateModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSubmit: (templateData: Partial<PromptTemplate>) => void;
+	onSubmit: (templateData: Partial<PromptTemplate>) => Promise<void>;
 	initialData?: TemplateItem; // when editing/viewing
 	existingTemplates: TemplateItem[];
 	mode?: ModalMode;
@@ -71,15 +73,44 @@ export function AddEditPromptTemplateModal({
 	});
 
 	const [errors, setErrors] = useState<ErrorState>({});
+	const [submitError, setSubmitError] = useState<string>('');
 
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
+	const roleDropdownItems = useMemo(() => {
+		const obj = {} as Record<PromptRoleEnum, DropdownItem>;
+		Object.values(PromptRoleEnum).forEach(r => {
+			obj[r] = { isEnabled: true };
+		});
+		return obj;
+	}, []);
+
+	const varTypeDropdownItems = useMemo(() => {
+		const obj = {} as Record<VarType, DropdownItem>;
+		Object.values(VarType).forEach(t => {
+			obj[t] = { isEnabled: true };
+		});
+		return obj;
+	}, []);
+
+	const varSourceDropdownItems = useMemo(() => {
+		const obj = {} as Record<VarSource, DropdownItem>;
+		Object.values(VarSource).forEach(s => {
+			obj[s] = { isEnabled: true };
+		});
+		return obj;
+	}, []);
 
 	useEffect(() => {
 		if (!isOpen) return;
 
 		if (initialData) {
 			const src = initialData.template;
-			const nextV = isEditMode ? suggestNextMinorVersion(src.version).suggested : src.version;
+			const existingVersionsForSlug = existingTemplates
+				.filter(t => t.template.slug === src.slug)
+				.map(t => t.template.version);
+
+			const nextV = isEditMode ? suggestNextMinorVersion(src.version, existingVersionsForSlug).suggested : src.version;
+
 			setFormData({
 				displayName: src.displayName,
 				slug: src.slug,
@@ -103,6 +134,7 @@ export function AddEditPromptTemplateModal({
 			});
 		}
 		setErrors({});
+		setSubmitError('');
 	}, [isOpen, initialData, isEditMode]);
 
 	useEffect(() => {
@@ -220,6 +252,7 @@ export function AddEditPromptTemplateModal({
 			setErrors(prev => validateField(name as keyof ErrorState, String(newVal), prev));
 		}
 	};
+
 	const updateBlock = (idx: number, patch: Partial<MessageBlock>) => {
 		setFormData(prev => {
 			const blocks = prev.blocks.map((b, i) => (i === idx ? { ...b, ...patch } : b));
@@ -289,6 +322,7 @@ export function AddEditPromptTemplateModal({
 		e.preventDefault();
 		e.stopPropagation();
 		if (isViewMode) return;
+		setSubmitError('');
 
 		const newErrs = validateForm(formData);
 
@@ -310,9 +344,14 @@ export function AddEditPromptTemplateModal({
 			version: formData.version.trim(),
 			blocks: formData.blocks.map(b => ({ ...b, content: b.content })),
 			variables: formData.variables.length ? formData.variables : undefined,
-		});
-
-		dialogRef.current?.close();
+		})
+			.then(() => {
+				dialogRef.current?.close();
+			})
+			.catch((err: unknown) => {
+				const msg = err instanceof Error ? err.message : 'Failed to save prompt template.';
+				setSubmitError(msg);
+			});
 	};
 
 	if (!isOpen) return null;
@@ -349,6 +388,14 @@ export function AddEditPromptTemplateModal({
 					</div>
 
 					<form noValidate onSubmit={handleSubmit} className="space-y-4">
+						{submitError && (
+							<div className="alert alert-error rounded-2xl text-sm">
+								<div className="flex items-center gap-2">
+									<FiAlertCircle size={14} />
+									<span>{submitError}</span>
+								</div>
+							</div>
+						)}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Display Name*</span>
@@ -392,8 +439,7 @@ export function AddEditPromptTemplateModal({
 									className={`input input-bordered w-full rounded-xl ${errors.slug ? 'input-error' : ''}`}
 									spellCheck="false"
 									autoComplete="off"
-									disabled={isEditMode}
-									readOnly={isViewMode}
+									readOnly={isViewMode || isEditMode}
 									aria-invalid={Boolean(errors.slug)}
 								/>
 								{errors.slug && (
@@ -434,7 +480,14 @@ export function AddEditPromptTemplateModal({
 									<div className="label">
 										<span className="label-text-alt text-base-content/70 text-xs">
 											Current: {initialData.template.version} · Suggested next:{' '}
-											{suggestNextMinorVersion(initialData.template.version).suggested}
+											{
+												suggestNextMinorVersion(
+													initialData.template.version,
+													existingTemplates
+														.filter(t => t.template.slug === initialData.template.slug)
+														.map(t => t.template.version)
+												).suggested
+											}
 											{!isSemverVersion(initialData.template.version) ? ' (current is not semver)' : ''}
 										</span>
 									</div>
@@ -494,20 +547,21 @@ export function AddEditPromptTemplateModal({
 									<div className="mb-2 flex items-center justify-between gap-2">
 										<div className="flex items-center gap-2">
 											<span className="text-base-content/70 text-xs font-semibold uppercase">Role</span>
-											<select
-												className="select select-bordered select-sm rounded-xl"
-												value={b.role}
-												disabled={isViewMode}
-												onChange={e => {
-													updateBlock(idx, { role: e.target.value as PromptRoleEnum });
-												}}
-											>
-												{Object.values(PromptRoleEnum).map(r => (
-													<option key={r} value={r}>
-														{r}
-													</option>
-												))}
-											</select>
+											{isViewMode ? (
+												<ReadOnlyValue value={b.role} />
+											) : (
+												<div className="w-44">
+													<Dropdown<PromptRoleEnum>
+														dropdownItems={roleDropdownItems}
+														selectedKey={b.role}
+														onChange={role => {
+															updateBlock(idx, { role });
+														}}
+														filterDisabled={false}
+														title="Select role"
+													/>
+												</div>
+											)}
 										</div>
 
 										{!isViewMode && (
@@ -633,40 +687,38 @@ export function AddEditPromptTemplateModal({
 											<label className="label py-1">
 												<span className="label-text text-sm">Type</span>
 											</label>
-											<select
-												className="select select-bordered bg-base-100 w-full rounded-xl"
-												disabled={isViewMode}
-												value={v.type}
-												onChange={e => {
-													updateVariable(idx, { type: e.target.value as VarType });
-												}}
-											>
-												{Object.values(VarType).map(t => (
-													<option key={t} value={t}>
-														{t}
-													</option>
-												))}
-											</select>
+											{isViewMode ? (
+												<ReadOnlyValue value={v.type} />
+											) : (
+												<Dropdown<VarType>
+													dropdownItems={varTypeDropdownItems}
+													selectedKey={v.type}
+													onChange={type => {
+														updateVariable(idx, { type });
+													}}
+													filterDisabled={false}
+													title="Select type"
+												/>
+											)}
 										</div>
 
 										<div className="col-span-6 md:col-span-4">
 											<label className="label py-1">
 												<span className="label-text text-sm">Source</span>
 											</label>
-											<select
-												className="select select-bordered bg-base-100 w-full rounded-xl"
-												disabled={isViewMode}
-												value={v.source}
-												onChange={e => {
-													updateVariable(idx, { source: e.target.value as VarSource });
-												}}
-											>
-												{Object.values(VarSource).map(s => (
-													<option key={s} value={s}>
-														{s}
-													</option>
-												))}
-											</select>
+											{isViewMode ? (
+												<ReadOnlyValue value={v.source} />
+											) : (
+												<Dropdown<VarSource>
+													dropdownItems={varSourceDropdownItems}
+													selectedKey={v.source}
+													onChange={source => {
+														updateVariable(idx, { source });
+													}}
+													filterDisabled={false}
+													title="Select source"
+												/>
+											)}
 										</div>
 
 										<div className="col-span-12">

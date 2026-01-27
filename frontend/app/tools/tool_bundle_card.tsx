@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { FiCheck, FiChevronDown, FiChevronUp, FiEdit2, FiEye, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
+import { FiCheck, FiChevronDown, FiChevronUp, FiEye, FiGitBranch, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
 import { type Tool, type ToolBundle, ToolImplType } from '@/spec/tool';
 
@@ -124,57 +124,54 @@ export function ToolBundleCard({
 	};
 
 	const handleModifySubmit = async (partial: Partial<Tool>) => {
-		try {
-			if (toolToEdit) {
-				const nextVersion = (partial.version ?? '').trim();
+		// Defensive: NEVER allow overwriting an existing (slug, version).
+		const slug = (toolToEdit?.slug ?? partial.slug ?? '').trim();
+		const version = (partial.version ?? '').trim();
+		if (!slug) throw new Error('Missing tool slug.');
+		if (!version) throw new Error('Version is required.');
 
-				await toolStoreAPI.putTool(
-					bundle.id,
-					toolToEdit.slug,
-					nextVersion,
-					partial.displayName ?? toolToEdit.displayName,
-					partial.isEnabled ?? toolToEdit.isEnabled,
-					partial.userCallable ?? toolToEdit.userCallable,
-					partial.llmCallable ?? toolToEdit.llmCallable,
-					partial.argSchema ?? toolToEdit.argSchema,
-					partial.type ?? toolToEdit.type,
-					partial.httpImpl ?? toolToEdit.httpImpl,
-					partial.description ?? toolToEdit.description,
-					partial.tags ?? toolToEdit.tags
-				);
-			} else {
-				const slug = partial.slug?.trim() ?? '';
-				const display = partial.displayName?.trim() ?? '';
-				const version = partial.version?.trim() ?? 'v1.0.0';
-
-				await toolStoreAPI.putTool(
-					bundle.id,
-					slug,
-					version,
-					display,
-					partial.isEnabled ?? true,
-					partial.userCallable ?? true,
-					partial.llmCallable ?? true,
-					partial.argSchema ?? {},
-					partial.type ?? ToolImplType.HTTP,
-					partial.httpImpl,
-					partial.description,
-					partial.tags
-				);
-			}
-
-			const toolListItems = await getAllTools([bundle.id], undefined, true);
-			const fresh = toolListItems.map(li => li.toolDefinition);
-			setLocalTools(fresh);
-			onToolsChange(bundle.id, fresh);
-		} catch (err) {
-			console.error('Tool save failed:', err);
-			setAlertMsg('Failed to save tool.');
-			setShowAlert(true);
-		} finally {
-			setIsToolModalOpen(false);
-			setToolToEdit(undefined);
+		const exists = localTools.some(t => t.slug === slug && t.version === version);
+		if (exists) {
+			throw new Error(`Version "${version}" already exists for slug "${slug}". Create a different version.`);
 		}
+
+		if (toolToEdit) {
+			await toolStoreAPI.putTool(
+				bundle.id,
+				toolToEdit.slug,
+				version,
+				partial.displayName ?? toolToEdit.displayName,
+				partial.isEnabled ?? toolToEdit.isEnabled,
+				partial.userCallable ?? toolToEdit.userCallable,
+				partial.llmCallable ?? toolToEdit.llmCallable,
+				partial.argSchema ?? toolToEdit.argSchema,
+				partial.type ?? toolToEdit.type,
+				partial.httpImpl ?? toolToEdit.httpImpl,
+				partial.description ?? toolToEdit.description,
+				partial.tags ?? toolToEdit.tags
+			);
+		} else {
+			const display = partial.displayName?.trim() ?? '';
+			await toolStoreAPI.putTool(
+				bundle.id,
+				slug,
+				version,
+				display,
+				partial.isEnabled ?? true,
+				partial.userCallable ?? true,
+				partial.llmCallable ?? true,
+				partial.argSchema ?? {},
+				partial.type ?? ToolImplType.HTTP,
+				partial.httpImpl,
+				partial.description,
+				partial.tags
+			);
+		}
+
+		const toolListItems = await getAllTools([bundle.id], undefined, true);
+		const fresh = toolListItems.map(li => li.toolDefinition);
+		setLocalTools(fresh);
+		onToolsChange(bundle.id, fresh);
 	};
 
 	return (
@@ -263,13 +260,14 @@ export function ToolBundleCard({
 											{tool.isBuiltIn ? <FiCheck className="mx-auto" /> : <FiX className="mx-auto" />}
 										</td>
 										<td className="text-center">
-											<div className="inline-flex gap-2">
+											<div className="inline-flex items-center gap-2">
 												<button
 													className="btn btn-sm btn-ghost rounded-2xl"
 													onClick={() => {
 														openToolModal('view', tool);
 													}}
 													title="View"
+													aria-label="View"
 												>
 													<FiEye size={16} />
 												</button>
@@ -282,11 +280,12 @@ export function ToolBundleCard({
 													disabled={tool.isBuiltIn || bundle.isBuiltIn}
 													title={
 														tool.isBuiltIn || bundle.isBuiltIn
-															? 'Editing disabled for built-in items'
-															: 'Create new version'
+															? 'Built-in items cannot create new versions'
+															: 'New Version'
 													}
+													aria-label="New Version"
 												>
-													<FiEdit2 size={16} />
+													<FiGitBranch size={16} />
 												</button>
 
 												<button
@@ -296,6 +295,7 @@ export function ToolBundleCard({
 													}}
 													disabled={tool.isBuiltIn || bundle.isBuiltIn}
 													title={tool.isBuiltIn || bundle.isBuiltIn ? 'Deleting disabled for built-in items' : 'Delete'}
+													aria-label="Delete"
 												>
 													<FiTrash2 size={16} />
 												</button>

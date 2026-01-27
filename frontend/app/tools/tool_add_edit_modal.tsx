@@ -14,6 +14,7 @@ import { DEFAULT_SEMVER, suggestNextMinorVersion } from '@/lib/version_utils';
 
 import { Dropdown } from '@/components/dropdown';
 import { ModalBackdrop } from '@/components/modal_backdrop';
+import { ReadOnlyValue } from '@/components/read_only_value';
 
 interface ToolItem {
 	tool: Tool;
@@ -21,20 +22,12 @@ interface ToolItem {
 	toolSlug: string;
 }
 
-function ReadOnlyValue({ value }: { value: string }) {
-	return (
-		<div className="input input-bordered bg-base-100 flex w-full items-center rounded-xl">
-			<span className="text-sm wrap-break-word whitespace-pre-wrap opacity-80">{value || '—'}</span>
-		</div>
-	);
-}
-
 type ModalMode = 'add' | 'edit' | 'view';
 
 interface AddEditToolModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSubmit: (toolData: Partial<Tool>) => void;
+	onSubmit: (toolData: Partial<Tool>) => Promise<void>;
 	initialData?: ToolItem; // when editing/viewing
 	existingTools: ToolItem[];
 	mode?: ModalMode;
@@ -116,6 +109,7 @@ export function AddEditToolModal({
 	});
 
 	const [errors, setErrors] = useState<ErrorState>({});
+	const [submitError, setSubmitError] = useState<string>('');
 
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
 	const displayNameInputRef = useRef<HTMLInputElement | null>(null);
@@ -126,7 +120,9 @@ export function AddEditToolModal({
 
 		if (initialData) {
 			const t = initialData.tool;
-			const nextV = isEditMode ? suggestNextMinorVersion(t.version).suggested : t.version;
+			const existingVersionsForSlug = existingTools.filter(x => x.tool.slug === t.slug).map(x => x.tool.version);
+
+			const nextV = isEditMode ? suggestNextMinorVersion(t.version, existingVersionsForSlug).suggested : t.version;
 
 			setFormData({
 				displayName: t.displayName,
@@ -195,6 +191,7 @@ export function AddEditToolModal({
 			});
 		}
 		setErrors({});
+		setSubmitError('');
 	}, [isOpen, initialData, isEditMode]);
 
 	useEffect(() => {
@@ -396,6 +393,7 @@ export function AddEditToolModal({
 		e.preventDefault();
 		e.stopPropagation();
 		if (isViewMode) return;
+		setSubmitError('');
 
 		const nextErrors = validateForm(formData);
 		setErrors(nextErrors);
@@ -496,9 +494,14 @@ export function AddEditToolModal({
 			argSchema: parsedArgSchema,
 			httpImpl,
 			version: formData.version,
-		});
-
-		dialogRef.current?.close();
+		})
+			.then(() => {
+				dialogRef.current?.close();
+			})
+			.catch((err: unknown) => {
+				const msg = err instanceof Error ? err.message : 'Failed to save tool.';
+				setSubmitError(msg);
+			});
 	};
 
 	const onToolTypeChange = (key: ToolImplType) => {
@@ -537,6 +540,14 @@ export function AddEditToolModal({
 					</div>
 
 					<form noValidate onSubmit={handleSubmit} className="space-y-4">
+						{submitError && (
+							<div className="alert alert-error rounded-2xl text-sm">
+								<div className="flex items-center gap-2">
+									<FiAlertCircle size={14} />
+									<span>{submitError}</span>
+								</div>
+							</div>
+						)}
 						<div className="grid grid-cols-12 items-center gap-2">
 							<label className="label col-span-3">
 								<span className="label-text text-sm">Display Name*</span>
@@ -580,8 +591,7 @@ export function AddEditToolModal({
 									className={`input input-bordered w-full rounded-xl ${errors.slug ? 'input-error' : ''}`}
 									spellCheck="false"
 									autoComplete="off"
-									disabled={isEditMode}
-									readOnly={isViewMode}
+									readOnly={isViewMode || isEditMode}
 									aria-invalid={Boolean(errors.slug)}
 								/>
 								{errors.slug && (
@@ -620,7 +630,12 @@ export function AddEditToolModal({
 									<div className="label">
 										<span className="label-text-alt text-base-content/70 text-xs">
 											Current: {initialData.tool.version} · Suggested next:{' '}
-											{suggestNextMinorVersion(initialData.tool.version).suggested}
+											{
+												suggestNextMinorVersion(
+													initialData.tool.version,
+													existingTools.filter(x => x.tool.slug === initialData.tool.slug).map(x => x.tool.version)
+												).suggested
+											}
 										</span>
 									</div>
 								)}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { FiCheck, FiChevronDown, FiChevronUp, FiEdit2, FiEye, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
+import { FiCheck, FiChevronDown, FiChevronUp, FiEye, FiGitBranch, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 
 import type { PromptBundle, PromptTemplate } from '@/spec/prompt';
 
@@ -127,53 +127,51 @@ export function PromptBundleCard({
 	};
 
 	const handleModifySubmit = async (partial: Partial<PromptTemplate>) => {
-		try {
-			if (templateToEdit) {
-				const nextVersion = (partial.version ?? '').trim();
+		// Defensive: NEVER allow overwriting an existing (slug, version).
+		const slug = (templateToEdit?.slug ?? partial.slug ?? '').trim();
+		const version = (partial.version ?? '').trim();
+		if (!slug) throw new Error('Missing template slug.');
+		if (!version) throw new Error('Version is required.');
 
-				await promptStoreAPI.putPromptTemplate(
-					bundle.id,
-					templateToEdit.slug,
-					partial.displayName ?? templateToEdit.displayName,
-					partial.isEnabled ?? templateToEdit.isEnabled,
-					partial.blocks ?? templateToEdit.blocks,
-					nextVersion,
-					partial.description ?? templateToEdit.description,
-					partial.tags ?? templateToEdit.tags,
-					partial.variables ?? templateToEdit.variables
-				);
-			} else {
-				const slug = partial.slug?.trim() ?? '';
-				const display = partial.displayName?.trim() ?? '';
-				const version = partial.version?.trim() ?? 'v1.0.0';
-				await promptStoreAPI.putPromptTemplate(
-					bundle.id,
-					slug,
-					display,
-					partial.isEnabled ?? true,
-					partial.blocks ?? [],
-					version,
-					partial.description,
-					partial.tags,
-					partial.variables
-				);
-			}
-
-			const promptTemplateListItems = await getAllPromptTemplates([bundle.id], undefined, true);
-			const tplPromises = promptTemplateListItems.map(li =>
-				promptStoreAPI.getPromptTemplate(li.bundleID, li.templateSlug, li.templateVersion)
-			);
-			const fresh = (await Promise.all(tplPromises)).filter((t): t is PromptTemplate => t !== undefined);
-			setLocalTemplates(fresh);
-			onTemplatesChange(bundle.id, fresh);
-		} catch (err) {
-			console.error('Save template failed:', err);
-			setAlertMsg('Failed to save template.');
-			setShowAlert(true);
-		} finally {
-			setIsTemplateModalOpen(false);
-			setTemplateToEdit(undefined);
+		const exists = localTemplates.some(t => t.slug === slug && t.version === version);
+		if (exists) {
+			throw new Error(`Version "${version}" already exists for slug "${slug}". Create a different version.`);
 		}
+
+		if (templateToEdit) {
+			await promptStoreAPI.putPromptTemplate(
+				bundle.id,
+				templateToEdit.slug,
+				partial.displayName ?? templateToEdit.displayName,
+				partial.isEnabled ?? templateToEdit.isEnabled,
+				partial.blocks ?? templateToEdit.blocks,
+				version,
+				partial.description ?? templateToEdit.description,
+				partial.tags ?? templateToEdit.tags,
+				partial.variables ?? templateToEdit.variables
+			);
+		} else {
+			const display = partial.displayName?.trim() ?? '';
+			await promptStoreAPI.putPromptTemplate(
+				bundle.id,
+				slug,
+				display,
+				partial.isEnabled ?? true,
+				partial.blocks ?? [],
+				version,
+				partial.description,
+				partial.tags,
+				partial.variables
+			);
+		}
+
+		const promptTemplateListItems = await getAllPromptTemplates([bundle.id], undefined, true);
+		const tplPromises = promptTemplateListItems.map(li =>
+			promptStoreAPI.getPromptTemplate(li.bundleID, li.templateSlug, li.templateVersion)
+		);
+		const fresh = (await Promise.all(tplPromises)).filter((t): t is PromptTemplate => t !== undefined);
+		setLocalTemplates(fresh);
+		onTemplatesChange(bundle.id, fresh);
 	};
 
 	return (
@@ -262,13 +260,14 @@ export function PromptBundleCard({
 											{tpl.isBuiltIn ? <FiCheck className="mx-auto" /> : <FiX className="mx-auto" />}
 										</td>
 										<td className="text-center">
-											<div className="inline-flex gap-3">
+											<div className="inline-flex items-center gap-2">
 												<button
 													className="btn btn-sm btn-ghost rounded-2xl"
 													onClick={() => {
 														openTemplateModal('view', tpl);
 													}}
 													title="View"
+													aria-label="View"
 												>
 													<FiEye size={16} />
 												</button>
@@ -281,11 +280,12 @@ export function PromptBundleCard({
 													disabled={tpl.isBuiltIn || bundle.isBuiltIn}
 													title={
 														tpl.isBuiltIn || bundle.isBuiltIn
-															? 'Editing disabled for built-in items'
-															: 'Create new version'
+															? 'Built-in items cannot create new versions'
+															: 'New Version'
 													}
+													aria-label="New Version"
 												>
-													<FiEdit2 size={16} />
+													<FiGitBranch size={16} />
 												</button>
 
 												<button
@@ -295,6 +295,7 @@ export function PromptBundleCard({
 													}}
 													disabled={tpl.isBuiltIn || bundle.isBuiltIn}
 													title={tpl.isBuiltIn || bundle.isBuiltIn ? 'Deleting disabled for built-in items' : 'Delete'}
+													aria-label="Delete"
 												>
 													<FiTrash2 size={16} />
 												</button>
