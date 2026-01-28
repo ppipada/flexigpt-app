@@ -9,12 +9,7 @@ import (
 
 // WithRecoveryResp is a helper that recovers from any panic, logs the stack trace,
 // and returns an error to the caller. T must match the response type of your function.
-func WithRecoveryResp[T any](fn func() (T, error)) (T, error) {
-	var (
-		result T
-		err    error
-	)
-
+func WithRecoveryResp[T any](fn func() (T, error)) (result T, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			// Log the panic plus stack trace.
@@ -23,8 +18,15 @@ func WithRecoveryResp[T any](fn func() (T, error)) (T, error) {
 				slog.String("stacktrace", string(debug.Stack())),
 			)
 
-			// Overwrite err so the caller sees we failed.
-			err = fmt.Errorf("panic recovered: %v", r)
+			// Ensure returned values reflect failure.
+			var zero T
+			result = zero
+
+			if e, ok := r.(error); ok {
+				err = fmt.Errorf("panic recovered: %w", e)
+			} else {
+				err = fmt.Errorf("panic recovered: %v", r)
+			}
 		}
 	}()
 

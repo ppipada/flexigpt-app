@@ -22,6 +22,17 @@
 			"createdAt": "2025-07-02T12:00:00Z",
 			"modifiedAt": "2025-07-02T12:00:00Z"
 		},
+		"019c0415-40f7-70cb-9200-d804c9388a57": {
+			"schemaVersion": "2025-07-01",
+			"id": "019c0415-40f7-70cb-9200-d804c9388a57",
+			"slug": "shell",
+			"displayName": "Shell utilities",
+			"description": "Common shell helpers.",
+			"isEnabled": true,
+			"isBuiltIn": true,
+			"createdAt": "2026-01-28T00:00:00Z",
+			"modifiedAt": "2026-01-28T00:00:00Z"
+		},
 		"019b9293-6f00-70d7-8c91-4a7f28156479": {
 			"schemaVersion": "2025-07-01",
 			"id": "019b9293-6f00-70d7-8c91-4a7f28156479",

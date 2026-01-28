@@ -90,6 +90,8 @@ func bundleIDForLLMToolsGo(t llmtoolsgoSpec.Tool) (bundleitemutils.BundleID, err
 		return bundleitemutils.BundleID(builtin.BuiltinBundleIDLLMToolsFS), nil
 	case strings.Contains(fid, "/imagetool/"):
 		return bundleitemutils.BundleID(builtin.BuiltinBundleIDLLMToolsImage), nil
+	case strings.Contains(fid, "/shelltool/"):
+		return bundleitemutils.BundleID(builtin.BuiltinBundleIDLLMToolsShell), nil
 	default:
 		return "", fmt.Errorf("no bundle mapping for llmtools-go tool funcID=%q tags=%v", fid, t.Tags)
 	}

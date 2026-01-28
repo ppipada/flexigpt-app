@@ -2,6 +2,13 @@
 
 ## Laundry list
 
+- [ ] tools should have a configuration which says can autoexecute i.e without user consent vs not.
+  - [ ] with this config we can have a "agent loop" of sort for file edits/mods etc
+  - [ ] major question remains as to what sort of tools should be auto exec vs not. write anything being human in loop is safest anycase. for write ones, we may want to see if we need to have a "keep old file as renamed" with some sessionid/tmp extension so that reverting is easier.
+  - [ ] a tool call only and tool output only message may be rendered as a single line after this.
+  - [ ] we may want to have a "assistant" like we planned before that has tool sets and autoexec config so that the "agent" loop is kind of autonomous
+- [ ] File name and details also should be sent along with file text from attachments
+
 ## Features
 
 - [ ] tool features
@@ -37,9 +44,10 @@
       - [x] web search
 
     - [ ] local replacements for some builtin tools that are very vendor specific
-      - [ ] bash
-      - [ ] apply patch
-      - [ ] text editor
+      - [ ] bash: yes.
+      - [ ] apply patch: No. this is very error prone, cosnidering unidiff vs V4A diff formats and compatibility issues.
+      - [ ] text editor: yes
+      - [ ] tool search tool: we may need a tool search tool that does sqlite based bm25 search or regex search like from anthropic
 
     - [x] Dont: New stateful APIs and its hooks from vendors
       - [x] stored responses, stored conversations, on server memory context, on server prompt templates etc.
