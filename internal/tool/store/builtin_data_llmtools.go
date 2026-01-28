@@ -74,17 +74,7 @@ func injectLLMToolsGoBuiltins(
 func bundleIDForLLMToolsGo(t llmtoolsgoSpec.Tool) (bundleitemutils.BundleID, error) {
 	fid := string(t.GoImpl.FuncID)
 
-	// Prefer tags if present.
-	for _, tag := range t.Tags {
-		switch tag {
-		case "fs":
-			return bundleitemutils.BundleID(builtin.BuiltinBundleIDLLMToolsFS), nil
-		case "image":
-			return bundleitemutils.BundleID(builtin.BuiltinBundleIDLLMToolsImage), nil
-		}
-	}
-
-	// Fallback: infer from funcID.
+	// Infer from funcID.
 	switch {
 	case strings.Contains(fid, "/fstool/"):
 		return bundleitemutils.BundleID(builtin.BuiltinBundleIDLLMToolsFS), nil
